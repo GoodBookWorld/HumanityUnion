@@ -1,0 +1,33 @@
+# Humanity Union Project Dictionary
+
+This document defines the official terminology of the Humanity Union platform. All specifications, user-facing copy, and engineering documentation must use these terms consistently. Where a term has an established abbreviation, both the full name and the abbreviation are authoritative.
+
+| Term | Definition | Notes |
+| --- | --- | --- |
+| Humanity Union | The unified digital platform that enables global humanitarian collaboration, democratic participation, and institutional coordination. | Platform name; use in full on first reference in formal documents. |
+| World Social Activity Zone (WSAZ) | The global public space where users and institutions publish content, participate in discussions, and engage in platform-wide social activity. | Abbreviation: WSAZ. Not bound to a single country or region. |
+| Country & Region Zone (CRZ) | A geographically scoped activity space limited to a defined country or region, supporting local participation within platform rules. | Abbreviation: CRZ. Each CRZ operates under shared global governance with local context. |
+| Proposal | A structured initiative submitted for review, discussion, and possible adoption by eligible participants or governing bodies. | Distinct from informal posts; follows a defined proposal lifecycle. |
+| Petition | A collective request supported by verified signatures, used to raise an issue or demand action within established thresholds and rules. | Signature requirements and validity rules are defined in governance specifications. |
+| Poll | A lightweight instrument for gathering opinions or preferences on a question without binding decision authority. | Non-binding unless explicitly linked to a formal voting process. |
+| Voting | A formal decision process in which eligible participants cast binding votes according to defined rules, quotas, and verification requirements. | Governed by role, verification level, and institutional scope. |
+| Institution | A registered organizational entity on the platform, such as a government body, NGO, academic unit, or other approved collective actor. | Institutions may hold distinct roles, permissions, and representation rights. |
+| Humanity Council | The supreme deliberative and decision-making assembly of the platform, responsible for major policy, governance, and strategic direction. | Composed of designated chambers and subject to platform charter rules. |
+| Chamber of State Representatives | A chamber of the Humanity Council composed of representatives linked to states or officially recognized regional authorities. | Focuses on state-level collaboration and geopolitical coordination. |
+| Chamber of Intellectual Analysis & General Staff | A chamber of the Humanity Council responsible for expert analysis, strategic assessment, and coordinated advisory support. | Provides analytical input to council decisions; does not replace democratic voting. |
+| Humanity Protection | The platform function and policy domain concerned with safeguarding users, institutions, data, and public integrity against harm, abuse, and systemic risk. | Encompasses safety, security, and protective governance measures. |
+| World Protection Corps | The operational body responsible for enforcing protection policies, responding to serious incidents, and supporting platform-wide safety actions. | Acts within defined authority limits and oversight mechanisms. |
+| Department of Intellectual Analysis | A permanent institutional unit that conducts research, evaluation, and expert review to inform platform decisions and public reports. | Supports the Chamber of Intellectual Analysis & General Staff and broader governance. |
+| Department of State Collaboration | A permanent institutional unit that manages relationships, workflows, and coordinated action with state and regional actors. | Works with the Chamber of State Representatives and CRZ operations. |
+| User | Any registered individual account holder who can access platform features according to assigned roles and verification status. | Base participant type; permissions vary by verification and role. |
+| Verified User | A user whose identity or affiliation has been confirmed through the platform verification process to a defined level of assurance. | Required for certain petitions, votes, and institutional interactions. |
+| Social Activity Score | A quantitative measure of a user's constructive participation, engagement quality, and compliance with platform norms over time. | Used for eligibility, visibility, and trust signals; not a substitute for verification. |
+| Verification Level | A graded classification indicating the depth and type of identity or affiliation checks completed for a user or institution. | Higher levels unlock additional rights and responsibilities. |
+| Moderator | A user or role holder authorized to review content, enforce community rules, and manage disputes within assigned zones or scopes. | Authority is limited to moderation permissions, not full system administration. |
+| Administrator | A trusted role holder with elevated permissions to configure platform settings, manage accounts, and oversee operational functions. | Distinct from council governance; subject to audit and policy controls. |
+| ACTUC | Automated Content, Trust, and User Compliance: the platform subsystem that applies automated and semi-automated checks on content, trust signals, and policy adherence. | Abbreviation: ACTUC. Supports moderators and protection workflows; does not replace human review where required. |
+| Publication | A primary content unit posted to WSAZ or a CRZ, such as an article, announcement, or structured update intended for public or scoped visibility. | May support comments, reactions, and linked democratic instruments. |
+| Comment | A user-generated response attached to a publication or eligible content item within defined threading and moderation rules. | Subject to the same trust, verification, and moderation policies as publications. |
+| Reaction | A lightweight expressive response to a publication or comment, used to indicate sentiment or acknowledgment without full commentary. | Typically limited in type and frequency to preserve signal quality. |
+| Statistics | Aggregated, policy-compliant metrics derived from platform activity, participation, and governance processes. | Must respect privacy, verification context, and publication rules. |
+| PWA | Progressive Web Application: the installable, offline-capable web client through which users access Humanity Union on supported devices. | Abbreviation: PWA. Primary user-facing delivery model for the platform. |

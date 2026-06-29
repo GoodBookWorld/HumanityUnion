@@ -1,0 +1,25 @@
+{
+  "name": "humanity-union-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Humanity Union civic technology platform monorepo.",
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "dev": "pnpm --parallel dev:api dev:web",
+    "dev:api": "pnpm --filter @hu/api dev",
+    "dev:web": "pnpm --filter @hu/web dev",
+    "build": "pnpm --filter @hu/api build && pnpm --filter @hu/web build",
+    "lint": "eslint .",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "typecheck": "pnpm --filter @hu/types typecheck && pnpm --filter @hu/api typecheck && pnpm --filter @hu/web typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
