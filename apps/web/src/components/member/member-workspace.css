@@ -1,0 +1,46 @@
+.member-workspace {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 2rem;
+  width: min(960px, 100%);
+  text-align: left;
+}
+
+.member-workspace__nav {
+  border-right: 1px solid #e5e5e5;
+  min-height: 24rem;
+  padding-right: 1.5rem;
+}
+
+.member-workspace__nav-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #737373;
+}
+
+.member-workspace__header {
+  margin-bottom: 1.5rem;
+}
+
+.member-workspace__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.member-workspace__subtitle {
+  color: #525252;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .member-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .member-workspace__nav {
+    display: none;
+  }
+}

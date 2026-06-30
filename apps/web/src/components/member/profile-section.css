@@ -1,0 +1,19 @@
+.profile-section {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.profile-section__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+}
+
+.profile-section__placeholder {
+  color: #737373;
+  font-style: italic;
+}

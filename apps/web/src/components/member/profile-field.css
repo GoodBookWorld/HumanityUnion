@@ -1,0 +1,16 @@
+.profile-field {
+  margin-bottom: 0.75rem;
+}
+
+.profile-field__label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #525252;
+  margin-bottom: 0.25rem;
+}
+
+.profile-field__value {
+  font-size: 1rem;
+  color: #1a1a1a;
+}

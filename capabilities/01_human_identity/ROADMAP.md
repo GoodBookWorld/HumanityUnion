@@ -179,7 +179,7 @@ visibility rules
 
 Status:
 
-Planned
+Completed
 
 ---
 
