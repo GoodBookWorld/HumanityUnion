@@ -114,7 +114,7 @@ This changelog documents the evolution of the Human Identity capability througho
 
 It represents the architectural history of the capability rather than the technical history of the source code.
 
-Version 1.1
+# Version 1.1
 
 Date:
 
@@ -143,3 +143,62 @@ Guide 17
 Related Architecture Review:
 
 Pending
+
+# Version 1.2
+
+Date:
+
+2026-06-30
+
+Status:
+
+Operational
+
+Summary:
+
+Guide 18 completed.
+
+Implemented:
+
+- Session Context abstraction
+- Bootstrap Session Context
+- AuthIdentity access through Session Context
+- Updated /api/v1/auth/me identity resolution
+
+Related Guides:
+
+Guide 18 — Session Context
+
+Related Architecture Review:
+
+Pending
+
+# Version 1.3
+
+Date:
+
+2026-06-30
+
+Status:
+
+Operational
+
+Summary:
+
+Guide 19 completed.
+
+Implemented:
+
+- Authentication Middleware
+- request.auth identity attachment
+- AuthIdentity resolution through Session Context
+- /api/v1/auth/me now consumes identity from middleware
+
+Related Guides:
+
+Guide 19 — Authentication Middleware
+
+Related Architecture Review:
+
+Pending
+

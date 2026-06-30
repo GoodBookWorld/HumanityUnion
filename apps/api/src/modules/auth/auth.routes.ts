@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createSuccessResponse } from "../../shared/http-response.js";
-import { getCurrentAuthIdentity } from "./auth.identity.js";
+import { authenticationMiddleware } from "./auth.middleware.js";
 
 const authRouter = Router();
 
@@ -12,8 +12,8 @@ const notImplementedResponse = {
   message: "Not implemented.",
 };
 
-authRouter.get("/me", (_req, res) => {
-  res.json(createSuccessResponse(getCurrentAuthIdentity()));
+authRouter.get("/me", authenticationMiddleware, (req, res) => {
+  res.json(createSuccessResponse(req.auth!, "Current identity loaded."));
 });
 
 authRouter.post("/login", (_req, res) => {
