@@ -258,3 +258,34 @@ Guide 21 — Member Profile API
 Related Architecture Review:
 
 Pending
+
+# Version 2.2
+
+Date:
+
+2026-06-30
+
+Status:
+
+Operational
+
+Summary:
+
+Guide 22 completed.
+
+Implemented:
+
+- Editable Member Profile
+- Bootstrap Member Store
+- PATCH /api/v1/members/me
+- Editable profile fields
+- Protected profile fields
+- Member-owned profile update flow
+
+Related Guides:
+
+Guide 22 — Editable Member Profile
+
+Related Architecture Review:
+
+Pending
