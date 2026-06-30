@@ -349,3 +349,11 @@ Guide 24 — Public Member Projection
 Related Architecture Review:
 
 Pending
+
+# Version 2.5
+
+Epic 02 officially closed.
+
+Architecture Review passed.
+
+Member Profile subsystem completed.
