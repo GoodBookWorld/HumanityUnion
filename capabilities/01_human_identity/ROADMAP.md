@@ -201,7 +201,7 @@ preferences
 
 Status:
 
-Planned
+Completed
 
 ---
 

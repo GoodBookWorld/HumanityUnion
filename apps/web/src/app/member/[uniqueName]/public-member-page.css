@@ -1,0 +1,25 @@
+.public-member-page {
+  width: 100%;
+  max-width: 720px;
+  padding: 2rem 1.5rem;
+  text-align: left;
+}
+
+.public-member-page__header {
+  margin-bottom: 1.5rem;
+}
+
+.public-member-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.public-member-page__subtitle {
+  color: #525252;
+  font-size: 0.95rem;
+}
+
+.public-member-page__back {
+  margin-top: 1.5rem;
+}

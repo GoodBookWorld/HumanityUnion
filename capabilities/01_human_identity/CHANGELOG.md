@@ -319,3 +319,33 @@ Guide 23 — Member Profile Workspace
 Related Architecture Review:
 
 Pending
+
+# Version 2.4
+
+Date:
+
+2026-06-30
+
+Status:
+
+Operational
+
+Summary:
+
+Guide 24 completed.
+
+Implemented:
+
+- Member Public Projection
+- Public Member API endpoint
+- Public member profile page
+- Projection-based privacy boundary
+- Public profile placeholder sections
+
+Related Guides:
+
+Guide 24 — Public Member Projection
+
+Related Architecture Review:
+
+Pending

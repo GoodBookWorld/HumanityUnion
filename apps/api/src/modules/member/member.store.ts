@@ -18,6 +18,16 @@ export function getMemberById(memberId: string): Member | null {
   return member ? structuredClone(member) : null;
 }
 
+export function getMemberByUniqueName(uniqueName: string): Member | null {
+  for (const member of members.values()) {
+    if (member.profile.uniqueName === uniqueName) {
+      return structuredClone(member);
+    }
+  }
+
+  return null;
+}
+
 export function updateMemberProfile(
   memberId: string,
   fields: EditableMemberProfileFields,

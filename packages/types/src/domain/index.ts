@@ -15,3 +15,4 @@ export type {
   MemberStatus,
   VerificationLevel,
 } from "./member.js";
+export type { MemberPublicProjection } from "./member-public-projection.js";

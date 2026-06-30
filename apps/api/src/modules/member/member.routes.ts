@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { authenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { toMemberPublicProjection } from "./member.projection.js";
 import {
   getMemberById,
+  getMemberByUniqueName,
   updateMemberProfile,
   type EditableMemberProfileFields,
 } from "./member.store.js";
@@ -26,6 +28,17 @@ function createFailureResponse(message: string) {
     message,
   };
 }
+
+memberRouter.get("/public/:uniqueName", (req, res) => {
+  const member = getMemberByUniqueName(req.params.uniqueName);
+
+  if (!member) {
+    res.status(404).json(createFailureResponse("Member not found."));
+    return;
+  }
+
+  res.json(createSuccessResponse(toMemberPublicProjection(member), "Public member profile loaded."));
+});
 
 memberRouter.get("/me", authenticationMiddleware, (req, res) => {
   const member = getMemberById(req.auth!.memberId);
