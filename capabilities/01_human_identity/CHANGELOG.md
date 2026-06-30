@@ -357,3 +357,31 @@ Epic 02 officially closed.
 Architecture Review passed.
 
 Member Profile subsystem completed.
+
+# Version 3.1
+
+Date:
+
+2026-06-30
+
+Status:
+
+Operational
+
+Summary:
+
+Guide 26 completed.
+
+Implemented:
+
+- MemberPreferences Aggregate Root
+- ExperiencePreferences
+- ParticipationPreferences
+- CommunicationPreferences
+- AccessibilityPreferences
+- WorkspacePreferences
+- Shared domain exports
+
+Related Guides:
+
+Guide 26 — Member Preferences Domain

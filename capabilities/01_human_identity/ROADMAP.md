@@ -221,7 +221,7 @@ visibility settings
 
 Status:
 
-Planned
+Completed
 
 ---
 
@@ -241,7 +241,7 @@ verification API integration
 
 Status:
 
-Planned
+Completed
 
 ---
 
