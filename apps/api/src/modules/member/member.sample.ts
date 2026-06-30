@@ -28,3 +28,11 @@ export const sampleMember: Member = {
   createdAt: "2026-06-28T00:00:00.000Z",
   updatedAt: "2026-06-28T00:00:00.000Z",
 };
+
+export function getSampleMemberById(memberId: string): Member | null {
+  if (memberId === "member-bootstrap-001") {
+    return sampleMember;
+  }
+
+  return null;
+}
