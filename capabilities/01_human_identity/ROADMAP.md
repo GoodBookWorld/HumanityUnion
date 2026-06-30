@@ -119,7 +119,7 @@ GET /api/v1/auth/me
 
 Status:
 
-Planned
+Completed
 
 ---
 

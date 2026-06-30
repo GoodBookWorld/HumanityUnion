@@ -202,3 +202,30 @@ Related Architecture Review:
 
 Pending
 
+Version 2.0
+
+Date:
+
+2026-06-30
+
+Status:
+
+Completed
+
+Summary:
+
+Epic 01 — Authentication completed.
+
+Implemented:
+
+- Authentication API Contract
+- Session Context
+- Authentication Middleware
+- Current Identity Endpoint
+
+Related Guides:
+
+17
+18
+19
+20
