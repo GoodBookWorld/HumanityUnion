@@ -1,13 +1,12 @@
 import { Router } from "express";
-import { getCurrentAuthIdentity } from "../auth/auth.identity.js";
+import { authenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { getSampleMemberById } from "./member.sample.js";
 
 const memberRouter = Router();
 
-memberRouter.get("/me", (_req, res) => {
-  const { memberId } = getCurrentAuthIdentity();
-  const member = getSampleMemberById(memberId);
+memberRouter.get("/me", authenticationMiddleware, (req, res) => {
+  const member = getSampleMemberById(req.auth!.memberId);
 
   if (!member) {
     res.status(404).json({

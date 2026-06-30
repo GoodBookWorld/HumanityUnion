@@ -229,3 +229,32 @@ Related Guides:
 18
 19
 20
+
+# Version 2.1
+
+Date:
+
+2026-06-30
+
+Status:
+
+Operational
+
+Summary:
+
+Guide 21 completed.
+
+Implemented:
+
+- Member Profile API
+- Authentication Middleware integration for /api/v1/members/me
+- Member resolution through request.auth.memberId
+- Bootstrap Member profile retrieval
+
+Related Guides:
+
+Guide 21 — Member Profile API
+
+Related Architecture Review:
+
+Pending
