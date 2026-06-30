@@ -61,7 +61,7 @@ Deliverables:
 
 Status:
 
-Planned
+Completed
 
 ---
 
