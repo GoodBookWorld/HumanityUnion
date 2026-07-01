@@ -40,7 +40,7 @@ Excellent
 
 # Current Capability
 
-Capability 01 — Human Identity
+Capability 02 — Participation
 
 Status:
 
@@ -50,7 +50,7 @@ In Progress
 
 # Current Epic
 
-Epic 03 — Member Preferences
+Epic 01 — Initiative Foundation
 
 Status:
 
@@ -64,7 +64,7 @@ None
 
 Status:
 
-Epic 03 Architecture Review completed
+Epic 01 Architecture Review completed
 
 ---
 
@@ -72,11 +72,17 @@ Epic 03 Architecture Review completed
 
 To be planned
 
-Next Epic of Capability 01
+Capability 02
+
+Epic 02
 
 Status:
 
 Planned
+
+Name:
+
+To be defined during Epic Planning.
 
 ---
 
@@ -100,17 +106,35 @@ Capability 01
 
 ✓ Guide 30 — Epic 03 Architecture Review
 
+Capability 02
+
+✓ Epic 01 — Initiative Foundation
+
+✓ Guide 01 — Initiative Domain
+
+✓ Guide 02 — Initiative Store
+
+✓ Guide 03 — Initiative API
+
+✓ Guide 04 — Initiative Workspace
+
+✓ Guide 05 — Public Initiative Projection
+
+✓ Guide 06 — Platform Integration
+
+✓ Guide 07 — Epic Architecture Review
+
 ---
 
 # Architecture
 
 Current Aggregate Root:
 
-MemberPreferences
+Initiative
 
 Current Domain:
 
-Member Preferences
+Participation
 
 Architecture State:
 
@@ -128,7 +152,7 @@ main
 
 Repository Status:
 
-Guide 29 implementation pending commit.
+Clean
 
 ---
 

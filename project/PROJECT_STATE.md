@@ -48,9 +48,9 @@ Platform Version:
 
 # Current Capability
 
-Capability 01
+Capability 02
 
-Human Identity
+Participation
 
 Status:
 
@@ -59,6 +59,8 @@ In Progress
 ---
 
 # Completed Epics
+
+Capability 01
 
 Epic 01
 
@@ -84,21 +86,41 @@ Status:
 
 Completed
 
+Capability 02
+
+Epic 01
+
+Initiative Foundation
+
+Status:
+
+Completed
+
 ---
 
 # Active Epic
 
 None
 
-Next Epic of Capability 01 is pending planning.
+Capability 02
+
+Epic 02
+
+Status:
+
+Planned
+
+Name:
+
+To be defined during Epic Planning.
 
 ---
 
 # Current Guide
 
-Guide 30
+Guide 07
 
-Epic 03 Architecture Review
+Epic 01 Architecture Review
 
 Status:
 
@@ -108,11 +130,11 @@ Completed
 
 # Current Domain
 
-Member Preferences
+Participation
 
 Aggregate Root:
 
-MemberPreferences
+Initiative
 
 Status:
 
@@ -144,6 +166,30 @@ Completed:
 
 ✓ Architecture Review
 
+Capability 02 — Epic 01:
+
+✓ Domain Design
+
+✓ Domain Model
+
+✓ Domain Decisions
+
+✓ Aggregate Root
+
+✓ Value Objects
+
+✓ Bootstrap Store
+
+✓ API
+
+✓ Workspace
+
+✓ Public Initiative Projection
+
+✓ Platform Integration
+
+✓ Architecture Review
+
 ---
 
 # Platform Architecture
@@ -153,6 +199,7 @@ Current Core Domains:
 - Authentication
 - Member
 - Member Preferences
+- Initiative
 
 Current Shared Types:
 
@@ -202,10 +249,6 @@ Working Rule:
 
 Always maintain a clean repository after Guide completion.
 
-Current Note:
-
-Guide 29 implementation files remain uncommitted.
-
 ---
 
 # Engineering Health
@@ -230,7 +273,7 @@ Minimal
 
 # Immediate Objective
 
-Plan the next Epic of Capability 01.
+Plan Capability 02 Epic 02.
 
 ---
 
@@ -239,6 +282,10 @@ Plan the next Epic of Capability 01.
 Complete Capability 01
 
 Human Identity
+
+Complete Capability 02
+
+Participation
 
 ---
 

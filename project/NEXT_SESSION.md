@@ -26,11 +26,11 @@ Platform Version:
 
 Current Capability:
 
-Capability 01 — Human Identity
+Capability 02 — Participation
 
 Current Epic:
 
-Epic 03 — Member Preferences (Completed)
+Epic 01 — Initiative Foundation (Completed)
 
 ---
 
@@ -38,9 +38,13 @@ Epic 03 — Member Preferences (Completed)
 
 Completed:
 
-Epic 03 — Member Preferences
+Capability 01 — Epic 03 — Member Preferences
 
 Guides 26–30
+
+Capability 02 — Epic 01 — Initiative Foundation
+
+Guides 01–07
 
 Verified:
 
@@ -56,11 +60,25 @@ Verified:
 
 ✓ Architecture Review 05
 
+✓ Initiative Domain
+
+✓ Initiative Store
+
+✓ Initiative API
+
+✓ Initiative Workspace
+
+✓ Public Initiative Projection
+
+✓ Platform Integration
+
+✓ Epic 01 Architecture Review
+
 ---
 
 # Immediate Objective
 
-Plan the next Epic of Capability 01.
+Plan Capability 02 Epic 02.
 
 ---
 
@@ -71,7 +89,8 @@ Review:
 - PROJECT_DASHBOARD.md
 - PROJECT_STATE.md
 - CAPABILITY_01_HUMAN_IDENTITY.md
-- ROADMAP.md
+- CAPABILITY_02_PARTICIPATION.md
+- capabilities/02_participation/ROADMAP.md
 
 Confirm:
 
@@ -81,13 +100,11 @@ Review:
 
 git status
 
-Commit pending Guide 29 changes if the working tree is not clean.
-
 ---
 
 # Current Engineering Focus
 
-Define the next Epic scope and implementation guide sequence.
+Define Capability 02 Epic 02 scope and implementation guide sequence.
 
 Do not begin implementation until the Epic specification and first guide are approved.
 
@@ -95,9 +112,9 @@ Do not begin implementation until the Epic specification and first guide are app
 
 # Success Target
 
-Next Epic specification drafted.
+Capability 02 Epic 02 specification drafted.
 
-First guide of the next Epic approved.
+First guide of Epic 02 approved.
 
 Engineering command center updated for the new Epic.
 
