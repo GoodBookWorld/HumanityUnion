@@ -169,3 +169,7 @@ Before finishing today's work:
 NEXT_SESSION.md should always answer one question:
 
 "What is the next engineering step?"
+
+Guide 28
+
+Member Preferences Workspace

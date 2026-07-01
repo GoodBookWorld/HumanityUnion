@@ -385,3 +385,16 @@ Implemented:
 Related Guides:
 
 Guide 26 — Member Preferences Domain
+
+# Version 3.2
+
+Guide 27 completed.
+
+Implemented:
+
+- Member Preferences API
+- Bootstrap Preferences Store
+- GET /api/v1/preferences/me
+- PATCH /api/v1/preferences/me
+- Authentication Middleware integration
+

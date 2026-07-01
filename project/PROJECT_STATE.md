@@ -98,7 +98,7 @@ Member Preferences API
 
 Status:
 
-Current
+Completed
 
 ---
 

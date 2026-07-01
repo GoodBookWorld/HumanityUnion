@@ -170,3 +170,7 @@ This document must always answer one question:
 "Where is the project right now?"
 
 Every Epic completion must update this dashboard.
+
+# Current Guide:
+
+Guide 28
