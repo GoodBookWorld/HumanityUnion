@@ -227,17 +227,17 @@ Completed
 
 ## Guide 26
 
-Verification Widget
+Member Preferences Domain
 
 Purpose:
 
-Display verification status.
+Establish the Member Preferences shared domain model.
 
 Deliverables:
 
-verification UI
-
-verification API integration
+* MemberPreferences aggregate root
+* preference value objects
+* shared domain exports
 
 Status:
 
@@ -247,19 +247,37 @@ Completed
 
 ## Guide 27
 
-Identity Navigation
+Member Preferences API
 
 Purpose:
 
-Integrate identity into platform navigation.
+Expose Member Preferences through the API.
 
 Deliverables:
 
-profile menu
+* preferences endpoints
+* bootstrap preferences store
+* authentication middleware integration
 
-navigation updates
+Status:
 
-identity entry points
+Current
+
+---
+
+## Guide 28
+
+Member Preferences Workspace
+
+Purpose:
+
+Display Member Preferences in the workspace.
+
+Deliverables:
+
+* preferences workspace page
+* preferences API integration
+* placeholder preference sections
 
 Status:
 
@@ -267,23 +285,40 @@ Planned
 
 ---
 
-## Guide 28
+## Guide 29
 
-Human Identity Review
+Member Preferences Public Projection
 
 Purpose:
 
-Complete Capability Review.
+Expose public-safe preference projection.
 
 Deliverables:
 
-architecture review
+* preference projection type
+* public preferences endpoint
+* projection boundary verification
 
-technical review
+Status:
 
-documentation review
+Planned
 
-roadmap update
+---
+
+## Guide 30
+
+Epic 03 Architecture Review
+
+Purpose:
+
+Complete Epic 03 review.
+
+Deliverables:
+
+* architecture review
+* technical review
+* documentation review
+* roadmap update
 
 Status:
 

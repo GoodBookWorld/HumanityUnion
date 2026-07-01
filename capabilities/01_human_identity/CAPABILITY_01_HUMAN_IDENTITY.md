@@ -170,11 +170,26 @@ Guide 24 — Member Settings
 
 Guide 25 — Privacy Preferences
 
-Guide 26 — Verification Widget
+Guide 26 — Member Preferences Domain
 
-Guide 27 — Identity Navigation
+Guide 27 — Member Preferences API
 
-Guide 28 — Human Identity Review
+Guide 28 — Member Preferences Workspace
+
+Guide 29 — Member Preferences Public Projection
+
+Guide 30 — Epic 03 Architecture Review
+
+---
+
+# Epic 03 Documentation
+
+Epic 03 — Member Preferences:
+
+* EPIC_03_MEMBER_PREFERENCES.md
+* PREFERENCES_DOMAIN_DESIGN.md
+* DOMAIN_MODEL.md
+* DOMAIN_DECISIONS.md
 
 ---
 

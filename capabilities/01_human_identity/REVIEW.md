@@ -167,3 +167,21 @@ Passed
 Result:
 
 Epic 02 completed.
+
+---
+
+# Guide 26
+
+Status:
+
+Passed
+
+Summary:
+
+Member Preferences Domain established.
+
+Aggregate Root and Value Objects verified.
+
+No API, Store or business logic introduced.
+
+---
