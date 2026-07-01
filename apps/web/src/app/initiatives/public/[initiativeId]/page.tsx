@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
+import { getCollaborativeAnalysisByInitiativeId } from "../../../../features/collaborative-analysis/api";
 import { getPublicInitiative } from "../../../../features/initiatives/api";
 
 import "./public-initiative-page.css";
@@ -27,11 +28,21 @@ function formatCreatedDate(createdAt: string): string {
 export default async function PublicInitiativePage({ params }: PublicInitiativePageProps) {
   const { initiativeId } = await params;
   let initiative = null;
+  let linkedAnalysisId: string | null = null;
 
   try {
     initiative = await getPublicInitiative(initiativeId);
   } catch {
     initiative = null;
+  }
+
+  if (initiative) {
+    try {
+      const analysis = await getCollaborativeAnalysisByInitiativeId(initiativeId);
+      linkedAnalysisId = analysis.analysisId;
+    } catch {
+      linkedAnalysisId = null;
+    }
   }
 
   if (!initiative) {
@@ -63,6 +74,16 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
         <ProfileField label="Steward" value={initiative.stewardDisplayName} />
         <ProfileField label="Created" value={formatCreatedDate(initiative.createdAt)} />
       </ProfileSection>
+
+      {linkedAnalysisId ? (
+        <nav className="public-initiative-page__related" aria-label="Platform integration">
+          <Link
+            href={`/collaborative-analysis/public/${encodeURIComponent(linkedAnalysisId)}`}
+          >
+            View Public Collaborative Analysis
+          </Link>
+        </nav>
+      ) : null}
 
       <p className="public-initiative-page__back">
         <Link href="/">Back to Home</Link>

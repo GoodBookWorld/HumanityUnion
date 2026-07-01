@@ -1,0 +1,25 @@
+.analysis-summary {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.analysis-summary__text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.analysis-summary__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+  color: #737373;
+  margin: 0;
+}
+
+.analysis-summary__empty {
+  color: #737373;
+  font-style: italic;
+}

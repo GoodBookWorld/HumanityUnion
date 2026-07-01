@@ -1,0 +1,22 @@
+.collaborative-analysis-page {
+  width: 100%;
+  max-width: 960px;
+  padding: 2rem 1.5rem;
+  text-align: left;
+}
+
+.collaborative-analysis-page__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.collaborative-analysis-page__links a {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.collaborative-analysis-page__back {
+  margin-top: 1rem;
+}

@@ -20,6 +20,15 @@
   font-size: 0.95rem;
 }
 
+.public-initiative-page__related {
+  margin-bottom: 1rem;
+}
+
+.public-initiative-page__related a {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
 .public-initiative-page__back {
   margin-top: 1.5rem;
 }

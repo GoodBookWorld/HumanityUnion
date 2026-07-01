@@ -1,0 +1,45 @@
+.signal-overview {
+  display: grid;
+  gap: 1rem;
+}
+
+.signal-overview__note {
+  font-size: 0.875rem;
+  color: #525252;
+  margin: 0;
+}
+
+.signal-overview__list {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.signal-overview__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.signal-overview__label {
+  font-size: 0.95rem;
+  color: #1a1a1a;
+}
+
+.signal-overview__count {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #525252;
+}
+
+.signal-overview__empty {
+  color: #737373;
+  font-style: italic;
+}

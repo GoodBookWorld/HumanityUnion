@@ -30,7 +30,7 @@ Capability 02 — Participation
 
 Current Epic:
 
-Epic 01 — Initiative Foundation (Completed)
+Epic 02 — Collaborative Analysis (Completed)
 
 ---
 
@@ -46,19 +46,15 @@ Capability 02 — Epic 01 — Initiative Foundation
 
 Guides 01–07
 
+Capability 02 — Epic 02 — Collaborative Analysis
+
+Guides 01–07
+
 Verified:
 
 ✓ TypeScript
 
 ✓ Shared Types
-
-✓ Preferences API
-
-✓ Preferences Workspace
-
-✓ Public Participation Profile
-
-✓ Architecture Review 05
 
 ✓ Initiative Domain
 
@@ -70,15 +66,27 @@ Verified:
 
 ✓ Public Initiative Projection
 
+✓ Epic 01 Architecture Review
+
+✓ Collaborative Analysis Domain
+
+✓ Collaborative Analysis Store
+
+✓ Collaborative Analysis API
+
+✓ Collaborative Analysis Workspace
+
+✓ Public Collaborative Analysis Projection
+
 ✓ Platform Integration
 
-✓ Epic 01 Architecture Review
+✓ Epic 02 Architecture Review
 
 ---
 
 # Immediate Objective
 
-Plan Capability 02 Epic 02.
+Plan Capability 02 Epic 03.
 
 ---
 
@@ -88,7 +96,6 @@ Review:
 
 - PROJECT_DASHBOARD.md
 - PROJECT_STATE.md
-- CAPABILITY_01_HUMAN_IDENTITY.md
 - CAPABILITY_02_PARTICIPATION.md
 - capabilities/02_participation/ROADMAP.md
 
@@ -100,11 +107,13 @@ Review:
 
 git status
 
+Commit Epic 02 vertical slice if working tree is not clean.
+
 ---
 
 # Current Engineering Focus
 
-Define Capability 02 Epic 02 scope and implementation guide sequence.
+Define Capability 02 Epic 03 scope and implementation guide sequence.
 
 Do not begin implementation until the Epic specification and first guide are approved.
 
@@ -112,9 +121,9 @@ Do not begin implementation until the Epic specification and first guide are app
 
 # Success Target
 
-Capability 02 Epic 02 specification drafted.
+Capability 02 Epic 03 specification drafted.
 
-First guide of Epic 02 approved.
+First guide of Epic 03 approved.
 
 Engineering command center updated for the new Epic.
 
@@ -136,50 +145,45 @@ Engineering Methodology
 
 ↓
 
-Domain Design
+Capability
 
 ↓
 
-Domain Model
+Epic
 
 ↓
 
-Guide
+Implementation Guide
 
-↓
-
-Implementation
-
-↓
-
-Verification
-
-↓
-
-Review
+One Guide = One Engineering Cycle.
 
 ---
 
-# End-of-Session Checklist
+# Session Start Checklist
 
-Before finishing today's work:
+1. Read PROJECT_DASHBOARD.md
+2. Read PROJECT_STATE.md
+3. Read this document
+4. Confirm git status
+5. Run pnpm typecheck
+6. Begin only the approved Guide
 
-□ Repository is clean
+---
 
-□ Documentation synchronized
+# Session End Checklist
 
-□ PROJECT_DASHBOARD updated
-
-□ PROJECT_STATE updated
-
-□ NEXT_SESSION rewritten
-
-□ WORK_LOG updated
+1. Complete the Guide
+2. Run verification
+3. Update documentation
+4. Commit changes
+5. Update command center
 
 ---
 
 # Rule
 
-NEXT_SESSION.md should always answer one question:
+NEXT_SESSION.md must always describe the next immediate engineering step.
 
-"What is the next engineering step?"
+It must never contain long-term planning.
+
+Long-term planning belongs in ROADMAP.md.

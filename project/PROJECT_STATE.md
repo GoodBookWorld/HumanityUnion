@@ -96,6 +96,14 @@ Status:
 
 Completed
 
+Epic 02
+
+Collaborative Analysis
+
+Status:
+
+Completed
+
 ---
 
 # Active Epic
@@ -104,7 +112,7 @@ None
 
 Capability 02
 
-Epic 02
+Epic 03
 
 Status:
 
@@ -120,7 +128,7 @@ To be defined during Epic Planning.
 
 Guide 07
 
-Epic 01 Architecture Review
+Epic 02 Architecture Review
 
 Status:
 
@@ -134,7 +142,7 @@ Participation
 
 Aggregate Root:
 
-Initiative
+CollaborativeAnalysis
 
 Status:
 
@@ -190,6 +198,30 @@ Capability 02 — Epic 01:
 
 ✓ Architecture Review
 
+Capability 02 — Epic 02:
+
+✓ Domain Design
+
+✓ Domain Model
+
+✓ Domain Decisions
+
+✓ Aggregate Root
+
+✓ Value Objects
+
+✓ Bootstrap Store
+
+✓ API
+
+✓ Workspace
+
+✓ Public Collaborative Analysis Projection
+
+✓ Platform Integration
+
+✓ Architecture Review
+
 ---
 
 # Platform Architecture
@@ -200,6 +232,7 @@ Current Core Domains:
 - Member
 - Member Preferences
 - Initiative
+- Collaborative Analysis
 
 Current Shared Types:
 
@@ -273,7 +306,7 @@ Minimal
 
 # Immediate Objective
 
-Plan Capability 02 Epic 02.
+Plan Capability 02 Epic 03.
 
 ---
 

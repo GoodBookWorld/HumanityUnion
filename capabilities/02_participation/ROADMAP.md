@@ -21,7 +21,7 @@ This roadmap reflects completed, active, and planned Epics.
 | Epic | Name | Status |
 |------|------|--------|
 | Epic 01 | Initiative Foundation | ✅ Completed |
-| Epic 02 | Discussions | Planned |
+| Epic 02 | Collaborative Analysis | ✅ Completed |
 | Epic 03 | Polls | Planned |
 | Epic 04 | Petitions | Planned |
 | Epic 05 | Implementation | Planned |
@@ -90,7 +90,7 @@ Participation
 
 Current Epic:
 
-Epic 01 — Initiative Foundation
+Epic 02 — Collaborative Analysis
 
 Status:
 
@@ -100,7 +100,7 @@ Completed
 
 # Next Epic
 
-Epic 02 — Discussions
+Epic 03 — Polls
 
 Status:
 

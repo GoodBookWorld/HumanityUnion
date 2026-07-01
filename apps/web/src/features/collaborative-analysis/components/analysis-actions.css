@@ -1,0 +1,30 @@
+.analysis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.analysis-actions__button {
+  padding: 0.65rem 1rem;
+  border: 1px solid #1a1a1a;
+  border-radius: 8px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.analysis-actions__button:hover {
+  background: #404040;
+  border-color: #404040;
+}
+
+.analysis-actions__button--secondary {
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+.analysis-actions__button--secondary:hover {
+  background: #fafafa;
+  border-color: #525252;
+}

@@ -268,6 +268,41 @@ Assist Members in improving Initiatives without replacing human decision-making.
 
 ---
 
+## AB-013
+
+### Collaborative Analysis Framework
+
+Status:
+
+Accepted
+
+Priority:
+
+High
+
+Target:
+
+Capability 02 — Participation
+
+Epic 02 — Architecture Phase
+
+Purpose:
+
+Create a structured participation framework that helps Initiatives improve through meaningful Contributions instead of chaotic comment threads.
+
+Includes:
+
+- Collaborative Analysis
+- Contribution Model
+- Signal Taxonomy
+- Progress Policy
+- Promotion Thresholds
+- Contribution Analytics
+- Readiness Evaluation
+- Structured Contributions
+
+---
+
 # Backlog Rules
 
 Items may enter the backlog only after architectural discussion.

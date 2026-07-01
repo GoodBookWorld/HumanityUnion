@@ -9,6 +9,7 @@ import { getInitiativeById } from "../api";
 import { InitiativeExplorer } from "./InitiativeExplorer";
 import { InitiativeOverview } from "./InitiativeOverview";
 import { StartNewInitiativeButton } from "./StartNewInitiativeButton";
+import { ViewCollaborativeAnalysisLink } from "./ViewCollaborativeAnalysisLink";
 
 interface InitiativeWorkspaceProps {
   initialInitiatives: Initiative[];
@@ -65,6 +66,7 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
       </ProfileSection>
 
       <ProfileSection title="Actions">
+        <ViewCollaborativeAnalysisLink initiativeId={selectedId} />
         <StartNewInitiativeButton onCreated={handleCreated} />
       </ProfileSection>
     </>

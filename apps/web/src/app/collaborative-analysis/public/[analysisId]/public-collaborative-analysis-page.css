@@ -1,0 +1,47 @@
+.public-collaborative-analysis-page {
+  width: 100%;
+  max-width: 720px;
+  padding: 2rem 1.5rem;
+  text-align: left;
+}
+
+.public-collaborative-analysis-page__header {
+  margin-bottom: 1.5rem;
+}
+
+.public-collaborative-analysis-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.public-collaborative-analysis-page__subtitle {
+  color: #525252;
+  font-size: 0.95rem;
+}
+
+.public-collaborative-analysis-page__stats {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+  color: #1a1a1a;
+}
+
+.public-collaborative-analysis-page__empty {
+  color: #737373;
+  font-style: italic;
+}
+
+.public-collaborative-analysis-page__related {
+  margin-bottom: 1rem;
+}
+
+.public-collaborative-analysis-page__related a {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.public-collaborative-analysis-page__back {
+  margin-top: 1.5rem;
+}

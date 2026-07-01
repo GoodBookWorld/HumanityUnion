@@ -1,0 +1,48 @@
+.readiness-dashboard {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.readiness-dashboard__score {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.readiness-dashboard__score-label {
+  font-size: 0.95rem;
+  color: #525252;
+}
+
+.readiness-dashboard__score-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.readiness-dashboard__list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.readiness-dashboard__item {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.readiness-dashboard__item dt {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #525252;
+}
+
+.readiness-dashboard__item dd {
+  margin: 0;
+  color: #1a1a1a;
+}

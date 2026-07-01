@@ -1,0 +1,19 @@
+.view-collaborative-analysis-link {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid #1a1a1a;
+  border-radius: 8px;
+  color: #1a1a1a;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.view-collaborative-analysis-link:hover {
+  background: #fafafa;
+}
+
+.view-collaborative-analysis-link__empty {
+  color: #737373;
+  font-size: 0.95rem;
+}

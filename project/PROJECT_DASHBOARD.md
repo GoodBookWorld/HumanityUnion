@@ -50,7 +50,7 @@ In Progress
 
 # Current Epic
 
-Epic 01 — Initiative Foundation
+Epic 02 — Collaborative Analysis
 
 Status:
 
@@ -64,7 +64,7 @@ None
 
 Status:
 
-Epic 01 Architecture Review completed
+Epic 02 Architecture Review completed
 
 ---
 
@@ -74,7 +74,7 @@ To be planned
 
 Capability 02
 
-Epic 02
+Epic 03
 
 Status:
 
@@ -124,13 +124,29 @@ Capability 02
 
 ✓ Guide 07 — Epic Architecture Review
 
+✓ Epic 02 — Collaborative Analysis
+
+✓ Guide 01 — Collaborative Analysis Domain
+
+✓ Guide 02 — Collaborative Analysis Store
+
+✓ Guide 03 — Collaborative Analysis API
+
+✓ Guide 04 — Collaborative Analysis Workspace
+
+✓ Guide 05 — Public Collaborative Analysis Projection
+
+✓ Guide 06 — Platform Integration
+
+✓ Guide 07 — Epic Architecture Review
+
 ---
 
 # Architecture
 
 Current Aggregate Root:
 
-Initiative
+CollaborativeAnalysis
 
 Current Domain:
 
@@ -152,7 +168,7 @@ main
 
 Repository Status:
 
-Clean
+Commit pending (Epic 02 vertical slice)
 
 ---
 
