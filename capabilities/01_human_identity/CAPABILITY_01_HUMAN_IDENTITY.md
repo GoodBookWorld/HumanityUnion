@@ -176,7 +176,7 @@ Guide 27 — Member Preferences API
 
 Guide 28 — Member Preferences Workspace
 
-Guide 29 — Member Preferences Public Projection
+Guide 29 — Public Participation Profile
 
 Guide 30 — Epic 03 Architecture Review
 

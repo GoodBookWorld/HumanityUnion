@@ -410,3 +410,46 @@ Implemented:
 - Preferences API integration
 - Left navigation
 
+# Version 3.4
+
+Guide 29 completed.
+
+Implemented:
+
+- PublicParticipationProfile shared type
+- Public participation projection
+- GET /api/v1/participation/public/:uniqueName
+- Explicit visibility bootstrap
+- Public participation workspace page
+
+Related Guides:
+
+Guide 29 — Public Participation Profile
+
+# Version 4.0
+
+Date:
+
+2026-06-27
+
+Status:
+
+Completed
+
+Summary:
+
+Epic 03 — Member Preferences officially closed.
+
+Architecture Review 05 passed.
+
+Implemented:
+
+- Member Preferences domain
+- Preferences API
+- Preferences Workspace
+- Public Participation Profile projection
+
+Related Guides:
+
+Guide 30 — Epic 03 Architecture Review
+

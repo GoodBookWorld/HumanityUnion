@@ -1,0 +1,25 @@
+.participation-page {
+  width: 100%;
+  max-width: 720px;
+  padding: 2rem 1.5rem;
+  text-align: left;
+}
+
+.participation-page__header {
+  margin-bottom: 1.5rem;
+}
+
+.participation-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.participation-page__subtitle {
+  color: #525252;
+  font-size: 0.95rem;
+}
+
+.participation-page__back {
+  margin-top: 1.5rem;
+}

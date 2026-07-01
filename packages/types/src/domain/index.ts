@@ -24,3 +24,4 @@ export type {
   WorkspacePreferences,
 } from "./member-preferences.js";
 export type { MemberPublicProjection } from "./member-public-projection.js";
+export type { PublicParticipationProfile } from "./public-participation-profile.js";

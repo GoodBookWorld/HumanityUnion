@@ -185,3 +185,89 @@ Aggregate Root and Value Objects verified.
 No API, Store or business logic introduced.
 
 ---
+
+# Guide 27
+
+Status:
+
+Passed
+
+Summary:
+
+Member Preferences API operational.
+
+GET and PATCH /api/v1/preferences/me verified.
+
+Authentication middleware and bootstrap store confirmed.
+
+---
+
+# Guide 28
+
+Status:
+
+Passed
+
+Summary:
+
+Preferences Workspace operational.
+
+Five domain sections verified.
+
+Preferences API integration confirmed.
+
+---
+
+# Guide 29
+
+Status:
+
+Passed
+
+Summary:
+
+Public Participation Profile projection operational.
+
+Explicit visibility bootstrap confirmed.
+
+GET /api/v1/participation/public/:uniqueName verified.
+
+---
+
+# Architecture Review 05
+
+Date:
+
+2026-06-27
+
+Capability 01
+
+Epic 03 — Member Preferences
+
+Status:
+
+Approved with Actions
+
+Scope:
+
+Epic 03 closure review (Guide 30)
+
+Findings:
+
+- Domain aggregate and value objects align with approved design.
+- Preferences API uses authentication middleware and memberId resolution.
+- Preferences Workspace renders five domain sections from API data.
+- PublicParticipationProfile projection respects explicit visibility boundaries.
+- Shared types exported through @hu/types.
+- TypeScript verification passed.
+- Runtime verification passed for GET/PATCH preferences and /preferences workspace.
+
+Required Actions:
+
+- Commit remaining Guide 29 implementation and documentation to restore a clean working tree.
+
+Decision:
+
+Epic 03 approved for closure pending repository commit.
+
+---

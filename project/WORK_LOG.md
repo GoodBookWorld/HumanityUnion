@@ -90,6 +90,36 @@ Guide 27 — Member Preferences API.
 
 ---
 
+## 2026-06-27
+
+Completed:
+
+- Epic 03 officially completed.
+- Guides 27–30 completed.
+- Preferences API operational.
+- Preferences Workspace operational.
+- Public Participation Profile projection operational.
+- Architecture Review 05 passed.
+
+Architecture:
+
+- Member Preferences confirmed as an independent domain.
+- Preferences API protected by authentication middleware.
+- Public participation projection uses explicit visibility bootstrap.
+- Domain-driven UI preserved across five preference sections.
+
+Engineering Notes:
+
+Guide 29 implementation remains pending git commit.
+
+Documentation synchronized during Guide 30 review.
+
+Next Objective:
+
+Plan the next Epic of Capability 01.
+
+---
+
 # Rule
 
 Every completed Guide should result in one new Work Log entry.

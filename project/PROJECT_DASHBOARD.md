@@ -22,7 +22,7 @@ Recover in minutes.
 
 Platform Version:
 
-3.1
+4.0
 
 Architecture Status:
 
@@ -54,27 +54,25 @@ Epic 03 — Member Preferences
 
 Status:
 
-In Progress
+Completed
 
 ---
 
 # Current Guide
 
-Guide 27
-
-Member Preferences API
+None
 
 Status:
 
-Current
+Epic 03 Architecture Review completed
 
 ---
 
 # Next Guide
 
-Guide 28
+To be planned
 
-Member Preferences Workspace
+Next Epic of Capability 01
 
 Status:
 
@@ -90,15 +88,17 @@ Capability 01
 
 ✓ Epic 02 — Member Profile
 
-Epic 03
+✓ Epic 03 — Member Preferences
 
-✓ Domain Design
+✓ Guide 26 — Member Preferences Domain
 
-✓ Domain Model
+✓ Guide 27 — Member Preferences API
 
-✓ Domain Decisions
+✓ Guide 28 — Member Preferences Workspace
 
-✓ Guide 26
+✓ Guide 29 — Public Participation Profile
+
+✓ Guide 30 — Epic 03 Architecture Review
 
 ---
 
@@ -128,7 +128,7 @@ main
 
 Repository Status:
 
-Maintain clean working tree.
+Guide 29 implementation pending commit.
 
 ---
 
@@ -170,12 +170,3 @@ This document must always answer one question:
 "Where is the project right now?"
 
 Every Epic completion must update this dashboard.
-
-# Current Guide:
-
-Guide 28
-
-# Current Guide:
-
-Guide 29
-

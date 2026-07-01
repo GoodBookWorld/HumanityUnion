@@ -42,7 +42,7 @@ Operational
 
 Platform Version:
 
-3.1
+4.0
 
 ---
 
@@ -76,47 +76,29 @@ Status:
 
 Completed
 
----
-
-# Active Epic
-
 Epic 03
 
 Member Preferences
 
 Status:
 
-In Progress
+Completed
+
+---
+
+# Active Epic
+
+None
+
+Next Epic of Capability 01 is pending planning.
 
 ---
 
 # Current Guide
 
-Guide 27
+Guide 30
 
-Member Preferences API
-
-Status:
-
-Completed
-
----
-
-# Guide 26
-
-Member Preferences Domain
-
-Status:
-
-Completed
-
----
-
-# Next Guide
-
-Guide 28
-
-Member Preferences Workspace
+Epic 03 Architecture Review
 
 Status:
 
@@ -152,15 +134,15 @@ Completed:
 
 ✓ Value Objects
 
-Pending:
+✓ Bootstrap Store
 
-API
+✓ API
 
-Workspace
+✓ Workspace
 
-Projection
+✓ Public Participation Projection
 
-Architecture Review
+✓ Architecture Review
 
 ---
 
@@ -220,6 +202,10 @@ Working Rule:
 
 Always maintain a clean repository after Guide completion.
 
+Current Note:
+
+Guide 29 implementation files remain uncommitted.
+
 ---
 
 # Engineering Health
@@ -244,9 +230,7 @@ Minimal
 
 # Immediate Objective
 
-Complete:
-
-Guide 27
+Plan the next Epic of Capability 01.
 
 ---
 

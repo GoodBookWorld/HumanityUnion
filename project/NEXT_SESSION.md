@@ -22,7 +22,7 @@ It is rewritten whenever a Guide is completed.
 
 Platform Version:
 
-3.1
+4.0
 
 Current Capability:
 
@@ -30,7 +30,7 @@ Capability 01 — Human Identity
 
 Current Epic:
 
-Epic 03 — Member Preferences
+Epic 03 — Member Preferences (Completed)
 
 ---
 
@@ -38,9 +38,9 @@ Epic 03 — Member Preferences
 
 Completed:
 
-Guide 26
+Epic 03 — Member Preferences
 
-Member Preferences Domain
+Guides 26–30
 
 Verified:
 
@@ -48,17 +48,19 @@ Verified:
 
 ✓ Shared Types
 
-✓ Aggregate Root
+✓ Preferences API
 
-✓ Value Objects
+✓ Preferences Workspace
+
+✓ Public Participation Profile
+
+✓ Architecture Review 05
 
 ---
 
 # Immediate Objective
 
-Guide 27
-
-Member Preferences API
+Plan the next Epic of Capability 01.
 
 ---
 
@@ -68,6 +70,8 @@ Review:
 
 - PROJECT_DASHBOARD.md
 - PROJECT_STATE.md
+- CAPABILITY_01_HUMAN_IDENTITY.md
+- ROADMAP.md
 
 Confirm:
 
@@ -77,32 +81,25 @@ Review:
 
 git status
 
+Commit pending Guide 29 changes if the working tree is not clean.
+
 ---
 
 # Current Engineering Focus
 
-Implement the API layer for Member Preferences.
+Define the next Epic scope and implementation guide sequence.
 
-Respect Domain boundaries.
-
-Do not modify the Domain Model unless an Architecture Decision is approved.
+Do not begin implementation until the Epic specification and first guide are approved.
 
 ---
 
 # Success Target
 
-Complete Guide 27.
+Next Epic specification drafted.
 
-Run verification.
+First guide of the next Epic approved.
 
-Update:
-
-- ROADMAP
-- CHANGELOG
-- PROJECT_DASHBOARD
-- PROJECT_STATE
-
-Prepare the next session.
+Engineering command center updated for the new Epic.
 
 ---
 
@@ -169,13 +166,3 @@ Before finishing today's work:
 NEXT_SESSION.md should always answer one question:
 
 "What is the next engineering step?"
-
-Guide 28
-
-Member Preferences Workspace
-
-Guide 29
-
-Member Preferences Public Projection
-
-

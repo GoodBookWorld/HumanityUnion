@@ -287,21 +287,22 @@ Completed
 
 ## Guide 29
 
-Member Preferences Public Projection
+Public Participation Profile
 
 Purpose:
 
-Expose public-safe preference projection.
+Expose a public-safe participation projection derived from Member and Preferences domains.
 
 Deliverables:
 
-* preference projection type
-* public preferences endpoint
-* projection boundary verification
+* PublicParticipationProfile shared type
+* GET /api/v1/participation/public/:uniqueName
+* explicit visibility bootstrap
+* public participation workspace page
 
 Status:
 
-Planned
+Completed
 
 ---
 
@@ -322,7 +323,7 @@ Deliverables:
 
 Status:
 
-Planned
+Completed
 
 ---
 

@@ -59,7 +59,7 @@ Guide 27 — Preferences API
 
 Guide 28 — Preferences Workspace
 
-Guide 29 — Preference Projections
+Guide 29 — Public Participation Profile
 
 Guide 30 — Epic 03 Architecture Review
 
@@ -86,7 +86,7 @@ After completion Humanity Union will provide:
 * Member Preferences Domain
 * Preferences API
 * Preferences Workspace
-* Public-safe Preference Projection
+* Public Participation Profile projection
 * Foundation for localization
 
 ---
