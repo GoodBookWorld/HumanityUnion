@@ -4,6 +4,7 @@ import { ProfileField } from "../../components/member/ProfileField";
 import { ProfileSection } from "../../components/member/ProfileSection";
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
 import { getCurrentMember } from "../../features/member/member-api";
+import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
 
 import "./profile-page.css";
 
@@ -30,7 +31,11 @@ export default async function ProfilePage() {
 
   return (
     <main className="profile-page">
-      <MemberWorkspace title="Profile" subtitle="Your Humanity Union participant profile">
+      <MemberWorkspace
+        title="Profile"
+        subtitle="Your Humanity Union participant profile"
+        workspaceNavigation={<WorkspaceNavigation current="Profile" />}
+      >
         <ProfileSection title="Basic Information">
           <ProfileField label="Display Name" value={member.profile.displayName} />
           <ProfileField label="Country" value={member.profile.country ?? ""} />

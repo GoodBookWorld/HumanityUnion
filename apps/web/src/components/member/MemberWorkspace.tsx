@@ -4,6 +4,7 @@ interface MemberWorkspaceProps {
   title: string;
   subtitle?: string;
   navItems?: string[];
+  workspaceNavigation?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -11,19 +12,28 @@ function toSectionId(title: string): string {
   return `section-${title.replace(/\s+/g, "-").toLowerCase()}`;
 }
 
-export function MemberWorkspace({ title, subtitle, navItems, children }: MemberWorkspaceProps) {
+export function MemberWorkspace({
+  title,
+  subtitle,
+  navItems,
+  workspaceNavigation,
+  children,
+}: MemberWorkspaceProps) {
   return (
     <div className="member-workspace">
       <aside className="member-workspace__nav" aria-label="Workspace navigation">
-        <p className="member-workspace__nav-label">Workspace</p>
+        {workspaceNavigation}
         {navItems ? (
-          <nav className="member-workspace__nav-list">
-            {navItems.map((item) => (
-              <a key={item} className="member-workspace__nav-link" href={`#${toSectionId(item)}`}>
-                {item}
-              </a>
-            ))}
-          </nav>
+          <>
+            <p className="member-workspace__nav-label">Sections</p>
+            <nav className="member-workspace__nav-list">
+              {navItems.map((item) => (
+                <a key={item} className="member-workspace__nav-link" href={`#${toSectionId(item)}`}>
+                  {item}
+                </a>
+              ))}
+            </nav>
+          </>
         ) : null}
       </aside>
       <div className="member-workspace__main">

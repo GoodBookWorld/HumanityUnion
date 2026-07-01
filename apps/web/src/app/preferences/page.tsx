@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ProfileField } from "../../components/member/ProfileField";
 import { ProfileSection } from "../../components/member/ProfileSection";
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
+import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
 import { getCurrentPreferences } from "../../features/preferences/preferences-api";
 
 import "./preferences-page.css";
@@ -44,6 +45,7 @@ export default async function PreferencesPage() {
         title="Preferences"
         subtitle="Your Humanity Union experience preferences"
         navItems={NAV_ITEMS}
+        workspaceNavigation={<WorkspaceNavigation current="Preferences" />}
       >
         <ProfileSection title="Experience">
           <ProfileField

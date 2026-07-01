@@ -1,0 +1,34 @@
+.workspace-navigation {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.workspace-navigation__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #737373;
+  margin-bottom: 0.75rem;
+}
+
+.workspace-navigation__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.workspace-navigation__link {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.workspace-navigation__link:hover {
+  color: #525252;
+}
+
+.workspace-navigation__link--active {
+  font-weight: 600;
+}

@@ -1,0 +1,44 @@
+.initiative-explorer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.initiative-explorer__item {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.initiative-explorer__item:hover {
+  border-color: #d4d4d4;
+}
+
+.initiative-explorer__item--selected {
+  border-color: #1a1a1a;
+}
+
+.initiative-explorer__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.initiative-explorer__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: #525252;
+}
+
+.initiative-explorer__empty {
+  color: #737373;
+  font-style: italic;
+}

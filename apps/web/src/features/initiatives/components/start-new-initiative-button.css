@@ -1,0 +1,28 @@
+.start-new-initiative-button {
+  margin-bottom: 0;
+}
+
+.start-new-initiative-button__action {
+  padding: 0.625rem 1rem;
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.start-new-initiative-button__action:hover {
+  background: #333333;
+}
+
+.start-new-initiative-button__action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.start-new-initiative-button__message {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #737373;
+}
