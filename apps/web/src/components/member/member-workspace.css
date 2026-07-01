@@ -18,6 +18,23 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #737373;
+  margin-bottom: 1rem;
+}
+
+.member-workspace__nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.member-workspace__nav-link {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.member-workspace__nav-link:hover {
+  color: #525252;
 }
 
 .member-workspace__header {

@@ -398,3 +398,15 @@ Implemented:
 - PATCH /api/v1/preferences/me
 - Authentication Middleware integration
 
+# Version 3.3
+
+Guide 28 completed.
+
+Implemented:
+
+- Preferences Workspace
+- Domain-driven layout
+- Five preference sections
+- Preferences API integration
+- Left navigation
+

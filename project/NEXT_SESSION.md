@@ -173,3 +173,9 @@ NEXT_SESSION.md should always answer one question:
 Guide 28
 
 Member Preferences Workspace
+
+Guide 29
+
+Member Preferences Public Projection
+
+

@@ -120,7 +120,7 @@ Member Preferences Workspace
 
 Status:
 
-Planned
+Completed
 
 ---
 
