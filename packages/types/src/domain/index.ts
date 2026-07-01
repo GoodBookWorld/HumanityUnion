@@ -40,4 +40,5 @@ export type {
   TimelineEventId,
 } from "./initiative.js";
 export type { MemberPublicProjection } from "./member-public-projection.js";
+export type { PublicInitiativeProjection } from "./public-initiative.js";
 export type { PublicParticipationProfile } from "./public-participation-profile.js";

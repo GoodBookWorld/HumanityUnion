@@ -1,4 +1,6 @@
 export { default as initiativesRouter } from "./initiative.routes.js";
+export { default as publicInitiativeRouter } from "./public-initiative.routes.js";
+export { toPublicInitiativeProjection } from "./public-initiative.projection.js";
 export {
   createInitiative,
   getInitiativeById,

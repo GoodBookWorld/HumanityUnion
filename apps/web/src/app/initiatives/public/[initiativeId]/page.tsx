@@ -1,0 +1,72 @@
+import Link from "next/link";
+
+import { ProfileField } from "../../../../components/member/ProfileField";
+import { ProfileSection } from "../../../../components/member/ProfileSection";
+import { getPublicInitiative } from "../../../../features/initiatives/api";
+
+import "./public-initiative-page.css";
+
+interface PublicInitiativePageProps {
+  params: Promise<{
+    initiativeId: string;
+  }>;
+}
+
+function formatList(values: string[]): string {
+  return values.length > 0 ? values.join(", ") : "Not specified";
+}
+
+function formatCreatedDate(createdAt: string): string {
+  return new Date(createdAt).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+export default async function PublicInitiativePage({ params }: PublicInitiativePageProps) {
+  const { initiativeId } = await params;
+  let initiative = null;
+
+  try {
+    initiative = await getPublicInitiative(initiativeId);
+  } catch {
+    initiative = null;
+  }
+
+  if (!initiative) {
+    return (
+      <main className="public-initiative-page">
+        <h1>Public Initiative</h1>
+        <p>Public initiative is not available.</p>
+        <p className="public-initiative-page__back">
+          <Link href="/">Back to Home</Link>
+        </p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="public-initiative-page">
+      <header className="public-initiative-page__header">
+        <h1 className="public-initiative-page__title">{initiative.title}</h1>
+        <p className="public-initiative-page__subtitle">Public initiative</p>
+      </header>
+
+      <ProfileSection title="Initiative">
+        <ProfileField label="Description" value={initiative.description} />
+        <ProfileField label="Status" value={initiative.status} />
+        <ProfileField label="Category" value={initiative.metadata.category} />
+        <ProfileField label="Tags" value={formatList(initiative.metadata.tags)} />
+        <ProfileField label="Region" value={initiative.metadata.region} />
+        <ProfileField label="Language" value={initiative.metadata.language} />
+        <ProfileField label="Steward" value={initiative.stewardDisplayName} />
+        <ProfileField label="Created" value={formatCreatedDate(initiative.createdAt)} />
+      </ProfileSection>
+
+      <p className="public-initiative-page__back">
+        <Link href="/">Back to Home</Link>
+      </p>
+    </main>
+  );
+}
