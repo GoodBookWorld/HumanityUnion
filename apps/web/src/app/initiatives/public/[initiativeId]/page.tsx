@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { getCollaborativeAnalysisByInitiativeId } from "../../../../features/collaborative-analysis/api";
+import { getCollectiveDecisionByInitiativeId } from "../../../../features/collective-decision/api";
 import { getPublicInitiative } from "../../../../features/initiatives/api";
 
 import "./public-initiative-page.css";
@@ -29,6 +30,7 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   const { initiativeId } = await params;
   let initiative = null;
   let linkedAnalysisId: string | null = null;
+  let linkedDecisionId: string | null = null;
 
   try {
     initiative = await getPublicInitiative(initiativeId);
@@ -42,6 +44,13 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       linkedAnalysisId = analysis.analysisId;
     } catch {
       linkedAnalysisId = null;
+    }
+
+    try {
+      const decision = await getCollectiveDecisionByInitiativeId(initiativeId);
+      linkedDecisionId = decision.decisionId;
+    } catch {
+      linkedDecisionId = null;
     }
   }
 
@@ -75,13 +84,20 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
         <ProfileField label="Created" value={formatCreatedDate(initiative.createdAt)} />
       </ProfileSection>
 
-      {linkedAnalysisId ? (
+      {linkedAnalysisId || linkedDecisionId ? (
         <nav className="public-initiative-page__related" aria-label="Platform integration">
-          <Link
-            href={`/collaborative-analysis/public/${encodeURIComponent(linkedAnalysisId)}`}
-          >
-            View Public Collaborative Analysis
-          </Link>
+          {linkedAnalysisId ? (
+            <Link
+              href={`/collaborative-analysis/public/${encodeURIComponent(linkedAnalysisId)}`}
+            >
+              View Public Collaborative Analysis
+            </Link>
+          ) : null}
+          {linkedDecisionId ? (
+            <Link href={`/collective-decisions/public/${encodeURIComponent(linkedDecisionId)}`}>
+              View Public Collective Decision
+            </Link>
+          ) : null}
         </nav>
       ) : null}
 

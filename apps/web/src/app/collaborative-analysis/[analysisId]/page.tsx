@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
 import { getCollaborativeAnalysisById } from "../../../features/collaborative-analysis/api";
 import { CollaborativeAnalysisWorkspace } from "../../../features/collaborative-analysis/components/CollaborativeAnalysisWorkspace";
+import { getCollectiveDecisionByInitiativeId } from "../../../features/collective-decision/api";
 import { WorkspaceNavigation } from "../../../features/initiatives/components/WorkspaceNavigation";
 
 import "../collaborative-analysis-page.css";
@@ -48,6 +49,15 @@ export default async function CollaborativeAnalysisPage({
     );
   }
 
+  let linkedDecisionId: string | null = null;
+
+  try {
+    const decision = await getCollectiveDecisionByInitiativeId(analysis.initiativeId);
+    linkedDecisionId = decision.decisionId;
+  } catch {
+    linkedDecisionId = null;
+  }
+
   return (
     <main className="collaborative-analysis-page">
       <MemberWorkspace
@@ -64,9 +74,19 @@ export default async function CollaborativeAnalysisPage({
 
       <nav className="collaborative-analysis-page__links" aria-label="Platform integration">
         <Link href="/initiatives">Initiative Workspace</Link>
+        {linkedDecisionId ? (
+          <Link href={`/collective-decisions/${encodeURIComponent(linkedDecisionId)}`}>
+            Collective Decision Workspace
+          </Link>
+        ) : null}
         <Link href={`/collaborative-analysis/public/${encodeURIComponent(analysisId)}`}>
           Public Collaborative Analysis
         </Link>
+        {linkedDecisionId ? (
+          <Link href={`/collective-decisions/public/${encodeURIComponent(linkedDecisionId)}`}>
+            Public Collective Decision
+          </Link>
+        ) : null}
         <Link href={`/initiatives/public/${encodeURIComponent(analysis.initiativeId)}`}>
           Public Initiative
         </Link>

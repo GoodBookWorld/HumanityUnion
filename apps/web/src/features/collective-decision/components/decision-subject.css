@@ -1,0 +1,9 @@
+.decision-subject {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.decision-subject__empty {
+  color: #737373;
+  font-size: 0.95rem;
+}

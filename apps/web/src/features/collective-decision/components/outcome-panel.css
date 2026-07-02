@@ -1,0 +1,9 @@
+.outcome-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.outcome-panel__empty {
+  color: #737373;
+  font-style: italic;
+}

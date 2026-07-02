@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { getPublicCollaborativeAnalysis } from "../../../../features/collaborative-analysis/api";
+import { getCollectiveDecisionByInitiativeId } from "../../../../features/collective-decision/api";
 
 import "./public-collaborative-analysis-page.css";
 
@@ -76,6 +77,15 @@ export default async function PublicCollaborativeAnalysisPage({
         </p>
       </main>
     );
+  }
+
+  let linkedDecisionId: string | null = null;
+
+  try {
+    const decision = await getCollectiveDecisionByInitiativeId(analysis.initiativeId);
+    linkedDecisionId = decision.decisionId;
+  } catch {
+    linkedDecisionId = null;
   }
 
   return (
@@ -182,6 +192,11 @@ export default async function PublicCollaborativeAnalysisPage({
         <Link href={`/initiatives/public/${encodeURIComponent(analysis.initiativeId)}`}>
           View Public Initiative
         </Link>
+        {linkedDecisionId ? (
+          <Link href={`/collective-decisions/public/${encodeURIComponent(linkedDecisionId)}`}>
+            View Public Collective Decision
+          </Link>
+        ) : null}
       </nav>
 
       <p className="public-collaborative-analysis-page__back">

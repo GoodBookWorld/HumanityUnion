@@ -90,3 +90,50 @@ Validated:
 Status:
 
 Completed
+
+---
+
+## Epic 03 — Community Poll (Collective Decision Framework)
+
+Completed.
+
+### Delivered
+
+- CollectiveDecision Aggregate Root
+- Collective Decision Store
+- Collective Decision REST API
+- Decision Workspace
+- Public Collective Decision Projection
+- Platform Integration
+- Architecture Review (Guide 07)
+
+### Architecture
+
+Introduced:
+
+- Collective Decision Framework
+- Decision Engine execution model (Version 1)
+- Community Poll Decision Template
+- Ballot, Participant Decision, Decision Result, Outcome
+- Public Collective Decision Projection
+- Capability vertical slice: Initiative → Collaborative Analysis → Collective Decision
+
+### Engineering
+
+Validated:
+
+- Domain First
+- Mechanism Independence
+- Thin API
+- Explicit Publicity
+- Historical Integrity (immutable Participant Decisions)
+- Derived State
+- Progressive Bootstrap
+- Operational View vs Public View
+- Understanding Before Action
+
+Status:
+
+Completed
+
+Commit pending.

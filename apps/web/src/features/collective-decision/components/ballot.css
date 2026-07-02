@@ -1,0 +1,17 @@
+.ballot {
+  display: grid;
+  gap: 1rem;
+}
+
+.ballot__options-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #525252;
+  margin-bottom: 0.35rem;
+}
+
+.ballot__options-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #1a1a1a;
+}

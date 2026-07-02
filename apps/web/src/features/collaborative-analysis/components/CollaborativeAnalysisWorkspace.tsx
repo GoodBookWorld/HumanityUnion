@@ -11,6 +11,7 @@ import { ContributionExplorer } from "./ContributionExplorer";
 import { ProgressPolicyPanel } from "./ProgressPolicyPanel";
 import { ReadinessDashboard } from "./ReadinessDashboard";
 import { SignalOverview } from "./SignalOverview";
+import { ViewCollectiveDecisionLink } from "../../collective-decision/components/ViewCollectiveDecisionLink";
 
 import "./workspace.css";
 
@@ -53,6 +54,7 @@ export function CollaborativeAnalysisWorkspace({
       </ProfileSection>
 
       <ProfileSection title="Actions">
+        <ViewCollectiveDecisionLink initiativeId={analysis.initiativeId} />
         <AnalysisActions />
       </ProfileSection>
     </div>

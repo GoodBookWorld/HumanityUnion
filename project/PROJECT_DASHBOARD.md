@@ -44,13 +44,13 @@ Capability 02 — Participation
 
 Status:
 
-In Progress
+Completed
 
 ---
 
 # Current Epic
 
-Epic 02 — Collaborative Analysis
+Epic 03 — Community Poll (Collective Decision Framework)
 
 Status:
 
@@ -64,7 +64,7 @@ None
 
 Status:
 
-Epic 02 Architecture Review completed
+Epic 03 Architecture Review approved (re-review 2026-07-02)
 
 ---
 
@@ -74,15 +74,13 @@ To be planned
 
 Capability 02
 
-Epic 03
+Epic 04 — Petitions
 
 Status:
 
 Planned
 
-Name:
-
-To be defined during Epic Planning.
+Do not begin until Epic 03 vertical slice is committed.
 
 ---
 
@@ -140,13 +138,29 @@ Capability 02
 
 ✓ Guide 07 — Epic Architecture Review
 
+Epic 03 — Community Poll (Collective Decision Framework)
+
+✓ Guide 01 — Collective Decision Domain
+
+✓ Guide 02 — Collective Decision Store
+
+✓ Guide 03 — Collective Decision API
+
+✓ Guide 04 — Decision Workspace
+
+✓ Guide 05 — Public Decision Projection
+
+✓ Guide 06 — Platform Integration
+
+✓ Guide 07 — Epic Architecture Review
+
 ---
 
 # Architecture
 
 Current Aggregate Root:
 
-CollaborativeAnalysis
+CollectiveDecision
 
 Current Domain:
 
@@ -168,7 +182,7 @@ main
 
 Repository Status:
 
-Commit pending (Epic 02 vertical slice)
+Commit pending (Epic 03 vertical slice)
 
 ---
 

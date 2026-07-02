@@ -1,0 +1,10 @@
+.decision-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.decision-actions__link {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}

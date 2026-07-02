@@ -1,0 +1,50 @@
+.public-collective-decision-page {
+  width: 100%;
+  max-width: 720px;
+  padding: 2rem 1.5rem;
+  text-align: left;
+}
+
+.public-collective-decision-page__header {
+  margin-bottom: 1.5rem;
+}
+
+.public-collective-decision-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.public-collective-decision-page__subtitle {
+  color: #525252;
+  font-size: 0.95rem;
+}
+
+.public-collective-decision-page__stats {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+  color: #1a1a1a;
+}
+
+.public-collective-decision-page__empty {
+  color: #737373;
+  font-style: italic;
+}
+
+.public-collective-decision-page__related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.public-collective-decision-page__related a {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.public-collective-decision-page__back {
+  margin-top: 1.5rem;
+}

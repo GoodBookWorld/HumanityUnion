@@ -31,6 +31,30 @@ export type {
 export type { AnalysisMetrics } from "./analysis-metrics.js";
 export type { AnalysisSummary, AnalysisSummaryId } from "./analysis-summary.js";
 export type { Contribution, ContributionType } from "./contribution.js";
+export type {
+  Ballot,
+  BallotId,
+  CollectiveDecision,
+  CollectiveDecisionStatus,
+  DecisionId,
+  DecisionMechanism,
+  DecisionOption,
+  DecisionOptionId,
+  DecisionOptionResult,
+  DecisionResult,
+  DecisionResultId,
+  DecisionRules,
+  DecisionStatistics,
+  DecisionSubjectType,
+  DecisionTimeline,
+  EligibilityRules,
+  Outcome,
+  OutcomeId,
+  OutcomeType,
+  ParticipantDecision,
+  ParticipantDecisionId,
+  ParticipantDecisionStatus,
+} from "./collective-decision/index.js";
 export type { ProgressPolicy } from "./progress-policy.js";
 export type { Readiness } from "./readiness.js";
 export type { Signal, SignalId, SignalType } from "./signal.js";
@@ -61,4 +85,11 @@ export type {
   PublicSignalStatistics,
   PublicSignalTypeCount,
 } from "./public-collaborative-analysis.js";
+export type {
+  PublicCollectiveDecisionProjection,
+  PublicDecisionOptionResult,
+  PublicDecisionOutcome,
+  PublicDecisionResult,
+  PublicDecisionSubject,
+} from "./public-collective-decision.js";
 export type { PublicParticipationProfile } from "./public-participation-profile.js";

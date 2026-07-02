@@ -1,0 +1,4 @@
+.decision-overview {
+  display: grid;
+  gap: 0.75rem;
+}
