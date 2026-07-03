@@ -28,7 +28,7 @@ It does not define implementation.
 
 It does not authorize new features by itself.
 
-The Participation vertical slice through **Petition** (Initiative → Collaborative Analysis → Collective Decision → Petition) is the first implemented expression of this frozen architecture. Later stages remain architecturally defined but are not yet implemented.
+The Participation vertical slice through **Implementation Commitment** (Idea → Initiative → Collaborative Analysis → Collective Decision → Petition → Implementation Commitment) is the implemented expression of this frozen architecture through Stage 6. **Implementation** and **Impact** remain architecturally defined but are not yet implemented.
 
 ---
 
@@ -62,28 +62,28 @@ Participation exists to support **informed, responsible civic action** — not e
 The Participation Pipeline is the canonical civic lifecycle.
 
 ```
-Idea
+Idea                                    Architecture Approved — Implementation Complete
         │
         ▼
-Initiative
+Initiative                              Architecture Approved — Implementation Complete
         │
         ▼
-Collaborative Analysis
+Collaborative Analysis                  Architecture Approved — Implementation Complete
         │
         ▼
-Collective Decision
+Collective Decision                     Architecture Approved — Implementation Complete
         │
         ▼
-Petition
+Petition                                Architecture Approved — Implementation Complete
         │
         ▼
-Implementation Commitment
+Implementation Commitment               Architecture Approved — Implementation Complete
         │
         ▼
-Implementation
+Implementation                          Architecture Approved — Not Yet Implemented
         │
         ▼
-Impact
+Impact                                  Architecture Approved — Not Yet Implemented
 ```
 
 Each stage answers a distinct civic question.
@@ -177,7 +177,7 @@ Each stage owns exactly one Aggregate in Version 1.
 
 **Output:** Implementation-ready community.
 
-**Status in Version 1:** Architecturally defined. Not yet implemented.
+**Status in Version 1:** Architecture Approved. Implementation Complete.
 
 ## Implementation
 
@@ -610,7 +610,7 @@ The derivation preserves:
 - **Aggregate Independence** — readiness for implementation commitment is not falsely owned by an earlier aggregate's manual field;
 - **Human Leadership** — people and communities produce capacity; policy defines constraints; the platform derives readiness transparently.
 
-Collaborative Analysis **Readiness** and future **Implementation Commitment** readiness are expressions of this principle at different pipeline stages.
+Collaborative Analysis **Readiness** and **Implementation Commitment** readiness are expressions of this principle at different pipeline stages.
 
 ---
 
@@ -697,7 +697,7 @@ The following are **not** valid architecture change paths:
 
 Accidental architecture evolution is forbidden.
 
-Version 1 implementation through Petition establishes precedent but does not silently extend scope to Implementation Commitment, Implementation or Impact without review.
+Version 1 implementation through **Implementation Commitment** establishes precedent but does not silently extend scope to **Implementation** or **Impact** without review.
 
 ---
 

@@ -183,29 +183,128 @@ function itemMatchesSkillLabel(item: ContributionItem, profile: ContributionProf
   return false;
 }
 
+function itemMatchesThreshold(
+  commitment: ImplementationCommitment,
+  item: ContributionItem,
+  threshold: ReadinessThresholdFixture,
+): boolean {
+  if (threshold.contributionType && item.contributionType !== threshold.contributionType) {
+    return false;
+  }
+
+  if (
+    threshold.requiredSkillLabel &&
+    !itemMatchesSkillLabel(
+      item,
+      commitment.contributionProfiles[item.participantId],
+      threshold.requiredSkillLabel,
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 function countMatchingItems(
   commitment: ImplementationCommitment,
   activeItems: ContributionItem[],
   threshold: ReadinessThresholdFixture,
 ): number {
-  return activeItems.filter((item) => {
-    if (threshold.contributionType && item.contributionType !== threshold.contributionType) {
-      return false;
-    }
+  return activeItems.filter((item) => itemMatchesThreshold(commitment, item, threshold)).length;
+}
 
-    if (
-      threshold.requiredSkillLabel &&
-      !itemMatchesSkillLabel(
-        item,
-        commitment.contributionProfiles[item.participantId],
-        threshold.requiredSkillLabel,
-      )
-    ) {
-      return false;
-    }
+function countMatchingParticipants(
+  commitment: ImplementationCommitment,
+  activeItems: ContributionItem[],
+  threshold: ReadinessThresholdFixture,
+): number {
+  const participantIds = new Set<ParticipantId>();
 
-    return true;
-  }).length;
+  for (const item of activeItems) {
+    if (itemMatchesThreshold(commitment, item, threshold)) {
+      participantIds.add(item.participantId);
+    }
+  }
+
+  return participantIds.size;
+}
+
+const PUBLIC_THRESHOLD_CATEGORY_LABELS: Record<string, string> = {
+  Coordinator: "Coordinator Expertise",
+  Translator: "Translation Support",
+  Facility: "Facility Resources",
+};
+
+const PUBLIC_CONTRIBUTION_TYPE_LABELS: Record<CommitmentContributionType, string> = {
+  Volunteer: "Volunteer Capacity",
+  Professional: "Professional Capacity",
+  Resource: "Resource Capacity",
+};
+
+function getPublicThresholdCategoryLabel(threshold: ReadinessThresholdFixture): string {
+  if (threshold.requiredSkillLabel) {
+    return (
+      PUBLIC_THRESHOLD_CATEGORY_LABELS[threshold.requiredSkillLabel] ??
+      `${threshold.requiredSkillLabel} Expertise`
+    );
+  }
+
+  if (threshold.contributionType) {
+    return PUBLIC_CONTRIBUTION_TYPE_LABELS[threshold.contributionType];
+  }
+
+  return threshold.description;
+}
+
+function formatContributorCount(count: number): string {
+  return `${count} contributor${count === 1 ? "" : "s"}`;
+}
+
+/** Public-safe skill coverage — policy-aligned category labels and counts only. */
+export function buildPublicSkillCoverageSummary(
+  commitment: ImplementationCommitment,
+  policy: FrozenPolicyFixture,
+): string {
+  const activeItems = getActiveContributionItems(commitment);
+
+  if (activeItems.length === 0) {
+    return "No skill coverage recorded.";
+  }
+
+  const categoryLines = policy.thresholds
+    .map((threshold) => ({
+      label: getPublicThresholdCategoryLabel(threshold),
+      count: countMatchingParticipants(commitment, activeItems, threshold),
+    }))
+    .filter((entry) => entry.count > 0)
+    .map((entry) => `${entry.label} — ${formatContributorCount(entry.count)}`);
+
+  if (categoryLines.length > 0) {
+    return categoryLines.join("; ");
+  }
+
+  const typeLines = (Object.keys(PUBLIC_CONTRIBUTION_TYPE_LABELS) as CommitmentContributionType[])
+    .map((contributionType) => {
+      const participantIds = new Set<ParticipantId>();
+
+      for (const item of activeItems) {
+        if (item.contributionType === contributionType) {
+          participantIds.add(item.participantId);
+        }
+      }
+
+      return {
+        label: PUBLIC_CONTRIBUTION_TYPE_LABELS[contributionType],
+        count: participantIds.size,
+      };
+    })
+    .filter((entry) => entry.count > 0)
+    .map((entry) => `${entry.label} — ${formatContributorCount(entry.count)}`);
+
+  return typeLines.length > 0
+    ? typeLines.join("; ")
+    : "Active declarations recorded without mapped public categories.";
 }
 
 function evaluateThreshold(

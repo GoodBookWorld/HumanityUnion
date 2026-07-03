@@ -17,6 +17,7 @@ import {
   getImplementationCommitmentByInitiativeId,
   getImplementationCommitmentByPetitionId,
   listImplementationCommitments,
+  removeContributionItem,
   submitImplementationCommitment,
   updateContributionProfile,
   updateImplementationCommitment,
@@ -380,6 +381,41 @@ export function addContributionItemHandler(req: Request, res: Response): void {
       mapImplementationCommitmentResponse(commitment),
       "Contribution Item recorded.",
       201,
+    );
+  } catch (error) {
+    handleStoreError(res, error);
+  }
+}
+
+export function removeContributionItemHandler(req: Request, res: Response): void {
+  const commitmentId = getCommitmentId(req);
+  const itemId = getItemId(req);
+  const idError = validateCommitmentId(commitmentId);
+
+  if (idError) {
+    res.status(400).json(createFailureResponse(idError));
+    return;
+  }
+
+  const itemError = validateContributionItemId(itemId);
+
+  if (itemError) {
+    res.status(400).json(createFailureResponse(itemError));
+    return;
+  }
+
+  try {
+    const commitment = removeContributionItem(commitmentId, itemId);
+
+    if (!commitment) {
+      res.status(404).json(createFailureResponse("Implementation Commitment not found."));
+      return;
+    }
+
+    respondWithCommitment(
+      res,
+      mapImplementationCommitmentResponse(commitment),
+      "Contribution Item removed.",
     );
   } catch (error) {
     handleStoreError(res, error);

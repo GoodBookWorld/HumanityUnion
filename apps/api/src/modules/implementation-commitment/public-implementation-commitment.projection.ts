@@ -21,6 +21,7 @@ import { getDecision } from "../collective-decision/collective-decision.store.js
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getPetition } from "../petition/petition.store.js";
 import { getFrozenPolicy } from "./frozen-policy.fixture.js";
+import { buildPublicSkillCoverageSummary } from "./implementation-commitment.helpers.js";
 
 const VIEWING_NOTE = "Viewing this page does not record a commitment declaration.";
 const SHARING_NOTE =
@@ -120,6 +121,7 @@ function buildCommunityCapacity(
   commitment: ImplementationCommitment,
 ): PublicCommunityCapacityProjection {
   const { communityCapacity } = commitment;
+  const policy = getFrozenPolicy(commitment.frozenPolicyId);
 
   return {
     totalContributions: communityCapacity.totalContributions,
@@ -127,7 +129,9 @@ function buildCommunityCapacity(
     professionalCapacity: communityCapacity.contributionsByType.Professional,
     resources: communityCapacity.contributionsByType.Resource,
     availabilitySummary: communityCapacity.aggregateAvailabilitySummary,
-    skillCoverageSummary: communityCapacity.skillCoverageSummary,
+    skillCoverageSummary: policy
+      ? buildPublicSkillCoverageSummary(commitment, policy)
+      : "No skill coverage recorded.",
     derivedAt: communityCapacity.derivedAt,
     derivedValueNote: DERIVED_VALUE_NOTE,
   };

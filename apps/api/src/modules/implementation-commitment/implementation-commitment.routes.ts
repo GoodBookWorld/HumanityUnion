@@ -12,6 +12,7 @@ import {
   getImplementationCommitmentHandler,
   listImplementationCommitmentsHandler,
   patchImplementationCommitmentHandler,
+  removeContributionItemHandler,
   submitImplementationCommitmentHandler,
   updateContributionProfileHandler,
   withdrawContributionItemHandler,
@@ -48,6 +49,10 @@ implementationCommitmentRouter.post(
 implementationCommitmentRouter.post(
   "/:commitmentId/contribution-items",
   addContributionItemHandler,
+);
+implementationCommitmentRouter.post(
+  "/:commitmentId/contribution-items/:itemId/remove",
+  removeContributionItemHandler,
 );
 implementationCommitmentRouter.post(
   "/:commitmentId/contribution-items/:itemId/withdraw",
