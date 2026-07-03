@@ -762,8 +762,9 @@ Verification has not been executed against running implementation.
 
 ## Status
 
-REMEDIATION REQUIRED
+CONDITIONALLY APPROVED
 
+Pending repository commit
 ---
 
 # Final Principle
