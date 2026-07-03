@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
+import { getImplementationCommitmentByPetitionId } from "../../../../features/implementation-commitment/api";
 import { getPublicPetition } from "../../../../features/petition/api";
 
 import "./public-petition-page.css";
@@ -56,6 +57,15 @@ export default async function PublicPetitionPage({ params }: PublicPetitionPageP
     publicSupportStatistics,
     shareReference,
   } = petition;
+
+  let implementationCommitmentId: string | null = null;
+
+  try {
+    const commitment = await getImplementationCommitmentByPetitionId(petitionId);
+    implementationCommitmentId = commitment.implementationCommitmentId;
+  } catch {
+    implementationCommitmentId = null;
+  }
 
   return (
     <main className="public-petition-page">
@@ -209,6 +219,13 @@ export default async function PublicPetitionPage({ params }: PublicPetitionPageP
         >
           View Public Collective Decision
         </Link>
+        {implementationCommitmentId ? (
+          <Link
+            href={`/implementation-commitments/public/${encodeURIComponent(implementationCommitmentId)}`}
+          >
+            View Public Implementation Commitment
+          </Link>
+        ) : null}
       </nav>
 
       <p className="public-petition-page__back">

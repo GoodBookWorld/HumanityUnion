@@ -104,7 +104,40 @@ export type {
   PublicSupportState,
   PublicSupportStatistics,
 } from "./public-petition.js";
+export type {
+  PublicCollectiveDecisionReference,
+  PublicCommunityCapacityProjection,
+  PublicCommunityNeedProjection,
+  PublicFrozenPolicySummary,
+  PublicHumanityAssistantPanel,
+  PublicImplementationCommitmentIdentity,
+  PublicImplementationCommitmentProjection,
+  PublicImplementationCommitmentShareReference,
+  PublicImplementationReadinessProjection,
+  PublicInitiativeContext,
+  PublicPetitionReference,
+  PublicRegistrationGatewayGuidance,
+} from "./public-implementation-commitment.js";
 export type { PublicParticipationProfile } from "./public-participation-profile.js";
+export type {
+  Availability,
+  CollectiveDecisionId,
+  CommitmentContributionType,
+  CommitmentState,
+  CommitmentStatus,
+  CommunityCapacity,
+  ContributionItem,
+  ContributionItemId,
+  ContributionProfile,
+  ContributionSummary,
+  FrozenPolicyId,
+  ImplementationCommitment,
+  ImplementationCommitmentId,
+  ImplementationReadiness,
+  ParticipantId,
+  PolicySatisfaction,
+  ReadinessThresholdId,
+} from "./implementation-commitment/index.js";
 export type {
   DailyActivitySummary,
   ParticipationMode,

@@ -1,0 +1,118 @@
+.implementation-commitment-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.commitment-section__intro,
+.commitment-section__note,
+.commitment-section__derived,
+.commitment-section__empty,
+.commitment-section__list,
+.commitment-assistant__summary,
+.commitment-assistant__suggestion,
+.next-meaningful-action__detail {
+  margin: 0.5rem 0 0;
+  color: #444;
+  line-height: 1.5;
+}
+
+.commitment-section__derived {
+  font-style: italic;
+}
+
+.commitment-status__pipeline {
+  list-style: none;
+  margin: 0.75rem 0 1rem;
+  padding: 0;
+}
+
+.commitment-status__pipeline-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.commitment-status__pipeline-stage {
+  font-weight: 500;
+}
+
+.commitment-status__pipeline-state {
+  color: #666;
+}
+
+.commitment-policy__group-title {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.commitment-policy__list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.commitment-declaration__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.commitment-declaration__field label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.commitment-declaration__field input,
+.commitment-declaration__field select,
+.commitment-declaration__field textarea {
+  padding: 0.45rem 0.5rem;
+  border: 1px solid #ccc;
+  font: inherit;
+}
+
+.commitment-declaration__button,
+.commitment-lifecycle__button {
+  margin-top: 0.75rem;
+  margin-right: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #1a1a1a;
+  background: #fff;
+  cursor: pointer;
+}
+
+.commitment-declaration__button:disabled,
+.commitment-lifecycle__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.commitment-section__error {
+  margin: 0.75rem 0 0;
+  color: #8b0000;
+}
+
+.next-meaningful-action__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.related-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.related-navigation__link {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.commitment-item-history {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+}

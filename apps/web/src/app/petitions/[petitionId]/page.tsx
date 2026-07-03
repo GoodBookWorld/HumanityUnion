@@ -5,6 +5,7 @@ import { getCollaborativeAnalysisByInitiativeId } from "../../../features/collab
 import { getCollectiveDecisionById } from "../../../features/collective-decision/api";
 import { getInitiativeById } from "../../../features/initiatives/api";
 import { getPetitionById } from "../../../features/petition/api";
+import { getImplementationCommitmentByPetitionId } from "../../../features/implementation-commitment/api";
 import { PetitionWorkspace } from "../../../features/petition/components/PetitionWorkspace";
 import { WorkspaceNavigation } from "../../../features/initiatives/components/WorkspaceNavigation";
 
@@ -75,6 +76,15 @@ export default async function PetitionPage({ params }: PetitionPageProps) {
     collaborativeAnalysis = null;
   }
 
+  let implementationCommitmentId: string | null = null;
+
+  try {
+    const commitment = await getImplementationCommitmentByPetitionId(petition.petitionId);
+    implementationCommitmentId = commitment.implementationCommitmentId;
+  } catch {
+    implementationCommitmentId = null;
+  }
+
   return (
     <main className="petition-page">
       <MemberWorkspace
@@ -107,6 +117,20 @@ export default async function PetitionPage({ params }: PetitionPageProps) {
         >
           Public Collective Decision
         </Link>
+        {implementationCommitmentId ? (
+          <>
+            <Link
+              href={`/implementation-commitments/${encodeURIComponent(implementationCommitmentId)}`}
+            >
+              Implementation Commitment Workspace
+            </Link>
+            <Link
+              href={`/implementation-commitments/public/${encodeURIComponent(implementationCommitmentId)}`}
+            >
+              Public Implementation Commitment
+            </Link>
+          </>
+        ) : null}
       </nav>
 
       <p className="petition-page__back">

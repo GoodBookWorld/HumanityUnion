@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import type { Petition } from "@hu/types";
 
+import { ViewImplementationCommitmentLink } from "../../implementation-commitment/components/ViewImplementationCommitmentLink";
+
 interface RelatedLinksProps {
   petition: Petition;
 }
@@ -22,12 +24,14 @@ export function RelatedLinks({ petition }: RelatedLinksProps) {
       >
         Collective Decision Workspace
       </Link>
+      <ViewImplementationCommitmentLink petitionId={petitionId} />
       <Link
         className="related-links__link"
         href={`/petitions/public/${encodeURIComponent(petitionId)}`}
       >
         Public Petition
       </Link>
+      <ViewImplementationCommitmentLink petitionId={petitionId} publicView />
       <Link
         className="related-links__link"
         href={`/initiatives/public/${encodeURIComponent(initiativeId)}`}

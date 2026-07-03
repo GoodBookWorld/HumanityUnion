@@ -1,0 +1,63 @@
+.public-commitment-page {
+  width: 100%;
+  max-width: 960px;
+  padding: 2rem 1.5rem;
+  text-align: left;
+}
+
+.public-commitment-page__header {
+  margin-bottom: 1.5rem;
+}
+
+.public-commitment-page__title {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.public-commitment-page__subtitle {
+  margin: 0.35rem 0 0;
+  color: #555;
+}
+
+.public-commitment-page__empty,
+.public-commitment-page__note,
+.public-commitment-page__message,
+.public-commitment-page__derived {
+  margin: 0.5rem 0 0;
+  color: #444;
+  line-height: 1.5;
+}
+
+.public-commitment-page__derived {
+  font-style: italic;
+}
+
+.public-commitment-page__list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.public-commitment-page__action {
+  margin-top: 0.75rem;
+}
+
+.public-commitment-page__action a {
+  color: #1a1a1a;
+}
+
+.public-commitment-page__related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.public-commitment-page__related a {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.public-commitment-page__back {
+  margin-top: 1rem;
+}
