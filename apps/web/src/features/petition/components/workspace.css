@@ -1,0 +1,82 @@
+.petition-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.petition-status__intro,
+.petition-subject__note,
+.decision-context__note,
+.signature-section__prompt,
+.signature-section__note,
+.signature-section__inactive,
+.signature-section__next,
+.support-metrics__empty,
+.petition-outcome__empty,
+.contribution-recognition p,
+.next-meaningful-action__detail {
+  margin: 0.5rem 0 0;
+  color: #444;
+  line-height: 1.5;
+}
+
+.petition-status__pipeline {
+  list-style: none;
+  margin: 0.75rem 0 1rem;
+  padding: 0;
+}
+
+.petition-status__pipeline-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.petition-status__pipeline-stage {
+  font-weight: 500;
+}
+
+.petition-status__pipeline-state {
+  color: #666;
+}
+
+.signature-section__button {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #1a1a1a;
+  background: #fff;
+  cursor: pointer;
+}
+
+.signature-section__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.signature-section__status {
+  margin: 0;
+  font-weight: 600;
+}
+
+.signature-section__error {
+  margin: 0.75rem 0 0;
+  color: #8b0000;
+}
+
+.next-meaningful-action__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.related-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.related-links__link {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}

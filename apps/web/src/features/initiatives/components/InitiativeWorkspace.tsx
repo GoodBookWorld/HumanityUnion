@@ -10,6 +10,8 @@ import { InitiativeExplorer } from "./InitiativeExplorer";
 import { InitiativeOverview } from "./InitiativeOverview";
 import { StartNewInitiativeButton } from "./StartNewInitiativeButton";
 import { ViewCollaborativeAnalysisLink } from "./ViewCollaborativeAnalysisLink";
+import { ViewCollectiveDecisionLink } from "../../collective-decision/components/ViewCollectiveDecisionLink";
+import { ViewPetitionLink } from "../../petition/components/ViewPetitionLink";
 
 interface InitiativeWorkspaceProps {
   initialInitiatives: Initiative[];
@@ -67,6 +69,8 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
 
       <ProfileSection title="Actions">
         <ViewCollaborativeAnalysisLink initiativeId={selectedId} />
+        <ViewCollectiveDecisionLink initiativeId={selectedId} />
+        <ViewPetitionLink initiativeId={selectedId} />
         <StartNewInitiativeButton onCreated={handleCreated} />
       </ProfileSection>
     </>

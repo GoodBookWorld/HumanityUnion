@@ -4,6 +4,7 @@ import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { getCollaborativeAnalysisByInitiativeId } from "../../../../features/collaborative-analysis/api";
 import { getPublicCollectiveDecision } from "../../../../features/collective-decision/api";
+import { getPetitionByCollectiveDecisionId } from "../../../../features/petition/api";
 
 import "../public-collective-decision-page.css";
 
@@ -58,6 +59,7 @@ export default async function PublicCollectiveDecisionPage({
   }
 
   let linkedAnalysisId: string | null = null;
+  let linkedPetitionId: string | null = null;
 
   if (decision.decisionSubject.subjectType === "Initiative") {
     try {
@@ -66,6 +68,13 @@ export default async function PublicCollectiveDecisionPage({
     } catch {
       linkedAnalysisId = null;
     }
+  }
+
+  try {
+    const petition = await getPetitionByCollectiveDecisionId(decisionId);
+    linkedPetitionId = petition.petitionId;
+  } catch {
+    linkedPetitionId = null;
   }
 
   return (
@@ -148,7 +157,9 @@ export default async function PublicCollectiveDecisionPage({
         )}
       </ProfileSection>
 
-      {decision.decisionSubject.subjectType === "Initiative" || linkedAnalysisId ? (
+      {decision.decisionSubject.subjectType === "Initiative" ||
+      linkedAnalysisId ||
+      linkedPetitionId ? (
         <nav className="public-collective-decision-page__related" aria-label="Platform integration">
           {decision.decisionSubject.subjectType === "Initiative" ? (
             <Link
@@ -160,6 +171,11 @@ export default async function PublicCollectiveDecisionPage({
           {linkedAnalysisId ? (
             <Link href={`/collaborative-analysis/public/${encodeURIComponent(linkedAnalysisId)}`}>
               View Public Collaborative Analysis
+            </Link>
+          ) : null}
+          {linkedPetitionId ? (
+            <Link href={`/petitions/public/${encodeURIComponent(linkedPetitionId)}`}>
+              View Public Petition
             </Link>
           ) : null}
         </nav>

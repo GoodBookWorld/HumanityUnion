@@ -2,8 +2,11 @@ import type {
   Ballot,
   CollectiveDecision,
   DecisionOption,
+  DecisionResult,
   DecisionRules,
   EligibilityRules,
+  Outcome,
+  ParticipantDecision,
 } from "@hu/types";
 
 const BOOTSTRAP_TIMESTAMP = "2026-07-02T00:00:00.000Z";
@@ -48,8 +51,46 @@ const bootstrapBallot: Ballot = {
   options: [approveOption, rejectOption],
   decisionRules: defaultDecisionRules,
   eligibilityRules: defaultEligibilityRules,
-  opensAt: "",
-  closesAt: "",
+  opensAt: BOOTSTRAP_TIMESTAMP,
+  closesAt: BOOTSTRAP_TIMESTAMP,
+};
+
+const bootstrapParticipantDecision: ParticipantDecision = {
+  participantDecisionId: "participant-decision-bootstrap-001",
+  participantId: "member-bootstrap-001",
+  ballotId: bootstrapBallot.ballotId,
+  selectedOptionIds: [approveOption.optionId],
+  submittedAt: BOOTSTRAP_TIMESTAMP,
+  status: "submitted",
+};
+
+const bootstrapDecisionResult: DecisionResult = {
+  resultId: "result-decision-bootstrap-001",
+  calculatedAt: BOOTSTRAP_TIMESTAMP,
+  optionResults: [
+    {
+      optionId: approveOption.optionId,
+      count: 1,
+      percentage: 100,
+    },
+    {
+      optionId: rejectOption.optionId,
+      count: 0,
+      percentage: 0,
+    },
+  ],
+  winningOptionId: approveOption.optionId,
+  participationRate: 100,
+  quorumSatisfied: true,
+  thresholdSatisfied: true,
+};
+
+const bootstrapOutcome: Outcome = {
+  outcomeId: "outcome-decision-bootstrap-001",
+  outcomeType: "Approved",
+  createdAt: BOOTSTRAP_TIMESTAMP,
+  nextLifecycleStage: "Petition",
+  explanation: "Initiative approved to proceed to the Petition stage.",
 };
 
 export const bootstrapCollectiveDecision: CollectiveDecision = {
@@ -57,26 +98,26 @@ export const bootstrapCollectiveDecision: CollectiveDecision = {
   decisionSubjectType: "Initiative",
   decisionSubjectId: "initiative-bootstrap-001",
   decisionMechanism: "CommunityPoll",
-  status: "Draft",
+  status: "Completed",
   createdAt: BOOTSTRAP_TIMESTAMP,
   updatedAt: BOOTSTRAP_TIMESTAMP,
   ballot: bootstrapBallot,
-  participantDecisions: [],
-  decisionResult: null,
-  outcome: null,
+  participantDecisions: [bootstrapParticipantDecision],
+  decisionResult: bootstrapDecisionResult,
+  outcome: bootstrapOutcome,
   statistics: {
-    eligibleParticipantCount: 0,
-    submittedDecisionCount: 0,
-    participationRate: 0,
-    completionRate: 0,
+    eligibleParticipantCount: 1,
+    submittedDecisionCount: 1,
+    participationRate: 100,
+    completionRate: 100,
     abstentionCount: 0,
   },
   timeline: {
     createdAt: BOOTSTRAP_TIMESTAMP,
-    scheduledAt: null,
-    opensAt: null,
-    closesAt: null,
-    completedAt: null,
+    scheduledAt: BOOTSTRAP_TIMESTAMP,
+    opensAt: BOOTSTRAP_TIMESTAMP,
+    closesAt: BOOTSTRAP_TIMESTAMP,
+    completedAt: BOOTSTRAP_TIMESTAMP,
     archivedAt: null,
   },
 };

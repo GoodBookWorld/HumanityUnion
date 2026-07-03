@@ -1,0 +1,57 @@
+.public-petition-page {
+  width: 100%;
+  max-width: 720px;
+  padding: 2rem 1.5rem;
+  text-align: left;
+}
+
+.public-petition-page__header {
+  margin-bottom: 1.5rem;
+}
+
+.public-petition-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.public-petition-page__subtitle {
+  color: #525252;
+  font-size: 0.95rem;
+}
+
+.public-petition-page__empty {
+  color: #737373;
+  font-style: italic;
+}
+
+.public-petition-page__note,
+.public-petition-page__message {
+  margin: 0.75rem 0 0;
+  color: #444;
+  line-height: 1.5;
+}
+
+.public-petition-page__action {
+  margin: 1rem 0 0;
+}
+
+.public-petition-page__action a {
+  color: #1a1a1a;
+}
+
+.public-petition-page__related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.public-petition-page__related a {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.public-petition-page__back {
+  margin-top: 1.5rem;
+}

@@ -5,6 +5,7 @@ import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { getCollaborativeAnalysisByInitiativeId } from "../../../../features/collaborative-analysis/api";
 import { getCollectiveDecisionByInitiativeId } from "../../../../features/collective-decision/api";
 import { getPublicInitiative } from "../../../../features/initiatives/api";
+import { getPetitionByInitiativeId } from "../../../../features/petition/api";
 
 import "./public-initiative-page.css";
 
@@ -31,6 +32,7 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   let initiative = null;
   let linkedAnalysisId: string | null = null;
   let linkedDecisionId: string | null = null;
+  let linkedPetitionId: string | null = null;
 
   try {
     initiative = await getPublicInitiative(initiativeId);
@@ -51,6 +53,13 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       linkedDecisionId = decision.decisionId;
     } catch {
       linkedDecisionId = null;
+    }
+
+    try {
+      const petition = await getPetitionByInitiativeId(initiativeId);
+      linkedPetitionId = petition.petitionId;
+    } catch {
+      linkedPetitionId = null;
     }
   }
 
@@ -84,7 +93,7 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
         <ProfileField label="Created" value={formatCreatedDate(initiative.createdAt)} />
       </ProfileSection>
 
-      {linkedAnalysisId || linkedDecisionId ? (
+      {linkedAnalysisId || linkedDecisionId || linkedPetitionId ? (
         <nav className="public-initiative-page__related" aria-label="Platform integration">
           {linkedAnalysisId ? (
             <Link
@@ -96,6 +105,11 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
           {linkedDecisionId ? (
             <Link href={`/collective-decisions/public/${encodeURIComponent(linkedDecisionId)}`}>
               View Public Collective Decision
+            </Link>
+          ) : null}
+          {linkedPetitionId ? (
+            <Link href={`/petitions/public/${encodeURIComponent(linkedPetitionId)}`}>
+              View Public Petition
             </Link>
           ) : null}
         </nav>

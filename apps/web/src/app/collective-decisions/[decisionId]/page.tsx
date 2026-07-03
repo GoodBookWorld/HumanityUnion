@@ -5,6 +5,7 @@ import { getCollaborativeAnalysisByInitiativeId } from "../../../features/collab
 import { getCollectiveDecisionById } from "../../../features/collective-decision/api";
 import { CollectiveDecisionWorkspace } from "../../../features/collective-decision/components/CollectiveDecisionWorkspace";
 import { getInitiativeById } from "../../../features/initiatives/api";
+import { getPetitionByCollectiveDecisionId } from "../../../features/petition/api";
 import { WorkspaceNavigation } from "../../../features/initiatives/components/WorkspaceNavigation";
 
 import "../collective-decision-page.css";
@@ -68,6 +69,14 @@ export default async function CollectiveDecisionPage({ params }: CollectiveDecis
   }
 
   const linkedAnalysisId = linkedAnalysis?.analysisId ?? null;
+  let linkedPetitionId: string | null = null;
+
+  try {
+    const linkedPetition = await getPetitionByCollectiveDecisionId(decisionId);
+    linkedPetitionId = linkedPetition.petitionId;
+  } catch {
+    linkedPetitionId = null;
+  }
 
   return (
     <main className="collective-decision-page">
@@ -111,6 +120,16 @@ export default async function CollectiveDecisionPage({ params }: CollectiveDecis
           <Link href={`/collaborative-analysis/public/${encodeURIComponent(linkedAnalysisId)}`}>
             Public Collaborative Analysis
           </Link>
+        ) : null}
+        {linkedPetitionId ? (
+          <>
+            <Link href={`/petitions/${encodeURIComponent(linkedPetitionId)}`}>
+              Petition Workspace
+            </Link>
+            <Link href={`/petitions/public/${encodeURIComponent(linkedPetitionId)}`}>
+              Public Petition
+            </Link>
+          </>
         ) : null}
       </nav>
 

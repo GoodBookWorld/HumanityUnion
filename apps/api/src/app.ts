@@ -12,6 +12,7 @@ import {
   initiativeCollectiveDecisionRouter,
   publicCollectiveDecisionRouter,
 } from "./modules/collective-decision/index.js";
+import { petitionRouter, publicPetitionRouter } from "./modules/petition/index.js";
 import initiativesRouter from "./modules/initiatives/initiative.routes.js";
 import publicInitiativeRouter from "./modules/initiatives/public-initiative.routes.js";
 import memberRouter from "./modules/member/member.routes.js";
@@ -32,6 +33,8 @@ app.use("/api/v1/initiatives", initiativeCollectiveDecisionRouter);
 app.use("/api/v1/initiatives", initiativesRouter);
 app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);
 app.use("/api/v1/collective-decisions", collectiveDecisionRouter);
+app.use("/api/v1/petitions", petitionRouter);
+app.use("/api/v1/public/petitions", publicPetitionRouter);
 app.use("/api/v1/public/collective-decisions", publicCollectiveDecisionRouter);
 app.use("/api/v1/public/collaborative-analysis", publicCollaborativeAnalysisRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);
