@@ -1,0 +1,163 @@
+.implementation-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.implementation-section__intro,
+.implementation-section__note,
+.implementation-section__derived,
+.implementation-section__empty,
+.implementation-section__list,
+.implementation-assistant__summary,
+.implementation-assistant__suggestion,
+.next-meaningful-observation__detail {
+  margin: 0.5rem 0 0;
+  color: #444;
+  line-height: 1.5;
+}
+
+.implementation-section__derived {
+  font-style: italic;
+}
+
+.implementation-status__pipeline {
+  list-style: none;
+  margin: 0.75rem 0 1rem;
+  padding: 0;
+}
+
+.implementation-status__pipeline-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.implementation-status__pipeline-stage {
+  font-weight: 500;
+}
+
+.implementation-status__pipeline-state {
+  color: #666;
+}
+
+.implementation-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.implementation-list__item {
+  margin-bottom: 0.75rem;
+}
+
+.implementation-list__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.implementation-list__meta {
+  margin: 0.25rem 0 0;
+  color: #666;
+  font-size: 0.92rem;
+}
+
+.implementation-milestone-group {
+  margin-top: 1rem;
+}
+
+.implementation-milestone-group__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.implementation-phase-card {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #eee;
+}
+
+.implementation-phase-card--current {
+  border-color: #bbb;
+  background: #fafafa;
+}
+
+.next-meaningful-observation__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.related-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.related-navigation__link {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.implementation-assistant__list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.implementation-progress-change {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+}
+
+.implementation-recording-panel {
+  margin-top: 0.75rem;
+}
+
+.implementation-recording__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.implementation-recording__field label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.implementation-recording__field input,
+.implementation-recording__field select,
+.implementation-recording__field textarea {
+  padding: 0.45rem 0.5rem;
+  border: 1px solid #ccc;
+  font: inherit;
+}
+
+.implementation-recording__button {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #1a1a1a;
+  background: #fff;
+  cursor: pointer;
+}
+
+.implementation-recording__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.implementation-section__error {
+  margin: 0.75rem 0 0;
+  color: #8b0000;
+}
+
+.implementation-achievement-recording + .implementation-achievements,
+.implementation-achievement-recording ~ .implementation-achievements,
+.implementation-evidence-attachment + .implementation-evidence,
+.implementation-evidence-attachment ~ .implementation-evidence {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}

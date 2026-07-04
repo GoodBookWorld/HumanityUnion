@@ -1,0 +1,74 @@
+.public-implementation-page {
+  width: 100%;
+  max-width: 960px;
+  padding: 2rem 1.5rem;
+  text-align: left;
+}
+
+.public-implementation-page__header {
+  margin-bottom: 1.5rem;
+}
+
+.public-implementation-page__title {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.public-implementation-page__subtitle {
+  margin: 0.35rem 0 0;
+  color: #555;
+}
+
+.public-implementation-page__empty,
+.public-implementation-page__note,
+.public-implementation-page__message,
+.public-implementation-page__derived {
+  margin: 0.5rem 0 0;
+  color: #444;
+  line-height: 1.5;
+}
+
+.public-implementation-page__derived {
+  font-style: italic;
+}
+
+.public-implementation-page__list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.public-implementation-page__group {
+  margin-top: 1rem;
+}
+
+.public-implementation-page__group-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.public-implementation-page__action {
+  margin-top: 0.75rem;
+}
+
+.public-implementation-page__action a {
+  color: #1a1a1a;
+}
+
+.public-implementation-page__related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.public-implementation-page__related a,
+.public-implementation-page__related span {
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.public-implementation-page__back {
+  margin-top: 1rem;
+}

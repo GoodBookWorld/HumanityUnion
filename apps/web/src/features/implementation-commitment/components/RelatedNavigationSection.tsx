@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import type { ImplementationCommitment } from "@hu/types";
 
+import { ViewImplementationLink } from "../../implementation/components/ViewImplementationLink";
+
 interface RelatedNavigationSectionProps {
   commitment: ImplementationCommitment;
 }
@@ -48,7 +50,13 @@ export function RelatedNavigationSection({ commitment }: RelatedNavigationSectio
       >
         Public Petition
       </Link>
-      <span className="related-navigation__link">Future Implementation (not yet active)</span>
+      <ViewImplementationLink
+        implementationCommitmentId={commitment.implementationCommitmentId}
+      />
+      <ViewImplementationLink
+        implementationCommitmentId={commitment.implementationCommitmentId}
+        publicView
+      />
     </nav>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
+import { ViewImplementationLink } from "../../../../features/implementation/components/ViewImplementationLink";
 import { getPublicImplementationCommitment } from "../../../../features/implementation-commitment/api";
 
 import "./public-commitment-page.css";
@@ -252,6 +253,10 @@ export default async function PublicImplementationCommitmentPage({
         <Link href={`/petitions/public/${encodeURIComponent(petitionReference.petitionId)}`}>
           View Public Petition
         </Link>
+        <ViewImplementationLink
+          implementationCommitmentId={commitmentIdentity.implementationCommitmentId}
+          publicView
+        />
       </nav>
 
       <p className="public-commitment-page__back">

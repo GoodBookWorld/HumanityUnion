@@ -118,6 +118,20 @@ export type {
   PublicPetitionReference,
   PublicRegistrationGatewayGuidance,
 } from "./public-implementation-commitment.js";
+export type {
+  PublicAchievementProjection,
+  PublicCollectiveProgressProjection,
+  PublicCompletionProjection,
+  PublicCurrentPhaseProjection,
+  PublicEvidenceProjection,
+  PublicImplementationCommitmentReference,
+  PublicImplementationHumanityAssistantPanel,
+  PublicImplementationIdentity,
+  PublicImplementationPhaseProjection,
+  PublicImplementationProjection,
+  PublicImplementationShareReference,
+  PublicImplementationStatusProjection,
+} from "./public-implementation.js";
 export type { PublicParticipationProfile } from "./public-participation-profile.js";
 export type {
   Availability,
@@ -138,6 +152,35 @@ export type {
   PolicySatisfaction,
   ReadinessThresholdId,
 } from "./implementation-commitment/index.js";
+export type {
+  Achievement,
+  AchievementId,
+  CollectiveProgress,
+  Completion,
+  CompletionAssessment,
+  CompletionIndicator,
+  Evidence,
+  EvidenceAttachment,
+  EvidenceId,
+  EvidenceKind,
+  EvidenceLink,
+  EvidenceReference,
+  Implementation,
+  ImplementationId,
+  ImplementationPhase,
+  ImplementationPhaseId,
+  ImplementationStatus,
+  ImplementationTimeline,
+  ImplementationTimelineEntry,
+  ImplementationVisibility,
+  Milestone,
+  MilestoneId,
+  MilestoneRequirementType,
+  MilestoneStatus,
+  PhaseStatus,
+  ProgressIndicator,
+  ProgressSnapshot,
+} from "./implementation/index.js";
 export type {
   DailyActivitySummary,
   ParticipationMode,

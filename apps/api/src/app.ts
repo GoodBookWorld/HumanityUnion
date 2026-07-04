@@ -16,6 +16,7 @@ import {
   implementationCommitmentRouter,
   publicImplementationCommitmentRouter,
 } from "./modules/implementation-commitment/index.js";
+import { implementationRouter, publicImplementationRouter } from "./modules/implementation/index.js";
 import { petitionRouter, publicPetitionRouter } from "./modules/petition/index.js";
 import initiativesRouter from "./modules/initiatives/initiative.routes.js";
 import publicInitiativeRouter from "./modules/initiatives/public-initiative.routes.js";
@@ -39,6 +40,8 @@ app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);
 app.use("/api/v1/collective-decisions", collectiveDecisionRouter);
 app.use("/api/v1/petitions", petitionRouter);
 app.use("/api/v1/implementation-commitments", implementationCommitmentRouter);
+app.use("/api/v1/implementations", implementationRouter);
+app.use("/api/v1/public/implementations", publicImplementationRouter);
 app.use("/api/v1/public/implementation-commitments", publicImplementationCommitmentRouter);
 app.use("/api/v1/public/petitions", publicPetitionRouter);
 app.use("/api/v1/public/collective-decisions", publicCollectiveDecisionRouter);

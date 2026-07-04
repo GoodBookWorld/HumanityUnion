@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Petition } from "@hu/types";
 
 import { ViewImplementationCommitmentLink } from "../../implementation-commitment/components/ViewImplementationCommitmentLink";
+import { ViewImplementationLink } from "../../implementation/components/ViewImplementationLink";
 
 interface RelatedLinksProps {
   petition: Petition;
@@ -25,6 +26,7 @@ export function RelatedLinks({ petition }: RelatedLinksProps) {
         Collective Decision Workspace
       </Link>
       <ViewImplementationCommitmentLink petitionId={petitionId} />
+      <ViewImplementationLink petitionId={petitionId} />
       <Link
         className="related-links__link"
         href={`/petitions/public/${encodeURIComponent(petitionId)}`}
@@ -32,6 +34,7 @@ export function RelatedLinks({ petition }: RelatedLinksProps) {
         Public Petition
       </Link>
       <ViewImplementationCommitmentLink petitionId={petitionId} publicView />
+      <ViewImplementationLink petitionId={petitionId} publicView />
       <Link
         className="related-links__link"
         href={`/initiatives/public/${encodeURIComponent(initiativeId)}`}

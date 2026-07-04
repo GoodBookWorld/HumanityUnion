@@ -28,7 +28,7 @@ It does not define implementation.
 
 It does not authorize new features by itself.
 
-The Participation vertical slice through **Implementation Commitment** (Idea → Initiative → Collaborative Analysis → Collective Decision → Petition → Implementation Commitment) is the implemented expression of this frozen architecture through Stage 6. **Implementation** and **Impact** remain architecturally defined but are not yet implemented.
+The Participation vertical slice through **Implementation** (Idea → Initiative → Collaborative Analysis → Collective Decision → Petition → Implementation Commitment → Implementation) is the implemented expression of this frozen architecture through Stage 7. **Impact** remains architecturally defined but is not yet implemented.
 
 ---
 
@@ -80,7 +80,7 @@ Petition                                Architecture Approved — Implementation
 Implementation Commitment               Architecture Approved — Implementation Complete
         │
         ▼
-Implementation                          Architecture Approved — Not Yet Implemented
+Implementation                          Architecture Approved — Implementation Complete
         │
         ▼
 Impact                                  Architecture Approved — Not Yet Implemented
@@ -192,7 +192,7 @@ Each stage owns exactly one Aggregate in Version 1.
 
 **Output:** Completed implementation record.
 
-**Status in Version 1:** Architecturally defined. Not yet implemented.
+**Status in Version 1:** Architecture Approved. Implementation Complete.
 
 ## Impact
 
@@ -207,7 +207,7 @@ Each stage owns exactly one Aggregate in Version 1.
 
 **Output:** Knowledge for future Initiatives.
 
-**Status in Version 1:** Architecturally defined. Not yet implemented.
+**Status in Version 1:** Architecture Approved. Not yet implemented.
 
 ---
 
@@ -697,7 +697,7 @@ The following are **not** valid architecture change paths:
 
 Accidental architecture evolution is forbidden.
 
-Version 1 implementation through **Implementation Commitment** establishes precedent but does not silently extend scope to **Implementation** or **Impact** without review.
+Version 1 implementation through **Implementation** establishes precedent but does not silently extend scope to **Impact** without review.
 
 ---
 

@@ -4,6 +4,7 @@ import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
 import { getCollectiveDecisionById } from "../../../features/collective-decision/api";
 import { getImplementationCommitmentById } from "../../../features/implementation-commitment/api";
 import { ImplementationCommitmentWorkspace } from "../../../features/implementation-commitment/components/ImplementationCommitmentWorkspace";
+import { ViewImplementationLink } from "../../../features/implementation/components/ViewImplementationLink";
 import { getInitiativeById } from "../../../features/initiatives/api";
 import { getPetitionById } from "../../../features/petition/api";
 import { WorkspaceNavigation } from "../../../features/initiatives/components/WorkspaceNavigation";
@@ -118,6 +119,11 @@ export default async function ImplementationCommitmentPage({
         <Link href={`/petitions/public/${encodeURIComponent(commitment.petitionId)}`}>
           Public Petition
         </Link>
+        <ViewImplementationLink implementationCommitmentId={commitment.implementationCommitmentId} />
+        <ViewImplementationLink
+          implementationCommitmentId={commitment.implementationCommitmentId}
+          publicView
+        />
       </nav>
 
       <p className="commitment-page__back">
