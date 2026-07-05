@@ -1,8 +1,7 @@
 import type { LatestInitiativesPublicProjection } from "@hu/types";
 
+import { ExperienceBlockShell, LatestInitiativesEvidence } from "../../public-experience";
 import { LATEST_GLOBAL_INITIATIVES_CONTENT } from "../content";
-import { ExperienceBlockShell } from "./ExperienceBlockShell";
-import { LatestGlobalInitiativesEvidence } from "./LatestGlobalInitiativesEvidence";
 
 interface LatestGlobalInitiativesSectionProps {
   projection: LatestInitiativesPublicProjection;
@@ -20,7 +19,10 @@ export function LatestGlobalInitiativesSection({
       contextIntroduction={LATEST_GLOBAL_INITIATIVES_CONTENT.contextIntroduction}
       visitorConclusion={LATEST_GLOBAL_INITIATIVES_CONTENT.visitorConclusion}
     >
-      <LatestGlobalInitiativesEvidence projection={projection} />
+      <LatestInitiativesEvidence
+        projection={projection}
+        emptyMessage={LATEST_GLOBAL_INITIATIVES_CONTENT.emptyMessage}
+      />
     </ExperienceBlockShell>
   );
 }

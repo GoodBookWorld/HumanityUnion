@@ -56,5 +56,8 @@ export const NATIONAL_STATISTICS_VISITOR_CONCLUSION =
 export const NATIONAL_PIPELINE_VISITOR_CONCLUSION =
   "Stage distribution shows how structured participation appears nationally — the same civic path used at world and community scopes.";
 
+export const NATIONAL_INITIATIVES_EMPTY_MESSAGE =
+  "No public initiatives are associated with this country yet.";
+
 export const NATIONAL_INITIATIVES_VISITOR_CONCLUSION =
   "Cards with an active public record link to verifiable civic detail. Demonstration cards without public records are labeled and not linked.";

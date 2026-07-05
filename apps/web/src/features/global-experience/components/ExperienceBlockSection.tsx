@@ -1,4 +1,4 @@
-import { ExperienceBlockShell } from "./ExperienceBlockShell";
+import { ExperienceBlockShell } from "../../public-experience";
 
 interface ExperienceBlockSectionProps {
   id: string;

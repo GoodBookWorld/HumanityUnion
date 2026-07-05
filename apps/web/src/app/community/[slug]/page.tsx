@@ -6,7 +6,7 @@ import {
   loadCommunityExperiencePageData,
 } from "../../../features/public-projection-engine";
 
-import "../../../features/global-experience/global-experience.css";
+import "../../../features/public-experience/public-experience.css";
 import "../../../features/community-experience/community-experience.css";
 
 interface CommunityPageProps {

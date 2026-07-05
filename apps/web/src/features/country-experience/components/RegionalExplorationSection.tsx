@@ -1,7 +1,7 @@
 import type { CountryRegionalCatalogPublicProjection } from "@hu/types";
 
 import { REGIONAL_EXPLORATION_CONTENT } from "../content";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
+import { ExperienceBlockShell } from "../../public-experience";
 import { RegionalExplorationEvidence } from "./RegionalExplorationEvidence";
 
 interface RegionalExplorationSectionProps {

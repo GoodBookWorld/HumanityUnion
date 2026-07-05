@@ -38,22 +38,6 @@
   padding: 0 1.5rem 2rem;
 }
 
-.geographic-navigator__scope--link {
-  display: inline-block;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.875rem;
-  border: 1px solid #d4d4d4;
-  background: #ffffff;
-  color: #404040;
-  text-decoration: none;
-}
-
-.geographic-navigator__scope--link:hover {
-  color: #1a1a1a;
-  border-color: #a3a3a3;
-}
-
 .community-identity {
   display: flex;
   flex-direction: column;

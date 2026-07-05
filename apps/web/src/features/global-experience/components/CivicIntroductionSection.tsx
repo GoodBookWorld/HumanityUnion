@@ -1,5 +1,5 @@
 import { CIVIC_INTRODUCTION_CONTENT } from "../content";
-import { ExperienceBlockShell } from "./ExperienceBlockShell";
+import { ExperienceBlockShell } from "../../public-experience";
 
 export function CivicIntroductionSection() {
   return (

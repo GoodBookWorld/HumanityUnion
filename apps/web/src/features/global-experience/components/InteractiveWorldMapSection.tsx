@@ -1,5 +1,5 @@
 import { INTERACTIVE_WORLD_MAP_CONTENT } from "../content";
-import { ExperienceBlockShell } from "./ExperienceBlockShell";
+import { ExperienceBlockShell } from "../../public-experience";
 import { InteractiveWorldMapEvidence } from "./InteractiveWorldMapEvidence";
 
 export function InteractiveWorldMapSection() {

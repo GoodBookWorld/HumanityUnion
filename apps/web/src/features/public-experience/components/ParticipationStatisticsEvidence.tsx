@@ -1,10 +1,12 @@
 import type { ParticipationPublicStatisticsProjection } from "@hu/types";
 
-interface GlobalStatisticsEvidenceProps {
+interface ParticipationStatisticsEvidenceProps {
   projection: ParticipationPublicStatisticsProjection;
 }
 
-export function GlobalStatisticsEvidence({ projection }: GlobalStatisticsEvidenceProps) {
+export function ParticipationStatisticsEvidence({
+  projection,
+}: ParticipationStatisticsEvidenceProps) {
   return (
     <div className="global-statistics">
       <p className="global-statistics__scope">

@@ -5,8 +5,7 @@ import {
   COMMUNITY_STATISTICS_VISITOR_CONCLUSION,
   communityStatisticsContextIntroduction,
 } from "../content";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
-import { GlobalStatisticsEvidence } from "../../global-experience/components/GlobalStatisticsEvidence";
+import { ExperienceBlockShell, ParticipationStatisticsEvidence } from "../../public-experience";
 
 interface CommunityStatisticsSectionProps {
   projection: ParticipationPublicStatisticsProjection;
@@ -26,7 +25,7 @@ export function CommunityStatisticsSection({
       contextIntroduction={communityStatisticsContextIntroduction(communityName)}
       visitorConclusion={COMMUNITY_STATISTICS_VISITOR_CONCLUSION}
     >
-      <GlobalStatisticsEvidence projection={projection} />
+      <ParticipationStatisticsEvidence projection={projection} />
       <p className="community-statistics__public-note" role="note">
         {COMMUNITY_STATISTICS_PUBLIC_NOTE}
       </p>

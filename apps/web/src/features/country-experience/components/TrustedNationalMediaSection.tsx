@@ -1,7 +1,7 @@
 import type { TrustedNationalMediaPublicProjection } from "@hu/types";
 
 import { TRUSTED_NATIONAL_MEDIA_CONTENT } from "../content";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
+import { ExperienceBlockShell } from "../../public-experience";
 import { TrustedNationalMediaEvidence } from "./TrustedNationalMediaEvidence";
 
 interface TrustedNationalMediaSectionProps {

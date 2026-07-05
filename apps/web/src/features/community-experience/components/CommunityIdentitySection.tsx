@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { CommunityIdentityPublicProjection } from "@hu/types";
 
 import { communityIdentityContextIntroduction } from "../content";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
+import { ExperienceBlockShell } from "../../public-experience";
 import { CommunityIdentityVisual } from "./CommunityIdentityVisual";
 
 interface CommunityIdentitySectionProps {

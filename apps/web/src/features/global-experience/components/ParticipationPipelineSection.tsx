@@ -1,8 +1,7 @@
 import type { ParticipationPipelinePublicProjection } from "@hu/types";
 
 import { PARTICIPATION_PIPELINE_CONTENT } from "../content";
-import { ExperienceBlockShell } from "./ExperienceBlockShell";
-import { ParticipationPipelineEvidence } from "./ParticipationPipelineEvidence";
+import { ExperienceBlockShell, ParticipationPipelineEvidence } from "../../public-experience";
 
 interface ParticipationPipelineSectionProps {
   projection: ParticipationPipelinePublicProjection;

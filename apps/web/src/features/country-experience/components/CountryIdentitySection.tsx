@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { CountryIdentityPublicProjection } from "@hu/types";
 
 import { countryIdentityContextIntroduction } from "../content";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
+import { ExperienceBlockShell } from "../../public-experience";
 import { CountryIdentityVisual } from "./CountryIdentityVisual";
 
 interface CountryIdentitySectionProps {

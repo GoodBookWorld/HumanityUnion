@@ -1,5 +1,5 @@
 import { FIND_YOUR_COMMUNITY_CONTENT, FIND_YOUR_COMMUNITY_VISITOR_CONCLUSION } from "../content";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
+import { ExperienceBlockShell } from "../../public-experience";
 import { FindYourCommunityEvidence } from "./FindYourCommunityEvidence";
 import type { CommunityCatalogPublicProjection } from "@hu/types";
 

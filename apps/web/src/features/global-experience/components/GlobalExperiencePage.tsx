@@ -1,13 +1,15 @@
 import { loadGlobalExperienceProjections } from "../../public-projection-engine";
+import {
+  PublicExperienceFooter,
+  PublicExperienceHeader,
+  RegistrationGatewaySection,
+} from "../../public-experience";
 import { CivicIntroductionSection } from "./CivicIntroductionSection";
 import { GeographicNavigator } from "./GeographicNavigator";
 import { GlobalStatisticsSection } from "./GlobalStatisticsSection";
 import { InteractiveWorldMapSection } from "./InteractiveWorldMapSection";
 import { LatestGlobalInitiativesSection } from "./LatestGlobalInitiativesSection";
 import { ParticipationPipelineSection } from "./ParticipationPipelineSection";
-import { PublicExperienceFooter } from "./PublicExperienceFooter";
-import { PublicExperienceHeader } from "./PublicExperienceHeader";
-import { RegistrationGatewaySection } from "./RegistrationGatewaySection";
 
 export async function GlobalExperiencePage() {
   const {

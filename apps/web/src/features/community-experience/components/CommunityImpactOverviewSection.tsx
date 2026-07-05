@@ -6,7 +6,7 @@ import {
   COMMUNITY_IMPACT_VISITOR_CONCLUSION,
   communityImpactContextIntroduction,
 } from "../content";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
+import { ExperienceBlockShell } from "../../public-experience";
 
 interface CommunityImpactOverviewSectionProps {
   projection: CommunityImpactOverviewPublicProjection;

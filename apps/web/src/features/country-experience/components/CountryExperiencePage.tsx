@@ -8,9 +8,11 @@ import { NationalParticipationPipelineSection } from "./NationalParticipationPip
 import { NationalStatisticsSection } from "./NationalStatisticsSection";
 import { RegionalExplorationSection } from "./RegionalExplorationSection";
 import { TrustedNationalMediaSection } from "./TrustedNationalMediaSection";
-import { PublicExperienceFooter } from "../../global-experience/components/PublicExperienceFooter";
-import { PublicExperienceHeader } from "../../global-experience/components/PublicExperienceHeader";
-import { RegistrationGatewaySection } from "../../global-experience/components/RegistrationGatewaySection";
+import {
+  PublicExperienceFooter,
+  PublicExperienceHeader,
+  RegistrationGatewaySection,
+} from "../../public-experience";
 
 interface CountryExperiencePageProps {
   projections: CountryExperiencePublicProjections;

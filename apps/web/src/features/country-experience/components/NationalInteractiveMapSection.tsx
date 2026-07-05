@@ -1,5 +1,5 @@
 import { NATIONAL_INTERACTIVE_MAP_CONTENT } from "../content";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
+import { ExperienceBlockShell } from "../../public-experience";
 import { NationalInteractiveMapEvidence } from "./NationalInteractiveMapEvidence";
 
 export function NationalInteractiveMapSection() {

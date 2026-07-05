@@ -7,8 +7,7 @@ import {
   workspaceContinuationContextIntroduction,
 } from "../content";
 import { WORKSPACE_ROUTE } from "../constants";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
-import { REGISTRATION_ROUTE } from "../../global-experience/footer-links";
+import { ExperienceBlockShell, REGISTRATION_ROUTE } from "../../public-experience";
 
 interface RegistrationGatewayWorkspaceSectionProps {
   communityName: string;

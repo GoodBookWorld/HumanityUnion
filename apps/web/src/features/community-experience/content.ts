@@ -66,6 +66,9 @@ export const COMMUNITY_STATISTICS_VISITOR_CONCLUSION =
 export const COMMUNITY_PIPELINE_VISITOR_CONCLUSION =
   "Stage distribution shows how structured participation appears around this community — the same civic path used at broader scopes.";
 
+export const COMMUNITY_INITIATIVES_EMPTY_MESSAGE =
+  "No public initiatives are associated with this community yet.";
+
 export const COMMUNITY_INITIATIVES_VISITOR_CONCLUSION =
   "Cards with an active public record link to verifiable civic detail. Demonstration cards without public records are labeled and not linked.";
 

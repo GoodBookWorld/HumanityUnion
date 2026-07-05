@@ -5,8 +5,7 @@ import {
   NATIONAL_STATISTICS_VISITOR_CONCLUSION,
   nationalStatisticsContextIntroduction,
 } from "../content";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
-import { GlobalStatisticsEvidence } from "../../global-experience/components/GlobalStatisticsEvidence";
+import { ExperienceBlockShell, ParticipationStatisticsEvidence } from "../../public-experience";
 
 interface NationalStatisticsSectionProps {
   projection: ParticipationPublicStatisticsProjection;
@@ -26,7 +25,7 @@ export function NationalStatisticsSection({
       contextIntroduction={nationalStatisticsContextIntroduction(countryName)}
       visitorConclusion={NATIONAL_STATISTICS_VISITOR_CONCLUSION}
     >
-      <GlobalStatisticsEvidence projection={projection} />
+      <ParticipationStatisticsEvidence projection={projection} />
       <p className="national-statistics__public-note" role="note">
         {NATIONAL_STATISTICS_PUBLIC_NOTE}
       </p>

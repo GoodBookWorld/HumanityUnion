@@ -2,13 +2,15 @@ import type { LatestInitiativesPublicProjection } from "@hu/types";
 
 import { LatestInitiativeCard } from "./LatestInitiativeCard";
 
-interface LatestGlobalInitiativesEvidenceProps {
+interface LatestInitiativesEvidenceProps {
   projection: LatestInitiativesPublicProjection;
+  emptyMessage: string;
 }
 
-export function LatestGlobalInitiativesEvidence({
+export function LatestInitiativesEvidence({
   projection,
-}: LatestGlobalInitiativesEvidenceProps) {
+  emptyMessage,
+}: LatestInitiativesEvidenceProps) {
   return (
     <div className="latest-global-initiatives">
       <p className="latest-global-initiatives__scope">
@@ -27,9 +29,7 @@ export function LatestGlobalInitiativesEvidence({
           ))}
         </ul>
       ) : (
-        <p className="latest-global-initiatives__empty">
-          No public initiatives are visible at world scope yet.
-        </p>
+        <p className="latest-global-initiatives__empty">{emptyMessage}</p>
       )}
     </div>
   );

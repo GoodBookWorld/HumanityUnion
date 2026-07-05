@@ -4,8 +4,7 @@ import {
   NATIONAL_PIPELINE_VISITOR_CONCLUSION,
   nationalPipelineContextIntroduction,
 } from "../content";
-import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
-import { ParticipationPipelineEvidence } from "../../global-experience/components/ParticipationPipelineEvidence";
+import { ExperienceBlockShell, ParticipationPipelineEvidence } from "../../public-experience";
 
 interface NationalParticipationPipelineSectionProps {
   projection: ParticipationPipelinePublicProjection;

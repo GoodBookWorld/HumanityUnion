@@ -1,8 +1,7 @@
 import type { ParticipationPublicStatisticsProjection } from "@hu/types";
 
 import { GLOBAL_STATISTICS_CONTENT } from "../content";
-import { ExperienceBlockShell } from "./ExperienceBlockShell";
-import { GlobalStatisticsEvidence } from "./GlobalStatisticsEvidence";
+import { ExperienceBlockShell, ParticipationStatisticsEvidence } from "../../public-experience";
 
 interface GlobalStatisticsSectionProps {
   projection: ParticipationPublicStatisticsProjection;
@@ -17,7 +16,7 @@ export function GlobalStatisticsSection({ projection }: GlobalStatisticsSectionP
       stage="Evidence"
       contextIntroduction={GLOBAL_STATISTICS_CONTENT.contextIntroduction}
     >
-      <GlobalStatisticsEvidence projection={projection} />
+      <ParticipationStatisticsEvidence projection={projection} />
     </ExperienceBlockShell>
   );
 }

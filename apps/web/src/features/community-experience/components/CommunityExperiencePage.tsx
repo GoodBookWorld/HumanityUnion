@@ -12,8 +12,7 @@ import { CommunityStatisticsSection } from "./CommunityStatisticsSection";
 import { FindYourCommunitySection } from "./FindYourCommunitySection";
 import { LatestCommunityInitiativesSection } from "./LatestCommunityInitiativesSection";
 import { RegistrationGatewayWorkspaceSection } from "./RegistrationGatewayWorkspaceSection";
-import { PublicExperienceFooter } from "../../global-experience/components/PublicExperienceFooter";
-import { PublicExperienceHeader } from "../../global-experience/components/PublicExperienceHeader";
+import { PublicExperienceFooter, PublicExperienceHeader } from "../../public-experience";
 
 interface CommunityExperiencePageProps {
   slug: string;
