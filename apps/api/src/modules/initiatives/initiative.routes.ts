@@ -1,5 +1,4 @@
 import { Router, type Request, type Response } from "express";
-import type { Initiative } from "@hu/types";
 
 import { authenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
@@ -11,15 +10,10 @@ import {
   publishInitiative,
   republishInitiative,
   saveInitiativeDraft,
+  updateManagedInitiative,
   updatePublishedInitiative,
 } from "./initiative.service.js";
-import {
-  createInitiative,
-  getInitiativeById,
-  listInitiatives,
-  updateInitiative,
-  type InitiativeUpdate,
-} from "./initiative.store.js";
+import { getInitiativeById, listInitiatives } from "./initiative.store.js";
 import {
   canExposePublicInitiativeProjection,
   toPublicInitiativeProjection,
@@ -30,20 +24,6 @@ import {
 } from "./initiative.validators.js";
 
 const initiativesRouter = Router();
-
-const IMMUTABLE_FIELDS = new Set(["initiativeId", "stewardId", "createdAt"]);
-
-const EDITABLE_FIELDS = new Set([
-  "title",
-  "description",
-  "status",
-  "lifecyclePhase",
-  "visibility",
-  "metadata",
-  "revisions",
-  "contributions",
-  "timeline",
-]);
 
 function createFailureResponse(message: string) {
   return {
@@ -68,6 +48,7 @@ function resolveErrorStatus(message: string): number {
     message.includes("Only draft initiatives") ||
     message.includes("Only published or projected") ||
     message.includes("already archived") ||
+    message.includes("Archived initiatives cannot be updated") ||
     message.includes("not allowed")
   ) {
     return 409;
@@ -86,12 +67,14 @@ function getInitiativeId(req: Request): string {
   return Array.isArray(initiativeId) ? (initiativeId[0] ?? "") : (initiativeId ?? "");
 }
 
+/** Public read — lists all initiatives (bootstrap operational view). */
 initiativesRouter.get("/", (_req, res) => {
   const initiatives = listInitiatives();
 
   res.json(createSuccessResponse(initiatives, "Initiatives loaded."));
 });
 
+/** Identity-scoped read — current participant initiatives only. */
 initiativesRouter.get("/mine", authenticationMiddleware, (req, res) => {
   const identity = resolveRequestIdentity(req);
   const initiatives = listMyInitiatives(identity);
@@ -99,6 +82,7 @@ initiativesRouter.get("/mine", authenticationMiddleware, (req, res) => {
   res.json(createSuccessResponse(initiatives, "My initiatives loaded."));
 });
 
+/** Canonical draft creation route. */
 initiativesRouter.post("/draft", authenticationMiddleware, (req, res) => {
   try {
     const identity = resolveRequestIdentity(req);
@@ -111,16 +95,25 @@ initiativesRouter.post("/draft", authenticationMiddleware, (req, res) => {
   }
 });
 
-initiativesRouter.post("/", (req, res) => {
-  const initiative = req.body as Initiative;
+/**
+ * Legacy create alias — delegates to canonical draft creation with RequestIdentity.
+ * Prefer POST /draft for new clients.
+ */
+initiativesRouter.post("/", authenticationMiddleware, (req, res) => {
+  try {
+    const identity = resolveRequestIdentity(req);
+    const input = validateCreateInitiativeDraftInput(req.body);
+    const created = createInitiativeDraft(identity, input);
 
-  const created = createInitiative(initiative);
-
-  res.status(201).json(createSuccessResponse(created, "Initiative created."));
+    res.status(201).json(createSuccessResponse(created, "Initiative draft created."));
+  } catch (error) {
+    handleServiceError(res, error);
+  }
 });
 
+/** Public read — single initiative record. */
 initiativesRouter.get("/:initiativeId", (req, res) => {
-  const initiative = getInitiativeById(req.params.initiativeId);
+  const initiative = getInitiativeById(getInitiativeId(req));
 
   if (!initiative) {
     res.status(404).json(createFailureResponse("Initiative not found."));
@@ -147,6 +140,22 @@ initiativesRouter.patch("/:initiativeId/published", authenticationMiddleware, (r
     const identity = resolveRequestIdentity(req);
     const input = validateSaveInitiativeDraftInput(req.body);
     const initiative = updatePublishedInitiative(identity, getInitiativeId(req), input);
+
+    res.json(createSuccessResponse(initiative, "Initiative updated."));
+  } catch (error) {
+    handleServiceError(res, error);
+  }
+});
+
+/**
+ * Legacy update alias — delegates to lifecycle-aware update with RequestIdentity.
+ * Prefer PATCH /:id/draft or PATCH /:id/published for explicit lifecycle intent.
+ */
+initiativesRouter.patch("/:initiativeId", authenticationMiddleware, (req, res) => {
+  try {
+    const identity = resolveRequestIdentity(req);
+    const input = validateSaveInitiativeDraftInput(req.body);
+    const initiative = updateManagedInitiative(identity, getInitiativeId(req), input);
 
     res.json(createSuccessResponse(initiative, "Initiative updated."));
   } catch (error) {
@@ -191,71 +200,9 @@ initiativesRouter.post("/:initiativeId/archive", authenticationMiddleware, (req,
   }
 });
 
-initiativesRouter.patch("/:initiativeId", (req, res) => {
-  const body = req.body as Record<string, unknown>;
-
-  for (const key of Object.keys(body)) {
-    if (IMMUTABLE_FIELDS.has(key)) {
-      res.status(400).json(createFailureResponse(`Field "${key}" cannot be modified.`));
-      return;
-    }
-
-    if (!EDITABLE_FIELDS.has(key)) {
-      res.status(400).json(createFailureResponse(`Field "${key}" cannot be modified.`));
-      return;
-    }
-  }
-
-  const update: InitiativeUpdate = {};
-
-  if (body.title !== undefined) {
-    update.title = body.title as InitiativeUpdate["title"];
-  }
-
-  if (body.description !== undefined) {
-    update.description = body.description as InitiativeUpdate["description"];
-  }
-
-  if (body.status !== undefined) {
-    update.status = body.status as InitiativeUpdate["status"];
-  }
-
-  if (body.lifecyclePhase !== undefined) {
-    update.lifecyclePhase = body.lifecyclePhase as InitiativeUpdate["lifecyclePhase"];
-  }
-
-  if (body.visibility !== undefined) {
-    update.visibility = body.visibility as InitiativeUpdate["visibility"];
-  }
-
-  if (body.metadata !== undefined) {
-    update.metadata = body.metadata as InitiativeUpdate["metadata"];
-  }
-
-  if (body.revisions !== undefined) {
-    update.revisions = body.revisions as InitiativeUpdate["revisions"];
-  }
-
-  if (body.contributions !== undefined) {
-    update.contributions = body.contributions as InitiativeUpdate["contributions"];
-  }
-
-  if (body.timeline !== undefined) {
-    update.timeline = body.timeline as InitiativeUpdate["timeline"];
-  }
-
-  const initiative = updateInitiative(req.params.initiativeId, update);
-
-  if (!initiative) {
-    res.status(404).json(createFailureResponse("Initiative not found."));
-    return;
-  }
-
-  res.json(createSuccessResponse(initiative, "Initiative updated."));
-});
-
+/** Public read — member-visible public projection when eligible. */
 initiativesRouter.get("/:initiativeId/public-projection", (req, res) => {
-  const initiative = getInitiativeById(req.params.initiativeId);
+  const initiative = getInitiativeById(getInitiativeId(req));
 
   if (!initiative) {
     res.status(404).json(createFailureResponse("Initiative not found."));

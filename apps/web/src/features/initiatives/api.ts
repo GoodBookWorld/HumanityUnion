@@ -116,13 +116,7 @@ export async function archiveInitiative(initiativeId: string): Promise<Initiativ
   });
 }
 
-/** @deprecated Use createInitiativeDraft for the lifecycle workflow. */
-export async function createInitiative(initiative: Initiative): Promise<Initiative> {
-  return apiRequest<Initiative>("/api/v1/initiatives", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(initiative),
-  });
+/** @deprecated Use createInitiativeDraft for the lifecycle workflow. Delegates to POST /draft. */
+export async function createInitiative(input: CreateInitiativeDraftInput): Promise<Initiative> {
+  return createInitiativeDraft(input);
 }

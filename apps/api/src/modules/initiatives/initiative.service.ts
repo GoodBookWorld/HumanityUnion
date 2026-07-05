@@ -351,6 +351,26 @@ export function republishInitiative(
   return republished;
 }
 
+export function updateManagedInitiative(
+  identity: RequestIdentity,
+  initiativeId: string,
+  input: SaveInitiativeDraftInput,
+): Initiative {
+  const initiative = getOwnedInitiative(initiativeId, identity);
+
+  switch (initiative.lifecyclePhase) {
+    case "draft":
+      return saveInitiativeDraft(identity, initiativeId, input);
+    case "published":
+    case "projected":
+      return updatePublishedInitiative(identity, initiativeId, input);
+    case "archived":
+      throw new Error("Archived initiatives cannot be updated.");
+    default:
+      throw new Error("Initiative update is not allowed from the current lifecycle phase.");
+  }
+}
+
 export function archiveInitiative(identity: RequestIdentity, initiativeId: string): Initiative {
   const initiative = getOwnedInitiative(initiativeId, identity);
 
