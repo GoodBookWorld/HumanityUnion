@@ -13,3 +13,11 @@ export async function fetchCommunityLatestInitiativesProjection(
     return null;
   }
 }
+
+export async function fetchPublicProjectionCommunitySlugs(): Promise<readonly string[]> {
+  try {
+    return await apiRequest<readonly string[]>("/api/v1/public/projections/communities");
+  } catch {
+    return [];
+  }
+}

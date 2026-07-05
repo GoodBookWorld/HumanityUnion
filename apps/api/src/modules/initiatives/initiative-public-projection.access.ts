@@ -1,7 +1,14 @@
 import type { Initiative, LatestInitiativesPublicProjection } from "@hu/types";
 
-import { getKnownInitiativeCommunity } from "./initiative-communities.js";
+import {
+  getKnownInitiativeCommunity,
+  KNOWN_INITIATIVE_COMMUNITIES,
+} from "./initiative-communities.js";
 import { listProjectedInitiativeCards } from "./initiative-projection.store.js";
+
+export function isInitiativeEligibleForPublicProjection(initiative: Initiative): boolean {
+  return initiative.lifecyclePhase === "projected" && initiative.visibility.policy === "public";
+}
 
 export function buildCommunityLatestInitiativesProjection(
   communitySlug: string,
@@ -14,10 +21,6 @@ export function buildCommunityLatestInitiativesProjection(
 
   const initiatives = listProjectedInitiativeCards(communitySlug);
 
-  if (initiatives.length === 0) {
-    return null;
-  }
-
   return {
     scope: "community",
     scopeLabel: community.name,
@@ -27,6 +30,6 @@ export function buildCommunityLatestInitiativesProjection(
   };
 }
 
-export function isInitiativeEligibleForPublicProjection(initiative: Initiative): boolean {
-  return initiative.lifecyclePhase === "projected" && initiative.visibility.policy === "public";
+export function listPublicProjectionCommunitySlugs(): readonly string[] {
+  return KNOWN_INITIATIVE_COMMUNITIES.map((community) => community.slug);
 }
