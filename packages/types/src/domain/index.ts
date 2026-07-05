@@ -99,6 +99,7 @@ export type {
   CommunityImpactOverviewPublicProjection,
   CommunityImpactOverviewSignal,
   CommunityPublicRecord,
+  CommunityRepresentativeVisual,
 } from "./public-community-experience.js";
 export type {
   PublicAnalysisSummaryProjection,

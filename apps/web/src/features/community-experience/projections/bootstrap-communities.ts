@@ -26,6 +26,7 @@ export const BOOTSTRAP_COMMUNITY_CATALOG: CommunityCatalogPublicProjection = {
       countryLabel: "Canada",
       initiativeCount: 1,
       communityHref: communityHref("nelson-community-garden"),
+      communityRouteStatus: "active",
     },
     {
       slug: "kootenay-lake-protection-society",
@@ -37,6 +38,7 @@ export const BOOTSTRAP_COMMUNITY_CATALOG: CommunityCatalogPublicProjection = {
       countryLabel: "Canada",
       initiativeCount: 1,
       communityHref: communityHref("kootenay-lake-protection-society"),
+      communityRouteStatus: "active",
     },
   ],
 };
@@ -50,6 +52,12 @@ const NELSON_COMMUNITY_GARDEN_PROJECTIONS: CommunityExperiencePublicProjections 
     activityArea: "Environment",
     regionLabel: "Central Kootenay",
     countryLabel: "Canada",
+    representativeVisual: {
+      kind: "placeholder",
+      initials: "NCG",
+      caption:
+        "Representative community visual placeholder — community imagery policy not yet available.",
+    },
     source: "bootstrap",
   },
   statistics: {
@@ -168,6 +176,12 @@ const KOOTENAY_LAKE_PROJECTIONS: CommunityExperiencePublicProjections = {
     activityArea: "Environment",
     regionLabel: "Central Kootenay",
     countryLabel: "Canada",
+    representativeVisual: {
+      kind: "placeholder",
+      initials: "KL",
+      caption:
+        "Representative community visual placeholder — community imagery policy not yet available.",
+    },
     source: "bootstrap",
   },
   statistics: {

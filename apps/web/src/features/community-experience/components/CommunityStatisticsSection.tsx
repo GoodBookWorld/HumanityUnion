@@ -1,6 +1,7 @@
 import type { ParticipationPublicStatisticsProjection } from "@hu/types";
 
 import {
+  COMMUNITY_STATISTICS_PUBLIC_NOTE,
   COMMUNITY_STATISTICS_VISITOR_CONCLUSION,
   communityStatisticsContextIntroduction,
 } from "../content";
@@ -26,6 +27,9 @@ export function CommunityStatisticsSection({
       visitorConclusion={COMMUNITY_STATISTICS_VISITOR_CONCLUSION}
     >
       <GlobalStatisticsEvidence projection={projection} />
+      <p className="community-statistics__public-note" role="note">
+        {COMMUNITY_STATISTICS_PUBLIC_NOTE}
+      </p>
     </ExperienceBlockShell>
   );
 }

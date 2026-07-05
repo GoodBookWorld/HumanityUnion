@@ -4,6 +4,7 @@ import type { CommunityIdentityPublicProjection } from "@hu/types";
 
 import { communityIdentityContextIntroduction } from "../content";
 import { ExperienceBlockShell } from "../../global-experience/components/ExperienceBlockShell";
+import { CommunityIdentityVisual } from "./CommunityIdentityVisual";
 
 interface CommunityIdentitySectionProps {
   identity: CommunityIdentityPublicProjection;
@@ -21,19 +22,30 @@ export function CommunityIdentitySection({ identity }: CommunityIdentitySectionP
       visitorConclusion="This community is a participant-created civic context — not an administrator-defined administrative unit."
     >
       <div className="community-identity">
-        <p className="community-identity__scope">
-          Community scope · {identity.regionLabel}, {identity.countryLabel}
-        </p>
-        <dl className="community-identity__details">
-          <div className="community-identity__detail">
-            <dt>Community Description</dt>
-            <dd>{identity.description}</dd>
+        <div className="community-identity__hero">
+          <CommunityIdentityVisual
+            communityName={identity.name}
+            activityArea={identity.activityArea}
+            visual={identity.representativeVisual}
+          />
+
+          <div className="community-identity__summary">
+            <p className="community-identity__scope">
+              Community scope · {identity.regionLabel}, {identity.countryLabel}
+            </p>
+            <dl className="community-identity__details">
+              <div className="community-identity__detail">
+                <dt>Community Description</dt>
+                <dd>{identity.description}</dd>
+              </div>
+              <div className="community-identity__detail">
+                <dt>Activity Area</dt>
+                <dd>{identity.activityArea}</dd>
+              </div>
+            </dl>
           </div>
-          <div className="community-identity__detail">
-            <dt>Activity Area</dt>
-            <dd>{identity.activityArea}</dd>
-          </div>
-        </dl>
+        </div>
+
         <p className="community-identity__ascent">
           <Link href="/">Return to World public square</Link>
         </p>

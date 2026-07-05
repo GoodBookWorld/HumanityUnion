@@ -35,6 +35,11 @@ export function CommunityImpactOverviewSection({
           ) : null}
         </p>
 
+        <p className="community-impact-overview__observable-note" role="note">
+          Signals describe publicly observable counts and stage presence — not subjective impact
+          judgments or community evaluations.
+        </p>
+
         <dl className="community-impact-overview__signals" aria-label="Observable outcome signals">
           {projection.signals.map((signal) => (
             <div key={signal.id} className="community-impact-overview__signal">

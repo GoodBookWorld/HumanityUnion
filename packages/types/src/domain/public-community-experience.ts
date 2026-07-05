@@ -1,6 +1,14 @@
 import type { LatestInitiativesPublicProjection } from "./public-latest-initiatives.js";
 import type { ParticipationPipelinePublicProjection } from "./public-participation-pipeline.js";
 import type { ParticipationPublicStatisticsProjection } from "./public-participation-statistics.js";
+import type { PublicExperienceRouteStatus } from "./public-latest-initiatives.js";
+
+export interface CommunityRepresentativeVisual {
+  kind: "placeholder" | "image";
+  caption: string;
+  initials: string;
+  imageHref?: string;
+}
 
 export interface CommunityPublicRecord {
   slug: string;
@@ -11,6 +19,7 @@ export interface CommunityPublicRecord {
   countryLabel: string;
   initiativeCount: number;
   communityHref: string;
+  communityRouteStatus: PublicExperienceRouteStatus;
 }
 
 export interface CommunityIdentityPublicProjection {
@@ -20,10 +29,9 @@ export interface CommunityIdentityPublicProjection {
   activityArea: string;
   regionLabel: string;
   countryLabel: string;
+  representativeVisual: CommunityRepresentativeVisual;
   source: "bootstrap" | "projection";
 }
-
-import type { PublicExperienceRouteStatus } from "./public-latest-initiatives.js";
 
 export interface CommunityImpactOverviewSignal {
   id: string;

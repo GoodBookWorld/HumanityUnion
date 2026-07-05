@@ -11,7 +11,7 @@ export function communityPipelineContextIntroduction(communityName: string): str
 }
 
 export function communityInitiativesContextIntroduction(communityName: string): string {
-  return `These are recent public initiatives associated with ${communityName} on Humanity Union. Each links to a public record of its civic path — you can read details without registering.`;
+  return `These are recent public initiatives associated with ${communityName} on Humanity Union. Active cards link to verifiable public records you may read without registering.`;
 }
 
 export function communityImpactContextIntroduction(communityName: string): string {
@@ -24,12 +24,14 @@ export const COMMUNITY_IMPACT_VISITOR_CONCLUSION =
 export const FIND_YOUR_COMMUNITY_CONTENT = {
   title: "Find Your Community",
   contextIntroduction:
-    "Communities on Humanity Union are created through civic participation. Search below finds participant-created communities by name and description — not a fixed administrative catalog.",
-  searchLabel: "Search participant-created communities",
+    "Communities on Humanity Union are created through civic participation — not assigned by administrators. Browse or search participant-created communities below.",
+  browseLabel: "Participant-created communities available to observe",
+  searchLabel: "Filter by community name or description",
   searchPlaceholder: "Search by community name or description",
   emptyResults:
     "No participant-created communities match your search. Try a different name or description.",
-  currentCommunityNote: "You are already viewing one community. Search below to discover others.",
+  currentCommunityNote:
+    "You are already viewing one community. Browse or search below to discover others created through participation.",
 } as const;
 
 export function registrationGatewayContextIntroduction(communityName: string): string {
@@ -55,6 +57,9 @@ export const REGISTRATION_GATEWAY_WORKSPACE_CONTENT = {
     "You may continue reading this community page or enter Workspace when you choose personal accountable participation.",
 } as const;
 
+export const COMMUNITY_STATISTICS_PUBLIC_NOTE =
+  "Public aggregate indicators only — no private participant identities and no operational database access.";
+
 export const COMMUNITY_STATISTICS_VISITOR_CONCLUSION =
   "These aggregates describe observable public activity — not community worth or organizational performance.";
 
@@ -62,10 +67,10 @@ export const COMMUNITY_PIPELINE_VISITOR_CONCLUSION =
   "Stage distribution shows how structured participation appears around this community — the same civic path used at broader scopes.";
 
 export const COMMUNITY_INITIATIVES_VISITOR_CONCLUSION =
-  "Each initiative links to verifiable public detail you may read without registering.";
+  "Cards with an active public record link to verifiable civic detail. Demonstration cards without public records are labeled and not linked.";
 
 export const FIND_YOUR_COMMUNITY_VISITOR_CONCLUSION =
-  "Search results show participant-created communities with public records — not an exhaustive administrator-maintained directory.";
+  "Listed communities are participant-created observation pages — not an exhaustive administrator-maintained directory.";
 
 export const REGISTRATION_VISITOR_CONCLUSION =
-  "Participation and Workspace entry remain optional after you have observed sufficient public context.";
+  "Registration and Workspace entry remain future capabilities. Public observation does not require an account.";

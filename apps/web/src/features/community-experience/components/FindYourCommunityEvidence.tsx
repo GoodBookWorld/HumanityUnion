@@ -16,31 +16,44 @@ function normalizeSearchQuery(query: string): string {
   return query.trim().toLowerCase();
 }
 
+function isActiveCommunityRoute(
+  community: CommunityCatalogPublicProjection["communities"][number],
+): boolean {
+  return community.communityRouteStatus === "active" && community.communityHref.length > 0;
+}
+
 export function FindYourCommunityEvidence({
   catalog,
   currentCommunitySlug,
 }: FindYourCommunityEvidenceProps) {
   const [query, setQuery] = useState("");
 
+  const availableCommunities = useMemo(
+    () => catalog.communities.filter(isActiveCommunityRoute),
+    [catalog.communities],
+  );
+
   const results = useMemo(() => {
     const normalizedQuery = normalizeSearchQuery(query);
 
     if (!normalizedQuery) {
-      return catalog.communities;
+      return availableCommunities;
     }
 
-    return catalog.communities.filter((community) => {
+    return availableCommunities.filter((community) => {
       const haystack =
-        `${community.name} ${community.description} ${community.activityArea}`.toLowerCase();
+        `${community.name} ${community.description} ${community.activityArea} ${community.regionLabel}`.toLowerCase();
       return haystack.includes(normalizedQuery);
     });
-  }, [catalog.communities, query]);
+  }, [availableCommunities, query]);
 
   return (
     <div className="find-your-community">
       <p className="find-your-community__note">
         {FIND_YOUR_COMMUNITY_CONTENT.currentCommunityNote}
       </p>
+
+      <p className="find-your-community__browse-label">{FIND_YOUR_COMMUNITY_CONTENT.browseLabel}</p>
 
       <label className="find-your-community__search" htmlFor="find-your-community-query">
         {FIND_YOUR_COMMUNITY_CONTENT.searchLabel}
@@ -77,10 +90,21 @@ export function FindYourCommunityEvidence({
                     <dd>{community.activityArea}</dd>
                   </div>
                   <div>
+                    <dt>Geographic context</dt>
+                    <dd>
+                      {community.regionLabel}, {community.countryLabel}
+                    </dd>
+                  </div>
+                  <div>
                     <dt>Public initiatives</dt>
                     <dd>{community.initiativeCount}</dd>
                   </div>
                 </dl>
+                {community.slug !== currentCommunitySlug ? (
+                  <p className="find-your-community__result-link">
+                    <Link href={community.communityHref}>Observe this community</Link>
+                  </p>
+                ) : null}
               </article>
             </li>
           ))}
@@ -93,7 +117,8 @@ export function FindYourCommunityEvidence({
 
       {catalog.source === "bootstrap" ? (
         <p className="find-your-community__source" role="note">
-          Bootstrap demonstration data
+          Bootstrap demonstration data — {availableCommunities.length} participant-created communit
+          {availableCommunities.length === 1 ? "y" : "ies"} available to observe.
         </p>
       ) : null}
     </div>
