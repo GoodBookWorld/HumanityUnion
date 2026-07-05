@@ -18,6 +18,12 @@ import {
   publicInitiativeCollaborativeAnalysesByInitiativeRouter,
 } from "./modules/initiative-collaborative-analysis/index.js";
 import {
+  initiativeImprovementProposalRouter,
+  publicInitiativeImprovementProposalRouter,
+  publicInitiativeImprovementProposalsByAnalysisRouter,
+  publicInitiativeImprovementProposalsByInitiativeRouter,
+} from "./modules/initiative-improvement-proposal/index.js";
+import {
   implementationCommitmentRouter,
   publicImplementationCommitmentRouter,
 } from "./modules/implementation-commitment/index.js";
@@ -46,6 +52,7 @@ app.use("/api/v1/initiatives", initiativeCollaborativeAnalysisRouter);
 app.use("/api/v1/initiatives", initiativeCollectiveDecisionRouter);
 app.use("/api/v1/initiatives", initiativesRouter);
 app.use("/api/v1/initiative-analyses", initiativeCollaborativeAnalysisLifecycleRouter);
+app.use("/api/v1/improvement-proposals", initiativeImprovementProposalRouter);
 app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);
 app.use("/api/v1/collective-decisions", collectiveDecisionRouter);
 app.use("/api/v1/petitions", petitionRouter);
@@ -57,7 +64,10 @@ app.use("/api/v1/public/petitions", publicPetitionRouter);
 app.use("/api/v1/public/collective-decisions", publicCollectiveDecisionRouter);
 app.use("/api/v1/public/collaborative-analysis", publicCollaborativeAnalysisRouter);
 app.use("/api/v1/public/initiative-analyses", publicInitiativeCollaborativeAnalysisRouter);
+app.use("/api/v1/public/initiative-analyses", publicInitiativeImprovementProposalsByAnalysisRouter);
+app.use("/api/v1/public/improvement-proposals", publicInitiativeImprovementProposalRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeCollaborativeAnalysesByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicInitiativeImprovementProposalsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);
 app.use("/api/v1/public/projections", publicLatestInitiativesRouter);
 app.use("/api/v1/participation", participationRouter);

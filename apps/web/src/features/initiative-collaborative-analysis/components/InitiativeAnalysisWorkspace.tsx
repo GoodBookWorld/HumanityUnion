@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createInitiativeAnalysisDraft, listMyInitiativeAnalysesForInitiative } from "../api";
 
 import { InitiativeAnalysisEditor } from "./InitiativeAnalysisEditor";
+import { InitiativeImprovementProposalWorkspace } from "../../initiative-improvement-proposal/components/InitiativeImprovementProposalWorkspace";
 
 import "./initiative-analysis-workspace.css";
 
@@ -145,7 +146,10 @@ export function InitiativeAnalysisWorkspace({ initiative }: InitiativeAnalysisWo
       ) : null}
 
       {selectedAnalysis ? (
-        <InitiativeAnalysisEditor analysis={selectedAnalysis} onUpdated={handleUpdated} />
+        <>
+          <InitiativeAnalysisEditor analysis={selectedAnalysis} onUpdated={handleUpdated} />
+          <InitiativeImprovementProposalWorkspace analysis={selectedAnalysis} />
+        </>
       ) : null}
 
       {message ? <p className="initiative-analysis-workspace__note">{message}</p> : null}

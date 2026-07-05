@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   "Lifecycle Timeline",
   "Manage Initiative",
   "Collaborative Analysis",
+  "Improvement Proposal Decisions",
 ];
 
 export default async function InitiativesPage() {

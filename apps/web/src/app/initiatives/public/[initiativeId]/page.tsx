@@ -6,6 +6,7 @@ import { getCollaborativeAnalysisByInitiativeId } from "../../../../features/col
 import { getCollectiveDecisionByInitiativeId } from "../../../../features/collective-decision/api";
 import { getPublicInitiative } from "../../../../features/initiatives/api";
 import { listPublicInitiativeAnalyses } from "../../../../features/initiative-collaborative-analysis/api";
+import { listPublicInitiativeImprovementProposals } from "../../../../features/initiative-improvement-proposal/api";
 import { getPetitionByInitiativeId } from "../../../../features/petition/api";
 
 import "./public-initiative-page.css";
@@ -35,6 +36,9 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   let linkedDecisionId: string | null = null;
   let linkedPetitionId: string | null = null;
   let publishedAnalyses: Awaited<ReturnType<typeof listPublicInitiativeAnalyses>> = [];
+  let improvementProposals: Awaited<
+    ReturnType<typeof listPublicInitiativeImprovementProposals>
+  > | null = null;
 
   try {
     initiative = await getPublicInitiative(initiativeId);
@@ -43,6 +47,12 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   }
 
   if (initiative) {
+    try {
+      improvementProposals = await listPublicInitiativeImprovementProposals(initiativeId);
+    } catch {
+      improvementProposals = null;
+    }
+
     try {
       publishedAnalyses = await listPublicInitiativeAnalyses(initiativeId);
     } catch {
@@ -114,6 +124,44 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
                 <p>{analysis.summary}</p>
                 <p>
                   {analysis.authorDisplayName} · {formatCreatedDate(analysis.publishedAt)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      ) : null}
+
+      {improvementProposals && improvementProposals.proposals.length > 0 ? (
+        <ProfileSection title="Improvement Proposals">
+          <ProfileField
+            label="Submitted"
+            value={String(improvementProposals.metrics.submittedCount)}
+          />
+          <ProfileField
+            label="Accepted"
+            value={String(improvementProposals.metrics.acceptedCount)}
+          />
+          <ProfileField
+            label="Partially Accepted"
+            value={String(improvementProposals.metrics.partiallyAcceptedCount)}
+          />
+          <ProfileField
+            label="Declined"
+            value={String(improvementProposals.metrics.declinedCount)}
+          />
+          <ul>
+            {improvementProposals.proposals.map((proposal) => (
+              <li key={proposal.proposalId}>
+                <Link
+                  href={`/improvement-proposals/public/${encodeURIComponent(proposal.proposalId)}`}
+                >
+                  {proposal.targetSection}: {proposal.proposedChange}
+                </Link>
+                <p>
+                  {proposal.status.replace("_", " ")} · {proposal.authorDisplayName}
+                  {proposal.decidedAt
+                    ? ` · ${formatCreatedDate(proposal.decidedAt)}`
+                    : ` · ${formatCreatedDate(proposal.updatedAt)}`}
                 </p>
               </li>
             ))}

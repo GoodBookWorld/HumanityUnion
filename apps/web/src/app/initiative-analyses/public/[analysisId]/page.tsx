@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { getPublicInitiativeAnalysis } from "../../../../features/initiative-collaborative-analysis/api";
+import { listPublicImprovementProposalsForAnalysis } from "../../../../features/initiative-improvement-proposal/api";
 
 import "./public-initiative-analysis-page.css";
 
@@ -25,11 +26,20 @@ export default async function PublicInitiativeAnalysisPage({
 }: PublicInitiativeAnalysisPageProps) {
   const { analysisId } = await params;
   let analysis = null;
+  let relatedProposals: Awaited<ReturnType<typeof listPublicImprovementProposalsForAnalysis>> = [];
 
   try {
     analysis = await getPublicInitiativeAnalysis(analysisId);
   } catch {
     analysis = null;
+  }
+
+  if (analysis) {
+    try {
+      relatedProposals = await listPublicImprovementProposalsForAnalysis(analysisId);
+    } catch {
+      relatedProposals = [];
+    }
   }
 
   if (!analysis) {
@@ -60,6 +70,28 @@ export default async function PublicInitiativeAnalysisPage({
         <ProfileField label="Author" value={analysis.authorDisplayName} />
         <ProfileField label="Published" value={formatPublishedDate(analysis.publishedAt)} />
       </ProfileSection>
+
+      {relatedProposals.length > 0 ? (
+        <ProfileSection title="Improvement Proposals">
+          <ul>
+            {relatedProposals.map((proposal) => (
+              <li key={proposal.proposalId}>
+                <Link
+                  href={`/improvement-proposals/public/${encodeURIComponent(proposal.proposalId)}`}
+                >
+                  {proposal.targetSection}: {proposal.proposedChange}
+                </Link>
+                <p>
+                  {proposal.status.replace("_", " ")} · {proposal.authorDisplayName}
+                  {proposal.decidedAt
+                    ? ` · ${formatPublishedDate(proposal.decidedAt)}`
+                    : ` · ${formatPublishedDate(proposal.updatedAt)}`}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      ) : null}
 
       <nav className="public-initiative-analysis-page__related" aria-label="Related public records">
         <Link href={`/initiatives/public/${encodeURIComponent(analysis.initiativeId)}`}>

@@ -16,6 +16,7 @@ import { ViewCollaborativeAnalysisLink } from "./ViewCollaborativeAnalysisLink";
 import { ViewCollectiveDecisionLink } from "../../collective-decision/components/ViewCollectiveDecisionLink";
 import { ViewPetitionLink } from "../../petition/components/ViewPetitionLink";
 import { InitiativeAnalysisWorkspace } from "../../initiative-collaborative-analysis/components/InitiativeAnalysisWorkspace";
+import { InitiativeImprovementProposalStewardPanel } from "../../initiative-improvement-proposal/components/InitiativeImprovementProposalStewardPanel";
 
 interface InitiativeWorkspaceProps {
   initialInitiatives: Initiative[];
@@ -117,6 +118,12 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
       {selectedInitiative ? (
         <ProfileSection title="Collaborative Analysis">
           <InitiativeAnalysisWorkspace initiative={selectedInitiative} />
+        </ProfileSection>
+      ) : null}
+
+      {selectedInitiative ? (
+        <ProfileSection title="Improvement Proposal Decisions">
+          <InitiativeImprovementProposalStewardPanel initiative={selectedInitiative} />
         </ProfileSection>
       ) : null}
     </>

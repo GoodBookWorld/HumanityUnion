@@ -1,0 +1,29 @@
+.public-improvement-proposal-page {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+.public-improvement-proposal-page__header {
+  margin-bottom: 1.5rem;
+}
+
+.public-improvement-proposal-page__title {
+  margin: 0 0 0.35rem;
+}
+
+.public-improvement-proposal-page__subtitle {
+  margin: 0;
+  color: #4a5568;
+}
+
+.public-improvement-proposal-page__back {
+  margin-top: 2rem;
+}
+
+.public-improvement-proposal-page__related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
