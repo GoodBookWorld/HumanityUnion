@@ -1,6 +1,24 @@
-import type { LatestInitiativeCardProjection } from "@hu/types";
+import type { Initiative, LatestInitiativeCardProjection } from "@hu/types";
+
+import { isInitiativeEligibleForPublicProjection } from "./initiative-public-projection.access.js";
+import { toLatestInitiativeCardProjection } from "./initiative-latest-initiatives.projection.js";
 
 const projectedInitiativesByCommunity = new Map<string, LatestInitiativeCardProjection[]>();
+
+export function rebuildProjectedInitiativeCards(initiatives: Initiative[]): void {
+  projectedInitiativesByCommunity.clear();
+
+  const projectedInitiatives = initiatives
+    .filter(isInitiativeEligibleForPublicProjection)
+    .sort(
+      (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+    );
+
+  projectedInitiatives.forEach((initiative, index) => {
+    const card = toLatestInitiativeCardProjection(initiative, index);
+    upsertProjectedInitiativeCard(initiative.metadata.communitySlug, card);
+  });
+}
 
 export function upsertProjectedInitiativeCard(
   communitySlug: string,

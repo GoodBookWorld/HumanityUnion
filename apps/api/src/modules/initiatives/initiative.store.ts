@@ -11,6 +11,9 @@ import type {
   TimelineEvent,
 } from "@hu/types";
 
+import { rebuildProjectedInitiativeCards } from "./initiative-projection.store.js";
+import { resolveInitiativePersistenceAdapter } from "./persistence/resolve-initiative-persistence.js";
+import { snapshotFromInitiatives } from "./persistence/initiative-persistence.types.js";
 import { sampleInitiative } from "./initiative.sample.js";
 
 export interface InitiativeUpdate {
@@ -25,9 +28,41 @@ export interface InitiativeUpdate {
   timeline?: TimelineEvent[];
 }
 
-const initiatives = new Map<string, Initiative>([
-  [sampleInitiative.initiativeId, structuredClone(sampleInitiative)],
-]);
+const persistence = resolveInitiativePersistenceAdapter();
+
+function ensureBootstrapSeed(initiatives: Map<string, Initiative>): boolean {
+  if (initiatives.has(sampleInitiative.initiativeId)) {
+    return false;
+  }
+
+  initiatives.set(sampleInitiative.initiativeId, structuredClone(sampleInitiative));
+  return true;
+}
+
+function loadInitiativesMap(): Map<string, Initiative> {
+  const snapshot = persistence.load();
+  const initiatives = new Map<string, Initiative>(
+    Object.entries(snapshot.initiatives).map(([initiativeId, initiative]) => [
+      initiativeId,
+      structuredClone(initiative),
+    ]),
+  );
+  const seededBootstrap = ensureBootstrapSeed(initiatives);
+
+  if (seededBootstrap) {
+    persistInitiativesMap(initiatives);
+  }
+
+  return initiatives;
+}
+
+function persistInitiativesMap(initiatives: Map<string, Initiative>): void {
+  persistence.save(snapshotFromInitiatives(initiatives));
+}
+
+const initiatives = loadInitiativesMap();
+
+rebuildProjectedInitiativeCards(Array.from(initiatives.values()));
 
 export function getInitiativeById(initiativeId: string): Initiative | null {
   const initiative = initiatives.get(initiativeId);
@@ -45,6 +80,8 @@ export function listInitiativesBySteward(stewardId: string): Initiative[] {
 
 export function createInitiative(initiative: Initiative): Initiative {
   initiatives.set(initiative.initiativeId, structuredClone(initiative));
+  persistInitiativesMap(initiatives);
+  rebuildProjectedInitiativeCards(Array.from(initiatives.values()));
 
   return structuredClone(initiative);
 }
@@ -96,6 +133,9 @@ export function updateInitiative(
   }
 
   initiative.updatedAt = new Date().toISOString();
+
+  persistInitiativesMap(initiatives);
+  rebuildProjectedInitiativeCards(Array.from(initiatives.values()));
 
   return structuredClone(initiative);
 }

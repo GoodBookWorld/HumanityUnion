@@ -35,3 +35,7 @@ temp/
 
 # MongoDB local data
 data/
+
+# Capability 02 initiative runtime persistence (local dev)
+apps/api/.runtime/
+apps/api/src/.runtime/
