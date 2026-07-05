@@ -1,7 +1,14 @@
 import type { Initiative, TimelineEvent } from "@hu/types";
 import { canTransitionInitiativeLifecycle } from "@hu/types";
 
-import { createInitiative, getInitiativeById, updateInitiative } from "./initiative.store.js";
+import type { RequestIdentity } from "./identity/request-identity.types.js";
+import { assertInitiativeOwnership } from "./initiative-ownership.js";
+import {
+  createInitiative,
+  getInitiativeById,
+  listInitiativesBySteward,
+  updateInitiative,
+} from "./initiative.store.js";
 import { toLatestInitiativeCardProjection } from "./initiative-latest-initiatives.projection.js";
 import {
   removeProjectedInitiativeCard,
@@ -11,7 +18,6 @@ import {
 import {
   type CreateInitiativeDraftInput,
   type SaveInitiativeDraftInput,
-  getBootstrapStewardId,
   validateInitiativeForPublication,
 } from "./initiative.validators.js";
 
@@ -22,6 +28,18 @@ function createTimelineEvent(eventType: string, metadata: Record<string, unknown
     timestamp: new Date().toISOString(),
     metadata,
   };
+}
+
+function getOwnedInitiative(initiativeId: string, identity: RequestIdentity): Initiative {
+  const initiative = getInitiativeById(initiativeId);
+
+  if (!initiative) {
+    throw new Error("Initiative not found.");
+  }
+
+  assertInitiativeOwnership(initiative, identity);
+
+  return initiative;
 }
 
 function assertDraftLifecycle(initiative: Initiative): void {
@@ -71,13 +89,20 @@ function removeInitiativeFromPublicProjection(initiative: Initiative): void {
   removeProjectedInitiativeCardFromAllCommunities(initiative.initiativeId);
 }
 
-export function createInitiativeDraft(input: CreateInitiativeDraftInput): Initiative {
+export function listMyInitiatives(identity: RequestIdentity): Initiative[] {
+  return listInitiativesBySteward(identity.participantId);
+}
+
+export function createInitiativeDraft(
+  identity: RequestIdentity,
+  input: CreateInitiativeDraftInput,
+): Initiative {
   const now = new Date().toISOString();
   const initiativeId = `initiative-${Date.now()}`;
 
   const initiative: Initiative = {
     initiativeId,
-    stewardId: getBootstrapStewardId(),
+    stewardId: identity.participantId,
     createdAt: now,
     updatedAt: now,
     title: input.title,
@@ -109,14 +134,11 @@ export function createInitiativeDraft(input: CreateInitiativeDraftInput): Initia
 }
 
 export function saveInitiativeDraft(
+  identity: RequestIdentity,
   initiativeId: string,
   input: SaveInitiativeDraftInput,
 ): Initiative {
-  const initiative = getInitiativeById(initiativeId);
-
-  if (!initiative) {
-    throw new Error("Initiative not found.");
-  }
+  const initiative = getOwnedInitiative(initiativeId, identity);
 
   assertDraftLifecycle(initiative);
 
@@ -144,14 +166,11 @@ export function saveInitiativeDraft(
 }
 
 export function updatePublishedInitiative(
+  identity: RequestIdentity,
   initiativeId: string,
   input: SaveInitiativeDraftInput,
 ): Initiative {
-  const initiative = getInitiativeById(initiativeId);
-
-  if (!initiative) {
-    throw new Error("Initiative not found.");
-  }
+  const initiative = getOwnedInitiative(initiativeId, identity);
 
   assertEditablePublishedLifecycle(initiative);
 
@@ -180,12 +199,8 @@ export function updatePublishedInitiative(
   return updated;
 }
 
-export function publishInitiative(initiativeId: string): Initiative {
-  const initiative = getInitiativeById(initiativeId);
-
-  if (!initiative) {
-    throw new Error("Initiative not found.");
-  }
+export function publishInitiative(identity: RequestIdentity, initiativeId: string): Initiative {
+  const initiative = getOwnedInitiative(initiativeId, identity);
 
   assertDraftLifecycle(initiative);
   validateInitiativeForPublication(initiative);
@@ -243,14 +258,11 @@ export function publishInitiative(initiativeId: string): Initiative {
 }
 
 export function republishInitiative(
+  identity: RequestIdentity,
   initiativeId: string,
   input: SaveInitiativeDraftInput = {},
 ): Initiative {
-  const initiative = getInitiativeById(initiativeId);
-
-  if (!initiative) {
-    throw new Error("Initiative not found.");
-  }
+  const initiative = getOwnedInitiative(initiativeId, identity);
 
   assertEditablePublishedLifecycle(initiative);
 
@@ -339,12 +351,8 @@ export function republishInitiative(
   return republished;
 }
 
-export function archiveInitiative(initiativeId: string): Initiative {
-  const initiative = getInitiativeById(initiativeId);
-
-  if (!initiative) {
-    throw new Error("Initiative not found.");
-  }
+export function archiveInitiative(identity: RequestIdentity, initiativeId: string): Initiative {
+  const initiative = getOwnedInitiative(initiativeId, identity);
 
   assertArchivableLifecycle(initiative);
 
@@ -373,5 +381,3 @@ export function archiveInitiative(initiativeId: string): Initiative {
 
   return archived;
 }
-
-export { getBootstrapStewardId } from "./initiative.validators.js";

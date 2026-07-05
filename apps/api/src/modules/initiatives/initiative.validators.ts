@@ -16,8 +16,6 @@ export interface SaveInitiativeDraftInput {
   activityArea?: string;
 }
 
-const BOOTSTRAP_STEWARD_ID = "member-bootstrap-001";
-
 function normalizeText(value: unknown, fieldName: string): string {
   if (typeof value !== "string") {
     throw new Error(`${fieldName} is required.`);
@@ -106,8 +104,4 @@ export function validateInitiativeForPublication(initiative: Initiative): void {
   if (initiative.visibility.policy !== "public") {
     throw new Error("Visibility must be Public before publishing.");
   }
-}
-
-export function getBootstrapStewardId(): string {
-  return BOOTSTRAP_STEWARD_ID;
 }

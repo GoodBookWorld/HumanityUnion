@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { getInitiativeById } from "../api";
-import { BOOTSTRAP_STEWARD_ID } from "../initiative-lifecycle-labels";
 
 import { InitiativeDraftEditor } from "./InitiativeDraftEditor";
 import { InitiativeLifecycleTimeline } from "./InitiativeLifecycleTimeline";
@@ -21,15 +20,10 @@ interface InitiativeWorkspaceProps {
   initialInitiatives: Initiative[];
 }
 
-function isMyInitiative(initiative: Initiative): boolean {
-  return initiative.stewardId === BOOTSTRAP_STEWARD_ID;
-}
-
 export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceProps) {
-  const myInitiatives = initialInitiatives.filter(isMyInitiative);
-  const [initiatives, setInitiatives] = useState(myInitiatives);
+  const [initiatives, setInitiatives] = useState(initialInitiatives);
   const [selectedId, setSelectedId] = useState<string | null>(
-    myInitiatives[0]?.initiativeId ?? null,
+    initialInitiatives[0]?.initiativeId ?? null,
   );
   const [selectedInitiative, setSelectedInitiative] = useState<Initiative | null>(null);
   const [loadingOverview, setLoadingOverview] = useState(false);

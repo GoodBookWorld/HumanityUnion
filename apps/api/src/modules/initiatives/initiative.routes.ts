@@ -1,11 +1,13 @@
-import { Router, type Response } from "express";
+import { Router, type Request, type Response } from "express";
 import type { Initiative } from "@hu/types";
 
+import { authenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { resolveRequestIdentity } from "./identity/resolve-request-identity.js";
 import {
   archiveInitiative,
   createInitiativeDraft,
-  getBootstrapStewardId,
+  listMyInitiatives,
   publishInitiative,
   republishInitiative,
   saveInitiativeDraft,
@@ -15,7 +17,6 @@ import {
   createInitiative,
   getInitiativeById,
   listInitiatives,
-  listInitiativesBySteward,
   updateInitiative,
   type InitiativeUpdate,
 } from "./initiative.store.js";
@@ -59,6 +60,10 @@ function resolveErrorStatus(message: string): number {
     return 404;
   }
 
+  if (message.includes("do not have access")) {
+    return 403;
+  }
+
   if (
     message.includes("Only draft initiatives") ||
     message.includes("Only published or projected") ||
@@ -76,22 +81,29 @@ function handleServiceError(res: Response, error: unknown): void {
   res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
 }
 
+function getInitiativeId(req: Request): string {
+  const initiativeId = req.params.initiativeId;
+  return Array.isArray(initiativeId) ? (initiativeId[0] ?? "") : (initiativeId ?? "");
+}
+
 initiativesRouter.get("/", (_req, res) => {
   const initiatives = listInitiatives();
 
   res.json(createSuccessResponse(initiatives, "Initiatives loaded."));
 });
 
-initiativesRouter.get("/mine", (_req, res) => {
-  const initiatives = listInitiativesBySteward(getBootstrapStewardId());
+initiativesRouter.get("/mine", authenticationMiddleware, (req, res) => {
+  const identity = resolveRequestIdentity(req);
+  const initiatives = listMyInitiatives(identity);
 
   res.json(createSuccessResponse(initiatives, "My initiatives loaded."));
 });
 
-initiativesRouter.post("/draft", (req, res) => {
+initiativesRouter.post("/draft", authenticationMiddleware, (req, res) => {
   try {
+    const identity = resolveRequestIdentity(req);
     const input = validateCreateInitiativeDraftInput(req.body);
-    const created = createInitiativeDraft(input);
+    const created = createInitiativeDraft(identity, input);
 
     res.status(201).json(createSuccessResponse(created, "Initiative draft created."));
   } catch (error) {
@@ -118,10 +130,11 @@ initiativesRouter.get("/:initiativeId", (req, res) => {
   res.json(createSuccessResponse(initiative, "Initiative loaded."));
 });
 
-initiativesRouter.patch("/:initiativeId/draft", (req, res) => {
+initiativesRouter.patch("/:initiativeId/draft", authenticationMiddleware, (req, res) => {
   try {
+    const identity = resolveRequestIdentity(req);
     const input = validateSaveInitiativeDraftInput(req.body);
-    const initiative = saveInitiativeDraft(req.params.initiativeId, input);
+    const initiative = saveInitiativeDraft(identity, getInitiativeId(req), input);
 
     res.json(createSuccessResponse(initiative, "Initiative draft saved."));
   } catch (error) {
@@ -129,10 +142,11 @@ initiativesRouter.patch("/:initiativeId/draft", (req, res) => {
   }
 });
 
-initiativesRouter.patch("/:initiativeId/published", (req, res) => {
+initiativesRouter.patch("/:initiativeId/published", authenticationMiddleware, (req, res) => {
   try {
+    const identity = resolveRequestIdentity(req);
     const input = validateSaveInitiativeDraftInput(req.body);
-    const initiative = updatePublishedInitiative(req.params.initiativeId, input);
+    const initiative = updatePublishedInitiative(identity, getInitiativeId(req), input);
 
     res.json(createSuccessResponse(initiative, "Initiative updated."));
   } catch (error) {
@@ -140,9 +154,10 @@ initiativesRouter.patch("/:initiativeId/published", (req, res) => {
   }
 });
 
-initiativesRouter.post("/:initiativeId/publish", (req, res) => {
+initiativesRouter.post("/:initiativeId/publish", authenticationMiddleware, (req, res) => {
   try {
-    const initiative = publishInitiative(req.params.initiativeId);
+    const identity = resolveRequestIdentity(req);
+    const initiative = publishInitiative(identity, getInitiativeId(req));
 
     res.json(createSuccessResponse(initiative, "Initiative published and projected."));
   } catch (error) {
@@ -150,13 +165,14 @@ initiativesRouter.post("/:initiativeId/publish", (req, res) => {
   }
 });
 
-initiativesRouter.post("/:initiativeId/republish", (req, res) => {
+initiativesRouter.post("/:initiativeId/republish", authenticationMiddleware, (req, res) => {
   try {
+    const identity = resolveRequestIdentity(req);
     const input =
       req.body && typeof req.body === "object" && Object.keys(req.body).length > 0
         ? validateSaveInitiativeDraftInput(req.body)
         : {};
-    const initiative = republishInitiative(req.params.initiativeId, input);
+    const initiative = republishInitiative(identity, getInitiativeId(req), input);
 
     res.json(createSuccessResponse(initiative, "Initiative republished."));
   } catch (error) {
@@ -164,9 +180,10 @@ initiativesRouter.post("/:initiativeId/republish", (req, res) => {
   }
 });
 
-initiativesRouter.post("/:initiativeId/archive", (req, res) => {
+initiativesRouter.post("/:initiativeId/archive", authenticationMiddleware, (req, res) => {
   try {
-    const initiative = archiveInitiative(req.params.initiativeId);
+    const identity = resolveRequestIdentity(req);
+    const initiative = archiveInitiative(identity, getInitiativeId(req));
 
     res.json(createSuccessResponse(initiative, "Initiative archived."));
   } catch (error) {

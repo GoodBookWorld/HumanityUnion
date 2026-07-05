@@ -27,8 +27,6 @@ export const MY_INITIATIVE_SECTIONS: readonly {
   { id: "archived", title: "My Archived" },
 ];
 
-export const BOOTSTRAP_STEWARD_ID = "member-bootstrap-001";
-
 export function groupInitiativesByLifecyclePhase(
   initiatives: Initiative[],
 ): Record<InitiativeLifecyclePhase, Initiative[]> {
