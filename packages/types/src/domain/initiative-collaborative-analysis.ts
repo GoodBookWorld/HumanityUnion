@@ -17,6 +17,8 @@ export interface InitiativeCollaborativeAnalysis {
   suggestedImprovements: string;
   references: string;
   status: InitiativeCollaborativeAnalysisStatus;
+  /** Initiative version active when this analysis was created. */
+  initiativeVersion: number;
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;

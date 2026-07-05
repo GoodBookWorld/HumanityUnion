@@ -14,4 +14,5 @@ export interface PublicInitiativeProjection {
   metadata: InitiativeMetadata;
   stewardDisplayName: string;
   createdAt: string;
+  currentVersion: number;
 }

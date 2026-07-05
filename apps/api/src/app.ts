@@ -24,6 +24,10 @@ import {
   publicInitiativeImprovementProposalsByInitiativeRouter,
 } from "./modules/initiative-improvement-proposal/index.js";
 import {
+  initiativeVersionRevisionRouter,
+  publicInitiativeVersionRevisionRouter,
+} from "./modules/initiative-version-revision/index.js";
+import {
   implementationCommitmentRouter,
   publicImplementationCommitmentRouter,
 } from "./modules/implementation-commitment/index.js";
@@ -53,6 +57,7 @@ app.use("/api/v1/initiatives", initiativeCollectiveDecisionRouter);
 app.use("/api/v1/initiatives", initiativesRouter);
 app.use("/api/v1/initiative-analyses", initiativeCollaborativeAnalysisLifecycleRouter);
 app.use("/api/v1/improvement-proposals", initiativeImprovementProposalRouter);
+app.use("/api/v1/initiative-revisions", initiativeVersionRevisionRouter);
 app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);
 app.use("/api/v1/collective-decisions", collectiveDecisionRouter);
 app.use("/api/v1/petitions", petitionRouter);
@@ -68,6 +73,7 @@ app.use("/api/v1/public/initiative-analyses", publicInitiativeImprovementProposa
 app.use("/api/v1/public/improvement-proposals", publicInitiativeImprovementProposalRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeCollaborativeAnalysesByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeImprovementProposalsByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicInitiativeVersionRevisionRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);
 app.use("/api/v1/public/projections", publicLatestInitiativesRouter);
 app.use("/api/v1/participation", participationRouter);

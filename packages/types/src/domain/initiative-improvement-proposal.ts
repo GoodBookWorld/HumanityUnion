@@ -22,6 +22,9 @@ export interface InitiativeImprovementProposal {
   expectedImprovement: string;
   references: string;
   status: InitiativeImprovementProposalStatus;
+  /** Set when a proposal is included in a published initiative revision. */
+  implementedInRevisionId?: string;
+  implementedInVersion?: number;
   createdAt: string;
   updatedAt: string;
   decidedAt?: string;

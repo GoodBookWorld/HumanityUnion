@@ -54,6 +54,7 @@ export function toPublicInitiativeImprovementProposalProjection(
     updatedAt: proposal.updatedAt,
     decidedAt: proposal.decidedAt,
     decisionNote: proposal.decisionNote,
+    implementedInVersion: proposal.implementedInVersion ?? null,
   };
 }
 
@@ -68,6 +69,7 @@ export function toPublicInitiativeImprovementProposalListItem(
     authorDisplayName: resolveAuthorDisplayName(proposal.authorId),
     updatedAt: proposal.updatedAt,
     decidedAt: proposal.decidedAt,
+    implementedInVersion: proposal.implementedInVersion ?? null,
   };
 }
 

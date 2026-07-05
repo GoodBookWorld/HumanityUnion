@@ -95,6 +95,13 @@ export type {
   InitiativeImprovementProposalId,
   InitiativeImprovementProposalStatus,
 } from "./initiative-improvement-proposal.js";
+export type {
+  InitiativeRevisionDraft,
+  InitiativeRevisionDraftContext,
+  InitiativeRevisionEligibleProposal,
+  InitiativeVersionRevision,
+  InitiativeVersionRevisionId,
+} from "./initiative-version-revision.js";
 export type { MemberPublicProjection } from "./member-public-projection.js";
 export type {
   LatestInitiativeCardProjection,
@@ -112,6 +119,12 @@ export type {
   PublicInitiativeImprovementProposalListItem,
   PublicInitiativeImprovementProposalProjection,
 } from "./public-initiative-improvement-proposal.js";
+export type {
+  InitiativeRevisionMetrics,
+  PublicInitiativeVersionRevisionListItem,
+  PublicInitiativeVersionRevisionProjection,
+  PublicInitiativeWithVersionHistory,
+} from "./public-initiative-version-revision.js";
 export type {
   ParticipationPipelinePublicProjection,
   ParticipationPipelineStageCount,

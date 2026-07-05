@@ -13,6 +13,8 @@ export interface InitiativeImprovementProposalUpdate {
   status?: InitiativeImprovementProposal["status"];
   decidedAt?: string;
   decisionNote?: string;
+  implementedInRevisionId?: string;
+  implementedInVersion?: number;
 }
 
 const PUBLIC_STATUSES = new Set<InitiativeImprovementProposal["status"]>([
@@ -147,6 +149,14 @@ export function updateProposal(
 
   if (update.decisionNote !== undefined) {
     proposal.decisionNote = update.decisionNote;
+  }
+
+  if (update.implementedInRevisionId !== undefined) {
+    proposal.implementedInRevisionId = update.implementedInRevisionId;
+  }
+
+  if (update.implementedInVersion !== undefined) {
+    proposal.implementedInVersion = update.implementedInVersion;
   }
 
   proposal.updatedAt = new Date().toISOString();

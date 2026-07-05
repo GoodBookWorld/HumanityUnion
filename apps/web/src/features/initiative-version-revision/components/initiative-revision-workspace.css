@@ -1,0 +1,74 @@
+.initiative-revision-workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+.initiative-revision-workspace__section {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #d8dee8;
+  border-radius: 0.35rem;
+}
+
+.initiative-revision-workspace__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.initiative-revision-workspace__field label {
+  font-weight: 600;
+}
+
+.initiative-revision-workspace__field input,
+.initiative-revision-workspace__field textarea {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #c8d0dc;
+  border-radius: 0.35rem;
+  font: inherit;
+}
+
+.initiative-revision-workspace__field textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.initiative-revision-workspace__proposal {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.initiative-revision-workspace__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.initiative-revision-workspace__actions button {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid #1f3a5f;
+  border-radius: 0.35rem;
+  background: #1f3a5f;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.initiative-revision-workspace__actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.initiative-revision-workspace__actions button[data-variant="secondary"] {
+  background: #fff;
+  color: #1f3a5f;
+}
+
+.initiative-revision-workspace__note,
+.initiative-revision-workspace__empty {
+  margin: 0;
+  color: #4a5568;
+}

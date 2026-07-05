@@ -20,6 +20,7 @@ import {
   type SaveInitiativeDraftInput,
   validateInitiativeForPublication,
 } from "./initiative.validators.js";
+import { createInitialInitiativeVersionRevision } from "../initiative-version-revision/initiative-version-revision.service.js";
 
 function createTimelineEvent(eventType: string, metadata: Record<string, unknown>): TimelineEvent {
   return {
@@ -253,6 +254,7 @@ export function publishInitiative(identity: RequestIdentity, initiativeId: strin
   }
 
   syncProjectedInitiativeCard(projected);
+  createInitialInitiativeVersionRevision(projected, identity.participantId);
 
   return projected;
 }

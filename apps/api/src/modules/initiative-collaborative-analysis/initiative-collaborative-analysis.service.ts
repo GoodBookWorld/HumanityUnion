@@ -15,6 +15,7 @@ import {
   type SaveInitiativeCollaborativeAnalysisDraftInput,
   validateInitiativeCollaborativeAnalysisForPublication,
 } from "./initiative-collaborative-analysis.validators.js";
+import { resolveInitiativeVersionForNewAnalysis } from "../initiative-version-revision/initiative-version-revision.service.js";
 
 function assertEligibleInitiative(initiativeId: string): void {
   const initiative = getInitiativeById(initiativeId);
@@ -111,6 +112,7 @@ export function createInitiativeCollaborativeAnalysisDraft(
     suggestedImprovements: input.suggestedImprovements,
     references: input.references,
     status: "draft",
+    initiativeVersion: resolveInitiativeVersionForNewAnalysis(input.initiativeId),
     createdAt: now,
     updatedAt: now,
   };

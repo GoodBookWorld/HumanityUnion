@@ -21,6 +21,7 @@ export interface PublicInitiativeImprovementProposalProjection {
   updatedAt: string;
   decidedAt?: string;
   decisionNote?: string;
+  implementedInVersion: number | null;
 }
 
 export interface PublicInitiativeImprovementProposalListItem {
@@ -31,6 +32,7 @@ export interface PublicInitiativeImprovementProposalListItem {
   authorDisplayName: string;
   updatedAt: string;
   decidedAt?: string;
+  implementedInVersion: number | null;
 }
 
 export interface InitiativeImprovementProposalMetrics {

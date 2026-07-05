@@ -66,6 +66,16 @@ export default async function PublicImprovementProposalPage({
         {proposal.decisionNote ? (
           <ProfileField label="Steward decision note" value={proposal.decisionNote} />
         ) : null}
+        <ProfileField
+          label="Implementation"
+          value={
+            proposal.implementedInVersion
+              ? `Implemented in Version ${proposal.implementedInVersion}`
+              : proposal.status === "accepted" || proposal.status === "partially_accepted"
+                ? "Not yet implemented"
+                : "Not applicable"
+          }
+        />
       </ProfileSection>
 
       <nav

@@ -1,0 +1,29 @@
+.public-initiative-revision-page {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+.public-initiative-revision-page__header {
+  margin-bottom: 1.5rem;
+}
+
+.public-initiative-revision-page__title {
+  margin: 0 0 0.35rem;
+}
+
+.public-initiative-revision-page__subtitle {
+  margin: 0;
+  color: #4a5568;
+}
+
+.public-initiative-revision-page__back {
+  margin-top: 2rem;
+}
+
+.public-initiative-revision-page__related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}

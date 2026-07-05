@@ -7,6 +7,7 @@ import { getCollectiveDecisionByInitiativeId } from "../../../../features/collec
 import { getPublicInitiative } from "../../../../features/initiatives/api";
 import { listPublicInitiativeAnalyses } from "../../../../features/initiative-collaborative-analysis/api";
 import { listPublicInitiativeImprovementProposals } from "../../../../features/initiative-improvement-proposal/api";
+import { getPublicInitiativeVersionHistory } from "../../../../features/initiative-version-revision/api";
 import { getPetitionByInitiativeId } from "../../../../features/petition/api";
 
 import "./public-initiative-page.css";
@@ -39,6 +40,7 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   let improvementProposals: Awaited<
     ReturnType<typeof listPublicInitiativeImprovementProposals>
   > | null = null;
+  let versionHistory: Awaited<ReturnType<typeof getPublicInitiativeVersionHistory>> | null = null;
 
   try {
     initiative = await getPublicInitiative(initiativeId);
@@ -47,6 +49,12 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   }
 
   if (initiative) {
+    try {
+      versionHistory = await getPublicInitiativeVersionHistory(initiativeId);
+    } catch {
+      versionHistory = null;
+    }
+
     try {
       improvementProposals = await listPublicInitiativeImprovementProposals(initiativeId);
     } catch {
@@ -108,8 +116,30 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
         <ProfileField label="Region" value={initiative.metadata.region} />
         <ProfileField label="Language" value={initiative.metadata.language} />
         <ProfileField label="Steward" value={initiative.stewardDisplayName} />
+        <ProfileField label="Current Version" value={`Version ${initiative.currentVersion}`} />
         <ProfileField label="Created" value={formatCreatedDate(initiative.createdAt)} />
       </ProfileSection>
+
+      {versionHistory && versionHistory.revisions.length > 0 ? (
+        <ProfileSection title="Revision History">
+          <ul>
+            {versionHistory.revisions.map((revision) => (
+              <li key={revision.revisionId}>
+                <Link
+                  href={`/initiatives/public/${encodeURIComponent(initiativeId)}/revisions/${revision.version}`}
+                >
+                  Version {revision.version}
+                  {revision.isCurrent ? " (Current)" : ""}
+                </Link>
+                <p>{revision.revisionSummary}</p>
+                <p>
+                  {revision.authorDisplayName} · {formatCreatedDate(revision.publishedAt)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      ) : null}
 
       {publishedAnalyses.length > 0 ? (
         <ProfileSection title="Collaborative Analyses">
@@ -159,6 +189,11 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
                 </Link>
                 <p>
                   {proposal.status.replace("_", " ")} · {proposal.authorDisplayName}
+                  {proposal.implementedInVersion
+                    ? ` · Implemented in Version ${proposal.implementedInVersion}`
+                    : proposal.status === "accepted" || proposal.status === "partially_accepted"
+                      ? " · Not yet implemented"
+                      : ""}
                   {proposal.decidedAt
                     ? ` · ${formatCreatedDate(proposal.decidedAt)}`
                     : ` · ${formatCreatedDate(proposal.updatedAt)}`}

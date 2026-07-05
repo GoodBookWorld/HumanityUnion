@@ -20,10 +20,15 @@ function loadAnalysesMap(): Map<string, InitiativeCollaborativeAnalysis> {
   const snapshot = persistence.load();
 
   return new Map<string, InitiativeCollaborativeAnalysis>(
-    Object.entries(snapshot.analyses).map(([analysisId, analysis]) => [
-      analysisId,
-      structuredClone(analysis),
-    ]),
+    Object.entries(snapshot.analyses).map(([analysisId, analysis]) => {
+      const normalized = structuredClone(analysis);
+
+      if (normalized.initiativeVersion === undefined) {
+        normalized.initiativeVersion = 1;
+      }
+
+      return [analysisId, normalized];
+    }),
   );
 }
 
