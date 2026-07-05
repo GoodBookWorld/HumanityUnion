@@ -47,6 +47,22 @@ export function CommunityIdentitySection({ identity }: CommunityIdentitySectionP
         </div>
 
         <p className="community-identity__ascent">
+          {identity.regionSlug ? (
+            <>
+              <Link href={`/region/${encodeURIComponent(identity.regionSlug)}`}>
+                Return to {identity.regionExperienceLabel ?? identity.regionLabel} regional scope
+              </Link>
+              {" · "}
+            </>
+          ) : null}
+          {identity.countrySlug ? (
+            <>
+              <Link href={`/country/${encodeURIComponent(identity.countrySlug)}`}>
+                Return to {identity.countryLabel} public square
+              </Link>
+              {" · "}
+            </>
+          ) : null}
           <Link href="/">Return to World public square</Link>
         </p>
         {identity.source === "bootstrap" ? (

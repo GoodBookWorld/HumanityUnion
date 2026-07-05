@@ -28,12 +28,6 @@
   transform: translateY(0);
 }
 
-.global-experience-page a:focus-visible,
-.global-experience-page button:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-}
-
 .global-experience-page__main {
   width: 100%;
 }
@@ -179,10 +173,4 @@
 
 .interactive-world-map__reset:hover {
   border-color: #94a3b8;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .global-experience-page__skip-link {
-    transition: none;
-  }
 }

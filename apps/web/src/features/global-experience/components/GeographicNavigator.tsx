@@ -25,14 +25,12 @@ export function GeographicNavigator() {
             </Link>
           </li>
           <li>
-            <span
-              className="geographic-navigator__scope geographic-navigator__scope--disabled"
-              aria-disabled="true"
-              title="Region Experience is not yet available"
+            <Link
+              className="geographic-navigator__scope geographic-navigator__scope--link"
+              href="/region/british-columbia"
             >
-              Region
-              <span className="geographic-navigator__scope-note"> (coming soon)</span>
-            </span>
+              British Columbia
+            </Link>
           </li>
         </ol>
       </div>

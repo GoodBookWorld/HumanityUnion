@@ -12,7 +12,7 @@ export const INTERACTIVE_WORLD_MAP_CONTENT = {
     "We live in different places, yet many challenges and opportunities are shared. Understanding them begins with seeing our world as one connected civic space.",
   worldScopeLabel: "World scope — civic activity across connected places",
   regionUnavailableMessage:
-    "Selecting a place would filter civic activity to country or region scope. Country and Region experiences are not yet available.",
+    "Selecting a world region previews geographic scope. Country and Region experiences are available in this bootstrap demonstration for Canada and British Columbia.",
   returnToWorldLabel: "Return to world view",
 } as const;
 

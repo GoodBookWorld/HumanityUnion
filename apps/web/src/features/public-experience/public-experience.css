@@ -3,6 +3,18 @@
   background: #ffffff;
 }
 
+.global-experience-page a:focus-visible,
+.global-experience-page button:focus-visible,
+.country-experience-page a:focus-visible,
+.country-experience-page button:focus-visible,
+.region-experience-page a:focus-visible,
+.region-experience-page button:focus-visible,
+.community-experience-page a:focus-visible,
+.community-experience-page button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .public-experience-header__inner {
   max-width: 72rem;
   margin: 0 auto;
@@ -576,6 +588,21 @@
 .public-experience-footer__placeholder-note {
   font-size: 0.8125rem;
   color: #737373;
+}
+
+.country-experience-page__skip-link:focus-visible,
+.region-experience-page__skip-link:focus-visible,
+.community-experience-page__skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .global-experience-page__skip-link,
+  .country-experience-page__skip-link,
+  .region-experience-page__skip-link,
+  .community-experience-page__skip-link {
+    transition: none;
+  }
 }
 
 @media (max-width: 30rem) {
