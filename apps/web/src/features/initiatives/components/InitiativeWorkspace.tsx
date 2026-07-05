@@ -18,6 +18,7 @@ import { ViewPetitionLink } from "../../petition/components/ViewPetitionLink";
 import { InitiativeAnalysisWorkspace } from "../../initiative-collaborative-analysis/components/InitiativeAnalysisWorkspace";
 import { InitiativeImprovementProposalStewardPanel } from "../../initiative-improvement-proposal/components/InitiativeImprovementProposalStewardPanel";
 import { InitiativeRevisionWorkspace } from "../../initiative-version-revision/components/InitiativeRevisionWorkspace";
+import { DecisionSessionWorkspace } from "../../decision-session/components/DecisionSessionWorkspace";
 
 interface InitiativeWorkspaceProps {
   initialInitiatives: Initiative[];
@@ -134,6 +135,12 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
             initiative={selectedInitiative}
             onInitiativeUpdated={handleUpdated}
           />
+        </ProfileSection>
+      ) : null}
+
+      {selectedInitiative ? (
+        <ProfileSection title="Decision Session">
+          <DecisionSessionWorkspace initiative={selectedInitiative} />
         </ProfileSection>
       ) : null}
     </>

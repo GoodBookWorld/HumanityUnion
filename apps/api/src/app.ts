@@ -13,6 +13,11 @@ import {
   publicCollectiveDecisionRouter,
 } from "./modules/collective-decision/index.js";
 import {
+  decisionSessionRouter,
+  publicDecisionSessionRouter,
+  publicDecisionSessionsByInitiativeRouter,
+} from "./modules/decision-session/index.js";
+import {
   initiativeCollaborativeAnalysisLifecycleRouter,
   publicInitiativeCollaborativeAnalysisRouter,
   publicInitiativeCollaborativeAnalysesByInitiativeRouter,
@@ -57,6 +62,7 @@ app.use("/api/v1/initiatives", initiativeCollectiveDecisionRouter);
 app.use("/api/v1/initiatives", initiativesRouter);
 app.use("/api/v1/initiative-analyses", initiativeCollaborativeAnalysisLifecycleRouter);
 app.use("/api/v1/improvement-proposals", initiativeImprovementProposalRouter);
+app.use("/api/v1/decision-sessions", decisionSessionRouter);
 app.use("/api/v1/initiative-revisions", initiativeVersionRevisionRouter);
 app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);
 app.use("/api/v1/collective-decisions", collectiveDecisionRouter);
@@ -71,8 +77,10 @@ app.use("/api/v1/public/collaborative-analysis", publicCollaborativeAnalysisRout
 app.use("/api/v1/public/initiative-analyses", publicInitiativeCollaborativeAnalysisRouter);
 app.use("/api/v1/public/initiative-analyses", publicInitiativeImprovementProposalsByAnalysisRouter);
 app.use("/api/v1/public/improvement-proposals", publicInitiativeImprovementProposalRouter);
+app.use("/api/v1/public/decision-sessions", publicDecisionSessionRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeCollaborativeAnalysesByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeImprovementProposalsByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicDecisionSessionsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeVersionRevisionRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);
 app.use("/api/v1/public/projections", publicLatestInitiativesRouter);

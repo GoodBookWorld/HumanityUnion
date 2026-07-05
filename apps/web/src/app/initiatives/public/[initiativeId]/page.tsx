@@ -8,6 +8,7 @@ import { getPublicInitiative } from "../../../../features/initiatives/api";
 import { listPublicInitiativeAnalyses } from "../../../../features/initiative-collaborative-analysis/api";
 import { listPublicInitiativeImprovementProposals } from "../../../../features/initiative-improvement-proposal/api";
 import { getPublicInitiativeVersionHistory } from "../../../../features/initiative-version-revision/api";
+import { listPublicDecisionSessionsForInitiative } from "../../../../features/decision-session/api";
 import { getPetitionByInitiativeId } from "../../../../features/petition/api";
 
 import "./public-initiative-page.css";
@@ -41,6 +42,8 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
     ReturnType<typeof listPublicInitiativeImprovementProposals>
   > | null = null;
   let versionHistory: Awaited<ReturnType<typeof getPublicInitiativeVersionHistory>> | null = null;
+  let decisionSessions: Awaited<ReturnType<typeof listPublicDecisionSessionsForInitiative>> | null =
+    null;
 
   try {
     initiative = await getPublicInitiative(initiativeId);
@@ -59,6 +62,12 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       improvementProposals = await listPublicInitiativeImprovementProposals(initiativeId);
     } catch {
       improvementProposals = null;
+    }
+
+    try {
+      decisionSessions = await listPublicDecisionSessionsForInitiative(initiativeId);
+    } catch {
+      decisionSessions = null;
     }
 
     try {
@@ -198,6 +207,24 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
                   {proposal.decidedAt
                     ? ` · ${formatCreatedDate(proposal.decidedAt)}`
                     : ` · ${formatCreatedDate(proposal.updatedAt)}`}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      ) : null}
+
+      {decisionSessions && decisionSessions.sessions.length > 0 ? (
+        <ProfileSection title="Decision Sessions">
+          <ul>
+            {decisionSessions.sessions.map((session) => (
+              <li key={session.sessionId}>
+                <Link href={`/decision-sessions/public/${encodeURIComponent(session.sessionId)}`}>
+                  {session.title}
+                </Link>
+                <p>
+                  {session.status} · Opens {formatCreatedDate(session.opensAt)} · Closes{" "}
+                  {formatCreatedDate(session.closesAt)}
                 </p>
               </li>
             ))}

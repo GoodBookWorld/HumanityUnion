@@ -102,6 +102,13 @@ export type {
   InitiativeVersionRevision,
   InitiativeVersionRevisionId,
 } from "./initiative-version-revision.js";
+export type {
+  DecisionSession,
+  DecisionSessionEligibility,
+  DecisionSessionId,
+  DecisionSessionPackageReferences,
+  DecisionSessionStatus,
+} from "./decision-session.js";
 export type { MemberPublicProjection } from "./member-public-projection.js";
 export type {
   LatestInitiativeCardProjection,
@@ -125,6 +132,12 @@ export type {
   PublicInitiativeVersionRevisionProjection,
   PublicInitiativeWithVersionHistory,
 } from "./public-initiative-version-revision.js";
+export type {
+  DecisionSessionMetrics,
+  PublicDecisionSessionListItem,
+  PublicDecisionSessionPackage,
+  PublicDecisionSessionProjection,
+} from "./public-decision-session.js";
 export type {
   ParticipationPipelinePublicProjection,
   ParticipationPipelineStageCount,
