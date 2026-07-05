@@ -1,6 +1,7 @@
 import type {
   CommunityCatalogPublicProjection,
   CommunityExperiencePublicProjections,
+  CountryExperiencePublicProjections,
   LatestInitiativesPublicProjection,
   ParticipationPipelinePublicProjection,
   ParticipationPublicStatisticsProjection,
@@ -26,4 +27,8 @@ export type GlobalExperiencePublicProjections = PublicParticipationEvidenceProje
 export interface CommunityExperiencePageData {
   projections: CommunityExperiencePublicProjections;
   catalog: CommunityCatalogPublicProjection;
+}
+
+export interface CountryExperiencePageData {
+  projections: CountryExperiencePublicProjections;
 }

@@ -23,14 +23,12 @@ export function CommunityGeographicNavigator({ identity }: CommunityGeographicNa
             </Link>
           </li>
           <li>
-            <span
-              className="geographic-navigator__scope geographic-navigator__scope--disabled"
-              aria-disabled="true"
-              title="Country Experience is not yet available"
+            <Link
+              className="geographic-navigator__scope geographic-navigator__scope--link"
+              href="/country/canada"
             >
               {identity.countryLabel}
-              <span className="geographic-navigator__scope-note"> (coming soon)</span>
-            </span>
+            </Link>
           </li>
           <li>
             <span

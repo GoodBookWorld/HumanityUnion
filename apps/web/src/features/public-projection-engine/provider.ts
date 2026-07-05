@@ -1,6 +1,7 @@
 import type {
   CommunityCatalogPublicProjection,
   CommunityExperiencePublicProjections,
+  CountryExperiencePublicProjections,
   LatestInitiativesPublicProjection,
   ParticipationPipelinePublicProjection,
   ParticipationPublicStatisticsProjection,
@@ -28,4 +29,8 @@ export interface PublicProjectionProvider {
   ): Promise<CommunityExperiencePublicProjections | null>;
 
   getCommunityCatalog(): Promise<CommunityCatalogPublicProjection>;
+
+  getCountryExperienceProjections(
+    countrySlug: string,
+  ): Promise<CountryExperiencePublicProjections | null>;
 }

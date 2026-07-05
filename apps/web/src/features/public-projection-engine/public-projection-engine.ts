@@ -3,6 +3,7 @@ import type { PublicProjectionProvider } from "./provider";
 import { bootstrapPublicProjectionProvider } from "./providers/bootstrap-public-projection-provider";
 import type {
   CommunityExperiencePageData,
+  CountryExperiencePageData,
   GlobalExperiencePublicProjections,
   PublicProjectionScopeRef,
 } from "./types";
@@ -72,6 +73,27 @@ export class PublicProjectionEngine {
   async getCommunityExperienceProjections(slug: string) {
     return this.provider.getCommunityExperienceProjections(slug);
   }
+
+  async loadCountryExperiencePageData(
+    countrySlug: string,
+  ): Promise<CountryExperiencePageData | null> {
+    const projections = await this.provider.getCountryExperienceProjections(countrySlug);
+
+    if (!projections) {
+      return null;
+    }
+
+    return {
+      projections: {
+        ...projections,
+        latestInitiatives: await enrichLatestInitiativesProjection(projections.latestInitiatives),
+      },
+    };
+  }
+
+  async getCountryExperienceProjections(countrySlug: string) {
+    return this.provider.getCountryExperienceProjections(countrySlug);
+  }
 }
 
 export const publicProjectionEngine = new PublicProjectionEngine(bootstrapPublicProjectionProvider);
@@ -84,4 +106,10 @@ export async function loadCommunityExperiencePageData(
   slug: string,
 ): Promise<CommunityExperiencePageData | null> {
   return publicProjectionEngine.loadCommunityExperiencePageData(slug);
+}
+
+export async function loadCountryExperiencePageData(
+  countrySlug: string,
+): Promise<CountryExperiencePageData | null> {
+  return publicProjectionEngine.loadCountryExperiencePageData(countrySlug);
 }

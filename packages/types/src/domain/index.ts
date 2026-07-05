@@ -102,6 +102,15 @@ export type {
   CommunityRepresentativeVisual,
 } from "./public-community-experience.js";
 export type {
+  CountryExperiencePublicProjections,
+  CountryIdentityPublicProjection,
+  CountryRegionalCatalogPublicProjection,
+  CountryRepresentativeVisual,
+  RegionPublicRecord,
+  TrustedNationalMediaPublicProjection,
+  TrustedNationalMediaRecord,
+} from "./public-country-experience.js";
+export type {
   PublicAnalysisSummaryProjection,
   PublicCollaborativeAnalysisProjection,
   PublicContributionStatistics,

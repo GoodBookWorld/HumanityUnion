@@ -1,0 +1,291 @@
+.country-experience-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background: #fafafa;
+  color: #1a1a1a;
+  text-align: left;
+  line-height: 1.6;
+  overflow-x: clip;
+}
+
+.country-experience-page__skip-link {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.375rem;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.country-experience-page__skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+.country-experience-page__main {
+  width: 100%;
+}
+
+.country-experience-page__content {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 2rem;
+}
+
+.country-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.country-identity__hero {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 48rem) {
+  .country-identity__hero {
+    grid-template-columns: minmax(10rem, 12rem) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.country-identity__visual {
+  margin: 0;
+}
+
+.country-identity__visual-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 0.75rem;
+  border: 1px solid #d4d4d4;
+  background: linear-gradient(145deg, #f5f5f5, #e5e5e5);
+}
+
+.country-identity__visual-initials {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #525252;
+}
+
+.country-identity__visual-caption {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: #525252;
+}
+
+.country-identity__scope {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: #525252;
+}
+
+.country-identity__details {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.country-identity__detail dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #737373;
+}
+
+.country-identity__detail dd {
+  margin: 0.25rem 0 0;
+}
+
+.country-identity__ascent a {
+  color: #404040;
+}
+
+.country-identity__source {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #737373;
+}
+
+.national-interactive-map {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.national-interactive-map__scope {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #525252;
+}
+
+.national-interactive-map__canvas {
+  display: grid;
+  gap: 1rem;
+}
+
+.national-interactive-map__svg {
+  width: 100%;
+  height: auto;
+  border: 1px solid #d4d4d4;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.national-interactive-map__land {
+  fill: #f5f5f5;
+}
+
+.national-interactive-map__region-shape {
+  fill: #dbeafe;
+  stroke: #93c5fd;
+  stroke-width: 2;
+}
+
+.national-interactive-map__region-shape--selected {
+  fill: #bfdbfe;
+  stroke: #2563eb;
+}
+
+.national-interactive-map__activity-marker {
+  fill: #2563eb;
+}
+
+.national-interactive-map__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.national-interactive-map__region-button {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #d4d4d4;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #404040;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.national-interactive-map__region-button--selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.national-interactive-map__feedback {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e5e5;
+  background: #ffffff;
+}
+
+.national-interactive-map__reset {
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #d4d4d4;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.national-statistics__public-note {
+  margin-top: 1rem;
+  font-size: 0.8125rem;
+  color: #737373;
+}
+
+.trusted-national-media,
+.regional-exploration {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.trusted-national-media__scope,
+.regional-exploration__note,
+.regional-exploration__browse-label {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #525252;
+}
+
+.trusted-national-media__list,
+.regional-exploration__list {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trusted-national-media__item,
+.regional-exploration__item {
+  padding: 1rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.trusted-national-media__title,
+.regional-exploration__title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.trusted-national-media__publisher {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  color: #737373;
+}
+
+.trusted-national-media__summary,
+.regional-exploration__description {
+  margin: 0 0 0.75rem;
+}
+
+.trusted-national-media__unavailable,
+.regional-exploration__placeholder,
+.regional-exploration__source {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #737373;
+}
+
+.regional-exploration__unavailable-note {
+  font-size: 0.8125rem;
+  color: #737373;
+}
+
+.regional-exploration__meta {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.regional-exploration__meta dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #737373;
+}
+
+.regional-exploration__meta dd {
+  margin: 0.125rem 0 0;
+}
+
+.regional-exploration__link a {
+  color: #404040;
+}

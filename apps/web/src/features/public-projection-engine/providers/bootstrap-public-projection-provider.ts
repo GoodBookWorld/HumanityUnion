@@ -1,6 +1,7 @@
 import type {
   CommunityCatalogPublicProjection,
   CommunityExperiencePublicProjections,
+  CountryExperiencePublicProjections,
   LatestInitiativesPublicProjection,
   ParticipationPipelinePublicProjection,
   ParticipationPublicStatisticsProjection,
@@ -13,6 +14,11 @@ import {
   BOOTSTRAP_COMMUNITY_PROJECTIONS_BY_SLUG,
   isBootstrapCommunitySlug,
 } from "./bootstrap/communities";
+import {
+  BOOTSTRAP_COUNTRY_PROJECTIONS_BY_SLUG,
+  getBootstrapCountryProjections,
+  isBootstrapCountrySlug,
+} from "./bootstrap/countries";
 import { WORLD_PARTICIPATION_PIPELINE_PUBLIC_PROJECTION } from "./bootstrap/world-pipeline";
 import { WORLD_LATEST_INITIATIVES_PUBLIC_PROJECTION } from "./bootstrap/world-latest-initiatives";
 import { WORLD_PARTICIPATION_PUBLIC_STATISTICS_PROJECTION } from "./bootstrap/world-statistics";
@@ -25,6 +31,10 @@ function getCommunityProjections(slug: string): CommunityExperiencePublicProject
   return BOOTSTRAP_COMMUNITY_PROJECTIONS_BY_SLUG[slug] ?? null;
 }
 
+function getCountryProjections(countrySlug: string): CountryExperiencePublicProjections | null {
+  return getBootstrapCountryProjections(countrySlug);
+}
+
 export class BootstrapPublicProjectionProvider implements PublicProjectionProvider {
   readonly mode = "bootstrap" as const;
 
@@ -34,6 +44,13 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
     switch (scopeRef.scope) {
       case "world":
         return WORLD_PARTICIPATION_PUBLIC_STATISTICS_PROJECTION;
+      case "country": {
+        if (!scopeRef.scopeKey) {
+          return null;
+        }
+
+        return getCountryProjections(scopeRef.scopeKey)?.statistics ?? null;
+      }
       case "community": {
         if (!scopeRef.scopeKey) {
           return null;
@@ -41,7 +58,6 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
 
         return getCommunityProjections(scopeRef.scopeKey)?.statistics ?? null;
       }
-      case "country":
       case "region":
         return null;
       default:
@@ -55,6 +71,13 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
     switch (scopeRef.scope) {
       case "world":
         return WORLD_PARTICIPATION_PIPELINE_PUBLIC_PROJECTION;
+      case "country": {
+        if (!scopeRef.scopeKey) {
+          return null;
+        }
+
+        return getCountryProjections(scopeRef.scopeKey)?.pipeline ?? null;
+      }
       case "community": {
         if (!scopeRef.scopeKey) {
           return null;
@@ -62,7 +85,6 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
 
         return getCommunityProjections(scopeRef.scopeKey)?.pipeline ?? null;
       }
-      case "country":
       case "region":
         return null;
       default:
@@ -76,6 +98,13 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
     switch (scopeRef.scope) {
       case "world":
         return WORLD_LATEST_INITIATIVES_PUBLIC_PROJECTION;
+      case "country": {
+        if (!scopeRef.scopeKey) {
+          return null;
+        }
+
+        return getCountryProjections(scopeRef.scopeKey)?.latestInitiatives ?? null;
+      }
       case "community": {
         if (!scopeRef.scopeKey) {
           return null;
@@ -83,7 +112,6 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
 
         return getCommunityProjections(scopeRef.scopeKey)?.latestInitiatives ?? null;
       }
-      case "country":
       case "region":
         return null;
       default:
@@ -99,6 +127,16 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
 
   async getCommunityCatalog(): Promise<CommunityCatalogPublicProjection> {
     return BOOTSTRAP_COMMUNITY_CATALOG;
+  }
+
+  async getCountryExperienceProjections(
+    countrySlug: string,
+  ): Promise<CountryExperiencePublicProjections | null> {
+    if (!isBootstrapCountrySlug(countrySlug)) {
+      return null;
+    }
+
+    return BOOTSTRAP_COUNTRY_PROJECTIONS_BY_SLUG[countrySlug] ?? null;
   }
 }
 
