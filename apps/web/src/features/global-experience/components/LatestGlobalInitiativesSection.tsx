@@ -18,6 +18,7 @@ export function LatestGlobalInitiativesSection({
       architecturalName="Latest Initiatives"
       stage="Evidence"
       contextIntroduction={LATEST_GLOBAL_INITIATIVES_CONTENT.contextIntroduction}
+      visitorConclusion={LATEST_GLOBAL_INITIATIVES_CONTENT.visitorConclusion}
     >
       <LatestGlobalInitiativesEvidence projection={projection} />
     </ExperienceBlockShell>

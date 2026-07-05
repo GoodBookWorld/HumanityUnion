@@ -23,12 +23,15 @@ export interface CommunityIdentityPublicProjection {
   source: "bootstrap" | "projection";
 }
 
+import type { PublicExperienceRouteStatus } from "./public-latest-initiatives.js";
+
 export interface CommunityImpactOverviewSignal {
   id: string;
   label: string;
   value: string;
   derived: boolean;
   verificationHref?: string;
+  verificationRouteStatus?: PublicExperienceRouteStatus;
 }
 
 export interface CommunityImpactOverviewPublicProjection {

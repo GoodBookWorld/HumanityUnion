@@ -115,6 +115,11 @@
   gap: 1rem;
 }
 
+.community-impact-overview__verification-placeholder {
+  color: #737373;
+  font-size: 0.875rem;
+}
+
 .community-impact-overview__scope {
   color: #525252;
   font-size: 0.9375rem;

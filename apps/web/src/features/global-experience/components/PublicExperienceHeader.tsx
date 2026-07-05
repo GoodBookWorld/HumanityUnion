@@ -38,6 +38,10 @@ export function PublicExperienceHeader({
                 );
               }
 
+              if (!item.href) {
+                return null;
+              }
+
               return (
                 <li key={item.label}>
                   <Link

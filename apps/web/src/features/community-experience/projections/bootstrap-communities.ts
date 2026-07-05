@@ -106,20 +106,24 @@ const NELSON_COMMUNITY_GARDEN_PROJECTIONS: CommunityExperiencePublicProjections 
         geographicScope: "Nelson Community Garden, Central Kootenay, Canada",
         participationStage: "Implementation",
         publicStatus: "Draft",
+        publicRouteStatus: "active",
         publicInitiativeHref: publicInitiativeHref("initiative-bootstrap-001"),
         recencyOrder: 1,
         relatedPublicLinks: [
           {
             label: "Public Collaborative Analysis",
             href: "/collaborative-analysis/public/analysis-bootstrap-001",
+            routeStatus: "active",
           },
           {
             label: "Public Petition",
             href: "/petitions/public/petition-bootstrap-001",
+            routeStatus: "active",
           },
           {
             label: "Public Implementation",
             href: "/implementations/public/implementation-bootstrap-001",
+            routeStatus: "active",
           },
         ],
       },
@@ -137,6 +141,7 @@ const NELSON_COMMUNITY_GARDEN_PROJECTIONS: CommunityExperiencePublicProjections 
         value: "1",
         derived: true,
         verificationHref: publicInitiativeHref("initiative-bootstrap-001"),
+        verificationRouteStatus: "active",
       },
       {
         id: "public-evidence",
@@ -219,7 +224,9 @@ const KOOTENAY_LAKE_PROJECTIONS: CommunityExperiencePublicProjections = {
         geographicScope: "Kootenay Lake Protection Society, Central Kootenay, Canada",
         participationStage: "Petition",
         publicStatus: "Proposal",
-        publicInitiativeHref: publicInitiativeHref("initiative-bootstrap-demo-002"),
+        publicRouteStatus: "unavailable",
+        publicUnavailableNotice:
+          "Demonstration card only — no public initiative record exists yet for this example.",
         recencyOrder: 1,
         relatedPublicLinks: [],
       },
@@ -236,7 +243,7 @@ const KOOTENAY_LAKE_PROJECTIONS: CommunityExperiencePublicProjections = {
         label: "Public initiatives associated with this community",
         value: "1",
         derived: false,
-        verificationHref: publicInitiativeHref("initiative-bootstrap-demo-002"),
+        verificationRouteStatus: "unavailable",
       },
       {
         id: "petition-stage",

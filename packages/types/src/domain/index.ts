@@ -79,6 +79,7 @@ export type {
   LatestInitiativeCardProjection,
   LatestInitiativeRelatedPublicLink,
   LatestInitiativesPublicProjection,
+  PublicExperienceRouteStatus,
 } from "./public-latest-initiatives.js";
 export type { PublicInitiativeProjection } from "./public-initiative.js";
 export type {

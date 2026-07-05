@@ -10,6 +10,7 @@ export function RegistrationGatewaySection() {
       architecturalName="Registration Gateway"
       stage="Participation"
       contextIntroduction={REGISTRATION_GATEWAY_CONTENT.contextIntroduction}
+      visitorConclusion={REGISTRATION_GATEWAY_CONTENT.visitorConclusion}
     >
       <RegistrationGatewayEvidence />
     </ExperienceBlockShell>

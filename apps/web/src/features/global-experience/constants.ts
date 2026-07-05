@@ -2,15 +2,15 @@ import type { FooterLinkStatus } from "./footer-links";
 
 export const PRIMARY_NAVIGATION: ReadonlyArray<{
   label: string;
-  href: string;
+  href?: string;
   status: FooterLinkStatus;
 }> = [
   { label: "Home", href: "/", status: "active" },
   { label: "Initiatives", href: "/initiatives", status: "active" },
-  { label: "Institutions", href: "/institutions", status: "placeholder" },
-  { label: "Media", href: "/media", status: "placeholder" },
-  { label: "Knowledge", href: "/knowledge", status: "placeholder" },
-  { label: "About", href: "/about", status: "placeholder" },
+  { label: "Institutions", status: "placeholder" },
+  { label: "Media", status: "placeholder" },
+  { label: "Knowledge", status: "placeholder" },
+  { label: "About", status: "placeholder" },
 ];
 
 export const GLOBAL_EXPERIENCE_BLOCKS = [

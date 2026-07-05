@@ -508,6 +508,33 @@
   min-width: 0;
 }
 
+.latest-initiative-card--unavailable {
+  background: #fafafa;
+}
+
+.latest-initiative-card__unavailable {
+  color: #737373;
+  font-size: 0.875rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.375rem;
+  background: #f5f5f5;
+  border: 1px solid #ececec;
+}
+
+.latest-initiative-card__primary-link--placeholder {
+  color: #737373;
+  font-size: 0.9375rem;
+}
+
+.latest-initiative-card__related-placeholder {
+  color: #737373;
+  font-size: 0.875rem;
+}
+
+.latest-initiative-card__related-note {
+  font-size: 0.8125rem;
+}
+
 .latest-initiative-card__title {
   font-size: 1.0625rem;
   font-weight: 700;

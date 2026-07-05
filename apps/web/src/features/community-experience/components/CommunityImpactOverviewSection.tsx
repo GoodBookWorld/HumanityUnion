@@ -46,10 +46,23 @@ export function CommunityImpactOverviewSection({
               </dt>
               <dd className="community-impact-overview__signal-value">
                 {signal.value}
-                {signal.verificationHref ? (
+                {signal.verificationHref &&
+                (signal.verificationRouteStatus ?? "active") === "active" ? (
                   <>
                     {" "}
                     · <Link href={signal.verificationHref}>Verify public record</Link>
+                  </>
+                ) : signal.verificationRouteStatus === "unavailable" ? (
+                  <>
+                    {" "}
+                    ·{" "}
+                    <span
+                      className="community-impact-overview__verification-placeholder"
+                      aria-disabled="true"
+                      title="Public verification record — coming soon"
+                    >
+                      Verify public record (coming soon)
+                    </span>
                   </>
                 ) : null}
               </dd>

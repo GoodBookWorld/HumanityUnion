@@ -18,24 +18,29 @@ export const WORLD_LATEST_INITIATIVES_PUBLIC_PROJECTION: LatestInitiativesPublic
       geographicScope: "British Columbia, World",
       participationStage: "Implementation",
       publicStatus: "Draft",
+      publicRouteStatus: "active",
       publicInitiativeHref: publicInitiativeHref("initiative-bootstrap-001"),
       recencyOrder: 1,
       relatedPublicLinks: [
         {
           label: "Public Collaborative Analysis",
           href: "/collaborative-analysis/public/analysis-bootstrap-001",
+          routeStatus: "active",
         },
         {
           label: "Public Collective Decision",
           href: "/collective-decisions/public/decision-bootstrap-001",
+          routeStatus: "active",
         },
         {
           label: "Public Petition",
           href: "/petitions/public/petition-bootstrap-001",
+          routeStatus: "active",
         },
         {
           label: "Public Implementation",
           href: "/implementations/public/implementation-bootstrap-001",
+          routeStatus: "active",
         },
       ],
     },
@@ -47,7 +52,9 @@ export const WORLD_LATEST_INITIATIVES_PUBLIC_PROJECTION: LatestInitiativesPublic
       geographicScope: "East Africa, World",
       participationStage: "Petition",
       publicStatus: "Proposal",
-      publicInitiativeHref: publicInitiativeHref("initiative-bootstrap-demo-002"),
+      publicRouteStatus: "unavailable",
+      publicUnavailableNotice:
+        "Demonstration card only — no public initiative record exists yet for this example.",
       recencyOrder: 2,
       relatedPublicLinks: [],
     },
@@ -59,7 +66,9 @@ export const WORLD_LATEST_INITIATIVES_PUBLIC_PROJECTION: LatestInitiativesPublic
       geographicScope: "Western Europe, World",
       participationStage: "Collective Decision",
       publicStatus: "Discussion",
-      publicInitiativeHref: publicInitiativeHref("initiative-bootstrap-demo-003"),
+      publicRouteStatus: "unavailable",
+      publicUnavailableNotice:
+        "Demonstration card only — no public initiative record exists yet for this example.",
       recencyOrder: 3,
       relatedPublicLinks: [],
     },

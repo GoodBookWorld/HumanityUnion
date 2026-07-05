@@ -25,6 +25,10 @@ function summarizeDescription(description: string, maxLength = 160): string {
 async function enrichLatestInitiativeCard(
   card: LatestInitiativeCardProjection,
 ): Promise<LatestInitiativeCardProjection> {
+  if (card.publicRouteStatus === "unavailable") {
+    return card;
+  }
+
   try {
     const projection = await getPublicInitiative(card.initiativeId);
 

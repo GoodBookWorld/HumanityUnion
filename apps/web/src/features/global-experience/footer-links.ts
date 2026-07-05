@@ -7,10 +7,10 @@ export interface FooterLink {
 }
 
 export const FOOTER_PLATFORM_LINKS: FooterLink[] = [
-  { label: "About", href: "/about", status: "placeholder" },
-  { label: "Institutions", href: "/institutions", status: "placeholder" },
-  { label: "Media", href: "/media", status: "placeholder" },
-  { label: "Knowledge", href: "/knowledge", status: "placeholder" },
+  { label: "About", status: "placeholder" },
+  { label: "Institutions", status: "placeholder" },
+  { label: "Media", status: "placeholder" },
+  { label: "Knowledge", status: "placeholder" },
   { label: "Initiatives", href: "/initiatives", status: "active" },
 ];
 

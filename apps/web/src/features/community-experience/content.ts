@@ -47,7 +47,8 @@ export const REGISTRATION_GATEWAY_WORKSPACE_CONTENT = {
   explorationNote:
     "Reading and exploring remain available without registration or entering Workspace.",
   registrationActionLabel: "Join Humanity Union",
-  registrationPlaceholderLabel: "Registration entry coming soon",
+  registrationPlaceholderLabel:
+    "Registration entry coming soon — Identity Capability not yet available",
   workspaceActionLabel: "Continue to Workspace",
   workspacePlaceholderLabel: "Workspace entry coming soon",
   authenticatedNote:
