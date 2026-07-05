@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { CommunityExperiencePage } from "../../../features/community-experience/components/CommunityExperiencePage";
 import {
-  BOOTSTRAP_COMMUNITY_SLUGS,
+  getKnownCommunitySlugs,
   loadCommunityExperiencePageData,
 } from "../../../features/public-projection-engine";
 
@@ -13,8 +13,9 @@ interface CommunityPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export function generateStaticParams() {
-  return BOOTSTRAP_COMMUNITY_SLUGS.map((slug) => ({ slug }));
+export async function generateStaticParams() {
+  const slugs = await getKnownCommunitySlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export default async function CommunityPage({ params }: CommunityPageProps) {

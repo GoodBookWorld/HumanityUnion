@@ -1,4 +1,7 @@
 export {
+  getKnownCommunitySlugs,
+  getKnownCountrySlugs,
+  getKnownRegionSlugs,
   loadCommunityExperiencePageData,
   loadCountryExperiencePageData,
   loadGlobalExperienceProjections,
@@ -7,10 +10,16 @@ export {
   PublicProjectionEngine,
 } from "./public-projection-engine";
 export type { PublicProjectionProvider } from "./provider";
+export { resolvePublicProjectionProvider } from "./resolve-public-projection-provider";
 export {
   bootstrapPublicProjectionProvider,
   BootstrapPublicProjectionProvider,
 } from "./providers/bootstrap-public-projection-provider";
+export {
+  apiPublicProjectionProvider,
+  ApiPublicProjectionProvider,
+} from "./providers/api-public-projection-provider";
+/** Bootstrap-only exports. Prefer PublicProjectionEngine loaders in Experience routes. */
 export {
   BOOTSTRAP_COMMUNITY_CATALOG,
   BOOTSTRAP_COMMUNITY_PROJECTIONS_BY_SLUG,
@@ -30,9 +39,6 @@ export {
   getBootstrapRegionProjections,
   isBootstrapRegionSlug,
 } from "./providers/bootstrap/regions";
-export { WORLD_PARTICIPATION_PIPELINE_PUBLIC_PROJECTION } from "./providers/bootstrap/world-pipeline";
-export { WORLD_PARTICIPATION_PUBLIC_STATISTICS_PROJECTION } from "./providers/bootstrap/world-statistics";
-export { WORLD_LATEST_INITIATIVES_PUBLIC_PROJECTION } from "./providers/bootstrap/world-latest-initiatives";
 export type {
   CommunityExperiencePageData,
   CountryExperiencePageData,

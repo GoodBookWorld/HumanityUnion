@@ -10,6 +10,11 @@ import type {
 
 import type { PublicProjectionProviderMode, PublicProjectionScopeRef } from "./types";
 
+/**
+ * Capability 02 integration boundary for Public Experience projection retrieval.
+ * Implementations: BootstrapPublicProjectionProvider (today), ApiPublicProjectionProvider (future).
+ * Experience UI depends on @hu/types models returned by PublicProjectionEngine loaders only.
+ */
 export interface PublicProjectionProvider {
   readonly mode: PublicProjectionProviderMode;
 
@@ -38,4 +43,11 @@ export interface PublicProjectionProvider {
   getRegionExperienceProjections(
     regionSlug: string,
   ): Promise<RegionExperiencePublicProjections | null>;
+
+  /** Slugs for Next.js generateStaticParams. API providers may return []. */
+  getKnownCommunitySlugs(): Promise<readonly string[]>;
+
+  getKnownCountrySlugs(): Promise<readonly string[]>;
+
+  getKnownRegionSlugs(): Promise<readonly string[]>;
 }

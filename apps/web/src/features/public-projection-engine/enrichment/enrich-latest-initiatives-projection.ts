@@ -6,6 +6,12 @@ import type {
 
 import { getPublicInitiative } from "../../initiatives/api";
 
+/**
+ * Engine-level enrichment applied after provider retrieval (all provider modes).
+ * Merges live initiative metadata when available. Capability 02 providers may
+ * return complete cards and make this a pass-through.
+ */
+
 function formatPublicStatus(status: InitiativeStatus): string {
   return status
     .split("_")

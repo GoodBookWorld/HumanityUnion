@@ -1,6 +1,6 @@
 import { enrichLatestInitiativesProjection } from "./enrichment/enrich-latest-initiatives-projection";
 import type { PublicProjectionProvider } from "./provider";
-import { bootstrapPublicProjectionProvider } from "./providers/bootstrap-public-projection-provider";
+import { resolvePublicProjectionProvider } from "./resolve-public-projection-provider";
 import type {
   CommunityExperiencePageData,
   CountryExperiencePageData,
@@ -48,6 +48,7 @@ export class PublicProjectionEngine {
     return {
       statistics: requireProjection(statistics, "Participation statistics projection"),
       pipeline: requireProjection(pipeline, "Participation pipeline projection"),
+      // Engine enrichment runs for all providers until Capability 02 returns complete cards.
       latestInitiatives: await enrichLatestInitiativesProjection(
         requireProjection(latestInitiatives, "Latest initiatives projection"),
       ),
@@ -92,6 +93,18 @@ export class PublicProjectionEngine {
     };
   }
 
+  async getKnownCommunitySlugs() {
+    return this.provider.getKnownCommunitySlugs();
+  }
+
+  async getKnownCountrySlugs() {
+    return this.provider.getKnownCountrySlugs();
+  }
+
+  async getKnownRegionSlugs() {
+    return this.provider.getKnownRegionSlugs();
+  }
+
   async getCountryExperienceProjections(countrySlug: string) {
     return this.provider.getCountryExperienceProjections(countrySlug);
   }
@@ -116,7 +129,7 @@ export class PublicProjectionEngine {
   }
 }
 
-export const publicProjectionEngine = new PublicProjectionEngine(bootstrapPublicProjectionProvider);
+export const publicProjectionEngine = new PublicProjectionEngine(resolvePublicProjectionProvider());
 
 export async function loadGlobalExperienceProjections(): Promise<GlobalExperiencePublicProjections> {
   return publicProjectionEngine.loadGlobalExperienceProjections();
@@ -138,4 +151,16 @@ export async function loadRegionExperiencePageData(
   regionSlug: string,
 ): Promise<RegionExperiencePageData | null> {
   return publicProjectionEngine.loadRegionExperiencePageData(regionSlug);
+}
+
+export async function getKnownCommunitySlugs(): Promise<readonly string[]> {
+  return publicProjectionEngine.getKnownCommunitySlugs();
+}
+
+export async function getKnownCountrySlugs(): Promise<readonly string[]> {
+  return publicProjectionEngine.getKnownCountrySlugs();
+}
+
+export async function getKnownRegionSlugs(): Promise<readonly string[]> {
+  return publicProjectionEngine.getKnownRegionSlugs();
 }

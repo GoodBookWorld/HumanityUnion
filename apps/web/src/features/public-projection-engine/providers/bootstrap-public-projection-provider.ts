@@ -13,15 +13,18 @@ import type { PublicProjectionScopeRef } from "../types";
 import {
   BOOTSTRAP_COMMUNITY_CATALOG,
   BOOTSTRAP_COMMUNITY_PROJECTIONS_BY_SLUG,
+  BOOTSTRAP_COMMUNITY_SLUGS,
   isBootstrapCommunitySlug,
 } from "./bootstrap/communities";
 import {
   BOOTSTRAP_COUNTRY_PROJECTIONS_BY_SLUG,
+  BOOTSTRAP_COUNTRY_SLUGS,
   getBootstrapCountryProjections,
   isBootstrapCountrySlug,
 } from "./bootstrap/countries";
 import {
   BOOTSTRAP_REGION_PROJECTIONS_BY_SLUG,
+  BOOTSTRAP_REGION_SLUGS,
   getBootstrapRegionProjections,
   isBootstrapRegionSlug,
 } from "./bootstrap/regions";
@@ -172,6 +175,18 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
     }
 
     return BOOTSTRAP_REGION_PROJECTIONS_BY_SLUG[regionSlug] ?? null;
+  }
+
+  async getKnownCommunitySlugs(): Promise<readonly string[]> {
+    return BOOTSTRAP_COMMUNITY_SLUGS;
+  }
+
+  async getKnownCountrySlugs(): Promise<readonly string[]> {
+    return BOOTSTRAP_COUNTRY_SLUGS;
+  }
+
+  async getKnownRegionSlugs(): Promise<readonly string[]> {
+    return BOOTSTRAP_REGION_SLUGS;
   }
 }
 

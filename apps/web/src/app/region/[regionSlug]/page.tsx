@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { RegionExperiencePage } from "../../../features/region-experience/components/RegionExperiencePage";
 import {
-  BOOTSTRAP_REGION_SLUGS,
+  getKnownRegionSlugs,
   loadRegionExperiencePageData,
 } from "../../../features/public-projection-engine";
 
@@ -13,8 +13,9 @@ interface RegionPageProps {
   params: Promise<{ regionSlug: string }>;
 }
 
-export function generateStaticParams() {
-  return BOOTSTRAP_REGION_SLUGS.map((regionSlug) => ({ regionSlug }));
+export async function generateStaticParams() {
+  const slugs = await getKnownRegionSlugs();
+  return slugs.map((regionSlug) => ({ regionSlug }));
 }
 
 export default async function RegionPage({ params }: RegionPageProps) {

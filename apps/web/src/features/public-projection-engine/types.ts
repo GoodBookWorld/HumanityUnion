@@ -11,6 +11,7 @@ import type {
 
 export type PublicProjectionProviderMode = "bootstrap" | "api";
 
+/** Geographic scope key passed to provider scope-based getters (Capability 02 contract). */
 export interface PublicProjectionScopeRef {
   scope: PublicGeographicScope;
   /** Country code, region identifier, or community slug when the scope requires a key. */
@@ -23,17 +24,21 @@ export interface PublicParticipationEvidenceProjections {
   latestInitiatives: LatestInitiativesPublicProjection;
 }
 
+/** Page bundle returned to Global Experience — statistics, pipeline, latest initiatives. */
 export type GlobalExperiencePublicProjections = PublicParticipationEvidenceProjections;
 
-export interface CommunityExperiencePageData {
-  projections: CommunityExperiencePublicProjections;
-  catalog: CommunityCatalogPublicProjection;
-}
-
+/** Page bundle returned to Country Experience. */
 export interface CountryExperiencePageData {
   projections: CountryExperiencePublicProjections;
 }
 
+/** Page bundle returned to Region Experience. */
 export interface RegionExperiencePageData {
   projections: RegionExperiencePublicProjections;
+}
+
+/** Page bundle returned to Community Experience. */
+export interface CommunityExperiencePageData {
+  projections: CommunityExperiencePublicProjections;
+  catalog: CommunityCatalogPublicProjection;
 }

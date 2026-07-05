@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { CountryExperiencePage } from "../../../features/country-experience/components/CountryExperiencePage";
 import {
-  BOOTSTRAP_COUNTRY_SLUGS,
+  getKnownCountrySlugs,
   loadCountryExperiencePageData,
 } from "../../../features/public-projection-engine";
 
@@ -13,8 +13,9 @@ interface CountryPageProps {
   params: Promise<{ countrySlug: string }>;
 }
 
-export function generateStaticParams() {
-  return BOOTSTRAP_COUNTRY_SLUGS.map((countrySlug) => ({ countrySlug }));
+export async function generateStaticParams() {
+  const slugs = await getKnownCountrySlugs();
+  return slugs.map((countrySlug) => ({ countrySlug }));
 }
 
 export default async function CountryPage({ params }: CountryPageProps) {
