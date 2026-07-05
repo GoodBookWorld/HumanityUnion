@@ -1,3 +1,4 @@
+import { INITIATIVE_LIFECYCLE_PHASE_LABELS } from "../initiative-lifecycle-labels";
 import type { Initiative } from "@hu/types";
 
 import "./initiative-explorer.css";
@@ -36,6 +37,7 @@ export function InitiativeExplorer({ initiatives, selectedId, onSelect }: Initia
           >
             <span className="initiative-explorer__title">{initiative.title}</span>
             <span className="initiative-explorer__meta">
+              <span>Lifecycle: {INITIATIVE_LIFECYCLE_PHASE_LABELS[initiative.lifecyclePhase]}</span>
               <span>Status: {initiative.status}</span>
               <span>Steward: {initiative.stewardId}</span>
               <span>Created: {formatCreatedDate(initiative.createdAt)}</span>

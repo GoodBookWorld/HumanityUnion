@@ -1,19 +1,19 @@
 import Link from "next/link";
 
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
-import { listInitiatives } from "../../features/initiatives/api";
+import { listMyInitiatives } from "../../features/initiatives/api";
 import { InitiativeWorkspace } from "../../features/initiatives/components/InitiativeWorkspace";
 import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
 
 import "./initiatives-page.css";
 
-const NAV_ITEMS = ["Explorer", "Overview", "Actions"];
+const NAV_ITEMS = ["My Initiatives", "Overview", "Lifecycle Timeline", "Manage Initiative"];
 
 export default async function InitiativesPage() {
   let initiatives = null;
 
   try {
-    initiatives = await listInitiatives();
+    initiatives = await listMyInitiatives();
   } catch {
     initiatives = null;
   }

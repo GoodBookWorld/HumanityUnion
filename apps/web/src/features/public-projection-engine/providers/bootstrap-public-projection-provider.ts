@@ -16,6 +16,8 @@ import {
   BOOTSTRAP_COMMUNITY_SLUGS,
   isBootstrapCommunitySlug,
 } from "./bootstrap/communities";
+import { fetchCommunityLatestInitiativesProjection } from "./live-community-latest-initiatives";
+import { mergeCommunityLatestInitiatives } from "./merge-community-latest-initiatives";
 import {
   BOOTSTRAP_COUNTRY_PROJECTIONS_BY_SLUG,
   BOOTSTRAP_COUNTRY_SLUGS,
@@ -150,7 +152,15 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
   async getCommunityExperienceProjections(
     slug: string,
   ): Promise<CommunityExperiencePublicProjections | null> {
-    return getCommunityProjections(slug);
+    const bootstrapProjections = getCommunityProjections(slug);
+
+    if (!bootstrapProjections) {
+      return null;
+    }
+
+    const liveLatestInitiatives = await fetchCommunityLatestInitiativesProjection(slug);
+
+    return mergeCommunityLatestInitiatives(bootstrapProjections, liveLatestInitiatives);
   }
 
   async getCommunityCatalog(): Promise<CommunityCatalogPublicProjection> {

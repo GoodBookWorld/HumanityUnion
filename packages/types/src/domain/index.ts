@@ -70,10 +70,20 @@ export type {
   InitiativeStatus,
   InitiativeTitle,
   InitiativeVisibility,
+  InitiativeVisibilityPolicy,
   RevisionId,
   TimelineEvent,
   TimelineEventId,
 } from "./initiative.js";
+export type { InitiativeLifecyclePhase } from "./initiative-lifecycle.js";
+export {
+  canTransitionInitiativeLifecycle,
+  INITIATIVE_LIFECYCLE_PHASE_LABELS,
+  INITIATIVE_LIFECYCLE_TRANSITIONS,
+  INITIATIVE_TIMELINE_EVENT_LABELS,
+  isInitiativeArchived,
+  isInitiativePubliclyProjected,
+} from "./initiative-lifecycle.js";
 export type { MemberPublicProjection } from "./member-public-projection.js";
 export type {
   LatestInitiativeCardProjection,

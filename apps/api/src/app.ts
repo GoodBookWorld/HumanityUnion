@@ -23,6 +23,7 @@ import {
 import { petitionRouter, publicPetitionRouter } from "./modules/petition/index.js";
 import initiativesRouter from "./modules/initiatives/initiative.routes.js";
 import publicInitiativeRouter from "./modules/initiatives/public-initiative.routes.js";
+import publicLatestInitiativesRouter from "./modules/initiatives/public-latest-initiatives.routes.js";
 import memberRouter from "./modules/member/member.routes.js";
 import participationRouter from "./modules/participation/participation.routes.js";
 import preferencesRouter from "./modules/preferences/preferences.routes.js";
@@ -50,6 +51,7 @@ app.use("/api/v1/public/petitions", publicPetitionRouter);
 app.use("/api/v1/public/collective-decisions", publicCollectiveDecisionRouter);
 app.use("/api/v1/public/collaborative-analysis", publicCollaborativeAnalysisRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);
+app.use("/api/v1/public/projections", publicLatestInitiativesRouter);
 app.use("/api/v1/participation", participationRouter);
 app.use("/api/v1/preferences", preferencesRouter);
 

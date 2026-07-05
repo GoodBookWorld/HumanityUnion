@@ -2,7 +2,10 @@ import { Router } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { getInitiativeById } from "./initiative.store.js";
-import { toPublicInitiativeProjection } from "./public-initiative.projection.js";
+import {
+  canExposePublicInitiativeProjection,
+  toPublicInitiativeProjection,
+} from "./public-initiative.projection.js";
 
 const publicInitiativeRouter = Router();
 
@@ -20,6 +23,11 @@ publicInitiativeRouter.get("/:initiativeId", (req, res) => {
   const initiative = getInitiativeById(req.params.initiativeId);
 
   if (!initiative) {
+    res.status(404).json(createFailureResponse("Initiative not found."));
+    return;
+  }
+
+  if (!canExposePublicInitiativeProjection(initiative)) {
     res.status(404).json(createFailureResponse("Initiative not found."));
     return;
   }

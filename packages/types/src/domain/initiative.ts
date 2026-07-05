@@ -1,3 +1,4 @@
+import type { InitiativeLifecyclePhase } from "./initiative-lifecycle.js";
 import type { MemberId } from "./member.js";
 
 export type InitiativeId = string;
@@ -27,8 +28,10 @@ export type InitiativeStatus =
   | "superseded"
   | "merged";
 
+export type InitiativeVisibilityPolicy = "steward_only" | "public";
+
 export interface InitiativeVisibility {
-  policy: string;
+  policy: InitiativeVisibilityPolicy;
 }
 
 export interface InitiativeMetadata {
@@ -36,6 +39,9 @@ export interface InitiativeMetadata {
   tags: string[];
   region: string;
   language: string;
+  /** Bootstrap community slug associated with this initiative. */
+  communitySlug: string;
+  activityArea: string;
 }
 
 export interface InitiativeRevision {
@@ -70,6 +76,7 @@ export interface Initiative {
   title: InitiativeTitle;
   description: InitiativeDescription;
   status: InitiativeStatus;
+  lifecyclePhase: InitiativeLifecyclePhase;
   visibility: InitiativeVisibility;
   metadata: InitiativeMetadata;
   revisions: InitiativeRevision[];

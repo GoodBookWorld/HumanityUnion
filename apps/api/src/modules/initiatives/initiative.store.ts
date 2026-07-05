@@ -1,6 +1,7 @@
 import type {
   Initiative,
   InitiativeDescription,
+  InitiativeLifecyclePhase,
   InitiativeMetadata,
   InitiativeRevision,
   InitiativeContribution,
@@ -16,6 +17,7 @@ export interface InitiativeUpdate {
   title?: InitiativeTitle;
   description?: InitiativeDescription;
   status?: InitiativeStatus;
+  lifecyclePhase?: InitiativeLifecyclePhase;
   visibility?: Partial<InitiativeVisibility>;
   metadata?: Partial<InitiativeMetadata>;
   revisions?: InitiativeRevision[];
@@ -35,6 +37,10 @@ export function getInitiativeById(initiativeId: string): Initiative | null {
 
 export function listInitiatives(): Initiative[] {
   return Array.from(initiatives.values(), (initiative) => structuredClone(initiative));
+}
+
+export function listInitiativesBySteward(stewardId: string): Initiative[] {
+  return listInitiatives().filter((initiative) => initiative.stewardId === stewardId);
 }
 
 export function createInitiative(initiative: Initiative): Initiative {
@@ -63,6 +69,10 @@ export function updateInitiative(
 
   if (update.status !== undefined) {
     initiative.status = update.status;
+  }
+
+  if (update.lifecyclePhase !== undefined) {
+    initiative.lifecyclePhase = update.lifecyclePhase;
   }
 
   if (update.visibility !== undefined) {

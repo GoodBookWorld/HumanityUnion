@@ -9,6 +9,7 @@ export const sampleInitiative: Initiative = {
   description:
     "Establish a shared community garden to improve local food access and neighborhood cooperation.",
   status: "draft",
+  lifecyclePhase: "draft",
   visibility: {
     policy: "steward_only",
   },
@@ -17,6 +18,8 @@ export const sampleInitiative: Initiative = {
     tags: ["Environment", "Food Security"],
     region: "British Columbia",
     language: "en",
+    communitySlug: "nelson-community-garden",
+    activityArea: "Environment",
   },
   revisions: [
     {

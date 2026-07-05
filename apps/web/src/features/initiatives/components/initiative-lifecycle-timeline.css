@@ -1,0 +1,45 @@
+.initiative-lifecycle-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.initiative-lifecycle-timeline__item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.initiative-lifecycle-timeline__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.initiative-lifecycle-timeline__content {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.initiative-lifecycle-timeline__label {
+  font-weight: 600;
+}
+
+.initiative-lifecycle-timeline__date {
+  font-size: 0.875rem;
+  color: #737373;
+}
+
+.initiative-lifecycle-timeline__empty {
+  margin: 0;
+  color: #737373;
+}

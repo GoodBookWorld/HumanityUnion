@@ -1,6 +1,7 @@
 import type { Initiative, PublicInitiativeProjection } from "@hu/types";
 
 import { getMemberById } from "../member/member.store.js";
+import { isInitiativeEligibleForPublicProjection } from "./initiative-public-projection.access.js";
 
 export function toPublicInitiativeProjection(initiative: Initiative): PublicInitiativeProjection {
   const steward = getMemberById(initiative.stewardId);
@@ -15,8 +16,14 @@ export function toPublicInitiativeProjection(initiative: Initiative): PublicInit
       tags: [...initiative.metadata.tags],
       region: initiative.metadata.region,
       language: initiative.metadata.language,
+      communitySlug: initiative.metadata.communitySlug,
+      activityArea: initiative.metadata.activityArea,
     },
     stewardDisplayName: steward?.profile.displayName ?? "Unknown Steward",
     createdAt: initiative.createdAt,
   };
+}
+
+export function canExposePublicInitiativeProjection(initiative: Initiative): boolean {
+  return isInitiativeEligibleForPublicProjection(initiative);
 }

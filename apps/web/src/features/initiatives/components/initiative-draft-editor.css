@@ -1,0 +1,34 @@
+.initiative-draft-editor {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.initiative-draft-editor__field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.initiative-draft-editor__field span {
+  font-weight: 600;
+}
+
+.initiative-draft-editor__field input,
+.initiative-draft-editor__field textarea,
+.initiative-draft-editor__field select {
+  width: 100%;
+}
+
+.initiative-draft-editor__visibility {
+  margin: 0;
+}
+
+.initiative-draft-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.initiative-draft-editor__message,
+.initiative-draft-editor__readonly {
+  margin: 0;
+}
