@@ -7,7 +7,13 @@ import { WorkspaceNavigation } from "../../features/initiatives/components/Works
 
 import "./initiatives-page.css";
 
-const NAV_ITEMS = ["My Initiatives", "Overview", "Lifecycle Timeline", "Manage Initiative"];
+const NAV_ITEMS = [
+  "My Initiatives",
+  "Overview",
+  "Lifecycle Timeline",
+  "Manage Initiative",
+  "Collaborative Analysis",
+];
 
 export default async function InitiativesPage() {
   let initiatives = null;

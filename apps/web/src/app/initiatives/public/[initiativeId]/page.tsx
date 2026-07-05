@@ -5,6 +5,7 @@ import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { getCollaborativeAnalysisByInitiativeId } from "../../../../features/collaborative-analysis/api";
 import { getCollectiveDecisionByInitiativeId } from "../../../../features/collective-decision/api";
 import { getPublicInitiative } from "../../../../features/initiatives/api";
+import { listPublicInitiativeAnalyses } from "../../../../features/initiative-collaborative-analysis/api";
 import { getPetitionByInitiativeId } from "../../../../features/petition/api";
 
 import "./public-initiative-page.css";
@@ -33,6 +34,7 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   let linkedAnalysisId: string | null = null;
   let linkedDecisionId: string | null = null;
   let linkedPetitionId: string | null = null;
+  let publishedAnalyses: Awaited<ReturnType<typeof listPublicInitiativeAnalyses>> = [];
 
   try {
     initiative = await getPublicInitiative(initiativeId);
@@ -41,6 +43,12 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   }
 
   if (initiative) {
+    try {
+      publishedAnalyses = await listPublicInitiativeAnalyses(initiativeId);
+    } catch {
+      publishedAnalyses = [];
+    }
+
     try {
       const analysis = await getCollaborativeAnalysisByInitiativeId(initiativeId);
       linkedAnalysisId = analysis.analysisId;
@@ -92,6 +100,26 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
         <ProfileField label="Steward" value={initiative.stewardDisplayName} />
         <ProfileField label="Created" value={formatCreatedDate(initiative.createdAt)} />
       </ProfileSection>
+
+      {publishedAnalyses.length > 0 ? (
+        <ProfileSection title="Collaborative Analyses">
+          <ul>
+            {publishedAnalyses.map((analysis) => (
+              <li key={analysis.analysisId}>
+                <Link
+                  href={`/initiative-analyses/public/${encodeURIComponent(analysis.analysisId)}`}
+                >
+                  {analysis.title}
+                </Link>
+                <p>{analysis.summary}</p>
+                <p>
+                  {analysis.authorDisplayName} · {formatCreatedDate(analysis.publishedAt)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      ) : null}
 
       {linkedAnalysisId || linkedDecisionId || linkedPetitionId ? (
         <nav className="public-initiative-page__related" aria-label="Platform integration">

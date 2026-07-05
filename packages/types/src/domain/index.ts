@@ -84,6 +84,11 @@ export {
   isInitiativeArchived,
   isInitiativePubliclyProjected,
 } from "./initiative-lifecycle.js";
+export type {
+  InitiativeCollaborativeAnalysis,
+  InitiativeCollaborativeAnalysisId,
+  InitiativeCollaborativeAnalysisStatus,
+} from "./initiative-collaborative-analysis.js";
 export type { MemberPublicProjection } from "./member-public-projection.js";
 export type {
   LatestInitiativeCardProjection,
@@ -92,6 +97,10 @@ export type {
   PublicExperienceRouteStatus,
 } from "./public-latest-initiatives.js";
 export type { PublicInitiativeProjection } from "./public-initiative.js";
+export type {
+  PublicInitiativeCollaborativeAnalysisListItem,
+  PublicInitiativeCollaborativeAnalysisProjection,
+} from "./public-initiative-collaborative-analysis.js";
 export type {
   ParticipationPipelinePublicProjection,
   ParticipationPipelineStageCount,

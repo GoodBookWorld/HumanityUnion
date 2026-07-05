@@ -13,6 +13,11 @@ import {
   publicCollectiveDecisionRouter,
 } from "./modules/collective-decision/index.js";
 import {
+  initiativeCollaborativeAnalysisLifecycleRouter,
+  publicInitiativeCollaborativeAnalysisRouter,
+  publicInitiativeCollaborativeAnalysesByInitiativeRouter,
+} from "./modules/initiative-collaborative-analysis/index.js";
+import {
   implementationCommitmentRouter,
   publicImplementationCommitmentRouter,
 } from "./modules/implementation-commitment/index.js";
@@ -40,6 +45,7 @@ app.use("/api/v1/members", memberRouter);
 app.use("/api/v1/initiatives", initiativeCollaborativeAnalysisRouter);
 app.use("/api/v1/initiatives", initiativeCollectiveDecisionRouter);
 app.use("/api/v1/initiatives", initiativesRouter);
+app.use("/api/v1/initiative-analyses", initiativeCollaborativeAnalysisLifecycleRouter);
 app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);
 app.use("/api/v1/collective-decisions", collectiveDecisionRouter);
 app.use("/api/v1/petitions", petitionRouter);
@@ -50,6 +56,8 @@ app.use("/api/v1/public/implementation-commitments", publicImplementationCommitm
 app.use("/api/v1/public/petitions", publicPetitionRouter);
 app.use("/api/v1/public/collective-decisions", publicCollectiveDecisionRouter);
 app.use("/api/v1/public/collaborative-analysis", publicCollaborativeAnalysisRouter);
+app.use("/api/v1/public/initiative-analyses", publicInitiativeCollaborativeAnalysisRouter);
+app.use("/api/v1/public/initiatives", publicInitiativeCollaborativeAnalysesByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);
 app.use("/api/v1/public/projections", publicLatestInitiativesRouter);
 app.use("/api/v1/participation", participationRouter);
