@@ -2,6 +2,7 @@ export {
   loadCommunityExperiencePageData,
   loadCountryExperiencePageData,
   loadGlobalExperienceProjections,
+  loadRegionExperiencePageData,
   publicProjectionEngine,
   PublicProjectionEngine,
 } from "./public-projection-engine";
@@ -23,6 +24,12 @@ export {
   getBootstrapCountryProjections,
   isBootstrapCountrySlug,
 } from "./providers/bootstrap/countries";
+export {
+  BOOTSTRAP_REGION_PROJECTIONS_BY_SLUG,
+  BOOTSTRAP_REGION_SLUGS,
+  getBootstrapRegionProjections,
+  isBootstrapRegionSlug,
+} from "./providers/bootstrap/regions";
 export { WORLD_PARTICIPATION_PIPELINE_PUBLIC_PROJECTION } from "./providers/bootstrap/world-pipeline";
 export { WORLD_PARTICIPATION_PUBLIC_STATISTICS_PROJECTION } from "./providers/bootstrap/world-statistics";
 export { WORLD_LATEST_INITIATIVES_PUBLIC_PROJECTION } from "./providers/bootstrap/world-latest-initiatives";
@@ -33,4 +40,5 @@ export type {
   PublicParticipationEvidenceProjections,
   PublicProjectionProviderMode,
   PublicProjectionScopeRef,
+  RegionExperiencePageData,
 } from "./types";

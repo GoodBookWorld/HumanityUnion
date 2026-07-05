@@ -111,6 +111,11 @@ export type {
   TrustedNationalMediaRecord,
 } from "./public-country-experience.js";
 export type {
+  RegionExperiencePublicProjections,
+  RegionIdentityPublicProjection,
+  RegionRepresentativeVisual,
+} from "./public-region-experience.js";
+export type {
   PublicAnalysisSummaryProjection,
   PublicCollaborativeAnalysisProjection,
   PublicContributionStatistics,

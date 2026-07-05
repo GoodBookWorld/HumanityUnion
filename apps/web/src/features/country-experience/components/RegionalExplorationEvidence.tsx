@@ -20,8 +20,8 @@ export function RegionalExplorationEvidence({
   return (
     <div className="regional-exploration">
       <p className="regional-exploration__note">
-        Regions within {countryName} on Humanity Union — Region Experience routes are not yet
-        available.
+        Regions within {countryName} on Humanity Union. Active routes link to Region Experience
+        pages; others remain honest previews until available.
       </p>
 
       <p className="regional-exploration__browse-label">
@@ -41,7 +41,7 @@ export function RegionalExplorationEvidence({
                       {region.name}
                       <span className="regional-exploration__unavailable-note">
                         {" "}
-                        (Region Experience coming soon)
+                        (Region Experience not yet available)
                       </span>
                     </span>
                   )}

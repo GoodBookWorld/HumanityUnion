@@ -17,6 +17,9 @@ export interface CommunityPublicRecord {
   activityArea: string;
   regionLabel: string;
   countryLabel: string;
+  regionSlug?: string;
+  countrySlug?: string;
+  regionExperienceLabel?: string;
   initiativeCount: number;
   communityHref: string;
   communityRouteStatus: PublicExperienceRouteStatus;
@@ -29,6 +32,9 @@ export interface CommunityIdentityPublicProjection {
   activityArea: string;
   regionLabel: string;
   countryLabel: string;
+  regionSlug?: string;
+  countrySlug?: string;
+  regionExperienceLabel?: string;
   representativeVisual: CommunityRepresentativeVisual;
   source: "bootstrap" | "projection";
 }

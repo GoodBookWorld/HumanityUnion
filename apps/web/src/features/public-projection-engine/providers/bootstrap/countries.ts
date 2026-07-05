@@ -163,7 +163,7 @@ const CANADA_PROJECTIONS: CountryExperiencePublicProjections = {
         countryLabel: "Canada",
         initiativeCount: 2,
         regionHref: regionHref("british-columbia"),
-        regionRouteStatus: "unavailable",
+        regionRouteStatus: "active",
       },
       {
         slug: "prairies",

@@ -5,6 +5,7 @@ import type {
   LatestInitiativesPublicProjection,
   ParticipationPipelinePublicProjection,
   ParticipationPublicStatisticsProjection,
+  RegionExperiencePublicProjections,
 } from "@hu/types";
 
 import type { PublicProjectionProvider } from "../provider";
@@ -19,6 +20,11 @@ import {
   getBootstrapCountryProjections,
   isBootstrapCountrySlug,
 } from "./bootstrap/countries";
+import {
+  BOOTSTRAP_REGION_PROJECTIONS_BY_SLUG,
+  getBootstrapRegionProjections,
+  isBootstrapRegionSlug,
+} from "./bootstrap/regions";
 import { WORLD_PARTICIPATION_PIPELINE_PUBLIC_PROJECTION } from "./bootstrap/world-pipeline";
 import { WORLD_LATEST_INITIATIVES_PUBLIC_PROJECTION } from "./bootstrap/world-latest-initiatives";
 import { WORLD_PARTICIPATION_PUBLIC_STATISTICS_PROJECTION } from "./bootstrap/world-statistics";
@@ -33,6 +39,10 @@ function getCommunityProjections(slug: string): CommunityExperiencePublicProject
 
 function getCountryProjections(countrySlug: string): CountryExperiencePublicProjections | null {
   return getBootstrapCountryProjections(countrySlug);
+}
+
+function getRegionProjections(regionSlug: string): RegionExperiencePublicProjections | null {
+  return getBootstrapRegionProjections(regionSlug);
 }
 
 export class BootstrapPublicProjectionProvider implements PublicProjectionProvider {
@@ -51,6 +61,13 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
 
         return getCountryProjections(scopeRef.scopeKey)?.statistics ?? null;
       }
+      case "region": {
+        if (!scopeRef.scopeKey) {
+          return null;
+        }
+
+        return getRegionProjections(scopeRef.scopeKey)?.statistics ?? null;
+      }
       case "community": {
         if (!scopeRef.scopeKey) {
           return null;
@@ -58,8 +75,6 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
 
         return getCommunityProjections(scopeRef.scopeKey)?.statistics ?? null;
       }
-      case "region":
-        return null;
       default:
         return null;
     }
@@ -78,6 +93,13 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
 
         return getCountryProjections(scopeRef.scopeKey)?.pipeline ?? null;
       }
+      case "region": {
+        if (!scopeRef.scopeKey) {
+          return null;
+        }
+
+        return getRegionProjections(scopeRef.scopeKey)?.pipeline ?? null;
+      }
       case "community": {
         if (!scopeRef.scopeKey) {
           return null;
@@ -85,8 +107,6 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
 
         return getCommunityProjections(scopeRef.scopeKey)?.pipeline ?? null;
       }
-      case "region":
-        return null;
       default:
         return null;
     }
@@ -105,6 +125,13 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
 
         return getCountryProjections(scopeRef.scopeKey)?.latestInitiatives ?? null;
       }
+      case "region": {
+        if (!scopeRef.scopeKey) {
+          return null;
+        }
+
+        return getRegionProjections(scopeRef.scopeKey)?.latestInitiatives ?? null;
+      }
       case "community": {
         if (!scopeRef.scopeKey) {
           return null;
@@ -112,8 +139,6 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
 
         return getCommunityProjections(scopeRef.scopeKey)?.latestInitiatives ?? null;
       }
-      case "region":
-        return null;
       default:
         return null;
     }
@@ -137,6 +162,16 @@ export class BootstrapPublicProjectionProvider implements PublicProjectionProvid
     }
 
     return BOOTSTRAP_COUNTRY_PROJECTIONS_BY_SLUG[countrySlug] ?? null;
+  }
+
+  async getRegionExperienceProjections(
+    regionSlug: string,
+  ): Promise<RegionExperiencePublicProjections | null> {
+    if (!isBootstrapRegionSlug(regionSlug)) {
+      return null;
+    }
+
+    return BOOTSTRAP_REGION_PROJECTIONS_BY_SLUG[regionSlug] ?? null;
   }
 }
 

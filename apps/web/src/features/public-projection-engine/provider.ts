@@ -5,6 +5,7 @@ import type {
   LatestInitiativesPublicProjection,
   ParticipationPipelinePublicProjection,
   ParticipationPublicStatisticsProjection,
+  RegionExperiencePublicProjections,
 } from "@hu/types";
 
 import type { PublicProjectionProviderMode, PublicProjectionScopeRef } from "./types";
@@ -33,4 +34,8 @@ export interface PublicProjectionProvider {
   getCountryExperienceProjections(
     countrySlug: string,
   ): Promise<CountryExperiencePublicProjections | null>;
+
+  getRegionExperienceProjections(
+    regionSlug: string,
+  ): Promise<RegionExperiencePublicProjections | null>;
 }

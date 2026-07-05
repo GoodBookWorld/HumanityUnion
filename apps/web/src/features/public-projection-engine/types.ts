@@ -6,6 +6,7 @@ import type {
   ParticipationPipelinePublicProjection,
   ParticipationPublicStatisticsProjection,
   PublicGeographicScope,
+  RegionExperiencePublicProjections,
 } from "@hu/types";
 
 export type PublicProjectionProviderMode = "bootstrap" | "api";
@@ -31,4 +32,8 @@ export interface CommunityExperiencePageData {
 
 export interface CountryExperiencePageData {
   projections: CountryExperiencePublicProjections;
+}
+
+export interface RegionExperiencePageData {
+  projections: RegionExperiencePublicProjections;
 }

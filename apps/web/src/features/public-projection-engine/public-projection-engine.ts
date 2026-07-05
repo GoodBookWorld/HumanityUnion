@@ -6,6 +6,7 @@ import type {
   CountryExperiencePageData,
   GlobalExperiencePublicProjections,
   PublicProjectionScopeRef,
+  RegionExperiencePageData,
 } from "./types";
 
 const WORLD_SCOPE: PublicProjectionScopeRef = { scope: "world" };
@@ -94,6 +95,25 @@ export class PublicProjectionEngine {
   async getCountryExperienceProjections(countrySlug: string) {
     return this.provider.getCountryExperienceProjections(countrySlug);
   }
+
+  async loadRegionExperiencePageData(regionSlug: string): Promise<RegionExperiencePageData | null> {
+    const projections = await this.provider.getRegionExperienceProjections(regionSlug);
+
+    if (!projections) {
+      return null;
+    }
+
+    return {
+      projections: {
+        ...projections,
+        latestInitiatives: await enrichLatestInitiativesProjection(projections.latestInitiatives),
+      },
+    };
+  }
+
+  async getRegionExperienceProjections(regionSlug: string) {
+    return this.provider.getRegionExperienceProjections(regionSlug);
+  }
 }
 
 export const publicProjectionEngine = new PublicProjectionEngine(bootstrapPublicProjectionProvider);
@@ -112,4 +132,10 @@ export async function loadCountryExperiencePageData(
   countrySlug: string,
 ): Promise<CountryExperiencePageData | null> {
   return publicProjectionEngine.loadCountryExperiencePageData(countrySlug);
+}
+
+export async function loadRegionExperiencePageData(
+  regionSlug: string,
+): Promise<RegionExperiencePageData | null> {
+  return publicProjectionEngine.loadRegionExperiencePageData(regionSlug);
 }
