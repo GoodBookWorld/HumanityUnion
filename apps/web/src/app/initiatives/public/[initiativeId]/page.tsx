@@ -9,6 +9,7 @@ import { listPublicInitiativeAnalyses } from "../../../../features/initiative-co
 import { listPublicInitiativeImprovementProposals } from "../../../../features/initiative-improvement-proposal/api";
 import { getPublicInitiativeVersionHistory } from "../../../../features/initiative-version-revision/api";
 import { listPublicDecisionSessionsForInitiative } from "../../../../features/decision-session/api";
+import { listPublicCivicCompatibilityReviews } from "../../../../features/civic-compatibility-review/api";
 import { getPetitionByInitiativeId } from "../../../../features/petition/api";
 
 import "./public-initiative-page.css";
@@ -44,6 +45,8 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   let versionHistory: Awaited<ReturnType<typeof getPublicInitiativeVersionHistory>> | null = null;
   let decisionSessions: Awaited<ReturnType<typeof listPublicDecisionSessionsForInitiative>> | null =
     null;
+  let compatibilityReviews: Awaited<ReturnType<typeof listPublicCivicCompatibilityReviews>> | null =
+    null;
 
   try {
     initiative = await getPublicInitiative(initiativeId);
@@ -68,6 +71,12 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       decisionSessions = await listPublicDecisionSessionsForInitiative(initiativeId);
     } catch {
       decisionSessions = null;
+    }
+
+    try {
+      compatibilityReviews = await listPublicCivicCompatibilityReviews(initiativeId);
+    } catch {
+      compatibilityReviews = null;
     }
 
     try {
@@ -211,6 +220,81 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
               </li>
             ))}
           </ul>
+        </ProfileSection>
+      ) : null}
+
+      {compatibilityReviews?.latest ? (
+        <ProfileSection title="Civic Compatibility Review">
+          {compatibilityReviews.latest.reviewAvailableNotice ? (
+            <p className="public-initiative-page__compatibility-notice" role="status">
+              {compatibilityReviews.latest.reviewAvailableNotice}
+            </p>
+          ) : null}
+          <ProfileField
+            label="Compatibility Status"
+            value={compatibilityReviews.latest.compatibilityStatus.replace(/_/g, " ")}
+          />
+          <ProfileField
+            label="Review Summary"
+            value={compatibilityReviews.latest.compatibilitySummary}
+          />
+          <ProfileField
+            label="Last Review Date"
+            value={formatCreatedDate(compatibilityReviews.latest.generatedAt)}
+          />
+          {compatibilityReviews.latest.referencedPrinciples.length > 0 ? (
+            <ProfileField
+              label="Referenced Principles"
+              value={compatibilityReviews.latest.referencedPrinciples
+                .map((principle) => principle.referenceCode)
+                .join(", ")}
+            />
+          ) : null}
+          <details className="public-initiative-page__compatibility-details">
+            <summary>View review details</summary>
+            <ProfileField
+              label="Human Rights Assessment"
+              value={compatibilityReviews.latest.humanRightsAssessment}
+            />
+            <ProfileField
+              label="Humanity Union Assessment"
+              value={compatibilityReviews.latest.humanityUnionAssessment}
+            />
+            {compatibilityReviews.latest.positiveAlignment.length > 0 ? (
+              <ProfileField
+                label="Positive Alignment"
+                value={compatibilityReviews.latest.positiveAlignment.join(" ")}
+              />
+            ) : null}
+            {compatibilityReviews.latest.detectedConcerns.length > 0 ? (
+              <ul>
+                {compatibilityReviews.latest.detectedConcerns.map((concern) => (
+                  <li key={concern.concernId}>
+                    <strong>{concern.summary}</strong>
+                    <p>{concern.explanation}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {compatibilityReviews.latest.recommendations.length > 0 ? (
+              <ul>
+                {compatibilityReviews.latest.recommendations.map((recommendation) => (
+                  <li key={recommendation.recommendationId}>
+                    <strong>{recommendation.summary}</strong>
+                    <p>{recommendation.explanation}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {compatibilityReviews.latest.referencedHumanRightsArticles.length > 0 ? (
+              <ProfileField
+                label="Referenced Human Rights Articles"
+                value={compatibilityReviews.latest.referencedHumanRightsArticles
+                  .map((article) => article.referenceCode)
+                  .join(", ")}
+              />
+            ) : null}
+          </details>
         </ProfileSection>
       ) : null}
 

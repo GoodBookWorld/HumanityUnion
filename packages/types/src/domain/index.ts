@@ -103,6 +103,18 @@ export type {
   InitiativeVersionRevisionId,
 } from "./initiative-version-revision.js";
 export type {
+  CivicCompatibilityConcern,
+  CivicCompatibilityConfidenceLevel,
+  CivicCompatibilityRecommendation,
+  CivicCompatibilityReview,
+  CivicCompatibilityReviewComparison,
+  CivicCompatibilityReviewId,
+  CivicCompatibilityStatus,
+  CivicReferenceFrameworkEntry,
+  CivicReferenceFrameworkType,
+  ReviewedDocumentReference,
+} from "./civic-compatibility-review.js";
+export type {
   DecisionSession,
   DecisionSessionEligibility,
   DecisionSessionId,
@@ -132,6 +144,11 @@ export type {
   PublicInitiativeVersionRevisionProjection,
   PublicInitiativeWithVersionHistory,
 } from "./public-initiative-version-revision.js";
+export type {
+  CivicCompatibilityReviewMetrics,
+  PublicCivicCompatibilityReviewListItem,
+  PublicCivicCompatibilityReviewSummary,
+} from "./public-civic-compatibility-review.js";
 export type {
   DecisionSessionMetrics,
   PublicDecisionSessionListItem,

@@ -56,6 +56,10 @@ export class FileDecisionSessionPersistenceAdapter implements DecisionSessionPer
   }
 }
 
+export function resolveDecisionSessionPersistenceFilePath(): string {
+  return process.env.DECISION_SESSION_PERSISTENCE_PATH ?? DEFAULT_FILE_PATH;
+}
+
 export function createFileDecisionSessionPersistenceAdapter(): FileDecisionSessionPersistenceAdapter {
-  return new FileDecisionSessionPersistenceAdapter();
+  return new FileDecisionSessionPersistenceAdapter(resolveDecisionSessionPersistenceFilePath());
 }

@@ -35,3 +35,20 @@
 .public-initiative-page__back {
   margin-top: 1.5rem;
 }
+
+.public-initiative-page__compatibility-notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d69e2e;
+  background: #fffff0;
+  border-radius: 0.375rem;
+}
+
+.public-initiative-page__compatibility-details {
+  margin-top: 1rem;
+}
+
+.public-initiative-page__compatibility-details ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}

@@ -14,7 +14,8 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "typecheck": "tsc --noEmit -p packages/types/tsconfig.json && tsc --noEmit -p apps/api/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json",
-    "verify:collective-intelligence": "INITIATIVE_PERSISTENCE=memory INITIATIVE_ANALYSIS_PERSISTENCE=memory INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE=memory INITIATIVE_VERSION_REVISION_PERSISTENCE=memory tsx apps/api/src/scripts/verify-collective-intelligence-e2e.ts"
+    "verify:collective-intelligence": "INITIATIVE_PERSISTENCE=memory INITIATIVE_ANALYSIS_PERSISTENCE=memory INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE=memory INITIATIVE_VERSION_REVISION_PERSISTENCE=memory tsx apps/api/src/scripts/verify-collective-intelligence-e2e.ts",
+    "verify:decision-session": "INITIATIVE_PERSISTENCE=memory INITIATIVE_ANALYSIS_PERSISTENCE=memory INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE=memory INITIATIVE_VERSION_REVISION_PERSISTENCE=memory DECISION_SESSION_PERSISTENCE=memory tsx apps/api/src/scripts/verify-decision-session-e2e.ts && INITIATIVE_PERSISTENCE=memory INITIATIVE_ANALYSIS_PERSISTENCE=memory INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE=memory INITIATIVE_VERSION_REVISION_PERSISTENCE=memory DECISION_SESSION_PERSISTENCE=memory tsx apps/api/src/scripts/verify-decision-session-e2e.ts && INITIATIVE_PERSISTENCE=memory INITIATIVE_ANALYSIS_PERSISTENCE=memory INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE=memory INITIATIVE_VERSION_REVISION_PERSISTENCE=memory DECISION_SESSION_PERSISTENCE=memory tsx apps/api/src/scripts/verify-decision-session-e2e.ts"
   },
   "engines": {
     "node": ">=20"

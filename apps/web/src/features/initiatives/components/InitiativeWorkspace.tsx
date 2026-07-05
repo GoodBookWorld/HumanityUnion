@@ -19,6 +19,7 @@ import { InitiativeAnalysisWorkspace } from "../../initiative-collaborative-anal
 import { InitiativeImprovementProposalStewardPanel } from "../../initiative-improvement-proposal/components/InitiativeImprovementProposalStewardPanel";
 import { InitiativeRevisionWorkspace } from "../../initiative-version-revision/components/InitiativeRevisionWorkspace";
 import { DecisionSessionWorkspace } from "../../decision-session/components/DecisionSessionWorkspace";
+import { CivicCompatibilityReviewWorkspace } from "../../civic-compatibility-review/components/CivicCompatibilityReviewWorkspace";
 
 interface InitiativeWorkspaceProps {
   initialInitiatives: Initiative[];
@@ -141,6 +142,12 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
       {selectedInitiative ? (
         <ProfileSection title="Decision Session">
           <DecisionSessionWorkspace initiative={selectedInitiative} />
+        </ProfileSection>
+      ) : null}
+
+      {selectedInitiative ? (
+        <ProfileSection title="Civic Compatibility Review">
+          <CivicCompatibilityReviewWorkspace initiative={selectedInitiative} />
         </ProfileSection>
       ) : null}
     </>
