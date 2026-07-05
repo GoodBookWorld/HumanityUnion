@@ -153,7 +153,8 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
                 </Link>
                 <p>{analysis.summary}</p>
                 <p>
-                  {analysis.authorDisplayName} · {formatCreatedDate(analysis.publishedAt)}
+                  {analysis.authorDisplayName} · Version {analysis.initiativeVersion} ·{" "}
+                  {formatCreatedDate(analysis.publishedAt)}
                 </p>
               </li>
             ))}

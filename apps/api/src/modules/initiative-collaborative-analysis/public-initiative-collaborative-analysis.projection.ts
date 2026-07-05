@@ -30,6 +30,7 @@ export function toPublicInitiativeCollaborativeAnalysisProjection(
     references: analysis.references,
     authorDisplayName: resolveAuthorDisplayName(analysis.authorId),
     publishedAt: analysis.publishedAt ?? analysis.updatedAt,
+    initiativeVersion: analysis.initiativeVersion ?? 1,
   };
 }
 
@@ -42,6 +43,7 @@ export function toPublicInitiativeCollaborativeAnalysisListItem(
     summary: analysis.summary,
     authorDisplayName: resolveAuthorDisplayName(analysis.authorId),
     publishedAt: analysis.publishedAt ?? analysis.updatedAt,
+    initiativeVersion: analysis.initiativeVersion ?? 1,
   };
 }
 

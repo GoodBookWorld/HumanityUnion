@@ -12,6 +12,7 @@ export interface PublicInitiativeCollaborativeAnalysisProjection {
   references: string;
   authorDisplayName: string;
   publishedAt: string;
+  initiativeVersion: number;
 }
 
 export interface PublicInitiativeCollaborativeAnalysisListItem {
@@ -20,4 +21,5 @@ export interface PublicInitiativeCollaborativeAnalysisListItem {
   summary: string;
   authorDisplayName: string;
   publishedAt: string;
+  initiativeVersion: number;
 }

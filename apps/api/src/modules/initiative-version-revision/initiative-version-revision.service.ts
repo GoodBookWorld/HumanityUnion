@@ -265,7 +265,7 @@ export function publishInitiativeRevision(
   );
 
   const revision: InitiativeVersionRevision = {
-    revisionId: `initiative-version-revision-${Date.now()}`,
+    revisionId: `initiative-version-revision-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     initiativeId,
     version: nextVersion,
     previousVersion: currentVersion > 0 ? currentVersion : null,
@@ -338,7 +338,7 @@ export function createInitialInitiativeVersionRevision(
 
   const publishedAt = new Date().toISOString();
   const revision: InitiativeVersionRevision = {
-    revisionId: `initiative-version-revision-${Date.now()}`,
+    revisionId: `initiative-version-revision-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     initiativeId: initiative.initiativeId,
     version: 1,
     previousVersion: null,

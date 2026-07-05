@@ -68,6 +68,7 @@ export default async function PublicInitiativeAnalysisPage({
         <ProfileField label="Suggested improvements" value={analysis.suggestedImprovements} />
         <ProfileField label="References" value={analysis.references} />
         <ProfileField label="Author" value={analysis.authorDisplayName} />
+        <ProfileField label="Created for version" value={`Version ${analysis.initiativeVersion}`} />
         <ProfileField label="Published" value={formatPublishedDate(analysis.publishedAt)} />
       </ProfileSection>
 
