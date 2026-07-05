@@ -62,14 +62,14 @@ Its responsibility is communication.
 
 The Platform API must be:
 
-* human-centered;
-* resource-oriented;
-* versioned;
-* secure;
-* predictable;
-* explainable;
-* consistent;
-* scalable.
+- human-centered;
+- resource-oriented;
+- versioned;
+- secure;
+- predictable;
+- explainable;
+- consistent;
+- scalable.
 
 The API should reflect Humanity Union terminology.
 
@@ -95,20 +95,20 @@ Backward compatibility should be preserved whenever possible.
 
 Primary resources include:
 
-* Members
-* Impact Profiles
-* Initiatives
-* Communities
-* Regions
-* Institutions
-* Knowledge
-* Learning Paths
-* Opportunities
-* Reflection
-* Fair
-* Impact
-* Notifications
-* Recommendations
+- Members
+- Impact Profiles
+- Initiatives
+- Communities
+- Regions
+- Institutions
+- Knowledge
+- Learning Paths
+- Opportunities
+- Reflection
+- Fair
+- Impact
+- Notifications
+- Recommendations
 
 Resources represent civic concepts.
 
@@ -374,11 +374,11 @@ GET /search?q=environment
 
 Search spans:
 
-* initiatives;
-* knowledge;
-* communities;
-* institutions;
-* learning.
+- initiatives;
+- knowledge;
+- communities;
+- institutions;
+- learning.
 
 ---
 
@@ -386,9 +386,9 @@ Search spans:
 
 Errors should always explain:
 
-* what happened;
-* why it happened;
-* how the Member can resolve it.
+- what happened;
+- why it happened;
+- how the Member can resolve it.
 
 The platform should never expose internal implementation details.
 
@@ -398,11 +398,11 @@ The platform should never expose internal implementation details.
 
 Recommendation responses include:
 
-* recommendation;
-* explanation;
-* related interests;
-* estimated effort;
-* expected impact.
+- recommendation;
+- explanation;
+- related interests;
+- estimated effort;
+- expected impact.
 
 Members should understand every recommendation.
 
@@ -422,11 +422,11 @@ The API does not publish events directly.
 
 Every endpoint should support:
 
-* authentication;
-* authorization;
-* rate limiting;
-* audit logging;
-* privacy controls.
+- authentication;
+- authorization;
+- rate limiting;
+- audit logging;
+- privacy controls.
 
 ---
 
@@ -452,10 +452,10 @@ This follows the Principle of Irreversible Architecture.
 
 The API should never expose:
 
-* database structure;
-* internal services;
-* internal engines;
-* implementation details.
+- database structure;
+- internal services;
+- internal engines;
+- implementation details.
 
 The API exposes platform capabilities.
 
@@ -465,12 +465,12 @@ The API exposes platform capabilities.
 
 The Platform API should support:
 
-* Web Application
-* Progressive Web App
-* Native Mobile Apps
-* Partner APIs
-* AI Assistants
-* Public Civic Data Services
+- Web Application
+- Progressive Web App
+- Native Mobile Apps
+- Partner APIs
+- AI Assistants
+- Public Civic Data Services
 
 without architectural redesign.
 
@@ -504,21 +504,21 @@ Approved
 
 Depends On:
 
-* 04_PLATFORM_BLUEPRINT.md
-* 05_PLATFORM_SERVICES.md
-* 07_DATABASE_BLUEPRINT.md
-* 08_EVENT_ARCHITECTURE.md
-* 09_INTENTION_ARCHITECTURE.md
-* 10_PLATFORM_CONTRACT.md
-* 11_ENGINEERING_ARCHITECTURE.md
+- 04_PLATFORM_BLUEPRINT.md
+- 05_PLATFORM_SERVICES.md
+- 07_DATABASE_BLUEPRINT.md
+- 08_EVENT_ARCHITECTURE.md
+- 09_INTENTION_ARCHITECTURE.md
+- 10_PLATFORM_CONTRACT.md
+- 11_ENGINEERING_ARCHITECTURE.md
 
 Used By:
 
-* Backend
-* Frontend
-* Mobile Applications
-* AI Services
-* Public API
+- Backend
+- Frontend
+- Mobile Applications
+- AI Services
+- Public API
 
 Next Document:
 

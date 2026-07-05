@@ -25,10 +25,7 @@ publicInitiativeRouter.get("/:initiativeId", (req, res) => {
   }
 
   res.json(
-    createSuccessResponse(
-      toPublicInitiativeProjection(initiative),
-      "Public initiative loaded.",
-    ),
+    createSuccessResponse(toPublicInitiativeProjection(initiative), "Public initiative loaded."),
   );
 });
 

@@ -24,7 +24,10 @@ export type {
 export type { Implementation } from "./implementation.js";
 export type { ImplementationPhase } from "./implementation-phase.js";
 export type { ImplementationStatus } from "./implementation-status.js";
-export type { ImplementationTimeline, ImplementationTimelineEntry } from "./implementation-timeline.js";
+export type {
+  ImplementationTimeline,
+  ImplementationTimelineEntry,
+} from "./implementation-timeline.js";
 export type { ImplementationVisibility } from "./implementation-visibility.js";
 export type { Milestone } from "./milestone.js";
 export type { MilestoneRequirementType } from "./milestone-requirement-type.js";

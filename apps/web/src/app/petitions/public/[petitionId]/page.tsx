@@ -123,8 +123,8 @@ export default async function PublicPetitionPage({ params }: PublicPetitionPageP
           </>
         ) : (
           <p className="public-petition-page__empty">
-            Approved decision context is unavailable. Review the Petition subject before
-            considering endorsement.
+            Approved decision context is unavailable. Review the Petition subject before considering
+            endorsement.
           </p>
         )}
       </ProfileSection>

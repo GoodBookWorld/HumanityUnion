@@ -34,8 +34,8 @@ export function ImplementationReadinessSection({
         value={new Date(implementationReadiness.derivedAt).toLocaleString()}
       />
       <p className="commitment-section__note">
-        Implementation Readiness is not approval of the Collective Decision. It reflects how
-        closely declared Community Capacity satisfies Frozen Policy thresholds.
+        Implementation Readiness is not approval of the Collective Decision. It reflects how closely
+        declared Community Capacity satisfies Frozen Policy thresholds.
       </p>
     </div>
   );

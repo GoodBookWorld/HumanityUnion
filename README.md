@@ -32,14 +32,14 @@ Each book has a specific purpose.
 
 Defines:
 
-* philosophy;
-* ethics;
-* architecture;
-* platform structure;
-* human journeys;
-* event architecture;
-* database logic;
-* platform contracts.
+- philosophy;
+- ethics;
+- architecture;
+- platform structure;
+- human journeys;
+- event architecture;
+- database logic;
+- platform contracts.
 
 This book answers:
 
@@ -51,11 +51,11 @@ This book answers:
 
 Defines:
 
-* engineering principles;
-* API architecture;
-* data models;
-* frontend system;
-* development standards.
+- engineering principles;
+- API architecture;
+- data models;
+- frontend system;
+- development standards.
 
 This book answers:
 
@@ -80,14 +80,14 @@ Future books should be read only after understanding the Foundation.
 
 The Blueprint follows several fundamental principles.
 
-* Humanity First
-* Knowledge Before Action
-* Human-Centered Domain Architecture
-* Principle of Irreversible Architecture
-* Quiet Technology
-* Calm Interaction
-* Explainable Systems
-* Evolution Without Rewrite
+- Humanity First
+- Knowledge Before Action
+- Human-Centered Domain Architecture
+- Principle of Irreversible Architecture
+- Quiet Technology
+- Calm Interaction
+- Explainable Systems
+- Evolution Without Rewrite
 
 These principles guide every engineering decision.
 

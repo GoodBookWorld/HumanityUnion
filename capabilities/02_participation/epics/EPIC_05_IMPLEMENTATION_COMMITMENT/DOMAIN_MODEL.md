@@ -98,18 +98,18 @@ The Aggregate Root entity.
 
 **Core properties:**
 
-| Property | Description |
-|----------|-------------|
-| `implementationCommitmentId` | Unique aggregate identifier |
-| `initiativeId` | Reference to originating Initiative |
-| `collectiveDecisionId` | Reference to approved Collective Decision |
-| `petitionId` | Reference to related Petition where applicable |
-| `status` | Commitment lifecycle state |
-| `subjectTitle` | Approved subject title snapshot |
-| `subjectSummary` | Approved subject summary snapshot |
-| `frozenPolicyId` | Reference to governing Frozen Policy |
-| `createdAt` | Aggregate creation timestamp |
-| `updatedAt` | Last mutation timestamp |
+| Property                     | Description                                    |
+| ---------------------------- | ---------------------------------------------- |
+| `implementationCommitmentId` | Unique aggregate identifier                    |
+| `initiativeId`               | Reference to originating Initiative            |
+| `collectiveDecisionId`       | Reference to approved Collective Decision      |
+| `petitionId`                 | Reference to related Petition where applicable |
+| `status`                     | Commitment lifecycle state                     |
+| `subjectTitle`               | Approved subject title snapshot                |
+| `subjectSummary`             | Approved subject summary snapshot              |
+| `frozenPolicyId`             | Reference to governing Frozen Policy           |
+| `createdAt`                  | Aggregate creation timestamp                   |
+| `updatedAt`                  | Last mutation timestamp                        |
 
 **Owned collections:**
 
@@ -134,18 +134,18 @@ A **Contribution Item** is one participant's recorded declaration of preparednes
 
 **Properties:**
 
-| Property | Description |
-|----------|-------------|
-| `contributionItemId` | Unique item identifier |
-| `implementationCommitmentId` | Owning aggregate |
-| `participantId` | Declaring participant |
-| `contributionType` | Volunteer, Professional or Resource classification |
-| `contributionCapacity` | Declared measurable capacity |
-| `availability` | Declared availability window |
-| `commitmentStatus` | Lifecycle status of this declaration |
-| `declaredAt` | Timestamp of original declaration |
-| `updatedAt` | Timestamp of last permitted status change |
-| `withdrawnAt` | Timestamp when withdrawn, if applicable |
+| Property                     | Description                                        |
+| ---------------------------- | -------------------------------------------------- |
+| `contributionItemId`         | Unique item identifier                             |
+| `implementationCommitmentId` | Owning aggregate                                   |
+| `participantId`              | Declaring participant                              |
+| `contributionType`           | Volunteer, Professional or Resource classification |
+| `contributionCapacity`       | Declared measurable capacity                       |
+| `availability`               | Declared availability window                       |
+| `commitmentStatus`           | Lifecycle status of this declaration               |
+| `declaredAt`                 | Timestamp of original declaration                  |
+| `updatedAt`                  | Timestamp of last permitted status change          |
+| `withdrawnAt`                | Timestamp when withdrawn, if applicable            |
 
 **Rules:**
 
@@ -289,13 +289,13 @@ Within the aggregate, it expresses evaluative outcome — not manual toggle.
 
 Implementation Commitment references external aggregates by identifier and approved snapshot only.
 
-| Reference | Purpose |
-|-----------|---------|
-| `InitiativeId` | Originating structured proposal |
-| `CollectiveDecisionId` | Approved collective direction |
-| `PetitionId` | Related public endorsement context |
-| `ParticipantId` | Declaring participant identity |
-| `FrozenPolicyId` | Governing frozen implementation policy |
+| Reference              | Purpose                                |
+| ---------------------- | -------------------------------------- |
+| `InitiativeId`         | Originating structured proposal        |
+| `CollectiveDecisionId` | Approved collective direction          |
+| `PetitionId`           | Related public endorsement context     |
+| `ParticipantId`        | Declaring participant identity         |
+| `FrozenPolicyId`       | Governing frozen implementation policy |
 
 **Reference rules:**
 
@@ -482,11 +482,11 @@ Implementation
 Impact
 ```
 
-| Stage | Question |
-|-------|----------|
-| Petition | Does society support this decision? |
-| **Implementation Commitment** | **Who is prepared to help?** |
-| Implementation | What is being done? |
+| Stage                         | Question                            |
+| ----------------------------- | ----------------------------------- |
+| Petition                      | Does society support this decision? |
+| **Implementation Commitment** | **Who is prepared to help?**        |
+| Implementation                | What is being done?                 |
 
 Each stage preserves aggregate independence.
 

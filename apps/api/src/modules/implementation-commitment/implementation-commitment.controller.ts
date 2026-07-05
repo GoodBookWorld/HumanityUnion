@@ -91,15 +91,15 @@ function respondWithCommitment(
 ): void {
   res
     .status(status)
-    .json(createSuccessResponse(commitment, message, {}, mapImplementationCommitmentLinks(commitment)));
+    .json(
+      createSuccessResponse(commitment, message, {}, mapImplementationCommitmentLinks(commitment)),
+    );
 }
 
 export function listImplementationCommitmentsHandler(_req: Request, res: Response): void {
   const commitments = mapImplementationCommitmentListResponse(listImplementationCommitments());
 
-  res.json(
-    createSuccessResponse(commitments, "Implementation Commitments loaded."),
-  );
+  res.json(createSuccessResponse(commitments, "Implementation Commitments loaded."));
 }
 
 export function getImplementationCommitmentHandler(req: Request, res: Response): void {

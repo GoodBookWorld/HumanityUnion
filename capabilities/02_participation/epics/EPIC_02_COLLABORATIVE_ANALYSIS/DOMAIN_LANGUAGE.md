@@ -271,13 +271,13 @@ The following terms should not be used within this Epic:
 
 Preferred terminology:
 
-| Avoid | Use |
-|--------|-----|
-| Discussion | Collaborative Analysis |
-| Comment | Contribution |
-| Like | Signal |
-| Thread | Analysis Session (if needed) |
-| Discussion Summary | Analysis Summary |
+| Avoid              | Use                          |
+| ------------------ | ---------------------------- |
+| Discussion         | Collaborative Analysis       |
+| Comment            | Contribution                 |
+| Like               | Signal                       |
+| Thread             | Analysis Session (if needed) |
+| Discussion Summary | Analysis Summary             |
 
 ---
 

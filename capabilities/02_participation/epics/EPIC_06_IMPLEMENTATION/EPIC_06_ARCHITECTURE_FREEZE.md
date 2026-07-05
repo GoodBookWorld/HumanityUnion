@@ -91,28 +91,28 @@ Internal entities are not independent mutation entry points.
 
 ### Approved Entities
 
-| Entity | Identity | Role |
-|--------|----------|------|
-| **Implementation** | `ImplementationId` | Aggregate Root; lifecycle authority; owns phases, milestones, achievements and evidence |
-| **Implementation Phase** | `ImplementationPhaseId` | Major segment of collective execution narrative; groups milestones |
-| **Milestone** | `MilestoneId` | Collective civic checkpoint toward completion; Required or Optional |
-| **Achievement** | `AchievementId` | Recorded collective accomplishment toward one Milestone |
-| **Evidence** | `EvidenceId` | Factual supporting material associated with one Achievement |
+| Entity                   | Identity                | Role                                                                                    |
+| ------------------------ | ----------------------- | --------------------------------------------------------------------------------------- |
+| **Implementation**       | `ImplementationId`      | Aggregate Root; lifecycle authority; owns phases, milestones, achievements and evidence |
+| **Implementation Phase** | `ImplementationPhaseId` | Major segment of collective execution narrative; groups milestones                      |
+| **Milestone**            | `MilestoneId`           | Collective civic checkpoint toward completion; Required or Optional                     |
+| **Achievement**          | `AchievementId`         | Recorded collective accomplishment toward one Milestone                                 |
+| **Evidence**             | `EvidenceId`            | Factual supporting material associated with one Achievement                             |
 
 ### Approved Value Objects
 
-| Value Object | Role |
-|--------------|------|
-| **Implementation Status** | Aggregate lifecycle meaning (`Planned`, `Started`, `In Progress`, `Completed`, `Archived`) |
-| **Progress Snapshot** | Point-in-time derived representation of Collective Progress |
-| **Completion Assessment** | Derived evaluation of Completion Criteria satisfaction |
-| **Progress Indicator** | Presentation-oriented derived signal of Collective Progress |
-| **Completion Indicator** | Presentation-oriented derived signal of Completion Assessment outcomes |
-| **Evidence Reference** | Identifier or citation pointing to evidence without embedding external aggregate content |
-| **Evidence Attachment** | Evidence content stored or linked under platform policy |
-| **Evidence Link** | URL or platform-resolved link to internal or external evidence |
-| **Implementation Visibility** | Policy-governed operational versus public presentation boundaries |
-| **Implementation Timeline** | Ordered presentation model of phases, milestones, achievements and significant updates |
+| Value Object                  | Role                                                                                       |
+| ----------------------------- | ------------------------------------------------------------------------------------------ |
+| **Implementation Status**     | Aggregate lifecycle meaning (`Planned`, `Started`, `In Progress`, `Completed`, `Archived`) |
+| **Progress Snapshot**         | Point-in-time derived representation of Collective Progress                                |
+| **Completion Assessment**     | Derived evaluation of Completion Criteria satisfaction                                     |
+| **Progress Indicator**        | Presentation-oriented derived signal of Collective Progress                                |
+| **Completion Indicator**      | Presentation-oriented derived signal of Completion Assessment outcomes                     |
+| **Evidence Reference**        | Identifier or citation pointing to evidence without embedding external aggregate content   |
+| **Evidence Attachment**       | Evidence content stored or linked under platform policy                                    |
+| **Evidence Link**             | URL or platform-resolved link to internal or external evidence                             |
+| **Implementation Visibility** | Policy-governed operational versus public presentation boundaries                          |
+| **Implementation Timeline**   | Ordered presentation model of phases, milestones, achievements and significant updates     |
 
 ### Approved Derived Values
 
@@ -128,13 +128,13 @@ Derived values must never appear as lifecycle states interchangeable with **Impl
 
 ### Aggregate References (Identifier Only)
 
-| Reference | Purpose |
-|-----------|---------|
-| `InitiativeId` | Originating structured proposal |
-| `CollectiveDecisionId` | Approved collective direction |
-| `PetitionId` | Related public endorsement context |
-| `ImplementationCommitmentId` | Preceding preparedness and readiness context |
-| `FrozenPolicyId` | Governing frozen policy for milestones, evidence and completion semantics |
+| Reference                    | Purpose                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `InitiativeId`               | Originating structured proposal                                           |
+| `CollectiveDecisionId`       | Approved collective direction                                             |
+| `PetitionId`                 | Related public endorsement context                                        |
+| `ImplementationCommitmentId` | Preceding preparedness and readiness context                              |
+| `FrozenPolicyId`             | Governing frozen policy for milestones, evidence and completion semantics |
 
 ---
 
@@ -142,23 +142,23 @@ Derived values must never appear as lifecycle states interchangeable with **Impl
 
 The following decisions from `DOMAIN_DECISIONS.md` are **approved and frozen** for Version 1.
 
-| # | Decision | Status |
-|---|----------|--------|
-| 01 | Implementation begins only after approved Implementation Commitment | Approved |
-| 02 | Implementation records collective progress, not individual work | Approved |
-| 03 | Progress is derived from Achievements | Approved |
-| 04 | Completion is derived from completed required Milestones | Approved |
-| 05 | Evidence supports transparency but does not establish objective truth | Approved |
-| 06 | Every Achievement belongs to exactly one Milestone | Approved |
-| 07 | Every Milestone belongs to exactly one Phase | Approved |
-| 08 | Frozen Policy remains immutable during Implementation | Approved |
-| 09 | Implementation never manages tasks or assignments | Approved |
-| 10 | Implementation never replaces external project management systems | Approved |
-| 11 | Humanity Assistant explains but never approves achievements | Approved |
-| 12 | Public and Operational views remain separated | Approved |
-| 13 | History is preserved | Approved |
-| 14 | Future Coordination Space excluded from Version 1 | Approved |
-| 15 | Future capability expansion must not require Aggregate redesign | Approved |
+| #   | Decision                                                              | Status   |
+| --- | --------------------------------------------------------------------- | -------- |
+| 01  | Implementation begins only after approved Implementation Commitment   | Approved |
+| 02  | Implementation records collective progress, not individual work       | Approved |
+| 03  | Progress is derived from Achievements                                 | Approved |
+| 04  | Completion is derived from completed required Milestones              | Approved |
+| 05  | Evidence supports transparency but does not establish objective truth | Approved |
+| 06  | Every Achievement belongs to exactly one Milestone                    | Approved |
+| 07  | Every Milestone belongs to exactly one Phase                          | Approved |
+| 08  | Frozen Policy remains immutable during Implementation                 | Approved |
+| 09  | Implementation never manages tasks or assignments                     | Approved |
+| 10  | Implementation never replaces external project management systems     | Approved |
+| 11  | Humanity Assistant explains but never approves achievements           | Approved |
+| 12  | Public and Operational views remain separated                         | Approved |
+| 13  | History is preserved                                                  | Approved |
+| 14  | Future Coordination Space excluded from Version 1                     | Approved |
+| 15  | Future capability expansion must not require Aggregate redesign       | Approved |
 
 ## Derived Progress and Completion (Frozen)
 
@@ -260,15 +260,15 @@ Version 1 intentionally excludes the following capabilities.
 
 They are deferred — not absent because they are unimportant — because they would redefine Implementation's civic purpose if introduced prematurely.
 
-| Deferred Capability | Reason |
-|---------------------|--------|
-| **Coordination Space** | Structured coordination beyond collective progress recording |
-| **Task Assignment** | Personal or role-based work delegation |
-| **Scheduling** | Time-slot and deadline assignment for people or resources |
-| **Messaging** | Chat, threads and informal coordination replacing accountable updates |
-| **Calendar** | Shared or personal calendar management |
-| **Volunteer Management** | Roster, dispatch and shift coordination |
-| **External Project Management Integration** | Embedded third-party execution tools |
+| Deferred Capability                         | Reason                                                                |
+| ------------------------------------------- | --------------------------------------------------------------------- |
+| **Coordination Space**                      | Structured coordination beyond collective progress recording          |
+| **Task Assignment**                         | Personal or role-based work delegation                                |
+| **Scheduling**                              | Time-slot and deadline assignment for people or resources             |
+| **Messaging**                               | Chat, threads and informal coordination replacing accountable updates |
+| **Calendar**                                | Shared or personal calendar management                                |
+| **Volunteer Management**                    | Roster, dispatch and shift coordination                               |
+| **External Project Management Integration** | Embedded third-party execution tools                                  |
 
 These may be introduced later as **independent capabilities** adjacent to Implementation.
 
@@ -300,13 +300,13 @@ Lifecycle transitions (`Planned` → `Started` → `In Progress` → `Completed`
 
 Version 1 bootstrap identifiers are frozen for vertical slice verification:
 
-| Entity | Bootstrap ID |
-|--------|----------------|
-| Initiative | `initiative-bootstrap-001` |
-| Collective Decision | `decision-bootstrap-001` |
-| Petition | `petition-bootstrap-001` |
-| Implementation Commitment | `commitment-bootstrap-001` |
-| Implementation | `implementation-bootstrap-001` |
+| Entity                    | Bootstrap ID                   |
+| ------------------------- | ------------------------------ |
+| Initiative                | `initiative-bootstrap-001`     |
+| Collective Decision       | `decision-bootstrap-001`       |
+| Petition                  | `petition-bootstrap-001`       |
+| Implementation Commitment | `commitment-bootstrap-001`     |
+| Implementation            | `implementation-bootstrap-001` |
 
 Bootstrap links prior pipeline stages through Stage 7 for end-to-end participation verification.
 

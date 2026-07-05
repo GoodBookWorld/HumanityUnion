@@ -395,18 +395,18 @@ PASS
 
 # Review Summary
 
-| Area | Verdict |
-|------|---------|
-| Domain Language | CONDITIONAL |
-| Domain Model | CONDITIONAL |
-| Domain Decisions | PASS |
-| State Machine | PASS |
-| Workspace Specification | PASS |
-| Public Projection | PASS |
-| Aggregate Boundaries | PASS |
+| Area                               | Verdict     |
+| ---------------------------------- | ----------- |
+| Domain Language                    | CONDITIONAL |
+| Domain Model                       | CONDITIONAL |
+| Domain Decisions                   | PASS        |
+| State Machine                      | PASS        |
+| Workspace Specification            | PASS        |
+| Public Projection                  | PASS        |
+| Aggregate Boundaries               | PASS        |
 | Participation Pipeline Integration | CONDITIONAL |
-| Engineering Methodology Compliance | PASS |
-| Platform Architecture Compliance | PASS |
+| Engineering Methodology Compliance | PASS        |
+| Platform Architecture Compliance   | PASS        |
 
 ---
 

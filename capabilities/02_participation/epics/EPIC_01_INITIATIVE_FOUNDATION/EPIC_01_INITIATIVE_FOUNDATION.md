@@ -66,15 +66,15 @@ Deferred to future Epics:
 
 # Guides
 
-| Guide | Status |
-|--------|--------|
-| Guide 01 — Initiative Domain | Complete |
-| Guide 02 — Initiative Store | Complete |
-| Guide 03 — Initiative API | Complete |
-| Guide 04 — Initiative Workspace | Complete |
+| Guide                                   | Status   |
+| --------------------------------------- | -------- |
+| Guide 01 — Initiative Domain            | Complete |
+| Guide 02 — Initiative Store             | Complete |
+| Guide 03 — Initiative API               | Complete |
+| Guide 04 — Initiative Workspace         | Complete |
 | Guide 05 — Initiative Public Projection | Complete |
-| Guide 06 — Platform Integration | Complete |
-| Guide 07 — Epic Architecture Review | Complete |
+| Guide 06 — Platform Integration         | Complete |
+| Guide 07 — Epic Architecture Review     | Complete |
 
 ---
 

@@ -14,39 +14,39 @@ Humanity Union maintains a strict separation between system identity and civic i
 
 ## Member Core Fields
 
-| Field | Purpose | Public / Private |
-| --- | --- | --- |
-| memberId | Unique platform identifier for the Member record. | Private (internal reference; not displayed as primary label) |
-| userId | Foreign key linking the Member to the associated User account. | Private |
-| displayName | Human-readable name shown on profile, publications, and comments. | Public |
-| uniqueName | Unique handle used for mentions, profile URLs, and search. | Public |
-| avatar | Profile image or approved placeholder representing the Member visually. | Public |
-| country | Member's declared or verified country affiliation for CRZ context. | Public (country may be shown; precise address is not stored here) |
-| region | Member's declared or verified region within the country. | Public |
-| city | Member's declared or verified city or local community context. | Public |
-| languages | Languages the Member speaks or prefers for interface and content. | Public (preference list); interface defaults may also be Private in User settings |
-| bio | Short self-description displayed on the public profile. | Public |
-| publicLinks | Approved external links the Member chooses to display on their profile. | Public |
-| memberStatus | Current civic and operational status level within the platform. | Public |
-| verificationLevel | Degree of identity or affiliation verification achieved. | Public (level shown; verification evidence remains Private) |
-| socialActivityScore | Computed participation metric reflecting constructive platform activity. | Public |
-| activityPlan | Member Social Activity Plan defining scope, priorities, time commitment, and notification preferences. | Private |
-| createdAt | Timestamp when the Member record was created. | Public (date may be shown in profile metadata) |
-| updatedAt | Timestamp when the Member record was last modified. | Private |
+| Field               | Purpose                                                                                                | Public / Private                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| memberId            | Unique platform identifier for the Member record.                                                      | Private (internal reference; not displayed as primary label)                      |
+| userId              | Foreign key linking the Member to the associated User account.                                         | Private                                                                           |
+| displayName         | Human-readable name shown on profile, publications, and comments.                                      | Public                                                                            |
+| uniqueName          | Unique handle used for mentions, profile URLs, and search.                                             | Public                                                                            |
+| avatar              | Profile image or approved placeholder representing the Member visually.                                | Public                                                                            |
+| country             | Member's declared or verified country affiliation for CRZ context.                                     | Public (country may be shown; precise address is not stored here)                 |
+| region              | Member's declared or verified region within the country.                                               | Public                                                                            |
+| city                | Member's declared or verified city or local community context.                                         | Public                                                                            |
+| languages           | Languages the Member speaks or prefers for interface and content.                                      | Public (preference list); interface defaults may also be Private in User settings |
+| bio                 | Short self-description displayed on the public profile.                                                | Public                                                                            |
+| publicLinks         | Approved external links the Member chooses to display on their profile.                                | Public                                                                            |
+| memberStatus        | Current civic and operational status level within the platform.                                        | Public                                                                            |
+| verificationLevel   | Degree of identity or affiliation verification achieved.                                               | Public (level shown; verification evidence remains Private)                       |
+| socialActivityScore | Computed participation metric reflecting constructive platform activity.                               | Public                                                                            |
+| activityPlan        | Member Social Activity Plan defining scope, priorities, time commitment, and notification preferences. | Private                                                                           |
+| createdAt           | Timestamp when the Member record was created.                                                          | Public (date may be shown in profile metadata)                                    |
+| updatedAt           | Timestamp when the Member record was last modified.                                                    | Private                                                                           |
 
 ## Member Status Levels
 
 Member status indicates civic role and platform responsibilities. A Member may hold one primary status for display, with additional roles managed through authorization systems where required.
 
-| Status | Description |
-| --- | --- |
-| Registered Member | Default status after successful registration; may participate within base platform rules. |
-| Verified Member | Member who has completed required verification steps beyond basic registration. |
-| Volunteer | Member approved for volunteer programs and related responsibilities. |
-| Moderator | Member authorized to review content and enforce community rules within assigned scope. |
-| Institution Member | Member acting as a representative or participant linked to a registered Institution. |
-| Council Member | Member holding a seat or role within Humanity Council or its chambers. |
-| Administrator | Member with elevated operational permissions for platform administration. |
+| Status             | Description                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| Registered Member  | Default status after successful registration; may participate within base platform rules. |
+| Verified Member    | Member who has completed required verification steps beyond basic registration.           |
+| Volunteer          | Member approved for volunteer programs and related responsibilities.                      |
+| Moderator          | Member authorized to review content and enforce community rules within assigned scope.    |
+| Institution Member | Member acting as a representative or participant linked to a registered Institution.      |
+| Council Member     | Member holding a seat or role within Humanity Council or its chambers.                    |
+| Administrator      | Member with elevated operational permissions for platform administration.                 |
 
 Status levels are distinct from verification level. Both may affect eligibility for petitions, voting, and institutional actions.
 
@@ -54,13 +54,13 @@ Status levels are distinct from verification level. Both may affect eligibility 
 
 Verification level indicates the depth of identity or affiliation assurance completed for a Member.
 
-| Level | Description |
-| --- | --- |
-| Unverified | Registration complete; no additional verification performed. |
-| Email Verified | Member has confirmed control of a registered email address. |
-| Phone Verified | Member has confirmed control of a registered phone number. |
-| Identity Verified | Member has completed identity verification according to platform policy. |
-| Institution Verified | Member's affiliation with a registered Institution has been confirmed. |
+| Level                | Description                                                              |
+| -------------------- | ------------------------------------------------------------------------ |
+| Unverified           | Registration complete; no additional verification performed.             |
+| Email Verified       | Member has confirmed control of a registered email address.              |
+| Phone Verified       | Member has confirmed control of a registered phone number.               |
+| Identity Verified    | Member has completed identity verification according to platform policy. |
+| Institution Verified | Member's affiliation with a registered Institution has been confirmed.   |
 
 Higher verification levels unlock additional rights and responsibilities as defined in governance and security specifications. Verification evidence and review metadata remain private.
 

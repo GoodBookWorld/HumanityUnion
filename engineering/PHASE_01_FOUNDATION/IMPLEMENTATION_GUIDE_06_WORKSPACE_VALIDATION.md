@@ -22,12 +22,12 @@ Only after successful validation may development proceed to Platform Core.
 
 Confirm that:
 
-* repository structure is correct;
-* workspace configuration is valid;
-* development tools operate correctly;
-* TypeScript configuration is functional;
-* formatting tools are available;
-* linting tools execute successfully.
+- repository structure is correct;
+- workspace configuration is valid;
+- development tools operate correctly;
+- TypeScript configuration is functional;
+- formatting tools are available;
+- linting tools execute successfully.
 
 ---
 
@@ -77,8 +77,8 @@ pnpm -v
 
 Expected:
 
-* pnpm version displayed
-* no errors
+- pnpm version displayed
+- no errors
 
 ---
 
@@ -92,9 +92,9 @@ pnpm install
 
 Expected:
 
-* dependencies resolve successfully
-* pnpm-lock.yaml exists
-* no critical errors
+- dependencies resolve successfully
+- pnpm-lock.yaml exists
+- no critical errors
 
 ---
 
@@ -108,8 +108,8 @@ pnpm format:check
 
 Expected:
 
-* repository formatting is valid
-* or only expected warnings appear
+- repository formatting is valid
+- or only expected warnings appear
 
 ---
 
@@ -123,8 +123,8 @@ pnpm lint
 
 Expected:
 
-* configuration loads correctly
-* no configuration failures
+- configuration loads correctly
+- no configuration failures
 
 Project may still report no source files.
 
@@ -142,9 +142,9 @@ pnpm typecheck
 
 Expected:
 
-* TypeScript configuration loads
-* compiler starts correctly
-* no configuration errors
+- TypeScript configuration loads
+- compiler starts correctly
+- no configuration errors
 
 Project may report no TypeScript source files.
 
@@ -162,8 +162,8 @@ git status
 
 Expected:
 
-* repository is clean
-* or only expected newly created files are listed
+- repository is clean
+- or only expected newly created files are listed
 
 ---
 
@@ -171,10 +171,10 @@ Expected:
 
 Verify:
 
-* Blueprint unchanged
-* Engineering documents unchanged
-* legacy folders remain untouched
-* repository structure remains stable
+- Blueprint unchanged
+- Engineering documents unchanged
+- legacy folders remain untouched
+- repository structure remains stable
 
 ---
 
@@ -182,13 +182,13 @@ Verify:
 
 Workspace Validation is successful when:
 
-* all required folders exist;
-* all configuration files exist;
-* pnpm works correctly;
-* lint configuration loads;
-* formatter configuration loads;
-* TypeScript configuration loads;
-* repository is ready for Platform Core implementation.
+- all required folders exist;
+- all configuration files exist;
+- pnpm works correctly;
+- lint configuration loads;
+- formatter configuration loads;
+- TypeScript configuration loads;
+- repository is ready for Platform Core implementation.
 
 ---
 

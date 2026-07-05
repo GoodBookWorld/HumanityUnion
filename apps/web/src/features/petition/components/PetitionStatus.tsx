@@ -26,9 +26,7 @@ export function PetitionStatus({ petition }: PetitionStatusProps) {
         {PIPELINE_STAGES.map((stage) => (
           <li key={stage} className="petition-status__pipeline-item">
             <span className="petition-status__pipeline-stage">{stage}</span>
-            <span className="petition-status__pipeline-state">
-              {getPipelineStageStatus(stage)}
-            </span>
+            <span className="petition-status__pipeline-state">{getPipelineStageStatus(stage)}</span>
           </li>
         ))}
       </ul>

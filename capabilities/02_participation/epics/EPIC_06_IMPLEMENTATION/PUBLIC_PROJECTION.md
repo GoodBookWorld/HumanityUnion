@@ -71,10 +71,10 @@ It does not serve administration, moderation, coordination or operational manage
 
 Operational Workspace and Public Projection are intentionally separate surfaces.
 
-| Surface | Audience | Purpose | Writable |
-|---------|----------|---------|----------|
-| Operational Workspace | Registered participants | Orientation and accountable collective recording where authorized | Through operational API commands only |
-| Public Projection | Public visitors, observers, society | Transparency and civic observation | Read-only |
+| Surface               | Audience                            | Purpose                                                           | Writable                              |
+| --------------------- | ----------------------------------- | ----------------------------------------------------------------- | ------------------------------------- |
+| Operational Workspace | Registered participants             | Orientation and accountable collective recording where authorized | Through operational API commands only |
+| Public Projection     | Public visitors, observers, society | Transparency and civic observation                                | Read-only                             |
 
 **Operational Workspace** supports accountable recording and participant orientation.
 
@@ -596,12 +596,12 @@ Operational participation requires registration.
 
 ## Lifecycle-specific guidance
 
-| Lifecycle | Public gateway meaning |
-|-----------|------------------------|
-| Planned / Started | Observe and share; recording prepares on operational side |
-| In Progress | Observe and share; registration required before operational recording if policy requires |
-| Completed | Observe historical record; recording closed |
-| Archived | Observe permanent historical record |
+| Lifecycle         | Public gateway meaning                                                                   |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| Planned / Started | Observe and share; recording prepares on operational side                                |
+| In Progress       | Observe and share; registration required before operational recording if policy requires |
+| Completed         | Observe historical record; recording closed                                              |
+| Archived          | Observe permanent historical record                                                      |
 
 ---
 
@@ -731,13 +731,13 @@ Public Implementation projection must be built by a dedicated projection builder
 
 Public visibility may vary by Implementation lifecycle state.
 
-| State | Default public meaning |
-|-------|------------------------|
-| Planned | Provisional visibility or restricted share per policy |
-| Started | Public orientation; progress may be limited |
+| State       | Default public meaning                                                |
+| ----------- | --------------------------------------------------------------------- |
+| Planned     | Provisional visibility or restricted share per policy                 |
+| Started     | Public orientation; progress may be limited                           |
 | In Progress | Full public progress, achievements and evidence per visibility policy |
-| Completed | Public historical execution record |
-| Archived | Permanent public historical record |
+| Completed   | Public historical execution record                                    |
+| Archived    | Permanent public historical record                                    |
 
 Exact visibility gates are policy-defined.
 
@@ -764,12 +764,12 @@ The following public experience concepts are **reserved for future versions**.
 
 They are **not Version 1**.
 
-| Reserved concept | Future intent |
-|------------------|---------------|
-| **Coordination Space** | Public or hybrid coordination views beyond progress transparency |
-| **Implementation Dashboard** | Rich operational-style dashboards on public surfaces |
-| **Volunteer Coordination** | Public roster or signup coordination |
-| **External PM Integration** | Embedded external project management views |
+| Reserved concept             | Future intent                                                    |
+| ---------------------------- | ---------------------------------------------------------------- |
+| **Coordination Space**       | Public or hybrid coordination views beyond progress transparency |
+| **Implementation Dashboard** | Rich operational-style dashboards on public surfaces             |
+| **Volunteer Coordination**   | Public roster or signup coordination                             |
+| **External PM Integration**  | Embedded external project management views                       |
 
 Future introduction must:
 

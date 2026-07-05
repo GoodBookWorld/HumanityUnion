@@ -1,8 +1,4 @@
-import type {
-  ImplementationId,
-  ImplementationPhaseId,
-  MilestoneId,
-} from "./identifiers.js";
+import type { ImplementationId, ImplementationPhaseId, MilestoneId } from "./identifiers.js";
 import type { MilestoneRequirementType } from "./milestone-requirement-type.js";
 import type { MilestoneStatus } from "./milestone-status.js";
 

@@ -9,11 +9,7 @@ import type { Signal } from "./signal.js";
 export type AnalysisId = string;
 
 export type CollaborativeAnalysisStatus =
-  | "not_started"
-  | "active"
-  | "requirements_met"
-  | "completed"
-  | "archived";
+  "not_started" | "active" | "requirements_met" | "completed" | "archived";
 
 export interface CollaborativeAnalysis {
   analysisId: AnalysisId;

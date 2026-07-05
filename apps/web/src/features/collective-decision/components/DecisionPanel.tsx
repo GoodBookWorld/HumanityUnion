@@ -16,8 +16,7 @@ interface DecisionPanelProps {
 
 function findSubmittedDecision(decision: CollectiveDecision) {
   return decision.participantDecisions.find(
-    (entry) =>
-      entry.participantId === BOOTSTRAP_PARTICIPANT_ID && entry.status === "submitted",
+    (entry) => entry.participantId === BOOTSTRAP_PARTICIPANT_ID && entry.status === "submitted",
   );
 }
 
@@ -25,15 +24,9 @@ export function DecisionPanel({ decision, onDecisionSubmitted }: DecisionPanelPr
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const submittedDecision = useMemo(
-    () => findSubmittedDecision(decision),
-    [decision],
-  );
+  const submittedDecision = useMemo(() => findSubmittedDecision(decision), [decision]);
 
-  const isReadOnly =
-    submittedDecision !== undefined ||
-    decision.status !== "Active" ||
-    submitting;
+  const isReadOnly = submittedDecision !== undefined || decision.status !== "Active" || submitting;
 
   async function handleSubmit(option: DecisionOption) {
     setSubmitting(true);

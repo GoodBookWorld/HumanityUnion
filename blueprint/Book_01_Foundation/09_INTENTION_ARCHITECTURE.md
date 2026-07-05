@@ -66,12 +66,12 @@ Intentions may be explicit or inferred only from transparent and voluntary platf
 
 Examples:
 
-* "I want to help my local community."
-* "I have ten minutes each day."
-* "I want to improve environmental protection."
-* "I would like to learn before participating."
-* "I want to support education."
-* "I would like to volunteer."
+- "I want to help my local community."
+- "I have ten minutes each day."
+- "I want to improve environmental protection."
+- "I would like to learn before participating."
+- "I want to support education."
+- "I would like to volunteer."
 
 The platform never invents intentions.
 
@@ -83,16 +83,16 @@ It only helps Members develop the intentions they have chosen.
 
 Intentions may originate from:
 
-* Impact Profile;
-* selected responsibility scope;
-* preferred initiative categories;
-* learning interests;
-* volunteering preferences;
-* ACTUC participation;
-* followed initiatives;
-* completed learning paths;
-* previous meaningful participation;
-* direct Member choices.
+- Impact Profile;
+- selected responsibility scope;
+- preferred initiative categories;
+- learning interests;
+- volunteering preferences;
+- ACTUC participation;
+- followed initiatives;
+- completed learning paths;
+- previous meaningful participation;
+- direct Member choices.
 
 Every intention must remain editable by the Member.
 
@@ -106,10 +106,10 @@ The Member wishes to understand.
 
 Recommended actions:
 
-* Learning Paths
-* ACTUC
-* Verified Knowledge
-* Research
+- Learning Paths
+- ACTUC
+- Verified Knowledge
+- Research
 
 ---
 
@@ -119,11 +119,11 @@ The Member wishes to join existing civic activity.
 
 Recommended actions:
 
-* Vote
-* Poll
-* Petition
-* Discussion
-* Volunteer
+- Vote
+- Poll
+- Petition
+- Discussion
+- Volunteer
 
 ---
 
@@ -133,10 +133,10 @@ The Member wishes to initiate change.
 
 Recommended actions:
 
-* Proposal
-* Community Project
-* Educational Initiative
-* ACTUC Project
+- Proposal
+- Community Project
+- Educational Initiative
+- ACTUC Project
 
 ---
 
@@ -146,10 +146,10 @@ The Member wishes to help others.
 
 Recommended actions:
 
-* Mentorship
-* Initiative Team
-* Knowledge Contribution
-* Local Community
+- Mentorship
+- Initiative Team
+- Knowledge Contribution
+- Local Community
 
 ---
 
@@ -159,10 +159,10 @@ The Member wishes to coordinate meaningful work.
 
 Recommended actions:
 
-* Community Leadership
-* Working Groups
-* Institutional Participation
-* Regional Coordination
+- Community Leadership
+- Working Groups
+- Institutional Participation
+- Regional Coordination
 
 ---
 
@@ -170,14 +170,14 @@ Recommended actions:
 
 The Opportunity Engine evaluates:
 
-* Impact Profile;
-* available time;
-* geographic scope;
-* preferred topics;
-* current skills;
-* completed learning;
-* active communities;
-* existing initiatives.
+- Impact Profile;
+- available time;
+- geographic scope;
+- preferred topics;
+- current skills;
+- completed learning;
+- active communities;
+- existing initiatives.
 
 The objective is not to maximize activity.
 
@@ -195,14 +195,14 @@ Its purpose is to answer one question:
 
 My Impact should include:
 
-* Today's Opportunities
-* My Active Initiatives
-* My Communities
-* Learning Progress
-* Reflection
-* Fair Summary
-* Personal Impact
-* Next Horizon
+- Today's Opportunities
+- My Active Initiatives
+- My Communities
+- Learning Progress
+- Reflection
+- Fair Summary
+- Personal Impact
+- Next Horizon
 
 The interface should feel calm, encouraging, and purposeful.
 
@@ -214,12 +214,12 @@ Every Member should always see one achievable next step.
 
 Examples:
 
-* Complete one learning module.
-* Join a discussion.
-* Support a local initiative.
-* Improve your proposal.
-* Mentor a new Member.
-* Participate in a community meeting.
+- Complete one learning module.
+- Join a discussion.
+- Support a local initiative.
+- Improve your proposal.
+- Mentor a new Member.
+- Participate in a community meeting.
 
 The platform should never overwhelm Members with too many choices.
 
@@ -267,11 +267,11 @@ The platform simply supports the journey.
 
 After meaningful participation, Reflection Engine helps the Member answer:
 
-* What did I accomplish?
-* What did I learn?
-* Who benefited?
-* What can I improve?
-* What meaningful opportunity comes next?
+- What did I accomplish?
+- What did I learn?
+- Who benefited?
+- What can I improve?
+- What meaningful opportunity comes next?
 
 Reflection transforms activity into growth.
 
@@ -281,13 +281,13 @@ Reflection transforms activity into growth.
 
 Every intention must be:
 
-* voluntary;
-* transparent;
-* editable;
-* explainable;
-* respectful;
-* realistic;
-* human-centered.
+- voluntary;
+- transparent;
+- editable;
+- explainable;
+- respectful;
+- realistic;
+- human-centered.
 
 The platform should never pressure Members into actions.
 
@@ -363,13 +363,13 @@ The platform coordinates many internal events.
 
 The success of Intention Architecture is measured by:
 
-* meaningful participation;
-* completed initiatives;
-* long-term engagement;
-* learning progression;
-* mentoring activity;
-* community cooperation;
-* measurable positive impact.
+- meaningful participation;
+- completed initiatives;
+- long-term engagement;
+- learning progression;
+- mentoring activity;
+- community cooperation;
+- measurable positive impact.
 
 Never by time spent on the platform.
 

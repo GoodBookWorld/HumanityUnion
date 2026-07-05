@@ -74,9 +74,9 @@ Defines the principles that should never change.
 
 Documents:
 
-* 00_MANIFESTO.md *(planned)*
-* 01_CONSTITUTION.md
-* 02_CHARTER_OF_ETHICAL_TECHNOLOGY.md
+- 00_MANIFESTO.md _(planned)_
+- 01_CONSTITUTION.md
+- 02_CHARTER_OF_ETHICAL_TECHNOLOGY.md
 
 Purpose:
 
@@ -90,14 +90,14 @@ Defines how Humanity Union is organized.
 
 Documents:
 
-* 03_INFORMATION_ARCHITECTURE.md
-* 04_PLATFORM_BLUEPRINT.md *(planned)*
-* 05_HUMAN_JOURNEYS.md *(planned)*
-* 06_PLATFORM_SERVICES.md *(planned)*
-* 07_DESIGN_PRINCIPLES.md *(planned)*
-* 08_DEVELOPMENT_RULES.md *(planned)*
-* 09_GLOSSARY.md *(planned)*
-* 10_ARCHITECTURE_DECISIONS.md *(planned)*
+- 03_INFORMATION_ARCHITECTURE.md
+- 04_PLATFORM_BLUEPRINT.md _(planned)_
+- 05_HUMAN_JOURNEYS.md _(planned)_
+- 06_PLATFORM_SERVICES.md _(planned)_
+- 07_DESIGN_PRINCIPLES.md _(planned)_
+- 08_DEVELOPMENT_RULES.md _(planned)_
+- 09_GLOSSARY.md _(planned)_
+- 10_ARCHITECTURE_DECISIONS.md _(planned)_
 
 Purpose:
 
@@ -111,15 +111,15 @@ Defines how the architecture is implemented.
 
 Future documents include:
 
-* Backend Architecture
-* Frontend Architecture
-* Database Architecture
-* API Specifications
-* Authentication
-* Security
-* Deployment
-* Infrastructure
-* Testing Strategy
+- Backend Architecture
+- Frontend Architecture
+- Database Architecture
+- API Specifications
+- Authentication
+- Security
+- Deployment
+- Infrastructure
+- Testing Strategy
 
 Purpose:
 
@@ -133,13 +133,13 @@ Defines how Humanity Union functions after deployment.
 
 Future documents include:
 
-* Governance
-* Moderation
-* Community Management
-* Analytics
-* Release Management
-* Monitoring
-* Incident Response
+- Governance
+- Moderation
+- Community Management
+- Analytics
+- Release Management
+- Monitoring
+- Incident Response
 
 Purpose:
 
@@ -153,12 +153,12 @@ Defines the long-term development of Humanity Union.
 
 Future documents include:
 
-* AI Roadmap
-* Research
-* Future Modules
-* International Expansion
-* Version History
-* Innovation Strategy
+- AI Roadmap
+- Research
+- Future Modules
+- International Expansion
+- Version History
+- Innovation Strategy
 
 Purpose:
 
@@ -170,14 +170,14 @@ To guide sustainable growth without compromising the founding principles.
 
 Every document inside the Blueprint must support the following principles:
 
-* Humanity before technology.
-* Knowledge before action.
-* Cooperation before competition.
-* Growth before recognition.
-* Simplicity before complexity.
-* Trust through transparency.
-* Meaningful participation over attention.
-* Long-term stewardship over short-term gain.
+- Humanity before technology.
+- Knowledge before action.
+- Cooperation before competition.
+- Growth before recognition.
+- Simplicity before complexity.
+- Trust through transparency.
+- Meaningful participation over attention.
+- Long-term stewardship over short-term gain.
 
 ---
 

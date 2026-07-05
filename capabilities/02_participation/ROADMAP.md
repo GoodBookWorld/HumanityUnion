@@ -18,13 +18,13 @@ This roadmap reflects completed, active, and planned Epics.
 
 # Capability Progress
 
-| Epic | Name | Status |
-|------|------|--------|
-| Epic 01 | Initiative Foundation | ✅ Completed |
-| Epic 02 | Collaborative Analysis | ✅ Completed |
+| Epic    | Name                                 | Status       |
+| ------- | ------------------------------------ | ------------ |
+| Epic 01 | Initiative Foundation                | ✅ Completed |
+| Epic 02 | Collaborative Analysis               | ✅ Completed |
 | Epic 03 | Community Poll (Collective Decision) | ✅ Completed |
-| Epic 04 | Petitions | Planned |
-| Epic 05 | Implementation | Planned |
+| Epic 04 | Petitions                            | Planned      |
+| Epic 05 | Implementation                       | Planned      |
 
 ---
 

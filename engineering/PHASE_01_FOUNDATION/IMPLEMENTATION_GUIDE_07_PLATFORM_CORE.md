@@ -22,10 +22,10 @@ No business logic is created during this guide.
 
 After completing this guide:
 
-* shared packages exist;
-* package structure is standardized;
-* TypeScript source folders exist;
-* Platform Core is ready for domain implementation.
+- shared packages exist;
+- package structure is standardized;
+- TypeScript source folders exist;
+- Platform Core is ready for domain implementation.
 
 ---
 
@@ -65,15 +65,15 @@ Contains all shared domain types and interfaces.
 
 Examples in future guides:
 
-* Member
-* Initiative
-* Community
-* Impact
-* Knowledge
-* Reflection
-* Opportunity
-* Fair
-* Institution
+- Member
+- Initiative
+- Community
+- Impact
+- Knowledge
+- Reflection
+- Opportunity
+- Fair
+- Institution
 
 No domain types are created yet.
 
@@ -87,10 +87,10 @@ Contains shared utilities.
 
 Examples:
 
-* Result types
-* Error helpers
-* Constants
-* Utility functions
+- Result types
+- Error helpers
+- Constants
+- Utility functions
 
 No implementation yet.
 
@@ -102,10 +102,10 @@ Contains shared configuration.
 
 Examples:
 
-* Environment configuration
-* Platform constants
-* Feature flags
-* Version information
+- Environment configuration
+- Platform constants
+- Feature flags
+- Version information
 
 No implementation yet.
 
@@ -140,9 +140,9 @@ Example:
 
 Use appropriate names:
 
-* @hu/types
-* @hu/shared
-* @hu/config
+- @hu/types
+- @hu/shared
+- @hu/config
 
 ---
 
@@ -164,12 +164,12 @@ Shared domain types used throughout Humanity Union.
 
 Do not create:
 
-* Member type
-* Initiative type
-* API code
-* Express server
-* Next.js application
-* MongoDB models
+- Member type
+- Initiative type
+- API code
+- Express server
+- Next.js application
+- MongoDB models
 
 Only create the Platform Core structure.
 
@@ -179,15 +179,15 @@ Only create the Platform Core structure.
 
 Confirm:
 
-* packages/types exists;
-* packages/shared exists;
-* packages/config exists;
-* each package contains:
+- packages/types exists;
+- packages/shared exists;
+- packages/config exists;
+- each package contains:
 
-  * src/
-  * index.ts
-  * package.json
-  * README.md
+  - src/
+  - index.ts
+  - package.json
+  - README.md
 
 No business code exists.
 
@@ -197,12 +197,12 @@ No business code exists.
 
 This guide implements the foundations defined in:
 
-* 04_PLATFORM_BLUEPRINT.md
-* 05_PLATFORM_SERVICES.md
-* 07_DATABASE_BLUEPRINT.md
-* 11_ENGINEERING_ARCHITECTURE.md
-* 13_DATA_MODEL.md
-* 15_DEVELOPMENT_STANDARDS.md
+- 04_PLATFORM_BLUEPRINT.md
+- 05_PLATFORM_SERVICES.md
+- 07_DATABASE_BLUEPRINT.md
+- 11_ENGINEERING_ARCHITECTURE.md
+- 13_DATA_MODEL.md
+- 15_DEVELOPMENT_STANDARDS.md
 
 ---
 
@@ -227,15 +227,15 @@ Implementation Guide 08 — Domain Types
 
 The next guide creates the first shared domain objects:
 
-* Member
-* Initiative
-* Community
-* Knowledge
-* Impact
-* Reflection
-* Fair
-* Opportunity
-* Institution
+- Member
+- Initiative
+- Community
+- Knowledge
+- Impact
+- Reflection
+- Fair
+- Opportunity
+- Institution
 
 These objects will become the common language shared by the API, Web application, and future mobile clients.
 

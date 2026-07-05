@@ -488,14 +488,14 @@ One recommendation only.
 
 Derive from actual state.
 
-| State | Participant | Recommendation |
-|-------|-------------|----------------|
-| Draft or Ready | any | understand Decision Context or wait for publication |
-| Published | not signed | read Decision Context; signing opens later |
-| Open | not signed, eligible | sign through Endorsement Panel |
-| Open | not signed, ineligible | explain restriction calmly |
-| Open | signed | view public record, related context, or continue journey |
-| Closed or Archived | any | review Petition Outcome or public record; do not recommend signing |
+| State              | Participant            | Recommendation                                                     |
+| ------------------ | ---------------------- | ------------------------------------------------------------------ |
+| Draft or Ready     | any                    | understand Decision Context or wait for publication                |
+| Published          | not signed             | read Decision Context; signing opens later                         |
+| Open               | not signed, eligible   | sign through Endorsement Panel                                     |
+| Open               | not signed, ineligible | explain restriction calmly                                         |
+| Open               | signed                 | view public record, related context, or continue journey           |
+| Closed or Archived | any                    | review Petition Outcome or public record; do not recommend signing |
 
 Presentation rules:
 
@@ -905,11 +905,11 @@ Guide 05 is complete when all items below are satisfied.
 
 Deferred to later guides:
 
-| Guide | Responsibility |
-|-------|----------------|
-| Guide 06 — Public Petition Projection | public page and projection-first public experience |
-| Guide 07 — Platform Integration | bootstrap path, cross-aggregate wiring, entry continuity |
-| Epic architecture review | final verification |
+| Guide                                 | Responsibility                                           |
+| ------------------------------------- | -------------------------------------------------------- |
+| Guide 06 — Public Petition Projection | public page and projection-first public experience       |
+| Guide 07 — Platform Integration       | bootstrap path, cross-aggregate wiring, entry continuity |
+| Epic architecture review              | final verification                                       |
 
 Adjust numbering if `IMPLEMENTATION_PLAN.md` is updated separately.
 

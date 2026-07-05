@@ -14,11 +14,11 @@ This document is independent of any database technology.
 
 Its purpose is to describe:
 
-* domain objects;
-* ownership;
-* relationships;
-* lifecycle;
-* scalability.
+- domain objects;
+- ownership;
+- relationships;
+- lifecycle;
+- scalability.
 
 The Data Model is the bridge between architecture and implementation.
 
@@ -30,11 +30,11 @@ Data represents living civic reality.
 
 Every domain object exists to support:
 
-* understanding;
-* cooperation;
-* participation;
-* trust;
-* meaningful impact.
+- understanding;
+- cooperation;
+- participation;
+- trust;
+- meaningful impact.
 
 Technology stores data.
 
@@ -54,14 +54,14 @@ Permanent concepts that define the ecosystem.
 
 Examples:
 
-* Member
-* Impact Profile
-* Initiative
-* Community
-* Institution
-* Knowledge
-* Learning Path
-* Region
+- Member
+- Impact Profile
+- Initiative
+- Community
+- Institution
+- Knowledge
+- Learning Path
+- Region
 
 These objects form the stable foundation of Humanity Union.
 
@@ -73,13 +73,13 @@ Objects created continuously during platform activity.
 
 Examples:
 
-* Comment
-* Reaction
-* Notification
-* Recommendation
-* Opportunity
-* Reflection
-* Activity Record
+- Comment
+- Reaction
+- Notification
+- Recommendation
+- Opportunity
+- Reflection
+- Activity Record
 
 They represent ongoing participation.
 
@@ -91,12 +91,12 @@ Objects that preserve history.
 
 Examples:
 
-* Event
-* Fair Ledger
-* Impact Record
-* Audit Log
-* Initiative Version
-* Timeline Event
+- Event
+- Fair Ledger
+- Impact Record
+- Audit Log
+- Initiative Version
+- Timeline Event
 
 Historical objects should remain immutable whenever possible.
 
@@ -112,23 +112,23 @@ Represents a person participating in Humanity Union.
 
 Owns:
 
-* Impact Profile
-* Public Profile
-* Reflection
-* Activity Records
-* Fair Summary
+- Impact Profile
+- Public Profile
+- Reflection
+- Activity Records
+- Fair Summary
 
 May create:
 
-* Initiatives
-* Comments
-* Communities
+- Initiatives
+- Comments
+- Communities
 
 May belong to:
 
-* Communities
-* Institutions
-* Initiative Teams
+- Communities
+- Institutions
+- Initiative Teams
 
 ---
 
@@ -138,12 +138,12 @@ Represents the Member's voluntary intentions.
 
 Contains:
 
-* civic scope;
-* interests;
-* priorities;
-* available time;
-* preferred participation;
-* notification preferences.
+- civic scope;
+- interests;
+- priorities;
+- available time;
+- preferred participation;
+- notification preferences.
 
 Owned by one Member.
 
@@ -155,17 +155,17 @@ Represents meaningful civic action.
 
 Owns:
 
-* Timeline
-* Versions
-* Discussions
-* Impact Records
+- Timeline
+- Versions
+- Discussions
+- Impact Records
 
 Belongs to:
 
-* Creator
-* Community (optional)
-* Region
-* Categories
+- Creator
+- Community (optional)
+- Region
+- Categories
 
 ---
 
@@ -175,13 +175,13 @@ Represents a collaborative civic group.
 
 Contains:
 
-* Members
-* Initiatives
-* Local statistics
+- Members
+- Initiatives
+- Local statistics
 
 Belongs to:
 
-* Region
+- Region
 
 ---
 
@@ -219,10 +219,10 @@ Represents verified information.
 
 Supports:
 
-* Learning
-* Initiatives
-* ACTUC
-* Research
+- Learning
+- Initiatives
+- ACTUC
+- Research
 
 Knowledge never depends on presentation.
 
@@ -234,16 +234,16 @@ Represents Humanity Union governance structures.
 
 Examples:
 
-* Humanity Council
-* Secretariat
-* Chamber of Intellectual Analysis
-* World Protection Corps
+- Humanity Council
+- Secretariat
+- Chamber of Intellectual Analysis
+- World Protection Corps
 
 Contains:
 
-* Members
-* Decisions
-* Reports
+- Members
+- Decisions
+- Reports
 
 ---
 
@@ -259,10 +259,10 @@ Opportunity Engine.
 
 Linked to:
 
-* Member
-* Community
-* Initiative
-* Learning
+- Member
+- Community
+- Initiative
+- Learning
 
 ---
 
@@ -288,10 +288,10 @@ Reflection Engine.
 
 Linked to:
 
-* Member
-* Fair
-* Impact
-* Activity
+- Member
+- Fair
+- Impact
+- Activity
 
 ---
 
@@ -301,17 +301,17 @@ Represents meaningful participation.
 
 Examples:
 
-* learning;
-* volunteering;
-* voting;
-* commenting;
-* initiative support.
+- learning;
+- volunteering;
+- voting;
+- commenting;
+- initiative support.
 
 Feeds:
 
-* Fair;
-* Reflection;
-* Analytics.
+- Fair;
+- Reflection;
+- Analytics.
 
 ---
 
@@ -501,15 +501,15 @@ History should be preserved.
 
 Every domain object receives:
 
-* unique identifier;
-* creation timestamp;
-* update timestamp;
-* ownership information.
+- unique identifier;
+- creation timestamp;
+- update timestamp;
+- ownership information.
 
 Historical objects additionally record:
 
-* origin event;
-* audit reference.
+- origin event;
+- audit reference.
 
 ---
 
@@ -563,11 +563,11 @@ The Data Model should support future growth.
 
 Examples:
 
-* new initiative types;
-* new institutions;
-* additional countries;
-* AI capabilities;
-* future civic services.
+- new initiative types;
+- new institutions;
+- additional countries;
+- AI capabilities;
+- future civic services.
 
 Extensions should not require redesign of existing domain objects.
 
@@ -577,11 +577,11 @@ Extensions should not require redesign of existing domain objects.
 
 The Data Model follows:
 
-* Human-Centered Domain Architecture;
-* Principle of Irreversible Architecture;
-* Event-Driven Architecture;
-* Platform Contract;
-* Human Journeys.
+- Human-Centered Domain Architecture;
+- Principle of Irreversible Architecture;
+- Event-Driven Architecture;
+- Platform Contract;
+- Human Journeys.
 
 Implementation should never violate these principles.
 
@@ -647,24 +647,24 @@ Approved
 
 Depends On:
 
-* 04_PLATFORM_BLUEPRINT.md
-* 05_PLATFORM_SERVICES.md
-* 06_HUMAN_JOURNEYS.md
-* 07_DATABASE_BLUEPRINT.md
-* 08_EVENT_ARCHITECTURE.md
-* 09_INTENTION_ARCHITECTURE.md
-* 10_PLATFORM_CONTRACT.md
-* 11_ENGINEERING_ARCHITECTURE.md
-* 12_PLATFORM_API_SPECIFICATION.md
+- 04_PLATFORM_BLUEPRINT.md
+- 05_PLATFORM_SERVICES.md
+- 06_HUMAN_JOURNEYS.md
+- 07_DATABASE_BLUEPRINT.md
+- 08_EVENT_ARCHITECTURE.md
+- 09_INTENTION_ARCHITECTURE.md
+- 10_PLATFORM_CONTRACT.md
+- 11_ENGINEERING_ARCHITECTURE.md
+- 12_PLATFORM_API_SPECIFICATION.md
 
 Used By:
 
-* MongoDB Schema
-* TypeScript Interfaces
-* Backend Services
-* API Resources
-* Frontend State Management
-* AI Engines
+- MongoDB Schema
+- TypeScript Interfaces
+- Backend Services
+- API Resources
+- Frontend State Management
+- AI Engines
 
 Next Document:
 

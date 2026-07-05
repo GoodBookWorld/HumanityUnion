@@ -51,7 +51,8 @@ preferencesRouter.patch("/me", authenticationMiddleware, (req, res) => {
   const update: PreferencesUpdate = {};
 
   if (body.experiencePreferences !== undefined) {
-    update.experiencePreferences = body.experiencePreferences as PreferencesUpdate["experiencePreferences"];
+    update.experiencePreferences =
+      body.experiencePreferences as PreferencesUpdate["experiencePreferences"];
   }
 
   if (body.participationPreferences !== undefined) {
@@ -70,7 +71,8 @@ preferencesRouter.patch("/me", authenticationMiddleware, (req, res) => {
   }
 
   if (body.workspacePreferences !== undefined) {
-    update.workspacePreferences = body.workspacePreferences as PreferencesUpdate["workspacePreferences"];
+    update.workspacePreferences =
+      body.workspacePreferences as PreferencesUpdate["workspacePreferences"];
   }
 
   const preferences = updatePreferences(req.auth!.memberId, update);

@@ -18,18 +18,13 @@ interface ContributionProfileSectionProps {
   onCommitmentUpdated: (commitment: ImplementationCommitment) => void;
 }
 
-const CONTRIBUTION_TYPES: CommitmentContributionType[] = [
-  "Volunteer",
-  "Professional",
-  "Resource",
-];
+const CONTRIBUTION_TYPES: CommitmentContributionType[] = ["Volunteer", "Professional", "Resource"];
 
 export function ContributionProfileSection({
   commitment,
   onCommitmentUpdated,
 }: ContributionProfileSectionProps) {
-  const [contributionType, setContributionType] =
-    useState<CommitmentContributionType>("Volunteer");
+  const [contributionType, setContributionType] = useState<CommitmentContributionType>("Volunteer");
   const [contributionCapacity, setContributionCapacity] = useState("");
   const [availabilityDescription, setAvailabilityDescription] = useState("");
   const [skillSummary, setSkillSummary] = useState("");
@@ -108,10 +103,7 @@ export function ContributionProfileSection({
             <ProfileField label="Regional Context" value={profile.regionalContext} />
           ) : null}
           {profile.organizationalContext ? (
-            <ProfileField
-              label="Organizational Context"
-              value={profile.organizationalContext}
-            />
+            <ProfileField label="Organizational Context" value={profile.organizationalContext} />
           ) : null}
         </>
       ) : (

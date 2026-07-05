@@ -17,8 +17,8 @@ export function HumanityAssistantPanel({ implementation }: HumanityAssistantPane
     return (
       <div className="implementation-assistant">
         <p className="implementation-assistant__summary">
-          This implementation record is still preparing. The assistant can explain lifecycle
-          meaning and what will appear as achievements are recorded.
+          This implementation record is still preparing. The assistant can explain lifecycle meaning
+          and what will appear as achievements are recorded.
         </p>
         <p className="implementation-section__note">
           This assistant explains only. It never decides, records, coordinates or assigns work.
@@ -40,8 +40,8 @@ export function HumanityAssistantPanel({ implementation }: HumanityAssistantPane
         {guidance.suggestion}
       </p>
       <p className="implementation-section__note">
-        This assistant explains implementation status, progress, achievements and evidence. It
-        never approves achievements, coordinates work, assigns tasks or recommends work.
+        This assistant explains implementation status, progress, achievements and evidence. It never
+        approves achievements, coordinates work, assigns tasks or recommends work.
       </p>
     </div>
   );

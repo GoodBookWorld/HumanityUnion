@@ -12,11 +12,7 @@ export type {
   ParticipantDecisionId,
   ParticipantDecisionStatus,
 } from "./participant-decision.js";
-export type {
-  DecisionOptionResult,
-  DecisionResult,
-  DecisionResultId,
-} from "./decision-result.js";
+export type { DecisionOptionResult, DecisionResult, DecisionResultId } from "./decision-result.js";
 export type { Outcome, OutcomeId, OutcomeType } from "./outcome.js";
 export type { DecisionRules } from "./decision-rules.js";
 export type { EligibilityRules } from "./eligibility-rules.js";

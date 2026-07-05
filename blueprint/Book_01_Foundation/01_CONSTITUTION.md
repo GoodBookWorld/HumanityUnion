@@ -104,12 +104,12 @@ Technology exists to strengthen human capability, not replace it.
 
 Humanity Union develops technology that:
 
-* supports understanding;
-* encourages meaningful participation;
-* respects human attention;
-* protects personal dignity;
-* increases transparency;
-* strengthens communities.
+- supports understanding;
+- encourages meaningful participation;
+- respects human attention;
+- protects personal dignity;
+- increases transparency;
+- strengthens communities.
 
 Technology should never manipulate human behavior for commercial or political advantage.
 

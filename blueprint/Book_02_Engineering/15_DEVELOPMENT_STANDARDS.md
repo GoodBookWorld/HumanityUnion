@@ -28,11 +28,11 @@ Technical correctness alone is not sufficient.
 
 Engineering decisions must also support:
 
-* human understanding;
-* cooperation;
-* transparency;
-* meaningful participation;
-* long-term maintainability.
+- human understanding;
+- cooperation;
+- transparency;
+- meaningful participation;
+- long-term maintainability.
 
 ---
 
@@ -52,12 +52,12 @@ If implementation appears to conflict with the Blueprint, architecture should be
 
 Every implementation should improve at least one of:
 
-* understanding;
-* cooperation;
-* accessibility;
-* trust;
-* reflection;
-* meaningful impact.
+- understanding;
+- cooperation;
+- accessibility;
+- trust;
+- reflection;
+- meaningful impact.
 
 Technology is successful only when people benefit.
 
@@ -67,13 +67,13 @@ Technology is successful only when people benefit.
 
 Every contribution should be:
 
-* readable;
-* modular;
-* reusable;
-* testable;
-* secure;
-* documented;
-* maintainable.
+- readable;
+- modular;
+- reusable;
+- testable;
+- secure;
+- documented;
+- maintainable.
 
 Readable code is preferred over clever code.
 
@@ -85,21 +85,21 @@ Use domain language whenever possible.
 
 Preferred names include:
 
-* Member
-* Initiative
-* Community
-* Opportunity
-* Reflection
-* Knowledge
-* Impact
-* Fair
+- Member
+- Initiative
+- Community
+- Opportunity
+- Reflection
+- Knowledge
+- Impact
+- Fair
 
 Avoid vague names such as:
 
-* DataManager
-* Utils
-* Helper
-* Misc
+- DataManager
+- Utils
+- Helper
+- Misc
 
 Names should describe purpose, not implementation.
 
@@ -123,9 +123,9 @@ Complex logic should be understandable.
 
 Developers should favor clarity over unnecessary abstraction.
 
-Comments should explain *why*, not *what*.
+Comments should explain _why_, not _what_.
 
-The code itself should express *what*.
+The code itself should express _what_.
 
 ---
 
@@ -165,12 +165,12 @@ It does not make decisions.
 
 Every implementation must consider:
 
-* authentication;
-* authorization;
-* input validation;
-* output sanitization;
-* audit logging;
-* privacy.
+- authentication;
+- authorization;
+- input validation;
+- output sanitization;
+- audit logging;
+- privacy.
 
 Security should never depend on optional future improvements.
 
@@ -182,11 +182,11 @@ Accessibility is required.
 
 Interfaces should support:
 
-* keyboard navigation;
-* screen readers;
-* responsive layouts;
-* high contrast;
-* internationalization.
+- keyboard navigation;
+- screen readers;
+- responsive layouts;
+- high contrast;
+- internationalization.
 
 Accessibility is part of quality.
 
@@ -206,10 +206,10 @@ Never sacrifice maintainability for insignificant performance gains.
 
 Every significant capability should include:
 
-* unit tests;
-* integration tests;
-* service tests;
-* event tests.
+- unit tests;
+- integration tests;
+- service tests;
+- event tests.
 
 Critical civic functionality should receive additional verification.
 
@@ -219,11 +219,11 @@ Critical civic functionality should receive additional verification.
 
 Every Platform Service should include:
 
-* purpose;
-* responsibilities;
-* published events;
-* consumed events;
-* dependencies.
+- purpose;
+- responsibilities;
+- published events;
+- consumed events;
+- dependencies.
 
 Documentation should evolve together with implementation.
 
@@ -233,12 +233,12 @@ Documentation should evolve together with implementation.
 
 Every review should evaluate:
 
-* architectural consistency;
-* readability;
-* security;
-* performance;
-* accessibility;
-* compliance with the Blueprint.
+- architectural consistency;
+- readability;
+- security;
+- performance;
+- accessibility;
+- compliance with the Blueprint.
 
 Review the design before reviewing syntax.
 
@@ -248,9 +248,9 @@ Review the design before reviewing syntax.
 
 Commits should be:
 
-* focused;
-* descriptive;
-* atomic.
+- focused;
+- descriptive;
+- atomic.
 
 Example:
 
@@ -278,10 +278,10 @@ AI may not redefine architecture.
 
 Every AI-generated code contribution must comply with:
 
-* Blueprint;
-* Platform Contract;
-* Engineering Architecture;
-* Data Model.
+- Blueprint;
+- Platform Contract;
+- Engineering Architecture;
+- Data Model.
 
 Human review remains mandatory.
 
@@ -293,9 +293,9 @@ Engineering standards should evolve.
 
 Changes should be:
 
-* documented;
-* reviewed;
-* justified.
+- documented;
+- reviewed;
+- justified.
 
 Stability should be preserved while allowing responsible improvement.
 
@@ -305,13 +305,13 @@ Stability should be preserved while allowing responsible improvement.
 
 Humanity Union engineers value:
 
-* curiosity;
-* humility;
-* cooperation;
-* continuous learning;
-* responsible innovation;
-* respect for evidence;
-* respect for people.
+- curiosity;
+- humility;
+- cooperation;
+- continuous learning;
+- responsible innovation;
+- respect for evidence;
+- respect for people.
 
 The objective is not simply to deliver software.
 
@@ -345,19 +345,19 @@ Approved
 
 Depends On:
 
-* Entire Book_01_Foundation
-* 11_ENGINEERING_ARCHITECTURE.md
-* 12_PLATFORM_API_SPECIFICATION.md
-* 13_DATA_MODEL.md
-* 14_HUMAN_EXPERIENCE_SYSTEM.md
+- Entire Book_01_Foundation
+- 11_ENGINEERING_ARCHITECTURE.md
+- 12_PLATFORM_API_SPECIFICATION.md
+- 13_DATA_MODEL.md
+- 14_HUMAN_EXPERIENCE_SYSTEM.md
 
 Used By:
 
-* All Engineers
-* Code Reviews
-* Pull Requests
-* CI/CD Quality Checks
-* AI-Assisted Development
+- All Engineers
+- Code Reviews
+- Pull Requests
+- CI/CD Quality Checks
+- AI-Assisted Development
 
 Next Phase:
 

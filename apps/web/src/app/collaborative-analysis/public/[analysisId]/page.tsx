@@ -91,9 +91,7 @@ export default async function PublicCollaborativeAnalysisPage({
   return (
     <main className="public-collaborative-analysis-page">
       <header className="public-collaborative-analysis-page__header">
-        <h1 className="public-collaborative-analysis-page__title">
-          {analysis.initiativeTitle}
-        </h1>
+        <h1 className="public-collaborative-analysis-page__title">{analysis.initiativeTitle}</h1>
         <p className="public-collaborative-analysis-page__subtitle">
           Public collaborative analysis
         </p>
@@ -158,7 +156,10 @@ export default async function PublicCollaborativeAnalysisPage({
       </ProfileSection>
 
       <ProfileSection title="Contribution Statistics">
-        <ProfileField label="Total Contributions" value={String(analysis.contributionStatistics.totalCount)} />
+        <ProfileField
+          label="Total Contributions"
+          value={String(analysis.contributionStatistics.totalCount)}
+        />
         {analysis.contributionStatistics.byType.length > 0 ? (
           <ul className="public-collaborative-analysis-page__stats">
             {analysis.contributionStatistics.byType.map((entry) => (
@@ -188,7 +189,10 @@ export default async function PublicCollaborativeAnalysisPage({
         )}
       </ProfileSection>
 
-      <nav className="public-collaborative-analysis-page__related" aria-label="Platform integration">
+      <nav
+        className="public-collaborative-analysis-page__related"
+        aria-label="Platform integration"
+      >
         <Link href={`/initiatives/public/${encodeURIComponent(analysis.initiativeId)}`}>
           View Public Initiative
         </Link>

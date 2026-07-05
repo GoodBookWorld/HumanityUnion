@@ -22,10 +22,10 @@ This guide prepares the platform for future authentication, error handling, envi
 
 After completing this guide:
 
-* Web API calls are centralized;
-* Member page no longer hardcodes fetch logic directly;
-* API base URL is defined in one place;
-* future authentication tokens can be added without rewriting pages.
+- Web API calls are centralized;
+- Member page no longer hardcodes fetch logic directly;
+- API base URL is defined in one place;
+- future authentication tokens can be added without rewriting pages.
 
 ---
 
@@ -33,11 +33,11 @@ After completing this guide:
 
 This guide implements foundations from:
 
-* 10_PLATFORM_CONTRACT.md
-* 12_PLATFORM_API_SPECIFICATION.md
-* 14_HUMAN_EXPERIENCE_SYSTEM.md
-* 15_DEVELOPMENT_STANDARDS.md
-* IMPLEMENTATION_GUIDE_13_MEMBER_WEB_PAGE.md
+- 10_PLATFORM_CONTRACT.md
+- 12_PLATFORM_API_SPECIFICATION.md
+- 14_HUMAN_EXPERIENCE_SYSTEM.md
+- 15_DEVELOPMENT_STANDARDS.md
+- IMPLEMENTATION_GUIDE_13_MEMBER_WEB_PAGE.md
 
 ---
 
@@ -75,10 +75,10 @@ Provide one reusable API request function.
 
 Requirements:
 
-* define API base URL;
-* default base URL should be `http://localhost:4000`;
-* support JSON responses;
-* throw readable errors when requests fail.
+- define API base URL;
+- default base URL should be `http://localhost:4000`;
+- support JSON responses;
+- throw readable errors when requests fail.
 
 ---
 
@@ -96,15 +96,15 @@ Provide Member-specific API access.
 
 Requirements:
 
-* export a function:
+- export a function:
   `getCurrentMember()`
 
-* internally call:
+- internally call:
   `/api/v1/members/me`
 
-* use the shared API client;
+- use the shared API client;
 
-* return Member data.
+- return Member data.
 
 ---
 
@@ -118,10 +118,10 @@ apps/web/src/app/member/page.tsx
 
 Requirements:
 
-* remove direct raw fetch logic;
-* use `getCurrentMember()`;
-* preserve current display behavior;
-* preserve API unavailable message.
+- remove direct raw fetch logic;
+- use `getCurrentMember()`;
+- preserve current display behavior;
+- preserve API unavailable message.
 
 ---
 
@@ -129,13 +129,13 @@ Requirements:
 
 Do not create:
 
-* authentication;
-* token storage;
-* login;
-* registration;
-* database logic;
-* global state management;
-* complex error framework.
+- authentication;
+- token storage;
+- login;
+- registration;
+- database logic;
+- global state management;
+- complex error framework.
 
 Do not modify Blueprint documents.
 
@@ -171,9 +171,9 @@ http://localhost:3000/member
 
 Expected:
 
-* Member data still appears;
-* behavior is unchanged;
-* API calls now pass through shared client.
+- Member data still appears;
+- behavior is unchanged;
+- API calls now pass through shared client.
 
 ---
 
@@ -181,12 +181,12 @@ Expected:
 
 Confirm:
 
-* `api-client.ts` exists;
-* `member-api.ts` exists;
-* Member page imports `getCurrentMember`;
-* Member page no longer directly hardcodes API fetch;
-* TypeScript passes;
-* Member page still works.
+- `api-client.ts` exists;
+- `member-api.ts` exists;
+- Member page imports `getCurrentMember`;
+- Member page no longer directly hardcodes API fetch;
+- TypeScript passes;
+- Member page still works.
 
 ---
 

@@ -48,15 +48,15 @@ The platform is organized around meaningful civic domains rather than technical 
 
 Primary domains include:
 
-* Members
-* Knowledge
-* Initiatives
-* Communities
-* Institutions
-* Trust
-* Impact
-* Reflection
-* Opportunities
+- Members
+- Knowledge
+- Initiatives
+- Communities
+- Institutions
+- Trust
+- Impact
+- Reflection
+- Opportunities
 
 Technology implements these domains.
 
@@ -68,10 +68,10 @@ Technology never replaces them.
 
 Every architectural decision must:
 
-* simplify future development;
-* reduce technical debt;
-* preserve architectural integrity;
-* support long-term evolution.
+- simplify future development;
+- reduce technical debt;
+- preserve architectural integrity;
+- support long-term evolution.
 
 Whenever possible, extend existing architecture instead of replacing it.
 
@@ -83,10 +83,10 @@ The best technology is almost invisible.
 
 Members should experience:
 
-* clarity;
-* confidence;
-* guidance;
-* reliability.
+- clarity;
+- confidence;
+- guidance;
+- reliability.
 
 They should never experience unnecessary technical complexity.
 
@@ -98,11 +98,11 @@ Engineering should reduce cognitive load.
 
 Every implementation should strive for:
 
-* fewer unnecessary clicks;
-* meaningful defaults;
-* explainable recommendations;
-* predictable behavior;
-* consistent interfaces.
+- fewer unnecessary clicks;
+- meaningful defaults;
+- explainable recommendations;
+- predictable behavior;
+- consistent interfaces.
 
 The platform should create confidence, not confusion.
 
@@ -162,10 +162,10 @@ Every recommendation must be explainable.
 
 Every automated recommendation should answer:
 
-* Why is this recommended?
-* Which information was considered?
-* What benefit may it provide?
-* Can the Member choose differently?
+- Why is this recommended?
+- Which information was considered?
+- What benefit may it provide?
+- Can the Member choose differently?
 
 Humanity Union never relies on opaque decision-making.
 
@@ -225,14 +225,14 @@ No layer should assume responsibilities belonging to another.
 
 Every implementation should be:
 
-* modular;
-* reusable;
-* testable;
-* observable;
-* secure;
-* scalable;
-* accessible;
-* documented.
+- modular;
+- reusable;
+- testable;
+- observable;
+- secure;
+- scalable;
+- accessible;
+- documented.
 
 Engineering quality is measured by long-term maintainability rather than short-term speed.
 
@@ -270,12 +270,12 @@ Security is part of architecture from the beginning.
 
 Every component must support:
 
-* authentication;
-* authorization;
-* encryption;
-* auditing;
-* privacy;
-* resilience.
+- authentication;
+- authorization;
+- encryption;
+- auditing;
+- privacy;
+- resilience.
 
 Security should never be added as an afterthought.
 
@@ -297,12 +297,12 @@ Every subsystem should support future growth.
 
 Architecture must anticipate:
 
-* additional countries;
-* additional languages;
-* additional institutions;
-* new civic tools;
-* AI assistants;
-* future technologies.
+- additional countries;
+- additional languages;
+- additional institutions;
+- new civic tools;
+- AI assistants;
+- future technologies.
 
 Growth should extend architecture, not replace it.
 
@@ -328,13 +328,13 @@ If these answers are incomplete, implementation should pause until clarified.
 
 Humanity Union engineering values:
 
-* curiosity over assumptions;
-* cooperation over individual ownership;
-* clarity over cleverness;
-* stability over speed;
-* quality over quantity;
-* continuous learning;
-* responsible innovation.
+- curiosity over assumptions;
+- cooperation over individual ownership;
+- clarity over cleverness;
+- stability over speed;
+- quality over quantity;
+- continuous learning;
+- responsible innovation.
 
 The objective is not simply to build software.
 

@@ -1,4 +1,10 @@
-import type { Petition, PetitionPolicy, PetitionSubject, ParticipationMode, Signature } from "@hu/types";
+import type {
+  Petition,
+  PetitionPolicy,
+  PetitionSubject,
+  ParticipationMode,
+  Signature,
+} from "@hu/types";
 
 import { getDecision } from "../collective-decision/collective-decision.store.js";
 import { bootstrapPetition } from "./bootstrap-petition.js";
@@ -50,7 +56,10 @@ function assertApprovedCollectiveDecision(collectiveDecisionId: string): void {
   }
 }
 
-function assertUniqueCollectiveDecisionPath(collectiveDecisionId: string, petitionId?: string): void {
+function assertUniqueCollectiveDecisionPath(
+  collectiveDecisionId: string,
+  petitionId?: string,
+): void {
   const duplicate = Array.from(petitions.values()).find(
     (entry) =>
       entry.collectiveDecisionId === collectiveDecisionId && entry.petitionId !== petitionId,

@@ -24,14 +24,14 @@ The project currently contains early folders created during initial setup.
 
 Examples:
 
-* assets
-* components
-* database
-* pages
-* public
-* api
-* backend
-* frontend
+- assets
+- components
+- database
+- pages
+- public
+- api
+- backend
+- frontend
 
 These folders must not be deleted immediately.
 
@@ -84,9 +84,9 @@ apps/
   api/
 ```
 
-* web — public platform, My Impact, Member experience.
-* admin — administrative platform.
-* api — Node.js / Express API server.
+- web — public platform, My Impact, Member experience.
+- admin — administrative platform.
+- api — Node.js / Express API server.
 
 ---
 
@@ -105,11 +105,11 @@ packages/
   sdk/
 ```
 
-* types — shared TypeScript types.
-* ui — shared UI components.
-* config — shared configuration.
-* shared — shared utilities.
-* sdk — future client SDK for API communication.
+- types — shared TypeScript types.
+- ui — shared UI components.
+- config — shared configuration.
+- shared — shared utilities.
+- sdk — future client SDK for API communication.
 
 ---
 
@@ -166,9 +166,9 @@ Automation scripts.
 
 Examples:
 
-* setup scripts;
-* migration scripts;
-* development helpers.
+- setup scripts;
+- migration scripts;
+- development helpers.
 
 ---
 
@@ -178,9 +178,9 @@ Cross-application tests.
 
 Examples:
 
-* integration tests;
-* end-to-end tests;
-* system tests.
+- integration tests;
+- end-to-end tests;
+- system tests.
 
 ---
 
@@ -198,14 +198,14 @@ Existing early folders must be reviewed before migration.
 
 Legacy folders include:
 
-* assets
-* components
-* database
-* pages
-* public
-* api
-* backend
-* frontend
+- assets
+- components
+- database
+- pages
+- public
+- api
+- backend
+- frontend
 
 Rules:
 
@@ -246,10 +246,10 @@ pnpm
 
 Reason:
 
-* efficient dependency management;
-* strong monorepo support;
-* fast installation;
-* workspace support.
+- efficient dependency management;
+- strong monorepo support;
+- fast installation;
+- workspace support.
 
 npm may remain installed on the machine, but project dependency management should use pnpm.
 
@@ -259,14 +259,14 @@ npm may remain installed on the machine, but project dependency management shoul
 
 Current approved stack:
 
-* TypeScript
-* Node.js
-* Express
-* MongoDB
-* React
-* Next.js
-* PWA
-* pnpm monorepo
+- TypeScript
+- Node.js
+- Express
+- MongoDB
+- React
+- Next.js
+- PWA
+- pnpm monorepo
 
 Future decisions should follow the Blueprint.
 
@@ -373,11 +373,11 @@ git commit -m "Set up monorepo repository foundation"
 
 This guide is complete when:
 
-* monorepo folders exist;
-* pnpm-workspace.yaml exists;
-* no legacy folders are deleted;
-* blueprint remains intact;
-* no application code is generated yet.
+- monorepo folders exist;
+- pnpm-workspace.yaml exists;
+- no legacy folders are deleted;
+- blueprint remains intact;
+- no application code is generated yet.
 
 ---
 

@@ -116,19 +116,19 @@ The Aggregate Root entity.
 
 **Core properties:**
 
-| Property | Description |
-|----------|-------------|
-| `implementationId` | Unique aggregate identifier |
-| `initiativeId` | Reference to originating Initiative |
-| `collectiveDecisionId` | Reference to approved Collective Decision |
-| `petitionId` | Reference to related Petition |
+| Property                     | Description                                      |
+| ---------------------------- | ------------------------------------------------ |
+| `implementationId`           | Unique aggregate identifier                      |
+| `initiativeId`               | Reference to originating Initiative              |
+| `collectiveDecisionId`       | Reference to approved Collective Decision        |
+| `petitionId`                 | Reference to related Petition                    |
 | `implementationCommitmentId` | Reference to preceding Implementation Commitment |
-| `frozenPolicyId` | Reference to governing Frozen Policy |
-| `status` | Implementation lifecycle state |
-| `subjectTitle` | Approved subject title snapshot |
-| `subjectSummary` | Approved subject summary snapshot |
-| `createdAt` | Aggregate creation timestamp |
-| `updatedAt` | Last mutation timestamp |
+| `frozenPolicyId`             | Reference to governing Frozen Policy             |
+| `status`                     | Implementation lifecycle state                   |
+| `subjectTitle`               | Approved subject title snapshot                  |
+| `subjectSummary`             | Approved subject summary snapshot                |
+| `createdAt`                  | Aggregate creation timestamp                     |
+| `updatedAt`                  | Last mutation timestamp                          |
 
 **Owned collections:**
 
@@ -157,16 +157,16 @@ An **Implementation Phase** is a major segment of collective execution within on
 
 **Properties:**
 
-| Property | Description |
-|----------|-------------|
-| `implementationPhaseId` | Unique phase identifier |
-| `implementationId` | Owning aggregate |
-| `title` | Phase title in civic language |
-| `summary` | Phase purpose summary |
-| `sequenceOrder` | Ordered position within implementation narrative |
-| `status` | Phase lifecycle meaning within implementation |
-| `createdAt` | Phase creation timestamp |
-| `updatedAt` | Last permitted mutation timestamp |
+| Property                | Description                                      |
+| ----------------------- | ------------------------------------------------ |
+| `implementationPhaseId` | Unique phase identifier                          |
+| `implementationId`      | Owning aggregate                                 |
+| `title`                 | Phase title in civic language                    |
+| `summary`               | Phase purpose summary                            |
+| `sequenceOrder`         | Ordered position within implementation narrative |
+| `status`                | Phase lifecycle meaning within implementation    |
+| `createdAt`             | Phase creation timestamp                         |
+| `updatedAt`             | Last permitted mutation timestamp                |
 
 **Rules:**
 
@@ -183,19 +183,19 @@ A **Milestone** is a defined collective checkpoint toward Implementation complet
 
 **Properties:**
 
-| Property | Description |
-|----------|-------------|
-| `milestoneId` | Unique milestone identifier |
-| `implementationId` | Owning aggregate |
-| `implementationPhaseId` | Owning phase |
-| `title` | Milestone title in civic language |
-| `description` | Milestone meaning and expected collective outcome |
-| `requirementType` | Required or Optional classification |
-| `status` | Milestone satisfaction state within implementation |
-| `sequenceOrder` | Ordered position within phase |
-| `createdAt` | Milestone creation timestamp |
-| `updatedAt` | Last permitted mutation timestamp |
-| `satisfiedAt` | Timestamp when milestone satisfaction recorded, if applicable |
+| Property                | Description                                                   |
+| ----------------------- | ------------------------------------------------------------- |
+| `milestoneId`           | Unique milestone identifier                                   |
+| `implementationId`      | Owning aggregate                                              |
+| `implementationPhaseId` | Owning phase                                                  |
+| `title`                 | Milestone title in civic language                             |
+| `description`           | Milestone meaning and expected collective outcome             |
+| `requirementType`       | Required or Optional classification                           |
+| `status`                | Milestone satisfaction state within implementation            |
+| `sequenceOrder`         | Ordered position within phase                                 |
+| `createdAt`             | Milestone creation timestamp                                  |
+| `updatedAt`             | Last permitted mutation timestamp                             |
+| `satisfiedAt`           | Timestamp when milestone satisfaction recorded, if applicable |
 
 **Rules:**
 
@@ -216,17 +216,17 @@ An **Achievement** is a recorded collective accomplishment advancing or satisfyi
 
 **Properties:**
 
-| Property | Description |
-|----------|-------------|
-| `achievementId` | Unique achievement identifier |
-| `implementationId` | Owning aggregate |
-| `milestoneId` | Related milestone |
-| `title` | Achievement title in civic language |
-| `summary` | Factual description of collective accomplishment |
-| `recordedAt` | Timestamp of accountable recording |
+| Property                  | Description                                                    |
+| ------------------------- | -------------------------------------------------------------- |
+| `achievementId`           | Unique achievement identifier                                  |
+| `implementationId`        | Owning aggregate                                               |
+| `milestoneId`             | Related milestone                                              |
+| `title`                   | Achievement title in civic language                            |
+| `summary`                 | Factual description of collective accomplishment               |
+| `recordedAt`              | Timestamp of accountable recording                             |
 | `recordedByParticipantId` | Participant who recorded under policy — not ownership of labor |
-| `createdAt` | Entity creation timestamp |
-| `updatedAt` | Last permitted mutation timestamp |
+| `createdAt`               | Entity creation timestamp                                      |
+| `updatedAt`               | Last permitted mutation timestamp                              |
 
 **Rules:**
 
@@ -244,15 +244,15 @@ An **Achievement** is a recorded collective accomplishment advancing or satisfyi
 
 **Properties:**
 
-| Property | Description |
-|----------|-------------|
-| `evidenceId` | Unique evidence identifier |
-| `achievementId` | Owning achievement |
-| `implementationId` | Owning aggregate |
-| `evidenceKind` | Reference, Attachment or Link classification |
-| `label` | Public-safe evidence label |
-| `recordedAt` | Timestamp of evidence association |
-| `createdAt` | Entity creation timestamp |
+| Property           | Description                                  |
+| ------------------ | -------------------------------------------- |
+| `evidenceId`       | Unique evidence identifier                   |
+| `achievementId`    | Owning achievement                           |
+| `implementationId` | Owning aggregate                             |
+| `evidenceKind`     | Reference, Attachment or Link classification |
+| `label`            | Public-safe evidence label                   |
+| `recordedAt`       | Timestamp of evidence association            |
+| `createdAt`        | Entity creation timestamp                    |
 
 **Rules:**
 
@@ -423,13 +423,13 @@ It is informational — not a scheduling system in Version 1.
 
 Implementation references external aggregates by identifier and approved snapshot only.
 
-| Reference | Purpose |
-|-----------|---------|
-| `InitiativeId` | Originating structured proposal |
-| `CollectiveDecisionId` | Approved collective direction |
-| `PetitionId` | Related public endorsement context |
-| `ImplementationCommitmentId` | Preceding preparedness and readiness context |
-| `FrozenPolicyId` | Governing frozen policy for milestones, evidence and completion semantics |
+| Reference                    | Purpose                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `InitiativeId`               | Originating structured proposal                                           |
+| `CollectiveDecisionId`       | Approved collective direction                                             |
+| `PetitionId`                 | Related public endorsement context                                        |
+| `ImplementationCommitmentId` | Preceding preparedness and readiness context                              |
+| `FrozenPolicyId`             | Governing frozen policy for milestones, evidence and completion semantics |
 
 **Reference rules:**
 
@@ -662,15 +662,15 @@ The following concepts are **reserved extension points** intentionally excluded 
 
 They must not silently enter Epic 06 scope through store convenience or experience drift.
 
-| Reserved concept | Future intent |
-|------------------|---------------|
-| **Coordination Space** | Richer structured coordination beyond collective progress recording |
-| **Task Assignment** | Personal or role-based work delegation |
-| **Calendar** | Shared or personal time coordination |
-| **Scheduling** | Shift, slot or deadline assignment |
-| **Messaging** | Chat or thread-based coordination replacing accountable updates |
-| **Volunteer Coordination** | Roster management and dispatch |
-| **External Project Management Integration** | Embedded third-party execution tools |
+| Reserved concept                            | Future intent                                                       |
+| ------------------------------------------- | ------------------------------------------------------------------- |
+| **Coordination Space**                      | Richer structured coordination beyond collective progress recording |
+| **Task Assignment**                         | Personal or role-based work delegation                              |
+| **Calendar**                                | Shared or personal time coordination                                |
+| **Scheduling**                              | Shift, slot or deadline assignment                                  |
+| **Messaging**                               | Chat or thread-based coordination replacing accountable updates     |
+| **Volunteer Coordination**                  | Roster management and dispatch                                      |
+| **External Project Management Integration** | Embedded third-party execution tools                                |
 
 Version 1 records **implementation progress only**.
 
@@ -716,11 +716,11 @@ Implementation   ← this aggregate
 Impact
 ```
 
-| Stage | Question |
-|-------|----------|
+| Stage                     | Question                 |
+| ------------------------- | ------------------------ |
 | Implementation Commitment | Who is prepared to help? |
-| **Implementation** | **What is being done?** |
-| Impact | What changed? |
+| **Implementation**        | **What is being done?**  |
+| Impact                    | What changed?            |
 
 Each stage preserves aggregate independence.
 

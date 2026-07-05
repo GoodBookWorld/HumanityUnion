@@ -94,12 +94,7 @@ function respondWithImplementation(
   res
     .status(status)
     .json(
-      createSuccessResponse(
-        implementation,
-        message,
-        {},
-        mapImplementationLinks(implementation),
-      ),
+      createSuccessResponse(implementation, message, {}, mapImplementationLinks(implementation)),
     );
 }
 
@@ -203,10 +198,7 @@ export function getImplementationByPetitionHandler(req: Request, res: Response):
 
 export function getImplementationByCommitmentHandler(req: Request, res: Response): void {
   const commitmentId = getParam(req, "commitmentId");
-  const validationError = validateReferenceId(
-    commitmentId,
-    "Implementation Commitment identifier",
-  );
+  const validationError = validateReferenceId(commitmentId, "Implementation Commitment identifier");
 
   if (validationError) {
     res.status(400).json(createFailureResponse(validationError));
@@ -464,11 +456,7 @@ export function updateMilestoneHandler(req: Request, res: Response): void {
       return;
     }
 
-    respondWithImplementation(
-      res,
-      mapImplementationResponse(implementation),
-      "Milestone updated.",
-    );
+    respondWithImplementation(res, mapImplementationResponse(implementation), "Milestone updated.");
   } catch (error) {
     handleStoreError(res, error);
   }

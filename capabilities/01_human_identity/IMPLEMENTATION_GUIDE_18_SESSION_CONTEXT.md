@@ -22,10 +22,10 @@ This guide does not implement real sessions, JWT, cookies, OAuth, or database-ba
 
 After completing this guide:
 
-* API has a Session Context abstraction;
-* current AuthIdentity is accessed through Session Context;
-* GET /api/v1/auth/me no longer reads bootstrap identity directly;
-* future authentication mechanisms can replace bootstrap identity without changing route logic.
+- API has a Session Context abstraction;
+- current AuthIdentity is accessed through Session Context;
+- GET /api/v1/auth/me no longer reads bootstrap identity directly;
+- future authentication mechanisms can replace bootstrap identity without changing route logic.
 
 ---
 
@@ -33,11 +33,11 @@ After completing this guide:
 
 Implements:
 
-* Platform Contract
-* Platform API Specification
-* Human Identity Capability
-* Epic 01 Authentication
-* Guide 17 Authentication API Contract
+- Platform Contract
+- Platform API Specification
+- Human Identity Capability
+- Epic 01 Authentication
+- Guide 17 Authentication API Contract
 
 ---
 
@@ -69,7 +69,7 @@ Create a `SessionContext` interface.
 It should expose:
 
 ```typescript
-getCurrentIdentity()
+getCurrentIdentity();
 ```
 
 Create a bootstrap implementation that returns the existing bootstrap AuthIdentity.
@@ -82,14 +82,14 @@ Update `GET /api/v1/auth/me` so it receives AuthIdentity through Session Context
 
 Do not implement:
 
-* JWT
-* cookies
-* sessions
-* OAuth
-* database storage
-* login
-* registration
-* password logic
+- JWT
+- cookies
+- sessions
+- OAuth
+- database storage
+- login
+- registration
+- password logic
 
 Do not modify Blueprint documents.
 
@@ -119,9 +119,9 @@ GET http://localhost:4000/api/v1/auth/me
 
 Expected:
 
-* returns AuthIdentity;
-* response envelope remains unchanged;
-* no real authentication required.
+- returns AuthIdentity;
+- response envelope remains unchanged;
+- no real authentication required.
 
 ---
 
@@ -129,12 +129,12 @@ Expected:
 
 Confirm:
 
-* session.context.ts exists;
-* SessionContext interface exists;
-* bootstrap Session Context exists;
-* auth/me uses Session Context;
-* TypeScript passes;
-* no real authentication was added.
+- session.context.ts exists;
+- SessionContext interface exists;
+- bootstrap Session Context exists;
+- auth/me uses Session Context;
+- TypeScript passes;
+- no real authentication was added.
 
 ---
 

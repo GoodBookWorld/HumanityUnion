@@ -3,7 +3,4 @@
  *
  * Distinct from Collaborative Analysis `ContributionType` in `contribution.ts`.
  */
-export type CommitmentContributionType =
-  | "Volunteer"
-  | "Professional"
-  | "Resource";
+export type CommitmentContributionType = "Volunteer" | "Professional" | "Resource";

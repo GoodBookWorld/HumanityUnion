@@ -728,15 +728,15 @@ Empty states explain **what this area means** and **what will appear later** —
 
 ## Examples
 
-| Section | Empty state meaning |
-|---------|---------------------|
-| Collective Progress | No achievements recorded yet; progress will derive when accomplishments exist |
-| Current Phase | Phases not yet configured |
-| Milestones | Milestones not yet defined |
-| Achievements | No collective achievements recorded |
-| Evidence | No evidence attached |
-| Completion Assessment | Assessment available when recording is active |
-| Next Meaningful Observation | No significant change since last visit — or lifecycle still preparing |
+| Section                     | Empty state meaning                                                           |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| Collective Progress         | No achievements recorded yet; progress will derive when accomplishments exist |
+| Current Phase               | Phases not yet configured                                                     |
+| Milestones                  | Milestones not yet defined                                                    |
+| Achievements                | No collective achievements recorded                                           |
+| Evidence                    | No evidence attached                                                          |
+| Completion Assessment       | Assessment available when recording is active                                 |
+| Next Meaningful Observation | No significant change since last visit — or lifecycle still preparing         |
 
 ## Rules
 

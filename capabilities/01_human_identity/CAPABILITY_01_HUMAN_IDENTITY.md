@@ -14,10 +14,10 @@ Human Identity establishes the complete human participation model inside Humanit
 
 Its purpose is to distinguish between:
 
-* technical identity;
-* civic identity;
-* public identity;
-* participation identity.
+- technical identity;
+- civic identity;
+- public identity;
+- participation identity.
 
 A human being is more than an authenticated account.
 
@@ -37,12 +37,12 @@ Human Identity is the foundation upon which every other platform capability is b
 
 A Member should be able to:
 
-* identify themselves securely;
-* manage their public identity;
-* protect private information;
-* participate in civic activities;
-* build long-term contribution history;
-* maintain ownership of their participation.
+- identify themselves securely;
+- manage their public identity;
+- protect private information;
+- participate in civic activities;
+- build long-term contribution history;
+- maintain ownership of their participation.
 
 ---
 
@@ -52,45 +52,45 @@ Capability 01 includes:
 
 ## Identity
 
-* Authentication
-* Identity Providers
-* Sessions
-* Identity Resolution
+- Authentication
+- Identity Providers
+- Sessions
+- Identity Resolution
 
 ---
 
 ## Member
 
-* Member Profile
-* Public Profile
-* Profile Editing
-* Profile Visibility
+- Member Profile
+- Public Profile
+- Profile Editing
+- Profile Visibility
 
 ---
 
 ## Verification
 
-* Verification Levels
-* Trust Indicators
-* Institution Verification
-* Identity Status
+- Verification Levels
+- Trust Indicators
+- Institution Verification
+- Identity Status
 
 ---
 
 ## Preferences
 
-* Languages
-* Notifications
-* Privacy
-* Participation Preferences
+- Languages
+- Notifications
+- Privacy
+- Participation Preferences
 
 ---
 
 ## Navigation
 
-* My Profile
-* Profile Menu
-* Member Dashboard Entry
+- My Profile
+- Profile Menu
+- Member Dashboard Entry
 
 ---
 
@@ -126,9 +126,9 @@ Each object has an independent lifecycle.
 
 Human Identity must never merge:
 
-* authentication;
-* authorization;
-* civic participation.
+- authentication;
+- authorization;
+- civic participation.
 
 These are separate architectural responsibilities.
 
@@ -138,13 +138,13 @@ These are separate architectural responsibilities.
 
 Capability 01 follows:
 
-* Principle of Irreversible Architecture
-* Principle of Shared Domain
-* Principle of Progressive Bootstrap
-* Principle of Feature-first Architecture
-* Principle of Capability-Driven Development
-* Principle of Implementation follows Approved Guide
-* Principle of Stable Repository Layout
+- Principle of Irreversible Architecture
+- Principle of Shared Domain
+- Principle of Progressive Bootstrap
+- Principle of Feature-first Architecture
+- Principle of Capability-Driven Development
+- Principle of Implementation follows Approved Guide
+- Principle of Stable Repository Layout
 
 ---
 
@@ -186,10 +186,10 @@ Guide 30 — Epic 03 Architecture Review
 
 Epic 03 — Member Preferences:
 
-* EPIC_03_MEMBER_PREFERENCES.md
-* PREFERENCES_DOMAIN_DESIGN.md
-* DOMAIN_MODEL.md
-* DOMAIN_DECISIONS.md
+- EPIC_03_MEMBER_PREFERENCES.md
+- PREFERENCES_DOMAIN_DESIGN.md
+- DOMAIN_MODEL.md
+- DOMAIN_DECISIONS.md
 
 ---
 
@@ -197,14 +197,14 @@ Epic 03 — Member Preferences:
 
 Capability 01 is complete when a Member can:
 
-* authenticate;
-* access their profile;
-* update profile information;
-* manage visibility settings;
-* manage notification preferences;
-* manage participation preferences;
-* view verification status;
-* securely end their session.
+- authenticate;
+- access their profile;
+- update profile information;
+- manage visibility settings;
+- manage notification preferences;
+- manage participation preferences;
+- view verification status;
+- securely end their session.
 
 ---
 
@@ -212,16 +212,16 @@ Capability 01 is complete when a Member can:
 
 Capability 01 does not include:
 
-* Initiatives
-* Proposals
-* Petitions
-* Polls
-* Voting
-* Communities
-* Fair Engine
-* Media Purity
-* Notifications delivery
-* Activity scoring
+- Initiatives
+- Proposals
+- Petitions
+- Polls
+- Voting
+- Communities
+- Fair Engine
+- Media Purity
+- Notifications delivery
+- Activity scoring
 
 These belong to later Capabilities.
 
@@ -231,11 +231,11 @@ These belong to later Capabilities.
 
 Capability 01 depends on:
 
-* Platform Foundation
-* Shared Domain
-* Shared API Client
-* Authentication Foundation
-* Member Domain
+- Platform Foundation
+- Shared Domain
+- Shared API Client
+- Authentication Foundation
+- Member Domain
 
 No other Capability depends on incomplete Human Identity.
 
@@ -245,11 +245,11 @@ No other Capability depends on incomplete Human Identity.
 
 Capability 01 is considered complete only after:
 
-* all Guides are implemented;
-* all verification steps pass;
-* Architecture Review is completed;
-* roadmap is updated;
-* documentation is synchronized.
+- all Guides are implemented;
+- all verification steps pass;
+- Architecture Review is completed;
+- roadmap is updated;
+- documentation is synchronized.
 
 ---
 

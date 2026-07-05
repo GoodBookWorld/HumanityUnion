@@ -24,11 +24,11 @@ The objective is to verify architectural integrity, documentation completeness, 
 
 Epic 02 is considered complete only if:
 
-* implementation is verified;
-* documentation is synchronized;
-* architecture remains consistent;
-* engineering principles are respected;
-* the platform is ready for the next Epic.
+- implementation is verified;
+- documentation is synchronized;
+- architecture remains consistent;
+- engineering principles are respected;
+- the platform is ready for the next Epic.
 
 ---
 
@@ -36,20 +36,20 @@ Epic 02 is considered complete only if:
 
 Review:
 
-* Capability 01 — Human Identity
-* Epic 01 — Authentication
-* Epic 02 — Member Profile
+- Capability 01 — Human Identity
+- Epic 01 — Authentication
+- Epic 02 — Member Profile
 
 Engineering Principles:
 
-* Progressive Bootstrap
-* Capability-Driven Development
-* Structured Identity
-* Domain Ownership
-* Multiple Projections
-* Projection Naming Convention
-* Documentation Synchronization
-* Completed Engineering Cycles
+- Progressive Bootstrap
+- Capability-Driven Development
+- Structured Identity
+- Domain Ownership
+- Multiple Projections
+- Projection Naming Convention
+- Documentation Synchronization
+- Completed Engineering Cycles
 
 ---
 
@@ -103,12 +103,12 @@ Projection does not duplicate Member.
 
 Verify synchronization of:
 
-* Capability
-* Epic
-* Roadmap
-* Changelog
-* Review
-* Architectural Principles
+- Capability
+- Epic
+- Roadmap
+- Changelog
+- Review
+- Architectural Principles
 
 ---
 
@@ -116,10 +116,10 @@ Verify synchronization of:
 
 Confirm that Humanity Union now provides:
 
-* Authentication
-* Private Member Workspace
-* Editable Member Profile
-* Public Member Projection
+- Authentication
+- Private Member Workspace
+- Editable Member Profile
+- Public Member Projection
 
 ---
 

@@ -63,7 +63,9 @@ export default async function PublicCollectiveDecisionPage({
 
   if (decision.decisionSubject.subjectType === "Initiative") {
     try {
-      const analysis = await getCollaborativeAnalysisByInitiativeId(decision.decisionSubject.subjectId);
+      const analysis = await getCollaborativeAnalysisByInitiativeId(
+        decision.decisionSubject.subjectId,
+      );
       linkedAnalysisId = analysis.analysisId;
     } catch {
       linkedAnalysisId = null;
@@ -80,9 +82,7 @@ export default async function PublicCollectiveDecisionPage({
   return (
     <main className="public-collective-decision-page">
       <header className="public-collective-decision-page__header">
-        <h1 className="public-collective-decision-page__title">
-          {decision.decisionSubject.title}
-        </h1>
+        <h1 className="public-collective-decision-page__title">{decision.decisionSubject.title}</h1>
         <p className="public-collective-decision-page__subtitle">Public collective decision</p>
       </header>
 
@@ -122,7 +122,9 @@ export default async function PublicCollectiveDecisionPage({
             </ul>
           </>
         ) : (
-          <p className="public-collective-decision-page__empty">Final result is not yet available.</p>
+          <p className="public-collective-decision-page__empty">
+            Final result is not yet available.
+          </p>
         )}
       </ProfileSection>
 
@@ -149,7 +151,10 @@ export default async function PublicCollectiveDecisionPage({
         {decision.outcome ? (
           <>
             <ProfileField label="Outcome" value={decision.outcome.outcomeType} />
-            <ProfileField label="Next Lifecycle Stage" value={decision.outcome.nextLifecycleStage} />
+            <ProfileField
+              label="Next Lifecycle Stage"
+              value={decision.outcome.nextLifecycleStage}
+            />
             <ProfileField label="Explanation" value={decision.outcome.explanation} />
           </>
         ) : (

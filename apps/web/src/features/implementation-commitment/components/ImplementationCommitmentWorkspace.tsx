@@ -1,11 +1,6 @@
 "use client";
 
-import type {
-  CollectiveDecision,
-  ImplementationCommitment,
-  Initiative,
-  Petition,
-} from "@hu/types";
+import type { CollectiveDecision, ImplementationCommitment, Initiative, Petition } from "@hu/types";
 import { useState } from "react";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
@@ -62,17 +57,11 @@ export function ImplementationCommitmentWorkspace({
       </ProfileSection>
 
       <ProfileSection title="Participant Commitment">
-        <ParticipantCommitmentSection
-          commitment={commitment}
-          onCommitmentUpdated={setCommitment}
-        />
+        <ParticipantCommitmentSection commitment={commitment} onCommitmentUpdated={setCommitment} />
       </ProfileSection>
 
       <ProfileSection title="Contribution Profile">
-        <ContributionProfileSection
-          commitment={commitment}
-          onCommitmentUpdated={setCommitment}
-        />
+        <ContributionProfileSection commitment={commitment} onCommitmentUpdated={setCommitment} />
       </ProfileSection>
 
       <ProfileSection title="Community Needs">

@@ -4,13 +4,13 @@ Master Project Specification
 
 ## Document Information
 
-| Field | Value |
-| --- | --- |
-| Project Name | Humanity Union |
-| Version | 1.0.0 |
-| Status | Draft |
-| Author | Humanity Union Architecture Team |
-| Last Update | 2026-06-27 |
+| Field        | Value                            |
+| ------------ | -------------------------------- |
+| Project Name | Humanity Union                   |
+| Version      | 1.0.0                            |
+| Status       | Draft                            |
+| Author       | Humanity Union Architecture Team |
+| Last Update  | 2026-06-27                       |
 
 ## Purpose of this Specification
 
@@ -41,11 +41,11 @@ This specification covers the full Humanity Union platform: user-facing applicat
 ## Documentation Structure
 
 | Volume | Title | Status | Description |
-| --- | --- | --- | --- |
-| | | | |
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| ------ | ----- | ------ | ----------- |
+|        |       |        |             |
+|        |       |        |             |
+|        |       |        |             |
+|        |       |        |             |
+|        |       |        |             |
 
 This document is the root specification of the Humanity Union platform.

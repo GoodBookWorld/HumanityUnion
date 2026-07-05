@@ -1,12 +1,6 @@
-import type {
-  CollectiveDecision,
-  DecisionResult,
-  Outcome,
-} from "@hu/types";
+import type { CollectiveDecision, DecisionResult, Outcome } from "@hu/types";
 
-export function mapCollectiveDecisionResponse(
-  decision: CollectiveDecision,
-): CollectiveDecision {
+export function mapCollectiveDecisionResponse(decision: CollectiveDecision): CollectiveDecision {
   return structuredClone(decision);
 }
 

@@ -24,10 +24,10 @@ No real authentication logic is implemented.
 
 After completing this guide:
 
-* Authentication API structure is defined.
-* Public authentication endpoints exist.
-* Request and response contracts are standardized.
-* Platform clients can depend on a stable API contract.
+- Authentication API structure is defined.
+- Public authentication endpoints exist.
+- Request and response contracts are standardized.
+- Platform clients can depend on a stable API contract.
 
 ---
 
@@ -35,10 +35,10 @@ After completing this guide:
 
 Implements:
 
-* Platform Contract
-* Platform API Specification
-* Human Identity Capability
-* Authentication Foundation
+- Platform Contract
+- Platform API Specification
+- Human Identity Capability
+- Authentication Foundation
 
 ---
 
@@ -166,14 +166,14 @@ Register routes inside API.
 
 Do not implement:
 
-* JWT
-* Password validation
-* Sessions
-* Cookies
-* OAuth
-* Database
-* MongoDB
-* Rate limiting
+- JWT
+- Password validation
+- Sessions
+- Cookies
+- OAuth
+- Database
+- MongoDB
+- Rate limiting
 
 This guide defines only the API contract.
 
@@ -219,12 +219,12 @@ Returns:
 
 Confirm:
 
-* auth.routes.ts exists;
-* auth endpoints registered;
-* GET /auth/me works;
-* POST endpoints return 501;
-* shared AuthIdentity is used;
-* TypeScript passes.
+- auth.routes.ts exists;
+- auth endpoints registered;
+- GET /auth/me works;
+- POST endpoints return 501;
+- shared AuthIdentity is used;
+- TypeScript passes.
 
 ---
 

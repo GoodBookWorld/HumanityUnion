@@ -24,10 +24,10 @@ Implementation follows the domain.
 
 After completing this guide:
 
-* common domain foundation exists;
-* shared base types exist;
-* domain folders are prepared;
-* every future platform module uses the same language.
+- common domain foundation exists;
+- shared base types exist;
+- domain folders are prepared;
+- every future platform module uses the same language.
 
 ---
 
@@ -86,8 +86,8 @@ Purpose:
 
 Every major domain object should expose:
 
-* createdAt
-* updatedAt
+- createdAt
+- updatedAt
 
 ---
 
@@ -101,8 +101,8 @@ Every major domain object extends BaseEntity.
 
 Typical shared properties include:
 
-* id
-* timestamps
+- id
+- timestamps
 
 No business fields belong here.
 
@@ -136,16 +136,16 @@ No properties beyond minimal placeholders.
 
 Files:
 
-* member.ts
-* initiative.ts
-* community.ts
-* knowledge.ts
-* impact.ts
-* reflection.ts
-* fair.ts
-* opportunity.ts
-* institution.ts
-* region.ts
+- member.ts
+- initiative.ts
+- community.ts
+- knowledge.ts
+- impact.ts
+- reflection.ts
+- fair.ts
+- opportunity.ts
+- institution.ts
+- region.ts
 
 Each interface should extend BaseEntity.
 
@@ -173,13 +173,13 @@ Provide clean package exports.
 
 Do not create:
 
-* MongoDB schemas
-* Mongoose models
-* API DTOs
-* Validation
-* Business logic
-* Services
-* Controllers
+- MongoDB schemas
+- Mongoose models
+- API DTOs
+- Validation
+- Business logic
+- Services
+- Controllers
 
 Only shared domain definitions.
 
@@ -189,11 +189,11 @@ Only shared domain definitions.
 
 This guide implements:
 
-* 07_DATABASE_BLUEPRINT.md
-* 09_INTENTION_ARCHITECTURE.md
-* 10_PLATFORM_CONTRACT.md
-* 13_DATA_MODEL.md
-* 15_DEVELOPMENT_STANDARDS.md
+- 07_DATABASE_BLUEPRINT.md
+- 09_INTENTION_ARCHITECTURE.md
+- 10_PLATFORM_CONTRACT.md
+- 13_DATA_MODEL.md
+- 15_DEVELOPMENT_STANDARDS.md
 
 ---
 
@@ -201,14 +201,14 @@ This guide implements:
 
 Confirm:
 
-* common folder exists;
-* domain folder exists;
-* all planned files exist;
-* BaseEntity exists;
-* Identifier exists;
-* Timestamp types exist;
-* every domain type extends BaseEntity;
-* barrel exports exist.
+- common folder exists;
+- domain folder exists;
+- all planned files exist;
+- BaseEntity exists;
+- Identifier exists;
+- Timestamp types exist;
+- every domain type extends BaseEntity;
+- barrel exports exist.
 
 No application logic exists.
 

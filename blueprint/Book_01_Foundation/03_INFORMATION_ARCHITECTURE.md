@@ -42,20 +42,20 @@ The People Domain contains all information related to Members and their particip
 
 Core entities:
 
-* User
-* Member
-* Public Profile
-* Civic Dashboard
-* Impact Profile
-* Verification
-* Social Activity
-* Fair
-* Growth
-* Milestones
-* Activity History
-* Privacy Settings
-* Notifications
-* Personal Recommendations
+- User
+- Member
+- Public Profile
+- Civic Dashboard
+- Impact Profile
+- Verification
+- Social Activity
+- Fair
+- Growth
+- Milestones
+- Activity History
+- Privacy Settings
+- Notifications
+- Personal Recommendations
 
 Purpose:
 
@@ -69,24 +69,24 @@ The Initiative Domain is the central action domain of Humanity Union.
 
 Core entities:
 
-* Initiative
-* Proposal
-* Petition
-* Poll
-* Voting
-* Volunteer Campaign
-* ACTUC Research
-* Educational Project
-* Community Project
-* Emergency Response Initiative
-* Initiative Team
-* Initiative Timeline
-* Initiative Status
-* Discussion
-* Evidence
-* Decision
-* Implementation
-* Impact Report
+- Initiative
+- Proposal
+- Petition
+- Poll
+- Voting
+- Volunteer Campaign
+- ACTUC Research
+- Educational Project
+- Community Project
+- Emergency Response Initiative
+- Initiative Team
+- Initiative Timeline
+- Initiative Status
+- Discussion
+- Evidence
+- Decision
+- Implementation
+- Impact Report
 
 Purpose:
 
@@ -104,18 +104,18 @@ The Knowledge Domain supports understanding before action.
 
 Core entities:
 
-* Knowledge Article
-* Verified Source
-* Media Purity
-* ACTUC
-* Research Note
-* Educational Material
-* Learning Path
-* Fact Check
-* Analysis
-* Knowledge Category
-* Source Reliability
-* Public Explanation
+- Knowledge Article
+- Verified Source
+- Media Purity
+- ACTUC
+- Research Note
+- Educational Material
+- Learning Path
+- Fact Check
+- Analysis
+- Knowledge Category
+- Source Reliability
+- Public Explanation
 
 Purpose:
 
@@ -129,18 +129,18 @@ The Institution Domain contains Humanity Union's governance and organizational s
 
 Core entities:
 
-* Humanity Council
-* Chamber of State Representatives
-* Chamber of Intellectual Analysis & General Staff
-* Humanity Protection
-* World Protection Corps
-* Secretariat
-* Department of Intellectual Analysis
-* Department of State Collaboration
-* Institutional Decision
-* Resolution
-* Working Group
-* Institutional Report
+- Humanity Council
+- Chamber of State Representatives
+- Chamber of Intellectual Analysis & General Staff
+- Humanity Protection
+- World Protection Corps
+- Secretariat
+- Department of Intellectual Analysis
+- Department of State Collaboration
+- Institutional Decision
+- Resolution
+- Working Group
+- Institutional Report
 
 Purpose:
 
@@ -154,17 +154,17 @@ The Regional Domain organizes participation by geography.
 
 Core entities:
 
-* World
-* Country
-* Region
-* City
-* Community
-* Local Initiative
-* Regional Statistics
-* Regional Institutions
-* Local Members
-* Regional Activity
-* Regional Impact
+- World
+- Country
+- Region
+- City
+- Community
+- Local Initiative
+- Regional Statistics
+- Regional Institutions
+- Local Members
+- Regional Activity
+- Regional Impact
 
 Purpose:
 
@@ -178,18 +178,18 @@ The Trust Domain protects credibility, transparency, and safety.
 
 Core entities:
 
-* Verification Level
-* Moderation Case
-* Report
-* Appeal
-* Evidence
-* Source Validation
-* Transparency Record
-* Decision History
-* Audit Log
-* Trust Signal
-* Content Status
-* Member Safety Record
+- Verification Level
+- Moderation Case
+- Report
+- Appeal
+- Evidence
+- Source Validation
+- Transparency Record
+- Decision History
+- Audit Log
+- Trust Signal
+- Content Status
+- Member Safety Record
 
 Purpose:
 
@@ -203,21 +203,21 @@ The Impact Domain measures meaningful participation and results.
 
 Core entities:
 
-* Fair
-* Personal Fair
-* Collective Fair
-* Initiative Fair
-* Community Fair
-* Regional Fair
-* Country Fair
-* World Fair
-* Impact Metric
-* Growth Metric
-* Collaboration Metric
-* Progress Record
-* Milestone
-* Impact Report
-* Reflection Summary
+- Fair
+- Personal Fair
+- Collective Fair
+- Initiative Fair
+- Community Fair
+- Regional Fair
+- Country Fair
+- World Fair
+- Impact Metric
+- Growth Metric
+- Collaboration Metric
+- Progress Record
+- Milestone
+- Impact Report
+- Reflection Summary
 
 Purpose:
 
@@ -235,24 +235,24 @@ Platform Services are reusable backend and frontend logic used across the whole 
 
 Core services:
 
-* Identity Service
-* Member Service
-* Initiative Service
-* Knowledge Service
-* Institution Service
-* Region Service
-* Trust Service
-* Fair Service
-* Impact Service
-* Opportunity Service
-* Recommendation Service
-* Reflection Service
-* Notification Service
-* Search Service
-* Analytics Service
-* Moderation Service
-* Localization Service
-* Security Service
+- Identity Service
+- Member Service
+- Initiative Service
+- Knowledge Service
+- Institution Service
+- Region Service
+- Trust Service
+- Fair Service
+- Impact Service
+- Opportunity Service
+- Recommendation Service
+- Reflection Service
+- Notification Service
+- Search Service
+- Analytics Service
+- Moderation Service
+- Localization Service
+- Security Service
 
 Rule:
 
@@ -272,13 +272,13 @@ To explain Humanity Union, show global activity, and guide visitors toward meani
 
 Includes:
 
-* Global overview
-* World map
-* Social activity statistics
-* Initiative previews
-* Knowledge previews
-* Institution overview
-* Join / Register pathway
+- Global overview
+- World map
+- Social activity statistics
+- Initiative previews
+- Knowledge previews
+- Institution overview
+- Join / Register pathway
 
 ---
 
@@ -290,17 +290,17 @@ Private main space after login.
 
 Includes:
 
-* Your Impact
-* Your Fair
-* Your Next Horizon
-* Recommended Actions
-* Impact Profile
-* Notifications
-* Active Initiatives
-* Progress
-* Milestones
-* ACTUC participation
-* Volunteering opportunities
+- Your Impact
+- Your Fair
+- Your Next Horizon
+- Recommended Actions
+- Impact Profile
+- Notifications
+- Active Initiatives
+- Progress
+- Milestones
+- ACTUC participation
+- Volunteering opportunities
 
 Main question:
 
@@ -316,17 +316,17 @@ Public identity of a Member.
 
 Includes:
 
-* Display name
-* Unique name
-* Avatar
-* Country / Region / City
-* Verification level
-* Member status
-* Public Fair
-* Public initiatives
-* Public comments
-* Public statistics
-* Public links
+- Display name
+- Unique name
+- Avatar
+- Country / Region / City
+- Verification level
+- Member status
+- Public Fair
+- Public initiatives
+- Public comments
+- Public statistics
+- Public links
 
 Rule:
 
@@ -342,17 +342,17 @@ To create, discuss, improve, support, decide, implement, and measure initiatives
 
 Includes:
 
-* Problem
-* Why it matters
-* Evidence
-* Proposed solution
-* Discussion
-* Team
-* Timeline
-* Status
-* Decision tools
-* Implementation progress
-* Impact measurement
+- Problem
+- Why it matters
+- Evidence
+- Proposed solution
+- Discussion
+- Team
+- Timeline
+- Status
+- Decision tools
+- Implementation progress
+- Impact measurement
 
 ---
 
@@ -364,15 +364,15 @@ To help Members understand before acting.
 
 Includes:
 
-* Articles
-* Research
-* ACTUC
-* Verified sources
-* Media Purity
-* Learning paths
-* Explanations
-* Analysis
-* Source reliability
+- Articles
+- Research
+- ACTUC
+- Verified sources
+- Media Purity
+- Learning paths
+- Explanations
+- Analysis
+- Source reliability
 
 ---
 
@@ -384,15 +384,15 @@ To explain and operate Humanity Union institutional structures.
 
 Includes:
 
-* Humanity Council
-* Chambers
-* Humanity Protection
-* World Protection Corps
-* Secretariat
-* Departments
-* Decisions
-* Reports
-* Institutional participation
+- Humanity Council
+- Chambers
+- Humanity Protection
+- World Protection Corps
+- Secretariat
+- Departments
+- Decisions
+- Reports
+- Institutional participation
 
 ---
 
@@ -404,13 +404,13 @@ To localize Humanity Union activity by world, country, region, city, and communi
 
 Includes:
 
-* Regional map
-* Local initiatives
-* Local Members
-* Local statistics
-* Local institutions
-* Regional impact
-* Country-specific activity
+- Regional map
+- Local initiatives
+- Local Members
+- Local statistics
+- Local institutions
+- Regional impact
+- Country-specific activity
 
 ---
 
@@ -422,14 +422,14 @@ To show how Humanity Union maintains credibility.
 
 Includes:
 
-* Verification
-* Moderation principles
-* Transparency records
-* Source validation
-* Appeals
-* Reports
-* Safety rules
-* Algorithm explanations
+- Verification
+- Moderation principles
+- Transparency records
+- Source validation
+- Appeals
+- Reports
+- Safety rules
+- Algorithm explanations
 
 ---
 
@@ -441,16 +441,16 @@ To manage the platform safely and responsibly.
 
 Includes:
 
-* Member management
-* Content moderation
-* Institution management
-* Regional management
-* Analytics
-* System settings
-* Security logs
-* Reports
-* Appeals
-* Platform configuration
+- Member management
+- Content moderation
+- Institution management
+- Regional management
+- Analytics
+- System settings
+- Security logs
+- Reports
+- Appeals
+- Platform configuration
 
 ---
 
@@ -553,9 +553,10 @@ Rules:
 3. The interface should progressively reveal advanced functions.
 4. Every screen must answer:
 
-   * Where am I?
-   * What can I do here?
-   * What is the best next step?
+   - Where am I?
+   - What can I do here?
+   - What is the best next step?
+
 5. Search must support people, initiatives, knowledge, regions, and institutions.
 6. The Civic Dashboard should act as the Member's personal command center.
 
@@ -590,12 +591,12 @@ Used by developers, documentation, APIs, and database models.
 
 Examples:
 
-* Civic Responsibility Profile
-* Responsibility Scope
-* Fair Service
-* Impact Service
-* Initiative Engine
-* Member Entity
+- Civic Responsibility Profile
+- Responsibility Scope
+- Fair Service
+- Impact Service
+- Initiative Engine
+- Member Entity
 
 ## 8.2 Human Interface Language
 
@@ -603,14 +604,14 @@ Used in the public interface.
 
 Examples:
 
-* Impact Profile
-* Your Focus
-* Fair
-* Your Impact
-* Start an Initiative
-* Your Next Horizon
-* Recommended Actions
-* Personal Updates
+- Impact Profile
+- Your Focus
+- Fair
+- Your Impact
+- Start an Initiative
+- Your Next Horizon
+- Recommended Actions
+- Personal Updates
 
 Rule:
 

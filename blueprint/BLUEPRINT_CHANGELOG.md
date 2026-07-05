@@ -16,17 +16,17 @@ Completed Book 01 — Foundation.
 
 Approved documents:
 
-* Blueprint Index
-* Constitution
-* Charter of Ethical Technology
-* Information Architecture
-* Platform Blueprint
-* Platform Services
-* Human Journeys
-* Database Blueprint
-* Event Architecture
-* Intention Architecture
-* Platform Contract
+- Blueprint Index
+- Constitution
+- Charter of Ethical Technology
+- Information Architecture
+- Platform Blueprint
+- Platform Services
+- Human Journeys
+- Database Blueprint
+- Event Architecture
+- Intention Architecture
+- Platform Contract
 
 ---
 
@@ -42,21 +42,21 @@ Engineering Architecture approved.
 
 Approved:
 
-* Human-Centered Domain Architecture (HCDA)
-* Principle of Irreversible Architecture
-* Principle of Quiet Technology
-* Principle of Calm Interaction
-* Event-Driven Architecture
-* Service-Oriented Architecture
-* Engine-Oriented Intelligence
-* Explainable Recommendations
-* Living Platform Model
-* Human Growth Journey
-* My Impact workspace
-* Humanity Observatory
-* Humanity Health Indicators
-* Platform Contract
-* Intention-Driven Platform
+- Human-Centered Domain Architecture (HCDA)
+- Principle of Irreversible Architecture
+- Principle of Quiet Technology
+- Principle of Calm Interaction
+- Event-Driven Architecture
+- Service-Oriented Architecture
+- Engine-Oriented Intelligence
+- Explainable Recommendations
+- Living Platform Model
+- Human Growth Journey
+- My Impact workspace
+- Humanity Observatory
+- Humanity Health Indicators
+- Platform Contract
+- Intention-Driven Platform
 
 ---
 

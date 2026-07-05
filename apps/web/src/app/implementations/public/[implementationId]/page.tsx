@@ -77,16 +77,15 @@ export default async function PublicImplementationPage({ params }: PublicImpleme
     <main className="public-implementation-page">
       <header className="public-implementation-page__header">
         <h1 className="public-implementation-page__title">{implementationIdentity.title}</h1>
-        <p className="public-implementation-page__subtitle">Public collective implementation record</p>
+        <p className="public-implementation-page__subtitle">
+          Public collective implementation record
+        </p>
       </header>
 
       <ProfileSection title="Initiative Context">
         <ProfileField label="Initiative" value={initiativeContext.title} />
         <ProfileField label="Summary" value={initiativeContext.summary} />
-        <ProfileField
-          label="Lifecycle State"
-          value={implementationStatus.lifecycleStatusLabel}
-        />
+        <ProfileField label="Lifecycle State" value={implementationStatus.lifecycleStatusLabel} />
         <ProfileField
           label="Recording Status"
           value={implementationIdentity.recordingStatusSummary}
@@ -132,7 +131,9 @@ export default async function PublicImplementationPage({ params }: PublicImpleme
             <ProfileField label="Note" value={petitionReference.endorsementContextNote} />
           </>
         ) : (
-          <p className="public-implementation-page__empty">Related Petition context is unavailable.</p>
+          <p className="public-implementation-page__empty">
+            Related Petition context is unavailable.
+          </p>
         )}
       </ProfileSection>
 
@@ -157,10 +158,7 @@ export default async function PublicImplementationPage({ params }: PublicImpleme
       </ProfileSection>
 
       <ProfileSection title="Implementation Status">
-        <ProfileField
-          label="Lifecycle State"
-          value={implementationStatus.lifecycleStatusLabel}
-        />
+        <ProfileField label="Lifecycle State" value={implementationStatus.lifecycleStatusLabel} />
         <ProfileField
           label="Recording Status"
           value={implementationStatus.recordingStatusSummary}

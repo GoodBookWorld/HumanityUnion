@@ -47,8 +47,7 @@ export function findParticipantSignature(
   participantId: string,
 ): Signature | undefined {
   return petition.signatures.find(
-    (signature) =>
-      signature.participantId === participantId && signature.status === "Active",
+    (signature) => signature.participantId === participantId && signature.status === "Active",
   );
 }
 

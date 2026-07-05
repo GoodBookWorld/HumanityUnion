@@ -395,30 +395,30 @@ HTTP 200
 
 **Result:** PASS (verified 2026-07-02)
 
-| Page | URL | Status |
-|------|-----|--------|
-| Initiative Workspace | `/initiatives` | 200 |
-| Collaborative Analysis Workspace | `/collaborative-analysis/analysis-bootstrap-001` | 200 |
-| Collective Decision Workspace | `/collective-decisions/decision-bootstrap-001` | 200 |
-| Public Initiative | `/initiatives/public/initiative-bootstrap-001` | 200 |
-| Public Collaborative Analysis | `/collaborative-analysis/public/analysis-bootstrap-001` | 200 |
-| Public Collective Decision | `/collective-decisions/public/decision-bootstrap-001` | 200 |
+| Page                             | URL                                                     | Status |
+| -------------------------------- | ------------------------------------------------------- | ------ |
+| Initiative Workspace             | `/initiatives`                                          | 200    |
+| Collaborative Analysis Workspace | `/collaborative-analysis/analysis-bootstrap-001`        | 200    |
+| Collective Decision Workspace    | `/collective-decisions/decision-bootstrap-001`          | 200    |
+| Public Initiative                | `/initiatives/public/initiative-bootstrap-001`          | 200    |
+| Public Collaborative Analysis    | `/collaborative-analysis/public/analysis-bootstrap-001` | 200    |
+| Public Collective Decision       | `/collective-decisions/public/decision-bootstrap-001`   | 200    |
 
 ---
 
 # Review Summary
 
-| Category | Result |
-|----------|--------|
-| Domain | PASS |
-| Store | PASS |
-| API | PASS |
-| Workspace | PASS |
-| Public Projection | PASS |
-| Platform Integration | PASS |
-| Engineering | PASS |
-| Documentation | PASS |
-| Repository | FAIL |
+| Category             | Result |
+| -------------------- | ------ |
+| Domain               | PASS   |
+| Store                | PASS   |
+| API                  | PASS   |
+| Workspace            | PASS   |
+| Public Projection    | PASS   |
+| Platform Integration | PASS   |
+| Engineering          | PASS   |
+| Documentation        | PASS   |
+| Repository           | FAIL   |
 
 ---
 
@@ -438,13 +438,13 @@ Epic 03 is approved only when:
 
 # Remediation Status
 
-| Item | Status |
-|------|--------|
+| Item                                  | Status   |
+| ------------------------------------- | -------- |
 | Decision Subject — Initiative context | Complete |
-| Analysis Summary — CA inline display | Complete |
-| Actions — Decision Panel canonical | Complete |
-| Public page CSS import | Complete |
-| Repository commit | Pending |
+| Analysis Summary — CA inline display  | Complete |
+| Actions — Decision Panel canonical    | Complete |
+| Public page CSS import                | Complete |
+| Repository commit                     | Pending  |
 
 ---
 

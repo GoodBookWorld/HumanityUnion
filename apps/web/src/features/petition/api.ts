@@ -31,17 +31,14 @@ export async function signPetition(
   participantId: string,
   participationMode: ParticipationMode = "Community",
 ): Promise<Petition> {
-  return apiRequest<Petition>(
-    `/api/v1/petitions/${encodeURIComponent(petitionId)}/signatures`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        participantId,
-        participationMode,
-      }),
+  return apiRequest<Petition>(`/api/v1/petitions/${encodeURIComponent(petitionId)}/signatures`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({
+      participantId,
+      participationMode,
+    }),
+  });
 }

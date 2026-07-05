@@ -26,11 +26,11 @@ The Humanity Union Platform is developed through complete platform capabilities 
 
 A Capability:
 
-* solves one meaningful problem;
-* contains one or more implementation guides;
-* finishes in a usable state;
-* can be verified independently;
-* integrates into the overall platform architecture.
+- solves one meaningful problem;
+- contains one or more implementation guides;
+- finishes in a usable state;
+- can be verified independently;
+- integrates into the overall platform architecture.
 
 No capability should compromise previously approved architecture.
 
@@ -54,11 +54,11 @@ Architecture Review
 
 Every capability must end with:
 
-* successful type checking;
-* successful application execution;
-* architecture review;
-* Git commit;
-* roadmap update.
+- successful type checking;
+- successful application execution;
+- architecture review;
+- Git commit;
+- roadmap update.
 
 ---
 
@@ -70,12 +70,12 @@ Establish complete human identity within Humanity Union.
 
 Scope:
 
-* Authentication
-* Member identity
-* Verification
-* Identity resolution
-* Session architecture
-* Profile foundation
+- Authentication
+- Member identity
+- Verification
+- Identity resolution
+- Session architecture
+- Profile foundation
 
 Primary outcome:
 
@@ -91,12 +91,12 @@ Enable Members to create meaningful initiatives.
 
 Scope:
 
-* Initiative Domain
-* Initiative API
-* Initiative Web
-* Categories
-* Draft workflow
-* Publishing
+- Initiative Domain
+- Initiative API
+- Initiative Web
+- Categories
+- Draft workflow
+- Publishing
 
 Primary outcome:
 
@@ -112,11 +112,11 @@ Support structured civic proposals.
 
 Scope:
 
-* Proposal lifecycle
-* Discussion
-* Visibility
-* Status
-* Public participation
+- Proposal lifecycle
+- Discussion
+- Visibility
+- Status
+- Public participation
 
 Primary outcome:
 
@@ -132,10 +132,10 @@ Enable public support collection.
 
 Scope:
 
-* Petitions
-* Support tracking
-* Signature model
-* Closing conditions
+- Petitions
+- Support tracking
+- Signature model
+- Closing conditions
 
 Primary outcome:
 
@@ -151,10 +151,10 @@ Collect community opinion.
 
 Scope:
 
-* Poll creation
-* Poll participation
-* Statistics
-* Results
+- Poll creation
+- Poll participation
+- Statistics
+- Results
 
 Primary outcome:
 
@@ -170,11 +170,11 @@ Enable structured democratic elections.
 
 Scope:
 
-* Candidate model
-* Election model
-* Ballots
-* Validation
-* Results
+- Candidate model
+- Election model
+- Ballots
+- Validation
+- Results
 
 Primary outcome:
 
@@ -190,11 +190,11 @@ Build regional and thematic communities.
 
 Scope:
 
-* Community model
-* Membership
-* Community pages
-* Moderation
-* Regional structure
+- Community model
+- Membership
+- Community pages
+- Moderation
+- Regional structure
 
 Primary outcome:
 
@@ -210,11 +210,11 @@ Support trustworthy information.
 
 Scope:
 
-* Media sources
-* Verification
-* Ratings
-* Transparency
-* Source quality
+- Media sources
+- Verification
+- Ratings
+- Transparency
+- Source quality
 
 Primary outcome:
 
@@ -230,11 +230,11 @@ Visualize Member participation.
 
 Scope:
 
-* Activity timeline
-* Fair summary
-* Participation statistics
-* Contributions
-* Recognition
+- Activity timeline
+- Fair summary
+- Participation statistics
+- Contributions
+- Recognition
 
 Primary outcome:
 
@@ -250,11 +250,11 @@ Measure participation fairly.
 
 Scope:
 
-* Fair calculation
-* Rules
-* Activity scoring
-* Balance updates
-* Transparency
+- Fair calculation
+- Rules
+- Activity scoring
+- Balance updates
+- Transparency
 
 Primary outcome:
 
@@ -270,10 +270,10 @@ Keep Members informed.
 
 Scope:
 
-* Notification domain
-* Preferences
-* Delivery
-* Read state
+- Notification domain
+- Preferences
+- Delivery
+- Read state
 
 Primary outcome:
 
@@ -289,12 +289,12 @@ Provide platform-wide discovery.
 
 Scope:
 
-* Members
-* Initiatives
-* Communities
-* Proposals
-* Petitions
-* Polls
+- Members
+- Initiatives
+- Communities
+- Proposals
+- Petitions
+- Polls
 
 Primary outcome:
 
@@ -310,11 +310,11 @@ Support responsible platform management.
 
 Scope:
 
-* Administration
-* Moderation
-* Auditing
-* Reporting
-* Governance tools
+- Administration
+- Moderation
+- Auditing
+- Reporting
+- Governance tools
 
 Primary outcome:
 
@@ -326,12 +326,12 @@ Platform governance becomes operational.
 
 Every capability must:
 
-* reuse Shared Domain;
-* reuse Shared API Client;
-* follow Feature-first Architecture;
-* preserve API contracts;
-* preserve Blueprint consistency;
-* remain independently testable.
+- reuse Shared Domain;
+- reuse Shared API Client;
+- follow Feature-first Architecture;
+- preserve API contracts;
+- preserve Blueprint consistency;
+- remain independently testable.
 
 ---
 
@@ -354,10 +354,10 @@ No capability proceeds to the next until the current one is verified.
 
 Phase II is complete when:
 
-* Members participate through complete platform capabilities;
-* all core civic modules are operational;
-* architecture remains consistent with the Blueprint;
-* engineering principles remain intact.
+- Members participate through complete platform capabilities;
+- all core civic modules are operational;
+- architecture remains consistent with the Blueprint;
+- engineering principles remain intact.
 
 ---
 
@@ -365,13 +365,13 @@ Phase II is complete when:
 
 Phase II is governed by:
 
-* Principle of Irreversible Architecture
-* Principle of Machine Independence
-* Principle of Progressive Bootstrap
-* Principle of Shared Domain
-* Principle of Feature-first Architecture
-* Principle of Implementation follows Approved Guide
-* Principle of Capability-Driven Development
+- Principle of Irreversible Architecture
+- Principle of Machine Independence
+- Principle of Progressive Bootstrap
+- Principle of Shared Domain
+- Principle of Feature-first Architecture
+- Principle of Implementation follows Approved Guide
+- Principle of Capability-Driven Development
 
 These principles are mandatory for all future development.
 

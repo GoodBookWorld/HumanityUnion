@@ -28,20 +28,20 @@ Blueprint v1.0 Approved for Implementation
 
 Check that the following terms are used consistently:
 
-* Member
-* Initiative
-* Impact Profile
-* My Impact
-* Fair
-* Opportunity
-* Reflection
-* Knowledge
-* Community
-* Institution
-* Event
-* Capability
-* Platform Service
-* Platform Engine
+- Member
+- Initiative
+- Impact Profile
+- My Impact
+- Fair
+- Opportunity
+- Reflection
+- Knowledge
+- Community
+- Institution
+- Event
+- Capability
+- Platform Service
+- Platform Engine
 
 Result:
 
@@ -53,8 +53,8 @@ Pending
 
 Confirm that documents are correctly organized:
 
-* Book_01_Foundation
-* Book_02_Engineering
+- Book_01_Foundation
+- Book_02_Engineering
 
 Result:
 
@@ -66,15 +66,15 @@ Pending
 
 Confirm that each major domain exists once and has a clear meaning:
 
-* Member
-* Initiative
-* Knowledge
-* Community
-* Institution
-* Trust
-* Impact
-* Reflection
-* Opportunity
+- Member
+- Initiative
+- Knowledge
+- Community
+- Institution
+- Trust
+- Impact
+- Reflection
+- Opportunity
 
 Result:
 
@@ -88,18 +88,18 @@ Confirm that each Platform Service has one clear responsibility.
 
 Check:
 
-* Member Service
-* Initiative Service
-* Knowledge Service
-* Community Service
-* Institution Service
-* Fair Service
-* Impact Service
-* Reflection Service
-* Opportunity Service
-* Notification Service
-* Search Service
-* Security Service
+- Member Service
+- Initiative Service
+- Knowledge Service
+- Community Service
+- Institution Service
+- Fair Service
+- Impact Service
+- Reflection Service
+- Opportunity Service
+- Notification Service
+- Search Service
+- Security Service
 
 Result:
 
@@ -113,12 +113,12 @@ Confirm that every meaningful action can generate an event.
 
 Check:
 
-* Member events
-* Knowledge events
-* Initiative events
-* Community events
-* Institution events
-* System events
+- Member events
+- Knowledge events
+- Initiative events
+- Community events
+- Institution events
+- System events
 
 Result:
 
@@ -130,11 +130,11 @@ Pending
 
 Confirm that every core domain object has:
 
-* owner;
-* lifecycle;
-* relationships;
-* event connection;
-* API relevance.
+- owner;
+- lifecycle;
+- relationships;
+- event connection;
+- API relevance.
 
 Result:
 
@@ -148,18 +148,18 @@ Confirm that API resources match the Data Model and Platform Services.
 
 Check:
 
-* members
-* impact-profile
-* initiatives
-* communities
-* knowledge
-* learning-paths
-* opportunities
-* reflection
-* fair
-* impact
-* notifications
-* recommendations
+- members
+- impact-profile
+- initiatives
+- communities
+- knowledge
+- learning-paths
+- opportunities
+- reflection
+- fair
+- impact
+- notifications
+- recommendations
 
 Result:
 
@@ -171,12 +171,12 @@ Pending
 
 Confirm that the experience follows:
 
-* My Impact
-* One Horizon
-* Progressive Discovery
-* Calm Interaction
-* Explainable Experience
-* Human Growth Journey
+- My Impact
+- One Horizon
+- Progressive Discovery
+- Calm Interaction
+- Explainable Experience
+- Human Growth Journey
 
 Result:
 
@@ -188,14 +188,14 @@ Pending
 
 Confirm that Book II follows:
 
-* Human-Centered Domain Architecture
-* Principle of Irreversible Architecture
-* Quiet Technology
-* Calm Interaction
-* Event-Driven Foundation
-* Service-Oriented Design
-* Explainable Systems
-* Evolution Without Rewrite
+- Human-Centered Domain Architecture
+- Principle of Irreversible Architecture
+- Quiet Technology
+- Calm Interaction
+- Event-Driven Foundation
+- Service-Oriented Design
+- Explainable Systems
+- Evolution Without Rewrite
 
 Result:
 
@@ -207,13 +207,13 @@ Pending
 
 Humanity Union is ready for implementation only when:
 
-* terminology is consistent;
-* domains are clear;
-* services are separated;
-* events are defined;
-* data model supports API;
-* human experience matches philosophy;
-* engineering standards are complete.
+- terminology is consistent;
+- domains are clear;
+- services are separated;
+- events are defined;
+- data model supports API;
+- human experience matches philosophy;
+- engineering standards are complete.
 
 Final status:
 

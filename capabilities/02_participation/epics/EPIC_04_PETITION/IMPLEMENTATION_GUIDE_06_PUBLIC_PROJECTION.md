@@ -115,10 +115,10 @@ It does not serialize the operational aggregate directly.
 
 Operational Workspace and Public Projection serve different audiences and purposes.
 
-| Surface | Purpose | Audience | Writable |
-|---------|---------|----------|----------|
-| Operational Workspace | participation | registered participants | through operational API |
-| Public Projection | transparency | Public Visitors, observers, society | no |
+| Surface               | Purpose       | Audience                            | Writable                |
+| --------------------- | ------------- | ----------------------------------- | ----------------------- |
+| Operational Workspace | participation | registered participants             | through operational API |
+| Public Projection     | transparency  | Public Visitors, observers, society | no                      |
 
 Operational workspace includes:
 
@@ -351,13 +351,13 @@ Include:
 Share Link behavior by lifecycle:
 
 | Lifecycle | Share Link |
-|-----------|------------|
-| Draft | not public |
-| Ready | not public |
-| Published | active |
-| Open | active |
-| Closed | active |
-| Archived | active |
+| --------- | ---------- |
+| Draft     | not public |
+| Ready     | not public |
+| Published | active     |
+| Open      | active     |
+| Closed    | active     |
+| Archived  | active     |
 
 Version 1 default:
 
@@ -555,13 +555,13 @@ Public projection errors must be explicit, deterministic and safe.
 
 ## Expected Errors
 
-| Condition | Expected behavior |
-|-----------|-------------------|
-| petition not found | not found response |
-| petition exists but not public yet | not found or not public response |
-| corrupted or incomplete bootstrap public data | fail safely without partial leakage |
-| referenced public context unavailable | return projection with explicit unavailable context marker, not silent omission of decision meaning |
-| builder receives archived or closed petition | still return valid historical public projection |
+| Condition                                     | Expected behavior                                                                                   |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| petition not found                            | not found response                                                                                  |
+| petition exists but not public yet            | not found or not public response                                                                    |
+| corrupted or incomplete bootstrap public data | fail safely without partial leakage                                                                 |
+| referenced public context unavailable         | return projection with explicit unavailable context marker, not silent omission of decision meaning |
+| builder receives archived or closed petition  | still return valid historical public projection                                                     |
 
 ## Error Rules
 
@@ -735,11 +735,11 @@ Guide 06 is complete when all items below are satisfied.
 
 Deferred to later guides:
 
-| Guide | Responsibility |
-|-------|----------------|
+| Guide                           | Responsibility                                                   |
+| ------------------------------- | ---------------------------------------------------------------- |
 | Guide 07 — Platform Integration | bootstrap public path, cross-projection wiring, entry continuity |
-| Epic architecture review | final verification |
-| future frontend public page | consumes public API separately when implemented |
+| Epic architecture review        | final verification                                               |
+| future frontend public page     | consumes public API separately when implemented                  |
 
 ---
 

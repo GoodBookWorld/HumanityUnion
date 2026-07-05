@@ -95,9 +95,7 @@ export default async function ImplementationCommitmentPage({
 
       <nav className="commitment-page__links" aria-label="Platform integration">
         <Link href="/initiatives">Initiative Workspace</Link>
-        <Link
-          href={`/collective-decisions/${encodeURIComponent(commitment.collectiveDecisionId)}`}
-        >
+        <Link href={`/collective-decisions/${encodeURIComponent(commitment.collectiveDecisionId)}`}>
           Collective Decision Workspace
         </Link>
         <Link href={`/petitions/${encodeURIComponent(commitment.petitionId)}`}>
@@ -119,7 +117,9 @@ export default async function ImplementationCommitmentPage({
         <Link href={`/petitions/public/${encodeURIComponent(commitment.petitionId)}`}>
           Public Petition
         </Link>
-        <ViewImplementationLink implementationCommitmentId={commitment.implementationCommitmentId} />
+        <ViewImplementationLink
+          implementationCommitmentId={commitment.implementationCommitmentId}
+        />
         <ViewImplementationLink
           implementationCommitmentId={commitment.implementationCommitmentId}
           publicView

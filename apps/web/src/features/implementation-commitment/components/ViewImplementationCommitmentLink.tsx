@@ -65,7 +65,9 @@ export function ViewImplementationCommitmentLink({
 
   if (!petitionId && !collectiveDecisionId) {
     return (
-      <p className="view-petition-link__empty">No implementation commitment reference is available.</p>
+      <p className="view-petition-link__empty">
+        No implementation commitment reference is available.
+      </p>
     );
   }
 

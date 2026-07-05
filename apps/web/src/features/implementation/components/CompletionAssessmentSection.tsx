@@ -11,9 +11,7 @@ interface CompletionAssessmentSectionProps {
   implementation: Implementation;
 }
 
-export function CompletionAssessmentSection({
-  implementation,
-}: CompletionAssessmentSectionProps) {
+export function CompletionAssessmentSection({ implementation }: CompletionAssessmentSectionProps) {
   const { completionAssessment, completion, completionIndicator, status } = implementation;
   const remainingRequired = getRemainingRequiredMilestones(implementation);
 

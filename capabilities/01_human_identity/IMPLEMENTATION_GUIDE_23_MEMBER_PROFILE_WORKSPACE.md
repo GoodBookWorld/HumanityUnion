@@ -24,10 +24,10 @@ This guide establishes the UI foundation only.
 
 After completing this guide:
 
-* A Member Profile Workspace page exists.
-* The page loads profile data from the Member Profile API.
-* Editable profile fields are displayed.
-* The page is prepared for future workspace navigation.
+- A Member Profile Workspace page exists.
+- The page loads profile data from the Member Profile API.
+- Editable profile fields are displayed.
+- The page is prepared for future workspace navigation.
 
 ---
 
@@ -35,11 +35,11 @@ After completing this guide:
 
 Implements:
 
-* Capability 01 — Human Identity
-* Epic 02 — Member Profile
-* Guide 21 — Member Profile API
-* Guide 22 — Editable Member Profile
-* Principle of Structured Identity
+- Capability 01 — Human Identity
+- Epic 02 — Member Profile
+- Guide 21 — Member Profile API
+- Guide 22 — Editable Member Profile
+- Principle of Structured Identity
 
 ---
 
@@ -88,27 +88,27 @@ Create the route if it does not exist.
 
 The page must:
 
-* load Member Profile using:
+- load Member Profile using:
 
 GET /api/v1/members/me
 
-* display:
+- display:
 
 Basic Information
 
-* Display Name
-* Country
-* Region
-* City
-* Languages
+- Display Name
+- Country
+- Region
+- City
+- Languages
 
 Prepare (placeholder only):
 
-* Skills
-* Interests
-* Participation
-* Visibility
-* Preferences
+- Skills
+- Interests
+- Participation
+- Visibility
+- Preferences
 
 Display placeholders as:
 
@@ -124,11 +124,11 @@ Guide 23 is a read-only workspace.
 
 Follow:
 
-* clean layout
-* responsive design
-* accessibility
-* minimal visual noise
-* future left navigation compatibility
+- clean layout
+- responsive design
+- accessibility
+- minimal visual noise
+- future left navigation compatibility
 
 The page should already resemble the future Member Workspace.
 
@@ -138,11 +138,11 @@ The page should already resemble the future Member Workspace.
 
 Do not implement:
 
-* profile editing UI
-* database
-* authentication UI
-* verification UI
-* preferences UI
+- profile editing UI
+- database
+- authentication UI
+- verification UI
+- preferences UI
 
 Use only the existing Member API.
 
@@ -172,10 +172,10 @@ Open:
 
 Expected:
 
-* Profile data loads
-* Workspace layout displayed
-* Placeholder sections visible
-* No editing controls
+- Profile data loads
+- Workspace layout displayed
+- Placeholder sections visible
+- No editing controls
 
 ---
 
@@ -183,11 +183,11 @@ Expected:
 
 Confirm:
 
-* Workspace page exists.
-* API data loads.
-* Member information displayed.
-* Placeholder sections rendered.
-* TypeScript passes.
+- Workspace page exists.
+- API data loads.
+- Member information displayed.
+- Placeholder sections rendered.
+- TypeScript passes.
 
 ---
 

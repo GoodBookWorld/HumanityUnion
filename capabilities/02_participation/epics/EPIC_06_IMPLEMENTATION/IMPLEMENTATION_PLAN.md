@@ -218,15 +218,15 @@ Implementation order:
 
 ## Layer responsibilities
 
-| Step | Layer | Responsibility |
-|------|-------|------------------|
-| 1 | **Domain** | Shared types, enums, identifiers, projection types in `@hu/types` — no business logic; harmonize lifecycle enum with `STATE_MACHINE.md` |
-| 2 | **Store** | Behavior: commands, lifecycle transitions, invariant enforcement, derivation (progress, completion, indicators); in-memory persistence, bootstrap seed, `structuredClone` protection |
-| 3 | **API** | Thin REST operational routes, command endpoints, validators, mappers, standard envelope; lookup by commitment, initiative, decision, petition where applicable |
-| 4 | **Workspace** | Operational UI per workspace specification — achievement/evidence recording surfaces, derived displays, Next Meaningful Observation, navigation |
-| 5 | **Public Projection** | Projection builder with privacy sanitization, public API route, public page — aggregate-only public fields |
-| 6 | **Platform Integration** | Bootstrap pipeline linkage, cross-stage navigation, eligibility verification |
-| 7 | **Review** | Architecture satisfaction, implementation review, repository discipline |
+| Step | Layer                    | Responsibility                                                                                                                                                                       |
+| ---- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1    | **Domain**               | Shared types, enums, identifiers, projection types in `@hu/types` — no business logic; harmonize lifecycle enum with `STATE_MACHINE.md`                                              |
+| 2    | **Store**                | Behavior: commands, lifecycle transitions, invariant enforcement, derivation (progress, completion, indicators); in-memory persistence, bootstrap seed, `structuredClone` protection |
+| 3    | **API**                  | Thin REST operational routes, command endpoints, validators, mappers, standard envelope; lookup by commitment, initiative, decision, petition where applicable                       |
+| 4    | **Workspace**            | Operational UI per workspace specification — achievement/evidence recording surfaces, derived displays, Next Meaningful Observation, navigation                                      |
+| 5    | **Public Projection**    | Projection builder with privacy sanitization, public API route, public page — aggregate-only public fields                                                                           |
+| 6    | **Platform Integration** | Bootstrap pipeline linkage, cross-stage navigation, eligibility verification                                                                                                         |
+| 7    | **Review**               | Architecture satisfaction, implementation review, repository discipline                                                                                                              |
 
 Each layer depends only on previous layers.
 
@@ -709,12 +709,12 @@ Version 1 bootstrap planning includes:
 
 Epic 06 depends upon approved vertical slices from:
 
-| Epic | Provides |
-|------|----------|
-| Epic 01 — Initiative Foundation | Initiative aggregate, workspace and public projection references |
-| Epic 02 — Collaborative Analysis | Analysis context for journey presentation (read-only) |
-| Epic 03 — Collective Decision | Approved Outcome eligibility |
-| Epic 04 — Petition | Endorsement context |
+| Epic                                | Provides                                                            |
+| ----------------------------------- | ------------------------------------------------------------------- |
+| Epic 01 — Initiative Foundation     | Initiative aggregate, workspace and public projection references    |
+| Epic 02 — Collaborative Analysis    | Analysis context for journey presentation (read-only)               |
+| Epic 03 — Collective Decision       | Approved Outcome eligibility                                        |
+| Epic 04 — Petition                  | Endorsement context                                                 |
 | Epic 05 — Implementation Commitment | Preparedness context, eligibility input, `commitment-bootstrap-001` |
 
 Platform foundations provide identity baseline, engineering methodology and UI/API standards.
@@ -748,17 +748,17 @@ Deferred items must not block Version 1 vertical slice completion.
 
 # Risks and Controls
 
-| Risk | Control |
-|------|---------|
-| Implementation created before Commitment eligibility | Store and API enforce preconditions from `STATE_MACHINE.md` and Decision 01 |
-| PM/task semantics enter UI | Workspace spec, Non-Goals list and Sprint 4/7 review |
-| Operational data leaks into public projection | Dedicated projection builder with sanitization; Sprint 5 and Sprint 7 review |
-| Manual progress or completion override | Derived fields read-only at API and store layers |
-| Lifecycle naming drift | Sprint 1 harmonization before types export |
-| Behavior duplicated in API controllers | Thin API pattern; rules live in behavior/store |
-| Architecture review preconditions skipped | Sprint 1 includes documentation harmonization deliverables |
-| Aggregate boundary erosion | Reference-only integration; Sprint 6 and Sprint 7 verification |
-| Deferred coordination enters through synonyms | Decision 15 review gate on all PRs |
+| Risk                                                 | Control                                                                      |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Implementation created before Commitment eligibility | Store and API enforce preconditions from `STATE_MACHINE.md` and Decision 01  |
+| PM/task semantics enter UI                           | Workspace spec, Non-Goals list and Sprint 4/7 review                         |
+| Operational data leaks into public projection        | Dedicated projection builder with sanitization; Sprint 5 and Sprint 7 review |
+| Manual progress or completion override               | Derived fields read-only at API and store layers                             |
+| Lifecycle naming drift                               | Sprint 1 harmonization before types export                                   |
+| Behavior duplicated in API controllers               | Thin API pattern; rules live in behavior/store                               |
+| Architecture review preconditions skipped            | Sprint 1 includes documentation harmonization deliverables                   |
+| Aggregate boundary erosion                           | Reference-only integration; Sprint 6 and Sprint 7 verification               |
+| Deferred coordination enters through synonyms        | Decision 15 review gate on all PRs                                           |
 
 ---
 

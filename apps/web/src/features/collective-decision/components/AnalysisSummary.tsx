@@ -32,9 +32,11 @@ function getCurrentSummary(summaries: AnalysisSummaryType[]): AnalysisSummaryTyp
     return null;
   }
 
-  return [...summaries].sort(
-    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
-  )[0] ?? null;
+  return (
+    [...summaries].sort(
+      (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+    )[0] ?? null
+  );
 }
 
 export function AnalysisSummary({ collaborativeAnalysis = null }: AnalysisSummaryProps) {
@@ -89,7 +91,10 @@ export function AnalysisSummary({ collaborativeAnalysis = null }: AnalysisSummar
           label="Participant Threshold"
           value={String(progressPolicy.minimumParticipantCount)}
         />
-        <ProfileField label="Expert Review" value={formatBoolean(progressPolicy.expertReviewRequired)} />
+        <ProfileField
+          label="Expert Review"
+          value={formatBoolean(progressPolicy.expertReviewRequired)}
+        />
         <ProfileField
           label="Regional Review"
           value={formatBoolean(progressPolicy.regionalReviewRequired)}

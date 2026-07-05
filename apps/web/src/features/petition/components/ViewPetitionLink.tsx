@@ -75,10 +75,7 @@ export function ViewPetitionLink({
   }
 
   return (
-    <Link
-      className="view-petition-link"
-      href={`/petitions/${encodeURIComponent(petitionId)}`}
-    >
+    <Link className="view-petition-link" href={`/petitions/${encodeURIComponent(petitionId)}`}>
       Open Petition Workspace
     </Link>
   );

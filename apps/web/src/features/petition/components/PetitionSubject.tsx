@@ -13,10 +13,7 @@ export function PetitionSubject({ petition }: PetitionSubjectProps) {
     <div className="petition-subject">
       <ProfileField label="Initiative Title" value={subject.title} />
       <ProfileField label="Initiative Summary" value={subject.summary} />
-      <ProfileField
-        label="Approved Collective Decision"
-        value={subject.decisionId}
-      />
+      <ProfileField label="Approved Collective Decision" value={subject.decisionId} />
       <p className="petition-subject__note">
         Endorsement follows an approved Collective Decision. Signing supports the approved
         direction; it does not reopen the decision.

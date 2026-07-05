@@ -27,10 +27,7 @@ export function CollaborativeAnalysisWorkspace({
   return (
     <div className="collaborative-analysis-workspace">
       <ProfileSection title="Analysis Overview">
-        <AnalysisOverview
-          analysis={analysis}
-          initiativeTitle={initiativeTitle}
-        />
+        <AnalysisOverview analysis={analysis} initiativeTitle={initiativeTitle} />
       </ProfileSection>
 
       <ProfileSection title="Readiness Dashboard">

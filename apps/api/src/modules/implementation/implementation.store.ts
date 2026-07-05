@@ -114,9 +114,7 @@ function assertApprovedCollectiveDecision(collectiveDecisionId: string): void {
   }
 
   if (decision.outcome?.outcomeType !== "Approved") {
-    throw new Error(
-      "Implementation may only be created from an approved Collective Decision.",
-    );
+    throw new Error("Implementation may only be created from an approved Collective Decision.");
   }
 }
 
@@ -128,7 +126,9 @@ function assertPetitionEligibility(petitionId: string, initiativeId: string): vo
   }
 
   if (petition.subject.initiativeId !== initiativeId) {
-    throw new Error("Petition subject Initiative reference does not match Implementation Initiative.");
+    throw new Error(
+      "Petition subject Initiative reference does not match Implementation Initiative.",
+    );
   }
 }
 
@@ -151,7 +151,9 @@ function assertCommitmentContext(
   }
 
   if (commitment.initiativeId !== initiativeId) {
-    throw new Error("Implementation Initiative reference does not match Implementation Commitment.");
+    throw new Error(
+      "Implementation Initiative reference does not match Implementation Commitment.",
+    );
   }
 
   if (commitment.collectiveDecisionId !== collectiveDecisionId) {
@@ -203,7 +205,10 @@ function ensureInProgressForRecording(implementation: Implementation): void {
   }
 }
 
-function getPhase(implementation: Implementation, implementationPhaseId: string): ImplementationPhase {
+function getPhase(
+  implementation: Implementation,
+  implementationPhaseId: string,
+): ImplementationPhase {
   const phase = implementation.implementationPhases.find(
     (entry) => entry.implementationPhaseId === implementationPhaseId,
   );
@@ -377,10 +382,7 @@ export function startImplementation(implementationId: string) {
   return touchImplementation(implementation);
 }
 
-export function updateImplementation(
-  implementationId: string,
-  update: ImplementationUpdate,
-) {
+export function updateImplementation(implementationId: string, update: ImplementationUpdate) {
   const implementation = getMutableImplementation(implementationId);
 
   if (!implementation) {

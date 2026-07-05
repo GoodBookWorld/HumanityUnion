@@ -33,8 +33,7 @@ export function DecisionContext({
     collectiveDecision.decisionResult?.winningOptionId !== undefined &&
     collectiveDecision.decisionResult.winningOptionId !== null
       ? (collectiveDecision.ballot.options.find(
-          (option) =>
-            option.optionId === collectiveDecision.decisionResult?.winningOptionId,
+          (option) => option.optionId === collectiveDecision.decisionResult?.winningOptionId,
         )?.label ?? "Unknown")
       : null;
 
@@ -42,10 +41,7 @@ export function DecisionContext({
     <div className="decision-context">
       <ProfileField label="Decision Question" value={collectiveDecision.ballot.question} />
       <ProfileField label="Decision Status" value={collectiveDecision.status} />
-      <ProfileField
-        label="Approved Result"
-        value={approvedOption ?? "Result not yet available"}
-      />
+      <ProfileField label="Approved Result" value={approvedOption ?? "Result not yet available"} />
       <ProfileField
         label="Collective Decision Outcome"
         value={collectiveDecision.outcome?.outcomeType ?? "Outcome not yet available"}

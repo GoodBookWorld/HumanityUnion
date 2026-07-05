@@ -20,80 +20,80 @@ All colors below use suggested HEX placeholders. Final values must be validated 
 
 ### Primary Color
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Brand identity, primary actions, active navigation, key links, and focal interactive elements. |
-| Suggested HEX | `#1B4F8A` |
+| Attribute     | Value                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------- |
+| Purpose       | Brand identity, primary actions, active navigation, key links, and focal interactive elements. |
+| Suggested HEX | `#1B4F8A`                                                                                      |
 
 ### Secondary Color
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Supporting actions, secondary navigation, complementary highlights, and non-primary institutional accents. |
-| Suggested HEX | `#2A6F97` |
+| Attribute     | Value                                                                                                      |
+| ------------- | ---------------------------------------------------------------------------------------------------------- |
+| Purpose       | Supporting actions, secondary navigation, complementary highlights, and non-primary institutional accents. |
+| Suggested HEX | `#2A6F97`                                                                                                  |
 
 ### Accent Color
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Highlights, badges, selected states, and emphasis elements that require distinction without alarm. |
-| Suggested HEX | `#3A9BBF` |
+| Attribute     | Value                                                                                              |
+| ------------- | -------------------------------------------------------------------------------------------------- |
+| Purpose       | Highlights, badges, selected states, and emphasis elements that require distinction without alarm. |
+| Suggested HEX | `#3A9BBF`                                                                                          |
 
 ### Success
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Confirmations, approved states, completed processes, and positive feedback messages. |
-| Suggested HEX | `#2E7D4F` |
+| Attribute     | Value                                                                                |
+| ------------- | ------------------------------------------------------------------------------------ |
+| Purpose       | Confirmations, approved states, completed processes, and positive feedback messages. |
+| Suggested HEX | `#2E7D4F`                                                                            |
 
 ### Warning
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Cautionary messages, pending review, thresholds approaching limits, and non-blocking alerts. |
-| Suggested HEX | `#B8860B` |
+| Attribute     | Value                                                                                        |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| Purpose       | Cautionary messages, pending review, thresholds approaching limits, and non-blocking alerts. |
+| Suggested HEX | `#B8860B`                                                                                    |
 
 ### Danger
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Errors, destructive actions, critical alerts, and failed validation states. |
-| Suggested HEX | `#B3261E` |
+| Attribute     | Value                                                                       |
+| ------------- | --------------------------------------------------------------------------- |
+| Purpose       | Errors, destructive actions, critical alerts, and failed validation states. |
+| Suggested HEX | `#B3261E`                                                                   |
 
 ### Background
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Default page canvas and outer application shell behind primary content areas. |
-| Suggested HEX | `#F5F7FA` |
+| Attribute     | Value                                                                         |
+| ------------- | ----------------------------------------------------------------------------- |
+| Purpose       | Default page canvas and outer application shell behind primary content areas. |
+| Suggested HEX | `#F5F7FA`                                                                     |
 
 ### Surface
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Cards, panels, modals, sidebars, and elevated content containers above the background. |
-| Suggested HEX | `#FFFFFF` |
+| Attribute     | Value                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------- |
+| Purpose       | Cards, panels, modals, sidebars, and elevated content containers above the background. |
+| Suggested HEX | `#FFFFFF`                                                                              |
 
 ### Border
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Dividers, input outlines, card edges, table separators, and structural boundaries. |
-| Suggested HEX | `#D8DEE6` |
+| Attribute     | Value                                                                              |
+| ------------- | ---------------------------------------------------------------------------------- |
+| Purpose       | Dividers, input outlines, card edges, table separators, and structural boundaries. |
+| Suggested HEX | `#D8DEE6`                                                                          |
 
 ### Text Primary
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Headings, body copy, labels, and primary readable content. |
-| Suggested HEX | `#1A1F2E` |
+| Attribute     | Value                                                      |
+| ------------- | ---------------------------------------------------------- |
+| Purpose       | Headings, body copy, labels, and primary readable content. |
+| Suggested HEX | `#1A1F2E`                                                  |
 
 ### Text Secondary
 
-| Attribute | Value |
-| --- | --- |
-| Purpose | Metadata, timestamps, helper text, placeholders, and de-emphasized supporting content. |
-| Suggested HEX | `#5C6578` |
+| Attribute     | Value                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------- |
+| Purpose       | Metadata, timestamps, helper text, placeholders, and de-emphasized supporting content. |
+| Suggested HEX | `#5C6578`                                                                              |
 
 ## Typography
 
@@ -119,14 +119,14 @@ Used for codes, identifiers, ACTUC logs, verification references, and inline tec
 
 ### Heading Hierarchy (H1–H6)
 
-| Level | Usage | Size (placeholder) | Weight | Line height |
-| --- | --- | --- | --- | --- |
-| H1 | Page and zone titles | 32 px | 600 | 1.25 |
-| H2 | Major section titles | 26 px | 600 | 1.3 |
-| H3 | Subsection and panel titles | 22 px | 600 | 1.35 |
-| H4 | Card titles and widget headers | 18 px | 600 | 1.4 |
-| H5 | Compact group labels | 16 px | 500 | 1.45 |
-| H6 | Overlines and minor labels | 14 px | 500 | 1.5 |
+| Level | Usage                          | Size (placeholder) | Weight | Line height |
+| ----- | ------------------------------ | ------------------ | ------ | ----------- |
+| H1    | Page and zone titles           | 32 px              | 600    | 1.25        |
+| H2    | Major section titles           | 26 px              | 600    | 1.3         |
+| H3    | Subsection and panel titles    | 22 px              | 600    | 1.35        |
+| H4    | Card titles and widget headers | 18 px              | 600    | 1.4         |
+| H5    | Compact group labels           | 16 px              | 500    | 1.45        |
+| H6    | Overlines and minor labels     | 14 px              | 500    | 1.5         |
 
 Headings use Text Primary. Avoid skipping levels for semantic structure.
 
@@ -160,29 +160,29 @@ All spacing, padding, margins, and component dimensions align to a **4 px base g
 
 ### Spacing Scale
 
-| Token | Value | Typical use |
-| --- | --- | --- |
-| `space-1` | 4 px | Tight inline gaps, icon-to-label spacing |
-| `space-2` | 8 px | Compact padding, dense list items |
-| `space-3` | 12 px | Form field internal padding, small component gaps |
-| `space-4` | 16 px | Standard component padding, paragraph spacing |
-| `space-5` | 20 px | Card header/footer padding |
-| `space-6` | 24 px | Section spacing within panels |
-| `space-8` | 32 px | Card padding, modal padding |
-| `space-10` | 40 px | Large section separation |
-| `space-12` | 48 px | Page section margins |
-| `space-16` | 64 px | Major layout breaks, hero spacing |
+| Token      | Value | Typical use                                       |
+| ---------- | ----- | ------------------------------------------------- |
+| `space-1`  | 4 px  | Tight inline gaps, icon-to-label spacing          |
+| `space-2`  | 8 px  | Compact padding, dense list items                 |
+| `space-3`  | 12 px | Form field internal padding, small component gaps |
+| `space-4`  | 16 px | Standard component padding, paragraph spacing     |
+| `space-5`  | 20 px | Card header/footer padding                        |
+| `space-6`  | 24 px | Section spacing within panels                     |
+| `space-8`  | 32 px | Card padding, modal padding                       |
+| `space-10` | 40 px | Large section separation                          |
+| `space-12` | 48 px | Page section margins                              |
+| `space-16` | 64 px | Major layout breaks, hero spacing                 |
 
 ## Border Radius
 
 Corner radii remain subtle to preserve a professional institutional tone.
 
-| Element | Radius | Notes |
-| --- | --- | --- |
-| Cards | 12 px | Default for publication cards, panels, and modals |
-| Buttons | 8 px | All button variants except icon-only circular controls |
-| Inputs | 8 px | Text fields, textareas, dropdowns, and search bars |
-| Widgets | 10 px | Statistics, institution, and profile widgets |
+| Element | Radius | Notes                                                  |
+| ------- | ------ | ------------------------------------------------------ |
+| Cards   | 12 px  | Default for publication cards, panels, and modals      |
+| Buttons | 8 px   | All button variants except icon-only circular controls |
+| Inputs  | 8 px   | Text fields, textareas, dropdowns, and search bars     |
+| Widgets | 10 px  | Statistics, institution, and profile widgets           |
 
 Icon-only buttons may use a fully circular radius (`50%`) when diameter is fixed.
 
@@ -190,11 +190,11 @@ Icon-only buttons may use a fully circular radius (`50%`) when diameter is fixed
 
 Shadows indicate elevation sparingly. Prefer border and surface contrast before adding shadow depth.
 
-| Level | Usage | Description (placeholder) |
-| --- | --- | --- |
-| Small | Inputs on focus, subtle hover on cards | Soft, low-offset shadow for minimal lift |
-| Medium | Dropdowns, popovers, floating menus | Moderate elevation with clear separation from background |
-| Large | Modals, drawers, major overlays | Pronounced elevation reserved for blocking or high-priority layers |
+| Level  | Usage                                  | Description (placeholder)                                          |
+| ------ | -------------------------------------- | ------------------------------------------------------------------ |
+| Small  | Inputs on focus, subtle hover on cards | Soft, low-offset shadow for minimal lift                           |
+| Medium | Dropdowns, popovers, floating menus    | Moderate elevation with clear separation from background           |
+| Large  | Modals, drawers, major overlays        | Pronounced elevation reserved for blocking or high-priority layers |
 
 Shadow color should derive from neutral dark tones at low opacity. Avoid colored shadows.
 
@@ -303,13 +303,13 @@ Animation supports comprehension and feedback; it must never obstruct access or 
 
 Layouts are responsive-first: design for mobile constraints first, then expand capability at larger breakpoints.
 
-| Name | Range | Intent |
-| --- | --- | --- |
-| Mobile | 0 – 639 px | Single-column layouts, stacked navigation, full-width cards, bottom-aligned primary actions where appropriate |
-| Tablet | 640 – 1023 px | Two-column grids where useful, collapsible side navigation, increased horizontal padding |
-| Laptop | 1024 – 1279 px | Standard multi-column dashboards, persistent side navigation, publication feeds with sidebar |
-| Desktop | 1280 – 1535 px | Full institutional layouts, multi-panel governance views, wider statistics grids |
-| Ultra-wide | 1536 px and above | Constrain max content width to preserve readability; use outer margins rather than stretching text lines |
+| Name       | Range             | Intent                                                                                                        |
+| ---------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| Mobile     | 0 – 639 px        | Single-column layouts, stacked navigation, full-width cards, bottom-aligned primary actions where appropriate |
+| Tablet     | 640 – 1023 px     | Two-column grids where useful, collapsible side navigation, increased horizontal padding                      |
+| Laptop     | 1024 – 1279 px    | Standard multi-column dashboards, persistent side navigation, publication feeds with sidebar                  |
+| Desktop    | 1280 – 1535 px    | Full institutional layouts, multi-panel governance views, wider statistics grids                              |
+| Ultra-wide | 1536 px and above | Constrain max content width to preserve readability; use outer margins rather than stretching text lines      |
 
 Touch targets, typography, and spacing tokens remain consistent across breakpoints; layout columns and navigation patterns adapt.
 

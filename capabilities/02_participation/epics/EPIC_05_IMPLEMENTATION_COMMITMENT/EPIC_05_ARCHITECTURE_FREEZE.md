@@ -276,10 +276,10 @@ Accountable declarations remain human commands through canonical workspace surfa
 
 ## Operational Workspace is separate from Public Projection
 
-| Surface | Writable | Audience |
-|---------|----------|----------|
-| Operational Workspace | Through operational API commands only | Registered participants |
-| Public Projection | Read-only | Public visitors, observers, society |
+| Surface               | Writable                              | Audience                            |
+| --------------------- | ------------------------------------- | ----------------------------------- |
+| Operational Workspace | Through operational API commands only | Registered participants             |
+| Public Projection     | Read-only                             | Public visitors, observers, society |
 
 Personal commitment state never leaks into public projection beyond approved aggregate fields.
 
@@ -445,11 +445,11 @@ Version 1 **Create Commitment** eligibility is frozen:
 
 Version 1 bootstrap identifiers are frozen for vertical slice verification:
 
-| Entity | Bootstrap ID |
-|--------|----------------|
-| Initiative | `initiative-bootstrap-001` |
-| Collective Decision | `decision-bootstrap-001` |
-| Petition | `petition-bootstrap-001` |
+| Entity                    | Bootstrap ID               |
+| ------------------------- | -------------------------- |
+| Initiative                | `initiative-bootstrap-001` |
+| Collective Decision       | `decision-bootstrap-001`   |
+| Petition                  | `petition-bootstrap-001`   |
 | Implementation Commitment | `commitment-bootstrap-001` |
 
 Bootstrap links prior stages to Stage 6 for end-to-end pipeline verification.
@@ -509,18 +509,18 @@ Valid architecture change requires:
 
 Cross-cutting items from `EPIC_05_ARCHITECTURE_REVIEW.md` are resolved for Version 1 as follows:
 
-| Item | Frozen Resolution |
-|------|-------------------|
+| Item                                          | Frozen Resolution                                                                                                                                |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Community Need / Capability Matching modeling | Community Need is a derived projection of unsatisfied Readiness Thresholds; Capability Matching is derived orientation only — no auto-assignment |
-| Invariant wording | One active declaration per participant per **Implementation Commitment context**; Version 1: one commitment per approved participation path |
-| Frozen Policy ownership | External read-only reference via `frozenPolicyId`; no in-place mutation |
-| Commitment Outcome naming | **Contribution Summary** is Version 1 outcome summary |
-| Public policy context | Community Needs + readiness copy carry Version 1 public-safe policy context |
-| Canonical declaration surface | **Contribution Declaration Panel** |
-| Petition eligibility gate | Approved Decision + completed Petition path; bootstrap uses Closed Petition or approved bootstrap equivalent |
-| Implementation plan | `IMPLEMENTATION_PLAN.md` approved — Status Ready |
-| Document status | This freeze supersedes Draft ambiguity for engineering baseline |
-| Bootstrap linkage | `commitment-bootstrap-001` linked to bootstrap pipeline IDs |
+| Invariant wording                             | One active declaration per participant per **Implementation Commitment context**; Version 1: one commitment per approved participation path      |
+| Frozen Policy ownership                       | External read-only reference via `frozenPolicyId`; no in-place mutation                                                                          |
+| Commitment Outcome naming                     | **Contribution Summary** is Version 1 outcome summary                                                                                            |
+| Public policy context                         | Community Needs + readiness copy carry Version 1 public-safe policy context                                                                      |
+| Canonical declaration surface                 | **Contribution Declaration Panel**                                                                                                               |
+| Petition eligibility gate                     | Approved Decision + completed Petition path; bootstrap uses Closed Petition or approved bootstrap equivalent                                     |
+| Implementation plan                           | `IMPLEMENTATION_PLAN.md` approved — Status Ready                                                                                                 |
+| Document status                               | This freeze supersedes Draft ambiguity for engineering baseline                                                                                  |
+| Bootstrap linkage                             | `commitment-bootstrap-001` linked to bootstrap pipeline IDs                                                                                      |
 
 No aggregate redesign was required.
 

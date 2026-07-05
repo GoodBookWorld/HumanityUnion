@@ -22,11 +22,11 @@ It prepares the environment for future implementation.
 
 After completing this guide:
 
-* the repository is a valid pnpm workspace;
-* root configuration exists;
-* applications have placeholder structure;
-* shared packages exist;
-* the project can evolve without restructuring.
+- the repository is a valid pnpm workspace;
+- root configuration exists;
+- applications have placeholder structure;
+- shared packages exist;
+- the project can evolve without restructuring.
 
 ---
 
@@ -134,10 +134,10 @@ Initialize the project as a private workspace.
 
 Requirements:
 
-* private = true
-* package manager = pnpm
-* workspaces enabled
-* no runtime dependencies yet
+- private = true
+- package manager = pnpm
+- workspaces enabled
+- no runtime dependencies yet
 
 ---
 
@@ -167,14 +167,14 @@ Future development should add implementation rather than reorganize folders.
 
 Existing folders:
 
-* assets
-* components
-* database
-* pages
-* public
-* backend
-* frontend
-* api
+- assets
+- components
+- database
+- pages
+- public
+- backend
+- frontend
+- api
 
 must remain untouched.
 
@@ -186,11 +186,11 @@ Migration will occur in a dedicated guide.
 
 Verify:
 
-* repository opens correctly in Cursor;
-* workspace folders exist;
-* no generated application code;
-* Blueprint remains unchanged;
-* Engineering documentation remains unchanged.
+- repository opens correctly in Cursor;
+- workspace folders exist;
+- no generated application code;
+- Blueprint remains unchanged;
+- Engineering documentation remains unchanged.
 
 ---
 
@@ -198,11 +198,11 @@ Verify:
 
 This guide is complete when:
 
-* root configuration files exist;
-* monorepo folders exist;
-* application placeholders exist;
-* shared package placeholders exist;
-* repository is ready for dependency installation.
+- root configuration files exist;
+- monorepo folders exist;
+- application placeholders exist;
+- shared package placeholders exist;
+- repository is ready for dependency installation.
 
 ---
 
@@ -221,12 +221,12 @@ Implementation Guide 04 — Dependency Installation
 
 The next guide will:
 
-* initialize pnpm;
-* install development dependencies;
-* configure TypeScript;
-* configure ESLint;
-* configure Prettier;
-* prepare the first executable project.
+- initialize pnpm;
+- install development dependencies;
+- configure TypeScript;
+- configure ESLint;
+- configure Prettier;
+- prepare the first executable project.
 
 ---
 

@@ -160,8 +160,7 @@ export function parseCreateInput(body: Record<string, unknown>): ImplementationC
     implementationCommitmentId: body.implementationCommitmentId as string,
     subjectTitle: body.subjectTitle as string,
     subjectSummary: body.subjectSummary as string,
-    frozenPolicyId:
-      typeof body.frozenPolicyId === "string" ? body.frozenPolicyId : undefined,
+    frozenPolicyId: typeof body.frozenPolicyId === "string" ? body.frozenPolicyId : undefined,
   };
 }
 
@@ -481,7 +480,10 @@ export function validateAttachEvidenceBody(body: Record<string, unknown>): strin
     return "evidenceId is required.";
   }
 
-  if (typeof body.evidenceKind !== "string" || !EVIDENCE_KINDS.has(body.evidenceKind as EvidenceKind)) {
+  if (
+    typeof body.evidenceKind !== "string" ||
+    !EVIDENCE_KINDS.has(body.evidenceKind as EvidenceKind)
+  ) {
     return 'evidenceKind must be "Reference", "Attachment", or "Link".';
   }
 
@@ -513,7 +515,8 @@ export function parseAttachEvidenceInput(
     achievementId,
     evidenceKind,
     label: body.label as string,
-    reference: evidenceKind === "Reference" ? (body.reference as AttachEvidenceInput["reference"]) : null,
+    reference:
+      evidenceKind === "Reference" ? (body.reference as AttachEvidenceInput["reference"]) : null,
     attachment:
       evidenceKind === "Attachment" ? (body.attachment as AttachEvidenceInput["attachment"]) : null,
     link: evidenceKind === "Link" ? (body.link as AttachEvidenceInput["link"]) : null,

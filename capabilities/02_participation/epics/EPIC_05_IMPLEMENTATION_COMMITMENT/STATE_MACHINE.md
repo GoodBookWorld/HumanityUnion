@@ -506,14 +506,14 @@ Withdrawn → Archived
 
 ## Transition conditions summary
 
-| Transition | Entry requirement |
-|------------|-------------------|
-| Draft → Submitted | Preparation complete; references and Frozen Policy attached |
-| Submitted → Active | Activation authorized; policy immutable |
-| Active → Completed | Readiness and policy completion conditions satisfied |
-| Active → Withdrawn | Aggregate-level withdrawal authorized |
-| Completed → Archived | Final derivation stable; historical retention |
-| Withdrawn → Archived | Withdrawn record stable; historical retention |
+| Transition           | Entry requirement                                           |
+| -------------------- | ----------------------------------------------------------- |
+| Draft → Submitted    | Preparation complete; references and Frozen Policy attached |
+| Submitted → Active   | Activation authorized; policy immutable                     |
+| Active → Completed   | Readiness and policy completion conditions satisfied        |
+| Active → Withdrawn   | Aggregate-level withdrawal authorized                       |
+| Completed → Archived | Final derivation stable; historical retention               |
+| Withdrawn → Archived | Withdrawn record stable; historical retention               |
 
 ---
 
@@ -610,28 +610,28 @@ Events do not replace aggregate state.
 
 ## Lifecycle events
 
-| Event | Meaning |
-|-------|---------|
-| **CommitmentCreated** | Aggregate created in Draft |
-| **CommitmentSubmitted** | Draft preparation submitted |
-| **CommitmentActivated** | Active collection begins |
+| Event                   | Meaning                                           |
+| ----------------------- | ------------------------------------------------- |
+| **CommitmentCreated**   | Aggregate created in Draft                        |
+| **CommitmentSubmitted** | Draft preparation submitted                       |
+| **CommitmentActivated** | Active collection begins                          |
 | **CommitmentWithdrawn** | Participant item or aggregate withdrawal recorded |
-| **CommitmentCompleted** | Successful completion of collection phase |
-| **CommitmentArchived** | Historical read-only preservation |
+| **CommitmentCompleted** | Successful completion of collection phase         |
+| **CommitmentArchived**  | Historical read-only preservation                 |
 
 ## Contribution events
 
-| Event | Meaning |
-|-------|---------|
-| **ContributionProfileUpdated** | Participant profile metadata changed within policy |
-| **ContributionAdded** | New Contribution Item recorded |
-| **ContributionRemoved** | Item removed where policy permits removal — not historical erasure |
+| Event                          | Meaning                                                            |
+| ------------------------------ | ------------------------------------------------------------------ |
+| **ContributionProfileUpdated** | Participant profile metadata changed within policy                 |
+| **ContributionAdded**          | New Contribution Item recorded                                     |
+| **ContributionRemoved**        | Item removed where policy permits removal — not historical erasure |
 
 ## Derivation events
 
-| Event | Meaning |
-|-------|---------|
-| **CommunityCapacityUpdated** | Derived capacity recalculated |
+| Event                              | Meaning                        |
+| ---------------------------------- | ------------------------------ |
+| **CommunityCapacityUpdated**       | Derived capacity recalculated  |
 | **ImplementationReadinessUpdated** | Derived readiness recalculated |
 
 Events may be consumed by projections, audit logs and future navigator services.

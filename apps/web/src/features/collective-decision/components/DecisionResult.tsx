@@ -8,23 +8,14 @@ interface DecisionResultPanelProps {
   decision: CollectiveDecision;
 }
 
-const VISIBLE_STATUSES = new Set<CollectiveDecision["status"]>([
-  "Closed",
-  "Completed",
-  "Archived",
-]);
+const VISIBLE_STATUSES = new Set<CollectiveDecision["status"]>(["Closed", "Completed", "Archived"]);
 
-function formatOptionLabel(
-  decision: CollectiveDecision,
-  optionId: string | null,
-): string {
+function formatOptionLabel(decision: CollectiveDecision, optionId: string | null): string {
   if (!optionId) {
     return "None";
   }
 
-  return (
-    decision.ballot.options.find((option) => option.optionId === optionId)?.label ?? optionId
-  );
+  return decision.ballot.options.find((option) => option.optionId === optionId)?.label ?? optionId;
 }
 
 export function DecisionResultPanel({ decision }: DecisionResultPanelProps) {
@@ -40,10 +31,7 @@ export function DecisionResultPanel({ decision }: DecisionResultPanelProps) {
 
   return (
     <div className="decision-result">
-      <ProfileField
-        label="Participation Rate"
-        value={`${decisionResult.participationRate}%`}
-      />
+      <ProfileField label="Participation Rate" value={`${decisionResult.participationRate}%`} />
       <ProfileField
         label="Winning Option"
         value={formatOptionLabel(decision, decisionResult.winningOptionId)}

@@ -24,10 +24,10 @@ No persistence layer is introduced.
 
 After completing this guide:
 
-* Member Profile API is officially established.
-* Profile retrieval uses the authenticated Member identity.
-* API returns the shared Member domain model.
-* Authentication and Member remain independent.
+- Member Profile API is officially established.
+- Profile retrieval uses the authenticated Member identity.
+- API returns the shared Member domain model.
+- Authentication and Member remain independent.
 
 ---
 
@@ -35,10 +35,10 @@ After completing this guide:
 
 Implements:
 
-* Capability 01 — Human Identity
-* Epic 02 — Member Profile
-* Epic 01 — Authentication
-* Platform API Specification
+- Capability 01 — Human Identity
+- Epic 02 — Member Profile
+- Epic 01 — Authentication
+- Platform API Specification
 
 ---
 
@@ -75,16 +75,16 @@ GET /api/v1/members/me
 
 must:
 
-* use Authentication Middleware;
-* obtain Member identity from request.auth.memberId;
-* return the bootstrap Member corresponding to the authenticated identity;
-* use the standard Humanity Union response envelope.
+- use Authentication Middleware;
+- obtain Member identity from request.auth.memberId;
+- return the bootstrap Member corresponding to the authenticated identity;
+- use the standard Humanity Union response envelope.
 
 The route must never:
 
-* authenticate the request;
-* resolve AuthIdentity;
-* access Session Context directly.
+- authenticate the request;
+- resolve AuthIdentity;
+- access Session Context directly.
 
 ---
 
@@ -92,13 +92,13 @@ The route must never:
 
 Do not implement:
 
-* MongoDB
-* JWT
-* Cookies
-* Sessions
-* OAuth
-* Registration
-* Login
+- MongoDB
+- JWT
+- Cookies
+- Sessions
+- OAuth
+- Registration
+- Login
 
 Do not change the Member shared domain model.
 
@@ -128,10 +128,10 @@ GET http://localhost:4000/api/v1/members/me
 
 Expected:
 
-* HTTP 200
-* Member returned
-* Standard response envelope
-* Identity resolved through Authentication Middleware
+- HTTP 200
+- Member returned
+- Standard response envelope
+- Identity resolved through Authentication Middleware
 
 ---
 
@@ -139,11 +139,11 @@ Expected:
 
 Confirm:
 
-* Authentication Middleware is used.
-* request.auth.memberId is used.
-* Member is returned.
-* Session Context is not accessed directly.
-* TypeScript passes.
+- Authentication Middleware is used.
+- request.auth.memberId is used.
+- Member is returned.
+- Session Context is not accessed directly.
+- TypeScript passes.
 
 ---
 

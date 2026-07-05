@@ -14,7 +14,10 @@ export function CommunityCapacitySection({ commitment }: CommunityCapacitySectio
       <p className="commitment-section__derived">
         Derived value — aggregated from recorded Contribution Items only. Never manually edited.
       </p>
-      <ProfileField label="Active Declarations" value={String(communityCapacity.totalContributions)} />
+      <ProfileField
+        label="Active Declarations"
+        value={String(communityCapacity.totalContributions)}
+      />
       <ProfileField
         label="Volunteers"
         value={String(communityCapacity.contributionsByType.Volunteer)}

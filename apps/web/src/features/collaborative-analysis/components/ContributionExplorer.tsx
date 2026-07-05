@@ -80,9 +80,7 @@ export function ContributionExplorer({ contributions }: ContributionExplorerProp
           <select
             className="contribution-explorer__filter"
             value={selectedType}
-            onChange={(event) =>
-              setSelectedType(event.target.value as ContributionType | "all")
-            }
+            onChange={(event) => setSelectedType(event.target.value as ContributionType | "all")}
           >
             <option value="all">All types</option>
             {CONTRIBUTION_GROUPS.map((group) => (

@@ -72,7 +72,7 @@ function buildPetitionSummary(petition: Petition): PublicPetitionSummary {
     petition.status === "Open" ||
     petition.status === "Closed" ||
     petition.status === "Archived"
-      ? petition.shareLink?.createdAt ?? petition.updatedAt
+      ? (petition.shareLink?.createdAt ?? petition.updatedAt)
       : null;
 
   return {
@@ -137,7 +137,9 @@ function buildApprovedDecisionContext(
   const approvedResultSummary = buildApprovedResultSummary(decision);
   const initiativeContextSummary = initiative?.description ?? petition.subject.summary;
   const analysisContextSummary = buildAnalysisContextSummary(analysis);
-  const contextAvailable = Boolean(decisionSummary || approvedOutcomeSummary || approvedResultSummary);
+  const contextAvailable = Boolean(
+    decisionSummary || approvedOutcomeSummary || approvedResultSummary,
+  );
 
   return {
     collectiveDecisionId: petition.collectiveDecisionId,
@@ -250,12 +252,7 @@ export function toPublicPetitionProjection(petition: Petition): PublicPetitionPr
     petitionIdentity: buildPetitionIdentity(petition),
     petitionSummary: buildPetitionSummary(petition),
     petitionSubject: buildPetitionSubject(petition),
-    approvedDecisionContext: buildApprovedDecisionContext(
-      petition,
-      decision,
-      initiative,
-      analysis,
-    ),
+    approvedDecisionContext: buildApprovedDecisionContext(petition, decision, initiative, analysis),
     publicSupportStatistics: buildPublicSupportStatistics(petition),
     petitionOutcome: buildPublicPetitionOutcome(petition),
     shareReference: buildShareReference(petition),

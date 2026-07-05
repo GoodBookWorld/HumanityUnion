@@ -16,18 +16,18 @@ Interest indicates attention; responsibility indicates willingness to act, respo
 
 ## Civic Responsibility Profile Fields
 
-| Field | Purpose | Examples |
-| --- | --- | --- |
-| responsibilityScope | Declares the geographic and civic scale at which the Member accepts responsibility. | Community, City, Region, Country, World |
-| priorityCategories | Topics and thematic areas the Member commits to follow and act upon. | Democracy, Environment, Healthcare, Local Community |
-| priorityTools | Platform instruments the Member is willing to use in fulfilling their responsibilities. | Proposals, Petitions, Polls, Voting, Volunteering |
-| priorityInstitutions | Institutions the Member chooses to engage with or monitor as part of their civic role. | Registered NGOs, local councils, academic bodies, humanitarian agencies |
-| priorityLocations | Specific places within scope where the Member accepts focused attention. | A city district, region, country, or cross-border world-level concern |
-| timeCommitment | Declared availability for civic activity and response to platform requests. | 10 minutes per day, 1 hour per week, custom schedule |
-| notificationPreferences | Rules for when and how the Member receives alerts tied to their responsibilities. | Digest only, immediate for voting deadlines, muted outside scope |
-| recommendationLogic | Derived rules used to surface tasks and opportunities matching the profile. | Match proposal topics to priority categories within responsibility scope |
-| activityHistory | Record of actions taken in fulfillment of declared responsibilities. | Proposals created, votes cast, volunteer shifts completed |
-| socialActivityScoreImpact | Mapping between responsible actions and Social Activity Score adjustments. | Higher weight for verified voting participation within declared scope |
+| Field                     | Purpose                                                                                 | Examples                                                                 |
+| ------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| responsibilityScope       | Declares the geographic and civic scale at which the Member accepts responsibility.     | Community, City, Region, Country, World                                  |
+| priorityCategories        | Topics and thematic areas the Member commits to follow and act upon.                    | Democracy, Environment, Healthcare, Local Community                      |
+| priorityTools             | Platform instruments the Member is willing to use in fulfilling their responsibilities. | Proposals, Petitions, Polls, Voting, Volunteering                        |
+| priorityInstitutions      | Institutions the Member chooses to engage with or monitor as part of their civic role.  | Registered NGOs, local councils, academic bodies, humanitarian agencies  |
+| priorityLocations         | Specific places within scope where the Member accepts focused attention.                | A city district, region, country, or cross-border world-level concern    |
+| timeCommitment            | Declared availability for civic activity and response to platform requests.             | 10 minutes per day, 1 hour per week, custom schedule                     |
+| notificationPreferences   | Rules for when and how the Member receives alerts tied to their responsibilities.       | Digest only, immediate for voting deadlines, muted outside scope         |
+| recommendationLogic       | Derived rules used to surface tasks and opportunities matching the profile.             | Match proposal topics to priority categories within responsibility scope |
+| activityHistory           | Record of actions taken in fulfillment of declared responsibilities.                    | Proposals created, votes cast, volunteer shifts completed                |
+| socialActivityScoreImpact | Mapping between responsible actions and Social Activity Score adjustments.              | Higher weight for verified voting participation within declared scope    |
 
 ## Responsibility Scope
 

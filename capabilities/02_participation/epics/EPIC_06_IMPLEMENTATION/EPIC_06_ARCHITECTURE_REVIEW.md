@@ -603,18 +603,18 @@ PASS
 
 # Cross-Cutting Issues Summary
 
-| # | Issue | Severity | Documents affected | Resolution required before implementation |
-|---|-------|----------|-------------------|-------------------------------------------|
-| 1 | Implementation Status lifecycle naming drift (`Draft`/`Active` vs `Planned`/`Started`/`In Progress`) | High | `DOMAIN_MODEL.md`, all others | Harmonize to single enum |
-| 2 | `Implementation Update` not modeled structurally | Medium | `DOMAIN_LANGUAGE.md`, `DOMAIN_MODEL.md` | Clarify nomenclature or add type |
-| 3 | Achievement recorder identity vs public privacy | Medium | `DOMAIN_MODEL.md`, `PUBLIC_PROJECTION.md` | Document operational-only field rule |
-| 4 | Achievement recording authorization roles undefined | Medium | `STATE_MACHINE.md`, `DOMAIN_DECISIONS.md` | Version 1 bootstrap role policy |
-| 5 | Frozen Policy completion criteria ownership | Medium | Epic 05 fixture reference, Epic 06 store | Document read contract and bootstrap thresholds |
-| 6 | Missing `IMPLEMENTATION_PLAN.md` | Medium | Engineering process | Create before Sprint 1 |
-| 7 | Missing `EPIC_06_ARCHITECTURE_FREEZE.md` | Medium | Governance | Create before engineering gate |
-| 8 | Optional milestone progress count semantics | Low | Derivation spec | Clarify in implementation plan |
-| 9 | Mid-execution milestone structure mutation | Low | `STATE_MACHINE.md` | Default forbid rule in plan |
-| 10 | Public lifecycle visibility defaults | Low | `PUBLIC_PROJECTION.md` | Define in implementation plan |
+| #   | Issue                                                                                                | Severity | Documents affected                        | Resolution required before implementation       |
+| --- | ---------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------- | ----------------------------------------------- |
+| 1   | Implementation Status lifecycle naming drift (`Draft`/`Active` vs `Planned`/`Started`/`In Progress`) | High     | `DOMAIN_MODEL.md`, all others             | Harmonize to single enum                        |
+| 2   | `Implementation Update` not modeled structurally                                                     | Medium   | `DOMAIN_LANGUAGE.md`, `DOMAIN_MODEL.md`   | Clarify nomenclature or add type                |
+| 3   | Achievement recorder identity vs public privacy                                                      | Medium   | `DOMAIN_MODEL.md`, `PUBLIC_PROJECTION.md` | Document operational-only field rule            |
+| 4   | Achievement recording authorization roles undefined                                                  | Medium   | `STATE_MACHINE.md`, `DOMAIN_DECISIONS.md` | Version 1 bootstrap role policy                 |
+| 5   | Frozen Policy completion criteria ownership                                                          | Medium   | Epic 05 fixture reference, Epic 06 store  | Document read contract and bootstrap thresholds |
+| 6   | Missing `IMPLEMENTATION_PLAN.md`                                                                     | Medium   | Engineering process                       | Create before Sprint 1                          |
+| 7   | Missing `EPIC_06_ARCHITECTURE_FREEZE.md`                                                             | Medium   | Governance                                | Create before engineering gate                  |
+| 8   | Optional milestone progress count semantics                                                          | Low      | Derivation spec                           | Clarify in implementation plan                  |
+| 9   | Mid-execution milestone structure mutation                                                           | Low      | `STATE_MACHINE.md`                        | Default forbid rule in plan                     |
+| 10  | Public lifecycle visibility defaults                                                                 | Low      | `PUBLIC_PROJECTION.md`                    | Define in implementation plan                   |
 
 Issues 1–3 should be closed before `@hu/types` domain definitions begin.
 
@@ -626,24 +626,24 @@ Issues 8–10 may be deferred in writing within Version 1 scope notes at archite
 
 # Verdict Summary
 
-| Section | Verdict |
-|---------|---------|
-| 1. Domain Integrity | CONDITIONAL |
-| 2. Aggregate Responsibilities | PASS |
-| 3. Aggregate Boundaries | CONDITIONAL |
-| 4. State Machine | CONDITIONAL |
-| 5. Derived Progress Model | PASS |
-| 6. Evidence Model | PASS |
-| 7. Workspace | PASS |
-| 8. Public Projection | PASS |
-| 9. Humanity Assistant Integration | PASS |
-| 10. Privacy Model | CONDITIONAL |
-| 11. Explainable Honesty | PASS |
-| 12. Transparent Progress | CONDITIONAL |
-| 13. Participation Pipeline Integration | PASS |
-| 14. Future Evolution Readiness | PASS |
-| 15. Platform Standards | CONDITIONAL |
-| Future Extension Without Present Complexity | PASS |
+| Section                                     | Verdict     |
+| ------------------------------------------- | ----------- |
+| 1. Domain Integrity                         | CONDITIONAL |
+| 2. Aggregate Responsibilities               | PASS        |
+| 3. Aggregate Boundaries                     | CONDITIONAL |
+| 4. State Machine                            | CONDITIONAL |
+| 5. Derived Progress Model                   | PASS        |
+| 6. Evidence Model                           | PASS        |
+| 7. Workspace                                | PASS        |
+| 8. Public Projection                        | PASS        |
+| 9. Humanity Assistant Integration           | PASS        |
+| 10. Privacy Model                           | CONDITIONAL |
+| 11. Explainable Honesty                     | PASS        |
+| 12. Transparent Progress                    | CONDITIONAL |
+| 13. Participation Pipeline Integration      | PASS        |
+| 14. Future Evolution Readiness              | PASS        |
+| 15. Platform Standards                      | CONDITIONAL |
+| Future Extension Without Present Complexity | PASS        |
 
 **Summary:** 8 PASS · 7 CONDITIONAL · 0 FAIL
 

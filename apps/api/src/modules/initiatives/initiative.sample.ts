@@ -6,7 +6,8 @@ export const sampleInitiative: Initiative = {
   createdAt: "2026-06-27T00:00:00.000Z",
   updatedAt: "2026-06-27T00:00:00.000Z",
   title: "Community Garden Initiative",
-  description: "Establish a shared community garden to improve local food access and neighborhood cooperation.",
+  description:
+    "Establish a shared community garden to improve local food access and neighborhood cooperation.",
   status: "draft",
   visibility: {
     policy: "steward_only",

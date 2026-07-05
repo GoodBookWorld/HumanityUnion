@@ -7,5 +7,7 @@ export async function getCurrentMember(): Promise<Member> {
 }
 
 export async function getPublicMember(uniqueName: string): Promise<MemberPublicProjection> {
-  return apiRequest<MemberPublicProjection>(`/api/v1/members/public/${encodeURIComponent(uniqueName)}`);
+  return apiRequest<MemberPublicProjection>(
+    `/api/v1/members/public/${encodeURIComponent(uniqueName)}`,
+  );
 }

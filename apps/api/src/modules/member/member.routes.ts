@@ -11,13 +11,7 @@ import {
 
 const memberRouter = Router();
 
-const EDITABLE_FIELDS = new Set([
-  "displayName",
-  "country",
-  "region",
-  "city",
-  "languages",
-]);
+const EDITABLE_FIELDS = new Set(["displayName", "country", "region", "city", "languages"]);
 
 function createFailureResponse(message: string) {
   return {
@@ -37,7 +31,9 @@ memberRouter.get("/public/:uniqueName", (req, res) => {
     return;
   }
 
-  res.json(createSuccessResponse(toMemberPublicProjection(member), "Public member profile loaded."));
+  res.json(
+    createSuccessResponse(toMemberPublicProjection(member), "Public member profile loaded."),
+  );
 });
 
 memberRouter.get("/me", authenticationMiddleware, (req, res) => {
@@ -80,7 +76,10 @@ memberRouter.patch("/me", authenticationMiddleware, (req, res) => {
   }
 
   if (body.languages !== undefined) {
-    if (!Array.isArray(body.languages) || !body.languages.every((value) => typeof value === "string")) {
+    if (
+      !Array.isArray(body.languages) ||
+      !body.languages.every((value) => typeof value === "string")
+    ) {
       res.status(400).json(createFailureResponse('Field "languages" must be an array of strings.'));
       return;
     }

@@ -1,8 +1,4 @@
-import type {
-  AchievementId,
-  EvidenceId,
-  ImplementationId,
-} from "./identifiers.js";
+import type { AchievementId, EvidenceId, ImplementationId } from "./identifiers.js";
 import type { EvidenceAttachment } from "./evidence-attachment.js";
 import type { EvidenceKind } from "./evidence-kind.js";
 import type { EvidenceLink } from "./evidence-link.js";

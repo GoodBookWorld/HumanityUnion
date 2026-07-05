@@ -5,10 +5,7 @@ import { useState } from "react";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 
-import {
-  activateImplementationCommitment,
-  submitImplementationCommitment,
-} from "../api";
+import { activateImplementationCommitment, submitImplementationCommitment } from "../api";
 import {
   BOOTSTRAP_PARTICIPANT_ID,
   formatCommitmentDate,
@@ -37,9 +34,7 @@ export function ParticipantCommitmentSection({
     setErrorMessage(null);
 
     try {
-      const updated = await submitImplementationCommitment(
-        commitment.implementationCommitmentId,
-      );
+      const updated = await submitImplementationCommitment(commitment.implementationCommitmentId);
       onCommitmentUpdated(updated);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unknown error");
@@ -53,9 +48,7 @@ export function ParticipantCommitmentSection({
     setErrorMessage(null);
 
     try {
-      const updated = await activateImplementationCommitment(
-        commitment.implementationCommitmentId,
-      );
+      const updated = await activateImplementationCommitment(commitment.implementationCommitmentId);
       onCommitmentUpdated(updated);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unknown error");
@@ -68,10 +61,7 @@ export function ParticipantCommitmentSection({
     <div className="commitment-participant-status">
       <ProfileField label="Aggregate Lifecycle" value={commitment.status} />
       <ProfileField label="Collection Meaning" value={getLifecycleSummary(commitment.status)} />
-      <ProfileField
-        label="Your Active Declaration"
-        value={hasActive ? "Recorded" : "None"}
-      />
+      <ProfileField label="Your Active Declaration" value={hasActive ? "Recorded" : "None"} />
 
       {activeItem ? (
         <>

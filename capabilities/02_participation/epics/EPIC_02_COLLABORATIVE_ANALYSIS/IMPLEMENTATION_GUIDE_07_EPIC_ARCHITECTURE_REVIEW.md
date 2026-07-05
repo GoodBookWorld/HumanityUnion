@@ -361,17 +361,17 @@ HTTP 200
 
 # Review Summary
 
-| Category | Result |
-|----------|--------|
-| Domain | PASS |
-| Store | PASS |
-| API | PASS |
-| Workspace | PASS |
-| Public Projection | PASS |
-| Platform Integration | PASS |
-| Engineering | PASS |
-| Documentation | PASS |
-| Repository | FAIL |
+| Category             | Result |
+| -------------------- | ------ |
+| Domain               | PASS   |
+| Store                | PASS   |
+| API                  | PASS   |
+| Workspace            | PASS   |
+| Public Projection    | PASS   |
+| Platform Integration | PASS   |
+| Engineering          | PASS   |
+| Documentation        | PASS   |
+| Repository           | FAIL   |
 
 ---
 

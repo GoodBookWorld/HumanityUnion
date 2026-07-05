@@ -16,7 +16,10 @@ import {
   implementationCommitmentRouter,
   publicImplementationCommitmentRouter,
 } from "./modules/implementation-commitment/index.js";
-import { implementationRouter, publicImplementationRouter } from "./modules/implementation/index.js";
+import {
+  implementationRouter,
+  publicImplementationRouter,
+} from "./modules/implementation/index.js";
 import { petitionRouter, publicPetitionRouter } from "./modules/petition/index.js";
 import initiativesRouter from "./modules/initiatives/initiative.routes.js";
 import publicInitiativeRouter from "./modules/initiatives/public-initiative.routes.js";

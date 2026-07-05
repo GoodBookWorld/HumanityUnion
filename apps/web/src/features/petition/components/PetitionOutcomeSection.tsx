@@ -18,9 +18,7 @@ export function PetitionOutcomeSection({ petition }: PetitionOutcomeSectionProps
   }
 
   if (!petition.outcome) {
-    return (
-      <p className="petition-outcome__empty">Petition Outcome is not yet available.</p>
-    );
+    return <p className="petition-outcome__empty">Petition Outcome is not yet available.</p>;
   }
 
   return (

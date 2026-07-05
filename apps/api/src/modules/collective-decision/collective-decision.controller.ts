@@ -81,10 +81,7 @@ export function getCollectiveDecisionHandler(req: Request, res: Response): void 
   }
 
   res.json(
-    createSuccessResponse(
-      mapCollectiveDecisionResponse(decision),
-      "Collective Decision loaded.",
-    ),
+    createSuccessResponse(mapCollectiveDecisionResponse(decision), "Collective Decision loaded."),
   );
 }
 
@@ -102,7 +99,12 @@ export function createCollectiveDecisionHandler(req: Request, res: Response): vo
 
     res
       .status(201)
-      .json(createSuccessResponse(mapCollectiveDecisionResponse(created), "Collective Decision created."));
+      .json(
+        createSuccessResponse(
+          mapCollectiveDecisionResponse(created),
+          "Collective Decision created.",
+        ),
+      );
   } catch (error) {
     handleStoreError(res, error);
   }
@@ -140,7 +142,10 @@ export function patchCollectiveDecisionHandler(req: Request, res: Response): voi
     }
 
     res.json(
-      createSuccessResponse(mapCollectiveDecisionResponse(decision), "Collective Decision updated."),
+      createSuccessResponse(
+        mapCollectiveDecisionResponse(decision),
+        "Collective Decision updated.",
+      ),
     );
   } catch (error) {
     handleStoreError(res, error);
@@ -165,10 +170,7 @@ export function submitParticipantDecisionHandler(req: Request, res: Response): v
   }
 
   try {
-    const decision = submitParticipantDecision(
-      decisionId,
-      parseParticipantDecision(body),
-    );
+    const decision = submitParticipantDecision(decisionId, parseParticipantDecision(body));
 
     if (!decision) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));

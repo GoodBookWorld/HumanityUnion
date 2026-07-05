@@ -74,17 +74,17 @@ Uniform systems are easier to understand, maintain, and extend.
 
 The Humanity Union Platform follows these permanent principles:
 
-* Principle of Irreversible Architecture
-* Principle of Machine Independence
-* Principle of Progressive Bootstrap
-* Principle of Shared Domain
-* Principle of Feature-first Architecture
-* Principle of Capability-Driven Development
-* Principle of Implementation follows Approved Guide
-* Principle of Stable Repository Layout
-* Principle of Contract-First API
-* Principle of Backward-Compatible APIs
-* Principle of Documentation Synchronization
+- Principle of Irreversible Architecture
+- Principle of Machine Independence
+- Principle of Progressive Bootstrap
+- Principle of Shared Domain
+- Principle of Feature-first Architecture
+- Principle of Capability-Driven Development
+- Principle of Implementation follows Approved Guide
+- Principle of Stable Repository Layout
+- Principle of Contract-First API
+- Principle of Backward-Compatible APIs
+- Principle of Documentation Synchronization
 
 Future principles may be added only through Architecture Review.
 
@@ -154,11 +154,11 @@ Documentation must evolve together with implementation.
 
 Every Capability includes:
 
-* Capability Specification
-* Roadmap
-* Changelog
-* Review
-* Implementation Guides
+- Capability Specification
+- Roadmap
+- Changelog
+- Review
+- Implementation Guides
 
 Each Capability is independently reviewable.
 
@@ -200,11 +200,11 @@ Growth occurs inside established architectural boundaries.
 
 Every completed implementation must satisfy:
 
-* successful type checking;
-* successful runtime verification;
-* architectural consistency;
-* documentation synchronization;
-* approved review.
+- successful type checking;
+- successful runtime verification;
+- architectural consistency;
+- documentation synchronization;
+- approved review.
 
 No implementation is considered complete before verification.
 
@@ -216,10 +216,10 @@ Architecture Reviews are mandatory engineering checkpoints.
 
 Their purpose is to:
 
-* protect architectural integrity;
-* prevent architectural drift;
-* validate implementation quality;
-* approve future evolution.
+- protect architectural integrity;
+- prevent architectural drift;
+- validate implementation quality;
+- approve future evolution.
 
 Architecture Reviews are part of normal development.
 
@@ -243,10 +243,10 @@ Performance optimization should never compromise architectural quality without m
 
 Every contributor should be able to understand:
 
-* why the platform exists;
-* how it is organized;
-* how implementation decisions are made;
-* how new capabilities are added.
+- why the platform exists;
+- how it is organized;
+- how implementation decisions are made;
+- how new capabilities are added.
 
 Engineering documentation exists to transfer knowledge, not only to describe software.
 

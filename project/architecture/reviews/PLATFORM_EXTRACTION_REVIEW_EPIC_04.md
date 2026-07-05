@@ -531,13 +531,13 @@ These reinforcements validate prior platform architecture rather than introducin
 
 The following concepts are architecturally mature enough to enter the platform Architecture Library as accepted standards or principles:
 
-| Concept | Recommended Home | Status |
-|---------|------------------|--------|
+| Concept                          | Recommended Home                     | Status   |
+| -------------------------------- | ------------------------------------ | -------- |
 | Collective Participation Journey | `core/UI_ARCHITECTURE_GUIDELINES.md` | Approved |
-| Next Meaningful Action | `core/UI_ARCHITECTURE_GUIDELINES.md` | Approved |
-| Contextual Participation Pattern | `core/PLATFORM_PATTERNS.md` | Approved |
-| Contribution Recognition | `core/UI_ARCHITECTURE_GUIDELINES.md` | Approved |
-| Public Endorsement Layer | `core/PLATFORM_PATTERNS.md` | Approved |
+| Next Meaningful Action           | `core/UI_ARCHITECTURE_GUIDELINES.md` | Approved |
+| Contextual Participation Pattern | `core/PLATFORM_PATTERNS.md`          | Approved |
+| Contribution Recognition         | `core/UI_ARCHITECTURE_GUIDELINES.md` | Approved |
+| Public Endorsement Layer         | `core/PLATFORM_PATTERNS.md`          | Approved |
 
 These concepts align with existing principles:
 
@@ -556,12 +556,12 @@ They do not require new platform services before documentation adoption.
 
 The following concepts are valid but should remain deferred until supporting platform boundaries or validation exist:
 
-| Concept | Reason for Deferral | Target |
-|---------|---------------------|--------|
-| Operational Workspace Standard | Requires consolidation of Epic 01–04 workspace conventions into one platform section; Petition spec is most mature but not yet canonical across all workspaces | `core/UI_ARCHITECTURE_GUIDELINES.md` |
-| Participation Navigator | Explicitly future platform service; no cross-aggregate contract yet | `backlog/ARCHITECTURE_BACKLOG.md` then future service specification |
-| Registration Gateway | Requires Capability 01 boundary specification and handoff contract before platform pattern is complete | `core/PLATFORM_PATTERNS.md`, `core/SYSTEM_ARCHITECTURE.md` |
-| Participant Workspace | Introduced in Epic 04 domain language but owned by cross-capability participant experience; not yet a platform document | Capability 01 integration phase |
+| Concept                        | Reason for Deferral                                                                                                                                            | Target                                                              |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Operational Workspace Standard | Requires consolidation of Epic 01–04 workspace conventions into one platform section; Petition spec is most mature but not yet canonical across all workspaces | `core/UI_ARCHITECTURE_GUIDELINES.md`                                |
+| Participation Navigator        | Explicitly future platform service; no cross-aggregate contract yet                                                                                            | `backlog/ARCHITECTURE_BACKLOG.md` then future service specification |
+| Registration Gateway           | Requires Capability 01 boundary specification and handoff contract before platform pattern is complete                                                         | `core/PLATFORM_PATTERNS.md`, `core/SYSTEM_ARCHITECTURE.md`          |
+| Participant Workspace          | Introduced in Epic 04 domain language but owned by cross-capability participant experience; not yet a platform document                                        | Capability 01 integration phase                                     |
 
 Deferral is intentional.
 

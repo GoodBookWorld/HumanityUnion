@@ -20,10 +20,10 @@ This guide does not implement authentication, My Impact, API integration, busine
 
 After completing this guide:
 
-* `apps/web` becomes an executable Next.js application;
-* the web application runs locally;
-* the first Humanity Union page appears in the browser;
-* the application is ready for future Human Experience implementation.
+- `apps/web` becomes an executable Next.js application;
+- the web application runs locally;
+- the first Humanity Union page appears in the browser;
+- the application is ready for future Human Experience implementation.
 
 ---
 
@@ -31,14 +31,14 @@ After completing this guide:
 
 This guide implements foundations from:
 
-* 11_ENGINEERING_ARCHITECTURE.md
-* 12_PLATFORM_API_SPECIFICATION.md
-* 13_DATA_MODEL.md
-* 14_HUMAN_EXPERIENCE_SYSTEM.md
-* 15_DEVELOPMENT_STANDARDS.md
-* IMPLEMENTATION_GUIDE_07_PLATFORM_CORE.md
-* IMPLEMENTATION_GUIDE_08_DOMAIN_TYPES.md
-* IMPLEMENTATION_GUIDE_09_API_BOOTSTRAP.md
+- 11_ENGINEERING_ARCHITECTURE.md
+- 12_PLATFORM_API_SPECIFICATION.md
+- 13_DATA_MODEL.md
+- 14_HUMAN_EXPERIENCE_SYSTEM.md
+- 15_DEVELOPMENT_STANDARDS.md
+- IMPLEMENTATION_GUIDE_07_PLATFORM_CORE.md
+- IMPLEMENTATION_GUIDE_08_DOMAIN_TYPES.md
+- IMPLEMENTATION_GUIDE_09_API_BOOTSTRAP.md
 
 ---
 
@@ -122,15 +122,8 @@ Create:
       }
     ]
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
 ```
 
@@ -156,15 +149,15 @@ Create a minimal layout.
 
 Requirements:
 
-* metadata title:
+- metadata title:
   Humanity Union
 
-* metadata description:
+- metadata description:
   World Solidarity civic technology platform
 
-* import globals.css
+- import globals.css
 
-* render children.
+- render children.
 
 ---
 
@@ -198,10 +191,10 @@ Create minimal global styling.
 
 Requirements:
 
-* remove default margins;
-* use a system font;
-* vertically and horizontally center content;
-* calm minimal appearance.
+- remove default margins;
+- use a system font;
+- vertically and horizontally center content;
+- calm minimal appearance.
 
 No design system yet.
 
@@ -229,14 +222,14 @@ Do not modify unrelated scripts.
 
 Do not create:
 
-* authentication;
-* My Impact;
-* API client;
-* Platform Services;
-* Platform Engines;
-* MongoDB;
-* final design;
-* production homepage.
+- authentication;
+- My Impact;
+- API client;
+- Platform Services;
+- Platform Engines;
+- MongoDB;
+- final design;
+- production homepage.
 
 Do not modify Blueprint.
 
@@ -280,16 +273,16 @@ Humanity Union Platform is starting.
 
 Confirm:
 
-* apps/web exists;
-* package.json exists;
-* tsconfig.json exists;
-* next.config.ts exists;
-* layout.tsx exists;
-* page.tsx exists;
-* globals.css exists;
-* application runs on port 3000;
-* no business logic exists;
-* no API integration exists.
+- apps/web exists;
+- package.json exists;
+- tsconfig.json exists;
+- next.config.ts exists;
+- layout.tsx exists;
+- page.tsx exists;
+- globals.css exists;
+- application runs on port 3000;
+- no business logic exists;
+- no API integration exists.
 
 ---
 
@@ -320,10 +313,10 @@ Implementation Guide 11 — Platform Core Integration
 
 The next guide connects:
 
-* Shared Platform Core
-* Domain Types
-* API
-* Web
+- Shared Platform Core
+- Domain Types
+- API
+- Web
 
 into one coherent engineering system.
 

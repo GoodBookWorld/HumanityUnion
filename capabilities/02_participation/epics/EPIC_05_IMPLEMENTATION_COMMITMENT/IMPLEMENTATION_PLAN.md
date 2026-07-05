@@ -208,16 +208,16 @@ Implementation order:
 
 ## Layer responsibilities
 
-| Step | Layer | Responsibility |
-|------|-------|------------------|
-| 1 | **Domain** | Shared types, enums, identifiers, projection types in `@hu/types` — no business logic |
-| 2 | **Behavior** | Commands, lifecycle transitions, invariant enforcement, derivation (capacity, readiness, needs, satisfaction, summary) |
-| 3 | **Store** | In-memory aggregate persistence, bootstrap seed, `structuredClone` protection, behavior invocation |
-| 4 | **API** | Thin REST operational routes, command endpoints, validators, mappers, standard envelope |
-| 5 | **Workspace** | Operational UI per workspace specification — declaration surface, derived displays, navigation |
-| 6 | **Public Projection** | Projection builder, public API route, public page — aggregate-only public fields |
-| 7 | **Platform Integration** | Bootstrap pipeline linkage, cross-stage navigation, eligibility verification |
-| 8 | **Review** | Architecture review satisfaction, implementation review, repository discipline |
+| Step | Layer                    | Responsibility                                                                                                         |
+| ---- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| 1    | **Domain**               | Shared types, enums, identifiers, projection types in `@hu/types` — no business logic                                  |
+| 2    | **Behavior**             | Commands, lifecycle transitions, invariant enforcement, derivation (capacity, readiness, needs, satisfaction, summary) |
+| 3    | **Store**                | In-memory aggregate persistence, bootstrap seed, `structuredClone` protection, behavior invocation                     |
+| 4    | **API**                  | Thin REST operational routes, command endpoints, validators, mappers, standard envelope                                |
+| 5    | **Workspace**            | Operational UI per workspace specification — declaration surface, derived displays, navigation                         |
+| 6    | **Public Projection**    | Projection builder, public API route, public page — aggregate-only public fields                                       |
+| 7    | **Platform Integration** | Bootstrap pipeline linkage, cross-stage navigation, eligibility verification                                           |
+| 8    | **Review**               | Architecture review satisfaction, implementation review, repository discipline                                         |
 
 Each layer depends only on previous layers.
 
@@ -627,12 +627,12 @@ shows no uncommitted changes for the Epic 05 vertical slice at closure.
 
 Epic 05 depends upon approved vertical slices from:
 
-| Epic | Provides |
-|------|----------|
-| Epic 01 — Initiative Foundation | Initiative aggregate, workspace and public projection references |
-| Epic 02 — Collaborative Analysis | Analysis context for journey presentation (read-only) |
-| Epic 03 — Collective Decision | Approved Outcome eligibility |
-| Epic 04 — Petition | Endorsement context; Petition completion eligibility for commitment path |
+| Epic                             | Provides                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------ |
+| Epic 01 — Initiative Foundation  | Initiative aggregate, workspace and public projection references         |
+| Epic 02 — Collaborative Analysis | Analysis context for journey presentation (read-only)                    |
+| Epic 03 — Collective Decision    | Approved Outcome eligibility                                             |
+| Epic 04 — Petition               | Endorsement context; Petition completion eligibility for commitment path |
 
 Platform foundations provide identity baseline, engineering methodology and UI/API standards.
 
@@ -704,16 +704,16 @@ Deferred items must not block Version 1 vertical slice completion.
 
 # Risks and Controls
 
-| Risk | Control |
-|------|---------|
-| Commitment created before Petition / Decision eligibility | Store and API enforce preconditions from `STATE_MACHINE.md` |
-| Petition signatures counted as capacity | Derivation uses Contribution Items only; Decision 03 enforced in review |
-| Operational data leaks into public projection | Dedicated projection builder; Sprint 5 and Sprint 7 review |
-| Manual readiness override | Derived fields read-only at API and store layers |
-| Workspace pressures participation | Workspace specification and UI guidelines enforced in Sprint 4 review |
-| Behavior duplicated in API controllers | Thin API pattern; rules live in behavior/store |
-| Architecture review preconditions skipped | Sprint 1 includes documentation harmonization deliverables |
-| Aggregate boundary erosion | Reference-only integration; Sprint 6 and Sprint 7 verification |
+| Risk                                                      | Control                                                                 |
+| --------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Commitment created before Petition / Decision eligibility | Store and API enforce preconditions from `STATE_MACHINE.md`             |
+| Petition signatures counted as capacity                   | Derivation uses Contribution Items only; Decision 03 enforced in review |
+| Operational data leaks into public projection             | Dedicated projection builder; Sprint 5 and Sprint 7 review              |
+| Manual readiness override                                 | Derived fields read-only at API and store layers                        |
+| Workspace pressures participation                         | Workspace specification and UI guidelines enforced in Sprint 4 review   |
+| Behavior duplicated in API controllers                    | Thin API pattern; rules live in behavior/store                          |
+| Architecture review preconditions skipped                 | Sprint 1 includes documentation harmonization deliverables              |
+| Aggregate boundary erosion                                | Reference-only integration; Sprint 6 and Sprint 7 verification          |
 
 ---
 

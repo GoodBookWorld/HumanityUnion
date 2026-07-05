@@ -41,14 +41,14 @@ Implementation follows these principles:
 
 Collaborative Analysis depends upon:
 
-| Foundation | Usage |
-|------------|-------|
-| Engineering Foundation | Required |
-| Collective Intelligence Foundation | Required |
-| Intelligence Service Contract | Required |
-| Knowledge Lifecycle | Required |
-| Community Memory | Read-only (future integration) |
-| Humanity Intelligence Assistant | Progressive integration |
+| Foundation                         | Usage                          |
+| ---------------------------------- | ------------------------------ |
+| Engineering Foundation             | Required                       |
+| Collective Intelligence Foundation | Required                       |
+| Intelligence Service Contract      | Required                       |
+| Knowledge Lifecycle                | Required                       |
+| Community Memory                   | Read-only (future integration) |
+| Humanity Intelligence Assistant    | Progressive integration        |
 
 ---
 

@@ -20,10 +20,7 @@ export function AchievementRecordingPanel({
   implementation,
   onImplementationUpdated,
 }: AchievementRecordingPanelProps) {
-  const openMilestones = useMemo(
-    () => getOpenMilestones(implementation),
-    [implementation],
-  );
+  const openMilestones = useMemo(() => getOpenMilestones(implementation), [implementation]);
   const [milestoneId, setMilestoneId] = useState(openMilestones[0]?.milestoneId ?? "");
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
@@ -76,7 +73,9 @@ export function AchievementRecordingPanel({
       onImplementationUpdated(updated);
       setTitle("");
       setSummary("");
-      setSuccessMessage("Collective achievement recorded. Derived progress will update from this record.");
+      setSuccessMessage(
+        "Collective achievement recorded. Derived progress will update from this record.",
+      );
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unknown error");
     } finally {
@@ -144,9 +143,7 @@ export function AchievementRecordingPanel({
         </div>
       ) : null}
 
-      {successMessage ? (
-        <p className="implementation-section__note">{successMessage}</p>
-      ) : null}
+      {successMessage ? <p className="implementation-section__note">{successMessage}</p> : null}
 
       {errorMessage ? <p className="implementation-section__error">{errorMessage}</p> : null}
 

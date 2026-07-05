@@ -70,10 +70,10 @@ It does not serve administration, moderation, coordination or operational manage
 
 Operational Workspace and Public Projection are intentionally separate surfaces.
 
-| Surface | Audience | Purpose | Writable |
-|---------|----------|---------|----------|
-| Operational Workspace | Registered participants | Informed declaration and personal commitment management | Through operational API commands only |
-| Public Projection | Public visitors, observers, society | Transparency and civic observation | Read-only |
+| Surface               | Audience                            | Purpose                                                 | Writable                              |
+| --------------------- | ----------------------------------- | ------------------------------------------------------- | ------------------------------------- |
+| Operational Workspace | Registered participants             | Informed declaration and personal commitment management | Through operational API commands only |
+| Public Projection     | Public visitors, observers, society | Transparency and civic observation                      | Read-only                             |
 
 **Operational Workspace** supports participation.
 

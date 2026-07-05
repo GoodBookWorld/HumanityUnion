@@ -1,9 +1,4 @@
-import type {
-  AchievementId,
-  ImplementationId,
-  MilestoneId,
-  ParticipantId,
-} from "./identifiers.js";
+import type { AchievementId, ImplementationId, MilestoneId, ParticipantId } from "./identifiers.js";
 
 /** Recorded collective accomplishment advancing or satisfying a Milestone. */
 export interface Achievement {

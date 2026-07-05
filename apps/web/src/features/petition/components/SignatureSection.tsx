@@ -51,10 +51,7 @@ export function SignatureSection({
     return (
       <div className="signature-section signature-section--signed">
         <p className="signature-section__status">Signature Recorded</p>
-        <ProfileField
-          label="Signed At"
-          value={formatPetitionDate(participantSignature.signedAt)}
-        />
+        <ProfileField label="Signed At" value={formatPetitionDate(participantSignature.signedAt)} />
         <p className="signature-section__note">
           Your endorsement is recorded and cannot be changed here.
         </p>
@@ -80,9 +77,7 @@ export function SignatureSection({
     return (
       <div className="signature-section signature-section--inactive">
         <p className="signature-section__inactive">{unavailableMessage}</p>
-        {nextChangeMessage ? (
-          <p className="signature-section__next">{nextChangeMessage}</p>
-        ) : null}
+        {nextChangeMessage ? <p className="signature-section__next">{nextChangeMessage}</p> : null}
       </div>
     );
   }

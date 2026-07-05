@@ -71,9 +71,7 @@ export function validateCreateDecision(decision: CollectiveDecision): string | n
   return null;
 }
 
-export function validateParticipantDecisionBody(
-  body: Record<string, unknown>,
-): string | null {
+export function validateParticipantDecisionBody(body: Record<string, unknown>): string | null {
   if (typeof body.participantDecisionId !== "string" || !body.participantDecisionId.trim()) {
     return "participantDecisionId is required.";
   }

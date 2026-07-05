@@ -14,10 +14,10 @@ This document records the formal architectural reviews of Capability 01 — Huma
 
 Its purpose is to verify that implementation remains aligned with:
 
-* Blueprint;
-* Platform Architecture;
-* Engineering Standards;
-* Capability Specification.
+- Blueprint;
+- Platform Architecture;
+- Engineering Standards;
+- Capability Specification.
 
 Architecture Reviews are approval checkpoints.
 
@@ -29,11 +29,11 @@ Implementation continues only after successful review.
 
 Each Architecture Review evaluates:
 
-* architectural consistency;
-* engineering quality;
-* implementation completeness;
-* documentation consistency;
-* future extensibility.
+- architectural consistency;
+- engineering quality;
+- implementation completeness;
+- documentation consistency;
+- future extensibility.
 
 ---
 
@@ -41,13 +41,13 @@ Each Architecture Review evaluates:
 
 Every review includes:
 
-* Review Number
-* Date
-* Capability Status
-* Scope
-* Findings
-* Required Actions
-* Decision
+- Review Number
+- Date
+- Capability Status
+- Scope
+- Findings
+- Required Actions
+- Decision
 
 ---
 
@@ -71,10 +71,10 @@ Capability 01 has been formally established.
 
 The following documents have been approved:
 
-* CAPABILITY_01_HUMAN_IDENTITY.md
-* ROADMAP.md
-* CHANGELOG.md
-* REVIEW.md
+- CAPABILITY_01_HUMAN_IDENTITY.md
+- ROADMAP.md
+- CHANGELOG.md
+- REVIEW.md
 
 The implementation sequence has been approved.
 
@@ -96,13 +96,13 @@ Approved
 
 Future Architecture Reviews should evaluate:
 
-* completed implementation guides;
-* architectural integrity;
-* domain separation;
-* API consistency;
-* web consistency;
-* documentation synchronization;
-* engineering principles compliance.
+- completed implementation guides;
+- architectural integrity;
+- domain separation;
+- API consistency;
+- web consistency;
+- documentation synchronization;
+- engineering principles compliance.
 
 ---
 
@@ -134,11 +134,11 @@ Implementation requires redesign before continuation.
 
 The final review for Capability 01 confirms:
 
-* all guides completed;
-* all verification passed;
-* architecture preserved;
-* documentation synchronized;
-* capability success criteria satisfied.
+- all guides completed;
+- all verification passed;
+- architecture preserved;
+- documentation synchronized;
+- capability success criteria satisfied.
 
 Only after successful completion review may Capability 01 receive the status:
 

@@ -20,10 +20,10 @@ This guide does not create authentication, database storage, registration, login
 
 After completing this guide:
 
-* API can return a sample Member;
-* Member API uses the shared `@hu/types` domain model;
-* API response follows the Platform API Specification;
-* the Member domain becomes visible through the running API.
+- API can return a sample Member;
+- Member API uses the shared `@hu/types` domain model;
+- API response follows the Platform API Specification;
+- the Member domain becomes visible through the running API.
 
 ---
 
@@ -31,11 +31,11 @@ After completing this guide:
 
 This guide implements foundations from:
 
-* 10_PLATFORM_CONTRACT.md
-* 12_PLATFORM_API_SPECIFICATION.md
-* 13_DATA_MODEL.md
-* 15_DEVELOPMENT_STANDARDS.md
-* IMPLEMENTATION_GUIDE_11_MEMBER_DOMAIN.md
+- 10_PLATFORM_CONTRACT.md
+- 12_PLATFORM_API_SPECIFICATION.md
+- 13_DATA_MODEL.md
+- 15_DEVELOPMENT_STANDARDS.md
+- IMPLEMENTATION_GUIDE_11_MEMBER_DOMAIN.md
 
 ---
 
@@ -102,15 +102,15 @@ If imports from `@hu/types` fail, fix package exports or workspace linking witho
 
 Create a sample Member with:
 
-* id;
-* profile;
-* status;
-* verificationLevel;
-* roles;
-* fair;
-* impactProfile;
-* createdAt;
-* updatedAt.
+- id;
+- profile;
+- status;
+- verificationLevel;
+- roles;
+- fair;
+- impactProfile;
+- createdAt;
+- updatedAt.
 
 Use neutral bootstrap data.
 
@@ -153,14 +153,14 @@ Member profile loaded.
 
 Do not create:
 
-* authentication;
-* database models;
-* MongoDB connection;
-* registration;
-* login;
-* password fields;
-* frontend page;
-* real user lookup.
+- authentication;
+- database models;
+- MongoDB connection;
+- registration;
+- login;
+- password fields;
+- frontend page;
+- real user lookup.
 
 Do not modify Blueprint.
 
@@ -190,10 +190,10 @@ http://localhost:4000/api/v1/members/me
 
 Expected:
 
-* success true;
-* Member object returned;
-* no authentication required yet;
-* response format matches Platform API Specification.
+- success true;
+- Member object returned;
+- no authentication required yet;
+- response format matches Platform API Specification.
 
 ---
 
@@ -201,14 +201,14 @@ Expected:
 
 Confirm:
 
-* member module folder exists;
-* `member.sample.ts` exists;
-* `member.routes.ts` exists;
-* `index.ts` exists;
-* endpoint `/api/v1/members/me` works;
-* sample Member uses shared `Member` type;
-* no database code exists;
-* no authentication code exists.
+- member module folder exists;
+- `member.sample.ts` exists;
+- `member.routes.ts` exists;
+- `index.ts` exists;
+- endpoint `/api/v1/members/me` works;
+- sample Member uses shared `Member` type;
+- no database code exists;
+- no authentication code exists.
 
 ---
 

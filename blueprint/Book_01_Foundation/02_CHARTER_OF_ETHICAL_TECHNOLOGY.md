@@ -62,10 +62,10 @@ Humanity Union should prefer transparent guidance over hidden manipulation.
 
 A recommended action should answer:
 
-* why it appears;
-* how it matches the Member;
-* what impact it may create;
-* how much time it may require.
+- why it appears;
+- how it matches the Member;
+- what impact it may create;
+- how much time it may require.
 
 ---
 
@@ -97,12 +97,12 @@ The platform must not optimize primarily for time spent, clicks, emotional react
 
 Humanity Union should optimize for:
 
-* understanding;
-* meaningful participation;
-* cooperation;
-* trust;
-* measurable positive impact;
-* personal and collective growth.
+- understanding;
+- meaningful participation;
+- cooperation;
+- trust;
+- measurable positive impact;
+- personal and collective growth.
 
 Engagement is useful only when it leads to meaningful action.
 
@@ -138,12 +138,12 @@ Trust must be built into the architecture.
 
 The platform should clearly distinguish:
 
-* verified information;
-* personal opinion;
-* institutional statement;
-* public discussion;
-* automated recommendation;
-* moderation decision.
+- verified information;
+- personal opinion;
+- institutional statement;
+- public discussion;
+- automated recommendation;
+- moderation decision.
 
 Members should understand the source, status, and reliability of information whenever possible.
 
@@ -187,11 +187,11 @@ It should create Human Growth Experience.
 
 Every major feature should help a Member:
 
-* understand more clearly;
-* act more meaningfully;
-* cooperate more effectively;
-* see their contribution;
-* discover their next horizon of possibility.
+- understand more clearly;
+- act more meaningfully;
+- cooperate more effectively;
+- see their contribution;
+- discover their next horizon of possibility.
 
 ---
 

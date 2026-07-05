@@ -38,9 +38,7 @@ function buildPublicDecisionResult(decision: CollectiveDecision): PublicDecision
   return {
     calculatedAt: decision.decisionResult.calculatedAt,
     optionResults: decision.decisionResult.optionResults.map((result) => {
-      const option = decision.ballot.options.find(
-        (entry) => entry.optionId === result.optionId,
-      );
+      const option = decision.ballot.options.find((entry) => entry.optionId === result.optionId);
 
       return {
         label: option?.label ?? result.optionId,

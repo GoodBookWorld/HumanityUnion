@@ -82,10 +82,10 @@ Bootstrap identifiers verified:
 
 # Terminal Verification
 
-| Check | Result | Notes |
-|-------|--------|-------|
-| `pnpm typecheck` | **PASS** | `@hu/types`, `@hu/api`, `@hu/web` — `tsc --noEmit` succeeded |
-| `git status` | **Pending closure verification** | Epic 06 vertical slice must be committed; verify clean before repository closure |
+| Check            | Result                           | Notes                                                                            |
+| ---------------- | -------------------------------- | -------------------------------------------------------------------------------- |
+| `pnpm typecheck` | **PASS**                         | `@hu/types`, `@hu/api`, `@hu/web` — `tsc --noEmit` succeeded                     |
+| `git status`     | **Pending closure verification** | Epic 06 vertical slice must be committed; verify clean before repository closure |
 
 Typecheck command:
 
@@ -105,31 +105,31 @@ Operational and public routes were verified against bootstrap data (`implementat
 
 ## Web Routes
 
-| Route | Surface | Bootstrap Result |
-|-------|---------|------------------|
-| `/implementations/implementation-bootstrap-001` | Operational Workspace | HTTP 200 |
-| `/implementations/public/implementation-bootstrap-001` | Public Implementation | HTTP 200 |
+| Route                                                  | Surface               | Bootstrap Result |
+| ------------------------------------------------------ | --------------------- | ---------------- |
+| `/implementations/implementation-bootstrap-001`        | Operational Workspace | HTTP 200         |
+| `/implementations/public/implementation-bootstrap-001` | Public Implementation | HTTP 200         |
 
 ## Operational API Routes
 
-| Method | Route | Purpose |
-|--------|-------|---------|
-| GET | `/api/v1/implementations` | List implementations |
-| GET | `/api/v1/implementations/:implementationId` | Load operational aggregate |
-| GET | `/api/v1/implementations/by-initiative/:initiativeId` | Lookup by Initiative |
-| GET | `/api/v1/implementations/by-collective-decision/:decisionId` | Lookup by Collective Decision |
-| GET | `/api/v1/implementations/by-petition/:petitionId` | Lookup by Petition |
-| GET | `/api/v1/implementations/by-commitment/:commitmentId` | Lookup by Implementation Commitment |
-| POST | `/api/v1/implementations` | Create implementation |
-| PATCH | `/api/v1/implementations/:implementationId` | Update preparatory fields |
-| POST | `/api/v1/implementations/:implementationId/start` | Start implementation |
-| POST | `/api/v1/implementations/:implementationId/phases` | Add phase |
-| PATCH | `/api/v1/implementations/:implementationId/phases/:phaseId` | Update phase |
-| POST | `/api/v1/implementations/:implementationId/milestones` | Add milestone |
-| PATCH | `/api/v1/implementations/:implementationId/milestones/:milestoneId` | Update milestone |
-| POST | `/api/v1/implementations/:implementationId/achievements` | Record achievement |
-| POST | `/api/v1/implementations/:implementationId/achievements/:achievementId/evidence` | Attach evidence |
-| POST | `/api/v1/implementations/:implementationId/archive` | Archive implementation |
+| Method | Route                                                                            | Purpose                             |
+| ------ | -------------------------------------------------------------------------------- | ----------------------------------- |
+| GET    | `/api/v1/implementations`                                                        | List implementations                |
+| GET    | `/api/v1/implementations/:implementationId`                                      | Load operational aggregate          |
+| GET    | `/api/v1/implementations/by-initiative/:initiativeId`                            | Lookup by Initiative                |
+| GET    | `/api/v1/implementations/by-collective-decision/:decisionId`                     | Lookup by Collective Decision       |
+| GET    | `/api/v1/implementations/by-petition/:petitionId`                                | Lookup by Petition                  |
+| GET    | `/api/v1/implementations/by-commitment/:commitmentId`                            | Lookup by Implementation Commitment |
+| POST   | `/api/v1/implementations`                                                        | Create implementation               |
+| PATCH  | `/api/v1/implementations/:implementationId`                                      | Update preparatory fields           |
+| POST   | `/api/v1/implementations/:implementationId/start`                                | Start implementation                |
+| POST   | `/api/v1/implementations/:implementationId/phases`                               | Add phase                           |
+| PATCH  | `/api/v1/implementations/:implementationId/phases/:phaseId`                      | Update phase                        |
+| POST   | `/api/v1/implementations/:implementationId/milestones`                           | Add milestone                       |
+| PATCH  | `/api/v1/implementations/:implementationId/milestones/:milestoneId`              | Update milestone                    |
+| POST   | `/api/v1/implementations/:implementationId/achievements`                         | Record achievement                  |
+| POST   | `/api/v1/implementations/:implementationId/achievements/:achievementId/evidence` | Attach evidence                     |
+| POST   | `/api/v1/implementations/:implementationId/archive`                              | Archive implementation              |
 
 Bootstrap operational routes return expected responses.
 
@@ -137,9 +137,9 @@ No explicit Complete, Complete Milestone or Complete Phase endpoints are present
 
 ## Public API Routes
 
-| Method | Route | Purpose |
-|--------|-------|---------|
-| GET | `/api/v1/public/implementations/:implementationId` | Public Implementation projection |
+| Method | Route                                              | Purpose                          |
+| ------ | -------------------------------------------------- | -------------------------------- |
+| GET    | `/api/v1/public/implementations/:implementationId` | Public Implementation projection |
 
 Bootstrap public route returns sanitized projection without operational leakage.
 
@@ -147,12 +147,12 @@ Bootstrap public route returns sanitized projection without operational leakage.
 
 Cross-stage navigation verified through bootstrap linkage:
 
-| Context | Integration |
-|---------|-------------|
-| Implementation Commitment workspace | View Implementation link resolves to operational workspace |
-| Implementation Commitment public page | View Implementation link resolves to public projection |
-| Implementation workspace | Related navigation to prior pipeline stages and public projection |
-| Petition Related Links | View Implementation lookup by petition identifier |
+| Context                               | Integration                                                       |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| Implementation Commitment workspace   | View Implementation link resolves to operational workspace        |
+| Implementation Commitment public page | View Implementation link resolves to public projection            |
+| Implementation workspace              | Related navigation to prior pipeline stages and public projection |
+| Petition Related Links                | View Implementation lookup by petition identifier                 |
 
 Pipeline navigation succeeds end-to-end on bootstrap identifiers.
 
@@ -160,23 +160,23 @@ Pipeline navigation succeeds end-to-end on bootstrap identifiers.
 
 # Review Areas
 
-| Area | Verdict | Summary |
-|------|---------|---------|
-| Domain | **PASS** | Implementation aggregate types, entities, value objects and `PublicImplementationProjection` exported from `@hu/types`; canonical lifecycle `Planned`, `Started`, `InProgress`, `Completed`, `Archived` |
-| Store | **PASS** | In-memory store with bootstrap seed, command handlers, invariant enforcement, `structuredClone` on reads, derived state refresh on material changes |
-| API | **PASS** | Thin REST under `/api/v1/implementations`; validators, mappers, standard envelope; lookup routes; no manual completion commands |
-| Workspace | **PASS** | Operational workspace at `/implementations/:implementationId`; read-only sections per spec; achievement recording and evidence attachment panels wired |
-| Public Projection | **PASS** | Dedicated projection builder; public API and page; participant IDs and storage paths excluded; derived values labeled |
-| Platform Integration | **PASS** | Bootstrap pipeline linked; `ViewImplementationLink` and cross-stage navigation operational |
-| Aggregate Boundaries | **PASS** | Reference-only integration with Initiative, Collective Decision, Petition and Implementation Commitment; no cross-aggregate mutation |
-| Derived Progress | **PASS** | Collective Progress and Progress Indicators computed from achievements and milestone state; not manually editable |
-| Derived Completion | **PASS** | Completion Assessment and Completion derived from required milestone satisfaction; auto-transition when criteria satisfied |
-| Evidence Model | **PASS** | Evidence attaches to achievements only; Reference, Attachment and Link kinds supported; public sanitization enforced |
-| Explainable Honesty | **PASS** | Derived values labeled; completion not presented as discretionary sign-off; evidence uses substantiation language |
-| Transparent Progress | **PASS** | Progress visible through phases, milestones, achievements and indicators; no engagement-metric proxies |
-| Trust Through Verification | **PASS** | Progress and completion trace to recorded achievements and criteria; public summaries explainable from underlying truth |
-| Operational/Public Separation | **PASS** | Distinct DTOs, routes and pages; projection builder — not operational serialization |
-| Participation Lifecycle Integration | **PASS** | Stage 7 follows Implementation Commitment; `PARTICIPATION_ARCHITECTURE_FREEZE.md` updated through Implementation |
+| Area                                | Verdict  | Summary                                                                                                                                                                                                 |
+| ----------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain                              | **PASS** | Implementation aggregate types, entities, value objects and `PublicImplementationProjection` exported from `@hu/types`; canonical lifecycle `Planned`, `Started`, `InProgress`, `Completed`, `Archived` |
+| Store                               | **PASS** | In-memory store with bootstrap seed, command handlers, invariant enforcement, `structuredClone` on reads, derived state refresh on material changes                                                     |
+| API                                 | **PASS** | Thin REST under `/api/v1/implementations`; validators, mappers, standard envelope; lookup routes; no manual completion commands                                                                         |
+| Workspace                           | **PASS** | Operational workspace at `/implementations/:implementationId`; read-only sections per spec; achievement recording and evidence attachment panels wired                                                  |
+| Public Projection                   | **PASS** | Dedicated projection builder; public API and page; participant IDs and storage paths excluded; derived values labeled                                                                                   |
+| Platform Integration                | **PASS** | Bootstrap pipeline linked; `ViewImplementationLink` and cross-stage navigation operational                                                                                                              |
+| Aggregate Boundaries                | **PASS** | Reference-only integration with Initiative, Collective Decision, Petition and Implementation Commitment; no cross-aggregate mutation                                                                    |
+| Derived Progress                    | **PASS** | Collective Progress and Progress Indicators computed from achievements and milestone state; not manually editable                                                                                       |
+| Derived Completion                  | **PASS** | Completion Assessment and Completion derived from required milestone satisfaction; auto-transition when criteria satisfied                                                                              |
+| Evidence Model                      | **PASS** | Evidence attaches to achievements only; Reference, Attachment and Link kinds supported; public sanitization enforced                                                                                    |
+| Explainable Honesty                 | **PASS** | Derived values labeled; completion not presented as discretionary sign-off; evidence uses substantiation language                                                                                       |
+| Transparent Progress                | **PASS** | Progress visible through phases, milestones, achievements and indicators; no engagement-metric proxies                                                                                                  |
+| Trust Through Verification          | **PASS** | Progress and completion trace to recorded achievements and criteria; public summaries explainable from underlying truth                                                                                 |
+| Operational/Public Separation       | **PASS** | Distinct DTOs, routes and pages; projection builder — not operational serialization                                                                                                                     |
+| Participation Lifecycle Integration | **PASS** | Stage 7 follows Implementation Commitment; `PARTICIPATION_ARCHITECTURE_FREEZE.md` updated through Implementation                                                                                        |
 
 All review areas pass.
 
@@ -188,13 +188,13 @@ No FAIL-level findings remain at Epic closure.
 
 The following remediation items were completed before this review was approved:
 
-| Item | Status | Outcome |
-|------|--------|---------|
-| Achievement Recording Panel | Complete | `AchievementRecordingPanel.tsx` wired to `POST /api/v1/implementations/:id/achievements` |
-| Evidence Attachment Panel | Complete | `EvidenceAttachmentPanel.tsx` wired to evidence attach endpoint |
-| Participation Architecture Freeze updated | Complete | Stage 7 Implementation marked Architecture Approved — Implementation Complete in `PARTICIPATION_ARCHITECTURE_FREEZE.md` |
-| Epic Architecture Freeze created | Complete | `EPIC_06_ARCHITECTURE_FREEZE.md` Version 1.0 — Frozen |
-| Derivation-only completion formally documented | Complete | Architecture freeze records that Complete API endpoints are intentionally absent |
+| Item                                           | Status   | Outcome                                                                                                                 |
+| ---------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Achievement Recording Panel                    | Complete | `AchievementRecordingPanel.tsx` wired to `POST /api/v1/implementations/:id/achievements`                                |
+| Evidence Attachment Panel                      | Complete | `EvidenceAttachmentPanel.tsx` wired to evidence attach endpoint                                                         |
+| Participation Architecture Freeze updated      | Complete | Stage 7 Implementation marked Architecture Approved — Implementation Complete in `PARTICIPATION_ARCHITECTURE_FREEZE.md` |
+| Epic Architecture Freeze created               | Complete | `EPIC_06_ARCHITECTURE_FREEZE.md` Version 1.0 — Frozen                                                                   |
+| Derivation-only completion formally documented | Complete | Architecture freeze records that Complete API endpoints are intentionally absent                                        |
 
 ## Manual Completion Endpoints
 
@@ -218,14 +218,14 @@ The following items are genuine future platform or pipeline work.
 
 They are **not** Version 1 architectural omissions.
 
-| Item | Scope |
-|------|-------|
-| **Authentication** | Real authentication beyond bootstrap participant identity |
-| **Notifications** | Notification and alert systems |
-| **Persistence** | Durable storage layer (Progressive Bootstrap defers to in-memory store) |
-| **Domain Events** | Domain event bus and event publishing |
-| **Integration Tests** | Automated end-to-end and integration test suite |
-| **Impact Stage** | Stage 8 Impact aggregate, workspace and public projection (Epic 08) |
+| Item                  | Scope                                                                   |
+| --------------------- | ----------------------------------------------------------------------- |
+| **Authentication**    | Real authentication beyond bootstrap participant identity               |
+| **Notifications**     | Notification and alert systems                                          |
+| **Persistence**       | Durable storage layer (Progressive Bootstrap defers to in-memory store) |
+| **Domain Events**     | Domain event bus and event publishing                                   |
+| **Integration Tests** | Automated end-to-end and integration test suite                         |
+| **Impact Stage**      | Stage 8 Impact aggregate, workspace and public projection (Epic 08)     |
 
 Deferred items must not block Epic 06 Version 1 approval.
 

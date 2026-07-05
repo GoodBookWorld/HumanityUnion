@@ -316,9 +316,7 @@ export function EvidenceAttachmentPanel({
         </div>
       ) : null}
 
-      {successMessage ? (
-        <p className="implementation-section__note">{successMessage}</p>
-      ) : null}
+      {successMessage ? <p className="implementation-section__note">{successMessage}</p> : null}
 
       {errorMessage ? <p className="implementation-section__error">{errorMessage}</p> : null}
 

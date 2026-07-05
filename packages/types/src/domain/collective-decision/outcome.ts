@@ -1,10 +1,6 @@
 export type OutcomeId = string;
 
-export type OutcomeType =
-  | "Approved"
-  | "Rejected"
-  | "Selected"
-  | "Prioritized";
+export type OutcomeType = "Approved" | "Rejected" | "Selected" | "Prioritized";
 
 export interface Outcome {
   outcomeId: OutcomeId;

@@ -20,12 +20,12 @@ This guide does not create application code.
 
 After completing this guide:
 
-* pnpm is available;
-* dependencies are installed from the repository root;
-* formatting tools are ready;
-* linting tools are ready;
-* TypeScript tools are ready;
-* pnpm-lock.yaml is created.
+- pnpm is available;
+- dependencies are installed from the repository root;
+- formatting tools are ready;
+- linting tools are ready;
+- TypeScript tools are ready;
+- pnpm-lock.yaml is created.
 
 ---
 
@@ -35,15 +35,15 @@ Repository Foundation must be complete.
 
 Required files:
 
-* package.json
-* pnpm-workspace.yaml
-* tsconfig.base.json
-* .editorconfig
-* .gitignore
-* .prettierrc.json
-* .prettierignore
-* eslint.config.js
-* .env.example
+- package.json
+- pnpm-workspace.yaml
+- tsconfig.base.json
+- .editorconfig
+- .gitignore
+- .prettierrc.json
+- .prettierignore
+- eslint.config.js
+- .env.example
 
 ---
 
@@ -177,10 +177,10 @@ Do not modify Blueprint documents.
 
 The repository should now contain:
 
-* node_modules/
-* pnpm-lock.yaml
-* updated package.json
-* updated eslint.config.js
+- node_modules/
+- pnpm-lock.yaml
+- updated package.json
+- updated eslint.config.js
 
 ---
 
@@ -188,13 +188,13 @@ The repository should now contain:
 
 Confirm:
 
-* pnpm works;
-* dependencies are installed;
-* pnpm-lock.yaml exists;
-* package.json scripts are updated;
-* eslint.config.js uses ESLint and TypeScript ESLint;
-* no application code was created;
-* legacy folders remain untouched.
+- pnpm works;
+- dependencies are installed;
+- pnpm-lock.yaml exists;
+- package.json scripts are updated;
+- eslint.config.js uses ESLint and TypeScript ESLint;
+- no application code was created;
+- legacy folders remain untouched.
 
 ---
 

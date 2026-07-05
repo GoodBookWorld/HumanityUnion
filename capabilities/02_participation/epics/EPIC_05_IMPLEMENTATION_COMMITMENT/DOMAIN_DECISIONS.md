@@ -563,23 +563,23 @@ Accepted
 
 # Decision Summary
 
-| ID | Decision | Status |
-|----|----------|--------|
-| 01 | Support is not Commitment | Accepted |
-| 02 | Implementation Commitment begins after Petition | Accepted |
-| 03 | Commitment measures capacity, not popularity | Accepted |
-| 04 | One active commitment per participant per initiative | Accepted |
-| 05 | Contribution Profile contains Contribution Items | Accepted |
-| 06 | Community Capacity is derived from individual commitments | Accepted |
-| 07 | Implementation Readiness is derived from Community Capacity and Frozen Policy | Accepted |
-| 08 | Frozen Policy cannot be modified during Commitment | Accepted |
-| 09 | Withdrawal preserves history | Accepted |
-| 10 | Commitment is not project management | Accepted |
-| 11 | Assistant may suggest, but never decide | Accepted |
-| 12 | Policy Assistant helps create Initial Policy but does not define final Policy | Accepted |
-| 13 | Living Policy evolves from Suggested to Satisfied | Accepted |
-| 14 | Readiness is not Approval | Accepted |
-| 15 | Implementation Commitment ends before Implementation execution | Accepted |
+| ID  | Decision                                                                      | Status   |
+| --- | ----------------------------------------------------------------------------- | -------- |
+| 01  | Support is not Commitment                                                     | Accepted |
+| 02  | Implementation Commitment begins after Petition                               | Accepted |
+| 03  | Commitment measures capacity, not popularity                                  | Accepted |
+| 04  | One active commitment per participant per initiative                          | Accepted |
+| 05  | Contribution Profile contains Contribution Items                              | Accepted |
+| 06  | Community Capacity is derived from individual commitments                     | Accepted |
+| 07  | Implementation Readiness is derived from Community Capacity and Frozen Policy | Accepted |
+| 08  | Frozen Policy cannot be modified during Commitment                            | Accepted |
+| 09  | Withdrawal preserves history                                                  | Accepted |
+| 10  | Commitment is not project management                                          | Accepted |
+| 11  | Assistant may suggest, but never decide                                       | Accepted |
+| 12  | Policy Assistant helps create Initial Policy but does not define final Policy | Accepted |
+| 13  | Living Policy evolves from Suggested to Satisfied                             | Accepted |
+| 14  | Readiness is not Approval                                                     | Accepted |
+| 15  | Implementation Commitment ends before Implementation execution                | Accepted |
 
 ---
 

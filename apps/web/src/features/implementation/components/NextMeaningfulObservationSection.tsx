@@ -12,9 +12,7 @@ export function NextMeaningfulObservationSection({
   const observation = deriveNextMeaningfulObservation(implementation);
   const latestSnapshot = implementation.progressSnapshots.at(-1);
   const previousSnapshot =
-    implementation.progressSnapshots.length >= 2
-      ? implementation.progressSnapshots.at(-2)
-      : null;
+    implementation.progressSnapshots.length >= 2 ? implementation.progressSnapshots.at(-2) : null;
 
   return (
     <div className="next-meaningful-observation">

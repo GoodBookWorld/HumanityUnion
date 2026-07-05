@@ -14,13 +14,13 @@ It does not yet define final MongoDB schemas or code.
 
 Its purpose is to describe the core data entities, relationships, and responsibilities that will later guide:
 
-* MongoDB collection design;
-* REST API design;
-* backend services;
-* frontend state structure;
-* analytics;
-* security rules;
-* future scalability.
+- MongoDB collection design;
+- REST API design;
+- backend services;
+- frontend state structure;
+- analytics;
+- security rules;
+- future scalability.
 
 The database must reflect Humanity Union as a living civic technology ecosystem, not as a simple website.
 
@@ -32,17 +32,17 @@ The database must never be designed only around screens.
 
 It must be designed around the living relationships between:
 
-* Members;
-* Initiatives;
-* Knowledge;
-* Communities;
-* Institutions;
-* Trust;
-* Fair;
-* Impact;
-* Growth;
-* Regions;
-* Platform Services.
+- Members;
+- Initiatives;
+- Knowledge;
+- Communities;
+- Institutions;
+- Trust;
+- Fair;
+- Impact;
+- Growth;
+- Regions;
+- Platform Services.
 
 Every stored record should support understanding, participation, cooperation, trust, or meaningful impact.
 
@@ -74,14 +74,14 @@ Technical system entity used for authentication and access control.
 
 Stores:
 
-* email;
-* password hash;
-* authentication provider;
-* account status;
-* roles;
-* security flags;
-* createdAt;
-* updatedAt.
+- email;
+- password hash;
+- authentication provider;
+- account status;
+- roles;
+- security flags;
+- createdAt;
+- updatedAt.
 
 Important rule:
 
@@ -97,21 +97,21 @@ Public and civic identity of a registered participant.
 
 Stores:
 
-* userId;
-* displayName;
-* uniqueName;
-* avatar;
-* country;
-* region;
-* city;
-* languages;
-* bio;
-* public links;
-* member status;
-* verification level;
-* public statistics;
-* createdAt;
-* updatedAt.
+- userId;
+- displayName;
+- uniqueName;
+- avatar;
+- country;
+- region;
+- city;
+- languages;
+- bio;
+- public links;
+- member status;
+- verification level;
+- public statistics;
+- createdAt;
+- updatedAt.
 
 ---
 
@@ -121,16 +121,16 @@ User-facing name for the internal Civic Responsibility Profile.
 
 Stores:
 
-* responsibility scope;
-* priority categories;
-* priority tools;
-* priority locations;
-* time commitment;
-* notification preferences;
-* learning interests;
-* volunteering interests;
-* ACTUC interest;
-* privacy settings.
+- responsibility scope;
+- priority categories;
+- priority tools;
+- priority locations;
+- time commitment;
+- notification preferences;
+- learning interests;
+- volunteering interests;
+- ACTUC interest;
+- privacy settings.
 
 Purpose:
 
@@ -152,13 +152,13 @@ Private personalized space for the Member.
 
 Stores or derives:
 
-* active initiatives;
-* recommended actions;
-* Fair summary;
-* impact summary;
-* growth insights;
-* notifications;
-* next horizon suggestions.
+- active initiatives;
+- recommended actions;
+- Fair summary;
+- impact summary;
+- growth insights;
+- notifications;
+- next horizon suggestions.
 
 ---
 
@@ -170,22 +170,22 @@ Stores every meaningful platform action.
 
 Examples:
 
-* comment;
-* vote;
-* petition signature;
-* proposal support;
-* poll participation;
-* volunteer action;
-* knowledge completion;
-* source contribution;
-* moderation action.
+- comment;
+- vote;
+- petition signature;
+- proposal support;
+- poll participation;
+- volunteer action;
+- knowledge completion;
+- source contribution;
+- moderation action.
 
 Used by:
 
-* Fair Service;
-* Impact Service;
-* Reflection Service;
-* Analytics Service.
+- Fair Service;
+- Impact Service;
+- Reflection Service;
+- Analytics Service.
 
 ---
 
@@ -195,16 +195,16 @@ Stores Member discussion contributions.
 
 Fields:
 
-* memberId;
-* targetType;
-* targetId;
-* text;
-* status;
-* parentCommentId;
-* reactions;
-* moderation status;
-* createdAt;
-* updatedAt.
+- memberId;
+- targetType;
+- targetId;
+- text;
+- status;
+- parentCommentId;
+- reactions;
+- moderation status;
+- createdAt;
+- updatedAt.
 
 ---
 
@@ -214,12 +214,12 @@ Stores lightweight Member responses.
 
 Examples:
 
-* support;
-* insightful;
-* constructive;
-* needs evidence;
-* agree;
-* disagree respectfully.
+- support;
+- insightful;
+- constructive;
+- needs evidence;
+- agree;
+- disagree respectfully.
 
 Rule:
 
@@ -237,27 +237,27 @@ All Proposals, Petitions, Polls, Voting processes, Volunteer Campaigns, ACTUC pr
 
 Stores:
 
-* title;
-* summary;
-* problem;
-* why it matters;
-* evidence;
-* proposed solution;
-* initiative type;
-* creatorId;
-* team;
-* status;
-* scope;
-* region;
-* country;
-* categories;
-* tags;
-* timeline;
-* discussion settings;
-* implementation status;
-* impact status;
-* createdAt;
-* updatedAt.
+- title;
+- summary;
+- problem;
+- why it matters;
+- evidence;
+- proposed solution;
+- initiative type;
+- creatorId;
+- team;
+- status;
+- scope;
+- region;
+- country;
+- categories;
+- tags;
+- timeline;
+- discussion settings;
+- implementation status;
+- impact status;
+- createdAt;
+- updatedAt.
 
 ---
 
@@ -267,15 +267,15 @@ Defines initiative formats.
 
 Examples:
 
-* Proposal;
-* Petition;
-* Poll;
-* Voting;
-* Volunteer Campaign;
-* ACTUC Research;
-* Educational Project;
-* Community Project;
-* Emergency Response.
+- Proposal;
+- Petition;
+- Poll;
+- Voting;
+- Volunteer Campaign;
+- ACTUC Research;
+- Educational Project;
+- Community Project;
+- Emergency Response.
 
 ---
 
@@ -285,13 +285,13 @@ Stores collaboration structure.
 
 Includes:
 
-* initiator;
-* co-authors;
-* experts;
-* editors;
-* volunteers;
-* moderators;
-* institutional contacts.
+- initiator;
+- co-authors;
+- experts;
+- editors;
+- volunteers;
+- moderators;
+- institutional contacts.
 
 ---
 
@@ -301,16 +301,16 @@ Stores the history of an initiative.
 
 Examples:
 
-* created;
-* published;
-* revised;
-* reviewed;
-* supported;
-* voted;
-* implemented;
-* completed;
-* archived;
-* impact confirmed.
+- created;
+- published;
+- revised;
+- reviewed;
+- supported;
+- voted;
+- implemented;
+- completed;
+- archived;
+- impact confirmed.
 
 Purpose:
 
@@ -336,28 +336,28 @@ Stores educational and informational content.
 
 Types:
 
-* article;
-* analysis;
-* research note;
-* learning material;
-* ACTUC material;
-* verified source explanation;
-* media purity note.
+- article;
+- analysis;
+- research note;
+- learning material;
+- ACTUC material;
+- verified source explanation;
+- media purity note.
 
 Fields:
 
-* title;
-* summary;
-* body;
-* authorId;
-* source references;
-* reliability status;
-* categories;
-* tags;
-* language;
-* status;
-* createdAt;
-* updatedAt.
+- title;
+- summary;
+- body;
+- authorId;
+- source references;
+- reliability status;
+- categories;
+- tags;
+- language;
+- status;
+- createdAt;
+- updatedAt.
 
 ---
 
@@ -367,14 +367,14 @@ Stores external or internal information sources.
 
 Fields:
 
-* source name;
-* URL;
-* type;
-* reliability status;
-* verification notes;
-* related knowledge items;
-* createdAt;
-* updatedAt.
+- source name;
+- URL;
+- type;
+- reliability status;
+- verification notes;
+- related knowledge items;
+- createdAt;
+- updatedAt.
 
 ---
 
@@ -396,21 +396,21 @@ Represents geographic structure.
 
 Types:
 
-* world;
-* country;
-* region;
-* city;
-* community.
+- world;
+- country;
+- region;
+- city;
+- community.
 
 Stores:
 
-* name;
-* type;
-* parentRegionId;
-* geographic metadata;
-* language settings;
-* local statistics;
-* activity summary.
+- name;
+- type;
+- parentRegionId;
+- geographic metadata;
+- language settings;
+- local statistics;
+- activity summary.
 
 ---
 
@@ -420,15 +420,15 @@ Represents civic communities within geographic or thematic areas.
 
 Stores:
 
-* name;
-* description;
-* scope;
-* members;
-* initiatives;
-* local statistics;
-* moderators;
-* createdAt;
-* updatedAt.
+- name;
+- description;
+- scope;
+- members;
+- initiatives;
+- local statistics;
+- moderators;
+- createdAt;
+- updatedAt.
 
 ---
 
@@ -440,27 +440,27 @@ Stores Humanity Union institutional structures.
 
 Examples:
 
-* Humanity Council;
-* Chamber of State Representatives;
-* Chamber of Intellectual Analysis & General Staff;
-* Humanity Protection;
-* World Protection Corps;
-* Secretariat;
-* Department of Intellectual Analysis;
-* Department of State Collaboration.
+- Humanity Council;
+- Chamber of State Representatives;
+- Chamber of Intellectual Analysis & General Staff;
+- Humanity Protection;
+- World Protection Corps;
+- Secretariat;
+- Department of Intellectual Analysis;
+- Department of State Collaboration.
 
 Fields:
 
-* name;
-* type;
-* purpose;
-* functions;
-* members;
-* decisions;
-* reports;
-* status;
-* createdAt;
-* updatedAt.
+- name;
+- type;
+- purpose;
+- functions;
+- members;
+- decisions;
+- reports;
+- status;
+- createdAt;
+- updatedAt.
 
 ---
 
@@ -482,15 +482,15 @@ Stores all Fair-generating events.
 
 Fields:
 
-* memberId;
-* sourceType;
-* sourceId;
-* actionType;
-* fairAmount;
-* calculationReason;
-* timestamp;
-* visibility;
-* audit metadata.
+- memberId;
+- sourceType;
+- sourceId;
+- actionType;
+- fairAmount;
+- calculationReason;
+- timestamp;
+- visibility;
+- audit metadata.
 
 Rule:
 
@@ -504,12 +504,12 @@ Aggregated Fair data.
 
 Types:
 
-* Member Fair;
-* Initiative Fair;
-* Community Fair;
-* Regional Fair;
-* Country Fair;
-* World Fair.
+- Member Fair;
+- Initiative Fair;
+- Community Fair;
+- Regional Fair;
+- Country Fair;
+- World Fair.
 
 ---
 
@@ -519,13 +519,13 @@ Stores meaningful outcomes.
 
 Examples:
 
-* initiative implemented;
-* community improved;
-* knowledge shared;
-* policy influenced;
-* volunteers mobilized;
-* environmental result;
-* educational result.
+- initiative implemented;
+- community improved;
+- knowledge shared;
+- policy influenced;
+- volunteers mobilized;
+- environmental result;
+- educational result.
 
 Impact should be evidence-based whenever possible.
 
@@ -537,11 +537,11 @@ Stores personal growth insights.
 
 Examples:
 
-* weekly reflection;
-* monthly reflection;
-* participation pattern;
-* learning progress;
-* next horizon suggestion.
+- weekly reflection;
+- monthly reflection;
+- participation pattern;
+- learning progress;
+- next horizon suggestion.
 
 ---
 
@@ -553,10 +553,10 @@ Stores Member and source verification data.
 
 Types:
 
-* email verification;
-* identity verification;
-* institution verification;
-* source verification.
+- email verification;
+- identity verification;
+- institution verification;
+- source verification.
 
 ---
 
@@ -588,11 +588,11 @@ Stores calm, useful communication.
 
 Types:
 
-* information;
-* recommendation;
-* guidance;
-* reminder;
-* system alert.
+- information;
+- recommendation;
+- guidance;
+- reminder;
+- system alert.
 
 Rule:
 
@@ -606,15 +606,15 @@ Stores why something was recommended.
 
 Fields:
 
-* memberId;
-* recommendationType;
-* targetType;
-* targetId;
-* reason;
-* related Impact Profile data;
-* estimated time;
-* createdAt;
-* status.
+- memberId;
+- recommendationType;
+- targetType;
+- targetId;
+- reason;
+- related Impact Profile data;
+- estimated time;
+- createdAt;
+- status.
 
 Purpose:
 
@@ -628,13 +628,13 @@ Stores meaningful contribution opportunities.
 
 Examples:
 
-* local initiative;
-* discussion needing expertise;
-* volunteering;
-* learning path;
-* poll;
-* voting;
-* ACTUC contribution.
+- local initiative;
+- discussion needing expertise;
+- volunteering;
+- learning path;
+- poll;
+- voting;
+- ACTUC contribution.
 
 ---
 
@@ -646,12 +646,12 @@ Stores high-level platform health metrics.
 
 Categories:
 
-* Initiative Health;
-* Participation Health;
-* Community Health;
-* Knowledge Health;
-* Trust Health;
-* Impact Health.
+- Initiative Health;
+- Participation Health;
+- Community Health;
+- Knowledge Health;
+- Trust Health;
+- Impact Health.
 
 ---
 
@@ -661,10 +661,10 @@ Stores periodic platform summaries.
 
 Examples:
 
-* daily;
-* weekly;
-* monthly;
-* yearly.
+- daily;
+- weekly;
+- monthly;
+- yearly.
 
 Purpose:
 
@@ -767,38 +767,38 @@ The final MongoDB implementation should use collections based on logical domain 
 
 Likely initial collections:
 
-* users
-* members
-* impact_profiles
-* initiatives
-* initiative_types
-* initiative_timeline_events
-* initiative_versions
-* comments
-* reactions
-* activity_records
-* knowledge_items
-* sources
-* learning_paths
-* regions
-* communities
-* institutions
-* institutional_decisions
-* fair_ledger
-* fair_summaries
-* impact_records
-* reflection_summaries
-* verification_records
-* moderation_cases
-* audit_logs
-* notifications
-* recommendation_records
-* opportunities
-* humanity_health_indicators
-* observatory_snapshots
-* system_settings
-* localization_entries
-* security_events
+- users
+- members
+- impact_profiles
+- initiatives
+- initiative_types
+- initiative_timeline_events
+- initiative_versions
+- comments
+- reactions
+- activity_records
+- knowledge_items
+- sources
+- learning_paths
+- regions
+- communities
+- institutions
+- institutional_decisions
+- fair_ledger
+- fair_summaries
+- impact_records
+- reflection_summaries
+- verification_records
+- moderation_cases
+- audit_logs
+- notifications
+- recommendation_records
+- opportunities
+- humanity_health_indicators
+- observatory_snapshots
+- system_settings
+- localization_entries
+- security_events
 
 This list may be refined during technical schema design.
 

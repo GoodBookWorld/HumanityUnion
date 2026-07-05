@@ -137,16 +137,16 @@ function buildCommunityCapacity(
   };
 }
 
-function buildFrozenPolicySummary(
-  commitment: ImplementationCommitment,
-): PublicFrozenPolicySummary {
+function buildFrozenPolicySummary(commitment: ImplementationCommitment): PublicFrozenPolicySummary {
   const policy = getFrozenPolicy(commitment.frozenPolicyId);
   const requiredThresholdLabels =
-    policy?.thresholds.filter((threshold) => !threshold.optional).map((threshold) => threshold.description) ??
-    [];
+    policy?.thresholds
+      .filter((threshold) => !threshold.optional)
+      .map((threshold) => threshold.description) ?? [];
   const optionalThresholdLabels =
-    policy?.thresholds.filter((threshold) => threshold.optional).map((threshold) => threshold.description) ??
-    [];
+    policy?.thresholds
+      .filter((threshold) => threshold.optional)
+      .map((threshold) => threshold.description) ?? [];
 
   return {
     frozenPolicyId: commitment.frozenPolicyId,
@@ -184,7 +184,9 @@ function buildCommunityNeeds(
   }
 
   return commitment.implementationReadiness.unsatisfiedThresholds
-    .map((thresholdId) => policy.thresholds.find((threshold) => threshold.thresholdId === thresholdId))
+    .map((thresholdId) =>
+      policy.thresholds.find((threshold) => threshold.thresholdId === thresholdId),
+    )
     .filter((threshold) => threshold && !threshold.optional)
     .map((threshold) => ({
       description: threshold!.description,

@@ -184,8 +184,9 @@ Archived
 → Revived
 
 Initiative A
-+ Initiative B
-→ Merged Initiative
+
+- Initiative B
+  → Merged Initiative
 
 Initiative
 → Superseded

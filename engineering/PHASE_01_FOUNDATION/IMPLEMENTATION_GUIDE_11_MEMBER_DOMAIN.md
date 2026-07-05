@@ -24,10 +24,10 @@ It does not create authentication, database models, API endpoints, or frontend p
 
 After completing this guide:
 
-* Member domain language exists in TypeScript;
-* Member-related types are shared across the platform;
-* API and Web can later use the same Member model;
-* no database-specific implementation is introduced.
+- Member domain language exists in TypeScript;
+- Member-related types are shared across the platform;
+- API and Web can later use the same Member model;
+- no database-specific implementation is introduced.
 
 ---
 
@@ -35,13 +35,13 @@ After completing this guide:
 
 This guide implements foundations from:
 
-* 03_INFORMATION_ARCHITECTURE.md
-* 06_HUMAN_JOURNEYS.md
-* 09_INTENTION_ARCHITECTURE.md
-* 10_PLATFORM_CONTRACT.md
-* 13_DATA_MODEL.md
-* 15_DEVELOPMENT_STANDARDS.md
-* IMPLEMENTATION_GUIDE_08_DOMAIN_TYPES.md
+- 03_INFORMATION_ARCHITECTURE.md
+- 06_HUMAN_JOURNEYS.md
+- 09_INTENTION_ARCHITECTURE.md
+- 10_PLATFORM_CONTRACT.md
+- 13_DATA_MODEL.md
+- 15_DEVELOPMENT_STANDARDS.md
+- IMPLEMENTATION_GUIDE_08_DOMAIN_TYPES.md
 
 ---
 
@@ -79,10 +79,10 @@ Represents the lifecycle status of a Member.
 
 Allowed values:
 
-* active
-* inactive
-* suspended
-* archived
+- active
+- inactive
+- suspended
+- archived
 
 ---
 
@@ -94,11 +94,11 @@ Represents the current verification level of a Member.
 
 Allowed values:
 
-* none
-* email
-* identity
-* institution
-* trusted
+- none
+- email
+- identity
+- institution
+- trusted
 
 ---
 
@@ -110,10 +110,10 @@ Represents platform-level roles.
 
 Allowed values:
 
-* member
-* moderator
-* admin
-* institution
+- member
+- moderator
+- admin
+- institution
 
 This is not final authorization architecture.
 
@@ -129,10 +129,10 @@ Represents Member Fair summary.
 
 Fields:
 
-* personal
-* community
-* regional
-* global
+- personal
+- community
+- regional
+- global
 
 All values should be numbers.
 
@@ -148,14 +148,14 @@ Represents public-facing Member profile information.
 
 Fields:
 
-* displayName
-* uniqueName
-* avatarUrl
-* country
-* region
-* city
-* bio
-* languages
+- displayName
+- uniqueName
+- avatarUrl
+- country
+- region
+- city
+- bio
+- languages
 
 Keep optional fields optional.
 
@@ -169,10 +169,10 @@ Represents a short summary of Member intention and participation preferences.
 
 Fields:
 
-* scope
-* priorityCategories
-* preferredTools
-* timeCommitment
+- scope
+- priorityCategories
+- preferredTools
+- timeCommitment
 
 Use string arrays for early implementation.
 
@@ -190,15 +190,15 @@ Member should extend BaseEntity.
 
 Fields:
 
-* id
-* profile
-* status
-* verificationLevel
-* roles
-* fair
-* impactProfile
-* createdAt
-* updatedAt
+- id
+- profile
+- status
+- verificationLevel
+- roles
+- fair
+- impactProfile
+- createdAt
+- updatedAt
 
 ---
 
@@ -226,13 +226,13 @@ if needed so Member types are available from `@hu/types`.
 
 Do not create:
 
-* authentication logic;
-* password fields;
-* database models;
-* Mongoose schemas;
-* API controllers;
-* frontend components;
-* business services.
+- authentication logic;
+- password fields;
+- database models;
+- Mongoose schemas;
+- API controllers;
+- frontend components;
+- business services.
 
 Do not include sensitive private data.
 
@@ -244,18 +244,18 @@ Do not include implementation-specific storage details.
 
 Confirm:
 
-* `packages/types/src/domain/member.ts` exists;
-* MemberId exists;
-* MemberStatus exists;
-* VerificationLevel exists;
-* MemberRole exists;
-* FairBalance exists;
-* MemberProfile exists;
-* ImpactProfileSummary exists;
-* Member exists;
-* Member extends BaseEntity;
-* domain exports are updated;
-* package exports are updated.
+- `packages/types/src/domain/member.ts` exists;
+- MemberId exists;
+- MemberStatus exists;
+- VerificationLevel exists;
+- MemberRole exists;
+- FairBalance exists;
+- MemberProfile exists;
+- ImpactProfileSummary exists;
+- Member exists;
+- Member extends BaseEntity;
+- domain exports are updated;
+- package exports are updated.
 
 ---
 

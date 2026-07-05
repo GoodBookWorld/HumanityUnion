@@ -22,10 +22,10 @@ No database storage, password handling, sessions, or real JWT implementation is 
 
 After completing this guide:
 
-* shared authentication domain types exist;
-* API has an authentication module folder;
-* API has a temporary current identity helper;
-* future login and registration can be added without restructuring.
+- shared authentication domain types exist;
+- API has an authentication module folder;
+- API has a temporary current identity helper;
+- future login and registration can be added without restructuring.
 
 ---
 
@@ -33,13 +33,13 @@ After completing this guide:
 
 This guide implements foundations from:
 
-* 10_PLATFORM_CONTRACT.md
-* 11_ENGINEERING_ARCHITECTURE.md
-* 12_PLATFORM_API_SPECIFICATION.md
-* 13_DATA_MODEL.md
-* 15_DEVELOPMENT_STANDARDS.md
-* IMPLEMENTATION_GUIDE_11_MEMBER_DOMAIN.md
-* IMPLEMENTATION_GUIDE_12_MEMBER_API.md
+- 10_PLATFORM_CONTRACT.md
+- 11_ENGINEERING_ARCHITECTURE.md
+- 12_PLATFORM_API_SPECIFICATION.md
+- 13_DATA_MODEL.md
+- 15_DEVELOPMENT_STANDARDS.md
+- IMPLEMENTATION_GUIDE_11_MEMBER_DOMAIN.md
+- IMPLEMENTATION_GUIDE_12_MEMBER_API.md
 
 ---
 
@@ -53,11 +53,11 @@ packages/types/src/domain/auth.ts
 
 Create the following domain types:
 
-* AuthUserId
-* AuthProvider
-* AuthAccountStatus
-* AuthRole
-* AuthIdentity
+- AuthUserId
+- AuthProvider
+- AuthAccountStatus
+- AuthRole
+- AuthIdentity
 
 ---
 
@@ -65,10 +65,10 @@ Create the following domain types:
 
 Allowed values:
 
-* email
-* google
-* apple
-* github
+- email
+- google
+- apple
+- github
 
 ---
 
@@ -76,10 +76,10 @@ Allowed values:
 
 Allowed values:
 
-* active
-* pending
-* disabled
-* archived
+- active
+- pending
+- disabled
+- archived
 
 ---
 
@@ -87,10 +87,10 @@ Allowed values:
 
 Allowed values:
 
-* member
-* moderator
-* admin
-* institution
+- member
+- moderator
+- admin
+- institution
 
 ---
 
@@ -102,14 +102,14 @@ Represents the authenticated technical identity.
 
 Fields:
 
-* id
-* email
-* provider
-* status
-* roles
-* memberId
-* createdAt
-* updatedAt
+- id
+- email
+- provider
+- status
+- roles
+- memberId
+- createdAt
+- updatedAt
 
 Important:
 
@@ -157,16 +157,16 @@ Create a temporary bootstrap identity.
 
 Requirements:
 
-* use AuthIdentity type from `@hu/types`;
-* connect to existing bootstrap Member id:
+- use AuthIdentity type from `@hu/types`;
+- connect to existing bootstrap Member id:
   `member-bootstrap-001`;
-* use email:
+- use email:
   `bootstrap@humanityunion.local`;
-* provider:
+- provider:
   `email`;
-* status:
+- status:
   `active`;
-* roles:
+- roles:
   `["member"]`.
 
 This is not real authentication.
@@ -179,17 +179,17 @@ This is bootstrap identity scaffolding.
 
 Do not create:
 
-* password handling;
-* JWT;
-* sessions;
-* cookies;
-* registration;
-* login;
-* logout;
-* database users;
-* MongoDB models;
-* OAuth logic;
-* frontend auth UI.
+- password handling;
+- JWT;
+- sessions;
+- cookies;
+- registration;
+- login;
+- logout;
+- database users;
+- MongoDB models;
+- OAuth logic;
+- frontend auth UI.
 
 Do not modify Blueprint documents.
 
@@ -207,9 +207,9 @@ pnpm typecheck
 
 Expected:
 
-* TypeScript passes;
-* AuthIdentity is importable from `@hu/types`;
-* API compiles.
+- TypeScript passes;
+- AuthIdentity is importable from `@hu/types`;
+- API compiles.
 
 ---
 
@@ -217,13 +217,13 @@ Expected:
 
 Confirm:
 
-* `packages/types/src/domain/auth.ts` exists;
-* AuthIdentity exists;
-* auth exports are available;
-* `apps/api/src/modules/auth/auth.identity.ts` exists;
-* temporary identity uses shared AuthIdentity type;
-* no real authentication logic exists;
-* no password or token logic exists.
+- `packages/types/src/domain/auth.ts` exists;
+- AuthIdentity exists;
+- auth exports are available;
+- `apps/api/src/modules/auth/auth.identity.ts` exists;
+- temporary identity uses shared AuthIdentity type;
+- no real authentication logic exists;
+- no password or token logic exists.
 
 ---
 

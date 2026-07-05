@@ -24,10 +24,10 @@ This guide establishes the editing contract without introducing persistent stora
 
 After completing this guide:
 
-* Member Profile becomes editable.
-* Editing remains inside the Member domain.
-* Profile updates follow Domain Ownership.
-* Bootstrap profile can be modified during runtime.
+- Member Profile becomes editable.
+- Editing remains inside the Member domain.
+- Profile updates follow Domain Ownership.
+- Bootstrap profile can be modified during runtime.
 
 ---
 
@@ -35,10 +35,10 @@ After completing this guide:
 
 Implements:
 
-* Capability 01 — Human Identity
-* Epic 02 — Member Profile
-* Principle of Structured Identity
-* Principle of Domain Ownership
+- Capability 01 — Human Identity
+- Epic 02 — Member Profile
+- Principle of Structured Identity
+- Principle of Domain Ownership
 
 ---
 
@@ -84,28 +84,28 @@ PATCH /api/v1/members/me
 
 must:
 
-* require Authentication Middleware;
-* identify the Member through `request.auth.memberId`;
-* accept editable Member profile fields;
-* update only editable fields;
-* return the updated Member using the standard Humanity Union response envelope.
+- require Authentication Middleware;
+- identify the Member through `request.auth.memberId`;
+- accept editable Member profile fields;
+- update only editable fields;
+- return the updated Member using the standard Humanity Union response envelope.
 
 Editable bootstrap fields:
 
-* displayName
-* country
-* region
-* city
-* languages
+- displayName
+- country
+- region
+- city
+- languages
 
 Do not allow editing:
 
-* id
-* roles
-* verificationLevel
-* fair
-* createdAt
-* updatedAt
+- id
+- roles
+- verificationLevel
+- fair
+- createdAt
+- updatedAt
 
 The route must never modify AuthIdentity.
 
@@ -115,13 +115,13 @@ The route must never modify AuthIdentity.
 
 Do not implement:
 
-* MongoDB
-* JWT
-* Cookies
-* Sessions
-* OAuth
-* Registration
-* Login
+- MongoDB
+- JWT
+- Cookies
+- Sessions
+- OAuth
+- Registration
+- Login
 
 Do not change the shared Member domain structure.
 
@@ -161,9 +161,9 @@ Example payload:
 
 Expected:
 
-* HTTP 200
-* Updated bootstrap Member returned
-* Standard response envelope preserved
+- HTTP 200
+- Updated bootstrap Member returned
+- Standard response envelope preserved
 
 ---
 
@@ -171,11 +171,11 @@ Expected:
 
 Confirm:
 
-* Authentication Middleware is used.
-* request.auth.memberId identifies the Member.
-* Editable fields are updated.
-* Protected fields remain unchanged.
-* TypeScript passes.
+- Authentication Middleware is used.
+- request.auth.memberId identifies the Member.
+- Editable fields are updated.
+- Protected fields remain unchanged.
+- TypeScript passes.
 
 ---
 

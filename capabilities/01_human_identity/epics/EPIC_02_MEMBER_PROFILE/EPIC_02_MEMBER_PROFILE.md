@@ -36,22 +36,22 @@ Member Profile represents the person as a participant.
 
 Epic 02 includes:
 
-* Member Profile API
-* Profile read model
-* Profile update model
-* Profile web page
-* Public profile foundation
-* Profile visibility preparation
+- Member Profile API
+- Profile read model
+- Profile update model
+- Profile web page
+- Public profile foundation
+- Profile visibility preparation
 
 This Epic does not include:
 
-* real database persistence
-* password management
-* full privacy system
-* verification workflow
-* Fair Engine
-* My Impact dashboard
-* public directory search
+- real database persistence
+- password management
+- full privacy system
+- verification workflow
+- Fair Engine
+- My Impact dashboard
+- public directory search
 
 ---
 
@@ -75,12 +75,12 @@ Guide 25 — Epic 02 Review
 
 After completion, the platform will have:
 
-* readable Member profile data;
-* editable bootstrap profile data;
-* API endpoints for profile retrieval and update;
-* web profile form;
-* public profile foundation;
-* clear distinction between private and public profile fields.
+- readable Member profile data;
+- editable bootstrap profile data;
+- API endpoints for profile retrieval and update;
+- web profile form;
+- public profile foundation;
+- clear distinction between private and public profile fields.
 
 ---
 
@@ -88,12 +88,12 @@ After completion, the platform will have:
 
 Epic 02 follows:
 
-* Shared Domain
-* Feature-first Architecture
-* Progressive Bootstrap
-* Capability-Driven Development
-* Documentation Synchronization
-* Platform Value
+- Shared Domain
+- Feature-first Architecture
+- Progressive Bootstrap
+- Capability-Driven Development
+- Documentation Synchronization
+- Platform Value
 
 ---
 
@@ -101,20 +101,20 @@ Epic 02 follows:
 
 Requires:
 
-* Epic 01 — Authentication
-* Member Domain
-* Shared API Client
-* Web Bootstrap
-* API Bootstrap
+- Epic 01 — Authentication
+- Member Domain
+- Shared API Client
+- Web Bootstrap
+- API Bootstrap
 
 Provides foundation for:
 
-* Preferences
-* Verification
-* Initiatives
-* Communities
-* My Impact
-* Fair Engine
+- Preferences
+- Verification
+- Initiatives
+- Communities
+- My Impact
+- Fair Engine
 
 ---
 
@@ -122,15 +122,15 @@ Provides foundation for:
 
 Epic 02 is complete when:
 
-* Member profile can be read from API;
-* Member profile can be updated through API;
-* Member profile can be displayed in Web;
-* Member profile can be edited in Web;
-* public profile foundation exists;
-* TypeScript passes;
-* API verification passes;
-* Web verification passes;
-* documentation is synchronized.
+- Member profile can be read from API;
+- Member profile can be updated through API;
+- Member profile can be displayed in Web;
+- Member profile can be edited in Web;
+- public profile foundation exists;
+- TypeScript passes;
+- API verification passes;
+- Web verification passes;
+- documentation is synchronized.
 
 ---
 
@@ -138,14 +138,14 @@ Epic 02 is complete when:
 
 Epic 02 does not implement:
 
-* MongoDB persistence;
-* login system;
-* registration;
-* real authorization;
-* full privacy controls;
-* profile search;
-* image uploads;
-* avatar management.
+- MongoDB persistence;
+- login system;
+- registration;
+- real authorization;
+- full privacy controls;
+- profile search;
+- image uploads;
+- avatar management.
 
 These belong to later Epics or Capabilities.
 
@@ -155,11 +155,11 @@ These belong to later Epics or Capabilities.
 
 Epic completion requires:
 
-* implementation verification;
-* documentation synchronization;
-* roadmap update;
-* changelog update;
-* architecture review approval.
+- implementation verification;
+- documentation synchronization;
+- roadmap update;
+- changelog update;
+- architecture review approval.
 
 ---
 
@@ -169,4 +169,4 @@ Member Profile is the first visible civic identity surface of Humanity Union.
 
 It must remain simple, respectful, editable, and ready to grow into deeper participation without becoming a social-media-style attention system.
 
-Completed 
+Completed

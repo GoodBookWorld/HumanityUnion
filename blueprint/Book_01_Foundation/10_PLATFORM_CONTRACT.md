@@ -58,12 +58,12 @@ The Platform Contract connects architecture with implementation.
 
 The Platform Contract guarantees:
 
-* architectural consistency;
-* reusable services;
-* independent development;
-* explainable interactions;
-* predictable behavior;
-* future scalability.
+- architectural consistency;
+- reusable services;
+- independent development;
+- explainable interactions;
+- predictable behavior;
+- future scalability.
 
 ---
 
@@ -75,10 +75,10 @@ The following components communicate only through the Platform Contract.
 
 Responsibilities:
 
-* present information;
-* collect Member input;
-* display recommendations;
-* never contain business rules.
+- present information;
+- collect Member input;
+- display recommendations;
+- never contain business rules.
 
 ---
 
@@ -86,10 +86,10 @@ Responsibilities:
 
 Responsibilities:
 
-* validate requests;
-* authenticate Members;
-* invoke Platform Services;
-* return standardized responses.
+- validate requests;
+- authenticate Members;
+- invoke Platform Services;
+- return standardized responses.
 
 The API is a translator, not a decision-maker.
 
@@ -99,10 +99,10 @@ The API is a translator, not a decision-maker.
 
 Responsibilities:
 
-* execute business capabilities;
-* publish events;
-* request Engine analysis;
-* store domain information.
+- execute business capabilities;
+- publish events;
+- request Engine analysis;
+- store domain information.
 
 Services never manipulate presentation.
 
@@ -112,11 +112,11 @@ Services never manipulate presentation.
 
 Responsibilities:
 
-* analyze;
-* recommend;
-* calculate;
-* evaluate;
-* guide.
+- analyze;
+- recommend;
+- calculate;
+- evaluate;
+- guide.
 
 Engines never directly modify the user interface.
 
@@ -126,10 +126,10 @@ Engines never directly modify the user interface.
 
 Responsibilities:
 
-* distribute meaningful platform events;
-* notify interested services;
-* preserve event history;
-* support scalability.
+- distribute meaningful platform events;
+- notify interested services;
+- preserve event history;
+- support scalability.
 
 ---
 
@@ -137,9 +137,9 @@ Responsibilities:
 
 Responsibilities:
 
-* preserve platform memory;
-* store facts;
-* support historical integrity.
+- preserve platform memory;
+- store facts;
+- support historical integrity.
 
 The database never contains business decisions.
 
@@ -197,11 +197,11 @@ Every layer has one responsibility.
 
 Every request contains:
 
-* authenticated identity;
-* request identifier;
-* timestamp;
-* requested action;
-* contextual information.
+- authenticated identity;
+- request identifier;
+- timestamp;
+- requested action;
+- contextual information.
 
 ---
 
@@ -209,10 +209,10 @@ Every request contains:
 
 Every response should include:
 
-* status;
-* requested data;
-* explanation (when applicable);
-* next possible actions.
+- status;
+- requested data;
+- explanation (when applicable);
+- next possible actions.
 
 The platform should always help the Member understand what comes next.
 
@@ -226,10 +226,10 @@ Example:
 
 Recommended because:
 
-* your Impact Profile includes Education;
-* you have available time this week;
-* your local community needs volunteers;
-* you recently completed a related learning path.
+- your Impact Profile includes Education;
+- you have available time this week;
+- your local community needs volunteers;
+- you recently completed a related learning path.
 
 Members should always understand recommendations.
 
@@ -273,9 +273,9 @@ Every Platform Service must remain independent.
 
 Services communicate through:
 
-* contracts;
-* events;
-* shared domain models.
+- contracts;
+- events;
+- shared domain models.
 
 They never rely on hidden implementation details.
 
@@ -285,10 +285,10 @@ They never rely on hidden implementation details.
 
 The Platform Contract guarantees:
 
-* consistent identifiers;
-* immutable historical records;
-* traceable changes;
-* auditable decisions.
+- consistent identifiers;
+- immutable historical records;
+- traceable changes;
+- auditable decisions.
 
 No silent modification is permitted.
 
@@ -298,11 +298,11 @@ No silent modification is permitted.
 
 Every interaction must support:
 
-* authentication;
-* authorization;
-* auditing;
-* privacy;
-* transparency.
+- authentication;
+- authorization;
+- auditing;
+- privacy;
+- transparency.
 
 Security is built into every contract rather than added later.
 
@@ -312,12 +312,12 @@ Security is built into every contract rather than added later.
 
 Every technical interaction should ultimately support at least one of the following:
 
-* understanding;
-* cooperation;
-* meaningful participation;
-* trust;
-* reflection;
-* growth.
+- understanding;
+- cooperation;
+- meaningful participation;
+- trust;
+- reflection;
+- growth.
 
 Technology serves human development.
 
@@ -351,12 +351,12 @@ This follows the Principle of Irreversible Architecture.
 
 Every new Platform Service, Engine, API endpoint, database collection, or frontend module must answer:
 
-* Which Platform Contract does it implement?
-* Which Platform Service owns it?
-* Which events does it publish?
-* Which events does it consume?
-* Which Human Journey does it support?
-* Which Humanity Health Indicator may it influence?
+- Which Platform Contract does it implement?
+- Which Platform Service owns it?
+- Which events does it publish?
+- Which events does it consume?
+- Which Human Journey does it support?
+- Which Humanity Health Indicator may it influence?
 
 If these answers are unclear, implementation should not begin.
 

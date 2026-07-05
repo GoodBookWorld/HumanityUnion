@@ -14,7 +14,7 @@ Status: Draft
 
 This document records the architectural decisions that define the Petition Aggregate.
 
-These decisions explain *why* the domain is designed as it is.
+These decisions explain _why_ the domain is designed as it is.
 
 They protect architectural consistency throughout the evolution of the Participation Capability.
 
@@ -464,19 +464,19 @@ Accepted
 
 # Decision Summary
 
-| ID | Decision | Status |
-|----|----------|--------|
-| 01 | Petition begins only after Approved Collective Decision | Accepted |
-| 02 | Petition is the Public Endorsement stage | Accepted |
-| 03 | Community and Public Participation are modes of one Aggregate | Accepted |
-| 04 | Public Visitors may read and share without registration | Accepted |
-| 05 | Registration required before signing | Accepted |
-| 06 | Signature is immutable once recorded | Accepted |
-| 07 | Petition owns endorsement, not external Aggregates | Accepted |
-| 08 | Petition ends before Implementation Commitment | Accepted |
-| 09 | Recognition acknowledges actions, not personal worth | Accepted |
-| 10 | Recommend only Next Meaningful Action | Accepted |
-| 11 | Participation Navigator is a future platform service | Accepted |
+| ID  | Decision                                                      | Status   |
+| --- | ------------------------------------------------------------- | -------- |
+| 01  | Petition begins only after Approved Collective Decision       | Accepted |
+| 02  | Petition is the Public Endorsement stage                      | Accepted |
+| 03  | Community and Public Participation are modes of one Aggregate | Accepted |
+| 04  | Public Visitors may read and share without registration       | Accepted |
+| 05  | Registration required before signing                          | Accepted |
+| 06  | Signature is immutable once recorded                          | Accepted |
+| 07  | Petition owns endorsement, not external Aggregates            | Accepted |
+| 08  | Petition ends before Implementation Commitment                | Accepted |
+| 09  | Recognition acknowledges actions, not personal worth          | Accepted |
+| 10  | Recommend only Next Meaningful Action                         | Accepted |
+| 11  | Participation Navigator is a future platform service          | Accepted |
 
 ---
 

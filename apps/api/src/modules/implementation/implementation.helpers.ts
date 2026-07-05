@@ -66,7 +66,9 @@ export function assertStructureEditAllowed(status: ImplementationStatus): void {
 
 export function assertRecordingAllowed(status: ImplementationStatus): void {
   if (!RECORDING_STATES.includes(status)) {
-    throw new Error("Achievements and evidence may only be recorded while implementation is Started or In Progress.");
+    throw new Error(
+      "Achievements and evidence may only be recorded while implementation is Started or In Progress.",
+    );
   }
 }
 
@@ -83,7 +85,9 @@ export function createEmptyCollectiveProgress(now = new Date().toISOString()): C
   };
 }
 
-export function createEmptyCompletionAssessment(now = new Date().toISOString()): CompletionAssessment {
+export function createEmptyCompletionAssessment(
+  now = new Date().toISOString(),
+): CompletionAssessment {
   return {
     assessmentReached: false,
     satisfiedCriteria: [],
@@ -109,7 +113,9 @@ export function createEmptyProgressIndicator(now = new Date().toISOString()): Pr
   };
 }
 
-export function createEmptyCompletionIndicator(now = new Date().toISOString()): CompletionIndicator {
+export function createEmptyCompletionIndicator(
+  now = new Date().toISOString(),
+): CompletionIndicator {
   return {
     completionReached: false,
     headline: "Implementation is not yet complete.",
@@ -122,7 +128,9 @@ function getAchievementsForMilestone(
   implementation: Implementation,
   milestoneId: string,
 ): Achievement[] {
-  return implementation.achievements.filter((achievement) => achievement.milestoneId === milestoneId);
+  return implementation.achievements.filter(
+    (achievement) => achievement.milestoneId === milestoneId,
+  );
 }
 
 function getMilestonesForPhase(implementation: Implementation, phaseId: string): Milestone[] {
@@ -131,15 +139,24 @@ function getMilestonesForPhase(implementation: Implementation, phaseId: string):
   );
 }
 
-function phaseContainsRequiredMilestone(implementation: Implementation, phase: ImplementationPhase): boolean {
+function phaseContainsRequiredMilestone(
+  implementation: Implementation,
+  phase: ImplementationPhase,
+): boolean {
   return getMilestonesForPhase(implementation, phase.implementationPhaseId).some(
     (milestone) => milestone.requirementType === "Required",
   );
 }
 
-export function syncDerivedMilestoneAndPhaseStatuses(implementation: Implementation, now: string): void {
+export function syncDerivedMilestoneAndPhaseStatuses(
+  implementation: Implementation,
+  now: string,
+): void {
   for (const milestone of implementation.milestones) {
-    const achievementCount = getAchievementsForMilestone(implementation, milestone.milestoneId).length;
+    const achievementCount = getAchievementsForMilestone(
+      implementation,
+      milestone.milestoneId,
+    ).length;
 
     if (achievementCount > 0 && milestone.status !== "Satisfied") {
       milestone.status = "Satisfied";
@@ -180,8 +197,12 @@ export function calculateCollectiveProgress(
   const satisfiedMilestones = implementation.milestones.filter(
     (milestone) => milestone.status === "Satisfied",
   );
-  const requiredSatisfied = requiredMilestones.filter((milestone) => milestone.status === "Satisfied");
-  const optionalSatisfied = optionalMilestones.filter((milestone) => milestone.status === "Satisfied");
+  const requiredSatisfied = requiredMilestones.filter(
+    (milestone) => milestone.status === "Satisfied",
+  );
+  const optionalSatisfied = optionalMilestones.filter(
+    (milestone) => milestone.status === "Satisfied",
+  );
   const completedPhases = implementation.implementationPhases.filter(
     (phase) => phase.status === "Complete",
   );
@@ -217,8 +238,7 @@ export function calculateCompletionAssessment(
   const unsatisfiedCriteria = requiredMilestones
     .filter((milestone) => milestone.status !== "Satisfied")
     .map((milestone) => milestone.milestoneId);
-  const assessmentReached =
-    requiredMilestones.length > 0 && unsatisfiedCriteria.length === 0;
+  const assessmentReached = requiredMilestones.length > 0 && unsatisfiedCriteria.length === 0;
 
   return {
     assessmentReached,
@@ -243,8 +263,7 @@ export function calculateCompletion(
   );
   const completedRequiredPhases = requiredPhases.filter((phase) => phase.status === "Complete");
   const phasesComplete =
-    requiredPhases.length === 0 ||
-    completedRequiredPhases.length === requiredPhases.length;
+    requiredPhases.length === 0 || completedRequiredPhases.length === requiredPhases.length;
   const completionReached =
     assessment.assessmentReached &&
     phasesComplete &&
@@ -358,10 +377,7 @@ export function refreshDerivedState(implementation: Implementation): void {
     now,
   );
 
-  if (
-    implementation.completion.completionReached &&
-    implementation.status === "InProgress"
-  ) {
+  if (implementation.completion.completionReached && implementation.status === "InProgress") {
     assertValidTransition(implementation.status, "Completed");
     implementation.status = "Completed";
   }

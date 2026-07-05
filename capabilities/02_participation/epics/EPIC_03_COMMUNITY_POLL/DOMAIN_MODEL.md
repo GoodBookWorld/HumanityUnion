@@ -382,7 +382,6 @@ This model follows:
 - Progressive Bootstrap
 - Historical Integrity
 
-
 ---
 
 # Execution Model

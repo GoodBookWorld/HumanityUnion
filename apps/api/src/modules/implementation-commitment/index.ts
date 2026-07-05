@@ -9,10 +9,7 @@ export {
   getFrozenPolicy,
   listFrozenPolicies,
 } from "./frozen-policy.fixture.js";
-export type {
-  FrozenPolicyFixture,
-  ReadinessThresholdFixture,
-} from "./frozen-policy.fixture.js";
+export type { FrozenPolicyFixture, ReadinessThresholdFixture } from "./frozen-policy.fixture.js";
 export {
   activateImplementationCommitment,
   addContributionItem,

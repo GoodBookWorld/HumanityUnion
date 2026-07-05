@@ -53,8 +53,8 @@ export function AchievementsSection({ implementation }: AchievementsSectionProps
         ))}
       </ul>
       <p className="implementation-section__note">
-        Achievements describe collective accomplishment — not personal task completion.
-        Operational participant metadata is excluded from this default view.
+        Achievements describe collective accomplishment — not personal task completion. Operational
+        participant metadata is excluded from this default view.
       </p>
     </div>
   );

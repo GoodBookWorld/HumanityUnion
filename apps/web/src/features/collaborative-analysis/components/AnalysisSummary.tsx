@@ -19,9 +19,11 @@ function getCurrentSummary(summaries: AnalysisSummary[]): AnalysisSummary | null
     return null;
   }
 
-  return [...summaries].sort(
-    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
-  )[0] ?? null;
+  return (
+    [...summaries].sort(
+      (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+    )[0] ?? null
+  );
 }
 
 export function AnalysisSummaryPanel({ summaries }: AnalysisSummaryPanelProps) {

@@ -2,24 +2,32 @@
   "name": "humanity-union-platform",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Humanity Union civic technology platform monorepo.",
   "packageManager": "pnpm@11.9.0",
   "scripts": {
     "dev": "pnpm --parallel dev:api dev:web",
     "dev:api": "pnpm --filter @hu/api dev",
     "dev:web": "pnpm --filter @hu/web dev",
-    "build": "pnpm --filter @hu/api build && pnpm --filter @hu/web build",
+    "build": "tsc -p apps/api/tsconfig.json && npm run build --prefix apps/web",
     "lint": "eslint .",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "typecheck": "pnpm --filter @hu/types typecheck && pnpm --filter @hu/api typecheck && pnpm --filter @hu/web typecheck"
+    "typecheck": "tsc --noEmit -p packages/types/tsconfig.json && tsc --noEmit -p apps/api/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json"
   },
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/node": "^26.0.1",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "prettier": "^3.7.4",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.50.0"
   }
 }

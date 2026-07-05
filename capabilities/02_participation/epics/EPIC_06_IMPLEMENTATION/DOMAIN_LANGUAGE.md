@@ -642,29 +642,29 @@ never records Achievements or sets Completion
 
 The following pairs must **never** be used as synonyms in Epic 06 language.
 
-| Correct term | Do not substitute | Reason |
-|--------------|-------------------|--------|
-| **Achievement** | Task, Ticket, To-do, Work item | Achievements record collective accomplishment; tasks imply assignment and personal execution tracking |
-| **Implementation** | Project Management, Program Management, Portfolio | Implementation records collective civic execution progress — not enterprise PM methodology |
-| **Milestone** | Personal Assignment, Individual Deliverable | Milestones are collective civic checkpoints — not jobs assigned to a person |
-| **Completion** | Manual Approval, Administrator sign-off | Completion is derived from criteria satisfaction — not discretionary override |
-| **Progress** | Activity, Engagement, Session count | Progress reflects recorded collective accomplishment — not platform activity volume |
-| **Evidence** | Opinion, Commentary, Endorsement | Evidence substantiates accomplishment factually — not persuasive belief |
-| **Implementation** | Employment, HR record, Payroll | Implementation tracks civic execution — not employer–employee administration |
-| **Coordinator** | Manager, Supervisor, Boss | Coordinators facilitate accountable recording within policy — not command hierarchy by default |
-| **Assistant** | Decision Maker, Approver, Recorder | Assistants explain — they do not decide, approve or record accountable acts on behalf of participants |
-| **Implementation Update** | Chat message, Comment thread | Updates are accountable civic records — not informal conversation |
-| **Progress Report** | Performance review, Ranking report | Reports summarize collective state — not personal evaluation |
-| **Implementation Readiness** | Completion, Go-live approval | Readiness belongs to Commitment stage preparedness; Completion belongs to Implementation execution closure |
-| **Implementation Commitment** | Implementation | Commitment declares preparedness; Implementation records execution |
-| **Milestone** | Deadline, Schedule slot | Milestones mark collective civic checkpoints — not calendar scheduling in Version 1 |
-| **Public Implementation** | Implementation Workspace | Separate audiences, separate surfaces, separate DTOs |
-| **Implementation Workspace** | Task board, Kanban, Backlog | Workspace orients and records collective progress — not personal task management |
-| **Future Coordination Space** | Hidden task feature in Version 1 | Deferred concept must not enter scope through synonym drift |
-| **Community Observer** | Operator, Moderator | Observers read by default — accountable roles require explicit policy |
-| **Required Milestone** | Optional Milestone | Required milestones gate Completion Assessment; optional milestones do not |
-| **Collective Progress** | Individual productivity score | Progress is community-level derivation — not personal metrics |
-| **Completion Criteria** | Project plan, Roadmap | Criteria define civic closure conditions — not execution scheduling artifacts |
+| Correct term                  | Do not substitute                                 | Reason                                                                                                     |
+| ----------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Achievement**               | Task, Ticket, To-do, Work item                    | Achievements record collective accomplishment; tasks imply assignment and personal execution tracking      |
+| **Implementation**            | Project Management, Program Management, Portfolio | Implementation records collective civic execution progress — not enterprise PM methodology                 |
+| **Milestone**                 | Personal Assignment, Individual Deliverable       | Milestones are collective civic checkpoints — not jobs assigned to a person                                |
+| **Completion**                | Manual Approval, Administrator sign-off           | Completion is derived from criteria satisfaction — not discretionary override                              |
+| **Progress**                  | Activity, Engagement, Session count               | Progress reflects recorded collective accomplishment — not platform activity volume                        |
+| **Evidence**                  | Opinion, Commentary, Endorsement                  | Evidence substantiates accomplishment factually — not persuasive belief                                    |
+| **Implementation**            | Employment, HR record, Payroll                    | Implementation tracks civic execution — not employer–employee administration                               |
+| **Coordinator**               | Manager, Supervisor, Boss                         | Coordinators facilitate accountable recording within policy — not command hierarchy by default             |
+| **Assistant**                 | Decision Maker, Approver, Recorder                | Assistants explain — they do not decide, approve or record accountable acts on behalf of participants      |
+| **Implementation Update**     | Chat message, Comment thread                      | Updates are accountable civic records — not informal conversation                                          |
+| **Progress Report**           | Performance review, Ranking report                | Reports summarize collective state — not personal evaluation                                               |
+| **Implementation Readiness**  | Completion, Go-live approval                      | Readiness belongs to Commitment stage preparedness; Completion belongs to Implementation execution closure |
+| **Implementation Commitment** | Implementation                                    | Commitment declares preparedness; Implementation records execution                                         |
+| **Milestone**                 | Deadline, Schedule slot                           | Milestones mark collective civic checkpoints — not calendar scheduling in Version 1                        |
+| **Public Implementation**     | Implementation Workspace                          | Separate audiences, separate surfaces, separate DTOs                                                       |
+| **Implementation Workspace**  | Task board, Kanban, Backlog                       | Workspace orients and records collective progress — not personal task management                           |
+| **Future Coordination Space** | Hidden task feature in Version 1                  | Deferred concept must not enter scope through synonym drift                                                |
+| **Community Observer**        | Operator, Moderator                               | Observers read by default — accountable roles require explicit policy                                      |
+| **Required Milestone**        | Optional Milestone                                | Required milestones gate Completion Assessment; optional milestones do not                                 |
+| **Collective Progress**       | Individual productivity score                     | Progress is community-level derivation — not personal metrics                                              |
+| **Completion Criteria**       | Project plan, Roadmap                             | Criteria define civic closure conditions — not execution scheduling artifacts                              |
 
 When in doubt, use the term defined in this document — not the nearest familiar product synonym.
 

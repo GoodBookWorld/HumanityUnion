@@ -38,19 +38,19 @@ These concepts must remain independent.
 
 Epic 01 includes:
 
-* Authentication API
-* Session Context
-* Authentication Middleware
-* Current Identity Endpoint
+- Authentication API
+- Session Context
+- Authentication Middleware
+- Current Identity Endpoint
 
 This Epic does not include:
 
-* Registration
-* Password Recovery
-* Multi-Factor Authentication
-* OAuth
-* User Management
-* Permission Management
+- Registration
+- Password Recovery
+- Multi-Factor Authentication
+- OAuth
+- User Management
+- Permission Management
 
 These belong to future Epics.
 
@@ -74,11 +74,11 @@ Guide 20 — Current Identity Endpoint
 
 After completion the platform will have:
 
-* Authentication API Contract
-* Session Context
-* Authentication Middleware
-* Current Identity Endpoint
-* Shared AuthIdentity integration
+- Authentication API Contract
+- Session Context
+- Authentication Middleware
+- Current Identity Endpoint
+- Shared AuthIdentity integration
 
 No real login implementation is expected at this stage.
 
@@ -88,11 +88,11 @@ No real login implementation is expected at this stage.
 
 Epic 01 follows:
 
-* Contract-First API
-* Shared Domain
-* Progressive Bootstrap
-* Backward-Compatible APIs
-* Documentation Synchronization
+- Contract-First API
+- Shared Domain
+- Progressive Bootstrap
+- Backward-Compatible APIs
+- Documentation Synchronization
 
 ---
 
@@ -100,21 +100,21 @@ Epic 01 follows:
 
 Requires:
 
-* Platform Foundation
-* Capability 01
-* Shared Types
-* Member Domain
-* Shared API Client
+- Platform Foundation
+- Capability 01
+- Shared Types
+- Member Domain
+- Shared API Client
 
 Provides foundation for:
 
-* Member Profile
-* Preferences
-* Verification
-* Initiatives
-* Communities
-* Voting
-* Fair Engine
+- Member Profile
+- Preferences
+- Verification
+- Initiatives
+- Communities
+- Voting
+- Fair Engine
 
 ---
 
@@ -122,13 +122,13 @@ Provides foundation for:
 
 Epic 01 is complete when:
 
-* Authentication API Contract is implemented.
-* Session Context exists.
-* Authentication Middleware resolves identity.
-* Current Identity endpoint returns the active AuthIdentity.
-* TypeScript passes.
-* API verification passes.
-* Architecture Review is approved.
+- Authentication API Contract is implemented.
+- Session Context exists.
+- Authentication Middleware resolves identity.
+- Current Identity endpoint returns the active AuthIdentity.
+- TypeScript passes.
+- API verification passes.
+- Architecture Review is approved.
 
 ---
 
@@ -136,13 +136,13 @@ Epic 01 is complete when:
 
 Epic 01 does not introduce:
 
-* real authentication;
-* passwords;
-* JWT validation;
-* refresh token logic;
-* persistent sessions;
-* MongoDB integration;
-* external identity providers.
+- real authentication;
+- passwords;
+- JWT validation;
+- refresh token logic;
+- persistent sessions;
+- MongoDB integration;
+- external identity providers.
 
 Those will be implemented in future Epics after the platform foundation is complete.
 
@@ -152,11 +152,11 @@ Those will be implemented in future Epics after the platform foundation is compl
 
 Epic completion requires:
 
-* implementation verification;
-* documentation synchronization;
-* roadmap update;
-* changelog update;
-* architecture review approval.
+- implementation verification;
+- documentation synchronization;
+- roadmap update;
+- changelog update;
+- architecture review approval.
 
 ---
 

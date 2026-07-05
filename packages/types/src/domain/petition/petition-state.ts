@@ -1,7 +1,1 @@
-export type PetitionState =
-  | "Draft"
-  | "Ready"
-  | "Published"
-  | "Open"
-  | "Closed"
-  | "Archived";
+export type PetitionState = "Draft" | "Ready" | "Published" | "Open" | "Closed" | "Archived";

@@ -51,15 +51,9 @@ export function InitiativeContextSection({
       <ProfileField label="Subject Title" value={implementation.subjectTitle} />
       <ProfileField label="Subject Summary" value={implementation.subjectSummary} />
       <ProfileField label="Lifecycle State" value={implementation.status} />
-      <ProfileField
-        label="Recording Status"
-        value={getLifecycleSummary(implementation.status)}
-      />
+      <ProfileField label="Recording Status" value={getLifecycleSummary(implementation.status)} />
       <ProfileField label="Created" value={formatImplementationDate(implementation.createdAt)} />
-      <ProfileField
-        label="Initiative"
-        value={initiative?.title ?? implementation.initiativeId}
-      />
+      <ProfileField label="Initiative" value={initiative?.title ?? implementation.initiativeId} />
       <ProfileField
         label="Collective Decision"
         value={collectiveDecision?.decisionId ?? implementation.collectiveDecisionId}
@@ -70,9 +64,7 @@ export function InitiativeContextSection({
       />
       <ProfileField
         label="Implementation Commitment"
-        value={
-          commitment?.subjectTitle ?? implementation.implementationCommitmentId
-        }
+        value={commitment?.subjectTitle ?? implementation.implementationCommitmentId}
       />
       <p className="implementation-section__note">
         This record continues the approved civic direction. It does not reopen collective

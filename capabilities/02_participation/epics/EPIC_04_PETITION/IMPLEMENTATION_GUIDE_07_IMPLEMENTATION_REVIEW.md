@@ -617,19 +617,19 @@ or documented intentional pending commit with user approval.
 
 Expected HTTP 200 for bootstrap vertical slice:
 
-| Surface | Expected Route | Expected |
-|---------|----------------|----------|
-| Petition Workspace | `/petitions/petition-bootstrap-001` | 200 |
-| Public Petition | `/petitions/public/petition-bootstrap-001` | 200 |
+| Surface            | Expected Route                             | Expected |
+| ------------------ | ------------------------------------------ | -------- |
+| Petition Workspace | `/petitions/petition-bootstrap-001`        | 200      |
+| Public Petition    | `/petitions/public/petition-bootstrap-001` | 200      |
 
 Adjust route prefixes only if app routing differs, but both surfaces must resolve successfully.
 
 Optional API verification:
 
-| Endpoint | Expected |
-|----------|----------|
-| `GET /api/v1/petitions/petition-bootstrap-001` | 200 |
-| `GET /api/v1/public/petitions/petition-bootstrap-001` | 200 |
+| Endpoint                                              | Expected |
+| ----------------------------------------------------- | -------- |
+| `GET /api/v1/petitions/petition-bootstrap-001`        | 200      |
+| `GET /api/v1/public/petitions/petition-bootstrap-001` | 200      |
 
 ### Aggregate Invariants
 
@@ -708,20 +708,20 @@ FAIL
 
 # Review Summary
 
-| Area | Verdict |
-|------|---------|
-| Domain | FAIL |
-| Behavior | FAIL |
-| Store | FAIL |
-| API | FAIL |
-| Workspace | FAIL |
-| Public Projection | FAIL |
-| Aggregate Boundaries | FAIL |
-| Participation Pipeline Integration | FAIL |
-| Experience Architecture Compliance | FAIL |
-| Platform Standards Compliance | FAIL |
-| Repository Cleanliness | FAIL |
-| Verification | FAIL |
+| Area                               | Verdict |
+| ---------------------------------- | ------- |
+| Domain                             | FAIL    |
+| Behavior                           | FAIL    |
+| Store                              | FAIL    |
+| API                                | FAIL    |
+| Workspace                          | FAIL    |
+| Public Projection                  | FAIL    |
+| Aggregate Boundaries               | FAIL    |
+| Participation Pipeline Integration | FAIL    |
+| Experience Architecture Compliance | FAIL    |
+| Platform Standards Compliance      | FAIL    |
+| Repository Cleanliness             | FAIL    |
+| Verification                       | FAIL    |
 
 ---
 

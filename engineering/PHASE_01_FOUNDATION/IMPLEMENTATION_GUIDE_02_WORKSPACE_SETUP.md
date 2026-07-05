@@ -20,11 +20,11 @@ The goal is to eliminate unnecessary setup differences and ensure predictable de
 
 After completing this guide:
 
-* the workspace is ready for development;
-* coding standards are enforceable;
-* formatting is automatic;
-* project configuration is centralized;
-* future implementation guides can assume a common environment.
+- the workspace is ready for development;
+- coding standards are enforceable;
+- formatting is automatic;
+- project configuration is centralized;
+- future implementation guides can assume a common environment.
 
 ---
 
@@ -32,35 +32,35 @@ After completing this guide:
 
 Programming Language
 
-* TypeScript
+- TypeScript
 
 Runtime
 
-* Node.js (LTS)
+- Node.js (LTS)
 
 Package Manager
 
-* pnpm
+- pnpm
 
 Backend
 
-* Express
+- Express
 
 Frontend
 
-* Next.js
+- Next.js
 
 Database
 
-* MongoDB
+- MongoDB
 
 Version Control
 
-* Git
+- Git
 
 IDE
 
-* Cursor or Visual Studio Code
+- Cursor or Visual Studio Code
 
 ---
 
@@ -68,12 +68,12 @@ IDE
 
 Every contributor should use:
 
-* UTF-8 encoding
-* LF line endings
-* EditorConfig
-* Prettier
-* ESLint
-* TypeScript strict mode
+- UTF-8 encoding
+- LF line endings
+- EditorConfig
+- Prettier
+- ESLint
+- TypeScript strict mode
 
 These standards prevent unnecessary formatting differences.
 
@@ -106,10 +106,10 @@ pnpm
 
 Requirements:
 
-* install the latest stable version;
-* use workspaces;
-* do not use npm install inside applications;
-* all dependencies are managed from the repository root.
+- install the latest stable version;
+- use workspaces;
+- do not use npm install inside applications;
+- all dependencies are managed from the repository root.
 
 ---
 
@@ -117,11 +117,11 @@ Requirements:
 
 Repository rules:
 
-* meaningful commits;
-* one logical change per commit;
-* no generated files committed;
-* secrets are never committed;
-* .env files remain local.
+- meaningful commits;
+- one logical change per commit;
+- no generated files committed;
+- secrets are never committed;
+- .env files remain local.
 
 ---
 
@@ -143,10 +143,10 @@ Formatting should be automatic.
 
 Prettier is responsible for:
 
-* indentation;
-* spacing;
-* line width;
-* quote consistency.
+- indentation;
+- spacing;
+- line width;
+- quote consistency.
 
 Formatting should never become a discussion during code reviews.
 
@@ -156,11 +156,11 @@ Formatting should never become a discussion during code reviews.
 
 ESLint verifies:
 
-* code quality;
-* consistency;
-* potential mistakes;
-* unused variables;
-* import organization.
+- code quality;
+- consistency;
+- potential mistakes;
+- unused variables;
+- import organization.
 
 Warnings should be addressed before merging.
 
@@ -172,9 +172,9 @@ TypeScript should operate in strict mode.
 
 Avoid:
 
-* implicit any;
-* unchecked null values;
-* weak typing.
+- implicit any;
+- unchecked null values;
+- weak typing.
 
 The compiler should help developers prevent errors.
 
@@ -184,12 +184,12 @@ The compiler should help developers prevent errors.
 
 Before implementation begins, verify:
 
-* pnpm installed;
-* Git repository clean;
-* workspace files exist;
-* Blueprint available;
-* no legacy folders deleted;
-* repository structure matches Guide 01.
+- pnpm installed;
+- Git repository clean;
+- workspace files exist;
+- Blueprint available;
+- no legacy folders deleted;
+- repository structure matches Guide 01.
 
 ---
 
@@ -197,10 +197,10 @@ Before implementation begins, verify:
 
 Cursor should use:
 
-* project-wide context;
-* Blueprint documentation;
-* engineering standards;
-* implementation guides.
+- project-wide context;
+- Blueprint documentation;
+- engineering standards;
+- implementation guides.
 
 Cursor should generate code that follows the Blueprint rather than inventing architecture.
 
@@ -224,10 +224,10 @@ If additional manual configuration becomes necessary, the setup should be improv
 
 This guide is complete when:
 
-* workspace configuration files exist;
-* development tools are standardized;
-* project formatting is consistent;
-* repository is ready for implementation.
+- workspace configuration files exist;
+- development tools are standardized;
+- project formatting is consistent;
+- repository is ready for implementation.
 
 ---
 

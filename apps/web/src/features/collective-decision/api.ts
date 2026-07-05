@@ -1,10 +1,12 @@
-import type { CollectiveDecision, ParticipantDecision, PublicCollectiveDecisionProjection } from "@hu/types";
+import type {
+  CollectiveDecision,
+  ParticipantDecision,
+  PublicCollectiveDecisionProjection,
+} from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
 
-export async function getCollectiveDecisionById(
-  decisionId: string,
-): Promise<CollectiveDecision> {
+export async function getCollectiveDecisionById(decisionId: string): Promise<CollectiveDecision> {
   return apiRequest<CollectiveDecision>(
     `/api/v1/collective-decisions/${encodeURIComponent(decisionId)}`,
   );

@@ -101,9 +101,7 @@ export default async function PublicImplementationCommitmentPage({
             />
           </>
         ) : (
-          <p className="public-commitment-page__empty">
-            Approved decision context is unavailable.
-          </p>
+          <p className="public-commitment-page__empty">Approved decision context is unavailable.</p>
         )}
       </ProfileSection>
 

@@ -1,9 +1,5 @@
 import { Router, type Response } from "express";
-import type {
-  CollaborativeAnalysis,
-  Contribution,
-  Signal,
-} from "@hu/types";
+import type { CollaborativeAnalysis, Contribution, Signal } from "@hu/types";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import {
@@ -113,7 +109,12 @@ collaborativeAnalysisRouter.patch("/:analysisId", (req, res) => {
       return;
     }
 
-    if (key === "contributions" || key === "signals" || key === "addContributions" || key === "addSignals") {
+    if (
+      key === "contributions" ||
+      key === "signals" ||
+      key === "addContributions" ||
+      key === "addSignals"
+    ) {
       res.status(400).json(createFailureResponse(`Field "${key}" cannot be modified.`));
       return;
     }

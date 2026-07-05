@@ -30,7 +30,8 @@ import { getImplementationCommitment } from "../implementation-commitment/implem
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getPetition } from "../petition/petition.store.js";
 
-const VIEWING_NOTE = "Viewing this page does not record achievements or change collective progress.";
+const VIEWING_NOTE =
+  "Viewing this page does not record achievements or change collective progress.";
 const SHARING_NOTE =
   "Sharing increases visibility but does not record accomplishment or assign work.";
 const NOT_REAPPROVAL_STATEMENT =
@@ -209,10 +210,7 @@ function buildCollectiveProgress(
   };
 }
 
-function getPhaseTitle(
-  implementation: Implementation,
-  phaseId: string | undefined,
-): string | null {
+function getPhaseTitle(implementation: Implementation, phaseId: string | undefined): string | null {
   if (!phaseId) {
     return null;
   }
@@ -225,7 +223,9 @@ function getPhaseTitle(
 
 function buildPublicAchievements(implementation: Implementation): PublicAchievementProjection[] {
   return [...implementation.achievements]
-    .sort((left, right) => new Date(right.recordedAt).getTime() - new Date(left.recordedAt).getTime())
+    .sort(
+      (left, right) => new Date(right.recordedAt).getTime() - new Date(left.recordedAt).getTime(),
+    )
     .map((achievement: Achievement) => {
       const milestone = implementation.milestones.find(
         (entry) => entry.milestoneId === achievement.milestoneId,
@@ -248,11 +248,16 @@ function buildPublicAchievements(implementation: Implementation): PublicAchievem
 
 function buildPublicEvidence(implementation: Implementation): PublicEvidenceProjection[] {
   const achievementTitles = new Map(
-    implementation.achievements.map((achievement) => [achievement.achievementId, achievement.title]),
+    implementation.achievements.map((achievement) => [
+      achievement.achievementId,
+      achievement.title,
+    ]),
   );
 
   return [...implementation.evidence]
-    .sort((left, right) => new Date(right.recordedAt).getTime() - new Date(left.recordedAt).getTime())
+    .sort(
+      (left, right) => new Date(right.recordedAt).getTime() - new Date(left.recordedAt).getTime(),
+    )
     .map((entry: Evidence) => ({
       evidenceId: entry.evidenceId,
       label: entry.label,
@@ -270,8 +275,7 @@ function buildCompletion(implementation: Implementation): PublicCompletionProjec
   const { completion, completionAssessment, completionIndicator } = implementation;
   const remainingRequiredMilestoneDescriptions = implementation.milestones
     .filter(
-      (milestone) =>
-        milestone.requirementType === "Required" && milestone.status !== "Satisfied",
+      (milestone) => milestone.requirementType === "Required" && milestone.status !== "Satisfied",
     )
     .map((milestone) => milestone.description || milestone.title);
 
@@ -320,7 +324,8 @@ function buildRegistrationGateway(
     registrationGatewayMessage =
       "Registration is required before achievements can be recorded. After registration, continue in the operational workspace if you choose to record collective accomplishment.";
   } else if (implementation.status === "Planned") {
-    entryIntent = "Observe and share while implementation structure prepares on the operational side.";
+    entryIntent =
+      "Observe and share while implementation structure prepares on the operational side.";
     registrationGatewayMessage =
       "You may observe and share without registration. Achievement recording becomes available when implementation recording is active.";
   } else if (implementation.status === "Completed" || implementation.status === "Archived") {

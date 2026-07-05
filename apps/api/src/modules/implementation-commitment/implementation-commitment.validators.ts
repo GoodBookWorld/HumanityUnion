@@ -1,7 +1,4 @@
-import type {
-  Availability,
-  CommitmentContributionType,
-} from "@hu/types";
+import type { Availability, CommitmentContributionType } from "@hu/types";
 
 import type {
   AddContributionItemInput,
@@ -89,7 +86,10 @@ export function validatePatchBody(body: Record<string, unknown>): string | null 
 }
 
 export function validateCreateBody(body: Record<string, unknown>): string | null {
-  if (typeof body.implementationCommitmentId !== "string" || !body.implementationCommitmentId.trim()) {
+  if (
+    typeof body.implementationCommitmentId !== "string" ||
+    !body.implementationCommitmentId.trim()
+  ) {
     return "implementationCommitmentId is required.";
   }
 
@@ -124,7 +124,9 @@ export function validateCreateBody(body: Record<string, unknown>): string | null
   return null;
 }
 
-export function parseCreateInput(body: Record<string, unknown>): ImplementationCommitmentCreateInput {
+export function parseCreateInput(
+  body: Record<string, unknown>,
+): ImplementationCommitmentCreateInput {
   return {
     implementationCommitmentId: body.implementationCommitmentId as string,
     initiativeId: body.initiativeId as string,
@@ -132,8 +134,7 @@ export function parseCreateInput(body: Record<string, unknown>): ImplementationC
     petitionId: body.petitionId as string,
     subjectTitle: body.subjectTitle as string,
     subjectSummary: body.subjectSummary as string,
-    frozenPolicyId:
-      typeof body.frozenPolicyId === "string" ? body.frozenPolicyId : undefined,
+    frozenPolicyId: typeof body.frozenPolicyId === "string" ? body.frozenPolicyId : undefined,
   };
 }
 
@@ -201,9 +202,10 @@ export function validateContributionProfileBody(body: Record<string, unknown>): 
   return null;
 }
 
-export function parseContributionProfileUpdate(
-  body: Record<string, unknown>,
-): { participantId: string; update: ContributionProfileUpdate } {
+export function parseContributionProfileUpdate(body: Record<string, unknown>): {
+  participantId: string;
+  update: ContributionProfileUpdate;
+} {
   return {
     participantId: body.participantId as string,
     update: {
@@ -308,7 +310,6 @@ export function parseWithdrawContributionBody(body: Record<string, unknown>): {
   participantId?: string;
 } {
   return {
-    participantId:
-      typeof body.participantId === "string" ? body.participantId : undefined,
+    participantId: typeof body.participantId === "string" ? body.participantId : undefined,
   };
 }

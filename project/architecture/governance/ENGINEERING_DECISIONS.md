@@ -12,7 +12,7 @@ Version 1.0
 
 This document records the fundamental engineering and architectural decisions of Humanity Union.
 
-Each decision explains *why* a particular architectural direction was chosen.
+Each decision explains _why_ a particular architectural direction was chosen.
 
 Engineering Decisions provide historical context, preserve architectural intent, and guide future development.
 

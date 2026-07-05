@@ -26,10 +26,10 @@ This guide still does not implement real authentication.
 
 After completing this guide:
 
-* Authentication Middleware exists.
-* Protected routes can use the middleware.
-* Middleware resolves AuthIdentity through Session Context.
-* Route handlers no longer need to resolve identity manually.
+- Authentication Middleware exists.
+- Protected routes can use the middleware.
+- Middleware resolves AuthIdentity through Session Context.
+- Route handlers no longer need to resolve identity manually.
 
 ---
 
@@ -37,10 +37,10 @@ After completing this guide:
 
 Implements:
 
-* Human Identity Capability
-* Epic 01 Authentication
-* Guide 18 Session Context
-* Platform API Specification
+- Human Identity Capability
+- Epic 01 Authentication
+- Guide 18 Session Context
+- Platform API Specification
 
 ---
 
@@ -73,16 +73,16 @@ AuthenticationMiddleware
 
 Responsibilities:
 
-* Obtain current AuthIdentity using Session Context.
-* Attach AuthIdentity to the request.
-* Call next().
+- Obtain current AuthIdentity using Session Context.
+- Attach AuthIdentity to the request.
+- Call next().
 
 The middleware must never:
 
-* validate passwords;
-* inspect JWT;
-* inspect cookies;
-* inspect OAuth tokens.
+- validate passwords;
+- inspect JWT;
+- inspect cookies;
+- inspect OAuth tokens.
 
 Identity resolution belongs exclusively to Session Context.
 
@@ -93,13 +93,13 @@ Identity resolution belongs exclusively to Session Context.
 Extend the Express Request type to expose:
 
 ```typescript
-request.auth
+request.auth;
 ```
 
 Type:
 
 ```typescript
-AuthIdentity
+AuthIdentity;
 ```
 
 The extension should remain reusable for future authentication implementations.
@@ -116,8 +116,8 @@ GET /api/v1/auth/me
 
 The route must:
 
-* receive AuthIdentity from request.auth;
-* never call Session Context directly.
+- receive AuthIdentity from request.auth;
+- never call Session Context directly.
 
 ---
 
@@ -125,13 +125,13 @@ The route must:
 
 Do not implement:
 
-* JWT
-* Cookies
-* Sessions
-* OAuth
-* Login
-* Registration
-* Database
+- JWT
+- Cookies
+- Sessions
+- OAuth
+- Login
+- Registration
+- Database
 
 Do not change public API contracts.
 
@@ -161,9 +161,9 @@ GET http://localhost:4000/api/v1/auth/me
 
 Expected:
 
-* returns AuthIdentity;
-* route receives identity from middleware;
-* Session Context remains internal.
+- returns AuthIdentity;
+- route receives identity from middleware;
+- Session Context remains internal.
 
 ---
 
@@ -171,11 +171,11 @@ Expected:
 
 Confirm:
 
-* auth.middleware.ts exists;
-* request.auth exists;
-* middleware uses Session Context;
-* routes no longer use Session Context directly;
-* TypeScript passes.
+- auth.middleware.ts exists;
+- request.auth exists;
+- middleware uses Session Context;
+- routes no longer use Session Context directly;
+- TypeScript passes.
 
 ---
 

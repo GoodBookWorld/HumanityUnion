@@ -96,9 +96,7 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       {linkedAnalysisId || linkedDecisionId || linkedPetitionId ? (
         <nav className="public-initiative-page__related" aria-label="Platform integration">
           {linkedAnalysisId ? (
-            <Link
-              href={`/collaborative-analysis/public/${encodeURIComponent(linkedAnalysisId)}`}
-            >
+            <Link href={`/collaborative-analysis/public/${encodeURIComponent(linkedAnalysisId)}`}>
               View Public Collaborative Analysis
             </Link>
           ) : null}

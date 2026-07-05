@@ -120,7 +120,9 @@ export function createEmptyPolicySatisfaction(now = new Date().toISOString()): P
   };
 }
 
-export function createEmptyContributionSummary(now = new Date().toISOString()): ContributionSummary {
+export function createEmptyContributionSummary(
+  now = new Date().toISOString(),
+): ContributionSummary {
   return {
     totalActiveDeclarations: 0,
     declarationsByType: createEmptyContributionsByType(),
@@ -135,9 +137,9 @@ function buildAvailabilitySummary(activeItems: ContributionItem[]): string {
     return "No active declarations recorded.";
   }
 
-  const described = activeItems
-    .filter((item) => item.availability.description || item.availability.startsAt)
-    .length;
+  const described = activeItems.filter(
+    (item) => item.availability.description || item.availability.startsAt,
+  ).length;
 
   return `${activeItems.length} active declaration(s); ${described} include availability detail.`;
 }
@@ -169,7 +171,11 @@ function buildSkillCoverageSummary(
     : "Active declarations recorded without skill labels.";
 }
 
-function itemMatchesSkillLabel(item: ContributionItem, profile: ContributionProfile | undefined, label: string): boolean {
+function itemMatchesSkillLabel(
+  item: ContributionItem,
+  profile: ContributionProfile | undefined,
+  label: string,
+): boolean {
   const normalized = label.toLowerCase();
 
   if (item.contributionCapacity.toLowerCase().includes(normalized)) {
@@ -485,7 +491,8 @@ export function assertContributionItemsPreserved(
 ): void {
   if (proposed.length < existing.length) {
     const removed = existing.find(
-      (item) => !proposed.some((candidate) => candidate.contributionItemId === item.contributionItemId),
+      (item) =>
+        !proposed.some((candidate) => candidate.contributionItemId === item.contributionItemId),
     );
 
     if (removed && removed.commitmentStatus !== "Declared") {

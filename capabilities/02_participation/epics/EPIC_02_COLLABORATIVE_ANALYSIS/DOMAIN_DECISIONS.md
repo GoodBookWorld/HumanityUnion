@@ -12,7 +12,7 @@ Version 1.0
 
 Document the architectural decisions that define the Collaborative Analysis domain.
 
-These decisions explain *why* the domain is designed as it is.
+These decisions explain _why_ the domain is designed as it is.
 
 They protect architectural consistency throughout the evolution of the platform.
 

@@ -206,12 +206,12 @@ POST /api/v1/petitions/:petitionId/close
 POST /api/v1/petitions/:petitionId/archive
 ```
 
-| Endpoint | Behavior Command | Effect |
-|----------|------------------|--------|
-| `prepare` | `PreparePetition` | `Draft → Ready` |
+| Endpoint  | Behavior Command  | Effect              |
+| --------- | ----------------- | ------------------- |
+| `prepare` | `PreparePetition` | `Draft → Ready`     |
 | `publish` | `PublishPetition` | `Ready → Published` |
-| `open` | `OpenPetition` | `Published → Open` |
-| `close` | `ClosePetition` | `Open → Closed` |
+| `open`    | `OpenPetition`    | `Published → Open`  |
+| `close`   | `ClosePetition`   | `Open → Closed`     |
 | `archive` | `ArchivePetition` | `Closed → Archived` |
 
 Each lifecycle endpoint performs one transition only.
@@ -531,16 +531,16 @@ API maps those failures to HTTP errors without leaking internals.
 
 ## Command-Specific Validation
 
-| Command | API validation focus |
-|---------|------------------------|
-| Create | required references and subject/policy shape |
-| Patch | editable fields only in preparatory states |
-| Prepare | petition id and request shape |
-| Publish | petition id |
-| Open | petition id |
-| Sign | petition id and participant context presence |
-| Close | petition id |
-| Archive | petition id |
+| Command | API validation focus                         |
+| ------- | -------------------------------------------- |
+| Create  | required references and subject/policy shape |
+| Patch   | editable fields only in preparatory states   |
+| Prepare | petition id and request shape                |
+| Publish | petition id                                  |
+| Open    | petition id                                  |
+| Sign    | petition id and participant context presence |
+| Close   | petition id                                  |
+| Archive | petition id                                  |
 
 Business eligibility such as Approved Collective Decision Outcome is enforced by aggregate behavior and persistence layer, not duplicated as API policy logic.
 
@@ -575,15 +575,15 @@ Do not expose:
 
 ## Expected Client-Visible Failures
 
-| Condition | HTTP expectation |
-|-----------|------------------|
-| resource not found | 404 |
-| invalid request shape | 400 |
-| invalid lifecycle command | 400 or 409 based on platform convention |
-| duplicate signature | 409 |
-| archived mutation attempt | 409 |
-| not public yet on public route | 404 |
-| unauthorized operational action | 401 or 403 when auth exists later |
+| Condition                       | HTTP expectation                        |
+| ------------------------------- | --------------------------------------- |
+| resource not found              | 404                                     |
+| invalid request shape           | 400                                     |
+| invalid lifecycle command       | 400 or 409 based on platform convention |
+| duplicate signature             | 409                                     |
+| archived mutation attempt       | 409                                     |
+| not public yet on public route  | 404                                     |
+| unauthorized operational action | 401 or 403 when auth exists later       |
 
 Message examples should use civic domain language:
 
@@ -767,10 +767,10 @@ Controller must not:
 
 # Separation Summary
 
-| Surface | Path | Audience | Writable |
-|---------|------|----------|----------|
-| Operational API | `/api/v1/petitions` | participants, stewards, integration | yes |
-| Public API | `/api/v1/public/petitions` | observers, society | no |
+| Surface         | Path                       | Audience                            | Writable |
+| --------------- | -------------------------- | ----------------------------------- | -------- |
+| Operational API | `/api/v1/petitions`        | participants, stewards, integration | yes      |
+| Public API      | `/api/v1/public/petitions` | observers, society                  | no       |
 
 Operational API exposes participation.
 
@@ -901,12 +901,12 @@ Guide 04 is complete when all items below are satisfied.
 
 Deferred to later guides:
 
-| Guide | Responsibility |
-|-------|----------------|
-| Guide 05 — Petition Workspace | operational UI consuming API |
+| Guide                                 | Responsibility                                          |
+| ------------------------------------- | ------------------------------------------------------- |
+| Guide 05 — Petition Workspace         | operational UI consuming API                            |
 | Guide 06 — Public Petition Projection | public page and projection refinement if split from API |
-| Guide 07 — Platform Integration | cross-aggregate bootstrap and eligibility wiring |
-| Epic architecture review | final verification |
+| Guide 07 — Platform Integration       | cross-aggregate bootstrap and eligibility wiring        |
+| Epic architecture review              | final verification                                      |
 
 Adjust numbering if `IMPLEMENTATION_PLAN.md` is updated separately.
 

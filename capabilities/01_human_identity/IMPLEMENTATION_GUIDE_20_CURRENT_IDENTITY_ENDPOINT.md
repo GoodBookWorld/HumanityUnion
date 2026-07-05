@@ -24,10 +24,10 @@ Its implementation must remain independent of any specific authentication techno
 
 After completing this guide:
 
-* GET /api/v1/auth/me becomes the official Current Identity endpoint.
-* The endpoint relies entirely on Authentication Middleware.
-* The endpoint exposes only AuthIdentity.
-* API behavior is considered stable.
+- GET /api/v1/auth/me becomes the official Current Identity endpoint.
+- The endpoint relies entirely on Authentication Middleware.
+- The endpoint exposes only AuthIdentity.
+- API behavior is considered stable.
 
 ---
 
@@ -35,10 +35,10 @@ After completing this guide:
 
 Implements:
 
-* Human Identity Capability
-* Epic 01 Authentication
-* Guide 19 Authentication Middleware
-* Platform API Specification
+- Human Identity Capability
+- Epic 01 Authentication
+- Guide 19 Authentication Middleware
+- Platform API Specification
 
 ---
 
@@ -58,10 +58,10 @@ apps/api/src/modules/auth/session.context.ts
 
 Verify that:
 
-* GET /api/v1/auth/me receives AuthIdentity only from request.auth.
-* The route performs no authentication logic.
-* The route performs no identity resolution.
-* The route simply returns the current AuthIdentity using the standard Humanity Union response envelope.
+- GET /api/v1/auth/me receives AuthIdentity only from request.auth.
+- The route performs no authentication logic.
+- The route performs no identity resolution.
+- The route simply returns the current AuthIdentity using the standard Humanity Union response envelope.
 
 Update the success message to:
 
@@ -77,13 +77,13 @@ The response body must continue exposing only AuthIdentity.
 
 Do not implement:
 
-* JWT
-* Cookies
-* Sessions
-* OAuth
-* Login
-* Registration
-* Database
+- JWT
+- Cookies
+- Sessions
+- OAuth
+- Login
+- Registration
+- Database
 
 Do not modify Blueprint documents.
 
@@ -113,9 +113,9 @@ GET http://localhost:4000/api/v1/auth/me
 
 Expected response:
 
-* HTTP 200
-* AuthIdentity returned
-* Message:
+- HTTP 200
+- AuthIdentity returned
+- Message:
   "Current identity loaded."
 
 ---
@@ -124,12 +124,12 @@ Expected response:
 
 Confirm:
 
-* auth/me uses Authentication Middleware.
-* auth/me reads request.auth.
-* auth/me returns AuthIdentity.
-* Success message updated.
-* TypeScript passes.
-* No authentication technology introduced.
+- auth/me uses Authentication Middleware.
+- auth/me reads request.auth.
+- auth/me returns AuthIdentity.
+- Success message updated.
+- TypeScript passes.
+- No authentication technology introduced.
 
 ---
 

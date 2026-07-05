@@ -10,7 +10,9 @@ export async function getInitiativeById(initiativeId: string): Promise<Initiativ
   return apiRequest<Initiative>(`/api/v1/initiatives/${encodeURIComponent(initiativeId)}`);
 }
 
-export async function getPublicInitiative(initiativeId: string): Promise<PublicInitiativeProjection> {
+export async function getPublicInitiative(
+  initiativeId: string,
+): Promise<PublicInitiativeProjection> {
   return apiRequest<PublicInitiativeProjection>(
     `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}`,
   );

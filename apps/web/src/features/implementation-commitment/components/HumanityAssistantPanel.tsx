@@ -22,8 +22,8 @@ export function HumanityAssistantPanel({ commitment }: HumanityAssistantPanelPro
         {guidance.suggestion}
       </p>
       <p className="commitment-section__note">
-        This assistant explains and suggests only. It never decides, persuades, creates, or
-        modifies commitments.
+        This assistant explains and suggests only. It never decides, persuades, creates, or modifies
+        commitments.
       </p>
     </div>
   );

@@ -62,7 +62,9 @@ export function ViewCollaborativeAnalysisLink({
   }
 
   if (loading) {
-    return <p className="view-collaborative-analysis-link__empty">Loading collaborative analysis...</p>;
+    return (
+      <p className="view-collaborative-analysis-link__empty">Loading collaborative analysis...</p>
+    );
   }
 
   if (!analysisId) {

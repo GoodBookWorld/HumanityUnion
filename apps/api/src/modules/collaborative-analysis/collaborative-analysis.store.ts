@@ -38,10 +38,7 @@ function contributionsEqual(left: Contribution, right: Contribution): boolean {
   );
 }
 
-function assertContributionsImmutable(
-  existing: Contribution[],
-  proposed: Contribution[],
-): void {
+function assertContributionsImmutable(existing: Contribution[], proposed: Contribution[]): void {
   if (proposed.length < existing.length) {
     throw new Error("Published Contributions cannot be removed.");
   }
@@ -179,9 +176,7 @@ function evaluateReadiness(analysis: CollaborativeAnalysis): Readiness {
 
   const evaluatedCount = satisfiedRequirements.length + missingRequirements.length;
   const readinessScore =
-    evaluatedCount === 0
-      ? 0
-      : Math.round((satisfiedRequirements.length / evaluatedCount) * 100);
+    evaluatedCount === 0 ? 0 : Math.round((satisfiedRequirements.length / evaluatedCount) * 100);
 
   return {
     readinessScore,
@@ -261,7 +256,9 @@ export function updateAnalysis(
     assertContributionsImmutable(analysis.contributions, nextContributions);
 
     for (const contribution of update.addContributions) {
-      if (analysis.contributions.some((entry) => entry.contributionId === contribution.contributionId)) {
+      if (
+        analysis.contributions.some((entry) => entry.contributionId === contribution.contributionId)
+      ) {
         throw new Error(`Contribution "${contribution.contributionId}" already exists.`);
       }
     }

@@ -30,10 +30,7 @@ export function EvidenceSection({ implementation }: EvidenceSectionProps) {
   return (
     <div className="implementation-evidence">
       {achievements.map((achievement) => {
-        const evidenceItems = getEvidenceForAchievement(
-          implementation,
-          achievement.achievementId,
-        );
+        const evidenceItems = getEvidenceForAchievement(implementation, achievement.achievementId);
 
         if (evidenceItems.length === 0) {
           return null;

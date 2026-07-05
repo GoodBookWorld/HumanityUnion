@@ -233,16 +233,16 @@ PASS
 
 # Architecture Integrity Score
 
-| Category | Result |
-|----------|--------|
-| Domain Consistency | PASS |
-| Foundation Alignment | PASS |
-| Platform Alignment | PASS |
-| Layer Separation | PASS |
-| Human Leadership | PASS |
-| Progressive Bootstrap | PASS |
-| Documentation | PASS |
-| Technology Independence | PASS |
+| Category                | Result |
+| ----------------------- | ------ |
+| Domain Consistency      | PASS   |
+| Foundation Alignment    | PASS   |
+| Platform Alignment      | PASS   |
+| Layer Separation        | PASS   |
+| Human Leadership        | PASS   |
+| Progressive Bootstrap   | PASS   |
+| Documentation           | PASS   |
+| Technology Independence | PASS   |
 
 Overall Architecture Integrity:
 

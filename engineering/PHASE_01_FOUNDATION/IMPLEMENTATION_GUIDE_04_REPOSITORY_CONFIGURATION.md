@@ -266,17 +266,17 @@ Do not delete legacy folders.
 
 Confirm that:
 
-* package.json exists;
-* pnpm-workspace.yaml exists;
-* tsconfig.base.json exists;
-* .editorconfig exists;
-* .gitignore exists;
-* .prettierrc.json exists;
-* .prettierignore exists;
-* eslint.config.js exists;
-* .env.example exists;
-* no application code was generated;
-* legacy folders were not deleted.
+- package.json exists;
+- pnpm-workspace.yaml exists;
+- tsconfig.base.json exists;
+- .editorconfig exists;
+- .gitignore exists;
+- .prettierrc.json exists;
+- .prettierignore exists;
+- eslint.config.js exists;
+- .env.example exists;
+- no application code was generated;
+- legacy folders were not deleted.
 
 ---
 

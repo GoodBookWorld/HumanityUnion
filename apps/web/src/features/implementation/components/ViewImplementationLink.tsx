@@ -69,9 +69,7 @@ export function ViewImplementationLink({
   }, [collectiveDecisionId, implementationCommitmentId, petitionId]);
 
   if (!implementationCommitmentId && !petitionId && !collectiveDecisionId) {
-    return (
-      <p className="view-petition-link__empty">No implementation reference is available.</p>
-    );
+    return <p className="view-petition-link__empty">No implementation reference is available.</p>;
   }
 
   if (loading) {

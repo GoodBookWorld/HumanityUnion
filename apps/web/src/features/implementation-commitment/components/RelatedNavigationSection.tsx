@@ -50,9 +50,7 @@ export function RelatedNavigationSection({ commitment }: RelatedNavigationSectio
       >
         Public Petition
       </Link>
-      <ViewImplementationLink
-        implementationCommitmentId={commitment.implementationCommitmentId}
-      />
+      <ViewImplementationLink implementationCommitmentId={commitment.implementationCommitmentId} />
       <ViewImplementationLink
         implementationCommitmentId={commitment.implementationCommitmentId}
         publicView

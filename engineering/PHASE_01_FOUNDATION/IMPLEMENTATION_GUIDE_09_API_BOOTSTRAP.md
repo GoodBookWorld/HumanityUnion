@@ -20,12 +20,12 @@ This guide does not implement business logic, authentication, MongoDB, Platform 
 
 After completing this guide:
 
-* `apps/api` becomes an executable TypeScript application;
-* Express server is configured;
-* health endpoint exists;
-* API structure follows Humanity Union Engineering Architecture;
-* the server can run locally;
-* future Platform Services can be added without restructuring.
+- `apps/api` becomes an executable TypeScript application;
+- Express server is configured;
+- health endpoint exists;
+- API structure follows Humanity Union Engineering Architecture;
+- the server can run locally;
+- future Platform Services can be added without restructuring.
 
 ---
 
@@ -33,13 +33,13 @@ After completing this guide:
 
 This guide implements foundations from:
 
-* `10_PLATFORM_CONTRACT.md`
-* `11_ENGINEERING_ARCHITECTURE.md`
-* `12_PLATFORM_API_SPECIFICATION.md`
-* `13_DATA_MODEL.md`
-* `15_DEVELOPMENT_STANDARDS.md`
-* `IMPLEMENTATION_GUIDE_07_PLATFORM_CORE.md`
-* `IMPLEMENTATION_GUIDE_08_DOMAIN_TYPES.md`
+- `10_PLATFORM_CONTRACT.md`
+- `11_ENGINEERING_ARCHITECTURE.md`
+- `12_PLATFORM_API_SPECIFICATION.md`
+- `13_DATA_MODEL.md`
+- `15_DEVELOPMENT_STANDARDS.md`
+- `IMPLEMENTATION_GUIDE_07_PLATFORM_CORE.md`
+- `IMPLEMENTATION_GUIDE_08_DOMAIN_TYPES.md`
 
 ---
 
@@ -164,10 +164,10 @@ Create a simple environment config.
 
 Requirements:
 
-* load `.env`;
-* define `apiPort`;
-* define `nodeEnv`;
-* default port should be `4000`.
+- load `.env`;
+- define `apiPort`;
+- define `nodeEnv`;
+- default port should be `4000`.
 
 ---
 
@@ -199,11 +199,11 @@ GET /api/v1/health
 
 Response should include:
 
-* success true;
-* service name;
-* version;
-* status;
-* message.
+- success true;
+- service name;
+- version;
+- status;
+- message.
 
 ---
 
@@ -213,11 +213,11 @@ Create Express app.
 
 Requirements:
 
-* use helmet;
-* use cors;
-* use express.json;
-* mount health routes at `/api/v1/health`;
-* expose a default app export.
+- use helmet;
+- use cors;
+- use express.json;
+- mount health routes at `/api/v1/health`;
+- expose a default app export.
 
 ---
 
@@ -227,10 +227,10 @@ Start server.
 
 Requirements:
 
-* import app;
-* import environment config;
-* listen on API port;
-* log server URL.
+- import app;
+- import environment config;
+- listen on API port;
+- log server URL.
 
 ---
 
@@ -258,13 +258,13 @@ Keep existing metadata unchanged.
 
 Do not create:
 
-* MongoDB connection;
-* authentication;
-* member module;
-* initiative module;
-* services implementation;
-* engines implementation;
-* frontend app.
+- MongoDB connection;
+- authentication;
+- member module;
+- initiative module;
+- services implementation;
+- engines implementation;
+- frontend app.
 
 Do not delete legacy folders.
 
@@ -320,16 +320,16 @@ Expected response:
 
 Confirm:
 
-* `apps/api/package.json` exists;
-* `apps/api/tsconfig.json` exists;
-* `apps/api/src/index.ts` exists;
-* `apps/api/src/app.ts` exists;
-* health route works;
-* API runs on port 4000;
-* response format follows Platform API Specification;
-* no business logic was created;
-* no MongoDB code was created;
-* no frontend code was created.
+- `apps/api/package.json` exists;
+- `apps/api/tsconfig.json` exists;
+- `apps/api/src/index.ts` exists;
+- `apps/api/src/app.ts` exists;
+- health route works;
+- API runs on port 4000;
+- response format follows Platform API Specification;
+- no business logic was created;
+- no MongoDB code was created;
+- no frontend code was created.
 
 ---
 

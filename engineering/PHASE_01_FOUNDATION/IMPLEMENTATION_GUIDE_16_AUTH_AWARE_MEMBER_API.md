@@ -20,10 +20,10 @@ This guide does not implement real authentication, JWT, passwords, sessions, coo
 
 After completing this guide:
 
-* Member API reads a temporary AuthIdentity;
-* Member API uses `memberId` from AuthIdentity;
-* Member response remains unchanged;
-* architecture clearly separates AuthIdentity and Member.
+- Member API reads a temporary AuthIdentity;
+- Member API uses `memberId` from AuthIdentity;
+- Member response remains unchanged;
+- architecture clearly separates AuthIdentity and Member.
 
 ---
 
@@ -31,12 +31,12 @@ After completing this guide:
 
 This guide implements foundations from:
 
-* 10_PLATFORM_CONTRACT.md
-* 11_ENGINEERING_ARCHITECTURE.md
-* 12_PLATFORM_API_SPECIFICATION.md
-* 13_DATA_MODEL.md
-* 15_DEVELOPMENT_STANDARDS.md
-* IMPLEMENTATION_GUIDE_15_AUTHENTICATION_FOUNDATION.md
+- 10_PLATFORM_CONTRACT.md
+- 11_ENGINEERING_ARCHITECTURE.md
+- 12_PLATFORM_API_SPECIFICATION.md
+- 13_DATA_MODEL.md
+- 15_DEVELOPMENT_STANDARDS.md
+- IMPLEMENTATION_GUIDE_15_AUTHENTICATION_FOUNDATION.md
 
 ---
 
@@ -44,11 +44,11 @@ This guide implements foundations from:
 
 The platform currently has:
 
-* shared Member domain type;
-* shared AuthIdentity domain type;
-* sample Member;
-* bootstrap AuthIdentity;
-* read-only Member endpoint.
+- shared Member domain type;
+- shared AuthIdentity domain type;
+- sample Member;
+- bootstrap AuthIdentity;
+- read-only Member endpoint.
 
 Now the Member endpoint should depend on temporary identity instead of directly returning a hardcoded Member.
 
@@ -126,11 +126,11 @@ If it does not match, return `null`.
 
 In `member.routes.ts`:
 
-* import bootstrap AuthIdentity;
-* read `memberId`;
-* call `getSampleMemberById(memberId)`;
-* return Member if found;
-* return a standard error response if not found.
+- import bootstrap AuthIdentity;
+- read `memberId`;
+- call `getSampleMemberById(memberId)`;
+- return Member if found;
+- return a standard error response if not found.
 
 ---
 
@@ -180,16 +180,16 @@ Full Member data should remain included as before.
 
 Do not create:
 
-* JWT;
-* password logic;
-* login;
-* logout;
-* registration;
-* sessions;
-* cookies;
-* database;
-* MongoDB models;
-* frontend auth UI.
+- JWT;
+- password logic;
+- login;
+- logout;
+- registration;
+- sessions;
+- cookies;
+- database;
+- MongoDB models;
+- frontend auth UI.
 
 Do not modify Blueprint documents.
 
@@ -221,9 +221,9 @@ http://localhost:4000/api/v1/members/me
 
 Expected:
 
-* same Member response as before;
-* route now internally uses AuthIdentity;
-* no authentication prompt required yet.
+- same Member response as before;
+- route now internally uses AuthIdentity;
+- no authentication prompt required yet.
 
 ---
 
@@ -231,14 +231,14 @@ Expected:
 
 Confirm:
 
-* `getSampleMemberById()` exists;
-* Member route imports AuthIdentity;
-* Member route uses `memberId`;
-* successful endpoint still works;
-* 404 behavior exists for missing Member;
-* TypeScript passes;
-* no real authentication was added;
-* no database was added.
+- `getSampleMemberById()` exists;
+- Member route imports AuthIdentity;
+- Member route uses `memberId`;
+- successful endpoint still works;
+- 404 behavior exists for missing Member;
+- TypeScript passes;
+- no real authentication was added;
+- no database was added.
 
 ---
 

@@ -74,17 +74,17 @@ Help visitors understand Humanity Union.
 
 Member questions:
 
-* What is Humanity Union?
-* Why does it exist?
-* Why should I care?
-* Can I contribute?
+- What is Humanity Union?
+- Why does it exist?
+- Why should I care?
+- Can I contribute?
 
 Platform responsibilities:
 
-* Explain the mission clearly.
-* Show real impact.
-* Demonstrate community activity.
-* Present simple opportunities.
+- Explain the mission clearly.
+- Show real impact.
+- Demonstrate community activity.
+- Present simple opportunities.
 
 Desired outcome:
 
@@ -100,12 +100,12 @@ Help new Members feel comfortable.
 
 Platform responsibilities:
 
-* Friendly onboarding.
-* Simple profile creation.
-* Impact Profile introduction.
-* Privacy explanation.
-* Verification overview.
-* First recommendations.
+- Friendly onboarding.
+- Simple profile creation.
+- Impact Profile introduction.
+- Privacy explanation.
+- Verification overview.
+- First recommendations.
 
 Desired outcome:
 
@@ -121,11 +121,11 @@ Increase understanding before participation.
 
 Platform responsibilities:
 
-* Recommend ACTUC learning paths.
-* Provide verified knowledge.
-* Explain important issues.
-* Offer educational resources.
-* Encourage critical thinking.
+- Recommend ACTUC learning paths.
+- Provide verified knowledge.
+- Explain important issues.
+- Offer educational resources.
+- Encourage critical thinking.
 
 Desired outcome:
 
@@ -141,14 +141,14 @@ Help every Member make their first meaningful contribution.
 
 Possible actions:
 
-* Comment
-* Support a Proposal
-* Sign a Petition
-* Participate in a Poll
-* Vote
-* Join a Community
-* Complete learning
-* Volunteer
+- Comment
+- Support a Proposal
+- Sign a Petition
+- Participate in a Poll
+- Vote
+- Join a Community
+- Complete learning
+- Volunteer
 
 Important principle:
 
@@ -168,12 +168,12 @@ Support Members who want to solve problems.
 
 Platform responsibilities:
 
-* Initiative creation tools.
-* Templates.
-* Collaboration suggestions.
-* Evidence support.
-* Similar initiative recommendations.
-* Team building.
+- Initiative creation tools.
+- Templates.
+- Collaboration suggestions.
+- Evidence support.
+- Similar initiative recommendations.
+- Team building.
 
 Desired outcome:
 
@@ -189,11 +189,11 @@ Transform individual participation into cooperation.
 
 Platform responsibilities:
 
-* Recommend teammates.
-* Connect local communities.
-* Match complementary skills.
-* Encourage respectful discussion.
-* Highlight shared goals.
+- Recommend teammates.
+- Connect local communities.
+- Match complementary skills.
+- Encourage respectful discussion.
+- Highlight shared goals.
 
 Desired outcome:
 
@@ -209,11 +209,11 @@ Strengthen local communities.
 
 Platform responsibilities:
 
-* Regional spaces.
-* Local initiatives.
-* Local volunteering.
-* Community statistics.
-* Community celebrations.
+- Regional spaces.
+- Local initiatives.
+- Local volunteering.
+- Community statistics.
+- Community celebrations.
 
 Desired outcome:
 
@@ -229,20 +229,20 @@ Help Members recognize personal development.
 
 Platform responsibilities:
 
-* Reflection.
-* Weekly summaries.
-* Monthly insights.
-* Fair history.
-* Growth timeline.
-* New opportunities.
+- Reflection.
+- Weekly summaries.
+- Monthly insights.
+- Fair history.
+- Growth timeline.
+- New opportunities.
 
 Growth is measured by:
 
-* understanding;
-* contribution;
-* cooperation;
-* consistency;
-* positive impact.
+- understanding;
+- contribution;
+- cooperation;
+- consistency;
+- positive impact.
 
 Growth is never measured by popularity.
 
@@ -256,11 +256,11 @@ Enable experienced Members to help others.
 
 Platform responsibilities:
 
-* Mentoring opportunities.
-* Knowledge sharing.
-* Initiative support.
-* Community guidance.
-* Educational contribution.
+- Mentoring opportunities.
+- Knowledge sharing.
+- Initiative support.
+- Community guidance.
+- Educational contribution.
 
 Desired outcome:
 
@@ -276,19 +276,19 @@ Prepare Members for participation in Humanity Union institutions.
 
 Possible destinations:
 
-* ACTUC
-* Humanity Council elections
-* Working Groups
-* Regional Committees
-* World Protection Corps
-* Secretariat participation
+- ACTUC
+- Humanity Council elections
+- Working Groups
+- Regional Committees
+- World Protection Corps
+- Secretariat participation
 
 Institutional participation should always be based on:
 
-* contribution;
-* trust;
-* knowledge;
-* collaboration.
+- contribution;
+- trust;
+- knowledge;
+- collaboration.
 
 ---
 
@@ -314,12 +314,12 @@ Help Members create long-term value.
 
 Examples:
 
-* Educational resources.
-* Successful initiatives.
-* Community development.
-* Mentorship.
-* Institutional improvements.
-* Knowledge contributions.
+- Educational resources.
+- Successful initiatives.
+- Community development.
+- Mentorship.
+- Institutional improvements.
+- Knowledge contributions.
 
 The greatest contribution is enabling future generations to continue improving humanity.
 
@@ -347,14 +347,14 @@ Human growth is multidimensional.
 
 Every journey should:
 
-* reduce fear;
-* increase understanding;
-* encourage cooperation;
-* respect personal freedom;
-* explain recommendations;
-* celebrate meaningful participation;
-* avoid manipulation;
-* remain voluntary.
+- reduce fear;
+- increase understanding;
+- encourage cooperation;
+- respect personal freedom;
+- explain recommendations;
+- celebrate meaningful participation;
+- avoid manipulation;
+- remain voluntary.
 
 ---
 
@@ -400,14 +400,14 @@ The platform should never intentionally generate anxiety, addiction, outrage, or
 
 The success of a journey is evaluated by:
 
-* increased understanding;
-* meaningful participation;
-* cooperation;
-* initiative creation;
-* completed projects;
-* mentoring activity;
-* long-term engagement;
-* measurable positive impact.
+- increased understanding;
+- meaningful participation;
+- cooperation;
+- initiative creation;
+- completed projects;
+- mentoring activity;
+- long-term engagement;
+- measurable positive impact.
 
 The goal is not more activity.
 

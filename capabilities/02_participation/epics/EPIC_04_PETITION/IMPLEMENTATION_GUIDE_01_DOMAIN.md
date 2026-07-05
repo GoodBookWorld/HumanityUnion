@@ -186,19 +186,19 @@ They are not embedded aggregate roots.
 
 All layers must preserve invariants from `STATE_MACHINE.md`.
 
-| ID | Invariant |
-|----|-----------|
-| PI-001 | One approved Collective Decision reference per Petition |
-| PI-002 | One Petition lifecycle per approved decision subject path in Version 1 |
-| PI-003 | One Signature per Participant per Petition |
-| PI-004 | Signatures recorded only during `Open` in Version 1 |
-| PI-005 | Recorded Signatures are immutable |
-| PI-006 | Petition Policy structure immutable after `Published` |
-| PI-007 | Petition Subject presentation immutable after `Published` |
-| PI-008 | Support Metrics are always derived, never manually authored |
-| PI-009 | Petition Outcome is always derived, never a lifecycle substitute |
-| PI-010 | Archived Petitions are immutable |
-| PI-011 | Petition never modifies Initiative, Collaborative Analysis or Collective Decision |
+| ID     | Invariant                                                                              |
+| ------ | -------------------------------------------------------------------------------------- |
+| PI-001 | One approved Collective Decision reference per Petition                                |
+| PI-002 | One Petition lifecycle per approved decision subject path in Version 1                 |
+| PI-003 | One Signature per Participant per Petition                                             |
+| PI-004 | Signatures recorded only during `Open` in Version 1                                    |
+| PI-005 | Recorded Signatures are immutable                                                      |
+| PI-006 | Petition Policy structure immutable after `Published`                                  |
+| PI-007 | Petition Subject presentation immutable after `Published`                              |
+| PI-008 | Support Metrics are always derived, never manually authored                            |
+| PI-009 | Petition Outcome is always derived, never a lifecycle substitute                       |
+| PI-010 | Archived Petitions are immutable                                                       |
+| PI-011 | Petition never modifies Initiative, Collaborative Analysis or Collective Decision      |
 | PI-012 | Community and Public Participation share the same Signature rules and lifecycle states |
 
 Derived concepts are not lifecycle states:
@@ -443,15 +443,15 @@ Domain events are documented here as audit and integration expectations for Guid
 
 Recommended event names for future Store emission:
 
-| Event | When |
-|-------|------|
-| `PetitionCreated` | Petition enters `Draft` with approved decision reference |
-| `PetitionPrepared` | Transition `Draft → Ready` |
-| `PetitionPublished` | Transition `Ready → Published`; Share Link activated |
-| `PetitionOpened` | Transition `Published → Open` |
-| `SignatureRecorded` | Immutable Signature appended during `Open` |
-| `PetitionClosed` | Transition `Open → Closed` |
-| `PetitionArchived` | Transition `Closed → Archived` |
+| Event               | When                                                     |
+| ------------------- | -------------------------------------------------------- |
+| `PetitionCreated`   | Petition enters `Draft` with approved decision reference |
+| `PetitionPrepared`  | Transition `Draft → Ready`                               |
+| `PetitionPublished` | Transition `Ready → Published`; Share Link activated     |
+| `PetitionOpened`    | Transition `Published → Open`                            |
+| `SignatureRecorded` | Immutable Signature appended during `Open`               |
+| `PetitionClosed`    | Transition `Open → Closed`                               |
+| `PetitionArchived`  | Transition `Closed → Archived`                           |
 
 Event payloads should include:
 
@@ -807,14 +807,14 @@ Guide 01 is complete when all items below are satisfied.
 
 Deferred to later guides:
 
-| Guide | Responsibility |
-|-------|----------------|
-| Guide 02 — Petition Store | lifecycle enforcement, signatures, derived metrics, repository behavior |
-| Guide 03 — Petition API | REST exposure |
-| Guide 04 — Petition Workspace | operational experience |
-| Guide 05 — Public Petition Projection | public read model types and builder |
-| Guide 06 — Platform Integration | Collective Decision eligibility reads, Initiative references |
-| Guide 07 — Architecture Review | epic verification |
+| Guide                                 | Responsibility                                                          |
+| ------------------------------------- | ----------------------------------------------------------------------- |
+| Guide 02 — Petition Store             | lifecycle enforcement, signatures, derived metrics, repository behavior |
+| Guide 03 — Petition API               | REST exposure                                                           |
+| Guide 04 — Petition Workspace         | operational experience                                                  |
+| Guide 05 — Public Petition Projection | public read model types and builder                                     |
+| Guide 06 — Platform Integration       | Collective Decision eligibility reads, Initiative references            |
+| Guide 07 — Architecture Review        | epic verification                                                       |
 
 ---
 

@@ -30,24 +30,24 @@ Allow the platform to adapt to the Member instead of forcing the Member to adapt
 
 Epic 03 includes:
 
-* Language Preferences
-* Localization Preferences
-* Time Zone
-* Date & Time Format
-* Notification Preferences (foundation)
-* Accessibility Preferences (foundation)
-* Workspace Preferences (foundation)
+- Language Preferences
+- Localization Preferences
+- Time Zone
+- Date & Time Format
+- Notification Preferences (foundation)
+- Accessibility Preferences (foundation)
+- Workspace Preferences (foundation)
 
 Epic 03 does not include:
 
-* Translation Engine
-* Email notifications
-* Push notifications
-* SMS
-* Theme switching
-* AI personalization
-* Privacy controls
-* Geo-personalization
+- Translation Engine
+- Email notifications
+- Push notifications
+- SMS
+- Theme switching
+- AI personalization
+- Privacy controls
+- Geo-personalization
 
 ---
 
@@ -69,13 +69,13 @@ Guide 30 — Epic 03 Architecture Review
 
 Epic 03 follows:
 
-* Progressive Bootstrap
-* Domain Ownership
-* Structured Identity
-* Multiple Projections
-* Calm Interfaces
-* User-Controlled Experience
-* Progressive Preferences
+- Progressive Bootstrap
+- Domain Ownership
+- Structured Identity
+- Multiple Projections
+- Calm Interfaces
+- User-Controlled Experience
+- Progressive Preferences
 
 ---
 
@@ -83,11 +83,11 @@ Epic 03 follows:
 
 After completion Humanity Union will provide:
 
-* Member Preferences Domain
-* Preferences API
-* Preferences Workspace
-* Public Participation Profile projection
-* Foundation for localization
+- Member Preferences Domain
+- Preferences API
+- Preferences Workspace
+- Public Participation Profile projection
+- Foundation for localization
 
 ---
 
@@ -95,15 +95,15 @@ After completion Humanity Union will provide:
 
 Requires:
 
-* Epic 01
-* Epic 02
+- Epic 01
+- Epic 02
 
 Provides foundation for:
 
-* Language & Translation Architecture
-* Accessibility
-* Notifications
-* Future Workspace
+- Language & Translation Architecture
+- Accessibility
+- Notifications
+- Future Workspace
 
 ---
 
@@ -111,12 +111,12 @@ Provides foundation for:
 
 Epic 03 is complete when:
 
-* Preferences Domain exists.
-* Preferences API works.
-* Workspace displays preferences.
-* Projection protects private preferences.
-* Documentation synchronized.
-* Architecture Review passes.
+- Preferences Domain exists.
+- Preferences API works.
+- Workspace displays preferences.
+- Projection protects private preferences.
+- Documentation synchronized.
+- Architecture Review passes.
 
 ---
 

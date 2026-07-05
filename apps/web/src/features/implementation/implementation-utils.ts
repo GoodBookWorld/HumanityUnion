@@ -128,10 +128,7 @@ export function getMilestonesForPhase(
     .sort((left, right) => left.sequenceOrder - right.sequenceOrder);
 }
 
-export function getMilestoneTitle(
-  implementation: Implementation,
-  milestoneId: string,
-): string {
+export function getMilestoneTitle(implementation: Implementation, milestoneId: string): string {
   return (
     implementation.milestones.find((milestone) => milestone.milestoneId === milestoneId)?.title ??
     milestoneId
@@ -236,14 +233,14 @@ export function getEvidenceAttachmentUnavailableReason(
   return null;
 }
 
-export function achievementHasEvidence(implementation: Implementation, achievementId: string): boolean {
+export function achievementHasEvidence(
+  implementation: Implementation,
+  achievementId: string,
+): boolean {
   return implementation.evidence.some((entry) => entry.achievementId === achievementId);
 }
 
-export function getEvidenceForAchievement(
-  implementation: Implementation,
-  achievementId: string,
-) {
+export function getEvidenceForAchievement(implementation: Implementation, achievementId: string) {
   return implementation.evidence.filter((entry) => entry.achievementId === achievementId);
 }
 
@@ -360,8 +357,7 @@ export interface AssistantGuidance {
 }
 
 export function deriveAssistantGuidance(implementation: Implementation): AssistantGuidance {
-  const { status, collectiveProgress, completionAssessment, completion, progressIndicator } =
-    implementation;
+  const { status, completionAssessment, completion, progressIndicator } = implementation;
   const observation = deriveNextMeaningfulObservation(implementation);
   const achievements = [...implementation.achievements].sort(
     (left, right) => new Date(right.recordedAt).getTime() - new Date(left.recordedAt).getTime(),

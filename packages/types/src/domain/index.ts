@@ -75,7 +75,30 @@ export type {
   TimelineEventId,
 } from "./initiative.js";
 export type { MemberPublicProjection } from "./member-public-projection.js";
+export type {
+  LatestInitiativeCardProjection,
+  LatestInitiativeRelatedPublicLink,
+  LatestInitiativesPublicProjection,
+} from "./public-latest-initiatives.js";
 export type { PublicInitiativeProjection } from "./public-initiative.js";
+export type {
+  ParticipationPipelinePublicProjection,
+  ParticipationPipelineStageCount,
+  ParticipationPipelineStageId,
+} from "./public-participation-pipeline.js";
+export type {
+  ParticipationPublicStatisticsIndicator,
+  ParticipationPublicStatisticsProjection,
+  PublicGeographicScope,
+} from "./public-participation-statistics.js";
+export type {
+  CommunityCatalogPublicProjection,
+  CommunityExperiencePublicProjections,
+  CommunityIdentityPublicProjection,
+  CommunityImpactOverviewPublicProjection,
+  CommunityImpactOverviewSignal,
+  CommunityPublicRecord,
+} from "./public-community-experience.js";
 export type {
   PublicAnalysisSummaryProjection,
   PublicCollaborativeAnalysisProjection,

@@ -116,14 +116,14 @@ Supports personal growth.
 
 Includes:
 
-* Member
-* Impact Profile
-* Civic Dashboard
-* Growth
-* Reflection
-* Fair
-* Verification
-* Personal Journey
+- Member
+- Impact Profile
+- Civic Dashboard
+- Growth
+- Reflection
+- Fair
+- Verification
+- Personal Journey
 
 ---
 
@@ -133,13 +133,13 @@ Supports understanding.
 
 Includes:
 
-* ACTUC
-* Learning
-* Research
-* Media Purity
-* Verified Sources
-* Educational Paths
-* Analysis
+- ACTUC
+- Learning
+- Research
+- Media Purity
+- Verified Sources
+- Educational Paths
+- Analysis
 
 ---
 
@@ -149,14 +149,14 @@ Transforms ideas into action.
 
 Includes:
 
-* Proposal
-* Petition
-* Poll
-* Voting
-* Volunteer Campaign
-* Community Project
-* Implementation
-* Impact Reports
+- Proposal
+- Petition
+- Poll
+- Voting
+- Volunteer Campaign
+- Community Project
+- Implementation
+- Impact Reports
 
 ---
 
@@ -166,12 +166,12 @@ Connects people.
 
 Includes:
 
-* Communities
-* Regions
-* Cities
-* Countries
-* Collaboration Networks
-* Local Projects
+- Communities
+- Regions
+- Cities
+- Countries
+- Collaboration Networks
+- Local Projects
 
 ---
 
@@ -181,12 +181,12 @@ Coordinates governance.
 
 Includes:
 
-* Humanity Council
-* Chambers
-* Secretariat
-* Humanity Protection
-* World Protection Corps
-* Departments
+- Humanity Council
+- Chambers
+- Secretariat
+- Humanity Protection
+- World Protection Corps
+- Departments
 
 ---
 
@@ -196,12 +196,12 @@ Protects credibility.
 
 Includes:
 
-* Verification
-* Moderation
-* Transparency
-* Appeals
-* Evidence
-* Trust Signals
+- Verification
+- Moderation
+- Transparency
+- Appeals
+- Evidence
+- Trust Signals
 
 ---
 
@@ -211,11 +211,11 @@ Measures meaningful progress.
 
 Includes:
 
-* Fair
-* Reflection
-* Humanity Health Indicators
-* Humanity Observatory
-* Impact Reports
+- Fair
+- Reflection
+- Humanity Health Indicators
+- Humanity Observatory
+- Impact Reports
 
 ---
 
@@ -247,20 +247,20 @@ Every domain relies on shared platform services.
 
 Core services include:
 
-* Identity Service
-* Initiative Service
-* Knowledge Service
-* Trust Service
-* Fair Service
-* Impact Service
-* Reflection Service
-* Opportunity Service
-* Recommendation Service
-* Search Service
-* Notification Service
-* Analytics Service
-* Localization Service
-* Security Service
+- Identity Service
+- Initiative Service
+- Knowledge Service
+- Trust Service
+- Fair Service
+- Impact Service
+- Reflection Service
+- Opportunity Service
+- Recommendation Service
+- Search Service
+- Notification Service
+- Analytics Service
+- Localization Service
+- Security Service
 
 No duplicated services should exist.
 
@@ -276,11 +276,11 @@ It is guidance.
 
 Humanity Guide helps each Member discover:
 
-* what is happening;
-* what matters;
-* what matches their interests;
-* what they can realistically contribute;
-* what meaningful step comes next.
+- what is happening;
+- what matters;
+- what matches their interests;
+- what they can realistically contribute;
+- what meaningful step comes next.
 
 The platform never pressures.
 
@@ -294,13 +294,13 @@ The platform continuously observes its own health.
 
 It measures:
 
-* participation;
-* cooperation;
-* implementation;
-* verified knowledge;
-* community growth;
-* trust;
-* measurable impact.
+- participation;
+- cooperation;
+- implementation;
+- verified knowledge;
+- community growth;
+- trust;
+- measurable impact.
 
 These indicators are called Humanity Health Indicators.
 
@@ -314,12 +314,12 @@ The objective of every interaction is growth.
 
 Every major feature should help a Member:
 
-* understand more;
-* cooperate better;
-* contribute meaningfully;
-* discover new opportunities;
-* reflect on progress;
-* expand their potential.
+- understand more;
+- cooperate better;
+- contribute meaningfully;
+- discover new opportunities;
+- reflect on progress;
+- expand their potential.
 
 ---
 
@@ -337,12 +337,12 @@ Every interaction should reduce cognitive effort while increasing understanding.
 
 Every technology used by Humanity Union must comply with:
 
-* Humanity Union Constitution;
-* Charter of Ethical Technology;
-* Human-centered design principles;
-* Transparency;
-* Responsible freedom;
-* Respect for human dignity.
+- Humanity Union Constitution;
+- Charter of Ethical Technology;
+- Human-centered design principles;
+- Transparency;
+- Responsible freedom;
+- Respect for human dignity.
 
 No engineering shortcut should compromise these principles.
 
@@ -354,12 +354,12 @@ Humanity Union is designed to evolve continuously.
 
 Architecture must allow:
 
-* new institutions;
-* new civic tools;
-* new educational systems;
-* new AI capabilities;
-* future technologies;
-* international expansion.
+- new institutions;
+- new civic tools;
+- new educational systems;
+- new AI capabilities;
+- future technologies;
+- international expansion.
 
 Growth should never require architectural redesign.
 

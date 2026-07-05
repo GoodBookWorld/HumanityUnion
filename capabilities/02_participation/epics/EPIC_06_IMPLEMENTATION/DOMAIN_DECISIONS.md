@@ -597,14 +597,14 @@ They are deferred because they would redefine Implementation's civic purpose if 
 
 ## Intentionally omitted from Version 1
 
-| Capability | Why deferred |
-|------------|--------------|
-| **Coordination** | Structured coordination beyond collective progress recording |
-| **Scheduling** | Time-slot and deadline assignment for people or resources |
-| **Messaging** | Chat, threads and informal coordination replacing accountable updates |
-| **Calendar** | Shared or personal calendar management |
-| **Task Assignment** | Personal or role-based work delegation |
-| **Volunteer Management** | Roster, dispatch and shift coordination |
+| Capability               | Why deferred                                                          |
+| ------------------------ | --------------------------------------------------------------------- |
+| **Coordination**         | Structured coordination beyond collective progress recording          |
+| **Scheduling**           | Time-slot and deadline assignment for people or resources             |
+| **Messaging**            | Chat, threads and informal coordination replacing accountable updates |
+| **Calendar**             | Shared or personal calendar management                                |
+| **Task Assignment**      | Personal or role-based work delegation                                |
+| **Volunteer Management** | Roster, dispatch and shift coordination                               |
 
 These may be introduced later as **independent capabilities** adjacent to Implementation.
 
@@ -626,23 +626,23 @@ It does not silently convert Implementation into project management software.
 
 # Decision Summary
 
-| # | Decision | Status |
-|---|----------|--------|
-| 01 | Implementation begins only after approved Implementation Commitment | Approved |
-| 02 | Implementation records collective progress, not individual work | Approved |
-| 03 | Progress is derived from Achievements | Approved |
-| 04 | Completion is derived from completed required Milestones | Approved |
-| 05 | Evidence supports transparency but does not establish objective truth | Approved |
-| 06 | Every Achievement belongs to exactly one Milestone | Approved |
-| 07 | Every Milestone belongs to exactly one Phase | Approved |
-| 08 | Frozen Policy remains immutable during Implementation | Approved |
-| 09 | Implementation never manages tasks or assignments | Approved |
-| 10 | Implementation never replaces external project management systems | Approved |
-| 11 | Humanity Assistant explains but never approves achievements | Approved |
-| 12 | Public and Operational views remain separated | Approved |
-| 13 | History is preserved | Approved |
-| 14 | Future Coordination Space excluded from Version 1 | Approved |
-| 15 | Future expansion must not require Aggregate redesign | Approved |
+| #   | Decision                                                              | Status   |
+| --- | --------------------------------------------------------------------- | -------- |
+| 01  | Implementation begins only after approved Implementation Commitment   | Approved |
+| 02  | Implementation records collective progress, not individual work       | Approved |
+| 03  | Progress is derived from Achievements                                 | Approved |
+| 04  | Completion is derived from completed required Milestones              | Approved |
+| 05  | Evidence supports transparency but does not establish objective truth | Approved |
+| 06  | Every Achievement belongs to exactly one Milestone                    | Approved |
+| 07  | Every Milestone belongs to exactly one Phase                          | Approved |
+| 08  | Frozen Policy remains immutable during Implementation                 | Approved |
+| 09  | Implementation never manages tasks or assignments                     | Approved |
+| 10  | Implementation never replaces external project management systems     | Approved |
+| 11  | Humanity Assistant explains but never approves achievements           | Approved |
+| 12  | Public and Operational views remain separated                         | Approved |
+| 13  | History is preserved                                                  | Approved |
+| 14  | Future Coordination Space excluded from Version 1                     | Approved |
+| 15  | Future expansion must not require Aggregate redesign                  | Approved |
 
 ---
 

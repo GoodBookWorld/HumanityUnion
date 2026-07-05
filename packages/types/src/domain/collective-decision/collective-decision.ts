@@ -8,13 +8,7 @@ import type { ParticipantDecision } from "./participant-decision.js";
 export type DecisionId = string;
 
 export type DecisionSubjectType =
-  | "Initiative"
-  | "Candidate"
-  | "Policy"
-  | "Project"
-  | "Organization"
-  | "Institution"
-  | "Program";
+  "Initiative" | "Candidate" | "Policy" | "Project" | "Organization" | "Institution" | "Program";
 
 export type DecisionMechanism =
   | "CommunityPoll"
@@ -25,13 +19,7 @@ export type DecisionMechanism =
   | "GovernanceDecision";
 
 export type CollectiveDecisionStatus =
-  | "Draft"
-  | "Scheduled"
-  | "Active"
-  | "Closed"
-  | "Completed"
-  | "Archived"
-  | "Cancelled";
+  "Draft" | "Scheduled" | "Active" | "Closed" | "Completed" | "Archived" | "Cancelled";
 
 export interface CollectiveDecision {
   decisionId: DecisionId;

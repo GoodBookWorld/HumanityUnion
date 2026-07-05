@@ -17,7 +17,9 @@ const SIGNAL_TYPE_LABELS: Record<SignalType, string> = {
   ReadyForPoll: "Ready for Poll",
 };
 
-function countSignalsByType(signals: Signal[]): { type: SignalType; label: string; count: number }[] {
+function countSignalsByType(
+  signals: Signal[],
+): { type: SignalType; label: string; count: number }[] {
   const counts = new Map<SignalType, number>();
 
   for (const signal of signals) {

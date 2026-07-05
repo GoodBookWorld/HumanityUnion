@@ -1,8 +1,4 @@
-import type {
-  CommitmentState,
-  ContributionItem,
-  ImplementationCommitment,
-} from "@hu/types";
+import type { CommitmentState, ContributionItem, ImplementationCommitment } from "@hu/types";
 
 export const BOOTSTRAP_PARTICIPANT_ID = "member-bootstrap-001";
 
@@ -115,8 +111,7 @@ export function participantHasActiveDeclaration(
 
 export function getThresholdDescription(thresholdId: string): string {
   return (
-    THRESHOLD_CATALOG.find((entry) => entry.thresholdId === thresholdId)?.description ??
-    thresholdId
+    THRESHOLD_CATALOG.find((entry) => entry.thresholdId === thresholdId)?.description ?? thresholdId
   );
 }
 
@@ -161,7 +156,10 @@ export function getPolicyRequirementGroups(commitment: ImplementationCommitment)
       const index = optional.findIndex((item) => item.thresholdId === entry.thresholdId);
 
       if (index >= 0) {
-        optional[index] = { thresholdId: entry.thresholdId, description: `${entry.description} (satisfied)` };
+        optional[index] = {
+          thresholdId: entry.thresholdId,
+          description: `${entry.description} (satisfied)`,
+        };
       }
     }
   }
@@ -263,7 +261,6 @@ export function deriveAssistantGuidance(
 ): AssistantGuidance {
   const needs = getCommunityNeeds(commitment);
   const hasDeclaration = participantHasActiveDeclaration(commitment, participantId);
-  const readiness = commitment.implementationReadiness;
 
   const highlights: string[] = [
     "Implementation Readiness is derived from declared capacity and Frozen Policy.",
@@ -271,9 +268,7 @@ export function deriveAssistantGuidance(
   ];
 
   if (needs.length > 0) {
-    highlights.push(
-      ...needs.map((need) => `Pending policy requirement: ${need.description}.`),
-    );
+    highlights.push(...needs.map((need) => `Pending policy requirement: ${need.description}.`));
   } else if (commitment.status === "Active") {
     highlights.push("Required Community Needs are currently satisfied by declared capacity.");
   }

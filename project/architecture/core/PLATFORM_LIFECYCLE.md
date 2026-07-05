@@ -312,9 +312,9 @@ This document complements:
 - API_DESIGN_GUIDELINES.md
 - UI_ARCHITECTURE_GUIDELINES.md
 
-Those documents describe *how* the platform is engineered.
+Those documents describe _how_ the platform is engineered.
 
-This document describes *how the platform itself evolves over time.*
+This document describes _how the platform itself evolves over time._
 
 ---
 

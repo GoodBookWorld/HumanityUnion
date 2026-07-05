@@ -12,8 +12,8 @@ export function ImplementationStatusSection({ implementation }: ImplementationSt
   return (
     <div className="implementation-status">
       <p className="implementation-section__derived">
-        Lifecycle status is authoritative aggregate state. Derived progress and completion are
-        shown separately and cannot be edited here.
+        Lifecycle status is authoritative aggregate state. Derived progress and completion are shown
+        separately and cannot be edited here.
       </p>
       <ProfileField label="Lifecycle State" value={implementation.status} />
       <ProfileField label="Lifecycle Meaning" value={getLifecycleSummary(implementation.status)} />

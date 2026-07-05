@@ -75,10 +75,7 @@ export function isMemberEligible(member: Member, rules: EligibilityRules): boole
   return true;
 }
 
-export function isParticipantEligible(
-  participantId: string,
-  rules: EligibilityRules,
-): boolean {
+export function isParticipantEligible(participantId: string, rules: EligibilityRules): boolean {
   const member = getMemberById(participantId);
 
   if (!member) {
@@ -133,8 +130,7 @@ export function buildDecisionResult(decision: CollectiveDecision): DecisionResul
     const count = submitted.filter((entry) =>
       entry.selectedOptionIds.includes(option.optionId),
     ).length;
-    const percentage =
-      submitted.length === 0 ? 0 : Math.round((count / submitted.length) * 100);
+    const percentage = submitted.length === 0 ? 0 : Math.round((count / submitted.length) * 100);
 
     return {
       optionId: option.optionId,
@@ -154,9 +150,7 @@ export function buildDecisionResult(decision: CollectiveDecision): DecisionResul
       : Math.round((submitted.length / eligibleParticipantCount) * 100);
   const quorumSatisfied = submitted.length >= rules.quorumRequired;
   const approveOption = decision.ballot.options.find((option) => option.value === "Approve");
-  const approveResult = optionResults.find(
-    (result) => result.optionId === approveOption?.optionId,
-  );
+  const approveResult = optionResults.find((result) => result.optionId === approveOption?.optionId);
   const thresholdSatisfied = (approveResult?.percentage ?? 0) >= rules.approvalThreshold;
 
   return {
@@ -170,17 +164,12 @@ export function buildDecisionResult(decision: CollectiveDecision): DecisionResul
   };
 }
 
-export function buildOutcome(
-  decision: CollectiveDecision,
-  result: DecisionResult,
-): Outcome {
+export function buildOutcome(decision: CollectiveDecision, result: DecisionResult): Outcome {
   const winningOption = decision.ballot.options.find(
     (option) => option.optionId === result.winningOptionId,
   );
   const approved =
-    winningOption?.value === "Approve" &&
-    result.quorumSatisfied &&
-    result.thresholdSatisfied;
+    winningOption?.value === "Approve" && result.quorumSatisfied && result.thresholdSatisfied;
 
   return {
     outcomeId: `outcome-${decision.decisionId}`,

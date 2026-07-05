@@ -78,16 +78,16 @@ Manage the complete lifecycle of every Member.
 
 Responsibilities:
 
-* Registration
-* Authentication integration
-* Public Profile
-* Civic Dashboard
-* Impact Profile
-* Verification
-* Preferences
-* Privacy
-* Member Journey
-* Growth History
+- Registration
+- Authentication integration
+- Public Profile
+- Civic Dashboard
+- Impact Profile
+- Verification
+- Preferences
+- Privacy
+- Member Journey
+- Growth History
 
 Supports:
 
@@ -111,27 +111,27 @@ Manage every civic initiative.
 
 Supported initiative types:
 
-* Proposal
-* Petition
-* Poll
-* Voting
-* Volunteer Campaign
-* Community Project
-* Educational Initiative
-* ACTUC Initiative
+- Proposal
+- Petition
+- Poll
+- Voting
+- Volunteer Campaign
+- Community Project
+- Educational Initiative
+- ACTUC Initiative
 
 Responsibilities:
 
-* Creation
-* Editing
-* Discussion
-* Collaboration
-* Evidence
-* Timeline
-* Status
-* Implementation
-* Archive
-* Statistics
+- Creation
+- Editing
+- Discussion
+- Collaboration
+- Evidence
+- Timeline
+- Status
+- Implementation
+- Archive
+- Statistics
 
 ---
 
@@ -143,14 +143,14 @@ Support understanding before participation.
 
 Responsibilities:
 
-* Articles
-* ACTUC
-* Learning
-* Verified Sources
-* Media Purity
-* Fact Check
-* Research
-* Educational Paths
+- Articles
+- ACTUC
+- Learning
+- Verified Sources
+- Media Purity
+- Fact Check
+- Research
+- Educational Paths
 
 Knowledge Service should continuously strengthen Initiative Service.
 
@@ -164,12 +164,12 @@ Support cooperation.
 
 Responsibilities:
 
-* Communities
-* Local Groups
-* Regional Collaboration
-* Community Membership
-* Community Projects
-* Local Statistics
+- Communities
+- Local Groups
+- Regional Collaboration
+- Community Membership
+- Community Projects
+- Local Statistics
 
 ---
 
@@ -181,13 +181,13 @@ Support Humanity Union governance.
 
 Responsibilities:
 
-* Humanity Council
-* Chambers
-* Secretariat
-* Humanity Protection
-* WPC
-* Institutional Decisions
-* Working Groups
+- Humanity Council
+- Chambers
+- Secretariat
+- Humanity Protection
+- WPC
+- Institutional Decisions
+- Working Groups
 
 ---
 
@@ -199,13 +199,13 @@ Measure civic participation.
 
 Responsibilities:
 
-* Fair calculation
-* Activity recording
-* Contribution history
-* Initiative Fair
-* Community Fair
-* Regional Fair
-* Reflection data
+- Fair calculation
+- Activity recording
+- Contribution history
+- Initiative Fair
+- Community Fair
+- Regional Fair
+- Reflection data
 
 Rule:
 
@@ -223,11 +223,11 @@ Measure meaningful change.
 
 Responsibilities:
 
-* Personal Impact
-* Community Impact
-* Initiative Impact
-* Regional Impact
-* Humanity Health Indicators
+- Personal Impact
+- Community Impact
+- Initiative Impact
+- Regional Impact
+- Humanity Health Indicators
 
 Impact should always be measurable whenever possible.
 
@@ -241,12 +241,12 @@ Help Members understand their own development.
 
 Responsibilities:
 
-* Weekly summaries
-* Monthly summaries
-* Growth timeline
-* Lessons learned
-* Participation patterns
-* Progress visualization
+- Weekly summaries
+- Monthly summaries
+- Growth timeline
+- Lessons learned
+- Participation patterns
+- Progress visualization
 
 Reflection should encourage growth rather than comparison.
 
@@ -260,12 +260,12 @@ Connect Members with meaningful opportunities.
 
 Responsibilities:
 
-* Recommended initiatives
-* Local volunteering
-* Learning opportunities
-* Community needs
-* Institution participation
-* Mentoring opportunities
+- Recommended initiatives
+- Local volunteering
+- Learning opportunities
+- Community needs
+- Institution participation
+- Mentoring opportunities
 
 Opportunity Service should answer:
 

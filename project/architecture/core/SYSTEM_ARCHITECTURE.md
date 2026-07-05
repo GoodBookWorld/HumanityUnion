@@ -83,15 +83,15 @@ Humanity Union
 
 Each Capability owns one primary Aggregate Root.
 
-| Capability | Aggregate Root |
-|------------|----------------|
-| Human Identity | Member |
-| Participation | Initiative |
-| Fair | Fair Profile (planned) |
-| Governance | Institution (planned) |
-| Organizations | Organization (planned) |
-| Media | Publication (planned) |
-| Knowledge | Knowledge Asset (planned) |
+| Capability     | Aggregate Root            |
+| -------------- | ------------------------- |
+| Human Identity | Member                    |
+| Participation  | Initiative                |
+| Fair           | Fair Profile (planned)    |
+| Governance     | Institution (planned)     |
+| Organizations  | Organization (planned)    |
+| Media          | Publication (planned)     |
+| Knowledge      | Knowledge Asset (planned) |
 
 Aggregate Roots represent the architectural center of gravity for each Capability.
 

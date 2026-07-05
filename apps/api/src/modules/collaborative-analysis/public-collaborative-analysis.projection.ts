@@ -33,9 +33,7 @@ const SIGNAL_TYPES: SignalType[] = [
   "ReadyForPoll",
 ];
 
-function buildProgressPolicySummary(
-  analysis: CollaborativeAnalysis,
-): PublicProgressPolicySummary {
+function buildProgressPolicySummary(analysis: CollaborativeAnalysis): PublicProgressPolicySummary {
   return {
     minimumContributions: analysis.progressPolicy.minimumContributions,
     minimumSignals: analysis.progressPolicy.minimumSignals,
@@ -80,10 +78,7 @@ function buildContributionStatistics(
   }
 
   for (const contribution of analysis.contributions) {
-    counts.set(
-      contribution.contributionType,
-      (counts.get(contribution.contributionType) ?? 0) + 1,
-    );
+    counts.set(contribution.contributionType, (counts.get(contribution.contributionType) ?? 0) + 1);
   }
 
   return {

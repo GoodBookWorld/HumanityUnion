@@ -516,21 +516,21 @@ Completed → Archived
 
 ## Transition conditions summary
 
-| Transition | Entry requirement |
-|------------|-------------------|
-| Planned → Started | References complete; Frozen Policy attached; start conditions satisfied |
-| Started → In Progress | Active collective recording authorized; structure validated |
+| Transition              | Entry requirement                                                                |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| Planned → Started       | References complete; Frozen Policy attached; start conditions satisfied          |
+| Started → In Progress   | Active collective recording authorized; structure validated                      |
 | In Progress → Completed | Required milestones satisfied; Completion Assessment and Completion derived true |
-| Completed → Archived | Final derivation stable; historical retention satisfied |
+| Completed → Archived    | Final derivation stable; historical retention satisfied                          |
 
 ## Valid supporting entity transitions (within aggregate)
 
-| Entity | Transition | Entry requirement |
-|--------|------------|-------------------|
-| Milestone | Open → Satisfied | Achievement and criteria conditions met via **Complete Milestone** |
-| Phase | Open → Complete | Phase milestone conditions met via **Complete Phase** |
-| Achievement | — | Recorded once; history preserved |
-| Evidence | — | Attached to existing achievement; history preserved |
+| Entity      | Transition       | Entry requirement                                                  |
+| ----------- | ---------------- | ------------------------------------------------------------------ |
+| Milestone   | Open → Satisfied | Achievement and criteria conditions met via **Complete Milestone** |
+| Phase       | Open → Complete  | Phase milestone conditions met via **Complete Phase**              |
+| Achievement | —                | Recorded once; history preserved                                   |
+| Evidence    | —                | Attached to existing achievement; history preserved                |
 
 ---
 
@@ -562,18 +562,18 @@ Archived → Completed
 
 ## Forbidden command patterns
 
-| Pattern | Reason |
-|---------|--------|
-| Manual set of Collective Progress | Derived only — Decision 03 |
-| Manual set of Completion | Derived only — Decision 04 |
-| Achievement without Milestone | Invariant **IM-004** |
-| Milestone without Phase | Invariant **IM-003** |
-| Evidence without Achievement | Invariant **IM-005** |
-| Create Implementation without Commitment reference | Decision 01 |
-| In-place Frozen Policy mutation | Decision 08 |
-| Cross-aggregate mutation | Invariant **IM-016** |
-| Task assignment commands | Decision 09 |
-| Assistant-recorded achievements | Decision 11 |
+| Pattern                                            | Reason                     |
+| -------------------------------------------------- | -------------------------- |
+| Manual set of Collective Progress                  | Derived only — Decision 03 |
+| Manual set of Completion                           | Derived only — Decision 04 |
+| Achievement without Milestone                      | Invariant **IM-004**       |
+| Milestone without Phase                            | Invariant **IM-003**       |
+| Evidence without Achievement                       | Invariant **IM-005**       |
+| Create Implementation without Commitment reference | Decision 01                |
+| In-place Frozen Policy mutation                    | Decision 08                |
+| Cross-aggregate mutation                           | Invariant **IM-016**       |
+| Task assignment commands                           | Decision 09                |
+| Assistant-recorded achievements                    | Decision 11                |
 
 ---
 
@@ -642,34 +642,34 @@ Events do not mutate state by themselves.
 
 ## Lifecycle events
 
-| Event | Emitted when |
-|-------|--------------|
-| **ImplementationCreated** | **Create Implementation** succeeds |
-| **ImplementationStarted** | **Start Implementation** succeeds |
+| Event                       | Emitted when                         |
+| --------------------------- | ------------------------------------ |
+| **ImplementationCreated**   | **Create Implementation** succeeds   |
+| **ImplementationStarted**   | **Start Implementation** succeeds    |
 | **ImplementationCompleted** | **Complete Implementation** succeeds |
-| **ImplementationArchived** | **Archive Implementation** succeeds |
+| **ImplementationArchived**  | **Archive Implementation** succeeds  |
 
 ## Structure events
 
-| Event | Emitted when |
-|-------|--------------|
-| **PhaseAdded** | **Add Phase** succeeds |
-| **MilestoneAdded** | **Add Milestone** succeeds |
+| Event                  | Emitted when                    |
+| ---------------------- | ------------------------------- |
+| **PhaseAdded**         | **Add Phase** succeeds          |
+| **MilestoneAdded**     | **Add Milestone** succeeds      |
 | **MilestoneCompleted** | **Complete Milestone** succeeds |
-| **PhaseCompleted** | **Complete Phase** succeeds |
+| **PhaseCompleted**     | **Complete Phase** succeeds     |
 
 ## Recording events
 
-| Event | Emitted when |
-|-------|--------------|
+| Event                   | Emitted when                    |
+| ----------------------- | ------------------------------- |
 | **AchievementRecorded** | **Record Achievement** succeeds |
-| **EvidenceAttached** | **Attach Evidence** succeeds |
+| **EvidenceAttached**    | **Attach Evidence** succeeds    |
 
 ## Derivation events
 
-| Event | Emitted when |
-|-------|--------------|
-| **ProgressUpdated** | Collective Progress or Progress Indicator derivation changes |
+| Event                 | Emitted when                                                                 |
+| --------------------- | ---------------------------------------------------------------------------- |
+| **ProgressUpdated**   | Collective Progress or Progress Indicator derivation changes                 |
 | **CompletionUpdated** | Completion Assessment, Completion or Completion Indicator derivation changes |
 
 ---
@@ -728,11 +728,11 @@ The following lifecycle extensions are **reserved for future versions**.
 
 They are **not part of Version 1**.
 
-| Reserved event / concept | Future intent |
-|--------------------------|---------------|
-| **CoordinationStarted** | Adjacent coordination capability begins — not aggregate lifecycle state in V1 |
-| **TaskLinked** | External or future task reference attached without task ownership in Implementation |
-| **CalendarSynchronized** | External calendar alignment — not scheduling ownership in V1 |
+| Reserved event / concept | Future intent                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------- |
+| **CoordinationStarted**  | Adjacent coordination capability begins — not aggregate lifecycle state in V1       |
+| **TaskLinked**           | External or future task reference attached without task ownership in Implementation |
+| **CalendarSynchronized** | External calendar alignment — not scheduling ownership in V1                        |
 
 Additional reserved extensions may include:
 

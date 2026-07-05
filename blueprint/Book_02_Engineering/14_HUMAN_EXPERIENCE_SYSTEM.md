@@ -34,10 +34,10 @@ Every interaction should strengthen the Member's sense of purpose.
 
 Members should always understand:
 
-* where they are;
-* what they can do;
-* why it matters;
-* what meaningful step comes next.
+- where they are;
+- what they can do;
+- why it matters;
+- what meaningful step comes next.
 
 The platform should remove uncertainty, not create it.
 
@@ -61,11 +61,11 @@ Every visit should highlight one primary next opportunity.
 
 Examples:
 
-* Continue learning.
-* Support an initiative.
-* Join your community.
-* Complete your reflection.
-* Help another Member.
+- Continue learning.
+- Support an initiative.
+- Join your community.
+- Complete your reflection.
+- Help another Member.
 
 The platform should reduce decision fatigue by focusing attention on the most meaningful next step.
 
@@ -77,17 +77,17 @@ Humanity Union reveals capabilities gradually.
 
 New Members first experience:
 
-* Welcome
-* My Impact
-* Learning
+- Welcome
+- My Impact
+- Learning
 
 As confidence grows, additional capabilities become available:
 
-* Communities
-* Initiatives
-* Collaboration
-* Mentorship
-* Institutions
+- Communities
+- Initiatives
+- Collaboration
+- Mentorship
+- Institutions
 
 Complexity grows with experience.
 
@@ -143,10 +143,10 @@ Participation in Humanity Union governance and working groups.
 
 The interface should:
 
-* reduce noise;
-* avoid unnecessary interruptions;
-* present clear explanations;
-* encourage confidence.
+- reduce noise;
+- avoid unnecessary interruptions;
+- present clear explanations;
+- encourage confidence.
 
 Notifications should support, never compete for attention.
 
@@ -156,10 +156,10 @@ Notifications should support, never compete for attention.
 
 Members should understand:
 
-* why recommendations appear;
-* why opportunities are relevant;
-* how Fair was calculated;
-* how Impact was measured.
+- why recommendations appear;
+- why opportunities are relevant;
+- how Fair was calculated;
+- how Impact was measured.
 
 Transparency builds trust.
 
@@ -169,10 +169,10 @@ Transparency builds trust.
 
 Every experience should remain accessible regardless of:
 
-* language;
-* device;
-* technical experience;
-* physical ability.
+- language;
+- device;
+- technical experience;
+- physical ability.
 
 Accessibility is part of the core experience.
 
@@ -220,11 +220,11 @@ The interface supports this cycle without overwhelming the Member.
 
 The Human Experience System depends on:
 
-* Platform API
-* Platform Services
-* Platform Engines
-* Events
-* Data Model
+- Platform API
+- Platform Services
+- Platform Engines
+- Events
+- Data Model
 
 The frontend presents the experience.
 
@@ -258,17 +258,17 @@ Approved
 
 Depends On:
 
-* Book_01_Foundation
-* 11_ENGINEERING_ARCHITECTURE.md
-* 12_PLATFORM_API_SPECIFICATION.md
-* 13_DATA_MODEL.md
+- Book_01_Foundation
+- 11_ENGINEERING_ARCHITECTURE.md
+- 12_PLATFORM_API_SPECIFICATION.md
+- 13_DATA_MODEL.md
 
 Used By:
 
-* Web Application
-* Progressive Web App
-* Native Mobile Applications
-* Future Accessibility Systems
+- Web Application
+- Progressive Web App
+- Native Mobile Applications
+- Future Accessibility Systems
 
 Next Document:
 

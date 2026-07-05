@@ -24,10 +24,10 @@ No data duplication is introduced.
 
 After completing this guide:
 
-* Public Member Projection exists.
-* Public profile is independent from the private workspace.
-* Projection exposes only public fields.
-* Projection becomes the foundation for future public member pages.
+- Public Member Projection exists.
+- Public profile is independent from the private workspace.
+- Projection exposes only public fields.
+- Projection becomes the foundation for future public member pages.
 
 ---
 
@@ -35,10 +35,10 @@ After completing this guide:
 
 Implements:
 
-* Capability 01 — Human Identity
-* Epic 02 — Member Profile
-* Principle of Multiple Projections
-* Principle of Domain Ownership
+- Capability 01 — Human Identity
+- Epic 02 — Member Profile
+- Principle of Multiple Projections
+- Principle of Domain Ownership
 
 ---
 
@@ -92,19 +92,19 @@ MemberPublicProjection
 
 Expose only:
 
-* displayName
-* uniqueName
-* country
-* region
-* languages
+- displayName
+- uniqueName
+- country
+- region
+- languages
 
 Do NOT expose:
 
-* fair
-* verificationLevel
-* impactProfile
-* private preferences
-* internal identifiers except uniqueName
+- fair
+- verificationLevel
+- impactProfile
+- private preferences
+- internal identifiers except uniqueName
 
 API:
 
@@ -126,16 +126,16 @@ Create a bootstrap public profile page:
 
 Display:
 
-* Display Name
-* Country
-* Region
-* Languages
+- Display Name
+- Country
+- Region
+- Languages
 
 Prepare placeholders:
 
-* Public Initiatives
-* Public Participation
-* Public Organizations
+- Public Initiatives
+- Public Participation
+- Public Organizations
 
 Display:
 
@@ -147,12 +147,12 @@ Display:
 
 Do not implement:
 
-* MongoDB
-* Search
-* Directory
-* Followers
-* Messaging
-* Authentication UI
+- MongoDB
+- Search
+- Directory
+- Followers
+- Messaging
+- Authentication UI
 
 Use projection only.
 
@@ -186,9 +186,9 @@ Open:
 
 Expected:
 
-* Public projection returned
-* Public page displayed
-* Private fields hidden
+- Public projection returned
+- Public page displayed
+- Private fields hidden
 
 ---
 
@@ -196,11 +196,11 @@ Expected:
 
 Confirm:
 
-* Projection exists.
-* Public API works.
-* Public page works.
-* Private fields are not exposed.
-* TypeScript passes.
+- Projection exists.
+- Public API works.
+- Public page works.
+- Private fields are not exposed.
+- TypeScript passes.
 
 ---
 

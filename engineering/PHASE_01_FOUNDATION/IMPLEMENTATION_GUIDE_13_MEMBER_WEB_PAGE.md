@@ -30,10 +30,10 @@ This guide does not create authentication, real user accounts, database storage,
 
 After completing this guide:
 
-* Web app can request Member data from API;
-* Member data appears in the browser;
-* API and Web begin working together;
-* Member identity becomes visible in the Human Experience layer.
+- Web app can request Member data from API;
+- Member data appears in the browser;
+- API and Web begin working together;
+- Member identity becomes visible in the Human Experience layer.
 
 ---
 
@@ -41,13 +41,13 @@ After completing this guide:
 
 This guide implements foundations from:
 
-* 10_PLATFORM_CONTRACT.md
-* 12_PLATFORM_API_SPECIFICATION.md
-* 13_DATA_MODEL.md
-* 14_HUMAN_EXPERIENCE_SYSTEM.md
-* 15_DEVELOPMENT_STANDARDS.md
-* IMPLEMENTATION_GUIDE_11_MEMBER_DOMAIN.md
-* IMPLEMENTATION_GUIDE_12_MEMBER_API.md
+- 10_PLATFORM_CONTRACT.md
+- 12_PLATFORM_API_SPECIFICATION.md
+- 13_DATA_MODEL.md
+- 14_HUMAN_EXPERIENCE_SYSTEM.md
+- 15_DEVELOPMENT_STANDARDS.md
+- IMPLEMENTATION_GUIDE_11_MEMBER_DOMAIN.md
+- IMPLEMENTATION_GUIDE_12_MEMBER_API.md
 
 ---
 
@@ -81,13 +81,13 @@ http://localhost:4000/api/v1/members/me
 
 The page should display:
 
-* displayName
-* uniqueName
-* location
-* verificationLevel
-* roles
-* Fair summary
-* Impact Profile summary
+- displayName
+- uniqueName
+- location
+- verificationLevel
+- roles
+- Fair summary
+- Impact Profile summary
 
 Use simple, readable layout.
 
@@ -121,14 +121,14 @@ View Member Profile
 
 Do not create:
 
-* authentication;
-* login;
-* registration;
-* database storage;
-* final public profile design;
-* My Impact dashboard;
-* API client package;
-* complex UI components.
+- authentication;
+- login;
+- registration;
+- database storage;
+- final public profile design;
+- My Impact dashboard;
+- API client package;
+- complex UI components.
 
 Do not modify Blueprint.
 
@@ -178,13 +178,13 @@ Member data from API appears on the page.
 
 Confirm:
 
-* member page exists;
-* homepage links to member page;
-* page fetches API data;
-* page handles API unavailable state;
-* no authentication exists;
-* no database code exists;
-* no final design was created.
+- member page exists;
+- homepage links to member page;
+- page fetches API data;
+- page handles API unavailable state;
+- no authentication exists;
+- no database code exists;
+- no final design was created.
 
 ---
 

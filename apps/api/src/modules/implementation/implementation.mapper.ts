@@ -1,8 +1,6 @@
 import type { Implementation } from "@hu/types";
 
-export function mapImplementationLinks(
-  implementation: Implementation,
-): Record<string, string> {
+export function mapImplementationLinks(implementation: Implementation): Record<string, string> {
   return {
     self: `/api/v1/implementations/${implementation.implementationId}`,
     initiative: `/api/v1/initiatives/${implementation.initiativeId}`,
@@ -16,8 +14,6 @@ export function mapImplementationResponse(implementation: Implementation): Imple
   return structuredClone(implementation);
 }
 
-export function mapImplementationListResponse(
-  implementations: Implementation[],
-): Implementation[] {
+export function mapImplementationListResponse(implementations: Implementation[]): Implementation[] {
   return implementations.map((implementation) => mapImplementationResponse(implementation));
 }

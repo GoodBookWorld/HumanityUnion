@@ -33,7 +33,10 @@ export function clonePetition(petition: Petition): Petition {
   return structuredClone(petition);
 }
 
-export function assertValidTransition(currentStatus: PetitionState, nextStatus: PetitionState): void {
+export function assertValidTransition(
+  currentStatus: PetitionState,
+  nextStatus: PetitionState,
+): void {
   const allowed = ALLOWED_TRANSITIONS[currentStatus];
 
   if (!allowed.includes(nextStatus)) {
@@ -154,7 +157,11 @@ export function calculateSupportMetrics(petition: Petition): SupportMetrics {
 }
 
 export function buildPetitionOutcome(petition: Petition): PetitionOutcome | null {
-  if (petition.status === "Draft" || petition.status === "Ready" || petition.status === "Published") {
+  if (
+    petition.status === "Draft" ||
+    petition.status === "Ready" ||
+    petition.status === "Published"
+  ) {
     return null;
   }
 

@@ -24,12 +24,12 @@ No guide should require later architectural redesign.
 
 Provide every Humanity Union Member with:
 
-* secure technical identity;
-* independent civic identity;
-* profile management;
-* privacy controls;
-* participation preferences;
-* verification status.
+- secure technical identity;
+- independent civic identity;
+- profile management;
+- privacy controls;
+- participation preferences;
+- verification status.
 
 ---
 
@@ -55,9 +55,9 @@ Define the public authentication API contract.
 
 Deliverables:
 
-* auth endpoints
-* request contracts
-* response contracts
+- auth endpoints
+- request contracts
+- response contracts
 
 Status:
 
@@ -75,9 +75,9 @@ Introduce application session context.
 
 Deliverables:
 
-* current identity context
-* request context
-* session abstraction
+- current identity context
+- request context
+- session abstraction
 
 Status:
 
@@ -95,9 +95,9 @@ Protect authenticated routes.
 
 Deliverables:
 
-* authentication middleware
-* identity resolution
-* unauthorized response
+- authentication middleware
+- identity resolution
+- unauthorized response
 
 Status:
 
@@ -235,9 +235,9 @@ Establish the Member Preferences shared domain model.
 
 Deliverables:
 
-* MemberPreferences aggregate root
-* preference value objects
-* shared domain exports
+- MemberPreferences aggregate root
+- preference value objects
+- shared domain exports
 
 Status:
 
@@ -255,9 +255,9 @@ Expose Member Preferences through the API.
 
 Deliverables:
 
-* preferences endpoints
-* bootstrap preferences store
-* authentication middleware integration
+- preferences endpoints
+- bootstrap preferences store
+- authentication middleware integration
 
 Status:
 
@@ -275,9 +275,9 @@ Display Member Preferences in the workspace.
 
 Deliverables:
 
-* preferences workspace page
-* preferences API integration
-* placeholder preference sections
+- preferences workspace page
+- preferences API integration
+- placeholder preference sections
 
 Status:
 
@@ -295,10 +295,10 @@ Expose a public-safe participation projection derived from Member and Preference
 
 Deliverables:
 
-* PublicParticipationProfile shared type
-* GET /api/v1/participation/public/:uniqueName
-* explicit visibility bootstrap
-* public participation workspace page
+- PublicParticipationProfile shared type
+- GET /api/v1/participation/public/:uniqueName
+- explicit visibility bootstrap
+- public participation workspace page
 
 Status:
 
@@ -316,10 +316,10 @@ Complete Epic 03 review.
 
 Deliverables:
 
-* architecture review
-* technical review
-* documentation review
-* roadmap update
+- architecture review
+- technical review
+- documentation review
+- roadmap update
 
 Status:
 
@@ -331,11 +331,11 @@ Completed
 
 Every guide must finish with:
 
-* TypeScript passes
-* API verification
-* Web verification
-* Git commit
-* Documentation update
+- TypeScript passes
+- API verification
+- Web verification
+- Git commit
+- Documentation update
 
 No guide advances without successful verification.
 
@@ -345,12 +345,12 @@ No guide advances without successful verification.
 
 Capability 01 is complete when:
 
-* authentication foundation is operational;
-* Member profile is editable;
-* privacy settings work;
-* verification status is visible;
-* profile navigation is integrated;
-* architecture review is completed.
+- authentication foundation is operational;
+- Member profile is editable;
+- privacy settings work;
+- verification status is visible;
+- profile navigation is integrated;
+- architecture review is completed.
 
 ---
 
@@ -358,21 +358,21 @@ Capability 01 is complete when:
 
 Depends on:
 
-* Platform Foundation
-* Shared Types
-* Shared API Client
-* Member Domain
-* Authentication Foundation
+- Platform Foundation
+- Shared Types
+- Shared API Client
+- Member Domain
+- Authentication Foundation
 
 Provides foundations for:
 
-* Initiatives
-* Communities
-* Voting
-* Proposals
-* Petitions
-* Fair Engine
-* My Impact
+- Initiatives
+- Communities
+- Voting
+- Proposals
+- Petitions
+- Fair Engine
+- My Impact
 
 ---
 

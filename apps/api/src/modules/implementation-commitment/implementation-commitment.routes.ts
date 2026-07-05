@@ -58,8 +58,17 @@ implementationCommitmentRouter.post(
   "/:commitmentId/contribution-items/:itemId/withdraw",
   withdrawContributionItemHandler,
 );
-implementationCommitmentRouter.post("/:commitmentId/withdraw", withdrawImplementationCommitmentHandler);
-implementationCommitmentRouter.post("/:commitmentId/complete", completeImplementationCommitmentHandler);
-implementationCommitmentRouter.post("/:commitmentId/archive", archiveImplementationCommitmentHandler);
+implementationCommitmentRouter.post(
+  "/:commitmentId/withdraw",
+  withdrawImplementationCommitmentHandler,
+);
+implementationCommitmentRouter.post(
+  "/:commitmentId/complete",
+  completeImplementationCommitmentHandler,
+);
+implementationCommitmentRouter.post(
+  "/:commitmentId/archive",
+  archiveImplementationCommitmentHandler,
+);
 
 export default implementationCommitmentRouter;

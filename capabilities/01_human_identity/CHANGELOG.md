@@ -24,12 +24,12 @@ Minor refactoring and routine maintenance remain tracked by Git.
 
 Each entry contains:
 
-* Version
-* Date
-* Status
-* Summary
-* Related Guides
-* Related Architecture Review
+- Version
+- Date
+- Status
+- Summary
+- Related Guides
+- Related Architecture Review
 
 ---
 
@@ -49,9 +49,9 @@ Capability 01 — Human Identity established as the first Platform Capability.
 
 Approved documents created:
 
-* CAPABILITY_01_HUMAN_IDENTITY.md
-* ROADMAP.md
-* CHANGELOG.md
+- CAPABILITY_01_HUMAN_IDENTITY.md
+- ROADMAP.md
+- CHANGELOG.md
 
 Development model officially changed from sequential implementation to Capability-Driven Development.
 
@@ -73,12 +73,12 @@ Architecture Review №2
 
 Future versions should record only significant events, including:
 
-* new completed Guides;
-* architectural improvements;
-* major capability milestones;
-* completed Architecture Reviews;
-* breaking changes;
-* approved structural revisions.
+- new completed Guides;
+- architectural improvements;
+- major capability milestones;
+- completed Architecture Reviews;
+- breaking changes;
+- approved structural revisions.
 
 Routine implementation commits should not appear here.
 
@@ -452,4 +452,3 @@ Implemented:
 Related Guides:
 
 Guide 30 — Epic 03 Architecture Review
-

@@ -64,9 +64,7 @@ const commitments = new Map<string, ImplementationCommitment>([
 
 refreshDerivedState(commitments.get(bootstrapImplementationCommitment.implementationCommitmentId)!);
 
-function getMutableCommitment(
-  implementationCommitmentId: string,
-): ImplementationCommitment | null {
+function getMutableCommitment(implementationCommitmentId: string): ImplementationCommitment | null {
   return commitments.get(implementationCommitmentId) ?? null;
 }
 

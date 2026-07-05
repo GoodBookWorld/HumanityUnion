@@ -607,36 +607,36 @@ Humanity Assistant / Policy Assistant
 
 The following pairs must **never** be used as synonyms in Epic 05 language.
 
-| Correct term | Do not substitute | Reason |
-|--------------|-------------------|--------|
-| **Implementation Commitment** | Support, Signature, Endorsement | Support belongs to Petition; commitment declares preparedness to help implement |
-| **Support** | Commitment | Petition support does not imply implementation preparedness |
-| **Volunteer** | Participant | Participant is the registered actor; Volunteer is one contribution type orientation |
-| **Participant** | Volunteer | Not all participants are volunteers; not all contributions are volunteer-type |
-| **Commitment** | Task, Assignment, Job | Commitment declares preparedness; tasks belong to Implementation execution |
-| **Task** | Commitment, Contribution | Tasks are execution artifacts — not declaration of preparedness |
-| **Implementation** | Implementation Commitment | Implementation Commitment prepares who may help; Implementation executes work |
-| **Implementation Commitment** | Implementation | Commitment stage precedes execution stage |
-| **Readiness** | Approval, Authorization | Readiness is derived preparedness; it does not re-approve the collective decision |
-| **Approval** | Readiness | Collective Decision approval precedes this stage; readiness is not a second vote |
-| **Contribution** | Employment, Contract, Hire | Declaring contribution is civic preparedness — not hiring |
-| **Employment** | Professional Contribution | Professional contribution expresses offered skill capacity — not employment status |
-| **Assistant** | Coordinator, Decision Maker, Steward of record | Assistants explain; they do not decide or record accountable acts |
-| **Policy Assistant** | Humanity Assistant (as identical scope) | Policy Assistant is policy-focused; Humanity Assistant is platform-wide guidance |
-| **Policy** | Project Plan, Roadmap, Backlog | Policy governs rules and thresholds — not execution scheduling |
-| **Project Plan** | Implementation Policy | Plans belong to Implementation planning surfaces — not policy domain |
-| **Community Capacity** | Headcount, Staffing level | Capacity is derived from declarations — not HR metrics |
-| **Implementation Readiness** | Go-live flag, Manual checkbox | Readiness is computed — never manually overridden |
-| **Capability Matching** | Auto-assignment | Matching aligns need and capacity — assignment belongs to human coordination |
-| **Community Need** | Ticket, Issue, Task | Need describes requirement — not work item ownership |
-| **Operational View** | Public View | Separate audiences, separate DTOs, separate surfaces |
-| **Public View** | Operational View | Public transparency must not expose private commitment detail by default |
-| **Contribution Recognition** | Praise, Ranking, Badge | Recognition confirms action — not personal worth |
-| **Living Policy** | Frozen Policy | Living policy is evolvable; frozen policy is intentionally stable |
-| **Frozen Policy** | Draft policy | Frozen requires explicit approval and lock semantics |
-| **Collaborative Analysis Contribution** | Implementation Commitment Contribution | Analysis contributions build understanding; commitment contributions declare implementation preparedness |
-| **Signature** | Commitment | Signatures endorse approved direction; commitments declare help toward implementation |
-| **Petition Outcome** | Implementation Readiness | Petition outcome summarizes endorsement; readiness summarizes implementation preparedness |
+| Correct term                            | Do not substitute                              | Reason                                                                                                   |
+| --------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Implementation Commitment**           | Support, Signature, Endorsement                | Support belongs to Petition; commitment declares preparedness to help implement                          |
+| **Support**                             | Commitment                                     | Petition support does not imply implementation preparedness                                              |
+| **Volunteer**                           | Participant                                    | Participant is the registered actor; Volunteer is one contribution type orientation                      |
+| **Participant**                         | Volunteer                                      | Not all participants are volunteers; not all contributions are volunteer-type                            |
+| **Commitment**                          | Task, Assignment, Job                          | Commitment declares preparedness; tasks belong to Implementation execution                               |
+| **Task**                                | Commitment, Contribution                       | Tasks are execution artifacts — not declaration of preparedness                                          |
+| **Implementation**                      | Implementation Commitment                      | Implementation Commitment prepares who may help; Implementation executes work                            |
+| **Implementation Commitment**           | Implementation                                 | Commitment stage precedes execution stage                                                                |
+| **Readiness**                           | Approval, Authorization                        | Readiness is derived preparedness; it does not re-approve the collective decision                        |
+| **Approval**                            | Readiness                                      | Collective Decision approval precedes this stage; readiness is not a second vote                         |
+| **Contribution**                        | Employment, Contract, Hire                     | Declaring contribution is civic preparedness — not hiring                                                |
+| **Employment**                          | Professional Contribution                      | Professional contribution expresses offered skill capacity — not employment status                       |
+| **Assistant**                           | Coordinator, Decision Maker, Steward of record | Assistants explain; they do not decide or record accountable acts                                        |
+| **Policy Assistant**                    | Humanity Assistant (as identical scope)        | Policy Assistant is policy-focused; Humanity Assistant is platform-wide guidance                         |
+| **Policy**                              | Project Plan, Roadmap, Backlog                 | Policy governs rules and thresholds — not execution scheduling                                           |
+| **Project Plan**                        | Implementation Policy                          | Plans belong to Implementation planning surfaces — not policy domain                                     |
+| **Community Capacity**                  | Headcount, Staffing level                      | Capacity is derived from declarations — not HR metrics                                                   |
+| **Implementation Readiness**            | Go-live flag, Manual checkbox                  | Readiness is computed — never manually overridden                                                        |
+| **Capability Matching**                 | Auto-assignment                                | Matching aligns need and capacity — assignment belongs to human coordination                             |
+| **Community Need**                      | Ticket, Issue, Task                            | Need describes requirement — not work item ownership                                                     |
+| **Operational View**                    | Public View                                    | Separate audiences, separate DTOs, separate surfaces                                                     |
+| **Public View**                         | Operational View                               | Public transparency must not expose private commitment detail by default                                 |
+| **Contribution Recognition**            | Praise, Ranking, Badge                         | Recognition confirms action — not personal worth                                                         |
+| **Living Policy**                       | Frozen Policy                                  | Living policy is evolvable; frozen policy is intentionally stable                                        |
+| **Frozen Policy**                       | Draft policy                                   | Frozen requires explicit approval and lock semantics                                                     |
+| **Collaborative Analysis Contribution** | Implementation Commitment Contribution         | Analysis contributions build understanding; commitment contributions declare implementation preparedness |
+| **Signature**                           | Commitment                                     | Signatures endorse approved direction; commitments declare help toward implementation                    |
+| **Petition Outcome**                    | Implementation Readiness                       | Petition outcome summarizes endorsement; readiness summarizes implementation preparedness                |
 
 When in doubt, use the term defined in this document — not the nearest familiar product synonym.
 
