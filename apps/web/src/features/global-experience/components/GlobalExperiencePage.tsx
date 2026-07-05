@@ -1,8 +1,4 @@
-import { getWorldLatestInitiativesPublicProjection } from "../projections/get-latest-initiatives-projection";
-import {
-  getWorldParticipationPipelinePublicProjection,
-  getWorldParticipationPublicStatisticsProjection,
-} from "../projections/get-world-projections";
+import { loadGlobalExperienceProjections } from "../../public-projection-engine";
 import { CivicIntroductionSection } from "./CivicIntroductionSection";
 import { GeographicNavigator } from "./GeographicNavigator";
 import { GlobalStatisticsSection } from "./GlobalStatisticsSection";
@@ -14,13 +10,11 @@ import { PublicExperienceHeader } from "./PublicExperienceHeader";
 import { RegistrationGatewaySection } from "./RegistrationGatewaySection";
 
 export async function GlobalExperiencePage() {
-  const [statisticsProjection, pipelineProjection, latestInitiativesProjection] = await Promise.all(
-    [
-      getWorldParticipationPublicStatisticsProjection(),
-      getWorldParticipationPipelinePublicProjection(),
-      getWorldLatestInitiativesPublicProjection(),
-    ],
-  );
+  const {
+    statistics: statisticsProjection,
+    pipeline: pipelineProjection,
+    latestInitiatives: latestInitiativesProjection,
+  } = await loadGlobalExperienceProjections();
 
   return (
     <div className="global-experience-page">

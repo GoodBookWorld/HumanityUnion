@@ -1,15 +1,23 @@
-import type {
-  ParticipationPipelinePublicProjection,
-  ParticipationPublicStatisticsProjection,
-} from "@hu/types";
+import { publicProjectionEngine } from "../../public-projection-engine";
 
-import { WORLD_PARTICIPATION_PIPELINE_PUBLIC_PROJECTION } from "./bootstrap-pipeline";
-import { WORLD_PARTICIPATION_PUBLIC_STATISTICS_PROJECTION } from "./bootstrap-statistics";
+const WORLD_SCOPE = { scope: "world" as const };
 
-export async function getWorldParticipationPublicStatisticsProjection(): Promise<ParticipationPublicStatisticsProjection> {
-  return WORLD_PARTICIPATION_PUBLIC_STATISTICS_PROJECTION;
+export async function getWorldParticipationPublicStatisticsProjection() {
+  const projection = await publicProjectionEngine.getParticipationStatistics(WORLD_SCOPE);
+
+  if (!projection) {
+    throw new Error("World participation statistics projection is unavailable.");
+  }
+
+  return projection;
 }
 
-export async function getWorldParticipationPipelinePublicProjection(): Promise<ParticipationPipelinePublicProjection> {
-  return WORLD_PARTICIPATION_PIPELINE_PUBLIC_PROJECTION;
+export async function getWorldParticipationPipelinePublicProjection() {
+  const projection = await publicProjectionEngine.getParticipationPipeline(WORLD_SCOPE);
+
+  if (!projection) {
+    throw new Error("World participation pipeline projection is unavailable.");
+  }
+
+  return projection;
 }

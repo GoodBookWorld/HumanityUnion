@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 
+import { CommunityExperiencePage } from "../../../features/community-experience/components/CommunityExperiencePage";
 import {
-  CommunityExperiencePage,
+  BOOTSTRAP_COMMUNITY_SLUGS,
   loadCommunityExperiencePageData,
-} from "../../../features/community-experience/components/CommunityExperiencePage";
-import { BOOTSTRAP_COMMUNITY_SLUGS } from "../../../features/community-experience/projections/bootstrap-communities";
+} from "../../../features/public-projection-engine";
 
 import "../../../features/global-experience/global-experience.css";
 import "../../../features/community-experience/community-experience.css";
@@ -19,11 +19,17 @@ export function generateStaticParams() {
 
 export default async function CommunityPage({ params }: CommunityPageProps) {
   const { slug } = await params;
-  const { projections, catalog } = await loadCommunityExperiencePageData(slug);
+  const pageData = await loadCommunityExperiencePageData(slug);
 
-  if (!projections) {
+  if (!pageData) {
     notFound();
   }
 
-  return <CommunityExperiencePage slug={slug} projections={projections} catalog={catalog} />;
+  return (
+    <CommunityExperiencePage
+      slug={slug}
+      projections={pageData.projections}
+      catalog={pageData.catalog}
+    />
+  );
 }

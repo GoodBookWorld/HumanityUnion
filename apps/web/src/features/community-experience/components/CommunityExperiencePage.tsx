@@ -1,9 +1,9 @@
 import type { CommunityExperiencePublicProjections } from "@hu/types";
 
 import {
-  getCommunityCatalogPublicProjection,
-  getCommunityExperiencePublicProjections,
-} from "../projections/get-community-projections";
+  loadCommunityExperiencePageData,
+  type CommunityExperiencePageData,
+} from "../../public-projection-engine";
 import { CommunityGeographicNavigator } from "./CommunityGeographicNavigator";
 import { CommunityIdentitySection } from "./CommunityIdentitySection";
 import { CommunityImpactOverviewSection } from "./CommunityImpactOverviewSection";
@@ -18,7 +18,7 @@ import { PublicExperienceHeader } from "../../global-experience/components/Publi
 interface CommunityExperiencePageProps {
   slug: string;
   projections: CommunityExperiencePublicProjections;
-  catalog: Awaited<ReturnType<typeof getCommunityCatalogPublicProjection>>;
+  catalog: CommunityExperiencePageData["catalog"];
 }
 
 export async function CommunityExperiencePage({
@@ -59,11 +59,4 @@ export async function CommunityExperiencePage({
   );
 }
 
-export async function loadCommunityExperiencePageData(slug: string) {
-  const [projections, catalog] = await Promise.all([
-    getCommunityExperiencePublicProjections(slug),
-    getCommunityCatalogPublicProjection(),
-  ]);
-
-  return { projections, catalog };
-}
+export { loadCommunityExperiencePageData };
