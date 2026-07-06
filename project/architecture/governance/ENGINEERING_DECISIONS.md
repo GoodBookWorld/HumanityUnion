@@ -314,6 +314,28 @@ Governance and authorship are separate concepts.
 
 ---
 
+## C02-ED-004
+
+### Transparent Unweighted Collective Decision Participation
+
+Capability:
+
+02 Participation
+
+Status:
+
+Accepted
+
+Reason:
+
+Collective Decision uses one participant / one vote with unweighted Support, Do Not Support, and Abstain choices. Verified and unverified statistics are displayed separately for transparency. Outcomes are never recalculated using weights, reputation, or AI. Eligibility depends on declared Participation Area, not IP. Decision Session is mandatory before any Collective Decision may open.
+
+Reference:
+
+ADR-025-TRANSPARENT-PARTICIPATION-VOTING.md, COLLECTIVE_DECISION_ARCHITECTURE.md
+
+---
+
 # Register Rules
 
 Engineering Decisions:

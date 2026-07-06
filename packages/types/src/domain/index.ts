@@ -121,6 +121,25 @@ export type {
   DecisionSessionPackageReferences,
   DecisionSessionStatus,
 } from "./decision-session.js";
+export type {
+  InitiativeCollectiveDecision,
+  InitiativeCollectiveDecisionEligibility,
+  InitiativeCollectiveDecisionId,
+  InitiativeCollectiveDecisionOutcome,
+  InitiativeCollectiveDecisionOutcomeType,
+  InitiativeCollectiveDecisionStatistics,
+  InitiativeCollectiveDecisionStatus,
+  InitiativeCollectiveDecisionVoteCohortStatistics,
+  ParticipationScope,
+} from "./initiative-collective-decision.js";
+export {
+  canTransitionInitiativeCollectiveDecision,
+  createEmptyInitiativeCollectiveDecisionOutcome,
+  createEmptyInitiativeCollectiveDecisionStatistics,
+  createEmptyInitiativeCollectiveDecisionVoteCohortStatistics,
+  INITIATIVE_COLLECTIVE_DECISION_TRANSITIONS,
+  isInitiativeCollectiveDecisionTerminal,
+} from "./initiative-collective-decision.js";
 export type { MemberPublicProjection } from "./member-public-projection.js";
 export type {
   LatestInitiativeCardProjection,
@@ -155,6 +174,11 @@ export type {
   PublicDecisionSessionPackage,
   PublicDecisionSessionProjection,
 } from "./public-decision-session.js";
+export type {
+  InitiativeCollectiveDecisionMetrics,
+  PublicInitiativeCollectiveDecisionListItem,
+  PublicInitiativeCollectiveDecisionProjection,
+} from "./public-initiative-collective-decision.js";
 export type {
   ParticipationPipelinePublicProjection,
   ParticipationPipelineStageCount,
