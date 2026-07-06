@@ -4,6 +4,7 @@ import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { getCollaborativeAnalysisByInitiativeId } from "../../../../features/collaborative-analysis/api";
 import { getPublicCollectiveDecision } from "../../../../features/collective-decision/api";
+import { getPublicInitiativeCollectiveDecision } from "../../../../features/initiative-collective-decision/api";
 import { getPetitionByCollectiveDecisionId } from "../../../../features/petition/api";
 
 import "../public-collective-decision-page.css";
@@ -22,7 +23,7 @@ function formatTemplate(template: string): string {
   return template;
 }
 
-function formatDate(value: string | null): string {
+function formatDate(value: string | null | undefined): string {
   if (!value) {
     return "Not completed";
   }
@@ -34,10 +35,110 @@ function formatDate(value: string | null): string {
   });
 }
 
+function formatOutcome(outcome: string): string {
+  return outcome.replace(/_/g, " ");
+}
+
 export default async function PublicCollectiveDecisionPage({
   params,
 }: PublicCollectiveDecisionPageProps) {
   const { decisionId } = await params;
+  const initiativeDecision = await getPublicInitiativeCollectiveDecision(decisionId);
+
+  if (initiativeDecision) {
+    return (
+      <main className="public-collective-decision-page">
+        <header className="public-collective-decision-page__header">
+          <h1 className="public-collective-decision-page__title">{initiativeDecision.question}</h1>
+          <p className="public-collective-decision-page__subtitle">Public collective decision</p>
+        </header>
+
+        <ProfileSection title="Decision">
+          <ProfileField label="Status" value={initiativeDecision.status} />
+          <ProfileField label="Participation scope" value={initiativeDecision.participationScope} />
+          <ProfileField label="Steward" value={initiativeDecision.stewardDisplayName} />
+          {initiativeDecision.openedAt ? (
+            <ProfileField label="Opened" value={formatDate(initiativeDecision.openedAt)} />
+          ) : null}
+          <ProfileField label="Closes" value={formatDate(initiativeDecision.closesAt)} />
+          {initiativeDecision.closedAt ? (
+            <ProfileField label="Closed" value={formatDate(initiativeDecision.closedAt)} />
+          ) : null}
+          {initiativeDecision.cancelledAt ? (
+            <ProfileField label="Cancelled" value={formatDate(initiativeDecision.cancelledAt)} />
+          ) : null}
+        </ProfileSection>
+
+        {initiativeDecision.outcome ? (
+          <>
+            <ProfileSection title="Result Counts">
+              <ul className="public-collective-decision-page__stats">
+                <li>Support: {initiativeDecision.statistics.supportCount}</li>
+                <li>Do Not Support: {initiativeDecision.statistics.doNotSupportCount}</li>
+                <li>Abstain: {initiativeDecision.statistics.abstainCount}</li>
+                <li>Total votes: {initiativeDecision.statistics.totalVotesCast}</li>
+              </ul>
+            </ProfileSection>
+
+            <ProfileSection title="Verified / Unverified Breakdown">
+              <ProfileField
+                label="Verified votes"
+                value={String(initiativeDecision.statistics.verifiedVotesCast)}
+              />
+              <ProfileField
+                label="Unverified votes"
+                value={String(initiativeDecision.statistics.unverifiedVotesCast)}
+              />
+              <ul className="public-collective-decision-page__stats">
+                <li>
+                  Verified — Support: {initiativeDecision.outcome.verifiedStatistics.support}, Do
+                  Not Support: {initiativeDecision.outcome.verifiedStatistics.doNotSupport},
+                  Abstain: {initiativeDecision.outcome.verifiedStatistics.abstain}
+                </li>
+                <li>
+                  Unverified — Support: {initiativeDecision.outcome.unverifiedStatistics.support},
+                  Do Not Support: {initiativeDecision.outcome.unverifiedStatistics.doNotSupport},
+                  Abstain: {initiativeDecision.outcome.unverifiedStatistics.abstain}
+                </li>
+              </ul>
+            </ProfileSection>
+
+            <ProfileSection title="Outcome">
+              <ProfileField
+                label="Outcome"
+                value={formatOutcome(initiativeDecision.outcome.outcome)}
+              />
+              <ProfileField
+                label="Participation confidence"
+                value={initiativeDecision.participationConfidenceLevel}
+              />
+              <ProfileField label="Summary" value={initiativeDecision.outcomeSummary} />
+              <p className="public-collective-decision-page__transparency-note">
+                {initiativeDecision.transparencyNote}
+              </p>
+            </ProfileSection>
+          </>
+        ) : (
+          <ProfileSection title="Results">
+            <p className="public-collective-decision-page__empty">
+              Results are not yet available for this collective decision.
+            </p>
+          </ProfileSection>
+        )}
+
+        <nav className="public-collective-decision-page__related" aria-label="Platform integration">
+          <Link href={`/initiatives/public/${encodeURIComponent(initiativeDecision.initiativeId)}`}>
+            View Public Initiative
+          </Link>
+        </nav>
+
+        <p className="public-collective-decision-page__back">
+          <Link href="/">Back to Home</Link>
+        </p>
+      </main>
+    );
+  }
+
   let decision = null;
 
   try {

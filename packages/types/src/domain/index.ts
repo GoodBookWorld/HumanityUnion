@@ -180,6 +180,18 @@ export type {
   PublicInitiativeCollectiveDecisionProjection,
 } from "./public-initiative-collective-decision.js";
 export type {
+  CollectiveDecisionPublicOutcome,
+  CollectiveDecisionTransparentResults,
+  ParticipationConfidenceLevel,
+} from "./collective-decision-transparent-results.js";
+export {
+  buildCollectiveDecisionOutcomeSummary,
+  buildTransparentCollectiveDecisionResults,
+  calculateCollectiveDecisionOutcomeType,
+  COLLECTIVE_DECISION_TRANSPARENCY_NOTE,
+  computeParticipationConfidenceLevel,
+} from "./collective-decision-transparent-results.js";
+export type {
   ParticipationArea,
   ParticipationAreaId,
   ParticipationAreaRecordStatus,

@@ -22,7 +22,11 @@ import {
   publicDecisionSessionRouter,
   publicDecisionSessionsByInitiativeRouter,
 } from "./modules/decision-session/index.js";
-import { initiativeCollectiveDecisionVoteRouter } from "./modules/initiative-collective-decision/index.js";
+import {
+  initiativeCollectiveDecisionVoteRouter,
+  publicInitiativeCollectiveDecisionRouter,
+  publicInitiativeCollectiveDecisionsByInitiativeRouter,
+} from "./modules/initiative-collective-decision/index.js";
 import {
   initiativeCollaborativeAnalysisLifecycleRouter,
   publicInitiativeCollaborativeAnalysisRouter,
@@ -86,10 +90,12 @@ app.use("/api/v1/public/initiative-analyses", publicInitiativeCollaborativeAnaly
 app.use("/api/v1/public/initiative-analyses", publicInitiativeImprovementProposalsByAnalysisRouter);
 app.use("/api/v1/public/improvement-proposals", publicInitiativeImprovementProposalRouter);
 app.use("/api/v1/public/decision-sessions", publicDecisionSessionRouter);
+app.use("/api/v1/public/initiative-collective-decisions", publicInitiativeCollectiveDecisionRouter);
 app.use("/api/v1/public/compatibility-reviews", publicCivicCompatibilityReviewRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeCollaborativeAnalysesByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeImprovementProposalsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicDecisionSessionsByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicInitiativeCollectiveDecisionsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicCivicCompatibilityReviewsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeVersionRevisionRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);

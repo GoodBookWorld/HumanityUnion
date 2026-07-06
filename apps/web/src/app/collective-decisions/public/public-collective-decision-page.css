@@ -48,3 +48,9 @@
 .public-collective-decision-page__back {
   margin-top: 1.5rem;
 }
+
+.public-collective-decision-page__transparency-note {
+  color: #525252;
+  font-size: 0.9rem;
+  font-style: italic;
+}

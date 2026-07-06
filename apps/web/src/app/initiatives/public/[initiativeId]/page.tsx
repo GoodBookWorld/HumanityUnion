@@ -9,6 +9,7 @@ import { listPublicInitiativeAnalyses } from "../../../../features/initiative-co
 import { listPublicInitiativeImprovementProposals } from "../../../../features/initiative-improvement-proposal/api";
 import { getPublicInitiativeVersionHistory } from "../../../../features/initiative-version-revision/api";
 import { listPublicDecisionSessionsForInitiative } from "../../../../features/decision-session/api";
+import { listPublicInitiativeCollectiveDecisions } from "../../../../features/initiative-collective-decision/api";
 import { listPublicCivicCompatibilityReviews } from "../../../../features/civic-compatibility-review/api";
 import { getPetitionByInitiativeId } from "../../../../features/petition/api";
 
@@ -45,6 +46,9 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   let versionHistory: Awaited<ReturnType<typeof getPublicInitiativeVersionHistory>> | null = null;
   let decisionSessions: Awaited<ReturnType<typeof listPublicDecisionSessionsForInitiative>> | null =
     null;
+  let collectiveDecisions: Awaited<
+    ReturnType<typeof listPublicInitiativeCollectiveDecisions>
+  > | null = null;
   let compatibilityReviews: Awaited<ReturnType<typeof listPublicCivicCompatibilityReviews>> | null =
     null;
 
@@ -71,6 +75,12 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       decisionSessions = await listPublicDecisionSessionsForInitiative(initiativeId);
     } catch {
       decisionSessions = null;
+    }
+
+    try {
+      collectiveDecisions = await listPublicInitiativeCollectiveDecisions(initiativeId);
+    } catch {
+      collectiveDecisions = null;
     }
 
     try {
@@ -309,6 +319,37 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
                 <p>
                   {session.status} · Opens {formatCreatedDate(session.opensAt)} · Closes{" "}
                   {formatCreatedDate(session.closesAt)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      ) : null}
+
+      {collectiveDecisions && collectiveDecisions.decisions.length > 0 ? (
+        <ProfileSection title="Collective Decisions">
+          <ul>
+            {collectiveDecisions.decisions.map((decision) => (
+              <li key={decision.decisionId}>
+                <Link
+                  href={`/collective-decisions/public/${encodeURIComponent(decision.decisionId)}`}
+                >
+                  {decision.question}
+                </Link>
+                <p>
+                  {decision.status} · {decision.participationScope} · Support{" "}
+                  {decision.statistics.supportCount} · Do Not Support{" "}
+                  {decision.statistics.doNotSupportCount} · Abstain{" "}
+                  {decision.statistics.abstainCount}
+                </p>
+                <p>
+                  Verified: {decision.statistics.verifiedVotesCast} · Unverified:{" "}
+                  {decision.statistics.unverifiedVotesCast} · Confidence:{" "}
+                  {decision.participationConfidenceLevel}
+                </p>
+                <p>{decision.outcomeSummary}</p>
+                <p className="public-initiative-page__transparency-note">
+                  {decision.transparencyNote}
                 </p>
               </li>
             ))}

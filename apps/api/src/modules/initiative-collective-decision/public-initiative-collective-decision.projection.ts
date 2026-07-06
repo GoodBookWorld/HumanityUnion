@@ -4,12 +4,10 @@ import type {
   PublicInitiativeCollectiveDecisionListItem,
   PublicInitiativeCollectiveDecisionProjection,
 } from "@hu/types";
-import {
-  createEmptyInitiativeCollectiveDecisionOutcome,
-  createEmptyInitiativeCollectiveDecisionStatistics,
-} from "@hu/types";
 
 import { getMemberById } from "../member/member.store.js";
+import { computeInitiativeDecisionVoteAggregates } from "../initiative-decision-vote/initiative-decision-vote-aggregates.js";
+import { buildPublicCollectiveDecisionResults } from "./initiative-collective-decision-results.js";
 import {
   getDecisionById,
   listDecisionsByInitiative,
@@ -38,18 +36,21 @@ function toPublicStatus(
   return status as PublicInitiativeCollectiveDecisionProjection["status"];
 }
 
-function buildEmptyOutcome(
-  decision: InitiativeCollectiveDecision,
-): PublicInitiativeCollectiveDecisionProjection["outcome"] {
-  if (decision.status === "cancelled") {
-    return createEmptyInitiativeCollectiveDecisionOutcome("cancelled");
-  }
+function buildPublicResultFields(decision: InitiativeCollectiveDecision) {
+  const results = buildPublicCollectiveDecisionResults(decision);
 
-  if (decision.status === "closed") {
-    return createEmptyInitiativeCollectiveDecisionOutcome("inconclusive");
-  }
-
-  return null;
+  return {
+    statistics: results.statistics,
+    outcome:
+      decision.status === "opened" ||
+      decision.status === "closed" ||
+      decision.status === "cancelled"
+        ? results.outcome
+        : null,
+    participationConfidenceLevel: results.participationConfidenceLevel,
+    outcomeSummary: results.outcomeSummary,
+    transparencyNote: results.transparencyNote,
+  };
 }
 
 export function toPublicInitiativeCollectiveDecisionListItem(
@@ -64,6 +65,7 @@ export function toPublicInitiativeCollectiveDecisionListItem(
     openedAt: decision.openedAt,
     closesAt: decision.closesAt,
     closedAt: decision.closedAt,
+    ...buildPublicResultFields(decision),
   };
 }
 
@@ -84,8 +86,7 @@ export function toPublicInitiativeCollectiveDecisionProjection(
     cancelledAt: decision.cancelledAt,
     supersedesDecisionId: decision.supersedesDecisionId,
     stewardDisplayName: resolveStewardDisplayName(decision.stewardId),
-    statistics: createEmptyInitiativeCollectiveDecisionStatistics(),
-    outcome: buildEmptyOutcome(decision),
+    ...buildPublicResultFields(decision),
   };
 }
 
@@ -121,3 +122,18 @@ export function getPublicInitiativeCollectiveDecision(
 
   return toPublicInitiativeCollectiveDecisionProjection(decision);
 }
+
+export function assertPublicProjectionHasNoPrivateVoteData(
+  projection: PublicInitiativeCollectiveDecisionProjection,
+): boolean {
+  const serialized = JSON.stringify(projection);
+
+  return (
+    !serialized.includes('"participantId"') &&
+    !serialized.includes('"voteId"') &&
+    !serialized.includes('"ipAddress"') &&
+    !serialized.includes('"voteHistory"')
+  );
+}
+
+export { computeInitiativeDecisionVoteAggregates };
