@@ -1,5 +1,6 @@
 import type {
   InitiativeCollectiveDecisionMetrics,
+  InitiativeDecisionVote,
   PublicInitiativeCollectiveDecisionListItem,
   PublicInitiativeCollectiveDecisionProjection,
 } from "@hu/types";
@@ -61,5 +62,13 @@ export async function getPublicInitiativeCollectiveDecisionOrThrow(
 ): Promise<PublicInitiativeCollectiveDecisionProjection> {
   return apiRequest<PublicInitiativeCollectiveDecisionProjection>(
     `/api/v1/public/initiative-collective-decisions/${encodeURIComponent(decisionId)}`,
+  );
+}
+
+export async function getMyInitiativeDecisionVote(
+  decisionId: string,
+): Promise<InitiativeDecisionVote | null> {
+  return apiRequest<InitiativeDecisionVote | null>(
+    `/api/v1/initiative-collective-decisions/${encodeURIComponent(decisionId)}/my-vote`,
   );
 }

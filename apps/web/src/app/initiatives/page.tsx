@@ -15,6 +15,10 @@ const NAV_ITEMS = [
   "Collaborative Analysis",
   "Improvement Proposal Decisions",
   "Initiative Revision",
+  "Decision Result",
+  "Implementation Commitment",
+  "Implementation Tracking",
+  "Public Impact",
 ];
 
 export default async function InitiativesPage() {

@@ -5,6 +5,7 @@ import "./workspace-navigation.css";
 const WORKSPACE_ROUTES = [
   { href: "/profile", label: "Profile" },
   { href: "/preferences", label: "Preferences" },
+  { href: "/civic-activity", label: "My Civic Activity" },
   { href: "/initiatives", label: "Initiatives" },
 ] as const;
 

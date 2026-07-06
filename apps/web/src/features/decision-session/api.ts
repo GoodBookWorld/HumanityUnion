@@ -32,6 +32,10 @@ export interface PublicDecisionSessionsResponse {
 
 const API_BASE_URL = "http://localhost:4000";
 
+export async function listMyDecisionSessions(): Promise<DecisionSession[]> {
+  return apiRequest<DecisionSession[]>("/api/v1/decision-sessions/mine");
+}
+
 export async function listMyDecisionSessionsForInitiative(
   initiativeId: string,
 ): Promise<DecisionSession[]> {
