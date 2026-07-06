@@ -22,6 +22,7 @@ import {
   publicDecisionSessionRouter,
   publicDecisionSessionsByInitiativeRouter,
 } from "./modules/decision-session/index.js";
+import { initiativeCollectiveDecisionVoteRouter } from "./modules/initiative-collective-decision/index.js";
 import {
   initiativeCollaborativeAnalysisLifecycleRouter,
   publicInitiativeCollaborativeAnalysisRouter,
@@ -68,6 +69,7 @@ app.use("/api/v1/initiatives", initiativesRouter);
 app.use("/api/v1/initiative-analyses", initiativeCollaborativeAnalysisLifecycleRouter);
 app.use("/api/v1/improvement-proposals", initiativeImprovementProposalRouter);
 app.use("/api/v1/decision-sessions", decisionSessionRouter);
+app.use("/api/v1/initiative-collective-decisions", initiativeCollectiveDecisionVoteRouter);
 app.use("/api/v1/civic-compatibility-reviews", civicCompatibilityReviewRouter);
 app.use("/api/v1/initiative-revisions", initiativeVersionRevisionRouter);
 app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);

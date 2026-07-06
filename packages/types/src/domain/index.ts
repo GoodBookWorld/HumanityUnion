@@ -180,6 +180,45 @@ export type {
   PublicInitiativeCollectiveDecisionProjection,
 } from "./public-initiative-collective-decision.js";
 export type {
+  ParticipationArea,
+  ParticipationAreaId,
+  ParticipationAreaRecordStatus,
+  ParticipationAreaSlugTriple,
+  ParticipationAreaTransition,
+  ParticipationAreaTransitionId,
+  ParticipationAreaTransitionStatus,
+  ParticipationAreaVerificationStatus,
+} from "./participation-area.js";
+export {
+  participationAreaSlugTriple,
+  participationAreaToSlugTriple,
+} from "./participation-area.js";
+export type {
+  DecisionParticipationEligibilityInput,
+  DecisionParticipationEligibilityResult,
+  InitiativeParticipationScopeMetadata,
+  ParticipationEligibilityReasonCode,
+  ParticipationTransparencyCohort,
+} from "./participation-eligibility.js";
+export {
+  evaluateDecisionParticipationEligibility,
+  getTransparencyCohort,
+  isParticipationAreaMatch,
+} from "./participation-eligibility.js";
+export type {
+  InitiativeDecisionVote,
+  InitiativeDecisionVoteAggregates,
+  InitiativeDecisionVoteChoice,
+  InitiativeDecisionVoteChoiceCounts,
+  InitiativeDecisionVoteHistoryEntry,
+  InitiativeDecisionVoteHistoryId,
+  InitiativeDecisionVoteId,
+} from "./initiative-decision-vote.js";
+export {
+  createEmptyInitiativeDecisionVoteAggregates,
+  createEmptyInitiativeDecisionVoteChoiceCounts,
+} from "./initiative-decision-vote.js";
+export type {
   ParticipationPipelinePublicProjection,
   ParticipationPipelineStageCount,
   ParticipationPipelineStageId,

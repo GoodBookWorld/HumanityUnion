@@ -62,3 +62,9 @@ export function updateMemberProfile(
 
   return structuredClone(member);
 }
+
+export function seedMember(member: Member): Member {
+  members.set(member.id, structuredClone(member));
+
+  return structuredClone(member);
+}
