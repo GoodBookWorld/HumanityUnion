@@ -28,6 +28,21 @@ import {
   publicInitiativeCollectiveDecisionsByInitiativeRouter,
 } from "./modules/initiative-collective-decision/index.js";
 import {
+  publicInitiativeImplementationCommitmentRouter,
+  publicInitiativeImplementationCommitmentsByDecisionRouter,
+  publicInitiativeImplementationCommitmentsByInitiativeRouter,
+} from "./modules/initiative-implementation-commitment/index.js";
+import {
+  publicInitiativeImplementationTrackingRouter,
+  publicInitiativeImplementationTrackingsByCommitmentRouter,
+  publicInitiativeImplementationTrackingsByInitiativeRouter,
+} from "./modules/initiative-implementation-tracking/index.js";
+import {
+  publicInitiativePublicImpactRouter,
+  publicInitiativePublicImpactsByInitiativeRouter,
+  publicInitiativePublicImpactsByTrackingRouter,
+} from "./modules/initiative-public-impact/index.js";
+import {
   initiativeCollaborativeAnalysisLifecycleRouter,
   publicInitiativeCollaborativeAnalysisRouter,
   publicInitiativeCollaborativeAnalysesByInitiativeRouter,
@@ -91,11 +106,35 @@ app.use("/api/v1/public/initiative-analyses", publicInitiativeImprovementProposa
 app.use("/api/v1/public/improvement-proposals", publicInitiativeImprovementProposalRouter);
 app.use("/api/v1/public/decision-sessions", publicDecisionSessionRouter);
 app.use("/api/v1/public/initiative-collective-decisions", publicInitiativeCollectiveDecisionRouter);
+app.use(
+  "/api/v1/public/initiative-collective-decisions",
+  publicInitiativeImplementationCommitmentsByDecisionRouter,
+);
+app.use(
+  "/api/v1/public/initiative-implementation-commitments",
+  publicInitiativeImplementationCommitmentRouter,
+);
+app.use(
+  "/api/v1/public/initiative-implementation-commitments",
+  publicInitiativeImplementationTrackingsByCommitmentRouter,
+);
+app.use(
+  "/api/v1/public/initiative-implementation-tracking",
+  publicInitiativeImplementationTrackingRouter,
+);
+app.use(
+  "/api/v1/public/initiative-implementation-tracking",
+  publicInitiativePublicImpactsByTrackingRouter,
+);
+app.use("/api/v1/public/public-impact", publicInitiativePublicImpactRouter);
 app.use("/api/v1/public/compatibility-reviews", publicCivicCompatibilityReviewRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeCollaborativeAnalysesByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeImprovementProposalsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicDecisionSessionsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeCollectiveDecisionsByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicInitiativeImplementationCommitmentsByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicInitiativeImplementationTrackingsByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicInitiativePublicImpactsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicCivicCompatibilityReviewsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeVersionRevisionRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);

@@ -5,6 +5,7 @@ import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { getCollaborativeAnalysisByInitiativeId } from "../../../../features/collaborative-analysis/api";
 import { getPublicCollectiveDecision } from "../../../../features/collective-decision/api";
 import { getPublicInitiativeCollectiveDecision } from "../../../../features/initiative-collective-decision/api";
+import { listPublicInitiativeImplementationCommitmentsForDecision } from "../../../../features/initiative-implementation-commitment/api";
 import { getPetitionByCollectiveDecisionId } from "../../../../features/petition/api";
 
 import "../public-collective-decision-page.css";
@@ -46,6 +47,17 @@ export default async function PublicCollectiveDecisionPage({
   const initiativeDecision = await getPublicInitiativeCollectiveDecision(decisionId);
 
   if (initiativeDecision) {
+    let implementationCommitments: Awaited<
+      ReturnType<typeof listPublicInitiativeImplementationCommitmentsForDecision>
+    > = [];
+
+    try {
+      implementationCommitments =
+        await listPublicInitiativeImplementationCommitmentsForDecision(decisionId);
+    } catch {
+      implementationCommitments = [];
+    }
+
     return (
       <main className="public-collective-decision-page">
         <header className="public-collective-decision-page__header">
@@ -125,6 +137,28 @@ export default async function PublicCollectiveDecisionPage({
             </p>
           </ProfileSection>
         )}
+
+        {implementationCommitments.length > 0 ? (
+          <ProfileSection title="Implementation Commitments">
+            <ul className="public-collective-decision-page__stats">
+              {implementationCommitments.map((commitment) => (
+                <li key={commitment.commitmentId}>
+                  <Link
+                    href={`/initiative-implementation-commitments/public/${encodeURIComponent(commitment.commitmentId)}`}
+                  >
+                    {commitment.title}
+                  </Link>
+                  <p>
+                    {commitment.status}
+                    {commitment.organization ? ` · ${commitment.organization}` : ""} ·{" "}
+                    {commitment.authorDisplayName}
+                  </p>
+                  <p>{commitment.summary}</p>
+                </li>
+              ))}
+            </ul>
+          </ProfileSection>
+        ) : null}
 
         <nav className="public-collective-decision-page__related" aria-label="Platform integration">
           <Link href={`/initiatives/public/${encodeURIComponent(initiativeDecision.initiativeId)}`}>

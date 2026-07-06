@@ -10,6 +10,9 @@ import { listPublicInitiativeImprovementProposals } from "../../../../features/i
 import { getPublicInitiativeVersionHistory } from "../../../../features/initiative-version-revision/api";
 import { listPublicDecisionSessionsForInitiative } from "../../../../features/decision-session/api";
 import { listPublicInitiativeCollectiveDecisions } from "../../../../features/initiative-collective-decision/api";
+import { listPublicInitiativeImplementationCommitments } from "../../../../features/initiative-implementation-commitment/api";
+import { listPublicInitiativeImplementationTrackings } from "../../../../features/initiative-implementation-tracking/api";
+import { listPublicInitiativePublicImpacts } from "../../../../features/initiative-public-impact/api";
 import { listPublicCivicCompatibilityReviews } from "../../../../features/civic-compatibility-review/api";
 import { getPetitionByInitiativeId } from "../../../../features/petition/api";
 
@@ -49,6 +52,13 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   let collectiveDecisions: Awaited<
     ReturnType<typeof listPublicInitiativeCollectiveDecisions>
   > | null = null;
+  let implementationCommitments: Awaited<
+    ReturnType<typeof listPublicInitiativeImplementationCommitments>
+  > | null = null;
+  let implementationTrackings: Awaited<
+    ReturnType<typeof listPublicInitiativeImplementationTrackings>
+  > | null = null;
+  let publicImpacts: Awaited<ReturnType<typeof listPublicInitiativePublicImpacts>> | null = null;
   let compatibilityReviews: Awaited<ReturnType<typeof listPublicCivicCompatibilityReviews>> | null =
     null;
 
@@ -81,6 +91,24 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       collectiveDecisions = await listPublicInitiativeCollectiveDecisions(initiativeId);
     } catch {
       collectiveDecisions = null;
+    }
+
+    try {
+      implementationCommitments = await listPublicInitiativeImplementationCommitments(initiativeId);
+    } catch {
+      implementationCommitments = null;
+    }
+
+    try {
+      implementationTrackings = await listPublicInitiativeImplementationTrackings(initiativeId);
+    } catch {
+      implementationTrackings = null;
+    }
+
+    try {
+      publicImpacts = await listPublicInitiativePublicImpacts(initiativeId);
+    } catch {
+      publicImpacts = null;
     }
 
     try {
@@ -351,6 +379,67 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
                 <p className="public-initiative-page__transparency-note">
                   {decision.transparencyNote}
                 </p>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      ) : null}
+
+      {implementationCommitments && implementationCommitments.commitments.length > 0 ? (
+        <ProfileSection title="Implementation Commitments">
+          <ul>
+            {implementationCommitments.commitments.map((commitment) => (
+              <li key={commitment.commitmentId}>
+                <Link
+                  href={`/initiative-implementation-commitments/public/${encodeURIComponent(commitment.commitmentId)}`}
+                >
+                  {commitment.title}
+                </Link>
+                <p>
+                  {commitment.status}
+                  {commitment.organization ? ` · ${commitment.organization}` : ""} ·{" "}
+                  {commitment.authorDisplayName}
+                </p>
+                <p>{commitment.summary}</p>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      ) : null}
+
+      {implementationTrackings && implementationTrackings.trackings.length > 0 ? (
+        <ProfileSection title="Implementation Tracking">
+          <ul>
+            {implementationTrackings.trackings.map((tracking) => (
+              <li key={tracking.trackingId}>
+                <Link
+                  href={`/implementation-tracking/public/${encodeURIComponent(tracking.trackingId)}`}
+                >
+                  {tracking.summary}
+                </Link>
+                <p>
+                  {tracking.status} · {tracking.currentStage} · {tracking.authorDisplayName} ·{" "}
+                  {tracking.updateCount} update{tracking.updateCount === 1 ? "" : "s"}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      ) : null}
+
+      {publicImpacts && publicImpacts.impacts.length > 0 ? (
+        <ProfileSection title="Public Impact">
+          <ul>
+            {publicImpacts.impacts.map((impact) => (
+              <li key={impact.impactId}>
+                <Link href={`/public-impact/${encodeURIComponent(impact.impactId)}`}>
+                  {impact.title}
+                </Link>
+                <p>
+                  {impact.status} · {impact.affectedCommunity} · {impact.authorDisplayName} ·{" "}
+                  {impact.evidenceCount} evidence item{impact.evidenceCount === 1 ? "" : "s"}
+                </p>
+                <p>{impact.observedImpact}</p>
               </li>
             ))}
           </ul>
