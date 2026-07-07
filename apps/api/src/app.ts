@@ -17,6 +17,7 @@ import {
   publicCivicCompatibilityReviewRouter,
   publicCivicCompatibilityReviewsByInitiativeRouter,
 } from "./modules/civic-compatibility-review/index.js";
+import { workspaceAssistantRouter } from "./modules/workspace-assistant/index.js";
 import {
   decisionSessionRouter,
   publicDecisionSessionRouter,
@@ -130,6 +131,7 @@ app.use("/api/v1/official-responses", officialResponseRouter);
 app.use("/api/v1/civic-accountability", civicAccountabilityRouter);
 app.use("/api/v1/public-civic-archive", publicCivicArchiveRouter);
 app.use("/api/v1/civic-compatibility-reviews", civicCompatibilityReviewRouter);
+app.use("/api/v1/workspace-assistant", workspaceAssistantRouter);
 app.use("/api/v1/initiative-revisions", initiativeVersionRevisionRouter);
 app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);
 app.use("/api/v1/collective-decisions", collectiveDecisionRouter);

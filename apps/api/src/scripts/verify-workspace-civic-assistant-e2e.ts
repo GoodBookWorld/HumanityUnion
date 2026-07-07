@@ -242,8 +242,8 @@ function verifyPlaceholderAndSafetyCopy(): void {
     "Safety note must be defined",
   );
   assert(
-    componentSource.includes("ASSISTANT_PLACEHOLDER_MESSAGE"),
-    "Component must use placeholder message constant on action click",
+    componentSource.includes("requestWorkspaceAssistantResponse"),
+    "Component must call workspace assistant engine endpoint",
   );
   assert(componentSource.includes("disabled"), "Chat input must be disabled or marked coming soon");
   assert(

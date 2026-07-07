@@ -2,25 +2,33 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import type { Initiative } from "@hu/types";
+import type { Initiative, WorkspaceAssistantResponse } from "@hu/types";
 
 import { getCivicIntegrationView } from "../../capability02-integration/api";
+import { requestWorkspaceAssistantResponse } from "../api";
 import { buildAssistantContext } from "../build-assistant-context";
 import {
   ASSISTANT_COMING_SOON_INPUT,
   ASSISTANT_GREETING,
   ASSISTANT_INPUT_LABEL,
-  ASSISTANT_PLACEHOLDER_MESSAGE,
   ASSISTANT_SAFETY_NOTE,
   ASSISTANT_TITLE,
 } from "../constants";
 import { getSuggestedActionsForSection } from "../section-actions";
+import { toWorkspaceAssistantContextSnapshot } from "../types";
 
 import "./workspace-civic-assistant.css";
 
 interface WorkspaceCivicAssistantProps {
   initiative: Initiative | null;
   currentSection: string;
+}
+
+interface AssistantMessage {
+  id: string;
+  role: "assistant";
+  text: string;
+  response?: WorkspaceAssistantResponse;
 }
 
 export function WorkspaceCivicAssistant({
@@ -31,8 +39,9 @@ export function WorkspaceCivicAssistant({
     ReturnType<typeof getCivicIntegrationView>
   > | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [placeholderMessage, setPlaceholderMessage] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Array<{ id: string; role: "assistant"; text: string }>>([
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<AssistantMessage[]>([
     { id: "greeting", role: "assistant", text: ASSISTANT_GREETING },
   ]);
 
@@ -70,16 +79,40 @@ export function WorkspaceCivicAssistant({
     [currentSection, initiative],
   );
 
-  function handleSuggestedAction(label: string) {
-    setPlaceholderMessage(ASSISTANT_PLACEHOLDER_MESSAGE);
-    setMessages((current) => [
-      ...current,
-      {
-        id: `action-${Date.now()}`,
-        role: "assistant",
-        text: `${label}: ${ASSISTANT_PLACEHOLDER_MESSAGE}`,
-      },
-    ]);
+  async function handleSuggestedAction(action: { id: string; label: string; capability: string }) {
+    if (!initiative?.initiativeId) {
+      setActionError("Select an initiative before using assistant actions.");
+      return;
+    }
+
+    setPendingActionId(action.id);
+    setActionError(null);
+
+    try {
+      const response = await requestWorkspaceAssistantResponse({
+        initiativeId: initiative.initiativeId,
+        currentSection,
+        requestedAction: {
+          capability: action.capability,
+          label: action.label,
+        },
+        contextSnapshot: toWorkspaceAssistantContextSnapshot(context),
+      });
+
+      setMessages((current) => [
+        ...current,
+        {
+          id: `action-${Date.now()}`,
+          role: "assistant",
+          text: response.assistantMessage,
+          response,
+        },
+      ]);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Assistant engine request failed.");
+    } finally {
+      setPendingActionId(null);
+    }
   }
 
   const panel = (
@@ -123,8 +156,12 @@ export function WorkspaceCivicAssistant({
         <ul>
           {suggestedActions.map((action) => (
             <li key={action.id}>
-              <button type="button" onClick={() => handleSuggestedAction(action.label)}>
-                {action.label}
+              <button
+                type="button"
+                disabled={pendingActionId !== null || !initiative}
+                onClick={() => void handleSuggestedAction(action)}
+              >
+                {pendingActionId === action.id ? "Requesting guidance..." : action.label}
               </button>
             </li>
           ))}
@@ -136,13 +173,26 @@ export function WorkspaceCivicAssistant({
         <ul className="workspace-civic-assistant__messages">
           {messages.map((message) => (
             <li key={message.id} className="workspace-civic-assistant__message">
-              {message.text}
+              <p>{message.text}</p>
+              {message.response ? (
+                <div className="workspace-civic-assistant__response-meta">
+                  <p>
+                    Confidence: <strong>{message.response.confidenceLevel}</strong> · Mode:{" "}
+                    {message.response.mode}
+                  </p>
+                  <ul className="workspace-civic-assistant__safety-notices">
+                    {message.response.safetyNotices.map((notice) => (
+                      <li key={`${message.id}-${notice.code}`}>{notice.message}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
-        {placeholderMessage ? (
-          <p className="workspace-civic-assistant__placeholder-notice" role="status">
-            {placeholderMessage}
+        {actionError ? (
+          <p className="workspace-civic-assistant__placeholder-notice" role="alert">
+            {actionError}
           </p>
         ) : null}
         <label

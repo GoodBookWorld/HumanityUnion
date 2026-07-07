@@ -1,128 +1,140 @@
-import type { Initiative } from "@hu/types";
+import type { Initiative, WorkspaceAssistantCapability } from "@hu/types";
 
 import type { WorkspaceSuggestedAction } from "./types";
 
-function actions(labels: string[]): WorkspaceSuggestedAction[] {
-  return labels.map((label, index) => ({
-    id: `${label.replace(/\s+/g, "-").toLowerCase()}-${index}`,
-    label,
+function actions(
+  items: Array<{ label: string; capability: WorkspaceAssistantCapability }>,
+): WorkspaceSuggestedAction[] {
+  return items.map((item, index) => ({
+    id: `${item.capability}-${index}`,
+    label: item.label,
+    capability: item.capability,
   }));
 }
 
 const INITIATIVE_DRAFT_ACTIONS = actions([
-  "Improve title",
-  "Clarify summary",
-  "Check missing fields",
-  "Run Civic Compatibility Review",
+  { label: "Improve title", capability: "improve_title" },
+  { label: "Clarify summary", capability: "clarify_summary" },
+  { label: "Check missing fields", capability: "check_missing_fields" },
+  { label: "Run Civic Compatibility Review", capability: "explain_compatibility_review" },
 ]);
 
 const MANAGE_PUBLISHED_ACTIONS = actions([
-  "Review initiative summary",
-  "Check lifecycle readiness",
-  "Identify next civic stage",
+  { label: "Review initiative summary", capability: "explain_current_section" },
+  { label: "Check lifecycle readiness", capability: "identify_next_step" },
+  { label: "Identify next civic stage", capability: "identify_next_step" },
 ]);
 
 const OVERVIEW_ACTIONS = actions([
-  "Summarize initiative status",
-  "Explain lifecycle phase",
-  "Identify next civic stage",
+  { label: "Summarize initiative status", capability: "explain_current_section" },
+  { label: "Explain lifecycle phase", capability: "explain_current_section" },
+  { label: "Identify next civic stage", capability: "identify_next_step" },
 ]);
 
 const COLLABORATIVE_ANALYSIS_ACTIONS = actions([
-  "Strengthen evidence",
-  "Identify risks",
-  "Suggest improvement structure",
+  { label: "Strengthen evidence", capability: "strengthen_evidence" },
+  { label: "Identify risks", capability: "identify_risks" },
+  { label: "Suggest improvement structure", capability: "structure_analysis" },
 ]);
 
 const IMPROVEMENT_PROPOSAL_ACTIONS = actions([
-  "Make proposal more specific",
-  "Clarify expected improvement",
-  "Add rationale",
+  { label: "Make proposal more specific", capability: "structure_proposal" },
+  { label: "Clarify expected improvement", capability: "structure_proposal" },
+  { label: "Add rationale", capability: "structure_proposal" },
 ]);
 
 const INITIATIVE_REVISION_ACTIONS = actions([
-  "Summarize accepted proposals",
-  "Draft revision summary",
-  "Check unresolved recommendations",
+  { label: "Summarize accepted proposals", capability: "draft_revision_summary" },
+  { label: "Draft revision summary", capability: "draft_revision_summary" },
+  { label: "Check unresolved recommendations", capability: "draft_revision_summary" },
 ]);
 
 const DECISION_SESSION_ACTIONS = actions([
-  "Clarify decision question",
-  "Review readiness",
-  "Explain decision package",
+  { label: "Clarify decision question", capability: "explain_decision_session" },
+  { label: "Review readiness", capability: "explain_decision_session" },
+  { label: "Explain decision package", capability: "explain_decision_session" },
 ]);
 
 const DECISION_RESULT_ACTIONS = actions([
-  "Explain vote result",
-  "Summarize verified/unverified participation",
-  "Prepare CAP summary",
+  { label: "Explain vote result", capability: "explain_decision_result" },
+  {
+    label: "Summarize verified/unverified participation",
+    capability: "explain_decision_result",
+  },
+  { label: "Prepare CAP summary", capability: "prepare_cap_summary" },
 ]);
 
 const CIVIC_ACTION_PACKAGE_ACTIONS = actions([
-  "Explain CAP purpose",
-  "Suggest recipient categories",
-  "Prepare delivery message draft placeholder",
+  { label: "Explain CAP purpose", capability: "prepare_cap_summary" },
+  { label: "Suggest recipient categories", capability: "suggest_recipient_categories" },
+  { label: "Prepare delivery message draft placeholder", capability: "prepare_delivery_message" },
 ]);
 
 const CIVIC_DELIVERY_ACTIONS = actions([
-  "Explain selected recipients",
-  "Check missing recipients",
-  "Prepare follow-up plan placeholder",
+  { label: "Explain selected recipients", capability: "suggest_recipient_categories" },
+  { label: "Check missing recipients", capability: "suggest_recipient_categories" },
+  { label: "Prepare follow-up plan placeholder", capability: "prepare_delivery_message" },
 ]);
 
 const OFFICIAL_RESPONSE_ACTIONS = actions([
-  "Summarize response placeholder",
-  "Identify factual commitments",
-  "Prepare accountability event placeholder",
+  { label: "Summarize response placeholder", capability: "summarize_official_response" },
+  { label: "Identify factual commitments", capability: "summarize_official_response" },
+  { label: "Prepare accountability event placeholder", capability: "prepare_accountability_event" },
 ]);
 
 const CIVIC_ACCOUNTABILITY_ACTIONS = actions([
-  "Suggest next factual event",
-  "Check no-response duration",
-  "Prepare public accountability summary placeholder",
+  { label: "Suggest next factual event", capability: "prepare_accountability_event" },
+  { label: "Check no-response duration", capability: "prepare_accountability_event" },
+  {
+    label: "Prepare public accountability summary placeholder",
+    capability: "prepare_accountability_event",
+  },
 ]);
 
 const IMPLEMENTATION_COMMITMENT_ACTIONS = actions([
-  "Clarify commitment scope",
-  "Check expected dates",
-  "Prepare tracking readiness placeholder",
+  { label: "Clarify commitment scope", capability: "structure_implementation_update" },
+  { label: "Check expected dates", capability: "structure_implementation_update" },
+  {
+    label: "Prepare tracking readiness placeholder",
+    capability: "structure_implementation_update",
+  },
 ]);
 
 const IMPLEMENTATION_TRACKING_ACTIONS = actions([
-  "Suggest evidence update structure",
-  "Check completion evidence",
-  "Prepare impact draft placeholder",
+  { label: "Suggest evidence update structure", capability: "structure_implementation_update" },
+  { label: "Check completion evidence", capability: "structure_implementation_update" },
+  { label: "Prepare impact draft placeholder", capability: "clarify_public_impact" },
 ]);
 
 const PUBLIC_IMPACT_ACTIONS = actions([
-  "Clarify observed impact",
-  "Strengthen evidence summary",
-  "Prepare archive lessons placeholder",
+  { label: "Clarify observed impact", capability: "clarify_public_impact" },
+  { label: "Strengthen evidence summary", capability: "clarify_public_impact" },
+  { label: "Prepare archive lessons placeholder", capability: "prepare_archive_lessons" },
 ]);
 
 const CIVIC_INTEGRATION_ACTIONS = actions([
-  "Explain pipeline status",
-  "Review related records",
-  "Identify next available step",
+  { label: "Explain pipeline status", capability: "explain_pipeline_status" },
+  { label: "Review related records", capability: "review_related_records" },
+  { label: "Identify next available step", capability: "identify_next_step" },
 ]);
 
 const CIVIC_COMPATIBILITY_REVIEW_ACTIONS = actions([
-  "Review compatibility findings",
-  "Clarify referenced principles",
-  "Prepare revision notes placeholder",
+  { label: "Review compatibility findings", capability: "explain_compatibility_review" },
+  { label: "Clarify referenced principles", capability: "explain_compatibility_review" },
+  { label: "Prepare revision notes placeholder", capability: "explain_compatibility_review" },
 ]);
 
 const PUBLIC_CIVIC_ARCHIVE_ACTIONS = actions([
-  "Improve lessons learned",
-  "Clarify transferable experience",
-  "Prepare archive summary placeholder",
-  "Check missing civic knowledge fields",
+  { label: "Improve lessons learned", capability: "prepare_archive_lessons" },
+  { label: "Clarify transferable experience", capability: "prepare_archive_lessons" },
+  { label: "Prepare archive summary placeholder", capability: "prepare_archive_lessons" },
+  { label: "Check missing civic knowledge fields", capability: "prepare_archive_lessons" },
 ]);
 
 const DEFAULT_ACTIONS = actions([
-  "Explain current section",
-  "Review civic pipeline status",
-  "Identify next available step",
+  { label: "Explain current section", capability: "explain_current_section" },
+  { label: "Review civic pipeline status", capability: "explain_pipeline_status" },
+  { label: "Identify next available step", capability: "identify_next_step" },
 ]);
 
 export function getSuggestedActionsForSection(

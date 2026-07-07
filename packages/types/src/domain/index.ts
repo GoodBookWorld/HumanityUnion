@@ -563,3 +563,18 @@ export type {
   SupportMetrics,
   SupportThresholdStatus,
 } from "./petition/index.js";
+export type {
+  WorkspaceAssistantAction,
+  WorkspaceAssistantCapability,
+  WorkspaceAssistantConfidenceLevel,
+  WorkspaceAssistantContextSnapshot,
+  WorkspaceAssistantProhibitedAction,
+  WorkspaceAssistantProviderMode,
+  WorkspaceAssistantRequest,
+  WorkspaceAssistantResponse,
+  WorkspaceAssistantSafetyNotice,
+} from "./workspace-assistant.js";
+export {
+  WORKSPACE_ASSISTANT_ALLOWED_CAPABILITIES,
+  WORKSPACE_ASSISTANT_PROHIBITED_ACTIONS,
+} from "./workspace-assistant.js";

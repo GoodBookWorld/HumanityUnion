@@ -122,6 +122,35 @@
   line-height: 1.45;
 }
 
+.workspace-civic-assistant__message p {
+  margin: 0;
+}
+
+.workspace-civic-assistant__response-meta {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #e5e5e5;
+  color: #525252;
+  font-size: 0.85rem;
+}
+
+.workspace-civic-assistant__response-meta p {
+  margin: 0 0 0.5rem;
+}
+
+.workspace-civic-assistant__safety-notices {
+  list-style: disc;
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.workspace-civic-assistant__actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .workspace-civic-assistant__placeholder-notice {
   margin: 0.75rem 0;
   color: #525252;
