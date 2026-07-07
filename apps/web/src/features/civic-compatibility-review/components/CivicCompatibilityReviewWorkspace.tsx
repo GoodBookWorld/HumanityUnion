@@ -9,6 +9,13 @@ import { useCallback, useEffect, useState } from "react";
 
 import { BOOTSTRAP_PARTICIPANT_ID } from "../../petition/petition-utils";
 import {
+  WorkspaceEmptyState,
+  WorkspaceMetricsRow,
+  WorkspaceSectionShell,
+  WorkspaceStatusBadge,
+  WorkspaceStatusCard,
+} from "../../initiative-workspace-ux";
+import {
   compareInitiativeCompatibilityReviews,
   listInitiativeCompatibilityReviews,
   runInitiativeCompatibilityReview,
@@ -125,22 +132,45 @@ export function CivicCompatibilityReviewWorkspace({
 
   if (!canRunReview) {
     return (
-      <p className="civic-compatibility-review-workspace__note">
-        Civic compatibility reviews become available after the initiative is published.
-      </p>
+      <WorkspaceSectionShell
+        purpose="Run an advisory civic compatibility review against Humanity Union principles and human rights frameworks. This intelligent civic assistant never blocks publication automatically."
+        emptyState={
+          <WorkspaceEmptyState
+            title="Civic compatibility review is not available yet"
+            explanation="Compatibility reviews become available after the initiative is published."
+            nextStep="Publish the initiative, then return here to run an advisory review."
+          />
+        }
+      />
     );
   }
 
   return (
-    <div className="civic-compatibility-review-workspace">
-      <p className="civic-compatibility-review-workspace__note">
-        Run an advisory civic compatibility review against Humanity Union principles and human
-        rights frameworks. This intelligent civic assistant never blocks publication automatically.
-      </p>
-
+    <WorkspaceSectionShell
+      purpose="Run an advisory civic compatibility review against Humanity Union principles and human rights frameworks. This intelligent civic assistant never blocks publication automatically."
+      loading={loading ? "Loading compatibility reviews..." : null}
+      metrics={
+        <WorkspaceMetricsRow>
+          <WorkspaceStatusCard label="Reviews" value={reviews.length} />
+          <WorkspaceStatusCard
+            label="Latest status"
+            value={latestReview ? formatStatus(latestReview.compatibilityStatus) : "None"}
+          />
+        </WorkspaceMetricsRow>
+      }
+      emptyState={
+        !loading && reviews.length === 0 ? (
+          <WorkspaceEmptyState
+            title="No compatibility reviews have been run yet"
+            explanation="Advisory reviews provide structured recommendations without blocking publication."
+            nextStep="Run a review to receive compatibility findings and recommendations."
+          />
+        ) : null
+      }
+    >
       {latestReview && latestReview.compatibilityStatus !== "compatible" ? (
-        <p className="civic-compatibility-review-workspace__notice" role="status">
-          ⚠ Civic Compatibility Review Available
+        <p className="workspace-helper-note" role="status">
+          Civic compatibility review available — review findings before continuing civic work.
         </p>
       ) : null}
 
@@ -150,168 +180,163 @@ export function CivicCompatibilityReviewWorkspace({
         </button>
       </div>
 
-      {loading ? (
-        <p className="civic-compatibility-review-workspace__empty">Loading reviews...</p>
-      ) : null}
+      <div className="civic-compatibility-review-workspace">
+        {reviews.length > 0 ? (
+          <ul className="civic-compatibility-review-workspace__reviews">
+            {reviews.map((review) => (
+              <li key={review.reviewId}>
+                <button
+                  type="button"
+                  className={
+                    selectedReviewId === review.reviewId
+                      ? "civic-compatibility-review-workspace__review-button civic-compatibility-review-workspace__review-button--active"
+                      : "civic-compatibility-review-workspace__review-button"
+                  }
+                  onClick={() => {
+                    setSelectedReviewId(review.reviewId);
+                    setComparison(null);
+                  }}
+                >
+                  Version {review.initiativeVersion} · Review {review.reviewVersion} ·{" "}
+                  <WorkspaceStatusBadge status={review.compatibilityStatus} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
-      {!loading && reviews.length === 0 ? (
-        <p className="civic-compatibility-review-workspace__empty">
-          No compatibility reviews yet. Run a review to receive structured recommendations.
-        </p>
-      ) : null}
+        {selectedReview ? (
+          <div className="civic-compatibility-review-workspace__detail">
+            <h3>Compatibility Summary</h3>
+            <p>{selectedReview.compatibilitySummary}</p>
+            <p>
+              <strong>Status:</strong> {formatStatus(selectedReview.compatibilityStatus)}
+            </p>
+            <p>
+              <strong>Generated:</strong> {formatDate(selectedReview.generatedAt)}
+            </p>
+            <p>
+              <strong>Human Rights Assessment:</strong> {selectedReview.humanRightsAssessment}
+            </p>
+            <p>
+              <strong>Humanity Union Assessment:</strong> {selectedReview.humanityUnionAssessment}
+            </p>
 
-      {reviews.length > 0 ? (
-        <ul className="civic-compatibility-review-workspace__reviews">
-          {reviews.map((review) => (
-            <li key={review.reviewId}>
+            {selectedReview.positiveAlignment.length > 0 ? (
+              <>
+                <h4>Positive Alignment</h4>
+                <ul>
+                  {selectedReview.positiveAlignment.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+
+            {selectedReview.detectedConcerns.length > 0 ? (
+              <>
+                <h4>Potential Concerns</h4>
+                <ul>
+                  {selectedReview.detectedConcerns.map((concern) => (
+                    <li key={concern.concernId}>
+                      <strong>{concern.summary}</strong>
+                      <p>{concern.explanation}</p>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+
+            {selectedReview.recommendations.length > 0 ? (
+              <>
+                <h4>Recommendations</h4>
+                <ul>
+                  {selectedReview.recommendations.map((recommendation) => (
+                    <li key={recommendation.recommendationId}>
+                      <strong>{recommendation.summary}</strong>
+                      <p>{recommendation.explanation}</p>
+                      <p>{recommendation.suggestedImprovement}</p>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+
+            {selectedReview.referencedPrinciples.length > 0 ? (
+              <>
+                <h4>Referenced Principles</h4>
+                <ul>
+                  {selectedReview.referencedPrinciples.map((principle) => (
+                    <li key={principle.frameworkId}>
+                      {principle.referenceCode}: {principle.title}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+
+            {selectedReview.referencedHumanRightsArticles.length > 0 ? (
+              <>
+                <h4>Referenced Human Rights Articles</h4>
+                <ul>
+                  {selectedReview.referencedHumanRightsArticles.map((article) => (
+                    <li key={article.frameworkId}>
+                      {article.referenceCode}: {article.title}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+
+            <div className="civic-compatibility-review-workspace__compare">
+              <label>
+                Compare with
+                <select
+                  value={compareWithId}
+                  onChange={(event) => setCompareWithId(event.target.value)}
+                >
+                  <option value="">Select earlier review</option>
+                  {reviews
+                    .filter((review) => review.reviewId !== selectedReview.reviewId)
+                    .map((review) => (
+                      <option key={review.reviewId} value={review.reviewId}>
+                        Version {review.initiativeVersion} · Review {review.reviewVersion}
+                      </option>
+                    ))}
+                </select>
+              </label>
               <button
                 type="button"
-                className={
-                  selectedReviewId === review.reviewId
-                    ? "civic-compatibility-review-workspace__review-button civic-compatibility-review-workspace__review-button--active"
-                    : "civic-compatibility-review-workspace__review-button"
-                }
-                onClick={() => {
-                  setSelectedReviewId(review.reviewId);
-                  setComparison(null);
-                }}
+                onClick={() => void handleCompare()}
+                disabled={comparing || !compareWithId}
               >
-                Version {review.initiativeVersion} · Review {review.reviewVersion} ·{" "}
-                {formatStatus(review.compatibilityStatus)}
+                {comparing ? "Comparing..." : "Compare Reviews"}
               </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {selectedReview ? (
-        <div className="civic-compatibility-review-workspace__detail">
-          <h3>Compatibility Summary</h3>
-          <p>{selectedReview.compatibilitySummary}</p>
-          <p>
-            <strong>Status:</strong> {formatStatus(selectedReview.compatibilityStatus)}
-          </p>
-          <p>
-            <strong>Generated:</strong> {formatDate(selectedReview.generatedAt)}
-          </p>
-          <p>
-            <strong>Human Rights Assessment:</strong> {selectedReview.humanRightsAssessment}
-          </p>
-          <p>
-            <strong>Humanity Union Assessment:</strong> {selectedReview.humanityUnionAssessment}
-          </p>
-
-          {selectedReview.positiveAlignment.length > 0 ? (
-            <>
-              <h4>Positive Alignment</h4>
-              <ul>
-                {selectedReview.positiveAlignment.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-
-          {selectedReview.detectedConcerns.length > 0 ? (
-            <>
-              <h4>Potential Concerns</h4>
-              <ul>
-                {selectedReview.detectedConcerns.map((concern) => (
-                  <li key={concern.concernId}>
-                    <strong>{concern.summary}</strong>
-                    <p>{concern.explanation}</p>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-
-          {selectedReview.recommendations.length > 0 ? (
-            <>
-              <h4>Recommendations</h4>
-              <ul>
-                {selectedReview.recommendations.map((recommendation) => (
-                  <li key={recommendation.recommendationId}>
-                    <strong>{recommendation.summary}</strong>
-                    <p>{recommendation.explanation}</p>
-                    <p>{recommendation.suggestedImprovement}</p>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-
-          {selectedReview.referencedPrinciples.length > 0 ? (
-            <>
-              <h4>Referenced Principles</h4>
-              <ul>
-                {selectedReview.referencedPrinciples.map((principle) => (
-                  <li key={principle.frameworkId}>
-                    {principle.referenceCode}: {principle.title}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-
-          {selectedReview.referencedHumanRightsArticles.length > 0 ? (
-            <>
-              <h4>Referenced Human Rights Articles</h4>
-              <ul>
-                {selectedReview.referencedHumanRightsArticles.map((article) => (
-                  <li key={article.frameworkId}>
-                    {article.referenceCode}: {article.title}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-
-          <div className="civic-compatibility-review-workspace__compare">
-            <label>
-              Compare with
-              <select
-                value={compareWithId}
-                onChange={(event) => setCompareWithId(event.target.value)}
-              >
-                <option value="">Select earlier review</option>
-                {reviews
-                  .filter((review) => review.reviewId !== selectedReview.reviewId)
-                  .map((review) => (
-                    <option key={review.reviewId} value={review.reviewId}>
-                      Version {review.initiativeVersion} · Review {review.reviewVersion}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              onClick={() => void handleCompare()}
-              disabled={comparing || !compareWithId}
-            >
-              {comparing ? "Comparing..." : "Compare Reviews"}
-            </button>
-          </div>
-
-          {comparison ? (
-            <div className="civic-compatibility-review-workspace__comparison">
-              <h4>Comparison</h4>
-              <p>
-                Initiative version changed: {comparison.initiativeVersionChanged ? "Yes" : "No"}
-              </p>
-              <p>
-                Compatibility status changed: {comparison.compatibilityStatusChanged ? "Yes" : "No"}
-              </p>
-              <p>Added concerns: {comparison.addedConcerns.length}</p>
-              <p>Resolved concerns: {comparison.resolvedConcerns.length}</p>
-              <p>Added recommendations: {comparison.addedRecommendations.length}</p>
-              <p>Resolved recommendations: {comparison.resolvedRecommendations.length}</p>
             </div>
-          ) : null}
-        </div>
-      ) : null}
 
-      {message ? <p className="civic-compatibility-review-workspace__message">{message}</p> : null}
-    </div>
+            {comparison ? (
+              <div className="civic-compatibility-review-workspace__comparison">
+                <h4>Comparison</h4>
+                <p>
+                  Initiative version changed: {comparison.initiativeVersionChanged ? "Yes" : "No"}
+                </p>
+                <p>
+                  Compatibility status changed:{" "}
+                  {comparison.compatibilityStatusChanged ? "Yes" : "No"}
+                </p>
+                <p>Added concerns: {comparison.addedConcerns.length}</p>
+                <p>Resolved concerns: {comparison.resolvedConcerns.length}</p>
+                <p>Added recommendations: {comparison.addedRecommendations.length}</p>
+                <p>Resolved recommendations: {comparison.resolvedRecommendations.length}</p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {message ? (
+          <p className="civic-compatibility-review-workspace__message">{message}</p>
+        ) : null}
+      </div>
+    </WorkspaceSectionShell>
   );
 }

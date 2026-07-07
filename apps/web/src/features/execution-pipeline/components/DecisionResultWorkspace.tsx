@@ -5,9 +5,15 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { Initiative } from "@hu/types";
 
+import {
+  WorkspaceEmptyState,
+  WorkspacePublicLink,
+  WorkspaceRecordItem,
+  WorkspaceRecordList,
+  WorkspaceSectionShell,
+  WorkspaceStatusBadge,
+} from "../../initiative-workspace-ux";
 import { listPublicInitiativeCollectiveDecisions } from "../../initiative-collective-decision/api";
-
-import "./execution-pipeline-workspace.css";
 
 interface DecisionResultWorkspaceProps {
   initiative: Initiative;
@@ -50,54 +56,51 @@ export function DecisionResultWorkspace({ initiative }: DecisionResultWorkspaceP
   const closedDecisions = decisions.filter((decision) => decision.status === "closed");
 
   return (
-    <div className="execution-pipeline-workspace">
-      <p className="execution-pipeline-workspace__pipeline">
-        Execution pipeline: Decision Result → Implementation Commitment → Implementation Tracking →
-        Public Impact
-      </p>
-      <p className="execution-pipeline-workspace__note">
-        Collective decision results are public transparency records. They create opportunity for
-        voluntary implementation — not automatic execution.
-      </p>
-
-      {loading ? (
-        <p className="execution-pipeline-workspace__empty">Loading decision results...</p>
-      ) : null}
-
-      {error ? <p className="execution-pipeline-workspace__empty">{error}</p> : null}
-
-      {!loading && !error && closedDecisions.length === 0 ? (
-        <p className="execution-pipeline-workspace__empty">
-          No closed collective decision results are published for this initiative yet.
-        </p>
-      ) : null}
-
+    <WorkspaceSectionShell
+      purpose="Collective decision results are public transparency records. They create opportunity for voluntary implementation — not automatic execution."
+      loading={loading ? "Loading decision results..." : null}
+      error={error}
+      links={
+        <WorkspacePublicLink
+          href={`/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`}
+          label="View Public Page"
+        />
+      }
+      emptyState={
+        !loading && !error && closedDecisions.length === 0 ? (
+          <WorkspaceEmptyState
+            title="No collective decision results are published yet"
+            explanation="Closed collective decision results appear here after a decision session completes voting."
+            nextStep="Continue in Decision Session and Collective Decision to reach a closed result."
+          />
+        ) : null
+      }
+    >
       {closedDecisions.length > 0 ? (
-        <ul className="execution-pipeline-workspace__list">
+        <WorkspaceRecordList>
           {closedDecisions.map((decision) => (
-            <li key={decision.decisionId} className="execution-pipeline-workspace__item">
-              <Link
-                href={`/collective-decisions/public/${encodeURIComponent(decision.decisionId)}`}
-              >
-                {decision.question}
-              </Link>
-              <p className="execution-pipeline-workspace__meta">
-                {decision.status} · Outcome: {formatOutcome(decision.outcome?.outcome)} · Support{" "}
-                {decision.statistics.supportCount} · Do Not Support{" "}
-                {decision.statistics.doNotSupportCount}
-              </p>
-              <p className="execution-pipeline-workspace__meta">{decision.outcomeSummary}</p>
-            </li>
+            <WorkspaceRecordItem
+              key={decision.decisionId}
+              title={
+                <Link
+                  href={`/collective-decisions/public/${encodeURIComponent(decision.decisionId)}`}
+                >
+                  {decision.question}
+                </Link>
+              }
+              meta={
+                <>
+                  <WorkspaceStatusBadge status={decision.status} /> · Outcome:{" "}
+                  {formatOutcome(decision.outcome?.outcome)} · Support{" "}
+                  {decision.statistics.supportCount} · Do Not Support{" "}
+                  {decision.statistics.doNotSupportCount}
+                </>
+              }
+              body={decision.outcomeSummary}
+            />
           ))}
-        </ul>
+        </WorkspaceRecordList>
       ) : null}
-
-      <Link
-        className="execution-pipeline-workspace__public-link"
-        href={`/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`}
-      >
-        View public initiative page
-      </Link>
-    </div>
+    </WorkspaceSectionShell>
   );
 }

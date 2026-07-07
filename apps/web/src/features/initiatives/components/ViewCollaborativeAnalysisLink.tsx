@@ -1,8 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import {
+  WorkspaceEmptyState,
+  WorkspaceLoadingState,
+  WorkspacePublicLink,
+} from "../../initiative-workspace-ux";
 import { getCollaborativeAnalysisByInitiativeId } from "../../collaborative-analysis/api";
 
 import "./view-collaborative-analysis-link.css";
@@ -58,29 +62,33 @@ export function ViewCollaborativeAnalysisLink({
   }, [initiativeId]);
 
   if (!initiativeId) {
-    return <p className="view-collaborative-analysis-link__empty">Select an initiative first.</p>;
+    return (
+      <WorkspaceEmptyState
+        title="No initiative selected"
+        explanation="Select an initiative to open its collaborative analysis workspace."
+        nextStep="Choose an initiative from My Initiatives."
+      />
+    );
   }
 
   if (loading) {
-    return (
-      <p className="view-collaborative-analysis-link__empty">Loading collaborative analysis...</p>
-    );
+    return <WorkspaceLoadingState message="Loading collaborative analysis..." />;
   }
 
   if (!analysisId) {
     return (
-      <p className="view-collaborative-analysis-link__empty">
-        No collaborative analysis is linked to this initiative.
-      </p>
+      <WorkspaceEmptyState
+        title="No collaborative analysis is linked yet"
+        explanation="This initiative does not have a linked collaborative analysis workspace."
+        nextStep="Create or publish collaborative analysis from the Collaborative Analysis section."
+      />
     );
   }
 
   return (
-    <Link
-      className="view-collaborative-analysis-link"
+    <WorkspacePublicLink
       href={`/collaborative-analysis/${encodeURIComponent(analysisId)}`}
-    >
-      Open Collaborative Analysis Workspace
-    </Link>
+      label="View Collaborative Analysis"
+    />
   );
 }

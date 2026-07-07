@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { Initiative, OfficialResponseType } from "@hu/types";
@@ -15,7 +14,16 @@ import {
   verifyOfficialResponse,
 } from "../../official-response/api";
 
-import "./execution-pipeline-workspace.css";
+import {
+  WorkspaceButton,
+  WorkspaceEmptyState,
+  WorkspaceHelperNote,
+  WorkspacePublicLink,
+  WorkspaceRecordItem,
+  WorkspaceRecordList,
+  WorkspaceSectionShell,
+  WorkspaceStatusBadge,
+} from "../../initiative-workspace-ux";
 
 const RESPONSE_TYPES: OfficialResponseType[] = [
   "official_letter",
@@ -176,22 +184,21 @@ export function OfficialResponsesWorkspace({ initiative }: OfficialResponsesWork
   };
 
   return (
-    <div className="execution-pipeline-workspace">
-      <p className="execution-pipeline-workspace__note">
-        Official Responses are the constitutional public record of institutional replies after civic
-        delivery. Humanity Union records facts — it does not evaluate whether a response is good or
-        bad.
-      </p>
-      <p className="execution-pipeline-workspace__note">
+    <WorkspaceSectionShell
+      purpose={
+        <>
+          Official Responses are the constitutional public record of institutional replies after
+          civic delivery. Humanity Union records facts — it does not evaluate whether a response is
+          good or bad.
+        </>
+      }
+      loading={loading ? "Loading official responses..." : null}
+      error={error}
+    >
+      <WorkspaceHelperNote>
         Incoming mailbox automation is coming in a future release. Until then, responses may be
         entered manually after a sent civic delivery.
-      </p>
-
-      {loading ? (
-        <p className="execution-pipeline-workspace__empty">Loading official responses...</p>
-      ) : null}
-
-      {error ? <p className="execution-pipeline-workspace__empty">{error}</p> : null}
+      </WorkspaceHelperNote>
 
       {recipientOptions.length > 0 ? (
         <>
@@ -254,64 +261,88 @@ export function OfficialResponsesWorkspace({ initiative }: OfficialResponsesWork
               ))}
             </select>
           </label>
-          <button type="button" disabled={submitting} onClick={() => void handleCreateDraft()}>
+          <WorkspaceButton
+            variant="primary"
+            disabled={submitting}
+            onClick={() => void handleCreateDraft()}
+          >
             {submitting ? "Saving..." : "Create draft response"}
-          </button>
+          </WorkspaceButton>
         </>
       ) : (
-        <p className="execution-pipeline-workspace__empty">
-          Send a civic delivery first. Official responses attach to sent delivery recipients.
-        </p>
+        <WorkspaceEmptyState
+          title="No sent civic delivery recipients yet"
+          explanation="Official responses attach to recipients who received a sent civic delivery."
+          nextStep="Send a civic delivery first, then record the institution response here."
+        />
       )}
 
       {initiativeResponses.length > 0 ? (
-        <ul className="execution-pipeline-workspace__list">
+        <WorkspaceRecordList>
           {initiativeResponses.map((response) => (
-            <li key={response.responseId} className="execution-pipeline-workspace__item">
-              <strong>
-                {response.responseNumber} — {response.organizationName}
-              </strong>
-              <p className="execution-pipeline-workspace__meta">
-                {response.publicationStatus} · {response.verificationState.replace(/_/g, " ")} ·{" "}
-                {response.responseType.replace(/_/g, " ")}
-              </p>
-              <p>{response.summary}</p>
-              <div className="execution-pipeline-workspace__deferred-actions">
-                {response.publicationStatus === "draft" ? (
-                  <button type="button" onClick={() => void handlePublish(response.responseId)}>
-                    Publish
-                  </button>
-                ) : null}
-                {response.publicationStatus === "published" &&
-                response.verificationState === "pending" &&
-                steward ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => void handleVerify(response.responseId, "verified")}
-                    >
-                      Verify
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleVerify(response.responseId, "unable_to_verify")}
-                    >
-                      Unable to verify
-                    </button>
-                  </>
-                ) : null}
-                {response.publicationStatus !== "draft" ? (
-                  <Link href={`/public-responses/${encodeURIComponent(response.responseId)}`}>
-                    View public page
-                  </Link>
-                ) : null}
-              </div>
-            </li>
+            <WorkspaceRecordItem
+              key={response.responseId}
+              title={
+                <strong>
+                  {response.responseNumber} — {response.organizationName}
+                </strong>
+              }
+              meta={
+                <>
+                  <WorkspaceStatusBadge status={response.publicationStatus} /> ·{" "}
+                  <WorkspaceStatusBadge status={response.verificationState} /> ·{" "}
+                  {response.responseType.replace(/_/g, " ")}
+                </>
+              }
+              body={
+                <>
+                  {response.summary}
+                  <div className="workspace-actions">
+                    {response.publicationStatus === "draft" ? (
+                      <WorkspaceButton
+                        variant="primary"
+                        onClick={() => void handlePublish(response.responseId)}
+                      >
+                        Publish
+                      </WorkspaceButton>
+                    ) : null}
+                    {response.publicationStatus === "published" &&
+                    response.verificationState === "pending" &&
+                    steward ? (
+                      <>
+                        <WorkspaceButton
+                          variant="secondary"
+                          onClick={() => void handleVerify(response.responseId, "verified")}
+                        >
+                          Verify
+                        </WorkspaceButton>
+                        <WorkspaceButton
+                          variant="secondary"
+                          onClick={() => void handleVerify(response.responseId, "unable_to_verify")}
+                        >
+                          Unable to verify
+                        </WorkspaceButton>
+                      </>
+                    ) : null}
+                    {response.publicationStatus !== "draft" ? (
+                      <WorkspacePublicLink
+                        href={`/public-responses/${encodeURIComponent(response.responseId)}`}
+                        label="View Public Page"
+                      />
+                    ) : null}
+                  </div>
+                </>
+              }
+            />
           ))}
-        </ul>
-      ) : (
-        <p className="execution-pipeline-workspace__empty">No official responses recorded yet.</p>
-      )}
-    </div>
+        </WorkspaceRecordList>
+      ) : recipientOptions.length > 0 ? (
+        <WorkspaceEmptyState
+          title="No official responses recorded yet"
+          explanation="Draft and published responses for this initiative will appear here."
+          nextStep="Create a draft response after selecting a sent delivery recipient."
+        />
+      ) : null}
+    </WorkspaceSectionShell>
   );
 }

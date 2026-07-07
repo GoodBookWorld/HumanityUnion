@@ -5,9 +5,16 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { Initiative } from "@hu/types";
 
+import { WORKSPACE_DEFERRED_TOOLTIP_API } from "../../initiative-workspace-ux/constants";
+import {
+  WorkspaceDeferredActions,
+  WorkspaceEmptyState,
+  WorkspaceRecordItem,
+  WorkspaceRecordList,
+  WorkspaceSectionShell,
+  WorkspaceStatusBadge,
+} from "../../initiative-workspace-ux";
 import { listPublicInitiativeImplementationCommitments } from "../../initiative-implementation-commitment/api";
-
-import "./execution-pipeline-workspace.css";
 
 interface InitiativeImplementationCommitmentWorkspaceProps {
   initiative: Initiative;
@@ -50,58 +57,51 @@ export function InitiativeImplementationCommitmentWorkspace({
   }, [loadCommitments]);
 
   return (
-    <div className="execution-pipeline-workspace">
-      <p className="execution-pipeline-workspace__note">
-        Implementation commitments are voluntary public accountability statements after a closed
-        collective decision. Multiple organizations may commit independently.
-      </p>
-
-      <div className="execution-pipeline-workspace__deferred">
-        <p className="execution-pipeline-workspace__deferred-title">Author actions (coming soon)</p>
-        <p className="execution-pipeline-workspace__note">
-          Commitment authoring is implemented in the domain layer. Workspace REST routes are not
-          connected yet, so create/edit/publish controls stay disabled here.
-        </p>
-        <div className="execution-pipeline-workspace__deferred-actions">
-          {DEFERRED_ACTIONS.map((action) => (
-            <button key={action} type="button" disabled title="Coming soon — workspace API pending">
-              {action}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {loading ? (
-        <p className="execution-pipeline-workspace__empty">Loading implementation commitments...</p>
-      ) : null}
-
-      {error ? <p className="execution-pipeline-workspace__empty">{error}</p> : null}
-
-      {!loading && !error && commitments.length === 0 ? (
-        <p className="execution-pipeline-workspace__empty">
-          No published implementation commitments yet.
-        </p>
-      ) : null}
-
+    <WorkspaceSectionShell
+      purpose="Implementation commitments are voluntary public accountability statements after a closed collective decision. Multiple organizations may commit independently."
+      loading={loading ? "Loading implementation commitments..." : null}
+      error={error}
+      deferredActions={
+        <WorkspaceDeferredActions
+          note="Commitment authoring is implemented in the domain layer. Workspace REST routes are not connected yet."
+          actions={DEFERRED_ACTIONS}
+          tooltip={WORKSPACE_DEFERRED_TOOLTIP_API}
+        />
+      }
+      emptyState={
+        !loading && !error && commitments.length === 0 ? (
+          <WorkspaceEmptyState
+            title="No implementation commitment has been published yet"
+            explanation="Organizations publish voluntary commitments after a closed collective decision."
+            nextStep="Review the decision result, then prepare a commitment when an organization is ready to participate."
+          />
+        ) : null
+      }
+    >
       {commitments.length > 0 ? (
-        <ul className="execution-pipeline-workspace__list">
+        <WorkspaceRecordList>
           {commitments.map((commitment) => (
-            <li key={commitment.commitmentId} className="execution-pipeline-workspace__item">
-              <Link
-                href={`/initiative-implementation-commitments/public/${encodeURIComponent(commitment.commitmentId)}`}
-              >
-                {commitment.title}
-              </Link>
-              <p className="execution-pipeline-workspace__meta">
-                {commitment.status}
-                {commitment.organization ? ` · ${commitment.organization}` : ""} ·{" "}
-                {commitment.authorDisplayName}
-              </p>
-              <p className="execution-pipeline-workspace__meta">{commitment.summary}</p>
-            </li>
+            <WorkspaceRecordItem
+              key={commitment.commitmentId}
+              title={
+                <Link
+                  href={`/initiative-implementation-commitments/public/${encodeURIComponent(commitment.commitmentId)}`}
+                >
+                  {commitment.title}
+                </Link>
+              }
+              meta={
+                <>
+                  <WorkspaceStatusBadge status={commitment.status} />
+                  {commitment.organization ? ` · ${commitment.organization}` : ""} ·{" "}
+                  {commitment.authorDisplayName}
+                </>
+              }
+              body={commitment.summary}
+            />
           ))}
-        </ul>
+        </WorkspaceRecordList>
       ) : null}
-    </div>
+    </WorkspaceSectionShell>
   );
 }

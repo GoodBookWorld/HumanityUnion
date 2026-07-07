@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import type { CivicAccountabilityEventType, Initiative } from "@hu/types";
@@ -12,7 +11,16 @@ import {
   listMyCivicAccountabilities,
 } from "../../civic-accountability/api";
 
-import "./execution-pipeline-workspace.css";
+import {
+  WorkspaceButton,
+  WorkspaceEmptyState,
+  WorkspaceHelperNote,
+  WorkspacePublicLink,
+  WorkspaceSectionShell,
+  WorkspaceStatusBadge,
+  WorkspaceTimeline,
+  WorkspaceTimelineItem,
+} from "../../initiative-workspace-ux";
 
 const EVENT_TYPES: CivicAccountabilityEventType[] = [
   "follow_up_sent",
@@ -130,29 +138,30 @@ export function CivicAccountabilityWorkspace({ initiative }: CivicAccountability
   };
 
   return (
-    <div className="execution-pipeline-workspace">
-      <p className="execution-pipeline-workspace__note">
-        Civic Accountability records what happened after institutions received and/or responded to a
-        Civic Action Package. Humanity Union records facts — it does not score institutions or
-        assign blame.
-      </p>
-      <p className="execution-pipeline-workspace__note">
+    <WorkspaceSectionShell
+      purpose={
+        <>
+          Civic Accountability records what happened after institutions received and/or responded to
+          a Civic Action Package. Humanity Union records facts — it does not score institutions or
+          assign blame.
+        </>
+      }
+      loading={loading ? "Loading civic accountability..." : null}
+      error={error}
+      emptyState={
+        initiativeRecords.length === 0 && !loading && !error ? (
+          <WorkspaceEmptyState
+            title="No civic accountability timeline exists yet"
+            explanation="Accountability timelines start after civic delivery or a published official response."
+            nextStep="Send a civic delivery or publish an official response first."
+          />
+        ) : null
+      }
+    >
+      <WorkspaceHelperNote>
         Accountability timelines start automatically after civic delivery or a published official
         response.
-      </p>
-
-      {loading ? (
-        <p className="execution-pipeline-workspace__empty">Loading civic accountability...</p>
-      ) : null}
-
-      {error ? <p className="execution-pipeline-workspace__empty">{error}</p> : null}
-
-      {initiativeRecords.length === 0 && !loading ? (
-        <p className="execution-pipeline-workspace__empty">
-          No civic accountability timelines yet. Send a civic delivery or publish an official
-          response first.
-        </p>
-      ) : null}
+      </WorkspaceHelperNote>
 
       {initiativeRecords.length > 0 ? (
         <>
@@ -205,46 +214,55 @@ export function CivicAccountabilityWorkspace({ initiative }: CivicAccountability
                 value={occurredAt}
                 onChange={(event) => setOccurredAt(event.target.value)}
               />
-              <button type="button" disabled={submitting} onClick={() => void handleAddEvent()}>
+              <WorkspaceButton
+                variant="primary"
+                disabled={submitting}
+                onClick={() => void handleAddEvent()}
+              >
                 {submitting ? "Recording..." : "Record event"}
-              </button>
+              </WorkspaceButton>
             </>
           ) : (
-            <p className="execution-pipeline-workspace__meta">
+            <p className="workspace-record-item__meta">
               This accountability timeline is read-only ({activeRecord?.status}).
             </p>
           )}
 
-          <ul className="execution-pipeline-workspace__list">
+          <WorkspaceTimeline>
             {initiativeRecords.map((record) => (
-              <li key={record.accountabilityId} className="execution-pipeline-workspace__item">
-                <strong>{record.capId}</strong>
-                <p className="execution-pipeline-workspace__meta">{record.status}</p>
-                <div className="execution-pipeline-workspace__deferred-actions">
-                  {record.status === "active" ? (
-                    <button type="button" onClick={() => void handleClose(record.accountabilityId)}>
-                      Close
-                    </button>
-                  ) : null}
-                  {record.status === "active" || record.status === "closed" ? (
-                    <button
-                      type="button"
-                      onClick={() => void handleArchive(record.accountabilityId)}
-                    >
-                      Archive
-                    </button>
-                  ) : null}
-                  <Link
-                    href={`/civic-accountability/public/${encodeURIComponent(record.accountabilityId)}`}
-                  >
-                    View public timeline
-                  </Link>
-                </div>
-              </li>
+              <WorkspaceTimelineItem
+                key={record.accountabilityId}
+                title={<strong>{record.capId}</strong>}
+                meta={<WorkspaceStatusBadge status={record.status} />}
+                links={
+                  <div className="workspace-actions">
+                    {record.status === "active" ? (
+                      <WorkspaceButton
+                        variant="secondary"
+                        onClick={() => void handleClose(record.accountabilityId)}
+                      >
+                        Close
+                      </WorkspaceButton>
+                    ) : null}
+                    {record.status === "active" || record.status === "closed" ? (
+                      <WorkspaceButton
+                        variant="secondary"
+                        onClick={() => void handleArchive(record.accountabilityId)}
+                      >
+                        Archive
+                      </WorkspaceButton>
+                    ) : null}
+                    <WorkspacePublicLink
+                      href={`/civic-accountability/public/${encodeURIComponent(record.accountabilityId)}`}
+                      label="View Accountability Record"
+                    />
+                  </div>
+                }
+              />
             ))}
-          </ul>
+          </WorkspaceTimeline>
         </>
       ) : null}
-    </div>
+    </WorkspaceSectionShell>
   );
 }

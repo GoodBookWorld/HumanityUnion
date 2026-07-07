@@ -1,11 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import {
+  WorkspaceEmptyState,
+  WorkspaceLoadingState,
+  WorkspacePublicLink,
+} from "../../initiative-workspace-ux";
 import { getPetitionByCollectiveDecisionId, getPetitionByInitiativeId } from "../api";
-
-import "./view-petition-link.css";
 
 interface ViewPetitionLinkProps {
   collectiveDecisionId?: string | null;
@@ -59,24 +61,33 @@ export function ViewPetitionLink({
   }, [collectiveDecisionId, initiativeId]);
 
   if (!collectiveDecisionId && !initiativeId) {
-    return <p className="view-petition-link__empty">No petition reference is available.</p>;
+    return (
+      <WorkspaceEmptyState
+        title="No petition reference is available"
+        explanation="A petition link appears when a collective decision or initiative petition exists."
+        nextStep="Continue civic participation stages that create a petition record."
+      />
+    );
   }
 
   if (loading) {
-    return <p className="view-petition-link__empty">Loading petition...</p>;
+    return <WorkspaceLoadingState message="Loading petition..." />;
   }
 
   if (!petitionId) {
     return (
-      <p className="view-petition-link__empty">
-        No petition is linked to this participation stage yet.
-      </p>
+      <WorkspaceEmptyState
+        title="No petition is linked yet"
+        explanation="This participation stage does not have a linked petition record."
+        nextStep="Open or close a collective decision to create petition participation."
+      />
     );
   }
 
   return (
-    <Link className="view-petition-link" href={`/petitions/${encodeURIComponent(petitionId)}`}>
-      Open Petition Workspace
-    </Link>
+    <WorkspacePublicLink
+      href={`/petitions/${encodeURIComponent(petitionId)}`}
+      label="View Petition"
+    />
   );
 }

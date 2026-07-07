@@ -5,12 +5,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { Initiative, PublicCivicArchiveListItem } from "@hu/types";
 
+import { WORKSPACE_DEFERRED_TOOLTIP_AUTHOR } from "../../initiative-workspace-ux/constants";
+import {
+  WorkspaceDeferredActions,
+  WorkspaceEmptyState,
+  WorkspaceMetricsRow,
+  WorkspacePublicLink,
+  WorkspaceRecordItem,
+  WorkspaceRecordList,
+  WorkspaceSectionShell,
+} from "../../initiative-workspace-ux";
 import {
   getLatestPublicCivicArchiveForInitiative,
   listMyPublicCivicArchiveRecords,
 } from "../../public-civic-archive/api";
-
-import "./execution-pipeline-workspace.css";
 
 interface InitiativePublicCivicArchiveWorkspaceProps {
   initiative: Initiative;
@@ -96,100 +104,80 @@ export function InitiativePublicCivicArchiveWorkspace({
   }, [latestArchiveRecordId, publishedRecords]);
 
   return (
-    <div className="execution-pipeline-workspace">
-      <p className="execution-pipeline-workspace__note">
-        Public Civic Archive preserves verified civic knowledge for future communities. Archive
-        records are permanent after publication and remain reference-only links to the civic
-        pipeline.
-      </p>
-
-      <dl className="execution-pipeline-workspace__summary">
-        <div>
-          <dt>Archive status</dt>
-          <dd>{archiveStatus}</dd>
-        </div>
-        <div>
-          <dt>Published archive records</dt>
-          <dd>{publishedRecords.length}</dd>
-        </div>
-        {draftCount > 0 ? (
+    <WorkspaceSectionShell
+      purpose="Public Civic Archive preserves verified civic knowledge for future communities. Archive records are permanent after publication and remain reference-only links to the civic pipeline."
+      metrics={
+        <WorkspaceMetricsRow>
           <div>
-            <dt>Workspace drafts</dt>
-            <dd>{draftCount}</dd>
+            <dt>Archive status</dt>
+            <dd>{archiveStatus}</dd>
           </div>
-        ) : null}
-      </dl>
-
-      <div className="execution-pipeline-workspace__deferred">
-        <p className="execution-pipeline-workspace__deferred-title">Author actions (coming soon)</p>
-        <p className="execution-pipeline-workspace__note">
-          Workspace archive authoring is not connected yet.
-        </p>
-        <div className="execution-pipeline-workspace__deferred-actions">
-          {AUTHOR_DEFERRED_ACTIONS.map((action) => (
-            <button
-              key={action}
-              type="button"
-              disabled
-              title="Workspace archive authoring is not connected yet."
-            >
-              {action}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {loading ? (
-        <p className="execution-pipeline-workspace__empty">Loading civic archive records...</p>
-      ) : null}
-
-      {error ? <p className="execution-pipeline-workspace__empty">{error}</p> : null}
-
-      {!loading && !error && publishedRecords.length === 0 && draftCount === 0 ? (
-        <p className="execution-pipeline-workspace__empty">
-          No civic archive record exists for this initiative yet. Verified public impact can be
-          archived into the Humanity Union Public Civic Archive when authoring is connected.
-        </p>
-      ) : null}
-
-      {!loading && !error && publishedRecords.length === 0 && draftCount > 0 ? (
-        <p className="execution-pipeline-workspace__empty">
-          A workspace draft exists, but no published archive record is public yet.
-        </p>
-      ) : null}
-
+          <div>
+            <dt>Published archive records</dt>
+            <dd>{publishedRecords.length}</dd>
+          </div>
+          {draftCount > 0 ? (
+            <div>
+              <dt>Workspace drafts</dt>
+              <dd>{draftCount}</dd>
+            </div>
+          ) : null}
+        </WorkspaceMetricsRow>
+      }
+      loading={loading ? "Loading civic archive records..." : null}
+      error={error}
+      deferredActions={
+        <WorkspaceDeferredActions
+          note="Workspace archive authoring is not connected yet."
+          actions={AUTHOR_DEFERRED_ACTIONS}
+          tooltip={WORKSPACE_DEFERRED_TOOLTIP_AUTHOR}
+          authorWorkflow
+        />
+      }
+      emptyState={
+        !loading && !error && publishedRecords.length === 0 && draftCount === 0 ? (
+          <WorkspaceEmptyState
+            title="No civic archive record exists yet"
+            explanation="Verified public impact can be archived into the Humanity Union Public Civic Archive."
+            nextStep="Complete public impact verification, then prepare an archive record when civic knowledge is ready to preserve."
+          />
+        ) : !loading && !error && publishedRecords.length === 0 && draftCount > 0 ? (
+          <WorkspaceEmptyState
+            title="No published archive record is public yet"
+            explanation="A workspace draft exists, but publication has not completed."
+            nextStep="Review the draft and publish the archive record when civic knowledge is ready."
+          />
+        ) : null
+      }
+      links={<WorkspacePublicLink href="/civic-archive" label="View Civic Archive" />}
+    >
       {latestRecord ? (
-        <div className="execution-pipeline-workspace__item">
-          <h3>Latest published archive record</h3>
-          <Link href={`/civic-archive/${encodeURIComponent(latestRecord.archiveRecordId)}`}>
-            {latestRecord.title}
-          </Link>
-          <p className="execution-pipeline-workspace__meta">
-            Version {latestRecord.archivedVersion} · {latestRecord.implementationPeriod} ·{" "}
-            {latestRecord.community}
-          </p>
-          <p>{latestRecord.summary}</p>
-        </div>
+        <WorkspaceRecordItem
+          title={
+            <Link href={`/civic-archive/${encodeURIComponent(latestRecord.archiveRecordId)}`}>
+              {latestRecord.title}
+            </Link>
+          }
+          meta={`Version ${latestRecord.archivedVersion} · ${latestRecord.implementationPeriod} · ${latestRecord.community}`}
+          body={latestRecord.summary}
+        />
       ) : null}
 
       {publishedRecords.length > 1 ? (
-        <ul className="execution-pipeline-workspace__list">
+        <WorkspaceRecordList>
           {publishedRecords.map((record) => (
-            <li key={record.archiveRecordId} className="execution-pipeline-workspace__item">
-              <Link href={`/civic-archive/${encodeURIComponent(record.archiveRecordId)}`}>
-                {record.title}
-              </Link>
-              <p className="execution-pipeline-workspace__meta">
-                Version {record.archivedVersion} · archived {record.archivedAt}
-              </p>
-            </li>
+            <WorkspaceRecordItem
+              key={record.archiveRecordId}
+              title={
+                <Link href={`/civic-archive/${encodeURIComponent(record.archiveRecordId)}`}>
+                  {record.title}
+                </Link>
+              }
+              meta={`Version ${record.archivedVersion} · archived ${record.archivedAt}`}
+            />
           ))}
-        </ul>
+        </WorkspaceRecordList>
       ) : null}
-
-      <p className="execution-pipeline-workspace__links">
-        <Link href="/civic-archive">Browse Humanity Union Public Civic Archive</Link>
-      </p>
-    </div>
+    </WorkspaceSectionShell>
   );
 }

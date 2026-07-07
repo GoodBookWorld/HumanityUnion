@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import type { Initiative, RecommendedCivicDeliveryRecipient } from "@hu/types";
@@ -16,7 +15,14 @@ import {
   type CivicDeliveryDetail,
 } from "../../civic-delivery/api";
 
-import "./execution-pipeline-workspace.css";
+import {
+  WorkspaceButton,
+  WorkspaceEmptyState,
+  WorkspaceHelperNote,
+  WorkspacePublicLink,
+  WorkspaceRecordList,
+  WorkspaceSectionShell,
+} from "../../initiative-workspace-ux";
 
 interface CivicDeliveryWorkspaceProps {
   initiative: Initiative;
@@ -178,70 +184,75 @@ export function CivicDeliveryWorkspace({ initiative }: CivicDeliveryWorkspacePro
   const activeCap = caps.find((capPackage) => capPackage.capId === activeCapId);
 
   return (
-    <div className="execution-pipeline-workspace">
-      <p className="execution-pipeline-workspace__pipeline">
+    <WorkspaceSectionShell
+      purpose="Delivery records civic facts transparently. Humanity Union does not judge recipient behavior. Dev simulated mode is active when no email provider is configured."
+      loading={loading ? "Loading civic delivery workspace..." : null}
+      error={error}
+      emptyState={
+        !loading && caps.length === 0 ? (
+          <WorkspaceEmptyState
+            title="No Civic Action Package is available for delivery yet"
+            explanation="Civic delivery requires an issued Civic Action Package from a closed collective decision."
+            nextStep="Complete collective decision and issue a Civic Action Package before selecting recipients."
+          />
+        ) : null
+      }
+    >
+      <WorkspaceHelperNote>
         Civic delivery: Civic Action Package → Recommended Recipients → Recipient Selection → Send →
         Public Delivery Log
-      </p>
-      <p className="execution-pipeline-workspace__note">
-        Delivery records civic facts transparently. Humanity Union does not judge recipient
-        behavior. Dev simulated mode is active when no email provider is configured.
-      </p>
-
-      {loading ? (
-        <p className="execution-pipeline-workspace__empty">Loading civic delivery workspace...</p>
-      ) : null}
-
-      {error ? <p className="execution-pipeline-workspace__empty">{error}</p> : null}
-
-      {!loading && caps.length === 0 ? (
-        <p className="execution-pipeline-workspace__empty">
-          No issued Civic Action Packages are available for delivery yet.
-        </p>
-      ) : null}
+      </WorkspaceHelperNote>
 
       {activeCap ? (
-        <p className="execution-pipeline-workspace__meta">
+        <p className="workspace-record-item__meta">
           Active CAP:{" "}
-          <Link href={`/civic-action-packages/public/${encodeURIComponent(activeCap.capId)}`}>
-            CAP #{activeCap.capNumber}
-          </Link>
+          <WorkspacePublicLink
+            href={`/civic-action-packages/public/${encodeURIComponent(activeCap.capId)}`}
+            label={`View Civic Action Package #${activeCap.capNumber}`}
+          />
         </p>
       ) : null}
 
       {deliveryDetail?.delivery.status === "draft" ? (
         <>
           <h3>Recommended recipients</h3>
-          <ul className="execution-pipeline-workspace__list">
+          <WorkspaceRecordList>
             {recommendations.map((recommended) => (
               <li key={`${recommended.email}-${recommended.recipientType}`}>
                 <strong>{recommended.name}</strong> ({recommended.recipientType})
-                <p className="execution-pipeline-workspace__meta">{recommended.reason}</p>
-                <button type="button" onClick={() => void handleAddRecommended(recommended)}>
+                <p className="workspace-record-item__meta">{recommended.reason}</p>
+                <WorkspaceButton
+                  variant="secondary"
+                  onClick={() => void handleAddRecommended(recommended)}
+                >
                   Select recipient
-                </button>
+                </WorkspaceButton>
               </li>
             ))}
-          </ul>
+          </WorkspaceRecordList>
 
           <h3>Selected recipients</h3>
           {deliveryDetail.recipients.length === 0 ? (
-            <p className="execution-pipeline-workspace__empty">No recipients selected yet.</p>
+            <WorkspaceEmptyState
+              title="No recipients selected yet"
+              explanation="Select recommended recipients or add a custom recipient before sending."
+              nextStep="Add at least one recipient to prepare civic delivery."
+            />
           ) : (
-            <ul className="execution-pipeline-workspace__list">
+            <WorkspaceRecordList>
               {deliveryDetail.recipients.map((recipient) => (
                 <li key={recipient.recipientId}>
                   <strong>{recipient.name}</strong> ({recipient.recipientType}) · {recipient.source}
-                  <p className="execution-pipeline-workspace__meta">{recipient.reason}</p>
-                  <button
-                    type="button"
+                  <p className="workspace-record-item__meta">{recipient.reason}</p>
+                  <WorkspaceButton
+                    variant="danger"
                     onClick={() => void handleRemoveRecipient(recipient.recipientId)}
                   >
                     Remove
-                  </button>
+                  </WorkspaceButton>
                 </li>
               ))}
-            </ul>
+            </WorkspaceRecordList>
           )}
 
           <h3>Add custom recipient</h3>
@@ -261,19 +272,19 @@ export function CivicDeliveryWorkspace({ initiative }: CivicDeliveryWorkspacePro
               value={customReason}
               onChange={(event) => setCustomReason(event.target.value)}
             />
-            <button type="button" onClick={() => void handleAddCustom()}>
+            <WorkspaceButton variant="secondary" onClick={() => void handleAddCustom()}>
               Add custom recipient
-            </button>
+            </WorkspaceButton>
           </div>
 
-          <button type="button" disabled={sending} onClick={() => void handleSend()}>
+          <WorkspaceButton variant="primary" disabled={sending} onClick={() => void handleSend()}>
             {sending ? "Sending..." : "Send (dev simulated)"}
-          </button>
+          </WorkspaceButton>
         </>
       ) : null}
 
       {deliveryDetail?.delivery.status === "sent" ? (
-        <p className="execution-pipeline-workspace__meta">
+        <p className="workspace-record-item__meta">
           Delivery sent via {deliveryDetail.delivery.deliveryMode ?? "dev_simulated"} on{" "}
           {deliveryDetail.delivery.sentAt
             ? new Date(deliveryDetail.delivery.sentAt).toLocaleString()
@@ -285,7 +296,7 @@ export function CivicDeliveryWorkspace({ initiative }: CivicDeliveryWorkspacePro
       {history.filter((detail) => detail.delivery.status === "sent").length > 0 ? (
         <>
           <h3>Delivery history</h3>
-          <ul className="execution-pipeline-workspace__list">
+          <WorkspaceRecordList>
             {history
               .filter((detail) => detail.delivery.status === "sent")
               .map((detail) => (
@@ -294,9 +305,9 @@ export function CivicDeliveryWorkspace({ initiative }: CivicDeliveryWorkspacePro
                   {detail.recipients.length} recipients · {detail.delivery.deliveryMode}
                 </li>
               ))}
-          </ul>
+          </WorkspaceRecordList>
         </>
       ) : null}
-    </div>
+    </WorkspaceSectionShell>
   );
 }

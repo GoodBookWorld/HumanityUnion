@@ -1,11 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import {
+  WorkspaceEmptyState,
+  WorkspaceLoadingState,
+  WorkspacePublicLink,
+} from "../../initiative-workspace-ux";
 import { getCollectiveDecisionByInitiativeId } from "../api";
-
-import "./view-collective-decision-link.css";
 
 interface ViewCollectiveDecisionLinkProps {
   initiativeId: string | null;
@@ -56,27 +58,33 @@ export function ViewCollectiveDecisionLink({ initiativeId }: ViewCollectiveDecis
   }, [initiativeId]);
 
   if (!initiativeId) {
-    return <p className="view-collective-decision-link__empty">Select an initiative first.</p>;
+    return (
+      <WorkspaceEmptyState
+        title="No initiative selected"
+        explanation="Select an initiative to open its collective decision workspace."
+        nextStep="Choose an initiative from My Initiatives."
+      />
+    );
   }
 
   if (loading) {
-    return <p className="view-collective-decision-link__empty">Loading collective decision...</p>;
+    return <WorkspaceLoadingState message="Loading collective decision..." />;
   }
 
   if (!decisionId) {
     return (
-      <p className="view-collective-decision-link__empty">
-        No collective decision is linked to this initiative.
-      </p>
+      <WorkspaceEmptyState
+        title="No collective decision is linked yet"
+        explanation="This initiative does not have an opened collective decision record."
+        nextStep="Publish a decision session, then open collective decision voting."
+      />
     );
   }
 
   return (
-    <Link
-      className="view-collective-decision-link"
+    <WorkspacePublicLink
       href={`/collective-decisions/${encodeURIComponent(decisionId)}`}
-    >
-      Open Collective Decision Workspace
-    </Link>
+      label="View Collective Decision"
+    />
   );
 }

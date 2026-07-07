@@ -34,6 +34,7 @@ import { INITIATIVE_WORKSPACE_SECTIONS } from "../../workspace-civic-assistant/i
 import { useWorkspaceSectionTracker } from "../../workspace-civic-assistant/use-workspace-section-tracker";
 
 import "./initiative-workspace-layout.css";
+import "../../initiative-workspace-ux/initiative-workspace-ux.css";
 
 interface InitiativeWorkspaceProps {
   initialInitiatives: Initiative[];

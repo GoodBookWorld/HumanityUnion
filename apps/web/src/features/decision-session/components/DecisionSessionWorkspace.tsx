@@ -5,6 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 
 import { BOOTSTRAP_PARTICIPANT_ID } from "../../petition/petition-utils";
 import {
+  WorkspaceEmptyState,
+  WorkspaceMetricsRow,
+  WorkspaceSectionShell,
+  WorkspaceStatusBadge,
+  WorkspaceStatusCard,
+} from "../../initiative-workspace-ux";
+import {
   archiveDecisionSession,
   closeDecisionSession,
   createDecisionSessionDraft,
@@ -258,18 +265,32 @@ export function DecisionSessionWorkspace({ initiative }: DecisionSessionWorkspac
   }
 
   return (
-    <div className="decision-session-workspace">
-      <p className="decision-session-workspace__note">
-        Prepare a structured decision session after collective intelligence work is complete. This
-        stage does not collect votes; it packages evidence for an informed public decision.
-      </p>
-
-      {loading ? (
-        <p className="decision-session-workspace__empty">Loading decision sessions...</p>
-      ) : null}
-
+    <WorkspaceSectionShell
+      purpose="Prepare a structured decision session after collective intelligence work is complete. This stage does not collect votes; it packages evidence for an informed public decision."
+      loading={loading ? "Loading decision sessions..." : null}
+      metrics={
+        eligibility ? (
+          <WorkspaceMetricsRow>
+            <WorkspaceStatusCard
+              label="Eligibility"
+              value={eligibility.eligible ? "Eligible" : "Not eligible"}
+            />
+            <WorkspaceStatusCard label="Sessions" value={sessions.length} />
+          </WorkspaceMetricsRow>
+        ) : null
+      }
+      emptyState={
+        !loading && sessions.length === 0 && eligibility?.eligible ? (
+          <WorkspaceEmptyState
+            title="No decision session has been created yet"
+            explanation="Decision sessions package civic evidence before collective voting begins."
+            nextStep="Create a draft decision session when initiative revision and analysis are ready."
+          />
+        ) : null
+      }
+    >
       {eligibility && !eligibility.eligible ? (
-        <div className="decision-session-workspace__eligibility">
+        <div className="workspace-helper-note">
           <p>Initiative is not yet eligible for a decision session:</p>
           <ul>
             {eligibility.reasons.map((reason) => (
@@ -292,113 +313,118 @@ export function DecisionSessionWorkspace({ initiative }: DecisionSessionWorkspac
                 }
                 onClick={() => handleSelectSession(session)}
               >
-                {session.title || "Untitled session"} · {session.status}
+                {session.title || "Untitled session"} ·{" "}
+                <WorkspaceStatusBadge status={session.status} />
               </button>
             </li>
           ))}
         </ul>
       ) : null}
 
-      <div className="decision-session-workspace__form">
-        <label>
-          Title
-          <input
-            value={form.title}
-            onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-            disabled={selectedSession !== null && selectedSession.status !== "draft"}
-          />
-        </label>
-        <label>
-          Purpose
-          <textarea
-            value={form.purpose}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, purpose: event.target.value }))
-            }
-            disabled={selectedSession !== null && selectedSession.status !== "draft"}
-          />
-        </label>
-        <label>
-          Decision question
-          <textarea
-            value={form.decisionQuestion}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, decisionQuestion: event.target.value }))
-            }
-            disabled={selectedSession !== null && selectedSession.status !== "draft"}
-          />
-        </label>
-        <label>
-          Opens
-          <input
-            type="datetime-local"
-            value={form.opensAt}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, opensAt: event.target.value }))
-            }
-            disabled={selectedSession !== null && selectedSession.status !== "draft"}
-          />
-        </label>
-        <label>
-          Closes
-          <input
-            type="datetime-local"
-            value={form.closesAt}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, closesAt: event.target.value }))
-            }
-            disabled={selectedSession !== null && selectedSession.status !== "draft"}
-          />
-        </label>
-      </div>
-
-      <div className="decision-session-workspace__actions">
-        {!selectedSession ? (
-          <button
-            type="button"
-            onClick={() => void handleCreateDraft()}
-            disabled={creating || !eligibility?.eligible}
-          >
-            {creating ? "Creating..." : "Create Draft"}
-          </button>
-        ) : null}
-
-        {selectedSession?.status === "draft" ? (
-          <>
-            <button type="button" onClick={() => void handleSaveDraft()} disabled={saving}>
-              {saving ? "Saving..." : "Save Draft"}
-            </button>
-            <button type="button" onClick={() => void handlePublish()} disabled={publishing}>
-              {publishing ? "Publishing..." : "Publish"}
-            </button>
-          </>
-        ) : null}
-
-        {selectedSession?.status === "published" ? (
-          <button type="button" onClick={() => void handleClose()} disabled={closing}>
-            {closing ? "Closing..." : "Close Session"}
-          </button>
-        ) : null}
-
-        {selectedSession && selectedSession.status !== "archived" ? (
-          <button type="button" onClick={() => void handleArchive()} disabled={archiving}>
-            {archiving ? "Archiving..." : "Archive"}
-          </button>
-        ) : null}
-      </div>
-
-      {selectedSession?.packageReferences ? (
-        <div className="decision-session-workspace__package">
-          <p>Decision package references:</p>
-          <ul>
-            <li>{selectedSession.packageReferences.revisionIds.length} revisions</li>
-            <li>{selectedSession.packageReferences.analysisIds.length} analyses</li>
-            <li>{selectedSession.packageReferences.proposalIds.length} proposals</li>
-          </ul>
+      <div className="decision-session-workspace">
+        <div className="decision-session-workspace__form">
+          <label>
+            Title
+            <input
+              value={form.title}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, title: event.target.value }))
+              }
+              disabled={selectedSession !== null && selectedSession.status !== "draft"}
+            />
+          </label>
+          <label>
+            Purpose
+            <textarea
+              value={form.purpose}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, purpose: event.target.value }))
+              }
+              disabled={selectedSession !== null && selectedSession.status !== "draft"}
+            />
+          </label>
+          <label>
+            Decision question
+            <textarea
+              value={form.decisionQuestion}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, decisionQuestion: event.target.value }))
+              }
+              disabled={selectedSession !== null && selectedSession.status !== "draft"}
+            />
+          </label>
+          <label>
+            Opens
+            <input
+              type="datetime-local"
+              value={form.opensAt}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, opensAt: event.target.value }))
+              }
+              disabled={selectedSession !== null && selectedSession.status !== "draft"}
+            />
+          </label>
+          <label>
+            Closes
+            <input
+              type="datetime-local"
+              value={form.closesAt}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, closesAt: event.target.value }))
+              }
+              disabled={selectedSession !== null && selectedSession.status !== "draft"}
+            />
+          </label>
         </div>
-      ) : null}
 
-      {message ? <p className="decision-session-workspace__message">{message}</p> : null}
-    </div>
+        <div className="decision-session-workspace__actions">
+          {!selectedSession ? (
+            <button
+              type="button"
+              onClick={() => void handleCreateDraft()}
+              disabled={creating || !eligibility?.eligible}
+            >
+              {creating ? "Creating..." : "Create Draft"}
+            </button>
+          ) : null}
+
+          {selectedSession?.status === "draft" ? (
+            <>
+              <button type="button" onClick={() => void handleSaveDraft()} disabled={saving}>
+                {saving ? "Saving..." : "Save Draft"}
+              </button>
+              <button type="button" onClick={() => void handlePublish()} disabled={publishing}>
+                {publishing ? "Publishing..." : "Publish"}
+              </button>
+            </>
+          ) : null}
+
+          {selectedSession?.status === "published" ? (
+            <button type="button" onClick={() => void handleClose()} disabled={closing}>
+              {closing ? "Closing..." : "Close Session"}
+            </button>
+          ) : null}
+
+          {selectedSession && selectedSession.status !== "archived" ? (
+            <button type="button" onClick={() => void handleArchive()} disabled={archiving}>
+              {archiving ? "Archiving..." : "Archive"}
+            </button>
+          ) : null}
+        </div>
+
+        {selectedSession?.packageReferences ? (
+          <div className="decision-session-workspace__package">
+            <p>Decision package references:</p>
+            <ul>
+              <li>{selectedSession.packageReferences.revisionIds.length} revisions</li>
+              <li>{selectedSession.packageReferences.analysisIds.length} analyses</li>
+              <li>{selectedSession.packageReferences.proposalIds.length} proposals</li>
+            </ul>
+          </div>
+        ) : null}
+
+        {message ? <p className="decision-session-workspace__message">{message}</p> : null}
+      </div>
+    </WorkspaceSectionShell>
   );
 }

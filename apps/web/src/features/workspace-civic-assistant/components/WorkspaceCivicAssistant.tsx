@@ -17,6 +17,7 @@ import {
 import { getSuggestedActionsForSection } from "../section-actions";
 import { toWorkspaceAssistantContextSnapshot } from "../types";
 
+import "../../initiative-workspace-ux/initiative-workspace-ux.css";
 import "./workspace-civic-assistant.css";
 
 interface WorkspaceCivicAssistantProps {

@@ -5,10 +5,20 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { Initiative } from "@hu/types";
 
+import { WORKSPACE_DEFERRED_TOOLTIP_API } from "../../initiative-workspace-ux/constants";
+import {
+  WorkspaceDeferredActions,
+  WorkspaceEmptyState,
+  WorkspaceHelperNote,
+  WorkspaceRecordItem,
+  WorkspaceRecordList,
+  WorkspaceSectionShell,
+  WorkspaceStatusBadge,
+  WorkspaceTimeline,
+  WorkspaceTimelineItem,
+} from "../../initiative-workspace-ux";
 import { listPublicInitiativeImplementationTrackings } from "../../initiative-implementation-tracking/api";
 import { listPublicOfficialResponsesForInitiative } from "../../official-response/api";
-
-import "./execution-pipeline-workspace.css";
 
 interface InitiativeImplementationTrackingWorkspaceProps {
   initiative: Initiative;
@@ -59,76 +69,77 @@ export function InitiativeImplementationTrackingWorkspace({
   }, [loadTrackings]);
 
   return (
-    <div className="execution-pipeline-workspace">
-      <p className="execution-pipeline-workspace__note">
-        Implementation tracking is a transparent public execution journal. It follows a published
-        implementation commitment and records evidence-driven progress — not project management.
-      </p>
-
-      <div className="execution-pipeline-workspace__deferred">
-        <p className="execution-pipeline-workspace__deferred-title">Author actions (coming soon)</p>
-        <p className="execution-pipeline-workspace__note">
-          Tracking lifecycle commands exist in the backend service layer. Workspace REST routes are
-          deferred, so journal updates cannot be submitted from here yet.
-        </p>
-        <div className="execution-pipeline-workspace__deferred-actions">
-          {DEFERRED_ACTIONS.map((action) => (
-            <button key={action} type="button" disabled title="Coming soon — workspace API pending">
-              {action}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {loading ? (
-        <p className="execution-pipeline-workspace__empty">Loading implementation tracking...</p>
-      ) : null}
-
-      {error ? <p className="execution-pipeline-workspace__empty">{error}</p> : null}
-
-      {!loading && !error && trackings.length === 0 ? (
-        <p className="execution-pipeline-workspace__empty">
-          No public implementation tracking records yet.
-        </p>
-      ) : null}
-
+    <WorkspaceSectionShell
+      purpose="Implementation tracking is a transparent public execution journal. It follows a published implementation commitment and records evidence-driven progress — not project management."
+      loading={loading ? "Loading implementation tracking..." : null}
+      error={error}
+      deferredActions={
+        <WorkspaceDeferredActions
+          note="Tracking lifecycle commands exist in the backend service layer. Workspace REST routes are deferred, so journal updates cannot be submitted from here yet."
+          actions={DEFERRED_ACTIONS}
+          tooltip={WORKSPACE_DEFERRED_TOOLTIP_API}
+        />
+      }
+      emptyState={
+        !loading && !error && trackings.length === 0 ? (
+          <WorkspaceEmptyState
+            title="No implementation tracking record has been published yet"
+            explanation="Tracking journals document execution progress after a published implementation commitment."
+            nextStep="Publish an implementation commitment, then activate tracking when execution begins."
+          />
+        ) : null
+      }
+    >
       {trackings.length > 0 ? (
-        <ul className="execution-pipeline-workspace__list">
+        <WorkspaceRecordList>
           {trackings.map((tracking) => (
-            <li key={tracking.trackingId} className="execution-pipeline-workspace__item">
-              <Link
-                href={`/implementation-tracking/public/${encodeURIComponent(tracking.trackingId)}`}
-              >
-                {tracking.summary}
-              </Link>
-              <p className="execution-pipeline-workspace__meta">
-                {tracking.status} · {tracking.currentStage} · {tracking.authorDisplayName} ·{" "}
-                {tracking.updateCount} update{tracking.updateCount === 1 ? "" : "s"}
-              </p>
-            </li>
+            <WorkspaceRecordItem
+              key={tracking.trackingId}
+              title={
+                <Link
+                  href={`/implementation-tracking/public/${encodeURIComponent(tracking.trackingId)}`}
+                >
+                  {tracking.summary}
+                </Link>
+              }
+              meta={
+                <>
+                  <WorkspaceStatusBadge status={tracking.status} /> · {tracking.currentStage} ·{" "}
+                  {tracking.authorDisplayName} · {tracking.updateCount} update
+                  {tracking.updateCount === 1 ? "" : "s"}
+                </>
+              }
+            />
           ))}
-        </ul>
+        </WorkspaceRecordList>
       ) : null}
 
       {responses.length > 0 ? (
         <>
-          <h3>Official Responses</h3>
-          <ul className="execution-pipeline-workspace__list">
+          <WorkspaceHelperNote>
+            Related official responses recorded during tracking.
+          </WorkspaceHelperNote>
+          <WorkspaceTimeline>
             {responses.map((response) => (
-              <li key={response.responseId} className="execution-pipeline-workspace__item">
-                <Link href={`/public-responses/${encodeURIComponent(response.responseId)}`}>
-                  {response.responseNumber} — {response.organizationName}
-                </Link>
-                <p className="execution-pipeline-workspace__meta">
-                  {response.verificationState.replace(/_/g, " ")} ·{" "}
-                  {response.responseType.replace(/_/g, " ")}
-                </p>
-                <p>{response.summary}</p>
-              </li>
+              <WorkspaceTimelineItem
+                key={response.responseId}
+                title={
+                  <Link href={`/public-responses/${encodeURIComponent(response.responseId)}`}>
+                    {response.responseNumber} — {response.organizationName}
+                  </Link>
+                }
+                meta={
+                  <>
+                    <WorkspaceStatusBadge status={response.verificationState} /> ·{" "}
+                    {response.responseType.replace(/_/g, " ")}
+                  </>
+                }
+                body={response.summary}
+              />
             ))}
-          </ul>
+          </WorkspaceTimeline>
         </>
       ) : null}
-    </div>
+    </WorkspaceSectionShell>
   );
 }

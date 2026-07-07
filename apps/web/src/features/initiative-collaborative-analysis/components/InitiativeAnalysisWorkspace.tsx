@@ -1,11 +1,18 @@
 "use client";
 
 import type { Initiative, InitiativeCollaborativeAnalysis } from "@hu/types";
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { createInitiativeAnalysisDraft, listMyInitiativeAnalysesForInitiative } from "../api";
 
+import {
+  WorkspaceEmptyState,
+  WorkspaceMetricsRow,
+  WorkspacePublicLink,
+  WorkspaceSectionShell,
+  WorkspaceStatusBadge,
+  WorkspaceStatusCard,
+} from "../../initiative-workspace-ux";
 import { InitiativeAnalysisEditor } from "./InitiativeAnalysisEditor";
 import { InitiativeImprovementProposalWorkspace } from "../../initiative-improvement-proposal/components/InitiativeImprovementProposalWorkspace";
 
@@ -92,67 +99,85 @@ export function InitiativeAnalysisWorkspace({ initiative }: InitiativeAnalysisWo
 
   if (!isEligibleForAnalysis(initiative)) {
     return (
-      <p className="initiative-analysis-workspace__note">
-        Collaborative analysis is available after an initiative is published.
-      </p>
+      <WorkspaceSectionShell
+        purpose="Structured analysis improves initiative quality. Analysis never edits the initiative directly."
+        emptyState={
+          <WorkspaceEmptyState
+            title="Collaborative analysis is not available yet"
+            explanation="Analysis workspaces open after an initiative is published."
+            nextStep="Publish the initiative, then create an analysis draft here."
+          />
+        }
+      />
     );
   }
 
   return (
-    <div className="initiative-analysis-workspace">
-      <p className="initiative-analysis-workspace__note">
-        Structured analysis improves initiative quality. Analysis never edits the initiative
-        directly.
-      </p>
-
-      <button
-        type="button"
-        className="initiative-analysis-workspace__create"
-        disabled={creating}
-        onClick={() => void handleCreateDraft()}
-      >
-        {creating ? "Creating..." : "Create Analysis Draft"}
-      </button>
-
-      {loading ? <p className="initiative-analysis-workspace__empty">Loading analyses...</p> : null}
-
-      {!loading && analyses.length === 0 ? (
-        <p className="initiative-analysis-workspace__empty">No analyses yet for this initiative.</p>
-      ) : null}
-
-      {analyses.length > 0 ? (
-        <div className="initiative-analysis-workspace__list">
-          {analyses.map((analysis) => (
-            <div key={analysis.analysisId} className="initiative-analysis-workspace__item">
-              <strong>{analysis.title}</strong>
-              <span>Status: {analysis.status}</span>
-              <button
-                type="button"
-                data-selected={selectedId === analysis.analysisId ? "true" : "false"}
-                onClick={() => setSelectedId(analysis.analysisId)}
-              >
-                {selectedId === analysis.analysisId ? "Selected" : "Open"}
-              </button>
-              {analysis.status === "published" ? (
-                <Link
-                  href={`/initiative-analyses/public/${encodeURIComponent(analysis.analysisId)}`}
+    <WorkspaceSectionShell
+      purpose="Structured analysis improves initiative quality. Analysis never edits the initiative directly."
+      loading={loading ? "Loading analyses..." : null}
+      metrics={
+        <WorkspaceMetricsRow>
+          <WorkspaceStatusCard label="Analyses" value={analyses.length} />
+          <WorkspaceStatusCard label="Selected status" value={selectedAnalysis?.status ?? "None"} />
+        </WorkspaceMetricsRow>
+      }
+      emptyState={
+        !loading && analyses.length === 0 ? (
+          <WorkspaceEmptyState
+            title="No collaborative analyses have been created yet"
+            explanation="Analysis drafts collect evidence, risks, and improvement ideas."
+            nextStep="Create an analysis draft to begin collaborative analysis."
+          />
+        ) : null
+      }
+      actions={
+        <button
+          type="button"
+          className="initiative-analysis-workspace__create"
+          disabled={creating}
+          onClick={() => void handleCreateDraft()}
+        >
+          {creating ? "Creating..." : "Create Analysis Draft"}
+        </button>
+      }
+    >
+      <div className="initiative-analysis-workspace">
+        {analyses.length > 0 ? (
+          <div className="initiative-analysis-workspace__list">
+            {analyses.map((analysis) => (
+              <div key={analysis.analysisId} className="initiative-analysis-workspace__item">
+                <strong>{analysis.title}</strong>
+                <span>
+                  <WorkspaceStatusBadge status={analysis.status} />
+                </span>
+                <button
+                  type="button"
+                  data-selected={selectedId === analysis.analysisId ? "true" : "false"}
+                  onClick={() => setSelectedId(analysis.analysisId)}
                 >
-                  View public analysis
-                </Link>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      ) : null}
+                  {selectedId === analysis.analysisId ? "Selected" : "Open"}
+                </button>
+                {analysis.status === "published" ? (
+                  <WorkspacePublicLink
+                    href={`/initiative-analyses/public/${encodeURIComponent(analysis.analysisId)}`}
+                    label="View Public Analysis"
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
 
-      {selectedAnalysis ? (
-        <>
-          <InitiativeAnalysisEditor analysis={selectedAnalysis} onUpdated={handleUpdated} />
-          <InitiativeImprovementProposalWorkspace analysis={selectedAnalysis} />
-        </>
-      ) : null}
+        {selectedAnalysis ? (
+          <>
+            <InitiativeAnalysisEditor analysis={selectedAnalysis} onUpdated={handleUpdated} />
+            <InitiativeImprovementProposalWorkspace analysis={selectedAnalysis} />
+          </>
+        ) : null}
 
-      {message ? <p className="initiative-analysis-workspace__note">{message}</p> : null}
-    </div>
+        {message ? <p className="initiative-analysis-workspace__note">{message}</p> : null}
+      </div>
+    </WorkspaceSectionShell>
   );
 }
