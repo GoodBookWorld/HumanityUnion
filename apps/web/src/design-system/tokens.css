@@ -1,0 +1,64 @@
+:root {
+  /* Official Humanity Union palette */
+  --hu-color-primary: #0174b0;
+  --hu-color-primary-hover: #015f92;
+  --hu-color-primary-soft: #e8f4fa;
+  --hu-color-secondary-cyan: #7ec8e3;
+  --hu-color-secondary-blue: #4a9fd4;
+  --hu-color-secondary-slate: #64748b;
+
+  --hu-color-bg: #ffffff;
+  --hu-color-bg-muted: #f4f7fa;
+  --hu-color-bg-subtle: #eef3f7;
+  --hu-color-surface: #ffffff;
+  --hu-color-border: #d6dee8;
+  --hu-color-text: #1a2b3c;
+  --hu-color-text-muted: #5f6b7a;
+
+  /* Legacy aliases used by workspace UX module */
+  --color-primary: var(--hu-color-primary);
+  --color-border: var(--hu-color-border);
+  --color-surface: var(--hu-color-surface);
+  --color-surface-muted: var(--hu-color-bg-muted);
+  --color-text-muted: var(--hu-color-text-muted);
+
+  /* Layout */
+  --hu-header-height: 4.5rem;
+  --hu-content-max-width: 72rem;
+  --hu-workspace-max-width: 75rem;
+
+  /* Spacing scale */
+  --hu-space-1: 0.25rem;
+  --hu-space-2: 0.5rem;
+  --hu-space-3: 0.75rem;
+  --hu-space-4: 1rem;
+  --hu-space-5: 1.25rem;
+  --hu-space-6: 1.5rem;
+  --hu-space-8: 2rem;
+  --hu-space-10: 2.5rem;
+  --hu-space-12: 3rem;
+
+  /* Typography */
+  --hu-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --hu-font-size-sm: 0.875rem;
+  --hu-font-size-base: 1rem;
+  --hu-font-size-lg: 1.125rem;
+  --hu-font-size-xl: 1.375rem;
+  --hu-font-size-2xl: 1.75rem;
+  --hu-line-height: 1.6;
+  --hu-line-height-tight: 1.35;
+
+  /* Radius */
+  --hu-radius-sm: 6px;
+  --hu-radius-md: 8px;
+  --hu-radius-lg: 12px;
+  --hu-radius-pill: 999px;
+
+  /* Shadows */
+  --hu-shadow-sm: 0 1px 2px rgba(26, 43, 60, 0.06);
+  --hu-shadow-md: 0 2px 8px rgba(26, 43, 60, 0.08);
+
+  /* Focus */
+  --hu-focus-ring: 2px solid var(--hu-color-primary);
+  --hu-focus-offset: 2px;
+}

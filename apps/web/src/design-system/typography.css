@@ -1,0 +1,44 @@
+.humanity-app {
+  font-family: var(--hu-font-family);
+  font-size: var(--hu-font-size-base);
+  line-height: var(--hu-line-height);
+  color: var(--hu-color-text);
+}
+
+.hu-heading-1 {
+  font-size: var(--hu-font-size-2xl);
+  font-weight: 700;
+  line-height: var(--hu-line-height-tight);
+  margin: 0 0 var(--hu-space-2);
+}
+
+.hu-heading-2 {
+  font-size: var(--hu-font-size-xl);
+  font-weight: 700;
+  line-height: var(--hu-line-height-tight);
+  margin: 0 0 var(--hu-space-2);
+}
+
+.hu-heading-3 {
+  font-size: var(--hu-font-size-lg);
+  font-weight: 600;
+  line-height: var(--hu-line-height-tight);
+  margin: 0 0 var(--hu-space-2);
+}
+
+.hu-body {
+  font-size: var(--hu-font-size-base);
+  line-height: var(--hu-line-height);
+  margin: 0;
+}
+
+.hu-body-sm {
+  font-size: var(--hu-font-size-sm);
+  line-height: var(--hu-line-height);
+  color: var(--hu-color-text-muted);
+  margin: 0;
+}
+
+.hu-prose {
+  max-width: 70ch;
+}

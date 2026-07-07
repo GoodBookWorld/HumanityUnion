@@ -12,7 +12,6 @@ import { CommunityStatisticsSection } from "./CommunityStatisticsSection";
 import { FindYourCommunitySection } from "./FindYourCommunitySection";
 import { LatestCommunityInitiativesSection } from "./LatestCommunityInitiativesSection";
 import { RegistrationGatewayWorkspaceSection } from "./RegistrationGatewayWorkspaceSection";
-import { PublicExperienceFooter, PublicExperienceHeader } from "../../public-experience";
 
 interface CommunityExperiencePageProps {
   slug: string;
@@ -32,7 +31,6 @@ export async function CommunityExperiencePage({
       <a href="#main-content" className="community-experience-page__skip-link">
         Skip to main content
       </a>
-      <PublicExperienceHeader currentDestination="Home" />
       <CommunityGeographicNavigator identity={identity} />
 
       <main className="community-experience-page__main" id="main-content">
@@ -52,8 +50,6 @@ export async function CommunityExperiencePage({
           <RegistrationGatewayWorkspaceSection communityName={identity.name} />
         </div>
       </main>
-
-      <PublicExperienceFooter />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 .initiative-workspace-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
-  gap: 1.5rem;
+  gap: var(--hu-space-6);
   align-items: start;
 }
 

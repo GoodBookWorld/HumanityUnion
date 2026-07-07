@@ -1,6 +1,6 @@
 import type { Member } from "@hu/types";
-import Link from "next/link";
 
+import { ApiUnavailableState } from "../../design-system";
 import { getCurrentMember } from "../../features/member/member-api";
 
 function formatLocation(member: Member): string {
@@ -21,18 +21,19 @@ export default async function MemberPage() {
 
   if (!member) {
     return (
-      <main>
-        <h1>Member Profile</h1>
-        <p>Member API is not available.</p>
-        <p>
-          <Link href="/">Back to Home</Link>
-        </p>
+      <main className="humanity-workspace-page">
+        <ApiUnavailableState
+          title="Member profile is temporarily unavailable"
+          explanation="We could not load your member profile right now. Your account information is safe, but this page cannot be shown until the connection is restored."
+          possibleReason="The member service may be starting up, undergoing maintenance, or temporarily unreachable."
+          retryHref="/member"
+        />
       </main>
     );
   }
 
   return (
-    <main>
+    <main className="humanity-workspace-page">
       <h1>Member Profile</h1>
 
       <section>
@@ -93,10 +94,6 @@ export default async function MemberPage() {
           <p>Not specified</p>
         )}
       </section>
-
-      <p>
-        <Link href="/">Back to Home</Link>
-      </p>
     </main>
   );
 }

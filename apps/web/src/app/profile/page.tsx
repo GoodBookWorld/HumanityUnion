@@ -1,8 +1,7 @@
-import Link from "next/link";
-
 import { ProfileField } from "../../components/member/ProfileField";
 import { ProfileSection } from "../../components/member/ProfileSection";
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
+import { ApiUnavailableState } from "../../design-system";
 import { getCurrentMember } from "../../features/member/member-api";
 import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
 
@@ -19,18 +18,19 @@ export default async function ProfilePage() {
 
   if (!member) {
     return (
-      <main className="profile-page">
-        <h1>Member Workspace</h1>
-        <p>Member API is not available.</p>
-        <p>
-          <Link href="/">Back to Home</Link>
-        </p>
+      <main className="profile-page humanity-workspace-page">
+        <ApiUnavailableState
+          title="Profile workspace is temporarily unavailable"
+          explanation="We could not load your participant profile right now. Your account information is safe, but this workspace cannot be shown until the connection is restored."
+          possibleReason="The member service may be starting up, undergoing maintenance, or temporarily unreachable."
+          retryHref="/profile"
+        />
       </main>
     );
   }
 
   return (
-    <main className="profile-page">
+    <main className="profile-page humanity-workspace-page">
       <MemberWorkspace
         title="Profile"
         subtitle="Your Humanity Union participant profile"
@@ -50,10 +50,6 @@ export default async function ProfilePage() {
         <ProfileSection title="Visibility" placeholder />
         <ProfileSection title="Preferences" placeholder />
       </MemberWorkspace>
-
-      <p className="profile-page__back">
-        <Link href="/">Back to Home</Link>
-      </p>
     </main>
   );
 }

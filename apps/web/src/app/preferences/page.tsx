@@ -1,8 +1,7 @@
-import Link from "next/link";
-
 import { ProfileField } from "../../components/member/ProfileField";
 import { ProfileSection } from "../../components/member/ProfileSection";
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
+import { ApiUnavailableState } from "../../design-system";
 import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
 import { getCurrentPreferences } from "../../features/preferences/preferences-api";
 
@@ -29,18 +28,19 @@ export default async function PreferencesPage() {
 
   if (!preferences) {
     return (
-      <main className="preferences-page">
-        <h1>Preferences Workspace</h1>
-        <p>Preferences API is not available.</p>
-        <p className="preferences-page__back">
-          <Link href="/">Back to Home</Link>
-        </p>
+      <main className="preferences-page humanity-workspace-page">
+        <ApiUnavailableState
+          title="Preferences workspace is temporarily unavailable"
+          explanation="We could not load your preferences right now. Your saved settings are safe, but this workspace cannot be shown until the connection is restored."
+          possibleReason="The preferences service may be starting up, undergoing maintenance, or temporarily unreachable."
+          retryHref="/preferences"
+        />
       </main>
     );
   }
 
   return (
-    <main className="preferences-page">
+    <main className="preferences-page humanity-workspace-page">
       <MemberWorkspace
         title="Preferences"
         subtitle="Your Humanity Union experience preferences"
@@ -143,10 +143,6 @@ export default async function PreferencesPage() {
           <ProfileField label="Card Density" value={preferences.workspacePreferences.cardDensity} />
         </ProfileSection>
       </MemberWorkspace>
-
-      <p className="preferences-page__back">
-        <Link href="/">Back to Home</Link>
-      </p>
     </main>
   );
 }

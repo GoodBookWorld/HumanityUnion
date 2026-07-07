@@ -1,10 +1,6 @@
 import type { RegionExperiencePublicProjections } from "@hu/types";
 
-import {
-  PublicExperienceFooter,
-  PublicExperienceHeader,
-  RegistrationGatewaySection,
-} from "../../public-experience";
+import { RegistrationGatewaySection } from "../../public-experience";
 import { CommunityDiscoverySection } from "./CommunityDiscoverySection";
 import { LatestRegionalInitiativesSection } from "./LatestRegionalInitiativesSection";
 import { RegionGeographicNavigator } from "./RegionGeographicNavigator";
@@ -25,7 +21,6 @@ export function RegionExperiencePage({ projections }: RegionExperiencePageProps)
       <a href="#main-content" className="region-experience-page__skip-link">
         Skip to main content
       </a>
-      <PublicExperienceHeader currentDestination="Home" />
       <RegionGeographicNavigator identity={identity} />
 
       <main className="region-experience-page__main" id="main-content">
@@ -42,8 +37,6 @@ export function RegionExperiencePage({ projections }: RegionExperiencePageProps)
           <RegistrationGatewaySection />
         </div>
       </main>
-
-      <PublicExperienceFooter />
     </div>
   );
 }

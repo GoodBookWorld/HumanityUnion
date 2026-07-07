@@ -1,9 +1,5 @@
 import { loadGlobalExperienceProjections } from "../../public-projection-engine";
-import {
-  PublicExperienceFooter,
-  PublicExperienceHeader,
-  RegistrationGatewaySection,
-} from "../../public-experience";
+import { RegistrationGatewaySection } from "../../public-experience";
 import { CivicIntroductionSection } from "./CivicIntroductionSection";
 import { GeographicNavigator } from "./GeographicNavigator";
 import { GlobalStatisticsSection } from "./GlobalStatisticsSection";
@@ -23,7 +19,6 @@ export async function GlobalExperiencePage() {
       <a href="#main-content" className="global-experience-page__skip-link">
         Skip to main content
       </a>
-      <PublicExperienceHeader currentDestination="Home" />
       <GeographicNavigator />
 
       <main className="global-experience-page__main" id="main-content">
@@ -36,8 +31,6 @@ export async function GlobalExperiencePage() {
           <RegistrationGatewaySection />
         </div>
       </main>
-
-      <PublicExperienceFooter />
     </div>
   );
 }

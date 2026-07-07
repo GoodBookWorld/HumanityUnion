@@ -17,8 +17,8 @@
 
 .workspace-civic-assistant__sticky {
   position: sticky;
-  top: 1rem;
-  max-height: calc(100vh - 2rem);
+  top: calc(var(--hu-header-height) + var(--hu-space-4));
+  max-height: calc(100vh - var(--hu-header-height) - var(--hu-space-8));
   overflow: auto;
 }
 

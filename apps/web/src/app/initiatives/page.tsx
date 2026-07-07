@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
+import { ApiUnavailableState } from "../../design-system";
 import { listMyInitiatives } from "../../features/initiatives/api";
 import { INITIATIVE_WORKSPACE_SECTIONS } from "../../features/workspace-civic-assistant/initiative-workspace-sections";
 import { InitiativeWorkspace } from "../../features/initiatives/components/InitiativeWorkspace";
@@ -21,19 +20,19 @@ export default async function InitiativesPage() {
 
   if (!initiatives) {
     return (
-      <main className="initiatives-page">
-        <WorkspaceNavigation current="Initiatives" />
-        <h1>Initiatives Workspace</h1>
-        <p>Initiative API is not available.</p>
-        <p className="initiatives-page__back">
-          <Link href="/">Back to Home</Link>
-        </p>
+      <main className="initiatives-page humanity-workspace-page">
+        <ApiUnavailableState
+          title="Initiatives workspace is temporarily unavailable"
+          explanation="We could not load your initiatives workspace right now. Your participation data is safe, but this workspace cannot be shown until the connection is restored."
+          possibleReason="The initiative service may be starting up, undergoing maintenance, or temporarily unreachable."
+          retryHref="/initiatives"
+        />
       </main>
     );
   }
 
   return (
-    <main className="initiatives-page">
+    <main className="initiatives-page humanity-workspace-page">
       <MemberWorkspace
         title="Initiatives"
         subtitle="Participation initiatives in Humanity Union"
@@ -42,10 +41,6 @@ export default async function InitiativesPage() {
       >
         <InitiativeWorkspace initialInitiatives={initiatives} />
       </MemberWorkspace>
-
-      <p className="initiatives-page__back">
-        <Link href="/">Back to Home</Link>
-      </p>
     </main>
   );
 }
