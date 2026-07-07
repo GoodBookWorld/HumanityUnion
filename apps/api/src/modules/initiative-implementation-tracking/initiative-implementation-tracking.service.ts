@@ -18,6 +18,7 @@ import {
   getTrackingById,
   listTrackingsByCommitment,
   listTrackingsByParticipant,
+  listUpdatesByParticipant,
   listUpdatesByTracking,
   updateTracking,
 } from "./initiative-implementation-tracking.store.js";
@@ -85,6 +86,12 @@ export function listMyInitiativeImplementationTrackings(
   identity: RequestIdentity,
 ): InitiativeImplementationTracking[] {
   return listTrackingsByParticipant(identity.participantId);
+}
+
+export function listMyInitiativeImplementationTrackingUpdates(
+  identity: RequestIdentity,
+): ImplementationTrackingUpdate[] {
+  return listUpdatesByParticipant(identity.participantId);
 }
 
 export function listMyInitiativeImplementationTrackingsForCommitment(

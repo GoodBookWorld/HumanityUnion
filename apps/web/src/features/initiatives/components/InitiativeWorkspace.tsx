@@ -21,9 +21,12 @@ import { InitiativeRevisionWorkspace } from "../../initiative-version-revision/c
 import { DecisionSessionWorkspace } from "../../decision-session/components/DecisionSessionWorkspace";
 import { CivicCompatibilityReviewWorkspace } from "../../civic-compatibility-review/components/CivicCompatibilityReviewWorkspace";
 import { DecisionResultWorkspace } from "../../execution-pipeline/components/DecisionResultWorkspace";
+import { CivicDeliveryWorkspace } from "../../execution-pipeline/components/CivicDeliveryWorkspace";
+import { OfficialResponsesWorkspace } from "../../execution-pipeline/components/OfficialResponsesWorkspace";
 import { InitiativeImplementationCommitmentWorkspace } from "../../execution-pipeline/components/InitiativeImplementationCommitmentWorkspace";
 import { InitiativeImplementationTrackingWorkspace } from "../../execution-pipeline/components/InitiativeImplementationTrackingWorkspace";
 import { InitiativePublicImpactWorkspace } from "../../execution-pipeline/components/InitiativePublicImpactWorkspace";
+import { WorkspaceCivicIntegrationPanel } from "../../capability02-integration/components/WorkspaceCivicIntegrationPanel";
 
 interface InitiativeWorkspaceProps {
   initialInitiatives: Initiative[];
@@ -150,6 +153,18 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
       ) : null}
 
       {selectedInitiative ? (
+        <ProfileSection title="Civic Delivery">
+          <CivicDeliveryWorkspace initiative={selectedInitiative} />
+        </ProfileSection>
+      ) : null}
+
+      {selectedInitiative ? (
+        <ProfileSection title="Official Responses">
+          <OfficialResponsesWorkspace initiative={selectedInitiative} />
+        </ProfileSection>
+      ) : null}
+
+      {selectedInitiative ? (
         <ProfileSection title="Implementation Commitment">
           <InitiativeImplementationCommitmentWorkspace initiative={selectedInitiative} />
         </ProfileSection>
@@ -165,6 +180,10 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
         <ProfileSection title="Public Impact">
           <InitiativePublicImpactWorkspace initiative={selectedInitiative} />
         </ProfileSection>
+      ) : null}
+
+      {selectedInitiative ? (
+        <WorkspaceCivicIntegrationPanel initiativeId={selectedInitiative.initiativeId} />
       ) : null}
 
       {selectedInitiative ? (

@@ -2,7 +2,9 @@ import Link from "next/link";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 import { ProfileSection } from "../../../components/member/ProfileSection";
+import { CivicIntegrationPanel } from "../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicInitiativePublicImpact } from "../../../features/initiative-public-impact/api";
+import { getPublicCivicArchiveForImpact } from "../../../features/public-civic-archive/api";
 
 interface PublicImpactPageProps {
   params: Promise<{
@@ -25,6 +27,8 @@ function formatDate(value: string | undefined): string {
 export default async function PublicImpactPage({ params }: PublicImpactPageProps) {
   const { impactId } = await params;
   const impact = await getPublicInitiativePublicImpact(impactId);
+  const archiveRecord =
+    impact?.status === "verified" ? await getPublicCivicArchiveForImpact(impactId) : null;
 
   if (!impact) {
     return (
@@ -82,6 +86,16 @@ export default async function PublicImpactPage({ params }: PublicImpactPageProps
           </ul>
         </ProfileSection>
       ) : null}
+
+      {archiveRecord ? (
+        <ProfileSection title="Included in Humanity Union Civic Archive">
+          <Link href={`/civic-archive/${encodeURIComponent(archiveRecord.archiveRecordId)}`}>
+            Open Archive Record
+          </Link>
+        </ProfileSection>
+      ) : null}
+
+      <CivicIntegrationPanel entityType="public-impact" entityId={impactId} />
 
       <nav aria-label="Platform integration">
         <Link href={`/initiatives/public/${encodeURIComponent(impact.initiativeId)}`}>

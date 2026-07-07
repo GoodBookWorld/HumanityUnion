@@ -170,6 +170,16 @@ export function listUpdatesByTracking(trackingId: string): ImplementationTrackin
     });
 }
 
+export function listUpdatesByParticipant(participantId: string): ImplementationTrackingUpdate[] {
+  const ownedTrackingIds = new Set(
+    listTrackingsByParticipant(participantId).map((tracking) => tracking.trackingId),
+  );
+
+  return Array.from(updates.values())
+    .filter((update) => ownedTrackingIds.has(update.trackingId))
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+}
+
 export function countUpdatesForTracking(trackingId: string): number {
   return listUpdatesByTracking(trackingId).length;
 }

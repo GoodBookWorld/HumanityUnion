@@ -28,20 +28,46 @@ import {
   publicInitiativeCollectiveDecisionsByInitiativeRouter,
 } from "./modules/initiative-collective-decision/index.js";
 import {
+  initiativeImplementationCommitmentRouter,
   publicInitiativeImplementationCommitmentRouter,
   publicInitiativeImplementationCommitmentsByDecisionRouter,
   publicInitiativeImplementationCommitmentsByInitiativeRouter,
 } from "./modules/initiative-implementation-commitment/index.js";
 import {
+  initiativeImplementationTrackingRouter,
   publicInitiativeImplementationTrackingRouter,
   publicInitiativeImplementationTrackingsByCommitmentRouter,
   publicInitiativeImplementationTrackingsByInitiativeRouter,
 } from "./modules/initiative-implementation-tracking/index.js";
 import {
+  initiativePublicImpactRouter,
   publicInitiativePublicImpactRouter,
   publicInitiativePublicImpactsByInitiativeRouter,
   publicInitiativePublicImpactsByTrackingRouter,
 } from "./modules/initiative-public-impact/index.js";
+import { capability02IntegrationRouter } from "./modules/capability02-integration/index.js";
+import {
+  publicCivicActionPackageByDecisionRouter,
+  publicCivicActionPackageRouter,
+  publicCivicActionPackagesByInitiativeRouter,
+} from "./modules/civic-action-package/index.js";
+import {
+  civicDeliveryRouter,
+  publicCivicDeliveriesByCapRouter,
+  publicCivicDeliveryRouter,
+} from "./modules/civic-delivery/index.js";
+import {
+  officialResponseRouter,
+  publicOfficialResponseRouter,
+  publicOfficialResponsesByCapRouter,
+  publicOfficialResponsesByInitiativeRouter,
+} from "./modules/official-response/index.js";
+import {
+  publicCivicArchiveRouter,
+  publicCivicArchiveByImpactRouter,
+  publicCivicArchiveByInitiativeRouter,
+  publicCivicArchivePublicRouter,
+} from "./modules/public-civic-archive/index.js";
 import {
   initiativeCollaborativeAnalysisLifecycleRouter,
   publicInitiativeCollaborativeAnalysisRouter,
@@ -89,6 +115,12 @@ app.use("/api/v1/initiative-analyses", initiativeCollaborativeAnalysisLifecycleR
 app.use("/api/v1/improvement-proposals", initiativeImprovementProposalRouter);
 app.use("/api/v1/decision-sessions", decisionSessionRouter);
 app.use("/api/v1/initiative-collective-decisions", initiativeCollectiveDecisionVoteRouter);
+app.use("/api/v1/initiative-implementation-commitments", initiativeImplementationCommitmentRouter);
+app.use("/api/v1/initiative-implementation-tracking", initiativeImplementationTrackingRouter);
+app.use("/api/v1/initiative-public-impact", initiativePublicImpactRouter);
+app.use("/api/v1/civic-deliveries", civicDeliveryRouter);
+app.use("/api/v1/official-responses", officialResponseRouter);
+app.use("/api/v1/public-civic-archive", publicCivicArchiveRouter);
 app.use("/api/v1/civic-compatibility-reviews", civicCompatibilityReviewRouter);
 app.use("/api/v1/initiative-revisions", initiativeVersionRevisionRouter);
 app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);
@@ -106,6 +138,7 @@ app.use("/api/v1/public/initiative-analyses", publicInitiativeImprovementProposa
 app.use("/api/v1/public/improvement-proposals", publicInitiativeImprovementProposalRouter);
 app.use("/api/v1/public/decision-sessions", publicDecisionSessionRouter);
 app.use("/api/v1/public/initiative-collective-decisions", publicInitiativeCollectiveDecisionRouter);
+app.use("/api/v1/public/initiative-collective-decisions", publicCivicActionPackageByDecisionRouter);
 app.use(
   "/api/v1/public/initiative-collective-decisions",
   publicInitiativeImplementationCommitmentsByDecisionRouter,
@@ -127,6 +160,13 @@ app.use(
   publicInitiativePublicImpactsByTrackingRouter,
 );
 app.use("/api/v1/public/public-impact", publicInitiativePublicImpactRouter);
+app.use("/api/v1/public/civic-archive", publicCivicArchivePublicRouter);
+app.use("/api/v1/public/civic-action-packages", publicCivicActionPackageRouter);
+app.use("/api/v1/public/civic-action-packages", publicCivicDeliveriesByCapRouter);
+app.use("/api/v1/public/civic-action-packages", publicOfficialResponsesByCapRouter);
+app.use("/api/v1/public/official-responses", publicOfficialResponseRouter);
+app.use("/api/v1/public/civic-deliveries", publicCivicDeliveryRouter);
+app.use("/api/v1/public/integration", capability02IntegrationRouter);
 app.use("/api/v1/public/compatibility-reviews", publicCivicCompatibilityReviewRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeCollaborativeAnalysesByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeImprovementProposalsByInitiativeRouter);
@@ -135,6 +175,10 @@ app.use("/api/v1/public/initiatives", publicInitiativeCollectiveDecisionsByIniti
 app.use("/api/v1/public/initiatives", publicInitiativeImplementationCommitmentsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeImplementationTrackingsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativePublicImpactsByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicCivicArchiveByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicCivicActionPackagesByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicOfficialResponsesByInitiativeRouter);
+app.use("/api/v1/public/public-impact", publicCivicArchiveByImpactRouter);
 app.use("/api/v1/public/initiatives", publicCivicCompatibilityReviewsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeVersionRevisionRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);

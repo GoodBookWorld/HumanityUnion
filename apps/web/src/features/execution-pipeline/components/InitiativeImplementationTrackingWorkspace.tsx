@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Initiative } from "@hu/types";
 
 import { listPublicInitiativeImplementationTrackings } from "../../initiative-implementation-tracking/api";
+import { listPublicOfficialResponsesForInitiative } from "../../official-response/api";
 
 import "./execution-pipeline-workspace.css";
 
@@ -29,16 +30,24 @@ export function InitiativeImplementationTrackingWorkspace({
   const [trackings, setTrackings] = useState<
     Awaited<ReturnType<typeof listPublicInitiativeImplementationTrackings>>["trackings"]
   >([]);
+  const [responses, setResponses] = useState<
+    Awaited<ReturnType<typeof listPublicOfficialResponsesForInitiative>>["responses"]
+  >([]);
 
   const loadTrackings = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await listPublicInitiativeImplementationTrackings(initiative.initiativeId);
-      setTrackings(response.trackings);
+      const [trackingResponse, responseData] = await Promise.all([
+        listPublicInitiativeImplementationTrackings(initiative.initiativeId),
+        listPublicOfficialResponsesForInitiative(initiative.initiativeId),
+      ]);
+      setTrackings(trackingResponse.trackings);
+      setResponses(responseData.responses);
     } catch {
       setTrackings([]);
+      setResponses([]);
       setError("Public implementation tracking records are not available for this initiative yet.");
     } finally {
       setLoading(false);
@@ -99,6 +108,26 @@ export function InitiativeImplementationTrackingWorkspace({
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {responses.length > 0 ? (
+        <>
+          <h3>Official Responses</h3>
+          <ul className="execution-pipeline-workspace__list">
+            {responses.map((response) => (
+              <li key={response.responseId} className="execution-pipeline-workspace__item">
+                <Link href={`/public-responses/${encodeURIComponent(response.responseId)}`}>
+                  {response.responseNumber} — {response.organizationName}
+                </Link>
+                <p className="execution-pipeline-workspace__meta">
+                  {response.verificationState.replace(/_/g, " ")} ·{" "}
+                  {response.responseType.replace(/_/g, " ")}
+                </p>
+                <p>{response.summary}</p>
+              </li>
+            ))}
+          </ul>
+        </>
       ) : null}
     </div>
   );

@@ -6,7 +6,10 @@ import {
   getMyInitiativeDecisionVote,
   listPublicInitiativeCollectiveDecisions,
 } from "../initiative-collective-decision/api";
+import { listMyInitiativeImplementationCommitments } from "../initiative-implementation-commitment/api";
+import { listMyInitiativeImplementationTrackings } from "../initiative-implementation-tracking/api";
 import { listMyImprovementProposals } from "../initiative-improvement-proposal/api";
+import { listMyInitiativePublicImpacts } from "../initiative-public-impact/api";
 import { listMyInitiatives } from "../initiatives/api";
 
 import {
@@ -50,12 +53,16 @@ async function loadMyDecisionVotes(initiatives: Initiative[]): Promise<MyDecisio
 
 export async function loadCivicActivitySnapshot(): Promise<CivicActivitySnapshot> {
   try {
-    const [initiatives, analyses, proposals, decisionSessions] = await Promise.all([
-      listMyInitiatives(),
-      listMyInitiativeAnalyses(),
-      listMyImprovementProposals(),
-      listMyDecisionSessions(),
-    ]);
+    const [initiatives, analyses, proposals, decisionSessions, commitments, trackingData, impacts] =
+      await Promise.all([
+        listMyInitiatives(),
+        listMyInitiativeAnalyses(),
+        listMyImprovementProposals(),
+        listMyDecisionSessions(),
+        listMyInitiativeImplementationCommitments().catch(() => []),
+        listMyInitiativeImplementationTrackings().catch(() => ({ trackings: [], updates: [] })),
+        listMyInitiativePublicImpacts().catch(() => []),
+      ]);
     const votes = await loadMyDecisionVotes(initiatives);
 
     return buildCivicActivitySnapshot({
@@ -64,6 +71,10 @@ export async function loadCivicActivitySnapshot(): Promise<CivicActivitySnapshot
       proposals,
       decisionSessions,
       votes,
+      commitments,
+      trackings: trackingData.trackings,
+      trackingUpdates: trackingData.updates,
+      impacts,
     });
   } catch {
     return createEmptyCivicActivitySnapshot();

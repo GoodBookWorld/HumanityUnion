@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
+import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicImprovementProposal } from "../../../../features/initiative-improvement-proposal/api";
 
 import "./public-improvement-proposal-page.css";
@@ -89,6 +90,8 @@ export default async function PublicImprovementProposalPage({
           View Collaborative Analysis
         </Link>
       </nav>
+
+      <CivicIntegrationPanel entityType="improvement-proposal" entityId={proposalId} />
 
       <p className="public-improvement-proposal-page__back">
         <Link href="/">Back to Home</Link>

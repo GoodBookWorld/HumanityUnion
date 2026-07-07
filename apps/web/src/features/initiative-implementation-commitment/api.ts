@@ -1,4 +1,5 @@
 import type {
+  InitiativeImplementationCommitment,
   InitiativeImplementationCommitmentMetrics,
   PublicInitiativeImplementationCommitmentListItem,
   PublicInitiativeImplementationCommitmentProjection,
@@ -12,6 +13,14 @@ export interface PublicInitiativeImplementationCommitmentsResponse {
 }
 
 const API_BASE_URL = "http://localhost:4000";
+
+export async function listMyInitiativeImplementationCommitments(): Promise<
+  InitiativeImplementationCommitment[]
+> {
+  return apiRequest<InitiativeImplementationCommitment[]>(
+    "/api/v1/initiative-implementation-commitments/mine",
+  );
+}
 
 export async function listPublicInitiativeImplementationCommitments(
   initiativeId: string,

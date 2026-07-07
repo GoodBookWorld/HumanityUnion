@@ -1,9 +1,13 @@
 import type {
   DecisionSession,
+  ImplementationTrackingUpdate,
   Initiative,
   InitiativeCollaborativeAnalysis,
   InitiativeDecisionVote,
+  InitiativeImplementationCommitment,
+  InitiativeImplementationTracking,
   InitiativeImprovementProposal,
+  InitiativePublicImpact,
 } from "@hu/types";
 
 export interface MyDecisionVoteRecord {
@@ -52,7 +56,9 @@ export type CivicTimelineEventType =
   | "vote_updated"
   | "decision_session_published"
   | "commitment_published"
+  | "implementation_tracking_activated"
   | "implementation_update_added"
+  | "implementation_tracking_completed"
   | "public_impact_published"
   | "public_impact_verified";
 
@@ -77,4 +83,8 @@ export interface CivicActivitySourceData {
   proposals: InitiativeImprovementProposal[];
   decisionSessions: DecisionSession[];
   votes: MyDecisionVoteRecord[];
+  commitments: InitiativeImplementationCommitment[];
+  trackings: InitiativeImplementationTracking[];
+  trackingUpdates: ImplementationTrackingUpdate[];
+  impacts: InitiativePublicImpact[];
 }

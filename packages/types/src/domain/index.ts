@@ -235,6 +235,85 @@ export type {
   PublicInitiativePublicImpactProjection,
 } from "./public-initiative-public-impact.js";
 export type {
+  KnowledgeContribution,
+  LessonsLearned,
+  PublicCivicArchiveRecord,
+  PublicCivicArchiveRecordId,
+  PublicCivicArchiveReferences,
+  PublicCivicArchiveStatus,
+} from "./public-civic-archive.js";
+export {
+  canTransitionPublicCivicArchive,
+  isPublicCivicArchiveTerminal,
+  PUBLIC_CIVIC_ARCHIVE_TRANSITIONS,
+} from "./public-civic-archive.js";
+export type {
+  PublicCivicArchiveListItem,
+  PublicCivicArchiveMetrics,
+  PublicCivicArchiveProjection,
+  PublicCivicArchiveReferenceLinks,
+  PublicCivicArchiveTimelineEntry,
+} from "./public-public-civic-archive.js";
+export type {
+  CivicActionPackage,
+  CivicActionPackageContent,
+  CivicActionPackageId,
+  CivicActionPackageStatus,
+} from "./civic-action-package.js";
+export {
+  canTransitionCivicActionPackage,
+  CIVIC_ACTION_PACKAGE_TRANSITIONS,
+  isCivicActionPackageTerminal,
+} from "./civic-action-package.js";
+export type {
+  CivicActionPackageMetrics,
+  PublicCivicActionPackageListItem,
+  PublicCivicActionPackageProjection,
+  PublicCivicActionPackageReferenceLinks,
+} from "./public-civic-action-package.js";
+export type {
+  CivicActionPackageDelivery,
+  CivicDeliveryId,
+  CivicDeliveryMode,
+  CivicDeliveryRecipient,
+  CivicDeliveryRecipientId,
+  CivicDeliveryRecipientSource,
+  CivicDeliveryRecipientStatus,
+  CivicDeliveryRecipientType,
+  CivicDeliveryStatus,
+  RecommendedCivicDeliveryRecipient,
+} from "./civic-delivery.js";
+export {
+  canTransitionCivicDelivery,
+  CIVIC_DELIVERY_TRANSITIONS,
+  isCivicDeliveryTerminal,
+} from "./civic-delivery.js";
+export type {
+  CivicDeliveryMetrics,
+  PublicCivicDeliveryListItem,
+  PublicCivicDeliveryProjection,
+  PublicCivicDeliveryRecipientLogEntry,
+} from "./public-civic-delivery.js";
+export type {
+  OfficialResponse,
+  OfficialResponseId,
+  OfficialResponseIdentity,
+  OfficialResponsePublicationStatus,
+  OfficialResponseType,
+  OfficialResponseVerificationState,
+} from "./official-response.js";
+export {
+  canTransitionOfficialResponsePublication,
+  isOfficialResponsePublicationTerminal,
+  OFFICIAL_RESPONSE_PUBLICATION_TRANSITIONS,
+} from "./official-response.js";
+export type {
+  OfficialResponseMetrics,
+  PublicOfficialResponseListItem,
+  PublicOfficialResponseProjection,
+  PublicOfficialResponseReferenceLinks,
+} from "./public-official-response.js";
+export type {
   CollectiveDecisionPublicOutcome,
   CollectiveDecisionTransparentResults,
   ParticipationConfidenceLevel,
@@ -285,6 +364,22 @@ export {
   createEmptyInitiativeDecisionVoteAggregates,
   createEmptyInitiativeDecisionVoteChoiceCounts,
 } from "./initiative-decision-vote.js";
+export type {
+  CivicBreadcrumbItem,
+  CivicContext,
+  CivicContextSection,
+  CivicEntityType,
+  CivicIntegrationView,
+  CivicNotificationEventDefinition,
+  CivicNotificationEventType,
+  CivicPipelineStageId,
+  CivicPipelineStageStatus,
+  CivicPipelineStatus,
+  CivicRelationshipType,
+  CivicSearchMetadata,
+  RelatedRecord,
+} from "./capability02-integration.js";
+export { CIVIC_NOTIFICATION_EVENT_REGISTRY } from "./capability02-integration.js";
 export type {
   ParticipationPipelinePublicProjection,
   ParticipationPipelineStageCount,

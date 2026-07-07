@@ -2,9 +2,13 @@ import Link from "next/link";
 
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
+import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getCollaborativeAnalysisByInitiativeId } from "../../../../features/collaborative-analysis/api";
 import { getPublicCollectiveDecision } from "../../../../features/collective-decision/api";
 import { getPublicInitiativeCollectiveDecision } from "../../../../features/initiative-collective-decision/api";
+import { getPublicCivicActionPackageForDecision } from "../../../../features/civic-action-package/api";
+import { listPublicOfficialResponsesForCap } from "../../../../features/official-response/api";
+import { OfficialResponsesPublicSection } from "../../../../features/official-response/components/OfficialResponsesPublicSection";
 import { listPublicInitiativeImplementationCommitmentsForDecision } from "../../../../features/initiative-implementation-commitment/api";
 import { getPetitionByCollectiveDecisionId } from "../../../../features/petition/api";
 
@@ -50,6 +54,13 @@ export default async function PublicCollectiveDecisionPage({
     let implementationCommitments: Awaited<
       ReturnType<typeof listPublicInitiativeImplementationCommitmentsForDecision>
     > = [];
+    const civicActionPackage =
+      initiativeDecision.status === "closed"
+        ? await getPublicCivicActionPackageForDecision(decisionId)
+        : null;
+    const officialResponses = civicActionPackage
+      ? await listPublicOfficialResponsesForCap(civicActionPackage.capId)
+      : [];
 
     try {
       implementationCommitments =
@@ -160,6 +171,23 @@ export default async function PublicCollectiveDecisionPage({
           </ProfileSection>
         ) : null}
 
+        {civicActionPackage ? (
+          <ProfileSection title="Civic Action Package">
+            <p>CAP generated from this decision result.</p>
+            <Link
+              href={`/civic-action-packages/public/${encodeURIComponent(civicActionPackage.capId)}`}
+            >
+              Open Civic Action Package →
+            </Link>
+          </ProfileSection>
+        ) : null}
+
+        {officialResponses.length > 0 ? (
+          <ProfileSection title="Official Responses">
+            <OfficialResponsesPublicSection responses={officialResponses} />
+          </ProfileSection>
+        ) : null}
+
         <nav className="public-collective-decision-page__related" aria-label="Platform integration">
           <Link href={`/initiatives/public/${encodeURIComponent(initiativeDecision.initiativeId)}`}>
             View Public Initiative
@@ -169,6 +197,8 @@ export default async function PublicCollectiveDecisionPage({
         <p className="public-collective-decision-page__back">
           <Link href="/">Back to Home</Link>
         </p>
+
+        <CivicIntegrationPanel entityType="collective-decision" entityId={decisionId} />
       </main>
     );
   }
@@ -320,6 +350,8 @@ export default async function PublicCollectiveDecisionPage({
           ) : null}
         </nav>
       ) : null}
+
+      <CivicIntegrationPanel entityType="collective-decision" entityId={decisionId} />
 
       <p className="public-collective-decision-page__back">
         <Link href="/">Back to Home</Link>

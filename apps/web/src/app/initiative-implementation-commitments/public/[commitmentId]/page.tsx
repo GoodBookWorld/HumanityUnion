@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
+import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicInitiativeImplementationCommitment } from "../../../../features/initiative-implementation-commitment/api";
 import { listPublicInitiativeImplementationTrackingsForCommitment } from "../../../../features/initiative-implementation-tracking/api";
 
@@ -111,6 +112,8 @@ export default async function PublicInitiativeImplementationCommitmentPage({
           View Public Collective Decision
         </Link>
       </nav>
+
+      <CivicIntegrationPanel entityType="implementation-commitment" entityId={commitmentId} />
 
       <p>
         <Link href="/">Back to Home</Link>

@@ -1,0 +1,73 @@
+.capability02-integration {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.capability02-integration__breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #5f6368);
+}
+
+.capability02-integration__breadcrumb-separator {
+  color: var(--color-text-muted, #5f6368);
+}
+
+.capability02-integration__panel {
+  border: 1px solid var(--color-border, #dadce0);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: var(--color-surface-muted, #f8f9fa);
+}
+
+.capability02-integration__heading {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.capability02-integration__section {
+  margin-top: 0.75rem;
+}
+
+.capability02-integration__section-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted, #5f6368);
+}
+
+.capability02-integration__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.capability02-integration__pipeline {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.capability02-integration__pipeline-item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.capability02-integration__pipeline-marker {
+  width: 1rem;
+  text-align: center;
+}
+
+.capability02-integration__meta {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted, #5f6368);
+}

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
+import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicInitiativeAnalysis } from "../../../../features/initiative-collaborative-analysis/api";
 import { listPublicImprovementProposalsForAnalysis } from "../../../../features/initiative-improvement-proposal/api";
 
@@ -99,6 +100,8 @@ export default async function PublicInitiativeAnalysisPage({
           View Public Initiative
         </Link>
       </nav>
+
+      <CivicIntegrationPanel entityType="analysis" entityId={analysisId} />
 
       <p className="public-initiative-analysis-page__back">
         <Link href="/">Back to Home</Link>

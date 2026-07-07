@@ -1,8 +1,12 @@
 import type {
   DecisionSession,
+  ImplementationTrackingUpdate,
   Initiative,
   InitiativeCollaborativeAnalysis,
+  InitiativeImplementationCommitment,
+  InitiativeImplementationTracking,
   InitiativeImprovementProposal,
+  InitiativePublicImpact,
 } from "@hu/types";
 
 import type {
@@ -11,7 +15,6 @@ import type {
   CivicActivitySnapshot,
   CivicActivitySourceData,
   CivicTimelineEntry,
-  DeferredActivityGroup,
   MyDecisionVoteRecord,
 } from "../types";
 
@@ -130,12 +133,89 @@ function buildDecisionParticipationGroup(
   };
 }
 
-function buildDeferredGroup(id: string, title: string, reason: string): DeferredActivityGroup {
+function buildCommitmentsGroup(
+  commitments: InitiativeImplementationCommitment[],
+): ActiveActivityGroup {
+  const draft = commitments.filter((commitment) => commitment.status === "draft").length;
+  const published = commitments.filter((commitment) => commitment.status === "published").length;
+  const completed = commitments.filter((commitment) =>
+    ["completed", "withdrawn"].includes(commitment.status),
+  ).length;
+
   return {
-    kind: "deferred",
-    id,
-    title,
-    reason,
+    kind: "active",
+    id: "implementation-commitments",
+    title: "My Implementation Commitments",
+    metrics: {
+      total: commitments.length,
+      draft,
+      published,
+      completed,
+      latestActivityDate: latestDate(
+        commitments.flatMap((commitment) => [
+          commitment.updatedAt,
+          commitment.publishedAt,
+          commitment.completedAt,
+          commitment.withdrawnAt,
+        ]),
+      ),
+    },
+  };
+}
+
+function buildTrackingGroup(trackings: InitiativeImplementationTracking[]): ActiveActivityGroup {
+  const draft = trackings.filter((tracking) => tracking.status === "draft").length;
+  const active = trackings.filter((tracking) => tracking.status === "active").length;
+  const completed = trackings.filter((tracking) =>
+    ["completed", "archived"].includes(tracking.status),
+  ).length;
+
+  return {
+    kind: "active",
+    id: "implementation-tracking",
+    title: "My Implementation Tracking",
+    metrics: {
+      total: trackings.length,
+      draft,
+      active,
+      completed,
+      latestActivityDate: latestDate(
+        trackings.flatMap((tracking) => [
+          tracking.updatedAt,
+          tracking.activatedAt,
+          tracking.completedAt,
+          tracking.archivedAt,
+        ]),
+      ),
+    },
+  };
+}
+
+function buildPublicImpactGroup(impacts: InitiativePublicImpact[]): ActiveActivityGroup {
+  const draft = impacts.filter((impact) => impact.status === "draft").length;
+  const published = impacts.filter((impact) => impact.status === "published").length;
+  const verified = impacts.filter((impact) => impact.status === "verified").length;
+  const completed = impacts.filter((impact) => impact.status === "archived").length;
+
+  return {
+    kind: "active",
+    id: "public-impact",
+    title: "My Public Impact",
+    metrics: {
+      total: impacts.length,
+      draft,
+      published,
+      verified,
+      completed,
+      latestActivityDate: latestDate(
+        impacts.flatMap((impact) => [
+          impact.updatedAt,
+          impact.publishedAt,
+          impact.verifiedAt,
+          impact.archivedAt,
+        ]),
+      ),
+    },
   };
 }
 
@@ -260,27 +340,105 @@ function buildDecisionSessionTimelineEntries(
     }));
 }
 
+function buildCommitmentTimelineEntries(
+  commitments: InitiativeImplementationCommitment[],
+): CivicTimelineEntry[] {
+  return commitments
+    .filter((commitment) => commitment.status === "published" && commitment.publishedAt)
+    .map((commitment) => ({
+      id: `commitment-published-${commitment.commitmentId}`,
+      type: "commitment_published" as const,
+      label: "Commitment published",
+      detail: commitment.commitmentTitle,
+      occurredAt: commitment.publishedAt ?? commitment.updatedAt,
+      href: `/initiative-implementation-commitments/public/${encodeURIComponent(commitment.commitmentId)}`,
+    }));
+}
+
+function buildTrackingTimelineEntries(
+  trackings: InitiativeImplementationTracking[],
+): CivicTimelineEntry[] {
+  const entries: CivicTimelineEntry[] = [];
+
+  for (const tracking of trackings) {
+    if (tracking.activatedAt) {
+      pushTimelineEntry(entries, {
+        id: `tracking-activated-${tracking.trackingId}`,
+        type: "implementation_tracking_activated",
+        label: "Implementation tracking activated",
+        detail: tracking.summary,
+        occurredAt: tracking.activatedAt,
+        href: `/implementation-tracking/public/${encodeURIComponent(tracking.trackingId)}`,
+      });
+    }
+
+    if (tracking.completedAt) {
+      pushTimelineEntry(entries, {
+        id: `tracking-completed-${tracking.trackingId}`,
+        type: "implementation_tracking_completed",
+        label: "Implementation tracking completed",
+        detail: tracking.summary,
+        occurredAt: tracking.completedAt,
+        href: `/implementation-tracking/public/${encodeURIComponent(tracking.trackingId)}`,
+      });
+    }
+  }
+
+  return entries;
+}
+
+function buildTrackingUpdateTimelineEntries(
+  updates: ImplementationTrackingUpdate[],
+): CivicTimelineEntry[] {
+  return updates.map((update) => ({
+    id: `tracking-update-${update.updateId}`,
+    type: "implementation_update_added" as const,
+    label: "Implementation update added",
+    detail: update.title,
+    occurredAt: update.createdAt,
+    href: `/implementation-tracking/public/${encodeURIComponent(update.trackingId)}`,
+  }));
+}
+
+function buildPublicImpactTimelineEntries(impacts: InitiativePublicImpact[]): CivicTimelineEntry[] {
+  const entries: CivicTimelineEntry[] = [];
+
+  for (const impact of impacts) {
+    if (impact.publishedAt) {
+      pushTimelineEntry(entries, {
+        id: `public-impact-published-${impact.impactId}`,
+        type: "public_impact_published",
+        label: "Public impact published",
+        detail: impact.title,
+        occurredAt: impact.publishedAt,
+        href: `/public-impact/${encodeURIComponent(impact.impactId)}`,
+      });
+    }
+
+    if (impact.verifiedAt) {
+      pushTimelineEntry(entries, {
+        id: `public-impact-verified-${impact.impactId}`,
+        type: "public_impact_verified",
+        label: "Public impact verified",
+        detail: impact.title,
+        occurredAt: impact.verifiedAt,
+        href: `/public-impact/${encodeURIComponent(impact.impactId)}`,
+      });
+    }
+  }
+
+  return entries;
+}
+
 export function buildCivicActivitySnapshot(source: CivicActivitySourceData): CivicActivitySnapshot {
   const groups: CivicActivityGroup[] = [
     buildInitiativesGroup(source.initiatives),
     buildAnalysesGroup(source.analyses),
     buildProposalsGroup(source.proposals),
     buildDecisionParticipationGroup(source.decisionSessions, source.votes),
-    buildDeferredGroup(
-      "implementation-commitments",
-      "My Implementation Commitments",
-      "Personal commitment aggregation API is not connected to the workspace yet.",
-    ),
-    buildDeferredGroup(
-      "implementation-tracking",
-      "My Implementation Tracking",
-      "Personal tracking aggregation API is not connected to the workspace yet.",
-    ),
-    buildDeferredGroup(
-      "public-impact",
-      "My Public Impact",
-      "Personal public impact aggregation API is not connected to the workspace yet.",
-    ),
+    buildCommitmentsGroup(source.commitments),
+    buildTrackingGroup(source.trackings),
+    buildPublicImpactGroup(source.impacts),
   ];
 
   const timeline = [
@@ -289,6 +447,10 @@ export function buildCivicActivitySnapshot(source: CivicActivitySourceData): Civ
     ...buildProposalTimelineEntries(source.proposals),
     ...buildVoteTimelineEntries(source.votes),
     ...buildDecisionSessionTimelineEntries(source.decisionSessions),
+    ...buildCommitmentTimelineEntries(source.commitments),
+    ...buildTrackingTimelineEntries(source.trackings),
+    ...buildTrackingUpdateTimelineEntries(source.trackingUpdates),
+    ...buildPublicImpactTimelineEntries(source.impacts),
   ]
     .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))
     .slice(0, 40);
@@ -307,5 +469,9 @@ export function createEmptyCivicActivitySnapshot(): CivicActivitySnapshot {
     proposals: [],
     decisionSessions: [],
     votes: [],
+    commitments: [],
+    trackings: [],
+    trackingUpdates: [],
+    impacts: [],
   });
 }

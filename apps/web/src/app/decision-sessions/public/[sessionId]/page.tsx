@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
+import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicDecisionSession } from "../../../../features/decision-session/api";
 
 import "./public-decision-session-page.css";
@@ -129,6 +130,8 @@ export default async function PublicDecisionSessionPage({
           <p>No improvement proposals in decision package.</p>
         )}
       </ProfileSection>
+
+      <CivicIntegrationPanel entityType="decision-session" entityId={sessionId} />
 
       <p className="public-decision-session-page__back">
         <Link href={`/initiatives/public/${encodeURIComponent(session.initiativeId)}`}>

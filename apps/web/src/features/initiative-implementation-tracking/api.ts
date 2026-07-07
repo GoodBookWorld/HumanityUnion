@@ -1,4 +1,6 @@
 import type {
+  ImplementationTrackingUpdate,
+  InitiativeImplementationTracking,
   InitiativeImplementationTrackingMetrics,
   PublicInitiativeImplementationTrackingListItem,
   PublicInitiativeImplementationTrackingProjection,
@@ -6,12 +8,41 @@ import type {
 
 import { apiRequest } from "../../lib/api-client";
 
+export interface MyInitiativeImplementationTrackingsResponse {
+  trackings: InitiativeImplementationTracking[];
+  updates: ImplementationTrackingUpdate[];
+}
+
 export interface PublicInitiativeImplementationTrackingsResponse {
   trackings: PublicInitiativeImplementationTrackingListItem[];
   metrics: InitiativeImplementationTrackingMetrics;
 }
 
 const API_BASE_URL = "http://localhost:4000";
+
+export async function listMyInitiativeImplementationTrackings(): Promise<MyInitiativeImplementationTrackingsResponse> {
+  const url = `${API_BASE_URL}/api/v1/initiative-implementation-tracking/mine`;
+  const response = await fetch(url, { cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error("My implementation tracking is not available.");
+  }
+
+  const payload = (await response.json()) as {
+    success: boolean;
+    data: InitiativeImplementationTracking[];
+    meta: { updates?: ImplementationTrackingUpdate[] };
+  };
+
+  if (!payload.success) {
+    throw new Error("My implementation tracking is not available.");
+  }
+
+  return {
+    trackings: payload.data,
+    updates: payload.meta.updates ?? [],
+  };
+}
 
 export async function listPublicInitiativeImplementationTrackings(
   initiativeId: string,

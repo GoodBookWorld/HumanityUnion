@@ -10,9 +10,14 @@ import { listPublicInitiativeImprovementProposals } from "../../../../features/i
 import { getPublicInitiativeVersionHistory } from "../../../../features/initiative-version-revision/api";
 import { listPublicDecisionSessionsForInitiative } from "../../../../features/decision-session/api";
 import { listPublicInitiativeCollectiveDecisions } from "../../../../features/initiative-collective-decision/api";
+import { listPublicCivicActionPackagesForInitiative } from "../../../../features/civic-action-package/api";
+import { listPublicOfficialResponsesForInitiative } from "../../../../features/official-response/api";
+import { OfficialResponsesPublicSection } from "../../../../features/official-response/components/OfficialResponsesPublicSection";
 import { listPublicInitiativeImplementationCommitments } from "../../../../features/initiative-implementation-commitment/api";
 import { listPublicInitiativeImplementationTrackings } from "../../../../features/initiative-implementation-tracking/api";
 import { listPublicInitiativePublicImpacts } from "../../../../features/initiative-public-impact/api";
+import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
+import { getLatestPublicCivicArchiveForInitiative } from "../../../../features/public-civic-archive/api";
 import { listPublicCivicCompatibilityReviews } from "../../../../features/civic-compatibility-review/api";
 import { getPetitionByInitiativeId } from "../../../../features/petition/api";
 
@@ -52,6 +57,12 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   let collectiveDecisions: Awaited<
     ReturnType<typeof listPublicInitiativeCollectiveDecisions>
   > | null = null;
+  let civicActionPackages: Awaited<
+    ReturnType<typeof listPublicCivicActionPackagesForInitiative>
+  > | null = null;
+  let officialResponses: Awaited<
+    ReturnType<typeof listPublicOfficialResponsesForInitiative>
+  > | null = null;
   let implementationCommitments: Awaited<
     ReturnType<typeof listPublicInitiativeImplementationCommitments>
   > | null = null;
@@ -59,6 +70,8 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
     ReturnType<typeof listPublicInitiativeImplementationTrackings>
   > | null = null;
   let publicImpacts: Awaited<ReturnType<typeof listPublicInitiativePublicImpacts>> | null = null;
+  let civicArchive: Awaited<ReturnType<typeof getLatestPublicCivicArchiveForInitiative>> | null =
+    null;
   let compatibilityReviews: Awaited<ReturnType<typeof listPublicCivicCompatibilityReviews>> | null =
     null;
 
@@ -94,6 +107,18 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
     }
 
     try {
+      civicActionPackages = await listPublicCivicActionPackagesForInitiative(initiativeId);
+    } catch {
+      civicActionPackages = null;
+    }
+
+    try {
+      officialResponses = await listPublicOfficialResponsesForInitiative(initiativeId);
+    } catch {
+      officialResponses = null;
+    }
+
+    try {
       implementationCommitments = await listPublicInitiativeImplementationCommitments(initiativeId);
     } catch {
       implementationCommitments = null;
@@ -109,6 +134,12 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       publicImpacts = await listPublicInitiativePublicImpacts(initiativeId);
     } catch {
       publicImpacts = null;
+    }
+
+    try {
+      civicArchive = await getLatestPublicCivicArchiveForInitiative(initiativeId);
+    } catch {
+      civicArchive = null;
     }
 
     try {
@@ -385,6 +416,33 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
         </ProfileSection>
       ) : null}
 
+      {civicActionPackages && civicActionPackages.packages.length > 0 ? (
+        <ProfileSection title="Civic Action Packages">
+          <ul>
+            {civicActionPackages.packages.map((capPackage) => (
+              <li key={capPackage.capId}>
+                <Link
+                  href={`/civic-action-packages/public/${encodeURIComponent(capPackage.capId)}`}
+                >
+                  CAP #{capPackage.capNumber} — {capPackage.title}
+                </Link>
+                <p>
+                  {capPackage.status} · Issued {formatCreatedDate(capPackage.issuedAt)} ·{" "}
+                  {capPackage.decisionQuestion}
+                </p>
+                <p>{capPackage.summary}</p>
+              </li>
+            ))}
+          </ul>
+        </ProfileSection>
+      ) : null}
+
+      {officialResponses && officialResponses.responses.length > 0 ? (
+        <ProfileSection title="Official Responses">
+          <OfficialResponsesPublicSection responses={officialResponses.responses} />
+        </ProfileSection>
+      ) : null}
+
       {implementationCommitments && implementationCommitments.commitments.length > 0 ? (
         <ProfileSection title="Implementation Commitments">
           <ul>
@@ -446,6 +504,15 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
         </ProfileSection>
       ) : null}
 
+      {civicArchive?.latestArchiveRecordId ? (
+        <ProfileSection title="Historical Record">
+          <p>✔ Archived in Humanity Union Civic Archive</p>
+          <Link href={`/civic-archive/${encodeURIComponent(civicArchive.latestArchiveRecordId)}`}>
+            View Archive Record
+          </Link>
+        </ProfileSection>
+      ) : null}
+
       {linkedAnalysisId || linkedDecisionId || linkedPetitionId ? (
         <nav className="public-initiative-page__related" aria-label="Platform integration">
           {linkedAnalysisId ? (
@@ -465,6 +532,8 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
           ) : null}
         </nav>
       ) : null}
+
+      <CivicIntegrationPanel entityType="initiative" entityId={initiativeId} />
 
       <p className="public-initiative-page__back">
         <Link href="/">Back to Home</Link>

@@ -9,6 +9,7 @@ import {
 } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
+import { generateCivicActionPackageForDecision } from "../civic-action-package/civic-action-package.service.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getSessionById } from "../decision-session/decision-session.store.js";
@@ -207,6 +208,8 @@ export function closeInitiativeCollectiveDecision(
   if (!updated) {
     throw new Error("Collective decision not found.");
   }
+
+  generateCivicActionPackageForDecision(updated.decisionId);
 
   return updated;
 }

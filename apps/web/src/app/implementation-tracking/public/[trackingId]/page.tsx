@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import { ProfileField } from "../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../components/member/ProfileSection";
+import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicInitiativeImplementationTracking } from "../../../../features/initiative-implementation-tracking/api";
+import { listPublicOfficialResponsesForInitiative } from "../../../../features/official-response/api";
+import { OfficialResponsesPublicSection } from "../../../../features/official-response/components/OfficialResponsesPublicSection";
 import { listPublicInitiativePublicImpactsForTracking } from "../../../../features/initiative-public-impact/api";
 
 interface PublicImplementationTrackingPageProps {
@@ -42,11 +45,20 @@ export default async function PublicImplementationTrackingPage({
   }
 
   let publicImpacts: Awaited<ReturnType<typeof listPublicInitiativePublicImpactsForTracking>> = [];
+  let officialResponses: Awaited<
+    ReturnType<typeof listPublicOfficialResponsesForInitiative>
+  > | null = null;
 
   try {
     publicImpacts = await listPublicInitiativePublicImpactsForTracking(trackingId);
   } catch {
     publicImpacts = [];
+  }
+
+  try {
+    officialResponses = await listPublicOfficialResponsesForInitiative(tracking.initiativeId);
+  } catch {
+    officialResponses = null;
   }
 
   return (
@@ -111,6 +123,12 @@ export default async function PublicImplementationTrackingPage({
         </ProfileSection>
       ) : null}
 
+      {officialResponses && officialResponses.responses.length > 0 ? (
+        <ProfileSection title="Official Responses">
+          <OfficialResponsesPublicSection responses={officialResponses.responses} />
+        </ProfileSection>
+      ) : null}
+
       <nav aria-label="Platform integration">
         <Link href={`/initiatives/public/${encodeURIComponent(tracking.initiativeId)}`}>
           View Public Initiative
@@ -121,6 +139,8 @@ export default async function PublicImplementationTrackingPage({
           View Public Implementation Commitment
         </Link>
       </nav>
+
+      <CivicIntegrationPanel entityType="implementation-tracking" entityId={trackingId} />
 
       <p>
         <Link href="/">Back to Home</Link>
