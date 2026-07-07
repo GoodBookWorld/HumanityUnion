@@ -22,11 +22,18 @@ import { DecisionSessionWorkspace } from "../../decision-session/components/Deci
 import { CivicCompatibilityReviewWorkspace } from "../../civic-compatibility-review/components/CivicCompatibilityReviewWorkspace";
 import { DecisionResultWorkspace } from "../../execution-pipeline/components/DecisionResultWorkspace";
 import { CivicDeliveryWorkspace } from "../../execution-pipeline/components/CivicDeliveryWorkspace";
+import { CivicAccountabilityWorkspace } from "../../execution-pipeline/components/CivicAccountabilityWorkspace";
 import { OfficialResponsesWorkspace } from "../../execution-pipeline/components/OfficialResponsesWorkspace";
 import { InitiativeImplementationCommitmentWorkspace } from "../../execution-pipeline/components/InitiativeImplementationCommitmentWorkspace";
 import { InitiativeImplementationTrackingWorkspace } from "../../execution-pipeline/components/InitiativeImplementationTrackingWorkspace";
 import { InitiativePublicImpactWorkspace } from "../../execution-pipeline/components/InitiativePublicImpactWorkspace";
+import { InitiativePublicCivicArchiveWorkspace } from "../../execution-pipeline/components/InitiativePublicCivicArchiveWorkspace";
 import { WorkspaceCivicIntegrationPanel } from "../../capability02-integration/components/WorkspaceCivicIntegrationPanel";
+import { WorkspaceCivicAssistant } from "../../workspace-civic-assistant/components/WorkspaceCivicAssistant";
+import { INITIATIVE_WORKSPACE_SECTIONS } from "../../workspace-civic-assistant/initiative-workspace-sections";
+import { useWorkspaceSectionTracker } from "../../workspace-civic-assistant/use-workspace-section-tracker";
+
+import "./initiative-workspace-layout.css";
 
 interface InitiativeWorkspaceProps {
   initialInitiatives: Initiative[];
@@ -39,6 +46,7 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
   );
   const [selectedInitiative, setSelectedInitiative] = useState<Initiative | null>(null);
   const [loadingOverview, setLoadingOverview] = useState(false);
+  const currentSection = useWorkspaceSectionTracker(INITIATIVE_WORKSPACE_SECTIONS);
 
   const loadInitiative = useCallback(async (initiativeId: string) => {
     setLoadingOverview(true);
@@ -100,103 +108,119 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
   }
 
   return (
-    <>
-      <ProfileSection title="My Initiatives">
-        <MyInitiativesDashboard
-          initiatives={initiatives}
-          selectedId={selectedId}
-          onSelect={handleSelect}
-        />
-      </ProfileSection>
-
-      <ProfileSection title="Overview">
-        <InitiativeOverview initiative={selectedInitiative} loading={loadingOverview} />
-      </ProfileSection>
-
-      <ProfileSection title="Lifecycle Timeline">
-        <InitiativeLifecycleTimeline initiative={selectedInitiative} />
-      </ProfileSection>
-
-      <ProfileSection title="Manage Initiative">
-        {renderManagementEditor()}
-        <ViewCollaborativeAnalysisLink initiativeId={selectedId} />
-        <ViewCollectiveDecisionLink initiativeId={selectedId} />
-        <ViewPetitionLink initiativeId={selectedId} />
-        <StartNewInitiativeButton onCreated={handleCreated} />
-      </ProfileSection>
-
-      {selectedInitiative ? (
-        <ProfileSection title="Collaborative Analysis">
-          <InitiativeAnalysisWorkspace initiative={selectedInitiative} />
-        </ProfileSection>
-      ) : null}
-
-      {selectedInitiative ? (
-        <ProfileSection title="Improvement Proposal Decisions">
-          <InitiativeImprovementProposalStewardPanel initiative={selectedInitiative} />
-        </ProfileSection>
-      ) : null}
-
-      {selectedInitiative ? (
-        <ProfileSection title="Initiative Revision">
-          <InitiativeRevisionWorkspace
-            initiative={selectedInitiative}
-            onInitiativeUpdated={handleUpdated}
+    <div className="initiative-workspace-layout">
+      <div className="initiative-workspace-layout__content">
+        <ProfileSection title="My Initiatives">
+          <MyInitiativesDashboard
+            initiatives={initiatives}
+            selectedId={selectedId}
+            onSelect={handleSelect}
           />
         </ProfileSection>
-      ) : null}
 
-      {selectedInitiative ? (
-        <ProfileSection title="Decision Result">
-          <DecisionResultWorkspace initiative={selectedInitiative} />
+        <ProfileSection title="Overview">
+          <InitiativeOverview initiative={selectedInitiative} loading={loadingOverview} />
         </ProfileSection>
-      ) : null}
 
-      {selectedInitiative ? (
-        <ProfileSection title="Civic Delivery">
-          <CivicDeliveryWorkspace initiative={selectedInitiative} />
+        <ProfileSection title="Lifecycle Timeline">
+          <InitiativeLifecycleTimeline initiative={selectedInitiative} />
         </ProfileSection>
-      ) : null}
 
-      {selectedInitiative ? (
-        <ProfileSection title="Official Responses">
-          <OfficialResponsesWorkspace initiative={selectedInitiative} />
+        <ProfileSection title="Manage Initiative">
+          {renderManagementEditor()}
+          <ViewCollaborativeAnalysisLink initiativeId={selectedId} />
+          <ViewCollectiveDecisionLink initiativeId={selectedId} />
+          <ViewPetitionLink initiativeId={selectedId} />
+          <StartNewInitiativeButton onCreated={handleCreated} />
         </ProfileSection>
-      ) : null}
 
-      {selectedInitiative ? (
-        <ProfileSection title="Implementation Commitment">
-          <InitiativeImplementationCommitmentWorkspace initiative={selectedInitiative} />
-        </ProfileSection>
-      ) : null}
+        {selectedInitiative ? (
+          <ProfileSection title="Collaborative Analysis">
+            <InitiativeAnalysisWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
 
-      {selectedInitiative ? (
-        <ProfileSection title="Implementation Tracking">
-          <InitiativeImplementationTrackingWorkspace initiative={selectedInitiative} />
-        </ProfileSection>
-      ) : null}
+        {selectedInitiative ? (
+          <ProfileSection title="Improvement Proposal Decisions">
+            <InitiativeImprovementProposalStewardPanel initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
 
-      {selectedInitiative ? (
-        <ProfileSection title="Public Impact">
-          <InitiativePublicImpactWorkspace initiative={selectedInitiative} />
-        </ProfileSection>
-      ) : null}
+        {selectedInitiative ? (
+          <ProfileSection title="Initiative Revision">
+            <InitiativeRevisionWorkspace
+              initiative={selectedInitiative}
+              onInitiativeUpdated={handleUpdated}
+            />
+          </ProfileSection>
+        ) : null}
 
-      {selectedInitiative ? (
-        <WorkspaceCivicIntegrationPanel initiativeId={selectedInitiative.initiativeId} />
-      ) : null}
+        {selectedInitiative ? (
+          <ProfileSection title="Decision Result">
+            <DecisionResultWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
 
-      {selectedInitiative ? (
-        <ProfileSection title="Decision Session">
-          <DecisionSessionWorkspace initiative={selectedInitiative} />
-        </ProfileSection>
-      ) : null}
+        {selectedInitiative ? (
+          <ProfileSection title="Civic Delivery">
+            <CivicDeliveryWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
 
-      {selectedInitiative ? (
-        <ProfileSection title="Civic Compatibility Review">
-          <CivicCompatibilityReviewWorkspace initiative={selectedInitiative} />
-        </ProfileSection>
-      ) : null}
-    </>
+        {selectedInitiative ? (
+          <ProfileSection title="Official Responses">
+            <OfficialResponsesWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
+
+        {selectedInitiative ? (
+          <ProfileSection title="Civic Accountability">
+            <CivicAccountabilityWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
+
+        {selectedInitiative ? (
+          <ProfileSection title="Implementation Commitment">
+            <InitiativeImplementationCommitmentWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
+
+        {selectedInitiative ? (
+          <ProfileSection title="Implementation Tracking">
+            <InitiativeImplementationTrackingWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
+
+        {selectedInitiative ? (
+          <ProfileSection title="Public Impact">
+            <InitiativePublicImpactWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
+
+        {selectedInitiative ? (
+          <ProfileSection title="Public Civic Archive">
+            <InitiativePublicCivicArchiveWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
+
+        {selectedInitiative ? (
+          <WorkspaceCivicIntegrationPanel initiativeId={selectedInitiative.initiativeId} />
+        ) : null}
+
+        {selectedInitiative ? (
+          <ProfileSection title="Decision Session">
+            <DecisionSessionWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
+
+        {selectedInitiative ? (
+          <ProfileSection title="Civic Compatibility Review">
+            <CivicCompatibilityReviewWorkspace initiative={selectedInitiative} />
+          </ProfileSection>
+        ) : null}
+      </div>
+
+      <WorkspaceCivicAssistant initiative={selectedInitiative} currentSection={currentSection} />
+    </div>
   );
 }

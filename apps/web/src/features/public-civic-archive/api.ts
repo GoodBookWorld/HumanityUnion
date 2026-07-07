@@ -2,6 +2,7 @@ import type {
   PublicCivicArchiveListItem,
   PublicCivicArchiveMetrics,
   PublicCivicArchiveProjection,
+  PublicCivicArchiveRecord,
 } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
@@ -109,6 +110,10 @@ export async function getPublicCivicArchiveForImpact(
   } catch {
     return null;
   }
+}
+
+export async function listMyPublicCivicArchiveRecords(): Promise<PublicCivicArchiveRecord[]> {
+  return apiRequest<PublicCivicArchiveRecord[]>("/api/v1/public-civic-archive/mine");
 }
 
 export async function getLatestPublicCivicArchiveForInitiative(

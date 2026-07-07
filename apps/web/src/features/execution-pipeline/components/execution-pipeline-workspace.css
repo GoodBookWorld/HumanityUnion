@@ -72,3 +72,30 @@
   display: inline-block;
   margin-top: 0.5rem;
 }
+
+.execution-pipeline-workspace__summary {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.execution-pipeline-workspace__summary div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.execution-pipeline-workspace__summary dt {
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.execution-pipeline-workspace__summary dd {
+  margin: 0;
+}
+
+.execution-pipeline-workspace__links {
+  margin: 0;
+}

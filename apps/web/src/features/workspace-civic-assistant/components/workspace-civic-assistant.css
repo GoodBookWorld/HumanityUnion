@@ -1,0 +1,173 @@
+.workspace-civic-assistant {
+  width: 100%;
+}
+
+.workspace-civic-assistant__toggle {
+  display: none;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d4d4d4;
+  border-radius: 0.5rem;
+  background: #fafafa;
+  color: #171717;
+  font: inherit;
+  text-align: left;
+}
+
+.workspace-civic-assistant__sticky {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+}
+
+.workspace-civic-assistant__panel {
+  border: 1px solid #e5e5e5;
+  border-radius: 0.75rem;
+  background: #fcfcfc;
+  padding: 1rem;
+}
+
+.workspace-civic-assistant__header {
+  margin-bottom: 1rem;
+}
+
+.workspace-civic-assistant__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.workspace-civic-assistant__section-label {
+  color: #525252;
+  font-size: 0.9rem;
+}
+
+.workspace-civic-assistant__meta {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.workspace-civic-assistant__meta div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.workspace-civic-assistant__meta dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #737373;
+}
+
+.workspace-civic-assistant__meta dd {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #171717;
+}
+
+.workspace-civic-assistant__summary {
+  margin-bottom: 1rem;
+  color: #404040;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.workspace-civic-assistant__actions h3,
+.workspace-civic-assistant__chat h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.workspace-civic-assistant__actions ul,
+.workspace-civic-assistant__messages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.workspace-civic-assistant__actions button {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d4d4d4;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #171717;
+  font: inherit;
+  text-align: left;
+}
+
+.workspace-civic-assistant__actions button:hover,
+.workspace-civic-assistant__actions button:focus-visible {
+  border-color: #a3a3a3;
+  outline: 2px solid #737373;
+  outline-offset: 2px;
+}
+
+.workspace-civic-assistant__chat {
+  margin-top: 1rem;
+}
+
+.workspace-civic-assistant__message {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #f5f5f5;
+  color: #262626;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.workspace-civic-assistant__placeholder-notice {
+  margin: 0.75rem 0;
+  color: #525252;
+  font-size: 0.88rem;
+}
+
+.workspace-civic-assistant__input-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+  color: #525252;
+}
+
+.workspace-civic-assistant__input {
+  width: 100%;
+  min-height: 4.5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #d4d4d4;
+  border-radius: 0.5rem;
+  background: #f5f5f5;
+  color: #737373;
+  font: inherit;
+  resize: vertical;
+}
+
+.workspace-civic-assistant__safety {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e5e5;
+  color: #525252;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 1024px) {
+  .workspace-civic-assistant__toggle {
+    display: block;
+  }
+
+  .workspace-civic-assistant__sticky {
+    position: static;
+    max-height: none;
+    display: none;
+  }
+
+  .workspace-civic-assistant--open .workspace-civic-assistant__sticky {
+    display: block;
+  }
+}

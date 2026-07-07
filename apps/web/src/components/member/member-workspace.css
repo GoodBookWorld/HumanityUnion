@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   gap: 2rem;
-  width: min(960px, 100%);
+  width: min(1200px, 100%);
   text-align: left;
 }
 

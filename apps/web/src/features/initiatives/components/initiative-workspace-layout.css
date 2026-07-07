@@ -1,0 +1,16 @@
+.initiative-workspace-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.initiative-workspace-layout__content {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .initiative-workspace-layout {
+    grid-template-columns: 1fr;
+  }
+}

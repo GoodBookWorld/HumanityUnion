@@ -7,7 +7,6 @@ import type { Initiative } from "@hu/types";
 
 import { listPublicInitiativeImplementationTrackings } from "../../initiative-implementation-tracking/api";
 import { listPublicOfficialResponsesForInitiative } from "../../official-response/api";
-import { CivicAccountabilityWorkspace } from "./CivicAccountabilityWorkspace";
 
 import "./execution-pipeline-workspace.css";
 
@@ -130,9 +129,6 @@ export function InitiativeImplementationTrackingWorkspace({
           </ul>
         </>
       ) : null}
-
-      <h3>Civic Accountability</h3>
-      <CivicAccountabilityWorkspace initiative={initiative} />
     </div>
   );
 }
