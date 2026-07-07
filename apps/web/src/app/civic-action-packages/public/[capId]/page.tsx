@@ -9,7 +9,9 @@ import {
   listPublicCivicDeliveriesForCap,
 } from "../../../../features/civic-delivery/api";
 import { listPublicOfficialResponsesForCap } from "../../../../features/official-response/api";
+import { listPublicCivicAccountabilitiesForCap } from "../../../../features/civic-accountability/api";
 import { OfficialResponsesPublicSection } from "../../../../features/official-response/components/OfficialResponsesPublicSection";
+import { CivicAccountabilityPublicSection } from "../../../../features/civic-accountability/components/CivicAccountabilityPublicSection";
 
 interface PublicCivicActionPackagePageProps {
   params: Promise<{
@@ -40,6 +42,7 @@ export default async function PublicCivicActionPackagePage({
   const capPackage = await getPublicCivicActionPackage(capId);
   const deliveryLog = capPackage ? await listPublicCivicDeliveriesForCap(capId) : [];
   const officialResponses = capPackage ? await listPublicOfficialResponsesForCap(capId) : [];
+  const civicAccountability = capPackage ? await listPublicCivicAccountabilitiesForCap(capId) : [];
   const deliveryDetails = await Promise.all(
     deliveryLog.map((entry) => getPublicCivicDelivery(entry.deliveryId)),
   );
@@ -162,6 +165,12 @@ export default async function PublicCivicActionPackagePage({
       {officialResponses.length > 0 ? (
         <ProfileSection title="Official Responses">
           <OfficialResponsesPublicSection responses={officialResponses} />
+        </ProfileSection>
+      ) : null}
+
+      {civicAccountability.length > 0 ? (
+        <ProfileSection title="Civic Accountability">
+          <CivicAccountabilityPublicSection records={civicAccountability} />
         </ProfileSection>
       ) : null}
 

@@ -314,6 +314,26 @@ export type {
   PublicOfficialResponseReferenceLinks,
 } from "./public-official-response.js";
 export type {
+  CivicAccountability,
+  CivicAccountabilityEvent,
+  CivicAccountabilityEventId,
+  CivicAccountabilityEventType,
+  CivicAccountabilityId,
+  CivicAccountabilityStatus,
+} from "./civic-accountability.js";
+export {
+  canTransitionCivicAccountabilityStatus,
+  CIVIC_ACCOUNTABILITY_STATUS_TRANSITIONS,
+} from "./civic-accountability.js";
+export type {
+  CivicAccountabilityMetrics,
+  PublicCivicAccountabilityEventItem,
+  PublicCivicAccountabilityListItem,
+  PublicCivicAccountabilityProjection,
+  PublicCivicAccountabilityRecipientInfo,
+  PublicCivicAccountabilityReferenceLinks,
+} from "./public-civic-accountability.js";
+export type {
   CollectiveDecisionPublicOutcome,
   CollectiveDecisionTransparentResults,
   ParticipationConfidenceLevel,

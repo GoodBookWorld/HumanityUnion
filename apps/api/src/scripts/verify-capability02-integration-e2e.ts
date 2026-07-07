@@ -334,7 +334,7 @@ async function runVerification(): Promise<void> {
   assert(metadata.publicUrl.startsWith("/public-impact/"), "Search metadata publicUrl set");
 
   console.log("6. Notification registry");
-  assert(CIVIC_NOTIFICATION_EVENT_REGISTRY.length === 14, "Notification registry has 14 events");
+  assert(CIVIC_NOTIFICATION_EVENT_REGISTRY.length === 16, "Notification registry has 16 events");
   assert(
     CIVIC_NOTIFICATION_EVENT_REGISTRY.some(
       (event) => event.eventType === "official_response_received",

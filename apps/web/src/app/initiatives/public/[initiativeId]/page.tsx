@@ -12,7 +12,9 @@ import { listPublicDecisionSessionsForInitiative } from "../../../../features/de
 import { listPublicInitiativeCollectiveDecisions } from "../../../../features/initiative-collective-decision/api";
 import { listPublicCivicActionPackagesForInitiative } from "../../../../features/civic-action-package/api";
 import { listPublicOfficialResponsesForInitiative } from "../../../../features/official-response/api";
+import { listPublicCivicAccountabilitiesForInitiative } from "../../../../features/civic-accountability/api";
 import { OfficialResponsesPublicSection } from "../../../../features/official-response/components/OfficialResponsesPublicSection";
+import { CivicAccountabilityPublicSection } from "../../../../features/civic-accountability/components/CivicAccountabilityPublicSection";
 import { listPublicInitiativeImplementationCommitments } from "../../../../features/initiative-implementation-commitment/api";
 import { listPublicInitiativeImplementationTrackings } from "../../../../features/initiative-implementation-tracking/api";
 import { listPublicInitiativePublicImpacts } from "../../../../features/initiative-public-impact/api";
@@ -63,6 +65,9 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   let officialResponses: Awaited<
     ReturnType<typeof listPublicOfficialResponsesForInitiative>
   > | null = null;
+  let civicAccountability: Awaited<
+    ReturnType<typeof listPublicCivicAccountabilitiesForInitiative>
+  > = [];
   let implementationCommitments: Awaited<
     ReturnType<typeof listPublicInitiativeImplementationCommitments>
   > | null = null;
@@ -116,6 +121,12 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       officialResponses = await listPublicOfficialResponsesForInitiative(initiativeId);
     } catch {
       officialResponses = null;
+    }
+
+    try {
+      civicAccountability = await listPublicCivicAccountabilitiesForInitiative(initiativeId);
+    } catch {
+      civicAccountability = [];
     }
 
     try {
@@ -440,6 +451,12 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       {officialResponses && officialResponses.responses.length > 0 ? (
         <ProfileSection title="Official Responses">
           <OfficialResponsesPublicSection responses={officialResponses.responses} />
+        </ProfileSection>
+      ) : null}
+
+      {civicAccountability.length > 0 ? (
+        <ProfileSection title="Civic Accountability">
+          <CivicAccountabilityPublicSection records={civicAccountability} />
         </ProfileSection>
       ) : null}
 

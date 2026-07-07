@@ -13,6 +13,7 @@ const URL_ENTITY_TYPE_MAP: Record<string, CivicEntityType> = {
   "collective-decision": "collective_decision",
   "civic-action-package": "civic_action_package",
   "official-response": "official_response",
+  "civic-accountability": "civic_accountability",
   "implementation-commitment": "implementation_commitment",
   "implementation-tracking": "implementation_tracking",
   "public-impact": "public_impact",

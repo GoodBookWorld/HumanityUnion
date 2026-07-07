@@ -57,6 +57,13 @@ import {
   publicCivicDeliveryRouter,
 } from "./modules/civic-delivery/index.js";
 import {
+  civicAccountabilityRouter,
+  publicCivicAccountabilitiesByCapRouter,
+  publicCivicAccountabilitiesByInitiativeRouter,
+  publicCivicAccountabilitiesByResponseRouter,
+  publicCivicAccountabilityRouter,
+} from "./modules/civic-accountability/index.js";
+import {
   officialResponseRouter,
   publicOfficialResponseRouter,
   publicOfficialResponsesByCapRouter,
@@ -120,6 +127,7 @@ app.use("/api/v1/initiative-implementation-tracking", initiativeImplementationTr
 app.use("/api/v1/initiative-public-impact", initiativePublicImpactRouter);
 app.use("/api/v1/civic-deliveries", civicDeliveryRouter);
 app.use("/api/v1/official-responses", officialResponseRouter);
+app.use("/api/v1/civic-accountability", civicAccountabilityRouter);
 app.use("/api/v1/public-civic-archive", publicCivicArchiveRouter);
 app.use("/api/v1/civic-compatibility-reviews", civicCompatibilityReviewRouter);
 app.use("/api/v1/initiative-revisions", initiativeVersionRevisionRouter);
@@ -164,7 +172,10 @@ app.use("/api/v1/public/civic-archive", publicCivicArchivePublicRouter);
 app.use("/api/v1/public/civic-action-packages", publicCivicActionPackageRouter);
 app.use("/api/v1/public/civic-action-packages", publicCivicDeliveriesByCapRouter);
 app.use("/api/v1/public/civic-action-packages", publicOfficialResponsesByCapRouter);
+app.use("/api/v1/public/civic-action-packages", publicCivicAccountabilitiesByCapRouter);
+app.use("/api/v1/public/official-responses", publicCivicAccountabilitiesByResponseRouter);
 app.use("/api/v1/public/official-responses", publicOfficialResponseRouter);
+app.use("/api/v1/public/civic-accountability", publicCivicAccountabilityRouter);
 app.use("/api/v1/public/civic-deliveries", publicCivicDeliveryRouter);
 app.use("/api/v1/public/integration", capability02IntegrationRouter);
 app.use("/api/v1/public/compatibility-reviews", publicCivicCompatibilityReviewRouter);
@@ -178,6 +189,7 @@ app.use("/api/v1/public/initiatives", publicInitiativePublicImpactsByInitiativeR
 app.use("/api/v1/public/initiatives", publicCivicArchiveByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicCivicActionPackagesByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicOfficialResponsesByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicCivicAccountabilitiesByInitiativeRouter);
 app.use("/api/v1/public/public-impact", publicCivicArchiveByImpactRouter);
 app.use("/api/v1/public/initiatives", publicCivicCompatibilityReviewsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeVersionRevisionRouter);

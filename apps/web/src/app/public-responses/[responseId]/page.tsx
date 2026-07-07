@@ -4,6 +4,8 @@ import { ProfileField } from "../../../components/member/ProfileField";
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { CivicIntegrationPanel } from "../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicOfficialResponse } from "../../../features/official-response/api";
+import { listPublicCivicAccountabilitiesForResponse } from "../../../features/civic-accountability/api";
+import { CivicAccountabilityPublicSection } from "../../../features/civic-accountability/components/CivicAccountabilityPublicSection";
 
 interface PublicOfficialResponsePageProps {
   params: Promise<{
@@ -32,6 +34,9 @@ export default async function PublicOfficialResponsePage({
 }: PublicOfficialResponsePageProps) {
   const { responseId } = await params;
   const response = await getPublicOfficialResponse(responseId);
+  const civicAccountability = response
+    ? await listPublicCivicAccountabilitiesForResponse(responseId)
+    : [];
 
   if (!response) {
     return (
@@ -85,6 +90,12 @@ export default async function PublicOfficialResponsePage({
           ) : null}
         </ul>
       </ProfileSection>
+
+      {civicAccountability.length > 0 ? (
+        <ProfileSection title="Civic Accountability">
+          <CivicAccountabilityPublicSection records={civicAccountability} />
+        </ProfileSection>
+      ) : null}
 
       <CivicIntegrationPanel entityType="official-response" entityId={responseId} />
 

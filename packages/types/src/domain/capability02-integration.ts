@@ -8,6 +8,7 @@ export type CivicEntityType =
   | "collective_decision"
   | "civic_action_package"
   | "official_response"
+  | "civic_accountability"
   | "implementation_commitment"
   | "implementation_tracking"
   | "public_impact"
@@ -57,6 +58,7 @@ export type CivicPipelineStageId =
   | "collective_decision"
   | "civic_action_package"
   | "official_response"
+  | "civic_accountability"
   | "commitment"
   | "tracking"
   | "public_impact"
@@ -111,6 +113,8 @@ export type CivicNotificationEventType =
   | "civic_action_package_issued"
   | "official_response_received"
   | "official_response_verified"
+  | "civic_accountability_event_added"
+  | "civic_accountability_closed"
   | "commitment_published"
   | "tracking_updated"
   | "impact_verified"
@@ -172,6 +176,16 @@ export const CIVIC_NOTIFICATION_EVENT_REGISTRY: readonly CivicNotificationEventD
     eventType: "official_response_verified",
     description: "A steward verified an official institutional response.",
     entityType: "official_response",
+  },
+  {
+    eventType: "civic_accountability_event_added",
+    description: "A civic accountability event was added to a CAP follow-up timeline.",
+    entityType: "civic_accountability",
+  },
+  {
+    eventType: "civic_accountability_closed",
+    description: "A civic accountability timeline was closed.",
+    entityType: "civic_accountability",
   },
   {
     eventType: "commitment_published",

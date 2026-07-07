@@ -11,6 +11,7 @@ import type { RequestIdentity } from "../initiatives/identity/request-identity.t
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { resolveCivicDeliveryProvider } from "./civic-delivery-provider.js";
+import { ensureAccountabilityFromDelivery } from "../civic-accountability/civic-accountability-auto-start.js";
 import { recommendCivicDeliveryRecipients } from "./civic-delivery-recommendations.js";
 import {
   createDelivery,
@@ -259,6 +260,8 @@ export async function sendCivicDelivery(
   if (!updatedDelivery) {
     throw new Error("Delivery record not found.");
   }
+
+  ensureAccountabilityFromDelivery(updatedDelivery, identity.participantId);
 
   return {
     delivery: updatedDelivery,

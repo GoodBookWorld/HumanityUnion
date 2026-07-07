@@ -5,7 +5,9 @@ import { ProfileSection } from "../../../../components/member/ProfileSection";
 import { CivicIntegrationPanel } from "../../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicInitiativeImplementationTracking } from "../../../../features/initiative-implementation-tracking/api";
 import { listPublicOfficialResponsesForInitiative } from "../../../../features/official-response/api";
+import { listPublicCivicAccountabilitiesForInitiative } from "../../../../features/civic-accountability/api";
 import { OfficialResponsesPublicSection } from "../../../../features/official-response/components/OfficialResponsesPublicSection";
+import { CivicAccountabilityPublicSection } from "../../../../features/civic-accountability/components/CivicAccountabilityPublicSection";
 import { listPublicInitiativePublicImpactsForTracking } from "../../../../features/initiative-public-impact/api";
 
 interface PublicImplementationTrackingPageProps {
@@ -48,6 +50,9 @@ export default async function PublicImplementationTrackingPage({
   let officialResponses: Awaited<
     ReturnType<typeof listPublicOfficialResponsesForInitiative>
   > | null = null;
+  let civicAccountability: Awaited<
+    ReturnType<typeof listPublicCivicAccountabilitiesForInitiative>
+  > = [];
 
   try {
     publicImpacts = await listPublicInitiativePublicImpactsForTracking(trackingId);
@@ -59,6 +64,12 @@ export default async function PublicImplementationTrackingPage({
     officialResponses = await listPublicOfficialResponsesForInitiative(tracking.initiativeId);
   } catch {
     officialResponses = null;
+  }
+
+  try {
+    civicAccountability = await listPublicCivicAccountabilitiesForInitiative(tracking.initiativeId);
+  } catch {
+    civicAccountability = [];
   }
 
   return (
@@ -126,6 +137,12 @@ export default async function PublicImplementationTrackingPage({
       {officialResponses && officialResponses.responses.length > 0 ? (
         <ProfileSection title="Official Responses">
           <OfficialResponsesPublicSection responses={officialResponses.responses} />
+        </ProfileSection>
+      ) : null}
+
+      {civicAccountability.length > 0 ? (
+        <ProfileSection title="Civic Accountability">
+          <CivicAccountabilityPublicSection records={civicAccountability} />
         </ProfileSection>
       ) : null}
 

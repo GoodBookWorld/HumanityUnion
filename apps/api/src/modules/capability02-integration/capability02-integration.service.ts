@@ -46,6 +46,11 @@ import {
   getResponseById,
   listResponsesByInitiative,
 } from "../official-response/official-response.store.js";
+import {
+  getAccountabilityById,
+  getAccountabilityByCapId,
+  listAccountabilitiesByInitiative,
+} from "../civic-accountability/civic-accountability.store.js";
 
 const PIPELINE_STAGE_ORDER: readonly { id: CivicPipelineStageId; label: string }[] = [
   { id: "initiative", label: "Initiative" },
@@ -56,6 +61,7 @@ const PIPELINE_STAGE_ORDER: readonly { id: CivicPipelineStageId; label: string }
   { id: "collective_decision", label: "Collective Decision" },
   { id: "civic_action_package", label: "Civic Action Package" },
   { id: "official_response", label: "Official Responses" },
+  { id: "civic_accountability", label: "Civic Accountability" },
   { id: "commitment", label: "Commitment" },
   { id: "tracking", label: "Tracking" },
   { id: "public_impact", label: "Public Impact" },
@@ -84,6 +90,8 @@ export function publicUrlForEntity(
       return `/civic-action-packages/public/${encodeURIComponent(entityId)}`;
     case "official_response":
       return `/public-responses/${encodeURIComponent(entityId)}`;
+    case "civic_accountability":
+      return `/civic-accountability/public/${encodeURIComponent(entityId)}`;
     case "implementation_commitment":
       return `/initiative-implementation-commitments/public/${encodeURIComponent(entityId)}`;
     case "implementation_tracking":
@@ -141,6 +149,10 @@ function resolveInitiativeId(entityType: CivicEntityType, entityId: string): str
       const response = getResponseById(entityId);
       return response?.initiativeId ?? null;
     }
+    case "civic_accountability": {
+      const accountability = getAccountabilityById(entityId);
+      return accountability?.initiativeId ?? null;
+    }
     case "implementation_commitment": {
       const commitment = getCommitmentById(entityId);
       return commitment?.initiativeId ?? null;
@@ -187,6 +199,7 @@ function buildInitiativePipelineCompletion(
   const officialResponses = listResponsesByInitiative(initiativeId).filter(
     (response) => response.publicationStatus !== "draft",
   );
+  const civicAccountabilities = listAccountabilitiesByInitiative(initiativeId);
 
   return {
     initiative: Boolean(initiative && initiative.lifecyclePhase !== "draft"),
@@ -197,6 +210,7 @@ function buildInitiativePipelineCompletion(
     collective_decision: decisions.length > 0,
     civic_action_package: caps.length > 0,
     official_response: officialResponses.length > 0,
+    civic_accountability: civicAccountabilities.length > 0,
     commitment: commitments.length > 0,
     tracking: trackings.length > 0,
     public_impact: impacts.some((impact) => ["published", "verified"].includes(impact.status)),
@@ -344,6 +358,22 @@ function initiativeRelatedRecords(initiativeId: string): RelatedRecord[] {
     );
   }
 
+  for (const accountability of listAccountabilitiesByInitiative(initiativeId)) {
+    if (accountability.status === "archived") {
+      continue;
+    }
+
+    records.push(
+      relatedRecord(
+        "civic_accountability",
+        accountability.accountabilityId,
+        `Civic Accountability — CAP ${accountability.capId}`,
+        accountability.status,
+        "documents",
+      ),
+    );
+  }
+
   for (const commitment of listCommitmentsByInitiative(initiativeId).filter(
     (c) => c.status !== "draft",
   )) {
@@ -469,6 +499,22 @@ export function resolveRelatedRecords(
         ...sessionRecords,
         ...capRecords,
         ...responseRecords,
+        ...(capPackage
+          ? (() => {
+              const accountability = getAccountabilityByCapId(capPackage.capId);
+              return accountability && accountability.status !== "archived"
+                ? [
+                    relatedRecord(
+                      "civic_accountability",
+                      accountability.accountabilityId,
+                      "Civic Accountability",
+                      accountability.status,
+                      "documents",
+                    ),
+                  ]
+                : [];
+            })()
+          : []),
       ];
     }
     case "civic_action_package": {
@@ -500,6 +546,22 @@ export function resolveRelatedRecords(
             ]
           : []),
         ...responseRecords,
+        ...(capPackage
+          ? (() => {
+              const accountability = getAccountabilityByCapId(capPackage.capId);
+              return accountability && accountability.status !== "archived"
+                ? [
+                    relatedRecord(
+                      "civic_accountability",
+                      accountability.accountabilityId,
+                      "Civic Accountability",
+                      accountability.status,
+                      "documents",
+                    ),
+                  ]
+                : [];
+            })()
+          : []),
       ];
     }
     case "official_response": {
@@ -520,6 +582,43 @@ export function resolveRelatedRecords(
                 "Parent CAP for this official response",
                 "created_from",
               ),
+              ...(() => {
+                const accountability = getAccountabilityByCapId(response.capId);
+                return accountability && accountability.status !== "archived"
+                  ? [
+                      relatedRecord(
+                        "civic_accountability",
+                        accountability.accountabilityId,
+                        "Civic Accountability",
+                        accountability.status,
+                        "documents",
+                      ),
+                    ]
+                  : [];
+              })(),
+            ]
+          : []),
+      ];
+    }
+    case "civic_accountability": {
+      const accountability = getAccountabilityById(entityId);
+      return [
+        ...all.filter(
+          (record) =>
+            record.entityType === "initiative" ||
+            record.entityType === "civic_action_package" ||
+            record.entityType === "official_response" ||
+            (record.entityType === "civic_accountability" && record.entityId !== entityId),
+        ),
+        ...(accountability
+          ? [
+              relatedRecord(
+                "civic_action_package",
+                accountability.capId,
+                "Civic Action Package",
+                "Parent CAP for civic accountability",
+                "created_from",
+              ),
             ]
           : []),
       ];
@@ -531,6 +630,7 @@ export function resolveRelatedRecords(
           (record) =>
             record.entityType === "implementation_commitment" ||
             record.entityType === "official_response" ||
+            record.entityType === "civic_accountability" ||
             record.entityType === "public_impact" ||
             record.entityType === "civic_archive" ||
             record.entityType === "initiative",
@@ -644,6 +744,11 @@ export function buildCivicContext(
       records: relatedRecords.filter((record) => record.entityType === "official_response"),
     },
     {
+      id: "civic-accountability",
+      title: "Civic Accountability",
+      records: relatedRecords.filter((record) => record.entityType === "civic_accountability"),
+    },
+    {
       id: "implementation-commitments",
       title: "Implementation Commitments",
       records: relatedRecords.filter((record) => record.entityType === "implementation_commitment"),
@@ -697,6 +802,12 @@ export function buildCivicContext(
       const response = getResponseById(entityId);
       title = response ? `${response.responseNumber} — ${response.organizationName}` : title;
       summary = response?.summary ?? summary;
+      break;
+    }
+    case "civic_accountability": {
+      const accountability = getAccountabilityById(entityId);
+      title = accountability ? `Civic Accountability — ${accountability.capId}` : title;
+      summary = accountability?.status ?? summary;
       break;
     }
     case "implementation_tracking": {
@@ -765,6 +876,7 @@ export function buildBreadcrumb(
     collective_decision: "Decision",
     civic_action_package: "Civic Action Package",
     official_response: "Official Response",
+    civic_accountability: "Civic Accountability",
     implementation_commitment: "Commitment",
     implementation_tracking: "Tracking",
     public_impact: "Impact",
@@ -825,6 +937,12 @@ export function buildSearchMetadata(
       const response = getResponseById(entityId);
       status = response?.publicationStatus ?? status;
       updatedAt = response?.updatedAt ?? updatedAt;
+      break;
+    }
+    case "civic_accountability": {
+      const accountability = getAccountabilityById(entityId);
+      status = accountability?.status ?? status;
+      updatedAt = accountability?.updatedAt ?? updatedAt;
       break;
     }
     case "implementation_tracking": {

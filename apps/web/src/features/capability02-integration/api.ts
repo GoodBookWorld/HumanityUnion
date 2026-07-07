@@ -10,6 +10,7 @@ export type IntegrationUrlEntityType =
   | "collective-decision"
   | "civic-action-package"
   | "official-response"
+  | "civic-accountability"
   | "implementation-commitment"
   | "implementation-tracking"
   | "public-impact"
@@ -24,6 +25,7 @@ const ENTITY_TYPE_TO_URL: Record<CivicEntityType, IntegrationUrlEntityType> = {
   collective_decision: "collective-decision",
   civic_action_package: "civic-action-package",
   official_response: "official-response",
+  civic_accountability: "civic-accountability",
   implementation_commitment: "implementation-commitment",
   implementation_tracking: "implementation-tracking",
   public_impact: "public-impact",

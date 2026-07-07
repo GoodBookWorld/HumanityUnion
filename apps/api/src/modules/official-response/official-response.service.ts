@@ -14,6 +14,7 @@ import {
 } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { ensureOfficialResponseIdentity } from "./official-response-identity.js";
+import { ensureAccountabilityFromResponse } from "../civic-accountability/civic-accountability-auto-start.js";
 import {
   createResponse,
   getNextResponseNumber,
@@ -200,6 +201,8 @@ export function publishOfficialResponse(
   if (!updated) {
     throw new Error("Official response not found.");
   }
+
+  ensureAccountabilityFromResponse(updated);
 
   return updated;
 }
