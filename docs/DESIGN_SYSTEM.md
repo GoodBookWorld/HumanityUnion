@@ -1,316 +1,409 @@
 # Humanity Union Design System
 
-This document defines the visual language of the Humanity Union platform. It establishes shared standards for color, typography, layout, components, and responsive behavior so that every interface presents a consistent, accessible, and professional experience across WSAZ, CRZ, and institutional contexts.
+This document is the single source of truth for the Humanity Union visual identity. It defines the official design language established in TASK-047 and used across the platform — public pages, workspace, country and region experiences, and all future capabilities.
 
-## Design Philosophy
+Every interface must inherit from this system. Do not introduce page-specific visual languages.
 
-Humanity Union interfaces are built on the following principles:
+---
 
-- **Minimalism** — Remove decorative elements that do not serve clarity or function. Every visual choice must earn its place.
-- **Future-oriented** — Favor clean geometry, restrained motion, and scalable patterns that remain credible as the platform evolves.
-- **Global organization style** — Present the platform as a serious international institution: neutral, authoritative, and culturally adaptable without regional bias in visual tone.
-- **Accessibility** — Meet WCAG 2.1 AA contrast targets as a baseline. Support keyboard navigation, screen readers, reduced motion preferences, and readable type at all breakpoints.
-- **High readability** — Prioritize legible type, generous line height, clear hierarchy, and sufficient spacing between content blocks.
-- **Low visual noise** — Limit simultaneous colors, borders, and effects. Use whitespace and hierarchy before ornament.
-- **Professional appearance** — Avoid casual or playful styling. Interfaces should convey trust, stability, and institutional credibility.
+## 1. Humanity Design Philosophy
 
-## Color Palette
+Humanity Union is **Minimal Civic Technology**. The platform should feel:
 
-All colors below use suggested HEX placeholders. Final values must be validated for contrast accessibility before production use.
+- **Civic** — grounded in public participation, responsibility, and collective decision-making
+- **Transparent** — open structure, clear hierarchy, no hidden complexity in the interface
+- **Trustworthy** — calm, professional, and credible for international participants
+- **Calm** — low visual noise, generous whitespace, restrained color use
+- **Intelligent** — information is organized and readable before it is decorative
+- **Technology serving humanity** — tools support people; interfaces never dominate content
 
-### Primary Color
+### What to avoid
 
-| Attribute     | Value                                                                                          |
-| ------------- | ---------------------------------------------------------------------------------------------- |
-| Purpose       | Brand identity, primary actions, active navigation, key links, and focal interactive elements. |
-| Suggested HEX | `#1B4F8A`                                                                                      |
+Do not design interfaces that resemble:
 
-### Secondary Color
+- Social media feeds
+- Gaming interfaces
+- Cryptocurrency or trading platforms
+- Commercial dashboards overloaded with widgets
+- Military or surveillance aesthetics
 
-| Attribute     | Value                                                                                                      |
-| ------------- | ---------------------------------------------------------------------------------------------------------- |
-| Purpose       | Supporting actions, secondary navigation, complementary highlights, and non-primary institutional accents. |
-| Suggested HEX | `#2A6F97`                                                                                                  |
+### Core principles
 
-### Accent Color
+- Readability before decoration
+- Color only where meaningful
+- Minimal elevation and no glassmorphism
+- One unified visual language across all pages
+- Accessibility as a baseline, not an afterthought
 
-| Attribute     | Value                                                                                              |
-| ------------- | -------------------------------------------------------------------------------------------------- |
-| Purpose       | Highlights, badges, selected states, and emphasis elements that require distinction without alarm. |
-| Suggested HEX | `#3A9BBF`                                                                                          |
+---
 
-### Success
+## 2. Color System
 
-| Attribute     | Value                                                                                |
-| ------------- | ------------------------------------------------------------------------------------ |
-| Purpose       | Confirmations, approved states, completed processes, and positive feedback messages. |
-| Suggested HEX | `#2E7D4F`                                                                            |
-
-### Warning
-
-| Attribute     | Value                                                                                        |
-| ------------- | -------------------------------------------------------------------------------------------- |
-| Purpose       | Cautionary messages, pending review, thresholds approaching limits, and non-blocking alerts. |
-| Suggested HEX | `#B8860B`                                                                                    |
-
-### Danger
-
-| Attribute     | Value                                                                       |
-| ------------- | --------------------------------------------------------------------------- |
-| Purpose       | Errors, destructive actions, critical alerts, and failed validation states. |
-| Suggested HEX | `#B3261E`                                                                   |
-
-### Background
-
-| Attribute     | Value                                                                         |
-| ------------- | ----------------------------------------------------------------------------- |
-| Purpose       | Default page canvas and outer application shell behind primary content areas. |
-| Suggested HEX | `#F5F7FA`                                                                     |
-
-### Surface
-
-| Attribute     | Value                                                                                  |
-| ------------- | -------------------------------------------------------------------------------------- |
-| Purpose       | Cards, panels, modals, sidebars, and elevated content containers above the background. |
-| Suggested HEX | `#FFFFFF`                                                                              |
-
-### Border
-
-| Attribute     | Value                                                                              |
-| ------------- | ---------------------------------------------------------------------------------- |
-| Purpose       | Dividers, input outlines, card edges, table separators, and structural boundaries. |
-| Suggested HEX | `#D8DEE6`                                                                          |
-
-### Text Primary
-
-| Attribute     | Value                                                      |
-| ------------- | ---------------------------------------------------------- |
-| Purpose       | Headings, body copy, labels, and primary readable content. |
-| Suggested HEX | `#1A1F2E`                                                  |
-
-### Text Secondary
-
-| Attribute     | Value                                                                                  |
-| ------------- | -------------------------------------------------------------------------------------- |
-| Purpose       | Metadata, timestamps, helper text, placeholders, and de-emphasized supporting content. |
-| Suggested HEX | `#5C6578`                                                                              |
-
-## Typography
-
-Typography must remain consistent across publications, governance views, statistics dashboards, and institutional profiles.
-
-### Heading Font
-
-**Inter** (or equivalent humanist sans-serif with strong Latin, Cyrillic, and extended character support).
-
-Used for page titles, section headers, card titles, and navigation labels. Weights: 600 (semibold) for major headings; 500 (medium) for subheadings.
-
-### Body Font
-
-**Inter** (same family as headings for visual unity).
-
-Used for paragraphs, form labels, list items, table content, and general UI text. Weight: 400 (regular) for body; 500 for emphasis within body text.
-
-### Monospace Font
-
-**JetBrains Mono** (or equivalent technical monospace).
-
-Used for codes, identifiers, ACTUC logs, verification references, and inline technical values.
-
-### Heading Hierarchy (H1–H6)
-
-| Level | Usage                          | Size (placeholder) | Weight | Line height |
-| ----- | ------------------------------ | ------------------ | ------ | ----------- |
-| H1    | Page and zone titles           | 32 px              | 600    | 1.25        |
-| H2    | Major section titles           | 26 px              | 600    | 1.3         |
-| H3    | Subsection and panel titles    | 22 px              | 600    | 1.35        |
-| H4    | Card titles and widget headers | 18 px              | 600    | 1.4         |
-| H5    | Compact group labels           | 16 px              | 500    | 1.45        |
-| H6    | Overlines and minor labels     | 14 px              | 500    | 1.5         |
-
-Headings use Text Primary. Avoid skipping levels for semantic structure.
-
-### Paragraph
-
-- Size: 16 px base (15 px minimum on dense admin views only if accessibility is preserved).
-- Line height: 1.6.
-- Maximum readable line length: 72 characters where layout permits.
-- Color: Text Primary for main content; Text Secondary for supporting paragraphs.
-
-### Buttons
-
-- Size: 14 px for standard buttons; 16 px for primary call-to-action buttons.
-- Weight: 500.
-- Letter spacing: normal; avoid uppercase except for compact badge-style controls.
-- Line height: 1.2.
-
-### Captions
-
-- Size: 12 px.
-- Weight: 400.
-- Line height: 1.4.
-- Color: Text Secondary.
-- Usage: timestamps, footnotes, chart labels, legal microcopy, and field hints.
-
-## Spacing System
-
-### 4 px Base Grid
-
-All spacing, padding, margins, and component dimensions align to a **4 px base grid**. Values not divisible by 4 require explicit design approval.
-
-### Spacing Scale
-
-| Token      | Value | Typical use                                       |
-| ---------- | ----- | ------------------------------------------------- |
-| `space-1`  | 4 px  | Tight inline gaps, icon-to-label spacing          |
-| `space-2`  | 8 px  | Compact padding, dense list items                 |
-| `space-3`  | 12 px | Form field internal padding, small component gaps |
-| `space-4`  | 16 px | Standard component padding, paragraph spacing     |
-| `space-5`  | 20 px | Card header/footer padding                        |
-| `space-6`  | 24 px | Section spacing within panels                     |
-| `space-8`  | 32 px | Card padding, modal padding                       |
-| `space-10` | 40 px | Large section separation                          |
-| `space-12` | 48 px | Page section margins                              |
-| `space-16` | 64 px | Major layout breaks, hero spacing                 |
-
-## Border Radius
-
-Corner radii remain subtle to preserve a professional institutional tone.
-
-| Element | Radius | Notes                                                  |
-| ------- | ------ | ------------------------------------------------------ |
-| Cards   | 12 px  | Default for publication cards, panels, and modals      |
-| Buttons | 8 px   | All button variants except icon-only circular controls |
-| Inputs  | 8 px   | Text fields, textareas, dropdowns, and search bars     |
-| Widgets | 10 px  | Statistics, institution, and profile widgets           |
-
-Icon-only buttons may use a fully circular radius (`50%`) when diameter is fixed.
-
-## Shadows
-
-Shadows indicate elevation sparingly. Prefer border and surface contrast before adding shadow depth.
-
-| Level  | Usage                                  | Description (placeholder)                                          |
-| ------ | -------------------------------------- | ------------------------------------------------------------------ |
-| Small  | Inputs on focus, subtle hover on cards | Soft, low-offset shadow for minimal lift                           |
-| Medium | Dropdowns, popovers, floating menus    | Moderate elevation with clear separation from background           |
-| Large  | Modals, drawers, major overlays        | Pronounced elevation reserved for blocking or high-priority layers |
-
-Shadow color should derive from neutral dark tones at low opacity. Avoid colored shadows.
-
-## Icons
-
-Icons follow a **consistent outlined style** at a default **24 px** canvas, with **20 px** for compact UI and **16 px** for inline metadata.
-
-- Stroke weight: 1.5 px equivalent for visual balance at standard sizes.
-- Style: geometric, minimal, monoline; no illustrative or cartoon treatment.
-- Corner treatment: slightly rounded joins to match UI radius language.
-- Color: inherit Text Primary by default; use Primary, Success, Warning, or Danger only for semantic states.
-- Accessibility: decorative icons require no alt text; functional icons require accessible labels.
-- Source: use a single approved icon set across the platform to avoid mixed visual languages.
-
-## Buttons
-
-All buttons meet minimum touch target **44 × 44 px** on mobile. Horizontal padding follows the spacing scale.
+Official colors are defined as CSS custom properties in `apps/web/src/design-system/tokens.css`.
 
 ### Primary
 
-Solid Primary Color background, white text. Used for the single most important action on a screen or dialog.
+| Token                      | Value     | Usage                                                         |
+| -------------------------- | --------- | ------------------------------------------------------------- |
+| `--hu-color-primary`       | `#0174B0` | Brand identity, primary actions, active navigation, key links |
+| `--hu-color-primary-hover` | `#015F92` | Hover and focus states on primary elements                    |
+| `--hu-color-primary-soft`  | `#E8F4FA` | Soft highlight backgrounds, status banners                    |
 
 ### Secondary
 
-Solid Secondary Color background, white text. Used for important but non-dominant actions alongside a primary button.
+| Token                        | Value     | Usage                                             |
+| ---------------------------- | --------- | ------------------------------------------------- |
+| `--hu-color-secondary-cyan`  | `#7EC8E3` | Soft cyan accents                                 |
+| `--hu-color-secondary-blue`  | `#4A9FD4` | Soft blue accents                                 |
+| `--hu-color-secondary-slate` | `#64748B` | Light slate for muted text and secondary elements |
 
-### Outline
+### Background
 
-Transparent or Surface background with Border outline and Primary Color text. Used for alternative actions that must remain visible without competing with primary actions.
+| Token                  | Value     | Usage                                       |
+| ---------------------- | --------- | ------------------------------------------- |
+| `--hu-color-bg`        | `#FFFFFF` | White page surfaces                         |
+| `--hu-color-bg-muted`  | `#F4F7FA` | Very light blue-gray application background |
+| `--hu-color-bg-subtle` | `#EEF3F7` | Subtle panel and notification backgrounds   |
 
-### Danger
+### Cards and surfaces
 
-Solid Danger background, white text. Used only for irreversible or high-risk actions such as deletion or revocation.
+| Token                   | Value     | Usage                           |
+| ----------------------- | --------- | ------------------------------- |
+| `--hu-color-surface`    | `#FFFFFF` | Card and panel backgrounds      |
+| `--hu-color-border`     | `#D6DEE8` | Soft neutral gray-blue borders  |
+| `--hu-color-text`       | `#1A2B3C` | Primary text                    |
+| `--hu-color-text-muted` | `#5F6B7A` | Helper text, metadata, captions |
 
-### Ghost
+Cards use white backgrounds with subtle elevation (`--hu-shadow-sm`). Do not introduce colorful gradients.
 
-Transparent background, Primary or Text Primary label, no border by default. Used for tertiary actions, toolbar controls, and low-emphasis navigation within dense interfaces. Hover state uses a subtle Surface or neutral tint.
+### Status colors (badges)
 
-## Cards
+Workspace status badges use semantic background tints. Border color remains `--hu-color-border` for all variants.
 
-Cards use Surface background, Border or shadow-small elevation, and radius per the Border Radius section.
+| Variant                                   | Background | States                                |
+| ----------------------------------------- | ---------- | ------------------------------------- |
+| Draft / Pending                           | `#FFF7ED`  | Warm neutral — work in progress       |
+| Published / Active                        | `#EFF6FF`  | Soft blue — live or in progress       |
+| Verified / Completed                      | `#ECFDF3`  | Soft green — confirmed or finished    |
+| Archived / Closed / Cancelled / Withdrawn | `#F5F5F5`  | Neutral gray — inactive or historical |
+| Neutral                                   | `#FAFAFA`  | Default fallback                      |
 
-### Default Card
+Status colors are unchanged from the workspace UX module. Do not repurpose badge colors for non-status UI.
 
-General-purpose container for settings blocks, summaries, and grouped content. Padding: `space-8`. Header optional with H4 title and Text Secondary subtitle.
+---
 
-### Publication Card
+## 3. Typography
 
-Displays a publication in WSAZ or CRZ feeds. Includes title, author or institution, zone label, timestamp, excerpt, and optional reaction summary. Supports clear hierarchy between title and metadata. Entire card may be clickable; actions must remain keyboard accessible.
+**Principle: Readability before decoration.**
 
-### Statistics Widget
+The platform uses a system font stack for performance and international readability:
 
-Compact card for metrics and trends. Prominent numeric value, short label, optional delta indicator using Success, Warning, or Danger semantics. Minimize chart decoration; prioritize legible numbers and captions.
+```
+system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif
+```
 
-### Institution Widget
+### Heading hierarchy
 
-Summarizes an institution profile: name, verification badge, type, region, and key statistics. Emphasizes trust signals and verification level without visual clutter.
+| Class / Level        | Token size                     | Usage                          |
+| -------------------- | ------------------------------ | ------------------------------ |
+| `.hu-heading-1` / H1 | `--hu-font-size-2xl` (1.75rem) | Page titles, workspace headers |
+| `.hu-heading-2` / H2 | `--hu-font-size-xl` (1.375rem) | Major section titles           |
+| `.hu-heading-3` / H3 | `--hu-font-size-lg` (1.125rem) | Subsection and card titles     |
 
-### Profile Widget
+Headings use `--hu-line-height-tight` (1.35). Do not skip heading levels for semantic structure.
 
-Displays user identity: avatar placeholder, display name, verification level, Social Activity Score indicator, and role badges where applicable. Metadata uses Text Secondary; identity uses Text Primary.
+### Body text
 
-## Forms
+| Class         | Token                                         | Usage                                            |
+| ------------- | --------------------------------------------- | ------------------------------------------------ |
+| `.hu-body`    | `--hu-font-size-base` (1rem), line-height 1.6 | Paragraphs, labels, general content              |
+| `.hu-body-sm` | `--hu-font-size-sm` (0.875rem)                | Compact body text                                |
+| `.hu-prose`   | max-width 70ch                                | Long civic documents and readable content blocks |
 
-Forms must be predictable, accessible, and consistent across registration, verification, proposals, petitions, and administration.
+Body text uses `--hu-color-text`. Supporting paragraphs use `--hu-color-text-muted`.
 
-### Input
+### Helper text
 
-Single-line text fields with 8 px radius, Border outline, Surface background. Height minimum 44 px. Focus state uses Primary Color border and small shadow. Label above field; helper text below in caption style.
+Helper text, purpose notes, and assistant safety notices use:
 
-### Textarea
+- Class: `.hu-helper-text` (or `.workspace-helper-note`, `.workspace-purpose`)
+- Size: `--hu-font-size-sm`
+- Color: `--hu-color-text-muted`
 
-Multi-line input with same border and focus behavior as Input. Minimum height 120 px; vertical resize allowed unless layout constraints require fixed height.
+### Badges
 
-### Dropdown
+- Size: ~0.78rem, weight 600, capitalize
+- Shape: pill (`--hu-radius-pill`)
+- Border: `--hu-color-border`
+- Background: semantic status tint (see Status colors)
 
-Select control matching Input height and radius. Chevron indicator on the trailing edge. Options presented in a medium-shadow menu with clear hover and selected states.
+### Timeline text
 
-### Checkbox
+Timeline items use consistent hierarchy within `.workspace-timeline__item`:
 
-Square control with 4 px internal padding to touch target requirements. Checked state uses Primary Color fill. Label clickable and associated via accessible naming.
+- **Date** — muted, small
+- **Title** — primary weight
+- **Meta / body** — muted helper style
+- **Links** — primary color via `PublicLink`
 
-### Radio
+---
 
-Circular control for mutually exclusive choices within a set. Selected state uses Primary Color. Group labels required for screen reader context.
+## 4. Layout
 
-### Validation
+### Global page shell
 
-- Inline errors appear below the field in Danger color with caption size.
-- Success confirmation uses Success color sparingly, typically after submission rather than per keystroke.
-- Invalid fields use Danger border; do not rely on color alone—include text explanation and icon where appropriate.
-- Required fields marked with text or aria-required, not color alone.
+Every page follows the official Humanity layout:
 
-## Animations
+```
+Sticky Header
+    ↓
+Page Layout (main content)
+    ↓
+Footer
+```
 
-Animation supports comprehension and feedback; it must never obstruct access or create distraction.
+Implemented by `HumanityLayout` in the root application layout. The header remains visible on all pages — workspace, public pages, country pages, region pages, community pages, and archive pages. There must be no duplicate headers.
 
-- **Purpose** — Indicate state change, confirm action, or guide attention. Avoid decorative motion.
-- **Duration** — Micro-interactions: 120–180 ms. Panel and modal transitions: 200–280 ms. No animation exceeds 400 ms except loading indicators.
-- **Easing** — Use ease-out for entrances and ease-in for exits; prefer standard curves across the platform.
-- **Restraint** — Limit concurrent motion. One primary animated element per viewport region.
-- **Accessibility** — Honor `prefers-reduced-motion`: replace transitions with instant state changes or opacity-only fades.
-- **Loading** — Use neutral progress indicators; avoid playful loaders in institutional and governance contexts.
+Header height token: `--hu-header-height` (4.5rem).
 
-## Responsive Breakpoints
+### Workspace layout
 
-Layouts are responsive-first: design for mobile constraints first, then expand capability at larger breakpoints.
+The initiative workspace follows a three-column structure below the global header:
 
-| Name       | Range             | Intent                                                                                                        |
-| ---------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
-| Mobile     | 0 – 639 px        | Single-column layouts, stacked navigation, full-width cards, bottom-aligned primary actions where appropriate |
-| Tablet     | 640 – 1023 px     | Two-column grids where useful, collapsible side navigation, increased horizontal padding                      |
-| Laptop     | 1024 – 1279 px    | Standard multi-column dashboards, persistent side navigation, publication feeds with sidebar                  |
-| Desktop    | 1280 – 1535 px    | Full institutional layouts, multi-panel governance views, wider statistics grids                              |
-| Ultra-wide | 1536 px and above | Constrain max content width to preserve readability; use outer margins rather than stretching text lines      |
+```
+Global Header (sticky)
+    ↓
+Left sticky Workspace Navigation
+    ↓
+Center working area
+    ↓
+Right sticky Civic Assistant
+```
 
-Touch targets, typography, and spacing tokens remain consistent across breakpoints; layout columns and navigation patterns adapt.
+- Navigation and assistant begin **below** the header — no overlapping
+- Left nav tracks the current workspace section
+- Center area holds pipeline sections via `WorkspaceSectionShell`
+- Right assistant follows the workspace context
+
+Max workspace width: `--hu-workspace-max-width` (75rem).
+
+---
+
+## 5. Spacing
+
+Official spacing uses a consistent scale defined in `tokens.css`:
+
+| Token           | Value          | Typical use                                       |
+| --------------- | -------------- | ------------------------------------------------- |
+| `--hu-space-1`  | 0.25rem (4px)  | Tight inline gaps                                 |
+| `--hu-space-2`  | 0.5rem (8px)   | Compact padding, nav link gaps                    |
+| `--hu-space-3`  | 0.75rem (12px) | Button padding, small component gaps              |
+| `--hu-space-4`  | 1rem (16px)    | Standard component padding, section header margin |
+| `--hu-space-5`  | 1.25rem (20px) | Card padding                                      |
+| `--hu-space-6`  | 1.5rem (24px)  | Grid gaps, section spacing                        |
+| `--hu-space-8`  | 2rem (32px)    | Workspace shell gap, page padding                 |
+| `--hu-space-10` | 2.5rem (40px)  | Large section separation                          |
+| `--hu-space-12` | 3rem (48px)    | Major layout breaks                               |
+
+### Consistent spacing rules
+
+| Context        | Spacing                                                 |
+| -------------- | ------------------------------------------------------- |
+| **Sections**   | `--hu-space-6` to `--hu-space-8` between major blocks   |
+| **Cards**      | `--hu-space-4` to `--hu-space-5` internal padding       |
+| **Buttons**    | `--hu-space-2` vertical, `--hu-space-4` horizontal      |
+| **Timelines**  | `--hu-space-3` between items                            |
+| **Paragraphs** | `--hu-space-3` to `--hu-space-4` between related blocks |
+
+Avoid random margins. Use tokens, not arbitrary pixel values.
+
+### Border radius
+
+| Token              | Value | Elements                         |
+| ------------------ | ----- | -------------------------------- |
+| `--hu-radius-sm`   | 6px   | Buttons, pipeline stages         |
+| `--hu-radius-md`   | 8px   | Cards, inputs, panels, assistant |
+| `--hu-radius-lg`   | 12px  | Large containers                 |
+| `--hu-radius-pill` | 999px | Badges                           |
+
+### Shadows
+
+| Token            | Usage                      |
+| ---------------- | -------------------------- |
+| `--hu-shadow-sm` | Cards, subtle elevation    |
+| `--hu-shadow-md` | Dropdowns, elevated panels |
+
+Shadows are minimal and neutral. No floating-glass effects.
+
+---
+
+## 6. Shared Components
+
+Official components are exported from `apps/web/src/design-system/`. Every future page must use these components.
+
+| Component                 | Purpose                                                                                                                       |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Button**                | Primary and secondary actions. Variants: `primary`, `secondary`.                                                              |
+| **Card**                  | General-purpose content container with standard padding and elevation.                                                        |
+| **MetricCard**            | Compact metric display (label + value) for workspace summaries.                                                               |
+| **ProfileCard**           | Profile-oriented card with titled header.                                                                                     |
+| **Badge**                 | Status indicator with semantic color variant.                                                                                 |
+| **SectionHeader**         | Section title with optional description.                                                                                      |
+| **WorkspaceSectionShell** | Standard workspace section wrapper: purpose, metrics, loading, error, content, actions, links, empty state, deferred actions. |
+| **PublicLink**            | Standardized public page link with arrow suffix (`→`).                                                                        |
+| **TimelineItem**          | Single entry in a workspace timeline.                                                                                         |
+| **EmptyState**            | Standardized empty state: title, explanation, next step.                                                                      |
+| **LoadingState**          | Accessible loading indicator with `role="status"`.                                                                            |
+| **ErrorState**            | Standardized error message display.                                                                                           |
+| **StatusBanner**          | Informational banner with left accent border.                                                                                 |
+| **HelperText**            | Muted supporting text below content or fields.                                                                                |
+| **PipelineStage**         | Compact pipeline stage label.                                                                                                 |
+| **ContextPanel**          | Side context panel with titled header.                                                                                        |
+| **NotificationCard**      | Notification-style card on subtle background.                                                                                 |
+| **ApiUnavailableState**   | Participant-friendly unavailable state with retry and back actions.                                                           |
+
+Workspace-specific components (`WorkspaceSectionShell`, `Badge`, `PublicLink`, etc.) live in `initiative-workspace-ux` and are re-exported through the design system index for a single import surface.
+
+---
+
+## 7. Workspace
+
+The workspace is the primary participation environment. All workspace sections must feel like part of one system.
+
+### Principles
+
+- **One visual language** — same cards, typography, badges, spacing, and empty states across every pipeline section
+- **Sticky navigation** — left sidebar tracks current section, stays visible below the global header
+- **Sticky assistant** — right Civic Assistant follows workspace context below the global header
+- **Assistant is advisory only** — see Section 11
+- **Consistent empty states** — every section uses `EmptyState` with title, explanation, and next step
+- **Consistent deferred actions** — disabled buttons use standard opacity (0.55) and standard tooltip text
+
+### Section structure
+
+Every workspace section uses `WorkspaceSectionShell` with:
+
+1. Purpose text
+2. Metrics row (optional)
+3. Loading / error states
+4. Content or empty state
+5. Actions and public links
+6. Deferred actions (when applicable)
+
+Equal padding, headers, footers, actions, metrics, and empty states across all sections.
+
+---
+
+## 8. Accessibility
+
+Accessibility is a baseline requirement, not optional polish.
+
+| Requirement             | Implementation                                                                                                             |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Focus order**         | Logical tab order matching visual layout; sticky elements do not trap focus                                                |
+| **Keyboard navigation** | All interactive elements reachable and operable via keyboard                                                               |
+| **Contrast**            | Text and interactive elements meet readable contrast against backgrounds                                                   |
+| **ARIA**                | Navigation landmarks, `aria-current="page"`, `role="status"` on loading states, `role="alert"` on error/unavailable states |
+| **Heading hierarchy**   | No skipped levels; section titles use appropriate heading level                                                            |
+| **Focus visible**       | `--hu-focus-ring` (2px solid primary) with `--hu-focus-offset` (2px) on all interactive elements                           |
+
+Public pages preserve skip links (`Skip to main content`) and `id="main-content"` landmarks.
+
+Honor `prefers-reduced-motion` for any future motion additions.
+
+---
+
+## 9. Responsive Layout
+
+| Breakpoint            | Layout                                                                                 |
+| --------------------- | -------------------------------------------------------------------------------------- |
+| **Desktop** (>1024px) | Global header + left sticky nav + center content + right sticky assistant              |
+| **Tablet** (≤1024px)  | Initiative layout stacks to single column; assistant moves below content               |
+| **Mobile** (≤768px)   | Header + content; workspace nav hidden; drawer navigation and drawer assistant planned |
+
+### Assistant behavior
+
+- **Desktop** — sticky right sidebar below header
+- **Tablet** — below main content (collapsible toggle)
+- **Mobile** — drawer pattern (planned; toggle button present)
+
+Assistant sticky offset accounts for `--hu-header-height` so it never overlaps the global header.
+
+---
+
+## 10. Visual Principles
+
+### Use
+
+- Minimal layout with clear hierarchy
+- Calm, professional tone
+- International neutrality in color and typography
+- Subtle elevation and soft borders
+- Color only where it communicates meaning
+
+### Do not use
+
+- Heavy gradients
+- Glassmorphism or frosted-glass effects
+- Gaming UI patterns (XP bars, achievement badges, neon accents)
+- Cryptocurrency aesthetics (dark trading themes, coin icons, price tickers)
+- Excessive animations or motion for decoration
+- Widget-heavy dashboard layouts
+
+---
+
+## 11. Assistant
+
+The Civic Assistant is a **workspace guide**, not an autonomous agent.
+
+### What the assistant does
+
+- Explains the current workspace section
+- Suggests next steps based on context
+- Shows confidence level and safety notices
+- Uses the same design system components as the rest of the workspace
+
+### What the assistant never does
+
+The assistant **never**:
+
+- Publishes content
+- Casts votes
+- Verifies records
+- Sends messages or notifications
+- Archives records
+
+The assistant **only suggests**. All consequential actions remain with the participant through explicit workspace controls.
+
+---
+
+## 12. Future Evolution
+
+The following areas are reserved for future design system expansion. Do not implement without updating this document.
+
+| Area                      | Status                                                       |
+| ------------------------- | ------------------------------------------------------------ |
+| **Component library**     | Foundation established; expand with Storybook or equivalent  |
+| **Motion guidelines**     | Reserved — define duration, easing, and reduced-motion rules |
+| **Icon library**          | Reserved — single approved set with consistent sizing        |
+| **Dark theme**            | Reserved — token structure supports future theme switching   |
+| **Illustration language** | Reserved — civic-tech atmosphere without literal copying     |
+
+When adding new capabilities, extend this document and the design system tokens before introducing new visual patterns.
+
+---
+
+## Implementation reference
+
+| Resource            | Location                                                   |
+| ------------------- | ---------------------------------------------------------- |
+| Design tokens       | `apps/web/src/design-system/tokens.css`                    |
+| Layout styles       | `apps/web/src/design-system/layout.css`                    |
+| Component styles    | `apps/web/src/design-system/components.css`                |
+| Typography          | `apps/web/src/design-system/typography.css`                |
+| Component exports   | `apps/web/src/design-system/index.ts`                      |
+| Global layout       | `apps/web/src/design-system/components/HumanityLayout.tsx` |
+| Workspace UX module | `apps/web/src/features/initiative-workspace-ux/`           |
+| Verification        | `npm run verify:design-system`                             |
 
 This Design System is mandatory for every Humanity Union interface.

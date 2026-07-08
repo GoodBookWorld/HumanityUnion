@@ -1,6 +1,7 @@
 import type { InitiativePersistenceAdapter } from "./initiative-persistence.types.js";
 import { createFileInitiativePersistenceAdapter } from "./initiative-file.persistence.js";
 import { createMemoryInitiativePersistenceAdapter } from "./initiative-memory.persistence.js";
+import { createMongoInitiativePersistenceAdapter } from "./initiative-mongo.persistence.js";
 
 /**
  * Selects initiative persistence for Capability 02 operational storage.
@@ -12,6 +13,8 @@ export function resolveInitiativePersistenceAdapter(): InitiativePersistenceAdap
   switch (mode) {
     case "memory":
       return createMemoryInitiativePersistenceAdapter();
+    case "mongodb":
+      return createMongoInitiativePersistenceAdapter();
     case "file":
     default:
       return createFileInitiativePersistenceAdapter();

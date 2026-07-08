@@ -44,7 +44,7 @@ function persistState(): void {
   );
 }
 
-export function getPersistenceMode(): "file" | "memory" {
+export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
 }
 

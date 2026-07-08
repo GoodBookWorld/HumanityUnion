@@ -9,7 +9,7 @@ export interface OfficialResponsePersistenceSnapshot {
 }
 
 export interface OfficialResponsePersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): OfficialResponsePersistenceSnapshot;
   save(snapshot: OfficialResponsePersistenceSnapshot): void;
 }

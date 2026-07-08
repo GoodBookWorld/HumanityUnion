@@ -130,6 +130,6 @@ export function updateArchiveRecord(
   return structuredClone(record);
 }
 
-export function getPersistenceMode(): "file" | "memory" {
+export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
 }

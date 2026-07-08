@@ -7,7 +7,7 @@ export interface InitiativePublicImpactPersistenceSnapshot {
 }
 
 export interface InitiativePublicImpactPersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): InitiativePublicImpactPersistenceSnapshot;
   save(snapshot: InitiativePublicImpactPersistenceSnapshot): void;
 }

@@ -151,6 +151,6 @@ export function updateCommitment(
   return structuredClone(commitment);
 }
 
-export function getPersistenceMode(): "file" | "memory" {
+export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
 }

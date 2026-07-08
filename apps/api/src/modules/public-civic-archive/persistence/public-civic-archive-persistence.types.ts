@@ -6,7 +6,7 @@ export interface PublicCivicArchivePersistenceSnapshot {
 }
 
 export interface PublicCivicArchivePersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): PublicCivicArchivePersistenceSnapshot;
   save(snapshot: PublicCivicArchivePersistenceSnapshot): void;
 }

@@ -181,6 +181,6 @@ export function getEvidenceById(evidenceId: string): PublicImpactEvidence | null
   return item ? structuredClone(item) : null;
 }
 
-export function getPersistenceMode(): "file" | "memory" {
+export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
 }

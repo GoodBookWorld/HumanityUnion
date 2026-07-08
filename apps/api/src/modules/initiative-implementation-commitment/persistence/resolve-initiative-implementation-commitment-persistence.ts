@@ -1,6 +1,7 @@
 import type { InitiativeImplementationCommitmentPersistenceAdapter } from "./initiative-implementation-commitment-persistence.types.js";
 import { createFileInitiativeImplementationCommitmentPersistenceAdapter } from "./initiative-implementation-commitment-file.persistence.js";
 import { createMemoryInitiativeImplementationCommitmentPersistenceAdapter } from "./initiative-implementation-commitment-memory.persistence.js";
+import { createMongoInitiativeImplementationCommitmentPersistenceAdapter } from "./initiative-implementation-commitment-mongo.persistence.js";
 
 export function resolveInitiativeImplementationCommitmentPersistenceAdapter(): InitiativeImplementationCommitmentPersistenceAdapter {
   const mode = process.env.INITIATIVE_IMPLEMENTATION_COMMITMENT_PERSISTENCE ?? "file";
@@ -8,6 +9,8 @@ export function resolveInitiativeImplementationCommitmentPersistenceAdapter(): I
   switch (mode) {
     case "memory":
       return createMemoryInitiativeImplementationCommitmentPersistenceAdapter();
+    case "mongodb":
+      return createMongoInitiativeImplementationCommitmentPersistenceAdapter();
     case "file":
     default:
       return createFileInitiativeImplementationCommitmentPersistenceAdapter();

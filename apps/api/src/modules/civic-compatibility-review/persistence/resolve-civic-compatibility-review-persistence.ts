@@ -1,6 +1,7 @@
 import type { CivicCompatibilityReviewPersistenceAdapter } from "./civic-compatibility-review-persistence.types.js";
 import { createFileCivicCompatibilityReviewPersistenceAdapter } from "./civic-compatibility-review-file.persistence.js";
 import { createMemoryCivicCompatibilityReviewPersistenceAdapter } from "./civic-compatibility-review-memory.persistence.js";
+import { createMongoCivicCompatibilityReviewPersistenceAdapter } from "./civic-compatibility-review-mongo.persistence.js";
 
 export function resolveCivicCompatibilityReviewPersistenceAdapter(): CivicCompatibilityReviewPersistenceAdapter {
   const mode = process.env.CIVIC_COMPATIBILITY_REVIEW_PERSISTENCE ?? "file";
@@ -8,6 +9,8 @@ export function resolveCivicCompatibilityReviewPersistenceAdapter(): CivicCompat
   switch (mode) {
     case "memory":
       return createMemoryCivicCompatibilityReviewPersistenceAdapter();
+    case "mongodb":
+      return createMongoCivicCompatibilityReviewPersistenceAdapter();
     case "file":
     default:
       return createFileCivicCompatibilityReviewPersistenceAdapter();

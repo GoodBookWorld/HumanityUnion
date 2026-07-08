@@ -190,6 +190,6 @@ export function getUpdateById(updateId: string): ImplementationTrackingUpdate | 
   return update ? structuredClone(update) : null;
 }
 
-export function getPersistenceMode(): "file" | "memory" {
+export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
 }

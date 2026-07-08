@@ -37,6 +37,22 @@ const PRIVATE_FIELD_KEYS = [
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 
+const EXPECTED_PIPELINE_STAGE_IDS = [
+  "initiative",
+  "analysis",
+  "proposal",
+  "revision",
+  "decision_session",
+  "collective_decision",
+  "civic_action_package",
+  "official_response",
+  "civic_accountability",
+  "commitment",
+  "tracking",
+  "public_impact",
+  "archive",
+] as const;
+
 function assert(condition: boolean, message: string): void {
   if (!condition) {
     throw new Error(message);
@@ -87,6 +103,7 @@ async function buildPipelineContext(): Promise<{
   analysisId: string;
   proposalId: string;
   sessionId: string;
+  capId: string;
 }> {
   const { createInitiativeDraft, publishInitiative } =
     await import("../modules/initiatives/initiative.service.js");
@@ -126,6 +143,16 @@ async function buildPipelineContext(): Promise<{
     publishInitiativePublicImpact,
     verifyInitiativePublicImpact,
   } = await import("../modules/initiative-public-impact/initiative-public-impact.service.js");
+  const { getCivicActionPackageForDecision } =
+    await import("../modules/civic-action-package/civic-action-package.service.js");
+  const {
+    addCivicDeliveryRecipient,
+    createCivicDeliveryDraft,
+    listRecommendedCivicDeliveryRecipients,
+    sendCivicDelivery,
+  } = await import("../modules/civic-delivery/civic-delivery.service.js");
+  const { createOfficialResponseDraft, publishOfficialResponse } =
+    await import("../modules/official-response/official-response.service.js");
 
   const draft = createInitiativeDraft(steward, {
     title: "Integration Layer Initiative",
@@ -200,6 +227,49 @@ async function buildPipelineContext(): Promise<{
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
   closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
+  const capPackage = getCivicActionPackageForDecision(decisionDraft.decisionId);
+
+  if (!capPackage) {
+    throw new Error("Civic Action Package was not generated.");
+  }
+
+  const deliveryDraft = createCivicDeliveryDraft(steward, { capId: capPackage.capId });
+  const recommendations = listRecommendedCivicDeliveryRecipients(capPackage.capId);
+  const recommended = recommendations[0];
+
+  if (!recommended) {
+    throw new Error("Recommendation missing");
+  }
+
+  addCivicDeliveryRecipient(steward, deliveryDraft.deliveryId, {
+    name: recommended.name,
+    organization: recommended.organization,
+    recipientType: recommended.recipientType,
+    email: recommended.email,
+    reason: recommended.reason,
+    source: "recommended",
+  });
+
+  const sent = await sendCivicDelivery(steward, deliveryDraft.deliveryId);
+  const recipient = sent.recipients[0];
+
+  if (!recipient) {
+    throw new Error("Recipient missing after delivery");
+  }
+
+  const responseDraft = createOfficialResponseDraft(steward, {
+    capId: capPackage.capId,
+    deliveryId: sent.delivery.deliveryId,
+    recipientId: recipient.recipientId,
+    organizationName: "City of Nelson",
+    receivedAt: new Date().toISOString(),
+    subject: "Official reply",
+    summary: "Institution response summary.",
+    responseReference: "REF-2026-INT",
+    responseType: "official_letter",
+  });
+  publishOfficialResponse(steward, responseDraft.responseId);
+
   const commitmentDraft = createInitiativeImplementationCommitmentDraft(author, {
     initiativeId: projected.initiativeId,
     decisionId: decisionDraft.decisionId,
@@ -251,6 +321,7 @@ async function buildPipelineContext(): Promise<{
     analysisId: analysis.analysisId,
     proposalId: decidedProposal.proposalId,
     sessionId: sessionDraft.sessionId,
+    capId: capPackage.capId,
   };
 }
 
@@ -294,7 +365,26 @@ async function runVerification(): Promise<void> {
 
   console.log("3. Pipeline widget");
   const pipeline = buildPipelineStatus(context.initiativeId);
-  assert(pipeline.stages.length === 11, "Pipeline includes all civic stages");
+  assert(
+    pipeline.stages.length === EXPECTED_PIPELINE_STAGE_IDS.length,
+    "Pipeline includes all civic stages",
+  );
+  assert(
+    pipeline.stages.map((stage) => stage.id).join(",") === EXPECTED_PIPELINE_STAGE_IDS.join(","),
+    "Pipeline stage order matches integration contract",
+  );
+  assert(
+    pipeline.stages.find((stage) => stage.id === "civic_action_package")?.complete === true,
+    "Pipeline civic_action_package stage complete",
+  );
+  assert(
+    pipeline.stages.find((stage) => stage.id === "official_response")?.complete === true,
+    "Pipeline official_response stage complete",
+  );
+  assert(
+    pipeline.stages.find((stage) => stage.id === "civic_accountability")?.complete === true,
+    "Pipeline civic_accountability stage complete",
+  );
   assert(
     pipeline.stages.filter((stage) => stage.id !== "archive").every((stage) => stage.complete),
     "Pipeline complete through public impact before archive",

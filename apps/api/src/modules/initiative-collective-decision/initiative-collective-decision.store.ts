@@ -113,6 +113,6 @@ export function updateDecision(
   return structuredClone(decision);
 }
 
-export function getPersistenceMode(): "file" | "memory" {
+export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
 }

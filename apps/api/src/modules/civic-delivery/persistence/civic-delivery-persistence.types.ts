@@ -7,7 +7,7 @@ export interface CivicDeliveryPersistenceSnapshot {
 }
 
 export interface CivicDeliveryPersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): CivicDeliveryPersistenceSnapshot;
   save(snapshot: CivicDeliveryPersistenceSnapshot): void;
 }

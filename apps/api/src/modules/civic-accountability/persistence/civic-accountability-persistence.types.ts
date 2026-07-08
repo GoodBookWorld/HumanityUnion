@@ -7,7 +7,7 @@ export interface CivicAccountabilityPersistenceSnapshot {
 }
 
 export interface CivicAccountabilityPersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): CivicAccountabilityPersistenceSnapshot;
   save(snapshot: CivicAccountabilityPersistenceSnapshot): void;
 }

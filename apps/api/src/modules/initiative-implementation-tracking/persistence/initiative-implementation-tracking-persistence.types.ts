@@ -7,7 +7,7 @@ export interface InitiativeImplementationTrackingPersistenceSnapshot {
 }
 
 export interface InitiativeImplementationTrackingPersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): InitiativeImplementationTrackingPersistenceSnapshot;
   save(snapshot: InitiativeImplementationTrackingPersistenceSnapshot): void;
 }

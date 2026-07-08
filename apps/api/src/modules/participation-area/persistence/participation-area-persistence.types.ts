@@ -7,7 +7,7 @@ export interface ParticipationAreaPersistenceSnapshot {
 }
 
 export interface ParticipationAreaPersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): ParticipationAreaPersistenceSnapshot;
   save(snapshot: ParticipationAreaPersistenceSnapshot): void;
 }

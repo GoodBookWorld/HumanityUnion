@@ -108,6 +108,6 @@ export function countActiveVotesForDecision(decisionId: string): number {
   return listVotesForDecision(decisionId).length;
 }
 
-export function getPersistenceMode(): "file" | "memory" {
+export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
 }

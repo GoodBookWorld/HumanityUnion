@@ -6,7 +6,7 @@ export interface CivicActionPackagePersistenceSnapshot {
 }
 
 export interface CivicActionPackagePersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): CivicActionPackagePersistenceSnapshot;
   save(snapshot: CivicActionPackagePersistenceSnapshot): void;
 }

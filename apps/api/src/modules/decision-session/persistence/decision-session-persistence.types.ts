@@ -6,7 +6,7 @@ export interface DecisionSessionPersistenceSnapshot {
 }
 
 export interface DecisionSessionPersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): DecisionSessionPersistenceSnapshot;
   save(snapshot: DecisionSessionPersistenceSnapshot): void;
 }

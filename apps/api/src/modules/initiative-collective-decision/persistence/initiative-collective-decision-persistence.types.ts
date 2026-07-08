@@ -6,7 +6,7 @@ export interface InitiativeCollectiveDecisionPersistenceSnapshot {
 }
 
 export interface InitiativeCollectiveDecisionPersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): InitiativeCollectiveDecisionPersistenceSnapshot;
   save(snapshot: InitiativeCollectiveDecisionPersistenceSnapshot): void;
 }

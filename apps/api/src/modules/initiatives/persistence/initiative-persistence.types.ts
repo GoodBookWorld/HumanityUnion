@@ -6,7 +6,7 @@ export interface InitiativePersistenceSnapshot {
 }
 
 export interface InitiativePersistenceAdapter {
-  readonly mode: "file" | "memory";
+  readonly mode: "file" | "memory" | "mongodb";
   load(): InitiativePersistenceSnapshot;
   save(snapshot: InitiativePersistenceSnapshot): void;
 }
