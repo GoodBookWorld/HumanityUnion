@@ -1,0 +1,101 @@
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.hu-skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hu-skip-link:focus-visible {
+  position: fixed;
+  top: var(--hu-space-4);
+  left: var(--hu-space-4);
+  z-index: 200;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: var(--hu-space-2) var(--hu-space-4);
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  border-radius: var(--hu-radius-sm);
+  background: var(--hu-color-text);
+  color: var(--hu-color-bg);
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--hu-shadow-md);
+}
+
+.hu-sticky-below-header {
+  position: sticky;
+  top: var(--hu-sticky-top);
+  align-self: start;
+  max-height: var(--hu-sticky-max-height);
+  overflow: auto;
+}
+
+.workspace-unavailable-center {
+  display: flex;
+  min-height: 24rem;
+  align-items: center;
+  justify-content: center;
+  padding: var(--hu-space-8) var(--hu-space-4);
+}
+
+.initiative-workspace-layout__content--unavailable {
+  min-height: 24rem;
+}
+
+@media (min-width: 769px) {
+  .member-workspace__nav {
+    position: sticky;
+    top: var(--hu-sticky-top);
+    align-self: start;
+    max-height: var(--hu-sticky-max-height);
+    overflow: auto;
+  }
+}
+
+@media (min-width: 1025px) {
+  .workspace-civic-assistant {
+    position: sticky;
+    top: var(--hu-sticky-top);
+    align-self: start;
+    max-height: var(--hu-sticky-max-height);
+  }
+
+  .workspace-civic-assistant__sticky {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 768px) {
+  .member-workspace__nav {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .workspace-civic-assistant {
+    position: static;
+    max-height: none;
+  }
+}

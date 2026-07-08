@@ -26,12 +26,9 @@ export function CountryExperiencePage({ projections }: CountryExperiencePageProp
 
   return (
     <div className="country-experience-page">
-      <a href="#main-content" className="country-experience-page__skip-link">
-        Skip to main content
-      </a>
       <CountryGeographicNavigator identity={identity} />
 
-      <main className="country-experience-page__main" id="main-content">
+      <main className="country-experience-page__main">
         <div className="country-experience-page__content">
           <CountryIdentitySection identity={identity} />
           <NationalInteractiveMapSection />

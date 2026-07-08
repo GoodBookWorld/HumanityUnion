@@ -1,34 +1,40 @@
 .workspace-navigation {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e5e5e5;
+  margin-bottom: var(--hu-space-6);
+  padding-bottom: var(--hu-space-4);
+  border-bottom: 1px solid var(--hu-color-border);
 }
 
 .workspace-navigation__label {
-  font-size: 0.75rem;
+  font-size: var(--hu-font-size-sm);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #737373;
-  margin-bottom: 0.75rem;
+  color: var(--hu-color-text-muted);
+  margin-bottom: var(--hu-space-3);
 }
 
 .workspace-navigation__list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--hu-space-2);
 }
 
 .workspace-navigation__link {
-  color: #1a1a1a;
-  font-size: 0.95rem;
+  color: var(--hu-color-text);
+  font-size: var(--hu-font-size-sm);
   text-decoration: none;
+  border-radius: var(--hu-radius-sm);
+  padding: var(--hu-space-1) var(--hu-space-2);
 }
 
-.workspace-navigation__link:hover {
-  color: #525252;
+.workspace-navigation__link:hover,
+.workspace-navigation__link:focus-visible {
+  color: var(--hu-color-primary);
+  background: var(--hu-color-primary-soft);
 }
 
 .workspace-navigation__link--active {
+  color: var(--hu-color-primary);
   font-weight: 600;
+  background: var(--hu-color-primary-soft);
 }

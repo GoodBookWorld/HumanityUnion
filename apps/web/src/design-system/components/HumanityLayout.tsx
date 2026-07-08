@@ -10,8 +10,13 @@ interface HumanityLayoutProps {
 export function HumanityLayout({ children }: HumanityLayoutProps) {
   return (
     <div className="humanity-layout">
+      <a href="#main-content" className="hu-skip-link">
+        Skip to main content
+      </a>
       <HumanityHeader />
-      <div className="humanity-layout__main">{children}</div>
+      <div className="humanity-layout__main" id="main-content">
+        {children}
+      </div>
       <HumanityFooter />
     </div>
   );

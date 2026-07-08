@@ -16,12 +16,9 @@ export async function GlobalExperiencePage() {
 
   return (
     <div className="global-experience-page">
-      <a href="#main-content" className="global-experience-page__skip-link">
-        Skip to main content
-      </a>
       <GeographicNavigator />
 
-      <main className="global-experience-page__main" id="main-content">
+      <main className="global-experience-page__main">
         <div className="global-experience-page__content">
           <CivicIntroductionSection />
           <InteractiveWorldMapSection />

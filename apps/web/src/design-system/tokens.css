@@ -26,6 +26,9 @@
   --hu-header-height: 4.5rem;
   --hu-content-max-width: 72rem;
   --hu-workspace-max-width: 75rem;
+  --hu-sticky-top: calc(var(--hu-header-height) + var(--hu-space-4));
+  --hu-sticky-max-height: calc(100vh - var(--hu-header-height) - var(--hu-space-8));
+  --hu-scroll-margin-top: var(--hu-sticky-top);
 
   /* Spacing scale */
   --hu-space-1: 0.25rem;

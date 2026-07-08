@@ -1,7 +1,7 @@
 import { ProfileField } from "../../components/member/ProfileField";
 import { ProfileSection } from "../../components/member/ProfileSection";
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
-import { ApiUnavailableState } from "../../design-system";
+import { WorkspaceUnavailableContent } from "../../components/member/WorkspaceUnavailableContent";
 import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
 import { getCurrentPreferences } from "../../features/preferences/preferences-api";
 
@@ -29,12 +29,18 @@ export default async function PreferencesPage() {
   if (!preferences) {
     return (
       <main className="preferences-page humanity-workspace-page">
-        <ApiUnavailableState
-          title="Preferences workspace is temporarily unavailable"
-          explanation="We could not load your preferences right now. Your saved settings are safe, but this workspace cannot be shown until the connection is restored."
-          possibleReason="The preferences service may be starting up, undergoing maintenance, or temporarily unreachable."
-          retryHref="/preferences"
-        />
+        <MemberWorkspace
+          title="Preferences"
+          subtitle="Your Humanity Union experience preferences"
+          navItems={NAV_ITEMS}
+          workspaceNavigation={<WorkspaceNavigation current="Preferences" />}
+        >
+          <WorkspaceUnavailableContent
+            title="Workspace temporarily unavailable"
+            explanation="We couldn't connect to the Preferences service. Please try again shortly."
+            retryHref="/preferences"
+          />
+        </MemberWorkspace>
       </main>
     );
   }

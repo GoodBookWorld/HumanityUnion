@@ -1,19 +1,21 @@
 .profile-section {
-  background: #ffffff;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
+  background: var(--hu-color-surface);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  box-shadow: var(--hu-shadow-sm);
+  padding: var(--hu-space-5);
+  margin-bottom: var(--hu-space-4);
 }
 
 .profile-section__title {
-  font-size: 1.125rem;
+  font-size: var(--hu-font-size-lg);
   font-weight: 600;
-  margin-bottom: 1rem;
-  color: #1a1a1a;
+  margin-bottom: var(--hu-space-4);
+  color: var(--hu-color-text);
+  scroll-margin-top: var(--hu-scroll-margin-top);
 }
 
 .profile-section__placeholder {
-  color: #737373;
+  color: var(--hu-color-text-muted);
   font-style: italic;
 }

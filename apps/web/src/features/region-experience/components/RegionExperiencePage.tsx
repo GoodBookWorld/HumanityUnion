@@ -18,12 +18,9 @@ export function RegionExperiencePage({ projections }: RegionExperiencePageProps)
 
   return (
     <div className="region-experience-page">
-      <a href="#main-content" className="region-experience-page__skip-link">
-        Skip to main content
-      </a>
       <RegionGeographicNavigator identity={identity} />
 
-      <main className="region-experience-page__main" id="main-content">
+      <main className="region-experience-page__main">
         <div className="region-experience-page__content">
           <RegionIdentitySection identity={identity} />
           <RegionalInteractiveMapSection />

@@ -28,12 +28,9 @@ export async function CommunityExperiencePage({
 
   return (
     <div className="community-experience-page">
-      <a href="#main-content" className="community-experience-page__skip-link">
-        Skip to main content
-      </a>
       <CommunityGeographicNavigator identity={identity} />
 
-      <main className="community-experience-page__main" id="main-content">
+      <main className="community-experience-page__main">
         <div className="community-experience-page__content">
           <CommunityIdentitySection identity={identity} />
           <CommunityStatisticsSection projection={statistics} communityName={identity.name} />

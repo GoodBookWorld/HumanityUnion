@@ -108,23 +108,13 @@
   align-items: start;
 }
 
-.humanity-workspace-shell__nav {
-  position: sticky;
-  top: calc(var(--hu-header-height) + var(--hu-space-4));
-  align-self: start;
-  max-height: calc(100vh - var(--hu-header-height) - var(--hu-space-8));
-  overflow: auto;
-  border-right: 1px solid var(--hu-color-border);
-  padding-right: var(--hu-space-6);
-}
-
 .humanity-workspace-shell__main {
   min-width: 0;
 }
 
 .humanity-initiative-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 280px);
   gap: var(--hu-space-6);
   align-items: start;
 }
@@ -142,12 +132,5 @@
 @media (max-width: 768px) {
   .humanity-workspace-shell {
     grid-template-columns: 1fr;
-  }
-
-  .humanity-workspace-shell__nav {
-    position: static;
-    max-height: none;
-    border-right: 0;
-    padding-right: 0;
   }
 }
