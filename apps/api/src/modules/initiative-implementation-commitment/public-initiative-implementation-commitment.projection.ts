@@ -5,7 +5,7 @@ import type {
   PublicInitiativeImplementationCommitmentProjection,
 } from "@hu/types";
 
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import {
   getCommitmentById,
   listCommitmentsByInitiative,
@@ -19,8 +19,8 @@ const PUBLIC_STATUSES = new Set<InitiativeImplementationCommitment["status"]>([
   "completed",
 ]);
 
-function resolveAuthorDisplayName(participantId: string): string {
-  const member = getMemberById(participantId);
+async function resolveAuthorDisplayName(participantId: string): Promise<string> {
+  const member = await getMemberById(participantId);
 
   return member?.profile.displayName ?? "Unknown Participant";
 }
@@ -35,16 +35,16 @@ function toPublicStatus(
   return status as PublicInitiativeImplementationCommitmentProjection["status"];
 }
 
-function toPublicListItem(
+async function toPublicListItem(
   commitment: InitiativeImplementationCommitment,
-): PublicInitiativeImplementationCommitmentListItem {
+): Promise<PublicInitiativeImplementationCommitmentListItem> {
   return {
     commitmentId: commitment.commitmentId,
     decisionId: commitment.decisionId,
     title: commitment.commitmentTitle,
     summary: commitment.commitmentSummary,
     organization: commitment.organizationName,
-    authorDisplayName: resolveAuthorDisplayName(commitment.participantId),
+    authorDisplayName: await resolveAuthorDisplayName(commitment.participantId),
     commitmentScope: commitment.commitmentScope,
     status: toPublicStatus(commitment.status),
     expectedStartDate: commitment.expectedStartDate,
@@ -55,9 +55,9 @@ function toPublicListItem(
   };
 }
 
-export function toPublicInitiativeImplementationCommitmentProjection(
+export async function toPublicInitiativeImplementationCommitmentProjection(
   commitment: InitiativeImplementationCommitment,
-): PublicInitiativeImplementationCommitmentProjection {
+): Promise<PublicInitiativeImplementationCommitmentProjection> {
   return {
     commitmentId: commitment.commitmentId,
     initiativeId: commitment.initiativeId,
@@ -65,7 +65,7 @@ export function toPublicInitiativeImplementationCommitmentProjection(
     title: commitment.commitmentTitle,
     summary: commitment.commitmentSummary,
     organization: commitment.organizationName,
-    authorDisplayName: resolveAuthorDisplayName(commitment.participantId),
+    authorDisplayName: await resolveAuthorDisplayName(commitment.participantId),
     commitmentScope: commitment.commitmentScope,
     status: toPublicStatus(commitment.status),
     expectedStartDate: commitment.expectedStartDate,
@@ -92,30 +92,30 @@ export function computeInitiativeImplementationCommitmentMetrics(
   };
 }
 
-export function listPublicInitiativeImplementationCommitmentsForInitiative(
+export async function listPublicInitiativeImplementationCommitmentsForInitiative(
   initiativeId: string,
-): PublicInitiativeImplementationCommitmentListItem[] {
-  return listPublicCommitmentsByInitiative(initiativeId).map((commitment) =>
-    toPublicListItem(commitment),
-  );
+): Promise<PublicInitiativeImplementationCommitmentListItem[]> {
+  const commitments = listPublicCommitmentsByInitiative(initiativeId);
+
+  return Promise.all(commitments.map((commitment) => toPublicListItem(commitment)));
 }
 
-export function listPublicInitiativeImplementationCommitmentsForDecision(
+export async function listPublicInitiativeImplementationCommitmentsForDecision(
   decisionId: string,
-): PublicInitiativeImplementationCommitmentListItem[] {
-  return listPublicCommitmentsByDecision(decisionId).map((commitment) =>
-    toPublicListItem(commitment),
-  );
+): Promise<PublicInitiativeImplementationCommitmentListItem[]> {
+  const commitments = listPublicCommitmentsByDecision(decisionId);
+
+  return Promise.all(commitments.map((commitment) => toPublicListItem(commitment)));
 }
 
-export function getPublicInitiativeImplementationCommitment(
+export async function getPublicInitiativeImplementationCommitment(
   commitmentId: string,
-): PublicInitiativeImplementationCommitmentProjection | null {
+): Promise<PublicInitiativeImplementationCommitmentProjection | null> {
   const commitment = getCommitmentById(commitmentId);
 
   if (!commitment || !PUBLIC_STATUSES.has(commitment.status)) {
     return null;
   }
 
-  return toPublicInitiativeImplementationCommitmentProjection(commitment);
+  return await toPublicInitiativeImplementationCommitmentProjection(commitment);
 }

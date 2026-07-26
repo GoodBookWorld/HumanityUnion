@@ -8,7 +8,7 @@ if (!decisionId || !expectedSupport || !expectedOutcome) {
   process.exit(1);
 }
 
-const projection = getPublicInitiativeCollectiveDecision(decisionId);
+const projection = await getPublicInitiativeCollectiveDecision(decisionId);
 
 if (
   !projection ||

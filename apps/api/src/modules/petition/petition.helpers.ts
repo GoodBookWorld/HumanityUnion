@@ -10,7 +10,7 @@ import type {
   VerificationLevel,
 } from "@hu/types";
 
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 
 const ALLOWED_TRANSITIONS: Record<PetitionState, PetitionState[]> = {
   Draft: ["Ready"],
@@ -91,11 +91,11 @@ export function isMemberEligibleForPetition(member: Member, policy: PetitionPoli
   return true;
 }
 
-export function isParticipantEligibleForPetition(
+export async function isParticipantEligibleForPetition(
   participantId: string,
   policy: PetitionPolicy,
-): boolean {
-  const member = getMemberById(participantId);
+): Promise<boolean> {
+  const member = await getMemberById(participantId);
 
   if (!member) {
     return false;

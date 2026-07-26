@@ -2,9 +2,28 @@ import { createFilePublicCivicArchivePersistenceAdapter } from "./public-civic-a
 import { createMemoryPublicCivicArchivePersistenceAdapter } from "./public-civic-archive-memory.persistence.js";
 import { createMongoPublicCivicArchivePersistenceAdapter } from "./public-civic-archive-mongo.persistence.js";
 import type { PublicCivicArchivePersistenceAdapter } from "./public-civic-archive-persistence.types.js";
+import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
+
+function resolvePublicCivicArchivePersistenceMode(): "file" | "memory" | "mongodb" {
+  const explicit = process.env.PUBLIC_CIVIC_ARCHIVE_PERSISTENCE?.trim();
+
+  if (explicit === "memory" || explicit === "file" || explicit === "mongodb") {
+    return explicit;
+  }
+
+  if (isMongoConfigured() && process.env.HU_VERIFICATION_MODE !== "true") {
+    if (!explicit) {
+      process.env.PUBLIC_CIVIC_ARCHIVE_PERSISTENCE = "mongodb";
+    }
+
+    return "mongodb";
+  }
+
+  return "file";
+}
 
 export function resolvePublicCivicArchivePersistenceAdapter(): PublicCivicArchivePersistenceAdapter {
-  const mode = process.env.PUBLIC_CIVIC_ARCHIVE_PERSISTENCE ?? "file";
+  const mode = resolvePublicCivicArchivePersistenceMode();
 
   switch (mode) {
     case "memory":

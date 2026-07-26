@@ -6,7 +6,7 @@ import type {
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import { evaluateStoredDecisionParticipationEligibility } from "../participation-eligibility/participation-eligibility.service.js";
 import { getDecisionById } from "../initiative-collective-decision/initiative-collective-decision.store.js";
 import {
@@ -45,11 +45,11 @@ function assertDecisionAcceptsVotes(
   return decision;
 }
 
-function evaluateVoteEligibility(
+async function evaluateVoteEligibility(
   decision: NonNullable<ReturnType<typeof getDecisionById>>,
   identity: RequestIdentity,
 ) {
-  const member = getMemberById(identity.participantId);
+  const member = await getMemberById(identity.participantId);
 
   return evaluateStoredDecisionParticipationEligibility({
     participantId: identity.participantId,
@@ -87,13 +87,13 @@ function recordVoteHistory(input: {
   });
 }
 
-export function castOrUpdateInitiativeDecisionVote(
+export async function castOrUpdateInitiativeDecisionVote(
   identity: RequestIdentity,
   decisionId: string,
   input: CastOrUpdateInitiativeDecisionVoteInput,
-): InitiativeDecisionVote {
+): Promise<InitiativeDecisionVote> {
   const decision = assertDecisionAcceptsVotes(decisionId);
-  const eligibility = evaluateVoteEligibility(decision, identity);
+  const eligibility = await evaluateVoteEligibility(decision, identity);
 
   if (!eligibility.eligible) {
     throw new Error(eligibility.explanation);

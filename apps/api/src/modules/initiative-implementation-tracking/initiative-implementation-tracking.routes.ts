@@ -10,8 +10,8 @@ import {
 
 const initiativeImplementationTrackingRouter = Router();
 
-initiativeImplementationTrackingRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+initiativeImplementationTrackingRouter.get("/mine", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const trackings = listMyInitiativeImplementationTrackings(identity);
   const updates = listMyInitiativeImplementationTrackingUpdates(identity);
 

@@ -2,6 +2,20 @@ import type { Member, MemberPreferences, PublicParticipationProfile } from "@hu/
 
 import type { PublicParticipationVisibility } from "./participation.visibility.js";
 
+export function resolvePublicParticipationVisibility(
+  preferences: MemberPreferences,
+): PublicParticipationVisibility {
+  const visibility = preferences.visibilityPreferences;
+
+  return {
+    displayName: visibility.profileVisibility === "public",
+    languages: visibility.profileVisibility === "public",
+    interestedTopics: visibility.interestsVisibility === "public",
+    volunteerInterests: visibility.participationVisibility === "public",
+    preferredParticipationRegions: visibility.participationVisibility === "public",
+  };
+}
+
 export function toPublicParticipationProfile(
   member: Member,
   preferences: MemberPreferences,

@@ -16,6 +16,7 @@ import {
   validateInitiativeCollaborativeAnalysisForPublication,
 } from "./initiative-collaborative-analysis.validators.js";
 import { resolveInitiativeVersionForNewAnalysis } from "../initiative-version-revision/initiative-version-revision.service.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 
 function assertEligibleInitiative(initiativeId: string): void {
   const initiative = getInitiativeById(initiativeId);
@@ -161,6 +162,14 @@ export function publishInitiativeCollaborativeAnalysis(
   if (!published) {
     throw new Error("Analysis not found.");
   }
+
+  emitCivicNotificationEvent({
+    eventType: "analysis_published",
+    entityType: "analysis",
+    entityId: analysisId,
+    initiativeId: published.initiativeId,
+    actorMemberId: identity.participantId,
+  });
 
   return published;
 }

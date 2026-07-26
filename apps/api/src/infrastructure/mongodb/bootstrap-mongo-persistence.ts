@@ -4,6 +4,8 @@ import { ensureMongoIndexes } from "./mongo-indexes.js";
 import { hydrateCivicAccountabilityMongoPersistence } from "../../modules/civic-accountability/persistence/civic-accountability-mongo.persistence.js";
 import { hydrateCivicActionPackageMongoPersistence } from "../../modules/civic-action-package/persistence/civic-action-package-mongo.persistence.js";
 import { hydrateCivicCompatibilityReviewMongoPersistence } from "../../modules/civic-compatibility-review/persistence/civic-compatibility-review-mongo.persistence.js";
+import { hydrateCivicNominationMongoPersistence } from "../../modules/civic-nomination/persistence/civic-nomination-mongo.persistence.js";
+import { hydrateCivicNominationVoteMongoPersistence } from "../../modules/civic-nomination-vote/persistence/civic-nomination-vote-mongo.persistence.js";
 import { hydrateCivicDeliveryMongoPersistence } from "../../modules/civic-delivery/persistence/civic-delivery-mongo.persistence.js";
 import { hydrateDecisionSessionMongoPersistence } from "../../modules/decision-session/persistence/decision-session-mongo.persistence.js";
 import { hydrateInitiativeCollaborativeAnalysisMongoPersistence } from "../../modules/initiative-collaborative-analysis/persistence/initiative-collaborative-analysis-mongo.persistence.js";
@@ -37,6 +39,11 @@ const PERSISTENCE_ENV_KEYS = [
   "INITIATIVE_PUBLIC_IMPACT_PERSISTENCE",
   "PUBLIC_CIVIC_ARCHIVE_PERSISTENCE",
   "CIVIC_COMPATIBILITY_REVIEW_PERSISTENCE",
+  "CIVIC_NOMINATION_PERSISTENCE",
+  "CIVIC_NOMINATION_VOTE_PERSISTENCE",
+  "INITIATIVE_COMMENT_PERSISTENCE",
+  "INITIATIVE_COMMENT_REACTION_PERSISTENCE",
+  "INITIATIVE_SUPPORT_PERSISTENCE",
 ] as const;
 
 export function isAnyMongoPersistenceSelected(): boolean {
@@ -74,5 +81,7 @@ export async function bootstrapMongoPersistence(): Promise<void> {
     hydrateInitiativePublicImpactMongoPersistence(),
     hydratePublicCivicArchiveMongoPersistence(),
     hydrateCivicCompatibilityReviewMongoPersistence(),
+    hydrateCivicNominationMongoPersistence(),
+    hydrateCivicNominationVoteMongoPersistence(),
   ]);
 }

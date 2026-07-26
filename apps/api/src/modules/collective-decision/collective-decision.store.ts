@@ -27,19 +27,19 @@ const decisions = new Map<string, CollectiveDecision>([
   [bootstrapCollectiveDecision.decisionId, structuredClone(bootstrapCollectiveDecision)],
 ]);
 
-refreshDerivedState(decisions.get(bootstrapCollectiveDecision.decisionId)!);
+void refreshDerivedState(decisions.get(bootstrapCollectiveDecision.decisionId)!);
 
-function refreshDerivedState(decision: CollectiveDecision): void {
-  decision.statistics = calculateDecisionStatistics(decision);
+async function refreshDerivedState(decision: CollectiveDecision): Promise<void> {
+  decision.statistics = await calculateDecisionStatistics(decision);
 }
 
 function getMutableDecision(decisionId: string): CollectiveDecision | null {
   return decisions.get(decisionId) ?? null;
 }
 
-function touchDecision(decision: CollectiveDecision): CollectiveDecision {
+async function touchDecision(decision: CollectiveDecision): Promise<CollectiveDecision> {
   decision.updatedAt = new Date().toISOString();
-  refreshDerivedState(decision);
+  await refreshDerivedState(decision);
   return cloneCollectiveDecision(decision);
 }
 
@@ -64,22 +64,22 @@ export function getDecisionBySubjectId(
   return decision ? cloneCollectiveDecision(decision) : null;
 }
 
-export function createDecision(decision: CollectiveDecision): CollectiveDecision {
+export async function createDecision(decision: CollectiveDecision): Promise<CollectiveDecision> {
   if (decisions.has(decision.decisionId)) {
     throw new Error(`Decision "${decision.decisionId}" already exists.`);
   }
 
   const created = structuredClone(decision);
-  refreshDerivedState(created);
+  await refreshDerivedState(created);
   decisions.set(created.decisionId, created);
 
   return cloneCollectiveDecision(created);
 }
 
-export function updateDecision(
+export async function updateDecision(
   decisionId: string,
   update: CollectiveDecisionUpdate,
-): CollectiveDecision | null {
+): Promise<CollectiveDecision | null> {
   const decision = getMutableDecision(decisionId);
 
   if (!decision) {
@@ -97,7 +97,7 @@ export function updateDecision(
   return touchDecision(decision);
 }
 
-export function archiveDecision(decisionId: string): CollectiveDecision | null {
+export async function archiveDecision(decisionId: string): Promise<CollectiveDecision | null> {
   const decision = getMutableDecision(decisionId);
 
   if (!decision) {
@@ -111,10 +111,10 @@ export function archiveDecision(decisionId: string): CollectiveDecision | null {
   return touchDecision(decision);
 }
 
-export function scheduleDecision(
+export async function scheduleDecision(
   decisionId: string,
   scheduledAt: string,
-): CollectiveDecision | null {
+): Promise<CollectiveDecision | null> {
   const decision = getMutableDecision(decisionId);
 
   if (!decision) {
@@ -128,7 +128,10 @@ export function scheduleDecision(
   return touchDecision(decision);
 }
 
-export function openDecision(decisionId: string, opensAt: string): CollectiveDecision | null {
+export async function openDecision(
+  decisionId: string,
+  opensAt: string,
+): Promise<CollectiveDecision | null> {
   const decision = getMutableDecision(decisionId);
 
   if (!decision) {
@@ -143,7 +146,10 @@ export function openDecision(decisionId: string, opensAt: string): CollectiveDec
   return touchDecision(decision);
 }
 
-export function closeDecision(decisionId: string, closesAt: string): CollectiveDecision | null {
+export async function closeDecision(
+  decisionId: string,
+  closesAt: string,
+): Promise<CollectiveDecision | null> {
   const decision = getMutableDecision(decisionId);
 
   if (!decision) {
@@ -158,7 +164,7 @@ export function closeDecision(decisionId: string, closesAt: string): CollectiveD
   return touchDecision(decision);
 }
 
-export function cancelDecision(decisionId: string): CollectiveDecision | null {
+export async function cancelDecision(decisionId: string): Promise<CollectiveDecision | null> {
   const decision = getMutableDecision(decisionId);
 
   if (!decision) {
@@ -176,7 +182,7 @@ export function cancelDecision(decisionId: string): CollectiveDecision | null {
   return touchDecision(decision);
 }
 
-export function calculateDecisionResult(decisionId: string): DecisionResult | null {
+export async function calculateDecisionResult(decisionId: string): Promise<DecisionResult | null> {
   const decision = getMutableDecision(decisionId);
 
   if (!decision) {
@@ -187,16 +193,16 @@ export function calculateDecisionResult(decisionId: string): DecisionResult | nu
     throw new Error("DecisionResult can only be calculated after the decision is Closed.");
   }
 
-  refreshDerivedState(decision);
+  await refreshDerivedState(decision);
   const result = buildDecisionResult(decision);
   decision.decisionResult = structuredClone(result);
 
-  touchDecision(decision);
+  await touchDecision(decision);
 
   return structuredClone(result);
 }
 
-export function determineOutcome(decisionId: string): Outcome | null {
+export async function determineOutcome(decisionId: string): Promise<Outcome | null> {
   const decision = getMutableDecision(decisionId);
 
   if (!decision) {
@@ -210,12 +216,12 @@ export function determineOutcome(decisionId: string): Outcome | null {
   const outcome = buildOutcome(decision, decision.decisionResult);
   decision.outcome = structuredClone(outcome);
 
-  touchDecision(decision);
+  await touchDecision(decision);
 
   return structuredClone(outcome);
 }
 
-export function completeDecision(decisionId: string): CollectiveDecision | null {
+export async function completeDecision(decisionId: string): Promise<CollectiveDecision | null> {
   const decision = getMutableDecision(decisionId);
 
   if (!decision) {
@@ -223,8 +229,8 @@ export function completeDecision(decisionId: string): CollectiveDecision | null 
   }
 
   assertValidTransition(decision.status, "Completed");
-  calculateDecisionResult(decisionId);
-  determineOutcome(decisionId);
+  await calculateDecisionResult(decisionId);
+  await determineOutcome(decisionId);
 
   const completed = getMutableDecision(decisionId);
 
@@ -238,10 +244,10 @@ export function completeDecision(decisionId: string): CollectiveDecision | null 
   return touchDecision(completed);
 }
 
-export function submitParticipantDecision(
+export async function submitParticipantDecision(
   decisionId: string,
   participantDecision: ParticipantDecision,
-): CollectiveDecision | null {
+): Promise<CollectiveDecision | null> {
   const decision = getMutableDecision(decisionId);
 
   if (!decision) {
@@ -252,7 +258,12 @@ export function submitParticipantDecision(
     throw new Error("Participant Decisions can only be submitted while the decision is Active.");
   }
 
-  if (!isParticipantEligible(participantDecision.participantId, decision.ballot.eligibilityRules)) {
+  if (
+    !(await isParticipantEligible(
+      participantDecision.participantId,
+      decision.ballot.eligibilityRules,
+    ))
+  ) {
     throw new Error(`Participant "${participantDecision.participantId}" is not eligible.`);
   }
 

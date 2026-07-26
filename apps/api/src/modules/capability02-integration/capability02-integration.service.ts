@@ -11,6 +11,7 @@ import type {
   CivicSearchMetadata,
   RelatedRecord,
 } from "@hu/types";
+import { formatRegionCode, getCountryByCode, getCountryLabel, getRegionLabel } from "@hu/geography";
 
 import {
   getCommitmentById,
@@ -33,6 +34,7 @@ import {
   listRevisionsByInitiative,
 } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { resolveInitiativeSearchGeography } from "../initiatives/initiative-geography.js";
 import {
   getArchiveRecordById,
   listArchiveRecordsByInitiative,
@@ -51,6 +53,7 @@ import {
   getAccountabilityByCapId,
   listAccountabilitiesByInitiative,
 } from "../civic-accountability/civic-accountability.store.js";
+import { getPetition } from "../petition/petition.store.js";
 
 const PIPELINE_STAGE_ORDER: readonly { id: CivicPipelineStageId; label: string }[] = [
   { id: "initiative", label: "Initiative" },
@@ -82,6 +85,8 @@ export function publicUrlForEntity(
       return `/improvement-proposals/public/${encodeURIComponent(entityId)}`;
     case "initiative_revision":
       return `/initiatives/public/${encodeURIComponent(extra?.initiativeId ?? entityId)}/revisions/${extra?.version ?? 1}`;
+    case "petition":
+      return `/petitions/public/${encodeURIComponent(entityId)}`;
     case "decision_session":
       return `/decision-sessions/public/${encodeURIComponent(entityId)}`;
     case "collective_decision":
@@ -99,7 +104,17 @@ export function publicUrlForEntity(
     case "public_impact":
       return `/public-impact/${encodeURIComponent(entityId)}`;
     case "civic_archive":
-      return `/civic-archive/${encodeURIComponent(entityId)}`;
+      return `/civic-archive/${encodeURIComponent(extra?.initiativeId ?? entityId)}`;
+    case "knowledge_article":
+      return `/knowledge/${encodeURIComponent(entityId)}`;
+    case "knowledge_media":
+      return entityId === "civic-media-center"
+        ? "/media"
+        : `/media#${encodeURIComponent(entityId)}`;
+    case "civic_nomination":
+      return `/civic-nominations/public/${encodeURIComponent(entityId)}`;
+    case "member_badge_contribution":
+      return `/membership/member-badge/requests/${encodeURIComponent(entityId)}`;
   }
 }
 
@@ -171,6 +186,10 @@ function resolveInitiativeId(entityType: CivicEntityType, entityId: string): str
     }
     case "initiative_revision":
       return entityId.split("::")[0] ?? null;
+    case "petition": {
+      const petition = getPetition(entityId);
+      return petition?.subject.initiativeId ?? null;
+    }
     default:
       return null;
   }
@@ -822,6 +841,12 @@ export function buildCivicContext(
       summary = impact?.observedImpact ?? summary;
       break;
     }
+    case "petition": {
+      const petition = getPetition(entityId);
+      title = petition?.subject.title ?? title;
+      summary = petition?.subject.summary ?? summary;
+      break;
+    }
     case "civic_archive": {
       const archive = getArchiveRecordById(entityId);
       title = archive?.title ?? title;
@@ -872,6 +897,7 @@ export function buildBreadcrumb(
     analysis: "Analysis",
     improvement_proposal: "Proposal",
     initiative_revision: "Revision",
+    petition: "Petition",
     decision_session: "Decision Session",
     collective_decision: "Decision",
     civic_action_package: "Civic Action Package",
@@ -927,6 +953,12 @@ export function buildSearchMetadata(
       updatedAt = decision?.updatedAt ?? updatedAt;
       break;
     }
+    case "petition": {
+      const petition = getPetition(entityId);
+      status = petition?.status ?? status;
+      updatedAt = petition?.updatedAt ?? updatedAt;
+      break;
+    }
     case "civic_action_package": {
       const capPackage = getCapById(entityId);
       status = capPackage?.status ?? status;
@@ -968,18 +1000,37 @@ export function buildSearchMetadata(
       break;
   }
 
+  const geography = resolveInitiativeSearchGeography(initiative);
+  const countryLabel = geography.country ? (getCountryLabel(geography.country) ?? "") : "";
+  const regionLabel =
+    geography.country && geography.region
+      ? (getRegionLabel(geography.country, geography.region) ?? geography.region)
+      : geography.region;
+  const country = getCountryByCode(geography.country);
+
   return {
     entityType,
     entityId,
     title: context.title,
     summary: context.summary,
-    country: initiative?.metadata.region ? "Canada" : "Unknown",
-    region: initiative?.metadata.region ?? "",
-    community: initiative?.metadata.communitySlug.replace(/-/g, " ") ?? "",
+    country: geography.country,
+    region: geography.region,
+    community: geography.community,
     activityArea: initiative?.metadata.activityArea ?? "",
     status,
-    publicUrl: publicUrlForEntity(entityType, entityId),
+    publicUrl: publicUrlForEntity(entityType, entityId, {
+      initiativeId: initiativeId ?? undefined,
+    }),
     updatedAt,
+    countryLabel,
+    regionLabel,
+    countryCode: country?.code,
+    regionCode:
+      geography.country && geography.region
+        ? formatRegionCode(geography.country, geography.region)
+        : undefined,
+    imageUrl: initiative?.metadata.imageUrl,
+    initiativeId: initiativeId ?? undefined,
   };
 }
 

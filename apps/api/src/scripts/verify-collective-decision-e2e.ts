@@ -445,7 +445,7 @@ async function runMainVerification(): Promise<void> {
     "Non-steward cannot open collective decision",
   );
   assertThrows(
-    () => closeInitiativeCollectiveDecision(analyst, primaryDecisionId),
+    async () => await closeInitiativeCollectiveDecision(analyst, primaryDecisionId),
     "Non-steward cannot close collective decision",
   );
 
@@ -527,8 +527,7 @@ async function runMainVerification(): Promise<void> {
     "Pending area transition must not apply before effectiveAt",
   );
   assertThrows(
-    () =>
-      castOrUpdateInitiativeDecisionVote(transitionVoter, transitionDecisionId, {
+    async () => await castOrUpdateInitiativeDecisionVote(transitionVoter, transitionDecisionId, {
         choice: "support",
       }),
     "Pending transition voter must be rejected for target community before effectiveAt",
@@ -536,12 +535,12 @@ async function runMainVerification(): Promise<void> {
 
   console.log("5. Voting — cast, update, history, unverified equality");
 
-  const supportVote = castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, {
+  const supportVote = await castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, {
     choice: "support",
   });
   assert(supportVote.choice === "support" && supportVote.version === 1, "Initial support vote");
 
-  const opposeVote = castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, {
+  const opposeVote = await castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, {
     choice: "do_not_support",
   });
   assert(
@@ -549,7 +548,7 @@ async function runMainVerification(): Promise<void> {
     "Vote update reuses record",
   );
 
-  const abstainVote = castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, {
+  const abstainVote = await castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, {
     choice: "abstain",
   });
   assert(abstainVote.choice === "abstain" && abstainVote.version === 3, "Vote update to abstain");
@@ -560,14 +559,14 @@ async function runMainVerification(): Promise<void> {
     "Vote history records all changes",
   );
 
-  const unverifiedVote = castOrUpdateInitiativeDecisionVote(unverifiedVoter, primaryDecisionId, {
+  const unverifiedVote = await castOrUpdateInitiativeDecisionVote(unverifiedVoter, primaryDecisionId, {
     choice: "support",
   });
   assert(unverifiedVote.transparencyCohort === "unverified", "Unverified cohort stored");
 
   console.log("6. Transparent results — live aggregates");
 
-  const liveProjection = getPublicInitiativeCollectiveDecision(primaryDecisionId);
+  const liveProjection = await getPublicInitiativeCollectiveDecision(primaryDecisionId);
   assert(
     liveProjection !== null && liveProjection.outcome !== null,
     "Live public projection required",
@@ -614,7 +613,7 @@ async function runMainVerification(): Promise<void> {
     ];
     let voterIndex = 0;
 
-    const castFromNextVoter = (choice: "support" | "do_not_support" | "abstain"): void => {
+    const castFromNextVoter = async (choice: "support" | "do_not_support" | "abstain"): Promise<void> => {
       const voter = voters[voterIndex];
       voterIndex += 1;
 
@@ -622,21 +621,21 @@ async function runMainVerification(): Promise<void> {
         throw new Error("Not enough seeded voters for outcome scenario.");
       }
 
-      castOrUpdateInitiativeDecisionVote(voter, decisionId, { choice });
+      await castOrUpdateInitiativeDecisionVote(voter, decisionId, { choice });
     };
 
     for (let index = 0; index < input.supportVotes; index += 1) {
-      castFromNextVoter("support");
+      await castFromNextVoter("support");
     }
     for (let index = 0; index < input.opposeVotes; index += 1) {
-      castFromNextVoter("do_not_support");
+      await castFromNextVoter("do_not_support");
     }
     for (let index = 0; index < input.abstainVotes; index += 1) {
-      castFromNextVoter("abstain");
+      await castFromNextVoter("abstain");
     }
 
-    closeInitiativeCollectiveDecision(steward, decisionId);
-    const projection = getPublicInitiativeCollectiveDecision(decisionId);
+    await closeInitiativeCollectiveDecision(steward, decisionId);
+    const projection = await getPublicInitiativeCollectiveDecision(decisionId);
     assert(
       projection?.outcome?.outcome === input.expectedOutcome,
       `${input.expectedOutcome} outcome`,
@@ -664,26 +663,24 @@ async function runMainVerification(): Promise<void> {
 
   console.log("8. Vote freeze and cancelled outcome");
 
-  castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, { choice: "support" });
-  castOrUpdateInitiativeDecisionVote(unverifiedVoter, primaryDecisionId, { choice: "support" });
-  closeInitiativeCollectiveDecision(steward, primaryDecisionId);
+  await castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, { choice: "support" });
+  await castOrUpdateInitiativeDecisionVote(unverifiedVoter, primaryDecisionId, { choice: "support" });
+  await closeInitiativeCollectiveDecision(steward, primaryDecisionId);
 
   const frozenSupport =
-    getPublicInitiativeCollectiveDecision(primaryDecisionId)?.statistics.supportCount;
+    (await getPublicInitiativeCollectiveDecision(primaryDecisionId))?.statistics.supportCount;
   assertThrows(
-    () =>
-      castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, { choice: "abstain" }),
+    async () => await castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, { choice: "abstain" }),
     "Closed decision rejects vote changes",
   );
   assertThrows(
-    () =>
-      castOrUpdateInitiativeDecisionVote(countryMismatchVoter, primaryDecisionId, {
+    async () => await castOrUpdateInitiativeDecisionVote(countryMismatchVoter, primaryDecisionId, {
         choice: "support",
       }),
     "Closed decision rejects new votes",
   );
   assert(
-    getPublicInitiativeCollectiveDecision(primaryDecisionId)?.statistics.supportCount ===
+    (await getPublicInitiativeCollectiveDecision(primaryDecisionId))?.statistics.supportCount ===
       frozenSupport,
     "Closed public results remain frozen",
   );
@@ -691,11 +688,11 @@ async function runMainVerification(): Promise<void> {
   await openCollectiveDecision(cancelDraftId);
   cancelInitiativeCollectiveDecision(steward, cancelDraftId);
   assert(
-    getPublicInitiativeCollectiveDecision(cancelDraftId)?.outcome?.outcome === "cancelled",
+    (await getPublicInitiativeCollectiveDecision(cancelDraftId))?.outcome?.outcome === "cancelled",
     "Cancelled decision outcome",
   );
   assertThrows(
-    () => castOrUpdateInitiativeDecisionVote(verifiedVoter, cancelDraftId, { choice: "support" }),
+    async () => await castOrUpdateInitiativeDecisionVote(verifiedVoter, cancelDraftId, { choice: "support" }),
     "Cancelled decision rejects votes",
   );
 
@@ -708,7 +705,7 @@ async function runMainVerification(): Promise<void> {
   );
   assertNoPrivateFields(publicList, "Public collective decision list");
 
-  const publicDetail = getPublicInitiativeCollectiveDecision(primaryDecisionId);
+  const publicDetail = await getPublicInitiativeCollectiveDecision(primaryDecisionId);
   assert(publicDetail !== null, "Public detail projection required");
   assertNoPrivateFields(publicDetail, "Public collective decision detail");
   assert(
@@ -777,9 +774,9 @@ async function runPersistenceVerification(): Promise<void> {
   const sessionId = await createClosedDecisionSession(initiativeId, "Persistence question?");
   const decisionId = await createCollectiveDecisionDraft(initiativeId, sessionId, "community");
   await openCollectiveDecision(decisionId);
-  castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, { choice: "support" });
-  castOrUpdateInitiativeDecisionVote(unverifiedVoter, decisionId, { choice: "support" });
-  closeInitiativeCollectiveDecision(steward, decisionId);
+  await castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, { choice: "support" });
+  await castOrUpdateInitiativeDecisionVote(unverifiedVoter, decisionId, { choice: "support" });
+  await closeInitiativeCollectiveDecision(steward, decisionId);
 
   const reloadEnv = {
     INITIATIVE_COLLECTIVE_DECISION_PERSISTENCE: "file",

@@ -267,7 +267,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("1. Eligible participant casts support");
 
-  const supportVote = castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, {
+  const supportVote = await castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, {
     choice: "support",
   });
   assert(supportVote.choice === "support", "Initial vote should be support");
@@ -276,7 +276,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("2. Same participant changes to do_not_support");
 
-  const opposeVote = castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, {
+  const opposeVote = await castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, {
     choice: "do_not_support",
   });
   assert(opposeVote.voteId === supportVote.voteId, "Vote update should reuse same voteId");
@@ -285,7 +285,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("3. Same participant changes to abstain");
 
-  const abstainVote = castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, {
+  const abstainVote = await castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, {
     choice: "abstain",
   });
   assert(abstainVote.choice === "abstain", "Vote should update to abstain");
@@ -321,7 +321,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("6. Unverified participant can vote with transparency cohort");
 
-  const unverifiedVote = castOrUpdateInitiativeDecisionVote(unverifiedVoter, decisionId, {
+  const unverifiedVote = await castOrUpdateInitiativeDecisionVote(unverifiedVoter, decisionId, {
     choice: "support",
   });
   assert(unverifiedVote.transparencyCohort === "unverified", "Unverified cohort stored");
@@ -330,8 +330,7 @@ async function runMainVerification(): Promise<void> {
   console.log("7. Ineligible participant rejected");
 
   assertThrows(
-    () =>
-      castOrUpdateInitiativeDecisionVote(ineligibleVoter, decisionId, {
+    async () => await castOrUpdateInitiativeDecisionVote(ineligibleVoter, decisionId, {
         choice: "support",
       }),
     "Ineligible participant must be rejected",
@@ -359,10 +358,9 @@ async function runMainVerification(): Promise<void> {
 
   console.log("10. Closed decision rejects vote changes");
 
-  closeInitiativeCollectiveDecision(steward, decisionId);
+  await closeInitiativeCollectiveDecision(steward, decisionId);
   assertThrows(
-    () =>
-      castOrUpdateInitiativeDecisionVote(unverifiedVoter, decisionId, {
+    async () => await castOrUpdateInitiativeDecisionVote(unverifiedVoter, decisionId, {
         choice: "do_not_support",
       }),
     "Closed decision must reject vote changes",
@@ -373,8 +371,7 @@ async function runMainVerification(): Promise<void> {
   const cancelledDecisionId = await buildOpenedCollectiveDecision();
   cancelInitiativeCollectiveDecision(steward, cancelledDecisionId);
   assertThrows(
-    () =>
-      castOrUpdateInitiativeDecisionVote(verifiedVoter, cancelledDecisionId, {
+    async () => await castOrUpdateInitiativeDecisionVote(verifiedVoter, cancelledDecisionId, {
         choice: "support",
       }),
     "Cancelled decision must reject vote changes",
@@ -383,7 +380,7 @@ async function runMainVerification(): Promise<void> {
   console.log("12. getMyInitiativeDecisionVote returns active vote");
 
   const reopenedDecisionId = await buildOpenedCollectiveDecision();
-  castOrUpdateInitiativeDecisionVote(verifiedVoter, reopenedDecisionId, { choice: "support" });
+  await castOrUpdateInitiativeDecisionVote(verifiedVoter, reopenedDecisionId, { choice: "support" });
   const myVote = getMyInitiativeDecisionVote(verifiedVoter, reopenedDecisionId);
   assert(myVote?.choice === "support", "My vote endpoint data should match active vote");
 
@@ -451,7 +448,7 @@ async function runPersistenceVerification(): Promise<void> {
 
   await seedVoterParticipationAreas();
   const decisionId = await buildOpenedCollectiveDecision();
-  castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, { choice: "support" });
+  await castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, { choice: "support" });
 
   assert(
     Object.values(createFileInitiativeDecisionVotePersistenceAdapter().load().votes).some(

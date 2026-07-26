@@ -12,7 +12,7 @@ import type {
 import { getDecision } from "../collective-decision/collective-decision.store.js";
 import { getImplementationCommitment } from "../implementation-commitment/implementation-commitment.store.js";
 import { getFrozenPolicy } from "../implementation-commitment/frozen-policy.fixture.js";
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import { getPetition } from "../petition/petition.store.js";
 import { bootstrapImplementation } from "./bootstrap-implementation.js";
 import {
@@ -190,8 +190,8 @@ function assertSubjectSnapshotComplete(subjectTitle: string, subjectSummary: str
   }
 }
 
-function assertRegisteredParticipant(participantId: ParticipantId): void {
-  if (!getMemberById(participantId)) {
+async function assertRegisteredParticipant(participantId: ParticipantId): Promise<void> {
+  if (!(await getMemberById(participantId))) {
     throw new Error(`Participant "${participantId}" was not found.`);
   }
 }
@@ -546,7 +546,7 @@ export function updateMilestone(
   return touchImplementation(implementation);
 }
 
-export function recordAchievement(implementationId: string, input: RecordAchievementInput) {
+export async function recordAchievement(implementationId: string, input: RecordAchievementInput) {
   const implementation = getMutableImplementation(implementationId);
 
   if (!implementation) {
@@ -564,7 +564,7 @@ export function recordAchievement(implementationId: string, input: RecordAchieve
     throw new Error(`Achievement "${input.achievementId}" already exists.`);
   }
 
-  assertRegisteredParticipant(input.recordedByParticipantId);
+  await assertRegisteredParticipant(input.recordedByParticipantId);
 
   const milestone = getMilestone(implementation, input.milestoneId);
 

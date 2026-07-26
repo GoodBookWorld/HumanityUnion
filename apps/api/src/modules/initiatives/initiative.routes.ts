@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 
-import { authenticationMiddleware } from "../auth/auth.middleware.js";
+import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "./identity/resolve-request-identity.js";
 import {
@@ -13,6 +13,7 @@ import {
   updateManagedInitiative,
   updatePublishedInitiative,
 } from "./initiative.service.js";
+import { getInitiativeOwnerAccess } from "./initiative-owner-access.service.js";
 import { getInitiativeById, listInitiatives } from "./initiative.store.js";
 import {
   canExposePublicInitiativeProjection,
@@ -22,6 +23,7 @@ import {
   validateCreateInitiativeDraftInput,
   validateSaveInitiativeDraftInput,
 } from "./initiative.validators.js";
+import { buildInitiativeNewsSourceSnapshot } from "../public-news/public-news.service.js";
 
 const initiativesRouter = Router();
 
@@ -75,19 +77,25 @@ initiativesRouter.get("/", (_req, res) => {
 });
 
 /** Identity-scoped read — current participant initiatives only. */
-initiativesRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+initiativesRouter.get("/mine", ...authenticatedWorkspaceWriteMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const initiatives = listMyInitiatives(identity);
 
   res.json(createSuccessResponse(initiatives, "My initiatives loaded."));
 });
 
 /** Canonical draft creation route. */
-initiativesRouter.post("/draft", authenticationMiddleware, (req, res) => {
+initiativesRouter.post("/draft", ...authenticatedWorkspaceWriteMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const input = validateCreateInitiativeDraftInput(req.body);
-    const created = createInitiativeDraft(identity, input);
+    const sourceReferences = input.sourceNewsId
+      ? [await buildInitiativeNewsSourceSnapshot(input.sourceNewsId)]
+      : input.sourceReferences;
+    const created = createInitiativeDraft(identity, {
+      ...input,
+      sourceReferences,
+    });
 
     res.status(201).json(createSuccessResponse(created, "Initiative draft created."));
   } catch (error) {
@@ -99,11 +107,17 @@ initiativesRouter.post("/draft", authenticationMiddleware, (req, res) => {
  * Legacy create alias — delegates to canonical draft creation with RequestIdentity.
  * Prefer POST /draft for new clients.
  */
-initiativesRouter.post("/", authenticationMiddleware, (req, res) => {
+initiativesRouter.post("/", ...authenticatedWorkspaceWriteMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const input = validateCreateInitiativeDraftInput(req.body);
-    const created = createInitiativeDraft(identity, input);
+    const sourceReferences = input.sourceNewsId
+      ? [await buildInitiativeNewsSourceSnapshot(input.sourceNewsId)]
+      : input.sourceReferences;
+    const created = createInitiativeDraft(identity, {
+      ...input,
+      sourceReferences,
+    });
 
     res.status(201).json(createSuccessResponse(created, "Initiative draft created."));
   } catch (error) {
@@ -111,8 +125,27 @@ initiativesRouter.post("/", authenticationMiddleware, (req, res) => {
   }
 });
 
+/** Public read — identity-scoped owner studio access. Never returns private data to non-owners. */
+initiativesRouter.get(
+  "/:initiativeId/owner-access",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const access = getInitiativeOwnerAccess({
+        initiativeId: getInitiativeId(req),
+        identity,
+      });
+
+      res.json(createSuccessResponse(access, "Initiative owner access resolved."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
 /** Public read — single initiative record. */
-initiativesRouter.get("/:initiativeId", (req, res) => {
+initiativesRouter.get("/:initiativeId", async (req, res) => {
   const initiative = getInitiativeById(getInitiativeId(req));
 
   if (!initiative) {
@@ -123,37 +156,45 @@ initiativesRouter.get("/:initiativeId", (req, res) => {
   res.json(createSuccessResponse(initiative, "Initiative loaded."));
 });
 
-initiativesRouter.patch("/:initiativeId/draft", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const input = validateSaveInitiativeDraftInput(req.body);
-    const initiative = saveInitiativeDraft(identity, getInitiativeId(req), input);
+initiativesRouter.patch(
+  "/:initiativeId/draft",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const input = validateSaveInitiativeDraftInput(req.body);
+      const initiative = saveInitiativeDraft(identity, getInitiativeId(req), input);
 
-    res.json(createSuccessResponse(initiative, "Initiative draft saved."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(initiative, "Initiative draft saved."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
-initiativesRouter.patch("/:initiativeId/published", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const input = validateSaveInitiativeDraftInput(req.body);
-    const initiative = updatePublishedInitiative(identity, getInitiativeId(req), input);
+initiativesRouter.patch(
+  "/:initiativeId/published",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const input = validateSaveInitiativeDraftInput(req.body);
+      const initiative = updatePublishedInitiative(identity, getInitiativeId(req), input);
 
-    res.json(createSuccessResponse(initiative, "Initiative updated."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(initiative, "Initiative updated."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
 /**
  * Legacy update alias — delegates to lifecycle-aware update with RequestIdentity.
  * Prefer PATCH /:id/draft or PATCH /:id/published for explicit lifecycle intent.
  */
-initiativesRouter.patch("/:initiativeId", authenticationMiddleware, (req, res) => {
+initiativesRouter.patch("/:initiativeId", ...authenticatedWorkspaceWriteMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const input = validateSaveInitiativeDraftInput(req.body);
     const initiative = updateManagedInitiative(identity, getInitiativeId(req), input);
 
@@ -163,45 +204,57 @@ initiativesRouter.patch("/:initiativeId", authenticationMiddleware, (req, res) =
   }
 });
 
-initiativesRouter.post("/:initiativeId/publish", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const initiative = publishInitiative(identity, getInitiativeId(req));
+initiativesRouter.post(
+  "/:initiativeId/publish",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const initiative = publishInitiative(identity, getInitiativeId(req));
 
-    res.json(createSuccessResponse(initiative, "Initiative published and projected."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(initiative, "Initiative published and projected."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
-initiativesRouter.post("/:initiativeId/republish", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const input =
-      req.body && typeof req.body === "object" && Object.keys(req.body).length > 0
-        ? validateSaveInitiativeDraftInput(req.body)
-        : {};
-    const initiative = republishInitiative(identity, getInitiativeId(req), input);
+initiativesRouter.post(
+  "/:initiativeId/republish",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const input =
+        req.body && typeof req.body === "object" && Object.keys(req.body).length > 0
+          ? validateSaveInitiativeDraftInput(req.body)
+          : {};
+      const initiative = republishInitiative(identity, getInitiativeId(req), input);
 
-    res.json(createSuccessResponse(initiative, "Initiative republished."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(initiative, "Initiative republished."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
-initiativesRouter.post("/:initiativeId/archive", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const initiative = archiveInitiative(identity, getInitiativeId(req));
+initiativesRouter.post(
+  "/:initiativeId/archive",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const initiative = archiveInitiative(identity, getInitiativeId(req));
 
-    res.json(createSuccessResponse(initiative, "Initiative archived."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(initiative, "Initiative archived."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
 /** Public read — member-visible public projection when eligible. */
-initiativesRouter.get("/:initiativeId/public-projection", (req, res) => {
+initiativesRouter.get("/:initiativeId/public-projection", async (req, res) => {
   const initiative = getInitiativeById(getInitiativeId(req));
 
   if (!initiative) {
@@ -216,7 +269,7 @@ initiativesRouter.get("/:initiativeId/public-projection", (req, res) => {
 
   res.json(
     createSuccessResponse(
-      toPublicInitiativeProjection(initiative),
+      await toPublicInitiativeProjection(initiative),
       "Initiative public projection loaded.",
     ),
   );

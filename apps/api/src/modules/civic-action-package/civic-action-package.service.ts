@@ -9,7 +9,8 @@ import { listProposalsByInitiative } from "../initiative-improvement-proposal/in
 import { getLatestRevisionForInitiative } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { listRevisionsByInitiative } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 import {
   createCapPackage,
   getCapByDecisionId,
@@ -78,14 +79,14 @@ function buildCapContent(decisionId: string): CivicActionPackageContent {
   };
 }
 
-function resolveCountry(initiativeId: string): string {
+async function resolveCountry(initiativeId: string): Promise<string> {
   const initiative = getInitiativeById(initiativeId);
 
   if (!initiative) {
     return "Unknown";
   }
 
-  const steward = getMemberById(initiative.stewardId);
+  const steward = await getMemberById(initiative.stewardId);
 
   return steward?.profile.country ?? "Canada";
 }
@@ -102,7 +103,9 @@ function buildCapSummary(content: CivicActionPackageContent): string {
  * Idempotent generation — one CAP per closed collective decision.
  * Safe to call from close workflow and verification scripts.
  */
-export function generateCivicActionPackageForDecision(decisionId: string): CivicActionPackage {
+export async function generateCivicActionPackageForDecision(
+  decisionId: string,
+): Promise<CivicActionPackage> {
   const existing = getCapByDecisionId(decisionId);
 
   if (existing) {
@@ -140,7 +143,7 @@ export function generateCivicActionPackageForDecision(decisionId: string): Civic
     title: buildCapTitle(content),
     summary: buildCapSummary(content),
     participationScope: decision.participationScope,
-    country: resolveCountry(decision.initiativeId),
+    country: await resolveCountry(decision.initiativeId),
     region: initiative.metadata.region || undefined,
     community: initiative.metadata.communitySlug.replace(/-/g, " ") || undefined,
     content,
@@ -148,7 +151,16 @@ export function generateCivicActionPackageForDecision(decisionId: string): Civic
     updatedAt: now,
   };
 
-  return createCapPackage(capPackage);
+  const created = createCapPackage(capPackage);
+
+  emitCivicNotificationEvent({
+    eventType: "civic_action_package_issued",
+    entityType: "civic_action_package",
+    entityId: created.capId,
+    initiativeId: created.initiativeId,
+  });
+
+  return created;
 }
 
 export function getCivicActionPackageById(capId: string): CivicActionPackage | null {

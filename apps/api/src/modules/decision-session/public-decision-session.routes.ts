@@ -21,11 +21,11 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicDecisionSessionRouter.get("/:sessionId", (req, res) => {
+publicDecisionSessionRouter.get("/:sessionId", async (req, res) => {
   const sessionId = Array.isArray(req.params.sessionId)
     ? (req.params.sessionId[0] ?? "")
     : (req.params.sessionId ?? "");
-  const projection = getPublicDecisionSession(sessionId);
+  const projection = await getPublicDecisionSession(sessionId);
 
   if (!projection) {
     res.status(404).json(createFailureResponse("Public decision session is not available."));

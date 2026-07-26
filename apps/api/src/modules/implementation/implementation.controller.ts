@@ -462,7 +462,7 @@ export function updateMilestoneHandler(req: Request, res: Response): void {
   }
 }
 
-export function recordAchievementHandler(req: Request, res: Response): void {
+export async function recordAchievementHandler(req: Request, res: Response): Promise<void> {
   const implementationId = getParam(req, "implementationId");
   const idError = validateImplementationId(implementationId);
 
@@ -480,7 +480,7 @@ export function recordAchievementHandler(req: Request, res: Response): void {
   }
 
   try {
-    const implementation = recordAchievement(implementationId, parseRecordAchievementInput(body));
+    const implementation = await recordAchievement(implementationId, parseRecordAchievementInput(body));
 
     if (!implementation) {
       res.status(404).json(createFailureResponse("Implementation not found."));

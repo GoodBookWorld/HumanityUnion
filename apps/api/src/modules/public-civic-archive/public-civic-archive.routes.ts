@@ -54,16 +54,16 @@ function getArchiveRecordId(req: Request): string {
   return Array.isArray(archiveRecordId) ? (archiveRecordId[0] ?? "") : (archiveRecordId ?? "");
 }
 
-publicCivicArchiveRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+publicCivicArchiveRouter.get("/mine", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const records = listMyPublicCivicArchiveRecords(identity);
 
   res.json(createSuccessResponse(records, "My civic archive records loaded."));
 });
 
-publicCivicArchiveRouter.get("/:archiveRecordId", authenticationMiddleware, (req, res) => {
+publicCivicArchiveRouter.get("/:archiveRecordId", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const record = getMyPublicCivicArchiveRecord(identity, getArchiveRecordId(req));
 
     res.json(createSuccessResponse(record, "Civic archive record loaded."));
@@ -72,10 +72,10 @@ publicCivicArchiveRouter.get("/:archiveRecordId", authenticationMiddleware, (req
   }
 });
 
-publicCivicArchiveRouter.post("/draft", authenticationMiddleware, (req, res) => {
+publicCivicArchiveRouter.post("/draft", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
-    const record = createPublicCivicArchiveDraft(identity, req.body);
+    const identity = await resolveRequestIdentity(req);
+    const record = await createPublicCivicArchiveDraft(identity, req.body);
 
     res.status(201).json(createSuccessResponse(record, "Civic archive draft created."));
   } catch (error) {
@@ -83,9 +83,9 @@ publicCivicArchiveRouter.post("/draft", authenticationMiddleware, (req, res) => 
   }
 });
 
-publicCivicArchiveRouter.patch("/:archiveRecordId/draft", authenticationMiddleware, (req, res) => {
+publicCivicArchiveRouter.patch("/:archiveRecordId/draft", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const record = updatePublicCivicArchiveDraft(identity, getArchiveRecordId(req), req.body);
 
     res.json(createSuccessResponse(record, "Civic archive draft updated."));
@@ -94,9 +94,9 @@ publicCivicArchiveRouter.patch("/:archiveRecordId/draft", authenticationMiddlewa
   }
 });
 
-publicCivicArchiveRouter.post("/:archiveRecordId/publish", authenticationMiddleware, (req, res) => {
+publicCivicArchiveRouter.post("/:archiveRecordId/publish", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const record = publishPublicCivicArchive(identity, getArchiveRecordId(req));
 
     res.json(createSuccessResponse(record, "Civic archive record published."));

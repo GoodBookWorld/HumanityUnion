@@ -225,7 +225,7 @@ async function buildPipelineContext(): Promise<{
     closesAt: futureIsoDate(30),
   });
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
-  closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
+  await closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
   const capPackage = getCivicActionPackageForDecision(decisionDraft.decisionId);
 
@@ -439,7 +439,7 @@ async function runVerification(): Promise<void> {
   console.log("7. Cross-entity integration after archive");
   const { createPublicCivicArchiveDraft, publishPublicCivicArchive } =
     await import("../modules/public-civic-archive/public-civic-archive.service.js");
-  const archiveDraft = createPublicCivicArchiveDraft(author, {
+  const archiveDraft = await createPublicCivicArchiveDraft(author, {
     impactId: context.impactId,
     title: "Integration Archive",
     summary: "Archive summary.",

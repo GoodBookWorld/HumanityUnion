@@ -176,7 +176,7 @@ async function buildClosedDecisionContext(): Promise<{
     closesAt: futureIsoDate(30),
   });
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
-  closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
+  await closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
   return {
     initiativeId: projected.initiativeId,
@@ -225,13 +225,13 @@ async function runVerification(): Promise<void> {
   const context = await buildClosedDecisionContext();
 
   console.log("1. CAP generated from closed decision");
-  const generated = generateCivicActionPackageForDecision(context.decisionId);
+  const generated = await generateCivicActionPackageForDecision(context.decisionId);
   assert(generated.status === "issued", "CAP is issued");
   assert(generated.decisionId === context.decisionId, "CAP links to decision");
   assert(generated.capNumber >= 1, "CAP number assigned");
 
   console.log("2. One CAP per decision and idempotent generation");
-  const second = generateCivicActionPackageForDecision(context.decisionId);
+  const second = await generateCivicActionPackageForDecision(context.decisionId);
   assert(second.capId === generated.capId, "Idempotent generation returns same CAP");
 
   console.log("3. Public projection and privacy");

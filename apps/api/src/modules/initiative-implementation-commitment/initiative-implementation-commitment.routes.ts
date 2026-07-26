@@ -7,8 +7,8 @@ import { listMyInitiativeImplementationCommitments } from "./initiative-implemen
 
 const initiativeImplementationCommitmentRouter = Router();
 
-initiativeImplementationCommitmentRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+initiativeImplementationCommitmentRouter.get("/mine", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const commitments = listMyInitiativeImplementationCommitments(identity);
 
   res.json(createSuccessResponse(commitments, "My implementation commitments loaded."));

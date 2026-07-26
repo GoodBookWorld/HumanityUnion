@@ -67,6 +67,14 @@ export function listVotesForDecision(decisionId: string): InitiativeDecisionVote
   );
 }
 
+export function listAllVotes(): InitiativeDecisionVote[] {
+  return Array.from(votes.values(), (vote) => structuredClone(vote));
+}
+
+export function listAllVoteHistory(): InitiativeDecisionVoteHistoryEntry[] {
+  return Array.from(history.values(), (entry) => structuredClone(entry));
+}
+
 export function listVoteHistoryForDecision(
   decisionId: string,
 ): InitiativeDecisionVoteHistoryEntry[] {

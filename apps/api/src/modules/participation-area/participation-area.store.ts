@@ -14,6 +14,7 @@ export interface CreateParticipationAreaInput {
   countrySlug: string;
   regionSlug?: string;
   communitySlug?: string;
+  regionLabel?: string;
   verificationStatus: ParticipationAreaVerificationStatus;
 }
 
@@ -108,6 +109,7 @@ function applyDueTransition(
     countrySlug: transition.toArea.countrySlug,
     regionSlug: transition.toArea.regionSlug,
     communitySlug: transition.toArea.communitySlug,
+    regionLabel: transition.toArea.regionLabel,
     verificationStatus: activeArea.verificationStatus,
     status: "active",
     createdAt: now,
@@ -125,6 +127,27 @@ function applyDueTransition(
   persistStores();
 
   return structuredClone(newArea);
+}
+
+export function cancelParticipationAreaTransition(
+  participantId: string,
+): ParticipationAreaTransition {
+  const pendingTransition = findPendingTransitionForParticipant(participantId);
+
+  if (!pendingTransition) {
+    throw new Error("Participant has no pending Participation Area transition.");
+  }
+
+  const storedTransition = transitions.get(pendingTransition.transitionId);
+
+  if (!storedTransition) {
+    throw new Error("Pending Participation Area transition not found.");
+  }
+
+  storedTransition.status = "cancelled";
+  persistStores();
+
+  return structuredClone(storedTransition);
 }
 
 export function getParticipationAreaById(participationAreaId: string): ParticipationArea | null {
@@ -159,6 +182,7 @@ export function createParticipationArea(input: CreateParticipationAreaInput): Pa
     countrySlug: input.countrySlug,
     regionSlug: input.regionSlug,
     communitySlug: input.communitySlug,
+    regionLabel: input.regionLabel,
     verificationStatus: input.verificationStatus,
     status: "active",
     createdAt: now,
@@ -195,6 +219,7 @@ export function requestParticipationAreaTransition(
       input.toArea.countrySlug,
       input.toArea.regionSlug,
       input.toArea.communitySlug,
+      input.toArea.regionLabel,
     ),
     requestedAt: now,
     effectiveAt: input.effectiveAt,
@@ -242,4 +267,10 @@ export function seedParticipationAreaTransition(
   persistStores();
 
   return structuredClone(transition);
+}
+
+export function listActiveParticipationAreas(): ParticipationArea[] {
+  return Array.from(areas.values(), (area) => structuredClone(area)).filter(
+    (area) => area.status === "active" && area.countrySlug.trim().length > 0,
+  );
 }

@@ -1,0 +1,389 @@
+import { randomUUID } from "node:crypto";
+
+import type { ClientSession } from "mongodb";
+
+import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
+import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
+import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connection.js";
+import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
+import { AuthPersistenceUnavailableError } from "./auth.errors.js";
+import type { AuthUserRecord, RegisterAuthUserInput } from "./auth-user.types.js";
+import { hashPassword } from "./auth-password.js";
+
+interface AuthUserDocument extends AuthUserRecord {
+  _id?: string;
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+async function ensureAuthMongoReady(): Promise<void> {
+  if (!isMongoConfigured()) {
+    throw new AuthPersistenceUnavailableError();
+  }
+
+  await connectMongoClient();
+}
+
+export async function findAuthUserByEmail(email: string): Promise<AuthUserRecord | null> {
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+  const document = await collection.findOne({ email: normalizeEmail(email) });
+
+  if (!document) {
+    return null;
+  }
+
+  const { _id: _ignored, ...record } = document;
+  return record;
+}
+
+export async function findAuthUserById(userId: string): Promise<AuthUserRecord | null> {
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+  const document = await collection.findOne({ userId });
+
+  if (!document) {
+    return null;
+  }
+
+  const { _id: _ignored, ...record } = document;
+  return record;
+}
+
+export async function findAuthUserByMemberId(memberId: string): Promise<AuthUserRecord | null> {
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+  const document = await collection.findOne({ memberId });
+
+  if (!document) {
+    return null;
+  }
+
+  const { _id: _ignored, ...record } = document;
+  return record;
+}
+
+export async function insertAuthUser(
+  input: RegisterAuthUserInput,
+  memberId: string,
+): Promise<AuthUserRecord> {
+  await ensureAuthMongoReady();
+
+  const now = new Date().toISOString();
+  const passwordHash = await hashPassword(input.password);
+  const record: AuthUserRecord = {
+    userId: randomUUID(),
+    email: normalizeEmail(input.email),
+    passwordHash,
+    displayName: input.displayName.trim(),
+    role: input.role ?? "member",
+    status: "active",
+    memberId,
+    emailVerificationStatus: "pending",
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  try {
+    await collection.insertOne(record);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: number }).code === 11000
+    ) {
+      throw error;
+    }
+
+    throw error;
+  }
+
+  return record;
+}
+
+export async function updateAuthUserLastLogin(userId: string, lastLoginAt: string): Promise<void> {
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  await collection.updateOne(
+    { userId },
+    {
+      $set: {
+        lastLoginAt,
+        updatedAt: lastLoginAt,
+      },
+    },
+  );
+}
+
+export async function deleteAuthUsersByEmailPrefix(emailPrefix: string): Promise<number> {
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+  const result = await collection.deleteMany({
+    email: { $regex: `^${emailPrefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}` },
+  });
+
+  return result.deletedCount ?? 0;
+}
+
+export async function findRawAuthUserByEmail(email: string): Promise<AuthUserRecord | null> {
+  return findAuthUserByEmail(email);
+}
+
+export async function markAuthUserEmailVerified(
+  userId: string,
+  options: { session?: ClientSession } = {},
+): Promise<AuthUserRecord | null> {
+  await ensureAuthMongoReady();
+
+  const now = new Date().toISOString();
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  const verifiedUpdate = await collection.findOneAndUpdate(
+    { userId, emailVerificationStatus: "pending" },
+    {
+      $set: {
+        emailVerificationStatus: "verified",
+        emailVerifiedAt: now,
+        updatedAt: now,
+      },
+      $unset: {
+        pendingEmail: "",
+      },
+    },
+    { returnDocument: "after", session: options.session },
+  );
+
+  if (verifiedUpdate) {
+    const { _id: _ignored, ...record } = verifiedUpdate;
+    return record;
+  }
+
+  const alreadyVerified = await collection.findOne(
+    { userId, emailVerificationStatus: "verified" },
+    { session: options.session },
+  );
+
+  if (!alreadyVerified) {
+    return null;
+  }
+
+  const { _id: _ignoredVerified, ...verifiedRecord } = alreadyVerified;
+  return verifiedRecord;
+}
+
+export async function markRegistrationWelcomeEmailSent(userId: string): Promise<boolean> {
+  await ensureAuthMongoReady();
+
+  const now = new Date().toISOString();
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  const result = await collection.findOneAndUpdate(
+    {
+      userId,
+      registrationWelcomeEmailSentAt: { $exists: false },
+    },
+    {
+      $set: {
+        registrationWelcomeEmailSentAt: now,
+        updatedAt: now,
+      },
+    },
+    { returnDocument: "after" },
+  );
+
+  return Boolean(result);
+}
+
+export async function setAuthUserLoginEmailTwoStepEnabled(
+  userId: string,
+  enabled: boolean,
+): Promise<AuthUserRecord | null> {
+  await ensureAuthMongoReady();
+
+  const now = new Date().toISOString();
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  const result = await collection.findOneAndUpdate(
+    { userId },
+    {
+      $set: {
+        loginEmailTwoStepEnabled: enabled,
+        updatedAt: now,
+      },
+    },
+    { returnDocument: "after" },
+  );
+
+  if (!result) {
+    return null;
+  }
+
+  const { _id: _ignored, ...record } = result;
+  return record;
+}
+
+export async function setAuthUserPendingEmail(
+  userId: string,
+  pendingEmail: string,
+): Promise<AuthUserRecord | null> {
+  await ensureAuthMongoReady();
+
+  const now = new Date().toISOString();
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  const result = await collection.findOneAndUpdate(
+    { userId },
+    {
+      $set: {
+        pendingEmail: normalizeEmail(pendingEmail),
+        updatedAt: now,
+      },
+    },
+    { returnDocument: "after" },
+  );
+
+  if (!result) {
+    return null;
+  }
+
+  const { _id: _ignored, ...record } = result;
+  return record;
+}
+
+export async function markExistingAuthUsersEmailVerifiedForMigration(): Promise<number> {
+  await ensureAuthMongoReady();
+
+  const now = new Date().toISOString();
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  const result = await collection.updateMany(
+    {
+      emailVerificationStatus: { $ne: "verified" },
+    },
+    {
+      $set: {
+        emailVerificationStatus: "verified",
+        emailVerifiedAt: now,
+        updatedAt: now,
+      },
+    },
+  );
+
+  return result.modifiedCount ?? 0;
+}
+
+export async function confirmAuthUserEmailChange(
+  userId: string,
+  newEmail: string,
+): Promise<AuthUserRecord | null> {
+  await ensureAuthMongoReady();
+
+  const now = new Date().toISOString();
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  const result = await collection.findOneAndUpdate(
+    { userId },
+    {
+      $set: {
+        email: normalizeEmail(newEmail),
+        emailVerificationStatus: "verified",
+        emailVerifiedAt: now,
+        updatedAt: now,
+      },
+      $unset: {
+        pendingEmail: "",
+      },
+    },
+    { returnDocument: "after" },
+  );
+
+  if (!result) {
+    return null;
+  }
+
+  const { _id: _ignored, ...record } = result;
+  return record;
+}
+
+export async function countActiveAuthUsers(): Promise<number> {
+  if (!isMongoConfigured()) {
+    return 0;
+  }
+
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  return collection.countDocuments({
+    status: { $ne: "disabled" },
+  });
+}
+
+export async function countVerifiedActiveAuthUsers(): Promise<number> {
+  if (!isMongoConfigured()) {
+    return 0;
+  }
+
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  return collection.countDocuments({
+    status: { $ne: "disabled" },
+    emailVerificationStatus: "verified",
+  });
+}
+
+export async function listActiveAuthUserMemberIds(): Promise<Map<string, string>> {
+  if (!isMongoConfigured()) {
+    return new Map();
+  }
+
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+  const documents = await collection
+    .find({ status: { $ne: "disabled" } }, { projection: { userId: 1, memberId: 1 } })
+    .toArray();
+
+  return new Map(documents.map((document) => [document.memberId, document.userId] as const));
+}
+
+export async function updateAuthUserPassword(
+  userId: string,
+  passwordHash: string,
+): Promise<AuthUserRecord | null> {
+  await ensureAuthMongoReady();
+
+  const now = new Date().toISOString();
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  const result = await collection.findOneAndUpdate(
+    { userId },
+    {
+      $set: {
+        passwordHash,
+        updatedAt: now,
+      },
+    },
+    { returnDocument: "after" },
+  );
+
+  if (!result) {
+    return null;
+  }
+
+  const { _id: _ignored, ...record } = result;
+  return record;
+}

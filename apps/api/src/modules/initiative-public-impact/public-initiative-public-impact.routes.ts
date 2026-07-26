@@ -23,11 +23,11 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicInitiativePublicImpactRouter.get("/:impactId", (req, res) => {
+publicInitiativePublicImpactRouter.get("/:impactId", async (req, res) => {
   const impactId = Array.isArray(req.params.impactId)
     ? (req.params.impactId[0] ?? "")
     : (req.params.impactId ?? "");
-  const projection = getPublicInitiativePublicImpact(impactId);
+  const projection = await getPublicInitiativePublicImpact(impactId);
 
   if (!projection) {
     res.status(404).json(createFailureResponse("Public impact record is not available."));
@@ -39,7 +39,7 @@ publicInitiativePublicImpactRouter.get("/:impactId", (req, res) => {
 
 export const publicInitiativePublicImpactsByInitiativeRouter = Router();
 
-publicInitiativePublicImpactsByInitiativeRouter.get("/:initiativeId/public-impact", (req, res) => {
+publicInitiativePublicImpactsByInitiativeRouter.get("/:initiativeId/public-impact", async (req, res) => {
   const initiativeId = Array.isArray(req.params.initiativeId)
     ? (req.params.initiativeId[0] ?? "")
     : (req.params.initiativeId ?? "");
@@ -55,7 +55,7 @@ publicInitiativePublicImpactsByInitiativeRouter.get("/:initiativeId/public-impac
     return;
   }
 
-  const impacts = listPublicInitiativePublicImpactsForInitiative(initiativeId);
+  const impacts = await listPublicInitiativePublicImpactsForInitiative(initiativeId);
   const metrics = computeInitiativePublicImpactMetrics(initiativeId);
 
   res.json(createSuccessResponse(impacts, "Public impact records loaded.", { metrics }));
@@ -63,7 +63,7 @@ publicInitiativePublicImpactsByInitiativeRouter.get("/:initiativeId/public-impac
 
 export const publicInitiativePublicImpactsByTrackingRouter = Router();
 
-publicInitiativePublicImpactsByTrackingRouter.get("/:trackingId/public-impact", (req, res) => {
+publicInitiativePublicImpactsByTrackingRouter.get("/:trackingId/public-impact", async (req, res) => {
   const trackingId = Array.isArray(req.params.trackingId)
     ? (req.params.trackingId[0] ?? "")
     : (req.params.trackingId ?? "");

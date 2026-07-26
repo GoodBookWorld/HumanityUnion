@@ -61,16 +61,16 @@ function getCapId(req: Request): string {
   return Array.isArray(capId) ? (capId[0] ?? "") : (capId ?? "");
 }
 
-civicDeliveryRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+civicDeliveryRouter.get("/mine", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const deliveries = listMyCivicDeliveries(identity);
 
   res.json(createSuccessResponse(deliveries, "Civic deliveries loaded."));
 });
 
-civicDeliveryRouter.post("/draft", authenticationMiddleware, (req, res) => {
+civicDeliveryRouter.post("/draft", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const capId = typeof req.body?.capId === "string" ? req.body.capId : "";
 
     if (!capId) {
@@ -86,7 +86,7 @@ civicDeliveryRouter.post("/draft", authenticationMiddleware, (req, res) => {
   }
 });
 
-civicDeliveryRouter.get("/recommended/:capId", authenticationMiddleware, (req, res) => {
+civicDeliveryRouter.get("/recommended/:capId", authenticationMiddleware, async (req, res) => {
   try {
     const capId = getCapId(req);
     const recommendations = listRecommendedCivicDeliveryRecipients(capId);
@@ -97,8 +97,8 @@ civicDeliveryRouter.get("/recommended/:capId", authenticationMiddleware, (req, r
   }
 });
 
-civicDeliveryRouter.get("/:deliveryId", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+civicDeliveryRouter.get("/:deliveryId", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const detail = getMyCivicDelivery(identity, getDeliveryId(req));
 
   if (!detail) {
@@ -109,9 +109,9 @@ civicDeliveryRouter.get("/:deliveryId", authenticationMiddleware, (req, res) => 
   res.json(createSuccessResponse(detail, "Civic delivery loaded."));
 });
 
-civicDeliveryRouter.post("/:deliveryId/recipients", authenticationMiddleware, (req, res) => {
+civicDeliveryRouter.post("/:deliveryId/recipients", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const body = req.body as {
       name?: string;
       organization?: string;
@@ -144,9 +144,9 @@ civicDeliveryRouter.post("/:deliveryId/recipients", authenticationMiddleware, (r
 civicDeliveryRouter.delete(
   "/:deliveryId/recipients/:recipientId",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       removeCivicDeliveryRecipient(identity, getDeliveryId(req), getRecipientId(req));
 
       res.json(createSuccessResponse({ removed: true }, "Recipient removed."));
@@ -158,7 +158,7 @@ civicDeliveryRouter.delete(
 
 civicDeliveryRouter.post("/:deliveryId/send", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const detail = await sendCivicDelivery(identity, getDeliveryId(req));
 
     res.json(createSuccessResponse(detail, "Civic delivery sent."));

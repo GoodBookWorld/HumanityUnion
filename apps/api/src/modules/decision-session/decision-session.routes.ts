@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 
-import { authenticationMiddleware } from "../auth/auth.middleware.js";
+import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
@@ -72,30 +72,34 @@ function getInitiativeId(req: Request): string {
   return Array.isArray(initiativeId) ? (initiativeId[0] ?? "") : (initiativeId ?? "");
 }
 
-decisionSessionRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+decisionSessionRouter.get("/mine", ...authenticatedWorkspaceWriteMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const sessions = listMyDecisionSessions(identity);
 
   res.json(createSuccessResponse(sessions, "My decision sessions loaded."));
 });
 
-decisionSessionRouter.get("/by-initiative/:initiativeId", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const sessions = listMyDecisionSessionsForInitiative(identity, getInitiativeId(req));
+decisionSessionRouter.get(
+  "/by-initiative/:initiativeId",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const sessions = listMyDecisionSessionsForInitiative(identity, getInitiativeId(req));
 
-    res.json(createSuccessResponse(sessions, "Initiative decision sessions loaded."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(sessions, "Initiative decision sessions loaded."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
 decisionSessionRouter.get(
   "/initiative/:initiativeId/eligibility",
-  authenticationMiddleware,
-  (req, res) => {
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const initiativeId = getInitiativeId(req);
       const initiative = getInitiativeById(initiativeId);
 
@@ -114,9 +118,9 @@ decisionSessionRouter.get(
   },
 );
 
-decisionSessionRouter.get("/:sessionId", authenticationMiddleware, (req, res) => {
+decisionSessionRouter.get("/:sessionId", ...authenticatedWorkspaceWriteMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const session = getMyDecisionSession(identity, getSessionId(req));
 
     res.json(createSuccessResponse(session, "Decision session loaded."));
@@ -125,9 +129,9 @@ decisionSessionRouter.get("/:sessionId", authenticationMiddleware, (req, res) =>
   }
 });
 
-decisionSessionRouter.post("/draft", authenticationMiddleware, (req, res) => {
+decisionSessionRouter.post("/draft", ...authenticatedWorkspaceWriteMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const input = validateCreateDecisionSessionDraftInput(req.body);
     const created = createDecisionSessionDraft(identity, input);
 
@@ -137,49 +141,65 @@ decisionSessionRouter.post("/draft", authenticationMiddleware, (req, res) => {
   }
 });
 
-decisionSessionRouter.patch("/:sessionId/draft", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const input = validateSaveDecisionSessionDraftInput(req.body);
-    const session = saveDecisionSessionDraft(identity, getSessionId(req), input);
+decisionSessionRouter.patch(
+  "/:sessionId/draft",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const input = validateSaveDecisionSessionDraftInput(req.body);
+      const session = saveDecisionSessionDraft(identity, getSessionId(req), input);
 
-    res.json(createSuccessResponse(session, "Decision session draft saved."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(session, "Decision session draft saved."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
-decisionSessionRouter.post("/:sessionId/publish", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const session = publishDecisionSession(identity, getSessionId(req));
+decisionSessionRouter.post(
+  "/:sessionId/publish",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const session = publishDecisionSession(identity, getSessionId(req));
 
-    res.json(createSuccessResponse(session, "Decision session published."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(session, "Decision session published."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
-decisionSessionRouter.post("/:sessionId/close", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const session = closeDecisionSession(identity, getSessionId(req));
+decisionSessionRouter.post(
+  "/:sessionId/close",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const session = closeDecisionSession(identity, getSessionId(req));
 
-    res.json(createSuccessResponse(session, "Decision session closed."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(session, "Decision session closed."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
-decisionSessionRouter.post("/:sessionId/archive", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const session = archiveDecisionSession(identity, getSessionId(req));
+decisionSessionRouter.post(
+  "/:sessionId/archive",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const session = archiveDecisionSession(identity, getSessionId(req));
 
-    res.json(createSuccessResponse(session, "Decision session archived."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(session, "Decision session archived."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
 export default decisionSessionRouter;

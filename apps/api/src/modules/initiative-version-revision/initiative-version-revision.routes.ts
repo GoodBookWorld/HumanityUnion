@@ -58,9 +58,9 @@ function getInitiativeId(req: Request): string {
 initiativeVersionRevisionRouter.get(
   "/initiative/:initiativeId",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const revisions = listInitiativeVersionRevisions(identity, getInitiativeId(req));
 
       res.json(createSuccessResponse(revisions, "Initiative version revisions loaded."));
@@ -73,9 +73,9 @@ initiativeVersionRevisionRouter.get(
 initiativeVersionRevisionRouter.get(
   "/initiative/:initiativeId/workspace",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const context = getInitiativeRevisionWorkspaceContext(identity, getInitiativeId(req));
 
       res.json(createSuccessResponse(context, "Initiative revision workspace loaded."));
@@ -88,9 +88,9 @@ initiativeVersionRevisionRouter.get(
 initiativeVersionRevisionRouter.post(
   "/initiative/:initiativeId/draft",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const draft = createInitiativeRevisionDraft(identity, getInitiativeId(req));
 
       res.status(201).json(createSuccessResponse(draft, "Initiative revision draft created."));
@@ -103,9 +103,9 @@ initiativeVersionRevisionRouter.post(
 initiativeVersionRevisionRouter.patch(
   "/initiative/:initiativeId/draft",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const input = validateSaveInitiativeRevisionDraftInput(req.body);
       const draft = saveInitiativeRevisionDraft(identity, getInitiativeId(req), input);
 
@@ -119,9 +119,9 @@ initiativeVersionRevisionRouter.patch(
 initiativeVersionRevisionRouter.post(
   "/initiative/:initiativeId/publish",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const result = publishInitiativeRevision(identity, getInitiativeId(req));
 
       res.json(createSuccessResponse(result, "Initiative revision published."));

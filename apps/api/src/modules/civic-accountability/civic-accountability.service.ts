@@ -7,6 +7,7 @@ import { canTransitionCivicAccountabilityStatus } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertCanRecordCivicAccountability } from "./civic-accountability-identity.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 import {
   createEvent,
   getAccountabilityById,
@@ -102,6 +103,14 @@ export function addCivicAccountabilityEvent(
     throw new Error("Civic accountability not found.");
   }
 
+  emitCivicNotificationEvent({
+    eventType: "civic_accountability_event_added",
+    entityType: "civic_accountability",
+    entityId: accountabilityId,
+    initiativeId: updatedAccountability.initiativeId,
+    actorMemberId: identity.participantId,
+  });
+
   return {
     accountability: updatedAccountability,
     event: createdEvent,
@@ -133,6 +142,14 @@ export function closeCivicAccountability(
   if (!updated) {
     throw new Error("Civic accountability not found.");
   }
+
+  emitCivicNotificationEvent({
+    eventType: "civic_accountability_closed",
+    entityType: "civic_accountability",
+    entityId: accountabilityId,
+    initiativeId: updated.initiativeId,
+    actorMemberId: identity.participantId,
+  });
 
   return updated;
 }

@@ -23,11 +23,11 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicInitiativeImplementationTrackingRouter.get("/:trackingId", (req, res) => {
+publicInitiativeImplementationTrackingRouter.get("/:trackingId", async (req, res) => {
   const trackingId = Array.isArray(req.params.trackingId)
     ? (req.params.trackingId[0] ?? "")
     : (req.params.trackingId ?? "");
-  const projection = getPublicInitiativeImplementationTracking(trackingId);
+  const projection = await getPublicInitiativeImplementationTracking(trackingId);
 
   if (!projection) {
     res.status(404).json(createFailureResponse("Public implementation tracking is not available."));
@@ -41,7 +41,7 @@ export const publicInitiativeImplementationTrackingsByInitiativeRouter = Router(
 
 publicInitiativeImplementationTrackingsByInitiativeRouter.get(
   "/:initiativeId/implementation-tracking",
-  (req, res) => {
+  async (req, res) => {
     const initiativeId = Array.isArray(req.params.initiativeId)
       ? (req.params.initiativeId[0] ?? "")
       : (req.params.initiativeId ?? "");
@@ -57,7 +57,7 @@ publicInitiativeImplementationTrackingsByInitiativeRouter.get(
       return;
     }
 
-    const trackings = listPublicInitiativeImplementationTrackingsForInitiative(initiativeId);
+    const trackings = await listPublicInitiativeImplementationTrackingsForInitiative(initiativeId);
     const metrics = computeInitiativeImplementationTrackingMetrics(initiativeId);
 
     res.json(
@@ -70,7 +70,7 @@ export const publicInitiativeImplementationTrackingsByCommitmentRouter = Router(
 
 publicInitiativeImplementationTrackingsByCommitmentRouter.get(
   "/:commitmentId/implementation-tracking",
-  (req, res) => {
+  async (req, res) => {
     const commitmentId = Array.isArray(req.params.commitmentId)
       ? (req.params.commitmentId[0] ?? "")
       : (req.params.commitmentId ?? "");
@@ -81,7 +81,7 @@ publicInitiativeImplementationTrackingsByCommitmentRouter.get(
       return;
     }
 
-    const trackings = listPublicInitiativeImplementationTrackingsForCommitment(commitmentId);
+    const trackings = await listPublicInitiativeImplementationTrackingsForCommitment(commitmentId);
 
     res.json(createSuccessResponse(trackings, "Public implementation tracking loaded."));
   },

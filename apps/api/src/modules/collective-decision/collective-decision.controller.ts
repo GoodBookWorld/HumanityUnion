@@ -53,7 +53,7 @@ function getDecisionId(req: Request): string {
   return Array.isArray(decisionId) ? (decisionId[0] ?? "") : (decisionId ?? "");
 }
 
-export function listCollectiveDecisionsHandler(_req: Request, res: Response): void {
+export async function listCollectiveDecisionsHandler(_req: Request, res: Response): Promise<void> {
   const decisions = listDecisions();
 
   res.json(
@@ -64,7 +64,7 @@ export function listCollectiveDecisionsHandler(_req: Request, res: Response): vo
   );
 }
 
-export function getCollectiveDecisionHandler(req: Request, res: Response): void {
+export async function getCollectiveDecisionHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const validationError = validateDecisionId(decisionId);
 
@@ -85,7 +85,7 @@ export function getCollectiveDecisionHandler(req: Request, res: Response): void 
   );
 }
 
-export function createCollectiveDecisionHandler(req: Request, res: Response): void {
+export async function createCollectiveDecisionHandler(req: Request, res: Response): Promise<void> {
   const decision = req.body as CollectiveDecision;
   const validationError = validateCreateDecision(decision);
 
@@ -95,7 +95,7 @@ export function createCollectiveDecisionHandler(req: Request, res: Response): vo
   }
 
   try {
-    const created = createDecision(decision);
+    const created = await createDecision(decision);
 
     res
       .status(201)
@@ -110,7 +110,7 @@ export function createCollectiveDecisionHandler(req: Request, res: Response): vo
   }
 }
 
-export function patchCollectiveDecisionHandler(req: Request, res: Response): void {
+export async function patchCollectiveDecisionHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const idError = validateDecisionId(decisionId);
 
@@ -134,7 +134,7 @@ export function patchCollectiveDecisionHandler(req: Request, res: Response): voi
   }
 
   try {
-    const decision = updateDecision(decisionId, update);
+    const decision = await updateDecision(decisionId, update);
 
     if (!decision) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));
@@ -152,7 +152,7 @@ export function patchCollectiveDecisionHandler(req: Request, res: Response): voi
   }
 }
 
-export function submitParticipantDecisionHandler(req: Request, res: Response): void {
+export async function submitParticipantDecisionHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const idError = validateDecisionId(decisionId);
 
@@ -170,7 +170,7 @@ export function submitParticipantDecisionHandler(req: Request, res: Response): v
   }
 
   try {
-    const decision = submitParticipantDecision(decisionId, parseParticipantDecision(body));
+    const decision = await submitParticipantDecision(decisionId, parseParticipantDecision(body));
 
     if (!decision) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));
@@ -190,7 +190,7 @@ export function submitParticipantDecisionHandler(req: Request, res: Response): v
   }
 }
 
-export function calculateDecisionResultHandler(req: Request, res: Response): void {
+export async function calculateDecisionResultHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const idError = validateDecisionId(decisionId);
 
@@ -200,7 +200,7 @@ export function calculateDecisionResultHandler(req: Request, res: Response): voi
   }
 
   try {
-    const result = calculateDecisionResult(decisionId);
+    const result = await calculateDecisionResult(decisionId);
 
     if (!result) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));
@@ -215,7 +215,7 @@ export function calculateDecisionResultHandler(req: Request, res: Response): voi
   }
 }
 
-export function determineOutcomeHandler(req: Request, res: Response): void {
+export async function determineOutcomeHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const idError = validateDecisionId(decisionId);
 
@@ -225,7 +225,7 @@ export function determineOutcomeHandler(req: Request, res: Response): void {
   }
 
   try {
-    const outcome = determineOutcome(decisionId);
+    const outcome = await determineOutcome(decisionId);
 
     if (!outcome) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));
@@ -238,7 +238,7 @@ export function determineOutcomeHandler(req: Request, res: Response): void {
   }
 }
 
-export function scheduleDecisionHandler(req: Request, res: Response): void {
+export async function scheduleDecisionHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const idError = validateDecisionId(decisionId);
 
@@ -256,7 +256,7 @@ export function scheduleDecisionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const decision = scheduleDecision(decisionId, body.scheduledAt as string);
+    const decision = await scheduleDecision(decisionId, body.scheduledAt as string);
 
     if (!decision) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));
@@ -269,7 +269,7 @@ export function scheduleDecisionHandler(req: Request, res: Response): void {
   }
 }
 
-export function openDecisionHandler(req: Request, res: Response): void {
+export async function openDecisionHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const idError = validateDecisionId(decisionId);
 
@@ -287,7 +287,7 @@ export function openDecisionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const decision = openDecision(decisionId, body.opensAt as string);
+    const decision = await openDecision(decisionId, body.opensAt as string);
 
     if (!decision) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));
@@ -300,7 +300,7 @@ export function openDecisionHandler(req: Request, res: Response): void {
   }
 }
 
-export function closeDecisionHandler(req: Request, res: Response): void {
+export async function closeDecisionHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const idError = validateDecisionId(decisionId);
 
@@ -318,7 +318,7 @@ export function closeDecisionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const decision = closeDecision(decisionId, body.closesAt as string);
+    const decision = await closeDecision(decisionId, body.closesAt as string);
 
     if (!decision) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));
@@ -331,7 +331,7 @@ export function closeDecisionHandler(req: Request, res: Response): void {
   }
 }
 
-export function completeDecisionHandler(req: Request, res: Response): void {
+export async function completeDecisionHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const idError = validateDecisionId(decisionId);
 
@@ -341,7 +341,7 @@ export function completeDecisionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const decision = completeDecision(decisionId);
+    const decision = await completeDecision(decisionId);
 
     if (!decision) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));
@@ -354,7 +354,7 @@ export function completeDecisionHandler(req: Request, res: Response): void {
   }
 }
 
-export function archiveDecisionHandler(req: Request, res: Response): void {
+export async function archiveDecisionHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const idError = validateDecisionId(decisionId);
 
@@ -364,7 +364,7 @@ export function archiveDecisionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const decision = archiveDecision(decisionId);
+    const decision = await archiveDecision(decisionId);
 
     if (!decision) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));
@@ -377,7 +377,7 @@ export function archiveDecisionHandler(req: Request, res: Response): void {
   }
 }
 
-export function cancelDecisionHandler(req: Request, res: Response): void {
+export async function cancelDecisionHandler(req: Request, res: Response): Promise<void> {
   const decisionId = getDecisionId(req);
   const idError = validateDecisionId(decisionId);
 
@@ -387,7 +387,7 @@ export function cancelDecisionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const decision = cancelDecision(decisionId);
+    const decision = await cancelDecision(decisionId);
 
     if (!decision) {
       res.status(404).json(createFailureResponse("Collective Decision not found."));

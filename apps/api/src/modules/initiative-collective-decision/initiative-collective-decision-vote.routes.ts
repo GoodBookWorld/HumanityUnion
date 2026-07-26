@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 
-import { authenticationMiddleware } from "../auth/auth.middleware.js";
+import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
 import {
@@ -57,12 +57,12 @@ function getDecisionId(req: Request): string {
 
 initiativeCollectiveDecisionVoteRouter.post(
   "/:decisionId/vote",
-  authenticationMiddleware,
-  (req, res) => {
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const input = validateCastInitiativeDecisionVoteInput(req.body);
-      const vote = castOrUpdateInitiativeDecisionVote(identity, getDecisionId(req), input);
+      const vote = await castOrUpdateInitiativeDecisionVote(identity, getDecisionId(req), input);
 
       res.status(201).json(createSuccessResponse(vote, "Vote recorded."));
     } catch (error) {
@@ -73,10 +73,10 @@ initiativeCollectiveDecisionVoteRouter.post(
 
 initiativeCollectiveDecisionVoteRouter.get(
   "/:decisionId/my-vote",
-  authenticationMiddleware,
-  (req, res) => {
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const vote = getMyInitiativeDecisionVote(identity, getDecisionId(req));
 
       res.json(createSuccessResponse(vote, vote ? "Vote loaded." : "No vote recorded yet."));

@@ -7,8 +7,8 @@ import { listMyInitiativePublicImpacts } from "./initiative-public-impact.servic
 
 const initiativePublicImpactRouter = Router();
 
-initiativePublicImpactRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+initiativePublicImpactRouter.get("/mine", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const impacts = listMyInitiativePublicImpacts(identity);
 
   res.json(createSuccessResponse(impacts, "My public impact records loaded."));

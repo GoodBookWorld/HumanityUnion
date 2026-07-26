@@ -1,0 +1,4 @@
+export const MEMBERSHIP_CONTRIBUTION_AMOUNT_CENTS = 100;
+export const MEMBERSHIP_CONTRIBUTION_CURRENCY = "cad";
+export const MEMBERSHIP_CHECKOUT_METADATA_PLATFORM = "humanity_union";
+export const MEMBERSHIP_CHECKOUT_MODE = "payment" as const;

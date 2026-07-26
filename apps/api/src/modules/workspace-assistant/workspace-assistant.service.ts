@@ -19,8 +19,14 @@ export interface WorkspaceAssistantRouteBody {
   timestamp: string;
 }
 
-export function respondToWorkspaceAssistant(
+export interface WorkspaceAssistantAuthContext {
+  userId: string;
+  displayName: string;
+}
+
+export async function respondToWorkspaceAssistant(
   identity: RequestIdentity,
+  authContext: WorkspaceAssistantAuthContext,
   body: WorkspaceAssistantRouteBody,
 ) {
   if (body.participantId && body.participantId !== identity.participantId) {
@@ -37,6 +43,8 @@ export function respondToWorkspaceAssistant(
 
   return generateWorkspaceAssistantResponse({
     participantId: identity.participantId,
+    userId: authContext.userId,
+    displayName: authContext.displayName,
     initiativeId: body.initiativeId,
     currentSection: body.currentSection,
     requestedAction: body.requestedAction,

@@ -209,11 +209,11 @@ export function openPetition(petitionId: string, opensAt?: string): Petition | n
   return touchPetition(petition);
 }
 
-export function signPetition(
+export async function signPetition(
   petitionId: string,
   participantId: string,
   participationMode?: ParticipationMode,
-): Petition | null {
+): Promise<Petition | null> {
   const petition = getMutablePetition(petitionId);
 
   if (!petition) {
@@ -230,7 +230,7 @@ export function signPetition(
     throw new Error(`Participant "${participantId}" already signed this Petition.`);
   }
 
-  if (!isParticipantEligibleForPetition(participantId, petition.policy)) {
+  if (!await isParticipantEligibleForPetition(participantId, petition.policy)) {
     throw new Error(`Participant "${participantId}" is not eligible to sign this Petition.`);
   }
 

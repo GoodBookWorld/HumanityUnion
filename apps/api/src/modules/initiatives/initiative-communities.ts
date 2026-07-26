@@ -13,7 +13,7 @@ export const KNOWN_INITIATIVE_COMMUNITIES: readonly KnownInitiativeCommunity[] =
     name: "Nelson Community Garden",
     regionLabel: "Central Kootenay",
     countryLabel: "Canada",
-    countrySlug: "canada",
+    countrySlug: "ca",
     regionSlug: "british-columbia",
   },
   {
@@ -21,7 +21,7 @@ export const KNOWN_INITIATIVE_COMMUNITIES: readonly KnownInitiativeCommunity[] =
     name: "Kootenay Lake Protection Society",
     regionLabel: "Central Kootenay",
     countryLabel: "Canada",
-    countrySlug: "canada",
+    countrySlug: "ca",
     regionSlug: "british-columbia",
   },
 ];

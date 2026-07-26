@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 
-import { authenticationMiddleware } from "../auth/auth.middleware.js";
+import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
 import {
@@ -65,18 +65,22 @@ function getInitiativeId(req: Request): string {
   return Array.isArray(initiativeId) ? (initiativeId[0] ?? "") : (initiativeId ?? "");
 }
 
-initiativeCollaborativeAnalysisRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
-  const analyses = listMyInitiativeCollaborativeAnalyses(identity);
+initiativeCollaborativeAnalysisRouter.get(
+  "/mine",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    const identity = await resolveRequestIdentity(req);
+    const analyses = listMyInitiativeCollaborativeAnalyses(identity);
 
-  res.json(createSuccessResponse(analyses, "My initiative analyses loaded."));
-});
+    res.json(createSuccessResponse(analyses, "My initiative analyses loaded."));
+  },
+);
 
 initiativeCollaborativeAnalysisRouter.get(
   "/by-initiative/:initiativeId",
-  authenticationMiddleware,
-  (req, res) => {
-    const identity = resolveRequestIdentity(req);
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    const identity = await resolveRequestIdentity(req);
     const analyses = listMyInitiativeCollaborativeAnalysesForInitiative(
       identity,
       getInitiativeId(req),
@@ -86,35 +90,43 @@ initiativeCollaborativeAnalysisRouter.get(
   },
 );
 
-initiativeCollaborativeAnalysisRouter.get("/:analysisId", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const analysis = getMyInitiativeCollaborativeAnalysis(identity, getAnalysisId(req));
+initiativeCollaborativeAnalysisRouter.get(
+  "/:analysisId",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const analysis = getMyInitiativeCollaborativeAnalysis(identity, getAnalysisId(req));
 
-    res.json(createSuccessResponse(analysis, "Initiative analysis loaded."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.json(createSuccessResponse(analysis, "Initiative analysis loaded."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
-initiativeCollaborativeAnalysisRouter.post("/draft", authenticationMiddleware, (req, res) => {
-  try {
-    const identity = resolveRequestIdentity(req);
-    const input = validateCreateInitiativeCollaborativeAnalysisDraftInput(req.body);
-    const created = createInitiativeCollaborativeAnalysisDraft(identity, input);
+initiativeCollaborativeAnalysisRouter.post(
+  "/draft",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const input = validateCreateInitiativeCollaborativeAnalysisDraftInput(req.body);
+      const created = createInitiativeCollaborativeAnalysisDraft(identity, input);
 
-    res.status(201).json(createSuccessResponse(created, "Initiative analysis draft created."));
-  } catch (error) {
-    handleServiceError(res, error);
-  }
-});
+      res.status(201).json(createSuccessResponse(created, "Initiative analysis draft created."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
 initiativeCollaborativeAnalysisRouter.patch(
   "/:analysisId/draft",
-  authenticationMiddleware,
-  (req, res) => {
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const input = validateSaveInitiativeCollaborativeAnalysisDraftInput(req.body);
       const analysis = saveInitiativeCollaborativeAnalysisDraft(
         identity,
@@ -131,10 +143,10 @@ initiativeCollaborativeAnalysisRouter.patch(
 
 initiativeCollaborativeAnalysisRouter.post(
   "/:analysisId/publish",
-  authenticationMiddleware,
-  (req, res) => {
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const analysis = publishInitiativeCollaborativeAnalysis(identity, getAnalysisId(req));
 
       res.json(createSuccessResponse(analysis, "Initiative analysis published."));
@@ -146,10 +158,10 @@ initiativeCollaborativeAnalysisRouter.post(
 
 initiativeCollaborativeAnalysisRouter.post(
   "/:analysisId/archive",
-  authenticationMiddleware,
-  (req, res) => {
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const analysis = archiveInitiativeCollaborativeAnalysis(identity, getAnalysisId(req));
 
       res.json(createSuccessResponse(analysis, "Initiative analysis archived."));

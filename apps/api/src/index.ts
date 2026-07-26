@@ -1,8 +1,23 @@
+import { bootstrapEventInfrastructure } from "./infrastructure/events/bootstrap-event-infrastructure.js";
+import { bootstrapAuthPersistence } from "./infrastructure/mongodb/bootstrap-auth-persistence.js";
 import { bootstrapMongoPersistence } from "./infrastructure/mongodb/bootstrap-mongo-persistence.js";
-import { environment } from "./config/environment.js";
+import { environment, initializeEnvironment } from "./config/environment.js";
+
+initializeEnvironment();
 
 async function start(): Promise<void> {
+  await bootstrapAuthPersistence();
+  await bootstrapEventInfrastructure();
   await bootstrapMongoPersistence();
+
+  const { assertNormalCivicArchiveRuntimeDatabase, logCivicArchiveRuntimeDiagnostic } =
+    await import("./modules/public-civic-archive/civic-archive-runtime-diagnostic.js");
+
+  assertNormalCivicArchiveRuntimeDatabase();
+  logCivicArchiveRuntimeDiagnostic();
+
+  const { startPublicNewsScheduler } = await import("./modules/public-news/public-news.scheduler.js");
+  startPublicNewsScheduler();
 
   const { default: app } = await import("./app.js");
 

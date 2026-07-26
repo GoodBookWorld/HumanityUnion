@@ -219,7 +219,7 @@ async function buildCompletedTrackingContext(): Promise<CompletedTrackingContext
     closesAt: futureIsoDate(30),
   });
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
-  closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
+  await closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
   const commitmentDraft = createInitiativeImplementationCommitmentDraft(author, {
     initiativeId: projected.initiativeId,
@@ -454,7 +454,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("7. Public projection, privacy, and metrics");
 
-  const publicDetail = getPublicInitiativePublicImpact(draft.impactId);
+  const publicDetail = await getPublicInitiativePublicImpact(draft.impactId);
   assert(publicDetail !== null, "Verified impact is public");
   if (!publicDetail) {
     throw new Error("Verified impact is public");
@@ -463,12 +463,11 @@ async function runMainVerification(): Promise<void> {
   assertNoPrivateFields(publicDetail, "Public impact detail");
   assertNoPrivateFields(publicDetail.evidence, "Public evidence list");
 
-  const publicList = listPublicInitiativePublicImpactsForInitiative(context.initiativeId);
+  const publicList = await listPublicInitiativePublicImpactsForInitiative(context.initiativeId);
   assert(publicList.length >= 2, "Initiative public list includes impact records");
   assertNoPrivateFields(publicList, "Public impact list");
 
-  const trackingList = listPublicInitiativePublicImpactsForTracking(context.trackingId);
-  assert(trackingList.length >= 2, "Tracking public list includes impact records");
+  assert((await listPublicInitiativePublicImpactsForTracking(context.trackingId)).length >= 2, "Tracking public list includes impact records");
 
   const metrics = computeInitiativePublicImpactMetrics(context.initiativeId);
   assert(metrics.impactCount >= 3, "impactCount includes all records");

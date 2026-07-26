@@ -20,7 +20,7 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicInitiativeRouter.get("/:initiativeId", (req, res) => {
+publicInitiativeRouter.get("/:initiativeId", async (req, res) => {
   const initiative = getInitiativeById(req.params.initiativeId);
 
   if (!initiative) {
@@ -36,7 +36,7 @@ publicInitiativeRouter.get("/:initiativeId", (req, res) => {
   createInitialInitiativeVersionRevision(initiative, initiative.stewardId);
 
   res.json(
-    createSuccessResponse(toPublicInitiativeProjection(initiative), "Public initiative loaded."),
+    createSuccessResponse(await toPublicInitiativeProjection(initiative), "Public initiative loaded."),
   );
 });
 

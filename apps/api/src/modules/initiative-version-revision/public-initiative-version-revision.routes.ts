@@ -21,7 +21,7 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicInitiativeVersionRevisionRouter.get("/:initiativeId/revisions", (req, res) => {
+publicInitiativeVersionRevisionRouter.get("/:initiativeId/revisions", async (req, res) => {
   const initiative = getInitiativeById(req.params.initiativeId);
 
   if (!initiative) {
@@ -35,12 +35,12 @@ publicInitiativeVersionRevisionRouter.get("/:initiativeId/revisions", (req, res)
   }
 
   createInitialInitiativeVersionRevision(initiative, initiative.stewardId);
-  const history = getPublicInitiativeVersionHistory(req.params.initiativeId);
+  const history = await getPublicInitiativeVersionHistory(req.params.initiativeId);
 
   res.json(createSuccessResponse(history, "Public initiative version history loaded."));
 });
 
-publicInitiativeVersionRevisionRouter.get("/:initiativeId/revisions/:version", (req, res) => {
+publicInitiativeVersionRevisionRouter.get("/:initiativeId/revisions/:version", async (req, res) => {
   const initiative = getInitiativeById(req.params.initiativeId);
 
   if (!initiative) {
@@ -61,7 +61,7 @@ publicInitiativeVersionRevisionRouter.get("/:initiativeId/revisions/:version", (
   }
 
   createInitialInitiativeVersionRevision(initiative, initiative.stewardId);
-  const revision = getPublicInitiativeVersionRevision(req.params.initiativeId, version);
+  const revision = await getPublicInitiativeVersionRevision(req.params.initiativeId, version);
 
   if (!revision) {
     res.status(404).json(createFailureResponse("Initiative version revision not found."));

@@ -35,6 +35,7 @@ import {
   type SaveInitiativeRevisionDraftInput,
   validateInitiativeRevisionDraftForPublication,
 } from "./initiative-version-revision.validators.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 
 function getOwnedInitiative(initiativeId: string, identity: RequestIdentity): Initiative {
   const initiative = getInitiativeById(initiativeId);
@@ -319,6 +320,14 @@ export function publishInitiativeRevision(
 
   deleteRevisionDraft(initiativeId);
   syncProjectedInitiativeCard(updatedInitiative, previousCommunitySlug);
+
+  emitCivicNotificationEvent({
+    eventType: "revision_published",
+    entityType: "initiative_revision",
+    entityId: `${initiativeId}::${createdRevision.version}`,
+    initiativeId,
+    actorMemberId: identity.participantId,
+  });
 
   return {
     revision: createdRevision,

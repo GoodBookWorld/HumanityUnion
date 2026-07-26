@@ -243,7 +243,7 @@ async function buildVerifiedImpactContext(): Promise<VerifiedImpactContext> {
     closesAt: futureIsoDate(30),
   });
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
-  closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
+  await closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
   const commitmentDraft = createInitiativeImplementationCommitmentDraft(author, {
     initiativeId: projected.initiativeId,
@@ -338,8 +338,7 @@ async function runMainVerification(): Promise<void> {
   assert(eligibility.eligible, "Verified impact author should be eligible");
 
   assertThrows(
-    () =>
-      createPublicCivicArchiveDraft(otherParticipant, {
+    async () => await createPublicCivicArchiveDraft(otherParticipant, {
         impactId: context.impactId,
         title: "Unauthorized archive",
         summary: "Should fail.",
@@ -354,7 +353,7 @@ async function runMainVerification(): Promise<void> {
   assert(canTransitionPublicCivicArchive("draft", "published"), "draft should publish");
   assert(isPublicCivicArchiveTerminal("published"), "published is terminal");
 
-  const draft = createPublicCivicArchiveDraft(author, {
+  const draft = await createPublicCivicArchiveDraft(author, {
     impactId: context.impactId,
     title: "Nelson Community Garden Civic Archive",
     summary: "Permanent record of the completed garden civic cycle.",
@@ -372,8 +371,7 @@ async function runMainVerification(): Promise<void> {
   });
 
   assertThrows(
-    () =>
-      createPublicCivicArchiveDraft(author, {
+    async () => await createPublicCivicArchiveDraft(author, {
         impactId: context.impactId,
         title: "Duplicate draft",
         summary: "Should fail while draft already exists.",
@@ -401,7 +399,7 @@ async function runMainVerification(): Promise<void> {
     "Published archive cannot be edited",
   );
 
-  const correctionDraft = createPublicCivicArchiveDraft(author, {
+  const correctionDraft = await createPublicCivicArchiveDraft(author, {
     impactId: context.impactId,
     title: "Nelson Community Garden Civic Archive (Correction)",
     summary: "Corrected permanent record after steward review.",
@@ -423,7 +421,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("4. Public projection, privacy, and metrics");
 
-  const publicDetail = getPublicCivicArchive(draft.archiveRecordId);
+  const publicDetail = await getPublicCivicArchive(draft.archiveRecordId);
   assert(publicDetail !== null, "Published archive is public");
   if (!publicDetail) {
     throw new Error("Published archive is public");
@@ -432,13 +430,13 @@ async function runMainVerification(): Promise<void> {
   assertNoPrivateFields(publicDetail, "Public archive detail");
   assertNoPrivateFields(publicDetail.references, "Public archive references");
 
-  const impactArchive = getPublishedPublicCivicArchiveForImpact(context.impactId);
+  const impactArchive = await getPublishedPublicCivicArchiveForImpact(context.impactId);
   assert(
     impactArchive?.archiveRecordId === correctionPublished.archiveRecordId,
     "Impact archive lookup returns latest version",
   );
 
-  const initiativeArchive = getLatestPublishedPublicCivicArchiveForInitiative(context.initiativeId);
+  const initiativeArchive = await getLatestPublishedPublicCivicArchiveForInitiative(context.initiativeId);
   assert(
     initiativeArchive?.archiveRecordId === correctionPublished.archiveRecordId,
     "Initiative archive lookup returns latest version",
@@ -507,7 +505,7 @@ async function runPersistenceVerification(): Promise<void> {
   const { createPublicCivicArchiveDraft, publishPublicCivicArchive } =
     await import("../modules/public-civic-archive/public-civic-archive.service.js");
 
-  const draft = createPublicCivicArchiveDraft(author, {
+  const draft = await createPublicCivicArchiveDraft(author, {
     impactId: context.impactId,
     title: "Persistence Archive",
     summary: "Survives restart.",

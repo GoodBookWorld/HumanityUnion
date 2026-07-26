@@ -1,11 +1,11 @@
 import type { AuthIdentity } from "@hu/types";
 
 import { bootstrapAuthIdentity } from "../../auth/auth.identity.js";
-import { getMemberById } from "../../member/member.store.js";
+import { getMemberById } from "../../member/member-access.js";
 import type { RequestIdentity } from "./request-identity.types.js";
 
-export function resolveBootstrapRequestIdentity(): RequestIdentity {
-  const member = getMemberById(bootstrapAuthIdentity.memberId);
+export async function resolveBootstrapRequestIdentity(): Promise<RequestIdentity> {
+  const member = await getMemberById(bootstrapAuthIdentity.memberId);
 
   return {
     participantId: bootstrapAuthIdentity.memberId,
@@ -14,8 +14,8 @@ export function resolveBootstrapRequestIdentity(): RequestIdentity {
   };
 }
 
-export function requestIdentityFromAuth(auth: AuthIdentity): RequestIdentity {
-  const member = getMemberById(auth.memberId);
+export async function requestIdentityFromAuth(auth: AuthIdentity): Promise<RequestIdentity> {
+  const member = await getMemberById(auth.memberId);
 
   return {
     participantId: auth.memberId,

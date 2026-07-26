@@ -1,21 +1,18 @@
-import { Router } from "express";
-import { authenticationMiddleware } from "../auth/auth.middleware.js";
+import { Router, type Response } from "express";
+
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import {
-  getPreferencesByMemberId,
-  updatePreferences,
-  type PreferencesUpdate,
-} from "./preferences.store.js";
+  PreferencesNotFoundError,
+  PreferencesPersistenceUnavailableError,
+  PreferencesValidationError,
+} from "./preferences.errors.js";
+import {
+  getMemberPreferencesForAuthUser,
+  updateMemberPreferencesForAuthUser,
+} from "./preferences.service.js";
 
 const preferencesRouter = Router();
-
-const EDITABLE_GROUPS = new Set([
-  "experiencePreferences",
-  "participationPreferences",
-  "communicationPreferences",
-  "accessibilityPreferences",
-  "workspacePreferences",
-]);
 
 function createFailureResponse(message: string) {
   return {
@@ -27,62 +24,57 @@ function createFailureResponse(message: string) {
   };
 }
 
-preferencesRouter.get("/me", authenticationMiddleware, (req, res) => {
-  const preferences = getPreferencesByMemberId(req.auth!.memberId);
+function resolvePreferencesErrorStatus(error: unknown): number {
+  if (error instanceof PreferencesValidationError) {
+    return 400;
+  }
 
-  if (!preferences) {
-    res.status(404).json(createFailureResponse("Member preferences not found."));
+  if (error instanceof PreferencesNotFoundError) {
+    return 404;
+  }
+
+  if (error instanceof PreferencesPersistenceUnavailableError) {
+    return 503;
+  }
+
+  return 500;
+}
+
+function handlePreferencesError(res: Response, error: unknown): void {
+  const message = error instanceof Error ? error.message : "Member preferences request failed.";
+  res.status(resolvePreferencesErrorStatus(error)).json(createFailureResponse(message));
+}
+
+preferencesRouter.get("/me", ...authenticatedWorkspaceWriteMiddleware, async (req, res) => {
+  if (!req.auth?.memberId) {
+    res.status(401).json(createFailureResponse("Authentication required."));
     return;
   }
 
-  res.json(createSuccessResponse(preferences, "Member preferences loaded."));
+  try {
+    const preferences = await getMemberPreferencesForAuthUser({
+      memberId: req.auth.memberId,
+      userId: req.auth.id,
+    });
+
+    res.json(createSuccessResponse(preferences, "Member preferences loaded."));
+  } catch (error) {
+    handlePreferencesError(res, error);
+  }
 });
 
-preferencesRouter.patch("/me", authenticationMiddleware, (req, res) => {
-  const body = req.body as Record<string, unknown>;
-
-  for (const key of Object.keys(body)) {
-    if (!EDITABLE_GROUPS.has(key)) {
-      res.status(400).json(createFailureResponse(`Field "${key}" cannot be modified.`));
-      return;
-    }
-  }
-
-  const update: PreferencesUpdate = {};
-
-  if (body.experiencePreferences !== undefined) {
-    update.experiencePreferences =
-      body.experiencePreferences as PreferencesUpdate["experiencePreferences"];
-  }
-
-  if (body.participationPreferences !== undefined) {
-    update.participationPreferences =
-      body.participationPreferences as PreferencesUpdate["participationPreferences"];
-  }
-
-  if (body.communicationPreferences !== undefined) {
-    update.communicationPreferences =
-      body.communicationPreferences as PreferencesUpdate["communicationPreferences"];
-  }
-
-  if (body.accessibilityPreferences !== undefined) {
-    update.accessibilityPreferences =
-      body.accessibilityPreferences as PreferencesUpdate["accessibilityPreferences"];
-  }
-
-  if (body.workspacePreferences !== undefined) {
-    update.workspacePreferences =
-      body.workspacePreferences as PreferencesUpdate["workspacePreferences"];
-  }
-
-  const preferences = updatePreferences(req.auth!.memberId, update);
-
-  if (!preferences) {
-    res.status(404).json(createFailureResponse("Member preferences not found."));
+preferencesRouter.patch("/me", ...authenticatedWorkspaceWriteMiddleware, async (req, res) => {
+  if (!req.auth?.memberId) {
+    res.status(401).json(createFailureResponse("Authentication required."));
     return;
   }
 
-  res.json(createSuccessResponse(preferences, "Member preferences updated."));
+  try {
+    const preferences = await updateMemberPreferencesForAuthUser(req.auth.memberId, req.body);
+    res.json(createSuccessResponse(preferences, "Member preferences updated."));
+  } catch (error) {
+    handlePreferencesError(res, error);
+  }
 });
 
 export default preferencesRouter;

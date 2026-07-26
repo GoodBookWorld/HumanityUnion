@@ -1,0 +1,148 @@
+import { article } from "../article-factory.js";
+
+export const CONSTITUTION_ARTICLES = [
+  article({
+    slug: "constitutional-principles",
+    categoryId: "constitution",
+    title: "Constitutional Principles",
+    purpose: "What constitutional principles guide the platform?",
+    overview:
+      "Humanity Union rests on dignity, solidarity, transparency, and governed participation.",
+    diagramId: "reference-architecture",
+    explanation: [
+      {
+        id: "dignity",
+        heading: "Human dignity",
+        body: "Participation respects equal standing. Processes must remain accessible and explainable.",
+      },
+    ],
+    keyConcepts: ["Dignity", "Solidarity", "Governance"],
+    relatedConceptSlugs: ["governance-principles", "open-civic-processes"],
+    relatedGuideSlugs: [],
+    relatedPublicPageHrefs: [],
+    readingTimeMinutes: 3,
+    searchTerms: ["constitutional", "principles"],
+    assistantTags: ["principles"],
+    sortOrder: 1,
+  }),
+  article({
+    slug: "governance-principles",
+    categoryId: "constitution",
+    title: "Governance Principles",
+    purpose: "How is platform governance structured?",
+    overview:
+      "Governance separates educational reference, public projection, and participant workspace authority.",
+    diagramId: "reference-architecture",
+    explanation: [
+      {
+        id: "separation",
+        heading: "Separation of roles",
+        body: "Knowledge explains. Public pages project records. Workspace hosts participant actions.",
+      },
+    ],
+    keyConcepts: ["Governance", "Separation", "Authority"],
+    relatedConceptSlugs: ["constitutional-principles"],
+    relatedGuideSlugs: [],
+    relatedPublicPageHrefs: [],
+    readingTimeMinutes: 3,
+    searchTerms: ["governance"],
+    assistantTags: ["principles"],
+    sortOrder: 2,
+  }),
+  article({
+    slug: "transparency",
+    categoryId: "constitution",
+    title: "Transparency",
+    purpose: "What does transparency mean on Humanity Union?",
+    overview:
+      "Published civic records, explainable search, and transparent decision statistics support public scrutiny.",
+    diagramId: "reference-architecture",
+    explanation: [
+      {
+        id: "records",
+        heading: "Open records",
+        body: "Eligible civic stages publish to Public Experience. Private drafts remain workspace-only.",
+      },
+    ],
+    keyConcepts: ["Transparency", "Publication", "Scrutiny"],
+    relatedConceptSlugs: ["collective-decision", "global-search"],
+    relatedGuideSlugs: [],
+    relatedPublicPageHrefs: [],
+    readingTimeMinutes: 2,
+    searchTerms: ["transparency", "open"],
+    assistantTags: ["principles"],
+    sortOrder: 3,
+  }),
+  article({
+    slug: "responsibility",
+    categoryId: "constitution",
+    title: "Responsibility",
+    purpose: "Who is responsible for civic actions?",
+    overview:
+      "Participants remain responsible for their civic actions. The platform and assistant provide tools, not decisions.",
+    diagramId: "workspace-overview",
+    explanation: [
+      {
+        id: "participant",
+        heading: "Participant responsibility",
+        body: "Stewards, authors, and voters own their records. Assistant output is advisory only.",
+      },
+    ],
+    keyConcepts: ["Responsibility", "Steward", "Advisory"],
+    relatedConceptSlugs: ["ai-assistant"],
+    relatedGuideSlugs: [],
+    relatedPublicPageHrefs: [],
+    readingTimeMinutes: 2,
+    searchTerms: ["responsibility", "accountability"],
+    assistantTags: ["principles"],
+    sortOrder: 4,
+  }),
+  article({
+    slug: "open-civic-processes",
+    categoryId: "constitution",
+    title: "Open Civic Processes",
+    purpose: "What makes civic processes open?",
+    overview:
+      "Processes are open when stages, eligibility, and outcomes are documented and publicly accessible where published.",
+    diagramId: "civic-pipeline",
+    explanation: [
+      {
+        id: "open",
+        heading: "Documented stages",
+        body: "Each pipeline stage has defined records and transitions. Integration links preserve traceability.",
+      },
+    ],
+    keyConcepts: ["Open process", "Pipeline", "Eligibility"],
+    relatedConceptSlugs: ["capability02-civic-pipeline"],
+    relatedGuideSlugs: [],
+    relatedPublicPageHrefs: [],
+    readingTimeMinutes: 3,
+    searchTerms: ["open", "process", "civic"],
+    assistantTags: ["pipeline"],
+    sortOrder: 5,
+  }),
+  article({
+    slug: "reference-only-architecture",
+    categoryId: "constitution",
+    title: "Reference-only architecture",
+    purpose: "What is reference-only architecture?",
+    overview:
+      "Public pages and Knowledge articles reference source records. They do not replace governed civic data stores.",
+    diagramId: "reference-architecture",
+    explanation: [
+      {
+        id: "reference",
+        heading: "Reference, not source",
+        body: "Integration layers link entities without duplicating business logic. Search metadata follows the same contract.",
+      },
+    ],
+    keyConcepts: ["Reference", "Integration layer", "Projection"],
+    relatedConceptSlugs: ["capability02-civic-pipeline", "global-search"],
+    relatedGuideSlugs: [],
+    relatedPublicPageHrefs: [],
+    readingTimeMinutes: 3,
+    searchTerms: ["reference", "architecture", "integration"],
+    assistantTags: ["review_related_records"],
+    sortOrder: 6,
+  }),
+];

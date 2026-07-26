@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 
 import { authenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { getMemberById } from "../member/member-access.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
 
 import {
@@ -35,7 +36,8 @@ function resolveErrorStatus(message: string): number {
     message.includes("not allowed") ||
     message.includes("prohibited") ||
     message.includes("blocked by safety guard") ||
-    message.includes("must not include")
+    message.includes("must not include") ||
+    message.includes("AI_API_KEY is required")
   ) {
     return 400;
   }
@@ -48,11 +50,25 @@ function handleServiceError(res: Response, error: unknown): void {
   res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
 }
 
-workspaceAssistantRouter.post("/respond", authenticationMiddleware, (req, res) => {
+workspaceAssistantRouter.post("/respond", authenticationMiddleware, async (req, res) => {
+  if (!req.auth?.id) {
+    res.status(401).json(createFailureResponse("Authentication required."));
+    return;
+  }
+
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
+    const member = req.auth.memberId ? await getMemberById(req.auth.memberId) : null;
+    const displayName = member?.profile.displayName ?? req.auth.email.split("@")[0] ?? "Member";
     const body = req.body as WorkspaceAssistantRouteBody;
-    const response = respondToWorkspaceAssistant(identity, body);
+    const response = await respondToWorkspaceAssistant(
+      identity,
+      {
+        userId: req.auth.id,
+        displayName,
+      },
+      body,
+    );
 
     res.json(createSuccessResponse(response, "Workspace assistant response generated."));
   } catch (error) {

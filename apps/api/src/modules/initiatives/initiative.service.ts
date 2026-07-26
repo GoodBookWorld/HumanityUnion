@@ -2,6 +2,11 @@ import type { Initiative, TimelineEvent } from "@hu/types";
 import { canTransitionInitiativeLifecycle } from "@hu/types";
 
 import type { RequestIdentity } from "./identity/request-identity.types.js";
+import { invalidateGlobalSearchIndex } from "../global-search/global-search.index.js";
+import { createInitialInitiativeVersionRevision } from "../initiative-version-revision/initiative-version-revision.service.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
+import { notifyInterestedParticipantsOfPublishedInitiative } from "../notifications/initiative-interest-match.service.js";
+import { enrichInitiativeMetadataGeography } from "./initiative-geography.js";
 import { assertInitiativeOwnership } from "./initiative-ownership.js";
 import {
   createInitiative,
@@ -10,6 +15,7 @@ import {
   updateInitiative,
 } from "./initiative.store.js";
 import { toLatestInitiativeCardProjection } from "./initiative-latest-initiatives.projection.js";
+import { resolveInitiativeParticipationScope } from "./initiative-world-initiatives.projection.js";
 import {
   removeProjectedInitiativeCard,
   removeProjectedInitiativeCardFromAllCommunities,
@@ -20,7 +26,6 @@ import {
   type SaveInitiativeDraftInput,
   validateInitiativeForPublication,
 } from "./initiative.validators.js";
-import { createInitialInitiativeVersionRevision } from "../initiative-version-revision/initiative-version-revision.service.js";
 
 function createTimelineEvent(eventType: string, metadata: Record<string, unknown>): TimelineEvent {
   return {
@@ -68,8 +73,43 @@ function applyInitiativeContentUpdate(
   return {
     title: input.title ?? initiative.title,
     description: input.description ?? initiative.description,
+    communityAssociation: input.communityAssociation ?? initiative.metadata.communityAssociation,
+    countrySlug: input.countrySlug ?? initiative.metadata.countrySlug,
+    regionSlug: input.regionSlug ?? initiative.metadata.regionSlug,
+    region: input.region ?? initiative.metadata.region,
     communitySlug: input.communitySlug ?? initiative.metadata.communitySlug,
+    participationScope: input.participationScope ?? initiative.metadata.participationScope,
     activityArea: input.activityArea ?? initiative.metadata.activityArea,
+    activityAreaOther: input.activityAreaOther ?? initiative.metadata.activityAreaOther,
+    imageUrl: input.imageUrl ?? initiative.metadata.imageUrl,
+    imageAltText: input.imageAltText ?? initiative.metadata.imageAltText,
+    startDate: input.startDate ?? initiative.metadata.startDate,
+    completionDate: input.completionDate ?? initiative.metadata.completionDate,
+  };
+}
+
+function buildMetadataPatch(
+  initiative: Initiative,
+  input: SaveInitiativeDraftInput,
+): Initiative["metadata"] {
+  const content = applyInitiativeContentUpdate(initiative, input);
+
+  return {
+    ...initiative.metadata,
+    communityAssociation: content.communityAssociation,
+    countrySlug: content.countrySlug ?? initiative.metadata.countrySlug,
+    regionSlug: content.regionSlug ?? initiative.metadata.regionSlug,
+    region: input.region ?? initiative.metadata.region,
+    communitySlug: content.communitySlug ?? initiative.metadata.communitySlug ?? "",
+    participationScope:
+      content.participationScope ?? initiative.metadata.participationScope ?? "community",
+    activityArea: content.activityArea ?? initiative.metadata.activityArea,
+    activityAreaOther: content.activityAreaOther,
+    category: content.activityArea ?? initiative.metadata.activityArea,
+    imageUrl: content.imageUrl,
+    imageAltText: content.imageAltText,
+    startDate: content.startDate,
+    completionDate: content.completionDate,
   };
 }
 
@@ -79,6 +119,14 @@ function syncProjectedInitiativeCard(initiative: Initiative, previousCommunitySl
   }
 
   if (initiative.lifecyclePhase !== "projected") {
+    return;
+  }
+
+  if (resolveInitiativeParticipationScope(initiative) !== "community") {
+    return;
+  }
+
+  if (!initiative.metadata.communitySlug) {
     return;
   }
 
@@ -116,10 +164,19 @@ export function createInitiativeDraft(
     metadata: {
       category: input.activityArea,
       tags: [],
-      region: "British Columbia",
+      region: "",
       language: "en",
-      communitySlug: input.communitySlug,
+      countrySlug: input.countrySlug,
+      regionSlug: input.regionSlug,
+      communitySlug: input.communitySlug ?? "",
+      communityAssociation: input.communityAssociation,
+      participationScope: input.participationScope ?? "community",
       activityArea: input.activityArea,
+      activityAreaOther: input.activityAreaOther,
+      imageUrl: input.imageUrl,
+      imageAltText: input.imageAltText,
+      startDate: input.startDate,
+      completionDate: input.completionDate,
     },
     revisions: [],
     contributions: [],
@@ -129,6 +186,7 @@ export function createInitiativeDraft(
         status: "draft",
       }),
     ],
+    sourceReferences: input.sourceReferences ? structuredClone(input.sourceReferences) : undefined,
   };
 
   return createInitiative(initiative);
@@ -146,11 +204,8 @@ export function saveInitiativeDraft(
   const updated = updateInitiative(initiativeId, {
     title: input.title,
     description: input.description,
-    metadata: {
-      communitySlug: input.communitySlug,
-      activityArea: input.activityArea,
-      category: input.activityArea,
-    },
+    metadata: buildMetadataPatch(initiative, input),
+    sourceReferences: input.clearSourceReferences ? null : undefined,
     timeline: [
       ...initiative.timeline,
       createTimelineEvent("initiative_draft_saved", {
@@ -180,11 +235,7 @@ export function updatePublishedInitiative(
   const updated = updateInitiative(initiativeId, {
     title: content.title,
     description: content.description,
-    metadata: {
-      communitySlug: content.communitySlug,
-      activityArea: content.activityArea,
-      category: content.activityArea,
-    },
+    metadata: buildMetadataPatch(initiative, input),
     timeline: [
       ...initiative.timeline,
       createTimelineEvent("initiative_updated", {
@@ -196,6 +247,8 @@ export function updatePublishedInitiative(
   if (!updated) {
     throw new Error("Initiative not found.");
   }
+
+  invalidateGlobalSearchIndex();
 
   return updated;
 }
@@ -253,10 +306,29 @@ export function publishInitiative(identity: RequestIdentity, initiativeId: strin
     throw new Error("Initiative not found.");
   }
 
-  syncProjectedInitiativeCard(projected);
-  createInitialInitiativeVersionRevision(projected, identity.participantId);
+  const geographyMetadata = enrichInitiativeMetadataGeography(projected, identity.participantId);
+  const projectedWithGeography =
+    updateInitiative(initiativeId, { metadata: geographyMetadata }) ?? projected;
 
-  return projected;
+  syncProjectedInitiativeCard(projectedWithGeography);
+  createInitialInitiativeVersionRevision(projectedWithGeography, identity.participantId);
+
+  emitCivicNotificationEvent({
+    eventType: "initiative_published",
+    entityType: "initiative",
+    entityId: initiativeId,
+    initiativeId,
+    actorMemberId: identity.participantId,
+  });
+
+  void notifyInterestedParticipantsOfPublishedInitiative(
+    projectedWithGeography,
+    identity.participantId,
+  ).catch(() => undefined);
+
+  invalidateGlobalSearchIndex();
+
+  return projectedWithGeography;
 }
 
 export function republishInitiative(
@@ -270,34 +342,27 @@ export function republishInitiative(
 
   const previousCommunitySlug = initiative.metadata.communitySlug;
   const content = applyInitiativeContentUpdate(initiative, input);
+  const nextMetadata = buildMetadataPatch(initiative, input);
   validateInitiativeForPublication({
     ...initiative,
     title: content.title ?? initiative.title,
     description: content.description ?? initiative.description,
-    metadata: {
-      ...initiative.metadata,
-      communitySlug: content.communitySlug ?? initiative.metadata.communitySlug,
-      activityArea: content.activityArea ?? initiative.metadata.activityArea,
-      category: content.activityArea ?? initiative.metadata.activityArea,
-    },
+    metadata: nextMetadata,
   });
 
   let current = initiative;
 
+  const metadataChanged = JSON.stringify(nextMetadata) !== JSON.stringify(initiative.metadata);
+
   if (
     content.title !== initiative.title ||
     content.description !== initiative.description ||
-    content.communitySlug !== initiative.metadata.communitySlug ||
-    content.activityArea !== initiative.metadata.activityArea
+    metadataChanged
   ) {
     const updated = updateInitiative(initiativeId, {
       title: content.title,
       description: content.description,
-      metadata: {
-        communitySlug: content.communitySlug,
-        activityArea: content.activityArea,
-        category: content.activityArea,
-      },
+      metadata: nextMetadata,
       timeline: [
         ...initiative.timeline,
         createTimelineEvent("initiative_updated", {
@@ -349,6 +414,7 @@ export function republishInitiative(
   }
 
   syncProjectedInitiativeCard(republished, previousCommunitySlug);
+  invalidateGlobalSearchIndex();
 
   return republished;
 }
@@ -400,6 +466,8 @@ export function archiveInitiative(identity: RequestIdentity, initiativeId: strin
   if (!archived) {
     throw new Error("Initiative not found.");
   }
+
+  invalidateGlobalSearchIndex();
 
   return archived;
 }

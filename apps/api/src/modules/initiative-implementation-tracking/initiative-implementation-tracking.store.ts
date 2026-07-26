@@ -180,6 +180,10 @@ export function listUpdatesByParticipant(participantId: string): ImplementationT
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 }
 
+export function listAllTrackingUpdates(): ImplementationTrackingUpdate[] {
+  return Array.from(updates.values(), (update) => structuredClone(update));
+}
+
 export function countUpdatesForTracking(trackingId: string): number {
   return listUpdatesByTracking(trackingId).length;
 }

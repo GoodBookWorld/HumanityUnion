@@ -5,7 +5,7 @@ import type {
   PublicInitiativeCollectiveDecisionProjection,
 } from "@hu/types";
 
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import { computeInitiativeDecisionVoteAggregates } from "../initiative-decision-vote/initiative-decision-vote-aggregates.js";
 import { buildPublicCollectiveDecisionResults } from "./initiative-collective-decision-results.js";
 import {
@@ -20,8 +20,8 @@ const PUBLIC_STATUSES = new Set<InitiativeCollectiveDecision["status"]>([
   "cancelled",
 ]);
 
-function resolveStewardDisplayName(stewardId: string): string {
-  const member = getMemberById(stewardId);
+async function resolveStewardDisplayName(stewardId: string): Promise<string> {
+  const member = await getMemberById(stewardId);
 
   return member?.profile.displayName ?? "Unknown Steward";
 }
@@ -69,9 +69,9 @@ export function toPublicInitiativeCollectiveDecisionListItem(
   };
 }
 
-export function toPublicInitiativeCollectiveDecisionProjection(
+export async function toPublicInitiativeCollectiveDecisionProjection(
   decision: InitiativeCollectiveDecision,
-): PublicInitiativeCollectiveDecisionProjection {
+): Promise<PublicInitiativeCollectiveDecisionProjection> {
   return {
     decisionId: decision.decisionId,
     initiativeId: decision.initiativeId,
@@ -85,7 +85,7 @@ export function toPublicInitiativeCollectiveDecisionProjection(
     closedAt: decision.closedAt,
     cancelledAt: decision.cancelledAt,
     supersedesDecisionId: decision.supersedesDecisionId,
-    stewardDisplayName: resolveStewardDisplayName(decision.stewardId),
+    stewardDisplayName: await resolveStewardDisplayName(decision.stewardId),
     ...buildPublicResultFields(decision),
   };
 }
@@ -111,9 +111,9 @@ export function listPublicInitiativeCollectiveDecisionsForInitiative(
   );
 }
 
-export function getPublicInitiativeCollectiveDecision(
+export async function getPublicInitiativeCollectiveDecision(
   decisionId: string,
-): PublicInitiativeCollectiveDecisionProjection | null {
+): Promise<PublicInitiativeCollectiveDecisionProjection | null> {
   const decision = getDecisionById(decisionId);
 
   if (!decision || !PUBLIC_STATUSES.has(decision.status)) {

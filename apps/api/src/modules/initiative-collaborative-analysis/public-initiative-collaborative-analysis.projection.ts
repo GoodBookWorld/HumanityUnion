@@ -4,21 +4,21 @@ import type {
   PublicInitiativeCollaborativeAnalysisProjection,
 } from "@hu/types";
 
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import {
   getAnalysisById,
   listPublishedAnalysesByInitiative,
 } from "./initiative-collaborative-analysis.store.js";
 
-function resolveAuthorDisplayName(authorId: string): string {
-  const member = getMemberById(authorId);
+async function resolveAuthorDisplayName(authorId: string): Promise<string> {
+  const member = await getMemberById(authorId);
 
   return member?.profile.displayName ?? "Unknown Author";
 }
 
-export function toPublicInitiativeCollaborativeAnalysisProjection(
+export async function toPublicInitiativeCollaborativeAnalysisProjection(
   analysis: InitiativeCollaborativeAnalysis,
-): PublicInitiativeCollaborativeAnalysisProjection {
+): Promise<PublicInitiativeCollaborativeAnalysisProjection> {
   return {
     analysisId: analysis.analysisId,
     initiativeId: analysis.initiativeId,
@@ -28,41 +28,43 @@ export function toPublicInitiativeCollaborativeAnalysisProjection(
     risks: analysis.risks,
     suggestedImprovements: analysis.suggestedImprovements,
     references: analysis.references,
-    authorDisplayName: resolveAuthorDisplayName(analysis.authorId),
+    authorDisplayName: await resolveAuthorDisplayName(analysis.authorId),
     publishedAt: analysis.publishedAt ?? analysis.updatedAt,
     initiativeVersion: analysis.initiativeVersion ?? 1,
   };
 }
 
-export function toPublicInitiativeCollaborativeAnalysisListItem(
+export async function toPublicInitiativeCollaborativeAnalysisListItem(
   analysis: InitiativeCollaborativeAnalysis,
-): PublicInitiativeCollaborativeAnalysisListItem {
+): Promise<PublicInitiativeCollaborativeAnalysisListItem> {
   return {
     analysisId: analysis.analysisId,
     title: analysis.title,
     summary: analysis.summary,
-    authorDisplayName: resolveAuthorDisplayName(analysis.authorId),
+    authorDisplayName: await resolveAuthorDisplayName(analysis.authorId),
     publishedAt: analysis.publishedAt ?? analysis.updatedAt,
     initiativeVersion: analysis.initiativeVersion ?? 1,
   };
 }
 
-export function listPublicInitiativeCollaborativeAnalyses(
+export async function listPublicInitiativeCollaborativeAnalyses(
   initiativeId: string,
-): PublicInitiativeCollaborativeAnalysisListItem[] {
-  return listPublishedAnalysesByInitiative(initiativeId).map((analysis) =>
-    toPublicInitiativeCollaborativeAnalysisListItem(analysis),
+): Promise<PublicInitiativeCollaborativeAnalysisListItem[]> {
+  const analyses = listPublishedAnalysesByInitiative(initiativeId);
+
+  return Promise.all(
+    analyses.map((analysis) => toPublicInitiativeCollaborativeAnalysisListItem(analysis)),
   );
 }
 
-export function getPublicInitiativeCollaborativeAnalysis(
+export async function getPublicInitiativeCollaborativeAnalysis(
   analysisId: string,
-): PublicInitiativeCollaborativeAnalysisProjection | null {
+): Promise<PublicInitiativeCollaborativeAnalysisProjection | null> {
   const analysis = getAnalysisById(analysisId);
 
   if (!analysis || analysis.status !== "published") {
     return null;
   }
 
-  return toPublicInitiativeCollaborativeAnalysisProjection(analysis);
+  return await toPublicInitiativeCollaborativeAnalysisProjection(analysis);
 }

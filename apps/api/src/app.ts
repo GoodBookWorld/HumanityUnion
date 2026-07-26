@@ -1,7 +1,9 @@
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+import { environment } from "./config/environment.js";
 import authRouter from "./modules/auth/auth.routes.js";
+import { emailRouter } from "./modules/email/index.js";
 import {
   collaborativeAnalysisRouter,
   initiativeCollaborativeAnalysisRouter,
@@ -18,6 +20,14 @@ import {
   publicCivicCompatibilityReviewsByInitiativeRouter,
 } from "./modules/civic-compatibility-review/index.js";
 import { workspaceAssistantRouter } from "./modules/workspace-assistant/index.js";
+import { workspaceIntelligenceRouter } from "./modules/workspace-intelligence/index.js";
+import { globalSearchRouter } from "./modules/global-search/index.js";
+import { platformStatisticsRouter } from "./modules/platform-statistics/index.js";
+import { countryStatisticsRouter } from "./modules/country-statistics/index.js";
+import { membershipStatisticsRouter } from "./modules/membership-statistics/index.js";
+import { knowledgeCenterRouter } from "./modules/knowledge-center/index.js";
+import { ipGeographyRouter } from "./modules/ip-geography/index.js";
+import { notificationRouter } from "./modules/notifications/index.js";
 import {
   decisionSessionRouter,
   publicDecisionSessionRouter,
@@ -53,6 +63,11 @@ import {
   publicCivicActionPackagesByInitiativeRouter,
 } from "./modules/civic-action-package/index.js";
 import {
+  civicNominationRouter,
+  publicCivicNominationRouter,
+  publicInstitutionCivicNominationsRouter,
+} from "./modules/civic-nomination/index.js";
+import {
   civicDeliveryRouter,
   publicCivicDeliveriesByCapRouter,
   publicCivicDeliveryRouter,
@@ -76,6 +91,8 @@ import {
   publicCivicArchiveByInitiativeRouter,
   publicCivicArchivePublicRouter,
 } from "./modules/public-civic-archive/index.js";
+import { publicNewsRouter } from "./modules/public-news/index.js";
+import { mediaRegistryRouter } from "./modules/media-registry/index.js";
 import {
   initiativeCollaborativeAnalysisLifecycleRouter,
   publicInitiativeCollaborativeAnalysisRouter,
@@ -101,20 +118,83 @@ import {
 } from "./modules/implementation/index.js";
 import { petitionRouter, publicPetitionRouter } from "./modules/petition/index.js";
 import initiativesRouter from "./modules/initiatives/initiative.routes.js";
+import publicInitiativeExperienceRouter from "./modules/initiatives/public-initiative-experience.routes.js";
 import publicInitiativeRouter from "./modules/initiatives/public-initiative.routes.js";
 import publicLatestInitiativesRouter from "./modules/initiatives/public-latest-initiatives.routes.js";
+import publicWorldInitiativesRouter from "./modules/initiatives/public-world-initiatives.routes.js";
+import { initiativeSupportRouter } from "./modules/initiative-support/index.js";
+import { initiativeCommentRouter } from "./modules/initiative-comments/index.js";
+import { memberProfileRouter, publicMemberProfileRouter } from "./modules/member-profile/index.js";
+import { membershipRouter } from "./modules/membership/index.js";
+import { membershipStripeWebhookRouter } from "./modules/membership-payment/index.js";
+import { memberBadgeContributionRouter } from "./modules/member-badge-contribution/index.js";
+import { LOCAL_MEDIA_UPLOAD_ROOT, mediaUploadRouter } from "./modules/media-upload/index.js";
+import { mediaStaticHeadersMiddleware } from "./modules/media-upload/media-static.middleware.js";
 import memberRouter from "./modules/member/member.routes.js";
 import participationRouter from "./modules/participation/participation.routes.js";
+import { participationAreaRouter } from "./modules/participation-area/index.js";
+import { workspaceHomeRouter } from "./modules/workspace-home/index.js";
+import { workspaceRouter } from "./modules/workspace/index.js";
+import { activityRouter } from "./modules/activity/index.js";
+import { discussionRouter } from "./modules/discussion/index.js";
+import { proposalRouter } from "./modules/proposal/index.js";
+import { decisionRouter } from "./modules/decision/index.js";
+import betaInviteRouter from "./modules/beta-invite/beta-invite.routes.js";
+import closedBetaRouter from "./modules/closed-beta/closed-beta.routes.js";
 import preferencesRouter from "./modules/preferences/preferences.routes.js";
 import healthRouter from "./routes/health.routes.js";
 
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: environment.corsOrigin,
+    credentials: true,
+  }),
+);
+app.use(
+  "/api/v1/webhooks/stripe/membership",
+  express.raw({ type: "application/json" }),
+  membershipStripeWebhookRouter,
+);
 app.use(express.json());
+app.use(
+  "/api/v1/media/files",
+  mediaStaticHeadersMiddleware,
+  express.static(LOCAL_MEDIA_UPLOAD_ROOT, {
+    index: false,
+    dotfiles: "deny",
+    fallthrough: false,
+    setHeaders(res, filePath) {
+      if (filePath.endsWith(".png")) {
+        res.setHeader("Content-Type", "image/png");
+      } else if (filePath.endsWith(".webp")) {
+        res.setHeader("Content-Type", "image/webp");
+      } else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) {
+        res.setHeader("Content-Type", "image/jpeg");
+      }
+    },
+  }),
+);
+app.use("/api/v1/media", mediaUploadRouter);
 app.use("/api/v1/health", healthRouter);
+app.use("/api/v1/platform", closedBetaRouter);
+app.use("/api/v1/beta-invites", betaInviteRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/email", emailRouter);
+app.use("/api/v1/member-profile", memberProfileRouter);
+app.use("/api/v1/membership", membershipRouter);
+app.use("/api/v1/member-badge-contributions", memberBadgeContributionRouter);
+app.use("/api/v1/participation-area", participationAreaRouter);
+app.use("/api/v1/workspace", workspaceRouter);
+app.use("/api/v1/activities", activityRouter);
+app.use("/api/v1/discussions", discussionRouter);
+app.use("/api/v1/proposals", proposalRouter);
+app.use("/api/v1/decisions", decisionRouter);
+/** @deprecated Legacy initiative-centric home — use canonical GET /api/v1/workspace */
+app.use("/api/v1/workspace", workspaceHomeRouter);
+app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/members", memberRouter);
 app.use("/api/v1/initiatives", initiativeCollaborativeAnalysisRouter);
 app.use("/api/v1/initiatives", initiativeCollectiveDecisionRouter);
@@ -132,15 +212,26 @@ app.use("/api/v1/civic-accountability", civicAccountabilityRouter);
 app.use("/api/v1/public-civic-archive", publicCivicArchiveRouter);
 app.use("/api/v1/civic-compatibility-reviews", civicCompatibilityReviewRouter);
 app.use("/api/v1/workspace-assistant", workspaceAssistantRouter);
+app.use("/api/v1/workspace-assistant", workspaceIntelligenceRouter);
+app.use("/api/v1/civic-nominations", civicNominationRouter);
+app.use("/api/v1/public/civic-nominations", publicCivicNominationRouter);
+app.use("/api/v1/public/institutions", publicInstitutionCivicNominationsRouter);
 app.use("/api/v1/initiative-revisions", initiativeVersionRevisionRouter);
 app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);
 app.use("/api/v1/collective-decisions", collectiveDecisionRouter);
 app.use("/api/v1/petitions", petitionRouter);
 app.use("/api/v1/implementation-commitments", implementationCommitmentRouter);
 app.use("/api/v1/implementations", implementationRouter);
+app.use("/api/v1/public/knowledge", knowledgeCenterRouter);
+app.use("/api/v1/public/ip-geography", ipGeographyRouter);
+app.use("/api/v1/statistics", membershipStatisticsRouter);
+app.use("/api/v1/public", globalSearchRouter);
+app.use("/api/v1/public", platformStatisticsRouter);
+app.use("/api/v1/public", countryStatisticsRouter);
 app.use("/api/v1/public/implementations", publicImplementationRouter);
 app.use("/api/v1/public/implementation-commitments", publicImplementationCommitmentRouter);
 app.use("/api/v1/public/petitions", publicPetitionRouter);
+app.use("/api/v1/public/member-profiles", publicMemberProfileRouter);
 app.use("/api/v1/public/collective-decisions", publicCollectiveDecisionRouter);
 app.use("/api/v1/public/collaborative-analysis", publicCollaborativeAnalysisRouter);
 app.use("/api/v1/public/initiative-analyses", publicInitiativeCollaborativeAnalysisRouter);
@@ -171,6 +262,8 @@ app.use(
 );
 app.use("/api/v1/public/public-impact", publicInitiativePublicImpactRouter);
 app.use("/api/v1/public/civic-archive", publicCivicArchivePublicRouter);
+app.use("/api/v1/public/news", publicNewsRouter);
+app.use("/api/v1/public/media/registry", mediaRegistryRouter);
 app.use("/api/v1/public/civic-action-packages", publicCivicActionPackageRouter);
 app.use("/api/v1/public/civic-action-packages", publicCivicDeliveriesByCapRouter);
 app.use("/api/v1/public/civic-action-packages", publicOfficialResponsesByCapRouter);
@@ -195,8 +288,12 @@ app.use("/api/v1/public/initiatives", publicCivicAccountabilitiesByInitiativeRou
 app.use("/api/v1/public/public-impact", publicCivicArchiveByImpactRouter);
 app.use("/api/v1/public/initiatives", publicCivicCompatibilityReviewsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeVersionRevisionRouter);
+app.use("/api/v1/public/initiatives", publicInitiativeExperienceRouter);
+app.use("/api/v1/public/initiatives", initiativeSupportRouter);
+app.use("/api/v1/public/initiatives", initiativeCommentRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);
 app.use("/api/v1/public/projections", publicLatestInitiativesRouter);
+app.use("/api/v1/public/projections", publicWorldInitiativesRouter);
 app.use("/api/v1/participation", participationRouter);
 app.use("/api/v1/preferences", preferencesRouter);
 

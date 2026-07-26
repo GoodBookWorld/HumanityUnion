@@ -315,7 +315,7 @@ export function activateImplementationCommitmentHandler(req: Request, res: Respo
   }
 }
 
-export function updateContributionProfileHandler(req: Request, res: Response): void {
+export async function updateContributionProfileHandler(req: Request, res: Response): Promise<void> {
   const commitmentId = getCommitmentId(req);
   const idError = validateCommitmentId(commitmentId);
 
@@ -334,7 +334,7 @@ export function updateContributionProfileHandler(req: Request, res: Response): v
 
   try {
     const { participantId, update } = parseContributionProfileUpdate(body);
-    const commitment = updateContributionProfile(commitmentId, participantId, update);
+    const commitment = await updateContributionProfile(commitmentId, participantId, update);
 
     if (!commitment) {
       res.status(404).json(createFailureResponse("Implementation Commitment not found."));
@@ -351,7 +351,7 @@ export function updateContributionProfileHandler(req: Request, res: Response): v
   }
 }
 
-export function addContributionItemHandler(req: Request, res: Response): void {
+export async function addContributionItemHandler(req: Request, res: Response): Promise<void> {
   const commitmentId = getCommitmentId(req);
   const idError = validateCommitmentId(commitmentId);
 
@@ -369,7 +369,7 @@ export function addContributionItemHandler(req: Request, res: Response): void {
   }
 
   try {
-    const commitment = addContributionItem(commitmentId, parseAddContributionItemInput(body));
+    const commitment = await addContributionItem(commitmentId, parseAddContributionItemInput(body));
 
     if (!commitment) {
       res.status(404).json(createFailureResponse("Implementation Commitment not found."));

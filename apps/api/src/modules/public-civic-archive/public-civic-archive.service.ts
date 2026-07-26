@@ -1,3 +1,4 @@
+import { getCountryLabel, normalizeCountryInput } from "@hu/geography";
 import type {
   KnowledgeContribution,
   LessonsLearned,
@@ -13,8 +14,9 @@ import { getImpactById } from "../initiative-public-impact/initiative-public-imp
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { getKnownInitiativeCommunity } from "../initiatives/initiative-communities.js";
 import { getCurrentPublishedVersion } from "../initiative-version-revision/initiative-version-revision.store.js";
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import { assertPublicCivicArchiveEligible } from "./public-civic-archive-eligibility.js";
 import {
   createArchiveRecord,
@@ -23,6 +25,7 @@ import {
   listArchiveRecordsByAuthor,
   updateArchiveRecord,
 } from "./public-civic-archive.store.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 
 export interface CreatePublicCivicArchiveDraftInput {
   impactId: string;
@@ -91,6 +94,44 @@ function formatImplementationPeriod(activatedAt?: string, completedAt?: string):
   return `${formatDate(activatedAt)} – ${formatDate(completedAt)}`;
 }
 
+function resolveArchiveCountryLabel(
+  initiative: ReturnType<typeof getInitiativeById>,
+  stewardCountry?: string,
+): string {
+  const countryCode = initiative?.metadata.countrySlug
+    ? normalizeCountryInput(initiative.metadata.countrySlug)
+    : undefined;
+
+  if (countryCode) {
+    return getCountryLabel(countryCode) ?? stewardCountry ?? "Canada";
+  }
+
+  const knownCommunity = initiative?.metadata.communitySlug
+    ? getKnownInitiativeCommunity(initiative.metadata.communitySlug)
+    : undefined;
+
+  return knownCommunity?.countryLabel ?? stewardCountry ?? "Canada";
+}
+
+function resolveArchiveRegionLabel(
+  initiative: ReturnType<typeof getInitiativeById>,
+  stewardRegion?: string,
+): string {
+  if (initiative?.metadata.region?.trim()) {
+    return initiative.metadata.region;
+  }
+
+  if (stewardRegion?.trim()) {
+    return stewardRegion;
+  }
+
+  const knownCommunity = initiative?.metadata.communitySlug
+    ? getKnownInitiativeCommunity(initiative.metadata.communitySlug)
+    : undefined;
+
+  return knownCommunity?.regionLabel ?? "";
+}
+
 function resolveCommunityLabel(initiativeCommunitySlug: string, affectedCommunity: string): string {
   if (affectedCommunity.trim().length > 0) {
     return affectedCommunity;
@@ -134,20 +175,22 @@ function buildArchiveReferences(impactId: string): PublicCivicArchiveRecord["ref
   };
 }
 
-function buildArchiveSnapshotFields(
+async function buildArchiveSnapshotFields(
   impactId: string,
-): Pick<
-  PublicCivicArchiveRecord,
-  | "initiativeId"
-  | "impactId"
-  | "stewardId"
-  | "references"
-  | "country"
-  | "region"
-  | "community"
-  | "activityArea"
-  | "participationScope"
-  | "implementationPeriod"
+): Promise<
+  Pick<
+    PublicCivicArchiveRecord,
+    | "initiativeId"
+    | "impactId"
+    | "stewardId"
+    | "references"
+    | "country"
+    | "region"
+    | "community"
+    | "activityArea"
+    | "participationScope"
+    | "implementationPeriod"
+  >
 > {
   const impact = getImpactById(impactId);
 
@@ -164,15 +207,15 @@ function buildArchiveSnapshotFields(
   const tracking = getTrackingById(impact.trackingId);
   const commitment = tracking ? getCommitmentById(tracking.commitmentId) : null;
   const decision = commitment ? getDecisionById(commitment.decisionId) : null;
-  const steward = getMemberById(initiative.stewardId);
+  const steward = await getMemberById(initiative.stewardId);
 
   return {
     initiativeId: impact.initiativeId,
     impactId: impact.impactId,
     stewardId: initiative.stewardId,
     references: buildArchiveReferences(impactId),
-    country: steward?.profile.country ?? "Canada",
-    region: initiative.metadata.region,
+    country: resolveArchiveCountryLabel(initiative, steward?.profile.country),
+    region: resolveArchiveRegionLabel(initiative, steward?.profile.region),
     community: resolveCommunityLabel(initiative.metadata.communitySlug, impact.affectedCommunity),
     activityArea: initiative.metadata.activityArea,
     participationScope: decision?.participationScope ?? "community",
@@ -186,13 +229,13 @@ export function listMyPublicCivicArchiveRecords(
   return listArchiveRecordsByAuthor(identity.participantId);
 }
 
-export function createPublicCivicArchiveDraft(
+export async function createPublicCivicArchiveDraft(
   identity: RequestIdentity,
   input: CreatePublicCivicArchiveDraftInput,
-): PublicCivicArchiveRecord {
+): Promise<PublicCivicArchiveRecord> {
   assertPublicCivicArchiveEligible(input.impactId, identity.participantId);
 
-  const snapshot = buildArchiveSnapshotFields(input.impactId);
+  const snapshot = await buildArchiveSnapshotFields(input.impactId);
   const now = new Date().toISOString();
 
   const record: PublicCivicArchiveRecord = {
@@ -264,6 +307,14 @@ export function publishPublicCivicArchive(
   if (!updated) {
     throw new Error("Archive record not found.");
   }
+
+  emitCivicNotificationEvent({
+    eventType: "archive_published",
+    entityType: "civic_archive",
+    entityId: archiveRecordId,
+    initiativeId: updated.initiativeId,
+    actorMemberId: identity.participantId,
+  });
 
   return updated;
 }

@@ -21,11 +21,11 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicInitiativeCollectiveDecisionRouter.get("/:decisionId", (req, res) => {
+publicInitiativeCollectiveDecisionRouter.get("/:decisionId", async (req, res) => {
   const decisionId = Array.isArray(req.params.decisionId)
     ? (req.params.decisionId[0] ?? "")
     : (req.params.decisionId ?? "");
-  const projection = getPublicInitiativeCollectiveDecision(decisionId);
+  const projection = await getPublicInitiativeCollectiveDecision(decisionId);
 
   if (!projection) {
     res.status(404).json(createFailureResponse("Public collective decision is not available."));

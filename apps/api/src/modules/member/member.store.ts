@@ -1,70 +1,44 @@
+/**
+ * @deprecated Import from `./member-access.js` instead. Compatibility shim for legacy callers.
+ * MongoDB is authoritative — use async APIs from member-access.ts for MVP paths.
+ */
 import type { Member } from "@hu/types";
 
-import { sampleMember } from "./member.sample.js";
+import type { EditableMemberProfileFields } from "./domain/member-profile.types.js";
+import {
+  getMemberByIdSync,
+  getMemberByUniqueNameSync,
+} from "./application/member-read.service.js";
+import { seedLegacyFixtureMember, listLegacyFixtureMembers } from "./infrastructure/member-fixture.store.js";
 
-export interface EditableMemberProfileFields {
-  displayName?: string;
-  country?: string;
-  region?: string;
-  city?: string;
-  languages?: string[];
-}
+export type { EditableMemberProfileFields };
 
-const members = new Map<string, Member>([[sampleMember.id, structuredClone(sampleMember)]]);
-
+/** @deprecated Use `getMemberById` from `./member-access.js` */
 export function getMemberById(memberId: string): Member | null {
-  const member = members.get(memberId);
-
-  return member ? structuredClone(member) : null;
+  return getMemberByIdSync(memberId);
 }
 
+/** @deprecated Use `getMemberByUniqueName` from `./member-access.js` */
 export function getMemberByUniqueName(uniqueName: string): Member | null {
-  for (const member of members.values()) {
-    if (member.profile.uniqueName === uniqueName) {
-      return structuredClone(member);
-    }
-  }
-
-  return null;
+  return getMemberByUniqueNameSync(uniqueName);
 }
 
+/** @deprecated Use `updateMemberProfile` from `./member-access.js` */
 export function updateMemberProfile(
-  memberId: string,
-  fields: EditableMemberProfileFields,
+  _memberId: string,
+  _fields: EditableMemberProfileFields,
 ): Member | null {
-  const member = members.get(memberId);
-
-  if (!member) {
-    return null;
-  }
-
-  if (fields.displayName !== undefined) {
-    member.profile.displayName = fields.displayName;
-  }
-
-  if (fields.country !== undefined) {
-    member.profile.country = fields.country;
-  }
-
-  if (fields.region !== undefined) {
-    member.profile.region = fields.region;
-  }
-
-  if (fields.city !== undefined) {
-    member.profile.city = fields.city;
-  }
-
-  if (fields.languages !== undefined) {
-    member.profile.languages = fields.languages;
-  }
-
-  member.updatedAt = new Date().toISOString();
-
-  return structuredClone(member);
+  throw new Error(
+    "member.store.updateMemberProfile is deprecated. Use async updateMemberProfile from member-access.js.",
+  );
 }
 
+/** @deprecated Verification scripts only — use Mongo-backed registration for MVP. */
 export function seedMember(member: Member): Member {
-  members.set(member.id, structuredClone(member));
+  return seedLegacyFixtureMember(member);
+}
 
-  return structuredClone(member);
+/** @deprecated Use async `listMembers` from `./member-access.js` */
+export function listMembers(): Member[] {
+  return listLegacyFixtureMembers();
 }

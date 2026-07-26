@@ -23,8 +23,8 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicInitiativeImprovementProposalRouter.get("/:proposalId", (req, res) => {
-  const projection = getPublicInitiativeImprovementProposal(req.params.proposalId);
+publicInitiativeImprovementProposalRouter.get("/:proposalId", async (req, res) => {
+  const projection = await getPublicInitiativeImprovementProposal(req.params.proposalId);
 
   if (!projection) {
     res.status(404).json(createFailureResponse("Public improvement proposal is not available."));
@@ -38,7 +38,7 @@ export const publicInitiativeImprovementProposalsByInitiativeRouter = Router();
 
 publicInitiativeImprovementProposalsByInitiativeRouter.get(
   "/:initiativeId/improvement-proposals",
-  (req, res) => {
+  async (req, res) => {
     const initiative = getInitiativeById(req.params.initiativeId);
 
     if (!initiative) {
@@ -51,7 +51,7 @@ publicInitiativeImprovementProposalsByInitiativeRouter.get(
       return;
     }
 
-    const proposals = listPublicInitiativeImprovementProposals(req.params.initiativeId);
+    const proposals = await listPublicInitiativeImprovementProposals(req.params.initiativeId);
     const metrics = computeInitiativeImprovementProposalMetrics(req.params.initiativeId);
 
     res.json(createSuccessResponse(proposals, "Public improvement proposals loaded.", { metrics }));
@@ -62,7 +62,7 @@ export const publicInitiativeImprovementProposalsByAnalysisRouter = Router();
 
 publicInitiativeImprovementProposalsByAnalysisRouter.get(
   "/:analysisId/improvement-proposals",
-  (req, res) => {
+  async (req, res) => {
     const analysis = getAnalysisById(req.params.analysisId);
 
     if (!analysis || analysis.status !== "published") {
@@ -70,7 +70,7 @@ publicInitiativeImprovementProposalsByAnalysisRouter.get(
       return;
     }
 
-    const proposals = listPublicInitiativeImprovementProposalsForAnalysis(req.params.analysisId);
+    const proposals = await listPublicInitiativeImprovementProposalsForAnalysis(req.params.analysisId);
 
     res.json(createSuccessResponse(proposals, "Public analysis improvement proposals loaded."));
   },

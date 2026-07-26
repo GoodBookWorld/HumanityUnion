@@ -22,6 +22,7 @@ import {
   listResponsesByRecorder,
   updateResponse,
 } from "./official-response.store.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 
 export interface CreateOfficialResponseDraftInput {
   capId: string;
@@ -204,6 +205,14 @@ export function publishOfficialResponse(
 
   ensureAccountabilityFromResponse(updated);
 
+  emitCivicNotificationEvent({
+    eventType: "official_response_received",
+    entityType: "official_response",
+    entityId: responseId,
+    initiativeId: updated.initiativeId,
+    actorMemberId: identity.participantId,
+  });
+
   return updated;
 }
 
@@ -245,6 +254,14 @@ export function verifyOfficialResponse(
   if (!updated) {
     throw new Error("Official response not found.");
   }
+
+  emitCivicNotificationEvent({
+    eventType: "official_response_verified",
+    entityType: "official_response",
+    entityId: responseId,
+    initiativeId: updated.initiativeId,
+    actorMemberId: identity.participantId,
+  });
 
   return updated;
 }

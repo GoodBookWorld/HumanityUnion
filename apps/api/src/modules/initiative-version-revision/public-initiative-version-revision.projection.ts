@@ -6,7 +6,7 @@ import type {
   PublicInitiativeWithVersionHistory,
 } from "@hu/types";
 
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import { listProposalsByInitiative } from "../initiative-improvement-proposal/initiative-improvement-proposal.store.js";
 import {
   getCurrentPublishedVersion,
@@ -14,8 +14,8 @@ import {
   listRevisionsByInitiative,
 } from "./initiative-version-revision.store.js";
 
-function resolveAuthorDisplayName(authorId: string): string {
-  const member = getMemberById(authorId);
+async function resolveAuthorDisplayName(authorId: string): Promise<string> {
+  const member = await getMemberById(authorId);
 
   return member?.profile.displayName ?? "Unknown Steward";
 }
@@ -65,24 +65,24 @@ export function computeInitiativeRevisionMetrics(initiativeId: string): Initiati
   };
 }
 
-export function toPublicInitiativeVersionRevisionListItem(
+export async function toPublicInitiativeVersionRevisionListItem(
   revision: InitiativeVersionRevision,
   currentVersion: number,
-): PublicInitiativeVersionRevisionListItem {
+): Promise<PublicInitiativeVersionRevisionListItem> {
   return {
     revisionId: revision.revisionId,
     version: revision.version,
     revisionSummary: revision.revisionSummary,
-    authorDisplayName: resolveAuthorDisplayName(revision.authorId),
+    authorDisplayName: await resolveAuthorDisplayName(revision.authorId),
     publishedAt: revision.publishedAt,
     isCurrent: revision.version === currentVersion,
   };
 }
 
-export function toPublicInitiativeVersionRevisionProjection(
+export async function toPublicInitiativeVersionRevisionProjection(
   revision: InitiativeVersionRevision,
   currentVersion: number,
-): PublicInitiativeVersionRevisionProjection {
+): Promise<PublicInitiativeVersionRevisionProjection> {
   return {
     revisionId: revision.revisionId,
     initiativeId: revision.initiativeId,
@@ -91,7 +91,7 @@ export function toPublicInitiativeVersionRevisionProjection(
     revisionSummary: revision.revisionSummary,
     title: revision.title,
     description: revision.description,
-    authorDisplayName: resolveAuthorDisplayName(revision.authorId),
+    authorDisplayName: await resolveAuthorDisplayName(revision.authorId),
     publishedAt: revision.publishedAt,
     isCurrent: revision.version === currentVersion,
     acceptedProposalIds: [...revision.acceptedProposalIds],
@@ -100,32 +100,34 @@ export function toPublicInitiativeVersionRevisionProjection(
   };
 }
 
-export function getPublicInitiativeVersionHistory(
+export async function getPublicInitiativeVersionHistory(
   initiativeId: string,
-): PublicInitiativeWithVersionHistory {
+): Promise<PublicInitiativeWithVersionHistory> {
   const revisions = listRevisionsByInitiative(initiativeId);
   const currentVersion = getCurrentPublishedVersion(initiativeId);
 
   return {
     currentVersion,
-    revisions: revisions.map((revision) =>
-      toPublicInitiativeVersionRevisionListItem(revision, currentVersion),
+    revisions: await Promise.all(
+      revisions.map((revision) =>
+        toPublicInitiativeVersionRevisionListItem(revision, currentVersion),
+      ),
     ),
     metrics: computeInitiativeRevisionMetrics(initiativeId),
   };
 }
 
-export function getPublicInitiativeVersionRevision(
+export async function getPublicInitiativeVersionRevision(
   initiativeId: string,
   version: number,
-): PublicInitiativeVersionRevisionProjection | null {
+): Promise<PublicInitiativeVersionRevisionProjection | null> {
   const revision = getRevisionByInitiativeAndVersion(initiativeId, version);
 
   if (!revision) {
     return null;
   }
 
-  return toPublicInitiativeVersionRevisionProjection(
+  return await toPublicInitiativeVersionRevisionProjection(
     revision,
     getCurrentPublishedVersion(initiativeId),
   );

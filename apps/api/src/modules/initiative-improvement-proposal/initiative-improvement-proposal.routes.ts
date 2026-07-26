@@ -76,8 +76,8 @@ function getAnalysisId(req: Request): string {
   return Array.isArray(analysisId) ? (analysisId[0] ?? "") : (analysisId ?? "");
 }
 
-initiativeImprovementProposalRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+initiativeImprovementProposalRouter.get("/mine", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const proposals = listMyInitiativeImprovementProposals(identity);
 
   res.json(createSuccessResponse(proposals, "My improvement proposals loaded."));
@@ -86,8 +86,8 @@ initiativeImprovementProposalRouter.get("/mine", authenticationMiddleware, (req,
 initiativeImprovementProposalRouter.get(
   "/by-initiative/:initiativeId",
   authenticationMiddleware,
-  (req, res) => {
-    const identity = resolveRequestIdentity(req);
+  async (req, res) => {
+    const identity = await resolveRequestIdentity(req);
     const proposals = listMyInitiativeImprovementProposalsForInitiative(
       identity,
       getInitiativeId(req),
@@ -100,8 +100,8 @@ initiativeImprovementProposalRouter.get(
 initiativeImprovementProposalRouter.get(
   "/by-analysis/:analysisId",
   authenticationMiddleware,
-  (req, res) => {
-    const identity = resolveRequestIdentity(req);
+  async (req, res) => {
+    const identity = await resolveRequestIdentity(req);
     const proposals = listMyInitiativeImprovementProposalsForAnalysis(identity, getAnalysisId(req));
 
     res.json(createSuccessResponse(proposals, "Analysis improvement proposals loaded."));
@@ -111,9 +111,9 @@ initiativeImprovementProposalRouter.get(
 initiativeImprovementProposalRouter.get(
   "/steward/:initiativeId/submitted",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const proposals = listSubmittedInitiativeImprovementProposalsForSteward(
         identity,
         getInitiativeId(req),
@@ -126,9 +126,9 @@ initiativeImprovementProposalRouter.get(
   },
 );
 
-initiativeImprovementProposalRouter.get("/:proposalId", authenticationMiddleware, (req, res) => {
+initiativeImprovementProposalRouter.get("/:proposalId", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const proposal = getMyInitiativeImprovementProposal(identity, getProposalId(req));
 
     res.json(createSuccessResponse(proposal, "Improvement proposal loaded."));
@@ -137,9 +137,9 @@ initiativeImprovementProposalRouter.get("/:proposalId", authenticationMiddleware
   }
 });
 
-initiativeImprovementProposalRouter.post("/draft", authenticationMiddleware, (req, res) => {
+initiativeImprovementProposalRouter.post("/draft", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const input = validateCreateInitiativeImprovementProposalDraftInput(req.body);
     const created = createInitiativeImprovementProposalDraft(identity, input);
 
@@ -152,9 +152,9 @@ initiativeImprovementProposalRouter.post("/draft", authenticationMiddleware, (re
 initiativeImprovementProposalRouter.patch(
   "/:proposalId/draft",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const input = validateSaveInitiativeImprovementProposalDraftInput(req.body);
       const proposal = saveInitiativeImprovementProposalDraft(identity, getProposalId(req), input);
 
@@ -168,9 +168,9 @@ initiativeImprovementProposalRouter.patch(
 initiativeImprovementProposalRouter.post(
   "/:proposalId/submit",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const proposal = submitInitiativeImprovementProposal(identity, getProposalId(req));
 
       res.json(createSuccessResponse(proposal, "Improvement proposal submitted."));
@@ -183,9 +183,9 @@ initiativeImprovementProposalRouter.post(
 initiativeImprovementProposalRouter.post(
   "/:proposalId/archive",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const proposal = archiveInitiativeImprovementProposal(identity, getProposalId(req));
 
       res.json(createSuccessResponse(proposal, "Improvement proposal archived."));
@@ -198,9 +198,9 @@ initiativeImprovementProposalRouter.post(
 initiativeImprovementProposalRouter.post(
   "/:proposalId/decide",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const input = validateDecideInitiativeImprovementProposalInput(req.body);
       const proposal = decideInitiativeImprovementProposal(identity, getProposalId(req), input);
 

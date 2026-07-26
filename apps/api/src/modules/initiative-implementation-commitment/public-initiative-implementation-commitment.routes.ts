@@ -23,11 +23,11 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicInitiativeImplementationCommitmentRouter.get("/:commitmentId", (req, res) => {
+publicInitiativeImplementationCommitmentRouter.get("/:commitmentId", async (req, res) => {
   const commitmentId = Array.isArray(req.params.commitmentId)
     ? (req.params.commitmentId[0] ?? "")
     : (req.params.commitmentId ?? "");
-  const projection = getPublicInitiativeImplementationCommitment(commitmentId);
+  const projection = await getPublicInitiativeImplementationCommitment(commitmentId);
 
   if (!projection) {
     res
@@ -43,7 +43,7 @@ export const publicInitiativeImplementationCommitmentsByInitiativeRouter = Route
 
 publicInitiativeImplementationCommitmentsByInitiativeRouter.get(
   "/:initiativeId/implementation-commitments",
-  (req, res) => {
+  async (req, res) => {
     const initiativeId = Array.isArray(req.params.initiativeId)
       ? (req.params.initiativeId[0] ?? "")
       : (req.params.initiativeId ?? "");
@@ -59,7 +59,7 @@ publicInitiativeImplementationCommitmentsByInitiativeRouter.get(
       return;
     }
 
-    const commitments = listPublicInitiativeImplementationCommitmentsForInitiative(initiativeId);
+    const commitments = await listPublicInitiativeImplementationCommitmentsForInitiative(initiativeId);
     const metrics = computeInitiativeImplementationCommitmentMetrics(initiativeId);
 
     res.json(
@@ -72,7 +72,7 @@ export const publicInitiativeImplementationCommitmentsByDecisionRouter = Router(
 
 publicInitiativeImplementationCommitmentsByDecisionRouter.get(
   "/:decisionId/implementation-commitments",
-  (req, res) => {
+  async (req, res) => {
     const decisionId = Array.isArray(req.params.decisionId)
       ? (req.params.decisionId[0] ?? "")
       : (req.params.decisionId ?? "");
@@ -83,7 +83,7 @@ publicInitiativeImplementationCommitmentsByDecisionRouter.get(
       return;
     }
 
-    const commitments = listPublicInitiativeImplementationCommitmentsForDecision(decisionId);
+    const commitments = await listPublicInitiativeImplementationCommitmentsForDecision(decisionId);
 
     res.json(createSuccessResponse(commitments, "Public implementation commitments loaded."));
   },

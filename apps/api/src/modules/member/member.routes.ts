@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { authenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
-import { toMemberPublicProjection } from "./member.projection.js";
 import {
   getMemberById,
   getMemberByUniqueName,
   updateMemberProfile,
   type EditableMemberProfileFields,
-} from "./member.store.js";
+} from "./member-access.js";
+import { toMemberPublicProjection } from "./member.projection.js";
 
 const memberRouter = Router();
 
@@ -23,8 +23,8 @@ function createFailureResponse(message: string) {
   };
 }
 
-memberRouter.get("/public/:uniqueName", (req, res) => {
-  const member = getMemberByUniqueName(req.params.uniqueName);
+memberRouter.get("/public/:uniqueName", async (req, res) => {
+  const member = await getMemberByUniqueName(req.params.uniqueName);
 
   if (!member) {
     res.status(404).json(createFailureResponse("Member not found."));
@@ -36,8 +36,8 @@ memberRouter.get("/public/:uniqueName", (req, res) => {
   );
 });
 
-memberRouter.get("/me", authenticationMiddleware, (req, res) => {
-  const member = getMemberById(req.auth!.memberId);
+memberRouter.get("/me", authenticationMiddleware, async (req, res) => {
+  const member = await getMemberById(req.auth!.memberId);
 
   if (!member) {
     res.status(404).json(createFailureResponse("Member not found."));
@@ -47,7 +47,7 @@ memberRouter.get("/me", authenticationMiddleware, (req, res) => {
   res.json(createSuccessResponse(member, "Member profile loaded."));
 });
 
-memberRouter.patch("/me", authenticationMiddleware, (req, res) => {
+memberRouter.patch("/me", authenticationMiddleware, async (req, res) => {
   const body = req.body as Record<string, unknown>;
 
   for (const key of Object.keys(body)) {
@@ -87,7 +87,7 @@ memberRouter.patch("/me", authenticationMiddleware, (req, res) => {
     fields.languages = body.languages;
   }
 
-  const member = updateMemberProfile(req.auth!.memberId, fields);
+  const member = await updateMemberProfile(req.auth!.memberId, fields);
 
   if (!member) {
     res.status(404).json(createFailureResponse("Member not found."));

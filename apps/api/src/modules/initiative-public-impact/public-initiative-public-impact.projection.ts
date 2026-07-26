@@ -6,7 +6,7 @@ import type {
   PublicInitiativePublicImpactProjection,
 } from "@hu/types";
 
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import {
   countEvidenceForImpact,
   getImpactById,
@@ -22,8 +22,8 @@ const PUBLIC_STATUSES = new Set<InitiativePublicImpact["status"]>([
   "archived",
 ]);
 
-function resolveAuthorDisplayName(participantId: string): string {
-  const member = getMemberById(participantId);
+async function resolveAuthorDisplayName(participantId: string): Promise<string> {
+  const member = await getMemberById(participantId);
 
   return member?.profile.displayName ?? "Unknown Participant";
 }
@@ -38,9 +38,9 @@ function toPublicStatus(
   return status as PublicInitiativePublicImpactProjection["status"];
 }
 
-function toPublicEvidenceListItem(
+async function toPublicEvidenceListItem(
   evidence: ReturnType<typeof listEvidenceByImpact>[number],
-): PublicImpactEvidenceListItem {
+): Promise<PublicImpactEvidenceListItem> {
   return {
     evidenceId: evidence.evidenceId,
     title: evidence.title,
@@ -48,11 +48,13 @@ function toPublicEvidenceListItem(
     referenceUrl: evidence.referenceUrl,
     referenceType: evidence.referenceType,
     createdAt: evidence.createdAt,
-    authorDisplayName: resolveAuthorDisplayName(evidence.authorId),
+    authorDisplayName: await resolveAuthorDisplayName(evidence.authorId),
   };
 }
 
-function toPublicListItem(impact: InitiativePublicImpact): PublicInitiativePublicImpactListItem {
+async function toPublicListItem(
+  impact: InitiativePublicImpact,
+): Promise<PublicInitiativePublicImpactListItem> {
   return {
     impactId: impact.impactId,
     trackingId: impact.trackingId,
@@ -63,14 +65,16 @@ function toPublicListItem(impact: InitiativePublicImpact): PublicInitiativePubli
     status: toPublicStatus(impact.status),
     publishedAt: impact.publishedAt,
     verifiedAt: impact.verifiedAt,
-    authorDisplayName: resolveAuthorDisplayName(impact.participantId),
+    authorDisplayName: await resolveAuthorDisplayName(impact.participantId),
     evidenceCount: countEvidenceForImpact(impact.impactId),
   };
 }
 
-export function toPublicInitiativePublicImpactProjection(
+export async function toPublicInitiativePublicImpactProjection(
   impact: InitiativePublicImpact,
-): PublicInitiativePublicImpactProjection {
+): Promise<PublicInitiativePublicImpactProjection> {
+  const evidence = listEvidenceByImpact(impact.impactId);
+
   return {
     impactId: impact.impactId,
     initiativeId: impact.initiativeId,
@@ -84,8 +88,8 @@ export function toPublicInitiativePublicImpactProjection(
     publishedAt: impact.publishedAt,
     verifiedAt: impact.verifiedAt,
     archivedAt: impact.archivedAt,
-    authorDisplayName: resolveAuthorDisplayName(impact.participantId),
-    evidence: listEvidenceByImpact(impact.impactId).map((item) => toPublicEvidenceListItem(item)),
+    authorDisplayName: await resolveAuthorDisplayName(impact.participantId),
+    evidence: await Promise.all(evidence.map((item) => toPublicEvidenceListItem(item))),
   };
 }
 
@@ -107,21 +111,25 @@ export function computeInitiativePublicImpactMetrics(
   };
 }
 
-export function listPublicInitiativePublicImpactsForInitiative(
+export async function listPublicInitiativePublicImpactsForInitiative(
   initiativeId: string,
-): PublicInitiativePublicImpactListItem[] {
-  return listPublicImpactsByInitiative(initiativeId).map((impact) => toPublicListItem(impact));
+): Promise<PublicInitiativePublicImpactListItem[]> {
+  const impacts = listPublicImpactsByInitiative(initiativeId);
+
+  return Promise.all(impacts.map((impact) => toPublicListItem(impact)));
 }
 
-export function listPublicInitiativePublicImpactsForTracking(
+export async function listPublicInitiativePublicImpactsForTracking(
   trackingId: string,
-): PublicInitiativePublicImpactListItem[] {
-  return listPublicImpactsByTracking(trackingId).map((impact) => toPublicListItem(impact));
+): Promise<PublicInitiativePublicImpactListItem[]> {
+  const impacts = listPublicImpactsByTracking(trackingId);
+
+  return Promise.all(impacts.map((impact) => toPublicListItem(impact)));
 }
 
-export function getPublicInitiativePublicImpact(
+export async function getPublicInitiativePublicImpact(
   impactId: string,
-): PublicInitiativePublicImpactProjection | null {
+): Promise<PublicInitiativePublicImpactProjection | null> {
   const impact = getImpactById(impactId);
 
   if (!impact || !PUBLIC_STATUSES.has(impact.status)) {

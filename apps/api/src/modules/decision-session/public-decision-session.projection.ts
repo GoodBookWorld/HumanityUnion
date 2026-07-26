@@ -14,7 +14,7 @@ import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getRevisionById } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { toPublicInitiativeVersionRevisionListItem } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
 import { getCurrentPublishedVersion } from "../initiative-version-revision/initiative-version-revision.store.js";
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import { getDecisionSessionPackageCounts } from "./decision-session-package.js";
 import {
   getSessionById,
@@ -24,8 +24,8 @@ import {
 
 const PUBLIC_STATUSES = new Set<DecisionSession["status"]>(["published", "closed"]);
 
-function resolveStewardDisplayName(stewardId: string): string {
-  const member = getMemberById(stewardId);
+async function resolveStewardDisplayName(stewardId: string): Promise<string> {
+  const member = await getMemberById(stewardId);
 
   return member?.profile.displayName ?? "Unknown Steward";
 }
@@ -40,7 +40,9 @@ function toPublicStatus(
   return status as PublicDecisionSessionProjection["status"];
 }
 
-function buildPublicDecisionSessionPackage(session: DecisionSession): PublicDecisionSessionPackage {
+async function buildPublicDecisionSessionPackage(
+  session: DecisionSession,
+): Promise<PublicDecisionSessionPackage> {
   const packageReferences = session.packageReferences ?? {
     revisionIds: [],
     analysisIds: [],
@@ -48,23 +50,29 @@ function buildPublicDecisionSessionPackage(session: DecisionSession): PublicDeci
   };
   const currentVersion = getCurrentPublishedVersion(session.initiativeId);
 
-  const revisions = packageReferences.revisionIds
-    .map((revisionId) => getRevisionById(revisionId))
-    .filter((revision): revision is NonNullable<typeof revision> => revision !== null)
-    .map((revision) => toPublicInitiativeVersionRevisionListItem(revision, currentVersion));
+  const revisions = await Promise.all(
+    packageReferences.revisionIds
+      .map((revisionId) => getRevisionById(revisionId))
+      .filter((revision): revision is NonNullable<typeof revision> => revision !== null)
+      .map((revision) => toPublicInitiativeVersionRevisionListItem(revision, currentVersion)),
+  );
 
-  const analyses = packageReferences.analysisIds
-    .map((analysisId) => getAnalysisById(analysisId))
-    .filter(
-      (analysis): analysis is NonNullable<typeof analysis> =>
-        analysis !== null && analysis.status === "published",
-    )
-    .map((analysis) => toPublicInitiativeCollaborativeAnalysisListItem(analysis));
+  const analyses = await Promise.all(
+    packageReferences.analysisIds
+      .map((analysisId) => getAnalysisById(analysisId))
+      .filter(
+        (analysis): analysis is NonNullable<typeof analysis> =>
+          analysis !== null && analysis.status === "published",
+      )
+      .map((analysis) => toPublicInitiativeCollaborativeAnalysisListItem(analysis)),
+  );
 
-  const proposals = packageReferences.proposalIds
-    .map((proposalId) => getProposalById(proposalId))
-    .filter((proposal): proposal is NonNullable<typeof proposal> => proposal !== null)
-    .map((proposal) => toPublicInitiativeImprovementProposalListItem(proposal));
+  const proposals = await Promise.all(
+    packageReferences.proposalIds
+      .map((proposalId) => getProposalById(proposalId))
+      .filter((proposal): proposal is NonNullable<typeof proposal> => proposal !== null)
+      .map((proposal) => toPublicInitiativeImprovementProposalListItem(proposal)),
+  );
 
   return {
     initiativeVersion: session.initiativeVersion,
@@ -87,9 +95,9 @@ export function toPublicDecisionSessionListItem(
   };
 }
 
-export function toPublicDecisionSessionProjection(
+export async function toPublicDecisionSessionProjection(
   session: DecisionSession,
-): PublicDecisionSessionProjection {
+): Promise<PublicDecisionSessionProjection> {
   return {
     sessionId: session.sessionId,
     initiativeId: session.initiativeId,
@@ -100,10 +108,10 @@ export function toPublicDecisionSessionProjection(
     status: toPublicStatus(session.status),
     opensAt: session.opensAt,
     closesAt: session.closesAt,
-    stewardDisplayName: resolveStewardDisplayName(session.stewardId),
+    stewardDisplayName: await resolveStewardDisplayName(session.stewardId),
     publishedAt: session.publishedAt ?? session.updatedAt,
     closedAt: session.closedAt,
-    decisionPackage: buildPublicDecisionSessionPackage(session),
+    decisionPackage: await buildPublicDecisionSessionPackage(session),
   };
 }
 
@@ -163,14 +171,14 @@ export function listPublicDecisionSessionsForInitiative(
   );
 }
 
-export function getPublicDecisionSession(
+export async function getPublicDecisionSession(
   sessionId: string,
-): PublicDecisionSessionProjection | null {
+): Promise<PublicDecisionSessionProjection | null> {
   const session = getSessionById(sessionId);
 
   if (!session || !PUBLIC_STATUSES.has(session.status)) {
     return null;
   }
 
-  return toPublicDecisionSessionProjection(session);
+  return await toPublicDecisionSessionProjection(session);
 }

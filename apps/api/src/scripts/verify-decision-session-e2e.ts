@@ -352,7 +352,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("7. Public page projection");
 
-  const publicPublished = getPublicDecisionSession(sessionDraft.sessionId);
+  const publicPublished = await getPublicDecisionSession(sessionDraft.sessionId);
   assert(publicPublished !== null, "Published session should be publicly visible");
   if (!publicPublished) {
     throw new Error("Published session should be publicly visible");
@@ -374,7 +374,7 @@ async function runMainVerification(): Promise<void> {
   assert(closed.status === "closed", "Closed session status");
   assert(closed.closedAt !== undefined, "Closed session should have closedAt");
 
-  const publicClosed = getPublicDecisionSession(sessionDraft.sessionId);
+  const publicClosed = await getPublicDecisionSession(sessionDraft.sessionId);
   assert(publicClosed !== null, "Closed session should remain publicly visible");
   if (!publicClosed) {
     throw new Error("Closed session should remain publicly visible");
@@ -482,7 +482,7 @@ async function runMainVerification(): Promise<void> {
   const archived = archiveDecisionSession(participantA, sessionDraft.sessionId);
   assert(archived.status === "archived", "Archived session status");
   assert(
-    getPublicDecisionSession(sessionDraft.sessionId) === null,
+    await getPublicDecisionSession(sessionDraft.sessionId) === null,
     "Archived session should not be publicly visible",
   );
 

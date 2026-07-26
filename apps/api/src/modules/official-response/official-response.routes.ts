@@ -55,16 +55,16 @@ function getResponseId(req: Request): string {
   return Array.isArray(responseId) ? (responseId[0] ?? "") : (responseId ?? "");
 }
 
-officialResponseRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+officialResponseRouter.get("/mine", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const responses = listMyOfficialResponses(identity);
 
   res.json(createSuccessResponse(responses, "Official responses loaded."));
 });
 
-officialResponseRouter.post("/draft", authenticationMiddleware, (req, res) => {
+officialResponseRouter.post("/draft", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const response = createOfficialResponseDraft(identity, req.body);
 
     res.status(201).json(createSuccessResponse(response, "Official response draft created."));
@@ -73,8 +73,8 @@ officialResponseRouter.post("/draft", authenticationMiddleware, (req, res) => {
   }
 });
 
-officialResponseRouter.get("/:responseId", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+officialResponseRouter.get("/:responseId", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const response = getMyOfficialResponse(identity, getResponseId(req));
 
   if (!response) {
@@ -85,9 +85,9 @@ officialResponseRouter.get("/:responseId", authenticationMiddleware, (req, res) 
   res.json(createSuccessResponse(response, "Official response loaded."));
 });
 
-officialResponseRouter.patch("/:responseId/draft", authenticationMiddleware, (req, res) => {
+officialResponseRouter.patch("/:responseId/draft", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const response = updateOfficialResponseDraft(identity, getResponseId(req), req.body);
 
     res.json(createSuccessResponse(response, "Official response draft updated."));
@@ -96,9 +96,9 @@ officialResponseRouter.patch("/:responseId/draft", authenticationMiddleware, (re
   }
 });
 
-officialResponseRouter.post("/:responseId/publish", authenticationMiddleware, (req, res) => {
+officialResponseRouter.post("/:responseId/publish", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const response = publishOfficialResponse(identity, getResponseId(req));
 
     res.json(createSuccessResponse(response, "Official response published."));
@@ -107,9 +107,9 @@ officialResponseRouter.post("/:responseId/publish", authenticationMiddleware, (r
   }
 });
 
-officialResponseRouter.post("/:responseId/verify", authenticationMiddleware, (req, res) => {
+officialResponseRouter.post("/:responseId/verify", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const verificationState = req.body?.verificationState;
 
     if (verificationState !== "verified" && verificationState !== "unable_to_verify") {
@@ -127,9 +127,9 @@ officialResponseRouter.post("/:responseId/verify", authenticationMiddleware, (re
   }
 });
 
-officialResponseRouter.post("/:responseId/archive", authenticationMiddleware, (req, res) => {
+officialResponseRouter.post("/:responseId/archive", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const response = archiveOfficialResponse(identity, getResponseId(req));
 
     res.json(createSuccessResponse(response, "Official response archived."));

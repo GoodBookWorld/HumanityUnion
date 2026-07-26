@@ -78,7 +78,20 @@ export async function ensureCollectionIndexes(
   }
 
   const collection = getMongoCollection(collectionName);
-  await collection.createIndexes(indexes);
+
+  for (const index of indexes) {
+    try {
+      await collection.createIndex(index.key, index);
+    } catch (error) {
+      const mongoError = error as { code?: number; codeName?: string };
+
+      if (mongoError.code === 85 || mongoError.code === 86) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
 }
 
 export async function deleteRecordsByIdPrefix(

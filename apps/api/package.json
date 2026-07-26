@@ -6,21 +6,38 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
+    "start:prod": "tsx src/index.ts",
+    "test": "node --import tsx --import ./test/helpers/test-setup.ts --test --test-concurrency=1 --test-force-exit test/**/*.test.ts",
+    "test:smtp": "tsx scripts/test-smtp.ts",
+    "dev:reset-auth-rate-limits": "tsx src/scripts/dev-reset-auth-rate-limits.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"
   },
   "dependencies": {
     "@hu/types": "workspace:*",
+    "@hu/geography": "workspace:*",
+    "@hu/media-registry": "workspace:*",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.2.0",
-    "mongodb": "^6.20.0"
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^6.20.0",
+    "multer": "^2.0.2",
+    "nodemailer": "^9.0.3",
+    "stripe": "^18.5.0",
+    "tsx": "^4.22.4"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "tsx": "^4.22.4",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "@types/nodemailer": "^8.0.1",
     "typescript": "^6.0.3"
   }
 }

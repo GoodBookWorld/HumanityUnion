@@ -10,7 +10,7 @@ import type {
   VerificationLevel,
 } from "@hu/types";
 
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 
 const ALLOWED_TRANSITIONS: Record<CollectiveDecisionStatus, CollectiveDecisionStatus[]> = {
   Draft: ["Scheduled", "Cancelled"],
@@ -75,8 +75,11 @@ export function isMemberEligible(member: Member, rules: EligibilityRules): boole
   return true;
 }
 
-export function isParticipantEligible(participantId: string, rules: EligibilityRules): boolean {
-  const member = getMemberById(participantId);
+export async function isParticipantEligible(
+  participantId: string,
+  rules: EligibilityRules,
+): Promise<boolean> {
+  const member = await getMemberById(participantId);
 
   if (!member) {
     return false;
@@ -85,8 +88,8 @@ export function isParticipantEligible(participantId: string, rules: EligibilityR
   return isMemberEligible(member, rules);
 }
 
-export function countEligibleParticipants(rules: EligibilityRules): number {
-  const bootstrapMember = getMemberById("member-bootstrap-001");
+export async function countEligibleParticipants(rules: EligibilityRules): Promise<number> {
+  const bootstrapMember = await getMemberById("member-bootstrap-001");
 
   if (bootstrapMember && isMemberEligible(bootstrapMember, rules)) {
     return 1;
@@ -101,8 +104,10 @@ export function getSubmittedParticipantDecisions(
   return participantDecisions.filter((decision) => decision.status === "submitted");
 }
 
-export function calculateDecisionStatistics(decision: CollectiveDecision): DecisionStatistics {
-  const eligibleParticipantCount = countEligibleParticipants(decision.ballot.eligibilityRules);
+export async function calculateDecisionStatistics(
+  decision: CollectiveDecision,
+): Promise<DecisionStatistics> {
+  const eligibleParticipantCount = await countEligibleParticipants(decision.ballot.eligibilityRules);
   const submittedDecisionCount = getSubmittedParticipantDecisions(
     decision.participantDecisions,
   ).length;

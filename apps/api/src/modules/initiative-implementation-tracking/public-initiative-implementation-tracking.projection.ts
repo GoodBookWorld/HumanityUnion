@@ -7,7 +7,7 @@ import type {
   PublicInitiativeImplementationTrackingProjection,
 } from "@hu/types";
 
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import {
   countUpdatesForTracking,
   getTrackingById,
@@ -23,8 +23,8 @@ const PUBLIC_STATUSES = new Set<InitiativeImplementationTracking["status"]>([
   "archived",
 ]);
 
-function resolveAuthorDisplayName(participantId: string): string {
-  const member = getMemberById(participantId);
+async function resolveAuthorDisplayName(participantId: string): Promise<string> {
+  const member = await getMemberById(participantId);
 
   return member?.profile.displayName ?? "Unknown Participant";
 }
@@ -39,7 +39,9 @@ function toPublicStatus(
   return status as PublicInitiativeImplementationTrackingProjection["status"];
 }
 
-function toPublicUpdate(update: ImplementationTrackingUpdate): PublicImplementationTrackingUpdate {
+async function toPublicUpdate(
+  update: ImplementationTrackingUpdate,
+): Promise<PublicImplementationTrackingUpdate> {
   return {
     updateId: update.updateId,
     title: update.title,
@@ -47,20 +49,20 @@ function toPublicUpdate(update: ImplementationTrackingUpdate): PublicImplementat
     evidence: update.evidence,
     references: update.references,
     createdAt: update.createdAt,
-    authorDisplayName: resolveAuthorDisplayName(update.authorId),
+    authorDisplayName: await resolveAuthorDisplayName(update.authorId),
   };
 }
 
-function toPublicListItem(
+async function toPublicListItem(
   tracking: InitiativeImplementationTracking,
-): PublicInitiativeImplementationTrackingListItem {
+): Promise<PublicInitiativeImplementationTrackingListItem> {
   return {
     trackingId: tracking.trackingId,
     commitmentId: tracking.commitmentId,
     status: toPublicStatus(tracking.status),
     currentStage: tracking.currentStage,
     summary: tracking.summary,
-    authorDisplayName: resolveAuthorDisplayName(tracking.participantId),
+    authorDisplayName: await resolveAuthorDisplayName(tracking.participantId),
     updateCount: countUpdatesForTracking(tracking.trackingId),
     activatedAt: tracking.activatedAt,
     completedAt: tracking.completedAt,
@@ -68,9 +70,11 @@ function toPublicListItem(
   };
 }
 
-export function toPublicInitiativeImplementationTrackingProjection(
+export async function toPublicInitiativeImplementationTrackingProjection(
   tracking: InitiativeImplementationTracking,
-): PublicInitiativeImplementationTrackingProjection {
+): Promise<PublicInitiativeImplementationTrackingProjection> {
+  const updates = listUpdatesByTracking(tracking.trackingId);
+
   return {
     trackingId: tracking.trackingId,
     commitmentId: tracking.commitmentId,
@@ -78,10 +82,8 @@ export function toPublicInitiativeImplementationTrackingProjection(
     status: toPublicStatus(tracking.status),
     currentStage: tracking.currentStage,
     summary: tracking.summary,
-    authorDisplayName: resolveAuthorDisplayName(tracking.participantId),
-    executionHistory: listUpdatesByTracking(tracking.trackingId).map((update) =>
-      toPublicUpdate(update),
-    ),
+    authorDisplayName: await resolveAuthorDisplayName(tracking.participantId),
+    executionHistory: await Promise.all(updates.map((update) => toPublicUpdate(update))),
     activatedAt: tracking.activatedAt,
     completedAt: tracking.completedAt,
     archivedAt: tracking.archivedAt,
@@ -123,25 +125,25 @@ export function computeInitiativeImplementationTrackingMetrics(
   };
 }
 
-export function listPublicInitiativeImplementationTrackingsForInitiative(
+export async function listPublicInitiativeImplementationTrackingsForInitiative(
   initiativeId: string,
-): PublicInitiativeImplementationTrackingListItem[] {
-  return listPublicTrackingsByInitiative(initiativeId).map((tracking) =>
-    toPublicListItem(tracking),
-  );
+): Promise<PublicInitiativeImplementationTrackingListItem[]> {
+  const trackings = listPublicTrackingsByInitiative(initiativeId);
+
+  return Promise.all(trackings.map((tracking) => toPublicListItem(tracking)));
 }
 
-export function listPublicInitiativeImplementationTrackingsForCommitment(
+export async function listPublicInitiativeImplementationTrackingsForCommitment(
   commitmentId: string,
-): PublicInitiativeImplementationTrackingListItem[] {
-  return listPublicTrackingsByCommitment(commitmentId).map((tracking) =>
-    toPublicListItem(tracking),
-  );
+): Promise<PublicInitiativeImplementationTrackingListItem[]> {
+  const trackings = listPublicTrackingsByCommitment(commitmentId);
+
+  return Promise.all(trackings.map((tracking) => toPublicListItem(tracking)));
 }
 
-export function getPublicInitiativeImplementationTracking(
+export async function getPublicInitiativeImplementationTracking(
   trackingId: string,
-): PublicInitiativeImplementationTrackingProjection | null {
+): Promise<PublicInitiativeImplementationTrackingProjection | null> {
   const tracking = getTrackingById(trackingId);
 
   if (!tracking || !PUBLIC_STATUSES.has(tracking.status)) {

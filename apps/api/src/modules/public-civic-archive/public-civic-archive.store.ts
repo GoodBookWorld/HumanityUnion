@@ -2,6 +2,7 @@ import type { PublicCivicArchiveRecord } from "@hu/types";
 
 import { resolvePublicCivicArchivePersistenceAdapter } from "./persistence/resolve-public-civic-archive-persistence.js";
 import { snapshotFromArchiveRecords } from "./persistence/public-civic-archive-persistence.types.js";
+import { isPublicVerificationFixtureRecord } from "./public-civic-archive-fixture-guard.js";
 
 export interface PublicCivicArchiveUpdate {
   title?: string;
@@ -11,6 +12,11 @@ export interface PublicCivicArchiveUpdate {
   status?: PublicCivicArchiveRecord["status"];
   archivedVersion?: number;
   archivedAt?: string;
+  verification?: PublicCivicArchiveRecord["verification"];
+  country?: string;
+  region?: string;
+  community?: string;
+  activityArea?: string;
 }
 
 const persistence = resolvePublicCivicArchivePersistenceAdapter();
@@ -54,9 +60,23 @@ export function listArchiveRecordsByAuthor(authorId: string): PublicCivicArchive
   return listArchiveRecords().filter((record) => record.authorId === authorId);
 }
 
-export function listPublishedArchiveRecords(): PublicCivicArchiveRecord[] {
+export function listPublishedArchiveRecords(options?: {
+  includeVerificationFixtures?: boolean;
+  verificationRunId?: string;
+}): PublicCivicArchiveRecord[] {
   return listArchiveRecords()
     .filter((record) => record.status === "published")
+    .filter((record) => {
+      if (options?.includeVerificationFixtures) {
+        if (options.verificationRunId) {
+          return record.verification?.verificationRunId === options.verificationRunId;
+        }
+
+        return true;
+      }
+
+      return !isPublicVerificationFixtureRecord(record);
+    })
     .sort((left, right) => (right.archivedAt ?? "").localeCompare(left.archivedAt ?? ""));
 }
 
@@ -123,6 +143,26 @@ export function updateArchiveRecord(
     record.archivedAt = update.archivedAt;
   }
 
+  if (update.verification !== undefined) {
+    record.verification = structuredClone(update.verification);
+  }
+
+  if (update.country !== undefined) {
+    record.country = update.country;
+  }
+
+  if (update.region !== undefined) {
+    record.region = update.region;
+  }
+
+  if (update.community !== undefined) {
+    record.community = update.community;
+  }
+
+  if (update.activityArea !== undefined) {
+    record.activityArea = update.activityArea;
+  }
+
   record.updatedAt = new Date().toISOString();
 
   persistRecords();
@@ -132,4 +172,49 @@ export function updateArchiveRecord(
 
 export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
+}
+
+export function removeVerificationFixturesForRun(verificationRunId: string): number {
+  let removed = 0;
+
+  for (const [archiveRecordId, record] of records.entries()) {
+    if (
+      record.verification?.isVerificationFixture &&
+      record.verification.verificationRunId === verificationRunId
+    ) {
+      records.delete(archiveRecordId);
+      removed += 1;
+    }
+  }
+
+  if (removed > 0) {
+    persistRecords();
+  }
+
+  return removed;
+}
+
+export function removePublicVerificationFixtureRecords(): number {
+  let removed = 0;
+
+  for (const [archiveRecordId, record] of records.entries()) {
+    if (isPublicVerificationFixtureRecord(record)) {
+      records.delete(archiveRecordId);
+      removed += 1;
+    }
+  }
+
+  if (removed > 0) {
+    persistRecords();
+  }
+
+  return removed;
+}
+
+export function reloadArchiveRecordsFromPersistence(): void {
+  records.clear();
+
+  for (const [archiveRecordId, record] of loadRecords().entries()) {
+    records.set(archiveRecordId, record);
+  }
 }

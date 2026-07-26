@@ -15,6 +15,14 @@ export function rebuildProjectedInitiativeCards(initiatives: Initiative[]): void
     );
 
   projectedInitiatives.forEach((initiative, index) => {
+    if (initiative.metadata.participationScope === "world") {
+      return;
+    }
+
+    if (!initiative.metadata.communitySlug) {
+      return;
+    }
+
     const card = toLatestInitiativeCardProjection(initiative, index);
     upsertProjectedInitiativeCard(initiative.metadata.communitySlug, card);
   });

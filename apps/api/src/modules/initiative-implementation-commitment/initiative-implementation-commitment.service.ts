@@ -9,6 +9,7 @@ import {
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeImplementationCommitmentEligible } from "./initiative-implementation-commitment-eligibility.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 import {
   createCommitment,
   getCommitmentById,
@@ -160,6 +161,14 @@ export function publishInitiativeImplementationCommitment(
   if (!updated) {
     throw new Error("Implementation commitment not found.");
   }
+
+  emitCivicNotificationEvent({
+    eventType: "commitment_published",
+    entityType: "implementation_commitment",
+    entityId: commitmentId,
+    initiativeId: updated.initiativeId,
+    actorMemberId: identity.participantId,
+  });
 
   return updated;
 }

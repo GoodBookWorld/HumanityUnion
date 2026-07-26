@@ -4,13 +4,18 @@ import { createSuccessResponse } from "../../shared/http-response.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
 import { getImpactById } from "../initiative-public-impact/initiative-public-impact.store.js";
+import { parseCivicArchiveIndexQuery } from "./civic-archive-index-query.js";
+import {
+  computeCivicArchiveLifecycleMetricsForRecords,
+  getCivicArchiveLifecycleRecord,
+  listCivicArchiveLifecycleRecords,
+  resolveCivicArchiveLifecycleRecord,
+} from "./public-civic-archive-lifecycle.projection.js";
 import {
   computePublicCivicArchiveMetrics,
   getLatestPublishedPublicCivicArchiveForInitiative,
-  getPublicCivicArchive,
   getPublishedPublicCivicArchiveForImpact,
   listPublicCivicArchiveForInitiative,
-  listPublicCivicArchiveIndex,
 } from "./public-civic-archive.projection.js";
 
 function createFailureResponse(message: string) {
@@ -23,49 +28,39 @@ function createFailureResponse(message: string) {
   };
 }
 
-function parseImplementationYear(value: unknown): number | undefined {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    return undefined;
-  }
-
-  const parsed = Number.parseInt(value, 10);
-
-  return Number.isNaN(parsed) ? undefined : parsed;
-}
-
 const publicCivicArchivePublicRouter = Router();
 
-publicCivicArchivePublicRouter.get("/", (req, res) => {
-  const records = listPublicCivicArchiveIndex({
-    search: typeof req.query.search === "string" ? req.query.search : undefined,
-    country: typeof req.query.country === "string" ? req.query.country : undefined,
-    region: typeof req.query.region === "string" ? req.query.region : undefined,
-    community: typeof req.query.community === "string" ? req.query.community : undefined,
-    activityArea: typeof req.query.activityArea === "string" ? req.query.activityArea : undefined,
-    implementationYear: parseImplementationYear(req.query.implementationYear),
-  });
-  const metrics = computePublicCivicArchiveMetrics();
+publicCivicArchivePublicRouter.get("/", async (req, res) => {
+  const indexQuery = parseCivicArchiveIndexQuery(req.query as Record<string, unknown>);
+  const records = listCivicArchiveLifecycleRecords(indexQuery);
+  const metrics = computeCivicArchiveLifecycleMetricsForRecords(records);
 
-  res.json(createSuccessResponse(records, "Public civic archive index loaded.", { metrics }));
+  res.setHeader("Cache-Control", "no-store");
+  res.json(
+    createSuccessResponse(records, "Public civic archive index loaded.", {
+      metrics,
+      total: records.length,
+    }),
+  );
 });
 
-publicCivicArchivePublicRouter.get("/:archiveRecordId", (req, res) => {
-  const archiveRecordId = Array.isArray(req.params.archiveRecordId)
+publicCivicArchivePublicRouter.get("/:archiveRecordId", async (req, res) => {
+  const id = Array.isArray(req.params.archiveRecordId)
     ? (req.params.archiveRecordId[0] ?? "")
     : (req.params.archiveRecordId ?? "");
-  const projection = getPublicCivicArchive(archiveRecordId);
+  const lifecycle = resolveCivicArchiveLifecycleRecord(id);
 
-  if (!projection) {
+  if (!lifecycle) {
     res.status(404).json(createFailureResponse("Public civic archive record is not available."));
     return;
   }
 
-  res.json(createSuccessResponse(projection, "Public civic archive record loaded."));
+  res.json(createSuccessResponse(lifecycle, "Public civic archive lifecycle record loaded."));
 });
 
 export const publicCivicArchiveByInitiativeRouter = Router();
 
-publicCivicArchiveByInitiativeRouter.get("/:initiativeId/civic-archive", (req, res) => {
+publicCivicArchiveByInitiativeRouter.get("/:initiativeId/civic-archive", async (req, res) => {
   const initiativeId = Array.isArray(req.params.initiativeId)
     ? (req.params.initiativeId[0] ?? "")
     : (req.params.initiativeId ?? "");
@@ -76,21 +71,23 @@ publicCivicArchiveByInitiativeRouter.get("/:initiativeId/civic-archive", (req, r
     return;
   }
 
+  const lifecycle = getCivicArchiveLifecycleRecord(initiativeId);
   const records = listPublicCivicArchiveForInitiative(initiativeId);
-  const latest = getLatestPublishedPublicCivicArchiveForInitiative(initiativeId);
+  const latest = await getLatestPublishedPublicCivicArchiveForInitiative(initiativeId);
   const metrics = computePublicCivicArchiveMetrics();
 
   res.json(
     createSuccessResponse(records, "Initiative civic archive records loaded.", {
       metrics,
       latestArchiveRecordId: latest?.archiveRecordId ?? null,
+      lifecycle,
     }),
   );
 });
 
 export const publicCivicArchiveByImpactRouter = Router();
 
-publicCivicArchiveByImpactRouter.get("/:impactId/civic-archive", (req, res) => {
+publicCivicArchiveByImpactRouter.get("/:impactId/civic-archive", async (req, res) => {
   const impactId = Array.isArray(req.params.impactId)
     ? (req.params.impactId[0] ?? "")
     : (req.params.impactId ?? "");
@@ -101,14 +98,19 @@ publicCivicArchiveByImpactRouter.get("/:impactId/civic-archive", (req, res) => {
     return;
   }
 
-  const projection = getPublishedPublicCivicArchiveForImpact(impactId);
+  const projection = await getPublishedPublicCivicArchiveForImpact(impactId);
+  const lifecycle = getCivicArchiveLifecycleRecord(impact.initiativeId);
 
-  if (!projection) {
+  if (!projection && !lifecycle) {
     res.status(404).json(createFailureResponse("Public civic archive record is not available."));
     return;
   }
 
-  res.json(createSuccessResponse(projection, "Public civic archive record loaded."));
+  res.json(
+    createSuccessResponse(lifecycle ?? projection, "Public civic archive record loaded.", {
+      projection,
+    }),
+  );
 });
 
 export default publicCivicArchivePublicRouter;

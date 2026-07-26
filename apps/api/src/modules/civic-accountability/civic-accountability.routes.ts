@@ -49,15 +49,15 @@ function getAccountabilityId(req: Request): string {
   return Array.isArray(accountabilityId) ? (accountabilityId[0] ?? "") : (accountabilityId ?? "");
 }
 
-civicAccountabilityRouter.get("/mine", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+civicAccountabilityRouter.get("/mine", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const accountabilities = listMyCivicAccountabilities(identity);
 
   res.json(createSuccessResponse(accountabilities, "Civic accountability records loaded."));
 });
 
-civicAccountabilityRouter.get("/:accountabilityId", authenticationMiddleware, (req, res) => {
-  const identity = resolveRequestIdentity(req);
+civicAccountabilityRouter.get("/:accountabilityId", authenticationMiddleware, async (req, res) => {
+  const identity = await resolveRequestIdentity(req);
   const detail = getMyCivicAccountability(identity, getAccountabilityId(req));
 
   if (!detail) {
@@ -71,9 +71,9 @@ civicAccountabilityRouter.get("/:accountabilityId", authenticationMiddleware, (r
 civicAccountabilityRouter.post(
   "/:accountabilityId/events",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const result = addCivicAccountabilityEvent(identity, getAccountabilityId(req), req.body);
 
       res.status(201).json(createSuccessResponse(result, "Accountability event recorded."));
@@ -83,9 +83,9 @@ civicAccountabilityRouter.post(
   },
 );
 
-civicAccountabilityRouter.post("/:accountabilityId/close", authenticationMiddleware, (req, res) => {
+civicAccountabilityRouter.post("/:accountabilityId/close", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const accountability = closeCivicAccountability(identity, getAccountabilityId(req));
 
     res.json(createSuccessResponse(accountability, "Civic accountability closed."));
@@ -97,9 +97,9 @@ civicAccountabilityRouter.post("/:accountabilityId/close", authenticationMiddlew
 civicAccountabilityRouter.post(
   "/:accountabilityId/archive",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const accountability = archiveCivicAccountability(identity, getAccountabilityId(req));
 
       res.json(createSuccessResponse(accountability, "Civic accountability archived."));

@@ -20,8 +20,8 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicInitiativeCollaborativeAnalysisRouter.get("/:analysisId", (req, res) => {
-  const projection = getPublicInitiativeCollaborativeAnalysis(req.params.analysisId);
+publicInitiativeCollaborativeAnalysisRouter.get("/:analysisId", async (req, res) => {
+  const projection = await getPublicInitiativeCollaborativeAnalysis(req.params.analysisId);
 
   if (!projection) {
     res.status(404).json(createFailureResponse("Public initiative analysis is not available."));
@@ -35,7 +35,7 @@ export const publicInitiativeCollaborativeAnalysesByInitiativeRouter = Router();
 
 publicInitiativeCollaborativeAnalysesByInitiativeRouter.get(
   "/:initiativeId/analyses",
-  (req, res) => {
+  async (req, res) => {
     const initiative = getInitiativeById(req.params.initiativeId);
 
     if (!initiative) {
@@ -48,7 +48,7 @@ publicInitiativeCollaborativeAnalysesByInitiativeRouter.get(
       return;
     }
 
-    const analyses = listPublicInitiativeCollaborativeAnalyses(req.params.initiativeId);
+    const analyses = await listPublicInitiativeCollaborativeAnalyses(req.params.initiativeId);
 
     res.json(createSuccessResponse(analyses, "Public initiative analyses loaded."));
   },

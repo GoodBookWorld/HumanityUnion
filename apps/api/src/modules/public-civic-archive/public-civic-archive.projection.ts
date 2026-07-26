@@ -1,4 +1,5 @@
 import type {
+  CivicArchiveLifecycleRecord,
   PublicCivicArchiveListItem,
   PublicCivicArchiveMetrics,
   PublicCivicArchiveProjection,
@@ -12,13 +13,17 @@ import { getTrackingById } from "../initiative-implementation-tracking/initiativ
 import { listUpdatesByTracking } from "../initiative-implementation-tracking/initiative-implementation-tracking.store.js";
 import { getImpactById } from "../initiative-public-impact/initiative-public-impact.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import {
   getArchiveRecordById,
   listArchiveRecordsByImpact,
   listArchiveRecordsByInitiative,
-  listPublishedArchiveRecords,
 } from "./public-civic-archive.store.js";
+import {
+  computeCivicArchiveLifecycleMetrics,
+  listCivicArchiveLifecycleRecords,
+  resolveCivicArchiveLifecycleRecord,
+} from "./public-civic-archive-lifecycle.projection.js";
 
 export interface PublicCivicArchiveIndexQuery {
   search?: string;
@@ -29,8 +34,8 @@ export interface PublicCivicArchiveIndexQuery {
   implementationYear?: number;
 }
 
-function resolveDisplayName(participantId: string): string {
-  const member = getMemberById(participantId);
+async function resolveDisplayName(participantId: string): Promise<string> {
+  const member = await getMemberById(participantId);
 
   return member?.profile.displayName ?? "Unknown Participant";
 }
@@ -135,9 +140,9 @@ function buildHistoricalTimeline(
   return entries.sort((left, right) => left.occurredAt.localeCompare(right.occurredAt));
 }
 
-export function toPublicCivicArchiveProjection(
+export async function toPublicCivicArchiveProjection(
   record: PublicCivicArchiveRecord,
-): PublicCivicArchiveProjection {
+): Promise<PublicCivicArchiveProjection> {
   const initiative = getInitiativeById(record.initiativeId);
   const commitment = getCommitmentById(record.references.commitmentId);
   const tracking = getTrackingById(record.references.trackingId);
@@ -173,95 +178,57 @@ export function toPublicCivicArchiveProjection(
     knowledgeContribution: structuredClone(record.knowledgeContribution),
     historicalTimeline: buildHistoricalTimeline(record),
     references: structuredClone(record.references),
-    authorDisplayName: resolveDisplayName(record.authorId),
-    stewardDisplayName: resolveDisplayName(record.stewardId),
+    authorDisplayName: await resolveDisplayName(record.authorId),
+    stewardDisplayName: await resolveDisplayName(record.stewardId),
   };
 }
 
 export function computePublicCivicArchiveMetrics(): PublicCivicArchiveMetrics {
-  const records = listPublishedArchiveRecords();
-  const unique = <T>(values: T[]): number => new Set(values).size;
+  const lifecycleMetrics = computeCivicArchiveLifecycleMetrics();
 
   return {
-    archiveRecordCount: records.length,
-    countriesRepresented: unique(records.map((record) => record.country)),
-    regionsRepresented: unique(records.map((record) => record.region)),
-    communitiesRepresented: unique(records.map((record) => record.community)),
-    activityAreasRepresented: unique(records.map((record) => record.activityArea)),
-    verifiedImpactCount: unique(records.map((record) => record.impactId)),
+    archivedInitiativeCount: lifecycleMetrics.archivedInitiativeCount,
+    archiveRecordCount: lifecycleMetrics.archiveRecordCount,
+    countriesRepresented: lifecycleMetrics.countriesRepresented,
+    regionsRepresented: lifecycleMetrics.regionsRepresented,
+    communitiesRepresented: lifecycleMetrics.communitiesRepresented,
+    activityAreasRepresented: lifecycleMetrics.activityAreasRepresented,
+    verifiedImpactCount: lifecycleMetrics.verifiedImpactCount,
   };
-}
-
-function matchesQuery(
-  record: PublicCivicArchiveRecord,
-  query: PublicCivicArchiveIndexQuery,
-): boolean {
-  const search = query.search?.trim().toLowerCase();
-
-  if (search) {
-    const haystack =
-      `${record.title} ${record.summary} ${record.community} ${record.activityArea}`.toLowerCase();
-
-    if (!haystack.includes(search)) {
-      return false;
-    }
-  }
-
-  if (query.country && record.country !== query.country) {
-    return false;
-  }
-
-  if (query.region && record.region !== query.region) {
-    return false;
-  }
-
-  if (query.community && record.community !== query.community) {
-    return false;
-  }
-
-  if (query.activityArea && record.activityArea !== query.activityArea) {
-    return false;
-  }
-
-  if (query.implementationYear) {
-    const year = new Date(record.archivedAt ?? record.updatedAt).getFullYear();
-
-    if (year !== query.implementationYear) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 export function listPublicCivicArchiveIndex(
   query: PublicCivicArchiveIndexQuery = {},
-): PublicCivicArchiveListItem[] {
-  return listPublishedArchiveRecords()
-    .filter((record) => matchesQuery(record, query))
-    .map((record) => toPublicListItem(record));
+): CivicArchiveLifecycleRecord[] {
+  return listCivicArchiveLifecycleRecords(query);
 }
 
-export function getPublicCivicArchive(
+export async function getPublicCivicArchive(
   archiveRecordId: string,
-): PublicCivicArchiveProjection | null {
-  const record = getArchiveRecordById(archiveRecordId);
+): Promise<PublicCivicArchiveProjection | null> {
+  const lifecycle = resolveCivicArchiveLifecycleRecord(archiveRecordId);
+
+  if (!lifecycle) {
+    return null;
+  }
+
+  const record = getArchiveRecordById(lifecycle.archiveRecordId);
 
   if (!record || record.status !== "published") {
     return null;
   }
 
-  return toPublicCivicArchiveProjection(record);
+  return await toPublicCivicArchiveProjection(record);
 }
 
-export function getPublishedPublicCivicArchiveForImpact(
+export async function getPublishedPublicCivicArchiveForImpact(
   impactId: string,
-): PublicCivicArchiveProjection | null {
+): Promise<PublicCivicArchiveProjection | null> {
   const record = listArchiveRecordsByImpact(impactId)
     .filter((item) => item.status === "published")
     .sort((left, right) => right.archivedVersion - left.archivedVersion)[0];
 
-  return record ? toPublicCivicArchiveProjection(record) : null;
+  return record ? await toPublicCivicArchiveProjection(record) : null;
 }
 
 export function listPublicCivicArchiveForInitiative(
@@ -273,12 +240,12 @@ export function listPublicCivicArchiveForInitiative(
     .map((record) => toPublicListItem(record));
 }
 
-export function getLatestPublishedPublicCivicArchiveForInitiative(
+export async function getLatestPublishedPublicCivicArchiveForInitiative(
   initiativeId: string,
-): PublicCivicArchiveProjection | null {
+): Promise<PublicCivicArchiveProjection | null> {
   const record = listArchiveRecordsByInitiative(initiativeId)
     .filter((item) => item.status === "published")
     .sort((left, right) => right.archivedVersion - left.archivedVersion)[0];
 
-  return record ? toPublicCivicArchiveProjection(record) : null;
+  return record ? await toPublicCivicArchiveProjection(record) : null;
 }

@@ -58,9 +58,9 @@ function getReviewId(req: Request): string {
 civicCompatibilityReviewRouter.get(
   "/initiative/:initiativeId",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const reviews = listInitiativeCompatibilityReviews(identity, getInitiativeId(req));
 
       res.json(createSuccessResponse(reviews, "Initiative compatibility reviews loaded."));
@@ -73,9 +73,9 @@ civicCompatibilityReviewRouter.get(
 civicCompatibilityReviewRouter.get(
   "/initiative/:initiativeId/latest",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const review = getLatestInitiativeCompatibilityReviewForSteward(
         identity,
         getInitiativeId(req),
@@ -88,9 +88,9 @@ civicCompatibilityReviewRouter.get(
   },
 );
 
-civicCompatibilityReviewRouter.get("/:reviewId", authenticationMiddleware, (req, res) => {
+civicCompatibilityReviewRouter.get("/:reviewId", authenticationMiddleware, async (req, res) => {
   try {
-    const identity = resolveRequestIdentity(req);
+    const identity = await resolveRequestIdentity(req);
     const review = getInitiativeCompatibilityReview(identity, getReviewId(req));
 
     res.json(createSuccessResponse(review, "Civic compatibility review loaded."));
@@ -102,9 +102,9 @@ civicCompatibilityReviewRouter.get("/:reviewId", authenticationMiddleware, (req,
 civicCompatibilityReviewRouter.post(
   "/initiative/:initiativeId/run",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const review = runInitiativeCompatibilityReview(identity, getInitiativeId(req));
 
       res.status(201).json(createSuccessResponse(review, "Civic compatibility review generated."));
@@ -117,9 +117,9 @@ civicCompatibilityReviewRouter.post(
 civicCompatibilityReviewRouter.get(
   "/compare/:baselineReviewId/:comparisonReviewId",
   authenticationMiddleware,
-  (req, res) => {
+  async (req, res) => {
     try {
-      const identity = resolveRequestIdentity(req);
+      const identity = await resolveRequestIdentity(req);
       const baselineReviewId = Array.isArray(req.params.baselineReviewId)
         ? (req.params.baselineReviewId[0] ?? "")
         : (req.params.baselineReviewId ?? "");

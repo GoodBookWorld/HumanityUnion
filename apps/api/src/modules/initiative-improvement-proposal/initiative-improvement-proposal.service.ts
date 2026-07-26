@@ -20,6 +20,7 @@ import {
   type SaveInitiativeImprovementProposalDraftInput,
   validateInitiativeImprovementProposalForSubmission,
 } from "./initiative-improvement-proposal.validators.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 
 function assertPublishedAnalysis(analysisId: string): {
   initiativeId: string;
@@ -196,6 +197,14 @@ export function submitInitiativeImprovementProposal(
     throw new Error("Improvement proposal not found.");
   }
 
+  emitCivicNotificationEvent({
+    eventType: "proposal_submitted",
+    entityType: "improvement_proposal",
+    entityId: proposalId,
+    initiativeId: updated.initiativeId,
+    actorMemberId: identity.participantId,
+  });
+
   return updated;
 }
 
@@ -242,6 +251,14 @@ export function decideInitiativeImprovementProposal(
   if (!updated) {
     throw new Error("Improvement proposal not found.");
   }
+
+  emitCivicNotificationEvent({
+    eventType: "proposal_decided",
+    entityType: "improvement_proposal",
+    entityId: proposalId,
+    initiativeId: updated.initiativeId,
+    actorMemberId: identity.participantId,
+  });
 
   return updated;
 }

@@ -158,7 +158,7 @@ async function buildCapContext(): Promise<{
     closesAt: futureIsoDate(30),
   });
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
-  closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
+  await closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
   const capPackage = getCivicActionPackageForDecision(decisionDraft.decisionId);
 

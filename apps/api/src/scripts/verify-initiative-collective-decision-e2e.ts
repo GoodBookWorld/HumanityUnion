@@ -293,7 +293,7 @@ async function runMainVerification(): Promise<void> {
   assert(opened.status === "opened", "Opened decision status");
   assert(opened.openedAt !== undefined, "Opened decision should have openedAt");
 
-  const closed = closeInitiativeCollectiveDecision(participantA, decisionDraft.decisionId);
+  const closed = await closeInitiativeCollectiveDecision(participantA, decisionDraft.decisionId);
   assert(closed.status === "closed", "Closed decision status");
   assert(closed.closedAt !== undefined, "Closed decision should have closedAt");
 
@@ -389,7 +389,7 @@ async function runMainVerification(): Promise<void> {
   );
   openInitiativeCollectiveDecision(participantA, ownedDraft.decisionId);
   assertThrows(
-    () => closeInitiativeCollectiveDecision(participantB, ownedDraft.decisionId),
+    async () => await closeInitiativeCollectiveDecision(participantB, ownedDraft.decisionId),
     "Non-steward cannot close",
   );
   assertThrows(
@@ -400,11 +400,11 @@ async function runMainVerification(): Promise<void> {
   console.log("8. Public projections — draft hidden, opened/closed/cancelled visible");
 
   assert(
-    getPublicInitiativeCollectiveDecision(ownedDraft.decisionId) !== null,
+    await getPublicInitiativeCollectiveDecision(ownedDraft.decisionId) !== null,
     "Opened decision should be publicly visible",
   );
 
-  const publicOpened = getPublicInitiativeCollectiveDecision(ownedDraft.decisionId);
+  const publicOpened = await getPublicInitiativeCollectiveDecision(ownedDraft.decisionId);
   assert(publicOpened !== null, "Opened public projection required");
   if (!publicOpened) {
     throw new Error("Opened public projection required");
@@ -423,8 +423,8 @@ async function runMainVerification(): Promise<void> {
   assert(metrics.closedCount >= 1, "Metrics should count closed decisions");
   assert(metrics.cancelledCount >= 2, "Metrics should count cancelled decisions");
 
-  closeInitiativeCollectiveDecision(participantA, ownedDraft.decisionId);
-  const publicClosed = getPublicInitiativeCollectiveDecision(ownedDraft.decisionId);
+  await closeInitiativeCollectiveDecision(participantA, ownedDraft.decisionId);
+  const publicClosed = await getPublicInitiativeCollectiveDecision(ownedDraft.decisionId);
   assert(publicClosed !== null, "Closed decision should remain public");
   if (!publicClosed) {
     throw new Error("Closed public projection required");
@@ -508,7 +508,7 @@ async function runPersistenceVerification(): Promise<void> {
   );
   assertDecisionReloadsFromFile(draft.decisionId, "opened", persistencePath);
 
-  closeInitiativeCollectiveDecision(participantA, draft.decisionId);
+  await closeInitiativeCollectiveDecision(participantA, draft.decisionId);
   assert(
     createFileInitiativeCollectiveDecisionPersistenceAdapter().load().decisions[draft.decisionId]
       ?.status === "closed",

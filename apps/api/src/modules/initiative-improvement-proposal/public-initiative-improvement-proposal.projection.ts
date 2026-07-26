@@ -5,7 +5,7 @@ import type {
   PublicInitiativeImprovementProposalProjection,
 } from "@hu/types";
 
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import {
   getProposalById,
   listPublicProposalsByAnalysis,
@@ -19,8 +19,8 @@ const PUBLIC_STATUSES = new Set<InitiativeImprovementProposal["status"]>([
   "declined",
 ]);
 
-function resolveAuthorDisplayName(authorId: string): string {
-  const member = getMemberById(authorId);
+async function resolveAuthorDisplayName(authorId: string): Promise<string> {
+  const member = await getMemberById(authorId);
 
   return member?.profile.displayName ?? "Unknown Author";
 }
@@ -35,9 +35,9 @@ function toPublicStatus(
   return status as PublicInitiativeImprovementProposalProjection["status"];
 }
 
-export function toPublicInitiativeImprovementProposalProjection(
+export async function toPublicInitiativeImprovementProposalProjection(
   proposal: InitiativeImprovementProposal,
-): PublicInitiativeImprovementProposalProjection {
+): Promise<PublicInitiativeImprovementProposalProjection> {
   return {
     proposalId: proposal.proposalId,
     initiativeId: proposal.initiativeId,
@@ -49,7 +49,7 @@ export function toPublicInitiativeImprovementProposalProjection(
     expectedImprovement: proposal.expectedImprovement,
     references: proposal.references,
     status: toPublicStatus(proposal.status),
-    authorDisplayName: resolveAuthorDisplayName(proposal.authorId),
+    authorDisplayName: await resolveAuthorDisplayName(proposal.authorId),
     createdAt: proposal.createdAt,
     updatedAt: proposal.updatedAt,
     decidedAt: proposal.decidedAt,
@@ -58,15 +58,15 @@ export function toPublicInitiativeImprovementProposalProjection(
   };
 }
 
-export function toPublicInitiativeImprovementProposalListItem(
+export async function toPublicInitiativeImprovementProposalListItem(
   proposal: InitiativeImprovementProposal,
-): PublicInitiativeImprovementProposalListItem {
+): Promise<PublicInitiativeImprovementProposalListItem> {
   return {
     proposalId: proposal.proposalId,
     targetSection: proposal.targetSection,
     proposedChange: proposal.proposedChange,
     status: toPublicStatus(proposal.status),
-    authorDisplayName: resolveAuthorDisplayName(proposal.authorId),
+    authorDisplayName: await resolveAuthorDisplayName(proposal.authorId),
     updatedAt: proposal.updatedAt,
     decidedAt: proposal.decidedAt,
     implementedInVersion: proposal.implementedInVersion ?? null,
@@ -87,25 +87,29 @@ export function computeInitiativeImprovementProposalMetrics(
   };
 }
 
-export function listPublicInitiativeImprovementProposals(
+export async function listPublicInitiativeImprovementProposals(
   initiativeId: string,
-): PublicInitiativeImprovementProposalListItem[] {
-  return listPublicProposalsByInitiative(initiativeId).map((proposal) =>
-    toPublicInitiativeImprovementProposalListItem(proposal),
+): Promise<PublicInitiativeImprovementProposalListItem[]> {
+  const proposals = listPublicProposalsByInitiative(initiativeId);
+
+  return Promise.all(
+    proposals.map((proposal) => toPublicInitiativeImprovementProposalListItem(proposal)),
   );
 }
 
-export function listPublicInitiativeImprovementProposalsForAnalysis(
+export async function listPublicInitiativeImprovementProposalsForAnalysis(
   analysisId: string,
-): PublicInitiativeImprovementProposalListItem[] {
-  return listPublicProposalsByAnalysis(analysisId).map((proposal) =>
-    toPublicInitiativeImprovementProposalListItem(proposal),
+): Promise<PublicInitiativeImprovementProposalListItem[]> {
+  const proposals = listPublicProposalsByAnalysis(analysisId);
+
+  return Promise.all(
+    proposals.map((proposal) => toPublicInitiativeImprovementProposalListItem(proposal)),
   );
 }
 
-export function getPublicInitiativeImprovementProposal(
+export async function getPublicInitiativeImprovementProposal(
   proposalId: string,
-): PublicInitiativeImprovementProposalProjection | null {
+): Promise<PublicInitiativeImprovementProposalProjection | null> {
   const proposal = getProposalById(proposalId);
 
   if (!proposal || !PUBLIC_STATUSES.has(proposal.status)) {

@@ -10,6 +10,7 @@ import {
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { generateCivicActionPackageForDecision } from "../civic-action-package/civic-action-package.service.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getSessionById } from "../decision-session/decision-session.store.js";
@@ -189,13 +190,21 @@ export function openInitiativeCollectiveDecision(
     throw new Error("Collective decision not found.");
   }
 
+  emitCivicNotificationEvent({
+    eventType: "decision_opened",
+    entityType: "collective_decision",
+    entityId: decisionId,
+    initiativeId: updated.initiativeId,
+    actorMemberId: identity.participantId,
+  });
+
   return updated;
 }
 
-export function closeInitiativeCollectiveDecision(
+export async function closeInitiativeCollectiveDecision(
   identity: RequestIdentity,
   decisionId: string,
-): InitiativeCollectiveDecision {
+): Promise<InitiativeCollectiveDecision> {
   const decision = getOwnedDecision(decisionId, identity);
 
   assertTransitionAllowed(decision, "closed");
@@ -209,7 +218,15 @@ export function closeInitiativeCollectiveDecision(
     throw new Error("Collective decision not found.");
   }
 
-  generateCivicActionPackageForDecision(updated.decisionId);
+  await generateCivicActionPackageForDecision(updated.decisionId);
+
+  emitCivicNotificationEvent({
+    eventType: "decision_closed",
+    entityType: "collective_decision",
+    entityId: decisionId,
+    initiativeId: updated.initiativeId,
+    actorMemberId: identity.participantId,
+  });
 
   return updated;
 }

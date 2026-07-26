@@ -11,6 +11,7 @@ import {
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { getCommitmentById } from "../initiative-implementation-commitment/initiative-implementation-commitment.store.js";
 import { assertInitiativeImplementationTrackingEligible } from "./initiative-implementation-tracking-eligibility.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 import {
   appendTrackingUpdate,
   countUpdatesForTracking,
@@ -217,6 +218,14 @@ export function addImplementationTrackingUpdate(
       currentStage: input.currentStage,
     });
   }
+
+  emitCivicNotificationEvent({
+    eventType: "tracking_updated",
+    entityType: "implementation_tracking",
+    entityId: trackingId,
+    initiativeId: tracking.initiativeId,
+    actorMemberId: identity.participantId,
+  });
 
   return update;
 }

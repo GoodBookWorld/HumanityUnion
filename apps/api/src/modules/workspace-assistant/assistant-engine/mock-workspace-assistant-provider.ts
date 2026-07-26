@@ -6,7 +6,9 @@ import type { WorkspaceAssistantProvider } from "./workspace-assistant-provider.
 export class MockWorkspaceAssistantProvider implements WorkspaceAssistantProvider {
   readonly providerId = "mock-workspace-assistant";
 
-  generateAssistantResponse(request: WorkspaceAssistantRequest): WorkspaceAssistantResponse {
+  async generateAssistantResponse(
+    request: WorkspaceAssistantRequest,
+  ): Promise<WorkspaceAssistantResponse> {
     const { requestedAction, contextSnapshot, currentSection } = request;
     const createdAt = request.timestamp;
 
@@ -25,6 +27,10 @@ export class MockWorkspaceAssistantProvider implements WorkspaceAssistantProvide
           code: "advisory_only",
           message:
             "Assistant suggestions are advisory. You remain responsible for all civic actions.",
+        },
+        {
+          code: "review_before_use",
+          message: "Review all generated text before using it in civic records.",
         },
         {
           code: "mock_provider",

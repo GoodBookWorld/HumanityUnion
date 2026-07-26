@@ -32,6 +32,18 @@ export async function connectMongoClient(): Promise<MongoClient> {
 }
 
 export async function disconnectMongoClient(): Promise<void> {
+  const pendingConnect = connectPromise;
+  connectPromise = null;
+
+  if (pendingConnect && !client) {
+    try {
+      const connectedClient = await pendingConnect;
+      await connectedClient.close();
+    } catch {
+      // Ignore connect/close races during verification teardown.
+    }
+  }
+
   if (!client) {
     return;
   }

@@ -134,7 +134,7 @@ async function verifyMockProvider(): Promise<void> {
     await import("../modules/workspace-assistant/assistant-engine/mock-workspace-assistant-provider.js");
 
   const provider = new MockWorkspaceAssistantProvider();
-  const response = provider.generateAssistantResponse({
+  const response = await provider.generateAssistantResponse({
     participantId: steward.participantId,
     initiativeId: "initiative-test",
     currentSection: "Collaborative Analysis",
@@ -185,7 +185,10 @@ async function verifySafetyGuardAndService(): Promise<void> {
   const projected = publishInitiative(steward, draft.initiativeId);
   const snapshot = buildContextSnapshot(projected.initiativeId);
 
-  const response = respondToWorkspaceAssistant(steward, {
+  const response = await respondToWorkspaceAssistant(
+    steward,
+    { userId: "verify-workspace-assistant-steward", displayName: steward.displayName },
+    {
     initiativeId: projected.initiativeId,
     currentSection: "Collaborative Analysis",
     requestedAction: {
@@ -194,15 +197,19 @@ async function verifySafetyGuardAndService(): Promise<void> {
     },
     contextSnapshot: snapshot,
     timestamp: "2026-07-06T00:00:00.000Z",
-  });
+  },
+  );
 
   assert(response.responseId.length > 0, "Service must return responseId");
   assert(response.confidenceLevel === "not_applicable", "Service must return confidence level");
   assert(response.safetyNotices.length > 0, "Service must return safety notices");
 
   assertThrows(
-    () =>
-      respondToWorkspaceAssistant(steward, {
+    async () =>
+      respondToWorkspaceAssistant(
+        steward,
+        { userId: "verify-workspace-assistant-steward", displayName: steward.displayName },
+        {
         participantId: otherParticipant.participantId,
         initiativeId: projected.initiativeId,
         currentSection: "Collaborative Analysis",
@@ -212,13 +219,17 @@ async function verifySafetyGuardAndService(): Promise<void> {
         },
         contextSnapshot: snapshot,
         timestamp: "2026-07-06T00:00:00.000Z",
-      }),
+      },
+      ),
     "participantId cannot be supplied",
   );
 
   assertThrows(
-    () =>
-      respondToWorkspaceAssistant(otherParticipant, {
+    async () =>
+      respondToWorkspaceAssistant(
+        otherParticipant,
+        { userId: "verify-workspace-assistant-other", displayName: otherParticipant.displayName },
+        {
         initiativeId: projected.initiativeId,
         currentSection: "Collaborative Analysis",
         requestedAction: {
@@ -227,7 +238,8 @@ async function verifySafetyGuardAndService(): Promise<void> {
         },
         contextSnapshot: snapshot,
         timestamp: "2026-07-06T00:00:00.000Z",
-      }),
+      },
+      ),
     "do not have access",
   );
 
@@ -240,6 +252,8 @@ async function verifySafetyGuardAndService(): Promise<void> {
     () =>
       generateWorkspaceAssistantResponse({
         participantId: steward.participantId,
+        userId: "verify-workspace-assistant-steward",
+        displayName: steward.displayName,
         initiativeId: projected.initiativeId,
         currentSection: "Collaborative Analysis",
         requestedAction: {
@@ -371,8 +385,10 @@ async function verifyResponsePrivacy(): Promise<void> {
   const { generateWorkspaceAssistantResponse } =
     await import("../modules/workspace-assistant/workspace-assistant-safety-guard.js");
 
-  const response = generateWorkspaceAssistantResponse({
+  const response = await generateWorkspaceAssistantResponse({
     participantId: steward.participantId,
+    userId: "verify-workspace-assistant-steward",
+    displayName: steward.displayName,
     initiativeId: "initiative-test",
     currentSection: "Collaborative Analysis",
     requestedAction: {

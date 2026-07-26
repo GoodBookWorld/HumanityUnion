@@ -204,7 +204,7 @@ async function buildClosedDecisionContext(): Promise<ClosedDecisionContext> {
     closesAt: futureIsoDate(30),
   });
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
-  closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
+  await closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
   return {
     initiativeId: projected.initiativeId,
@@ -361,13 +361,13 @@ async function runMainVerification(): Promise<void> {
   console.log("6. Relationship — one decision, many commitments");
 
   assert(
-    listPublicInitiativeImplementationCommitmentsForDecision(context.decisionId).length >= 2,
+    (await listPublicInitiativeImplementationCommitmentsForDecision(context.decisionId)).length >= 2,
     "Multiple independent commitments on one decision",
   );
 
   console.log("7. Public projection and privacy");
 
-  const publicDetail = getPublicInitiativeImplementationCommitment(draft.commitmentId);
+  const publicDetail = await getPublicInitiativeImplementationCommitment(draft.commitmentId);
   assert(publicDetail !== null, "Completed commitment is public");
   if (!publicDetail) {
     throw new Error("Completed commitment is public");
@@ -375,14 +375,14 @@ async function runMainVerification(): Promise<void> {
   assert(publicDetail.authorDisplayName === "Commitment Author A", "Author display name resolved");
   assertNoPrivateFields(publicDetail, "Public commitment detail");
 
-  const publicList = listPublicInitiativeImplementationCommitmentsForInitiative(
+  const publicList = await listPublicInitiativeImplementationCommitmentsForInitiative(
     context.initiativeId,
   );
   assert(publicList.length >= 2, "Initiative public list includes commitments");
   assertNoPrivateFields(publicList, "Public commitment list");
 
   assert(
-    getPublicInitiativeImplementationCommitment(withdrawDraft.commitmentId) !== null,
+    await getPublicInitiativeImplementationCommitment(withdrawDraft.commitmentId) !== null,
     "Withdrawn commitment remains publicly visible",
   );
 

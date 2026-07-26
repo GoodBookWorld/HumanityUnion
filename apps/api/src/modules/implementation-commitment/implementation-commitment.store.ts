@@ -7,7 +7,7 @@ import type {
 } from "@hu/types";
 
 import { getDecision } from "../collective-decision/collective-decision.store.js";
-import { getMemberById } from "../member/member.store.js";
+import { getMemberById } from "../member/member-access.js";
 import { getPetition } from "../petition/petition.store.js";
 import { bootstrapImplementationCommitment } from "./bootstrap-implementation-commitment.js";
 import { getFrozenPolicy } from "./frozen-policy.fixture.js";
@@ -74,8 +74,8 @@ function touchCommitment(commitment: ImplementationCommitment): ImplementationCo
   return cloneImplementationCommitment(commitment);
 }
 
-function assertRegisteredParticipant(participantId: ParticipantId): void {
-  if (!getMemberById(participantId)) {
+async function assertRegisteredParticipant(participantId: ParticipantId): Promise<void> {
+  if (!(await getMemberById(participantId))) {
     throw new Error(`Participant "${participantId}" was not found.`);
   }
 }
@@ -352,11 +352,11 @@ export function activateImplementationCommitment(
   return touchCommitment(commitment);
 }
 
-export function updateContributionProfile(
+export async function updateContributionProfile(
   implementationCommitmentId: string,
   participantId: ParticipantId,
   update: ContributionProfileUpdate,
-): ImplementationCommitment | null {
+): Promise<ImplementationCommitment | null> {
   const commitment = getMutableCommitment(implementationCommitmentId);
 
   if (!commitment) {
@@ -365,7 +365,7 @@ export function updateContributionProfile(
 
   assertMutableCommitment(commitment.status);
   assertProfileUpdateAllowed(commitment.status);
-  assertRegisteredParticipant(participantId);
+  await assertRegisteredParticipant(participantId);
 
   const profile = ensureContributionProfile(commitment, participantId);
 
@@ -384,10 +384,10 @@ export function updateContributionProfile(
   return touchCommitment(commitment);
 }
 
-export function addContributionItem(
+export async function addContributionItem(
   implementationCommitmentId: string,
   input: AddContributionItemInput,
-): ImplementationCommitment | null {
+): Promise<ImplementationCommitment | null> {
   const commitment = getMutableCommitment(implementationCommitmentId);
 
   if (!commitment) {
@@ -400,7 +400,7 @@ export function addContributionItem(
     throw new Error("Contribution Items may only be added while the commitment is Active.");
   }
 
-  assertRegisteredParticipant(input.participantId);
+  await assertRegisteredParticipant(input.participantId);
   assertValidFrozenPolicyReference(commitment.frozenPolicyId);
 
   if (!input.contributionCapacity.trim()) {

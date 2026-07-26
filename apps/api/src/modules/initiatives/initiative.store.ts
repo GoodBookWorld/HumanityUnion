@@ -3,6 +3,7 @@ import type {
   InitiativeDescription,
   InitiativeLifecyclePhase,
   InitiativeMetadata,
+  InitiativeNewsSourceReference,
   InitiativeRevision,
   InitiativeContribution,
   InitiativeStatus,
@@ -26,6 +27,7 @@ export interface InitiativeUpdate {
   revisions?: InitiativeRevision[];
   contributions?: InitiativeContribution[];
   timeline?: TimelineEvent[];
+  sourceReferences?: InitiativeNewsSourceReference[] | null;
 }
 
 const persistence = resolveInitiativePersistenceAdapter();
@@ -130,6 +132,14 @@ export function updateInitiative(
 
   if (update.timeline !== undefined) {
     initiative.timeline = structuredClone(update.timeline);
+  }
+
+  if (update.sourceReferences !== undefined) {
+    if (update.sourceReferences === null) {
+      delete initiative.sourceReferences;
+    } else {
+      initiative.sourceReferences = structuredClone(update.sourceReferences);
+    }
   }
 
   initiative.updatedAt = new Date().toISOString();

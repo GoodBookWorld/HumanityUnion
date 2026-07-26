@@ -92,7 +92,7 @@ async function main(): Promise<void> {
   const projected = publishInitiative(participantA, draft.initiativeId);
   assert(projected.lifecyclePhase === "projected", "Initiative should be projected after publish");
 
-  const publicInitiative = toPublicInitiativeProjection(projected);
+  const publicInitiative = await toPublicInitiativeProjection(projected);
   assert(publicInitiative.currentVersion === 1, "Initial public version should be 1");
   assertNoPrivateFields(publicInitiative, "Public initiative");
 
@@ -116,7 +116,7 @@ async function main(): Promise<void> {
   );
   assert(publishedAnalysis.status === "published", "Analysis should be published");
 
-  const publicAnalysis = getPublicInitiativeCollaborativeAnalysis(publishedAnalysis.analysisId);
+  const publicAnalysis = await getPublicInitiativeCollaborativeAnalysis(publishedAnalysis.analysisId);
   assert(publicAnalysis !== null, "Public analysis should be available");
   if (!publicAnalysis) {
     throw new Error("Public analysis should be available");
@@ -192,7 +192,7 @@ async function main(): Promise<void> {
 
   console.log("6. Public projection refresh");
 
-  const updatedPublicInitiative = toPublicInitiativeProjection(revisionResult.initiative);
+  const updatedPublicInitiative = await toPublicInitiativeProjection(revisionResult.initiative);
   assert(updatedPublicInitiative.currentVersion === 2, "Public current version should be 2");
   assert(
     updatedPublicInitiative.title.includes("Revised"),
@@ -211,7 +211,7 @@ async function main(): Promise<void> {
 
   console.log("7. Version history");
 
-  const versionHistory = getPublicInitiativeVersionHistory(projected.initiativeId);
+  const versionHistory = await getPublicInitiativeVersionHistory(projected.initiativeId);
   assert(versionHistory.currentVersion === 2, "Version history current should be 2");
   assert(versionHistory.revisions.length === 2, "Version history should contain 2 revisions");
   assert(
@@ -219,15 +219,15 @@ async function main(): Promise<void> {
     "Version 2 should be marked current",
   );
 
-  const versionOne = getPublicInitiativeVersionRevision(projected.initiativeId, 1);
-  const versionTwo = getPublicInitiativeVersionRevision(projected.initiativeId, 2);
+  const versionOne = await getPublicInitiativeVersionRevision(projected.initiativeId, 1);
+  const versionTwo = await getPublicInitiativeVersionRevision(projected.initiativeId, 2);
   assert(versionOne !== null && versionTwo !== null, "Both versions should be readable");
   assertNoPrivateFields(versionOne, "Public revision v1");
   assertNoPrivateFields(versionTwo, "Public revision v2");
 
   console.log("8. Proposal traceability");
 
-  const publicProposal = getPublicInitiativeImprovementProposal(decidedProposal.proposalId);
+  const publicProposal = await getPublicInitiativeImprovementProposal(decidedProposal.proposalId);
   assert(publicProposal !== null, "Public proposal should be available");
   if (!publicProposal) {
     throw new Error("Public proposal should be available");

@@ -25,6 +25,7 @@ import {
   listImpactsByTracking,
   updateImpact,
 } from "./initiative-public-impact.store.js";
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 
 export interface CreateInitiativePublicImpactDraftInput {
   trackingId: string;
@@ -253,6 +254,14 @@ export function verifyInitiativePublicImpact(
   if (!updated) {
     throw new Error("Public impact record not found.");
   }
+
+  emitCivicNotificationEvent({
+    eventType: "impact_verified",
+    entityType: "public_impact",
+    entityId: impactId,
+    initiativeId: updated.initiativeId,
+    actorMemberId: identity.participantId,
+  });
 
   return updated;
 }

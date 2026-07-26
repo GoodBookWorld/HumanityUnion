@@ -211,7 +211,7 @@ async function buildPublishedCommitmentContext(): Promise<PublishedCommitmentCon
     closesAt: futureIsoDate(30),
   });
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
-  closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
+  await closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
   const commitmentDraft = createInitiativeImplementationCommitmentDraft(author, {
     initiativeId: projected.initiativeId,
@@ -415,7 +415,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("7. Public projection, privacy, and metrics");
 
-  const publicDetail = getPublicInitiativeImplementationTracking(draft.trackingId);
+  const publicDetail = await getPublicInitiativeImplementationTracking(draft.trackingId);
   assert(publicDetail !== null, "Completed tracking is public");
   if (!publicDetail) {
     throw new Error("Completed tracking is public");
@@ -424,14 +424,13 @@ async function runMainVerification(): Promise<void> {
   assertNoPrivateFields(publicDetail, "Public tracking detail");
   assertNoPrivateFields(publicDetail.executionHistory, "Public execution history");
 
-  const publicList = listPublicInitiativeImplementationTrackingsForInitiative(context.initiativeId);
+  const publicList = await listPublicInitiativeImplementationTrackingsForInitiative(context.initiativeId);
   assert(publicList.length >= 2, "Initiative public list includes tracking records");
   assertNoPrivateFields(publicList, "Public tracking list");
 
-  const commitmentList = listPublicInitiativeImplementationTrackingsForCommitment(
+  assert((await listPublicInitiativeImplementationTrackingsForCommitment(
     context.commitmentId,
-  );
-  assert(commitmentList.length >= 2, "Commitment public list includes tracking records");
+  )).length >= 2, "Commitment public list includes tracking records");
 
   const metrics = computeInitiativeImplementationTrackingMetrics(context.initiativeId);
   assert(metrics.trackingCount >= 3, "trackingCount includes all records");

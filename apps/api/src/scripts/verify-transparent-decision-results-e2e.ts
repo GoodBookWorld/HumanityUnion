@@ -281,13 +281,13 @@ async function runMainVerification(): Promise<void> {
   await seedVoters();
   const decisionId = await openCommunityDecision();
 
-  castOrUpdateInitiativeDecisionVote(voterA, decisionId, { choice: "support" });
-  castOrUpdateInitiativeDecisionVote(voterB, decisionId, { choice: "do_not_support" });
-  castOrUpdateInitiativeDecisionVote(voterC, decisionId, { choice: "support" });
+  await castOrUpdateInitiativeDecisionVote(voterA, decisionId, { choice: "support" });
+  await castOrUpdateInitiativeDecisionVote(voterB, decisionId, { choice: "do_not_support" });
+  await castOrUpdateInitiativeDecisionVote(voterC, decisionId, { choice: "support" });
 
   console.log("5. Verified/unverified split and equal counting");
 
-  const liveProjection = getPublicInitiativeCollectiveDecision(decisionId);
+  const liveProjection = await getPublicInitiativeCollectiveDecision(decisionId);
   assert(liveProjection !== null, "Public projection should exist");
   if (!liveProjection?.outcome) {
     throw new Error("Public outcome required");
@@ -305,8 +305,8 @@ async function runMainVerification(): Promise<void> {
 
   console.log("6. Vote change updates aggregates");
 
-  castOrUpdateInitiativeDecisionVote(voterB, decisionId, { choice: "support" });
-  const updatedProjection = getPublicInitiativeCollectiveDecision(decisionId);
+  await castOrUpdateInitiativeDecisionVote(voterB, decisionId, { choice: "support" });
+  const updatedProjection = await getPublicInitiativeCollectiveDecision(decisionId);
   assert(
     updatedProjection?.statistics.supportCount === 3,
     "Vote change should update support count",
@@ -319,17 +319,17 @@ async function runMainVerification(): Promise<void> {
 
   console.log("7. Close freezes result");
 
-  closeInitiativeCollectiveDecision(steward, decisionId);
-  const closedProjection = getPublicInitiativeCollectiveDecision(decisionId);
+  await closeInitiativeCollectiveDecision(steward, decisionId);
+  const closedProjection = await getPublicInitiativeCollectiveDecision(decisionId);
   const frozenSupport = closedProjection?.statistics.supportCount;
   const frozenOutcome = closedProjection?.outcome?.outcome;
 
   assertThrows(
-    () => castOrUpdateInitiativeDecisionVote(voterC, decisionId, { choice: "do_not_support" }),
+    async () => await castOrUpdateInitiativeDecisionVote(voterC, decisionId, { choice: "do_not_support" }),
     "Closed decision must reject vote changes",
   );
 
-  const afterCloseProjection = getPublicInitiativeCollectiveDecision(decisionId);
+  const afterCloseProjection = await getPublicInitiativeCollectiveDecision(decisionId);
   assert(
     afterCloseProjection?.statistics.supportCount === frozenSupport,
     "Closed decision aggregates must remain frozen",
@@ -343,7 +343,7 @@ async function runMainVerification(): Promise<void> {
 
   const cancelledDecisionId = await openCommunityDecision();
   cancelInitiativeCollectiveDecision(steward, cancelledDecisionId);
-  const cancelledProjection = getPublicInitiativeCollectiveDecision(cancelledDecisionId);
+  const cancelledProjection = await getPublicInitiativeCollectiveDecision(cancelledDecisionId);
   assert(cancelledProjection?.outcome?.outcome === "cancelled", "Cancelled decision outcome");
 
   console.log("9. Privacy — no individual votes or identities in public projection");
@@ -354,12 +354,12 @@ async function runMainVerification(): Promise<void> {
     "Public list",
   );
   assert(
-    assertPublicProjectionHasNoPrivateVoteData(liveProjection),
+    await assertPublicProjectionHasNoPrivateVoteData(liveProjection),
     "Public projection helper should confirm no vote identifiers",
   );
   assert(listVoteHistoryForDecision(decisionId).length > 0, "Vote history exists internally");
   assert(
-    !JSON.stringify(getPublicInitiativeCollectiveDecision(decisionId)).includes("vote-history"),
+    !JSON.stringify(await getPublicInitiativeCollectiveDecision(decisionId)).includes("vote-history"),
     "Vote history must not appear in public projection",
   );
 

@@ -251,7 +251,7 @@ export function openPetitionHandler(req: Request, res: Response): void {
   }
 }
 
-export function signPetitionHandler(req: Request, res: Response): void {
+export async function signPetitionHandler(req: Request, res: Response): Promise<void> {
   const petitionId = getPetitionId(req);
   const idError = validatePetitionId(petitionId);
 
@@ -270,7 +270,7 @@ export function signPetitionHandler(req: Request, res: Response): void {
 
   try {
     const { participantId, participationMode } = parseSignRequest(body);
-    const petition = signPetition(petitionId, participantId, participationMode);
+    const petition = await signPetition(petitionId, participantId, participationMode);
 
     if (!petition) {
       res.status(404).json(createFailureResponse("Petition not found."));
