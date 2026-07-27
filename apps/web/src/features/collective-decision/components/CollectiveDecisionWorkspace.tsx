@@ -14,6 +14,7 @@ import { DecisionResultPanel } from "./DecisionResult";
 import { DecisionSubject } from "./DecisionSubject";
 import { OutcomePanel } from "./OutcomePanel";
 import { ParticipationStatistics } from "./ParticipationStatistics";
+import { MembershipPlatformStatisticsSection } from "../../membership/components/MembershipPlatformStatisticsSection";
 
 import "./workspace.css";
 
@@ -61,6 +62,10 @@ export function CollectiveDecisionWorkspace({
 
       <ProfileSection title="Decision Result">
         <DecisionResultPanel decision={decision} />
+      </ProfileSection>
+
+      <ProfileSection title="Membership Participation Transparency">
+        <MembershipPlatformStatisticsSection title="Participation composition" />
       </ProfileSection>
 
       <ProfileSection title="Outcome">

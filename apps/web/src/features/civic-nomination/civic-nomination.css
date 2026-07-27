@@ -1,0 +1,317 @@
+.civic-nomination-form-page,
+.civic-nomination-poster-page {
+  max-width: var(--hu-layout-max-width);
+  margin: 0 auto;
+  padding: var(--hu-space-8) var(--hu-space-6) var(--hu-space-12);
+  display: grid;
+  gap: var(--hu-space-6);
+}
+
+.civic-nomination-form-page__header,
+.civic-nomination-poster-page__header {
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.civic-nomination-form-page__header h1,
+.civic-nomination-poster-page__header h1 {
+  margin: 0;
+  font-size: var(--hu-font-size-3xl);
+}
+
+.civic-nomination-form-page__eyebrow,
+.civic-nomination-poster-page__eyebrow {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+}
+
+.civic-nomination-form {
+  display: grid;
+  gap: var(--hu-space-6);
+}
+
+.civic-nomination-form__section {
+  display: grid;
+  gap: var(--hu-space-3);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.civic-nomination-form__section h2,
+.civic-nomination-form__section legend {
+  margin: 0;
+  font-size: var(--hu-font-size-xl);
+  font-weight: 600;
+}
+
+.civic-nomination-form__field {
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.civic-nomination-form__field input,
+.civic-nomination-form__field select,
+.civic-nomination-form__field textarea {
+  width: 100%;
+  padding: var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-sm);
+  background: var(--hu-color-surface);
+  color: var(--hu-color-text);
+}
+
+.civic-nomination-form__checkbox-grid {
+  display: grid;
+  gap: var(--hu-space-2);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.civic-nomination-form__checkbox,
+.civic-nomination-form__radio {
+  display: flex;
+  gap: var(--hu-space-2);
+  align-items: flex-start;
+}
+
+.civic-nomination-form__review-link {
+  color: var(--hu-color-primary);
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.civic-nomination-form__review-link:hover,
+.civic-nomination-form__review-link:focus-visible {
+  color: var(--hu-color-primary-hover);
+}
+
+.civic-nomination-form__evidence-row {
+  display: grid;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+}
+
+.civic-nomination-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+}
+
+.civic-nomination-form__error,
+.civic-nomination-form__field-error {
+  margin: 0;
+  color: var(--hu-color-danger, #b42318);
+}
+
+.civic-nomination-form__notice {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+}
+
+.civic-nomination-compact-poster {
+  display: grid;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+}
+
+.civic-nomination-compact-poster__name {
+  margin: 0;
+  font-size: var(--hu-font-size-lg);
+}
+
+.civic-nomination-compact-poster__role,
+.civic-nomination-compact-poster__country {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+}
+
+.civic-nomination-compact-poster__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+}
+
+.civic-nomination-compact-poster__tag {
+  padding: var(--hu-space-1) var(--hu-space-2);
+  border-radius: var(--hu-radius-sm);
+  background: var(--hu-color-surface-muted);
+  font-size: var(--hu-font-size-sm);
+}
+
+.civic-nomination-compact-poster__votes-label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.civic-nomination-compact-poster__votes-status {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+}
+
+.civic-nomination-compact-poster__link {
+  color: var(--hu-color-primary, #1d4ed8);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.civic-nomination-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--hu-space-4);
+  background: rgb(15 23 42 / 45%);
+}
+
+.civic-nomination-modal {
+  width: min(960px, 100%);
+  max-height: min(90vh, 960px);
+  overflow: auto;
+  display: grid;
+  gap: var(--hu-space-4);
+  padding: var(--hu-space-5);
+  border-radius: var(--hu-radius-lg);
+  background: var(--hu-color-surface);
+  box-shadow: 0 20px 40px rgb(15 23 42 / 18%);
+}
+
+.civic-nomination-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--hu-space-3);
+}
+
+.civic-nomination-modal__header h2 {
+  margin: 0;
+}
+
+.civic-nomination-modal__close {
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-sm);
+  background: transparent;
+  padding: var(--hu-space-2) var(--hu-space-3);
+  cursor: pointer;
+}
+
+.civic-nomination-modal__filters {
+  display: grid;
+  gap: var(--hu-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  align-items: end;
+}
+
+.civic-nomination-modal__grid {
+  display: grid;
+  gap: var(--hu-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.civic-nomination-modal__empty,
+.civic-nomination-modal__status {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+}
+
+.civic-nomination-poster-page__meta {
+  display: grid;
+  gap: var(--hu-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  margin: 0;
+}
+
+.civic-nomination-poster-page__meta dt {
+  font-weight: 600;
+}
+
+.civic-nomination-poster-page__meta dd {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+}
+
+.civic-nomination-poster-page__section {
+  display: grid;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-5);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+}
+
+.civic-nomination-poster-page__section h2 {
+  margin: 0;
+  font-size: var(--hu-font-size-xl);
+}
+
+.civic-nomination-poster-page__tags,
+.civic-nomination-poster-page__evidence,
+.civic-nomination-poster-page__declarations {
+  margin: 0;
+  padding-left: var(--hu-space-5);
+}
+
+.civic-nomination-voting-placeholder,
+.civic-nomination-result-placeholder {
+  display: grid;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-5);
+  border: 1px dashed var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface-muted);
+}
+
+.civic-nomination-voting-placeholder__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+}
+
+.civic-nomination-voting-placeholder__controls button {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.civic-nomination-result-placeholder__metrics {
+  display: grid;
+  gap: var(--hu-space-2);
+  margin: 0;
+}
+
+.civic-nomination-result-placeholder__metrics dt {
+  font-weight: 600;
+}
+
+.civic-nomination-result-placeholder__metrics dd {
+  margin: 0 0 var(--hu-space-2);
+  color: var(--hu-color-text-muted);
+}
+
+.civic-nomination-poster-page__legal {
+  padding: var(--hu-space-4);
+  border-left: 4px solid var(--hu-color-border);
+  background: var(--hu-color-surface-muted);
+}
+
+.institutions-card__nomination-note {
+  margin: 0;
+  padding: var(--hu-space-3);
+  border-radius: var(--hu-radius-sm);
+  background: var(--hu-color-surface-muted);
+  color: var(--hu-color-text-muted);
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .civic-nomination-modal__backdrop,
+  .civic-nomination-compact-poster__link {
+    transition: none;
+  }
+}

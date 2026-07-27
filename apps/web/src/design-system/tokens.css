@@ -14,8 +14,18 @@
   --hu-color-border: #d6dee8;
   --hu-color-text: #1a2b3c;
   --hu-color-text-muted: #5f6b7a;
+  --hu-color-brand-tagline: #a57979;
+  --hu-color-danger: #b42318;
 
-  /* Legacy aliases used by workspace UX module */
+  /* Form aliases */
+  --hu-control-border: #dadce0;
+  --hu-border-default: var(--hu-control-border);
+  --hu-border-subtle: var(--hu-color-border);
+  --hu-surface-base: var(--hu-color-surface);
+  --hu-text-default: var(--hu-color-text);
+  --hu-text-sm: var(--hu-font-size-sm);
+  --hu-text-muted: var(--hu-color-text-muted);
+  --hu-text-2xl: var(--hu-font-size-2xl);
   --color-primary: var(--hu-color-primary);
   --color-border: var(--hu-color-border);
   --color-surface: var(--hu-color-surface);
@@ -24,11 +34,13 @@
 
   /* Layout */
   --hu-header-height: 4.5rem;
+  --hu-beta-banner-height: 3.5rem;
   --hu-content-max-width: 72rem;
   --hu-workspace-max-width: 75rem;
-  --hu-sticky-top: calc(var(--hu-header-height) + var(--hu-space-4));
+  --humanity-header-offset: calc(var(--hu-header-height) + var(--hu-space-4));
+  --hu-sticky-top: var(--humanity-header-offset);
   --hu-sticky-max-height: calc(100vh - var(--hu-header-height) - var(--hu-space-8));
-  --hu-scroll-margin-top: var(--hu-sticky-top);
+  --hu-scroll-margin-top: var(--humanity-header-offset);
 
   /* Spacing scale */
   --hu-space-1: 0.25rem;

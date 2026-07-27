@@ -1,0 +1,65 @@
+.hu-feedback {
+  width: 100%;
+  margin: 0;
+  padding: var(--hu-space-4, 1rem);
+  border: 1px solid transparent;
+  border-radius: var(--hu-radius-md, 0.5rem);
+  font-size: var(--hu-font-size-base, 1rem);
+  line-height: 1.5;
+}
+
+.hu-feedback__label {
+  margin: 0 0 var(--hu-space-2, 0.5rem);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.hu-feedback__content {
+  margin: 0;
+}
+
+.hu-feedback__content p {
+  margin: 0;
+}
+
+.hu-feedback--neutral {
+  background: #fff9ef;
+  border-color: #df9815;
+  color: #5c4a1f;
+}
+
+.hu-feedback--neutral .hu-feedback__label {
+  color: #df9815;
+}
+
+.hu-feedback--warning {
+  background: #fff9ef;
+  border-color: #df9815;
+  color: #5c4a1f;
+}
+
+.hu-feedback--warning .hu-feedback__label {
+  color: #df9815;
+}
+
+.hu-feedback--error {
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #991b1b;
+}
+
+.hu-feedback--error .hu-feedback__label {
+  color: #dc2626;
+}
+
+.hu-feedback--success {
+  background: #ecfdf5;
+  border-color: #059669;
+  color: #065f46;
+}
+
+.hu-feedback--success .hu-feedback__label {
+  color: #059669;
+}

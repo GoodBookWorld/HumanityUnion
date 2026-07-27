@@ -37,7 +37,7 @@ export function ViewCollectiveDecisionLink({ initiativeId }: ViewCollectiveDecis
       try {
         const decision = await getCollectiveDecisionByInitiativeId(currentInitiativeId);
         if (!cancelled) {
-          setDecisionId(decision.decisionId);
+          setDecisionId(decision?.decisionId ?? null);
         }
       } catch {
         if (!cancelled) {
@@ -74,7 +74,7 @@ export function ViewCollectiveDecisionLink({ initiativeId }: ViewCollectiveDecis
   if (!decisionId) {
     return (
       <WorkspaceEmptyState
-        title="No collective decision is linked yet"
+        title="No decision session has been created yet."
         explanation="This initiative does not have an opened collective decision record."
         nextStep="Publish a decision session, then open collective decision voting."
       />

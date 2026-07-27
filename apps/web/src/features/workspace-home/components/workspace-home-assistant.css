@@ -1,0 +1,4 @@
+.workspace-home-assistant__note {
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}

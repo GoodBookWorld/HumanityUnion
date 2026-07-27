@@ -1,21 +1,39 @@
-import type { Initiative, PublicInitiativeProjection } from "@hu/types";
+import type { Initiative, ParticipationScope, PublicInitiativeProjection } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
 
 export interface CreateInitiativeDraftInput {
   title: string;
   description: string;
-  communitySlug: string;
+  communityAssociation?: string;
   activityArea: string;
+  activityAreaOther?: string;
+  participationScope?: ParticipationScope;
+  imageUrl?: string;
+  imageAltText?: string;
+  startDate?: string;
+  completionDate?: string;
+  sourceNewsId?: string;
 }
 
 export interface SaveInitiativeDraftInput {
   title?: string;
   description?: string;
-  communitySlug?: string;
+  communityAssociation?: string;
   activityArea?: string;
+  activityAreaOther?: string;
+  participationScope?: ParticipationScope;
+  countrySlug?: string;
+  regionSlug?: string;
+  region?: string;
+  imageUrl?: string;
+  imageAltText?: string;
+  startDate?: string;
+  completionDate?: string;
+  clearSourceReferences?: boolean;
 }
 
+/** @deprecated Legacy bootstrap community options retained for revision workspace compatibility. */
 export const INITIATIVE_COMMUNITY_OPTIONS = [
   {
     slug: "nelson-community-garden",

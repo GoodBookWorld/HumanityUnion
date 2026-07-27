@@ -1,0 +1,59 @@
+.membership-participation-statistics {
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.membership-participation-statistics__title {
+  font-size: var(--hu-font-size-lg, 1.125rem);
+  margin: 0;
+}
+
+.membership-participation-statistics__status {
+  color: var(--hu-color-text-muted, #5f6368);
+  margin: 0;
+}
+
+.membership-participation-statistics__grid {
+  display: grid;
+  gap: var(--hu-space-3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.membership-participation-statistics__item {
+  background: var(--hu-color-surface, #fff);
+  border: 1px solid var(--hu-color-border, #dadce0);
+  border-radius: var(--hu-radius-md, 8px);
+  display: grid;
+  gap: var(--hu-space-1);
+  padding: var(--hu-space-3);
+}
+
+.membership-participation-statistics__item dt {
+  color: var(--hu-color-text-muted, #5f6368);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  font-weight: 500;
+  margin: 0;
+}
+
+.membership-participation-statistics__item dd {
+  font-size: var(--hu-font-size-xl, 1.25rem);
+  font-weight: 700;
+  margin: 0;
+}
+
+.membership-participation-statistics__updated {
+  color: var(--hu-color-text-muted, #5f6368);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  margin: 0;
+}
+
+.membership-participation-statistics__note {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .membership-participation-statistics__grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -39,7 +39,7 @@ export default async function CollaborativeAnalysisPage({
   if (!analysis) {
     return (
       <main className="collaborative-analysis-page">
-        <WorkspaceNavigation current="Initiatives" />
+        <WorkspaceNavigation />
         <h1>Collaborative Analysis Workspace</h1>
         <p>Collaborative Analysis is not available.</p>
         <p className="collaborative-analysis-page__back">
@@ -53,7 +53,7 @@ export default async function CollaborativeAnalysisPage({
 
   try {
     const decision = await getCollectiveDecisionByInitiativeId(analysis.initiativeId);
-    linkedDecisionId = decision.decisionId;
+    linkedDecisionId = decision?.decisionId ?? null;
   } catch {
     linkedDecisionId = null;
   }
@@ -64,7 +64,7 @@ export default async function CollaborativeAnalysisPage({
         title="Collaborative Analysis"
         subtitle="Analytical progress for an initiative"
         navItems={NAV_ITEMS}
-        workspaceNavigation={<WorkspaceNavigation current="Initiatives" />}
+        workspaceNavigation={<WorkspaceNavigation />}
       >
         <CollaborativeAnalysisWorkspace
           analysis={analysis}

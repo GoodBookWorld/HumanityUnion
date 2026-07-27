@@ -1,0 +1,8 @@
+.humanity-avatar {
+  display: block;
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--hu-color-surface);
+  border: 1px solid var(--hu-color-border);
+  flex-shrink: 0;
+}

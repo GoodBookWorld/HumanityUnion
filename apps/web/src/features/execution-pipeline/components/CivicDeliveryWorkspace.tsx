@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { Initiative, RecommendedCivicDeliveryRecipient } from "@hu/types";
 
+import { isApiUnavailableError } from "../../../lib/api-client";
 import { listPublicCivicActionPackagesForInitiative } from "../../civic-action-package/api";
 import {
   addCivicDeliveryRecipient,
@@ -76,8 +77,10 @@ export function CivicDeliveryWorkspace({ initiative }: CivicDeliveryWorkspacePro
         const recommended = await getRecommendedCivicDeliveryRecipients(firstCap);
         setRecommendations(recommended);
       }
-    } catch {
-      setError("Civic delivery is not available for this initiative yet.");
+    } catch (loadError) {
+      setError(
+        isApiUnavailableError(loadError) ? "Civic delivery is temporarily unavailable." : null,
+      );
       setCaps([]);
       setDeliveryDetail(null);
       setRecommendations([]);

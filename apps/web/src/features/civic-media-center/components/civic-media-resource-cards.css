@@ -1,0 +1,226 @@
+.civic-media-resource-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-3);
+  height: 100%;
+  min-height: 100%;
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border, #d7dde5);
+  border-radius: var(--hu-radius-lg, 0.75rem);
+  background: var(--hu-color-surface, #fff);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.civic-media-resource-card:hover,
+.civic-media-resource-card:focus-within {
+  border-color: rgb(1 116 176 / 0.35);
+  box-shadow: 0 2px 8px rgb(1 116 176 / 0.08);
+}
+
+.civic-media-resource-card h2,
+.civic-media-resource-card h3 {
+  margin: 0;
+  color: var(--hu-color-primary, #0174b0);
+  font-size: 1.05rem;
+}
+
+.civic-media-resource-card p {
+  margin: 0;
+  color: var(--hu-color-text, #1f2933);
+}
+
+.civic-media-resource-card__label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--hu-color-text-muted, #5f6775);
+}
+
+.civic-media-resource-card__body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+.civic-media-resource-card__why {
+  margin-top: auto;
+  padding-top: var(--hu-space-2);
+  border-top: 1px solid var(--hu-color-border, #e5e9ef);
+  font-size: 0.875rem;
+}
+
+.civic-media-resource-card__why strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--hu-color-accent, #df9815);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.civic-media-resource-card__meta {
+  font-size: 0.875rem;
+  color: var(--hu-color-text-muted, #5f6775);
+}
+
+.civic-media-resource-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hu-space-3);
+}
+
+.civic-media-resource-card__icon,
+.civic-media-resource-card__resource-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--hu-radius-md, 0.5rem);
+  background: rgb(223 152 21 / 0.12);
+  color: var(--hu-color-accent, #df9815);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.civic-media-resource-card--verification .civic-media-resource-card__resource-icon {
+  background: rgb(223 152 21 / 0.14);
+}
+
+.civic-media-resource-card--analysis .civic-media-resource-card__resource-icon {
+  background: rgb(95 103 117 / 0.12);
+  color: var(--hu-color-text-muted, #5f6775);
+}
+
+.civic-media-resource-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.civic-media-resource-card .hu-button,
+.civic-media-resource-card a.hu-button {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.civic-media-resource-card--principle {
+  min-height: 15rem;
+}
+
+.civic-media-resource-card--trusted {
+  min-height: 18rem;
+}
+
+.civic-media-resource-card--verification,
+.civic-media-resource-card--analysis {
+  min-height: 17rem;
+}
+
+.civic-media-resource-card--hero h2 {
+  font-size: 1.05rem;
+}
+
+.civic-media-section-shell__category-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-2);
+  flex-wrap: wrap;
+}
+
+.civic-media-trusted-media-group {
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.civic-media-trusted-media-group > .civic-media-section-shell:first-child {
+  margin-top: 0;
+}
+
+.country-initiative-rail-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100%;
+  border: 1px solid var(--hu-color-border, #d7dde5);
+  border-radius: var(--hu-radius-lg, 0.75rem);
+  overflow: hidden;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.country-initiative-rail-card:hover,
+.country-initiative-rail-card:focus-visible {
+  border-color: var(--hu-color-primary, #0174b0);
+  box-shadow: 0 2px 8px rgb(1 116 176 / 0.12);
+  outline: none;
+}
+
+.country-initiative-rail-card__media {
+  aspect-ratio: 16 / 9;
+  background: var(--hu-color-bg-muted, #f0f0f0);
+}
+
+.country-initiative-rail-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.country-initiative-rail-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2);
+  padding: var(--hu-space-4);
+  flex: 1;
+}
+
+.country-initiative-rail-card__title {
+  margin: 0;
+  color: var(--hu-color-primary, #0174b0);
+  font-size: 1.05rem;
+}
+
+.country-initiative-rail-card__summary {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--hu-color-text, #1f2933);
+  line-height: 1.45;
+}
+
+.country-initiative-rail-card__meta {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--hu-color-text-muted, #5f6775);
+}
+
+.country-initiative-rail-card__footer {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  align-items: center;
+  font-size: 0.8125rem;
+}
+
+.country-initiative-rail-card__status {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgb(1 116 176 / 0.1);
+  color: var(--hu-color-primary, #0174b0);
+  font-weight: 600;
+}
+
+.country-media-rail-card {
+  min-height: 18rem;
+}

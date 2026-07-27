@@ -1,4 +1,11 @@
 import type { MemberId } from "./member.js";
+import type { MemberProfileVisibility } from "./member-profile.js";
+
+export type NotificationFrequency =
+  "immediate" | "daily_digest" | "weekly_digest" | "platform_only";
+
+export type ContributionWillingness =
+  "analysis" | "proposals" | "implementation" | "evidence" | "translation" | "coordination";
 
 export interface ExperiencePreferences {
   interfaceLanguage: string;
@@ -8,14 +15,26 @@ export interface ExperiencePreferences {
   timeZone: string;
   dateFormat: string;
   timeFormat: string;
+  expertiseAreas: string[];
+  skills: string[];
+  experienceLevel?: string;
 }
 
 export interface ParticipationPreferences {
   interestedTopics: string[];
   preferredInitiativeTypes: string[];
   volunteerInterests: string[];
+  /** Canonical ISO country codes selected for civic relevance. */
+  preferredCountryIds: string[];
+  /** Canonical region identifiers, typically `{countryCode}::{regionCode}`. */
   preferredRegions: string[];
+  /** Canonical city/community identifiers, typically `{countryCode}::{regionCode}::{communityCode}`. */
+  preferredCityCommunityIds: string[];
   participationAvailability: string;
+  preferredActivityAreas: string[];
+  preferredGeographicScopes: string[];
+  initiativeParticipationInterests: string[];
+  contributionWillingness: ContributionWillingness[];
 }
 
 export interface CommunicationPreferences {
@@ -23,6 +42,10 @@ export interface CommunicationPreferences {
   invitationPreference: string;
   digestFrequency: string;
   messageCategories: string[];
+  notificationFrequency: NotificationFrequency;
+  emailNotificationsEnabled: boolean;
+  interestMatchNotificationsEnabled: boolean;
+  disabledNotificationCategories: string[];
 }
 
 export interface AccessibilityPreferences {
@@ -30,6 +53,8 @@ export interface AccessibilityPreferences {
   highContrast: boolean;
   reducedMotion: boolean;
   screenReaderSupport: boolean;
+  simplifiedExplanations: boolean;
+  contentDensity: "compact" | "comfortable" | "spacious";
 }
 
 export interface WorkspacePreferences {
@@ -39,11 +64,21 @@ export interface WorkspacePreferences {
   cardDensity: string;
 }
 
+export interface VisibilityPreferences {
+  profileVisibility: MemberProfileVisibility;
+  skillsVisibility: MemberProfileVisibility;
+  interestsVisibility: MemberProfileVisibility;
+  participationVisibility: MemberProfileVisibility;
+}
+
 export interface MemberPreferences {
   memberId: MemberId;
+  userId?: string;
   experiencePreferences: ExperiencePreferences;
   participationPreferences: ParticipationPreferences;
   communicationPreferences: CommunicationPreferences;
   accessibilityPreferences: AccessibilityPreferences;
   workspacePreferences: WorkspacePreferences;
+  visibilityPreferences: VisibilityPreferences;
+  updatedAt?: string;
 }

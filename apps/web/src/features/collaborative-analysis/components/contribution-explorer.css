@@ -24,7 +24,7 @@
   border: 1px solid #e5e5e5;
   border-radius: 8px;
   font: inherit;
-  color: #1a1a1a;
+  color: #df9815;
   background: #ffffff;
 }
 
@@ -37,7 +37,7 @@
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 0.75rem;
-  color: #1a1a1a;
+  color: #df9815;
 }
 
 .contribution-explorer__list {
@@ -59,7 +59,7 @@
   font-size: 0.95rem;
   font-weight: 600;
   margin-bottom: 0.35rem;
-  color: #1a1a1a;
+  color: #df9815;
 }
 
 .contribution-explorer__item-content {

@@ -15,7 +15,7 @@ export interface FairBalance {
   global: number;
 }
 
-export interface MemberProfile {
+export interface MemberAccountProfile {
   displayName: string;
   uniqueName: string;
   avatarUrl?: string;
@@ -34,7 +34,7 @@ export interface ImpactProfileSummary {
 }
 
 export interface Member extends BaseEntity {
-  profile: MemberProfile;
+  profile: MemberAccountProfile;
   status: MemberStatus;
   verificationLevel: VerificationLevel;
   roles: MemberRole[];

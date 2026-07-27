@@ -1,10 +1,11 @@
 .profile-section {
-  background: var(--hu-color-surface);
+  background: #fffefc;
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-md);
   box-shadow: var(--hu-shadow-sm);
   padding: var(--hu-space-5);
   margin-bottom: var(--hu-space-4);
+  scroll-margin-top: var(--humanity-header-offset, var(--hu-scroll-margin-top));
 }
 
 .profile-section__title {
@@ -12,7 +13,6 @@
   font-weight: 600;
   margin-bottom: var(--hu-space-4);
   color: var(--hu-color-text);
-  scroll-margin-top: var(--hu-scroll-margin-top);
 }
 
 .profile-section__placeholder {

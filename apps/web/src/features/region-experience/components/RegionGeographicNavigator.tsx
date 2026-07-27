@@ -2,8 +2,15 @@ import Link from "next/link";
 
 import type { RegionIdentityPublicProjection } from "@hu/types";
 
+import { normalizeCountryInput } from "../../../data/geography";
+
 interface RegionGeographicNavigatorProps {
   identity: RegionIdentityPublicProjection;
+}
+
+function buildCountryHref(countrySlug: string): string {
+  const code = normalizeCountryInput(countrySlug) ?? countrySlug.toUpperCase();
+  return `/countries/${encodeURIComponent(code)}`;
 }
 
 export function RegionGeographicNavigator({ identity }: RegionGeographicNavigatorProps) {
@@ -25,7 +32,7 @@ export function RegionGeographicNavigator({ identity }: RegionGeographicNavigato
           <li>
             <Link
               className="geographic-navigator__scope geographic-navigator__scope--link"
-              href={`/country/${encodeURIComponent(identity.countrySlug)}`}
+              href={buildCountryHref(identity.countrySlug)}
             >
               {identity.countryLabel}
             </Link>

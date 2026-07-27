@@ -96,7 +96,7 @@
 }
 
 .related-navigation__link {
-  color: #1a1a1a;
+  color: #df9815;
   font-size: 0.95rem;
 }
 
@@ -138,7 +138,7 @@
 .implementation-recording__button {
   margin-top: 0.75rem;
   padding: 0.5rem 1rem;
-  border: 1px solid #1a1a1a;
+  border: 1px solid #df9815;
   background: #fff;
   cursor: pointer;
 }

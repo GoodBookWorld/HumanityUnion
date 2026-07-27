@@ -1,4 +1,14 @@
-const API_BASE_URL = "http://localhost:4000";
+import {
+  isAuthRefreshExemptPath,
+  refreshAuthSessionOnce,
+} from "../features/auth/auth-token-refresh";
+import { getStoredAccessToken, getStoredRefreshToken } from "../features/auth/auth-token-store";
+import { API_BASE_URL } from "./api-base-url";
+
+export { API_BASE_URL };
+
+const API_UNAVAILABLE_MESSAGE =
+  "The Humanity Union service is temporarily unavailable. Please check that the API is running and try again.";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -8,7 +18,85 @@ interface ApiResponse<T> {
   message: string;
 }
 
+export class ApiRequestError extends Error {
+  readonly status: number;
+  readonly meta?: Record<string, unknown>;
+
+  constructor(message: string, status: number, meta?: Record<string, unknown>) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+    this.meta = meta;
+  }
+}
+
+function buildAuthHeaders(headers?: HeadersInit): HeadersInit {
+  const token = getStoredAccessToken();
+
+  if (!token) {
+    return headers ?? {};
+  }
+
+  return {
+    ...headers,
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+async function readApiEnvelope<T>(response: Response): Promise<ApiResponse<T>> {
+  if (response.status === 204) {
+    return {
+      success: response.ok,
+      data: {} as T,
+      meta: {},
+      links: {},
+      message: "",
+    };
+  }
+
+  const text = await response.text();
+
+  if (!text.trim()) {
+    if (response.ok) {
+      return {
+        success: true,
+        data: {} as T,
+        meta: {},
+        links: {},
+        message: "",
+      };
+    }
+
+    throw new ApiRequestError(API_UNAVAILABLE_MESSAGE, response.status);
+  }
+
+  try {
+    return JSON.parse(text) as ApiResponse<T>;
+  } catch {
+    throw new ApiRequestError(
+      "The Humanity Union service returned an unexpected response. Please try again shortly.",
+      response.status,
+    );
+  }
+}
+
+function shouldAttemptRefresh(path: string, isRetry: boolean): boolean {
+  if (isRetry || isAuthRefreshExemptPath(path)) {
+    return false;
+  }
+
+  return Boolean(getStoredAccessToken() || getStoredRefreshToken());
+}
+
 export async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
+  return executeApiRequest<T>(path, options, false);
+}
+
+async function executeApiRequest<T>(
+  path: string,
+  options: RequestInit | undefined,
+  isRetry: boolean,
+): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
 
   let response: Response;
@@ -16,22 +104,123 @@ export async function apiRequest<T>(path: string, options?: RequestInit): Promis
   try {
     response = await fetch(url, {
       cache: "no-store",
+      credentials: "include",
       ...options,
+      headers: buildAuthHeaders(options?.headers),
     });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    throw new Error(`API request failed: ${message}`);
+  } catch {
+    throw new ApiRequestError(API_UNAVAILABLE_MESSAGE, 0);
   }
 
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+  if (response.status === 401 && shouldAttemptRefresh(path, isRetry)) {
+    const refreshed = await refreshAuthSessionOnce();
+
+    if (refreshed) {
+      return executeApiRequest<T>(path, options, true);
+    }
   }
 
-  const body = (await response.json()) as ApiResponse<T>;
+  const body = await readApiEnvelope<T>(response);
 
-  if (!body.success) {
-    throw new Error(body.message || "API request failed");
+  if (!response.ok || !body.success) {
+    throw new ApiRequestError(
+      body.message || `API request failed: ${response.status}`,
+      response.status,
+      body.meta,
+    );
   }
 
   return body.data;
+}
+
+export function isAuthenticationRequiredError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.status === 401;
+}
+
+export function isNotFoundError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.status === 404;
+}
+
+export async function apiRequestOptional<T>(
+  path: string,
+  options?: RequestInit,
+): Promise<T | null> {
+  try {
+    return await apiRequest<T>(path, options);
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+export function isApiUnavailableError(error: unknown): boolean {
+  if (error instanceof ApiRequestError) {
+    return error.status === 0 || error.status >= 500;
+  }
+
+  if (error instanceof TypeError) {
+    return true;
+  }
+
+  return false;
+}
+
+export function formatAuthFormError(error: unknown): string {
+  if (isApiUnavailableError(error)) {
+    return API_UNAVAILABLE_MESSAGE;
+  }
+
+  if (error instanceof ApiRequestError) {
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
+export interface PublicInitiativeListResult<TItem, TMetrics> {
+  items: TItem[];
+  metrics: TMetrics;
+}
+
+export async function fetchPublicInitiativeList<TItem, TMetrics>(
+  path: string,
+  defaultMetrics: TMetrics,
+): Promise<PublicInitiativeListResult<TItem, TMetrics>> {
+  const url = `${API_BASE_URL}${path}`;
+
+  let response: Response;
+
+  try {
+    response = await fetch(url, { cache: "no-store" });
+  } catch {
+    throw new ApiRequestError(API_UNAVAILABLE_MESSAGE, 0);
+  }
+
+  if (response.status === 404) {
+    return { items: [], metrics: defaultMetrics };
+  }
+
+  const payload = await readApiEnvelope<TItem[]>(response);
+
+  if (!response.ok || !payload.success) {
+    if (response.status === 404) {
+      return { items: [], metrics: defaultMetrics };
+    }
+
+    throw new ApiRequestError(payload.message || API_UNAVAILABLE_MESSAGE, response.status);
+  }
+
+  const metrics = (payload.meta as { metrics?: TMetrics } | undefined)?.metrics ?? defaultMetrics;
+
+  return {
+    items: payload.data,
+    metrics,
+  };
 }

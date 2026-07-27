@@ -42,7 +42,7 @@ export default async function PetitionPage({ params }: PetitionPageProps) {
   if (!petition) {
     return (
       <main className="petition-page">
-        <WorkspaceNavigation current="Initiatives" />
+        <WorkspaceNavigation />
         <h1>Petition Workspace</h1>
         <p>Petition is not available.</p>
         <p className="petition-page__back">
@@ -91,7 +91,7 @@ export default async function PetitionPage({ params }: PetitionPageProps) {
         title="Petition"
         subtitle="Public endorsement after collective decision"
         navItems={NAV_ITEMS}
-        workspaceNavigation={<WorkspaceNavigation current="Initiatives" />}
+        workspaceNavigation={<WorkspaceNavigation />}
       >
         <PetitionWorkspace
           initialPetition={petition}

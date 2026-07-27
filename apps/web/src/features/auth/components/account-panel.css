@@ -1,0 +1,63 @@
+.account-panel__form {
+  display: grid;
+}
+
+.account-panel__field {
+  display: grid;
+  gap: var(--hu-space-1);
+  font-size: var(--hu-font-size-sm);
+}
+
+.account-panel__field input,
+.account-panel__field .password-input {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.account-panel__field .password-input input {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.account-panel__actions {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.account-panel .hu-button--secondary,
+.account-panel .hu-button--primary {
+  background: #f5e4c4;
+  color: var(--hu-color-text);
+  border-color: #f5e4c4;
+}
+
+.account-panel .hu-button--secondary:hover:not(:disabled),
+.account-panel .hu-button--secondary:focus-visible {
+  background: #df9815;
+  border-color: #df9815;
+  color: #ffffff;
+}
+
+.account-panel .hu-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.account-panel__status {
+  margin: 0;
+  color: var(--hu-color-success, #1a6b3a);
+  font-size: var(--hu-font-size-sm);
+}
+
+.account-panel__error {
+  margin: 0;
+  color: var(--hu-color-danger);
+  font-size: var(--hu-font-size-sm);
+}
+
+.account-panel__help {
+  margin: var(--hu-space-2) 0;
+  color: var(--hu-color-text-muted, inherit);
+  font-size: var(--hu-font-size-sm);
+  line-height: 1.5;
+}

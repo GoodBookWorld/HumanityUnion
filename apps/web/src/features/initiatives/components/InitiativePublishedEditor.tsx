@@ -3,13 +3,20 @@
 import type { Initiative } from "@hu/types";
 import { useEffect, useState } from "react";
 
+import { uploadInitiativeImage } from "../../media-upload/media-upload-api";
 import {
-  INITIATIVE_COMMUNITY_OPTIONS,
   archiveInitiative,
   republishInitiative,
   updatePublishedInitiative,
   type SaveInitiativeDraftInput,
 } from "../api";
+
+import {
+  buildInitiativeFormValuesFromMetadata,
+  InitiativeFormFields,
+  initiativeFormValuesToSaveInput,
+  type InitiativeFormValues,
+} from "./InitiativeFormFields";
 
 import "./initiative-draft-editor.css";
 
@@ -21,16 +28,14 @@ interface InitiativePublishedEditorProps {
 interface PublishedFormState {
   title: string;
   description: string;
-  communitySlug: string;
-  activityArea: string;
+  fields: InitiativeFormValues;
 }
 
 function buildFormState(initiative: Initiative): PublishedFormState {
   return {
     title: initiative.title,
     description: initiative.description,
-    communitySlug: initiative.metadata.communitySlug,
-    activityArea: initiative.metadata.activityArea,
+    fields: buildInitiativeFormValuesFromMetadata(initiative.metadata),
   };
 }
 
@@ -55,8 +60,7 @@ export function InitiativePublishedEditor({
     return {
       title: form.title,
       description: form.description,
-      communitySlug: form.communitySlug,
-      activityArea: form.activityArea,
+      ...initiativeFormValuesToSaveInput(form.fields),
     };
   }
 
@@ -140,32 +144,30 @@ export function InitiativePublishedEditor({
         />
       </label>
 
-      <label className="initiative-draft-editor__field">
-        <span>Community association</span>
-        <select
-          value={form.communitySlug}
-          onChange={(event) =>
-            setForm((current) => ({ ...current, communitySlug: event.target.value }))
-          }
-        >
-          {INITIATIVE_COMMUNITY_OPTIONS.map((community) => (
-            <option key={community.slug} value={community.slug}>
-              {community.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="initiative-draft-editor__field">
-        <span>Activity area</span>
-        <input
-          type="text"
-          value={form.activityArea}
-          onChange={(event) =>
-            setForm((current) => ({ ...current, activityArea: event.target.value }))
-          }
-        />
-      </label>
+      <InitiativeFormFields
+        values={form.fields}
+        initiativeId={initiative.initiativeId}
+        onChange={(patch) =>
+          setForm((current) => ({
+            ...current,
+            fields: { ...current.fields, ...patch },
+          }))
+        }
+        onImageUpload={async (file) => {
+          const uploaded = await uploadInitiativeImage(initiative.initiativeId, file);
+          setForm((current) => ({
+            ...current,
+            fields: { ...current.fields, imageUrl: uploaded.mediaUrl },
+          }));
+          return uploaded.mediaUrl;
+        }}
+        onImageRemove={async () => {
+          setForm((current) => ({
+            ...current,
+            fields: { ...current.fields, imageUrl: "", imageAltText: "" },
+          }));
+        }}
+      />
 
       <div className="initiative-draft-editor__actions">
         <button

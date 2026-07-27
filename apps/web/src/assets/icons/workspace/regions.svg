@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Created with Vectornator (http://vectornator.io/) -->
+<svg height="100%" stroke-miterlimit="10" style="fill-rule:nonzero;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;" version="1.1" viewBox="0 0 512 512" width="100%" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:vectornator="http://vectornator.io" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs>
+<image height="32" id="Image" width="32" xlink:href="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAAHGlET1QAAAACAAAAAAAAABAAAAAoAAAAEAAAABAAAAKdXPR24AAAAmlJREFUWAnslNtrE0EYxde/wSfpg09CFcGHFkrFhlJzEUpq09rQUkgRlTamCoIVqSIIGlQERbBifPDBSiOEigpB82LxBlJvNUhAKWjIzSSbG5Ym2WSP861OYMeU1KpvDhxmzje78zuzs4wk/W//4AsoI+beisMyVxmxfNPExorD0rMmVDqdbpJl2Z7JZDy5XG4xGo0uRiKRK6zvqLdgadh4XnWYAEFUY3Pueu/oaiIwn8+jUCjUlEgkQIrH4+BhwuGwgRZZGjTY1OEu4KdoLPriUJdVBxRNNputwQgcTHzG7Y9zOPPmJsafH8fAzEG4/Ncx8/alFoSHofeWT4wBgwZNyrljUOUk1HQSinuiVi/ZdzwWmTrPA5ycn4Lz2REceLJPp4Fb/eCyew9jIjCNhx/eg75UeagT6G9HtY8p9RW8VVMJrUZz5b62gg4oGh5ABHPP4WJP87K9DeruVig9LagwKG+VZFyr0VyxpyUlMnX+TwK8cnVA7d6mKc+OQyEwU35yrFZf2rXVrwOKhv3t2j/Adyz24s65p+cue3qhmLegavmhonkzSNzTXNrUbBOZOr/2APtx6MUFBPcaUd25qa6yozZAktbpgKL5/QB2WH0enF6QcTYIXA18QsHIdm3YqNOyqRnywmvGb9DYpbPqI7B5j8Lo/4LOADQ4BSB5b/hQ2t6EavsGTUU2lmenQWs3wEvSagNYfVMMrGhwMQCFuHfxGsqt6zXdd1/S7oxYLPY3AuxB9907NTDB6wWgEI8mT2HW6cS47x1CoRDdnI0DsKt4xSMYfeqC5cH8L/CVAvAjoZ5uVVpbPILvAAAA//9MO7pDAAABQ0lEQVTtlM1Kw0AUhfsw0rWP4Hu4lCJCF4q41YXUtQs3rrpxJfgC7hQNjRiMNSg1IcQkpfmXhEDBgsfcwEBm0vqDdKMNHIY7MPd8cy6ZRkP4oihClmVoXa5x2rjawZ5qYeUcU9V5AD4T9aTegl29nAaw2TvGfj8vDeYOEIZhmUBbOsBWr4vdu2fuZr8BoN71Kws7DGBWnH8fIAiCcgTzSIB6C4HXywWA7/vcCA4f33FqTiANx3CTHH07RFfLsH79xr0Hs0bG9ukdoN71zIUdBnAzGmP4mpcwdJgUxzFc14XneaVurQhH9zlWLybcr8pMq+uPAehAkiRkNCpMz3Rdb6uq2pRluTkYDLZN05SqMGmaQhQDZ+u3ErAs68VxnJPCpKUoypIQEFcWMMuapnUMw3hiqVRXMqzKtu2vR8A5LIr/kMAHWIEpSTwPlMQAAAAASUVORK5CYII="/>
+</defs>
+<clipPath id="ArtboardFrame">
+<rect height="512" width="512" x="0" y="0"/>
+</clipPath>
+<g clip-path="url(#ArtboardFrame)" id="Layer-1" vectornator:layerName="Layer 1">
+<use opacity="1" transform="matrix(16 0 0 16 0 -2.27374e-13)" xlink:href="#Image"/>
+</g>
+</svg>

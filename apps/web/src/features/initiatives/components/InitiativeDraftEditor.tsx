@@ -4,13 +4,20 @@ import { INITIATIVE_LIFECYCLE_PHASE_LABELS } from "../initiative-lifecycle-label
 import type { Initiative } from "@hu/types";
 import { useEffect, useState } from "react";
 
+import { uploadInitiativeImage } from "../../media-upload/media-upload-api";
 import {
-  INITIATIVE_COMMUNITY_OPTIONS,
   archiveInitiative,
   publishInitiative,
   saveInitiativeDraft,
   type SaveInitiativeDraftInput,
 } from "../api";
+
+import {
+  buildInitiativeFormValuesFromMetadata,
+  InitiativeFormFields,
+  initiativeFormValuesToSaveInput,
+  type InitiativeFormValues,
+} from "./InitiativeFormFields";
 
 import "./initiative-draft-editor.css";
 
@@ -22,16 +29,14 @@ interface InitiativeDraftEditorProps {
 interface DraftFormState {
   title: string;
   description: string;
-  communitySlug: string;
-  activityArea: string;
+  fields: InitiativeFormValues;
 }
 
 function buildFormState(initiative: Initiative): DraftFormState {
   return {
     title: initiative.title,
     description: initiative.description,
-    communitySlug: initiative.metadata.communitySlug,
-    activityArea: initiative.metadata.activityArea,
+    fields: buildInitiativeFormValuesFromMetadata(initiative.metadata),
   };
 }
 
@@ -49,24 +54,29 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
 
   const isDraft = initiative.lifecyclePhase === "draft";
 
+  function buildSaveInput(): SaveInitiativeDraftInput {
+    return {
+      title: form.title,
+      description: form.description,
+      ...initiativeFormValuesToSaveInput(form.fields),
+    };
+  }
+
   async function handleSaveDraft() {
     setSaving(true);
     setMessage(null);
 
-    const input: SaveInitiativeDraftInput = {
-      title: form.title,
-      description: form.description,
-      communitySlug: form.communitySlug,
-      activityArea: form.activityArea,
-    };
-
     try {
-      const updated = await saveInitiativeDraft(initiative.initiativeId, input);
+      const updated = await saveInitiativeDraft(initiative.initiativeId, buildSaveInput());
       onUpdated(updated);
-      setMessage("Draft saved.");
+      setMessage("Draft saved successfully.");
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage(`Save failed: ${detail}`);
+      if (error instanceof Error && error.message.toLowerCase().includes("authentication")) {
+        setMessage("Sign in to create an initiative.");
+      } else {
+        const detail = error instanceof Error ? error.message : "Unknown error";
+        setMessage(`Save failed: ${detail}`);
+      }
     } finally {
       setSaving(false);
     }
@@ -77,18 +87,17 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
     setMessage(null);
 
     try {
-      await saveInitiativeDraft(initiative.initiativeId, {
-        title: form.title,
-        description: form.description,
-        communitySlug: form.communitySlug,
-        activityArea: form.activityArea,
-      });
+      await saveInitiativeDraft(initiative.initiativeId, buildSaveInput());
       const published = await publishInitiative(initiative.initiativeId);
       onUpdated(published);
-      setMessage("Initiative published and projected.");
+      setMessage("Initiative published successfully.");
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage(`Publish failed: ${detail}`);
+      if (error instanceof Error && error.message.toLowerCase().includes("authentication")) {
+        setMessage("Sign in to create an initiative.");
+      } else {
+        const detail = error instanceof Error ? error.message : "Unknown error";
+        setMessage(`Publish failed: ${detail}`);
+      }
     } finally {
       setPublishing(false);
     }
@@ -147,33 +156,30 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
         />
       </label>
 
-      <label className="initiative-draft-editor__field">
-        <span>Community association</span>
-        <select
-          value={form.communitySlug}
-          onChange={(event) =>
-            setForm((current) => ({ ...current, communitySlug: event.target.value }))
-          }
-        >
-          <option value="">Select a community</option>
-          {INITIATIVE_COMMUNITY_OPTIONS.map((community) => (
-            <option key={community.slug} value={community.slug}>
-              {community.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="initiative-draft-editor__field">
-        <span>Activity area</span>
-        <input
-          type="text"
-          value={form.activityArea}
-          onChange={(event) =>
-            setForm((current) => ({ ...current, activityArea: event.target.value }))
-          }
-        />
-      </label>
+      <InitiativeFormFields
+        values={form.fields}
+        initiativeId={initiative.initiativeId}
+        onChange={(patch) =>
+          setForm((current) => ({
+            ...current,
+            fields: { ...current.fields, ...patch },
+          }))
+        }
+        onImageUpload={async (file) => {
+          const uploaded = await uploadInitiativeImage(initiative.initiativeId, file);
+          setForm((current) => ({
+            ...current,
+            fields: { ...current.fields, imageUrl: uploaded.mediaUrl },
+          }));
+          return uploaded.mediaUrl;
+        }}
+        onImageRemove={async () => {
+          setForm((current) => ({
+            ...current,
+            fields: { ...current.fields, imageUrl: "", imageAltText: "" },
+          }));
+        }}
+      />
 
       <p className="initiative-draft-editor__visibility">Visibility: Public</p>
 
@@ -190,7 +196,7 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
           onClick={() => void handlePublish()}
           disabled={saving || publishing || archiving}
         >
-          {publishing ? "Publishing..." : "Publish"}
+          {publishing ? "Publishing..." : "Publish Initiative"}
         </button>
         <button
           type="button"

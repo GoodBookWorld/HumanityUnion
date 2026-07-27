@@ -16,6 +16,8 @@
 }
 
 .workspace-civic-assistant__sticky {
+  position: sticky;
+  top: var(--hu-header-height);
   overflow: auto;
 }
 
@@ -58,7 +60,7 @@
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: var(--hu-color-text-muted);
+  color: #819cbe;
 }
 
 .workspace-civic-assistant__meta dd {
@@ -179,6 +181,87 @@
   color: var(--hu-color-text-muted);
   font-size: var(--hu-font-size-sm);
   line-height: var(--hu-line-height);
+}
+
+.workspace-civic-assistant__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.workspace-intelligence__section {
+  margin-bottom: var(--hu-space-4);
+}
+
+.workspace-intelligence__section h3 {
+  font-size: var(--hu-font-size-base);
+  margin-bottom: var(--hu-space-2);
+}
+
+.workspace-intelligence__section h4 {
+  font-size: var(--hu-font-size-sm);
+  margin: 0 0 var(--hu-space-2);
+}
+
+.workspace-intelligence__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.workspace-intelligence__card {
+  padding: var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-sm);
+  background: var(--hu-color-bg-muted);
+  font-size: var(--hu-font-size-sm);
+  line-height: var(--hu-line-height);
+}
+
+.workspace-intelligence__card--top {
+  border-color: var(--hu-color-secondary-slate);
+  background: var(--hu-color-surface);
+}
+
+.workspace-intelligence__card--blocked {
+  border-color: var(--hu-color-border);
+  background: var(--hu-color-bg-muted);
+}
+
+.workspace-intelligence__priority {
+  margin: 0 0 var(--hu-space-1);
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--hu-color-text-muted);
+}
+
+.workspace-intelligence__reason,
+.workspace-intelligence__blocked-by {
+  margin: var(--hu-space-2) 0 0;
+  color: var(--hu-color-text-muted);
+}
+
+.workspace-intelligence__nav-link {
+  display: inline-block;
+  margin-top: var(--hu-space-2);
+  color: var(--hu-color-secondary-slate);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.workspace-intelligence__nav-link:hover,
+.workspace-intelligence__nav-link:focus-visible {
+  text-decoration: underline;
 }
 
 @media (max-width: 1024px) {

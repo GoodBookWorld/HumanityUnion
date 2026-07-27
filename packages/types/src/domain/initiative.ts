@@ -1,5 +1,7 @@
 import type { InitiativeLifecyclePhase } from "./initiative-lifecycle.js";
+import type { ParticipationScope } from "./initiative-collective-decision.js";
 import type { MemberId } from "./member.js";
+import type { InitiativeNewsSourceReference } from "./public-news-article.js";
 
 export type InitiativeId = string;
 
@@ -39,9 +41,27 @@ export interface InitiativeMetadata {
   tags: string[];
   region: string;
   language: string;
+  /** Canonical ISO-style country slug for search and geographic discovery. */
+  countrySlug?: string;
+  /** Canonical first-level region slug for search and geographic discovery. */
+  regionSlug?: string;
   /** Bootstrap community slug associated with this initiative. */
   communitySlug: string;
+  /** Optional descriptive community or organization association entered by the steward. */
+  communityAssociation?: string;
+  /** Canonical participation scope for public discovery and eligibility. */
+  participationScope?: ParticipationScope;
   activityArea: string;
+  /** Supplemental activity area label when activityArea is Other. */
+  activityAreaOther?: string;
+  /** Optional initiative image URL from authenticated media upload. */
+  imageUrl?: string;
+  /** Optional image alt text for accessibility. */
+  imageAltText?: string;
+  /** Optional initiative start date (ISO 8601 date). */
+  startDate?: string;
+  /** Optional initiative completion date (ISO 8601 date). */
+  completionDate?: string;
 }
 
 export interface InitiativeRevision {
@@ -82,4 +102,5 @@ export interface Initiative {
   revisions: InitiativeRevision[];
   contributions: InitiativeContribution[];
   timeline: TimelineEvent[];
+  sourceReferences?: InitiativeNewsSourceReference[];
 }

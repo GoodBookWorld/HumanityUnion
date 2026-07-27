@@ -1,0 +1,28 @@
+.workspace-auth-status {
+  margin-bottom: var(--hu-space-4);
+  padding: var(--hu-space-3);
+  border: 1px solid var(--hu-border-subtle);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-surface-muted);
+}
+
+.workspace-auth-status__label {
+  margin: 0;
+  font-size: var(--hu-text-xs);
+  color: var(--hu-text-muted);
+}
+
+.workspace-auth-status__name {
+  margin: var(--hu-space-1) 0 0;
+  font-size: var(--hu-text-sm);
+  font-weight: 600;
+}
+
+.workspace-auth-status__copy {
+  margin: var(--hu-space-1) 0 0;
+  font-size: var(--hu-text-sm);
+}
+
+.workspace-auth-status--prompt {
+  border-color: var(--hu-border-strong);
+}

@@ -2,7 +2,7 @@
   font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-base);
   line-height: var(--hu-line-height);
-  color: var(--hu-color-text);
+  color: #0174b0;
 }
 
 .hu-heading-1 {

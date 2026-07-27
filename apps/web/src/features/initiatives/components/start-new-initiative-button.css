@@ -2,6 +2,7 @@
   display: grid;
   gap: 0.75rem;
   margin-bottom: 0;
+  scroll-margin-top: 6rem;
 }
 
 .start-new-initiative-button__field {
@@ -25,9 +26,9 @@
 
 .start-new-initiative-button__action {
   padding: 0.625rem 1rem;
-  border: 1px solid #1a1a1a;
+  border: 1px solid #df9815;
   border-radius: 6px;
-  background: #1a1a1a;
+  background: #df9815;
   color: #ffffff;
   font-size: 0.95rem;
   cursor: pointer;
@@ -42,8 +43,26 @@
   cursor: not-allowed;
 }
 
-.start-new-initiative-button__message {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: #737373;
+.start-new-initiative-button__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.start-new-initiative-button__action--primary {
+  background: #0174b0;
+  border-color: #0174b0;
+}
+
+.start-new-initiative-button__message--success {
+  color: #1a6b3a;
+}
+
+.start-new-initiative-button__auth {
+  display: flex;
+  gap: 1rem;
+}
+
+.start-new-initiative-button__auth a {
+  color: #0174b0;
 }

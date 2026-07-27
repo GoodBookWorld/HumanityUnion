@@ -14,13 +14,15 @@ export type IntegrationUrlEntityType =
   | "implementation-commitment"
   | "implementation-tracking"
   | "public-impact"
-  | "civic-archive";
+  | "civic-archive"
+  | "knowledge";
 
 const ENTITY_TYPE_TO_URL: Record<CivicEntityType, IntegrationUrlEntityType> = {
   initiative: "initiative",
   analysis: "analysis",
   improvement_proposal: "improvement-proposal",
   initiative_revision: "initiative",
+  petition: "initiative",
   decision_session: "decision-session",
   collective_decision: "collective-decision",
   civic_action_package: "civic-action-package",
@@ -30,6 +32,10 @@ const ENTITY_TYPE_TO_URL: Record<CivicEntityType, IntegrationUrlEntityType> = {
   implementation_tracking: "implementation-tracking",
   public_impact: "public-impact",
   civic_archive: "civic-archive",
+  knowledge_article: "knowledge",
+  knowledge_media: "knowledge",
+  civic_nomination: "knowledge",
+  member_badge_contribution: "knowledge",
 };
 
 export function toIntegrationUrlEntityType(entityType: CivicEntityType): IntegrationUrlEntityType {

@@ -1,24 +1,53 @@
-# Humanity Union Information Architecture v1.0
+# Humanity Union Information Architecture v2.0
 
-## Purpose
+## The Structural Foundation of the Humanity Union Platform
 
-This document defines the information structure of the Humanity Union platform.
+---
 
-Humanity Union is designed as a global civic technology ecosystem where people, knowledge, initiatives, institutions, regions, trust systems, and impact measurement work together in one coherent space.
+# Document Purpose
 
-The purpose of this architecture is to prevent fragmented development and ensure that every future page, module, database collection, API endpoint, and user journey has a clear place in the platform.
+This document defines the Information Architecture of the Humanity Union platform.
+
+Humanity Union is designed as an Initiative-centric civic ecosystem where Participants, knowledge, collaboration, governance, institutions, regions, trust systems, and measurable impact are connected through one coherent civic lifecycle.
+
+The purpose of this architecture is to prevent fragmented development and ensure that every future page, module, service, database collection, API endpoint, and user journey has a clearly defined place within the platform.
+
+This document defines **where information belongs**.
+
+It does not define workflows, governance rules, or software implementation.
+
+---
+
+**Status:** Foundational Architectural Standard
+
+**Scope:** Information domains, platform spaces, navigation hierarchy, human journeys, platform services, and architectural organization
+
+**Implementation:** Out of scope for this document
+
+---
+
+# Table of Contents
+
+1. Core Concept
+2. Initiative Lifecycle
+3. Primary Information Domains
+4. Guiding Principle
 
 ---
 
 # 1. Core Concept
 
-Humanity Union is not structured as a set of isolated website pages.
+Humanity Union is not structured as a collection of independent website pages.
 
 It is structured as an interconnected civic ecosystem.
 
-The platform contains:
+Information is organized around the complete lifecycle of civic participation rather than around isolated software features.
 
-1. People
+Every feature, service, and interface contributes to a common civic purpose.
+
+The platform is organized into nine primary information domains:
+
+1. Participants
 2. Initiatives
 3. Knowledge
 4. Institutions
@@ -28,26 +57,71 @@ The platform contains:
 8. Platform Services
 9. Administration
 
-Each area must support the main mission of Humanity Union:
+These domains are interconnected.
 
-To help people better understand the world, discover their own potential, cooperate with others, and transform knowledge into meaningful positive impact.
+None exists in isolation.
+
+Together they support Humanity Union's mission:
+
+> To help people better understand the world, discover meaningful opportunities to contribute, cooperate with others, and transform knowledge into measurable positive impact.
 
 ---
 
-# 2. Primary Information Domains
+# 2. Initiative Lifecycle
 
-## 2.1 People Domain
+The Initiative Lifecycle is the organizing model of the Humanity Union platform.
 
-The People Domain contains all information related to Members and their participation.
+Every major information domain supports one or more stages of this lifecycle.
+
+```text
+Initiative
+        ↓
+Collaborative Analysis
+        ↓
+Proposal Evolution
+        ↓
+Petition
+        ↓
+Decision Session
+        ↓
+Collective Decision
+        ↓
+Implementation
+        ↓
+Impact
+        ↓
+Archive
+```
+
+The Information Architecture exists to ensure that information naturally flows through this lifecycle without fragmentation.
+
+Each stage produces new knowledge, relationships, historical records, and opportunities for participation.
+
+The Initiative remains the central civic entity throughout the platform.
+
+---
+
+# 3. Primary Information Domains
+
+## 3.1 Participant Domain
+
+The Participant Domain contains all information related to people participating in Humanity Union.
+
+Every registered person is a **Participant**.
+
+Membership is an optional status available within the Participant ecosystem.
 
 Core entities:
 
-- User
-- Member
+- Participant
 - Public Profile
 - Civic Dashboard
-- Impact Profile
+- Participation Profile
+- Membership
+- Membership Status
 - Verification
+- Roles
+- Expertise
 - Social Activity
 - Fair
 - Growth
@@ -59,98 +133,129 @@ Core entities:
 
 Purpose:
 
-To help each Member understand their role, see their progress, choose meaningful participation areas, and discover their next horizon of opportunity.
+To help every Participant discover meaningful opportunities to contribute, understand their civic journey, monitor their progress, and participate effectively across Humanity Union.
 
 ---
 
-## 2.2 Initiative Domain
+### Membership
+
+Membership is an optional form of participation.
+
+It represents voluntary support for Humanity Union and may provide additional recognition, verification, privileges, or participation opportunities.
+
+Membership never replaces Participant status.
+
+Every Member is a Participant.
+
+Not every Participant is a Member.
+
+---
+
+## 3.2 Initiative Domain
 
 The Initiative Domain is the central action domain of Humanity Union.
+
+Every meaningful civic activity ultimately belongs to an Initiative.
 
 Core entities:
 
 - Initiative
+- Collaborative Analysis
+- Contribution
+- Evidence
+- Consensus Summary
+- Collective Signal
 - Proposal
 - Petition
-- Poll
-- Voting
-- Volunteer Campaign
-- ACTUC Research
-- Educational Project
-- Community Project
-- Emergency Response Initiative
+- Decision Session
+- Collective Decision
+- Implementation
+- Impact
+- Archive
 - Initiative Team
 - Initiative Timeline
 - Initiative Status
-- Discussion
-- Evidence
-- Decision
-- Implementation
-- Impact Report
 
 Purpose:
 
-To transform ideas, problems, and civic concerns into structured paths toward discussion, improvement, decision, implementation, and measurable impact.
+To transform ideas, concerns, opportunities, and collective knowledge into legitimate decisions, practical implementation, and measurable societal impact.
 
 Rule:
 
-Proposal, Petition, Poll, and Voting are not isolated systems. They are types of Initiative.
+The Initiative Lifecycle is the primary organizing model of Humanity Union.
+
+Every Initiative progresses through one or more stages of this lifecycle.
 
 ---
 
-## 2.3 Knowledge Domain
+## 3.3 Knowledge Domain
 
 The Knowledge Domain supports understanding before action.
+
+Knowledge provides the foundation upon which meaningful civic participation is built.
 
 Core entities:
 
 - Knowledge Article
 - Verified Source
-- Media Purity
-- ACTUC
 - Research Note
 - Educational Material
 - Learning Path
 - Fact Check
 - Analysis
+- Consensus Summary
+- Collective Signal
 - Knowledge Category
 - Source Reliability
 - Public Explanation
+- ACTUC
+- Media Purity
 
 Purpose:
 
-To provide Members with verified, understandable, and actionable knowledge before they participate in civic processes.
+To provide Participants with verified, understandable, and actionable knowledge before they participate in civic processes.
+
+Knowledge should reduce uncertainty, strengthen critical thinking, and improve the quality of collective decisions.
 
 ---
 
-## 2.4 Institution Domain
+## 3.4 Institution Domain
 
 The Institution Domain contains Humanity Union's governance and organizational structures.
+
+Institutions provide governance, expertise, coordination, and implementation capacity for Initiatives.
 
 Core entities:
 
 - Humanity Council
 - Chamber of State Representatives
-- Chamber of Intellectual Analysis & General Staff
+- Chamber of Intellectual Analysis
+- General Staff
 - Humanity Protection
 - World Protection Corps
 - Secretariat
 - Department of Intellectual Analysis
 - Department of State Collaboration
-- Institutional Decision
-- Resolution
 - Working Group
+- Resolution
+- Institutional Decision
 - Institutional Report
 
 Purpose:
 
-To provide structured, transparent, and rational mechanisms for analysis, coordination, decision-making, and implementation.
+To provide transparent, accountable, and effective institutional structures that support collaborative governance and implementation.
+
+Institutions support the Initiative Lifecycle.
+
+They do not replace it.
 
 ---
 
-## 2.5 Regional Domain
+## 3.5 Regional Domain
 
-The Regional Domain organizes participation by geography.
+The Regional Domain organizes participation geographically.
+
+Humanity Union enables meaningful civic participation at every geographic level.
 
 Core entities:
 
@@ -162,19 +267,23 @@ Core entities:
 - Local Initiative
 - Regional Statistics
 - Regional Institutions
-- Local Members
+- Participants
 - Regional Activity
 - Regional Impact
 
 Purpose:
 
-To allow Members to participate at the level where their contribution is most realistic and meaningful: community, city, region, country, or world.
+To allow Participants to contribute where their knowledge, experience, and resources can create the greatest positive impact.
+
+Regional participation strengthens global cooperation rather than fragmenting it.
 
 ---
 
-## 2.6 Trust Domain
+## 3.6 Trust Domain
 
-The Trust Domain protects credibility, transparency, and safety.
+The Trust Domain protects credibility, transparency, accountability, and civic safety.
+
+Trust is integrated into every public process.
 
 Core entities:
 
@@ -185,21 +294,23 @@ Core entities:
 - Evidence
 - Source Validation
 - Transparency Record
-- Decision History
-- Audit Log
-- Trust Signal
+- Activity History
+- Activity Events
+- Trust Indicator
 - Content Status
-- Member Safety Record
+- Participant Safety Record
 
 Purpose:
 
-To ensure that Humanity Union remains reliable, transparent, safe, and resistant to manipulation, spam, disinformation, abuse, and authoritarian misuse.
+To ensure that Humanity Union remains transparent, trustworthy, resilient against manipulation, and respectful of participants while preserving openness and accountability.
 
 ---
 
-## 2.7 Impact Domain
+## 3.7 Impact Domain
 
-The Impact Domain measures meaningful participation and results.
+The Impact Domain measures meaningful participation and real-world results.
+
+Impact reflects the outcomes created through collaboration rather than individual popularity.
 
 Core entities:
 
@@ -216,355 +327,878 @@ Core entities:
 - Collaboration Metric
 - Progress Record
 - Milestone
-- Impact Report
+- Implementation Outcome
+- Impact Assessment
 - Reflection Summary
 
 Purpose:
 
-To show Members that their actions matter and to measure participation without reducing human value to a score.
+To help Participants understand how their contributions influence Initiatives, communities, and Humanity Union as a whole.
 
 Rule:
 
-Fair measures civic activity and contribution. It never measures human worth.
+Fair measures civic participation and contribution.
+
+It never measures human value.
 
 ---
 
-# 3. Platform Services
+# Guiding Principle
 
-Platform Services are reusable backend and frontend logic used across the whole platform.
+Information Architecture is not the structure of a website.
 
-Core services:
+It is the structure of Humanity Union's civic ecosystem.
 
-- Identity Service
-- Member Service
-- Initiative Service
-- Knowledge Service
-- Institution Service
-- Region Service
-- Trust Service
-- Fair Service
-- Impact Service
-- Opportunity Service
-- Recommendation Service
-- Reflection Service
-- Notification Service
-- Search Service
-- Analytics Service
-- Moderation Service
-- Localization Service
-- Security Service
+Every information domain exists to support meaningful participation.
 
-Rule:
+Every Participant, Initiative, Institution, and Platform Service contributes to one continuous civic lifecycle.
 
-No major feature should create a separate parallel system if it can use an existing Platform Service.
+The Information Architecture therefore organizes not only information, but the way Humanity Union understands, collaborates, decides, implements, learns, and continuously improves.
+
+# 4. Platform Services
+
+Platform Services provide the reusable business capabilities shared across the Humanity Union platform.
+
+Rather than belonging to individual pages or modules, Platform Services support multiple Information Domains and operate throughout the Initiative Lifecycle.
+
+Their purpose is to provide consistent functionality, eliminate duplication, and ensure architectural scalability.
+
+Every major feature should reuse existing Platform Services whenever possible.
 
 ---
 
-# 4. Core Spaces
+## Core Platform Services
 
-Humanity Union should be designed as spaces, not merely pages.
+### Identity Service
 
-## 4.1 Public Home Space
+Manages identity, authentication, authorization, verification, privacy, and participant credentials.
 
-Purpose:
+Supports:
 
-To explain Humanity Union, show global activity, and guide visitors toward meaningful participation.
+- Participant Domain
+- Trust Domain
+- Administration
+
+---
+
+### Participant Service
+
+Manages Participants throughout their entire civic journey.
+
+Supports:
+
+- registration
+- Participant profiles
+- Civic Dashboard
+- Participation Profile
+- roles
+- preferences
+- participation history
+- recommendations
+
+Supports:
+
+- Participant Domain
+- Impact Domain
+
+---
+
+### Membership Service
+
+Manages Humanity Union Membership.
+
+Membership is an optional form of participation that allows Participants to support Humanity Union while receiving additional recognition, verification, benefits, and participation opportunities.
+
+Supports:
+
+- Membership registration
+- Membership status
+- Membership history
+- Membership verification
+- Membership benefits
+- Membership statistics
+
+Supports:
+
+- Participant Domain
+- Trust Domain
+
+---
+
+### Initiative Service
+
+Supports the complete Initiative Lifecycle.
+
+Manages:
+
+- Initiatives
+- Collaborative Analysis
+- Proposal Evolution
+- Petitions
+- Decision Sessions
+- Collective Decisions
+- Implementation
+- Impact
+- Archive
+
+Supports:
+
+- Initiative Domain
+
+---
+
+### Knowledge Service
+
+Provides knowledge management capabilities across the platform.
+
+Supports:
+
+- Knowledge Articles
+- Research
+- ACTUC
+- Media Purity
+- Evidence
+- Learning Paths
+- Consensus Summaries
+- Collective Signals
+
+Supports:
+
+- Knowledge Domain
+- Initiative Domain
+
+---
+
+### Institution Service
+
+Supports Humanity Union's institutional architecture.
+
+Manages:
+
+- institutions
+- organizational structures
+- working groups
+- institutional reports
+- institutional decisions
+
+Supports:
+
+- Institution Domain
+
+---
+
+### Region Service
+
+Provides geographic organization of Humanity Union.
+
+Supports:
+
+- world
+- countries
+- regions
+- cities
+- communities
+- regional statistics
+- regional initiatives
+
+Supports:
+
+- Regional Domain
+
+---
+
+### Trust Service
+
+Maintains trust, transparency, moderation, and verification.
+
+Supports:
+
+- moderation
+- appeals
+- transparency
+- evidence validation
+- trust indicators
+- participant safety
+
+Supports:
+
+- Trust Domain
+
+---
+
+### Fair Service
+
+Calculates civic participation metrics.
+
+Supports:
+
+- Personal Fair
+- Collective Fair
+- Initiative Fair
+- Regional Fair
+- World Fair
+
+Supports:
+
+- Impact Domain
+
+---
+
+### Impact Service
+
+Measures outcomes created through collaboration.
+
+Supports:
+
+- Impact Metrics
+- Impact Assessments
+- Progress Records
+- Reflection Summaries
+
+Supports:
+
+- Impact Domain
+
+---
+
+### Activity Service
+
+Provides access to Humanity Union's historical activity.
+
+Supports:
+
+- Civic Events
+- Activity History
+- Timeline reconstruction
+- historical relationships
+
+This service operates on top of the Activity Engine defined in Document 05.
+
+Supports:
+
+- every Information Domain
+
+---
+
+### Opportunity Service
+
+Identifies meaningful opportunities for participation.
+
+Supports personalized recommendations based on:
+
+- interests
+- expertise
+- location
+- previous participation
+- active Initiatives
+
+Supports:
+
+- Participant Domain
+- Initiative Domain
+
+---
+
+### Recommendation Service
+
+Provides intelligent guidance throughout the Participant Journey.
+
+Recommendations may include:
+
+- Initiatives
+- learning resources
+- collaboration opportunities
+- volunteer activities
+- institutional participation
+
+Supports:
+
+- Participant Domain
+
+---
+
+### Reflection Service
+
+Supports learning through civic experience.
+
+Provides:
+
+- Reflection Summaries
+- progress reviews
+- participation insights
+- growth suggestions
+
+Supports:
+
+- Participant Domain
+- Impact Domain
+
+---
+
+### Notification Service
+
+Provides timely and relevant communication.
+
+Supports:
+
+- Initiative updates
+- Decision Sessions
+- Implementation progress
+- recommendations
+- Membership updates
+- trust notifications
+
+Supports:
+
+- every Information Domain
+
+---
+
+### Search Service
+
+Provides unified discovery across Humanity Union.
+
+Supports searching:
+
+- Participants
+- Initiatives
+- Knowledge
+- Institutions
+- Regions
+- Impact
+- historical activity
+
+Supports:
+
+- every Information Domain
+
+---
+
+### Analytics Service
+
+Provides aggregated platform insights.
+
+Supports:
+
+- participation analytics
+- Initiative analytics
+- regional analytics
+- impact analytics
+- organizational analytics
+
+Supports:
+
+- Administration
+- Impact Domain
+
+---
+
+### Moderation Service
+
+Supports responsible community management.
+
+Provides:
+
+- moderation workflows
+- appeals
+- policy enforcement
+- safety mechanisms
+
+Supports:
+
+- Trust Domain
+- Administration
+
+---
+
+### Localization Service
+
+Supports Humanity Union's multilingual architecture.
+
+Provides:
+
+- language adaptation
+- localization
+- translation
+- regional formatting
+
+Supports:
+
+- every Information Domain
+
+---
+
+### Security Service
+
+Protects Humanity Union infrastructure.
+
+Provides:
+
+- authentication security
+- data protection
+- fraud detection
+- abuse prevention
+- infrastructure monitoring
+
+Supports:
+
+- entire platform
+
+---
+
+## Platform Service Principles
+
+Platform Services should remain:
+
+- reusable;
+- modular;
+- interoperable;
+- scalable;
+- domain-oriented;
+- implementation-independent.
+
+No Platform Service should duplicate responsibilities already provided by another service.
+
+Every service should support one or more Information Domains without becoming tightly coupled to any single interface.
+
+---
+
+# 5. Core Spaces
+
+Humanity Union is organized as interconnected civic spaces rather than isolated webpages.
+
+Each space represents a meaningful area of participation within the platform.
+
+Together these spaces create one continuous civic experience.
+
+---
+
+## 5.1 Public Home Space
+
+Purpose
+
+Introduce Humanity Union, explain its mission, demonstrate ongoing civic activity, and guide Visitors toward becoming Participants.
 
 Includes:
 
-- Global overview
-- World map
-- Social activity statistics
-- Initiative previews
-- Knowledge previews
-- Institution overview
-- Join / Register pathway
+- Humanity Union overview
+- global activity
+- featured Initiatives
+- latest Impact
+- featured Knowledge
+- Institutions overview
+- world statistics
+- registration pathway
+
+Primary question:
+
+> What is Humanity Union and how can I participate?
 
 ---
 
-## 4.2 Civic Dashboard Space
+## 5.2 Civic Dashboard Space
 
-Purpose:
+Purpose
 
-Private main space after login.
+The Participant's personal civic workspace.
+
+The Civic Dashboard helps every Participant understand where they are, what they can do next, and how their participation creates impact.
 
 Includes:
 
-- Your Impact
+- Participation Profile
 - Your Fair
+- Your Impact
 - Your Next Horizon
 - Recommended Actions
-- Impact Profile
-- Notifications
 - Active Initiatives
+- Membership Status
+- Notifications
 - Progress
 - Milestones
-- ACTUC participation
-- Volunteering opportunities
+- Reflection Summary
+- ACTUC opportunities
+- volunteering opportunities
 
-Main question:
+Primary question:
 
-What meaningful action can I take next?
+> What meaningful action can I take next?
 
 ---
 
-## 4.3 Public Profile Space
+## 5.3 Public Profile Space
 
-Purpose:
+Purpose
 
-Public identity of a Member.
+Public identity of a Participant.
 
 Includes:
 
-- Display name
-- Unique name
-- Avatar
-- Country / Region / City
-- Verification level
-- Member status
-- Public Fair
-- Public initiatives
-- Public comments
-- Public statistics
-- Public links
+- display name
+- unique identifier
+- avatar
+- country
+- region
+- city
+- verification level
+- Membership Status
+- public Fair
+- public Initiatives
+- public Contributions
+- public statistics
+- public links
 
-Rule:
+Rule
 
-Private data must never appear here without explicit permission.
+Private information must never appear without explicit Participant permission.
 
 ---
 
-## 4.4 Initiative Space
+## 5.4 Initiative Space
 
-Purpose:
+Purpose
 
-To create, discuss, improve, support, decide, implement, and measure initiatives.
+The complete civic workspace for every Initiative.
+
+The Initiative Space follows the Initiative Lifecycle.
 
 Includes:
 
 - Problem
-- Why it matters
+- Context
+- Collaborative Analysis
+- Contributions
 - Evidence
-- Proposed solution
-- Discussion
-- Team
+- Consensus Summaries
+- Collective Signals
+- Proposal Evolution
+- Petition
+- Decision Session
+- Collective Decision
+- Implementation
+- Impact
 - Timeline
-- Status
-- Decision tools
-- Implementation progress
-- Impact measurement
+- Archive
+
+Primary question:
+
+> How can this Initiative create meaningful change?
 
 ---
 
-## 4.5 Knowledge Space
+## 5.5 Knowledge Space
 
-Purpose:
+Purpose
 
-To help Members understand before acting.
+Help Participants understand before acting.
 
 Includes:
 
-- Articles
+- Knowledge Articles
 - Research
 - ACTUC
-- Verified sources
 - Media Purity
-- Learning paths
-- Explanations
+- Evidence
+- Fact Checks
+- Learning Paths
 - Analysis
-- Source reliability
+- Source Reliability
+- Public Explanations
+
+Primary question:
+
+> What knowledge will help me contribute responsibly?
 
 ---
 
-## 4.6 Institution Space
+## 5.6 Institution Space
 
-Purpose:
+Purpose
 
-To explain and operate Humanity Union institutional structures.
+Present Humanity Union's institutional architecture and its role within the Initiative Lifecycle.
 
 Includes:
 
 - Humanity Council
 - Chambers
+- General Staff
 - Humanity Protection
 - World Protection Corps
 - Secretariat
 - Departments
-- Decisions
-- Reports
-- Institutional participation
+- institutional decisions
+- reports
+- working groups
+- institutional participation
+
+Primary question:
+
+> How do Humanity Union institutions support collective governance?
 
 ---
 
-## 4.7 Regional Space
+## 5.7 Regional Space
 
-Purpose:
+Purpose
 
-To localize Humanity Union activity by world, country, region, city, and community.
+Organize Humanity Union geographically while preserving one unified global ecosystem.
 
 Includes:
 
-- Regional map
-- Local initiatives
-- Local Members
-- Local statistics
-- Local institutions
-- Regional impact
-- Country-specific activity
+- world map
+- countries
+- regions
+- cities
+- communities
+- local Initiatives
+- Participants
+- regional statistics
+- institutions
+- regional Impact
+
+Primary question:
+
+> What is happening in my community and region?
 
 ---
 
-## 4.8 Trust & Transparency Space
+## 5.8 Trust & Transparency Space
 
-Purpose:
+Purpose
 
-To show how Humanity Union maintains credibility.
+Demonstrate how Humanity Union protects credibility, accountability, and public trust.
 
 Includes:
 
-- Verification
-- Moderation principles
-- Transparency records
-- Source validation
-- Appeals
-- Reports
-- Safety rules
-- Algorithm explanations
+- verification
+- moderation principles
+- transparency records
+- Activity History
+- evidence validation
+- appeals
+- participant safety
+- algorithm explanations
+
+Primary question:
+
+> Why can this platform be trusted?
 
 ---
 
-## 4.9 Administration Space
+## 5.9 Administration Space
 
-Purpose:
+Purpose
 
-To manage the platform safely and responsibly.
+Provide responsible management of the Humanity Union platform.
 
 Includes:
 
-- Member management
-- Content moderation
-- Institution management
-- Regional management
-- Analytics
-- System settings
-- Security logs
-- Reports
-- Appeals
-- Platform configuration
+- Participant Management
+- Membership Management
+- Initiative Management
+- Institution Management
+- Regional Management
+- moderation
+- analytics
+- platform configuration
+- security
+- reports
+- appeals
+
+Primary question:
+
+> How is Humanity Union responsibly operated?
+
+# 6. Main Human Journeys
+
+Humanity Union is designed around long-term civic participation rather than short-term interactions.
+
+Participants gradually expand their knowledge, experience, responsibility, and impact through meaningful contribution.
+
+Membership represents an optional path of support within the Participant Journey rather than a separate user type.
 
 ---
 
-# 5. Main Human Journeys
+## 6.1 Visitor to Participant
 
-## 5.1 Visitor to Member
+A Visitor discovers Humanity Union.
 
-Visitor discovers Humanity Union.
+Learns about its mission.
 
-Understands the mission.
+Explores public knowledge and Initiatives.
 
-Registers.
+Registers as a Participant.
 
-Creates Impact Profile.
+Creates a Participation Profile.
 
-Receives first recommended action.
+Receives personalized recommendations.
 
-Generates first Fair.
+Joins their first Initiative.
 
-Sees first reflection.
-
----
-
-## 5.2 Member to Contributor
-
-Member supports initiatives.
-
-Comments.
-
-Votes.
-
-Signs petitions.
-
-Participates in polls.
-
-Receives guidance.
-
-Builds confidence.
+Begins contributing to the Humanity Union ecosystem.
 
 ---
 
-## 5.3 Contributor to Collaborator
+## 6.2 Participant to Contributor
 
-Member joins Initiative Teams.
+A Participant begins meaningful civic participation.
 
-Helps improve proposals.
+Typical activities include:
 
-Shares knowledge.
+- joining Initiatives;
+- contributing to Collaborative Analysis;
+- submitting Evidence;
+- participating in Proposal development;
+- supporting Petitions;
+- participating in Decision Sessions when eligible;
+- volunteering;
+- learning through Knowledge resources.
 
-Supports implementation.
-
-Creates collective Fair.
-
----
-
-## 5.4 Collaborator to Community Builder
-
-Member participates regularly.
-
-Supports local initiatives.
-
-Helps others join.
-
-Contributes to regional impact.
-
-Becomes trusted by community.
+Through participation the individual begins building civic experience.
 
 ---
 
-## 5.5 Community Builder to Mentor
+## 6.3 Contributor to Collaborator
 
-Member helps new Members.
+A Contributor becomes an active collaborator.
 
-Explains tools.
+Typical activities include:
 
-Supports discussions.
+- improving Proposals;
+- participating in Initiative Teams;
+- contributing expertise;
+- helping organize collaboration;
+- supporting Implementation;
+- creating Consensus Summaries;
+- strengthening Collective Signals.
 
-Guides initiatives.
-
-Strengthens cooperation.
-
----
-
-## 5.6 Mentor to Institution Participant
-
-Member may participate in institutional processes, expert groups, ACTUC, or other Humanity Union structures.
-
-Institutional participation must be based on trust, contribution, verification, and alignment with Humanity Union principles.
+The Participant increasingly contributes to collective intelligence rather than individual activity.
 
 ---
 
-# 6. Navigation Principles
+## 6.4 Collaborator to Community Builder
 
-Navigation must remain simple even as the platform grows.
+A Collaborator begins strengthening local and global communities.
 
-Rules:
+Typical activities include:
 
-1. Main actions must be reachable within three steps.
-2. New Members should not see expert-level complexity immediately.
-3. The interface should progressively reveal advanced functions.
-4. Every screen must answer:
+- supporting local Initiatives;
+- organizing collaboration;
+- mentoring Participants;
+- connecting organizations;
+- improving regional participation;
+- helping new communities grow.
 
-   - Where am I?
-   - What can I do here?
-   - What is the best next step?
-
-5. Search must support people, initiatives, knowledge, regions, and institutions.
-6. The Civic Dashboard should act as the Member's personal command center.
+The Participant creates opportunities for others rather than participating alone.
 
 ---
 
-# 7. Information Hierarchy
+## 6.5 Community Builder to Mentor
 
-Highest-level structure:
+Experienced Participants naturally become mentors.
+
+Typical activities include:
+
+- helping new Participants;
+- explaining Humanity Union tools;
+- improving collaboration quality;
+- encouraging responsible participation;
+- sharing experience;
+- strengthening civic culture.
+
+Mentorship is based on contribution rather than authority.
+
+---
+
+## 6.6 Mentor to Institutional Participant
+
+Some Participants may later contribute within Humanity Union's institutional structures.
+
+Examples include:
+
+- ACTUC participation;
+- expert groups;
+- Working Groups;
+- Chamber participation;
+- Humanity Council activities;
+- advisory roles;
+- implementation coordination.
+
+Institutional participation should always be based on:
+
+- demonstrated contribution;
+- expertise;
+- trust;
+- transparency;
+- Humanity Union principles.
+
+Institutional participation represents service to the ecosystem rather than elevated status.
+
+---
+
+## 6.7 Membership Journey
+
+Membership is an optional journey available to every Participant.
+
+Participants may choose to support Humanity Union through Membership.
+
+Membership may include:
+
+- voluntary financial support;
+- pseudo-verification;
+- public recognition;
+- additional participation opportunities;
+- Member-specific communications;
+- other benefits defined by Humanity Union.
+
+Membership never replaces participation.
+
+Every Member remains a Participant.
+
+Participation is the foundation.
+
+Membership is an additional commitment to Humanity Union.
+
+---
+
+# 7. Navigation Principles
+
+Navigation should remain intuitive regardless of future platform growth.
+
+The platform should expose complexity progressively rather than overwhelming Participants.
+
+---
+
+## Core Principles
+
+1. Every major action should be reachable within three interactions whenever practical.
+
+2. New Participants should immediately understand how to begin meaningful participation.
+
+3. Advanced functionality should appear progressively as Participants gain experience.
+
+4. Every interface should answer four questions:
+
+- Where am I?
+- What can I do here?
+- Why does it matter?
+- What is the best next step?
+
+5. Navigation should naturally follow the Initiative Lifecycle.
+
+6. Search should operate across all major Information Domains.
+
+7. The Civic Dashboard should remain the Participant's primary workspace.
+
+8. Public participation should never require understanding Humanity Union's internal architecture.
+
+---
+
+# 8. Information Hierarchy
+
+Humanity Union organizes information according to civic purpose rather than website structure.
+
+Highest-level Information Hierarchy:
 
 1. Home
 2. Initiatives
@@ -572,78 +1206,173 @@ Highest-level structure:
 4. Institutions
 5. Regions
 6. Impact
-7. Members
+7. Participants
 8. Trust
 9. Dashboard
 10. Administration
 
-User-facing navigation may use simpler labels, but backend architecture must preserve this information hierarchy.
+Within these domains, information is further organized according to the Initiative Lifecycle and related civic processes.
+
+User-facing navigation may use simpler labels while preserving this architectural hierarchy internally.
 
 ---
 
-# 8. Language System
+# 9. Language System
 
-Humanity Union uses two language layers.
+Humanity Union uses two complementary language layers.
 
-## 8.1 Architecture Language
+---
 
-Used by developers, documentation, APIs, and database models.
+## 9.1 Architecture Language
+
+Architecture Language is used for:
+
+- Blueprint documents;
+- database models;
+- APIs;
+- backend services;
+- software architecture;
+- developer documentation.
+
+Architecture Language should prioritize precision and consistency.
 
 Examples:
 
-- Civic Responsibility Profile
-- Responsibility Scope
+- Participant Entity
+- Participation Profile
+- Initiative Lifecycle
+- Collaborative Analysis
+- Collective Decision
+- Activity Engine
 - Fair Service
 - Impact Service
-- Initiative Engine
-- Member Entity
 
-## 8.2 Human Interface Language
+---
 
-Used in the public interface.
+## 9.2 Human Interface Language
+
+Human Interface Language is used throughout the public platform.
+
+It should remain:
+
+- simple;
+- encouraging;
+- understandable;
+- welcoming;
+- human-centered.
 
 Examples:
 
-- Impact Profile
-- Your Focus
-- Fair
 - Your Impact
+- Your Fair
 - Start an Initiative
+- Join an Initiative
 - Your Next Horizon
 - Recommended Actions
 - Personal Updates
 
-Rule:
-
-Architecture language must be precise.
-
-Interface language must be simple, encouraging, and human.
+The interface should hide architectural complexity without reducing functionality.
 
 ---
 
-# 9. Information Architecture Rules
+## 9.3 Terminology Principle
 
-1. Every feature must belong to a domain.
-2. Every domain must support the mission.
-3. Every major object must connect to Platform Services.
-4. No feature should exist only because it is common on other platforms.
-5. No system should prioritize attention over meaningful impact.
-6. Complexity must remain invisible to Members.
-7. Public information and private information must be clearly separated.
-8. Regional structures must support local action without fragmenting the global platform.
-9. Initiative must remain the central action entity.
-10. Trust must be designed into every public process.
+Humanity Union distinguishes between **Participants** and **Members**.
+
+**Participant** is the universal architectural term for every registered person using Humanity Union.
+
+**Member** refers exclusively to an optional Membership status that provides additional recognition, pseudo-verification, support mechanisms, and participation benefits.
+
+Every Member is a Participant.
+
+Not every Participant is a Member.
+
+This distinction should remain consistent throughout the entire Humanity Union Blueprint.
 
 ---
 
-# 10. Strategic Summary
+# 10. Information Architecture Rules
 
-Humanity Union Information Architecture is built around one central idea:
+The following principles govern every future extension of Humanity Union.
 
-People should be able to move from knowledge to meaningful action through simple, trustworthy, and respectful digital spaces.
+1. Every feature shall belong to a defined Information Domain.
 
-The platform is not a collection of pages.
+2. Every Information Domain shall support Humanity Union's mission.
 
-It is a structured civic ecosystem where Members discover knowledge, choose meaningful action, cooperate with others, measure impact, and grow through participation.
+3. Every major object shall integrate with one or more Platform Services.
 
-This Information Architecture is the foundation for future database design, API design, backend services, frontend structure, and user experience.
+4. Every major object shall participate in the Initiative Lifecycle where applicable.
+
+5. The Initiative Lifecycle shall remain the primary organizing model of Humanity Union.
+
+6. Information Architecture shall remain consistent with the Domain Model and the Core Collaboration Architecture.
+
+7. No feature shall exist solely because it is common on other platforms.
+
+8. Technology shall support meaningful civic participation rather than maximize attention.
+
+9. Public and private information shall remain clearly separated.
+
+10. Regional organization shall strengthen global cooperation rather than fragment it.
+
+11. Trust, transparency, and accountability shall be integrated into every public process.
+
+12. Information should remain understandable before becoming technically sophisticated.
+
+---
+
+# 11. Architectural Relationships
+
+This document defines **where information belongs** within Humanity Union.
+
+It complements the other core Blueprint documents.
+
+**Document 18 — Humanity Union Core Collaboration Architecture**
+
+Defines how Participants collaborate.
+
+**Document 17 — Proposal Framework**
+
+Defines how collaborative understanding evolves into mature Proposals.
+
+**Document 12 — Decision Lifecycle Architecture**
+
+Defines how legitimate Collective Decisions are produced.
+
+**Document 05 — Activity Engine Specification**
+
+Defines how Humanity Union preserves its institutional memory through immutable Civic Events.
+
+Together these documents describe one coherent civic ecosystem.
+
+---
+
+# 12. Strategic Summary
+
+Humanity Union Information Architecture is built around one central principle:
+
+Knowledge should naturally become meaningful civic participation.
+
+Participants should be able to understand problems, collaborate responsibly, develop solutions, participate in legitimate decision-making, support implementation, evaluate impact, and continuously learn throughout one coherent civic journey.
+
+The Information Architecture therefore organizes far more than webpages or databases.
+
+It organizes the complete civic ecosystem of Humanity Union.
+
+Every Information Domain, Platform Service, Participant Space, Institution, and Initiative exists to support one unified civic lifecycle.
+
+This architecture provides the structural foundation upon which future database models, APIs, backend services, frontend interfaces, mobile applications, analytics, governance systems, and AI-assisted civic technologies can evolve while remaining consistent, scalable, transparent, and faithful to Humanity Union's mission.
+
+---
+
+# Guiding Principle
+
+Information Architecture is the structural map of Humanity Union.
+
+It connects Participants, Initiatives, Knowledge, Institutions, Regions, Trust, Impact, and Platform Services into one coherent civic ecosystem.
+
+By organizing information around the Initiative Lifecycle rather than isolated software modules, Humanity Union ensures that every contribution has context, every decision has traceability, every implementation has continuity, and every Participant can find meaningful opportunities to create positive impact.
+
+A well-designed Information Architecture does not simply organize information.
+
+It organizes humanity's ability to cooperate.

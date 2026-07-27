@@ -1,0 +1,27 @@
+.public-initiatives-landing {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: var(--hu-space-6) var(--hu-space-5);
+}
+
+.public-initiatives-landing h1 {
+  margin: 0 0 var(--hu-space-3);
+}
+
+.public-initiatives-landing__message {
+  margin: 0 0 var(--hu-space-5);
+  color: var(--hu-color-text-muted);
+  line-height: var(--hu-line-height);
+}
+
+.public-initiatives-landing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+}
+
+.public-initiatives-landing__hint {
+  margin: var(--hu-space-4) 0 0;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}

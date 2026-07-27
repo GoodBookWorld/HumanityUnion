@@ -60,6 +60,16 @@ export function getTransparencyCohort(
   return verificationStatus;
 }
 
+const LEGACY_COUNTRY_SLUG_ALIASES: Record<string, string> = {
+  canada: "ca",
+};
+
+function normalizeCountrySlugForMatch(slug: string): string {
+  const normalized = slug.trim().toLowerCase();
+  const legacy = LEGACY_COUNTRY_SLUG_ALIASES[normalized] ?? normalized;
+  return legacy.toUpperCase();
+}
+
 export function isParticipationAreaMatch(
   participationScope: ParticipationScope,
   participantArea: ParticipationAreaSlugTriple,
@@ -70,18 +80,23 @@ export function isParticipationAreaMatch(
   }
 
   if (participationScope === "country") {
-    return participantArea.countrySlug === initiativeScopeMetadata.countrySlug;
+    return (
+      normalizeCountrySlugForMatch(participantArea.countrySlug) ===
+      normalizeCountrySlugForMatch(initiativeScopeMetadata.countrySlug)
+    );
   }
 
   if (participationScope === "region") {
     return (
-      participantArea.countrySlug === initiativeScopeMetadata.countrySlug &&
+      normalizeCountrySlugForMatch(participantArea.countrySlug) ===
+        normalizeCountrySlugForMatch(initiativeScopeMetadata.countrySlug ?? "") &&
       participantArea.regionSlug === initiativeScopeMetadata.regionSlug
     );
   }
 
   return (
-    participantArea.countrySlug === initiativeScopeMetadata.countrySlug &&
+    normalizeCountrySlugForMatch(participantArea.countrySlug) ===
+      normalizeCountrySlugForMatch(initiativeScopeMetadata.countrySlug) &&
     participantArea.regionSlug === initiativeScopeMetadata.regionSlug &&
     participantArea.communitySlug === initiativeScopeMetadata.communitySlug
   );
@@ -121,7 +136,10 @@ function resolveScopeMismatchReason(
   participantArea: ParticipationAreaSlugTriple,
   initiativeScopeMetadata: InitiativeParticipationScopeMetadata,
 ): Exclude<ParticipationEligibilityReasonCode, "eligible"> {
-  if (participantArea.countrySlug !== initiativeScopeMetadata.countrySlug) {
+  if (
+    normalizeCountrySlugForMatch(participantArea.countrySlug) !==
+    normalizeCountrySlugForMatch(initiativeScopeMetadata.countrySlug)
+  ) {
     return "country_mismatch";
   }
 

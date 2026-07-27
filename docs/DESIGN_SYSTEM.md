@@ -76,6 +76,18 @@ Official colors are defined as CSS custom properties in `apps/web/src/design-sys
 
 Cards use white backgrounds with subtle elevation (`--hu-shadow-sm`). Do not introduce colorful gradients.
 
+### Form controls
+
+| Token                 | Value     | Usage                                                                |
+| --------------------- | --------- | -------------------------------------------------------------------- |
+| `--hu-control-border` | `#DADCE0` | Neutral border for inputs, selects, textareas, and combobox triggers |
+
+Standard controls use `.hu-form-control` or inherit the same border token through shared selectors. Focus rings and error borders override the neutral control border.
+
+### Buttons
+
+Standard `.hu-button` elements size to content (`width: fit-content`), allow wrapped translated labels (`white-space: normal`), and preserve minimum tap height. Form action rows use `.hu-form-actions` with left alignment (`justify-content: flex-start`).
+
 ### Status colors (badges)
 
 Workspace status badges use semantic background tints. Border color remains `--hu-color-border` for all variants.

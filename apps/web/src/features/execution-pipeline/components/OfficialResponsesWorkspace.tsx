@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { Initiative, OfficialResponseType } from "@hu/types";
 
+import { isApiUnavailableError } from "../../../lib/api-client";
 import { listPublicCivicActionPackagesForInitiative } from "../../civic-action-package/api";
 import { listMyCivicDeliveries } from "../../civic-delivery/api";
 import { BOOTSTRAP_PARTICIPANT_ID } from "../../petition/petition-utils";
@@ -112,8 +113,10 @@ export function OfficialResponsesWorkspace({ initiative }: OfficialResponsesWork
         setActiveRecipientId(firstOption.recipientId);
         setActiveCapId(firstOption.capId);
       }
-    } catch {
-      setError("Official responses are not available for this initiative yet.");
+    } catch (loadError) {
+      setError(
+        isApiUnavailableError(loadError) ? "Official responses are temporarily unavailable." : null,
+      );
       setResponses([]);
       setRecipientOptions([]);
     } finally {

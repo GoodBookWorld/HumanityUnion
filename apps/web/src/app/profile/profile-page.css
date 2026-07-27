@@ -1,10 +1,7 @@
 .profile-page {
-  width: 100%;
-  max-width: 960px;
-  padding: 2rem 1.5rem;
   text-align: left;
 }
 
 .profile-page__back {
-  margin-top: 1.5rem;
+  margin-top: var(--hu-space-6);
 }

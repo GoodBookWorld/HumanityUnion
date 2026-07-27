@@ -1,0 +1,107 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+import { useUnreadNotificationCount } from "../../features/notifications/use-unread-notification-count";
+
+const WORKSPACE_ICON = "/icons/workspace/work.svg";
+const NOTIFICATIONS_ICON = "/icons/workspace/icons8-notification.svg";
+
+function formatUnreadBadgeCount(unreadCount: number): string {
+  return unreadCount > 99 ? "99+" : String(unreadCount);
+}
+
+function resolveNotificationsAriaLabel(unreadCount: number | null, hasError: boolean): string {
+  if (unreadCount === null || hasError) {
+    return "Notifications";
+  }
+
+  if (unreadCount === 0) {
+    return "Notifications, no unread notifications";
+  }
+
+  return `Notifications, ${formatUnreadBadgeCount(unreadCount)} unread`;
+}
+
+export function HeaderWorkspaceLink() {
+  const pathname = usePathname();
+  const isActive = pathname === "/workspace" || pathname.startsWith("/workspace/");
+
+  return (
+    <Link
+      href="/workspace"
+      className={[
+        "humanity-header__icon-link",
+        isActive ? "humanity-header__icon-link--active" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      aria-label="Workspace"
+      title="Workspace"
+      aria-current={isActive ? "page" : undefined}
+    >
+      <Image
+        src={WORKSPACE_ICON}
+        alt=""
+        width={22}
+        height={22}
+        className="humanity-header__icon-link-image"
+        aria-hidden="true"
+      />
+    </Link>
+  );
+}
+
+export function HeaderNotificationsLink() {
+  const pathname = usePathname();
+  const { unreadCount, hasError } = useUnreadNotificationCount();
+  const isActive = pathname === "/notifications" || pathname.startsWith("/notifications/");
+  const showZeroState = unreadCount === 0 && !hasError;
+  const showUnreadBadge = unreadCount !== null && unreadCount > 0 && !hasError;
+
+  return (
+    <Link
+      href="/notifications"
+      className={[
+        "humanity-header__icon-link",
+        "humanity-header__icon-link--notifications",
+        isActive ? "humanity-header__icon-link--active" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      aria-label={resolveNotificationsAriaLabel(unreadCount, hasError)}
+      title="Notifications"
+      aria-current={isActive ? "page" : undefined}
+    >
+      <Image
+        src={NOTIFICATIONS_ICON}
+        alt=""
+        width={22}
+        height={22}
+        className="humanity-header__icon-link-image"
+        aria-hidden="true"
+      />
+      {showZeroState ? (
+        <span className="humanity-header__notification-status-dot" aria-hidden="true">
+          <span className="humanity-header__visually-hidden">No unread notifications</span>
+        </span>
+      ) : null}
+      {showUnreadBadge ? (
+        <span className="humanity-header__notification-badge" aria-hidden="true">
+          {formatUnreadBadgeCount(unreadCount)}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
+
+export function AuthenticatedHeaderTools() {
+  return (
+    <div className="humanity-header__auth-tools">
+      <HeaderWorkspaceLink />
+      <HeaderNotificationsLink />
+    </div>
+  );
+}

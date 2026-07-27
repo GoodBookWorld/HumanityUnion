@@ -5,14 +5,19 @@ import type {
   PublicInitiativeImplementationCommitmentProjection,
 } from "@hu/types";
 
-import { apiRequest } from "../../lib/api-client";
+import { apiRequest, fetchPublicInitiativeList } from "../../lib/api-client";
 
 export interface PublicInitiativeImplementationCommitmentsResponse {
   commitments: PublicInitiativeImplementationCommitmentListItem[];
   metrics: InitiativeImplementationCommitmentMetrics;
 }
 
-const API_BASE_URL = "http://localhost:4000";
+const EMPTY_METRICS: InitiativeImplementationCommitmentMetrics = {
+  commitmentCount: 0,
+  publishedCommitments: 0,
+  completedCommitments: 0,
+  withdrawnCommitments: 0,
+};
 
 export async function listMyInitiativeImplementationCommitments(): Promise<
   InitiativeImplementationCommitment[]
@@ -25,54 +30,32 @@ export async function listMyInitiativeImplementationCommitments(): Promise<
 export async function listPublicInitiativeImplementationCommitments(
   initiativeId: string,
 ): Promise<PublicInitiativeImplementationCommitmentsResponse> {
-  const url = `${API_BASE_URL}/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/implementation-commitments`;
-  const response = await fetch(url, { cache: "no-store" });
-
-  if (!response.ok) {
-    throw new Error("Public implementation commitments are not available.");
-  }
-
-  const payload = (await response.json()) as {
-    success: boolean;
-    data: PublicInitiativeImplementationCommitmentListItem[];
-    meta: { metrics?: InitiativeImplementationCommitmentMetrics };
-  };
-
-  if (!payload.success) {
-    throw new Error("Public implementation commitments are not available.");
-  }
+  const result = await fetchPublicInitiativeList<
+    PublicInitiativeImplementationCommitmentListItem,
+    InitiativeImplementationCommitmentMetrics
+  >(
+    `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/implementation-commitments`,
+    EMPTY_METRICS,
+  );
 
   return {
-    commitments: payload.data,
-    metrics: payload.meta.metrics ?? {
-      commitmentCount: payload.data.length,
-      publishedCommitments: 0,
-      completedCommitments: 0,
-      withdrawnCommitments: 0,
-    },
+    commitments: result.items,
+    metrics: result.metrics,
   };
 }
 
 export async function listPublicInitiativeImplementationCommitmentsForDecision(
   decisionId: string,
 ): Promise<PublicInitiativeImplementationCommitmentListItem[]> {
-  const url = `${API_BASE_URL}/api/v1/public/initiative-collective-decisions/${encodeURIComponent(decisionId)}/implementation-commitments`;
-  const response = await fetch(url, { cache: "no-store" });
+  const result = await fetchPublicInitiativeList<
+    PublicInitiativeImplementationCommitmentListItem,
+    InitiativeImplementationCommitmentMetrics
+  >(
+    `/api/v1/public/initiative-collective-decisions/${encodeURIComponent(decisionId)}/implementation-commitments`,
+    EMPTY_METRICS,
+  );
 
-  if (!response.ok) {
-    throw new Error("Public implementation commitments are not available.");
-  }
-
-  const payload = (await response.json()) as {
-    success: boolean;
-    data: PublicInitiativeImplementationCommitmentListItem[];
-  };
-
-  if (!payload.success) {
-    throw new Error("Public implementation commitments are not available.");
-  }
-
-  return payload.data;
+  return result.items;
 }
 
 export async function getPublicInitiativeImplementationCommitment(

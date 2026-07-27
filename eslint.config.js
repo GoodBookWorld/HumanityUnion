@@ -13,6 +13,10 @@ export default tseslint.config(
       "**/.next/**",
       "**/coverage/**",
       "**/out/**",
+      "apps/web/public/wdcr-js-map/**",
+      "apps/web/public/**/*.min.js",
+      "packages/geography/src/*.json",
+      "scripts/normalize-geography-data.ts",
     ],
   },
   eslint.configs.recommended,
@@ -38,7 +42,45 @@ export default tseslint.config(
     },
   },
   {
-    files: ["apps/web/**/*.{ts,tsx}"],
+    files: ["apps/api/src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "./member.store.js",
+              message: "Import from member-access.js instead. member.store.js is deprecated.",
+            },
+            {
+              name: "../member/member.store.js",
+              message: "Import from member-access.js instead. member.store.js is deprecated.",
+            },
+            {
+              name: "../../member/member.store.js",
+              message: "Import from member-access.js instead. member.store.js is deprecated.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["**/member/member.store.js", "**/member/member.store"],
+              message: "Import from member-access.js instead. member.store.js is deprecated.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      "apps/api/src/modules/member/**/*.{ts,tsx}",
+      "apps/api/src/scripts/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-imports": "off",
+    },
+  },
+  {
     plugins: {
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,

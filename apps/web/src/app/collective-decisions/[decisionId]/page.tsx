@@ -41,7 +41,7 @@ export default async function CollectiveDecisionPage({ params }: CollectiveDecis
   if (!decision) {
     return (
       <main className="collective-decision-page">
-        <WorkspaceNavigation current="Initiatives" />
+        <WorkspaceNavigation />
         <h1>Collective Decision Workspace</h1>
         <p>Collective Decision is not available.</p>
         <p className="collective-decision-page__back">
@@ -73,7 +73,7 @@ export default async function CollectiveDecisionPage({ params }: CollectiveDecis
 
   try {
     const linkedPetition = await getPetitionByCollectiveDecisionId(decisionId);
-    linkedPetitionId = linkedPetition.petitionId;
+    linkedPetitionId = linkedPetition?.petitionId ?? null;
   } catch {
     linkedPetitionId = null;
   }
@@ -84,7 +84,7 @@ export default async function CollectiveDecisionPage({ params }: CollectiveDecis
         title="Collective Decision"
         subtitle="Structured community decision-making"
         navItems={NAV_ITEMS}
-        workspaceNavigation={<WorkspaceNavigation current="Initiatives" />}
+        workspaceNavigation={<WorkspaceNavigation />}
       >
         <CollectiveDecisionWorkspace
           initialDecision={decision}

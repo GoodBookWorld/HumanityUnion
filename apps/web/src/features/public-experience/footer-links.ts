@@ -1,3 +1,5 @@
+import { CIVIC_MEDIA_ROUTE } from "../civic-media-center/routes";
+
 export type FooterLinkStatus = "active" | "placeholder";
 
 export interface FooterLink {
@@ -6,18 +8,51 @@ export interface FooterLink {
   status: FooterLinkStatus;
 }
 
-export const FOOTER_PLATFORM_LINKS: FooterLink[] = [
-  { label: "About", status: "placeholder" },
-  { label: "Institutions", status: "placeholder" },
-  { label: "Media", status: "placeholder" },
-  { label: "Knowledge", status: "placeholder" },
+export const ORGANIZATION_NAME = "HUMANITY UNION SOCIETY";
+export const ORGANIZATION_ADDRESS = "514 VERNON ST., PO BOX 721, NELSON BC V1L 5R4";
+export const ORGANIZATION_WEBSITE = "https://www.huws.org";
+export const CONTACT_EMAIL = "info@huws.org";
+
+export const FOOTER_PLATFORM_COLUMN_ONE: FooterLink[] = [
+  { label: "Institutions", href: "/institutions", status: "active" },
   { label: "Initiatives", href: "/initiatives", status: "active" },
+  { label: "Knowledge", href: "/knowledge", status: "active" },
+  { label: "Membership", href: "/membership", status: "active" },
+];
+
+export const FOOTER_PLATFORM_COLUMN_TWO: FooterLink[] = [
+  { label: "Civic Media", href: CIVIC_MEDIA_ROUTE, status: "active" },
+  { label: "Civic Archive", href: "/civic-archive", status: "active" },
+  { label: "Feedback", href: "/support", status: "active" },
+  { label: "Search", href: "/search", status: "active" },
+];
+
+/** @deprecated Use FOOTER_PLATFORM_COLUMN_ONE and FOOTER_PLATFORM_COLUMN_TWO */
+export const FOOTER_PLATFORM_LINKS: FooterLink[] = [
+  ...FOOTER_PLATFORM_COLUMN_ONE,
+  ...FOOTER_PLATFORM_COLUMN_TWO,
 ];
 
 export const FOOTER_LEGAL_LINKS: FooterLink[] = [
-  { label: "Privacy", status: "placeholder" },
-  { label: "Terms", status: "placeholder" },
-  { label: "Contact", status: "placeholder" },
+  { label: "Privacy", href: "/privacy", status: "active" },
+  { label: "Terms", href: "/terms", status: "active" },
+  { label: "Contact", href: "/contact", status: "active" },
 ];
 
+export const FOOTER_SOCIAL_LINKS = [
+  { label: "Facebook", href: "https://www.facebook.com/HumanityUnionWS/" },
+  { label: "YouTube", href: "https://www.youtube.com/@HumanityUnionWS" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/company/105362851/admin/dashboard/" },
+  { label: "Instagram", href: "https://www.instagram.com/humanity_union/" },
+  { label: "X", href: "https://x.com/HumanityUnionWS" },
+] as const;
+
 export const REGISTRATION_ROUTE: string | null = null;
+
+export function mailtoContactLink(subject?: string): string {
+  if (!subject) {
+    return `mailto:${CONTACT_EMAIL}`;
+  }
+
+  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}`;
+}

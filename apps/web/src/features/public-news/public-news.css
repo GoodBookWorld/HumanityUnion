@@ -1,0 +1,118 @@
+.public-news-section__status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--hu-space-3);
+  margin-bottom: var(--hu-space-4);
+}
+
+.public-news-grid {
+  display: grid;
+  gap: var(--hu-space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48rem) {
+  .public-news-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.public-news-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-3);
+  height: 100%;
+}
+
+.public-news-card__image,
+.public-news-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  border-radius: var(--hu-radius-md, 0.5rem);
+  background: var(--hu-color-surface-muted, #f5f5f5);
+}
+
+.public-news-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2);
+  flex: 1;
+}
+
+.public-news-card__source {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.public-news-card__meta {
+  font-size: 0.875rem;
+  color: var(--hu-color-text-muted, #555);
+  margin: 0;
+}
+
+.public-news-card__summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+.public-news-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+  margin-top: auto;
+}
+
+.public-news-card__actions .hu-button,
+.public-news-card__actions a.hu-button {
+  min-height: 2.75rem;
+}
+
+.public-news-source-panel {
+  display: grid;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border, #ddd);
+  border-radius: var(--hu-radius-md, 0.5rem);
+  background: var(--hu-color-bg-muted, #fafafa);
+  margin-bottom: var(--hu-space-4);
+}
+
+.public-news-source-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--hu-space-3);
+}
+
+.public-news-source-panel__content {
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+@media (min-width: 40rem) {
+  .public-news-source-panel__content {
+    grid-template-columns: 8rem 1fr;
+    align-items: start;
+  }
+}
+
+.public-news-source-panel__image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--hu-radius-sm, 0.375rem);
+}
+
+.public-news-source-panel__meta {
+  font-size: 0.875rem;
+  color: var(--hu-color-text-muted, #555);
+  margin: 0;
+}

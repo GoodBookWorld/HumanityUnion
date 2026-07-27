@@ -1,21 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { Initiative, WorkspaceAssistantResponse } from "@hu/types";
 
 import { getCivicIntegrationView } from "../../capability02-integration/api";
 import { requestWorkspaceAssistantResponse } from "../api";
 import { buildAssistantContext } from "../build-assistant-context";
-import {
-  ASSISTANT_COMING_SOON_INPUT,
-  ASSISTANT_GREETING,
-  ASSISTANT_INPUT_LABEL,
-  ASSISTANT_SAFETY_NOTE,
-  ASSISTANT_TITLE,
-} from "../constants";
+import { ASSISTANT_PLACEHOLDER_MESSAGE, ASSISTANT_SAFETY_NOTE } from "../constants";
 import { getSuggestedActionsForSection } from "../section-actions";
 import { toWorkspaceAssistantContextSnapshot } from "../types";
+import { useWorkspaceIntelligence } from "../use-workspace-intelligence";
+
+import { WorkspaceIntelligencePanel } from "./WorkspaceIntelligencePanel";
 
 import "../../initiative-workspace-ux/initiative-workspace-ux.css";
 import "./workspace-civic-assistant.css";
@@ -23,13 +20,6 @@ import "./workspace-civic-assistant.css";
 interface WorkspaceCivicAssistantProps {
   initiative: Initiative | null;
   currentSection: string;
-}
-
-interface AssistantMessage {
-  id: string;
-  role: "assistant";
-  text: string;
-  response?: WorkspaceAssistantResponse;
 }
 
 export function WorkspaceCivicAssistant({
@@ -40,11 +30,17 @@ export function WorkspaceCivicAssistant({
     ReturnType<typeof getCivicIntegrationView>
   > | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [messages, setMessages] = useState<AssistantMessage[]>([
-    { id: "greeting", role: "assistant", text: ASSISTANT_GREETING },
-  ]);
+  const [assistantResponse, setAssistantResponse] = useState<WorkspaceAssistantResponse | null>(
+    null,
+  );
+  const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantError, setAssistantError] = useState<string | null>(null);
+  const [activeActionId, setActiveActionId] = useState<string | null>(null);
+
+  const { intelligence, loading, error } = useWorkspaceIntelligence({
+    initiativeId: initiative?.initiativeId,
+    section: currentSection,
+  });
 
   useEffect(() => {
     if (!initiative?.initiativeId) {
@@ -80,141 +76,51 @@ export function WorkspaceCivicAssistant({
     [currentSection, initiative],
   );
 
-  async function handleSuggestedAction(action: { id: string; label: string; capability: string }) {
-    if (!initiative?.initiativeId) {
-      setActionError("Select an initiative before using assistant actions.");
-      return;
-    }
+  const handleSuggestedAction = useCallback(
+    async (actionId: string, capability: string, label: string) => {
+      if (!initiative?.initiativeId || assistantLoading) {
+        return;
+      }
 
-    setPendingActionId(action.id);
-    setActionError(null);
+      setActiveActionId(actionId);
+      setAssistantLoading(true);
+      setAssistantError(null);
+      setAssistantResponse(null);
 
-    try {
-      const response = await requestWorkspaceAssistantResponse({
-        initiativeId: initiative.initiativeId,
-        currentSection,
-        requestedAction: {
-          capability: action.capability,
-          label: action.label,
-        },
-        contextSnapshot: toWorkspaceAssistantContextSnapshot(context),
-      });
+      try {
+        const response = await requestWorkspaceAssistantResponse({
+          initiativeId: initiative.initiativeId,
+          currentSection,
+          requestedAction: {
+            capability,
+            label,
+          },
+          contextSnapshot: toWorkspaceAssistantContextSnapshot(context),
+        });
 
-      setMessages((current) => [
-        ...current,
-        {
-          id: `action-${Date.now()}`,
-          role: "assistant",
-          text: response.assistantMessage,
-          response,
-        },
-      ]);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Assistant engine request failed.");
-    } finally {
-      setPendingActionId(null);
-    }
-  }
+        setAssistantResponse(response);
+      } catch (requestError) {
+        const message =
+          requestError instanceof Error
+            ? requestError.message
+            : "Workspace assistant request failed.";
+        setAssistantError(message);
+      } finally {
+        setAssistantLoading(false);
+        setActiveActionId(null);
+      }
+    },
+    [assistantLoading, context, currentSection, initiative],
+  );
 
   const panel = (
-    <div className="workspace-civic-assistant__panel">
-      <header className="workspace-civic-assistant__header">
-        <h2 className="workspace-civic-assistant__title">{ASSISTANT_TITLE}</h2>
-        <p className="workspace-civic-assistant__section-label">{context.currentSectionLabel}</p>
-      </header>
-
-      <dl className="workspace-civic-assistant__meta">
-        <div>
-          <dt>Initiative</dt>
-          <dd>{context.initiativeTitle}</dd>
-        </div>
-        <div>
-          <dt>Lifecycle</dt>
-          <dd>{context.lifecyclePhase}</dd>
-        </div>
-        <div>
-          <dt>Visibility</dt>
-          <dd>{context.visibilityLabel}</dd>
-        </div>
-        <div>
-          <dt>Civic stage</dt>
-          <dd>{context.currentCivicStage ?? "Not started"}</dd>
-        </div>
-        <div>
-          <dt>Next step</dt>
-          <dd>{context.nextAvailableStep ?? "None suggested"}</dd>
-        </div>
-        <div>
-          <dt>Related records</dt>
-          <dd>{context.relatedRecordsCount}</dd>
-        </div>
-      </dl>
-
-      <p className="workspace-civic-assistant__summary">{context.contextSummary}</p>
-
-      <section aria-label="Suggested actions" className="workspace-civic-assistant__actions">
-        <h3>Suggested actions</h3>
-        <ul>
-          {suggestedActions.map((action) => (
-            <li key={action.id}>
-              <button
-                type="button"
-                disabled={pendingActionId !== null || !initiative}
-                onClick={() => void handleSuggestedAction(action)}
-              >
-                {pendingActionId === action.id ? "Requesting guidance..." : action.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section aria-label="Assistant conversation" className="workspace-civic-assistant__chat">
-        <h3>Assistant conversation</h3>
-        <ul className="workspace-civic-assistant__messages">
-          {messages.map((message) => (
-            <li key={message.id} className="workspace-civic-assistant__message">
-              <p>{message.text}</p>
-              {message.response ? (
-                <div className="workspace-civic-assistant__response-meta">
-                  <p>
-                    Confidence: <strong>{message.response.confidenceLevel}</strong> · Mode:{" "}
-                    {message.response.mode}
-                  </p>
-                  <ul className="workspace-civic-assistant__safety-notices">
-                    {message.response.safetyNotices.map((notice) => (
-                      <li key={`${message.id}-${notice.code}`}>{notice.message}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-        {actionError ? (
-          <p className="workspace-civic-assistant__placeholder-notice" role="alert">
-            {actionError}
-          </p>
-        ) : null}
-        <label
-          className="workspace-civic-assistant__input-label"
-          htmlFor="workspace-assistant-input"
-        >
-          {ASSISTANT_INPUT_LABEL}
-        </label>
-        <textarea
-          id="workspace-assistant-input"
-          className="workspace-civic-assistant__input"
-          disabled
-          readOnly
-          value=""
-          placeholder={ASSISTANT_COMING_SOON_INPUT}
-          aria-disabled="true"
-        />
-      </section>
-
-      <p className="workspace-civic-assistant__safety">{ASSISTANT_SAFETY_NOTE}</p>
-    </div>
+    <WorkspaceIntelligencePanel
+      sectionLabel={context.currentSectionLabel}
+      intelligence={intelligence}
+      loading={loading}
+      error={error}
+      showAssistantInputPlaceholder
+    />
   );
 
   return (
@@ -233,6 +139,77 @@ export function WorkspaceCivicAssistant({
       </button>
       <div id="workspace-civic-assistant-panel" className="workspace-civic-assistant__sticky">
         {panel}
+
+        <section aria-label="Suggested actions" className="workspace-civic-assistant__actions">
+          <h3>Suggested actions</h3>
+          <ul>
+            {suggestedActions.map((action) => (
+              <li key={action.id}>
+                <button
+                  type="button"
+                  disabled={assistantLoading || !initiative?.initiativeId}
+                  onClick={() =>
+                    void handleSuggestedAction(action.id, action.capability, action.label)
+                  }
+                >
+                  {action.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {!initiative?.initiativeId ? (
+            <p className="workspace-civic-assistant__placeholder-notice">
+              {ASSISTANT_PLACEHOLDER_MESSAGE}
+            </p>
+          ) : null}
+        </section>
+
+        <section aria-label="Assistant conversation" className="workspace-civic-assistant__chat">
+          <h3>Assistant output</h3>
+          <ul className="workspace-civic-assistant__messages">
+            {assistantLoading ? (
+              <li className="workspace-civic-assistant__message">
+                <p>Generating advisory response...</p>
+              </li>
+            ) : null}
+            {assistantError ? (
+              <li className="workspace-civic-assistant__message" role="alert">
+                <p>{assistantError}</p>
+              </li>
+            ) : null}
+            {assistantResponse ? (
+              <li className="workspace-civic-assistant__message">
+                <p>{assistantResponse.assistantMessage}</p>
+                {assistantResponse.suggestedDraft ? (
+                  <div className="workspace-civic-assistant__response-meta">
+                    <p>
+                      <strong>Draft (review before use):</strong>
+                    </p>
+                    <p>{assistantResponse.suggestedDraft}</p>
+                  </div>
+                ) : null}
+                <div className="workspace-civic-assistant__response-meta">
+                  <p>Confidence: {assistantResponse.confidenceLevel}</p>
+                  <ul className="workspace-civic-assistant__safety-notices">
+                    {assistantResponse.safetyNotices.map((notice) => (
+                      <li key={notice.code}>{notice.message}</li>
+                    ))}
+                  </ul>
+                </div>
+              </li>
+            ) : null}
+            {!assistantLoading && !assistantError && !assistantResponse && activeActionId
+              ? null
+              : null}
+            {!assistantLoading && !assistantError && !assistantResponse ? (
+              <li className="workspace-civic-assistant__message">
+                <p>Select a suggested action to receive advisory guidance in this panel only.</p>
+              </li>
+            ) : null}
+          </ul>
+        </section>
+
+        <p className="workspace-civic-assistant__safety">{ASSISTANT_SAFETY_NOTE}</p>
       </div>
     </aside>
   );

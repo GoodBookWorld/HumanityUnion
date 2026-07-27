@@ -1,0 +1,62 @@
+.participation-area-section {
+  display: grid;
+  gap: var(--hu-space-4);
+}
+
+.participation-area-section__card {
+  display: grid;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-border-subtle);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-surface-muted);
+}
+
+.participation-area-section__card--pending {
+  border-color: var(--hu-border-strong);
+}
+
+.participation-area-section__card--info {
+  background: var(--hu-surface-base);
+}
+
+.participation-area-section__card-title {
+  margin: 0;
+  font-size: var(--hu-text-base);
+}
+
+.participation-area-section__form {
+  display: grid;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-border-subtle);
+  border-radius: var(--hu-radius-md);
+}
+
+.participation-area-section__field {
+  display: grid;
+  gap: var(--hu-space-2);
+  font-size: var(--hu-text-sm);
+}
+
+.participation-area-section__field select {
+  width: 100%;
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border: 1px solid var(--hu-border-subtle);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-surface-base);
+}
+
+.participation-area-section__note,
+.participation-area-section__error {
+  font-size: var(--hu-text-sm);
+}
+
+.participation-area-section__error {
+  color: var(--hu-color-danger, #b42318);
+}
+
+.participation-area-section__eligibility {
+  margin: var(--hu-space-2) 0 0;
+  padding-left: var(--hu-space-5);
+}

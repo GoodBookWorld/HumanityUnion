@@ -14,6 +14,7 @@ import {
   WorkspaceSectionShell,
   WorkspaceStatusBadge,
 } from "../../initiative-workspace-ux";
+import { isApiUnavailableError } from "../../../lib/api-client";
 import { listPublicInitiativeImplementationCommitments } from "../../initiative-implementation-commitment/api";
 
 interface InitiativeImplementationCommitmentWorkspaceProps {
@@ -44,9 +45,13 @@ export function InitiativeImplementationCommitmentWorkspace({
     try {
       const response = await listPublicInitiativeImplementationCommitments(initiative.initiativeId);
       setCommitments(response.commitments);
-    } catch {
+    } catch (loadError) {
       setCommitments([]);
-      setError("Public implementation commitments are not available for this initiative yet.");
+      setError(
+        isApiUnavailableError(loadError)
+          ? "Public implementation commitments are temporarily unavailable."
+          : null,
+      );
     } finally {
       setLoading(false);
     }

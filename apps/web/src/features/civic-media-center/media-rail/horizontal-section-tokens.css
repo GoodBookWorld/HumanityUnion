@@ -1,0 +1,19 @@
+:root {
+  --horizontal-section-gap: 3rem;
+  --horizontal-section-padding: var(--hu-space-5);
+  --horizontal-section-header-gap: var(--hu-space-4);
+  --horizontal-section-description-gap: var(--hu-space-3);
+  --horizontal-section-rail-gap: var(--hu-space-4);
+  --horizontal-rail-gap: var(--hu-space-4);
+  --horizontal-rail-fade-width: 3rem;
+  --horizontal-rail-control-size: 2.75rem;
+  --horizontal-rail-edge-preview: 0.12;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --horizontal-section-gap: 2.5rem;
+    --horizontal-section-padding: var(--hu-space-4);
+    --horizontal-rail-control-size: 2.75rem;
+  }
+}

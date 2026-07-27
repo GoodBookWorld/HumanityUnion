@@ -45,7 +45,7 @@ export default async function ImplementationCommitmentPage({
   if (!commitment) {
     return (
       <main className="commitment-page">
-        <WorkspaceNavigation current="Initiatives" />
+        <WorkspaceNavigation />
         <h1>Implementation Commitment Workspace</h1>
         <p>Implementation Commitment is not available.</p>
         <p className="commitment-page__back">
@@ -83,7 +83,7 @@ export default async function ImplementationCommitmentPage({
         title="Implementation Commitment"
         subtitle="Declared preparedness and derived implementation readiness"
         navItems={NAV_ITEMS}
-        workspaceNavigation={<WorkspaceNavigation current="Initiatives" />}
+        workspaceNavigation={<WorkspaceNavigation />}
       >
         <ImplementationCommitmentWorkspace
           initialCommitment={commitment}

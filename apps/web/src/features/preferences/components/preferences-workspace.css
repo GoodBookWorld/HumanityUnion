@@ -1,0 +1,82 @@
+.preferences-workspace {
+  display: grid;
+  gap: var(--hu-space-6);
+}
+
+.preferences-workspace__field {
+  display: grid;
+  gap: var(--hu-space-2);
+  font-size: var(--hu-font-size-sm);
+}
+
+.preferences-workspace__field-label {
+  font-weight: 600;
+}
+
+.preferences-workspace__field input,
+.preferences-workspace__field select {
+  width: 50%;
+}
+
+.preferences-workspace__checkbox-grid {
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.preferences-workspace__checkbox {
+  display: flex;
+  gap: var(--hu-space-2);
+  align-items: center;
+  font-size: var(--hu-font-size-sm);
+}
+
+.preferences-workspace__fieldset {
+  border: 1px solid var(--hu-border-default);
+  border-radius: var(--hu-radius-md);
+  padding: var(--hu-space-3);
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.preferences-workspace__actions {
+  margin-top: var(--hu-space-2);
+}
+
+.preferences-workspace__success {
+  margin: 0;
+  color: var(--hu-color-success, #1a6b3a);
+}
+
+.preferences-workspace__error {
+  margin: 0;
+  color: var(--hu-color-danger);
+}
+
+.preferences-workspace__helper {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+}
+
+.preferences-workspace__region-list {
+  display: grid;
+  gap: var(--hu-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preferences-workspace__region-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .preferences-workspace__field input,
+  .preferences-workspace__field select,
+  .preferences-workspace__field .geography-search-select__search,
+  .preferences-workspace__field .geography-multi-select {
+    width: 100%;
+  }
+}

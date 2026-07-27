@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { CommunityIdentityPublicProjection } from "@hu/types";
 
+import { normalizeCountryInput } from "../../../data/geography";
 import { communityIdentityContextIntroduction } from "../content";
 import { ExperienceBlockShell } from "../../public-experience";
 import { CommunityIdentityVisual } from "./CommunityIdentityVisual";
@@ -57,7 +58,9 @@ export function CommunityIdentitySection({ identity }: CommunityIdentitySectionP
           ) : null}
           {identity.countrySlug ? (
             <>
-              <Link href={`/country/${encodeURIComponent(identity.countrySlug)}`}>
+              <Link
+                href={`/countries/${encodeURIComponent(normalizeCountryInput(identity.countrySlug) ?? identity.countrySlug.toUpperCase())}`}
+              >
                 Return to {identity.countryLabel} public square
               </Link>
               {" · "}

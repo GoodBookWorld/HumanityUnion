@@ -25,7 +25,7 @@
   gap: 0.35rem;
   margin: 0.75rem 0 0;
   padding-left: 1.25rem;
-  color: #1a1a1a;
+  color: #df9815;
 }
 
 .public-collaborative-analysis-page__empty {
@@ -41,7 +41,7 @@
 }
 
 .public-collaborative-analysis-page__related a {
-  color: #1a1a1a;
+  color: #df9815;
   font-size: 0.95rem;
 }
 

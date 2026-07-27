@@ -1,0 +1,116 @@
+.world-initiatives-page {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.world-initiatives-page__header {
+  margin-bottom: 2rem;
+}
+
+.world-initiatives-page__title {
+  margin: 0 0 0.75rem;
+  font-size: 2rem;
+}
+
+.world-initiatives-page__intro,
+.world-initiatives-page__secondary {
+  margin: 0 0 0.75rem;
+  max-width: 42rem;
+  line-height: 1.6;
+}
+
+.world-initiatives-page__empty {
+  padding: 2rem;
+  border: 1px solid var(--hu-border-subtle, #d9dee7);
+  border-radius: 0.75rem;
+  background: var(--hu-surface-muted, #f7f8fa);
+}
+
+.world-initiatives-page__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 1200px) {
+  .world-initiatives-page__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .world-initiatives-page__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .world-initiatives-page__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.world-initiative-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--hu-border-subtle, #d9dee7);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #fff;
+}
+
+.world-initiative-card__media {
+  aspect-ratio: 16 / 9;
+  background: var(--hu-surface-muted, #f7f8fa);
+}
+
+.world-initiative-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.world-initiative-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  flex: 1;
+}
+
+.world-initiative-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.world-initiative-card__meta {
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.world-initiative-card__meta dt {
+  font-weight: 600;
+}
+
+.world-initiative-card__meta dd {
+  margin: 0;
+}
+
+.world-initiative-card__link {
+  margin-top: auto;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.world-initiative-card__link:hover,
+.world-initiative-card__link:focus-visible {
+  text-decoration: underline;
+}

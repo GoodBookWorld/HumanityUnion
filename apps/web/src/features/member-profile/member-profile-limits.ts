@@ -1,0 +1,3 @@
+export const MAX_MEMBER_SKILLS = 25;
+
+export const MAX_MEMBER_SKILL_LABEL_LENGTH = 48;

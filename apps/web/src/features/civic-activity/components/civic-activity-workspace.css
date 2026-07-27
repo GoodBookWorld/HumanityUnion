@@ -1,6 +1,7 @@
 .civic-activity-workspace {
   display: grid;
   gap: 1.5rem;
+  --civic-activity-timeline-height: 430px;
 }
 
 .civic-activity-workspace__intro {
@@ -40,6 +41,16 @@
 .civic-activity-card__title {
   margin: 0 0 0.75rem;
   font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.civic-activity-card__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .civic-activity-card__note,
@@ -68,6 +79,23 @@
 .civic-activity-card__metrics dd {
   margin: 0;
   font-size: 0.9375rem;
+}
+
+.civic-activity-workspace__timeline-viewport {
+  max-height: var(--civic-activity-timeline-height);
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.civic-activity-workspace__timeline-viewport:focus-within {
+  outline: var(--hu-focus-ring, 2px solid #1a73e8);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .civic-activity-workspace {
+    --civic-activity-timeline-height: 320px;
+  }
 }
 
 .civic-activity-workspace__timeline {

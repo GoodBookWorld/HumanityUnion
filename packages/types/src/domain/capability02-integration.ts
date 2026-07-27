@@ -4,6 +4,7 @@ export type CivicEntityType =
   | "analysis"
   | "improvement_proposal"
   | "initiative_revision"
+  | "petition"
   | "decision_session"
   | "collective_decision"
   | "civic_action_package"
@@ -12,7 +13,11 @@ export type CivicEntityType =
   | "implementation_commitment"
   | "implementation_tracking"
   | "public_impact"
-  | "civic_archive";
+  | "civic_archive"
+  | "knowledge_article"
+  | "knowledge_media"
+  | "civic_nomination"
+  | "member_badge_contribution";
 
 /** Reference-only relationship semantics — no business logic. */
 export type CivicRelationshipType =
@@ -47,6 +52,13 @@ export interface CivicSearchMetadata {
   status: string;
   publicUrl: string;
   updatedAt: string;
+  countryLabel?: string;
+  regionLabel?: string;
+  countryCode?: string;
+  regionCode?: string;
+  imageUrl?: string;
+  /** Parent initiative when this record belongs to an initiative lifecycle. */
+  initiativeId?: string;
 }
 
 export type CivicPipelineStageId =
@@ -104,6 +116,7 @@ export interface CivicContextSection {
 /** Notification event registry — delivery not implemented in TASK-038. */
 export type CivicNotificationEventType =
   | "initiative_published"
+  | "initiative_interest_match"
   | "analysis_published"
   | "proposal_submitted"
   | "proposal_decided"
@@ -118,7 +131,19 @@ export type CivicNotificationEventType =
   | "commitment_published"
   | "tracking_updated"
   | "impact_verified"
-  | "archive_published";
+  | "archive_published"
+  | "civic_nomination_submitted"
+  | "civic_nomination_published"
+  | "civic_nomination_withdrawn"
+  | "civic_nomination_voting_opened"
+  | "civic_nomination_vote_cast"
+  | "civic_nomination_voting_closed"
+  | "member_badge_contribution_confirmed"
+  | "member_badge_shipped"
+  | "member_badge_delivered"
+  | "member_badge_contribution_refunded"
+  | "initiative_comment_posted"
+  | "initiative_comment_reply";
 
 export interface CivicNotificationEventDefinition {
   eventType: CivicNotificationEventType;
@@ -206,6 +231,66 @@ export const CIVIC_NOTIFICATION_EVENT_REGISTRY: readonly CivicNotificationEventD
     eventType: "archive_published",
     description: "A verified civic cycle entered the Public Civic Archive.",
     entityType: "civic_archive",
+  },
+  {
+    eventType: "civic_nomination_submitted",
+    description: "A civic nomination was submitted for institution formation review.",
+    entityType: "civic_nomination",
+  },
+  {
+    eventType: "civic_nomination_published",
+    description: "A civic nomination poster was published.",
+    entityType: "civic_nomination",
+  },
+  {
+    eventType: "civic_nomination_withdrawn",
+    description: "A civic nomination was withdrawn.",
+    entityType: "civic_nomination",
+  },
+  {
+    eventType: "civic_nomination_voting_opened",
+    description: "Transparent support voting opened on a published civic nomination.",
+    entityType: "civic_nomination",
+  },
+  {
+    eventType: "civic_nomination_vote_cast",
+    description: "A participant cast or updated a civic nomination support vote.",
+    entityType: "civic_nomination",
+  },
+  {
+    eventType: "civic_nomination_voting_closed",
+    description: "Transparent support voting closed on a civic nomination.",
+    entityType: "civic_nomination",
+  },
+  {
+    eventType: "member_badge_contribution_confirmed",
+    description: "An additional Member Badge Contribution was confirmed.",
+    entityType: "member_badge_contribution",
+  },
+  {
+    eventType: "member_badge_shipped",
+    description: "A physical Member Badge request was shipped.",
+    entityType: "member_badge_contribution",
+  },
+  {
+    eventType: "member_badge_delivered",
+    description: "A physical Member Badge request was delivered.",
+    entityType: "member_badge_contribution",
+  },
+  {
+    eventType: "member_badge_contribution_refunded",
+    description: "A Member Badge Contribution was refunded.",
+    entityType: "member_badge_contribution",
+  },
+  {
+    eventType: "initiative_comment_posted",
+    description: "A new comment was posted on an initiative discussion.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_comment_reply",
+    description: "A participant replied to an initiative discussion comment.",
+    entityType: "initiative",
   },
 ] as const;
 

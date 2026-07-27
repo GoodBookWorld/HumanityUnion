@@ -1,0 +1,42 @@
+.workspace-member-identity {
+  display: flex;
+  gap: var(--hu-space-3);
+  align-items: center;
+  margin-bottom: var(--hu-space-4);
+  padding: var(--hu-space-3);
+  border: 1px solid var(--hu-border-subtle);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-surface-muted);
+}
+
+.workspace-member-identity__avatar {
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--hu-surface-base);
+}
+
+.workspace-member-identity__name {
+  margin: 0;
+  font-size: var(--hu-text-sm);
+  font-weight: 600;
+}
+
+.workspace-member-identity__meta {
+  margin: var(--hu-space-1) 0 0;
+  font-size: var(--hu-text-xs);
+  color: var(--hu-text-muted);
+}
+
+.workspace-member-identity__label,
+.workspace-member-identity__copy {
+  margin: 0;
+  font-size: var(--hu-text-sm);
+}
+
+.workspace-member-identity--prompt {
+  display: block;
+}
+
+.workspace-member-identity--prompt .workspace-member-identity__copy {
+  margin-top: var(--hu-space-1);
+}

@@ -21,13 +21,13 @@
 }
 
 .initiative-explorer__item--selected {
-  border-color: #1a1a1a;
+  border-color: #df9815;
 }
 
 .initiative-explorer__title {
   font-size: 1rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #df9815;
 }
 
 .initiative-explorer__meta {

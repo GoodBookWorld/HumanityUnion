@@ -44,7 +44,7 @@ export default async function ImplementationPage({ params }: ImplementationPageP
   if (!implementation) {
     return (
       <main className="implementation-page">
-        <WorkspaceNavigation current="Initiatives" />
+        <WorkspaceNavigation />
         <h1>Implementation Workspace</h1>
         <p>Implementation is not available.</p>
         <p className="implementation-page__back">
@@ -89,7 +89,7 @@ export default async function ImplementationPage({ params }: ImplementationPageP
         title="Implementation"
         subtitle="Collective execution progress and derived completion"
         navItems={NAV_ITEMS}
-        workspaceNavigation={<WorkspaceNavigation current="Initiatives" />}
+        workspaceNavigation={<WorkspaceNavigation />}
       >
         <ImplementationWorkspace
           initialImplementation={implementation}

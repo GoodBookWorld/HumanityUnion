@@ -1,0 +1,108 @@
+.civic-pipeline-stage {
+  position: relative;
+  display: grid;
+  gap: var(--hu-space-2);
+  min-height: 100%;
+  min-width: 14rem;
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border, #d7dde5);
+  border-radius: var(--hu-radius-lg, 0.75rem);
+  background: var(--hu-color-surface, #fff);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.civic-pipeline-stage::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -0.85rem;
+  width: 0.85rem;
+  height: 2px;
+  background: rgb(1 116 176 / 0.25);
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+.civic-pipeline-stage:last-child::before {
+  display: none;
+}
+
+.civic-pipeline-stage--highlighted {
+  border-color: rgb(1 116 176 / 0.45);
+  background: linear-gradient(180deg, rgb(1 116 176 / 0.08), #fff 55%);
+  box-shadow: 0 2px 8px rgb(1 116 176 / 0.1);
+}
+
+.civic-pipeline-stage__number {
+  margin: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgb(1 116 176 / 0.12);
+  color: var(--hu-color-primary, #0174b0);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.civic-pipeline-stage__title {
+  margin: 0;
+  color: var(--hu-color-primary, #0174b0);
+  font-size: 1.05rem;
+}
+
+.civic-pipeline-stage__description {
+  margin: 0;
+  color: var(--hu-color-text, #1f2933);
+  line-height: 1.5;
+  font-size: 0.9375rem;
+}
+
+.civic-pipeline-stage__progress {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--hu-color-text-muted, #5f6775);
+}
+
+.civic-pipeline-stage__connector {
+  display: none;
+}
+
+.civic-media-section-shell--pipeline .media-horizontal-rail__viewport {
+  position: relative;
+}
+
+.civic-media-section-shell--pipeline .media-horizontal-rail__viewport::before {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  top: 50%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgb(1 116 176 / 0.08),
+    rgb(1 116 176 / 0.22),
+    rgb(1 116 176 / 0.08)
+  );
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.civic-media-section-shell--pipeline .media-horizontal-rail__slide {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 767px) {
+  .civic-pipeline-stage::before {
+    display: none;
+  }
+
+  .civic-media-section-shell--pipeline .media-horizontal-rail__viewport::before {
+    display: none;
+  }
+}

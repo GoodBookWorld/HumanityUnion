@@ -5,7 +5,7 @@
 
 .decision-panel__prompt {
   margin: 0;
-  color: #1a1a1a;
+  color: #df9815;
 }
 
 .decision-panel__actions {
@@ -16,9 +16,9 @@
 
 .decision-panel__button {
   padding: 0.65rem 1rem;
-  border: 1px solid #1a1a1a;
+  border: 1px solid #df9815;
   border-radius: 8px;
-  background: #1a1a1a;
+  background: #df9815;
   color: #ffffff;
   font: inherit;
   cursor: pointer;

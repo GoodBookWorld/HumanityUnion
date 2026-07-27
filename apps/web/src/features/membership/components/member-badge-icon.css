@@ -1,0 +1,40 @@
+.member-badge-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.member-badge-icon--feature {
+  max-width: min(100%, 240px);
+}
+
+.member-badge-icon__image {
+  height: auto;
+  width: 100%;
+}
+
+.member-badge-icon--fallback {
+  align-items: center;
+  background: #0174b0;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.65rem;
+  font-weight: 700;
+  justify-content: center;
+}
+
+.member-badge-icon--small.member-badge-icon--fallback {
+  height: 24px;
+  width: 24px;
+}
+
+.member-badge-icon--medium.member-badge-icon--fallback {
+  height: 40px;
+  width: 40px;
+}
+
+.member-badge-icon--large.member-badge-icon--fallback {
+  height: 64px;
+  width: 64px;
+}

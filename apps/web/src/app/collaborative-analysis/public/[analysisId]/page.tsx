@@ -83,7 +83,7 @@ export default async function PublicCollaborativeAnalysisPage({
 
   try {
     const decision = await getCollectiveDecisionByInitiativeId(analysis.initiativeId);
-    linkedDecisionId = decision.decisionId;
+    linkedDecisionId = decision?.decisionId ?? null;
   } catch {
     linkedDecisionId = null;
   }

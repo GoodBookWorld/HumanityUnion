@@ -1,48 +1,36 @@
-import { MemberWorkspace } from "../../components/member/MemberWorkspace";
-import { listMyInitiatives } from "../../features/initiatives/api";
-import { INITIATIVE_WORKSPACE_SECTIONS } from "../../features/workspace-civic-assistant/initiative-workspace-sections";
-import { InitiativeWorkspace } from "../../features/initiatives/components/InitiativeWorkspace";
-import { InitiativesUnavailableWorkspace } from "../../features/initiatives/components/InitiativesUnavailableWorkspace";
-import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
+import { ApiUnavailableState } from "../../design-system";
+import { WorldInitiativesPageContent } from "../../features/initiatives/components/WorldInitiativesPageContent";
+import { fetchWorldInitiativesProjection } from "../../features/initiatives/world-initiatives-api";
 
 import "./initiatives-page.css";
 
-const NAV_ITEMS = [...INITIATIVE_WORKSPACE_SECTIONS];
-
 export default async function InitiativesPage() {
-  let initiatives = null;
+  let projection = null;
+  let unavailable = false;
 
   try {
-    initiatives = await listMyInitiatives();
+    projection = await fetchWorldInitiativesProjection();
   } catch {
-    initiatives = null;
+    unavailable = true;
   }
 
-  if (!initiatives) {
+  if (unavailable || !projection) {
     return (
       <main className="initiatives-page humanity-workspace-page">
-        <MemberWorkspace
-          title="Initiatives"
-          subtitle="Participation initiatives in Humanity Union"
-          navItems={NAV_ITEMS}
-          workspaceNavigation={<WorkspaceNavigation current="Initiatives" />}
-        >
-          <InitiativesUnavailableWorkspace />
-        </MemberWorkspace>
+        <ApiUnavailableState
+          title="World initiatives temporarily unavailable"
+          explanation="We couldn't load published world initiatives. Please try again shortly."
+          retryHref="/initiatives"
+          retryLabel="Retry"
+          homeLabel="Return Home"
+        />
       </main>
     );
   }
 
   return (
     <main className="initiatives-page humanity-workspace-page">
-      <MemberWorkspace
-        title="Initiatives"
-        subtitle="Participation initiatives in Humanity Union"
-        navItems={NAV_ITEMS}
-        workspaceNavigation={<WorkspaceNavigation current="Initiatives" />}
-      >
-        <InitiativeWorkspace initialInitiatives={initiatives} />
-      </MemberWorkspace>
+      <WorldInitiativesPageContent projection={projection.initiatives} />
     </main>
   );
 }

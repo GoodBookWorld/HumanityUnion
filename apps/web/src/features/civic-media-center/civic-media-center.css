@@ -1,0 +1,104 @@
+.civic-media-page {
+  width: 100%;
+  overflow-x: clip;
+  --civic-media-section-gap: 3rem;
+}
+
+.civic-media-page__container {
+  width: min(100%, 90rem);
+  margin-inline: auto;
+  padding: var(--hu-space-6) var(--hu-space-4) var(--hu-space-10);
+}
+
+.civic-media-page__hero,
+.civic-media-page__trusted-media,
+.civic-media-page__faq,
+.civic-media-page__news,
+.media-rail-section {
+  margin-bottom: var(--hu-space-10);
+  scroll-margin-top: var(--hu-scroll-margin-top, 5rem);
+}
+
+.civic-media-page__eyebrow {
+  margin: 0 0 var(--hu-space-2);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hu-color-accent, #df9815);
+}
+
+.civic-media-page__hero h1 {
+  margin: 0 0 var(--hu-space-3);
+  color: var(--hu-color-primary, #0174b0);
+}
+
+.civic-media-page__lead {
+  max-width: 48rem;
+  margin: 0 0 var(--hu-space-6);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--hu-color-text, #1f2933);
+}
+
+.civic-media-page__hero-grid {
+  display: grid;
+  gap: var(--hu-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.civic-media-page__trusted-category {
+  margin-top: var(--hu-space-6);
+}
+
+.civic-media-page__trusted-category .media-section-header__copy h2 {
+  font-size: 1.125rem;
+}
+
+.civic-media-page__faq h2 {
+  margin: 0 0 var(--hu-space-4);
+  color: var(--hu-color-primary, #0174b0);
+}
+
+.civic-media-page__faq-list {
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.civic-media-page__knowledge-link {
+  margin: 0;
+  color: var(--hu-color-text-muted, #5f6775);
+}
+
+.civic-media-center__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--hu-radius-md, 0.5rem);
+  background: var(--hu-color-surface-muted, #f0f0f0);
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.civic-media-center__logo-image {
+  width: 3.75rem;
+  height: 3.75rem;
+  object-fit: contain;
+}
+
+.civic-media-page__news.public-news-discovery {
+  padding: 0;
+}
+
+.civic-media-page__news .public-news-discovery__intro h2 {
+  color: var(--hu-color-primary, #0174b0);
+}
+
+@media (max-width: 767px) {
+  .civic-media-page__container {
+    padding-inline: var(--hu-space-3);
+  }
+}

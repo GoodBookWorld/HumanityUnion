@@ -1,44 +1,61 @@
-import type { Initiative } from "@hu/types";
+"use client";
 
-import { INITIATIVE_COMMUNITY_OPTIONS } from "../api";
+import type { Initiative } from "@hu/types";
+import Link from "next/link";
+
 import {
   INITIATIVE_LIFECYCLE_PHASE_LABELS,
   formatInitiativeDate,
 } from "../initiative-lifecycle-labels";
+import {
+  buildInitiativeExperienceHref,
+  buildInitiativeExperienceManageHref,
+} from "../../initiative-owner-studio/initiative-experience-routes";
+
+import { InitiativeImage } from "./InitiativeImage";
 
 import "./initiative-card.css";
 
 interface InitiativeCardProps {
   initiative: Initiative;
-  selected: boolean;
-  onSelect: (initiativeId: string) => void;
 }
 
-function communityLabel(communitySlug: string): string {
+function communityLabel(initiative: Initiative): string {
   return (
-    INITIATIVE_COMMUNITY_OPTIONS.find((community) => community.slug === communitySlug)?.label ??
-    communitySlug
+    initiative.metadata.communityAssociation || initiative.metadata.communitySlug || "Not specified"
   );
 }
 
-export function InitiativeCard({ initiative, selected, onSelect }: InitiativeCardProps) {
+function resolveActionLabel(initiative: Initiative): string {
+  return initiative.lifecyclePhase === "draft" ? "Manage Initiative" : "Open Initiative";
+}
+
+export function InitiativeCard({ initiative }: InitiativeCardProps) {
+  const href =
+    initiative.lifecyclePhase === "draft"
+      ? buildInitiativeExperienceManageHref(initiative.initiativeId)
+      : buildInitiativeExperienceHref(initiative.initiativeId);
+
   return (
-    <button
-      type="button"
-      className={`initiative-card${selected ? " initiative-card--selected" : ""}`}
-      onClick={() => onSelect(initiative.initiativeId)}
-      aria-pressed={selected}
+    <Link
+      href={href}
+      className="initiative-card initiative-card--link"
+      aria-label={`${resolveActionLabel(initiative)}: ${initiative.title}`}
     >
+      <span className="initiative-card__media">
+        <InitiativeImage title={initiative.title} imageUrl={initiative.metadata.imageUrl} />
+      </span>
       <span className="initiative-card__title">{initiative.title}</span>
       <span className="initiative-card__meta">
         <span>{INITIATIVE_LIFECYCLE_PHASE_LABELS[initiative.lifecyclePhase]}</span>
         <span>{initiative.metadata.activityArea}</span>
-        <span>{communityLabel(initiative.metadata.communitySlug)}</span>
+        <span>{communityLabel(initiative)}</span>
       </span>
       <span className="initiative-card__dates">
         <span>Created {formatInitiativeDate(initiative.createdAt)}</span>
         <span>Updated {formatInitiativeDate(initiative.updatedAt)}</span>
       </span>
-    </button>
+      <span className="initiative-card__action">{resolveActionLabel(initiative)}</span>
+    </Link>
   );
 }

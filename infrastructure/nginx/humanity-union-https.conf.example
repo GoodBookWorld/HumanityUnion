@@ -1,0 +1,81 @@
+# Humanity Union — HTTPS-ready Nginx example (staging / production)
+#
+# 1. Replace STAGING_DOMAIN with your domain.
+# 2. Replace certificate paths after running certbot.
+# 3. Do NOT commit real certificates or private keys.
+# 4. For Docker Compose, mount this file instead of humanity-union.conf when TLS is ready,
+#    or terminate TLS on the host and proxy to the compose nginx container on port 80.
+
+upstream humanity_web {
+    server web:3000;
+}
+
+upstream humanity_api {
+    server api:4000;
+}
+
+server {
+    listen 80;
+    server_name STAGING_DOMAIN;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name STAGING_DOMAIN;
+
+    ssl_certificate /etc/letsencrypt/live/STAGING_DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/STAGING_DOMAIN/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    client_max_body_size 10m;
+
+    gzip on;
+    gzip_comp_level 5;
+    gzip_min_length 256;
+    gzip_types
+        application/json
+        application/javascript
+        application/xml
+        text/css
+        text/javascript
+        text/plain;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+
+    location /api/ {
+        proxy_pass http://humanity_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /health {
+        proxy_pass http://humanity_web;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    location / {
+        proxy_pass http://humanity_web;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

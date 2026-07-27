@@ -1,6 +1,6 @@
 import type { ParticipationMode, Petition, PublicPetitionProjection } from "@hu/types";
 
-import { apiRequest } from "../../lib/api-client";
+import { apiRequest, apiRequestOptional } from "../../lib/api-client";
 
 export async function getPetitionById(petitionId: string): Promise<Petition> {
   return apiRequest<Petition>(`/api/v1/petitions/${encodeURIComponent(petitionId)}`);
@@ -8,14 +8,14 @@ export async function getPetitionById(petitionId: string): Promise<Petition> {
 
 export async function getPetitionByCollectiveDecisionId(
   collectiveDecisionId: string,
-): Promise<Petition> {
-  return apiRequest<Petition>(
+): Promise<Petition | null> {
+  return apiRequestOptional<Petition>(
     `/api/v1/petitions/by-collective-decision/${encodeURIComponent(collectiveDecisionId)}`,
   );
 }
 
-export async function getPetitionByInitiativeId(initiativeId: string): Promise<Petition> {
-  return apiRequest<Petition>(
+export async function getPetitionByInitiativeId(initiativeId: string): Promise<Petition | null> {
+  return apiRequestOptional<Petition>(
     `/api/v1/petitions/by-initiative/${encodeURIComponent(initiativeId)}`,
   );
 }

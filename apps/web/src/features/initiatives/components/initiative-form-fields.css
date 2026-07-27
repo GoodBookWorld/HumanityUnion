@@ -1,0 +1,20 @@
+.initiative-form-fields {
+  display: grid;
+  gap: 1rem;
+}
+
+.initiative-form-fields__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.initiative-form-fields__helper {
+  color: var(--hu-color-text-muted, #5f6775);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.initiative-form-fields__media {
+  display: grid;
+  gap: 1rem;
+}

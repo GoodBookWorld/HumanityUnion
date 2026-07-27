@@ -1,0 +1,27 @@
+.member-settings-summaries {
+  display: grid;
+  gap: var(--hu-space-6);
+}
+
+.member-settings-summaries a {
+  color: var(--hu-color-primary);
+}
+
+.member-settings-summaries__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+}
+
+.member-settings-summaries__external-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hu-space-2);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.member-settings-summaries__external-link:hover,
+.member-settings-summaries__external-link:focus-visible {
+  text-decoration: underline;
+}

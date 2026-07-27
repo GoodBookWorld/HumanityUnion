@@ -1,0 +1,187 @@
+/* Humanity Union Horizontal Experience System (HUX) */
+
+.hux-section {
+  --hux-rail-fade: var(--horizontal-rail-fade, var(--civic-media-rail-fade, #fff));
+}
+
+/* Discovery — activity feeds with optional filters and result context */
+.hux-section--discovery.horizontal-section-shell--plain .horizontal-section-shell__inner {
+  --horizontal-rail-fade: var(--hu-color-bg, #fff);
+}
+
+.hux-section--discovery.horizontal-section-shell--elevated .horizontal-section-shell__inner,
+.hux-section--discovery.horizontal-section-shell--grouped .horizontal-section-shell__inner {
+  --horizontal-rail-fade: var(--hu-color-bg-muted, #f8fafc);
+}
+
+.hux-section--discovery .horizontal-section-shell__panel,
+.hux-section--discovery .hux-discovery-toolbar {
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border, #d7dde5);
+  border-radius: var(--hu-radius-md, 0.5rem);
+  background: rgb(255 255 255 / 0.9);
+}
+
+.hux-section--discovery.horizontal-section-shell--elevated .hux-discovery-toolbar {
+  background: #fff;
+}
+
+/* Directory — categorized resource catalogs */
+.hux-section--directory .horizontal-section-shell__inner {
+  --horizontal-rail-fade: var(--hu-color-bg-muted, #f8fafc);
+}
+
+.hux-section--directory .horizontal-section-shell__eyebrow {
+  color: var(--hu-color-primary, #0174b0);
+}
+
+.hux-section--directory .trusted-media-category-tabs__tab[aria-selected="true"] {
+  border-color: rgb(1 116 176 / 0.45);
+  background: rgb(1 116 176 / 0.1);
+}
+
+/* Workflow — connected timeline stages, never ordinary cards */
+.hux-section--workflow .horizontal-section-shell__inner {
+  background: linear-gradient(180deg, rgb(1 116 176 / 0.04), #fff 28%);
+  --horizontal-rail-fade: #fff;
+}
+
+.hux-section--workflow .horizontal-section-shell__eyebrow {
+  color: var(--hu-color-primary, #0174b0);
+}
+
+.hux-section--workflow .horizontal-rail__viewport {
+  position: relative;
+}
+
+.hux-section--workflow .horizontal-rail__viewport::before,
+.hux-section--workflow .media-horizontal-rail__viewport::before {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  top: 50%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgb(1 116 176 / 0.08),
+    rgb(1 116 176 / 0.22),
+    rgb(1 116 176 / 0.08)
+  );
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hux-section--workflow .horizontal-rail__slide,
+.hux-section--workflow .media-horizontal-rail__slide {
+  position: relative;
+  z-index: 1;
+}
+
+.hux-workflow-stage,
+.civic-pipeline-stage {
+  position: relative;
+  display: grid;
+  gap: var(--hu-space-2);
+  min-height: 100%;
+  min-width: 14rem;
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border, #d7dde5);
+  border-radius: var(--hu-radius-lg, 0.75rem);
+  background: var(--hu-color-surface, #fff);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.hux-workflow-stage::before,
+.civic-pipeline-stage::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -0.85rem;
+  width: 0.85rem;
+  height: 2px;
+  background: rgb(1 116 176 / 0.25);
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+.hux-workflow-stage:last-child::before,
+.civic-pipeline-stage:last-child::before {
+  display: none;
+}
+
+.hux-workflow-stage--highlighted,
+.civic-pipeline-stage--highlighted {
+  border-color: rgb(1 116 176 / 0.45);
+  background: linear-gradient(180deg, rgb(1 116 176 / 0.08), #fff 55%);
+  box-shadow: 0 2px 8px rgb(1 116 176 / 0.1);
+}
+
+.hux-workflow-stage__number,
+.civic-pipeline-stage__number {
+  margin: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgb(1 116 176 / 0.12);
+  color: var(--hu-color-primary, #0174b0);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.hux-workflow-stage__title,
+.civic-pipeline-stage__title {
+  margin: 0;
+  color: var(--hu-color-primary, #0174b0);
+  font-size: 1.05rem;
+}
+
+.hux-workflow-stage__description,
+.civic-pipeline-stage__description {
+  margin: 0;
+  color: var(--hu-color-text, #1f2933);
+  line-height: 1.5;
+  font-size: 0.9375rem;
+}
+
+.hux-workflow-stage__progress,
+.civic-pipeline-stage__progress {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--hu-color-text-muted, #5f6775);
+}
+
+/* Education — compact learning cards */
+.hux-section--education .horizontal-section-shell__eyebrow {
+  color: var(--hu-color-accent, #df9815);
+}
+
+.hux-section--education.horizontal-section-shell--grouped .horizontal-section-shell__inner {
+  --horizontal-rail-fade: var(--hu-color-bg-muted, #f8fafc);
+}
+
+.hux-section--education.horizontal-section-shell--plain .horizontal-section-shell__inner {
+  --horizontal-rail-fade: var(--hu-color-bg, #fff);
+}
+
+@media (max-width: 767px) {
+  .hux-workflow-stage::before,
+  .civic-pipeline-stage::before {
+    display: none;
+  }
+
+  .hux-section--workflow .horizontal-rail__viewport::before,
+  .hux-section--workflow .media-horizontal-rail__viewport::before {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hux-section--workflow .horizontal-rail__viewport::before {
+    display: none;
+  }
+}

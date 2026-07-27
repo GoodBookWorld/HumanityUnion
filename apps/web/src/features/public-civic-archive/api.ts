@@ -1,65 +1,39 @@
 import type {
+  CivicArchiveLifecycleRecord,
+  CivicArchiveLifecycleMetrics,
+  CivicArchiveOutcomeStatus,
   PublicCivicArchiveListItem,
-  PublicCivicArchiveMetrics,
   PublicCivicArchiveProjection,
   PublicCivicArchiveRecord,
 } from "@hu/types";
 
-import { apiRequest } from "../../lib/api-client";
-
-export interface PublicCivicArchiveIndexQuery {
-  search?: string;
-  country?: string;
-  region?: string;
-  community?: string;
-  activityArea?: string;
-  implementationYear?: number;
-}
+import { API_BASE_URL, apiRequest } from "../../lib/api-client";
+import type { CivicArchiveAppliedFilters } from "./civic-archive-query";
+import { buildCivicArchiveApiQuery } from "./civic-archive-query";
 
 export interface PublicCivicArchiveIndexResponse {
-  records: PublicCivicArchiveListItem[];
-  metrics: PublicCivicArchiveMetrics;
+  records: CivicArchiveLifecycleRecord[];
+  total: number;
+  metrics: CivicArchiveLifecycleMetrics;
 }
 
-const API_BASE_URL = "http://localhost:4000";
-
-function buildQueryString(query: PublicCivicArchiveIndexQuery): string {
+function buildQueryString(query: Record<string, string | number>): string {
   const params = new URLSearchParams();
 
-  if (query.search) {
-    params.set("search", query.search);
-  }
-
-  if (query.country) {
-    params.set("country", query.country);
-  }
-
-  if (query.region) {
-    params.set("region", query.region);
-  }
-
-  if (query.community) {
-    params.set("community", query.community);
-  }
-
-  if (query.activityArea) {
-    params.set("activityArea", query.activityArea);
-  }
-
-  if (query.implementationYear) {
-    params.set("implementationYear", String(query.implementationYear));
+  for (const [key, value] of Object.entries(query)) {
+    params.set(key, String(value));
   }
 
   const serialized = params.toString();
-
   return serialized.length > 0 ? `?${serialized}` : "";
 }
 
 export async function listPublicCivicArchiveIndex(
-  query: PublicCivicArchiveIndexQuery = {},
+  query: CivicArchiveAppliedFilters = {},
+  options?: { signal?: AbortSignal },
 ): Promise<PublicCivicArchiveIndexResponse> {
-  const url = `${API_BASE_URL}/api/v1/public/civic-archive${buildQueryString(query)}`;
-  const response = await fetch(url, { cache: "no-store" });
+  const url = `${API_BASE_URL}/api/v1/public/civic-archive${buildQueryString(buildCivicArchiveApiQuery(query))}`;
+  const response = await fetch(url, { cache: "no-store", signal: options?.signal });
 
   if (!response.ok) {
     throw new Error("Public civic archive index is not available.");
@@ -67,27 +41,44 @@ export async function listPublicCivicArchiveIndex(
 
   const payload = (await response.json()) as {
     success: boolean;
-    data: PublicCivicArchiveListItem[];
-    meta: { metrics?: PublicCivicArchiveMetrics };
+    data: CivicArchiveLifecycleRecord[];
+    meta: { metrics?: CivicArchiveLifecycleMetrics; total?: number };
   };
 
   if (!payload.success) {
     throw new Error("Public civic archive index is not available.");
   }
 
+  const metrics = payload.meta.metrics ?? {
+    archivedInitiativeCount: payload.data.length,
+    archiveRecordCount: payload.data.length,
+    countriesRepresented: 0,
+    regionsRepresented: 0,
+    communitiesRepresented: 0,
+    activityAreasRepresented: 0,
+    verifiedImpactCount: 0,
+  };
+
   return {
     records: payload.data,
-    metrics: payload.meta.metrics ?? {
-      archiveRecordCount: payload.data.length,
-      countriesRepresented: 0,
-      regionsRepresented: 0,
-      communitiesRepresented: 0,
-      activityAreasRepresented: 0,
-      verifiedImpactCount: 0,
-    },
+    total: payload.meta.total ?? payload.data.length,
+    metrics,
   };
 }
 
+export async function getCivicArchiveLifecycleRecord(
+  initiativeId: string,
+): Promise<CivicArchiveLifecycleRecord | null> {
+  try {
+    return await apiRequest<CivicArchiveLifecycleRecord>(
+      `/api/v1/public/civic-archive/${encodeURIComponent(initiativeId)}`,
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** @deprecated Use getCivicArchiveLifecycleRecord for lifecycle detail pages. */
 export async function getPublicCivicArchive(
   archiveRecordId: string,
 ): Promise<PublicCivicArchiveProjection | null> {
@@ -102,9 +93,9 @@ export async function getPublicCivicArchive(
 
 export async function getPublicCivicArchiveForImpact(
   impactId: string,
-): Promise<PublicCivicArchiveProjection | null> {
+): Promise<CivicArchiveLifecycleRecord | PublicCivicArchiveProjection | null> {
   try {
-    return await apiRequest<PublicCivicArchiveProjection>(
+    return await apiRequest<CivicArchiveLifecycleRecord | PublicCivicArchiveProjection>(
       `/api/v1/public/public-impact/${encodeURIComponent(impactId)}/civic-archive`,
     );
   } catch {
@@ -116,9 +107,11 @@ export async function listMyPublicCivicArchiveRecords(): Promise<PublicCivicArch
   return apiRequest<PublicCivicArchiveRecord[]>("/api/v1/public-civic-archive/mine");
 }
 
-export async function getLatestPublicCivicArchiveForInitiative(
-  initiativeId: string,
-): Promise<{ records: PublicCivicArchiveListItem[]; latestArchiveRecordId: string | null }> {
+export async function getLatestPublicCivicArchiveForInitiative(initiativeId: string): Promise<{
+  records: PublicCivicArchiveListItem[];
+  lifecycle: CivicArchiveLifecycleRecord | null;
+  latestArchiveRecordId: string | null;
+}> {
   const url = `${API_BASE_URL}/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/civic-archive`;
   const response = await fetch(url, { cache: "no-store" });
 
@@ -129,7 +122,7 @@ export async function getLatestPublicCivicArchiveForInitiative(
   const payload = (await response.json()) as {
     success: boolean;
     data: PublicCivicArchiveListItem[];
-    meta: { latestArchiveRecordId?: string | null };
+    meta: { latestArchiveRecordId?: string | null; lifecycle?: CivicArchiveLifecycleRecord | null };
   };
 
   if (!payload.success) {
@@ -138,6 +131,9 @@ export async function getLatestPublicCivicArchiveForInitiative(
 
   return {
     records: payload.data,
+    lifecycle: payload.meta.lifecycle ?? null,
     latestArchiveRecordId: payload.meta.latestArchiveRecordId ?? null,
   };
 }
+
+export type { CivicArchiveOutcomeStatus };

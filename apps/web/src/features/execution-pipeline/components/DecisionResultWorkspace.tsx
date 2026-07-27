@@ -13,6 +13,7 @@ import {
   WorkspaceSectionShell,
   WorkspaceStatusBadge,
 } from "../../initiative-workspace-ux";
+import { isApiUnavailableError } from "../../../lib/api-client";
 import { listPublicInitiativeCollectiveDecisions } from "../../initiative-collective-decision/api";
 
 interface DecisionResultWorkspaceProps {
@@ -41,9 +42,13 @@ export function DecisionResultWorkspace({ initiative }: DecisionResultWorkspaceP
     try {
       const response = await listPublicInitiativeCollectiveDecisions(initiative.initiativeId);
       setDecisions(response.decisions);
-    } catch {
+    } catch (loadError) {
       setDecisions([]);
-      setError("Public collective decision results are not available for this initiative yet.");
+      setError(
+        isApiUnavailableError(loadError)
+          ? "Public collective decision results are temporarily unavailable."
+          : null,
+      );
     } finally {
       setLoading(false);
     }

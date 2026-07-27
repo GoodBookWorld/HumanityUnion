@@ -1,0 +1,115 @@
+.civic-archive-lifecycle {
+  margin-bottom: var(--hu-space-6);
+}
+
+.civic-archive-lifecycle__timeline {
+  display: grid;
+  gap: var(--hu-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.civic-archive-lifecycle__stage {
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  padding: var(--hu-space-4);
+  background: var(--hu-color-bg-muted);
+}
+
+.civic-archive-lifecycle__stage h3 {
+  margin: 0 0 var(--hu-space-3);
+}
+
+.civic-archive-lifecycle__stage ul {
+  display: grid;
+  gap: var(--hu-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.civic-archive-lifecycle__record {
+  padding: var(--hu-space-3);
+  border-radius: var(--hu-radius-sm);
+  background: var(--hu-color-surface);
+}
+
+.civic-archive-lifecycle__record h4 {
+  margin: 0 0 var(--hu-space-2);
+}
+
+.civic-archive-lifecycle__record p {
+  margin: 0 0 var(--hu-space-2);
+  color: var(--hu-color-text-muted);
+}
+
+.civic-archive-lifecycle__record-meta {
+  font-size: var(--hu-font-size-sm);
+}
+
+.civic-archive-detail__header {
+  margin-bottom: var(--hu-space-6);
+}
+
+.civic-archive-detail__eyebrow {
+  margin: 0 0 var(--hu-space-2);
+  color: var(--hu-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--hu-font-size-sm);
+}
+
+.civic-archive-detail__summary {
+  color: var(--hu-color-text-muted);
+}
+
+.civic-archive-detail__meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hu-space-3);
+  margin: var(--hu-space-4) 0 0;
+}
+
+.civic-archive-detail__meta-grid dt {
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}
+
+.civic-archive-detail__meta-grid dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.civic-archive-detail__section {
+  margin-bottom: var(--hu-space-5);
+}
+
+.civic-archive-detail__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+  margin-bottom: var(--hu-space-6);
+}
+
+.civic-archive-record-card__badge {
+  align-self: flex-start;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--hu-radius-sm);
+  background: color-mix(in srgb, var(--hu-color-primary) 12%, transparent);
+  color: var(--hu-color-primary);
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .civic-archive-detail__meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .civic-archive-detail__meta-grid {
+    grid-template-columns: 1fr;
+  }
+}

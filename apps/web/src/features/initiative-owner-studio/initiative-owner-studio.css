@@ -1,0 +1,24 @@
+.initiative-owner-studio__draft-hero {
+  display: grid;
+  gap: var(--hu-space-2, 0.5rem);
+  margin-bottom: var(--hu-space-6, 1.5rem);
+}
+
+.initiative-owner-studio__draft-label {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm, 0.9rem);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.initiative-owner-studio__draft-hero h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+}
+
+.initiative-owner-studio__draft-hero p:last-child {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  line-height: 1.6;
+}

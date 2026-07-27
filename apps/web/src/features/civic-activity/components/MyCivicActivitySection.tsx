@@ -69,16 +69,18 @@ export function MyCivicActivitySection() {
 
   return (
     <div className="civic-activity-workspace">
-      <ProfileSection title="My Civic Activity">
+      <ProfileSection title="My Civic Activity" id="section-my-civic-activity">
         <CivicActivityIntro loadedAt={snapshot.loadedAt} />
       </ProfileSection>
 
-      <ProfileSection title="Activity Summary">
+      <ProfileSection title="Activity Summary" id="section-activity-summary">
         <CivicActivitySummaryCards groups={snapshot.groups} />
       </ProfileSection>
 
-      <ProfileSection title="Activity Timeline">
-        <CivicActivityTimeline timeline={snapshot.timeline} />
+      <ProfileSection title="Activity Timeline" id="section-activity-timeline">
+        <div className="civic-activity-workspace__timeline-viewport">
+          <CivicActivityTimeline timeline={snapshot.timeline} />
+        </div>
       </ProfileSection>
     </div>
   );

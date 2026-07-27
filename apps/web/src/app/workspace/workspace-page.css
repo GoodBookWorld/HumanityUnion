@@ -1,0 +1,4 @@
+.workspace-page {
+  width: min(var(--hu-workspace-max-width), 100%);
+  margin: 0 auto;
+}

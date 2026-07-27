@@ -89,7 +89,7 @@ export default async function PublicImpactPage({ params }: PublicImpactPageProps
 
       {archiveRecord ? (
         <ProfileSection title="Included in Humanity Union Civic Archive">
-          <Link href={`/civic-archive/${encodeURIComponent(archiveRecord.archiveRecordId)}`}>
+          <Link href={`/civic-archive/${encodeURIComponent(impact.initiativeId)}`}>
             Open Archive Record
           </Link>
         </ProfileSection>

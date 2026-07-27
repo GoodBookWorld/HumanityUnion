@@ -41,7 +41,7 @@ export function ViewCollaborativeAnalysisLink({
       try {
         const analysis = await getCollaborativeAnalysisByInitiativeId(currentInitiativeId);
         if (!cancelled) {
-          setAnalysisId(analysis.analysisId);
+          setAnalysisId(analysis?.analysisId ?? null);
         }
       } catch {
         if (!cancelled) {
@@ -78,7 +78,7 @@ export function ViewCollaborativeAnalysisLink({
   if (!analysisId) {
     return (
       <WorkspaceEmptyState
-        title="No collaborative analysis is linked yet"
+        title="No collaborative analysis has been created yet."
         explanation="This initiative does not have a linked collaborative analysis workspace."
         nextStep="Create or publish collaborative analysis from the Collaborative Analysis section."
       />

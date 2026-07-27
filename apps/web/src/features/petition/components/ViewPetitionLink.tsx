@@ -77,8 +77,8 @@ export function ViewPetitionLink({
   if (!petitionId) {
     return (
       <WorkspaceEmptyState
-        title="No petition is linked yet"
-        explanation="This participation stage does not have a linked petition record."
+        title="No related petition exists."
+        explanation="Petitions remain available for legacy participation flows. Capability 02 collective decisions may not create a petition record."
         nextStep="Open or close a collective decision to create petition participation."
       />
     );

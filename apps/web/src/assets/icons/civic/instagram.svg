@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Created with Vectornator (http://vectornator.io/) -->
+<svg height="100%" stroke-miterlimit="10" style="fill-rule:nonzero;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;" version="1.1" viewBox="0 0 1024 1024" width="100%" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:vectornator="http://vectornator.io" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs/>
+<clipPath id="ArtboardFrame">
+<rect height="1024" width="1024" x="0" y="0"/>
+</clipPath>
+<g clip-path="url(#ArtboardFrame)" id="Layer-1" vectornator:layerName="Layer 1">
+<path d="M173.589 334.25C173.589 239.993 249.999 163.583 344.255 163.583L685.589 163.583C779.845 163.583 856.255 239.993 856.255 334.25L856.255 675.583C856.255 769.84 779.845 846.25 685.589 846.25L344.255 846.25C249.999 846.25 173.589 769.84 173.589 675.583L173.589 334.25" fill="none" opacity="1" stroke="#0174b0" stroke-linecap="round" stroke-linejoin="round" stroke-width="84.35" vectornator:layerName="path"/>
+<path d="M386.922 504.916C386.922 575.609 444.23 632.916 514.922 632.916C585.614 632.916 642.922 575.609 642.922 504.916C642.922 434.224 585.614 376.916 514.922 376.916C444.23 376.916 386.922 434.224 386.922 504.916" fill="none" opacity="1" stroke="#0174b0" stroke-linecap="round" stroke-linejoin="round" stroke-width="84.35" vectornator:layerName="path"/>
+<path d="M706.922 312.916L706.922 313.343" fill="none" opacity="1" stroke="#0174b0" stroke-linecap="round" stroke-linejoin="round" stroke-width="84.35" vectornator:layerName="path"/>
+</g>
+</svg>

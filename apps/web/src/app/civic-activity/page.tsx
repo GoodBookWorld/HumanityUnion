@@ -15,7 +15,7 @@ export default function CivicActivityPage() {
         title="My Civic Activity"
         subtitle="Your private civic work across the Humanity Union lifecycle"
         navItems={NAV_ITEMS}
-        workspaceNavigation={<WorkspaceNavigation current="My Civic Activity" />}
+        workspaceNavigation={<WorkspaceNavigation />}
       >
         <MyCivicActivitySection />
       </MemberWorkspace>

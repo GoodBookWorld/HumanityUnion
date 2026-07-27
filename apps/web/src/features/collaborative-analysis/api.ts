@@ -5,7 +5,7 @@ import type {
   Signal,
 } from "@hu/types";
 
-import { apiRequest } from "../../lib/api-client";
+import { apiRequest, apiRequestOptional } from "../../lib/api-client";
 
 export async function listCollaborativeAnalyses(): Promise<CollaborativeAnalysis[]> {
   return apiRequest<CollaborativeAnalysis[]>("/api/v1/collaborative-analysis");
@@ -21,8 +21,8 @@ export async function getCollaborativeAnalysisById(
 
 export async function getCollaborativeAnalysisByInitiativeId(
   initiativeId: string,
-): Promise<CollaborativeAnalysis> {
-  return apiRequest<CollaborativeAnalysis>(
+): Promise<CollaborativeAnalysis | null> {
+  return apiRequestOptional<CollaborativeAnalysis>(
     `/api/v1/initiatives/${encodeURIComponent(initiativeId)}/analysis`,
   );
 }

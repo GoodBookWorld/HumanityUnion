@@ -2,14 +2,21 @@ import Link from "next/link";
 
 import type { CommunityIdentityPublicProjection } from "@hu/types";
 
+import { normalizeCountryInput } from "../../../data/geography";
+
 interface CommunityGeographicNavigatorProps {
   identity: CommunityIdentityPublicProjection;
 }
 
+function buildCountryHref(countrySlug: string): string {
+  const code = normalizeCountryInput(countrySlug) ?? countrySlug.toUpperCase();
+  return `/countries/${encodeURIComponent(code)}`;
+}
+
 export function CommunityGeographicNavigator({ identity }: CommunityGeographicNavigatorProps) {
   const countryHref = identity.countrySlug
-    ? `/country/${encodeURIComponent(identity.countrySlug)}`
-    : "/country/canada";
+    ? buildCountryHref(identity.countrySlug)
+    : "/countries/CA";
   const regionHref = identity.regionSlug
     ? `/region/${encodeURIComponent(identity.regionSlug)}`
     : "/region/british-columbia";

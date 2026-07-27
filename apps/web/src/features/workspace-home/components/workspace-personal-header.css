@@ -1,0 +1,44 @@
+.workspace-personal-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: var(--hu-space-4);
+  margin-bottom: var(--hu-space-6);
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface-muted, var(--hu-color-primary-soft));
+}
+
+.workspace-personal-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+  align-items: center;
+  width: 100%;
+}
+
+.workspace-personal-header__workspace-label {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}
+
+.workspace-personal-header__link,
+.workspace-personal-header__logout {
+  font-size: var(--hu-font-size-sm);
+}
+
+.workspace-personal-header__logout {
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-sm);
+  background: transparent;
+  padding: var(--hu-space-1) var(--hu-space-3);
+  cursor: pointer;
+}
+
+.workspace-personal-header__logout:hover,
+.workspace-personal-header__logout:focus-visible {
+  border-color: var(--hu-color-primary);
+  color: var(--hu-color-primary);
+}

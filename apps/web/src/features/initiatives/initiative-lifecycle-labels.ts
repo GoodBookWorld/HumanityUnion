@@ -46,6 +46,25 @@ export function formatInitiativeDate(isoDate: string): string {
   });
 }
 
+/** Stable UTC calendar formatting for SSR/client parity. */
+export function formatStableCalendarDate(isoDate: string | undefined): string {
+  if (!isoDate) {
+    return "Not specified";
+  }
+
+  const date = new Date(isoDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not specified";
+  }
+
+  const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+  const day = date.getUTCDate();
+  const year = date.getUTCFullYear();
+
+  return `${month} ${day}, ${year}`;
+}
+
 export function formatTimelineEventLabel(eventType: string): string {
   return INITIATIVE_TIMELINE_EVENT_LABELS[eventType] ?? eventType;
 }

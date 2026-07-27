@@ -26,3 +26,17 @@ Documentation takes priority over implementation. When the user requests specifi
 All code must be clean, readable, documented, and scalable. Use clear structure, consistent naming, and appropriate comments for non-obvious logic. Design for maintainability and growth without unnecessary complexity. Match existing patterns in the codebase and follow established conventions for the relevant language and layer of the stack.
 
 These rules apply to every future task inside the Humanity Union project.
+
+## BARREL EXPORT RULES
+
+- Never automatically export every file from an `index.ts`.
+- Never regenerate `packages/types` barrels without auditing duplicate public symbols.
+- Source barrel files in `packages/types` use **extensionless** relative specifiers (for example `./domain`, `./auth-user`). Do not use `.js` suffixes in barrel `from` paths.
+- When adding, moving, or deleting a shared type module, update the relevant barrel deliberately.
+- Run `npm run verify:barrels` after modifying `packages/types`.
+- Run `npm run typecheck` and `npm run build` after barrel changes.
+- Do not copy shared types into `apps/web` or `apps/api` to bypass an export problem.
+- Do not hide barrel errors with aliases or duplicated constants.
+- Never replace a carefully curated barrel with generated wildcard exports.
+
+See `docs/BARREL_EXPORT_POLICY.md` for the full policy.

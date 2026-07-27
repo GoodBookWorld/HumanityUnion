@@ -7,6 +7,7 @@ export { Card } from "./components/Card";
 export { ProfileCard } from "./components/ProfileCard";
 export { SectionHeader } from "./components/SectionHeader";
 export { StatusBanner } from "./components/StatusBanner";
+export { HuFeedbackMessage, type HuFeedbackVariant } from "./components/HuFeedbackMessage";
 export { HelperText } from "./components/HelperText";
 export { NotificationCard } from "./components/NotificationCard";
 export { ContextPanel } from "./components/ContextPanel";

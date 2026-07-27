@@ -57,6 +57,13 @@ export interface PublicCivicArchiveReferences {
   impactId: InitiativePublicImpactId;
 }
 
+/** Internal verification metadata; excluded from public projections. */
+export interface PublicCivicArchiveVerificationMetadata {
+  isVerificationFixture?: boolean;
+  verificationRunId?: string;
+  verificationTask?: string;
+}
+
 /** TASK-037 Public Civic Archive aggregate root. */
 export interface PublicCivicArchiveRecord {
   archiveRecordId: PublicCivicArchiveRecordId;
@@ -80,4 +87,5 @@ export interface PublicCivicArchiveRecord {
   archivedAt?: string;
   createdAt: string;
   updatedAt: string;
+  verification?: PublicCivicArchiveVerificationMetadata;
 }

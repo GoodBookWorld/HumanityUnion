@@ -1,0 +1,11 @@
+.approximate-ip-geographic-navigator__label {
+  margin: 0 0 var(--hu-space-2);
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}
+
+.approximate-ip-geographic-navigator__loading {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}

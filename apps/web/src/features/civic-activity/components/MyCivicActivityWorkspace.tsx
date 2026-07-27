@@ -7,6 +7,16 @@ import type { ActiveActivityGroup, CivicActivityGroup, CivicTimelineEntry } from
 
 import "./civic-activity-workspace.css";
 
+const ACTIVITY_SUMMARY_ICONS: Record<string, string> = {
+  "My Initiatives": "/icons/workspace/initiatives.svg",
+  "My Collaborative Analyses": "/icons/workspace/analyses.svg",
+  "My Improvement Proposals": "/icons/workspace/proposals.svg",
+  "My Decision Participation": "/icons/workspace/participation.svg",
+  "My Implementation Commitments": "/icons/workspace/commitments.svg",
+  "My Implementation Tracking": "/icons/workspace/tracking.svg",
+  "My Public Impact": "/icons/workspace/impact.svg",
+};
+
 function formatMetricValue(value: number | undefined): string {
   if (value === undefined) {
     return "—";
@@ -27,7 +37,19 @@ function ActivityGroupCard({ group }: { group: CivicActivityGroup }) {
   if (group.kind === "deferred") {
     return (
       <article className="civic-activity-card civic-activity-card--deferred">
-        <h3 className="civic-activity-card__title">{group.title}</h3>
+        <h3 className="civic-activity-card__title">
+          {ACTIVITY_SUMMARY_ICONS[group.title] ? (
+            <img
+              className="civic-activity-card__icon"
+              src={ACTIVITY_SUMMARY_ICONS[group.title]}
+              alt=""
+              aria-hidden="true"
+              width={24}
+              height={24}
+            />
+          ) : null}
+          <span>{group.title}</span>
+        </h3>
         <p className="civic-activity-card__deferred">{group.reason}</p>
         <dl className="civic-activity-card__metrics">
           <div>
@@ -51,7 +73,19 @@ function ActiveActivityGroupCard({ group }: { group: ActiveActivityGroup }) {
 
   return (
     <article className="civic-activity-card">
-      <h3 className="civic-activity-card__title">{group.title}</h3>
+      <h3 className="civic-activity-card__title">
+        {ACTIVITY_SUMMARY_ICONS[group.title] ? (
+          <img
+            className="civic-activity-card__icon"
+            src={ACTIVITY_SUMMARY_ICONS[group.title]}
+            alt=""
+            aria-hidden="true"
+            width={24}
+            height={24}
+          />
+        ) : null}
+        <span>{group.title}</span>
+      </h3>
       {group.note ? <p className="civic-activity-card__note">{group.note}</p> : null}
       <dl className="civic-activity-card__metrics">
         <div>

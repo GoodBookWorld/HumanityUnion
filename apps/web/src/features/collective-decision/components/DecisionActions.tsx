@@ -30,7 +30,9 @@ export function DecisionActions({ decision }: DecisionActionsProps) {
       try {
         const analysis = await getCollaborativeAnalysisByInitiativeId(decision.decisionSubjectId);
         if (!cancelled) {
-          setAnalysisLink(`/collaborative-analysis/${encodeURIComponent(analysis.analysisId)}`);
+          setAnalysisLink(
+            analysis ? `/collaborative-analysis/${encodeURIComponent(analysis.analysisId)}` : null,
+          );
         }
       } catch {
         if (!cancelled) {
@@ -53,7 +55,7 @@ export function DecisionActions({ decision }: DecisionActionsProps) {
       try {
         const petition = await getPetitionByCollectiveDecisionId(decision.decisionId);
         if (!cancelled) {
-          setPetitionId(petition.petitionId);
+          setPetitionId(petition?.petitionId ?? null);
         }
       } catch {
         if (!cancelled) {

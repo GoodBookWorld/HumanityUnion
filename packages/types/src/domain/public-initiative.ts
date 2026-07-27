@@ -5,6 +5,7 @@ import type {
   InitiativeStatus,
   InitiativeTitle,
 } from "./initiative.js";
+import type { InitiativeNewsSourceReference } from "./public-news-article.js";
 
 export interface PublicInitiativeProjection {
   initiativeId: InitiativeId;
@@ -15,4 +16,5 @@ export interface PublicInitiativeProjection {
   stewardDisplayName: string;
   createdAt: string;
   currentVersion: number;
+  sourceReferences?: InitiativeNewsSourceReference[];
 }

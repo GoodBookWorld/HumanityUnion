@@ -1,0 +1,739 @@
+.institutions-page {
+  display: grid;
+  gap: 0;
+  --institutions-nav-height: calc(var(--hu-space-2) * 2 + 2.75rem);
+  --institutions-anchor-offset: calc(
+    var(--hu-header-height) + var(--institutions-nav-height) + var(--hu-space-6)
+  );
+}
+
+.institutions-page
+  :is(
+    #institutions-architecture,
+    #institutions-grid-section,
+    #institutions-protection,
+    #institution-wpc,
+    #regional-offices,
+    #institutions-related-initiatives
+  ) {
+  scroll-margin-top: var(--institutions-anchor-offset);
+}
+
+.institutions-section {
+  padding: var(--hu-space-10) var(--hu-space-6);
+}
+
+.institutions-section__inner {
+  max-width: var(--hu-layout-max-width);
+  margin: 0 auto;
+  display: grid;
+  gap: var(--hu-space-5);
+}
+
+.institutions-section--hero {
+  background: color-mix(in srgb, var(--hu-color-text-muted) 6%, var(--hu-color-bg));
+}
+
+.institutions-section--white {
+  background: var(--hu-color-bg);
+}
+
+.institutions-section--institutions {
+  background: color-mix(in srgb, var(--hu-color-accent) 4%, var(--hu-color-bg));
+}
+
+.institutions-section--regional {
+  background: color-mix(in srgb, #b45309 5%, var(--hu-color-bg));
+}
+
+.institutions-section__sr-only,
+.institutions-architecture__sr-only,
+.institutions-footer-statement__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.institutions-hero {
+  display: grid;
+  gap: var(--hu-space-5);
+}
+
+.institutions-hero h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--hu-color-text);
+}
+
+.institutions-hero__subheadline {
+  margin: 0;
+  max-width: 52rem;
+  font-size: var(--hu-font-size-lg);
+  line-height: 1.6;
+  color: var(--hu-color-text-muted);
+}
+
+.institutions-hero__banner {
+  padding: var(--hu-space-4) var(--hu-space-5);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface-muted);
+}
+
+.institutions-hero__banner p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--hu-color-text);
+}
+
+.institutions-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+}
+
+.institutions-sticky-nav {
+  position: sticky;
+  top: var(--hu-header-height);
+  z-index: 19;
+  background: color-mix(in srgb, var(--hu-color-bg) 92%, transparent);
+  border-bottom: 1px solid var(--hu-color-border);
+  backdrop-filter: blur(8px);
+}
+
+.institutions-sticky-nav__inner {
+  max-width: var(--hu-layout-max-width);
+  margin: 0 auto;
+  padding: var(--hu-space-2) var(--hu-space-6);
+}
+
+.institutions-sticky-nav__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.institutions-sticky-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--hu-radius-sm);
+  background: transparent;
+  color: var(--hu-color-text-muted);
+  font: inherit;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.institutions-sticky-nav__link:hover {
+  color: var(--hu-color-text);
+  background: var(--hu-color-surface-muted);
+}
+
+.institutions-sticky-nav__link:focus-visible {
+  outline: 2px solid var(--hu-focus-ring);
+  outline-offset: 2px;
+}
+
+.institutions-architecture,
+.institutions-grid-section,
+.institutions-hierarchy,
+.institutions-wpc-featured,
+.institutions-related-initiatives,
+.institutions-footer-statement {
+  display: grid;
+  gap: var(--hu-space-5);
+}
+
+.institutions-architecture h2,
+.institutions-grid-section h2,
+.institutions-hierarchy h2,
+.institutions-related-initiatives h2,
+.institutions-section--regional h2 {
+  margin: 0;
+  font-size: var(--hu-font-size-2xl);
+  font-weight: 700;
+}
+
+.institutions-architecture__intro,
+.institutions-grid-section__intro,
+.institutions-hierarchy__intro,
+.institutions-related-initiatives__intro {
+  margin: 0;
+  max-width: 48rem;
+  line-height: 1.6;
+  color: var(--hu-color-text-muted);
+}
+
+.institutions-ribbon {
+  overflow: hidden;
+  margin-top: var(--hu-space-2);
+  border-block: 1px solid var(--hu-color-border);
+  background: var(--hu-color-surface);
+}
+
+.institutions-ribbon__viewport {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.institutions-ribbon__track {
+  display: flex;
+  width: max-content;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-4) var(--hu-space-3);
+  animation: institutions-ribbon-scroll 48s linear infinite;
+}
+
+.institutions-ribbon:hover .institutions-ribbon__track {
+  animation-play-state: paused;
+}
+
+@keyframes institutions-ribbon-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.institutions-architecture__block,
+.institutions-ribbon__item {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding: var(--hu-space-3) var(--hu-space-5);
+  border: 1px solid
+    color-mix(in srgb, var(--institutions-ribbon-accent) 35%, var(--hu-color-border));
+  border-radius: var(--hu-radius-md);
+  background: color-mix(in srgb, var(--institutions-ribbon-accent) 10%, var(--hu-color-bg));
+  color: var(--hu-color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.institutions-architecture__block:hover,
+.institutions-ribbon__item:hover {
+  transform: scale(1.04);
+  border-color: var(--institutions-ribbon-accent);
+  box-shadow: 0 0.35rem 1rem color-mix(in srgb, var(--institutions-ribbon-accent) 18%, transparent);
+}
+
+.institutions-architecture__block:focus-visible,
+.institutions-ribbon__item:focus-visible {
+  outline: 2px solid var(--hu-focus-ring);
+  outline-offset: 2px;
+}
+
+.institutions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--hu-space-6);
+  align-items: stretch;
+}
+
+.institutions-grid--after-wpc {
+  margin-top: 0;
+}
+
+.institutions-card-wrapper {
+  display: flex;
+  min-height: 100%;
+}
+
+.institutions-card {
+  display: grid;
+  gap: var(--hu-space-4);
+  width: 100%;
+  height: 100%;
+}
+
+.institutions-card__body,
+.institutions-wpc-featured__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--hu-space-4);
+}
+
+.institutions-card__title,
+.institutions-wpc-featured__body h2 {
+  margin: 0;
+  font-size: var(--hu-font-size-xl);
+  line-height: 1.3;
+}
+
+.institutions-card__description,
+.institutions-wpc-featured__description {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--hu-color-text-muted);
+}
+
+.institutions-wpc-featured__role {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.institutions-status-badge {
+  display: inline-flex;
+  align-self: start;
+  padding: var(--hu-space-1) var(--hu-space-3);
+  border-radius: var(--hu-radius-sm);
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.institutions-status-badge--concept {
+  background: var(--hu-color-surface-muted);
+  color: var(--hu-color-text-muted);
+}
+
+.institutions-status-badge--future-institution {
+  background: color-mix(in srgb, var(--hu-color-accent) 12%, transparent);
+  color: var(--hu-color-text);
+}
+
+.institutions-status-badge--under-development {
+  background: color-mix(in srgb, var(--hu-color-warning, #9a6700) 14%, transparent);
+  color: var(--hu-color-text);
+}
+
+.institutions-card__field h4,
+.institutions-card__field h3,
+.institutions-hierarchy__node h3,
+.institutions-hierarchy__link-node h3 {
+  margin: 0 0 var(--hu-space-2);
+  font-size: var(--hu-font-size-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--hu-color-text-muted);
+}
+
+.institutions-card__field p,
+.institutions-hierarchy__node p,
+.institutions-hierarchy__link-node p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.institutions-card__footer {
+  margin-top: auto;
+  display: grid;
+  gap: var(--hu-space-4);
+}
+
+.institutions-card__actions,
+.institutions-footer-statement__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+}
+
+.institutions-card__actions :is(a, button),
+.institutions-footer-statement__actions :is(a, button) {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+}
+
+.institutions-card__knowledge {
+  padding-top: var(--hu-space-3);
+  border-top: 1px solid var(--hu-color-border);
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.institutions-card__knowledge-label {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 700;
+  color: var(--hu-color-text-muted);
+}
+
+.institutions-card__knowledge-link {
+  color: var(--hu-color-accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.institutions-card__knowledge-link:hover {
+  text-decoration: underline;
+}
+
+.institutions-card__knowledge-link:focus-visible {
+  outline: 2px solid var(--hu-focus-ring);
+  outline-offset: 2px;
+}
+
+.institutions-illustration,
+.institutions-hero-illustration {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface-muted);
+}
+
+.institutions-illustration__image,
+.institutions-hero-illustration__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.institutions-hero-illustration {
+  position: relative;
+}
+
+.institutions-hero-illustration__overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: var(--hu-space-2);
+  padding: var(--hu-space-6);
+  text-align: center;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #000 15%, transparent) 0%,
+    color-mix(in srgb, #000 55%, transparent) 100%
+  );
+}
+
+.institutions-hero-illustration__title {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  line-height: 1.3;
+}
+
+.institutions-hero-illustration__subtitle {
+  margin: 0;
+  color: color-mix(in srgb, #fff 88%, transparent);
+  font-size: var(--hu-font-size-lg);
+  line-height: 1.5;
+}
+
+.institutions-hierarchy__flow {
+  display: grid;
+  gap: 0;
+  padding: var(--hu-space-6);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-lg);
+  background: var(--hu-color-surface);
+}
+
+.institutions-hierarchy__step {
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.institutions-hierarchy__node {
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.institutions-hierarchy__link-node {
+  width: min(100%, 36rem);
+  margin: 0 auto;
+  padding: var(--hu-space-4) var(--hu-space-5);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-bg);
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.institutions-hierarchy__link-node:hover {
+  border-color: var(--hu-color-accent);
+  box-shadow: 0 0.25rem 0.75rem color-mix(in srgb, var(--hu-color-accent) 12%, transparent);
+}
+
+.institutions-hierarchy__link-node:focus-visible {
+  outline: 2px solid var(--hu-focus-ring);
+  outline-offset: 2px;
+}
+
+.institutions-hierarchy__connector {
+  display: grid;
+  justify-items: center;
+  gap: var(--hu-space-1);
+  padding-block: var(--hu-space-2);
+}
+
+.institutions-hierarchy__connector--labelled {
+  gap: var(--hu-space-2);
+}
+
+.institutions-hierarchy__arrow {
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-lg);
+  line-height: 1;
+}
+
+.institutions-hierarchy__command-label {
+  font-size: var(--hu-font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hu-color-text-muted);
+}
+
+.institutions-hierarchy__node .institutions-hero-illustration {
+  width: min(100%, 500px);
+  max-height: 300px;
+  aspect-ratio: 5 / 3;
+  margin-inline: auto;
+}
+
+.institutions-hierarchy__node .institutions-hero-illustration__image {
+  width: 100%;
+  height: 100%;
+  max-height: 300px;
+  object-fit: cover;
+}
+
+.institutions-wpc-featured__layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 30%) minmax(0, 70%);
+  align-items: center;
+  gap: var(--hu-space-6);
+}
+
+.institutions-featured-card__layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 30%) minmax(0, 70%);
+  align-items: center;
+  gap: var(--hu-space-6);
+}
+
+.institutions-card-wrapper--featured {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--hu-space-6);
+}
+
+.institutions-featured-card__media-card {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.institutions-featured-card__intro,
+.institutions-wpc-featured__intro {
+  justify-content: center;
+}
+
+.institutions-featured-card__details {
+  width: 100%;
+  padding-top: var(--hu-space-2);
+  border-top: 1px solid var(--hu-color-border);
+}
+
+.institutions-wpc-featured__media {
+  width: 100%;
+}
+
+.institutions-wpc-featured__media .institutions-illustration {
+  aspect-ratio: 5 / 3;
+  width: 100%;
+  max-width: 100%;
+}
+
+.institutions-wpc-featured__media .institutions-illustration__image {
+  object-fit: cover;
+}
+
+.institutions-wpc-accordion {
+  display: grid;
+  gap: var(--hu-space-2);
+  width: 100%;
+  margin-top: var(--hu-space-8);
+}
+
+.institutions-wpc-featured__details {
+  display: grid;
+  gap: var(--hu-space-4);
+}
+
+.institutions-wpc-accordion__item {
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-sm);
+  background: var(--hu-color-bg);
+}
+
+.institutions-wpc-accordion__summary {
+  min-height: 2.75rem;
+  padding: var(--hu-space-3) var(--hu-space-4);
+  font-weight: 600;
+  color: #0174b0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.institutions-wpc-accordion__summary::-webkit-details-marker {
+  display: none;
+}
+
+.institutions-wpc-accordion__summary::after {
+  content: "+";
+  float: right;
+  font-weight: 700;
+}
+
+.institutions-wpc-accordion__item[open] .institutions-wpc-accordion__summary::after {
+  content: "−";
+}
+
+.institutions-wpc-accordion__summary:focus-visible {
+  outline: 2px solid var(--hu-focus-ring);
+  outline-offset: -2px;
+}
+
+.institutions-wpc-accordion__body {
+  padding: 0 var(--hu-space-4) var(--hu-space-4);
+}
+
+.institutions-wpc-accordion__body p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--hu-color-text-muted);
+}
+
+.institutions-related-initiatives__empty,
+.institutions-related-initiatives__loading {
+  padding: var(--hu-space-5);
+  border: 1px dashed var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.institutions-footer-statement {
+  text-align: center;
+}
+
+.institutions-footer-statement__line {
+  margin: 0;
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.institutions-footer-statement__actions {
+  justify-content: center;
+  margin-top: var(--hu-space-4);
+}
+
+@media (max-width: 1279px) and (min-width: 769px) {
+  .institutions-wpc-featured__layout,
+  .institutions-featured-card__layout {
+    grid-template-columns: minmax(220px, 35%) minmax(0, 65%);
+  }
+}
+
+@media (max-width: 768px) {
+  .institutions-page {
+    --institutions-nav-height: 0px;
+    --institutions-anchor-offset: calc(var(--hu-header-height) + var(--hu-space-4));
+  }
+
+  .institutions-section {
+    padding: var(--hu-space-8) var(--hu-space-4);
+  }
+
+  .institutions-sticky-nav {
+    display: none;
+  }
+
+  .institutions-wpc-featured__layout,
+  .institutions-featured-card__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .institutions-hierarchy__node .institutions-hero-illustration {
+    width: 100%;
+    max-height: none;
+    aspect-ratio: 5 / 3;
+  }
+
+  .institutions-hierarchy__node .institutions-hero-illustration__image {
+    max-height: none;
+    height: auto;
+    aspect-ratio: 5 / 3;
+  }
+
+  .institutions-ribbon__viewport {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    mask-image: none;
+  }
+
+  .institutions-ribbon__track {
+    animation: none;
+    width: auto;
+    padding-inline: var(--hu-space-4);
+  }
+
+  .institutions-ribbon__item {
+    scroll-snap-align: start;
+  }
+
+  .institutions-hierarchy__flow {
+    padding: var(--hu-space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .institutions-ribbon__track {
+    animation: none;
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .institutions-ribbon__viewport {
+    overflow-x: auto;
+    mask-image: none;
+  }
+
+  .institutions-architecture__block,
+  .institutions-ribbon__item {
+    transition: none;
+  }
+
+  .institutions-architecture__block:hover,
+  .institutions-ribbon__item:hover {
+    transform: none;
+  }
+}

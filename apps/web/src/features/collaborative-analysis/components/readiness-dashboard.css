@@ -22,7 +22,7 @@
 .readiness-dashboard__score-value {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #df9815;
 }
 
 .readiness-dashboard__list {
@@ -44,5 +44,5 @@
 
 .readiness-dashboard__item dd {
   margin: 0;
-  color: #1a1a1a;
+  color: #df9815;
 }

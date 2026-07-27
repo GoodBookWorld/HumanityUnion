@@ -1,0 +1,24 @@
+.initiative-owner-manage-panel {
+  display: grid;
+  gap: var(--hu-space-6, 1.5rem);
+}
+
+.initiative-owner-manage-panel__back {
+  margin: 0;
+  font-size: var(--hu-font-size-sm, 0.9rem);
+}
+
+.initiative-owner-manage-panel__back a {
+  color: var(--hu-color-primary);
+  text-decoration: none;
+}
+
+.initiative-owner-manage-panel__back a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1023px) {
+  .initiative-owner-manage-panel {
+    width: 100%;
+  }
+}

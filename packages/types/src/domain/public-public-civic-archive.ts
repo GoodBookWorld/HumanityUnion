@@ -61,6 +61,8 @@ export interface PublicCivicArchiveListItem {
 }
 
 export interface PublicCivicArchiveMetrics {
+  /** Count of archived initiatives (one per initiative lifecycle). */
+  archivedInitiativeCount: number;
   archiveRecordCount: number;
   countriesRepresented: number;
   regionsRepresented: number;

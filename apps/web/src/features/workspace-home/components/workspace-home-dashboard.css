@@ -1,0 +1,121 @@
+.workspace-home-dashboard {
+  display: grid;
+  gap: var(--hu-space-6);
+}
+
+.workspace-home-section {
+  scroll-margin-top: var(--hu-scroll-margin-top, 96px);
+}
+
+.workspace-home-welcome {
+  display: flex;
+  gap: var(--hu-space-4);
+  align-items: flex-start;
+}
+
+.workspace-home-welcome__avatar {
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.workspace-home-welcome__name {
+  margin: 0 0 var(--hu-space-2);
+  font-size: var(--hu-font-size-lg);
+  font-weight: 700;
+}
+
+.workspace-home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+}
+
+.workspace-home-actions__link,
+.workspace-home-actions__disabled {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-sm);
+  font-size: var(--hu-font-size-sm);
+  text-decoration: none;
+}
+
+.workspace-home-actions__disabled {
+  color: var(--hu-color-text-muted);
+  background: var(--hu-color-surface-muted, #f5f5f5);
+}
+
+.workspace-home-grid {
+  display: grid;
+  gap: var(--hu-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.workspace-home-card {
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface-muted, #fafafa);
+}
+
+.workspace-home-card__title {
+  margin: 0 0 var(--hu-space-3);
+  font-size: var(--hu-font-size-base);
+}
+
+.workspace-home-card__list {
+  margin: 0;
+  padding-left: var(--hu-space-5);
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.workspace-home-card__status {
+  margin-left: var(--hu-space-2);
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+}
+
+.workspace-home-card__meta {
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+}
+
+.workspace-home-empty {
+  color: var(--hu-color-text-muted);
+}
+
+.workspace-home-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--hu-space-4);
+}
+
+.workspace-home-timeline__date,
+.workspace-home-timeline__label {
+  margin: 0 0 var(--hu-space-1);
+}
+
+.workspace-home-timeline__label {
+  font-weight: 600;
+}
+
+.workspace-home-responsibilities {
+  display: grid;
+  gap: var(--hu-space-4);
+}
+
+.workspace-home-preferences {
+  display: grid;
+  gap: var(--hu-space-2);
+  max-width: 320px;
+}
+
+.workspace-home-preferences select {
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-sm);
+}

@@ -8,6 +8,8 @@
 }
 
 .member-workspace__nav {
+  position: sticky;
+  top: var(--hu-header-height);
   border-right: 1px solid var(--hu-color-border);
   padding-right: var(--hu-space-6);
 }
@@ -64,6 +66,23 @@
 
 .member-workspace__main {
   min-width: 0;
+}
+
+.member-workspace__content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 280px);
+  gap: var(--hu-space-6);
+  align-items: start;
+}
+
+.member-workspace__content {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .member-workspace__content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {

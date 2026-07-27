@@ -1,4 +1,6 @@
 import type { InitiativeId } from "./initiative.js";
+import type { CivicMediaAssistantReference } from "./civic-media-center.js";
+import type { KnowledgeArticleAssistantReference } from "./knowledge-center.js";
 import type { MemberId } from "./member.js";
 
 export type WorkspaceAssistantProviderMode = "mock" | "ai_assisted" | "hybrid";
@@ -63,6 +65,30 @@ export interface WorkspaceAssistantContextSnapshot {
   contextSummary: string;
 }
 
+/** Sanitized deterministic intelligence context for advisory AI prompts only. */
+export interface WorkspaceAssistantAdvisoryContext {
+  constitutionalSummary: string | null;
+  currentCivicStage: string | null;
+  nextCivicMilestone: string | null;
+  responsibilities: string[];
+  topRecommendation: {
+    title: string;
+    description: string;
+    reason: string;
+    recommendedAction: string;
+  } | null;
+  secondaryRecommendations: Array<{
+    title: string;
+    description: string;
+    recommendedAction: string;
+  }>;
+  blockedActions: Array<{
+    title: string;
+    reason: string;
+  }>;
+  initiativeDescription?: string;
+}
+
 export interface WorkspaceAssistantAction {
   capability: WorkspaceAssistantCapability;
   label: string;
@@ -75,6 +101,7 @@ export interface WorkspaceAssistantRequest {
   requestedAction: WorkspaceAssistantAction;
   userPrompt?: string;
   contextSnapshot: WorkspaceAssistantContextSnapshot;
+  advisoryContext?: WorkspaceAssistantAdvisoryContext;
   timestamp: string;
 }
 
@@ -88,6 +115,8 @@ export interface WorkspaceAssistantResponse {
   safetyNotices: WorkspaceAssistantSafetyNotice[];
   followUpPrompts: string[];
   prohibitedActions: WorkspaceAssistantProhibitedAction[];
+  knowledgeReferences?: KnowledgeArticleAssistantReference[];
+  civicMediaReferences?: CivicMediaAssistantReference[];
   createdAt: string;
 }
 

@@ -5,6 +5,9 @@ node_modules/
 .env
 .env.local
 .env.*.local
+apps/api/.env
+apps/web/.env
+apps/web/.env.local
 
 # Build outputs
 dist/
@@ -32,6 +35,7 @@ Thumbs.db
 # Temporary
 tmp/
 temp/
+packages/types/**/*.backup
 
 # MongoDB local data
 data/
@@ -39,3 +43,10 @@ data/
 # Capability 02 initiative runtime persistence (local dev)
 apps/api/.runtime/
 apps/api/src/.runtime/
+
+# Local pnpm store
+.pnpm-store/
+
+# Temporary root documents
+/Untitled.pages
+/Untitled 2.pages

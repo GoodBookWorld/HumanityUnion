@@ -1,3 +1,10 @@
+export const FOOTER_CONTENT = {
+  identity: "Humanity Union",
+  tagline: "WORLD SOLIDARITY",
+  platformHeading: "Platform",
+  legalHeading: "Legal and transparency",
+} as const;
+
 export const REGISTRATION_GATEWAY_CONTENT = {
   title: "Join Humanity Union",
   contextIntroduction: "Participation begins with understanding. Join when you are ready.",
@@ -8,12 +15,4 @@ export const REGISTRATION_GATEWAY_CONTENT = {
   placeholderActionLabel: "Registration entry coming soon — Identity Capability not yet available",
   visitorConclusion:
     "Registration and Workspace entry remain future capabilities. Public observation does not require an account.",
-} as const;
-
-export const FOOTER_CONTENT = {
-  contextIntroduction:
-    "Supporting links for platform orientation, transparency, and informed use of Humanity Union.",
-  identity: "Humanity Union",
-  platformHeading: "Platform",
-  legalHeading: "Legal and transparency",
 } as const;

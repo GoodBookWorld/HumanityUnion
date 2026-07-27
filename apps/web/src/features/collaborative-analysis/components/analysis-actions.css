@@ -6,9 +6,9 @@
 
 .analysis-actions__button {
   padding: 0.65rem 1rem;
-  border: 1px solid #1a1a1a;
+  border: 1px solid #df9815;
   border-radius: 8px;
-  background: #1a1a1a;
+  background: #df9815;
   color: #ffffff;
   font: inherit;
   cursor: pointer;
@@ -21,7 +21,7 @@
 
 .analysis-actions__button--secondary {
   background: #ffffff;
-  color: #1a1a1a;
+  color: #df9815;
 }
 
 .analysis-actions__button--secondary:hover {

@@ -5,3 +5,10 @@ build/
 out/
 coverage/
 pnpm-lock.yaml
+
+# Vendored / minified third-party assets
+apps/web/public/wdcr-js-map/
+apps/web/public/**/*.min.js
+
+# Generated geography datasets
+packages/geography/src/*.json

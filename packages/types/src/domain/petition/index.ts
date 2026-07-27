@@ -1,6 +1,6 @@
-export type { Petition, PetitionId } from "./petition.js";
-export type { PetitionState } from "./petition-state.js";
-export type { PetitionSubject } from "./petition-subject.js";
+export type { Petition, PetitionId } from "./petition";
+export type { PetitionState } from "./petition-state";
+export type { PetitionSubject } from "./petition-subject";
 export type {
   PetitionEligibilityRules,
   PetitionEndorsementPeriodRules,
@@ -9,22 +9,18 @@ export type {
   PetitionSignaturePolicy,
   PetitionVisibilityRules,
   PetitionWithdrawalPolicy,
-} from "./petition-policy.js";
-export type { ShareLink } from "./share-link.js";
+} from "./petition-policy";
+export type { ShareLink } from "./share-link";
 export type {
   ParticipationMode,
   Signature,
   SignatureId,
   SignatureStatus,
   SignatureVisibility,
-} from "./signature.js";
+} from "./signature";
 export type {
   DailyActivitySummary,
   SupportMetrics,
   SupportThresholdStatus,
-} from "./support-metrics.js";
-export type {
-  PetitionOutcome,
-  PetitionOutcomeId,
-  PetitionOutcomeType,
-} from "./petition-outcome.js";
+} from "./support-metrics";
+export type { PetitionOutcome, PetitionOutcomeId, PetitionOutcomeType } from "./petition-outcome";

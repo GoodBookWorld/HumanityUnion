@@ -9,6 +9,7 @@ import { getPublicInitiativeCollectiveDecision } from "../../../../features/init
 import { getPublicCivicActionPackageForDecision } from "../../../../features/civic-action-package/api";
 import { listPublicOfficialResponsesForCap } from "../../../../features/official-response/api";
 import { OfficialResponsesPublicSection } from "../../../../features/official-response/components/OfficialResponsesPublicSection";
+import { MembershipPlatformStatisticsSection } from "../../../../features/membership/components/MembershipPlatformStatisticsSection";
 import { listPublicInitiativeImplementationCommitmentsForDecision } from "../../../../features/initiative-implementation-commitment/api";
 import { getPetitionByCollectiveDecisionId } from "../../../../features/petition/api";
 
@@ -126,6 +127,10 @@ export default async function PublicCollectiveDecisionPage({
               </ul>
             </ProfileSection>
 
+            <ProfileSection title="Membership Participation Transparency">
+              <MembershipPlatformStatisticsSection title="Participation composition" />
+            </ProfileSection>
+
             <ProfileSection title="Outcome">
               <ProfileField
                 label="Outcome"
@@ -231,7 +236,7 @@ export default async function PublicCollectiveDecisionPage({
       const analysis = await getCollaborativeAnalysisByInitiativeId(
         decision.decisionSubject.subjectId,
       );
-      linkedAnalysisId = analysis.analysisId;
+      linkedAnalysisId = analysis?.analysisId ?? null;
     } catch {
       linkedAnalysisId = null;
     }
@@ -239,7 +244,7 @@ export default async function PublicCollectiveDecisionPage({
 
   try {
     const petition = await getPetitionByCollectiveDecisionId(decisionId);
-    linkedPetitionId = petition.petitionId;
+    linkedPetitionId = petition?.petitionId ?? null;
   } catch {
     linkedPetitionId = null;
   }

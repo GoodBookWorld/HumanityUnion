@@ -4,7 +4,7 @@ import type {
   PublicCivicActionPackageProjection,
 } from "@hu/types";
 
-import { apiRequest } from "../../lib/api-client";
+import { apiRequest, isNotFoundError } from "../../lib/api-client";
 
 export interface PublicCivicActionPackagesResponse {
   packages: PublicCivicActionPackageListItem[];
@@ -38,16 +38,31 @@ export async function getPublicCivicActionPackageForDecision(
 export async function listPublicCivicActionPackagesForInitiative(
   initiativeId: string,
 ): Promise<PublicCivicActionPackagesResponse> {
-  const payload = await apiRequest<PublicCivicActionPackageListItem[]>(
-    `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/civic-action-packages`,
-  );
+  try {
+    const payload = await apiRequest<PublicCivicActionPackageListItem[]>(
+      `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/civic-action-packages`,
+    );
 
-  return {
-    packages: payload,
-    metrics: {
-      capCount: payload.length,
-      issuedCapCount: payload.filter((capPackage) => capPackage.status === "issued").length,
-      archivedCapCount: payload.filter((capPackage) => capPackage.status === "archived").length,
-    },
-  };
+    return {
+      packages: payload,
+      metrics: {
+        capCount: payload.length,
+        issuedCapCount: payload.filter((capPackage) => capPackage.status === "issued").length,
+        archivedCapCount: payload.filter((capPackage) => capPackage.status === "archived").length,
+      },
+    };
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return {
+        packages: [],
+        metrics: {
+          capCount: 0,
+          issuedCapCount: 0,
+          archivedCapCount: 0,
+        },
+      };
+    }
+
+    throw error;
+  }
 }

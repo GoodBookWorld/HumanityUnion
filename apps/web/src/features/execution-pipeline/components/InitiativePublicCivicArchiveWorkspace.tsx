@@ -154,7 +154,7 @@ export function InitiativePublicCivicArchiveWorkspace({
       {latestRecord ? (
         <WorkspaceRecordItem
           title={
-            <Link href={`/civic-archive/${encodeURIComponent(latestRecord.archiveRecordId)}`}>
+            <Link href={`/civic-archive/${encodeURIComponent(initiative.initiativeId)}`}>
               {latestRecord.title}
             </Link>
           }
@@ -169,7 +169,7 @@ export function InitiativePublicCivicArchiveWorkspace({
             <WorkspaceRecordItem
               key={record.archiveRecordId}
               title={
-                <Link href={`/civic-archive/${encodeURIComponent(record.archiveRecordId)}`}>
+                <Link href={`/civic-archive/${encodeURIComponent(initiative.initiativeId)}`}>
                   {record.title}
                 </Link>
               }

@@ -4,17 +4,17 @@ export type {
   DecisionId,
   DecisionMechanism,
   DecisionSubjectType,
-} from "./collective-decision.js";
-export type { Ballot, BallotId } from "./ballot.js";
-export type { DecisionOption, DecisionOptionId } from "./decision-option.js";
+} from "./collective-decision";
+export type { Ballot, BallotId } from "./ballot";
+export type { DecisionOption, DecisionOptionId } from "./decision-option";
 export type {
   ParticipantDecision,
   ParticipantDecisionId,
   ParticipantDecisionStatus,
-} from "./participant-decision.js";
-export type { DecisionOptionResult, DecisionResult, DecisionResultId } from "./decision-result.js";
-export type { Outcome, OutcomeId, OutcomeType } from "./outcome.js";
-export type { DecisionRules } from "./decision-rules.js";
-export type { EligibilityRules } from "./eligibility-rules.js";
-export type { DecisionStatistics } from "./decision-statistics.js";
-export type { DecisionTimeline } from "./decision-timeline.js";
+} from "./participant-decision";
+export type { DecisionOptionResult, DecisionResult, DecisionResultId } from "./decision-result";
+export type { Outcome, OutcomeId, OutcomeType } from "./outcome";
+export type { DecisionRules } from "./decision-rules";
+export type { EligibilityRules } from "./eligibility-rules";
+export type { DecisionStatistics } from "./decision-statistics";
+export type { DecisionTimeline } from "./decision-timeline";

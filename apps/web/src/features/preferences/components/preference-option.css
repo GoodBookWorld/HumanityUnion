@@ -1,0 +1,41 @@
+.preference-option {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--hu-space-2);
+  min-height: 1.75rem;
+  font-size: var(--hu-font-size-sm);
+}
+
+.preference-option__input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+.preference-option__label {
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preference-option-grid {
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.preference-option-grid--two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--hu-space-4);
+}
+
+@media (max-width: 768px) {
+  .preference-option-grid--two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .preference-option__label {
+    white-space: normal;
+  }
+}

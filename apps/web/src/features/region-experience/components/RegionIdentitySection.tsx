@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import type { RegionIdentityPublicProjection } from "@hu/types";
 
+import { normalizeCountryInput } from "../../../data/geography";
 import { regionIdentityContextIntroduction } from "../content";
 import { ExperienceBlockShell } from "../../public-experience";
 import { RegionIdentityVisual } from "./RegionIdentityVisual";
@@ -39,7 +40,9 @@ export function RegionIdentitySection({ identity }: RegionIdentitySectionProps) 
         </div>
 
         <p className="region-identity__ascent">
-          <Link href={`/country/${encodeURIComponent(identity.countrySlug)}`}>
+          <Link
+            href={`/countries/${encodeURIComponent(normalizeCountryInput(identity.countrySlug) ?? identity.countrySlug.toUpperCase())}`}
+          >
             Return to {identity.countryLabel} public square
           </Link>
         </p>

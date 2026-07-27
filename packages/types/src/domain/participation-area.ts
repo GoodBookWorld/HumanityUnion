@@ -9,6 +9,7 @@ export interface ParticipationAreaSlugTriple {
   countrySlug: string;
   regionSlug?: string;
   communitySlug?: string;
+  regionLabel?: string;
 }
 
 export type ParticipationAreaVerificationStatus = "verified" | "unverified";
@@ -22,6 +23,7 @@ export interface ParticipationArea {
   countrySlug: string;
   regionSlug?: string;
   communitySlug?: string;
+  regionLabel?: string;
   verificationStatus: ParticipationAreaVerificationStatus;
   status: ParticipationAreaRecordStatus;
   createdAt: string;
@@ -45,20 +47,23 @@ export function participationAreaSlugTriple(
   countrySlug: string,
   regionSlug?: string,
   communitySlug?: string,
+  regionLabel?: string,
 ): ParticipationAreaSlugTriple {
   return {
     countrySlug,
     regionSlug,
     communitySlug,
+    regionLabel,
   };
 }
 
 export function participationAreaToSlugTriple(
-  area: Pick<ParticipationArea, "countrySlug" | "regionSlug" | "communitySlug">,
+  area: Pick<ParticipationArea, "countrySlug" | "regionSlug" | "communitySlug" | "regionLabel">,
 ): ParticipationAreaSlugTriple {
   return {
     countrySlug: area.countrySlug,
     regionSlug: area.regionSlug,
     communitySlug: area.communitySlug,
+    regionLabel: area.regionLabel,
   };
 }

@@ -1,0 +1,73 @@
+.member-badge-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.member-badge-page__hero h1 {
+  margin: 0 0 0.5rem;
+}
+
+.member-badge-page__artwork-card {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.member-badge-page__amount {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+.member-badge-page__cta {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.member-badge-page__cta-note {
+  margin: 0;
+  color: var(--hu-color-text-muted, #64748b);
+}
+
+.member-badge-page__banner {
+  padding: 1rem;
+}
+
+.member-badge-page__banner--error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+}
+
+.member-badge-page__history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.member-badge-page__history-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.member-badge-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.member-badge-requests-page,
+.member-badge-request-detail-page,
+.member-badge-success-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.member-badge-success-page__grid {
+  display: grid;
+  gap: 0.5rem;
+}

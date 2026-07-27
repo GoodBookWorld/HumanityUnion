@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Created with Vectornator (http://vectornator.io/) -->
+<svg height="100%" stroke-miterlimit="10" style="fill-rule:nonzero;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;" version="1.1" viewBox="0 0 512 512" width="100%" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:vectornator="http://vectornator.io" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs>
+<image height="48" id="Image" width="48" xlink:href="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAMKADAAQAAAABAAAAMAAAAADbN2wMAAAAHGlET1QAAAACAAAAAAAAABgAAAAoAAAAGAAAABgAAAHECNZqNAAAAZBJREFUaAXsVUtOwzAQ7QouAGzYghxxHAS3gN6B0tNwAFYJW0Cidla1FfsIiVRo14QZk1SWa9dNWolIOJLlf+a9Nx+PRvGLCkQFogJRgajAf1MgV+qMCjWlXDHoV7pxRamQj7g3aD2YkLcA+IsJVbsa7lFe3AyShAbP5bcLuLlG4czgSDRh41XeJKDHXH3SojgdjCcgNKYbID1htD7H5WQwBBiX+RpYCHizD0lOfQTq54vj8oWMq5S8VRlZ6QbjMiP3uOe713sdPLDsTAAS2mWwTC/PyzTJqyypXa1MCcMzrru917ZVHi8xyAPboFZ+C/iWEJI4qCew5nuBekLKFUI6bDzKt+DbHrx0ZwvQe46PVFcCkDcPtkEA994CDPYpebXv9553L6Ny8SHEiW0QknYZBN56CM7a9/ea4+OEj1TIE3gmn6trl7FOBLJkI4dc/+y0hiQYJKeXBJcLH3g09GchZLLEFxbiewKVaYbltWkzjHlX2Jh3sc7vGkIHTWITxD7j3zJKWIiELqNPV0chWz8AAAD//12/POwAAAGhSURBVGNgGADwZo+q9Js96uff7tX4jw2D5EBqBsBpxFv5f5UW25s9Gjlv96gfB+LPIPxmr/oxkBhIjniTSFB55coVnnPXb4Wcu3Fn5rnrt0+ev37nNZD9E4TBbKDYuRu3Z4DUXLhwgZsEo2mr9Pz9+wLnb9zpATryI5D+TxS+fvsDWA9QL21dR8B0oKMTgKH9kihHY/EcMEZenLt2J56ANdSX3r9/P8v5G7enk+twdH1Aj8w7c+YMK8ilgbllMqG51UUhuVV7QnIrn4XkVf0AYxAbKBacV1kIUkO2r/bfv88BdPwudEdQyj915fqh8KLa1cG5lX+BDv6PD4PUBOdWLSfZI////2cEhtYSSh2LS/+yrXv+h+ZX43U8sseAnvgCVB9OdGwA03sVLsupJd63YAXRHoB65h8oyRH0xNkbd/WAjvxFLYfiMufMtVv/sxp7SPYEMG/E4PUELdI9Lk+s33uYVA8A1Vd+Dc2vUcfpCVyW0UocOa0TywbGwt4h7QGQR0c9QK0kRWyyQVeHMwZGJUZDYDQERkNgNARGQ2CohQAA4l3zYSCEIcIAAAAASUVORK5CYII="/>
+</defs>
+<g id="Layer-1" vectornator:layerName="Layer 1">
+<use opacity="1" transform="matrix(10.6667 0 0 10.6667 0 0)" vectornator:layerName="Moon" xlink:href="#Image"/>
+</g>
+</svg>

@@ -6,7 +6,7 @@ import type {
   PublicInitiativeImplementationTrackingProjection,
 } from "@hu/types";
 
-import { apiRequest } from "../../lib/api-client";
+import { apiRequest, fetchPublicInitiativeList } from "../../lib/api-client";
 
 export interface MyInitiativeImplementationTrackingsResponse {
   trackings: InitiativeImplementationTracking[];
@@ -18,84 +18,54 @@ export interface PublicInitiativeImplementationTrackingsResponse {
   metrics: InitiativeImplementationTrackingMetrics;
 }
 
-const API_BASE_URL = "http://localhost:4000";
+const EMPTY_METRICS: InitiativeImplementationTrackingMetrics = {
+  trackingCount: 0,
+  activeTrackingCount: 0,
+  completedTrackingCount: 0,
+  averageUpdatesPerTracking: 0,
+  averageCompletionTimeMs: null,
+};
 
 export async function listMyInitiativeImplementationTrackings(): Promise<MyInitiativeImplementationTrackingsResponse> {
-  const url = `${API_BASE_URL}/api/v1/initiative-implementation-tracking/mine`;
-  const response = await fetch(url, { cache: "no-store" });
-
-  if (!response.ok) {
-    throw new Error("My implementation tracking is not available.");
-  }
-
-  const payload = (await response.json()) as {
-    success: boolean;
-    data: InitiativeImplementationTracking[];
-    meta: { updates?: ImplementationTrackingUpdate[] };
-  };
-
-  if (!payload.success) {
-    throw new Error("My implementation tracking is not available.");
-  }
+  const payload = await apiRequest<InitiativeImplementationTracking[]>(
+    "/api/v1/initiative-implementation-tracking/mine",
+  );
 
   return {
-    trackings: payload.data,
-    updates: payload.meta.updates ?? [],
+    trackings: payload,
+    updates: [],
   };
 }
 
 export async function listPublicInitiativeImplementationTrackings(
   initiativeId: string,
 ): Promise<PublicInitiativeImplementationTrackingsResponse> {
-  const url = `${API_BASE_URL}/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/implementation-tracking`;
-  const response = await fetch(url, { cache: "no-store" });
-
-  if (!response.ok) {
-    throw new Error("Public implementation tracking is not available.");
-  }
-
-  const payload = (await response.json()) as {
-    success: boolean;
-    data: PublicInitiativeImplementationTrackingListItem[];
-    meta: { metrics?: InitiativeImplementationTrackingMetrics };
-  };
-
-  if (!payload.success) {
-    throw new Error("Public implementation tracking is not available.");
-  }
+  const result = await fetchPublicInitiativeList<
+    PublicInitiativeImplementationTrackingListItem,
+    InitiativeImplementationTrackingMetrics
+  >(
+    `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/implementation-tracking`,
+    EMPTY_METRICS,
+  );
 
   return {
-    trackings: payload.data,
-    metrics: payload.meta.metrics ?? {
-      trackingCount: payload.data.length,
-      activeTrackingCount: 0,
-      completedTrackingCount: 0,
-      averageUpdatesPerTracking: 0,
-      averageCompletionTimeMs: null,
-    },
+    trackings: result.items,
+    metrics: result.metrics,
   };
 }
 
 export async function listPublicInitiativeImplementationTrackingsForCommitment(
   commitmentId: string,
 ): Promise<PublicInitiativeImplementationTrackingListItem[]> {
-  const url = `${API_BASE_URL}/api/v1/public/initiative-implementation-commitments/${encodeURIComponent(commitmentId)}/implementation-tracking`;
-  const response = await fetch(url, { cache: "no-store" });
+  const result = await fetchPublicInitiativeList<
+    PublicInitiativeImplementationTrackingListItem,
+    InitiativeImplementationTrackingMetrics
+  >(
+    `/api/v1/public/initiative-implementation-commitments/${encodeURIComponent(commitmentId)}/implementation-tracking`,
+    EMPTY_METRICS,
+  );
 
-  if (!response.ok) {
-    throw new Error("Public implementation tracking is not available.");
-  }
-
-  const payload = (await response.json()) as {
-    success: boolean;
-    data: PublicInitiativeImplementationTrackingListItem[];
-  };
-
-  if (!payload.success) {
-    throw new Error("Public implementation tracking is not available.");
-  }
-
-  return payload.data;
+  return result.items;
 }
 
 export async function getPublicInitiativeImplementationTracking(

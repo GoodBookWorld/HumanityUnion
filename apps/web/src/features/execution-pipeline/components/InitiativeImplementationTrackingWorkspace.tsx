@@ -17,6 +17,7 @@ import {
   WorkspaceTimeline,
   WorkspaceTimelineItem,
 } from "../../initiative-workspace-ux";
+import { isApiUnavailableError } from "../../../lib/api-client";
 import { listPublicInitiativeImplementationTrackings } from "../../initiative-implementation-tracking/api";
 import { listPublicOfficialResponsesForInitiative } from "../../official-response/api";
 
@@ -55,10 +56,14 @@ export function InitiativeImplementationTrackingWorkspace({
       ]);
       setTrackings(trackingResponse.trackings);
       setResponses(responseData.responses);
-    } catch {
+    } catch (loadError) {
       setTrackings([]);
       setResponses([]);
-      setError("Public implementation tracking records are not available for this initiative yet.");
+      setError(
+        isApiUnavailableError(loadError)
+          ? "Public implementation tracking records are temporarily unavailable."
+          : null,
+      );
     } finally {
       setLoading(false);
     }
