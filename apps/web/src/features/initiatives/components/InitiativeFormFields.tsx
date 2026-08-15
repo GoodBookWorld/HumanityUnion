@@ -18,7 +18,7 @@ import {
   toGeographyCommunityOptions,
   toGeographyCountryOptions,
   toGeographyRegionOptions,
-} from "../../../data/geography";
+} from "@hu/geography";
 import { GeographySearchSelect } from "../../../design-system/components/GeographySearchSelect";
 import {
   INITIATIVE_ACTIVITY_AREA_OPTIONS,

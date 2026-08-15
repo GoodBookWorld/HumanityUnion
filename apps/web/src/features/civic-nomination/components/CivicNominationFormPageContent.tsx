@@ -16,7 +16,7 @@ import {
   toGeographyCommunityOptions,
   toGeographyCountryOptions,
   toGeographyRegionOptions,
-} from "../../../data/geography";
+} from "@hu/geography";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import {
   createCivicNominationDraft,

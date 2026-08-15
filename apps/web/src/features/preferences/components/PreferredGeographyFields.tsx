@@ -15,7 +15,7 @@ import {
   parsePreferredRegionId,
   sanitizeParticipationGeography,
   toGeographyCommunityOptions,
-} from "../../../data/geography";
+} from "@hu/geography";
 import { Button } from "../../../design-system/components/Button";
 import {
   GeographySearchSelect,

@@ -10,7 +10,7 @@ import type {
 } from "@hu/types";
 import { isInitiativeLifecycleAuthorWorkspaceStage } from "@hu/types";
 
-import { formatPublicGeography } from "../../../data/geography/format-public-geography";
+import { formatPublicGeography } from "@hu/geography";
 import { InitiativeLifecycleStageWorkspace } from "../../initiative-lifecycle-stage-workspace";
 import { InitiativeCollaborativeAnalysisAuthorWorkspace } from "../../initiative-collaborative-analysis/components/InitiativeCollaborativeAnalysisAuthorWorkspace";
 import { InitiativeCollaborativeAnalysisDraftPreview } from "../../initiative-collaborative-analysis/components/InitiativeCollaborativeAnalysisDraftPreview";

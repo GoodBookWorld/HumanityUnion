@@ -1,4 +1,4 @@
-import { getCountryLabel, getRegionLabel } from "../../../data/geography";
+import { getCountryLabel, getRegionLabel } from "@hu/geography";
 import {
   CIVIC_ARCHIVE_IDLE_INSTRUCTION,
   CIVIC_ARCHIVE_NO_MATCH_MESSAGE,

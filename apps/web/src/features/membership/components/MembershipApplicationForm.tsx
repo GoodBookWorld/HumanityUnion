@@ -6,7 +6,7 @@ import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
 import { SectionHeader } from "../../../design-system/components/SectionHeader";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
-import { toGeographyCountryOptions } from "../../../data/geography/geography.helpers";
+import { toGeographyCountryOptions } from "@hu/geography";
 import { formatAuthFormError } from "../../../lib/api-client";
 import { getMyMemberProfile } from "../../member-profile/member-profile-api";
 import { updateMembershipApplication } from "../membership-api";

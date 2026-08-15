@@ -14,7 +14,7 @@ import {
   fetchCommunitiesByRegion,
   getCountryByCode,
   toGeographyRegionOptions,
-} from "../../../data/geography";
+} from "@hu/geography";
 import { buildSearchUrlForGeographyScope } from "../../../data/geography/helpers";
 import { GeographySearchSelect } from "../../../design-system/components/GeographySearchSelect";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";

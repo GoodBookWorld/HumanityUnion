@@ -1,7 +1,7 @@
 import {
   formatPublicGeography,
   type PublicGeographyInput,
-} from "../../../data/geography/format-public-geography";
+} from "@hu/geography";
 
 export function PublicGeographyLabel({
   geography,

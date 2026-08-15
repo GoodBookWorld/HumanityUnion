@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { GEOGRAPHY_COUNTRIES } from "../../../data/geography";
+import { GEOGRAPHY_COUNTRIES } from "@hu/geography";
 import { WORLD_MAP_ZOOM_BOUNDS } from "../world-map-zoom";
 
 import "./interactive-world-map.css";

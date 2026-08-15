@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import type { CommunityIdentityPublicProjection } from "@hu/types";
 
-import { normalizeCountryInput } from "../../../data/geography";
+import { normalizeCountryInput } from "@hu/geography";
 import { communityIdentityContextIntroduction } from "../content";
 import { ExperienceBlockShell } from "../../public-experience";
 import { CommunityIdentityVisual } from "./CommunityIdentityVisual";

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 import { ProfileSection } from "../../../components/member/ProfileSection";
-import { fetchCommunitiesByRegion, toGeographyCommunityOptions } from "../../../data/geography";
+import { fetchCommunitiesByRegion, toGeographyCommunityOptions } from "@hu/geography";
 import { Button } from "../../../design-system/components/Button";
 import {
   GeographySearchSelect,

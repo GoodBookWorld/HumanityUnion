@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
-import { normalizeCountryInput } from "../../../data/geography";
+import { normalizeCountryInput } from "@hu/geography";
 
 interface LegacyCountryPageProps {
   params: Promise<{ countrySlug: string }>;

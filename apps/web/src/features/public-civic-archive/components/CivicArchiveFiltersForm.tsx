@@ -6,7 +6,7 @@ import {
   fetchCommunitiesByRegion,
   toGeographyCountryOptions,
   toGeographyRegionOptions,
-} from "../../../data/geography";
+} from "@hu/geography";
 import { GeographySearchSelect } from "../../../design-system/components/GeographySearchSelect";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { type CivicArchiveDraftFilters, validateArchiveYearInput } from "../civic-archive-query";

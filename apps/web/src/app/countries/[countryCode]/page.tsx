@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
-import { normalizeCountryInput } from "../../../data/geography";
+import { normalizeCountryInput } from "@hu/geography";
 import { CountryExperienceDynamicPage } from "../../../features/country-experience/components/CountryExperienceDynamicPage";
 
 import "../../../features/country-experience/country-experience-dynamic.css";

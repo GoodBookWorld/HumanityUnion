@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import type { RegionIdentityPublicProjection } from "@hu/types";
 
-import { normalizeCountryInput } from "../../../data/geography";
+import { normalizeCountryInput } from "@hu/geography";
 
 interface RegionGeographicNavigatorProps {
   identity: RegionIdentityPublicProjection;

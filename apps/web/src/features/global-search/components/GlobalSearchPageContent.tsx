@@ -14,7 +14,7 @@ import {
   toGeographyCommunityOptions,
   toGeographyCountryOptions,
   toGeographyRegionOptions,
-} from "../../../data/geography";
+} from "@hu/geography";
 import { buildSearchUrlForGeographyScope } from "../../../data/geography/helpers";
 import { Button } from "../../../design-system";
 import { GeographySearchSelect } from "../../../design-system/components/GeographySearchSelect";

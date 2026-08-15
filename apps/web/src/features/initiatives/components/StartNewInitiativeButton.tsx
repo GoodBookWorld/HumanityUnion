@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-import { getCountryLabel } from "../../../data/geography";
+import { getCountryLabel } from "@hu/geography";
 import { checkInitiativeSimilarity } from "../../community-intelligence/api";
 import { InitiativeOverlapNotice } from "../../community-intelligence/components/InitiativeOverlapNotice";
 import {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { GEOGRAPHY_COUNTRIES, getRegionsForCountry } from "../../../data/geography";
+import { GEOGRAPHY_COUNTRIES, getRegionsForCountry } from "@hu/geography";
 import { buildSearchUrlForGeographyScope } from "../../../data/geography/helpers";
 
 import "./geographic-navigator.css";
