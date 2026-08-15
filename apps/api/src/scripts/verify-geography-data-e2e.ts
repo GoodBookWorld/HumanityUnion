@@ -26,21 +26,31 @@ function readRepoFile(relativePath: string): string {
 function verifyNormalizationOutputs(): void {
   console.log("1. Normalization outputs and attribution");
 
-  const countriesPath = path.join(REPO_ROOT, "apps/web/src/data/geography/countries.json");
+  const countriesPath = path.join(REPO_ROOT, "packages/geography/src/countries.json");
   const regionsPath = path.join(
     REPO_ROOT,
-    "apps/web/src/data/geography/administrative-regions.json",
+    "packages/geography/src/administrative-regions.json",
   );
 
-  assert(fs.existsSync(countriesPath), "countries.json must exist");
-  assert(fs.existsSync(regionsPath), "administrative-regions.json must exist");
+  assert(fs.existsSync(countriesPath), "countries.json must exist in @hu/geography");
+  assert(fs.existsSync(regionsPath), "administrative-regions.json must exist in @hu/geography");
   assert(
-    fs.existsSync(path.join(REPO_ROOT, "apps/web/src/data/geography/ATTRIBUTION.md")),
-    "ATTRIBUTION.md must exist",
+    fs.existsSync(path.join(REPO_ROOT, "packages/geography/ATTRIBUTION.md")),
+    "ATTRIBUTION.md must exist in @hu/geography",
   );
   assert(
-    fs.existsSync(path.join(REPO_ROOT, "apps/web/src/data/geography/source/LICENSE")),
-    "source LICENSE must be preserved",
+    fs.existsSync(path.join(REPO_ROOT, "packages/geography/source/LICENSE")),
+    "source LICENSE must be preserved in @hu/geography",
+  );
+  assert(
+    !fs.existsSync(path.join(REPO_ROOT, "apps/web/src/data/geography/countries.json")),
+    "Web must not keep a duplicate countries.json dataset",
+  );
+  assert(
+    !fs.existsSync(
+      path.join(REPO_ROOT, "apps/web/src/data/geography/administrative-regions.json"),
+    ),
+    "Web must not keep a duplicate administrative-regions.json dataset",
   );
 
   const countries = JSON.parse(fs.readFileSync(countriesPath, "utf-8")) as Array<{
@@ -90,13 +100,27 @@ function verifyNormalizationOutputs(): void {
 async function verifyGeographyHelpers(): Promise<void> {
   console.log("2. Shared geography helpers");
 
-  const helpers = readRepoFile("apps/web/src/data/geography/geography.helpers.ts");
-  const index = readRepoFile("apps/web/src/data/geography/index.ts");
+  const helpers = readRepoFile("packages/geography/src/geography.helpers.ts");
+  const index = readRepoFile("packages/geography/src/index.ts");
+  const webHelpers = readRepoFile("apps/web/src/data/geography/helpers.ts");
+  const webIndex = readRepoFile("apps/web/src/data/geography/index.ts");
 
   assert(helpers.includes("getCountries"), "Helpers must expose getCountries");
   assert(helpers.includes("normalizeCountryInput"), "Helpers must expose normalizeCountryInput");
   assert(helpers.includes("normalizeRegionInput"), "Helpers must expose normalizeRegionInput");
-  assert(index.includes("geography.helpers"), "Index must export shared helpers");
+  assert(index.includes("geography.helpers"), "Package index must export shared helpers");
+  assert(
+    helpers.includes("countries.json"),
+    "Canonical helpers must load package countries.json",
+  );
+  assert(
+    webHelpers.includes("buildSearchUrlForGeographyScope"),
+    "Web-only geography helpers must keep buildSearchUrlForGeographyScope",
+  );
+  assert(
+    webIndex.includes("@hu/geography"),
+    "Web geography facade must re-export @hu/geography",
+  );
   assert(
     !readRepoFile(
       "apps/web/src/features/global-search/components/GlobalSearchPageContent.tsx",

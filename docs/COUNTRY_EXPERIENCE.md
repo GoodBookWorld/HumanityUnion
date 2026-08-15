@@ -112,7 +112,7 @@ The carousel supports up to 10 approved local resources without duplicating sour
 
 | Section        | Source                                                  |
 | -------------- | ------------------------------------------------------- |
-| Hero geography | `apps/web/src/data/geography/`                          |
+| Hero geography | `@hu/geography` (`packages/geography`)                  |
 | Statistics     | `GET /api/v1/public/countries/:countryCode/statistics`  |
 | Initiatives    | `GET /api/v1/public/countries/:countryCode/initiatives` |
 | Civic media    | `GET /api/v1/public/countries/:countryCode/media`       |

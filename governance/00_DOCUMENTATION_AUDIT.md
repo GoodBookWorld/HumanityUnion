@@ -138,7 +138,7 @@ These documents define the approved platform architecture after Activity-centere
 | `blueprint/BLUEPRINT_CHANGELOG.md` | blueprint | Blueprint change history | Change log |
 | `blueprint/ARCHITECTURE_AUDIT.md` | blueprint | Earlier blueprint audit | Historical audit |
 | `apps/api/src/*/README.md` (5 files) | apps | Code module orientation | Code-adjacent local docs |
-| `apps/web/src/data/geography/*.md` (2 files) | apps | Data attribution | Code-adjacent |
+| `packages/geography/ATTRIBUTION.md` | packages | Geography data attribution | Code-adjacent |
 | `.cursor/rules.md` | .cursor | IDE agent rules | Tooling config |
 
 ---

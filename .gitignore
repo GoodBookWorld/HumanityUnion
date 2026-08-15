@@ -52,3 +52,16 @@ apps/api/src/.runtime/
 /Untitled.pages
 /Untitled 2.pages
 apps/api/.env.save
+
+# Narrow exceptions: Web geography facades/helpers under apps/web/src/data/geography.
+# Do not broaden this to unrelated data/ trees. Canonical datasets live in packages/geography.
+!apps/web/src/data/
+!apps/web/src/data/geography/
+!apps/web/src/data/geography/**
+
+# Upstream geography source dump (local normalize input; keep LICENSE/README tracked)
+packages/geography/source/countries+states+cities.json
+packages/geography/source/regions.json
+packages/geography/source/subregions.json
+
+.DS_Store

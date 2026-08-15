@@ -13,15 +13,18 @@ Replace the placeholder frame inside `InteractiveWorldMap.tsx`. Keep the accessi
 
 ## Geography data
 
-Shared frontend source:
+Canonical shared package:
 
-`apps/web/src/data/geography/`
-
-Underlying canonical dataset:
+`@hu/geography` (`packages/geography`)
 
 - Countries: `packages/geography/src/countries.json`
-- Regions: `packages/geography/src/regions.json`
-- Helpers: `packages/geography/src/index.ts`
+- Regions: `packages/geography/src/administrative-regions.json`
+- Helpers/types: `packages/geography/src/index.ts`
+- Attribution: `packages/geography/ATTRIBUTION.md`
+
+Web-only search URL helper / thin compatibility facade:
+
+`apps/web/src/data/geography/` (`helpers.ts`, re-export barrels)
 
 ### Country object format
 
@@ -62,7 +65,7 @@ npm run build
 - Search country filter
 - Home geographic navigator / world map fallback
 
-Do not duplicate country arrays in feature components. Import from `apps/web/src/data/geography/`.
+Do not duplicate country arrays in feature components. Import shared geography APIs from `@hu/geography`.
 
 ## Home statistics icons
 

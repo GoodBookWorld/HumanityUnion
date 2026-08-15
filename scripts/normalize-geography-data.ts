@@ -12,9 +12,9 @@ const REPO_ROOT = path.resolve(path.dirname(SCRIPT_PATH), "..");
 
 const SOURCE_PATH = path.join(
   REPO_ROOT,
-  "apps/web/src/data/geography/source/countries+states+cities.json",
+  "packages/geography/source/countries+states+cities.json",
 );
-const OUTPUT_DIR = path.join(REPO_ROOT, "apps/web/src/data/geography");
+const OUTPUT_DIR = path.join(REPO_ROOT, "packages/geography/src");
 const COMMUNITIES_OUTPUT_DIR = path.join(REPO_ROOT, "apps/web/public/data/geography/communities");
 const COUNTRIES_OUTPUT = path.join(OUTPUT_DIR, "countries.json");
 const REGIONS_OUTPUT = path.join(OUTPUT_DIR, "administrative-regions.json");

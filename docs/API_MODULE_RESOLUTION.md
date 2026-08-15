@@ -63,13 +63,7 @@ curl http://localhost:4013/api/v1/health
 
 **Deployment path (`start:prod`)** starts successfully, connects to MongoDB, and serves `GET /api/v1/health` with HTTP 200.
 
-**`node dist/index.js`** currently fails during module load with:
-
-```
-ERR_MODULE_NOT_FOUND: .../apps/web/src/data/geography/geography.helpers.js
-```
-
-This comes from `@hu/geography` exporting TypeScript source that references a `.js` path under `apps/web`. It is **pre-existing cross-package source-import debt**, not caused by the `@hu/types` barrel policy or ESNext/bundler change. Resolving it requires a dedicated `@hu/geography` build/export strategy (out of scope for barrel infra tasks).
+**`node dist/index.js`** previously failed during module load when `@hu/geography` re-exported TypeScript from `apps/web/src/data/geography`. Canonical geography now lives entirely in `packages/geography` (self-contained JSON + helpers). Prefer `pnpm start:prod` for the deployment path; any remaining `node dist/index.js` issues are separate from Web geography path coupling.
 
 ## Shared Types Consumption
 
