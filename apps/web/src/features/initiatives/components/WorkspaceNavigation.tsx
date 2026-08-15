@@ -4,77 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { getMe } from "../../auth/auth-api";
+import { isAdminAccountRole } from "../../administration/is-admin-role";
 import { fetchBlogAuthoringAccessState } from "../../blog/authoring-api";
 import { WorkspaceMemberIdentity } from "../../member-profile/components/WorkspaceMemberIdentity";
 import {
   getCollapsedNavigationGroups,
   setCollapsedNavigationGroups,
 } from "../../workspace-home/workspace-preferences-store";
+import {
+  buildWorkspaceNavGroups,
+  type WorkspaceNavRoute,
+} from "./build-workspace-nav-groups";
 
 import "./workspace-navigation.css";
-
-type NavRoute = { href: string; label: string };
-
-type NavGroup = {
-  id: string;
-  label: string;
-  collapsible: boolean;
-  routes: readonly NavRoute[];
-};
-
-/**
- * Sidebar structure (Recovery Task 33 — Workspace UX Evolution, Part 3).
- * Author Access Pack 04 / Publishing Workspace Pack 05 — one evolving entry:
- * Become an Author → /workspace/authoring; Publishing → /workspace/publishing.
- * Editorial Review Pack 06 — Editors/Administrators also see Editorial Review.
- */
-function buildWorkspaceNavGroups(
-  authoringRoute: NavRoute,
-  editorialRoute: NavRoute | null,
-): readonly NavGroup[] {
-  const civicRoutes: NavRoute[] = [
-    { href: "/civic-activity", label: "My Civic Activity" },
-    { href: "/workspace/initiatives", label: "Initiatives" },
-    { href: "/workspace/messages", label: "Messages" },
-    authoringRoute,
-  ];
-  if (editorialRoute) {
-    civicRoutes.push(editorialRoute);
-  }
-
-  return [
-    {
-      id: "workspace",
-      label: "Workspace",
-      collapsible: false,
-      routes: [{ href: "/workspace", label: "Workspace Home" }],
-    },
-    {
-      id: "civic",
-      label: "Civic Work",
-      collapsible: true,
-      routes: civicRoutes,
-    },
-    {
-      id: "settings",
-      label: "Settings",
-      collapsible: false,
-      routes: [
-        { href: "/account", label: "Account Security" },
-        { href: "/member", label: "Profile" },
-        { href: "/preferences", label: "Preferences" },
-        { href: "/membership", label: "Membership" },
-        { href: "/notifications", label: "Notifications" },
-      ],
-    },
-    {
-      id: "public-profile",
-      label: "Public Profile",
-      collapsible: false,
-      routes: [{ href: "/profile", label: "View Public Profile" }],
-    },
-  ];
-}
 
 function isRouteActive(pathname: string, href: string): boolean {
   if (href === "/workspace") {
@@ -105,11 +48,12 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
     }
     return getCollapsedNavigationGroups();
   });
-  const [authoringRoute, setAuthoringRoute] = useState<NavRoute>({
+  const [authoringRoute, setAuthoringRoute] = useState<WorkspaceNavRoute>({
     href: "/workspace/authoring",
     label: "Become an Author",
   });
-  const [editorialRoute, setEditorialRoute] = useState<NavRoute | null>(null);
+  const [editorialRoute, setEditorialRoute] = useState<WorkspaceNavRoute | null>(null);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,6 +88,26 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    void getMe()
+      .then((user) => {
+        if (!cancelled) {
+          setShowAdminPanel(isAdminAccountRole(user.role));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setShowAdminPanel(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function toggleGroup(groupId: string) {
     setCollapsedGroups((current) => {
       const next = current.includes(groupId)
@@ -155,7 +119,7 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
     });
   }
 
-  const groups = buildWorkspaceNavGroups(authoringRoute, editorialRoute);
+  const groups = buildWorkspaceNavGroups(authoringRoute, editorialRoute, { showAdminPanel });
 
   return (
     <nav className="workspace-navigation" aria-label="Main workspace navigation">

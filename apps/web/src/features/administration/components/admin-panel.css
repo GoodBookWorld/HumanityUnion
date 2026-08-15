@@ -1,0 +1,25 @@
+.admin-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-panel__note {
+  margin: 0.75rem 0 0;
+  max-width: 42rem;
+}
+
+.admin-panel__links {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.admin-panel__link {
+  color: var(--hu-workspace-primary, #1a4d6d);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.admin-panel__link:hover {
+  text-decoration-thickness: 2px;
+}
