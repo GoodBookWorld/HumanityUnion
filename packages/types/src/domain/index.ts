@@ -1180,6 +1180,8 @@ export type {
   AdministrationAuditAction,
   AdministrationAuditAppendInput,
   AdministrationAuditRecord,
+  AdminParticipantDirectoryItem,
+  AdminParticipantDirectoryResponse,
   CapabilityScope,
   CapabilityScopeType,
   OwnershipCheck,

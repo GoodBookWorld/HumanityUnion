@@ -1,5 +1,6 @@
 export type AdminPanelSectionId =
   | "overview"
+  | "views"
   | "participants"
   | "initiatives"
   | "publishing"
@@ -14,9 +15,10 @@ export interface AdminPanelSection {
   readonly href: string;
 }
 
-/** Canonical Admin Panel horizontal navigation — Pack 02. */
+/** Canonical Admin Panel horizontal navigation — Pack 03 (+ Views). */
 export const ADMIN_PANEL_SECTIONS: readonly AdminPanelSection[] = [
   { id: "overview", label: "Overview", href: "/admin" },
+  { id: "views", label: "Views", href: "/admin/views" },
   { id: "participants", label: "Participants", href: "/admin/participants" },
   { id: "initiatives", label: "Initiatives", href: "/admin/initiatives" },
   { id: "publishing", label: "Publishing", href: "/admin/publishing" },
@@ -24,6 +26,21 @@ export const ADMIN_PANEL_SECTIONS: readonly AdminPanelSection[] = [
   { id: "beta-access", label: "Beta Access", href: "/admin/beta-access" },
   { id: "platform", label: "Platform", href: "/admin/platform" },
   { id: "audit", label: "Audit", href: "/admin/audit" },
+] as const;
+
+export type AdminViewsSectionId = "traffic" | "insights" | "subscribers";
+
+export interface AdminViewsSection {
+  readonly id: AdminViewsSectionId;
+  readonly label: string;
+  readonly href: string;
+}
+
+/** Views secondary navigation — Pack 03. */
+export const ADMIN_VIEWS_SECTIONS: readonly AdminViewsSection[] = [
+  { id: "traffic", label: "Traffic", href: "/admin/views" },
+  { id: "insights", label: "Insights", href: "/admin/views/insights" },
+  { id: "subscribers", label: "Subscribers", href: "/admin/views/subscribers" },
 ] as const;
 
 export function resolveAdminPanelSectionId(pathname: string): AdminPanelSectionId {
@@ -43,4 +60,21 @@ export function resolveAdminPanelSectionId(pathname: string): AdminPanelSectionI
   }
 
   return "overview";
+}
+
+export function resolveAdminViewsSectionId(pathname: string): AdminViewsSectionId {
+  const normalized = pathname.replace(/\/$/, "") || "/admin/views";
+
+  if (normalized === "/admin/views/insights" || normalized.startsWith("/admin/views/insights/")) {
+    return "insights";
+  }
+
+  if (
+    normalized === "/admin/views/subscribers" ||
+    normalized.startsWith("/admin/views/subscribers/")
+  ) {
+    return "subscribers";
+  }
+
+  return "traffic";
 }

@@ -210,3 +210,47 @@ export async function deleteMembersByIdentityIdPrefix(prefix: string): Promise<n
 
   return result.deletedCount ?? 0;
 }
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Admin directory search — returns identityIds (auth userIds) matching uniqueName. */
+export async function findIdentityIdsByUniqueNameSearch(
+  search: string,
+  limit = 100,
+): Promise<string[]> {
+  const trimmed = search.trim();
+  if (!trimmed) {
+    return [];
+  }
+
+  await ensureMemberMongoReady();
+  const collection = getMongoCollection<MemberMongoDocument>(MONGO_COLLECTIONS.members);
+  const documents = await collection
+    .find(
+      { uniqueName: { $regex: escapeRegex(trimmed), $options: "i" } },
+      { projection: { identityId: 1 } },
+    )
+    .limit(limit)
+    .toArray();
+
+  return documents.map((document) => document.identityId);
+}
+
+export async function findMembersByIdentityIds(
+  identityIds: readonly string[],
+): Promise<Map<string, PersistedMemberRecord>> {
+  const uniqueIds = [...new Set(identityIds.filter((id) => id.trim().length > 0))];
+  if (uniqueIds.length === 0) {
+    return new Map();
+  }
+
+  await ensureMemberMongoReady();
+  const collection = getMongoCollection<MemberMongoDocument>(MONGO_COLLECTIONS.members);
+  const documents = await collection.find({ identityId: { $in: uniqueIds } }).toArray();
+
+  return new Map(
+    documents.map((document) => [document.identityId, fromMemberMongoDocument(document)]),
+  );
+}

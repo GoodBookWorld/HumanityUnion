@@ -445,3 +445,84 @@ export async function updateAuthUserPassword(
   const { _id: _ignored, ...record } = result;
   return record;
 }
+
+export type AdminAuthUserListSort = "createdAt" | "lastLoginAt" | "email";
+
+export interface ListAuthUsersForAdminQuery {
+  search?: string;
+  status?: AuthUserRecord["status"];
+  role?: AuthUserRecord["role"];
+  /** When set, only these userIds are considered (intersection). */
+  userIdAllowlist?: readonly string[];
+  /** Extra userIds matched via Member.uniqueName search — OR'd with email/displayName search. */
+  searchAlsoUserIds?: readonly string[];
+  sort: AdminAuthUserListSort;
+  order: "asc" | "desc";
+  limit: number;
+  offset: number;
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function stripAuthDocument(document: AuthUserDocument): AuthUserRecord {
+  const { _id: _ignored, ...record } = document;
+  return record;
+}
+
+/**
+ * Admin Panel Pack 03 — pageable auth_users list for Participant directory.
+ * Caller must enforce admin authorization. Never expose passwordHash outside service projection.
+ */
+export async function listAuthUsersForAdmin(
+  query: ListAuthUsersForAdminQuery,
+): Promise<{ items: AuthUserRecord[]; total: number }> {
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+  const filter: Record<string, unknown> = {};
+
+  if (query.status) {
+    filter.status = query.status;
+  }
+
+  if (query.role) {
+    filter.role = query.role;
+  }
+
+  if (query.userIdAllowlist) {
+    if (query.userIdAllowlist.length === 0) {
+      return { items: [], total: 0 };
+    }
+    filter.userId = { $in: [...query.userIdAllowlist] };
+  }
+
+  const search = query.search?.trim();
+  if (search) {
+    const pattern = escapeRegex(search);
+    const orClauses: Record<string, unknown>[] = [
+      { email: { $regex: pattern, $options: "i" } },
+      { displayName: { $regex: pattern, $options: "i" } },
+    ];
+
+    if (query.searchAlsoUserIds && query.searchAlsoUserIds.length > 0) {
+      orClauses.push({ userId: { $in: [...query.searchAlsoUserIds] } });
+    }
+
+    filter.$or = orClauses;
+  }
+
+  const sortDirection = query.order === "asc" ? 1 : -1;
+  const sort: Record<string, 1 | -1> = { [query.sort]: sortDirection };
+
+  const [total, documents] = await Promise.all([
+    collection.countDocuments(filter),
+    collection.find(filter).sort(sort).skip(query.offset).limit(query.limit).toArray(),
+  ]);
+
+  return {
+    total,
+    items: documents.map(stripAuthDocument),
+  };
+}

@@ -39,6 +39,7 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
     const labels = ADMIN_PANEL_SECTIONS.map((section) => section.label);
     assert.deepEqual(labels, [
       "Overview",
+      "Views",
       "Participants",
       "Initiatives",
       "Publishing",
@@ -91,6 +92,7 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
 
   it("direct URL authorization remains enforced on every admin section page", () => {
     for (const segment of [
+      "views",
       "participants",
       "initiatives",
       "publishing",

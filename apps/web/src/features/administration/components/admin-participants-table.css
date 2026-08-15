@@ -1,0 +1,107 @@
+.admin-participants-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0.75rem 0 1rem;
+  max-width: 48rem;
+}
+
+.admin-participants-filters__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.admin-participants-filters__row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.admin-participants-filters__row select {
+  min-width: 9rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid rgba(26, 77, 109, 0.28);
+  border-radius: 0.3rem;
+  font: inherit;
+}
+
+.admin-participants-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(26, 77, 109, 0.14);
+  border-radius: 0.4rem;
+}
+
+.admin-participants-table {
+  width: 100%;
+  min-width: 56rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admin-participants-table th,
+.admin-participants-table td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(26, 77, 109, 0.1);
+}
+
+.admin-participants-table th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+  background: rgba(1, 116, 176, 0.04);
+}
+
+.admin-participants-table__identity {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.admin-participants-table__avatar,
+.admin-participants-table__avatar-fallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.admin-participants-table__avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(1, 116, 176, 0.15);
+  color: var(--hu-workspace-primary, #1a4d6d);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.admin-participants-table__name {
+  margin: 0;
+  font-weight: 600;
+}
+
+.admin-participants-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.admin-participants-pagination__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-panel__capability-gap {
+  margin: 0;
+}

@@ -132,3 +132,36 @@ export interface AdministrationAuditAppendInput {
   readonly afterSummary?: string;
   readonly correlationId?: string;
 }
+
+/** Admin Panel Pack 03 — safe Participant directory row (never includes secrets). */
+export interface AdminParticipantDirectoryItem {
+  readonly userId: string;
+  readonly memberId: string;
+  readonly email: string;
+  readonly displayName: string;
+  readonly role: "member" | "admin";
+  readonly status: "active" | "disabled";
+  readonly emailVerificationStatus: string;
+  readonly createdAt: string;
+  readonly lastLoginAt?: string;
+  readonly uniqueName?: string;
+  readonly memberRecordStatus?: string;
+  readonly verificationLevel?: string;
+  readonly publicName?: string;
+  readonly profileDisplayName?: string;
+  readonly avatarUrl?: string;
+  readonly membership?: {
+    readonly cohortLabel: "Participant" | "Member";
+    readonly status: string;
+    readonly applicationStatus: string;
+    readonly memberNumber: string | null;
+  };
+}
+
+export interface AdminParticipantDirectoryResponse {
+  readonly participants: readonly AdminParticipantDirectoryItem[];
+  readonly total: number;
+  readonly limit: number;
+  readonly offset: number;
+  readonly hasMore: boolean;
+}

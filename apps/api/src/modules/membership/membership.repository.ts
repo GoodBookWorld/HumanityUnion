@@ -211,3 +211,33 @@ export async function assignMembershipMemberNumberForTests(input: {
     applicationStatus: "approved",
   });
 }
+
+export async function findMembershipsByUserIds(
+  userIds: readonly string[],
+): Promise<Map<string, MembershipRecord>> {
+  const uniqueIds = [...new Set(userIds.filter((id) => id.trim().length > 0))];
+  if (uniqueIds.length === 0) {
+    return new Map();
+  }
+
+  await ensureMembershipMongoReady();
+  const collection = getMongoCollection<MembershipDocument>(MONGO_COLLECTIONS.memberships);
+  const documents = await collection.find({ userId: { $in: uniqueIds } }).toArray();
+
+  return new Map(
+    documents.map((document) => [document.userId, normalizeStoredRecord(stripDocument(document))]),
+  );
+}
+
+/** Returns userIds whose membership status matches (for admin directory filters). */
+export async function findUserIdsByMembershipStatus(
+  status: MembershipRecord["status"],
+): Promise<string[]> {
+  await ensureMembershipMongoReady();
+  const collection = getMongoCollection<MembershipDocument>(MONGO_COLLECTIONS.memberships);
+  const documents = await collection
+    .find({ status }, { projection: { userId: 1 } })
+    .toArray();
+
+  return documents.map((document) => document.userId);
+}

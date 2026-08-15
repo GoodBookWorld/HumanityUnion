@@ -13,6 +13,11 @@ export {
   AdministrationValidationError,
 } from "./administration.errors.js";
 export {
+  listAdminParticipants,
+  AdminParticipantDirectoryValidationError,
+} from "./admin-participant-directory.service.js";
+export { default as adminParticipantDirectoryRouter } from "./admin-participant-directory.routes.js";
+export {
   AuditService,
   deleteAdministrationAudit,
   getAdministrationAuditById,
