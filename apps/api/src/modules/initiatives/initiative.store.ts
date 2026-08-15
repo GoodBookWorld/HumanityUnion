@@ -33,39 +33,79 @@ export interface InitiativeUpdate {
 
 const persistence = resolveInitiativePersistenceAdapter();
 
-function ensureBootstrapSeed(initiatives: Map<string, Initiative>): boolean {
-  if (initiatives.has(sampleInitiative.initiativeId)) {
+function ensureBootstrapSeed(target: Map<string, Initiative>): boolean {
+  if (target.has(sampleInitiative.initiativeId)) {
     return false;
   }
 
-  initiatives.set(sampleInitiative.initiativeId, structuredClone(sampleInitiative));
+  target.set(sampleInitiative.initiativeId, structuredClone(sampleInitiative));
   return true;
 }
 
+function replaceInitiativesMap(next: Map<string, Initiative>): void {
+  initiatives.clear();
+  for (const [initiativeId, initiative] of next) {
+    initiatives.set(initiativeId, initiative);
+  }
+}
+
+/**
+ * Loads the in-memory Initiative map from the active persistence adapter.
+ *
+ * Mongo mode must not write during module import — `save()` would call Mongo
+ * before `connectMongoClient()` / hydrate. Seed persistence for Mongo happens
+ * in `syncInitiativeStoreAfterMongoHydrate()` after bootstrap.
+ */
 function loadInitiativesMap(): Map<string, Initiative> {
   const snapshot = persistence.load();
-  const initiatives = new Map<string, Initiative>(
+  const loaded = new Map<string, Initiative>(
     Object.entries(snapshot.initiatives).map(([initiativeId, initiative]) => [
       initiativeId,
       structuredClone(initiative),
     ]),
   );
-  const seededBootstrap = ensureBootstrapSeed(initiatives);
+  const seededBootstrap = ensureBootstrapSeed(loaded);
 
-  if (seededBootstrap) {
-    persistInitiativesMap(initiatives);
+  if (seededBootstrap && persistence.mode !== "mongodb") {
+    persistInitiativesMap(loaded);
   }
 
-  return initiatives;
+  return loaded;
 }
 
-function persistInitiativesMap(initiatives: Map<string, Initiative>): void {
-  persistence.save(snapshotFromInitiatives(initiatives));
+function persistInitiativesMap(source: Map<string, Initiative>): void {
+  persistence.save(snapshotFromInitiatives(source));
 }
 
 const initiatives = loadInitiativesMap();
 
 rebuildProjectedInitiativeCards(Array.from(initiatives.values()));
+
+/**
+ * Re-bind the Initiative store from the Mongo adapter cache after
+ * `hydrateInitiativeMongoPersistence()`. Safe to call only after Mongo connect.
+ */
+export function syncInitiativeStoreAfterMongoHydrate(): void {
+  if (persistence.mode !== "mongodb") {
+    return;
+  }
+
+  const snapshot = persistence.load();
+  const reloaded = new Map<string, Initiative>(
+    Object.entries(snapshot.initiatives).map(([initiativeId, initiative]) => [
+      initiativeId,
+      structuredClone(initiative),
+    ]),
+  );
+  const seededBootstrap = ensureBootstrapSeed(reloaded);
+  replaceInitiativesMap(reloaded);
+
+  if (seededBootstrap) {
+    persistInitiativesMap(initiatives);
+  }
+
+  rebuildProjectedInitiativeCards(Array.from(initiatives.values()));
+}
 
 export function getInitiativeById(initiativeId: string): Initiative | null {
   const initiative = initiatives.get(initiativeId);

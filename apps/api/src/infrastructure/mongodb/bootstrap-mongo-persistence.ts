@@ -28,7 +28,7 @@ import { hydrateInitiativePublicImpactMongoPersistence } from "../../modules/ini
 import { hydrateInitiativePublicImpactLifecycleDraftMongoPersistence } from "../../modules/initiative-public-impact-lifecycle/persistence/initiative-public-impact-lifecycle-draft-mongo.persistence.js";
 import { hydrateInitiativePublicImpactReportMongoPersistence } from "../../modules/initiative-public-impact-lifecycle/initiative-public-impact-report.store.js";
 import { hydrateInitiativeVersionRevisionMongoPersistence } from "../../modules/initiative-version-revision/persistence/initiative-version-revision-mongo.persistence.js";
-import { hydrateInitiativeMongoPersistence } from "../../modules/initiatives/persistence/initiative-mongo.persistence.js";
+import { hydrateInitiativeMongoPersistence, flushInitiativeMongoPersistence } from "../../modules/initiatives/persistence/initiative-mongo.persistence.js";
 import { hydrateOfficialResponseMongoPersistence } from "../../modules/official-response/persistence/official-response-mongo.persistence.js";
 import { hydrateParticipationAreaMongoPersistence } from "../../modules/participation-area/persistence/participation-area-mongo.persistence.js";
 import { hydratePublicCivicArchiveMongoPersistence } from "../../modules/public-civic-archive/persistence/public-civic-archive-mongo.persistence.js";
@@ -42,8 +42,11 @@ export function isAnyMongoPersistenceSelected(): boolean {
 }
 
 /**
- * Connects to MongoDB, ensures indexes, and hydrates module caches before stores load.
+ * Connects to MongoDB, ensures indexes, and hydrates module caches before HTTP routes load.
  * Production always bootstraps (durable keys default to mongodb).
+ *
+ * Initiative in-memory store sync runs after adapter hydrate so sample seeding
+ * never writes to Mongo during module import.
  */
 export async function bootstrapMongoPersistence(): Promise<void> {
   if (!shouldBootstrapMongoPersistence()) {
@@ -89,4 +92,12 @@ export async function bootstrapMongoPersistence(): Promise<void> {
     hydrateInitiativeCivicArchiveVersionMongoPersistence(),
     hydrateMediaUploadRecordsFromMongo(),
   ]);
+
+  // Initiative store may seed a bootstrap sample; that write must run only after
+  // Mongo connect + adapter hydrate (never during module import).
+  const { syncInitiativeStoreAfterMongoHydrate } = await import(
+    "../../modules/initiatives/initiative.store.js"
+  );
+  syncInitiativeStoreAfterMongoHydrate();
+  await flushInitiativeMongoPersistence();
 }
