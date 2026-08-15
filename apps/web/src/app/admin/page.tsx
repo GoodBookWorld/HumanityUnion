@@ -1,29 +1,12 @@
-import { MemberWorkspace } from "../../components/member/MemberWorkspace";
-import { WorkspaceAuthGate } from "../../features/auth/components/WorkspaceAuthGate";
-import { AdminPanelPageContent } from "../../features/administration/components/AdminPanelPageContent";
-import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
+"use client";
 
-export const metadata = {
-  title: "Admin Panel | Humanity Union",
-  description: "Platform administration foundation for Humanity Union administrators.",
-};
+import { AdminAccessGate } from "../../features/administration/components/AdminAccessGate";
+import { AdminOverviewSection } from "../../features/administration/components/AdminOverviewSection";
 
 /**
- * Admin Panel root — authentication via WorkspaceAuthGate; admin authorization
- * enforced independently in AdminPanelPageContent via server-backed getMe().
+ * Admin Overview — rendered inside layout gates; local AdminAccessGate supplies
+ * the authenticated admin identity to the overview section.
  */
-export default function AdminPanelPage() {
-  return (
-    <main className="humanity-workspace-page">
-      <WorkspaceAuthGate>
-        <MemberWorkspace
-          title="Admin Panel"
-          subtitle="Platform administration for Humanity Union"
-          workspaceNavigation={<WorkspaceNavigation />}
-        >
-          <AdminPanelPageContent />
-        </MemberWorkspace>
-      </WorkspaceAuthGate>
-    </main>
-  );
+export default function AdminOverviewPage() {
+  return <AdminAccessGate>{(user) => <AdminOverviewSection user={user} />}</AdminAccessGate>;
 }

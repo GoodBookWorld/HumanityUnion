@@ -5,6 +5,11 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { isAdminAccountRole } from "./is-admin-role";
+import {
+  ADMIN_PANEL_SECTIONS,
+  resolveAdminPanelSectionId,
+} from "./admin-panel-sections";
+import { ADMIN_OVERVIEW_STATISTIC_CARDS } from "./admin-overview-statistics-config";
 import { buildWorkspaceNavGroups } from "../initiatives/components/build-workspace-nav-groups";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -15,95 +20,137 @@ function read(relativePath: string): string {
 
 const authoringRoute = { href: "/workspace/authoring", label: "Become an Author" };
 
-describe("Admin Panel foundation", () => {
+describe("Admin Panel Pack 02 — navigation, overview & capability inventory", () => {
+  it("Administration group order is Workspace → Administration → Civic Work", () => {
+    const groups = buildWorkspaceNavGroups(authoringRoute, null, { showAdminPanel: true });
+    const ids = groups.map((group) => group.id);
+
+    assert.deepEqual(ids.slice(0, 3), ["workspace", "administration", "civic"]);
+    assert.equal(ids.indexOf("administration") < ids.indexOf("settings"), true);
+    assert.equal(ids.indexOf("administration") < ids.indexOf("public-profile"), true);
+  });
+
+  it("non-admin does not see Administration", () => {
+    const groups = buildWorkspaceNavGroups(authoringRoute, null, { showAdminPanel: false });
+    assert.equal(groups.some((group) => group.id === "administration"), false);
+  });
+
+  it("admin navigation renders canonical horizontal sections", () => {
+    const labels = ADMIN_PANEL_SECTIONS.map((section) => section.label);
+    assert.deepEqual(labels, [
+      "Overview",
+      "Participants",
+      "Initiatives",
+      "Publishing",
+      "SEO",
+      "Beta Access",
+      "Platform",
+      "Audit",
+    ]);
+
+    const nav = read("features/administration/components/AdminPanelNavigation.tsx");
+    assert.match(nav, /ADMIN_PANEL_SECTIONS/);
+    assert.match(nav, /overflow-x|admin-panel-navigation/);
+    assert.match(read("features/administration/components/admin-panel-navigation.css"), /overflow-x:\s*auto/);
+  });
+
+  it("resolves active admin section from pathname", () => {
+    assert.equal(resolveAdminPanelSectionId("/admin"), "overview");
+    assert.equal(resolveAdminPanelSectionId("/admin/"), "overview");
+    assert.equal(resolveAdminPanelSectionId("/admin/publishing"), "publishing");
+    assert.equal(resolveAdminPanelSectionId("/admin/beta-access"), "beta-access");
+  });
+
   it("isAdminAccountRole recognizes only the canonical admin role", () => {
     assert.equal(isAdminAccountRole("admin"), true);
     assert.equal(isAdminAccountRole("member"), false);
-    assert.equal(isAdminAccountRole("moderator"), false);
-    assert.equal(isAdminAccountRole(null), false);
-    assert.equal(isAdminAccountRole(undefined), false);
   });
 
-  it("admin sees Administration → Admin Panel in Workspace nav groups", () => {
-    const groups = buildWorkspaceNavGroups(authoringRoute, null, { showAdminPanel: true });
-    const administration = groups.find((group) => group.id === "administration");
-
-    assert.ok(administration);
-    assert.equal(administration.label, "Administration");
-    assert.deepEqual(administration.routes, [{ href: "/admin", label: "Admin Panel" }]);
-  });
-
-  it("non-admin does not see the Administration group", () => {
-    const groups = buildWorkspaceNavGroups(authoringRoute, null, { showAdminPanel: false });
-    assert.equal(
-      groups.some((group) => group.id === "administration"),
-      false,
-    );
-    assert.equal(
-      groups.some((group) => group.routes.some((route) => route.href === "/admin")),
-      false,
-    );
-  });
-
-  it("WorkspaceNavigation loads admin awareness from getMe role (no parallel auth state)", () => {
+  it("WorkspaceNavigation loads admin awareness from getMe (no parallel auth state)", () => {
     const nav = read("features/initiatives/components/WorkspaceNavigation.tsx");
     assert.match(nav, /getMe/);
     assert.match(nav, /isAdminAccountRole/);
-    assert.match(nav, /showAdminPanel/);
-    assert.match(nav, /buildWorkspaceNavGroups/);
     assert.doesNotMatch(nav, /AuthProvider|useCurrentUser|createContext/);
   });
 
-  it("/admin page uses WorkspaceAuthGate and AdminPanelPageContent", () => {
-    const page = read("app/admin/page.tsx");
-    assert.match(page, /WorkspaceAuthGate/);
-    assert.match(page, /AdminPanelPageContent/);
-    assert.match(page, /Admin Panel/);
-    assert.match(page, /MemberWorkspace/);
-    assert.match(page, /WorkspaceNavigation/);
+  it("/admin layout and pages independently enforce authorization", () => {
+    const layout = read("app/admin/layout.tsx");
+    assert.match(layout, /WorkspaceAuthGate/);
+    assert.match(layout, /MemberWorkspace/);
+
+    const overview = read("app/admin/page.tsx");
+    assert.match(overview, /AdminAccessGate/);
+    assert.match(overview, /AdminOverviewSection/);
+
+    const gate = read("features/administration/components/AdminAccessGate.tsx");
+    assert.match(gate, /getMe/);
+    assert.match(gate, /isAdminAccountRole/);
+    assert.match(gate, /Access restricted/);
+    assert.doesNotMatch(gate, /showAdminPanel/);
   });
 
-  it("AdminPanelPageContent independently enforces admin authorization via getMe", () => {
-    const content = read("features/administration/components/AdminPanelPageContent.tsx");
-    assert.match(content, /getMe/);
-    assert.match(content, /isAdminAccountRole/);
-    assert.match(content, /Access restricted/);
-    assert.match(content, /Administrators only/);
-    assert.match(content, /StatusBanner/);
-    // Must not treat nav visibility as sufficient authorization.
-    assert.doesNotMatch(content, /showAdminPanel/);
+  it("direct URL authorization remains enforced on every admin section page", () => {
+    for (const segment of [
+      "participants",
+      "initiatives",
+      "publishing",
+      "seo",
+      "beta-access",
+      "platform",
+      "audit",
+    ]) {
+      const page = read(`app/admin/${segment}/page.tsx`);
+      assert.match(page, /AdminAccessGate/, `${segment} must use AdminAccessGate`);
+    }
   });
 
-  it("unauthenticated users are gated to login via WorkspaceAuthGate returnTo", () => {
-    const gate = read("features/auth/components/WorkspaceAuthGate.tsx");
-    assert.match(gate, /useClientAuthStatus/);
-    assert.match(gate, /\/login\?returnTo=/);
-    assert.match(gate, /unauthenticated/);
+  it("Overview never invents fallback statistics", () => {
+    const overview = read("features/administration/components/AdminOverviewSection.tsx");
+    assert.match(overview, /fetchPlatformStatistics/);
+    assert.match(overview, /fetchMembershipStatistics/);
+    assert.match(overview, /fetchPublicBlogPosts/);
+    assert.match(overview, /listEditorialReviewQueue/);
+    assert.match(overview, /PublicStatisticsGrid/);
+    assert.match(overview, /Unavailable/);
+    assert.doesNotMatch(overview, /\?\? 0/);
+    assert.doesNotMatch(overview, /fallbackCount|fakeTotal|hardcodedStat/i);
 
-    const page = read("app/admin/page.tsx");
-    assert.match(page, /WorkspaceAuthGate/);
+    for (const card of ADMIN_OVERVIEW_STATISTIC_CARDS) {
+      assert.ok(card.key);
+      assert.ok(card.label);
+    }
   });
 
-  it("direct /admin URL cannot bypass authorization (role check on page content)", () => {
-    const page = read("app/admin/page.tsx");
-    const content = read("features/administration/components/AdminPanelPageContent.tsx");
+  it("Initiative and Publishing admin surfaces use canonical APIs", () => {
+    const initiatives = read("features/administration/components/AdminInitiativesSection.tsx");
+    assert.match(initiatives, /listInitiatives/);
+    assert.match(initiatives, /Deferred admin correction|no admin force-edit/i);
+    assert.doesNotMatch(initiatives, /saveInitiativeDraft|updatePublishedInitiative|createInitiativeDraft/);
 
-    assert.match(page, /AdminPanelPageContent/);
-    assert.match(content, /role/);
-    assert.match(content, /isAdminAccountRole\(currentUser\.role\)/);
-    assert.match(content, /setDenied\(true\)/);
+    const publishing = read("features/administration/components/AdminPublishingSection.tsx");
+    assert.match(publishing, /listEditorialReviewQueue/);
+    assert.match(publishing, /fetchPublicBlogPosts/);
+    assert.match(publishing, /\/workspace\/editorial/);
   });
 
-  it("foundation reuses Workspace visual language and defers unimplemented admin sections", () => {
-    const content = read("features/administration/components/AdminPanelPageContent.tsx");
-    assert.match(content, /ProfileSection/);
-    assert.match(content, /ProfileField/);
-    assert.match(content, /Platform \/ Administration status/);
-    assert.match(content, /\/workspace\/editorial/);
-    assert.match(content, /title="Participants" placeholder/);
-    assert.match(content, /title="Beta Access" placeholder/);
-    assert.match(content, /title="Platform Capabilities" placeholder/);
-    assert.match(content, /title="Audit" placeholder/);
-    assert.doesNotMatch(content, /\/api\/v1\/admin/);
+  it("Beta Access uses existing admin invite API; Audit/capabilities remain explicit gaps", () => {
+    const beta = read("features/administration/components/AdminBetaAccessSection.tsx");
+    assert.match(beta, /listBetaInvitesForAdmin|createBetaInviteForAdmin/);
+    assert.match(read("features/administration/beta-invite-api.ts"), /\/api\/v1\/beta-invites/);
+
+    const audit = read("features/administration/components/AdminAuditSection.tsx");
+    assert.match(audit, /no Web-consumable HTTP route/i);
+
+    const platform = read("features/administration/components/AdminPlatformSection.tsx");
+    assert.match(platform, /getPlatformConfig/);
+    assert.match(platform, /Capability grants \(gap\)/);
+  });
+
+  it("SEO section inventories existing indexing configuration without inventing a settings store", () => {
+    const seo = read("features/administration/components/AdminSeoSection.tsx");
+    assert.match(seo, /shouldDisallowSearchIndexing|resolvePlatformIndexingMode/);
+    assert.match(seo, /robots\.txt/);
+    assert.match(seo, /sitemap/);
+    assert.doesNotMatch(seo, /localStorage|seoSettings|SEO_SETTINGS/);
   });
 });

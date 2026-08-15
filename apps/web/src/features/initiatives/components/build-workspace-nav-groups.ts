@@ -8,7 +8,8 @@ export type WorkspaceNavGroup = {
 };
 
 /**
- * Pure Workspace sidebar group builder (Recovery Task 33 + Admin Panel foundation).
+ * Pure Workspace sidebar group builder.
+ * Admin Panel Pack 02 order: Workspace → Administration → Civic Work → Settings → Public Profile.
  * Administration group is included only when `showAdminPanel` is true.
  */
 export function buildWorkspaceNavGroups(
@@ -33,6 +34,18 @@ export function buildWorkspaceNavGroups(
       collapsible: false,
       routes: [{ href: "/workspace", label: "Workspace Home" }],
     },
+  ];
+
+  if (options.showAdminPanel) {
+    groups.push({
+      id: "administration",
+      label: "Administration",
+      collapsible: false,
+      routes: [{ href: "/admin", label: "Admin Panel" }],
+    });
+  }
+
+  groups.push(
     {
       id: "civic",
       label: "Civic Work",
@@ -51,23 +64,13 @@ export function buildWorkspaceNavGroups(
         { href: "/notifications", label: "Notifications" },
       ],
     },
-  ];
-
-  if (options.showAdminPanel) {
-    groups.push({
-      id: "administration",
-      label: "Administration",
+    {
+      id: "public-profile",
+      label: "Public Profile",
       collapsible: false,
-      routes: [{ href: "/admin", label: "Admin Panel" }],
-    });
-  }
-
-  groups.push({
-    id: "public-profile",
-    label: "Public Profile",
-    collapsible: false,
-    routes: [{ href: "/profile", label: "View Public Profile" }],
-  });
+      routes: [{ href: "/profile", label: "View Public Profile" }],
+    },
+  );
 
   return groups;
 }

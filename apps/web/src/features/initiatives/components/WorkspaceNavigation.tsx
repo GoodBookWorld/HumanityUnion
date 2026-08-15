@@ -19,6 +19,14 @@ import {
 
 import "./workspace-navigation.css";
 
+/**
+ * Sidebar structure (Recovery Task 33 — Workspace UX Evolution, Part 3).
+ * Author Access Pack 04 / Publishing Workspace Pack 05 — one evolving entry:
+ * Become an Author → /workspace/authoring; Publishing → /workspace/publishing
+ * via `publishingWorkspaceHref` from authoring access state.
+ * Editorial Review Pack 06 — Editors/Administrators also see Editorial Review.
+ * Admin Panel Pack 02 — Administration group for admins only (see buildWorkspaceNavGroups).
+ */
 function isRouteActive(pathname: string, href: string): boolean {
   if (href === "/workspace") {
     return pathname === "/workspace";

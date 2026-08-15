@@ -23,3 +23,52 @@
 .admin-panel__link:hover {
   text-decoration-thickness: 2px;
 }
+
+.admin-panel__entity-list {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-panel__entity-card {
+  padding: 0.85rem 1rem;
+}
+
+.admin-panel__entity-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+}
+
+.admin-panel__form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  max-width: 24rem;
+}
+
+.admin-panel__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.admin-panel__input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(26, 77, 109, 0.28);
+  border-radius: 0.35rem;
+  font: inherit;
+}
+
+.admin-panel__gap-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.admin-panel__statistics {
+  margin-top: 0.25rem;
+}
