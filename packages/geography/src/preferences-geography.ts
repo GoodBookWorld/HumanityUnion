@@ -7,7 +7,7 @@ import {
   normalizeCountryInput,
   normalizeRegionInput,
   OTHER_REGION_SLUG,
-} from "./geography.helpers";
+} from "./geography.helpers.js";
 
 export function formatPreferredRegionId(countryCode: string, regionCode: string): string {
   const normalizedCountry = normalizeCountryInput(countryCode);

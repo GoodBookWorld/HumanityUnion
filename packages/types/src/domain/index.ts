@@ -1,10 +1,10 @@
-export type { AuthAccountStatus, AuthIdentity, AuthProvider, AuthRole, AuthUserId } from "./auth";
+export type { AuthAccountStatus, AuthIdentity, AuthProvider, AuthRole, AuthUserId } from "./auth.js";
 export type {
   AuthTokenPair,
   AuthUserAccountRole,
   AuthUserAccountStatus,
   AuthUserPublic,
-} from "./auth-user";
+} from "./auth-user.js";
 export type {
   EmailAuditRecordPublic,
   EmailDeliveryStatus,
@@ -12,7 +12,7 @@ export type {
   EmailTemplateId,
   EmailVerificationStatus,
   EmailVerificationTokenPurpose,
-} from "./email";
+} from "./email.js";
 export type {
   FairBalance,
   ImpactProfileSummary,
@@ -21,7 +21,7 @@ export type {
   MemberRole,
   MemberStatus,
   VerificationLevel,
-} from "./member";
+} from "./member.js";
 export type {
   MemberProfile,
   MemberProfilePrivacySettings,
@@ -33,14 +33,14 @@ export type {
   PublicMemberProfile,
   PublicMemberProfileHiddenSections,
   PublicMemberProfileMessagingAvailability,
-} from "./member-profile";
+} from "./member-profile.js";
 export type {
   CommunicationReminder,
   CommunicationReminderCategory,
   CommunicationReminderListResponse,
   CommunicationReminderStatus,
   CommunicationReminderView,
-} from "./communication-reminder";
+} from "./communication-reminder.js";
 export type {
   DirectConversation,
   DirectConversationDetail,
@@ -55,8 +55,8 @@ export type {
   DirectMessageProjection,
   DirectMessageStatus,
   DirectMessagingPolicy,
-} from "./direct-messaging";
-export type { ParticipantStatistics, PublicParticipantStatistics } from "./participant-statistics";
+} from "./direct-messaging.js";
+export type { ParticipantStatistics, PublicParticipantStatistics } from "./participant-statistics.js";
 export type {
   AccessibilityPreferences,
   CommunicationPreferences,
@@ -67,14 +67,14 @@ export type {
   ParticipationPreferences,
   VisibilityPreferences,
   WorkspacePreferences,
-} from "./member-preferences";
+} from "./member-preferences.js";
 export type {
   LanguageCode,
   OriginalContentLanguageMetadata,
   ParticipantLanguageContext,
   PriorityLanguageCode,
   TranslationDisplayPreference,
-} from "./language";
+} from "./language.js";
 export {
   DEFAULT_PLATFORM_LANGUAGE,
   PRIORITY_LANGUAGE_CODES,
@@ -84,7 +84,7 @@ export {
   isRtlLanguageCode,
   isTranslationDisplayPreference,
   normalizeLanguageCode,
-} from "./language";
+} from "./language.js";
 export type {
   ContentTranslationSourceKind,
   ResolvedContentPresentationMode,
@@ -95,16 +95,16 @@ export type {
   TranslationFreshness,
   TranslationKind,
   TranslationProviderId,
-} from "./content-translation";
-export type { ApproximateIpGeography, ApproximateIpGeographySource } from "./ip-geography";
+} from "./content-translation.js";
+export type { ApproximateIpGeography, ApproximateIpGeographySource } from "./ip-geography.js";
 export type {
   AnalysisId,
   CollaborativeAnalysis,
   CollaborativeAnalysisStatus,
-} from "./collaborative-analysis";
-export type { AnalysisMetrics } from "./analysis-metrics";
-export type { AnalysisSummary, AnalysisSummaryId } from "./analysis-summary";
-export type { Contribution, ContributionType } from "./contribution";
+} from "./collaborative-analysis.js";
+export type { AnalysisMetrics } from "./analysis-metrics.js";
+export type { AnalysisSummary, AnalysisSummaryId } from "./analysis-summary.js";
+export type { Contribution, ContributionType } from "./contribution.js";
 export type {
   Ballot,
   BallotId,
@@ -128,10 +128,10 @@ export type {
   ParticipantDecision,
   ParticipantDecisionId,
   ParticipantDecisionStatus,
-} from "./collective-decision";
-export type { ProgressPolicy } from "./progress-policy";
-export type { Readiness } from "./readiness";
-export type { Signal, SignalId, SignalType } from "./signal";
+} from "./collective-decision/index.js";
+export type { ProgressPolicy } from "./progress-policy.js";
+export type { Readiness } from "./readiness.js";
+export type { Signal, SignalId, SignalType } from "./signal.js";
 export type {
   ContributionId,
   Initiative,
@@ -150,19 +150,19 @@ export type {
   RevisionId,
   TimelineEvent,
   TimelineEventId,
-} from "./initiative";
+} from "./initiative.js";
 export type {
   InitiativeCoverMedia,
   InitiativeCoverMediaExternalProvider,
   InitiativeCoverMediaType,
   InitiativeCoverMediaVerificationStatus,
   ParsedExternalVideoUrl,
-} from "./initiative-cover-media";
+} from "./initiative-cover-media.js";
 export {
   buildExternalVideoEmbedUrl,
   parseExternalVideoUrl,
   resolveInitiativeCoverMedia,
-} from "./initiative-cover-media";
+} from "./initiative-cover-media.js";
 export type {
   CivicArtifactType,
   DirectInitiativeAncestry,
@@ -172,15 +172,15 @@ export type {
   InitiativeAncestryKind,
   TransitiveInitiativeAncestry,
   TransitiveInitiativeAncestryCandidate,
-} from "./initiative-ancestry";
+} from "./initiative-ancestry.js";
 export {
   CIVIC_ARTIFACT_TYPE_CANONICAL_MODULE,
   CIVIC_ARTIFACT_TYPES,
   INITIATIVE_ANCESTRY_KINDS,
   isCivicArtifactType,
-} from "./initiative-ancestry";
-export type { InitiativeOwnerAccessPayload } from "./initiative-owner-studio";
-export type { InitiativeLifecyclePhase } from "./initiative-lifecycle";
+} from "./initiative-ancestry.js";
+export type { InitiativeOwnerAccessPayload } from "./initiative-owner-studio.js";
+export type { InitiativeLifecyclePhase } from "./initiative-lifecycle.js";
 export {
   canTransitionInitiativeLifecycle,
   INITIATIVE_LIFECYCLE_PHASE_LABELS,
@@ -188,39 +188,39 @@ export {
   INITIATIVE_TIMELINE_EVENT_LABELS,
   isInitiativeArchived,
   isInitiativePubliclyProjected,
-} from "./initiative-lifecycle";
+} from "./initiative-lifecycle.js";
 export type {
   InitiativeCollaborativeAnalysis,
   InitiativeCollaborativeAnalysisId,
   InitiativeCollaborativeAnalysisStatus,
-} from "./initiative-collaborative-analysis";
+} from "./initiative-collaborative-analysis.js";
 export type {
   InitiativeImprovementProposal,
   InitiativeImprovementProposalDecision,
   InitiativeImprovementProposalId,
   InitiativeImprovementProposalStatus,
-} from "./initiative-improvement-proposal";
+} from "./initiative-improvement-proposal.js";
 export type {
   InitiativeImprovementProposalsCollection,
   InitiativeImprovementProposalsCollectionStatus,
   InitiativeStructuredProposal,
   InitiativeStructuredProposalStatus,
-} from "./initiative-improvement-proposals-stage";
+} from "./initiative-improvement-proposals-stage.js";
 export type {
   InitiativeProposalAnalysisReference,
   InitiativeProposalCandidateRef,
   InitiativeProposalGroup,
   InitiativeProposalIntelligenceSnapshot,
-} from "./initiative-proposal-intelligence-snapshot";
+} from "./initiative-proposal-intelligence-snapshot.js";
 export type {
   InitiativeProposalReaction,
   InitiativeProposalReactionKind,
   InitiativeProposalReactionSummary,
-} from "./initiative-proposal-reaction";
+} from "./initiative-proposal-reaction.js";
 export type {
   PublicInitiativeImprovementProposalsCollectionProjection,
   PublicInitiativeStructuredProposal,
-} from "./public-initiative-improvement-proposals-stage";
+} from "./public-initiative-improvement-proposals-stage.js";
 export type {
   InitiativeRevisionChange,
   InitiativeRevisionChangeOrigin,
@@ -231,18 +231,18 @@ export type {
   InitiativeRevisionEligibleStructuredProposal,
   InitiativeVersionRevision,
   InitiativeVersionRevisionId,
-} from "./initiative-version-revision";
+} from "./initiative-version-revision.js";
 export type {
   InitiativeRevisionAnalysisReference,
   InitiativeRevisionConflictWarning,
   InitiativeRevisionConsistencyCheck,
   InitiativeRevisionIntelligenceSnapshot,
-} from "./initiative-revision-intelligence-snapshot";
+} from "./initiative-revision-intelligence-snapshot.js";
 export type {
   InitiativeRevisionReaction,
   InitiativeRevisionReactionKind,
   InitiativeRevisionReactionSummary,
-} from "./initiative-revision-reaction";
+} from "./initiative-revision-reaction.js";
 export type {
   InitiativePetitionAnalysisReference,
   InitiativePetitionConsistencyCheck,
@@ -252,8 +252,8 @@ export type {
   InitiativePetitionProposalReference,
   InitiativePetitionRevisionReference,
   PetitionTraceability,
-} from "./initiative-petition-lifecycle";
-export type { PetitionVisitorSignalRecord } from "./initiative-petition-visitor-signal";
+} from "./initiative-petition-lifecycle.js";
+export type { PetitionVisitorSignalRecord } from "./initiative-petition-visitor-signal.js";
 export type {
   DecisionSessionTraceability,
   InitiativeDecisionSessionAnalysisReference,
@@ -267,7 +267,7 @@ export type {
   InitiativeDecisionSessionRecommendation,
   InitiativeDecisionSessionRecommendationKind,
   InitiativeDecisionSessionRevisionReference,
-} from "./initiative-decision-session-lifecycle";
+} from "./initiative-decision-session-lifecycle.js";
 export type {
   CollectiveDecisionStructuredContent,
   CollectiveDecisionTraceability,
@@ -280,7 +280,7 @@ export type {
   InitiativeCollectiveDecisionProposalReference,
   InitiativeCollectiveDecisionRevisionReference,
   InitiativeCollectiveDecisionSessionReference,
-} from "./initiative-collective-decision-lifecycle";
+} from "./initiative-collective-decision-lifecycle.js";
 export type {
   CivicCompatibilityConcern,
   CivicCompatibilityConfidenceLevel,
@@ -292,7 +292,7 @@ export type {
   CivicReferenceFrameworkEntry,
   CivicReferenceFrameworkType,
   ReviewedDocumentReference,
-} from "./civic-compatibility-review";
+} from "./civic-compatibility-review.js";
 export type {
   DecisionSession,
   DecisionSessionEligibility,
@@ -300,7 +300,7 @@ export type {
   DecisionSessionPackageReferences,
   DecisionSessionStatus,
   DecisionSessionStructuredContent,
-} from "./decision-session";
+} from "./decision-session.js";
 export type {
   InitiativeCollectiveDecision,
   InitiativeCollectiveDecisionEligibility,
@@ -311,7 +311,7 @@ export type {
   InitiativeCollectiveDecisionStatus,
   InitiativeCollectiveDecisionVoteCohortStatistics,
   ParticipationScope,
-} from "./initiative-collective-decision";
+} from "./initiative-collective-decision.js";
 export {
   canTransitionInitiativeCollectiveDecision,
   createEmptyInitiativeCollectiveDecisionOutcome,
@@ -319,17 +319,17 @@ export {
   createEmptyInitiativeCollectiveDecisionVoteCohortStatistics,
   INITIATIVE_COLLECTIVE_DECISION_TRANSITIONS,
   isInitiativeCollectiveDecisionTerminal,
-} from "./initiative-collective-decision";
+} from "./initiative-collective-decision.js";
 export type {
   InitiativeImplementationCommitment,
   InitiativeImplementationCommitmentId,
   InitiativeImplementationCommitmentStatus,
-} from "./initiative-implementation-commitment";
+} from "./initiative-implementation-commitment.js";
 export {
   canTransitionInitiativeImplementationCommitment,
   INITIATIVE_IMPLEMENTATION_COMMITMENT_TRANSITIONS,
   isInitiativeImplementationCommitmentTerminal,
-} from "./initiative-implementation-commitment";
+} from "./initiative-implementation-commitment.js";
 export type {
   ImplementationCommitmentTraceability,
   InitiativeImplementationCommitmentCandidate,
@@ -341,7 +341,7 @@ export type {
   InitiativeImplementationCommitmentLifecycleDraftContext,
   InitiativeImplementationCommitmentPackage,
   InitiativeImplementationCommitmentProposalStatus,
-} from "./initiative-implementation-commitment-lifecycle";
+} from "./initiative-implementation-commitment-lifecycle.js";
 export type {
   ImplementationTrackingUpdate,
   ImplementationTrackingUpdateId,
@@ -349,13 +349,13 @@ export type {
   InitiativeImplementationTrackingId,
   InitiativeImplementationTrackingStatus,
   SuggestedImplementationTrackingStage,
-} from "./initiative-implementation-tracking";
+} from "./initiative-implementation-tracking.js";
 export {
   canTransitionInitiativeImplementationTracking,
   INITIATIVE_IMPLEMENTATION_TRACKING_TRANSITIONS,
   isInitiativeImplementationTrackingTerminal,
   SUGGESTED_IMPLEMENTATION_TRACKING_STAGES,
-} from "./initiative-implementation-tracking";
+} from "./initiative-implementation-tracking.js";
 export type {
   ImplementationTrackingTraceability,
   InitiativeImplementationTrackingCandidate,
@@ -366,7 +366,7 @@ export type {
   InitiativeImplementationTrackingLifecycleDraftContext,
   InitiativeImplementationTrackingPackage,
   InitiativeImplementationTrackingPackageReference,
-} from "./initiative-implementation-tracking-lifecycle";
+} from "./initiative-implementation-tracking-lifecycle.js";
 export type {
   InitiativeOfficialResponseCandidate,
   InitiativeOfficialResponseConsistencyCheck,
@@ -378,7 +378,7 @@ export type {
   InitiativeOfficialResponseTrackingPackageReference,
   InitiativeOfficialResponseTrackingRecordReference,
   OfficialResponseTraceability,
-} from "./initiative-official-response-lifecycle";
+} from "./initiative-official-response-lifecycle.js";
 export type {
   InitiativePublicImpactAnalysisReference,
   InitiativePublicImpactCommitmentPackageReference,
@@ -399,8 +399,8 @@ export type {
   InitiativePublicImpactTrackingPackageReference,
   InitiativePublicImpactTrackingRecordSummary,
   PublicImpactTraceability,
-} from "./initiative-public-impact-lifecycle";
-export { INITIATIVE_PUBLIC_IMPACT_REPORT_SECTION_IDS } from "./initiative-public-impact-lifecycle";
+} from "./initiative-public-impact-lifecycle.js";
+export { INITIATIVE_PUBLIC_IMPACT_REPORT_SECTION_IDS } from "./initiative-public-impact-lifecycle.js";
 export type {
   CivicArchiveTraceability,
   InitiativeCivicArchiveCompleteness,
@@ -416,11 +416,11 @@ export type {
   InitiativeCivicArchiveTimelineStatus,
   InitiativeCivicArchiveVersion,
   InitiativeLifecycleArchiveDocument,
-} from "./initiative-civic-archive-lifecycle";
+} from "./initiative-civic-archive-lifecycle.js";
 export {
   INITIATIVE_CIVIC_ARCHIVE_SECTION_IDS,
   INITIATIVE_LIFECYCLE_ARCHIVE_DISCLAIMER,
-} from "./initiative-civic-archive-lifecycle";
+} from "./initiative-civic-archive-lifecycle.js";
 export type {
   InitiativePublicImpact,
   InitiativePublicImpactId,
@@ -428,21 +428,21 @@ export type {
   PublicImpactEvidence,
   PublicImpactEvidenceId,
   PublicImpactEvidenceReferenceType,
-} from "./initiative-public-impact";
+} from "./initiative-public-impact.js";
 export {
   canTransitionInitiativePublicImpact,
   INITIATIVE_PUBLIC_IMPACT_TRANSITIONS,
   isInitiativePublicImpactTerminal,
   PUBLIC_IMPACT_EVIDENCE_REFERENCE_TYPES,
-} from "./initiative-public-impact";
-export type { MemberPublicProjection } from "./member-public-projection";
+} from "./initiative-public-impact.js";
+export type { MemberPublicProjection } from "./member-public-projection.js";
 export type {
   LatestInitiativeCardProjection,
   LatestInitiativeRelatedPublicLink,
   LatestInitiativesPublicProjection,
   PublicExperienceRouteStatus,
-} from "./public-latest-initiatives";
-export type { PublicInitiativeProjection } from "./public-initiative";
+} from "./public-latest-initiatives.js";
+export type { PublicInitiativeProjection } from "./public-initiative.js";
 export type {
   CreateInitiativeCommentInput,
   InitiativeComment,
@@ -450,17 +450,17 @@ export type {
   InitiativeCommentModerationState,
   InitiativeCommentStatus,
   PublicCommentAuthor,
-} from "./initiative-comment";
+} from "./initiative-comment.js";
 export type {
   InitiativeCommentReaction,
   InitiativeCommentReactionKind,
   InitiativeCommentReactionSummary,
-} from "./initiative-comment-reaction";
+} from "./initiative-comment-reaction.js";
 export type {
   InitiativeAnalysisReaction,
   InitiativeAnalysisReactionKind,
   InitiativeAnalysisReactionSummary,
-} from "./initiative-analysis-reaction";
+} from "./initiative-analysis-reaction.js";
 export type {
   InitiativeAnalysisDiscussionStatistics,
   InitiativeAnalysisSourceArgument,
@@ -469,7 +469,7 @@ export type {
   InitiativeAnalysisSourceProposalCandidate,
   InitiativeAnalysisSourceSnapshot,
   InitiativeAnalysisSourceTopic,
-} from "./initiative-analysis-source-snapshot";
+} from "./initiative-analysis-source-snapshot.js";
 export type {
   InitiativeActiveAlliesProjection,
   InitiativeActiveAllyEntry,
@@ -480,7 +480,7 @@ export type {
   PublicCommentProposalCandidateStatus,
   PublicInitiativeCollaborationParticipant,
   PublicInitiativeCollaborationParticipantsResult,
-} from "./initiative-discussion-collaboration";
+} from "./initiative-discussion-collaboration.js";
 export type {
   InitiativeCollaborationChannelHistoryResult,
   InitiativeCollaborationChannelMessage,
@@ -490,7 +490,7 @@ export type {
   InitiativeCollaborationChannelReadState,
   InitiativeCollaborationChannelSummary,
   InitiativeCollaborationSystemEventKind,
-} from "./initiative-collaboration-channel";
+} from "./initiative-collaboration-channel.js";
 export type {
   InitiativeCollaborationSession,
   InitiativeCollaborationSessionAttendance,
@@ -501,7 +501,7 @@ export type {
   InitiativeCollaborationSessionListResult,
   InitiativeCollaborationSessionStatus,
   InitiativeCollaborationSessionView,
-} from "./initiative-collaboration-session";
+} from "./initiative-collaboration-session.js";
 export type {
   SharedDocument,
   SharedDocumentContextRef,
@@ -511,7 +511,7 @@ export type {
   SharedDocumentUploaderIdentity,
   SharedDocumentVerificationStatus,
   SharedDocumentView,
-} from "./shared-document";
+} from "./shared-document.js";
 export type {
   InitiativeSupportActorCohort,
   InitiativeSupportBookmarkRecord,
@@ -519,11 +519,11 @@ export type {
   InitiativeSupportStoredSignal,
   InitiativeSupportViewRecord,
   InitiativeSupportVisitorSignalRecord,
-} from "./initiative-support-signal";
+} from "./initiative-support-signal.js";
 export {
   INITIATIVE_SUPPORT_TRANSPARENCY_NOTE,
   PUBLIC_INITIATIVE_EXPERIENCE_STAGES,
-} from "./public-initiative-experience";
+} from "./public-initiative-experience.js";
 export type {
   InitiativeExperienceLifecycleStageState,
   InitiativeSupportAudienceBreakdown,
@@ -541,7 +541,7 @@ export type {
   PublicInitiativeLifecycleStageNavItem,
   PublicInitiativeRelatedCivicRecord,
   PublicInitiativeSupportStatistics,
-} from "./public-initiative-experience";
+} from "./public-initiative-experience.js";
 export {
   getInitiativeLifecycleStageDefinition,
   getNextInitiativeLifecycleStageId,
@@ -549,24 +549,24 @@ export {
   INITIATIVE_LIFECYCLE_STAGE_REGISTRY,
   isInitiativeLifecycleAuthorWorkspaceStage,
   isInitiativeLifecycleStageId,
-} from "./initiative-lifecycle-stage";
-export type { InitiativeLifecycleStageDefinition, InitiativeLifecycleStageId } from "./initiative-lifecycle-stage";
+} from "./initiative-lifecycle-stage.js";
+export type { InitiativeLifecycleStageDefinition, InitiativeLifecycleStageId } from "./initiative-lifecycle-stage.js";
 export type {
   InitiativeLifecyclePresentationMode,
   InitiativeLifecyclePresentationModeResult,
   InitiativeLifecyclePresentationStatus,
   InitiativeLifecycleViewerRole,
-} from "./initiative-lifecycle-presentation";
-export type { InitiativeLifecycleStageMetadata } from "./initiative-lifecycle-stage-metadata";
+} from "./initiative-lifecycle-presentation.js";
+export type { InitiativeLifecycleStageMetadata } from "./initiative-lifecycle-stage-metadata.js";
 export type {
   InitiativeLifecycleSourceKind,
   InitiativeLifecycleSourceSnapshotItem,
   InitiativeLifecycleSourceSnapshotSummary,
-} from "./initiative-lifecycle-source-snapshot";
+} from "./initiative-lifecycle-source-snapshot.js";
 export type {
   InitiativeLifecycleStagePublicationEvent,
   InitiativeLifecycleStagePublicationKind,
-} from "./initiative-lifecycle-stage-publication-event";
+} from "./initiative-lifecycle-stage-publication-event.js";
 export type {
   InitiativeLifecycleAiAssistOperation,
   InitiativeLifecycleAiAssistRequest,
@@ -575,8 +575,8 @@ export type {
   LifecycleAiAssistantSessionContext,
   LifecycleAiProviderDiagnostics,
   LifecycleAiProviderId,
-} from "./initiative-lifecycle-ai-assist";
-export { INITIATIVE_LIFECYCLE_AI_ASSIST_OPERATIONS } from "./initiative-lifecycle-ai-assist";
+} from "./initiative-lifecycle-ai-assist.js";
+export { INITIATIVE_LIFECYCLE_AI_ASSIST_OPERATIONS } from "./initiative-lifecycle-ai-assist.js";
 export type {
   HumanityUnionAssistantAssistRequest,
   HumanityUnionAssistantAssistResult,
@@ -584,23 +584,23 @@ export type {
   HumanityUnionAssistantSessionContext,
   HumanityUnionAssistantSessionHistoryPolicy,
   HumanityUnionAssistantSurfaceId,
-} from "./humanity-union-assistant";
+} from "./humanity-union-assistant.js";
 export {
   HUMANITY_UNION_ASSISTANT_PRODUCT_NAME,
   HUMANITY_UNION_ASSISTANT_SESSION_HISTORY_POLICY,
   HUMANITY_UNION_ASSISTANT_SURFACE_IDS,
   isHumanityUnionAssistantSurfaceId,
-} from "./humanity-union-assistant";
+} from "./humanity-union-assistant.js";
 export type {
   InitiativeLifecycleAuthorAction,
   InitiativeLifecycleAuthorActionId,
   InitiativeLifecycleAuthorActionState,
-} from "./initiative-lifecycle-author-action";
+} from "./initiative-lifecycle-author-action.js";
 export type {
   InitiativeLifecycleAiCapabilities,
   InitiativeLifecycleStageNeighbor,
   InitiativeLifecycleStageProjection,
-} from "./initiative-lifecycle-stage-projection";
+} from "./initiative-lifecycle-stage-projection.js";
 export type {
   LifecycleSafetyCategoryHit,
   LifecycleSafetyCategoryId,
@@ -610,62 +610,62 @@ export type {
   LifecycleSafetyProviderResult,
   LifecycleSafetyProviderSignal,
   LifecycleSafetySurfaceId,
-} from "./lifecycle-safety";
+} from "./lifecycle-safety.js";
 export {
   LIFECYCLE_SAFETY_CATEGORY_IDS,
   LIFECYCLE_SAFETY_OUTCOMES,
   LIFECYCLE_SAFETY_PROTECTED_SURFACES,
-} from "./lifecycle-safety";
+} from "./lifecycle-safety.js";
 export type {
   PublicInitiativeCollaborativeAnalysisListItem,
   PublicInitiativeCollaborativeAnalysisProjection,
-} from "./public-initiative-collaborative-analysis";
+} from "./public-initiative-collaborative-analysis.js";
 export type {
   InitiativeImprovementProposalMetrics,
   PublicInitiativeImprovementProposalListItem,
   PublicInitiativeImprovementProposalProjection,
-} from "./public-initiative-improvement-proposal";
+} from "./public-initiative-improvement-proposal.js";
 export type {
   InitiativeRevisionMetrics,
   PublicInitiativeRevisionChange,
   PublicInitiativeVersionRevisionListItem,
   PublicInitiativeVersionRevisionProjection,
   PublicInitiativeWithVersionHistory,
-} from "./public-initiative-version-revision";
+} from "./public-initiative-version-revision.js";
 export type {
   CivicCompatibilityReviewMetrics,
   PublicCivicCompatibilityReviewListItem,
   PublicCivicCompatibilityReviewSummary,
-} from "./public-civic-compatibility-review";
+} from "./public-civic-compatibility-review.js";
 export type {
   DecisionSessionMetrics,
   PublicDecisionSessionListItem,
   PublicDecisionSessionPackage,
   PublicDecisionSessionPetitionContext,
   PublicDecisionSessionProjection,
-} from "./public-decision-session";
+} from "./public-decision-session.js";
 export type {
   InitiativeCollectiveDecisionMetrics,
   PublicInitiativeCollectiveDecisionListItem,
   PublicInitiativeCollectiveDecisionProjection,
-} from "./public-initiative-collective-decision";
+} from "./public-initiative-collective-decision.js";
 export type {
   InitiativeImplementationCommitmentMetrics,
   PublicInitiativeImplementationCommitmentListItem,
   PublicInitiativeImplementationCommitmentProjection,
-} from "./public-initiative-implementation-commitment";
+} from "./public-initiative-implementation-commitment.js";
 export type {
   InitiativeImplementationTrackingMetrics,
   PublicImplementationTrackingUpdate,
   PublicInitiativeImplementationTrackingListItem,
   PublicInitiativeImplementationTrackingProjection,
-} from "./public-initiative-implementation-tracking";
+} from "./public-initiative-implementation-tracking.js";
 export type {
   InitiativePublicImpactMetrics,
   PublicImpactEvidenceListItem,
   PublicInitiativePublicImpactListItem,
   PublicInitiativePublicImpactProjection,
-} from "./public-initiative-public-impact";
+} from "./public-initiative-public-impact.js";
 export type {
   KnowledgeContribution,
   LessonsLearned,
@@ -674,12 +674,12 @@ export type {
   PublicCivicArchiveReferences,
   PublicCivicArchiveStatus,
   PublicCivicArchiveVerificationMetadata,
-} from "./public-civic-archive";
+} from "./public-civic-archive.js";
 export {
   canTransitionPublicCivicArchive,
   isPublicCivicArchiveTerminal,
   PUBLIC_CIVIC_ARCHIVE_TRANSITIONS,
-} from "./public-civic-archive";
+} from "./public-civic-archive.js";
 export type {
   CivicArchiveEvidenceLink,
   CivicArchiveLifecycleChildRecord,
@@ -688,32 +688,32 @@ export type {
   CivicArchiveLifecycleRecord,
   CivicArchiveLifecycleStage,
   CivicArchiveOutcomeStatus,
-} from "./civic-archive-lifecycle";
-export { CIVIC_ARCHIVE_OUTCOME_STATUS_LABELS } from "./civic-archive-lifecycle";
+} from "./civic-archive-lifecycle.js";
+export { CIVIC_ARCHIVE_OUTCOME_STATUS_LABELS } from "./civic-archive-lifecycle.js";
 export type {
   PublicCivicArchiveListItem,
   PublicCivicArchiveMetrics,
   PublicCivicArchiveProjection,
   PublicCivicArchiveReferenceLinks,
   PublicCivicArchiveTimelineEntry,
-} from "./public-public-civic-archive";
+} from "./public-public-civic-archive.js";
 export type {
   CivicActionPackage,
   CivicActionPackageContent,
   CivicActionPackageId,
   CivicActionPackageStatus,
-} from "./civic-action-package";
+} from "./civic-action-package.js";
 export {
   canTransitionCivicActionPackage,
   CIVIC_ACTION_PACKAGE_TRANSITIONS,
   isCivicActionPackageTerminal,
-} from "./civic-action-package";
+} from "./civic-action-package.js";
 export type {
   CivicActionPackageMetrics,
   PublicCivicActionPackageListItem,
   PublicCivicActionPackageProjection,
   PublicCivicActionPackageReferenceLinks,
-} from "./public-civic-action-package";
+} from "./public-civic-action-package.js";
 export type {
   CivicActionPackageDelivery,
   CivicDeliveryId,
@@ -725,18 +725,18 @@ export type {
   CivicDeliveryRecipientType,
   CivicDeliveryStatus,
   RecommendedCivicDeliveryRecipient,
-} from "./civic-delivery";
+} from "./civic-delivery.js";
 export {
   canTransitionCivicDelivery,
   CIVIC_DELIVERY_TRANSITIONS,
   isCivicDeliveryTerminal,
-} from "./civic-delivery";
+} from "./civic-delivery.js";
 export type {
   CivicDeliveryMetrics,
   PublicCivicDeliveryListItem,
   PublicCivicDeliveryProjection,
   PublicCivicDeliveryRecipientLogEntry,
-} from "./public-civic-delivery";
+} from "./public-civic-delivery.js";
 export type {
   OfficialResponse,
   OfficialResponseId,
@@ -744,18 +744,18 @@ export type {
   OfficialResponsePublicationStatus,
   OfficialResponseType,
   OfficialResponseVerificationState,
-} from "./official-response";
+} from "./official-response.js";
 export {
   canTransitionOfficialResponsePublication,
   isOfficialResponsePublicationTerminal,
   OFFICIAL_RESPONSE_PUBLICATION_TRANSITIONS,
-} from "./official-response";
+} from "./official-response.js";
 export type {
   OfficialResponseMetrics,
   PublicOfficialResponseListItem,
   PublicOfficialResponseProjection,
   PublicOfficialResponseReferenceLinks,
-} from "./public-official-response";
+} from "./public-official-response.js";
 export type {
   CivicAccountability,
   CivicAccountabilityEvent,
@@ -763,11 +763,11 @@ export type {
   CivicAccountabilityEventType,
   CivicAccountabilityId,
   CivicAccountabilityStatus,
-} from "./civic-accountability";
+} from "./civic-accountability.js";
 export {
   canTransitionCivicAccountabilityStatus,
   CIVIC_ACCOUNTABILITY_STATUS_TRANSITIONS,
-} from "./civic-accountability";
+} from "./civic-accountability.js";
 export type {
   CivicAccountabilityMetrics,
   PublicCivicAccountabilityEventItem,
@@ -775,19 +775,19 @@ export type {
   PublicCivicAccountabilityProjection,
   PublicCivicAccountabilityRecipientInfo,
   PublicCivicAccountabilityReferenceLinks,
-} from "./public-civic-accountability";
+} from "./public-civic-accountability.js";
 export type {
   CollectiveDecisionPublicOutcome,
   CollectiveDecisionTransparentResults,
   ParticipationConfidenceLevel,
-} from "./collective-decision-transparent-results";
+} from "./collective-decision-transparent-results.js";
 export {
   buildCollectiveDecisionOutcomeSummary,
   buildTransparentCollectiveDecisionResults,
   calculateCollectiveDecisionOutcomeType,
   COLLECTIVE_DECISION_TRANSPARENCY_NOTE,
   computeParticipationConfidenceLevel,
-} from "./collective-decision-transparent-results";
+} from "./collective-decision-transparent-results.js";
 export type {
   ParticipationArea,
   ParticipationAreaId,
@@ -797,20 +797,20 @@ export type {
   ParticipationAreaTransitionId,
   ParticipationAreaTransitionStatus,
   ParticipationAreaVerificationStatus,
-} from "./participation-area";
-export { participationAreaSlugTriple, participationAreaToSlugTriple } from "./participation-area";
+} from "./participation-area.js";
+export { participationAreaSlugTriple, participationAreaToSlugTriple } from "./participation-area.js";
 export type {
   DecisionParticipationEligibilityInput,
   DecisionParticipationEligibilityResult,
   InitiativeParticipationScopeMetadata,
   ParticipationEligibilityReasonCode,
   ParticipationTransparencyCohort,
-} from "./participation-eligibility";
+} from "./participation-eligibility.js";
 export {
   evaluateDecisionParticipationEligibility,
   getTransparencyCohort,
   isParticipationAreaMatch,
-} from "./participation-eligibility";
+} from "./participation-eligibility.js";
 export type {
   InitiativeDecisionVote,
   InitiativeDecisionVoteAggregates,
@@ -819,11 +819,11 @@ export type {
   InitiativeDecisionVoteHistoryEntry,
   InitiativeDecisionVoteHistoryId,
   InitiativeDecisionVoteId,
-} from "./initiative-decision-vote";
+} from "./initiative-decision-vote.js";
 export {
   createEmptyInitiativeDecisionVoteAggregates,
   createEmptyInitiativeDecisionVoteChoiceCounts,
-} from "./initiative-decision-vote";
+} from "./initiative-decision-vote.js";
 export type {
   CivicBreadcrumbItem,
   CivicContext,
@@ -838,18 +838,18 @@ export type {
   CivicRelationshipType,
   CivicSearchMetadata,
   RelatedRecord,
-} from "./capability02-integration";
-export { CIVIC_NOTIFICATION_EVENT_REGISTRY } from "./capability02-integration";
+} from "./capability02-integration.js";
+export { CIVIC_NOTIFICATION_EVENT_REGISTRY } from "./capability02-integration.js";
 export type {
   ParticipationPipelinePublicProjection,
   ParticipationPipelineStageCount,
   ParticipationPipelineStageId,
-} from "./public-participation-pipeline";
+} from "./public-participation-pipeline.js";
 export type {
   ParticipationPublicStatisticsIndicator,
   ParticipationPublicStatisticsProjection,
   PublicGeographicScope,
-} from "./public-participation-statistics";
+} from "./public-participation-statistics.js";
 export type {
   CommunityCatalogPublicProjection,
   CommunityExperiencePublicProjections,
@@ -858,7 +858,7 @@ export type {
   CommunityImpactOverviewSignal,
   CommunityPublicRecord,
   CommunityRepresentativeVisual,
-} from "./public-community-experience";
+} from "./public-community-experience.js";
 export type {
   CountryExperiencePublicProjections,
   CountryIdentityPublicProjection,
@@ -867,12 +867,12 @@ export type {
   RegionPublicRecord,
   TrustedNationalMediaPublicProjection,
   TrustedNationalMediaRecord,
-} from "./public-country-experience";
+} from "./public-country-experience.js";
 export type {
   RegionExperiencePublicProjections,
   RegionIdentityPublicProjection,
   RegionRepresentativeVisual,
-} from "./public-region-experience";
+} from "./public-region-experience.js";
 export type {
   PublicAnalysisSummaryProjection,
   PublicCollaborativeAnalysisProjection,
@@ -881,14 +881,14 @@ export type {
   PublicProgressPolicySummary,
   PublicSignalStatistics,
   PublicSignalTypeCount,
-} from "./public-collaborative-analysis";
+} from "./public-collaborative-analysis.js";
 export type {
   PublicCollectiveDecisionProjection,
   PublicDecisionOptionResult,
   PublicDecisionOutcome,
   PublicDecisionResult,
   PublicDecisionSubject,
-} from "./public-collective-decision";
+} from "./public-collective-decision.js";
 export type {
   PublicApprovedDecisionContext,
   PublicParticipationEntryGuidance,
@@ -902,8 +902,8 @@ export type {
   PublicShareReference,
   PublicSupportState,
   PublicSupportStatistics,
-} from "./public-petition";
-export { PETITION_PARTICIPATION_TRANSPARENCY_NOTE } from "./public-petition";
+} from "./public-petition.js";
+export { PETITION_PARTICIPATION_TRANSPARENCY_NOTE } from "./public-petition.js";
 export type {
   PublicCollectiveDecisionReference,
   PublicCommunityCapacityProjection,
@@ -917,7 +917,7 @@ export type {
   PublicInitiativeContext,
   PublicPetitionReference,
   PublicRegistrationGatewayGuidance,
-} from "./public-implementation-commitment";
+} from "./public-implementation-commitment.js";
 export type {
   PublicAchievementProjection,
   PublicCollectiveProgressProjection,
@@ -931,8 +931,8 @@ export type {
   PublicImplementationProjection,
   PublicImplementationShareReference,
   PublicImplementationStatusProjection,
-} from "./public-implementation";
-export type { PublicParticipationProfile } from "./public-participation-profile";
+} from "./public-implementation.js";
+export type { PublicParticipationProfile } from "./public-participation-profile.js";
 export type {
   Availability,
   CollectiveDecisionId,
@@ -951,7 +951,7 @@ export type {
   ParticipantId,
   PolicySatisfaction,
   ReadinessThresholdId,
-} from "./implementation-commitment";
+} from "./implementation-commitment/index.js";
 export type {
   Achievement,
   AchievementId,
@@ -980,7 +980,7 @@ export type {
   PhaseStatus,
   ProgressIndicator,
   ProgressSnapshot,
-} from "./implementation";
+} from "./implementation/index.js";
 export type {
   DailyActivitySummary,
   ParticipationMode,
@@ -1005,7 +1005,7 @@ export type {
   SignatureVisibility,
   SupportMetrics,
   SupportThresholdStatus,
-} from "./petition";
+} from "./petition/index.js";
 export type {
   WorkspaceAssistantAction,
   WorkspaceAssistantAdvisoryContext,
@@ -1017,11 +1017,11 @@ export type {
   WorkspaceAssistantRequest,
   WorkspaceAssistantResponse,
   WorkspaceAssistantSafetyNotice,
-} from "./workspace-assistant";
+} from "./workspace-assistant.js";
 export {
   WORKSPACE_ASSISTANT_ALLOWED_CAPABILITIES,
   WORKSPACE_ASSISTANT_PROHIBITED_ACTIONS,
-} from "./workspace-assistant";
+} from "./workspace-assistant.js";
 export type {
   PlatformMode,
   BetaInvitePublic,
@@ -1029,7 +1029,7 @@ export type {
   BetaOnboardingItem,
   PlatformConfigPublic,
   WorkspaceReadiness,
-} from "./platform";
+} from "./platform.js";
 export type {
   MembershipApplicationInput,
   MembershipApplicationStatus,
@@ -1040,27 +1040,27 @@ export type {
   MembershipStatusPayload,
   MembershipSummary,
   MembershipTimelineStep,
-} from "./membership";
+} from "./membership.js";
 export type {
   MembershipCheckoutSessionPayload,
   MembershipContributionPaymentStatus,
   MembershipContributionRecord,
   MembershipWebhookEventRecord,
   MembershipWebhookProcessingStatus,
-} from "./membership-payment";
-export { MEMBERSHIP_VOTE_WEIGHT_TRANSPARENCY_NOTE } from "./membership-statistics";
+} from "./membership-payment.js";
+export { MEMBERSHIP_VOTE_WEIGHT_TRANSPARENCY_NOTE } from "./membership-statistics.js";
 export type {
   MembershipStatisticsFutureDimensions,
   MembershipStatisticsPayload,
   MembershipStatisticsSearchFilter,
-} from "./membership-statistics";
+} from "./membership-statistics.js";
 export type {
   MemberNotification,
   MemberNotificationListResponse,
   MemberNotificationPriority,
   MemberNotificationStatus,
   MemberNotificationView,
-} from "./member-notification";
+} from "./member-notification.js";
 export type {
   MemberBadgeCheckoutSessionPayload,
   MemberBadgeContributionAvailability,
@@ -1070,8 +1070,8 @@ export type {
   MemberBadgeContributionSummary,
   MemberBadgeFulfillmentStatus,
   MemberBadgeShippingAddress,
-} from "./member-badge-contribution";
-export type { CountryStatisticsCounts, CountryStatisticsPayload } from "./country-statistics";
+} from "./member-badge-contribution.js";
+export type { CountryStatisticsCounts, CountryStatisticsPayload } from "./country-statistics.js";
 export type {
   CivicSearchDisplayResult,
   CivicSearchFacetBucket,
@@ -1083,7 +1083,7 @@ export type {
   InitiativeLifecycleSearchGroup,
   InitiativeLifecycleSearchStage,
   StandaloneCivicSearchResult,
-} from "./global-search";
+} from "./global-search.js";
 export type {
   CivicNomination,
   CivicNominationConflictOfInterest,
@@ -1096,7 +1096,7 @@ export type {
   CivicNominationInstitutionRole,
   CivicNominationStatus,
   CivicNominationType,
-} from "./civic-nomination";
+} from "./civic-nomination.js";
 export {
   CIVIC_NOMINATION_COUNTRY_REQUIRED_ROLES,
   CIVIC_NOMINATION_EVIDENCE_TYPES,
@@ -1105,7 +1105,7 @@ export {
   CIVIC_NOMINATION_TRANSITIONS,
   canTransitionCivicNomination,
   isCivicNominationTerminal,
-} from "./civic-nomination";
+} from "./civic-nomination.js";
 export type {
   CivicNominationVote,
   CivicNominationVoteChoice,
@@ -1116,13 +1116,13 @@ export type {
   CivicNominationVotingResult,
   CivicNominationVotingSession,
   CivicNominationVotingSessionStatus,
-} from "./civic-nomination-voting";
+} from "./civic-nomination-voting.js";
 export {
   CIVIC_NOMINATION_VOTING_ELIGIBLE_ROLES,
   computeCivicNominationVotingOutcomeLabel,
   createEmptyCivicNominationVotingResult,
   resolveCivicNominationVotingScope,
-} from "./civic-nomination-voting";
+} from "./civic-nomination-voting.js";
 export type {
   KnowledgeArticleAssistantReference,
   KnowledgeArticlePublic,
@@ -1132,8 +1132,8 @@ export type {
   KnowledgeCategory,
   KnowledgeCategoryId,
   KnowledgeCenterListing,
-} from "./knowledge-center";
-export type { MediaUploadPurpose, MediaUploadResponse } from "./media-upload";
+} from "./knowledge-center.js";
+export type { MediaUploadPurpose, MediaUploadResponse } from "./media-upload.js";
 export type {
   BlogAuthorApplication,
   BlogAuthorApplicationStatus,
@@ -1167,7 +1167,7 @@ export type {
   PublicBlogPostDetail,
   PublicBlogPostListItem,
   PublicBlogPostListResponse,
-} from "./blog";
+} from "./blog.js";
 export {
   BLOG_AUTHOR_APPLICATION_ACTIVE_STATUSES,
   BLOG_AUTHOR_APPLICATION_STATUSES,
@@ -1175,7 +1175,7 @@ export {
   BLOG_CATEGORIES,
   BLOG_COMMENT_STATUSES,
   BLOG_POST_STATUSES,
-} from "./blog";
+} from "./blog.js";
 export type {
   AdministrationAuditAction,
   AdministrationAuditAppendInput,
@@ -1187,13 +1187,13 @@ export type {
   PlatformCapabilityGrant,
   PlatformCapabilityGrantSource,
   PlatformCapabilityId,
-} from "./administration";
-export { PLATFORM_CAPABILITY_IDS } from "./administration";
+} from "./administration.js";
+export { PLATFORM_CAPABILITY_IDS } from "./administration.js";
 export type {
   PlatformStatisticsCounts,
   PlatformStatisticsMeta,
   PlatformStatisticsPayload,
-} from "./platform-statistics";
+} from "./platform-statistics.js";
 export type {
   CivicMediaAssistantReference,
   CivicMediaCategoriesListing,
@@ -1208,7 +1208,7 @@ export type {
   TrustedMediaCategory,
   TrustedMediaCategoryId,
   TrustedMediaResource,
-} from "./civic-media-center";
+} from "./civic-media-center.js";
 export type {
   ApprovedNewsSource,
   MediaRegistryCategory,
@@ -1217,7 +1217,7 @@ export type {
   MediaRegistryProvider,
   MediaRegistryRegionTag,
   MediaRegistryRssFeed,
-} from "./media-registry";
+} from "./media-registry.js";
 export type {
   InitiativeNewsSourceReference,
   NewsArticleRecord,
@@ -1225,11 +1225,11 @@ export type {
   NewsVerificationStatus,
   PublicNewsArticleItem,
   PublicNewsListingResponse,
-} from "./public-news-article";
+} from "./public-news-article.js";
 export type {
   WorldInitiativeCardProjection,
   WorldInitiativesPublicProjection,
-} from "./public-world-initiatives";
+} from "./public-world-initiatives.js";
 export type {
   CommunityCollaborationOpportunityProjection,
   CommunityInitiativeRelationshipProjection,
@@ -1243,17 +1243,17 @@ export type {
   CommunitySimilarityCheckRequest,
   CommunitySimilarityCheckResponse,
   CommunityWorkspaceOpportunitiesResponse,
-} from "./community-intelligence";
+} from "./community-intelligence.js";
 export type {
   PublicCivicNominationConflictOfInterest,
   PublicCivicNominationDeclarationStatus,
   PublicCivicNominationListItem,
   PublicCivicNominationProjection,
-} from "./public-civic-nomination";
-export type { PublicCivicNominationVotingProjection } from "./public-civic-nomination-voting";
+} from "./public-civic-nomination.js";
+export type { PublicCivicNominationVotingProjection } from "./public-civic-nomination-voting.js";
 export {
   INITIATIVE_ACTIVITY_AREA_OPTIONS,
   INITIATIVE_ACTIVITY_AREA_OTHER,
   isKnownInitiativeActivityArea,
-} from "./initiative-activity-areas";
-export type { InitiativeActivityAreaOption } from "./initiative-activity-areas";
+} from "./initiative-activity-areas.js";
+export type { InitiativeActivityAreaOption } from "./initiative-activity-areas.js";

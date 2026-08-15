@@ -5,9 +5,9 @@ export type {
   GeographyCommunityOption,
   GeographyCountryOption,
   GeographyRegionOption,
-} from "./geography.types";
+} from "./geography.types.js";
 
-export type { GeographyCountry, GeographyRegion } from "./geography.helpers";
+export type { GeographyCountry, GeographyRegion } from "./geography.helpers.js";
 
 export {
   OTHER_REGION_CODE,
@@ -38,7 +38,7 @@ export {
   toGeographyCountryOptions,
   toGeographyRegionOptions,
   GEOGRAPHY_COUNTRIES,
-} from "./geography.helpers";
+} from "./geography.helpers.js";
 
 export {
   OTHER_COMMUNITY_CODE,
@@ -47,7 +47,7 @@ export {
   getCommunityLabel,
   normalizeCommunityInput,
   toGeographyCommunityOptions,
-} from "./geography.communities";
+} from "./geography.communities.js";
 
 export {
   buildPreferredCityCommunityLabel,
@@ -61,12 +61,12 @@ export {
   parsePreferredRegionId,
   regionIdMatchesSelection,
   sanitizeParticipationGeography,
-} from "./preferences-geography";
-export type { SanitizedParticipationGeography } from "./preferences-geography";
+} from "./preferences-geography.js";
+export type { SanitizedParticipationGeography } from "./preferences-geography.js";
 
 export {
   formatPublicGeography,
   formatPublicGeographyLabel,
   resolvePublicGeography,
-} from "./format-public-geography";
-export type { PublicGeographyInput, ResolvedPublicGeography } from "./format-public-geography";
+} from "./format-public-geography.js";
+export type { PublicGeographyInput, ResolvedPublicGeography } from "./format-public-geography.js";

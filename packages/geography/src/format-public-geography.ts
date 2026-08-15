@@ -3,8 +3,8 @@ import {
   getRegionLabel,
   normalizeCountryInput,
   normalizeRegionInput,
-} from "./geography.helpers";
-import { getCommunityLabel } from "./geography.communities";
+} from "./geography.helpers.js";
+import { getCommunityLabel } from "./geography.communities.js";
 
 export interface PublicGeographyInput {
   countryCode?: string;

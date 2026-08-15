@@ -15,7 +15,7 @@
     "dev:cleanup-news": "tsx apps/api/src/scripts/dev-cleanup-news.ts",
     "dev:audit-civic-archive": "tsx apps/api/src/scripts/dev-audit-civic-archive.ts",
     "dev:rebuild-civic-archive-projections": "tsx apps/api/src/scripts/dev-rebuild-civic-archive-projections.ts",
-    "build": "tsc -p apps/api/tsconfig.json && npm run build --prefix apps/web",
+    "build": "pnpm --filter @hu/types build && pnpm --filter @hu/geography build && pnpm --filter @hu/media-registry build && tsc -p apps/api/tsconfig.json && npm run build --prefix apps/web",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",

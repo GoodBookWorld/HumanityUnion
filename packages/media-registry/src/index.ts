@@ -14,10 +14,10 @@ export {
   MEDIA_REGISTRY_UPDATED_AT,
   resolveMediaRegistryProviderForArticle,
   TRUSTED_GLOBAL_MEDIA_REGISTRY,
-} from "./media-registry";
+} from "./media-registry.js";
 export {
   collectMediaRegistryFilterOptions,
   filterMediaRegistryProviders,
   sortMediaRegistryProviders,
-} from "./media-registry.filters";
-export { resolveMediaRegistryConfig, type MediaRegistryRuntimeConfig } from "./media-registry.config";
+} from "./media-registry.filters.js";
+export { resolveMediaRegistryConfig, type MediaRegistryRuntimeConfig } from "./media-registry.config.js";

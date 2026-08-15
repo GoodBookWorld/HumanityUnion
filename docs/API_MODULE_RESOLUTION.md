@@ -9,84 +9,76 @@ This document records the TypeScript module strategy for `apps/api` after TASK-I
 | Setting            | Value     | Purpose                                                                                           |
 | ------------------ | --------- | ------------------------------------------------------------------------------------------------- |
 | `module`           | `ESNext`  | ESM emit compatible with `"type": "module"`                                                       |
-| `moduleResolution` | `bundler` | Resolve extensionless `@hu/types` source barrels (required for Turbopack-aligned monorepo policy) |
+| `moduleResolution` | `bundler` | Resolve shared package exports / TS source for API typecheck |
 | `outDir`           | `dist`    | Compiled JavaScript for `pnpm start`                                                              |
 
-### Why API Was Changed from NodeNext / NodeNext
+### Why API Uses bundler resolution
 
-During TASK-INFRA-001, `@hu/types` barrels were standardized to **extensionless** relative specifiers (for example `export * from "./domain"`) so Next.js 16 / Turbopack can import TypeScript source without looking for literal `.js` files on disk.
+`@hu/types` now uses explicit `.js` relative specifiers and emits compiled ESM under `packages/types/dist/`. Package exports expose:
 
-With `moduleResolution: NodeNext`, TypeScript checking `apps/api` treated re-exports from `@hu/types` as **empty** (mass TS2305: “has no exported member …”) because NodeNext could not resolve extensionless paths inside the types package source.
+- `types` → `./src/index.ts` (TypeScript / editor)
+- `import` → `./dist/index.js` (Node runtime)
 
-`module: ESNext` + `moduleResolution: bundler` restores correct type re-export resolution while preserving ESM output.
-
-TypeScript 6 rejects `module: NodeNext` paired with `moduleResolution: bundler`, so both settings were updated together.
+`apps/api` keeps `module: ESNext` + `moduleResolution: bundler` so typechecking remains aligned with the monorepo web toolchain while production Node loads the built types package (no directory imports).
 
 ## Development Runtime
 
 ```bash
+pnpm --filter @hu/types build
 pnpm --filter @hu/api dev    # tsx watch src/index.ts
 ```
 
-- Loads TypeScript source directly via `tsx`
-- Resolves `@hu/types` through package exports → `packages/types/src/index.ts`
-- No separate types build step
+- Runtime value imports from `@hu/types` resolve to `packages/types/dist`
+- Rebuild `@hu/types` after changing shared type/runtime helpers
 
 ## Production Compiled Runtime
 
 ### Build
 
 ```bash
-pnpm --filter @hu/api build   # tsc -p apps/api/tsconfig.json
+pnpm build   # builds @hu/types, then API, then Web
 ```
 
-`tsc` emits JavaScript under `apps/api/dist/` with **`.js` extensions on relative imports** (for example `from "./app.js"`), which Node.js ESM resolves correctly.
-
-`@hu/types` imports are **type-only** in most API modules and are erased from emitted JavaScript — there is no runtime `@hu/types` path resolution in `dist/`.
+`tsc` emits JavaScript under `apps/api/dist/` with **`.js` extensions on relative imports**. Runtime `@hu/types` value imports resolve to `packages/types/dist` (not TypeScript source barrels).
 
 ### Start commands
 
 | Command           | Entry                | Used by                                                   |
 | ----------------- | -------------------- | --------------------------------------------------------- |
-| `pnpm start`      | `node dist/index.js` | Local compiled smoke tests                                |
-| `pnpm start:prod` | `tsx src/index.ts`   | **Docker production image** (`apps/api/Dockerfile` `CMD`) |
+| `pnpm start`      | `node dist/index.js` | Local compiled smoke tests / Render-style start           |
+| `pnpm start:prod` | `node dist/index.js` | Production compiled entry                                 |
 
-### Compiled smoke test (TASK-INFRA-001B)
+### Compiled smoke test
 
 ```bash
+pnpm --filter @hu/types build
+pnpm --filter @hu/api build
 cd apps/api
-pnpm build
-PORT=4013 pnpm start:prod          # deployment path — PASS (health 200, Mongo connected)
-PORT=4011 node dist/index.js       # node dist path — fails at @hu/geography (see below)
-curl http://localhost:4013/api/v1/health
+PORT=4011 node dist/index.js
 ```
 
-**Deployment path (`start:prod`)** starts successfully, connects to MongoDB, and serves `GET /api/v1/health` with HTTP 200.
-
-**`node dist/index.js`** previously failed during module load when `@hu/geography` re-exported TypeScript from `apps/web/src/data/geography`. Canonical geography now lives entirely in `packages/geography` (self-contained JSON + helpers). Prefer `pnpm start:prod` for the deployment path; any remaining `node dist/index.js` issues are separate from Web geography path coupling.
+Expect module graph load without `ERR_UNSUPPORTED_DIR_IMPORT` / `ERR_MODULE_NOT_FOUND` from `@hu/types`.
 
 ## Shared Types Consumption
 
 ```
-@hu/types (package.json exports → ./src/index.ts)
+@hu/types (exports.types → ./src/index.ts, exports.import → ./dist/index.js)
   └── packages/types/src/index.ts
-        export * from "./common";
-        export * from "./domain";
+        export * from "./common/index.js";
+        export * from "./domain/index.js";
 ```
 
-- **Barrels:** extensionless specifiers only (enforced by `npm run verify:barrels`)
-- **Non-barrel modules inside `@hu/types`:** may still use `.js` suffixes where needed for internal Node-oriented modules
-- **API compile-time:** bundler resolution follows barrels correctly
-- **API runtime:** types erased; no barrel paths at runtime
+- **Barrels + modules:** explicit `.js` relative specifiers (enforced by `npm run verify:barrels`)
+- **No directory imports** (`./common`, `./domain`, …)
+- **API runtime:** value exports load from `packages/types/dist`
 
 ## Barrel Policy Interaction
 
 See `docs/BARREL_EXPORT_POLICY.md`. Summary:
 
-- Do **not** reintroduce `./domain/index.js` in TypeScript source barrels
-- Do **not** weaken `verify:barrels` to allow `.js` barrel suffixes
-- If runtime output ever needs explicit extensions, solve via **emit/build/package exports**, not by reverting source barrels to unresolved `.js` paths
-
+- Prefer `./domain/index.js` / `./auth-user.js` in `@hu/types` source
+- Do **not** reintroduce extensionless or directory barrel imports
+- Keep `pnpm --filter @hu/types build` in the production build path so `dist/` exists for Node
 ## Required Deployment Verification
 
 After changing `apps/api/tsconfig.json`, `@hu/types` barrels, or API build scripts:

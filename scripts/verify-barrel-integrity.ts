@@ -81,7 +81,24 @@ function parseRelativeExports(barrelPath: string): RelativeExport[] {
 }
 
 function resolveExportTarget(barrelPath: string, specifier: string): string | null {
-  const absoluteBase = path.resolve(path.dirname(barrelPath), specifier);
+  // Node ESM / TypeScript NodeNext: relative specifiers use .js and map to .ts sources.
+  const normalized = specifier.replace(/\.js$/u, "");
+  const absoluteBase = path.resolve(path.dirname(barrelPath), normalized);
+
+  if (specifier.endsWith(".js")) {
+    const fileCandidate = `${absoluteBase}.ts`;
+    if (fs.existsSync(fileCandidate)) {
+      return fileCandidate;
+    }
+    if (normalized.endsWith("/index")) {
+      const indexCandidate = `${absoluteBase}.ts`;
+      if (fs.existsSync(indexCandidate)) {
+        return indexCandidate;
+      }
+    }
+    return null;
+  }
+
   const fileCandidate = `${absoluteBase}.ts`;
   if (fs.existsSync(fileCandidate)) {
     return fileCandidate;
@@ -104,19 +121,12 @@ function collectBarrelViolations(barrelFiles: string[], typesSrcRoot: string): V
   for (const barrelPath of barrelFiles) {
     const relBarrel = rel(barrelPath);
     for (const { line, specifier } of parseRelativeExports(barrelPath)) {
-      if (specifier.endsWith(".js")) {
-        violations.push({
-          code: "BARREL_INTEGRITY_ERROR",
-          file: relBarrel,
-          line,
-          specifier,
-          reason: ".js specifiers are prohibited in source barrel files.",
-          suggested: specifier.replace(/\.js$/u, ""),
-        });
-        continue;
-      }
-
-      if (specifier === "./index" || specifier === "." || specifier.endsWith("/index")) {
+      if (
+        specifier === "./index" ||
+        specifier === "./index.js" ||
+        specifier === "." ||
+        specifier.endsWith("/index")
+      ) {
         violations.push({
           code: "BARREL_INTEGRITY_ERROR",
           file: relBarrel,
@@ -128,6 +138,29 @@ function collectBarrelViolations(barrelFiles: string[], typesSrcRoot: string): V
         continue;
       }
 
+      if (!specifier.endsWith(".js")) {
+        const suggested = (() => {
+          const absoluteBase = path.resolve(path.dirname(barrelPath), specifier);
+          if (fs.existsSync(path.join(absoluteBase, "index.ts"))) {
+            return `${specifier.replace(/\/$/u, "")}/index.js`;
+          }
+          if (fs.existsSync(`${absoluteBase}.ts`)) {
+            return `${specifier}.js`;
+          }
+          return `${specifier}.js`;
+        })();
+        violations.push({
+          code: "BARREL_INTEGRITY_ERROR",
+          file: relBarrel,
+          line,
+          specifier,
+          reason:
+            "Barrel relative exports must use explicit .js specifiers for Node ESM compatibility.",
+          suggested,
+        });
+        continue;
+      }
+
       const target = resolveExportTarget(barrelPath, specifier);
       if (!target) {
         violations.push({
@@ -135,25 +168,25 @@ function collectBarrelViolations(barrelFiles: string[], typesSrcRoot: string): V
           file: relBarrel,
           line,
           specifier,
-          reason: "Export target does not resolve to an existing .ts module or directory index.ts.",
+          reason:
+            "Export target does not resolve to an existing .ts module (via .js → .ts remapping).",
           suggested: undefined,
         });
       }
     }
   }
 
-  // Root barrel must not reference phantom .js index paths.
+  // Root barrel must export through explicit package-local index.js paths.
   const rootSource = fs.readFileSync(path.join(typesSrcRoot, "index.ts"), "utf8");
-  for (const banned of ["./common/index.js", "./domain/index.js"]) {
-    if (rootSource.includes(banned)) {
+  for (const required of ["./common/index.js", "./domain/index.js"]) {
+    if (!rootSource.includes(required)) {
       violations.push({
         code: "BARREL_INTEGRITY_ERROR",
         file: "packages/types/src/index.ts",
         line: 1,
-        specifier: banned,
-        reason:
-          "Root barrel references a non-resolvable .js path under direct TypeScript source imports.",
-        suggested: banned.replace("/index.js", "").replace(".js", ""),
+        specifier: required,
+        reason: "Root barrel must re-export shared packages through explicit index.js paths.",
+        suggested: required,
       });
     }
   }
@@ -326,16 +359,20 @@ async function runSelfTests(): Promise<void> {
     writeFixtureFile(
       srcRoot,
       "index.ts",
-      `export * from "./good";
-export type { Example } from "./example";
+      `export * from "./common/index.js";
+export * from "./domain/index.js";
+export type { Example } from "./example.js";
 `,
     );
-    writeFixtureFile(srcRoot, "good.ts", "export type Good = string;\n");
     writeFixtureFile(srcRoot, "example.ts", "export type Example = string;\n");
+    writeFixtureFile(srcRoot, "common/index.ts", 'export type { Good } from "./good.js";\n');
+    writeFixtureFile(srcRoot, "common/good.ts", "export type Good = string;\n");
+    writeFixtureFile(srcRoot, "domain/index.ts", 'export type { DecisionId } from "./decision.js";\n');
+    writeFixtureFile(srcRoot, "domain/decision.ts", "export type DecisionId = string;\n");
     writeFixtureFile(
       srcRoot,
       "collective-decision/index.ts",
-      `export type { DecisionId } from "./decision";
+      `export type { DecisionId } from "./decision.js";
 `,
     );
     writeFixtureFile(
@@ -348,25 +385,27 @@ export type { Example } from "./example";
     assert(baseline.violations.length === 0, "baseline fixture barrels should pass");
 
     // 1. Missing module
-    writeFixtureFile(srcRoot, "missing/index.ts", 'export * from "./does-not-exist";\n');
+    writeFixtureFile(srcRoot, "missing/index.ts", 'export * from "./does-not-exist.js";\n');
     const missing = verifyBarrelIntegrity({ typesSrcRoot: srcRoot, skipDuplicateCheck: true });
     assert(
-      missing.violations.some((v) => v.specifier === "./does-not-exist"),
+      missing.violations.some((v) => v.specifier === "./does-not-exist.js"),
       "missing module should be detected",
     );
     fs.rmSync(path.join(srcRoot, "missing"), { recursive: true, force: true });
 
-    // 2. Prohibited .js specifier
-    writeFixtureFile(srcRoot, "bad-js/index.ts", 'export * from "./member.js";\n');
-    writeFixtureFile(srcRoot, "bad-js/member.ts", "export type Member = string;\n");
-    const badJs = verifyBarrelIntegrity({ typesSrcRoot: srcRoot, skipDuplicateCheck: true });
+    // 2. Extensionless specifier is prohibited
+    writeFixtureFile(srcRoot, "bad-ext/index.ts", 'export * from "./member";\n');
+    writeFixtureFile(srcRoot, "bad-ext/member.ts", "export type Member = string;\n");
+    const badExt = verifyBarrelIntegrity({ typesSrcRoot: srcRoot, skipDuplicateCheck: true });
     assert(
-      badJs.violations.some((v) => v.reason.includes(".js specifiers are prohibited")),
-      ".js barrel specifier should be detected",
+      badExt.violations.some((v) =>
+        v.reason.includes("explicit .js specifiers for Node ESM compatibility"),
+      ),
+      "extensionless barrel specifier should be detected",
     );
-    fs.rmSync(path.join(srcRoot, "bad-js"), { recursive: true, force: true });
+    fs.rmSync(path.join(srcRoot, "bad-ext"), { recursive: true, force: true });
 
-    // 3. Directory index resolution (already in collective-decision/index.ts)
+    // 3. Directory index resolution via explicit index.js
     const dirIndex = verifyBarrelIntegrity({ typesSrcRoot: srcRoot, skipDuplicateCheck: true });
     assert(
       !dirIndex.violations.some((v) => v.file.includes("collective-decision/index.ts")),
@@ -375,12 +414,12 @@ export type { Example } from "./example";
 
     // 4. Direct file resolution (example.ts via index.ts)
     assert(
-      !baseline.violations.some((v) => v.specifier === "./example"),
+      !baseline.violations.some((v) => v.specifier === "./example.js"),
       "direct file resolution should pass",
     );
 
     // 5. Self-reference
-    writeFixtureFile(srcRoot, "self/index.ts", 'export * from "./index";\n');
+    writeFixtureFile(srcRoot, "self/index.ts", 'export * from "./index.js";\n');
     const selfRef = verifyBarrelIntegrity({ typesSrcRoot: srcRoot, skipDuplicateCheck: true });
     assert(
       selfRef.violations.some((v) => v.reason.includes("self-reference")),
@@ -389,8 +428,8 @@ export type { Example } from "./example";
     fs.rmSync(path.join(srcRoot, "self"), { recursive: true, force: true });
 
     // 6. Simple cycle a <-> b
-    writeFixtureFile(srcRoot, "a/index.ts", 'export * from "../b";\n');
-    writeFixtureFile(srcRoot, "b/index.ts", 'export * from "../a";\n');
+    writeFixtureFile(srcRoot, "a/index.ts", 'export * from "../b/index.js";\n');
+    writeFixtureFile(srcRoot, "b/index.ts", 'export * from "../a/index.js";\n');
     const cycle = verifyBarrelIntegrity({ typesSrcRoot: srcRoot, skipDuplicateCheck: true });
     assert(
       cycle.violations.some((v) => v.reason.includes("cycle")),
@@ -405,12 +444,20 @@ export type { Example } from "./example";
       writeFixtureFile(
         dupRoot,
         "index.ts",
-        `export * from "./common";
-export * from "./domain";
+        `export * from "./common/index.js";
+export * from "./domain/index.js";
 `,
       );
-      writeFixtureFile(dupRoot, "common/index.ts", 'export type { SharedId } from "./shared";\n');
-      writeFixtureFile(dupRoot, "domain/index.ts", 'export type { SharedId } from "./shared";\n');
+      writeFixtureFile(
+        dupRoot,
+        "common/index.ts",
+        'export type { SharedId } from "./shared.js";\n',
+      );
+      writeFixtureFile(
+        dupRoot,
+        "domain/index.ts",
+        'export type { SharedId } from "./shared.js";\n',
+      );
       writeFixtureFile(dupRoot, "common/shared.ts", "export type SharedId = string;\n");
       writeFixtureFile(dupRoot, "domain/shared.ts", "export type SharedId = number;\n");
 

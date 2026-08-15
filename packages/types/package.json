@@ -4,10 +4,19 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./initiative-activity-areas": "./src/domain/initiative-activity-areas.ts"
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./initiative-activity-areas": {
+      "types": "./src/domain/initiative-activity-areas.ts",
+      "import": "./dist/domain/initiative-activity-areas.js",
+      "default": "./dist/domain/initiative-activity-areas.js"
+    }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
   }
 }

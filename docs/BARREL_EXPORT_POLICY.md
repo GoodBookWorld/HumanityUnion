@@ -17,20 +17,21 @@ packages/types/src/domain/*/index.ts   (nested domain barrels)
 
 ## How `@hu/types` Is Consumed
 
-The package exports **TypeScript source**, not compiled JavaScript:
+The package keeps TypeScript source for editor/typechecking and emits compiled ESM for Node runtime:
 
 ```json
 "exports": {
-  ".": "./src/index.ts"
+  ".": {
+    "types": "./src/index.ts",
+    "import": "./dist/index.js",
+    "default": "./dist/index.js"
+  }
 }
 ```
 
-Consumers import directly from source:
-
-- `apps/api` (NodeNext / `tsc`)
-- `apps/web` (Next.js 16, `transpilePackages: ["@hu/types"]`, Turbopack and Webpack)
-
-There is no separate build step for `@hu/types`. Barrels must resolve when Next.js/Turbopack and TypeScript follow source paths.
+- TypeScript consumers resolve types through `./src/index.ts`
+- Node (`node dist/index.js` / Render) loads `./dist/index.js`
+- Build with `pnpm --filter @hu/types build` (also run by the root `pnpm build`)
 
 ## Protected Barrels
 
@@ -48,58 +49,41 @@ These files are checked by `npm run verify:barrels`:
 
 Any new `index.ts` under `packages/types/src` is automatically included in verification.
 
-## Canonical Module Specifier Style (Barrels Only)
+## Canonical Module Specifier Style
 
-**In barrel files**, use extensionless relative specifiers:
+**In all `packages/types` relative imports/exports**, use explicit `.js` specifiers (TypeScript NodeNext / Node ESM convention). Directory barrels must point at `index.js`:
 
 ```typescript
 // packages/types/src/index.ts
-export * from "./common";
-export * from "./domain";
+export * from "./common/index.js";
+export * from "./domain/index.js";
 
 // packages/types/src/domain/index.ts
-export type { AuthUserPublic } from "./auth-user";
-export { MEMBERSHIP_VOTE_WEIGHT_TRANSPARENCY_NOTE } from "./membership-statistics";
-export type { CollectiveDecision } from "./collective-decision";
+export type { AuthUserPublic } from "./auth-user.js";
+export { MEMBERSHIP_VOTE_WEIGHT_TRANSPARENCY_NOTE } from "./membership-statistics.js";
+export type { CollectiveDecision } from "./collective-decision/index.js";
 ```
 
 ### Allowed
 
-- `./domain`
-- `./auth-user`
-- `./collective-decision` (resolves to `./collective-decision/index.ts`)
-
-### Disallowed in barrels
-
-- `./common/index.js`
-- `./domain/index.js`
 - `./auth-user.js`
-- `./capability02-integration.js`
+- `./collective-decision/index.js`
+- `./common/index.js`
 
-### Why `.js` specifiers failed
+### Disallowed
 
-When Next.js/Turbopack imports `@hu/types` source, it resolves paths literally. A barrel that says:
+- `./domain` (directory import — `ERR_UNSUPPORTED_DIR_IMPORT` under Node ESM)
+- `./auth-user` (extensionless relative specifier)
+- `./index` / `./index.js` self-references
 
-```typescript
-export * from "./domain/index.js";
-```
-
-makes the bundler look for a **`.js` file on disk**. Under `packages/types/src` only `.ts` files exist, so resolution fails with errors such as:
-
-```
-Module not found: ./domain/index.js
-Module not found: ./capability02-integration.js
-```
-
-Non-barrel modules may still use `.js` extensions in their internal imports where required by NodeNext emit rules. **This policy applies to barrel `index.ts` files only.**
-
+TypeScript remaps `.js` → `.ts` while typechecking source. The package build emits real `.js` files under `dist/` for Node.
 ## TypeScript Module Resolution (Audited)
 
 | Project                        | Settings                                                                                                      |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| `packages/types/tsconfig.json` | `moduleResolution: bundler` — matches source barrel policy                                                    |
-| `apps/api/tsconfig.json`       | `module: ESNext`, `moduleResolution: bundler` — resolves extensionless `@hu/types` barrels while emitting ESM |
-| `apps/web/tsconfig.json`       | `moduleResolution: bundler`, `transpilePackages: ["@hu/types"]`                                               |
+| `packages/types/tsconfig.json` | `module`/`moduleResolution`: `NodeNext` — ESM `.js` remapping + `dist/` emit |
+| `apps/api/tsconfig.json`       | `module: ESNext`, `moduleResolution: bundler` — consumes `@hu/types` package exports |
+| `apps/web/tsconfig.json`       | `moduleResolution: bundler`, `transpilePackages` includes shared packages |
 
 `moduleResolution: NodeNext` with `module: NodeNext` caused `@hu/types` re-exports to appear empty (TS2305) because extensionless barrel paths did not resolve. API now uses `module: ESNext` with `moduleResolution: bundler` to align with Next.js source imports.
 
@@ -158,7 +142,7 @@ Barrel updates must be deliberate and reviewed. A safe generator may be designed
 
 | Command                            | Purpose                                                               |
 | ---------------------------------- | --------------------------------------------------------------------- |
-| `npm run verify:barrels`           | Fast gate: targets resolve, no `.js` in barrels, no cycles, no TS2308 |
+| `npm run verify:barrels`           | Fast gate: targets resolve, explicit `.js` barrel specifiers, no cycles, no TS2308 |
 | `npm run verify:barrels:self-test` | Fixture tests for the integrity script                                |
 | `npm run typecheck`                | Runs `verify:barrels` first, then project typecheck                   |
 | `npm run build`                    | API + Web production build                                            |

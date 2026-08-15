@@ -1,5 +1,5 @@
-import type { CommunityOption, GeographyCommunityOption } from "./geography.types";
-import { normalizeCountryInput, normalizeRegionInput } from "./geography.helpers";
+import type { CommunityOption, GeographyCommunityOption } from "./geography.types.js";
+import { normalizeCountryInput, normalizeRegionInput } from "./geography.helpers.js";
 
 export const OTHER_COMMUNITY_CODE = "OTHER-NOT-LISTED";
 export const OTHER_COMMUNITY_SLUG = "other-not-listed";

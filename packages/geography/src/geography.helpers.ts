@@ -1,19 +1,19 @@
-import countriesData from "./countries.json";
-import regionsData from "./administrative-regions.json";
+import countriesData from "./countries.json" with { type: "json" };
+import regionsData from "./administrative-regions.json" with { type: "json" };
 
 import type {
   AdministrativeRegionOption,
   CountryOption,
   GeographyCountryOption,
   GeographyRegionOption,
-} from "./geography.types";
+} from "./geography.types.js";
 
 export type {
   AdministrativeRegionOption,
   CountryOption,
   GeographyCountryOption,
   GeographyRegionOption,
-} from "./geography.types";
+} from "./geography.types.js";
 
 export const OTHER_REGION_CODE = "OTHER-NOT-LISTED";
 export const OTHER_REGION_SLUG = "other-not-listed";
