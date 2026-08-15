@@ -7,6 +7,13 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hu/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
   }
 }
