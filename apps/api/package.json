@@ -11,6 +11,7 @@
     "test": "tsx ./scripts/run-tests-recursively.ts",
     "test:smtp": "tsx scripts/test-smtp.ts",
     "dev:reset-auth-rate-limits": "tsx src/scripts/dev-reset-auth-rate-limits.ts",
+    "provision:staging-admin": "tsx src/scripts/provision-staging-admin.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"
   },
