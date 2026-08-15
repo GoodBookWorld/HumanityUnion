@@ -2,6 +2,13 @@ import type { Request, Response } from "express";
 import type { Petition } from "@hu/types";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
+import {
+  InitiativeAncestryMissingError,
+  InitiativeIdMalformedError,
+  InitiativeNotFoundError,
+} from "../../shared/initiative-ancestry/index.js";
+import { AuthenticationRequiredError } from "../auth/auth.errors.js";
+import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
 import { mapPetitionListResponse, mapPetitionResponse } from "./petition.mapper.js";
 import {
   archivePetition,
@@ -16,6 +23,7 @@ import {
   publishPetition,
   signPetition,
   updatePetition,
+  withdrawPetitionSignature,
 } from "./petition.store.js";
 import {
   parsePetitionUpdate,
@@ -46,10 +54,41 @@ function resolveErrorStatus(message: string): number {
     return 409;
   }
 
+  if (message.includes("concurrently modified")) {
+    return 409;
+  }
+
+  // Initiative Lifecycle — Part F, Section 8 (Withdraw Signature).
+  if (message.includes("has not signed") || message.includes("does not permit signature withdrawal")) {
+    return 409;
+  }
+
   return 400;
 }
 
 function handleStoreError(res: Response, error: unknown): void {
+  // Direct Initiative ancestry errors — Recovery Task 24 Part 6. Mapped the
+  // same way other direct-Initiative artifacts map them (see
+  // initiative-improvement-proposal.routes.ts) so a Petition created against
+  // a nonexistent Initiative fails the same way other artifacts do.
+  if (error instanceof InitiativeNotFoundError) {
+    res.status(404).json(createFailureResponse("Initiative not found."));
+    return;
+  }
+
+  if (error instanceof InitiativeAncestryMissingError || error instanceof InitiativeIdMalformedError) {
+    res.status(400).json(createFailureResponse(error.message));
+    return;
+  }
+
+  // Initiative Lifecycle — Part F, Section 7/8. Thrown by
+  // `resolveRequestIdentity` when the body omits `participantId` and no
+  // real/bootstrap identity could be resolved.
+  if (error instanceof AuthenticationRequiredError) {
+    res.status(401).json(createFailureResponse(error.message));
+    return;
+  }
+
   const message = error instanceof Error ? error.message : "Petition request failed.";
   res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
 }
@@ -59,13 +98,13 @@ function getPetitionId(req: Request): string {
   return Array.isArray(petitionId) ? (petitionId[0] ?? "") : (petitionId ?? "");
 }
 
-export function listPetitionsHandler(_req: Request, res: Response): void {
-  const petitions = listPetitions();
+export async function listPetitionsHandler(_req: Request, res: Response): Promise<void> {
+  const petitions = await listPetitions();
 
   res.json(createSuccessResponse(mapPetitionListResponse(petitions), "Petitions loaded."));
 }
 
-export function getPetitionHandler(req: Request, res: Response): void {
+export async function getPetitionHandler(req: Request, res: Response): Promise<void> {
   const petitionId = getPetitionId(req);
   const validationError = validatePetitionId(petitionId);
 
@@ -74,7 +113,7 @@ export function getPetitionHandler(req: Request, res: Response): void {
     return;
   }
 
-  const petition = getPetition(petitionId);
+  const petition = await getPetition(petitionId);
 
   if (!petition) {
     res.status(404).json(createFailureResponse("Petition not found."));
@@ -84,7 +123,10 @@ export function getPetitionHandler(req: Request, res: Response): void {
   res.json(createSuccessResponse(mapPetitionResponse(petition), "Petition loaded."));
 }
 
-export function getPetitionByCollectiveDecisionHandler(req: Request, res: Response): void {
+export async function getPetitionByCollectiveDecisionHandler(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const collectiveDecisionId = Array.isArray(req.params.collectiveDecisionId)
     ? req.params.collectiveDecisionId[0]
     : req.params.collectiveDecisionId;
@@ -94,7 +136,7 @@ export function getPetitionByCollectiveDecisionHandler(req: Request, res: Respon
     return;
   }
 
-  const petition = getPetitionByCollectiveDecisionId(collectiveDecisionId);
+  const petition = await getPetitionByCollectiveDecisionId(collectiveDecisionId);
 
   if (!petition) {
     res.status(404).json(createFailureResponse("Petition not found."));
@@ -104,7 +146,7 @@ export function getPetitionByCollectiveDecisionHandler(req: Request, res: Respon
   res.json(createSuccessResponse(mapPetitionResponse(petition), "Petition loaded."));
 }
 
-export function getPetitionByInitiativeHandler(req: Request, res: Response): void {
+export async function getPetitionByInitiativeHandler(req: Request, res: Response): Promise<void> {
   const initiativeId = Array.isArray(req.params.initiativeId)
     ? req.params.initiativeId[0]
     : req.params.initiativeId;
@@ -114,7 +156,7 @@ export function getPetitionByInitiativeHandler(req: Request, res: Response): voi
     return;
   }
 
-  const petition = getPetitionByInitiativeId(initiativeId);
+  const petition = await getPetitionByInitiativeId(initiativeId);
 
   if (!petition) {
     res.status(404).json(createFailureResponse("Petition not found."));
@@ -124,7 +166,7 @@ export function getPetitionByInitiativeHandler(req: Request, res: Response): voi
   res.json(createSuccessResponse(mapPetitionResponse(petition), "Petition loaded."));
 }
 
-export function createPetitionHandler(req: Request, res: Response): void {
+export async function createPetitionHandler(req: Request, res: Response): Promise<void> {
   const petition = req.body as Petition;
   const validationError = validateCreatePetition(petition);
 
@@ -134,7 +176,7 @@ export function createPetitionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const created = createPetition(petition);
+    const created = await createPetition(petition);
 
     res.status(201).json(createSuccessResponse(mapPetitionResponse(created), "Petition created."));
   } catch (error) {
@@ -142,7 +184,7 @@ export function createPetitionHandler(req: Request, res: Response): void {
   }
 }
 
-export function patchPetitionHandler(req: Request, res: Response): void {
+export async function patchPetitionHandler(req: Request, res: Response): Promise<void> {
   const petitionId = getPetitionId(req);
   const idError = validatePetitionId(petitionId);
 
@@ -160,7 +202,7 @@ export function patchPetitionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const petition = updatePetition(petitionId, parsePetitionUpdate(body));
+    const petition = await updatePetition(petitionId, parsePetitionUpdate(body));
 
     if (!petition) {
       res.status(404).json(createFailureResponse("Petition not found."));
@@ -173,7 +215,7 @@ export function patchPetitionHandler(req: Request, res: Response): void {
   }
 }
 
-export function preparePetitionHandler(req: Request, res: Response): void {
+export async function preparePetitionHandler(req: Request, res: Response): Promise<void> {
   const petitionId = getPetitionId(req);
   const idError = validatePetitionId(petitionId);
 
@@ -183,7 +225,7 @@ export function preparePetitionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const petition = preparePetition(petitionId);
+    const petition = await preparePetition(petitionId);
 
     if (!petition) {
       res.status(404).json(createFailureResponse("Petition not found."));
@@ -196,7 +238,7 @@ export function preparePetitionHandler(req: Request, res: Response): void {
   }
 }
 
-export function publishPetitionHandler(req: Request, res: Response): void {
+export async function publishPetitionHandler(req: Request, res: Response): Promise<void> {
   const petitionId = getPetitionId(req);
   const idError = validatePetitionId(petitionId);
 
@@ -206,7 +248,7 @@ export function publishPetitionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const petition = publishPetition(petitionId);
+    const petition = await publishPetition(petitionId);
 
     if (!petition) {
       res.status(404).json(createFailureResponse("Petition not found."));
@@ -219,7 +261,7 @@ export function publishPetitionHandler(req: Request, res: Response): void {
   }
 }
 
-export function openPetitionHandler(req: Request, res: Response): void {
+export async function openPetitionHandler(req: Request, res: Response): Promise<void> {
   const petitionId = getPetitionId(req);
   const idError = validatePetitionId(petitionId);
 
@@ -238,7 +280,7 @@ export function openPetitionHandler(req: Request, res: Response): void {
 
   try {
     const opensAt = typeof body.opensAt === "string" ? body.opensAt : undefined;
-    const petition = openPetition(petitionId, opensAt);
+    const petition = await openPetition(petitionId, opensAt);
 
     if (!petition) {
       res.status(404).json(createFailureResponse("Petition not found."));
@@ -251,6 +293,14 @@ export function openPetitionHandler(req: Request, res: Response): void {
   }
 }
 
+/**
+ * Initiative Lifecycle — Part F, Section 7/8 (Representative Signatures).
+ * When the request body omits `participantId` (the new Lifecycle-based
+ * public Petition renderer never sends one), the acting Participant is
+ * resolved from the authenticated request instead — mirroring
+ * `withdrawPetitionSignatureHandler` below. The legacy body-supplied
+ * contract keeps working unchanged whenever a caller still provides one.
+ */
 export async function signPetitionHandler(req: Request, res: Response): Promise<void> {
   const petitionId = getPetitionId(req);
   const idError = validatePetitionId(petitionId);
@@ -269,7 +319,8 @@ export async function signPetitionHandler(req: Request, res: Response): Promise<
   }
 
   try {
-    const { participantId, participationMode } = parseSignRequest(body);
+    const { participantId: bodyParticipantId, participationMode } = parseSignRequest(body);
+    const participantId = bodyParticipantId ?? (await resolveRequestIdentity(req)).participantId;
     const petition = await signPetition(petitionId, participantId, participationMode);
 
     if (!petition) {
@@ -285,7 +336,40 @@ export async function signPetitionHandler(req: Request, res: Response): Promise<
   }
 }
 
-export function closePetitionHandler(req: Request, res: Response): void {
+/**
+ * Initiative Lifecycle — Part F, Section 8 (Petition Reactions — "Withdraw
+ * Signature"). Unlike the pre-existing `signPetitionHandler`, the acting
+ * Participant is resolved server-side from the authenticated request
+ * (`resolveRequestIdentity`), never trusted from the request body — this
+ * is a brand-new capability, so it is built with proper actor resolution
+ * from the start rather than inheriting the legacy body-supplied
+ * `participantId` pattern.
+ */
+export async function withdrawPetitionSignatureHandler(req: Request, res: Response): Promise<void> {
+  const petitionId = getPetitionId(req);
+  const idError = validatePetitionId(petitionId);
+
+  if (idError) {
+    res.status(400).json(createFailureResponse(idError));
+    return;
+  }
+
+  try {
+    const identity = await resolveRequestIdentity(req);
+    const petition = await withdrawPetitionSignature(petitionId, identity.participantId);
+
+    if (!petition) {
+      res.status(404).json(createFailureResponse("Petition not found."));
+      return;
+    }
+
+    res.json(createSuccessResponse(mapPetitionResponse(petition), "Signature withdrawn."));
+  } catch (error) {
+    handleStoreError(res, error);
+  }
+}
+
+export async function closePetitionHandler(req: Request, res: Response): Promise<void> {
   const petitionId = getPetitionId(req);
   const idError = validatePetitionId(petitionId);
 
@@ -304,7 +388,7 @@ export function closePetitionHandler(req: Request, res: Response): void {
 
   try {
     const closesAt = typeof body.closesAt === "string" ? body.closesAt : undefined;
-    const petition = closePetition(petitionId, closesAt);
+    const petition = await closePetition(petitionId, closesAt);
 
     if (!petition) {
       res.status(404).json(createFailureResponse("Petition not found."));
@@ -317,7 +401,7 @@ export function closePetitionHandler(req: Request, res: Response): void {
   }
 }
 
-export function archivePetitionHandler(req: Request, res: Response): void {
+export async function archivePetitionHandler(req: Request, res: Response): Promise<void> {
   const petitionId = getPetitionId(req);
   const idError = validatePetitionId(petitionId);
 
@@ -327,7 +411,7 @@ export function archivePetitionHandler(req: Request, res: Response): void {
   }
 
   try {
-    const petition = archivePetition(petitionId);
+    const petition = await archivePetition(petitionId);
 
     if (!petition) {
       res.status(404).json(createFailureResponse("Petition not found."));

@@ -162,7 +162,7 @@ async function buildPipelineContext(): Promise<{
   });
   const projected = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
     initiativeId: projected.initiativeId,
     title: "Integration Analysis",
     summary: "Analysis summary.",
@@ -171,12 +171,12 @@ async function buildPipelineContext(): Promise<{
     suggestedImprovements: "Improve.",
     references: "Ref.",
   });
-  const analysis = publishInitiativeCollaborativeAnalysis(
+  const analysis = await publishInitiativeCollaborativeAnalysis(
     otherParticipant,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(otherParticipant, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(otherParticipant, {
     analysisId: analysis.analysisId,
     targetSection: "Description",
     currentIssue: "Issue.",
@@ -207,7 +207,7 @@ async function buildPipelineContext(): Promise<{
   });
   publishInitiativeRevision(steward, projected.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: projected.initiativeId,
     title: "Integration Session",
     purpose: "Prepare decision.",
@@ -218,7 +218,7 @@ async function buildPipelineContext(): Promise<{
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: projected.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -270,7 +270,7 @@ async function buildPipelineContext(): Promise<{
   });
   publishOfficialResponse(steward, responseDraft.responseId);
 
-  const commitmentDraft = createInitiativeImplementationCommitmentDraft(author, {
+  const commitmentDraft = await createInitiativeImplementationCommitmentDraft(author, {
     initiativeId: projected.initiativeId,
     decisionId: decisionDraft.decisionId,
     commitmentTitle: "Integration Commitment",
@@ -282,7 +282,7 @@ async function buildPipelineContext(): Promise<{
     commitmentDraft.commitmentId,
   );
 
-  const trackingDraft = createInitiativeImplementationTrackingDraft(author, {
+  const trackingDraft = await createInitiativeImplementationTrackingDraft(author, {
     commitmentId: publishedCommitment.commitmentId,
     currentStage: "Completed",
     summary: "Tracking summary.",
@@ -295,7 +295,7 @@ async function buildPipelineContext(): Promise<{
   });
   completeInitiativeImplementationTracking(author, trackingDraft.trackingId);
 
-  const impactDraft = createInitiativePublicImpactDraft(author, {
+  const impactDraft = await createInitiativePublicImpactDraft(author, {
     trackingId: trackingDraft.trackingId,
     title: "Integration Impact",
     summary: "Impact summary.",
@@ -351,7 +351,7 @@ async function runVerification(): Promise<void> {
   const context = await buildPipelineContext();
 
   console.log("1. Related records resolve correctly");
-  const initiativeRelated = resolveRelatedRecords("initiative", context.initiativeId);
+  const initiativeRelated = await resolveRelatedRecords("initiative", context.initiativeId);
   assert(initiativeRelated.length > 0, "Initiative related records resolve");
   assert(
     initiativeRelated.every((record) => record.publicUrl.startsWith("/")),
@@ -359,7 +359,7 @@ async function runVerification(): Promise<void> {
   );
 
   console.log("2. Breadcrumb generation");
-  const breadcrumb = buildBreadcrumb("implementation_tracking", context.trackingId);
+  const breadcrumb = await buildBreadcrumb("implementation_tracking", context.trackingId);
   assert(breadcrumb.length >= 3, "Breadcrumb includes civic path");
   assert(breadcrumb[0]?.label === "Home", "Breadcrumb starts at Home");
 
@@ -396,7 +396,7 @@ async function runVerification(): Promise<void> {
   );
 
   console.log("4. Context panel and integration view");
-  const initiativeView = buildIntegrationView("initiative", context.initiativeId);
+  const initiativeView = await buildIntegrationView("initiative", context.initiativeId);
   assert(initiativeView !== null, "Initiative integration view resolves");
   if (!initiativeView) {
     throw new Error("Initiative integration view resolves");
@@ -404,7 +404,7 @@ async function runVerification(): Promise<void> {
   assert(initiativeView.context.relatedSections.length > 0, "Context panel sections populated");
   assertNoPrivateFields(initiativeView, "Integration view");
 
-  const trackingView = buildIntegrationView("implementation_tracking", context.trackingId);
+  const trackingView = await buildIntegrationView("implementation_tracking", context.trackingId);
   assert(trackingView !== null, "Tracking integration view resolves");
   if (!trackingView) {
     throw new Error("Tracking integration view resolves");
@@ -415,7 +415,7 @@ async function runVerification(): Promise<void> {
   );
 
   console.log("5. Shared references and search metadata");
-  const metadata = buildSearchMetadata("public_impact", context.impactId);
+  const metadata = await buildSearchMetadata("public_impact", context.impactId);
   assert(metadata !== null, "Search metadata contract resolves");
   if (!metadata) {
     throw new Error("Search metadata contract resolves");
@@ -466,7 +466,7 @@ async function runVerification(): Promise<void> {
   )?.complete;
   assert(archiveStageComplete === true, "Archive stage completes pipeline");
 
-  const archiveView = buildIntegrationView("civic_archive", archiveDraft.archiveRecordId);
+  const archiveView = await buildIntegrationView("civic_archive", archiveDraft.archiveRecordId);
   assert(archiveView !== null, "Archive integration view resolves");
   if (!archiveView) {
     throw new Error("Archive integration view resolves");
@@ -485,7 +485,7 @@ async function runVerification(): Promise<void> {
   ];
 
   for (const [entityType, entityId] of entityChecks) {
-    const view = buildIntegrationView(entityType, entityId);
+    const view = await buildIntegrationView(entityType, entityId);
     assert(view !== null, `${entityType} integration view resolves`);
     if (!view) {
       throw new Error(`${entityType} integration view resolves`);

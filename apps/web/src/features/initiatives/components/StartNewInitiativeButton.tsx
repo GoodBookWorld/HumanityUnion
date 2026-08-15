@@ -1,17 +1,23 @@
 "use client";
 
-import type { Initiative } from "@hu/types";
+import type { CommunityInitiativeRelationshipProjection, Initiative } from "@hu/types";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../initiative-activity-areas";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import { getCountryLabel } from "../../../data/geography";
-import { uploadInitiativeImage } from "../../media-upload/media-upload-api";
+import { checkInitiativeSimilarity } from "../../community-intelligence/api";
+import { InitiativeOverlapNotice } from "../../community-intelligence/components/InitiativeOverlapNotice";
+import {
+  OVERLAP_CHECK_UNAVAILABLE_MESSAGE,
+  buildSimilarityDraftFingerprint,
+  shouldSkipSimilarityCheck,
+} from "../../community-intelligence/overlap-ux";
+import { submitInitiativeVideoLink, uploadInitiativeImage } from "../../media-upload/media-upload-api";
 import { fetchPublicNewsArticleById } from "../../public-news/api";
 import { createInitiativeDraft, publishInitiative, saveInitiativeDraft } from "../api";
 import { isAuthenticationRequiredError, isApiUnavailableError } from "../../../lib/api-client";
-import { getStoredAccessToken } from "../../auth/auth-token-store";
 import {
   mapNewsCategoryToActivityArea,
   resolveInitiativeCreateNewsSourceId,
@@ -78,6 +84,12 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
   const [description, setDescription] = useState("");
   const [formValues, setFormValues] = useState<InitiativeFormValues>(DEFAULT_FORM_VALUES);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [overlapItems, setOverlapItems] = useState<CommunityInitiativeRelationshipProjection[]>(
+    [],
+  );
+  const [overlapAcknowledged, setOverlapAcknowledged] = useState(false);
+  const [acknowledgedFingerprint, setAcknowledgedFingerprint] = useState<string | null>(null);
+  const [overlapCheckUnavailable, setOverlapCheckUnavailable] = useState(false);
   const [activeSourceNewsId, setActiveSourceNewsId] = useState<string | null>(initialNewsSourceId);
   const [sourceRemoved, setSourceRemoved] = useState(false);
   const [sourceArticle, setSourceArticle] = useState<Awaited<
@@ -140,11 +152,58 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
     };
   }, [activeSourceNewsId, sourcePrefillApplied, sourceRemoved]);
 
+  // Material draft changes invalidate a prior Continue acknowledgement so the
+  // next publish may re-run a bounded similarity check. Unchanged drafts do not nag.
+  useEffect(() => {
+    if (!overlapAcknowledged || !acknowledgedFingerprint) {
+      return;
+    }
+    const next = buildSimilarityDraftFingerprint({
+      title,
+      description,
+      activityArea: formValues.activityArea,
+      activityAreaOther: formValues.activityAreaOther || undefined,
+      countryCode: formValues.countryCode || undefined,
+      regionCode: formValues.regionCode || undefined,
+      communityCode: formValues.communityCode || undefined,
+      participationScope: formValues.participationScope,
+      excludeInitiativeId: draftId,
+    });
+    if (next !== acknowledgedFingerprint) {
+      setOverlapAcknowledged(false);
+      setAcknowledgedFingerprint(null);
+    }
+  }, [
+    acknowledgedFingerprint,
+    description,
+    draftId,
+    formValues.activityArea,
+    formValues.activityAreaOther,
+    formValues.communityCode,
+    formValues.countryCode,
+    formValues.participationScope,
+    formValues.regionCode,
+    overlapAcknowledged,
+    title,
+  ]);
+
   async function persistDraft(): Promise<Initiative> {
+    const saveInput = initiativeFormValuesToSaveInput(formValues);
+
+    if (pendingImageFile) {
+      // The selected file has not been uploaded yet — `formValues.coverMedia`
+      // currently only holds a browser-local `blob:` preview URL (see
+      // `onImageUpload` below), which must never be sent to the API. The
+      // real, platform-hosted coverMedia is saved in a follow-up call below,
+      // once the file has actually been uploaded.
+      saveInput.coverMedia = undefined;
+      saveInput.clearCoverMedia = false;
+    }
+
     const payload = {
       title,
       description,
-      ...initiativeFormValuesToSaveInput(formValues),
+      ...saveInput,
       ...(draftId || !activeSourceNewsId || sourceRemoved ? {} : { sourceNewsId: activeSourceNewsId }),
       ...(draftId && sourceRemoved ? { clearSourceReferences: true } : {}),
     };
@@ -160,7 +219,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
     if (pendingImageFile) {
       const uploaded = await uploadInitiativeImage(initiative.initiativeId, pendingImageFile);
       initiative = await saveInitiativeDraft(initiative.initiativeId, {
-        imageUrl: uploaded.mediaUrl,
+        coverMedia: { type: "image", url: uploaded.mediaUrl, verificationStatus: "approved" },
       });
     }
 
@@ -168,12 +227,6 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
   }
 
   async function handleSaveDraft() {
-    if (!getStoredAccessToken()) {
-      setAuthRequired(true);
-      setMessage("Sign in to create an initiative.");
-      return;
-    }
-
     setCreating(true);
     setMessage(null);
     setIsSuccess(false);
@@ -193,19 +246,78 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
     }
   }
 
+  function currentSimilarityFingerprint(): string {
+    return buildSimilarityDraftFingerprint({
+      title,
+      description,
+      activityArea: formValues.activityArea,
+      activityAreaOther: formValues.activityAreaOther || undefined,
+      countryCode: formValues.countryCode || undefined,
+      regionCode: formValues.regionCode || undefined,
+      communityCode: formValues.communityCode || undefined,
+      participationScope: formValues.participationScope,
+      excludeInitiativeId: draftId,
+    });
+  }
+
+  function handleContinueCreating() {
+    // Acknowledge and collapse the notice. Do not publish, mutate draft text,
+    // or suppress existing Initiatives — Author continues editing.
+    const fingerprint = currentSimilarityFingerprint();
+    setOverlapAcknowledged(true);
+    setAcknowledgedFingerprint(fingerprint);
+    setOverlapItems([]);
+    setMessage(null);
+    setIsSuccess(false);
+  }
+
   async function handlePublish() {
-    if (!getStoredAccessToken()) {
-      setAuthRequired(true);
-      setMessage("Sign in to create an initiative.");
-      return;
-    }
+    const fingerprint = currentSimilarityFingerprint();
+    const skipOverlapCheck = shouldSkipSimilarityCheck({
+      acknowledgeOverlap: false,
+      overlapAcknowledged,
+      currentFingerprint: fingerprint,
+      acknowledgedFingerprint,
+    });
 
     setCreating(true);
     setMessage(null);
     setIsSuccess(false);
     setAuthRequired(false);
+    setOverlapCheckUnavailable(false);
 
     try {
+      if (!skipOverlapCheck) {
+        try {
+          const similarity = await checkInitiativeSimilarity({
+            title,
+            description,
+            activityArea: formValues.activityArea,
+            activityAreaOther: formValues.activityAreaOther || undefined,
+            countrySlug: formValues.countryCode || undefined,
+            regionSlug: formValues.regionCode || undefined,
+            communitySlug: formValues.communityCode || undefined,
+            participationScope: formValues.participationScope,
+            excludeInitiativeId: draftId ?? undefined,
+          });
+
+          if (similarity.hasStrongOverlap && similarity.items.length > 0) {
+            setOverlapItems([...similarity.items]);
+            setOverlapAcknowledged(false);
+            setAcknowledgedFingerprint(null);
+            setCreating(false);
+            setMessage("Related Initiatives already exist. Review them or continue creating.");
+            return;
+          }
+
+          setOverlapItems([]);
+        } catch {
+          // Community Intelligence must never block Initiative creation.
+          setOverlapCheckUnavailable(true);
+          setOverlapItems([]);
+        }
+      }
+
       const saved = await persistDraft();
       const published = await publishInitiative(saved.initiativeId);
       onCreated(published);
@@ -221,6 +333,10 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
       setSourceArticle(null);
       setSourceRemoved(false);
       setSourcePrefillApplied(false);
+      setOverlapItems([]);
+      setOverlapAcknowledged(false);
+      setAcknowledgedFingerprint(null);
+      setOverlapCheckUnavailable(false);
     } catch (error) {
       setAuthRequired(isAuthenticationRequiredError(error));
       setMessage(formatInitiativeError(error));
@@ -268,12 +384,24 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
           setPendingImageFile(file);
           return URL.createObjectURL(file);
         }}
+        onVideoLinkSubmit={(url) => {
+          setPendingImageFile(null);
+          return submitInitiativeVideoLink(draftId ?? "", url);
+        }}
         onImageRemove={() => {
           setPendingImageFile(null);
         }}
       />
 
       <p className="start-new-initiative-button__visibility">Visibility: Public</p>
+
+      <InitiativeOverlapNotice items={overlapItems} onContinue={handleContinueCreating} />
+
+      {overlapCheckUnavailable ? (
+        <p className="start-new-initiative-button__message" role="status">
+          {OVERLAP_CHECK_UNAVAILABLE_MESSAGE}
+        </p>
+      ) : null}
 
       <div className="start-new-initiative-button__actions">
         <button
@@ -282,7 +410,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
           onClick={() => void handleSaveDraft()}
           disabled={creating}
         >
-          {creating ? "Saving..." : "Save Draft"}
+          {creating ? "Saving…" : "Save Draft"}
         </button>
         <button
           type="button"

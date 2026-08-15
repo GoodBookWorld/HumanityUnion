@@ -3,7 +3,6 @@
  * Run: npm run verify:public-impact
  */
 
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -13,6 +12,11 @@ import type { Member } from "@hu/types";
 import { canTransitionInitiativePublicImpact, isInitiativePublicImpactTerminal } from "@hu/types";
 
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
+import {
+  assertVerificationSubprocessSucceeded,
+  runVerificationSubprocess,
+} from "./run-verification-subprocess.js";
+import { runVerificationScript } from "./verification-script-lifecycle.js";
 
 const steward: RequestIdentity = {
   participantId: "member-bootstrap-001",
@@ -61,9 +65,9 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-function assertThrows(fn: () => unknown, message: string): void {
+async function assertThrows(fn: () => unknown, message: string): Promise<void> {
   try {
-    fn();
+    await fn();
     throw new Error(`Expected failure: ${message}`);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("Expected failure:")) {
@@ -156,7 +160,7 @@ async function buildCompletedTrackingContext(): Promise<CompletedTrackingContext
   });
   const projected = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
     initiativeId: projected.initiativeId,
     title: "Public Impact Analysis",
     summary: "Analysis for public impact path.",
@@ -165,12 +169,12 @@ async function buildCompletedTrackingContext(): Promise<CompletedTrackingContext
     suggestedImprovements: "Improve.",
     references: "Ref.",
   });
-  const publishedAnalysis = publishInitiativeCollaborativeAnalysis(
+  const publishedAnalysis = await publishInitiativeCollaborativeAnalysis(
     otherParticipant,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(otherParticipant, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(otherParticipant, {
     analysisId: publishedAnalysis.analysisId,
     targetSection: "Description",
     currentIssue: "Issue.",
@@ -201,7 +205,7 @@ async function buildCompletedTrackingContext(): Promise<CompletedTrackingContext
   });
   publishInitiativeRevision(steward, projected.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: projected.initiativeId,
     title: "Public Impact Session",
     purpose: "Prepare society for collective decision.",
@@ -212,7 +216,7 @@ async function buildCompletedTrackingContext(): Promise<CompletedTrackingContext
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: projected.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -221,7 +225,7 @@ async function buildCompletedTrackingContext(): Promise<CompletedTrackingContext
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
   await closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
-  const commitmentDraft = createInitiativeImplementationCommitmentDraft(author, {
+  const commitmentDraft = await createInitiativeImplementationCommitmentDraft(author, {
     initiativeId: projected.initiativeId,
     decisionId: decisionDraft.decisionId,
     commitmentTitle: "Garden Implementation Commitment",
@@ -233,7 +237,7 @@ async function buildCompletedTrackingContext(): Promise<CompletedTrackingContext
     commitmentDraft.commitmentId,
   );
 
-  const trackingDraft = createInitiativeImplementationTrackingDraft(author, {
+  const trackingDraft = await createInitiativeImplementationTrackingDraft(author, {
     commitmentId: publishedCommitment.commitmentId,
     currentStage: "Completed",
     summary: "Garden implementation completed.",
@@ -320,7 +324,7 @@ async function runMainVerification(): Promise<void> {
   );
   assert(eligibility.eligible, "Completed tracking author should be eligible");
 
-  assertThrows(
+  await assertThrows(
     () =>
       createInitiativePublicImpactDraft(otherParticipant, {
         trackingId: context.trackingId,
@@ -335,7 +339,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("3. Lifecycle — draft → published → verified with evidence");
 
-  const draft = createInitiativePublicImpactDraft(author, {
+  const draft = await createInitiativePublicImpactDraft(author, {
     trackingId: context.trackingId,
     title: "Community Garden Outcome",
     summary: "Observable change from the garden implementation.",
@@ -349,7 +353,7 @@ async function runMainVerification(): Promise<void> {
     summary: "Updated observable outcome summary before publishing.",
   });
 
-  assertThrows(
+  await assertThrows(
     () => publishInitiativePublicImpact(author, draft.impactId),
     "Publish requires at least one evidence entry",
   );
@@ -365,7 +369,7 @@ async function runMainVerification(): Promise<void> {
   assert(published.status === "published", "Impact published");
   assert(published.publishedAt !== undefined, "Published impact has publishedAt");
 
-  assertThrows(
+  await assertThrows(
     () =>
       updateInitiativePublicImpactDraft(author, draft.impactId, {
         title: "Changed after publish",
@@ -373,7 +377,7 @@ async function runMainVerification(): Promise<void> {
     "Published impact cannot be edited",
   );
 
-  assertThrows(
+  await assertThrows(
     () => verifyInitiativePublicImpact(author, draft.impactId),
     "Author cannot verify own impact",
   );
@@ -409,7 +413,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("5. Lifecycle — draft → archived and published → archived");
 
-  const archiveDraft = createInitiativePublicImpactDraft(author, {
+  const archiveDraft = await createInitiativePublicImpactDraft(author, {
     trackingId: context.trackingId,
     title: "Archived Draft Impact",
     summary: "Will be archived from draft.",
@@ -420,7 +424,7 @@ async function runMainVerification(): Promise<void> {
   const archivedFromDraft = archiveInitiativePublicImpact(author, archiveDraft.impactId);
   assert(archivedFromDraft.status === "archived", "Archived from draft");
 
-  const publishThenArchiveDraft = createInitiativePublicImpactDraft(author, {
+  const publishThenArchiveDraft = await createInitiativePublicImpactDraft(author, {
     trackingId: context.trackingId,
     title: "Published Then Archived",
     summary: "Published impact archived by author.",
@@ -443,11 +447,11 @@ async function runMainVerification(): Promise<void> {
 
   console.log("6. Identity — author publish/archive; steward verify");
 
-  assertThrows(
+  await assertThrows(
     () => publishInitiativePublicImpact(otherParticipant, draft.impactId),
     "Non-author cannot publish",
   );
-  assertThrows(
+  await assertThrows(
     () => archiveInitiativePublicImpact(otherParticipant, draft.impactId),
     "Non-author cannot archive verified impact",
   );
@@ -488,14 +492,12 @@ async function runMainVerification(): Promise<void> {
 
 function spawnReload(scriptName: string, args: string[], env: Record<string, string>): void {
   const reloadScriptPath = path.resolve(path.dirname(SCRIPT_PATH), scriptName);
-  const result = spawnSync("npx", ["tsx", reloadScriptPath, ...args], {
+  const result = runVerificationSubprocess(reloadScriptPath, args, {
     cwd: path.resolve(path.dirname(SCRIPT_PATH), "../.."),
     env: { ...process.env, ...env },
-    stdio: "pipe",
-    encoding: "utf-8",
   });
 
-  assert(result.status === 0, `Reload verification failed for ${scriptName}`);
+  assertVerificationSubprocessSucceeded(result, scriptName);
 }
 
 async function runPersistenceVerification(): Promise<void> {
@@ -522,7 +524,7 @@ async function runPersistenceVerification(): Promise<void> {
     verifyInitiativePublicImpact,
   } = await import("../modules/initiative-public-impact/initiative-public-impact.service.js");
 
-  const draft = createInitiativePublicImpactDraft(author, {
+  const draft = await createInitiativePublicImpactDraft(author, {
     trackingId: context.trackingId,
     title: "Persistence Impact",
     summary: "Survives restart.",
@@ -568,8 +570,17 @@ async function main(): Promise<void> {
 
   await runMainVerification();
 
-  const persistenceResult = spawnSync("npx", ["tsx", SCRIPT_PATH], {
-    cwd: path.resolve(path.dirname(SCRIPT_PATH), "../.."),
+  // Recovery Task 17: run via the shared bounded-subprocess helper (direct
+  // `process.execPath --import tsx`, never nested `npx`) instead of a raw,
+  // unbounded `spawnSync("npx", ...)`. This process performs real Member
+  // lookups (Mongo-backed) as part of the "Public projection, privacy, and
+  // metrics" step, which used to leave an open MongoDB connection after all
+  // assertions passed — keeping the process alive and this `spawnSync` call
+  // blocked forever (observed as a pre-existing hang in Tasks 15 and 16).
+  // Wrapping `main()` in `runVerificationScript` (below) closes that
+  // connection deterministically; the timeout here is an independent
+  // safety net.
+  const persistenceResult = runVerificationSubprocess(SCRIPT_PATH, [], {
     env: {
       ...process.env,
       VERIFY_PUBLIC_IMPACT_PERSISTENCE: "1",
@@ -583,15 +594,24 @@ async function main(): Promise<void> {
       INITIATIVE_IMPLEMENTATION_TRACKING_PERSISTENCE: "memory",
       INITIATIVE_PUBLIC_IMPACT_PERSISTENCE: "memory",
     },
-    stdio: "inherit",
   });
 
-  assert(persistenceResult.status === 0, "Persistence verification subprocess failed");
+  // Preserve the pre-existing visible output of the persistence subprocess
+  // even though output is now captured rather than inherited.
+  if (persistenceResult.stdout) {
+    process.stdout.write(persistenceResult.stdout);
+  }
+
+  assertVerificationSubprocessSucceeded(
+    persistenceResult,
+    "Initiative Public Impact persistence verification",
+  );
 
   console.log("All Initiative Public Impact foundation checks passed.");
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exit(1);
-});
+// Recovery Task 17: closes the shared MongoDB client (and other
+// verification-only resources) deterministically after `main()` settles —
+// see the comment above the persistence-subprocess call for why this was
+// necessary to prevent an indefinite hang.
+void runVerificationScript(main);

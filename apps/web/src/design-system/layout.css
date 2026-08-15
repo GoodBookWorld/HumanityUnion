@@ -10,13 +10,14 @@
   width: 100%;
 }
 
+/* Public Header UX Pack 01 — floating three-zone header (no full-bleed shell). */
 .humanity-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid var(--hu-color-border);
-  background: var(--hu-color-bg);
-  box-shadow: var(--hu-shadow-sm);
+  border-bottom: none;
+  background: var(--hu-color-bg-muted);
+  box-shadow: none;
 }
 
 .humanity-header__inner {
@@ -32,7 +33,7 @@
 
 .humanity-header__row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--hu-space-4);
@@ -66,10 +67,11 @@
 }
 
 .humanity-header__tagline {
-  color: #a57979;
+  color: var(--hu-color-brand-tagline);
   font-size: 0.6875rem;
   font-weight: 400;
-  letter-spacing: 0.08em;
+  /* Tuned so WORLD SOLIDARITY ≈ Humanity Union rendered width (no font stretch). */
+  letter-spacing: 0.10em;
   line-height: 1.2;
   text-transform: uppercase;
 }
@@ -125,6 +127,110 @@
   font-weight: 600;
 }
 
+/* Desktop three-zone layout: brand | floating capsule | auth */
+@media (min-width: 769px) {
+  .humanity-header__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--hu-space-4);
+  }
+
+  .humanity-header__brand {
+    justify-self: start;
+    grid-column: 1;
+  }
+
+  .humanity-header__nav--desktop {
+    grid-column: 2;
+    justify-self: center;
+    display: block;
+    max-width: 100%;
+    padding: 0.25rem;
+    border: 1px solid var(--hu-color-border);
+    border-radius: var(--hu-radius-capsule);
+    background: var(--hu-color-surface);
+    box-shadow: var(--hu-shadow-capsule);
+  }
+
+  .humanity-header__nav--desktop .humanity-header__nav-list {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0;
+  }
+
+  .humanity-header__nav--desktop .humanity-header__nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.25rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--hu-radius-pill);
+    color: var(--hu-color-primary);
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition:
+      background-color 160ms ease,
+      box-shadow 160ms ease,
+      color 160ms ease;
+  }
+
+  .humanity-header__nav--desktop .humanity-header__nav-link:hover {
+    background: color-mix(in srgb, var(--hu-color-primary) 8%, #ffffff);
+    box-shadow: var(--hu-shadow-capsule-item);
+    color: var(--hu-color-primary);
+  }
+
+  .humanity-header__nav--desktop .humanity-header__nav-link:focus-visible {
+    color: var(--hu-color-primary);
+    outline: var(--hu-focus-ring);
+    outline-offset: var(--hu-focus-offset);
+  }
+
+  .humanity-header__nav--desktop .humanity-header__nav-link[aria-current="page"] {
+    background: color-mix(in srgb, var(--hu-color-primary) 12%, #ffffff);
+    box-shadow: var(--hu-shadow-capsule-item);
+    color: var(--hu-color-primary-hover);
+    font-weight: 600;
+  }
+
+  .humanity-header__utility--desktop {
+    grid-column: 3;
+    justify-self: end;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .humanity-header__nav--desktop {
+      animation: humanity-header-capsule-enter 280ms ease-out;
+    }
+  }
+}
+
+@keyframes humanity-header-capsule-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1180px) {
+  .humanity-header__nav--desktop .humanity-header__nav-link {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.8125rem;
+  }
+
+  .humanity-header__brand-name {
+    font-size: var(--hu-font-size-base);
+  }
+}
+
 .humanity-header__nav-placeholder {
   color: var(--hu-color-text-muted);
   font-size: var(--hu-font-size-sm);
@@ -147,18 +253,69 @@
 }
 
 .humanity-header__utility-link {
-  color: var(--hu-color-text-muted);
+  color: var(--hu-color-primary);
   font-size: var(--hu-font-size-sm);
+  font-weight: 600;
   text-decoration: none;
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--hu-space-2);
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--hu-radius-pill);
 }
 
 .humanity-header__utility-link:hover,
 .humanity-header__utility-link:focus-visible {
-  color: var(--hu-color-text);
+  color: var(--hu-color-primary-hover);
+  background: color-mix(in srgb, var(--hu-color-primary) 8%, transparent);
+}
+
+.humanity-header__utility-link:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+}
+
+/* Launch Readiness UX Fix Pack 01 — guest Log in icon + label (no header shell). */
+.humanity-header__login-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: var(--hu-radius-md);
+  color: var(--hu-color-primary);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.humanity-header__login-link:hover,
+.humanity-header__login-link:focus-visible {
+  color: var(--hu-color-primary-hover);
+  background: color-mix(in srgb, var(--hu-color-primary) 8%, transparent);
+}
+
+.humanity-header__login-link:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+}
+
+.humanity-header__login-link-icon {
+  display: block;
+  width: 1.375rem;
+  height: 1.375rem;
+  object-fit: contain;
+}
+
+.humanity-header__login-link-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .humanity-header__auth-tools {
@@ -248,6 +405,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--hu-space-2);
+  min-height: var(--hu-touch-target);
   padding: var(--hu-space-2) 0;
   color: var(--hu-color-text);
   font-size: var(--hu-font-size-base);
@@ -265,8 +423,8 @@
   display: none;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--hu-touch-target);
+  height: var(--hu-touch-target);
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-md);
   background: var(--hu-color-surface);
@@ -376,16 +534,53 @@
 }
 
 .humanity-workspace-page {
-  width: 100%;
+  width: min(100%, var(--hu-workspace-max-width));
   max-width: var(--hu-workspace-max-width);
-  margin: 0 auto;
-  padding: var(--hu-space-8) var(--hu-space-6);
+  margin-inline: auto;
+  padding-block: var(--hu-section-gap);
+  padding-inline: var(--hu-page-padding-inline);
+  box-sizing: border-box;
+}
+
+/* Canonical public content shell — Launch Readiness Pack 03. */
+.hu-page-container {
+  width: min(100%, var(--hu-page-max-width));
+  max-width: var(--hu-page-max-width);
+  margin-inline: auto;
+  padding-inline: var(--hu-page-padding-inline);
+  box-sizing: border-box;
+}
+
+.hu-page-container--sectioned {
+  padding-block: var(--hu-section-gap);
+}
+
+/* Inner reading / form / document columns (never used as outer page shells). */
+.hu-reading-column {
+  width: min(100%, var(--hu-reading-max-width));
+  max-width: var(--hu-reading-max-width);
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.hu-form-column {
+  width: min(100%, var(--hu-form-max-width));
+  max-width: var(--hu-form-max-width);
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+.hu-document-column {
+  width: min(100%, var(--hu-document-max-width));
+  max-width: var(--hu-document-max-width);
+  margin-inline: auto;
+  box-sizing: border-box;
 }
 
 .humanity-workspace-shell {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: var(--hu-space-8);
+  grid-template-columns: var(--hu-sidebar-width) minmax(0, 1fr);
+  gap: var(--hu-content-gap);
   width: 100%;
   align-items: start;
 }
@@ -396,7 +591,7 @@
 
 .humanity-initiative-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 280px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, var(--hu-initiative-sidebar-width));
   gap: var(--hu-space-6);
   align-items: start;
 }

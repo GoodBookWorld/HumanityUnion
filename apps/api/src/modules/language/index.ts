@@ -1,0 +1,52 @@
+/**
+ * Language Architecture Pack 01–02 — Language & Translation.
+ *
+ * Original Content is preserved permanently.
+ * Translation is a separate representation.
+ * Browser Google Translate is convenience only — not the source of truth.
+ */
+
+export { PRIORITY_LANGUAGE_CATALOG, listPriorityLanguageCodes, resolveSafeDefaultLanguage } from "./language-catalog.js";
+export type { PriorityLanguageDescriptor } from "./language-catalog.js";
+export type {
+  TranslationProvider,
+  TranslationProviderRequest,
+  TranslationProviderResult,
+} from "./translation-provider.js";
+export { DeterministicTranslationProvider } from "./providers/deterministic-translation-provider.js";
+export { GeminiTranslationProvider } from "./providers/gemini-translation-provider.js";
+export {
+  resolveTranslationProvider,
+  setTranslationProviderForTests,
+  resetTranslationProviderForTests,
+  translationProviderPublicErrorMessage,
+} from "./resolve-translation-provider.js";
+export {
+  resolveTranslatedDisplay,
+  resolveStructuredTranslatedDisplay,
+  markTranslationStaleIfSourceChanged,
+} from "./resolve-translated-display.js";
+export type { ResolveTranslatedDisplayInput } from "./resolve-translated-display.js";
+export { translateDraft } from "./translate-draft.js";
+export {
+  buildParticipantLanguageContextFromExperience,
+  resolveParticipantLanguageContext,
+} from "./participant-language-context.js";
+export { buildTranslationCacheKey } from "./translation-cache-key.js";
+export { resolveNotificationTemplate } from "./notification-localization.js";
+export type {
+  LocalizedNotificationTemplate,
+  NotificationTemplateKey,
+} from "./notification-localization.js";
+export {
+  getOrCreateContentTranslation,
+  loadTranslatableSource,
+  resolvePublicTranslatedContent,
+} from "./content-translation.service.js";
+export {
+  resolveTranslationConfig,
+  TranslationProviderError,
+} from "./translation.config.js";
+export { resetContentTranslationMemoryStoreForTests } from "./persistence/content-translation.memory.store.js";
+export { clearTranslationRateLimitBucketsForTests } from "./translation-rate-limit.js";
+export { default as languageRouter } from "./language.routes.js";

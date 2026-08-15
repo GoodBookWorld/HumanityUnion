@@ -1,12 +1,26 @@
 import { getCountryLabel, normalizeCountryInput } from "@hu/geography";
 import type {
+  Initiative,
+  InitiativeCollectiveDecision,
+  InitiativeImplementationCommitment,
+  InitiativeImplementationTracking,
+  InitiativePublicImpact,
   KnowledgeContribution,
   LessonsLearned,
   PublicCivicArchiveRecord,
   PublicCivicArchiveStatus,
+  TransitiveInitiativeAncestry,
 } from "@hu/types";
 import { canTransitionPublicCivicArchive, isPublicCivicArchiveTerminal } from "@hu/types";
 
+import {
+  InitiativeAncestryMissingError,
+  InitiativeNotFoundError,
+  ParentArtifactNotFoundError,
+  validateTransitiveInitiativeAncestry,
+  type InitiativeExistenceChecker,
+  type ParentArtifactInitiativeResolver,
+} from "../../shared/initiative-ancestry/index.js";
 import { getCommitmentById } from "../initiative-implementation-commitment/initiative-implementation-commitment.store.js";
 import { getDecisionById } from "../initiative-collective-decision/initiative-collective-decision.store.js";
 import { getTrackingById } from "../initiative-implementation-tracking/initiative-implementation-tracking.store.js";
@@ -17,7 +31,10 @@ import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getKnownInitiativeCommunity } from "../initiatives/initiative-communities.js";
 import { getCurrentPublishedVersion } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getMemberById } from "../member/member-access.js";
-import { assertPublicCivicArchiveEligible } from "./public-civic-archive-eligibility.js";
+import {
+  assertPublicCivicArchiveEligibleForResolved,
+  type ResolvedPublicCivicArchiveEligibilitySource,
+} from "./public-civic-archive-eligibility.js";
 import {
   createArchiveRecord,
   getArchiveRecordById,
@@ -140,43 +157,150 @@ function resolveCommunityLabel(initiativeCommunitySlug: string, affectedCommunit
   return initiativeCommunitySlug.replace(/-/g, " ");
 }
 
-function buildArchiveReferences(impactId: string): PublicCivicArchiveRecord["references"] {
-  const impact = getImpactById(impactId);
+/**
+ * Recovery Task 18 — single-resolution Initiative ancestry and source
+ * identity for Public Civic Archive.
+ *
+ * Inspection (Part 1/2/3) found `PublicCivicArchiveRecord` stores its own
+ * `initiativeId` and `impactId`, but `CreatePublicCivicArchiveDraftInput`
+ * carries ONLY `impactId` — there is no independently-supplied
+ * `initiativeId` anywhere in the creation path. This is the same
+ * "Model B — transitive child" shape Task 17 found for Public Impact's own
+ * relationship to Implementation Tracking, one level further down the
+ * chain:
+ *
+ *   Initiative ← Implementation Commitment ← Implementation Tracking
+ *     ← Public Impact ← Public Civic Archive
+ *
+ * Ancestry is TRANSITIVE (`validateTransitiveInitiativeAncestry` with
+ * `parentArtifactType: "impact"`, the canonical type for
+ * `initiative-public-impact` per Task 11). Tracking/Commitment/Decision are
+ * NOT part of the ancestry chain being validated here — Public Impact's own
+ * Initiative ancestry was already validated at Impact-creation time
+ * (Task 17). They are resolved once each below only because real,
+ * pre-existing business rules (eligibility + the `references` snapshot)
+ * already required them.
+ */
+export interface PublicCivicArchiveAncestryDependencies {
+  readonly getImpact: (impactId: string) => InitiativePublicImpact | null;
+  readonly getInitiative: (initiativeId: string) => Initiative | null;
+  readonly getTracking: (trackingId: string) => InitiativeImplementationTracking | null;
+  readonly getCommitment: (commitmentId: string) => InitiativeImplementationCommitment | null;
+  readonly getDecision: (decisionId: string) => InitiativeCollectiveDecision | null;
+}
+
+const defaultPublicCivicArchiveAncestryDependencies: PublicCivicArchiveAncestryDependencies = {
+  getImpact: getImpactById,
+  getInitiative: getInitiativeById,
+  getTracking: getTrackingById,
+  getCommitment: getCommitmentById,
+  getDecision: getDecisionById,
+};
+
+/** Production `ParentArtifactInitiativeResolver` adapter for the "impact" parent type. */
+export function createArchiveParentImpactResolver(
+  getImpact: PublicCivicArchiveAncestryDependencies["getImpact"],
+  resolvedImpactBox: { value: InitiativePublicImpact | null },
+): ParentArtifactInitiativeResolver {
+  return {
+    resolveParentInitiativeId(parentArtifactType, parentArtifactId) {
+      if (parentArtifactType !== "impact") {
+        return { found: false };
+      }
+
+      const impact = getImpact(parentArtifactId);
+      resolvedImpactBox.value = impact;
+
+      return impact ? { found: true, initiativeId: impact.initiativeId } : { found: false };
+    },
+  };
+}
+
+/** Production `InitiativeExistenceChecker` adapter that captures the resolved Initiative. */
+export function createArchiveInitiativeExistenceChecker(
+  getInitiative: PublicCivicArchiveAncestryDependencies["getInitiative"],
+  resolvedInitiativeBox: { value: Initiative | null },
+): InitiativeExistenceChecker {
+  return {
+    initiativeExists(initiativeId) {
+      const initiative = getInitiative(initiativeId);
+      resolvedInitiativeBox.value = initiative;
+
+      return initiative !== null;
+    },
+  };
+}
+
+export interface ResolvedPublicCivicArchiveSource extends ResolvedPublicCivicArchiveEligibilitySource {
+  readonly ancestry: TransitiveInitiativeAncestry;
+}
+
+/**
+ * Resolves and validates the Public Civic Archive write-side source in a
+ * single pass: Public Impact ancestry (transitive, through Initiative) plus
+ * the Tracking/Commitment/Decision records the existing eligibility and
+ * snapshot-construction logic already depends on.
+ *
+ * Lookup counts for a successful resolution (Part 6/7/8 targets):
+ * Public Impact 1, Initiative 1, Tracking 1, Commitment 1, Decision 1.
+ */
+export async function resolvePublicCivicArchiveSource(
+  impactId: string,
+  deps: PublicCivicArchiveAncestryDependencies,
+): Promise<ResolvedPublicCivicArchiveSource> {
+  const resolvedImpactBox: { value: InitiativePublicImpact | null } = { value: null };
+  const resolvedInitiativeBox: { value: Initiative | null } = { value: null };
+
+  let ancestry: TransitiveInitiativeAncestry;
+
+  try {
+    ancestry = await validateTransitiveInitiativeAncestry(
+      { parentArtifactType: "impact", parentArtifactId: impactId },
+      {
+        ...createArchiveParentImpactResolver(deps.getImpact, resolvedImpactBox),
+        ...createArchiveInitiativeExistenceChecker(deps.getInitiative, resolvedInitiativeBox),
+      },
+    );
+  } catch (error) {
+    if (
+      error instanceof ParentArtifactNotFoundError ||
+      error instanceof InitiativeAncestryMissingError
+    ) {
+      // Preserves the pre-existing "Public impact record not found." message
+      // for the same, previously-reachable case (missing/nonexistent impactId).
+      throw new Error("Public impact record not found.");
+    }
+
+    if (error instanceof InitiativeNotFoundError) {
+      // Preserves the pre-existing "Initiative not found." message — this
+      // Initiative-existence check already existed pre-Task-18, just as
+      // ad hoc code rather than the shared validator.
+      throw new Error("Initiative not found.");
+    }
+
+    throw error;
+  }
+
+  const impact = resolvedImpactBox.value;
+  const initiative = resolvedInitiativeBox.value;
 
   if (!impact) {
     throw new Error("Public impact record not found.");
   }
 
-  const tracking = getTrackingById(impact.trackingId);
-
-  if (!tracking) {
-    throw new Error("Implementation tracking not found.");
+  if (!initiative) {
+    throw new Error("Initiative not found.");
   }
 
-  const commitment = getCommitmentById(tracking.commitmentId);
+  const tracking = deps.getTracking(impact.trackingId);
+  const commitment = tracking ? deps.getCommitment(tracking.commitmentId) : null;
+  const decision = commitment ? deps.getDecision(commitment.decisionId) : null;
 
-  if (!commitment) {
-    throw new Error("Implementation commitment not found.");
-  }
-
-  const decision = getDecisionById(commitment.decisionId);
-
-  if (!decision) {
-    throw new Error("Collective decision not found.");
-  }
-
-  return {
-    initiativeId: impact.initiativeId,
-    initiativeVersion: getCurrentPublishedVersion(impact.initiativeId) || 1,
-    decisionId: decision.decisionId,
-    commitmentId: commitment.commitmentId,
-    trackingId: tracking.trackingId,
-    impactId: impact.impactId,
-  };
+  return { impact, initiative, tracking, commitment, decision, ancestry };
 }
 
-async function buildArchiveSnapshotFields(
-  impactId: string,
+async function buildArchiveSnapshotFieldsForResolved(
+  resolved: ResolvedPublicCivicArchiveSource,
 ): Promise<
   Pick<
     PublicCivicArchiveRecord,
@@ -192,34 +316,42 @@ async function buildArchiveSnapshotFields(
     | "implementationPeriod"
   >
 > {
-  const impact = getImpactById(impactId);
+  const { impact, initiative, tracking, commitment, decision } = resolved;
 
-  if (!impact) {
-    throw new Error("Public impact record not found.");
+  // Defensive only — eligibility (already asserted by the caller) already
+  // requires all three to be non-null, using these exact messages.
+  if (!tracking) {
+    throw new Error("Implementation tracking not found.");
   }
 
-  const initiative = getInitiativeById(impact.initiativeId);
-
-  if (!initiative) {
-    throw new Error("Initiative not found.");
+  if (!commitment) {
+    throw new Error("Implementation commitment not found.");
   }
 
-  const tracking = getTrackingById(impact.trackingId);
-  const commitment = tracking ? getCommitmentById(tracking.commitmentId) : null;
-  const decision = commitment ? getDecisionById(commitment.decisionId) : null;
+  if (!decision) {
+    throw new Error("Collective decision not found.");
+  }
+
   const steward = await getMemberById(initiative.stewardId);
 
   return {
     initiativeId: impact.initiativeId,
     impactId: impact.impactId,
     stewardId: initiative.stewardId,
-    references: buildArchiveReferences(impactId),
+    references: {
+      initiativeId: impact.initiativeId,
+      initiativeVersion: getCurrentPublishedVersion(impact.initiativeId) || 1,
+      decisionId: decision.decisionId,
+      commitmentId: commitment.commitmentId,
+      trackingId: tracking.trackingId,
+      impactId: impact.impactId,
+    },
     country: resolveArchiveCountryLabel(initiative, steward?.profile.country),
     region: resolveArchiveRegionLabel(initiative, steward?.profile.region),
     community: resolveCommunityLabel(initiative.metadata.communitySlug, impact.affectedCommunity),
     activityArea: initiative.metadata.activityArea,
-    participationScope: decision?.participationScope ?? "community",
-    implementationPeriod: formatImplementationPeriod(tracking?.activatedAt, tracking?.completedAt),
+    participationScope: decision.participationScope,
+    implementationPeriod: formatImplementationPeriod(tracking.activatedAt, tracking.completedAt),
   };
 }
 
@@ -232,10 +364,13 @@ export function listMyPublicCivicArchiveRecords(
 export async function createPublicCivicArchiveDraft(
   identity: RequestIdentity,
   input: CreatePublicCivicArchiveDraftInput,
+  deps: PublicCivicArchiveAncestryDependencies = defaultPublicCivicArchiveAncestryDependencies,
 ): Promise<PublicCivicArchiveRecord> {
-  assertPublicCivicArchiveEligible(input.impactId, identity.participantId);
+  const resolved = await resolvePublicCivicArchiveSource(input.impactId, deps);
 
-  const snapshot = await buildArchiveSnapshotFields(input.impactId);
+  assertPublicCivicArchiveEligibleForResolved(resolved, identity.participantId);
+
+  const snapshot = await buildArchiveSnapshotFieldsForResolved(resolved);
   const now = new Date().toISOString();
 
   const record: PublicCivicArchiveRecord = {

@@ -75,7 +75,7 @@ export function PublicInitiativeSupportStatistics({
   onBookmarkToggle,
   busy = false,
   className,
-  title = "Support",
+  title = "Initiative Support",
 }: PublicInitiativeSupportStatisticsProps) {
   const rootClass = className ? `pie-support ${className}` : "pie-support";
 
@@ -84,24 +84,25 @@ export function PublicInitiativeSupportStatistics({
       <h2 id="pie-support-title" className="pie-support__title">
         {title}
       </h2>
+      <p className="pie-support__subtitle">Express your overall position on this initiative.</p>
 
       <div className="pie-support__actions">
         <button
           type="button"
           className={`pie-support__signal${statistics.currentUserSignal === "like" ? " pie-support__signal--active" : ""}`}
           aria-pressed={statistics.currentUserSignal === "like"}
-          aria-label="Like this initiative"
+          aria-label="Support this initiative"
           disabled={busy}
           onClick={() => onSignalChange(statistics.currentUserSignal === "like" ? "none" : "like")}
         >
           <img src="/icons/workspace/like.svg" alt="" aria-hidden="true" width={32} height={32} />
-          Like
+          Support
         </button>
         <button
           type="button"
           className={`pie-support__signal${statistics.currentUserSignal === "dislike" ? " pie-support__signal--active" : ""}`}
           aria-pressed={statistics.currentUserSignal === "dislike"}
-          aria-label="Dislike this initiative"
+          aria-label="Do not support this initiative"
           disabled={busy}
           onClick={() =>
             onSignalChange(statistics.currentUserSignal === "dislike" ? "none" : "dislike")
@@ -114,12 +115,12 @@ export function PublicInitiativeSupportStatistics({
             width={32}
             height={32}
           />
-          Dislike
+          Do Not Support
         </button>
       </div>
 
-      <BreakdownRow label="Like" breakdown={statistics.likes} />
-      <BreakdownRow label="Dislike" breakdown={statistics.dislikes} />
+      <BreakdownRow label="Support" breakdown={statistics.likes} />
+      <BreakdownRow label="Do Not Support" breakdown={statistics.dislikes} />
 
       <div className="pie-support__metrics">
         <button

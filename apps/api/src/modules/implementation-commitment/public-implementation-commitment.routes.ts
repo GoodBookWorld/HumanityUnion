@@ -16,7 +16,7 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicImplementationCommitmentRouter.get("/:commitmentId", (req, res) => {
+publicImplementationCommitmentRouter.get("/:commitmentId", async (req, res) => {
   const commitmentId = Array.isArray(req.params.commitmentId)
     ? req.params.commitmentId[0]
     : req.params.commitmentId;
@@ -27,7 +27,7 @@ publicImplementationCommitmentRouter.get("/:commitmentId", (req, res) => {
     return;
   }
 
-  const projection = toPublicImplementationCommitmentProjection(commitment);
+  const projection = await toPublicImplementationCommitmentProjection(commitment);
 
   if (!projection) {
     res.status(404).json(createFailureResponse("Public Implementation Commitment not available."));

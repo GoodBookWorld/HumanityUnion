@@ -9,6 +9,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY packages/types/package.json packages/types/
+COPY packages/media-registry/package.json packages/media-registry/
+COPY packages/geography/package.json packages/geography/
 RUN pnpm install --frozen-lockfile
 
 FROM base AS build
@@ -16,12 +18,16 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/web ./apps/web
 COPY packages/types ./packages/types
+COPY packages/media-registry ./packages/media-registry
+COPY packages/geography ./packages/geography
 
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ARG NEXT_PUBLIC_PLATFORM_MODE=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_PLATFORM_MODE=$NEXT_PUBLIC_PLATFORM_MODE
 
 RUN pnpm --filter @hu/web build
 
@@ -35,6 +41,7 @@ ENV PORT=3000
 
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs --ingroup nodejs
 
+# Next standalone output + static assets + public (required for Next 16).
 COPY --from=build /app/apps/web/public ./apps/web/public
 COPY --from=build --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static

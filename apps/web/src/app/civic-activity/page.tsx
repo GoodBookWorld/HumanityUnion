@@ -10,7 +10,7 @@ const NAV_ITEMS = ["My Civic Activity", "Activity Summary", "Activity Timeline"]
 
 export default function CivicActivityPage() {
   return (
-    <main className="civic-activity-page">
+    <main className="civic-activity-page humanity-workspace-page">
       <MemberWorkspace
         title="My Civic Activity"
         subtitle="Your private civic work across the Humanity Union lifecycle"

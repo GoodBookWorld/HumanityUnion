@@ -115,6 +115,20 @@ export function publicUrlForEntity(
       return `/civic-nominations/public/${encodeURIComponent(entityId)}`;
     case "member_badge_contribution":
       return `/membership/member-badge/requests/${encodeURIComponent(entityId)}`;
+    case "direct_conversation":
+      // Profile UX Pack 03 — Direct Collaboration conversations are
+      // private and never have a public URL; this integration layer is
+      // for public civic cross-linking only. The private
+      // `/workspace/messages/{conversationId}` route is built directly in
+      // `direct-messaging-notifications.ts`, never through this function.
+      throw new Error("Direct Collaboration conversations do not have a public URL.");
+    case "blog_post":
+      // Blog Implementation Pack 02 — public URLs are slug-based; callers that
+      // only have postId should prefer `blogPostToSearchMetadata`.
+      return `/blog/${encodeURIComponent(entityId)}`;
+    case "blog_author_application":
+      // Author Access Pack 04 — applications live in Workspace Authoring.
+      return "/workspace/authoring";
   }
 }
 
@@ -136,7 +150,10 @@ function relatedRecord(
   };
 }
 
-function resolveInitiativeId(entityType: CivicEntityType, entityId: string): string | null {
+async function resolveInitiativeId(
+  entityType: CivicEntityType,
+  entityId: string,
+): Promise<string | null> {
   switch (entityType) {
     case "initiative":
       return entityId;
@@ -187,7 +204,7 @@ function resolveInitiativeId(entityType: CivicEntityType, entityId: string): str
     case "initiative_revision":
       return entityId.split("::")[0] ?? null;
     case "petition": {
-      const petition = getPetition(entityId);
+      const petition = await getPetition(entityId);
       return petition?.subject.initiativeId ?? null;
     }
     default:
@@ -448,11 +465,11 @@ function initiativeRelatedRecords(initiativeId: string): RelatedRecord[] {
   return records;
 }
 
-export function resolveRelatedRecords(
+export async function resolveRelatedRecords(
   entityType: CivicEntityType,
   entityId: string,
-): RelatedRecord[] {
-  const initiativeId = resolveInitiativeId(entityType, entityId);
+): Promise<RelatedRecord[]> {
+  const initiativeId = await resolveInitiativeId(entityType, entityId);
 
   if (!initiativeId) {
     return [];
@@ -698,11 +715,11 @@ export function resolveRelatedRecords(
   }
 }
 
-export function buildCivicContext(
+export async function buildCivicContext(
   entityType: CivicEntityType,
   entityId: string,
-): CivicContext | null {
-  const initiativeId = resolveInitiativeId(entityType, entityId);
+): Promise<CivicContext | null> {
+  const initiativeId = await resolveInitiativeId(entityType, entityId);
 
   if (!initiativeId) {
     return null;
@@ -710,7 +727,7 @@ export function buildCivicContext(
 
   const initiative = getInitiativeById(initiativeId);
   const pipelineStatus = buildPipelineStatus(initiativeId);
-  const relatedRecords = resolveRelatedRecords(entityType, entityId);
+  const relatedRecords = await resolveRelatedRecords(entityType, entityId);
 
   const sections: CivicContextSection[] = [
     {
@@ -842,7 +859,7 @@ export function buildCivicContext(
       break;
     }
     case "petition": {
-      const petition = getPetition(entityId);
+      const petition = await getPetition(entityId);
       title = petition?.subject.title ?? title;
       summary = petition?.subject.summary ?? summary;
       break;
@@ -868,11 +885,11 @@ export function buildCivicContext(
   };
 }
 
-export function buildBreadcrumb(
+export async function buildBreadcrumb(
   entityType: CivicEntityType,
   entityId: string,
-): CivicBreadcrumbItem[] {
-  const initiativeId = resolveInitiativeId(entityType, entityId);
+): Promise<CivicBreadcrumbItem[]> {
+  const initiativeId = await resolveInitiativeId(entityType, entityId);
   const items: CivicBreadcrumbItem[] = [{ label: "Home", href: "/" }];
 
   if (!initiativeId) {
@@ -919,13 +936,13 @@ export function buildBreadcrumb(
   return items;
 }
 
-export function buildSearchMetadata(
+export async function buildSearchMetadata(
   entityType: CivicEntityType,
   entityId: string,
-): CivicSearchMetadata | null {
-  const initiativeId = resolveInitiativeId(entityType, entityId);
+): Promise<CivicSearchMetadata | null> {
+  const initiativeId = await resolveInitiativeId(entityType, entityId);
   const initiative = initiativeId ? getInitiativeById(initiativeId) : null;
-  const context = buildCivicContext(entityType, entityId);
+  const context = await buildCivicContext(entityType, entityId);
 
   if (!context) {
     return null;
@@ -954,7 +971,7 @@ export function buildSearchMetadata(
       break;
     }
     case "petition": {
-      const petition = getPetition(entityId);
+      const petition = await getPetition(entityId);
       status = petition?.status ?? status;
       updatedAt = petition?.updatedAt ?? updatedAt;
       break;
@@ -1034,11 +1051,11 @@ export function buildSearchMetadata(
   };
 }
 
-export function buildIntegrationView(
+export async function buildIntegrationView(
   entityType: CivicEntityType,
   entityId: string,
-): CivicIntegrationView | null {
-  const context = buildCivicContext(entityType, entityId);
+): Promise<CivicIntegrationView | null> {
+  const context = await buildCivicContext(entityType, entityId);
 
   if (!context || !context.initiativeId) {
     return null;
@@ -1046,9 +1063,9 @@ export function buildIntegrationView(
 
   return {
     context,
-    relatedRecords: resolveRelatedRecords(entityType, entityId),
+    relatedRecords: await resolveRelatedRecords(entityType, entityId),
     pipelineStatus: buildPipelineStatus(context.initiativeId),
-    breadcrumb: buildBreadcrumb(entityType, entityId),
-    searchMetadata: buildSearchMetadata(entityType, entityId),
+    breadcrumb: await buildBreadcrumb(entityType, entityId),
+    searchMetadata: await buildSearchMetadata(entityType, entityId),
   };
 }

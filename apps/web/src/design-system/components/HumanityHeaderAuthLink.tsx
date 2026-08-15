@@ -1,18 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-import { getStoredAccessToken } from "../../features/auth/auth-token-store";
+import { useClientAuthStatus } from "../../features/auth/use-client-auth-status";
 
+/** Legacy utility — prefer HeaderAuthUtility. Pack 07: session-based, not localStorage. */
 export function HumanityHeaderAuthLink() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const status = useClientAuthStatus();
 
-  useEffect(() => {
-    setIsAuthenticated(Boolean(getStoredAccessToken()));
-  }, []);
+  if (status === "pending") {
+    return <span className="humanity-header__utility-link" aria-hidden="true" />;
+  }
 
-  if (isAuthenticated) {
+  if (status === "authenticated") {
     return (
       <Link href="/workspace" className="humanity-header__utility-link">
         Workspace

@@ -35,7 +35,7 @@ export default async function PublicCivicAccountabilityPage({
 
   if (!accountability) {
     return (
-      <main>
+      <main className="hu-page-container hu-page-container--sectioned">
         <h1>Civic accountability not available</h1>
         <p>
           <Link href="/">Back to Home</Link>
@@ -45,7 +45,7 @@ export default async function PublicCivicAccountabilityPage({
   }
 
   return (
-    <main>
+    <main className="hu-page-container hu-page-container--sectioned">
       <header>
         <h1>Civic Accountability</h1>
         <p>Public follow-up timeline after civic delivery and official responses</p>

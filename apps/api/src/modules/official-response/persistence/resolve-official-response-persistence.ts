@@ -2,9 +2,11 @@ import { MemoryOfficialResponsePersistenceAdapter } from "./official-response-me
 import { FileOfficialResponsePersistenceAdapter } from "./official-response-file.persistence.js";
 import { createMongoOfficialResponsePersistenceAdapter } from "./official-response-mongo.persistence.js";
 import type { OfficialResponsePersistenceAdapter } from "./official-response-persistence.types.js";
+import { resolvePersistenceMode } from "../../../config/production-persistence-contract.js";
+
 
 export function resolveOfficialResponsePersistenceAdapter(): OfficialResponsePersistenceAdapter {
-  const mode = process.env.OFFICIAL_RESPONSE_PERSISTENCE ?? "file";
+  const mode = resolvePersistenceMode("OFFICIAL_RESPONSE_PERSISTENCE", "file");
 
   switch (mode) {
     case "memory":

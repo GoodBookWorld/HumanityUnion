@@ -3,7 +3,6 @@
  * Run: npm run verify:initiative-implementation-commitment
  */
 
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -16,6 +15,11 @@ import {
 } from "@hu/types";
 
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
+import {
+  assertVerificationSubprocessSucceeded,
+  runVerificationSubprocess,
+} from "./run-verification-subprocess.js";
+import { runVerificationScript } from "./verification-script-lifecycle.js";
 
 const steward: RequestIdentity = {
   participantId: "member-bootstrap-001",
@@ -141,7 +145,7 @@ async function buildClosedDecisionContext(): Promise<ClosedDecisionContext> {
   });
   const projected = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
     initiativeId: projected.initiativeId,
     title: "Implementation Commitment Analysis",
     summary: "Analysis for implementation commitment path.",
@@ -150,12 +154,12 @@ async function buildClosedDecisionContext(): Promise<ClosedDecisionContext> {
     suggestedImprovements: "Improve.",
     references: "Ref.",
   });
-  const publishedAnalysis = publishInitiativeCollaborativeAnalysis(
+  const publishedAnalysis = await publishInitiativeCollaborativeAnalysis(
     otherParticipant,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(otherParticipant, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(otherParticipant, {
     analysisId: publishedAnalysis.analysisId,
     targetSection: "Description",
     currentIssue: "Issue.",
@@ -186,7 +190,7 @@ async function buildClosedDecisionContext(): Promise<ClosedDecisionContext> {
   });
   publishInitiativeRevision(steward, projected.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: projected.initiativeId,
     title: "Implementation Commitment Session",
     purpose: "Prepare society for collective decision.",
@@ -197,7 +201,7 @@ async function buildClosedDecisionContext(): Promise<ClosedDecisionContext> {
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: projected.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -279,7 +283,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("3. Lifecycle — draft → published → completed");
 
-  const draft = createInitiativeImplementationCommitmentDraft(authorA, {
+  const draft = await createInitiativeImplementationCommitmentDraft(authorA, {
     initiativeId: context.initiativeId,
     decisionId: context.decisionId,
     organizationName: "Nelson Garden Collective",
@@ -317,7 +321,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("4. Lifecycle — draft → withdrawn");
 
-  const withdrawDraft = createInitiativeImplementationCommitmentDraft(authorA, {
+  const withdrawDraft = await createInitiativeImplementationCommitmentDraft(authorA, {
     initiativeId: context.initiativeId,
     decisionId: context.decisionId,
     commitmentTitle: "Withdrawn Commitment",
@@ -330,7 +334,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("5. Identity — author-only edit, publish, withdraw");
 
-  const authorDraft = createInitiativeImplementationCommitmentDraft(authorB, {
+  const authorDraft = await createInitiativeImplementationCommitmentDraft(authorB, {
     initiativeId: context.initiativeId,
     decisionId: context.decisionId,
     commitmentTitle: "Author B Commitment",
@@ -404,14 +408,12 @@ async function runMainVerification(): Promise<void> {
 
 function spawnReload(scriptName: string, args: string[], env: Record<string, string>): void {
   const reloadScriptPath = path.resolve(path.dirname(SCRIPT_PATH), scriptName);
-  const result = spawnSync("npx", ["tsx", reloadScriptPath, ...args], {
+  const result = runVerificationSubprocess(reloadScriptPath, args, {
     cwd: path.resolve(path.dirname(SCRIPT_PATH), "../.."),
     env: { ...process.env, ...env },
-    stdio: "pipe",
-    encoding: "utf-8",
   });
 
-  assert(result.status === 0, `Reload verification failed for ${scriptName}`);
+  assertVerificationSubprocessSucceeded(result, scriptName);
 }
 
 async function runPersistenceVerification(): Promise<void> {
@@ -435,7 +437,7 @@ async function runPersistenceVerification(): Promise<void> {
   const { createInitiativeImplementationCommitmentDraft } =
     await import("../modules/initiative-implementation-commitment/initiative-implementation-commitment.service.js");
 
-  const draft = createInitiativeImplementationCommitmentDraft(authorA, {
+  const draft = await createInitiativeImplementationCommitmentDraft(authorA, {
     initiativeId: context.initiativeId,
     decisionId: context.decisionId,
     commitmentTitle: "Persistence Commitment",
@@ -469,8 +471,16 @@ async function main(): Promise<void> {
 
   await runMainVerification();
 
-  const persistenceResult = spawnSync("npx", ["tsx", SCRIPT_PATH], {
-    cwd: path.resolve(path.dirname(SCRIPT_PATH), "../.."),
+  // Recovery Task 15: run via the shared bounded-subprocess helper (direct
+  // `process.execPath --import tsx`, never nested `npx`) instead of a raw,
+  // unbounded `spawnSync("npx", ...)`. This process performs real Member
+  // lookups (Mongo-backed) as part of the "Public projection and privacy"
+  // step, which used to leave an open MongoDB connection after all
+  // assertions passed — keeping the process alive and this `spawnSync` call
+  // blocked forever. Wrapping `main()` in `runVerificationScript` (below)
+  // closes that connection deterministically; the timeout here is an
+  // independent safety net.
+  const persistenceResult = runVerificationSubprocess(SCRIPT_PATH, [], {
     env: {
       ...process.env,
       VERIFY_IMPLEMENTATION_COMMITMENT_PERSISTENCE: "1",
@@ -482,15 +492,24 @@ async function main(): Promise<void> {
       INITIATIVE_COLLECTIVE_DECISION_PERSISTENCE: "memory",
       INITIATIVE_IMPLEMENTATION_COMMITMENT_PERSISTENCE: "memory",
     },
-    stdio: "inherit",
   });
 
-  assert(persistenceResult.status === 0, "Persistence verification subprocess failed");
+  // Preserve the pre-existing visible output of the persistence subprocess
+  // even though output is now captured rather than inherited.
+  if (persistenceResult.stdout) {
+    process.stdout.write(persistenceResult.stdout);
+  }
+
+  assertVerificationSubprocessSucceeded(
+    persistenceResult,
+    "Initiative Implementation Commitment persistence verification",
+  );
 
   console.log("All Initiative Implementation Commitment foundation checks passed.");
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exit(1);
-});
+// Recovery Task 15: closes the shared MongoDB client (and other
+// verification-only resources) deterministically after `main()` settles —
+// see the comment above the persistence-subprocess call for why this was
+// necessary to prevent an indefinite hang.
+void runVerificationScript(main);

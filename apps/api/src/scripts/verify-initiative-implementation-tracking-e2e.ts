@@ -3,7 +3,6 @@
  * Run: npm run verify:initiative-implementation-tracking
  */
 
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -17,6 +16,11 @@ import {
 } from "@hu/types";
 
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
+import {
+  assertVerificationSubprocessSucceeded,
+  runVerificationSubprocess,
+} from "./run-verification-subprocess.js";
+import { runVerificationScript } from "./verification-script-lifecycle.js";
 
 const steward: RequestIdentity = {
   participantId: "member-bootstrap-001",
@@ -59,9 +63,9 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-function assertThrows(fn: () => unknown, message: string): void {
+async function assertThrows(fn: () => unknown, message: string): Promise<void> {
   try {
-    fn();
+    await fn();
     throw new Error(`Expected failure: ${message}`);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("Expected failure:")) {
@@ -148,7 +152,7 @@ async function buildPublishedCommitmentContext(): Promise<PublishedCommitmentCon
   });
   const projected = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
     initiativeId: projected.initiativeId,
     title: "Implementation Tracking Analysis",
     summary: "Analysis for tracking path.",
@@ -157,12 +161,12 @@ async function buildPublishedCommitmentContext(): Promise<PublishedCommitmentCon
     suggestedImprovements: "Improve.",
     references: "Ref.",
   });
-  const publishedAnalysis = publishInitiativeCollaborativeAnalysis(
+  const publishedAnalysis = await publishInitiativeCollaborativeAnalysis(
     otherParticipant,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(otherParticipant, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(otherParticipant, {
     analysisId: publishedAnalysis.analysisId,
     targetSection: "Description",
     currentIssue: "Issue.",
@@ -193,7 +197,7 @@ async function buildPublishedCommitmentContext(): Promise<PublishedCommitmentCon
   });
   publishInitiativeRevision(steward, projected.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: projected.initiativeId,
     title: "Implementation Tracking Session",
     purpose: "Prepare society for collective decision.",
@@ -204,7 +208,7 @@ async function buildPublishedCommitmentContext(): Promise<PublishedCommitmentCon
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: projected.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -213,7 +217,7 @@ async function buildPublishedCommitmentContext(): Promise<PublishedCommitmentCon
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
   await closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
-  const commitmentDraft = createInitiativeImplementationCommitmentDraft(author, {
+  const commitmentDraft = await createInitiativeImplementationCommitmentDraft(author, {
     initiativeId: projected.initiativeId,
     decisionId: decisionDraft.decisionId,
     commitmentTitle: "Garden Implementation Commitment",
@@ -304,23 +308,23 @@ async function runMainVerification(): Promise<void> {
   );
   assert(eligibility.eligible, "Published commitment author should be eligible");
 
-  assertThrows(
-    () =>
+  await assertThrows(
+    async () =>
       assessInitiativeImplementationTrackingEligibility(
         context.commitmentId,
         otherParticipant.participantId,
       ).eligible ||
-      createInitiativeImplementationTrackingDraft(otherParticipant, {
+      (await createInitiativeImplementationTrackingDraft(otherParticipant, {
         commitmentId: context.commitmentId,
         currentStage: "Preparation",
         summary: "Unauthorized tracking.",
-      }),
+      })),
     "Non-author cannot begin tracking",
   );
 
   console.log("3. Lifecycle — draft → active → completed with evidence");
 
-  const draft = createInitiativeImplementationTrackingDraft(author, {
+  const draft = await createInitiativeImplementationTrackingDraft(author, {
     commitmentId: context.commitmentId,
     currentStage: SUGGESTED_IMPLEMENTATION_TRACKING_STAGES[0],
     summary: "Public execution journal for garden implementation.",
@@ -337,7 +341,7 @@ async function runMainVerification(): Promise<void> {
   assert(active.status === "active", "Tracking activated");
   assert(active.activatedAt !== undefined, "Active tracking has activatedAt");
 
-  assertThrows(
+  await assertThrows(
     () => completeInitiativeImplementationTracking(author, draft.trackingId),
     "Completion requires at least one execution update",
   );
@@ -384,7 +388,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("5. Lifecycle — draft → archived");
 
-  const archiveDraft = createInitiativeImplementationTrackingDraft(author, {
+  const archiveDraft = await createInitiativeImplementationTrackingDraft(author, {
     commitmentId: context.commitmentId,
     currentStage: "Preparation",
     summary: "Will be archived from draft.",
@@ -395,20 +399,20 @@ async function runMainVerification(): Promise<void> {
 
   console.log("6. Identity — author-only edit, activate, update, complete, archive");
 
-  const authorDraft = createInitiativeImplementationTrackingDraft(author, {
+  const authorDraft = await createInitiativeImplementationTrackingDraft(author, {
     commitmentId: context.commitmentId,
     currentStage: "Verification",
     summary: "Author-only tracking.",
   });
 
-  assertThrows(
+  await assertThrows(
     () =>
       updateInitiativeImplementationTrackingDraft(otherParticipant, authorDraft.trackingId, {
         summary: "Stolen edit",
       }),
     "Non-author cannot edit",
   );
-  assertThrows(
+  await assertThrows(
     () => activateInitiativeImplementationTracking(otherParticipant, authorDraft.trackingId),
     "Non-author cannot activate",
   );
@@ -451,14 +455,12 @@ async function runMainVerification(): Promise<void> {
 
 function spawnReload(scriptName: string, args: string[], env: Record<string, string>): void {
   const reloadScriptPath = path.resolve(path.dirname(SCRIPT_PATH), scriptName);
-  const result = spawnSync("npx", ["tsx", reloadScriptPath, ...args], {
+  const result = runVerificationSubprocess(reloadScriptPath, args, {
     cwd: path.resolve(path.dirname(SCRIPT_PATH), "../.."),
     env: { ...process.env, ...env },
-    stdio: "pipe",
-    encoding: "utf-8",
   });
 
-  assert(result.status === 0, `Reload verification failed for ${scriptName}`);
+  assertVerificationSubprocessSucceeded(result, scriptName);
 }
 
 async function runPersistenceVerification(): Promise<void> {
@@ -485,7 +487,7 @@ async function runPersistenceVerification(): Promise<void> {
   } =
     await import("../modules/initiative-implementation-tracking/initiative-implementation-tracking.service.js");
 
-  const draft = createInitiativeImplementationTrackingDraft(author, {
+  const draft = await createInitiativeImplementationTrackingDraft(author, {
     commitmentId: context.commitmentId,
     currentStage: "Started",
     summary: "Persistence tracking.",
@@ -528,8 +530,16 @@ async function main(): Promise<void> {
 
   await runMainVerification();
 
-  const persistenceResult = spawnSync("npx", ["tsx", SCRIPT_PATH], {
-    cwd: path.resolve(path.dirname(SCRIPT_PATH), "../.."),
+  // Recovery Task 16: run via the shared bounded-subprocess helper (direct
+  // `process.execPath --import tsx`, never nested `npx`) instead of a raw,
+  // unbounded `spawnSync("npx", ...)`. This process performs real Member
+  // lookups (Mongo-backed) as part of the "Public projection, privacy, and
+  // metrics" step, which used to leave an open MongoDB connection after all
+  // assertions passed — keeping the process alive and this `spawnSync` call
+  // blocked forever. Wrapping `main()` in `runVerificationScript` (below)
+  // closes that connection deterministically; the timeout here is an
+  // independent safety net.
+  const persistenceResult = runVerificationSubprocess(SCRIPT_PATH, [], {
     env: {
       ...process.env,
       VERIFY_IMPLEMENTATION_TRACKING_PERSISTENCE: "1",
@@ -542,15 +552,24 @@ async function main(): Promise<void> {
       INITIATIVE_IMPLEMENTATION_COMMITMENT_PERSISTENCE: "memory",
       INITIATIVE_IMPLEMENTATION_TRACKING_PERSISTENCE: "memory",
     },
-    stdio: "inherit",
   });
 
-  assert(persistenceResult.status === 0, "Persistence verification subprocess failed");
+  // Preserve the pre-existing visible output of the persistence subprocess
+  // even though output is now captured rather than inherited.
+  if (persistenceResult.stdout) {
+    process.stdout.write(persistenceResult.stdout);
+  }
+
+  assertVerificationSubprocessSucceeded(
+    persistenceResult,
+    "Initiative Implementation Tracking persistence verification",
+  );
 
   console.log("All Initiative Implementation Tracking foundation checks passed.");
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exit(1);
-});
+// Recovery Task 16: closes the shared MongoDB client (and other
+// verification-only resources) deterministically after `main()` settles —
+// see the comment above the persistence-subprocess call for why this was
+// necessary to prevent an indefinite hang.
+void runVerificationScript(main);

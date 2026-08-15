@@ -1,0 +1,174 @@
+.iic-source-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.iic-source-panel__empty {
+  color: var(--hu-muted, #5c6570);
+  font-size: 0.95rem;
+}
+
+.iic-source-panel__list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.iic-source-panel__item {
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  padding-top: 0.55rem;
+}
+
+.iic-source-panel__label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.iic-source-panel__summary {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+}
+
+.iic-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.iic-editor__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.iic-editor__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.iic-editor__field input,
+.iic-editor__field select,
+.iic-editor__field textarea {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.35rem;
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.iic-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.iic-candidate {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+}
+
+.iic-candidate__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.iic-candidate__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.iic-candidate__status {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  text-transform: capitalize;
+}
+
+.iic-public {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.iic-public__section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.iic-public__section p,
+.iic-public__section li {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.iic-public__section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.iic-public__meta {
+  font-size: 0.9rem;
+  opacity: 0.78;
+}
+
+.iic-public__commitment {
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  padding-top: 0.65rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.iic-public__commitment-status {
+  display: inline-block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.75;
+}
+
+.iic-assistant-block {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.iic-assistant-block h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.iic-assistant-block ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.iic-proposal-inbox {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.iic-proposal-inbox__item {
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.4rem;
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.iic-proposal-inbox__actions {
+  display: flex;
+  gap: 0.5rem;
+}

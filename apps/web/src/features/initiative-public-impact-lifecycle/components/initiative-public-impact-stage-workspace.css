@@ -1,0 +1,140 @@
+.ipi-source-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.ipi-source-panel__empty {
+  color: var(--hu-muted, #5c6570);
+  font-size: 0.95rem;
+}
+
+.ipi-source-panel__list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ipi-source-panel__item {
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  padding-top: 0.55rem;
+}
+
+.ipi-source-panel__label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.ipi-source-panel__summary {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+}
+
+.ipi-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.ipi-editor__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.ipi-editor__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ipi-editor__field input,
+.ipi-editor__field select,
+.ipi-editor__field textarea {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.35rem;
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.ipi-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ipi-section {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+}
+
+.ipi-section__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.ipi-section__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.ipi-section__status {
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
+.ipi-public {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.ipi-public__section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.ipi-public__section p,
+.ipi-public__section li {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ipi-public__section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.ipi-public__meta {
+  font-size: 0.9rem;
+  opacity: 0.78;
+}
+
+.ipi-assistant-block {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.ipi-assistant-block h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.ipi-assistant-block ul {
+  margin: 0;
+  padding-left: 1rem;
+}

@@ -1,104 +1,120 @@
 # Email Test Safety
 
-This document records the TASK-095B incident and the permanent controls that prevent automated tests from sending real email.
+Mail Delivery Reliability Pack 01 — prevent automated tests from contacting Flockmail / generating bounce storms.
 
-## Incident summary
+## Incidents
 
-During membership and related verification runs, scripts created real user registrations that triggered **welcome emails through the async email queue**. More than **40 messages** were sent through the configured **Titan SMTP** provider to synthetic addresses such as:
+### TASK-095B
+
+Verification runs inherited `EMAIL_PROVIDER=smtp` and sent welcome mail to `@example.com`, producing Titan/Flockmail bounce traffic.
+
+### Pack 01 (direct-messaging synthetic recipients)
+
+Automated/direct-messaging tests used synthetic addresses such as:
 
 ```
-membership-domain-...-status@example.com
+dm-service-...@direct-messaging.test
 ```
 
-Because `example.com` publishes a **null MX**, Titan accepted the messages for delivery but the recipient domain could not receive them, producing **bounce notifications**.
+When real SMTP was reachable, Flockmail attempted DNS delivery and bounced to the Humanity Union administrative mailbox.
 
 Root causes:
 
-1. Verification scripts inherited `EMAIL_PROVIDER=smtp` from the developer shell or loaded `.env` without forcing mock mode.
-2. Welcome email used the **async queue** (`sendTransactionalEmail`) and was not drained before process exit (fixed in TASK-INFRA-001B).
-3. No factory guard blocked real SMTP/Resend construction during verification runs.
+1. Valid SMTP credentials present in `apps/api/.env` during test runs.
+2. Synthetic recipient hard-guard was incomplete / verification-mode-only.
+3. Provider selection could still resolve to real SMTP if isolation flags were incomplete.
 
-## Permanent prevention controls
-
-### 1. Verification bootstrap
-
-All scripts using `runVerificationScript()` import `verification-environment.bootstrap.ts`, which sets:
+## Required architecture
 
 ```
-HU_VERIFICATION_MODE=true
+TEST / VERIFICATION
+  → Fake / in-memory MockEmailProvider
+  → NEVER real SMTP
+
+REAL DEV / PRODUCTION MAIL
+  → MailDeliveryService
+  → Flockmail SMTP (smtp-out.flockmail.com)
+```
+
+## Permanent controls
+
+### 1. Test preload (`apps/api/test/helpers/test-setup.ts`)
+
+After dotenv loads (which may include production SMTP credentials):
+
+```
+NODE_ENV=test
+NODE_TEST_ENV=true
 EMAIL_PROVIDER=mock
+ALLOW_REAL_EMAIL_IN_TESTS=false
+HU_VERIFICATION_MODE=true
 ```
 
-unless `ALLOW_REAL_EMAIL_IN_TESTS=true` (manual opt-in only).
+Credentials remaining in `process.env` must not override this isolation.
 
-### 2. Provider factory guard
+### 2. Provider mode force (`mustForceMockEmailProvider`)
 
-`resolveEmailProvider()` rejects `smtp` and `resend` when:
+`resolveEmailProviderMode()` always returns `mock` when:
 
-- `HU_VERIFICATION_MODE=true`, and
-- `ALLOW_REAL_EMAIL_IN_TESTS` is not `true`
+- `NODE_ENV=test`, or
+- `NODE_TEST_ENV=true`, or
+- `HU_VERIFICATION_MODE=true`
 
-### 3. Reserved recipient domains
+unless `ALLOW_REAL_EMAIL_IN_TESTS=true` (manual smoke only).
 
-In verification mode, real providers reject recipients on documentation/test domains:
+### 3. SMTP transport refuse
 
-- `example.com`, `example.org`, `example.net`
-- `.test`, `.invalid`, `localhost`
+`createSmtpTransport()` throws in automated test/verification mode — no pooled connection to Flockmail.
 
-### 4. Package script isolation
+### 4. Synthetic recipient hard guard (all environments)
 
-Root `verify:*` email-related scripts set:
+Before any external provider send, recipients matching reserved/synthetic patterns are blocked locally (`test_recipient_blocked`):
 
-```
-HU_VERIFICATION_MODE=true EMAIL_PROVIDER=mock
-```
+- Domains ending in `.test`, `.invalid`, `.example`, `.localhost`, `.local`
+- Documentation domains: `example.com`, `example.org`, `example.net`
+- Bare labels such as `localhost` / `test`
+
+This is **not** limited to the string `direct-messaging.test`.
+
+Behavior:
+
+- Message is **not** submitted to Flockmail
+- No external bounce is generated
+- Result status: `blocked`
+
+Mock provider may still accept synthetic addresses for local assertions.
 
 ### 5. Queue draining
 
-`finalizeVerificationResources()` drains:
-
-- civic notification tasks
-- async email queue jobs
-- mock outbox reset between isolated passes
+Verification finalizers drain async email queue jobs before exit.
 
 ### 6. Manual SMTP only
 
-`npm run test:smtp` (in `apps/api`) is **manual only**:
+`npm run test:smtp` in `apps/api` is manual only — never part of CI / `verify:*` / regression.
 
-- never part of `verify:*`, CI, typecheck, or build
-- sends at most one message
-- requires explicit recipient configuration
-- prints a warning before sending
+## Proving isolation
 
-## Running automated gates safely
+`apps/api/test/unit/email/mail-delivery-reliability-pack01.test.ts` covers:
+
+- `NODE_ENV=test` never selects Flockmail SMTP even with real-looking credentials
+- `.test` / `.invalid` / `.example` recipients blocked on real provider
+- No SMTP transporter cache after blocked sends
+- Logo absolute HTTPS / no localhost in rendered HTML
+- HTML + plain-text templates
+- Temporary vs permanent retry classification
+
+## Deliberate real SMTP smoke
+
+Only after automated gates pass, and only with a **user-approved real recipient**:
 
 ```bash
-npm run verify:smtp-provider
-npm run verify:email
-npm run verify:membership-domain
+cd apps/api
+SMTP_TEST_RECIPIENT=<approved-inbox> npm run test:smtp
 ```
 
-Expected:
-
-- `[email:mock]` log lines only
-- zero Titan connections
-- zero bounce messages
-- processes exit naturally
-
-## Deliberate real SMTP testing
-
-Only after automated gates pass:
-
-1. Ensure `HU_VERIFICATION_MODE` is **unset** or `false`.
-2. Configure `apps/api/.env` with Titan settings.
-3. Start API with `cd apps/api && npm run dev`.
-4. Check `GET /api/v1/health` → `email.provider = smtp`, `healthy = true`.
-5. Register **one controlled real address** manually in the browser.
-6. Or run `npm run test:smtp` with `SMTP_TEST_RECIPIENT` set.
-
-Never use `@example.com` or other reserved domains for real SMTP tests.
+Never use synthetic test addresses for real smoke.
 
 ## Related documentation
 
 - `docs/EMAIL_DELIVERY_OPERATIONS.md`
-- `docs/API_MODULE_RESOLUTION.md`
+- `docs/EMAIL_INFRASTRUCTURE_FOUNDATION.md`

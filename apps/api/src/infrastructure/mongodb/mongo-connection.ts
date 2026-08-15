@@ -23,10 +23,17 @@ export async function connectMongoClient(): Promise<MongoClient> {
     maxPoolSize: config.maxPoolSize,
   };
 
-  connectPromise = MongoClient.connect(uri, options).then((connectedClient) => {
-    client = connectedClient;
-    return connectedClient;
-  });
+  connectPromise = MongoClient.connect(uri, options)
+    .then((connectedClient) => {
+      client = connectedClient;
+      return connectedClient;
+    })
+    .catch((error) => {
+      // Launch Readiness Pack 06 — allow a later retry after a failed connect
+      // instead of permanently sticky-rejecting for the process lifetime.
+      connectPromise = null;
+      throw error;
+    });
 
   return connectPromise;
 }

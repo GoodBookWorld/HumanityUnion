@@ -1,8 +1,11 @@
 import type {
+  Initiative,
+  InitiativeImplementationTracking,
   InitiativePublicImpact,
   InitiativePublicImpactStatus,
   PublicImpactEvidence,
   PublicImpactEvidenceReferenceType,
+  TransitiveInitiativeAncestry,
 } from "@hu/types";
 import {
   canTransitionInitiativePublicImpact,
@@ -14,7 +17,14 @@ import type { RequestIdentity } from "../initiatives/identity/request-identity.t
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getTrackingById } from "../initiative-implementation-tracking/initiative-implementation-tracking.store.js";
-import { assertInitiativePublicImpactEligible } from "./initiative-public-impact-eligibility.js";
+import { assessInitiativePublicImpactEligibilityForResolved } from "./initiative-public-impact-eligibility.js";
+import {
+  InitiativeAncestryMissingError,
+  ParentArtifactNotFoundError,
+  validateTransitiveInitiativeAncestry,
+  type InitiativeExistenceChecker,
+  type ParentArtifactInitiativeResolver,
+} from "../../shared/initiative-ancestry/index.js";
 import {
   appendPublicImpactEvidence,
   countEvidenceForImpact,
@@ -34,6 +44,197 @@ export interface CreateInitiativePublicImpactDraftInput {
   observedImpact: string;
   affectedCommunity: string;
   evidenceSummary: string;
+}
+
+/**
+ * Initiative Ancestry — Recovery Task 17.
+ *
+ * Domain classification: `InitiativePublicImpact` stores its own
+ * `initiativeId` field, but `CreateInitiativePublicImpactDraftInput` carries
+ * only a `trackingId` — there is no independently-supplied `initiativeId`
+ * anywhere in the creation path. Initiative identity has always been derived
+ * entirely from the referenced, completed Implementation Tracking record
+ * (`initiativeId: tracking.initiativeId`, pre-Task-17). This is the same
+ * **Model B — transitive Tracking child** shape Task 16 found for
+ * Implementation Tracking's own relationship to Implementation Commitment:
+ * there is no second, independently-supplied Initiative reference to
+ * reconcile, so no mismatch is structurally reachable and no
+ * `PublicImpactInitiativeMismatchError` is introduced. Public Impact remains
+ * an independent aggregate root (own store, id, lifecycle) — not embedded in
+ * Tracking and not a mere projection (the separate
+ * `public-initiative-public-impact.projection.ts` is a downstream read
+ * projection built FROM this aggregate, not the aggregate itself) — but its
+ * Initiative *ancestry* is transitive through Tracking, matching Recovery
+ * Task 11's canonical vocabulary: `"impact"` (this module) is a transitive
+ * child reachable via the `"implementation"` parent type
+ * (= `initiative-implementation-tracking`, per Task 11).
+ *
+ * Ancestry mechanism: `resolvePublicImpactInitiativeAncestry` is the second
+ * production consumer of `validateTransitiveInitiativeAncestry` with a
+ * `"implementation"` parent type (after Task 16's own consumption of
+ * `"implementation_commitment"` for Tracking), using an Impact-local
+ * `ParentArtifactInitiativeResolver` (`createImpactParentTrackingResolver`)
+ * that resolves exclusively through
+ * `initiative-implementation-tracking.store.js`. Any other
+ * `parentArtifactType` fails explicitly (`{ found: false }`) — unreachable in
+ * production since this module always supplies the literal
+ * `"implementation"`.
+ *
+ * This closes a real gap: before Task 17, Initiative existence was never
+ * checked at all — `tracking.initiativeId` was copied blindly. The shared
+ * validator's `InitiativeExistenceChecker` now verifies the Initiative still
+ * exists before a Public Impact draft can be created.
+ *
+ * Single resolution (Part 5/13): both the parent resolver and the Initiative
+ * existence checker capture their resolved object into a box, so Tracking
+ * and Initiative are each looked up exactly once per creation call, and the
+ * resolved Tracking is reused by eligibility assessment
+ * (`assessInitiativePublicImpactEligibilityForResolved`) instead of being
+ * looked up a second time (pre-Task-17 looked it up twice: once inside
+ * `assertInitiativePublicImpactEligible`, once again in the service body).
+ * Commitment and Decision are never looked up — unchanged, since this module
+ * never stored, accepted, or needed a `commitmentId`/`decisionId` before or
+ * after this task (0 lookups each).
+ *
+ * `verifyInitiativePublicImpact` performs its own, separate
+ * `getInitiativeById(impact.initiativeId)` lookup for Initiative-steward
+ * verification authorization — this is untouched by Task 17: it operates on
+ * an already-persisted Impact record whose `initiativeId` is now guaranteed
+ * ancestry-validated at creation time, and its own lookup/ownership check is
+ * an authorization concern, not a creation-time ancestry concern.
+ *
+ * Error-message compatibility (Part 15): `ParentArtifactNotFoundError` and
+ * `InitiativeAncestryMissingError` (tracking id resolves to nothing / is not
+ * supplied) are both translated back to the pre-existing
+ * `"Implementation tracking not found."` message, preserving the exact
+ * wording eligibility assessment already used. `InitiativeIdMalformedError`,
+ * `InitiativeNotFoundError`, and `ParentArtifactMissingInitiativeAncestryError`
+ * are left untranslated (new, more accurate failure surfaces for cases that
+ * were previously silently unchecked); the last is unreachable for any
+ * Tracking created through the real service (Task 16 validates Initiative
+ * ancestry at Tracking creation).
+ */
+export interface InitiativePublicImpactAncestryDependencies {
+  readonly getTracking: (trackingId: string) => InitiativeImplementationTracking | null;
+  readonly getInitiative: (initiativeId: string) => Initiative | null;
+}
+
+const defaultInitiativePublicImpactAncestryDependencies: InitiativePublicImpactAncestryDependencies =
+  {
+    getTracking: getTrackingById,
+    getInitiative: getInitiativeById,
+  };
+
+/**
+ * Production `ParentArtifactInitiativeResolver` for Public Impact's sole
+ * supported transitive parent type, canonical `"implementation"`
+ * (= `initiative-implementation-tracking`, per Recovery Task 11). Captures
+ * the resolved Tracking into `resolvedTrackingBox` so the caller can reuse
+ * it after ancestry succeeds instead of looking it up again.
+ *
+ * Exported so its "fail explicitly for any non-tracking parent type" and
+ * single-resolution capture behavior can be tested directly, since
+ * `resolvePublicImpactInitiativeAncestry` always supplies the literal
+ * `"implementation"` and can never exercise those branches itself.
+ */
+export function createImpactParentTrackingResolver(
+  getTracking: InitiativePublicImpactAncestryDependencies["getTracking"],
+  resolvedTrackingBox: { value: InitiativeImplementationTracking | null },
+): ParentArtifactInitiativeResolver {
+  return {
+    resolveParentInitiativeId(parentArtifactType, parentArtifactId) {
+      if (parentArtifactType !== "implementation") {
+        // Fail explicitly instead of silently resolving another module.
+        // Unreachable in production: this adapter is only ever invoked
+        // (below) with the literal "implementation" parent type.
+        return { found: false };
+      }
+
+      const tracking = getTracking(parentArtifactId);
+      resolvedTrackingBox.value = tracking;
+
+      return tracking ? { found: true, initiativeId: tracking.initiativeId } : { found: false };
+    },
+  };
+}
+
+/**
+ * Production `InitiativeExistenceChecker` for Public Impact. Captures the
+ * resolved Initiative into `resolvedInitiativeBox` for parity with the
+ * pattern used by Vote (Task 12), Implementation Commitment (Task 15), and
+ * Implementation Tracking (Task 16), even though this module does not
+ * currently reuse the Initiative object itself (eligibility only needs the
+ * resolved Tracking).
+ *
+ * Exported for the same direct-testability reason as
+ * {@link createImpactParentTrackingResolver}.
+ */
+export function createImpactInitiativeExistenceChecker(
+  getInitiative: InitiativePublicImpactAncestryDependencies["getInitiative"],
+  resolvedInitiativeBox: { value: Initiative | null },
+): InitiativeExistenceChecker {
+  return {
+    initiativeExists(initiativeId) {
+      const initiative = getInitiative(initiativeId);
+      resolvedInitiativeBox.value = initiative;
+      return initiative !== null;
+    },
+  };
+}
+
+/**
+ * Exported (in addition to being used internally by
+ * `createInitiativePublicImpactDraft`) so ancestry enforcement can be tested
+ * in isolation with fully in-memory fakes.
+ */
+export async function resolvePublicImpactInitiativeAncestry(
+  trackingId: string,
+  deps: InitiativePublicImpactAncestryDependencies,
+): Promise<{
+  tracking: InitiativeImplementationTracking;
+  initiative: Initiative;
+  ancestry: TransitiveInitiativeAncestry;
+}> {
+  const resolvedTrackingBox: { value: InitiativeImplementationTracking | null } = { value: null };
+  const resolvedInitiativeBox: { value: Initiative | null } = { value: null };
+
+  let ancestry: TransitiveInitiativeAncestry;
+
+  try {
+    ancestry = await validateTransitiveInitiativeAncestry(
+      { parentArtifactType: "implementation", parentArtifactId: trackingId },
+      {
+        ...createImpactParentTrackingResolver(deps.getTracking, resolvedTrackingBox),
+        ...createImpactInitiativeExistenceChecker(deps.getInitiative, resolvedInitiativeBox),
+      },
+    );
+  } catch (error) {
+    if (
+      error instanceof ParentArtifactNotFoundError ||
+      error instanceof InitiativeAncestryMissingError
+    ) {
+      throw new Error("Implementation tracking not found.");
+    }
+
+    throw error;
+  }
+
+  const tracking = resolvedTrackingBox.value;
+  const initiative = resolvedInitiativeBox.value;
+
+  if (!tracking) {
+    // Unreachable: the resolver only reports found:true after storing a
+    // non-null tracking in the box.
+    throw new Error("Implementation tracking not found.");
+  }
+
+  if (!initiative) {
+    // Unreachable in practice (see module doc comment above); defensive
+    // guard only, matching the pattern used by Tasks 09-16.
+    throw new Error("Initiative not found.");
+  }
+
+  return { tracking, initiative, ancestry };
 }
 
 export interface UpdateInitiativePublicImpactDraftInput {
@@ -125,23 +326,30 @@ export function listPublicImpactEvidence(
   return listEvidenceByImpact(impactId);
 }
 
-export function createInitiativePublicImpactDraft(
+export async function createInitiativePublicImpactDraft(
   identity: RequestIdentity,
   input: CreateInitiativePublicImpactDraftInput,
-): InitiativePublicImpact {
-  assertInitiativePublicImpactEligible(input.trackingId, identity.participantId);
+  deps: InitiativePublicImpactAncestryDependencies = defaultInitiativePublicImpactAncestryDependencies,
+): Promise<InitiativePublicImpact> {
+  const { tracking, ancestry } = await resolvePublicImpactInitiativeAncestry(
+    input.trackingId,
+    deps,
+  );
 
-  const tracking = getTrackingById(input.trackingId);
+  const eligibility = assessInitiativePublicImpactEligibilityForResolved(
+    tracking,
+    identity.participantId,
+  );
 
-  if (!tracking) {
-    throw new Error("Implementation tracking not found.");
+  if (!eligibility.eligible) {
+    throw new Error(eligibility.reasons.join(" "));
   }
 
   const now = new Date().toISOString();
 
   const impact: InitiativePublicImpact = {
     impactId: `public-impact-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    initiativeId: tracking.initiativeId,
+    initiativeId: ancestry.initiativeId,
     trackingId: tracking.trackingId,
     participantId: identity.participantId,
     title: input.title,

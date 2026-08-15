@@ -8,6 +8,12 @@ import type {
 
 import { findAuthUserById } from "../auth/auth-user.repository.js";
 import { findMemberProfileByUserId } from "../member-profile/member-profile.repository.js";
+import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
+import {
+  validateDirectInitiativeAncestry,
+  type InitiativeExistenceChecker,
+} from "../../shared/initiative-ancestry/index.js";
 import {
   createInitiativeComment as createMemoryComment,
   deleteInitiativeComment as deleteMemoryComment,
@@ -31,6 +37,49 @@ import {
 import { getInitiativeCommentReactionSummaries } from "../initiative-comment-reactions/initiative-comment-reaction.service.js";
 import { resolvePublicCommentAuthorsForComments } from "./public-comment-author.projection.js";
 import { emitInitiativeCommentNotifications } from "../notifications/initiative-comment-notifications.service.js";
+
+/**
+ * Initiative Ancestry — Recovery Task 05.
+ *
+ * Initiative Comments use DIRECT Initiative ancestry: a comment stores its
+ * own `initiativeId` and never derives it transitively through another
+ * civic artifact. Per ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0.md, this
+ * service — not the Express route — is the enforcement boundary for that
+ * invariant: `createInitiativeComment` validates ancestry itself, so a
+ * comment cannot be persisted without a validated `initiativeId` regardless
+ * of whether the caller is the HTTP route or a direct (e.g. test, future
+ * internal) invocation. Routes remain useful for request-shape parsing,
+ * authentication, and product-level eligibility gating, but are not trusted
+ * as the sole invariant boundary.
+ *
+ * Persistence is unchanged: comments continue to store a plain `initiativeId`
+ * string (see `@hu/types` `InitiativeComment`), not a nested ancestry object.
+ * The validated ancestry result is used only to source that field, making it
+ * evident that the persisted value came from a checked Initiative rather than
+ * unchecked caller input. This module does not become a second civic root —
+ * it depends on Initiative, it does not duplicate it.
+ */
+export interface InitiativeCommentAncestryDependencies {
+  readonly initiativeExistenceChecker: InitiativeExistenceChecker;
+}
+
+/**
+ * Default existence checker: an Initiative "exists" for comment-ancestry
+ * purposes only if it is both present and currently eligible for public
+ * exposure. This intentionally folds in the same eligibility rule the route
+ * previously checked separately (`canExposePublicInitiativeProjection`), so
+ * that a single Initiative lookup here serves both the ancestry invariant
+ * and the pre-existing product rule, rather than requiring two lookups (one
+ * in the route, one in the service) for a single comment creation.
+ */
+const defaultInitiativeCommentAncestryDependencies: InitiativeCommentAncestryDependencies = {
+  initiativeExistenceChecker: {
+    initiativeExists(initiativeId) {
+      const initiative = getInitiativeById(initiativeId);
+      return initiative !== null && canExposePublicInitiativeProjection(initiative);
+    },
+  },
+};
 
 function isMongoMode(): boolean {
   return isEngagementMongoMode(INITIATIVE_COMMENT_PERSISTENCE_KEY);
@@ -92,9 +141,31 @@ export async function createInitiativeComment(
     CreateInitiativeCommentInput,
     "initiativeId" | "authorUserId" | "body" | "parentCommentId"
   >,
+  deps: InitiativeCommentAncestryDependencies = defaultInitiativeCommentAncestryDependencies,
 ): Promise<InitiativeComment> {
+  // Enforcement boundary: this validates Initiative ancestry before any
+  // persistence is attempted, regardless of caller. See module doc above.
+  const ancestry = await validateDirectInitiativeAncestry(
+    { initiativeId: input.initiativeId },
+    deps.initiativeExistenceChecker,
+  );
+
+  // Safety Architecture Pack 01 — Discussion surface. Rejected content never
+  // reaches storage, Stage Intelligence, or notification fan-out.
+  const { assertLifecycleContentSafe } = await import("../lifecycle-safety/index.js");
+  await assertLifecycleContentSafe({
+    surfaceId: "discussion",
+    initiativeId: ancestry.initiativeId,
+    actorParticipantId: null,
+    text: input.body,
+    fieldName: "body",
+  });
+
   const persistedInput: CreateInitiativeCommentInput = {
     ...input,
+    // Persisted initiativeId is sourced from the validated ancestry result,
+    // not directly from unchecked caller input.
+    initiativeId: ancestry.initiativeId,
     authorDisplayName: await resolveCommentAuthorNameSnapshot(input.authorUserId),
   };
 
@@ -110,8 +181,9 @@ export async function createInitiativeCommentWithNotifications(
     CreateInitiativeCommentInput,
     "initiativeId" | "authorUserId" | "body" | "parentCommentId"
   > & { actorMemberId: string | null },
+  deps?: InitiativeCommentAncestryDependencies,
 ): Promise<InitiativeComment> {
-  const comment = await createInitiativeComment(input);
+  const comment = await createInitiativeComment(input, deps);
 
   emitInitiativeCommentNotifications({
     comment,
@@ -199,6 +271,16 @@ export async function buildInitiativeDiscussionSummary(input: {
   canComment: boolean;
   requiresLogin: boolean;
   commentsAvailable: boolean;
+  /**
+   * UX Evolution Pack 02.3 — the raw (un-projected) comments backing
+   * `initialComments`, exposed so a caller can additively attach
+   * per-comment collaboration state (see
+   * `attachCollaborationStateToComments`) without a second Initiative
+   * comment query. Internal-only: never part of the public
+   * `PublicInitiativeDiscussionSummary` response shape, so it must be
+   * stripped before this result reaches an HTTP response.
+   */
+  rawComments: InitiativeComment[];
 }> {
   const listing = await listApprovedInitiativeComments({
     initiativeId: input.initiativeId,
@@ -213,5 +295,6 @@ export async function buildInitiativeDiscussionSummary(input: {
     canComment: Boolean(input.userId),
     requiresLogin: !input.userId,
     commentsAvailable: true,
+    rawComments: listing.comments,
   };
 }

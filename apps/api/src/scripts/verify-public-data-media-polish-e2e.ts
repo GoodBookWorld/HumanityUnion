@@ -137,7 +137,7 @@ function verifyFooterPlatformLinks(): void {
   assert(!columnOne.includes('href: "/search"'), "Search must not appear in column one.");
 }
 
-function verifyCivicArchiveFilters(): void {
+async function verifyCivicArchiveFilters(): Promise<void> {
   console.log("4. Civic Archive geographic filters");
 
   const filters = readRepoFile(
@@ -172,7 +172,7 @@ function verifyCivicArchiveFilters(): void {
     "Archive projection must resolve country filters.",
   );
 
-  const filtered = listPublicCivicArchiveIndex({ country: "CA,US" });
+  const filtered = await listPublicCivicArchiveIndex({ country: "CA,US" });
   assert(Array.isArray(filtered), "Archive index must accept comma-separated country filters.");
 }
 
@@ -315,7 +315,7 @@ async function runPass(pass: number): Promise<void> {
   verifyCountryStatistics();
   verifyCountrySearchAndMedia();
   verifyFooterPlatformLinks();
-  verifyCivicArchiveFilters();
+  await verifyCivicArchiveFilters();
   verifyHomeStatistics();
   verifyMemberAnchors();
   verifyCivicMediaCenter();

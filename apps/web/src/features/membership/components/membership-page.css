@@ -1,7 +1,10 @@
 .membership-page-shell {
-  margin: 0 auto;
-  max-width: var(--hu-content-max-width, 1120px);
-  padding: var(--hu-space-6) var(--hu-space-4);
+  /* Parent route already uses `.humanity-workspace-page`; avoid a second max-width. */
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .membership-page-shell__header {

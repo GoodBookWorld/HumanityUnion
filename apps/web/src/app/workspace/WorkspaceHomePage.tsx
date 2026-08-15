@@ -11,17 +11,19 @@ import type { WorkspaceHomeState } from "../../features/workspace-home/workspace
 
 import "./workspace-page.css";
 
-const NAV_ITEMS = [
-  "Personal Welcome",
-  "Quick Actions",
-  "My Active Civic Work",
-  "My Recent Activity",
-  "My Responsibilities",
-  "Participation Summary",
-  "Workspace Notifications",
-  "Recent Public Contributions",
-] as const;
-
+/**
+ * Recovery Task 33 — Workspace UX Evolution, Part 8.
+ *
+ * The Workspace page previously rendered a second, duplicate in-page
+ * "Sections" navigation block (hash-linking to each dashboard widget) in
+ * addition to the route-based sidebar (`WorkspaceNavigation`). It has been
+ * removed here — intentionally not passing `navItems` to `MemberWorkspace`
+ * — because it duplicated information already reachable via the sidebar
+ * and the dashboard's own natural scroll order. `MemberWorkspace` and its
+ * underlying `WorkspaceSectionNav` component are unchanged and continue to
+ * back the in-page section nav used by other pages (initiatives, petitions,
+ * collective decisions, etc.).
+ */
 export function WorkspaceHomePage() {
   const [assistantContext, setAssistantContext] = useState<
     WorkspaceHomeState["assistantContext"] | null
@@ -31,7 +33,6 @@ export function WorkspaceHomePage() {
     <MemberWorkspace
       title="Workspace"
       subtitle="Your personal civic dashboard"
-      navItems={NAV_ITEMS}
       workspaceNavigation={<WorkspaceNavigation />}
       headerBar={<WorkspacePersonalHeader />}
       assistant={<WorkspaceHomeAssistant context={assistantContext} />}

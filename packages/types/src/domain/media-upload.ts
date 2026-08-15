@@ -1,4 +1,4 @@
-export type MediaUploadPurpose = "avatar" | "initiative-image";
+export type MediaUploadPurpose = "avatar" | "initiative-image" | "blog-image";
 
 export interface MediaUploadResponse {
   mediaId: string;

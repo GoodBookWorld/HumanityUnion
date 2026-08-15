@@ -128,7 +128,13 @@ export async function resolveBetaOnboardingForUser(input: {
       id: "first-initiative",
       label: "Create first Initiative",
       completed: initiatives.length > 0,
-      href: "/initiatives",
+      // UX Evolution Pack 02.4 Part 1 — link directly to the "Start New
+      // Initiative" ProfileSection on the Workspace Initiatives page. The
+      // hash relies on ProfileSection's default id (title
+      // "Start New Initiative" -> "start-new-initiative") and ordinary
+      // browser fragment-scroll behavior; no custom scroll-management logic
+      // is introduced.
+      href: "/workspace/initiatives#start-new-initiative",
     },
   ];
 }

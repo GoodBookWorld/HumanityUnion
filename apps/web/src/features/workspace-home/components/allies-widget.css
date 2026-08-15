@@ -1,0 +1,157 @@
+.allies-widget {
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.allies-widget__empty {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+  line-height: var(--hu-line-height);
+}
+
+/*
+ * 4 cards visible (~68px each incl. gap); remaining up to 8 scroll
+ * internally via `overflow-y: auto` — no custom wheel handling, so normal
+ * page scrolling is never intercepted while the pointer is over this list
+ * (Profile UX Pack 01 Part 10/19).
+ *
+ * Communication UX Pack 03.2 Part 17 — `overscroll-behavior: contain` was
+ * removed here: it stops wheel/touch scroll from chaining to the page once
+ * this list reaches its own top/bottom boundary, which is exactly the
+ * "dead zone" a user hits when continuing to scroll past a nested list
+ * (the page appears to stop responding). The default `auto` chaining is
+ * kept instead so page scroll never gets trapped.
+ */
+.allies-widget__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--hu-space-2);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.allies-widget__card {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-bg-muted);
+}
+
+/* Avatar + name (+ optional shared-initiative count), linked as one unit to the public profile. */
+.allies-widget__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-3);
+  min-width: 0;
+  flex: 1 1 auto;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.allies-widget__identity:hover .allies-widget__name,
+a.allies-widget__identity:focus-visible .allies-widget__name {
+  text-decoration: underline;
+}
+
+.allies-widget__avatar {
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--hu-color-surface);
+  flex-shrink: 0;
+}
+
+.allies-widget__name {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  color: var(--hu-color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.allies-widget__shared-count {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--hu-color-text-muted);
+}
+
+/* Communication UX Pack 03.2 Part 3/4 — compact Message control on the right side of the card. */
+.allies-widget__message-wrap {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.allies-widget__message-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  color: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.allies-widget__message-button:hover,
+.allies-widget__message-button:focus-visible {
+  border-color: var(--hu-color-primary, #1a56db);
+}
+
+.allies-widget__message-button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.allies-widget__message-label {
+  white-space: nowrap;
+}
+
+/* Part 4 — never the only accessible indicator; always paired with the visually-hidden text below. */
+.allies-widget__unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hu-color-danger, #dc2626);
+  flex-shrink: 0;
+}
+
+.allies-widget__message-error {
+  margin: 0;
+  max-width: 12rem;
+  font-size: 0.75rem;
+  color: var(--hu-color-danger, #dc2626);
+  text-align: right;
+}
+
+.allies-widget__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Narrow cards (Part 3 — "visible text may be compact"): hide the label, keep icon + accessible name. */
+@media (max-width: 420px) {
+  .allies-widget__message-label {
+    display: none;
+  }
+}

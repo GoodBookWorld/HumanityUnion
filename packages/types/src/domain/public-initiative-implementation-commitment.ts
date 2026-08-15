@@ -4,6 +4,10 @@ import type {
   InitiativeImplementationCommitmentId,
   InitiativeImplementationCommitmentStatus,
 } from "./initiative-implementation-commitment.js";
+import type {
+  ImplementationCommitmentTraceability,
+  InitiativeImplementationCommitmentProposalStatus,
+} from "./initiative-implementation-commitment-lifecycle.js";
 
 export interface PublicInitiativeImplementationCommitmentProjection {
   commitmentId: InitiativeImplementationCommitmentId;
@@ -20,6 +24,17 @@ export interface PublicInitiativeImplementationCommitmentProjection {
   publishedAt?: string;
   withdrawnAt?: string;
   completedAt?: string;
+  /** Initiative Lifecycle — Part I. */
+  packageId: string | null;
+  approvedAction: string | null;
+  actionIndex: number | null;
+  proposalStatus: InitiativeImplementationCommitmentProposalStatus | null;
+  suggestedResponsibleRole: string | null;
+  priority: string | null;
+  requiredResources: readonly string[];
+  relatedRisks: readonly string[];
+  references: readonly string[];
+  traceability: ImplementationCommitmentTraceability | null;
 }
 
 export interface PublicInitiativeImplementationCommitmentListItem {
@@ -36,6 +51,10 @@ export interface PublicInitiativeImplementationCommitmentListItem {
   publishedAt?: string;
   withdrawnAt?: string;
   completedAt?: string;
+  packageId: string | null;
+  approvedAction: string | null;
+  proposalStatus: InitiativeImplementationCommitmentProposalStatus | null;
+  priority: string | null;
 }
 
 export interface InitiativeImplementationCommitmentMetrics {

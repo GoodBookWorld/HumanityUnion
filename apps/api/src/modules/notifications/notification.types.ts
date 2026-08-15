@@ -20,6 +20,11 @@ export interface NotificationPersistenceAdapter {
   countByUserId(userId: string, status?: MemberNotificationStatus): Promise<number>;
   findById(notificationId: string): Promise<MemberNotification | null>;
   update(notification: MemberNotification): Promise<void>;
+  delete(notificationId: string): Promise<void>;
+  deleteByRelatedEntity(
+    relatedEntityType: MemberNotification["relatedEntityType"],
+    relatedEntityId: string,
+  ): Promise<number>;
   clearForTests?(): void;
 }
 

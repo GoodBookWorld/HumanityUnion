@@ -1,0 +1,261 @@
+/**
+ * Communication UX Pack 03.7 — Shared Documents. One stylesheet backs the
+ * single reusable `SharedDocumentsPanel`, mounted unchanged inside Direct
+ * Messages, the Collaboration Channel, and Collaboration Sessions (Part
+ * 1). Follows the same BEM-ish, design-token-only convention already
+ * used by `initiative-collaboration-sessions.css` / `direct-messaging.css`.
+ */
+
+.sd-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2);
+  padding: var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-bg-muted);
+}
+
+.sd-panel__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hu-space-2);
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  color: var(--hu-color-text);
+}
+
+.sd-panel__toggle:focus-visible {
+  outline: 2px solid var(--hu-color-primary, #1a56db);
+  outline-offset: 2px;
+}
+
+.sd-panel__title {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-2);
+  font-weight: 600;
+  font-size: var(--hu-font-size-sm);
+}
+
+.sd-panel__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--hu-color-surface);
+  color: var(--hu-color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.sd-panel__toggle-icon {
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--hu-color-text-muted);
+}
+
+.sd-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-3);
+  padding-top: var(--hu-space-2);
+  border-top: 1px solid var(--hu-color-border);
+}
+
+.sd-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hu-space-2);
+}
+
+.sd-panel__upload-label {
+  cursor: pointer;
+}
+
+/* Visually hidden but keyboard/screen-reader accessible (Part 14 — never `display: none` on a control a keyboard user still needs to reach via its `<label>`). */
+.sd-panel__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sd-panel__hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--hu-color-text-muted);
+}
+
+.sd-panel__status {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}
+
+.sd-panel__status--error {
+  color: var(--hu-color-danger, #dc2626);
+}
+
+.sd-panel__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+/* --- Document list --- */
+
+.sd-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-list__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hu-space-2);
+  padding: var(--hu-space-2);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+}
+
+.sd-file-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--hu-radius-md);
+  background: color-mix(in srgb, var(--hu-color-primary, #1a56db) 10%, transparent);
+  color: var(--hu-color-primary, #1a56db);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.sd-list__details {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sd-list__file-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.sd-list__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--hu-color-text-muted);
+}
+
+.sd-list__actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-1, 0.25rem);
+}
+
+.sd-list__action-button {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--hu-color-text);
+}
+
+.sd-list__action-button:focus-visible {
+  outline: 2px solid var(--hu-color-primary, #1a56db);
+  outline-offset: 2px;
+}
+
+.sd-list__action-button:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.sd-list__action-button--danger {
+  border-color: var(--hu-color-danger, #dc2626);
+  color: var(--hu-color-danger, #dc2626);
+}
+
+/* --- Verification badge (Part 4/14 — text always accompanies the dot; never color-only) --- */
+
+.sd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--hu-color-bg-muted);
+  color: var(--hu-color-text-muted);
+}
+
+.sd-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.sd-badge--approved {
+  background: color-mix(in srgb, var(--hu-color-success, #16a34a) 12%, transparent);
+  color: var(--hu-color-success, #16a34a);
+}
+
+.sd-badge--review_required {
+  background: color-mix(in srgb, #b45309 12%, transparent);
+  color: #b45309;
+}
+
+.sd-badge--rejected,
+.sd-badge--malware_detected {
+  background: color-mix(in srgb, var(--hu-color-danger, #dc2626) 12%, transparent);
+  color: var(--hu-color-danger, #dc2626);
+}
+
+/* Part 11 — Mobile: full-width actions stack cleanly instead of forcing horizontal overflow. */
+@media (max-width: 640px) {
+  .sd-list__item {
+    flex-wrap: wrap;
+  }
+
+  .sd-list__actions {
+    width: 100%;
+    padding-left: calc(2.25rem + var(--hu-space-2));
+  }
+}

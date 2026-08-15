@@ -6,6 +6,7 @@ import type {
   MemberProfileVisibility,
   NotificationFrequency,
 } from "@hu/types";
+import { PRIORITY_LANGUAGE_CODES } from "@hu/types";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { useEffect, useState } from "react";
 
@@ -13,12 +14,20 @@ import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
 import { ApiUnavailableState } from "../../../design-system/components/ApiUnavailableState";
 import { isAuthenticationRequiredError, isApiUnavailableError } from "../../../lib/api-client";
+import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { getMyPreferences, updateMyPreferences } from "../preferences-api";
 
+import { SurfaceAssistantEntry } from "../../humanity-union-assistant";
 import { PreferenceOption, PreferenceOptionGrid } from "./PreferenceOption";
 import { PreferredGeographyFields } from "./PreferredGeographyFields";
 
 import "./preferences-workspace.css";
+
+const TRANSLATION_PREFERENCE_OPTIONS = [
+  { value: "none", label: "Always show original" },
+  { value: "preferred", label: "Prefer translation when available" },
+  { value: "ask", label: "Offer translation; keep original by default" },
+] as const;
 
 const CONTRIBUTION_OPTIONS: ContributionWillingness[] = [
   "analysis",
@@ -62,11 +71,12 @@ function toggleValue<T extends string>(values: T[], value: T, checked: boolean):
 export function PreferencesWorkspace() {
   const [preferences, setPreferences] = useState<MemberPreferences | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
   const [apiUnavailable, setApiUnavailable] = useState(false);
+
+  /** UX Completion Pack 04 Part 9 — the same delayed Save feedback used on `/member` (Profile, Skills, Privacy, ...). */
+  const savePhase = useSaveButtonPhase();
 
   useEffect(() => {
     let cancelled = false;
@@ -109,29 +119,26 @@ export function PreferencesWorkspace() {
       return;
     }
 
-    setSaving(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
-      const updated = await updateMyPreferences({
-        experiencePreferences: preferences.experiencePreferences,
-        participationPreferences: preferences.participationPreferences,
-        communicationPreferences: preferences.communicationPreferences,
-        accessibilityPreferences: preferences.accessibilityPreferences,
-        workspacePreferences: preferences.workspacePreferences,
-        visibilityPreferences: preferences.visibilityPreferences,
+      await savePhase.runSave(async () => {
+        const updated = await updateMyPreferences({
+          experiencePreferences: preferences.experiencePreferences,
+          participationPreferences: preferences.participationPreferences,
+          communicationPreferences: preferences.communicationPreferences,
+          accessibilityPreferences: preferences.accessibilityPreferences,
+          workspacePreferences: preferences.workspacePreferences,
+          visibilityPreferences: preferences.visibilityPreferences,
+        });
+        setPreferences(updated);
       });
-      setPreferences(updated);
-      setSuccessMessage("Preferences saved successfully.");
     } catch (saveError) {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
       } else {
         setError(saveError instanceof Error ? saveError.message : "Unable to save preferences.");
       }
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -168,16 +175,103 @@ export function PreferencesWorkspace() {
 
   return (
     <form className="preferences-workspace" onSubmit={(event) => void handleSubmit(event)}>
-      {successMessage ? (
-        <p className="preferences-workspace__success" role="status">
-          {successMessage}
-        </p>
-      ) : null}
       {error ? (
         <p className="preferences-workspace__error" role="alert">
           {error}
         </p>
       ) : null}
+
+      <SurfaceAssistantEntry
+        surfaceId="preferences"
+        label="Ask Humanity Union Assistant about Preferences"
+      />
+
+      <ProfileSection title="Language & Translation" id="language">
+        <p className="preferences-workspace__help">
+          Interface Language controls platform navigation. Preferred Reading Language is used for
+          translated public content. Writing Languages are languages you commonly write in.
+          Translation Preference controls whether translations are shown automatically.
+        </p>
+        <label className="preferences-workspace__field">
+          <span>Interface Language</span>
+          <select
+            value={preferences.experiencePreferences.interfaceLanguage}
+            onChange={(event) =>
+              setPreferences({
+                ...preferences,
+                experiencePreferences: {
+                  ...preferences.experiencePreferences,
+                  interfaceLanguage: event.target.value,
+                },
+              })
+            }
+          >
+            {PRIORITY_LANGUAGE_CODES.map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="preferences-workspace__field">
+          <span>Preferred Reading Language</span>
+          <select
+            value={preferences.experiencePreferences.readingLanguages[0] ?? "en"}
+            onChange={(event) =>
+              setPreferences({
+                ...preferences,
+                experiencePreferences: {
+                  ...preferences.experiencePreferences,
+                  readingLanguages: [event.target.value],
+                },
+              })
+            }
+          >
+            {PRIORITY_LANGUAGE_CODES.map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="preferences-workspace__field">
+          <span>Writing Languages (comma-separated codes)</span>
+          <input
+            value={formatCommaList(preferences.experiencePreferences.writingLanguages)}
+            onChange={(event) =>
+              setPreferences({
+                ...preferences,
+                experiencePreferences: {
+                  ...preferences.experiencePreferences,
+                  writingLanguages: parseCommaList(event.target.value),
+                },
+              })
+            }
+            placeholder="en, uk"
+          />
+        </label>
+        <label className="preferences-workspace__field">
+          <span>Translation Preference</span>
+          <select
+            value={preferences.experiencePreferences.translationPreference || "none"}
+            onChange={(event) =>
+              setPreferences({
+                ...preferences,
+                experiencePreferences: {
+                  ...preferences.experiencePreferences,
+                  translationPreference: event.target.value,
+                },
+              })
+            }
+          >
+            {TRANSLATION_PREFERENCE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </ProfileSection>
 
       <ProfileSection title="Experience" id="experience">
         <div className="preferences-workspace__field">
@@ -368,19 +462,6 @@ export function PreferencesWorkspace() {
           </select>
         </label>
         <PreferenceOption
-          label="Email notifications enabled"
-          checked={preferences.communicationPreferences.emailNotificationsEnabled}
-          onChange={(checked) =>
-            setPreferences({
-              ...preferences,
-              communicationPreferences: {
-                ...preferences.communicationPreferences,
-                emailNotificationsEnabled: checked,
-              },
-            })
-          }
-        />
-        <PreferenceOption
           label="Notify me when a new initiative matches my saved interests"
           checked={preferences.communicationPreferences.interestMatchNotificationsEnabled}
           onChange={(checked) =>
@@ -393,6 +474,37 @@ export function PreferencesWorkspace() {
             })
           }
         />
+      </ProfileSection>
+
+      {/*
+       * Lifecycle UX Correction Pack 01 Part 8 — a dedicated Notification
+       * Preferences section (distinct from the general "Communication"
+       * section above), reusing the existing
+       * `communicationPreferences.emailNotificationsEnabled` field so this
+       * one boolean is never duplicated across two controls. This is only
+       * a notification *trigger*: the description below is the exact copy
+       * required by Part 8, and the actual content is always read inside
+       * Humanity Union, never in the email itself.
+       */}
+      <ProfileSection title="Notification Preferences" id="notification-preferences">
+        <PreferenceOption
+          label="Receive email notifications"
+          checked={preferences.communicationPreferences.emailNotificationsEnabled}
+          onChange={(checked) =>
+            setPreferences({
+              ...preferences,
+              communicationPreferences: {
+                ...preferences.communicationPreferences,
+                emailNotificationsEnabled: checked,
+              },
+            })
+          }
+        />
+        <p className="preferences-workspace__helper">
+          When enabled, Humanity Union will send simple email notifications when new activity requires
+          your attention. Example: &ldquo;You have 3 new notifications in your Workspace.&rdquo; Emails
+          never contain private conversation content or confidential Initiative information.
+        </p>
       </ProfileSection>
 
       <ProfileSection title="Accessibility" id="accessibility">
@@ -461,10 +573,10 @@ export function PreferencesWorkspace() {
       <ProfileSection title="Visibility" id="visibility">
         {(
           [
-            ["profileVisibility", "Profile visibility"],
-            ["skillsVisibility", "Skills visibility"],
-            ["interestsVisibility", "Interests visibility"],
-            ["participationVisibility", "Participation visibility"],
+            ["profileVisibility", "Who can see my public profile"],
+            ["skillsVisibility", "Who can see my Skills"],
+            ["interestsVisibility", "Who can see my Interests"],
+            ["participationVisibility", "Who can see my Participation Areas"],
           ] as const
         ).map(([field, label]) => (
           <label key={field} className="preferences-workspace__field">
@@ -492,8 +604,8 @@ export function PreferencesWorkspace() {
       </ProfileSection>
 
       <div className="preferences-workspace__actions">
-        <Button type="submit" variant="primary" disabled={saving}>
-          {saving ? "Saving..." : "Save Preferences"}
+        <Button type="submit" variant="primary" disabled={savePhase.isBusy} ariaLive="polite">
+          {resolveSaveButtonLabel(savePhase.phase, "Save Preferences")}
         </Button>
       </div>
     </form>

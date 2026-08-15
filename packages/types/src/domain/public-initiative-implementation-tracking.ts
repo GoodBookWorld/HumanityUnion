@@ -4,6 +4,7 @@ import type {
   InitiativeImplementationTrackingId,
   InitiativeImplementationTrackingStatus,
 } from "./initiative-implementation-tracking.js";
+import type { ImplementationTrackingTraceability } from "./initiative-implementation-tracking-lifecycle.js";
 
 export interface PublicImplementationTrackingUpdate {
   updateId: string;
@@ -29,6 +30,18 @@ export interface PublicInitiativeImplementationTrackingProjection {
   archivedAt?: string;
   createdAt: string;
   updatedAt: string;
+  /** Initiative Lifecycle — Part J. */
+  packageId: string | null;
+  progress: number | null;
+  targetDate: string | null;
+  startedDate: string | null;
+  actualCompletedDate: string | null;
+  dependencies: readonly string[];
+  obstacles: readonly string[];
+  evidenceReferences: readonly string[];
+  notes: string | null;
+  approvedAction: string | null;
+  traceability: ImplementationTrackingTraceability | null;
 }
 
 export interface PublicInitiativeImplementationTrackingListItem {
@@ -42,6 +55,9 @@ export interface PublicInitiativeImplementationTrackingListItem {
   activatedAt?: string;
   completedAt?: string;
   archivedAt?: string;
+  packageId: string | null;
+  progress: number | null;
+  approvedAction: string | null;
 }
 
 export interface InitiativeImplementationTrackingMetrics {

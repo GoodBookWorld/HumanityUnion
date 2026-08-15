@@ -9,10 +9,10 @@ export const REGISTRATION_GATEWAY_CONTENT = {
   title: "Join Humanity Union",
   contextIntroduction: "Participation begins with understanding. Join when you are ready.",
   invitation:
-    "You can explore public civic activity without an account. Registration enables structured participation when you choose.",
+    "You can explore public civic activity without an account. Creating an account enables structured participation when you choose.",
   explorationNote: "Reading and exploring remain available without registration.",
-  actionLabel: "Join Humanity Union",
-  placeholderActionLabel: "Registration entry coming soon — Identity Capability not yet available",
+  actionLabel: "Create account",
+  placeholderActionLabel: "Create account",
   visitorConclusion:
-    "Registration and Workspace entry remain future capabilities. Public observation does not require an account.",
+    "Public observation does not require an account. Create an account when you are ready to participate in Workspace.",
 } as const;

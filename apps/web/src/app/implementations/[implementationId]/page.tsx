@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   "Evidence",
   "Completion Assessment",
   "Next Meaningful Observation",
-  "Humanity Assistant",
+  "Humanity Union Assistant",
   "Related Navigation",
 ];
 

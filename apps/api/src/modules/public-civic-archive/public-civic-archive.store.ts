@@ -211,6 +211,27 @@ export function removePublicVerificationFixtureRecords(): number {
   return removed;
 }
 
+/**
+ * Test-only cleanup, narrowly scoped to the aggregate's actual boundary
+ * (author-owned draft/published archive records) — mirrors
+ * `deletePublicImpactsByParticipantIdForTests` (Task 17) and
+ * `deleteTrackingsByParticipantIdForTests` (Task 16).
+ */
+export function deleteArchiveRecordsByAuthorIdForTests(authorId: string): void {
+  let removed = false;
+
+  for (const [archiveRecordId, record] of records.entries()) {
+    if (record.authorId === authorId) {
+      records.delete(archiveRecordId);
+      removed = true;
+    }
+  }
+
+  if (removed) {
+    persistRecords();
+  }
+}
+
 export function reloadArchiveRecordsFromPersistence(): void {
   records.clear();
 

@@ -38,6 +38,7 @@ function parseEntityTypes(value: string | string[] | undefined): CivicEntityType
     "civic_archive",
     "knowledge_article",
     "knowledge_media",
+    "blog_post",
   ]);
 
   const parsed = rawValues
@@ -113,10 +114,12 @@ export function sanitizeCivicSearchResponse(response: CivicSearchResponse): Civi
   return response;
 }
 
-export function searchPublicCivicRecords(query: CivicSearchQuery): CivicSearchResponse {
+export async function searchPublicCivicRecords(
+  query: CivicSearchQuery,
+): Promise<CivicSearchResponse> {
   const view = query.view ?? "flat";
   const normalizedQuery: CivicSearchQuery = { ...query, view };
-  const index = getGlobalSearchIndex();
+  const index = await getGlobalSearchIndex();
   const matched = matchGlobalSearchIndex(normalizedQuery, index);
   const allResults = matched.map(toSearchResult);
   const facets = buildSearchFacets(allResults);

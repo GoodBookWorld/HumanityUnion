@@ -12,7 +12,7 @@ const NOTIFICATIONS_ICON = "/icons/workspace/icons8-notification.svg";
 
 interface HumanityHeaderMobileMenuProps {
   menuId: string;
-  activeDestination: string;
+  activeDestination: string | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -129,7 +129,7 @@ export function HumanityHeaderMobileMenu({
                   className="humanity-header__mobile-nav-link"
                   onClick={handleLinkClick}
                 >
-                  Member profile
+                  Profile
                 </Link>
               </>
             )}

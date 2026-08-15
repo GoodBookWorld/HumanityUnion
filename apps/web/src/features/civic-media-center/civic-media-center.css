@@ -5,9 +5,12 @@
 }
 
 .civic-media-page__container {
-  width: min(100%, 90rem);
+  /* Launch Readiness Pack 03 — canonical public page width. */
+  width: min(100%, var(--hu-page-max-width));
+  max-width: var(--hu-page-max-width);
   margin-inline: auto;
-  padding: var(--hu-space-6) var(--hu-space-4) var(--hu-space-10);
+  padding: var(--hu-section-gap) var(--hu-page-padding-inline) var(--hu-space-10);
+  box-sizing: border-box;
 }
 
 .civic-media-page__hero,
@@ -74,8 +77,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 3.75rem;
+  height: 3.75rem;
   border-radius: var(--hu-radius-md, 0.5rem);
   background: var(--hu-color-surface-muted, #f0f0f0);
   font-weight: 700;
@@ -84,8 +87,10 @@
 }
 
 .civic-media-center__logo-image {
-  width: 3.75rem;
-  height: 3.75rem;
+  width: auto;
+  height: auto;
+  max-width: 6.75rem;
+  max-height: 3.75rem;
   object-fit: contain;
 }
 

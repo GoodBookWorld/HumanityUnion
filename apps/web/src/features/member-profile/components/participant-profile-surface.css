@@ -1,0 +1,350 @@
+/*
+ * Profile UX Pack 03.2 — centered bounded container, matching the platform's
+ * established content-page convention (`--hu-content-max-width`, used by
+ * notifications-page, civic-archive-page, membership-page, etc.) instead of
+ * an unmatched one-off `max-width` with no `margin-inline: auto`, which is
+ * what caused the page to hug the left edge of the viewport.
+ *
+ * Profile UX Pack 03.3 — relocated from
+ * `app/member/[uniqueName]/public-member-page.css` and shared by both
+ * `/member/{publicName}` (public) and `/profile` (owner-preview) through
+ * `ParticipantProfileSurface`. Class names are unchanged so the visual
+ * language (and this stylesheet) is never forked between the two routes;
+ * only the `--top-row` two-column layout automatically narrows to fit the
+ * available Workspace main column on `/profile` (no route-specific CSS).
+ */
+.public-member-page {
+  width: min(100%, var(--hu-page-max-width, var(--hu-content-max-width, 72rem)));
+  max-width: var(--hu-page-max-width, var(--hu-content-max-width, 72rem));
+  margin-inline: auto;
+  padding-block: var(--hu-section-gap, var(--hu-space-8, 2rem));
+  padding-inline: var(--hu-page-padding-inline, var(--hu-space-6, 1.5rem));
+  box-sizing: border-box;
+  text-align: start;
+  display: grid;
+  gap: var(--hu-space-6, 2rem);
+}
+
+/*
+ * Part 3/4 — equal 50/50 top row, retained through the tablet breakpoint.
+ * `align-items` is intentionally left at its `stretch` default so the two
+ * cards share the same row height (Part 5) instead of each sizing to its
+ * own content.
+ */
+.public-member-page__top-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--hu-space-6, 2rem);
+}
+
+/* Part 5 — Privacy hid Participation Statistics entirely: identity spans the full row instead of sitting in a half-width column. */
+.public-member-page__top-row--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/*
+ * Part 5 — identity and statistics share identical card chrome (border,
+ * radius, background, shadow, padding) and both stretch to the row's full
+ * height. Part 6 — each centers its content group vertically as a flex
+ * column.
+ */
+.public-member-page__identity,
+.public-member-page__statistics {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  box-shadow: var(--hu-shadow-sm);
+  padding: var(--hu-space-5, 1.25rem);
+}
+
+/* Launch Readiness UX Fix Pack 01 — Member badge + identity information stack. */
+.public-member-page__identity {
+  position: relative;
+  justify-content: flex-start;
+  gap: var(--hu-space-4, 1.25rem);
+  overflow: hidden;
+}
+
+.public-member-page__member-badge {
+  position: absolute;
+  top: var(--hu-space-4, 1rem);
+  right: var(--hu-space-4, 1rem);
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.public-member-page__identity-body {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-4, 1.25rem);
+  width: 100%;
+  /* Keep Message action clear of the top-right Member badge. */
+  padding-right: calc(48px + var(--hu-space-3, 0.75rem));
+  box-sizing: border-box;
+}
+
+.public-member-page__identity-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2, 0.5rem);
+  width: 100%;
+  min-width: 0;
+}
+
+.public-member-page__identity-info-heading {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.public-member-page__organization-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: var(--hu-line-height, 1.6);
+  color: var(--hu-color-text);
+}
+
+.public-member-page__identity-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.public-member-page__avatar {
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.public-member-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.public-member-page__subtitle {
+  color: var(--hu-color-text-muted, #525252);
+  font-size: 0.95rem;
+  margin: 0 0 0.35rem;
+}
+
+/* Part 9 — country/organization share one consistent metadata style; the group is only rendered when at least one line is present. */
+.public-member-page__meta-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: var(--hu-space-3, 0.75rem);
+}
+
+.public-member-page__meta {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--hu-color-text-muted, #525252);
+}
+
+/*
+ * Part 10 / Communication UX Pack 03.2 Part 6 — a flex sibling of the
+ * avatar/text group inside `identity-body`: `margin-left: auto` pins it to
+ * the right side of the identity card on desktop/tablet while the avatar +
+ * name stay left-aligned; `identity-body`'s own mobile column breakpoint
+ * (below) drops it beneath the identity metadata instead.
+ */
+.public-member-page__message-action {
+  margin-left: auto;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.public-member-page__section-heading {
+  margin: 0 0 var(--hu-space-3, 1rem);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Part 7 — three horizontal statistic cards now reuse the shared `personal-statistics__*` grid/card visuals (see personal-statistics.css) instead of a bespoke vertical list. */
+
+/* Part 11 — Biography typography inside the identity information zone. */
+.public-member-page__biography-text {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: var(--hu-line-height, 1.6);
+  font-size: var(--hu-font-size-base, 1rem);
+  color: var(--hu-color-text);
+}
+
+/* Launch Readiness UX Fix Pack 01 — Participation Area / Skills under statistics. */
+.public-member-page__statistics {
+  justify-content: flex-start;
+  gap: var(--hu-space-4, 1.25rem);
+}
+
+.public-member-page__profile-context {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2, 0.5rem);
+  width: 100%;
+  min-width: 0;
+}
+
+.public-member-page__profile-context-heading {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.public-member-page__context-chips,
+.public-member-page__skills-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2, 0.5rem);
+}
+
+.public-member-page__context-chip,
+.public-member-page__skill-tag {
+  border: 1px solid var(--hu-color-border);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  background: var(--hu-color-bg-muted);
+}
+
+/* Part 13 — Recent Public Initiatives: scrollable, title-only, no pagination. */
+.public-member-page__initiatives-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 9.5rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: var(--hu-space-1, 0.35rem);
+}
+
+.public-member-page__initiatives-item a {
+  display: block;
+  padding: 0.4rem 0.1rem;
+  color: var(--hu-color-primary, #1a56db);
+  text-decoration: none;
+}
+
+.public-member-page__initiatives-item a:hover,
+.public-member-page__initiatives-item a:focus-visible {
+  text-decoration: underline;
+}
+
+.public-member-page__back {
+  margin-top: 0;
+}
+
+/*
+ * Profile UX Pack 03.3 Part 5 — owner-preview-only neutral notice for a
+ * section Privacy currently hides from the public. Reuses the same muted
+ * text color used elsewhere on this surface (never color-only: the wording
+ * itself states the section is hidden) and never sits inside a card whose
+ * styling implies real public-facing content.
+ */
+.public-member-page__owner-notice {
+  margin: 0;
+  color: var(--hu-color-text-muted, #525252);
+  font-size: 0.9rem;
+}
+
+.public-member-page__owner-notice a {
+  color: var(--hu-color-primary, #1a56db);
+  margin-left: var(--hu-space-2, 0.5rem);
+}
+
+/* Profile UX Pack 03.3 Part 9 — owner-preview empty-biography prompt, distinct from the hidden-section notice above (no Privacy setting is blocking it; nothing has been written yet). */
+.public-member-page__owner-empty-prompt {
+  margin: 0;
+  color: var(--hu-color-text-muted, #525252);
+}
+
+.public-member-page__owner-empty-prompt a {
+  color: var(--hu-color-primary, #1a56db);
+  margin-left: var(--hu-space-2, 0.5rem);
+}
+
+/*
+ * Part 4 — 768px is this repository's established tablet/mobile threshold
+ * (see personal-statistics.css, public-initiative-experience.css). Desktop
+ * AND tablet keep the 50/50 top row; only below 768px does it stack.
+ */
+@media (max-width: 767px) {
+  .public-member-page__top-row {
+    grid-template-columns: 1fr;
+  }
+
+  .public-member-page__identity,
+  .public-member-page__statistics {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  /*
+   * PWA UX Correction Pack 02/03 — center avatar + name only.
+   * Biography / Organization / Professional Links stay full-width, left-aligned.
+   * Member badge keeps absolute top-right clearance via identity-body padding-top.
+   */
+  .public-member-page__identity {
+    align-items: stretch;
+    text-align: start;
+  }
+
+  .public-member-page__identity-body {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-right: 0;
+    padding-top: calc(48px + var(--hu-space-2, 0.5rem));
+  }
+
+  .public-member-page__identity-text {
+    align-items: center;
+    text-align: center;
+  }
+
+  .public-member-page__meta-group {
+    align-items: center;
+  }
+
+  .public-member-page__identity-info {
+    align-items: stretch;
+    text-align: start;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .public-member-page__identity-info-heading,
+  .public-member-page__biography-text,
+  .public-member-page__organization-text {
+    text-align: start;
+    width: 100%;
+  }
+
+  /* Communication UX Pack 03.2 Part 6 — below identity metadata on mobile. */
+  .public-member-page__message-action {
+    margin-left: 0;
+    align-self: center;
+  }
+
+  .public-member-page__statistics .personal-statistics__grid {
+    justify-items: stretch;
+  }
+
+  .public-member-page__section-heading {
+    text-align: left;
+  }
+}

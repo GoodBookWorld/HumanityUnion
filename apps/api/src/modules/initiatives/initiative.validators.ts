@@ -1,5 +1,16 @@
-import type { Initiative, InitiativeNewsSourceReference, ParticipationScope, InitiativeActivityAreaOption } from "@hu/types";
-import { INITIATIVE_ACTIVITY_AREA_OTHER, isKnownInitiativeActivityArea } from "@hu/types";
+import type {
+  Initiative,
+  InitiativeCoverMedia,
+  InitiativeNewsSourceReference,
+  ParticipationScope,
+  InitiativeActivityAreaOption,
+} from "@hu/types";
+import {
+  INITIATIVE_ACTIVITY_AREA_OTHER,
+  isKnownInitiativeActivityArea,
+  parseExternalVideoUrl,
+} from "@hu/types";
+import { isPlatformMediaUrl } from "../media-upload/media-upload.validation.js";
 
 export interface CreateInitiativeDraftInput {
   title: string;
@@ -15,6 +26,8 @@ export interface CreateInitiativeDraftInput {
   participationScope?: ParticipationScope;
   imageUrl?: string;
   imageAltText?: string;
+  /** UX Evolution Pack 03 — see `validateCoverMediaInput`; always server re-derived, never trusted verbatim. */
+  coverMedia?: InitiativeCoverMedia;
   startDate?: string;
   completionDate?: string;
   sourceNewsId?: string;
@@ -35,6 +48,10 @@ export interface SaveInitiativeDraftInput {
   participationScope?: ParticipationScope;
   imageUrl?: string;
   imageAltText?: string;
+  /** UX Evolution Pack 03 — see `validateCoverMediaInput`; always server re-derived, never trusted verbatim. */
+  coverMedia?: InitiativeCoverMedia;
+  /** UX Evolution Pack 03 — explicit "Remove Media" action; clears both `coverMedia` and the legacy `imageUrl`. */
+  clearCoverMedia?: boolean;
   startDate?: string;
   completionDate?: string;
   clearSourceReferences?: boolean;
@@ -81,6 +98,71 @@ function normalizeOptionalIsoDate(value: unknown, fieldName: string): string | u
   }
 
   return new Date(parsed).toISOString();
+}
+
+/**
+ * UX Evolution Pack 03 — server-side re-derivation of `coverMedia`. Client
+ * input is treated only as a hint of intent (which type, which url); every
+ * field that matters for safety (`verificationStatus`, `provider`,
+ * `providerVideoId`) is recomputed here rather than trusted verbatim. This
+ * is defense in depth against a client crafting a request that skips the
+ * dedicated `/api/v1/media/*` validation endpoints entirely — e.g. POSTing a
+ * forged `verificationStatus: "approved"` pointing at an arbitrary external
+ * image URL, which would otherwise become "arbitrary media hosting"
+ * (explicitly out of scope, Part 11).
+ */
+function validateCoverMediaInput(value: unknown): InitiativeCoverMedia | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value !== "object") {
+    throw new Error("Invalid cover media payload.");
+  }
+
+  const record = value as Record<string, unknown>;
+
+  if (record.type === "image") {
+    const url = typeof record.url === "string" ? record.url.trim() : "";
+
+    if (!url || !isPlatformMediaUrl(url)) {
+      throw new Error("Cover image must reference an uploaded platform media file.");
+    }
+
+    return {
+      type: "image",
+      url,
+      verificationStatus: "approved",
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  if (record.type === "video_external") {
+    const url = typeof record.url === "string" ? record.url.trim() : "";
+    const parsed = parseExternalVideoUrl(url);
+
+    if (!parsed) {
+      throw new Error("Video link must be an approved HTTPS YouTube or Vimeo URL.");
+    }
+
+    return {
+      type: "video_external",
+      url: parsed.canonicalUrl,
+      provider: parsed.provider,
+      providerVideoId: parsed.providerVideoId,
+      verificationStatus: "approved",
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  if (record.type === "video_upload") {
+    // Part 5 — no malware/security scanning, transcoding, or quarantine
+    // pipeline exists yet; raw video upload must not be presented as
+    // production-ready (see the Pack 03 final report).
+    throw new Error("Video upload is not yet available. Please use an approved video link instead.");
+  }
+
+  throw new Error("Unsupported cover media type.");
 }
 
 function validateParticipationScope(value: unknown): ParticipationScope | undefined {
@@ -160,6 +242,7 @@ export function validateCreateInitiativeDraftInput(body: unknown): CreateInitiat
     ...activityAreaFields,
     imageUrl: normalizeOptionalText(record.imageUrl),
     imageAltText: normalizeOptionalText(record.imageAltText),
+    coverMedia: validateCoverMediaInput(record.coverMedia),
     startDate: normalizeOptionalIsoDate(record.startDate, "Start date"),
     completionDate: normalizeOptionalIsoDate(record.completionDate, "Completion date"),
     sourceNewsId: normalizeOptionalText(record.sourceNewsId),
@@ -228,6 +311,18 @@ export function validateSaveInitiativeDraftInput(body: unknown): SaveInitiativeD
 
   if (record.imageAltText !== undefined) {
     update.imageAltText = normalizeOptionalText(record.imageAltText);
+  }
+
+  if (record.coverMedia !== undefined) {
+    update.coverMedia = validateCoverMediaInput(record.coverMedia);
+  }
+
+  if (record.clearCoverMedia !== undefined) {
+    if (typeof record.clearCoverMedia !== "boolean") {
+      throw new Error("clearCoverMedia must be a boolean.");
+    }
+
+    update.clearCoverMedia = record.clearCoverMedia;
   }
 
   if (record.startDate !== undefined) {

@@ -26,6 +26,10 @@ export const CATALOGUE_EVENTS = {
   proposalCreated: "ProposalCreated",
   proposalRevised: "ProposalRevised",
   proposalWithdrawn: "ProposalWithdrawn",
+  petitionSigned: "PetitionSigned",
+  // Recovery Task 32 — Initiative Decision Vote durable producer.
+  initiativeDecisionVoteCast: "InitiativeDecisionVoteCast",
+  initiativeDecisionVoteChanged: "InitiativeDecisionVoteChanged",
   decisionApproved: "DecisionApproved",
   decisionRejected: "DecisionRejected",
   decisionReturnedForRevision: "DecisionReturnedForRevision",
@@ -36,6 +40,17 @@ export const CATALOGUE_EVENTS = {
   impactRecorded: "ImpactRecorded",
   notificationDelivered: "NotificationDelivered",
   notificationRead: "NotificationRead",
+  // Initiative Lifecycle Part A — universal stage publication event.
+  initiativeLifecycleStagePublished: "InitiativeLifecycleStagePublished",
+  // Blog Implementation Pack 02 — publishing domain events.
+  blogPostSubmittedForReview: "BlogPostSubmittedForReview",
+  blogPostChangesRequested: "BlogPostChangesRequested",
+  blogPostPublished: "BlogPostPublished",
+  blogPostEditoriallyDeclined: "BlogPostEditoriallyDeclined",
+  blogPostArchived: "BlogPostArchived",
+  blogAuthorCapabilityGranted: "BlogAuthorCapabilityGranted",
+  // Admin Foundation Pack 02 — immutable audit outbox signal.
+  administrationAuditRecorded: "AdministrationAuditRecorded",
 } as const;
 
 export type CatalogueEventName = (typeof CATALOGUE_EVENTS)[keyof typeof CATALOGUE_EVENTS];

@@ -1,4 +1,5 @@
 import type { OfficialResponse, OfficialResponseIdentity } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import {
@@ -61,7 +62,7 @@ export function createMongoOfficialResponsePersistenceAdapter(): OfficialRespons
 }
 
 export async function hydrateOfficialResponseMongoPersistence(): Promise<void> {
-  if (process.env.OFFICIAL_RESPONSE_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("OFFICIAL_RESPONSE_PERSISTENCE")) {
     return;
   }
 
@@ -92,7 +93,7 @@ export async function hydrateOfficialResponseMongoPersistence(): Promise<void> {
 }
 
 export async function flushOfficialResponseMongoPersistence(): Promise<void> {
-  if (process.env.OFFICIAL_RESPONSE_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("OFFICIAL_RESPONSE_PERSISTENCE")) {
     return;
   }
 

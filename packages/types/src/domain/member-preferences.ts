@@ -7,6 +7,16 @@ export type NotificationFrequency =
 export type ContributionWillingness =
   "analysis" | "proposals" | "implementation" | "evidence" | "translation" | "coordination";
 
+/**
+ * Experience preferences include the Language Architecture foundations:
+ * - interfaceLanguage → Interface Language
+ * - readingLanguages[0] → Preferred Reading Language (when set)
+ * - writingLanguages[0] → writing language
+ * - translationPreference → TranslationDisplayPreference ("none" | "preferred" | "ask")
+ *
+ * Values remain strings for migration compatibility; prefer LanguageCode /
+ * TranslationDisplayPreference at call sites (see packages/types language.ts).
+ */
 export interface ExperiencePreferences {
   interfaceLanguage: string;
   readingLanguages: string[];

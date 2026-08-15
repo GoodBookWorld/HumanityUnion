@@ -236,6 +236,48 @@ export async function countBookmarkRecordsMongo(initiativeId: string): Promise<n
   });
 }
 
+function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: number }).code === 11_000
+  );
+}
+
+function extractDuplicateKeyPattern(error: unknown): Record<string, unknown> | undefined {
+  if (typeof error !== "object" || error === null) {
+    return undefined;
+  }
+
+  return (error as { keyPattern?: Record<string, unknown> }).keyPattern;
+}
+
+/**
+ * Stability Hotfix — narrow duplicate-key classifier for
+ * `initiative_support_views`. This collection carries exactly one unique
+ * index (`initiative_support_view_unique` on `{ initiativeId, viewerKey }`),
+ * so an E11000 raised by the `updateOne(..., { upsert: true })` below —
+ * filtered on that same natural key — can only ever be that index. The
+ * `keyPattern` check (mirroring `participant-action.repository.ts`) is kept
+ * as an extra guard so an unrelated duplicate-key error (e.g. a future
+ * second unique index on this collection) is never misclassified as this
+ * view's own idempotent replay and rethrows instead.
+ */
+export function isInitiativeViewUniqueIndexConflict(error: unknown): boolean {
+  if (!isDuplicateKeyError(error)) {
+    return false;
+  }
+
+  const keyPattern = extractDuplicateKeyPattern(error);
+
+  if (!keyPattern) {
+    return true;
+  }
+
+  return "initiativeId" in keyPattern && "viewerKey" in keyPattern;
+}
+
 export async function recordViewMongo(input: {
   initiativeId: string;
   viewerKey: string;
@@ -244,17 +286,36 @@ export async function recordViewMongo(input: {
   const collection = getMongoCollection<DocumentWithId<InitiativeSupportViewRecord>>(
     MONGO_COLLECTIONS.initiativeSupportViews,
   );
-  const existing = await collection.findOne({
-    initiativeId: input.initiativeId,
-    viewerKey: input.viewerKey,
-  });
 
-  if (!existing) {
-    await collection.insertOne({
-      initiativeId: input.initiativeId,
-      viewerKey: input.viewerKey,
-      viewedAt: new Date().toISOString(),
-    });
+  try {
+    // Atomic create-or-noop: the unique index on { initiativeId, viewerKey }
+    // is what enforces "one unique view per viewer" (Part 1's established
+    // meaning), not an application-level check-then-insert race. $setOnInsert
+    // means a repeat view never rewrites the original viewedAt and never
+    // creates a second row — no findOne read step, so there is no window
+    // between "check" and "write" for two concurrent repeat views to race
+    // through.
+    await collection.updateOne(
+      { initiativeId: input.initiativeId, viewerKey: input.viewerKey },
+      {
+        $setOnInsert: {
+          initiativeId: input.initiativeId,
+          viewerKey: input.viewerKey,
+          viewedAt: new Date().toISOString(),
+        },
+      },
+      { upsert: true },
+    );
+  } catch (error) {
+    if (!isInitiativeViewUniqueIndexConflict(error)) {
+      throw error;
+    }
+
+    // Two concurrent upserts for the exact same (initiativeId, viewerKey)
+    // can still both attempt the insert half of the upsert; MongoDB
+    // guarantees exactly one wins and the loser surfaces E11000 rather than
+    // silently retrying. That row is this caller's view, already durably
+    // recorded by the winner — treat the loss as idempotent success.
   }
 
   return collection.countDocuments({ initiativeId: input.initiativeId });

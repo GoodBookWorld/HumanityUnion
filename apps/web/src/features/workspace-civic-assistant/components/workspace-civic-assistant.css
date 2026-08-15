@@ -33,10 +33,17 @@
   margin-bottom: var(--hu-space-4);
 }
 
+.workspace-civic-assistant__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hu-space-2);
+}
+
 .workspace-civic-assistant__title {
   font-size: var(--hu-font-size-lg);
   font-weight: 700;
-  margin-bottom: var(--hu-space-1);
+  margin: 0 0 var(--hu-space-1);
 }
 
 .workspace-civic-assistant__section-label {
@@ -44,29 +51,76 @@
   font-size: var(--hu-font-size-sm);
 }
 
+.workspace-civic-assistant__quick-actions {
+  display: flex;
+  gap: var(--hu-space-2);
+  flex-shrink: 0;
+}
+
+.workspace-civic-assistant__quick-action {
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-pill);
+  background: var(--hu-color-surface);
+  color: var(--hu-workspace-action, var(--hu-color-text-muted));
+  padding: var(--hu-space-1) var(--hu-space-3);
+  cursor: pointer;
+}
+
+.workspace-civic-assistant__quick-action:hover,
+.workspace-civic-assistant__quick-action:focus-visible {
+  border-color: var(--hu-workspace-action, var(--hu-color-secondary-slate));
+}
+
+/* Compact, scannable status strip — easier to read at a glance than a
+   two-column definition list (Recovery Task 33, Part 10). */
 .workspace-civic-assistant__meta {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--hu-space-2);
   margin: 0 0 var(--hu-space-4);
+  padding: 0;
+  list-style: none;
 }
 
-.workspace-civic-assistant__meta div {
-  display: grid;
-  gap: var(--hu-space-1);
+.workspace-civic-assistant__meta li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border-radius: var(--hu-radius-sm);
+  background: var(--hu-color-bg-muted);
+  min-width: 0;
 }
 
-.workspace-civic-assistant__meta dt {
-  font-size: var(--hu-font-size-sm);
+.workspace-civic-assistant__meta-label {
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: #819cbe;
+  color: var(--hu-workspace-secondary, #819cbe);
 }
 
-.workspace-civic-assistant__meta dd {
-  margin: 0;
+.workspace-civic-assistant__meta-value {
   font-size: var(--hu-font-size-sm);
   color: var(--hu-color-text);
+}
+
+.workspace-civic-assistant__future-capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+}
+
+.workspace-civic-assistant__future-chip {
+  font-size: 0.75rem;
+  border: 1px dashed var(--hu-color-border);
+  border-radius: var(--hu-radius-pill);
+  background: transparent;
+  color: var(--hu-workspace-muted, var(--hu-color-text-muted));
+  padding: var(--hu-space-1) var(--hu-space-3);
+  cursor: not-allowed;
 }
 
 .workspace-civic-assistant__summary {

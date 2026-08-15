@@ -2,9 +2,11 @@ import type { InitiativeImplementationTrackingPersistenceAdapter } from "./initi
 import { createFileInitiativeImplementationTrackingPersistenceAdapter } from "./initiative-implementation-tracking-file.persistence.js";
 import { createMemoryInitiativeImplementationTrackingPersistenceAdapter } from "./initiative-implementation-tracking-memory.persistence.js";
 import { createMongoInitiativeImplementationTrackingPersistenceAdapter } from "./initiative-implementation-tracking-mongo.persistence.js";
+import { resolvePersistenceMode } from "../../../config/production-persistence-contract.js";
+
 
 export function resolveInitiativeImplementationTrackingPersistenceAdapter(): InitiativeImplementationTrackingPersistenceAdapter {
-  const mode = process.env.INITIATIVE_IMPLEMENTATION_TRACKING_PERSISTENCE ?? "file";
+  const mode = resolvePersistenceMode("INITIATIVE_IMPLEMENTATION_TRACKING_PERSISTENCE", "file");
 
   switch (mode) {
     case "memory":

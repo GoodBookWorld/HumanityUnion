@@ -46,9 +46,18 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-function assertThrows(fn: () => unknown, message: string): void {
+// Recovery Task 09: createInitiativeCollectiveDecisionDraft is now async,
+// and it is wrapped by this helper below. Awaiting fn()'s return value
+// preserves identical throw-detection semantics for synchronous throwers
+// (await resolves a non-Promise value immediately) and asynchronous ones
+// (await unwraps a rejected Promise into the catch block), so no existing
+// synchronous-throw caller changes behavior. This also corrects a
+// pre-existing latent defect where an async fn (e.g. the
+// closeInitiativeCollectiveDecision wrapper below) would previously report
+// a false "Expected failure" because its rejection was never awaited.
+async function assertThrows(fn: () => unknown, message: string): Promise<void> {
   try {
-    fn();
+    await fn();
     throw new Error(`Expected failure: ${message}`);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("Expected failure:")) {
@@ -102,7 +111,7 @@ async function buildEligibleCollectiveDecisionContext(): Promise<EligibleCollect
   const projected = publishInitiative(participantA, draft.initiativeId);
   assert(projected.lifecyclePhase === "projected", "Initiative should be projected");
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(participantB, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(participantB, {
     initiativeId: projected.initiativeId,
     title: "E2E Collective Decision Analysis",
     summary: "Analysis supporting collective decision eligibility.",
@@ -112,12 +121,12 @@ async function buildEligibleCollectiveDecisionContext(): Promise<EligibleCollect
     references: "Participation records.",
   });
 
-  const publishedAnalysis = publishInitiativeCollaborativeAnalysis(
+  const publishedAnalysis = await publishInitiativeCollaborativeAnalysis(
     participantB,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(participantB, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(participantB, {
     analysisId: publishedAnalysis.analysisId,
     targetSection: "Description",
     currentIssue: "Decision scope unclear.",
@@ -152,7 +161,7 @@ async function buildEligibleCollectiveDecisionContext(): Promise<EligibleCollect
 
   publishInitiativeRevision(participantA, projected.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(participantA, {
+  const sessionDraft = await createDecisionSessionDraft(participantA, {
     initiativeId: projected.initiativeId,
     title: "E2E Decision Session for Collective Decision",
     purpose: "Prepare society for the collective decision.",
@@ -236,7 +245,7 @@ async function runMainVerification(): Promise<void> {
 
   const eligible = await buildEligibleCollectiveDecisionContext();
 
-  const openSession = createDecisionSessionDraft(participantA, {
+  const openSession = await createDecisionSessionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     title: "Open Session",
     purpose: "Still open.",
@@ -256,7 +265,7 @@ async function runMainVerification(): Promise<void> {
     "Open session should require closed status",
   );
 
-  assertThrows(
+  await assertThrows(
     () =>
       createInitiativeCollectiveDecisionDraft(participantA, {
         initiativeId: eligible.initiativeId,
@@ -275,7 +284,7 @@ async function runMainVerification(): Promise<void> {
   );
   assert(eligibility.eligible, "Closed decision session should be eligible");
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(participantA, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     decisionSessionId: eligible.decisionSessionId,
     participationScope: "community",
@@ -297,18 +306,18 @@ async function runMainVerification(): Promise<void> {
   assert(closed.status === "closed", "Closed decision status");
   assert(closed.closedAt !== undefined, "Closed decision should have closedAt");
 
-  assertThrows(
+  await assertThrows(
     () => openInitiativeCollectiveDecision(participantA, decisionDraft.decisionId),
     "Closed decision cannot reopen",
   );
-  assertThrows(
+  await assertThrows(
     () => cancelInitiativeCollectiveDecision(participantA, decisionDraft.decisionId),
     "Closed decision cannot cancel",
   );
 
   console.log("5. Lifecycle — draft → cancelled");
 
-  const cancelSession = createDecisionSessionDraft(participantA, {
+  const cancelSession = await createDecisionSessionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     title: "Cancel Draft Session",
     purpose: "Session for draft cancel path.",
@@ -319,7 +328,7 @@ async function runMainVerification(): Promise<void> {
   publishDecisionSession(participantA, cancelSession.sessionId);
   closeDecisionSession(participantA, cancelSession.sessionId);
 
-  const cancelDraft = createInitiativeCollectiveDecisionDraft(participantA, {
+  const cancelDraft = await createInitiativeCollectiveDecisionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     decisionSessionId: cancelSession.sessionId,
     participationScope: "world",
@@ -338,7 +347,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("6. Lifecycle — opened → cancelled");
 
-  const reopenSession = createDecisionSessionDraft(participantA, {
+  const reopenSession = await createDecisionSessionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     title: "Cancel Path Session",
     purpose: "Session for open cancel path.",
@@ -349,7 +358,7 @@ async function runMainVerification(): Promise<void> {
   publishDecisionSession(participantA, reopenSession.sessionId);
   closeDecisionSession(participantA, reopenSession.sessionId);
 
-  const openCancelDraft = createInitiativeCollectiveDecisionDraft(participantA, {
+  const openCancelDraft = await createInitiativeCollectiveDecisionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     decisionSessionId: reopenSession.sessionId,
     participationScope: "region",
@@ -365,7 +374,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("7. Identity — only steward may open, close, cancel");
 
-  const ownershipSession = createDecisionSessionDraft(participantA, {
+  const ownershipSession = await createDecisionSessionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     title: "Ownership Session",
     purpose: "Ownership verification.",
@@ -376,23 +385,23 @@ async function runMainVerification(): Promise<void> {
   publishDecisionSession(participantA, ownershipSession.sessionId);
   closeDecisionSession(participantA, ownershipSession.sessionId);
 
-  const ownedDraft = createInitiativeCollectiveDecisionDraft(participantA, {
+  const ownedDraft = await createInitiativeCollectiveDecisionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     decisionSessionId: ownershipSession.sessionId,
     participationScope: "country",
     closesAt: futureIsoDate(35),
   });
 
-  assertThrows(
+  await assertThrows(
     () => openInitiativeCollectiveDecision(participantB, ownedDraft.decisionId),
     "Non-steward cannot open",
   );
   openInitiativeCollectiveDecision(participantA, ownedDraft.decisionId);
-  assertThrows(
+  await assertThrows(
     async () => await closeInitiativeCollectiveDecision(participantB, ownedDraft.decisionId),
     "Non-steward cannot close",
   );
-  assertThrows(
+  await assertThrows(
     () => cancelInitiativeCollectiveDecision(participantB, ownedDraft.decisionId),
     "Non-steward cannot cancel",
   );
@@ -432,7 +441,7 @@ async function runMainVerification(): Promise<void> {
   assert(publicClosed.outcome !== null, "Closed decision should expose outcome structure");
   assert(publicClosed.outcome?.outcome === "inconclusive", "Empty outcome remains inconclusive");
 
-  const publicList = listPublicInitiativeCollectiveDecisionsForInitiative(eligible.initiativeId);
+  const publicList = await listPublicInitiativeCollectiveDecisionsForInitiative(eligible.initiativeId);
   assert(publicList.length >= 3, "Public list should include opened/closed/cancelled decisions");
   assertNoPrivateFields(publicList, "Public collective decision list");
 
@@ -486,7 +495,7 @@ async function runPersistenceVerification(): Promise<void> {
 
   const eligible = await buildEligibleCollectiveDecisionContext();
 
-  const draft = createInitiativeCollectiveDecisionDraft(participantA, {
+  const draft = await createInitiativeCollectiveDecisionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     decisionSessionId: eligible.decisionSessionId,
     participationScope: "community",
@@ -517,7 +526,7 @@ async function runPersistenceVerification(): Promise<void> {
   assertDecisionReloadsFromFile(draft.decisionId, "closed", persistencePath);
 
   const cancelSession = await buildEligibleCollectiveDecisionContext();
-  const cancelDraft = createInitiativeCollectiveDecisionDraft(participantA, {
+  const cancelDraft = await createInitiativeCollectiveDecisionDraft(participantA, {
     initiativeId: cancelSession.initiativeId,
     decisionSessionId: cancelSession.decisionSessionId,
     participationScope: "world",

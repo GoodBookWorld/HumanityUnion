@@ -7,7 +7,8 @@ import type { CivicArchiveLifecycleRecord } from "@hu/types";
 
 import { resolveMediaUrl } from "../../media-upload/media-url";
 
-export const PUBLIC_ARCHIVE_INITIATIVE_MINI_CARD_FALLBACK_IMAGE = "/initiative.webp";
+export const PUBLIC_ARCHIVE_INITIATIVE_MINI_CARD_FALLBACK_IMAGE =
+  "/images/initiatives/initiative-default.webp";
 
 function formatDate(value: string | undefined): string {
   if (!value) {

@@ -1,4 +1,8 @@
 import type { InitiativeCollectiveDecisionId } from "./initiative-collective-decision.js";
+import type {
+  ImplementationCommitmentTraceability,
+  InitiativeImplementationCommitmentProposalStatus,
+} from "./initiative-implementation-commitment-lifecycle.js";
 import type { InitiativeId } from "./initiative.js";
 import type { MemberId } from "./member.js";
 
@@ -48,6 +52,26 @@ export interface InitiativeImplementationCommitment {
   publishedAt?: string;
   withdrawnAt?: string;
   completedAt?: string;
+  /**
+   * Initiative Lifecycle — Part I. Package grouping Action-linked Commitments
+   * published together from the Author Workspace.
+   */
+  packageId?: string | null;
+  /** Exact Approved Action text from the Published Collective Decision. */
+  approvedAction?: string | null;
+  actionIndex?: number | null;
+  /** Voluntary proposal lifecycle (Part I §6). Absent on legacy records. */
+  proposalStatus?: InitiativeImplementationCommitmentProposalStatus | null;
+  suggestedResponsibleRole?: string | null;
+  priority?: string | null;
+  requiredResources?: string[] | null;
+  relatedRisks?: string[] | null;
+  references?: string[] | null;
+  proposedByParticipantId?: MemberId | null;
+  acceptedAt?: string | null;
+  declinedAt?: string | null;
+  /** Permanent provenance for "which Collective Decision Action created this?". */
+  traceability?: ImplementationCommitmentTraceability | null;
   createdAt: string;
   updatedAt: string;
 }

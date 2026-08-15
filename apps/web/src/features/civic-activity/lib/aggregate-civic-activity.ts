@@ -133,12 +133,34 @@ function buildDecisionParticipationGroup(
   };
 }
 
+/**
+ * Initiative Lifecycle — Part I, Section 6/10: a `published` Commitment
+ * whose voluntary proposal is still `"unassigned"` or `"proposed"` is not
+ * yet a real accepted responsibility for the participant it happens to be
+ * keyed by (a steward placeholder, or an invitation awaiting response) —
+ * only `"accepted"` (or a legacy record predating Part I, which carries no
+ * `proposalStatus` at all) counts toward "My Implementation Commitments".
+ * A `"proposed"` invitation is still surfaced, but only via its own
+ * `proposed` metric, so it never inflates the accepted-commitment counts.
+ */
+function isCountedCommitment(commitment: InitiativeImplementationCommitment): boolean {
+  if (commitment.status !== "published") {
+    return true;
+  }
+
+  return commitment.proposalStatus === undefined || commitment.proposalStatus === null
+    ? true
+    : commitment.proposalStatus === "accepted";
+}
+
 function buildCommitmentsGroup(
   commitments: InitiativeImplementationCommitment[],
 ): ActiveActivityGroup {
-  const draft = commitments.filter((commitment) => commitment.status === "draft").length;
-  const published = commitments.filter((commitment) => commitment.status === "published").length;
-  const completed = commitments.filter((commitment) =>
+  const counted = commitments.filter((commitment) => isCountedCommitment(commitment));
+  const proposed = commitments.filter((commitment) => commitment.proposalStatus === "proposed").length;
+  const draft = counted.filter((commitment) => commitment.status === "draft").length;
+  const published = counted.filter((commitment) => commitment.status === "published").length;
+  const completed = counted.filter((commitment) =>
     ["completed", "withdrawn"].includes(commitment.status),
   ).length;
 
@@ -147,10 +169,11 @@ function buildCommitmentsGroup(
     id: "implementation-commitments",
     title: "My Implementation Commitments",
     metrics: {
-      total: commitments.length,
+      total: counted.length,
       draft,
       published,
       completed,
+      proposed,
       latestActivityDate: latestDate(
         commitments.flatMap((commitment) => [
           commitment.updatedAt,
@@ -344,7 +367,10 @@ function buildCommitmentTimelineEntries(
   commitments: InitiativeImplementationCommitment[],
 ): CivicTimelineEntry[] {
   return commitments
-    .filter((commitment) => commitment.status === "published" && commitment.publishedAt)
+    .filter(
+      (commitment) =>
+        commitment.status === "published" && commitment.publishedAt && isCountedCommitment(commitment),
+    )
     .map((commitment) => ({
       id: `commitment-published-${commitment.commitmentId}`,
       type: "commitment_published" as const,

@@ -42,7 +42,7 @@ export function TrustedMediaRailCard({
           logoLabel={resource.logoLabel}
           className="civic-media-center__logo"
           imageClassName="civic-media-center__logo-image"
-          width={48}
+          width={90}
           height={48}
         />
         <div>

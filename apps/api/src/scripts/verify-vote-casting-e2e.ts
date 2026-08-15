@@ -1,17 +1,24 @@
 /**
  * TASK-028 — Vote casting foundation verification.
  * Run: npm run verify:vote-casting
+ *
+ * Recovery Task 31: this script no longer spawns a subprocess to exercise a
+ * file-mode persistence round-trip — `InitiativeDecisionVote` persistence is
+ * now unconditionally MongoDB-backed (see `initiative-decision-vote.store.ts`),
+ * so there is no persistence "mode" left to switch. `runVerificationScript`
+ * already closes the Mongo connection deterministically on exit (see
+ * `verification-script-lifecycle.ts`), which was the other reason the
+ * subprocess split previously existed.
  */
 
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { Member } from "@hu/types";
 
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
+import { runVerificationScript } from "./verification-script-lifecycle.js";
 
 const steward: RequestIdentity = {
   participantId: "member-bootstrap-001",
@@ -53,9 +60,21 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-function assertThrows(fn: () => unknown, message: string): void {
+// Recovery Task 14: every call site below passes an async arrow function
+// (e.g. `async () => await castOrUpdateInitiativeDecisionVote(...)`). A
+// synchronous `assertThrows` invokes `fn()` without awaiting it, so it only
+// ever observes whether *calling* the async function threw synchronously —
+// never whether the returned Promise actually rejects. Since
+// `castOrUpdateInitiativeDecisionVote` always returns a Promise (it never
+// throws synchronously), the old implementation fell through to
+// `throw new Error("Expected failure: ...")` on every call, even though the
+// underlying service call rejected exactly as intended. Awaiting `fn()`
+// correctly unwraps rejected Promises for async callers while remaining a
+// no-op for genuinely synchronous throwers (Promise.resolve/await on a
+// non-Promise value is a pass-through), so this fix is safe for both.
+async function assertThrows(fn: () => unknown, message: string): Promise<void> {
   try {
-    fn();
+    await fn();
     throw new Error(`Expected failure: ${message}`);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("Expected failure:")) {
@@ -113,7 +132,7 @@ async function buildOpenedCollectiveDecision(): Promise<string> {
   });
   const projected = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(
     {
       participantId: "member-participant-b-001",
       displayName: "Analyst B",
@@ -128,12 +147,12 @@ async function buildOpenedCollectiveDecision(): Promise<string> {
       references: "Ref.",
     },
   );
-  const publishedAnalysis = publishInitiativeCollaborativeAnalysis(
+  const publishedAnalysis = await publishInitiativeCollaborativeAnalysis(
     { participantId: "member-participant-b-001", displayName: "Analyst B" },
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(
+  const proposalDraft = await createInitiativeImprovementProposalDraft(
     { participantId: "member-participant-b-001", displayName: "Analyst B" },
     {
       analysisId: publishedAnalysis.analysisId,
@@ -167,7 +186,7 @@ async function buildOpenedCollectiveDecision(): Promise<string> {
   });
   publishInitiativeRevision(steward, projected.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: projected.initiativeId,
     title: "Vote Casting Session",
     purpose: "Prepare for vote casting.",
@@ -178,7 +197,7 @@ async function buildOpenedCollectiveDecision(): Promise<string> {
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: projected.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -191,10 +210,37 @@ async function buildOpenedCollectiveDecision(): Promise<string> {
   return opened.decisionId;
 }
 
+/**
+ * Recovery Task 13: this script's fixture participants
+ * (`member-voter-verified-001`, `member-voter-unverified-001`,
+ * `member-voter-ineligible-001`) are fixed IDs re-seeded on every run
+ * against the real, file-backed Participation Area store (the default
+ * `PARTICIPATION_AREA_PERSISTENCE` mode). Without this cleanup, a second
+ * run of this script would find each fixture participant already has an
+ * active Participation Area from the previous run and fail at
+ * `createParticipationArea` before ever reaching Vote casting or the
+ * transitive ancestry path introduced in Recovery Task 12. Cleanup runs
+ * before creation and targets only these three explicit participant IDs.
+ */
+async function cleanupStaleParticipationAreaFixtures(): Promise<void> {
+  const { deleteParticipationAreasByParticipantIdForTests } =
+    await import("../modules/participation-area/participation-area.store.js");
+
+  for (const participantId of [
+    verifiedVoter.participantId,
+    unverifiedVoter.participantId,
+    ineligibleVoter.participantId,
+  ]) {
+    deleteParticipationAreasByParticipantIdForTests(participantId);
+  }
+}
+
 async function seedVoterParticipationAreas(): Promise<void> {
   const { seedMember } = await import("../modules/member/member.store.js");
   const { createParticipationArea } =
     await import("../modules/participation-area/participation-area.store.js");
+
+  await cleanupStaleParticipationAreaFixtures();
 
   seedMember(
     createTestMember(verifiedVoter.participantId, verifiedVoter.displayName ?? "Verified"),
@@ -231,7 +277,7 @@ async function seedVoterParticipationAreas(): Promise<void> {
   });
 }
 
-async function runMainVerification(): Promise<void> {
+async function main(): Promise<void> {
   const { castOrUpdateInitiativeDecisionVote, getMyInitiativeDecisionVote } =
     await import("../modules/initiative-decision-vote/initiative-decision-vote.service.js");
   const { closeInitiativeCollectiveDecision, cancelInitiativeCollectiveDecision } =
@@ -294,17 +340,17 @@ async function runMainVerification(): Promise<void> {
   console.log("4. Only one active vote exists");
 
   assert(
-    countActiveVotesForDecision(decisionId) === 1,
+    (await countActiveVotesForDecision(decisionId)) === 1,
     "Only one active vote should exist for participant",
   );
   assert(
-    listVotesForDecision(decisionId).length === 1,
+    (await listVotesForDecision(decisionId)).length === 1,
     "Decision should contain exactly one vote record",
   );
 
   console.log("5. Vote history records all changes");
 
-  const history = listVoteHistoryForParticipant(decisionId, verifiedVoter.participantId);
+  const history = await listVoteHistoryForParticipant(decisionId, verifiedVoter.participantId);
   assert(history.length === 3, "Vote history should contain three entries");
   assert(
     history[0]?.newChoice === "support" && history[0]?.previousChoice === undefined,
@@ -329,7 +375,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("7. Ineligible participant rejected");
 
-  assertThrows(
+  await assertThrows(
     async () => await castOrUpdateInitiativeDecisionVote(ineligibleVoter, decisionId, {
         choice: "support",
       }),
@@ -339,27 +385,27 @@ async function runMainVerification(): Promise<void> {
   console.log("8. Duplicate active vote not created");
 
   assert(
-    listVotesForDecision(decisionId).length === 2,
+    (await listVotesForDecision(decisionId)).length === 2,
     "Decision should contain two distinct participant votes only",
   );
 
   console.log("9. Aggregate helper returns correct unweighted counts");
 
-  const aggregates = computeInitiativeDecisionVoteAggregates(decisionId);
+  const aggregates = await computeInitiativeDecisionVoteAggregates(decisionId);
   assert(aggregates.total.totalVotes === 2, "Total vote count should be 2");
   assert(aggregates.total.support === 1, "One support vote counted");
   assert(aggregates.total.abstain === 1, "One abstain vote counted");
   assert(aggregates.verified.abstain === 1, "Verified abstain counted separately");
   assert(aggregates.unverified.support === 1, "Unverified support counted separately");
   assert(
-    assertUnweightedVoteCounts(listVotesForDecision(decisionId), aggregates),
+    assertUnweightedVoteCounts(await listVotesForDecision(decisionId), aggregates),
     "Aggregates must match unweighted vote records",
   );
 
   console.log("10. Closed decision rejects vote changes");
 
   await closeInitiativeCollectiveDecision(steward, decisionId);
-  assertThrows(
+  await assertThrows(
     async () => await castOrUpdateInitiativeDecisionVote(unverifiedVoter, decisionId, {
         choice: "do_not_support",
       }),
@@ -370,7 +416,7 @@ async function runMainVerification(): Promise<void> {
 
   const cancelledDecisionId = await buildOpenedCollectiveDecision();
   cancelInitiativeCollectiveDecision(steward, cancelledDecisionId);
-  assertThrows(
+  await assertThrows(
     async () => await castOrUpdateInitiativeDecisionVote(verifiedVoter, cancelledDecisionId, {
         choice: "support",
       }),
@@ -381,7 +427,7 @@ async function runMainVerification(): Promise<void> {
 
   const reopenedDecisionId = await buildOpenedCollectiveDecision();
   await castOrUpdateInitiativeDecisionVote(verifiedVoter, reopenedDecisionId, { choice: "support" });
-  const myVote = getMyInitiativeDecisionVote(verifiedVoter, reopenedDecisionId);
+  const myVote = await getMyInitiativeDecisionVote(verifiedVoter, reopenedDecisionId);
   assert(myVote?.choice === "support", "My vote endpoint data should match active vote");
 
   console.log("13. IP/VPN/geolocation absent from vote model");
@@ -396,106 +442,16 @@ async function runMainVerification(): Promise<void> {
   for (const term of FORBIDDEN_VOTE_TERMS) {
     assert(!serializedVote.includes(term), `Stored vote must not include ${term}`);
   }
-}
 
-function assertVoteReloadsFromFile(
-  decisionId: string,
-  participantId: string,
-  expectedChoice: "support" | "do_not_support" | "abstain",
-  expectedVersion: number,
-  filePath: string,
-): void {
-  const reloadScriptPath = path.resolve(
-    path.dirname(SCRIPT_PATH),
-    "verify-initiative-decision-vote-store-reload.ts",
-  );
-  const result = spawnSync(
-    "npx",
-    ["tsx", reloadScriptPath, decisionId, participantId, expectedChoice, String(expectedVersion)],
-    {
-      cwd: path.resolve(path.dirname(SCRIPT_PATH), "../.."),
-      env: {
-        ...process.env,
-        INITIATIVE_DECISION_VOTE_PERSISTENCE: "file",
-        INITIATIVE_DECISION_VOTE_PERSISTENCE_PATH: filePath,
-      },
-      stdio: "pipe",
-      encoding: "utf-8",
-    },
-  );
+  console.log("14. Vote is independently addressable and durable in Mongo");
 
-  assert(result.status === 0, "Vote should reload from file after API restart");
-}
-
-async function runPersistenceVerification(): Promise<void> {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hu-vote-casting-e2e-"));
-  const persistencePath = path.join(tempDir, "initiative-decision-votes.json");
-
-  process.env.INITIATIVE_DECISION_VOTE_PERSISTENCE = "file";
-  process.env.INITIATIVE_DECISION_VOTE_PERSISTENCE_PATH = persistencePath;
-  process.env.INITIATIVE_COLLECTIVE_DECISION_PERSISTENCE = "memory";
-  process.env.PARTICIPATION_AREA_PERSISTENCE = "memory";
-  process.env.DECISION_SESSION_PERSISTENCE = "memory";
-  process.env.INITIATIVE_PERSISTENCE = "memory";
-  process.env.INITIATIVE_ANALYSIS_PERSISTENCE = "memory";
-  process.env.INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE = "memory";
-  process.env.INITIATIVE_VERSION_REVISION_PERSISTENCE = "memory";
-
-  const { createFileInitiativeDecisionVotePersistenceAdapter } =
-    await import("../modules/initiative-decision-vote/persistence/initiative-decision-vote-file.persistence.js");
-  const { castOrUpdateInitiativeDecisionVote } =
-    await import("../modules/initiative-decision-vote/initiative-decision-vote.service.js");
-
-  await seedVoterParticipationAreas();
-  const decisionId = await buildOpenedCollectiveDecision();
-  await castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, { choice: "support" });
-
-  assert(
-    Object.values(createFileInitiativeDecisionVotePersistenceAdapter().load().votes).some(
-      (vote) => vote.decisionId === decisionId,
-    ),
-    "Vote should persist to file",
-  );
-
-  assertVoteReloadsFromFile(decisionId, verifiedVoter.participantId, "support", 1, persistencePath);
-
-  fs.rmSync(tempDir, { recursive: true, force: true });
-
-  console.log("14. Persistence — vote survives API restart");
-}
-
-async function main(): Promise<void> {
-  if (process.env.VERIFY_VOTE_CASTING_PERSISTENCE === "1") {
-    await runPersistenceVerification();
-    console.log("Vote casting persistence checks passed.");
-    return;
-  }
-
-  await runMainVerification();
-
-  const persistenceResult = spawnSync("npx", ["tsx", SCRIPT_PATH], {
-    env: {
-      ...process.env,
-      VERIFY_VOTE_CASTING_PERSISTENCE: "1",
-      INITIATIVE_DECISION_VOTE_PERSISTENCE: "memory",
-      INITIATIVE_COLLECTIVE_DECISION_PERSISTENCE: "memory",
-      PARTICIPATION_AREA_PERSISTENCE: "memory",
-      DECISION_SESSION_PERSISTENCE: "memory",
-      INITIATIVE_PERSISTENCE: "memory",
-      INITIATIVE_ANALYSIS_PERSISTENCE: "memory",
-      INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE: "memory",
-      INITIATIVE_VERSION_REVISION_PERSISTENCE: "memory",
-    },
-    stdio: "inherit",
-  });
-
-  assert(persistenceResult.status === 0, "Persistence verification subprocess failed");
+  const { getVoteById } = await import("../modules/initiative-decision-vote/initiative-decision-vote.store.js");
+  const reloadedVote = await getVoteById(abstainVote.voteId);
+  assert(reloadedVote !== null, "Vote must be independently readable by voteId from Mongo");
+  assert(reloadedVote?.choice === "abstain", "Reloaded vote must reflect the last committed choice");
+  assert(reloadedVote?.version === abstainVote.version, "Reloaded vote must reflect the last committed version");
 
   console.log("All vote casting checks passed.");
 }
 
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(`Vote casting verification FAILED: ${message}`);
-  process.exit(1);
-});
+void runVerificationScript(main);

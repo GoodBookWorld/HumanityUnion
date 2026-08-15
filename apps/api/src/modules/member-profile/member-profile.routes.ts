@@ -13,6 +13,8 @@ import {
 } from "./member-profile.errors.js";
 import {
   getMemberProfilePrivacyForUser,
+  getMemberProfileStatisticsForUser,
+  getMyPublicMemberProfilePreview,
   getOrCreateMemberProfileForUser,
   getWorkspaceMemberIdentityForUser,
   updateMemberProfileForUser,
@@ -154,6 +156,68 @@ memberProfileRouter.patch(
 
       const privacy = await updateMemberProfilePrivacyForUser(userId, req.body);
       res.json(createSuccessResponse(privacy, "Member profile privacy updated."));
+    } catch (error) {
+      handleMemberProfileError(res, error);
+    }
+  },
+);
+
+/**
+ * Profile UX Pack 02 Part 4/11 — dedicated, lightweight endpoint for the
+ * three "Personal Statistics" cards on the Member Profile page, reusing
+ * the exact same aggregation the Workspace Home statistics widget uses
+ * (`participant-statistics.service.ts`). Deliberately its own endpoint
+ * rather than piggy-backing on `/api/v1/workspace/home` so this page does
+ * not have to load that heavier payload just for three numbers.
+ */
+memberProfileRouter.get(
+  "/me/statistics",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    const userId = resolveAuthUserId(req);
+
+    if (!userId) {
+      res.status(401).json(createFailureResponse("Authentication required."));
+      return;
+    }
+
+    try {
+      const statistics = await getMemberProfileStatisticsForUser(userId);
+      res.json(createSuccessResponse(statistics, "Member profile statistics loaded."));
+    } catch (error) {
+      handleMemberProfileError(res, error);
+    }
+  },
+);
+
+/**
+ * Profile UX Pack 03.3 — powers the `/profile` "Public Profile Preview".
+ * Additive, read-only endpoint: it returns the exact same
+ * `PublicMemberProfile` shape the public `/member/{publicName}` route
+ * returns for an authenticated non-owner viewer, plus `hiddenSections` so
+ * the preview can explain a Privacy-hidden section without ever showing
+ * public visitors that explanation. See `getMyPublicMemberProfilePreview`
+ * for why no Privacy logic is duplicated here.
+ */
+memberProfileRouter.get(
+  "/me/public-preview",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    const userId = resolveAuthUserId(req);
+
+    if (!userId) {
+      res.status(401).json(createFailureResponse("Authentication required."));
+      return;
+    }
+
+    try {
+      await getOrCreateMemberProfileForUser({
+        userId,
+        displayName: await resolveDisplayName(req),
+      });
+
+      const preview = await getMyPublicMemberProfilePreview(userId);
+      res.json(createSuccessResponse(preview, "Public profile preview loaded."));
     } catch (error) {
       handleMemberProfileError(res, error);
     }

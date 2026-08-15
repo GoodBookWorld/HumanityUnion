@@ -1,0 +1,147 @@
+.ica-source-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.ica-source-panel__empty {
+  color: var(--hu-muted, #5c6570);
+  font-size: 0.95rem;
+}
+
+.ica-source-panel__list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ica-source-panel__item {
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  padding-top: 0.55rem;
+}
+
+.ica-source-panel__label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.ica-source-panel__summary {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+}
+
+.ica-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.ica-editor__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.ica-editor__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ica-editor__field input,
+.ica-editor__field textarea {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.35rem;
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.ica-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ica-section {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+}
+
+.ica-section__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.ica-section__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ica-section__status {
+  font-size: 0.75rem;
+  opacity: 0.65;
+}
+
+.ica-section__body {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+}
+
+.ica-public {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.ica-public__meta {
+  margin: 0;
+  color: var(--hu-muted, #5c6570);
+  font-size: 0.9rem;
+}
+
+.ica-public__section {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.ica-public__section h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.ica-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+}
+
+.ica-assistant-block {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.ica-assistant-block h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+}
+
+.ica-assistant-block ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.ica-assistant-block p {
+  margin: 0;
+  font-size: 0.9rem;
+}

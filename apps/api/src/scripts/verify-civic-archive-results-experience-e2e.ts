@@ -183,7 +183,7 @@ async function verifyArchiveSearchFlow(): Promise<void> {
     const { listCivicArchiveLifecycleRecords } =
       await import("../modules/public-civic-archive/public-civic-archive-lifecycle.projection.js");
 
-    const publicBefore = listCivicArchiveLifecycleRecords();
+    const publicBefore = await listCivicArchiveLifecycleRecords();
     assert(
       !publicBefore.some((record) => record.title.includes("TASK-107")),
       "Public archive index must exclude verification fixtures.",
@@ -196,7 +196,7 @@ async function verifyArchiveSearchFlow(): Promise<void> {
       verificationTask: "TASK-107B",
     });
 
-    const publicAfterSeed = listCivicArchiveLifecycleRecords();
+    const publicAfterSeed = await listCivicArchiveLifecycleRecords();
     assert(
       !publicAfterSeed.some((record) => record.initiativeId === fixture.initiativeId),
       "Public archive index must exclude seeded verification fixtures.",
@@ -207,13 +207,13 @@ async function verifyArchiveSearchFlow(): Promise<void> {
       verificationRunId: isolation.runId,
     } as const;
 
-    const unfiltered = listCivicArchiveLifecycleRecords(query);
+    const unfiltered = await listCivicArchiveLifecycleRecords(query);
     assert(
       unfiltered.some((record) => record.initiativeId === fixture.initiativeId),
       "Isolated archive index must return fixture record.",
     );
 
-    const titleSearch = listCivicArchiveLifecycleRecords({
+    const titleSearch = await listCivicArchiveLifecycleRecords({
       ...query,
       search: fixture.title,
     });
@@ -222,7 +222,7 @@ async function verifyArchiveSearchFlow(): Promise<void> {
       "Title search must return fixture record.",
     );
 
-    const countryFilter = listCivicArchiveLifecycleRecords({
+    const countryFilter = await listCivicArchiveLifecycleRecords({
       ...query,
       country: "CA",
     });
@@ -231,7 +231,7 @@ async function verifyArchiveSearchFlow(): Promise<void> {
       "Country filter must return fixture record.",
     );
 
-    const regionFilter = listCivicArchiveLifecycleRecords({
+    const regionFilter = await listCivicArchiveLifecycleRecords({
       ...query,
       country: "CA",
       region: "CA-BC",
@@ -241,7 +241,7 @@ async function verifyArchiveSearchFlow(): Promise<void> {
       "Region filter must return fixture record.",
     );
 
-    const communityFilter = listCivicArchiveLifecycleRecords({
+    const communityFilter = await listCivicArchiveLifecycleRecords({
       ...query,
       country: "CA",
       region: "CA-BC",
@@ -252,7 +252,7 @@ async function verifyArchiveSearchFlow(): Promise<void> {
       "Community code filter must resolve to archive community label.",
     );
 
-    const wrongCountry = listCivicArchiveLifecycleRecords({
+    const wrongCountry = await listCivicArchiveLifecycleRecords({
       ...query,
       country: "US",
     });
@@ -261,10 +261,12 @@ async function verifyArchiveSearchFlow(): Promise<void> {
       "Incorrect country filter must exclude fixture record.",
     );
 
-    const perInitiative = listCivicArchiveLifecycleRecords({
-      ...query,
-      search: fixture.title,
-    }).filter((record) => record.initiativeId === fixture.initiativeId);
+    const perInitiative = (
+      await listCivicArchiveLifecycleRecords({
+        ...query,
+        search: fixture.title,
+      })
+    ).filter((record) => record.initiativeId === fixture.initiativeId);
     assert(
       perInitiative.length === 1,
       "Archive index must return one card per initiative lifecycle.",

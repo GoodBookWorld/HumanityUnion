@@ -1,0 +1,240 @@
+.ipl-source-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ipl-source-panel__title {
+  margin: 0;
+}
+
+.ipl-source-panel__lede {
+  margin: 0;
+  color: var(--workspace-muted-text, #6b7280);
+}
+
+.ipl-source-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ipl-source-panel__section-title {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.ipl-source-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ipl-source-panel__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--workspace-border, #e5e7eb);
+  border-radius: 0.5rem;
+}
+
+.ipl-source-panel__item[data-tone="warning"] {
+  border-color: var(--workspace-warning-border, #f59e0b);
+}
+
+.ipl-source-panel__item-meta {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--workspace-muted-text, #6b7280);
+}
+
+.ipl-source-panel__empty {
+  margin: 0;
+  color: var(--workspace-muted-text, #6b7280);
+  font-style: italic;
+}
+
+.ipl-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ipl-editor__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ipl-editor__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ipl-editor__message {
+  margin: 0;
+}
+
+.ipl-editor__message[data-tone="error"] {
+  color: var(--workspace-error-text, #b91c1c);
+}
+
+.ipl-editor__message[data-tone="success"] {
+  color: var(--workspace-success-text, #15803d);
+}
+
+.ipl-editor__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ipl-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ipl-editor__field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ipl-editor__key-arguments {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ipl-editor__key-argument {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.ipl-editor__key-argument textarea {
+  flex: 1;
+}
+
+.ipl-public-result {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ipl-public-result__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ipl-public-result__field h4 {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.ipl-public-result__field p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.ipl-public-result__empty {
+  color: var(--workspace-muted-text, #6b7280);
+  font-style: italic;
+}
+
+.ipl-public-result__key-arguments {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.ipl-traceability {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--workspace-border, #e5e7eb);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.ipl-support {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--workspace-border, #e5e7eb);
+}
+
+.ipl-support__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.ipl-support__counters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.ipl-support__counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 6rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--workspace-border, #e5e7eb);
+  border-radius: 0.5rem;
+}
+
+.ipl-support__counter-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.ipl-support__counter-label {
+  font-size: 0.75rem;
+  color: var(--workspace-muted-text, #6b7280);
+}
+
+.ipl-support__note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--workspace-muted-text, #6b7280);
+}
+
+.ipl-signature {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ipl-signature__prompt {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--workspace-muted-text, #6b7280);
+}
+
+.ipl-signature__status {
+  margin: 0;
+  font-weight: 600;
+  color: var(--workspace-success-text, #15803d);
+}
+
+.ipl-signature__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ipl-signature__error {
+  margin: 0;
+  color: var(--workspace-error-text, #b91c1c);
+}

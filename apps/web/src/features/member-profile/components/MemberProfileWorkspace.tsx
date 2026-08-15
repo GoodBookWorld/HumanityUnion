@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import type { MemberProfile, MemberProfilePrivacySettings } from "@hu/types";
+import type { MemberProfile, MemberProfilePrivacySettings, ParticipantStatistics } from "@hu/types";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 import { ProfileSection } from "../../../components/member/ProfileSection";
@@ -12,14 +12,18 @@ import { isAuthenticationRequiredError, isApiUnavailableError } from "../../../l
 import { AvatarImageUploadField } from "../../media-upload/components/AvatarImageUploadField";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { uploadAvatarImage } from "../../media-upload/media-upload-api";
+import { PersonalStatisticsCards } from "../../personal-statistics/components/PersonalStatisticsCards";
 import {
   getMyMemberProfile,
   getMyMemberProfilePrivacy,
+  getMyMemberProfileStatistics,
   updateMyMemberProfile,
   updateMyMemberProfilePrivacy,
 } from "../member-profile-api";
 import { dispatchMemberProfileUpdated } from "../member-profile-events";
+import { resolveSaveButtonLabel, useSaveButtonPhase } from "../use-save-button-phase";
 import { ParticipationAreaSection } from "../../participation-area/components/ParticipationAreaSection";
+import { ProfileAssistantEntry } from "../../humanity-union-assistant";
 import { MembershipProfileSection } from "../../membership/components/MembershipProfileSection";
 import { MemberSettingsSummaries } from "./MemberSettingsSummaries";
 import { MemberSkillsEditor } from "./MemberSkillsEditor";
@@ -28,6 +32,7 @@ import { MemberProfessionalLinksSection } from "./MemberProfessionalLinksSection
 import "./member-profile-workspace.css";
 
 const SECTIONS = [
+  "Statistics",
   "Profile",
   "Skills",
   "Professional Links",
@@ -44,13 +49,18 @@ function formatLocation(profile: MemberProfile): string {
 export function MemberProfileWorkspace() {
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [privacy, setPrivacy] = useState<MemberProfilePrivacySettings | null>(null);
+  const [statistics, setStatistics] = useState<ParticipantStatistics | null>(null);
+  const [statisticsLoading, setStatisticsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [apiUnavailable, setApiUnavailable] = useState(false);
   const [authRequired, setAuthRequired] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [linksSuccessMessage, setLinksSuccessMessage] = useState<string | null>(null);
+
+  // Profile UX Pack 02 Part 3 — one independent Save-button phase per
+  // section, so saving one section never disables the others.
+  const profilePhase = useSaveButtonPhase();
+  const linksPhase = useSaveButtonPhase();
+  const privacyPhase = useSaveButtonPhase();
 
   useEffect(() => {
     let cancelled = false;
@@ -92,37 +102,60 @@ export function MemberProfileWorkspace() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    // Profile UX Pack 02 Part 4 — statistics load independently: a failure
+    // here should never block the rest of the profile page from working.
+    void getMyMemberProfileStatistics()
+      .then((loaded) => {
+        if (!cancelled) {
+          setStatistics(loaded);
+        }
+      })
+      .catch(() => {
+        // Non-critical section; leave the skeleton state rather than
+        // surfacing a page-level error for a secondary widget.
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setStatisticsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function handleProfileSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!profile) {
       return;
     }
 
-    setSaving(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
-      const updated = await updateMyMemberProfile({
-        displayName: profile.displayName,
-        publicName: profile.publicName,
-        biography: profile.biography,
-        avatarUrl: profile.avatarUrl,
-        organization: profile.organization,
-        language: profile.language,
-        timezone: profile.timezone,
+      await profilePhase.runSave(async () => {
+        const updated = await updateMyMemberProfile({
+          displayName: profile.displayName,
+          publicName: profile.publicName,
+          biography: profile.biography,
+          avatarUrl: profile.avatarUrl,
+          organization: profile.organization,
+          language: profile.language,
+          timezone: profile.timezone,
+        });
+        setProfile(updated);
+        dispatchMemberProfileUpdated();
       });
-      setProfile(updated);
-      setSuccessMessage("Profile saved successfully.");
-      dispatchMemberProfileUpdated();
     } catch (saveError) {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
       } else {
         setError(saveError instanceof Error ? saveError.message : "Unable to save profile.");
       }
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -144,18 +177,17 @@ export function MemberProfileWorkspace() {
       return;
     }
 
-    setSaving(true);
     setError(null);
-    setLinksSuccessMessage(null);
 
     try {
-      const updated = await updateMyMemberProfile({
-        website: profile.website,
-        linkedinUrl: profile.linkedinUrl,
+      await linksPhase.runSave(async () => {
+        const updated = await updateMyMemberProfile({
+          website: profile.website,
+          linkedinUrl: profile.linkedinUrl,
+        });
+        setProfile(updated);
+        dispatchMemberProfileUpdated();
       });
-      setProfile(updated);
-      setLinksSuccessMessage("Professional links saved successfully.");
-      dispatchMemberProfileUpdated();
     } catch (saveError) {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
@@ -164,8 +196,6 @@ export function MemberProfileWorkspace() {
           saveError instanceof Error ? saveError.message : "Unable to save professional links.",
         );
       }
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -175,12 +205,13 @@ export function MemberProfileWorkspace() {
       return;
     }
 
-    setSaving(true);
     setError(null);
 
     try {
-      const updated = await updateMyMemberProfilePrivacy(privacy);
-      setPrivacy(updated);
+      await privacyPhase.runSave(async () => {
+        const updated = await updateMyMemberProfilePrivacy(privacy);
+        setPrivacy(updated);
+      });
     } catch (saveError) {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
@@ -189,19 +220,17 @@ export function MemberProfileWorkspace() {
           saveError instanceof Error ? saveError.message : "Unable to save privacy settings.",
         );
       }
-    } finally {
-      setSaving(false);
     }
   }
 
   if (loading) {
-    return <p>Loading member profile...</p>;
+    return <p>Loading profile…</p>;
   }
 
   if (authRequired) {
     return (
-      <ProfileSection title="Member Profile">
-        <p>Sign in to manage your member profile.</p>
+      <ProfileSection title="Profile">
+        <p>Sign in to manage your Participant profile.</p>
         <Button href="/login">Log in</Button>
       </ProfileSection>
     );
@@ -209,9 +238,9 @@ export function MemberProfileWorkspace() {
 
   if (apiUnavailable) {
     return (
-      <ProfileSection title="Member Profile">
+      <ProfileSection title="Profile">
         <ApiUnavailableState
-          title="Member profile temporarily unavailable"
+          title="Profile temporarily unavailable"
           explanation="We couldn't connect to the Humanity Union service. Please try again shortly."
           retryHref="/member"
         />
@@ -221,26 +250,23 @@ export function MemberProfileWorkspace() {
 
   if (!profile || !privacy) {
     return (
-      <ProfileSection title="Member Profile">
-        <p>{error ?? "Member profile is unavailable."}</p>
+      <ProfileSection title="Profile">
+        <p>{error ?? "Profile is unavailable."}</p>
       </ProfileSection>
     );
   }
 
   return (
     <div className="member-profile-workspace">
-      {successMessage ? (
-        <p className="member-profile-workspace__success" role="status">
-          {successMessage}
-        </p>
-      ) : null}
       {error ? (
         <p className="member-profile-workspace__error" role="alert">
           {error}
         </p>
       ) : null}
 
-      <nav className="member-profile-workspace__sections" aria-label="Member profile sections">
+      <ProfileAssistantEntry />
+
+      <nav className="member-profile-workspace__sections" aria-label="Profile sections">
         {SECTIONS.map((section) => {
           const sectionId = section.toLowerCase().replace(/\s+/g, "-");
           return (
@@ -254,6 +280,10 @@ export function MemberProfileWorkspace() {
           );
         })}
       </nav>
+
+      <ProfileSection title="Statistics" id="statistics">
+        <PersonalStatisticsCards statistics={statistics} loading={statisticsLoading} />
+      </ProfileSection>
 
       <ProfileSection title="Profile" id="profile">
         <form className="member-profile-workspace__form" onSubmit={handleProfileSave}>
@@ -304,8 +334,8 @@ export function MemberProfileWorkspace() {
           </label>
           <ProfileField label="Member Number" value={profile.memberNumber} />
           <ProfileField label="Location" value={formatLocation(profile)} />
-          <Button type="submit" variant="primary" disabled={saving}>
-            {saving ? "Saving..." : "Save profile"}
+          <Button type="submit" variant="primary" disabled={profilePhase.isBusy} ariaLive="polite">
+            {resolveSaveButtonLabel(profilePhase.phase, "Save profile")}
           </Button>
         </form>
       </ProfileSection>
@@ -313,7 +343,6 @@ export function MemberProfileWorkspace() {
       <ProfileSection title="Skills" id="skills">
         <MemberSkillsEditor
           skills={profile.skills}
-          disabled={saving}
           onChange={(skills) => setProfile({ ...profile, skills })}
           onSave={handleSkillsSave}
         />
@@ -323,9 +352,7 @@ export function MemberProfileWorkspace() {
         <MemberProfessionalLinksSection
           website={profile.website}
           linkedinUrl={profile.linkedinUrl}
-          disabled={saving}
-          saving={saving}
-          successMessage={linksSuccessMessage}
+          phase={linksPhase.phase}
           onWebsiteChange={(website) => setProfile({ ...profile, website })}
           onLinkedInChange={(linkedinUrl) => setProfile({ ...profile, linkedinUrl })}
           onSubmit={handleProfessionalLinksSave}
@@ -335,7 +362,7 @@ export function MemberProfileWorkspace() {
       <ProfileSection title="Privacy" id="privacy">
         <form className="member-profile-workspace__form" onSubmit={handlePrivacySave}>
           <label className="member-profile-workspace__field">
-            <span>Profile visibility</span>
+            <span>Who can see my public profile</span>
             <select
               value={privacy.profileVisibility}
               onChange={(event) =>
@@ -352,7 +379,7 @@ export function MemberProfileWorkspace() {
             </select>
           </label>
           <label className="member-profile-workspace__field">
-            <span>Participation area visibility</span>
+            <span>Who can see my Participation Areas</span>
             <select
               value={privacy.participationVisibility}
               onChange={(event) =>
@@ -369,7 +396,7 @@ export function MemberProfileWorkspace() {
             </select>
           </label>
           <label className="member-profile-workspace__field">
-            <span>Skills visibility</span>
+            <span>Who can see my Skills</span>
             <select
               value={privacy.skillsVisibility}
               onChange={(event) =>
@@ -386,7 +413,7 @@ export function MemberProfileWorkspace() {
             </select>
           </label>
           <label className="member-profile-workspace__field">
-            <span>Professional links visibility</span>
+            <span>Who can see my Professional Links</span>
             <select
               value={privacy.professionalLinksVisibility}
               onChange={(event) =>
@@ -402,6 +429,27 @@ export function MemberProfileWorkspace() {
               <option value="private">Private</option>
             </select>
           </label>
+          <label className="member-profile-workspace__field">
+            <span>Who can message me?</span>
+            <select
+              value={privacy.messagingPolicy}
+              onChange={(event) =>
+                setPrivacy({
+                  ...privacy,
+                  messagingPolicy: event.target
+                    .value as MemberProfilePrivacySettings["messagingPolicy"],
+                })
+              }
+            >
+              <option value="active_allies">Active Allies (recommended)</option>
+              <option value="registered_participants">Registered Participants</option>
+              <option value="nobody">Nobody</option>
+            </select>
+          </label>
+          <p className="member-profile-workspace__field-hint">
+            Controls who can start a new Direct Collaboration conversation with you. Existing
+            conversation history remains visible; choosing &ldquo;Nobody&rdquo; only blocks new messages.
+          </p>
           <label className="member-profile-workspace__checkbox">
             <input
               type="checkbox"
@@ -430,8 +478,41 @@ export function MemberProfileWorkspace() {
             />
             <span>Show participation area publicly when allowed</span>
           </label>
-          <Button type="submit" variant="primary" disabled={saving}>
-            {saving ? "Saving..." : "Save privacy settings"}
+          <label className="member-profile-workspace__checkbox">
+            <input
+              type="checkbox"
+              checked={privacy.showInitiativesStatistics}
+              onChange={(event) =>
+                setPrivacy({ ...privacy, showInitiativesStatistics: event.target.checked })
+              }
+            />
+            <span>Show Initiatives statistics publicly</span>
+          </label>
+          <label className="member-profile-workspace__checkbox">
+            <input
+              type="checkbox"
+              checked={privacy.showCollectiveDecisionsStatistics}
+              onChange={(event) =>
+                setPrivacy({
+                  ...privacy,
+                  showCollectiveDecisionsStatistics: event.target.checked,
+                })
+              }
+            />
+            <span>Show Collective Decisions statistics publicly</span>
+          </label>
+          <label className="member-profile-workspace__checkbox">
+            <input
+              type="checkbox"
+              checked={privacy.showAlliesStatistics}
+              onChange={(event) =>
+                setPrivacy({ ...privacy, showAlliesStatistics: event.target.checked })
+              }
+            />
+            <span>Show Allies statistics publicly</span>
+          </label>
+          <Button type="submit" variant="primary" disabled={privacyPhase.isBusy} ariaLive="polite">
+            {resolveSaveButtonLabel(privacyPhase.phase, "Save privacy settings")}
           </Button>
         </form>
       </ProfileSection>

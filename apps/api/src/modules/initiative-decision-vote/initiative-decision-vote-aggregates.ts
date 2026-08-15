@@ -27,12 +27,12 @@ function incrementChoiceCount(
   }
 }
 
-export function computeInitiativeDecisionVoteAggregates(
+export async function computeInitiativeDecisionVoteAggregates(
   decisionId: string,
-): InitiativeDecisionVoteAggregates {
+): Promise<InitiativeDecisionVoteAggregates> {
   const aggregates = createEmptyInitiativeDecisionVoteAggregates();
 
-  for (const vote of listVotesForDecision(decisionId)) {
+  for (const vote of await listVotesForDecision(decisionId)) {
     incrementChoiceCount(aggregates.total, vote.choice);
 
     if (vote.transparencyCohort === "verified") {

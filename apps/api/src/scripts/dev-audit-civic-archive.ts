@@ -96,13 +96,17 @@ async function main(): Promise<void> {
   console.log(`Candidate initiatives for ${countryCode}: ${initiatives.length}`);
   console.log("");
 
+  const lifecycleRecordsForCountry = await listCivicArchiveLifecycleRecords({
+    country: countryCode,
+  });
+
   for (const initiative of initiatives) {
     const impacts = listPublicImpactsByInitiative(initiative.initiativeId);
     const verifiedImpact = impacts.find((impact) => impact.status === "verified");
     const publishedArchive = publishedRecords.find(
       (record) => record.initiativeId === initiative.initiativeId,
     );
-    const lifecycleMatch = listCivicArchiveLifecycleRecords({ country: countryCode }).find(
+    const lifecycleMatch = lifecycleRecordsForCountry.find(
       (record) => record.initiativeId === initiative.initiativeId,
     );
 
@@ -143,7 +147,7 @@ async function main(): Promise<void> {
     console.log("");
   }
 
-  const indexedForCountry = listCivicArchiveLifecycleRecords({ country: countryCode });
+  const indexedForCountry = lifecycleRecordsForCountry;
   console.log(`Indexed civic archive records for ${countryCode}: ${indexedForCountry.length}`);
 
   for (const record of indexedForCountry) {

@@ -18,7 +18,7 @@ import {
   getNextCapNumber,
 } from "./civic-action-package.store.js";
 
-function buildCapContent(decisionId: string): CivicActionPackageContent {
+async function buildCapContent(decisionId: string): Promise<CivicActionPackageContent> {
   const decision = getDecisionById(decisionId);
 
   if (!decision) {
@@ -45,7 +45,7 @@ function buildCapContent(decisionId: string): CivicActionPackageContent {
 
   const latestRevision = getLatestRevisionForInitiative(decision.initiativeId);
   const initiativeVersion = latestRevision?.version ?? 1;
-  const results = buildPublicCollectiveDecisionResults(decision);
+  const results = await buildPublicCollectiveDecisionResults(decision);
   const compatibilityReview = getLatestReviewForInitiativeVersion(
     decision.initiativeId,
     initiativeVersion,
@@ -122,7 +122,7 @@ export async function generateCivicActionPackageForDecision(
     throw new Error("Collective decision must be closed before issuing a Civic Action Package.");
   }
 
-  const content = buildCapContent(decisionId);
+  const content = await buildCapContent(decisionId);
   const initiative = getInitiativeById(decision.initiativeId);
 
   if (!initiative) {

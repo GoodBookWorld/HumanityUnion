@@ -1,6 +1,7 @@
 "use client";
 
 import type { Initiative } from "@hu/types";
+import { resolveInitiativeCoverMedia } from "@hu/types";
 import Link from "next/link";
 
 import {
@@ -43,7 +44,11 @@ export function InitiativeCard({ initiative }: InitiativeCardProps) {
       aria-label={`${resolveActionLabel(initiative)}: ${initiative.title}`}
     >
       <span className="initiative-card__media">
-        <InitiativeImage title={initiative.title} imageUrl={initiative.metadata.imageUrl} />
+        <InitiativeImage
+          title={initiative.title}
+          imageUrl={initiative.metadata.imageUrl}
+          coverMedia={resolveInitiativeCoverMedia(initiative.metadata)}
+        />
       </span>
       <span className="initiative-card__title">{initiative.title}</span>
       <span className="initiative-card__meta">

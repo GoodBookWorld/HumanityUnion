@@ -8,7 +8,8 @@ import { InitiativeImage } from "../initiatives/components/InitiativeImage";
 
 import "./public-initiative-mini-card.css";
 
-export const PUBLIC_INITIATIVE_MINI_CARD_FALLBACK_IMAGE = "/initiative.webp";
+export const PUBLIC_INITIATIVE_MINI_CARD_FALLBACK_IMAGE =
+  "/images/initiatives/initiative-default.webp";
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString(undefined, {
@@ -79,7 +80,8 @@ function MiniCardImage({ title, imageUrl }: { title: string; imageUrl?: string }
       height={180}
       loading="lazy"
       onError={(event) => {
-        event.currentTarget.src = "/images/initiatives/initiative-default.webp";
+        event.currentTarget.onerror = null;
+        event.currentTarget.src = PUBLIC_INITIATIVE_MINI_CARD_FALLBACK_IMAGE;
       }}
     />
   );

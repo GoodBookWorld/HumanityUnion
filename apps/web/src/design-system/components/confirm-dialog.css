@@ -1,0 +1,58 @@
+/*
+ * Initiative UX Pack 01.1 Part 4 — matches the existing modal backdrop
+ * convention (`civic-nomination-modal__backdrop`): fixed overlay, centered
+ * surface, same dim/blur treatment, sized down for a short confirm/cancel
+ * prompt instead of a full-page modal.
+ */
+.hu-confirm-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: var(--hu-space-4);
+  background: rgb(15 23 42 / 45%);
+}
+
+.hu-confirm-dialog {
+  width: min(var(--hu-dialog-max-width, 28rem), 100%);
+  display: grid;
+  gap: var(--hu-space-4);
+  padding: var(--hu-space-6);
+  border-radius: var(--hu-radius-lg);
+  background: var(--hu-color-surface);
+  box-shadow: var(--hu-shadow-floating);
+}
+
+.hu-confirm-dialog__title {
+  margin: 0;
+  font-size: var(--hu-font-size-lg);
+  font-weight: 700;
+  color: var(--hu-color-text);
+}
+
+.hu-confirm-dialog__description {
+  margin: 0;
+  display: grid;
+  gap: var(--hu-space-2);
+  color: var(--hu-color-text-muted);
+  line-height: var(--hu-line-height);
+}
+
+.hu-confirm-dialog__description p {
+  margin: 0;
+}
+
+.hu-confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+  margin-top: var(--hu-space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hu-confirm-dialog__backdrop {
+    transition: none;
+  }
+}

@@ -1,0 +1,57 @@
+/**
+ * Admin Foundation Pack 02 — Canonical Capability Resolver & Immutable Audit.
+ *
+ * Services only — no Admin Console routes in this pack.
+ */
+
+export {
+  AdministrationAuditImmutableError,
+  AdministrationForbiddenError,
+  AdministrationInsufficientCapabilityError,
+  AdministrationScopeMismatchError,
+  AdministrationUnauthorizedError,
+  AdministrationValidationError,
+} from "./administration.errors.js";
+export {
+  AuditService,
+  deleteAdministrationAudit,
+  getAdministrationAuditById,
+  listAdministrationAuditsForTarget,
+  record,
+  recordAdministrationAuditBestEffort,
+  updateAdministrationAudit,
+} from "./audit.service.js";
+export {
+  expandBlogCapabilitiesToPlatformIds,
+  mapBlogCapabilityToPlatformIds,
+} from "./blog-capability-bridge.js";
+export {
+  runWithCapabilityResolutionContext,
+} from "./capability-resolution-context.js";
+export {
+  assertAnyCapability,
+  assertCapability,
+  hasAllCapabilities,
+  hasAnyCapability,
+  hasCapability,
+  resolveParticipantCapabilities,
+  type ResolveCapabilitiesInput,
+} from "./capability-resolver.js";
+export {
+  assertOwnership,
+  isOwner,
+  ownershipOf,
+} from "./ownership.js";
+export {
+  grantPlatformCapability,
+  revokePlatformCapability,
+} from "./platform-capability-grant.service.js";
+export {
+  deleteAdministrationAuditByActorIdsForTests,
+  resetAdministrationAuditMemoryForTests,
+} from "./persistence/administration-audit.repository.js";
+export {
+  deletePlatformCapabilityGrantsByParticipantIdsForTests,
+  listActivePlatformCapabilityGrants,
+  resetPlatformCapabilityGrantsMemoryForTests,
+} from "./persistence/platform-capability-grant.repository.js";

@@ -1,4 +1,5 @@
 import type { InitiativeCollaborativeAnalysis } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -28,7 +29,7 @@ export function createMongoInitiativeCollaborativeAnalysisPersistenceAdapter(): 
 }
 
 export async function hydrateInitiativeCollaborativeAnalysisMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_ANALYSIS_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_ANALYSIS_PERSISTENCE")) {
     return;
   }
 
@@ -36,7 +37,7 @@ export async function hydrateInitiativeCollaborativeAnalysisMongoPersistence(): 
 }
 
 export async function flushInitiativeCollaborativeAnalysisMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_ANALYSIS_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_ANALYSIS_PERSISTENCE")) {
     return;
   }
 

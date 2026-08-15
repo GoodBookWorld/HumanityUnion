@@ -4,6 +4,11 @@ import { listMyCivicAccountabilities } from "../civic-accountability/civic-accou
 import { listMyDecisionSessions } from "../decision-session/decision-session.service.js";
 import { listMyInitiativeCollaborativeAnalyses } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.service.js";
 import { listMyInitiativeCollectiveDecisions } from "../initiative-collective-decision/initiative-collective-decision.service.js";
+import { listUnreadDirectMessageSenderParticipantIds } from "../direct-messaging/index.js";
+import {
+  countActiveCollaborationsForParticipant,
+  listWorkspaceAlliesForParticipant,
+} from "../initiative-discussion-collaboration/index.js";
 import { listMyInitiativeImplementationCommitments } from "../initiative-implementation-commitment/initiative-implementation-commitment.service.js";
 import { listMyInitiativeImplementationTrackings } from "../initiative-implementation-tracking/initiative-implementation-tracking.service.js";
 import { listMyInitiativeImprovementProposals } from "../initiative-improvement-proposal/initiative-improvement-proposal.service.js";
@@ -15,6 +20,7 @@ import {
   getWorkspaceMemberIdentityForUser,
 } from "../member-profile/member-profile.service.js";
 import { listMyOfficialResponses } from "../official-response/official-response.service.js";
+import { getParticipantStatistics } from "../participant-statistics/participant-statistics.service.js";
 import { loadParticipationAreaWorkspaceForParticipant } from "../participation-area/participation-area.service.js";
 import { listMyPublicCivicArchiveRecords } from "../public-civic-archive/public-civic-archive.service.js";
 import { countUnreadNotifications } from "../notifications/notification.service.js";
@@ -22,8 +28,10 @@ import {
   formatWorkspaceReadinessSummary,
   resolveWorkspaceReadinessForUser,
 } from "../closed-beta/closed-beta.service.js";
+import { buildWorkspaceCommunityOpportunities } from "../community-intelligence/index.js";
 import { buildWorkspaceHomeTimeline } from "./workspace-home-timeline.js";
 import type {
+  WorkspaceHomeAlliesSummary,
   WorkspaceHomeAssistantContext,
   WorkspaceHomeLinkItem,
   WorkspaceHomePublicContribution,
@@ -56,6 +64,15 @@ function resolveCivicStage(initiatives: ReturnType<typeof listMyInitiatives>): s
     : "Published initiative active";
 }
 
+/**
+ * UX Evolution Pack 01 — Quick Actions Finalization.
+ *
+ * "Notification Center" was removed (previously id: "notification-center",
+ * href: "/notifications") — it duplicated the notification bell and the
+ * Settings → Notifications sidebar link. The `/notifications` route, its
+ * API, and its data are untouched; this list simply no longer links to it
+ * a second time from here.
+ */
 function buildQuickActions(): WorkspaceHomeQuickAction[] {
   return [
     {
@@ -110,12 +127,6 @@ function buildQuickActions(): WorkspaceHomeQuickAction[] {
       id: "create-initiative",
       label: "Create New Initiative",
       href: "/initiatives",
-      available: true,
-    },
-    {
-      id: "notification-center",
-      label: "Notification Center",
-      href: "/notifications",
       available: true,
     },
   ];
@@ -267,6 +278,66 @@ function buildRecentPublicContributions(input: {
     .slice(0, 5);
 }
 
+/**
+ * Communication UX Pack 03.3.1 Part 4/11 — injectable so the Workspace
+ * Messages "Active Allies" panel (`workspace-home.routes.ts`
+ * `GET /home/allies`) and this module's own full `GET /home` payload call
+ * through the exact same aggregation, and so both can be call-count tested
+ * without Mongo (no duplicate service/projection/query).
+ */
+export interface AlliesSummaryDependencies {
+  listWorkspaceAlliesForParticipant: typeof listWorkspaceAlliesForParticipant;
+  countActiveCollaborationsForParticipant: typeof countActiveCollaborationsForParticipant;
+  listUnreadDirectMessageSenderParticipantIds: typeof listUnreadDirectMessageSenderParticipantIds;
+}
+
+const defaultAlliesSummaryDependencies: AlliesSummaryDependencies = {
+  listWorkspaceAlliesForParticipant,
+  countActiveCollaborationsForParticipant,
+  listUnreadDirectMessageSenderParticipantIds,
+};
+
+/**
+ * Profile UX Pack 01 Part 9/11 — see `workspace-allies.service.ts` for the
+ * exact "Allies" / "Collaborations" definitions this projects.
+ *
+ * Communication UX Pack 03.2 Part 4/5 — `hasUnreadMessages` is resolved
+ * with exactly one additional batch query
+ * (`listUnreadDirectMessageSenderParticipantIds`), never one Direct
+ * Messaging lookup per Ally card, so this stays a single bounded Workspace
+ * response regardless of how many Allies are displayed.
+ *
+ * Communication UX Pack 03.3.1 Part 4 — exported (with injectable deps) so
+ * the Workspace Messages "Active Allies" panel can reuse this exact
+ * aggregation through its own small route instead of loading the entire
+ * `WorkspaceHomeState` (which would run every unrelated Workspace Home
+ * query — initiatives, decision sessions, statistics, etc. — just to reach
+ * this one field).
+ */
+export async function buildAlliesSummary(
+  participantId: string,
+  deps: AlliesSummaryDependencies = defaultAlliesSummaryDependencies,
+): Promise<WorkspaceHomeAlliesSummary> {
+  const [allies, collaborationsCount, unreadSenderIds] = await Promise.all([
+    deps.listWorkspaceAlliesForParticipant(participantId),
+    deps.countActiveCollaborationsForParticipant(participantId),
+    deps.listUnreadDirectMessageSenderParticipantIds(participantId),
+  ]);
+
+  return {
+    items: allies.map((ally) => ({
+      participantId: ally.participantId,
+      displayName: ally.author.displayName,
+      avatarUrl: ally.author.avatarUrl,
+      profileUrl: ally.author.profileUrl,
+      sharedInitiativeCount: ally.sharedInitiativeCount,
+      hasUnreadMessages: unreadSenderIds.has(ally.participantId),
+    })),
+    alliesCount: allies.length,
+    collaborationsCount,
+  };
+}
+
 function countActiveWork(activeWork: WorkspaceHomeState["activeWork"]): number {
   return [
     activeWork.draftInitiatives,
@@ -318,6 +389,12 @@ export async function getWorkspaceHomeForParticipant(input: {
   const officialResponses = listMyOfficialResponses(input.identity);
   const accountabilities = listMyCivicAccountabilities(input.identity);
   const unreadNotificationCount = await countUnreadNotifications(input.userId);
+  const allies = await buildAlliesSummary(input.identity.participantId);
+  const statistics = await getParticipantStatistics(input.identity.participantId);
+  const communityIntelligence = await buildWorkspaceCommunityOpportunities({
+    participantId: input.identity.participantId,
+    memberId: input.identity.participantId,
+  });
 
   const activeWork = {
     draftInitiatives: initiatives
@@ -479,6 +556,7 @@ export async function getWorkspaceHomeForParticipant(input: {
       civicStage: resolveCivicStage(initiatives),
       participationArea,
     },
+    statistics,
     quickActions: buildQuickActions(),
     activeWork,
     recentActivity,
@@ -506,6 +584,8 @@ export async function getWorkspaceHomeForParticipant(input: {
       impacts,
       archives,
     }),
+    allies,
+    communityIntelligence,
     assistantContext,
     workspaceReadiness,
     loadedAt: new Date().toISOString(),

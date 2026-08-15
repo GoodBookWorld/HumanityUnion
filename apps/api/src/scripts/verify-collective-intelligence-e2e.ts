@@ -98,7 +98,7 @@ async function main(): Promise<void> {
 
   console.log("2. Participant B — collaborative analysis");
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(participantB, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(participantB, {
     initiativeId: projected.initiativeId,
     title: "E2E Garden Analysis",
     summary: "Structured analysis of the garden initiative.",
@@ -110,7 +110,7 @@ async function main(): Promise<void> {
 
   assert(analysisDraft.initiativeVersion === 1, "Analysis should attach to version 1");
 
-  const publishedAnalysis = publishInitiativeCollaborativeAnalysis(
+  const publishedAnalysis = await publishInitiativeCollaborativeAnalysis(
     participantB,
     analysisDraft.analysisId,
   );
@@ -126,7 +126,7 @@ async function main(): Promise<void> {
 
   console.log("3. Participant B — improvement proposal");
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(participantB, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(participantB, {
     analysisId: publishedAnalysis.analysisId,
     targetSection: "Description",
     currentIssue: "Composting is not mentioned.",
@@ -237,7 +237,7 @@ async function main(): Promise<void> {
 
   console.log("9. Analysis traceability after revision");
 
-  const postRevisionAnalysis = createInitiativeCollaborativeAnalysisDraft(participantB, {
+  const postRevisionAnalysis = await createInitiativeCollaborativeAnalysisDraft(participantB, {
     initiativeId: projected.initiativeId,
     title: "E2E Post-Revision Analysis",
     summary: "Analysis created after version 2 publication.",

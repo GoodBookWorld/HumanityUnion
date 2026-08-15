@@ -33,6 +33,10 @@ healthRouter.get("/", async (_req, res) => {
         service: "Humanity Union API",
         version: environment.platformVersion,
         status,
+        /** Process is up (deployment liveness). */
+        liveness: "alive",
+        /** Durable data plane ready — Mongo required in production. */
+        ready: mongo.connected,
         uptimeSeconds: Math.floor(process.uptime()),
         startedAt: new Date(startedAt).toISOString(),
         environment: environment.nodeEnv,
@@ -46,6 +50,28 @@ healthRouter.get("/", async (_req, res) => {
         },
       },
       "Humanity Union API is running.",
+    ),
+  );
+});
+
+/** Readiness probe — 503 when Mongo is unavailable (production traffic gate). */
+healthRouter.get("/ready", async (_req, res) => {
+  const mongo = await checkMongoConnection();
+  if (!mongo.connected) {
+    res.status(503).json({
+      success: false,
+      data: { ready: false, mongodb: mongo },
+      meta: {},
+      links: {},
+      message: "API not ready: MongoDB unavailable.",
+    });
+    return;
+  }
+
+  res.json(
+    createSuccessResponse(
+      { ready: true, mongodb: mongo },
+      "API ready.",
     ),
   );
 });

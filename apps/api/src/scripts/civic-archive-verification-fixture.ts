@@ -109,7 +109,7 @@ export async function seedCivicArchiveVerificationFixture(input: {
   });
   const published = publishInitiative(input.steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(input.steward, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(input.steward, {
     initiativeId: published.initiativeId,
     title: "Archive Runtime Analysis",
     summary: "Analysis for runtime search verification.",
@@ -118,9 +118,9 @@ export async function seedCivicArchiveVerificationFixture(input: {
     suggestedImprovements: "Improve",
     references: "Ref",
   });
-  publishInitiativeCollaborativeAnalysis(input.steward, analysisDraft.analysisId);
+  await publishInitiativeCollaborativeAnalysis(input.steward, analysisDraft.analysisId);
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(input.steward, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(input.steward, {
     analysisId: analysisDraft.analysisId,
     targetSection: "Description",
     currentIssue: "Issue",
@@ -147,7 +147,7 @@ export async function seedCivicArchiveVerificationFixture(input: {
   });
   publishInitiativeRevision(input.steward, published.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(input.steward, {
+  const sessionDraft = await createDecisionSessionDraft(input.steward, {
     initiativeId: published.initiativeId,
     title: "Archive Runtime Session",
     purpose: "Decision for runtime search fixture.",
@@ -158,7 +158,7 @@ export async function seedCivicArchiveVerificationFixture(input: {
   publishDecisionSession(input.steward, sessionDraft.sessionId);
   closeDecisionSession(input.steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(input.steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(input.steward, {
     initiativeId: published.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -167,7 +167,7 @@ export async function seedCivicArchiveVerificationFixture(input: {
   openInitiativeCollectiveDecision(input.steward, decisionDraft.decisionId);
   await closeInitiativeCollectiveDecision(input.steward, decisionDraft.decisionId);
 
-  const commitmentDraft = createInitiativeImplementationCommitmentDraft(input.steward, {
+  const commitmentDraft = await createInitiativeImplementationCommitmentDraft(input.steward, {
     initiativeId: published.initiativeId,
     decisionId: decisionDraft.decisionId,
     commitmentTitle: "Archive Runtime Commitment",
@@ -179,7 +179,7 @@ export async function seedCivicArchiveVerificationFixture(input: {
     commitmentDraft.commitmentId,
   );
 
-  const trackingDraft = createInitiativeImplementationTrackingDraft(input.steward, {
+  const trackingDraft = await createInitiativeImplementationTrackingDraft(input.steward, {
     commitmentId: publishedCommitment.commitmentId,
     currentStage: "Completed",
     summary: "Fixture implementation completed.",
@@ -192,7 +192,7 @@ export async function seedCivicArchiveVerificationFixture(input: {
   });
   completeInitiativeImplementationTracking(input.steward, trackingDraft.trackingId);
 
-  const impactDraft = createInitiativePublicImpactDraft(input.steward, {
+  const impactDraft = await createInitiativePublicImpactDraft(input.steward, {
     trackingId: trackingDraft.trackingId,
     title: "Archive Runtime Impact",
     summary: "Observable change from the archive runtime search fixture.",

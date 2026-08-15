@@ -17,7 +17,13 @@ export type CivicEntityType =
   | "knowledge_article"
   | "knowledge_media"
   | "civic_nomination"
-  | "member_badge_contribution";
+  | "member_badge_contribution"
+  /** Profile UX Pack 03 — Direct Collaboration conversation (private, never a public entity). */
+  | "direct_conversation"
+  /** Blog Implementation Pack 02 — published Blog posts in Global Search. */
+  | "blog_post"
+  /** Author Access Pack 04 — Blog Author application (Workspace, not public). */
+  | "blog_author_application";
 
 /** Reference-only relationship semantics — no business logic. */
 export type CivicRelationshipType =
@@ -143,7 +149,67 @@ export type CivicNotificationEventType =
   | "member_badge_delivered"
   | "member_badge_contribution_refunded"
   | "initiative_comment_posted"
-  | "initiative_comment_reply";
+  | "initiative_comment_reply"
+  | "initiative_collaboration_interest_expressed"
+  | "initiative_collaboration_interest_accepted"
+  | "initiative_collaboration_interest_declined"
+  | "initiative_allies_invitation_received"
+  | "initiative_allies_invitation_accepted"
+  | "initiative_allies_invitation_declined"
+  /** Profile UX Pack 03 Part 13 — new Direct Collaboration message received. */
+  | "direct_message_received"
+  /** Communication UX Pack 03.5 Part 7 — new Initiative Collaboration Channel message. */
+  | "initiative_collaboration_channel_message_received"
+  /** Communication UX Pack 03.5 Part 7 — an important Collaboration Channel system event (e.g. Ally joined). */
+  | "initiative_collaboration_channel_system_event"
+  /** Communication UX Pack 03.6 Part 7 — a new Collaboration Session was scheduled. */
+  | "initiative_collaboration_session_created"
+  /** Communication UX Pack 03.6 Part 7 — an existing Collaboration Session was edited or rescheduled. */
+  | "initiative_collaboration_session_updated"
+  /** Communication UX Pack 03.6 Part 7 — a Collaboration Session was cancelled. */
+  | "initiative_collaboration_session_cancelled"
+  /** Communication UX Pack 03.6 Part 7/8 — an Active Ally changed their attendance response. */
+  | "initiative_collaboration_session_attendance_changed"
+  /**
+   * Communication UX Pack 03.6 Part 7/8 — a Collaboration Session is about
+   * to begin. This event type and its notification helper exist as a
+   * prepared extension point only (Part 8: "reminder generation belongs to
+   * future automation packs") — nothing in this pack ever emits it; a
+   * future scheduled-job pack calls `emitInitiativeCollaborationSessionUpcomingReminderNotification`.
+   */
+  | "initiative_collaboration_session_upcoming_reminder"
+  /** Communication UX Pack 03.7 Part 10 — a new Shared Document was uploaded to a communication context. */
+  | "shared_document_uploaded"
+  /** Communication UX Pack 03.7 Part 10 — a Shared Document was replaced with a new version. */
+  | "shared_document_replaced"
+  /** Communication UX Pack 03.7 Part 10 — a Shared Document was removed. */
+  | "shared_document_removed"
+  /**
+   * Initiative Lifecycle Part A Part 14 — a lifecycle stage was formally
+   * published/opened/finalized/fixed. Fanned out to every Active Ally of
+   * the Initiative (excluding the acting Author) by the universal
+   * `initiative-lifecycle-stage` notification consumer; never emitted
+   * directly by a stage domain's own service.
+   */
+  | "initiative_lifecycle_stage_published"
+  /** Author Access Pack 04 — Blog Author application submitted. */
+  | "blog_author_application_submitted"
+  /** Author Access Pack 04 — Blog Author application approved. */
+  | "blog_author_application_approved"
+  /** Author Access Pack 04 — Editor requested changes on a Blog Author application. */
+  | "blog_author_application_changes_requested"
+  /** Author Access Pack 04 — Blog Author application declined. */
+  | "blog_author_application_declined"
+  /** Editorial Review Pack 06 — Editor requested changes on a Blog publication. */
+  | "blog_post_changes_requested"
+  /** Editorial Review Pack 06 — Blog publication approved and published. */
+  | "blog_post_published"
+  /** Editorial Review Pack 06 — Blog publication editorially declined. */
+  | "blog_post_declined"
+  /** Blog Interaction Pack 07 — new top-level comment on a publication. */
+  | "blog_comment_posted"
+  /** Blog Interaction Pack 07 — reply to your Blog comment. */
+  | "blog_comment_reply";
 
 export interface CivicNotificationEventDefinition {
   eventType: CivicNotificationEventType;
@@ -291,6 +357,145 @@ export const CIVIC_NOTIFICATION_EVENT_REGISTRY: readonly CivicNotificationEventD
     eventType: "initiative_comment_reply",
     description: "A participant replied to an initiative discussion comment.",
     entityType: "initiative",
+  },
+  {
+    eventType: "initiative_collaboration_interest_expressed",
+    description: "A participant expressed readiness to collaborate on an initiative.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_collaboration_interest_accepted",
+    description: "An Initiative Author accepted a participant's collaboration request.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_collaboration_interest_declined",
+    description: "An Initiative Author declined a participant's collaboration request.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_allies_invitation_received",
+    description: "A participant received an Allies invitation for an initiative.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_allies_invitation_accepted",
+    description: "A participant accepted an Allies invitation for an initiative.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_allies_invitation_declined",
+    description: "A participant declined an Allies invitation for an initiative.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "direct_message_received",
+    description: "A participant received a new Direct Collaboration message.",
+    entityType: "direct_conversation",
+  },
+  {
+    eventType: "initiative_collaboration_channel_message_received",
+    description: "A participant received a new Initiative Collaboration Channel message.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_collaboration_channel_system_event",
+    description: "An important Initiative Collaboration Channel system event occurred.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_collaboration_session_created",
+    description: "A new Initiative Collaboration Session was scheduled.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_collaboration_session_updated",
+    description: "An Initiative Collaboration Session was edited or rescheduled.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_collaboration_session_cancelled",
+    description: "An Initiative Collaboration Session was cancelled.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_collaboration_session_attendance_changed",
+    description: "An Active Ally changed their Collaboration Session attendance response.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_collaboration_session_upcoming_reminder",
+    description: "An Initiative Collaboration Session is about to begin.",
+    entityType: "initiative",
+  },
+  {
+    // Shared Document events actually span two entity types
+    // (`direct_conversation` or `initiative`, chosen per upload — see
+    // `shared-documents-notifications.ts`); `"initiative"` is recorded
+    // here only because this registry format allows exactly one.
+    eventType: "shared_document_uploaded",
+    description: "A new Shared Document was uploaded to a communication context.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "shared_document_replaced",
+    description: "A Shared Document was replaced with a new version.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "shared_document_removed",
+    description: "A Shared Document was removed.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "initiative_lifecycle_stage_published",
+    description: "A lifecycle stage was formally published, opened, finalized, or fixed.",
+    entityType: "initiative",
+  },
+  {
+    eventType: "blog_author_application_submitted",
+    description: "A Participant submitted a Blog Author application.",
+    entityType: "blog_author_application",
+  },
+  {
+    eventType: "blog_author_application_approved",
+    description: "A Blog Author application was approved.",
+    entityType: "blog_author_application",
+  },
+  {
+    eventType: "blog_author_application_changes_requested",
+    description: "An Editor requested changes on a Blog Author application.",
+    entityType: "blog_author_application",
+  },
+  {
+    eventType: "blog_author_application_declined",
+    description: "A Blog Author application was declined.",
+    entityType: "blog_author_application",
+  },
+  {
+    eventType: "blog_post_changes_requested",
+    description: "An Editor requested changes on a Blog publication.",
+    entityType: "blog_post",
+  },
+  {
+    eventType: "blog_post_published",
+    description: "A Blog publication was approved and published.",
+    entityType: "blog_post",
+  },
+  {
+    eventType: "blog_post_declined",
+    description: "A Blog publication was editorially declined.",
+    entityType: "blog_post",
+  },
+  {
+    eventType: "blog_comment_posted",
+    description: "A Participant commented on a Blog publication.",
+    entityType: "blog_post",
+  },
+  {
+    eventType: "blog_comment_reply",
+    description: "A Participant replied to a Blog comment.",
+    entityType: "blog_post",
   },
 ] as const;
 

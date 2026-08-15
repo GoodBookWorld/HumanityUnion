@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 const MEMORY_PERSISTENCE_KEYS = [
   "INITIATIVE_PERSISTENCE",
@@ -11,6 +11,7 @@ const MEMORY_PERSISTENCE_KEYS = [
   "INITIATIVE_IMPLEMENTATION_TRACKING_PERSISTENCE",
   "INITIATIVE_PUBLIC_IMPACT_PERSISTENCE",
   "PUBLIC_CIVIC_ARCHIVE_PERSISTENCE",
+  "INITIATIVE_PETITION_DRAFT_PERSISTENCE",
 ] as const;
 
 export interface VerificationDatabaseIsolation {
@@ -38,11 +39,32 @@ function replaceMongoDatabase(uri: string, databaseName: string): string {
   return `${prefix}${databaseName}${query}`;
 }
 
+/**
+ * MongoDB Atlas (this project's configured cluster tier) enforces a hard
+ * 38-byte database name limit — far shorter than self-hosted MongoDB's
+ * usual 64-character limit. `runId` itself stays long/human-readable
+ * (it embeds the verification task name — callers use it to tag seeded
+ * fixtures for later lookup/cleanup, e.g. `verificationRunId: isolation
+ * .runId`, where length does not matter), but the actual Mongo database
+ * name must be short. A short, fixed prefix ("hu_verify_", 10 bytes) plus
+ * a 16-hex-character SHA-256 digest of the full `runId` (16 bytes) stays
+ * comfortably under the 38-byte cap while remaining effectively unique
+ * per run and fully deterministic from `runId` (so `assertVerification
+ * DatabaseIsolated`'s prefix check and any diagnostic logging can always
+ * recognize a verification database on sight).
+ */
+export const VERIFICATION_DATABASE_PREFIX = "hu_verify_";
+
+function buildVerificationDatabaseName(runId: string): string {
+  const digest = createHash("sha256").update(runId).digest("hex").slice(0, 16);
+  return `${VERIFICATION_DATABASE_PREFIX}${digest}`;
+}
+
 export function activateVerificationDatabaseIsolation(
   verificationTask: string,
 ): VerificationDatabaseIsolation {
   const runId = `${verificationTask.toLowerCase()}-${Date.now()}-${randomBytes(4).toString("hex")}`;
-  const verifyDatabase = `humanity_union_verify_${runId.replace(/[^a-z0-9-]/gi, "-")}`;
+  const verifyDatabase = buildVerificationDatabaseName(runId);
   const previousEnv = new Map<string, string | undefined>();
 
   for (const key of [
@@ -93,7 +115,7 @@ export function assertVerificationDatabaseIsolated(): void {
     throw new Error("Verification must not use humanity_union_dev.");
   }
 
-  if (database && !database.startsWith("humanity_union_verify_")) {
+  if (database && !database.startsWith(VERIFICATION_DATABASE_PREFIX)) {
     throw new Error(`Verification must use an isolated database, received "${database}".`);
   }
 }

@@ -9,16 +9,26 @@ import type {
   PublicPetitionIdentity,
   PublicPetitionOutcomeProjection,
   PublicPetitionProjection,
+  PublicPetitionRevisionContext,
   PublicPetitionSubject,
   PublicPetitionSummary,
+  PublicPetitionSupportBreakdown,
   PublicShareReference,
   PublicSupportState,
   PublicSupportStatistics,
 } from "@hu/types";
+import { PETITION_PARTICIPATION_TRANSPARENCY_NOTE } from "@hu/types";
 
 import { getAnalysisByInitiativeId } from "../collaborative-analysis/collaborative-analysis.store.js";
 import { getDecision } from "../collective-decision/collective-decision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { getMemberById } from "../member/member-access.js";
+import { findMembershipByUserId } from "../membership/membership.repository.js";
+import {
+  getCurrentPublishedVersion,
+  getRevisionByInitiativeAndVersion,
+} from "../initiative-version-revision/initiative-version-revision.store.js";
+import { countPetitionVisitorSignals } from "./petition-visitor-signal.service.js";
 
 const VIEWING_NOTE = "Viewing this page does not record endorsement.";
 const SHARING_NOTE = "Sharing increases visibility but does not record endorsement.";
@@ -91,6 +101,10 @@ function buildPetitionSubject(petition: Petition): PublicPetitionSubject {
     initiativeId: petition.subject.initiativeId,
     title: petition.subject.title,
     summary: petition.subject.summary,
+    requestStatement: petition.subject.requestStatement,
+    expectedOutcome: petition.subject.expectedOutcome,
+    supportingContext: petition.subject.supportingContext,
+    keyArguments: petition.subject.keyArguments,
   };
 }
 
@@ -152,6 +166,46 @@ function buildApprovedDecisionContext(
   };
 }
 
+/**
+ * Initiative Lifecycle — Part E, Section 11 (Petition Integration).
+ *
+ * Lightweight, purely additive lookup of the latest Published Revision for
+ * the Petition's Initiative — "Petition automatically receives Published
+ * Revision, Change Summary, and Revision metadata." Deliberately reads the
+ * revision store directly (never the full public projection, which also
+ * fetches reaction summaries this context does not need) and never gates,
+ * blocks, or alters Petition creation/transition — this is informational
+ * context only, resolving to `null` whenever the Initiative has not yet
+ * published a Revision.
+ */
+async function buildPetitionRevisionContext(
+  initiativeId: string,
+): Promise<PublicPetitionRevisionContext | null> {
+  const currentVersion = getCurrentPublishedVersion(initiativeId);
+
+  if (currentVersion === 0) {
+    return null;
+  }
+
+  const revision = getRevisionByInitiativeAndVersion(initiativeId, currentVersion);
+
+  if (!revision) {
+    return null;
+  }
+
+  const author = await getMemberById(revision.authorId);
+
+  return {
+    revisionId: revision.revisionId,
+    version: revision.version,
+    revisionSummary: revision.revisionSummary,
+    publishedAt: revision.publishedAt,
+    authorDisplayName: author?.profile.displayName ?? "Unknown Steward",
+    changeCount: revision.changes.length,
+    proposalIds: [...revision.acceptedProposalIds, ...revision.partiallyAcceptedProposalIds],
+  };
+}
+
 function buildPublicSupportStatistics(petition: Petition): PublicSupportStatistics {
   const { supportMetrics } = petition;
   const { supportThresholdStatus } = supportMetrics;
@@ -175,6 +229,43 @@ function buildPublicSupportStatistics(petition: Petition): PublicSupportStatisti
     thresholdReached: supportThresholdStatus.thresholdReached,
     thresholdProgress,
     recentActivitySummary,
+  };
+}
+
+/**
+ * Initiative Lifecycle — Part F, Section 7/8 (Representative Signatures).
+ *
+ * "Participants" is the platform's baseline signing identity — every
+ * `Active` `Signature` counts once here, regardless of Member status.
+ * "Members" is the subset of those same signers who additionally hold
+ * active Member status (mirrors `resolveAudienceKind` in
+ * `initiative-support.service.ts` — the platform's only other
+ * Participant/Member cohort split). These two counters therefore overlap
+ * by design (every Member signature is also a Participant signature);
+ * they are never summed into a single total. "Visitors" is a wholly
+ * separate, unregistered civic-interest signal that never becomes a
+ * `Signature` (see `petition-visitor-signal.service.ts`).
+ */
+async function buildSupportBreakdown(petition: Petition): Promise<PublicPetitionSupportBreakdown> {
+  const activeSignatures = petition.signatures.filter((signature) => signature.status === "Active");
+
+  const memberFlags = await Promise.all(
+    activeSignatures.map(async (signature) => {
+      try {
+        const membership = await findMembershipByUserId(signature.participantId);
+        return membership?.status === "active_member";
+      } catch {
+        return false;
+      }
+    }),
+  );
+
+  const visitorSignals = await countPetitionVisitorSignals(petition.petitionId);
+
+  return {
+    participantSignatures: activeSignatures.length,
+    memberSignatures: memberFlags.filter(Boolean).length,
+    visitorSignals,
   };
 }
 
@@ -239,7 +330,17 @@ function buildParticipationEntryGuidance(petition: Petition): PublicParticipatio
   };
 }
 
-export function toPublicPetitionProjection(petition: Petition): PublicPetitionProjection | null {
+/**
+ * Initiative Lifecycle — Part F, Section 7/8. `viewerParticipantId` is
+ * OPTIONAL and additive — every pre-existing caller (the adapter, the
+ * public Initiative experience aggregate, the E2E script) keeps working
+ * unchanged and simply always gets `viewerHasSigned: false`. Only the
+ * public Petition GET route resolves and passes a real viewer identity.
+ */
+export async function toPublicPetitionProjection(
+  petition: Petition,
+  viewerParticipantId?: string | null,
+): Promise<PublicPetitionProjection | null> {
   if (!isPubliclyVisible(petition.status)) {
     return null;
   }
@@ -247,13 +348,25 @@ export function toPublicPetitionProjection(petition: Petition): PublicPetitionPr
   const decision = getDecision(petition.collectiveDecisionId);
   const initiative = getInitiativeById(petition.subject.initiativeId);
   const analysis = getAnalysisByInitiativeId(petition.subject.initiativeId);
+  const relatedRevisionContext = await buildPetitionRevisionContext(petition.subject.initiativeId);
+  const supportBreakdown = await buildSupportBreakdown(petition);
+  const viewerHasSigned = viewerParticipantId
+    ? petition.signatures.some(
+        (signature) => signature.participantId === viewerParticipantId && signature.status === "Active",
+      )
+    : false;
 
   return {
     petitionIdentity: buildPetitionIdentity(petition),
     petitionSummary: buildPetitionSummary(petition),
     petitionSubject: buildPetitionSubject(petition),
     approvedDecisionContext: buildApprovedDecisionContext(petition, decision, initiative, analysis),
+    relatedRevisionContext,
     publicSupportStatistics: buildPublicSupportStatistics(petition),
+    supportBreakdown,
+    traceability: petition.traceability ?? null,
+    viewerHasSigned,
+    participationTransparencyNote: PETITION_PARTICIPATION_TRANSPARENCY_NOTE,
     petitionOutcome: buildPublicPetitionOutcome(petition),
     shareReference: buildShareReference(petition),
     participationEntryGuidance: buildParticipationEntryGuidance(petition),

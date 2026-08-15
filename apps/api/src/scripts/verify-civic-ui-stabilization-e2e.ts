@@ -206,7 +206,7 @@ async function verifyGroupedCountrySearchApi(): Promise<void> {
 
   const published = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(steward, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(steward, {
     initiativeId: published.initiativeId,
     title: "Canada Stabilization Analysis",
     summary: "Analysis for grouped lifecycle verification.",
@@ -215,7 +215,7 @@ async function verifyGroupedCountrySearchApi(): Promise<void> {
     suggestedImprovements: "Improve",
     references: "Ref",
   });
-  publishInitiativeCollaborativeAnalysis(steward, analysisDraft.analysisId);
+  await publishInitiativeCollaborativeAnalysis(steward, analysisDraft.analysisId);
 
   createInitiativeRevisionDraft(steward, published.initiativeId);
   saveInitiativeRevisionDraft(steward, published.initiativeId, {
@@ -227,7 +227,7 @@ async function verifyGroupedCountrySearchApi(): Promise<void> {
 
   resetGlobalSearchIndexForTests();
 
-  const response = searchPublicCivicRecords({
+  const response = await searchPublicCivicRecords({
     country: "CA",
     q: initiativeTitle,
     limit: 20,

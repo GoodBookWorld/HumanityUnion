@@ -343,9 +343,11 @@ async function verifyOnboardingAndWorkspaceReadiness(): Promise<void> {
     onboarding.some((item) => item.label === "Complete Member Profile"),
     "Onboarding must include member profile",
   );
+  const firstInitiativeItem = onboarding.find((item) => item.label === "Create first Initiative");
+  assert(Boolean(firstInitiativeItem), "Onboarding must include first initiative");
   assert(
-    onboarding.some((item) => item.label === "Create first Initiative"),
-    "Onboarding must include first initiative",
+    firstInitiativeItem?.href === "/workspace/initiatives#start-new-initiative",
+    "Create first Initiative must link to the Start New Initiative section on /workspace/initiatives",
   );
 
   const readiness = await resolveWorkspaceReadinessForUser({

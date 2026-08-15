@@ -1,4 +1,5 @@
 import type { MemberNotification } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
@@ -99,6 +100,28 @@ export class MongoNotificationPersistenceAdapter implements NotificationPersiste
       { $set: notification },
     );
   }
+
+  async delete(notificationId: string): Promise<void> {
+    await ensureMongoReady();
+    const collection = getMongoCollection<MemberNotificationDocument>(
+      MONGO_COLLECTIONS.memberNotifications,
+    );
+    await collection.deleteOne({ notificationId });
+  }
+
+  async deleteByRelatedEntity(
+    relatedEntityType: MemberNotification["relatedEntityType"],
+    relatedEntityId: string,
+  ): Promise<number> {
+    await ensureMongoReady();
+    const collection = getMongoCollection<MemberNotificationDocument>(
+      MONGO_COLLECTIONS.memberNotifications,
+    );
+
+    const result = await collection.deleteMany({ relatedEntityType, relatedEntityId });
+
+    return result.deletedCount ?? 0;
+  }
 }
 
 export function createMongoNotificationPersistenceAdapter(): MongoNotificationPersistenceAdapter {
@@ -106,7 +129,7 @@ export function createMongoNotificationPersistenceAdapter(): MongoNotificationPe
 }
 
 export async function ensureNotificationMongoIndexes(): Promise<void> {
-  if (!isMongoConfigured() || process.env.NOTIFICATION_PERSISTENCE !== "mongodb") {
+  if (!isMongoConfigured() || !isMongoPersistenceMode("NOTIFICATION_PERSISTENCE")) {
     return;
   }
 

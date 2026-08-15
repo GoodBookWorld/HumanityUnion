@@ -183,8 +183,8 @@ export async function toPublicCivicArchiveProjection(
   };
 }
 
-export function computePublicCivicArchiveMetrics(): PublicCivicArchiveMetrics {
-  const lifecycleMetrics = computeCivicArchiveLifecycleMetrics();
+export async function computePublicCivicArchiveMetrics(): Promise<PublicCivicArchiveMetrics> {
+  const lifecycleMetrics = await computeCivicArchiveLifecycleMetrics();
 
   return {
     archivedInitiativeCount: lifecycleMetrics.archivedInitiativeCount,
@@ -197,16 +197,16 @@ export function computePublicCivicArchiveMetrics(): PublicCivicArchiveMetrics {
   };
 }
 
-export function listPublicCivicArchiveIndex(
+export async function listPublicCivicArchiveIndex(
   query: PublicCivicArchiveIndexQuery = {},
-): CivicArchiveLifecycleRecord[] {
+): Promise<CivicArchiveLifecycleRecord[]> {
   return listCivicArchiveLifecycleRecords(query);
 }
 
 export async function getPublicCivicArchive(
   archiveRecordId: string,
 ): Promise<PublicCivicArchiveProjection | null> {
-  const lifecycle = resolveCivicArchiveLifecycleRecord(archiveRecordId);
+  const lifecycle = await resolveCivicArchiveLifecycleRecord(archiveRecordId);
 
   if (!lifecycle) {
     return null;

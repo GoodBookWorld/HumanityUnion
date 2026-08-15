@@ -33,9 +33,9 @@ function stageStateLabel(state: StageVisualState): string {
     case "completed":
       return "Completed";
     case "active":
-      return "Current stage";
+      return "In Progress";
     case "upcoming":
-      return "Upcoming";
+      return "Not Started";
     default:
       return "Not applicable";
   }

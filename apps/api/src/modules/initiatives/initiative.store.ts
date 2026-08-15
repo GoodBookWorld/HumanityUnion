@@ -12,6 +12,7 @@ import type {
   TimelineEvent,
 } from "@hu/types";
 
+import { isInitiativeEligibleForPublicProjection } from "./initiative-public-projection.access.js";
 import { rebuildProjectedInitiativeCards } from "./initiative-projection.store.js";
 import { resolveInitiativePersistenceAdapter } from "./persistence/resolve-initiative-persistence.js";
 import { snapshotFromInitiatives } from "./persistence/initiative-persistence.types.js";
@@ -80,12 +81,52 @@ export function listInitiativesBySteward(stewardId: string): Initiative[] {
   return listInitiatives().filter((initiative) => initiative.stewardId === stewardId);
 }
 
+/**
+ * Profile UX Pack 02 Part 9 — "Recent Public Initiatives" on a Public
+ * Profile must only ever surface Initiatives that are ALREADY publicly
+ * projected (`isInitiativeEligibleForPublicProjection`), regardless of the
+ * viewer. This is a strictly narrower view of `listInitiativesBySteward`,
+ * not a new eligibility rule.
+ */
+export function listPublicInitiativesBySteward(stewardId: string, limit = 5): Initiative[] {
+  const boundedLimit = Math.max(0, limit);
+
+  return listInitiativesBySteward(stewardId)
+    .filter(isInitiativeEligibleForPublicProjection)
+    .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+    .slice(0, boundedLimit);
+}
+
 export function createInitiative(initiative: Initiative): Initiative {
   initiatives.set(initiative.initiativeId, structuredClone(initiative));
   persistInitiativesMap(initiatives);
   rebuildProjectedInitiativeCards(Array.from(initiatives.values()));
 
   return structuredClone(initiative);
+}
+
+/**
+ * Initiative UX Pack 01.1 — permanent, hard removal of one Initiative
+ * record. No prior `deleteInitiative`/soft-delete concept existed on this
+ * store before this pack (only `createInitiative`/`updateInitiative`), and
+ * this is the only place an Initiative is ever removed from the map —
+ * callers (see `initiative.service.ts#deleteInitiativeDraft`) are
+ * responsible for verifying ownership + Draft-only eligibility first, and
+ * for cleaning up any dependent data before calling this. Returns `false`
+ * when the Initiative was already gone (e.g. a concurrent delete), so
+ * callers can distinguish "nothing to delete" from a genuine deletion.
+ */
+export function deleteInitiative(initiativeId: string): boolean {
+  const existed = initiatives.delete(initiativeId);
+
+  if (!existed) {
+    return false;
+  }
+
+  persistInitiativesMap(initiatives);
+  rebuildProjectedInitiativeCards(Array.from(initiatives.values()));
+
+  return true;
 }
 
 export function updateInitiative(

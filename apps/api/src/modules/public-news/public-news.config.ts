@@ -59,7 +59,7 @@ export function resolvePublicNewsConfig(): PublicNewsRuntimeConfig {
     retentionDays: parsePositiveInt(process.env.NEWS_RETENTION_DAYS, 7, 30),
     refreshIntervalHours: parsePositiveFloat(process.env.NEWS_REFRESH_INTERVAL_HOURS, 6),
     defaultLanguage: registryConfig.defaultLanguage,
-    fetchTimeoutMs: 10_000,
+    fetchTimeoutMs: parsePositiveInt(process.env.NEWS_FETCH_TIMEOUT_MS, 15_000, 30_000),
     maxResponseBytes: 2 * 1024 * 1024,
   };
 }

@@ -5,7 +5,6 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import express from "express";
 
 import { registerAuthUser } from "../../src/modules/auth/auth.service.js";
-import { buildMemberRegisteredEventId } from "../../src/modules/member/domain/member-registered.event.js";
 import { confirmRegistrationEmailCode } from "../../src/modules/auth/auth-email-confirmation.service.js";
 import { createAccessToken } from "../../src/modules/auth/auth-tokens.js";
 import { deleteAuthUsersByEmailPrefix, findAuthUserByEmail } from "../../src/modules/auth/auth-user.repository.js";
@@ -28,11 +27,8 @@ import {
   deleteProcessedEventsByConsumerIdPrefix,
   deleteProcessedEventsByEventIdPrefix,
   dispatchOutboxOnceForTests,
-  resetOutboxDispatcherStateForTests,
-  stopOutboxDispatcher,
 } from "../../src/infrastructure/outbox/index.js";
 import { deleteMembersByMemberIdPrefix } from "../../src/modules/member/infrastructure/member.repository.js";
-import { buildMemberRegisteredEventId } from "../../src/modules/member/domain/member-registered.event.js";
 import workspaceRouter from "../../src/modules/workspace/api/workspace.routes.js";
 import {
   handleMemberRegisteredWorkspaceProjection,

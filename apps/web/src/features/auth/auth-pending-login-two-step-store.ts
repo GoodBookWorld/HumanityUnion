@@ -1,37 +1,34 @@
-const PENDING_LOGIN_TWO_STEP_TOKEN_KEY = "hu_pending_login_two_step_token";
+/**
+ * Launch Readiness Pack 07 — login two-step challenge JWT lives in an HttpOnly
+ * cookie (`hu_pending_login_two_step`). No JS-readable challenge token.
+ */
 
-export function storePendingLoginTwoStepToken(token: string): void {
+const LEGACY_PENDING_LOGIN_TWO_STEP_TOKEN_KEY = "hu_pending_login_two_step_token";
+
+function clearLegacyChallengeToken(): void {
   if (typeof window === "undefined") {
     return;
   }
 
-  sessionStorage.setItem(PENDING_LOGIN_TWO_STEP_TOKEN_KEY, token);
+  sessionStorage.removeItem(LEGACY_PENDING_LOGIN_TWO_STEP_TOKEN_KEY);
 }
 
-export function getPendingLoginTwoStepToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
+export function storePendingLoginTwoStepToken(_token?: string): void {
+  clearLegacyChallengeToken();
+}
 
-  return sessionStorage.getItem(PENDING_LOGIN_TWO_STEP_TOKEN_KEY);
+/** @deprecated Pack 07 — challenge token is cookie-only. */
+export function getPendingLoginTwoStepToken(): string | null {
+  clearLegacyChallengeToken();
+  return null;
 }
 
 export function clearPendingLoginTwoStepToken(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  sessionStorage.removeItem(PENDING_LOGIN_TWO_STEP_TOKEN_KEY);
+  clearLegacyChallengeToken();
 }
 
+/** Cookie credentials carry the challenge — no Authorization header. */
 export function buildPendingLoginTwoStepHeaders(): HeadersInit {
-  const token = getPendingLoginTwoStepToken();
-
-  if (!token) {
-    return {};
-  }
-
-  return {
-    Authorization: `Bearer ${token}`,
-  };
+  clearLegacyChallengeToken();
+  return {};
 }

@@ -32,7 +32,7 @@ export default async function PublicInitiativeImplementationCommitmentPage({
 
   if (!commitment) {
     return (
-      <main>
+      <main className="hu-page-container hu-page-container--sectioned">
         <h1>Public Implementation Commitment</h1>
         <p>Public implementation commitment is not available.</p>
         <p>
@@ -54,7 +54,7 @@ export default async function PublicInitiativeImplementationCommitmentPage({
   }
 
   return (
-    <main>
+    <main className="hu-page-container hu-page-container--sectioned">
       <header>
         <h1>{commitment.title}</h1>
         <p>Public implementation commitment</p>

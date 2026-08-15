@@ -6,6 +6,8 @@ export interface CreateInitiativeCollaborativeAnalysisDraftInput {
   summary: string;
   supportingEvidence: string;
   risks: string;
+  /** Optional — "no open questions yet" is legitimate content, unlike the other (required) sections. */
+  openQuestions?: string;
   suggestedImprovements: string;
   references: string;
 }
@@ -15,6 +17,7 @@ export interface SaveInitiativeCollaborativeAnalysisDraftInput {
   summary?: string;
   supportingEvidence?: string;
   risks?: string;
+  openQuestions?: string;
   suggestedImprovements?: string;
   references?: string;
 }
@@ -41,6 +44,19 @@ function normalizeOptionalText(value: unknown, fieldName: string): string | unde
   return normalizeText(value, fieldName);
 }
 
+/** Like {@link normalizeOptionalText}, but an explicitly-provided empty string is valid ("no open questions yet" is real content, not a missing field). */
+function normalizeOptionalFreeText(value: unknown, fieldName: string): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string") {
+    throw new Error(`${fieldName} must be text.`);
+  }
+
+  return value.trim();
+}
+
 export function validateCreateInitiativeCollaborativeAnalysisDraftInput(
   body: unknown,
 ): CreateInitiativeCollaborativeAnalysisDraftInput {
@@ -56,6 +72,7 @@ export function validateCreateInitiativeCollaborativeAnalysisDraftInput(
     summary: normalizeText(record.summary, "Summary"),
     supportingEvidence: normalizeText(record.supportingEvidence, "Supporting evidence"),
     risks: normalizeText(record.risks, "Risks"),
+    openQuestions: normalizeOptionalFreeText(record.openQuestions, "Open questions"),
     suggestedImprovements: normalizeText(record.suggestedImprovements, "Suggested improvements"),
     references: normalizeText(record.references, "References"),
   };
@@ -92,6 +109,11 @@ export function validateSaveInitiativeCollaborativeAnalysisDraftInput(
   const risks = normalizeOptionalText(record.risks, "Risks");
   if (risks !== undefined) {
     update.risks = risks;
+  }
+
+  const openQuestions = normalizeOptionalFreeText(record.openQuestions, "Open questions");
+  if (openQuestions !== undefined) {
+    update.openQuestions = openQuestions;
   }
 
   const suggestedImprovements = normalizeOptionalText(

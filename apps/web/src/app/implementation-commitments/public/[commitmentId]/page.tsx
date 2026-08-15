@@ -231,7 +231,7 @@ export default async function PublicImplementationCommitmentPage({
         ) : null}
       </ProfileSection>
 
-      <ProfileSection title="Humanity Assistant">
+      <ProfileSection title="Humanity Union Assistant">
         <p className="public-commitment-page__message">{humanityAssistant.summary}</p>
         <ProfileField label="Readiness" value={humanityAssistant.readinessExplanation} />
         <ProfileField label="Policy" value={humanityAssistant.policyExplanation} />

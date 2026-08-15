@@ -24,10 +24,12 @@
 }
 
 .institutions-section__inner {
-  max-width: var(--hu-layout-max-width);
-  margin: 0 auto;
+  width: min(100%, var(--hu-page-max-width));
+  max-width: var(--hu-page-max-width);
+  margin-inline: auto;
   display: grid;
   gap: var(--hu-space-5);
+  box-sizing: border-box;
 }
 
 .institutions-section--hero {
@@ -110,9 +112,11 @@
 }
 
 .institutions-sticky-nav__inner {
-  max-width: var(--hu-layout-max-width);
-  margin: 0 auto;
-  padding: var(--hu-space-2) var(--hu-space-6);
+  width: min(100%, var(--hu-page-max-width));
+  max-width: var(--hu-page-max-width);
+  margin-inline: auto;
+  padding: var(--hu-space-2) var(--hu-page-padding-inline);
+  box-sizing: border-box;
 }
 
 .institutions-sticky-nav__list {

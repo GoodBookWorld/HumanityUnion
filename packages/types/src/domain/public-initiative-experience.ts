@@ -1,15 +1,31 @@
 import type { InitiativeStatus } from "./initiative.js";
+import type { InitiativeCoverMedia } from "./initiative-cover-media.js";
 import type { PublicCommentAuthor } from "./initiative-comment.js";
+import type { PublicCommentCollaborationState } from "./initiative-discussion-collaboration.js";
 import type { PublicInitiativeProjection } from "./public-initiative.js";
 import type { PublicInitiativeWithVersionHistory } from "./public-initiative-version-revision.js";
+import type { CommunityInitiativeRelationshipProjection } from "./community-intelligence.js";
 import type { WorldInitiativeCardProjection } from "./public-world-initiatives.js";
 
 /** Shared transparency note for initiative support signals. */
 export const INITIATIVE_SUPPORT_TRANSPARENCY_NOTE =
   "Support signals are statistical indicators and do not change vote weight or create authority.";
 
+/**
+ * Lifecycle UX Completion Pack 02 — visual progress vocabulary for the
+ * Lifecycle menu. Derived from publication metadata + registry order;
+ * never a hardcoded per-stage UI enum.
+ */
 export type InitiativeExperienceLifecycleStageState =
-  "completed" | "current" | "upcoming" | "not_applicable" | "unavailable";
+  | "not_started"
+  | "in_progress"
+  | "draft_saved"
+  | "preview"
+  | "published"
+  | "completed"
+  | "archived"
+  | "not_applicable"
+  | "unavailable";
 
 export type InitiativeSupportSignalKind = "like" | "dislike" | "none";
 
@@ -136,6 +152,11 @@ export interface PublicInitiativeDiscussionComment {
   likes: number;
   dislikes: number;
   currentUserReaction?: "like" | "dislike" | "none";
+  /**
+   * UX Evolution Pack 02 — present once the collaboration module is wired in;
+   * absent means the caller did not compute it (never a broken/partial state).
+   */
+  collaboration?: PublicCommentCollaborationState;
 }
 
 export interface PublicInitiativeDiscussionSummary {
@@ -169,6 +190,8 @@ export interface PublicInitiativeExperienceHero {
   lastUpdatedAt: string;
   imageUrl?: string;
   imageAltText?: string;
+  /** UX Evolution Pack 03 — public-safe (verificationReasonCode always stripped); approved media only. */
+  coverMedia?: InitiativeCoverMedia;
   stewardDisplayName: string;
 }
 
@@ -183,6 +206,8 @@ export interface PublicInitiativeExperienceProjection {
   revisionHistory: PublicInitiativeWithVersionHistory;
   relatedCivicRecords: PublicInitiativeRelatedCivicRecord[];
   latestInitiatives: WorldInitiativeCardProjection[];
+  /** Community Intelligence Pack 01 — explainable related Initiatives (public, non-personalized). */
+  relatedInitiatives: readonly CommunityInitiativeRelationshipProjection[];
   discussion: PublicInitiativeDiscussionSummary;
   generatedAt: string;
 }

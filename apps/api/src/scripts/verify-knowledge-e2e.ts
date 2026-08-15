@@ -119,12 +119,12 @@ async function verifySearchIntegration(): Promise<void> {
     await import("../modules/global-search/global-search.service.js");
 
   resetGlobalSearchIndexForTests();
-  const index = getGlobalSearchIndex();
+  const index = await getGlobalSearchIndex();
   const knowledgeEntries = index.filter((entry) => entry.entityType === "knowledge_article");
 
   assert(knowledgeEntries.length > 0, "Global search index must include knowledge_article entries");
 
-  const results = searchPublicCivicRecords({
+  const results = await searchPublicCivicRecords({
     q: "initiative",
     entityTypes: ["knowledge_article"],
     limit: 10,

@@ -54,6 +54,35 @@ export async function findAuthUserById(userId: string): Promise<AuthUserRecord |
   return record;
 }
 
+/**
+ * Performance Recovery Task — batch equivalent of `findAuthUserById`, used
+ * where a caller previously issued one `findOne` per unique author id (see
+ * `attachCollaborationStateToComments`). A single `$in` query replaces N
+ * parallel round trips with one round trip, mirroring the existing
+ * `findMemberProfilesByUserIds` batching pattern.
+ */
+export async function findAuthUsersByIds(
+  userIds: readonly string[],
+): Promise<Map<string, AuthUserRecord>> {
+  const uniqueUserIds = [...new Set(userIds.filter((userId) => userId.trim().length > 0))];
+
+  if (uniqueUserIds.length === 0) {
+    return new Map();
+  }
+
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+  const documents = await collection.find({ userId: { $in: uniqueUserIds } }).toArray();
+
+  return new Map(
+    documents.map((document) => {
+      const { _id: _ignored, ...record } = document;
+      return [document.userId, record];
+    }),
+  );
+}
+
 export async function findAuthUserByMemberId(memberId: string): Promise<AuthUserRecord | null> {
   await ensureAuthMongoReady();
 
@@ -66,6 +95,35 @@ export async function findAuthUserByMemberId(memberId: string): Promise<AuthUser
 
   const { _id: _ignored, ...record } = document;
   return record;
+}
+
+/**
+ * Profile UX Pack 01 — batch equivalent of `findAuthUserByMemberId`, used to
+ * enrich a list of Initiative-scoped Ally rows (each keyed by
+ * `participantId`, i.e. `memberId`) with public author identity in one
+ * round trip instead of one `findOne` per row (see
+ * `resolvePublicAuthorsForParticipantIds`).
+ */
+export async function findAuthUsersByMemberIds(
+  memberIds: readonly string[],
+): Promise<Map<string, AuthUserRecord>> {
+  const uniqueMemberIds = [...new Set(memberIds.filter((memberId) => memberId.trim().length > 0))];
+
+  if (uniqueMemberIds.length === 0) {
+    return new Map();
+  }
+
+  await ensureAuthMongoReady();
+
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+  const documents = await collection.find({ memberId: { $in: uniqueMemberIds } }).toArray();
+
+  return new Map(
+    documents.map((document) => {
+      const { _id: _ignored, ...record } = document;
+      return [document.memberId, record];
+    }),
+  );
 }
 
 export async function insertAuthUser(

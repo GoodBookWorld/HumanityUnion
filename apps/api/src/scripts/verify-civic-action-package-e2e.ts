@@ -120,7 +120,7 @@ async function buildClosedDecisionContext(): Promise<{
   });
   const projected = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
     initiativeId: projected.initiativeId,
     title: "CAP Analysis",
     summary: "Analysis summary.",
@@ -129,9 +129,9 @@ async function buildClosedDecisionContext(): Promise<{
     suggestedImprovements: "Improve.",
     references: "Ref.",
   });
-  publishInitiativeCollaborativeAnalysis(otherParticipant, analysisDraft.analysisId);
+  await publishInitiativeCollaborativeAnalysis(otherParticipant, analysisDraft.analysisId);
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(otherParticipant, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(otherParticipant, {
     analysisId: analysisDraft.analysisId,
     targetSection: "Description",
     currentIssue: "Issue.",
@@ -158,7 +158,7 @@ async function buildClosedDecisionContext(): Promise<{
   });
   publishInitiativeRevision(steward, projected.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: projected.initiativeId,
     title: "CAP Session",
     purpose: "Prepare decision.",
@@ -169,7 +169,7 @@ async function buildClosedDecisionContext(): Promise<{
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: projected.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -270,7 +270,7 @@ async function runVerification(): Promise<void> {
     ),
     "Notification registry includes civic_action_package_issued",
   );
-  const integrationView = buildIntegrationView("civic_action_package", generated.capId);
+  const integrationView = await buildIntegrationView("civic_action_package", generated.capId);
   assert(integrationView !== null, "Integration view for CAP");
   assertNoPrivateFields(integrationView, "Integration view");
 

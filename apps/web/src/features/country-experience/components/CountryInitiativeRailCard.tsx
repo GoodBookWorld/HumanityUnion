@@ -31,8 +31,12 @@ export function CountryInitiativeRailCard({ initiative }: CountryInitiativeRailC
       aria-label={`Open initiative: ${initiative.title}`}
     >
       <div className="country-initiative-rail-card__media">
-        {initiative.imageUrl ? (
-          <InitiativeImage title={initiative.title} imageUrl={initiative.imageUrl} />
+        {initiative.imageUrl || initiative.coverMedia ? (
+          <InitiativeImage
+            title={initiative.title}
+            imageUrl={initiative.imageUrl}
+            coverMedia={initiative.coverMedia}
+          />
         ) : (
           <img
             src={PUBLIC_INITIATIVE_MINI_CARD_FALLBACK_IMAGE}

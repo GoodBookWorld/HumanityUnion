@@ -323,7 +323,14 @@ export function validateMemberProfilePrivacyPatch(
     patch[field] = value;
   }
 
-  for (const field of ["showOrganization", "showLocation", "showParticipationArea"] as const) {
+  for (const field of [
+    "showOrganization",
+    "showLocation",
+    "showParticipationArea",
+    "showInitiativesStatistics",
+    "showCollectiveDecisionsStatistics",
+    "showAlliesStatistics",
+  ] as const) {
     if (!(field in record)) {
       continue;
     }
@@ -341,6 +348,18 @@ export function validateMemberProfilePrivacyPatch(
     }
 
     patch.membershipPubliclyVisible = record.membershipPubliclyVisible;
+  }
+
+  if ("messagingPolicy" in record) {
+    const value = record.messagingPolicy;
+
+    if (value !== "active_allies" && value !== "registered_participants" && value !== "nobody") {
+      throw new MemberProfileValidationError(
+        "messagingPolicy must be active_allies, registered_participants, or nobody.",
+      );
+    }
+
+    patch.messagingPolicy = value;
   }
 
   if (Object.keys(patch).length === 0) {

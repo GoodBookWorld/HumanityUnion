@@ -4,10 +4,13 @@ export {
   countUnreadNotifications,
   createNotification,
   createNotificationsForEvent,
+  deleteArchivedNotification,
+  deleteNotificationsByRelatedEntity,
   emitCivicNotificationEvent,
   listMyNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  markNotificationsReadByRelatedEntity,
   resetNotificationsForTests,
   sanitizeNotificationResponse,
 } from "./notification.service.js";

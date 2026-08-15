@@ -15,10 +15,10 @@ function createFailureResponse(message: string) {
   };
 }
 
-globalSearchRouter.get("/search", (req, res: Response) => {
+globalSearchRouter.get("/search", async (req, res: Response) => {
   try {
     const query = parseCivicSearchQuery(req.query as Record<string, string | string[] | undefined>);
-    const results = searchPublicCivicRecords(query);
+    const results = await searchPublicCivicRecords(query);
 
     res.json(createSuccessResponse(results, "Public civic search results loaded."));
   } catch (error) {

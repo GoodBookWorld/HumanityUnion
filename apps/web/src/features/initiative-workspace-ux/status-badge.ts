@@ -11,8 +11,22 @@ export type WorkspaceBadgeVariant =
   | "cancelled"
   | "neutral";
 
+const LIFECYCLE_PRESENTATION_LABELS: Record<string, string> = {
+  not_started: "Not Started",
+  draft: "Draft Saved",
+  ready_for_review: "Preview",
+  published: "Published",
+  superseded: "Completed",
+  in_progress: "In Progress",
+  draft_saved: "Draft Saved",
+  preview: "Preview",
+  completed: "Completed",
+  archived: "Archived",
+};
+
 export function formatWorkspaceStatusLabel(status: string): string {
-  return status.replace(/_/g, " ");
+  const normalized = status.trim().toLowerCase();
+  return LIFECYCLE_PRESENTATION_LABELS[normalized] ?? status.replace(/_/g, " ");
 }
 
 export function resolveWorkspaceBadgeVariant(status: string): WorkspaceBadgeVariant {

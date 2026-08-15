@@ -1,4 +1,5 @@
 import type { CivicNomination } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -28,7 +29,7 @@ export function createMongoCivicNominationPersistenceAdapter(): CivicNominationP
 }
 
 export async function hydrateCivicNominationMongoPersistence(): Promise<void> {
-  if (process.env.CIVIC_NOMINATION_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("CIVIC_NOMINATION_PERSISTENCE")) {
     return;
   }
 
@@ -36,7 +37,7 @@ export async function hydrateCivicNominationMongoPersistence(): Promise<void> {
 }
 
 export async function flushCivicNominationMongoPersistence(): Promise<void> {
-  if (process.env.CIVIC_NOMINATION_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("CIVIC_NOMINATION_PERSISTENCE")) {
     return;
   }
 

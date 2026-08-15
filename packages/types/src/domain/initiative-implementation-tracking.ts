@@ -1,4 +1,5 @@
 import type { InitiativeImplementationCommitmentId } from "./initiative-implementation-commitment.js";
+import type { ImplementationTrackingTraceability } from "./initiative-implementation-tracking-lifecycle.js";
 import type { InitiativeId } from "./initiative.js";
 import type { MemberId } from "./member.js";
 
@@ -68,6 +69,23 @@ export interface InitiativeImplementationTracking {
   activatedAt?: string;
   completedAt?: string;
   archivedAt?: string;
+  /**
+   * Initiative Lifecycle — Part J. Package grouping Tracking Records
+   * published together from the Author Workspace.
+   */
+  packageId?: string | null;
+  /** Progress percentage 0–100 (Part J continuous tracking). */
+  progress?: number | null;
+  targetDate?: string | null;
+  startedDate?: string | null;
+  actualCompletedDate?: string | null;
+  dependencies?: string[] | null;
+  obstacles?: string[] | null;
+  evidenceReferences?: string[] | null;
+  notes?: string | null;
+  approvedAction?: string | null;
+  /** Permanent provenance for "which Commitment produced this Tracking Record?". */
+  traceability?: ImplementationTrackingTraceability | null;
   createdAt: string;
   updatedAt: string;
 }

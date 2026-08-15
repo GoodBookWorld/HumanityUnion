@@ -10,6 +10,7 @@ export const LOCAL_MEDIA_UPLOAD_ROOT = path.join(API_ROOT, ".runtime", "uploads"
 const PURPOSE_DIRECTORIES: Record<MediaUploadPurpose, string> = {
   avatar: "avatars",
   "initiative-image": "initiatives",
+  "blog-image": "blog",
 };
 
 function purposeDirectory(purpose: MediaUploadPurpose): string {

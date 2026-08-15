@@ -52,28 +52,6 @@
   color: var(--hu-color-text-muted);
 }
 
-.support-page {
-  display: grid;
-  gap: var(--hu-space-6);
-  max-width: 48rem;
-}
-
-.support-page__section h2 {
-  margin: 0 0 var(--hu-space-3);
-  font-size: var(--hu-font-size-lg);
-}
-
-.support-page__section p,
-.support-page__section ul {
-  margin: 0;
-  color: var(--hu-color-text-muted);
-  line-height: var(--hu-line-height);
-}
-
-.support-page__section ul {
-  padding-left: var(--hu-space-5);
-}
-
 .workspace-readiness {
   margin-bottom: var(--hu-space-4);
 }

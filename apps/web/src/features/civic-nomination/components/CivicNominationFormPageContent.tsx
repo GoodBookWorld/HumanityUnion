@@ -17,7 +17,7 @@ import {
   toGeographyCountryOptions,
   toGeographyRegionOptions,
 } from "../../../data/geography";
-import { getStoredAccessToken } from "../../auth/auth-token-store";
+import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import {
   createCivicNominationDraft,
   submitCivicNomination,
@@ -57,6 +57,7 @@ function resolveInitialRole(searchRole: string | null): CivicNominationInstituti
 export function CivicNominationFormPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const authStatus = useClientAuthStatus();
   const initialRole = useMemo(() => resolveInitialRole(searchParams.get("role")), [searchParams]);
 
   const [formState, setFormState] = useState<CivicNominationFormState>(() =>
@@ -79,14 +80,18 @@ export function CivicNominationFormPageContent() {
   );
 
   useEffect(() => {
-    if (!getStoredAccessToken()) {
+    if (authStatus === "pending") {
+      return;
+    }
+
+    if (authStatus !== "authenticated") {
       const returnPath = `/institutions/nominations/new?role=${encodeURIComponent(initialRole)}`;
       router.replace(`/login?returnTo=${encodeURIComponent(returnPath)}`);
       return;
     }
 
     setAuthChecked(true);
-  }, [initialRole, router]);
+  }, [authStatus, initialRole, router]);
 
   useEffect(() => {
     setFormState((current) => ({

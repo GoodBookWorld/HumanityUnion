@@ -8,6 +8,10 @@ export interface InitiativeCollectiveDecisionUpdate {
   openedAt?: string;
   closedAt?: string;
   cancelledAt?: string;
+  /** Initiative Lifecycle — Part H, Section 6/7. Structured Decision Result. */
+  structuredContent?: InitiativeCollectiveDecision["structuredContent"];
+  /** Initiative Lifecycle — Part H, Section 9. Decision Session provenance. */
+  traceability?: InitiativeCollectiveDecision["traceability"];
 }
 
 const PUBLIC_STATUSES = new Set<InitiativeCollectiveDecision["status"]>([
@@ -106,6 +110,16 @@ export function updateDecision(
     decision.cancelledAt = update.cancelledAt;
   }
 
+  if (update.structuredContent !== undefined) {
+    decision.structuredContent = update.structuredContent
+      ? structuredClone(update.structuredContent)
+      : null;
+  }
+
+  if (update.traceability !== undefined) {
+    decision.traceability = update.traceability ? structuredClone(update.traceability) : null;
+  }
+
   decision.updatedAt = new Date().toISOString();
 
   persistDecisionsMap(decisions);
@@ -115,4 +129,21 @@ export function updateDecision(
 
 export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
+}
+
+/**
+ * Test-only cleanup helper (Recovery Task 09), mirroring the pattern
+ * established in Tasks 06-08 for file-backed persistence modules that lack
+ * a dedicated test-reset mechanism. Removes only decisions authored by the
+ * given steward, scoping deletion narrowly so unrelated runtime records are
+ * never touched.
+ */
+export function deleteDecisionsByStewardIdForTests(stewardId: string): void {
+  for (const [decisionId, decision] of decisions) {
+    if (decision.stewardId === stewardId) {
+      decisions.delete(decisionId);
+    }
+  }
+
+  persistDecisionsMap(decisions);
 }

@@ -1,7 +1,9 @@
 .country-experience-dynamic {
-  max-width: var(--hu-content-max-width, 72rem);
-  margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
+  width: min(100%, var(--hu-page-max-width));
+  max-width: var(--hu-page-max-width);
+  margin-inline: auto;
+  padding: var(--hu-section-gap) var(--hu-page-padding-inline) var(--hu-space-12);
+  box-sizing: border-box;
   overflow-x: clip;
 }
 

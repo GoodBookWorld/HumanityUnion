@@ -4,41 +4,56 @@
   justify-content: flex-start;
   gap: var(--hu-space-4);
   margin-bottom: var(--hu-space-6);
-  padding: var(--hu-space-4);
+  padding: var(--hu-space-4) var(--hu-space-5);
   border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-md);
-  background: var(--hu-color-surface-muted, var(--hu-color-primary-soft));
+  border-radius: var(--hu-radius-lg);
+  background: var(--hu-color-surface);
+  box-shadow: var(--hu-shadow-sm);
 }
 
 .workspace-personal-header__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--hu-space-3);
+  gap: var(--hu-space-4);
   align-items: center;
   width: 100%;
 }
 
 .workspace-personal-header__workspace-label {
-  margin: 0;
-  font-size: var(--hu-font-size-sm);
-  color: var(--hu-color-text-muted);
+  margin: 0 var(--hu-space-2) 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hu-workspace-secondary, var(--hu-color-text-muted));
 }
 
-.workspace-personal-header__link,
-.workspace-personal-header__logout {
+.workspace-personal-header__link {
   font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  color: var(--hu-workspace-primary, var(--hu-color-primary));
+  text-decoration: none;
+}
+
+.workspace-personal-header__link:hover,
+.workspace-personal-header__link:focus-visible {
+  text-decoration: underline;
 }
 
 .workspace-personal-header__logout {
+  margin-left: auto;
+  font-size: var(--hu-font-size-sm);
   border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-sm);
+  border-radius: var(--hu-radius-pill);
   background: transparent;
-  padding: var(--hu-space-1) var(--hu-space-3);
+  color: var(--hu-color-text-muted);
+  padding: var(--hu-space-1) var(--hu-space-4);
   cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
 }
 
 .workspace-personal-header__logout:hover,
 .workspace-personal-header__logout:focus-visible {
-  border-color: var(--hu-color-primary);
-  color: var(--hu-color-primary);
+  border-color: var(--hu-workspace-action, var(--hu-color-primary));
+  color: var(--hu-workspace-action, var(--hu-color-primary));
 }

@@ -166,11 +166,7 @@
   margin-top: var(--hu-space-2);
 }
 
-/* Hero */
-.public-home-v2 {
-  --public-home-hero-background-image: url("/illustrations/unity.webp");
-}
-
+/* Hero — Home Visual Pack 01: 60/40 content + unity visual */
 .public-home-v2__hero {
   position: relative;
   isolation: isolate;
@@ -180,25 +176,55 @@
   padding-bottom: var(--hu-space-4);
 }
 
-@media (min-width: 1024px) {
-  .public-home-v2__hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-    background-image: var(--public-home-hero-background-image);
-    background-size: contain;
-    background-position: center right;
-    background-repeat: no-repeat;
-    pointer-events: none;
+.public-home-v2__hero-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--hu-space-6);
+  align-items: stretch;
+}
+
+.public-home-v2__hero-content {
+  min-width: 0;
+}
+
+.public-home-v2__hero-visual {
+  min-width: 0;
+  min-height: 300px;
+}
+
+@media (min-width: 900px) {
+  .public-home-v2__hero-layout {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: var(--hu-space-6);
+    align-items: center;
   }
 
-  .public-home-v2__hero::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
+  .public-home-v2__hero-visual {
+    min-height: 340px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .public-home-v2__hero-layout {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: var(--hu-space-8);
+  }
+
+  .public-home-v2__hero-visual {
+    min-height: 380px;
+  }
+}
+
+/* Pack 01.1 — single-column Hero; no empty visual column ≤768px. */
+@media (max-width: 768px) {
+  .public-home-v2__hero-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .public-home-v2__hero-visual {
+    display: none;
+    min-height: 0;
   }
 }
 
@@ -384,7 +410,7 @@
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-lg);
   padding: var(--hu-space-5);
-  background: var(--hu-color-surface);
+  background: #eaf6fd;
   box-shadow: var(--hu-shadow-sm);
 }
 

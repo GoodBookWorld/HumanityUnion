@@ -1,10 +1,18 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { resolveAuthRateLimitConfig } from "../../config/auth.config.js";
+import {
+  resolveAuthRateLimitConfig,
+  resolveAuthRefreshRateLimitConfig,
+} from "../../config/auth.config.js";
 
 interface RateLimitBucket {
   count: number;
   resetAt: number;
+}
+
+interface RateLimitConfig {
+  windowMs: number;
+  maxAttempts: number;
 }
 
 const buckets = new Map<string, RateLimitBucket>();
@@ -23,9 +31,16 @@ function resolveClientKey(req: Request, scope: string): string {
   return `${scope}:${ip}`;
 }
 
+function resolveConfigForScope(scope: string): RateLimitConfig {
+  if (scope === "auth-refresh") {
+    return resolveAuthRefreshRateLimitConfig();
+  }
+  return resolveAuthRateLimitConfig();
+}
+
 export function createAuthRateLimiter(scope: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const config = resolveAuthRateLimitConfig();
+    const config = resolveConfigForScope(scope);
     const key = resolveClientKey(req, scope);
     const now = Date.now();
     const existing = buckets.get(key);

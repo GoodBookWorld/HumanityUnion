@@ -1,10 +1,27 @@
 .member-workspace {
+  /*
+   * Workspace-scoped color palette (Recovery Task 33 — Workspace UX Evolution).
+   * Scoped to .member-workspace only, so it affects the Workspace operating
+   * center exclusively and never leaks into other pages. Use these tokens
+   * only for hierarchy and emphasis — not decorative gradients or heavy
+   * saturation.
+   */
+  --hu-workspace-primary: #0174b0;
+  --hu-workspace-secondary: #2e7a91;
+  --hu-workspace-neutral: #5a8072;
+  --hu-workspace-muted: #878653;
+  --hu-workspace-action: #b38c34;
+  --hu-workspace-highlight: #df9815;
+
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: var(--hu-space-8);
-  width: min(var(--hu-workspace-max-width), 100%);
+  /* Launch Readiness Pack 03 — fill the outer `.humanity-workspace-page` shell. */
+  grid-template-columns: var(--hu-sidebar-width) minmax(0, 1fr);
+  gap: var(--hu-content-gap);
+  width: 100%;
+  max-width: 100%;
   align-items: start;
   text-align: left;
+  box-sizing: border-box;
 }
 
 .member-workspace__nav {
@@ -54,9 +71,13 @@
 }
 
 .member-workspace__title {
+  font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-2xl);
-  font-weight: 700;
-  margin-bottom: var(--hu-space-1);
+  font-weight: var(--hu-font-weight-bold);
+  line-height: var(--hu-line-height-tight);
+  letter-spacing: var(--hu-letter-spacing-tight);
+  color: var(--hu-color-text);
+  margin: 0 0 var(--hu-space-1);
 }
 
 .member-workspace__subtitle {
@@ -70,7 +91,7 @@
 
 .member-workspace__content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 280px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, var(--hu-initiative-sidebar-width));
   gap: var(--hu-space-6);
   align-items: start;
 }

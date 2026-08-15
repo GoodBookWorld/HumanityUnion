@@ -25,10 +25,38 @@ export type {
 export type {
   MemberProfile,
   MemberProfilePrivacySettings,
+  MemberProfilePublicPreview,
+  MemberProfilePublicRecentInitiative,
   MemberProfileStatus,
   MemberProfileVisibility,
+  PublicMemberParticipationArea,
   PublicMemberProfile,
+  PublicMemberProfileHiddenSections,
+  PublicMemberProfileMessagingAvailability,
 } from "./member-profile";
+export type {
+  CommunicationReminder,
+  CommunicationReminderCategory,
+  CommunicationReminderListResponse,
+  CommunicationReminderStatus,
+  CommunicationReminderView,
+} from "./communication-reminder";
+export type {
+  DirectConversation,
+  DirectConversationDetail,
+  DirectConversationListResponse,
+  DirectConversationParticipantProjection,
+  DirectConversationReadState,
+  DirectConversationSharedContext,
+  DirectConversationStatus,
+  DirectConversationSummary,
+  DirectMessage,
+  DirectMessageListResponse,
+  DirectMessageProjection,
+  DirectMessageStatus,
+  DirectMessagingPolicy,
+} from "./direct-messaging";
+export type { ParticipantStatistics, PublicParticipantStatistics } from "./participant-statistics";
 export type {
   AccessibilityPreferences,
   CommunicationPreferences,
@@ -40,6 +68,34 @@ export type {
   VisibilityPreferences,
   WorkspacePreferences,
 } from "./member-preferences";
+export type {
+  LanguageCode,
+  OriginalContentLanguageMetadata,
+  ParticipantLanguageContext,
+  PriorityLanguageCode,
+  TranslationDisplayPreference,
+} from "./language";
+export {
+  DEFAULT_PLATFORM_LANGUAGE,
+  PRIORITY_LANGUAGE_CODES,
+  RTL_LANGUAGE_CODES,
+  TRANSLATION_DISPLAY_PREFERENCES,
+  isPriorityLanguageCode,
+  isRtlLanguageCode,
+  isTranslationDisplayPreference,
+  normalizeLanguageCode,
+} from "./language";
+export type {
+  ContentTranslationSourceKind,
+  ResolvedContentPresentationMode,
+  ResolvedTranslatedDisplay,
+  TranslateDraftRequest,
+  TranslateDraftResult,
+  TranslatedContentRecord,
+  TranslationFreshness,
+  TranslationKind,
+  TranslationProviderId,
+} from "./content-translation";
 export type { ApproximateIpGeography, ApproximateIpGeographySource } from "./ip-geography";
 export type {
   AnalysisId,
@@ -89,10 +145,40 @@ export type {
   InitiativeTitle,
   InitiativeVisibility,
   InitiativeVisibilityPolicy,
+  MyInitiativeGroupRole,
+  MyInitiativeGroupSummary,
   RevisionId,
   TimelineEvent,
   TimelineEventId,
 } from "./initiative";
+export type {
+  InitiativeCoverMedia,
+  InitiativeCoverMediaExternalProvider,
+  InitiativeCoverMediaType,
+  InitiativeCoverMediaVerificationStatus,
+  ParsedExternalVideoUrl,
+} from "./initiative-cover-media";
+export {
+  buildExternalVideoEmbedUrl,
+  parseExternalVideoUrl,
+  resolveInitiativeCoverMedia,
+} from "./initiative-cover-media";
+export type {
+  CivicArtifactType,
+  DirectInitiativeAncestry,
+  DirectInitiativeAncestryCandidate,
+  InitiativeAncestry,
+  InitiativeAncestryCandidate,
+  InitiativeAncestryKind,
+  TransitiveInitiativeAncestry,
+  TransitiveInitiativeAncestryCandidate,
+} from "./initiative-ancestry";
+export {
+  CIVIC_ARTIFACT_TYPE_CANONICAL_MODULE,
+  CIVIC_ARTIFACT_TYPES,
+  INITIATIVE_ANCESTRY_KINDS,
+  isCivicArtifactType,
+} from "./initiative-ancestry";
 export type { InitiativeOwnerAccessPayload } from "./initiative-owner-studio";
 export type { InitiativeLifecyclePhase } from "./initiative-lifecycle";
 export {
@@ -115,12 +201,86 @@ export type {
   InitiativeImprovementProposalStatus,
 } from "./initiative-improvement-proposal";
 export type {
+  InitiativeImprovementProposalsCollection,
+  InitiativeImprovementProposalsCollectionStatus,
+  InitiativeStructuredProposal,
+  InitiativeStructuredProposalStatus,
+} from "./initiative-improvement-proposals-stage";
+export type {
+  InitiativeProposalAnalysisReference,
+  InitiativeProposalCandidateRef,
+  InitiativeProposalGroup,
+  InitiativeProposalIntelligenceSnapshot,
+} from "./initiative-proposal-intelligence-snapshot";
+export type {
+  InitiativeProposalReaction,
+  InitiativeProposalReactionKind,
+  InitiativeProposalReactionSummary,
+} from "./initiative-proposal-reaction";
+export type {
+  PublicInitiativeImprovementProposalsCollectionProjection,
+  PublicInitiativeStructuredProposal,
+} from "./public-initiative-improvement-proposals-stage";
+export type {
+  InitiativeRevisionChange,
+  InitiativeRevisionChangeOrigin,
+  InitiativeRevisionChangeSection,
   InitiativeRevisionDraft,
   InitiativeRevisionDraftContext,
   InitiativeRevisionEligibleProposal,
+  InitiativeRevisionEligibleStructuredProposal,
   InitiativeVersionRevision,
   InitiativeVersionRevisionId,
 } from "./initiative-version-revision";
+export type {
+  InitiativeRevisionAnalysisReference,
+  InitiativeRevisionConflictWarning,
+  InitiativeRevisionConsistencyCheck,
+  InitiativeRevisionIntelligenceSnapshot,
+} from "./initiative-revision-intelligence-snapshot";
+export type {
+  InitiativeRevisionReaction,
+  InitiativeRevisionReactionKind,
+  InitiativeRevisionReactionSummary,
+} from "./initiative-revision-reaction";
+export type {
+  InitiativePetitionAnalysisReference,
+  InitiativePetitionConsistencyCheck,
+  InitiativePetitionDraft,
+  InitiativePetitionDraftContext,
+  InitiativePetitionIntelligenceSnapshot,
+  InitiativePetitionProposalReference,
+  InitiativePetitionRevisionReference,
+  PetitionTraceability,
+} from "./initiative-petition-lifecycle";
+export type { PetitionVisitorSignalRecord } from "./initiative-petition-visitor-signal";
+export type {
+  DecisionSessionTraceability,
+  InitiativeDecisionSessionAnalysisReference,
+  InitiativeDecisionSessionConsistencyCheck,
+  InitiativeDecisionSessionDraft,
+  InitiativeDecisionSessionDraftContext,
+  InitiativeDecisionSessionIntelligenceSnapshot,
+  InitiativeDecisionSessionOpenCommentReference,
+  InitiativeDecisionSessionPetitionReference,
+  InitiativeDecisionSessionProposalReference,
+  InitiativeDecisionSessionRecommendation,
+  InitiativeDecisionSessionRecommendationKind,
+  InitiativeDecisionSessionRevisionReference,
+} from "./initiative-decision-session-lifecycle";
+export type {
+  CollectiveDecisionStructuredContent,
+  CollectiveDecisionTraceability,
+  InitiativeCollectiveDecisionAnalysisReference,
+  InitiativeCollectiveDecisionConsistencyCheck,
+  InitiativeCollectiveDecisionIntelligenceSnapshot,
+  InitiativeCollectiveDecisionLifecycleDraft,
+  InitiativeCollectiveDecisionLifecycleDraftContext,
+  InitiativeCollectiveDecisionPetitionReference,
+  InitiativeCollectiveDecisionProposalReference,
+  InitiativeCollectiveDecisionRevisionReference,
+  InitiativeCollectiveDecisionSessionReference,
+} from "./initiative-collective-decision-lifecycle";
 export type {
   CivicCompatibilityConcern,
   CivicCompatibilityConfidenceLevel,
@@ -139,6 +299,7 @@ export type {
   DecisionSessionId,
   DecisionSessionPackageReferences,
   DecisionSessionStatus,
+  DecisionSessionStructuredContent,
 } from "./decision-session";
 export type {
   InitiativeCollectiveDecision,
@@ -170,6 +331,18 @@ export {
   isInitiativeImplementationCommitmentTerminal,
 } from "./initiative-implementation-commitment";
 export type {
+  ImplementationCommitmentTraceability,
+  InitiativeImplementationCommitmentCandidate,
+  InitiativeImplementationCommitmentCandidateDraftStatus,
+  InitiativeImplementationCommitmentConsistencyCheck,
+  InitiativeImplementationCommitmentDecisionReference,
+  InitiativeImplementationCommitmentIntelligenceSnapshot,
+  InitiativeImplementationCommitmentLifecycleDraft,
+  InitiativeImplementationCommitmentLifecycleDraftContext,
+  InitiativeImplementationCommitmentPackage,
+  InitiativeImplementationCommitmentProposalStatus,
+} from "./initiative-implementation-commitment-lifecycle";
+export type {
   ImplementationTrackingUpdate,
   ImplementationTrackingUpdateId,
   InitiativeImplementationTracking,
@@ -183,6 +356,71 @@ export {
   isInitiativeImplementationTrackingTerminal,
   SUGGESTED_IMPLEMENTATION_TRACKING_STAGES,
 } from "./initiative-implementation-tracking";
+export type {
+  ImplementationTrackingTraceability,
+  InitiativeImplementationTrackingCandidate,
+  InitiativeImplementationTrackingCommitmentReference,
+  InitiativeImplementationTrackingConsistencyCheck,
+  InitiativeImplementationTrackingIntelligenceSnapshot,
+  InitiativeImplementationTrackingLifecycleDraft,
+  InitiativeImplementationTrackingLifecycleDraftContext,
+  InitiativeImplementationTrackingPackage,
+  InitiativeImplementationTrackingPackageReference,
+} from "./initiative-implementation-tracking-lifecycle";
+export type {
+  InitiativeOfficialResponseCandidate,
+  InitiativeOfficialResponseConsistencyCheck,
+  InitiativeOfficialResponseIntelligenceSnapshot,
+  InitiativeOfficialResponseLifecycleDraft,
+  InitiativeOfficialResponseLifecycleDraftContext,
+  InitiativeOfficialResponsePackage,
+  InitiativeOfficialResponseRecord,
+  InitiativeOfficialResponseTrackingPackageReference,
+  InitiativeOfficialResponseTrackingRecordReference,
+  OfficialResponseTraceability,
+} from "./initiative-official-response-lifecycle";
+export type {
+  InitiativePublicImpactAnalysisReference,
+  InitiativePublicImpactCommitmentPackageReference,
+  InitiativePublicImpactConsistencyCheck,
+  InitiativePublicImpactDecisionReference,
+  InitiativePublicImpactDecisionSessionReference,
+  InitiativePublicImpactIntelligenceSnapshot,
+  InitiativePublicImpactLifecycleDraft,
+  InitiativePublicImpactLifecycleDraftContext,
+  InitiativePublicImpactOfficialResponsePackageReference,
+  InitiativePublicImpactOfficialResponseSummary,
+  InitiativePublicImpactParticipationStatistics,
+  InitiativePublicImpactPetitionReference,
+  InitiativePublicImpactReport,
+  InitiativePublicImpactReportSection,
+  InitiativePublicImpactReportSectionId,
+  InitiativePublicImpactRevisionReference,
+  InitiativePublicImpactTrackingPackageReference,
+  InitiativePublicImpactTrackingRecordSummary,
+  PublicImpactTraceability,
+} from "./initiative-public-impact-lifecycle";
+export { INITIATIVE_PUBLIC_IMPACT_REPORT_SECTION_IDS } from "./initiative-public-impact-lifecycle";
+export type {
+  CivicArchiveTraceability,
+  InitiativeCivicArchiveCompleteness,
+  InitiativeCivicArchiveConsistencyCheck,
+  InitiativeCivicArchiveIntelligenceSnapshot,
+  InitiativeCivicArchiveLifecycleDraft,
+  InitiativeCivicArchiveLifecycleDraftContext,
+  InitiativeCivicArchiveParticipationStatistics,
+  InitiativeCivicArchiveSection,
+  InitiativeCivicArchiveSectionId,
+  InitiativeCivicArchiveSourceReference,
+  InitiativeCivicArchiveTimelineEntry,
+  InitiativeCivicArchiveTimelineStatus,
+  InitiativeCivicArchiveVersion,
+  InitiativeLifecycleArchiveDocument,
+} from "./initiative-civic-archive-lifecycle";
+export {
+  INITIATIVE_CIVIC_ARCHIVE_SECTION_IDS,
+  INITIATIVE_LIFECYCLE_ARCHIVE_DISCLAIMER,
+} from "./initiative-civic-archive-lifecycle";
 export type {
   InitiativePublicImpact,
   InitiativePublicImpactId,
@@ -219,6 +457,62 @@ export type {
   InitiativeCommentReactionSummary,
 } from "./initiative-comment-reaction";
 export type {
+  InitiativeAnalysisReaction,
+  InitiativeAnalysisReactionKind,
+  InitiativeAnalysisReactionSummary,
+} from "./initiative-analysis-reaction";
+export type {
+  InitiativeAnalysisDiscussionStatistics,
+  InitiativeAnalysisSourceArgument,
+  InitiativeAnalysisSourceCommentRef,
+  InitiativeAnalysisSourceConcern,
+  InitiativeAnalysisSourceProposalCandidate,
+  InitiativeAnalysisSourceSnapshot,
+  InitiativeAnalysisSourceTopic,
+} from "./initiative-analysis-source-snapshot";
+export type {
+  InitiativeActiveAlliesProjection,
+  InitiativeActiveAllyEntry,
+  InitiativeAlly,
+  InitiativeAllyStatus,
+  InitiativeDiscussionProposalCandidate,
+  PublicCommentCollaborationState,
+  PublicCommentProposalCandidateStatus,
+  PublicInitiativeCollaborationParticipant,
+  PublicInitiativeCollaborationParticipantsResult,
+} from "./initiative-discussion-collaboration";
+export type {
+  InitiativeCollaborationChannelHistoryResult,
+  InitiativeCollaborationChannelMessage,
+  InitiativeCollaborationChannelMessageSender,
+  InitiativeCollaborationChannelMessageType,
+  InitiativeCollaborationChannelMessageView,
+  InitiativeCollaborationChannelReadState,
+  InitiativeCollaborationChannelSummary,
+  InitiativeCollaborationSystemEventKind,
+} from "./initiative-collaboration-channel";
+export type {
+  InitiativeCollaborationSession,
+  InitiativeCollaborationSessionAttendance,
+  InitiativeCollaborationSessionAttendanceResponse,
+  InitiativeCollaborationSessionAttendanceRosterEntry,
+  InitiativeCollaborationSessionAttendanceTotals,
+  InitiativeCollaborationSessionInput,
+  InitiativeCollaborationSessionListResult,
+  InitiativeCollaborationSessionStatus,
+  InitiativeCollaborationSessionView,
+} from "./initiative-collaboration-session";
+export type {
+  SharedDocument,
+  SharedDocumentContextRef,
+  SharedDocumentContextType,
+  SharedDocumentFutureExtensionPoint,
+  SharedDocumentListResult,
+  SharedDocumentUploaderIdentity,
+  SharedDocumentVerificationStatus,
+  SharedDocumentView,
+} from "./shared-document";
+export type {
   InitiativeSupportActorCohort,
   InitiativeSupportBookmarkRecord,
   InitiativeSupportRegisteredSignalRecord,
@@ -248,6 +542,80 @@ export type {
   PublicInitiativeRelatedCivicRecord,
   PublicInitiativeSupportStatistics,
 } from "./public-initiative-experience";
+export {
+  getInitiativeLifecycleStageDefinition,
+  getNextInitiativeLifecycleStageId,
+  getPreviousInitiativeLifecycleStageId,
+  INITIATIVE_LIFECYCLE_STAGE_REGISTRY,
+  isInitiativeLifecycleAuthorWorkspaceStage,
+  isInitiativeLifecycleStageId,
+} from "./initiative-lifecycle-stage";
+export type { InitiativeLifecycleStageDefinition, InitiativeLifecycleStageId } from "./initiative-lifecycle-stage";
+export type {
+  InitiativeLifecyclePresentationMode,
+  InitiativeLifecyclePresentationModeResult,
+  InitiativeLifecyclePresentationStatus,
+  InitiativeLifecycleViewerRole,
+} from "./initiative-lifecycle-presentation";
+export type { InitiativeLifecycleStageMetadata } from "./initiative-lifecycle-stage-metadata";
+export type {
+  InitiativeLifecycleSourceKind,
+  InitiativeLifecycleSourceSnapshotItem,
+  InitiativeLifecycleSourceSnapshotSummary,
+} from "./initiative-lifecycle-source-snapshot";
+export type {
+  InitiativeLifecycleStagePublicationEvent,
+  InitiativeLifecycleStagePublicationKind,
+} from "./initiative-lifecycle-stage-publication-event";
+export type {
+  InitiativeLifecycleAiAssistOperation,
+  InitiativeLifecycleAiAssistRequest,
+  InitiativeLifecycleAiAssistResult,
+  InitiativeLifecycleAiAssistSuggestion,
+  LifecycleAiAssistantSessionContext,
+  LifecycleAiProviderDiagnostics,
+  LifecycleAiProviderId,
+} from "./initiative-lifecycle-ai-assist";
+export { INITIATIVE_LIFECYCLE_AI_ASSIST_OPERATIONS } from "./initiative-lifecycle-ai-assist";
+export type {
+  HumanityUnionAssistantAssistRequest,
+  HumanityUnionAssistantAssistResult,
+  HumanityUnionAssistantConversationTurn,
+  HumanityUnionAssistantSessionContext,
+  HumanityUnionAssistantSessionHistoryPolicy,
+  HumanityUnionAssistantSurfaceId,
+} from "./humanity-union-assistant";
+export {
+  HUMANITY_UNION_ASSISTANT_PRODUCT_NAME,
+  HUMANITY_UNION_ASSISTANT_SESSION_HISTORY_POLICY,
+  HUMANITY_UNION_ASSISTANT_SURFACE_IDS,
+  isHumanityUnionAssistantSurfaceId,
+} from "./humanity-union-assistant";
+export type {
+  InitiativeLifecycleAuthorAction,
+  InitiativeLifecycleAuthorActionId,
+  InitiativeLifecycleAuthorActionState,
+} from "./initiative-lifecycle-author-action";
+export type {
+  InitiativeLifecycleAiCapabilities,
+  InitiativeLifecycleStageNeighbor,
+  InitiativeLifecycleStageProjection,
+} from "./initiative-lifecycle-stage-projection";
+export type {
+  LifecycleSafetyCategoryHit,
+  LifecycleSafetyCategoryId,
+  LifecycleSafetyDecision,
+  LifecycleSafetyEvaluationInput,
+  LifecycleSafetyOutcome,
+  LifecycleSafetyProviderResult,
+  LifecycleSafetyProviderSignal,
+  LifecycleSafetySurfaceId,
+} from "./lifecycle-safety";
+export {
+  LIFECYCLE_SAFETY_CATEGORY_IDS,
+  LIFECYCLE_SAFETY_OUTCOMES,
+  LIFECYCLE_SAFETY_PROTECTED_SURFACES,
+} from "./lifecycle-safety";
 export type {
   PublicInitiativeCollaborativeAnalysisListItem,
   PublicInitiativeCollaborativeAnalysisProjection,
@@ -259,6 +627,7 @@ export type {
 } from "./public-initiative-improvement-proposal";
 export type {
   InitiativeRevisionMetrics,
+  PublicInitiativeRevisionChange,
   PublicInitiativeVersionRevisionListItem,
   PublicInitiativeVersionRevisionProjection,
   PublicInitiativeWithVersionHistory,
@@ -272,6 +641,7 @@ export type {
   DecisionSessionMetrics,
   PublicDecisionSessionListItem,
   PublicDecisionSessionPackage,
+  PublicDecisionSessionPetitionContext,
   PublicDecisionSessionProjection,
 } from "./public-decision-session";
 export type {
@@ -525,12 +895,15 @@ export type {
   PublicPetitionIdentity,
   PublicPetitionOutcomeProjection,
   PublicPetitionProjection,
+  PublicPetitionRevisionContext,
   PublicPetitionSubject,
   PublicPetitionSummary,
+  PublicPetitionSupportBreakdown,
   PublicShareReference,
   PublicSupportState,
   PublicSupportStatistics,
 } from "./public-petition";
+export { PETITION_PARTICIPATION_TRANSPARENCY_NOTE } from "./public-petition";
 export type {
   PublicCollectiveDecisionReference,
   PublicCommunityCapacityProjection,
@@ -762,6 +1135,61 @@ export type {
 } from "./knowledge-center";
 export type { MediaUploadPurpose, MediaUploadResponse } from "./media-upload";
 export type {
+  BlogAuthorApplication,
+  BlogAuthorApplicationStatus,
+  BlogAuthoringAccessState,
+  BlogAuthorWorkspacePost,
+  BlogAuthorWorkspacePostListResponse,
+  BlogAuthorWorkspacePostSummary,
+  BlogComment,
+  BlogCommentModerationState,
+  BlogCommentStatus,
+  BlogEditorialHistoryAction,
+  BlogEditorialHistoryEntry,
+  BlogEditorialQueueItem,
+  BlogEditorialQueueResponse,
+  BlogEditorialReviewDetail,
+  BlogCapability,
+  BlogCapabilityGrant,
+  BlogCategory,
+  BlogCategoryId,
+  BlogCoverMedia,
+  BlogPost,
+  BlogPostLegacyMigration,
+  BlogPostReviewMetadata,
+  BlogPostStatus,
+  BlogReaction,
+  BlogReactionKind,
+  BlogReactionSummary,
+  BlogReviewStatus,
+  PublicBlogComment,
+  PublicBlogCommentListResponse,
+  PublicBlogPostDetail,
+  PublicBlogPostListItem,
+  PublicBlogPostListResponse,
+} from "./blog";
+export {
+  BLOG_AUTHOR_APPLICATION_ACTIVE_STATUSES,
+  BLOG_AUTHOR_APPLICATION_STATUSES,
+  BLOG_CAPABILITIES,
+  BLOG_CATEGORIES,
+  BLOG_COMMENT_STATUSES,
+  BLOG_POST_STATUSES,
+} from "./blog";
+export type {
+  AdministrationAuditAction,
+  AdministrationAuditAppendInput,
+  AdministrationAuditRecord,
+  CapabilityScope,
+  CapabilityScopeType,
+  OwnershipCheck,
+  OwnershipRelation,
+  PlatformCapabilityGrant,
+  PlatformCapabilityGrantSource,
+  PlatformCapabilityId,
+} from "./administration";
+export { PLATFORM_CAPABILITY_IDS } from "./administration";
+export type {
   PlatformStatisticsCounts,
   PlatformStatisticsMeta,
   PlatformStatisticsPayload,
@@ -802,6 +1230,20 @@ export type {
   WorldInitiativeCardProjection,
   WorldInitiativesPublicProjection,
 } from "./public-world-initiatives";
+export type {
+  CommunityCollaborationOpportunityProjection,
+  CommunityInitiativeRelationshipProjection,
+  CommunityInitiativeRelationshipType,
+  CommunityIntelligenceAssistantContext,
+  CommunityIntelligenceAudience,
+  CommunityIntelligenceReason,
+  CommunityParticipantRelevanceProjection,
+  CommunityPriorityMatchProjection,
+  CommunityRelatedInitiativesResponse,
+  CommunitySimilarityCheckRequest,
+  CommunitySimilarityCheckResponse,
+  CommunityWorkspaceOpportunitiesResponse,
+} from "./community-intelligence";
 export type {
   PublicCivicNominationConflictOfInterest,
   PublicCivicNominationDeclarationStatus,

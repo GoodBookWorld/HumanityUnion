@@ -25,14 +25,21 @@ function decodeXmlEntities(value: string): string {
     .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 10)));
 }
 
+function unwrapCdata(value: string): string {
+  const trimmed = value.trim();
+  // Economist (and others) wrap titles/descriptions in multiline CDATA.
+  // stripHtml() would otherwise treat `<![CDATA[...]]>` as a tag and erase the text.
+  const cdataMatch = trimmed.match(/^<!\[CDATA\[([\s\S]*?)\]\]>$/i);
+  return cdataMatch?.[1] ?? trimmed;
+}
+
 function readRawTag(block: string, tagNames: string[]): string | undefined {
   for (const tagName of tagNames) {
     const pattern = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, "i");
     const match = block.match(pattern);
 
     if (match?.[1]) {
-      const cdataMatch = match[1].match(/^<!\[CDATA\[([\s\S]*?)\]\]>$/i);
-      return decodeXmlEntities(cdataMatch?.[1] ?? match[1]).trim();
+      return decodeXmlEntities(unwrapCdata(match[1])).trim();
     }
   }
 
@@ -330,10 +337,22 @@ function parseItemBlock(block: string): ParsedFeedItem | null {
   const publishedAt = publishedRaw ? new Date(publishedRaw).toISOString() : new Date().toISOString();
   const imageUrl = readImageUrl(block);
 
+  // Prefer short syndication fields only — never prefer content:encoded (often full HTML body).
+  const summaryRaw =
+    readTag(block, ["description", "summary", "content"]) ??
+    // Last resort: bound content:encoded text so full articles are not retained.
+    (() => {
+      const encoded = readTag(block, ["content:encoded"]);
+      if (!encoded) {
+        return undefined;
+      }
+      return encoded.length > 320 ? `${encoded.slice(0, 317).trimEnd()}...` : encoded;
+    })();
+
   return {
     externalId: readGuid(block),
     title,
-    summary: readTag(block, ["description", "summary", "content", "content:encoded"]),
+    summary: summaryRaw,
     articleUrl,
     imageUrl,
     publishedAt,

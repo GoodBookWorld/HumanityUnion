@@ -6,6 +6,10 @@ Version 1.0
 
 Reference Implementation
 
+> **Production note (Hardening Pack 02):** The shipping product Assistant is documented in
+> [`HUMANITY_UNION_ASSISTANT_CANONICAL_v1.0.md`](./HUMANITY_UNION_ASSISTANT_CANONICAL_v1.0.md).
+> Legacy Workspace Civic Assistant / workspace-assistant HTTP mounts are quarantined.
+
 ---
 
 # Purpose

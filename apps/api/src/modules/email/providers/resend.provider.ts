@@ -1,5 +1,9 @@
 import { resolveEmailConfig } from "../email.config.js";
-import { assertSafeRecipientForVerificationMode } from "../email-verification-guards.js";
+import {
+  assertRecipientAllowedForExternalDelivery,
+  recipientDomainForLogs,
+  TestRecipientBlockedError,
+} from "../email-safety-guards.js";
 import type {
   EmailProvider,
   EmailProviderHealthResult,
@@ -15,12 +19,36 @@ export class ResendEmailProvider implements EmailProvider {
   readonly providerId = "resend" as const;
 
   async sendEmail(request: EmailSendRequest): Promise<EmailSendResult> {
-    assertSafeRecipientForVerificationMode(request.to, this.providerId);
+    const started = Date.now();
+
+    try {
+      assertRecipientAllowedForExternalDelivery(request.to, this.providerId);
+    } catch (error) {
+      if (error instanceof TestRecipientBlockedError) {
+        console.warn(
+          `[email:resend] test-recipient-blocked | template=${request.template} domain=${recipientDomainForLogs(request.to)}`,
+        );
+        return {
+          status: "blocked",
+          attemptCount: 0,
+          provider: "resend",
+          durationMs: Date.now() - started,
+          failureCategory: "test_recipient_blocked",
+        };
+      }
+      throw error;
+    }
 
     const config = resolveEmailConfig();
 
     if (!config.resendApiKey) {
-      throw new Error("RESEND_API_KEY is required when EMAIL_PROVIDER=resend.");
+      return {
+        status: "failed",
+        attemptCount: 1,
+        provider: "resend",
+        durationMs: Date.now() - started,
+        failureCategory: "not_configured",
+      };
     }
 
     const response = await fetch("https://api.resend.com/emails", {
@@ -40,13 +68,23 @@ export class ResendEmailProvider implements EmailProvider {
     });
 
     if (!response.ok) {
-      throw new Error(`Resend provider request failed with status ${response.status}.`);
+      return {
+        status: "failed",
+        attemptCount: 1,
+        provider: "resend",
+        durationMs: Date.now() - started,
+        failureCategory: `http_${response.status}`,
+      };
     }
 
     const body = (await response.json()) as ResendSendResponse;
 
     return {
+      status: "sent",
       providerMessageId: body.id,
+      attemptCount: 1,
+      provider: "resend",
+      durationMs: Date.now() - started,
     };
   }
 

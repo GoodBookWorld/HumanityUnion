@@ -2,6 +2,8 @@ import { isMongoConfigured } from "../mongodb/mongo-config.js";
 import { connectMongoClient } from "../mongodb/mongo-connection.js";
 import { ensureMongoIndexes } from "../mongodb/mongo-indexes.js";
 import { registerWorkspaceProjectionHandlers } from "../../modules/workspace/index.js";
+import { registerParticipantActionHandlers } from "../../modules/participant-action/index.js";
+import { registerInitiativeLifecycleStageHandlers } from "../../shared/initiative-lifecycle-stage/index.js";
 import { startOutboxDispatcher } from "../outbox/outbox.dispatcher.js";
 import { logger } from "../../shared/observability/logger.js";
 
@@ -21,6 +23,8 @@ export async function bootstrapEventInfrastructure(): Promise<void> {
   await connectMongoClient();
   await ensureMongoIndexes();
   registerWorkspaceProjectionHandlers();
+  registerParticipantActionHandlers();
+  registerInitiativeLifecycleStageHandlers();
   startOutboxDispatcher();
 
   logger.info("event_infrastructure.ready", { component: "event-infrastructure" });

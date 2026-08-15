@@ -4,6 +4,8 @@ export const FACT_CHECK_RESOURCES: readonly FactCheckResource[] = [
   {
     id: "snopes",
     name: "Snopes",
+    logoLabel: "Sn",
+    logoUrl: "/images/media/fact/snopes.webp",
     mission:
       "Investigate rumors, viral claims, and widely shared stories with documented evidence.",
     coverage: "General claims, urban legends, social media rumors, and public statements.",
@@ -13,6 +15,8 @@ export const FACT_CHECK_RESOURCES: readonly FactCheckResource[] = [
   {
     id: "politifact",
     name: "PolitiFact",
+    logoLabel: "PF",
+    logoUrl: "/images/media/fact/politifact.webp",
     mission:
       "Fact-check public statements using transparent rating methodology and source citations.",
     coverage: "Political statements, campaign claims, and policy assertions in public discourse.",
@@ -22,6 +26,8 @@ export const FACT_CHECK_RESOURCES: readonly FactCheckResource[] = [
   {
     id: "factcheck-org",
     name: "FactCheck.org",
+    logoLabel: "FC",
+    logoUrl: "/images/media/fact/factcheck.webp",
     mission: "Nonpartisan project monitoring factual accuracy in U.S. political communications.",
     coverage: "Political ads, speeches, debates, and viral political content.",
     websiteUrl: "https://www.factcheck.org/",
@@ -30,6 +36,8 @@ export const FACT_CHECK_RESOURCES: readonly FactCheckResource[] = [
   {
     id: "euvsdisinfo",
     name: "EUvsDisinfo",
+    logoLabel: "EU",
+    logoUrl: "/images/media/fact/euvsdisinfo.webp",
     mission: "Track and document disinformation narratives with open-source evidence.",
     coverage: "Disinformation campaigns, information manipulation, and false narratives.",
     websiteUrl: "https://euvsdisinfo.eu/",
@@ -38,6 +46,8 @@ export const FACT_CHECK_RESOURCES: readonly FactCheckResource[] = [
   {
     id: "bellingcat",
     name: "Bellingcat",
+    logoLabel: "Be",
+    logoUrl: "/images/media/fact/bellingcat.webp",
     mission: "Open-source investigation using publicly available evidence and verifiable methods.",
     coverage: "Conflict reporting, geolocation verification, and digital forensics.",
     websiteUrl: "https://www.bellingcat.com/",
@@ -46,6 +56,8 @@ export const FACT_CHECK_RESOURCES: readonly FactCheckResource[] = [
   {
     id: "afp-fact-check",
     name: "AFP Fact Check",
+    logoLabel: "AFP",
+    logoUrl: "/images/media/fact/afp.webp",
     mission: "International fact-checking unit of Agence France-Presse with editorial standards.",
     coverage: "Global viral claims, health misinformation, and international news assertions.",
     websiteUrl: "https://factcheck.afp.com/",
@@ -54,6 +66,8 @@ export const FACT_CHECK_RESOURCES: readonly FactCheckResource[] = [
   {
     id: "full-fact",
     name: "Full Fact",
+    logoLabel: "FF",
+    logoUrl: "/images/media/fact/fullfact.webp",
     mission: "Independent fact-checking charity using transparent methodology and corrections.",
     coverage: "UK public statements, statistics, and widely shared online claims.",
     websiteUrl: "https://fullfact.org/",

@@ -11,11 +11,17 @@ function resolveBrandedLogoMarkup(): string {
   const config = resolveEmailConfig();
   const logoUrl = config.logoUrl;
 
+  // Prefer absolute HTTPS EMAIL_LOGO_URL. When unavailable (e.g. localhost),
+  // omit the <img> so Gmail does not show a broken-image icon — text brand remains.
+  const logoImage = logoUrl
+    ? `<img src="${logoUrl}" alt="Humanity Union" width="160" height="40" style="display:block;margin:0 auto;width:160px;height:auto;max-width:160px;border:0;outline:none;text-decoration:none;" />`
+    : "";
+
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0">
   <tr>
     <td style="background:${PRIMARY_COLOR};padding:24px 32px;text-align:center;">
-      <img src="${logoUrl}" alt="Humanity Union" width="160" style="display:block;margin:0 auto;max-width:160px;height:auto;border:0;" />
-      <p style="margin:8px 0 0;font-size:18px;font-weight:700;color:#ffffff;letter-spacing:0.02em;">Humanity Union</p>
+      ${logoImage}
+      <p style="margin:${logoImage ? "8px" : "0"} 0 0;font-size:18px;font-weight:700;color:#ffffff;letter-spacing:0.02em;">Humanity Union</p>
     </td>
   </tr>
 </table>`;
@@ -315,6 +321,110 @@ export function renderMemberBadgeContributionConfirmedEmail(
   };
 }
 
+export interface WorkspaceNotificationSummaryTemplateInput {
+  displayName: string;
+  unreadCount: number;
+  notificationsUrl: string;
+}
+
+export interface BlogAuthorApplicationStatusTemplateInput {
+  displayName: string;
+  statusLabel: string;
+  statusMessage: string;
+  authoringUrl: string;
+}
+
+export interface BlogPublicationStatusTemplateInput {
+  displayName: string;
+  statusLabel: string;
+  statusMessage: string;
+  publishingUrl: string;
+}
+
+export interface WorkspaceMessageAlertTemplateInput {
+  displayName: string;
+  messagesUrl: string;
+}
+
+export function renderWorkspaceNotificationSummaryEmail(
+  input: WorkspaceNotificationSummaryTemplateInput,
+): EmailTemplateContent {
+  const countLabel =
+    input.unreadCount === 1
+      ? "You have 1 new notification in your Workspace."
+      : `You have ${input.unreadCount} new notifications in your Workspace.`;
+
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Workspace notifications</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">${countLabel}</p>
+    ${primaryButton("Open Notifications", input.notificationsUrl)}
+    <p style="margin:0;line-height:1.6;font-size:13px;color:#64748b;">This summary does not include private message content.</p>
+  `;
+
+  return {
+    subject: "You have new Humanity Union notifications",
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\n${countLabel}\n\nOpen Notifications: ${input.notificationsUrl}\n\nThis summary does not include private message content.`,
+  };
+}
+
+export function renderBlogAuthorApplicationStatusEmail(
+  input: BlogAuthorApplicationStatusTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">${input.statusLabel}</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">${input.statusMessage}</p>
+    ${primaryButton("Open Authoring", input.authoringUrl)}
+  `;
+
+  return {
+    subject: input.statusLabel,
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\n${input.statusMessage}\n\nOpen Authoring: ${input.authoringUrl}`,
+  };
+}
+
+export function renderBlogPublicationStatusEmail(
+  input: BlogPublicationStatusTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">${input.statusLabel}</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">${input.statusMessage}</p>
+    ${primaryButton("Open Publishing", input.publishingUrl)}
+  `;
+
+  return {
+    subject: input.statusLabel,
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\n${input.statusMessage}\n\nOpen Publishing: ${input.publishingUrl}`,
+  };
+}
+
+/**
+ * Private Direct Message / Collaboration alert.
+ * Must never accept or render message body, channel content, or documents.
+ */
+export function renderWorkspaceMessageAlertEmail(
+  input: WorkspaceMessageAlertTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">New message</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">You have a new message in Humanity Union.</p>
+    ${primaryButton("Open Messages", input.messagesUrl)}
+    <p style="margin:0;line-height:1.6;font-size:13px;color:#64748b;">For privacy, message content is never included in email.</p>
+  `;
+
+  return {
+    subject: "You have a new message in Humanity Union",
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\nYou have a new message in Humanity Union.\n\nOpen Messages: ${input.messagesUrl}\n\nFor privacy, message content is never included in email.`,
+  };
+}
+
 export function renderEmailTemplate(
   template: EmailTemplateId,
   input: Record<string, string | number | undefined>,
@@ -346,6 +456,31 @@ export function renderEmailTemplate(
       return renderMemberBadgeContributionConfirmedEmail(
         input as unknown as MemberBadgeContributionConfirmedTemplateInput,
       );
+    case "workspace_notification_summary":
+      return renderWorkspaceNotificationSummaryEmail({
+        displayName: String(input.displayName ?? "Participant"),
+        unreadCount: Number(input.unreadCount ?? 0),
+        notificationsUrl: String(input.notificationsUrl ?? ""),
+      });
+    case "blog_author_application_status":
+      return renderBlogAuthorApplicationStatusEmail({
+        displayName: String(input.displayName ?? "Participant"),
+        statusLabel: String(input.statusLabel ?? "Blog Author application update"),
+        statusMessage: String(input.statusMessage ?? ""),
+        authoringUrl: String(input.authoringUrl ?? ""),
+      });
+    case "blog_publication_status":
+      return renderBlogPublicationStatusEmail({
+        displayName: String(input.displayName ?? "Participant"),
+        statusLabel: String(input.statusLabel ?? "Blog publication update"),
+        statusMessage: String(input.statusMessage ?? ""),
+        publishingUrl: String(input.publishingUrl ?? ""),
+      });
+    case "workspace_message_alert":
+      return renderWorkspaceMessageAlertEmail({
+        displayName: String(input.displayName ?? "Participant"),
+        messagesUrl: String(input.messagesUrl ?? ""),
+      });
     default: {
       const unsupported: never = template;
       throw new Error(`Unsupported email template: ${unsupported}`);

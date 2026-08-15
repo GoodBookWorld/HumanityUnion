@@ -1,5 +1,8 @@
 import type {
+  InitiativeAlly,
+  InitiativeDiscussionProposalCandidate,
   InitiativeSupportSignalKind,
+  PublicInitiativeCollaborationParticipantsResult,
   PublicInitiativeDiscussionComment,
   PublicInitiativeExperienceProjection,
   PublicInitiativeSupportStatistics,
@@ -63,6 +66,60 @@ export async function updateInitiativeCommentReaction(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reaction }),
+    },
+  );
+}
+
+export async function markCommentAsProposalCandidate(
+  initiativeId: string,
+  commentId: string,
+): Promise<InitiativeDiscussionProposalCandidate> {
+  return apiRequest<InitiativeDiscussionProposalCandidate>(
+    `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/comments/${encodeURIComponent(commentId)}/proposal-candidate`,
+    { method: "POST" },
+  );
+}
+
+export async function expressInitiativeCollaborationInterest(
+  initiativeId: string,
+): Promise<InitiativeAlly> {
+  return apiRequest<InitiativeAlly>(
+    `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/collaboration-interest`,
+    { method: "POST" },
+  );
+}
+
+export async function inviteCommentAuthorToAllies(
+  initiativeId: string,
+  commentId: string,
+): Promise<InitiativeAlly> {
+  return apiRequest<InitiativeAlly>(
+    `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/comments/${encodeURIComponent(commentId)}/allies-invitation`,
+    { method: "POST" },
+  );
+}
+
+/** Profile UX Pack 01 Part 2/8 — the Initiative Author's Collaboration working list. */
+export async function fetchInitiativeCollaborationParticipants(
+  initiativeId: string,
+): Promise<PublicInitiativeCollaborationParticipantsResult> {
+  return apiRequest<PublicInitiativeCollaborationParticipantsResult>(
+    `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/collaboration-participants`,
+  );
+}
+
+/** Profile UX Pack 01 Part 5/6 — Initiative Author Accept/Decline of a Participant's own request. */
+export async function respondToInitiativeCollaborationInterest(
+  initiativeId: string,
+  participantId: string,
+  response: "accept" | "decline",
+): Promise<InitiativeAlly> {
+  return apiRequest<InitiativeAlly>(
+    `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/collaboration-interest/${encodeURIComponent(participantId)}/respond`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ response }),
     },
   );
 }

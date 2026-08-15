@@ -7,20 +7,25 @@
 .workspace-status-card,
 .workspace-civic-assistant__panel {
   border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-md);
+  border-radius: var(--hu-radius-card);
   background: var(--hu-color-surface);
-  box-shadow: var(--hu-shadow-sm);
+  box-shadow: var(--hu-shadow-card);
 }
 
 .hu-card {
   padding: var(--hu-space-4) var(--hu-space-5);
 }
 
+.hu-card--interactive:hover,
+.hu-card--interactive:focus-within {
+  box-shadow: var(--hu-shadow-control);
+}
+
 .hu-profile-card {
   border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-md);
+  border-radius: var(--hu-radius-card);
   background: var(--hu-color-surface);
-  box-shadow: var(--hu-shadow-sm);
+  box-shadow: var(--hu-shadow-card);
   padding: var(--hu-space-5);
 }
 
@@ -33,15 +38,49 @@
 .hu-button,
 .workspace-button,
 .workspace-civic-assistant__actions button {
-  border-radius: var(--hu-radius-sm);
-  min-height: 2.25rem;
-  padding: var(--hu-space-2) var(--hu-space-4);
-  font: inherit;
+  appearance: none;
+  border-radius: var(--hu-button-radius);
+  min-height: var(--hu-button-min-height);
+  padding: var(--hu-button-padding-block) var(--hu-button-padding-inline);
+  font-family: var(--hu-font-family);
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-button-font-weight);
+  line-height: var(--hu-line-height-tight);
   width: fit-content;
   max-width: 100%;
   box-sizing: border-box;
   text-align: center;
   white-space: normal;
+  cursor: pointer;
+  box-shadow: var(--hu-shadow-control);
+  transition:
+    background-color var(--hu-button-transition),
+    border-color var(--hu-button-transition),
+    box-shadow var(--hu-button-transition),
+    color var(--hu-button-transition),
+    transform var(--hu-button-transition);
+}
+
+.hu-button:active:not(:disabled),
+.workspace-button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: var(--hu-shadow-control-pressed);
+}
+
+.hu-button--sm {
+  min-height: 2rem;
+  padding: 0.35rem 0.75rem;
+  font-size: var(--hu-font-size-xs);
+}
+
+.hu-button--lg {
+  min-height: 2.75rem;
+  padding: 0.65rem 1.25rem;
+  font-size: var(--hu-font-size-base);
+}
+
+.hu-button--pill {
+  border-radius: var(--hu-radius-pill);
 }
 
 .hu-form-actions {
@@ -52,10 +91,16 @@
   gap: var(--hu-space-3);
 }
 
+/* A — Filled / primary */
 .hu-button--primary,
 .workspace-button--primary {
-  background: var(--hu-color-primary);
-  border: 1px solid var(--hu-color-primary);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--hu-color-primary) 92%, #ffffff) 0%,
+    var(--hu-color-primary) 55%,
+    color-mix(in srgb, var(--hu-color-primary) 88%, #000000) 100%
+  );
+  border: 1px solid var(--hu-color-primary-hover);
   color: #ffffff;
 }
 
@@ -72,28 +117,95 @@ a.hu-button.hu-button--primary:hover:not([aria-disabled="true"]),
 a.hu-button.hu-button--primary:focus-visible:not([aria-disabled="true"]),
 .workspace-button--primary:hover:not(:disabled),
 .workspace-button--primary:focus-visible:not(:disabled) {
-  background-color: #df9815;
-  border-color: #df9815;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--hu-color-primary-hover) 88%, #ffffff) 0%,
+    var(--hu-color-primary-hover) 100%
+  );
+  border-color: var(--hu-color-primary-hover);
   color: #ffffff;
 }
 
+/* B — Light / secondary */
 .hu-button--secondary,
 .workspace-button--secondary {
-  background: var(--hu-color-surface);
+  background: linear-gradient(165deg, #ffffff 0%, #f4f7fa 55%, #e6ebef 100%);
   border: 1px solid var(--hu-color-border);
-  color: var(--hu-color-text);
+  color: var(--hu-color-primary);
 }
 
 a.hu-button.hu-button--secondary,
 a.hu-button.hu-button--secondary:link,
 a.hu-button.hu-button--secondary:visited {
-  color: var(--hu-color-text);
+  color: var(--hu-color-primary);
   text-decoration: none;
 }
 
+.hu-button--secondary:hover:not(:disabled),
+.hu-button--secondary:focus-visible:not(:disabled),
 a.hu-button.hu-button--secondary:hover:not([aria-disabled="true"]),
-a.hu-button.hu-button--secondary:focus-visible:not([aria-disabled="true"]) {
-  color: var(--hu-color-text);
+a.hu-button.hu-button--secondary:focus-visible:not([aria-disabled="true"]),
+.workspace-button--secondary:hover:not(:disabled),
+.workspace-button--secondary:focus-visible:not(:disabled) {
+  background: linear-gradient(165deg, #ffffff 0%, var(--hu-color-primary-soft) 70%, #e6ebef 100%);
+  border-color: color-mix(in srgb, var(--hu-color-primary) 35%, var(--hu-color-border));
+  color: var(--hu-color-primary-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hu-button,
+  .workspace-button,
+  .workspace-civic-assistant__actions button {
+    transition: none;
+  }
+
+  .hu-button:active:not(:disabled),
+  .workspace-button:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/*
+ * UX Completion Pack 04 Part 6 — the lowest-emphasis button weight, for
+ * actions that must remain available but should never visually compete
+ * with a screen's primary/secondary actions (e.g. "Archive" beside
+ * "Publish"/"Save Draft"). No dedicated destructive variant exists yet
+ * (see design-system tokens), so the hover/focus tint toward
+ * `--hu-color-danger` is this button's only "use with care" signal —
+ * still a normal button, never a fake-disabled or hidden one.
+ */
+.hu-button--tertiary {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--hu-color-text-muted);
+}
+
+.hu-button--tertiary:hover:not(:disabled),
+.hu-button--tertiary:focus-visible:not(:disabled) {
+  border-color: var(--hu-color-border);
+  color: var(--hu-color-danger);
+}
+
+/*
+ * Initiative UX Pack 01.1 Part 3 — the first true destructive button
+ * variant: an always-visible danger outline (not just a hover tint like
+ * `.hu-button--tertiary`), reusing the exact `--hu-color-danger` treatment
+ * already established for `.sd-list__action-button--danger` (Shared
+ * Documents "Remove"), promoted here into the shared design system so any
+ * future irreversible action (e.g. "Delete Draft") can reuse one real
+ * destructive style instead of another bespoke one-off class.
+ */
+.hu-button--danger {
+  background: var(--hu-color-surface);
+  border: 1px solid var(--hu-color-danger);
+  color: var(--hu-color-danger);
+}
+
+.hu-button--danger:hover:not(:disabled),
+.hu-button--danger:focus-visible:not(:disabled) {
+  background: var(--hu-color-danger);
+  border-color: var(--hu-color-danger);
+  color: #ffffff;
 }
 
 .hu-button:disabled,
@@ -315,4 +427,21 @@ a.hu-button.hu-button--secondary:focus-visible:not([aria-disabled="true"]) {
   color: var(--hu-color-text-muted);
   cursor: not-allowed;
   opacity: 0.85;
+}
+
+/**
+ * Launch Readiness Pack 05 — canonical visually-hidden helper.
+ * Prefer `.hu-visually-hidden`. `.visually-hidden` remains as a compatibility alias.
+ */
+.hu-visually-hidden,
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }

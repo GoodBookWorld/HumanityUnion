@@ -1,4 +1,9 @@
-import type { Initiative, ParticipationScope, PublicInitiativeProjection } from "@hu/types";
+import type {
+  Initiative,
+  InitiativeCoverMedia,
+  ParticipationScope,
+  PublicInitiativeProjection,
+} from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
 
@@ -11,6 +16,8 @@ export interface CreateInitiativeDraftInput {
   participationScope?: ParticipationScope;
   imageUrl?: string;
   imageAltText?: string;
+  /** UX Evolution Pack 03 */
+  coverMedia?: InitiativeCoverMedia;
   startDate?: string;
   completionDate?: string;
   sourceNewsId?: string;
@@ -28,6 +35,10 @@ export interface SaveInitiativeDraftInput {
   region?: string;
   imageUrl?: string;
   imageAltText?: string;
+  /** UX Evolution Pack 03 */
+  coverMedia?: InitiativeCoverMedia;
+  /** UX Evolution Pack 03 — explicit "Remove Media" action. */
+  clearCoverMedia?: boolean;
   startDate?: string;
   completionDate?: string;
   clearSourceReferences?: boolean;
@@ -131,6 +142,18 @@ export async function republishInitiative(
 export async function archiveInitiative(initiativeId: string): Promise<Initiative> {
   return apiRequest<Initiative>(`/api/v1/initiatives/${encodeURIComponent(initiativeId)}/archive`, {
     method: "POST",
+  });
+}
+
+/**
+ * Initiative UX Pack 01.1 — permanently removes an unpublished Draft
+ * Initiative owned by the current Author. Server-side rejects anything
+ * that is not still `"draft"` (or not owned by the caller), so this can
+ * never be used to remove a published/archived Initiative.
+ */
+export async function deleteInitiativeDraft(initiativeId: string): Promise<void> {
+  await apiRequest<null>(`/api/v1/initiatives/${encodeURIComponent(initiativeId)}/draft`, {
+    method: "DELETE",
   });
 }
 

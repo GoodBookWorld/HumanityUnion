@@ -14,6 +14,7 @@ import {
 } from "@hu/types";
 
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
+import { runVerificationScript } from "./verification-script-lifecycle.js";
 
 const steward: RequestIdentity = {
   participantId: "member-bootstrap-001",
@@ -55,9 +56,17 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-function assertThrows(fn: () => unknown, message: string): void {
+// Recovery Task 14: the sole call site below passes an async arrow function
+// (`async () => await castOrUpdateInitiativeDecisionVote(...)`). A
+// synchronous `assertThrows` invokes `fn()` without awaiting it, so it only
+// observes whether *calling* the async function threw synchronously — never
+// whether the returned Promise actually rejects, causing a false
+// "Expected failure" even when the underlying service call rejected exactly
+// as intended. Awaiting `fn()` correctly unwraps rejected Promises for async
+// callers while remaining a no-op for genuinely synchronous throwers.
+async function assertThrows(fn: () => unknown, message: string): Promise<void> {
   try {
-    fn();
+    await fn();
     throw new Error(`Expected failure: ${message}`);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("Expected failure:")) {
@@ -72,10 +81,36 @@ function futureIsoDate(daysFromNow: number): string {
   return date.toISOString();
 }
 
+/**
+ * Recovery Task 13: this script's fixture participants
+ * (`member-results-voter-a/b/c`) are fixed IDs re-seeded on every run
+ * against the real, file-backed Participation Area store (no
+ * `PARTICIPATION_AREA_PERSISTENCE` override exists in this script). Without
+ * this cleanup, a second run would find each fixture participant already
+ * has an active Participation Area from the previous run and fail at
+ * `createParticipationArea` before Vote casting is ever exercised. Cleanup
+ * runs before creation and targets only these three explicit participant
+ * IDs.
+ */
+async function cleanupStaleParticipationAreaFixtures(): Promise<void> {
+  const { deleteParticipationAreasByParticipantIdForTests } =
+    await import("../modules/participation-area/participation-area.store.js");
+
+  for (const participantId of [
+    voterA.participantId,
+    voterB.participantId,
+    voterC.participantId,
+  ]) {
+    deleteParticipationAreasByParticipantIdForTests(participantId);
+  }
+}
+
 async function seedVoters(): Promise<void> {
   const { seedMember } = await import("../modules/member/member.store.js");
   const { createParticipationArea } =
     await import("../modules/participation-area/participation-area.store.js");
+
+  await cleanupStaleParticipationAreaFixtures();
 
   for (const [id, name, verification] of [
     [voterA.participantId, "Voter A", "verified"],
@@ -134,7 +169,7 @@ async function openCommunityDecision(): Promise<string> {
   });
   const projected = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(analyst, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(analyst, {
     initiativeId: projected.initiativeId,
     title: "Results Analysis",
     summary: "Analysis.",
@@ -143,12 +178,12 @@ async function openCommunityDecision(): Promise<string> {
     suggestedImprovements: "Improve.",
     references: "Ref.",
   });
-  const publishedAnalysis = publishInitiativeCollaborativeAnalysis(
+  const publishedAnalysis = await publishInitiativeCollaborativeAnalysis(
     analyst,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(analyst, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(analyst, {
     analysisId: publishedAnalysis.analysisId,
     targetSection: "Description",
     currentIssue: "Issue.",
@@ -176,7 +211,7 @@ async function openCommunityDecision(): Promise<string> {
   });
   publishInitiativeRevision(steward, projected.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: projected.initiativeId,
     title: "Results Session",
     purpose: "Purpose.",
@@ -187,7 +222,7 @@ async function openCommunityDecision(): Promise<string> {
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: projected.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -324,7 +359,7 @@ async function runMainVerification(): Promise<void> {
   const frozenSupport = closedProjection?.statistics.supportCount;
   const frozenOutcome = closedProjection?.outcome?.outcome;
 
-  assertThrows(
+  await assertThrows(
     async () => await castOrUpdateInitiativeDecisionVote(voterC, decisionId, { choice: "do_not_support" }),
     "Closed decision must reject vote changes",
   );
@@ -350,14 +385,14 @@ async function runMainVerification(): Promise<void> {
 
   assertNoPrivateFields(liveProjection, "Public projection");
   assertNoPrivateFields(
-    listPublicInitiativeCollectiveDecisionsForInitiative(liveProjection.initiativeId),
+    await listPublicInitiativeCollectiveDecisionsForInitiative(liveProjection.initiativeId),
     "Public list",
   );
   assert(
     await assertPublicProjectionHasNoPrivateVoteData(liveProjection),
     "Public projection helper should confirm no vote identifiers",
   );
-  assert(listVoteHistoryForDecision(decisionId).length > 0, "Vote history exists internally");
+  assert((await listVoteHistoryForDecision(decisionId)).length > 0, "Vote history exists internally");
   assert(
     !JSON.stringify(await getPublicInitiativeCollectiveDecision(decisionId)).includes("vote-history"),
     "Vote history must not appear in public projection",
@@ -398,8 +433,11 @@ async function main(): Promise<void> {
   console.log("All transparent decision result checks passed.");
 }
 
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(`Transparent decision results verification FAILED: ${message}`);
-  process.exit(1);
-});
+// Recovery Task 14: `castOrUpdateInitiativeDecisionVote` performs a
+// Mongo-backed Member eligibility lookup, which can leave an open MongoDB
+// connection alive after all assertions pass, preventing the process from
+// exiting naturally. `runVerificationScript` closes shared verification
+// resources (Mongo client, email/notification queues) deterministically via
+// `finalizeVerificationResources` after `main()` settles, whether it
+// succeeds or throws.
+void runVerificationScript(main);

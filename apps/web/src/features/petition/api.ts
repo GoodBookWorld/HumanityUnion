@@ -42,3 +42,43 @@ export async function signPetition(
     }),
   });
 }
+
+/**
+ * Initiative Lifecycle — Part F, Section 7/8 (Representative Signatures).
+ * Unlike `signPetition` above (the pre-Lifecycle Petition workspace's
+ * body-supplied `participantId` contract), this never sends its own id —
+ * mirroring every Part D/E reaction endpoint
+ * (`setInitiativeRevisionReaction`, etc.), the server resolves the real
+ * signed-in Participant from the request itself.
+ */
+export async function signPetitionAsCurrentParticipant(petitionId: string): Promise<Petition> {
+  return apiRequest<Petition>(`/api/v1/petitions/${encodeURIComponent(petitionId)}/signatures`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ participationMode: "Public" }),
+  });
+}
+
+/** Section 8 — "Withdraw Signature": one signature per Participant, reversible while the Petition stays open. */
+export async function withdrawPetitionSignature(petitionId: string): Promise<Petition> {
+  return apiRequest<Petition>(
+    `/api/v1/petitions/${encodeURIComponent(petitionId)}/signatures/withdraw`,
+    { method: "POST" },
+  );
+}
+
+/**
+ * Section 7 (Representative Signatures — Visitors). Anonymous civic-interest
+ * signal, distinct from a `Signature` — tracked via a long-lived cookie the
+ * server sets on first call (see `public-petition.routes.ts`).
+ */
+export async function recordPetitionVisitorSignal(
+  petitionId: string,
+): Promise<{ visitorSignals: number }> {
+  return apiRequest<{ visitorSignals: number }>(
+    `/api/v1/public/petitions/${encodeURIComponent(petitionId)}/visitor-signal`,
+    { method: "POST" },
+  );
+}

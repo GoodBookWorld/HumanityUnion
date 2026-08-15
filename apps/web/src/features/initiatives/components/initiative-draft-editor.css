@@ -1,34 +1,105 @@
+/*
+ * UX Completion Pack 04 Part 5/6 — the unpublished-Initiative owner-edit
+ * form, brought into the platform's established form language: token-based
+ * spacing (matches `member-profile-workspace.css`), `.hu-form-control`
+ * inputs (shared border/focus/hover treatment), and a `.hu-form-actions`
+ * button row with a clear Publish/Save Draft/Archive hierarchy. This form
+ * already renders inside a `ProfileSection` card (see
+ * `InitiativeOwnerManagePanel`), so no separate card chrome is added here.
+ */
 .initiative-draft-editor {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--hu-space-4);
 }
 
 .initiative-draft-editor__field {
   display: grid;
-  gap: 0.25rem;
+  gap: var(--hu-space-2);
 }
 
 .initiative-draft-editor__field span {
+  font-size: var(--hu-font-size-sm);
   font-weight: 600;
+  color: var(--hu-color-text);
 }
 
+/*
+ * Kept for `InitiativePublishedEditor`, whose own title/description
+ * inputs do not carry `.hu-form-control` (out of scope for this pass —
+ * see the note on `.initiative-draft-editor__actions` below). Redundant
+ * with, and harmless alongside, `.hu-form-control`'s own `width: 100%`.
+ */
 .initiative-draft-editor__field input,
 .initiative-draft-editor__field textarea,
 .initiative-draft-editor__field select {
   width: 100%;
 }
 
-.initiative-draft-editor__visibility {
-  margin: 0;
+.initiative-draft-editor__field textarea {
+  resize: vertical;
 }
 
+.initiative-draft-editor__visibility {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+}
+
+/*
+ * `InitiativePublishedEditor` also renders this class (its own action row
+ * is unstyled otherwise, and is intentionally left unchanged here — this
+ * pass is scoped to the unpublished/draft form only), so its own
+ * flex/gap/wrap layout is kept exactly as it always has been. The
+ * `.hu-form-actions` class `InitiativeDraftEditor` also applies covers the
+ * new Part 6 spacing for the draft form specifically.
+ */
 .initiative-draft-editor__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--hu-space-3);
+  margin-top: var(--hu-space-2);
+}
+
+/* Part 6 — pushes the tertiary Archive action to the far end of the row, away from the two primary content actions. */
+.initiative-draft-editor__archive-action {
+  margin-left: auto;
 }
 
 .initiative-draft-editor__message,
 .initiative-draft-editor__readonly {
   margin: 0;
+  color: var(--hu-color-text-muted);
+}
+
+.initiative-draft-editor__readonly + .initiative-draft-editor__readonly {
+  margin-top: var(--hu-space-2);
+}
+
+/*
+ * Initiative UX Pack 01.1 Part 3 — "Delete Draft" lives in its own
+ * clearly separated zone below a divider, distinct from the Publish/Save
+ * Draft/Archive action row above, so it is never adjacent to (and never
+ * mistaken for) those far more frequent actions.
+ */
+.initiative-draft-editor__danger-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hu-space-4);
+  margin-top: var(--hu-space-4);
+  padding-top: var(--hu-space-5);
+  border-top: 1px solid var(--hu-color-border);
+}
+
+.initiative-draft-editor__danger-zone-title {
+  margin: 0 0 var(--hu-space-1);
+  font-weight: 600;
+  color: var(--hu-color-text);
+}
+
+.initiative-draft-editor__danger-zone-description {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
 }

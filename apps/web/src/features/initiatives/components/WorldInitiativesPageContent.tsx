@@ -19,6 +19,7 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
         <InitiativeImage
           title={initiative.title}
           imageUrl={initiative.imageUrl}
+          coverMedia={initiative.coverMedia}
           className="world-initiative-card__image"
         />
       </div>

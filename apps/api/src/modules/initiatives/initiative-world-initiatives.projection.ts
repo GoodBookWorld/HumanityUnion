@@ -1,4 +1,5 @@
 import type { Initiative, ParticipationScope, WorldInitiativeCardProjection } from "@hu/types";
+import { resolveInitiativeCoverMedia } from "@hu/types";
 
 import { formatPublicGeography } from "../../shared/format-public-geography.js";
 import { isInitiativeEligibleForPublicProjection } from "./initiative-public-projection.access.js";
@@ -62,6 +63,7 @@ export function toWorldInitiativeCardProjection(
     activityArea,
     geographyLabel: resolveGeographyLabel(initiative),
     imageUrl: initiative.metadata.imageUrl,
+    coverMedia: resolveInitiativeCoverMedia(initiative.metadata),
     startDate: initiative.metadata.startDate,
     completionDate: initiative.metadata.completionDate,
     publicStatus: formatPublicStatus(initiative.status),

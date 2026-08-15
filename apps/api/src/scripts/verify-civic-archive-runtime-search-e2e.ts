@@ -97,7 +97,7 @@ async function verifyRuntimeFixtureIsolation(): Promise<void> {
     const { listCivicArchiveLifecycleRecords } =
       await import("../modules/public-civic-archive/public-civic-archive-lifecycle.projection.js");
 
-    const publicBefore = listCivicArchiveLifecycleRecords();
+    const publicBefore = await listCivicArchiveLifecycleRecords();
     assert(
       !publicBefore.some((record) => record.title.includes("TASK-107B")),
       "Public index must not expose verification fixtures before opt-in.",
@@ -110,13 +110,13 @@ async function verifyRuntimeFixtureIsolation(): Promise<void> {
       verificationTask: "TASK-107B",
     });
 
-    const publicAfterSeed = listCivicArchiveLifecycleRecords();
+    const publicAfterSeed = await listCivicArchiveLifecycleRecords();
     assert(
       !publicAfterSeed.some((record) => record.initiativeId === fixture.initiativeId),
       "Public index must exclude verification fixtures by default.",
     );
 
-    const isolated = listCivicArchiveLifecycleRecords({
+    const isolated = await listCivicArchiveLifecycleRecords({
       includeVerificationFixtures: true,
       verificationRunId: isolation.runId,
     });
@@ -133,7 +133,7 @@ async function verifyRuntimeFixtureIsolation(): Promise<void> {
 
   const { listCivicArchiveLifecycleRecords } =
     await import("../modules/public-civic-archive/public-civic-archive-lifecycle.projection.js");
-  const afterRestore = listCivicArchiveLifecycleRecords();
+  const afterRestore = await listCivicArchiveLifecycleRecords();
   assert(
     !afterRestore.some((record) => record.title === TASK107B_FIXTURE_TITLE),
     "Public archive index must not expose verification fixtures after cleanup.",
@@ -163,25 +163,25 @@ async function verifyRuntimeSearchFilters(): Promise<void> {
       verificationRunId: isolation.runId,
     } as const;
 
-    const unfiltered = listCivicArchiveLifecycleRecords(query);
+    const unfiltered = await listCivicArchiveLifecycleRecords(query);
     assert(
       unfiltered.some((record) => record.initiativeId === fixture.initiativeId),
       "Unfiltered isolated query must return fixture.",
     );
 
-    const titleSearch = listCivicArchiveLifecycleRecords({
+    const titleSearch = await listCivicArchiveLifecycleRecords({
       ...query,
       search: fixture.title,
     });
     assert(titleSearch.length === 1, "Exact title search must return one fixture record.");
 
-    const unrelated = listCivicArchiveLifecycleRecords({
+    const unrelated = await listCivicArchiveLifecycleRecords({
       ...query,
       search: "definitely-unrelated-archive-term-107b",
     });
     assert(unrelated.length === 0, "Unrelated search must return empty results.");
 
-    const countryFilter = listCivicArchiveLifecycleRecords({
+    const countryFilter = await listCivicArchiveLifecycleRecords({
       ...query,
       country: "CA",
     });
@@ -190,7 +190,7 @@ async function verifyRuntimeSearchFilters(): Promise<void> {
       "Country filter must return fixture.",
     );
 
-    const wrongCountry = listCivicArchiveLifecycleRecords({
+    const wrongCountry = await listCivicArchiveLifecycleRecords({
       ...query,
       country: "US",
     });
@@ -199,7 +199,7 @@ async function verifyRuntimeSearchFilters(): Promise<void> {
       "Wrong country must exclude fixture.",
     );
 
-    const regionFilter = listCivicArchiveLifecycleRecords({
+    const regionFilter = await listCivicArchiveLifecycleRecords({
       ...query,
       country: "CA",
       region: "CA-BC",
@@ -209,7 +209,7 @@ async function verifyRuntimeSearchFilters(): Promise<void> {
       "Region filter must return fixture.",
     );
 
-    const communityFilter = listCivicArchiveLifecycleRecords({
+    const communityFilter = await listCivicArchiveLifecycleRecords({
       ...query,
       country: "CA",
       region: "CA-BC",
@@ -220,7 +220,7 @@ async function verifyRuntimeSearchFilters(): Promise<void> {
       "Community code filter must return fixture.",
     );
 
-    const activityFilter = listCivicArchiveLifecycleRecords({
+    const activityFilter = await listCivicArchiveLifecycleRecords({
       ...query,
       activityArea: fixture.activityArea,
     });

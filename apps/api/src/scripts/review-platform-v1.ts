@@ -139,8 +139,12 @@ function verifyNoOrphanCapabilityModules(): void {
     "Integration layer must be mounted in app.ts",
   );
   assert(
-    appSource.includes("workspaceAssistantRouter") || appSource.includes("workspace-assistant"),
-    "Workspace assistant must be mounted in app.ts",
+    appSource.includes('/api/v1/assistant"') || appSource.includes("/api/v1/assistant"),
+    "Canonical Humanity Union Assistant must be mounted in app.ts",
+  );
+  assert(
+    !appSource.includes('app.use("/api/v1/workspace-assistant"'),
+    "Legacy workspace-assistant must remain unmounted (Pack 02 quarantine)",
   );
 }
 

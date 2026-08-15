@@ -31,9 +31,7 @@ import {
   deleteProcessedEventsByEventIdPrefix,
   dispatchOutboxOnceForTests,
   isEventProcessed,
-  resetOutboxDispatcherStateForTests,
   setForceEnqueueFailureForTests,
-  stopOutboxDispatcher,
 } from "../../src/infrastructure/outbox/index.js";
 import { MONGO_COLLECTIONS } from "../../src/infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../src/infrastructure/mongodb/mongo-database.js";

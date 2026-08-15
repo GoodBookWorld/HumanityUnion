@@ -1,0 +1,149 @@
+/*
+ * Communication UX Pack 03.4 Part 3 — the one reusable row shared by all
+ * three Notification Center sections. Shared shell (`.communication-card`)
+ * plus one modifier per mode for the only things that differ: accent color
+ * and (for Message rows) a real avatar instead of a mode icon.
+ */
+.communication-card__item {
+  list-style: none;
+}
+
+.communication-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-lg);
+  background: var(--hu-color-bg);
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Link-variant rows (Message / Reminder — Part 5: one action, one destination). */
+a.communication-card:hover,
+a.communication-card:focus-visible {
+  border-color: var(--hu-color-primary);
+}
+
+.communication-card--unread {
+  border-left: 4px solid var(--hu-color-primary);
+  background: color-mix(in srgb, var(--hu-color-primary) 4%, var(--hu-color-bg));
+}
+
+.communication-card--unread .communication-card__title {
+  font-weight: 700;
+}
+
+.communication-card__avatar {
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--hu-color-bg-muted);
+  flex-shrink: 0;
+}
+
+.communication-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--hu-color-bg-muted);
+  flex-shrink: 0;
+}
+
+/* Mode accent — subtle, never the only distinguishing signal (title/description text already differs). */
+.communication-card--notification .communication-card__icon {
+  background: #e0f2fe;
+}
+
+.communication-card--message .communication-card__icon {
+  background: #dcfce7;
+}
+
+.communication-card--reminder .communication-card__icon {
+  background: #fef3c7;
+}
+
+.communication-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.communication-card__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hu-space-2);
+}
+
+.communication-card__title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.communication-card__description {
+  color: var(--hu-color-text);
+  font-size: var(--hu-font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.communication-card__meta {
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-xs);
+}
+
+/* Part 10 — never the only accessible indicator; always paired with visually-hidden text. */
+.communication-card__unread-dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--hu-color-primary);
+  flex-shrink: 0;
+}
+
+.communication-card__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Panel-variant rows (Notification mode — Part 6: preserves the existing multi-action footer). */
+.communication-card--panel {
+  flex-wrap: wrap;
+}
+
+.communication-card__actions {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+  margin-top: var(--hu-space-2);
+  padding-left: calc(40px + var(--hu-space-3));
+}
+
+@media (max-width: 480px) {
+  .communication-card__actions {
+    padding-left: 0;
+  }
+
+  .communication-card__description,
+  .communication-card__title {
+    white-space: normal;
+  }
+}

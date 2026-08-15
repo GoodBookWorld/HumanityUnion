@@ -13,6 +13,12 @@ function parseBoolean(value: string | undefined, fallback: boolean): boolean {
 export function resolvePlatformMode(): PlatformMode {
   const mode = process.env.PLATFORM_MODE?.trim();
 
+  // Staging uses production-like NODE_ENV + noindex Web mode.
+  // API treats PLATFORM_MODE=staging as beta (invite-gated, no bootstrap).
+  if (mode === "staging") {
+    return "beta";
+  }
+
   if (mode === "beta" || mode === "production" || mode === "development") {
     return mode;
   }

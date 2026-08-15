@@ -1,0 +1,31 @@
+.communication-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hu-space-3);
+  margin: 0 0 var(--hu-space-6);
+}
+
+.communication-summary__item {
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-lg);
+  background: var(--hu-color-bg);
+  padding: var(--hu-space-4);
+}
+
+.communication-summary__label {
+  margin: 0 0 var(--hu-space-1);
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+}
+
+.communication-summary__value {
+  margin: 0;
+  font-size: var(--hu-font-size-2xl);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .communication-summary {
+    grid-template-columns: 1fr;
+  }
+}

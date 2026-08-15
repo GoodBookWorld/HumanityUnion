@@ -1,4 +1,5 @@
 import type { InitiativePublicImpact, PublicImpactEvidence } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -37,7 +38,7 @@ export function createMongoInitiativePublicImpactPersistenceAdapter(): Initiativ
 }
 
 export async function hydrateInitiativePublicImpactMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_PUBLIC_IMPACT_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_PUBLIC_IMPACT_PERSISTENCE")) {
     return;
   }
 
@@ -45,7 +46,7 @@ export async function hydrateInitiativePublicImpactMongoPersistence(): Promise<v
 }
 
 export async function flushInitiativePublicImpactMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_PUBLIC_IMPACT_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_PUBLIC_IMPACT_PERSISTENCE")) {
     return;
   }
 

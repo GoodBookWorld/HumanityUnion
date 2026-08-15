@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
 import { isBootstrapUiAllowed } from "../bootstrap-ui.config";
@@ -10,8 +10,13 @@ interface WorkspaceAuthGateProps {
   children: ReactNode;
 }
 
+/**
+ * Authenticated-only Workspace gate. Guests are sent to Login with returnTo
+ * so PWA launches at `/workspace` resume into Workspace after sign-in.
+ */
 export function WorkspaceAuthGate({ children }: WorkspaceAuthGateProps) {
   const router = useRouter();
+  const pathname = usePathname() ?? "/workspace";
   const authStatus = useClientAuthStatus();
 
   useEffect(() => {
@@ -20,16 +25,25 @@ export function WorkspaceAuthGate({ children }: WorkspaceAuthGateProps) {
     }
 
     if (authStatus === "unauthenticated" && !isBootstrapUiAllowed()) {
-      router.replace("/login");
+      const returnTo = pathname.startsWith("/") ? pathname : "/workspace";
+      router.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`);
     }
-  }, [authStatus, router]);
+  }, [authStatus, pathname, router]);
 
   if (authStatus === "pending") {
-    return null;
+    return (
+      <p className="workspace-auth-gate__pending" role="status">
+        Checking your session…
+      </p>
+    );
   }
 
   if (authStatus === "unauthenticated" && !isBootstrapUiAllowed()) {
-    return null;
+    return (
+      <p className="workspace-auth-gate__pending" role="status">
+        Redirecting to Log in…
+      </p>
+    );
   }
 
   return children;

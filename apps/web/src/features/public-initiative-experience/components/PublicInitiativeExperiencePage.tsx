@@ -4,9 +4,11 @@ import type { Initiative, PublicInitiativeExperienceProjection } from "@hu/types
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { toggleInitiativeBookmark, updateInitiativeSupportSignal } from "../api";
+import { isLifecycleStageSelectable } from "../lifecycle-stage-navigation";
 import { PublicCivicRecordExperienceLayout } from "./PublicCivicRecordExperienceLayout";
 import { PublicExperienceHero, buildInitiativeHeroProps } from "./PublicExperienceHero";
-import { PublicExperienceSidebar } from "./PublicExperienceSidebar";
+import { PublicExperienceSidebarOrChannel } from "./PublicExperienceSidebarOrChannel";
+import type { CollaborationTab } from "./InitiativeCollaborationWorkspace";
 import { PublicInitiativeCenterPanel, type CenterTab } from "./PublicInitiativeCenterPanel";
 import { PublicInitiativeLifecycleNav } from "./PublicInitiativeLifecycleNav";
 import { InitiativeOwnerManagePanel } from "../../initiative-owner-studio/components/InitiativeOwnerManagePanel";
@@ -47,7 +49,21 @@ export function PublicInitiativeExperiencePage({
   );
   const [activeStageId, setActiveStageId] = useState(initialExperience.currentStageId);
   const [showLifecyclePanel, setShowLifecyclePanel] = useState(false);
+  /** Initiative Lifecycle Part A Completion Part 9 — lifted so the Author working sidebar's Preview button and the shell's own footer toggle stay in sync. */
+  const [isStagePreviewMode, setIsStagePreviewMode] = useState(false);
   const [supportBusy, setSupportBusy] = useState(false);
+  const [initialDiscussionFilter, setInitialDiscussionFilter] = useState<"collaboration" | undefined>(
+    undefined,
+  );
+  /**
+   * Communication UX Pack 03.7 Part 10 — "Notifications open the
+   * communication context": a Shared Document notification's
+   * `relatedUrl` deep-links to `#collaboration-channel` /
+   * `#collaboration-sessions`, landing directly on that tab of the
+   * Collaboration Workspace (Communication UX Pack 03.5/03.6's existing
+   * sidebar-slot swap) instead of always defaulting to Channel.
+   */
+  const [collaborationTab, setCollaborationTab] = useState<CollaborationTab | undefined>(undefined);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,6 +99,14 @@ export function PublicInitiativeExperiencePage({
         return;
       }
 
+      if (normalized === "collaboration-channel" || normalized === "collaboration-sessions") {
+        setCollaborationTab(normalized === "collaboration-channel" ? "channel" : "sessions");
+        setShowLifecyclePanel(false);
+        setActiveTab("overview");
+        ownerMode?.onShowManageTabChange(false);
+        return;
+      }
+
       const stageId = resolveStageFromHash(hash);
 
       if (stageId) {
@@ -108,11 +132,50 @@ export function PublicInitiativeExperiencePage({
     return () => window.removeEventListener("hashchange", onHashChange);
   }, [applyHash]);
 
+  /**
+   * Profile UX Pack 01 Part 4 — the collaboration-request notification's
+   * "Review request" action links to
+   * `/initiatives/public/{id}?filter=collaboration#discussion`. The `#discussion`
+   * hash is already handled by `applyHash` above; this reads the
+   * `filter=collaboration` query parameter (checked once, on initial load,
+   * matching how deep links are normally consumed) to also land the viewer
+   * directly on the Collaboration working list rather than "All".
+   */
+  const applyQueryParams = useCallback(
+    (search: string) => {
+      const filterParam = new URLSearchParams(search).get("filter");
+
+      if (filterParam !== "collaboration") {
+        return;
+      }
+
+      setShowLifecyclePanel(false);
+      setActiveTab("discussion");
+      ownerMode?.onShowManageTabChange(false);
+      setInitialDiscussionFilter("collaboration");
+    },
+    [ownerMode],
+  );
+
+  useEffect(() => {
+    applyQueryParams(window.location.search);
+  }, [applyQueryParams]);
+
   const handleStageSelect = (stageId: string, hash: string) => {
+    if (!isLifecycleStageSelectable(experience.lifecycleStages, stageId)) {
+      return;
+    }
+
     setActiveStageId(stageId);
     setShowLifecyclePanel(true);
+    setIsStagePreviewMode(false);
     ownerMode?.onShowManageTabChange(false);
     window.history.replaceState(null, "", `#${hash}`);
+    scrollToContent();
+  };
+
+  const handleOpenStagePublicPreview = () => {
+    setIsStagePreviewMode(true);
     scrollToContent();
   };
 
@@ -185,7 +248,12 @@ export function PublicInitiativeExperiencePage({
 
   return (
     <PublicCivicRecordExperienceLayout
-      hero={<PublicExperienceHero {...buildInitiativeHeroProps(experience.hero)} />}
+      hero={
+        <PublicExperienceHero
+          {...buildInitiativeHeroProps(experience.hero)}
+          initiativeId={experience.initiativeId}
+        />
+      }
       lifecycle={
         <PublicInitiativeLifecycleNav
           stages={experience.lifecycleStages}
@@ -202,6 +270,7 @@ export function PublicInitiativeExperiencePage({
           onTabChange={handleTabChange}
           contentRef={contentRef}
           showManageTab={Boolean(ownerMode)}
+          initialDiscussionFilter={initialDiscussionFilter}
           managePanel={
             ownerMode ? (
               <InitiativeOwnerManagePanel
@@ -210,14 +279,30 @@ export function PublicInitiativeExperiencePage({
               />
             ) : null
           }
+          onNavigateStage={handleStageSelect}
+          returnToInitiativeHref={
+            ownerMode
+              ? `/initiatives/${experience.initiativeId}`
+              : `/initiatives/public/${experience.initiativeId}`
+          }
+          isOwnerRoute={Boolean(ownerMode)}
+          isStagePreviewMode={isStagePreviewMode}
+          onToggleStagePreviewMode={() => setIsStagePreviewMode((current) => !current)}
         />
       }
       sidebar={
-        <PublicExperienceSidebar
+        <PublicExperienceSidebarOrChannel
           initiativeId={experience.initiativeId}
+          currentStageId={experience.currentStageId}
+          workspaceStageId={showLifecyclePanel ? activeStageId : null}
+          isStagePreviewMode={isStagePreviewMode}
+          onOpenPublicPreview={handleOpenStagePublicPreview}
+          onNavigateStage={handleStageSelect}
+          collaborationTab={collaborationTab}
           statistics={experience.supportStatistics}
           revisionHistory={experience.revisionHistory}
           latestInitiatives={experience.latestInitiatives}
+          relatedInitiatives={experience.relatedInitiatives ?? []}
           onSignalChange={(signal) => void handleSignalChange(signal)}
           onBookmarkToggle={() => void handleBookmarkToggle()}
           onRevisionSelect={handleRevisionSelect}

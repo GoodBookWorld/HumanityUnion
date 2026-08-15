@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { CivicNominationInstitutionRole } from "@hu/types";
 
 import { Button } from "../../../design-system";
-import { getStoredAccessToken } from "../../auth/auth-token-store";
+import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { civicNominationFormPath } from "../constants";
 
 interface CreateNominationButtonProps {
@@ -14,10 +14,11 @@ interface CreateNominationButtonProps {
 
 export function CreateNominationButton({ role }: CreateNominationButtonProps) {
   const router = useRouter();
+  const authStatus = useClientAuthStatus();
   const formPath = civicNominationFormPath(role);
 
   function handleClick() {
-    if (!getStoredAccessToken()) {
+    if (authStatus !== "authenticated") {
       router.push(`/login?returnTo=${encodeURIComponent(formPath)}`);
       return;
     }

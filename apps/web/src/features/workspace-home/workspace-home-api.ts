@@ -1,4 +1,11 @@
+import type {
+  CommunityWorkspaceOpportunitiesResponse,
+  ParticipantStatistics,
+} from "@hu/types";
+
 import { apiRequest } from "../../lib/api-client";
+
+export type WorkspaceHomeCommunityIntelligence = CommunityWorkspaceOpportunitiesResponse;
 
 export interface WorkspaceHomeLinkItem {
   id: string;
@@ -93,6 +100,23 @@ export interface WorkspaceHomePublicContribution {
   publishedAt: string;
 }
 
+export interface WorkspaceHomeAllyEntry {
+  participantId: string;
+  displayName: string;
+  avatarUrl?: string;
+  profileUrl?: string;
+  sharedInitiativeCount: number;
+  /** Communication UX Pack 03.2 Part 4/5 — durable Direct Messaging unread state, batch-derived server-side. */
+  hasUnreadMessages: boolean;
+}
+
+/** Profile UX Pack 01 Part 9/11 — see the API's `workspace-allies.service.ts` for definitions. */
+export interface WorkspaceHomeAlliesSummary {
+  items: WorkspaceHomeAllyEntry[];
+  alliesCount: number;
+  collaborationsCount: number;
+}
+
 export interface WorkspaceHomeAssistantContext {
   participantName: string;
   participationAreaLabel: string | null;
@@ -108,6 +132,8 @@ export interface WorkspaceHomeAssistantContext {
 
 export interface WorkspaceHomeState {
   welcome: WorkspaceHomeWelcome;
+  /** Profile UX Pack 02 Part 1/11 — Initiatives / Collective Decisions / Allies cards. */
+  statistics: ParticipantStatistics;
   quickActions: WorkspaceHomeQuickAction[];
   activeWork: WorkspaceHomeActiveWork;
   recentActivity: WorkspaceHomeTimelineEntry[];
@@ -115,6 +141,8 @@ export interface WorkspaceHomeState {
   participationSummary: WorkspaceHomeParticipationSummary;
   notifications: WorkspaceHomeNotificationsSummary;
   recentPublicContributions: WorkspaceHomePublicContribution[];
+  allies: WorkspaceHomeAlliesSummary;
+  communityIntelligence: WorkspaceHomeCommunityIntelligence;
   assistantContext: WorkspaceHomeAssistantContext;
   workspaceReadiness: {
     status: "ready" | "missing";

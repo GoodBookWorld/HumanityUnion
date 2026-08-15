@@ -17,6 +17,7 @@ import {
   requestMyParticipationAreaTransition,
   type ParticipationAreaWorkspaceResponse,
 } from "../participation-area-api";
+import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 
 import "./participation-area-section.css";
 
@@ -37,7 +38,8 @@ export function ParticipationAreaSection() {
   const [communitiesLoading, setCommunitiesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const savePhase = useSaveButtonPhase();
   const hydratedFormRef = useRef(false);
 
   useEffect(() => {
@@ -135,36 +137,34 @@ export function ParticipationAreaSection() {
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSaving(true);
     setError(null);
 
     try {
-      const nextState = await createMyParticipationArea(await submitAreaInput());
-      await refreshState(nextState);
+      await savePhase.runSave(async () => {
+        const nextState = await createMyParticipationArea(await submitAreaInput());
+        await refreshState(nextState);
+      });
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unable to create area.");
-    } finally {
-      setSaving(false);
     }
   }
 
   async function handleTransition(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSaving(true);
     setError(null);
 
     try {
-      const nextState = await requestMyParticipationAreaTransition(await submitAreaInput());
-      await refreshState(nextState);
+      await savePhase.runSave(async () => {
+        const nextState = await requestMyParticipationAreaTransition(await submitAreaInput());
+        await refreshState(nextState);
+      });
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unable to request change.");
-    } finally {
-      setSaving(false);
     }
   }
 
   async function handleCancelTransition() {
-    setSaving(true);
+    setCancelling(true);
     setError(null);
 
     try {
@@ -173,7 +173,7 @@ export function ParticipationAreaSection() {
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unable to cancel change.");
     } finally {
-      setSaving(false);
+      setCancelling(false);
     }
   }
 
@@ -218,10 +218,10 @@ export function ParticipationAreaSection() {
             />
             <Button
               variant="secondary"
-              disabled={saving}
+              disabled={cancelling}
               onClick={() => void handleCancelTransition()}
             >
-              Cancel pending change
+              {cancelling ? "Cancelling..." : "Cancel pending change"}
             </Button>
           </div>
         ) : null}
@@ -287,12 +287,11 @@ export function ParticipationAreaSection() {
             }
           />
           {error ? <p className="participation-area-section__error">{error}</p> : null}
-          <Button type="submit" variant="primary" disabled={saving}>
-            {saving
-              ? "Saving..."
-              : hasActiveArea
-                ? "Request area change"
-                : "Create Participation Area"}
+          <Button type="submit" variant="primary" disabled={savePhase.isBusy} ariaLive="polite">
+            {resolveSaveButtonLabel(
+              savePhase.phase,
+              hasActiveArea ? "Request area change" : "Create Participation Area",
+            )}
           </Button>
           {hasActiveArea ? (
             <p className="participation-area-section__note">{state.transitionPolicy.explanation}</p>

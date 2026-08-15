@@ -1,4 +1,4 @@
-export type MediaUploadPurpose = "avatar" | "initiative-image";
+export type MediaUploadPurpose = "avatar" | "initiative-image" | "blog-image";
 
 export interface StoredMediaRecord {
   mediaId: string;
@@ -21,13 +21,4 @@ export interface MediaUploadResponse {
   createdAt: string;
 }
 
-export interface MediaStorageProvider {
-  saveFile(input: {
-    purpose: MediaUploadPurpose;
-    buffer: Buffer;
-    mimeType: string;
-    extension: string;
-  }): Promise<{ storageKey: string; absolutePath: string }>;
-  deleteFile(storageKey: string): Promise<void>;
-  buildPublicUrl(storageKey: string): string;
-}
+export type { MediaObjectStorage, MediaStorageProvider } from "./media-object-storage.js";

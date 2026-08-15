@@ -194,6 +194,15 @@ export async function generateWorkspaceAssistantResponse(
   if (input.userPrompt) {
     assertNoPrivateFields({ prompt: input.userPrompt }, "Assistant user prompt");
     assertUserPromptIsAllowed(input.userPrompt);
+
+    // Safety Architecture Pack 01 Part 6 — AI prompts share the central
+    // Lifecycle Safety pipeline (provider-independent; no external AI).
+    const { assertAiPromptSafe } = await import("../lifecycle-safety/index.js");
+    await assertAiPromptSafe({
+      initiativeId: input.initiativeId,
+      actorParticipantId: input.participantId,
+      prompt: input.userPrompt,
+    });
   }
 
   const initiative = getInitiativeById(input.initiativeId);

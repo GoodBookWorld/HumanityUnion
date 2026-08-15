@@ -1,0 +1,55 @@
+.workspace-welcome-banner {
+  display: flex;
+  gap: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-lg);
+  background: var(--hu-color-surface);
+  box-shadow: var(--hu-shadow-sm);
+  overflow: hidden;
+}
+
+.workspace-welcome-banner__accent {
+  flex: 0 0 4px;
+  background: var(--hu-workspace-highlight, var(--hu-color-primary));
+}
+
+.workspace-welcome-banner__body {
+  flex: 1 1 auto;
+  padding: var(--hu-space-5);
+  min-width: 0;
+}
+
+.workspace-welcome-banner__title {
+  margin: 0 0 var(--hu-space-2);
+  font-size: var(--hu-font-size-xl);
+  font-weight: 700;
+  color: var(--hu-color-text);
+}
+
+.workspace-welcome-banner__text {
+  margin: 0 0 var(--hu-space-3);
+  color: var(--hu-color-text);
+  line-height: var(--hu-line-height);
+}
+
+.workspace-welcome-banner__lead {
+  margin: 0 0 var(--hu-space-2);
+  font-weight: 600;
+  color: var(--hu-workspace-secondary, var(--hu-color-text));
+}
+
+.workspace-welcome-banner__list {
+  margin: 0 0 var(--hu-space-3);
+  padding-left: var(--hu-space-5);
+  display: grid;
+  gap: var(--hu-space-2);
+  line-height: var(--hu-line-height);
+}
+
+.workspace-welcome-banner__still-needed {
+  margin: var(--hu-space-3) 0 0;
+  padding-top: var(--hu-space-3);
+  border-top: 1px solid var(--hu-color-border);
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-workspace-muted, var(--hu-color-text-muted));
+}

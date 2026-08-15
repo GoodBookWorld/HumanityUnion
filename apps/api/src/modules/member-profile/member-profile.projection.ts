@@ -1,5 +1,12 @@
 import type { MembershipRecord } from "@hu/types";
-import type { MemberProfile, MemberProfilePrivacySettings, PublicMemberProfile } from "@hu/types";
+import type {
+  MemberProfile,
+  MemberProfilePrivacySettings,
+  ParticipantStatistics,
+  PublicMemberProfile,
+  PublicMemberProfileHiddenSections,
+  PublicParticipantStatistics,
+} from "@hu/types";
 
 import { DEFAULT_MEMBER_AVATAR_URL } from "./member-profile.constants.js";
 
@@ -45,7 +52,46 @@ export function toMemberProfilePrivacySettings(
     membershipPubliclyVisible: profile.membershipPubliclyVisible ?? false,
     skillsVisibility: profile.skillsVisibility ?? "members_only",
     professionalLinksVisibility: profile.professionalLinksVisibility ?? "public",
+    showInitiativesStatistics: profile.showInitiativesStatistics ?? true,
+    showCollectiveDecisionsStatistics: profile.showCollectiveDecisionsStatistics ?? true,
+    showAlliesStatistics: profile.showAlliesStatistics ?? true,
+    messagingPolicy: profile.messagingPolicy ?? "active_allies",
   };
+}
+
+/**
+ * Profile UX Pack 02 Part 5/6/11 — pure filter applied to the one shared
+ * `ParticipantStatistics` aggregation before it is placed on a Public
+ * Profile projection. The profile owner always sees every number on their
+ * own Public Profile (matches the existing `viewerIsOwner` bypass pattern
+ * used for organization/location/participation area above); every other
+ * viewer only sees the numbers the owner's Privacy switches allow.
+ * Returns `undefined` (not an object of zeros) when nothing is permitted,
+ * so the UI can omit the whole "Participation Statistics" block.
+ */
+export function toPublicParticipantStatistics(
+  statistics: ParticipantStatistics,
+  profile: Pick<
+    MemberProfile,
+    "showInitiativesStatistics" | "showCollectiveDecisionsStatistics" | "showAlliesStatistics"
+  >,
+  viewerIsOwner: boolean,
+): PublicParticipantStatistics | undefined {
+  const result: PublicParticipantStatistics = {};
+
+  if (viewerIsOwner || (profile.showInitiativesStatistics ?? true)) {
+    result.initiativesCount = statistics.initiativesCount;
+  }
+
+  if (viewerIsOwner || (profile.showCollectiveDecisionsStatistics ?? true)) {
+    result.collectiveDecisionsCount = statistics.collectiveDecisionsCount;
+  }
+
+  if (viewerIsOwner || (profile.showAlliesStatistics ?? true)) {
+    result.alliesCount = statistics.alliesCount;
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined;
 }
 
 export function resolvePublicMembershipFields(
@@ -99,6 +145,11 @@ export function toPublicMemberProfile(
     publicName: profile.publicName,
     biography: profile.biography,
     avatarUrl: resolveMemberAvatarUrl(profile.avatarUrl),
+    // Profile UX Pack 03 Part 7 — placeholder until
+    // `enrichPublicMemberProfileProjection` resolves the real,
+    // async, Privacy-and-Ally-aware value. Defaulting to "hidden" means a
+    // request that fails before enrichment never leaks an active control.
+    messagingAvailability: "hidden",
     ...resolvePublicMembershipFields(profile, options.membership ?? null),
   };
 
@@ -146,10 +197,54 @@ export function toPublicMemberProfile(
     options.viewerIsOwner;
 
   if ((profile.showParticipationArea && participationVisible) || options.viewerIsOwner) {
-    publicProfile.participationAreaId = profile.participationAreaId;
+    if (profile.participationAreaId) {
+      publicProfile.participationAreaId = profile.participationAreaId;
+    }
+
+    // Launch Readiness UX Fix Pack 01 — expose human-readable Participation
+    // Area labels when Privacy permits (independent of showLocation). Labels
+    // are the same geography strings already synced onto the profile; never
+    // invent values or return the raw id as display text.
+    const participationArea = {
+      ...(profile.country ? { country: profile.country } : {}),
+      ...(profile.region ? { region: profile.region } : {}),
+      ...(profile.community ? { community: profile.community } : {}),
+    };
+
+    if (Object.keys(participationArea).length > 0) {
+      publicProfile.participationArea = participationArea;
+    }
   }
 
   return publicProfile;
+}
+
+/**
+ * Profile UX Pack 03.3 — derives which sections of the owner's "Public
+ * Profile Preview" (`/profile`) are absent specifically *because* Privacy
+ * hides them, as opposed to absent because the owner never added anything.
+ * Deliberately a pure diff against the same `PublicMemberProfile` the
+ * public route already returns for a non-owner viewer — it never
+ * re-implements a visibility rule, so it can never drift from
+ * `toPublicMemberProfile` / `toPublicParticipantStatistics`. `biography`
+ * and `recentPublicInitiatives` have no dedicated Privacy switch today (see
+ * `MemberProfile`), so this always resolves them to `false`; the fields
+ * exist for presentation-model completeness and stay correct automatically
+ * if a future Privacy switch is ever added for either.
+ */
+export function resolvePublicMemberProfileHiddenSections(
+  profile: MemberProfile,
+  projection: PublicMemberProfile,
+): PublicMemberProfileHiddenSections {
+  return {
+    statistics: projection.statistics === undefined,
+    biography: Boolean(profile.biography) && !projection.biography,
+    skills: profile.skills.length > 0 && !(projection.skills && projection.skills.length > 0),
+    professionalLinks:
+      Boolean(profile.website || profile.linkedinUrl) &&
+      !(projection.website || projection.linkedinUrl),
+    recentPublicInitiatives: false,
+  };
 }
 
 export function assertPublicMemberProfileIsSafe(record: Record<string, unknown>): void {

@@ -3,6 +3,7 @@ import type {
   DecisionSessionMetrics,
   PublicDecisionSessionListItem,
   PublicDecisionSessionPackage,
+  PublicDecisionSessionPetitionContext,
   PublicDecisionSessionProjection,
 } from "@hu/types";
 
@@ -15,12 +16,17 @@ import { getRevisionById } from "../initiative-version-revision/initiative-versi
 import { toPublicInitiativeVersionRevisionListItem } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
 import { getCurrentPublishedVersion } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { getMemberById } from "../member/member-access.js";
+import { findMembershipByUserId } from "../membership/membership.repository.js";
+import { getPetition } from "../petition/petition.store.js";
+import { countPetitionVisitorSignals } from "../petition/petition-visitor-signal.service.js";
 import { getDecisionSessionPackageCounts } from "./decision-session-package.js";
 import {
   getSessionById,
   listPublicSessionsByInitiative,
   listSessionsByInitiative,
 } from "./decision-session.store.js";
+
+const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed", "Archived"]);
 
 const PUBLIC_STATUSES = new Set<DecisionSession["status"]>(["published", "closed"]);
 
@@ -82,6 +88,54 @@ async function buildPublicDecisionSessionPackage(
   };
 }
 
+/**
+ * Initiative Lifecycle — Part F, Section 11 (Decision Session
+ * Integration). "Decision Session automatically receives: Published
+ * Petition, Signature statistics, Revision metadata, Proposal references.
+ * No duplicated editing." Purely additive; resolves to `null` for any
+ * Decision Session published before Part F, or whose Initiative never had
+ * a publicly visible Petition.
+ */
+async function buildRelatedPetitionContext(
+  session: DecisionSession,
+): Promise<PublicDecisionSessionPetitionContext | null> {
+  const petitionId = session.packageReferences?.petitionId;
+
+  if (!petitionId) {
+    return null;
+  }
+
+  const petition = await getPetition(petitionId);
+
+  if (!petition || !PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
+    return null;
+  }
+
+  const activeSignatures = petition.signatures.filter((signature) => signature.status === "Active");
+  const memberFlags = await Promise.all(
+    activeSignatures.map(async (signature) => {
+      try {
+        const membership = await findMembershipByUserId(signature.participantId);
+        return membership?.status === "active_member";
+      } catch {
+        return false;
+      }
+    }),
+  );
+  const visitorSignals = await countPetitionVisitorSignals(petitionId);
+
+  return {
+    petitionId: petition.petitionId,
+    title: petition.subject.title,
+    publishedAt: petition.shareLink?.createdAt ?? null,
+    participantSignatures: activeSignatures.length,
+    memberSignatures: memberFlags.filter(Boolean).length,
+    visitorSignals,
+    revisionVersion: petition.traceability?.revisionVersion ?? null,
+    proposalIds: petition.traceability?.proposalIds ?? [],
+  };
+}
+
 export function toPublicDecisionSessionListItem(
   session: DecisionSession,
 ): PublicDecisionSessionListItem {
@@ -112,6 +166,9 @@ export async function toPublicDecisionSessionProjection(
     publishedAt: session.publishedAt ?? session.updatedAt,
     closedAt: session.closedAt,
     decisionPackage: await buildPublicDecisionSessionPackage(session),
+    relatedPetitionContext: await buildRelatedPetitionContext(session),
+    structuredContent: session.structuredContent ?? null,
+    traceability: session.traceability ?? null,
   };
 }
 

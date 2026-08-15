@@ -1,4 +1,4 @@
-import type { InitiativeRevisionDraft, InitiativeVersionRevision } from "@hu/types";
+import type { InitiativeRevisionChange, InitiativeRevisionDraft, InitiativeVersionRevision } from "@hu/types";
 
 import { resolveInitiativeVersionRevisionPersistenceAdapter } from "./persistence/resolve-initiative-version-revision-persistence.js";
 import { snapshotFromRevisionStore } from "./persistence/initiative-version-revision-persistence.types.js";
@@ -10,6 +10,8 @@ export interface InitiativeRevisionDraftUpdate {
   revisionSummary?: string;
   appliedProposalIds?: string[];
   skippedProposalIds?: string[];
+  /** Initiative Lifecycle — Part E, Section 5/6/7. Whole-array replacement, mirroring `InitiativeImprovementProposalsCollectionUpdate.proposals` (Part D). */
+  changes?: InitiativeRevisionChange[];
 }
 
 const persistence = resolveInitiativeVersionRevisionPersistenceAdapter();
@@ -127,6 +129,10 @@ export function updateRevisionDraft(
 
   if (update.skippedProposalIds !== undefined) {
     draft.skippedProposalIds = [...update.skippedProposalIds];
+  }
+
+  if (update.changes !== undefined) {
+    draft.changes = [...update.changes];
   }
 
   draft.updatedAt = new Date().toISOString();

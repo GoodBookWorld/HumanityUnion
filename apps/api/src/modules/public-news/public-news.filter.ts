@@ -142,15 +142,26 @@ export async function validateExternalNewsArticleUrls(
   }
 
   const config = resolvePublicNewsConfig();
+  // Bound concurrency so one refresh does not serialize dozens of publisher GETs
+  // (and starve the API event loop for /media).
+  const concurrency = 8;
   const validated: ExternalNewsArticle[] = [];
 
-  for (const article of articles) {
-    const reachable = await validatePublicArticleUrl(article.articleUrl, {
-      timeoutMs: config.fetchTimeoutMs,
-    });
+  for (let index = 0; index < articles.length; index += concurrency) {
+    const batch = articles.slice(index, index + concurrency);
+    const results = await Promise.all(
+      batch.map(async (article) => {
+        const reachable = await validatePublicArticleUrl(article.articleUrl, {
+          timeoutMs: Math.min(config.fetchTimeoutMs, 8_000),
+        });
+        return reachable ? article : null;
+      }),
+    );
 
-    if (reachable) {
-      validated.push(article);
+    for (const article of results) {
+      if (article) {
+        validated.push(article);
+      }
     }
   }
 

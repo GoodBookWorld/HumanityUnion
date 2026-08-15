@@ -36,7 +36,7 @@ export default async function PublicImplementationTrackingPage({
 
   if (!tracking) {
     return (
-      <main>
+      <main className="hu-page-container hu-page-container--sectioned">
         <h1>Public Implementation Tracking</h1>
         <p>Public implementation tracking is not available.</p>
         <p>
@@ -73,7 +73,7 @@ export default async function PublicImplementationTrackingPage({
   }
 
   return (
-    <main>
+    <main className="hu-page-container hu-page-container--sectioned">
       <header>
         <h1>Implementation Tracking</h1>
         <p>Public execution journal</p>

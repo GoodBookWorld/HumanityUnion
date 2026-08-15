@@ -80,9 +80,21 @@ export function validateCreatePetition(petition: Petition): string | null {
   return null;
 }
 
+/**
+ * Initiative Lifecycle — Part F, Section 7/8 (Representative Signatures).
+ * `participantId` is now OPTIONAL in the body: the pre-existing
+ * body-supplied contract (legacy Petition workspace UI, existing tests) is
+ * left working unchanged, but the new Lifecycle-based public Petition
+ * renderer never sends one — it relies on `signPetitionHandler` resolving
+ * the real signed-in actor server-side, exactly like every Part D/E
+ * reaction endpoint (`setInitiativeRevisionReaction`, etc.).
+ */
 export function validateSignBody(body: Record<string, unknown>): string | null {
-  if (typeof body.participantId !== "string" || !body.participantId.trim()) {
-    return "participantId is required.";
+  if (
+    body.participantId !== undefined &&
+    (typeof body.participantId !== "string" || !body.participantId.trim())
+  ) {
+    return "participantId must be a non-empty string when provided.";
   }
 
   if (
@@ -97,11 +109,11 @@ export function validateSignBody(body: Record<string, unknown>): string | null {
 }
 
 export function parseSignRequest(body: Record<string, unknown>): {
-  participantId: string;
+  participantId?: string;
   participationMode?: ParticipationMode;
 } {
   return {
-    participantId: body.participantId as string,
+    participantId: body.participantId as string | undefined,
     participationMode: body.participationMode as ParticipationMode | undefined,
   };
 }

@@ -59,7 +59,7 @@ export function PublicNewsCard({ article }: PublicNewsCardProps) {
             logoLabel={provider.logoLabel}
             className="public-news-card__logo-fallback"
             imageClassName="public-news-card__logo"
-            width={28}
+            width={44}
             height={28}
           />
           <div className="public-news-card__provider-copy">

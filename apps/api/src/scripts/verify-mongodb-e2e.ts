@@ -45,8 +45,13 @@ const ALL_MODULE_COLLECTIONS = [
   MONGO_COLLECTIONS.initiativeRevisionDrafts,
   MONGO_COLLECTIONS.decisionSessions,
   MONGO_COLLECTIONS.initiativeCollectiveDecisions,
-  MONGO_COLLECTIONS.initiativeDecisionVotes,
-  MONGO_COLLECTIONS.initiativeDecisionVoteHistory,
+  // Recovery Task 31: `initiativeDecisionVotes` / `initiativeDecisionVoteHistory`
+  // are intentionally NOT listed here (same precedent as `petitions` /
+  // `petitionSignatures`, also absent). Both are dedicated, row-level
+  // authoritative collections now — `verifyCollectionRoundTrip`'s
+  // `replaceRecordMap` performs a whole-collection `deleteMany` of every
+  // document not in its single-record test fixture, which would destroy
+  // real Vote/history data in whatever database `MONGODB_URI` points at.
   MONGO_COLLECTIONS.participationAreas,
   MONGO_COLLECTIONS.participationAreaTransitions,
   MONGO_COLLECTIONS.civicActionPackages,
@@ -232,12 +237,8 @@ async function verifyPriorityModuleCollections(): Promise<void> {
     "decisionId",
     "decision",
   );
-  await verifyCollectionRoundTrip(MONGO_COLLECTIONS.initiativeDecisionVotes, "voteId", "vote");
-  await verifyCollectionRoundTrip(
-    MONGO_COLLECTIONS.initiativeDecisionVoteHistory,
-    "historyId",
-    "history",
-  );
+  // Recovery Task 31: `initiativeDecisionVotes` / `initiativeDecisionVoteHistory`
+  // round-trips removed — see the `ALL_MODULE_COLLECTIONS` comment above.
   await verifyCollectionRoundTrip(
     MONGO_COLLECTIONS.participationAreas,
     "participationAreaId",

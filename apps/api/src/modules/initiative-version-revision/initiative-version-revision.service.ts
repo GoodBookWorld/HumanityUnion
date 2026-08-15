@@ -1,5 +1,8 @@
+import { randomUUID } from "node:crypto";
+
 import type {
   Initiative,
+  InitiativeRevisionChange,
   InitiativeRevisionDraft,
   InitiativeRevisionDraftContext,
   InitiativeRevisionEligibleProposal,
@@ -21,6 +24,9 @@ import {
   upsertProjectedInitiativeCard,
 } from "../initiatives/initiative-projection.store.js";
 import { validateInitiativeForPublication } from "../initiatives/initiative.validators.js";
+import { publishInitiativeLifecycleStage } from "../../shared/initiative-lifecycle-stage/index.js";
+import { buildInitiativeRevisionIntelligenceSnapshot } from "./initiative-revision-intelligence.service.js";
+import { generateRevisionChanges, toRevisionChange } from "./initiative-revision-draft-builder.js";
 import {
   createRevision,
   deleteRevisionDraft,
@@ -32,10 +38,12 @@ import {
   upsertRevisionDraft,
 } from "./initiative-version-revision.store.js";
 import {
+  type AddAuthorOriginatedRevisionChangeInput,
+  type SaveInitiativeRevisionChangeInput,
   type SaveInitiativeRevisionDraftInput,
+  validateInitiativeRevisionChangesForPublication,
   validateInitiativeRevisionDraftForPublication,
 } from "./initiative-version-revision.validators.js";
-import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 
 function getOwnedInitiative(initiativeId: string, identity: RequestIdentity): Initiative {
   const initiative = getInitiativeById(initiativeId);
@@ -141,24 +149,260 @@ export function listInitiativeVersionRevisions(
   return listRevisionsByInitiative(initiativeId);
 }
 
-export function getInitiativeRevisionWorkspaceContext(
+export async function getInitiativeRevisionWorkspaceContext(
   identity: RequestIdentity,
   initiativeId: string,
-): InitiativeRevisionDraftContext {
+): Promise<InitiativeRevisionDraftContext> {
   const initiative = getOwnedInitiative(initiativeId, identity);
 
   assertRevisionEligibleInitiative(initiative);
+
+  const snapshot = await buildInitiativeRevisionIntelligenceSnapshot(initiativeId);
 
   return {
     draft: getRevisionDraftByInitiativeId(initiativeId),
     currentVersion: getCurrentPublishedVersion(initiativeId),
     eligibleProposals: listEligibleProposals(initiativeId),
+    eligibleStructuredProposals: [...snapshot.eligibleProposals],
+    intelligenceSnapshot: snapshot,
     currentInitiative: {
       title: initiative.title,
       description: initiative.description,
       metadata: structuredClone(initiative.metadata),
     },
   };
+}
+
+/**
+ * Initiative Lifecycle — Part E, Section 2. The one canonical
+ * `InitiativeRevisionDraft` the Lifecycle Stage Workspace shows this
+ * Author for this Initiative — creates it (from the Current published
+ * Initiative) on first use rather than requiring a separate explicit
+ * "create draft" step, mirroring how Part D's/Part B's Author Workspace
+ * auto-provisions its first working document. Returns the existing draft
+ * unchanged if one is already in progress — never silently resets an
+ * Author's in-progress `changes`.
+ */
+function getOrCreateWorkingRevisionDraft(
+  identity: RequestIdentity,
+  initiative: Initiative,
+): InitiativeRevisionDraft {
+  const existing = getRevisionDraftByInitiativeId(initiative.initiativeId);
+
+  if (existing) {
+    return existing;
+  }
+
+  if (getCurrentPublishedVersion(initiative.initiativeId) === 0) {
+    throw new Error("Initial version must be published before creating a revision.");
+  }
+
+  const now = new Date().toISOString();
+  const draft: InitiativeRevisionDraft = {
+    draftId: `initiative-revision-draft-${randomUUID()}`,
+    initiativeId: initiative.initiativeId,
+    authorId: identity.participantId,
+    title: initiative.title,
+    description: initiative.description,
+    metadata: structuredClone(initiative.metadata),
+    revisionSummary: "",
+    appliedProposalIds: [],
+    skippedProposalIds: [],
+    changes: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return upsertRevisionDraft(draft);
+}
+
+/**
+ * Initiative Lifecycle — Part E, Section 2/3 (Revision Sources → Intelligent
+ * Revision Builder). "Generate" is ENRICHING, never wholesale-overwriting
+ * (Part D's exact discipline for the analogous Improvement Proposals
+ * Generate action) — every call auto-provisions the Author's working
+ * draft if none exists yet, then appends exactly one new
+ * `InitiativeRevisionChange` per curated ("Included in Revision") Proposal
+ * that does not already have a backing change, leaving every existing
+ * change's fields untouched.
+ */
+export async function generateInitiativeRevisionChanges(
+  identity: RequestIdentity,
+  initiativeId: string,
+): Promise<InitiativeRevisionDraft> {
+  const initiative = getOwnedInitiative(initiativeId, identity);
+  assertRevisionEligibleInitiative(initiative);
+
+  const draft = getOrCreateWorkingRevisionDraft(identity, initiative);
+  const snapshot = await buildInitiativeRevisionIntelligenceSnapshot(initiativeId);
+  const existingReferencedProposalIds = new Set(draft.changes.flatMap((change) => change.proposalIds));
+
+  const generatedItems = await generateRevisionChanges({ snapshot, existingReferencedProposalIds });
+
+  if (generatedItems.length === 0) {
+    return draft;
+  }
+
+  const now = new Date().toISOString();
+  const newChanges = generatedItems.map((item) => toRevisionChange(item, now));
+
+  const updated = updateRevisionDraft(initiativeId, {
+    changes: [...draft.changes, ...newChanges],
+  });
+
+  if (!updated) {
+    throw new Error("Revision draft not found.");
+  }
+
+  return updated;
+}
+
+/** Part 8 — an Author-originated improvement with no Proposal backing, explicitly marked with a reason so it still participates in full traceability (Part 5). */
+export function addAuthorOriginatedRevisionChange(
+  identity: RequestIdentity,
+  initiativeId: string,
+  input: AddAuthorOriginatedRevisionChangeInput,
+): InitiativeRevisionDraft {
+  const initiative = getOwnedInitiative(initiativeId, identity);
+  assertRevisionEligibleInitiative(initiative);
+
+  const draft = getOrCreateWorkingRevisionDraft(identity, initiative);
+  const now = new Date().toISOString();
+
+  const change: InitiativeRevisionChange = {
+    changeId: `initiative-revision-change-${randomUUID()}`,
+    section: input.section,
+    sectionLabel: input.sectionLabel && input.sectionLabel.trim() ? input.sectionLabel : input.section,
+    before: input.before,
+    after: input.after,
+    origin: "author_originated",
+    proposalIds: [],
+    authorOriginatedReason: input.authorOriginatedReason,
+    explanation: input.explanation,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const updated = updateRevisionDraft(initiativeId, { changes: [...draft.changes, change] });
+
+  if (!updated) {
+    throw new Error("Revision draft not found.");
+  }
+
+  return updated;
+}
+
+/** Part 4/7 — the Author edits a suggested or manual change's text/explanation before deciding whether to fold it into the draft's real title/description. */
+export function saveRevisionChange(
+  identity: RequestIdentity,
+  initiativeId: string,
+  changeId: string,
+  input: SaveInitiativeRevisionChangeInput,
+): InitiativeRevisionDraft {
+  getOwnedInitiative(initiativeId, identity);
+
+  const draft = getRevisionDraftByInitiativeId(initiativeId);
+
+  if (!draft) {
+    throw new Error("Revision draft not found.");
+  }
+
+  const changeIndex = draft.changes.findIndex((change) => change.changeId === changeId);
+
+  if (changeIndex === -1) {
+    throw new Error("Revision change not found.");
+  }
+
+  const now = new Date().toISOString();
+  const nextChanges = [...draft.changes];
+  const current = nextChanges[changeIndex]!;
+  nextChanges[changeIndex] = {
+    ...current,
+    before: input.before ?? current.before,
+    after: input.after ?? current.after,
+    explanation: input.explanation ?? current.explanation,
+    authorOriginatedReason:
+      current.origin === "author_originated"
+        ? (input.authorOriginatedReason ?? current.authorOriginatedReason)
+        : current.authorOriginatedReason,
+    updatedAt: now,
+  };
+
+  const updated = updateRevisionDraft(initiativeId, { changes: nextChanges });
+
+  if (!updated) {
+    throw new Error("Revision draft not found.");
+  }
+
+  return updated;
+}
+
+/** Part 6 — the Author discards a suggested or manual change before publish; it never appears in the published revision's Before/After trace. */
+export function removeRevisionChange(
+  identity: RequestIdentity,
+  initiativeId: string,
+  changeId: string,
+): InitiativeRevisionDraft {
+  getOwnedInitiative(initiativeId, identity);
+
+  const draft = getRevisionDraftByInitiativeId(initiativeId);
+
+  if (!draft) {
+    throw new Error("Revision draft not found.");
+  }
+
+  const updated = updateRevisionDraft(initiativeId, {
+    changes: draft.changes.filter((change) => change.changeId !== changeId),
+  });
+
+  if (!updated) {
+    throw new Error("Revision draft not found.");
+  }
+
+  return updated;
+}
+
+/**
+ * Part 6/7 — a real, deterministic, Author-triggered "Apply" action: copies
+ * one change's reviewed `after` text into the draft's actual `title`/
+ * `description` field (never automatic — the Author must click Apply for
+ * each change individually). A `"custom"`-section change has no matching
+ * Initiative field and is a no-op here; it still remains fully tracked in
+ * `changes` for traceability.
+ */
+export function applyRevisionChangeToDraft(
+  identity: RequestIdentity,
+  initiativeId: string,
+  changeId: string,
+): InitiativeRevisionDraft {
+  getOwnedInitiative(initiativeId, identity);
+
+  const draft = getRevisionDraftByInitiativeId(initiativeId);
+
+  if (!draft) {
+    throw new Error("Revision draft not found.");
+  }
+
+  const change = draft.changes.find((entry) => entry.changeId === changeId);
+
+  if (!change) {
+    throw new Error("Revision change not found.");
+  }
+
+  if (change.section !== "title" && change.section !== "description") {
+    return draft;
+  }
+
+  const updated = updateRevisionDraft(initiativeId, {
+    title: change.section === "title" ? change.after : undefined,
+    description: change.section === "description" ? change.after : undefined,
+  });
+
+  if (!updated) {
+    throw new Error("Revision draft not found.");
+  }
+
+  return updated;
 }
 
 export function createInitiativeRevisionDraft(
@@ -184,6 +428,7 @@ export function createInitiativeRevisionDraft(
     revisionSummary: "",
     appliedProposalIds: [],
     skippedProposalIds: [],
+    changes: [],
     createdAt: now,
     updatedAt: now,
   };
@@ -250,6 +495,7 @@ export function publishInitiativeRevision(
 
   validateInitiativeRevisionDraftForPublication(draft);
   validateAppliedProposalIds(initiativeId, draft.appliedProposalIds);
+  validateInitiativeRevisionChangesForPublication(draft.changes);
 
   validateInitiativeForPublication({
     ...initiative,
@@ -280,6 +526,7 @@ export function publishInitiativeRevision(
     acceptedProposalIds,
     partiallyAcceptedProposalIds,
     declinedProposalIds: listDeclinedProposalIds(initiativeId),
+    changes: [...draft.changes],
   };
 
   const previousCommunitySlug = initiative.metadata.communitySlug;
@@ -321,18 +568,65 @@ export function publishInitiativeRevision(
   deleteRevisionDraft(initiativeId);
   syncProjectedInitiativeCard(updatedInitiative, previousCommunitySlug);
 
-  emitCivicNotificationEvent({
-    eventType: "revision_published",
-    entityType: "initiative_revision",
-    entityId: `${initiativeId}::${createdRevision.version}`,
-    initiativeId,
-    actorMemberId: identity.participantId,
-  });
-
   return {
     revision: createdRevision,
     initiative: updatedInitiative,
   };
+}
+
+/**
+ * Initiative Lifecycle — Part E, Section 10/13. Reuses the Part A/B/C/D
+ * Lifecycle notification foundation verbatim — no new notification
+ * plumbing exists for this stage; `publishInitiativeLifecycleStage` is
+ * stage-agnostic, so calling it with `stageId: "revision"` alone is
+ * sufficient for the existing consumer to fan out one Notification to
+ * every Active Ally (Author excluded), advance Lifecycle Progress, and
+ * generate the standard "continue to next stage" (Petition) Reminder —
+ * see `mapLifecycleStageIdToReminderCategory` in
+ * `initiative-lifecycle-stage-notification.consumer.ts`, which already
+ * maps `"revision"` → its own reminder category and `"petition"` → the
+ * next-stage Reminder this publish produces.
+ */
+async function notifyLifecycleStageRevisionPublished(
+  revision: InitiativeVersionRevision,
+  actorParticipantId: string,
+): Promise<void> {
+  const initiative = getInitiativeById(revision.initiativeId);
+
+  try {
+    await publishInitiativeLifecycleStage({
+      initiativeId: revision.initiativeId,
+      initiativeTitle: initiative?.title ?? revision.initiativeId,
+      stageId: "revision",
+      stageLabel: "Revision",
+      stageArtifactId: revision.revisionId,
+      stageVersion: revision.version,
+      actorParticipantId,
+      publicationKind: "published",
+      relatedUrl: `/initiatives/public/${encodeURIComponent(revision.initiativeId)}#revision`,
+    });
+  } catch (error) {
+    console.warn(`[initiative-version-revision] Lifecycle stage notification skipped: ${String(error)}`);
+  }
+}
+
+/**
+ * Initiative Lifecycle — Part E. The real product entry point (HTTP route)
+ * for publishing a Revision: performs the exact same synchronous publish
+ * as {@link publishInitiativeRevision} (kept synchronous and unchanged for
+ * its many existing fixture-script callers across other Parts/Capabilities)
+ * and additionally AWAITS the Lifecycle stage notification, so the
+ * publication event is durably enqueued before the HTTP response returns.
+ */
+export async function publishInitiativeRevisionStage(
+  identity: RequestIdentity,
+  initiativeId: string,
+): Promise<{ revision: InitiativeVersionRevision; initiative: Initiative }> {
+  const result = publishInitiativeRevision(identity, initiativeId);
+
+  await notifyLifecycleStageRevisionPublished(result.revision, identity.participantId);
+
+  return result;
 }
 
 export function createInitialInitiativeVersionRevision(
@@ -361,6 +655,7 @@ export function createInitialInitiativeVersionRevision(
     acceptedProposalIds: [],
     partiallyAcceptedProposalIds: [],
     declinedProposalIds: listDeclinedProposalIds(initiative.initiativeId),
+    changes: [],
   };
 
   return createRevision(revision);

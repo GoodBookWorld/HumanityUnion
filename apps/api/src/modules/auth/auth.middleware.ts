@@ -1,7 +1,7 @@
 import type { AuthIdentity } from "@hu/types";
 import type { NextFunction, Request, Response } from "express";
 
-import { isAuthBootstrapFallbackEnabled } from "../../config/auth.config.js";
+import { isAuthBootstrapFallbackEnabled, resolveAuthConfig } from "../../config/auth.config.js";
 import { bootstrapAuthIdentity } from "./auth.identity.js";
 import { authIdentityFromAccessTokenClaims } from "./auth.service.js";
 import { verifyAccessToken } from "./auth-tokens.js";
@@ -27,8 +27,29 @@ function extractBearerToken(req: Request): string | null {
   return token.length > 0 ? token : null;
 }
 
+/**
+ * Launch Readiness Pack 07 — prefer Authorization Bearer (tests / non-browser
+ * clients), then HttpOnly access cookie (browser sessions).
+ */
+export function extractAccessToken(req: Request): string | null {
+  const bearer = extractBearerToken(req);
+
+  if (bearer) {
+    return bearer;
+  }
+
+  const cookieName = resolveAuthConfig().accessCookieName;
+  const cookieToken = req.cookies?.[cookieName];
+
+  if (typeof cookieToken === "string" && cookieToken.trim().length > 0) {
+    return cookieToken.trim();
+  }
+
+  return null;
+}
+
 function resolveJwtIdentity(req: Request): AuthIdentity | null {
-  const token = extractBearerToken(req);
+  const token = extractAccessToken(req);
 
   if (!token) {
     return null;
@@ -85,7 +106,10 @@ export function requireAuthenticationMiddleware(
   next();
 }
 
-/** Requires a valid JWT bearer token. Bootstrap fallback is never accepted. */
+/**
+ * Requires a valid JWT access credential (Bearer or HttpOnly cookie).
+ * Bootstrap fallback is never accepted.
+ */
 export function requireJwtAuthenticationMiddleware(
   req: Request,
   res: Response,

@@ -1,0 +1,38 @@
+.hu-translated-content {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.hu-translated-content__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+  color: #445163;
+}
+
+.hu-translated-content__machine,
+.hu-translated-content__stale {
+  font-style: italic;
+}
+
+.hu-translated-content__body {
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.hu-translated-content__toggle {
+  justify-self: start;
+  border: 1px solid rgba(28, 36, 48, 0.2);
+  background: transparent;
+  color: #1c2430;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.hu-translated-content__toggle:focus-visible {
+  outline: 2px solid #1c2430;
+  outline-offset: 2px;
+}

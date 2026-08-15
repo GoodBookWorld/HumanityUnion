@@ -1,0 +1,302 @@
+/*
+ * Communication UX Pack 03.5 — Initiative Collaboration Channel.
+ * Header -> History -> Composer -> Participants, in that DOM order on
+ * every breakpoint (Part 11 already mandates this order on mobile; using
+ * it everywhere means no responsive reordering is needed at all).
+ */
+.icc-channel {
+  display: grid;
+  gap: var(--hu-space-4);
+}
+
+.icc-channel__status {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+}
+
+.icc-channel__status--error {
+  color: var(--hu-color-danger, #dc2626);
+}
+
+.icc-channel__header {
+  display: grid;
+  gap: var(--hu-space-1);
+}
+
+.icc-channel__title {
+  margin: 0;
+  font-size: var(--hu-font-size-lg, 1.1rem);
+}
+
+.icc-channel__header-meta {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-2);
+  font-size: 0.75rem;
+  color: var(--hu-color-text-muted);
+}
+
+/* Part 12 — unread count is a number, never a bare colored dot. */
+.icc-channel__unread-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--hu-color-primary, #1a56db);
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.icc-channel__history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-3);
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: var(--hu-space-2);
+}
+
+.icc-channel__load-older {
+  align-self: center;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.icc-channel__load-older:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.icc-channel__message-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2);
+}
+
+.icc-channel__message {
+  max-width: 88%;
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-bg-muted);
+  border: 1px solid var(--hu-color-border);
+  align-self: flex-start;
+}
+
+.icc-channel__message--own {
+  align-self: flex-end;
+  background: var(--hu-color-surface);
+  border-color: var(--hu-color-primary, #1a56db);
+}
+
+.icc-channel__message-sender {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--hu-color-text-muted);
+}
+
+.icc-channel__message-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-size: var(--hu-font-size-sm);
+}
+
+.icc-channel__message-time {
+  margin: 0.25rem 0 0;
+  font-size: 0.7rem;
+  color: var(--hu-color-text-muted);
+}
+
+/* Part 5 — visually distinct from a Participant Message: centered, no bubble alignment, no sender identity. */
+.icc-channel__system-event {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.35rem 0.75rem;
+  max-width: 92%;
+  text-align: center;
+}
+
+.icc-channel__system-event-text {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--hu-color-text-muted);
+}
+
+.icc-channel__system-event-time {
+  font-size: 0.65rem;
+  color: var(--hu-color-text-muted);
+}
+
+.icc-channel__composer {
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.icc-channel__composer-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.icc-channel__composer-input {
+  width: 100%;
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  resize: vertical;
+  font: inherit;
+}
+
+.icc-channel__composer-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.icc-channel__participants {
+  border-top: 1px solid var(--hu-color-border);
+  padding-top: var(--hu-space-3);
+}
+
+.icc-channel__participants-title {
+  margin: 0 0 var(--hu-space-2);
+  font-size: var(--hu-font-size-sm);
+}
+
+.icc-channel__participants-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--hu-space-2);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.icc-channel__participant-row {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-2);
+  padding: 0.35rem;
+  border-radius: var(--hu-radius-md);
+}
+
+.icc-channel__participant-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-2);
+  min-width: 0;
+  flex: 1 1 auto;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.icc-channel__participant-identity:hover,
+a.icc-channel__participant-identity:focus-visible {
+  text-decoration: underline;
+}
+
+.icc-channel__participant-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icc-channel__participant-role {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--hu-color-text-muted);
+  white-space: nowrap;
+}
+
+/* Part 8/12 — "Current status"; never a bare dot, always paired with the "Active" text label. */
+.icc-channel__participant-status {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: var(--hu-color-text-muted);
+  white-space: nowrap;
+}
+
+.icc-channel__participant-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hu-color-success, #16a34a);
+}
+
+.icc-channel__participant-message-button {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  justify-content: center;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  cursor: pointer;
+}
+
+.icc-channel__participant-message-button:focus-visible,
+.icc-channel__load-older:focus-visible,
+.icc-channel__composer-input:focus-visible {
+  outline: 2px solid var(--hu-color-primary, #1a56db);
+  outline-offset: 2px;
+}
+
+.icc-channel__participant-message-button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* Part 12 — never the only accessible indicator; always paired with visually-hidden text. */
+.icc-channel__participant-unread-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hu-color-danger, #dc2626);
+}
+
+.icc-channel__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Part 11 — tablet/mobile: the sidebar column already collapses to full width below the shared `.pie-layout` breakpoints; only the internal history max-height needs relaxing so the Channel does not force an inner scroll region on a full-width, taller layout. */
+@media (max-width: 767px) {
+  .icc-channel__history {
+    max-height: none;
+  }
+
+  .icc-channel__participants-list {
+    max-height: none;
+  }
+}

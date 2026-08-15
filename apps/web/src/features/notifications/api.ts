@@ -76,6 +76,13 @@ export async function archiveNotification(notificationId: string): Promise<Membe
   });
 }
 
+/** Lifecycle UX Correction Pack 01 Part 4/9 — only ever offered in the UI for an already-archived notification. Removes only that one record. */
+export async function deleteNotification(notificationId: string): Promise<{ deleted: boolean }> {
+  return apiRequest<{ deleted: boolean }>(`/api/v1/notifications/${notificationId}`, {
+    method: "DELETE",
+  });
+}
+
 export function priorityLabel(priority: NotificationPriority): string {
   switch (priority) {
     case "critical":

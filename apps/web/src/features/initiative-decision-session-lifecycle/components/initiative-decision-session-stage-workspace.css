@@ -1,0 +1,113 @@
+.ids-source-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.ids-source-panel__empty {
+  color: var(--hu-muted, #5c6570);
+  font-size: 0.95rem;
+}
+
+.ids-source-panel__list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ids-source-panel__item {
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  padding-top: 0.55rem;
+}
+
+.ids-source-panel__label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.ids-source-panel__summary {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+}
+
+.ids-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.ids-editor__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.ids-editor__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ids-editor__field input,
+.ids-editor__field textarea {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.35rem;
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.ids-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ids-public {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.ids-public__section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.ids-public__section p,
+.ids-public__section li {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ids-public__section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.ids-public__meta {
+  font-size: 0.9rem;
+  opacity: 0.78;
+}
+
+.ids-assistant-block {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.ids-assistant-block h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.ids-assistant-block ul {
+  margin: 0;
+  padding-left: 1rem;
+}

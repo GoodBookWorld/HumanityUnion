@@ -1,0 +1,392 @@
+# LANGUAGE & TRANSLATION ARCHITECTURE
+
+Version: 1.0  
+Status: Active (Provider-backed vertical slice)  
+Pack: Language Architecture Pack 01–02
+
+---
+
+## Purpose
+
+Humanity Union must support Participants who use different languages while **preserving original authored content**.
+
+Primary principle:
+
+```
+Original Content  → preserved permanently
+Translation       → separate representation
+```
+
+Machine translation **never** overwrites the original.
+
+Browser Google Translate may remain a convenience layer. It is **not** the source of truth for multilingual content.
+
+---
+
+## Discovery summary (Pack 01)
+
+### What existed
+
+- `MemberPreferences.experiencePreferences` already stores `interfaceLanguage`, `readingLanguages`, `writingLanguages`, `translationPreference` (defaults `"en"` / `"none"`).
+- Initiative / profile metadata may carry a free-form `language` string (typically `"en"`).
+- No next-intl / Accept-Language middleware / `/en/` routes.
+- Root layout hardcodes `<html lang="en">`.
+- Lifecycle public/preview copy uses `LifecycleTranslatableText` / `translate="yes"` for **browser** Translate convenience.
+- Notifications largely persist fully rendered English title/message at create-time.
+- Assistant prompts did not receive preferred response language.
+
+### Why browser Google Translate misses generated form values
+
+Confirmed in Author Lifecycle editors (Petition, Collaborative Analysis, and other stage editors):
+
+1. Browser Google Translate **skips `<input>` / `<textarea>` values**.
+2. Editors use **React controlled state** (`value={field}`).
+3. AI / generated drafts are applied into that state via events such as `LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT`.
+4. While editing, those strings are not ordinary text nodes, so Translate cannot rewrite them.
+
+Public/Preview surfaces intentionally render the same strings as text nodes so browser Translate can still help as a convenience — not as canonical storage.
+
+---
+
+## Language concepts
+
+These are **not** necessarily identical:
+
+| Concept | Meaning |
+|--------|---------|
+| **Original Language** | Language of the authored civic record |
+| **Interface Language** | UI chrome language (menus, system labels) |
+| **Preferred Reading Language** | Preferred language for reading civic content |
+| **Translation Language** | Target language for an explicit translation action (e.g. Translate Draft) |
+
+Canonical types live in `packages/types` (`language.ts`, `content-translation.ts`).
+
+---
+
+## Priority languages
+
+Architecture supports at least:
+
+English (`en`), Ukrainian (`uk`), Russian (`ru`), French (`fr`), Spanish (`es`), Chinese (`zh`), Hindi (`hi`), Arabic (`ar`), Hebrew (`he`).
+
+Not all translations must exist yet. Missing translation falls back to original content.
+
+RTL preparation applies to Arabic and Hebrew (`dir="rtl"`, logical CSS where practical).
+
+---
+
+## Original content rule
+
+Every authored civic record preserves:
+
+- original text
+- original language (when known)
+- author
+- timestamp
+- version
+
+Published records remain traceable to the original. Translations never become a second civic entity.
+
+---
+
+## Translation record
+
+Logical model (`TranslatedContentRecord`):
+
+- `sourceRecordId`
+- `sourceVersion`
+- `sourceLanguage`
+- `targetLanguage`
+- `translatedContent`
+- `translationProvider`
+- `translationKind` (`machine` | `human` | `author-approved`)
+- `createdAt`
+- `stale` / `freshness` (`current` | `stale` | `regenerating`)
+
+Storage strategy may vary by domain (side collection vs projection). The logical shape is stable.
+
+---
+
+## Lifecycle translation
+
+The same published Lifecycle record may be read in multiple languages for:
+
+Initiative → Discussion → Collaborative Analysis → Improvement Proposals → Revision → Petition → Decision Session → Collective Decision → Implementation Commitments → Implementation Tracking → Official Responses → Public Impact → Civic Archive.
+
+Proposal/Analysis source traceability always points to **original** content.
+
+---
+
+## Author drafts
+
+Do **not** silently translate editable Author forms.
+
+Provide explicit assistance (e.g. **Translate Draft**):
+
+1. Author chooses target language.
+2. System creates a **working translated representation**.
+3. Original draft remains preserved.
+4. Controlled form values are never silently replaced.
+
+API foundation: `translateDraft()` in `apps/api/src/modules/language/`.
+
+---
+
+## Public content display
+
+If a current translation exists for the Participant’s preferred reading language:
+
+- show translation
+- offer **View Original**
+- identify original language
+- discreet **Machine translated** indicator when `translationKind === "machine"`
+
+Fallback chain:
+
+```
+preferred translation
+  → other approved translation (if policy allows)
+  → original content
+```
+
+Never render empty content merely because translation is unavailable.
+
+Stale translations must **not** be presented as current.
+
+UI foundation: `TranslatedContentView`.
+
+---
+
+## Google Translate role
+
+Allowed: optional convenience for ordinary text nodes.
+
+Not reliable for:
+
+- controlled inputs
+- editable forms
+- dynamically generated values held in React state
+- canonical translated records
+
+Do not depend on DOM mutation for platform data architecture.
+
+---
+
+## Translation provider abstraction
+
+`TranslationProvider` seam (provider-independent):
+
+Possible future implementations:
+
+- Gemini Translation
+- Google Cloud Translation
+- DeepL
+- other approved providers
+
+Pack 01 ships `DeterministicTranslationProvider` for tests/offline.
+
+Pack 02 adds `GeminiTranslationProvider` behind `TRANSLATION_PROVIDER=deterministic|gemini` (reuses server-side `GEMINI_API_KEY`). Domains must not import Gemini directly — only the provider adapter may.
+
+Cache key: `sourceKind::sourceRecordId::sourceVersion::targetLanguage` — avoid repeated provider calls for identical pairs. Idempotent `getOrCreateContentTranslation` enforces uniqueness.
+
+---
+
+## Assistant language
+
+Humanity Union Assistant receives:
+
+- interface language
+- preferred response language
+- source content language (when known)
+
+It should respond in the Participant’s preferred language when safely supported, preserve semantic meaning across languages, and must **not** ingest private Direct Messages for translation automatically.
+
+---
+
+## Multilingual Discussion
+
+Architecture preparation:
+
+- Participant writes a comment in language A
+- Another Participant may read a translation in language B
+- Original remains accessible
+- Traceability for Proposal/Analysis sources points to originals
+
+Full Discussion translation UX is a later implementation pack.
+
+---
+
+## Notifications
+
+Prepare template-key localization (`resolveNotificationTemplate`).
+
+Render in the recipient’s preferred language where a locale pack exists; otherwise fall back to English templates.
+
+Do not treat one English-only fully rendered body as the only long-term canonical representation when template-based localization is available.
+
+Migration of existing persisted English bodies is a later pack — no bulk production rewrite here.
+
+---
+
+## Messages (privacy)
+
+Pack 01 does **not** automatically translate private Direct Messages.
+
+Future message translation requires explicit privacy review.
+
+Messages remain original-language content. Assistant must not ingest private messages for translation automatically.
+
+---
+
+## RTL
+
+Helpers: `isRtlLanguageCode`, `documentDirectionForLanguage`.
+
+Pack 02: root document `lang` / `dir` driven from Interface Language (`DocumentLanguageAttributes`). Guests keep `en` / `ltr`.
+
+Remaining blockers before full rollout:
+
+- many physical CSS properties (`left`/`right`, `margin-left`) instead of logical properties
+- sidebars / FAB assume LTR edges
+- public Lifecycle chrome not fully mirrored
+
+Do not redesign the entire platform in Pack 01–02.
+
+---
+
+## Search
+
+A translated record must not become a duplicate civic entity.
+
+Future multilingual search should match original and approved translation text while returning the **same** canonical entity.
+
+Large search redesign is out of scope for Pack 01.
+
+---
+
+## URL / routing
+
+**Decision (Pack 01):** locale belongs primarily in **profile preference** (`interfaceLanguage` / reading languages).
+
+Do **not** add `/en/`, `/fr/` URL prefixes automatically.
+
+Preserve existing public URLs. Hybrid (preference + optional cookie) may be considered later.
+
+---
+
+## Safety
+
+- Safety decisions refer to **canonical source content**.
+- Translated content must not bypass Safety moderation.
+- Machine translation must not convert rejected content into an accepted civic record.
+- If moderation of translated output is required later, define it as a separate step.
+
+---
+
+## Migration / compatibility
+
+Existing records without language metadata continue to work.
+
+Safe default / fallback language: **`en`** (matches current Initiative, profile, preferences, and layout conventions).
+
+Do not bulk-migrate production data without an explicit migration plan.
+
+---
+
+## Performance
+
+Avoid translating entire Lifecycle graphs on every request.
+
+Translation should be:
+
+- version-aware
+- cacheable
+- on-demand or asynchronously generated
+
+---
+
+## Accessibility
+
+- correct `lang` on active content
+- RTL `dir` where applicable (future root wiring)
+- translated controls retain text labels (not flag-only)
+- View Original is keyboard accessible
+- screen readers receive the active language via `lang`
+
+---
+
+## Implementation map (Pack 01)
+
+| Area | Location |
+|------|----------|
+| Types | `packages/types/src/domain/language.ts`, `content-translation.ts` |
+| API foundation | `apps/api/src/modules/language/` |
+| Assistant language context | `platform-assistant.service.ts`, `build-lifecycle-ai-prompt.ts` |
+| Web display | `apps/web/src/features/language/` |
+| Browser Translate note | `LifecycleTranslatableText.tsx` |
+
+---
+
+## Pack 02 — Provider-backed vertical slice (implemented)
+
+### Real provider
+
+- `GeminiTranslationProvider` implements `TranslationProvider`.
+- Config: `TRANSLATION_PROVIDER=deterministic` (default/tests) or `gemini` (dev/real).
+- Reuses `GEMINI_API_KEY` server-side only — never exposed to Web env, responses, or logs.
+- Bounded HU terminology glossary injected into provider requests.
+
+### Persistence
+
+- `TranslatedContentRecord` with `sourceKind` for Initiative / Collaborative Analysis / Petition.
+- Memory + Mongo (`content_translations`) with unique identity index.
+- Version-aware staleness: older `sourceVersion` → stale → fallback to original.
+
+### Public surfaces
+
+- Initiative hero title/description via translation resolve/generate.
+- Published Collaborative Analysis and Petition via `PublicTranslatedFields` + `TranslatedContentView`.
+- Machine translated label + View Original toggle.
+- Existing public URLs unchanged (no locale prefixes).
+
+### Author drafts
+
+- Reusable `TranslateDraftControl` on Petition and Collaborative Analysis editors.
+- `POST /api/v1/translations/draft` (auth + rate limit); never mutates canonical draft.
+- Explicit apply action required to replace local editor state.
+
+### Preferences / document semantics
+
+- Preferences → Language & Translation section (existing preference fields).
+- `translationPreference`: `none` | `preferred` | `ask` (actual contract).
+- Root `lang`/`dir` from Interface Language.
+
+### Notifications
+
+- Foundation wired: generic lifecycle stage published copy can resolve via `resolveNotificationTemplate` using recipient Interface Language.
+- Stage-specific fixed English wording retained until a dedicated localization pack expands locale packs.
+
+### Privacy / safety
+
+- No automatic DM / Collaboration Channel / private chat translation.
+- Draft endpoint refuses private-message-shaped payloads.
+- Provider requires `safetyCleared`; failures fall back to original.
+
+### Rate limiting
+
+- Generate + Translate Draft use per-user/IP translation rate limiter.
+
+---
+
+## Recommended next pack
+
+**Language Architecture Pack 03 — Full Lifecycle Translation Rollout**
+
+Bounded scope:
+
+1. Remaining Lifecycle stages (Improvement Proposals → Civic Archive) on the same translation boundary.
+2. Expand notification locale packs for stage-specific fixed copy.
+3. Incremental RTL logical-CSS migration for high-traffic shells.
+4. Optional Discussion comment translation UX (still original-preserving).
+
+Out of scope unless separately approved: automatic DM translation, multilingual search rewrite, whole-platform CSS redesign.

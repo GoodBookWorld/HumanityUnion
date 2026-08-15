@@ -3,7 +3,6 @@
  * Run: npm run verify:civic-archive
  */
 
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -13,6 +12,11 @@ import type { Member } from "@hu/types";
 import { canTransitionPublicCivicArchive, isPublicCivicArchiveTerminal } from "@hu/types";
 
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
+import {
+  assertVerificationSubprocessSucceeded,
+  runVerificationSubprocess,
+} from "./run-verification-subprocess.js";
+import { runVerificationScript } from "./verification-script-lifecycle.js";
 
 const steward: RequestIdentity = {
   participantId: "member-bootstrap-001",
@@ -77,9 +81,9 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-function assertThrows(fn: () => unknown, message: string): void {
+async function assertThrows(fn: () => unknown, message: string): Promise<void> {
   try {
-    fn();
+    await fn();
     throw new Error(`Expected failure: ${message}`);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("Expected failure:")) {
@@ -183,7 +187,7 @@ async function buildVerifiedImpactContext(): Promise<VerifiedImpactContext> {
   });
   const projected = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
     initiativeId: projected.initiativeId,
     title: "Archive Analysis",
     summary: "Analysis for archive path.",
@@ -192,9 +196,9 @@ async function buildVerifiedImpactContext(): Promise<VerifiedImpactContext> {
     suggestedImprovements: "Improve.",
     references: "Ref.",
   });
-  publishInitiativeCollaborativeAnalysis(otherParticipant, analysisDraft.analysisId);
+  await publishInitiativeCollaborativeAnalysis(otherParticipant, analysisDraft.analysisId);
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(otherParticipant, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(otherParticipant, {
     analysisId: analysisDraft.analysisId,
     targetSection: "Description",
     currentIssue: "Issue.",
@@ -225,7 +229,7 @@ async function buildVerifiedImpactContext(): Promise<VerifiedImpactContext> {
   });
   publishInitiativeRevision(steward, projected.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: projected.initiativeId,
     title: "Archive Session",
     purpose: "Prepare society for collective decision.",
@@ -236,7 +240,7 @@ async function buildVerifiedImpactContext(): Promise<VerifiedImpactContext> {
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: projected.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -245,7 +249,7 @@ async function buildVerifiedImpactContext(): Promise<VerifiedImpactContext> {
   openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
   await closeInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
 
-  const commitmentDraft = createInitiativeImplementationCommitmentDraft(author, {
+  const commitmentDraft = await createInitiativeImplementationCommitmentDraft(author, {
     initiativeId: projected.initiativeId,
     decisionId: decisionDraft.decisionId,
     commitmentTitle: "Archive Implementation Commitment",
@@ -257,7 +261,7 @@ async function buildVerifiedImpactContext(): Promise<VerifiedImpactContext> {
     commitmentDraft.commitmentId,
   );
 
-  const trackingDraft = createInitiativeImplementationTrackingDraft(author, {
+  const trackingDraft = await createInitiativeImplementationTrackingDraft(author, {
     commitmentId: publishedCommitment.commitmentId,
     currentStage: "Completed",
     summary: "Garden implementation completed.",
@@ -270,7 +274,7 @@ async function buildVerifiedImpactContext(): Promise<VerifiedImpactContext> {
   });
   completeInitiativeImplementationTracking(author, trackingDraft.trackingId);
 
-  const impactDraft = createInitiativePublicImpactDraft(author, {
+  const impactDraft = await createInitiativePublicImpactDraft(author, {
     trackingId: trackingDraft.trackingId,
     title: "Community Garden Outcome",
     summary: "Observable change from the garden implementation.",
@@ -337,8 +341,9 @@ async function runMainVerification(): Promise<void> {
   const eligibility = assessPublicCivicArchiveEligibility(context.impactId, author.participantId);
   assert(eligibility.eligible, "Verified impact author should be eligible");
 
-  assertThrows(
-    async () => await createPublicCivicArchiveDraft(otherParticipant, {
+  await assertThrows(
+    () =>
+      createPublicCivicArchiveDraft(otherParticipant, {
         impactId: context.impactId,
         title: "Unauthorized archive",
         summary: "Should fail.",
@@ -370,8 +375,9 @@ async function runMainVerification(): Promise<void> {
     summary: "Updated archive summary before publication.",
   });
 
-  assertThrows(
-    async () => await createPublicCivicArchiveDraft(author, {
+  await assertThrows(
+    () =>
+      createPublicCivicArchiveDraft(author, {
         impactId: context.impactId,
         title: "Duplicate draft",
         summary: "Should fail while draft already exists.",
@@ -381,7 +387,7 @@ async function runMainVerification(): Promise<void> {
     "Duplicate draft blocked while draft exists",
   );
 
-  assertThrows(
+  await assertThrows(
     () => publishPublicCivicArchive(author, draft.archiveRecordId),
     "Author cannot publish archive",
   );
@@ -391,7 +397,7 @@ async function runMainVerification(): Promise<void> {
   assert(published.archivedVersion === 1, "First archive version is 1");
   assert(published.archivedAt !== undefined, "Published archive has archivedAt");
 
-  assertThrows(
+  await assertThrows(
     () =>
       updatePublicCivicArchiveDraft(author, draft.archiveRecordId, {
         title: "Changed after publish",
@@ -445,20 +451,29 @@ async function runMainVerification(): Promise<void> {
   const initiativeList = listPublicCivicArchiveForInitiative(context.initiativeId);
   assert(initiativeList.length === 2, "Initiative archive list contains both published versions");
 
-  const index = listPublicCivicArchiveIndex({ search: "Garden" });
+  const index = await listPublicCivicArchiveIndex({ search: "Garden" });
+  // Recovery Task 18: the lifecycle index returns one canonical (latest
+  // published version) record per Initiative — see
+  // `selectCanonicalArchiveRecord` in `public-civic-archive-lifecycle.projection.ts`,
+  // untouched by this task. This assertion previously compared against the
+  // superseded v1 `draft.archiveRecordId`, which can never appear in the
+  // index once a v2 correction exists; the two lookups immediately above
+  // already correctly expect `correctionPublished`. This mismatch was never
+  // reached before this task because the pre-existing, synchronous
+  // `assertThrows` (fixed above) always failed earlier in step 1.
   assert(
-    index.some((record) => record.archiveRecordId === draft.archiveRecordId),
+    index.some((record) => record.archiveRecordId === correctionPublished.archiveRecordId),
     "Index search works",
   );
 
-  const metrics = computePublicCivicArchiveMetrics();
+  const metrics = await computePublicCivicArchiveMetrics();
   assert(metrics.archiveRecordCount >= 1, "archiveRecordCount computed");
   assert(metrics.countriesRepresented >= 1, "countriesRepresented computed");
   assert(metrics.verifiedImpactCount >= 1, "verifiedImpactCount computed");
 
   console.log("5. Archive index filters");
 
-  const filtered = listPublicCivicArchiveIndex({
+  const filtered = await listPublicCivicArchiveIndex({
     country: published.country,
     activityArea: published.activityArea,
   });
@@ -474,14 +489,12 @@ async function runMainVerification(): Promise<void> {
 
 function spawnReload(scriptName: string, args: string[], env: Record<string, string>): void {
   const reloadScriptPath = path.resolve(path.dirname(SCRIPT_PATH), scriptName);
-  const result = spawnSync("npx", ["tsx", reloadScriptPath, ...args], {
+  const result = runVerificationSubprocess(reloadScriptPath, args, {
     cwd: path.resolve(path.dirname(SCRIPT_PATH), "../.."),
     env: { ...process.env, ...env },
-    stdio: "pipe",
-    encoding: "utf-8",
   });
 
-  assert(result.status === 0, `Reload verification failed for ${scriptName}`);
+  assertVerificationSubprocessSucceeded(result, scriptName);
 }
 
 async function runPersistenceVerification(): Promise<void> {
@@ -533,7 +546,18 @@ async function main(): Promise<void> {
 
   await runMainVerification();
 
-  const persistenceResult = spawnSync("npx", ["tsx", SCRIPT_PATH], {
+  // Recovery Task 18: run via the shared bounded-subprocess helper (direct
+  // `process.execPath --import tsx`, never nested `npx`) instead of a raw,
+  // unbounded `spawnSync("npx", ...)`. This process resolves Public Impact,
+  // Tracking, Commitment, Decision, and Initiative ancestry, and builds a
+  // public projection (Member lookups) as part of "Public projection,
+  // privacy, and metrics" — a real MongoDB connection that, left open, kept
+  // this `spawnSync` call blocked forever (the pre-existing hang risk
+  // Tasks 15-17 also found and fixed in their own primary scripts).
+  // Wrapping `main()` in `runVerificationScript` (below) closes that
+  // connection deterministically; the timeout here is an independent
+  // safety net.
+  const persistenceResult = runVerificationSubprocess(SCRIPT_PATH, [], {
     cwd: path.resolve(path.dirname(SCRIPT_PATH), "../.."),
     env: {
       ...process.env,
@@ -549,15 +573,24 @@ async function main(): Promise<void> {
       INITIATIVE_PUBLIC_IMPACT_PERSISTENCE: "memory",
       PUBLIC_CIVIC_ARCHIVE_PERSISTENCE: "memory",
     },
-    stdio: "inherit",
   });
 
-  assert(persistenceResult.status === 0, "Persistence verification subprocess failed");
+  // Preserve the pre-existing visible output of the persistence subprocess
+  // even though output is now captured rather than inherited.
+  if (persistenceResult.stdout) {
+    process.stdout.write(persistenceResult.stdout);
+  }
+
+  assertVerificationSubprocessSucceeded(
+    persistenceResult,
+    "Public Civic Archive persistence verification",
+  );
 
   console.log("All Public Civic Archive checks passed.");
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exit(1);
-});
+// Recovery Task 18: closes the shared MongoDB client (and other
+// verification-only resources) deterministically after `main()` settles —
+// see the comment above the persistence-subprocess call for why this was
+// necessary to prevent an indefinite hang.
+void runVerificationScript(main);

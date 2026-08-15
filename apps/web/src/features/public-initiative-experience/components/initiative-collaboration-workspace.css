@@ -1,0 +1,36 @@
+/*
+ * Communication UX Pack 03.6 Part 1 — the tab switcher between the
+ * Collaboration Channel and Collaboration Sessions, both siblings inside
+ * the one Author/Active-Ally working-area sidebar slot.
+ */
+.icw-workspace {
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.icw-tabs {
+  display: flex;
+  gap: var(--hu-space-1);
+  border-bottom: 1px solid var(--hu-color-border);
+}
+
+.icw-tab {
+  padding: 0.5rem 0.9rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--hu-color-text-muted);
+  cursor: pointer;
+}
+
+.icw-tab:focus-visible {
+  outline: 2px solid var(--hu-color-primary, #1a56db);
+  outline-offset: 2px;
+}
+
+.icw-tab--active {
+  color: var(--hu-color-primary, #1a56db);
+  border-bottom-color: var(--hu-color-primary, #1a56db);
+}

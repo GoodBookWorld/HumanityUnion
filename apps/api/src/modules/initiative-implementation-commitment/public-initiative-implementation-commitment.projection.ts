@@ -52,6 +52,10 @@ async function toPublicListItem(
     publishedAt: commitment.publishedAt,
     withdrawnAt: commitment.withdrawnAt,
     completedAt: commitment.completedAt,
+    packageId: commitment.packageId ?? null,
+    approvedAction: commitment.approvedAction ?? null,
+    proposalStatus: commitment.proposalStatus ?? null,
+    priority: commitment.priority ?? null,
   };
 }
 
@@ -73,6 +77,16 @@ export async function toPublicInitiativeImplementationCommitmentProjection(
     publishedAt: commitment.publishedAt,
     withdrawnAt: commitment.withdrawnAt,
     completedAt: commitment.completedAt,
+    packageId: commitment.packageId ?? null,
+    approvedAction: commitment.approvedAction ?? null,
+    actionIndex: commitment.actionIndex ?? null,
+    proposalStatus: commitment.proposalStatus ?? null,
+    suggestedResponsibleRole: commitment.suggestedResponsibleRole ?? null,
+    priority: commitment.priority ?? null,
+    requiredResources: commitment.requiredResources ?? [],
+    relatedRisks: commitment.relatedRisks ?? [],
+    references: commitment.references ?? [],
+    traceability: commitment.traceability ?? null,
   };
 }
 

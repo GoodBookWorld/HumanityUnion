@@ -100,7 +100,7 @@ async function seedGroupedSearchFixture(): Promise<{
 
   const published = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
     initiativeId: published.initiativeId,
     title: "Grouped Search Analysis Evidence",
     summary: "Analysis supporting grouped search pagination verification.",
@@ -109,12 +109,12 @@ async function seedGroupedSearchFixture(): Promise<{
     suggestedImprovements: "Improve",
     references: "Ref",
   });
-  const analysis = publishInitiativeCollaborativeAnalysis(
+  const analysis = await publishInitiativeCollaborativeAnalysis(
     otherParticipant,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(otherParticipant, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(otherParticipant, {
     analysisId: analysis.analysisId,
     targetSection: "Summary",
     currentIssue: "Issue",
@@ -137,7 +137,7 @@ async function seedGroupedSearchFixture(): Promise<{
   });
   publishInitiativeRevision(steward, published.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: published.initiativeId,
     title: "Grouped Search Decision Session",
     purpose: "Prepare grouped search verification decision",
@@ -148,7 +148,7 @@ async function seedGroupedSearchFixture(): Promise<{
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: published.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -157,7 +157,7 @@ async function seedGroupedSearchFixture(): Promise<{
   const opened = openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
   await closeInitiativeCollectiveDecision(steward, opened.decisionId);
 
-  const commitmentDraft = createInitiativeImplementationCommitmentDraft(steward, {
+  const commitmentDraft = await createInitiativeImplementationCommitmentDraft(steward, {
     initiativeId: published.initiativeId,
     decisionId: opened.decisionId,
     commitmentTitle: "Grouped Search Commitment",
@@ -169,7 +169,7 @@ async function seedGroupedSearchFixture(): Promise<{
     commitmentDraft.commitmentId,
   );
 
-  const trackingDraft = createInitiativeImplementationTrackingDraft(steward, {
+  const trackingDraft = await createInitiativeImplementationTrackingDraft(steward, {
     commitmentId: commitment.commitmentId,
     summary: "Grouped search tracking record",
     currentStage: "Implementation",
@@ -182,7 +182,7 @@ async function seedGroupedSearchFixture(): Promise<{
   });
   completeInitiativeImplementationTracking(steward, tracking.trackingId);
 
-  const impactDraft = createInitiativePublicImpactDraft(steward, {
+  const impactDraft = await createInitiativePublicImpactDraft(steward, {
     trackingId: tracking.trackingId,
     title: "Grouped Search Verified Impact",
     summary: "Impact summary for grouped search pagination verification.",
@@ -220,13 +220,13 @@ async function verifyGroupedPagination(): Promise<void> {
   const fixture = await seedGroupedSearchFixture();
   resetGlobalSearchIndexForTests();
 
-  const flatPaged = searchPublicCivicRecords({
+  const flatPaged = await searchPublicCivicRecords({
     q: "Grouped Search",
     limit: 1,
     offset: 0,
     view: "flat",
   });
-  const flatPagedNext = searchPublicCivicRecords({
+  const flatPagedNext = await searchPublicCivicRecords({
     q: "Grouped Search",
     limit: 1,
     offset: 1,
@@ -240,7 +240,7 @@ async function verifyGroupedPagination(): Promise<void> {
     "Flat pagination must split lifecycle records across pages",
   );
 
-  const groupedPage = searchPublicCivicRecords({
+  const groupedPage = await searchPublicCivicRecords({
     q: "Grouped Search",
     limit: 1,
     offset: 0,
@@ -276,7 +276,7 @@ async function verifyGroupedPagination(): Promise<void> {
   assert(stageEntityTypes.has("analysis"), "Grouped lifecycle must include analysis stage");
   assert(stageEntityTypes.has("public_impact"), "Grouped lifecycle must include impact stage");
 
-  const groupedAll = searchPublicCivicRecords({
+  const groupedAll = await searchPublicCivicRecords({
     q: "Grouped Search",
     limit: 20,
     offset: 0,
@@ -316,7 +316,7 @@ async function verifyEntityTypeFilterSemantics(): Promise<void> {
   const fixture = await seedGroupedSearchFixture();
   resetGlobalSearchIndexForTests();
 
-  const analysisOnly = searchPublicCivicRecords({
+  const analysisOnly = await searchPublicCivicRecords({
     entityTypes: ["analysis"],
     limit: 20,
     offset: 0,
@@ -354,7 +354,7 @@ async function verifyFlatCompatibility(): Promise<void> {
   await seedGroupedSearchFixture();
   resetGlobalSearchIndexForTests();
 
-  const flat = searchPublicCivicRecords({
+  const flat = await searchPublicCivicRecords({
     entityTypes: ["public_impact"],
     limit: 20,
     offset: 0,
@@ -382,8 +382,8 @@ async function verifyDeterministicSorting(): Promise<void> {
   await seedGroupedSearchFixture();
   resetGlobalSearchIndexForTests();
 
-  const first = searchPublicCivicRecords({ limit: 20, offset: 0, view: "grouped" });
-  const second = searchPublicCivicRecords({ limit: 20, offset: 0, view: "grouped" });
+  const first = await searchPublicCivicRecords({ limit: 20, offset: 0, view: "grouped" });
+  const second = await searchPublicCivicRecords({ limit: 20, offset: 0, view: "grouped" });
 
   assert(
     JSON.stringify(first.displayResults) === JSON.stringify(second.displayResults),
@@ -409,7 +409,7 @@ async function verifyNoDraftLeak(): Promise<void> {
 
   resetGlobalSearchIndexForTests();
 
-  const grouped = searchPublicCivicRecords({
+  const grouped = await searchPublicCivicRecords({
     q: "Grouped Search Draft Exclusion",
     limit: 20,
     offset: 0,
@@ -436,7 +436,7 @@ async function verifyBoundedResponse(): Promise<void> {
   await seedGroupedSearchFixture();
   resetGlobalSearchIndexForTests();
 
-  const grouped = searchPublicCivicRecords({ limit: 5, offset: 0, view: "grouped" });
+  const grouped = await searchPublicCivicRecords({ limit: 5, offset: 0, view: "grouped" });
 
   assert((grouped.displayResults?.length ?? 0) <= 5, "Grouped page must respect limit");
   assert(JSON.stringify(grouped).length < 500_000, "Grouped response must remain bounded");

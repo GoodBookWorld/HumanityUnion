@@ -1,0 +1,155 @@
+.ior-source-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.ior-source-panel__empty {
+  color: var(--hu-muted, #5c6570);
+  font-size: 0.95rem;
+}
+
+.ior-source-panel__list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ior-source-panel__item {
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  padding-top: 0.55rem;
+}
+
+.ior-source-panel__label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.ior-source-panel__summary {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+}
+
+.ior-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.ior-editor__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.ior-editor__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ior-editor__field input,
+.ior-editor__field select,
+.ior-editor__field textarea {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.35rem;
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.ior-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ior-candidate {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+}
+
+.ior-candidate__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.ior-candidate__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.ior-candidate__status {
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
+.ior-public {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.ior-public__section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.ior-public__section p,
+.ior-public__section li {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ior-public__section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.ior-public__meta {
+  font-size: 0.9rem;
+  opacity: 0.78;
+}
+
+.ior-public__response {
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  padding-top: 0.65rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.ior-public__response-status {
+  display: inline-block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.75;
+}
+
+.ior-assistant-block {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.ior-assistant-block h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.ior-assistant-block ul {
+  margin: 0;
+  padding-left: 1rem;
+}

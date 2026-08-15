@@ -2,9 +2,11 @@ import { MemoryCivicActionPackagePersistenceAdapter } from "./civic-action-packa
 import { FileCivicActionPackagePersistenceAdapter } from "./civic-action-package-file.persistence.js";
 import { createMongoCivicActionPackagePersistenceAdapter } from "./civic-action-package-mongo.persistence.js";
 import type { CivicActionPackagePersistenceAdapter } from "./civic-action-package-persistence.types.js";
+import { resolvePersistenceMode } from "../../../config/production-persistence-contract.js";
+
 
 export function resolveCivicActionPackagePersistenceAdapter(): CivicActionPackagePersistenceAdapter {
-  const mode = process.env.CIVIC_ACTION_PACKAGE_PERSISTENCE ?? "file";
+  const mode = resolvePersistenceMode("CIVIC_ACTION_PACKAGE_PERSISTENCE", "file");
 
   switch (mode) {
     case "memory":

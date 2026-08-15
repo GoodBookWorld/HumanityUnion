@@ -293,9 +293,147 @@ export const TRUSTED_GLOBAL_MEDIA_REGISTRY: readonly MediaRegistryProvider[] = [
     sourceDomains: ["theconversation.com"],
     rssEnabled: true,
   },
+  {
+    id: "the-guardian",
+    name: "The Guardian",
+    country: "United Kingdom",
+    countryCode: "GB",
+    language: "en",
+    rssFeeds: [
+      {
+        url: "https://www.theguardian.com/international/rss",
+        defaultCategory: "peace and security",
+      },
+    ],
+    logoUrl: "/images/media/guardian.webp",
+    logoLabel: "G",
+    website: "https://www.theguardian.com/international",
+    categories: ["peace and security", "democracy", "human rights"],
+    priority: 13,
+    reliabilityScore: 94,
+    regionTags: ["global", "europe", "international"],
+    sourceDomains: ["theguardian.com", "guardian.com"],
+    aliases: ["Guardian"],
+    rssEnabled: true,
+  },
+  {
+    id: "the-economist",
+    name: "The Economist",
+    country: "United Kingdom",
+    countryCode: "GB",
+    language: "en",
+    rssFeeds: [
+      {
+        url: "https://www.economist.com/international/rss.xml",
+        defaultCategory: "institutional accountability",
+      },
+    ],
+    logoUrl: "/images/media/the-economist.webp",
+    logoLabel: "TE",
+    website: "https://www.economist.com/international",
+    categories: ["institutional accountability", "democracy", "peace and security"],
+    priority: 14,
+    reliabilityScore: 93,
+    regionTags: ["global", "europe", "international"],
+    sourceDomains: ["economist.com"],
+    aliases: ["Economist"],
+    rssEnabled: true,
+  },
+  {
+    id: "washington-post",
+    name: "The Washington Post",
+    country: "United States",
+    countryCode: "US",
+    language: "en",
+    rssFeeds: [
+      {
+        url: "https://feeds.washingtonpost.com/rss/opinions",
+        defaultCategory: "democracy",
+      },
+    ],
+    logoUrl: "/images/media/wpost.webp",
+    logoLabel: "WP",
+    website: "https://www.washingtonpost.com/",
+    categories: ["democracy", "institutional accountability", "public participation"],
+    priority: 15,
+    reliabilityScore: 93,
+    regionTags: ["global", "americas", "international"],
+    sourceDomains: ["washingtonpost.com", "wapo.st"],
+    aliases: ["Washington Post", "WaPo"],
+    rssEnabled: true,
+  },
+  {
+    id: "cbc",
+    name: "CBC",
+    country: "Canada",
+    countryCode: "CA",
+    language: "en",
+    rssFeeds: [
+      {
+        url: "https://www.cbc.ca/webfeed/rss/rss-world",
+        defaultCategory: "peace and security",
+      },
+    ],
+    logoUrl: "/images/media/canada/cbc.webp",
+    logoLabel: "CBC",
+    website: "https://www.cbc.ca/news/world",
+    categories: ["peace and security", "democracy", "public participation"],
+    priority: 16,
+    reliabilityScore: 93,
+    regionTags: ["global", "americas", "international"],
+    sourceDomains: ["cbc.ca"],
+    aliases: ["CBC News"],
+    rssEnabled: true,
+  },
+  {
+    id: "politico",
+    name: "POLITICO",
+    country: "United States",
+    countryCode: "US",
+    language: "en",
+    rssFeeds: [
+      {
+        url: "https://www.politico.com/rss/politicopicks.xml",
+        defaultCategory: "democracy",
+      },
+    ],
+    // No dedicated asset in /images/media — text logoLabel fallback.
+    logoLabel: "POL",
+    website: "https://www.politico.com/",
+    categories: ["democracy", "institutional accountability", "public participation"],
+    priority: 17,
+    reliabilityScore: 91,
+    regionTags: ["global", "americas", "international"],
+    sourceDomains: ["politico.com", "politico.eu"],
+    aliases: ["Politico"],
+    rssEnabled: true,
+  },
+  {
+    id: "new-york-times",
+    name: "The New York Times",
+    country: "United States",
+    countryCode: "US",
+    language: "en",
+    rssFeeds: [
+      {
+        url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+        defaultCategory: "peace and security",
+      },
+    ],
+    logoUrl: "/images/media/nytimes.webp",
+    logoLabel: "NYT",
+    website: "https://www.nytimes.com/section/world",
+    categories: ["peace and security", "democracy", "human rights"],
+    priority: 18,
+    reliabilityScore: 94,
+    regionTags: ["global", "americas", "international"],
+    sourceDomains: ["nytimes.com", "nyti.ms"],
+    aliases: ["New York Times", "NYT", "NY Times"],
+    rssEnabled: true,
+  },
 ] as const;
 
-export const MEDIA_REGISTRY_UPDATED_AT = "2026-07-20T12:00:00.000Z";
+export const MEDIA_REGISTRY_UPDATED_AT = "2026-08-13T00:00:00.000Z";
 
 export function deriveApprovedNewsSources(
   providers: readonly MediaRegistryProvider[] = listEnabledMediaRegistryProviders(),
@@ -487,6 +625,7 @@ function isProviderSpecificArticleUrl(
   provider: MediaRegistryProvider | undefined,
 ): boolean {
   const path = parsed.pathname.toLowerCase();
+  const segments = path.split("/").filter(Boolean);
 
   if (provider?.id === "who-news") {
     return path.includes("/news/item/");
@@ -512,7 +651,57 @@ function isProviderSpecificArticleUrl(
     return hasArticleSlugPath(path);
   }
 
+  if (provider?.id === "the-guardian") {
+    return segments.length >= 2;
+  }
+
+  if (provider?.id === "cbc") {
+    return path.includes("/news/") || hasArticleSlugPath(path);
+  }
+
+  if (provider?.id === "washington-post") {
+    return segments.length >= 2;
+  }
+
+  if (provider?.id === "new-york-times") {
+    return segments.length >= 2;
+  }
+
+  if (provider?.id === "politico" || provider?.id === "the-economist") {
+    return hasArticleSlugPath(path) || segments.length >= 2;
+  }
+
   return hasArticleSlugPath(path);
+}
+
+/** Explicit allow-list of registry RSS/Atom feed URLs — never accept client-supplied feed URLs. */
+export function listApprovedMediaRegistryFeedUrls(
+  providers: readonly MediaRegistryProvider[] = listEnabledMediaRegistryProviders(),
+): readonly string[] {
+  const urls = new Set<string>();
+
+  for (const provider of providers) {
+    for (const feed of provider.rssFeeds) {
+      const normalized = normalizeComparableUrl(feed.url);
+      if (normalized) {
+        urls.add(normalized);
+      }
+    }
+  }
+
+  return [...urls];
+}
+
+export function isApprovedMediaRegistryFeedUrl(
+  feedUrl: string,
+  providers: readonly MediaRegistryProvider[] = listEnabledMediaRegistryProviders(),
+): boolean {
+  const normalized = normalizeComparableUrl(feedUrl);
+  if (!normalized) {
+    return false;
+  }
+
+  return listApprovedMediaRegistryFeedUrls(providers).includes(normalized);
 }
 
 /** Returns false when the URL is a homepage, search page, feed, or other non-article destination. */

@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Button } from "../../../design-system/components/Button";
 import { MAX_MEMBER_SKILL_LABEL_LENGTH, MAX_MEMBER_SKILLS } from "../member-profile-limits";
+import { resolveSaveButtonLabel, useSaveButtonPhase } from "../use-save-button-phase";
 
 import "./member-skills-editor.css";
 
@@ -49,8 +50,7 @@ export function MemberSkillsEditor({
   onSave,
 }: MemberSkillsEditorProps) {
   const [draft, setDraft] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { phase, isBusy, runSave } = useSaveButtonPhase();
   const [error, setError] = useState<string | null>(null);
 
   function handleAddSkill(): void {
@@ -88,19 +88,16 @@ export function MemberSkillsEditor({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    setSaving(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
-      const normalized = dedupeSkills(skills);
-      onChange(normalized);
-      await onSave(normalized);
-      setSuccessMessage("Skills saved successfully.");
+      await runSave(async () => {
+        const normalized = dedupeSkills(skills);
+        onChange(normalized);
+        await onSave(normalized);
+      });
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save skills.");
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -108,10 +105,10 @@ export function MemberSkillsEditor({
     <form className="member-skills-editor" onSubmit={handleSubmit}>
       <div className="member-skills-editor__add-row">
         <label className="member-skills-editor__field">
-          <span className="visually-hidden">Add skill</span>
+          <span className="hu-visually-hidden">Add skill</span>
           <input
             value={draft}
-            disabled={disabled || saving}
+            disabled={disabled || isBusy}
             maxLength={MAX_MEMBER_SKILL_LABEL_LENGTH}
             placeholder="Add a skill"
             onChange={(event) => {
@@ -129,7 +126,7 @@ export function MemberSkillsEditor({
         <Button
           type="button"
           variant="secondary"
-          disabled={disabled || saving || draft.trim().length === 0}
+          disabled={disabled || isBusy || draft.trim().length === 0}
           onClick={handleAddSkill}
         >
           Add
@@ -149,7 +146,7 @@ export function MemberSkillsEditor({
               <button
                 type="button"
                 className="member-skills-editor__remove"
-                disabled={disabled || saving}
+                disabled={disabled || isBusy}
                 aria-label={`Remove ${skill}`}
                 onClick={() => handleRemoveSkill(skill)}
               >
@@ -167,14 +164,9 @@ export function MemberSkillsEditor({
           {error}
         </p>
       ) : null}
-      {successMessage ? (
-        <p className="member-skills-editor__success" role="status">
-          {successMessage}
-        </p>
-      ) : null}
 
-      <Button type="submit" variant="primary" disabled={disabled || saving}>
-        {saving ? "Saving..." : "Save skills"}
+      <Button type="submit" variant="primary" disabled={disabled || isBusy} ariaLive="polite">
+        {resolveSaveButtonLabel(phase, "Save skills")}
       </Button>
     </form>
   );

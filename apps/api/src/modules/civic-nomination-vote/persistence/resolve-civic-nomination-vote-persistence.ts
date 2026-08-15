@@ -1,9 +1,11 @@
 import type { CivicNominationVotePersistenceAdapter } from "./civic-nomination-vote-persistence.types.js";
 import { createMemoryCivicNominationVotePersistenceAdapter } from "./civic-nomination-vote-memory.persistence.js";
 import { createMongoCivicNominationVotePersistenceAdapter } from "./civic-nomination-vote-mongo.persistence.js";
+import { resolvePersistenceMode } from "../../../config/production-persistence-contract.js";
+
 
 export function resolveCivicNominationVotePersistenceAdapter(): CivicNominationVotePersistenceAdapter {
-  const mode = process.env.CIVIC_NOMINATION_VOTE_PERSISTENCE ?? "memory";
+  const mode = resolvePersistenceMode("CIVIC_NOMINATION_VOTE_PERSISTENCE", "memory");
 
   switch (mode) {
     case "mongodb":

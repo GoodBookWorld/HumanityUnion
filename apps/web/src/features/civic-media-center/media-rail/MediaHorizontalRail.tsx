@@ -30,7 +30,20 @@ export function MediaHorizontalRail<T>({
   controlsPlacement = "inline",
   renderHeaderControls,
 }: MediaHorizontalRailProps<T>) {
-  const rail = useMediaHorizontalRail({
+  const {
+    instructionsId,
+    viewportRef,
+    startIndex,
+    visibleCount,
+    canScrollPrevious,
+    canScrollNext,
+    allItemsVisible,
+    visibleEnd,
+    showPrevious,
+    showNext,
+    handleKeyDown,
+    handleScroll,
+  } = useMediaHorizontalRail({
     itemCount: items.length,
     layout,
     label,
@@ -41,13 +54,13 @@ export function MediaHorizontalRail<T>({
   }
 
   const controls =
-    items.length > 0 && !rail.allItemsVisible ? (
+    items.length > 0 && !allItemsVisible ? (
       <MediaRailControls
         label={label}
-        canScrollPrevious={rail.canScrollPrevious}
-        canScrollNext={rail.canScrollNext}
-        onPrevious={rail.showPrevious}
-        onNext={rail.showNext}
+        canScrollPrevious={canScrollPrevious}
+        canScrollNext={canScrollNext}
+        onPrevious={showPrevious}
+        onNext={showNext}
       />
     ) : null;
 
@@ -59,21 +72,19 @@ export function MediaHorizontalRail<T>({
         className="media-horizontal-rail"
         aria-roledescription="carousel"
         aria-label={label}
-        data-visible-count={rail.visibleCount}
+        data-visible-count={visibleCount}
         data-layout={layout}
       >
-        <p id={rail.instructionsId} className="media-rail__visually-hidden">
+        <p id={instructionsId} className="media-rail__visually-hidden">
           {label}. Use the previous and next buttons, arrow keys, or horizontal scrolling to browse
           additional cards.
         </p>
 
         <div
           className={`media-horizontal-rail__frame${
-            rail.canScrollPrevious ? " media-horizontal-rail__frame--fade-start" : ""
-          }${rail.canScrollNext ? " media-horizontal-rail__frame--fade-end" : ""}${
-            rail.canScrollNext && !rail.allItemsVisible
-              ? " media-horizontal-rail__frame--preview-next"
-              : ""
+            canScrollPrevious ? " media-horizontal-rail__frame--fade-start" : ""
+          }${canScrollNext ? " media-horizontal-rail__frame--fade-end" : ""}${
+            canScrollNext && !allItemsVisible ? " media-horizontal-rail__frame--preview-next" : ""
           }`}
         >
           {controlsPlacement === "inline" ? (
@@ -83,14 +94,14 @@ export function MediaHorizontalRail<T>({
           ) : null}
 
           <div
-            ref={rail.viewportRef}
+            ref={viewportRef}
             className="media-horizontal-rail__viewport"
             role="list"
             aria-live="polite"
-            aria-describedby={rail.instructionsId}
+            aria-describedby={instructionsId}
             tabIndex={0}
-            onKeyDown={rail.handleKeyDown}
-            onScroll={rail.handleScroll}
+            onKeyDown={handleKeyDown}
+            onScroll={handleScroll}
           >
             {items.map((item, index) => (
               <div
@@ -111,9 +122,9 @@ export function MediaHorizontalRail<T>({
           ) : null}
         </div>
 
-        {!hideSummary && !rail.allItemsVisible ? (
+        {!hideSummary && !allItemsVisible ? (
           <p className="media-horizontal-rail__summary" aria-live="polite">
-            Showing {rail.startIndex + 1}–{rail.visibleEnd} of {items.length}
+            Showing {startIndex + 1}–{visibleEnd} of {items.length}
           </p>
         ) : null}
       </div>

@@ -141,10 +141,10 @@ function deriveOutcomeStatus(input: {
   return "concluded_without_implementation";
 }
 
-function buildLifecycleStages(
+async function buildLifecycleStages(
   initiativeId: string,
   archiveRecord: PublicCivicArchiveRecord,
-): CivicArchiveLifecycleStage[] {
+): Promise<CivicArchiveLifecycleStage[]> {
   const initiative = getInitiativeById(initiativeId);
   const stageBuckets = new Map<string, CivicArchiveLifecycleChildRecord[]>();
 
@@ -229,7 +229,7 @@ function buildLifecycleStages(
     );
   }
 
-  const petition = getPetitionByInitiativeId(initiativeId);
+  const petition = await getPetitionByInitiativeId(initiativeId);
 
   if (petition) {
     pushRecord(
@@ -369,9 +369,9 @@ function resolvePublicArchiveImageUrl(imageUrl?: string | null): string | undefi
   return undefined;
 }
 
-export function toCivicArchiveLifecycleRecord(
+export async function toCivicArchiveLifecycleRecord(
   archiveRecord: PublicCivicArchiveRecord,
-): CivicArchiveLifecycleRecord | null {
+): Promise<CivicArchiveLifecycleRecord | null> {
   const initiative = getInitiativeById(archiveRecord.initiativeId);
 
   if (!initiative || initiative.lifecyclePhase === "draft") {
@@ -387,7 +387,7 @@ export function toCivicArchiveLifecycleRecord(
   const officialResponses = listResponsesByInitiative(archiveRecord.initiativeId).filter(
     (entry) => entry.publicationStatus !== "draft",
   );
-  const stages = buildLifecycleStages(archiveRecord.initiativeId, archiveRecord);
+  const stages = await buildLifecycleStages(archiveRecord.initiativeId, archiveRecord);
   const outcomeStatus = deriveOutcomeStatus({
     archiveRecord,
     initiativeLifecyclePhase: initiative.lifecyclePhase,
@@ -471,9 +471,9 @@ function matchesLifecycleQuery(
   return true;
 }
 
-export function listCivicArchiveLifecycleRecords(
+export async function listCivicArchiveLifecycleRecords(
   query: CivicArchiveLifecycleIndexQuery = {},
-): CivicArchiveLifecycleRecord[] {
+): Promise<CivicArchiveLifecycleRecord[]> {
   const grouped = groupPublishedRecordsByInitiative(query);
   const records: CivicArchiveLifecycleRecord[] = [];
 
@@ -484,7 +484,7 @@ export function listCivicArchiveLifecycleRecords(
       continue;
     }
 
-    const lifecycleRecord = toCivicArchiveLifecycleRecord(canonical);
+    const lifecycleRecord = await toCivicArchiveLifecycleRecord(canonical);
 
     if (!lifecycleRecord || !matchesLifecycleQuery(lifecycleRecord, query)) {
       continue;
@@ -512,9 +512,9 @@ export function computeCivicArchiveLifecycleMetricsForRecords(
   };
 }
 
-export function getCivicArchiveLifecycleRecord(
+export async function getCivicArchiveLifecycleRecord(
   initiativeId: string,
-): CivicArchiveLifecycleRecord | null {
+): Promise<CivicArchiveLifecycleRecord | null> {
   const grouped = groupPublishedRecordsByInitiative();
   const initiativeRecords = grouped.get(initiativeId) ?? [];
   const canonical = selectCanonicalArchiveRecord(initiativeRecords);
@@ -526,8 +526,10 @@ export function getCivicArchiveLifecycleRecord(
   return toCivicArchiveLifecycleRecord(canonical);
 }
 
-export function resolveCivicArchiveLifecycleRecord(id: string): CivicArchiveLifecycleRecord | null {
-  const byInitiative = getCivicArchiveLifecycleRecord(id);
+export async function resolveCivicArchiveLifecycleRecord(
+  id: string,
+): Promise<CivicArchiveLifecycleRecord | null> {
+  const byInitiative = await getCivicArchiveLifecycleRecord(id);
 
   if (byInitiative) {
     return byInitiative;
@@ -546,7 +548,7 @@ export function resolveCivicArchiveLifecycleRecord(id: string): CivicArchiveLife
   return getCivicArchiveLifecycleRecord(archiveRecord.initiativeId);
 }
 
-export function computeCivicArchiveLifecycleMetrics(): CivicArchiveLifecycleMetrics {
-  const lifecycleRecords = listCivicArchiveLifecycleRecords();
+export async function computeCivicArchiveLifecycleMetrics(): Promise<CivicArchiveLifecycleMetrics> {
+  const lifecycleRecords = await listCivicArchiveLifecycleRecords();
   return computeCivicArchiveLifecycleMetricsForRecords(lifecycleRecords);
 }

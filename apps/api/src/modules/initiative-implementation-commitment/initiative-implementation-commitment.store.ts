@@ -1,4 +1,8 @@
-import type { InitiativeImplementationCommitment } from "@hu/types";
+import type {
+  ImplementationCommitmentTraceability,
+  InitiativeImplementationCommitment,
+  InitiativeImplementationCommitmentProposalStatus,
+} from "@hu/types";
 
 import { resolveInitiativeImplementationCommitmentPersistenceAdapter } from "./persistence/resolve-initiative-implementation-commitment-persistence.js";
 import { snapshotFromCommitments } from "./persistence/initiative-implementation-commitment-persistence.types.js";
@@ -14,6 +18,20 @@ export interface InitiativeImplementationCommitmentUpdate {
   publishedAt?: string;
   withdrawnAt?: string;
   completedAt?: string;
+  /** Initiative Lifecycle — Part I fields (Package publish / proposal lifecycle). */
+  packageId?: string | null;
+  approvedAction?: string | null;
+  actionIndex?: number | null;
+  proposalStatus?: InitiativeImplementationCommitmentProposalStatus | null;
+  suggestedResponsibleRole?: string | null;
+  priority?: string | null;
+  requiredResources?: string[] | null;
+  relatedRisks?: string[] | null;
+  references?: string[] | null;
+  proposedByParticipantId?: string | null;
+  acceptedAt?: string | null;
+  declinedAt?: string | null;
+  traceability?: ImplementationCommitmentTraceability | null;
 }
 
 const PUBLIC_STATUSES = new Set<InitiativeImplementationCommitment["status"]>([
@@ -144,6 +162,58 @@ export function updateCommitment(
     commitment.completedAt = update.completedAt;
   }
 
+  if (update.packageId !== undefined) {
+    commitment.packageId = update.packageId;
+  }
+
+  if (update.approvedAction !== undefined) {
+    commitment.approvedAction = update.approvedAction;
+  }
+
+  if (update.actionIndex !== undefined) {
+    commitment.actionIndex = update.actionIndex;
+  }
+
+  if (update.proposalStatus !== undefined) {
+    commitment.proposalStatus = update.proposalStatus;
+  }
+
+  if (update.suggestedResponsibleRole !== undefined) {
+    commitment.suggestedResponsibleRole = update.suggestedResponsibleRole;
+  }
+
+  if (update.priority !== undefined) {
+    commitment.priority = update.priority;
+  }
+
+  if (update.requiredResources !== undefined) {
+    commitment.requiredResources = update.requiredResources;
+  }
+
+  if (update.relatedRisks !== undefined) {
+    commitment.relatedRisks = update.relatedRisks;
+  }
+
+  if (update.references !== undefined) {
+    commitment.references = update.references;
+  }
+
+  if (update.proposedByParticipantId !== undefined) {
+    commitment.proposedByParticipantId = update.proposedByParticipantId;
+  }
+
+  if (update.acceptedAt !== undefined) {
+    commitment.acceptedAt = update.acceptedAt;
+  }
+
+  if (update.declinedAt !== undefined) {
+    commitment.declinedAt = update.declinedAt;
+  }
+
+  if (update.traceability !== undefined) {
+    commitment.traceability = update.traceability;
+  }
+
   commitment.updatedAt = new Date().toISOString();
 
   persistCommitmentsMap(commitments);
@@ -153,4 +223,22 @@ export function updateCommitment(
 
 export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
+}
+
+/**
+ * Test-only cleanup helper (Recovery Task 15), mirroring
+ * `deleteDecisionsByStewardIdForTests`
+ * (`initiative-collective-decision.store.ts`, Recovery Task 09) and
+ * `deleteParticipationAreasByParticipantIdForTests` (Recovery Task 13).
+ * Deletes only commitments owned by the given `participantId`, leaving
+ * unrelated records untouched. Not a general-purpose delete-all API.
+ */
+export function deleteCommitmentsByParticipantIdForTests(participantId: string): void {
+  for (const [commitmentId, commitment] of commitments) {
+    if (commitment.participantId === participantId) {
+      commitments.delete(commitmentId);
+    }
+  }
+
+  persistCommitmentsMap(commitments);
 }

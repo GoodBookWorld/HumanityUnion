@@ -1,3 +1,4 @@
+import { maskRecipientEmail, recipientDomainForLogs } from "../email-safety-guards.js";
 import type {
   EmailProvider,
   EmailProviderHealthResult,
@@ -11,18 +12,26 @@ export class MockEmailProvider implements EmailProvider {
   static readonly sentMessages: EmailSendRequest[] = [];
 
   async sendEmail(request: EmailSendRequest): Promise<EmailSendResult> {
+    const started = Date.now();
     MockEmailProvider.sentMessages.push({
       ...request,
       to: request.to,
     });
 
-    const previewUrl = `mock://email/${encodeURIComponent(request.template)}/${encodeURIComponent(request.to)}`;
+    const previewUrl = `mock://email/${encodeURIComponent(request.template)}/${encodeURIComponent(maskRecipientEmail(request.to))}`;
 
     console.info(
-      `[email:mock] ${request.template} → ${request.to} | subject: ${request.subject} | preview: ${previewUrl}`,
+      `[email:mock] ${request.template} → domain=${recipientDomainForLogs(request.to)} | subject: ${request.subject} | preview: ${previewUrl}`,
     );
 
-    return { previewUrl, providerMessageId: `mock-${Date.now()}` };
+    return {
+      status: "sent",
+      previewUrl,
+      providerMessageId: `mock-${Date.now()}`,
+      attemptCount: 1,
+      provider: "mock",
+      durationMs: Date.now() - started,
+    };
   }
 
   async verifyConfiguration(): Promise<EmailProviderHealthResult> {

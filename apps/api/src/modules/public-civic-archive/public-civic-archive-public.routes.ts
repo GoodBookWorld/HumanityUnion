@@ -32,7 +32,7 @@ const publicCivicArchivePublicRouter = Router();
 
 publicCivicArchivePublicRouter.get("/", async (req, res) => {
   const indexQuery = parseCivicArchiveIndexQuery(req.query as Record<string, unknown>);
-  const records = listCivicArchiveLifecycleRecords(indexQuery);
+  const records = await listCivicArchiveLifecycleRecords(indexQuery);
   const metrics = computeCivicArchiveLifecycleMetricsForRecords(records);
 
   res.setHeader("Cache-Control", "no-store");
@@ -48,7 +48,7 @@ publicCivicArchivePublicRouter.get("/:archiveRecordId", async (req, res) => {
   const id = Array.isArray(req.params.archiveRecordId)
     ? (req.params.archiveRecordId[0] ?? "")
     : (req.params.archiveRecordId ?? "");
-  const lifecycle = resolveCivicArchiveLifecycleRecord(id);
+  const lifecycle = await resolveCivicArchiveLifecycleRecord(id);
 
   if (!lifecycle) {
     res.status(404).json(createFailureResponse("Public civic archive record is not available."));
@@ -71,10 +71,10 @@ publicCivicArchiveByInitiativeRouter.get("/:initiativeId/civic-archive", async (
     return;
   }
 
-  const lifecycle = getCivicArchiveLifecycleRecord(initiativeId);
+  const lifecycle = await getCivicArchiveLifecycleRecord(initiativeId);
   const records = listPublicCivicArchiveForInitiative(initiativeId);
   const latest = await getLatestPublishedPublicCivicArchiveForInitiative(initiativeId);
-  const metrics = computePublicCivicArchiveMetrics();
+  const metrics = await computePublicCivicArchiveMetrics();
 
   res.json(
     createSuccessResponse(records, "Initiative civic archive records loaded.", {
@@ -99,7 +99,7 @@ publicCivicArchiveByImpactRouter.get("/:impactId/civic-archive", async (req, res
   }
 
   const projection = await getPublishedPublicCivicArchiveForImpact(impactId);
-  const lifecycle = getCivicArchiveLifecycleRecord(impact.initiativeId);
+  const lifecycle = await getCivicArchiveLifecycleRecord(impact.initiativeId);
 
   if (!projection && !lifecycle) {
     res.status(404).json(createFailureResponse("Public civic archive record is not available."));

@@ -1,4 +1,8 @@
 import type { DecisionSessionId } from "./decision-session.js";
+import type {
+  CollectiveDecisionStructuredContent,
+  CollectiveDecisionTraceability,
+} from "./initiative-collective-decision-lifecycle.js";
 import type { InitiativeId } from "./initiative.js";
 import type { MemberId } from "./member.js";
 
@@ -91,6 +95,16 @@ export interface InitiativeCollectiveDecision {
   closedAt?: string;
   cancelledAt?: string;
   supersedesDecisionId?: InitiativeCollectiveDecisionId;
+  /**
+   * Initiative Lifecycle — Part H, Section 6/7. Structured Decision Result
+   * attached on lifecycle Publish and permanently frozen once `closed`.
+   */
+  structuredContent?: CollectiveDecisionStructuredContent | null;
+  /**
+   * Initiative Lifecycle — Part H, Section 9. Permanent answer to
+   * "which Decision Session produced this Collective Decision?".
+   */
+  traceability?: CollectiveDecisionTraceability | null;
   createdAt: string;
   updatedAt: string;
 }

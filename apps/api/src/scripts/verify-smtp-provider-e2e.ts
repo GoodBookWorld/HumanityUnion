@@ -125,8 +125,10 @@ async function verifyMockDeliveryFlows(): Promise<void> {
 async function verifyBrandedHeader(): Promise<void> {
   console.log("5. Branded email header and plain-text fallback");
 
+  process.env.EMAIL_LOGO_URL = "https://huws.org/brand/humanity-union-logo-white-email.png";
   const config = resolveEmailConfig();
-  assert.match(config.logoUrl, /^https?:\/\//u);
+  assert.ok(config.logoUrl);
+  assert.match(config.logoUrl, /^https:\/\//u);
 
   const rendered = renderRegistrationConfirmationCodeEmail({
     displayName: "Verify SMTP",

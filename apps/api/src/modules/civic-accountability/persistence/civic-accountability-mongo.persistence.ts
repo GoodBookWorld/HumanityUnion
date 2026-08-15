@@ -1,4 +1,5 @@
 import type { CivicAccountability, CivicAccountabilityEvent } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -37,7 +38,7 @@ export function createMongoCivicAccountabilityPersistenceAdapter(): CivicAccount
 }
 
 export async function hydrateCivicAccountabilityMongoPersistence(): Promise<void> {
-  if (process.env.CIVIC_ACCOUNTABILITY_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("CIVIC_ACCOUNTABILITY_PERSISTENCE")) {
     return;
   }
 
@@ -45,7 +46,7 @@ export async function hydrateCivicAccountabilityMongoPersistence(): Promise<void
 }
 
 export async function flushCivicAccountabilityMongoPersistence(): Promise<void> {
-  if (process.env.CIVIC_ACCOUNTABILITY_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("CIVIC_ACCOUNTABILITY_PERSISTENCE")) {
     return;
   }
 

@@ -1,9 +1,11 @@
 import { MemoryCivicNominationPersistenceAdapter } from "./civic-nomination-memory.persistence.js";
 import { createMongoCivicNominationPersistenceAdapter } from "./civic-nomination-mongo.persistence.js";
 import type { CivicNominationPersistenceAdapter } from "./civic-nomination-persistence.types.js";
+import { resolvePersistenceMode } from "../../../config/production-persistence-contract.js";
+
 
 export function resolveCivicNominationPersistenceAdapter(): CivicNominationPersistenceAdapter {
-  const mode = process.env.CIVIC_NOMINATION_PERSISTENCE ?? "memory";
+  const mode = resolvePersistenceMode("CIVIC_NOMINATION_PERSISTENCE", "memory");
 
   switch (mode) {
     case "mongodb":

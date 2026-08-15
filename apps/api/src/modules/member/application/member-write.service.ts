@@ -5,10 +5,7 @@ import type { MemberProfileWritePort } from "./member-query.port.js";
 import { toMemberDomain } from "../infrastructure/member.persistence.js";
 import { updateMemberProfile as updateMemberProfileInMongo } from "../infrastructure/member.repository.js";
 import { writeCachedMember } from "../infrastructure/member-read-cache.js";
-import {
-  getLegacyFixtureMemberById,
-  updateLegacyFixtureMemberProfile,
-} from "../infrastructure/member-fixture.store.js";
+import { updateLegacyFixtureMemberProfile } from "../infrastructure/member-fixture.store.js";
 
 class MemberWriteService implements MemberProfileWritePort {
   async updateMemberProfile(

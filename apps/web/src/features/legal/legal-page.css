@@ -1,7 +1,10 @@
 .legal-page {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: var(--hu-space-8) var(--hu-space-5);
+  /* Justified exception: document column measure for legal prose. */
+  width: min(100%, var(--hu-document-max-width));
+  max-width: var(--hu-document-max-width);
+  margin-inline: auto;
+  padding: var(--hu-section-gap) var(--hu-page-padding-inline);
+  box-sizing: border-box;
 }
 
 .legal-page__header {
@@ -52,9 +55,12 @@
 }
 
 .contact-page {
-  max-width: 42rem;
-  margin: 0 auto;
-  padding: var(--hu-space-8) var(--hu-space-5);
+  /* Justified exception: compact document/contact column. */
+  width: min(100%, var(--hu-document-max-width));
+  max-width: var(--hu-document-max-width);
+  margin-inline: auto;
+  padding: var(--hu-section-gap) var(--hu-page-padding-inline);
+  box-sizing: border-box;
 }
 
 .contact-page h1 {

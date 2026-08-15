@@ -42,11 +42,6 @@
   margin-top: var(--hu-space-2);
 }
 
-.preferences-workspace__success {
-  margin: 0;
-  color: var(--hu-color-success, #1a6b3a);
-}
-
 .preferences-workspace__error {
   margin: 0;
   color: var(--hu-color-danger);

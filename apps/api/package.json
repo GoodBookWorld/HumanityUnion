@@ -6,17 +6,19 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "start:prod": "tsx src/index.ts",
-    "test": "node --import tsx --import ./test/helpers/test-setup.ts --test --test-concurrency=1 --test-force-exit test/**/*.test.ts",
+    "start:prod": "node dist/index.js",
+    "start:src": "tsx src/index.ts",
+    "test": "tsx ./scripts/run-tests-recursively.ts",
     "test:smtp": "tsx scripts/test-smtp.ts",
     "dev:reset-auth-rate-limits": "tsx src/scripts/dev-reset-auth-rate-limits.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"
   },
   "dependencies": {
-    "@hu/types": "workspace:*",
+    "@aws-sdk/client-s3": "^3.1108.0",
     "@hu/geography": "workspace:*",
     "@hu/media-registry": "workspace:*",
+    "@hu/types": "workspace:*",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -27,6 +29,7 @@
     "mongodb": "^6.20.0",
     "multer": "^2.0.2",
     "nodemailer": "^9.0.3",
+    "pdfkit": "^0.19.1",
     "stripe": "^18.5.0",
     "tsx": "^4.22.4"
   },
@@ -38,6 +41,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/nodemailer": "^8.0.1",
+    "@types/pdfkit": "^0.17.6",
     "typescript": "^6.0.3"
   }
 }

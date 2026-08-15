@@ -2,6 +2,16 @@ import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collection
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { getPersistenceMode } from "./public-civic-archive.store.js";
 
+/**
+ * Mirrors `VERIFICATION_DATABASE_PREFIX` in
+ * `scripts/verification-database-isolation.ts`. Duplicated (not
+ * imported) deliberately: `modules/` must never import from `scripts/`
+ * (the dependency direction is the reverse), and this guard only needs
+ * the literal prefix value, which is stable and documented in both
+ * places.
+ */
+const VERIFICATION_DATABASE_PREFIX = "hu_verify_";
+
 export function logCivicArchiveRuntimeDiagnostic(): void {
   const database = process.env.MONGODB_DATABASE?.trim() || "unset";
   const verificationMode = process.env.HU_VERIFICATION_MODE === "true";
@@ -26,7 +36,7 @@ export function assertNormalCivicArchiveRuntimeDatabase(): void {
 
   const database = process.env.MONGODB_DATABASE?.trim();
 
-  if (database?.startsWith("humanity_union_verify_")) {
+  if (database?.startsWith(VERIFICATION_DATABASE_PREFIX)) {
     throw new Error(
       "Civic Archive API startup refused: verification database must not be used for normal runtime.",
     );

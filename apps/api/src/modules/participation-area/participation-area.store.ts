@@ -274,3 +274,40 @@ export function listActiveParticipationAreas(): ParticipationArea[] {
     (area) => area.status === "active" && area.countrySlug.trim().length > 0,
   );
 }
+
+/**
+ * Test-only cleanup helper (Recovery Task 13), mirroring the pattern
+ * established in Tasks 06-10 for file-backed persistence modules that lack
+ * a dedicated test-reset mechanism (e.g.
+ * `deleteVotesByParticipantIdForTests`).
+ *
+ * Removes every Participation Area AND every pending/active Participation
+ * Area Transition owned by the given participant, so a verification script
+ * that re-seeds a fixed fixture participant ID on each run (e.g.
+ * `verify-vote-casting-e2e.ts`) does not trip
+ * `createParticipationArea`'s "already has an active Participation Area"
+ * uniqueness check, or `requestParticipationAreaTransition`'s "already has
+ * a pending Participation Area transition" check, against a record left
+ * over from a previous run.
+ *
+ * Scoped narrowly to the supplied `participantId`: it never inspects or
+ * deletes another participant's records, and it does not touch any other
+ * store (Votes, Collective Decisions, Initiatives, etc.). Not exposed
+ * through HTTP and not called from any production service — verification
+ * scripts and tests only.
+ */
+export function deleteParticipationAreasByParticipantIdForTests(participantId: string): void {
+  for (const [participationAreaId, area] of areas) {
+    if (area.participantId === participantId) {
+      areas.delete(participationAreaId);
+    }
+  }
+
+  for (const [transitionId, transition] of transitions) {
+    if (transition.participantId === participantId) {
+      transitions.delete(transitionId);
+    }
+  }
+
+  persistStores();
+}

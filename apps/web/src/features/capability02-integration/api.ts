@@ -17,7 +17,10 @@ export type IntegrationUrlEntityType =
   | "civic-archive"
   | "knowledge";
 
-const ENTITY_TYPE_TO_URL: Record<CivicEntityType, IntegrationUrlEntityType> = {
+const ENTITY_TYPE_TO_URL: Record<
+  Exclude<CivicEntityType, "direct_conversation" | "blog_post" | "blog_author_application">,
+  IntegrationUrlEntityType
+> = {
   initiative: "initiative",
   analysis: "analysis",
   improvement_proposal: "improvement-proposal",
@@ -38,7 +41,28 @@ const ENTITY_TYPE_TO_URL: Record<CivicEntityType, IntegrationUrlEntityType> = {
   member_badge_contribution: "knowledge",
 };
 
+/**
+ * Profile UX Pack 03 — `direct_conversation` is a private Direct
+ * Collaboration entity (Part 24) and never has a public Civic Integration
+ * view, mirroring `publicUrlForEntity`'s explicit rejection in
+ * `capability02-integration.service.ts` on the API side.
+ *
+ * Blog Implementation Pack 02 — `blog_post` uses Global Search / `/blog`
+ * routes; it is not a Capability 02 lifecycle integration entity.
+ */
 export function toIntegrationUrlEntityType(entityType: CivicEntityType): IntegrationUrlEntityType {
+  if (entityType === "direct_conversation") {
+    throw new Error("Direct Collaboration conversations do not have a public Civic Integration view.");
+  }
+
+  if (entityType === "blog_post") {
+    throw new Error("Blog posts do not have a Civic Integration lifecycle view.");
+  }
+
+  if (entityType === "blog_author_application") {
+    throw new Error("Blog Author applications do not have a Civic Integration lifecycle view.");
+  }
+
   return ENTITY_TYPE_TO_URL[entityType];
 }
 

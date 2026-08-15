@@ -218,12 +218,18 @@ async function verifyAuthenticatedWorkspaceHome(prefix: string): Promise<void> {
 
   assert(home.welcome.displayName.length > 0, "Welcome must resolve member profile display name");
   assert(Array.isArray(home.quickActions), "Quick actions must be returned");
+  // UX Evolution Pack 01 — Quick Actions Finalization: "Notification Center"
+  // was removed from Workspace Quick Actions (it duplicated the notification
+  // bell and Settings -> Notifications sidebar link). The exactly-9 list is
+  // asserted here; /notifications itself is untouched and its own
+  // route/page/API are covered separately by verify-notifications-e2e.ts.
   assert(
-    home.quickActions.some(
-      (action) =>
-        action.id === "notification-center" && action.available && action.href === "/notifications",
-    ),
-    "Notification center quick action must be available",
+    home.quickActions.length === 9,
+    "Workspace quick actions must contain exactly 9 entries",
+  );
+  assert(
+    !home.quickActions.some((action) => action.id === "notification-center"),
+    "Notification center quick action must no longer appear in Workspace Quick Actions",
   );
   assert(Array.isArray(home.recentActivity), "Recent activity must be returned");
   assert(home.recentActivity.length <= 20, "Recent activity must cap at 20 entries");

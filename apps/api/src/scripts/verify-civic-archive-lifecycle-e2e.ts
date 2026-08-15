@@ -106,7 +106,7 @@ async function seedArchiveFixture(): Promise<{ initiativeId: string }> {
   });
   const published = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(author, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(author, {
     initiativeId: published.initiativeId,
     title: "Archive Analysis",
     summary: "Analysis for archive lifecycle verification.",
@@ -115,9 +115,9 @@ async function seedArchiveFixture(): Promise<{ initiativeId: string }> {
     suggestedImprovements: "Improve",
     references: "Ref",
   });
-  publishInitiativeCollaborativeAnalysis(author, analysisDraft.analysisId);
+  await publishInitiativeCollaborativeAnalysis(author, analysisDraft.analysisId);
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(author, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(author, {
     analysisId: analysisDraft.analysisId,
     targetSection: "Summary",
     currentIssue: "Issue",
@@ -140,7 +140,7 @@ async function seedArchiveFixture(): Promise<{ initiativeId: string }> {
   });
   publishInitiativeRevision(steward, published.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: published.initiativeId,
     title: "Archive Decision Session",
     purpose: "Decision for archive lifecycle verification",
@@ -151,7 +151,7 @@ async function seedArchiveFixture(): Promise<{ initiativeId: string }> {
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: published.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -160,7 +160,7 @@ async function seedArchiveFixture(): Promise<{ initiativeId: string }> {
   const opened = openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
   await closeInitiativeCollectiveDecision(steward, opened.decisionId);
 
-  const commitmentDraft = createInitiativeImplementationCommitmentDraft(steward, {
+  const commitmentDraft = await createInitiativeImplementationCommitmentDraft(steward, {
     initiativeId: published.initiativeId,
     decisionId: opened.decisionId,
     commitmentTitle: "Archive Commitment",
@@ -172,7 +172,7 @@ async function seedArchiveFixture(): Promise<{ initiativeId: string }> {
     commitmentDraft.commitmentId,
   );
 
-  const trackingDraft = createInitiativeImplementationTrackingDraft(steward, {
+  const trackingDraft = await createInitiativeImplementationTrackingDraft(steward, {
     commitmentId: commitment.commitmentId,
     summary: "Archive tracking",
     currentStage: "Implementation",
@@ -185,7 +185,7 @@ async function seedArchiveFixture(): Promise<{ initiativeId: string }> {
   });
   completeInitiativeImplementationTracking(steward, tracking.trackingId);
 
-  const impactDraft = createInitiativePublicImpactDraft(steward, {
+  const impactDraft = await createInitiativePublicImpactDraft(steward, {
     trackingId: tracking.trackingId,
     title: "Archive Verified Impact",
     summary: "Impact for archive lifecycle verification.",
@@ -233,7 +233,7 @@ async function verifyLifecycleProjection(): Promise<void> {
     await import("../modules/public-civic-archive/public-civic-archive-lifecycle.projection.js");
 
   const fixture = await seedArchiveFixture();
-  const records = listCivicArchiveLifecycleRecords({ search: "Lifecycle Archive" });
+  const records = await listCivicArchiveLifecycleRecords({ search: "Lifecycle Archive" });
 
   assert(records.length >= 1, "Archive index must return lifecycle records");
   assert(
@@ -257,7 +257,7 @@ async function verifyLifecycleProjection(): Promise<void> {
     "Verified completed archive must label completed outcome",
   );
 
-  const detail = getCivicArchiveLifecycleRecord(fixture.initiativeId);
+  const detail = await getCivicArchiveLifecycleRecord(fixture.initiativeId);
   assert(
     detail?.initiativeId === fixture.initiativeId,
     "Detail lookup must resolve by initiativeId",
@@ -271,8 +271,8 @@ async function verifyCountsAndFilters(): Promise<void> {
   const { listCivicArchiveLifecycleRecords, computeCivicArchiveLifecycleMetrics } =
     await import("../modules/public-civic-archive/public-civic-archive-lifecycle.projection.js");
 
-  const records = listCivicArchiveLifecycleRecords({ search: "Lifecycle Archive" });
-  const metrics = computeCivicArchiveLifecycleMetrics();
+  const records = await listCivicArchiveLifecycleRecords({ search: "Lifecycle Archive" });
+  const metrics = await computeCivicArchiveLifecycleMetrics();
 
   assert(
     metrics.archivedInitiativeCount >= records.length,
@@ -283,7 +283,7 @@ async function verifyCountsAndFilters(): Promise<void> {
     "Initiative count must not exceed flat archive record count",
   );
 
-  const completedOnly = listCivicArchiveLifecycleRecords({ outcomeStatus: "completed" });
+  const completedOnly = await listCivicArchiveLifecycleRecords({ outcomeStatus: "completed" });
   assert(
     completedOnly.every((record) => record.outcomeStatus === "completed"),
     "Outcome filter must restrict lifecycle records",
@@ -304,7 +304,7 @@ async function verifyDraftExclusion(): Promise<void> {
     activityArea: "Environment",
   });
 
-  const records = listCivicArchiveLifecycleRecords({ search: "Draft Archive Exclusion" });
+  const records = await listCivicArchiveLifecycleRecords({ search: "Draft Archive Exclusion" });
   assert(
     !records.some((record) => record.initiativeId === draftOnly.initiativeId),
     "Draft initiatives must not appear in archive lifecycle index",

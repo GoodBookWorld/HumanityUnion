@@ -2,7 +2,7 @@ import type { AuthTokenPair, AuthUserPublic } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
 import { dispatchAuthStateChanged } from "./auth-events";
-import { refreshAuthSessionOnce } from "./auth-token-refresh";
+import { refreshAuthSessionOnce, resetAuthRefreshState } from "./auth-token-refresh";
 import {
   buildPendingConfirmationHeaders,
   clearPendingConfirmationContext,
@@ -14,11 +14,25 @@ import {
   storePendingLoginTwoStepToken,
 } from "./auth-pending-login-two-step-store";
 import {
+  clearLegacyAuthTokenStorage,
   clearStoredAuthTokens,
-  getStoredAccessToken,
-  getStoredRefreshToken,
   storeAuthTokens,
 } from "./auth-token-store";
+
+export interface AuthSessionProbe {
+  authenticated: boolean;
+  user: AuthUserPublic | null;
+  authSource?: string;
+}
+
+function acceptBrowserSession(): void {
+  // Pack 07 — cookies already set by Set-Cookie; never persist JSON tokens.
+  storeAuthTokens();
+  clearLegacyAuthTokenStorage();
+  // Auth Recovery Hotfix — prior failed refresh must not poison login.
+  resetAuthRefreshState();
+  dispatchAuthStateChanged();
+}
 
 export interface AuthSessionPayload {
   user: AuthUserPublic;
@@ -95,8 +109,7 @@ export async function register(input: {
     return result;
   }
 
-  storeAuthTokens(result.tokens.accessToken, result.tokens.refreshToken);
-  dispatchAuthStateChanged();
+  acceptBrowserSession();
   return result;
 }
 
@@ -123,8 +136,7 @@ export async function login(input: { email: string; password: string }): Promise
     return result;
   }
 
-  storeAuthTokens(result.tokens.accessToken, result.tokens.refreshToken);
-  dispatchAuthStateChanged();
+  acceptBrowserSession();
   return result;
 }
 
@@ -140,8 +152,8 @@ export async function refresh(): Promise<AuthSessionPayload> {
   return {
     user,
     tokens: {
-      accessToken: getStoredAccessToken() ?? "",
-      refreshToken: getStoredRefreshToken() ?? "",
+      accessToken: "",
+      refreshToken: "",
       expiresIn: "15m",
     },
   };
@@ -161,12 +173,19 @@ export async function logout(): Promise<void> {
     clearStoredAuthTokens();
     clearPendingConfirmationContext();
     clearPendingLoginTwoStepToken();
+    // Auth Recovery Hotfix — allow a later login after guest settle.
+    resetAuthRefreshState();
     dispatchAuthStateChanged();
   }
 }
 
 export async function getMe(): Promise<AuthUserPublic> {
   return apiRequest<AuthUserPublic>("/api/v1/auth/me");
+}
+
+/** Pack 07 — bounded session probe (no JWT in response). */
+export async function fetchAuthSession(): Promise<AuthSessionProbe> {
+  return apiRequest<AuthSessionProbe>("/api/v1/auth/session");
 }
 
 export async function verifyEmail(token: string): Promise<AuthUserPublic> {
@@ -205,8 +224,7 @@ export async function confirmEmailCode(code: string): Promise<AuthSessionPayload
   });
 
   clearPendingConfirmationContext();
-  storeAuthTokens(result.tokens.accessToken, result.tokens.refreshToken);
-  dispatchAuthStateChanged();
+  acceptBrowserSession();
   return result;
 }
 
@@ -258,8 +276,7 @@ export async function confirmLoginTwoStepCode(code: string): Promise<AuthSession
   );
 
   clearPendingLoginTwoStepToken();
-  storeAuthTokens(result.tokens.accessToken, result.tokens.refreshToken);
-  dispatchAuthStateChanged();
+  acceptBrowserSession();
   return result;
 }
 

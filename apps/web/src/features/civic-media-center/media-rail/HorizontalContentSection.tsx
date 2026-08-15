@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 
+import type { HuxExperienceVariant } from "../../horizontal-experience/hux.types";
+
 import { HorizontalSectionShell } from "./CivicMediaSectionShell";
 import { HorizontalRailControls } from "./MediaRailControls";
 import { HorizontalRailViewport } from "./MediaRailViewport";
@@ -36,7 +38,7 @@ export interface HorizontalContentSectionProps<T> {
   toolbar?: ReactNode;
   childrenBeforeRail?: ReactNode;
   categoryIcon?: ReactNode;
-  experience?: import("../../horizontal-experience/hux.types").HuxExperienceVariant;
+  experience?: HuxExperienceVariant;
   viewportClassName?: string;
 }
 

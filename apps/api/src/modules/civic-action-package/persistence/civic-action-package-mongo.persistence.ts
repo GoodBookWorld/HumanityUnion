@@ -1,4 +1,5 @@
 import type { CivicActionPackage } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -28,7 +29,7 @@ export function createMongoCivicActionPackagePersistenceAdapter(): CivicActionPa
 }
 
 export async function hydrateCivicActionPackageMongoPersistence(): Promise<void> {
-  if (process.env.CIVIC_ACTION_PACKAGE_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("CIVIC_ACTION_PACKAGE_PERSISTENCE")) {
     return;
   }
 
@@ -36,7 +37,7 @@ export async function hydrateCivicActionPackageMongoPersistence(): Promise<void>
 }
 
 export async function flushCivicActionPackageMongoPersistence(): Promise<void> {
-  if (process.env.CIVIC_ACTION_PACKAGE_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("CIVIC_ACTION_PACKAGE_PERSISTENCE")) {
     return;
   }
 

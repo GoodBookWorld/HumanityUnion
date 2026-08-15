@@ -1,12 +1,65 @@
 .interactive-world-map-boundary {
   display: grid;
-  gap: var(--hu-space-4);
+  gap: var(--hu-space-3);
+}
+
+.interactive-world-map-boundary__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hu-space-2);
+}
+
+.interactive-world-map-boundary__zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--hu-touch-target, 2.75rem);
+  min-height: var(--hu-touch-target, 2.75rem);
+  padding: 0 0.75rem;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  color: var(--hu-color-text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.interactive-world-map-boundary__zoom-btn--reset {
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+}
+
+.interactive-world-map-boundary__zoom-btn:hover:not(:disabled),
+.interactive-world-map-boundary__zoom-btn:focus-visible {
+  border-color: var(--hu-color-primary, #0174b0);
+  outline: none;
+}
+
+.interactive-world-map-boundary__zoom-btn:focus-visible {
+  outline: 2px solid var(--hu-focus-ring, var(--hu-color-primary, #0174b0));
+  outline-offset: 2px;
+}
+
+.interactive-world-map-boundary__zoom-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.interactive-world-map-boundary__zoom-level {
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+  min-width: 3rem;
 }
 
 .interactive-world-map-boundary__frame {
   width: 100%;
   overflow: hidden;
   border-radius: var(--hu-radius-lg);
+  border: 1px solid var(--hu-color-border);
+  background: var(--hu-color-surface);
 }
 
 .interactive-world-map-boundary__iframe {
@@ -15,6 +68,12 @@
   min-height: 560px;
   border: 0;
   background: transparent;
+}
+
+.interactive-world-map-boundary__hint {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
 }
 
 .interactive-world-map-boundary__controls {
@@ -30,6 +89,7 @@
 .interactive-world-map-boundary__select {
   width: 100%;
   max-width: 24rem;
+  min-height: var(--hu-touch-target, 2.75rem);
 }
 
 .interactive-world-map-boundary__quick-links {
@@ -65,5 +125,10 @@
 @media (max-width: 640px) {
   .interactive-world-map-boundary__iframe {
     min-height: 360px;
+  }
+
+  .interactive-world-map-boundary__toolbar {
+    /* Keep controls above the map; avoid covering dense country regions. */
+    position: relative;
   }
 }

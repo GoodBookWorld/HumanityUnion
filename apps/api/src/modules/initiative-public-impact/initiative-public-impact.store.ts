@@ -184,3 +184,31 @@ export function getEvidenceById(evidenceId: string): PublicImpactEvidence | null
 export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
 }
+
+/**
+ * Initiative Ancestry — Recovery Task 17.
+ *
+ * Test-only cleanup helper, mirroring
+ * `deleteTrackingsByParticipantIdForTests` (Task 16). Removes Public Impact
+ * records (and their evidence entries) owned by a given `participantId` so
+ * focused unit tests can run repeatably against the shared in-memory store
+ * without interference from earlier tests. Not exposed over HTTP.
+ */
+export function deletePublicImpactsByParticipantIdForTests(participantId: string): void {
+  const removedImpactIds = new Set<string>();
+
+  for (const [impactId, impact] of impacts) {
+    if (impact.participantId === participantId) {
+      impacts.delete(impactId);
+      removedImpactIds.add(impactId);
+    }
+  }
+
+  for (const [evidenceId, item] of evidence) {
+    if (removedImpactIds.has(item.impactId)) {
+      evidence.delete(evidenceId);
+    }
+  }
+
+  persistState({ impacts, evidence });
+}

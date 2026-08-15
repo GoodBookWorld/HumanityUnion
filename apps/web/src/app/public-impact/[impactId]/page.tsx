@@ -32,7 +32,7 @@ export default async function PublicImpactPage({ params }: PublicImpactPageProps
 
   if (!impact) {
     return (
-      <main>
+      <main className="hu-page-container hu-page-container--sectioned">
         <h1>Public Impact</h1>
         <p>Public impact record is not available.</p>
         <p>
@@ -43,7 +43,7 @@ export default async function PublicImpactPage({ params }: PublicImpactPageProps
   }
 
   return (
-    <main>
+    <main className="hu-page-container hu-page-container--sectioned">
       <header>
         <h1>{impact.title}</h1>
         <p>Public impact — observable societal outcome</p>

@@ -4,26 +4,63 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
-import { BRAND_TAGLINE, PRIMARY_NAVIGATION } from "../../features/public-experience/constants";
+import {
+  BRAND_TAGLINE,
+  DESKTOP_CAPSULE_NAVIGATION,
+  type PrimaryNavLabel,
+} from "../../features/public-experience/constants";
+import { getFocusableElements, trapTabKey } from "../focus-trap";
 import { HeaderAuthUtility } from "./HeaderAuthUtility";
 import { HumanityHeaderMenuButton, HumanityHeaderMobileMenu } from "./HumanityHeaderMobileMenu";
 
-type PrimaryDestination = (typeof PRIMARY_NAVIGATION)[number]["label"];
+type PrimaryDestination = PrimaryNavLabel;
 
-function resolveCurrentDestination(pathname: string): PrimaryDestination {
+/**
+ * Public Initiative lifecycle records that live outside `/initiatives/*`
+ * but still belong to the Initiatives navigation destination.
+ */
+const NESTED_PUBLIC_INITIATIVE_PREFIXES = [
+  "/collaborative-analysis/public/",
+  "/improvement-proposals/public/",
+  "/petitions/public/",
+  "/decision-sessions/public/",
+  "/collective-decisions/public/",
+  "/implementation-commitments/public/",
+  "/initiative-implementation-commitments/public/",
+  "/implementation-tracking/public/",
+  "/implementations/public/",
+  "/public-impact/",
+  "/civic-archive/",
+] as const;
+
+function isNestedPublicInitiativeRoute(pathname: string): boolean {
+  if (pathname === "/civic-archive" || pathname === "/civic-archive/") {
+    return false;
+  }
+
+  return NESTED_PUBLIC_INITIATIVE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+/**
+ * Launch Readiness Pack 02 / Pack 04 — only mark a primary nav item current
+ * when the pathname actually belongs to that destination. Unmatched routes
+ * (Blog, Workspace, Profile, auth, …) must not fall through to "Home".
+ * Nested public Initiative lifecycle records mark Initiatives.
+ */
+export function resolveCurrentDestination(pathname: string): PrimaryDestination | null {
+  if (pathname === "/" || pathname === "") {
+    return "Home";
+  }
+
   if (pathname.startsWith("/institutions")) {
     return "Institutions";
   }
 
-  if (pathname.startsWith("/initiatives")) {
+  if (pathname.startsWith("/initiatives") || isNestedPublicInitiativeRoute(pathname)) {
     return "Initiatives";
   }
 
-  if (pathname.startsWith("/media")) {
-    return "Civic Media";
-  }
-
-  if (pathname.startsWith("/knowledge/media")) {
+  if (pathname.startsWith("/media") || pathname.startsWith("/knowledge/media")) {
     return "Civic Media";
   }
 
@@ -39,16 +76,17 @@ function resolveCurrentDestination(pathname: string): PrimaryDestination {
     return "Search";
   }
 
-  return "Home";
+  return null;
 }
 
 interface HumanityHeaderProps {
-  currentDestination?: PrimaryDestination;
+  currentDestination?: PrimaryDestination | null;
 }
 
 export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
   const pathname = usePathname();
-  const activeDestination = currentDestination ?? resolveCurrentDestination(pathname);
+  const activeDestination =
+    currentDestination !== undefined ? currentDestination : resolveCurrentDestination(pathname);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuId = useId();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -67,9 +105,19 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
       return;
     }
 
+    const panel = document.getElementById(mobileMenuId);
+    const firstFocusable = panel ? getFocusableElements(panel)[0] : null;
+    firstFocusable?.focus();
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        event.preventDefault();
         closeMobileMenu();
+        return;
+      }
+
+      if (panel) {
+        trapTabKey(event, panel);
       }
     }
 
@@ -81,7 +129,7 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [mobileMenuOpen, closeMobileMenu]);
+  }, [mobileMenuOpen, closeMobileMenu, mobileMenuId]);
 
   return (
     <header className="humanity-header" data-block="Header">
@@ -115,7 +163,7 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
             aria-label="Primary navigation"
           >
             <ul className="humanity-header__nav-list">
-              {PRIMARY_NAVIGATION.map((item) => {
+              {DESKTOP_CAPSULE_NAVIGATION.map((item) => {
                 const isCurrent = item.label === activeDestination;
 
                 if (!item.href) {

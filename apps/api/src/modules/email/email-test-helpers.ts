@@ -1,4 +1,5 @@
 import { clearEmailQueueForTests, drainEmailQueueForTests } from "./email.queue.js";
+import { resetEmailProviderCacheForTests } from "./email.provider.js";
 import { MockEmailProvider } from "./providers/mock.provider.js";
 import { resetSmtpTransportForTests } from "./smtp-transport.js";
 
@@ -16,4 +17,7 @@ export function disposeEmailWorkersForTests(): void {
   clearEmailQueueForTests();
   resetMockEmailOutboxForTests();
   resetSmtpTransportForTests();
+  resetEmailProviderCacheForTests();
 }
+
+export { resetEmailProviderCacheForTests };

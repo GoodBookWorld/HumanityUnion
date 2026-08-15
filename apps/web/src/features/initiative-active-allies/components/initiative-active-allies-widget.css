@@ -1,0 +1,190 @@
+.iaa-widget {
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.iaa-widget__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--hu-space-2);
+}
+
+.iaa-widget__count {
+  font-size: 0.75rem;
+  color: var(--hu-color-text-muted);
+  white-space: nowrap;
+}
+
+/*
+ * Part 8 — approximately Author + 3-4 Allies visible (~64px per row incl.
+ * gap); additional rows scroll internally via `overflow-y: auto`. No
+ * `overscroll-behavior: contain` (Part 8/17 — verified elsewhere in this
+ * codebase to create a scroll "dead zone" that blocks page-scroll
+ * chaining once this list reaches its own top/bottom); the default `auto`
+ * chaining keeps normal page scrolling available at all times.
+ */
+.iaa-widget__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--hu-space-2);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.iaa-widget__row {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-bg-muted);
+}
+
+/* Avatar + name + role, linked as one unit to the public profile (Part 10/22 — distinct from the Message action). */
+.iaa-widget__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-3);
+  min-width: 0;
+  flex: 1 1 auto;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.iaa-widget__identity:hover .iaa-widget__name,
+a.iaa-widget__identity:focus-visible .iaa-widget__name {
+  text-decoration: underline;
+}
+
+.iaa-widget__avatar {
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--hu-color-surface);
+  flex-shrink: 0;
+}
+
+.iaa-widget__identity-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.iaa-widget__name {
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  color: var(--hu-color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.iaa-widget__message-wrap {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.iaa-widget__message-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  color: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.iaa-widget__message-button:hover,
+.iaa-widget__message-button:focus-visible {
+  border-color: var(--hu-color-primary, #1a56db);
+}
+
+.iaa-widget__message-button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.iaa-widget__message-label {
+  white-space: nowrap;
+}
+
+/* Part 13/22 — never the only accessible indicator; always paired with the visually-hidden text below. */
+.iaa-widget__unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hu-color-danger, #dc2626);
+  flex-shrink: 0;
+}
+
+.iaa-widget__message-error {
+  margin: 0;
+  max-width: 12rem;
+  font-size: 0.75rem;
+  color: var(--hu-color-danger, #dc2626);
+  text-align: right;
+}
+
+.iaa-widget__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.iaa-widget__empty {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+  line-height: var(--hu-line-height);
+}
+
+.iaa-widget__empty p {
+  margin: 0 0 var(--hu-space-1);
+}
+
+.iaa-widget__empty-support {
+  font-size: 0.8rem;
+}
+
+.iaa-widget__empty-action {
+  display: inline-block;
+  margin-top: var(--hu-space-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Part 21 — tablet: keep compact identity text, icon-first Message button (label still present, min-width guards the touch target). */
+@media (max-width: 720px) {
+  .iaa-widget__message-label {
+    display: none;
+  }
+
+  .iaa-widget__message-button {
+    padding: 0.5rem;
+  }
+}
+
+/* Part 21 — mobile: full-width rows remain readable; Message button stays touch-friendly (>=2rem, already set above). */
+@media (max-width: 420px) {
+  .iaa-widget__row {
+    flex-wrap: wrap;
+  }
+}

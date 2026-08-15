@@ -276,7 +276,7 @@ async function verifyRuntimeBehavior(): Promise<void> {
   );
 
   resetGlobalSearchIndexForTests();
-  const searchResults = searchPublicCivicRecords({
+  const searchResults = await searchPublicCivicRecords({
     q: "Jordan Example",
     entityTypes: ["civic_nomination"],
     limit: 10,

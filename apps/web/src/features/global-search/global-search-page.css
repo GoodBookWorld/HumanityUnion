@@ -1,7 +1,11 @@
 .global-search-page {
-  max-width: var(--hu-content-max-width, 960px);
-  margin: 0 auto;
-  padding: var(--hu-space-6) var(--hu-space-4);
+  /* Launch Readiness Pack 03 — canonical public page shell. */
+  width: min(100%, var(--hu-page-max-width));
+  max-width: var(--hu-page-max-width);
+  margin-inline: auto;
+  padding-block: var(--hu-section-gap);
+  padding-inline: var(--hu-page-padding-inline);
+  box-sizing: border-box;
 }
 
 .global-search-page__header {

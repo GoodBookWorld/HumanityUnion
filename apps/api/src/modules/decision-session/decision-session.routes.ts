@@ -6,6 +6,11 @@ import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import {
+  InitiativeAncestryMissingError,
+  InitiativeIdMalformedError,
+  InitiativeNotFoundError,
+} from "../../shared/initiative-ancestry/index.js";
+import {
   archiveDecisionSession,
   closeDecisionSession,
   createDecisionSessionDraft,
@@ -58,6 +63,19 @@ function resolveErrorStatus(message: string): number {
 }
 
 function handleServiceError(res: Response, error: unknown): void {
+  // Shared Initiative ancestry errors (Recovery Task 08): mapped explicitly
+  // because their messages ("Referenced Initiative does not exist.", etc.)
+  // do not match the pre-existing substring heuristic in resolveErrorStatus.
+  if (error instanceof InitiativeNotFoundError) {
+    res.status(404).json(createFailureResponse(error.message));
+    return;
+  }
+
+  if (error instanceof InitiativeAncestryMissingError || error instanceof InitiativeIdMalformedError) {
+    res.status(400).json(createFailureResponse(error.message));
+    return;
+  }
+
   const message = error instanceof Error ? error.message : "Decision session request failed.";
   res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
 }
@@ -109,7 +127,7 @@ decisionSessionRouter.get(
 
       assertInitiativeOwnership(initiative, identity);
 
-      const eligibility = getDecisionSessionEligibility(initiativeId);
+      const eligibility = await getDecisionSessionEligibility(initiativeId);
 
       res.json(createSuccessResponse(eligibility, "Decision session eligibility loaded."));
     } catch (error) {
@@ -133,7 +151,7 @@ decisionSessionRouter.post("/draft", ...authenticatedWorkspaceWriteMiddleware, a
   try {
     const identity = await resolveRequestIdentity(req);
     const input = validateCreateDecisionSessionDraftInput(req.body);
-    const created = createDecisionSessionDraft(identity, input);
+    const created = await createDecisionSessionDraft(identity, input);
 
     res.status(201).json(createSuccessResponse(created, "Decision session draft created."));
   } catch (error) {
@@ -163,7 +181,7 @@ decisionSessionRouter.post(
   async (req, res) => {
     try {
       const identity = await resolveRequestIdentity(req);
-      const session = publishDecisionSession(identity, getSessionId(req));
+      const session = await publishDecisionSession(identity, getSessionId(req));
 
       res.json(createSuccessResponse(session, "Decision session published."));
     } catch (error) {

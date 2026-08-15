@@ -1,20 +1,35 @@
+/*
+ * UX Completion Pack 04 Part 5 — token-based spacing and label typography
+ * matching `member-profile-workspace.css` / `.initiative-draft-editor__field`,
+ * the platform's established form language. Field elements themselves use
+ * the shared `.hu-form-control` class directly (see each `<input>`/
+ * `<select>` in `InitiativeFormFields.tsx`) rather than a scoped selector
+ * here, matching how `CivicArchiveFiltersForm` and
+ * `MemberProfessionalLinksSection` already apply it.
+ */
 .initiative-form-fields {
   display: grid;
-  gap: 1rem;
+  gap: var(--hu-space-4, 1rem);
 }
 
 .initiative-form-fields__field {
   display: grid;
-  gap: 0.35rem;
+  gap: var(--hu-space-2, 0.5rem);
+}
+
+.initiative-form-fields__field > span:first-child {
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--hu-color-text);
 }
 
 .initiative-form-fields__helper {
   color: var(--hu-color-text-muted, #5f6775);
-  font-size: 0.875rem;
+  font-size: var(--hu-font-size-sm, 0.875rem);
   line-height: 1.45;
 }
 
 .initiative-form-fields__media {
   display: grid;
-  gap: 1rem;
+  gap: var(--hu-space-4, 1rem);
 }

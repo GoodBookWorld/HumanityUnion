@@ -5,6 +5,10 @@ import type {
   ParticipationScope,
 } from "./initiative-collective-decision.js";
 import type {
+  CollectiveDecisionStructuredContent,
+  CollectiveDecisionTraceability,
+} from "./initiative-collective-decision-lifecycle.js";
+import type {
   CollectiveDecisionPublicOutcome,
   ParticipationConfidenceLevel,
 } from "./collective-decision-transparent-results.js";
@@ -30,6 +34,10 @@ export interface PublicInitiativeCollectiveDecisionProjection {
   participationConfidenceLevel: ParticipationConfidenceLevel;
   outcomeSummary: string;
   transparencyNote: string;
+  /** Initiative Lifecycle — Part H, Section 6/8. Structured Decision Result. */
+  structuredContent: CollectiveDecisionStructuredContent | null;
+  /** Initiative Lifecycle — Part H, Section 9. Decision Session provenance. */
+  traceability: CollectiveDecisionTraceability | null;
 }
 
 export interface PublicInitiativeCollectiveDecisionListItem {

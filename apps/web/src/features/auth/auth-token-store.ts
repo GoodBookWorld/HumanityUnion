@@ -1,38 +1,55 @@
-const ACCESS_TOKEN_KEY = "hu_access_token";
-const REFRESH_TOKEN_KEY = "hu_refresh_token";
+/**
+ * Launch Readiness Pack 07 — browser auth credentials are HttpOnly cookies
+ * managed by the API. These helpers no longer persist JWTs in Web Storage.
+ *
+ * Legacy localStorage keys are removed on initialization/logout so old
+ * deployments cannot keep sending stolen/stale tokens.
+ */
 
-// TODO(TASK-052): Move refresh token storage to httpOnly cookies only; keep access token out of JS when cookie-based auth lands.
+const LEGACY_ACCESS_TOKEN_KEY = "hu_access_token";
+const LEGACY_REFRESH_TOKEN_KEY = "hu_refresh_token";
 
-export function getStoredAccessToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return window.localStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
-export function getStoredRefreshToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return window.localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
-export function storeAuthTokens(accessToken: string, refreshToken: string): void {
+export function clearLegacyAuthTokenStorage(): void {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  window.localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
+  window.localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+}
+
+/** @deprecated Pack 07 — always null; identity comes from HttpOnly cookies. */
+export function getStoredAccessToken(): string | null {
+  clearLegacyAuthTokenStorage();
+  return null;
+}
+
+/** @deprecated Pack 07 — always null; refresh uses HttpOnly cookie. */
+export function getStoredRefreshToken(): string | null {
+  clearLegacyAuthTokenStorage();
+  return null;
+}
+
+/**
+ * Pack 07 — browser must not persist auth tokens. Clears any legacy keys.
+ * Token arguments are ignored (API may still return them for non-browser clients).
+ */
+export function storeAuthTokens(_accessToken?: string, _refreshToken?: string): void {
+  clearLegacyAuthTokenStorage();
 }
 
 export function clearStoredAuthTokens(): void {
+  clearLegacyAuthTokenStorage();
+}
+
+/** True only when legacy keys still exist (should be cleared immediately). */
+export function hasLegacyAuthTokenStorage(): boolean {
   if (typeof window === "undefined") {
-    return;
+    return false;
   }
 
-  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+  return Boolean(
+    window.localStorage.getItem(LEGACY_ACCESS_TOKEN_KEY) ||
+      window.localStorage.getItem(LEGACY_REFRESH_TOKEN_KEY),
+  );
 }

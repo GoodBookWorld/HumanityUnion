@@ -11,29 +11,21 @@ import {
 } from "react";
 
 import type { HorizontalRailLayout } from "./horizontal-section.types";
-
-function getDefaultVisibleCount(layout: HorizontalRailLayout): number {
-  if (layout === "four-two-one" || layout === "four-three-one") {
-    return 4;
-  }
-
-  return 3;
-}
+import {
+  computeRailNavigationState,
+  getDefaultVisibleCount,
+  resolveVisibleCountForBreakpoints,
+} from "./horizontal-rail-navigation";
 
 function resolveVisibleCount(layout: HorizontalRailLayout): number {
   if (typeof window === "undefined") {
     return getDefaultVisibleCount(layout);
   }
 
-  if (window.matchMedia("(max-width: 767px)").matches) {
-    return 1;
-  }
-
-  if (window.matchMedia("(max-width: 1279px)").matches) {
-    return layout === "four-three-one" ? 3 : 2;
-  }
-
-  return getDefaultVisibleCount(layout);
+  return resolveVisibleCountForBreakpoints(layout, {
+    isMobile: window.matchMedia("(max-width: 767px)").matches,
+    isTablet: window.matchMedia("(max-width: 1279px)").matches,
+  });
 }
 
 export interface UseHorizontalRailOptions {
@@ -82,8 +74,8 @@ export function useHorizontalRail({
     };
   }, [itemCount, layout]);
 
-  const maxStart = Math.max(0, itemCount - visibleCount);
-  const allItemsVisible = itemCount <= visibleCount;
+  const { maxStart, allItemsVisible, canScrollPrevious, canScrollNext, visibleEnd } =
+    computeRailNavigationState(itemCount, visibleCount, startIndex);
 
   useEffect(() => {
     if (startIndex > maxStart) {
@@ -120,29 +112,6 @@ export function useHorizontalRail({
   const showNext = useCallback(() => {
     scrollToIndex(startIndex + 1);
   }, [scrollToIndex, startIndex]);
-
-  useEffect(() => {
-    const viewport = viewportRef.current;
-
-    if (!viewport) {
-      return;
-    }
-
-    const handleWheel = (event: WheelEvent) => {
-      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
-        return;
-      }
-
-      event.preventDefault();
-      viewport.scrollLeft += event.deltaY;
-    };
-
-    viewport.addEventListener("wheel", handleWheel, { passive: false });
-
-    return () => {
-      viewport.removeEventListener("wheel", handleWheel);
-    };
-  }, [itemCount]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
@@ -190,10 +159,6 @@ export function useHorizontalRail({
     },
     [startIndex],
   );
-
-  const canScrollPrevious = startIndex > 0;
-  const canScrollNext = startIndex < maxStart;
-  const visibleEnd = Math.min(startIndex + visibleCount, itemCount);
 
   return {
     instructionsId,

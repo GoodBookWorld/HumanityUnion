@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { after, afterEach, before, beforeEach, describe, it } from "node:test";
+import { after, before, beforeEach, describe, it } from "node:test";
 
 import { registerAuthUser } from "../../src/modules/auth/auth.service.js";
 import { confirmRegistrationEmailCode } from "../../src/modules/auth/auth-email-confirmation.service.js";
@@ -8,10 +8,7 @@ import { getLastIssuedConfirmationCodeForTests } from "../../src/modules/email/e
 import { resetSmtpTransportForTests } from "../../src/modules/email/smtp-transport.js";
 import { deserializeDomainEventEnvelope } from "../../src/infrastructure/events/event-serialization.js";
 import { CATALOGUE_EVENTS } from "../../src/infrastructure/events/catalogue-events.js";
-import {
-  clearDomainEventHandlers,
-  registerDomainEventHandler,
-} from "../../src/infrastructure/integration/event-handler-registry.js";
+import { clearDomainEventHandlers } from "../../src/infrastructure/integration/event-handler-registry.js";
 import {
   connectMongoClient,
   disconnectMongoClient,
@@ -23,10 +20,7 @@ import {
   deleteOutboxRecordsByEventIdPrefix,
   deleteProcessedEventsByConsumerIdPrefix,
   deleteProcessedEventsByEventIdPrefix,
-  dispatchOutboxOnceForTests,
   isEventProcessed,
-  resetOutboxDispatcherStateForTests,
-  stopOutboxDispatcher,
 } from "../../src/infrastructure/outbox/index.js";
 import { buildMemberRegisteredEventId } from "../../src/modules/member/domain/member-registered.event.js";
 import { deleteMembersByMemberIdPrefix } from "../../src/modules/member/infrastructure/member.repository.js";
@@ -34,14 +28,11 @@ import { findAuthUserByEmail } from "../../src/modules/auth/auth-user.repository
 import type { WorkspaceProjectionRecord } from "../../src/modules/workspace/domain/workspace-projection.types.js";
 import {
   initializeWorkspaceFromMemberRegisteredEnvelope,
+  WORKSPACE_MEMBER_REGISTERED_CONSUMER_ID,
 } from "../../src/modules/workspace/application/member-registered.workspace-handler.js";
 import {
   getWorkspaceOverviewForMember,
 } from "../../src/modules/workspace/application/workspace-query.service.js";
-import {
-  handleMemberRegisteredWorkspaceProjection,
-  WORKSPACE_MEMBER_REGISTERED_CONSUMER_ID,
-} from "../../src/modules/workspace/application/member-registered.workspace-handler.js";
 import {
   countWorkspaceProjectionsByMemberId,
   deleteWorkspaceProjectionByMemberId,

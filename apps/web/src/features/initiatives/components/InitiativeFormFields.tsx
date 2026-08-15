@@ -1,6 +1,12 @@
 "use client";
 
-import type { InitiativeMetadata, ParticipationScope, PublicNewsArticleItem } from "@hu/types";
+import type {
+  InitiativeCoverMedia,
+  InitiativeMetadata,
+  ParticipationScope,
+  PublicNewsArticleItem,
+} from "@hu/types";
+import { resolveInitiativeCoverMedia } from "@hu/types";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -19,7 +25,7 @@ import {
   INITIATIVE_ACTIVITY_AREA_OTHER,
 } from "../initiative-activity-areas";
 
-import { MediaImageUploadField } from "../../media-upload/components/MediaImageUploadField";
+import { InitiativeCoverMediaField } from "../../media-upload/components/InitiativeCoverMediaField";
 import { InitiativeNewsSourcePanel } from "./InitiativeNewsSourcePanel";
 
 import "./initiative-form-fields.css";
@@ -35,7 +41,8 @@ export interface InitiativeFormValues {
   regionLabel: string;
   communityCode: string;
   communityLabel: string;
-  imageUrl?: string;
+  /** UX Evolution Pack 03 — the single source of truth for cover media; legacy `imageUrl` is derived server-side, see `resolveInitiativeCoverMedia`. */
+  coverMedia?: InitiativeCoverMedia;
   imageAltText?: string;
   startDate?: string;
   completionDate?: string;
@@ -46,6 +53,7 @@ interface InitiativeFormFieldsProps {
   onChange: (patch: Partial<InitiativeFormValues>) => void;
   initiativeId?: string;
   onImageUpload: (file: File) => Promise<string>;
+  onVideoLinkSubmit: (url: string) => Promise<InitiativeCoverMedia>;
   onImageRemove?: () => Promise<void> | void;
   sourceArticle?: PublicNewsArticleItem | null;
   onSourceRemove?: () => void;
@@ -55,6 +63,7 @@ export function InitiativeFormFields({
   values,
   onChange,
   onImageUpload,
+  onVideoLinkSubmit,
   onImageRemove,
   sourceArticle,
   onSourceRemove,
@@ -113,6 +122,7 @@ export function InitiativeFormFields({
         <span>Community association</span>
         <input
           type="text"
+          className="hu-form-control"
           value={values.communityAssociation}
           onChange={(event) => onChange({ communityAssociation: event.target.value })}
         />
@@ -125,6 +135,7 @@ export function InitiativeFormFields({
       <label className="initiative-form-fields__field">
         <span>Participation scope</span>
         <select
+          className="hu-form-control"
           value={values.participationScope}
           onChange={(event) =>
             onChange({ participationScope: event.target.value as ParticipationScope })
@@ -183,6 +194,7 @@ export function InitiativeFormFields({
                   <span>Region name</span>
                   <input
                     type="text"
+                    className="hu-form-control"
                     value={values.regionLabel}
                     onChange={(event) => onChange({ regionLabel: event.target.value })}
                     required
@@ -220,6 +232,7 @@ export function InitiativeFormFields({
       <label className="initiative-form-fields__field">
         <span>Activity area</span>
         <select
+          className="hu-form-control"
           value={values.activityArea}
           onChange={(event) => onChange({ activityArea: event.target.value })}
         >
@@ -236,6 +249,7 @@ export function InitiativeFormFields({
           <span>Activity area (Other)</span>
           <input
             type="text"
+            className="hu-form-control"
             value={values.activityAreaOther}
             onChange={(event) => onChange({ activityAreaOther: event.target.value })}
           />
@@ -246,6 +260,7 @@ export function InitiativeFormFields({
         <span>Start date</span>
         <input
           type="date"
+          className="hu-form-control"
           value={values.startDate?.slice(0, 10) ?? ""}
           onChange={(event) =>
             onChange({ startDate: event.target.value ? `${event.target.value}T00:00:00.000Z` : "" })
@@ -257,6 +272,7 @@ export function InitiativeFormFields({
         <span>Completion date</span>
         <input
           type="date"
+          className="hu-form-control"
           value={values.completionDate?.slice(0, 10) ?? ""}
           onChange={(event) =>
             onChange({
@@ -271,21 +287,28 @@ export function InitiativeFormFields({
           <InitiativeNewsSourcePanel article={sourceArticle} onRemove={onSourceRemove} />
         ) : null}
 
-        <MediaImageUploadField
-          label="Initiative cover image"
-          imageUrl={values.imageUrl}
+        <InitiativeCoverMediaField
+          coverMedia={values.coverMedia}
           altText={values.imageAltText}
-          showAltTextField
           onAltTextChange={(imageAltText) => onChange({ imageAltText })}
-          helperText="Upload a separate cover image for this initiative. This is independent from the external source preview."
-          onUpload={async (file) => {
+          onImageUpload={async (file) => {
             const mediaUrl = await onImageUpload(file);
-            onChange({ imageUrl: mediaUrl });
-            return mediaUrl;
+            const coverMedia: InitiativeCoverMedia = {
+              type: "image",
+              url: mediaUrl,
+              verificationStatus: "approved",
+            };
+            onChange({ coverMedia });
+            return coverMedia;
+          }}
+          onVideoLinkSubmit={async (url) => {
+            const coverMedia = await onVideoLinkSubmit(url);
+            onChange({ coverMedia });
+            return coverMedia;
           }}
           onRemove={async () => {
             await onImageRemove?.();
-            onChange({ imageUrl: "", imageAltText: "" });
+            onChange({ coverMedia: undefined, imageAltText: "" });
           }}
         />
       </div>
@@ -312,7 +335,7 @@ export function buildInitiativeFormValuesFromMetadata(
       : (metadata.region ?? ""),
     communityCode: metadata.communitySlug ?? "",
     communityLabel: "",
-    imageUrl: metadata.imageUrl,
+    coverMedia: resolveInitiativeCoverMedia(metadata),
     imageAltText: metadata.imageAltText,
     startDate: metadata.startDate,
     completionDate: metadata.completionDate,
@@ -330,7 +353,12 @@ export function initiativeFormValuesToSaveInput(values: InitiativeFormValues) {
     regionSlug: values.regionCode || undefined,
     region: values.regionCode === OTHER_REGION_SLUG ? values.regionLabel || undefined : undefined,
     communitySlug: values.communityCode || undefined,
-    imageUrl: values.imageUrl || undefined,
+    // UX Evolution Pack 03 — coverMedia is now the single source of truth;
+    // the legacy `imageUrl` field is derived server-side from it (see
+    // `resolveCoverMediaUpdate` in `initiative.service.ts`) rather than sent
+    // directly, so the two can never disagree.
+    coverMedia: values.coverMedia,
+    clearCoverMedia: !values.coverMedia,
     imageAltText: values.imageAltText || undefined,
     startDate: values.startDate || undefined,
     completionDate: values.completionDate || undefined,

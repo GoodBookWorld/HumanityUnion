@@ -1,6 +1,7 @@
 import type { IndexDescription } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
+import { getMongoCollection } from "./mongo-database.js";
 import { ensureCollectionIndexes } from "./mongo-snapshot-store.js";
 
 const MODULE_INDEXES: ReadonlyArray<{
@@ -36,12 +37,47 @@ const MODULE_INDEXES: ReadonlyArray<{
     indexes: [{ key: { initiativeId: 1 } }, { key: { stewardId: 1 } }, { key: { status: 1 } }],
   },
   {
+    // Recovery Task 31 — dedicated, transaction-capable authoritative
+    // collection (no longer a whole-collection snapshot mirror). The dead
+    // `{ status: 1 }` index was removed: `InitiativeDecisionVote` has no
+    // `status` field. `unique(voteId)` and `unique(decisionId,
+    // participantId)` are the database-enforced concurrency authority
+    // (Gate 5); with a deterministic `voteId` the two are equivalent in
+    // practice, but both are declared explicitly per Part 3/7.
     collectionName: MONGO_COLLECTIONS.initiativeDecisionVotes,
-    indexes: [{ key: { decisionId: 1 } }, { key: { participantId: 1 } }, { key: { status: 1 } }],
+    indexes: [
+      { key: { voteId: 1 }, unique: true, name: "initiative_decision_votes_vote_id_unique" },
+      {
+        key: { decisionId: 1, participantId: 1 },
+        unique: true,
+        name: "initiative_decision_votes_decision_participant_unique",
+      },
+      { key: { decisionId: 1 }, name: "initiative_decision_votes_decision_id" },
+      { key: { participantId: 1 }, name: "initiative_decision_votes_participant_id" },
+      { key: { decisionId: 1, choice: 1 }, name: "initiative_decision_votes_decision_choice" },
+    ],
   },
   {
     collectionName: MONGO_COLLECTIONS.initiativeDecisionVoteHistory,
-    indexes: [{ key: { decisionId: 1 } }, { key: { participantId: 1 } }],
+    indexes: [
+      {
+        key: { historyId: 1 },
+        unique: true,
+        name: "initiative_decision_vote_history_history_id_unique",
+      },
+      {
+        key: { voteId: 1, changedAt: 1 },
+        name: "initiative_decision_vote_history_vote_id_changed_at",
+      },
+      {
+        key: { decisionId: 1, changedAt: 1 },
+        name: "initiative_decision_vote_history_decision_id_changed_at",
+      },
+      {
+        key: { participantId: 1, changedAt: 1 },
+        name: "initiative_decision_vote_history_participant_id_changed_at",
+      },
+    ],
   },
   {
     collectionName: MONGO_COLLECTIONS.participationAreas,
@@ -380,6 +416,18 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    collectionName: MONGO_COLLECTIONS.initiativeAnalysisReactions,
+    indexes: [
+      {
+        key: { analysisId: 1, actorUserId: 1 },
+        unique: true,
+        name: "initiative_analysis_reaction_unique",
+      },
+      { key: { initiativeId: 1, analysisId: 1 } },
+      { key: { analysisId: 1, reaction: 1 } },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.initiativeSupportRegisteredSignals,
     indexes: [
       {
@@ -484,6 +532,52 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    collectionName: MONGO_COLLECTIONS.petitions,
+    indexes: [
+      { key: { petitionId: 1 }, unique: true, name: "petitions_petition_id_unique" },
+      {
+        key: { collectiveDecisionId: 1 },
+        unique: true,
+        name: "petitions_collective_decision_id_unique",
+      },
+      { key: { "subject.initiativeId": 1 }, name: "petitions_subject_initiative_id" },
+      { key: { status: 1 }, name: "petitions_status" },
+      { key: { createdAt: -1 }, name: "petitions_created_at" },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.petitionSignatures,
+    indexes: [
+      { key: { signatureId: 1 }, unique: true, name: "petition_signatures_signature_id_unique" },
+      {
+        key: { petitionId: 1, memberId: 1 },
+        unique: true,
+        name: "petition_signatures_petition_member_unique",
+      },
+      { key: { petitionId: 1, signedAt: 1 }, name: "petition_signatures_petition_signed_at" },
+      { key: { initiativeId: 1 }, name: "petition_signatures_initiative_id" },
+    ],
+  },
+  {
+    // Initiative Lifecycle — Part F. One Petition Lifecycle draft per
+    // Initiative, mirroring `initiativeRevisionDrafts`.
+    collectionName: MONGO_COLLECTIONS.initiativePetitionDrafts,
+    indexes: [{ key: { initiativeId: 1 } }, { key: { authorId: 1 } }],
+  },
+  {
+    // Initiative Lifecycle — Part F, Section 7/8. One "civic interest"
+    // signal per (petition, visitor cookie) — never a `Signature`, never
+    // counted toward `SupportMetrics`.
+    collectionName: MONGO_COLLECTIONS.petitionVisitorSignals,
+    indexes: [
+      {
+        key: { petitionId: 1, visitorKey: 1 },
+        unique: true,
+        name: "petition_visitor_signals_petition_visitor_unique",
+      },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.workspaceProjections,
     indexes: [
       { key: { memberId: 1 }, unique: true, name: "workspace_projections_member_id_unique" },
@@ -511,9 +605,394 @@ const MODULE_INDEXES: ReadonlyArray<{
       { key: { processedAt: -1 }, name: "processed_events_processed_at" },
     ],
   },
+  {
+    // Recovery Task 27 Part 6 — Participant Action Ledger. Indexes are
+    // limited to what the accepted near-term projections (Part 19) and
+    // focused tests (Part 21) actually require.
+    collectionName: MONGO_COLLECTIONS.participantActions,
+    indexes: [
+      {
+        key: { participantActionId: 1 },
+        unique: true,
+        name: "participant_actions_participant_action_id_unique",
+      },
+      {
+        key: { sourceEventId: 1 },
+        unique: true,
+        name: "participant_actions_source_event_id_unique",
+      },
+      {
+        key: { participantId: 1, occurredAt: -1 },
+        name: "participant_actions_participant_id_occurred_at",
+      },
+      {
+        key: { initiativeId: 1, occurredAt: -1 },
+        name: "participant_actions_initiative_id_occurred_at",
+      },
+      {
+        key: { participantId: 1, initiativeId: 1, occurredAt: -1 },
+        name: "participant_actions_participant_initiative_occurred_at",
+      },
+      {
+        key: { sourceType: 1, sourceId: 1 },
+        name: "participant_actions_source_type_source_id",
+      },
+      {
+        key: { actionType: 1, occurredAt: -1 },
+        name: "participant_actions_action_type_occurred_at",
+      },
+    ],
+  },
+  {
+    // UX Evolution Pack 02.1 — a single mutable-status row per
+    // (initiativeId, participantId) pair is the entire uniqueness
+    // authority: it is what gives "one current Ally relationship per
+    // Initiative + Participant" for free (interest, invitation, acceptance,
+    // and decline are status transitions on that one row, never separate
+    // documents). Every exact-key access pattern is served by this one
+    // compound index — the initiativeId-prefixed scan (optionally filtered
+    // by status in the query) is also covered by it.
+    //
+    // Profile UX Pack 01 — the Workspace "Collaborations" count and the
+    // cross-initiative "which Allies rows belong to this Participant" read
+    // (used to build the Workspace Allies widget) both query by
+    // `participantId` alone, across initiatives. The second index below
+    // exists specifically for that access pattern.
+    collectionName: MONGO_COLLECTIONS.initiativeAllies,
+    indexes: [
+      {
+        key: { initiativeId: 1, participantId: 1 },
+        unique: true,
+        name: "initiative_allies_initiative_participant_unique",
+      },
+      {
+        key: { participantId: 1, status: 1 },
+        name: "initiative_allies_participant_status",
+      },
+    ],
+  },
+  {
+    // UX Evolution Pack 02.1 — `sourceCommentId` is the sole uniqueness
+    // authority ("one discussion comment -> at most one active Proposal
+    // Candidate"). No `initiativeId`/`createdAt` index is declared: the only
+    // real read patterns are find-by-candidateId's owning comment
+    // (`sourceCommentId`) and a batched `$in` lookup over comment ids, both
+    // already served by this one unique index.
+    collectionName: MONGO_COLLECTIONS.initiativeDiscussionProposalCandidates,
+    indexes: [
+      {
+        key: { sourceCommentId: 1 },
+        unique: true,
+        name: "initiative_discussion_proposal_candidates_source_comment_unique",
+      },
+    ],
+  },
+  {
+    // Profile UX Pack 03 Part 4 — `pairKey` (the deterministic
+    // `min(participantIdA, participantIdB)::max(...)` natural key) is the
+    // database-enforced uniqueness authority for "only one active direct
+    // conversation per unordered Participant pair" (Part 3): every
+    // creation goes through one atomic `findOneAndUpdate(..., { upsert:
+    // true })` against this unique index, never an application-level
+    // check-then-write.
+    collectionName: MONGO_COLLECTIONS.directConversations,
+    indexes: [
+      { key: { conversationId: 1 }, unique: true, name: "direct_conversations_conversation_id_unique" },
+      { key: { pairKey: 1 }, unique: true, name: "direct_conversations_pair_key_unique" },
+      { key: { participantIds: 1, lastMessageAt: -1 }, name: "direct_conversations_participant_last_message" },
+      { key: { lastMessageAt: -1 }, name: "direct_conversations_last_message_at" },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.directMessages,
+    indexes: [
+      { key: { messageId: 1 }, unique: true, name: "direct_messages_message_id_unique" },
+      { key: { conversationId: 1, createdAt: 1 }, name: "direct_messages_conversation_created_at" },
+      { key: { senderParticipantId: 1, createdAt: 1 }, name: "direct_messages_sender_created_at" },
+      {
+        // Part 21 #2 — idempotent send retry: a duplicate `clientMessageId`
+        // within the same conversation+sender never creates a second
+        // message. Sparse/partial so messages sent without a
+        // `clientMessageId` never collide with each other.
+        key: { conversationId: 1, senderParticipantId: 1, clientMessageId: 1 },
+        unique: true,
+        name: "direct_messages_client_message_id_unique",
+        partialFilterExpression: { clientMessageId: { $exists: true } },
+      },
+    ],
+  },
+  {
+    // Communication UX Pack 03.5 — one persistent Collaboration Channel per
+    // Initiative (never a separate "channel" document; the Initiative id
+    // itself is the channel's identity). Chronological history and cursor
+    // pagination both key off `(initiativeId, createdAt)`.
+    collectionName: MONGO_COLLECTIONS.initiativeCollaborationChannelMessages,
+    indexes: [
+      {
+        key: { messageId: 1 },
+        unique: true,
+        name: "initiative_collaboration_channel_messages_message_id_unique",
+      },
+      {
+        key: { initiativeId: 1, createdAt: 1 },
+        name: "initiative_collaboration_channel_messages_initiative_created_at",
+      },
+    ],
+  },
+  {
+    // Part 6 — one per-viewer read marker per (initiativeId, participantId).
+    // Unlike Direct Messaging's embedded `reads` array (fixed 2
+    // Participants), the Channel's membership changes over time, so each
+    // read marker is its own upserted row rather than a pre-seeded array
+    // element.
+    collectionName: MONGO_COLLECTIONS.initiativeCollaborationChannelReads,
+    indexes: [
+      {
+        key: { initiativeId: 1, participantId: 1 },
+        unique: true,
+        name: "initiative_collaboration_channel_reads_initiative_participant_unique",
+      },
+    ],
+  },
+  {
+    // Communication UX Pack 03.6 Part 1 — one schedule per Initiative;
+    // `scheduledAtUtc` (derived, never independently editable) drives both
+    // the chronological list order and the Part 3 status derivation.
+    collectionName: MONGO_COLLECTIONS.initiativeCollaborationSessions,
+    indexes: [
+      {
+        key: { sessionId: 1 },
+        unique: true,
+        name: "initiative_collaboration_sessions_session_id_unique",
+      },
+      {
+        key: { initiativeId: 1, scheduledAtUtc: 1 },
+        name: "initiative_collaboration_sessions_initiative_scheduled_at",
+      },
+    ],
+  },
+  {
+    // Part 6 — one attendance row per (session, participant); read
+    // patterns are always "all attendance for one session" (prefix scan on
+    // this same unique index, no separate index needed).
+    collectionName: MONGO_COLLECTIONS.initiativeCollaborationSessionAttendances,
+    indexes: [
+      {
+        key: { sessionId: 1, participantId: 1 },
+        unique: true,
+        name: "initiative_collaboration_session_attendances_session_participant_unique",
+      },
+      {
+        // Part 14 — supports the one batched "every attendance row across
+        // this Initiative's Sessions" read used when building the Session
+        // list view, avoiding a per-session query (N+1).
+        key: { initiativeId: 1 },
+        name: "initiative_collaboration_session_attendances_initiative_id",
+      },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.sharedDocuments,
+    indexes: [
+      {
+        key: { documentId: 1 },
+        unique: true,
+        name: "shared_documents_document_id_unique",
+      },
+      {
+        key: { documentFamilyId: 1, version: 1 },
+        name: "shared_documents_family_version",
+      },
+      {
+        key: { conversationId: 1, isLatestVersion: 1, uploadedAt: -1 },
+        name: "shared_documents_conversation_latest_uploaded_at",
+      },
+      {
+        // Collaboration Channel documents (`initiativeId` only, no `sessionId`).
+        key: { contextType: 1, initiativeId: 1, isLatestVersion: 1, uploadedAt: -1 },
+        name: "shared_documents_channel_latest_uploaded_at",
+      },
+      {
+        // Collaboration Session documents (`initiativeId` + `sessionId`).
+        key: { sessionId: 1, isLatestVersion: 1, uploadedAt: -1 },
+        name: "shared_documents_session_latest_uploaded_at",
+      },
+    ],
+  },
+  {
+    // Production Deployment Pack 02 — durable media metadata (survives API restart).
+    collectionName: MONGO_COLLECTIONS.mediaUploadRecords,
+    indexes: [
+      {
+        key: { mediaId: 1 },
+        unique: true,
+        name: "media_upload_records_media_id_unique",
+      },
+      {
+        key: { ownerUserId: 1, createdAt: -1 },
+        name: "media_upload_records_owner_created_at",
+      },
+      {
+        key: { initiativeId: 1, createdAt: -1 },
+        name: "media_upload_records_initiative_created_at",
+      },
+      {
+        key: { mediaUrl: 1 },
+        name: "media_upload_records_media_url",
+      },
+    ],
+  },
+  {
+    // Language Architecture Pack 02 — version-aware unique translation identity.
+    collectionName: MONGO_COLLECTIONS.contentTranslations,
+    indexes: [
+      {
+        key: {
+          sourceKind: 1,
+          sourceRecordId: 1,
+          sourceVersion: 1,
+          targetLanguage: 1,
+        },
+        unique: true,
+        name: "content_translations_identity_unique",
+      },
+      {
+        key: { sourceKind: 1, sourceRecordId: 1, stale: 1 },
+        name: "content_translations_source_stale",
+      },
+    ],
+  },
+  {
+    // Blog Implementation Pack 02 — publishing domain.
+    collectionName: MONGO_COLLECTIONS.blogPosts,
+    indexes: [
+      { key: { postId: 1 }, unique: true, name: "blog_posts_post_id_unique" },
+      { key: { slug: 1 }, unique: true, name: "blog_posts_slug_unique" },
+      { key: { status: 1, publishedAt: -1 }, name: "blog_posts_status_published_at" },
+      {
+        key: { authorParticipantId: 1, updatedAt: -1 },
+        name: "blog_posts_author_updated_at",
+      },
+      { key: { categoryId: 1, publishedAt: -1 }, name: "blog_posts_category_published_at" },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.blogCapabilityGrants,
+    indexes: [
+      {
+        key: { participantId: 1 },
+        unique: true,
+        name: "blog_capability_grants_participant_unique",
+      },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.blogAuthorApplications,
+    indexes: [
+      {
+        key: { applicationId: 1 },
+        unique: true,
+        name: "blog_author_applications_application_id_unique",
+      },
+      {
+        key: { participantId: 1, status: 1 },
+        name: "blog_author_applications_participant_status",
+      },
+    ],
+  },
+  {
+    // Blog Interaction Pack 07 — comments (one-level replies).
+    collectionName: MONGO_COLLECTIONS.blogComments,
+    indexes: [
+      { key: { commentId: 1 }, unique: true, name: "blog_comments_comment_id_unique" },
+      {
+        key: { postId: 1, status: 1, parentCommentId: 1, createdAt: 1 },
+        name: "blog_comments_post_status_parent_created",
+      },
+      { key: { postId: 1, createdAt: 1 }, name: "blog_comments_post_created" },
+      { key: { parentCommentId: 1, createdAt: 1 }, name: "blog_comments_parent_created" },
+    ],
+  },
+  {
+    // Blog Interaction Pack 07 — one reaction per Participant per post.
+    collectionName: MONGO_COLLECTIONS.blogReactions,
+    indexes: [
+      { key: { reactionId: 1 }, unique: true, name: "blog_reactions_reaction_id_unique" },
+      {
+        key: { postId: 1, actorParticipantId: 1 },
+        unique: true,
+        name: "blog_reactions_post_actor_unique",
+      },
+      { key: { postId: 1, reaction: 1 }, name: "blog_reactions_post_kind" },
+    ],
+  },
+  {
+    // Admin Foundation Pack 02 — generalized capability grants (dual-read).
+    collectionName: MONGO_COLLECTIONS.platformCapabilityGrants,
+    indexes: [
+      { key: { grantId: 1 }, unique: true, name: "platform_capability_grants_grant_id_unique" },
+      {
+        key: { participantId: 1, capability: 1, scopeType: 1, scopeId: 1 },
+        name: "platform_capability_grants_participant_capability_scope",
+      },
+      {
+        key: { participantId: 1, revokedAt: 1 },
+        name: "platform_capability_grants_participant_revoked",
+      },
+    ],
+  },
+  {
+    // Admin Foundation Pack 02 — append-only administration audit log.
+    collectionName: MONGO_COLLECTIONS.administrationAuditLog,
+    indexes: [
+      { key: { auditId: 1 }, unique: true, name: "administration_audit_audit_id_unique" },
+      {
+        key: { targetType: 1, targetId: 1, createdAt: 1 },
+        name: "administration_audit_target_created",
+      },
+      {
+        key: { actorParticipantId: 1, createdAt: -1 },
+        name: "administration_audit_actor_created",
+      },
+      { key: { action: 1, createdAt: -1 }, name: "administration_audit_action_created" },
+    ],
+  },
 ];
 
+/**
+ * Recovery Task 31 Part 7 — one-time, idempotent removal of the dead
+ * `{ status: 1 }` index on `initiative_decision_votes` (default Mongo name
+ * `status_1`): `InitiativeDecisionVote` has no `status` field, and
+ * `ensureCollectionIndexes` only ever creates indexes, never drops ones no
+ * longer declared. Safe to call unconditionally on every startup — a
+ * missing index (already dropped, or never created in a fresh database) is
+ * not an error (Mongo error code 27, `IndexNotFound`), and neither is a
+ * collection that does not exist yet at all — e.g. a freshly created
+ * isolated test database, or a brand-new deployment (Mongo error code 26,
+ * `NamespaceNotFound`).
+ */
+async function dropDeadInitiativeDecisionVoteStatusIndex(): Promise<void> {
+  try {
+    await getMongoCollection(MONGO_COLLECTIONS.initiativeDecisionVotes).dropIndex("status_1");
+  } catch (error) {
+    const mongoError = error as { code?: number; codeName?: string };
+
+    if (
+      mongoError.code === 27 ||
+      mongoError.codeName === "IndexNotFound" ||
+      mongoError.code === 26 ||
+      mongoError.codeName === "NamespaceNotFound"
+    ) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
 export async function ensureMongoIndexes(): Promise<void> {
+  await dropDeadInitiativeDecisionVoteStatusIndex();
+
   for (const entry of MODULE_INDEXES) {
     await ensureCollectionIndexes(entry.collectionName, entry.indexes);
   }

@@ -115,9 +115,12 @@
 }
 
 .auth-page {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: var(--hu-space-8) var(--hu-space-4);
+  /* Justified exception: form column measure (not full page width). */
+  width: min(100%, var(--hu-form-max-width));
+  max-width: var(--hu-form-max-width);
+  margin-inline: auto;
+  padding: var(--hu-section-gap) var(--hu-page-padding-inline);
+  box-sizing: border-box;
 }
 
 .auth-page__header {

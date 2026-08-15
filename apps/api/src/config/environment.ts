@@ -6,10 +6,28 @@ import {
 
 loadApiEnvironment();
 
+function resolvePrimaryConfiguredOrigin(): string {
+  const raw = resolveCorsOrigin();
+  if (!raw) {
+    return "http://localhost:3000";
+  }
+
+  const first = raw
+    .split(",")
+    .map((part) => part.trim())
+    .find((part) => part.length > 0);
+
+  return first ?? "http://localhost:3000";
+}
+
 export const environment = {
   apiPort: Number(process.env.PORT ?? process.env.API_PORT ?? 4000),
   nodeEnv: process.env.NODE_ENV ?? "development",
-  corsOrigin: resolveCorsOrigin() ?? "http://localhost:3000",
+  /**
+   * Primary configured Web origin (first CORS_ORIGIN / WEB_ORIGIN entry).
+   * Prefer `isAllowedWebOrigin` / `resolveCorsOriginOption` for credentialed checks.
+   */
+  corsOrigin: resolvePrimaryConfiguredOrigin(),
   apiPublicUrl:
     process.env.API_PUBLIC_URL?.trim() ??
     `http://localhost:${Number(process.env.PORT ?? process.env.API_PORT ?? 4000)}`,

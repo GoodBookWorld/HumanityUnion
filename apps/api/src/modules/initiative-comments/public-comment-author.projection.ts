@@ -1,51 +1,16 @@
-import type { MemberProfile, PublicCommentAuthor } from "@hu/types";
+import type { PublicCommentAuthor } from "@hu/types";
 
 import { findMemberProfilesByUserIds } from "../member-profile/member-profile.repository.js";
-import { resolveMemberAvatarUrl } from "../member-profile/member-profile.projection.js";
+import { resolvePublicAuthorIdentity } from "../member-profile/public-author-identity.projection.js";
 
-const FALLBACK_AUTHOR_NAME = "Participant";
-
-function resolveDisplayName(profile: MemberProfile | undefined, nameSnapshot: string): string {
-  const currentName = profile?.displayName.trim();
-
-  if (profile?.status === "active" && currentName) {
-    return currentName;
-  }
-
-  const snapshot = nameSnapshot.trim();
-
-  if (snapshot) {
-    return snapshot;
-  }
-
-  return FALLBACK_AUTHOR_NAME;
-}
-
-function resolveProfileUrl(profile: MemberProfile | undefined): string | undefined {
-  if (!profile || profile.status !== "active" || profile.profileVisibility !== "public") {
-    return undefined;
-  }
-
-  return `/member/${encodeURIComponent(profile.publicName)}`;
-}
-
-export function resolvePublicCommentAuthor(
-  profile: MemberProfile | undefined,
-  nameSnapshot: string,
-): PublicCommentAuthor {
-  const displayName = resolveDisplayName(profile, nameSnapshot);
-
-  if (!profile || profile.status !== "active") {
-    return { displayName };
-  }
-
-  return {
-    publicUserId: profile.profileId,
-    displayName,
-    avatarUrl: resolveMemberAvatarUrl(profile.avatarUrl),
-    profileUrl: resolveProfileUrl(profile),
-  };
-}
+/**
+ * UX Evolution Pack 02.4 — the actual identity-resolution rule (active
+ * profile required for a name, `public` visibility required for a link,
+ * never expose private fields) now lives in `member-profile` so Initiative
+ * steward display can reuse it too. Kept as a re-export here so existing
+ * comment call sites are unaffected.
+ */
+export const resolvePublicCommentAuthor = resolvePublicAuthorIdentity;
 
 export async function resolvePublicCommentAuthorsForComments(
   comments: Array<{ commentId: string; authorUserId: string; authorDisplayName: string }>,

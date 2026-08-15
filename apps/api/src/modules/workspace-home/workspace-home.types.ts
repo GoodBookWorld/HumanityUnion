@@ -1,4 +1,8 @@
-import type { WorkspaceReadiness } from "@hu/types";
+import type {
+  CommunityWorkspaceOpportunitiesResponse,
+  ParticipantStatistics,
+  WorkspaceReadiness,
+} from "@hu/types";
 
 export interface WorkspaceHomeLinkItem {
   id: string;
@@ -93,6 +97,34 @@ export interface WorkspaceHomePublicContribution {
   publishedAt: string;
 }
 
+export interface WorkspaceHomeAllyEntry {
+  participantId: string;
+  displayName: string;
+  avatarUrl?: string;
+  profileUrl?: string;
+  sharedInitiativeCount: number;
+  /**
+   * Communication UX Pack 03.2 Part 4/5 — derived from the exact same
+   * durable Direct Messaging read state used by the Workspace Messages
+   * conversation list's `unread` field (never a second/new definition).
+   * Batch-computed once per Workspace Home load, never one query per Ally.
+   */
+  hasUnreadMessages: boolean;
+}
+
+/**
+ * Profile UX Pack 01 Part 9/11 — Workspace Allies widget data + the
+ * "Allies" / "Collaborations" counts prepared for Profile UX Pack 02. See
+ * `workspace-allies.service.ts` for the exact aggregation definitions.
+ */
+export interface WorkspaceHomeAlliesSummary {
+  items: WorkspaceHomeAllyEntry[];
+  /** Unique active-Ally Participants across Initiatives this Participant stewards. */
+  alliesCount: number;
+  /** Initiatives where this Participant is themselves an active Ally. */
+  collaborationsCount: number;
+}
+
 export interface WorkspaceHomeAssistantContext {
   participantName: string;
   participationAreaLabel: string | null;
@@ -108,6 +140,8 @@ export interface WorkspaceHomeAssistantContext {
 
 export interface WorkspaceHomeState {
   welcome: WorkspaceHomeWelcome;
+  /** Profile UX Pack 02 Part 1/11 — Initiatives / Collective Decisions / Allies cards. */
+  statistics: ParticipantStatistics;
   quickActions: WorkspaceHomeQuickAction[];
   activeWork: WorkspaceHomeActiveWork;
   recentActivity: WorkspaceHomeTimelineEntry[];
@@ -115,6 +149,9 @@ export interface WorkspaceHomeState {
   participationSummary: WorkspaceHomeParticipationSummary;
   notifications: WorkspaceHomeNotificationsSummary;
   recentPublicContributions: WorkspaceHomePublicContribution[];
+  allies: WorkspaceHomeAlliesSummary;
+  /** Community Intelligence Pack 01 — bounded collaboration opportunities. */
+  communityIntelligence: CommunityWorkspaceOpportunitiesResponse;
   assistantContext: WorkspaceHomeAssistantContext;
   workspaceReadiness: WorkspaceReadiness;
   loadedAt: string;

@@ -98,7 +98,7 @@ async function verifyRealEligibleCanadianRecords(): Promise<void> {
       markAsVerificationFixture: false,
     });
 
-    const results = listCivicArchiveLifecycleRecords({ country: "CA" });
+    const results = await listCivicArchiveLifecycleRecords({ country: "CA" });
     assert(results.length === 3, "Country=CA must return three real eligible archive records.");
     assert(
       results.every((record) => !record.title.includes("TASK-107")),
@@ -138,7 +138,7 @@ async function verifyNonEligiblePublicationExcluded(): Promise<void> {
     });
     publishInitiative(steward, draft.initiativeId);
 
-    const results = listCivicArchiveLifecycleRecords({ country: "CA" });
+    const results = await listCivicArchiveLifecycleRecords({ country: "CA" });
     assert(
       !results.some((record) => record.initiativeId === draft.initiativeId),
       "Published but non-archived initiative must not appear in civic archive index.",
@@ -170,7 +170,7 @@ async function verifyFixtureExclusion(): Promise<void> {
       title: TASK107B_FIXTURE_TITLE,
     });
 
-    const publicResults = listCivicArchiveLifecycleRecords({ country: "CA" });
+    const publicResults = await listCivicArchiveLifecycleRecords({ country: "CA" });
     assert(
       !publicResults.some((record) => record.initiativeId === fixture.initiativeId),
       "Marked verification fixture must be excluded from public archive index.",
@@ -198,8 +198,8 @@ async function verifyImageFallback(): Promise<void> {
     "Archive projection must sanitize image URLs.",
   );
   assert(
-    miniCard.includes("/initiative.webp"),
-    "Archive mini card must fall back to /initiative.webp.",
+    miniCard.includes("/images/initiatives/initiative-default.webp"),
+    "Archive mini card must fall back to /images/initiatives/initiative-default.webp.",
   );
 }
 

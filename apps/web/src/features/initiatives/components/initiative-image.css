@@ -5,3 +5,57 @@
   aspect-ratio: 16 / 9;
   object-fit: contain;
 }
+
+/* UX Evolution Pack 03 — video cover media: poster + non-blocking "Video" badge, matching layout dimensions of the plain image case so cards do not jump. */
+.initiative-image.initiative-image--video-poster {
+  position: relative;
+  overflow: hidden;
+  background: #111;
+}
+
+.initiative-image__poster-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.initiative-image__video-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.initiative-image__play-button {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 0;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.initiative-image__play-button:hover,
+.initiative-image__play-button:focus-visible {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.initiative-image__play-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -3px;
+}

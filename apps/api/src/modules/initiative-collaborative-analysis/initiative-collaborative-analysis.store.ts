@@ -8,6 +8,7 @@ export interface InitiativeCollaborativeAnalysisUpdate {
   summary?: string;
   supportingEvidence?: string;
   risks?: string;
+  openQuestions?: string;
   suggestedImprovements?: string;
   references?: string;
   status?: InitiativeCollaborativeAnalysis["status"];
@@ -56,6 +57,21 @@ export function listAnalysesByInitiative(initiativeId: string): InitiativeCollab
   return listAnalyses().filter((analysis) => analysis.initiativeId === initiativeId);
 }
 
+/**
+ * Initiative Lifecycle — Part B. Scopes analyses to one specific author for
+ * one specific Initiative — used by the Lifecycle Stage Workspace to find
+ * "the Author's own Collaborative Analysis" without picking up another
+ * participant's analysis of the same Initiative (the pre-existing
+ * multi-author "Collective Intelligence" model this domain already
+ * supports, left otherwise untouched).
+ */
+export function listAnalysesByInitiativeAndAuthor(
+  initiativeId: string,
+  authorId: string,
+): InitiativeCollaborativeAnalysis[] {
+  return listAnalysesByInitiative(initiativeId).filter((analysis) => analysis.authorId === authorId);
+}
+
 export function listPublishedAnalysesByInitiative(
   initiativeId: string,
 ): InitiativeCollaborativeAnalysis[] {
@@ -75,6 +91,28 @@ export function createAnalysis(
   persistAnalysesMap(analyses);
 
   return structuredClone(analysis);
+}
+
+/**
+ * Test-only cleanup: removes analyses created by a given authorId. Used by
+ * focused ancestry tests (Recovery Task 06) to avoid leaving fixture
+ * records behind in the persisted store.
+ */
+export function deleteAnalysesByAuthorIdForTests(authorId: string): number {
+  let deleted = 0;
+
+  for (const [analysisId, analysis] of analyses) {
+    if (analysis.authorId === authorId) {
+      analyses.delete(analysisId);
+      deleted += 1;
+    }
+  }
+
+  if (deleted > 0) {
+    persistAnalysesMap(analyses);
+  }
+
+  return deleted;
 }
 
 export function updateAnalysis(
@@ -101,6 +139,10 @@ export function updateAnalysis(
 
   if (update.risks !== undefined) {
     analysis.risks = update.risks;
+  }
+
+  if (update.openQuestions !== undefined) {
+    analysis.openQuestions = update.openQuestions;
   }
 
   if (update.suggestedImprovements !== undefined) {

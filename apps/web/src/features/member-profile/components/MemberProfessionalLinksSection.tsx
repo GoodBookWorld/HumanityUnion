@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "../../../design-system/components/Button";
+import { resolveSaveButtonLabel, type SaveButtonPhase } from "../use-save-button-phase";
 
 import "./member-professional-links.css";
 
@@ -8,8 +9,8 @@ interface MemberProfessionalLinksSectionProps {
   website?: string;
   linkedinUrl?: string;
   disabled?: boolean;
-  saving?: boolean;
-  successMessage?: string | null;
+  /** Profile UX Pack 02 Part 3 — drives the reusable Save-button feedback. */
+  phase?: SaveButtonPhase;
   onWebsiteChange: (website: string) => void;
   onLinkedInChange: (linkedinUrl: string) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
@@ -19,12 +20,12 @@ export function MemberProfessionalLinksSection({
   website,
   linkedinUrl,
   disabled = false,
-  saving = false,
-  successMessage = null,
+  phase = "idle",
   onWebsiteChange,
   onLinkedInChange,
   onSubmit,
 }: MemberProfessionalLinksSectionProps) {
+  const busy = phase !== "idle";
   return (
     <form className="member-professional-links" onSubmit={onSubmit}>
       <label className="member-professional-links__field member-professional-links__field--with-icon">
@@ -41,7 +42,7 @@ export function MemberProfessionalLinksSection({
           <input
             className="hu-form-control"
             value={website ?? ""}
-            disabled={disabled || saving}
+            disabled={disabled || busy}
             onChange={(event) => onWebsiteChange(event.target.value)}
             placeholder="https://example.com"
           />
@@ -61,21 +62,15 @@ export function MemberProfessionalLinksSection({
           <input
             className="hu-form-control"
             value={linkedinUrl ?? ""}
-            disabled={disabled || saving}
+            disabled={disabled || busy}
             onChange={(event) => onLinkedInChange(event.target.value)}
             placeholder="https://www.linkedin.com/in/your-profile"
           />
         </span>
       </label>
 
-      {successMessage ? (
-        <p className="member-professional-links__success" role="status">
-          {successMessage}
-        </p>
-      ) : null}
-
-      <Button type="submit" variant="primary" disabled={disabled || saving}>
-        {saving ? "Saving..." : "Save professional links"}
+      <Button type="submit" variant="primary" disabled={disabled || busy} ariaLive="polite">
+        {resolveSaveButtonLabel(phase, "Save professional links")}
       </Button>
     </form>
   );

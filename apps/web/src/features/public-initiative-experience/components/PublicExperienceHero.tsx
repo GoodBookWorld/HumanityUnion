@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-import type { PublicInitiativeExperienceHero } from "@hu/types";
+import type { InitiativeCoverMedia, PublicInitiativeExperienceHero } from "@hu/types";
 
+import { TranslatedContentView } from "../../language";
+import { resolveTranslatedContent, generateContentTranslation } from "../../language/translation-api";
+import { getMyPreferences } from "../../preferences/preferences-api";
+import { isAuthenticationRequiredError } from "../../../lib/api-client";
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
 
 function formatDate(value: string): string {
@@ -19,25 +24,112 @@ export interface PublicExperienceHeroProps {
   summary?: string;
   imageUrl?: string | null;
   imageAltText?: string;
+  coverMedia?: InitiativeCoverMedia;
   meta: Array<{ label: string; value: string }>;
   parentLink?: { href: string; label: string };
+  /** Pack 02 — when set, title/summary resolve through provider-backed translation. */
+  initiativeId?: string;
 }
 
 export function PublicExperienceHero({
   title,
   summary,
   imageUrl,
+  coverMedia,
   meta,
   parentLink,
+  initiativeId,
 }: PublicExperienceHeroProps) {
+  const [displayTitle, setDisplayTitle] = useState(title);
+  const [displaySummary, setDisplaySummary] = useState(summary ?? "");
+  const [originalTitle, setOriginalTitle] = useState(title);
+  const [originalSummary, setOriginalSummary] = useState(summary ?? "");
+  const [activeLanguage, setActiveLanguage] = useState("en");
+  const [originalLanguage, setOriginalLanguage] = useState("en");
+  const [canViewOriginal, setCanViewOriginal] = useState(false);
+  const [isMachineTranslated, setIsMachineTranslated] = useState(false);
+  const [isStale, setIsStale] = useState(false);
+
+  useEffect(() => {
+    if (!initiativeId) {
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      let readingLanguage = "en";
+      let preference = "preferred";
+      try {
+        const prefs = await getMyPreferences();
+        readingLanguage =
+          prefs.experiencePreferences.readingLanguages[0] ||
+          prefs.experiencePreferences.interfaceLanguage ||
+          "en";
+        preference = prefs.experiencePreferences.translationPreference || "preferred";
+      } catch (error) {
+        if (!isAuthenticationRequiredError(error)) {
+          // keep defaults
+        }
+      }
+
+      try {
+        let resolved = await resolveTranslatedContent({
+          sourceKind: "initiative",
+          sourceRecordId: initiativeId,
+          language: readingLanguage,
+        });
+
+        if (
+          preference === "preferred" &&
+          resolved.presentationMode === "original" &&
+          readingLanguage !== resolved.originalLanguage &&
+          !resolved.isStale
+        ) {
+          try {
+            const generated = await generateContentTranslation({
+              sourceKind: "initiative",
+              sourceRecordId: initiativeId,
+              targetLanguage: readingLanguage,
+            });
+            resolved = generated.display;
+          } catch {
+            // keep original
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        setDisplayTitle(resolved.content.title || title);
+        setDisplaySummary(resolved.content.description || summary || "");
+        setOriginalTitle(resolved.originalContent.title || title);
+        setOriginalSummary(resolved.originalContent.description || summary || "");
+        setActiveLanguage(resolved.activeLanguage);
+        setOriginalLanguage(resolved.originalLanguage);
+        setCanViewOriginal(resolved.canViewOriginal || resolved.canViewTranslation);
+        setIsMachineTranslated(resolved.isMachineTranslated);
+        setIsStale(resolved.isStale);
+      } catch {
+        // keep props
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initiativeId, summary, title]);
+
   return (
     <section className="pie-hero" aria-labelledby="pie-hero-title">
       <div className="pie-hero__media">
         <InitiativeImage
-          title={title}
+          title={displayTitle}
           imageUrl={imageUrl}
+          coverMedia={coverMedia}
           className="pie-hero__image"
           loading="eager"
+          interactive
         />
       </div>
       <div className="pie-hero__content">
@@ -46,10 +138,41 @@ export function PublicExperienceHero({
             <Link href={parentLink.href}>{parentLink.label}</Link>
           </p>
         ) : null}
-        <h1 id="pie-hero-title" className="pie-hero__title">
-          {title}
-        </h1>
-        {summary ? <p className="pie-hero__summary">{summary}</p> : null}
+        {initiativeId ? (
+          <>
+            <h1 id="pie-hero-title" className="pie-hero__title">
+              <TranslatedContentView
+                content={displayTitle}
+                originalContent={originalTitle}
+                activeLanguage={activeLanguage}
+                originalLanguage={originalLanguage}
+                canViewOriginal={canViewOriginal}
+                isMachineTranslated={isMachineTranslated}
+                isStale={isStale}
+              />
+            </h1>
+            {displaySummary || originalSummary ? (
+              <div className="pie-hero__summary">
+                <TranslatedContentView
+                  content={displaySummary}
+                  originalContent={originalSummary}
+                  activeLanguage={activeLanguage}
+                  originalLanguage={originalLanguage}
+                  canViewOriginal={canViewOriginal}
+                  isMachineTranslated={isMachineTranslated}
+                  isStale={isStale}
+                />
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <h1 id="pie-hero-title" className="pie-hero__title">
+              {title}
+            </h1>
+            {summary ? <p className="pie-hero__summary">{summary}</p> : null}
+          </>
+        )}
         <dl className="pie-hero__meta">
           {meta.map((item) => (
             <div key={item.label}>
@@ -71,6 +194,7 @@ export function buildInitiativeHeroProps(
     summary: hero.summary,
     imageUrl: hero.imageUrl,
     imageAltText: hero.imageAltText,
+    coverMedia: hero.coverMedia,
     meta: [
       { label: "Activity Area", value: hero.activityArea },
       { label: "Geography", value: hero.geography.label },

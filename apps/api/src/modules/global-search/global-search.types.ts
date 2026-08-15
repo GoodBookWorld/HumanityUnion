@@ -57,6 +57,13 @@ export const GLOBAL_SEARCH_ENTITY_TYPE_LABELS: Record<CivicEntityType, string> =
   knowledge_media: "Knowledge Media",
   civic_nomination: "Civic Nomination",
   member_badge_contribution: "Member Badge Contribution",
+  // Profile UX Pack 03 — Direct Collaboration conversations are private
+  // and must never appear in global (public) search results; this label
+  // exists only to satisfy the exhaustive `CivicEntityType` map.
+  direct_conversation: "Direct Collaboration Conversation",
+  blog_post: "Blog Post",
+  // Author Access Pack 04 — applications are Workspace-private, never indexed.
+  blog_author_application: "Blog Author Application",
 };
 
 export const PRIVATE_SEARCH_RESPONSE_KEYS = [

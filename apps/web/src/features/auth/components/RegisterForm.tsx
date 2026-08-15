@@ -67,39 +67,54 @@ export function RegisterForm() {
     <Card>
       <form className="auth-form" onSubmit={handleSubmit}>
         <label className="auth-form__field">
-          <span>Email</span>
+          <span>
+            Email <span aria-hidden="true">*</span>
+            <span className="hu-visually-hidden">(required)</span>
+          </span>
           <input
             type="email"
             autoComplete="email"
             required
+            aria-required="true"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
         </label>
         <label className="auth-form__field">
-          <span>Display name</span>
+          <span>
+            Display name <span aria-hidden="true">*</span>
+            <span className="hu-visually-hidden">(required)</span>
+          </span>
           <input
             type="text"
             autoComplete="name"
             required
+            aria-required="true"
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
           />
         </label>
         {requiresInvite ? (
           <label className="auth-form__field">
-            <span>Beta invite code</span>
+            <span>
+              Beta invite code <span aria-hidden="true">*</span>
+              <span className="hu-visually-hidden">(required)</span>
+            </span>
             <input
               type="text"
               autoComplete="off"
               required
+              aria-required="true"
               value={inviteCode}
               onChange={(event) => setInviteCode(event.target.value)}
             />
           </label>
         ) : null}
         <label className="auth-form__field">
-          <span>Password</span>
+          <span>
+            Password <span aria-hidden="true">*</span>
+            <span className="hu-visually-hidden">(required)</span>
+          </span>
           <PasswordInput
             autoComplete="new-password"
             required
@@ -120,7 +135,7 @@ export function RegisterForm() {
         ) : null}
         <div className="auth-form__actions">
           <Button type="submit" variant="primary" disabled={submitting}>
-            {submitting ? "Creating account..." : "Register"}
+            {submitting ? "Creating account…" : "Create account"}
           </Button>
           <Button href="/login">Already have an account?</Button>
         </div>

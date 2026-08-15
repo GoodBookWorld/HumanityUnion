@@ -2,13 +2,15 @@ import type { InitiativeCollaborativeAnalysisPersistenceAdapter } from "./initia
 import { createFileInitiativeCollaborativeAnalysisPersistenceAdapter } from "./initiative-collaborative-analysis-file.persistence.js";
 import { createMemoryInitiativeCollaborativeAnalysisPersistenceAdapter } from "./initiative-collaborative-analysis-memory.persistence.js";
 import { createMongoInitiativeCollaborativeAnalysisPersistenceAdapter } from "./initiative-collaborative-analysis-mongo.persistence.js";
+import { resolvePersistenceMode } from "../../../config/production-persistence-contract.js";
+
 
 /**
  * Selects initiative collaborative analysis persistence.
  * Default: local JSON file under apps/api/.runtime/initiative-analyses.json
  */
 export function resolveInitiativeCollaborativeAnalysisPersistenceAdapter(): InitiativeCollaborativeAnalysisPersistenceAdapter {
-  const mode = process.env.INITIATIVE_ANALYSIS_PERSISTENCE ?? "file";
+  const mode = resolvePersistenceMode("INITIATIVE_ANALYSIS_PERSISTENCE", "file");
 
   switch (mode) {
     case "memory":

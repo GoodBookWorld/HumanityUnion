@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import type { PublicInitiativeLifecycleStageNavItem } from "@hu/types";
 
+import { isLifecycleStageSelectable } from "../lifecycle-stage-navigation";
+
 interface PublicInitiativeLifecycleNavProps {
   stages: PublicInitiativeLifecycleStageNavItem[];
   activeStageId: string;
@@ -27,12 +29,26 @@ export function PublicInitiativeLifecycleNav({
           const label =
             stage.recordCount > 0 ? `${stage.label} (${stage.recordCount})` : stage.label;
           const isActive = stage.stageId === activeStageId;
-          const href = resolveStageHref?.(stage.stageId, stage.hash) ?? null;
-          const className = `pie-lifecycle__stage pie-lifecycle__stage--${stage.state}${isActive ? " pie-lifecycle__stage--active" : ""}`;
+          const selectable = isLifecycleStageSelectable(stages, stage.stageId);
+          const href = selectable
+            ? (resolveStageHref?.(stage.stageId, stage.hash) ?? null)
+            : null;
+          const className = [
+            "pie-lifecycle__stage",
+            `pie-lifecycle__stage--${stage.state}`,
+            isActive ? "pie-lifecycle__stage--active" : "",
+            selectable ? "" : "pie-lifecycle__stage--locked",
+          ]
+            .filter(Boolean)
+            .join(" ");
 
           const content = (
             <>
-              <span className="pie-lifecycle__marker" aria-hidden="true" />
+              <span
+                className="pie-lifecycle__marker"
+                data-lifecycle-marker={stage.state}
+                aria-hidden="true"
+              />
               <span className="pie-lifecycle__label">{label}</span>
               <span className="pie-lifecycle__state">{stage.stateLabel}</span>
             </>
@@ -53,7 +69,15 @@ export function PublicInitiativeLifecycleNav({
                   type="button"
                   className={className}
                   aria-current={isActive ? "step" : undefined}
-                  onClick={() => onStageSelect?.(stage.stageId, stage.hash)}
+                  aria-disabled={!selectable}
+                  disabled={!selectable}
+                  onClick={() => {
+                    if (!selectable) {
+                      return;
+                    }
+
+                    onStageSelect?.(stage.stageId, stage.hash);
+                  }}
                 >
                   {content}
                 </button>

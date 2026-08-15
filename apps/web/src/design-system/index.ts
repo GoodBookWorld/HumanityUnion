@@ -3,6 +3,7 @@ export { HumanityHeader } from "./components/HumanityHeader";
 export { HumanityFooter } from "./components/HumanityFooter";
 export { ApiUnavailableState } from "./components/ApiUnavailableState";
 export { Button } from "./components/Button";
+export { ConfirmDialog } from "./components/ConfirmDialog";
 export { Card } from "./components/Card";
 export { ProfileCard } from "./components/ProfileCard";
 export { SectionHeader } from "./components/SectionHeader";

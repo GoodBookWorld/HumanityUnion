@@ -1,0 +1,68 @@
+/* PWA Experience Pack 01 — canonical safe-area + bottom-nav clearance tokens */
+
+:root {
+  --hu-safe-area-top: env(safe-area-inset-top, 0px);
+  --hu-safe-area-right: env(safe-area-inset-right, 0px);
+  --hu-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --hu-safe-area-left: env(safe-area-inset-left, 0px);
+
+  --hu-pwa-bottom-nav-content-height: 3.5rem;
+  --hu-pwa-bottom-nav-height: calc(
+    var(--hu-pwa-bottom-nav-content-height) + var(--hu-safe-area-bottom)
+  );
+  --hu-pwa-app-header-content-height: 3.5rem;
+  --hu-pwa-app-header-height: calc(
+    var(--hu-pwa-app-header-content-height) + var(--hu-safe-area-top)
+  );
+}
+
+/* Standalone shell: reserve space for App Header + Bottom Nav */
+.humanity-app--pwa-standalone .humanity-layout__main {
+  padding-top: var(--hu-pwa-app-header-height);
+  padding-bottom: calc(var(--hu-pwa-bottom-nav-height) + var(--hu-space-3));
+}
+
+.humanity-app--pwa-standalone .humanity-header,
+.humanity-app--pwa-standalone .humanity-footer {
+  display: none;
+}
+
+/* Drawer owns Workspace nav in standalone — hide sticky sidebar duplicate. */
+.humanity-app--pwa-standalone .member-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.humanity-app--pwa-standalone .member-workspace__nav {
+  display: none;
+}
+
+/* Hide browser-mode Assistant FAB when bottom nav owns Assistant */
+.humanity-app--pwa-standalone .hu-assistant-fab {
+  display: none !important;
+}
+
+/* Messages / composers clear bottom navigation */
+.humanity-app--pwa-standalone .direct-messaging__composer,
+.humanity-app--pwa-standalone .icc-channel__composer,
+.humanity-app--pwa-standalone .blog-comments__composer {
+  padding-bottom: max(var(--hu-space-3), var(--hu-safe-area-bottom));
+  margin-bottom: var(--hu-pwa-bottom-nav-height);
+}
+
+/* Assistant modal covers bottom nav (higher z-index); composer needs safe-area only. */
+.humanity-app--pwa-standalone .hu-assistant-modal__composer {
+  padding-bottom: max(var(--hu-space-3), var(--hu-safe-area-bottom));
+}
+
+/* Assistant near-fullscreen in standalone mobile */
+@media (max-width: 768px) {
+  .humanity-app--pwa-standalone .hu-assistant-modal {
+    inset: var(--hu-safe-area-top) var(--hu-safe-area-right) var(--hu-safe-area-bottom)
+      var(--hu-safe-area-left);
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    border-radius: 0;
+  }
+}

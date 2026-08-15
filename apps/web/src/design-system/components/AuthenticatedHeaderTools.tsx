@@ -97,6 +97,14 @@ export function HeaderNotificationsLink() {
   );
 }
 
+/**
+ * Communication UX Pack 03.3.1 Part 7 — the standalone Messages icon was
+ * removed from the global header. The Notification Center is now the
+ * universal communication entry point (every Direct Message notification
+ * already links straight to `/workspace/messages/{conversationId}`, Part
+ * 8); Messages otherwise remains reachable via Workspace → Messages. The
+ * Notification Bell itself is untouched.
+ */
 export function AuthenticatedHeaderTools() {
   return (
     <div className="humanity-header__auth-tools">

@@ -1,7 +1,12 @@
+/* Launch Readiness Pack 03 — canonical outer page geometry. */
 .public-petition-page {
-  width: 100%;
-  max-width: 720px;
-  padding: 2rem 1.5rem;
+    width: min(100%, var(--hu-page-max-width));
+  max-width: var(--hu-page-max-width);
+  margin-inline: auto;
+  padding-block: var(--hu-section-gap);
+  padding-inline: var(--hu-page-padding-inline);
+  box-sizing: border-box;
+  text-align: left;
   text-align: left;
 }
 

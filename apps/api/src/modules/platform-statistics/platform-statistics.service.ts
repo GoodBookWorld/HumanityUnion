@@ -190,12 +190,12 @@ async function countActiveMembers(windowStartMs: number): Promise<number> {
     registerActor(proposal.authorId, undefined, proposal.decidedAt);
   }
 
-  for (const vote of listAllVotes()) {
+  for (const vote of await listAllVotes()) {
     registerActor(vote.participantId, undefined, vote.castAt);
     registerActor(vote.participantId, undefined, vote.updatedAt);
   }
 
-  for (const historyEntry of listAllVoteHistory()) {
+  for (const historyEntry of await listAllVoteHistory()) {
     registerActor(historyEntry.participantId, undefined, historyEntry.changedAt);
   }
 

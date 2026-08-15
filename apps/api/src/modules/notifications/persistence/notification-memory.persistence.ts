@@ -57,6 +57,29 @@ export class MemoryNotificationPersistenceAdapter implements NotificationPersist
     this.notifications.set(notification.notificationId, structuredClone(notification));
   }
 
+  async delete(notificationId: string): Promise<void> {
+    this.notifications.delete(notificationId);
+  }
+
+  async deleteByRelatedEntity(
+    relatedEntityType: MemberNotification["relatedEntityType"],
+    relatedEntityId: string,
+  ): Promise<number> {
+    let deletedCount = 0;
+
+    for (const [notificationId, notification] of this.notifications.entries()) {
+      if (
+        notification.relatedEntityType === relatedEntityType &&
+        notification.relatedEntityId === relatedEntityId
+      ) {
+        this.notifications.delete(notificationId);
+        deletedCount += 1;
+      }
+    }
+
+    return deletedCount;
+  }
+
   clearForTests(): void {
     this.notifications.clear();
   }

@@ -55,17 +55,24 @@ function LoginFormFields() {
     <Card>
       <form className="auth-form" onSubmit={handleSubmit}>
         <label className="auth-form__field">
-          <span>Email</span>
+          <span>
+            Email <span aria-hidden="true">*</span>
+            <span className="hu-visually-hidden">(required)</span>
+          </span>
           <input
             type="email"
             autoComplete="email"
             required
+            aria-required="true"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
         </label>
         <label className="auth-form__field">
-          <span>Password</span>
+          <span>
+            Password <span aria-hidden="true">*</span>
+            <span className="hu-visually-hidden">(required)</span>
+          </span>
           <PasswordInput
             autoComplete="current-password"
             required
@@ -80,7 +87,7 @@ function LoginFormFields() {
         ) : null}
         <div className="auth-form__actions">
           <Button type="submit" variant="primary" disabled={submitting}>
-            {submitting ? "Signing in..." : "Log in"}
+            {submitting ? "Signing in…" : "Log in"}
           </Button>
           <Button href="/register">Create account</Button>
           <Button href="/password-reset">Forgot password?</Button>

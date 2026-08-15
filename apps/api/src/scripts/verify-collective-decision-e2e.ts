@@ -1,6 +1,12 @@
 /**
  * TASK-030 — Collective Decision end-to-end verification.
  * Run: npm run verify:collective-decision
+ *
+ * Persistence note (Recovery Task 31 + staging baseline cleanup):
+ * Collective Decision / Participation Area may still use file snapshot mode in
+ * the persistence subprocess. Initiative Decision Vote is unconditionally
+ * Mongo-backed — durability is probed via
+ * `verify-initiative-decision-vote-mongo-persistence-reload.ts`.
  */
 
 import { spawnSync } from "node:child_process";
@@ -13,6 +19,12 @@ import type { Member, ParticipationScope } from "@hu/types";
 import { participationAreaSlugTriple } from "@hu/types";
 
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
+import {
+  assertVerificationSubprocessSucceeded,
+  DEFAULT_VERIFICATION_SUBPROCESS_TIMEOUT_MS,
+  runVerificationSubprocess,
+} from "./run-verification-subprocess.js";
+import { runVerificationScript } from "./verification-script-lifecycle.js";
 
 const steward: RequestIdentity = {
   participantId: "member-bootstrap-001",
@@ -102,9 +114,16 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-function assertThrows(fn: () => unknown, message: string): void {
+// Recovery Task 09: createInitiativeCollectiveDecisionDraft is now async.
+// Awaiting fn()'s return value preserves identical throw-detection
+// semantics for synchronous throwers and correctly unwraps rejected
+// Promises for asynchronous ones (some existing call sites below already
+// pass an async fn, e.g. the closeInitiativeCollectiveDecision and
+// castOrUpdateInitiativeDecisionVote wrappers, which previously reported a
+// false "Expected failure" because their rejections were never awaited).
+async function assertThrows(fn: () => unknown, message: string): Promise<void> {
   try {
-    fn();
+    await fn();
     throw new Error(`Expected failure: ${message}`);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("Expected failure:")) {
@@ -152,6 +171,28 @@ function createTestMember(id: string, displayName: string): Member {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Recovery Task 13: this script's ten fixture voter participant IDs
+ * (`member-cd-voter-*`) are fixed and re-seeded on every run against the
+ * real, file-backed Participation Area store (the default
+ * `PARTICIPATION_AREA_PERSISTENCE` mode used by `runMainVerification`).
+ * Without this cleanup, a second run would find each fixture participant
+ * already has an active Participation Area (and `transitionVoter` already
+ * has a pending Transition) from the previous run, failing before Vote
+ * casting or the Recovery Task 12 transitive ancestry path is ever reached.
+ * Cleanup runs before creation and targets only these explicit IDs.
+ */
+async function cleanupStaleParticipationAreaFixtures(
+  participantIds: readonly string[],
+): Promise<void> {
+  const { deleteParticipationAreasByParticipantIdForTests } =
+    await import("../modules/participation-area/participation-area.store.js");
+
+  for (const participantId of participantIds) {
+    deleteParticipationAreasByParticipantIdForTests(participantId);
+  }
 }
 
 async function seedParticipants(): Promise<void> {
@@ -224,6 +265,10 @@ async function seedParticipants(): Promise<void> {
     },
   ];
 
+  await cleanupStaleParticipationAreaFixtures(
+    participants.map((participant) => participant.identity.participantId),
+  );
+
   for (const participant of participants) {
     seedMember(
       createTestMember(
@@ -270,7 +315,7 @@ async function buildMatureInitiative(): Promise<string> {
   const projected = publishInitiative(steward, draft.initiativeId);
   assert(projected.lifecyclePhase === "projected", "Initiative should be projected");
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(analyst, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(analyst, {
     initiativeId: projected.initiativeId,
     title: "Collective Decision Analysis",
     summary: "Analysis for collective decision path.",
@@ -279,12 +324,12 @@ async function buildMatureInitiative(): Promise<string> {
     suggestedImprovements: "Improve.",
     references: "Ref.",
   });
-  const publishedAnalysis = publishInitiativeCollaborativeAnalysis(
+  const publishedAnalysis = await publishInitiativeCollaborativeAnalysis(
     analyst,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(analyst, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(analyst, {
     analysisId: publishedAnalysis.analysisId,
     targetSection: "Description",
     currentIssue: "Issue.",
@@ -322,7 +367,7 @@ async function createClosedDecisionSession(
   const { createDecisionSessionDraft, publishDecisionSession, closeDecisionSession } =
     await import("../modules/decision-session/decision-session.service.js");
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId,
     title: "Collective Decision Session",
     purpose: "Prepare society for collective decision.",
@@ -344,7 +389,7 @@ async function createCollectiveDecisionDraft(
   const { createInitiativeCollectiveDecisionDraft } =
     await import("../modules/initiative-collective-decision/initiative-collective-decision.service.js");
 
-  const draft = createInitiativeCollectiveDecisionDraft(steward, {
+  const draft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId,
     decisionSessionId,
     participationScope,
@@ -369,12 +414,25 @@ function verifyPublicExperienceUnchanged(): void {
     path.dirname(SCRIPT_PATH),
     "../../../web/src/scripts/verify-decision-session-public-experience.ts",
   );
+  // Recovery Task 14: this check targets a separate (web) package script and
+  // was not implicated in the diagnosed persistence-subprocess hang, so its
+  // `npx tsx` invocation is left unchanged. A bounded timeout is added
+  // defensively so it can never hang the overall verification run
+  // indefinitely, consistent with every other subprocess call in this file.
   const result = spawnSync("npx", ["tsx", publicExperienceScriptPath], {
     cwd: path.resolve(path.dirname(SCRIPT_PATH), "../../.."),
     stdio: "inherit",
     encoding: "utf-8",
+    timeout: DEFAULT_VERIFICATION_SUBPROCESS_TIMEOUT_MS,
+    killSignal: "SIGKILL",
   });
 
+  const timedOut =
+    result.error !== undefined &&
+    typeof result.error === "object" &&
+    (result.error as NodeJS.ErrnoException).code === "ETIMEDOUT";
+
+  assert(!timedOut, "Public experience providers check timed out and was terminated");
   assert(result.status === 0, "Public experience providers should remain unchanged");
 }
 
@@ -430,7 +488,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("3. Steward-only lifecycle control");
 
-  assertThrows(
+  await assertThrows(
     () =>
       createInitiativeCollectiveDecisionDraft(analyst, {
         initiativeId,
@@ -440,11 +498,11 @@ async function runMainVerification(): Promise<void> {
       }),
     "Non-steward cannot create collective decision",
   );
-  assertThrows(
+  await assertThrows(
     () => openInitiativeCollectiveDecision(analyst, primaryDecisionId),
     "Non-steward cannot open collective decision",
   );
-  assertThrows(
+  await assertThrows(
     async () => await closeInitiativeCollectiveDecision(analyst, primaryDecisionId),
     "Non-steward cannot close collective decision",
   );
@@ -455,7 +513,7 @@ async function runMainVerification(): Promise<void> {
     cancelSessionId,
     "community",
   );
-  assertThrows(
+  await assertThrows(
     () => cancelInitiativeCollectiveDecision(analyst, cancelDraftId),
     "Non-steward cannot cancel collective decision",
   );
@@ -526,7 +584,7 @@ async function runMainVerification(): Promise<void> {
     !transitionEligibility.eligible,
     "Pending area transition must not apply before effectiveAt",
   );
-  assertThrows(
+  await assertThrows(
     async () => await castOrUpdateInitiativeDecisionVote(transitionVoter, transitionDecisionId, {
         choice: "support",
       }),
@@ -553,9 +611,9 @@ async function runMainVerification(): Promise<void> {
   });
   assert(abstainVote.choice === "abstain" && abstainVote.version === 3, "Vote update to abstain");
 
-  assert(countActiveVotesForDecision(primaryDecisionId) === 1, "One active vote per participant");
+  assert((await countActiveVotesForDecision(primaryDecisionId)) === 1, "One active vote per participant");
   assert(
-    listVoteHistoryForParticipant(primaryDecisionId, verifiedVoter.participantId).length === 3,
+    (await listVoteHistoryForParticipant(primaryDecisionId, verifiedVoter.participantId)).length === 3,
     "Vote history records all changes",
   );
 
@@ -669,11 +727,11 @@ async function runMainVerification(): Promise<void> {
 
   const frozenSupport =
     (await getPublicInitiativeCollectiveDecision(primaryDecisionId))?.statistics.supportCount;
-  assertThrows(
+  await assertThrows(
     async () => await castOrUpdateInitiativeDecisionVote(verifiedVoter, primaryDecisionId, { choice: "abstain" }),
     "Closed decision rejects vote changes",
   );
-  assertThrows(
+  await assertThrows(
     async () => await castOrUpdateInitiativeDecisionVote(countryMismatchVoter, primaryDecisionId, {
         choice: "support",
       }),
@@ -691,14 +749,14 @@ async function runMainVerification(): Promise<void> {
     (await getPublicInitiativeCollectiveDecision(cancelDraftId))?.outcome?.outcome === "cancelled",
     "Cancelled decision outcome",
   );
-  assertThrows(
+  await assertThrows(
     async () => await castOrUpdateInitiativeDecisionVote(verifiedVoter, cancelDraftId, { choice: "support" }),
     "Cancelled decision rejects votes",
   );
 
   console.log("9. Public integration and privacy");
 
-  const publicList = listPublicInitiativeCollectiveDecisionsForInitiative(initiativeId);
+  const publicList = await listPublicInitiativeCollectiveDecisionsForInitiative(initiativeId);
   assert(
     publicList.some((item) => item.decisionId === primaryDecisionId),
     "Initiative public list includes decision",
@@ -713,7 +771,7 @@ async function runMainVerification(): Promise<void> {
     "Vote history must not appear in public payload",
   );
 
-  const myVote = getMyInitiativeDecisionVote(verifiedVoter, primaryDecisionId);
+  const myVote = await getMyInitiativeDecisionVote(verifiedVoter, primaryDecisionId);
   assert(myVote !== null, "Authenticated my-vote remains available to participant");
 
   console.log("10. No weighting and no AI outcome logic");
@@ -722,7 +780,7 @@ async function runMainVerification(): Promise<void> {
     assert(!resultsSource.includes(term), `Outcome logic must not include ${term}`);
   }
   assert(
-    listVotesForDecision(primaryDecisionId).every(
+    (await listVotesForDecision(primaryDecisionId)).every(
       (vote) =>
         vote.choice === "support" || vote.choice === "do_not_support" || vote.choice === "abstain",
     ),
@@ -736,26 +794,24 @@ async function runMainVerification(): Promise<void> {
 
 function spawnReload(scriptName: string, args: string[], env: Record<string, string>): void {
   const reloadScriptPath = path.resolve(path.dirname(SCRIPT_PATH), scriptName);
-  const result = spawnSync("npx", ["tsx", reloadScriptPath, ...args], {
+  const result = runVerificationSubprocess(reloadScriptPath, args, {
     cwd: path.resolve(path.dirname(SCRIPT_PATH), "../.."),
     env: { ...process.env, ...env },
-    stdio: "pipe",
-    encoding: "utf-8",
   });
 
-  assert(result.status === 0, `Reload verification failed for ${scriptName}`);
+  assertVerificationSubprocessSucceeded(result, scriptName);
 }
 
 async function runPersistenceVerification(): Promise<void> {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hu-collective-decision-e2e-"));
   const decisionPath = path.join(tempDir, "initiative-collective-decisions.json");
-  const votePath = path.join(tempDir, "initiative-decision-votes.json");
   const areaPath = path.join(tempDir, "participation-areas.json");
 
+  // Collective Decision + Participation Area still support file snapshot mode.
+  // Initiative Decision Vote is unconditionally Mongo-backed (Recovery Task 31) —
+  // do not set INITIATIVE_DECISION_VOTE_PERSISTENCE / _PATH (removed adapters).
   process.env.INITIATIVE_COLLECTIVE_DECISION_PERSISTENCE = "file";
   process.env.INITIATIVE_COLLECTIVE_DECISION_PERSISTENCE_PATH = decisionPath;
-  process.env.INITIATIVE_DECISION_VOTE_PERSISTENCE = "file";
-  process.env.INITIATIVE_DECISION_VOTE_PERSISTENCE_PATH = votePath;
   process.env.PARTICIPATION_AREA_PERSISTENCE = "file";
   process.env.PARTICIPATION_AREA_PERSISTENCE_PATH = areaPath;
   process.env.INITIATIVE_PERSISTENCE = "memory";
@@ -763,26 +819,30 @@ async function runPersistenceVerification(): Promise<void> {
   process.env.INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE = "memory";
   process.env.INITIATIVE_VERSION_REVISION_PERSISTENCE = "memory";
   process.env.DECISION_SESSION_PERSISTENCE = "memory";
+  delete process.env.INITIATIVE_DECISION_VOTE_PERSISTENCE;
+  delete process.env.INITIATIVE_DECISION_VOTE_PERSISTENCE_PATH;
 
   const { closeInitiativeCollectiveDecision } =
     await import("../modules/initiative-collective-decision/initiative-collective-decision.service.js");
   const { castOrUpdateInitiativeDecisionVote } =
     await import("../modules/initiative-decision-vote/initiative-decision-vote.service.js");
+  const { deleteVotesByDecisionIdForTests } =
+    await import("../modules/initiative-decision-vote/initiative-decision-vote.store.js");
 
   await seedParticipants();
   const initiativeId = await buildMatureInitiative();
   const sessionId = await createClosedDecisionSession(initiativeId, "Persistence question?");
   const decisionId = await createCollectiveDecisionDraft(initiativeId, sessionId, "community");
   await openCollectiveDecision(decisionId);
-  await castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, { choice: "support" });
+  const verifiedVote = await castOrUpdateInitiativeDecisionVote(verifiedVoter, decisionId, {
+    choice: "support",
+  });
   await castOrUpdateInitiativeDecisionVote(unverifiedVoter, decisionId, { choice: "support" });
   await closeInitiativeCollectiveDecision(steward, decisionId);
 
   const reloadEnv = {
     INITIATIVE_COLLECTIVE_DECISION_PERSISTENCE: "file",
     INITIATIVE_COLLECTIVE_DECISION_PERSISTENCE_PATH: decisionPath,
-    INITIATIVE_DECISION_VOTE_PERSISTENCE: "file",
-    INITIATIVE_DECISION_VOTE_PERSISTENCE_PATH: votePath,
     PARTICIPATION_AREA_PERSISTENCE: "file",
     PARTICIPATION_AREA_PERSISTENCE_PATH: areaPath,
   };
@@ -792,9 +852,10 @@ async function runPersistenceVerification(): Promise<void> {
     [decisionId, "closed"],
     reloadEnv,
   );
+  // Fresh-process durability probe for Mongo-backed Vote (canonical Task 31 reload script).
   spawnReload(
-    "verify-initiative-decision-vote-store-reload.ts",
-    [decisionId, verifiedVoter.participantId, "support", "1"],
+    "verify-initiative-decision-vote-mongo-persistence-reload.ts",
+    [verifiedVote.voteId, "support", String(verifiedVote.version)],
     reloadEnv,
   );
   spawnReload(
@@ -803,9 +864,12 @@ async function runPersistenceVerification(): Promise<void> {
     reloadEnv,
   );
 
+  await deleteVotesByDecisionIdForTests(decisionId);
   fs.rmSync(tempDir, { recursive: true, force: true });
 
-  console.log("12. Persistence — votes, decision status, and public results survive restart");
+  console.log(
+    "12. Persistence — Mongo votes, decision status, and public results survive restart",
+  );
 }
 
 async function main(): Promise<void> {
@@ -817,7 +881,17 @@ async function main(): Promise<void> {
 
   await runMainVerification();
 
-  const persistenceResult = spawnSync("npx", ["tsx", SCRIPT_PATH], {
+  // Recovery Task 14: run via the shared bounded-subprocess helper (direct
+  // `process.execPath --import tsx`, never nested `npx`) instead of a raw,
+  // unbounded `spawnSync("npx", ...)`. This process (and, transitively, the
+  // `verify-collective-decision-public-results-reload.ts` reload script it
+  // spawns) perform real Member lookups (Mongo-backed) as part of Vote/
+  // public-projection eligibility, which used to leave an open MongoDB
+  // connection after all assertions passed — keeping the process alive and
+  // this `spawnSync` call blocked forever. Wrapping every affected script's
+  // `main()`/module body in `runVerificationScript` closes that connection
+  // deterministically; the timeout here is an independent safety net.
+  const persistenceResult = runVerificationSubprocess(SCRIPT_PATH, [], {
     env: {
       ...process.env,
       VERIFY_COLLECTIVE_DECISION_PERSISTENCE: "1",
@@ -828,18 +902,26 @@ async function main(): Promise<void> {
       DECISION_SESSION_PERSISTENCE: "memory",
       INITIATIVE_COLLECTIVE_DECISION_PERSISTENCE: "memory",
       PARTICIPATION_AREA_PERSISTENCE: "memory",
-      INITIATIVE_DECISION_VOTE_PERSISTENCE: "memory",
+      // Vote is unconditionally Mongo-backed — do not set INITIATIVE_DECISION_VOTE_PERSISTENCE.
     },
-    stdio: "inherit",
   });
 
-  assert(persistenceResult.status === 0, "Persistence verification subprocess failed");
+  // Preserve the pre-existing visible output of the persistence subprocess
+  // even though output is now captured rather than inherited.
+  if (persistenceResult.stdout) {
+    process.stdout.write(persistenceResult.stdout);
+  }
+
+  assertVerificationSubprocessSucceeded(
+    persistenceResult,
+    "Collective Decision persistence verification",
+  );
 
   console.log("All Collective Decision E2E checks passed.");
 }
 
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(`Collective Decision E2E verification FAILED: ${message}`);
-  process.exit(1);
-});
+// Recovery Task 14: closes the shared MongoDB client (and other
+// verification-only resources) deterministically after `main()` settles —
+// see the comment above the persistence-subprocess call for why this was
+// necessary to prevent an indefinite hang.
+void runVerificationScript(main);

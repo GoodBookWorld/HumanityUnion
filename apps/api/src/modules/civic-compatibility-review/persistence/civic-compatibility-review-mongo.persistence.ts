@@ -1,4 +1,5 @@
 import type { CivicCompatibilityReview } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -28,7 +29,7 @@ export function createMongoCivicCompatibilityReviewPersistenceAdapter(): CivicCo
 }
 
 export async function hydrateCivicCompatibilityReviewMongoPersistence(): Promise<void> {
-  if (process.env.CIVIC_COMPATIBILITY_REVIEW_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("CIVIC_COMPATIBILITY_REVIEW_PERSISTENCE")) {
     return;
   }
 
@@ -36,7 +37,7 @@ export async function hydrateCivicCompatibilityReviewMongoPersistence(): Promise
 }
 
 export async function flushCivicCompatibilityReviewMongoPersistence(): Promise<void> {
-  if (process.env.CIVIC_COMPATIBILITY_REVIEW_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("CIVIC_COMPATIBILITY_REVIEW_PERSISTENCE")) {
     return;
   }
 

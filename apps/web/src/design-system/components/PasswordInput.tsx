@@ -36,6 +36,7 @@ export function PasswordInput({
         type={visible ? "text" : "password"}
         autoComplete={autoComplete}
         required={required}
+        aria-required={required || undefined}
         minLength={minLength}
         disabled={disabled}
         value={value}

@@ -1,53 +1,45 @@
-const PENDING_CONFIRMATION_TOKEN_KEY = "hu_pending_confirmation_token";
-const PENDING_CONFIRMATION_MASKED_EMAIL_KEY = "hu_pending_confirmation_masked_email";
+/**
+ * Launch Readiness Pack 07 — pending confirmation JWT lives in an HttpOnly
+ * cookie (`hu_pending_confirmation`). Only non-sensitive UI state (masked
+ * email) remains in sessionStorage.
+ */
 
-export function storePendingConfirmationContext(input: {
-  pendingConfirmationToken: string;
-  maskedEmail: string;
-}): void {
+const PENDING_CONFIRMATION_MASKED_EMAIL_KEY = "hu_pending_confirmation_masked_email";
+const LEGACY_PENDING_CONFIRMATION_TOKEN_KEY = "hu_pending_confirmation_token";
+
+function clearLegacyPendingToken(): void {
   if (typeof window === "undefined") {
     return;
   }
 
-  sessionStorage.setItem(PENDING_CONFIRMATION_TOKEN_KEY, input.pendingConfirmationToken);
+  sessionStorage.removeItem(LEGACY_PENDING_CONFIRMATION_TOKEN_KEY);
+}
+
+export function storePendingConfirmationContext(input: {
+  pendingConfirmationToken?: string;
+  maskedEmail: string;
+}): void {
+  clearLegacyPendingToken();
   sessionStorage.setItem(PENDING_CONFIRMATION_MASKED_EMAIL_KEY, input.maskedEmail);
 }
 
+/** @deprecated Pack 07 — pending token is cookie-only. */
 export function getPendingConfirmationToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return sessionStorage.getItem(PENDING_CONFIRMATION_TOKEN_KEY);
+  clearLegacyPendingToken();
+  return null;
 }
 
 export function getPendingConfirmationMaskedEmail(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
   return sessionStorage.getItem(PENDING_CONFIRMATION_MASKED_EMAIL_KEY);
 }
 
 export function clearPendingConfirmationContext(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  sessionStorage.removeItem(PENDING_CONFIRMATION_TOKEN_KEY);
+  clearLegacyPendingToken();
   sessionStorage.removeItem(PENDING_CONFIRMATION_MASKED_EMAIL_KEY);
 }
 
-function buildPendingConfirmationHeaders(): HeadersInit {
-  const token = getPendingConfirmationToken();
-
-  if (!token) {
-    return {};
-  }
-
-  return {
-    Authorization: `Bearer ${token}`,
-  };
+/** Cookie credentials carry the pending session — no Authorization header. */
+export function buildPendingConfirmationHeaders(): HeadersInit {
+  clearLegacyPendingToken();
+  return {};
 }
-
-export { buildPendingConfirmationHeaders };

@@ -10,7 +10,6 @@ import {
   DecisionAlreadyExistsError,
   DecisionCreationForbiddenError,
   DecisionMemberNotRegisteredError,
-  DecisionPersistenceError,
   DecisionProposalNotFoundError,
   DecisionProposalNotSubmittedError,
   DecisionTransactionError,

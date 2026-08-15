@@ -1,61 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import { useWorkspaceIntelligence } from "../../workspace-civic-assistant/use-workspace-intelligence";
-import { WorkspaceIntelligencePanel } from "../../workspace-civic-assistant/components/WorkspaceIntelligencePanel";
-import {
-  isAssistantOpenPreference,
-  setAssistantOpenPreference,
-} from "../workspace-preferences-store";
+import { HumanityUnionAssistantWidget } from "../../humanity-union-assistant";
 import type { WorkspaceHomeAssistantContext } from "../workspace-home-api";
 
-import "../../workspace-civic-assistant/components/workspace-civic-assistant.css";
 import "./workspace-home-assistant.css";
 
 interface WorkspaceHomeAssistantProps {
   context: WorkspaceHomeAssistantContext | null;
 }
 
+/**
+ * Pack 04 — Workspace Home right rail is the canonical Assistant Widget.
+ * Legacy Civic Assistant intelligence panel removed from this surface.
+ */
 export function WorkspaceHomeAssistant({ context }: WorkspaceHomeAssistantProps) {
-  const [mobileOpen, setMobileOpen] = useState(isAssistantOpenPreference());
-
-  const { intelligence, loading, error } = useWorkspaceIntelligence({
-    section: context?.currentSection ?? "Workspace Home",
-  });
-
-  useEffect(() => {
-    setAssistantOpenPreference(mobileOpen);
-  }, [mobileOpen]);
-
-  const panel = (
-    <WorkspaceIntelligencePanel
-      sectionLabel={context?.currentSection ?? "Workspace Home"}
-      participantName={context?.participantName}
-      participationAreaLabel={context?.participationAreaLabel}
-      intelligence={intelligence}
-      loading={loading}
-      error={error}
-    />
-  );
+  const section = context?.currentSection ?? "Workspace Home";
+  const description =
+    section.toLowerCase().includes("commitment")
+      ? "I can help with responsibilities, resources and Implementation Commitments."
+      : "I can help you understand your Workspace, priorities, notifications and next civic actions.";
 
   return (
-    <aside
-      className={`workspace-civic-assistant ${mobileOpen ? "workspace-civic-assistant--open" : ""}`}
-      aria-label="Civic assistant sidebar"
-    >
-      <button
-        type="button"
-        className="workspace-civic-assistant__toggle"
-        aria-expanded={mobileOpen}
-        aria-controls="workspace-home-assistant-panel"
-        onClick={() => setMobileOpen((open) => !open)}
-      >
-        {mobileOpen ? "Hide Civic Assistant" : "Open Civic Assistant"}
-      </button>
-      <div id="workspace-home-assistant-panel" className="workspace-civic-assistant__sticky">
-        {panel}
-      </div>
-    </aside>
+    <div className="workspace-home-assistant-rail">
+      <HumanityUnionAssistantWidget surfaceId="workspace" description={description} />
+    </div>
   );
 }

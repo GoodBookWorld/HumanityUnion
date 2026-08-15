@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 
 import type { HorizontalRailLayout } from "./horizontal-section.types";
-import { useHorizontalRail } from "./useMediaHorizontalRail";
+import type { useHorizontalRail } from "./useMediaHorizontalRail";
 
 type HorizontalRailState = ReturnType<typeof useHorizontalRail>;
 
@@ -50,22 +50,35 @@ export function HorizontalRailViewport<T>({
   slideClassName,
   viewportClassName,
 }: HorizontalRailViewportProps<T>) {
+  const {
+    instructionsId,
+    viewportRef,
+    startIndex,
+    visibleCount,
+    canScrollPrevious,
+    canScrollNext,
+    allItemsVisible,
+    visibleEnd,
+    handleKeyDown,
+    handleScroll,
+  } = rail;
+
   if (items.length === 0) {
     return null;
   }
 
-  const visibleScrollHint = resolveScrollHint(showScrollHint && rail.canScrollNext, scrollHint);
-  const shouldShowCount = showCount && !hideSummary && !rail.allItemsVisible;
+  const visibleScrollHint = resolveScrollHint(showScrollHint && canScrollNext, scrollHint);
+  const shouldShowCount = showCount && !hideSummary && !allItemsVisible;
 
   return (
     <div
       className="horizontal-rail"
       aria-roledescription="carousel"
       aria-label={label}
-      data-visible-count={rail.visibleCount}
+      data-visible-count={visibleCount}
       data-layout={layout}
     >
-      <p id={rail.instructionsId} className="horizontal-rail__visually-hidden">
+      <p id={instructionsId} className="horizontal-rail__visually-hidden">
         {label}. Use the previous and next buttons, arrow keys, or horizontal scrolling to browse
         additional cards.
       </p>
@@ -79,24 +92,22 @@ export function HorizontalRailViewport<T>({
       <div
         className={[
           "horizontal-rail__frame",
-          rail.canScrollPrevious ? "horizontal-rail__frame--fade-start" : "",
-          rail.canScrollNext ? "horizontal-rail__frame--fade-end" : "",
-          rail.canScrollNext && !rail.allItemsVisible
-            ? "horizontal-rail__frame--preview-next"
-            : "",
+          canScrollPrevious ? "horizontal-rail__frame--fade-start" : "",
+          canScrollNext ? "horizontal-rail__frame--fade-end" : "",
+          canScrollNext && !allItemsVisible ? "horizontal-rail__frame--preview-next" : "",
         ]
           .filter(Boolean)
           .join(" ")}
       >
         <div
-          ref={rail.viewportRef}
+          ref={viewportRef}
           className={["horizontal-rail__viewport", viewportClassName].filter(Boolean).join(" ")}
           role="list"
           aria-live="polite"
-          aria-describedby={rail.instructionsId}
+          aria-describedby={instructionsId}
           tabIndex={0}
-          onKeyDown={rail.handleKeyDown}
-          onScroll={rail.handleScroll}
+          onKeyDown={handleKeyDown}
+          onScroll={handleScroll}
         >
           {items.map((item, index) => (
             <div
@@ -115,7 +126,7 @@ export function HorizontalRailViewport<T>({
         <div className="horizontal-rail__footer">
           {shouldShowCount ? (
             <p className="horizontal-rail__summary" aria-live="polite">
-              Showing {rail.startIndex + 1}–{rail.visibleEnd} of {items.length}
+              Showing {startIndex + 1}–{visibleEnd} of {items.length}
             </p>
           ) : null}
           {footerAction ? (

@@ -14,17 +14,25 @@ import { WORKSPACE_MEMBER_REGISTERED_CONSUMER_ID } from "../../src/modules/works
 import { resetWorkspaceProjectionHandlersForTests } from "../../src/modules/workspace/index.js";
 import {
   setForceWorkspaceActivityUpdateFailureForTests,
+  setForceWorkspaceDecisionUpdateFailureForTests,
   setForceWorkspaceDiscussionUpdateFailureForTests,
   setForceWorkspaceProposalUpdateFailureForTests,
   setForceWorkspaceProposalSubmissionUpdateFailureForTests,
   setForceWorkspaceProjectionInsertFailureForTests,
 } from "../../src/modules/workspace/infrastructure/workspace-projection.repository.js";
+import {
+  resetParticipantActionHandlersForTests,
+  setForceParticipantActionInsertFailureForTests,
+} from "../../src/modules/participant-action/index.js";
+import { resetInitiativeLifecycleStageHandlersForTests } from "../../src/shared/initiative-lifecycle-stage/index.js";
 
 export function resetEventInfrastructureForTests(): void {
   stopOutboxDispatcher();
   resetOutboxDispatcherStateForTests();
   clearDomainEventHandlers();
   resetWorkspaceProjectionHandlersForTests();
+  resetParticipantActionHandlersForTests();
+  resetInitiativeLifecycleStageHandlersForTests();
   setForceEnqueueFailureForTests(false);
   setForceWorkspaceProjectionInsertFailureForTests(false);
   setForceWorkspaceActivityUpdateFailureForTests(false);
@@ -32,6 +40,7 @@ export function resetEventInfrastructureForTests(): void {
   setForceWorkspaceProposalUpdateFailureForTests(false);
   setForceWorkspaceProposalSubmissionUpdateFailureForTests(false);
   setForceWorkspaceDecisionUpdateFailureForTests(false);
+  setForceParticipantActionInsertFailureForTests(false);
 }
 
 export async function drainPendingOutboxForTests(): Promise<void> {

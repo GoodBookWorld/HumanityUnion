@@ -2,9 +2,11 @@ import type { CivicCompatibilityReviewPersistenceAdapter } from "./civic-compati
 import { createFileCivicCompatibilityReviewPersistenceAdapter } from "./civic-compatibility-review-file.persistence.js";
 import { createMemoryCivicCompatibilityReviewPersistenceAdapter } from "./civic-compatibility-review-memory.persistence.js";
 import { createMongoCivicCompatibilityReviewPersistenceAdapter } from "./civic-compatibility-review-mongo.persistence.js";
+import { resolvePersistenceMode } from "../../../config/production-persistence-contract.js";
+
 
 export function resolveCivicCompatibilityReviewPersistenceAdapter(): CivicCompatibilityReviewPersistenceAdapter {
-  const mode = process.env.CIVIC_COMPATIBILITY_REVIEW_PERSISTENCE ?? "file";
+  const mode = resolvePersistenceMode("CIVIC_COMPATIBILITY_REVIEW_PERSISTENCE", "file");
 
   switch (mode) {
     case "memory":

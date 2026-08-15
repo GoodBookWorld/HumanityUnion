@@ -38,7 +38,7 @@ capability02IntegrationRouter.get("/notification-events", (_req, res) => {
   );
 });
 
-capability02IntegrationRouter.get("/:entityType/:entityId", (req, res) => {
+capability02IntegrationRouter.get("/:entityType/:entityId", async (req, res) => {
   const entityTypeParam = Array.isArray(req.params.entityType)
     ? (req.params.entityType[0] ?? "")
     : (req.params.entityType ?? "");
@@ -52,7 +52,7 @@ capability02IntegrationRouter.get("/:entityType/:entityId", (req, res) => {
     return;
   }
 
-  const view = buildIntegrationView(entityType, entityId);
+  const view = await buildIntegrationView(entityType, entityId);
 
   if (!view) {
     res.status(404).json(createFailureResponse("Civic integration context is not available."));

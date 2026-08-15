@@ -105,6 +105,28 @@ export function createProposal(
   return structuredClone(proposal);
 }
 
+/**
+ * Test-only cleanup: removes proposals created by a given authorId. Used by
+ * focused ancestry tests (Recovery Task 07) to avoid leaving fixture
+ * records behind in the persisted store.
+ */
+export function deleteProposalsByAuthorIdForTests(authorId: string): number {
+  let deleted = 0;
+
+  for (const [proposalId, proposal] of proposals) {
+    if (proposal.authorId === authorId) {
+      proposals.delete(proposalId);
+      deleted += 1;
+    }
+  }
+
+  if (deleted > 0) {
+    persistProposalsMap(proposals);
+  }
+
+  return deleted;
+}
+
 export function updateProposal(
   proposalId: string,
   update: InitiativeImprovementProposalUpdate,

@@ -31,7 +31,6 @@ COPY apps/api/package.json apps/api/
 COPY packages/types/package.json packages/types/
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/apps/api/src ./apps/api/src
 COPY --from=build /app/packages/types ./packages/types
 
 USER hu
@@ -41,4 +40,5 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget -qO- http://127.0.0.1:${PORT:-4000}/api/v1/health || exit 1
 
-CMD ["pnpm", "start:prod"]
+# Production must run compiled output (not tsx watch / start:prod).
+CMD ["node", "dist/index.js"]

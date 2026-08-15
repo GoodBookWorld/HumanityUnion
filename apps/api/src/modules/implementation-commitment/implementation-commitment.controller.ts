@@ -203,7 +203,10 @@ export function getImplementationCommitmentByPetitionHandler(req: Request, res: 
   );
 }
 
-export function createImplementationCommitmentHandler(req: Request, res: Response): void {
+export async function createImplementationCommitmentHandler(
+  req: Request,
+  res: Response,
+): Promise<void> {
   const body = req.body as Record<string, unknown>;
   const validationError = validateCreateBody(body);
 
@@ -213,7 +216,7 @@ export function createImplementationCommitmentHandler(req: Request, res: Respons
   }
 
   try {
-    const created = createImplementationCommitment(parseCreateInput(body));
+    const created = await createImplementationCommitment(parseCreateInput(body));
 
     respondWithCommitment(
       res,

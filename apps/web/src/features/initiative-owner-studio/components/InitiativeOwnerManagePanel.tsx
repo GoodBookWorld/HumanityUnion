@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
-import { InitiativeAnalysisWorkspace } from "../../initiative-collaborative-analysis/components/InitiativeAnalysisWorkspace";
 import { InitiativeDraftEditor } from "../../initiatives/components/InitiativeDraftEditor";
 import { InitiativePublishedEditor } from "../../initiatives/components/InitiativePublishedEditor";
 import { ViewCollaborativeAnalysisLink } from "../../initiatives/components/ViewCollaborativeAnalysisLink";
@@ -71,10 +70,6 @@ export function InitiativeOwnerManagePanel({
         <ViewCollaborativeAnalysisLink initiativeId={currentInitiative.initiativeId} />
         <ViewCollectiveDecisionLink initiativeId={currentInitiative.initiativeId} />
         <ViewPetitionLink initiativeId={currentInitiative.initiativeId} />
-      </ProfileSection>
-
-      <ProfileSection title="Collaborative Analysis" id="collaborative-analysis">
-        <InitiativeAnalysisWorkspace initiative={currentInitiative} />
       </ProfileSection>
     </div>
   );

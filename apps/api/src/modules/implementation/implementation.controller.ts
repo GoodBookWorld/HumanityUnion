@@ -219,7 +219,7 @@ export function getImplementationByCommitmentHandler(req: Request, res: Response
   );
 }
 
-export function createImplementationHandler(req: Request, res: Response): void {
+export async function createImplementationHandler(req: Request, res: Response): Promise<void> {
   const body = req.body as Record<string, unknown>;
   const validationError = validateCreateBody(body);
 
@@ -229,7 +229,7 @@ export function createImplementationHandler(req: Request, res: Response): void {
   }
 
   try {
-    const created = createImplementation(parseCreateInput(body));
+    const created = await createImplementation(parseCreateInput(body));
 
     respondWithImplementation(
       res,

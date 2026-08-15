@@ -251,7 +251,7 @@ async function verifySearchCompatibility(): Promise<void> {
     regionSlug: "CA-BC",
   });
 
-  const draftSearch = searchPublicCivicRecords({ q: draft.title, limit: 20, offset: 0 });
+  const draftSearch = await searchPublicCivicRecords({ q: draft.title, limit: 20, offset: 0 });
   assert(
     !draftSearch.results.some((result) => result.entityId === draft.initiativeId),
     "Draft initiatives must remain excluded from search",
@@ -259,7 +259,7 @@ async function verifySearchCompatibility(): Promise<void> {
 
   const published = publishInitiative(steward, draft.initiativeId);
 
-  const byCountryName = searchPublicCivicRecords({
+  const byCountryName = await searchPublicCivicRecords({
     country: "Canada",
     entityTypes: ["initiative"],
     limit: 50,
@@ -270,7 +270,7 @@ async function verifySearchCompatibility(): Promise<void> {
     "Search must match by country name",
   );
 
-  const byRegionCode = searchPublicCivicRecords({
+  const byRegionCode = await searchPublicCivicRecords({
     country: "CA",
     region: "CA-BC",
     entityTypes: ["initiative"],

@@ -4,6 +4,11 @@ import { authenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
 import {
+  InitiativeAncestryMissingError,
+  InitiativeIdMalformedError,
+  InitiativeNotFoundError,
+} from "../../shared/initiative-ancestry/index.js";
+import {
   archiveInitiativeImprovementProposal,
   createInitiativeImprovementProposalDraft,
   decideInitiativeImprovementProposal,
@@ -47,7 +52,8 @@ function resolveErrorStatus(message: string): number {
     message.includes("already archived") ||
     message.includes("Decided proposals cannot be archived") ||
     message.includes("Only submitted proposals") ||
-    message.includes("can only be created from published")
+    message.includes("can only be created from published") ||
+    message.includes("belong to different Initiatives")
   ) {
     return 409;
   }
@@ -56,6 +62,18 @@ function resolveErrorStatus(message: string): number {
 }
 
 function handleServiceError(res: Response, error: unknown): void {
+  if (error instanceof InitiativeNotFoundError) {
+    // Matches the pre-existing "Initiative not found." 404 semantics used
+    // elsewhere in this module (e.g. steward-decision lookups).
+    res.status(404).json(createFailureResponse("Initiative not found."));
+    return;
+  }
+
+  if (error instanceof InitiativeAncestryMissingError || error instanceof InitiativeIdMalformedError) {
+    res.status(400).json(createFailureResponse(error.message));
+    return;
+  }
+
   const message =
     error instanceof Error ? error.message : "Initiative improvement proposal request failed.";
   res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
@@ -141,7 +159,7 @@ initiativeImprovementProposalRouter.post("/draft", authenticationMiddleware, asy
   try {
     const identity = await resolveRequestIdentity(req);
     const input = validateCreateInitiativeImprovementProposalDraftInput(req.body);
-    const created = createInitiativeImprovementProposalDraft(identity, input);
+    const created = await createInitiativeImprovementProposalDraft(identity, input);
 
     res.status(201).json(createSuccessResponse(created, "Improvement proposal draft created."));
   } catch (error) {

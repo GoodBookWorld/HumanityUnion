@@ -2,41 +2,76 @@
   font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-base);
   line-height: var(--hu-line-height);
-  color: #0174b0;
+  color: var(--hu-color-text);
 }
 
+/* Page Title */
 .hu-heading-1 {
+  font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-2xl);
-  font-weight: 700;
+  font-weight: var(--hu-font-weight-bold);
   line-height: var(--hu-line-height-tight);
+  letter-spacing: var(--hu-letter-spacing-tight);
+  color: var(--hu-color-text);
   margin: 0 0 var(--hu-space-2);
 }
 
+/* Section Title */
 .hu-heading-2 {
+  font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-xl);
-  font-weight: 700;
+  font-weight: var(--hu-font-weight-bold);
   line-height: var(--hu-line-height-tight);
+  letter-spacing: var(--hu-letter-spacing-tight);
+  color: var(--hu-color-text);
   margin: 0 0 var(--hu-space-2);
 }
 
-.hu-heading-3 {
+/* Card / Widget Title */
+.hu-heading-3,
+.hu-widget-title {
+  font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-lg);
-  font-weight: 600;
+  font-weight: var(--hu-font-weight-semibold);
   line-height: var(--hu-line-height-tight);
+  letter-spacing: var(--hu-letter-spacing-tight);
+  color: var(--hu-color-text);
   margin: 0 0 var(--hu-space-2);
 }
 
 .hu-body {
+  font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-base);
+  font-weight: var(--hu-font-weight-regular);
   line-height: var(--hu-line-height);
+  color: var(--hu-color-text);
   margin: 0;
 }
 
 .hu-body-sm {
+  font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-regular);
   line-height: var(--hu-line-height);
   color: var(--hu-color-text-muted);
   margin: 0;
+}
+
+.hu-caption {
+  font-family: var(--hu-font-family);
+  font-size: var(--hu-font-size-xs);
+  font-weight: var(--hu-font-weight-regular);
+  line-height: var(--hu-line-height);
+  color: var(--hu-color-text-muted);
+  margin: 0;
+}
+
+.hu-label {
+  font-family: var(--hu-font-family);
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-semibold);
+  line-height: var(--hu-line-height-tight);
+  color: var(--hu-color-text);
 }
 
 .hu-prose {

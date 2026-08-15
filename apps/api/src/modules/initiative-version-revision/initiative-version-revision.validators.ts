@@ -1,4 +1,4 @@
-import type { InitiativeRevisionDraft } from "@hu/types";
+import type { InitiativeRevisionChange, InitiativeRevisionChangeSection, InitiativeRevisionDraft } from "@hu/types";
 
 export interface SaveInitiativeRevisionDraftInput {
   title?: string;
@@ -104,4 +104,87 @@ export function validateInitiativeRevisionDraftForPublication(
   normalizeText(draft.metadata.communitySlug, "Community association");
   normalizeText(draft.metadata.activityArea, "Activity area");
   normalizeText(draft.revisionSummary, "Revision summary");
+}
+
+const REVISION_CHANGE_SECTIONS: readonly InitiativeRevisionChangeSection[] = ["title", "description", "custom"];
+
+export interface AddAuthorOriginatedRevisionChangeInput {
+  section: InitiativeRevisionChangeSection;
+  sectionLabel?: string;
+  before: string;
+  after: string;
+  authorOriginatedReason: string;
+  explanation: string;
+}
+
+export function validateAddAuthorOriginatedRevisionChangeInput(
+  body: unknown,
+): AddAuthorOriginatedRevisionChangeInput {
+  const record = (body ?? {}) as Record<string, unknown>;
+  const section = record.section;
+
+  if (typeof section !== "string" || !REVISION_CHANGE_SECTIONS.includes(section as InitiativeRevisionChangeSection)) {
+    throw new Error(`section must be one of: ${REVISION_CHANGE_SECTIONS.join(", ")}.`);
+  }
+
+  return {
+    section: section as InitiativeRevisionChangeSection,
+    sectionLabel: normalizeOptionalText(record.sectionLabel, "Section label"),
+    before: typeof record.before === "string" ? record.before : "",
+    after: normalizeText(record.after, "After text"),
+    authorOriginatedReason: normalizeText(record.reason, "Reason"),
+    explanation: normalizeText(record.explanation, "Explanation"),
+  };
+}
+
+export interface SaveInitiativeRevisionChangeInput {
+  before?: string;
+  after?: string;
+  explanation?: string;
+  authorOriginatedReason?: string;
+}
+
+export function validateSaveInitiativeRevisionChangeInput(body: unknown): SaveInitiativeRevisionChangeInput {
+  const record = (body ?? {}) as Record<string, unknown>;
+
+  return {
+    before: typeof record.before === "string" ? record.before : undefined,
+    after: normalizeOptionalText(record.after, "After text"),
+    explanation: normalizeOptionalText(record.explanation, "Explanation"),
+    authorOriginatedReason: normalizeOptionalText(record.reason, "Reason"),
+  };
+}
+
+/**
+ * Initiative Lifecycle — Part E, Section 5 (Canonical Traceability). "Every
+ * Revision change must reference one or more Proposal IDs OR be explicitly
+ * marked as an Author-originated change [with] a reason and explanation."
+ * This validates every `InitiativeRevisionChange` the Author has actually
+ * drafted (Section 5 is about each declared change's own traceability, not
+ * a retroactive diff against the previously published Initiative text) —
+ * an empty `changes` array (e.g. a Revision published entirely through the
+ * pre-Part-E free-text draft fields) is not itself a traceability
+ * violation, so this never blocks publication when nothing has been
+ * declared as a structured change.
+ */
+export function validateInitiativeRevisionChangesForPublication(
+  changes: readonly InitiativeRevisionChange[],
+): void {
+  for (const change of changes) {
+    if (change.origin === "proposal") {
+      if (change.proposalIds.length === 0) {
+        throw new Error(
+          `Change "${change.sectionLabel || change.section}" is marked as Proposal-based but references no Proposal ID.`,
+        );
+      }
+
+      continue;
+    }
+
+    if (!change.authorOriginatedReason || !change.authorOriginatedReason.trim()) {
+      throw new Error(
+        `Author-originated change "${change.sectionLabel || change.section}" requires a reason.`,
+      );
+    }
+  }
 }

@@ -1,11 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 import {
   ASSISTANT_COMING_SOON_INPUT,
+  ASSISTANT_COPIED_LABEL,
+  ASSISTANT_COPY_LABEL,
+  ASSISTANT_FUTURE_CAPABILITIES,
   ASSISTANT_INPUT_LABEL,
   ASSISTANT_SAFETY_NOTE,
+  ASSISTANT_SHARED_LABEL,
+  ASSISTANT_SHARE_LABEL,
 } from "../constants";
 import type { WorkspaceIntelligenceResponse } from "../workspace-intelligence-api";
 
@@ -25,6 +31,75 @@ function formatPriorityLabel(priority: string): string {
   return priority.charAt(0).toUpperCase() + priority.slice(1);
 }
 
+/**
+ * Recovery Task 33 — Workspace UX Evolution, Part 10.
+ *
+ * Real, working UI actions (not AI): "Copy" copies the current top
+ * recommendation (or a sensible fallback summary) as plain text; "Share"
+ * uses the native Web Share API when available, falling back to copying a
+ * link to the workspace to the clipboard. Neither calls any backend
+ * endpoint or AI service.
+ */
+function useCopyShareActions(
+  intelligence: WorkspaceIntelligenceResponse | null,
+): {
+  copyLabel: string;
+  shareLabel: string;
+  handleCopy: () => void;
+  handleShare: () => void;
+} {
+  const [copyLabel, setCopyLabel] = useState<string>(ASSISTANT_COPY_LABEL);
+  const [shareLabel, setShareLabel] = useState<string>(ASSISTANT_SHARE_LABEL);
+
+  function buildShareText(): string {
+    const top = intelligence?.topRecommendation;
+
+    if (top) {
+      return `${top.title}\n${top.description}\n${top.reason}`;
+    }
+
+    return intelligence?.constitutionalSummary ?? "Civic Assistant — Humanity Union Workspace";
+  }
+
+  function handleCopy() {
+    const text = buildShareText();
+
+    void navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopyLabel(ASSISTANT_COPIED_LABEL);
+        setTimeout(() => setCopyLabel(ASSISTANT_COPY_LABEL), 2000);
+      })
+      .catch(() => {
+        /* Clipboard access denied or unavailable — no-op, button remains as-is. */
+      });
+  }
+
+  function handleShare() {
+    const text = buildShareText();
+    const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+
+    if (typeof navigator.share === "function") {
+      navigator.share({ title: "Civic Assistant", text, url: shareUrl }).catch(() => {
+        /* User cancelled the native share sheet — no-op. */
+      });
+      return;
+    }
+
+    void navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        setShareLabel(ASSISTANT_SHARED_LABEL);
+        setTimeout(() => setShareLabel(ASSISTANT_SHARE_LABEL), 2000);
+      })
+      .catch(() => {
+        /* Clipboard access denied or unavailable — no-op, button remains as-is. */
+      });
+  }
+
+  return { copyLabel, shareLabel, handleCopy, handleShare };
+}
+
 export function WorkspaceIntelligencePanel({
   sectionLabel,
   participantName,
@@ -37,48 +112,65 @@ export function WorkspaceIntelligencePanel({
   const topRecommendation = intelligence?.topRecommendation ?? null;
   const secondaryRecommendations = intelligence?.suggestions.slice(1) ?? [];
   const blockedActions = intelligence?.blockedActions ?? [];
+  const { copyLabel, shareLabel, handleCopy, handleShare } = useCopyShareActions(intelligence);
 
   return (
     <div className="workspace-civic-assistant__panel">
       <header className="workspace-civic-assistant__header">
-        <h2 className="workspace-civic-assistant__title">Civic Assistant</h2>
+        <div className="workspace-civic-assistant__header-row">
+          <h2 className="workspace-civic-assistant__title">Civic Assistant</h2>
+          <div className="workspace-civic-assistant__quick-actions">
+            <button type="button" className="workspace-civic-assistant__quick-action" onClick={handleCopy}>
+              {copyLabel}
+            </button>
+            <button type="button" className="workspace-civic-assistant__quick-action" onClick={handleShare}>
+              {shareLabel}
+            </button>
+          </div>
+        </div>
         <p className="workspace-civic-assistant__section-label">{sectionLabel}</p>
       </header>
 
-      <dl className="workspace-civic-assistant__meta">
+      <ul className="workspace-civic-assistant__meta" aria-label="Civic assistant context">
         {participantName ? (
-          <div>
-            <dt>Participant</dt>
-            <dd>{participantName}</dd>
-          </div>
+          <li>
+            <span className="workspace-civic-assistant__meta-label">Participant</span>
+            <span className="workspace-civic-assistant__meta-value">{participantName}</span>
+          </li>
         ) : null}
         {participationAreaLabel != null && participationAreaLabel !== "" ? (
-          <div>
-            <dt>Participation Area</dt>
-            <dd>{participationAreaLabel}</dd>
-          </div>
+          <li>
+            <span className="workspace-civic-assistant__meta-label">Participation Area</span>
+            <span className="workspace-civic-assistant__meta-value">{participationAreaLabel}</span>
+          </li>
         ) : null}
-        <div>
-          <dt>Civic stage</dt>
-          <dd>{intelligence?.currentCivicStage ?? "Not started"}</dd>
-        </div>
-        <div>
-          <dt>Next milestone</dt>
-          <dd>{intelligence?.nextCivicMilestone ?? "None suggested"}</dd>
-        </div>
-        <div>
-          <dt>Responsibilities</dt>
-          <dd>
+        <li>
+          <span className="workspace-civic-assistant__meta-label">Civic stage</span>
+          <span className="workspace-civic-assistant__meta-value">
+            {intelligence?.currentCivicStage ?? "Not started"}
+          </span>
+        </li>
+        <li>
+          <span className="workspace-civic-assistant__meta-label">Next milestone</span>
+          <span className="workspace-civic-assistant__meta-value">
+            {intelligence?.nextCivicMilestone ?? "None suggested"}
+          </span>
+        </li>
+        <li>
+          <span className="workspace-civic-assistant__meta-label">Responsibilities</span>
+          <span className="workspace-civic-assistant__meta-value">
             {intelligence?.currentResponsibilities.length
               ? intelligence.currentResponsibilities.join("; ")
               : "None open"}
-          </dd>
-        </div>
-        <div>
-          <dt>Unread notifications</dt>
-          <dd>{intelligence?.context.unreadNotificationCount ?? 0}</dd>
-        </div>
-      </dl>
+          </span>
+        </li>
+        <li>
+          <span className="workspace-civic-assistant__meta-label">Unread notifications</span>
+          <span className="workspace-civic-assistant__meta-value">
+            {intelligence?.context.unreadNotificationCount ?? 0}
+          </span>
+        </li>
+      </ul>
 
       {loading ? (
         <p className="workspace-civic-assistant__summary">Loading civic intelligence...</p>
@@ -185,6 +277,27 @@ export function WorkspaceIntelligencePanel({
           ) : null}
         </>
       ) : null}
+
+      <section aria-label="Coming soon" className="workspace-intelligence__section">
+        <h3>Coming soon</h3>
+        <p className="workspace-civic-assistant__summary">
+          The assistant will eventually help with tasks like these:
+        </p>
+        <div className="workspace-civic-assistant__future-capabilities">
+          {ASSISTANT_FUTURE_CAPABILITIES.map((capability) => (
+            <button
+              key={capability}
+              type="button"
+              className="workspace-civic-assistant__future-chip"
+              disabled
+              aria-disabled="true"
+              title="Not available yet"
+            >
+              {capability}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {showAssistantInputPlaceholder ? (
         <section

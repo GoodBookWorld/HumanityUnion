@@ -52,7 +52,15 @@ import {
 } from "./auth-pending-login-two-step.cookies.js";
 import { resolvePendingLoginTwoStepUserId } from "./auth-pending-login-two-step.middleware.js";
 import { createAuthRateLimiter } from "./auth-rate-limit.js";
-import { authenticationMiddleware, requireJwtAuthenticationMiddleware } from "./auth.middleware.js";
+import {
+  authenticationMiddleware,
+  optionalAuthenticationMiddleware,
+  requireJwtAuthenticationMiddleware,
+} from "./auth.middleware.js";
+import {
+  clearAuthSessionCookies,
+  setAuthSessionCookies,
+} from "./auth-session.cookies.js";
 import {
   getAuthUserPublicById,
   loginAuthUser,
@@ -69,6 +77,7 @@ const authRouter = Router();
 
 const registerRateLimit = createAuthRateLimiter("auth-register");
 const loginRateLimit = createAuthRateLimiter("auth-login");
+const refreshRateLimit = createAuthRateLimiter("auth-refresh");
 const passwordResetRateLimit = createAuthRateLimiter("auth-password-reset");
 const emailChangeRateLimit = createAuthRateLimiter("auth-email-change");
 const resendVerificationRateLimit = createAuthRateLimiter("auth-resend-verification");
@@ -198,28 +207,6 @@ function resolveCurrentSessionId(refreshToken: string | null): string | undefine
   }
 }
 
-function setRefreshTokenCookie(res: Response, refreshToken: string): void {
-  const config = resolveAuthConfig();
-
-  res.cookie(config.refreshCookieName, refreshToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/api/v1/auth",
-  });
-}
-
-function clearRefreshTokenCookie(res: Response): void {
-  const config = resolveAuthConfig();
-
-  res.clearCookie(config.refreshCookieName, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/api/v1/auth",
-  });
-}
-
 authRouter.use(cookieParser());
 
 authRouter.post("/register", registerRateLimit, async (req, res) => {
@@ -255,12 +242,14 @@ authRouter.post("/register", registerRateLimit, async (req, res) => {
       return;
     }
 
-    setRefreshTokenCookie(res, result.tokens.refreshToken);
+    setAuthSessionCookies(res, result.tokens);
 
     res.status(201).json(
       createSuccessResponse(
         {
           user: result.user,
+          // Compatibility: tokens remain in JSON for non-browser API clients/tests.
+          // Browser clients must not persist them (Pack 07 HttpOnly cookies).
           tokens: result.tokens,
         },
         "Account registered.",
@@ -320,13 +309,15 @@ authRouter.post("/login", loginRateLimit, async (req, res) => {
       return;
     }
 
-    setRefreshTokenCookie(res, result.tokens.refreshToken);
+    setAuthSessionCookies(res, result.tokens);
 
     res.json(
       createSuccessResponse(
         {
           authenticationComplete: true,
           user: result.user,
+          // Compatibility: tokens remain in JSON for non-browser API clients/tests.
+          // Browser clients must not persist them (Pack 07 HttpOnly cookies).
           tokens: result.tokens,
         },
         "Signed in.",
@@ -337,10 +328,11 @@ authRouter.post("/login", loginRateLimit, async (req, res) => {
   }
 });
 
-authRouter.post("/refresh", async (req, res) => {
+authRouter.post("/refresh", refreshRateLimit, async (req, res) => {
   const refreshToken = readRefreshToken(req);
 
   if (!refreshToken) {
+    clearAuthSessionCookies(res);
     res.status(401).json(createAuthRequiredResponse());
     return;
   }
@@ -348,7 +340,7 @@ authRouter.post("/refresh", async (req, res) => {
   try {
     const result = await refreshAuthSession(refreshToken);
 
-    setRefreshTokenCookie(res, result.tokens.refreshToken);
+    setAuthSessionCookies(res, result.tokens);
 
     res.json(
       createSuccessResponse(
@@ -360,6 +352,7 @@ authRouter.post("/refresh", async (req, res) => {
       ),
     );
   } catch (error) {
+    clearAuthSessionCookies(res);
     handleAuthError(res, error);
   }
 });
@@ -368,17 +361,23 @@ authRouter.post("/logout", authenticationMiddleware, async (req, res) => {
   const refreshToken = readRefreshToken(req);
 
   if (!refreshToken) {
-    clearRefreshTokenCookie(res);
+    clearAuthSessionCookies(res);
+    clearPendingConfirmationCookie(res);
+    clearPendingLoginTwoStepCookie(res);
     res.json(createSuccessResponse({ loggedOut: true }, "Signed out."));
     return;
   }
 
   try {
     await logoutAuthSession(refreshToken);
-    clearRefreshTokenCookie(res);
+    clearAuthSessionCookies(res);
+    clearPendingConfirmationCookie(res);
+    clearPendingLoginTwoStepCookie(res);
     res.json(createSuccessResponse({ loggedOut: true }, "Signed out."));
   } catch {
-    clearRefreshTokenCookie(res);
+    clearAuthSessionCookies(res);
+    clearPendingConfirmationCookie(res);
+    clearPendingLoginTwoStepCookie(res);
     res.json(createSuccessResponse({ loggedOut: true }, "Signed out."));
   }
 });
@@ -451,7 +450,7 @@ authRouter.post("/email-confirmation/confirm", emailConfirmationRateLimit, async
     });
 
     clearPendingConfirmationCookie(res);
-    setRefreshTokenCookie(res, result.tokens.refreshToken);
+    setAuthSessionCookies(res, result.tokens);
 
     res.json(
       createSuccessResponse(
@@ -512,7 +511,7 @@ authRouter.post("/login/two-step/confirm", loginTwoStepRateLimit, async (req, re
     });
 
     clearPendingLoginTwoStepCookie(res);
-    setRefreshTokenCookie(res, result.tokens.refreshToken);
+    setAuthSessionCookies(res, result.tokens);
 
     res.json(
       createSuccessResponse(
@@ -699,7 +698,7 @@ authRouter.post("/password-reset/confirm", passwordResetRateLimit, async (req, r
       String(body.token ?? ""),
       String(body.password ?? ""),
     );
-    clearRefreshTokenCookie(res);
+    clearAuthSessionCookies(res);
     res.json(createSuccessResponse({ user }, "Password reset complete."));
   } catch (error) {
     handleAuthError(res, error);
@@ -714,7 +713,7 @@ authRouter.post("/password-reset/reset", passwordResetRateLimit, async (req, res
       String(body.token ?? ""),
       String(body.password ?? ""),
     );
-    clearRefreshTokenCookie(res);
+    clearAuthSessionCookies(res);
     res.json(createSuccessResponse({ user }, "Password reset complete."));
   } catch (error) {
     handleAuthError(res, error);
@@ -791,6 +790,57 @@ authRouter.get("/me", requireJwtAuthenticationMiddleware, async (req, res) => {
     }
 
     res.json(createSuccessResponse(user, "Current user loaded."));
+  } catch (error) {
+    handleAuthError(res, error);
+  }
+});
+
+/**
+ * Launch Readiness Pack 07 — canonical browser session probe.
+ * Never returns JWT/cookie values. Uses cookie (or Bearer) identity when present.
+ */
+authRouter.get("/session", optionalAuthenticationMiddleware, async (req, res) => {
+  try {
+    if (!req.auth?.id || req.auth.id === "auth-bootstrap-001") {
+      res.json(
+        createSuccessResponse(
+          {
+            authenticated: false,
+            user: null,
+            authSource: "none",
+          },
+          "Guest session.",
+        ),
+      );
+      return;
+    }
+
+    const user = await getAuthUserPublicById(req.auth.id);
+
+    if (!user) {
+      res.json(
+        createSuccessResponse(
+          {
+            authenticated: false,
+            user: null,
+            authSource: "none",
+          },
+          "Guest session.",
+        ),
+      );
+      return;
+    }
+
+    res.json(
+      createSuccessResponse(
+        {
+          authenticated: true,
+          user,
+          authSource: "cookie_or_bearer",
+        },
+        "Authenticated session.",
+      ),
+    );
   } catch (error) {
     handleAuthError(res, error);
   }

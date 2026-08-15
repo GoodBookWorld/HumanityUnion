@@ -1,0 +1,121 @@
+/*
+ * Profile UX Pack 02 Part 1/4 — mirrors the visual language of
+ * `platform-statistics__card` (border/radius/shadow/icon-value-label
+ * layout) so Personal Statistics reads as the same design system, while
+ * remaining a separate, per-Participant component (three cards, not the
+ * platform-wide nine-card grid).
+ */
+.personal-statistics__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hu-space-3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.personal-statistics__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 5.5rem;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  padding: var(--hu-space-3) var(--hu-space-2);
+  background: var(--hu-color-surface);
+  box-shadow: var(--hu-shadow-sm);
+  text-align: center;
+}
+
+.personal-statistics__icon {
+  width: clamp(1.5rem, 2.5vw, 2rem);
+  height: clamp(1.5rem, 2.5vw, 2rem);
+  margin-bottom: var(--hu-space-1);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.personal-statistics__value {
+  margin: 0 0 var(--hu-space-1);
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+  line-height: var(--hu-line-height-tight);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.personal-statistics__label {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--hu-color-text-muted);
+}
+
+.personal-statistics__card--loading {
+  pointer-events: none;
+}
+
+.personal-statistics__icon-skeleton,
+.personal-statistics__value-skeleton {
+  display: block;
+  border-radius: var(--hu-radius-sm);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--hu-color-border) 70%, transparent),
+    color-mix(in srgb, var(--hu-color-border) 35%, transparent),
+    color-mix(in srgb, var(--hu-color-border) 70%, transparent)
+  );
+  background-size: 200% 100%;
+}
+
+.personal-statistics__icon-skeleton {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: var(--hu-space-2);
+}
+
+.personal-statistics__value-skeleton {
+  width: 45%;
+  height: 1.75rem;
+  margin-bottom: var(--hu-space-1);
+}
+
+@media (max-width: 768px) {
+  .personal-statistics__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--hu-space-2);
+  }
+
+  .personal-statistics__card {
+    min-height: 4.75rem;
+    padding: var(--hu-space-2) var(--hu-space-1);
+  }
+
+  .personal-statistics__value {
+    font-size: clamp(1rem, 3.6vw, 1.2rem);
+  }
+
+  .personal-statistics__label {
+    font-size: var(--hu-font-size-xs);
+  }
+}
+
+/* PWA UX Correction Pack 02 — keep a compact horizontal row; scroll only at extreme width. */
+@media (max-width: 360px) {
+  .personal-statistics__grid {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(5.5rem, 70%);
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding-bottom: 0.15rem;
+  }
+
+  .personal-statistics__card {
+    scroll-snap-align: start;
+  }
+}

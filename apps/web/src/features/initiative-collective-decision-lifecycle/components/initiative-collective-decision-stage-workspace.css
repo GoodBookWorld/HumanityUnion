@@ -1,0 +1,114 @@
+.icd-source-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.icd-source-panel__empty {
+  color: var(--hu-muted, #5c6570);
+  font-size: 0.95rem;
+}
+
+.icd-source-panel__list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.icd-source-panel__item {
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  padding-top: 0.55rem;
+}
+
+.icd-source-panel__label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.icd-source-panel__summary {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+}
+
+.icd-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.icd-editor__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.icd-editor__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.icd-editor__field input,
+.icd-editor__field select,
+.icd-editor__field textarea {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.35rem;
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.icd-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.icd-public {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.icd-public__section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.icd-public__section p,
+.icd-public__section li {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.icd-public__section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.icd-public__meta {
+  font-size: 0.9rem;
+  opacity: 0.78;
+}
+
+.icd-assistant-block {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.icd-assistant-block h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.icd-assistant-block ul {
+  margin: 0;
+  padding-left: 1rem;
+}

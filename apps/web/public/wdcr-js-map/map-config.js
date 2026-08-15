@@ -26,12 +26,12 @@
   "wdcrjs5":{
     "hover": "<b><u>ANGOLA</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/ao.png'>",
     "url": "/countries/AO", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs6":{
     "hover": "<b><u>ARGENTINA</u></b><br>Democracy Index 7.0-7.99<br><img src='/wdcr-js-map/flags/ar.png'>",
     "url": "/countries/AR", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs7":{
     "hover": "<b><u>ARMENIA</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/am.png'>",
@@ -71,7 +71,7 @@
   "wdcrjs14":{
     "hover": "<b><u>BELARUS</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/by.png'>",
     "url": "/countries/BY", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs15":{
     "hover": "<b><u>BELGIUM</u></b><br>Democracy Index 7.0-7.99<br><img src='/wdcr-js-map/flags/be.png'>",
@@ -86,7 +86,7 @@
   "wdcrjs17":{
     "hover": "<b><u>BENIN</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/bj.png'>",
     "url": "/countries/BJ", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs18":{
     "hover": "<b><u>BHUTAN</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/bt.png'>",
@@ -96,7 +96,7 @@
   "wdcrjs19":{
     "hover": "<b><u>BOLIVIA</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/bo.png'>",
     "url": "/countries/BO", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs20":{
     "hover": "<b><u>BOSNIA AND HERZEGOVINA</u></b><br>Democracy Index 4.0-4.99<br><img src='/wdcr-js-map/flags/ba.png'>",
@@ -111,7 +111,7 @@
   "wdcrjs22":{
     "hover": "<b><u>BRAZIL</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/br.png'>",
     "url": "/countries/BR", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs23":{
     "hover": "BRUNEI",
@@ -131,7 +131,7 @@
   "wdcrjs26":{
     "hover": "<b><u>BURUNDI</u></b><br>Democracy Index 2.0-2.99<br><img src='/wdcr-js-map/flags/bi.png'>",
     "url": "/countries/BI", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs27":{
     "hover": "<b><u>CAMBODIA</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/kh.png'>",
@@ -141,7 +141,7 @@
   "wdcrjs28":{
     "hover": "<b><u>CAMEROON</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/cm.png'>",
     "url": "/countries/CM", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs29":{
     "hover": "<b><u>CANADA</u></b><br>Democracy Index 9.0-10.0<br><img src='/wdcr-js-map/flags/ca.png'>",
@@ -156,7 +156,7 @@
   "wdcrjs31":{
     "hover": "<b><u>CENTRAL AFRICAN REPUBLIC</u></b><br>Democracy Index 0-1.99<br><img src='/wdcr-js-map/flags/cf.png'>",
     "url": "/countries/CF", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs32":{
     "hover": "<b><u>CHAD</u></b><br>Democracy Index 0-1.99<br><img src='/wdcr-js-map/flags/td.png'>",
@@ -166,7 +166,7 @@
   "wdcrjs33":{
     "hover": "<b><u>CHILE</u></b><br>Democracy Index 7.0-7.99<br><img src='/wdcr-js-map/flags/cl.png'>",
     "url": "/countries/CL", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs34":{
     "hover": "<b><u>CHINA</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/cn.png'>",
@@ -176,12 +176,12 @@
   "wdcrjs35":{
     "hover": "<b><u>COLOMBIA</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/co.png'>",
     "url": "/countries/CO", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs36":{
     "hover": "COMOROS",
     "url": "https://en.wikipedia.org/wiki/Comoros", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#ECFFB3", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#ECFFB3", "downColor": "#0174b0", "active": true
   },
   "wdcrjs37":{
     "hover": "<b><u>CONGO</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/cg.png'>",
@@ -191,7 +191,7 @@
   "wdcrjs38":{
     "hover": "<b><u>COSTA RICA</u></b><br>Democracy Index 8.0-8.99<br><img src='/wdcr-js-map/flags/cr.png'>",
     "url": "/countries/CR", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs39":{
     "hover": "<b><u>CROATIA</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/hr.png'>",
@@ -216,7 +216,7 @@
   "wdcrjs43":{
     "hover": "<b><u>CÔTE D’IVOIRE</u></b><br>Democracy Index 4.0-4.99<br><img src='/wdcr-js-map/flags/ci.png'>",
     "url": "/countries/CI", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs44":{
     "hover": "<b><u>DEMOCRATIC REPUBLIC OF THE CONGO</u></b><br>Democracy Index 0-1.99<br><img src='/wdcr-js-map/flags/cd.png'>",
@@ -231,17 +231,17 @@
   "wdcrjs46":{
     "hover": "DJIBOUTI",
     "url": "https://en.wikipedia.org/wiki/Djibouti", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#ECFFB3", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#ECFFB3", "downColor": "#0174b0", "active": true
   },
   "wdcrjs47":{
     "hover": "<b><u>DOMINICAN REPUBLIC</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/do.png'>",
     "url": "/countries/DO", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs48":{
     "hover": "<b><u>ECUADOR</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/ec.png'>",
     "url": "/countries/EC", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs49":{
     "hover": "<b><u>EGYPT</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/eg.png'>",
@@ -251,7 +251,7 @@
   "wdcrjs50":{
     "hover": "<b><u>EL SALVADOR</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/sv.png'>",
     "url": "/countries/SV", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs51":{
     "hover": "EQUATORIAL GUINEA",
@@ -296,7 +296,7 @@
   "wdcrjs59":{
     "hover": "<b><u>GABON</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/ga.png'>",
     "url": "/countries/GA", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs60":{
     "hover": "<b><u>GEORGIA</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/ge.png'>",
@@ -311,7 +311,7 @@
   "wdcrjs62":{
     "hover": "<b><u>GHANA</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/gh.png'>",
     "url": "/countries/GH", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs63":{
     "hover": "<b><u>GREECE</u></b><br>Democracy Index 7.0-7.99<br><img src='/wdcr-js-map/flags/gr.png'>",
@@ -326,7 +326,7 @@
   "wdcrjs65":{
     "hover": "<b><u>GUATEMALA</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/gt.png'>",
     "url": "/countries/GT", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs66":{
     "hover": "<b><u>GUINEA</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/gn.png'>",
@@ -351,7 +351,7 @@
   "wdcrjs70":{
     "hover": "<b><u>HONDURAS</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/hn.png'>",
     "url": "/countries/HN", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs71":{
     "hover": "<b><u>HUNGARY</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/hu.png'>",
@@ -371,12 +371,12 @@
   "wdcrjs74":{
     "hover": "<b><u>INDONESIA</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/id.png'>",
     "url": "/countries/ID", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs75":{
     "hover": "<b><u>IRAN</u></b><br>Democracy Index 2.0-2.99<br><img src='/wdcr-js-map/flags/ir.png'>",
     "url": "/countries/IR", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs76":{
     "hover": "<b><u>IRAQ</u></b><br>Democracy Index 4.0-4.99<br><img src='/wdcr-js-map/flags/iq.png'>",
@@ -417,12 +417,12 @@
   "wdcrjs83":{
     "hover": "<b><u>KAZAKHSTAN</u></b><br>Democracy Index 2.0-2.99<br><img src='/wdcr-js-map/flags/kz.png'>",
     "url": "/countries/KZ", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs84":{
     "hover": "<b><u>KENYA</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/ke.png'>",
     "url": "/countries/KE", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs85":{
     "hover": "<b><u>KOSOVO</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/_Kosovo.png'>",
@@ -437,7 +437,7 @@
   "wdcrjs87":{
     "hover": "<b><u>KYRGYZSTAN</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/kg.png'>",
     "url": "/countries/KG", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs88":{
     "hover": "<b><u>LAOS</u></b><br>Democracy Index 2.0-2.99<br><img src='/wdcr-js-map/flags/la.png'>",
@@ -462,7 +462,7 @@
   "wdcrjs92":{
     "hover": "<b><u>LIBERIA</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/lr.png'>",
     "url": "/countries/LR", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs93":{
     "hover": "<b><u>LIBYA</u></b><br>Democracy Index 2.0-2.99<br><img src='/wdcr-js-map/flags/ly.png'>",
@@ -497,7 +497,7 @@
   "wdcrjs99":{
     "hover": "MALAWI",
     "url": "https://en.wikipedia.org/wiki/Malawi", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#ECFFB3", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#ECFFB3", "downColor": "#0174b0", "active": true
   },
   "wdcrjs100":{
     "hover": "<b><u>MALAYSIA</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/my.png'>",
@@ -507,7 +507,7 @@
   "wdcrjs101":{
     "hover": "<b><u>MALDIVES</u></b><br>Write any text and load images<br><img src='/wdcr-js-map/example.png'>",
     "url": "https://en.wikipedia.org/wiki/Maldives", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs102":{
     "hover": "<b><u>MALI</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/ml.png'>",
@@ -532,7 +532,7 @@
   "wdcrjs106":{
     "hover": "<b><u>MEXICO</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/mx.png'>",
     "url": "/countries/MX", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs107":{
     "hover": "<b><u>MOLDOVA</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/md.png'>",
@@ -587,7 +587,7 @@
   "wdcrjs117":{
     "hover": "<b><u>NICARAGUA</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/ni.png'>",
     "url": "/countries/NI", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs118":{
     "hover": "<b><u>NIGER</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/ne.png'>",
@@ -597,7 +597,7 @@
   "wdcrjs119":{
     "hover": "<b><u>NIGERIA</u></b><br>Democracy Index 4.0-4.99<br><img src='/wdcr-js-map/flags/ng.png'>",
     "url": "/countries/NG", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs120":{
     "hover": "<b><u>NORTH KOREA</u></b><br>Democracy Index 0-1.99<br><img src='/wdcr-js-map/flags/kp.png'>",
@@ -627,7 +627,7 @@
   "wdcrjs125":{
     "hover": "<b><u>PANAMA</u></b><br>Democracy Index 7.0-7.99<br><img src='/wdcr-js-map/flags/pa.png'>",
     "url": "/countries/PA", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs126":{
     "hover": "<b><u>PAPUA NEW GUINEA</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/pg.png'>",
@@ -637,17 +637,17 @@
   "wdcrjs127":{
     "hover": "<b><u>PARAGUAY</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/py.png'>",
     "url": "/countries/PY", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs128":{
     "hover": "<b><u>PERU</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/pe.png'>",
     "url": "/countries/PE", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs129":{
     "hover": "<b><u>PHILIPPINES</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/ph.png'>",
     "url": "/countries/PH", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs130":{
     "hover": "<b><u>POLAND</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/pl.png'>",
@@ -682,7 +682,7 @@
   "wdcrjs136":{
     "hover": "<b><u>RWANDA</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/rw.png'>",
     "url": "/countries/RW", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs137":{
     "hover": "<b><u>SAUDI ARABIA</u></b><br>Democracy Index 0-1.99<br><img src='/wdcr-js-map/flags/sa.png'>",
@@ -692,7 +692,7 @@
   "wdcrjs138":{
     "hover": "<b><u>SENEGAL</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/sn.png'>",
     "url": "/countries/SN", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs139":{
     "hover": "<b><u>SERBIA</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/rs.png'>",
@@ -702,12 +702,12 @@
   "wdcrjs140":{
     "hover": "SEYCHELLES",
     "url": "https://en.wikipedia.org/wiki/Seychelles", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#ECFFB3", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#ECFFB3", "downColor": "#0174b0", "active": true
   },
   "wdcrjs141":{
     "hover": "<b><u>SIERRA LEONE</u></b><br>Democracy Index 4.0-4.99<br><img src='/wdcr-js-map/flags/sl.png'>",
     "url": "/countries/SL", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs142":{
     "hover": "<b><u>SINGAPORE</u></b><br>Democracy Index 4.0-4.99<br><img src='/wdcr-js-map/flags/sg.png''>",
@@ -743,12 +743,12 @@
   "wdcrjs148":{
     "hover": "<b><u>SOUTH KOREA</u></b><br>Democracy Index 7.0-7.99<br><img src='/wdcr-js-map/flags/kr.png'>",
     "url": "/countries/KR", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs149":{
     "hover": "<b><u>SOUTH SUDAN</u></b><br>Democracy Index 2.0-2.99<br><img src='/wdcr-js-map/flags/ss.png'>",
     "url": "/countries/SS", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs150":{
     "hover": "<b><u>SPAIN</u></b><br>Democracy Index 8.0-8.99<br><img src='/wdcr-js-map/flags/es.png'>",
@@ -804,12 +804,12 @@
   "wdcrjs160":{
     "hover": "<b><u>TAJIKISTAN</u></b><br>Democracy Index 0-1.99<br><img src='/wdcr-js-map/flags/tj.png'>",
     "url": "/countries/TJ", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs161":{
     "hover": "<b><u>TANZANIA</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/tz.png'>",
     "url": "/countries/TZ", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs162":{
     "hover": "<b><u>THAILAND</u></b><br>Democracy Index 4.0-4.99<br><img src='/wdcr-js-map/flags/th.png'>",
@@ -829,27 +829,27 @@
   "wdcrjs165":{
     "hover": "<b><u>TOGO</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/tg.png'>",
     "url": "/countries/TG", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs166":{
     "hover": "<b><u>TUNISIA</u></b><br>Democracy Index 6.0-6.99<br><img src='/wdcr-js-map/flags/tn.png'>",
     "url": "/countries/TN", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs167":{
     "hover": "<b><u>TURKEY</u></b><br>Democracy Index 4.0-4.99<br><img src='/wdcr-js-map/flags/tr.png'>",
     "url": "/countries/TR", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs168":{
     "hover": "<b><u>TURKMENISTAN</u></b><br>Democracy Index 0-1.99<br><img src='/wdcr-js-map/flags/tm.png'>",
     "url": "/countries/TM", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs169":{
     "hover": "<b><u>UGANDA</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/ug.png'>",
     "url": "/countries/UG", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs170":{
     "hover": "<b><u>UKRAINE</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/ua.png'>",
@@ -869,22 +869,22 @@
   "wdcrjs173":{
     "hover": "<b><u>UNITED STATES</u></b><br>Democracy Index 7.0-7.99<br><img src='/wdcr-js-map/flags/us.png'>",
     "url": "/countries/US", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs174":{
     "hover": "<b><u>URUGUAY</u></b><br>Democracy Index 8.0-8.99<br><img src='/wdcr-js-map/flags/uy.png'>",
     "url": "/countries/UY", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs175":{
     "hover": "<b><u>UZBEKISTAN</u></b><br>Democracy Index 2.0-2.99<br><img src='/wdcr-js-map/flags/uz.png'>",
     "url": "/countries/UZ", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs176":{
     "hover": "<b><u>VENEZUELA</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/ve.png'>",
     "url": "/countries/VE", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs177":{
     "hover": "<b><u>VIETNAM</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/vn.png'>",
@@ -899,12 +899,12 @@
   "wdcrjs179":{
     "hover": "<b><u>ZAMBIA</u></b><br>Democracy Index 5.0-5.99<br><img src='/wdcr-js-map/flags/zm.png'>",
     "url": "/countries/ZM", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "wdcrjs180":{
     "hover": "<b><u>ZIMBABWE</u></b><br>Democracy Index 3.0-3.99<br><img src='/wdcr-js-map/flags/zw.png'>",
     "url": "/countries/ZW", "target": "same_window",
-    "upColor": "#2664DB", "overColor": "#d9ff66", "downColor": "#2664DB", "active": true
+    "upColor": "#0174b0", "overColor": "#d9ff66", "downColor": "#0174b0", "active": true
   },
   "general":{
     "borderColor": "#9CA8B6",

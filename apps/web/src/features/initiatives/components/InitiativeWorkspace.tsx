@@ -1,19 +1,39 @@
 "use client";
 
 import type { Initiative } from "@hu/types";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
+import { HuFeedbackMessage } from "../../../design-system/components/HuFeedbackMessage";
 import { MyInitiativesDashboard } from "./MyInitiativesDashboard";
 import { StartNewInitiativeButton } from "./StartNewInitiativeButton";
-import { WorkspaceCivicAssistant } from "../../workspace-civic-assistant/components/WorkspaceCivicAssistant";
-import { INITIATIVE_WORKSPACE_SECTIONS } from "../../workspace-civic-assistant/initiative-workspace-sections";
-import { useWorkspaceSectionTracker } from "../../workspace-civic-assistant/use-workspace-section-tracker";
+import { HumanityUnionAssistantWidget } from "../../humanity-union-assistant";
 import { buildInitiativeExperienceManageHref } from "../../initiative-owner-studio/initiative-experience-routes";
 
 import "./initiative-workspace-layout.css";
 import "../../initiative-workspace-ux/initiative-workspace-ux.css";
+
+/**
+ * Initiative UX Pack 01.1 Part 7 — reads the `draftDeleted` query param set
+ * by `InitiativeDraftEditor` after a successful delete-and-redirect, and
+ * shows the required "Draft Initiative deleted." confirmation once. Kept
+ * as its own component (rather than inline in `InitiativeWorkspace`)
+ * purely so `useSearchParams()` can sit behind its own `<Suspense>`
+ * boundary, matching the convention already used for
+ * `StartNewInitiativeButton` just below it.
+ */
+function DraftDeletedNotice() {
+  const searchParams = useSearchParams();
+
+  if (searchParams.get("draftDeleted") !== "1") {
+    return null;
+  }
+
+  return (
+    <HuFeedbackMessage variant="success">Draft Initiative deleted.</HuFeedbackMessage>
+  );
+}
 
 interface InitiativeWorkspaceProps {
   initialInitiatives: Initiative[];
@@ -21,7 +41,6 @@ interface InitiativeWorkspaceProps {
 
 export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceProps) {
   const router = useRouter();
-  const currentSection = useWorkspaceSectionTracker(INITIATIVE_WORKSPACE_SECTIONS);
 
   useEffect(() => {
     function focusCreateSection(): void {
@@ -59,6 +78,10 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
   return (
     <div className="initiative-workspace-layout">
       <div className="initiative-workspace-layout__content">
+        <Suspense fallback={null}>
+          <DraftDeletedNotice />
+        </Suspense>
+
         <ProfileSection title="My Initiatives">
           <MyInitiativesDashboard initiatives={initialInitiatives} />
         </ProfileSection>
@@ -70,7 +93,10 @@ export function InitiativeWorkspace({ initialInitiatives }: InitiativeWorkspaceP
         </ProfileSection>
       </div>
 
-      <WorkspaceCivicAssistant initiative={null} currentSection={currentSection} />
+      <HumanityUnionAssistantWidget
+        surfaceId="initiatives"
+        description="I can help you create, review and advance your Initiatives."
+      />
     </div>
   );
 }

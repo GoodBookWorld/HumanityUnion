@@ -1,4 +1,5 @@
 import type { InitiativeRevisionDraft, InitiativeVersionRevision } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -37,7 +38,7 @@ export function createMongoInitiativeVersionRevisionPersistenceAdapter(): Initia
 }
 
 export async function hydrateInitiativeVersionRevisionMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_VERSION_REVISION_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_VERSION_REVISION_PERSISTENCE")) {
     return;
   }
 
@@ -45,7 +46,7 @@ export async function hydrateInitiativeVersionRevisionMongoPersistence(): Promis
 }
 
 export async function flushInitiativeVersionRevisionMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_VERSION_REVISION_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_VERSION_REVISION_PERSISTENCE")) {
     return;
   }
 

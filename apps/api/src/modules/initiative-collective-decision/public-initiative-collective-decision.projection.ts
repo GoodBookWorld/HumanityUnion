@@ -36,8 +36,8 @@ function toPublicStatus(
   return status as PublicInitiativeCollectiveDecisionProjection["status"];
 }
 
-function buildPublicResultFields(decision: InitiativeCollectiveDecision) {
-  const results = buildPublicCollectiveDecisionResults(decision);
+async function buildPublicResultFields(decision: InitiativeCollectiveDecision) {
+  const results = await buildPublicCollectiveDecisionResults(decision);
 
   return {
     statistics: results.statistics,
@@ -53,9 +53,9 @@ function buildPublicResultFields(decision: InitiativeCollectiveDecision) {
   };
 }
 
-export function toPublicInitiativeCollectiveDecisionListItem(
+export async function toPublicInitiativeCollectiveDecisionListItem(
   decision: InitiativeCollectiveDecision,
-): PublicInitiativeCollectiveDecisionListItem {
+): Promise<PublicInitiativeCollectiveDecisionListItem> {
   return {
     decisionId: decision.decisionId,
     sequenceNumber: decision.sequenceNumber,
@@ -65,7 +65,7 @@ export function toPublicInitiativeCollectiveDecisionListItem(
     openedAt: decision.openedAt,
     closesAt: decision.closesAt,
     closedAt: decision.closedAt,
-    ...buildPublicResultFields(decision),
+    ...(await buildPublicResultFields(decision)),
   };
 }
 
@@ -86,7 +86,9 @@ export async function toPublicInitiativeCollectiveDecisionProjection(
     cancelledAt: decision.cancelledAt,
     supersedesDecisionId: decision.supersedesDecisionId,
     stewardDisplayName: await resolveStewardDisplayName(decision.stewardId),
-    ...buildPublicResultFields(decision),
+    structuredContent: decision.structuredContent ?? null,
+    traceability: decision.traceability ?? null,
+    ...(await buildPublicResultFields(decision)),
   };
 }
 
@@ -103,11 +105,13 @@ export function computeInitiativeCollectiveDecisionMetrics(
   };
 }
 
-export function listPublicInitiativeCollectiveDecisionsForInitiative(
+export async function listPublicInitiativeCollectiveDecisionsForInitiative(
   initiativeId: string,
-): PublicInitiativeCollectiveDecisionListItem[] {
-  return listPublicDecisionsByInitiative(initiativeId).map((decision) =>
-    toPublicInitiativeCollectiveDecisionListItem(decision),
+): Promise<PublicInitiativeCollectiveDecisionListItem[]> {
+  return Promise.all(
+    listPublicDecisionsByInitiative(initiativeId).map((decision) =>
+      toPublicInitiativeCollectiveDecisionListItem(decision),
+    ),
   );
 }
 

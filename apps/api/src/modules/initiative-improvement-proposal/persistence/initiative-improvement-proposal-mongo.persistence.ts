@@ -1,4 +1,5 @@
 import type { InitiativeImprovementProposal } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -28,7 +29,7 @@ export function createMongoInitiativeImprovementProposalPersistenceAdapter(): In
 }
 
 export async function hydrateInitiativeImprovementProposalMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE")) {
     return;
   }
 
@@ -36,7 +37,7 @@ export async function hydrateInitiativeImprovementProposalMongoPersistence(): Pr
 }
 
 export async function flushInitiativeImprovementProposalMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE")) {
     return;
   }
 

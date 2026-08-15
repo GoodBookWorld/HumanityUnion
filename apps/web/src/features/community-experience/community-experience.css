@@ -33,9 +33,11 @@
 }
 
 .community-experience-page__content {
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 0 1.5rem 2rem;
+  width: min(100%, var(--hu-page-max-width));
+  max-width: var(--hu-page-max-width);
+  margin-inline: auto;
+  padding: 0 var(--hu-page-padding-inline) var(--hu-section-gap);
+  box-sizing: border-box;
 }
 
 .community-identity {

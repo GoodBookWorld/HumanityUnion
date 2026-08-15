@@ -73,6 +73,20 @@ export function normalizeArticleUrl(value: unknown): { articleUrl: string; norma
   }
 
   parsed.hash = "";
+
+  // Drop common tracking params so refresh cycles reuse one canonical URL identity.
+  for (const key of [...parsed.searchParams.keys()]) {
+    if (
+      /^utm(_|$)/i.test(key) ||
+      key === "fbclid" ||
+      key === "gclid" ||
+      key === "mc_cid" ||
+      key === "mc_eid"
+    ) {
+      parsed.searchParams.delete(key);
+    }
+  }
+
   const articleUrl = parsed.toString();
   const normalizedArticleUrl = articleUrl.toLowerCase();
 

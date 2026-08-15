@@ -1,0 +1,27 @@
+.pie-current-stage {
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-lg);
+  background: var(--hu-color-bg-muted);
+  padding: var(--hu-space-4) var(--hu-space-5);
+  margin-bottom: var(--hu-space-6);
+}
+
+.pie-current-stage__label {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pie-current-stage__value {
+  margin: var(--hu-space-1) 0 0;
+  font-size: var(--hu-font-size-lg);
+  font-weight: 600;
+}
+
+.pie-current-stage__meta {
+  margin: var(--hu-space-1) 0 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+}

@@ -94,6 +94,73 @@ export async function upsertPublicNewsRecords(records: NewsArticleRecord[]): Pro
   return upserted;
 }
 
+function sortNewestFirst(records: NewsArticleRecord[]): NewsArticleRecord[] {
+  return [...records].sort(
+    (left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt),
+  );
+}
+
+/**
+ * Prevent one prolific source from consuming the entire public news rail.
+ * Round-robin across sources (newest article first within each source), then
+ * present the mixed result newest-first.
+ */
+export function balancePublicNewsRecordsBySource(
+  records: NewsArticleRecord[],
+  limit: number,
+): NewsArticleRecord[] {
+  if (limit <= 0) {
+    return [];
+  }
+
+  if (records.length <= limit) {
+    return sortNewestFirst(records);
+  }
+
+  const bySource = new Map<string, NewsArticleRecord[]>();
+
+  for (const record of sortNewestFirst(records)) {
+    const bucket = bySource.get(record.sourceName);
+
+    if (bucket) {
+      bucket.push(record);
+    } else {
+      bySource.set(record.sourceName, [record]);
+    }
+  }
+
+  const sources = [...bySource.keys()].sort((left, right) => {
+    const leftNewest = bySource.get(left)?.[0]?.publishedAt ?? "";
+    const rightNewest = bySource.get(right)?.[0]?.publishedAt ?? "";
+    return Date.parse(rightNewest) - Date.parse(leftNewest);
+  });
+
+  const selected: NewsArticleRecord[] = [];
+  const offsets = new Map<string, number>(sources.map((source) => [source, 0]));
+  let madeProgress = true;
+
+  while (selected.length < limit && madeProgress) {
+    madeProgress = false;
+
+    for (const source of sources) {
+      if (selected.length >= limit) {
+        break;
+      }
+
+      const bucket = bySource.get(source) ?? [];
+      const offset = offsets.get(source) ?? 0;
+
+      if (offset < bucket.length) {
+        selected.push(bucket[offset]!);
+        offsets.set(source, offset + 1);
+        madeProgress = true;
+      }
+    }
+  }
+
+  return sortNewestFirst(selected).slice(0, limit);
+}
+
 export async function findActivePublicNewsRecords(input: {
   limit: number;
   language?: string;
@@ -103,9 +170,10 @@ export async function findActivePublicNewsRecords(input: {
 }): Promise<NewsArticleRecord[]> {
   const now = input.now ?? new Date().toISOString();
   const mode = resolvePublicNewsPersistenceMode();
+  const sourceFilterActive = Boolean(input.source?.trim());
 
   if (mode === "memory") {
-    return [...memoryRecords.values()]
+    const filtered = [...memoryRecords.values()]
       .filter((record) => record.status === "active" && record.expiresAt > now)
       .filter((record) => (input.language ? record.language === input.language : true))
       .filter((record) =>
@@ -113,9 +181,13 @@ export async function findActivePublicNewsRecords(input: {
       )
       .filter((record) =>
         input.source ? record.sourceName.toLowerCase().includes(input.source.toLowerCase()) : true,
-      )
-      .sort((left, right) => Date.parse(right.publishedAt) - Date.parse(left.publishedAt))
-      .slice(0, input.limit);
+      );
+
+    if (sourceFilterActive) {
+      return sortNewestFirst(filtered).slice(0, input.limit);
+    }
+
+    return balancePublicNewsRecordsBySource(filtered, input.limit);
   }
 
   const query: Record<string, unknown> = {
@@ -137,11 +209,29 @@ export async function findActivePublicNewsRecords(input: {
 
   const collection = getCollection();
 
-  return collection
-    .find(query)
-    .sort({ publishedAt: -1 })
-    .limit(input.limit)
-    .toArray();
+  if (sourceFilterActive) {
+    return collection
+      .find(query)
+      .sort({ publishedAt: -1 })
+      .limit(input.limit)
+      .toArray();
+  }
+
+  // Pull a bounded newest slice per source, then merge newest-first so older but
+  // still-active Pack sources (e.g. Economist) are not erased by prolific feeds.
+  const sourceNames = await collection.distinct("sourceName", query);
+  const perSourceCap = Math.max(2, Math.ceil(input.limit / Math.max(sourceNames.length, 1)));
+  const batches = await Promise.all(
+    sourceNames.map((sourceName) =>
+      collection
+        .find({ ...query, sourceName })
+        .sort({ publishedAt: -1 })
+        .limit(perSourceCap)
+        .toArray(),
+    ),
+  );
+
+  return balancePublicNewsRecordsBySource(batches.flat(), input.limit);
 }
 
 export async function findActivePublicNewsSourceNames(input?: {

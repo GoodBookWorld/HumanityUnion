@@ -202,7 +202,7 @@ async function seedSearchFixture(): Promise<{ initiativeId: string; impactTitle:
 
   const published = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
     initiativeId: published.initiativeId,
     title: "Search Analysis Evidence",
     summary: "Analysis supporting global search verification.",
@@ -211,12 +211,12 @@ async function seedSearchFixture(): Promise<{ initiativeId: string; impactTitle:
     suggestedImprovements: "Improve",
     references: "Ref",
   });
-  const analysis = publishInitiativeCollaborativeAnalysis(
+  const analysis = await publishInitiativeCollaborativeAnalysis(
     otherParticipant,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(otherParticipant, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(otherParticipant, {
     analysisId: analysis.analysisId,
     targetSection: "Summary",
     currentIssue: "Issue",
@@ -239,7 +239,7 @@ async function seedSearchFixture(): Promise<{ initiativeId: string; impactTitle:
   });
   publishInitiativeRevision(steward, published.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: published.initiativeId,
     title: "Search Decision Session",
     purpose: "Prepare search verification decision",
@@ -250,7 +250,7 @@ async function seedSearchFixture(): Promise<{ initiativeId: string; impactTitle:
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: published.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -259,7 +259,7 @@ async function seedSearchFixture(): Promise<{ initiativeId: string; impactTitle:
   const opened = openInitiativeCollectiveDecision(steward, decisionDraft.decisionId);
   await closeInitiativeCollectiveDecision(steward, opened.decisionId);
 
-  const commitmentDraft = createInitiativeImplementationCommitmentDraft(steward, {
+  const commitmentDraft = await createInitiativeImplementationCommitmentDraft(steward, {
     initiativeId: published.initiativeId,
     decisionId: opened.decisionId,
     commitmentTitle: "Search Commitment",
@@ -271,7 +271,7 @@ async function seedSearchFixture(): Promise<{ initiativeId: string; impactTitle:
     commitmentDraft.commitmentId,
   );
 
-  const trackingDraft = createInitiativeImplementationTrackingDraft(steward, {
+  const trackingDraft = await createInitiativeImplementationTrackingDraft(steward, {
     commitmentId: commitment.commitmentId,
     summary: "Search tracking record",
     currentStage: "Implementation",
@@ -284,7 +284,7 @@ async function seedSearchFixture(): Promise<{ initiativeId: string; impactTitle:
   });
   completeInitiativeImplementationTracking(steward, tracking.trackingId);
 
-  const impactDraft = createInitiativePublicImpactDraft(steward, {
+  const impactDraft = await createInitiativePublicImpactDraft(steward, {
     trackingId: tracking.trackingId,
     title: "Search Verified Impact",
     summary: "Impact summary for search verification.",
@@ -316,14 +316,14 @@ async function verifyIndexAndMatching(): Promise<void> {
   const fixture = await seedSearchFixture();
   resetGlobalSearchIndexForTests();
 
-  const index = buildGlobalSearchIndex();
+  const index = await buildGlobalSearchIndex();
   assert(index.length > 0, "Search index must include public records");
   assert(
     index.some((entry) => entry.entityType === "public_impact"),
     "Search index must include public impact records",
   );
 
-  const titleSearch = searchPublicCivicRecords({
+  const titleSearch = await searchPublicCivicRecords({
     q: fixture.impactTitle,
     limit: 20,
     offset: 0,
@@ -353,7 +353,7 @@ async function verifyDraftExclusion(): Promise<void> {
   });
 
   resetGlobalSearchIndexForTests();
-  const index = buildGlobalSearchIndex();
+  const index = await buildGlobalSearchIndex();
 
   assert(
     !index.some(
@@ -375,7 +375,7 @@ async function verifyFiltersFacetsPagination(): Promise<void> {
   await seedSearchFixture();
   resetGlobalSearchIndexForTests();
 
-  const filtered = searchPublicCivicRecords({
+  const filtered = await searchPublicCivicRecords({
     entityTypes: ["public_impact"],
     limit: 20,
     offset: 0,
@@ -389,8 +389,8 @@ async function verifyFiltersFacetsPagination(): Promise<void> {
   );
   assert(filtered.facets.entityTypes.length > 0, "Facets must include entity types");
 
-  const paged = searchPublicCivicRecords({ limit: 1, offset: 0, view: "flat" });
-  const pagedNext = searchPublicCivicRecords({ limit: 1, offset: 1, view: "flat" });
+  const paged = await searchPublicCivicRecords({ limit: 1, offset: 0, view: "flat" });
+  const pagedNext = await searchPublicCivicRecords({ limit: 1, offset: 1, view: "flat" });
 
   assert(paged.results.length === 1, "Pagination limit must apply");
   assert(paged.total >= 2, "Fixture must have multiple searchable records for pagination test");
@@ -414,7 +414,7 @@ async function verifyPrivacy(): Promise<void> {
   resetGlobalSearchIndexForTests();
   await seedSearchFixture();
 
-  const response = searchPublicCivicRecords({ q: "Search", limit: 20, offset: 0, view: "flat" });
+  const response = await searchPublicCivicRecords({ q: "Search", limit: 20, offset: 0, view: "flat" });
   const serialized = JSON.stringify(response).toLowerCase();
 
   for (const key of PRIVATE_FIELD_KEYS) {

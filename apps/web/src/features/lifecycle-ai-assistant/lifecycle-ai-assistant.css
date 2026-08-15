@@ -1,0 +1,174 @@
+.lifecycle-ai-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(18, 24, 28, 0.48);
+}
+
+.lifecycle-ai-modal {
+  width: min(720px, 100%);
+  max-height: min(88vh, 900px);
+  overflow: auto;
+  background: #f7f4ef;
+  color: #1c2428;
+  border: 1px solid rgba(28, 36, 40, 0.14);
+  box-shadow: 0 18px 48px rgba(18, 24, 28, 0.22);
+  padding: 1.25rem 1.35rem 1.4rem;
+}
+
+.lifecycle-ai-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.lifecycle-ai-modal__title {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  font-weight: 650;
+}
+
+.lifecycle-ai-modal__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: rgba(28, 36, 40, 0.72);
+}
+
+.lifecycle-ai-modal__close {
+  border: 1px solid rgba(28, 36, 40, 0.2);
+  background: transparent;
+  color: inherit;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+}
+
+.lifecycle-ai-modal__context {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.85rem;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(28, 36, 40, 0.1);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.lifecycle-ai-modal__context dt {
+  font-weight: 650;
+}
+
+.lifecycle-ai-modal__context dd {
+  margin: 0 0 0.35rem;
+}
+
+.lifecycle-ai-modal__principles {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  color: rgba(28, 36, 40, 0.78);
+}
+
+.lifecycle-ai-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.lifecycle-ai-modal__actions button {
+  border: 1px solid rgba(28, 36, 40, 0.22);
+  background: #fff;
+  color: inherit;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.lifecycle-ai-modal__actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.lifecycle-ai-modal__actions button[aria-pressed="true"] {
+  background: #1c2428;
+  color: #f7f4ef;
+}
+
+.lifecycle-ai-modal__question {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.lifecycle-ai-modal__question textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(28, 36, 40, 0.18);
+  background: #fff;
+  font: inherit;
+}
+
+.lifecycle-ai-modal__notice {
+  margin: 0 0 0.85rem;
+  font-size: 0.86rem;
+  color: rgba(28, 36, 40, 0.72);
+}
+
+.lifecycle-ai-modal__error {
+  margin: 0 0 0.85rem;
+  color: #8a1f1f;
+  font-size: 0.9rem;
+}
+
+.lifecycle-ai-modal__suggestions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.lifecycle-ai-modal__suggestion {
+  padding: 0.75rem 0.85rem;
+  background: #fff;
+  border: 1px solid rgba(28, 36, 40, 0.12);
+}
+
+.lifecycle-ai-modal__suggestion h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.lifecycle-ai-modal__suggestion p {
+  margin: 0 0 0.55rem;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.lifecycle-ai-modal__suggestion-meta {
+  margin: 0 0 0.55rem;
+  font-size: 0.8rem;
+  color: rgba(28, 36, 40, 0.65);
+}
+
+.lifecycle-ai-modal__open-button {
+  width: 100%;
+  margin-top: 0.75rem;
+  border: 1px solid rgba(28, 36, 40, 0.22);
+  background: #1c2428;
+  color: #f7f4ef;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.lifecycle-ai-modal__open-button:hover {
+  background: #2a353b;
+}

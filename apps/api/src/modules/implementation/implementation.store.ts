@@ -118,8 +118,8 @@ function assertApprovedCollectiveDecision(collectiveDecisionId: string): void {
   }
 }
 
-function assertPetitionEligibility(petitionId: string, initiativeId: string): void {
-  const petition = getPetition(petitionId);
+async function assertPetitionEligibility(petitionId: string, initiativeId: string): Promise<void> {
+  const petition = await getPetition(petitionId);
 
   if (!petition) {
     throw new Error(`Petition "${petitionId}" was not found.`);
@@ -274,13 +274,13 @@ export function getImplementationByPetitionId(petitionId: string) {
   return implementation ? cloneImplementation(implementation) : null;
 }
 
-export function createImplementation(input: ImplementationCreateInput) {
+export async function createImplementation(input: ImplementationCreateInput) {
   if (implementations.has(input.implementationId)) {
     throw new Error(`Implementation "${input.implementationId}" already exists.`);
   }
 
   assertApprovedCollectiveDecision(input.collectiveDecisionId);
-  assertPetitionEligibility(input.petitionId, input.initiativeId);
+  await assertPetitionEligibility(input.petitionId, input.initiativeId);
   assertCommitmentContext(
     input.implementationCommitmentId,
     input.initiativeId,

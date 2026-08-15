@@ -543,11 +543,11 @@ This decision SHALL be reviewed if:
 |-------|---------|
 | **ADR ID** | ADR-002 |
 | **Title** | Activity is the universal starting object |
-| **Status** | Accepted |
+| **Status** | Superseded |
 | **Date** | 2026-07-21 |
 | **Related Blueprint Documents** | [05_ACTIVITY_ENGINE_SPECIFICATION.md](../blueprint/05_ACTIVITY_ENGINE_SPECIFICATION.md), [10_ACTIVITY_INBOX_ARCHITECTURE.md](../blueprint/10_ACTIVITY_INBOX_ARCHITECTURE.md), [Book_01_Foundation/08_EVENT_ARCHITECTURE.md](../blueprint/Book_01_Foundation/08_EVENT_ARCHITECTURE.md) |
 | **Supersedes** | None |
-| **Superseded By** | None |
+| **Superseded By** | ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0 (architecture/decisions/ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0.md) |
 
 ### Problem
 
@@ -1540,6 +1540,63 @@ This decision SHALL be reviewed when:
 
 ---
 
+## ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0 — Initiative Is the Sole Canonical Civic Root
+
+**Registry stub — full text lives at `architecture/decisions/ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0.md`, per this repository's convention of keeping large, task-produced ADRs as standalone files rather than duplicating them inline here. This stub exists to close the Documentation Update Backlog item tracked in `architecture/recovery/INITIATIVE_ARCHITECTURE_RECOVERY_ROADMAP_v1.0.md` §10 item 1 (added by the Recovery Closure Task).**
+
+| Field | Content |
+|-------|---------|
+| **ADR ID** | ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0 |
+| **Title** | Initiative is the sole canonical civic root |
+| **Status** | Accepted |
+| **Date** | 2026-07-28 |
+| **Related Blueprint Documents** | `architecture/recovery/INITIATIVE_ARCHITECTURE_RECONCILIATION_REPORT_v1.0.md`, `architecture/recovery/INITIATIVE_ARCHITECTURE_RECOVERY_ROADMAP_v1.0.md` |
+| **Supersedes** | ADR-002 (Activity as Universal Starting Object) |
+| **Superseded By** | None |
+
+### Problem
+
+The repository's documentation was internally contradictory about which entity is the platform's canonical civic root: ADR-002 named Activity, while Initiative was already the platform's live, working, 11-module product surface with zero frontend integration for Activity.
+
+### Decision (summary — see full document for complete reasoning, alternatives, and rollout)
+
+Initiative is the sole canonical civic root. Every civic record must resolve to an Initiative Ancestry (direct or transitive). Activity is redefined as a subordinate, bounded participation-trace recorder — not retargeted to become the ledger of record (see the companion ADR-MEMBER-ACTION-LEDGER-v1.0 below for what does fill that role). A 10-phase migration roadmap governs the transition; only Phases 1–2 (ancestry contracts and validation tests) and a pivoted Phase-4-equivalent (the Participant Action Ledger) have been executed as of this registry entry — see `architecture/recovery/RECOVERY_STATUS.md` for the authoritative current-state summary.
+
+### Related ADRs
+
+- Supersedes ADR-002.
+- Elaborated by ADR-MEMBER-ACTION-LEDGER-v1.0 (below) for the specific question of where participation facts are durably recorded.
+
+---
+
+## ADR-MEMBER-ACTION-LEDGER-v1.0 — Canonical Member (Participant) Action Ledger, Legacy Activity Frozen
+
+**Registry stub — full text lives at `architecture/decisions/ADR-MEMBER-ACTION-LEDGER-v1.0.md`. Read that file's §4a before relying on any "Member Action"/`memberId` wording in its body — the platform is participant-first, corrected in-place without reopening the decision. This stub closes the same Documentation Update Backlog item as the entry above.**
+
+| Field | Content |
+|-------|---------|
+| **ADR ID** | ADR-MEMBER-ACTION-LEDGER-v1.0 |
+| **Title** | A durable Participant Action Ledger, populated exclusively from canonical source events, is the platform's sole participation-fact record — legacy Activity is frozen, not retargeted |
+| **Status** | Accepted (transitioned from `Proposed` by the Recovery Closure Task — see the ADR's own §31 for the evidentiary basis) |
+| **Date** | 2026-07-28 (proposed); 2026-07-29 (accepted) |
+| **Related Blueprint Documents** | `architecture/recovery/ACTIVITY_RETARGETING_DISCOVERY_v1.0.md`, `architecture/recovery/MEMBER_ACTION_LEDGER_IMPLEMENTATION_BLUEPRINT_v1.0.md` |
+| **Supersedes** | None |
+| **Superseded By** | None |
+
+### Problem
+
+Every genuinely canonical, product-live participant action (comments, petitions, votes, implementation commitments, public impact, etc.) is already Initiative-scoped through its own module — but none of them durably records the *fact* of the action anywhere queryable as a unified history, and the existing `activity` module is a disconnected, frontend-unreachable, non-Initiative-scoped record that would duplicate rather than unify this.
+
+### Decision (summary — see full document for complete reasoning, rejected alternatives, and full rollout table)
+
+A **new**, dedicated, append-only Participant Action Ledger (not a retargeted `activity` module) is the platform's sole durable participation-fact record, populated by idempotent consumers reading canonical domain events from each source module's own durable outbox. Rollout is phased, one producer module at a time. As of acceptance: Phase 0 (Petition pilot producer), Phase 1 (ledger core), Phase 2 (Petition wired end-to-end), and one of Phase 4's nine target modules (Initiative Decision Vote) are complete and verified; Phases 3, 5, 6, and the remaining eight Phase-4 producer modules are not yet implemented. See the ADR's own §31 and `architecture/recovery/RECOVERY_STATUS.md` for the authoritative current state.
+
+### Related ADRs
+
+- Elaborates ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0 §8/§12.
+
+---
+
 # 5. Change History
 
 This section is the chronological and append-only registry of ADR creation, acceptance, status transition, deprecation, and supersession.
@@ -1564,6 +1621,11 @@ New entries SHALL be appended in chronological order.
 | 2026-07-21 | ADR-008 | Accepted | Governance established as coordination rather than concentration |
 | 2026-07-21 | ADR-009 | Accepted | Proposal and Member Signal Framework established for institutional evolution |
 | 2026-07-21 | ADR-010 | Accepted | Validation evidence required for significant architecture changes |
+| 2026-07-28 | ADR-002 | Superseded | Superseded by ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0 (architecture/decisions/ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0.md), which establishes Initiative as the sole canonical civic root |
+| 2026-07-28 | ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0 | Accepted | Initiative established as the sole canonical civic root; Activity redefined as a subordinate participation-trace recorder (see §4.11 for registry stub; full text at architecture/decisions/ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0.md) |
+| 2026-07-28 | ADR-MEMBER-ACTION-LEDGER-v1.0 | Proposed | A durable, participant-first Action Ledger (corrected terminology, Task 26) proposed as the platform's sole participation-fact record; Activity frozen, not retargeted (see §4.12 for registry stub; full text at architecture/decisions/ADR-MEMBER-ACTION-LEDGER-v1.0.md) |
+| 2026-07-29 | ADR-MEMBER-ACTION-LEDGER-v1.0 | Accepted | Recovery Closure Task: transitioned Proposed → Accepted after Phases 0–2 and part of Phase 4 (Petition + Initiative Decision Vote producers, Participant Action Ledger core) were implemented and verified with a passing full regression suite (Recovery Tasks 25, 27, 31–33) |
+| 2026-07-30 | (roadmap, not an ADR) | Superseded | `architecture/recovery/INITIATIVE_ARCHITECTURE_RECOVERY_ROADMAP_v1.0.md` superseded by `architecture/ARCHITECTURE_EVOLUTION_ROADMAP_v2.0.md`, which governs Stages I–V and the Approved Assessment Backlog (Assessment 01 onward) for all platform evolution following the Recovery Phase; recorded here for registry completeness even though the roadmap itself is not an ADR |
 
 ---
 

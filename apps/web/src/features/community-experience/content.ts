@@ -45,14 +45,13 @@ export function workspaceContinuationContextIntroduction(communityName: string):
 export const REGISTRATION_GATEWAY_WORKSPACE_CONTENT = {
   title: "Join Humanity Union",
   invitation:
-    "You can explore public civic activity without an account. Registration enables structured participation when you choose.",
+    "You can explore public civic activity without an account. Creating an account enables structured participation when you choose.",
   explorationNote:
     "Reading and exploring remain available without registration or entering Workspace.",
-  registrationActionLabel: "Join Humanity Union",
-  registrationPlaceholderLabel:
-    "Registration entry coming soon — Identity Capability not yet available",
+  registrationActionLabel: "Create account",
+  registrationPlaceholderLabel: "Create account",
   workspaceActionLabel: "Continue to Workspace",
-  workspacePlaceholderLabel: "Workspace entry coming soon",
+  workspacePlaceholderLabel: "Continue to Workspace",
   authenticatedNote:
     "You may continue reading this community page or enter Workspace when you choose personal accountable participation.",
 } as const;
@@ -76,4 +75,4 @@ export const FIND_YOUR_COMMUNITY_VISITOR_CONCLUSION =
   "Listed communities are participant-created observation pages — not an exhaustive administrator-maintained directory.";
 
 export const REGISTRATION_VISITOR_CONCLUSION =
-  "Registration and Workspace entry remain future capabilities. Public observation does not require an account.";
+  "Public observation does not require an account. Create an account when you are ready to participate in Workspace.";

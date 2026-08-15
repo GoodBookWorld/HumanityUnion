@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import type { ClientSession, Document } from "mongodb";
+import type { Document } from "mongodb";
 
 import type { DomainEvent } from "../events/domain-event.js";
 import { toCanonicalEnvelope } from "../events/event-envelope.js";

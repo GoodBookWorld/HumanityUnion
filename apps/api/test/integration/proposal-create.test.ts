@@ -24,7 +24,6 @@ import {
   setForceEnqueueFailureForTests,
 } from "../../src/infrastructure/outbox/index.js";
 import { deleteMembersByMemberIdPrefix } from "../../src/modules/member/infrastructure/member.repository.js";
-import activityRouter from "../../src/modules/activity/api/activity.routes.js";
 import {
   createActivity,
   deleteActivitiesByActivityIdPrefix,

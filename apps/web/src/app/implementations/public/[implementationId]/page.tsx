@@ -379,7 +379,7 @@ export default async function PublicImplementationPage({ params }: PublicImpleme
         ) : null}
       </ProfileSection>
 
-      <ProfileSection title="Humanity Assistant">
+      <ProfileSection title="Humanity Union Assistant">
         <p className="public-implementation-page__message">{humanityAssistant.summary}</p>
         <ProfileField label="Progress" value={humanityAssistant.progressExplanation} />
         <ProfileField label="Achievements" value={humanityAssistant.achievementExplanation} />

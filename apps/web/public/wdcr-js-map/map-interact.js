@@ -71,3 +71,173 @@ function wdcraddEvent(id,relationId) {
     }
 	}
 }
+/* PWA UX Correction Pack 03 — zoom / pan / reset (no new map library). */
+(function () {
+  var MIN_SCALE = 1;
+  var MAX_SCALE = 2.5;
+  var SCALE_STEP = 0.25;
+  var scale = MIN_SCALE;
+  var tx = 0;
+  var ty = 0;
+  var dragging = false;
+  var panActive = false;
+  var startX = 0;
+  var startY = 0;
+  var originTx = 0;
+  var originTy = 0;
+  var MESSAGE_SOURCE = "hu-world-map";
+  var PAN_THRESHOLD = 8;
+
+  function mapbase() {
+    return document.getElementById("mapbase");
+  }
+
+  function wrapper() {
+    return document.getElementById("mapwrapper");
+  }
+
+  function clampPan() {
+    var base = mapbase();
+    var wrap = wrapper();
+    if (!base || !wrap || scale <= MIN_SCALE) {
+      tx = 0;
+      ty = 0;
+      return;
+    }
+    var wrapRect = wrap.getBoundingClientRect();
+    var maxX = (wrapRect.width * (scale - 1)) / 2;
+    var maxY = (wrapRect.height * (scale - 1)) / 2;
+    if (tx > maxX) tx = maxX;
+    if (tx < -maxX) tx = -maxX;
+    if (ty > maxY) ty = maxY;
+    if (ty < -maxY) ty = -maxY;
+  }
+
+  function applyTransform() {
+    var base = mapbase();
+    if (!base) {
+      return;
+    }
+    clampPan();
+    base.style.transformOrigin = "center center";
+    base.style.transform = "translate(" + tx + "px, " + ty + "px) scale(" + scale + ")";
+    base.style.cursor = scale > MIN_SCALE ? "grab" : "";
+    publishView();
+  }
+
+  function publishView() {
+    if (!window.parent || window.parent === window) {
+      return;
+    }
+    window.parent.postMessage(
+      { source: MESSAGE_SOURCE, type: "view", scale: scale, x: tx, y: ty },
+      window.location.origin
+    );
+  }
+
+  function zoomIn() {
+    scale = Math.min(MAX_SCALE, Math.round((scale + SCALE_STEP) * 100) / 100);
+    applyTransform();
+  }
+
+  function zoomOut() {
+    scale = Math.max(MIN_SCALE, Math.round((scale - SCALE_STEP) * 100) / 100);
+    if (scale === MIN_SCALE) {
+      tx = 0;
+      ty = 0;
+    }
+    applyTransform();
+  }
+
+  function resetView() {
+    scale = MIN_SCALE;
+    tx = 0;
+    ty = 0;
+    applyTransform();
+  }
+
+  window.addEventListener("message", function (event) {
+    if (event.origin !== window.location.origin) {
+      return;
+    }
+    var data = event.data;
+    if (!data || data.source !== MESSAGE_SOURCE) {
+      return;
+    }
+    if (data.action === "zoomIn") zoomIn();
+    else if (data.action === "zoomOut") zoomOut();
+    else if (data.action === "reset") resetView();
+    else if (data.action === "sync") publishView();
+  });
+
+  function onPointerDown(event) {
+    if (scale <= MIN_SCALE) {
+      return;
+    }
+    if (event.button != null && event.button !== 0) {
+      return;
+    }
+    dragging = true;
+    panActive = false;
+    startX = event.clientX;
+    startY = event.clientY;
+    originTx = tx;
+    originTy = ty;
+  }
+
+  function onPointerMove(event) {
+    if (!dragging) {
+      return;
+    }
+    var dx = event.clientX - startX;
+    var dy = event.clientY - startY;
+    if (!panActive && Math.abs(dx) < PAN_THRESHOLD && Math.abs(dy) < PAN_THRESHOLD) {
+      return;
+    }
+    if (!panActive) {
+      panActive = true;
+      var base = mapbase();
+      if (base) {
+        base.style.cursor = "grabbing";
+      }
+    }
+    // Prefer horizontal/vertical map pan; do not call preventDefault so page
+    // vertical scroll remains available when the gesture is mostly vertical.
+    tx = originTx + dx;
+    ty = originTy + dy;
+    applyTransform();
+  }
+
+  function onPointerUp() {
+    if (!dragging) {
+      return;
+    }
+    dragging = false;
+    panActive = false;
+    var base = mapbase();
+    if (base) {
+      base.style.cursor = scale > MIN_SCALE ? "grab" : "";
+    }
+  }
+
+  function bindPan() {
+    var wrap = wrapper();
+    if (!wrap || wrap.getAttribute("data-hu-zoom-bound") === "1") {
+      return;
+    }
+    wrap.setAttribute("data-hu-zoom-bound", "1");
+    wrap.style.overflow = "hidden";
+    wrap.style.touchAction = "pan-y";
+    wrap.addEventListener("pointerdown", onPointerDown);
+    wrap.addEventListener("pointermove", onPointerMove);
+    wrap.addEventListener("pointerup", onPointerUp);
+    wrap.addEventListener("pointercancel", onPointerUp);
+    applyTransform();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindPan);
+  } else {
+    bindPan();
+  }
+})();

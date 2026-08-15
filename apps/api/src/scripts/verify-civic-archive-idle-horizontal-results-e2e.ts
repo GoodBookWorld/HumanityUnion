@@ -128,8 +128,8 @@ function verifyIdleSearchModel(): void {
     "Results must not use a wrapping vertical grid.",
   );
   assert(
-    miniCard.includes("/initiative.webp"),
-    "Mini archive card must use /initiative.webp fallback.",
+    miniCard.includes("/images/initiatives/initiative-default.webp"),
+    "Mini archive card must use /images/initiatives/initiative-default.webp fallback.",
   );
   assert(
     miniCard.includes("/civic-archive/"),
@@ -149,7 +149,7 @@ async function verifyHorizontalSearchRuntime(): Promise<void> {
     const { listCivicArchiveLifecycleRecords } =
       await import("../modules/public-civic-archive/public-civic-archive-lifecycle.projection.js");
 
-    const publicBefore = listCivicArchiveLifecycleRecords();
+    const publicBefore = await listCivicArchiveLifecycleRecords();
     assert(
       !publicBefore.some((record) => record.title.includes("TASK-107")),
       "Public archive index must exclude verification fixtures before opt-in.",
@@ -170,7 +170,7 @@ async function verifyHorizontalSearchRuntime(): Promise<void> {
       "Horizontal fixtures must produce five unique initiatives.",
     );
 
-    const publicAfterSeed = listCivicArchiveLifecycleRecords();
+    const publicAfterSeed = await listCivicArchiveLifecycleRecords();
     assert(
       !publicAfterSeed.some((record) => record.title.includes(TASK107C_FIXTURE_TITLE_PREFIX)),
       "Public archive index must exclude seeded verification fixtures.",
@@ -182,14 +182,14 @@ async function verifyHorizontalSearchRuntime(): Promise<void> {
       search: "TASK-107C Horizontal Results",
     } as const;
 
-    const results = listCivicArchiveLifecycleRecords(query);
+    const results = await listCivicArchiveLifecycleRecords(query);
     assert(results.length === 5, "Submitted search must return five matching archive records.");
     assert(
       new Set(results.map((record) => record.initiativeId)).size === 5,
       "Search results must remain unique per initiative.",
     );
 
-    const unrelated = listCivicArchiveLifecycleRecords({
+    const unrelated = await listCivicArchiveLifecycleRecords({
       ...query,
       search: "definitely-unrelated-archive-term-107c",
     });
@@ -203,7 +203,7 @@ async function verifyHorizontalSearchRuntime(): Promise<void> {
 
   const { listCivicArchiveLifecycleRecords } =
     await import("../modules/public-civic-archive/public-civic-archive-lifecycle.projection.js");
-  const afterRestore = listCivicArchiveLifecycleRecords();
+  const afterRestore = await listCivicArchiveLifecycleRecords();
   assert(
     !afterRestore.some((record) => record.title.includes(TASK107C_FIXTURE_TITLE_PREFIX)),
     "Verification fixtures must not remain in public archive index after cleanup.",

@@ -83,8 +83,8 @@ function verifyCommentReactions(): void {
   );
   assert(panel.includes("/icons/workspace/like.svg"), "Comment UI must render like icon.");
   assert(panel.includes("/icons/workspace/dislike.svg"), "Comment UI must render dislike icon.");
-  assert(panel.includes("Like this comment."), "Like control must expose accessible label.");
-  assert(panel.includes("Dislike this comment."), "Dislike control must expose accessible label.");
+  assert(panel.includes("Helpful. "), "Helpful control must expose accessible label.");
+  assert(panel.includes("Not helpful. "), "Not Helpful control must expose accessible label.");
   assert(panel.includes("Log In"), "Guest reaction attempt must offer login.");
   assert(api.includes("updateInitiativeCommentReaction"), "Web client must call reaction API.");
 }

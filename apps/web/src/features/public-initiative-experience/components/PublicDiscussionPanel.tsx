@@ -1,18 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import type { PublicInitiativeDiscussionComment } from "@hu/types";
+import type {
+  PublicInitiativeCollaborationParticipant,
+  PublicInitiativeCollaborationParticipantsResult,
+  PublicInitiativeDiscussionComment,
+} from "@hu/types";
 
 import { Button, HuFeedbackMessage } from "../../../design-system";
 import { getMe } from "../../auth/auth-api";
 import { resolveSafeReturnTo } from "../../auth/lib/resolve-safe-return-to";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import {
+  expressInitiativeCollaborationInterest,
+  fetchInitiativeCollaborationParticipants,
   fetchInitiativeComments,
+  inviteCommentAuthorToAllies,
+  markCommentAsProposalCandidate,
   postInitiativeComment,
+  respondToInitiativeCollaborationInterest,
   updateInitiativeCommentReaction,
 } from "../api";
+import {
+  DISCUSSION_ACTION_DEFINITIONS,
+  DISCUSSION_FILTERS,
+  matchesDiscussionFilter,
+  resolveAuthorBadges,
+  resolveAuthorLinkPresentation,
+  resolveCollaborationReviewActionState,
+  resolveCollaborationStatusLabel,
+  resolveFilterHeading,
+  resolveInviteToAlliesActionState,
+  resolveProposalActionState,
+  resolveReadyToCollaborateActionState,
+  resolveStatusIndicators,
+  type DiscussionFilter,
+} from "./discussion-comment-presentation";
 
 interface PublicDiscussionPanelProps {
   initiativeId: string;
@@ -21,6 +45,13 @@ interface PublicDiscussionPanelProps {
   hasMoreComments?: boolean;
   panelId?: string;
   scopeLabel?: string;
+  /**
+   * Profile UX Pack 01 Part 4 — allows the collaboration-request
+   * notification's "Review request" action to deep-link straight into the
+   * Collaboration working list (see `?filter=collaboration` handling in
+   * `PublicInitiativeExperiencePage`).
+   */
+  initialFilter?: DiscussionFilter;
 }
 
 const DRAFT_STORAGE_PREFIX = "pie-discussion-draft:";
@@ -72,36 +103,82 @@ function applyReactionChange(
   };
 }
 
-function CommentReactionControls({
+const ICON_BY_ACTION_ID = new Map(
+  DISCUSSION_ACTION_DEFINITIONS.map((definition) => [definition.id, definition.icon]),
+);
+
+/**
+ * UX Evolution Pack 02.3 Part 6/7 — single ordered action row rendered
+ * under every comment: Helpful, Not Helpful, Proposal, Ready to
+ * Collaborate, Invite to Allies. Helpful/Not Helpful reuse the existing
+ * like/dislike reaction pipeline; the remaining three reuse the existing
+ * collaboration permission flags computed server-side (canMarkProposal /
+ * canReadyToCollaborate / canInviteToAllies / viewerAllyStatus /
+ * authorAllyStatus / isViewerInitiativeSteward / isViewerAuthor) — no
+ * permission logic changes, only how the already-authorized state is
+ * rendered (see discussion-comment-presentation.ts).
+ *
+ * Completed actions (Proposal Added / Ready to Collaborate /
+ * Invitation Pending / Ally / Invitation Sent) are shown muted and
+ * disabled rather than hidden, so a participant can always see the result
+ * of an action they already took.
+ */
+function CommentActions({
   initiativeId,
   comment,
   authStatus,
   returnTo,
-  onUpdated,
+  onReactionUpdated,
+  onCollaborationChanged,
 }: {
   initiativeId: string;
   comment: PublicInitiativeDiscussionComment;
   authStatus: ReturnType<typeof useClientAuthStatus>;
   returnTo: string;
-  onUpdated: (comment: PublicInitiativeDiscussionComment) => void;
+  onReactionUpdated: (comment: PublicInitiativeDiscussionComment) => void;
+  onCollaborationChanged: () => void;
 }) {
-  const [busy, setBusy] = useState(false);
+  const [reactionBusy, setReactionBusy] = useState(false);
+  const [collabAction, setCollabAction] = useState<"proposal" | "collaborate" | "invite" | null>(
+    null,
+  );
+  const [actionError, setActionError] = useState<string | null>(null);
   const currentReaction = comment.currentUserReaction ?? "none";
+  const collaboration = comment.collaboration;
 
   async function handleReaction(nextReaction: "like" | "dislike" | "none"): Promise<void> {
     if (authStatus !== "authenticated") {
       return;
     }
 
-    setBusy(true);
+    setReactionBusy(true);
 
     try {
       await updateInitiativeCommentReaction(initiativeId, comment.commentId, nextReaction);
-      onUpdated(applyReactionChange(comment, nextReaction));
+      onReactionUpdated(applyReactionChange(comment, nextReaction));
     } catch {
       // Keep comment intact if reaction fails.
     } finally {
-      setBusy(false);
+      setReactionBusy(false);
+    }
+  }
+
+  async function runCollaborationAction(
+    action: "proposal" | "collaborate" | "invite",
+    perform: () => Promise<unknown>,
+  ): Promise<void> {
+    setCollabAction(action);
+    setActionError(null);
+
+    try {
+      await perform();
+      onCollaborationChanged();
+    } catch (error) {
+      setActionError(
+        error instanceof Error ? error.message : "This action could not be completed.",
+      );
+    } finally {
+      setCollabAction(null);
     }
   }
 
@@ -110,65 +187,373 @@ function CommentReactionControls({
     const registerHref = `/register?returnTo=${encodeURIComponent(returnTo)}`;
 
     return (
-      <div className="pie-discussion__reactions pie-discussion__reactions--guest">
+      <div className="pie-discussion__actions pie-discussion__actions--guest">
         <a
-          className="pie-discussion__reaction pie-discussion__reaction--guest"
+          className="pie-discussion__action pie-discussion__action--guest"
           href={loginHref}
-          aria-label={`Like this comment. ${comment.likes} likes. Sign in to react.`}
-        >
-          <img src="/icons/workspace/like.svg" alt="" aria-hidden="true" width={16} height={16} />
-          <span aria-hidden="true">{comment.likes}</span>
-        </a>
-        <a
-          className="pie-discussion__reaction pie-discussion__reaction--guest"
-          href={loginHref}
-          aria-label={`Dislike this comment. ${comment.dislikes} dislikes. Sign in to react.`}
+          aria-label={`Helpful. ${comment.likes} votes. Sign in to react.`}
         >
           <img
-            src="/icons/workspace/dislike.svg"
+            className="pie-discussion__action-icon"
+            src={ICON_BY_ACTION_ID.get("helpful")}
             alt=""
             aria-hidden="true"
-            width={16}
-            height={16}
+            width={18}
+            height={18}
           />
-          <span aria-hidden="true">{comment.dislikes}</span>
+          <span className="pie-discussion__action-label">Helpful</span>
+          <span className="pie-discussion__action-count" aria-hidden="true">
+            {comment.likes}
+          </span>
         </a>
-        <a className="pie-discussion__reaction-link" href={registerHref}>
+        <a
+          className="pie-discussion__action pie-discussion__action--guest"
+          href={loginHref}
+          aria-label={`Not helpful. ${comment.dislikes} votes. Sign in to react.`}
+        >
+          <img
+            className="pie-discussion__action-icon"
+            src={ICON_BY_ACTION_ID.get("not-helpful")}
+            alt=""
+            aria-hidden="true"
+            width={18}
+            height={18}
+          />
+          <span className="pie-discussion__action-label">Not Helpful</span>
+          <span className="pie-discussion__action-count" aria-hidden="true">
+            {comment.dislikes}
+          </span>
+        </a>
+        <a className="pie-discussion__action-link" href={registerHref}>
           Create Account
         </a>
       </div>
     );
   }
 
+  const proposalState = resolveProposalActionState(collaboration, collabAction === "proposal");
+  const readyState = resolveReadyToCollaborateActionState(
+    collaboration,
+    collabAction === "collaborate",
+  );
+  const inviteState = resolveInviteToAlliesActionState(collaboration, collabAction === "invite");
+
   return (
-    <div className="pie-discussion__reactions">
+    <div className="pie-discussion__actions" role="group" aria-label="Comment feedback actions">
       <button
         type="button"
-        className={`pie-discussion__reaction${
-          currentReaction === "like" ? " pie-discussion__reaction--active" : ""
+        className={`pie-discussion__action${
+          currentReaction === "like" ? " pie-discussion__action--active" : ""
         }`}
         aria-pressed={currentReaction === "like"}
-        aria-label={`Like this comment. ${comment.likes} likes.`}
-        disabled={busy || authStatus !== "authenticated"}
+        aria-label={`Helpful. ${comment.likes} votes.`}
+        disabled={reactionBusy}
         onClick={() => void handleReaction(currentReaction === "like" ? "none" : "like")}
       >
-        <img src="/icons/workspace/like.svg" alt="" aria-hidden="true" width={16} height={16} />
-        <span aria-hidden="true">{comment.likes}</span>
+        <img
+          className="pie-discussion__action-icon"
+          src={ICON_BY_ACTION_ID.get("helpful")}
+          alt=""
+          aria-hidden="true"
+          width={18}
+          height={18}
+        />
+        <span className="pie-discussion__action-label">Helpful</span>
+        <span className="pie-discussion__action-count" aria-hidden="true">
+          {comment.likes}
+        </span>
       </button>
       <button
         type="button"
-        className={`pie-discussion__reaction${
-          currentReaction === "dislike" ? " pie-discussion__reaction--active" : ""
+        className={`pie-discussion__action${
+          currentReaction === "dislike" ? " pie-discussion__action--active" : ""
         }`}
         aria-pressed={currentReaction === "dislike"}
-        aria-label={`Dislike this comment. ${comment.dislikes} dislikes.`}
-        disabled={busy || authStatus !== "authenticated"}
+        aria-label={`Not helpful. ${comment.dislikes} votes.`}
+        disabled={reactionBusy}
         onClick={() => void handleReaction(currentReaction === "dislike" ? "none" : "dislike")}
       >
-        <img src="/icons/workspace/dislike.svg" alt="" aria-hidden="true" width={16} height={16} />
-        <span aria-hidden="true">{comment.dislikes}</span>
+        <img
+          className="pie-discussion__action-icon"
+          src={ICON_BY_ACTION_ID.get("not-helpful")}
+          alt=""
+          aria-hidden="true"
+          width={18}
+          height={18}
+        />
+        <span className="pie-discussion__action-label">Not Helpful</span>
+        <span className="pie-discussion__action-count" aria-hidden="true">
+          {comment.dislikes}
+        </span>
       </button>
+      {proposalState.visible ? (
+        <button
+          type="button"
+          className={`pie-discussion__action${
+            proposalState.disabled && collabAction !== "proposal"
+              ? " pie-discussion__action--completed"
+              : ""
+          }`}
+          disabled={proposalState.disabled}
+          onClick={() =>
+            void runCollaborationAction("proposal", () =>
+              markCommentAsProposalCandidate(initiativeId, comment.commentId),
+            )
+          }
+        >
+          <img
+            className="pie-discussion__action-icon"
+            src={ICON_BY_ACTION_ID.get("proposal")}
+            alt=""
+            aria-hidden="true"
+            width={18}
+            height={18}
+          />
+          <span className="pie-discussion__action-label">{proposalState.label}</span>
+        </button>
+      ) : null}
+      {readyState.visible ? (
+        <button
+          type="button"
+          className={`pie-discussion__action${
+            readyState.disabled && collabAction !== "collaborate"
+              ? " pie-discussion__action--completed"
+              : ""
+          }`}
+          disabled={readyState.disabled}
+          onClick={() =>
+            void runCollaborationAction("collaborate", () =>
+              expressInitiativeCollaborationInterest(initiativeId),
+            )
+          }
+        >
+          <img
+            className="pie-discussion__action-icon"
+            src={ICON_BY_ACTION_ID.get("ready-to-collaborate")}
+            alt=""
+            aria-hidden="true"
+            width={18}
+            height={18}
+          />
+          <span className="pie-discussion__action-label">{readyState.label}</span>
+        </button>
+      ) : null}
+      {inviteState.visible ? (
+        <button
+          type="button"
+          className={`pie-discussion__action${
+            inviteState.disabled && collabAction !== "invite"
+              ? " pie-discussion__action--completed"
+              : ""
+          }`}
+          disabled={inviteState.disabled}
+          onClick={() =>
+            void runCollaborationAction("invite", () =>
+              inviteCommentAuthorToAllies(initiativeId, comment.commentId),
+            )
+          }
+        >
+          <img
+            className="pie-discussion__action-icon"
+            src={ICON_BY_ACTION_ID.get("invite-to-allies")}
+            alt=""
+            aria-hidden="true"
+            width={18}
+            height={18}
+          />
+          <span className="pie-discussion__action-label">{inviteState.label}</span>
+        </button>
+      ) : null}
+
+      {actionError ? <p className="pie-discussion__collab-error">{actionError}</p> : null}
     </div>
+  );
+}
+
+/** Part 4/5 — one complete visual card: author row, comment, status indicators, action row. */
+function DiscussionCommentCard({
+  initiativeId,
+  comment,
+  authStatus,
+  returnTo,
+  onReactionUpdated,
+  onCollaborationChanged,
+}: {
+  initiativeId: string;
+  comment: PublicInitiativeDiscussionComment;
+  authStatus: ReturnType<typeof useClientAuthStatus>;
+  returnTo: string;
+  onReactionUpdated: (comment: PublicInitiativeDiscussionComment) => void;
+  onCollaborationChanged: () => void;
+}) {
+  const authorLink = resolveAuthorLinkPresentation(comment.author);
+  const badges = resolveAuthorBadges(comment.collaboration);
+  const indicators = resolveStatusIndicators(comment.collaboration);
+
+  return (
+    <li className="pie-discussion__comment-card">
+      <p className="pie-discussion__author">
+        {comment.author.avatarUrl ? (
+          <img
+            className="pie-discussion__author-avatar"
+            src={comment.author.avatarUrl}
+            alt=""
+            aria-hidden="true"
+            width={24}
+            height={24}
+          />
+        ) : null}
+        {authorLink.isLink ? (
+          <a className="pie-discussion__author-link" href={authorLink.href}>
+            <span className="pie-discussion__author-name">{comment.author.displayName}</span>
+          </a>
+        ) : (
+          <span className="pie-discussion__author-name">{comment.author.displayName}</span>
+        )}
+        {badges.isInitiativeAuthor ? (
+          <span className="pie-discussion__badge pie-discussion__badge--steward">
+            Initiative Author
+          </span>
+        ) : null}
+        {badges.isYou ? <span className="pie-discussion__badge pie-discussion__badge--you">You</span> : null}
+        <span className="pie-discussion__date">{formatCommentDate(comment.createdAt)}</span>
+      </p>
+      <p className="pie-discussion__body">{comment.body}</p>
+      {indicators.length > 0 ? (
+        <p className="pie-discussion__collab-indicators">
+          {indicators.map((indicator) => (
+            <span key={indicator} className="pie-discussion__collab-indicator">
+              {indicator}
+            </span>
+          ))}
+        </p>
+      ) : null}
+      <CommentActions
+        initiativeId={initiativeId}
+        comment={comment}
+        authStatus={authStatus}
+        returnTo={returnTo}
+        onReactionUpdated={onReactionUpdated}
+        onCollaborationChanged={onCollaborationChanged}
+      />
+    </li>
+  );
+}
+
+/**
+ * Profile UX Pack 01 Parts 2/8 — the "Collaboration" filter's compact
+ * Participant list: avatar, name, status, and (for the Initiative Author
+ * only, on still-pending requests) Accept/Decline. Deliberately does not
+ * reuse `DiscussionCommentCard` — no comment text, no Helpful / Not Helpful
+ * / Proposal, no duplicate Discussion card. Sourced directly from the Ally
+ * store via `fetchInitiativeCollaborationParticipants` (see that module's
+ * doc comment for why this cannot be derived from loaded comments).
+ */
+function CollaborationParticipantList({
+  initiativeId,
+  participants,
+  isViewerInitiativeSteward,
+  onChanged,
+}: {
+  initiativeId: string;
+  participants: readonly PublicInitiativeCollaborationParticipant[];
+  isViewerInitiativeSteward: boolean;
+  onChanged: () => void;
+}) {
+  const [busyParticipantId, setBusyParticipantId] = useState<string | null>(null);
+  const [errorByParticipantId, setErrorByParticipantId] = useState<Record<string, string>>({});
+
+  async function handleRespond(participantId: string, response: "accept" | "decline"): Promise<void> {
+    setBusyParticipantId(participantId);
+    setErrorByParticipantId((current) => {
+      if (!(participantId in current)) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[participantId];
+      return next;
+    });
+
+    try {
+      await respondToInitiativeCollaborationInterest(initiativeId, participantId, response);
+      onChanged();
+    } catch (error) {
+      setErrorByParticipantId((current) => ({
+        ...current,
+        [participantId]:
+          error instanceof Error ? error.message : "This request could not be updated.",
+      }));
+    } finally {
+      setBusyParticipantId(null);
+    }
+  }
+
+  return (
+    <ul className="pie-collab-list">
+      {participants.map((entry) => {
+        const authorLink = resolveAuthorLinkPresentation(entry.author);
+        const name = entry.author.displayName;
+        const statusLabel = resolveCollaborationStatusLabel(entry.status);
+        const reviewState = resolveCollaborationReviewActionState(
+          entry.status,
+          isViewerInitiativeSteward,
+          busyParticipantId === entry.participantId,
+        );
+        const entryError = errorByParticipantId[entry.participantId];
+
+        return (
+          <li key={entry.participantId} className="pie-collab-list__item">
+            <span className="pie-collab-list__identity">
+              {entry.author.avatarUrl ? (
+                <img
+                  className="pie-collab-list__avatar"
+                  src={entry.author.avatarUrl}
+                  alt=""
+                  aria-hidden="true"
+                  width={32}
+                  height={32}
+                />
+              ) : (
+                <span
+                  className="pie-collab-list__avatar pie-collab-list__avatar--placeholder"
+                  aria-hidden="true"
+                />
+              )}
+              {authorLink.isLink ? (
+                <a className="pie-collab-list__name pie-discussion__author-link" href={authorLink.href}>
+                  {name}
+                </a>
+              ) : (
+                <span className="pie-collab-list__name">{name}</span>
+              )}
+              <span className="pie-collab-list__status">{statusLabel}</span>
+            </span>
+            {reviewState.visible ? (
+              <span className="pie-collab-list__review-actions">
+                <button
+                  type="button"
+                  className="hu-button hu-button--primary pie-collab-list__review-button"
+                  disabled={reviewState.disabled}
+                  onClick={() => void handleRespond(entry.participantId, "accept")}
+                >
+                  {busyParticipantId === entry.participantId ? "Working…" : "Accept"}
+                </button>
+                <button
+                  type="button"
+                  className="hu-button hu-button--secondary pie-collab-list__review-button"
+                  disabled={reviewState.disabled}
+                  onClick={() => void handleRespond(entry.participantId, "decline")}
+                >
+                  Decline
+                </button>
+              </span>
+            ) : null}
+            {entryError ? <p className="pie-collab-list__error">{entryError}</p> : null}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -179,6 +564,7 @@ export function PublicDiscussionPanel({
   hasMoreComments = false,
   panelId,
   scopeLabel,
+  initialFilter,
 }: PublicDiscussionPanelProps) {
   const authStatus = useClientAuthStatus();
   const [comments, setComments] = useState(initialComments);
@@ -193,6 +579,10 @@ export function PublicDiscussionPanel({
   const [canComment, setCanComment] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [filter, setFilter] = useState<DiscussionFilter>(initialFilter ?? "all");
+  const [collaborationData, setCollaborationData] =
+    useState<PublicInitiativeCollaborationParticipantsResult | null>(null);
+  const [collaborationLoading, setCollaborationLoading] = useState(false);
   const returnTo = buildDiscussionReturnTo(initiativeId);
   const draftStorageKey = `${DRAFT_STORAGE_PREFIX}${initiativeId}`;
 
@@ -201,6 +591,14 @@ export function PublicDiscussionPanel({
     setTotalCount(commentCount);
     setHasMore(hasMoreComments);
   }, [initialComments, commentCount, hasMoreComments]);
+
+  useEffect(() => {
+    // `initialFilter` is resolved from the URL by the parent page one tick after
+    // mount, so it may transition from undefined to "collaboration" — pick that up.
+    if (initialFilter) {
+      setFilter(initialFilter);
+    }
+  }, [initialFilter]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -275,6 +673,56 @@ export function PublicDiscussionPanel({
     }
   };
 
+  /**
+   * A single collaboration action (Proposal / Ready to Collaborate / Invite
+   * to Allies) can change the collaboration state of every comment by the
+   * same author, not just the one that was clicked. Re-fetching the
+   * currently loaded page is simpler and more correct than optimistic
+   * per-comment patching, and the list is bounded (default 40).
+   */
+  const handleCollaborationChanged = async (): Promise<void> => {
+    try {
+      const response = await fetchInitiativeComments(initiativeId, 0, Math.max(comments.length, 40));
+      setComments(response.comments);
+      setTotalCount(response.total);
+      setHasMore(response.hasMore);
+    } catch {
+      // Keep the existing list; the action itself already succeeded.
+    }
+  };
+
+  const filteredComments = useMemo(
+    () => comments.filter((comment) => matchesDiscussionFilter(comment, filter)),
+    [comments, filter],
+  );
+  const filterHeading = resolveFilterHeading(filter);
+
+  /**
+   * Profile UX Pack 01 Part 2/8 — the Collaboration working list is sourced
+   * directly from the Ally store (not derived from loaded comments), so it
+   * correctly includes every Participant who expressed interest, even one
+   * who never posted a comment themselves. Loaded lazily when the filter is
+   * selected, and reloaded after every Accept/Decline.
+   */
+  const loadCollaborationParticipants = useCallback(async (): Promise<void> => {
+    setCollaborationLoading(true);
+
+    try {
+      const result = await fetchInitiativeCollaborationParticipants(initiativeId);
+      setCollaborationData(result);
+    } catch {
+      // Keep any previously loaded list; the tab remains usable.
+    } finally {
+      setCollaborationLoading(false);
+    }
+  }, [initiativeId]);
+
+  useEffect(() => {
+    if (filter === "collaboration") {
+      void loadCollaborationParticipants();
+    }
+  }, [filter, loadCollaborationParticipants]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFeedback(null);
@@ -327,45 +775,95 @@ export function PublicDiscussionPanel({
       </h2>
       {scopeLabel ? <p className="pie-discussion__scope">{scopeLabel}</p> : null}
 
-      {comments.length > 0 ? (
-        <div className="pie-discussion__comments-wrap">
-          <ul className="pie-discussion__comments">
-            {comments.map((comment) => (
-              <li key={comment.commentId}>
-                <p className="pie-discussion__author">
-                  {comment.author.avatarUrl ? (
-                    <img
-                      className="pie-discussion__author-avatar"
-                      src={comment.author.avatarUrl}
-                      alt=""
-                      aria-hidden="true"
-                      width={24}
-                      height={24}
-                    />
-                  ) : null}
-                  <span className="pie-discussion__author-name">{comment.author.displayName}</span>
-                  <span className="pie-discussion__date">
-                    {formatCommentDate(comment.createdAt)}
-                  </span>
-                </p>
-                <p>{comment.body}</p>
-                <CommentReactionControls
+      {/*
+       * UX Evolution Pack 02.3 Part 3 / 02.4 Part 8 — compact guidance,
+       * always rendered (including for guests) regardless of whether
+       * comments exist yet or the viewer is signed in. Intentionally a
+       * single short paragraph, not an instruction panel.
+       */}
+      <p className="pie-discussion__guidance">
+        Comments help improve this Initiative. Select <strong>Proposal</strong> to add a comment
+        to the improvement ideas list. Select <strong>Ready to Collaborate</strong> to let the
+        Initiative Author know that you want to help. The Initiative Author can then select{" "}
+        <strong>Invite to Allies</strong> to invite that Participant into the Initiative team.
+      </p>
+
+      {/*
+       * Profile UX Pack 01 Part 8 — the Collaboration filter/tab must remain
+       * reachable (and its working list visible) even when the Initiative
+       * has zero Discussion comments, since it is sourced from the Ally
+       * store rather than from comments.
+       */}
+      {comments.length > 0 || filter === "collaboration" ? (
+        <div className="pie-discussion__filters" role="group" aria-label="Filter comments">
+          {DISCUSSION_FILTERS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className={`pie-discussion__filter${
+                filter === option.id ? " pie-discussion__filter--active" : ""
+              }`}
+              aria-pressed={filter === option.id}
+              onClick={() => setFilter(option.id)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {comments.length > 0 || filter === "collaboration" ? (
+        filterHeading ? (
+          <p className="pie-discussion__filter-heading">{filterHeading}</p>
+        ) : (
+          <div className="pie-discussion__feedback-heading">
+            <h3 className="pie-discussion__feedback-title">Comment Feedback</h3>
+            <p className="pie-discussion__feedback-note">Express your opinion about this comment.</p>
+          </div>
+        )
+      ) : null}
+
+      {comments.length > 0 || filter === "collaboration" ? (
+        filter === "collaboration" ? (
+          collaborationLoading && !collaborationData ? (
+            <p className="pie-empty">Loading collaboration requests…</p>
+          ) : collaborationData && collaborationData.participants.length > 0 ? (
+            <CollaborationParticipantList
+              initiativeId={initiativeId}
+              participants={collaborationData.participants}
+              isViewerInitiativeSteward={collaborationData.isViewerInitiativeSteward}
+              onChanged={() => void loadCollaborationParticipants()}
+            />
+          ) : (
+            <p className="pie-empty">No participants have expressed interest yet.</p>
+          )
+        ) : filteredComments.length > 0 ? (
+          <div className="pie-discussion__comments-wrap">
+            <ul className="pie-discussion__comments">
+              {filteredComments.map((comment) => (
+                <DiscussionCommentCard
+                  key={comment.commentId}
                   initiativeId={initiativeId}
                   comment={comment}
                   authStatus={authStatus}
                   returnTo={returnTo}
-                  onUpdated={(updated) => {
+                  onReactionUpdated={(updated) => {
                     setComments((current) =>
                       current.map((entry) =>
-                        entry.commentId === updated.commentId ? updated : entry,
+                        entry.commentId === updated.commentId
+                          ? { ...updated, collaboration: entry.collaboration }
+                          : entry,
                       ),
                     );
                   }}
+                  onCollaborationChanged={() => void handleCollaborationChanged()}
                 />
-              </li>
-            ))}
-          </ul>
-        </div>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p className="pie-empty">No comments match this filter.</p>
+        )
       ) : (
         <p className="pie-empty">
           {totalCount > 0

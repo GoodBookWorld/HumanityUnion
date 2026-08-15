@@ -32,6 +32,9 @@ export interface TrustedMediaResource {
 export interface FactCheckResource {
   id: string;
   name: string;
+  logoLabel: string;
+  /** Local public asset path, e.g. /images/media/fact/snopes.webp */
+  logoUrl?: string;
   mission: string;
   coverage: string;
   websiteUrl: string;
@@ -41,6 +44,9 @@ export interface FactCheckResource {
 export interface PropagandaAnalysisResource {
   id: string;
   name: string;
+  logoLabel: string;
+  /** Local public asset path, e.g. /images/media/fact/dfrlab.webp */
+  logoUrl?: string;
   focus: string;
   explanation: string;
   websiteUrl: string;

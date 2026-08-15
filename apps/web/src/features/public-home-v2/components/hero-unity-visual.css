@@ -1,0 +1,256 @@
+/* Home Visual Pack 01 / 01.1 / Refinement 02 — right-column unity visual */
+
+.hero-unity-visual {
+  --hero-unity-blue: #0174b0;
+  --hero-unity-amber: #ffd250;
+  --hero-unity-quote-gap: 5px;
+  --hero-unity-quote-inline-pad: var(--hu-space-3);
+  container-type: inline-size;
+  container-name: hero-unity;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 320px;
+  height: 100%;
+  border-radius: var(--hu-radius-lg);
+  background: color-mix(in srgb, var(--hu-color-bg-muted) 88%, #ffffff);
+}
+
+.hero-unity-visual__background {
+  position: absolute;
+  inset: -4%;
+  z-index: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  pointer-events: none;
+}
+
+.hero-unity-visual__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-height: inherit;
+  padding: var(--hu-space-4) var(--hu-space-3) var(--hero-unity-quote-gap);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.hero-unity-visual__globe-slot {
+  position: relative;
+  flex: 1 1 auto;
+  width: min(100%, 20rem);
+  min-height: 11rem;
+  max-height: 16.5rem;
+  margin: 0 auto;
+  /* Room for multiline quote anchored at the bottom. */
+  margin-bottom: 5.5rem;
+}
+
+.hero-unity-globe {
+  width: 100%;
+  height: 100%;
+  min-height: 11rem;
+  touch-action: pan-y;
+  pointer-events: none;
+}
+
+/*
+ * Quote — bottom-anchored; grows upward for wrapped translations.
+ * Width comes from the panel, not from English ghost-string measurement.
+ */
+.hero-unity-quote {
+  position: absolute;
+  inset-inline: var(--hero-unity-quote-inline-pad);
+  bottom: var(--hero-unity-quote-gap);
+  inline-size: calc(100% - (2 * var(--hero-unity-quote-inline-pad)));
+  max-inline-size: calc(100% - (2 * var(--hero-unity-quote-inline-pad)));
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  /* Do not clip glyphs; panel overflow:hidden is the outer safety boundary. */
+  overflow: visible;
+}
+
+.hero-unity-quote__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hero-unity-quote__visual {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2em;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+  padding-inline-end: 0.15em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: clamp(1rem, 4.2cqi, 1.35rem);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--hero-unity-blue);
+}
+
+.hero-unity-quote__line {
+  display: block;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  opacity: 0;
+}
+
+.hero-unity-quote__line-text {
+  display: inline;
+  box-sizing: border-box;
+  padding-inline-end: 0.05em;
+}
+
+/* Logical alignment — LTR reads start/center/end; RTL-safe. */
+.hero-unity-quote__line--1 {
+  text-align: start;
+}
+
+.hero-unity-quote__line--2 {
+  text-align: center;
+}
+
+.hero-unity-quote__line--3 {
+  text-align: end;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-unity-quote__line--1 {
+    animation: hero-unity-quote-line-1 var(--hero-unity-quote-cycle, 12s) infinite ease-in-out;
+  }
+
+  .hero-unity-quote__line--2 {
+    animation: hero-unity-quote-line-2 var(--hero-unity-quote-cycle, 12s) infinite ease-in-out;
+  }
+
+  .hero-unity-quote__line--3 {
+    animation: hero-unity-quote-line-3 var(--hero-unity-quote-cycle, 12s) infinite ease-in-out;
+  }
+}
+
+/*
+ * Sequential reveal → hold → dissolve → pause (~12s).
+ * Opacity/filter only — no width animation (avoids final-glyph clipping).
+ */
+@keyframes hero-unity-quote-line-1 {
+  0%,
+  2% {
+    opacity: 0;
+    filter: none;
+  }
+
+  10%,
+  58% {
+    opacity: 1;
+    filter: none;
+  }
+
+  68% {
+    opacity: 0.75;
+    filter: blur(2px) drop-shadow(4px 4px 0 rgba(1, 116, 176, 0.28));
+  }
+
+  78% {
+    opacity: 0.25;
+    filter: blur(7px);
+  }
+
+  86%,
+  100% {
+    opacity: 0;
+    filter: none;
+  }
+}
+
+@keyframes hero-unity-quote-line-2 {
+  0%,
+  10% {
+    opacity: 0;
+    filter: none;
+  }
+
+  20%,
+  58% {
+    opacity: 1;
+    filter: none;
+  }
+
+  68% {
+    opacity: 0.75;
+    filter: blur(2px) drop-shadow(4px 4px 0 rgba(1, 116, 176, 0.28));
+  }
+
+  78% {
+    opacity: 0.25;
+    filter: blur(7px);
+  }
+
+  86%,
+  100% {
+    opacity: 0;
+    filter: none;
+  }
+}
+
+@keyframes hero-unity-quote-line-3 {
+  0%,
+  20% {
+    opacity: 0;
+    filter: none;
+  }
+
+  32%,
+  58% {
+    opacity: 1;
+    filter: none;
+  }
+
+  68% {
+    opacity: 0.75;
+    filter: blur(2px) drop-shadow(4px 4px 0 rgba(1, 116, 176, 0.28));
+  }
+
+  78% {
+    opacity: 0.25;
+    filter: blur(7px);
+  }
+
+  86%,
+  100% {
+    opacity: 0;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-unity-quote__line {
+    opacity: 1;
+    animation: none;
+    filter: none;
+  }
+}
+
+/* Pack 01.1 — hide the entire right visual at 768px and below. */
+@media (max-width: 768px) {
+  .hero-unity-visual {
+    display: none;
+  }
+}

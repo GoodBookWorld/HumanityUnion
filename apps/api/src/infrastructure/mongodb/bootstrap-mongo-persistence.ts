@@ -1,61 +1,52 @@
-import { assertMongoConfigured } from "./mongo-config.js";
-import { connectMongoClient } from "./mongo-connection.js";
-import { ensureMongoIndexes } from "./mongo-indexes.js";
+import { shouldBootstrapMongoPersistence } from "../../config/production-persistence-contract.js";
 import { hydrateCivicAccountabilityMongoPersistence } from "../../modules/civic-accountability/persistence/civic-accountability-mongo.persistence.js";
 import { hydrateCivicActionPackageMongoPersistence } from "../../modules/civic-action-package/persistence/civic-action-package-mongo.persistence.js";
 import { hydrateCivicCompatibilityReviewMongoPersistence } from "../../modules/civic-compatibility-review/persistence/civic-compatibility-review-mongo.persistence.js";
+import { hydrateCivicDeliveryMongoPersistence } from "../../modules/civic-delivery/persistence/civic-delivery-mongo.persistence.js";
 import { hydrateCivicNominationMongoPersistence } from "../../modules/civic-nomination/persistence/civic-nomination-mongo.persistence.js";
 import { hydrateCivicNominationVoteMongoPersistence } from "../../modules/civic-nomination-vote/persistence/civic-nomination-vote-mongo.persistence.js";
-import { hydrateCivicDeliveryMongoPersistence } from "../../modules/civic-delivery/persistence/civic-delivery-mongo.persistence.js";
 import { hydrateDecisionSessionMongoPersistence } from "../../modules/decision-session/persistence/decision-session-mongo.persistence.js";
 import { hydrateInitiativeCollaborativeAnalysisMongoPersistence } from "../../modules/initiative-collaborative-analysis/persistence/initiative-collaborative-analysis-mongo.persistence.js";
 import { hydrateInitiativeCollectiveDecisionMongoPersistence } from "../../modules/initiative-collective-decision/persistence/initiative-collective-decision-mongo.persistence.js";
-import { hydrateInitiativeDecisionVoteMongoPersistence } from "../../modules/initiative-decision-vote/persistence/initiative-decision-vote-mongo.persistence.js";
+import { hydrateInitiativeCollectiveDecisionLifecycleDraftMongoPersistence } from "../../modules/initiative-collective-decision-lifecycle/persistence/initiative-collective-decision-lifecycle-draft-mongo.persistence.js";
+import { hydrateInitiativeCivicArchiveLifecycleDraftMongoPersistence } from "../../modules/initiative-civic-archive-lifecycle/persistence/initiative-civic-archive-lifecycle-draft-mongo.persistence.js";
+import { hydrateInitiativeCivicArchiveVersionMongoPersistence } from "../../modules/initiative-civic-archive-lifecycle/initiative-civic-archive-version.store.js";
+import { hydrateMediaUploadRecordsFromMongo } from "../../modules/media-upload/media-upload.service.js";
+import { hydrateInitiativeDecisionSessionDraftMongoPersistence } from "../../modules/initiative-decision-session-lifecycle/persistence/initiative-decision-session-draft-mongo.persistence.js";
+import { hydrateInitiativeDecisionSessionRecommendationMongoPersistence } from "../../modules/initiative-decision-session-lifecycle/initiative-decision-session-recommendation.store.js";
 import { hydrateInitiativeImplementationCommitmentMongoPersistence } from "../../modules/initiative-implementation-commitment/persistence/initiative-implementation-commitment-mongo.persistence.js";
+import { hydrateInitiativeImplementationCommitmentLifecycleDraftMongoPersistence } from "../../modules/initiative-implementation-commitment-lifecycle/persistence/initiative-implementation-commitment-lifecycle-draft-mongo.persistence.js";
+import { hydrateInitiativeImplementationCommitmentPackageMongoPersistence } from "../../modules/initiative-implementation-commitment-lifecycle/initiative-implementation-commitment-package.store.js";
 import { hydrateInitiativeImplementationTrackingMongoPersistence } from "../../modules/initiative-implementation-tracking/persistence/initiative-implementation-tracking-mongo.persistence.js";
+import { hydrateInitiativeImplementationTrackingLifecycleDraftMongoPersistence } from "../../modules/initiative-implementation-tracking-lifecycle/persistence/initiative-implementation-tracking-lifecycle-draft-mongo.persistence.js";
+import { hydrateInitiativeImplementationTrackingPackageMongoPersistence } from "../../modules/initiative-implementation-tracking-lifecycle/initiative-implementation-tracking-package.store.js";
 import { hydrateInitiativeImprovementProposalMongoPersistence } from "../../modules/initiative-improvement-proposal/persistence/initiative-improvement-proposal-mongo.persistence.js";
+import { hydrateInitiativeOfficialResponseLifecycleDraftMongoPersistence } from "../../modules/initiative-official-response-lifecycle/persistence/initiative-official-response-lifecycle-draft-mongo.persistence.js";
+import { hydrateInitiativeOfficialResponsePackageMongoPersistence } from "../../modules/initiative-official-response-lifecycle/initiative-official-response-package.store.js";
+import { hydrateInitiativePetitionDraftMongoPersistence } from "../../modules/initiative-petition-lifecycle/persistence/initiative-petition-draft-mongo.persistence.js";
 import { hydrateInitiativePublicImpactMongoPersistence } from "../../modules/initiative-public-impact/persistence/initiative-public-impact-mongo.persistence.js";
+import { hydrateInitiativePublicImpactLifecycleDraftMongoPersistence } from "../../modules/initiative-public-impact-lifecycle/persistence/initiative-public-impact-lifecycle-draft-mongo.persistence.js";
+import { hydrateInitiativePublicImpactReportMongoPersistence } from "../../modules/initiative-public-impact-lifecycle/initiative-public-impact-report.store.js";
 import { hydrateInitiativeVersionRevisionMongoPersistence } from "../../modules/initiative-version-revision/persistence/initiative-version-revision-mongo.persistence.js";
 import { hydrateInitiativeMongoPersistence } from "../../modules/initiatives/persistence/initiative-mongo.persistence.js";
 import { hydrateOfficialResponseMongoPersistence } from "../../modules/official-response/persistence/official-response-mongo.persistence.js";
 import { hydrateParticipationAreaMongoPersistence } from "../../modules/participation-area/persistence/participation-area-mongo.persistence.js";
 import { hydratePublicCivicArchiveMongoPersistence } from "../../modules/public-civic-archive/persistence/public-civic-archive-mongo.persistence.js";
+import { assertMongoConfigured } from "./mongo-config.js";
+import { connectMongoClient } from "./mongo-connection.js";
+import { ensureMongoIndexes } from "./mongo-indexes.js";
 
-const PERSISTENCE_ENV_KEYS = [
-  "INITIATIVE_PERSISTENCE",
-  "INITIATIVE_ANALYSIS_PERSISTENCE",
-  "INITIATIVE_IMPROVEMENT_PROPOSAL_PERSISTENCE",
-  "INITIATIVE_VERSION_REVISION_PERSISTENCE",
-  "DECISION_SESSION_PERSISTENCE",
-  "INITIATIVE_COLLECTIVE_DECISION_PERSISTENCE",
-  "INITIATIVE_DECISION_VOTE_PERSISTENCE",
-  "PARTICIPATION_AREA_PERSISTENCE",
-  "CIVIC_ACTION_PACKAGE_PERSISTENCE",
-  "CIVIC_DELIVERY_PERSISTENCE",
-  "OFFICIAL_RESPONSE_PERSISTENCE",
-  "CIVIC_ACCOUNTABILITY_PERSISTENCE",
-  "INITIATIVE_IMPLEMENTATION_COMMITMENT_PERSISTENCE",
-  "INITIATIVE_IMPLEMENTATION_TRACKING_PERSISTENCE",
-  "INITIATIVE_PUBLIC_IMPACT_PERSISTENCE",
-  "PUBLIC_CIVIC_ARCHIVE_PERSISTENCE",
-  "CIVIC_COMPATIBILITY_REVIEW_PERSISTENCE",
-  "CIVIC_NOMINATION_PERSISTENCE",
-  "CIVIC_NOMINATION_VOTE_PERSISTENCE",
-  "INITIATIVE_COMMENT_PERSISTENCE",
-  "INITIATIVE_COMMENT_REACTION_PERSISTENCE",
-  "INITIATIVE_SUPPORT_PERSISTENCE",
-] as const;
-
+/** @deprecated Prefer shouldBootstrapMongoPersistence — kept for existing imports. */
 export function isAnyMongoPersistenceSelected(): boolean {
-  return PERSISTENCE_ENV_KEYS.some((key) => process.env[key] === "mongodb");
+  return shouldBootstrapMongoPersistence();
 }
 
 /**
  * Connects to MongoDB, ensures indexes, and hydrates module caches before stores load.
- * No-op when no module selects mongodb persistence.
+ * Production always bootstraps (durable keys default to mongodb).
  */
 export async function bootstrapMongoPersistence(): Promise<void> {
-  if (!isAnyMongoPersistenceSelected()) {
+  if (!shouldBootstrapMongoPersistence()) {
     return;
   }
 
@@ -70,7 +61,6 @@ export async function bootstrapMongoPersistence(): Promise<void> {
     hydrateInitiativeVersionRevisionMongoPersistence(),
     hydrateDecisionSessionMongoPersistence(),
     hydrateInitiativeCollectiveDecisionMongoPersistence(),
-    hydrateInitiativeDecisionVoteMongoPersistence(),
     hydrateParticipationAreaMongoPersistence(),
     hydrateCivicActionPackageMongoPersistence(),
     hydrateCivicDeliveryMongoPersistence(),
@@ -83,5 +73,20 @@ export async function bootstrapMongoPersistence(): Promise<void> {
     hydrateCivicCompatibilityReviewMongoPersistence(),
     hydrateCivicNominationMongoPersistence(),
     hydrateCivicNominationVoteMongoPersistence(),
+    hydrateInitiativePetitionDraftMongoPersistence(),
+    hydrateInitiativeDecisionSessionDraftMongoPersistence(),
+    hydrateInitiativeDecisionSessionRecommendationMongoPersistence(),
+    hydrateInitiativeCollectiveDecisionLifecycleDraftMongoPersistence(),
+    hydrateInitiativeImplementationCommitmentLifecycleDraftMongoPersistence(),
+    hydrateInitiativeImplementationCommitmentPackageMongoPersistence(),
+    hydrateInitiativeImplementationTrackingLifecycleDraftMongoPersistence(),
+    hydrateInitiativeImplementationTrackingPackageMongoPersistence(),
+    hydrateInitiativeOfficialResponseLifecycleDraftMongoPersistence(),
+    hydrateInitiativeOfficialResponsePackageMongoPersistence(),
+    hydrateInitiativePublicImpactLifecycleDraftMongoPersistence(),
+    hydrateInitiativePublicImpactReportMongoPersistence(),
+    hydrateInitiativeCivicArchiveLifecycleDraftMongoPersistence(),
+    hydrateInitiativeCivicArchiveVersionMongoPersistence(),
+    hydrateMediaUploadRecordsFromMongo(),
   ]);
 }

@@ -272,16 +272,16 @@ function buildHumanityAssistantPanel(
   };
 }
 
-export function toPublicImplementationCommitmentProjection(
+export async function toPublicImplementationCommitmentProjection(
   commitment: ImplementationCommitment,
-): PublicImplementationCommitmentProjection | null {
+): Promise<PublicImplementationCommitmentProjection | null> {
   if (!commitment.implementationCommitmentId) {
     return null;
   }
 
   const decision = getDecision(commitment.collectiveDecisionId);
   const initiative = getInitiativeById(commitment.initiativeId);
-  const petition = getPetition(commitment.petitionId);
+  const petition = await getPetition(commitment.petitionId);
 
   const communityCapacity = buildCommunityCapacity(commitment);
   const frozenPolicySummary = buildFrozenPolicySummary(commitment);

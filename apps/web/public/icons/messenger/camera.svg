@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Created with Vectornator (http://vectornator.io/) -->
+<svg height="100%" stroke-miterlimit="10" style="fill-rule:nonzero;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;" version="1.1" viewBox="0 0 1024 1024" width="100%" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:vectornator="http://vectornator.io" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs/>
+<g id="Layer-1" vectornator:layerName="Layer 1">
+<path d="M193.784 166.308L281.31 166.308C291.243 166.308 299.295 173.868 299.295 183.193L299.295 217.13C299.295 226.455 291.243 234.015 281.31 234.015L193.784 234.015C183.851 234.015 175.799 226.455 175.799 217.13L175.799 183.193C175.799 173.868 183.851 166.308 193.784 166.308Z" fill="#83b9e7" fill-rule="nonzero" opacity="1" stroke="none"/>
+<path d="M167.523 214.49L337.58 214.49L395.612 126.499L635.809 126.624L687.6 214.49L856.477 214.49C902.698 214.49 940.167 253.086 940.167 300.695L940.167 806.942C940.167 854.552 902.698 893.147 856.477 893.147L167.523 893.147C121.302 893.147 83.833 854.552 83.833 806.942L83.833 300.695C83.833 253.086 121.302 214.49 167.523 214.49Z" fill="#0174b0" fill-rule="nonzero" opacity="1" stroke="none"/>
+<path d="M198.663 288.318C198.663 272.336 217.112 259.38 239.871 259.38C262.63 259.38 281.079 272.336 281.079 288.318C281.079 304.299 262.63 317.255 239.871 317.255C217.112 317.255 198.663 304.299 198.663 288.318Z" fill="#83b9e7" fill-rule="nonzero" opacity="1" stroke="none"/>
+<path d="M294.817 543.993C294.817 424.046 392.053 326.81 512 326.81C631.947 326.81 729.183 424.046 729.183 543.993C729.183 663.94 631.947 761.176 512 761.176C392.053 761.176 294.817 663.94 294.817 543.993Z" fill="#83b9e7" fill-rule="nonzero" opacity="1" stroke="none"/>
+<path d="M433.753 506.705C433.753 506.705 469.765 469.289 518.156 468.611C566.547 467.932 603.902 507.124 603.902 507.124" fill="none" opacity="1" stroke="#cbe3f7" stroke-linecap="round" stroke-linejoin="miter" stroke-width="48.7982"/>
+<path d="M279.966 545.97C279.966 417.821 383.851 313.936 512 313.936C640.149 313.936 744.034 417.821 744.034 545.97C744.034 674.119 640.149 778.004 512 778.004C383.851 778.004 279.966 674.119 279.966 545.97Z" fill="none" opacity="1" stroke="#086698" stroke-linecap="butt" stroke-linejoin="miter" stroke-width="48.7982"/>
+</g>
+</svg>

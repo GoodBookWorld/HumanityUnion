@@ -1,5 +1,9 @@
 import type {
+  DecisionSession,
+  DirectInitiativeAncestry,
+  Initiative,
   InitiativeCollectiveDecision,
+  InitiativeCollectiveDecisionEligibility,
   InitiativeCollectiveDecisionStatus,
   ParticipationScope,
 } from "@hu/types";
@@ -14,9 +18,10 @@ import { emitCivicNotificationEvent } from "../notifications/notification.servic
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getSessionById } from "../decision-session/decision-session.store.js";
+import { validateDirectInitiativeAncestry } from "../../shared/initiative-ancestry/index.js";
 import {
-  assertInitiativeCollectiveDecisionEligible,
   assessInitiativeCollectiveDecisionEligibility,
+  assessInitiativeCollectiveDecisionEligibilityForResolved,
 } from "./initiative-collective-decision-eligibility.js";
 import {
   createDecision,
@@ -33,6 +38,172 @@ export interface CreateInitiativeCollectiveDecisionDraftInput {
   participationScope: ParticipationScope;
   closesAt: string;
   supersedesDecisionId?: string;
+}
+
+/**
+ * Narrow, module-specific typed error for a Collective Decision whose
+ * `initiativeId` does not match its referenced Decision Session's
+ * `initiativeId` (Recovery Task 09). Distinct from the shared Initiative
+ * ancestry errors (`apps/api/src/shared/initiative-ancestry/`), which only
+ * cover Initiative existence/format, not cross-artifact consistency with a
+ * *specific* upstream artifact such as Decision Session.
+ */
+export class CollectiveDecisionInitiativeMismatchError extends Error {
+  readonly code = "COLLECTIVE_DECISION_INITIATIVE_MISMATCH";
+
+  constructor(message = "Decision session does not belong to this initiative.") {
+    super(message);
+    this.name = "CollectiveDecisionInitiativeMismatchError";
+  }
+}
+
+/**
+ * Initiative Ancestry — Recovery Task 09.
+ *
+ * Inspection (Part 1/2) found that `CreateInitiativeCollectiveDecisionDraftInput`
+ * carries BOTH an independent, direct `initiativeId` AND a mandatory
+ * `decisionSessionId` — unlike Decision Session (Recovery Task 08), which
+ * has no upstream-artifact reference at all, and unlike Improvement
+ * Proposal (Recovery Task 07), whose `initiativeId` is entirely derived
+ * from its parent. This matches the task's "Model A — direct ancestry plus
+ * parent consistency": `InitiativeCollectiveDecision` stores its own
+ * `initiativeId` directly, and Decision Session consistency
+ * (`decision.initiativeId === decisionSession.initiativeId`) is a
+ * *separate* invariant from Initiative existence, not something ancestry
+ * derivation guarantees by construction.
+ *
+ * Consequently:
+ * - Ancestry is DIRECT (`validateDirectInitiativeAncestry`).
+ *   `validateTransitiveInitiativeAncestry` does not apply: an independent
+ *   `initiativeId` is always supplied, so there is nothing to resolve
+ *   through a parent. (Note: the canonical `CivicArtifactType` vocabulary
+ *   in `packages/types/src/domain/initiative-ancestry.ts` also has no
+ *   `"decision-session"` member today, which would have blocked a
+ *   transitive design without a separate, explicit shared-contract task —
+ *   moot here since direct ancestry is the correct mechanism.)
+ * - The Initiative/Decision-Session consistency check
+ *   (`session.initiativeId !== ancestry.initiativeId`) already existed as
+ *   part of `assessInitiativeCollectiveDecisionEligibility`'s reasons list;
+ *   this task formalizes it with a dedicated typed error
+ *   (`CollectiveDecisionInitiativeMismatchError`) while preserving its
+ *   exact message text and reason precedence for the pre-existing
+ *   `assessInitiativeCollectiveDecisionEligibility`/
+ *   `getInitiativeCollectiveDecisionEligibility` read path, which is left
+ *   untouched.
+ *
+ * As of this task, `createInitiativeCollectiveDecisionDraft` — there is no
+ * Express route for creation; the service itself is, and remains, the sole
+ * enforcement boundary — validates Initiative existence via the shared
+ * validator, resolves the Decision Session exactly once, and reuses both
+ * resolved records for the pre-existing eligibility rule. This closes a
+ * real, pre-existing inefficiency: the previous implementation performed
+ * the Initiative lookup twice (once directly, once inside
+ * `assertInitiativeCollectiveDecisionEligible`) and the Decision Session
+ * lookup twice (once inside eligibility, once directly afterward). The
+ * pre-existing check ORDER is preserved exactly (Initiative existence →
+ * ownership → Session/eligibility → supersedes → duplicate-decision), so
+ * compound-invalid requests fail with the same error as before.
+ *
+ * Persistence is unchanged: decisions continue to store plain
+ * `initiativeId`/`decisionSessionId` strings, not a nested ancestry object.
+ * The pre-existing "one Collective Decision per Decision Session" rule
+ * (`existingForSession`) and the `supersedesDecisionId` reopening flow are
+ * both preserved unchanged and unconditionally on Decision Session identity
+ * (not status) — see Part 6 of the task for the documented cardinality.
+ *
+ * Aggregate boundary: INITIATIVE remains the sole canonical civic root.
+ * Decision Session is a specific upstream civic artifact belonging to that
+ * same Initiative — it is not itself a civic root and cannot anchor
+ * ancestry independently. `InitiativeCollectiveDecision` owns its own
+ * decision statement/question, participation scope, status, and
+ * open/close/cancel timestamps; it does NOT own Initiative lifecycle,
+ * Decision Session deliberation lifecycle, or implementation/impact
+ * tracking (those remain the responsibility of the Initiative,
+ * Decision Session, and Implementation/Impact modules respectively).
+ */
+export interface InitiativeCollectiveDecisionAncestryDependencies {
+  readonly getInitiative: (initiativeId: string) => Initiative | null;
+  readonly getSession: (decisionSessionId: string) => DecisionSession | null;
+  readonly assessEligibility: (
+    initiative: Initiative,
+    session: DecisionSession | null,
+  ) => InitiativeCollectiveDecisionEligibility;
+}
+
+const defaultInitiativeCollectiveDecisionAncestryDependencies: InitiativeCollectiveDecisionAncestryDependencies =
+  {
+    getInitiative: getInitiativeById,
+    getSession: getSessionById,
+    assessEligibility: assessInitiativeCollectiveDecisionEligibilityForResolved,
+  };
+
+async function assertInitiativeAncestry(
+  initiativeId: string,
+  deps: Pick<InitiativeCollectiveDecisionAncestryDependencies, "getInitiative">,
+): Promise<{ ancestry: DirectInitiativeAncestry; initiative: Initiative }> {
+  const resolvedInitiativeBox: { value: Initiative | null } = { value: null };
+
+  // Enforcement boundary: confirms the Initiative exists and is well-formed
+  // before ownership, Session/eligibility checks, or persistence,
+  // regardless of caller.
+  const ancestry = await validateDirectInitiativeAncestry(
+    { initiativeId },
+    {
+      initiativeExists(id) {
+        resolvedInitiativeBox.value = deps.getInitiative(id);
+        return resolvedInitiativeBox.value !== null;
+      },
+    },
+  );
+
+  const initiative = resolvedInitiativeBox.value;
+
+  if (!initiative) {
+    // Unreachable: validateDirectInitiativeAncestry only resolves once
+    // initiativeExists() returned true.
+    throw new Error("Initiative not found.");
+  }
+
+  return { ancestry, initiative };
+}
+
+/**
+ * Resolves the Decision Session exactly once and applies the pre-existing,
+ * Initiative-scoped eligibility rule (which includes the Initiative/Session
+ * consistency invariant). Must be called AFTER ownership has been asserted,
+ * to preserve the pre-existing error precedence for compound-invalid
+ * requests (a non-owner with an ineligible session previously received —
+ * and still receives — the ownership failure, not an eligibility failure).
+ */
+function assertEligibleDecisionSession(
+  initiative: Initiative,
+  ancestry: DirectInitiativeAncestry,
+  decisionSessionId: string,
+  deps: Pick<InitiativeCollectiveDecisionAncestryDependencies, "getSession" | "assessEligibility">,
+): { session: DecisionSession; initiativeVersion: number } {
+  const session = deps.getSession(decisionSessionId);
+  const eligibility = deps.assessEligibility(initiative, session);
+
+  if (!eligibility.eligible) {
+    const reason = eligibility.reasons[0] ?? "Initiative is not eligible for a collective decision.";
+
+    // Distinguishes the specific Initiative/Session mismatch invariant with
+    // a dedicated typed error while preserving the exact pre-existing
+    // message text and reason precedence for every other case.
+    if (session && session.initiativeId !== ancestry.initiativeId) {
+      throw new CollectiveDecisionInitiativeMismatchError(reason);
+    }
+
+    throw new Error(reason);
+  }
+
+  if (!session) {
+    // Unreachable: assessEligibility can only return eligible: true when a
+    // non-null session was supplied (see assessInitiativeCollectiveDecisionEligibilityForResolved).
+    throw new Error("Decision session not found.");
+  }
+
+  return { session, initiativeVersion: eligibility.initiativeVersion };
 }
 
 function getOwnedDecision(
@@ -104,24 +275,21 @@ export function getMyInitiativeCollectiveDecision(
   return getOwnedDecision(decisionId, identity);
 }
 
-export function createInitiativeCollectiveDecisionDraft(
+export async function createInitiativeCollectiveDecisionDraft(
   identity: RequestIdentity,
   input: CreateInitiativeCollectiveDecisionDraftInput,
-): InitiativeCollectiveDecision {
-  const initiative = getInitiativeById(input.initiativeId);
-
-  if (!initiative) {
-    throw new Error("Initiative not found.");
-  }
+  deps: InitiativeCollectiveDecisionAncestryDependencies = defaultInitiativeCollectiveDecisionAncestryDependencies,
+): Promise<InitiativeCollectiveDecision> {
+  const { ancestry, initiative } = await assertInitiativeAncestry(input.initiativeId, deps);
 
   assertInitiativeOwnership(initiative, identity);
-  assertInitiativeCollectiveDecisionEligible(input.initiativeId, input.decisionSessionId);
 
-  const session = getSessionById(input.decisionSessionId);
-
-  if (!session) {
-    throw new Error("Decision session not found.");
-  }
+  const { session } = assertEligibleDecisionSession(
+    initiative,
+    ancestry,
+    input.decisionSessionId,
+    deps,
+  );
 
   if (input.supersedesDecisionId) {
     const priorDecision = getDecisionById(input.supersedesDecisionId);
@@ -130,7 +298,7 @@ export function createInitiativeCollectiveDecisionDraft(
       throw new Error("Prior collective decision not found.");
     }
 
-    if (priorDecision.initiativeId !== input.initiativeId) {
+    if (priorDecision.initiativeId !== ancestry.initiativeId) {
       throw new Error("Prior collective decision does not belong to this initiative.");
     }
 
@@ -139,7 +307,7 @@ export function createInitiativeCollectiveDecisionDraft(
     }
   }
 
-  const existingForSession = listDecisionsByInitiative(input.initiativeId).some(
+  const existingForSession = listDecisionsByInitiative(ancestry.initiativeId).some(
     (decision) => decision.decisionSessionId === input.decisionSessionId,
   );
 
@@ -151,10 +319,12 @@ export function createInitiativeCollectiveDecisionDraft(
 
   const decision: InitiativeCollectiveDecision = {
     decisionId: `collective-decision-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    initiativeId: input.initiativeId,
+    // Persisted initiativeId is sourced from the validated ancestry result,
+    // not directly from the unchecked input.
+    initiativeId: ancestry.initiativeId,
     decisionSessionId: input.decisionSessionId,
     stewardId: identity.participantId,
-    sequenceNumber: getNextSequenceNumber(input.initiativeId),
+    sequenceNumber: getNextSequenceNumber(ancestry.initiativeId),
     participationScope: input.participationScope,
     status: "draft",
     question: session.decisionQuestion,

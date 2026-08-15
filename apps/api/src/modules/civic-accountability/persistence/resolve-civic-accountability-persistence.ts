@@ -2,9 +2,11 @@ import { FileCivicAccountabilityPersistenceAdapter } from "./civic-accountabilit
 import { MemoryCivicAccountabilityPersistenceAdapter } from "./civic-accountability-memory.persistence.js";
 import { createMongoCivicAccountabilityPersistenceAdapter } from "./civic-accountability-mongo.persistence.js";
 import type { CivicAccountabilityPersistenceAdapter } from "./civic-accountability-persistence.types.js";
+import { resolvePersistenceMode } from "../../../config/production-persistence-contract.js";
+
 
 export function resolveCivicAccountabilityPersistenceAdapter(): CivicAccountabilityPersistenceAdapter {
-  const mode = process.env.CIVIC_ACCOUNTABILITY_PERSISTENCE ?? "file";
+  const mode = resolvePersistenceMode("CIVIC_ACCOUNTABILITY_PERSISTENCE", "file");
 
   switch (mode) {
     case "memory":

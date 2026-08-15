@@ -125,6 +125,8 @@ project/architecture/
 ├── core/
 ├── intelligence/
 ├── governance/
+├── publishing/
+├── administration/
 ├── reviews/
 ├── backlog/
 └── adr/
@@ -149,6 +151,7 @@ Engineering standards and platform foundations.
 - `core/UI_ARCHITECTURE_GUIDELINES.md`
 - `core/PLATFORM_LIFECYCLE.md`
 - `core/SYSTEM_ARCHITECTURE.md`
+- `core/LANGUAGE_TRANSLATION_ARCHITECTURE_v1.0.md`
 
 ## intelligence/
 
@@ -170,12 +173,28 @@ Platform decisions, freezes, and certification artifacts.
 - `governance/COLLECTIVE_INTELLIGENCE_ARCHITECTURE_FREEZE.md`
 - `governance/COLLECTIVE_INTELLIGENCE_FOUNDATION_CERTIFICATE.md`
 
+## publishing/
+
+Publishing and Blog architecture packs.
+
+- `publishing/BLOG_ARCHITECTURE_PACK01.md`
+
+## administration/
+
+Platform Administration Architecture (roles, capabilities, audit, Admin Console boundaries).
+
+- `administration/ADMIN_ARCHITECTURE_v1.0.md`
+- `administration/CANONICAL_CAPABILITY_RESOLVER.md`
+- `administration/IMMUTABLE_AUDIT_FOUNDATION.md`
+
 ## reviews/
 
 Architecture review records.
 
 - `reviews/PLATFORM_ARCHITECTURE_REVIEW_V1.md`
 - `reviews/ENGINEERING_FOUNDATION_REVIEW.md`
+- `reviews/LAUNCH_READINESS_AUDIT_v1.0.md`
+- `reviews/LAUNCH_READINESS_GEOMETRY_CONVERGENCE_v1.0.md`
 
 ## backlog/
 

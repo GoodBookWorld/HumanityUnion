@@ -11,7 +11,7 @@ import type {
   TrustedMediaResource,
 } from "@hu/types";
 
-import { Badge, Button, Card } from "../../../design-system";
+import { Badge, Card } from "../../../design-system";
 import { CIVIC_MEDIA_ROUTE } from "../routes";
 import {
   coverageToChips,
@@ -41,6 +41,26 @@ const PRINCIPLE_ICONS: Record<string, string> = {
   "fact-checking-practice": "F",
 };
 
+function isExternalHttpUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
+function ExternalResourceLink({ href, children }: { href: string; children: string }) {
+  if (isExternalHttpUrl(href)) {
+    return (
+      <a href={href} className="hu-button hu-button--secondary" target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <a href={href} className="hu-button hu-button--secondary">
+      {children}
+    </a>
+  );
+}
+
 function PrincipleCard({ principle }: { principle: CivicMediaSelectionPrinciple }) {
   const icon = PRINCIPLE_ICONS[principle.id] ?? principle.title.slice(0, 1);
   const whyItMatters = PRINCIPLE_WHY_IT_MATTERS[principle.id];
@@ -67,10 +87,20 @@ function FactCheckCard({ resource }: { resource: FactCheckResource }) {
 
   return (
     <Card className="civic-media-resource-card civic-media-resource-card--verification">
-      <span className="civic-media-resource-card__resource-icon" aria-hidden="true">
-        ✓
-      </span>
-      <h3>{resource.name}</h3>
+      <div className="civic-media-resource-card__header civic-media-resource-card__header--logo-end">
+        <div className="civic-media-resource-card__heading">
+          <h3>{resource.name}</h3>
+        </div>
+        <MediaLogo
+          name={resource.name}
+          logoUrl={resource.logoUrl}
+          logoLabel={resource.logoLabel}
+          className="civic-media-center__logo civic-media-resource-card__logo-fallback"
+          imageClassName="civic-media-center__logo-image civic-media-resource-card__logo-image"
+          width={72}
+          height={40}
+        />
+      </div>
       <p className="civic-media-resource-card__label">Mission</p>
       <p className="civic-media-resource-card__body">{resource.mission}</p>
       <div className="civic-media-resource-card__chips" aria-label="Coverage areas">
@@ -80,9 +110,7 @@ function FactCheckCard({ resource }: { resource: FactCheckResource }) {
           </span>
         ))}
       </div>
-      <Button href={resource.websiteUrl} variant="secondary">
-        Official website
-      </Button>
+      <ExternalResourceLink href={resource.websiteUrl}>Official website</ExternalResourceLink>
     </Card>
   );
 }
@@ -90,15 +118,23 @@ function FactCheckCard({ resource }: { resource: FactCheckResource }) {
 function PropagandaCard({ resource }: { resource: PropagandaAnalysisResource }) {
   return (
     <Card className="civic-media-resource-card civic-media-resource-card--analysis">
-      <span className="civic-media-resource-card__resource-icon" aria-hidden="true">
-        ⌕
-      </span>
-      <h3>{resource.name}</h3>
+      <div className="civic-media-resource-card__header civic-media-resource-card__header--logo-end">
+        <div className="civic-media-resource-card__heading">
+          <h3>{resource.name}</h3>
+        </div>
+        <MediaLogo
+          name={resource.name}
+          logoUrl={resource.logoUrl}
+          logoLabel={resource.logoLabel}
+          className="civic-media-center__logo civic-media-resource-card__logo-fallback"
+          imageClassName="civic-media-center__logo-image civic-media-resource-card__logo-image"
+          width={72}
+          height={40}
+        />
+      </div>
       <Badge status={resource.focus} />
       <p className="civic-media-resource-card__body">{resource.explanation}</p>
-      <Button href={resource.websiteUrl} variant="secondary">
-        Learn more
-      </Button>
+      <ExternalResourceLink href={resource.websiteUrl}>Learn more</ExternalResourceLink>
     </Card>
   );
 }

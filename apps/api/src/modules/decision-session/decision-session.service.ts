@@ -1,12 +1,14 @@
-import type { DecisionSession } from "@hu/types";
+import type { DecisionSession, DecisionSessionEligibility, DirectInitiativeAncestry, Initiative } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getCurrentPublishedVersion } from "../initiative-version-revision/initiative-version-revision.store.js";
+import { validateDirectInitiativeAncestry } from "../../shared/initiative-ancestry/index.js";
 import {
   assertDecisionSessionEligible,
   assessDecisionSessionEligibility,
+  assessDecisionSessionEligibilityForInitiative,
 } from "./decision-session-eligibility.js";
 import { buildDecisionSessionPackageReferences } from "./decision-session-package.js";
 import {
@@ -21,6 +23,100 @@ import {
   type SaveDecisionSessionDraftInput,
   validateDecisionSessionForPublication,
 } from "./decision-session.validators.js";
+import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+
+/**
+ * Initiative Ancestry — Recovery Task 08.
+ *
+ * `CreateDecisionSessionDraftInput` carries a direct, independent
+ * `initiativeId` (unlike Initiative Improvement Proposal, whose
+ * `initiativeId` is derived from a mandatory Analysis reference — Recovery
+ * Task 07). `DecisionSession` itself stores this `initiativeId` directly
+ * (see `@hu/types` `DecisionSession`). Decision Session creation does not
+ * accept or store any independent Improvement Proposal, Collaborative
+ * Analysis, or other upstream-artifact identifier: eligibility is instead an
+ * aggregate, Initiative-scoped business rule (at least one *published*
+ * Collaborative Analysis and one *steward-reviewed* Improvement Proposal
+ * must exist for the Initiative — see `decision-session-eligibility.ts`).
+ * Because both artifact lists are looked up by the same, already-validated
+ * `initiativeId`, cross-artifact Initiative consistency is guaranteed
+ * structurally: there is no independently supplied Analysis/Proposal
+ * identifier that a caller could use to reference an artifact belonging to
+ * a different Initiative. Consequently:
+ *
+ * - Ancestry is DIRECT (`validateDirectInitiativeAncestry`), not transitive.
+ *   `validateTransitiveInitiativeAncestry` does not apply to this module's
+ *   actual contract and is not used here.
+ * - There is no "Improvement Proposal validation" or "multiple upstream
+ *   artifact consistency" boundary to add beyond the existing,
+ *   Initiative-scoped eligibility rule, which this task leaves behaviorally
+ *   unchanged.
+ *
+ * As of this task, `createDecisionSessionDraft` — not the Express route — is
+ * the enforcement boundary: it validates that the Initiative exists (via the
+ * shared `validateDirectInitiativeAncestry`) before applying the
+ * module-specific eligibility rule and before any persistence is attempted.
+ * The resolved Initiative is reused for both the eligibility check and the
+ * ownership check, so a successful creation performs exactly one Initiative
+ * lookup (previously two: one inside `assertDecisionSessionEligible` and a
+ * second, redundant `getInitiativeById` call in this function).
+ *
+ * Decision Session does not own the Initiative lifecycle, Improvement
+ * Proposal content lifecycle, Collective Decision aggregate, implementation,
+ * or public impact. Persistence is unchanged: sessions continue to store a
+ * plain `initiativeId` string, not a nested ancestry object.
+ */
+export interface DecisionSessionAncestryDependencies {
+  readonly getInitiative: (initiativeId: string) => Initiative | null;
+  readonly assessEligibility: (initiative: Initiative) => Promise<DecisionSessionEligibility>;
+}
+
+const defaultDecisionSessionAncestryDependencies: DecisionSessionAncestryDependencies = {
+  getInitiative: getInitiativeById,
+  assessEligibility: assessDecisionSessionEligibilityForInitiative,
+};
+
+async function assertEligibleInitiativeAncestry(
+  initiativeId: string,
+  deps: DecisionSessionAncestryDependencies,
+): Promise<{
+  ancestry: DirectInitiativeAncestry;
+  initiative: Initiative;
+  initiativeVersion: number;
+}> {
+  const resolvedInitiativeBox: { value: Initiative | null } = { value: null };
+
+  // Enforcement boundary: confirms the Initiative exists and is well-formed
+  // before any persistence, regardless of caller.
+  const ancestry = await validateDirectInitiativeAncestry(
+    { initiativeId },
+    {
+      initiativeExists(id) {
+        resolvedInitiativeBox.value = deps.getInitiative(id);
+        return resolvedInitiativeBox.value !== null;
+      },
+    },
+  );
+
+  const initiative = resolvedInitiativeBox.value;
+
+  if (!initiative) {
+    // Unreachable: validateDirectInitiativeAncestry only resolves once
+    // initiativeExists() returned true, which only happens when
+    // resolvedInitiativeBox.value was set to a non-null Initiative.
+    throw new Error("Initiative not found.");
+  }
+
+  // Module-specific eligibility rule, reusing the already-resolved
+  // Initiative so no second lookup is performed.
+  const eligibility = await deps.assessEligibility(initiative);
+
+  if (!eligibility.eligible) {
+    throw new Error(eligibility.reasons[0] ?? "Initiative is not eligible for a decision session.");
+  }
+
+  return { ancestry, initiative, initiativeVersion: eligibility.initiativeVersion };
+}
 
 function getOwnedSession(sessionId: string, identity: RequestIdentity): DecisionSession {
   const session = getSessionById(sessionId);
@@ -54,7 +150,9 @@ function assertArchivableStatus(session: DecisionSession): void {
   }
 }
 
-export function getDecisionSessionEligibility(initiativeId: string) {
+export async function getDecisionSessionEligibility(
+  initiativeId: string,
+): Promise<DecisionSessionEligibility> {
   return assessDecisionSessionEligibility(initiativeId);
 }
 
@@ -86,16 +184,15 @@ export function getMyDecisionSession(
   return getOwnedSession(sessionId, identity);
 }
 
-export function createDecisionSessionDraft(
+export async function createDecisionSessionDraft(
   identity: RequestIdentity,
   input: CreateDecisionSessionDraftInput,
-): DecisionSession {
-  const { initiativeVersion } = assertDecisionSessionEligible(input.initiativeId);
-  const initiative = getInitiativeById(input.initiativeId);
-
-  if (!initiative) {
-    throw new Error("Initiative not found.");
-  }
+  deps: DecisionSessionAncestryDependencies = defaultDecisionSessionAncestryDependencies,
+): Promise<DecisionSession> {
+  const { ancestry, initiative, initiativeVersion } = await assertEligibleInitiativeAncestry(
+    input.initiativeId,
+    deps,
+  );
 
   assertInitiativeOwnership(initiative, identity);
 
@@ -107,7 +204,9 @@ export function createDecisionSessionDraft(
 
   const session: DecisionSession = {
     sessionId: `decision-session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    initiativeId: input.initiativeId,
+    // Persisted initiativeId is sourced from the validated ancestry result,
+    // not directly from the unchecked input.
+    initiativeId: ancestry.initiativeId,
     initiativeVersion,
     stewardId: identity.participantId,
     title: input.title,
@@ -148,19 +247,26 @@ export function saveDecisionSessionDraft(
   return updated;
 }
 
-export function publishDecisionSession(
+export async function publishDecisionSession(
   identity: RequestIdentity,
   sessionId: string,
-): DecisionSession {
+): Promise<DecisionSession> {
   const session = getOwnedSession(sessionId, identity);
 
   assertDraftStatus(session);
   validateDecisionSessionForPublication(session);
 
-  assertDecisionSessionEligible(session.initiativeId);
+  await assertDecisionSessionEligible(session.initiativeId);
 
   const publishedAt = new Date().toISOString();
-  const packageReferences = buildDecisionSessionPackageReferences(session.initiativeId);
+  // Initiative Lifecycle — Part F, Section 11: the Published Petition this
+  // session's decision is built on top of, frozen into the same
+  // reference-only package as Revisions/Analyses/Proposals.
+  const publishedPetition = await getPetitionByInitiativeId(session.initiativeId);
+  const packageReferences = {
+    ...buildDecisionSessionPackageReferences(session.initiativeId),
+    petitionId: publishedPetition?.petitionId ?? null,
+  };
 
   const updated = updateSession(sessionId, {
     status: "published",

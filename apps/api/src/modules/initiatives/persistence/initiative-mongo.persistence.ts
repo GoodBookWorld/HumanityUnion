@@ -1,6 +1,7 @@
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import type { Initiative } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import {
   createEmptyInitiativePersistenceSnapshot,
@@ -27,7 +28,7 @@ export function createMongoInitiativePersistenceAdapter(): InitiativePersistence
 }
 
 export async function hydrateInitiativeMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_PERSISTENCE")) {
     return;
   }
 
@@ -35,7 +36,7 @@ export async function hydrateInitiativeMongoPersistence(): Promise<void> {
 }
 
 export async function flushInitiativeMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_PERSISTENCE")) {
     return;
   }
 

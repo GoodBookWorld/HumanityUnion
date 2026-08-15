@@ -102,6 +102,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     id: "propublica",
     name: "ProPublica",
     logoLabel: "PP",
+    logoUrl: "/images/media/propublica.webp",
     country: "United States",
     categoryId: "independent-investigative",
     explanation:
@@ -110,15 +111,28 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     sortOrder: 9,
   },
   {
+    id: "the-atlantic",
+    name: "The Atlantic",
+    logoLabel: "Atl",
+    logoUrl: "/images/media/the-atlantic.webp",
+    country: "United States",
+    categoryId: "independent-investigative",
+    explanation:
+      "Long-form journalism magazine with published editorial standards covering politics, culture, and civic life.",
+    websiteUrl: "https://www.theatlantic.com/",
+    sortOrder: 10,
+  },
+  {
     id: "occrp",
     name: "OCCRP",
     logoLabel: "OC",
+    logoUrl: "/images/media/occrp.webp",
     country: "International",
     categoryId: "independent-investigative",
     explanation:
       "Consortium of investigative centers focused on corruption and organized crime with cross-border reporting.",
     websiteUrl: "https://www.occrp.org/",
-    sortOrder: 10,
+    sortOrder: 11,
   },
   {
     id: "the-guardian",
@@ -130,7 +144,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Independent news organization with published editorial standards and corrections policy.",
     websiteUrl: "https://www.theguardian.com/",
-    sortOrder: 11,
+    sortOrder: 12,
   },
   {
     id: "new-york-times",
@@ -142,7 +156,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "National newspaper with published standards for accuracy, corrections, and editorial independence.",
     websiteUrl: "https://www.nytimes.com/",
-    sortOrder: 12,
+    sortOrder: 13,
   },
   {
     id: "washington-post",
@@ -154,7 +168,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "National newspaper covering public policy and civic affairs with published editorial standards.",
     websiteUrl: "https://www.washingtonpost.com/",
-    sortOrder: 13,
+    sortOrder: 14,
   },
   {
     id: "cbc",
@@ -167,7 +181,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Canadian public broadcaster with journalistic standards and regional news coverage.",
     websiteUrl: "https://www.cbc.ca/",
-    sortOrder: 14,
+    sortOrder: 15,
   },
   {
     id: "globe-and-mail",
@@ -327,6 +341,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     id: "abc-australia",
     name: "ABC Australia",
     logoLabel: "ABC",
+    logoUrl: "/images/media/abc-australia.webp",
     country: "Australia",
     categoryId: "regional-public-media",
     explanation:
@@ -338,6 +353,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     id: "nature",
     name: "Nature",
     logoLabel: "Nat",
+    logoUrl: "/images/media/nature.webp",
     country: "International",
     categoryId: "scientific-publisher",
     explanation:
@@ -349,6 +365,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     id: "science-magazine",
     name: "Science",
     logoLabel: "Sci",
+    logoUrl: "/images/media/science.webp",
     country: "International",
     categoryId: "scientific-publisher",
     explanation:
@@ -360,6 +377,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     id: "jstor",
     name: "JSTOR",
     logoLabel: "JS",
+    logoUrl: "/images/media/jstor.webp",
     country: "International",
     categoryId: "academic-resource",
     explanation:
@@ -371,6 +389,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     id: "britannica",
     name: "Britannica",
     logoLabel: "BE",
+    logoUrl: "/images/media/britannica.webp",
     country: "International",
     categoryId: "academic-resource",
     explanation: "Encyclopedic reference resource with editorial review and source citations.",

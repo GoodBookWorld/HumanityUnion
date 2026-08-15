@@ -16,14 +16,14 @@ export const CONTACT_EMAIL = "info@huws.org";
 export const FOOTER_PLATFORM_COLUMN_ONE: FooterLink[] = [
   { label: "Institutions", href: "/institutions", status: "active" },
   { label: "Initiatives", href: "/initiatives", status: "active" },
-  { label: "Knowledge", href: "/knowledge", status: "active" },
+  { label: "Blog", href: "/blog", status: "active" },
   { label: "Membership", href: "/membership", status: "active" },
 ];
 
 export const FOOTER_PLATFORM_COLUMN_TWO: FooterLink[] = [
   { label: "Civic Media", href: CIVIC_MEDIA_ROUTE, status: "active" },
   { label: "Civic Archive", href: "/civic-archive", status: "active" },
-  { label: "Feedback", href: "/support", status: "active" },
+  { label: "Support", href: "/support", status: "active" },
   { label: "Search", href: "/search", status: "active" },
 ];
 
@@ -42,12 +42,13 @@ export const FOOTER_LEGAL_LINKS: FooterLink[] = [
 export const FOOTER_SOCIAL_LINKS = [
   { label: "Facebook", href: "https://www.facebook.com/HumanityUnionWS/" },
   { label: "YouTube", href: "https://www.youtube.com/@HumanityUnionWS" },
-  { label: "LinkedIn", href: "https://www.linkedin.com/company/105362851/admin/dashboard/" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/company/105362851/" },
   { label: "Instagram", href: "https://www.instagram.com/humanity_union/" },
   { label: "X", href: "https://x.com/HumanityUnionWS" },
 ] as const;
 
-export const REGISTRATION_ROUTE: string | null = null;
+/** Live registration entry — Identity Capability is available at `/register`. */
+export const REGISTRATION_ROUTE = "/register";
 
 export function mailtoContactLink(subject?: string): string {
   if (!subject) {

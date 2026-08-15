@@ -1,4 +1,8 @@
-import type { ImplementationTrackingUpdate, InitiativeImplementationTracking } from "@hu/types";
+import type {
+  ImplementationTrackingTraceability,
+  ImplementationTrackingUpdate,
+  InitiativeImplementationTracking,
+} from "@hu/types";
 
 import { resolveInitiativeImplementationTrackingPersistenceAdapter } from "./persistence/resolve-initiative-implementation-tracking-persistence.js";
 import { snapshotFromTrackingData } from "./persistence/initiative-implementation-tracking-persistence.types.js";
@@ -10,6 +14,18 @@ export interface InitiativeImplementationTrackingUpdate {
   activatedAt?: string;
   completedAt?: string;
   archivedAt?: string;
+  /** Initiative Lifecycle — Part J fields. */
+  packageId?: string | null;
+  progress?: number | null;
+  targetDate?: string | null;
+  startedDate?: string | null;
+  actualCompletedDate?: string | null;
+  dependencies?: string[] | null;
+  obstacles?: string[] | null;
+  evidenceReferences?: string[] | null;
+  notes?: string | null;
+  approvedAction?: string | null;
+  traceability?: ImplementationTrackingTraceability | null;
 }
 
 const PUBLIC_STATUSES = new Set<InitiativeImplementationTracking["status"]>([
@@ -140,6 +156,50 @@ export function updateTracking(
     tracking.archivedAt = update.archivedAt;
   }
 
+  if (update.packageId !== undefined) {
+    tracking.packageId = update.packageId;
+  }
+
+  if (update.progress !== undefined) {
+    tracking.progress = update.progress;
+  }
+
+  if (update.targetDate !== undefined) {
+    tracking.targetDate = update.targetDate;
+  }
+
+  if (update.startedDate !== undefined) {
+    tracking.startedDate = update.startedDate;
+  }
+
+  if (update.actualCompletedDate !== undefined) {
+    tracking.actualCompletedDate = update.actualCompletedDate;
+  }
+
+  if (update.dependencies !== undefined) {
+    tracking.dependencies = update.dependencies;
+  }
+
+  if (update.obstacles !== undefined) {
+    tracking.obstacles = update.obstacles;
+  }
+
+  if (update.evidenceReferences !== undefined) {
+    tracking.evidenceReferences = update.evidenceReferences;
+  }
+
+  if (update.notes !== undefined) {
+    tracking.notes = update.notes;
+  }
+
+  if (update.approvedAction !== undefined) {
+    tracking.approvedAction = update.approvedAction;
+  }
+
+  if (update.traceability !== undefined) {
+    tracking.traceability = update.traceability;
+  }
+
   tracking.updatedAt = new Date().toISOString();
 
   persistState({ trackings, updates });
@@ -196,4 +256,35 @@ export function getUpdateById(updateId: string): ImplementationTrackingUpdate | 
 
 export function getPersistenceMode(): "file" | "memory" | "mongodb" {
   return persistence.mode;
+}
+
+/**
+ * Recovery Task 16 — narrow, test-only cleanup helper aligned with the
+ * actual aggregate boundary: Tracking is its own aggregate root (not
+ * embedded within Commitment), and each `ImplementationTrackingUpdate` is
+ * owned exclusively by exactly one Tracking record. Deletes only the
+ * Tracking records authored by `participantId` and their owned execution
+ * history entries, leaving unrelated records (including other
+ * participants' Tracking and Commitment data) untouched. No delete-all
+ * option and no HTTP exposure, matching sibling cleanup helpers
+ * (`deleteVotesByParticipantIdForTests`,
+ * `deleteCommitmentsByParticipantIdForTests`).
+ */
+export function deleteTrackingsByParticipantIdForTests(participantId: string): void {
+  const removedTrackingIds = new Set<string>();
+
+  for (const [trackingId, tracking] of trackings) {
+    if (tracking.participantId === participantId) {
+      trackings.delete(trackingId);
+      removedTrackingIds.add(trackingId);
+    }
+  }
+
+  for (const [updateId, update] of updates) {
+    if (removedTrackingIds.has(update.trackingId)) {
+      updates.delete(updateId);
+    }
+  }
+
+  persistState({ trackings, updates });
 }

@@ -2,10 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
 
+# pnpm 11+: lifecycle scripts are blocked unless explicitly allowed here.
+# Keep this allowlist minimal — only packages that legitimately need native/postinstall builds.
 allowBuilds:
-  argon2: set this to true or false
-  bcrypt: set this to true or false
-
-onlyBuiltDependencies:
-  - esbuild
-  - sharp
+  bcrypt: true
+  esbuild: true
+  sharp: true

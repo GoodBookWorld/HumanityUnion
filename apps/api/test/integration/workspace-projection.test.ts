@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { after, afterEach, before, beforeEach, describe, it } from "node:test";
+import { after, before, beforeEach, describe, it } from "node:test";
 
 import { deserializeDomainEventEnvelope } from "../../src/infrastructure/events/event-serialization.js";
 import { registerAuthUser } from "../../src/modules/auth/auth.service.js";
@@ -26,8 +26,6 @@ import {
   deleteProcessedEventsByEventIdPrefix,
   dispatchOutboxOnceForTests,
   isEventProcessed,
-  resetOutboxDispatcherStateForTests,
-  stopOutboxDispatcher,
 } from "../../src/infrastructure/outbox/index.js";
 import { findAuthUserByEmail } from "../../src/modules/auth/auth-user.repository.js";
 import {

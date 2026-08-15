@@ -24,3 +24,4 @@ export type {
   SupportThresholdStatus,
 } from "./support-metrics";
 export type { PetitionOutcome, PetitionOutcomeId, PetitionOutcomeType } from "./petition-outcome";
+export type { PetitionTraceability } from "../initiative-petition-lifecycle";

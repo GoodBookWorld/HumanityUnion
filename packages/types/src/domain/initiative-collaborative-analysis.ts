@@ -14,6 +14,12 @@ export interface InitiativeCollaborativeAnalysis {
   summary: string;
   supportingEvidence: string;
   risks: string;
+  /**
+   * Initiative Lifecycle — Part B. Additive field (optional so pre-existing
+   * persisted analyses without it still deserialize cleanly). Maps to the
+   * Lifecycle Stage Workspace editor's "Open Questions" section.
+   */
+  openQuestions?: string;
   suggestedImprovements: string;
   references: string;
   status: InitiativeCollaborativeAnalysisStatus;

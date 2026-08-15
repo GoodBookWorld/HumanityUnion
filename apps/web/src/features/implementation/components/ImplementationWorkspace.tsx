@@ -96,7 +96,7 @@ export function ImplementationWorkspace({
         <NextMeaningfulObservationSection implementation={implementation} />
       </ProfileSection>
 
-      <ProfileSection title="Humanity Assistant">
+      <ProfileSection title="Humanity Union Assistant">
         <HumanityAssistantPanel implementation={implementation} />
       </ProfileSection>
 

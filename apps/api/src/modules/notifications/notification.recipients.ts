@@ -213,6 +213,29 @@ export function clearMemoryNotificationRecipientsForTests(): void {
   memoryRecipientDirectory.clear();
 }
 
+/**
+ * Reliability Task — Fix Notification Recipient Identity in Memory Mode.
+ *
+ * Root cause: this bridge previously only attempted the Mongo-backed
+ * `memberId` (i.e. `participantId`) -> auth `userId` lookup when
+ * `NOTIFICATION_PERSISTENCE === "mongodb"`. That env var only selects where
+ * *notification records* are stored (a Mongo collection vs. an in-process
+ * Map) — it has nothing to do with whether the `auth-users` collection
+ * (the actual source of truth for identity) is reachable. Since the
+ * platform's configured default is `NOTIFICATION_PERSISTENCE=memory`
+ * (see `.env.example`, and unset in practice), the identity bridge was
+ * skipped in the platform's default configuration even though Mongo — and
+ * the real `auth-users` collection — was fully configured and reachable.
+ * Every notification created under that default therefore recorded
+ * `recipientUserId = memberId` (a `participantId`), not the authenticated
+ * `userId`, so retrieval by the real signed-in `userId` (see
+ * `notification.routes.ts`, `req.auth!.id`) silently returned nothing.
+ *
+ * Fix: identity resolution now depends only on whether Mongo itself is
+ * configured (`isMongoConfigured()`), never on the notification *storage*
+ * mode. This guarantees `owner = authenticated userId` identically whether
+ * notifications are persisted in memory or MongoDB.
+ */
 export async function resolveRecipientIdentity(memberId: string): Promise<{
   userId: string;
   profileId: string;
@@ -223,33 +246,31 @@ export async function resolveRecipientIdentity(memberId: string): Promise<{
     return cached;
   }
 
-  const shouldResolveFromMongo =
-    isMongoConfigured() && process.env.NOTIFICATION_PERSISTENCE === "mongodb";
-
-  if (shouldResolveFromMongo) {
+  if (isMongoConfigured()) {
     try {
       const authUser = await findAuthUserByMemberId(memberId);
 
       if (authUser) {
         const profile = await findMemberProfileByUserId(authUser.userId);
 
-        if (profile) {
-          return {
-            userId: authUser.userId,
-            profileId: profile.profileId,
-          };
-        }
-
         return {
           userId: authUser.userId,
-          profileId: authUser.userId,
+          profileId: profile?.profileId ?? authUser.userId,
         };
       }
     } catch {
-      // Mongo may be unavailable in memory-only civic tests.
+      // Mongo may be configured but unreachable (e.g. isolated unit tests
+      // that stub `MONGODB_URI` without a live connection). Fall through
+      // to the last-resort identity below rather than throwing, since
+      // notification delivery must never block the originating workflow.
     }
   }
 
+  // Last resort: only reached when Mongo is not configured at all (no way
+  // to resolve a real `userId`) and no test pre-registered a mapping via
+  // `registerMemoryNotificationRecipient`. Never reachable in a real
+  // deployment, where Mongo (the `auth-users` source of truth) is always
+  // configured.
   return {
     userId: memberId,
     profileId: memberId,

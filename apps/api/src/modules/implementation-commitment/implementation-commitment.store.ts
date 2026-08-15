@@ -94,8 +94,8 @@ function assertApprovedCollectiveDecision(collectiveDecisionId: string): void {
   }
 }
 
-function assertPetitionEligibility(petitionId: string, initiativeId: string): void {
-  const petition = getPetition(petitionId);
+async function assertPetitionEligibility(petitionId: string, initiativeId: string): Promise<void> {
+  const petition = await getPetition(petitionId);
 
   if (!petition) {
     throw new Error(`Petition "${petitionId}" was not found.`);
@@ -216,9 +216,9 @@ export function participantHasActiveContribution(
   return hasActiveContributionForParticipant(commitment, participantId);
 }
 
-export function createImplementationCommitment(
+export async function createImplementationCommitment(
   input: ImplementationCommitmentCreateInput,
-): ImplementationCommitment {
+): Promise<ImplementationCommitment> {
   if (commitments.has(input.implementationCommitmentId)) {
     throw new Error(
       `Implementation Commitment "${input.implementationCommitmentId}" already exists.`,
@@ -226,7 +226,7 @@ export function createImplementationCommitment(
   }
 
   assertApprovedCollectiveDecision(input.collectiveDecisionId);
-  assertPetitionEligibility(input.petitionId, input.initiativeId);
+  await assertPetitionEligibility(input.petitionId, input.initiativeId);
   assertUniqueCommitmentPath(input.collectiveDecisionId);
 
   if (input.frozenPolicyId) {

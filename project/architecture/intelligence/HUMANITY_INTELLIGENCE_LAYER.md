@@ -160,6 +160,12 @@ Supports:
 
 The objective is collaboration rather than duplication.
 
+**Implemented foundation:** Community Intelligence Pack 01 — see
+`COMMUNITY_INTELLIGENCE_v1.0.md`. Pack 01 ships a deterministic, explainable
+`CommunitySimilarityProvider` with `possible_duplicate` / `related` /
+`complementary` classifications. It never auto-merges Initiatives. Semantic
+providers remain a future optional seam.
+
 ---
 
 # Contribution Engine

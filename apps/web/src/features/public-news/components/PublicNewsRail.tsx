@@ -17,7 +17,19 @@ export function PublicNewsRail({
   articles,
   label = "Trusted news discovery results",
 }: PublicNewsRailProps) {
-  const rail = useMediaHorizontalRail({
+  const {
+    instructionsId,
+    viewportRef,
+    startIndex,
+    visibleCount,
+    canScrollPrevious,
+    canScrollNext,
+    visibleEnd,
+    showPrevious,
+    showNext,
+    handleKeyDown,
+    handleScroll,
+  } = useMediaHorizontalRail({
     itemCount: articles.length,
     layout: "three-two-one",
     label,
@@ -32,10 +44,10 @@ export function PublicNewsRail({
       className="media-horizontal-rail public-news-rail"
       aria-roledescription="carousel"
       aria-label={label}
-      data-visible-count={rail.visibleCount}
+      data-visible-count={visibleCount}
       data-layout="three-two-one"
     >
-      <p id={rail.instructionsId} className="media-rail__visually-hidden">
+      <p id={instructionsId} className="media-rail__visually-hidden">
         {label}. Use the previous and next buttons, arrow keys, or horizontal scrolling to browse
         additional news cards.
       </p>
@@ -43,34 +55,34 @@ export function PublicNewsRail({
       <div className="public-news-rail__toolbar">
         <MediaRailControls
           label="news cards"
-          canScrollPrevious={rail.canScrollPrevious}
-          canScrollNext={rail.canScrollNext}
-          onPrevious={rail.showPrevious}
-          onNext={rail.showNext}
+          canScrollPrevious={canScrollPrevious}
+          canScrollNext={canScrollNext}
+          onPrevious={showPrevious}
+          onNext={showNext}
         />
       </div>
 
       <div
         className={`media-horizontal-rail__frame${
-          rail.canScrollPrevious ? " media-horizontal-rail__frame--fade-start" : ""
-        }${rail.canScrollNext ? " media-horizontal-rail__frame--fade-end" : ""}`}
+          canScrollPrevious ? " media-horizontal-rail__frame--fade-start" : ""
+        }${canScrollNext ? " media-horizontal-rail__frame--fade-end" : ""}`}
       >
         <div
-          ref={rail.viewportRef}
+          ref={viewportRef}
           className="media-horizontal-rail__viewport public-news-rail__viewport"
           role="list"
           aria-live="polite"
-          aria-describedby={rail.instructionsId}
+          aria-describedby={instructionsId}
           tabIndex={0}
-          onKeyDown={rail.handleKeyDown}
-          onScroll={rail.handleScroll}
+          onKeyDown={handleKeyDown}
+          onScroll={handleScroll}
         >
           {articles.map((article, index) => (
             <div
               key={article.id}
               className="media-horizontal-rail__slide public-news-rail__slide"
               role="listitem"
-              data-media-rail-index={index}
+              data-horizontal-rail-index={index}
             >
               <PublicNewsCard article={article} />
             </div>
@@ -79,7 +91,7 @@ export function PublicNewsRail({
       </div>
 
       <p className="media-horizontal-rail__summary" aria-live="polite">
-        Showing {rail.startIndex + 1}–{rail.visibleEnd} of {articles.length} trusted article
+        Showing {startIndex + 1}–{visibleEnd} of {articles.length} trusted article
         {articles.length === 1 ? "" : "s"}
       </p>
     </div>

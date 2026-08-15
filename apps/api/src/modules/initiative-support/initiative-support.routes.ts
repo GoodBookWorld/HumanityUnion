@@ -5,6 +5,7 @@ import type { InitiativeSupportSignalKind } from "@hu/types";
 import { INITIATIVE_SUPPORT_TRANSPARENCY_NOTE } from "@hu/types";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { logger } from "../../shared/observability/logger.js";
 import {
   optionalAuthenticationMiddleware,
   requireJwtAuthenticationMiddleware,
@@ -206,20 +207,36 @@ initiativeSupportRouter.post("/:initiativeId/support/view", async (req, res) => 
       ? req.body.viewerKey
       : resolveVisitorKey(req);
 
-  const total = await recordInitiativeView({
-    initiativeId: initiative.initiativeId,
-    viewerKey,
-  });
+  try {
+    const total = await recordInitiativeView({
+      initiativeId: initiative.initiativeId,
+      viewerKey,
+    });
 
-  res.json(
-    createSuccessResponse(
-      {
-        total,
-        available: true,
-      },
-      "Initiative view recorded.",
-    ),
-  );
+    res.json(
+      createSuccessResponse(
+        {
+          total,
+          available: true,
+        },
+        "Initiative view recorded.",
+      ),
+    );
+  } catch (error) {
+    // Stability Hotfix: `recordInitiativeView` is idempotent for the
+    // expected duplicate-view race, so a rejection here is a genuine,
+    // unexpected persistence failure (e.g. a real Mongo outage) — this
+    // route has no global async-error middleware, so without this
+    // try/catch an unawaited-by-Express rejection would become an
+    // unhandled rejection and could terminate the process, exactly as it
+    // did for the fire-and-forget call in
+    // buildPublicInitiativeExperienceProjection.
+    logger.error("initiative_view.record_failed", {
+      initiativeId: initiative.initiativeId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.status(500).json(createFailureResponse("Unable to record Initiative view."));
+  }
 });
 
 export default initiativeSupportRouter;

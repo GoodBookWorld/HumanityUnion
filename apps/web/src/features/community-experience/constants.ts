@@ -9,4 +9,5 @@ export const COMMUNITY_EXPERIENCE_BLOCKS = [
   "Footer",
 ] as const;
 
-export const WORKSPACE_ROUTE: string | null = null;
+/** Live Workspace entry for authenticated Participants. */
+export const WORKSPACE_ROUTE = "/workspace";

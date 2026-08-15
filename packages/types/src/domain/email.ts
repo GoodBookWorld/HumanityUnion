@@ -1,4 +1,4 @@
-/** Transactional email templates supported in Phase 1. */
+/** Transactional email templates supported by the canonical MailDeliveryService. */
 export type EmailTemplateId =
   | "registration_verification"
   | "registration_confirmation_code"
@@ -8,9 +8,17 @@ export type EmailTemplateId =
   | "login_notification"
   | "email_change_verification"
   | "security_alert"
-  | "member_badge_contribution_confirmed";
+  | "member_badge_contribution_confirmed"
+  /** Workspace notification digest / summary — never embeds private message bodies. */
+  | "workspace_notification_summary"
+  /** Blog Author Access Pack 04 status updates (approved / changes / declined). */
+  | "blog_author_application_status"
+  /** Editorial Review Pack 06 — publication review/publish status summary. */
+  | "blog_publication_status"
+  /** Direct message alert — link only; never includes message content. */
+  | "workspace_message_alert";
 
-export type EmailDeliveryStatus = "queued" | "sent" | "failed";
+export type EmailDeliveryStatus = "queued" | "sent" | "failed" | "deferred" | "blocked";
 
 export type EmailVerificationTokenPurpose = "registration" | "password_reset" | "email_change";
 
@@ -33,4 +41,8 @@ export interface EmailProviderHealth {
   healthy: boolean;
   configured: boolean;
   message: string;
+  /** ISO timestamp of last successful delivery/verify when known (admin diagnostics). */
+  lastSuccessAt?: string;
+  /** Stable failure category — never includes SMTP secrets or raw auth payloads. */
+  lastFailureCategory?: string;
 }

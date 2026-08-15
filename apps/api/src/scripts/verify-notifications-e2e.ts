@@ -293,7 +293,7 @@ async function verifyRuntimeBehavior(): Promise<void> {
     "Initiative publish hook must create steward notification",
   );
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(analyst, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(analyst, {
     initiativeId: draft.initiativeId,
     title: "Notification Analysis",
     summary: "Analysis for notification verification.",
@@ -302,9 +302,9 @@ async function verifyRuntimeBehavior(): Promise<void> {
     suggestedImprovements: "Improve",
     references: "Ref",
   });
-  publishInitiativeCollaborativeAnalysis(analyst, analysisDraft.analysisId);
+  await publishInitiativeCollaborativeAnalysis(analyst, analysisDraft.analysisId);
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(analyst, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(analyst, {
     analysisId: analysisDraft.analysisId,
     targetSection: "Summary",
     currentIssue: "Issue",

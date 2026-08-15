@@ -50,7 +50,10 @@ function verifySharedMiniCard(): void {
     card.includes("PUBLIC_INITIATIVE_MINI_CARD_FALLBACK_IMAGE"),
     "Mini card must define image fallback.",
   );
-  assert(card.includes("/initiative.webp"), "Mini card fallback must use /initiative.webp.");
+  assert(
+    card.includes("/images/initiatives/initiative-default.webp"),
+    "Mini card fallback must use /images/initiatives/initiative-default.webp.",
+  );
   assert(card.includes("PublicInitiativeMiniCardPlaceholder"), "Placeholder card must be defined.");
   assert(
     card.includes("Initiative slot awaiting publication"),

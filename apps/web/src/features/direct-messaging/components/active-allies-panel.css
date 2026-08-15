@@ -1,0 +1,252 @@
+/*
+ * Communication UX Pack 03.3.1 Part 2/3/21 — the permanent replacement for
+ * the Civic Assistant column on the Workspace Messages page. Mirrors the
+ * exact sticky-column chrome of `.workspace-civic-assistant` (Workspace
+ * Home / Initiatives) so this reads as one consistent Workspace pattern,
+ * not a bolt-on.
+ */
+.active-allies-panel {
+  width: 100%;
+}
+
+.active-allies-panel__sticky {
+  position: sticky;
+  top: var(--hu-header-height);
+}
+
+.active-allies-panel__panel {
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  box-shadow: var(--hu-shadow-sm);
+  padding: var(--hu-space-4);
+}
+
+.active-allies-panel__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--hu-space-2);
+  margin-bottom: var(--hu-space-3);
+}
+
+.active-allies-panel__title {
+  font-size: var(--hu-font-size-lg);
+  font-weight: 700;
+  margin: 0;
+}
+
+.active-allies-panel__count {
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+  white-space: nowrap;
+}
+
+.active-allies-panel__status {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+}
+
+.active-allies-panel__status--error {
+  color: var(--hu-color-danger, #dc2626);
+}
+
+/* Communication UX Pack 03.8 Part 4 — search by Participant name, above the scrollable list. */
+.active-allies-panel__search {
+  margin-bottom: var(--hu-space-3);
+}
+
+.active-allies-panel__search-input {
+  width: 100%;
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  font: inherit;
+  font-size: var(--hu-font-size-sm);
+}
+
+.active-allies-panel__search-input:focus-visible {
+  outline: 2px solid var(--hu-color-primary, #1a56db);
+  outline-offset: 1px;
+}
+
+/* Part 5 — Author still sees an entry point to gain Allies (never a fake Invite button). */
+.active-allies-panel__empty {
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.active-allies-panel__empty-title {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+  line-height: var(--hu-line-height);
+}
+
+.active-allies-panel__empty-action {
+  display: inline-block;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  color: var(--hu-color-primary, #1a56db);
+}
+
+/*
+ * Part 8/9 — bounded, internally-scrolling list. No `overscroll-behavior:
+ * contain` (see `allies-widget.css` / `direct-messaging.css` for the same
+ * documented "dead zone" reasoning) — default `auto` chaining keeps normal
+ * Workspace page scrolling from ever getting trapped once this list
+ * reaches its own top/bottom boundary.
+ */
+.active-allies-panel__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--hu-space-2);
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.active-allies-panel__card {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-bg-muted);
+}
+
+/* UX Completion Pack 04 Part 6 — the selected Ally, now that this directory is the sole conversation selector. */
+.active-allies-panel__card--active {
+  border-color: var(--hu-color-primary, #1a56db);
+  background: var(--hu-color-surface);
+  box-shadow: inset 0 0 0 1px var(--hu-color-primary, #1a56db);
+}
+
+/*
+ * Communication UX Pack 03.8 Part 4 — avatar + name only, as one clickable
+ * unit that opens the conversation (never role, shared Initiatives, or
+ * statistics); the Message button beside it performs the identical
+ * action and remains a fully separate, independently focusable control.
+ */
+.active-allies-panel__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-3);
+  min-width: 0;
+  flex: 1 1 auto;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.active-allies-panel__identity:hover .active-allies-panel__name,
+.active-allies-panel__identity:focus-visible .active-allies-panel__name {
+  text-decoration: underline;
+}
+
+.active-allies-panel__identity:disabled {
+  cursor: default;
+}
+
+.active-allies-panel__avatar {
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--hu-color-surface);
+  flex-shrink: 0;
+}
+
+.active-allies-panel__name {
+  display: block;
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  color: var(--hu-color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.active-allies-panel__message-wrap {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+/* Part 10/22 — minimum touch target size, visible focus, never the row's only interactive element. */
+.active-allies-panel__message-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  color: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.active-allies-panel__message-button:hover,
+.active-allies-panel__message-button:focus-visible {
+  border-color: var(--hu-color-primary, #1a56db);
+}
+
+.active-allies-panel__message-button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.active-allies-panel__message-label {
+  white-space: nowrap;
+}
+
+/* Part 10 — never the only accessible indicator; always paired with visually-hidden text below. */
+.active-allies-panel__unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hu-color-danger, #dc2626);
+  flex-shrink: 0;
+}
+
+.active-allies-panel__message-error {
+  margin: 0;
+  max-width: 12rem;
+  font-size: 0.75rem;
+  color: var(--hu-color-danger, #dc2626);
+  text-align: right;
+}
+
+.active-allies-panel__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Part 21 — tablet: icon-first Message control with the accessible label preserved. */
+@media (max-width: 420px) {
+  .active-allies-panel__message-label {
+    display: none;
+  }
+}

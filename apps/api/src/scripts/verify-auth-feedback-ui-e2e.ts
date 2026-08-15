@@ -155,6 +155,8 @@ function verifyEmailLogoDeploymentReadiness(): void {
   assert(templates.includes("Humanity Union</p>"), "Email header must include textual fallback.");
 
   const configuredLogoUrl = "https://huws.org/brand/humanity-union-logo-white-email.png";
+  const previousLogo = process.env.EMAIL_LOGO_URL;
+  delete process.env.EMAIL_LOGO_URL;
   const resolved = resolveEmailLogoUrl("http://localhost:3000");
   process.env.EMAIL_LOGO_URL = configuredLogoUrl;
   const configuredResolved = resolveEmailLogoUrl("http://localhost:3000");
@@ -165,17 +167,26 @@ function verifyEmailLogoDeploymentReadiness(): void {
     configuredLogoUrl,
     "EMAIL_LOGO_URL must be inserted as an absolute URL when configured.",
   );
-  assertStrict.match(resolved, /^https?:\/\//u, "Fallback logo URL must still be absolute.");
+  assertStrict.equal(
+    resolved,
+    null,
+    "Localhost fallback must be omitted so Gmail never receives a broken image URL.",
+  );
 
+  process.env.WEB_ORIGIN = "http://localhost:3000";
+  delete process.env.EMAIL_LOGO_URL;
   const rendered = renderRegistrationConfirmationCodeEmail({
     displayName: "Verify Feedback",
     confirmationCode: "123456",
     expiresMinutes: 15,
   });
-  assertStrict.match(
-    rendered.html,
-    /^[\s\S]*alt="Humanity Union"[\s\S]*$/u,
-    "Default render must retain logo alt text.",
+  assert(
+    !rendered.html.includes("<img"),
+    "Localhost/dev render must omit <img> when no safe public logo URL is configured.",
+  );
+  assert(
+    rendered.html.includes("Humanity Union</p>"),
+    "Header text branding must remain when the logo image is omitted.",
   );
 
   process.env.EMAIL_LOGO_URL = configuredLogoUrl;
@@ -200,12 +211,18 @@ function verifyEmailLogoDeploymentReadiness(): void {
   );
 
   delete process.env.EMAIL_LOGO_URL;
+  process.env.WEB_ORIGIN = "https://huws.org";
   const missingConfigured = resolveEmailConfig();
-  assertStrict.match(
+  assertStrict.equal(
     missingConfigured.logoUrl,
-    /^https?:\/\//u,
-    "Missing EMAIL_LOGO_URL must not break logo resolution.",
+    "https://huws.org/brand/humanity-union-logo-white-email.png",
+    "Missing EMAIL_LOGO_URL may fall back to public WEB_ORIGIN brand asset.",
   );
+  if (previousLogo === undefined) {
+    delete process.env.EMAIL_LOGO_URL;
+  } else {
+    process.env.EMAIL_LOGO_URL = previousLogo;
+  }
 
   assert(
     docs.includes("EMAIL_LOGO_URL") && docs.includes("localhost"),

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
@@ -64,19 +65,24 @@ export function WorkspaceMemberIdentity() {
 
   return (
     <div className="workspace-member-identity">
-      <HumanityAvatar
-        className="workspace-member-identity__avatar"
-        avatarUrl={identity.avatarUrl}
-        size={48}
-      />
-      <div className="workspace-member-identity__details">
-        <p className="workspace-member-identity__name">{identity.displayName}</p>
-        {identity.community || identity.region || identity.country ? (
-          <p className="workspace-member-identity__meta">
-            {[identity.community, identity.region, identity.country].filter(Boolean).join(", ")}
-          </p>
-        ) : null}
+      <div className="workspace-member-identity__row">
+        <HumanityAvatar
+          className="workspace-member-identity__avatar"
+          avatarUrl={identity.avatarUrl}
+          size={48}
+        />
+        <div className="workspace-member-identity__details">
+          <p className="workspace-member-identity__name">{identity.displayName}</p>
+          {identity.community || identity.region || identity.country ? (
+            <p className="workspace-member-identity__meta">
+              {[identity.community, identity.region, identity.country].filter(Boolean).join(", ")}
+            </p>
+          ) : null}
+        </div>
       </div>
+      <Link className="workspace-member-identity__edit-link" href="/member">
+        Edit Profile
+      </Link>
     </div>
   );
 }

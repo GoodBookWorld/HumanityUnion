@@ -14,6 +14,7 @@ export default tseslint.config(
       "**/coverage/**",
       "**/out/**",
       "apps/web/public/wdcr-js-map/**",
+      "apps/web/public/sw.js",
       "apps/web/public/**/*.min.js",
       "packages/geography/src/*.json",
       "scripts/normalize-geography-data.ts",

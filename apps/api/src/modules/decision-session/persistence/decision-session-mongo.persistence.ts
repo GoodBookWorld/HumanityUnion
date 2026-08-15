@@ -1,4 +1,5 @@
 import type { DecisionSession } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -28,7 +29,7 @@ export function createMongoDecisionSessionPersistenceAdapter(): DecisionSessionP
 }
 
 export async function hydrateDecisionSessionMongoPersistence(): Promise<void> {
-  if (process.env.DECISION_SESSION_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("DECISION_SESSION_PERSISTENCE")) {
     return;
   }
 
@@ -36,7 +37,7 @@ export async function hydrateDecisionSessionMongoPersistence(): Promise<void> {
 }
 
 export async function flushDecisionSessionMongoPersistence(): Promise<void> {
-  if (process.env.DECISION_SESSION_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("DECISION_SESSION_PERSISTENCE")) {
     return;
   }
 

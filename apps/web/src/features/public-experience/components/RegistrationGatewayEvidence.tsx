@@ -12,31 +12,15 @@ export function RegistrationGatewayEvidence() {
       </p>
 
       <div className="registration-gateway__actions">
-        {REGISTRATION_ROUTE ? (
-          <Link className="registration-gateway__action" href={REGISTRATION_ROUTE}>
-            {REGISTRATION_GATEWAY_CONTENT.actionLabel}
-          </Link>
-        ) : (
-          <span
-            className="registration-gateway__action registration-gateway__action--placeholder"
-            role="status"
-            aria-disabled="true"
-            title={REGISTRATION_GATEWAY_CONTENT.placeholderActionLabel}
-          >
-            {REGISTRATION_GATEWAY_CONTENT.actionLabel}
-            <span className="registration-gateway__action-note">
-              {" "}
-              — {REGISTRATION_GATEWAY_CONTENT.placeholderActionLabel}
-            </span>
-          </span>
-        )}
+        <Link className="registration-gateway__action" href={REGISTRATION_ROUTE}>
+          {REGISTRATION_GATEWAY_CONTENT.actionLabel}
+        </Link>
       </div>
 
       <p className="registration-gateway__about">
-        <span className="registration-gateway__about-placeholder" title="About — coming soon">
-          Learn about Humanity Union before registering
-          <span className="registration-gateway__about-note"> (coming soon)</span>
-        </span>
+        <Link href="/knowledge" className="registration-gateway__about-link">
+          Learn about Humanity Union before creating an account
+        </Link>
       </p>
     </div>
   );

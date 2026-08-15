@@ -115,7 +115,7 @@ async function buildCapContext(): Promise<{
   });
   const projected = publishInitiative(steward, draft.initiativeId);
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(otherParticipant, {
     initiativeId: projected.initiativeId,
     title: "Accountability Analysis",
     summary: "Analysis summary.",
@@ -124,12 +124,12 @@ async function buildCapContext(): Promise<{
     suggestedImprovements: "Improve.",
     references: "Ref.",
   });
-  const analysis = publishInitiativeCollaborativeAnalysis(
+  const analysis = await publishInitiativeCollaborativeAnalysis(
     otherParticipant,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(otherParticipant, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(otherParticipant, {
     analysisId: analysis.analysisId,
     targetSection: "Description",
     currentIssue: "Issue.",
@@ -156,7 +156,7 @@ async function buildCapContext(): Promise<{
   });
   publishInitiativeRevision(steward, projected.initiativeId);
 
-  const sessionDraft = createDecisionSessionDraft(steward, {
+  const sessionDraft = await createDecisionSessionDraft(steward, {
     initiativeId: projected.initiativeId,
     title: "Accountability Session",
     purpose: "Prepare decision.",
@@ -167,7 +167,7 @@ async function buildCapContext(): Promise<{
   publishDecisionSession(steward, sessionDraft.sessionId);
   closeDecisionSession(steward, sessionDraft.sessionId);
 
-  const decisionDraft = createInitiativeCollectiveDecisionDraft(steward, {
+  const decisionDraft = await createInitiativeCollectiveDecisionDraft(steward, {
     initiativeId: projected.initiativeId,
     decisionSessionId: sessionDraft.sessionId,
     participationScope: "community",
@@ -384,7 +384,7 @@ async function runVerification(): Promise<void> {
     "civic_accountability_closed registered",
   );
 
-  const integrationView = buildIntegrationView(
+  const integrationView = await buildIntegrationView(
     "civic_accountability",
     accountability.accountabilityId,
   );

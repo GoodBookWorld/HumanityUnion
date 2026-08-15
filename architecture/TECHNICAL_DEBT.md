@@ -1,0 +1,40 @@
+# Technical Debt Register v1.0
+
+**Produced by:** the Recovery Closure Task. Contains only genuine technical debt discovered or inherited during Recovery Tasks 01–33 — not future feature requests. Future feature/architecture work belongs in `architecture/recovery/RECOVERY_STATUS.md` §6 ("Future Recovery Work") instead.
+
+---
+
+## 1. Infrastructure
+
+1. ~~**`verify-collective-decision-e2e.ts` references a deleted script.**~~ **Resolved (staging baseline cleanup):** persistence verification now uses `verify-initiative-decision-vote-mongo-persistence-reload.ts` and no longer sets `INITIATIVE_DECISION_VOTE_PERSISTENCE` / `_PATH`.
+2. ~~**Four `verify:*` npm scripts set a dead environment variable.**~~ **Resolved (staging baseline cleanup):** `INITIATIVE_DECISION_VOTE_PERSISTENCE=memory` removed from `verify:vote-casting`, `verify:transparent-decision-results`, `verify:collective-decision`, and `verify:workspace-intelligence`.
+3. **`pnpm test` runtime is 13–15 minutes, single-threaded by design.** `--test-concurrency=1` avoids cross-test interference within the one isolated Mongo database (Task 30), but it means the full suite is a genuine wait, not a quick feedback loop. There is no current sharding or parallel-isolated-database strategy.
+
+## 2. Architecture
+
+1. **`petition_signatures`'s persistence-layer field name is `memberId`, not `participantId`.** This is a deliberate, documented exception (see `petition-signed.event.ts`'s own doc comment, and `RECOVERY_STATUS.md` §3) made for index/schema continuity when Task 26 corrected the platform's vocabulary to participant-first everywhere else. It is not a defect, but it is a trap for any future contributor who greps for `participantId` in the Petition module's persistence layer and does not find it. **Recommendation:** do not "fix" this as a drive-by change in an unrelated task; if it is ever renamed, do it as its own explicitly-scoped, reviewed migration task (index rename requires a data migration, not just a code edit).
+2. **Two similarly-named Collective Decision modules coexist:** `collective-decision` (used by `petition`) and `initiative-collective-decision` (used by `initiative-decision-vote`, the canonical one per Task 11). This was intentionally not merged during recovery — `petition`'s coupling to the older module is explicitly flagged, but not remediated, in `ADR-MEMBER-ACTION-LEDGER-v1.0` §21.
+3. **Two governing ADRs (`ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0`, `ADR-MEMBER-ACTION-LEDGER-v1.0`) lived outside the main `architecture/ARCHITECTURE_DECISION_RECORDS.md` registry** for their entire authorship (Tasks 02, 21) until this closure task added registry stub entries and change-history rows for both. This was itself a self-identified gap (`INITIATIVE_ARCHITECTURE_RECOVERY_ROADMAP_v1.0.md` §10, item 1) that had gone unaddressed since Task 03.
+4. **The broader `INITIATIVE_ARCHITECTURE_RECOVERY_ROADMAP_v1.0.md` (Phases 3, 5–9) remains unexecuted.** This is disclosed in `RECOVERY_STATUS.md` §1 rather than hidden, but it means the repository still contains the older Stage pipeline (`collaborative-analysis`, `collective-decision`, `implementation-commitment`, `implementation`) and the disconnected `activity`/`workspace-home` modules the roadmap describes retiring. None of this was in scope for Tasks 01–33 and none of it was touched.
+
+## 3. Developer Experience
+
+1. **Ten-plus standalone architecture/recovery documents with overlapping context** now exist under `architecture/recovery/` and `architecture/decisions/`, each individually excellent but requiring a new contributor to read several of them in sequence to understand current state. `RECOVERY_STATUS.md` (this closure task) is intended to be the fix — the single entry point — but the underlying documents were not consolidated or shortened.
+2. **`verify:*` npm scripts are not part of `pnpm test` and can silently rot**, as demonstrated by debt item Infrastructure #1 above. There is no CI job or pre-commit check that runs the `verify:*` family, so breakage in them is only caught by someone manually running the specific script.
+3. **`pnpm lint` / `npm run lint` fails with 100 errors repository-wide, pre-dating and unrelated to Recovery Tasks 01–33.** Root-caused by this closure task's audit:
+   - **72 errors** are `typescript-eslint`'s "was not found by the project service" parsing failures across essentially all of `apps/api/test/**` (both pre-existing test files, e.g. `activity-persistence.test.ts`, `proposal-submit.test.ts`, and every test file recovery added) — the test directory is not covered by any tsconfig `include` the ESLint "project service" resolves against. This is a pre-existing configuration gap, not a regression: it affects old and new test files identically and does not correlate with any recovery change.
+   - **3 errors** (`@typescript-eslint/no-unused-vars`) are in `apps/api/src/infrastructure/outbox/outbox.repository.ts`, `apps/api/src/modules/decision/application/create-decision.service.ts`, and `apps/api/src/modules/member/application/member-write.service.ts` — none of which appear in `git status`/`git diff` for Tasks 01–33; these are pre-existing, unmodified files.
+   - **The remainder (~25 errors)** are entirely inside `apps/web/src/features/civic-media-center/**` and `apps/web/src/features/public-news/**` — a concurrent, unrelated body of work (Civic Media Center content/UI) explicitly out of scope for this closure task's "do not modify Civic Media Center" rule.
+   - **Net conclusion:** Recovery Tasks 01–33 introduced zero new lint errors. `pnpm typecheck`, `pnpm build`, and `pnpm test` are the meaningful regression gates for this recovery; `pnpm lint`'s pre-existing failures are a separate, already-scoped-out body of debt. Fixing the ESLint test-project-service configuration is a good candidate for a small, standalone future task.
+
+## 4. Testing
+
+1. **Verification scripts run against the shared development database by convention, not an isolated one.** This is intentional (they are meant to exercise the real dev environment end-to-end) but it means every verification script must implement its own fixture-ID-based self-cleanup, and a script that is interrupted mid-run (crash, manual kill) can leave orphaned fixture data in the dev database. Tasks 31–33 encountered and manually cleaned exactly this scenario during development.
+2. **A verification/test script invoked directly (e.g. `tsx test/unit/...test.ts`) without the `--import ./test/helpers/test-setup.ts` flag silently connects to the development database instead of an isolated one**, because the isolation check only runs if `test-setup.ts` is actually imported. `pnpm test` always imports it correctly; a developer manually invoking Node's test runner on a single file, bypassing `pnpm test`, will not get this protection. This exact mistake was made and caught during Task 33's own development.
+3. **Shared-development-environment races are tolerated, not eliminated, in verification scripts.** A concurrently running `dev:api` process's background outbox dispatcher can process an event before a verification script's own explicit dispatch call does. Scripts are written defensively (asserting invariants, not exact counts/timing) but this is a workaround, not a fix.
+
+## 5. Known Limitations
+
+1. **The Participant Action Ledger has 2 of a planned 9 Phase-4 producer modules onboarded** (Petition, Vote). This is a scope limitation, not a defect — Tasks 21–33 never claimed to complete Phase 4, only to prove the pattern twice.
+2. **No Private Participant Timeline, Collective Participation Journey, or Fair Accounting Ledger exists in code.** These are explicitly out of scope for Tasks 01–33 (Phases 3, 5, 6 of `ADR-MEMBER-ACTION-LEDGER-v1.0` §20) and are not technical debt so much as simply not-yet-built.
+3. **`public-civic-archive` has not received the same Mongo-transaction/durable-event recovery treatment as Petition and Vote.** Task 18 addressed its ancestry and write-side authority, but whether it needs Petition/Vote-style persistence recovery has not been formally assessed.

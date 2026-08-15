@@ -211,15 +211,15 @@ function verifyAssistantReferences(): void {
   );
 }
 
-function verifyGlobalSearchIntegration(): void {
+async function verifyGlobalSearchIntegration(): Promise<void> {
   console.log("6. Global Search integration");
 
   resetGlobalSearchIndexForTests();
-  const index = getGlobalSearchIndex();
+  const index = await getGlobalSearchIndex();
   const mediaEntries = index.filter((entry) => entry.entityType === "knowledge_media");
   assert(mediaEntries.length > 0, "Global search index must include knowledge_media entries");
 
-  const results = searchPublicCivicRecords({
+  const results = await searchPublicCivicRecords({
     q: "Reuters",
     entityTypes: ["knowledge_media"],
     limit: 10,
@@ -283,16 +283,18 @@ function verifyPublicRoutes(): void {
   );
 }
 
-function main(): void {
+async function main(): Promise<void> {
   verifyModuleStructure();
   verifyKnowledgeIntegration();
   verifySidebarNavigation();
   verifyNewsWidgetArchitecture();
   verifyAssistantReferences();
-  verifyGlobalSearchIntegration();
+  await verifyGlobalSearchIntegration();
   verifyNoForbiddenFeatures();
   verifyPublicRoutes();
   console.log("verify:media-center passed.");
 }
 
-main();
+const { runVerificationScript } = await import("./verification-script-lifecycle.js");
+
+void runVerificationScript(main);

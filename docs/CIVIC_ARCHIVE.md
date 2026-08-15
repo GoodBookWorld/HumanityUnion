@@ -141,7 +141,7 @@ Cards link to the canonical archived initiative experience:
 
 Component: `PublicArchiveInitiativeMiniCard`
 
-Fallback image: `/initiative.webp`
+Fallback image: `/images/initiatives/initiative-default.webp`
 
 ## Archive results layout
 

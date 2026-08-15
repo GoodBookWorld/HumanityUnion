@@ -1,4 +1,3 @@
-export { bootstrapPetition } from "./bootstrap-petition.js";
 export {
   archivePetition,
   closePetition,

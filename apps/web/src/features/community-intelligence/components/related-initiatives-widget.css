@@ -1,0 +1,69 @@
+.ci-related {
+  margin-block: 1.25rem;
+}
+
+.ci-related__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.ci-related__item {
+  padding-block: 0.35rem;
+}
+
+.ci-related__type {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--hu-text-muted, #5c5c5c);
+}
+
+.ci-related__type-label {
+  font-weight: 600;
+}
+
+.ci-related__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.ci-related__title a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.ci-related__title a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.ci-related__meta,
+.ci-related__why,
+.ci-related__diff,
+.ci-related__empty,
+.ci-related__actions {
+  margin: 0.2rem 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.ci-related__why-label {
+  font-weight: 600;
+}
+
+.ci-related__link {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.ci-related__link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

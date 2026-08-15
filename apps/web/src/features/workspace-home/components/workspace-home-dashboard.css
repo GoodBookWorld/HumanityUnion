@@ -1,62 +1,214 @@
 .workspace-home-dashboard {
   display: grid;
-  gap: var(--hu-space-6);
+  gap: var(--hu-space-5);
 }
 
 .workspace-home-section {
   scroll-margin-top: var(--hu-scroll-margin-top, 96px);
 }
 
-.workspace-home-welcome {
-  display: flex;
-  gap: var(--hu-space-4);
-  align-items: flex-start;
+/*
+ * UX Evolution Pack 01 — Part 10. `.profile-section` normally carries its
+ * own bottom margin for pages that stack sections without a grid gap.
+ * Here, spacing between the five cards is fully handled by the
+ * `.workspace-home-dashboard` grid `gap`, so the shared component's own
+ * margin is zeroed out *only inside this dashboard* to avoid doubled
+ * spacing — `profile-section.css` itself (used by many other pages) is
+ * untouched.
+ */
+.workspace-home-dashboard .profile-section {
+  margin-bottom: 0;
 }
 
-.workspace-home-welcome__avatar {
-  border-radius: 999px;
-  object-fit: cover;
-}
-
-.workspace-home-welcome__name {
-  margin: 0 0 var(--hu-space-2);
-  font-size: var(--hu-font-size-lg);
-  font-weight: 700;
-}
-
+/*
+ * UX Evolution Pack 01 — Part 4/5 (Quick Actions Finalization, and Quick
+ * Actions Responsive Layout).
+ *
+ * CSS Grid (not fixed pixel positioning): the same 3x3 grid is kept on
+ * both Desktop (>=1200px) and Tablet (768px-1199px) — no 2-column
+ * intermediate layout — and only collapses to a single, full-width
+ * column below 768px (Mobile). Cards share a fixed min-height so labels
+ * of different lengths never change card size — long labels wrap
+ * internally instead. The workspace-home API returns exactly 9 quick
+ * actions ("Notification Center" was removed as a duplicate — see
+ * `workspace-home.service.ts`), so the grid is a clean 3x3 on Desktop
+ * and Tablet alike.
+ */
 .workspace-home-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--hu-space-2);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hu-space-3);
 }
 
 .workspace-home-actions__link,
 .workspace-home-actions__disabled {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  padding: var(--hu-space-2) var(--hu-space-3);
-  border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-sm);
+  justify-content: center;
+  min-height: 96px;
+  padding: var(--hu-space-3) var(--hu-space-4);
+  border-radius: var(--hu-radius-md);
+  border: 1px solid transparent;
+  border-top: 3px solid var(--hu-color-border);
+  background: var(--hu-color-bg-muted);
+  color: var(--hu-color-text);
   font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  line-height: var(--hu-line-height-tight);
+  text-align: center;
   text-decoration: none;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.workspace-home-actions__label {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.workspace-home-actions__reason {
+  display: block;
+  margin-top: var(--hu-space-1);
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--hu-color-text-muted);
+}
+
+.workspace-home-actions__link:hover {
+  box-shadow: var(--hu-shadow-sm);
+  transform: translateY(-1px);
+}
+
+.workspace-home-actions__link:focus-visible {
+  outline: 2px solid var(--hu-workspace-primary);
+  outline-offset: 2px;
 }
 
 .workspace-home-actions__disabled {
+  cursor: not-allowed;
   color: var(--hu-color-text-muted);
-  background: var(--hu-color-surface-muted, #f5f5f5);
+  background: var(--hu-color-bg-subtle);
+  border-top-color: var(--hu-color-border);
 }
 
-.workspace-home-grid {
-  display: grid;
-  gap: var(--hu-space-4);
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+/*
+ * Palette accent cycle. Pale tinted background + palette-colored top
+ * border per card; text stays dark/readable throughout. Six base
+ * Workspace palette colors plus three scoped lighter/darker variants —
+ * exactly nine slots for the nine Workspace Quick Actions.
+ */
+.workspace-home-actions__link:nth-child(9n + 1) {
+  border-top-color: #0174b0;
+  background: #e8f4fa;
+}
+.workspace-home-actions__link:nth-child(9n + 1):hover {
+  background: #d3e9f4;
 }
 
+.workspace-home-actions__link:nth-child(9n + 2) {
+  border-top-color: #2e7a91;
+  background: #e7f1f3;
+}
+.workspace-home-actions__link:nth-child(9n + 2):hover {
+  background: #d2e6ea;
+}
+
+.workspace-home-actions__link:nth-child(9n + 3) {
+  border-top-color: #5a8072;
+  background: #eaf1ee;
+}
+.workspace-home-actions__link:nth-child(9n + 3):hover {
+  background: #d7e6e0;
+}
+
+.workspace-home-actions__link:nth-child(9n + 4) {
+  border-top-color: #878653;
+  background: #f3f2e7;
+}
+.workspace-home-actions__link:nth-child(9n + 4):hover {
+  background: #e9e7d1;
+}
+
+.workspace-home-actions__link:nth-child(9n + 5) {
+  border-top-color: #b38c34;
+  background: #f7f0e1;
+}
+.workspace-home-actions__link:nth-child(9n + 5):hover {
+  background: #efe1c4;
+}
+
+.workspace-home-actions__link:nth-child(9n + 6) {
+  border-top-color: #df9815;
+  background: #fcf1de;
+}
+.workspace-home-actions__link:nth-child(9n + 6):hover {
+  background: #f8e2bb;
+}
+
+.workspace-home-actions__link:nth-child(9n + 7) {
+  /* Primary, darker variant */
+  border-top-color: #045d8c;
+  background: #e5eff5;
+}
+.workspace-home-actions__link:nth-child(9n + 7):hover {
+  background: #cfe1ec;
+}
+
+.workspace-home-actions__link:nth-child(9n + 8) {
+  /* Secondary, lighter variant */
+  border-top-color: #4a9fd4;
+  background: #eaf4fa;
+}
+.workspace-home-actions__link:nth-child(9n + 8):hover {
+  background: #d3e9f5;
+}
+
+.workspace-home-actions__link:nth-child(9n + 9) {
+  /* Neutral, lighter variant */
+  border-top-color: #7ea28f;
+  background: #eef4f1;
+}
+.workspace-home-actions__link:nth-child(9n + 9):hover {
+  background: #dcebe3;
+}
+
+/*
+ * Quick Actions Responsive Layout.
+ *
+ * Desktop (>=1200px) and Tablet (768px-1199px) intentionally share the
+ * same 3x3 grid so the navigation pattern always looks the same to
+ * desktop and tablet users — no 2-column intermediate layout. On tablet,
+ * horizontal padding is reduced (not the column count) to fit narrower
+ * columns; card height stays fixed via `min-height` above, and labels
+ * already wrap via `.workspace-home-actions__label`. Only below 768px
+ * (Mobile) does the grid drop to a single, full-width column.
+ */
+@media (max-width: 1199px) and (min-width: 768px) {
+  .workspace-home-actions__link,
+  .workspace-home-actions__disabled {
+    padding: var(--hu-space-3) var(--hu-space-2);
+  }
+}
+
+@media (max-width: 767px) {
+  .workspace-home-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * Used by MembershipWorkspaceWidget (features/membership), which is only
+ * ever rendered inside this dashboard's "Membership" section. Restored /
+ * tuned here (Part 8 permits "minor spacing and card-style adjustments")
+ * as a subtle inner panel — the surrounding ProfileSection already
+ * provides the outer card chrome (border/shadow/padding), so this stays
+ * light rather than nesting a second heavy card.
+ */
 .workspace-home-card {
   padding: var(--hu-space-4);
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-md);
-  background: var(--hu-color-surface-muted, #fafafa);
+  background: var(--hu-color-bg-muted);
 }
 
 .workspace-home-card__title {
@@ -77,21 +229,25 @@
   font-size: var(--hu-font-size-sm);
 }
 
-.workspace-home-card__meta {
-  color: var(--hu-color-text-muted);
-  font-size: var(--hu-font-size-sm);
-}
-
 .workspace-home-empty {
   color: var(--hu-color-text-muted);
 }
 
+/*
+ * UX Evolution Pack 01 — Part 9. Capped to a maximum visible height with
+ * internal vertical scrolling; the underlying data (recentActivity) and
+ * its links are unchanged. No preferred-section/scroll-capture behavior
+ * is attached to this element.
+ */
 .workspace-home-timeline {
   margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
   gap: var(--hu-space-4);
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .workspace-home-timeline__date,
@@ -101,21 +257,4 @@
 
 .workspace-home-timeline__label {
   font-weight: 600;
-}
-
-.workspace-home-responsibilities {
-  display: grid;
-  gap: var(--hu-space-4);
-}
-
-.workspace-home-preferences {
-  display: grid;
-  gap: var(--hu-space-2);
-  max-width: 320px;
-}
-
-.workspace-home-preferences select {
-  padding: var(--hu-space-2) var(--hu-space-3);
-  border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-sm);
 }

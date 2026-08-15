@@ -40,7 +40,7 @@ export default async function PublicOfficialResponsePage({
 
   if (!response) {
     return (
-      <main>
+      <main className="hu-page-container hu-page-container--sectioned">
         <h1>Official response not available</h1>
         <p>
           <Link href="/">Back to Home</Link>
@@ -50,7 +50,7 @@ export default async function PublicOfficialResponsePage({
   }
 
   return (
-    <main>
+    <main className="hu-page-container hu-page-container--sectioned">
       <header>
         <h1>{response.responseNumber}</h1>
         <p>Official institutional response · {response.organizationName}</p>

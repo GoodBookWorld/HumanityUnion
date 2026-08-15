@@ -1,0 +1,384 @@
+/* Profile UX Pack 03 — Direct Collaboration Communication (Parts 9/10/22/23). */
+
+.direct-messaging__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * UX Completion Pack 04 Part 2/3 — the Messages page now has exactly two
+ * major areas (Messenger + Active Allies, the latter rendered through
+ * `MemberWorkspace`'s own `assistant` column); this wrapper no longer
+ * defines a second internal grid, so the Messenger occupies the full
+ * available main-content width.
+ */
+.direct-messaging-page {
+  min-width: 0;
+}
+
+/*
+ * Part 12/17 — the message history itself (not this wrapper) is the
+ * bounded, internally-scrolling surface; see `.direct-messaging__history`
+ * below. No `overscroll-behavior: contain` here either, for the same
+ * dead-zone reason documented there.
+ */
+.direct-messaging-page__conversation-column {
+  min-width: 0;
+  border: 1px solid var(--hu-border-subtle);
+  border-radius: var(--hu-radius-lg);
+  padding: var(--hu-space-4);
+  background: var(--hu-surface-base);
+}
+
+/* UX Completion Pack 04 Part 4 — shown on the generic `/workspace/messages` route now that there is no conversation list to select from instead. */
+.direct-messaging-page__empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hu-space-2);
+  min-height: 240px;
+  text-align: center;
+  color: var(--hu-text-muted);
+}
+
+.direct-messaging-page__empty-title {
+  margin: 0;
+  font-size: var(--hu-text-lg);
+  font-weight: 600;
+  color: var(--hu-text-default, inherit);
+}
+
+.direct-messaging-page__empty-text {
+  margin: 0;
+  max-width: 32rem;
+}
+
+/* --- Empty state (Part 9/14) --- */
+
+.direct-messaging__empty-state {
+  padding: var(--hu-space-5);
+  border: 1px dashed var(--hu-border-subtle);
+  border-radius: var(--hu-radius-lg);
+  text-align: center;
+}
+
+.direct-messaging__empty-title {
+  margin: 0 0 var(--hu-space-2);
+  font-weight: 600;
+}
+
+/* --- Conversation view (Part 10) --- */
+
+.direct-messaging__conversation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-4);
+}
+
+/* Communication UX Pack 03.8 Part 3 — top Messenger header: avatar, name/status, public profile button, toolbar. */
+.direct-messaging__conversation-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+  align-items: flex-start;
+  padding-bottom: var(--hu-space-2);
+  border-bottom: 1px solid var(--hu-border-subtle);
+}
+
+.direct-messaging__conversation-heading {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Part 13 — a fixed category label above the Participant's name, never a second page-level heading. */
+.direct-messaging__conversation-kicker {
+  margin: 0;
+  font-size: var(--hu-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--hu-text-muted);
+}
+
+.direct-messaging__conversation-title {
+  margin: 0;
+  font-size: var(--hu-text-lg);
+}
+
+.direct-messaging__conversation-status-line {
+  margin: var(--hu-space-1) 0 0;
+  font-size: var(--hu-text-xs);
+  color: var(--hu-text-muted);
+}
+
+.direct-messaging__profile-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.direct-messaging__conversation-status {
+  color: var(--hu-text-muted);
+  text-align: center;
+}
+
+/*
+ * Communication UX Pack 03.8 Part 3/6/12 — the Messenger header toolbar
+ * (Call/Video/End call/Share) and, separately, the composer toolbar
+ * (Attach file/Voice message — see `.direct-messaging__composer-toolbar`
+ * below). Every icon is a real, always-visible, always-labeled control
+ * (never hidden behind a "more" menu). Disabled placeholders show a
+ * visible text hint, never opacity alone (Part 12).
+ */
+.direct-messaging__toolbar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hu-space-2);
+  flex-shrink: 0;
+}
+
+.direct-messaging__toolbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.direct-messaging__toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--hu-border-subtle);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-surface-base);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.direct-messaging__toolbar-button:hover:not(:disabled) {
+  border-color: var(--hu-accent, var(--hu-border-subtle));
+  background: var(--hu-surface-raised, var(--hu-surface-base));
+}
+
+.direct-messaging__toolbar-button:focus-visible {
+  outline: 2px solid var(--hu-accent, currentColor);
+  outline-offset: 2px;
+}
+
+.direct-messaging__toolbar-button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.direct-messaging__toolbar-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  background: var(--hu-surface-muted, var(--hu-surface-base));
+}
+
+/* Part 12 — the visible "coming soon" hint that accompanies every disabled placeholder icon, never opacity alone. */
+.direct-messaging__toolbar-hint {
+  font-size: 0.625rem;
+  line-height: 1;
+  color: var(--hu-text-muted);
+  white-space: nowrap;
+}
+
+/* Part 6 — Attach file + Voice message live inside the composer, beside Send, not in the header. */
+.direct-messaging__composer-toolbar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hu-space-2);
+}
+
+/*
+ * Part 17 — bounded, internally-scrolling message history.
+ * `overscroll-behavior: contain` was intentionally removed: it stops a
+ * wheel/touch scroll from chaining to the surrounding page once this box
+ * reaches its own top/bottom boundary, which is exactly the "dead zone" a
+ * user hits when continuing to scroll past the message list. The default
+ * `auto` chaining is kept instead so normal Workspace page scrolling is
+ * never trapped.
+ */
+.direct-messaging__history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-3);
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-right: var(--hu-space-2);
+}
+
+/* Part 16 — compact, non-intrusive "new message" action; never forces the scroll position on its own. */
+.direct-messaging__jump-to-latest {
+  align-self: center;
+  background: var(--hu-accent, var(--hu-surface-raised, var(--hu-surface-base)));
+  color: var(--hu-surface-base);
+  border: none;
+  border-radius: var(--hu-radius-md);
+  padding: var(--hu-space-1) var(--hu-space-3);
+  font-size: var(--hu-text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.direct-messaging__load-older {
+  align-self: center;
+  background: none;
+  border: 1px solid var(--hu-border-subtle);
+  border-radius: var(--hu-radius-md);
+  padding: var(--hu-space-1) var(--hu-space-3);
+  font-size: var(--hu-text-sm);
+  cursor: pointer;
+}
+
+.direct-messaging__message-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2);
+}
+
+.direct-messaging__message {
+  max-width: 70%;
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border-radius: var(--hu-radius-md);
+  background: #fdf8d9;
+  border: 1px solid var(--hu-border-subtle);
+  align-self: flex-start;
+}
+
+.direct-messaging__message--own {
+  align-self: flex-end;
+  background: #ddfde9;
+}
+
+.direct-messaging__message-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.direct-messaging__message-time {
+  margin: var(--hu-space-1) 0 0;
+  font-size: var(--hu-text-xs);
+  color: var(--hu-text-muted);
+}
+
+.direct-messaging__composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2);
+}
+
+.direct-messaging__composer-label {
+  font-size: var(--hu-text-sm);
+  font-weight: 600;
+}
+
+.direct-messaging__composer-input {
+  width: 100%;
+  padding: var(--hu-space-2) var(--hu-space-3);
+  border: 1px solid var(--hu-border-subtle);
+  border-radius: var(--hu-radius-md);
+  resize: vertical;
+  font: inherit;
+}
+
+.direct-messaging__composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--hu-space-3);
+}
+
+/*
+ * --- Responsive (UX Completion Pack 04 Part 2) ---
+ * Matches `.member-workspace__content-grid`'s own 1024px breakpoint (see
+ * `member-workspace.css`), so the Messages page's two areas (Messenger +
+ * Active Allies) collapse from side-by-side straight to full-width stacked
+ * sections — Messenger first, Active Allies below — at the same width.
+ */
+@media (max-width: 1024px) {
+  .direct-messaging__history {
+    max-height: none;
+  }
+}
+
+/* Communication UX Pack 03.8 Part 3/13 — narrow viewports stack the header and let the toolbar scroll horizontally instead of wrapping/clipping icons. */
+@media (max-width: 480px) {
+  .direct-messaging__profile-button {
+    margin-left: calc(48px + var(--hu-space-3));
+  }
+
+  .direct-messaging__toolbar {
+    width: 100%;
+    margin-left: calc(48px + var(--hu-space-3));
+    overflow-x: auto;
+  }
+}
+
+/*
+ * Communication UX Pack 03.9 Part 2 — the Personal Chat / Initiative Group
+ * Chat mode switch. Lives inside the page's own header (not the two-column
+ * content grid), so it stays visible and full-width regardless of which
+ * mode's layout is currently rendered below it.
+ */
+.communication-mode-switch {
+  display: inline-flex;
+  gap: var(--hu-space-1);
+  margin-top: var(--hu-space-3);
+  padding: 0.2rem;
+  border: 1px solid var(--hu-border-subtle);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-surface-base);
+}
+
+.communication-mode-switch__tab {
+  border: none;
+  background: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--hu-radius-sm, var(--hu-radius-md));
+  font-size: var(--hu-text-sm);
+  font-weight: 600;
+  color: var(--hu-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.communication-mode-switch__tab:hover {
+  color: var(--hu-text-default, inherit);
+}
+
+.communication-mode-switch__tab:focus-visible {
+  outline: 2px solid var(--hu-accent, currentColor);
+  outline-offset: 2px;
+}
+
+.communication-mode-switch__tab--active {
+  background: var(--hu-accent, #16a34a);
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  .communication-mode-switch {
+    width: 100%;
+  }
+
+  .communication-mode-switch__tab {
+    flex: 1 1 0;
+    text-align: center;
+  }
+}

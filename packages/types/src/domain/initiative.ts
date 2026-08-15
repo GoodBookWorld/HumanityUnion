@@ -2,6 +2,7 @@ import type { InitiativeLifecyclePhase } from "./initiative-lifecycle.js";
 import type { ParticipationScope } from "./initiative-collective-decision.js";
 import type { MemberId } from "./member.js";
 import type { InitiativeNewsSourceReference } from "./public-news-article.js";
+import type { InitiativeCoverMedia } from "./initiative-cover-media.js";
 
 export type InitiativeId = string;
 
@@ -54,10 +55,22 @@ export interface InitiativeMetadata {
   activityArea: string;
   /** Supplemental activity area label when activityArea is Other. */
   activityAreaOther?: string;
-  /** Optional initiative image URL from authenticated media upload. */
+  /**
+   * Optional initiative image URL from authenticated media upload.
+   * Legacy field, retained for backward compatibility with existing
+   * initiatives and API clients. UX Evolution Pack 03 — kept in sync with
+   * `coverMedia` when `coverMedia.type === "image"`; see
+   * `resolveInitiativeCoverMedia` and `initiative.service.ts`.
+   */
   imageUrl?: string;
   /** Optional image alt text for accessibility. */
   imageAltText?: string;
+  /**
+   * UX Evolution Pack 03 — Initiative Cover Media. Additive: existing
+   * initiatives simply omit this field and continue to work off `imageUrl`
+   * alone via `resolveInitiativeCoverMedia`.
+   */
+  coverMedia?: InitiativeCoverMedia;
   /** Optional initiative start date (ISO 8601 date). */
   startDate?: string;
   /** Optional initiative completion date (ISO 8601 date). */
@@ -103,4 +116,22 @@ export interface Initiative {
   contributions: InitiativeContribution[];
   timeline: TimelineEvent[];
   sourceReferences?: InitiativeNewsSourceReference[];
+}
+
+/**
+ * Communication UX Pack 03.9 — one row in the signed-in Participant's
+ * "Initiative Group Chat" picker: an Initiative they either steward
+ * ("author") or currently collaborate on as an `active` Ally
+ * ("active_ally"). This is a thin composition over two already-existing
+ * reads (`listInitiativesBySteward` + active `InitiativeAlly` rows) — never
+ * a new persisted projection, so it can never drift from the source of
+ * truth for either role.
+ */
+export type MyInitiativeGroupRole = "author" | "active_ally";
+
+export interface MyInitiativeGroupSummary {
+  initiativeId: InitiativeId;
+  title: InitiativeTitle;
+  lifecyclePhase: InitiativeLifecyclePhase;
+  role: MyInitiativeGroupRole;
 }

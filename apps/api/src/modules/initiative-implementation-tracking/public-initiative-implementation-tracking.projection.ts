@@ -67,6 +67,9 @@ async function toPublicListItem(
     activatedAt: tracking.activatedAt,
     completedAt: tracking.completedAt,
     archivedAt: tracking.archivedAt,
+    packageId: tracking.packageId ?? null,
+    progress: tracking.progress ?? null,
+    approvedAction: tracking.approvedAction ?? null,
   };
 }
 
@@ -89,6 +92,17 @@ export async function toPublicInitiativeImplementationTrackingProjection(
     archivedAt: tracking.archivedAt,
     createdAt: tracking.createdAt,
     updatedAt: tracking.updatedAt,
+    packageId: tracking.packageId ?? null,
+    progress: tracking.progress ?? null,
+    targetDate: tracking.targetDate ?? null,
+    startedDate: tracking.startedDate ?? null,
+    actualCompletedDate: tracking.actualCompletedDate ?? null,
+    dependencies: tracking.dependencies ?? [],
+    obstacles: tracking.obstacles ?? [],
+    evidenceReferences: tracking.evidenceReferences ?? [],
+    notes: tracking.notes ?? null,
+    approvedAction: tracking.approvedAction ?? null,
+    traceability: tracking.traceability ?? null,
   };
 }
 

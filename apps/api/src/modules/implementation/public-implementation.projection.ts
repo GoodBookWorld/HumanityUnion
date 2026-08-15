@@ -388,16 +388,16 @@ function buildHumanityAssistantPanel(
   };
 }
 
-export function toPublicImplementationProjection(
+export async function toPublicImplementationProjection(
   implementation: Implementation,
-): PublicImplementationProjection | null {
+): Promise<PublicImplementationProjection | null> {
   if (!implementation.implementationId) {
     return null;
   }
 
   const decision = getDecision(implementation.collectiveDecisionId);
   const initiative = getInitiativeById(implementation.initiativeId);
-  const petition = getPetition(implementation.petitionId);
+  const petition = await getPetition(implementation.petitionId);
   const commitment = getImplementationCommitment(implementation.implementationCommitmentId);
 
   const collectiveProgress = buildCollectiveProgress(implementation);

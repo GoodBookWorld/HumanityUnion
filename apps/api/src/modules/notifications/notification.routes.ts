@@ -5,6 +5,7 @@ import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import {
   archiveNotification,
   countUnreadNotifications,
+  deleteArchivedNotification,
   listMyNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -97,6 +98,16 @@ notificationRouter.post("/:notificationId/archive", async (req, res: Response) =
     res.json(createSuccessResponse(notification, "Notification archived."));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Archive notification failed.";
+    res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
+  }
+});
+
+notificationRouter.delete("/:notificationId", async (req, res: Response) => {
+  try {
+    await deleteArchivedNotification(req.params.notificationId, req.auth!.id);
+    res.json(createSuccessResponse({ deleted: true }, "Notification deleted."));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Delete notification failed.";
     res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
   }
 });

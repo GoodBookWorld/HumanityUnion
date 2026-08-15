@@ -1,21 +1,36 @@
 .notifications-page {
-  max-width: var(--hu-content-max-width);
-  margin: 0 auto;
-  padding: var(--hu-space-8) var(--hu-space-6);
+  width: min(100%, var(--hu-page-max-width));
+  max-width: var(--hu-page-max-width);
+  margin-inline: auto;
+  padding-block: var(--hu-section-gap);
+  padding-inline: var(--hu-page-padding-inline);
+  box-sizing: border-box;
 }
 
 .notifications-page__header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--hu-space-4);
-  margin-bottom: var(--hu-space-6);
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+  gap: var(--hu-space-6);
+  margin-bottom: var(--hu-section-gap);
+}
+
+.notifications-page__header-copy {
+  min-width: 0;
+}
+
+.notifications-page__header-assistant {
+  min-width: 0;
 }
 
 .notifications-page__title {
   margin: 0;
-  font-size: var(--hu-font-size-2xl);
+}
+
+@media (max-width: 768px) {
+  .notifications-page__header {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .notifications-page__summary {
@@ -23,10 +38,43 @@
   color: var(--hu-color-text-muted);
 }
 
-.notifications-page__actions {
+/*
+ * UX Completion Pack 04 Part 8 — three real desktop columns
+ * (Notifications / Messages / Reminders), collapsing to full-width stacked
+ * rows at the same 1024px breakpoint every other Workspace three-column
+ * page uses (`member-workspace.css`, `direct-messaging.css`). Each column
+ * is independently, boundedly scrollable (see `.notifications-page__list`
+ * below) so one long section never stretches the other two.
+ */
+.notifications-page__columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--hu-space-6);
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .notifications-page__columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.notifications-page__section {
+  min-width: 0;
+}
+
+.notifications-page__section-header {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--hu-space-3);
+  margin-bottom: var(--hu-space-4);
+}
+
+.notifications-page__section-title {
+  margin: 0;
+  font-size: var(--hu-font-size-xl);
 }
 
 .notifications-page__filters {
@@ -58,6 +106,16 @@
   font-weight: 600;
 }
 
+/*
+ * Part 8 — bounded, internally-scrolling column list (mirrors
+ * `.direct-messaging__list` / `.active-allies-panel__list`). Default
+ * `overscroll-behavior: auto` is kept (not `contain`) so a wheel/touch
+ * scroll that reaches this list's own top/bottom boundary chains normally
+ * to the surrounding page scroll instead of getting trapped in a dead
+ * zone. Collapses to unbounded height on tablet/mobile, where the three
+ * sections stack full-width and each one's own vertical scroll is just
+ * the page's scroll.
+ */
 .notifications-page__list {
   display: flex;
   flex-direction: column;
@@ -65,36 +123,15 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  max-height: 32rem;
+  overflow-y: auto;
 }
 
-.notifications-page__item {
-  border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-lg);
-  background: var(--hu-color-bg);
-  padding: var(--hu-space-5);
-}
-
-.notifications-page__item--unread {
-  border-left: 4px solid var(--hu-color-primary);
-  background: color-mix(in srgb, var(--hu-color-primary) 4%, var(--hu-color-bg));
-}
-
-.notifications-page__item--unread .notifications-page__item-title {
-  font-weight: 700;
-}
-
-.notifications-page__item-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--hu-space-3);
-  margin-bottom: var(--hu-space-2);
-}
-
-.notifications-page__item-title {
-  margin: 0;
-  font-size: var(--hu-font-size-lg);
+@media (max-width: 1024px) {
+  .notifications-page__list {
+    max-height: none;
+    overflow-y: visible;
+  }
 }
 
 .notifications-page__badge {
@@ -125,23 +162,6 @@
 .notifications-page__badge--informational {
   background: var(--hu-color-bg-muted);
   color: var(--hu-color-text-muted);
-}
-
-.notifications-page__message {
-  margin: 0 0 var(--hu-space-3);
-  color: var(--hu-color-text);
-}
-
-.notifications-page__meta {
-  margin: 0 0 var(--hu-space-4);
-  color: var(--hu-color-text-muted);
-  font-size: var(--hu-font-size-sm);
-}
-
-.notifications-page__item-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--hu-space-3);
 }
 
 .notifications-page__link {
@@ -175,6 +195,30 @@
 .notifications-page__error {
   color: var(--hu-color-text-muted);
   padding: var(--hu-space-6) 0;
+}
+
+/*
+ * Lifecycle UX Correction Pack 01 Part 3/9 — Archive sits below the three
+ * active sections as its own bordered area (never a fourth grid column,
+ * never sharing their scroll), with a compact list and its own bounded,
+ * internally-scrolling body so a long Archive never stretches the page.
+ */
+.notifications-page__archive {
+  margin-top: var(--hu-space-8);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-lg);
+  padding: var(--hu-space-6);
+}
+
+.notifications-page__archive-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 20rem;
+  overflow-y: auto;
 }
 
 .notifications-page__login-prompt {

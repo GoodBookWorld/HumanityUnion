@@ -72,7 +72,7 @@ export function ImplementationCommitmentWorkspace({
         <NextMeaningfulActionSection commitment={commitment} />
       </ProfileSection>
 
-      <ProfileSection title="Humanity Assistant">
+      <ProfileSection title="Humanity Union Assistant">
         <HumanityAssistantPanel commitment={commitment} />
       </ProfileSection>
 

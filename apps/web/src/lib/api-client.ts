@@ -2,7 +2,7 @@ import {
   isAuthRefreshExemptPath,
   refreshAuthSessionOnce,
 } from "../features/auth/auth-token-refresh";
-import { getStoredAccessToken, getStoredRefreshToken } from "../features/auth/auth-token-store";
+import { clearLegacyAuthTokenStorage } from "../features/auth/auth-token-store";
 import { API_BASE_URL } from "./api-base-url";
 
 export { API_BASE_URL };
@@ -30,19 +30,10 @@ export class ApiRequestError extends Error {
   }
 }
 
-function buildAuthHeaders(headers?: HeadersInit): HeadersInit {
-  const token = getStoredAccessToken();
-
-  if (!token) {
-    return headers ?? {};
-  }
-
-  return {
-    ...headers,
-    Authorization: `Bearer ${token}`,
-  };
-}
-
+/**
+ * Launch Readiness Pack 07 — browser auth uses HttpOnly cookies via
+ * `credentials: "include"`. Do not construct Authorization from Web Storage.
+ */
 async function readApiEnvelope<T>(response: Response): Promise<ApiResponse<T>> {
   if (response.status === 204) {
     return {
@@ -81,17 +72,23 @@ async function readApiEnvelope<T>(response: Response): Promise<ApiResponse<T>> {
 }
 
 function shouldAttemptRefresh(path: string, isRetry: boolean): boolean {
+  // Auth Recovery Hotfix — at most one refresh + one retry per request.
+  // /auth/refresh (and other auth bootstrap paths) never recurse into refresh.
   if (isRetry || isAuthRefreshExemptPath(path)) {
     return false;
   }
 
-  return Boolean(getStoredAccessToken() || getStoredRefreshToken());
+  return true;
 }
 
 export async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
   return executeApiRequest<T>(path, options, false);
 }
 
+/**
+ * Bound: original request → optional single refresh → optional single retry.
+ * Never: request → refresh → retry → refresh → …
+ */
 async function executeApiRequest<T>(
   path: string,
   options: RequestInit | undefined,
@@ -106,7 +103,7 @@ async function executeApiRequest<T>(
       cache: "no-store",
       credentials: "include",
       ...options,
-      headers: buildAuthHeaders(options?.headers),
+      headers: options?.headers,
     });
   } catch {
     throw new ApiRequestError(API_UNAVAILABLE_MESSAGE, 0);
@@ -118,6 +115,8 @@ async function executeApiRequest<T>(
     if (refreshed) {
       return executeApiRequest<T>(path, options, true);
     }
+
+    clearLegacyAuthTokenStorage();
   }
 
   const body = await readApiEnvelope<T>(response);
@@ -139,6 +138,10 @@ export function isAuthenticationRequiredError(error: unknown): boolean {
 
 export function isNotFoundError(error: unknown): boolean {
   return error instanceof ApiRequestError && error.status === 404;
+}
+
+export function isForbiddenError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.status === 403;
 }
 
 export async function apiRequestOptional<T>(
@@ -174,6 +177,12 @@ export function formatAuthFormError(error: unknown): string {
   }
 
   if (error instanceof ApiRequestError) {
+    // Launch Blocker Recovery Pack 01 — origin/CORS misconfiguration must not
+    // look like an invalid password.
+    if (error.meta?.code === "AUTH_ORIGIN_FORBIDDEN") {
+      return "We couldn't start your session. Please try again.";
+    }
+
     return error.message;
   }
 
@@ -214,13 +223,15 @@ export async function fetchPublicInitiativeList<TItem, TMetrics>(
       return { items: [], metrics: defaultMetrics };
     }
 
-    throw new ApiRequestError(payload.message || API_UNAVAILABLE_MESSAGE, response.status);
+    throw new ApiRequestError(
+      payload.message || `API request failed: ${response.status}`,
+      response.status,
+      payload.meta,
+    );
   }
-
-  const metrics = (payload.meta as { metrics?: TMetrics } | undefined)?.metrics ?? defaultMetrics;
 
   return {
     items: payload.data,
-    metrics,
+    metrics: (payload.meta?.metrics as TMetrics | undefined) ?? defaultMetrics,
   };
 }

@@ -1,22 +1,27 @@
 import type {
   Initiative,
   InitiativeExperienceLifecycleStageState,
-  InitiativeStatus,
+  PublicInitiativeDiscussionSummary,
   PublicInitiativeExperienceProjection,
   PublicInitiativeLifecycleRecordItem,
   PublicInitiativeLifecycleStageContent,
   PublicInitiativeLifecycleStageNavItem,
+  PublicInitiativeProjection,
   PublicInitiativeRelatedCivicRecord,
+  PublicInitiativeWithVersionHistory,
 } from "@hu/types";
 import {
   INITIATIVE_SUPPORT_TRANSPARENCY_NOTE,
   PUBLIC_INITIATIVE_EXPERIENCE_STAGES as EXPERIENCE_STAGES,
+  resolveInitiativeCoverMedia,
 } from "@hu/types";
 
+import { logger } from "../../shared/observability/logger.js";
 import { listPublicCivicAccountabilitiesForInitiative } from "../civic-accountability/civic-accountability.projection.js";
 import { listPublicCivicActionPackagesForInitiative } from "../civic-action-package/civic-action-package.projection.js";
 import { listPublicDecisionSessionsForInitiative } from "../decision-session/public-decision-session.projection.js";
 import { buildInitiativeDiscussionSummary } from "../initiative-comments/initiative-comment.service.js";
+import { attachCollaborationStateToComments } from "../initiative-discussion-collaboration/initiative-discussion-collaboration.service.js";
 import {
   getInitiativeSupportStatistics,
   recordInitiativeView,
@@ -29,6 +34,10 @@ import { listPublicInitiativeImprovementProposals } from "../initiative-improvem
 import { listPublicInitiativePublicImpactsForInitiative } from "../initiative-public-impact/public-initiative-public-impact.projection.js";
 import { getPublicInitiativeVersionHistory } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
 import { createInitialInitiativeVersionRevision } from "../initiative-version-revision/initiative-version-revision.service.js";
+import { getLatestArchiveVersionByInitiativeId } from "../initiative-civic-archive-lifecycle/initiative-civic-archive-version.store.js";
+import { getPackageByInitiativeId as getOfficialResponsePackageByInitiativeId } from "../initiative-official-response-lifecycle/initiative-official-response-package.store.js";
+import { listResponsesByInitiativeId as listLifecycleOfficialResponsesByInitiativeId } from "../initiative-official-response-lifecycle/initiative-official-response-package.store.js";
+import { getReportByInitiativeId as getPublicImpactReportByInitiativeId } from "../initiative-public-impact-lifecycle/initiative-public-impact-report.store.js";
 import { listPublicOfficialResponsesForInitiative } from "../official-response/official-response.projection.js";
 import { getPetitionByInitiativeId } from "../petition/petition.store.js";
 import { toPublicPetitionProjection } from "../petition/public-petition.projection.js";
@@ -37,31 +46,24 @@ import { resolvePublicGeography } from "../../shared/format-public-geography.js"
 import { getKnownInitiativeCommunity } from "./initiative-communities.js";
 import { isInitiativeEligibleForPublicProjection } from "./initiative-public-projection.access.js";
 import { toWorldInitiativeCardProjection } from "./initiative-world-initiatives.projection.js";
+import { findRelatedInitiativesForInitiative } from "../community-intelligence/index.js";
 import { listInitiatives } from "./initiative.store.js";
 import { toPublicInitiativeProjection } from "./public-initiative.projection.js";
 
+/**
+ * Lifecycle UX Completion Pack 02 Part 1 — menu labels derived from
+ * publication metadata, never static "Upcoming" placeholders.
+ */
 const STATE_LABELS: Record<InitiativeExperienceLifecycleStageState, string> = {
+  not_started: "Not Started",
+  in_progress: "In Progress",
+  draft_saved: "Draft Saved",
+  preview: "Preview",
+  published: "Published",
   completed: "Completed",
-  current: "Current stage",
-  upcoming: "Upcoming",
+  archived: "Archived",
   not_applicable: "Not applicable",
   unavailable: "Unavailable",
-};
-
-const STATUS_TO_STAGE: Partial<Record<InitiativeStatus, string>> = {
-  draft: "initiative",
-  proposal: "initiative",
-  discussion: "analysis",
-  revision: "revision",
-  ready_for_poll: "decision_session",
-  poll: "collective_decision",
-  petition: "petition",
-  implementation: "commitment",
-  completed: "public_impact",
-  archived: "archive",
-  revived: "initiative",
-  superseded: "archive",
-  merged: "archive",
 };
 
 function summarizeText(text: string, maxLength = 220): string {
@@ -102,25 +104,35 @@ function resolveGeography(initiative: Initiative) {
   };
 }
 
-function resolveCurrentStageId(initiative: Initiative, stageCounts: Map<string, number>): string {
-  const mapped = STATUS_TO_STAGE[initiative.status];
-
-  if (mapped) {
-    return mapped;
-  }
-
-  let currentIndex = 0;
+/**
+ * Lifecycle UX Completion Pack 02 Parts 1/8 — current stage is the first
+ * unpublished stage after the furthest published Lifecycle artifact.
+ * Never derived from `Initiative.status` (which can remain `proposal`
+ * long after Collaborative Analysis and later stages have published).
+ */
+export function resolveCurrentStageIdFromPublicationMetadata(
+  stageCounts: Map<string, number>,
+): string {
+  let furthestPublishedIndex = -1;
 
   for (let index = 0; index < EXPERIENCE_STAGES.length; index += 1) {
     const stage = EXPERIENCE_STAGES[index]!;
     const count = stageCounts.get(stage.stageId) ?? 0;
 
     if (count > 0) {
-      currentIndex = index;
+      furthestPublishedIndex = index;
     }
   }
 
-  return EXPERIENCE_STAGES[currentIndex]?.stageId ?? "initiative";
+  if (furthestPublishedIndex < 0) {
+    return "initiative";
+  }
+
+  if (furthestPublishedIndex >= EXPERIENCE_STAGES.length - 1) {
+    return EXPERIENCE_STAGES[furthestPublishedIndex]!.stageId;
+  }
+
+  return EXPERIENCE_STAGES[furthestPublishedIndex + 1]!.stageId;
 }
 
 function isPetitionStageApplicable(initiative: Initiative): boolean {
@@ -129,12 +141,36 @@ function isPetitionStageApplicable(initiative: Initiative): boolean {
   );
 }
 
-async function buildStageRecords(
+/**
+ * UX Evolution Pack 02.4 Part 4 — `publicInitiative` is now always passed in
+ * rather than re-fetched here, so the Lifecycle "Initiative" stage record's
+ * `authorDisplayName` and the Overview panel's `stewardDisplayName` are
+ * guaranteed (by construction, not just by coincidence of identical inputs)
+ * to come from the exact same resolved value within a single request.
+ */
+/**
+ * Exported (in addition to its internal call site) so a focused test can
+ * assert the Part 4 invariant directly: the Lifecycle "Initiative" stage
+ * record's `authorDisplayName` always equals the `publicInitiative` passed
+ * in — see `public-initiative-experience-author-consistency.test.ts`.
+ */
+export async function buildStageRecords(
   initiative: Initiative,
+  publicInitiative: PublicInitiativeProjection,
+  /**
+   * Performance Recovery Task — optional pre-fetched version history. The
+   * caller (`buildPublicInitiativeExperienceProjection`) also needs the
+   * initiative's version history for its own `revisionHistory` field; when
+   * it passes its already-fetched result here, this function reuses it
+   * instead of issuing a second, redundant lookup for the exact same data.
+   * Omitting it (as the existing focused test does) simply falls back to
+   * fetching it directly, so this parameter is purely an optimization, not
+   * a behavior change.
+   */
+  precomputedVersionHistory?: PublicInitiativeWithVersionHistory,
 ): Promise<Map<string, PublicInitiativeLifecycleRecordItem[]>> {
   const initiativeId = initiative.initiativeId;
   const records = new Map<string, PublicInitiativeLifecycleRecordItem[]>();
-  const publicInitiative = await toPublicInitiativeProjection(initiative);
 
   records.set("initiative", [
     {
@@ -147,9 +183,37 @@ async function buildStageRecords(
     },
   ]);
 
+  // Performance Recovery Task — these nine lookups are mutually independent
+  // (each depends only on `initiativeId`, never on another lookup's
+  // result), so they are fetched concurrently instead of one sequential
+  // `await` at a time. This does not change any returned value: every
+  // `records.set(...)` call below still runs in the exact same order as
+  // before, so the resulting Map's key order and contents are identical.
+  const [
+    analyses,
+    proposals,
+    versionHistory,
+    petition,
+    collectiveDecisions,
+    commitments,
+    trackings,
+    publicImpacts,
+    archive,
+  ] = await Promise.all([
+    listPublicInitiativeCollaborativeAnalyses(initiativeId),
+    listPublicInitiativeImprovementProposals(initiativeId),
+    precomputedVersionHistory ?? getPublicInitiativeVersionHistory(initiativeId),
+    getPetitionByInitiativeId(initiativeId),
+    listPublicInitiativeCollectiveDecisionsForInitiative(initiativeId),
+    listPublicInitiativeImplementationCommitmentsForInitiative(initiativeId),
+    listPublicInitiativeImplementationTrackingsForInitiative(initiativeId),
+    listPublicInitiativePublicImpactsForInitiative(initiativeId),
+    getLatestPublishedPublicCivicArchiveForInitiative(initiativeId),
+  ]);
+
   records.set(
     "analysis",
-    (await listPublicInitiativeCollaborativeAnalyses(initiativeId)).map((analysis) => ({
+    analyses.map((analysis) => ({
       recordId: analysis.analysisId,
       title: analysis.title,
       summary: analysis.summary,
@@ -162,7 +226,7 @@ async function buildStageRecords(
 
   records.set(
     "proposal",
-    (await listPublicInitiativeImprovementProposals(initiativeId)).map((proposal) => ({
+    proposals.map((proposal) => ({
       recordId: proposal.proposalId,
       title: `${proposal.targetSection}: ${proposal.proposedChange}`,
       status: proposal.status.replaceAll("_", " "),
@@ -172,7 +236,6 @@ async function buildStageRecords(
     })),
   );
 
-  const versionHistory = await getPublicInitiativeVersionHistory(initiativeId);
   records.set(
     "revision",
     versionHistory.revisions.map((revision) => ({
@@ -186,8 +249,7 @@ async function buildStageRecords(
     })),
   );
 
-  const petition = getPetitionByInitiativeId(initiativeId);
-  const petitionProjection = petition ? toPublicPetitionProjection(petition) : null;
+  const petitionProjection = petition ? await toPublicPetitionProjection(petition) : null;
 
   records.set(
     "petition",
@@ -221,7 +283,7 @@ async function buildStageRecords(
 
   records.set(
     "collective_decision",
-    listPublicInitiativeCollectiveDecisionsForInitiative(initiativeId).map((decision) => ({
+    collectiveDecisions.map((decision) => ({
       recordId: decision.decisionId,
       title: decision.question,
       summary: decision.outcomeSummary,
@@ -233,8 +295,7 @@ async function buildStageRecords(
 
   records.set(
     "commitment",
-    (await listPublicInitiativeImplementationCommitmentsForInitiative(initiativeId)).map(
-      (commitment) => ({
+    commitments.map((commitment) => ({
       recordId: commitment.commitmentId,
       title: commitment.title,
       summary: commitment.summary,
@@ -251,8 +312,7 @@ async function buildStageRecords(
 
   records.set(
     "tracking",
-    (await listPublicInitiativeImplementationTrackingsForInitiative(initiativeId)).map(
-      (tracking) => ({
+    trackings.map((tracking) => ({
       recordId: tracking.trackingId,
       title: tracking.summary,
       status: tracking.status,
@@ -263,32 +323,61 @@ async function buildStageRecords(
     })),
   );
 
-  records.set(
-    "official_response",
-    listPublicOfficialResponsesForInitiative(initiativeId).map((response) => ({
+  const capOfficialResponses = listPublicOfficialResponsesForInitiative(initiativeId).map(
+    (response) => ({
       recordId: response.responseId,
       title: response.subject,
       summary: response.summary,
       status: response.verificationState,
       updatedAt: response.publishedAt ?? response.receivedAt,
       publicHref: `/official-responses/public/${encodeURIComponent(response.responseId)}`,
-    })),
+    }),
   );
+  const lifecycleOfficialPackage = getOfficialResponsePackageByInitiativeId(initiativeId);
+  const lifecycleOfficialResponses = lifecycleOfficialPackage
+    ? listLifecycleOfficialResponsesByInitiativeId(initiativeId).map((response) => ({
+        recordId: response.responseId,
+        title: response.subject,
+        summary: response.summary,
+        status: response.verificationStatus,
+        updatedAt: response.publishedAt ?? response.receivedAt,
+        publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#official-responses`,
+      }))
+    : [];
 
   records.set(
-    "public_impact",
-    (await listPublicInitiativePublicImpactsForInitiative(initiativeId)).map((impact) => ({
-      recordId: impact.impactId,
-      title: impact.title,
-      summary: impact.observedImpact,
-      status: impact.status,
-      updatedAt: impact.publishedAt ?? impact.verifiedAt ?? initiative.updatedAt,
-      publicHref: `/public-impact/${encodeURIComponent(impact.impactId)}`,
-      authorDisplayName: impact.authorDisplayName,
-    })),
+    "official_response",
+    capOfficialResponses.length > 0 ? capOfficialResponses : lifecycleOfficialResponses,
   );
 
-  const archive = await getLatestPublishedPublicCivicArchiveForInitiative(initiativeId);
+  const lifecyclePublicImpactReport = getPublicImpactReportByInitiativeId(initiativeId);
+  records.set(
+    "public_impact",
+    publicImpacts.length > 0
+      ? publicImpacts.map((impact) => ({
+          recordId: impact.impactId,
+          title: impact.title,
+          summary: impact.observedImpact,
+          status: impact.status,
+          updatedAt: impact.publishedAt ?? impact.verifiedAt ?? initiative.updatedAt,
+          publicHref: `/public-impact/${encodeURIComponent(impact.impactId)}`,
+          authorDisplayName: impact.authorDisplayName,
+        }))
+      : lifecyclePublicImpactReport
+        ? [
+            {
+              recordId: lifecyclePublicImpactReport.reportId,
+              title: lifecyclePublicImpactReport.title,
+              summary: lifecyclePublicImpactReport.sections[0]?.body,
+              status: lifecyclePublicImpactReport.status,
+              updatedAt: lifecyclePublicImpactReport.publishedAt,
+              publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#public-impact`,
+            },
+          ]
+        : [],
+  );
+
+  const lifecycleArchiveVersion = getLatestArchiveVersionByInitiativeId(initiativeId);
   records.set(
     "archive",
     archive
@@ -302,13 +391,28 @@ async function buildStageRecords(
             publicHref: `/civic-archive/${encodeURIComponent(initiativeId)}`,
           },
         ]
-      : [],
+      : lifecycleArchiveVersion
+        ? [
+            {
+              recordId: lifecycleArchiveVersion.archiveVersionId,
+              title: lifecycleArchiveVersion.finalArchiveTitle,
+              summary: lifecycleArchiveVersion.finalSummary,
+              status: "archived",
+              updatedAt: lifecycleArchiveVersion.publishedAt,
+              publicHref: lifecycleArchiveVersion.publicUrlPath,
+            },
+          ]
+        : [],
   );
 
   return records;
 }
 
-function buildLifecycleNavigation(
+/**
+ * Lifecycle UX Completion Pack 02 Parts 1–2 — derive menu state + marker
+ * class from publication metadata and registry order.
+ */
+export function buildLifecycleNavigation(
   initiative: Initiative,
   stageRecords: Map<string, PublicInitiativeLifecycleRecordItem[]>,
 ): {
@@ -321,23 +425,32 @@ function buildLifecycleNavigation(
     stageCounts.set(stageId, items.length);
   }
 
-  const currentStageId = resolveCurrentStageId(initiative, stageCounts);
+  // Initiative record itself is always present for a public experience.
+  if ((stageCounts.get("initiative") ?? 0) === 0) {
+    stageCounts.set("initiative", 1);
+  }
+
+  const currentStageId = resolveCurrentStageIdFromPublicationMetadata(stageCounts);
   const currentIndex = EXPERIENCE_STAGES.findIndex((stage) => stage.stageId === currentStageId);
 
   const stages: PublicInitiativeLifecycleStageNavItem[] = EXPERIENCE_STAGES.map((stage, index) => {
     const recordCount = stageCounts.get(stage.stageId) ?? 0;
     let state: InitiativeExperienceLifecycleStageState;
 
-    if (stage.stageId === "petition" && !isPetitionStageApplicable(initiative)) {
+    if (stage.stageId === "petition" && !isPetitionStageApplicable(initiative) && recordCount === 0) {
       state = "not_applicable";
-    } else if (stage.stageId === "initiative") {
-      state = index === currentIndex ? "current" : "completed";
+    } else if (stage.stageId === "archive" && recordCount > 0) {
+      state = "archived";
     } else if (index < currentIndex) {
       state = recordCount > 0 ? "completed" : "not_applicable";
     } else if (index === currentIndex) {
-      state = "current";
+      if (recordCount > 0) {
+        state = stage.stageId === "archive" ? "archived" : "published";
+      } else {
+        state = "in_progress";
+      }
     } else {
-      state = "upcoming";
+      state = "not_started";
     }
 
     return {
@@ -454,31 +567,87 @@ export async function buildPublicInitiativeExperienceProjection(input: {
   initiative: Initiative;
   userId?: string | null;
   viewerKey?: string | null;
+  /**
+   * UX Evolution Pack 02.3 — the viewer's Initiative-scoped participant id
+   * (auth `memberId`), distinct from `userId` (the auth account id). Needed
+   * to attach per-comment collaboration state (Proposal / Ready to
+   * Collaborate / Invite to Allies visibility) to the server-rendered
+   * initial comments, exactly as the client-side `/comments` route already
+   * does. Optional and additive: omitting it simply yields comments with no
+   * collaboration actions, matching prior behavior.
+   */
+  viewerParticipantId?: string | null;
 }): Promise<PublicInitiativeExperienceProjection> {
   const { initiative } = input;
   createInitialInitiativeVersionRevision(initiative, initiative.stewardId);
 
   if (input.viewerKey) {
-    recordInitiativeView({
+    // Fire-and-forget by design (view recording must never delay the
+    // experience payload) — but a fire-and-forget call is still a Promise,
+    // and an unawaited rejection is an unhandled rejection that can
+    // terminate the process (Stability Hotfix: this was the crash site).
+    // `recordInitiativeView` is now idempotent for the expected
+    // duplicate-view race (see `recordViewMongo`), so anything that still
+    // rejects here is a genuine, unexpected failure that must be logged,
+    // never silently dropped and never allowed to crash the request.
+    void recordInitiativeView({
       initiativeId: initiative.initiativeId,
       viewerKey: input.viewerKey,
+    }).catch((error) => {
+      logger.error("initiative_view.record_failed", {
+        initiativeId: initiative.initiativeId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     });
   }
 
-  const publicInitiative = await toPublicInitiativeProjection(initiative);
+  // Performance Recovery Task — these four lookups are mutually
+  // independent: `toPublicInitiativeProjection`, the initiative's version
+  // history, its support statistics, and its discussion summary each
+  // depend only on `initiative`/`input`, never on one another's result.
+  // Running them concurrently instead of one sequential `await` after
+  // another removes real, measured wall-clock latency (confirmed via
+  // temporary per-step tracing during this task's investigation) without
+  // changing any returned value.
+  const [publicInitiative, versionHistory, support, { rawComments, ...discussionSummary }] =
+    await Promise.all([
+      toPublicInitiativeProjection(initiative),
+      getPublicInitiativeVersionHistory(initiative.initiativeId),
+      getInitiativeSupportStatistics({
+        initiativeId: initiative.initiativeId,
+        userId: input.userId ?? null,
+        visitorKeyValue: input.userId ? null : (input.viewerKey ?? null),
+      }),
+      buildInitiativeDiscussionSummary({
+        initiativeId: initiative.initiativeId,
+        userId: input.userId ?? null,
+      }),
+    ]);
   const geography = resolveGeography(initiative);
-  const stageRecords = await buildStageRecords(initiative);
+  // `versionHistory` is passed through so `buildStageRecords` reuses this
+  // exact result for its "revision" stage instead of fetching it a second
+  // time (it was previously fetched twice per request — once here for the
+  // top-level `revisionHistory` field, once inside `buildStageRecords`).
+  const stageRecords = await buildStageRecords(initiative, publicInitiative, versionHistory);
   const { stages, currentStageId } = buildLifecycleNavigation(initiative, stageRecords);
   const currentStage = stages.find((stage) => stage.stageId === currentStageId);
-  const support = await getInitiativeSupportStatistics({
-    initiativeId: initiative.initiativeId,
-    userId: input.userId ?? null,
-    visitorKeyValue: input.userId ? null : (input.viewerKey ?? null),
-  });
-  const discussion = await buildInitiativeDiscussionSummary({
-    initiativeId: initiative.initiativeId,
-    userId: input.userId ?? null,
-  });
+  // UX Evolution Pack 02.3 Part 1 diagnosis: `buildInitiativeDiscussionSummary`
+  // alone never attached collaboration state, so every server-rendered
+  // initial comment had `collaboration` permanently absent and the
+  // Proposal / Ready to Collaborate / Invite to Allies controls could never
+  // appear on first page load (only a later client-side `/comments` fetch
+  // computed them). Mirror the exact same projection step the comments
+  // route already performs, so the initial payload and any later refetch
+  // are consistent.
+  const discussion: PublicInitiativeDiscussionSummary = {
+    ...discussionSummary,
+    initialComments: await attachCollaborationStateToComments({
+      initiativeId: initiative.initiativeId,
+      rawComments,
+      projectedComments: discussionSummary.initialComments,
+      viewerParticipantId: input.viewerParticipantId ?? null,
+    }),
+  };
 
   const firstPublishedAt =
     initiative.timeline.find((event) => event.eventType === "initiative_published")?.timestamp ??
@@ -497,6 +666,7 @@ export async function buildPublicInitiativeExperienceProjection(input: {
       lastUpdatedAt: initiative.updatedAt,
       imageUrl: initiative.metadata.imageUrl,
       imageAltText: initiative.metadata.imageAltText,
+      coverMedia: resolveInitiativeCoverMedia(initiative.metadata),
       stewardDisplayName: publicInitiative.stewardDisplayName,
     },
     initiative: publicInitiative,
@@ -507,9 +677,12 @@ export async function buildPublicInitiativeExperienceProjection(input: {
       ...support,
       transparencyNote: INITIATIVE_SUPPORT_TRANSPARENCY_NOTE,
     },
-    revisionHistory: await getPublicInitiativeVersionHistory(initiative.initiativeId),
+    revisionHistory: versionHistory,
     relatedCivicRecords: buildRelatedCivicRecords(initiative.initiativeId),
     latestInitiatives: selectLatestInitiatives(initiative),
+    relatedInitiatives: (
+      await findRelatedInitiativesForInitiative(initiative.initiativeId)
+    ).items,
     discussion,
     generatedAt: new Date().toISOString(),
   };

@@ -3,7 +3,7 @@
 import type { Initiative } from "@hu/types";
 import { useEffect, useState } from "react";
 
-import { uploadInitiativeImage } from "../../media-upload/media-upload-api";
+import { submitInitiativeVideoLink, uploadInitiativeImage } from "../../media-upload/media-upload-api";
 import {
   archiveInitiative,
   republishInitiative,
@@ -155,18 +155,9 @@ export function InitiativePublishedEditor({
         }
         onImageUpload={async (file) => {
           const uploaded = await uploadInitiativeImage(initiative.initiativeId, file);
-          setForm((current) => ({
-            ...current,
-            fields: { ...current.fields, imageUrl: uploaded.mediaUrl },
-          }));
           return uploaded.mediaUrl;
         }}
-        onImageRemove={async () => {
-          setForm((current) => ({
-            ...current,
-            fields: { ...current.fields, imageUrl: "", imageAltText: "" },
-          }));
-        }}
+        onVideoLinkSubmit={(url) => submitInitiativeVideoLink(initiative.initiativeId, url)}
       />
 
       <div className="initiative-draft-editor__actions">

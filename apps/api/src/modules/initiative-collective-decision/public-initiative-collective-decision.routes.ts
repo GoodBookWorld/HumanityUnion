@@ -39,7 +39,7 @@ export const publicInitiativeCollectiveDecisionsByInitiativeRouter = Router();
 
 publicInitiativeCollectiveDecisionsByInitiativeRouter.get(
   "/:initiativeId/collective-decisions",
-  (req, res) => {
+  async (req, res) => {
     const initiativeId = Array.isArray(req.params.initiativeId)
       ? (req.params.initiativeId[0] ?? "")
       : (req.params.initiativeId ?? "");
@@ -55,7 +55,7 @@ publicInitiativeCollectiveDecisionsByInitiativeRouter.get(
       return;
     }
 
-    const decisions = listPublicInitiativeCollectiveDecisionsForInitiative(initiativeId);
+    const decisions = await listPublicInitiativeCollectiveDecisionsForInitiative(initiativeId);
     const metrics = computeInitiativeCollectiveDecisionMetrics(initiativeId);
 
     res.json(createSuccessResponse(decisions, "Public collective decisions loaded.", { metrics }));

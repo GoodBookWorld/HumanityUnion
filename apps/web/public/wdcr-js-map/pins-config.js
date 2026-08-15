@@ -28,13 +28,13 @@
   },
   {
     "shape": "square",
-    "hover": "<b><u>Presidential system</u></b><span style='color: #999;'></span><br><span style='color: #2664DB;'><b>Presidential republics</b></span>",
+    "hover": "<b><u>Presidential system</u></b><span style='color: #999;'></span><br><span style='color: #0174b0;'><b>Presidential republics</b></span>",
     "pos_X": 10,
     "pos_Y": 250,
     "size": 12,
-    "outline": "#2664DB",
-    "upColor": "#2664DB",
-    "overColor": "#2664DB",
+    "outline": "#0174b0",
+    "upColor": "#0174b0",
+    "overColor": "#0174b0",
     "url": "https://en.wikipedia.org/wiki/Presidential_system",
     "target": "same_window",
     "active": true

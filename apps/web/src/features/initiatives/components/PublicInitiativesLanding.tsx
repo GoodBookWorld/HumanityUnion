@@ -19,7 +19,7 @@ export function PublicInitiativesLanding() {
           <Button href="/search?entityType=initiative">Search</Button>
         </div>
         <p className="public-initiatives-landing__hint">
-          Member workspace tools appear here after you sign in.
+          Workspace tools appear here after you log in.
         </p>
       </Card>
     </section>

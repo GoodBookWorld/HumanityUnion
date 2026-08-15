@@ -52,7 +52,7 @@ export default async function PublicCivicActionPackagePage({
 
   if (!capPackage) {
     return (
-      <main>
+      <main className="hu-page-container hu-page-container--sectioned">
         <h1>Civic Action Package not available</h1>
         <p>
           <Link href="/">Back to Home</Link>
@@ -62,7 +62,7 @@ export default async function PublicCivicActionPackagePage({
   }
 
   return (
-    <main>
+    <main className="hu-page-container hu-page-container--sectioned">
       <header>
         <h1>{capPackage.title}</h1>
         <p>Official Civic Action Package · CAP #{capPackage.capNumber}</p>

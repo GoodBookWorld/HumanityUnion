@@ -5,7 +5,7 @@ import { confirmRegistrationEmailCode } from "../../src/modules/auth/auth-email-
 import { findAuthUserByEmail, type AuthUserRecord } from "../../src/modules/auth/auth-user.repository.js";
 import { getLastIssuedConfirmationCodeForTests } from "../../src/modules/email/email-confirmation-code.repository.js";
 import { deleteWorkspaceProjectionByMemberId } from "../../src/modules/workspace/infrastructure/workspace-projection.repository.js";
-import { resetMemberRegisteredOutboxForDispatchTests, markMemberRegisteredOutboxPublishedForTests } from "./test-events.js";
+import { markMemberRegisteredOutboxPublishedForTests } from "./test-events.js";
 
 export async function registerAndConfirmMemberForTests(input: {
   email: string;

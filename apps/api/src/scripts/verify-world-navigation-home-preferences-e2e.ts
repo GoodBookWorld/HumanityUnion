@@ -85,7 +85,7 @@ async function verifyInitiativeDiscoverability(): Promise<void> {
     regionSlug: "CA-BC",
   });
 
-  const draftSearch = searchPublicCivicRecords({
+  const draftSearch = await searchPublicCivicRecords({
     q: draft.title,
     limit: 20,
     offset: 0,
@@ -98,7 +98,7 @@ async function verifyInitiativeDiscoverability(): Promise<void> {
   const published = publishInitiative(steward, draft.initiativeId);
   assert(published.lifecyclePhase === "projected", "Publish must reach projected lifecycle");
 
-  const publishedSearch = searchPublicCivicRecords({
+  const publishedSearch = await searchPublicCivicRecords({
     q: published.title,
     limit: 20,
     offset: 0,
@@ -110,7 +110,7 @@ async function verifyInitiativeDiscoverability(): Promise<void> {
     "Published initiative must appear in search without manual index reset",
   );
 
-  const countrySearch = searchPublicCivicRecords({
+  const countrySearch = await searchPublicCivicRecords({
     country: "Canada",
     entityTypes: ["initiative"],
     limit: 50,

@@ -20,7 +20,7 @@ const NAV_ITEMS = [
   "Contribution Profile",
   "Community Needs",
   "Next Meaningful Action",
-  "Humanity Assistant",
+  "Humanity Union Assistant",
   "Related Navigation",
 ];
 

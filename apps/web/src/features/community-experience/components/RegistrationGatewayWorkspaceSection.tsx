@@ -47,39 +47,13 @@ export function RegistrationGatewayWorkspaceSection({
 
         <div className="registration-gateway__actions">
           {isAuthenticated ? (
-            WORKSPACE_ROUTE ? (
-              <Link className="registration-gateway__action" href={WORKSPACE_ROUTE}>
-                {REGISTRATION_GATEWAY_WORKSPACE_CONTENT.workspaceActionLabel}
-              </Link>
-            ) : (
-              <span
-                className="registration-gateway__action registration-gateway__action--placeholder"
-                role="status"
-                aria-disabled="true"
-              >
-                {REGISTRATION_GATEWAY_WORKSPACE_CONTENT.workspaceActionLabel}
-                <span className="registration-gateway__action-note">
-                  {" "}
-                  — {REGISTRATION_GATEWAY_WORKSPACE_CONTENT.workspacePlaceholderLabel}
-                </span>
-              </span>
-            )
-          ) : REGISTRATION_ROUTE ? (
+            <Link className="registration-gateway__action" href={WORKSPACE_ROUTE}>
+              {REGISTRATION_GATEWAY_WORKSPACE_CONTENT.workspaceActionLabel}
+            </Link>
+          ) : (
             <Link className="registration-gateway__action" href={REGISTRATION_ROUTE}>
               {REGISTRATION_GATEWAY_WORKSPACE_CONTENT.registrationActionLabel}
             </Link>
-          ) : (
-            <span
-              className="registration-gateway__action registration-gateway__action--placeholder"
-              role="status"
-              aria-disabled="true"
-            >
-              {REGISTRATION_GATEWAY_WORKSPACE_CONTENT.registrationActionLabel}
-              <span className="registration-gateway__action-note">
-                {" "}
-                — {REGISTRATION_GATEWAY_WORKSPACE_CONTENT.registrationPlaceholderLabel}
-              </span>
-            </span>
           )}
         </div>
 

@@ -4,9 +4,16 @@ import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-ga
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
 import {
+  InitiativeAncestryMissingError,
+  InitiativeIdMalformedError,
+  InitiativeNotFoundError,
+} from "../../shared/initiative-ancestry/index.js";
+import {
   archiveInitiativeCollaborativeAnalysis,
   createInitiativeCollaborativeAnalysisDraft,
+  generateInitiativeCollaborativeAnalysisDraft,
   getMyInitiativeCollaborativeAnalysis,
+  getMyInitiativeCollaborativeAnalysisForInitiative,
   listMyInitiativeCollaborativeAnalyses,
   listMyInitiativeCollaborativeAnalysesForInitiative,
   publishInitiativeCollaborativeAnalysis,
@@ -16,6 +23,7 @@ import {
   validateCreateInitiativeCollaborativeAnalysisDraftInput,
   validateSaveInitiativeCollaborativeAnalysisDraftInput,
 } from "./initiative-collaborative-analysis.validators.js";
+import { buildInitiativeAnalysisSourceSnapshot } from "./initiative-analysis-source-snapshot.service.js";
 
 const initiativeCollaborativeAnalysisRouter = Router();
 
@@ -50,6 +58,18 @@ function resolveErrorStatus(message: string): number {
 }
 
 function handleServiceError(res: Response, error: unknown): void {
+  if (error instanceof InitiativeNotFoundError) {
+    // Matches the pre-existing "Initiative not found." 404 previously
+    // produced by the hand-rolled assertEligibleInitiative check.
+    res.status(404).json(createFailureResponse("Initiative not found."));
+    return;
+  }
+
+  if (error instanceof InitiativeAncestryMissingError || error instanceof InitiativeIdMalformedError) {
+    res.status(400).json(createFailureResponse(error.message));
+    return;
+  }
+
   const message =
     error instanceof Error ? error.message : "Initiative collaborative analysis request failed.";
   res.status(resolveErrorStatus(message)).json(createFailureResponse(message));
@@ -90,6 +110,58 @@ initiativeCollaborativeAnalysisRouter.get(
   },
 );
 
+/**
+ * Initiative Lifecycle — Part B. "The" Analysis the Lifecycle Stage
+ * Workspace should render for this Author (current draft, else most
+ * recently published, else `null` — the Workspace's own draft-empty
+ * state), distinct from `/by-initiative/:id` (which returns every one of
+ * this author's analyses for the pre-existing multi-analysis list view).
+ */
+initiativeCollaborativeAnalysisRouter.get(
+  "/by-initiative/:initiativeId/current",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    const identity = await resolveRequestIdentity(req);
+    const analysis = getMyInitiativeCollaborativeAnalysisForInitiative(identity, getInitiativeId(req));
+
+    res.json(createSuccessResponse(analysis, "Current initiative analysis loaded."));
+  },
+);
+
+/** Initiative Lifecycle — Part B, Section 2/3: the Author-only Source Snapshot (Automatic Source Collection). */
+initiativeCollaborativeAnalysisRouter.get(
+  "/by-initiative/:initiativeId/source-snapshot",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const snapshot = await buildInitiativeAnalysisSourceSnapshot(getInitiativeId(req));
+
+      res.json(createSuccessResponse(snapshot, "Analysis source snapshot loaded."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+/** Initiative Lifecycle — Part B, Section 4: "Generate Analysis Draft" (deterministic, no external AI provider). */
+initiativeCollaborativeAnalysisRouter.post(
+  "/by-initiative/:initiativeId/generate",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const analysis = await generateInitiativeCollaborativeAnalysisDraft(
+        identity,
+        getInitiativeId(req),
+      );
+
+      res.json(createSuccessResponse(analysis, "Analysis draft generated."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
 initiativeCollaborativeAnalysisRouter.get(
   "/:analysisId",
   ...authenticatedWorkspaceWriteMiddleware,
@@ -112,7 +184,7 @@ initiativeCollaborativeAnalysisRouter.post(
     try {
       const identity = await resolveRequestIdentity(req);
       const input = validateCreateInitiativeCollaborativeAnalysisDraftInput(req.body);
-      const created = createInitiativeCollaborativeAnalysisDraft(identity, input);
+      const created = await createInitiativeCollaborativeAnalysisDraft(identity, input);
 
       res.status(201).json(createSuccessResponse(created, "Initiative analysis draft created."));
     } catch (error) {
@@ -147,7 +219,7 @@ initiativeCollaborativeAnalysisRouter.post(
   async (req, res) => {
     try {
       const identity = await resolveRequestIdentity(req);
-      const analysis = publishInitiativeCollaborativeAnalysis(identity, getAnalysisId(req));
+      const analysis = await publishInitiativeCollaborativeAnalysis(identity, getAnalysisId(req));
 
       res.json(createSuccessResponse(analysis, "Initiative analysis published."));
     } catch (error) {

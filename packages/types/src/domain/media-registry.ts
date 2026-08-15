@@ -37,8 +37,11 @@ export interface MediaRegistryProvider {
   countryCode?: string;
   language: string;
   rssFeeds: MediaRegistryRssFeed[];
-  /** Local public asset path, e.g. /images/media/bbc.webp — never hotlink external logos. */
-  logoUrl: string;
+  /**
+   * Local public asset path, e.g. /images/media/bbc.webp — never hotlink external logos.
+   * Omit when no appropriate asset exists; UI uses logoLabel text fallback.
+   */
+  logoUrl?: string;
   logoLabel: string;
   website: string;
   categories: MediaRegistryCategory[];

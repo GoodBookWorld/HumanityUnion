@@ -111,7 +111,7 @@ async function buildInitiativeState(
 
     participantEligibleToVote = eligibility.eligible;
     participantHasVote =
-      getActiveVoteForParticipant(openDecision.decisionId, identity.participantId) !== null;
+      (await getActiveVoteForParticipant(openDecision.decisionId, identity.participantId)) !== null;
   }
 
   return {

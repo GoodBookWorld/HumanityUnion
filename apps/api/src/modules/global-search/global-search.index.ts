@@ -22,6 +22,8 @@ import { getCivicMediaRecordsForSearch } from "../civic-media-center/civic-media
 import { civicNominationToSearchMetadata } from "../civic-nomination/civic-nomination.projection.js";
 import { listPublishedCivicNominations } from "../civic-nomination/civic-nomination.store.js";
 import { listPetitions } from "../petition/petition.store.js";
+import { blogPostToSearchMetadata } from "../blog/blog.projection.js";
+import { listPublishedBlogPostsForSearch } from "../blog/blog.service.js";
 
 interface SearchEntityRef {
   entityType: CivicEntityType;
@@ -38,7 +40,7 @@ function isPublicInitiative(initiativeId: string): boolean {
 }
 
 function toIndexEntry(
-  metadata: NonNullable<ReturnType<typeof buildSearchMetadata>>,
+  metadata: NonNullable<Awaited<ReturnType<typeof buildSearchMetadata>>>,
 ): GlobalSearchIndexEntry {
   return {
     ...metadata,
@@ -57,7 +59,7 @@ function toIndexEntry(
   };
 }
 
-function collectSearchEntityRefs(): SearchEntityRef[] {
+async function collectSearchEntityRefs(): Promise<SearchEntityRef[]> {
   const refs: SearchEntityRef[] = [];
 
   for (const initiative of listInitiatives()) {
@@ -113,7 +115,7 @@ function collectSearchEntityRefs(): SearchEntityRef[] {
     refs.push({ entityType: "collective_decision", entityId: decision.decisionId });
   }
 
-  for (const petition of listPetitions()) {
+  for (const petition of await listPetitions()) {
     if (
       !["Open", "Published", "Closed", "Archived"].includes(petition.status) ||
       !isPublicInitiative(petition.subject.initiativeId)
@@ -191,11 +193,11 @@ function collectSearchEntityRefs(): SearchEntityRef[] {
 
 let cachedIndex: GlobalSearchIndexEntry[] | null = null;
 
-export function buildGlobalSearchIndex(): GlobalSearchIndexEntry[] {
+export async function buildGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]> {
   const entries: GlobalSearchIndexEntry[] = [];
 
-  for (const ref of collectSearchEntityRefs()) {
-    const metadata = buildSearchMetadata(ref.entityType, ref.entityId);
+  for (const ref of await collectSearchEntityRefs()) {
+    const metadata = await buildSearchMetadata(ref.entityType, ref.entityId);
 
     if (!metadata) {
       continue;
@@ -220,14 +222,25 @@ export function buildGlobalSearchIndex(): GlobalSearchIndexEntry[] {
     }
   }
 
+  try {
+    for (const post of await listPublishedBlogPostsForSearch()) {
+      const metadata = blogPostToSearchMetadata(post);
+      if (metadata) {
+        entries.push(toIndexEntry(metadata));
+      }
+    }
+  } catch {
+    // Blog Mongo unavailable in some test/bootstrap modes — skip Blog index entries.
+  }
+
   return entries.sort(
     (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
   );
 }
 
-export function getGlobalSearchIndex(): GlobalSearchIndexEntry[] {
+export async function getGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]> {
   if (!cachedIndex) {
-    cachedIndex = buildGlobalSearchIndex();
+    cachedIndex = await buildGlobalSearchIndex();
   }
 
   return cachedIndex;

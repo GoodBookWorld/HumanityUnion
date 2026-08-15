@@ -2,9 +2,11 @@ import { MemoryCivicDeliveryPersistenceAdapter } from "./civic-delivery-memory.p
 import { FileCivicDeliveryPersistenceAdapter } from "./civic-delivery-file.persistence.js";
 import { createMongoCivicDeliveryPersistenceAdapter } from "./civic-delivery-mongo.persistence.js";
 import type { CivicDeliveryPersistenceAdapter } from "./civic-delivery-persistence.types.js";
+import { resolvePersistenceMode } from "../../../config/production-persistence-contract.js";
+
 
 export function resolveCivicDeliveryPersistenceAdapter(): CivicDeliveryPersistenceAdapter {
-  const mode = process.env.CIVIC_DELIVERY_PERSISTENCE ?? "file";
+  const mode = resolvePersistenceMode("CIVIC_DELIVERY_PERSISTENCE", "file");
 
   switch (mode) {
     case "memory":

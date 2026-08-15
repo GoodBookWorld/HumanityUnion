@@ -199,7 +199,7 @@ async function verifySearchRepair(): Promise<void> {
     regionSlug: "CA-BC",
   });
 
-  const draftSearch = searchPublicCivicRecords({
+  const draftSearch = await searchPublicCivicRecords({
     q: draft.title,
     limit: 20,
     offset: 0,
@@ -211,7 +211,7 @@ async function verifySearchRepair(): Promise<void> {
 
   const published = publishInitiative(steward, draft.initiativeId);
 
-  const titleSearch = searchPublicCivicRecords({
+  const titleSearch = await searchPublicCivicRecords({
     q: published.title,
     entityTypes: ["initiative"],
     limit: 20,
@@ -222,7 +222,7 @@ async function verifySearchRepair(): Promise<void> {
     "Published initiative must be searchable by title",
   );
 
-  const countrySearch = searchPublicCivicRecords({
+  const countrySearch = await searchPublicCivicRecords({
     country: "CA",
     entityTypes: ["initiative"],
     limit: 50,
@@ -233,7 +233,7 @@ async function verifySearchRepair(): Promise<void> {
     "Published initiative must match country code filter",
   );
 
-  const regionSearch = searchPublicCivicRecords({
+  const regionSearch = await searchPublicCivicRecords({
     country: "CA",
     region: "CA-BC",
     entityTypes: ["initiative"],
@@ -245,7 +245,7 @@ async function verifySearchRepair(): Promise<void> {
     "Published initiative must match region code filter",
   );
 
-  const activitySearch = searchPublicCivicRecords({
+  const activitySearch = await searchPublicCivicRecords({
     activityArea: "Environment and Climate",
     entityTypes: ["initiative"],
     limit: 50,

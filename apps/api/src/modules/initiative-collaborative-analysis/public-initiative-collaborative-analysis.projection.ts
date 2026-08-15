@@ -9,6 +9,7 @@ import {
   getAnalysisById,
   listPublishedAnalysesByInitiative,
 } from "./initiative-collaborative-analysis.store.js";
+import { getInitiativeAnalysisReactionSummary } from "../initiative-analysis-reactions/initiative-analysis-reaction.service.js";
 
 async function resolveAuthorDisplayName(authorId: string): Promise<string> {
   const member = await getMemberById(authorId);
@@ -18,7 +19,16 @@ async function resolveAuthorDisplayName(authorId: string): Promise<string> {
 
 export async function toPublicInitiativeCollaborativeAnalysisProjection(
   analysis: InitiativeCollaborativeAnalysis,
+  viewerUserId?: string | null,
 ): Promise<PublicInitiativeCollaborativeAnalysisProjection> {
+  const [authorDisplayName, reactionSummary] = await Promise.all([
+    resolveAuthorDisplayName(analysis.authorId),
+    getInitiativeAnalysisReactionSummary({
+      analysisId: analysis.analysisId,
+      actorUserId: viewerUserId,
+    }),
+  ]);
+
   return {
     analysisId: analysis.analysisId,
     initiativeId: analysis.initiativeId,
@@ -26,11 +36,13 @@ export async function toPublicInitiativeCollaborativeAnalysisProjection(
     summary: analysis.summary,
     supportingEvidence: analysis.supportingEvidence,
     risks: analysis.risks,
+    openQuestions: analysis.openQuestions ?? "",
     suggestedImprovements: analysis.suggestedImprovements,
     references: analysis.references,
-    authorDisplayName: await resolveAuthorDisplayName(analysis.authorId),
+    authorDisplayName,
     publishedAt: analysis.publishedAt ?? analysis.updatedAt,
     initiativeVersion: analysis.initiativeVersion ?? 1,
+    reactionSummary,
   };
 }
 
@@ -59,6 +71,7 @@ export async function listPublicInitiativeCollaborativeAnalyses(
 
 export async function getPublicInitiativeCollaborativeAnalysis(
   analysisId: string,
+  viewerUserId?: string | null,
 ): Promise<PublicInitiativeCollaborativeAnalysisProjection | null> {
   const analysis = getAnalysisById(analysisId);
 
@@ -66,5 +79,5 @@ export async function getPublicInitiativeCollaborativeAnalysis(
     return null;
   }
 
-  return await toPublicInitiativeCollaborativeAnalysisProjection(analysis);
+  return await toPublicInitiativeCollaborativeAnalysisProjection(analysis, viewerUserId);
 }

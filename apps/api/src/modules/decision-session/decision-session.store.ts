@@ -14,6 +14,8 @@ export interface DecisionSessionUpdate {
   publishedAt?: string;
   closedAt?: string;
   packageReferences?: DecisionSession["packageReferences"];
+  structuredContent?: DecisionSession["structuredContent"];
+  traceability?: DecisionSession["traceability"];
 }
 
 const PUBLIC_STATUSES = new Set<DecisionSession["status"]>(["published", "closed"]);
@@ -61,6 +63,30 @@ export function listPublicSessionsByInitiative(initiativeId: string): DecisionSe
     .sort((left, right) =>
       (right.publishedAt ?? right.updatedAt).localeCompare(left.publishedAt ?? left.updatedAt),
     );
+}
+
+/**
+ * Test-only cleanup helper (Recovery Task 08), mirroring the pattern
+ * established in Recovery Tasks 06-07 for modules backed by file
+ * persistence with no built-in reset mechanism. Deletes sessions authored
+ * (stewarded) by the given member ID and returns the number removed.
+ * Scoped narrowly by stewardId; must not be used in production code paths.
+ */
+export function deleteSessionsByStewardIdForTests(stewardId: string): number {
+  let removed = 0;
+
+  for (const [sessionId, session] of sessions.entries()) {
+    if (session.stewardId === stewardId) {
+      sessions.delete(sessionId);
+      removed += 1;
+    }
+  }
+
+  if (removed > 0) {
+    persistSessionsMap(sessions);
+  }
+
+  return removed;
 }
 
 export function createSession(session: DecisionSession): DecisionSession {
@@ -118,6 +144,16 @@ export function updateSession(
 
   if (update.packageReferences !== undefined) {
     session.packageReferences = structuredClone(update.packageReferences);
+  }
+
+  if (update.structuredContent !== undefined) {
+    session.structuredContent = update.structuredContent
+      ? structuredClone(update.structuredContent)
+      : null;
+  }
+
+  if (update.traceability !== undefined) {
+    session.traceability = update.traceability ? structuredClone(update.traceability) : null;
   }
 
   session.updatedAt = new Date().toISOString();

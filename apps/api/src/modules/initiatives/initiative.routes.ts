@@ -6,6 +6,8 @@ import { resolveRequestIdentity } from "./identity/resolve-request-identity.js";
 import {
   archiveInitiative,
   createInitiativeDraft,
+  deleteInitiativeDraft,
+  listMyInitiativeGroups,
   listMyInitiatives,
   publishInitiative,
   republishInitiative,
@@ -82,6 +84,23 @@ initiativesRouter.get("/mine", ...authenticatedWorkspaceWriteMiddleware, async (
   const initiatives = listMyInitiatives(identity);
 
   res.json(createSuccessResponse(initiatives, "My initiatives loaded."));
+});
+
+/**
+ * Communication UX Pack 03.9 Part 3 — Initiative Group Chat picker read:
+ * every Initiative the signed-in Participant authors OR actively
+ * collaborates on. Mounted before `/:initiativeId` so the literal segment
+ * `my-groups` is never swallowed by the dynamic route.
+ */
+initiativesRouter.get("/my-groups", ...authenticatedWorkspaceWriteMiddleware, async (req, res) => {
+  try {
+    const identity = await resolveRequestIdentity(req);
+    const groups = await listMyInitiativeGroups(identity);
+
+    res.json(createSuccessResponse(groups, "My Initiative Groups loaded."));
+  } catch (error) {
+    handleServiceError(res, error);
+  }
 });
 
 /** Canonical draft creation route. */
@@ -203,6 +222,27 @@ initiativesRouter.patch("/:initiativeId", ...authenticatedWorkspaceWriteMiddlewa
     handleServiceError(res, error);
   }
 });
+
+/**
+ * Initiative UX Pack 01.1 — permanently deletes an unpublished Draft
+ * Initiative. Mounted on the same `/:initiativeId/draft` resource as the
+ * PATCH save-draft route above (DELETE on that resource is the natural,
+ * RESTful complement — no separate "/delete" action route).
+ */
+initiativesRouter.delete(
+  "/:initiativeId/draft",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      await deleteInitiativeDraft(identity, getInitiativeId(req));
+
+      res.json(createSuccessResponse(null, "Draft Initiative deleted."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
 
 initiativesRouter.post(
   "/:initiativeId/publish",

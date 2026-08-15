@@ -1,4 +1,5 @@
 import type { ImplementationTrackingUpdate, InitiativeImplementationTracking } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -37,7 +38,7 @@ export function createMongoInitiativeImplementationTrackingPersistenceAdapter():
 }
 
 export async function hydrateInitiativeImplementationTrackingMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_IMPLEMENTATION_TRACKING_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_IMPLEMENTATION_TRACKING_PERSISTENCE")) {
     return;
   }
 
@@ -45,7 +46,7 @@ export async function hydrateInitiativeImplementationTrackingMongoPersistence():
 }
 
 export async function flushInitiativeImplementationTrackingMongoPersistence(): Promise<void> {
-  if (process.env.INITIATIVE_IMPLEMENTATION_TRACKING_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("INITIATIVE_IMPLEMENTATION_TRACKING_PERSISTENCE")) {
     return;
   }
 

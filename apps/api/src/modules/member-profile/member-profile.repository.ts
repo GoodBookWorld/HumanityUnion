@@ -33,6 +33,14 @@ function stripDocument(document: MemberProfileDocument): MemberProfile {
     skillsVisibility: record.skillsVisibility ?? "members_only",
     professionalLinksVisibility: record.professionalLinksVisibility ?? "public",
     membershipPubliclyVisible: record.membershipPubliclyVisible ?? false,
+    // Profile UX Pack 02 Part 5 — statistics visibility switches default to
+    // `true` for profiles persisted before this pack existed.
+    showInitiativesStatistics: record.showInitiativesStatistics ?? true,
+    showCollectiveDecisionsStatistics: record.showCollectiveDecisionsStatistics ?? true,
+    showAlliesStatistics: record.showAlliesStatistics ?? true,
+    // Profile UX Pack 03 Part 6 — defaults to the recommended "Active
+    // Allies" policy for every profile persisted before this pack existed.
+    messagingPolicy: record.messagingPolicy ?? "active_allies",
   };
 }
 
@@ -80,6 +88,10 @@ export function buildDefaultMemberProfile(input: {
     membershipPubliclyVisible: false,
     skillsVisibility: "members_only",
     professionalLinksVisibility: "public",
+    showInitiativesStatistics: true,
+    showCollectiveDecisionsStatistics: true,
+    showAlliesStatistics: true,
+    messagingPolicy: "active_allies",
     status: "active",
   };
 }
@@ -109,6 +121,25 @@ export async function findMemberProfileByProfileId(
 
   const collection = getMongoCollection<MemberProfileDocument>(MONGO_COLLECTIONS.memberProfiles);
   const document = await collection.findOne({ profileId });
+
+  return document ? stripDocument(document) : null;
+}
+
+/**
+ * UX Evolution Pack 02.4 Part 6 — `publicName` is the human-readable
+ * identifier used everywhere a public profile link is generated (see
+ * `resolvePublicAuthorIdentity`'s `/member/{publicName}` route), and already
+ * carries a unique Mongo index (`member_profile_public_name_unique`). This
+ * was the missing read: the `/member/{publicName}` page previously had no
+ * way to resolve a profile by this field at all.
+ */
+export async function findMemberProfileByPublicName(
+  publicName: string,
+): Promise<MemberProfile | null> {
+  await ensureMemberProfileMongoReady();
+
+  const collection = getMongoCollection<MemberProfileDocument>(MONGO_COLLECTIONS.memberProfiles);
+  const document = await collection.findOne({ publicName });
 
   return document ? stripDocument(document) : null;
 }

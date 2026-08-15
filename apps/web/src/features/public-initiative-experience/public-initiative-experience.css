@@ -1,8 +1,10 @@
 .pie-page {
-  width: 100%;
-  max-width: var(--hu-workspace-max-width);
+  /* Launch Readiness Pack 03 — public outer shell uses page max-width (not workspace). */
+  width: min(100%, var(--hu-page-max-width));
+  max-width: var(--hu-page-max-width);
   margin-inline: auto;
-  padding: clamp(1rem, 2vw, 2rem) clamp(1rem, 3vw, 1.5rem) 3rem;
+  padding-block: var(--hu-section-gap) var(--hu-space-12);
+  padding-inline: var(--hu-page-padding-inline);
   box-sizing: border-box;
   min-width: 0;
   overflow-x: clip;
@@ -108,7 +110,8 @@
 .pie-support__title,
 .pie-revisions__header h2,
 .pie-latest h2,
-.pie-discussion__title {
+.pie-discussion__title,
+.iaa-widget__header h2 {
   font-size: 1rem;
   margin: 0 0 0.75rem;
 }
@@ -145,25 +148,42 @@
   box-shadow: inset 0 0 0 1px var(--hu-color-primary);
 }
 
-.pie-lifecycle__stage--completed .pie-lifecycle__marker {
+/* Lifecycle UX Completion Pack 02 Part 2 — markers track completion state. */
+.pie-lifecycle__stage--completed .pie-lifecycle__marker,
+.pie-lifecycle__stage--published .pie-lifecycle__marker {
   background: var(--hu-color-primary);
   border-color: var(--hu-color-primary);
 }
 
-.pie-lifecycle__stage--current .pie-lifecycle__marker {
+.pie-lifecycle__stage--in_progress .pie-lifecycle__marker,
+.pie-lifecycle__stage--draft_saved .pie-lifecycle__marker,
+.pie-lifecycle__stage--preview .pie-lifecycle__marker {
   border: 2px solid var(--hu-color-primary);
   background: var(--hu-color-primary-soft);
 }
 
+.pie-lifecycle__stage--archived .pie-lifecycle__marker {
+  background: var(--hu-color-text);
+  border-color: var(--hu-color-text);
+}
+
+.pie-lifecycle__stage--not_started .pie-lifecycle__marker,
 .pie-lifecycle__stage--upcoming .pie-lifecycle__marker,
-.pie-lifecycle__stage--not_applicable .pie-lifecycle__marker {
+.pie-lifecycle__stage--not_applicable .pie-lifecycle__marker,
+.pie-lifecycle__stage--unavailable .pie-lifecycle__marker {
   background: transparent;
   border: 1px dashed var(--hu-color-border);
 }
 
-.pie-lifecycle__stage--not_applicable {
+.pie-lifecycle__stage--not_applicable,
+.pie-lifecycle__stage--unavailable {
   opacity: 0.72;
   border-style: dashed;
+}
+
+.pie-lifecycle__stage--locked {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .pie-lifecycle__marker {
@@ -171,6 +191,8 @@
   height: 0.75rem;
   border-radius: 999px;
   margin-top: 0.2rem;
+  border: 1px solid var(--hu-color-border);
+  box-sizing: border-box;
 }
 
 .pie-lifecycle__label {
@@ -269,6 +291,24 @@
   font-size: 1rem;
 }
 
+/* UX Evolution Pack 02.4 Part 3 — real Initiative author link, only rendered when a public profile exists. */
+.pie-overview__author-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pie-overview__author-link:hover,
+.pie-overview__author-link:focus-visible {
+  text-decoration: underline;
+  color: var(--hu-color-primary);
+}
+
+.pie-overview__author-link:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+  border-radius: var(--hu-radius-sm);
+}
+
 .pie-stage-panel,
 .pie-related__list,
 .pie-latest__list,
@@ -324,11 +364,23 @@
 .pie-support,
 .pie-revisions,
 .pie-latest,
-.pie-discussion {
+.pie-discussion,
+/* Communication UX Pack 03.3 Part 6/21 — the Active Allies widget shares
+ * this sidebar's card chrome so it reads as one consistent set of cards
+ * alongside Initiative Support and Revision History, rather than a
+ * visually distinct bolt-on. */
+.iaa-widget {
   border: 1px solid var(--hu-color-border);
   border-radius: 0.75rem;
   padding: 1rem;
   background: var(--hu-color-surface);
+}
+
+.pie-support__subtitle {
+  margin: 0 0 0.75rem;
+  color: var(--hu-color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
 .pie-support__actions {
@@ -451,7 +503,7 @@
 .pie-latest__thumb img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .pie-discussion__scope {
@@ -461,12 +513,86 @@
 }
 
 .pie-discussion__comments-wrap {
-  max-height: 24rem;
+  max-height: 30rem;
   overflow-y: auto;
+  overflow-x: hidden;
   margin-bottom: 0.75rem;
+}
+
+/*
+ * UX Evolution Pack 02.4 Part 7 — the "Collaboration" filter's compact
+ * Participant list: avatar + name + optional short status only, visually
+ * lighter than a full `.pie-discussion__comment-card` since it carries no
+ * comment text or action row.
+ */
+.pie-collab-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.pie-collab-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
   border: 1px solid var(--hu-color-border);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
+  border-radius: 0.65rem;
+  background: var(--hu-color-bg-muted);
+  padding: 0.55rem 0.85rem;
+}
+
+.pie-collab-list__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pie-collab-list__avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.pie-collab-list__avatar--placeholder {
+  background: var(--hu-color-surface);
+  border: 1px solid var(--hu-color-border);
+}
+
+.pie-collab-list__name {
+  font-weight: 600;
+}
+
+.pie-collab-list__status {
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}
+
+/* Profile UX Pack 01 Parts 2/5/6/7 — Accept/Decline, steward-only, rendered
+   only for still-pending requests (see resolveCollaborationReviewActionState). */
+.pie-collab-list__review-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.pie-collab-list__review-button {
+  padding: 0.35rem 0.85rem;
+  font-size: var(--hu-font-size-sm);
+}
+
+.pie-collab-list__error {
+  flex-basis: 100%;
+  margin: 0.35rem 0 0;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-danger, #b3261e);
 }
 
 .pie-discussion__date {
@@ -510,6 +636,20 @@
   font-size: 0.9rem;
 }
 
+/*
+ * UX Evolution Pack 02.3 Part 4 — each comment is one complete visual
+ * card: author row, comment body, status indicators, action row. The
+ * action row (.pie-discussion__actions, styled further below) forms the
+ * card's visual lower border.
+ */
+.pie-discussion__comment-card {
+  border: 1px solid var(--hu-color-border);
+  border-radius: 0.65rem;
+  background: var(--hu-color-bg-muted);
+  padding: 0.85rem 0.95rem 0;
+  overflow: hidden;
+}
+
 .pie-discussion__author {
   display: flex;
   flex-wrap: wrap;
@@ -528,54 +668,232 @@
   font-weight: 600;
 }
 
-.pie-discussion__reactions {
+.pie-discussion__body {
+  margin: 0 0 0.6rem;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+/* Part 5 — restrained badges next to the author's name; ownership-based, never username-based. */
+.pie-discussion__badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pie-discussion__badge--steward {
+  background: var(--hu-color-primary-soft);
+  color: var(--hu-color-primary);
+}
+
+.pie-discussion__badge--you {
+  background: var(--hu-color-surface);
+  border: 1px solid var(--hu-color-border);
+  color: var(--hu-color-text-muted);
+}
+
+/* UX Evolution Pack 02.2 Part 2 — comment-level feedback section header. */
+.pie-discussion__feedback-heading {
+  margin: 0.25rem 0 0.6rem;
+}
+
+.pie-discussion__feedback-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--hu-color-text-muted);
+}
+
+.pie-discussion__feedback-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--hu-color-text-muted);
+}
+
+/* UX Evolution Pack 02 — Discussion Collaboration Foundation. */
+
+/*
+ * UX Evolution Pack 02.3 Part 3 — compact guidance directly below the
+ * "Discussion" heading. Deliberately a single short paragraph (no panel,
+ * no box) so it stays readable for guests without competing with the
+ * comment list itself.
+ */
+.pie-discussion__guidance {
+  margin: 0 0 0.85rem;
+  color: var(--hu-color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.pie-discussion__guidance strong {
+  color: var(--hu-color-text);
+  font-weight: 700;
+}
+
+/* Part 8 — heading shown above the active working-list filter (Proposals / Collaboration). */
+.pie-discussion__filter-heading {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--hu-color-text-muted);
+}
+
+.pie-discussion__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.pie-discussion__filter {
+  border: 1px solid var(--hu-color-border);
+  border-radius: 999px;
+  background: var(--hu-color-surface);
+  color: var(--hu-color-text-muted);
+  padding: 0.3rem 0.85rem;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pie-discussion__filter--active {
+  border-color: var(--hu-color-primary);
+  background: var(--hu-color-primary);
+  color: var(--hu-color-on-primary, #fff);
+}
+
+.pie-discussion__filter:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+}
+
+.pie-discussion__author-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pie-discussion__author-link:hover .pie-discussion__author-name,
+.pie-discussion__author-link:focus-visible .pie-discussion__author-name {
+  text-decoration: underline;
+  color: var(--hu-color-primary);
+}
+
+.pie-discussion__author-link:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+  border-radius: var(--hu-radius-sm);
+}
+
+/*
+ * UX Evolution Pack 02.2/02.3 — unified per-comment action row (Helpful,
+ * Not Helpful, Proposal, Ready to Collaborate, Invite to Allies). These are
+ * local, comment-scoped controls: styling intentionally stays neutral
+ * (border/muted background) rather than the Humanity Union blue accent, so
+ * Initiative Support (.pie-support__signal, blue when active) remains the
+ * visually stronger, initiative-level action. See Part 6/7.
+ *
+ * Part 4 — the action row forms the card's visual lower border: a top
+ * border plus matching negative-margin padding closes off
+ * .pie-discussion__comment-card (which has no bottom padding of its own).
+ */
+.pie-discussion__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+  gap: 0.5rem;
+  margin: 0.75rem -0.95rem 0;
+  padding: 0.65rem 0.95rem;
+  border-top: 1px solid var(--hu-color-border);
 }
 
-.pie-discussion__reactions--guest {
+.pie-discussion__actions--guest {
   gap: 0.5rem 0.75rem;
 }
 
-.pie-discussion__reaction,
-.pie-discussion__reaction-count {
+.pie-discussion__action {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-sm);
   background: var(--hu-color-surface);
-  padding: 0.25rem 0.5rem;
-  font-size: var(--hu-font-size-sm);
   color: var(--hu-color-text-muted);
-}
-
-.pie-discussion__reaction {
+  padding: 0.3rem 0.6rem;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
   cursor: pointer;
+  text-decoration: none;
 }
 
-.pie-discussion__reaction--active {
-  border-color: var(--hu-color-primary);
-  color: var(--hu-color-primary);
+.pie-discussion__action-icon {
+  width: 16px;
+  height: 16px;
 }
 
-.pie-discussion__reaction:focus-visible {
+.pie-discussion__action-count {
+  font-weight: 700;
+}
+
+.pie-discussion__action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Part 7 — "completed" states (Proposal Added, Invitation Sent, Ally, etc.): muted, never hidden. */
+.pie-discussion__action--completed {
+  border-style: dashed;
+  background: var(--hu-color-surface);
+}
+
+.pie-discussion__action--active,
+.pie-discussion__action:not(:disabled):hover {
+  border-color: var(--hu-color-text-muted);
+  background: var(--hu-color-bg-muted);
+  color: var(--hu-color-text);
+}
+
+.pie-discussion__action:focus-visible {
   outline: var(--hu-focus-ring);
   outline-offset: var(--hu-focus-offset);
+  border-radius: var(--hu-radius-sm);
 }
 
-.pie-discussion__reaction--guest {
-  text-decoration: none;
-  color: inherit;
-}
-
-.pie-discussion__reaction-link {
+.pie-discussion__action-link {
   font-size: var(--hu-font-size-sm);
   font-weight: 600;
   color: var(--hu-color-primary);
+}
+
+.pie-discussion__collab-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+}
+
+.pie-discussion__collab-indicator {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--hu-color-bg-muted);
+  color: var(--hu-color-text-muted);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.pie-discussion__collab-error {
+  flex-basis: 100%;
+  margin: 0.4rem 0 0;
+  color: var(--hu-color-danger, #b3261e);
+  font-size: 0.85rem;
 }
 
 /* Tablet: keep three columns */
@@ -608,6 +926,10 @@
     grid-template-columns: 1fr;
   }
 
+  /*
+   * PWA UX Correction Pack 02 — warm amber track behind white stage cards
+   * so the horizontal Lifecycle strip reads as scrollable.
+   */
   .pie-lifecycle__list {
     display: grid;
     grid-auto-flow: column;
@@ -616,12 +938,18 @@
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
-    padding-bottom: 0.35rem;
+    gap: 0.5rem;
     max-width: 100%;
+    padding: 0.55rem;
+    padding-bottom: 0.65rem;
+    border-radius: var(--hu-radius-md, 0.5rem);
+    background: color-mix(in srgb, var(--hu-color-accent, #df9815) 18%, var(--hu-color-bg, #fff));
+    border: 1px solid color-mix(in srgb, var(--hu-color-accent, #df9815) 28%, var(--hu-color-border));
   }
 
   .pie-lifecycle__stage {
     scroll-snap-align: start;
+    background: var(--hu-color-surface, #fff);
   }
 
   .pie-layout__sidebar {

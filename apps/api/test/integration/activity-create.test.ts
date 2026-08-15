@@ -21,9 +21,7 @@ import { getMongoCollection } from "../../src/infrastructure/mongodb/mongo-datab
 import {
   deleteOutboxRecordsByEventIdPrefix,
   deleteProcessedEventsByEventIdPrefix,
-  resetOutboxDispatcherStateForTests,
   setForceEnqueueFailureForTests,
-  stopOutboxDispatcher,
 } from "../../src/infrastructure/outbox/index.js";
 import { deleteMembersByMemberIdPrefix } from "../../src/modules/member/infrastructure/member.repository.js";
 import activityRouter from "../../src/modules/activity/api/activity.routes.js";
@@ -35,7 +33,7 @@ import {
 } from "../../src/modules/activity/index.js";
 import { buildActivityCreatedEventId } from "../../src/modules/activity/domain/activity-created.event.js";
 import { createTestId, isMongoAvailableForTests, skipIfMongoUnavailable } from "../helpers/test-env.js";
-import { resetEventInfrastructureForTests, drainPendingOutboxForTests } from "../helpers/test-events.js";
+import { resetEventInfrastructureForTests } from "../helpers/test-events.js";
 
 if (!isMongoAvailableForTests()) {
   skipIfMongoUnavailable();
@@ -233,7 +231,7 @@ describe("CreateActivity integration", () => {
   });
 
   it("rejects client-supplied trusted fields and malformed input", async () => {
-    const { user, session } = await registerAndConfirm("Validation Creator", "validation");
+    const { session } = await registerAndConfirm("Validation Creator", "validation");
     const accessToken = session.tokens.accessToken;
 
     const trustedFieldResponse = await requestActivity("POST", "/api/v1/activities", accessToken, {

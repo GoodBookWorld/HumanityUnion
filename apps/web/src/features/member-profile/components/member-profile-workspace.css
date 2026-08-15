@@ -59,6 +59,12 @@
   font-size: var(--hu-text-sm);
 }
 
+.member-profile-workspace__field-hint {
+  margin: calc(var(--hu-space-2) * -1) 0 0;
+  font-size: var(--hu-text-xs);
+  color: var(--hu-text-muted);
+}
+
 .member-profile-workspace__note {
   margin-top: var(--hu-space-2);
   color: var(--hu-text-muted);

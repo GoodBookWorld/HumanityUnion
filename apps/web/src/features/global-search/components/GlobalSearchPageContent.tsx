@@ -236,7 +236,7 @@ export function GlobalSearchPageContent() {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     setLoading(true);
     setError(null);
@@ -254,26 +254,31 @@ export function GlobalSearchPageContent() {
       limit: 20,
       offset,
       view: "grouped",
+      signal: controller.signal,
     })
       .then((data) => {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setResponse(data);
         }
       })
-      .catch(() => {
-        if (!cancelled) {
-          setResponse(null);
-          setError("Search is temporarily unavailable.");
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) {
+          return;
         }
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        setResponse(null);
+        setError("Search is temporarily unavailable.");
       })
       .finally(() => {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [
     hasActiveSearch,

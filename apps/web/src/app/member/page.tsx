@@ -8,8 +8,8 @@ export default function MemberPage() {
     <main className="humanity-workspace-page">
       <WorkspaceAuthGate>
         <MemberWorkspace
-          title="Member"
-          subtitle="Your Humanity Union civic participant profile"
+          title="Profile"
+          subtitle="Your Humanity Union Participant profile"
           workspaceNavigation={<WorkspaceNavigation />}
         >
           <MemberProfileWorkspace />

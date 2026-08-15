@@ -1,10 +1,12 @@
 import Link from "next/link";
 
-import { ProfileField } from "../../../components/member/ProfileField";
-import { ProfileSection } from "../../../components/member/ProfileSection";
-import { getPublicMember } from "../../../features/member/member-api";
+import type { PublicMemberProfile } from "@hu/types";
 
-import "./public-member-page.css";
+import { ApiRequestError } from "../../../lib/api-client";
+import { getPublicMemberProfileByPublicName } from "../../../features/member-profile/member-profile-api";
+import { ParticipantProfileSurface } from "../../../features/member-profile/components/ParticipantProfileSurface";
+
+import "../../../features/member-profile/components/participant-profile-surface.css";
 
 interface PublicMemberPageProps {
   params: Promise<{
@@ -12,21 +14,61 @@ interface PublicMemberPageProps {
   }>;
 }
 
-export default async function PublicMemberPage({ params }: PublicMemberPageProps) {
-  const { uniqueName } = await params;
-  let member = null;
+/**
+ * UX Evolution Pack 02.4 Part 6 root-cause fix.
+ * Profile UX Pack 02 Parts 6-9 — full redesign: identity/statistics top
+ * row, full-width Biography, 50/50 Skills/Professional Links, and a
+ * "Recent Public Initiatives" compact list. Resolves by publicName via
+ * member-profile.
+ * Profile UX Pack 03.2 — centered container, 50/50 top row through tablet,
+ * equal-height identity/statistics cards, and three horizontal statistic
+ * cards (reusing the shared `personal-statistics__*` card visuals).
+ * Profile UX Pack 03.3 — the profile content itself now renders through the
+ * shared `ParticipantProfileSurface` (`mode="public"`), also used by
+ * `/profile`'s owner-preview. This route keeps only what is genuinely
+ * route-specific: resolving the profile, the `<main>` landmark, and the
+ * not-found / restricted / "Back to Home" states a signed-in owner
+ * previewing their own profile never needs.
+ */
+type PublicMemberPageState =
+  | { status: "found"; profile: PublicMemberProfile }
+  | { status: "not_found" }
+  | { status: "restricted" };
 
+async function loadPublicMemberProfile(publicName: string): Promise<PublicMemberPageState> {
   try {
-    member = await getPublicMember(uniqueName);
-  } catch {
-    member = null;
-  }
+    const profile = await getPublicMemberProfileByPublicName(publicName);
+    return { status: "found", profile };
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 403) {
+      return { status: "restricted" };
+    }
 
-  if (!member) {
+    return { status: "not_found" };
+  }
+}
+
+export default async function PublicMemberPage({ params }: PublicMemberPageProps) {
+  const { uniqueName: publicName } = await params;
+  const state = await loadPublicMemberProfile(publicName);
+
+  if (state.status === "restricted") {
     return (
       <main className="public-member-page">
-        <h1>Public Member Profile</h1>
-        <p>Member profile is not available.</p>
+        <h1>Public Profile</h1>
+        <p>This profile is only visible to signed-in Participants.</p>
+        <p className="public-member-page__back">
+          <Link href="/">Back to Home</Link>
+        </p>
+      </main>
+    );
+  }
+
+  if (state.status === "not_found") {
+    return (
+      <main className="public-member-page">
+        <h1>Public Profile</h1>
+        <p>This Participant profile is not available.</p>
         <p className="public-member-page__back">
           <Link href="/">Back to Home</Link>
         </p>
@@ -35,26 +77,16 @@ export default async function PublicMemberPage({ params }: PublicMemberPageProps
   }
 
   return (
-    <main className="public-member-page">
-      <header className="public-member-page__header">
-        <h1 className="public-member-page__title">{member.displayName}</h1>
-        <p className="public-member-page__subtitle">@{member.uniqueName}</p>
-      </header>
-
-      <ProfileSection title="Public Profile">
-        <ProfileField label="Display Name" value={member.displayName} />
-        <ProfileField label="Country" value={member.country ?? ""} />
-        <ProfileField label="Region" value={member.region ?? ""} />
-        <ProfileField label="Languages" value={member.languages.join(", ")} />
-      </ProfileSection>
-
-      <ProfileSection title="Public Initiatives" placeholder />
-      <ProfileSection title="Public Participation" placeholder />
-      <ProfileSection title="Public Organizations" placeholder />
-
-      <p className="public-member-page__back">
-        <Link href="/">Back to Home</Link>
-      </p>
+    <main>
+      <ParticipantProfileSurface
+        mode="public"
+        profile={state.profile}
+        footer={
+          <p className="public-member-page__back">
+            <Link href="/">Back to Home</Link>
+          </p>
+        }
+      />
     </main>
   );
 }

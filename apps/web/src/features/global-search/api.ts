@@ -17,6 +17,8 @@ export interface FetchPublicSearchInput {
   limit?: number;
   offset?: number;
   view?: CivicSearchView;
+  /** Launch Readiness Pack 06 — abort stale search navigations. */
+  signal?: AbortSignal;
 }
 
 export async function fetchPublicSearch(
@@ -75,25 +77,25 @@ export async function fetchPublicSearch(
   const query = params.toString();
   const path = query ? `/api/v1/public/search?${query}` : "/api/v1/public/search";
 
-  return apiRequest<CivicSearchResponse>(path);
+  return apiRequest<CivicSearchResponse>(path, input.signal ? { signal: input.signal } : undefined);
 }
 
 export const ENTITY_TYPE_OPTIONS = [
   { value: "", label: "All record types" },
   { value: "initiative", label: "Initiative" },
   { value: "analysis", label: "Collaborative Analysis" },
-  { value: "improvement_proposal", label: "Improvement Proposal" },
-  { value: "initiative_revision", label: "Initiative Revision" },
+  { value: "improvement_proposal", label: "Improvement Proposals" },
+  { value: "initiative_revision", label: "Revision" },
   { value: "petition", label: "Petition" },
   { value: "decision_session", label: "Decision Session" },
   { value: "collective_decision", label: "Collective Decision" },
   { value: "civic_action_package", label: "Civic Action Package" },
-  { value: "official_response", label: "Official Response" },
+  { value: "official_response", label: "Official Responses" },
   { value: "civic_accountability", label: "Civic Accountability" },
-  { value: "implementation_commitment", label: "Implementation Commitment" },
+  { value: "implementation_commitment", label: "Implementation Commitments" },
   { value: "implementation_tracking", label: "Implementation Tracking" },
   { value: "public_impact", label: "Public Impact" },
-  { value: "civic_archive", label: "Public Civic Archive" },
+  { value: "civic_archive", label: "Civic Archive" },
   { value: "knowledge_article", label: "Knowledge Article" },
   { value: "knowledge_media", label: "Knowledge Media" },
   { value: "civic_nomination", label: "Civic Nomination" },

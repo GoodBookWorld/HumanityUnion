@@ -1,0 +1,185 @@
+.iit-source-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.iit-source-panel__empty {
+  color: var(--hu-muted, #5c6570);
+  font-size: 0.95rem;
+}
+
+.iit-source-panel__list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.iit-source-panel__item {
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  padding-top: 0.55rem;
+}
+
+.iit-source-panel__label {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.iit-source-panel__summary {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+}
+
+.iit-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.iit-editor__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.iit-editor__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.iit-editor__field input,
+.iit-editor__field select,
+.iit-editor__field textarea {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.35rem;
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.iit-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.iit-candidate {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+}
+
+.iit-candidate__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.iit-candidate__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.iit-candidate__status {
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
+.iit-candidate__progress-bar {
+  height: 0.4rem;
+  border-radius: 0.2rem;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  overflow: hidden;
+}
+
+.iit-candidate__progress-fill {
+  height: 100%;
+  background: var(--hu-accent, #2f6fed);
+}
+
+.iit-public {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.iit-public__section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.iit-public__section p,
+.iit-public__section li {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.iit-public__section ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.iit-public__meta {
+  font-size: 0.9rem;
+  opacity: 0.78;
+}
+
+.iit-public__tracking {
+  border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  padding-top: 0.65rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.iit-public__tracking-status {
+  display: inline-block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.75;
+}
+
+.iit-assistant-block {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.iit-assistant-block h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.iit-assistant-block ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.iit-progress-inbox {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.iit-progress-inbox__item {
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 0.4rem;
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.iit-progress-inbox__actions {
+  display: flex;
+  gap: 0.5rem;
+}

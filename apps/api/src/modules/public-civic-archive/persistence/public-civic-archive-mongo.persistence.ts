@@ -1,4 +1,5 @@
 import type { PublicCivicArchiveRecord } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -28,7 +29,7 @@ export function createMongoPublicCivicArchivePersistenceAdapter(): PublicCivicAr
 }
 
 export async function hydratePublicCivicArchiveMongoPersistence(): Promise<void> {
-  if (process.env.PUBLIC_CIVIC_ARCHIVE_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("PUBLIC_CIVIC_ARCHIVE_PERSISTENCE")) {
     return;
   }
 
@@ -36,7 +37,7 @@ export async function hydratePublicCivicArchiveMongoPersistence(): Promise<void>
 }
 
 export async function flushPublicCivicArchiveMongoPersistence(): Promise<void> {
-  if (process.env.PUBLIC_CIVIC_ARCHIVE_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("PUBLIC_CIVIC_ARCHIVE_PERSISTENCE")) {
     return;
   }
 

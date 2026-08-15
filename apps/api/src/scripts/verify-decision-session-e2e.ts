@@ -3,6 +3,15 @@
  * Run: npm run verify:decision-session
  */
 
+// Initiative Lifecycle — Part F: Decision Session eligibility now reads
+// `petition.store.js`, which transitively loads `collective-decision.store.ts`.
+// That module fires an unawaited Mongo-backed lookup at import time, so — like
+// every other verification script in this directory (e.g.
+// `verify-petition-persistence.ts`) — the shared env bootstrap must run and
+// complete before that first import, not rely on tsx's own (differently
+// timed) automatic `.env` loading.
+import "./verification-environment.bootstrap.js";
+
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -12,6 +21,7 @@ import { fileURLToPath } from "node:url";
 import type { DecisionSessionStatus } from "@hu/types";
 
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
+import { finalizeVerificationResources } from "./verification-script-lifecycle.js";
 
 const participantA: RequestIdentity = {
   participantId: "member-bootstrap-001",
@@ -35,9 +45,15 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
-function assertThrows(fn: () => unknown, message: string): void {
+// Recovery Task 08: createDecisionSessionDraft is now async, and two call
+// sites below invoke it through this helper. Awaiting fn()'s return value
+// preserves identical throw-detection semantics for both synchronous
+// throwers (the await resolves a non-Promise value immediately) and
+// asynchronous ones (the await unwraps a rejected Promise into the catch
+// block below), so no existing synchronous-throw caller changes behavior.
+async function assertThrows(fn: () => unknown, message: string): Promise<void> {
   try {
-    fn();
+    await fn();
     throw new Error(`Expected failure: ${message}`);
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("Expected failure:")) {
@@ -80,6 +96,9 @@ async function buildEligibleInitiativeContext(): Promise<EligibleInitiativeConte
     await import("../modules/initiative-improvement-proposal/initiative-improvement-proposal.service.js");
   const { createInitiativeRevisionDraft, saveInitiativeRevisionDraft, publishInitiativeRevision } =
     await import("../modules/initiative-version-revision/initiative-version-revision.service.js");
+  const { generateInitiativePetitionDraft, publishInitiativePetitionStage } = await import(
+    "../modules/initiative-petition-lifecycle/initiative-petition-lifecycle.service.js"
+  );
 
   const draft = createInitiativeDraft(participantA, {
     title: "E2E Decision Session Initiative",
@@ -91,7 +110,7 @@ async function buildEligibleInitiativeContext(): Promise<EligibleInitiativeConte
   const projected = publishInitiative(participantA, draft.initiativeId);
   assert(projected.lifecyclePhase === "projected", "Initiative should be projected");
 
-  const analysisDraft = createInitiativeCollaborativeAnalysisDraft(participantB, {
+  const analysisDraft = await createInitiativeCollaborativeAnalysisDraft(participantB, {
     initiativeId: projected.initiativeId,
     title: "E2E Decision Session Analysis",
     summary: "Analysis supporting decision session eligibility.",
@@ -101,12 +120,12 @@ async function buildEligibleInitiativeContext(): Promise<EligibleInitiativeConte
     references: "Participation records.",
   });
 
-  const publishedAnalysis = publishInitiativeCollaborativeAnalysis(
+  const publishedAnalysis = await publishInitiativeCollaborativeAnalysis(
     participantB,
     analysisDraft.analysisId,
   );
 
-  const proposalDraft = createInitiativeImprovementProposalDraft(participantB, {
+  const proposalDraft = await createInitiativeImprovementProposalDraft(participantB, {
     analysisId: publishedAnalysis.analysisId,
     targetSection: "Description",
     currentIssue: "Decision scope unclear.",
@@ -140,6 +159,12 @@ async function buildEligibleInitiativeContext(): Promise<EligibleInitiativeConte
   });
 
   publishInitiativeRevision(participantA, projected.initiativeId);
+
+  // Initiative Lifecycle — Part F, Section 11: Decision Session eligibility
+  // now requires a Published Petition, so the "fully eligible" fixture
+  // publishes one from the just-published Revision.
+  await generateInitiativePetitionDraft(participantA, projected.initiativeId);
+  await publishInitiativePetitionStage(participantA, projected.initiativeId);
 
   return {
     initiativeId: projected.initiativeId,
@@ -208,14 +233,14 @@ async function runMainVerification(): Promise<void> {
   });
   const projectedA = publishInitiative(participantA, scenarioA.initiativeId);
 
-  const eligibilityA = getDecisionSessionEligibility(projectedA.initiativeId);
+  const eligibilityA = await getDecisionSessionEligibility(projectedA.initiativeId);
   assert(!eligibilityA.eligible, "Scenario A should be ineligible");
   assert(
     eligibilityA.reasons.some((reason) => reason.includes("collaborative analysis")),
     "Scenario A should require analyses",
   );
 
-  assertThrows(
+  await assertThrows(
     () =>
       createDecisionSessionDraft(participantA, {
         initiativeId: projectedA.initiativeId,
@@ -238,7 +263,7 @@ async function runMainVerification(): Promise<void> {
   });
   const projectedB = publishInitiative(participantA, scenarioB.initiativeId);
 
-  const analysisB = createInitiativeCollaborativeAnalysisDraft(participantB, {
+  const analysisB = await createInitiativeCollaborativeAnalysisDraft(participantB, {
     initiativeId: projectedB.initiativeId,
     title: "Scenario B Analysis",
     summary: "Published analysis without steward-reviewed proposal.",
@@ -247,16 +272,16 @@ async function runMainVerification(): Promise<void> {
     suggestedImprovements: "Improve.",
     references: "Ref.",
   });
-  publishInitiativeCollaborativeAnalysis(participantB, analysisB.analysisId);
+  await publishInitiativeCollaborativeAnalysis(participantB, analysisB.analysisId);
 
-  const eligibilityB = getDecisionSessionEligibility(projectedB.initiativeId);
+  const eligibilityB = await getDecisionSessionEligibility(projectedB.initiativeId);
   assert(!eligibilityB.eligible, "Scenario B should be ineligible");
   assert(
     eligibilityB.reasons.some((reason) => reason.includes("steward-reviewed")),
     "Scenario B should require steward-reviewed proposals",
   );
 
-  const submittedOnlyProposal = createInitiativeImprovementProposalDraft(participantB, {
+  const submittedOnlyProposal = await createInitiativeImprovementProposalDraft(participantB, {
     analysisId: analysisB.analysisId,
     targetSection: "Description",
     currentIssue: "Issue.",
@@ -267,7 +292,7 @@ async function runMainVerification(): Promise<void> {
   });
   submitInitiativeImprovementProposal(participantB, submittedOnlyProposal.proposalId);
 
-  assertThrows(
+  await assertThrows(
     () =>
       createDecisionSessionDraft(participantA, {
         initiativeId: projectedB.initiativeId,
@@ -283,10 +308,10 @@ async function runMainVerification(): Promise<void> {
   console.log("3. Scenario C — full collective intelligence allows draft creation");
 
   const eligible = await buildEligibleInitiativeContext();
-  const eligibilityC = getDecisionSessionEligibility(eligible.initiativeId);
+  const eligibilityC = await getDecisionSessionEligibility(eligible.initiativeId);
   assert(eligibilityC.eligible, "Scenario C should be eligible");
 
-  const sessionDraft = createDecisionSessionDraft(participantA, {
+  const sessionDraft = await createDecisionSessionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     title: "E2E Decision Session",
     purpose: "Prepare society for an informed public decision on the garden initiative.",
@@ -305,7 +330,7 @@ async function runMainVerification(): Promise<void> {
   assert(edited.status === "draft", "Edited session should remain draft");
   assert(edited.title.includes("Edited"), "Draft edit should persist");
 
-  const published = publishDecisionSession(participantA, sessionDraft.sessionId);
+  const published = await publishDecisionSession(participantA, sessionDraft.sessionId);
   assert(published.status === "published", "Published session status");
   assert(published.packageReferences !== undefined, "Published session should capture package");
   assert(published.publishedAt !== undefined, "Published session should have publishedAt");
@@ -383,7 +408,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("5. Ownership — non-steward cannot manage decision sessions");
 
-  const ownedSession = createDecisionSessionDraft(participantA, {
+  const ownedSession = await createDecisionSessionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     title: "Ownership Test Session",
     purpose: "Ownership verification.",
@@ -392,7 +417,7 @@ async function runMainVerification(): Promise<void> {
     closesAt: futureIsoDate(20),
   });
 
-  assertThrows(
+  await assertThrows(
     () =>
       saveDecisionSessionDraft(participantB, ownedSession.sessionId, {
         title: "Unauthorized edit",
@@ -400,22 +425,22 @@ async function runMainVerification(): Promise<void> {
     "Non-steward cannot edit decision session",
   );
 
-  assertThrows(
+  await assertThrows(
     () => publishDecisionSession(participantB, ownedSession.sessionId),
     "Non-steward cannot publish decision session",
   );
 
-  assertThrows(
+  await assertThrows(
     () => closeDecisionSession(participantB, ownedSession.sessionId),
     "Non-steward cannot close decision session",
   );
 
-  assertThrows(
+  await assertThrows(
     () => archiveDecisionSession(participantB, ownedSession.sessionId),
     "Non-steward cannot archive decision session",
   );
 
-  assertThrows(
+  await assertThrows(
     () =>
       createDecisionSessionDraft(participantB, {
         initiativeId: eligible.initiativeId,
@@ -430,7 +455,7 @@ async function runMainVerification(): Promise<void> {
 
   console.log("8. Initiative integration — published/closed visible, archived hidden");
 
-  const publishedForList = publishDecisionSession(participantA, ownedSession.sessionId);
+  const publishedForList = await publishDecisionSession(participantA, ownedSession.sessionId);
   assert(publishedForList.status === "published", "Second session should publish for list test");
 
   const publicList = listPublicDecisionSessionsForInitiative(eligible.initiativeId);
@@ -556,7 +581,7 @@ async function runPersistenceVerification(): Promise<void> {
 
   const eligible = await buildEligibleInitiativeContext();
 
-  const draft = createDecisionSessionDraft(participantA, {
+  const draft = await createDecisionSessionDraft(participantA, {
     initiativeId: eligible.initiativeId,
     title: "Persistence Decision Session",
     purpose: "Verify persistence across API restarts.",
@@ -572,7 +597,7 @@ async function runPersistenceVerification(): Promise<void> {
   );
   assertSessionReloadsFromFile(draft.sessionId, "draft", persistencePath);
 
-  const published = publishDecisionSession(participantA, draft.sessionId);
+  const published = await publishDecisionSession(participantA, draft.sessionId);
   assert(
     createFileDecisionSessionPersistenceAdapter().load().sessions[draft.sessionId]?.status ===
       "published",
@@ -628,8 +653,18 @@ async function main(): Promise<void> {
   console.log("All Decision Session E2E checks passed.");
 }
 
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(`E2E verification FAILED: ${message}`);
-  process.exit(1);
-});
+main()
+  .catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`E2E verification FAILED: ${message}`);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    // Part F introduced this script's first real Member/CollectiveDecision
+    // Mongo reads (via Petition eligibility). Without an explicit shutdown,
+    // the open Mongo connection pool keeps the process alive indefinitely
+    // after every check has already passed — every other verification
+    // script in this directory closes it the same way.
+    await finalizeVerificationResources();
+    process.exit(process.exitCode ?? 0);
+  });

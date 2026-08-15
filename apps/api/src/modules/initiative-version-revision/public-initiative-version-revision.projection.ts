@@ -1,6 +1,7 @@
 import type {
   InitiativeRevisionMetrics,
   InitiativeVersionRevision,
+  PublicInitiativeRevisionChange,
   PublicInitiativeVersionRevisionListItem,
   PublicInitiativeVersionRevisionProjection,
   PublicInitiativeWithVersionHistory,
@@ -8,11 +9,28 @@ import type {
 
 import { getMemberById } from "../member/member-access.js";
 import { listProposalsByInitiative } from "../initiative-improvement-proposal/initiative-improvement-proposal.store.js";
+import { getInitiativeRevisionReactionSummary } from "../initiative-revision-reactions/index.js";
 import {
   getCurrentPublishedVersion,
   getRevisionByInitiativeAndVersion,
   listRevisionsByInitiative,
 } from "./initiative-version-revision.store.js";
+
+function toPublicInitiativeRevisionChanges(
+  revision: InitiativeVersionRevision,
+): readonly PublicInitiativeRevisionChange[] {
+  return revision.changes.map((change) => ({
+    changeId: change.changeId,
+    section: change.section,
+    sectionLabel: change.sectionLabel,
+    before: change.before,
+    after: change.after,
+    origin: change.origin,
+    proposalIds: [...change.proposalIds],
+    authorOriginatedReason: change.authorOriginatedReason,
+    explanation: change.explanation,
+  }));
+}
 
 async function resolveAuthorDisplayName(authorId: string): Promise<string> {
   const member = await getMemberById(authorId);
@@ -82,6 +100,7 @@ export async function toPublicInitiativeVersionRevisionListItem(
 export async function toPublicInitiativeVersionRevisionProjection(
   revision: InitiativeVersionRevision,
   currentVersion: number,
+  viewerUserId?: string | null,
 ): Promise<PublicInitiativeVersionRevisionProjection> {
   return {
     revisionId: revision.revisionId,
@@ -97,6 +116,11 @@ export async function toPublicInitiativeVersionRevisionProjection(
     acceptedProposalIds: [...revision.acceptedProposalIds],
     partiallyAcceptedProposalIds: [...revision.partiallyAcceptedProposalIds],
     declinedProposalIds: [...revision.declinedProposalIds],
+    changes: toPublicInitiativeRevisionChanges(revision),
+    reactionSummary: await getInitiativeRevisionReactionSummary({
+      revisionId: revision.revisionId,
+      actorUserId: viewerUserId,
+    }),
   };
 }
 
@@ -120,6 +144,7 @@ export async function getPublicInitiativeVersionHistory(
 export async function getPublicInitiativeVersionRevision(
   initiativeId: string,
   version: number,
+  viewerUserId?: string | null,
 ): Promise<PublicInitiativeVersionRevisionProjection | null> {
   const revision = getRevisionByInitiativeAndVersion(initiativeId, version);
 
@@ -130,5 +155,6 @@ export async function getPublicInitiativeVersionRevision(
   return await toPublicInitiativeVersionRevisionProjection(
     revision,
     getCurrentPublishedVersion(initiativeId),
+    viewerUserId,
   );
 }

@@ -1,76 +1,43 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { isAuthenticationRequiredError } from "../../lib/api-client";
-import { getMe } from "./auth-api";
-import { AUTH_STATE_CHANGED_EVENT } from "./auth-events";
-import { refreshAuthSessionOnce } from "./auth-token-refresh";
 import {
-  clearStoredAuthTokens,
-  getStoredAccessToken,
-  getStoredRefreshToken,
-} from "./auth-token-store";
+  getClientAuthStatusSnapshot,
+  resolveClientAuthStatus,
+  subscribeClientAuthStatus,
+} from "./client-auth-status-resolver";
 
 export type ClientAuthStatus = "pending" | "authenticated" | "unauthenticated";
 
+/**
+ * Launch Readiness Pack 07 — auth status from server session (HttpOnly cookies),
+ * not from localStorage token presence.
+ *
+ * Auth Recovery Hotfix — all mounts share one single-flight resolver:
+ * - session probe guest → unauthenticated (stop);
+ * - auth-state events after guest settle do not restart /me+refresh;
+ * - login/logout/successful refresh invalidate and re-resolve once.
+ */
 export function useClientAuthStatus(): ClientAuthStatus {
-  const [status, setStatus] = useState<ClientAuthStatus>("pending");
-
-  const resolveStatus = useCallback(async () => {
-    const token = getStoredAccessToken();
-    const refreshToken = getStoredRefreshToken();
-
-    if (!token && !refreshToken) {
-      setStatus("unauthenticated");
-      return;
-    }
-
-    try {
-      await getMe();
-      setStatus("authenticated");
-      return;
-    } catch (error) {
-      if (!isAuthenticationRequiredError(error)) {
-        setStatus("authenticated");
-        return;
-      }
-    }
-
-    try {
-      const refreshed = await refreshAuthSessionOnce();
-
-      if (refreshed) {
-        await getMe();
-        setStatus("authenticated");
-        return;
-      }
-
-      clearStoredAuthTokens();
-      setStatus("unauthenticated");
-    } catch {
-      clearStoredAuthTokens();
-      setStatus("unauthenticated");
-    }
-  }, []);
+  const [status, setStatus] = useState<ClientAuthStatus>(() => getClientAuthStatusSnapshot());
 
   useEffect(() => {
-    void resolveStatus();
+    const unsubscribe = subscribeClientAuthStatus((next) => {
+      setStatus(next);
+    });
 
-    function handleAuthStateChanged() {
-      void resolveStatus();
-    }
+    void resolveClientAuthStatus().then((next) => {
+      setStatus(next);
+    });
 
-    window.addEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthStateChanged);
-
-    return () => {
-      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthStateChanged);
-    };
-  }, [resolveStatus]);
+    return unsubscribe;
+  }, []);
 
   return status;
 }
 
+/** @deprecated Pack 07 — use `useClientAuthStatus()`; never infer auth from storage. */
 export function hasStoredAccessToken(): boolean {
-  return Boolean(getStoredAccessToken());
+  return false;
 }

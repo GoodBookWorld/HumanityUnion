@@ -1,7 +1,10 @@
 import dns from "node:dns/promises";
 import net from "node:net";
 
-import { isApprovedMediaRegistryDomain } from "@hu/media-registry";
+import {
+  isApprovedMediaRegistryDomain,
+  isApprovedMediaRegistryFeedUrl,
+} from "@hu/media-registry";
 
 const BLOCKED_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
 const FEED_URL_PATTERN = /\/(?:feed|rss|atom)(?:\/|$|[?#])/i;
@@ -103,12 +106,16 @@ async function assertSafeHostname(hostname: string): Promise<void> {
 
 export async function fetchExternalDocument(
   url: string,
-  options: { timeoutMs: number; maxBytes: number },
+  options: { timeoutMs: number; maxBytes: number; requireApprovedRssFeed?: boolean },
 ): Promise<string> {
   const parsed = new URL(url);
 
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     throw new Error("Only http and https URLs are allowed.");
+  }
+
+  if (options.requireApprovedRssFeed && !isApprovedMediaRegistryFeedUrl(url)) {
+    throw new Error("RSS feed URL is not in the approved media registry.");
   }
 
   await assertSafeHostname(parsed.hostname);
@@ -123,7 +130,12 @@ export async function fetchExternalDocument(
       signal: controller.signal,
       headers: {
         Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
-        "User-Agent": "HumanityUnionPublicNewsBot/1.0",
+        // Some publishers (e.g. Politico) reject bare bot UAs with HTTP 403.
+        "User-Agent":
+          "Mozilla/5.0 (compatible; HumanityUnionPublicNewsBot/1.0; +https://huws.org)",
+        ...(parsed.hostname.toLowerCase().includes("politico.com")
+          ? { Referer: "https://www.politico.com/" }
+          : {}),
       },
     });
 
@@ -191,30 +203,10 @@ export async function validatePublicArticleUrl(
     return false;
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
-
-  try {
-    const response = await fetch(parsed.toString(), {
-      method: "GET",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        Accept: "text/html,application/xhtml+xml",
-        "User-Agent": "Mozilla/5.0 (compatible; HumanityUnionPublicNewsBot/1.0; +https://humanityunion.org)",
-      },
-    });
-
-    await response.body?.cancel().catch(() => undefined);
-
-    if (response.status >= 200 && response.status < 400) {
-      return true;
-    }
-
-    return false;
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timeout);
-  }
+  // Approved-registry article URLs are trusted after SSRF hostname checks.
+  // Do not require a live HTML GET: publishers often paywall, bot-gate (403),
+  // or reset HTTP/2 streams, and Humanity Union only links out — it never
+  // ingests full article bodies.
+  void options.timeoutMs;
+  return true;
 }

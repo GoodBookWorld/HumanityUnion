@@ -32,6 +32,8 @@ export interface ActivityGroupMetrics {
   completed?: number;
   verified?: number;
   votesCast?: number;
+  /** Initiative Lifecycle — Part I: proposed Implementation Commitments awaiting my Accept/Decline. */
+  proposed?: number;
   latestActivityDate: string | null;
 }
 

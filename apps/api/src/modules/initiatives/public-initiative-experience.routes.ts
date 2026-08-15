@@ -61,6 +61,7 @@ publicInitiativeExperienceRouter.get(
       initiative,
       userId: req.auth?.id ?? null,
       viewerKey,
+      viewerParticipantId: req.auth?.memberId ?? null,
     });
 
     res.json(createSuccessResponse(experience, "Public initiative experience loaded."));

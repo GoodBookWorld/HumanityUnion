@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Created with Vectornator (http://vectornator.io/) -->
+<svg height="100%" stroke-miterlimit="10" style="fill-rule:nonzero;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;" version="1.1" viewBox="0 0 1024 1024" width="100%" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:vectornator="http://vectornator.io" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs/>
+<g id="Layer-1" vectornator:layerName="Layer 1">
+<g opacity="1">
+<path d="M59.7326 445.609C59.7326 445.609 135.004 326.178 279.175 324.944C419.332 323.744 491.422 445.609 491.422 445.609L491.422 517.902L59.7326 517.902L59.7326 445.609Z" fill="#78909c" fill-rule="nonzero" opacity="1" stroke="none"/>
+<path d="M174.846 174.881C174.846 117.444 221.408 70.8812 278.846 70.8812C336.284 70.8812 382.846 117.444 382.846 174.881C382.846 232.319 336.284 278.881 278.846 278.881C221.408 278.881 174.846 232.319 174.846 174.881Z" fill="#ffa726" fill-rule="nonzero" opacity="1" stroke="none"/>
+</g>
+<g opacity="1">
+<path d="M533.754 891.353C533.754 891.353 609.025 771.922 753.196 770.688C893.353 769.487 965.443 891.353 965.443 891.353L965.443 963.646L533.754 963.646L533.754 891.353Z" fill="#78909c" fill-rule="nonzero" opacity="1" stroke="none"/>
+<path d="M648.867 620.625C648.867 563.187 695.43 516.625 752.867 516.625C810.305 516.625 856.867 563.187 856.867 620.625C856.867 678.063 810.305 724.625 752.867 724.625C695.43 724.625 648.867 678.063 648.867 620.625Z" fill="#ffa726" fill-rule="nonzero" opacity="1" stroke="none"/>
+</g>
+<path d="M445.553 160.805C445.553 160.805 600.586 150.899 705.968 235.78C840.884 344.448 843.621 470.021 843.621 470.021" fill="none" opacity="1" stroke="#0174b0" stroke-linecap="butt" stroke-linejoin="round" stroke-width="80"/>
+<path d="M430.936 922.251C430.936 922.251 322.581 910.696 220.512 812.28C122.577 717.848 108.385 611.977 108.385 611.977" fill="none" opacity="1" stroke="#0174b0" stroke-linecap="butt" stroke-linejoin="miter" stroke-width="70"/>
+</g>
+</svg>

@@ -1,7 +1,5 @@
-.civic-activity-page {
-  padding: 1.5rem;
-}
+/* Outer geometry comes from `.humanity-workspace-page` (Launch Readiness Pack 03). */
 
 .civic-activity-page__back {
-  margin-top: 1.5rem;
+  margin-top: var(--hu-space-6);
 }

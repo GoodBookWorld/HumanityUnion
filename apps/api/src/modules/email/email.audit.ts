@@ -84,12 +84,16 @@ export async function markEmailAuditSent(emailId: string, sentAt: string): Promi
   );
 }
 
-export async function markEmailAuditFailed(emailId: string, errorSummary: string): Promise<void> {
+export async function markEmailAuditFailed(
+  emailId: string,
+  errorSummary: string,
+  status: Extract<EmailDeliveryStatus, "failed" | "deferred" | "blocked"> = "failed",
+): Promise<void> {
   if (!isMongoConfigured()) {
     const record = memoryAuditRecords.find((entry) => entry.emailId === emailId);
 
     if (record) {
-      record.status = "failed";
+      record.status = status;
       record.errorSummary = errorSummary.slice(0, 500);
     }
 
@@ -103,7 +107,7 @@ export async function markEmailAuditFailed(emailId: string, errorSummary: string
     { emailId },
     {
       $set: {
-        status: "failed",
+        status,
         errorSummary: errorSummary.slice(0, 500),
       },
     },

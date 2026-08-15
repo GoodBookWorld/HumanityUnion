@@ -1,0 +1,309 @@
+/* Initiative Lifecycle — Part B: Collaborative Analysis stage workspace (Source Panel, Editor, AI Assistant, Public Result). */
+
+.ica-source-panel {
+  border: 1px solid var(--color-border, #dadce0);
+  border-radius: var(--hu-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-4);
+  padding: var(--hu-space-4) var(--hu-space-5);
+}
+
+.ica-source-panel__title {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.ica-source-panel__lede {
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.ica-source-panel__stats {
+  display: grid;
+  gap: var(--hu-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.ica-source-panel__stat {
+  background: var(--color-surface-muted, #f8f9fa);
+  border-radius: var(--hu-radius-md);
+  padding: var(--hu-space-3);
+}
+
+.ica-source-panel__stat-value {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.ica-source-panel__stat-label {
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ica-source-panel__section {
+  border-top: 1px solid var(--color-border, #dadce0);
+  padding-top: var(--hu-space-3);
+}
+
+.ica-source-panel__section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0 0 var(--hu-space-2);
+  text-transform: uppercase;
+}
+
+.ica-source-panel__topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ica-source-panel__topic {
+  background: var(--color-surface-muted, #f8f9fa);
+  border-radius: var(--hu-radius-pill);
+  font-size: 0.85rem;
+  padding: 0.2rem 0.7rem;
+}
+
+.ica-source-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ica-source-panel__item {
+  border-radius: var(--hu-radius-sm, 4px);
+  font-size: 0.88rem;
+}
+
+.ica-source-panel__item-excerpt {
+  display: block;
+}
+
+.ica-source-panel__item-meta {
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.78rem;
+}
+
+.ica-source-panel__item-link {
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-left: var(--hu-space-2);
+}
+
+.ica-source-panel__empty {
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* Editor */
+
+.ica-editor {
+  border: 1px solid var(--color-border, #dadce0);
+  border-radius: var(--hu-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-4);
+  padding: var(--hu-space-4) var(--hu-space-5);
+}
+
+.ica-editor__status-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  justify-content: space-between;
+}
+
+.ica-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-1);
+}
+
+.ica-editor__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.ica-editor__field input,
+.ica-editor__field textarea {
+  border: 1px solid var(--color-border, #dadce0);
+  border-radius: var(--hu-radius-sm, 4px);
+  font: inherit;
+  padding: var(--hu-space-2);
+  width: 100%;
+}
+
+.ica-editor__field textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.ica-editor__hint {
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.ica-editor__actions {
+  border-top: 1px solid var(--color-border, #dadce0);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  padding-top: var(--hu-space-3);
+}
+
+.ica-editor__message {
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.ica-editor__message[data-tone="error"] {
+  color: var(--color-danger, #b3261e);
+}
+
+.ica-editor__message[data-tone="success"] {
+  color: var(--color-success, #1e7a34);
+}
+
+.ica-editor__readonly {
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.9rem;
+}
+
+/* Public result */
+
+.ica-public-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-4);
+}
+
+.ica-public-result__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-1);
+}
+
+.ica-public-result__field h4 {
+  font-size: 0.85rem;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted, #5f6368);
+}
+
+.ica-public-result__field p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.ica-reaction {
+  align-items: center;
+  border: 1px solid var(--color-border, #dadce0);
+  border-radius: var(--hu-radius-md);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-3) var(--hu-space-4);
+}
+
+.ica-reaction__title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0 0 var(--hu-space-1);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.ica-reaction__note {
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.78rem;
+  margin: var(--hu-space-1) 0 0;
+  width: 100%;
+}
+
+.ica-reaction__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+}
+
+.ica-reaction__button {
+  align-items: center;
+  background: var(--color-surface-muted, #f8f9fa);
+  border: 1px solid var(--color-border, #dadce0);
+  border-radius: var(--hu-radius-pill);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 600;
+  gap: var(--hu-space-2);
+  padding: 0.4rem 0.9rem;
+}
+
+.ica-reaction__button[aria-pressed="true"] {
+  background: var(--color-accent-muted, #dbeafe);
+  border-color: var(--color-accent, #1d4ed8);
+}
+
+.ica-reaction__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* AI Assistant sidebar section content */
+
+.ica-ai-assistant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-3);
+}
+
+.ica-ai-assistant__group h4 {
+  font-size: 0.78rem;
+  margin: 0 0 var(--hu-space-1);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted, #5f6368);
+}
+
+.ica-ai-assistant__group ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ica-ai-assistant__group li {
+  font-size: 0.85rem;
+}
+
+.ica-ai-assistant__empty {
+  color: var(--color-text-muted, #5f6368);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  .ica-source-panel,
+  .ica-editor {
+    padding: var(--hu-space-3);
+  }
+}

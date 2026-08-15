@@ -1,4 +1,5 @@
 import type { ParticipationArea, ParticipationAreaTransition } from "@hu/types";
+import { isMongoPersistenceMode } from "../../../config/production-persistence-contract.js";
 
 import { createMongoSnapshotPersistence } from "../../../infrastructure/mongodb/create-mongo-snapshot-persistence.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -37,7 +38,7 @@ export function createMongoParticipationAreaPersistenceAdapter(): ParticipationA
 }
 
 export async function hydrateParticipationAreaMongoPersistence(): Promise<void> {
-  if (process.env.PARTICIPATION_AREA_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("PARTICIPATION_AREA_PERSISTENCE")) {
     return;
   }
 
@@ -45,7 +46,7 @@ export async function hydrateParticipationAreaMongoPersistence(): Promise<void> 
 }
 
 export async function flushParticipationAreaMongoPersistence(): Promise<void> {
-  if (process.env.PARTICIPATION_AREA_PERSISTENCE !== "mongodb") {
+  if (!isMongoPersistenceMode("PARTICIPATION_AREA_PERSISTENCE")) {
     return;
   }
 

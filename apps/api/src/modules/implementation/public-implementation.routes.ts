@@ -16,7 +16,7 @@ function createFailureResponse(message: string) {
   };
 }
 
-publicImplementationRouter.get("/:implementationId", (req, res) => {
+publicImplementationRouter.get("/:implementationId", async (req, res) => {
   const implementationId = Array.isArray(req.params.implementationId)
     ? req.params.implementationId[0]
     : req.params.implementationId;
@@ -27,7 +27,7 @@ publicImplementationRouter.get("/:implementationId", (req, res) => {
     return;
   }
 
-  const projection = toPublicImplementationProjection(implementation);
+  const projection = await toPublicImplementationProjection(implementation);
 
   if (!projection) {
     res.status(404).json(createFailureResponse("Public Implementation not available."));
