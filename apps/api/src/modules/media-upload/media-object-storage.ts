@@ -10,6 +10,8 @@ export interface MediaObjectStorage {
     buffer: Buffer;
     mimeType: string;
     extension: string;
+    /** Optional deterministic object key (Pack 03 historical media recovery). */
+    storageKey?: string;
   }): Promise<{ storageKey: string; absolutePath?: string }>;
   deleteFile(storageKey: string): Promise<void>;
   buildPublicUrl(storageKey: string): string;

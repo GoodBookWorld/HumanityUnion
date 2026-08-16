@@ -146,12 +146,15 @@ export class MediaUploadService {
     ownerParticipantId: string;
     initiativeId?: string;
     publicBaseUrl?: string;
+    /** Optional deterministic object key for idempotent recovery uploads. */
+    storageKey?: string;
   }): Promise<StoredMediaRecord> {
     const stored = await this.provider.saveFile({
       purpose: input.purpose,
       buffer: input.file.buffer,
       mimeType: input.file.mimeType,
       extension: input.file.extension,
+      storageKey: input.storageKey,
     });
 
     const mediaId = `media-${crypto.randomUUID()}`;

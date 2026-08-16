@@ -27,15 +27,22 @@ export class LocalMediaStorageProvider implements MediaStorageProvider {
     buffer: Buffer;
     mimeType: string;
     extension: string;
+    storageKey?: string;
   }): Promise<{ storageKey: string; absolutePath: string }> {
     const { mkdir, writeFile } = await import("node:fs/promises");
     const directory = purposeDirectory(input.purpose);
     await mkdir(directory, { recursive: true });
 
-    const safeFilename = `${Date.now()}-${crypto.randomUUID()}${input.extension}`;
-    const storageKey = `${PURPOSE_DIRECTORIES[input.purpose]}/${safeFilename}`;
-    const absolutePath = path.join(LOCAL_MEDIA_UPLOAD_ROOT, storageKey);
+    const storageKey = (
+      input.storageKey?.replace(/\\/g, "/").replace(/^\/+/, "") ??
+      `${PURPOSE_DIRECTORIES[input.purpose]}/${Date.now()}-${crypto.randomUUID()}${input.extension}`
+    );
 
+    if (storageKey.includes("..")) {
+      throw new Error("Invalid media storage key.");
+    }
+
+    const absolutePath = path.join(LOCAL_MEDIA_UPLOAD_ROOT, storageKey);
     const resolved = path.resolve(absolutePath);
     const rootResolved = path.resolve(LOCAL_MEDIA_UPLOAD_ROOT);
 
@@ -43,6 +50,7 @@ export class LocalMediaStorageProvider implements MediaStorageProvider {
       throw new Error("Invalid media storage path.");
     }
 
+    await mkdir(path.dirname(resolved), { recursive: true });
     await writeFile(resolved, input.buffer);
 
     return {

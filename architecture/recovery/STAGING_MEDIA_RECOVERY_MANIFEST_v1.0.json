@@ -1,0 +1,115 @@
+{
+  "pack": "STAGING_DATA_MIGRATION_PACK_03",
+  "mode": "dry-run-ready",
+  "generatedAt": "2026-08-16T05:36:11.310Z",
+  "portableBundle": "architecture/recovery/staging-media-source-v1",
+  "bundleChecksumSha256": "09dacd58b0b7d54f897ee7df60bc9e8f74e1d31d69d2923c0faf9761e56e6287",
+  "initiativeCovers": [
+    {
+      "initiativeId": "initiative-1783748417899",
+      "title": "Citizen Support Squad (CSS)",
+      "sourceFilename": "1783748417920-befba949-3527-443e-8dad-c06fc9f6be49.webp",
+      "contentType": "image/webp",
+      "contentSha256": "c3697e86e872594d55d9e1eda6885b00557786601989f20a3965b3cbca490fa4",
+      "destinationObjectKey": "initiatives/historical-recovery/c3697e86e872594d55d9e1eda6885b00557786601989f20a3965b3cbca490fa4.webp",
+      "status": "READY",
+      "historicalLocalhostUrl": "http://localhost:4000/api/v1/media/files/initiatives/1783748417920-befba949-3527-443e-8dad-c06fc9f6be49.webp"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "title": "The Mind-Safe Alliance",
+      "sourceFilename": "1784349613958-6e09ef7a-17b6-4bd1-845d-0ec510440082.webp",
+      "contentType": "image/webp",
+      "contentSha256": "d09326510f40e6d6d48fac44c93cecfdd607d6003e63eab1122e773128a072e4",
+      "destinationObjectKey": "initiatives/historical-recovery/d09326510f40e6d6d48fac44c93cecfdd607d6003e63eab1122e773128a072e4.webp",
+      "status": "READY",
+      "historicalLocalhostUrl": "http://localhost:4000/api/v1/media/files/initiatives/1784349613958-6e09ef7a-17b6-4bd1-845d-0ec510440082.webp"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "title": "Bridging the \"New World Disorder\"",
+      "sourceFilename": "1785636843444-1b9a0946-349b-4041-8adb-4d843a303648.webp",
+      "contentType": "image/webp",
+      "contentSha256": "4aea8398be894d4baee6a45ebb308e6b8ed3821f5ecd172b162095c77fe1a78e",
+      "destinationObjectKey": "initiatives/historical-recovery/4aea8398be894d4baee6a45ebb308e6b8ed3821f5ecd172b162095c77fe1a78e.webp",
+      "status": "READY",
+      "historicalLocalhostUrl": "http://localhost:4000/api/v1/media/files/initiatives/1785636843444-1b9a0946-349b-4041-8adb-4d843a303648.webp"
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "title": "AI for the Common Good",
+      "sourceFilename": "1785693642488-ab07adb4-8fda-4464-a713-10b35f3e6561.webp",
+      "contentType": "image/webp",
+      "contentSha256": "f1a23d3318a531322e990e7e3e8a614eaaa24f1e91f7b44291dceffe3f1803b9",
+      "destinationObjectKey": "initiatives/historical-recovery/f1a23d3318a531322e990e7e3e8a614eaaa24f1e91f7b44291dceffe3f1803b9.webp",
+      "status": "READY",
+      "historicalLocalhostUrl": "http://localhost:4000/api/v1/media/files/initiatives/1785693642488-ab07adb4-8fda-4464-a713-10b35f3e6561.webp"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "title": "Development of the Humanity Union platform",
+      "sourceFilename": "1785948978096-d26c4f4e-db6d-483d-bb3d-785838c71b9f.webp",
+      "contentType": "image/webp",
+      "contentSha256": "1e5e23b6879708d79e82679bccd65d436e95b5d795b400cee9266fe6a9a6e941",
+      "destinationObjectKey": "initiatives/historical-recovery/1e5e23b6879708d79e82679bccd65d436e95b5d795b400cee9266fe6a9a6e941.webp",
+      "status": "READY",
+      "historicalLocalhostUrl": "http://localhost:4000/api/v1/media/files/initiatives/1785948978096-d26c4f4e-db6d-483d-bb3d-785838c71b9f.webp"
+    }
+  ],
+  "participantAvatars": [
+    {
+      "key": "historical_vlad_gmail",
+      "memberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "userId": "5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+      "displayName": "Vlad",
+      "sourceFilename": "1783655659911-0d8f4b8b-b6c8-4f8d-9462-6adb50b63649.jpg",
+      "contentType": "image/jpeg",
+      "contentSha256": "b011341f515500242972ec2669b12e64f81fae3f5ef93cb641925117161b2bac",
+      "destinationObjectKey": "avatars/historical-recovery/b011341f515500242972ec2669b12e64f81fae3f5ef93cb641925117161b2bac.jpg",
+      "status": "READY",
+      "historicalLocalhostUrl": "http://localhost:4000/api/v1/media/files/avatars/1783655659911-0d8f4b8b-b6c8-4f8d-9462-6adb50b63649.jpg"
+    },
+    {
+      "key": "michael",
+      "memberId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+      "userId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "displayName": "Michael",
+      "sourceFilename": "1784357360878-c0015a41-b832-4347-80ba-d793d0db3c38.webp",
+      "contentType": "image/webp",
+      "contentSha256": "f7863560b424b4f48d75e03a5f1436cd8204ade6a619d0ef31ee915b15bd6ea7",
+      "destinationObjectKey": "avatars/historical-recovery/f7863560b424b4f48d75e03a5f1436cd8204ade6a619d0ef31ee915b15bd6ea7.webp",
+      "status": "READY",
+      "historicalLocalhostUrl": "http://localhost:4000/api/v1/media/files/avatars/1784357360878-c0015a41-b832-4347-80ba-d793d0db3c38.webp"
+    },
+    {
+      "key": "derek",
+      "memberId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+      "userId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "displayName": "Derek",
+      "sourceFilename": "1785692381343-ba87cbe4-40b0-4a65-a72d-b756b84c1b60.webp",
+      "contentType": "image/webp",
+      "contentSha256": "27ee616d6e49326a05d4285ddf2ed7a0346ca0e4780bf34b29bbcb332d8e21f9",
+      "destinationObjectKey": "avatars/historical-recovery/27ee616d6e49326a05d4285ddf2ed7a0346ca0e4780bf34b29bbcb332d8e21f9.webp",
+      "status": "READY",
+      "historicalLocalhostUrl": "http://localhost:4000/api/v1/media/files/avatars/1785692381343-ba87cbe4-40b0-4a65-a72d-b756b84c1b60.webp"
+    },
+    {
+      "key": "isabella",
+      "memberId": "5bb8e373-c042-4786-a69c-0340301711d8",
+      "userId": "7e876d38-0c1e-4241-b520-44bdfc11781a",
+      "displayName": "Isabella",
+      "sourceFilename": "1785948186862-9fa00621-f9b1-4134-9526-5cfd09031ce9.webp",
+      "contentType": "image/webp",
+      "contentSha256": "2a406c2a5229f944d01f0b2de8db9cce8a990a5739e9957f5f071c2ded88e0b7",
+      "destinationObjectKey": "avatars/historical-recovery/2a406c2a5229f944d01f0b2de8db9cce8a990a5739e9957f5f071c2ded88e0b7.webp",
+      "status": "READY",
+      "historicalLocalhostUrl": "http://localhost:4000/api/v1/media/files/avatars/1785948186862-9fa00621-f9b1-4134-9526-5cfd09031ce9.webp"
+    }
+  ],
+  "unresolvedAvatars": [],
+  "excluded": {
+    "stagingAdmin": true,
+    "unrelatedUploads": true,
+    "testFixtures": true
+  }
+}

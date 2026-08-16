@@ -13,6 +13,7 @@
     "dev:reset-auth-rate-limits": "tsx src/scripts/dev-reset-auth-rate-limits.ts",
     "provision:staging-admin": "tsx src/scripts/provision-staging-admin.ts",
     "migrate:staging-historical-data": "tsx src/scripts/migrate-staging-historical-data.ts",
+    "migrate:staging-historical-media": "tsx src/scripts/migrate-staging-historical-media.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"
   },

@@ -24,6 +24,7 @@
     "verify:staging": "tsx apps/api/src/scripts/verify-staging-e2e.ts",
     "provision:staging-admin": "tsx apps/api/src/scripts/provision-staging-admin.ts",
     "migrate:staging-historical-data": "tsx apps/api/src/scripts/migrate-staging-historical-data.ts",
+    "migrate:staging-historical-media": "tsx apps/api/src/scripts/migrate-staging-historical-media.ts",
     "lint": "eslint .",
     "format": "prettier . --write",
     "format:check": "prettier . --check",

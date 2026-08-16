@@ -65,8 +65,11 @@ export class R2MediaObjectStorage implements MediaObjectStorage {
     buffer: Buffer;
     mimeType: string;
     extension: string;
+    storageKey?: string;
   }): Promise<{ storageKey: string }> {
-    const storageKey = `${PURPOSE_PREFIX[input.purpose]}/${Date.now()}-${crypto.randomUUID()}${input.extension}`;
+    const storageKey =
+      input.storageKey?.replace(/\\/g, "/").replace(/^\/+/, "") ??
+      `${PURPOSE_PREFIX[input.purpose]}/${Date.now()}-${crypto.randomUUID()}${input.extension}`;
 
     if (storageKey.includes("..")) {
       throw new Error("Invalid media storage key.");
