@@ -55,14 +55,16 @@ Platform Version:
 
 # Current Focus
 
-**Last completed:** LIFECYCLE UX COMPLETION PACK 01 — Collective Decision Participant Voting
+**Last completed:** INITIATIVE LIFECYCLE FINALIZATION — PHASE 01 (Architecture & Runtime Convergence Audit)
 
-**Next:** LIFECYCLE UX COMPLETION — PHASE 2 (Improvement Proposals durability + shell primacy / Stage URL hygiene)
+**Next:** INITIATIVE LIFECYCLE FINALIZATION — PHASE 02 (canonical lifecycle state + persistence convergence)
 
-See `project/NEXT_SESSION.md`.
+Audit: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_AUDIT_v1.0.md`
+Prior UX audit: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`
 
 Recovery Packs 01–05 remain **CLOSED**.
-Audit: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`.
+
+See `project/NEXT_SESSION.md`.
 
 ---
 
@@ -158,18 +160,17 @@ Also retained from earlier operator-verified migration:
 
 None as Cap-02 Guide cycle.
 
-Current engineering cycle type: **Lifecycle UX Completion** (Pack 01 complete; Phase 2 next).
+Current engineering cycle type: **Initiative Lifecycle Finalization** (Phase 01 audit complete; Phase 02 next).
 
-Lifecycle maturity (post Pack 01): Author Mode Analysis→Archive ~85%; Participant journey coherence improved on Collective Decision vote; Collective Participation Journey UX still deferred (~15%).
+Lifecycle system status (Phase 01): capabilities present; staging convergence **not** certified. Experience projection fragile; local≠staging persistence behavior.
 
 ---
 
 # Immediate Objective
 
-See `project/NEXT_SESSION.md` — **LIFECYCLE UX COMPLETION — PHASE 2**.
+See `project/NEXT_SESSION.md` — **INITIATIVE LIFECYCLE FINALIZATION — PHASE 02**.
 
-Pack 01 (Collective Decision vote in shell) complete. Audit reference:
-`architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`.
+Finalization audit: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_AUDIT_v1.0.md`.
 
 ---
 

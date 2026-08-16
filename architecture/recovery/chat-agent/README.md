@@ -32,7 +32,7 @@ Read in this order. Prefer existing authoritative files; do not invent parallel 
 | 5 | Initiative-root rule | `architecture/decisions/ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0.md` (registry: `architecture/ARCHITECTURE_DECISION_RECORDS.md`) |
 | 6 | Participant-first identity | `architecture/DEVELOPMENT_BASELINE.md` §1; `architecture/decisions/ADR-MEMBER-ACTION-LEDGER-v1.0.md` |
 | 7 | Lifecycle / Author Mode | `architecture/lifecycle/LIFECYCLE_STAGE_INTELLIGENCE_MODEL_v1.0.md` |
-| 8 | Current Pack / domain docs | Follow pointers in `project/NEXT_SESSION.md` (today: Lifecycle UX Phase 2 — Pack 01 voting complete; audit at `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`; stage model `architecture/lifecycle/LIFECYCLE_STAGE_INTELLIGENCE_MODEL_v1.0.md`) |
+| 8 | Current Pack / domain docs | Follow pointers in `project/NEXT_SESSION.md` (today: Lifecycle Finalization Phase 02 — Phase 01 audit at `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_AUDIT_v1.0.md`; stage intelligence `architecture/lifecycle/LIFECYCLE_STAGE_INTELLIGENCE_MODEL_v1.0.md`) |
 | 9 | Ops / staging / deploy constraints | `project/architecture/operations/STAGING_DEPLOYMENT_VERIFICATION_v1.0.md` → `project/architecture/operations/PRODUCTION_CONFIGURATION_OPERATIONS_v1.0.md` |
 | 10 | Forward architecture plan (not live handoff) | `architecture/ARCHITECTURE_EVOLUTION_ROADMAP_v2.0.md` |
 
@@ -126,11 +126,12 @@ See `project/NEXT_SESSION.md`.
 
 **Historical staging recovery (Packs 01–05): CLOSED.**
 
-**Audit:** `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`
+**Lifecycle Finalization Phase 01 complete:**
+`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_AUDIT_v1.0.md`
 
-**Last completed:** LIFECYCLE UX COMPLETION PACK 01 (Collective Decision Participant Voting in Initiative shell).
+**Next:** INITIATIVE LIFECYCLE FINALIZATION — PHASE 02 (state + persistence convergence).
 
-**Next:** Lifecycle UX Phase 2 (Improvement Proposals durability + shell primacy).
+Prior UX audit remains useful: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`
 
 Update this section only when recovery paths, authority structure, environment topology, or major current focus change. Do **not** paste full Pack reports into this folder.
 
