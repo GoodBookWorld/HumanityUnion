@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "commentId": "ff0345b3-47ba-43f8-8d46-2e8368ada089",
+      "initiativeId": "initiative-1784349613932",
+      "authorUserId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "authorDisplayName": "Derek",
+      "body": "Test",
+      "status": "approved",
+      "moderationState": "none",
+      "parentCommentId": null,
+      "createdAt": "2026-08-03T01:54:38.263Z",
+      "updatedAt": "2026-08-03T01:54:38.263Z"
+    },
+    {
+      "commentId": "2a7db040-4d9c-48fd-9f1e-cee9c61b526c",
+      "initiativeId": "initiative-1784349613932",
+      "authorUserId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "authorDisplayName": "Derek",
+      "body": "Intergenerational Mentorship Circles.\nPair older, retired professionals with young workers and students in structured conversation groups. This bridges generational divides, combats chronic isolation, and provides young people with grounded perspective on managing long-term economic and social uncertainty.",
+      "status": "approved",
+      "moderationState": "none",
+      "parentCommentId": null,
+      "createdAt": "2026-08-02T17:42:33.861Z",
+      "updatedAt": "2026-08-02T17:42:33.861Z"
+    },
+    {
+      "commentId": "789b70e0-538d-4949-b2be-c0810c64855b",
+      "initiativeId": "initiative-1784349613932",
+      "authorUserId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "authorDisplayName": "Leonardo",
+      "body": "Proposal 2: Decentralized Digital Access Hubs\nPartner with local municipal libraries and community centers to establish offline access points for the mobile toolkit. This ensures that youth and workers with limited internet connectivity or data plans can still access crucial crisis hotlines and resources.",
+      "status": "approved",
+      "moderationState": "none",
+      "parentCommentId": null,
+      "createdAt": "2026-08-02T02:24:37.477Z",
+      "updatedAt": "2026-08-02T02:24:37.477Z"
+    },
+    {
+      "commentId": "232023e2-c5fd-4a33-98e7-85a666c1d817",
+      "initiativeId": "initiative-1784349613932",
+      "authorUserId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "authorDisplayName": "Leonardo",
+      "body": "Workplace & School Micro-Interventions.\nIntroduce peer-led, 15-minute daily \"decompress and reset\" circles within participating workplaces and educational institutions. This lowers the barrier to entry for busy essential workers and students who might otherwise skip traditional, longer therapy sessions.",
+      "status": "approved",
+      "moderationState": "none",
+      "parentCommentId": null,
+      "createdAt": "2026-08-02T02:20:41.522Z",
+      "updatedAt": "2026-08-02T02:20:41.522Z"
+    },
+    {
+      "commentId": "c370a40a-228a-4aad-8579-caa3a1d2eca4",
+      "initiativeId": "initiative-1784349613932",
+      "authorUserId": "5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+      "authorDisplayName": "Vlad",
+      "body": "Do you have any proposals?",
+      "status": "approved",
+      "moderationState": "none",
+      "parentCommentId": null,
+      "createdAt": "2026-08-01T17:35:22.592Z",
+      "updatedAt": "2026-08-01T17:35:22.592Z"
+    },
+    {
+      "commentId": "b85f0421-b661-4dbb-8f3a-ecf94236c9e8",
+      "initiativeId": "initiative-1784349613932",
+      "authorUserId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "authorDisplayName": "Michael",
+      "body": "Good idea!",
+      "status": "approved",
+      "moderationState": "none",
+      "parentCommentId": null,
+      "createdAt": "2026-07-18T06:48:21.149Z",
+      "updatedAt": "2026-07-18T06:48:21.149Z"
+    },
+    {
+      "commentId": "73d6c06c-70be-40eb-9fe2-d14a930bb4e5",
+      "initiativeId": "initiative-1785636843367",
+      "authorUserId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "authorDisplayName": "Derek",
+      "body": "Digital Simulation & Scenario Planning Labs.\nEstablish secure, virtual sandbox environments where civil society actors, academics, and former diplomats can run real-time geopolitical conflict simulations. This allows participants to test unconventional diplomatic levers, evaluate the downstream effects of grassroots peace interventions, and rapidly iterate on policy blueprints before presenting them to formal state bodies.",
+      "status": "approved",
+      "moderationState": "none",
+      "parentCommentId": null,
+      "createdAt": "2026-08-02T18:05:27.005Z",
+      "updatedAt": "2026-08-02T18:05:27.005Z"
+    },
+    {
+      "commentId": "70677c71-1164-410c-8a1f-af7f9455684c",
+      "initiativeId": "initiative-1785948978037",
+      "authorUserId": "5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+      "authorDisplayName": "Vlad",
+      "body": "I have a suggestion that we host local community meetups and workshops to show everyday people how to use the platform, so everyone feels comfortable participating regardless of their tech background.",
+      "status": "approved",
+      "moderationState": "none",
+      "parentCommentId": null,
+      "createdAt": "2026-08-05T17:58:17.355Z",
+      "updatedAt": "2026-08-05T17:58:17.355Z"
+    },
+    {
+      "commentId": "4ab6c190-cec7-4940-a857-b179733d1ef2",
+      "initiativeId": "initiative-1785948978037",
+      "authorUserId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "authorDisplayName": "Leonardo",
+      "body": "It would be great if we could host regular community coding events where people team up to build and improve free tools for fighting corruption and making decisions together.",
+      "status": "approved",
+      "moderationState": "none",
+      "parentCommentId": null,
+      "createdAt": "2026-08-05T17:46:30.258Z",
+      "updatedAt": "2026-08-05T17:46:30.258Z"
+    },
+    {
+      "commentId": "245cb283-54f0-4cae-a3a2-ce3a5683870f",
+      "initiativeId": "initiative-1785948978037",
+      "authorUserId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "authorDisplayName": "Derek",
+      "body": "I have a suggestion that we use a secure digital system to track public funds and spending so everyone can see where the money goes and hold leaders accountable.",
+      "status": "approved",
+      "moderationState": "none",
+      "parentCommentId": null,
+      "createdAt": "2026-08-05T17:34:21.006Z",
+      "updatedAt": "2026-08-05T17:34:21.006Z"
+    }
+  ]
+}

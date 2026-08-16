@@ -275,6 +275,18 @@ export async function executeStagingHistoricalMediaMigration(input: {
     );
   }
 
+  // Pack 04: Mongo writes alone do not refresh the in-memory Initiative adapter.
+  // Request hydrate so public projections stop serving stale localhost URLs
+  // without requiring an operator to guess that an API restart is needed.
+  try {
+    const { hydrateInitiativeMongoPersistence } = await import(
+      "../initiatives/persistence/initiative-mongo.persistence.js"
+    );
+    await hydrateInitiativeMongoPersistence();
+  } catch {
+    // Hydrate is best-effort in migration scripts; operator may still restart API.
+  }
+
   summary.confirmation =
     "STAGING MEDIA WRITE COMPLETE for approved Initiative covers + historical Participant avatars only.";
   return summary;

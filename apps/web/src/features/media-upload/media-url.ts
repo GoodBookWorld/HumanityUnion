@@ -11,6 +11,25 @@ function isSameOriginStaticAssetPath(path: string): boolean {
   );
 }
 
+function isUnusableLocalhostMediaUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1") {
+      return false;
+    }
+    // Browser on a real staging/production host cannot load API-localhost media.
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      return host !== "localhost" && host !== "127.0.0.1";
+    }
+    // SSR: reject only when the public platform mode is not local development.
+    const mode = process.env.NEXT_PUBLIC_PLATFORM_MODE ?? process.env.PLATFORM_MODE ?? "";
+    return mode === "staging" || mode === "production" || mode === "beta";
+  } catch {
+    return false;
+  }
+}
+
 export function resolveMediaUrl(mediaUrl?: string | null): string | undefined {
   if (!mediaUrl?.trim()) {
     return undefined;
@@ -19,6 +38,9 @@ export function resolveMediaUrl(mediaUrl?: string | null): string | undefined {
   const trimmed = mediaUrl.trim();
 
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    if (isUnusableLocalhostMediaUrl(trimmed)) {
+      return undefined;
+    }
     return trimmed;
   }
 

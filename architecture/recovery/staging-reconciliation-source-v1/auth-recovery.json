@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "strategy": "restore_bcrypt_hash_and_verification_from_source_db_at_execute",
+  "note": "Password hashes are NEVER stored in this bundle. Execute reads compatible $2b$ hashes from humanity_union_dev for approved Participants only.",
+  "participants": [
+    {
+      "key": "historical_vlad_gmail",
+      "userId": "5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+      "memberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "emailDomain": "gmail.com",
+      "displayName": "Vlad",
+      "role": "member",
+      "status": "active",
+      "sourceEmailVerificationStatus": "verified",
+      "sourceEmailVerifiedAt": "2026-07-15T03:29:27.957Z",
+      "hashAlgorithmExpected": "bcrypt_$2b$_cost_12"
+    },
+    {
+      "key": "michael",
+      "userId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "memberId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+      "emailDomain": "gmail.com",
+      "displayName": "Michael",
+      "role": "member",
+      "status": "active",
+      "sourceEmailVerificationStatus": "verified",
+      "sourceEmailVerifiedAt": "2026-07-15T04:36:51.940Z",
+      "hashAlgorithmExpected": "bcrypt_$2b$_cost_12"
+    },
+    {
+      "key": "derek",
+      "userId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "memberId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+      "emailDomain": "gmail.com",
+      "displayName": "Derek",
+      "role": "member",
+      "status": "active",
+      "sourceEmailVerificationStatus": "verified",
+      "sourceEmailVerifiedAt": "2026-08-02T17:38:15.979Z",
+      "hashAlgorithmExpected": "bcrypt_$2b$_cost_12"
+    },
+    {
+      "key": "isabella",
+      "userId": "7e876d38-0c1e-4241-b520-44bdfc11781a",
+      "memberId": "5bb8e373-c042-4786-a69c-0340301711d8",
+      "emailDomain": "gmail.com",
+      "displayName": "Isabella",
+      "role": "member",
+      "status": "active",
+      "sourceEmailVerificationStatus": "verified",
+      "sourceEmailVerifiedAt": "2026-08-05T16:41:49.812Z",
+      "hashAlgorithmExpected": "bcrypt_$2b$_cost_12"
+    }
+  ]
+}

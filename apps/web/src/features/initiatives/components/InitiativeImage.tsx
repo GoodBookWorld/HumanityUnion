@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { InitiativeCoverMedia } from "@hu/types";
 
@@ -61,6 +61,12 @@ export function InitiativeImage({
 
   const [useFallback, setUseFallback] = useState(!resolvedStillUrl && !isExternalVideo);
 
+  // Pack 04 — reset fallback when the canonical URL becomes available or changes.
+  // Without this, a transient onError or a late URL hydrate stuck the UI on the placeholder.
+  useEffect(() => {
+    setUseFallback(!resolvedStillUrl && !isExternalVideo);
+  }, [resolvedStillUrl, isExternalVideo]);
+
   const combinedClassName = className ? `initiative-image ${className}` : "initiative-image";
 
   if (isExternalVideo && coverMedia?.provider && coverMedia.providerVideoId) {
@@ -116,6 +122,7 @@ export function InitiativeImage({
       width={320}
       height={180}
       loading={loading}
+      referrerPolicy="no-referrer"
       onError={() => {
         if (!useFallback) {
           setUseFallback(true);

@@ -1,0 +1,985 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1784393205058-wonrajax",
+      "viewedAt": "2026-07-18T16:46:45.103Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1784393310135-4l2jil7m",
+      "viewedAt": "2026-07-18T16:48:30.176Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1784526686044-kg84hca7",
+      "viewedAt": "2026-07-20T05:51:26.090Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1784526686053-ii61y1lj",
+      "viewedAt": "2026-07-20T05:51:26.096Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1784784895354-kewc063p",
+      "viewedAt": "2026-07-23T05:34:55.389Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1784785007259-ikiqubxh",
+      "viewedAt": "2026-07-23T05:36:47.290Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1784785150314-kwggzmqc",
+      "viewedAt": "2026-07-23T05:39:10.356Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1784785155067-ht1jsjxq",
+      "viewedAt": "2026-07-23T05:39:15.106Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1784785176025-y1445fd0",
+      "viewedAt": "2026-07-23T05:39:36.058Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1784826249217-lupm55pr",
+      "viewedAt": "2026-07-23T17:04:09.298Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785098924652-41yy8y29",
+      "viewedAt": "2026-07-26T20:48:44.696Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785098924667-n7ajddsl",
+      "viewedAt": "2026-07-26T20:48:44.702Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785462374645-db7op88s",
+      "viewedAt": "2026-07-31T01:46:14.688Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785462374649-clm64bou",
+      "viewedAt": "2026-07-31T01:46:14.694Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785560831302-6ge8yfeq",
+      "viewedAt": "2026-08-01T05:07:11.389Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785560831304-vphk8mkp",
+      "viewedAt": "2026-08-01T05:07:11.390Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785622624850-jfit9cf6",
+      "viewedAt": "2026-08-01T22:17:04.895Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785787382953-akierok2",
+      "viewedAt": "2026-08-03T20:03:02.964Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785805475645-gqpa8l81",
+      "viewedAt": "2026-08-04T01:04:35.648Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785805475650-0q7waza5",
+      "viewedAt": "2026-08-04T01:04:35.651Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "viewer-1785958616351-cp0ma3gq",
+      "viewedAt": "2026-08-05T19:36:56.357Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "visitor-1784393313447-u63xra18",
+      "viewedAt": "2026-07-18T16:56:26.267Z"
+    },
+    {
+      "initiativeId": "initiative-1783748417899",
+      "viewerKey": "visitor-1785618208618-6o41o5oj",
+      "viewedAt": "2026-08-01T21:09:58.692Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784357205815-iwwia3ds",
+      "viewedAt": "2026-07-18T06:46:45.881Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784357280603-1hbbvjzl",
+      "viewedAt": "2026-07-18T06:48:00.638Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784357280607-bsindi9x",
+      "viewedAt": "2026-07-18T06:48:00.856Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784357435596-u5ybvqja",
+      "viewedAt": "2026-07-18T06:50:35.728Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784357556611-ef3mynp2",
+      "viewedAt": "2026-07-18T06:52:36.658Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784357556624-jsef6lyr",
+      "viewedAt": "2026-07-18T06:52:36.665Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784393250399-x2vvkvol",
+      "viewedAt": "2026-07-18T16:47:30.447Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784438342164-0pb02qsj",
+      "viewedAt": "2026-07-19T05:19:02.214Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784481223959-zzxjwh0r",
+      "viewedAt": "2026-07-19T17:13:44.002Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784482441960-lsk4e2zg",
+      "viewedAt": "2026-07-19T17:34:02.007Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784526686053-ii61y1lj",
+      "viewedAt": "2026-07-24T04:41:36.569Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1784868007496-qzmwmfcm",
+      "viewedAt": "2026-07-24T04:40:07.606Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785293570000-zp6smjvt",
+      "viewedAt": "2026-07-29T02:52:50.034Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785561414870-gxu9k9fb",
+      "viewedAt": "2026-08-01T05:16:54.920Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785561742667-vrk6gwck",
+      "viewedAt": "2026-08-01T05:22:22.707Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785566754074-s1ys37j1",
+      "viewedAt": "2026-08-01T06:45:54.134Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785605670144-3xs193ed",
+      "viewedAt": "2026-08-01T17:34:30.180Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785606824929-qw2orybq",
+      "viewedAt": "2026-08-01T17:53:44.971Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785606868843-snclfnt7",
+      "viewedAt": "2026-08-01T17:54:28.881Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785618195453-ncmyshp6",
+      "viewedAt": "2026-08-01T21:03:15.500Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785618282230-wenrkyq6",
+      "viewedAt": "2026-08-01T21:04:42.274Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785618318048-j0opvxh9",
+      "viewedAt": "2026-08-01T21:05:18.089Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785618570784-r77j9h1f",
+      "viewedAt": "2026-08-01T21:09:30.834Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785619120307-j9a6omsl",
+      "viewedAt": "2026-08-01T21:18:40.346Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785622549652-3zc3ri3l",
+      "viewedAt": "2026-08-01T22:15:49.689Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785622608388-5zrh073v",
+      "viewedAt": "2026-08-01T22:16:48.487Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785622638424-nm0np99k",
+      "viewedAt": "2026-08-01T22:17:18.467Z"
+    },
+    {
+      "viewerKey": "viewer-1785625681193-6mx13cuw",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-01T23:08:01.198Z"
+    },
+    {
+      "viewerKey": "viewer-1785625683255-55shbsce",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-01T23:08:03.260Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785625728354-ees3lofz",
+      "viewedAt": "2026-08-01T23:08:48.355Z"
+    },
+    {
+      "viewerKey": "viewer-1785625728812-raoxxi6e",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-01T23:08:48.813Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785634866289-kems8cdj",
+      "viewedAt": "2026-08-02T01:41:06.290Z"
+    },
+    {
+      "viewerKey": "viewer-1785635067489-n2lhagax",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-02T01:44:27.490Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785635067491-af7ebqbw",
+      "viewedAt": "2026-08-02T01:44:27.492Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785637142950-v7mfbxvw",
+      "viewedAt": "2026-08-02T02:19:02.952Z"
+    },
+    {
+      "viewerKey": "viewer-1785637177430-pi1ghygs",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-02T02:19:37.431Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785639655548-p6v9rm8g",
+      "viewedAt": "2026-08-02T03:00:55.550Z"
+    },
+    {
+      "viewerKey": "viewer-1785648151939-73waa6f3",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-02T05:22:31.941Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785649316921-tewk98st",
+      "viewedAt": "2026-08-02T05:41:56.924Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785649415922-ki85z5lb",
+      "viewedAt": "2026-08-02T05:43:35.924Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785692490917-sjd68j6r",
+      "viewedAt": "2026-08-02T17:41:30.918Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785694334020-vsjn8gox",
+      "viewedAt": "2026-08-02T18:12:14.021Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785694455893-qzin5q73",
+      "viewedAt": "2026-08-02T18:14:15.895Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785694513489-u3m92v7v",
+      "viewedAt": "2026-08-02T18:15:13.491Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785720642340-t6wad85p",
+      "viewedAt": "2026-08-03T01:30:42.347Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785720752211-fkd2euqf",
+      "viewedAt": "2026-08-03T01:32:32.215Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785720900812-1y66wo62",
+      "viewedAt": "2026-08-03T01:35:00.818Z"
+    },
+    {
+      "viewerKey": "viewer-1785721850159-jpbe6hkl",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-03T01:50:50.164Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785722042645-xmi6uy8w",
+      "viewedAt": "2026-08-03T01:54:02.650Z"
+    },
+    {
+      "viewerKey": "viewer-1785724320997-5a5f9e4r",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-03T02:32:01.004Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785725586641-gsnszyk6",
+      "viewedAt": "2026-08-03T02:53:06.648Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785726536323-jqf80owo",
+      "viewedAt": "2026-08-03T03:08:56.332Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785726711823-65smyuiw",
+      "viewedAt": "2026-08-03T03:11:51.828Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785728591537-qvbbyxzc",
+      "viewedAt": "2026-08-03T03:43:11.543Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785735004430-215ywoqx",
+      "viewedAt": "2026-08-03T05:30:04.437Z"
+    },
+    {
+      "viewerKey": "viewer-1785735333421-o76fayn8",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-03T05:35:33.427Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785778683120-5z8knfzh",
+      "viewedAt": "2026-08-03T17:38:03.123Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785787328832-robwwvpf",
+      "viewedAt": "2026-08-03T20:02:08.835Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785787378832-d4mgxtsk",
+      "viewedAt": "2026-08-03T20:02:58.863Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785787440427-w1yaaa12",
+      "viewedAt": "2026-08-03T20:04:00.465Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785793506735-ouci85r1",
+      "viewedAt": "2026-08-03T21:45:06.741Z"
+    },
+    {
+      "viewerKey": "viewer-1785794300505-svk574au",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-03T21:58:20.510Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785805122606-bc24d6a0",
+      "viewedAt": "2026-08-04T00:58:42.608Z"
+    },
+    {
+      "viewerKey": "viewer-1785805475650-0q7waza5",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-04T01:04:59.962Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785807527822-ewktcpyo",
+      "viewedAt": "2026-08-04T01:38:47.828Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785814112155-hckskgi2",
+      "viewedAt": "2026-08-04T03:28:32.157Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785814206823-9n912fkz",
+      "viewedAt": "2026-08-04T03:30:06.828Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785818482434-d5gnwxjj",
+      "viewedAt": "2026-08-04T04:41:22.436Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785865097011-tvdd6wtm",
+      "viewedAt": "2026-08-04T17:38:17.015Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785882095621-kc87759c",
+      "viewedAt": "2026-08-04T22:21:35.623Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785892075620-hp4ayowg",
+      "viewedAt": "2026-08-05T01:07:55.625Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785892148750-iwxdtcgj",
+      "viewedAt": "2026-08-05T01:09:08.755Z"
+    },
+    {
+      "viewerKey": "viewer-1785892460559-ur5ml6gu",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-05T01:14:20.564Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785893515438-1m94jq26",
+      "viewedAt": "2026-08-05T01:31:55.440Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785894004098-yirs50np",
+      "viewedAt": "2026-08-05T01:40:04.105Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785903625307-91arg49g",
+      "viewedAt": "2026-08-05T04:20:25.313Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785911775775-nhmajwog",
+      "viewedAt": "2026-08-05T06:36:15.782Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1785912044303-c4hfd16s",
+      "viewedAt": "2026-08-05T06:40:44.312Z"
+    },
+    {
+      "viewerKey": "viewer-1785960138006-vsesg9lo",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-05T20:02:18.014Z"
+    },
+    {
+      "viewerKey": "viewer-1786069153721-r3gz5i9y",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-07T02:19:13.726Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1786069153728-1b6tok8a",
+      "viewedAt": "2026-08-07T02:19:13.731Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1786069911800-ke1q1zel",
+      "viewedAt": "2026-08-07T02:31:51.805Z"
+    },
+    {
+      "viewerKey": "viewer-1786070400494-o6a00dr8",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-07T02:40:00.499Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1786077801690-41k3b2ze",
+      "viewedAt": "2026-08-07T04:43:21.694Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1786077863357-kdl1502c",
+      "viewedAt": "2026-08-07T04:44:23.362Z"
+    },
+    {
+      "viewerKey": "viewer-1786292903625-85nbd41p",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-09T16:28:23.631Z"
+    },
+    {
+      "viewerKey": "viewer-1786485432583-taahdqek",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-11T21:57:12.587Z"
+    },
+    {
+      "viewerKey": "viewer-1786571822980-nr6dz79p",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-12T21:57:02.990Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1786571822993-c7kqouid",
+      "viewedAt": "2026-08-12T21:57:02.995Z"
+    },
+    {
+      "viewerKey": "viewer-1786578452683-89524f6w",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-12T23:47:32.713Z"
+    },
+    {
+      "viewerKey": "viewer-1786578452718-gkws1lz4",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-12T23:47:32.721Z"
+    },
+    {
+      "viewerKey": "viewer-1786587563810-wqkjhdo3",
+      "initiativeId": "initiative-1784349613932",
+      "viewedAt": "2026-08-13T02:19:23.813Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "viewer-1786587563815-ik81tizi",
+      "viewedAt": "2026-08-13T02:19:23.817Z"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "viewerKey": "visitor-1785618208618-6o41o5oj",
+      "viewedAt": "2026-08-01T21:20:24.263Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785635067489-n2lhagax",
+      "viewedAt": "2026-08-02T02:15:38.776Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785640423150-2uwk15yy",
+      "viewedAt": "2026-08-02T03:13:43.152Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785643885805-ktc63rtu",
+      "viewedAt": "2026-08-02T04:11:25.807Z"
+    },
+    {
+      "viewerKey": "viewer-1785644038979-6oft5qk3",
+      "initiativeId": "initiative-1785636843367",
+      "viewedAt": "2026-08-02T04:13:58.981Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785648124185-4je96z4f",
+      "viewedAt": "2026-08-02T05:22:04.189Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785649285035-renslchu",
+      "viewedAt": "2026-08-02T05:41:25.038Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785649397323-73ven3z6",
+      "viewedAt": "2026-08-02T05:43:17.325Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785692205498-tjcjzvsb",
+      "viewedAt": "2026-08-02T17:36:45.499Z"
+    },
+    {
+      "viewerKey": "viewer-1785693755513-1q8x0iph",
+      "initiativeId": "initiative-1785636843367",
+      "viewedAt": "2026-08-02T18:02:35.515Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785694469674-yqbld4uh",
+      "viewedAt": "2026-08-02T18:14:29.676Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785700961134-x0sdfwdx",
+      "viewedAt": "2026-08-02T20:02:41.135Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785701761615-ywesatx7",
+      "viewedAt": "2026-08-02T20:16:01.620Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785701762232-35rlwyre",
+      "viewedAt": "2026-08-02T20:16:02.234Z"
+    },
+    {
+      "viewerKey": "viewer-1785701762784-qz7k071a",
+      "initiativeId": "initiative-1785636843367",
+      "viewedAt": "2026-08-02T20:16:02.786Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785701768465-ydf5tmxe",
+      "viewedAt": "2026-08-02T20:16:08.466Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785701769121-0bsqax2p",
+      "viewedAt": "2026-08-02T20:16:09.122Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785701769950-lfph42or",
+      "viewedAt": "2026-08-02T20:16:09.951Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785702310943-rsf7ytrf",
+      "viewedAt": "2026-08-02T20:25:10.949Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785702545413-7648si8q",
+      "viewedAt": "2026-08-02T20:29:05.417Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785702569303-po7trtqt",
+      "viewedAt": "2026-08-02T20:29:29.306Z"
+    },
+    {
+      "viewerKey": "viewer-1785702569874-selq894m",
+      "initiativeId": "initiative-1785636843367",
+      "viewedAt": "2026-08-02T20:29:29.876Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785702570375-zbkbzhkz",
+      "viewedAt": "2026-08-02T20:29:30.377Z"
+    },
+    {
+      "viewerKey": "viewer-1785702690824-jt2rz3ah",
+      "initiativeId": "initiative-1785636843367",
+      "viewedAt": "2026-08-02T20:31:30.826Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785702691682-92ow639c",
+      "viewedAt": "2026-08-02T20:31:31.684Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785702692170-vi4uty1g",
+      "viewedAt": "2026-08-02T20:31:32.171Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785703047444-jtiosk74",
+      "viewedAt": "2026-08-02T20:37:27.452Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785703060361-f1epglhb",
+      "viewedAt": "2026-08-02T20:37:40.366Z"
+    },
+    {
+      "viewerKey": "viewer-1785703236039-woluy6u3",
+      "initiativeId": "initiative-1785636843367",
+      "viewedAt": "2026-08-02T20:40:36.053Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785703302411-glc751zo",
+      "viewedAt": "2026-08-02T20:41:42.423Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785703316090-8emmw2r6",
+      "viewedAt": "2026-08-02T20:41:56.096Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785703316471-lculwldc",
+      "viewedAt": "2026-08-02T20:41:56.476Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785703316772-18c54gqb",
+      "viewedAt": "2026-08-02T20:41:56.778Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785703317119-18utaabq",
+      "viewedAt": "2026-08-02T20:41:57.124Z"
+    },
+    {
+      "viewerKey": "viewer-1785704195203-p1a7uf8f",
+      "initiativeId": "initiative-1785636843367",
+      "viewedAt": "2026-08-02T20:56:35.216Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785704195520-bci4t08b",
+      "viewedAt": "2026-08-02T20:56:35.525Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785704195873-ra9b0qv7",
+      "viewedAt": "2026-08-02T20:56:35.878Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785704196135-4136l9st",
+      "viewedAt": "2026-08-02T20:56:36.143Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785704196481-x7hw4qbm",
+      "viewedAt": "2026-08-02T20:56:36.487Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785704209176-m1rk7exz",
+      "viewedAt": "2026-08-02T20:56:49.185Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785704209794-pis8c9cl",
+      "viewedAt": "2026-08-02T20:56:49.799Z"
+    },
+    {
+      "viewerKey": "viewer-1785704210446-e84ntc6b",
+      "initiativeId": "initiative-1785636843367",
+      "viewedAt": "2026-08-02T20:56:50.455Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785706410820-ksdcuyn0",
+      "viewedAt": "2026-08-02T21:33:30.836Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785720309122-776fgpme",
+      "viewedAt": "2026-08-03T01:25:09.127Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1785721998985-9q1fb0ol",
+      "viewedAt": "2026-08-03T01:53:18.991Z"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "viewerKey": "viewer-1786069153728-1b6tok8a",
+      "viewedAt": "2026-08-07T03:42:01.320Z"
+    },
+    {
+      "viewerKey": "viewer-1786292888669-bnss3lke",
+      "initiativeId": "initiative-1785636843367",
+      "viewedAt": "2026-08-09T16:28:08.673Z"
+    },
+    {
+      "viewerKey": "viewer-1785635067489-n2lhagax",
+      "initiativeId": "initiative-1785693642422",
+      "viewedAt": "2026-08-02T18:00:43.393Z"
+    },
+    {
+      "viewerKey": "viewer-1785703317405-zazkfo97",
+      "initiativeId": "initiative-1785693642422",
+      "viewedAt": "2026-08-02T20:41:57.412Z"
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "viewerKey": "viewer-1785704202131-rcugm777",
+      "viewedAt": "2026-08-02T20:56:42.140Z"
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "viewerKey": "viewer-1785704202366-aqsg9cf2",
+      "viewedAt": "2026-08-02T20:56:42.371Z"
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "viewerKey": "viewer-1785704202635-htpesccv",
+      "viewedAt": "2026-08-02T20:56:42.640Z"
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "viewerKey": "viewer-1785704209499-jjm9s4ns",
+      "viewedAt": "2026-08-02T20:56:49.508Z"
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "viewerKey": "viewer-1785704210106-sj158eb4",
+      "viewedAt": "2026-08-02T20:56:50.111Z"
+    },
+    {
+      "viewerKey": "viewer-1785704210724-ecfzuxff",
+      "initiativeId": "initiative-1785693642422",
+      "viewedAt": "2026-08-02T20:56:50.729Z"
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "viewerKey": "viewer-1785720293927-l2cuwud4",
+      "viewedAt": "2026-08-03T01:24:53.932Z"
+    },
+    {
+      "viewerKey": "viewer-1785805475650-0q7waza5",
+      "initiativeId": "initiative-1785693642422",
+      "viewedAt": "2026-08-05T17:33:30.395Z"
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "viewerKey": "viewer-1786065837684-wn6kiyyh",
+      "viewedAt": "2026-08-07T01:23:57.690Z"
+    },
+    {
+      "viewerKey": "viewer-1786069153728-1b6tok8a",
+      "initiativeId": "initiative-1785693642422",
+      "viewedAt": "2026-08-07T04:45:55.834Z"
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "viewerKey": "viewer-1786292871535-4ech0nqh",
+      "viewedAt": "2026-08-09T16:27:51.538Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785805475650-0q7waza5",
+      "viewedAt": "2026-08-05T17:15:13.499Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785908581883-hlsh1fkg",
+      "viewedAt": "2026-08-06T01:59:27.267Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785950139599-xh7vcju2",
+      "viewedAt": "2026-08-05T17:15:39.605Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785951232664-rc331psu",
+      "viewedAt": "2026-08-05T17:33:52.670Z"
+    },
+    {
+      "viewerKey": "viewer-1785951945095-gw2cqsfu",
+      "initiativeId": "initiative-1785948978037",
+      "viewedAt": "2026-08-05T17:45:45.109Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785951963275-zbeyt9lx",
+      "viewedAt": "2026-08-05T17:46:03.285Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785952687279-miqhm6rb",
+      "viewedAt": "2026-08-05T17:58:07.288Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785952825856-8ug2rfkg",
+      "viewedAt": "2026-08-05T18:00:25.865Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785953097921-u30y5d87",
+      "viewedAt": "2026-08-05T18:04:57.936Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785958188373-d2ors3du",
+      "viewedAt": "2026-08-05T19:29:48.379Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785958296822-gk23kvzo",
+      "viewedAt": "2026-08-05T19:31:36.828Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785958410116-y9kuq8ms",
+      "viewedAt": "2026-08-05T19:33:30.122Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785958533325-ks465qdl",
+      "viewedAt": "2026-08-05T19:35:33.332Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785974596931-s1whbcpe",
+      "viewedAt": "2026-08-06T00:03:16.939Z"
+    },
+    {
+      "viewerKey": "viewer-1785977442405-5e3aw1ov",
+      "initiativeId": "initiative-1785948978037",
+      "viewedAt": "2026-08-06T00:50:42.412Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1785981514384-29xqaevz",
+      "viewedAt": "2026-08-06T01:58:34.402Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1786065847246-atmgv0go",
+      "viewedAt": "2026-08-07T01:24:07.251Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1786069872715-yxro5kop",
+      "viewedAt": "2026-08-07T02:31:12.720Z"
+    },
+    {
+      "viewerKey": "viewer-1786077754571-qivr19ev",
+      "initiativeId": "initiative-1785948978037",
+      "viewedAt": "2026-08-07T04:42:34.577Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "viewerKey": "viewer-1786485455399-tpyrpswn",
+      "viewedAt": "2026-08-11T21:57:35.401Z"
+    }
+  ]
+}

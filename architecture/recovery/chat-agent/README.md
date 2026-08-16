@@ -124,7 +124,7 @@ Prefer simple instructions for the user. Cursor implementation tasks may be tech
 
 See `project/NEXT_SESSION.md`.
 
-As of Continuity Pack 01: next major objective is **STAGING HISTORICAL DATA RECONCILIATION PACK 04** (assessment/reconciliation — not started here).
+As of Pack 04 tooling: **STAGING HISTORICAL DATA RECONCILIATION PACK 04** is implemented for dry-run; operator `--execute` on staging is the live next step.
 
 Update this section only when recovery paths, authority structure, environment topology, or major current focus change. Do **not** paste full Pack reports into this folder.
 

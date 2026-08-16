@@ -56,6 +56,32 @@ Next Objective:
 
 # Entries
 
+## 2026-08-16 (Pack 04)
+
+Completed:
+
+- STAGING HISTORICAL DATA RECONCILIATION PACK 04 tooling.
+- Portable reconciliation bundle (engagement + auth metadata; no password hashes).
+- `pnpm reconcile:staging-historical-data` (dry-run default) + `pnpm verify:staging`.
+- Web media rendering harden (InitiativeImage fallback reset; reject localhost media on staging/production hosts).
+- Auth root cause documented: Pack 02 unusable hash + pending verification; restore compatible source bcrypt at execute.
+
+Architecture:
+
+- Initiative-scoped engagement only; legacy Activity/Discussion/Proposal/Decision roots excluded.
+- Password hashes never committed to Git.
+
+Engineering Notes:
+
+- Real staging `--execute` not run in Cursor task.
+- Proposals statistic correctly 0 while Improvement Proposals remain draft.
+
+Next Objective:
+
+Operator execute Pack 04 on staging + verify:staging.
+
+---
+
 ## 2026-08-16
 
 Completed:

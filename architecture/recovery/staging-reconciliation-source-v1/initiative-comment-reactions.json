@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "actorUserId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "commentId": "232023e2-c5fd-4a33-98e7-85a666c1d817",
+      "createdAt": "2026-08-02T02:27:30.088Z",
+      "initiativeId": "initiative-1784349613932",
+      "reaction": "like",
+      "reactionId": "77cf9b23-f01e-4552-af52-51134a30a0d8",
+      "updatedAt": "2026-08-02T02:27:30.088Z"
+    },
+    {
+      "commentId": "232023e2-c5fd-4a33-98e7-85a666c1d817",
+      "actorUserId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "createdAt": "2026-08-02T17:43:37.643Z",
+      "initiativeId": "initiative-1784349613932",
+      "reaction": "like",
+      "reactionId": "e323dd7a-9a94-4abd-9bc9-8a8db1a7013f",
+      "updatedAt": "2026-08-02T17:43:37.643Z"
+    },
+    {
+      "actorUserId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "commentId": "789b70e0-538d-4949-b2be-c0810c64855b",
+      "createdAt": "2026-08-02T02:27:27.877Z",
+      "initiativeId": "initiative-1784349613932",
+      "reaction": "like",
+      "reactionId": "3d974248-cb38-4471-84f2-e2923165213e",
+      "updatedAt": "2026-08-02T02:27:27.877Z"
+    },
+    {
+      "commentId": "789b70e0-538d-4949-b2be-c0810c64855b",
+      "actorUserId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "createdAt": "2026-08-02T17:43:06.209Z",
+      "initiativeId": "initiative-1784349613932",
+      "reaction": "like",
+      "reactionId": "6fd379a8-4122-4836-a1a1-d6c60deb996d",
+      "updatedAt": "2026-08-02T17:43:06.209Z"
+    },
+    {
+      "commentId": "b85f0421-b661-4dbb-8f3a-ecf94236c9e8",
+      "actorUserId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "createdAt": "2026-07-18T06:48:23.332Z",
+      "initiativeId": "initiative-1784349613932",
+      "reaction": "like",
+      "reactionId": "90e97923-fe9b-4241-9978-f6145c26aa48",
+      "updatedAt": "2026-07-18T06:48:23.332Z"
+    },
+    {
+      "actorUserId": "5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+      "commentId": "b85f0421-b661-4dbb-8f3a-ecf94236c9e8",
+      "createdAt": "2026-08-01T06:45:45.788Z",
+      "initiativeId": "initiative-1784349613932",
+      "reaction": "like",
+      "reactionId": "ae88589c-e6e2-47dc-8c8c-02629bf26bcf",
+      "updatedAt": "2026-08-01T06:45:45.788Z"
+    },
+    {
+      "actorUserId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "commentId": "b85f0421-b661-4dbb-8f3a-ecf94236c9e8",
+      "createdAt": "2026-08-02T17:43:13.760Z",
+      "initiativeId": "initiative-1784349613932",
+      "reaction": "like",
+      "reactionId": "2be67837-18d1-46d8-a800-105f43111fda",
+      "updatedAt": "2026-08-02T17:43:13.760Z"
+    },
+    {
+      "commentId": "73d6c06c-70be-40eb-9fe2-d14a930bb4e5",
+      "actorUserId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "createdAt": "2026-08-02T18:05:50.667Z",
+      "initiativeId": "initiative-1785636843367",
+      "reaction": "like",
+      "reactionId": "0aaf2ef5-f3c2-4c1f-81c3-2b22af7bf85f",
+      "updatedAt": "2026-08-02T18:05:50.667Z"
+    },
+    {
+      "actorUserId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "commentId": "245cb283-54f0-4cae-a3a2-ce3a5683870f",
+      "createdAt": "2026-08-05T17:34:25.939Z",
+      "initiativeId": "initiative-1785948978037",
+      "reaction": "like",
+      "reactionId": "c76fcdaf-2a74-481c-9848-db0960a1db9e",
+      "updatedAt": "2026-08-05T17:34:25.939Z"
+    },
+    {
+      "commentId": "245cb283-54f0-4cae-a3a2-ce3a5683870f",
+      "actorUserId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "createdAt": "2026-08-05T17:46:35.128Z",
+      "initiativeId": "initiative-1785948978037",
+      "reaction": "like",
+      "reactionId": "38ade850-acce-4b58-824f-77206d85e603",
+      "updatedAt": "2026-08-05T17:46:35.128Z"
+    },
+    {
+      "actorUserId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "commentId": "4ab6c190-cec7-4940-a857-b179733d1ef2",
+      "createdAt": "2026-08-05T17:46:37.272Z",
+      "initiativeId": "initiative-1785948978037",
+      "reaction": "like",
+      "reactionId": "e9a78f8f-e1cd-40cd-8a56-91925f38f174",
+      "updatedAt": "2026-08-05T17:46:37.272Z"
+    },
+    {
+      "actorUserId": "5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+      "commentId": "70677c71-1164-410c-8a1f-af7f9455684c",
+      "createdAt": "2026-08-05T17:58:25.510Z",
+      "initiativeId": "initiative-1785948978037",
+      "reaction": "like",
+      "reactionId": "b5dd6bf2-0687-4ed0-8714-c2e0fcfaa59d",
+      "updatedAt": "2026-08-05T17:58:25.510Z"
+    }
+  ]
+}

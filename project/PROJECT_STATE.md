@@ -55,11 +55,13 @@ Platform Version:
 
 # Current Focus
 
-**Last completed (docs):** CHAT AGENT CONTINUITY PACK 01
+**Last completed (tooling):** STAGING HISTORICAL DATA RECONCILIATION PACK 04 (dry-run + Web media harden; real `--execute` not run in Cursor task)
 
-**Next (see NEXT_SESSION):** STAGING HISTORICAL DATA RECONCILIATION PACK 04
+**Next:** Operator execute Pack 04 on staging (`reconcile:staging-historical-data -- --execute` in **RENDER API WEB SHELL**), then `pnpm verify:staging`.
 
-Do not start Pack 04 until the owner issues that Pack task.
+See `project/NEXT_SESSION.md`.
+
+Do not start a new migration Pack until Pack 04 execute + verify are complete.
 
 ---
 
@@ -120,6 +122,22 @@ The following are **operator-verified** staging outcomes (explicitly distinguish
 - A second media migration dry-run reported canonical skips (`skip_already_canonical`) and zero conflicts.
 
 Identity / civic sources (repo design): historical identity Mongo `humanity_union_dev`; civic portable bundle `architecture/recovery/staging-data-source-v1/`; media bundle `architecture/recovery/staging-media-source-v1/`; target DB `humanity_union_staging`.
+
+---
+
+# Staging — Pack 04 reconciliation status
+
+**Repository-verifiable**
+
+- Portable bundle: `architecture/recovery/staging-reconciliation-source-v1/` (comments 10, comment reactions 12, analysis reactions 1, support registered 9, visitor 15, bookmarks 1, views 196; auth metadata without hashes)
+- Commands: `pnpm reconcile:staging-historical-data`, `pnpm verify:staging`
+- Assessment: `architecture/recovery/STAGING_RECONCILIATION_ASSESSMENT_v1.0.md`
+- Web: InitiativeImage fallback reset + localhost media rejection on staging/production hosts
+
+**Operator execute still required for**
+
+- Restoring historical bcrypt hashes + email verified from `humanity_union_dev` (not committed to Git)
+- Inserting engagement history into `humanity_union_staging`
 
 ---
 

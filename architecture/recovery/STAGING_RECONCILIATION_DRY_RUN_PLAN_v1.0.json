@@ -1,0 +1,1605 @@
+{
+  "mode": "dry-run",
+  "sourceDatabase": "humanity_union_dev",
+  "targetDatabase": "humanity_union_staging",
+  "stagingAdminProtected": true,
+  "auth": [
+    {
+      "key": "historical_vlad_gmail",
+      "userId": "5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+      "memberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "action": "restore",
+      "reason": "Pack 02 left unusable migration hash + pending email verification. Restore compatible source bcrypt hash + verified status from humanity_union_dev (hashes never logged).",
+      "loginReadyAfter": true
+    },
+    {
+      "key": "michael",
+      "userId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+      "memberId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+      "action": "restore",
+      "reason": "Pack 02 left unusable migration hash + pending email verification. Restore compatible source bcrypt hash + verified status from humanity_union_dev (hashes never logged).",
+      "loginReadyAfter": true
+    },
+    {
+      "key": "derek",
+      "userId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+      "memberId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+      "action": "restore",
+      "reason": "Pack 02 left unusable migration hash + pending email verification. Restore compatible source bcrypt hash + verified status from humanity_union_dev (hashes never logged).",
+      "loginReadyAfter": true
+    },
+    {
+      "key": "isabella",
+      "userId": "7e876d38-0c1e-4241-b520-44bdfc11781a",
+      "memberId": "5bb8e373-c042-4786-a69c-0340301711d8",
+      "action": "restore",
+      "reason": "Pack 02 left unusable migration hash + pending email verification. Restore compatible source bcrypt hash + verified status from humanity_union_dev (hashes never logged).",
+      "loginReadyAfter": true
+    }
+  ],
+  "comments": [
+    {
+      "id": "ff0345b3-47ba-43f8-8d46-2e8368ada089",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comments record."
+    },
+    {
+      "id": "2a7db040-4d9c-48fd-9f1e-cee9c61b526c",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comments record."
+    },
+    {
+      "id": "789b70e0-538d-4949-b2be-c0810c64855b",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comments record."
+    },
+    {
+      "id": "232023e2-c5fd-4a33-98e7-85a666c1d817",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comments record."
+    },
+    {
+      "id": "c370a40a-228a-4aad-8579-caa3a1d2eca4",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comments record."
+    },
+    {
+      "id": "b85f0421-b661-4dbb-8f3a-ecf94236c9e8",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comments record."
+    },
+    {
+      "id": "73d6c06c-70be-40eb-9fe2-d14a930bb4e5",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comments record."
+    },
+    {
+      "id": "70677c71-1164-410c-8a1f-af7f9455684c",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comments record."
+    },
+    {
+      "id": "4ab6c190-cec7-4940-a857-b179733d1ef2",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comments record."
+    },
+    {
+      "id": "245cb283-54f0-4cae-a3a2-ce3a5683870f",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comments record."
+    }
+  ],
+  "commentReactions": [
+    {
+      "id": "77cf9b23-f01e-4552-af52-51134a30a0d8",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "e323dd7a-9a94-4abd-9bc9-8a8db1a7013f",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "3d974248-cb38-4471-84f2-e2923165213e",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "6fd379a8-4122-4836-a1a1-d6c60deb996d",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "90e97923-fe9b-4241-9978-f6145c26aa48",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "ae88589c-e6e2-47dc-8c8c-02629bf26bcf",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "2be67837-18d1-46d8-a800-105f43111fda",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "0aaf2ef5-f3c2-4c1f-81c3-2b22af7bf85f",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "c76fcdaf-2a74-481c-9848-db0960a1db9e",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "38ade850-acce-4b58-824f-77206d85e603",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "e9a78f8f-e1cd-40cd-8a56-91925f38f174",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    },
+    {
+      "id": "b5dd6bf2-0687-4ed0-8714-c2e0fcfaa59d",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_comment_reactions record."
+    }
+  ],
+  "analysisReactions": [
+    {
+      "id": "813d4fd7-b5c1-486a-99c1-fece4072ba9d",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_analysis_reactions record."
+    }
+  ],
+  "supportRegistered": [
+    {
+      "id": "e8d315e6-3d83-4cb3-99de-d4d0088adf2b",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_registered_signals record."
+    },
+    {
+      "id": "4e05034d-27c7-4327-9819-273908742dc9",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_registered_signals record."
+    },
+    {
+      "id": "8fc20d24-8468-4a06-b60c-ae484af37792",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_registered_signals record."
+    },
+    {
+      "id": "48d5669d-bcf5-475f-b482-a76aa15600e4",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_registered_signals record."
+    },
+    {
+      "id": "18d82d50-f29d-4924-9eeb-ee01ba67e9ea",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_registered_signals record."
+    },
+    {
+      "id": "8c1a91da-8543-42b4-b16f-f5db335e1023",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_registered_signals record."
+    },
+    {
+      "id": "855ccecd-a095-4804-b69b-251a3488e727",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_registered_signals record."
+    },
+    {
+      "id": "40c29ec7-1482-44e8-881b-bb80a5053ac2",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_registered_signals record."
+    },
+    {
+      "id": "1271741d-7383-4472-a68c-9ff390c747d4",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_registered_signals record."
+    }
+  ],
+  "supportVisitor": [
+    {
+      "id": "ded89b81-e4a9-403b-b4da-daf9ff79bfdf",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "d72c6106-eec6-4b4d-a12e-639d240b733f",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "2bcdd8f0-6afe-4aeb-8a34-eb1126059bcc",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "e1f3ac15-6959-4c1b-8f4a-fab67da139cb",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "9d09546c-621e-4fdb-a613-af578cf9c2f7",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "f8d3cd03-6508-4fa7-8120-adb9497332be",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "6a0138fc-f4bc-44a3-87b7-6df071177d21",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "77cfcd87-701f-4e9e-b42e-7acc0c7b9dd8",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "202e9464-d5b6-4181-a8a0-fae6f02f4302",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "61f5516e-e6ed-4003-9e76-d9e42473ac17",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "ff70118e-4cf5-48e1-afc2-e82eca048f4d",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "234f7f9a-55f7-454f-9139-7dd93b526cba",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "9b8c956a-f623-4232-9908-a4cb4715378e",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "08d377c3-697e-4c89-80cd-18ab0ee75a7f",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    },
+    {
+      "id": "111caee6-1d87-4f90-a49d-a8dd01eee5d4",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Insert canonical Initiative-scoped initiative_support_visitor_signals record."
+    }
+  ],
+  "bookmarks": [
+    {
+      "id": "initiative-1785948978037:5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create bookmark."
+    }
+  ],
+  "views": [
+    {
+      "id": "initiative-1783748417899:viewer-1784393205058-wonrajax",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1784393310135-4l2jil7m",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1784526686044-kg84hca7",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1784526686053-ii61y1lj",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1784784895354-kewc063p",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1784785007259-ikiqubxh",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1784785150314-kwggzmqc",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1784785155067-ht1jsjxq",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1784785176025-y1445fd0",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1784826249217-lupm55pr",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785098924652-41yy8y29",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785098924667-n7ajddsl",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785462374645-db7op88s",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785462374649-clm64bou",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785560831302-6ge8yfeq",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785560831304-vphk8mkp",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785622624850-jfit9cf6",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785787382953-akierok2",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785805475645-gqpa8l81",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785805475650-0q7waza5",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:viewer-1785958616351-cp0ma3gq",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:visitor-1784393313447-u63xra18",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1783748417899:visitor-1785618208618-6o41o5oj",
+      "initiativeId": "initiative-1783748417899",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784357205815-iwwia3ds",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784357280603-1hbbvjzl",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784357280607-bsindi9x",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784357435596-u5ybvqja",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784357556611-ef3mynp2",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784357556624-jsef6lyr",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784393250399-x2vvkvol",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784438342164-0pb02qsj",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784481223959-zzxjwh0r",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784482441960-lsk4e2zg",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784526686053-ii61y1lj",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1784868007496-qzmwmfcm",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785293570000-zp6smjvt",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785561414870-gxu9k9fb",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785561742667-vrk6gwck",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785566754074-s1ys37j1",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785605670144-3xs193ed",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785606824929-qw2orybq",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785606868843-snclfnt7",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785618195453-ncmyshp6",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785618282230-wenrkyq6",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785618318048-j0opvxh9",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785618570784-r77j9h1f",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785619120307-j9a6omsl",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785622549652-3zc3ri3l",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785622608388-5zrh073v",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785622638424-nm0np99k",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785625681193-6mx13cuw",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785625683255-55shbsce",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785625728354-ees3lofz",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785625728812-raoxxi6e",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785634866289-kems8cdj",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785635067489-n2lhagax",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785635067491-af7ebqbw",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785637142950-v7mfbxvw",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785637177430-pi1ghygs",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785639655548-p6v9rm8g",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785648151939-73waa6f3",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785649316921-tewk98st",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785649415922-ki85z5lb",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785692490917-sjd68j6r",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785694334020-vsjn8gox",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785694455893-qzin5q73",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785694513489-u3m92v7v",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785720642340-t6wad85p",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785720752211-fkd2euqf",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785720900812-1y66wo62",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785721850159-jpbe6hkl",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785722042645-xmi6uy8w",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785724320997-5a5f9e4r",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785725586641-gsnszyk6",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785726536323-jqf80owo",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785726711823-65smyuiw",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785728591537-qvbbyxzc",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785735004430-215ywoqx",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785735333421-o76fayn8",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785778683120-5z8knfzh",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785787328832-robwwvpf",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785787378832-d4mgxtsk",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785787440427-w1yaaa12",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785793506735-ouci85r1",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785794300505-svk574au",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785805122606-bc24d6a0",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785805475650-0q7waza5",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785807527822-ewktcpyo",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785814112155-hckskgi2",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785814206823-9n912fkz",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785818482434-d5gnwxjj",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785865097011-tvdd6wtm",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785882095621-kc87759c",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785892075620-hp4ayowg",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785892148750-iwxdtcgj",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785892460559-ur5ml6gu",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785893515438-1m94jq26",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785894004098-yirs50np",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785903625307-91arg49g",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785911775775-nhmajwog",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785912044303-c4hfd16s",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1785960138006-vsesg9lo",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786069153721-r3gz5i9y",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786069153728-1b6tok8a",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786069911800-ke1q1zel",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786070400494-o6a00dr8",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786077801690-41k3b2ze",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786077863357-kdl1502c",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786292903625-85nbd41p",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786485432583-taahdqek",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786571822980-nr6dz79p",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786571822993-c7kqouid",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786578452683-89524f6w",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786578452718-gkws1lz4",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786587563810-wqkjhdo3",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:viewer-1786587563815-ik81tizi",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1784349613932:visitor-1785618208618-6o41o5oj",
+      "initiativeId": "initiative-1784349613932",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785635067489-n2lhagax",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785640423150-2uwk15yy",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785643885805-ktc63rtu",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785644038979-6oft5qk3",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785648124185-4je96z4f",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785649285035-renslchu",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785649397323-73ven3z6",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785692205498-tjcjzvsb",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785693755513-1q8x0iph",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785694469674-yqbld4uh",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785700961134-x0sdfwdx",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785701761615-ywesatx7",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785701762232-35rlwyre",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785701762784-qz7k071a",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785701768465-ydf5tmxe",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785701769121-0bsqax2p",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785701769950-lfph42or",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785702310943-rsf7ytrf",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785702545413-7648si8q",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785702569303-po7trtqt",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785702569874-selq894m",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785702570375-zbkbzhkz",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785702690824-jt2rz3ah",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785702691682-92ow639c",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785702692170-vi4uty1g",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785703047444-jtiosk74",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785703060361-f1epglhb",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785703236039-woluy6u3",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785703302411-glc751zo",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785703316090-8emmw2r6",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785703316471-lculwldc",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785703316772-18c54gqb",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785703317119-18utaabq",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785704195203-p1a7uf8f",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785704195520-bci4t08b",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785704195873-ra9b0qv7",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785704196135-4136l9st",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785704196481-x7hw4qbm",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785704209176-m1rk7exz",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785704209794-pis8c9cl",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785704210446-e84ntc6b",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785706410820-ksdcuyn0",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785720309122-776fgpme",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1785721998985-9q1fb0ol",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1786069153728-1b6tok8a",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785636843367:viewer-1786292888669-bnss3lke",
+      "initiativeId": "initiative-1785636843367",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1785635067489-n2lhagax",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1785703317405-zazkfo97",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1785704202131-rcugm777",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1785704202366-aqsg9cf2",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1785704202635-htpesccv",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1785704209499-jjm9s4ns",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1785704210106-sj158eb4",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1785704210724-ecfzuxff",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1785720293927-l2cuwud4",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1785805475650-0q7waza5",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1786065837684-wn6kiyyh",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1786069153728-1b6tok8a",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785693642422:viewer-1786292871535-4ech0nqh",
+      "initiativeId": "initiative-1785693642422",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785805475650-0q7waza5",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785908581883-hlsh1fkg",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785950139599-xh7vcju2",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785951232664-rc331psu",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785951945095-gw2cqsfu",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785951963275-zbeyt9lx",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785952687279-miqhm6rb",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785952825856-8ug2rfkg",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785953097921-u30y5d87",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785958188373-d2ors3du",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785958296822-gk23kvzo",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785958410116-y9kuq8ms",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785958533325-ks465qdl",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785974596931-s1whbcpe",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785977442405-5e3aw1ov",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1785981514384-29xqaevz",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1786065847246-atmgv0go",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1786069872715-yxro5kop",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1786077754571-qivr19ev",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    },
+    {
+      "id": "initiative-1785948978037:viewer-1786485455399-tpyrpswn",
+      "initiativeId": "initiative-1785948978037",
+      "action": "create",
+      "reason": "Create view."
+    }
+  ],
+  "participantActions": [],
+  "media": [
+    {
+      "initiativeId": "initiative-1783748417899",
+      "action": "already_canonical",
+      "reason": "Mongo already has approved R2 cover URL. UI failures are likely stale API memory before hydrate/restart or client fallback stickiness.",
+      "imageHost": "pub-46ce2c9bfd804c1eb4a27948271697bf.r2.dev",
+      "isLocalhost": false,
+      "coverApproved": true
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "action": "already_canonical",
+      "reason": "Mongo already has approved R2 cover URL. UI failures are likely stale API memory before hydrate/restart or client fallback stickiness.",
+      "imageHost": "pub-46ce2c9bfd804c1eb4a27948271697bf.r2.dev",
+      "isLocalhost": false,
+      "coverApproved": true
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "action": "already_canonical",
+      "reason": "Mongo already has approved R2 cover URL. UI failures are likely stale API memory before hydrate/restart or client fallback stickiness.",
+      "imageHost": "pub-46ce2c9bfd804c1eb4a27948271697bf.r2.dev",
+      "isLocalhost": false,
+      "coverApproved": true
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "action": "already_canonical",
+      "reason": "Mongo already has approved R2 cover URL. UI failures are likely stale API memory before hydrate/restart or client fallback stickiness.",
+      "imageHost": "pub-46ce2c9bfd804c1eb4a27948271697bf.r2.dev",
+      "isLocalhost": false,
+      "coverApproved": true
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "action": "already_canonical",
+      "reason": "Mongo already has approved R2 cover URL. UI failures are likely stale API memory before hydrate/restart or client fallback stickiness.",
+      "imageHost": "pub-46ce2c9bfd804c1eb4a27948271697bf.r2.dev",
+      "isLocalhost": false,
+      "coverApproved": true
+    }
+  ],
+  "statistics": [
+    {
+      "metric": "proposals",
+      "observed": 0,
+      "explanation": "3 Initiative Improvement Proposals exist; 3 are draft and excluded from platform statistics (submitted/accepted/partially_accepted/declined only). Zero public proposals is correct under current canonical counting.",
+      "action": "document_only"
+    },
+    {
+      "metric": "authors",
+      "observed": null,
+      "explanation": "Authors count blog capability grants only — not Initiative stewards. Do not fabricate Blog author grants from historical Initiative ownership.",
+      "action": "document_only"
+    },
+    {
+      "metric": "countries",
+      "observed": null,
+      "explanation": "Countries derive from active participation areas or member profile geography. Historical Initiatives may have region metadata without creating participation-area rows.",
+      "action": "document_only"
+    },
+    {
+      "metric": "regions",
+      "observed": null,
+      "explanation": "Regions use the same geography derivation rules as countries. CSS is regional BC/Canada in Initiative metadata; that does not auto-increment platform region statistics.",
+      "action": "document_only"
+    }
+  ],
+  "excludedLegacy": [
+    "activities",
+    "discussions",
+    "proposals",
+    "decisions"
+  ],
+  "conflicts": [],
+  "integrityIssues": [],
+  "counts": {
+    "commentsToCreate": 10,
+    "commentReactionsToCreate": 12,
+    "analysisReactionsToCreate": 1,
+    "supportRegisteredToCreate": 9,
+    "supportVisitorToCreate": 15,
+    "bookmarksToCreate": 1,
+    "viewsToCreate": 196,
+    "authToRestore": 4
+  }
+}
