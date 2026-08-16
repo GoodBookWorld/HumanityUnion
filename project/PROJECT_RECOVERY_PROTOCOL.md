@@ -4,7 +4,7 @@ Humanity Union
 
 Engineering Recovery Protocol
 
-Version 1.0
+Version 1.1
 
 ---
 
@@ -33,19 +33,51 @@ The project itself must contain all critical engineering knowledge.
 
 ---
 
+# Entry Point (AI / human)
+
+**Start here first:**
+
+`architecture/recovery/chat-agent/README.md`
+
+Paste-ready new-chat prompt:
+
+`architecture/recovery/chat-agent/NEW_CHAT_RECOVERY_PROMPT.md`
+
+That README defines the full reading sequence, authority hierarchy, architecture protections, Bash execution matrix, and working relationship. Do not duplicate it here.
+
+Canonical live handoff (current objective):
+
+`project/NEXT_SESSION.md`
+
+---
+
 # Recovery Procedure
+
+## Step 0
+
+Open:
+
+`architecture/recovery/chat-agent/README.md`
+
+Follow its recovery sequence.
+
+Estimated time:
+
+1–2 minutes to orient
+
+---
 
 ## Step 1
 
 Open:
 
-PROJECT_DASHBOARD.md
+`project/PROJECT_DASHBOARD.md`
 
 Determine:
 
-- Current Capability
-- Current Epic
-- Current Guide
+- Current focus / Pack
+- Branch
+- Project health
 
 Estimated time:
 
@@ -57,13 +89,13 @@ Estimated time:
 
 Read:
 
-PROJECT_STATE.md
+`project/PROJECT_STATE.md`
 
 Determine:
 
 - Current platform status
-- Current architecture
-- Current implementation state
+- Operator-verified staging facts vs repository-verifiable facts
+- Operator-observed blockers
 
 Estimated time:
 
@@ -75,12 +107,12 @@ Estimated time:
 
 Review:
 
-NEXT_SESSION.md
+`project/NEXT_SESSION.md`
 
 Determine:
 
 - Immediate objective
-- Next implementation task
+- Next Pack / implementation task
 
 Estimated time:
 
@@ -90,14 +122,9 @@ Estimated time:
 
 ## Step 4
 
-Review current Epic documentation.
+Review current Pack or Epic documentation named by `NEXT_SESSION.md`.
 
-Read:
-
-- Epic Specification
-- Domain Design
-- Domain Model
-- Domain Decisions (if available)
+For architecture constraints, follow the chat-agent README links to ADRs, `RECOVERY_STATUS`, Development Baseline, and lifecycle docs.
 
 Estimated time:
 
@@ -109,13 +136,17 @@ Estimated time:
 
 Verify implementation status.
 
-Run:
+Run (label location: **CURSOR AGENT** or **LOCAL MAC TERMINAL** as appropriate):
 
+```
 pnpm typecheck
+```
 
 Review:
 
+```
 git status
+```
 
 Confirm repository integrity.
 
@@ -123,11 +154,13 @@ Confirm repository integrity.
 
 ## Step 6
 
-Continue implementation.
+Continue only after owner approval when starting a new AI session.
 
-Never skip unfinished Guides.
+Never implement outside the approved Pack or Guide.
 
-Never implement functionality outside the approved Guide.
+Never let a stale live-state document override a normative ADR.
+
+Never treat superseded ADR-002 (Activity-root) as current architecture.
 
 ---
 
@@ -140,7 +173,8 @@ Always follow:
 - Engineering Methodology
 - Domain First
 - Stable Domains
-- One Guide = One Engineering Cycle
+- One Guide / one Pack = one Engineering Cycle
+- Chat Agent Continuity maintenance rule (chat-agent README + `.cursor/rules.md`)
 
 ---
 
@@ -148,19 +182,19 @@ Always follow:
 
 Confirm:
 
+✓ Chat-agent README reviewed
+
 ✓ Dashboard reviewed
 
 ✓ Project State reviewed
 
 ✓ Next Session reviewed
 
-✓ Current Guide identified
+✓ Current Pack/Guide identified
 
 ✓ Repository verified
 
-✓ TypeScript verified
-
-✓ Documentation synchronized
+✓ Documentation authority hierarchy understood
 
 ---
 
@@ -182,25 +216,22 @@ Repository state becomes authoritative for implementation.
 
 Documentation is then synchronized.
 
+A stale live-state document must not override a normative ADR.
+
+A superseded ADR must not override its replacement.
+
 ---
 
 # AI Assistant Recovery
 
 When starting a new AI session:
 
-Provide:
+1. Open `architecture/recovery/chat-agent/README.md` (or paste `NEW_CHAT_RECOVERY_PROMPT.md`)
+2. Follow the README recovery sequence
+3. Read `project/NEXT_SESSION.md` for the current objective
+4. Return a recovery report; wait for owner approval before issuing Cursor work
 
-1. PROJECT_DASHBOARD.md
-
-2. PROJECT_STATE.md
-
-3. Current Epic
-
-4. Current Guide
-
-5. Current Cursor report
-
-The new AI session should be able to continue development without reconstructing project history.
+The new AI session should be able to continue development without reconstructing project history from chat alone.
 
 ---
 

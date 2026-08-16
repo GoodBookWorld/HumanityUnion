@@ -1,10 +1,10 @@
 # Humanity Union — Administration Architecture v1.0
 
-**Pack:** Admin Architecture Pack 01  
-**Status:** Canonical architecture (documentation only)  
-**Date:** 2026-08-11  
+**Pack:** Admin Architecture Pack 01
+**Status:** Canonical architecture (documentation only)
+**Date:** 2026-08-11
 
-**This pack does not implement an Admin Console UI.**  
+**This pack does not implement an Admin Console UI.**
 **This pack does not change production authorization behavior.**
 
 ---
@@ -177,7 +177,7 @@ Human-facing bundles for Admin Console and docs. Each maps to capabilities — n
 | Moderator | Content moderation (future-first-class) | UGC / reports / comments — **not** grant management |
 | Administrator | Platform operations | Capability grants, ops, exceptional workflows |
 
-**Compatibility note (do not change production in Pack 01):**  
+**Compatibility note (do not change production in Pack 01):**
 Today `AuthRole.moderator` maps to Blog Editor capabilities. Future architecture **separates** Moderator from Editor. Migration keeps the mapping as an explicit compatibility layer until Moderator capabilities exist and JWT/grant issuance supports them.
 
 ---
@@ -282,11 +282,11 @@ Administration **must not** expose by default:
 
 Any future exceptional legal/safety access requires:
 
-1. Explicit product/legal policy  
-2. Dedicated capability (e.g. `communications.exceptional_access`)  
-3. Step-up authentication  
-4. Immutable audit with reason  
-5. Separate architecture pack  
+1. Explicit product/legal policy
+2. Dedicated capability (e.g. `communications.exceptional_access`)
+3. Step-up authentication
+4. Immutable audit with reason
+5. Separate architecture pack
 
 **Not built in Pack 01. Not planned as ordinary Admin UI.**
 
@@ -300,11 +300,11 @@ Admins cannot silently act as another Participant.
 
 If ever reconsidered (out of scope):
 
-- Explicit mode  
-- Visible UI banner  
-- Limited permissions  
-- Full audit  
-- No sensitive operations (messages, votes, grants)  
+- Explicit mode
+- Visible UI banner
+- Limited permissions
+- Full audit
+- No sensitive operations (messages, votes, grants)
 
 Current architecture: **no impersonation**.
 
@@ -427,46 +427,46 @@ Authorized Admin
 
 ### 20.1 Author Applications
 
-Reuse Author Access backend (`blog_author_applications`, decide APIs).  
-Admin/Editor lists → open → approve / request changes / decline.  
+Reuse Author Access backend (`blog_author_applications`, decide APIs).
+Admin/Editor lists → open → approve / request changes / decline.
 **No second application system.**
 
 ### 20.2 Blog administration
 
-Surfaces may include: Author Applications, Authors, Editorial Review, Published/Archived Posts, Comment Moderation.  
+Surfaces may include: Author Applications, Authors, Editorial Review, Published/Archived Posts, Comment Moderation.
 Data remains in Blog domain; UI calls Blog services.
 
 ### 20.3 Comment moderation
 
-Reuse Blog Pack 07 seam: pending_review list, approve, remove.  
+Reuse Blog Pack 07 seam: pending_review list, approve, remove.
 **Do not recreate comment persistence.**
 
 ### 20.4 Safety administration
 
-Admin / Safety reviewer may see: content reference, surface, Safety state, review status, human decision, reason, timestamps.  
+Admin / Safety reviewer may see: content reference, surface, Safety state, review status, human decision, reason, timestamps.
 
 **Do not expose:** provider secrets, private model prompts, security-sensitive internals, raw provider payloads indiscriminately.
 
 ### 20.5 Media administration
 
-Audit finding: human media moderator role **not implemented**; automated moderation exists for shared documents.  
+Audit finding: human media moderator role **not implemented**; automated moderation exists for shared documents.
 Future: pending media queue using existing moderation architecture — **no new media domain**.
 
 ### 20.6 Membership administration
 
-Self-service + payment activation today; no admin queue.  
-Future Admin may support applications/status review **without** equating Membership to account access.  
+Self-service + payment activation today; no admin queue.
+Future Admin may support applications/status review **without** equating Membership to account access.
 Participant remains foundational identity.
 
 ### 20.7 Participant account administration
 
-Allowed future ops (bounded projections): public/basic operational state, verification state, support-related flags, restriction/suspension when designed.  
+Allowed future ops (bounded projections): public/basic operational state, verification state, support-related flags, restriction/suspension when designed.
 
 **Not allowed:** unrestricted profile edit; browsing private fields without purpose; DM contents.
 
 ### 20.8 Suspension / restriction
 
-`auth_users.status` includes `disabled` (login blocked); profile may be `suspended` for public projection.  
+`auth_users.status` includes `disabled` (login blocked); profile may be `suspended` for public projection.
 **No admin suspension API today — do not implement in Pack 01.**
 
 Future requirements: reason, scope, start, expiry, issuer, appeal reference, audit. Prefer restriction over destructive deletion.
@@ -489,11 +489,11 @@ Admin UI must not present generic destructive **Delete** everywhere.
 
 Administrators must **not** silently rewrite:
 
-- Published Lifecycle versions  
-- Collective Decision results  
-- Petition signatures / statistics  
-- Civic Archive versions  
-- Audit records  
+- Published Lifecycle versions
+- Collective Decision results
+- Petition signatures / statistics
+- Civic Archive versions
+- Audit records
 
 Corrections use additive versioning / correction architecture where it exists — never hidden overwrite.
 
@@ -521,9 +521,9 @@ userAgent?       # only if justified
 
 ### Rules
 
-- **Append-only** — ordinary UI cannot edit/delete audit history  
-- **Minimize personal data** — no passwords, tokens, SMTP secrets, full private messages, full private documents, indiscriminate request bodies  
-- **Visibility:** `platform.audit.read` (Administrator / dedicated Audit capability) — **not** automatic for Editor/Moderator  
+- **Append-only** — ordinary UI cannot edit/delete audit history
+- **Minimize personal data** — no passwords, tokens, SMTP secrets, full private messages, full private documents, indiscriminate request bodies
+- **Visibility:** `platform.audit.read` (Administrator / dedicated Audit capability) — **not** automatic for Editor/Moderator
 
 ---
 
@@ -533,12 +533,12 @@ Future Admin Console distinguishes ordinary vs high-impact actions.
 
 High-impact examples (require explicit confirmation + reason):
 
-- Grant / revoke Administrator  
-- Revoke Editor  
-- Suspend / restrict account  
-- Archive public content (policy cases)  
-- Safety override publish  
-- Platform settings write  
+- Grant / revoke Administrator
+- Revoke Editor
+- Suspend / restrict account
+- Archive public content (policy cases)
+- Safety override publish
+- Platform settings write
 
 ---
 
@@ -553,7 +553,7 @@ High-impact examples (require explicit confirmation + reason):
 | Admin viewed a record | **No** |
 | Queue sorting / search | **No** |
 
-Reuse `MailDeliveryService` / notification pipeline.  
+Reuse `MailDeliveryService` / notification pipeline.
 Admin Console must **not** send arbitrary SMTP mail.
 
 ---
@@ -571,7 +571,7 @@ Admin Console must **not** send arbitrary SMTP mail.
 
 ### Step-up authentication (roadmap)
 
-Evaluate for: grant administrator, suspend account, critical settings write.  
+Evaluate for: grant administrator, suspend account, critical settings write.
 If unsupported today: document as security roadmap — **do not invent insecure pseudo-step-up**.
 
 ---
@@ -625,12 +625,12 @@ Operational, not vanity analytics.
 
 Bounded cards (examples):
 
-- Pending Author Applications  
-- Pending Blog Reviews  
-- Pending Comment Reviews  
-- Pending Media Reviews (when exists)  
-- Membership Reviews (when exists)  
-- System Mail / Outbox health (non-secret)  
+- Pending Author Applications
+- Pending Blog Reviews
+- Pending Comment Reviews
+- Pending Media Reviews (when exists)
+- Membership Reviews (when exists)
+- System Mail / Outbox health (non-secret)
 
 **No** engagement / popularity dashboards by default.
 
@@ -651,7 +651,7 @@ Secrets remain deployment / server configuration.
 
 ## 31. Assistant in Admin
 
-Assistant may explain queues, permissions, and workflows.  
+Assistant may explain queues, permissions, and workflows.
 
 Must **not**: grant/revoke, approve content, suspend accounts, Safety override, read private communications.
 
@@ -661,9 +661,9 @@ Use bounded authorized context only — no automatic dump of admin records into 
 
 ## 32. Translation & Search
 
-- Admin UI may use Interface Language later.  
-- Administrative records remain canonical.  
-- Do not machine-translate audit facts into stored alternate truth.  
+- Admin UI may use Interface Language later.
+- Administrative records remain canonical.
+- Do not machine-translate audit facts into stored alternate truth.
 - Admin search is **scoped** (applications, posts, authorized operational Participant fields) — **not** Global Search plus hidden private data.
 
 ---
@@ -701,7 +701,7 @@ New administration capabilities are **first-party modules**.
 
 ## 35. Design System & Density
 
-Reuse Design System Pack 01 (typography, buttons, forms, cards, banners, focus, colors).  
+Reuse Design System Pack 01 (typography, buttons, forms, cards, banners, focus, colors).
 
 Admin may use denser lists/tables than public pages, but:
 
@@ -726,7 +726,7 @@ Clear queues + clear status + clear actions + clear audit
 
 ## 37. Operational Health Boundary
 
-Read-only future surfaces: mail delivery health, outbox health, provider configuration **state** (not secrets), background processing state.  
+Read-only future surfaces: mail delivery health, outbox health, provider configuration **state** (not secrets), background processing state.
 
 Do not turn Admin Console into full infrastructure monitoring.
 
@@ -761,8 +761,8 @@ Legend: **YES** = allowed when capability present; **OWN** = own resource only; 
 | Impersonate Participant | **NO** | **NO** | **NO** | **NO** | **NO** | **NO** |
 | Alter votes/signatures invisibly | **NO** | **NO** | **NO** | **NO** | **NO** | **NO** |
 
-\* Participants may **apply** for authorship (not create drafts until Author).  
-† Still subject to Safety (`needs_review` / `rejected` block silent publish).  
+\* Participants may **apply** for authorship (not create drafts until Author).
+† Still subject to Safety (`needs_review` / `rejected` block silent publish).
 ‡ Only existing Administrator + confirmation + reason + audit (§60).
 
 ---
@@ -771,11 +771,11 @@ Legend: **YES** = allowed when capability present; **OWN** = own resource only; 
 
 Granting Administrator is high risk:
 
-1. Actor must already hold authorized Administrator (or controlled bootstrap)  
-2. Explicit confirmation in UI  
-3. Reason required  
-4. Append-only audit  
-5. Future step-up auth  
+1. Actor must already hold authorized Administrator (or controlled bootstrap)
+2. Explicit confirmation in UI
+3. Reason required
+4. Append-only audit
+5. Future step-up auth
 
 **Editor / Moderator cannot grant Administrator.**
 
@@ -785,15 +785,15 @@ Granting Administrator is high risk:
 
 ### Current reality
 
-- No default `admin/admin` credentials  
-- No automatic promotion of first registered user  
-- JWT `admin` set via controlled insert (e2e/scripts) or operational DB change  
-- Blog `grantBlogCapabilities` for Administrator requires existing administrator / JWT admin  
-- Dev AuthIdentity bootstrap uses `member` — not admin  
+- No default `admin/admin` credentials
+- No automatic promotion of first registered user
+- JWT `admin` set via controlled insert (e2e/scripts) or operational DB change
+- Blog `grantBlogCapabilities` for Administrator requires existing administrator / JWT admin
+- Dev AuthIdentity bootstrap uses `member` — not admin
 
 ### Preferred ongoing strategy
 
-Controlled deployment / one-time bootstrap command or explicitly configured Participant ID with **one-time audited grant**.  
+Controlled deployment / one-time bootstrap command or explicitly configured Participant ID with **one-time audited grant**.
 
 **Forbidden:** hardcoded passwords; silent first-user promotion; undocumented role flips.
 
@@ -803,15 +803,15 @@ Controlled deployment / one-time bootstrap command or explicitly configured Part
 
 Cover:
 
-- Capability grants / revocation / scope  
-- Authorization allow/deny  
-- Privacy matrix (no DM leakage)  
-- Audit append-only  
-- No impersonation  
-- No secret exposure in Admin APIs  
-- High-impact confirmation required  
-- Stale conflict (`expectedUpdatedAt`)  
-- Compatibility: JWT admin ↔ grant dual-read during migration  
+- Capability grants / revocation / scope
+- Authorization allow/deny
+- Privacy matrix (no DM leakage)
+- Audit append-only
+- No impersonation
+- No secret exposure in Admin APIs
+- High-impact confirmation required
+- Stale conflict (`expectedUpdatedAt`)
+- Compatibility: JWT admin ↔ grant dual-read during migration
 
 No production implementation required in Pack 01.
 
@@ -819,16 +819,18 @@ No production implementation required in Pack 01.
 
 ## 42. Implementation Roadmap
 
-| Pack | Focus |
-|------|--------|
-| **Admin Foundation Pack 02** | Canonical Capability Resolver + immutable Audit foundation + wrap existing checks |
-| **Admin Console Pack 03** | `/admin` shell + dashboard + Author Applications |
-| **Admin Console Pack 04** | Blog Editorial / Comment Moderation (reuse Workspace + Pack 07 APIs) |
-| **Admin Console Pack 05** | Membership / Media / Participant operational administration |
-| **Admin Security Pack** | Step-up auth / high-impact controls / privileged session policy |
-| **Moderator Separation Pack** | First-class Moderator capabilities; retire `moderator→editor` compat carefully |
+| Pack | Focus | Status (as of Continuity Pack 01) |
+|------|--------|-----------------------------------|
+| **Admin Foundation Pack 02** | Canonical Capability Resolver + immutable Audit foundation + wrap existing checks | **Implemented** in repository (see companion admin docs + tests) |
+| **Admin Console Pack 03** | `/admin` shell + dashboard + Author Applications | **Implemented** in repository |
+| **Admin Console Pack 04** | Blog Editorial / Comment Moderation (reuse Workspace + Pack 07 APIs) | **Implemented** in repository |
+| **Admin Console Pack 05** | Membership / Media / Participant operational administration (+ initiative admin/oversight surfaces) | **Implemented** in repository; operator reports Pack 05 committed/pushed — see `project/PROJECT_STATE.md` |
+| **Admin Security Pack** | Step-up auth / high-impact controls / privileged session policy | **Not started** |
+| **Moderator Separation Pack** | First-class Moderator capabilities; retire `moderator→editor` compat carefully | **Not started** |
 
-Do not implement Pack 02 in this pack.
+Packs 02–05 above are no longer “future-only” relative to this Pack 01 document. Remaining rows are still future work.
+
+This Pack 01 document itself remains the architecture blueprint; it does not re-verify live staging Admin UI.
 
 ---
 
@@ -842,14 +844,14 @@ Admin Architecture must remain compatible with Blog, Lifecycle, Membership, Safe
 
 ## 44. Explicit Non-Goals (Pack 01)
 
-- No Admin Console UI pages  
-- No production authorization behavior change  
-- No second Participant identity  
-- No private-message admin access  
-- No impersonation  
-- No plugin system  
-- No suspension API implementation  
-- No commit / staging  
+- No Admin Console UI pages
+- No production authorization behavior change
+- No second Participant identity
+- No private-message admin access
+- No impersonation
+- No plugin system
+- No suspension API implementation
+- No commit / staging
 
 ---
 
@@ -859,4 +861,5 @@ Admin Architecture must remain compatible with Blog, Lifecycle, Membership, Safe
 |-------|-------|
 | Version | 1.0 |
 | Pack | Admin Architecture Pack 01 |
-| Next | Admin Foundation Pack 02 — Canonical Capability Resolver & Immutable Audit Foundation |
+| Status note | Continuity Pack 01: roadmap Packs 02–05 marked implemented in repo; next Admin product Packs are Security / Moderator Separation (see §42) |
+| Original next (at Pack 01 authorship) | Admin Foundation Pack 02 — Canonical Capability Resolver & Immutable Audit Foundation |

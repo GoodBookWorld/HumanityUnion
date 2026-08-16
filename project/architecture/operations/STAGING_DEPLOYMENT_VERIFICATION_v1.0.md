@@ -1,9 +1,11 @@
 # Staging Deployment Verification v1.0
 
-**Status:** IN PROGRESS (code readiness advanced; external provisioning pending user dashboards)  
-**Date:** 2026-08-13  
-**Scope:** First real staging environment — Render Web + Render API + Atlas + R2 + Cloudflare DNS  
-**Non-goals:** Production cutover (`huws.org` / `api.huws.org`), production user migration, Admin Console, Push
+**Status:** STAGING ENVIRONMENT IN USE (operator-provisioned hosts; formal checklist rows below may still say PENDING until re-verified in a dedicated ops Pack)
+**Date:** 2026-08-13 (status wording refreshed 2026-08-16 — Continuity Pack 01)
+**Scope:** First real staging environment — Render Web + Render API + Atlas + R2 + Cloudflare DNS
+**Non-goals:** Production cutover (`huws.org` / `api.huws.org`), production user migration, Push
+
+**Note:** Admin Console Packs 02–05 are implemented in the repository (see `project/architecture/administration/ADMIN_ARCHITECTURE_v1.0.md` §42). This verification document does **not** invent completed HTTPS/auth/PWA smoke results — leave §14 PENDING until explicitly re-verified.
 
 Related:
 
@@ -243,16 +245,18 @@ Verify live:
 
 ---
 
-## 15. Current blocker / risk classification (pre-provision)
+## 15. Current blocker / risk classification
 
 | Severity | Item |
 |---|---|
-| BLOCKER (ops) | Staging hosts not yet provisioned — cannot complete HTTPS/auth/PWA verification |
+| OPEN (product/staging data) | Operator-observed: Initiative images UI, historical Participant login, unrestored comments/likes/support — see `project/NEXT_SESSION.md` (Pack 04) |
+| HIGH (ops hygiene) | Formal §14 verification log still contains PENDING rows — do not treat this table as a completed smoke certificate |
 | HIGH (mitigated in code) | Media metadata durability → Mongo `media_upload_records` |
 | HIGH (mitigated in code) | Shared Document bytes on ephemeral disk → private R2 seam + validation |
 | MEDIUM | Staging Atlas backup tier may be weaker than production needs |
-| MEDIUM | Full live smoke (lifecycle/blog/workspace) blocked on provision |
 | LOW | API `PLATFORM_MODE=staging` maps to beta behavior (documented) |
+
+**Continuity Pack 01 correction:** earlier “hosts not yet provisioned” wording is obsolete relative to operator-provisioned staging use. This file still does not claim a full automated verification pass.
 
 ---
 

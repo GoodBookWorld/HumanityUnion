@@ -40,3 +40,21 @@ These rules apply to every future task inside the Humanity Union project.
 - Never replace a carefully curated barrel with generated wildcard exports.
 
 See `docs/BARREL_EXPORT_POLICY.md` for the full policy.
+
+## Chat Agent Continuity
+
+AI recovery entry: `architecture/recovery/chat-agent/README.md`
+Canonical live handoff: `project/NEXT_SESSION.md`
+
+Before any Pack may report **COMPLETE**:
+
+1. Update `project/NEXT_SESSION.md`.
+2. Update current-focus / last-completed in `project/PROJECT_STATE.md`.
+3. Update `project/PROJECT_DASHBOARD.md` only when capability/Pack status actually changed.
+4. Add a `project/WORK_LOG.md` entry when useful for historical traceability.
+5. Update `architecture/recovery/chat-agent/README.md` only when recovery paths, authority structure, environment topology, or major current focus changed.
+6. Do **not** paste full Pack reports into `architecture/recovery/chat-agent/`.
+
+Every Bash/operator instruction must explicitly label the execution location: **CURSOR AGENT**, **LOCAL MAC TERMINAL**, **RENDER API WEB SHELL**, or **RENDER WEB WEB SHELL**.
+
+A stale live-state document must not override a normative ADR. Superseded ADR-002 (Activity-root) must not override `ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0`.

@@ -1,10 +1,10 @@
 # Staging Data Migration Execution Plan v1.0
 
-**Pack:** STAGING DATA MIGRATION PACK 02  
-**Mode:** Controlled import (script defaults to DRY RUN)  
-**Target:** `humanity_union_staging`  
-**Source identity:** `humanity_union_dev`  
-**Source Initiatives:** `apps/api/.runtime/*.json` (file persistence)
+**Pack:** STAGING DATA MIGRATION PACK 02 (+ Pack 02A portable source)
+**Mode:** Controlled import (script defaults to DRY RUN)
+**Target:** `humanity_union_staging`
+**Source identity:** `humanity_union_dev`
+**Source Initiatives (current):** Pack 02A portable bundle `architecture/recovery/staging-data-source-v1/` (version-controlled; checksum-validated). Do **not** use `apps/api/.runtime/*.json` as the migration source — that path is local-only and unavailable on Render.
 
 ---
 

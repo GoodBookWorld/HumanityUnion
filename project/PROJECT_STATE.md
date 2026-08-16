@@ -4,7 +4,7 @@ Humanity Union
 
 Project State
 
-Version 1.0
+Version 1.1
 
 ---
 
@@ -12,9 +12,12 @@ Version 1.0
 
 This document represents the current engineering state of the Humanity Union platform.
 
-It is the authoritative summary of platform progress.
+It is the authoritative **summary** of platform progress for live work.
 
-It must be updated after every completed Guide.
+It must be updated after every completed Guide or Pack (current-focus / last-completed at minimum).
+
+Canonical next-task handoff: `project/NEXT_SESSION.md`
+AI recovery entry: `architecture/recovery/chat-agent/README.md`
 
 ---
 
@@ -26,15 +29,19 @@ Humanity Union
 
 Development Stage:
 
-Foundation
+Staging environment active; production cutover not the current focus
 
 Architecture Status:
 
-Stable
+Stable — Initiative is the sole canonical civic root (Accepted ADR)
 
 Engineering Status:
 
 Operational
+
+Primary branch:
+
+`staging`
 
 ---
 
@@ -42,288 +49,119 @@ Operational
 
 Platform Version:
 
-4.0
+4.0+ (staging launch-ready baseline + Admin + historical migration tooling)
 
 ---
 
-# Current Capability
+# Current Focus
 
-Capability 02
+**Last completed (docs):** CHAT AGENT CONTINUITY PACK 01
 
-Participation
+**Next (see NEXT_SESSION):** STAGING HISTORICAL DATA RECONCILIATION PACK 04
 
-Status:
-
-In Progress
+Do not start Pack 04 until the owner issues that Pack task.
 
 ---
 
-# Completed Epics
+# Architecture baseline (normative pointers)
+
+- Initiative sole civic root: `architecture/decisions/ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0.md`
+- Recovered baseline: `architecture/recovery/RECOVERY_STATUS.md`
+- Development rules: `architecture/DEVELOPMENT_BASELINE.md`
+- Lifecycle / Author Mode: `architecture/lifecycle/LIFECYCLE_STAGE_INTELLIGENCE_MODEL_v1.0.md`
+- Forward plan: `architecture/ARCHITECTURE_EVOLUTION_ROADMAP_v2.0.md`
+
+Superseded: ADR-002 (Activity as universal starting object) — historical only.
+
+---
+
+# Completed Capability Epics (foundation)
 
 Capability 01
 
-Epic 01
-
-Authentication
-
-Status:
-
-Completed
-
-Epic 02
-
-Member Profile
-
-Status:
-
-Completed
-
-Epic 03
-
-Member Preferences
-
-Status:
-
-Completed
+✓ Epic 01 Authentication
+✓ Epic 02 Member Profile
+✓ Epic 03 Member Preferences
 
 Capability 02
 
-Epic 01
-
-Initiative Foundation
-
-Status:
-
-Completed
-
-Epic 02
-
-Collaborative Analysis
-
-Status:
-
-Completed
+✓ Epic 01 Initiative Foundation
+✓ Epic 02 Collaborative Analysis
+✓ Epic 03 Collective Decision Framework
 
 ---
 
-# Active Epic
+# Recent Pack tracks (repository-verifiable)
 
-None
+**Repository-verifiable** means present in git (modules, tests, docs, commits). Does not by itself prove live staging `--execute` outcomes.
 
-Capability 02
-
-Epic 03
-
-Status:
-
-Planned
-
-Name:
-
-To be defined during Epic Planning.
+| Track | Repo evidence (examples) |
+|-------|---------------------------|
+| Admin Foundation Pack 02 | `project/architecture/administration/CANONICAL_CAPABILITY_RESOLVER.md`, admin foundation tests |
+| Admin Console Packs 03–05 | Admin Panel features + `admin-panel-pack05` / initiative visibility tests; commits through `521f201` |
+| Staging Data Migration Packs 01–02 / 02A | `architecture/recovery/STAGING_DATA_MIGRATION_*`, `staging-data-source-v1/`, `apps/api/src/modules/staging-data-migration/` |
+| Staging Media Pack 03 | `architecture/recovery/STAGING_MEDIA_*`, `staging-media-source-v1/`, `apps/api/src/modules/staging-historical-media/` |
+| Staging baseline | `5954d54` STAGING BASELINE; ops doc `project/architecture/operations/STAGING_DEPLOYMENT_VERIFICATION_v1.0.md` |
 
 ---
 
-# Current Guide
+# Staging data — OPERATOR-VERIFIED facts
 
-Guide 07
+The following are **operator-verified** staging outcomes (explicitly distinguished from pure repository evidence). Treat as live staging facts for planning; re-verify in Pack 04 where needed.
 
-Epic 02 Architecture Review
+- Admin Panel Pack 05 was committed and pushed.
+- Historical staging data migration `--execute` completed successfully.
+- Four historical Participants were added; staging admin remained protected.
+- Five historical Initiatives were added.
+- Historical Vlad Gmail remains a **separate** Participant from staging-admin Vlad HUWS.
+- Isabella’s Initiative is intentional working/test data (not disposable).
+- CSS is regional (British Columbia / Canada; `participationScope: region`), not World scope.
+- Historical Initiative media and four Participant avatars were uploaded to Cloudflare R2.
+- A second media migration dry-run reported canonical skips (`skip_already_canonical`) and zero conflicts.
 
-Status:
-
-Completed
-
----
-
-# Current Domain
-
-Participation
-
-Aggregate Root:
-
-CollaborativeAnalysis
-
-Status:
-
-Stable
+Identity / civic sources (repo design): historical identity Mongo `humanity_union_dev`; civic portable bundle `architecture/recovery/staging-data-source-v1/`; media bundle `architecture/recovery/staging-media-source-v1/`; target DB `humanity_union_staging`.
 
 ---
 
-# Domain Components
+# Staging — OPERATOR-OBSERVED unresolved issues
 
-Completed:
+Label: **operator-observed until verified by the next engineering Pack**.
 
-✓ Domain Design
-
-✓ Domain Model
-
-✓ Domain Decisions
-
-✓ Aggregate Root
-
-✓ Value Objects
-
-✓ Bootstrap Store
-
-✓ API
-
-✓ Workspace
-
-✓ Public Participation Projection
-
-✓ Architecture Review
-
-Capability 02 — Epic 01:
-
-✓ Domain Design
-
-✓ Domain Model
-
-✓ Domain Decisions
-
-✓ Aggregate Root
-
-✓ Value Objects
-
-✓ Bootstrap Store
-
-✓ API
-
-✓ Workspace
-
-✓ Public Initiative Projection
-
-✓ Platform Integration
-
-✓ Architecture Review
-
-Capability 02 — Epic 02:
-
-✓ Domain Design
-
-✓ Domain Model
-
-✓ Domain Decisions
-
-✓ Aggregate Root
-
-✓ Value Objects
-
-✓ Bootstrap Store
-
-✓ API
-
-✓ Workspace
-
-✓ Public Collaborative Analysis Projection
-
-✓ Platform Integration
-
-✓ Architecture Review
+1. Initiative images still do not display correctly in the actual Web UI.
+2. Historical Participants cannot currently log in.
+3. Historical comments and likes/dislikes/support history are not restored.
+4. Remaining historical data needs **canonical reconciliation** rather than bulk-copying obsolete parallel civic roots (Activity/Discussion/Proposal/Decision as roots).
 
 ---
 
-# Platform Architecture
+# Active Epic / Guide
 
-Current Core Domains:
+None as Cap-02 Guide cycle.
 
-- Authentication
-- Member
-- Member Preferences
-- Initiative
-- Collaborative Analysis
-
-Current Shared Types:
-
-Operational
-
----
-
-# Documentation Status
-
-Blueprint:
-
-Complete
-
-Architectural Principles:
-
-Complete
-
-Engineering Methodology:
-
-Operational
-
-Capability Documentation:
-
-Operational
-
-Epic Documentation:
-
-Operational
-
-Implementation Guides:
-
-Operational
-
-Reviews:
-
-Operational
-
----
-
-# Repository
-
-Primary Branch:
-
-main
-
-Working Rule:
-
-Always maintain a clean repository after Guide completion.
-
----
-
-# Engineering Health
-
-Architecture:
-
-Excellent
-
-Documentation:
-
-Excellent
-
-Implementation:
-
-Excellent
-
-Technical Debt:
-
-Minimal
+Current engineering cycle type: **Staging Pack** (reconciliation), not Epic Guide.
 
 ---
 
 # Immediate Objective
 
-Plan Capability 02 Epic 03.
+See `project/NEXT_SESSION.md` — **STAGING HISTORICAL DATA RECONCILIATION PACK 04**.
 
 ---
 
 # Long-Term Objective
 
-Complete Capability 01
+Preserve Initiative-centric Participation architecture.
 
-Human Identity
+Evolve via `architecture/ARCHITECTURE_EVOLUTION_ROADMAP_v2.0.md`.
 
-Complete Capability 02
-
-Participation
+Production cutover remains a later ops track — not the current Pack 04 focus.
 
 ---
 
 # Rule
 
-PROJECT_STATE.md must always reflect the actual state of the platform.
+`PROJECT_STATE.md` must always reflect the actual state of the platform.
 
-If this document becomes outdated, it must be updated before new implementation begins.
+A stale live-state document must not override a normative ADR.
+
+If this document becomes outdated, update it before new implementation begins.
