@@ -1,0 +1,3717 @@
+{
+  "pack": "STAGING_DATA_MIGRATION_PACK_01",
+  "mode": "dry-run",
+  "generatedAt": "2026-08-16T03:56:36.345Z",
+  "source": {
+    "database": "humanity_union_dev",
+    "counts": {
+      "auth_users": 154,
+      "members": 4358,
+      "member_profiles": 6837,
+      "memberships": 20,
+      "initiatives": 1,
+      "initiative_analyses": 0,
+      "initiative_improvement_proposals": 0,
+      "initiative_version_revisions": 0,
+      "initiative_revision_drafts": 0,
+      "decision_sessions": 0,
+      "initiative_collective_decisions": 0,
+      "petitions": 11,
+      "petition_signatures": 0,
+      "initiative_implementation_commitments": 0,
+      "initiative_implementation_trackings": 0,
+      "initiative_public_impacts": 0,
+      "official_responses": 0,
+      "public_civic_archive_records": 0,
+      "participant_actions": 160,
+      "initiative_support_registered_signals": 9,
+      "initiative_comments": 13,
+      "blog_posts": 0,
+      "activities": 1785,
+      "discussions": 789,
+      "proposals": 563,
+      "decisions": 0
+    },
+    "authUserCount": 154,
+    "nonExampleAuthUserCount": 17,
+    "memberCount": 200,
+    "profileCount": 200,
+    "initiativeCount": 1,
+    "legacyActivities": {
+      "count": 1785,
+      "distinctCreators": 1754,
+      "sample": [
+        {
+          "activityId": "8b64ac95-ad8c-4b17-9734-9d5ef93d111e",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "e2f1e664-a938-46c3-aee4-1ffa677d486d",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:35:41.559Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "43b6d023-7f34-4672-bf3e-cc5ece0d1b15",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "0e626388-90e3-490d-8016-e8384079a857",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:35:45.803Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "3c703606-44f6-4ab9-a610-c781667fe7cc",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "75ee3769-4395-46e9-8cf3-bc2d13c9b540",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:35:50.933Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "84859793-1262-4c99-a6d5-b10e944e1cdb",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "8239262d-b07a-48df-b305-4c0a1ae53381",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:35:53.242Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "2c87d870-48f5-44db-8413-73716cf27a8c",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "7c7805e1-2df4-4ca4-9812-4e5757703428",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:36:09.422Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "1be7280f-5788-44ac-9c37-46603a7d0849",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "45b7e5d6-773d-40a0-96f2-2d74139bae9d",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:36:11.148Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "ebb80615-ea03-4a7b-b8e4-1f072828ad86",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "1b85defb-5167-435d-bd84-932d02e5fdab",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:36:13.093Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "e1d44fd7-8838-40be-9b15-2c236ec9f2ea",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "8c8b532e-0338-48ea-ab86-338e6f578444",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:36:14.768Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "03a27666-41cd-4ed9-9a6c-7cf737f3839c",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "acfc0da0-36e4-4412-baa1-314891f6f65f",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:36:16.655Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "a034daf6-a2bb-439e-8e5d-90b766d4d831",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "a0d189e3-011d-4e7a-9c12-911822070258",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:46:05.918Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "4af5f450-ed94-4410-875c-157e5126ae97",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "2a88b232-ac74-4f7e-8883-679d850ddc2f",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:46:10.216Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "c3b75a52-a650-49f3-9976-5923d0fa928f",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "3cdcdddb-f80b-4b75-a19a-a705023c6d71",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:46:17.502Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "1db16f5c-f556-4e65-9622-684e2cbcbb64",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "e61d345b-62fc-4693-a363-aeb069f7238e",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:46:19.785Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "f52e3689-a2aa-409a-888d-fbdef1634ee4",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "98f1f4b0-96aa-4c08-ac56-faaa2fb28811",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:46:39.836Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "7129eb26-53c6-46af-ad49-fc36fa29291a",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "6c89f9f1-ef4e-4c83-919f-1a6ba31a1855",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:46:41.830Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "23b1bf95-444e-48dd-82e4-19a46e142bcc",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "35113d12-27c0-40cc-8375-ad5103c03eb8",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:46:43.943Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "e012b920-4ebf-4073-9690-11f4e8ec4bf8",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "4a4741bb-0a0d-4434-956d-4efb355f0a94",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:46:46.455Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "d69bd858-0898-4aa4-8ff5-42f48b6d6004",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "8e9f335d-7e12-489a-9045-5c3c68c197f2",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:46:48.771Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "2ceb1256-9127-438d-9520-902a1863755c",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "5097f720-6141-483a-88cd-61d1487d716a",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:53:34.010Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        },
+        {
+          "activityId": "6c9152ff-4582-4756-96a9-265765fc6ada",
+          "title": "Community Water Quality Review",
+          "status": "open",
+          "creatorMemberId": "806da13a-0b45-49c8-b324-90bf539dd3b3",
+          "visibility": "public",
+          "activityType": "civic_participation",
+          "createdAt": "2026-07-22T20:53:37.493Z",
+          "classification": "LEGACY_DO_NOT_MIGRATE_DIRECTLY"
+        }
+      ]
+    },
+    "participants": [
+      {
+        "userId": "2995d359-b8dc-4ff1-ae8c-a110c85ba1fb",
+        "memberId": "8566dfe2-2b27-4cec-a336-0f362e7881c6",
+        "displayName": "Participation Area Verify User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "pa***@example.com",
+        "emailFingerprint": "0c4f271afa71",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "a30354be-b732-4855-b469-46248c39cbe6",
+        "memberId": "5e3e1b1f-f580-46d8-9829-f2d7c96c4cdb",
+        "displayName": "Workspace Personalization User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "wo***@example.com",
+        "emailFingerprint": "7e3a4e4581d3",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "7f34718f-29e3-4cf8-9626-ec5835e6a410",
+        "memberId": "791e178c-87e2-420e-b492-a9318cf4836f",
+        "displayName": "Token User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "2daf170fcb76",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "18f235e6-55fc-46d4-b7c6-f65c89792155",
+        "memberId": "167bc375-2896-47db-a575-29ae7bc79e9f",
+        "displayName": "Email Verify User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "db58f7ec50c1",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "0eb42921-7d0a-438a-8a07-97f4644cd4d4",
+        "memberId": "c5f40ab2-8d38-463b-9c4f-cbef57f495b1",
+        "displayName": "Verify Flow User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "cb68d2feeb56",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2a97e4e8-8c99-4703-aa81-51036a4cb358",
+        "memberId": "2bd6e972-bbfa-4de6-8368-9e6c5b1fc8ae",
+        "displayName": "Gate User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "32c635391b34",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2092c16d-3f2d-4dd1-a66d-0ead0777f458",
+        "memberId": "d72835fc-7835-413a-acea-bd38168571f7",
+        "displayName": "Reset User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "63d40cffe7a4",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "84a0d262-4c24-4e8f-bc52-086806ee09c4",
+        "memberId": "172b1ae8-656b-4265-98da-afd30ccda19e",
+        "displayName": "Change Password User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "c3dc9bd21f7b",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "d3614950-be0f-4a4a-95b5-83f0c96f7618",
+        "memberId": "2e1e3543-366e-48c8-94f9-6f5bb7cabc72",
+        "displayName": "Email Change User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "460d442eaa9c",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "26405f54-9437-49de-b026-108ed2864074",
+        "memberId": "d3976cbd-ea0f-4ae1-9fb9-a2b3942fd4f6",
+        "displayName": "Duplicate Target",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "39f689e306f3",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2ab9a139-9b57-447b-a5b5-1070a3a3a5b8",
+        "memberId": "2fdd6e2a-950f-4710-9248-6bcbefd62ab6",
+        "displayName": "Session User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "2e050df1116f",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "d4735a94-81d7-44f0-bf7a-009b3dc7aebb",
+        "memberId": "8bc62756-4fc3-44ac-bbec-2f42501ce703",
+        "displayName": "Auth Verify User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "e892ac3e864c",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "a36f458d-5910-4530-a00f-ab0515b4082c",
+        "memberId": "ed956e58-9720-46b9-964a-dc4c017e99d2",
+        "displayName": "Auth Verify User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "03671f6ff2c9",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "58707346-2b79-425e-8bd9-a42aacb35497",
+        "memberId": "5b7e378c-f9f9-4bb0-a561-4bd96c4a228d",
+        "displayName": "Nomination Nominator",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ci***@example.com",
+        "emailFingerprint": "0a962e5e3900",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "e585bb57-6c59-4ca4-998b-8db7b8d26ff2",
+        "memberId": "5c983182-bad8-497b-b07c-8e6e258747f4",
+        "displayName": "Other Participant",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ci***@example.com",
+        "emailFingerprint": "441e6a5c0ee3",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "8d9a458f-ba89-4a9a-a92a-c06ace1dbd4c",
+        "memberId": "890c0d79-cae0-40f2-80c9-d386529a5168",
+        "displayName": "Nomination Nominator",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ci***@example.com",
+        "emailFingerprint": "0b2c7de61f57",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "ccd4940a-aa1d-4902-8153-90931a3b2927",
+        "memberId": "fc134cbf-391d-4a46-bfde-66085c768bd0",
+        "displayName": "Other Participant",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ci***@example.com",
+        "emailFingerprint": "1ee0de28acf9",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "681101d1-e646-4281-99db-d4c18405101a",
+        "memberId": "455f89f8-4abc-40ce-ba7a-f5cd5c1f4299",
+        "displayName": "Nomination Nominator",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ci***@example.com",
+        "emailFingerprint": "c3ae4d7d8fd6",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+        "memberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+        "displayName": "Vlad",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "sh***@gmail.com",
+        "emailFingerprint": "38f352956e57",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "b44010dd-61c0-4ebd-a294-f497b0711547",
+        "memberId": "d5c588e9-208d-490a-8ef0-efd4fc68a064",
+        "displayName": "Media Auth Verify User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ve***@example.com",
+        "emailFingerprint": "6c45927b96b3",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "00ebe3c7-ca83-4a6c-9a54-febfb1d9edc0",
+        "memberId": "a93bf620-304e-4dad-9200-e0a6c1828bb5",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "5c70ad1c12ae",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "574f4535-7c66-46d5-85ea-334d977b42cb",
+        "memberId": "b9eac5e8-181f-4825-b98f-f4e34b58ba14",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "3e4c9f4f35a8",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "401dc7cb-ad3c-4571-934b-23f2cb207ba0",
+        "memberId": "54e8ae2d-40bf-4f41-9bbb-9244f039c5dc",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "f44586f3e70d",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "379871dd-ed44-429e-bba3-1cb017a7b268",
+        "memberId": "56730cc2-3905-4127-a8a1-9cecf277f285",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "55afcf26c177",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "504b00ab-ad8f-4468-ac94-469d263305f2",
+        "memberId": "f42da0d0-ff3f-40bc-8d2c-6c4b4177c358",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "e471cab02edf",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "3c940f6e-d0b1-4384-82c2-8bb0577827a8",
+        "memberId": "0d024048-5ad1-4b0a-a737-f9d24480a01e",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "113bb98cfaf9",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "f8f342e8-e6fa-4a54-823e-56c4ef599b62",
+        "memberId": "2d111ae6-01c7-401d-aac9-8b410c2b5cd3",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "3ea76f871889",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "db308b03-64bf-4ddc-bd82-2dc2f5194278",
+        "memberId": "90b25e07-f570-4374-8182-e2169c9392b7",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "5afcd46f8934",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "df41c23d-5aab-4302-bcaa-3428ca3516df",
+        "memberId": "93950b62-9cf9-4522-b1a6-764bfd8a258c",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "014302fbede4",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "72e53965-f6ce-47c1-8b75-74d76523793c",
+        "memberId": "0439ecae-51f9-4ee2-a2b0-f88bc4a97cb0",
+        "displayName": "Participation Area Verify User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "pa***@example.com",
+        "emailFingerprint": "b867c9ea769b",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "542c51f4-f4a4-400a-82cf-64a6794fdc8d",
+        "memberId": "76cc8c79-80be-4572-93e9-73be4b1272dd",
+        "displayName": "Participation Area Verify User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "pa***@example.com",
+        "emailFingerprint": "e1aea5057839",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "56c645d9-4609-45d0-a9ef-1ccff0f8288c",
+        "memberId": "3a31fa98-02d6-4031-9ead-00090c09a83a",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "e6cb714f79e5",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "bf257501-8c08-44a8-90a9-673d57900be4",
+        "memberId": "12f2e6b3-9c72-4edd-8c0f-7a4f775640c8",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "61b2204f448e",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "28b35783-dc60-4af3-9525-7128f5a02417",
+        "memberId": "c9c9cf6e-c5f3-49a5-af1a-33f4b6fdcd25",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "99a332b22cb2",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "29f63092-3dd1-40d9-a33b-ecefde27430b",
+        "memberId": "c06c5642-26c8-414a-a269-fb68e1147b53",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "080f17e2a2ee",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "eef295cb-d8d4-4309-8a3b-ae812ac05256",
+        "memberId": "cf33f66f-0c18-4a3e-858b-6aad8029bcaf",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "58c526dd084f",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "95eccec2-21f3-45cc-b196-70f0d244edc2",
+        "memberId": "eba816fc-d97e-417b-9350-b75165c0a73b",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "9abfe5e902de",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "11309852-c183-4b5a-82d5-d2ba9444621d",
+        "memberId": "f643a74d-3f69-4fc9-afdc-22da14ce6ce8",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "c1465e122720",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "81d9a066-6bc8-4556-adcc-fafcb7d0ed61",
+        "memberId": "0dcbd1b3-7f1c-496e-8d4d-f6c057d761dc",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "6dcdbd5abc69",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2d4b497b-a535-431a-997d-9ed18cbdd213",
+        "memberId": "36401f0e-d2de-4cd7-a37b-c80eced641d7",
+        "displayName": "Stabilization Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "2c11e0d2795f",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "6af3bf49-dbda-4c0d-8664-db51d547a993",
+        "memberId": "b3b430fe-7805-4df6-a52e-ec3fc02f9276",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "8e75280f3c08",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "f07864f7-750d-4af8-b623-cbf5b34cf556",
+        "memberId": "b27b9fb9-1bf3-46f9-94f6-01caedb061ab",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "c6cc07c89c0a",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "5ef86f77-59cf-4b46-bddd-e3657e0d5bb3",
+        "memberId": "a3c22f55-b918-41e5-93f5-0e00c109788d",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "2a00b98d2585",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "c2b5fcec-4caf-4592-adf0-9bf81442cdda",
+        "memberId": "7809dfc5-250a-4b6b-9b2c-1648d12d12f5",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "5fe17f484ff8",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "dc15af6d-e9b7-4edf-80d7-c03f8273083e",
+        "memberId": "df90e37e-fe57-4e02-aecc-57b6c8659219",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "46b6cfc96837",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "cc4eb1bc-afc9-4a00-96a8-56ba6d96b9ec",
+        "memberId": "8adaf3c0-1f2a-47db-addf-9b9cd03d51cf",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "dcc64c68d740",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "d49b99b8-4ffe-4a6a-8490-a4d03f508896",
+        "memberId": "3efa44b2-e437-414a-b9d3-a88ac39efcfd",
+        "displayName": "Confirm Flow User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "re***@example.com",
+        "emailFingerprint": "b891790155bc",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "cdcee66b-1e44-4979-9c13-3ad1602e502b",
+        "memberId": "4d5a4c62-a591-4371-a523-b6bc3bfde96e",
+        "displayName": "Confirm Flow User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "re***@example.com",
+        "emailFingerprint": "32f0ce7be5b0",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "e6ac0ad8-9693-4648-a70c-bcddbc21ccb8",
+        "memberId": "ee1b0b8d-5d71-429d-b3db-c80c41913853",
+        "displayName": "Confirm Flow User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "re***@example.com",
+        "emailFingerprint": "38b3dbb1c677",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "ce20c315-8f74-4539-85ac-455a4ec262b9",
+        "memberId": "d74f603c-296c-494f-b470-cba5e2a11ea3",
+        "displayName": "Confirm Flow User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "re***@example.com",
+        "emailFingerprint": "53e51d0e3f95",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "4da1eaee-b24d-426f-b697-3ffb0c4ed085",
+        "memberId": "46a5bb59-cc55-4f9e-be7f-d6a36ca3e99d",
+        "displayName": "Unconfirmed User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "fb0958418ea1",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "b7368e69-e527-4f98-ac97-106713a19e05",
+        "memberId": "98aed438-a339-4ac9-a7f8-21d369002861",
+        "displayName": "Two Step confirmed",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "c471db33f40d",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "846d10cc-1ce2-4096-ac2e-e151785f026d",
+        "memberId": "12ab5f7c-8bce-4c2a-a448-74d18f46f114",
+        "displayName": "Auth Verify User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "53ed7982f904",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2ac75a42-bd6e-4d87-8e92-bbd4a71752b8",
+        "memberId": "c786341c-7803-4bcb-a9f7-8d0a7069a3d2",
+        "displayName": "Public Safety User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "461811a0627b",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "c4cf69c5-c56e-4134-b19b-27368a3938e1",
+        "memberId": "af8cc5cc-5cea-492c-85bf-17f2fbf28b15",
+        "displayName": "Membership single",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "ea9dc779bd3e",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "a6a39116-40bd-47ad-921f-d823e1ca822c",
+        "memberId": "6100c35d-5cba-48d8-b3d6-10aaaaffb2ad",
+        "displayName": "Unconfirmed Membership",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "0f312050fb22",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "f70fa039-459c-49d9-bc23-96127aa49f90",
+        "memberId": "92c18f64-25cb-42c3-8f30-c570cb6fc921",
+        "displayName": "Membership apply",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "4f5d998930b6",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "b2dec987-e65b-4e65-ac61-d006870682d0",
+        "memberId": "a3c208fc-eb0f-429f-b1a5-6faa6df63cc8",
+        "displayName": "Membership single",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "34177c14a530",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "1bda28a0-1250-43cd-82c0-0ad9d2c6e0dd",
+        "memberId": "de0d5a0a-e942-4701-9534-362fb0ad7524",
+        "displayName": "Unconfirmed Membership",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "d9e0bd930cf5",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "1e5ce2d3-65cc-4247-86eb-e50a8d67d862",
+        "memberId": "8ba2bb78-dc44-42a8-b18a-5dbcc1e989e2",
+        "displayName": "Membership apply",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "e8a228e90255",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "a663e204-0e19-41ed-b600-8d03f6e1491c",
+        "memberId": "dea6b4d3-05b9-4329-8a0c-a51197f4862a",
+        "displayName": "Membership number",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "6109f05bc6ad",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "4af7f8da-9be1-4e21-9a6c-e98d9fdba27f",
+        "memberId": "6051683f-78a2-49e7-b3ec-c3bd182b1cb8",
+        "displayName": "Membership status",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "1602145e1617",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "dba5f962-eace-40cb-8921-b99629211da8",
+        "memberId": "33acd9b1-aed4-475a-bd17-78c083df275f",
+        "displayName": "Membership timeline",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "696a632a6210",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "45984667-8281-46ac-86ec-d84814418d1a",
+        "memberId": "6a1d3b75-940b-4eaf-b7ee-7ca956106888",
+        "displayName": "Payment Eligible",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "d1c9e82563b2",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "d457d00f-2a79-46a8-95b0-ab6f5cb166d1",
+        "memberId": "d98d6d66-b4c5-4345-b31f-73c2421f3e3e",
+        "displayName": "Michael",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "gc***@gmail.com",
+        "emailFingerprint": "f25e1256e6f1",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "44c3104a-af1c-4c85-9a67-bbef4c010cbb",
+        "memberId": "51ed2c7a-4169-43f4-ae8f-55b3d44de004",
+        "displayName": "Membership single",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "bc165c37d9cf",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "38b9ae76-a966-48bd-8360-4e9b03c3090b",
+        "memberId": "f172a2b1-6a90-41ce-93aa-4e3ac95e754f",
+        "displayName": "Unconfirmed Membership",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "02b16cd16635",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "a6bbd1c1-7e34-4d76-b50a-a3223bf3f0e5",
+        "memberId": "e480f5cc-5912-485c-8522-ee2893a3d582",
+        "displayName": "Membership apply",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "858f5f02b213",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "b1b4beb0-cac1-4a1f-8550-17b616fa61ba",
+        "memberId": "f731d896-10c3-44b6-8bc5-2339f97df79f",
+        "displayName": "Stats Participant",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "aab36d88979f",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "4866931a-3d21-4cd2-bfaf-6bb47109b178",
+        "memberId": "dfef1c7f-b44d-46da-84eb-926beec44ea9",
+        "displayName": "Auth Verify User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "2578c4b1d124",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "d03f82df-d9ed-4e61-b606-6ba9077c929f",
+        "memberId": "b28b4214-2719-4dd0-8442-ff8da6493fa7",
+        "displayName": "Manala",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ma***@gmail.com",
+        "emailFingerprint": "d1494eb7aa35",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "0d13d196-34ec-4a06-81f3-d2d248fef5e9",
+        "memberId": "fe709574-93f5-4bb8-a0c3-51a00fd7e793",
+        "displayName": "Derek",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ca***@gmail.com",
+        "emailFingerprint": "87219f5cea96",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "e0b35c89-7809-4eb6-a62b-a2c711ed9b7c",
+        "memberId": "32574423-f1f6-44c2-9bdf-3f8ddf27bd61",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "c953dcab4317",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "b44d9583-9ed3-4fbf-a370-8263b3504ee3",
+        "memberId": "1b27325b-b6b6-440b-a4c5-59fe19eddf08",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "f9deb4d38a2a",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "4d283f86-7d59-42ac-bd74-a5127aabb4f6",
+        "memberId": "3eb15c8a-a187-4b2a-806c-d480ba6443dd",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "f7b855efed2d",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "194be922-bee0-46f1-869e-250b1214a8d8",
+        "memberId": "d1bb1272-eb95-4cf0-913c-0261f1d24403",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "84baca564cf6",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "49b2511e-ce54-4640-b86b-84d5e7f65c57",
+        "memberId": "5ac17814-6b79-4b47-b094-792e6d24154f",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "344c9a40f381",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "66301897-0854-4c51-b072-5556a982d7f7",
+        "memberId": "8fedd8fa-1596-4424-a118-228e12229fd9",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "976fbc59ce1e",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "f64c70ae-c0eb-4cfc-8e1a-0d5534f9e374",
+        "memberId": "918cbae5-22df-47ab-a936-2c8ef98263e8",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "ad9f3c798e5e",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "3e606456-167d-4250-9da2-c193f5ee09b5",
+        "memberId": "054a1a0f-7168-497b-be82-d5e0bc0000e3",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "cb6a597e931f",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "d8851ede-87ad-431e-9df7-1bba44d50edb",
+        "memberId": "ef57a7e8-0721-4d09-ace2-674d84f96dc3",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "9b39c3bf500c",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "6dd1ea0c-bc59-447d-ba5b-434dd818432a",
+        "memberId": "c291b2bc-aa57-40c5-9278-463882d9c0d5",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "06770047d0a3",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "a94fbaff-0e1a-422a-a89e-99c9c5431a1f",
+        "memberId": "a5f95446-e72a-45e0-b5ce-33171a526fd1",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "52898c37bedd",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "38256d9e-2a1b-4504-ad29-cf13c7078216",
+        "memberId": "04c2e536-3fc9-44a8-9365-901900ea4c77",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "dca2f553a8d9",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "a79d083f-457a-41f5-8c77-a3e27b99b6bd",
+        "memberId": "bc3203d8-578e-4550-ba30-d2d799ffa61e",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "6574fb1773a5",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "3015a07a-7d2c-4ade-8bca-41de89bd2fbe",
+        "memberId": "ab58877e-c48c-44c3-a85f-50bd9aec5f07",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "d3f7ebc67ae9",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "bda14f7a-1a31-4c4a-ba3f-94ea54fb2574",
+        "memberId": "eedc6697-1dc1-47e6-b6d3-0c00fededf74",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "958527c0a921",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2922827e-e42c-4e5e-93f2-8a955bead2fb",
+        "memberId": "b2bda005-a192-4496-b590-dcd07545b6ea",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "2c5d68535be2",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "463ba8d7-a76e-4815-817b-25c3e6f3edc3",
+        "memberId": "0e89825f-2eaa-40aa-9ce8-79bb757eb830",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "42ed8502b5c3",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "c1811019-6edc-44f8-818a-7e1be3df5e97",
+        "memberId": "d655ace2-5baa-4af1-a1ea-1372594f96a1",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "613a29f14090",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2c1aa693-d2ef-4049-90f4-b212a73c011f",
+        "memberId": "fdb17761-5cde-4c49-a380-a5ee81687539",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "77b2c51d2a5d",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "bc628ee5-73f2-4bdf-b9c4-9528eeb60797",
+        "memberId": "a9955918-48bb-449f-a048-52c6dcab1dfa",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "4aeb62438c13",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "82f7b57d-c39c-45d7-a601-13b599bfc195",
+        "memberId": "d703e1da-03be-414e-84ab-7297ea159969",
+        "displayName": "Unconfirmed User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "7db1cd3935be",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "57ccdaab-32d0-43ad-92f4-3d73044dd072",
+        "memberId": "eabf1a32-70e6-481b-89a5-3f3182cac1e8",
+        "displayName": "Two Step confirmed",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "039845639166",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "3226ff51-4c87-42f5-bed5-545662bff757",
+        "memberId": "13fd068b-2d44-4885-b1b7-a45110147fab",
+        "displayName": "Two Step resend",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "686b4fea5cc3",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "3c210132-1608-4c73-ad33-0b3888a6f8f0",
+        "memberId": "0a4738bc-ba3f-44dd-904d-cb93398d15d5",
+        "displayName": "Unconfirmed User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "6a72762241b0",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "8ebb08bc-b3e6-4c47-81e7-f8b843a2d7c3",
+        "memberId": "29d34efc-7534-4f55-822b-e00613c23436",
+        "displayName": "Two Step confirmed",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "1c33565ba113",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "ca1b44dc-5fcd-4062-99c6-b3b11ac06789",
+        "memberId": "c429026b-c1d6-40b9-b183-06d6bea151d5",
+        "displayName": "Two Step resend",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "a91c634d421a",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "d173d0b9-fda0-48ea-800e-272d9ec4f5cf",
+        "memberId": "043d8b5c-6fc5-4ddf-88a3-a83785ea0d9f",
+        "displayName": "Unconfirmed User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "7f28a0242a44",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2f2b621f-88b0-4da9-af6a-152297ed6117",
+        "memberId": "556c75fc-c045-4607-bc7d-b192a05262c5",
+        "displayName": "Two Step confirmed",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "f67dd345db22",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "7c5fada0-4141-4d32-b11e-a8631ff40ac2",
+        "memberId": "e7bcb825-da46-4e22-b593-27dc5dc033e7",
+        "displayName": "Two Step resend",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "em***@example.com",
+        "emailFingerprint": "ba04a2be3754",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+        "memberId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+        "displayName": "Michael",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "us***@gmail.com",
+        "emailFingerprint": "3b692f6f5cbc",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "4f7e8f39-20ab-45f0-92a6-684571ea0ca1",
+        "memberId": "257b9877-6e91-4138-9e12-38a1080df0be",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "8829173c8e7c",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "a240fd06-6f46-479a-b9e4-7ef806bcaa7f",
+        "memberId": "72ed76d1-2c74-453d-b8da-32f7984810ab",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "9ed1ce4f355d",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "0d8a208e-70b9-4c1a-9404-692c1df6c4fc",
+        "memberId": "6b042536-5ba4-439b-b0cf-4feb6fedda5f",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "bb109bd58366",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "b0050e98-a372-4c7a-af1f-e586a10772b8",
+        "memberId": "bf182ea1-ef4f-41bd-b005-13dea6303a26",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "bc8cd3b6216c",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "0aec8154-f436-4f87-a890-9fec044e9234",
+        "memberId": "f71b75b7-8fe9-4d3a-bdb9-541642518cd2",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "f4f9817b00ae",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "7ebe7bf5-b301-432e-9f5c-bdad512efa85",
+        "memberId": "54d02ee2-7c4e-4789-b9be-b9f1b9b03a5a",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "f1abc455f46c",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "383bbfec-7d48-4e03-a9ef-ce0044cd5f1c",
+        "memberId": "7b3e4af8-7f26-4e50-a226-02ccdf4c6fc3",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "13bd9d104a7f",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "d33decd6-7bfc-42a7-b4e1-9389249ef825",
+        "memberId": "1134bc0a-a572-4f13-a980-ddd69a4e56e0",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "c3c126560e6d",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "785c59a4-a343-4df6-9264-996544e52f81",
+        "memberId": "554c87c6-71e6-459c-a639-82da3a95949f",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "8a43aa6149df",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "a4bfdf5c-f5d0-46c0-b1d2-a4b0925414d8",
+        "memberId": "9794258e-7e63-4811-a6a0-c8a0aa3b61e9",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "f598bc0ddf99",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2aca2154-ecb0-43ad-a1c5-de962bd25a9f",
+        "memberId": "f946cb58-fb92-4b9a-b71a-2ddcda83bb32",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "187adce3e1d2",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "58fa4f45-a6c7-48b2-8098-c4a232e36b06",
+        "memberId": "c47c3f10-6660-4938-b1d6-b9bf9bf872b8",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "5cbd9ba5a1b2",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "b71d6adc-0fbf-4548-9b93-6c3fcb8a6e04",
+        "memberId": "d4fbdf79-ffe8-4599-9967-759558006e50",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "ae45d1eccf9f",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "3b362753-54de-4336-955c-e08c19ed4c45",
+        "memberId": "a8280e76-7e5a-40ec-9a20-3e4e0a3aa9d8",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "40396e00a6b3",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "c3b6d068-587a-437a-8ea1-851eb979d239",
+        "memberId": "d41e8336-0226-4b28-9fff-465173a08383",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "c4b8180cfad8",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "d950786c-88e2-4a88-8a11-82740ca8980c",
+        "memberId": "043d466f-95d8-4c45-84bc-27d0cca943bf",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "52dc76100dbe",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "e08cb264-19ed-4b04-8f51-0e59d44b2ffb",
+        "memberId": "f727ce91-0101-450b-bde2-d60d82d2a240",
+        "displayName": "Auth UX A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "f2026233753b",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "2dac9a31-1bc3-454e-930a-d5e573e77cd5",
+        "memberId": "83ecda1e-4e85-495c-8ce3-95bc71d982d5",
+        "displayName": "Auth UX B",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "au***@example.com",
+        "emailFingerprint": "9a347d769d0f",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "064fcf6f-f48c-4095-a834-f8b5cbdd2da9",
+        "memberId": "d1d46abd-2b21-47fc-8b60-ff1ae255a720",
+        "displayName": "Profile Verify User",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "a5b5db810f1d",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "1a6f8cb3-cd2d-4c49-888d-2b636a4290bc",
+        "memberId": "9c626fa2-322d-4b27-901f-e802cf3eff76",
+        "displayName": "Display Name A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "co***@example.com",
+        "emailFingerprint": "62fac9e7d8bb",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "6cdf8462-8662-4ecb-986d-b671c7e12ae3",
+        "memberId": "af9f022b-8a02-4cf2-81e1-fb8a3a88e91f",
+        "displayName": "Display Name A",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "co***@example.com",
+        "emailFingerprint": "8af34cbfb2c3",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "ccb57589-a19c-4905-b109-2e545dadad6c",
+        "memberId": "bb08da34-3383-4929-8a28-21523607e6ef",
+        "displayName": "Preferences City Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "pr***@example.com",
+        "emailFingerprint": "13befdf12ca6",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "bade6685-91c0-4c3b-9962-c8a3dd2ac11c",
+        "memberId": "046cd0dc-e2e2-43b8-841c-f4da8348c9c8",
+        "displayName": "Preferences City Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "pr***@example.com",
+        "emailFingerprint": "102c06319f0f",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "82538140-beda-4250-9670-de8ede76f25f",
+        "memberId": "6de934ee-cfa0-413f-8a54-7c312f6e5497",
+        "displayName": "Preferences City Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "pr***@example.com",
+        "emailFingerprint": "51cafb823885",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "45427002-bd1b-423c-9219-756741364767",
+        "memberId": "6558527d-da40-44c9-9601-c4001dbd1d05",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "66227148b630",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "3c3a1293-47c9-4a74-9d1f-c2d7fd5f6442",
+        "memberId": "d410255e-b38c-4c66-a16f-c61ae00875d4",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "387f479bc852",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "534018cd-bda1-462e-b01c-16c64695489b",
+        "memberId": "af0535f1-e7df-4f27-a2c6-1987a8e1b627",
+        "displayName": "Preferences UX Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "me***@example.com",
+        "emailFingerprint": "0b5fecfd24c4",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "be9706b6-ff56-4505-8ee3-8d6df5364350",
+        "memberId": "f586f9fa-ae09-4af5-9d55-29df09b4db94",
+        "displayName": "Debug",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@test.local",
+        "emailFingerprint": "9f2930a9bf97",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "b154c086-f719-4b97-a4d1-8ca229af799d",
+        "memberId": "633287b6-5ecc-4c97-9c53-95c009531074",
+        "displayName": "Flow",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@workspace.test",
+        "emailFingerprint": "d69474c2b850",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "a74a54d9-c8a8-41ae-bff0-343e026fe97b",
+        "memberId": "0529d798-0c05-4096-88a6-a2303463b7ff",
+        "displayName": "X",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "st***@t.test",
+        "emailFingerprint": "b744d6cb76a9",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "44d06918-b05f-49e8-869e-db934a46e287",
+        "memberId": "52d166e7-616e-490b-9d39-87d171aefe9d",
+        "displayName": "X",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@t.test",
+        "emailFingerprint": "8cc8d454b972",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+        "memberId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+        "displayName": "Derek",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "tu***@gmail.com",
+        "emailFingerprint": "c8be38bc1d82",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "c79a1f83-99ea-4cd6-bf92-12ac93180765",
+        "memberId": "572f98c6-e136-40d2-a01b-a88eaa56422f",
+        "displayName": "Ada Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "re***@direct-messaging.test",
+        "emailFingerprint": "132b34bc8d39",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "3ba0d50e-8a5f-4498-bc12-19595b6add2c",
+        "memberId": "f8efcbba-75bc-4d40-a598-8e039e36da6a",
+        "displayName": "Leo Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "re***@direct-messaging.test",
+        "emailFingerprint": "0014aa87c9d7",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "cfab2b16-0f3e-4796-aa21-206e78d590e7",
+        "memberId": "22ab105a-3751-49fd-aab6-27b6a9bbd48b",
+        "displayName": "QA Author Recovery",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "qa***@example.com",
+        "emailFingerprint": "ca4c70406c8f",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "faeb3d1d-31e2-4271-8a28-757da9294a0d",
+        "memberId": "0a428018-be6e-445a-a33c-ce7c794dcff4",
+        "displayName": "QA Ally Recovery",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "qa***@example.com",
+        "emailFingerprint": "cd33f3448a36",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "7e876d38-0c1e-4241-b520-44bdfc11781a",
+        "memberId": "5bb8e373-c042-4786-a69c-0340301711d8",
+        "displayName": "Isabella",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "co***@gmail.com",
+        "emailFingerprint": "d01ce9da863c",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "1dac32c7-eb41-4e45-bfbb-d31d4a6ef844",
+        "memberId": "48b5f479-74c4-4f37-8c4c-6b739a9f51d2",
+        "displayName": "UX Pack 04 Tester",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ux***@example.com",
+        "emailFingerprint": "40e58bc1f1d2",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "f78b24fd-2edc-419f-a856-01fbd3f26943",
+        "memberId": "d5c7af32-7107-4f60-9fc8-c75dadc325e6",
+        "displayName": "UX Pack 04 Visual Check",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ux***@example.com",
+        "emailFingerprint": "59bf9e8fe19e",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "01211ec3-88dd-4948-9f10-2bf891d4eac4",
+        "memberId": "bd410012-34af-4064-b1fe-13cd14fee3ca",
+        "displayName": "QA Author PartB",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "qa***@example.com",
+        "emailFingerprint": "1a411e325e34",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "6eb7ad36-76a8-4193-b5b3-c621fe48335d",
+        "memberId": "c65bf923-9265-4bb1-9b90-56035b64a21a",
+        "displayName": "QA Ally PartB",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "qa***@example.com",
+        "emailFingerprint": "9a7a92489051",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "44428c3a-1f00-45c4-823c-85ed4d44870e",
+        "memberId": "a5261432-6679-4039-9945-5e11a45bf84c",
+        "displayName": "QA Author PartB",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "qa***@example.com",
+        "emailFingerprint": "a4f46787e334",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "f0cb7e91-2bec-4ff0-9136-65fe1570a81f",
+        "memberId": "807c6ae9-0e67-41b4-826e-d44bdca5e95f",
+        "displayName": "QA Ally PartB",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "qa***@example.com",
+        "emailFingerprint": "cb51ea5b9bd6",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "5c503e58-70e2-4fa0-88db-59408a19646d",
+        "memberId": "ea168c1b-aab0-493e-961a-2134e9589673",
+        "displayName": "Debug",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@blog-editorial.test",
+        "emailFingerprint": "1f80aa928370",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "c1fb2160-b47e-4277-b071-d9f9cd98a5f4",
+        "memberId": "e323937e-2268-4c69-a79c-eaee6964aa5d",
+        "displayName": "Debug",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@blog-editorial.test",
+        "emailFingerprint": "78e1627e5053",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "1275af20-595f-47e4-93fc-8a905b7dc5d6",
+        "memberId": "0f95de7a-3ad2-4c4f-80f8-7d9366004f56",
+        "displayName": "Debug",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@blog-editorial.test",
+        "emailFingerprint": "d5a5010294dc",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "bbdac68b-81b1-488d-b620-da5487753eb6",
+        "memberId": "22c73f1a-906e-44c4-8209-7ea60e89d820",
+        "displayName": "QA Browser Device Pack01",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "qa***@example.com",
+        "emailFingerprint": "f82e6ee6e5a0",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "06ed239a-0d49-4275-b096-c757192851c2",
+        "memberId": "30123bc3-f1d7-4cce-9145-4d254fc13ec4",
+        "displayName": "QA Recovery",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "qa***@humanityunion.test",
+        "emailFingerprint": "91cb8b5d3ec3",
+        "referencedAsSteward": false,
+        "likelyTestAccount": false
+      },
+      {
+        "userId": "1d3189ff-6c19-4487-96a4-566dcf05266d",
+        "memberId": "08e8ee81-91cd-4745-8d79-cc90b1a6c8bf",
+        "displayName": "QA Recovery",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "qa***@example.com",
+        "emailFingerprint": "3f416653cab4",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "29ffa586-27aa-4545-9764-70a21eddea75",
+        "memberId": "23dcf48f-87fd-4523-8943-6daa94c9a186",
+        "displayName": "Auth Hotfix QA",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "hu***@example.com",
+        "emailFingerprint": "ed5099a0eef1",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "795a12a9-264a-4505-a730-99c9c93f125a",
+        "memberId": "79134f5d-492d-4241-a096-aae692855d57",
+        "displayName": "Auth Hotfix QA",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "hu***@example.com",
+        "emailFingerprint": "5f4a03636117",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      },
+      {
+        "userId": "9c201471-076f-47d7-b94d-a4b1d3f1e46c",
+        "memberId": "0f9e039a-d344-4f33-8383-bc8567dc80d6",
+        "displayName": "Auth Hotfix QA",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "hu***@example.com",
+        "emailFingerprint": "356f2efbfcba",
+        "referencedAsSteward": false,
+        "likelyTestAccount": true
+      }
+    ],
+    "nonExampleParticipants": [
+      {
+        "userId": "5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+        "memberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+        "displayName": "Vlad",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "sh***@gmail.com",
+        "emailFingerprint": "38f352956e57",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "d457d00f-2a79-46a8-95b0-ab6f5cb166d1",
+        "memberId": "d98d6d66-b4c5-4345-b31f-73c2421f3e3e",
+        "displayName": "Michael",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "gc***@gmail.com",
+        "emailFingerprint": "f25e1256e6f1",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "d03f82df-d9ed-4e61-b606-6ba9077c929f",
+        "memberId": "b28b4214-2719-4dd0-8442-ff8da6493fa7",
+        "displayName": "Manala",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ma***@gmail.com",
+        "emailFingerprint": "d1494eb7aa35",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "0d13d196-34ec-4a06-81f3-d2d248fef5e9",
+        "memberId": "fe709574-93f5-4bb8-a0c3-51a00fd7e793",
+        "displayName": "Derek",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "ca***@gmail.com",
+        "emailFingerprint": "87219f5cea96",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+        "memberId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+        "displayName": "Michael",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "us***@gmail.com",
+        "emailFingerprint": "3b692f6f5cbc",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "be9706b6-ff56-4505-8ee3-8d6df5364350",
+        "memberId": "f586f9fa-ae09-4af5-9d55-29df09b4db94",
+        "displayName": "Debug",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@test.local",
+        "emailFingerprint": "9f2930a9bf97",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "b154c086-f719-4b97-a4d1-8ca229af799d",
+        "memberId": "633287b6-5ecc-4c97-9c53-95c009531074",
+        "displayName": "Flow",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@workspace.test",
+        "emailFingerprint": "d69474c2b850",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "a74a54d9-c8a8-41ae-bff0-343e026fe97b",
+        "memberId": "0529d798-0c05-4096-88a6-a2303463b7ff",
+        "displayName": "X",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "st***@t.test",
+        "emailFingerprint": "b744d6cb76a9",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "44d06918-b05f-49e8-869e-db934a46e287",
+        "memberId": "52d166e7-616e-490b-9d39-87d171aefe9d",
+        "displayName": "X",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@t.test",
+        "emailFingerprint": "8cc8d454b972",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+        "memberId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+        "displayName": "Derek",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "tu***@gmail.com",
+        "emailFingerprint": "c8be38bc1d82",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "c79a1f83-99ea-4cd6-bf92-12ac93180765",
+        "memberId": "572f98c6-e136-40d2-a01b-a88eaa56422f",
+        "displayName": "Ada Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "re***@direct-messaging.test",
+        "emailFingerprint": "132b34bc8d39",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "3ba0d50e-8a5f-4498-bc12-19595b6add2c",
+        "memberId": "f8efcbba-75bc-4d40-a598-8e039e36da6a",
+        "displayName": "Leo Verify",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "re***@direct-messaging.test",
+        "emailFingerprint": "0014aa87c9d7",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "7e876d38-0c1e-4241-b520-44bdfc11781a",
+        "memberId": "5bb8e373-c042-4786-a69c-0340301711d8",
+        "displayName": "Isabella",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "co***@gmail.com",
+        "emailFingerprint": "d01ce9da863c",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "5c503e58-70e2-4fa0-88db-59408a19646d",
+        "memberId": "ea168c1b-aab0-493e-961a-2134e9589673",
+        "displayName": "Debug",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@blog-editorial.test",
+        "emailFingerprint": "1f80aa928370",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "c1fb2160-b47e-4277-b071-d9f9cd98a5f4",
+        "memberId": "e323937e-2268-4c69-a79c-eaee6964aa5d",
+        "displayName": "Debug",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@blog-editorial.test",
+        "emailFingerprint": "78e1627e5053",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "1275af20-595f-47e4-93fc-8a905b7dc5d6",
+        "memberId": "0f95de7a-3ad2-4c4f-80f8-7d9366004f56",
+        "displayName": "Debug",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "de***@blog-editorial.test",
+        "emailFingerprint": "d5a5010294dc",
+        "referencedAsSteward": false
+      },
+      {
+        "userId": "06ed239a-0d49-4275-b096-c757192851c2",
+        "memberId": "30123bc3-f1d7-4cce-9145-4d254fc13ec4",
+        "displayName": "QA Recovery",
+        "role": "member",
+        "status": "active",
+        "emailMasked": "qa***@humanityunion.test",
+        "emailFingerprint": "91cb8b5d3ec3",
+        "referencedAsSteward": false
+      }
+    ],
+    "initiatives": [
+      {
+        "initiativeId": "initiative-bootstrap-001",
+        "title": "Community Garden Initiative",
+        "stewardId": "member-bootstrap-001",
+        "lifecyclePhase": "draft",
+        "status": "draft",
+        "visibility": "steward_only",
+        "geography": {
+          "region": "British Columbia",
+          "countrySlug": null,
+          "regionSlug": null
+        },
+        "createdAt": "2026-06-27T00:00:00.000Z",
+        "updatedAt": "2026-06-27T00:00:00.000Z",
+        "relatedCounts": {
+          "analyses": 0,
+          "proposals": 0,
+          "revisions": 0,
+          "decisionSessions": 0,
+          "collectiveDecisions": 0,
+          "petitions": 0,
+          "commitments": 0,
+          "trackings": 0,
+          "officialResponses": 0,
+          "publicImpacts": 0,
+          "civicArchive": 0,
+          "comments": 0,
+          "supportSignals": 0
+        }
+      }
+    ]
+  },
+  "target": {
+    "database": "humanity_union_staging",
+    "counts": {
+      "auth_users": 1,
+      "members": 1,
+      "member_profiles": 1,
+      "memberships": 1,
+      "initiatives": 1,
+      "initiative_analyses": 0,
+      "initiative_improvement_proposals": 0,
+      "initiative_version_revisions": 0,
+      "initiative_revision_drafts": 0,
+      "decision_sessions": 0,
+      "initiative_collective_decisions": 0,
+      "petitions": 0,
+      "petition_signatures": 0,
+      "initiative_implementation_commitments": 0,
+      "initiative_implementation_trackings": 0,
+      "initiative_public_impacts": 0,
+      "official_responses": 0,
+      "public_civic_archive_records": 0,
+      "participant_actions": 0,
+      "initiative_support_registered_signals": 0,
+      "initiative_comments": 0,
+      "blog_posts": 0,
+      "activities": 0,
+      "discussions": 0,
+      "proposals": 0,
+      "decisions": 0
+    },
+    "authUserCount": 1,
+    "nonExampleAuthUserCount": 1,
+    "memberCount": 1,
+    "profileCount": 1,
+    "initiativeCount": 1,
+    "legacyActivities": {
+      "count": 0,
+      "sample": []
+    },
+    "participants": [
+      {
+        "userId": "13561681-8a25-4bb7-ab97-f9c9e61870bb",
+        "memberId": "58229b2a-adff-4aa0-bb0e-b4d210248ecf",
+        "displayName": "Vlad",
+        "role": "admin",
+        "status": "active",
+        "emailMasked": "sh***@huws.org",
+        "emailFingerprint": "e7e6c1e5adcf"
+      }
+    ],
+    "nonExampleParticipants": [
+      {
+        "userId": "13561681-8a25-4bb7-ab97-f9c9e61870bb",
+        "memberId": "58229b2a-adff-4aa0-bb0e-b4d210248ecf",
+        "displayName": "Vlad",
+        "role": "admin",
+        "status": "active",
+        "emailMasked": "sh***@huws.org",
+        "emailFingerprint": "e7e6c1e5adcf"
+      }
+    ],
+    "initiatives": [
+      {
+        "initiativeId": "initiative-bootstrap-001",
+        "title": "Community Garden Initiative",
+        "stewardId": "member-bootstrap-001",
+        "lifecyclePhase": "draft",
+        "status": "draft",
+        "visibility": "steward_only",
+        "geography": {
+          "region": "British Columbia",
+          "countrySlug": null,
+          "regionSlug": null
+        },
+        "createdAt": "2026-06-27T00:00:00.000Z",
+        "updatedAt": "2026-06-27T00:00:00.000Z",
+        "relatedCounts": {
+          "analyses": 0,
+          "proposals": 0,
+          "revisions": 0,
+          "decisionSessions": 0,
+          "collectiveDecisions": 0,
+          "petitions": 0,
+          "commitments": 0,
+          "trackings": 0,
+          "officialResponses": 0,
+          "publicImpacts": 0,
+          "civicArchive": 0,
+          "comments": 0,
+          "supportSignals": 0
+        }
+      }
+    ]
+  },
+  "duplicates": {
+    "participantIdCollisions": 0,
+    "memberIdCollisions": 0,
+    "emailCollisions": 0,
+    "initiativeIdCollisions": 1,
+    "duplicateParticipants": [],
+    "duplicateInitiatives": [
+      {
+        "classification": "DUPLICATE_OR_ALREADY_PRESENT",
+        "initiativeId": "initiative-bootstrap-001",
+        "title": "Community Garden Initiative",
+        "reason": "Same initiativeId already present in staging"
+      }
+    ]
+  },
+  "transformations": [
+    {
+      "entity": "auth_users",
+      "note": "Do not migrate passwordHash/session secrets; prefer invite-reset or re-verification for historical accounts"
+    },
+    {
+      "entity": "initiatives",
+      "note": "Preserve initiativeId and stewardId when steward Participant migrates or maps; exclude verification fixture titles"
+    },
+    {
+      "entity": "file_runtime_initiatives",
+      "note": "Import selected .runtime Initiative records into humanity_union_staging Mongo initiatives collection under INITIATIVE_PERSISTENCE=mongodb; preserve initiativeId and stewardId after Participant migration"
+    }
+  ],
+  "integrityIssues": {
+    "initiativesMissingStewardCount": 1,
+    "initiativesMissingStewardIds": [
+      "initiative-bootstrap-001"
+    ],
+    "adminEmailCollisionCount": 0,
+    "stagingAdminCount": 1
+  },
+  "excludedLegacyRecords": {
+    "activities": 1785,
+    "discussions": 789,
+    "proposals": 563,
+    "decisions": 0,
+    "reason": "Legacy Activity/Proposal/Decision-as-root modules must not be migrated as civic roots"
+  },
+  "participants": {
+    "safeToMigrate": [
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2995d359-b8dc-4ff1-ae8c-a110c85ba1fb",
+        "memberId": "8566dfe2-2b27-4cec-a336-0f362e7881c6",
+        "displayName": "Participation Area Verify User",
+        "emailMasked": "pa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "a30354be-b732-4855-b469-46248c39cbe6",
+        "memberId": "5e3e1b1f-f580-46d8-9829-f2d7c96c4cdb",
+        "displayName": "Workspace Personalization User",
+        "emailMasked": "wo***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "7f34718f-29e3-4cf8-9626-ec5835e6a410",
+        "memberId": "791e178c-87e2-420e-b492-a9318cf4836f",
+        "displayName": "Token User",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "18f235e6-55fc-46d4-b7c6-f65c89792155",
+        "memberId": "167bc375-2896-47db-a575-29ae7bc79e9f",
+        "displayName": "Email Verify User",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "0eb42921-7d0a-438a-8a07-97f4644cd4d4",
+        "memberId": "c5f40ab2-8d38-463b-9c4f-cbef57f495b1",
+        "displayName": "Verify Flow User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2a97e4e8-8c99-4703-aa81-51036a4cb358",
+        "memberId": "2bd6e972-bbfa-4de6-8368-9e6c5b1fc8ae",
+        "displayName": "Gate User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2092c16d-3f2d-4dd1-a66d-0ead0777f458",
+        "memberId": "d72835fc-7835-413a-acea-bd38168571f7",
+        "displayName": "Reset User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "84a0d262-4c24-4e8f-bc52-086806ee09c4",
+        "memberId": "172b1ae8-656b-4265-98da-afd30ccda19e",
+        "displayName": "Change Password User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "d3614950-be0f-4a4a-95b5-83f0c96f7618",
+        "memberId": "2e1e3543-366e-48c8-94f9-6f5bb7cabc72",
+        "displayName": "Email Change User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "26405f54-9437-49de-b026-108ed2864074",
+        "memberId": "d3976cbd-ea0f-4ae1-9fb9-a2b3942fd4f6",
+        "displayName": "Duplicate Target",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2ab9a139-9b57-447b-a5b5-1070a3a3a5b8",
+        "memberId": "2fdd6e2a-950f-4710-9248-6bcbefd62ab6",
+        "displayName": "Session User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "d4735a94-81d7-44f0-bf7a-009b3dc7aebb",
+        "memberId": "8bc62756-4fc3-44ac-bbec-2f42501ce703",
+        "displayName": "Auth Verify User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "a36f458d-5910-4530-a00f-ab0515b4082c",
+        "memberId": "ed956e58-9720-46b9-964a-dc4c017e99d2",
+        "displayName": "Auth Verify User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "58707346-2b79-425e-8bd9-a42aacb35497",
+        "memberId": "5b7e378c-f9f9-4bb0-a561-4bd96c4a228d",
+        "displayName": "Nomination Nominator",
+        "emailMasked": "ci***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "e585bb57-6c59-4ca4-998b-8db7b8d26ff2",
+        "memberId": "5c983182-bad8-497b-b07c-8e6e258747f4",
+        "displayName": "Other Participant",
+        "emailMasked": "ci***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "8d9a458f-ba89-4a9a-a92a-c06ace1dbd4c",
+        "memberId": "890c0d79-cae0-40f2-80c9-d386529a5168",
+        "displayName": "Nomination Nominator",
+        "emailMasked": "ci***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "ccd4940a-aa1d-4902-8153-90931a3b2927",
+        "memberId": "fc134cbf-391d-4a46-bfde-66085c768bd0",
+        "displayName": "Other Participant",
+        "emailMasked": "ci***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "681101d1-e646-4281-99db-d4c18405101a",
+        "memberId": "455f89f8-4abc-40ce-ba7a-f5cd5c1f4299",
+        "displayName": "Nomination Nominator",
+        "emailMasked": "ci***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "5a56a3fd-58d1-41b3-be64-c15ca3e93a28",
+        "memberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+        "displayName": "Vlad",
+        "emailMasked": "sh***@gmail.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "b44010dd-61c0-4ebd-a294-f497b0711547",
+        "memberId": "d5c588e9-208d-490a-8ef0-efd4fc68a064",
+        "displayName": "Media Auth Verify User",
+        "emailMasked": "ve***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "00ebe3c7-ca83-4a6c-9a54-febfb1d9edc0",
+        "memberId": "a93bf620-304e-4dad-9200-e0a6c1828bb5",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "574f4535-7c66-46d5-85ea-334d977b42cb",
+        "memberId": "b9eac5e8-181f-4825-b98f-f4e34b58ba14",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "401dc7cb-ad3c-4571-934b-23f2cb207ba0",
+        "memberId": "54e8ae2d-40bf-4f41-9bbb-9244f039c5dc",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "379871dd-ed44-429e-bba3-1cb017a7b268",
+        "memberId": "56730cc2-3905-4127-a8a1-9cecf277f285",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "504b00ab-ad8f-4468-ac94-469d263305f2",
+        "memberId": "f42da0d0-ff3f-40bc-8d2c-6c4b4177c358",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "3c940f6e-d0b1-4384-82c2-8bb0577827a8",
+        "memberId": "0d024048-5ad1-4b0a-a737-f9d24480a01e",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "f8f342e8-e6fa-4a54-823e-56c4ef599b62",
+        "memberId": "2d111ae6-01c7-401d-aac9-8b410c2b5cd3",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "db308b03-64bf-4ddc-bd82-2dc2f5194278",
+        "memberId": "90b25e07-f570-4374-8182-e2169c9392b7",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "df41c23d-5aab-4302-bcaa-3428ca3516df",
+        "memberId": "93950b62-9cf9-4522-b1a6-764bfd8a258c",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "72e53965-f6ce-47c1-8b75-74d76523793c",
+        "memberId": "0439ecae-51f9-4ee2-a2b0-f88bc4a97cb0",
+        "displayName": "Participation Area Verify User",
+        "emailMasked": "pa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "542c51f4-f4a4-400a-82cf-64a6794fdc8d",
+        "memberId": "76cc8c79-80be-4572-93e9-73be4b1272dd",
+        "displayName": "Participation Area Verify User",
+        "emailMasked": "pa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "56c645d9-4609-45d0-a9ef-1ccff0f8288c",
+        "memberId": "3a31fa98-02d6-4031-9ead-00090c09a83a",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "bf257501-8c08-44a8-90a9-673d57900be4",
+        "memberId": "12f2e6b3-9c72-4edd-8c0f-7a4f775640c8",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "28b35783-dc60-4af3-9525-7128f5a02417",
+        "memberId": "c9c9cf6e-c5f3-49a5-af1a-33f4b6fdcd25",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "29f63092-3dd1-40d9-a33b-ecefde27430b",
+        "memberId": "c06c5642-26c8-414a-a269-fb68e1147b53",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "eef295cb-d8d4-4309-8a3b-ae812ac05256",
+        "memberId": "cf33f66f-0c18-4a3e-858b-6aad8029bcaf",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "95eccec2-21f3-45cc-b196-70f0d244edc2",
+        "memberId": "eba816fc-d97e-417b-9350-b75165c0a73b",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "11309852-c183-4b5a-82d5-d2ba9444621d",
+        "memberId": "f643a74d-3f69-4fc9-afdc-22da14ce6ce8",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "81d9a066-6bc8-4556-adcc-fafcb7d0ed61",
+        "memberId": "0dcbd1b3-7f1c-496e-8d4d-f6c057d761dc",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2d4b497b-a535-431a-997d-9ed18cbdd213",
+        "memberId": "36401f0e-d2de-4cd7-a37b-c80eced641d7",
+        "displayName": "Stabilization Verify",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "6af3bf49-dbda-4c0d-8664-db51d547a993",
+        "memberId": "b3b430fe-7805-4df6-a52e-ec3fc02f9276",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "f07864f7-750d-4af8-b623-cbf5b34cf556",
+        "memberId": "b27b9fb9-1bf3-46f9-94f6-01caedb061ab",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "5ef86f77-59cf-4b46-bddd-e3657e0d5bb3",
+        "memberId": "a3c22f55-b918-41e5-93f5-0e00c109788d",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "c2b5fcec-4caf-4592-adf0-9bf81442cdda",
+        "memberId": "7809dfc5-250a-4b6b-9b2c-1648d12d12f5",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "dc15af6d-e9b7-4edf-80d7-c03f8273083e",
+        "memberId": "df90e37e-fe57-4e02-aecc-57b6c8659219",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "cc4eb1bc-afc9-4a00-96a8-56ba6d96b9ec",
+        "memberId": "8adaf3c0-1f2a-47db-addf-9b9cd03d51cf",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "d49b99b8-4ffe-4a6a-8490-a4d03f508896",
+        "memberId": "3efa44b2-e437-414a-b9d3-a88ac39efcfd",
+        "displayName": "Confirm Flow User",
+        "emailMasked": "re***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "cdcee66b-1e44-4979-9c13-3ad1602e502b",
+        "memberId": "4d5a4c62-a591-4371-a523-b6bc3bfde96e",
+        "displayName": "Confirm Flow User",
+        "emailMasked": "re***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "e6ac0ad8-9693-4648-a70c-bcddbc21ccb8",
+        "memberId": "ee1b0b8d-5d71-429d-b3db-c80c41913853",
+        "displayName": "Confirm Flow User",
+        "emailMasked": "re***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "ce20c315-8f74-4539-85ac-455a4ec262b9",
+        "memberId": "d74f603c-296c-494f-b470-cba5e2a11ea3",
+        "displayName": "Confirm Flow User",
+        "emailMasked": "re***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "4da1eaee-b24d-426f-b697-3ffb0c4ed085",
+        "memberId": "46a5bb59-cc55-4f9e-be7f-d6a36ca3e99d",
+        "displayName": "Unconfirmed User",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "b7368e69-e527-4f98-ac97-106713a19e05",
+        "memberId": "98aed438-a339-4ac9-a7f8-21d369002861",
+        "displayName": "Two Step confirmed",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "846d10cc-1ce2-4096-ac2e-e151785f026d",
+        "memberId": "12ab5f7c-8bce-4c2a-a448-74d18f46f114",
+        "displayName": "Auth Verify User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2ac75a42-bd6e-4d87-8e92-bbd4a71752b8",
+        "memberId": "c786341c-7803-4bcb-a9f7-8d0a7069a3d2",
+        "displayName": "Public Safety User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "c4cf69c5-c56e-4134-b19b-27368a3938e1",
+        "memberId": "af8cc5cc-5cea-492c-85bf-17f2fbf28b15",
+        "displayName": "Membership single",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "a6a39116-40bd-47ad-921f-d823e1ca822c",
+        "memberId": "6100c35d-5cba-48d8-b3d6-10aaaaffb2ad",
+        "displayName": "Unconfirmed Membership",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "f70fa039-459c-49d9-bc23-96127aa49f90",
+        "memberId": "92c18f64-25cb-42c3-8f30-c570cb6fc921",
+        "displayName": "Membership apply",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "b2dec987-e65b-4e65-ac61-d006870682d0",
+        "memberId": "a3c208fc-eb0f-429f-b1a5-6faa6df63cc8",
+        "displayName": "Membership single",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "1bda28a0-1250-43cd-82c0-0ad9d2c6e0dd",
+        "memberId": "de0d5a0a-e942-4701-9534-362fb0ad7524",
+        "displayName": "Unconfirmed Membership",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "1e5ce2d3-65cc-4247-86eb-e50a8d67d862",
+        "memberId": "8ba2bb78-dc44-42a8-b18a-5dbcc1e989e2",
+        "displayName": "Membership apply",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "a663e204-0e19-41ed-b600-8d03f6e1491c",
+        "memberId": "dea6b4d3-05b9-4329-8a0c-a51197f4862a",
+        "displayName": "Membership number",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "4af7f8da-9be1-4e21-9a6c-e98d9fdba27f",
+        "memberId": "6051683f-78a2-49e7-b3ec-c3bd182b1cb8",
+        "displayName": "Membership status",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "dba5f962-eace-40cb-8921-b99629211da8",
+        "memberId": "33acd9b1-aed4-475a-bd17-78c083df275f",
+        "displayName": "Membership timeline",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "45984667-8281-46ac-86ec-d84814418d1a",
+        "memberId": "6a1d3b75-940b-4eaf-b7ee-7ca956106888",
+        "displayName": "Payment Eligible",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "d457d00f-2a79-46a8-95b0-ab6f5cb166d1",
+        "memberId": "d98d6d66-b4c5-4345-b31f-73c2421f3e3e",
+        "displayName": "Michael",
+        "emailMasked": "gc***@gmail.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "44c3104a-af1c-4c85-9a67-bbef4c010cbb",
+        "memberId": "51ed2c7a-4169-43f4-ae8f-55b3d44de004",
+        "displayName": "Membership single",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "38b9ae76-a966-48bd-8360-4e9b03c3090b",
+        "memberId": "f172a2b1-6a90-41ce-93aa-4e3ac95e754f",
+        "displayName": "Unconfirmed Membership",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "a6bbd1c1-7e34-4d76-b50a-a3223bf3f0e5",
+        "memberId": "e480f5cc-5912-485c-8522-ee2893a3d582",
+        "displayName": "Membership apply",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "b1b4beb0-cac1-4a1f-8550-17b616fa61ba",
+        "memberId": "f731d896-10c3-44b6-8bc5-2339f97df79f",
+        "displayName": "Stats Participant",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "4866931a-3d21-4cd2-bfaf-6bb47109b178",
+        "memberId": "dfef1c7f-b44d-46da-84eb-926beec44ea9",
+        "displayName": "Auth Verify User",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "d03f82df-d9ed-4e61-b606-6ba9077c929f",
+        "memberId": "b28b4214-2719-4dd0-8442-ff8da6493fa7",
+        "displayName": "Manala",
+        "emailMasked": "ma***@gmail.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "0d13d196-34ec-4a06-81f3-d2d248fef5e9",
+        "memberId": "fe709574-93f5-4bb8-a0c3-51a00fd7e793",
+        "displayName": "Derek",
+        "emailMasked": "ca***@gmail.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "e0b35c89-7809-4eb6-a62b-a2c711ed9b7c",
+        "memberId": "32574423-f1f6-44c2-9bdf-3f8ddf27bd61",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "b44d9583-9ed3-4fbf-a370-8263b3504ee3",
+        "memberId": "1b27325b-b6b6-440b-a4c5-59fe19eddf08",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "4d283f86-7d59-42ac-bd74-a5127aabb4f6",
+        "memberId": "3eb15c8a-a187-4b2a-806c-d480ba6443dd",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "194be922-bee0-46f1-869e-250b1214a8d8",
+        "memberId": "d1bb1272-eb95-4cf0-913c-0261f1d24403",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "49b2511e-ce54-4640-b86b-84d5e7f65c57",
+        "memberId": "5ac17814-6b79-4b47-b094-792e6d24154f",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "66301897-0854-4c51-b072-5556a982d7f7",
+        "memberId": "8fedd8fa-1596-4424-a118-228e12229fd9",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "f64c70ae-c0eb-4cfc-8e1a-0d5534f9e374",
+        "memberId": "918cbae5-22df-47ab-a936-2c8ef98263e8",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "3e606456-167d-4250-9da2-c193f5ee09b5",
+        "memberId": "054a1a0f-7168-497b-be82-d5e0bc0000e3",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "d8851ede-87ad-431e-9df7-1bba44d50edb",
+        "memberId": "ef57a7e8-0721-4d09-ace2-674d84f96dc3",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "6dd1ea0c-bc59-447d-ba5b-434dd818432a",
+        "memberId": "c291b2bc-aa57-40c5-9278-463882d9c0d5",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "a94fbaff-0e1a-422a-a89e-99c9c5431a1f",
+        "memberId": "a5f95446-e72a-45e0-b5ce-33171a526fd1",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "38256d9e-2a1b-4504-ad29-cf13c7078216",
+        "memberId": "04c2e536-3fc9-44a8-9365-901900ea4c77",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "a79d083f-457a-41f5-8c77-a3e27b99b6bd",
+        "memberId": "bc3203d8-578e-4550-ba30-d2d799ffa61e",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "3015a07a-7d2c-4ade-8bca-41de89bd2fbe",
+        "memberId": "ab58877e-c48c-44c3-a85f-50bd9aec5f07",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "bda14f7a-1a31-4c4a-ba3f-94ea54fb2574",
+        "memberId": "eedc6697-1dc1-47e6-b6d3-0c00fededf74",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2922827e-e42c-4e5e-93f2-8a955bead2fb",
+        "memberId": "b2bda005-a192-4496-b590-dcd07545b6ea",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "463ba8d7-a76e-4815-817b-25c3e6f3edc3",
+        "memberId": "0e89825f-2eaa-40aa-9ce8-79bb757eb830",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "c1811019-6edc-44f8-818a-7e1be3df5e97",
+        "memberId": "d655ace2-5baa-4af1-a1ea-1372594f96a1",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2c1aa693-d2ef-4049-90f4-b212a73c011f",
+        "memberId": "fdb17761-5cde-4c49-a380-a5ee81687539",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "bc628ee5-73f2-4bdf-b9c4-9528eeb60797",
+        "memberId": "a9955918-48bb-449f-a048-52c6dcab1dfa",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "82f7b57d-c39c-45d7-a601-13b599bfc195",
+        "memberId": "d703e1da-03be-414e-84ab-7297ea159969",
+        "displayName": "Unconfirmed User",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "57ccdaab-32d0-43ad-92f4-3d73044dd072",
+        "memberId": "eabf1a32-70e6-481b-89a5-3f3182cac1e8",
+        "displayName": "Two Step confirmed",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "3226ff51-4c87-42f5-bed5-545662bff757",
+        "memberId": "13fd068b-2d44-4885-b1b7-a45110147fab",
+        "displayName": "Two Step resend",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "3c210132-1608-4c73-ad33-0b3888a6f8f0",
+        "memberId": "0a4738bc-ba3f-44dd-904d-cb93398d15d5",
+        "displayName": "Unconfirmed User",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "8ebb08bc-b3e6-4c47-81e7-f8b843a2d7c3",
+        "memberId": "29d34efc-7534-4f55-822b-e00613c23436",
+        "displayName": "Two Step confirmed",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "ca1b44dc-5fcd-4062-99c6-b3b11ac06789",
+        "memberId": "c429026b-c1d6-40b9-b183-06d6bea151d5",
+        "displayName": "Two Step resend",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "d173d0b9-fda0-48ea-800e-272d9ec4f5cf",
+        "memberId": "043d8b5c-6fc5-4ddf-88a3-a83785ea0d9f",
+        "displayName": "Unconfirmed User",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2f2b621f-88b0-4da9-af6a-152297ed6117",
+        "memberId": "556c75fc-c045-4607-bc7d-b192a05262c5",
+        "displayName": "Two Step confirmed",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "7c5fada0-4141-4d32-b11e-a8631ff40ac2",
+        "memberId": "e7bcb825-da46-4e22-b593-27dc5dc033e7",
+        "displayName": "Two Step resend",
+        "emailMasked": "em***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2e3375dd-dfb1-42a2-8ce2-98a9022cbaae",
+        "memberId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+        "displayName": "Michael",
+        "emailMasked": "us***@gmail.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "4f7e8f39-20ab-45f0-92a6-684571ea0ca1",
+        "memberId": "257b9877-6e91-4138-9e12-38a1080df0be",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "a240fd06-6f46-479a-b9e4-7ef806bcaa7f",
+        "memberId": "72ed76d1-2c74-453d-b8da-32f7984810ab",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "0d8a208e-70b9-4c1a-9404-692c1df6c4fc",
+        "memberId": "6b042536-5ba4-439b-b0cf-4feb6fedda5f",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "b0050e98-a372-4c7a-af1f-e586a10772b8",
+        "memberId": "bf182ea1-ef4f-41bd-b005-13dea6303a26",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "0aec8154-f436-4f87-a890-9fec044e9234",
+        "memberId": "f71b75b7-8fe9-4d3a-bdb9-541642518cd2",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "7ebe7bf5-b301-432e-9f5c-bdad512efa85",
+        "memberId": "54d02ee2-7c4e-4789-b9be-b9f1b9b03a5a",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "383bbfec-7d48-4e03-a9ef-ce0044cd5f1c",
+        "memberId": "7b3e4af8-7f26-4e50-a226-02ccdf4c6fc3",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "d33decd6-7bfc-42a7-b4e1-9389249ef825",
+        "memberId": "1134bc0a-a572-4f13-a980-ddd69a4e56e0",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "785c59a4-a343-4df6-9264-996544e52f81",
+        "memberId": "554c87c6-71e6-459c-a639-82da3a95949f",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "a4bfdf5c-f5d0-46c0-b1d2-a4b0925414d8",
+        "memberId": "9794258e-7e63-4811-a6a0-c8a0aa3b61e9",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2aca2154-ecb0-43ad-a1c5-de962bd25a9f",
+        "memberId": "f946cb58-fb92-4b9a-b71a-2ddcda83bb32",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "58fa4f45-a6c7-48b2-8098-c4a232e36b06",
+        "memberId": "c47c3f10-6660-4938-b1d6-b9bf9bf872b8",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "b71d6adc-0fbf-4548-9b93-6c3fcb8a6e04",
+        "memberId": "d4fbdf79-ffe8-4599-9967-759558006e50",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "3b362753-54de-4336-955c-e08c19ed4c45",
+        "memberId": "a8280e76-7e5a-40ec-9a20-3e4e0a3aa9d8",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "c3b6d068-587a-437a-8ea1-851eb979d239",
+        "memberId": "d41e8336-0226-4b28-9fff-465173a08383",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "d950786c-88e2-4a88-8a11-82740ca8980c",
+        "memberId": "043d466f-95d8-4c45-84bc-27d0cca943bf",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "e08cb264-19ed-4b04-8f51-0e59d44b2ffb",
+        "memberId": "f727ce91-0101-450b-bde2-d60d82d2a240",
+        "displayName": "Auth UX A",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "2dac9a31-1bc3-454e-930a-d5e573e77cd5",
+        "memberId": "83ecda1e-4e85-495c-8ce3-95bc71d982d5",
+        "displayName": "Auth UX B",
+        "emailMasked": "au***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "064fcf6f-f48c-4095-a834-f8b5cbdd2da9",
+        "memberId": "d1d46abd-2b21-47fc-8b60-ff1ae255a720",
+        "displayName": "Profile Verify User",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "1a6f8cb3-cd2d-4c49-888d-2b636a4290bc",
+        "memberId": "9c626fa2-322d-4b27-901f-e802cf3eff76",
+        "displayName": "Display Name A",
+        "emailMasked": "co***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "6cdf8462-8662-4ecb-986d-b671c7e12ae3",
+        "memberId": "af9f022b-8a02-4cf2-81e1-fb8a3a88e91f",
+        "displayName": "Display Name A",
+        "emailMasked": "co***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "ccb57589-a19c-4905-b109-2e545dadad6c",
+        "memberId": "bb08da34-3383-4929-8a28-21523607e6ef",
+        "displayName": "Preferences City Verify",
+        "emailMasked": "pr***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "bade6685-91c0-4c3b-9962-c8a3dd2ac11c",
+        "memberId": "046cd0dc-e2e2-43b8-841c-f4da8348c9c8",
+        "displayName": "Preferences City Verify",
+        "emailMasked": "pr***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "82538140-beda-4250-9670-de8ede76f25f",
+        "memberId": "6de934ee-cfa0-413f-8a54-7c312f6e5497",
+        "displayName": "Preferences City Verify",
+        "emailMasked": "pr***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "45427002-bd1b-423c-9219-756741364767",
+        "memberId": "6558527d-da40-44c9-9601-c4001dbd1d05",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "3c3a1293-47c9-4a74-9d1f-c2d7fd5f6442",
+        "memberId": "d410255e-b38c-4c66-a16f-c61ae00875d4",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "534018cd-bda1-462e-b01c-16c64695489b",
+        "memberId": "af0535f1-e7df-4f27-a2c6-1987a8e1b627",
+        "displayName": "Preferences UX Verify",
+        "emailMasked": "me***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "be9706b6-ff56-4505-8ee3-8d6df5364350",
+        "memberId": "f586f9fa-ae09-4af5-9d55-29df09b4db94",
+        "displayName": "Debug",
+        "emailMasked": "de***@test.local",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "b154c086-f719-4b97-a4d1-8ca229af799d",
+        "memberId": "633287b6-5ecc-4c97-9c53-95c009531074",
+        "displayName": "Flow",
+        "emailMasked": "de***@workspace.test",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "a74a54d9-c8a8-41ae-bff0-343e026fe97b",
+        "memberId": "0529d798-0c05-4096-88a6-a2303463b7ff",
+        "displayName": "X",
+        "emailMasked": "st***@t.test",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "44d06918-b05f-49e8-869e-db934a46e287",
+        "memberId": "52d166e7-616e-490b-9d39-87d171aefe9d",
+        "displayName": "X",
+        "emailMasked": "de***@t.test",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "0bf8690c-5e07-4fff-8acb-d56722d5ce80",
+        "memberId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+        "displayName": "Derek",
+        "emailMasked": "tu***@gmail.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "c79a1f83-99ea-4cd6-bf92-12ac93180765",
+        "memberId": "572f98c6-e136-40d2-a01b-a88eaa56422f",
+        "displayName": "Ada Verify",
+        "emailMasked": "re***@direct-messaging.test",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "3ba0d50e-8a5f-4498-bc12-19595b6add2c",
+        "memberId": "f8efcbba-75bc-4d40-a598-8e039e36da6a",
+        "displayName": "Leo Verify",
+        "emailMasked": "re***@direct-messaging.test",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "cfab2b16-0f3e-4796-aa21-206e78d590e7",
+        "memberId": "22ab105a-3751-49fd-aab6-27b6a9bbd48b",
+        "displayName": "QA Author Recovery",
+        "emailMasked": "qa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "faeb3d1d-31e2-4271-8a28-757da9294a0d",
+        "memberId": "0a428018-be6e-445a-a33c-ce7c794dcff4",
+        "displayName": "QA Ally Recovery",
+        "emailMasked": "qa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "7e876d38-0c1e-4241-b520-44bdfc11781a",
+        "memberId": "5bb8e373-c042-4786-a69c-0340301711d8",
+        "displayName": "Isabella",
+        "emailMasked": "co***@gmail.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "1dac32c7-eb41-4e45-bfbb-d31d4a6ef844",
+        "memberId": "48b5f479-74c4-4f37-8c4c-6b739a9f51d2",
+        "displayName": "UX Pack 04 Tester",
+        "emailMasked": "ux***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "f78b24fd-2edc-419f-a856-01fbd3f26943",
+        "memberId": "d5c7af32-7107-4f60-9fc8-c75dadc325e6",
+        "displayName": "UX Pack 04 Visual Check",
+        "emailMasked": "ux***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "01211ec3-88dd-4948-9f10-2bf891d4eac4",
+        "memberId": "bd410012-34af-4064-b1fe-13cd14fee3ca",
+        "displayName": "QA Author PartB",
+        "emailMasked": "qa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "6eb7ad36-76a8-4193-b5b3-c621fe48335d",
+        "memberId": "c65bf923-9265-4bb1-9b90-56035b64a21a",
+        "displayName": "QA Ally PartB",
+        "emailMasked": "qa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "44428c3a-1f00-45c4-823c-85ed4d44870e",
+        "memberId": "a5261432-6679-4039-9945-5e11a45bf84c",
+        "displayName": "QA Author PartB",
+        "emailMasked": "qa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "f0cb7e91-2bec-4ff0-9136-65fe1570a81f",
+        "memberId": "807c6ae9-0e67-41b4-826e-d44bdca5e95f",
+        "displayName": "QA Ally PartB",
+        "emailMasked": "qa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "5c503e58-70e2-4fa0-88db-59408a19646d",
+        "memberId": "ea168c1b-aab0-493e-961a-2134e9589673",
+        "displayName": "Debug",
+        "emailMasked": "de***@blog-editorial.test",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "c1fb2160-b47e-4277-b071-d9f9cd98a5f4",
+        "memberId": "e323937e-2268-4c69-a79c-eaee6964aa5d",
+        "displayName": "Debug",
+        "emailMasked": "de***@blog-editorial.test",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "1275af20-595f-47e4-93fc-8a905b7dc5d6",
+        "memberId": "0f95de7a-3ad2-4c4f-80f8-7d9366004f56",
+        "displayName": "Debug",
+        "emailMasked": "de***@blog-editorial.test",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "bbdac68b-81b1-488d-b620-da5487753eb6",
+        "memberId": "22c73f1a-906e-44c4-8209-7ea60e89d820",
+        "displayName": "QA Browser Device Pack01",
+        "emailMasked": "qa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "06ed239a-0d49-4275-b096-c757192851c2",
+        "memberId": "30123bc3-f1d7-4cce-9145-4d254fc13ec4",
+        "displayName": "QA Recovery",
+        "emailMasked": "qa***@humanityunion.test",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "1d3189ff-6c19-4487-96a4-566dcf05266d",
+        "memberId": "08e8ee81-91cd-4745-8d79-cc90b1a6c8bf",
+        "displayName": "QA Recovery",
+        "emailMasked": "qa***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "29ffa586-27aa-4545-9764-70a21eddea75",
+        "memberId": "23dcf48f-87fd-4523-8943-6daa94c9a186",
+        "displayName": "Auth Hotfix QA",
+        "emailMasked": "hu***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "795a12a9-264a-4505-a730-99c9c93f125a",
+        "memberId": "79134f5d-492d-4241-a096-aae692855d57",
+        "displayName": "Auth Hotfix QA",
+        "emailMasked": "hu***@example.com",
+        "role": "member"
+      },
+      {
+        "classification": "SAFE_TO_MIGRATE",
+        "userId": "9c201471-076f-47d7-b94d-a4b1d3f1e46c",
+        "memberId": "0f9e039a-d344-4f33-8383-bc8567dc80d6",
+        "displayName": "Auth Hotfix QA",
+        "emailMasked": "hu***@example.com",
+        "role": "member"
+      }
+    ],
+    "duplicates": []
+  },
+  "initiatives": {
+    "safeToMigrate": [],
+    "duplicates": [
+      {
+        "classification": "DUPLICATE_OR_ALREADY_PRESENT",
+        "initiativeId": "initiative-bootstrap-001",
+        "title": "Community Garden Initiative",
+        "reason": "Same initiativeId already present in staging"
+      }
+    ]
+  },
+  "relatedArtifacts": {
+    "note": "Related counts are attached per Initiative under source.initiatives[].relatedCounts"
+  },
+  "confirmation": "NO DATA WAS WRITTEN, UPDATED, DELETED, OR MIGRATED BY THIS DRY-RUN INSPECTION.",
+  "fileRuntimeHistorical": {
+    "note": "Local non-production INITIATIVE_PERSISTENCE defaults to file. Historical Initiatives were found in apps/api/.runtime/, not in Mongo initiatives collection.",
+    "path": "apps/api/.runtime/initiatives.json",
+    "totalRuntimeInitiatives": 592,
+    "recommendedHistoricalInitiatives": [
+      {
+        "initiativeId": "initiative-1783748417899",
+        "title": "Citizen Support Squad (CSS)",
+        "stewardMemberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+        "stewardDisplayName": "Vlad",
+        "stewardEmailMasked": "sh***@gmail.com",
+        "lifecyclePhase": "projected",
+        "status": "proposal",
+        "visibility": "public",
+        "geography": {
+          "countrySlug": "CA",
+          "region": "British Columbia"
+        },
+        "relatedCounts": {
+          "analyses": 2,
+          "proposals": 3,
+          "revisions": 1
+        },
+        "classification": "REQUIRES_TRANSFORM",
+        "reason": "Present in file runtime; absent from staging Mongo initiatives; steward auth exists in humanity_union_dev with different email than staging admin"
+      },
+      {
+        "initiativeId": "initiative-1784349613932",
+        "title": "The Mind-Safe Alliance",
+        "stewardMemberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+        "stewardDisplayName": "Vlad",
+        "stewardEmailMasked": "sh***@gmail.com",
+        "lifecyclePhase": "projected",
+        "status": "proposal",
+        "visibility": "public",
+        "geography": {
+          "countrySlug": "CA",
+          "region": "British Columbia"
+        },
+        "relatedCounts": {
+          "analyses": 1,
+          "proposals": 0,
+          "revisions": 1
+        },
+        "classification": "REQUIRES_TRANSFORM",
+        "reason": "File-runtime Initiative; must import into staging Mongo with steward identity mapping"
+      },
+      {
+        "initiativeId": "initiative-1785636843367",
+        "title": "Bridging the \"New World Disorder\"",
+        "stewardMemberId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+        "stewardDisplayName": "Michael",
+        "stewardEmailMasked": "us***@gmail.com",
+        "lifecyclePhase": "projected",
+        "status": "proposal",
+        "visibility": "public",
+        "geography": {
+          "countrySlug": "US",
+          "region": ""
+        },
+        "relatedCounts": {
+          "analyses": 0,
+          "proposals": 0,
+          "revisions": 1
+        },
+        "classification": "REQUIRES_TRANSFORM"
+      },
+      {
+        "initiativeId": "initiative-1785693642422",
+        "title": "AI for the Common Good",
+        "stewardMemberId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+        "stewardDisplayName": "Derek",
+        "stewardEmailMasked": "tu***@gmail.com",
+        "lifecyclePhase": "projected",
+        "status": "proposal",
+        "visibility": "public",
+        "geography": {
+          "countrySlug": "TR",
+          "region": ""
+        },
+        "relatedCounts": {
+          "analyses": 0,
+          "proposals": 0,
+          "revisions": 1
+        },
+        "classification": "REQUIRES_TRANSFORM"
+      },
+      {
+        "initiativeId": "initiative-1785948978037",
+        "title": "Development of the Humanity Union platform",
+        "stewardMemberId": "5bb8e373-c042-4786-a69c-0340301711d8",
+        "stewardDisplayName": "Isabella",
+        "stewardEmailMasked": "co***@gmail.com",
+        "lifecyclePhase": "projected",
+        "status": "proposal",
+        "visibility": "public",
+        "geography": {
+          "countrySlug": "CO",
+          "region": ""
+        },
+        "relatedCounts": {
+          "analyses": 0,
+          "proposals": 0,
+          "revisions": 1
+        },
+        "classification": "REQUIRES_TRANSFORM",
+        "note": "Isabella Initiative — explicitly APPROVED in Pack 02; in scope."
+      }
+    ],
+    "recommendedHistoricalParticipants": [
+      {
+        "memberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+        "displayName": "Vlad",
+        "emailMasked": "sh***@gmail.com",
+        "classification": "SEPARATE_PARTICIPANT",
+        "note": "Different email than staging admin; do NOT merge with staging-admin Vlad HUWS."
+      },
+      {
+        "memberId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+        "displayName": "Michael",
+        "emailMasked": "us***@gmail.com",
+        "classification": "SAFE_TO_MIGRATE_WITH_AUTH_RESET"
+      },
+      {
+        "memberId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+        "displayName": "Derek",
+        "emailMasked": "tu***@gmail.com",
+        "classification": "SAFE_TO_MIGRATE_WITH_AUTH_RESET"
+      },
+      {
+        "memberId": "5bb8e373-c042-4786-a69c-0340301711d8",
+        "displayName": "Isabella",
+        "emailMasked": "co***@gmail.com",
+        "classification": "SAFE_TO_MIGRATE_WITH_AUTH_RESET"
+      }
+    ]
+  },
+  "pack02Decisions": {
+    "approvedAt": "2026-08-16",
+    "historicalVladGmail": {
+      "memberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "classification": "SEPARATE_PARTICIPANT",
+      "mergeWithStagingAdmin": false,
+      "note": "Display name Vlad is not an identity key. Remains distinct from staging-admin Vlad HUWS."
+    },
+    "isabellaInitiative": {
+      "initiativeId": "initiative-1785948978037",
+      "title": "Development of the Humanity Union platform",
+      "classification": "REQUIRES_TRANSFORM",
+      "inScope": true,
+      "note": "Explicitly APPROVED in Pack 02; not optional / not REVIEW_REQUIRED merely for being fifth."
+    },
+    "approvedParticipants": [
+      "historical_vlad_gmail",
+      "michael",
+      "derek",
+      "isabella"
+    ],
+    "approvedInitiatives": [
+      "initiative-1783748417899",
+      "initiative-1784349613932",
+      "initiative-1785636843367",
+      "initiative-1785693642422",
+      "initiative-1785948978037"
+    ],
+    "expectedTargetParticipantCount": 5,
+    "expectedTargetHistoricalInitiativeCount": 5,
+    "bootstrapInitiative": {
+      "initiativeId": "initiative-bootstrap-001",
+      "action": "RETAIN",
+      "deleteInPack02": false
+    },
+    "authStrategy": "shell_with_password_reset_required",
+    "legacyRootsExcluded": [
+      "activities",
+      "discussions",
+      "proposals",
+      "decisions"
+    ]
+  }
+}

@@ -12,6 +12,7 @@
     "test:smtp": "tsx scripts/test-smtp.ts",
     "dev:reset-auth-rate-limits": "tsx src/scripts/dev-reset-auth-rate-limits.ts",
     "provision:staging-admin": "tsx src/scripts/provision-staging-admin.ts",
+    "migrate:staging-historical-data": "tsx src/scripts/migrate-staging-historical-data.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"
   },
