@@ -46,7 +46,7 @@ Operational on **staging**
 
 Project Health:
 
-Good — staging recovery CLOSED (verify:staging PASS); Lifecycle UX audit complete; Phase 1 (Collective Decision vote in shell) is next
+Good — staging recovery CLOSED; Lifecycle UX Pack 01 (Collective Decision vote in shell) complete; Phase 2 next
 
 Primary engineering branch:
 
@@ -56,15 +56,15 @@ Primary engineering branch:
 
 # Current Focus
 
-**LIFECYCLE UX COMPLETION — PHASE 1: Collective Decision Vote in Initiative Shell**
+**LIFECYCLE UX COMPLETION — PHASE 2** (durability + shell primacy)
 
 Last completed:
 
-LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT (`architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`)
+LIFECYCLE UX COMPLETION PACK 01 — Collective Decision Participant Voting
 
-Prior closed:
+Prior:
 
-RECOVERY PHASE CLOSURE — STAGING VERIFIED PASS (Packs 01–05)
+LIFECYCLE UX CURRENT-STATE AUDIT; RECOVERY PHASE CLOSURE (Packs 01–05)
 
 ---
 
@@ -76,7 +76,7 @@ Historical Epics 01–03 (Initiative, Collaborative Analysis, Collective Decisio
 
 Later product work (Blog, PWA, Launch Readiness, Admin, Staging recovery) advanced via Packs on branch `staging` — see `PROJECT_STATE.md` and git history.
 
-Live next task is Lifecycle UX Phase 1 (Collective Decision vote in shell) — see `NEXT_SESSION.md`.
+Live next task is Lifecycle UX Phase 2 — see `NEXT_SESSION.md`.
 
 ---
 

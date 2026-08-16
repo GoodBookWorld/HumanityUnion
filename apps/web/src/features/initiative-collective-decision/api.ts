@@ -63,3 +63,24 @@ export async function getMyInitiativeDecisionVote(
     `/api/v1/initiative-collective-decisions/${encodeURIComponent(decisionId)}/my-vote`,
   );
 }
+
+/**
+ * Lifecycle UX Pack 01 — cast or change the signed-in Participant's vote.
+ * Choice values are the canonical InitiativeDecisionVoteChoice set.
+ * Server resolves actor identity; never send participantId from the client.
+ */
+export async function castOrUpdateInitiativeDecisionVote(
+  decisionId: string,
+  choice: InitiativeDecisionVote["choice"],
+): Promise<InitiativeDecisionVote> {
+  return apiRequest<InitiativeDecisionVote>(
+    `/api/v1/initiative-collective-decisions/${encodeURIComponent(decisionId)}/vote`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ choice }),
+    },
+  );
+}

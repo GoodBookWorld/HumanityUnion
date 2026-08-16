@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import type { PublicInitiativeCollectiveDecisionProjection } from "@hu/types";
+import type {
+  InitiativeDecisionVote,
+  PublicInitiativeCollectiveDecisionProjection,
+} from "@hu/types";
 
 import { getPublicInitiativeCollectiveDecisionOrThrow } from "../../initiative-collective-decision/api";
+
+import { InitiativeCollectiveDecisionBallotWidget } from "./InitiativeCollectiveDecisionBallotWidget";
 
 import "./initiative-collective-decision-stage-workspace.css";
 
@@ -34,17 +39,25 @@ export function InitiativeCollectiveDecisionPublicResult({
   decisionId,
   isPreview = false,
 }: InitiativeCollectiveDecisionPublicResultProps) {
-  const [projection, setProjection] = useState<PublicInitiativeCollectiveDecisionProjection | null>(null);
+  const [projection, setProjection] = useState<PublicInitiativeCollectiveDecisionProjection | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const loadProjection = useCallback(async () => {
+    return getPublicInitiativeCollectiveDecisionOrThrow(decisionId);
+  }, [decisionId]);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
       try {
-        const result = await getPublicInitiativeCollectiveDecisionOrThrow(decisionId);
+        const result = await loadProjection();
         if (!cancelled) {
           setProjection(result);
+          setError(null);
         }
       } catch {
         if (!cancelled) {
@@ -56,9 +69,20 @@ export function InitiativeCollectiveDecisionPublicResult({
     return () => {
       cancelled = true;
     };
-  }, [decisionId]);
+  }, [decisionId, loadProjection, reloadToken]);
 
-  if (error) {
+  async function handleVoteSucceeded(_vote: InitiativeDecisionVote) {
+    try {
+      const refreshed = await loadProjection();
+      setProjection(refreshed);
+      setError(null);
+    } catch {
+      // Keep the prior projection; ballot already shows the recorded vote.
+      setReloadToken((token) => token + 1);
+    }
+  }
+
+  if (error && !projection) {
     return <p className="icd-source-panel__empty">{error}</p>;
   }
 
@@ -67,15 +91,22 @@ export function InitiativeCollectiveDecisionPublicResult({
   }
 
   const structured = projection.structuredContent;
+  const stats = projection.statistics;
 
   return (
     <article className="icd-public" aria-label="Published Collective Decision">
-      {isPreview ? <p className="icd-public__meta">Author Preview of published Collective Decision</p> : null}
+      {isPreview ? (
+        <p className="icd-public__meta">Author Preview of published Collective Decision</p>
+      ) : null}
       <section className="icd-public__section">
         <h3>{structured?.title || projection.question}</h3>
         <p>{structured?.decisionSummary ?? projection.question}</p>
         <p className="icd-public__meta">
-          Closed {projection.closedAt ?? projection.closesAt} · Steward {projection.stewardDisplayName}
+          Status {projection.status.replaceAll("_", " ")}
+          {projection.closedAt
+            ? ` · Closed ${new Date(projection.closedAt).toLocaleString()}`
+            : ` · Closes ${new Date(projection.closesAt).toLocaleString()}`}{" "}
+          · Steward {projection.stewardDisplayName}
         </p>
       </section>
 
@@ -105,8 +136,20 @@ export function InitiativeCollectiveDecisionPublicResult({
       <section className="icd-public__section">
         <h3>Voting Results</h3>
         <p>{projection.outcomeSummary}</p>
+        <ul className="icd-public__stats" aria-label="Vote totals">
+          <li>Support: {stats.supportCount}</li>
+          <li>Do Not Support: {stats.doNotSupportCount}</li>
+          <li>Abstain: {stats.abstainCount}</li>
+          <li>Total votes: {stats.totalVotesCast}</li>
+        </ul>
         <p className="icd-public__meta">{projection.transparencyNote}</p>
       </section>
+
+      <InitiativeCollectiveDecisionBallotWidget
+        decisionId={decisionId}
+        projection={projection}
+        onVoteSucceeded={handleVoteSucceeded}
+      />
 
       {projection.traceability ? (
         <section className="icd-public__section">

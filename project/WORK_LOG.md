@@ -56,6 +56,20 @@ Next Objective:
 
 # Entries
 
+## 2026-08-16 (Lifecycle UX Pack 01)
+
+Completed:
+
+- LIFECYCLE UX COMPLETION PACK 01 — Collective Decision Participant Voting.
+- Ballot in Initiative lifecycle PublicResult; reuses existing vote API (support / do_not_support / abstain).
+- Auth/eligibility gated by backend; Author Mode unchanged; ledger cast/changed path preserved.
+
+Next Objective:
+
+Lifecycle UX Phase 2 — Improvement Proposals durability + shell primacy.
+
+---
+
 ## 2026-08-16 (Lifecycle UX audit)
 
 Completed:

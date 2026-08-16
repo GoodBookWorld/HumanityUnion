@@ -4,7 +4,7 @@ Humanity Union
 
 Next Engineering Session
 
-Version 1.5
+Version 1.6
 
 ---
 
@@ -18,31 +18,30 @@ AI recovery entry: `architecture/recovery/chat-agent/README.md`
 
 # Last Completed
 
-**LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT**
+**LIFECYCLE UX COMPLETION PACK 01 — Collective Decision Participant Voting**
 
-Primary audit: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`
+Participant ballot wired into canonical Initiative lifecycle shell
+(`InitiativeCollectiveDecisionPublicResult`), reusing existing
+`POST .../vote` + `GET .../my-vote` (choices: support / do_not_support / abstain).
+No parallel voting domain. Ledger consumers unchanged (backend path preserved).
 
-Prior: RECOVERY PHASE CLOSURE — STAGING VERIFIED PASS (Packs 01–05 CLOSED).
-
-Audit headline: Author Mode vertical slices Analysis→Archive are largely present (~85%). Largest gaps are Collective Decision **vote UI** (API exists), Participant Action Ledger **journey UX** (backend partial), Improvement Proposals **memory-default** persistence risk, and live legacy Stage/Activity parallels.
+Prior: Lifecycle UX Current-State Audit; Recovery Packs 01–05 CLOSED.
 
 ---
 
 # Immediate Objective
 
-**LIFECYCLE UX COMPLETION — PHASE 1: Collective Decision Vote in Initiative Shell**
+**LIFECYCLE UX COMPLETION — PHASE 2 (recommended next)**
 
-Implementation Pack (first): connect the broken Participant transition.
+From audit §15:
 
-Scope:
+1. Confirm/force Improvement Proposals stage persistence = mongodb on staging.
+2. Prefer Initiative-shell deep links; begin Stage URL quarantine/redirects (Analysis first).
+3. Fix orphan `/official-responses/public/{id}` hrefs → shell `#official-responses`.
 
-1. Add cast/update vote UI inside lifecycle `InitiativeCollectiveDecisionPublicResult`.
-2. Reuse existing `POST /api/v1/initiative-collective-decisions/:decisionId/vote` and `getMyInitiativeDecisionVote`.
-3. Keep Participant Action Ledger consumers recording vote cast/changed.
-4. Do **not** redesign Author Mode, reopen recovery, or create parallel civic roots.
+Do **not** implement full Collective Participation Journey UX in Phase 2 unless scoped as its own Pack after Phase 2 review.
 
-Authority / sequencing: audit §15 Phase 1.
-Later phases (durability, journey projection, Stage URL quarantine) wait until Phase 1 is reviewed.
+Authority: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`
 
 ---
 

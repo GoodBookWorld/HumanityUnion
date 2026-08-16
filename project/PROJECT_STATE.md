@@ -55,14 +55,14 @@ Platform Version:
 
 # Current Focus
 
-**Last completed:** LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT
-(`architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`)
+**Last completed:** LIFECYCLE UX COMPLETION PACK 01 — Collective Decision Participant Voting
 
-**Next:** LIFECYCLE UX COMPLETION — PHASE 1: Collective Decision Vote in Initiative Shell
+**Next:** LIFECYCLE UX COMPLETION — PHASE 2 (Improvement Proposals durability + shell primacy / Stage URL hygiene)
 
 See `project/NEXT_SESSION.md`.
 
 Recovery Packs 01–05 remain **CLOSED**.
+Audit: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`.
 
 ---
 
@@ -158,17 +158,18 @@ Also retained from earlier operator-verified migration:
 
 None as Cap-02 Guide cycle.
 
-Current engineering cycle type: **Lifecycle UX Completion** (Phase 1 after current-state audit).
+Current engineering cycle type: **Lifecycle UX Completion** (Pack 01 complete; Phase 2 next).
 
-Lifecycle maturity (audit): Author Mode Analysis→Archive ~85%; Participant journey coherence ~55–65%; Collective Participation Journey UX ~15%.
+Lifecycle maturity (post Pack 01): Author Mode Analysis→Archive ~85%; Participant journey coherence improved on Collective Decision vote; Collective Participation Journey UX still deferred (~15%).
 
 ---
 
 # Immediate Objective
 
-See `project/NEXT_SESSION.md` — **LIFECYCLE UX COMPLETION — PHASE 1: Collective Decision Vote in Initiative Shell**.
+See `project/NEXT_SESSION.md` — **LIFECYCLE UX COMPLETION — PHASE 2**.
 
-Audit reference: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`.
+Pack 01 (Collective Decision vote in shell) complete. Audit reference:
+`architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`.
 
 ---
 
