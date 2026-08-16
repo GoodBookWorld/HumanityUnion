@@ -4,7 +4,7 @@ Humanity Union
 
 Next Engineering Session
 
-Version 1.4
+Version 1.5
 
 ---
 
@@ -18,82 +18,47 @@ AI recovery entry: `architecture/recovery/chat-agent/README.md`
 
 # Last Completed
 
-**RECOVERY PHASE CLOSURE — STAGING VERIFIED PASS**
+**LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT**
 
-Historical staging recovery / migration / reconciliation for the **approved canonical scope** (Packs 01–05) is **CLOSED**.
+Primary audit: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`
 
-Operator-verified (`pnpm verify:staging -- --check-media-http` on staging):
+Prior: RECOVERY PHASE CLOSURE — STAGING VERIFIED PASS (Packs 01–05 CLOSED).
 
-- result: **PASS**
-- Pack 05 deployed; reconciliation `--execute` completed successfully
-- participants 5 / loginReady 5 (historical Participants login-ready)
-- initiativesPublic 5; media / avatars / card navigation: **PASS**
-- allies 6; activeAllies 5; brokenAllyParticipants 0; brokenAllyInitiatives 0
-- collaborationMessages 4; collaborationSessions 0
-- rssSources 16; publicNewsArticles **54** (verification snapshot only — not a permanent invariant)
-- rssFeedAvailable: **PASS**; `NEWS_PROVIDER_ENABLED=true` on staging API; RSS ingestion operational
-- Operator manually confirmed installed functionality is working
-
-Prior track: Staging Data Migration Packs 01–03 (+02A), Reconciliation Packs 04–05, Continuity Pack 01.
-
-**Closure note:** This does **not** claim every legacy record in `humanity_union_dev` was migrated. Excluded Activity / Discussion / Proposal / Decision roots remain excluded. Do not reopen bulk DB migration as the default strategy.
+Audit headline: Author Mode vertical slices Analysis→Archive are largely present (~85%). Largest gaps are Collective Decision **vote UI** (API exists), Participant Action Ledger **journey UX** (backend partial), Improvement Proposals **memory-default** persistence risk, and live legacy Stage/Activity parallels.
 
 ---
 
 # Immediate Objective
 
-**LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT**
+**LIFECYCLE UX COMPLETION — PHASE 1: Collective Decision Vote in Initiative Shell**
 
-Documentation / repository audit only for the first implementation session.
-**Do not** implement new Lifecycle UX until this audit completes and is reviewed.
+Implementation Pack (first): connect the broken Participant transition.
 
-## Reference journey (approved Initiative lifecycle)
+Scope:
 
-Initiative
-→ Discussion
-→ Collaborative Analysis
-→ Improvement Proposals
-→ Revision
-→ Petition
-→ Decision Session
-→ Collective Decision
-→ Implementation Commitments
-→ Implementation Tracking
-→ Official Responses
-→ Public Impact
-→ Civic Archive
+1. Add cast/update vote UI inside lifecycle `InitiativeCollectiveDecisionPublicResult`.
+2. Reuse existing `POST /api/v1/initiative-collective-decisions/:decisionId/vote` and `getMyInitiativeDecisionVote`.
+3. Keep Participant Action Ledger consumers recording vote cast/changed.
+4. Do **not** redesign Author Mode, reopen recovery, or create parallel civic roots.
 
-## Architectural rules (must preserve)
+Authority / sequencing: audit §15 Phase 1.
+Later phases (durability, journey projection, Stage URL quarantine) wait until Phase 1 is reviewed.
 
-1. Initiative remains the sole canonical civic root.
-2. Initiative Ancestry Invariant remains mandatory.
-3. Participant is the universal actor identity.
-4. Member is earned/honorary status, not the canonical actor base.
-5. Activity / Discussion / Proposal / Decision must not become parallel civic roots.
-6. Author Mode begins at Collaborative Analysis.
-7. Existing functionality must be reused before new functionality is designed.
-8. Collective Participation Journey is a participant-facing journey/projection, not a new parallel civic domain root.
+---
 
-## Audit must determine (per lifecycle stage)
+# Architectural Rules (unchanged)
 
-- existing domain/API implementation, persistence, frontend/UI, routes, tests, documentation
-- Participant actions currently available
-- Author Mode tools currently available
-- Allies / Active Allies integration
-- stage transition implementation; missing UX transitions
-- duplicated or competing implementations
-- backend-only vs documentation-only capabilities
-- gaps between the canonical lifecycle and actual runtime
-- reusable components/services
-- minimum safe vertical slice to make the lifecycle journey coherent
-- what existing data can support the Collective Participation Journey **without** introducing another persistence root
-
-Authority: `architecture/lifecycle/LIFECYCLE_STAGE_INTELLIGENCE_MODEL_v1.0.md`
-ADR: `architecture/decisions/ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0.md`
+1. Initiative = sole canonical civic root.
+2. Initiative Ancestry Invariant mandatory.
+3. Participant-first; Member honorary.
+4. No Activity / Discussion / Proposal / Decision parallel roots.
+5. Author Mode begins at Collaborative Analysis.
+6. Reuse before invent.
+7. Collective Participation Journey = projection, not a new root.
+8. Recovery Packs 01–05 remain CLOSED unless a concrete blocking defect appears.
 
 ---
 
 # Engineering Reminder
 
-- Label every Bash command with execution location (CURSOR AGENT / LOCAL MAC TERMINAL / RENDER API WEB SHELL / RENDER WEB WEB SHELL).
-- Staging recovery tooling remains available for future *scoped* repairs; it is not the live engineering focus.
+Label every Bash command with execution location (CURSOR AGENT / LOCAL MAC TERMINAL / RENDER API WEB SHELL / RENDER WEB WEB SHELL).

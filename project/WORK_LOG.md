@@ -56,6 +56,20 @@ Next Objective:
 
 # Entries
 
+## 2026-08-16 (Lifecycle UX audit)
+
+Completed:
+
+- LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT.
+- Document: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`.
+- Finding: Author Mode Analysis→Archive largely present; largest gaps = Collective Decision vote UI, Participant journey UX, Improvement Proposals memory-default, legacy Stage/Activity parallels.
+
+Next Objective:
+
+LIFECYCLE UX COMPLETION — PHASE 1: Collective Decision Vote in Initiative Shell.
+
+---
+
 ## 2026-08-16 (Recovery phase closure)
 
 Completed:

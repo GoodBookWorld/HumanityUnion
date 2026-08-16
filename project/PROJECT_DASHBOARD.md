@@ -46,7 +46,7 @@ Operational on **staging**
 
 Project Health:
 
-Good — approved historical staging recovery Packs 01–05 **CLOSED** (verify:staging PASS); Lifecycle UX audit is next
+Good — staging recovery CLOSED (verify:staging PASS); Lifecycle UX audit complete; Phase 1 (Collective Decision vote in shell) is next
 
 Primary engineering branch:
 
@@ -56,18 +56,15 @@ Primary engineering branch:
 
 # Current Focus
 
-**LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT**
+**LIFECYCLE UX COMPLETION — PHASE 1: Collective Decision Vote in Initiative Shell**
 
 Last completed:
 
-RECOVERY PHASE CLOSURE — STAGING VERIFIED PASS (Packs 01–05 approved scope closed)
+LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT (`architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`)
 
-Recent closed staging tracks:
+Prior closed:
 
-- Admin Packs 02–05
-- Staging Data Migration Packs 01–03 (+02A)
-- Staging Historical Data Reconciliation Pack 04
-- Staging Feature Reconciliation Pack 05 (Allies/UI/RSS) — deployed + operator-verified PASS
+RECOVERY PHASE CLOSURE — STAGING VERIFIED PASS (Packs 01–05)
 
 ---
 
@@ -79,7 +76,7 @@ Historical Epics 01–03 (Initiative, Collaborative Analysis, Collective Decisio
 
 Later product work (Blog, PWA, Launch Readiness, Admin, Staging recovery) advanced via Packs on branch `staging` — see `PROJECT_STATE.md` and git history.
 
-Live next task is Lifecycle UX audit — see `NEXT_SESSION.md`.
+Live next task is Lifecycle UX Phase 1 (Collective Decision vote in shell) — see `NEXT_SESSION.md`.
 
 ---
 

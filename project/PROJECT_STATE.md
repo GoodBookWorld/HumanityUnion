@@ -55,11 +55,14 @@ Platform Version:
 
 # Current Focus
 
-**Last completed:** RECOVERY PHASE CLOSURE — STAGING VERIFIED PASS (approved historical recovery Packs 01–05 **CLOSED**)
+**Last completed:** LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT
+(`architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`)
 
-**Next:** **LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT** (audit before any new Lifecycle UX implementation)
+**Next:** LIFECYCLE UX COMPLETION — PHASE 1: Collective Decision Vote in Initiative Shell
 
 See `project/NEXT_SESSION.md`.
+
+Recovery Packs 01–05 remain **CLOSED**.
 
 ---
 
@@ -155,13 +158,17 @@ Also retained from earlier operator-verified migration:
 
 None as Cap-02 Guide cycle.
 
-Current engineering cycle type: **Lifecycle UX** (current-state audit first), not Staging Pack.
+Current engineering cycle type: **Lifecycle UX Completion** (Phase 1 after current-state audit).
+
+Lifecycle maturity (audit): Author Mode Analysis→Archive ~85%; Participant journey coherence ~55–65%; Collective Participation Journey UX ~15%.
 
 ---
 
 # Immediate Objective
 
-See `project/NEXT_SESSION.md` — **LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT**.
+See `project/NEXT_SESSION.md` — **LIFECYCLE UX COMPLETION — PHASE 1: Collective Decision Vote in Initiative Shell**.
+
+Audit reference: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`.
 
 ---
 
