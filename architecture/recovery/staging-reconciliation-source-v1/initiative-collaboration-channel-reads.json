@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "initiativeId": "initiative-1783748417899",
+      "participantId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "lastReadAt": "2026-08-12T21:32:56.878Z",
+      "lastReadMessageId": null
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "participantId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "lastReadAt": "2026-08-13T02:22:18.387Z",
+      "lastReadMessageId": null
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "participantId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+      "lastReadAt": "2026-08-07T03:13:04.318Z",
+      "lastReadMessageId": null
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "participantId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+      "lastReadAt": "2026-08-07T04:46:22.828Z",
+      "lastReadMessageId": null
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "participantId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+      "lastReadAt": "2026-08-07T04:46:39.206Z",
+      "lastReadMessageId": "66223a6f-8b6f-4d0c-a916-9d8205b58dd4"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "participantId": "5bb8e373-c042-4786-a69c-0340301711d8",
+      "lastReadAt": "2026-08-07T02:12:54.476Z",
+      "lastReadMessageId": "66223a6f-8b6f-4d0c-a916-9d8205b58dd4"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "participantId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+      "lastReadAt": "2026-08-07T03:13:28.839Z",
+      "lastReadMessageId": "66223a6f-8b6f-4d0c-a916-9d8205b58dd4"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "participantId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "lastReadAt": "2026-08-11T22:15:13.301Z",
+      "lastReadMessageId": "66223a6f-8b6f-4d0c-a916-9d8205b58dd4"
+    }
+  ]
+}

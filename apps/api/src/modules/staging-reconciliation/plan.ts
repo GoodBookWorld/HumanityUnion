@@ -58,8 +58,21 @@ export interface ReconciliationPlan {
   bookmarks: RecordPlanItem[];
   views: RecordPlanItem[];
   participantActions: RecordPlanItem[];
+  allies: RecordPlanItem[];
+  collaborationMessages: RecordPlanItem[];
+  collaborationReads: RecordPlanItem[];
   media: MediaPlanItem[];
   statistics: StatisticsFinding[];
+  pack05: {
+    alliesFound: number;
+    alliesToCreate: number;
+    activeAlliesResolved: number;
+    collaborationMessagesFound: number;
+    collaborationSessionsFound: number;
+    rssSourcesFound: number;
+    newsRecordsFound: number;
+    rssStrategy: string;
+  };
   excludedLegacy: string[];
   conflicts: string[];
   integrityIssues: string[];
@@ -72,6 +85,9 @@ export interface ReconciliationPlan {
     bookmarksToCreate: number;
     viewsToCreate: number;
     authToRestore: number;
+    alliesToCreate: number;
+    collaborationMessagesToCreate: number;
+    collaborationReadsToCreate: number;
   };
 }
 
@@ -157,6 +173,20 @@ export async function buildReconciliationPlan(input: {
   const bookmarks = await planBookmarks(target, input.bundle.bookmarks.records, conflicts);
   const views = await planViews(target, input.bundle.views.records, conflicts);
 
+  const allies = await planAllies(target, input.bundle.allies.records, conflicts);
+  const collaborationMessages = await planByUniqueId({
+    target,
+    collection: MONGO_COLLECTIONS.initiativeCollaborationChannelMessages,
+    records: input.bundle.collaborationMessages.records,
+    idField: "messageId",
+    conflicts,
+  });
+  const collaborationReads = await planCollaborationReads(
+    target,
+    input.bundle.collaborationReads.records,
+    conflicts,
+  );
+
   const media = await planMedia(target);
   const statistics = await planStatistics(target);
 
@@ -168,6 +198,10 @@ export async function buildReconciliationPlan(input: {
 
   const countAction = (items: Array<{ action: PlanAction }>, action: PlanAction) =>
     items.filter((item) => item.action === action).length;
+
+  const activeAlliesResolved = input.bundle.allies.records.filter(
+    (record) => String(record.status) === "active",
+  ).length;
 
   return {
     mode: "dry-run",
@@ -183,9 +217,28 @@ export async function buildReconciliationPlan(input: {
     bookmarks,
     views,
     participantActions: [],
+    allies,
+    collaborationMessages,
+    collaborationReads,
     media,
     statistics,
-    excludedLegacy: ["activities", "discussions", "proposals", "decisions"],
+    pack05: {
+      alliesFound: input.bundle.allies.records.length,
+      alliesToCreate: countAction(allies, "create"),
+      activeAlliesResolved,
+      collaborationMessagesFound: input.bundle.collaborationMessages.records.length,
+      collaborationSessionsFound: 0,
+      rssSourcesFound: input.bundle.rssSources.sources.length,
+      newsRecordsFound: 0,
+      rssStrategy: input.bundle.rssSources.strategy,
+    },
+    excludedLegacy: [
+      "activities",
+      "discussions",
+      "proposals",
+      "decisions",
+      "expired_public_news_bulk_dump",
+    ],
     conflicts,
     integrityIssues,
     counts: {
@@ -197,6 +250,9 @@ export async function buildReconciliationPlan(input: {
       bookmarksToCreate: countAction(bookmarks, "create"),
       viewsToCreate: countAction(views, "create"),
       authToRestore: countAction(auth, "restore"),
+      alliesToCreate: countAction(allies, "create"),
+      collaborationMessagesToCreate: countAction(collaborationMessages, "create"),
+      collaborationReadsToCreate: countAction(collaborationReads, "create"),
     },
   };
 }
@@ -404,6 +460,72 @@ async function planViews(
       initiativeId,
       action: existing ? "skip_existing" : "create",
       reason: existing ? "View already present." : "Create view.",
+    });
+  }
+  return items;
+}
+
+async function planAllies(
+  target: Db,
+  records: Array<Record<string, unknown>>,
+  conflicts: string[],
+): Promise<RecordPlanItem[]> {
+  const approvedParticipants = new Set<string>(
+    APPROVED_HISTORICAL_PARTICIPANTS.map((participant) => participant.memberId),
+  );
+  const items: RecordPlanItem[] = [];
+  for (const record of records) {
+    const initiativeId = String(record.initiativeId ?? "");
+    const participantId = String(record.participantId ?? "");
+    if (!APPROVED_INITIATIVE_IDS.includes(initiativeId as (typeof APPROVED_INITIATIVE_IDS)[number])) {
+      conflicts.push(`Out-of-scope ally initiative ${initiativeId}`);
+      continue;
+    }
+    if (!approvedParticipants.has(participantId)) {
+      conflicts.push(`Ally participant ${participantId} not on approved historical allow-list.`);
+      continue;
+    }
+    if (participantId === STAGING_ADMIN_MEMBER_ID) {
+      conflicts.push("Refusing ally row for staging administrator memberId.");
+      continue;
+    }
+    const existing = await target.collection(MONGO_COLLECTIONS.initiativeAllies).findOne({
+      initiativeId,
+      participantId,
+    });
+    items.push({
+      id: `${initiativeId}:${participantId}`,
+      initiativeId,
+      action: existing ? "skip_existing" : "create",
+      reason: existing
+        ? "Ally relationship already present."
+        : `Create Ally with status=${String(record.status ?? "unknown")}.`,
+    });
+  }
+  return items;
+}
+
+async function planCollaborationReads(
+  target: Db,
+  records: Array<Record<string, unknown>>,
+  conflicts: string[],
+): Promise<RecordPlanItem[]> {
+  const items: RecordPlanItem[] = [];
+  for (const record of records) {
+    const initiativeId = String(record.initiativeId ?? "");
+    const participantId = String(record.participantId ?? "");
+    if (!APPROVED_INITIATIVE_IDS.includes(initiativeId as (typeof APPROVED_INITIATIVE_IDS)[number])) {
+      conflicts.push(`Out-of-scope collaboration read initiative ${initiativeId}`);
+      continue;
+    }
+    const existing = await target
+      .collection(MONGO_COLLECTIONS.initiativeCollaborationChannelReads)
+      .findOne({ initiativeId, participantId });
+    items.push({
+      id: `${initiativeId}:${participantId}`,
+      initiativeId,
+      action: existing ? "skip_existing" : "create",
+      reason: existing ? "Channel read already present." : "Create channel read cursor.",
     });
   }
   return items;

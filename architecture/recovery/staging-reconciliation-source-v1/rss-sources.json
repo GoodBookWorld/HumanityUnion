@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "strategy": "re_ingest_from_configured_sources",
+  "note": "Do not bulk-migrate expired historical public_news_articles. Staging should enable NEWS_PROVIDER_ENABLED=true and refresh via existing public-news scheduler / dev-refresh-news.",
+  "runtimeEnabledLocally": true,
+  "providerName": "rss",
+  "sources": [
+    {
+      "providerId": "bbc-world",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "peace and security"
+    },
+    {
+      "providerId": "deutsche-welle",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "peace and security"
+    },
+    {
+      "providerId": "france24",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "peace and security"
+    },
+    {
+      "providerId": "euronews",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "democracy"
+    },
+    {
+      "providerId": "al-jazeera-english",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "human rights"
+    },
+    {
+      "providerId": "un-news",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "institutional accountability"
+    },
+    {
+      "providerId": "who-news",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "public health"
+    },
+    {
+      "providerId": "nasa-news",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "education"
+    },
+    {
+      "providerId": "nature-news",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "education"
+    },
+    {
+      "providerId": "the-conversation",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "public participation"
+    },
+    {
+      "providerId": "the-guardian",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "peace and security"
+    },
+    {
+      "providerId": "the-economist",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "institutional accountability"
+    },
+    {
+      "providerId": "washington-post",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "democracy"
+    },
+    {
+      "providerId": "cbc",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "peace and security"
+    },
+    {
+      "providerId": "politico",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "democracy"
+    },
+    {
+      "providerId": "new-york-times",
+      "feedUrl": null,
+      "language": "en",
+      "countryCode": null,
+      "category": "peace and security"
+    }
+  ]
+}

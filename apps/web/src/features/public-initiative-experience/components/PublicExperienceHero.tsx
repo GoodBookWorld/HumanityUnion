@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { InitiativeCoverMedia, PublicInitiativeExperienceHero } from "@hu/types";
 
@@ -19,13 +19,19 @@ function formatDate(value: string): string {
   });
 }
 
+export interface PublicExperienceHeroMetaItem {
+  label: string;
+  value: string;
+  column: "a" | "b";
+}
+
 export interface PublicExperienceHeroProps {
   title: string;
   summary?: string;
   imageUrl?: string | null;
   imageAltText?: string;
   coverMedia?: InitiativeCoverMedia;
-  meta: Array<{ label: string; value: string }>;
+  meta: PublicExperienceHeroMetaItem[];
   parentLink?: { href: string; label: string };
   /** Pack 02 — when set, title/summary resolve through provider-backed translation. */
   initiativeId?: string;
@@ -120,26 +126,30 @@ export function PublicExperienceHero({
     };
   }, [initiativeId, summary, title]);
 
+  const columnA = useMemo(() => meta.filter((item) => item.column === "a"), [meta]);
+  const columnB = useMemo(() => meta.filter((item) => item.column === "b"), [meta]);
+  const descriptionText = displaySummary || originalSummary || summary || "";
+
   return (
     <section className="pie-hero" aria-labelledby="pie-hero-title">
-      <div className="pie-hero__media">
-        <InitiativeImage
-          title={displayTitle}
-          imageUrl={imageUrl}
-          coverMedia={coverMedia}
-          className="pie-hero__image"
-          loading="eager"
-          interactive
-        />
-      </div>
-      <div className="pie-hero__content">
-        {parentLink ? (
-          <p className="pie-hero__parent">
-            <Link href={parentLink.href}>{parentLink.label}</Link>
-          </p>
-        ) : null}
-        {initiativeId ? (
-          <>
+      <div className="pie-hero__top">
+        <div className="pie-hero__media">
+          <InitiativeImage
+            title={displayTitle}
+            imageUrl={imageUrl}
+            coverMedia={coverMedia}
+            className="pie-hero__image"
+            loading="eager"
+            interactive
+          />
+        </div>
+        <div className="pie-hero__content">
+          {parentLink ? (
+            <p className="pie-hero__parent">
+              <Link href={parentLink.href}>{parentLink.label}</Link>
+            </p>
+          ) : null}
+          {initiativeId ? (
             <h1 id="pie-hero-title" className="pie-hero__title">
               <TranslatedContentView
                 content={displayTitle}
@@ -151,37 +161,48 @@ export function PublicExperienceHero({
                 isStale={isStale}
               />
             </h1>
-            {displaySummary || originalSummary ? (
-              <div className="pie-hero__summary">
-                <TranslatedContentView
-                  content={displaySummary}
-                  originalContent={originalSummary}
-                  activeLanguage={activeLanguage}
-                  originalLanguage={originalLanguage}
-                  canViewOriginal={canViewOriginal}
-                  isMachineTranslated={isMachineTranslated}
-                  isStale={isStale}
-                />
-              </div>
-            ) : null}
-          </>
-        ) : (
-          <>
+          ) : (
             <h1 id="pie-hero-title" className="pie-hero__title">
               {title}
             </h1>
-            {summary ? <p className="pie-hero__summary">{summary}</p> : null}
-          </>
-        )}
-        <dl className="pie-hero__meta">
-          {meta.map((item) => (
-            <div key={item.label}>
-              <dt>{item.label}</dt>
-              <dd>{item.value}</dd>
-            </div>
-          ))}
-        </dl>
+          )}
+          <div className="pie-hero__meta-grid" role="group" aria-label="Initiative details">
+            <dl className="pie-hero__meta pie-hero__meta--column-a">
+              {columnA.map((item) => (
+                <div key={item.label}>
+                  <dt>{item.label}</dt>
+                  <dd>{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <dl className="pie-hero__meta pie-hero__meta--column-b">
+              {columnB.map((item) => (
+                <div key={item.label}>
+                  <dt>{item.label}</dt>
+                  <dd>{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
       </div>
+      {descriptionText ? (
+        <div className="pie-hero__description">
+          {initiativeId ? (
+            <TranslatedContentView
+              content={displaySummary || summary || ""}
+              originalContent={originalSummary || summary || ""}
+              activeLanguage={activeLanguage}
+              originalLanguage={originalLanguage}
+              canViewOriginal={canViewOriginal}
+              isMachineTranslated={isMachineTranslated}
+              isStale={isStale}
+            />
+          ) : (
+            <p>{descriptionText}</p>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -196,12 +217,12 @@ export function buildInitiativeHeroProps(
     imageAltText: hero.imageAltText,
     coverMedia: hero.coverMedia,
     meta: [
-      { label: "Activity Area", value: hero.activityArea },
-      { label: "Geography", value: hero.geography.label },
-      { label: "Status", value: hero.status.replaceAll("_", " ") },
-      { label: "Current Stage", value: hero.currentStageLabel },
-      { label: "First Published", value: formatDate(hero.firstPublishedAt) },
-      { label: "Last Updated", value: formatDate(hero.lastUpdatedAt) },
+      { label: "Activity Area", value: hero.activityArea, column: "a" },
+      { label: "Status", value: hero.status.replaceAll("_", " "), column: "a" },
+      { label: "First Published", value: formatDate(hero.firstPublishedAt), column: "a" },
+      { label: "Geography", value: hero.geography.label, column: "b" },
+      { label: "Current Stage", value: hero.currentStageLabel, column: "b" },
+      { label: "Last Updated", value: formatDate(hero.lastUpdatedAt), column: "b" },
     ],
   };
 }

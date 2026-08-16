@@ -23,14 +23,19 @@ function buildAccessibleName(initiative: WorldInitiativeCardProjection): string 
   return `View initiative: ${initiative.title}`;
 }
 
+export function resolvePublicInitiativeHref(initiative: WorldInitiativeCardProjection): string {
+  return (
+    initiative.publicInitiativeHref ||
+    `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`
+  );
+}
+
 export function PublicInitiativeMiniCard({
   initiative,
 }: {
   initiative: WorldInitiativeCardProjection;
 }) {
-  const href =
-    initiative.publicInitiativeHref ||
-    `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`;
+  const href = resolvePublicInitiativeHref(initiative);
 
   return (
     <Link
@@ -38,7 +43,7 @@ export function PublicInitiativeMiniCard({
       className="public-initiative-mini-card"
       aria-label={buildAccessibleName(initiative)}
     >
-      <div className="public-initiative-mini-card__media">
+      <div className="public-initiative-mini-card__media" aria-hidden="true">
         <MiniCardImage title={initiative.title} imageUrl={initiative.imageUrl} />
       </div>
       <div className="public-initiative-mini-card__body">
@@ -61,6 +66,9 @@ export function PublicInitiativeMiniCard({
             </span>
           ) : null}
         </div>
+        <span className="public-initiative-mini-card__cta" aria-hidden="true">
+          View Initiative →
+        </span>
       </div>
     </Link>
   );
@@ -68,7 +76,7 @@ export function PublicInitiativeMiniCard({
 
 function MiniCardImage({ title, imageUrl }: { title: string; imageUrl?: string }) {
   if (imageUrl) {
-    return <InitiativeImage title={title} imageUrl={imageUrl} />;
+    return <InitiativeImage title={title} imageUrl={imageUrl} decorative />;
   }
 
   return (

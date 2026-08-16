@@ -68,6 +68,9 @@ export function CountryInitiativeRailCard({ initiative }: CountryInitiativeRailC
             </span>
           ) : null}
         </div>
+        <span className="country-initiative-rail-card__cta" aria-hidden="true">
+          View Initiative →
+        </span>
       </div>
     </Link>
   );

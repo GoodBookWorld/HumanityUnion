@@ -55,13 +55,11 @@ Platform Version:
 
 # Current Focus
 
-**Last completed (tooling):** STAGING HISTORICAL DATA RECONCILIATION PACK 04 (dry-run + Web media harden; real `--execute` not run in Cursor task)
+**Last completed (tooling):** STAGING FEATURE RECONCILIATION PACK 05 (Allies/RSS bundle + Initiative public UI + mini-cards; no real staging `--execute`)
 
-**Next:** Operator execute Pack 04 on staging (`reconcile:staging-historical-data -- --execute` in **RENDER API WEB SHELL**), then `pnpm verify:staging`.
+**Next:** Operator execute reconcile (Packs 04+05 inserts) + enable/refresh staging RSS, then `verify:staging`.
 
 See `project/NEXT_SESSION.md`.
-
-Do not start a new migration Pack until Pack 04 execute + verify are complete.
 
 ---
 

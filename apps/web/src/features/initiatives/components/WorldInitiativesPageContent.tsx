@@ -13,14 +13,23 @@ interface WorldInitiativesPageContentProps {
 }
 
 function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardProjection }) {
+  const href =
+    initiative.publicInitiativeHref ||
+    `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`;
+
   return (
-    <article className="world-initiative-card">
-      <div className="world-initiative-card__media">
+    <Link
+      href={href}
+      className="world-initiative-card"
+      aria-label={`View initiative: ${initiative.title}`}
+    >
+      <div className="world-initiative-card__media" aria-hidden="true">
         <InitiativeImage
           title={initiative.title}
           imageUrl={initiative.imageUrl}
           coverMedia={initiative.coverMedia}
           className="world-initiative-card__image"
+          decorative
         />
       </div>
       <div className="world-initiative-card__body">
@@ -43,11 +52,11 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
             <dd>{initiative.publicStatus}</dd>
           </div>
         </dl>
-        <Link className="world-initiative-card__link" href={initiative.publicInitiativeHref}>
+        <span className="world-initiative-card__link" aria-hidden="true">
           View Initiative →
-        </Link>
+        </span>
       </div>
-    </article>
+    </Link>
   );
 }
 

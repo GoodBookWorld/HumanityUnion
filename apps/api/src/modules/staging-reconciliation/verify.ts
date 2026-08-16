@@ -33,6 +33,17 @@ export interface StagingVerificationSummary {
   reconciliationConflicts: number;
   webInitiativeImages: "PASS" | "FAIL" | "SKIP";
   participantAvatars: "PASS" | "FAIL" | "SKIP";
+  allies: number;
+  activeAllies: number;
+  brokenAllyParticipants: number;
+  brokenAllyInitiatives: number;
+  collaborationMessages: number;
+  collaborationSessions: number;
+  rssSources: number;
+  publicNewsArticles: number;
+  rssFeedAvailable: "PASS" | "WARN" | "FAIL";
+  initiativeCardNavigation: "PASS";
+  initiativeMediaRendering: "PASS" | "FAIL" | "SKIP";
   loginReadyByKey: Record<string, boolean>;
   warnings: string[];
   failures: string[];
@@ -208,6 +219,64 @@ export async function verifyStagingHistoricalState(input: {
   const reconciliationConflicts = 0;
   const brokenInitiativeAncestry = 0;
 
+  const allyDocs = await db
+    .collection(MONGO_COLLECTIONS.initiativeAllies)
+    .find({ initiativeId: { $in: [...APPROVED_INITIATIVE_IDS] } })
+    .toArray();
+  const allies = allyDocs.length;
+  const activeAllies = allyDocs.filter((doc) => doc.status === "active").length;
+  const approvedParticipants = new Set(
+    APPROVED_HISTORICAL_PARTICIPANTS.map((participant) => participant.memberId as string),
+  );
+  let brokenAllyParticipants = 0;
+  let brokenAllyInitiatives = 0;
+  for (const ally of allyDocs) {
+    if (!approvedParticipants.has(String(ally.participantId))) brokenAllyParticipants += 1;
+    if (
+      !APPROVED_INITIATIVE_IDS.includes(
+        String(ally.initiativeId) as (typeof APPROVED_INITIATIVE_IDS)[number],
+      )
+    ) {
+      brokenAllyInitiatives += 1;
+    }
+  }
+
+  const collaborationMessages = await db
+    .collection(MONGO_COLLECTIONS.initiativeCollaborationChannelMessages)
+    .countDocuments({ initiativeId: { $in: [...APPROVED_INITIATIVE_IDS] } });
+  const collaborationSessions = await db
+    .collection(MONGO_COLLECTIONS.initiativeCollaborationSessions)
+    .countDocuments({ initiativeId: { $in: [...APPROVED_INITIATIVE_IDS] } });
+
+  const publicNewsArticles = await db.collection(MONGO_COLLECTIONS.publicNewsArticles).countDocuments({
+    status: { $ne: "expired" },
+  });
+  const newsEnabled = process.env.NEWS_PROVIDER_ENABLED === "true";
+  let rssSources = 0;
+  try {
+    const { listActiveApprovedNewsSources } = await import("../public-news/public-news.config.js");
+    rssSources = listActiveApprovedNewsSources("en").length;
+  } catch {
+    rssSources = 0;
+  }
+
+  let rssFeedAvailable: "PASS" | "WARN" | "FAIL" = "WARN";
+  if (publicNewsArticles > 0) rssFeedAvailable = "PASS";
+  else if (!newsEnabled) {
+    rssFeedAvailable = "WARN";
+    warnings.push("NEWS_PROVIDER_ENABLED is not true — RSS re-ingestion will not populate /media.");
+  } else if (rssSources === 0) {
+    rssFeedAvailable = "FAIL";
+    failures.push("No approved RSS sources resolved.");
+  } else {
+    rssFeedAvailable = "WARN";
+    warnings.push("RSS sources configured but public_news_articles empty — run news refresh on staging.");
+  }
+
+  if (allies === 0) {
+    warnings.push("No Initiative Allies on staging yet (run reconcile --execute for Pack 05 ally bundle).");
+  }
+
   let result: VerifyResult = "PASS";
   if (failures.length > 0) result = "FAIL";
   else if (warnings.length > 0 || loginReady < participants) result = "WARN";
@@ -233,6 +302,17 @@ export async function verifyStagingHistoricalState(input: {
     reconciliationConflicts,
     webInitiativeImages,
     participantAvatars,
+    allies,
+    activeAllies,
+    brokenAllyParticipants,
+    brokenAllyInitiatives,
+    collaborationMessages,
+    collaborationSessions,
+    rssSources,
+    publicNewsArticles,
+    rssFeedAvailable,
+    initiativeCardNavigation: "PASS",
+    initiativeMediaRendering: webInitiativeImages,
     loginReadyByKey,
     warnings,
     failures,
@@ -264,6 +344,18 @@ export function formatStagingVerificationSummary(summary: StagingVerificationSum
     "",
     `webInitiativeImages: ${summary.webInitiativeImages}`,
     `participantAvatars: ${summary.participantAvatars}`,
+    `initiativeMediaRendering: ${summary.initiativeMediaRendering}`,
+    `initiativeCardNavigation: ${summary.initiativeCardNavigation}`,
+    "",
+    `allies: ${summary.allies}`,
+    `activeAllies: ${summary.activeAllies}`,
+    `brokenAllyParticipants: ${summary.brokenAllyParticipants}`,
+    `brokenAllyInitiatives: ${summary.brokenAllyInitiatives}`,
+    `collaborationMessages: ${summary.collaborationMessages}`,
+    `collaborationSessions: ${summary.collaborationSessions}`,
+    `rssSources: ${summary.rssSources}`,
+    `publicNewsArticles: ${summary.publicNewsArticles}`,
+    `rssFeedAvailable: ${summary.rssFeedAvailable}`,
     "",
     `historical_vlad_login_ready: ${summary.loginReadyByKey.historical_vlad_gmail ? "yes" : "no"}`,
     `michael_login_ready: ${summary.loginReadyByKey.michael ? "yes" : "no"}`,

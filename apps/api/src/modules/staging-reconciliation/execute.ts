@@ -63,6 +63,9 @@ export async function executeStagingReconciliation(input: {
       supportVisitor: 0,
       bookmarks: 0,
       views: 0,
+      allies: 0,
+      collaborationMessages: 0,
+      collaborationReads: 0,
     },
     skipped: {
       comments: 0,
@@ -72,6 +75,9 @@ export async function executeStagingReconciliation(input: {
       supportVisitor: 0,
       bookmarks: 0,
       views: 0,
+      allies: 0,
+      collaborationMessages: 0,
+      collaborationReads: 0,
     },
     mediaAlreadyCanonical: 0,
     mediaRewritten: 0,
@@ -214,6 +220,47 @@ export async function executeStagingReconciliation(input: {
       stripMongoId(record) as Document,
     );
     summary.inserted.views = (summary.inserted.views ?? 0) + 1;
+  }
+
+  for (const item of input.plan.allies) {
+    if (item.action !== "create") {
+      summary.skipped.allies = (summary.skipped.allies ?? 0) + 1;
+      continue;
+    }
+    const record = input.bundle.allies.records.find(
+      (entry) => `${entry.initiativeId}:${entry.participantId}` === item.id,
+    );
+    if (!record) continue;
+    await target.collection(MONGO_COLLECTIONS.initiativeAllies).insertOne(
+      stripMongoId(record) as Document,
+    );
+    summary.inserted.allies = (summary.inserted.allies ?? 0) + 1;
+  }
+
+  summary.inserted.collaborationMessages = await insertManyById(
+    target,
+    MONGO_COLLECTIONS.initiativeCollaborationChannelMessages,
+    input.bundle.collaborationMessages.records,
+    "messageId",
+    input.plan.collaborationMessages,
+  );
+  summary.skipped.collaborationMessages = input.plan.collaborationMessages.filter(
+    (item) => item.action === "skip_existing",
+  ).length;
+
+  for (const item of input.plan.collaborationReads) {
+    if (item.action !== "create") {
+      summary.skipped.collaborationReads = (summary.skipped.collaborationReads ?? 0) + 1;
+      continue;
+    }
+    const record = input.bundle.collaborationReads.records.find(
+      (entry) => `${entry.initiativeId}:${entry.participantId}` === item.id,
+    );
+    if (!record) continue;
+    await target.collection(MONGO_COLLECTIONS.initiativeCollaborationChannelReads).insertOne(
+      stripMongoId(record) as Document,
+    );
+    summary.inserted.collaborationReads = (summary.inserted.collaborationReads ?? 0) + 1;
   }
 
   for (const item of input.plan.media) {

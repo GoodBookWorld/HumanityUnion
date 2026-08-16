@@ -152,6 +152,7 @@ async function main(): Promise<void> {
             reason: item.reason,
           })),
           counts: plan.counts,
+          pack05: plan.pack05,
           media: plan.media.map((item) => ({
             initiativeId: item.initiativeId,
             action: item.action,

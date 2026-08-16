@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "messageId": "9fd9d013-9cbf-44c0-8bb3-6aad7fd14dd6",
+      "initiativeId": "initiative-1785948978037",
+      "type": "system_event",
+      "text": "Derek joined the Collaboration Channel.",
+      "createdAt": "2026-08-05T18:00:46.327Z",
+      "systemEventKind": "ally_joined"
+    },
+    {
+      "messageId": "8e3754f0-63c3-4994-866f-c017ae53a210",
+      "initiativeId": "initiative-1785948978037",
+      "type": "system_event",
+      "text": "Leonardo joined the Collaboration Channel.",
+      "createdAt": "2026-08-05T18:00:47.322Z",
+      "systemEventKind": "ally_joined"
+    },
+    {
+      "messageId": "d799abbe-ea12-4f75-baf8-fd0bc6ac6a96",
+      "initiativeId": "initiative-1785948978037",
+      "type": "system_event",
+      "text": "Vlad joined the Collaboration Channel.",
+      "createdAt": "2026-08-05T18:00:48.268Z",
+      "systemEventKind": "ally_joined"
+    },
+    {
+      "messageId": "66223a6f-8b6f-4d0c-a916-9d8205b58dd4",
+      "initiativeId": "initiative-1785948978037",
+      "type": "participant_message",
+      "text": "Hello everybody",
+      "createdAt": "2026-08-07T01:15:33.372Z",
+      "senderParticipantId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662"
+    }
+  ]
+}

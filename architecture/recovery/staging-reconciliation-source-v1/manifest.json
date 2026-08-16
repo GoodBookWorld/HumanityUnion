@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "pack": "STAGING_HISTORICAL_DATA_RECONCILIATION_PACK_04",
+  "pack": "STAGING_HISTORICAL_DATA_RECONCILIATION_PACK_04_PLUS_05",
   "createdAt": "2026-08-16T18:15:21.389Z",
   "sourceDatabase": "humanity_union_dev",
   "approvedInitiativeIds": [
@@ -25,7 +25,14 @@
     "bookmarks": 1,
     "views": 196,
     "participantActions": 0,
-    "authRecoveryParticipants": 4
+    "authRecoveryParticipants": 4,
+    "allies": 6,
+    "activeAllies": 5,
+    "collaborationMessages": 4,
+    "collaborationReads": 8,
+    "collaborationSessions": 0,
+    "rssSourcesConfigured": 16,
+    "newsRecordsMigrated": 0
   },
   "byInitiative": {
     "initiative-1783748417899": {
@@ -35,7 +42,11 @@
       "supportRegistered": 1,
       "supportVisitor": 2,
       "bookmarks": 0,
-      "views": 23
+      "views": 23,
+      "allies": 0,
+      "activeAllies": 0,
+      "collaborationMessages": 0,
+      "collaborationReads": 1
     },
     "initiative-1784349613932": {
       "comments": 6,
@@ -44,7 +55,11 @@
       "supportRegistered": 2,
       "supportVisitor": 6,
       "bookmarks": 0,
-      "views": 94
+      "views": 94,
+      "allies": 3,
+      "activeAllies": 2,
+      "collaborationMessages": 0,
+      "collaborationReads": 1
     },
     "initiative-1785636843367": {
       "comments": 1,
@@ -53,7 +68,11 @@
       "supportRegistered": 2,
       "supportVisitor": 3,
       "bookmarks": 0,
-      "views": 46
+      "views": 46,
+      "allies": 0,
+      "activeAllies": 0,
+      "collaborationMessages": 0,
+      "collaborationReads": 1
     },
     "initiative-1785693642422": {
       "comments": 0,
@@ -62,7 +81,11 @@
       "supportRegistered": 1,
       "supportVisitor": 2,
       "bookmarks": 0,
-      "views": 13
+      "views": 13,
+      "allies": 0,
+      "activeAllies": 0,
+      "collaborationMessages": 0,
+      "collaborationReads": 1
     },
     "initiative-1785948978037": {
       "comments": 3,
@@ -71,7 +94,11 @@
       "supportRegistered": 3,
       "supportVisitor": 2,
       "bookmarks": 1,
-      "views": 20
+      "views": 20,
+      "allies": 3,
+      "activeAllies": 3,
+      "collaborationMessages": 4,
+      "collaborationReads": 4
     }
   },
   "excluded": {
@@ -93,6 +120,20 @@
     "initiative-support-signals.json": "244e3f8f14be428f723adbb259ea28ea9006c0f3e19dae9db2b88e2961ebef95",
     "initiative-bookmarks.json": "9c96627d4e12e72c9b97e6e7ad8e6db4e96299fd298963e53e538085213d7648",
     "initiative-views.json": "ce1ab1cd57139b3d93ebace9f7dfa2c67dae1aa490d2d79c997cacf0d0d0982b",
-    "participant-actions.json": "cd26c1a062b33c0d3ca9ce1526785129049abbedc483f6c1261f8a9b3fd81e05"
+    "participant-actions.json": "cd26c1a062b33c0d3ca9ce1526785129049abbedc483f6c1261f8a9b3fd81e05",
+    "initiative-allies.json": "1778d6e0fe170cf83bfdfcec4b4473a34ccf86f73b519473eaf08e6a0adb4fc1",
+    "initiative-collaboration-channel-messages.json": "412e7b8e5fe6689aefd038011e826370f80c0c9651b1417f1b490f5585e7979b",
+    "initiative-collaboration-channel-reads.json": "11d517c93f1fa4ed9a1814656b73e4bea5207b28eff8353e044775712f84c657",
+    "rss-sources.json": "db65bb39cb263b14e2cc6b8364944d5af93ac14a2a875d5125b53c3d883c7624"
+  },
+  "updatedAt": "2026-08-16T19:12:45.928Z",
+  "pack05": {
+    "activeAlliesRule": "Derived projection: Initiative steward/author + Ally rows with status===active (author never counted in activeAlliesCount).",
+    "rssStrategy": "re_ingest_from_configured_sources",
+    "excluded": [
+      "expired public_news_articles bulk dump",
+      "legacy Activity/Discussion roots",
+      "collaboration sessions (none in source)"
+    ]
   }
 }

@@ -65,6 +65,8 @@
   border-radius: 0.75rem;
   overflow: hidden;
   background: #fff;
+  text-decoration: none;
+  color: inherit;
 }
 
 .world-initiative-card__media {
@@ -88,8 +90,8 @@
 
 .world-initiative-card__title {
   margin: 0;
-  font-size: 1.05rem;
-  line-height: 1.35;
+  font-size: 0.98rem;
+  line-height: 1.3;
 }
 
 .world-initiative-card__meta {

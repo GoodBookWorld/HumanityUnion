@@ -50,7 +50,11 @@ export function PublicNewsPlaceholder({ variant, onRetry, message }: PublicNewsP
   return (
     <div className="public-news-discovery__placeholder" role="status">
       <h3>No current news articles are available</h3>
-      <p>Please check again later for new events to explore and transform into initiatives.</p>
+      <p>
+        The live RSS discovery feed has no active articles yet. When staging news refresh is enabled
+        (`NEWS_PROVIDER_ENABLED=true`) and approved sources are fetched, articles appear here
+        automatically.
+      </p>
     </div>
   );
 }

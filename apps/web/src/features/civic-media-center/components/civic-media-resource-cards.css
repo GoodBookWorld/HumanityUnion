@@ -250,6 +250,13 @@
   font-weight: 600;
 }
 
+.country-initiative-rail-card__cta {
+  margin-top: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--hu-color-primary, #0174b0);
+}
+
 .country-media-rail-card {
   min-height: 18rem;
 }

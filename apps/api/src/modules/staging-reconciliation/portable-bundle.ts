@@ -43,6 +43,16 @@ export interface ReconciliationPortableBundle {
   bookmarks: { version: number; records: Array<Record<string, unknown>> };
   views: { version: number; records: Array<Record<string, unknown>> };
   participantActions: { version: number; records: Array<Record<string, unknown>>; note?: string };
+  allies: { version: number; records: Array<Record<string, unknown>> };
+  collaborationMessages: { version: number; records: Array<Record<string, unknown>> };
+  collaborationReads: { version: number; records: Array<Record<string, unknown>> };
+  rssSources: {
+    version: number;
+    strategy: string;
+    note?: string;
+    providerName?: string;
+    sources: Array<Record<string, unknown>>;
+  };
 }
 
 function sha256File(filePath: string): string {
@@ -127,6 +137,18 @@ export function loadAndValidateReconciliationBundle(
   const authRecovery = readJson<ReconciliationPortableBundle["authRecovery"]>(
     path.join(bundleDir, "auth-recovery.json"),
   );
+  const allies = readJson<ReconciliationPortableBundle["allies"]>(
+    path.join(bundleDir, "initiative-allies.json"),
+  );
+  const collaborationMessages = readJson<ReconciliationPortableBundle["collaborationMessages"]>(
+    path.join(bundleDir, "initiative-collaboration-channel-messages.json"),
+  );
+  const collaborationReads = readJson<ReconciliationPortableBundle["collaborationReads"]>(
+    path.join(bundleDir, "initiative-collaboration-channel-reads.json"),
+  );
+  const rssSources = readJson<ReconciliationPortableBundle["rssSources"]>(
+    path.join(bundleDir, "rss-sources.json"),
+  );
 
   const assertScoped = (label: string, records: Array<Record<string, unknown>>) => {
     for (const record of records) {
@@ -146,6 +168,9 @@ export function loadAndValidateReconciliationBundle(
   assertScoped("supportVisitor", supportSignals.visitor);
   assertScoped("bookmarks", bookmarks.records);
   assertScoped("views", views.records);
+  assertScoped("allies", allies.records);
+  assertScoped("collaborationMessages", collaborationMessages.records);
+  assertScoped("collaborationReads", collaborationReads.records);
 
   if (authRecovery.participants.some((p) => "passwordHash" in (p as object))) {
     throw new StagingReconciliationError(
@@ -164,5 +189,9 @@ export function loadAndValidateReconciliationBundle(
     bookmarks,
     views,
     participantActions,
+    allies,
+    collaborationMessages,
+    collaborationReads,
+    rssSources,
   };
 }

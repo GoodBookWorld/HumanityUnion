@@ -56,18 +56,18 @@ Primary engineering branch:
 
 # Current Focus
 
-**STAGING HISTORICAL DATA RECONCILIATION PACK 04** — tooling complete; operator `--execute` pending
+**STAGING FEATURE RECONCILIATION PACK 05** — tooling complete; operator `--execute` + RSS refresh pending
 
 Last completed continuity work:
 
-CHAT AGENT CONTINUITY PACK 01 (documentation / recovery entry)
+CHAT AGENT CONTINUITY PACK 01
 
-Recent completed staging tracks (repository-verifiable tooling + commits; operator-verified execute outcomes recorded in `PROJECT_STATE` / `NEXT_SESSION`):
+Recent staging tracks:
 
-- Admin Console Packs 02–05 (capability resolver, audit, Admin Panel surfaces including Pack 05)
-- Staging Data Migration Packs 01–03 (+ Pack 02A portable civic source bundle)
-- Staging media recovery tooling and portable media bundle
-- Staging Historical Data Reconciliation Pack 04 (tooling / dry-run / Web media harden)
+- Admin Packs 02–05
+- Staging Data Migration Packs 01–03 (+02A)
+- Staging Historical Data Reconciliation Pack 04
+- Staging Feature Reconciliation Pack 05 (Allies/UI/RSS)
 
 ---
 

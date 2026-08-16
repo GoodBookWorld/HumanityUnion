@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "initiativeId": "initiative-1784349613932",
+      "participantId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+      "createdAt": "2026-08-02T17:42:47.491Z",
+      "requestedByParticipantId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+      "status": "active",
+      "updatedAt": "2026-08-03T05:31:06.344Z"
+    },
+    {
+      "participantId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+      "initiativeId": "initiative-1784349613932",
+      "createdAt": "2026-08-02T02:27:54.493Z",
+      "requestedByParticipantId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+      "status": "active",
+      "updatedAt": "2026-08-03T05:31:04.159Z"
+    },
+    {
+      "participantId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "initiativeId": "initiative-1784349613932",
+      "createdAt": "2026-08-02T01:45:14.315Z",
+      "requestedByParticipantId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "status": "interest_pending",
+      "updatedAt": "2026-08-02T01:45:14.315Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "participantId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+      "createdAt": "2026-08-05T17:34:40.223Z",
+      "requestedByParticipantId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+      "status": "active",
+      "updatedAt": "2026-08-05T18:00:46.222Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "participantId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+      "createdAt": "2026-08-05T17:46:37.940Z",
+      "requestedByParticipantId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+      "status": "active",
+      "updatedAt": "2026-08-05T18:00:47.214Z"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "participantId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "createdAt": "2026-08-05T17:58:30.311Z",
+      "requestedByParticipantId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "status": "active",
+      "updatedAt": "2026-08-05T18:00:48.153Z"
+    }
+  ]
+}
