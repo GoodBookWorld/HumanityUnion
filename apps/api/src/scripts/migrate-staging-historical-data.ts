@@ -1,5 +1,9 @@
 /**
- * STAGING DATA MIGRATION PACK 02 — controlled historical import.
+ * STAGING DATA MIGRATION PACK 02 / 02A — controlled historical import.
+ *
+ * Civic Initiatives load from the portable recovery bundle:
+ *   architecture/recovery/staging-data-source-v1/
+ * (not apps/api/.runtime — unavailable on Render)
  *
  * Defaults to DRY RUN (no writes).
  *
@@ -41,11 +45,12 @@ import {
   executeStagingHistoricalMigration,
   isExecuteModeRequested,
   loadMigrationSourceBundle,
-  resolveDefaultRuntimeDir,
+  resolveCivicSourceDir,
   resolveRepoRoot,
   validatePack01Manifest,
   StagingDataMigrationError,
 } from "../modules/staging-data-migration/index.js";
+import { PORTABLE_CIVIC_SOURCE_RELATIVE_PATH } from "../modules/staging-data-migration/portable-source-bundle.js";
 
 loadApiEnvironment();
 
@@ -58,8 +63,11 @@ async function main(): Promise<void> {
   const execute = isExecuteModeRequested();
   const sourceDatabase = parseArg("source") ?? APPROVED_SOURCE_DATABASE;
   const targetDatabase = parseArg("target") ?? APPROVED_TARGET_DATABASE;
-  const repoRoot = resolveRepoRoot(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.."));
-  const runtimeDir = parseArg("runtime-dir") ?? resolveDefaultRuntimeDir(repoRoot);
+  const repoRoot = resolveRepoRoot(
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.."),
+  );
+  // Pack 02A: --civic-source-dir may override for tests; never silently use .runtime.
+  const civicSourceDir = resolveCivicSourceDir(repoRoot, parseArg("civic-source-dir"));
 
   console.log(
     JSON.stringify(
@@ -68,7 +76,8 @@ async function main(): Promise<void> {
         mode: execute ? "execute" : "dry-run",
         sourceDatabase,
         targetDatabase,
-        runtimeDir: path.relative(repoRoot, runtimeDir),
+        civicSource: PORTABLE_CIVIC_SOURCE_RELATIVE_PATH,
+        civicSourceDir: path.relative(repoRoot, civicSourceDir) || civicSourceDir,
         credentials: "redacted",
         note: execute
           ? "Execute mode requested — guards will be enforced before any write."
@@ -109,7 +118,6 @@ async function main(): Promise<void> {
     throw new StagingDataMigrationError("MONGODB_URI must be configured (value never logged).");
   }
 
-  // Refuse accidental execute against whatever MONGODB_DATABASE is if it conflicts.
   const configuredDatabase = resolveMongoConfig().database;
   if (
     execute &&
@@ -121,9 +129,9 @@ async function main(): Promise<void> {
     );
   }
 
-  if (!fs.existsSync(path.join(runtimeDir, "initiatives.json"))) {
+  if (!fs.existsSync(path.join(civicSourceDir, "manifest.json"))) {
     throw new StagingDataMigrationError(
-      `File runtime initiatives.json not found under ${path.relative(repoRoot, runtimeDir)}.`,
+      `Portable civic source bundle missing (expected ${PORTABLE_CIVIC_SOURCE_RELATIVE_PATH}/manifest.json).`,
     );
   }
 
@@ -134,7 +142,7 @@ async function main(): Promise<void> {
       client,
       sourceDatabase,
       targetDatabase,
-      runtimeDir,
+      civicSourceDir,
     });
     assertApprovedSourcesPresent(bundle);
     const plan = buildMigrationPlan(bundle);
@@ -202,7 +210,7 @@ async function main(): Promise<void> {
       client,
       sourceDatabase,
       targetDatabase,
-      runtimeDir,
+      civicSourceDir,
       repoRoot,
       plan: { ...plan, mode: "execute" },
     });

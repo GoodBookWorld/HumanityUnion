@@ -25,10 +25,18 @@ export type { MigrationSourceBundle } from "./plan.js";
 export {
   assertApprovedSourcesPresent,
   loadMigrationSourceBundle,
+  resolveCivicSourceDir,
   resolveDefaultRuntimeDir,
   resolveRepoRoot,
   validatePack01Manifest,
 } from "./load-sources.js";
+
+export {
+  loadAndValidatePortableCivicSource,
+  PORTABLE_CIVIC_SOURCE_RELATIVE_PATH,
+  computeBundleChecksum,
+  computeFileChecksums,
+} from "./portable-source-bundle.js";
 
 export { executeStagingHistoricalMigration, writePreMigrationSnapshot } from "./execute.js";
 export { maskEmail, redactAuthDocument, emailFingerprint } from "./redact.js";

@@ -45,16 +45,13 @@ Expected after successful migration:
 | Entity | Source | Target collection |
 |---|---|---|
 | Auth shells | `humanity_union_dev.auth_users` | `humanity_union_staging.auth_users` |
-| Members | `humanity_union_dev.members` | `humanity_union_staging.members` |
-| Profiles | `humanity_union_dev.member_profiles` | `humanity_union_staging.member_profiles` |
+| Members | `humanity_union_dev.members` (or synthesized) | `humanity_union_staging.members` |
+| Profiles | `humanity_union_dev.member_profiles` (or synthesized) | `humanity_union_staging.member_profiles` |
 | Memberships | `humanity_union_dev.memberships` (allow-listed only) | `humanity_union_staging.memberships` |
-| Initiatives | `apps/api/.runtime/initiatives.json` | `humanity_union_staging.initiatives` |
-| Analyses | `.runtime/initiative-analyses.json` | `initiative_analyses` |
-| Improvement proposals | `.runtime/initiative-improvement-proposals.json` | `initiative_improvement_proposals` |
-| Revisions | `.runtime/initiative-version-revisions.json` | `initiative_version_revisions` |
-| Petition drafts | `.runtime/initiative-petition-drafts.json` | `initiative_petition_drafts` |
+| Initiatives | **Pack 02A portable bundle** `architecture/recovery/staging-data-source-v1/` | `humanity_union_staging.initiatives` |
+| Analyses / proposals / revisions / petition drafts | same portable bundle | matching Mongo collections |
 
-Raw Mongo `insertOne` (insert-if-absent) is used intentionally: the shared snapshot `replaceRecordMap` helper performs `deleteMany` of non-mapped IDs and must not be used for migration.
+Pack 02A: Render and local execution **must not** depend on `apps/api/.runtime`. The portable bundle is version-controlled and checksum-validated.
 
 ---
 

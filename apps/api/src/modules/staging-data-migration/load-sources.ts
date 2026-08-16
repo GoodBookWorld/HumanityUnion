@@ -11,6 +11,11 @@ import {
 } from "./constants.js";
 import { StagingDataMigrationError } from "./guards.js";
 import type { MigrationSourceBundle } from "./plan.js";
+import {
+  loadAndValidatePortableCivicSource,
+  resolvePortableCivicSourceDir,
+  type LoadedPortableCivicSource,
+} from "./portable-source-bundle.js";
 import { normalizeEmail } from "./redact.js";
 import type {
   InitiativeRecord,
@@ -34,21 +39,6 @@ function toAuthShell(doc: Record<string, unknown>): SafeAuthShell {
   };
 }
 
-function loadSnapshotMap(
-  filePath: string,
-  mapKey: string,
-): Record<string, Record<string, unknown>> {
-  if (!fs.existsSync(filePath)) {
-    return {};
-  }
-  const parsed = JSON.parse(fs.readFileSync(filePath, "utf8")) as Record<string, unknown>;
-  const map = parsed[mapKey];
-  if (!map || typeof map !== "object" || Array.isArray(map)) {
-    return {};
-  }
-  return map as Record<string, Record<string, unknown>>;
-}
-
 export function resolveRepoRoot(fromDir: string = process.cwd()): string {
   let current = path.resolve(fromDir);
   for (let i = 0; i < 8; i += 1) {
@@ -65,7 +55,12 @@ export function resolveRepoRoot(fromDir: string = process.cwd()): string {
 }
 
 export function resolveDefaultRuntimeDir(repoRoot: string): string {
-  return path.join(repoRoot, "apps/api/.runtime");
+  // Pack 02A: civic Initiatives come from the portable recovery bundle, not .runtime.
+  return resolvePortableCivicSourceDir(repoRoot);
+}
+
+export function resolveCivicSourceDir(repoRoot: string, overrideDir?: string): string {
+  return resolvePortableCivicSourceDir(repoRoot, overrideDir);
 }
 
 export function validatePack01Manifest(repoRoot: string): {
@@ -289,44 +284,13 @@ async function loadInitiatives(db: Db): Promise<Map<string, InitiativeRecord>> {
   return map;
 }
 
-function loadFileInitiatives(runtimeDir: string): Map<string, InitiativeRecord> {
-  const filePath = path.join(runtimeDir, "initiatives.json");
-  const mapRaw = loadSnapshotMap(filePath, "initiatives");
-  const map = new Map<string, InitiativeRecord>();
-  for (const [id, record] of Object.entries(mapRaw)) {
-    map.set(id, {
-      ...(record as InitiativeRecord),
-      initiativeId: String(record.initiativeId ?? id),
-      title: String(record.title ?? ""),
-      stewardId: String(record.stewardId ?? ""),
-    });
-  }
-  return map;
-}
-
-function countRelated(
-  runtimeDir: string,
-  fileName: string,
-  mapKey: string,
-  initiativeIds: Set<string>,
-): Map<string, number> {
-  const mapRaw = loadSnapshotMap(path.join(runtimeDir, fileName), mapKey);
-  const counts = new Map<string, number>();
-  for (const record of Object.values(mapRaw)) {
-    const initiativeId = String(record.initiativeId ?? "");
-    if (!initiativeIds.has(initiativeId)) {
-      continue;
-    }
-    counts.set(initiativeId, (counts.get(initiativeId) ?? 0) + 1);
-  }
-  return counts;
-}
-
 export async function loadMigrationSourceBundle(input: {
   client: MongoClient;
   sourceDatabase: string;
   targetDatabase: string;
-  runtimeDir: string;
+  civicSourceDir: string;
+  /** @deprecated Pack 02A — ignored; portable civic source is required. */
+  runtimeDir?: string;
 }): Promise<MigrationSourceBundle> {
   const sourceDb = input.client.db(input.sourceDatabase);
   const targetDb = input.client.db(input.targetDatabase);
@@ -344,45 +308,12 @@ export async function loadMigrationSourceBundle(input: {
     }
   }
 
-  const initiativeIds = new Set(APPROVED_HISTORICAL_INITIATIVES.map((i) => i.initiativeId));
-  const fileInitiativesById = loadFileInitiatives(input.runtimeDir);
-  const analyses = countRelated(input.runtimeDir, "initiative-analyses.json", "analyses", initiativeIds);
-  const proposals = countRelated(
-    input.runtimeDir,
-    "initiative-improvement-proposals.json",
-    "proposals",
-    initiativeIds,
-  );
-  const revisions = countRelated(
-    input.runtimeDir,
-    "initiative-version-revisions.json",
-    "revisions",
-    initiativeIds,
-  );
-  const petitionDrafts = countRelated(
-    input.runtimeDir,
-    "initiative-petition-drafts.json",
-    "drafts",
-    initiativeIds,
-  );
-
-  const relatedCountsByInitiativeId = new Map<
-    string,
-    { analyses: number; proposals: number; revisions: number; petitionDrafts: number }
-  >();
-  for (const id of initiativeIds) {
-    relatedCountsByInitiativeId.set(id, {
-      analyses: analyses.get(id) ?? 0,
-      proposals: proposals.get(id) ?? 0,
-      revisions: revisions.get(id) ?? 0,
-      petitionDrafts: petitionDrafts.get(id) ?? 0,
-    });
-  }
+  const portable = loadAndValidatePortableCivicSource(input.civicSourceDir);
 
   return {
     sourceDatabase: input.sourceDatabase,
     targetDatabase: input.targetDatabase,
-    fileRuntimePath: input.runtimeDir,
+    fileRuntimePath: portable.bundleDir,
     sourceAuthByMemberId,
     sourceMembersById: await loadMembers(sourceDb),
     sourceProfilesByUserId: await loadProfiles(sourceDb),
@@ -394,14 +325,14 @@ export async function loadMigrationSourceBundle(input: {
     targetProfilesByUserId: await loadProfiles(targetDb),
     targetMembershipsByMemberId: await loadMemberships(targetDb),
     targetInitiativesById: await loadInitiatives(targetDb),
-    fileInitiativesById,
-    relatedCountsByInitiativeId,
+    fileInitiativesById: portable.initiativesById,
+    relatedCountsByInitiativeId: portable.relatedCountsByInitiativeId,
     stagingAdmin: targetAuth.admin,
   };
 }
 
 export function loadRelatedRecordsForInitiatives(
-  runtimeDir: string,
+  civicSourceDir: string,
   initiativeIds: Set<string>,
 ): {
   analyses: Record<string, unknown>[];
@@ -409,19 +340,20 @@ export function loadRelatedRecordsForInitiatives(
   revisions: Record<string, unknown>[];
   petitionDrafts: Record<string, unknown>[];
 } {
-  const filter = (records: Record<string, Record<string, unknown>>) =>
-    Object.values(records).filter((record) => initiativeIds.has(String(record.initiativeId ?? "")));
+  const portable = loadAndValidatePortableCivicSource(civicSourceDir);
+  const filter = (records: Record<string, unknown>[]) =>
+    records.filter((record) => initiativeIds.has(String(record.initiativeId ?? "")));
 
   return {
-    analyses: filter(loadSnapshotMap(path.join(runtimeDir, "initiative-analyses.json"), "analyses")),
-    proposals: filter(
-      loadSnapshotMap(path.join(runtimeDir, "initiative-improvement-proposals.json"), "proposals"),
-    ),
-    revisions: filter(
-      loadSnapshotMap(path.join(runtimeDir, "initiative-version-revisions.json"), "revisions"),
-    ),
-    petitionDrafts: filter(
-      loadSnapshotMap(path.join(runtimeDir, "initiative-petition-drafts.json"), "drafts"),
-    ),
+    analyses: filter(portable.analyses),
+    proposals: filter(portable.proposals),
+    revisions: filter(portable.revisions),
+    petitionDrafts: filter(portable.petitionDrafts),
   };
+}
+
+export function loadPortableCivicSourceForMigration(
+  civicSourceDir: string,
+): LoadedPortableCivicSource {
+  return loadAndValidatePortableCivicSource(civicSourceDir);
 }

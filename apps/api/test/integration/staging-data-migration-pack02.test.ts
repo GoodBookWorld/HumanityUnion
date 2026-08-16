@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { after, before, describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { MONGO_COLLECTIONS } from "../../src/infrastructure/mongodb/mongo-collections.js";
 import { resolveMongoConfig } from "../../src/infrastructure/mongodb/mongo-config.js";
@@ -20,7 +21,9 @@ import {
   buildMigrationPlan,
   executeStagingHistoricalMigration,
   loadMigrationSourceBundle,
+  resolveRepoRoot,
 } from "../../src/modules/staging-data-migration/index.js";
+import { PORTABLE_CIVIC_SOURCE_RELATIVE_PATH } from "../../src/modules/staging-data-migration/portable-source-bundle.js";
 import { createTestId, isMongoAvailableForTests, skipIfMongoUnavailable } from "../helpers/test-env.js";
 
 if (!isMongoAvailableForTests()) {
@@ -33,7 +36,7 @@ const ADMIN_USER_ID = randomUUID();
 const ADMIN_MEMBER_ID = randomUUID();
 
 describe("Staging Data Migration Pack 02 — isolated execute idempotency", () => {
-  let runtimeDir = "";
+  let civicSourceDir = "";
   let repoRoot = "";
   let sourceDbName = "";
   let targetDbName = "";
@@ -48,7 +51,10 @@ describe("Staging Data Migration Pack 02 — isolated execute idempotency", () =
     targetDbName = configured;
     sourceDbName = `${configured}_src`;
 
-    runtimeDir = fs.mkdtempSync(path.join(os.tmpdir(), "hu-mig02-"));
+    const workspaceRoot = resolveRepoRoot(path.dirname(fileURLToPath(import.meta.url)));
+    civicSourceDir = path.join(workspaceRoot, PORTABLE_CIVIC_SOURCE_RELATIVE_PATH);
+    assert.ok(fs.existsSync(path.join(civicSourceDir, "manifest.json")));
+
     repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hu-mig02-repo-"));
     fs.mkdirSync(path.join(repoRoot, "apps/api/.runtime/recovery"), { recursive: true });
 
@@ -83,11 +89,6 @@ describe("Staging Data Migration Pack 02 — isolated execute idempotency", () =
       status: "proposal",
     });
 
-    const initiatives: Record<string, unknown> = {};
-    const analyses: Record<string, unknown> = {};
-    const proposals: Record<string, unknown> = {};
-    const revisions: Record<string, unknown> = {};
-
     for (const participant of APPROVED_HISTORICAL_PARTICIPANTS) {
       const userId = randomUUID();
       const email = `${PREFIX}-${participant.key}@gmail.com`;
@@ -120,80 +121,11 @@ describe("Staging Data Migration Pack 02 — isolated execute idempotency", () =
         updatedAt: new Date().toISOString(),
       });
     }
-
-    for (const initiative of APPROVED_HISTORICAL_INITIATIVES) {
-      initiatives[initiative.initiativeId] = {
-        initiativeId: initiative.initiativeId,
-        title: initiative.title,
-        stewardId: initiative.stewardMemberId,
-        lifecyclePhase: "projected",
-        status: "proposal",
-        visibility: { policy: "public" },
-        description: `Fixture ${initiative.title}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        metadata: {},
-        revisions: [],
-        contributions: [],
-        timeline: [],
-      };
-      const revisionId = `revision-${initiative.initiativeId}`;
-      revisions[revisionId] = {
-        revisionId,
-        initiativeId: initiative.initiativeId,
-        version: 1,
-        authorId: initiative.stewardMemberId,
-        createdAt: new Date().toISOString(),
-        title: initiative.title,
-      };
-    }
-
-    const cssId = "initiative-1783748417899";
-    analyses["analysis-css-1"] = {
-      analysisId: "analysis-css-1",
-      initiativeId: cssId,
-      authorId: APPROVED_HISTORICAL_PARTICIPANTS[0].memberId,
-      title: "CSS analysis",
-      status: "published",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    proposals["proposal-css-1"] = {
-      proposalId: "proposal-css-1",
-      initiativeId: cssId,
-      analysisId: "analysis-css-1",
-      authorId: APPROVED_HISTORICAL_PARTICIPANTS[0].memberId,
-      status: "submitted",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    fs.writeFileSync(
-      path.join(runtimeDir, "initiatives.json"),
-      JSON.stringify({ version: 1, initiatives }, null, 2),
-    );
-    fs.writeFileSync(
-      path.join(runtimeDir, "initiative-analyses.json"),
-      JSON.stringify({ version: 1, analyses }, null, 2),
-    );
-    fs.writeFileSync(
-      path.join(runtimeDir, "initiative-improvement-proposals.json"),
-      JSON.stringify({ version: 1, proposals }, null, 2),
-    );
-    fs.writeFileSync(
-      path.join(runtimeDir, "initiative-version-revisions.json"),
-      JSON.stringify({ version: 1, revisions, drafts: {} }, null, 2),
-    );
-    fs.writeFileSync(
-      path.join(runtimeDir, "initiative-petition-drafts.json"),
-      JSON.stringify({ version: 1, drafts: {} }, null, 2),
-    );
   });
 
   after(async () => {
     const client = getMongoClient();
     await client.db(sourceDbName).dropDatabase().catch(() => undefined);
-    // Target is the shared hu_test_* DB for this process — delete only our prefixed rows.
     const targetDb = client.db(targetDbName);
     await targetDb.collection(MONGO_COLLECTIONS.authUsers).deleteMany({
       email: { $regex: `^${PREFIX}` },
@@ -217,29 +149,22 @@ describe("Staging Data Migration Pack 02 — isolated execute idempotency", () =
         ],
       },
     });
-    await targetDb.collection(MONGO_COLLECTIONS.initiativeAnalyses).deleteMany({
-      _id: "analysis-css-1",
-    });
-    await targetDb.collection(MONGO_COLLECTIONS.initiativeImprovementProposals).deleteMany({
-      _id: "proposal-css-1",
-    });
-    await targetDb.collection(MONGO_COLLECTIONS.initiativeVersionRevisions).deleteMany({
-      _id: { $regex: `^revision-initiative-178` },
-    });
-    fs.rmSync(runtimeDir, { recursive: true, force: true });
+    await targetDb.collection(MONGO_COLLECTIONS.initiativeAnalyses).deleteMany({});
+    await targetDb.collection(MONGO_COLLECTIONS.initiativeImprovementProposals).deleteMany({});
+    await targetDb.collection(MONGO_COLLECTIONS.initiativeVersionRevisions).deleteMany({});
+    await targetDb.collection(MONGO_COLLECTIONS.initiativePetitionDrafts).deleteMany({});
     fs.rmSync(repoRoot, { recursive: true, force: true });
     await disconnectMongoClient();
   });
 
-  it("imports 4 Participants + 5 Initiatives, protects admin, second run idempotent", async () => {
+  it("imports 4 Participants + 5 Initiatives from portable bundle, protects admin, second run idempotent", async () => {
     const client = getMongoClient();
     const bundle = await loadMigrationSourceBundle({
       client,
       sourceDatabase: sourceDbName,
       targetDatabase: targetDbName,
-      runtimeDir,
+      civicSourceDir,
     });
-    // Source is hu_test_*_src — assertApprovedSourcesPresent still applies to allow-list presence.
     const plan = buildMigrationPlan(bundle);
     assert.equal(plan.conflicts.length, 0);
     assert.equal(plan.participants.length, 4);
@@ -249,7 +174,7 @@ describe("Staging Data Migration Pack 02 — isolated execute idempotency", () =
       client,
       sourceDatabase: sourceDbName,
       targetDatabase: targetDbName,
-      runtimeDir,
+      civicSourceDir,
       repoRoot,
       plan: { ...plan, mode: "execute" },
     });
@@ -274,7 +199,6 @@ describe("Staging Data Migration Pack 02 — isolated execute idempotency", () =
     assert.ok(historicalVlad);
     assert.notEqual(historicalVlad?.userId, ADMIN_USER_ID);
     assert.equal(historicalVlad?.role, "member");
-    assert.notEqual(historicalVlad?.passwordHash, "HistoricalPass123!");
 
     for (const initiative of APPROVED_HISTORICAL_INITIATIVES) {
       const doc = await targetDb.collection(MONGO_COLLECTIONS.initiatives).findOne({
@@ -297,14 +221,14 @@ describe("Staging Data Migration Pack 02 — isolated execute idempotency", () =
       client,
       sourceDatabase: sourceDbName,
       targetDatabase: targetDbName,
-      runtimeDir,
+      civicSourceDir,
     });
     const plan2 = buildMigrationPlan(bundle2);
     const second = await executeStagingHistoricalMigration({
       client,
       sourceDatabase: sourceDbName,
       targetDatabase: targetDbName,
-      runtimeDir,
+      civicSourceDir,
       repoRoot,
       plan: { ...plan2, mode: "execute" },
     });

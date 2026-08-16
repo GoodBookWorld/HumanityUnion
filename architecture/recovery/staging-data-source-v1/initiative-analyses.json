@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "analyses": {
+    "initiative-analysis-1783748572904": {
+      "analysisId": "initiative-analysis-1783748572904",
+      "initiativeId": "initiative-1783748417899",
+      "authorId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "title": "Strengthening Local Resilience",
+      "summary": "The Citizen Support Squad (CSS) initiative is a strategic asset for the Central Kootenay region. By formalizing a volunteer-led response framework, we can significantly improve our municipal readiness for emergency events.",
+      "supportingEvidence": "Why This Initiative Matters\nOptimized Resource Management: By tasking volunteers with logistics, shelter management, and community outreach, professional first responders are freed to prioritize high-stakes, life-saving operations.\n\nEnhanced Community Resilience: Empowering residents to participate directly in emergency support fosters a culture of preparedness and collective responsibility, which is vital in our geographically challenging mountainous terrain.\n\nScalable Response: The pilot phase from September to December 2026 provides a controlled, measurable window to establish standardized protocols, training benchmarks, and effective communication channels between civil society and government agencies.\n\nCost-Effective Support: Mobilizing trained local volunteers provides a sustainable, cost-effective surge capacity that can be activated instantly, reducing the reliance on external aid during the critical first hours of an incident.",
+      "risks": "Risks pending.",
+      "suggestedImprovements": "The primary objective of the CSS is to act as a force multiplier for government services. Through clear role definitions and safety-first orientation, this initiative transforms passive community members into a highly capable, ready-to-deploy support network.",
+      "references": "References pending.",
+      "status": "published",
+      "initiativeVersion": 1,
+      "createdAt": "2026-07-11T05:42:52.904Z",
+      "updatedAt": "2026-07-11T05:46:49.856Z",
+      "publishedAt": "2026-07-11T05:46:49.856Z"
+    },
+    "initiative-analysis-1785462522262": {
+      "analysisId": "initiative-analysis-1785462522262",
+      "initiativeId": "initiative-1783748417899",
+      "authorId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "title": "Untitled analysis",
+      "summary": "Summary pending.",
+      "supportingEvidence": "Evidence pending.",
+      "risks": "Risks pending.",
+      "suggestedImprovements": "Improvements pending.",
+      "references": "References pending.",
+      "status": "draft",
+      "initiativeVersion": 1,
+      "createdAt": "2026-07-31T01:48:42.262Z",
+      "updatedAt": "2026-07-31T01:48:42.262Z"
+    },
+    "initiative-analysis-1786064417086": {
+      "analysisId": "initiative-analysis-1786064417086",
+      "initiativeId": "initiative-1784349613932",
+      "authorId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "title": "Collaborative Analysis: The Mind-Safe Alliance",
+      "summary": "This analysis is based on 6 discussion comments for \"The Mind-Safe Alliance\" (7 marked Helpful, 0 marked Not Helpful), 3 proposal-marked contributions, 2 Active Allies, and 0 participants ready to collaborate.",
+      "supportingEvidence": "- \"Good idea!\" — Michael (3 Helpful)\n- \"Proposal 2: Decentralized Digital Access Hubs\nPartner with local municipal libraries and community centers to establish offline access points for the mobile to…\" — Leonardo (2 Helpful)\n- \"Workplace & School Micro-Interventions.\nIntroduce peer-led, 15-minute daily \"decompress and reset\" circles within participating workplaces and educational inst…\" — Leonardo (2 Helpful)",
+      "risks": "No discussion comments have been identified as concerns yet.",
+      "openQuestions": "- \"Do you have any proposals?\" — Vlad",
+      "suggestedImprovements": "- Consider clarifying the Initiative's position on \"workers\" (mentioned 3 times).\n- Consider clarifying the Initiative's position on \"access\" (mentioned 3 times).\n- Consider clarifying the Initiative's position on \"circles\" (mentioned 2 times).\n- Consider clarifying the Initiative's position on \"young\" (mentioned 2 times).\n- Consider clarifying the Initiative's position on \"students\" (mentioned 2 times).",
+      "references": "- \"Intergenerational Mentorship Circles.\nPair older, retired professionals with young workers and students in structured conversation groups. This bridges generat…\" — Derek (see Discussion)\n- \"Proposal 2: Decentralized Digital Access Hubs\nPartner with local municipal libraries and community centers to establish offline access points for the mobile to…\" — Leonardo (see Discussion)\n- \"Workplace & School Micro-Interventions.\nIntroduce peer-led, 15-minute daily \"decompress and reset\" circles within participating workplaces and educational inst…\" — Leonardo (see Discussion)",
+      "status": "published",
+      "initiativeVersion": 1,
+      "createdAt": "2026-08-07T01:00:17.086Z",
+      "updatedAt": "2026-08-07T01:02:49.325Z",
+      "publishedAt": "2026-08-07T01:02:49.325Z"
+    }
+  }
+}

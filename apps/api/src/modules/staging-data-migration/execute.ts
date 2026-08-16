@@ -13,7 +13,7 @@ import {
   PRE_MIGRATION_SNAPSHOT_RUNTIME_RELATIVE_PATH,
 } from "./constants.js";
 import { StagingDataMigrationError } from "./guards.js";
-import { loadRelatedRecordsForInitiatives } from "./load-sources.js";
+import { loadRelatedRecordsForInitiatives, loadPortableCivicSourceForMigration } from "./load-sources.js";
 import type { MigrationPlan } from "./types.js";
 import type { MigrationWriteSummary } from "./types.js";
 import { maskEmail, redactAuthDocument, stripSecretsForMigrationInsert } from "./redact.js";
@@ -169,7 +169,9 @@ export async function executeStagingHistoricalMigration(input: {
   client: MongoClient;
   sourceDatabase: string;
   targetDatabase: string;
-  runtimeDir: string;
+  civicSourceDir: string;
+  /** @deprecated Pack 02A */
+  runtimeDir?: string;
   repoRoot: string;
   plan: MigrationPlan;
 }): Promise<MigrationWriteSummary> {
@@ -178,6 +180,12 @@ export async function executeStagingHistoricalMigration(input: {
       `Refusing execute: plan has conflicts: ${input.plan.conflicts.join("; ")}`,
     );
   }
+
+  const civicSourceDir = input.civicSourceDir || input.runtimeDir;
+  if (!civicSourceDir) {
+    throw new StagingDataMigrationError("civicSourceDir is required for Pack 02A migration.");
+  }
+  const portable = loadPortableCivicSourceForMigration(civicSourceDir);
 
   const sourceDb = input.client.db(input.sourceDatabase);
   const targetDb = input.client.db(input.targetDatabase);
@@ -398,18 +406,16 @@ export async function executeStagingHistoricalMigration(input: {
     }
   }
 
-  // Initiatives + related (file → Mongo)
+  // Initiatives + related (portable civic bundle → Mongo)
   const initiativeIds = new Set(APPROVED_HISTORICAL_INITIATIVES.map((i) => i.initiativeId));
-  const related = loadRelatedRecordsForInitiatives(input.runtimeDir, initiativeIds);
+  const related = loadRelatedRecordsForInitiatives(civicSourceDir, initiativeIds);
 
   for (const approved of APPROVED_HISTORICAL_INITIATIVES) {
-    const fileMapPath = path.join(input.runtimeDir, "initiatives.json");
-    const snapshot = JSON.parse(fs.readFileSync(fileMapPath, "utf8")) as {
-      initiatives?: Record<string, Record<string, unknown>>;
-    };
-    const initiative = snapshot.initiatives?.[approved.initiativeId];
+    const initiative = portable.initiativesById.get(approved.initiativeId) as
+      | (Record<string, unknown> & { stewardId?: string; title?: string })
+      | undefined;
     if (!initiative) {
-      throw new StagingDataMigrationError(`Missing file Initiative ${approved.initiativeId}`);
+      throw new StagingDataMigrationError(`Missing portable Initiative ${approved.initiativeId}`);
     }
     if (String(initiative.stewardId) !== approved.stewardMemberId) {
       throw new StagingDataMigrationError(

@@ -11,6 +11,9 @@ export const STAGING_DATA_MIGRATION_FLAG = "ALLOW_STAGING_DATA_MIGRATION";
 export const PACK01_MANIFEST_RELATIVE_PATH =
   "architecture/recovery/STAGING_DATA_MIGRATION_MANIFEST_v1.0.json";
 
+export const PORTABLE_CIVIC_SOURCE_RELATIVE_PATH =
+  "architecture/recovery/staging-data-source-v1";
+
 export const PRE_MIGRATION_SNAPSHOT_RUNTIME_RELATIVE_PATH =
   "apps/api/.runtime/recovery/STAGING_DATA_PRE_MIGRATION_SNAPSHOT_v1.0.json";
 

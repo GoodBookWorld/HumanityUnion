@@ -1,0 +1,84 @@
+{
+  "bundleVersion": "1.0.0",
+  "pack": "STAGING_DATA_MIGRATION_PACK_02A",
+  "generatedAt": "2026-08-16T04:30:42.593Z",
+  "sourceLogicalOrigin": "local historical runtime (INITIATIVE_PERSISTENCE=file)",
+  "note": "Portable allow-listed civic source for Pack 02. Does not include auth secrets or full .runtime.",
+  "approvedInitiativeIds": [
+    "initiative-1783748417899",
+    "initiative-1784349613932",
+    "initiative-1785636843367",
+    "initiative-1785693642422",
+    "initiative-1785948978037"
+  ],
+  "initiatives": [
+    {
+      "initiativeId": "initiative-1783748417899",
+      "title": "Citizen Support Squad (CSS)",
+      "stewardMemberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662"
+    },
+    {
+      "initiativeId": "initiative-1784349613932",
+      "title": "The Mind-Safe Alliance",
+      "stewardMemberId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662"
+    },
+    {
+      "initiativeId": "initiative-1785636843367",
+      "title": "Bridging the \"New World Disorder\"",
+      "stewardMemberId": "9cde6a4e-0fda-4132-8e7e-78432b864231"
+    },
+    {
+      "initiativeId": "initiative-1785693642422",
+      "title": "AI for the Common Good",
+      "stewardMemberId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c"
+    },
+    {
+      "initiativeId": "initiative-1785948978037",
+      "title": "Development of the Humanity Union platform",
+      "stewardMemberId": "5bb8e373-c042-4786-a69c-0340301711d8"
+    }
+  ],
+  "artifactCounts": {
+    "initiatives": 5,
+    "analyses": 3,
+    "improvementProposals": 3,
+    "revisions": 5,
+    "petitionDrafts": 1
+  },
+  "files": [
+    "initiative-analyses.json",
+    "initiative-improvement-proposals.json",
+    "initiative-petition-drafts.json",
+    "initiative-revisions.json",
+    "initiatives.json"
+  ],
+  "fileChecksumsSha256": {
+    "initiatives.json": "e2637acba5566e11ec79e77875751eaae5d91ab973fcc5981fffee50ec618f0f",
+    "initiative-analyses.json": "a3adaf629f8ef6fd6cbdd736c6f472f21b302086711a53e6c9873d2e0afb5122",
+    "initiative-improvement-proposals.json": "5833cab0ddc6a613149512bc11f1b899bd791b343c5ae0e9bd3a58a72673da21",
+    "initiative-revisions.json": "d56bbeac2b520c1a9f54829b73e7b1a3d6789c7a683e81bfa93b2d03e7c977c6",
+    "initiative-petition-drafts.json": "897cfaa7ac2bb9c7af8cc2d99a623c968f63f4846126664cf811e0cf5a476f78"
+  },
+  "bundleChecksumSha256": "9796d0ba0579f4c4b1435521b2acfc4bafded1eb72e4a5887f6aaf00051468e1",
+  "legacyExcluded": [
+    "activities",
+    "discussions",
+    "proposals",
+    "decisions"
+  ],
+  "secretScan": {
+    "scanned": true,
+    "forbiddenFieldPatterns": [
+      "password",
+      "token",
+      "secret",
+      "session",
+      "hash",
+      "jwt",
+      "refresh",
+      "credential",
+      "mongodb uri"
+    ],
+    "result": "PASS"
+  }
+}

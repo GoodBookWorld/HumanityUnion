@@ -1,0 +1,385 @@
+{
+  "version": 1,
+  "initiatives": {
+    "initiative-1783748417899": {
+      "initiativeId": "initiative-1783748417899",
+      "stewardId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "createdAt": "2026-07-11T05:40:17.899Z",
+      "updatedAt": "2026-07-17T05:34:28.418Z",
+      "title": "Citizen Support Squad (CSS)",
+      "description": "A coordinated group of trained community volunteers mobilized to assist emergency services during natural disasters, public health crises, or large-scale community incidents. The goal is to provide non-hazardous support to allow first responders to focus on critical operations.",
+      "status": "proposal",
+      "lifecyclePhase": "projected",
+      "visibility": {
+        "policy": "public"
+      },
+      "metadata": {
+        "category": "Emergency Preparedness and Response",
+        "tags": [],
+        "region": "British Columbia",
+        "language": "en",
+        "communitySlug": "",
+        "participationScope": "region",
+        "activityArea": "Emergency Preparedness and Response",
+        "imageUrl": "http://localhost:4000/api/v1/media/files/initiatives/1783748417920-befba949-3527-443e-8dad-c06fc9f6be49.webp",
+        "imageAltText": "Recruitment poster for the Citizen Support Squad (CSS) in Central Kootenay, featuring a diverse team of volunteers with emergency equipment against a mountain background.",
+        "startDate": "2026-07-10T00:00:00.000Z",
+        "completionDate": "2027-07-01T00:00:00.000Z",
+        "countrySlug": "CA",
+        "regionSlug": "CA-BC"
+      },
+      "revisions": [],
+      "contributions": [],
+      "timeline": [
+        {
+          "eventId": "timeline-1783748417899-s1w1en",
+          "eventType": "initiative_created",
+          "timestamp": "2026-07-11T05:40:17.899Z",
+          "metadata": {
+            "lifecyclePhase": "draft",
+            "status": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1783748417927-1xbgqn",
+          "eventType": "initiative_draft_saved",
+          "timestamp": "2026-07-11T05:40:17.927Z",
+          "metadata": {
+            "lifecyclePhase": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1783748417933-4wkwhs",
+          "eventType": "initiative_published",
+          "timestamp": "2026-07-11T05:40:17.933Z",
+          "metadata": {
+            "lifecyclePhase": "published",
+            "status": "proposal"
+          }
+        },
+        {
+          "eventId": "timeline-1783748417936-wu1w70",
+          "eventType": "initiative_projected",
+          "timestamp": "2026-07-11T05:40:17.936Z",
+          "metadata": {
+            "lifecyclePhase": "projected",
+            "projectedAt": "2026-07-11T05:40:17.933Z"
+          }
+        },
+        {
+          "eventId": "timeline-1784266450398-dwdnt2",
+          "eventType": "initiative_updated",
+          "timestamp": "2026-07-17T05:34:10.398Z",
+          "metadata": {
+            "lifecyclePhase": "projected"
+          }
+        },
+        {
+          "eventId": "timeline-1784266468418-w1n8h6",
+          "eventType": "initiative_republished",
+          "timestamp": "2026-07-17T05:34:28.418Z",
+          "metadata": {
+            "lifecyclePhase": "projected"
+          }
+        }
+      ]
+    },
+    "initiative-1784349613932": {
+      "initiativeId": "initiative-1784349613932",
+      "stewardId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "createdAt": "2026-07-18T04:40:13.932Z",
+      "updatedAt": "2026-07-18T04:40:24.432Z",
+      "title": "The Mind-Safe Alliance",
+      "description": "A coordinated international campaign designed to provide accessible mental health resources, destigmatize psychological support, and build community-based resilience frameworks for youth and essential workers. By addressing the psychological toll of chronic uncertainty, this initiative aims to foster a more stable and resilient global workforce and future generation.",
+      "status": "proposal",
+      "lifecyclePhase": "projected",
+      "visibility": {
+        "policy": "public"
+      },
+      "metadata": {
+        "category": "Public Health",
+        "tags": [],
+        "region": "British Columbia",
+        "language": "en",
+        "countrySlug": "CA",
+        "regionSlug": "CA-BC",
+        "communitySlug": "",
+        "participationScope": "world",
+        "activityArea": "Public Health",
+        "imageUrl": "http://localhost:4000/api/v1/media/files/initiatives/1784349613958-6e09ef7a-17b6-4bd1-845d-0ec510440082.webp",
+        "startDate": "2026-08-01T00:00:00.000Z",
+        "completionDate": "2026-09-01T00:00:00.000Z"
+      },
+      "revisions": [],
+      "contributions": [],
+      "timeline": [
+        {
+          "eventId": "timeline-1784349613932-za7807",
+          "eventType": "initiative_created",
+          "timestamp": "2026-07-18T04:40:13.933Z",
+          "metadata": {
+            "lifecyclePhase": "draft",
+            "status": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1784349613995-vg5xyd",
+          "eventType": "initiative_draft_saved",
+          "timestamp": "2026-07-18T04:40:13.995Z",
+          "metadata": {
+            "lifecyclePhase": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1784349624375-0my1ke",
+          "eventType": "initiative_draft_saved",
+          "timestamp": "2026-07-18T04:40:24.376Z",
+          "metadata": {
+            "lifecyclePhase": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1784349624424-8j84gl",
+          "eventType": "initiative_published",
+          "timestamp": "2026-07-18T04:40:24.424Z",
+          "metadata": {
+            "lifecyclePhase": "published",
+            "status": "proposal"
+          }
+        },
+        {
+          "eventId": "timeline-1784349624428-2k5dqa",
+          "eventType": "initiative_projected",
+          "timestamp": "2026-07-18T04:40:24.428Z",
+          "metadata": {
+            "lifecyclePhase": "projected",
+            "projectedAt": "2026-07-18T04:40:24.424Z"
+          }
+        }
+      ]
+    },
+    "initiative-1785636843367": {
+      "initiativeId": "initiative-1785636843367",
+      "stewardId": "9cde6a4e-0fda-4132-8e7e-78432b864231",
+      "createdAt": "2026-08-02T02:14:03.367Z",
+      "updatedAt": "2026-08-02T02:15:38.750Z",
+      "title": "Bridging the \"New World Disorder\"",
+      "description": "A collaborative international initiative designed to counter rising geopolitical fragmentation and armed conflict by mobilizing independent experts, civil society leaders, and community peacebuilders. The program utilizes informal diplomacy to keep communication channels open between regions experiencing severe political breakdown. Through structured dialogue and regional workshops, participants develop practical, citizen-driven peace blueprints that can be presented to formal governing bodies. By shifting focus from hostile rhetoric to shared human security, the initiative empowers local actors to build sustainable foundations for long-term conflict resolution.",
+      "status": "proposal",
+      "lifecyclePhase": "projected",
+      "visibility": {
+        "policy": "public"
+      },
+      "metadata": {
+        "category": "Peace and Security",
+        "tags": [],
+        "region": "",
+        "language": "en",
+        "countrySlug": "US",
+        "communitySlug": "",
+        "participationScope": "world",
+        "activityArea": "Peace and Security",
+        "imageUrl": "http://localhost:4000/api/v1/media/files/initiatives/1785636843444-1b9a0946-349b-4041-8adb-4d843a303648.webp",
+        "startDate": "2026-08-01T00:00:00.000Z",
+        "completionDate": "2027-08-01T00:00:00.000Z"
+      },
+      "revisions": [],
+      "contributions": [],
+      "timeline": [
+        {
+          "eventId": "timeline-1785636843367-gxddk7",
+          "eventType": "initiative_created",
+          "timestamp": "2026-08-02T02:14:03.367Z",
+          "metadata": {
+            "lifecyclePhase": "draft",
+            "status": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1785636843522-q00tz5",
+          "eventType": "initiative_draft_saved",
+          "timestamp": "2026-08-02T02:14:03.522Z",
+          "metadata": {
+            "lifecyclePhase": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1785636938504-dx1qiu",
+          "eventType": "initiative_draft_saved",
+          "timestamp": "2026-08-02T02:15:38.504Z",
+          "metadata": {
+            "lifecyclePhase": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1785636938730-cq8hpz",
+          "eventType": "initiative_published",
+          "timestamp": "2026-08-02T02:15:38.730Z",
+          "metadata": {
+            "lifecyclePhase": "published",
+            "status": "proposal"
+          }
+        },
+        {
+          "eventId": "timeline-1785636938742-wn7mz8",
+          "eventType": "initiative_projected",
+          "timestamp": "2026-08-02T02:15:38.742Z",
+          "metadata": {
+            "lifecyclePhase": "projected",
+            "projectedAt": "2026-08-02T02:15:38.730Z"
+          }
+        }
+      ]
+    },
+    "initiative-1785693642422": {
+      "initiativeId": "initiative-1785693642422",
+      "stewardId": "57696395-199d-48b2-bbeb-bc30d2a1ba6c",
+      "createdAt": "2026-08-02T18:00:42.422Z",
+      "updatedAt": "2026-08-02T18:00:42.813Z",
+      "title": "AI for the Common Good",
+      "description": "The \"AI for the Common Good\" initiative proposes harnessing advanced artificial intelligence resources to drive optimal, data-driven decision-making across public administration and community development. By deploying ethical algorithms to analyze complex datasets, municipal and global leaders can anticipate resource shortages, streamline service delivery, and target interventions where they are needed most. This framework ensures that technological power is directly channeled into solving systemic social challenges rather than commercial pursuits. Ultimately, the initiative bridges the gap between raw data and actionable human welfare, fostering transparent and highly effective governance for society.",
+      "status": "proposal",
+      "lifecyclePhase": "projected",
+      "visibility": {
+        "policy": "public"
+      },
+      "metadata": {
+        "category": "Democracy and Governance",
+        "tags": [],
+        "region": "",
+        "language": "en",
+        "countrySlug": "TR",
+        "communitySlug": "",
+        "participationScope": "world",
+        "activityArea": "Democracy and Governance",
+        "imageUrl": "http://localhost:4000/api/v1/media/files/initiatives/1785693642488-ab07adb4-8fda-4464-a713-10b35f3e6561.webp",
+        "coverMedia": {
+          "type": "image",
+          "url": "http://localhost:4000/api/v1/media/files/initiatives/1785693642488-ab07adb4-8fda-4464-a713-10b35f3e6561.webp",
+          "verificationStatus": "approved",
+          "createdAt": "2026-08-02T18:00:42.688Z"
+        },
+        "startDate": "2026-09-01T00:00:00.000Z",
+        "completionDate": "2027-12-22T00:00:00.000Z"
+      },
+      "revisions": [],
+      "contributions": [],
+      "timeline": [
+        {
+          "eventId": "timeline-1785693642423-nug4g1",
+          "eventType": "initiative_created",
+          "timestamp": "2026-08-02T18:00:42.423Z",
+          "metadata": {
+            "lifecyclePhase": "draft",
+            "status": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1785693642689-y8o0jb",
+          "eventType": "initiative_draft_saved",
+          "timestamp": "2026-08-02T18:00:42.689Z",
+          "metadata": {
+            "lifecyclePhase": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1785693642790-ojyu3j",
+          "eventType": "initiative_published",
+          "timestamp": "2026-08-02T18:00:42.790Z",
+          "metadata": {
+            "lifecyclePhase": "published",
+            "status": "proposal"
+          }
+        },
+        {
+          "eventId": "timeline-1785693642804-uvppt1",
+          "eventType": "initiative_projected",
+          "timestamp": "2026-08-02T18:00:42.804Z",
+          "metadata": {
+            "lifecyclePhase": "projected",
+            "projectedAt": "2026-08-02T18:00:42.790Z"
+          }
+        }
+      ]
+    },
+    "initiative-1785948978037": {
+      "initiativeId": "initiative-1785948978037",
+      "stewardId": "5bb8e373-c042-4786-a69c-0340301711d8",
+      "createdAt": "2026-08-05T16:56:18.037Z",
+      "updatedAt": "2026-08-05T17:15:13.468Z",
+      "title": "Development of the Humanity Union platform",
+      "description": "An interactive, multi-stakeholder platform that provides citizens with transparent access to government decision-making processes, policy tracking, and collaborative forums. The platform utilizes fact-based education to dismantle the \"ignorance trap\"—the lack of accessible information that often fuels political polarization, inequality, and corruption. Core Objectives\nThe Humanity Union aims to transform the relationship between the governed and the governing by shifting from passive observation to active, informed participation. By creating a standardized, transparent record of political activities, the platform minimizes the space where corruption thrives and empowers citizens to replace cynicism with data-driven advocacy.\n\nStrategic Impact\nCombating Ignorance: By centralizing verified data and policy history, the platform removes barriers to understanding complex government actions.\n\nMitigating Aggression: Structured, moderated dialogue spaces encourage deliberation over reaction, reducing the hostility often found in fragmented online political spaces.\n\nReducing Inequality: Transparent budget tracking ensures that public resources are visible to all, holding institutions accountable for equitable distribution.",
+      "status": "proposal",
+      "lifecyclePhase": "projected",
+      "visibility": {
+        "policy": "public"
+      },
+      "metadata": {
+        "category": "Democracy and Governance",
+        "tags": [],
+        "region": "",
+        "language": "en",
+        "countrySlug": "CO",
+        "communitySlug": "",
+        "participationScope": "world",
+        "activityArea": "Democracy and Governance",
+        "imageUrl": "http://localhost:4000/api/v1/media/files/initiatives/1785948978096-d26c4f4e-db6d-483d-bb3d-785838c71b9f.webp",
+        "coverMedia": {
+          "type": "image",
+          "url": "http://localhost:4000/api/v1/media/files/initiatives/1785948978096-d26c4f4e-db6d-483d-bb3d-785838c71b9f.webp",
+          "verificationStatus": "approved",
+          "createdAt": "2026-08-05T17:15:13.338Z"
+        },
+        "startDate": "2026-08-05T00:00:00.000Z",
+        "completionDate": "2030-01-05T00:00:00.000Z"
+      },
+      "revisions": [],
+      "contributions": [],
+      "timeline": [
+        {
+          "eventId": "timeline-1785948978037-uelhp9",
+          "eventType": "initiative_created",
+          "timestamp": "2026-08-05T16:56:18.037Z",
+          "metadata": {
+            "lifecyclePhase": "draft",
+            "status": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1785948978173-lyb97j",
+          "eventType": "initiative_draft_saved",
+          "timestamp": "2026-08-05T16:56:18.173Z",
+          "metadata": {
+            "lifecyclePhase": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1785950113339-sdvh7o",
+          "eventType": "initiative_draft_saved",
+          "timestamp": "2026-08-05T17:15:13.339Z",
+          "metadata": {
+            "lifecyclePhase": "draft"
+          }
+        },
+        {
+          "eventId": "timeline-1785950113437-l1rxt9",
+          "eventType": "initiative_published",
+          "timestamp": "2026-08-05T17:15:13.437Z",
+          "metadata": {
+            "lifecyclePhase": "published",
+            "status": "proposal"
+          }
+        },
+        {
+          "eventId": "timeline-1785950113457-2h93bn",
+          "eventType": "initiative_projected",
+          "timestamp": "2026-08-05T17:15:13.457Z",
+          "metadata": {
+            "lifecyclePhase": "projected",
+            "projectedAt": "2026-08-05T17:15:13.437Z"
+          }
+        }
+      ]
+    }
+  }
+}

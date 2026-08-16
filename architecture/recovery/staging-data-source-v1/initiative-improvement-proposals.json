@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "proposals": {
+    "initiative-proposal-1784271889831": {
+      "proposalId": "initiative-proposal-1784271889831",
+      "initiativeId": "initiative-1783748417899",
+      "analysisId": "initiative-analysis-1783748572904",
+      "authorId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "targetSection": "Initiative description",
+      "currentIssue": "Issue pending.",
+      "proposedChange": "Proposed change pending.",
+      "rationale": "Rationale pending.",
+      "expectedImprovement": "Expected improvement pending.",
+      "references": "References pending.",
+      "status": "draft",
+      "createdAt": "2026-07-17T07:04:49.831Z",
+      "updatedAt": "2026-07-17T07:04:49.831Z"
+    },
+    "initiative-proposal-1785462455443": {
+      "proposalId": "initiative-proposal-1785462455443",
+      "initiativeId": "initiative-1783748417899",
+      "analysisId": "initiative-analysis-1783748572904",
+      "authorId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "targetSection": "Initiative description",
+      "currentIssue": "Issue pending.",
+      "proposedChange": "Proposed change pending.",
+      "rationale": "Rationale pending.",
+      "expectedImprovement": "Expected improvement pending.",
+      "references": "References pending.",
+      "status": "draft",
+      "createdAt": "2026-07-31T01:47:35.443Z",
+      "updatedAt": "2026-07-31T01:47:35.443Z"
+    },
+    "initiative-proposal-1785462456799": {
+      "proposalId": "initiative-proposal-1785462456799",
+      "initiativeId": "initiative-1783748417899",
+      "analysisId": "initiative-analysis-1783748572904",
+      "authorId": "a5e65d2f-3be7-4f8f-acd9-87c68027d662",
+      "targetSection": "Initiative description",
+      "currentIssue": "Issue pending.",
+      "proposedChange": "Proposed change pending.",
+      "rationale": "Rationale pending.",
+      "expectedImprovement": "Expected improvement pending.",
+      "references": "References pending.",
+      "status": "draft",
+      "createdAt": "2026-07-31T01:47:36.799Z",
+      "updatedAt": "2026-07-31T01:47:36.799Z"
+    }
+  }
+}
