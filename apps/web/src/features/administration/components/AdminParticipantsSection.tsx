@@ -11,10 +11,10 @@ import type {
   PlatformStatisticsMeta,
 } from "@hu/types";
 
-import { ProfileField } from "../../../components/member/ProfileField";
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
+import { WorkspaceStatusBadge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
 import { formatAuthFormError, isForbiddenError } from "../../../lib/api-client";
 import {
   fetchMembershipStatistics,
@@ -25,6 +25,7 @@ import {
   formatPlatformStatisticValue,
 } from "../../platform-statistics/platform-statistics-api";
 import { listAdminParticipants } from "../admin-participant-directory-api";
+import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
@@ -36,12 +37,16 @@ interface AdminParticipantsSectionProps {
 
 const PAGE_SIZE = 25;
 
-function formatDate(value?: string): string {
+function formatCompactDate(value?: string): string {
   if (!value) {
     return "—";
   }
   try {
-    return new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(value));
+    return new Intl.DateTimeFormat("en", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(new Date(value));
   } catch {
     return value;
   }
@@ -59,6 +64,33 @@ function participantSecondaryName(row: AdminParticipantDirectoryItem): string | 
     return row.publicName;
   }
   return null;
+}
+
+function formatAccountStatus(status: AdminParticipantDirectoryItem["status"]): string {
+  return status === "active" ? "Active" : "Disabled";
+}
+
+function formatAccountRole(role: AdminParticipantDirectoryItem["role"]): string {
+  return role === "admin" ? "Administrator" : "Participant account";
+}
+
+function formatMembershipLabel(row: AdminParticipantDirectoryItem): string {
+  if (!row.membership) {
+    return "Not a Member";
+  }
+
+  if (row.membership.cohortLabel === "Member" || row.membership.status === "active_member") {
+    return "Member";
+  }
+
+  const statusLabels: Record<string, string> = {
+    not_started: "Not started",
+    application_started: "Application started",
+    pending_payment: "Pending payment",
+    active_member: "Active Member",
+  };
+
+  return statusLabels[row.membership.status] ?? row.membership.status.replace(/_/g, " ");
 }
 
 export function AdminParticipantsSection({ user: _user }: AdminParticipantsSectionProps) {
@@ -161,22 +193,32 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
 
       <ProfileSection title="Participant aggregates">
         {loading ? <p className="hu-body">Loading aggregates…</p> : null}
-        <ProfileField
-          label="Total Participants"
-          value={counts ? formatPlatformStatisticValue(counts.users) : "Unavailable"}
-        />
-        <ProfileField
-          label="Recently active"
-          value={counts ? formatPlatformStatisticValue(counts.activeMembers) : "Unavailable"}
-        />
-        {meta ? (
-          <ProfileField label="Active window (days)" value={String(meta.activeMemberWindowDays)} />
-        ) : null}
-        <ProfileField
-          label="Members"
-          value={
-            membership ? formatMembershipStatisticValue(membership.members) : "Unavailable"
-          }
+        <AdminMetricDetailsGrid
+          aria-label="Participant aggregates"
+          cells={[
+            {
+              label: "Total Participants",
+              value: counts ? formatPlatformStatisticValue(counts.users) : "Unavailable",
+            },
+            {
+              label: "Recently Active",
+              value: counts
+                ? formatPlatformStatisticValue(counts.activeMembers)
+                : "Unavailable",
+            },
+            {
+              label: "Active Window",
+              value: meta ? `${meta.activeMemberWindowDays} days` : "Unavailable",
+              caption: "activity measurement window",
+              methodological: true,
+            },
+            {
+              label: "Members",
+              value: membership
+                ? formatMembershipStatisticValue(membership.members)
+                : "Unavailable",
+            },
+          ]}
         />
       </ProfileSection>
 
@@ -225,8 +267,8 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                 }}
               >
                 <option value="">All</option>
-                <option value="member">Member (account)</option>
-                <option value="admin">Admin</option>
+                <option value="member">Participant account</option>
+                <option value="admin">Administrator</option>
               </select>
             </label>
 
@@ -324,7 +366,10 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                                   className="admin-participants-table__avatar"
                                 />
                               ) : (
-                                <span className="admin-participants-table__avatar-fallback" aria-hidden="true">
+                                <span
+                                  className="admin-participants-table__avatar-fallback"
+                                  aria-hidden="true"
+                                >
                                   {(participantPrimaryName(row)[0] ?? "?").toUpperCase()}
                                 </span>
                               )}
@@ -333,21 +378,27 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                                   {participantPrimaryName(row)}
                                 </p>
                                 {secondary ? (
-                                  <p className="hu-caption">{secondary}</p>
+                                  <p className="hu-caption admin-participants-table__secondary">
+                                    {secondary}
+                                  </p>
                                 ) : null}
                               </div>
                             </div>
                           </td>
                           <td>{row.email}</td>
-                          <td>{row.status}</td>
-                          <td>{row.role}</td>
                           <td>
-                            {row.membership
-                              ? `${row.membership.cohortLabel} · ${row.membership.status}`
-                              : "—"}
+                            <WorkspaceStatusBadge status={formatAccountStatus(row.status)} />
                           </td>
-                          <td>{formatDate(row.createdAt)}</td>
-                          <td>{formatDate(row.lastLoginAt)}</td>
+                          <td>
+                            <span className="admin-participants-table__role">
+                              {formatAccountRole(row.role)}
+                            </span>
+                          </td>
+                          <td>
+                            <WorkspaceStatusBadge status={formatMembershipLabel(row)} />
+                          </td>
+                          <td>{formatCompactDate(row.createdAt)}</td>
+                          <td>{formatCompactDate(row.lastLoginAt)}</td>
                           <td>
                             {profileHref ? (
                               <Link className="admin-panel__link" href={profileHref}>

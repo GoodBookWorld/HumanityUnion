@@ -19,7 +19,11 @@ import {
   listAllTrackingUpdates,
   listTrackings as listImplementationTrackings,
 } from "../initiative-implementation-tracking/initiative-implementation-tracking.store.js";
-import { listProposals as listImprovementProposals } from "../initiative-improvement-proposal/initiative-improvement-proposal.store.js";
+import { countParticipantsWithBlogAuthorCapability } from "../blog/persistence/blog.repository.js";
+import {
+  countPublicImprovementProposals,
+  listProposals as listImprovementProposals,
+} from "../initiative-improvement-proposal/initiative-improvement-proposal.store.js";
 import { listImpacts as listPublicImpacts } from "../initiative-public-impact/initiative-public-impact.store.js";
 import { isInitiativeEligibleForPublicProjection } from "../initiatives/initiative-public-projection.access.js";
 import { listInitiatives } from "../initiatives/initiative.store.js";
@@ -82,6 +86,14 @@ function countPublicOfficialResponses(): number {
 
 function countPublishedCivicArchiveRecords(): number {
   return listPublishedArchiveRecords().length;
+}
+
+function countCanonicalProposals(): number {
+  return countPublicImprovementProposals();
+}
+
+async function countAuthors(): Promise<number> {
+  return countParticipantsWithBlogAuthorCapability();
 }
 
 function countGeographyFromParticipationAreas(): { countries: number; regions: number } {
@@ -248,7 +260,9 @@ async function buildPlatformStatisticsCounts(): Promise<PlatformStatisticsCounts
     activeMembers: await countActiveMembers(windowStartMs),
     countries: geography.countries,
     regions: geography.regions,
+    authors: await countAuthors(),
     initiatives: countPublicInitiatives(),
+    proposals: countCanonicalProposals(),
     collectiveDecisions: countPublicCollectiveDecisions(),
     civicActionPackages: countIssuedCivicActionPackages(),
     officialResponses: countPublicOfficialResponses(),

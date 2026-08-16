@@ -88,6 +88,14 @@
   font-weight: 600;
 }
 
+.admin-participants-table__secondary {
+  margin: 0.15rem 0 0;
+}
+
+.admin-participants-table__role {
+  font-size: 0.88rem;
+}
+
 .admin-participants-pagination {
   display: flex;
   flex-wrap: wrap;

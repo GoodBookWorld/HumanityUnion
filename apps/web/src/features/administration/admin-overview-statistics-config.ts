@@ -8,24 +8,29 @@ import {
 export type AdminOverviewStatisticKey =
   | keyof PlatformStatisticsCounts
   | "humanityUnionMembers"
-  | "publishedBlogPosts"
-  | "editorialPending";
+  | "publishedBlogPosts";
 
+/** Pack 04 — Operational Overview exactly 12 metrics, order fixed, 6+6 desktop. */
 export const ADMIN_OVERVIEW_STATISTIC_CARDS: ReadonlyArray<
   PublicStatisticCardConfig & { key: AdminOverviewStatisticKey }
 > = [
   {
+    key: "countries",
+    label: "Countries",
+    iconSrc: PUBLIC_STATISTIC_ICONS.countries,
+    description: "Distinct countries from active participation areas (or member profiles).",
+  },
+  {
+    key: "regions",
+    label: "Regions",
+    iconSrc: PUBLIC_STATISTIC_ICONS.regions,
+    description: "Distinct country and region combinations on the platform.",
+  },
+  {
     key: "users",
     label: "Participants",
     iconSrc: PUBLIC_STATISTIC_ICONS.participants,
-    description: "Active authentication accounts on the platform (platform statistics).",
-  },
-  {
-    key: "activeMembers",
-    label: "Recently active Participants",
-    iconSrc: PUBLIC_STATISTIC_ICONS.members,
-    description:
-      "Participants with recent activity within the platform statistics active window.",
+    description: "Active authentication accounts (registered Participants).",
   },
   {
     key: "humanityUnionMembers",
@@ -34,10 +39,30 @@ export const ADMIN_OVERVIEW_STATISTIC_CARDS: ReadonlyArray<
     description: "Confirmed Humanity Union Members with active Membership status.",
   },
   {
+    key: "authors",
+    label: "Authors",
+    iconSrc: "/icons/workspace/author.svg",
+    description:
+      "Participants with Author or Trusted Author blog capability grants.",
+  },
+  {
+    key: "publishedBlogPosts",
+    label: "Published Blog posts",
+    iconSrc: "/icons/workspace/blog.svg",
+    description: "Publicly listed Blog publications.",
+  },
+  {
     key: "initiatives",
     label: "Initiatives",
     iconSrc: PUBLIC_STATISTIC_ICONS.initiatives,
-    description: "Publicly visible civic initiatives (platform statistics).",
+    description: "Publicly visible civic initiatives.",
+  },
+  {
+    key: "proposals",
+    label: "Proposals",
+    iconSrc: "/icons/workspace/proposals.svg",
+    description:
+      "Canonical Initiative Improvement Proposals in submitted or decided public statuses.",
   },
   {
     key: "collectiveDecisions",
@@ -63,16 +88,7 @@ export const ADMIN_OVERVIEW_STATISTIC_CARDS: ReadonlyArray<
     iconSrc: PUBLIC_STATISTIC_ICONS.civicArchive,
     description: "Published public civic archive records.",
   },
-  {
-    key: "publishedBlogPosts",
-    label: "Published Blog posts",
-    iconSrc: PUBLIC_STATISTIC_ICONS.initiatives,
-    description: "Publicly listed Blog publications.",
-  },
-  {
-    key: "editorialPending",
-    label: "Editorial queue",
-    iconSrc: PUBLIC_STATISTIC_ICONS.officialResponses,
-    description: "Blog publications awaiting Editorial Review.",
-  },
 ];
+
+export const ADMIN_OVERVIEW_METRIC_ORDER: readonly AdminOverviewStatisticKey[] =
+  ADMIN_OVERVIEW_STATISTIC_CARDS.map((card) => card.key);

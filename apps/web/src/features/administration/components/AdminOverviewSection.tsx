@@ -11,9 +11,7 @@ import type {
   PlatformStatisticsMeta,
 } from "@hu/types";
 
-import { ProfileField } from "../../../components/member/ProfileField";
 import { ProfileSection } from "../../../components/member/ProfileSection";
-import { listEditorialReviewQueue } from "../../blog/editorial-api";
 import { fetchPublicBlogPosts } from "../../blog/api";
 import { getPlatformConfig } from "../../closed-beta/platform-api";
 import {
@@ -29,6 +27,7 @@ import {
   ADMIN_OVERVIEW_STATISTIC_CARDS,
   type AdminOverviewStatisticKey,
 } from "../admin-overview-statistics-config";
+import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "../../platform-statistics/platform-statistics.css";
@@ -44,12 +43,11 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
   const [membership, setMembership] = useState<MembershipStatisticsPayload | null>(null);
   const [platform, setPlatform] = useState<PlatformConfigPublic | null>(null);
   const [publishedBlogTotal, setPublishedBlogTotal] = useState<number | null>(null);
-  const [editorialPending, setEditorialPending] = useState<number | null>(null);
   const [platformStatsError, setPlatformStatsError] = useState(false);
   const [membershipError, setMembershipError] = useState(false);
   const [blogError, setBlogError] = useState(false);
-  const [editorialError, setEditorialError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [techOpen, setTechOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,8 +57,7 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
       fetchMembershipStatistics(),
       getPlatformConfig(),
       fetchPublicBlogPosts({ limit: 1, offset: 0 }),
-      listEditorialReviewQueue({ limit: 1, offset: 0 }),
-    ]).then(([platformResult, membershipResult, configResult, blogResult, editorialResult]) => {
+    ]).then(([platformResult, membershipResult, configResult, blogResult]) => {
       if (cancelled) {
         return;
       }
@@ -97,14 +94,6 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
         setBlogError(true);
       }
 
-      if (editorialResult.status === "fulfilled") {
-        setEditorialPending(editorialResult.value.total);
-        setEditorialError(false);
-      } else {
-        setEditorialPending(null);
-        setEditorialError(true);
-      }
-
       setLoading(false);
     });
 
@@ -130,13 +119,6 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
       return publishedBlogTotal;
     }
 
-    if (statisticKey === "editorialPending") {
-      if (editorialError) {
-        return null;
-      }
-      return editorialPending;
-    }
-
     if (platformStatsError || !counts) {
       return null;
     }
@@ -151,52 +133,90 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
     return formatPlatformStatisticValue(value);
   }
 
-  const allUnavailable =
-    platformStatsError && membershipError && blogError && editorialError;
+  const allUnavailable = platformStatsError && membershipError && blogError;
 
   return (
     <div className="admin-panel">
       <AdminPanelNavigation />
 
       <ProfileSection title="Administrator">
-        <ProfileField label="Display name" value={user.displayName} />
-        <ProfileField label="Email" value={user.email} />
-        <ProfileField label="Role" value={user.role} />
-        <ProfileField label="Participant / Member ID" value={user.memberId} />
-        <ProfileField label="Account status" value={user.status} />
+        <AdminMetricDetailsGrid
+          aria-label="Administrator details"
+          cells={[
+            { label: "Display name", value: user.displayName },
+            { label: "Email", value: user.email },
+            { label: "Role", value: user.role === "admin" ? "Administrator" : user.role },
+            { label: "Account status", value: user.status === "active" ? "Active" : "Disabled" },
+          ]}
+        />
+        <details
+          className="admin-panel__tech-details"
+          open={techOpen}
+          onToggle={(event) => setTechOpen(event.currentTarget.open)}
+        >
+          <summary>Technical details</summary>
+          <dl className="admin-panel__tech-list">
+            <div>
+              <dt>User ID</dt>
+              <dd>
+                <code>{user.userId}</code>
+              </dd>
+            </div>
+            <div>
+              <dt>Participant / Member ID</dt>
+              <dd>
+                <code>{user.memberId}</code>
+              </dd>
+            </div>
+          </dl>
+        </details>
       </ProfileSection>
 
       <ProfileSection title="Platform status">
-        <ProfileField label="Platform mode" value={platform?.platformMode ?? "Unavailable"} />
-        <ProfileField
-          label="Registration requires invite"
-          value={
-            platform
-              ? platform.registrationRequiresInvite
-                ? "Yes"
-                : "No"
-              : "Unavailable"
-          }
+        <AdminMetricDetailsGrid
+          aria-label="Platform status"
+          cells={[
+            {
+              label: "Platform mode",
+              value: platform?.platformMode ?? "Unavailable",
+            },
+            {
+              label: "Registration / invite gate",
+              value: platform
+                ? platform.registrationRequiresInvite
+                  ? "Invite required"
+                  : "Open registration"
+                : "Unavailable",
+            },
+            {
+              label: "Beta banner",
+              value: platform
+                ? platform.showBetaBanner
+                  ? "Visible"
+                  : "Hidden"
+                : "Unavailable",
+            },
+            {
+              label: "Active Participant window",
+              value: meta ? `${meta.activeMemberWindowDays} days` : "Unavailable",
+              caption: "activity measurement window",
+              methodological: true,
+            },
+          ]}
         />
-        <ProfileField
-          label="Beta banner"
-          value={platform ? (platform.showBetaBanner ? "Visible" : "Hidden") : "Unavailable"}
-        />
-        {meta ? (
-          <ProfileField
-            label="Active Participant window (days)"
-            value={String(meta.activeMemberWindowDays)}
-          />
-        ) : null}
       </ProfileSection>
 
-      <section className="platform-statistics admin-panel__statistics" aria-labelledby="admin-overview-stats">
+      <section
+        className="platform-statistics admin-panel__statistics admin-panel__statistics--overview"
+        aria-labelledby="admin-overview-stats"
+      >
         <h2 id="admin-overview-stats" className="profile-section__title">
           Operational overview
         </h2>
         <p className="hu-caption admin-panel__note">
-          Metrics come from existing platform, membership, Blog, and Editorial APIs.
-          Unavailable values are shown as Unavailable — never invented.
+          Metrics come from existing platform, membership, and Blog APIs. Unavailable values are
+          shown as Unavailable — never invented. Subscriber analytics live under Views →
+          Subscribers.
         </p>
         <PublicStatisticsGrid
           cards={ADMIN_OVERVIEW_STATISTIC_CARDS}

@@ -111,12 +111,12 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
     assert.match(overview, /fetchPlatformStatistics/);
     assert.match(overview, /fetchMembershipStatistics/);
     assert.match(overview, /fetchPublicBlogPosts/);
-    assert.match(overview, /listEditorialReviewQueue/);
     assert.match(overview, /PublicStatisticsGrid/);
     assert.match(overview, /Unavailable/);
     assert.doesNotMatch(overview, /\?\? 0/);
     assert.doesNotMatch(overview, /fallbackCount|fakeTotal|hardcodedStat/i);
 
+    assert.equal(ADMIN_OVERVIEW_STATISTIC_CARDS.length, 12);
     for (const card of ADMIN_OVERVIEW_STATISTIC_CARDS) {
       assert.ok(card.key);
       assert.ok(card.label);

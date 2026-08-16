@@ -71,10 +71,9 @@ describe("Admin Panel Pack 03 — Views & Participant directory", () => {
     );
   });
 
-  it("Insights uses existing operational aggregates only", () => {
+  it("Insights does not duplicate Operational Overview and never invents traffic", () => {
     const insights = read("features/administration/components/AdminViewsInsightsSection.tsx");
-    assert.match(insights, /fetchPlatformStatistics/);
-    assert.match(insights, /PublicStatisticsGrid/);
+    assert.doesNotMatch(insights, /Operational totals|PublicStatisticsGrid|ADMIN_OVERVIEW/);
     assert.match(insights, /AdminCapabilityGap/);
     assert.doesNotMatch(insights, /wordpress|ga4|posthog/i);
     assert.match(

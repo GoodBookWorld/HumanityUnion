@@ -245,6 +245,23 @@ export async function findBlogCapabilityGrant(
   return doc ? fromBlogCapabilityGrantMongoDocument(doc) : null;
 }
 
+/**
+ * Count distinct Participants who hold Author or Trusted Author capability
+ * via `blog_capability_grants` (one grant document per participant).
+ * Returns 0 when Mongo blog persistence is not configured.
+ */
+export async function countParticipantsWithBlogAuthorCapability(): Promise<number> {
+  if (!isMongoConfigured()) {
+    return 0;
+  }
+
+  await ensureBlogMongoReady();
+
+  return grantsCollection().countDocuments({
+    capabilities: { $in: ["author", "trusted_author"] },
+  });
+}
+
 export async function insertBlogAuthorApplication(
   application: BlogAuthorApplication,
   options: RepositorySessionOptions = {},

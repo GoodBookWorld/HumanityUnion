@@ -20,7 +20,9 @@ The **Humanity Union in Numbers** widget presents aggregate civic activity count
     "activeMembers": 0,
     "countries": 0,
     "regions": 0,
+    "authors": 0,
     "initiatives": 0,
+    "proposals": 0,
     "collectiveDecisions": 0,
     "civicActionPackages": 0,
     "officialResponses": 0,
@@ -107,6 +109,33 @@ Count initiatives eligible for public projection:
 
 Drafts and private records are excluded.
 
+### Authors
+
+Count Participants with an explicit blog capability grant containing `author` or
+`trusted_author` in `blog_capability_grants`. One grant document per Participant.
+Returns `0` when Mongo blog persistence is not configured.
+
+Does not count JWT-only editorial roles without a grant, author applications, or
+draft-only writers who lack Author capability.
+
+### Proposals
+
+Count canonical **Initiative Improvement Proposal** records whose status is one of:
+
+- `submitted`
+- `accepted`
+- `partially_accepted`
+- `declined`
+
+Source: `initiative_improvement_proposals` via `countPublicImprovementProposals()`.
+
+Excluded (do not double-count):
+
+- `draft` and `archived` Improvement Proposals
+- structured Part D proposal collections / candidates / intelligence groupings
+- proposal reactions or revision ID lists as separate proposals
+- Activity / legacy Proposal module records
+
 ### Collective Decisions
 
 Count initiative collective decision records with public statuses: `opened`, `closed`, or `cancelled`.
@@ -130,7 +159,9 @@ Count records returned by `listPublishedArchiveRecords()` in the public civic ar
 | Users                 | `auth-user.repository` → `countActiveAuthUsers()`                                                        |
 | Active Members        | Aggregated from initiative, analysis, proposal, vote, commitment, tracking, impact, nomination stores    |
 | Countries / Regions   | `participation-area.store` → `listActiveParticipationAreas()`, fallback `member.store` → `listMembers()` |
+| Authors               | `blog.repository` → `countParticipantsWithBlogAuthorCapability()`                                        |
 | Initiatives           | `initiative.store` + `isInitiativeEligibleForPublicProjection()`                                         |
+| Proposals             | `initiative-improvement-proposal.store` → `countPublicImprovementProposals()`                            |
 | Collective Decisions  | `initiative-collective-decision.store`                                                                   |
 | Civic Action Packages | `civic-action-package.store`                                                                             |
 | Official Responses    | `official-response.store`                                                                                |

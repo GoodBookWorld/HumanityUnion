@@ -62,6 +62,16 @@ export function listProposals(): InitiativeImprovementProposal[] {
   return Array.from(proposals.values(), (proposal) => structuredClone(proposal));
 }
 
+/**
+ * Canonical Operational Overview / platform statistics count.
+ * Includes submitted + decided civic Improvement Proposals only.
+ * Excludes draft and archived; does not count structured Part D collections,
+ * revisions, reactions, candidates, or Activity Proposal module records.
+ */
+export function countPublicImprovementProposals(): number {
+  return listProposals().filter((proposal) => PUBLIC_STATUSES.has(proposal.status)).length;
+}
+
 export function listProposalsByAuthor(authorId: string): InitiativeImprovementProposal[] {
   return listProposals().filter((proposal) => proposal.authorId === authorId);
 }
