@@ -4,7 +4,7 @@ Humanity Union
 
 Engineering Command Center
 
-Version 1.1
+Version 1.2
 
 ---
 
@@ -46,7 +46,7 @@ Operational on **staging**
 
 Project Health:
 
-Good — staging historical data partially restored; UI/auth reconciliation open
+Good — approved historical staging recovery Packs 01–05 **CLOSED** (verify:staging PASS); Lifecycle UX audit is next
 
 Primary engineering branch:
 
@@ -56,18 +56,18 @@ Primary engineering branch:
 
 # Current Focus
 
-**STAGING FEATURE RECONCILIATION PACK 05** — tooling complete; operator `--execute` + RSS refresh pending
+**LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT**
 
-Last completed continuity work:
+Last completed:
 
-CHAT AGENT CONTINUITY PACK 01
+RECOVERY PHASE CLOSURE — STAGING VERIFIED PASS (Packs 01–05 approved scope closed)
 
-Recent staging tracks:
+Recent closed staging tracks:
 
 - Admin Packs 02–05
 - Staging Data Migration Packs 01–03 (+02A)
 - Staging Historical Data Reconciliation Pack 04
-- Staging Feature Reconciliation Pack 05 (Allies/UI/RSS)
+- Staging Feature Reconciliation Pack 05 (Allies/UI/RSS) — deployed + operator-verified PASS
 
 ---
 
@@ -77,7 +77,9 @@ Capability 02 — Participation
 
 Historical Epics 01–03 (Initiative, Collaborative Analysis, Collective Decision): **Completed** (committed)
 
-Later product work (Blog, PWA, Launch Readiness, Admin, Staging) advanced via Packs on branch `staging` — see `PROJECT_STATE.md` and git history. Do not treat Epic 04 Petitions as the live next task unless `NEXT_SESSION.md` says so.
+Later product work (Blog, PWA, Launch Readiness, Admin, Staging recovery) advanced via Packs on branch `staging` — see `PROJECT_STATE.md` and git history.
+
+Live next task is Lifecycle UX audit — see `NEXT_SESSION.md`.
 
 ---
 
@@ -146,6 +148,8 @@ Development follows:
 Entry: `architecture/recovery/chat-agent/README.md`
 
 Protocol: `project/PROJECT_RECOVERY_PROTOCOL.md`
+
+Historical staging recovery (approved Packs 01–05): **CLOSED** — see `PROJECT_STATE.md`.
 
 ---
 

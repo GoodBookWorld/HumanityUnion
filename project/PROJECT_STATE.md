@@ -4,7 +4,7 @@ Humanity Union
 
 Project State
 
-Version 1.1
+Version 1.2
 
 ---
 
@@ -49,15 +49,15 @@ Primary branch:
 
 Platform Version:
 
-4.0+ (staging launch-ready baseline + Admin + historical migration tooling)
+4.0+ (staging launch-ready baseline + Admin + closed historical recovery scope Packs 01–05)
 
 ---
 
 # Current Focus
 
-**Last completed (tooling):** STAGING FEATURE RECONCILIATION PACK 05 (Allies/RSS bundle + Initiative public UI + mini-cards; no real staging `--execute`)
+**Last completed:** RECOVERY PHASE CLOSURE — STAGING VERIFIED PASS (approved historical recovery Packs 01–05 **CLOSED**)
 
-**Next:** Operator execute reconcile (Packs 04+05 inserts) + enable/refresh staging RSS, then `verify:staging`.
+**Next:** **LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT** (audit before any new Lifecycle UX implementation)
 
 See `project/NEXT_SESSION.md`.
 
@@ -93,60 +93,61 @@ Capability 02
 
 # Recent Pack tracks (repository-verifiable)
 
-**Repository-verifiable** means present in git (modules, tests, docs, commits). Does not by itself prove live staging `--execute` outcomes.
+**Repository-verifiable** means present in git (modules, tests, docs, commits). Does not by itself prove live staging outcomes.
 
 | Track | Repo evidence (examples) |
 |-------|---------------------------|
 | Admin Foundation Pack 02 | `project/architecture/administration/CANONICAL_CAPABILITY_RESOLVER.md`, admin foundation tests |
-| Admin Console Packs 03–05 | Admin Panel features + `admin-panel-pack05` / initiative visibility tests; commits through `521f201` |
+| Admin Console Packs 03–05 | Admin Panel features + `admin-panel-pack05` / initiative visibility tests |
 | Staging Data Migration Packs 01–02 / 02A | `architecture/recovery/STAGING_DATA_MIGRATION_*`, `staging-data-source-v1/`, `apps/api/src/modules/staging-data-migration/` |
 | Staging Media Pack 03 | `architecture/recovery/STAGING_MEDIA_*`, `staging-media-source-v1/`, `apps/api/src/modules/staging-historical-media/` |
-| Staging baseline | `5954d54` STAGING BASELINE; ops doc `project/architecture/operations/STAGING_DEPLOYMENT_VERIFICATION_v1.0.md` |
+| Staging Reconciliation Packs 04–05 | `staging-reconciliation-source-v1/`, `apps/api/src/modules/staging-reconciliation/`, Pack 05 assessment |
+| Staging baseline | ops doc `project/architecture/operations/STAGING_DEPLOYMENT_VERIFICATION_v1.0.md` |
 
 ---
 
-# Staging data — OPERATOR-VERIFIED facts
+# Historical staging recovery — CLOSED (approved scope)
 
-The following are **operator-verified** staging outcomes (explicitly distinguished from pure repository evidence). Treat as live staging facts for planning; re-verify in Pack 04 where needed.
+**Status:** **CLOSED** for the currently approved canonical recovery scope completed through Packs **01–05**.
 
-- Admin Panel Pack 05 was committed and pushed.
-- Historical staging data migration `--execute` completed successfully.
-- Four historical Participants were added; staging admin remained protected.
-- Five historical Initiatives were added.
-- Historical Vlad Gmail remains a **separate** Participant from staging-admin Vlad HUWS.
-- Isabella’s Initiative is intentional working/test data (not disposable).
-- CSS is regional (British Columbia / Canada; `participationScope: region`), not World scope.
-- Historical Initiative media and four Participant avatars were uploaded to Cloudflare R2.
-- A second media migration dry-run reported canonical skips (`skip_already_canonical`) and zero conflicts.
+This does **not** claim every possible legacy record in `humanity_union_dev` was migrated.
 
-Identity / civic sources (repo design): historical identity Mongo `humanity_union_dev`; civic portable bundle `architecture/recovery/staging-data-source-v1/`; media bundle `architecture/recovery/staging-media-source-v1/`; target DB `humanity_union_staging`.
+**Still excluded** (unless a future architecture decision says otherwise):
+
+- Activity / Discussion / Proposal / Decision as parallel civic roots
+- Bulk migration as the default strategy
+
+Identity / civic sources (repo design): historical identity Mongo `humanity_union_dev`; civic portable bundle `architecture/recovery/staging-data-source-v1/`; media bundle `architecture/recovery/staging-media-source-v1/`; reconciliation bundle `architecture/recovery/staging-reconciliation-source-v1/`; target DB `humanity_union_staging`.
 
 ---
 
-# Staging — Pack 04 reconciliation status
+# Staging — OPERATOR-VERIFIED facts (final recovery verification)
 
-**Repository-verifiable**
+Final command: `pnpm verify:staging -- --check-media-http` → **result: PASS**
 
-- Portable bundle: `architecture/recovery/staging-reconciliation-source-v1/` (comments 10, comment reactions 12, analysis reactions 1, support registered 9, visitor 15, bookmarks 1, views 196; auth metadata without hashes)
-- Commands: `pnpm reconcile:staging-historical-data`, `pnpm verify:staging`
-- Assessment: `architecture/recovery/STAGING_RECONCILIATION_ASSESSMENT_v1.0.md`
-- Web: InitiativeImage fallback reset + localhost media rejection on staging/production hosts
+Operator also manually confirmed deployed functionality is installed and working.
 
-**Operator execute still required for**
+| Area | Verified |
+|------|----------|
+| Pack 05 deployed + reconcile `--execute` | yes |
+| participants / loginReady | 5 / 5 (historical Participants login-ready) |
+| initiativesPublic / initiativesTotal | 5 / 6 |
+| engagement (snapshot) | comments 10; commentReactions 13; supportSignals 13; bookmarks 1; views 211 |
+| proposals / proposalsPublicCounted | 3 / 0 (drafts correctly excluded from public count) |
+| integrity | brokenStewards 0; brokenInitiativeAncestry 0; brokenMediaUrls 0; unreachableMedia 0; authIntegrityIssues 0; reconciliationConflicts 0 |
+| Web media / cards | webInitiativeImages PASS; participantAvatars PASS; initiativeMediaRendering PASS; initiativeCardNavigation PASS |
+| Allies | allies 6; activeAllies 5; brokenAllyParticipants 0; brokenAllyInitiatives 0 |
+| Collaboration | collaborationMessages 4; collaborationSessions 0 |
+| RSS | rssSources 16; publicNewsArticles **54** (snapshot only); rssFeedAvailable PASS |
+| Staging API | `NEWS_PROVIDER_ENABLED=true`; RSS ingestion operational |
+| Historical login keys | historical_vlad / michael / derek / isabella — all login-ready |
 
-- Restoring historical bcrypt hashes + email verified from `humanity_union_dev` (not committed to Git)
-- Inserting engagement history into `humanity_union_staging`
+Also retained from earlier operator-verified migration:
 
----
-
-# Staging — OPERATOR-OBSERVED unresolved issues
-
-Label: **operator-observed until verified by the next engineering Pack**.
-
-1. Initiative images still do not display correctly in the actual Web UI.
-2. Historical Participants cannot currently log in.
-3. Historical comments and likes/dislikes/support history are not restored.
-4. Remaining historical data needs **canonical reconciliation** rather than bulk-copying obsolete parallel civic roots (Activity/Discussion/Proposal/Decision as roots).
+- Staging admin remained protected; historical Vlad Gmail ≠ staging-admin Vlad HUWS
+- Five historical Initiatives; Isabella’s Initiative is intentional working/test data
+- CSS is regional (British Columbia / Canada), not World scope
+- Historical Initiative media and Participant avatars on Cloudflare R2
 
 ---
 
@@ -154,13 +155,13 @@ Label: **operator-observed until verified by the next engineering Pack**.
 
 None as Cap-02 Guide cycle.
 
-Current engineering cycle type: **Staging Pack** (reconciliation), not Epic Guide.
+Current engineering cycle type: **Lifecycle UX** (current-state audit first), not Staging Pack.
 
 ---
 
 # Immediate Objective
 
-See `project/NEXT_SESSION.md` — **STAGING HISTORICAL DATA RECONCILIATION PACK 04**.
+See `project/NEXT_SESSION.md` — **LIFECYCLE UX COMPLETION — CURRENT-STATE AUDIT**.
 
 ---
 
@@ -170,7 +171,7 @@ Preserve Initiative-centric Participation architecture.
 
 Evolve via `architecture/ARCHITECTURE_EVOLUTION_ROADMAP_v2.0.md`.
 
-Production cutover remains a later ops track — not the current Pack 04 focus.
+Production cutover remains a later ops track — not the current Lifecycle UX audit focus.
 
 ---
 

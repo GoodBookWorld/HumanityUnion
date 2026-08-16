@@ -17,11 +17,10 @@
 - Public hero: 50/50 media|title+meta columns; description full-width below.
 - Mini/world/country cards: whole-card Link to canonical public Initiative href.
 
-## Operator (not run in Cursor)
+## Operator (verified)
 
-```bash
-# RENDER API WEB SHELL
-ALLOW_STAGING_RECONCILIATION=true pnpm reconcile:staging-historical-data -- --execute
-# ensure NEWS_PROVIDER_ENABLED=true, then refresh news
-pnpm verify:staging -- --check-media-http
-```
+Pack 05 deployed; reconcile `--execute` completed; `pnpm verify:staging -- --check-media-http` → **PASS**.
+
+`NEWS_PROVIDER_ENABLED=true` on staging API; RSS ingestion operational (16 sources; news article count is a verification snapshot, not an invariant).
+
+Historical staging recovery approved scope (Packs 01–05): **CLOSED**. Next: Lifecycle UX current-state audit — see `project/NEXT_SESSION.md`.
