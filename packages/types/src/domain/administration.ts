@@ -105,7 +105,9 @@ export type AdministrationAuditAction =
   | "blog.archive"
   | "blog.comment.moderate"
   | "safety.override"
-  | "administration.bootstrap";
+  | "administration.bootstrap"
+  | "initiative.visibility.hide"
+  | "initiative.visibility.restore";
 
 export interface AdministrationAuditRecord {
   readonly auditId: string;
@@ -164,4 +166,126 @@ export interface AdminParticipantDirectoryResponse {
   readonly limit: number;
   readonly offset: number;
   readonly hasMore: boolean;
+}
+
+/** Admin Panel Pack 05 — safe Initiative directory row. */
+export interface AdminInitiativeDirectoryItem {
+  readonly initiativeId: string;
+  readonly title: string;
+  readonly stewardId: string;
+  readonly stewardDisplayName: string;
+  readonly stewardUniqueName?: string;
+  readonly lifecyclePhase: string;
+  readonly status: string;
+  readonly visibility: "steward_only" | "public";
+  readonly geography: {
+    readonly region: string;
+    readonly countrySlug?: string;
+    readonly regionSlug?: string;
+    readonly communitySlug?: string;
+  };
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly publiclyProjected: boolean;
+  readonly proposalCount: number;
+  readonly decisionSummary: string | null;
+  readonly civicArchiveState: "none" | "present";
+  readonly integrityStatus: "ok" | "warning";
+}
+
+export interface AdminInitiativeDirectoryAggregates {
+  readonly total: number;
+  readonly public: number;
+  readonly nonPublic: number;
+  readonly activeLifecycle: number;
+  readonly archived: number;
+  readonly proposals: number;
+}
+
+export interface AdminInitiativeDirectoryResponse {
+  readonly initiatives: readonly AdminInitiativeDirectoryItem[];
+  readonly aggregates: AdminInitiativeDirectoryAggregates;
+  readonly total: number;
+  readonly limit: number;
+  readonly offset: number;
+  readonly hasMore: boolean;
+}
+
+export type AdminInitiativeLifecycleStageId =
+  | "initiative"
+  | "discussion"
+  | "collaborative_analysis"
+  | "improvement_proposals"
+  | "revision"
+  | "petition"
+  | "decision_session"
+  | "collective_decision"
+  | "implementation_commitments"
+  | "implementation_tracking"
+  | "official_responses"
+  | "public_impact"
+  | "civic_archive";
+
+export type AdminInitiativeLifecycleStageState =
+  | "present"
+  | "current"
+  | "not_reached";
+
+export interface AdminInitiativeLifecycleStage {
+  readonly stageId: AdminInitiativeLifecycleStageId;
+  readonly label: string;
+  readonly state: AdminInitiativeLifecycleStageState;
+  readonly evidence: string;
+}
+
+export interface AdminInitiativeIntegrityFinding {
+  readonly code: string;
+  readonly severity: "info" | "warning";
+  readonly message: string;
+}
+
+export interface AdminInitiativeCivicRelationships {
+  readonly proposalCount: number;
+  readonly analysisCount: number;
+  readonly revisionCount: number;
+  readonly petitionStatus: string | null;
+  readonly decisionSessionCount: number;
+  readonly collectiveDecisionSummary: string | null;
+  readonly commitmentCount: number;
+  readonly trackingCount: number;
+  readonly officialResponseCount: number;
+  readonly publicImpactCount: number;
+  readonly civicArchiveCount: number;
+}
+
+export interface AdminInitiativeDetail {
+  readonly initiativeId: string;
+  readonly title: string;
+  readonly descriptionPreview: string;
+  readonly stewardId: string;
+  readonly stewardDisplayName: string;
+  readonly stewardUniqueName?: string;
+  readonly geography: AdminInitiativeDirectoryItem["geography"];
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly lifecyclePhase: string;
+  readonly status: string;
+  readonly visibility: "steward_only" | "public";
+  readonly publiclyProjected: boolean;
+  readonly publicUrl: string | null;
+  readonly lifecycleStages: readonly AdminInitiativeLifecycleStage[];
+  readonly relationships: AdminInitiativeCivicRelationships;
+  readonly integrity: readonly AdminInitiativeIntegrityFinding[];
+  /** Explicit admin visibility moderation availability. */
+  readonly adminActions: {
+    readonly canHideFromPublic: boolean;
+    readonly canRestorePublicVisibility: boolean;
+  };
+}
+
+export interface AdminInitiativeVisibilityCommandResult {
+  readonly initiativeId: string;
+  readonly visibility: "steward_only" | "public";
+  readonly publiclyProjected: boolean;
+  readonly auditId: string;
 }

@@ -125,9 +125,10 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
 
   it("Initiative and Publishing admin surfaces use canonical APIs", () => {
     const initiatives = read("features/administration/components/AdminInitiativesSection.tsx");
-    assert.match(initiatives, /listInitiatives/);
-    assert.match(initiatives, /Deferred admin correction|no admin force-edit/i);
+    assert.match(initiatives, /listAdminInitiatives/);
+    assert.match(initiatives, /Deferred administrative commands/i);
     assert.doesNotMatch(initiatives, /saveInitiativeDraft|updatePublishedInitiative|createInitiativeDraft/);
+    assert.doesNotMatch(initiatives, /listInitiatives\(\)/);
 
     const publishing = read("features/administration/components/AdminPublishingSection.tsx");
     assert.match(publishing, /listEditorialReviewQueue/);

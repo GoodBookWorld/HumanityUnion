@@ -18,6 +18,17 @@ export {
 } from "./admin-participant-directory.service.js";
 export { default as adminParticipantDirectoryRouter } from "./admin-participant-directory.routes.js";
 export {
+  getAdminInitiativeDetail,
+  listAdminInitiatives,
+  AdminInitiativeDirectoryValidationError,
+} from "./admin-initiative-directory.service.js";
+export {
+  hideAdminInitiativeFromPublic,
+  restoreAdminInitiativePublicVisibility,
+  AdminInitiativeCommandValidationError,
+} from "./admin-initiative-visibility.service.js";
+export { default as adminInitiativeDirectoryRouter } from "./admin-initiative-directory.routes.js";
+export {
   AuditService,
   deleteAdministrationAudit,
   getAdministrationAuditById,
