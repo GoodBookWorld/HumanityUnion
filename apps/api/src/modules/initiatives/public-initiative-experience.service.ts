@@ -60,6 +60,7 @@ import { toWorldInitiativeCardProjection } from "./initiative-world-initiatives.
 import { findRelatedInitiativesForInitiative } from "../community-intelligence/index.js";
 import { listInitiatives } from "./initiative.store.js";
 import { toPublicInitiativeProjection } from "./public-initiative.projection.js";
+import { buildCollectiveParticipationJourney } from "../collective-participation-journey/collective-participation-journey.service.js";
 
 function summarizeText(text: string, maxLength = 220): string {
   const normalized = text.trim();
@@ -655,6 +656,19 @@ export async function buildPublicInitiativeExperienceProjection(input: {
     initiative.timeline.find((event) => event.eventType === "initiative_published")?.timestamp ??
     initiative.createdAt;
 
+  let participationJourney = undefined;
+  try {
+    participationJourney = await buildCollectiveParticipationJourney({
+      initiativeId: initiative.initiativeId,
+      participantId: input.viewerParticipantId ?? null,
+    });
+  } catch (error) {
+    logger.warn("public_initiative_experience.participation_journey_failed", {
+      initiativeId: initiative.initiativeId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   return {
     initiativeId: initiative.initiativeId,
     hero: {
@@ -691,6 +705,7 @@ export async function buildPublicInitiativeExperienceProjection(input: {
     viewerIsSteward:
       Boolean(input.viewerParticipantId) &&
       input.viewerParticipantId === initiative.stewardId,
+    participationJourney: participationJourney ?? undefined,
     generatedAt: new Date().toISOString(),
   };
 }

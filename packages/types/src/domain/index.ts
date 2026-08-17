@@ -591,6 +591,17 @@ export type {
   InitiativeAuthorWorkflowStageContract,
   InitiativeAuthorWorkflowStep,
 } from "./initiative-author-workflow.js";
+export { COLLECTIVE_PARTICIPATION_ACTION_TYPES } from "./collective-participation-journey.js";
+export type {
+  CollectiveParticipationActionSource,
+  CollectiveParticipationActionType,
+  CollectiveParticipationAvailableAction,
+  CollectiveParticipationEligibility,
+  CollectiveParticipationJourney,
+  CollectiveParticipationJourneySummary,
+  CollectiveParticipationNextAction,
+  CollectiveParticipationPastAction,
+} from "./collective-participation-journey.js";
 export type {
   InitiativeLifecyclePresentationMode,
   InitiativeLifecyclePresentationModeResult,

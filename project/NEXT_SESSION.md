@@ -4,7 +4,7 @@ Humanity Union
 
 Next Engineering Session
 
-Version 1.11
+Version 1.14
 
 ---
 
@@ -16,31 +16,24 @@ AI recovery entry: `architecture/recovery/chat-agent/README.md`
 
 ---
 
-# Last Completed
+# Last Completed (product)
 
-**INITIATIVE LIFECYCLE FINALIZATION — PHASE 04**
-Uniform Author workflow convergence.
+**INITIATIVE LIFECYCLE FINALIZATION — PHASE 05** (implemented locally; **not** committed/pushed/deployed)
 
-Primary document:
+Report: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_05_REPORT_v1.0.md`
 
-`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_04_REPORT_v1.0.md`
-
-Prior: Phase 03 shell/nav (`9de09fc`); Phase 02 state/persistence.
+Prior pushed checkpoint: `be12c77` — Phase 04 Author workflow
 
 ---
 
-# Immediate Objective
+# Infrastructure status
 
-**INITIATIVE LIFECYCLE FINALIZATION — PHASE 05**
-(Follow Phase 04 report §24 and the Finalization program plan — Participant Journey / Guide / Candidate presentation sequencing as defined by architecture authority.)
+1. **Mongo leak hardening complete** — Pack 01
+   Report: `architecture/recovery/MONGODB_TEST_ISOLATION_HARDENING_PACK_01_REPORT_v1.0.md`
+2. **Phase 04 staging verification PASS** (`pnpm verify:staging -- --check-media-http`) after approved test-DB cleanup (500 → 164 collections; staging/dev unchanged).
+3. **Next product action:** finalize/commit/deploy Lifecycle Finalization Phase 05.
 
-Direction:
-
-1. Do not reopen Phase 04 Author workflow contract unless a regression appears.
-2. Preserve Initiative-root, LifecycleProfile, lazy next-stage, and `InitiativeLifecycleStagePublished`.
-3. Do **not** implement full Phase 06 notification recipient expansion unless Phase 05 scope explicitly requires it.
-
-Authority: Phase 04 report; Phase 01 audit program sequence.
+Phase 06 remains deferred until Phase 05 is landed.
 
 ---
 
@@ -49,12 +42,5 @@ Authority: Phase 04 report; Phase 01 audit program sequence.
 1. Initiative = sole canonical civic root.
 2. Participant = universal actor identity.
 3. One Lifecycle Engine; LifecycleProfile selects the route.
-4. Discussion = Center-tab surface; completion is an explicit Author marker.
-5. Do not invent Stage-root or Activity-root progression.
-6. No commit/push/deploy unless the owner explicitly requests it.
-
----
-
-# Suggested first Cursor task
-
-Execute **INITIATIVE LIFECYCLE FINALIZATION — PHASE 05** per the program plan once ChatGPT issues the Phase 05 task text.
+4. No commit/push/deploy unless the owner explicitly requests it.
+5. Do not invent a second Mongo topology or second participation ledger.

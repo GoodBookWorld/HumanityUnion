@@ -3,6 +3,7 @@
 import type { ComponentProps, ReactNode } from "react";
 
 import type {
+  CollectiveParticipationJourney,
   CommunityInitiativeRelationshipProjection,
   PublicInitiativeSupportStatistics as PublicInitiativeSupportStatisticsModel,
   PublicInitiativeWithVersionHistory,
@@ -14,6 +15,7 @@ import { InitiativeActiveAlliesWidget } from "../../initiative-active-allies/com
 import { PublicInitiativeLatestInitiatives } from "./PublicInitiativeLatestInitiatives";
 import { PublicInitiativeRevisionHistory } from "./PublicInitiativeRevisionHistory";
 import { PublicInitiativeSupportStatistics } from "./PublicInitiativeSupportStatistics";
+import { YourParticipationPanel } from "./YourParticipationPanel";
 
 interface PublicExperienceSidebarProps {
   initiativeId: string;
@@ -27,6 +29,9 @@ interface PublicExperienceSidebarProps {
   onRevisionSelect: (version: number) => void;
   supportBusy?: boolean;
   latestInitiativesSlot?: ReactNode;
+  /** Phase 05 — Collective Participation Journey (optional soft field). */
+  participationJourney?: CollectiveParticipationJourney | null;
+  viewerIsSteward?: boolean;
 }
 
 export function PublicExperienceSidebar({
@@ -41,9 +46,17 @@ export function PublicExperienceSidebar({
   onRevisionSelect,
   supportBusy = false,
   latestInitiativesSlot,
+  participationJourney = null,
+  viewerIsSteward = false,
 }: PublicExperienceSidebarProps) {
   return (
     <>
+      {participationJourney ? (
+        <YourParticipationPanel
+          journey={participationJourney}
+          isAuthorPrimary={viewerIsSteward || participationJourney.viewerIsSteward}
+        />
+      ) : null}
       <PublicInitiativeSupportStatistics
         statistics={statistics}
         onSignalChange={onSignalChange}

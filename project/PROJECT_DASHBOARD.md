@@ -46,7 +46,7 @@ Operational on **staging**
 
 Project Health:
 
-Attention — Lifecycle Finalization Phase 04 Author workflow complete; Phase 05 next. Recovery CLOSED.
+**Healthy** — Mongo incident remediated; Pack 01 hardening complete. Phase 05 local (ready to land).
 
 Primary engineering branch:
 
@@ -56,27 +56,17 @@ Primary engineering branch:
 
 # Current Focus
 
-**INITIATIVE LIFECYCLE FINALIZATION — PHASE 05**
+**Next product action:** finalize/commit/deploy Lifecycle Finalization Phase 05
 
-Last completed:
+Last product milestone completed in code (not deployed):
 
-INITIATIVE LIFECYCLE FINALIZATION — PHASE 04 (Uniform Author workflow)
+INITIATIVE LIFECYCLE FINALIZATION — PHASE 05
 
-`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_04_REPORT_v1.0.md`
+`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_05_REPORT_v1.0.md`
 
-Prior: Phase 03 shell/nav; Phase 02 profiles/state/persistence; Phase 01 audit; Recovery Packs 01–05 CLOSED
+Infra (complete): Mongo Pack 01 — `architecture/recovery/MONGODB_TEST_ISOLATION_HARDENING_PACK_01_REPORT_v1.0.md`
 
----
-
-# Capability / Epic snapshot
-
-Capability 02 — Participation
-
-Historical Epics 01–03 (Initiative, Collaborative Analysis, Collective Decision): **Completed** (committed)
-
-Later product work (Blog, PWA, Launch Readiness, Admin, Staging recovery) advanced via Packs on branch `staging` — see `PROJECT_STATE.md` and git history.
-
-Live next task is Initiative Lifecycle Finalization Phase 05 — see `NEXT_SESSION.md`.
+Live next task: Phase 05 land → Phase 06 — see `NEXT_SESSION.md`.
 
 ---
 

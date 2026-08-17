@@ -144,6 +144,52 @@
   gap: 0.65rem;
 }
 
+.pie-participation {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--hu-color-border);
+  border-radius: 0.5rem;
+  background: var(--hu-color-surface);
+  display: grid;
+  gap: 0.55rem;
+}
+
+.pie-participation__title {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.pie-participation__note,
+.pie-participation__stage,
+.pie-participation__empty,
+.pie-participation__reason,
+.pie-participation__meta {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.pie-participation__past {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.pie-participation__next-label {
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.8;
+}
+
+.pie-participation__next-link {
+  font-weight: 600;
+  color: inherit;
+}
+
 .pie-discussion-lifecycle__guidance,
 .pie-discussion-lifecycle__status {
   margin: 0;

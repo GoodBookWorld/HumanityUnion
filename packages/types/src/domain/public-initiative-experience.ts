@@ -3,6 +3,7 @@ import type { InitiativeCoverMedia } from "./initiative-cover-media.js";
 import type { PublicCommentAuthor } from "./initiative-comment.js";
 import type { PublicCommentCollaborationState } from "./initiative-discussion-collaboration.js";
 import type { InitiativeLifecycleProfile } from "./initiative-lifecycle-profile.js";
+import type { CollectiveParticipationJourney } from "./collective-participation-journey.js";
 import type { PublicInitiativeProjection } from "./public-initiative.js";
 import type { PublicInitiativeWithVersionHistory } from "./public-initiative-version-revision.js";
 import type { CommunityInitiativeRelationshipProjection } from "./community-intelligence.js";
@@ -226,6 +227,11 @@ export interface PublicInitiativeExperienceProjection {
    * Author Mode eligibility must use this (or owner route), never Allies success.
    */
   viewerIsSteward?: boolean;
+  /**
+   * Phase 05 — Collective Participation Journey for the viewer (null participant when signed out).
+   * Soft-built; absence does not fail the Experience shell.
+   */
+  participationJourney?: CollectiveParticipationJourney;
   generatedAt: string;
 }
 

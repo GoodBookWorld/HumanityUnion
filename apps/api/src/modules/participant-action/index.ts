@@ -104,6 +104,7 @@ export {
   findParticipantActionBySourceEventId,
   insertParticipantActionIfAbsent,
   listParticipantActionsByInitiativeId,
+  listParticipantActionsByParticipantAndInitiative,
   listParticipantActionsByParticipantId,
   setForceParticipantActionInsertFailureForTests,
 } from "./infrastructure/participant-action.repository.js";

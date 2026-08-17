@@ -320,6 +320,8 @@ export function PublicInitiativeExperiencePage({
           onBookmarkToggle={() => void handleBookmarkToggle()}
           onRevisionSelect={handleRevisionSelect}
           supportBusy={supportBusy}
+          participationJourney={experience.participationJourney ?? null}
+          viewerIsSteward={viewerIsSteward}
         />
       }
     />

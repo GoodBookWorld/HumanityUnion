@@ -214,6 +214,20 @@ export async function listParticipantActionsByInitiativeId(
   return documents.map((document) => fromParticipantActionMongoDocument(document));
 }
 
+export async function listParticipantActionsByParticipantAndInitiative(
+  participantId: string,
+  initiativeId: string,
+): Promise<ParticipantActionRecord[]> {
+  await ensureParticipantActionMongoReady();
+
+  const documents = await collection()
+    .find({ participantId, initiativeId })
+    .sort({ occurredAt: -1, participantActionId: 1 })
+    .toArray();
+
+  return documents.map((document) => fromParticipantActionMongoDocument(document));
+}
+
 export async function countParticipantActionsBySourceEventId(
   sourceEventId: string,
 ): Promise<number> {

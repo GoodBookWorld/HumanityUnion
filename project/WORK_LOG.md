@@ -56,6 +56,47 @@ Next Objective:
 
 # Entries
 
+## 2026-08-16 (Mongo test isolation hardening Pack 01)
+
+Completed:
+
+- Prevention hardening after Atlas 500-collection incident: owned `hu_test_*` / `hu_verify_*` cleanup contracts, protected DB fail-closed rules, collection-pressure gate, permanent `inspect:mongo-topology`.
+- Document: `architecture/recovery/MONGODB_TEST_ISOLATION_HARDENING_PACK_01_REPORT_v1.0.md`.
+
+Next Objective:
+
+Finalize/commit/deploy Lifecycle Finalization Phase 05.
+
+---
+
+## 2026-08-16 (Mongo collection topology audit)
+
+Completed:
+
+- READ-ONLY Atlas collection-cap diagnosis after staging API deploy failure at 500/500.
+- Document: `architecture/recovery/MONGODB_COLLECTION_TOPOLOGY_AUDIT_v1.0.md`.
+- Phase 04 +1 collection trigger; root cause leaked `hu_test_*` / `hu_verify_*` DBs; read-only `inspect:mongo-topology` helper.
+
+Next Objective:
+
+Approved remediation: drop abandoned test/verify databases only; restore staging API; keep Phase 05 local until then.
+
+---
+
+## 2026-08-16 (Lifecycle Finalization Phase 05)
+
+Completed:
+
+- INITIATIVE LIFECYCLE FINALIZATION — PHASE 05 Collective Participation Journey.
+- Document: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_05_REPORT_v1.0.md`.
+- One journey read model; next-action resolver; Experience + Workspace-ready APIs; compact Your Participation UI; ledger gaps documented without a second ledger.
+
+Next Objective:
+
+INITIATIVE LIFECYCLE FINALIZATION — PHASE 06.
+
+---
+
 ## 2026-08-16 (Lifecycle Finalization Phase 04)
 
 Completed:
