@@ -53,6 +53,12 @@ interface PublicExperienceSidebarOrChannelProps extends PublicExperienceSidebarP
    * never the Author's own Working Sidebar or the Collaboration Channel.
    */
   isStagePreviewMode?: boolean;
+  /**
+   * Phase 02 — when Allies team fetch fails, stewards must still resolve as
+   * Author so Author Mode tools do not disappear due to an optional Allies
+   * projection failure.
+   */
+  isInitiativeSteward?: boolean;
 }
 
 /**
@@ -73,6 +79,7 @@ export function PublicExperienceSidebarOrChannel({
   onOpenPublicPreview,
   onNavigateStage,
   isStagePreviewMode = false,
+  isInitiativeSteward = false,
   ...sidebarProps
 }: PublicExperienceSidebarOrChannelProps) {
   const [viewerRole, setViewerRole] = useState<"author" | "active_ally" | "other" | "loading">(
@@ -95,14 +102,14 @@ export function PublicExperienceSidebarOrChannel({
       })
       .catch(() => {
         if (!cancelled) {
-          setViewerRole("other");
+          setViewerRole(isInitiativeSteward ? "author" : "other");
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [sidebarProps.initiativeId]);
+  }, [sidebarProps.initiativeId, isInitiativeSteward]);
 
   // Initiative Lifecycle Part A Completion Part 4/6 — the Author's working
   // sidebar takes priority over the pre-existing Channel swap below, but

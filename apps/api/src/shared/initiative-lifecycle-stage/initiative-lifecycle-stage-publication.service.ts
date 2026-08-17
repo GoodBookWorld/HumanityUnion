@@ -1,10 +1,17 @@
 import type { ClientSession } from "mongodb";
 
-import type { InitiativeLifecycleStagePublicationEvent, InitiativeLifecycleStagePublicationKind } from "@hu/types";
+import type {
+  InitiativeLifecycleProfile,
+  InitiativeLifecycleStageId,
+  InitiativeLifecycleStagePublicationEvent,
+  InitiativeLifecycleStagePublicationKind,
+} from "@hu/types";
+import { isInitiativeLifecycleStageId } from "@hu/types";
 
 import { enqueueDomainEvent } from "../../infrastructure/outbox/outbox.repository.js";
 import { logger } from "../observability/logger.js";
 import { createInitiativeLifecycleStagePublishedEvent } from "./initiative-lifecycle-stage-published.event.js";
+import { summarizeLifecycleTransitionPostcondition } from "./initiative-lifecycle-transition.contract.js";
 
 export interface PublishInitiativeLifecycleStageInput {
   readonly initiativeId: string;
@@ -19,6 +26,11 @@ export interface PublishInitiativeLifecycleStageInput {
   readonly relatedUrl: string;
   /** Optional session for callers wiring this atomically into their own domain-write transaction. */
   readonly session?: ClientSession;
+  /**
+   * Phase 02 — optional profile for next-stage observability. Missing → STANDARD
+   * via the shared transition helper (historical Initiatives).
+   */
+  readonly lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }
 
 export type PublishInitiativeLifecycleStageOutcome = "enqueued" | "duplicate_ignored";
@@ -95,6 +107,15 @@ export async function publishInitiativeLifecycleStage(
   try {
     await enqueueDomainEvent(event, { session: input.session });
 
+    const transition =
+      isInitiativeLifecycleStageId(input.stageId)
+        ? summarizeLifecycleTransitionPostcondition({
+            initiativeId: input.initiativeId,
+            publishedStageId: input.stageId as InitiativeLifecycleStageId,
+            lifecycleProfile: input.lifecycleProfile,
+          })
+        : null;
+
     logger.info("initiative_lifecycle_stage.publication_enqueued", {
       component: "initiative-lifecycle-stage-publication",
       eventId: event.eventId,
@@ -102,6 +123,8 @@ export async function publishInitiativeLifecycleStage(
       stageId: input.stageId,
       stageVersion: input.stageVersion,
       publicationKind: input.publicationKind,
+      nextStageId: transition?.nextStageId ?? null,
+      transitionMessage: transition?.message,
     });
 
     return { outcome: "enqueued", event: publicationEvent };

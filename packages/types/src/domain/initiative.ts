@@ -1,4 +1,5 @@
 import type { InitiativeLifecyclePhase } from "./initiative-lifecycle.js";
+import type { InitiativeLifecycleProfile } from "./initiative-lifecycle-profile.js";
 import type { ParticipationScope } from "./initiative-collective-decision.js";
 import type { MemberId } from "./member.js";
 import type { InitiativeNewsSourceReference } from "./public-news-article.js";
@@ -110,6 +111,11 @@ export interface Initiative {
   description: InitiativeDescription;
   status: InitiativeStatus;
   lifecyclePhase: InitiativeLifecyclePhase;
+  /**
+   * Lifecycle Finalization Phase 02 — selects the allowed Stage Registry route.
+   * Missing on historical Initiatives → treated as STANDARD.
+   */
+  lifecycleProfile?: InitiativeLifecycleProfile;
   visibility: InitiativeVisibility;
   metadata: InitiativeMetadata;
   revisions: InitiativeRevision[];

@@ -56,6 +56,35 @@ Next Objective:
 
 # Entries
 
+## 2026-08-16 (Lifecycle Finalization Phase 02 — Architecture Review Addendum)
+
+Completed:
+
+- Corrected PUBLIC_CHOICE to Initiative → Discussion → Collective Decision → Archive.
+- Distinguished NOT_CREATED_YET from INFRASTRUCTURE_FAILURE with Experience diagnostics.
+- Resolver postcondition after publish (Discussion→Analysis / Discussion→Collective Decision / Revision→Petition).
+- LAZY next-stage strategy documented; Analysis route classified COMPATIBILITY_READ_ONLY.
+
+Next Objective:
+
+Await Phase 02 acceptance; do not start Phase 03 yet.
+
+---
+
+## 2026-08-16 (Lifecycle Finalization Phase 02)
+
+Completed:
+
+- INITIATIVE LIFECYCLE FINALIZATION — PHASE 02 architecture convergence.
+- Document: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_02_REPORT_v1.0.md`.
+- LifecycleProfile (STANDARD | PUBLIC_CHOICE); derived state resolver; Experience soft-fail; Revision communitySlug optional; legacy Analysis compat read; transition helpers.
+
+Next Objective:
+
+INITIATIVE LIFECYCLE FINALIZATION — PHASE 03 (Experience shell resilience + Stage URL quarantine).
+
+---
+
 ## 2026-08-16 (Lifecycle Finalization Phase 01)
 
 Completed:

@@ -597,6 +597,7 @@ async function notifyLifecycleStageRevisionPublished(
     await publishInitiativeLifecycleStage({
       initiativeId: revision.initiativeId,
       initiativeTitle: initiative?.title ?? revision.initiativeId,
+      lifecycleProfile: initiative?.lifecycleProfile,
       stageId: "revision",
       stageLabel: "Revision",
       stageArtifactId: revision.revisionId,

@@ -46,7 +46,7 @@ Operational on **staging**
 
 Project Health:
 
-Attention — lifecycle capabilities exist, but staging end-to-end lifecycle is not yet deterministic (see Finalization Audit Phase 01). Recovery CLOSED.
+Attention — Lifecycle Finalization Phase 02 converged profile-aware state + Experience soft-fail; Phase 03 still needed for full shell/URL quarantine. Recovery CLOSED.
 
 Primary engineering branch:
 
@@ -56,17 +56,15 @@ Primary engineering branch:
 
 # Current Focus
 
-**INITIATIVE LIFECYCLE FINALIZATION — PHASE 02**
+**INITIATIVE LIFECYCLE FINALIZATION — PHASE 02 (awaiting acceptance after architecture review addendum)**
 
 Last completed:
 
-INITIATIVE LIFECYCLE FINALIZATION — PHASE 01 (Architecture & Runtime Convergence Audit)
+Phase 02 Architecture Review Addendum (PUBLIC_CHOICE Discussion route; absence vs infra failure; resolver postcondition)
 
-`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_AUDIT_v1.0.md`
+`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_02_REPORT_v1.0.md`
 
-Prior:
-
-Lifecycle UX Pack 01 (Collective Decision voting); Lifecycle UX Current-State Audit; Recovery Packs 01–05 CLOSED
+Do not start Phase 03 until Phase 02 is accepted.
 
 ---
 
@@ -78,7 +76,7 @@ Historical Epics 01–03 (Initiative, Collaborative Analysis, Collective Decisio
 
 Later product work (Blog, PWA, Launch Readiness, Admin, Staging recovery) advanced via Packs on branch `staging` — see `PROJECT_STATE.md` and git history.
 
-Live next task is Initiative Lifecycle Finalization Phase 02 — see `NEXT_SESSION.md`.
+Live next task is Initiative Lifecycle Finalization Phase 03 — see `NEXT_SESSION.md`.
 
 ---
 

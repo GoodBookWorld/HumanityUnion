@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 import type { CollaborativeAnalysis, Contribution, Signal } from "@hu/types";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
+import { listPublishedAnalysesByInitiative } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import {
   createAnalysis,
   getAnalysisById,
@@ -157,12 +158,52 @@ collaborativeAnalysisRouter.patch("/:analysisId", (req, res) => {
 initiativeCollaborativeAnalysisRouter.get("/:initiativeId/analysis", (req, res) => {
   const analysis = getAnalysisByInitiativeId(req.params.initiativeId);
 
-  if (!analysis) {
-    res.status(404).json(createFailureResponse("Collaborative Analysis not found."));
+  if (analysis) {
+    res.json(createSuccessResponse(analysis, "Collaborative Analysis loaded."));
     return;
   }
 
-  res.json(createSuccessResponse(analysis, "Collaborative Analysis loaded."));
+  // Legacy store miss — resolve from the canonical Initiative Collaborative
+  // Analysis module (published only). This is a COMPATIBILITY_READ_ONLY path,
+  // not a second authoritative store write path. Frontend lifecycle
+  // progression must not treat this route as lifecycle authority.
+  // Intended removal/deprecation: Phase 03–04 (migrate remaining callers to
+  // initiative-analyses).
+  const publishedCanonical = listPublishedAnalysesByInitiative(req.params.initiativeId)[0] ?? null;
+
+  if (publishedCanonical) {
+    res.json(
+      createSuccessResponse(
+        {
+          analysisId: publishedCanonical.analysisId,
+          initiativeId: publishedCanonical.initiativeId,
+          status: "completed",
+          createdAt: publishedCanonical.createdAt,
+          updatedAt: publishedCanonical.updatedAt,
+          title: publishedCanonical.title,
+          summary: publishedCanonical.summary,
+          supportingEvidence: publishedCanonical.supportingEvidence,
+          risks: publishedCanonical.risks,
+          openQuestions: publishedCanonical.openQuestions,
+          suggestedImprovements: publishedCanonical.suggestedImprovements,
+          references: publishedCanonical.references,
+          initiativeVersion: publishedCanonical.initiativeVersion,
+          publishedAt: publishedCanonical.publishedAt,
+          contributions: [],
+          signals: [],
+          summaries: [],
+        },
+        "Collaborative Analysis loaded via legacy compatibility from initiative-analyses.",
+      ),
+    );
+    return;
+  }
+
+  res.status(404).json(
+    createFailureResponse(
+      "Collaborative Analysis was not found. Use the initiative-analyses API.",
+    ),
+  );
 });
 
 export default collaborativeAnalysisRouter;

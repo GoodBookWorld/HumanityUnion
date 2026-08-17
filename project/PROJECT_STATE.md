@@ -55,12 +55,11 @@ Platform Version:
 
 # Current Focus
 
-**Last completed:** INITIATIVE LIFECYCLE FINALIZATION — PHASE 01 (Architecture & Runtime Convergence Audit)
+**Last completed:** INITIATIVE LIFECYCLE FINALIZATION — PHASE 02 Architecture Review Addendum
 
-**Next:** INITIATIVE LIFECYCLE FINALIZATION — PHASE 02 (canonical lifecycle state + persistence convergence)
+**Next:** Await Phase 02 acceptance — do **not** start Phase 03 yet.
 
-Audit: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_AUDIT_v1.0.md`
-Prior UX audit: `architecture/recovery/LIFECYCLE_UX_CURRENT_STATE_AUDIT_v1.0.md`
+Report: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_02_REPORT_v1.0.md`
 
 Recovery Packs 01–05 remain **CLOSED**.
 

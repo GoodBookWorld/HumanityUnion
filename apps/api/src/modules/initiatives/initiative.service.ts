@@ -1,5 +1,8 @@
 import type { Initiative, InitiativeCoverMedia, MyInitiativeGroupSummary, TimelineEvent } from "@hu/types";
-import { canTransitionInitiativeLifecycle } from "@hu/types";
+import {
+  canTransitionInitiativeLifecycle,
+  resolveInitiativeLifecycleProfile,
+} from "@hu/types";
 
 import type { RequestIdentity } from "./identity/request-identity.types.js";
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
@@ -296,6 +299,7 @@ export function createInitiativeDraft(
     description: input.description,
     status: "draft",
     lifecyclePhase: "draft",
+    lifecycleProfile: resolveInitiativeLifecycleProfile(input.lifecycleProfile),
     visibility: {
       policy: "public",
     },

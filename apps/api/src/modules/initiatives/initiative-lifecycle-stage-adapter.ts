@@ -36,6 +36,7 @@ import { buildInitiativeCivicArchiveIntelligenceSnapshot } from "../initiative-c
 import { getLatestArchiveVersionByInitiativeId } from "../initiative-civic-archive-lifecycle/initiative-civic-archive-version.store.js";
 import { getLatestPublishedPublicCivicArchiveForInitiative } from "../public-civic-archive/public-civic-archive.projection.js";
 import { getSessionById } from "../decision-session/decision-session.store.js";
+import { logger } from "../../shared/observability/logger.js";
 
 /**
  * Initiative Lifecycle — Part A Completion Part 3: presentation adapters.
@@ -176,7 +177,23 @@ async function adaptRevisionStage(initiativeId: string): Promise<InitiativeLifec
 }
 
 async function adaptPetitionStage(initiativeId: string): Promise<InitiativeLifecycleStageAdapterResult> {
-  const petition = await getPetitionByInitiativeId(initiativeId);
+  let petition;
+  try {
+    petition = await getPetitionByInitiativeId(initiativeId);
+  } catch (error) {
+    logger.error("initiative_lifecycle_stage_adapter.petition_infrastructure_failure", {
+      initiativeId,
+      classification: "INFRASTRUCTURE_FAILURE",
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      presentationStatus: "unavailable",
+      hasPublicResult: false,
+      version: null,
+      publishedAt: null,
+      publishedRecordId: null,
+    };
+  }
 
   if (!petition) {
     return EMPTY_RESULT;
@@ -185,7 +202,23 @@ async function adaptPetitionStage(initiativeId: string): Promise<InitiativeLifec
   // Petition retains its own richer publication/signature state
   // (`PetitionState`: Draft/Ready/Published/Open/Closed/Archived) — this
   // adapter only answers whether a public result exists at all.
-  const projection = await toPublicPetitionProjection(petition);
+  let projection;
+  try {
+    projection = await toPublicPetitionProjection(petition);
+  } catch (error) {
+    logger.error("initiative_lifecycle_stage_adapter.petition_projection_infrastructure_failure", {
+      initiativeId,
+      classification: "INFRASTRUCTURE_FAILURE",
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      presentationStatus: "unavailable",
+      hasPublicResult: false,
+      version: null,
+      publishedAt: null,
+      publishedRecordId: null,
+    };
+  }
 
   if (!projection) {
     return EMPTY_RESULT;
@@ -439,6 +472,19 @@ export async function buildInitiativeLifecycleStageAdapterResult(
   switch (stageId) {
     case "initiative":
       return adaptInitiativeRecordStage(initiative);
+    case "discussion":
+      // Reuses Center-tab Discussion — no parallel Discussion aggregate.
+      // Presentation reflects Initiative publication (surface open), not a
+      // second Discussion domain. Progress completion uses published counts.
+      return initiative.lifecyclePhase === "draft"
+        ? EMPTY_RESULT
+        : {
+            presentationStatus: "published",
+            hasPublicResult: true,
+            version: null,
+            publishedAt: initiative.updatedAt,
+            publishedRecordId: null,
+          };
     case "analysis":
       return adaptAnalysisStage(initiative);
     case "proposal":

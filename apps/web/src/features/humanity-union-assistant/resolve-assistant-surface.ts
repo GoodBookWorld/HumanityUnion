@@ -11,7 +11,7 @@ export interface ResolvedAssistantLaunchContext {
 
 const HASH_TO_STAGE: Record<string, InitiativeLifecycleStageId> = {
   initiative: "initiative",
-  discussion: "initiative",
+  discussion: "discussion",
   "collaborative-analysis": "analysis",
   analysis: "analysis",
   "improvement-proposals": "proposal",
@@ -36,6 +36,7 @@ const HASH_TO_STAGE: Record<string, InitiativeLifecycleStageId> = {
 
 const STAGE_TO_SURFACE: Record<InitiativeLifecycleStageId, HumanityUnionAssistantSurfaceId> = {
   initiative: "initiative",
+  discussion: "discussion",
   analysis: "analysis",
   proposal: "proposal",
   revision: "revision",

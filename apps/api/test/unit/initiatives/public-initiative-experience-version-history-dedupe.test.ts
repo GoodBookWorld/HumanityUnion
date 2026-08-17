@@ -111,7 +111,7 @@ describe("buildStageRecords — reuses precomputed version history (Performance 
       fabricatedVersionHistory,
     );
 
-    const revisionRecords = stageRecords.get("revision");
+    const revisionRecords = stageRecords.records.get("revision");
     assert.equal(revisionRecords?.length, 1);
     assert.equal(revisionRecords?.[0]?.recordId, `${TEST_PREFIX}-fabricated-revision`);
     assert.equal(revisionRecords?.[0]?.title, "Version 999");
@@ -125,7 +125,7 @@ describe("buildStageRecords — reuses precomputed version history (Performance 
 
     const stageRecords = await buildStageRecords(initiative, publicInitiative);
 
-    const revisionRecords = stageRecords.get("revision");
+    const revisionRecords = stageRecords.records.get("revision");
     assert.equal(revisionRecords?.length, realVersionHistory.revisions.length);
     assert.deepEqual(
       revisionRecords?.map((record) => record.recordId),

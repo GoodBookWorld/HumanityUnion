@@ -41,6 +41,7 @@ export interface PublicInitiativeExperienceStageDefinition {
 export const PUBLIC_INITIATIVE_EXPERIENCE_STAGES: readonly PublicInitiativeExperienceStageDefinition[] =
   [
     { stageId: "initiative", label: "Initiative", hash: "initiative" },
+    { stageId: "discussion", label: "Discussion", hash: "discussion" },
     {
       stageId: "analysis",
       label: "Collaborative Analysis",
@@ -209,7 +210,33 @@ export interface PublicInitiativeExperienceProjection {
   /** Community Intelligence Pack 01 — explainable related Initiatives (public, non-personalized). */
   relatedInitiatives: readonly CommunityInitiativeRelationshipProjection[];
   discussion: PublicInitiativeDiscussionSummary;
+  /**
+   * Phase 02 addendum — public-safe optional-section health.
+   * Never includes raw infrastructure error messages.
+   */
+  optionalStageDiagnostics?: PublicInitiativeOptionalStageDiagnostics;
   generatedAt: string;
+}
+
+/**
+ * Distinguishes normal absence from optional-section degradation.
+ * `unavailable` means the section failed to load (infrastructure), not that
+ * the artifact was never created.
+ */
+export type PublicInitiativeOptionalStageHealth = "ok" | "absent" | "unavailable";
+
+export type PublicInitiativeOptionalStageReasonCode =
+  | "not_created_yet"
+  | "infrastructure_failure";
+
+export interface PublicInitiativeOptionalStageDiagnostic {
+  readonly health: PublicInitiativeOptionalStageHealth;
+  readonly reasonCode?: PublicInitiativeOptionalStageReasonCode;
+}
+
+export interface PublicInitiativeOptionalStageDiagnostics {
+  readonly petition?: PublicInitiativeOptionalStageDiagnostic;
+  readonly civicArchive?: PublicInitiativeOptionalStageDiagnostic;
 }
 
 export interface InitiativeSupportSignalInput {

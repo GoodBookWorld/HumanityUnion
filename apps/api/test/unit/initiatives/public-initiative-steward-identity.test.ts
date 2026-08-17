@@ -134,7 +134,7 @@ describe("Initiative steward identity — 'Unknown Steward' root-cause fix (Pack
     const publicInitiative = await toPublicInitiativeProjection(initiative);
     const stageRecords = await buildStageRecords(initiative, publicInitiative);
 
-    const initiativeStageRecord = stageRecords.get("initiative")?.[0];
+    const initiativeStageRecord = stageRecords.records.get("initiative")?.[0];
     assert.ok(initiativeStageRecord, "Lifecycle 'initiative' stage must have exactly one record");
     assert.equal(initiativeStageRecord.authorDisplayName, publicInitiative.stewardDisplayName);
   });

@@ -539,6 +539,10 @@ export type {
   PublicInitiativeLifecycleRecordItem,
   PublicInitiativeLifecycleStageContent,
   PublicInitiativeLifecycleStageNavItem,
+  PublicInitiativeOptionalStageDiagnostic,
+  PublicInitiativeOptionalStageDiagnostics,
+  PublicInitiativeOptionalStageHealth,
+  PublicInitiativeOptionalStageReasonCode,
   PublicInitiativeRelatedCivicRecord,
   PublicInitiativeSupportStatistics,
 } from "./public-initiative-experience.js";
@@ -551,6 +555,32 @@ export {
   isInitiativeLifecycleStageId,
 } from "./initiative-lifecycle-stage.js";
 export type { InitiativeLifecycleStageDefinition, InitiativeLifecycleStageId } from "./initiative-lifecycle-stage.js";
+export {
+  DEFAULT_INITIATIVE_LIFECYCLE_PROFILE,
+  INITIATIVE_LIFECYCLE_PROFILES,
+  PUBLIC_CHOICE_LIFECYCLE_STAGE_ROUTE,
+  STANDARD_LIFECYCLE_STAGE_ROUTE,
+  canChangeInitiativeLifecycleProfile,
+  describeLifecycleProfile,
+  getLifecycleStageDefinitionForProfile,
+  getLifecycleStageRouteForProfile,
+  getNextApplicableLifecycleStageId,
+  getPreviousApplicableLifecycleStageId,
+  isInitiativeLifecycleProfile,
+  isLifecycleStageApplicableToProfile,
+  listNotApplicableLifecycleStageIds,
+  resolveInitiativeLifecycleProfile,
+} from "./initiative-lifecycle-profile.js";
+export type { InitiativeLifecycleProfile } from "./initiative-lifecycle-profile.js";
+export {
+  INITIATIVE_LIFECYCLE_FIELD_AUTHORITY,
+  resolveInitiativeLifecycleState,
+} from "./initiative-lifecycle-state.js";
+export type {
+  InitiativeLifecycleStageApplicability,
+  InitiativeLifecycleStateSnapshot,
+  ResolveInitiativeLifecycleStateInput,
+} from "./initiative-lifecycle-state.js";
 export type {
   InitiativeLifecyclePresentationMode,
   InitiativeLifecyclePresentationModeResult,

@@ -322,6 +322,7 @@ async function notifyLifecycleStageAnalysisPublished(
       actorParticipantId,
       publicationKind: "published",
       relatedUrl: `/initiatives/public/${encodeURIComponent(published.initiativeId)}#collaborative-analysis`,
+      lifecycleProfile: initiative?.lifecycleProfile,
     });
   } catch (error) {
     console.warn(

@@ -21,7 +21,9 @@ export type InitiativeLifecyclePresentationStatus =
   | "draft"
   | "ready_for_review"
   | "published"
-  | "superseded";
+  | "superseded"
+  /** Optional stage lookup failed (infrastructure) — not the same as not_started/absent. */
+  | "unavailable";
 
 /**
  * Who the current viewer is, from the Initiative Lifecycle Stage Workspace's

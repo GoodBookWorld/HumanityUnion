@@ -296,6 +296,7 @@ export function PublicInitiativeExperiencePage({
           currentStageId={experience.currentStageId}
           workspaceStageId={showLifecyclePanel ? activeStageId : null}
           isStagePreviewMode={isStagePreviewMode}
+          isInitiativeSteward={Boolean(ownerMode)}
           onOpenPublicPreview={handleOpenStagePublicPreview}
           onNavigateStage={handleStageSelect}
           collaborationTab={collaborationTab}

@@ -15,6 +15,7 @@ const STATUS_LABELS: Record<InitiativeLifecycleStageMetadata["presentationStatus
   ready_for_review: "Preview",
   published: "Published",
   superseded: "Completed",
+  unavailable: "Temporarily Unavailable",
 };
 
 /**

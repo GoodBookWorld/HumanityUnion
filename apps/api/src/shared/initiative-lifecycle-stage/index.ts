@@ -59,6 +59,14 @@ export {
   type PublishInitiativeLifecycleStageOutcome,
   type PublishInitiativeLifecycleStageResult,
 } from "./initiative-lifecycle-stage-publication.service.js";
+export {
+  assertLifecycleTransitionPostcondition,
+  LIFECYCLE_NEXT_STAGE_CREATION_STRATEGY,
+  resolveLifecycleStateAfterStagePublication,
+  resolveNextStageAfterPublish,
+  summarizeLifecycleTransitionPostcondition,
+  type LifecycleTransitionPostconditionInput,
+} from "./initiative-lifecycle-transition.contract.js";
 export { buildInitiativeLifecycleStageNotificationCopy } from "./initiative-lifecycle-stage-notification-copy.js";
 export {
   defaultInitiativeLifecycleStageNotificationDependencies,

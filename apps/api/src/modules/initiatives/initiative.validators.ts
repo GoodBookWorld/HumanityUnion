@@ -1,12 +1,14 @@
 import type {
   Initiative,
   InitiativeCoverMedia,
+  InitiativeLifecycleProfile,
   InitiativeNewsSourceReference,
   ParticipationScope,
   InitiativeActivityAreaOption,
 } from "@hu/types";
 import {
   INITIATIVE_ACTIVITY_AREA_OTHER,
+  isInitiativeLifecycleProfile,
   isKnownInitiativeActivityArea,
   parseExternalVideoUrl,
 } from "@hu/types";
@@ -32,6 +34,8 @@ export interface CreateInitiativeDraftInput {
   completionDate?: string;
   sourceNewsId?: string;
   sourceReferences?: InitiativeNewsSourceReference[];
+  /** Phase 02 — optional Lifecycle Profile; omitted → STANDARD at persist time. */
+  lifecycleProfile?: InitiativeLifecycleProfile;
 }
 
 export interface SaveInitiativeDraftInput {
@@ -82,6 +86,18 @@ function normalizeOptionalText(value: unknown): string | undefined {
 
   const normalized = value.trim();
   return normalized.length > 0 ? normalized : undefined;
+}
+
+function validateOptionalLifecycleProfile(value: unknown): InitiativeLifecycleProfile | undefined {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  if (!isInitiativeLifecycleProfile(value)) {
+    throw new Error('lifecycleProfile must be "STANDARD" or "PUBLIC_CHOICE".');
+  }
+
+  return value;
 }
 
 function normalizeOptionalIsoDate(value: unknown, fieldName: string): string | undefined {
@@ -246,6 +262,7 @@ export function validateCreateInitiativeDraftInput(body: unknown): CreateInitiat
     startDate: normalizeOptionalIsoDate(record.startDate, "Start date"),
     completionDate: normalizeOptionalIsoDate(record.completionDate, "Completion date"),
     sourceNewsId: normalizeOptionalText(record.sourceNewsId),
+    lifecycleProfile: validateOptionalLifecycleProfile(record.lifecycleProfile),
   };
 }
 

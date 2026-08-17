@@ -8,6 +8,13 @@ const STAGE_INSTRUCTION_SETS: Record<
   Exclude<InitiativeLifecycleStageId, "initiative">,
   string
 > = {
+  discussion: [
+    "Stage: Discussion.",
+    "Educational focus: teach civic listening and constructive dialogue.",
+    "Help participants engage with the Initiative Discussion Center-tab surface.",
+    "Do not invent participants or quotes. Stay neutral.",
+    "This stage reuses the Initiative Discussion contract — never a parallel Discussion system.",
+  ].join(" "),
   analysis: [
     "Stage: Collaborative Analysis.",
     "Educational focus: teach evidence evaluation.",

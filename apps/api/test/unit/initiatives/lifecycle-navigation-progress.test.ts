@@ -6,7 +6,7 @@ import type { Initiative, PublicInitiativeLifecycleRecordItem } from "@hu/types"
 import {
   buildLifecycleNavigation,
   resolveCurrentStageIdFromPublicationMetadata,
-} from "../../../src/modules/initiatives/public-initiative-experience.service.js";
+} from "../../../src/modules/initiatives/public-initiative-experience-lifecycle-nav.js";
 
 function emptyRecords(): Map<string, PublicInitiativeLifecycleRecordItem[]> {
   return new Map();
@@ -40,6 +40,7 @@ describe("Lifecycle UX Completion Pack 02 — navigation progress", () => {
   it("does not pin current stage to Initiative.status=proposal", () => {
     const counts = new Map<string, number>([
       ["initiative", 1],
+      ["discussion", 1],
       ["analysis", 1],
       ["revision", 1],
     ]);
@@ -52,6 +53,7 @@ describe("Lifecycle UX Completion Pack 02 — navigation progress", () => {
       initiative,
       withRecords([
         ["initiative", 1],
+        ["discussion", 1],
         ["analysis", 1],
       ]),
     );
@@ -71,6 +73,7 @@ describe("Lifecycle UX Completion Pack 02 — navigation progress", () => {
       initiative,
       withRecords([
         ["initiative", 1],
+        ["discussion", 1],
         ["analysis", 1],
         ["proposal", 1],
         ["revision", 1],

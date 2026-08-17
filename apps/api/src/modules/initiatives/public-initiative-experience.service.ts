@@ -1,11 +1,11 @@
 import type {
   Initiative,
-  InitiativeExperienceLifecycleStageState,
   PublicInitiativeDiscussionSummary,
   PublicInitiativeExperienceProjection,
   PublicInitiativeLifecycleRecordItem,
   PublicInitiativeLifecycleStageContent,
-  PublicInitiativeLifecycleStageNavItem,
+  PublicInitiativeOptionalStageDiagnostic,
+  PublicInitiativeOptionalStageDiagnostics,
   PublicInitiativeProjection,
   PublicInitiativeRelatedCivicRecord,
   PublicInitiativeWithVersionHistory,
@@ -16,7 +16,15 @@ import {
   resolveInitiativeCoverMedia,
 } from "@hu/types";
 
+import { settleOptionalLifecycleLookup } from "../../shared/lifecycle/optional-lifecycle-lookup.js";
 import { logger } from "../../shared/observability/logger.js";
+import { buildLifecycleNavigation } from "./public-initiative-experience-lifecycle-nav.js";
+
+export {
+  buildLifecycleNavigation,
+  resolveCurrentStageIdFromPublicationMetadata,
+  resolveExperienceStageFromHash,
+} from "./public-initiative-experience-lifecycle-nav.js";
 import { listPublicCivicAccountabilitiesForInitiative } from "../civic-accountability/civic-accountability.projection.js";
 import { listPublicCivicActionPackagesForInitiative } from "../civic-action-package/civic-action-package.projection.js";
 import { listPublicDecisionSessionsForInitiative } from "../decision-session/public-decision-session.projection.js";
@@ -49,22 +57,6 @@ import { toWorldInitiativeCardProjection } from "./initiative-world-initiatives.
 import { findRelatedInitiativesForInitiative } from "../community-intelligence/index.js";
 import { listInitiatives } from "./initiative.store.js";
 import { toPublicInitiativeProjection } from "./public-initiative.projection.js";
-
-/**
- * Lifecycle UX Completion Pack 02 Part 1 — menu labels derived from
- * publication metadata, never static "Upcoming" placeholders.
- */
-const STATE_LABELS: Record<InitiativeExperienceLifecycleStageState, string> = {
-  not_started: "Not Started",
-  in_progress: "In Progress",
-  draft_saved: "Draft Saved",
-  preview: "Preview",
-  published: "Published",
-  completed: "Completed",
-  archived: "Archived",
-  not_applicable: "Not applicable",
-  unavailable: "Unavailable",
-};
 
 function summarizeText(text: string, maxLength = 220): string {
   const normalized = text.trim();
@@ -105,43 +97,6 @@ function resolveGeography(initiative: Initiative) {
 }
 
 /**
- * Lifecycle UX Completion Pack 02 Parts 1/8 — current stage is the first
- * unpublished stage after the furthest published Lifecycle artifact.
- * Never derived from `Initiative.status` (which can remain `proposal`
- * long after Collaborative Analysis and later stages have published).
- */
-export function resolveCurrentStageIdFromPublicationMetadata(
-  stageCounts: Map<string, number>,
-): string {
-  let furthestPublishedIndex = -1;
-
-  for (let index = 0; index < EXPERIENCE_STAGES.length; index += 1) {
-    const stage = EXPERIENCE_STAGES[index]!;
-    const count = stageCounts.get(stage.stageId) ?? 0;
-
-    if (count > 0) {
-      furthestPublishedIndex = index;
-    }
-  }
-
-  if (furthestPublishedIndex < 0) {
-    return "initiative";
-  }
-
-  if (furthestPublishedIndex >= EXPERIENCE_STAGES.length - 1) {
-    return EXPERIENCE_STAGES[furthestPublishedIndex]!.stageId;
-  }
-
-  return EXPERIENCE_STAGES[furthestPublishedIndex + 1]!.stageId;
-}
-
-function isPetitionStageApplicable(initiative: Initiative): boolean {
-  return (
-    initiative.status === "petition" || getPetitionByInitiativeId(initiative.initiativeId) !== null
-  );
-}
-
-/**
  * UX Evolution Pack 02.4 Part 4 — `publicInitiative` is now always passed in
  * rather than re-fetched here, so the Lifecycle "Initiative" stage record's
  * `authorDisplayName` and the Overview panel's `stewardDisplayName` are
@@ -168,9 +123,16 @@ export async function buildStageRecords(
    * a behavior change.
    */
   precomputedVersionHistory?: PublicInitiativeWithVersionHistory,
-): Promise<Map<string, PublicInitiativeLifecycleRecordItem[]>> {
+): Promise<{
+  records: Map<string, PublicInitiativeLifecycleRecordItem[]>;
+  optionalStageDiagnostics: PublicInitiativeOptionalStageDiagnostics;
+}> {
   const initiativeId = initiative.initiativeId;
   const records = new Map<string, PublicInitiativeLifecycleRecordItem[]>();
+  const optionalStageDiagnostics: {
+    petition?: PublicInitiativeOptionalStageDiagnostic;
+    civicArchive?: PublicInitiativeOptionalStageDiagnostic;
+  } = {};
 
   records.set("initiative", [
     {
@@ -183,33 +145,37 @@ export async function buildStageRecords(
     },
   ]);
 
-  // Performance Recovery Task — these nine lookups are mutually independent
-  // (each depends only on `initiativeId`, never on another lookup's
-  // result), so they are fetched concurrently instead of one sequential
-  // `await` at a time. This does not change any returned value: every
-  // `records.set(...)` call below still runs in the exact same order as
-  // before, so the resulting Map's key order and contents are identical.
+  // Discussion reuses the Center-tab civic surface — no parallel Discussion store.
+  records.set("discussion", []);
+
   const [
     analyses,
     proposals,
     versionHistory,
-    petition,
+    petitionLookup,
     collectiveDecisions,
     commitments,
     trackings,
     publicImpacts,
-    archive,
+    archiveLookup,
   ] = await Promise.all([
     listPublicInitiativeCollaborativeAnalyses(initiativeId),
     listPublicInitiativeImprovementProposals(initiativeId),
     precomputedVersionHistory ?? getPublicInitiativeVersionHistory(initiativeId),
-    getPetitionByInitiativeId(initiativeId),
+    settleOptionalLifecycleLookup("petition_by_initiative", getPetitionByInitiativeId(initiativeId), null),
     listPublicInitiativeCollectiveDecisionsForInitiative(initiativeId),
     listPublicInitiativeImplementationCommitmentsForInitiative(initiativeId),
     listPublicInitiativeImplementationTrackingsForInitiative(initiativeId),
     listPublicInitiativePublicImpactsForInitiative(initiativeId),
-    getLatestPublishedPublicCivicArchiveForInitiative(initiativeId),
+    settleOptionalLifecycleLookup(
+      "civic_archive_by_initiative",
+      getLatestPublishedPublicCivicArchiveForInitiative(initiativeId),
+      null,
+    ),
   ]);
+
+  optionalStageDiagnostics.petition = toOptionalStageDiagnostic(petitionLookup.classification);
+  optionalStageDiagnostics.civicArchive = toOptionalStageDiagnostic(archiveLookup.classification);
 
   records.set(
     "analysis",
@@ -249,7 +215,26 @@ export async function buildStageRecords(
     })),
   );
 
-  const petitionProjection = petition ? await toPublicPetitionProjection(petition) : null;
+  const petition = petitionLookup.value;
+  let petitionProjection = null;
+  if (petition && !petitionLookup.degraded) {
+    const projectionLookup = await settleOptionalLifecycleLookup(
+      "petition_public_projection",
+      toPublicPetitionProjection(petition),
+      null,
+    );
+    if (projectionLookup.degraded) {
+      optionalStageDiagnostics.petition = {
+        health: "unavailable",
+        reasonCode: "infrastructure_failure",
+      };
+    } else {
+      petitionProjection = projectionLookup.value;
+      if (petitionProjection) {
+        optionalStageDiagnostics.petition = { health: "ok" };
+      }
+    }
+  }
 
   records.set(
     "petition",
@@ -377,6 +362,11 @@ export async function buildStageRecords(
         : [],
   );
 
+  const archive = archiveLookup.value;
+  if (archiveLookup.classification === "PRESENT" && archive) {
+    optionalStageDiagnostics.civicArchive = { health: "ok" };
+  }
+
   const lifecycleArchiveVersion = getLatestArchiveVersionByInitiativeId(initiativeId);
   records.set(
     "archive",
@@ -405,90 +395,58 @@ export async function buildStageRecords(
         : [],
   );
 
-  return records;
+  return {
+    records,
+    optionalStageDiagnostics: optionalStageDiagnostics as PublicInitiativeOptionalStageDiagnostics,
+  };
 }
 
-/**
- * Lifecycle UX Completion Pack 02 Parts 1–2 — derive menu state + marker
- * class from publication metadata and registry order.
- */
-export function buildLifecycleNavigation(
-  initiative: Initiative,
-  stageRecords: Map<string, PublicInitiativeLifecycleRecordItem[]>,
-): {
-  stages: PublicInitiativeLifecycleStageNavItem[];
-  currentStageId: string;
-} {
-  const stageCounts = new Map<string, number>();
-
-  for (const [stageId, items] of stageRecords.entries()) {
-    stageCounts.set(stageId, items.length);
+function toOptionalStageDiagnostic(
+  classification: "PRESENT" | "ABSENT" | "NOT_CREATED_YET" | "INFRASTRUCTURE_FAILURE",
+): PublicInitiativeOptionalStageDiagnostic {
+  if (classification === "PRESENT") {
+    return { health: "ok" };
   }
-
-  // Initiative record itself is always present for a public experience.
-  if ((stageCounts.get("initiative") ?? 0) === 0) {
-    stageCounts.set("initiative", 1);
+  if (classification === "INFRASTRUCTURE_FAILURE") {
+    return { health: "unavailable", reasonCode: "infrastructure_failure" };
   }
-
-  const currentStageId = resolveCurrentStageIdFromPublicationMetadata(stageCounts);
-  const currentIndex = EXPERIENCE_STAGES.findIndex((stage) => stage.stageId === currentStageId);
-
-  const stages: PublicInitiativeLifecycleStageNavItem[] = EXPERIENCE_STAGES.map((stage, index) => {
-    const recordCount = stageCounts.get(stage.stageId) ?? 0;
-    let state: InitiativeExperienceLifecycleStageState;
-
-    if (stage.stageId === "petition" && !isPetitionStageApplicable(initiative) && recordCount === 0) {
-      state = "not_applicable";
-    } else if (stage.stageId === "archive" && recordCount > 0) {
-      state = "archived";
-    } else if (index < currentIndex) {
-      state = recordCount > 0 ? "completed" : "not_applicable";
-    } else if (index === currentIndex) {
-      if (recordCount > 0) {
-        state = stage.stageId === "archive" ? "archived" : "published";
-      } else {
-        state = "in_progress";
-      }
-    } else {
-      state = "not_started";
-    }
-
-    return {
-      stageId: stage.stageId,
-      label: stage.label,
-      hash: stage.hash,
-      state,
-      stateLabel: STATE_LABELS[state],
-      recordCount,
-    };
-  });
-
-  return { stages, currentStageId };
+  return { health: "absent", reasonCode: "not_created_yet" };
 }
 
 function buildStageContent(
   stageRecords: Map<string, PublicInitiativeLifecycleRecordItem[]>,
+  optionalStageDiagnostics?: PublicInitiativeOptionalStageDiagnostics,
 ): PublicInitiativeLifecycleStageContent[] {
   const emptyMessages: Record<string, string> = {
     initiative: "Initiative content is available in Overview.",
+    discussion: "Discussion continues in the Initiative Discussion tab.",
     analysis: "No Collaborative Analysis has been published yet.",
     proposal: "No improvement proposals have been published yet.",
     revision: "No revisions have been published.",
-    petition: "No petition is linked to this initiative.",
+    petition:
+      optionalStageDiagnostics?.petition?.health === "unavailable"
+        ? "Petition information is temporarily unavailable."
+        : "No petition is linked to this initiative.",
     decision_session: "No decision sessions have been published yet.",
     collective_decision: "No collective decisions have been published yet.",
     commitment: "No implementation commitments have been published yet.",
     tracking: "No implementation tracking records have been published yet.",
     official_response: "No official responses have been published yet.",
     public_impact: "No public impact records have been published yet.",
-    archive: "This initiative has not been archived yet.",
+    archive:
+      optionalStageDiagnostics?.civicArchive?.health === "unavailable"
+        ? "Civic Archive information is temporarily unavailable."
+        : "This initiative has not been archived yet.",
   };
 
-  return EXPERIENCE_STAGES.map((stage) => ({
-    stageId: stage.stageId,
-    records: stageRecords.get(stage.stageId) ?? [],
-    emptyStateMessage: emptyMessages[stage.stageId] ?? "No records are available for this stage.",
-  }));
+  return EXPERIENCE_STAGES.map((stage) => {
+    const stateRecords = stageRecords.get(stage.stageId) ?? [];
+    return {
+      stageId: stage.stageId,
+      records: stateRecords,
+      emptyStateMessage: emptyMessages[stage.stageId] ?? "No records are available for this stage.",
+    };
+  });
 }
 
 function buildRelatedCivicRecords(initiativeId: string): PublicInitiativeRelatedCivicRecord[] {
@@ -628,7 +586,11 @@ export async function buildPublicInitiativeExperienceProjection(input: {
   // exact result for its "revision" stage instead of fetching it a second
   // time (it was previously fetched twice per request — once here for the
   // top-level `revisionHistory` field, once inside `buildStageRecords`).
-  const stageRecords = await buildStageRecords(initiative, publicInitiative, versionHistory);
+  const { records: stageRecords, optionalStageDiagnostics } = await buildStageRecords(
+    initiative,
+    publicInitiative,
+    versionHistory,
+  );
   const { stages, currentStageId } = buildLifecycleNavigation(initiative, stageRecords);
   const currentStage = stages.find((stage) => stage.stageId === currentStageId);
   // UX Evolution Pack 02.3 Part 1 diagnosis: `buildInitiativeDiscussionSummary`
@@ -639,14 +601,24 @@ export async function buildPublicInitiativeExperienceProjection(input: {
   // computed them). Mirror the exact same projection step the comments
   // route already performs, so the initial payload and any later refetch
   // are consistent.
-  const discussion: PublicInitiativeDiscussionSummary = {
-    ...discussionSummary,
-    initialComments: await attachCollaborationStateToComments({
+  let initialComments = discussionSummary.initialComments;
+  try {
+    initialComments = await attachCollaborationStateToComments({
       initiativeId: initiative.initiativeId,
       rawComments,
       projectedComments: discussionSummary.initialComments,
       viewerParticipantId: input.viewerParticipantId ?? null,
-    }),
+    });
+  } catch (error) {
+    logger.warn("public_initiative_experience.collaboration_state_attach_failed", {
+      initiativeId: initiative.initiativeId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  const discussion: PublicInitiativeDiscussionSummary = {
+    ...discussionSummary,
+    initialComments,
   };
 
   const firstPublishedAt =
@@ -672,7 +644,7 @@ export async function buildPublicInitiativeExperienceProjection(input: {
     initiative: publicInitiative,
     currentStageId,
     lifecycleStages: stages,
-    stageContent: buildStageContent(stageRecords),
+    stageContent: buildStageContent(stageRecords, optionalStageDiagnostics),
     supportStatistics: {
       ...support,
       transparencyNote: INITIATIVE_SUPPORT_TRANSPARENCY_NOTE,
@@ -684,17 +656,7 @@ export async function buildPublicInitiativeExperienceProjection(input: {
       await findRelatedInitiativesForInitiative(initiative.initiativeId)
     ).items,
     discussion,
+    optionalStageDiagnostics,
     generatedAt: new Date().toISOString(),
   };
-}
-
-export function resolveExperienceStageFromHash(hash: string): string | null {
-  const normalized = hash.replace(/^#/, "").trim().toLowerCase();
-
-  if (!normalized) {
-    return null;
-  }
-
-  const stage = EXPERIENCE_STAGES.find((item) => item.hash === normalized);
-  return stage?.stageId ?? null;
 }

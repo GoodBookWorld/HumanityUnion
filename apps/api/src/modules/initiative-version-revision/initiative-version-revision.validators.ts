@@ -101,9 +101,12 @@ export function validateInitiativeRevisionDraftForPublication(
 ): void {
   normalizeText(draft.title, "Title");
   normalizeText(draft.description, "Description");
-  normalizeText(draft.metadata.communitySlug, "Community association");
   normalizeText(draft.metadata.activityArea, "Activity area");
   normalizeText(draft.revisionSummary, "Revision summary");
+
+  // communitySlug / communityAssociation are optional — aligned with Initiative
+  // publish, which does not require them. Empty strings after trim are treated
+  // as absent and must not fail publication validation.
 }
 
 const REVISION_CHANGE_SECTIONS: readonly InitiativeRevisionChangeSection[] = ["title", "description", "custom"];
