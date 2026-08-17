@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import type { InitiativeLifecycleStageProjection } from "@hu/types";
+import { INITIATIVE_LIFECYCLE_STAGE_REGISTRY } from "@hu/types";
 
 import {
   WorkspaceButton,
@@ -109,7 +110,7 @@ function StageHeader({
     <header className="lsw-header">
       <div className="lsw-header__top">
         <p className="lsw-header__order" aria-hidden="true">
-          Stage {projection.stageOrder} of 11
+          Stage {projection.stageOrder + 1} of {INITIATIVE_LIFECYCLE_STAGE_REGISTRY.length}
         </p>
         <h2 id={`lsw-stage-title-${projection.stageId}`} className="lsw-header__title">
           {projection.stageLabel}

@@ -2,6 +2,7 @@ import type { InitiativeStatus } from "./initiative.js";
 import type { InitiativeCoverMedia } from "./initiative-cover-media.js";
 import type { PublicCommentAuthor } from "./initiative-comment.js";
 import type { PublicCommentCollaborationState } from "./initiative-discussion-collaboration.js";
+import type { InitiativeLifecycleProfile } from "./initiative-lifecycle-profile.js";
 import type { PublicInitiativeProjection } from "./public-initiative.js";
 import type { PublicInitiativeWithVersionHistory } from "./public-initiative-version-revision.js";
 import type { CommunityInitiativeRelationshipProjection } from "./community-intelligence.js";
@@ -215,6 +216,16 @@ export interface PublicInitiativeExperienceProjection {
    * Never includes raw infrastructure error messages.
    */
   optionalStageDiagnostics?: PublicInitiativeOptionalStageDiagnostics;
+  /**
+   * Phase 03 — LifecycleProfile on the Experience shell (configuration, not progress).
+   * Missing → STANDARD at resolve time.
+   */
+  lifecycleProfile?: InitiativeLifecycleProfile;
+  /**
+   * Phase 03 — true when the authenticated viewer is the Initiative steward.
+   * Author Mode eligibility must use this (or owner route), never Allies success.
+   */
+  viewerIsSteward?: boolean;
   generatedAt: string;
 }
 

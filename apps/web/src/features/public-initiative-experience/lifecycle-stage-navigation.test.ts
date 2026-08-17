@@ -44,4 +44,18 @@ describe("isLifecycleStageSelectable", () => {
       false,
     );
   });
+
+  it("Phase 03 — skips NOT_APPLICABLE when choosing the next unlocked stage", () => {
+    const publicChoice = [
+      stage("initiative", "completed"),
+      stage("discussion", "in_progress"),
+      stage("analysis", "not_applicable"),
+      stage("petition", "not_applicable"),
+      stage("collective_decision", "not_started"),
+      stage("archive", "not_started"),
+    ];
+    assert.equal(isLifecycleStageSelectable(publicChoice, "collective_decision"), true);
+    assert.equal(isLifecycleStageSelectable(publicChoice, "archive"), false);
+    assert.equal(isLifecycleStageSelectable(publicChoice, "analysis"), false);
+  });
 });

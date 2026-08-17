@@ -14,6 +14,7 @@ import {
   INITIATIVE_SUPPORT_TRANSPARENCY_NOTE,
   PUBLIC_INITIATIVE_EXPERIENCE_STAGES as EXPERIENCE_STAGES,
   resolveInitiativeCoverMedia,
+  resolveInitiativeLifecycleProfile,
 } from "@hu/types";
 
 import { settleOptionalLifecycleLookup } from "../../shared/lifecycle/optional-lifecycle-lookup.js";
@@ -657,6 +658,10 @@ export async function buildPublicInitiativeExperienceProjection(input: {
     ).items,
     discussion,
     optionalStageDiagnostics,
+    lifecycleProfile: resolveInitiativeLifecycleProfile(initiative.lifecycleProfile),
+    viewerIsSteward:
+      Boolean(input.viewerParticipantId) &&
+      input.viewerParticipantId === initiative.stewardId,
     generatedAt: new Date().toISOString(),
   };
 }

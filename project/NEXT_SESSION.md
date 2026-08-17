@@ -4,7 +4,7 @@ Humanity Union
 
 Next Engineering Session
 
-Version 1.9
+Version 1.10
 
 ---
 
@@ -18,25 +18,30 @@ AI recovery entry: `architecture/recovery/chat-agent/README.md`
 
 # Last Completed
 
-**INITIATIVE LIFECYCLE FINALIZATION — PHASE 02 (Architecture Review Addendum)**
-
-Corrected PUBLIC_CHOICE route (includes Discussion), absence vs infrastructure-failure diagnostics, resolver postcondition contract.
+**INITIATIVE LIFECYCLE FINALIZATION — PHASE 03**
+Experience shell resilience + navigation convergence.
 
 Primary document:
 
-`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_02_REPORT_v1.0.md`
+`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_03_REPORT_v1.0.md`
+
+Prior: Phase 02 state/persistence + architecture review addendum.
 
 ---
 
 # Immediate Objective
 
-**Await Phase 02 acceptance.** Do **not** start Phase 03 until the owner accepts the Phase 02 addendum.
+**INITIATIVE LIFECYCLE FINALIZATION — PHASE 04**
+Uniform Author workflow convergence
 
-After acceptance, Phase 03 will be:
+Direction:
 
-Experience shell resilience + Stage URL quarantine
+1. Align Author Generate / Save / Preview / Publish semantics across stages.
+2. Finish Revision validator / migrated-data polish where still needed.
+3. Migrate remaining legacy Analysis callers to initiative-analyses where safe.
+4. Do **not** build Candidate/PUBLIC_CHOICE full UX, Reference Initiatives, Journey Pack, or Phase 06 notifications yet.
 
-Authority: Phase 02 report §20 / §23.
+Authority: Phase 03 report §12–13; Phase 01 audit §19 Phase 04.
 
 ---
 
@@ -50,7 +55,7 @@ Authority: Phase 02 report §20 / §23.
 6. AI may draft; Author publishes.
 7. One Lifecycle Engine; LifecycleProfile only selects the Stage Registry route.
 8. Progress = derived from published artifacts + profile — never `Initiative.status`.
-9. PUBLIC_CHOICE domain route: Initiative → Discussion → Collective Decision → Civic Archive.
+9. selectedStage is DISPLAY-ONLY; currentStage is resolver progress.
 10. Recovery Packs 01–05 remain CLOSED unless a concrete blocking defect requires scoped repair.
 
 ---

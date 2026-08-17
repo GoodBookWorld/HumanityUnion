@@ -1,10 +1,16 @@
 "use client";
 
 import type { Initiative, PublicInitiativeExperienceProjection } from "@hu/types";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { isInitiativeLifecycleAuthorWorkspaceStage } from "@hu/types";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { toggleInitiativeBookmark, updateInitiativeSupportSignal } from "../api";
 import { isLifecycleStageSelectable } from "../lifecycle-stage-navigation";
+import {
+  publicSafeOptionalSectionMessage,
+  resolveLifecycleShellHash,
+  selectLifecycleNavStagesForDisplay,
+} from "../initiative-lifecycle-shell";
 import { PublicCivicRecordExperienceLayout } from "./PublicCivicRecordExperienceLayout";
 import { PublicExperienceHero, buildInitiativeHeroProps } from "./PublicExperienceHero";
 import { PublicExperienceSidebarOrChannel } from "./PublicExperienceSidebarOrChannel";
@@ -12,20 +18,8 @@ import type { CollaborationTab } from "./InitiativeCollaborationWorkspace";
 import { PublicInitiativeCenterPanel, type CenterTab } from "./PublicInitiativeCenterPanel";
 import { PublicInitiativeLifecycleNav } from "./PublicInitiativeLifecycleNav";
 import { InitiativeOwnerManagePanel } from "../../initiative-owner-studio/components/InitiativeOwnerManagePanel";
-import { PUBLIC_INITIATIVE_EXPERIENCE_STAGES } from "@hu/types";
 
 import "../public-initiative-experience.css";
-
-function resolveStageFromHash(hash: string): string | null {
-  const normalized = hash.replace(/^#/, "").trim().toLowerCase();
-
-  if (!normalized) {
-    return null;
-  }
-
-  const stage = PUBLIC_INITIATIVE_EXPERIENCE_STAGES.find((item) => item.hash === normalized);
-  return stage?.stageId ?? null;
-}
 
 export interface InitiativeExperienceOwnerMode {
   initiative: Initiative;
@@ -47,24 +41,26 @@ export function PublicInitiativeExperiencePage({
   const [activeTab, setActiveTab] = useState<CenterTab>(
     ownerMode?.showManageTab ? "manage" : "overview",
   );
-  const [activeStageId, setActiveStageId] = useState(initialExperience.currentStageId);
+  /** DISPLAY-ONLY selected stage — never mutates experience.currentStageId. */
+  const [selectedStageId, setSelectedStageId] = useState(initialExperience.currentStageId);
   const [showLifecyclePanel, setShowLifecyclePanel] = useState(false);
-  /** Initiative Lifecycle Part A Completion Part 9 — lifted so the Author working sidebar's Preview button and the shell's own footer toggle stay in sync. */
   const [isStagePreviewMode, setIsStagePreviewMode] = useState(false);
   const [supportBusy, setSupportBusy] = useState(false);
   const [initialDiscussionFilter, setInitialDiscussionFilter] = useState<"collaboration" | undefined>(
     undefined,
   );
-  /**
-   * Communication UX Pack 03.7 Part 10 — "Notifications open the
-   * communication context": a Shared Document notification's
-   * `relatedUrl` deep-links to `#collaboration-channel` /
-   * `#collaboration-sessions`, landing directly on that tab of the
-   * Collaboration Workspace (Communication UX Pack 03.5/03.6's existing
-   * sidebar-slot swap) instead of always defaulting to Channel.
-   */
   const [collaborationTab, setCollaborationTab] = useState<CollaborationTab | undefined>(undefined);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const viewerIsSteward = Boolean(ownerMode || experience.viewerIsSteward);
+  const navStages = useMemo(
+    () => selectLifecycleNavStagesForDisplay(experience.lifecycleStages),
+    [experience.lifecycleStages],
+  );
+  const petitionDegradedMessage = publicSafeOptionalSectionMessage(
+    experience.optionalStageDiagnostics,
+    "petition",
+  );
 
   useEffect(() => {
     setExperience(initialExperience);
@@ -83,44 +79,42 @@ export function PublicInitiativeExperiencePage({
 
   const applyHash = useCallback(
     (hash: string) => {
-      const normalized = hash.replace(/^#/, "").trim().toLowerCase();
+      const resolution = resolveLifecycleShellHash(hash, experience.lifecycleStages, {
+        allowManage: Boolean(ownerMode),
+      });
 
-      if (normalized === "manage" && ownerMode) {
-        setShowLifecyclePanel(false);
-        setActiveTab("manage");
-        ownerMode.onShowManageTabChange(true);
-        return;
+      switch (resolution.kind) {
+        case "manage":
+          setShowLifecyclePanel(false);
+          setActiveTab("manage");
+          ownerMode?.onShowManageTabChange(true);
+          return;
+        case "discussion_tab":
+          // Discussion stage reuses the Center-tab Discussion contract.
+          setShowLifecyclePanel(false);
+          setActiveTab("discussion");
+          setSelectedStageId("discussion");
+          ownerMode?.onShowManageTabChange(false);
+          return;
+        case "collaboration":
+          setCollaborationTab(resolution.tab);
+          setShowLifecyclePanel(false);
+          setActiveTab("overview");
+          ownerMode?.onShowManageTabChange(false);
+          return;
+        case "lifecycle_stage":
+          setSelectedStageId(resolution.stageId);
+          setShowLifecyclePanel(true);
+          ownerMode?.onShowManageTabChange(false);
+          return;
+        case "fallback_overview":
+        default:
+          setShowLifecyclePanel(false);
+          setActiveTab("overview");
+          ownerMode?.onShowManageTabChange(false);
       }
-
-      if (normalized === "discussion") {
-        setShowLifecyclePanel(false);
-        setActiveTab("discussion");
-        ownerMode?.onShowManageTabChange(false);
-        return;
-      }
-
-      if (normalized === "collaboration-channel" || normalized === "collaboration-sessions") {
-        setCollaborationTab(normalized === "collaboration-channel" ? "channel" : "sessions");
-        setShowLifecyclePanel(false);
-        setActiveTab("overview");
-        ownerMode?.onShowManageTabChange(false);
-        return;
-      }
-
-      const stageId = resolveStageFromHash(hash);
-
-      if (stageId) {
-        setActiveStageId(stageId);
-        setShowLifecyclePanel(true);
-        ownerMode?.onShowManageTabChange(false);
-        return;
-      }
-
-      setShowLifecyclePanel(false);
-      setActiveTab("overview");
-      ownerMode?.onShowManageTabChange(false);
     },
-    [ownerMode],
+    [experience.lifecycleStages, ownerMode],
   );
 
   useEffect(() => {
@@ -132,15 +126,6 @@ export function PublicInitiativeExperiencePage({
     return () => window.removeEventListener("hashchange", onHashChange);
   }, [applyHash]);
 
-  /**
-   * Profile UX Pack 01 Part 4 — the collaboration-request notification's
-   * "Review request" action links to
-   * `/initiatives/public/{id}?filter=collaboration#discussion`. The `#discussion`
-   * hash is already handled by `applyHash` above; this reads the
-   * `filter=collaboration` query parameter (checked once, on initial load,
-   * matching how deep links are normally consumed) to also land the viewer
-   * directly on the Collaboration working list rather than "All".
-   */
   const applyQueryParams = useCallback(
     (search: string) => {
       const filterParam = new URLSearchParams(search).get("filter");
@@ -166,7 +151,19 @@ export function PublicInitiativeExperiencePage({
       return;
     }
 
-    setActiveStageId(stageId);
+    // Discussion lifecycle stage → Center Discussion tab (no second Discussion UI).
+    if (stageId === "discussion") {
+      setSelectedStageId("discussion");
+      setShowLifecyclePanel(false);
+      setActiveTab("discussion");
+      setIsStagePreviewMode(false);
+      ownerMode?.onShowManageTabChange(false);
+      window.history.replaceState(null, "", "#discussion");
+      scrollToContent();
+      return;
+    }
+
+    setSelectedStageId(stageId);
     setShowLifecyclePanel(true);
     setIsStagePreviewMode(false);
     ownerMode?.onShowManageTabChange(false);
@@ -187,6 +184,7 @@ export function PublicInitiativeExperiencePage({
       ownerMode?.onShowManageTabChange(true);
       window.history.replaceState(null, "", "#manage");
     } else if (tab === "discussion") {
+      setSelectedStageId("discussion");
       ownerMode?.onShowManageTabChange(false);
       window.history.replaceState(null, "", "#discussion");
     } else {
@@ -198,7 +196,7 @@ export function PublicInitiativeExperiencePage({
   };
 
   const handleRevisionSelect = (version: number) => {
-    setActiveStageId("revision");
+    setSelectedStageId("revision");
     setShowLifecyclePanel(true);
     ownerMode?.onShowManageTabChange(false);
     window.history.replaceState(null, "", "#revision");
@@ -256,47 +254,61 @@ export function PublicInitiativeExperiencePage({
       }
       lifecycle={
         <PublicInitiativeLifecycleNav
-          stages={experience.lifecycleStages}
-          activeStageId={activeStageId}
+          stages={navStages}
+          currentStageId={experience.currentStageId}
+          selectedStageId={selectedStageId}
           onStageSelect={handleStageSelect}
         />
       }
       center={
-        <PublicInitiativeCenterPanel
-          experience={experience}
-          activeTab={activeTab}
-          activeStageId={activeStageId}
-          showLifecyclePanel={showLifecyclePanel}
-          onTabChange={handleTabChange}
-          contentRef={contentRef}
-          showManageTab={Boolean(ownerMode)}
-          initialDiscussionFilter={initialDiscussionFilter}
-          managePanel={
-            ownerMode ? (
-              <InitiativeOwnerManagePanel
-                initiative={ownerMode.initiative}
-                onInitiativeUpdated={ownerMode.onInitiativeUpdated}
-              />
-            ) : null
-          }
-          onNavigateStage={handleStageSelect}
-          returnToInitiativeHref={
-            ownerMode
-              ? `/initiatives/${experience.initiativeId}`
-              : `/initiatives/public/${experience.initiativeId}`
-          }
-          isOwnerRoute={Boolean(ownerMode)}
-          isStagePreviewMode={isStagePreviewMode}
-          onToggleStagePreviewMode={() => setIsStagePreviewMode((current) => !current)}
-        />
+        <>
+          {petitionDegradedMessage &&
+          showLifecyclePanel &&
+          selectedStageId === "petition" ? (
+            <p className="pie-optional-degraded" role="status">
+              {petitionDegradedMessage}
+            </p>
+          ) : null}
+          <PublicInitiativeCenterPanel
+            experience={experience}
+            activeTab={activeTab}
+            activeStageId={selectedStageId}
+            showLifecyclePanel={showLifecyclePanel}
+            onTabChange={handleTabChange}
+            contentRef={contentRef}
+            showManageTab={Boolean(ownerMode)}
+            initialDiscussionFilter={initialDiscussionFilter}
+            managePanel={
+              ownerMode ? (
+                <InitiativeOwnerManagePanel
+                  initiative={ownerMode.initiative}
+                  onInitiativeUpdated={ownerMode.onInitiativeUpdated}
+                />
+              ) : null
+            }
+            onNavigateStage={handleStageSelect}
+            returnToInitiativeHref={
+              ownerMode
+                ? `/initiatives/${experience.initiativeId}`
+                : `/initiatives/public/${experience.initiativeId}`
+            }
+            isOwnerRoute={viewerIsSteward}
+            isStagePreviewMode={isStagePreviewMode}
+            onToggleStagePreviewMode={() => setIsStagePreviewMode((current) => !current)}
+          />
+        </>
       }
       sidebar={
         <PublicExperienceSidebarOrChannel
           initiativeId={experience.initiativeId}
           currentStageId={experience.currentStageId}
-          workspaceStageId={showLifecyclePanel ? activeStageId : null}
+          workspaceStageId={
+            showLifecyclePanel && isInitiativeLifecycleAuthorWorkspaceStage(selectedStageId)
+              ? selectedStageId
+              : null
+          }
           isStagePreviewMode={isStagePreviewMode}
-          isInitiativeSteward={Boolean(ownerMode)}
+          isInitiativeSteward={viewerIsSteward}
           onOpenPublicPreview={handleOpenStagePublicPreview}
           onNavigateStage={handleStageSelect}
           collaborationTab={collaborationTab}

@@ -46,7 +46,7 @@ Operational on **staging**
 
 Project Health:
 
-Attention — Lifecycle Finalization Phase 02 converged profile-aware state + Experience soft-fail; Phase 03 still needed for full shell/URL quarantine. Recovery CLOSED.
+Attention — Lifecycle Finalization Phase 03 shell/nav resilience complete; Phase 04 Author workflow next. Recovery CLOSED.
 
 Primary engineering branch:
 
@@ -56,15 +56,15 @@ Primary engineering branch:
 
 # Current Focus
 
-**INITIATIVE LIFECYCLE FINALIZATION — PHASE 02 (awaiting acceptance after architecture review addendum)**
+**INITIATIVE LIFECYCLE FINALIZATION — PHASE 04**
 
 Last completed:
 
-Phase 02 Architecture Review Addendum (PUBLIC_CHOICE Discussion route; absence vs infra failure; resolver postcondition)
+INITIATIVE LIFECYCLE FINALIZATION — PHASE 03 (Experience shell resilience + navigation)
 
-`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_02_REPORT_v1.0.md`
+`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_03_REPORT_v1.0.md`
 
-Do not start Phase 03 until Phase 02 is accepted.
+Prior: Phase 02 (profiles/state/persistence); Phase 01 audit; Recovery Packs 01–05 CLOSED
 
 ---
 
@@ -76,7 +76,7 @@ Historical Epics 01–03 (Initiative, Collaborative Analysis, Collective Decisio
 
 Later product work (Blog, PWA, Launch Readiness, Admin, Staging recovery) advanced via Packs on branch `staging` — see `PROJECT_STATE.md` and git history.
 
-Live next task is Initiative Lifecycle Finalization Phase 03 — see `NEXT_SESSION.md`.
+Live next task is Initiative Lifecycle Finalization Phase 04 — see `NEXT_SESSION.md`.
 
 ---
 

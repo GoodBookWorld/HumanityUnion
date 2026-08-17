@@ -166,6 +166,20 @@
   box-shadow: inset 0 0 0 1px var(--hu-color-primary);
 }
 
+.pie-lifecycle__stage--current:not(.pie-lifecycle__stage--active) {
+  outline: 1px dashed var(--hu-color-primary);
+}
+
+.pie-optional-degraded {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--hu-color-border);
+  background: var(--hu-color-surface);
+  color: var(--hu-color-text-muted, inherit);
+  font-size: 0.9rem;
+}
+
 /* Lifecycle UX Completion Pack 02 Part 2 — markers track completion state. */
 .pie-lifecycle__stage--completed .pie-lifecycle__marker,
 .pie-lifecycle__stage--published .pie-lifecycle__marker {

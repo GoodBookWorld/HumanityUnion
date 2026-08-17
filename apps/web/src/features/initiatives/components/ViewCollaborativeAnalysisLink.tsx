@@ -7,7 +7,7 @@ import {
   WorkspaceLoadingState,
   WorkspacePublicLink,
 } from "../../initiative-workspace-ux";
-import { getCollaborativeAnalysisByInitiativeId } from "../../collaborative-analysis/api";
+import { listPublicInitiativeAnalyses } from "../../initiative-collaborative-analysis/api";
 
 import "./view-collaborative-analysis-link.css";
 
@@ -15,15 +15,19 @@ interface ViewCollaborativeAnalysisLinkProps {
   initiativeId: string | null;
 }
 
+/**
+ * Phase 03 — links to the canonical Initiative shell (#collaborative-analysis).
+ * Uses initiative-analyses (canonical), not the legacy `/initiatives/:id/analysis` route.
+ */
 export function ViewCollaborativeAnalysisLink({
   initiativeId,
 }: ViewCollaborativeAnalysisLinkProps) {
-  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [hasAnalysis, setHasAnalysis] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!initiativeId) {
-      setAnalysisId(null);
+      setHasAnalysis(false);
       return;
     }
 
@@ -39,13 +43,13 @@ export function ViewCollaborativeAnalysisLink({
       }
 
       try {
-        const analysis = await getCollaborativeAnalysisByInitiativeId(currentInitiativeId);
+        const analyses = await listPublicInitiativeAnalyses(currentInitiativeId);
         if (!cancelled) {
-          setAnalysisId(analysis?.analysisId ?? null);
+          setHasAnalysis(analyses.length > 0);
         }
       } catch {
         if (!cancelled) {
-          setAnalysisId(null);
+          setHasAnalysis(false);
         }
       } finally {
         if (!cancelled) {
@@ -75,7 +79,7 @@ export function ViewCollaborativeAnalysisLink({
     return <WorkspaceLoadingState message="Loading collaborative analysis..." />;
   }
 
-  if (!analysisId) {
+  if (!hasAnalysis) {
     return (
       <WorkspaceEmptyState
         title="No collaborative analysis has been created yet."
@@ -87,7 +91,7 @@ export function ViewCollaborativeAnalysisLink({
 
   return (
     <WorkspacePublicLink
-      href={`/collaborative-analysis/${encodeURIComponent(analysisId)}`}
+      href={`/initiatives/public/${encodeURIComponent(initiativeId)}#collaborative-analysis`}
       label="View Collaborative Analysis"
     />
   );

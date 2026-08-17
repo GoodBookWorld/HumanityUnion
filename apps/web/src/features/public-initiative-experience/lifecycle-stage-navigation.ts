@@ -10,10 +10,11 @@ const UNLOCKED_STATES = new Set([
 ]);
 
 /**
- * Lifecycle UX Completion Pack 02 Part 6 — a stage is selectable when it is
- * already unlocked by publication progress, or is the single next
- * Not Started stage after the furthest unlocked stage. Further Not Started
- * stages cannot be skipped into.
+ * Lifecycle UX Completion Pack 02 Part 6 + Phase 03 profile-awareness —
+ * a stage is selectable when already unlocked by publication progress, or
+ * is the single next applicable Not Started stage after the furthest
+ * unlocked *applicable* stage. NOT_APPLICABLE stages are skipped (never
+ * treated as the "next" gate).
  */
 export function isLifecycleStageSelectable(
   stages: readonly PublicInitiativeLifecycleStageNavItem[],
@@ -34,13 +35,28 @@ export function isLifecycleStageSelectable(
     return true;
   }
 
-  let furthestUnlocked = -1;
+  const applicableIndexes: number[] = [];
 
   for (let i = 0; i < stages.length; i += 1) {
-    if (UNLOCKED_STATES.has(stages[i]!.state)) {
-      furthestUnlocked = i;
+    const item = stages[i]!;
+    if (item.state !== "not_applicable" && item.state !== "unavailable") {
+      applicableIndexes.push(i);
     }
   }
 
-  return index <= furthestUnlocked + 1;
+  let furthestUnlockedApplicableOrdinal = -1;
+
+  for (let ordinal = 0; ordinal < applicableIndexes.length; ordinal += 1) {
+    const stageIndex = applicableIndexes[ordinal]!;
+    if (UNLOCKED_STATES.has(stages[stageIndex]!.state)) {
+      furthestUnlockedApplicableOrdinal = ordinal;
+    }
+  }
+
+  const targetOrdinal = applicableIndexes.indexOf(index);
+  if (targetOrdinal < 0) {
+    return false;
+  }
+
+  return targetOrdinal <= furthestUnlockedApplicableOrdinal + 1;
 }

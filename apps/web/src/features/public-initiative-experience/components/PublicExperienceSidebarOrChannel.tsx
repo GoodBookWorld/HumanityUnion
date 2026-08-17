@@ -83,16 +83,26 @@ export function PublicExperienceSidebarOrChannel({
   ...sidebarProps
 }: PublicExperienceSidebarOrChannelProps) {
   const [viewerRole, setViewerRole] = useState<"author" | "active_ally" | "other" | "loading">(
-    "loading",
+    () => (isInitiativeSteward ? "author" : "loading"),
   );
 
   useEffect(() => {
     let cancelled = false;
-    setViewerRole("loading");
+    if (!isInitiativeSteward) {
+      setViewerRole("loading");
+    } else {
+      setViewerRole("author");
+    }
 
     getInitiativeActiveAlliesTeam(sidebarProps.initiativeId)
       .then((team) => {
         if (cancelled) {
+          return;
+        }
+
+        // Phase 03 — stewardship wins over Allies projection for Author Mode.
+        if (isInitiativeSteward) {
+          setViewerRole("author");
           return;
         }
 
