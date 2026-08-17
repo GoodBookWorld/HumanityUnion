@@ -135,6 +135,7 @@ import {
 } from "./modules/implementation/index.js";
 import { petitionRouter, publicPetitionRouter } from "./modules/petition/index.js";
 import { initiativePetitionLifecycleRouter } from "./modules/initiative-petition-lifecycle/index.js";
+import { initiativeDiscussionLifecycleRouter } from "./modules/initiative-discussion-lifecycle/index.js";
 import { initiativeDecisionSessionLifecycleRouter } from "./modules/initiative-decision-session-lifecycle/index.js";
 import { initiativeCollectiveDecisionLifecycleRouter } from "./modules/initiative-collective-decision-lifecycle/index.js";
 import { initiativeImplementationCommitmentLifecycleRouter } from "./modules/initiative-implementation-commitment-lifecycle/index.js";
@@ -277,6 +278,7 @@ app.use("/api/v1/collaborative-analysis", collaborativeAnalysisRouter);
 app.use("/api/v1/collective-decisions", collectiveDecisionRouter);
 app.use("/api/v1/petitions", petitionRouter);
 app.use("/api/v1/initiative-petitions", initiativePetitionLifecycleRouter);
+app.use("/api/v1/initiative-discussion-lifecycle", initiativeDiscussionLifecycleRouter);
 app.use("/api/v1/initiative-decision-sessions", initiativeDecisionSessionLifecycleRouter);
 app.use("/api/v1/initiative-collective-decision-lifecycle", initiativeCollectiveDecisionLifecycleRouter);
 app.use(

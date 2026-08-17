@@ -56,6 +56,20 @@ Next Objective:
 
 # Entries
 
+## 2026-08-16 (Lifecycle Finalization Phase 04)
+
+Completed:
+
+- INITIATIVE LIFECYCLE FINALIZATION — PHASE 04 uniform Author workflow.
+- Document: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_04_REPORT_v1.0.md`.
+- Author workflow contract; Discussion completion marker; Revision/Petition save→publish + validation UX; Improvement Proposals durable default; lazy-init helper.
+
+Next Objective:
+
+INITIATIVE LIFECYCLE FINALIZATION — PHASE 05.
+
+---
+
 ## 2026-08-16 (Lifecycle Finalization Phase 03)
 
 Completed:

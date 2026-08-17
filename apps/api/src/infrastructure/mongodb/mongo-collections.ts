@@ -77,6 +77,8 @@ export const MONGO_COLLECTIONS = {
   initiativeProposalReactions: "initiative_proposal_reactions",
   initiativeRevisionReactions: "initiative_revision_reactions",
   initiativePetitionDrafts: "initiative_petition_drafts",
+  initiativeDiscussionCompletions: "initiative_discussion_completions",
+
   initiativeDecisionSessionDrafts: "initiative_decision_session_drafts",
   initiativeDecisionSessionRecommendations: "initiative_decision_session_recommendations",
   initiativeCollectiveDecisionLifecycleDrafts: "initiative_collective_decision_lifecycle_drafts",

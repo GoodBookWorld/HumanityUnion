@@ -55,11 +55,11 @@ Platform Version:
 
 # Current Focus
 
-**Last completed:** INITIATIVE LIFECYCLE FINALIZATION — PHASE 03 (Experience shell resilience)
+**Last completed:** INITIATIVE LIFECYCLE FINALIZATION — PHASE 04 (Uniform Author workflow)
 
-**Next:** INITIATIVE LIFECYCLE FINALIZATION — PHASE 04 (Uniform Author workflow convergence)
+**Next:** INITIATIVE LIFECYCLE FINALIZATION — PHASE 05
 
-Report: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_03_REPORT_v1.0.md`
+Report: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_04_REPORT_v1.0.md`
 
 Recovery Packs 01–05 remain **CLOSED**.
 

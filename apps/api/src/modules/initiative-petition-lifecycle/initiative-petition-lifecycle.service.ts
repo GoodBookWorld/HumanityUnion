@@ -36,6 +36,7 @@ import {
   validateInitiativePetitionDraftForPublication,
   type SaveInitiativePetitionDraftInput,
 } from "./initiative-petition-lifecycle.validators.js";
+import { ensureLazyWorkingArtifact } from "../../shared/lifecycle/lazy-stage-initialization.js";
 
 const BOOTSTRAP_APPROVE_OPTION_ID = "option-petition-bootstrap-approve";
 const BOOTSTRAP_REJECT_OPTION_ID = "option-petition-bootstrap-reject";
@@ -178,33 +179,32 @@ function getOrCreateWorkingPetitionDraft(
   identity: RequestIdentity,
   initiative: Initiative,
 ): InitiativePetitionDraft {
-  const existing = getInitiativePetitionDraftByInitiativeId(initiative.initiativeId);
+  return ensureLazyWorkingArtifact({
+    getExisting: () => getInitiativePetitionDraftByInitiativeId(initiative.initiativeId),
+    create: () => {
+      const now = new Date().toISOString();
+      const draft: InitiativePetitionDraft = {
+        draftId: `initiative-petition-draft-${randomUUID()}`,
+        initiativeId: initiative.initiativeId,
+        authorId: identity.participantId,
+        title: "",
+        publicSummary: "",
+        requestStatement: "",
+        expectedOutcome: "",
+        supportingContext: "",
+        keyArguments: [],
+        revisionId: null,
+        revisionVersion: null,
+        analysisId: null,
+        analysisVersion: null,
+        proposalIds: [],
+        createdAt: now,
+        updatedAt: now,
+      };
 
-  if (existing) {
-    return existing;
-  }
-
-  const now = new Date().toISOString();
-  const draft: InitiativePetitionDraft = {
-    draftId: `initiative-petition-draft-${randomUUID()}`,
-    initiativeId: initiative.initiativeId,
-    authorId: identity.participantId,
-    title: "",
-    publicSummary: "",
-    requestStatement: "",
-    expectedOutcome: "",
-    supportingContext: "",
-    keyArguments: [],
-    revisionId: null,
-    revisionVersion: null,
-    analysisId: null,
-    analysisVersion: null,
-    proposalIds: [],
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  return upsertInitiativePetitionDraft(draft);
+      return upsertInitiativePetitionDraft(draft);
+    },
+  });
 }
 
 /**
@@ -275,13 +275,11 @@ export function saveInitiativePetitionDraft(
   initiativeId: string,
   input: SaveInitiativePetitionDraftInput,
 ): InitiativePetitionDraft {
-  getOwnedInitiative(initiativeId, identity);
+  const initiative = getOwnedInitiative(initiativeId, identity);
 
-  const existing = getInitiativePetitionDraftByInitiativeId(initiativeId);
-
-  if (!existing) {
-    throw new Error("Petition draft not found.");
-  }
+  // Phase 04 — first Save must persist even if workspace open was skipped;
+  // lazy init must not publish or advance lifecycle.
+  getOrCreateWorkingPetitionDraft(identity, initiative);
 
   const updated = updateInitiativePetitionDraft(initiativeId, {
     title: input.title,

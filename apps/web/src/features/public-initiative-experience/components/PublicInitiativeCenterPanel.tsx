@@ -1,6 +1,7 @@
 "use client";
 
 import type { RefObject, ReactNode } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import type {
   PublicInitiativeExperienceProjection,
@@ -46,6 +47,7 @@ import { InitiativeCivicArchiveAuthorWorkspace } from "../../initiative-civic-ar
 import { InitiativeCivicArchiveDraftPreview } from "../../initiative-civic-archive-lifecycle/components/InitiativeCivicArchiveDraftPreview";
 import { InitiativeCivicArchivePublicResult } from "../../initiative-civic-archive-lifecycle/components/InitiativeCivicArchivePublicResult";
 import { CurrentLifecycleStageBanner } from "./CurrentLifecycleStageBanner";
+import { DiscussionLifecycleCompletionBanner } from "./DiscussionLifecycleCompletionBanner";
 import { PublicDiscussionPanel } from "./PublicDiscussionPanel";
 
 /**
@@ -254,19 +256,40 @@ function DiscussionPanel({
   initiativeId,
   discussion,
   initialDiscussionFilter,
+  isOwnerRoute,
+  discussionStageState,
+  onDiscussionCompleted,
 }: {
   initiativeId: string;
   discussion: PublicInitiativeExperienceProjection["discussion"];
   initialDiscussionFilter?: "collaboration";
+  isOwnerRoute: boolean;
+  discussionStageState?: string;
+  onDiscussionCompleted: () => void;
 }) {
+  const discussionCompleted =
+    discussionStageState === "completed" || discussionStageState === "published";
+  const canComplete =
+    isOwnerRoute &&
+    !discussionCompleted &&
+    (discussionStageState === "in_progress" || discussionStageState === "not_started");
+
   return (
-    <PublicDiscussionPanel
-      initiativeId={initiativeId}
-      initialComments={discussion.initialComments}
-      commentCount={discussion.commentCount}
-      hasMoreComments={discussion.hasMoreComments}
-      initialFilter={initialDiscussionFilter}
-    />
+    <>
+      <DiscussionLifecycleCompletionBanner
+        initiativeId={initiativeId}
+        discussionCompleted={discussionCompleted}
+        canComplete={canComplete}
+        onCompleted={onDiscussionCompleted}
+      />
+      <PublicDiscussionPanel
+        initiativeId={initiativeId}
+        initialComments={discussion.initialComments}
+        commentCount={discussion.commentCount}
+        hasMoreComments={discussion.hasMoreComments}
+        initialFilter={initialDiscussionFilter}
+      />
+    </>
   );
 }
 
@@ -322,6 +345,7 @@ export function PublicInitiativeCenterPanel({
   isStagePreviewMode,
   onToggleStagePreviewMode,
 }: PublicInitiativeCenterPanelProps) {
+  const [discussionCompletedOverride, setDiscussionCompletedOverride] = useState(false);
   const activeStage = experience.stageContent.find((stage) => stage.stageId === activeStageId);
   /**
    * Initiative Lifecycle — Part B, Section 0 (Mandatory Architectural
@@ -636,6 +660,13 @@ export function PublicInitiativeCenterPanel({
               initiativeId={experience.initiativeId}
               discussion={experience.discussion}
               initialDiscussionFilter={initialDiscussionFilter}
+              isOwnerRoute={isOwnerRoute}
+              discussionStageState={
+                discussionCompletedOverride
+                  ? "completed"
+                  : experience.lifecycleStages.find((stage) => stage.stageId === "discussion")?.state
+              }
+              onDiscussionCompleted={() => setDiscussionCompletedOverride(true)}
             />
           </section>
         ) : null}

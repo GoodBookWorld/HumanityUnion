@@ -24,6 +24,7 @@ import { hydrateInitiativeImprovementProposalMongoPersistence } from "../../modu
 import { hydrateInitiativeOfficialResponseLifecycleDraftMongoPersistence } from "../../modules/initiative-official-response-lifecycle/persistence/initiative-official-response-lifecycle-draft-mongo.persistence.js";
 import { hydrateInitiativeOfficialResponsePackageMongoPersistence } from "../../modules/initiative-official-response-lifecycle/initiative-official-response-package.store.js";
 import { hydrateInitiativePetitionDraftMongoPersistence } from "../../modules/initiative-petition-lifecycle/persistence/initiative-petition-draft-mongo.persistence.js";
+import { hydrateInitiativeDiscussionCompletionMongoPersistence } from "../../modules/initiative-discussion-lifecycle/persistence/initiative-discussion-completion-mongo.persistence.js";
 import { hydrateInitiativePublicImpactMongoPersistence } from "../../modules/initiative-public-impact/persistence/initiative-public-impact-mongo.persistence.js";
 import { hydrateInitiativePublicImpactLifecycleDraftMongoPersistence } from "../../modules/initiative-public-impact-lifecycle/persistence/initiative-public-impact-lifecycle-draft-mongo.persistence.js";
 import { hydrateInitiativePublicImpactReportMongoPersistence } from "../../modules/initiative-public-impact-lifecycle/initiative-public-impact-report.store.js";
@@ -77,6 +78,7 @@ export async function bootstrapMongoPersistence(): Promise<void> {
     hydrateCivicNominationMongoPersistence(),
     hydrateCivicNominationVoteMongoPersistence(),
     hydrateInitiativePetitionDraftMongoPersistence(),
+    hydrateInitiativeDiscussionCompletionMongoPersistence(),
     hydrateInitiativeDecisionSessionDraftMongoPersistence(),
     hydrateInitiativeDecisionSessionRecommendationMongoPersistence(),
     hydrateInitiativeCollectiveDecisionLifecycleDraftMongoPersistence(),

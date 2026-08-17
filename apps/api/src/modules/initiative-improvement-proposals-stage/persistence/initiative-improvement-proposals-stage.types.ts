@@ -1,7 +1,7 @@
 import type { InitiativeImprovementProposalsCollection } from "@hu/types";
 
 export interface InitiativeImprovementProposalsStagePersistenceAdapter {
-  readonly mode: "memory" | "mongodb";
+  readonly mode: "memory" | "file" | "mongodb";
   findById(collectionId: string): Promise<InitiativeImprovementProposalsCollection | null>;
   listByInitiativeAndAuthor(
     initiativeId: string,

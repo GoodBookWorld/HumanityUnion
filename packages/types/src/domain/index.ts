@@ -581,6 +581,16 @@ export type {
   InitiativeLifecycleStateSnapshot,
   ResolveInitiativeLifecycleStateInput,
 } from "./initiative-lifecycle-state.js";
+export {
+  INITIATIVE_AUTHOR_WORKFLOW_MATRIX,
+  INITIATIVE_AUTHOR_WORKFLOW_STEPS,
+  getInitiativeAuthorWorkflowStageContract,
+} from "./initiative-author-workflow.js";
+export type {
+  InitiativeAuthorWorkflowStageClassification,
+  InitiativeAuthorWorkflowStageContract,
+  InitiativeAuthorWorkflowStep,
+} from "./initiative-author-workflow.js";
 export type {
   InitiativeLifecyclePresentationMode,
   InitiativeLifecyclePresentationModeResult,

@@ -92,7 +92,7 @@ export function InitiativePetitionEditor({
     }
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     setMessage(null);
 
     try {
@@ -108,13 +108,36 @@ export function InitiativePetitionEditor({
       );
       applyDraftToFields(updated);
       setMessage({ tone: "success", text: "Petition draft saved." });
+      return true;
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Unknown error";
       setMessage({ tone: "error", text: `Save failed: ${detail}` });
+      return false;
     }
   }
 
+  function unresolvedPublishRequirements(): string[] {
+    const missing: string[] = [];
+    if (!title.trim()) missing.push("Petition title");
+    if (!publicSummary.trim()) missing.push("Public summary");
+    if (!requestStatement.trim()) missing.push("Request statement");
+    if (!expectedOutcome.trim()) missing.push("Expected outcome");
+    if (!draft.revisionId || draft.revisionVersion === null) {
+      missing.push("Generate from a published Revision (required reference)");
+    }
+    return missing;
+  }
+
   async function handlePublish() {
+    const missing = unresolvedPublishRequirements();
+    if (missing.length > 0) {
+      setMessage({
+        tone: "error",
+        text: `Publish blocked — complete required fields first: ${missing.join("; ")}.`,
+      });
+      return;
+    }
+
     if (
       !window.confirm(
         "Publishing creates the canonical Public Petition, opens it for signatures, notifies every Active Ally, and unlocks the Decision Session stage. Continue?",
@@ -126,7 +149,12 @@ export function InitiativePetitionEditor({
     setMessage(null);
 
     try {
-      await handleSave();
+      // Phase 04 — Save must succeed before Publish; never publish on a failed/stale save.
+      const saved = await handleSave();
+      if (!saved) {
+        return;
+      }
+
       await publishPhase.runSave(() => publishInitiativePetitionStage(initiativeId));
       setMessage({ tone: "success", text: "Petition published. Active Allies have been notified." });
       onPublished();
@@ -152,10 +180,20 @@ export function InitiativePetitionEditor({
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleSave()}>
           {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
         </WorkspaceButton>
-        <WorkspaceButton variant="primary" disabled={isBusy} onClick={() => void handlePublish()}>
+        <WorkspaceButton
+          variant="primary"
+          disabled={isBusy || unresolvedPublishRequirements().length > 0}
+          onClick={() => void handlePublish()}
+        >
           {resolveSaveButtonLabel(publishPhase.phase, "Publish Petition")}
         </WorkspaceButton>
       </div>
+
+      {unresolvedPublishRequirements().length > 0 ? (
+        <p className="ipl-editor__message" data-tone="error" role="status">
+          Required before Publish: {unresolvedPublishRequirements().join("; ")}.
+        </p>
+      ) : null}
 
       {message ? (
         <p className="ipl-editor__message" data-tone={message.tone} role="status">

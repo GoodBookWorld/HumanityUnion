@@ -472,19 +472,33 @@ export async function buildInitiativeLifecycleStageAdapterResult(
   switch (stageId) {
     case "initiative":
       return adaptInitiativeRecordStage(initiative);
-    case "discussion":
-      // Reuses Center-tab Discussion — no parallel Discussion aggregate.
-      // Presentation reflects Initiative publication (surface open), not a
-      // second Discussion domain. Progress completion uses published counts.
-      return initiative.lifecyclePhase === "draft"
-        ? EMPTY_RESULT
-        : {
-            presentationStatus: "published",
-            hasPublicResult: true,
-            version: null,
-            publishedAt: initiative.updatedAt,
-            publishedRecordId: null,
-          };
+    case "discussion": {
+      // Progress completion uses the explicit Author completion marker
+      // (Phase 04). The Discussion Center tab itself is always the civic surface.
+      const { getDiscussionCompletionByInitiativeId } = await import(
+        "../initiative-discussion-lifecycle/initiative-discussion-completion.store.js"
+      );
+      const completion = getDiscussionCompletionByInitiativeId(initiative.initiativeId);
+      if (!completion) {
+        return initiative.lifecyclePhase === "draft"
+          ? EMPTY_RESULT
+          : {
+              presentationStatus: "draft",
+              hasPublicResult: false,
+              version: null,
+              publishedAt: null,
+              publishedRecordId: null,
+            };
+      }
+
+      return {
+        presentationStatus: "published",
+        hasPublicResult: true,
+        version: 1,
+        publishedAt: completion.completedAt,
+        publishedRecordId: completion.completionId,
+      };
+    }
     case "analysis":
       return adaptAnalysisStage(initiative);
     case "proposal":

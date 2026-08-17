@@ -134,6 +134,33 @@
   margin: 0 0 0.75rem;
 }
 
+.pie-discussion-lifecycle {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--hu-color-border);
+  border-radius: 0.5rem;
+  background: var(--hu-color-surface);
+  display: grid;
+  gap: 0.65rem;
+}
+
+.pie-discussion-lifecycle__guidance,
+.pie-discussion-lifecycle__status {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.pie-discussion-lifecycle__message[data-tone="error"] {
+  color: var(--hu-color-danger, #b42318);
+  margin: 0;
+}
+
+.pie-discussion-lifecycle__message[data-tone="success"] {
+  color: var(--hu-color-success, #027a48);
+  margin: 0;
+}
+
 .pie-lifecycle__list {
   list-style: none;
   margin: 0;

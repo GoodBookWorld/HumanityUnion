@@ -50,6 +50,8 @@ import { getReportByInitiativeId as getPublicImpactReportByInitiativeId } from "
 import { listPublicOfficialResponsesForInitiative } from "../official-response/official-response.projection.js";
 import { getPetitionByInitiativeId } from "../petition/petition.store.js";
 import { toPublicPetitionProjection } from "../petition/public-petition.projection.js";
+import { getDiscussionCompletionByInitiativeId } from "../initiative-discussion-lifecycle/initiative-discussion-completion.store.js";
+import { listPublishedCollectionsByInitiative } from "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js";
 import { getLatestPublishedPublicCivicArchiveForInitiative } from "../public-civic-archive/public-civic-archive.projection.js";
 import { resolvePublicGeography } from "../../shared/format-public-geography.js";
 import { getKnownInitiativeCommunity } from "./initiative-communities.js";
@@ -146,12 +148,29 @@ export async function buildStageRecords(
     },
   ]);
 
-  // Discussion reuses the Center-tab civic surface — no parallel Discussion store.
-  records.set("discussion", []);
+  // Discussion reuses the Center-tab civic surface — completion is an explicit
+  // Author marker (Phase 04), never inferred from visiting #discussion.
+  const discussionCompletion = getDiscussionCompletionByInitiativeId(initiativeId);
+  records.set(
+    "discussion",
+    discussionCompletion
+      ? [
+          {
+            recordId: discussionCompletion.completionId,
+            title: "Discussion completed",
+            summary: "The Author marked Discussion complete for lifecycle progression.",
+            status: "Completed",
+            updatedAt: discussionCompletion.completedAt,
+            publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#discussion`,
+          },
+        ]
+      : [],
+  );
 
   const [
     analyses,
-    proposals,
+    legacyProposals,
+    publishedProposalCollections,
     versionHistory,
     petitionLookup,
     collectiveDecisions,
@@ -162,6 +181,7 @@ export async function buildStageRecords(
   ] = await Promise.all([
     listPublicInitiativeCollaborativeAnalyses(initiativeId),
     listPublicInitiativeImprovementProposals(initiativeId),
+    listPublishedCollectionsByInitiative(initiativeId),
     precomputedVersionHistory ?? getPublicInitiativeVersionHistory(initiativeId),
     settleOptionalLifecycleLookup("petition_by_initiative", getPetitionByInitiativeId(initiativeId), null),
     listPublicInitiativeCollectiveDecisionsForInitiative(initiativeId),
@@ -193,14 +213,23 @@ export async function buildStageRecords(
 
   records.set(
     "proposal",
-    proposals.map((proposal) => ({
-      recordId: proposal.proposalId,
-      title: `${proposal.targetSection}: ${proposal.proposedChange}`,
-      status: proposal.status.replaceAll("_", " "),
-      updatedAt: proposal.decidedAt ?? proposal.updatedAt,
-      publicHref: `/improvement-proposals/public/${encodeURIComponent(proposal.proposalId)}`,
-      authorDisplayName: proposal.authorDisplayName,
-    })),
+    publishedProposalCollections.length > 0
+      ? publishedProposalCollections.map((collection) => ({
+          recordId: collection.collectionId,
+          title: "Improvement Proposals collection",
+          summary: `${collection.proposals.filter((proposal) => proposal.status === "published").length} published proposal(s)`,
+          status: collection.status,
+          updatedAt: collection.publishedAt ?? collection.updatedAt,
+          publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#improvement-proposals`,
+        }))
+      : legacyProposals.map((proposal) => ({
+          recordId: proposal.proposalId,
+          title: `${proposal.targetSection}: ${proposal.proposedChange}`,
+          status: proposal.status.replaceAll("_", " "),
+          updatedAt: proposal.decidedAt ?? proposal.updatedAt,
+          publicHref: `/improvement-proposals/public/${encodeURIComponent(proposal.proposalId)}`,
+          authorDisplayName: proposal.authorDisplayName,
+        })),
   );
 
   records.set(

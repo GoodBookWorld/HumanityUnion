@@ -565,6 +565,11 @@ const MODULE_INDEXES: ReadonlyArray<{
     indexes: [{ key: { initiativeId: 1 } }, { key: { authorId: 1 } }],
   },
   {
+    // Phase 04 — Discussion completion marker (Center-tab surface; no parallel Discussion domain).
+    collectionName: MONGO_COLLECTIONS.initiativeDiscussionCompletions,
+    indexes: [{ key: { initiativeId: 1 }, unique: true }],
+  },
+  {
     // Initiative Lifecycle — Part F, Section 7/8. One "civic interest"
     // signal per (petition, visitor cookie) — never a `Signature`, never
     // counted toward `SupportMetrics`.

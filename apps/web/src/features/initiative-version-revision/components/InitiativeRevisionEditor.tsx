@@ -73,7 +73,7 @@ export function InitiativeRevisionEditor({
     }
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     setMessage(null);
 
     try {
@@ -92,13 +92,33 @@ export function InitiativeRevisionEditor({
       );
       onDraftUpdated(updated);
       setMessage({ tone: "success", text: "Revision draft saved." });
+      return true;
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Unknown error";
       setMessage({ tone: "error", text: `Save failed: ${detail}` });
+      return false;
     }
   }
 
+  function unresolvedPublishRequirements(): string[] {
+    const missing: string[] = [];
+    if (!title.trim()) missing.push("Title");
+    if (!description.trim()) missing.push("Description");
+    if (!activityArea.trim()) missing.push("Activity area");
+    if (!revisionSummary.trim()) missing.push("Revision summary");
+    return missing;
+  }
+
   async function handlePublish() {
+    const missing = unresolvedPublishRequirements();
+    if (missing.length > 0) {
+      setMessage({
+        tone: "error",
+        text: `Publish blocked — complete required fields first: ${missing.join("; ")}.`,
+      });
+      return;
+    }
+
     if (
       !window.confirm(
         "Publishing creates a new Initiative version, notifies every Active Ally, and unlocks the Petition stage. Continue?",
@@ -110,7 +130,11 @@ export function InitiativeRevisionEditor({
     setMessage(null);
 
     try {
-      await handleSave();
+      const saved = await handleSave();
+      if (!saved) {
+        return;
+      }
+
       await publishPhase.runSave(() => publishInitiativeRevision(initiativeId));
       setMessage({ tone: "success", text: "Revision published. Active Allies have been notified." });
       onPublished();
@@ -136,10 +160,20 @@ export function InitiativeRevisionEditor({
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleSave()}>
           {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
         </WorkspaceButton>
-        <WorkspaceButton variant="primary" disabled={isBusy} onClick={() => void handlePublish()}>
+        <WorkspaceButton
+          variant="primary"
+          disabled={isBusy || unresolvedPublishRequirements().length > 0}
+          onClick={() => void handlePublish()}
+        >
           {resolveSaveButtonLabel(publishPhase.phase, "Publish Revision")}
         </WorkspaceButton>
       </div>
+
+      {unresolvedPublishRequirements().length > 0 ? (
+        <p className="irv-editor__message" data-tone="error" role="status">
+          Required before Publish: {unresolvedPublishRequirements().join("; ")}.
+        </p>
+      ) : null}
 
       {message ? (
         <p className="irv-editor__message" data-tone={message.tone} role="status">
@@ -210,11 +244,15 @@ export function InitiativeRevisionEditor({
           />
         </div>
         <div className="irv-editor__field">
-          <label htmlFor="irv-summary">Change Summary — what changed in this revision?</label>
+          <label htmlFor="irv-summary">
+            Change Summary — what changed in this revision? (required to publish)
+          </label>
           <textarea
             id="irv-summary"
             rows={3}
             value={revisionSummary}
+            required
+            aria-required="true"
             onChange={(event) => setRevisionSummary(event.target.value)}
           />
         </div>
