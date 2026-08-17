@@ -82,6 +82,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
   const [draftId, setDraftId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [lifecycleProfile, setLifecycleProfile] = useState<"STANDARD" | "PUBLIC_CHOICE">("STANDARD");
   const [formValues, setFormValues] = useState<InitiativeFormValues>(DEFAULT_FORM_VALUES);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [overlapItems, setOverlapItems] = useState<CommunityInitiativeRelationshipProjection[]>(
@@ -203,6 +204,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
     const payload = {
       title,
       description,
+      lifecycleProfile,
       ...saveInput,
       ...(draftId || !activeSourceNewsId || sourceRemoved ? {} : { sourceNewsId: activeSourceNewsId }),
       ...(draftId && sourceRemoved ? { clearSourceReferences: true } : {}),
@@ -326,6 +328,7 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
       setIsSuccess(true);
       setTitle("");
       setDescription("");
+      setLifecycleProfile("STANDARD");
       setFormValues(DEFAULT_FORM_VALUES);
       setPendingImageFile(null);
       setDraftId(null);
@@ -374,6 +377,42 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
           rows={3}
         />
       </label>
+
+      <fieldset className="start-new-initiative-button__profile">
+        <legend>Lifecycle route</legend>
+        <label className="start-new-initiative-button__profile-option">
+          <input
+            type="radio"
+            name="lifecycleProfile"
+            value="STANDARD"
+            checked={lifecycleProfile === "STANDARD"}
+            onChange={() => setLifecycleProfile("STANDARD")}
+          />
+          <span>
+            <strong>Standard Initiative</strong>
+            <small>
+              Full civic lifecycle for developing, deciding, implementing and documenting an
+              initiative.
+            </small>
+          </span>
+        </label>
+        <label className="start-new-initiative-button__profile-option">
+          <input
+            type="radio"
+            name="lifecycleProfile"
+            value="PUBLIC_CHOICE"
+            checked={lifecycleProfile === "PUBLIC_CHOICE"}
+            onChange={() => setLifecycleProfile("PUBLIC_CHOICE")}
+          />
+          <span>
+            <strong>Public Choice</strong>
+            <small>
+              For choosing a candidate/person or another public choice through discussion and
+              collective decision.
+            </small>
+          </span>
+        </label>
+      </fieldset>
 
       <InitiativeFormFields
         values={formValues}

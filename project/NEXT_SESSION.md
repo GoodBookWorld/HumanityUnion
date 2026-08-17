@@ -4,7 +4,7 @@ Humanity Union
 
 Next Engineering Session
 
-Version 1.14
+Version 1.15
 
 ---
 
@@ -16,24 +16,30 @@ AI recovery entry: `architecture/recovery/chat-agent/README.md`
 
 ---
 
-# Last Completed (product)
+# Last Completed
 
-**INITIATIVE LIFECYCLE FINALIZATION — PHASE 05** (implemented locally; **not** committed/pushed/deployed)
+**INITIATIVE LIFECYCLE FINALIZATION — PHASE 05A** (runtime certification)
 
-Report: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_05_REPORT_v1.0.md`
+Report: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_05A_REPORT_v1.0.md`
+
+- STANDARD zero-community → Archive: PASS (`pnpm verify:initiative-lifecycle`)
+- PUBLIC_CHOICE → Archive: PASS
+- Mongo restart checkpoints: PASS
+- Create UX lifecycleProfile selector added
+- Critical fixes: Revision bootstrap progress, Petition visibility, empty Proposals publish, Mongo snapshot write races
+
+**Phase 05** (Participation Journey) is committed on `staging` (`3858d2d`). Phase 05A certification changes remain local/uncommitted.
 
 Prior pushed checkpoint: `be12c77` — Phase 04 Author workflow
+Mongo Pack 01 hardening: complete; Phase 04 staging verify previously PASS
 
 ---
 
-# Infrastructure status
+# Immediate Objective
 
-1. **Mongo leak hardening complete** — Pack 01
-   Report: `architecture/recovery/MONGODB_TEST_ISOLATION_HARDENING_PACK_01_REPORT_v1.0.md`
-2. **Phase 04 staging verification PASS** (`pnpm verify:staging -- --check-media-http`) after approved test-DB cleanup (500 → 164 collections; staging/dev unchanged).
-3. **Next product action:** finalize/commit/deploy Lifecycle Finalization Phase 05.
-
-Phase 06 remains deferred until Phase 05 is landed.
+1. Owner review Phase 05A report + optional human staging steward acceptance.
+2. Finalize/commit/deploy Lifecycle Finalization **Phase 05 + 05A** when owner requests.
+3. Only after staging acceptance: start **Phase 06** (notifications on reliable stage transitions).
 
 ---
 

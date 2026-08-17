@@ -22,6 +22,7 @@
     "deploy:check": "tsx apps/api/src/scripts/verify-deployment-e2e.ts",
     "verify:deployment": "tsx apps/api/src/scripts/verify-deployment-e2e.ts",
     "verify:staging": "tsx apps/api/src/scripts/verify-staging.ts",
+    "verify:initiative-lifecycle": "tsx apps/api/src/scripts/verify-initiative-lifecycle.ts",
     "inspect:mongo-topology": "pnpm --filter @hu/api inspect:mongo-topology",
     "verify:staging-runbook": "tsx apps/api/src/scripts/verify-staging-e2e.ts",
     "provision:staging-admin": "tsx apps/api/src/scripts/provision-staging-admin.ts",

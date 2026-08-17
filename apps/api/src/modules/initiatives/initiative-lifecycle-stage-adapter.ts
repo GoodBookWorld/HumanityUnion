@@ -17,6 +17,7 @@ import { listPublicInitiativeImprovementProposalsCollections } from "../initiati
 import { listPublicInitiativePublicImpactsForInitiative } from "../initiative-public-impact/public-initiative-public-impact.projection.js";
 import { buildInitiativeRevisionIntelligenceSnapshot } from "../initiative-version-revision/initiative-revision-intelligence.service.js";
 import { getPublicInitiativeVersionHistory } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
+import { filterLifecycleProgressRevisions } from "../../shared/lifecycle/lifecycle-progress-revision.js";
 import { listPublicOfficialResponsesForInitiative } from "../official-response/official-response.projection.js";
 import { listPublicDecisionSessionsForInitiative } from "../decision-session/public-decision-session.projection.js";
 import { getPetitionByInitiativeId } from "../petition/petition.store.js";
@@ -156,7 +157,9 @@ async function adaptProposalStage(initiativeId: string): Promise<InitiativeLifec
 
 async function adaptRevisionStage(initiativeId: string): Promise<InitiativeLifecycleStageAdapterResult> {
   const history = await getPublicInitiativeVersionHistory(initiativeId);
-  const current = history.revisions.find((revision) => revision.isCurrent) ?? history.revisions[0] ?? null;
+  const progressRevisions = filterLifecycleProgressRevisions(history.revisions);
+  const current =
+    progressRevisions.find((revision) => revision.isCurrent) ?? progressRevisions[0] ?? null;
 
   return current
     ? {

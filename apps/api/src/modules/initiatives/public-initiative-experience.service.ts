@@ -42,6 +42,7 @@ import { listPublicInitiativeImplementationTrackingsForInitiative } from "../ini
 import { listPublicInitiativeImprovementProposals } from "../initiative-improvement-proposal/public-initiative-improvement-proposal.projection.js";
 import { listPublicInitiativePublicImpactsForInitiative } from "../initiative-public-impact/public-initiative-public-impact.projection.js";
 import { getPublicInitiativeVersionHistory } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
+import { filterLifecycleProgressRevisions } from "../../shared/lifecycle/lifecycle-progress-revision.js";
 import { createInitialInitiativeVersionRevision } from "../initiative-version-revision/initiative-version-revision.service.js";
 import { getLatestArchiveVersionByInitiativeId } from "../initiative-civic-archive-lifecycle/initiative-civic-archive-version.store.js";
 import { getPackageByInitiativeId as getOfficialResponsePackageByInitiativeId } from "../initiative-official-response-lifecycle/initiative-official-response-package.store.js";
@@ -235,7 +236,7 @@ export async function buildStageRecords(
 
   records.set(
     "revision",
-    versionHistory.revisions.map((revision) => ({
+    filterLifecycleProgressRevisions(versionHistory.revisions).map((revision) => ({
       recordId: revision.revisionId,
       title: `Version ${revision.version}`,
       summary: revision.revisionSummary,

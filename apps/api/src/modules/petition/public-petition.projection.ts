@@ -29,12 +29,13 @@ import {
   getRevisionByInitiativeAndVersion,
 } from "../initiative-version-revision/initiative-version-revision.store.js";
 import { countPetitionVisitorSignals } from "./petition-visitor-signal.service.js";
+import { isPetitionPubliclyVisible } from "./petition-public-visibility.js";
 
 const VIEWING_NOTE = "Viewing this page does not record endorsement.";
 const SHARING_NOTE = "Sharing increases visibility but does not record endorsement.";
 
 function isPubliclyVisible(status: PetitionState): boolean {
-  return status !== "Draft" && status !== "Ready";
+  return isPetitionPubliclyVisible(status);
 }
 
 function getSupportStatusSummary(status: PetitionState): string {
@@ -260,7 +261,12 @@ async function buildSupportBreakdown(petition: Petition): Promise<PublicPetition
     }),
   );
 
-  const visitorSignals = await countPetitionVisitorSignals(petition.petitionId);
+  let visitorSignals = 0;
+  try {
+    visitorSignals = await countPetitionVisitorSignals(petition.petitionId);
+  } catch {
+    visitorSignals = 0;
+  }
 
   return {
     participantSignatures: activeSignatures.length,

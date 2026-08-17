@@ -38,10 +38,12 @@ export function createMongoSnapshotPersistence<TSnapshot extends { version: 1 }>
       },
       save(snapshot: TSnapshot): void {
         cache = structuredClone(snapshot);
-        pendingWrite = persistSnapshot(snapshot).catch((error) => {
-          pendingWrite = null;
-          throw error;
-        });
+        // Chain writes so a later save never drops an in-flight earlier persist
+        // (flush must observe every queued write before disconnect/reconnect).
+        const snapshotToPersist = cache;
+        pendingWrite = (pendingWrite ?? Promise.resolve())
+          .catch(() => undefined)
+          .then(() => persistSnapshot(snapshotToPersist));
       },
     },
     async hydrate(): Promise<void> {

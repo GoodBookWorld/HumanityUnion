@@ -50,14 +50,16 @@ export async function replaceRecordMap<T extends object>(
   const operations = ids.map((id) => {
     const entity = records[id];
     const record = entity as Record<string, unknown>;
-    const { [idField]: _ignored, ...rest } = record;
 
+    // Keep idField on the document (e.g. initiativeId) so unique indexes on that
+    // field remain valid. _id mirrors the same id for collection addressing.
     return {
       replaceOne: {
         filter: { _id: id } as unknown as Filter<Document>,
         replacement: {
           _id: id,
-          ...rest,
+          ...record,
+          [idField]: id,
         } as Document,
         upsert: true,
       },

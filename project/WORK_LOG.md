@@ -56,6 +56,20 @@ Next Objective:
 
 # Entries
 
+## 2026-08-17 (Lifecycle Finalization Phase 05A)
+
+Completed:
+
+- Full STANDARD zero-community and PUBLIC_CHOICE golden-path certification (`pnpm verify:initiative-lifecycle`).
+- Fixed Revision bootstrap progress leak, Petition visibility contradiction, empty Proposals publish, Mongo snapshot write races.
+- Create Initiative lifecycleProfile selector; Phase 05A report.
+
+Next Objective:
+
+Human staging acceptance → commit/deploy Phase 05+05A → Phase 06.
+
+---
+
 ## 2026-08-16 (Mongo test isolation hardening Pack 01)
 
 Completed:

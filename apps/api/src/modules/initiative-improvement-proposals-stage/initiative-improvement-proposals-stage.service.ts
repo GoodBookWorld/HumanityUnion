@@ -303,7 +303,9 @@ export async function publishImprovementProposalsCollection(
 
   const readyProposals = collection.proposals.filter((proposal) => proposal.status === "ready");
 
-  if (readyProposals.length === 0) {
+  // Phase 05A — zero proposals is a valid Author outcome (continue without
+  // community contributions). If draft proposals exist, at least one must be Ready.
+  if (readyProposals.length === 0 && collection.proposals.length > 0) {
     throw new Error('At least one proposal must be marked "Ready" before publishing.');
   }
 

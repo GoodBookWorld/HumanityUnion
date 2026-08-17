@@ -21,6 +21,11 @@ export interface CreateInitiativeDraftInput {
   startDate?: string;
   completionDate?: string;
   sourceNewsId?: string;
+  /**
+   * Lifecycle Finalization Phase 05A — explicit route selector.
+   * STANDARD (default) or PUBLIC_CHOICE. Never inferred silently.
+   */
+  lifecycleProfile?: "STANDARD" | "PUBLIC_CHOICE";
 }
 
 export interface SaveInitiativeDraftInput {

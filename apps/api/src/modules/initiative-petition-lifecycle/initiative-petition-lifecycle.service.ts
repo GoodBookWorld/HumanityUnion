@@ -24,6 +24,7 @@ import {
   setPetitionTraceability,
   updatePetition,
 } from "../petition/petition.store.js";
+import { isPetitionPubliclyVisible } from "../petition/petition-public-visibility.js";
 import { buildInitiativePetitionIntelligenceSnapshot } from "./initiative-petition-intelligence.service.js";
 import { generatePetitionDraftContent } from "./initiative-petition-draft-builder.js";
 import {
@@ -222,7 +223,10 @@ export async function getInitiativePetitionWorkspaceContext(
   const initiative = getOwnedInitiative(initiativeId, identity);
 
   const publishedPetition = await getPetitionByInitiativeId(initiativeId);
-  const isPublished = publishedPetition ? publishedPetition.status !== "Draft" : false;
+  // Same visibility rule as public projection — Ready/Draft are not "published".
+  const isPublished = publishedPetition
+    ? isPetitionPubliclyVisible(publishedPetition.status)
+    : false;
 
   const intelligenceSnapshot = await buildInitiativePetitionIntelligenceSnapshot(initiativeId);
   const draft = isPublished ? null : getOrCreateWorkingPetitionDraft(identity, initiative);

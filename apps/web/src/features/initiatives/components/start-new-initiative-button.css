@@ -24,6 +24,37 @@
   margin: 0;
 }
 
+.start-new-initiative-button__profile {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.75rem 0 0;
+  border: 0;
+  border-top: 1px solid #e5e5e5;
+}
+
+.start-new-initiative-button__profile legend {
+  padding: 0;
+  font-weight: 600;
+}
+
+.start-new-initiative-button__profile-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.start-new-initiative-button__profile-option span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.start-new-initiative-button__profile-option small {
+  color: #555555;
+  font-weight: 400;
+}
+
 .start-new-initiative-button__action {
   padding: 0.625rem 1rem;
   border: 1px solid #df9815;

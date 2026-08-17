@@ -16,6 +16,7 @@
     "migrate:staging-historical-media": "tsx src/scripts/migrate-staging-historical-media.ts",
     "reconcile:staging-historical-data": "tsx src/scripts/reconcile-staging-historical-data.ts",
     "verify:staging": "tsx src/scripts/verify-staging.ts",
+    "verify:initiative-lifecycle": "tsx src/scripts/verify-initiative-lifecycle.ts",
     "inspect:mongo-topology": "tsx src/scripts/inspect-mongo-topology.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"

@@ -55,11 +55,9 @@ Platform Version:
 
 # Current Focus
 
-**Mongo leak hardening Pack 01 complete.** Operational Atlas incident resolved (approved test-DB cleanup; Phase 04 staging verify PASS).
+**Phase 05A lifecycle certification complete** (local). Next: owner staging acceptance, then commit/deploy Phase 05+05A; Phase 06 after that.
 
-**Last product work:** Phase 05 Participation Journey (local only; not committed/deployed)
-
-**Next:** Finalize/commit/deploy Lifecycle Finalization Phase 05; then Phase 06.
+**Last product work:** Phase 05 Participation Journey + Phase 05A certification (local; not committed/deployed)
 
 See `project/NEXT_SESSION.md`.
 
