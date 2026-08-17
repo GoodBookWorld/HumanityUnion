@@ -20,12 +20,12 @@
  *
  * Run: tsx apps/api/src/scripts/verify-initiative-lifecycle-collaborative-analysis-e2e.ts
  * (safe to run repeatedly: every run gets its own throwaway `hu_verify_*`
- * database via `activateVerificationDatabaseIsolation`)
+ * database via `activateVerificationDatabaseIsolationAsync`)
  */
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -195,7 +195,7 @@ async function verifyDraftBuilder(): Promise<void> {
 async function main(): Promise<void> {
   await verifyDraftBuilder();
 
-  const isolation = activateVerificationDatabaseIsolation("PART-B-ANALYSIS");
+  const isolation = await activateVerificationDatabaseIsolationAsync("PART-B-ANALYSIS");
   const runSuffix = isolation.runId;
   const initiativeCommunitySlug = `part-b-analysis-verify-${runSuffix}`;
 
@@ -792,7 +792,7 @@ async function main(): Promise<void> {
       console.warn(`Best-effort fixture cleanup skipped: ${String(cleanupError)}`);
     }
 
-    isolation.restore();
+    await isolation.dispose();
   }
 }
 

@@ -142,8 +142,17 @@ the cluster indefinitely).
 
 ### Verification scripts remain separate
 
-`apps/api/src/scripts/verify-*.ts` scripts have their own, independent
-isolation mechanism (`activateVerificationDatabaseIsolation`, database names
-like `humanity_union_verify_<runId>`) predating this task. The two are
-deliberately not unified — verification scripts are invoked and controlled
-independently of `pnpm test`.
+`apps/api/src/scripts/verify-*.ts` scripts use
+`activateVerificationDatabaseIsolationAsync` (`hu_verify_*` databases).
+Lifecycle is:
+
+1. create isolation
+2. run verification
+3. `await isolation.dispose()` (drops owned DB, then restores env)
+
+`restore()` / `restoreEnvironment()` restore process env only and do **not**
+drop the database. `finalizeVerificationResources()` also disposes any
+still-active isolations as a safety net.
+
+Diagnostic preserve: `KEEP_VERIFICATION_DATABASE=1` (verification) or
+`KEEP_TEST_DATABASE=1` (pnpm test) — explicit, inspection-only.

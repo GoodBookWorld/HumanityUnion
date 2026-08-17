@@ -250,6 +250,7 @@ describe("runIsolatedTestSuite", () => {
         stderr: "",
       }),
       dropDatabase: async () => {},
+      ensureCreationAllowed: async () => {},
       log: (message: string) => logs.push(message),
       logError: (message: string) => errorLogs.push(message),
       ...overrides,
@@ -380,6 +381,44 @@ describe("runIsolatedTestSuite", () => {
       (deps.__logs as string[]).some((line) => line.includes("hu_test_fixed_name")),
       "expected the retained database name to be logged clearly",
     );
+  });
+
+  it("still attempts owned cleanup when the child fails", async () => {
+    let dropCalled = false;
+    const deps = makeFakeDeps({
+      env: { MONGODB_URI: "mongodb://127.0.0.1:1/whatever" } as NodeJS.ProcessEnv,
+      spawnTests: async (): Promise<RunChildProcessResult> => ({
+        code: 1,
+        signal: null,
+        stdout: "",
+        stderr: "boom",
+      }),
+      dropDatabase: async () => {
+        dropCalled = true;
+      },
+    });
+
+    const result = await runIsolatedTestSuite(deps);
+    assert.equal(result.code, 1);
+    assert.equal(dropCalled, true);
+    assert.equal(result.cleanup.attempted, true);
+    assert.equal(result.cleanup.succeeded, true);
+  });
+
+  it("still attempts owned cleanup when spawn throws", async () => {
+    let dropCalled = false;
+    const deps = makeFakeDeps({
+      env: { MONGODB_URI: "mongodb://127.0.0.1:1/whatever" } as NodeJS.ProcessEnv,
+      spawnTests: async () => {
+        throw new Error("spawn failed");
+      },
+      dropDatabase: async () => {
+        dropCalled = true;
+      },
+    });
+
+    await assert.rejects(() => runIsolatedTestSuite(deps), /spawn failed/);
+    assert.equal(dropCalled, true);
   });
 
   it("propagates a signal reported by the child instead of a numeric code", async () => {

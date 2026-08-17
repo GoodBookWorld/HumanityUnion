@@ -35,12 +35,12 @@
  *
  * Run: tsx apps/api/src/scripts/verify-initiative-lifecycle-petition-e2e.ts
  * (safe to run repeatedly: every run gets its own throwaway `hu_verify_*`
- * database via `activateVerificationDatabaseIsolation`)
+ * database via `activateVerificationDatabaseIsolationAsync`)
  */
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -56,7 +56,7 @@ const steward: RequestIdentity = {
 };
 
 async function main(): Promise<void> {
-  const isolation = activateVerificationDatabaseIsolation("PART-F-PETITION");
+  const isolation = await activateVerificationDatabaseIsolationAsync("PART-F-PETITION");
   const runSuffix = isolation.runId;
   const initiativeCommunitySlug = `part-f-petition-verify-${runSuffix}`;
 
@@ -598,7 +598,7 @@ async function main(): Promise<void> {
       console.warn(`Best-effort fixture cleanup skipped: ${String(cleanupError)}`);
     }
 
-    isolation.restore();
+    await isolation.dispose();
   }
 }
 

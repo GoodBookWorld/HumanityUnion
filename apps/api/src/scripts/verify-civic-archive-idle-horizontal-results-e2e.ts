@@ -14,7 +14,7 @@ import {
 } from "./civic-archive-verification-fixture.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -141,7 +141,7 @@ function verifyIdleSearchModel(): void {
 async function verifyHorizontalSearchRuntime(): Promise<void> {
   console.log("2. Horizontal search runtime and fixture isolation");
 
-  const isolation = activateVerificationDatabaseIsolation("TASK-107C");
+  const isolation = await activateVerificationDatabaseIsolationAsync("TASK-107C");
 
   try {
     assertVerificationDatabaseIsolated();
@@ -198,7 +198,7 @@ async function verifyHorizontalSearchRuntime(): Promise<void> {
     const { removeVerificationFixturesForRun } =
       await import("../modules/public-civic-archive/public-civic-archive.store.js");
     removeVerificationFixturesForRun(isolation.runId);
-    isolation.restore();
+    await isolation.dispose();
   }
 
   const { listCivicArchiveLifecycleRecords } =

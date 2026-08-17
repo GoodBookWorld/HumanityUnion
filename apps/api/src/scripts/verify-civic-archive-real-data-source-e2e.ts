@@ -15,7 +15,7 @@ import {
 } from "./civic-archive-verification-fixture.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -77,7 +77,7 @@ function verifyStaticDataSourceGuards(): void {
 async function verifyRealEligibleCanadianRecords(): Promise<void> {
   console.log("2. Real eligible Canadian archive records");
 
-  const isolation = activateVerificationDatabaseIsolation("TASK-107D");
+  const isolation = await activateVerificationDatabaseIsolationAsync("TASK-107D");
 
   try {
     assertVerificationDatabaseIsolated();
@@ -113,14 +113,14 @@ async function verifyRealEligibleCanadianRecords(): Promise<void> {
       await import("../modules/public-civic-archive/public-civic-archive.store.js");
     removeVerificationFixturesForRun(isolation.runId);
     removePublicVerificationFixtureRecords();
-    isolation.restore();
+    await isolation.dispose();
   }
 }
 
 async function verifyNonEligiblePublicationExcluded(): Promise<void> {
   console.log("3. Non-eligible publication exclusion");
 
-  const isolation = activateVerificationDatabaseIsolation("TASK-107D");
+  const isolation = await activateVerificationDatabaseIsolationAsync("TASK-107D");
 
   try {
     assertVerificationDatabaseIsolated();
@@ -144,14 +144,14 @@ async function verifyNonEligiblePublicationExcluded(): Promise<void> {
       "Published but non-archived initiative must not appear in civic archive index.",
     );
   } finally {
-    isolation.restore();
+    await isolation.dispose();
   }
 }
 
 async function verifyFixtureExclusion(): Promise<void> {
   console.log("4. Fixture exclusion");
 
-  const isolation = activateVerificationDatabaseIsolation("TASK-107D");
+  const isolation = await activateVerificationDatabaseIsolationAsync("TASK-107D");
 
   try {
     assertVerificationDatabaseIsolated();
@@ -179,7 +179,7 @@ async function verifyFixtureExclusion(): Promise<void> {
     const { removeVerificationFixturesForRun } =
       await import("../modules/public-civic-archive/public-civic-archive.store.js");
     removeVerificationFixturesForRun(isolation.runId);
-    isolation.restore();
+    await isolation.dispose();
   }
 }
 

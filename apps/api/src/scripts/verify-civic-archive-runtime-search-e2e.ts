@@ -14,7 +14,7 @@ import {
 } from "./civic-archive-verification-fixture.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -89,7 +89,7 @@ function verifyStaticIsolationAndSearchModel(): void {
 async function verifyRuntimeFixtureIsolation(): Promise<void> {
   console.log("B. Runtime fixture isolation");
 
-  const isolation = activateVerificationDatabaseIsolation("TASK-107B");
+  const isolation = await activateVerificationDatabaseIsolationAsync("TASK-107B");
 
   try {
     assertVerificationDatabaseIsolated();
@@ -128,7 +128,7 @@ async function verifyRuntimeFixtureIsolation(): Promise<void> {
     const { removeVerificationFixturesForRun } =
       await import("../modules/public-civic-archive/public-civic-archive.store.js");
     removeVerificationFixturesForRun(isolation.runId);
-    isolation.restore();
+    await isolation.dispose();
   }
 
   const { listCivicArchiveLifecycleRecords } =
@@ -143,7 +143,7 @@ async function verifyRuntimeFixtureIsolation(): Promise<void> {
 async function verifyRuntimeSearchFilters(): Promise<void> {
   console.log("C. Runtime search filters");
 
-  const isolation = activateVerificationDatabaseIsolation("TASK-107B");
+  const isolation = await activateVerificationDatabaseIsolationAsync("TASK-107B");
 
   try {
     assertVerificationDatabaseIsolated();
@@ -232,7 +232,7 @@ async function verifyRuntimeSearchFilters(): Promise<void> {
     const { removeVerificationFixturesForRun } =
       await import("../modules/public-civic-archive/public-civic-archive.store.js");
     removeVerificationFixturesForRun(isolation.runId);
-    isolation.restore();
+    await isolation.dispose();
   }
 }
 

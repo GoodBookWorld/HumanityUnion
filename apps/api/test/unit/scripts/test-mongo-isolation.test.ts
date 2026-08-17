@@ -86,7 +86,12 @@ describe("isSafeTestDatabaseName / assertSafeTestDatabaseName", () => {
 
   it("rejects the development database name (Part 12 item 8)", () => {
     assert.equal(isSafeTestDatabaseName("humanity_union_dev"), false);
-    assert.throws(() => assertSafeTestDatabaseName("humanity_union_dev"), /forbidden/);
+    assert.throws(() => assertSafeTestDatabaseName("humanity_union_dev"), /forbidden|protected/);
+  });
+
+  it("rejects the staging database name", () => {
+    assert.equal(isSafeTestDatabaseName("humanity_union_staging"), false);
+    assert.throws(() => assertSafeTestDatabaseName("humanity_union_staging"), /forbidden|protected/);
   });
 
   it("rejects production-like and reserved names (Part 12 item 9)", () => {
@@ -166,6 +171,7 @@ describe("dropIsolatedTestDatabase safety guard", () => {
         uri: "mongodb://10.255.255.1:27017/unreachable",
         databaseName: "hu_test_bounded_timeout_check",
         timeoutMs: 500,
+        verifyAbsent: false,
       }),
     );
 

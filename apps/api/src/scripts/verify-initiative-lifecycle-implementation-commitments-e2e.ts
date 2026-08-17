@@ -12,7 +12,7 @@
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -31,7 +31,7 @@ const allyOne = "verify-implementation-commitment-ally-1";
 const allyTwo = "verify-implementation-commitment-ally-2";
 
 async function main(): Promise<void> {
-  const isolation = activateVerificationDatabaseIsolation("PART-I-IMPLEMENTATION-COMMITMENTS");
+  const isolation = await activateVerificationDatabaseIsolationAsync("PART-I-IMPLEMENTATION-COMMITMENTS");
   const runSuffix = isolation.runId;
   const initiativeCommunitySlug = `part-i-implementation-commitments-verify-${runSuffix}`;
 
@@ -504,6 +504,11 @@ async function main(): Promise<void> {
     console.log("   OK — Active Allies notified once; Author excluded; Implementation Tracking unlocked.");
     console.log("All Initiative Lifecycle — Part I Implementation Commitments checks passed.");
   } finally {
+    try {
+      await isolation.dispose();
+    } catch (isolationCleanupError) {
+      console.warn(`Verification database cleanup warning: ${String(isolationCleanupError)}`);
+    }
     try {
       const { resetInitiativeAlliesStoreForTests } = await import(
         "../modules/initiative-discussion-collaboration/initiative-ally.store.js"

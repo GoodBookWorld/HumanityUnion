@@ -45,6 +45,7 @@ import dotenv from "dotenv";
 
 import {
   dropIsolatedTestDatabase,
+  ensureEphemeralTestDatabaseCreationAllowed,
   generateIsolatedTestDatabaseName,
   KEEP_TEST_DATABASE_ENV_VAR,
   TEST_DATABASE_ENV_VAR,
@@ -208,6 +209,8 @@ export interface RunIsolatedTestSuiteDeps {
   spawnTests: (args: string[], env: NodeJS.ProcessEnv, cwd: string) => Promise<RunChildProcessResult>;
   generateDatabaseName: () => string;
   dropDatabase: (databaseName: string, uri: string) => Promise<void>;
+  /** Collection-pressure gate before creating a new ephemeral test DB. */
+  ensureCreationAllowed: (uri: string, env: NodeJS.ProcessEnv, log: (message: string) => void) => Promise<void>;
   log: (message: string) => void;
   logError: (message: string) => void;
 }
@@ -249,6 +252,8 @@ export async function runIsolatedTestSuite(
     spawnTests: (args, env, cwd) => runChildProcess(process.execPath, args, { cwd, env, stdio: "inherit" }),
     generateDatabaseName: generateIsolatedTestDatabaseName,
     dropDatabase: (databaseName, uri) => dropIsolatedTestDatabase({ databaseName, uri }),
+    ensureCreationAllowed: (uri, env, log) =>
+      ensureEphemeralTestDatabaseCreationAllowed({ uri, env, log }),
     log: (message) => console.log(message),
     logError: (message) => console.error(message),
     ...overrides,
@@ -266,6 +271,11 @@ export async function runIsolatedTestSuite(
 
   deps.log(`[run-tests-recursively] discovered ${relativeFiles.length} test file(s) under test/`);
 
+  const mongoUri = deps.env.MONGODB_URI?.trim();
+  if (mongoUri) {
+    await deps.ensureCreationAllowed(mongoUri, deps.env, deps.log);
+  }
+
   const databaseName = deps.generateDatabaseName();
   deps.log(`[run-tests-recursively] isolated Mongo test database for this run: ${databaseName}`);
 
@@ -282,9 +292,22 @@ export async function runIsolatedTestSuite(
     ...relativeFiles,
   ];
 
-  const { code, signal } = await deps.spawnTests(args, childEnv, deps.apiRoot);
+  let code: number | null = null;
+  let signal: NodeJS.Signals | null = null;
+  let cleanup: RunIsolatedTestSuiteResult["cleanup"] = {
+    attempted: false,
+    succeeded: true,
+    error: null,
+  };
 
-  const cleanup = await performOwnedCleanup(deps, databaseName);
+  try {
+    const childResult = await deps.spawnTests(args, childEnv, deps.apiRoot);
+    code = childResult.code;
+    signal = childResult.signal;
+  } finally {
+    // Owned cleanup always runs — pass, fail, or spawn throw — unless KEEP_TEST_DATABASE=1.
+    cleanup = await performOwnedCleanup(deps, databaseName);
+  }
 
   return { code, signal, databaseName, cleanup };
 }

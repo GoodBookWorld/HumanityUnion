@@ -13,7 +13,7 @@ import type { RequestIdentity } from "../modules/initiatives/identity/request-id
 import { seedCivicArchiveVerificationFixture } from "./civic-archive-verification-fixture.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -175,7 +175,7 @@ function verifyApiClient(): void {
 async function verifyArchiveSearchFlow(): Promise<void> {
   console.log("5. Archive search flow and filters");
 
-  const isolation = activateVerificationDatabaseIsolation("TASK-107B");
+  const isolation = await activateVerificationDatabaseIsolationAsync("TASK-107B");
 
   try {
     assertVerificationDatabaseIsolated();
@@ -275,7 +275,7 @@ async function verifyArchiveSearchFlow(): Promise<void> {
     const { removeVerificationFixturesForRun } =
       await import("../modules/public-civic-archive/public-civic-archive.store.js");
     removeVerificationFixturesForRun(isolation.runId);
-    isolation.restore();
+    await isolation.dispose();
   }
 }
 

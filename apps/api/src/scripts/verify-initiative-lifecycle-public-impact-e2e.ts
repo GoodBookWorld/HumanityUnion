@@ -13,7 +13,7 @@
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -32,7 +32,7 @@ const allyOne = "verify-public-impact-ally-1";
 const allyTwo = "verify-public-impact-ally-2";
 
 async function main(): Promise<void> {
-  const isolation = activateVerificationDatabaseIsolation("PART-L-PUBLIC-IMPACT");
+  const isolation = await activateVerificationDatabaseIsolationAsync("PART-L-PUBLIC-IMPACT");
   const runSuffix = isolation.runId;
   const initiativeCommunitySlug = `part-l-public-impact-verify-${runSuffix}`;
 
@@ -591,6 +591,11 @@ async function main(): Promise<void> {
     );
     console.log("All Initiative Lifecycle — Part L Public Impact checks passed.");
   } finally {
+    try {
+      await isolation.dispose();
+    } catch (isolationCleanupError) {
+      console.warn(`Verification database cleanup warning: ${String(isolationCleanupError)}`);
+    }
     try {
       const { resetInitiativeAlliesStoreForTests } = await import(
         "../modules/initiative-discussion-collaboration/initiative-ally.store.js"

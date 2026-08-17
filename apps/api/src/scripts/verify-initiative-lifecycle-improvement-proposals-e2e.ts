@@ -25,12 +25,12 @@
  *
  * Run: tsx apps/api/src/scripts/verify-initiative-lifecycle-improvement-proposals-e2e.ts
  * (safe to run repeatedly: every run gets its own throwaway `hu_verify_*`
- * database via `activateVerificationDatabaseIsolation`)
+ * database via `activateVerificationDatabaseIsolationAsync`)
  */
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -141,7 +141,7 @@ async function verifyGrouping(): Promise<void> {
 async function main(): Promise<void> {
   await verifyGrouping();
 
-  const isolation = activateVerificationDatabaseIsolation("PART-D-PROPOSALS");
+  const isolation = await activateVerificationDatabaseIsolationAsync("PART-D-PROPOSALS");
   const runSuffix = isolation.runId;
   const initiativeCommunitySlug = `part-d-proposals-verify-${runSuffix}`;
 
@@ -784,7 +784,7 @@ async function main(): Promise<void> {
       console.warn(`Best-effort fixture cleanup skipped: ${String(cleanupError)}`);
     }
 
-    isolation.restore();
+    await isolation.dispose();
   }
 }
 

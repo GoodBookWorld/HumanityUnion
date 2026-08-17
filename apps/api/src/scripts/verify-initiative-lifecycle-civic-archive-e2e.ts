@@ -13,7 +13,7 @@
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -32,7 +32,7 @@ const allyOne = "verify-civic-archive-ally-1";
 const allyTwo = "verify-civic-archive-ally-2";
 
 async function main(): Promise<void> {
-  const isolation = activateVerificationDatabaseIsolation("PART-M-CIVIC-ARCHIVE");
+  const isolation = await activateVerificationDatabaseIsolationAsync("PART-M-CIVIC-ARCHIVE");
   const runSuffix = isolation.runId;
   const initiativeCommunitySlug = `part-m-civic-archive-verify-${runSuffix}`;
 
@@ -553,6 +553,11 @@ async function main(): Promise<void> {
     );
     console.log("All Initiative Lifecycle — Part M Civic Archive checks passed.");
   } finally {
+    try {
+      await isolation.dispose();
+    } catch (isolationCleanupError) {
+      console.warn(`Verification database cleanup warning: ${String(isolationCleanupError)}`);
+    }
     try {
       const { resetInitiativeAlliesStoreForTests } = await import(
         "../modules/initiative-discussion-collaboration/initiative-ally.store.js"

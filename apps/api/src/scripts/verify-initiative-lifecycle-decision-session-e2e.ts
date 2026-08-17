@@ -7,7 +7,7 @@
 import type { RequestIdentity } from "../modules/initiatives/identity/request-identity.types.js";
 import { runVerificationScript } from "./verification-script-lifecycle.js";
 import {
-  activateVerificationDatabaseIsolation,
+  activateVerificationDatabaseIsolationAsync,
   assertVerificationDatabaseIsolated,
 } from "./verification-database-isolation.js";
 
@@ -28,7 +28,7 @@ const allyIdentity: RequestIdentity = {
 };
 
 async function main(): Promise<void> {
-  const isolation = activateVerificationDatabaseIsolation("PART-G-DECISION");
+  const isolation = await activateVerificationDatabaseIsolationAsync("PART-G-DECISION");
   const runSuffix = isolation.runId;
   const initiativeCommunitySlug = `part-g-decision-verify-${runSuffix}`;
 
@@ -432,6 +432,11 @@ async function main(): Promise<void> {
     console.log("   OK — Active Allies notified once; Author excluded; Collective Decision unlocked.");
     console.log("All Initiative Lifecycle — Part G Decision Session checks passed.");
   } finally {
+    try {
+      await isolation.dispose();
+    } catch (isolationCleanupError) {
+      console.warn(`Verification database cleanup warning: ${String(isolationCleanupError)}`);
+    }
     try {
       const { resetInitiativeAlliesStoreForTests } = await import(
         "../modules/initiative-discussion-collaboration/initiative-ally.store.js"
