@@ -38,6 +38,8 @@ export type PublishInitiativeLifecycleStageOutcome = "enqueued" | "duplicate_ign
 export interface PublishInitiativeLifecycleStageResult {
   readonly outcome: PublishInitiativeLifecycleStageOutcome;
   readonly event: InitiativeLifecycleStagePublicationEvent;
+  /** Profile-aware next applicable stage after this publication (observability + tests). */
+  readonly nextStageId: InitiativeLifecycleStageId | null;
 }
 
 function isDuplicateKeyError(error: unknown): boolean {
@@ -104,17 +106,18 @@ export async function publishInitiativeLifecycleStage(
     relatedUrl: input.relatedUrl,
   };
 
+  const transition =
+    isInitiativeLifecycleStageId(input.stageId)
+      ? summarizeLifecycleTransitionPostcondition({
+          initiativeId: input.initiativeId,
+          publishedStageId: input.stageId as InitiativeLifecycleStageId,
+          lifecycleProfile: input.lifecycleProfile,
+        })
+      : null;
+  const nextStageId = transition?.nextStageId ?? null;
+
   try {
     await enqueueDomainEvent(event, { session: input.session });
-
-    const transition =
-      isInitiativeLifecycleStageId(input.stageId)
-        ? summarizeLifecycleTransitionPostcondition({
-            initiativeId: input.initiativeId,
-            publishedStageId: input.stageId as InitiativeLifecycleStageId,
-            lifecycleProfile: input.lifecycleProfile,
-          })
-        : null;
 
     logger.info("initiative_lifecycle_stage.publication_enqueued", {
       component: "initiative-lifecycle-stage-publication",
@@ -123,11 +126,12 @@ export async function publishInitiativeLifecycleStage(
       stageId: input.stageId,
       stageVersion: input.stageVersion,
       publicationKind: input.publicationKind,
-      nextStageId: transition?.nextStageId ?? null,
+      lifecycleProfile: input.lifecycleProfile ?? null,
+      nextStageId,
       transitionMessage: transition?.message,
     });
 
-    return { outcome: "enqueued", event: publicationEvent };
+    return { outcome: "enqueued", event: publicationEvent, nextStageId };
   } catch (error) {
     if (!isDuplicateKeyError(error)) {
       throw error;
@@ -142,6 +146,6 @@ export async function publishInitiativeLifecycleStage(
       publicationKind: input.publicationKind,
     });
 
-    return { outcome: "duplicate_ignored", event: publicationEvent };
+    return { outcome: "duplicate_ignored", event: publicationEvent, nextStageId };
   }
 }

@@ -434,6 +434,7 @@ export async function publishInitiativePetitionStage(
     await publishInitiativeLifecycleStage({
       initiativeId,
       initiativeTitle: initiative.title,
+      lifecycleProfile: initiative.lifecycleProfile,
       stageId: "petition",
       stageLabel: "Petition",
       stageArtifactId: petition.petitionId,

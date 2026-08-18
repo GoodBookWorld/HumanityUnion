@@ -18,7 +18,7 @@ import type { InitiativeId } from "./initiative.js";
 export interface PublicInitiativeCollectiveDecisionProjection {
   decisionId: InitiativeCollectiveDecisionId;
   initiativeId: InitiativeId;
-  decisionSessionId: DecisionSessionId;
+  decisionSessionId: DecisionSessionId | null;
   sequenceNumber: number;
   participationScope: ParticipationScope;
   status: Exclude<InitiativeCollectiveDecisionStatus, "draft">;

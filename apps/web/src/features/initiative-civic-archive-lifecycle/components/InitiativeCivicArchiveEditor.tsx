@@ -5,10 +5,12 @@ import { useState } from "react";
 import type {
   InitiativeCivicArchiveLifecycleDraft,
   InitiativeCivicArchiveVersion,
+  InitiativeLifecycleProfile,
 } from "@hu/types";
 
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
+import { requiresPublicImpactBeforeCivicArchive } from "../../public-initiative-experience/initiative-lifecycle-shell";
 import {
   generateInitiativeCivicArchiveDraft,
   publishInitiativeCivicArchiveStage,
@@ -23,6 +25,7 @@ interface InitiativeCivicArchiveEditorProps {
   readonly onDraftUpdated: (draft: InitiativeCivicArchiveLifecycleDraft) => void;
   readonly onPublished: (version: InitiativeCivicArchiveVersion) => void;
   readonly onTogglePreview: () => void;
+  readonly lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }
 
 export function InitiativeCivicArchiveEditor({
@@ -31,7 +34,9 @@ export function InitiativeCivicArchiveEditor({
   onDraftUpdated,
   onPublished,
   onTogglePreview,
+  lifecycleProfile,
 }: InitiativeCivicArchiveEditorProps) {
+  const requirePublicImpact = requiresPublicImpactBeforeCivicArchive(lifecycleProfile);
   const [finalArchiveTitle, setFinalArchiveTitle] = useState(draft.finalArchiveTitle);
   const [finalSummary, setFinalSummary] = useState(draft.finalSummary);
   const [lessonsLearned, setLessonsLearned] = useState(draft.lessonsLearned);
@@ -98,7 +103,10 @@ export function InitiativeCivicArchiveEditor({
     <div className="ica-editor">
       <InitiativeCivicArchiveShareToolbar initiativeId={initiativeId} mode="preview" />
 
-      <InitiativeCivicArchiveCompletenessPanel completeness={draft.completeness} />
+      <InitiativeCivicArchiveCompletenessPanel
+        completeness={draft.completeness}
+        lifecycleProfile={lifecycleProfile}
+      />
 
       <div className="ica-editor__field">
         <label htmlFor="ica-title">Final Archive Title</label>
@@ -143,8 +151,9 @@ export function InitiativeCivicArchiveEditor({
 
       {draft.sections.length === 0 ? (
         <p className="ica-source-panel__empty">
-          No Archive sections yet. Generate from the published Public Impact Report and upstream
-          Lifecycle sources.
+          {requirePublicImpact
+            ? "No Archive sections yet. Generate from the published Public Impact Report and upstream Lifecycle sources."
+            : "No Archive sections yet. Generate from published Public Choice lifecycle sources (Collective Decision)."}
         </p>
       ) : (
         draft.sections.map((section) => (

@@ -368,6 +368,7 @@ export async function publishInitiativeDecisionSessionStage(
     await publishInitiativeLifecycleStage({
       initiativeId,
       initiativeTitle: initiative.title,
+      lifecycleProfile: initiative.lifecycleProfile,
       stageId: "decision_session",
       stageLabel: "Decision Session",
       stageArtifactId: session.sessionId,

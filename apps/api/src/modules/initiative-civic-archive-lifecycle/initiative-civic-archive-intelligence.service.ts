@@ -32,6 +32,9 @@ import {
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { listPublicSessionsByInitiative } from "../decision-session/decision-session.store.js";
 import { getPetitionByInitiativeId } from "../petition/petition.store.js";
+import { resolveCivicArchiveSourceEmptyState } from "./initiative-civic-archive-source-empty.js";
+
+export { resolveCivicArchiveSourceEmptyState } from "./initiative-civic-archive-source-empty.js";
 
 const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed", "Archived"]);
 
@@ -351,6 +354,7 @@ function buildCompleteness(input: {
   officialResponseCount: number;
   publicImpactAvailable: boolean;
   hasTraceabilityAnchors: boolean;
+  requirePublicImpact: boolean;
 }): InitiativeCivicArchiveCompleteness {
   const stagesFound = input.timeline
     .filter((entry) => entry.status !== "missing")
@@ -364,21 +368,22 @@ function buildCompleteness(input: {
       entry.status === "archived",
     )
     .map((entry) => entry.stageId);
-  const optionalStageIds: InitiativeLifecycleStageId[] = [
-    "proposal",
-    "revision",
-    "petition",
-    "decision_session",
-  ];
+  const optionalStageIds: InitiativeLifecycleStageId[] = input.requirePublicImpact
+    ? ["proposal", "revision", "petition", "decision_session"]
+    : ["proposal", "revision", "petition"];
   const missingOptionalStages = optionalStageIds.filter(
     (stageId) => !stagesFound.includes(stageId),
   );
 
   const summaryParts = [
     `${stagesPublished.length} Lifecycle stage(s) have published records.`,
-    input.publicImpactAvailable
-      ? "A published Public Impact Report is available."
-      : "No published Public Impact Report yet.",
+    input.requirePublicImpact
+      ? input.publicImpactAvailable
+        ? "A published Public Impact Report is available."
+        : "No published Public Impact Report yet."
+      : input.publicImpactAvailable
+        ? "A published Public Impact Report is available (optional on Public Choice)."
+        : "Public Impact is not required on Public Choice — Collective Decision completion is sufficient.",
     input.unresolvedTrackingCount > 0
       ? `${input.unresolvedTrackingCount} Tracking Record(s) remain unresolved.`
       : "No unresolved Tracking Records.",
@@ -396,7 +401,9 @@ function buildCompleteness(input: {
     missingEvidenceCount: input.missingEvidenceCount,
     officialResponseCount: input.officialResponseCount,
     publicImpactAvailable: input.publicImpactAvailable,
-    traceabilityComplete: input.hasTraceabilityAnchors && input.publicImpactAvailable,
+    traceabilityComplete: input.requirePublicImpact
+      ? input.hasTraceabilityAnchors && input.publicImpactAvailable
+      : input.hasTraceabilityAnchors,
     summary: summaryParts.join(" "),
   };
 }
@@ -406,24 +413,34 @@ function buildConsistencyChecks(input: {
   unresolvedTrackingCount: number;
   missingEvidenceCount: number;
   missingOptionalStages: readonly string[];
+  requirePublicImpact: boolean;
 }): readonly InitiativeCivicArchiveConsistencyCheck[] {
   const checks: InitiativeCivicArchiveConsistencyCheck[] = [];
 
-  checks.push(
-    input.publicImpactAvailable
-      ? {
-          checkId: "public-impact-available",
-          label: "Published Public Impact Report",
-          status: "ok",
-          detail: "A published Public Impact Report is available as the Archive source.",
-        }
-      : {
-          checkId: "public-impact-available",
-          label: "Published Public Impact Report",
-          status: "warning",
-          detail: "A published Public Impact Report is required before Archive can be generated.",
-        },
-  );
+  if (input.requirePublicImpact) {
+    checks.push(
+      input.publicImpactAvailable
+        ? {
+            checkId: "public-impact-available",
+            label: "Published Public Impact Report",
+            status: "ok",
+            detail: "A published Public Impact Report is available as the Archive source.",
+          }
+        : {
+            checkId: "public-impact-available",
+            label: "Published Public Impact Report",
+            status: "warning",
+            detail: "A published Public Impact Report is required before Archive can be generated.",
+          },
+    );
+  } else if (input.publicImpactAvailable) {
+    checks.push({
+      checkId: "public-impact-available",
+      label: "Published Public Impact Report",
+      status: "ok",
+      detail: "A published Public Impact Report is available (optional on Public Choice).",
+    });
+  }
 
   checks.push(
     input.unresolvedTrackingCount === 0
@@ -574,6 +591,12 @@ export async function buildInitiativeCivicArchiveIntelligenceSnapshot(
     unfinishedCommitmentCount: effectiveUnfinishedCommitments,
   });
 
+  const { requirePublicImpact, isEmpty } = resolveCivicArchiveSourceEmptyState({
+    hasInitiative: Boolean(initiative),
+    publicImpactAvailable: publicImpactReport !== null,
+    lifecycleProfile: initiative?.lifecycleProfile,
+  });
+
   const completeness = buildCompleteness({
     timeline,
     unresolvedTrackingCount,
@@ -589,6 +612,7 @@ export async function buildInitiativeCivicArchiveIntelligenceSnapshot(
         trackingPackage ||
         officialResponsePackage,
     ),
+    requirePublicImpact,
   });
 
   const consistencyChecks = buildConsistencyChecks({
@@ -596,6 +620,7 @@ export async function buildInitiativeCivicArchiveIntelligenceSnapshot(
     unresolvedTrackingCount,
     missingEvidenceCount,
     missingOptionalStages: completeness.missingOptionalStages,
+    requirePublicImpact,
   });
 
   const isPublicImpactReportAvailable = publicImpactReport !== null;
@@ -620,6 +645,6 @@ export async function buildInitiativeCivicArchiveIntelligenceSnapshot(
     timeline,
     consistencyChecks,
     isPublicImpactReportAvailable,
-    isEmpty: !initiative || !isPublicImpactReportAvailable,
+    isEmpty,
   };
 }

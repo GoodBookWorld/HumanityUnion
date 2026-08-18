@@ -20,6 +20,9 @@ import { findMembershipByUserId } from "../membership/membership.repository.js";
 import { getPetitionByInitiativeId } from "../petition/petition.store.js";
 import { countPetitionVisitorSignals } from "../petition/petition-visitor-signal.service.js";
 import { getSessionById, listPublicSessionsByInitiative } from "../decision-session/decision-session.store.js";
+import { resolveCollectiveDecisionSourceEmptyState } from "./initiative-collective-decision-source-empty.js";
+
+export { resolveCollectiveDecisionSourceEmptyState } from "./initiative-collective-decision-source-empty.js";
 
 const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed", "Archived"]);
 
@@ -160,8 +163,21 @@ function buildSessionReference(session: DecisionSession): InitiativeCollectiveDe
 
 function buildConsistencyChecks(
   sessionReference: InitiativeCollectiveDecisionSessionReference | null,
+  requireDecisionSession: boolean,
 ): readonly InitiativeCollectiveDecisionConsistencyCheck[] {
   const checks: InitiativeCollectiveDecisionConsistencyCheck[] = [];
+
+  if (!requireDecisionSession) {
+    if (sessionReference) {
+      checks.push({
+        checkId: "decision-session-available",
+        label: "Decision Session (optional)",
+        status: "ok",
+        detail: `Decision Session "${sessionReference.title}" is available as optional context.`,
+      });
+    }
+    return checks;
+  }
 
   checks.push(
     sessionReference
@@ -285,7 +301,16 @@ export async function buildInitiativeCollectiveDecisionIntelligenceSnapshot(
           ]
         : [];
   const proposalReferences = await buildProposalReferences(initiativeId, proposalIds);
-  const consistencyChecks = buildConsistencyChecks(decisionSessionReference);
+  const { requireDecisionSession, isEmpty } = resolveCollectiveDecisionSourceEmptyState({
+    hasInitiative: Boolean(initiative),
+    decisionSessionAvailable: decisionSessionReference !== null,
+    lifecycleProfile: initiative?.lifecycleProfile,
+  });
+  const consistencyChecks = buildConsistencyChecks(
+    decisionSessionReference,
+    requireDecisionSession,
+  );
+  const isDecisionSessionAvailable = decisionSessionReference !== null;
 
   return {
     initiativeId,
@@ -298,7 +323,7 @@ export async function buildInitiativeCollectiveDecisionIntelligenceSnapshot(
     analysisReference,
     proposalReferences,
     consistencyChecks,
-    isDecisionSessionAvailable: decisionSessionReference !== null,
-    isEmpty: !initiative || !decisionSessionReference,
+    isDecisionSessionAvailable,
+    isEmpty,
   };
 }

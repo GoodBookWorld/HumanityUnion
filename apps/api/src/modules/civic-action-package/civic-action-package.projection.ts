@@ -27,7 +27,9 @@ function buildReferenceLinks(content: CivicActionPackage["content"]) {
   return {
     initiativeUrl: content.publicInitiativeUrl,
     decisionUrl: content.publicDecisionUrl,
-    decisionSessionUrl: `/decision-sessions/public/${encodeURIComponent(content.decisionSessionId)}`,
+    decisionSessionUrl: content.decisionSessionId
+      ? `/decision-sessions/public/${encodeURIComponent(content.decisionSessionId)}`
+      : null,
     civicCompatibilityReviewUrl: content.civicCompatibilityReviewId
       ? `/initiatives/public/${encodeURIComponent(content.initiativeId)}#civic-compatibility-review`
       : null,

@@ -5,9 +5,10 @@ import type {
   InitiativeCivicArchiveSection,
   InitiativeCivicArchiveSectionId,
   InitiativeCivicArchiveTimelineEntry,
+  InitiativeLifecycleProfile,
   InitiativeLifecycleStageId,
 } from "@hu/types";
-import { INITIATIVE_CIVIC_ARCHIVE_SECTION_IDS } from "@hu/types";
+import { INITIATIVE_CIVIC_ARCHIVE_SECTION_IDS, resolveInitiativeLifecycleProfile } from "@hu/types";
 
 /**
  * Initiative Lifecycle — Part M, Section 3 (Archive Builder). Deterministic
@@ -94,12 +95,15 @@ function missingStageBody(label: string): string {
  */
 export function generateCivicArchiveDraftContent(
   snapshot: InitiativeCivicArchiveIntelligenceSnapshot,
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null,
 ): GeneratedCivicArchiveDraftContent {
   const finalArchiveTitle = snapshot.initiativeTitle
     ? `Civic Archive: ${snapshot.initiativeTitle}`
     : "Civic Archive";
 
   const publicImpactReportId = snapshot.publicImpactReportReference?.recordId ?? null;
+  const requirePublicImpact =
+    resolveInitiativeLifecycleProfile(lifecycleProfile) !== "PUBLIC_CHOICE";
 
   const participation = snapshot.participationStatistics;
   const discussionBody = [
@@ -458,8 +462,12 @@ export function generateCivicArchiveDraftContent(
     snapshot.initiativeTitle
       ? `Archive of published Lifecycle records for "${snapshot.initiativeTitle}".`
       : "Archive of published Lifecycle records for this Initiative.",
-    `${snapshot.completeness.stagesPublished.length} stage(s) with published records; Public Impact ${
-      snapshot.isPublicImpactReportAvailable ? "available" : "unavailable"
+    `${snapshot.completeness.stagesPublished.length} stage(s) with published records; ${
+      snapshot.isPublicImpactReportAvailable
+        ? "Public Impact available"
+        : requirePublicImpact
+          ? "Public Impact unavailable"
+          : "Public Impact not required on Public Choice"
     }.`,
   ].join(" ");
 

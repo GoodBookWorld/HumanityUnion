@@ -1,4 +1,8 @@
-import type { InitiativeCivicArchiveLifecycleDraft } from "@hu/types";
+import type {
+  InitiativeCivicArchiveLifecycleDraft,
+  InitiativeLifecycleProfile,
+} from "@hu/types";
+import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import type { InitiativeCivicArchiveLifecycleDraftUpdate } from "./initiative-civic-archive-lifecycle-draft.store.js";
 
@@ -48,6 +52,7 @@ export function validateSaveInitiativeCivicArchiveLifecycleDraftInput(
 
 export function validateInitiativeCivicArchiveLifecycleDraftForPublication(
   draft: InitiativeCivicArchiveLifecycleDraft,
+  options?: { lifecycleProfile?: InitiativeLifecycleProfile | string | null },
 ): void {
   if (!draft.finalArchiveTitle.trim()) {
     throw new Error("Civic Archive finalArchiveTitle is required.");
@@ -57,7 +62,8 @@ export function validateInitiativeCivicArchiveLifecycleDraftForPublication(
     throw new Error("Civic Archive finalSummary is required.");
   }
 
-  if (!draft.publicImpactReportId) {
+  const profile = resolveInitiativeLifecycleProfile(options?.lifecycleProfile);
+  if (!draft.publicImpactReportId && profile !== "PUBLIC_CHOICE") {
     throw new Error(
       "A published Public Impact Report is required before publishing Civic Archive.",
     );

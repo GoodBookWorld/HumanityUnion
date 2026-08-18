@@ -84,7 +84,11 @@ export interface InitiativeCollectiveDecisionStatistics {
 export interface InitiativeCollectiveDecision {
   decisionId: InitiativeCollectiveDecisionId;
   initiativeId: InitiativeId;
-  decisionSessionId: DecisionSessionId;
+  /**
+   * STANDARD route: published Decision Session id.
+   * PUBLIC_CHOICE route: null — Collective Decision does not require a Decision Session substrate.
+   */
+  decisionSessionId: DecisionSessionId | null;
   stewardId: MemberId;
   sequenceNumber: number;
   participationScope: ParticipationScope;

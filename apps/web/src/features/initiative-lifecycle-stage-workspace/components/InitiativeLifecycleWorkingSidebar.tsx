@@ -19,6 +19,7 @@ import type {
   InitiativePublicImpactLifecycleDraft,
   InitiativeCivicArchiveIntelligenceSnapshot,
   InitiativeCivicArchiveLifecycleDraft,
+  InitiativeLifecycleProfile,
   InitiativePetitionIntelligenceSnapshot,
   InitiativeProposalIntelligenceSnapshot,
   InitiativeRevisionDraft,
@@ -91,6 +92,8 @@ export interface InitiativeLifecycleWorkingSidebarProps {
   readonly stageId: string;
   readonly onOpenPublicPreview: () => void;
   readonly onNavigateNextStage: (stageId: string, hash: string) => void;
+  /** Canonical profile from the Lifecycle shell — Archive assistant gating only. */
+  readonly lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }
 
 function AiAssistantSlot({
@@ -774,7 +777,13 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
  * Initiative Lifecycle — Part H, Section 4/12 (Decision Assistant).
  * Advisory-only derived insights — never chooses an action, votes, or publishes.
  */
-function CollectiveDecisionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+function CollectiveDecisionAiAssistantSlot({
+  initiativeId,
+  lifecycleProfile,
+}: {
+  initiativeId: string;
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null;
+}) {
   const [snapshot, setSnapshot] = useState<InitiativeCollectiveDecisionIntelligenceSnapshot | null>(
     null,
   );
@@ -805,7 +814,9 @@ function CollectiveDecisionAiAssistantSlot({ initiativeId }: { initiativeId: str
   }, [initiativeId]);
 
   const insights =
-    snapshot !== null ? deriveCollectiveDecisionAiAssistantInsights(snapshot, draft) : null;
+    snapshot !== null
+      ? deriveCollectiveDecisionAiAssistantInsights(snapshot, draft, lifecycleProfile)
+      : null;
 
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
@@ -1367,7 +1378,13 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
  * Initiative Lifecycle — Part M, Section 4 (Archive Assistant).
  * Advisory-only — never praise/blame/success-wash, never edits or publishes.
  */
-function CivicArchiveAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+function CivicArchiveAiAssistantSlot({
+  initiativeId,
+  lifecycleProfile,
+}: {
+  initiativeId: string;
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null;
+}) {
   const [snapshot, setSnapshot] = useState<InitiativeCivicArchiveIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativeCivicArchiveLifecycleDraft | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -1395,7 +1412,10 @@ function CivicArchiveAiAssistantSlot({ initiativeId }: { initiativeId: string })
     };
   }, [initiativeId]);
 
-  const insights = snapshot !== null ? deriveCivicArchiveAiAssistantInsights(snapshot, draft) : null;
+  const insights =
+    snapshot !== null
+      ? deriveCivicArchiveAiAssistantInsights(snapshot, draft, lifecycleProfile)
+      : null;
 
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
@@ -1468,6 +1488,7 @@ export function InitiativeLifecycleWorkingSidebar({
   stageId,
   onOpenPublicPreview,
   onNavigateNextStage,
+  lifecycleProfile,
 }: InitiativeLifecycleWorkingSidebarProps) {
   const [projection, setProjection] = useState<InitiativeLifecycleStageProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -1531,7 +1552,10 @@ export function InitiativeLifecycleWorkingSidebar({
       ) : isDecisionSessionStage ? (
         <DecisionSessionAiAssistantSlot initiativeId={initiativeId} />
       ) : isCollectiveDecisionStage ? (
-        <CollectiveDecisionAiAssistantSlot initiativeId={initiativeId} />
+        <CollectiveDecisionAiAssistantSlot
+          initiativeId={initiativeId}
+          lifecycleProfile={lifecycleProfile}
+        />
       ) : isCommitmentStage ? (
         <CommitmentAiAssistantSlot initiativeId={initiativeId} />
       ) : isTrackingStage ? (
@@ -1541,7 +1565,10 @@ export function InitiativeLifecycleWorkingSidebar({
       ) : isPublicImpactStage ? (
         <PublicImpactAiAssistantSlot initiativeId={initiativeId} />
       ) : isArchiveStage ? (
-        <CivicArchiveAiAssistantSlot initiativeId={initiativeId} />
+        <CivicArchiveAiAssistantSlot
+          initiativeId={initiativeId}
+          lifecycleProfile={lifecycleProfile}
+        />
       ) : (
         <AiAssistantSlot
           initiativeId={initiativeId}

@@ -44,7 +44,7 @@ export interface CivicActionPackageContent {
   collaborativeAnalysesCount: number;
   improvementProposalsCount: number;
   revisionCount: number;
-  decisionSessionId: DecisionSessionId;
+  decisionSessionId: DecisionSessionId | null;
   decisionSessionTitle: string;
   decisionId: InitiativeCollectiveDecisionId;
   decisionQuestion: string;

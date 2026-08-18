@@ -155,8 +155,9 @@ export function InitiativeCollectiveDecisionPublicResult({
         <section className="icd-public__section">
           <h3>Traceability</h3>
           <p>
-            Produced from Decision Session {projection.traceability.decisionSessionId} (v
-            {projection.traceability.decisionSessionVersion})
+            {projection.traceability.decisionSessionId
+              ? `Produced from Decision Session ${projection.traceability.decisionSessionId} (v${projection.traceability.decisionSessionVersion})`
+              : "Produced from upstream Lifecycle sources"}
             {projection.traceability.petitionId
               ? `, Petition ${projection.traceability.petitionId}`
               : ""}

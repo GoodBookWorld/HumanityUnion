@@ -16,7 +16,7 @@ export interface CivicActionPackageMetrics {
 export interface PublicCivicActionPackageReferenceLinks {
   initiativeUrl: string;
   decisionUrl: string;
-  decisionSessionUrl: string;
+  decisionSessionUrl: string | null;
   civicCompatibilityReviewUrl: string | null;
 }
 

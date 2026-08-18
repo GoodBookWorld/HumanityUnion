@@ -260,11 +260,10 @@ async function runStandardZeroCommunityPath(
     "../modules/initiative-collaborative-analysis/initiative-collaborative-analysis.service.js"
   );
   const {
-    createInitiativeImprovementProposalDraft,
-    submitInitiativeImprovementProposal,
-    decideInitiativeImprovementProposal,
+    generateImprovementProposalsDraft,
+    publishImprovementProposalsCollection,
   } = await import(
-    "../modules/initiative-improvement-proposal/initiative-improvement-proposal.service.js"
+    "../modules/initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.service.js"
   );
   const {
     createInitiativeRevisionDraft,
@@ -368,33 +367,31 @@ async function runStandardZeroCommunityPath(
   });
 
   console.log(
-    "4. Improvement Proposal — author-authored legacy proposal (not community); required for Decision Session eligibility",
+    "4. Improvement Proposals — explicitly complete stage with ZERO proposals (no fabricated author proposal)",
   );
-  const proposalDraft = await createInitiativeImprovementProposalDraft(steward, {
-    analysisId: publishedAnalysis.analysisId,
-    targetSection: "Description",
-    currentIssue: "Author-identified gap with zero community input.",
-    proposedChange: "Document an author-only revision path.",
-    rationale: "Zero-community STANDARD golden path still needs steward-reviewed proposal ancestry.",
-    expectedImprovement: "Unlocks Revision / Petition / Decision Session eligibility.",
-    references: "Author notes.",
-  });
-  const submittedProposal = submitInitiativeImprovementProposal(steward, proposalDraft.proposalId);
-  const decidedProposal = decideInitiativeImprovementProposal(steward, submittedProposal.proposalId, {
-    decision: "accepted",
-    decisionNote: "Accepted for author-only Revision.",
-  });
-  assert(decidedProposal.status === "accepted", "Author proposal must be accepted.");
-  await assertCurrentStage(initiativeId, "STANDARD", "revision", "after Proposal accept");
+  const proposalCollection = await generateImprovementProposalsDraft(steward, initiativeId);
+  assert(
+    proposalCollection.proposals.length === 0,
+    "Zero-community path must start with an empty Improvement Proposals collection.",
+  );
+  const publishedProposalCollection = await publishImprovementProposalsCollection(
+    steward,
+    proposalCollection.collectionId,
+  );
+  assert(
+    publishedProposalCollection.status === "published",
+    "Improvement Proposals stage must publish even with zero proposals.",
+  );
+  await assertCurrentStage(initiativeId, "STANDARD", "revision", "after zero-proposal stage complete");
 
-  console.log("5. Revision");
+  console.log("5. Revision (no applied proposals)");
   const liveInitiative = getInitiativeById(initiativeId)!;
   createInitiativeRevisionDraft(steward, initiativeId);
   saveInitiativeRevisionDraft(steward, initiativeId, {
     title: liveInitiative.title,
     description: liveInitiative.description,
-    revisionSummary: "Author-only revision with accepted steward proposal.",
-    appliedProposalIds: [decidedProposal.proposalId],
+    revisionSummary: "Author-only revision after explicitly completing Improvement Proposals with zero proposals.",
+    appliedProposalIds: [],
   });
   await publishInitiativeRevisionStage(steward, initiativeId);
   await assertCurrentStage(initiativeId, "STANDARD", "petition", "after Revision publish");
@@ -540,10 +537,8 @@ async function runPublicChoicePath(
 ): Promise<string> {
   console.log("\n=== PUBLIC_CHOICE golden path ===");
   console.log(
-    "   Note: Collective Decision still requires a Decision Session substrate today;",
-    "PUBLIC_CHOICE seeds a minimal published Decision Session (not a STANDARD stage",
-    "on this route). Archive still requires a Public Impact Report substrate —",
-    "seeded minimally without running STANDARD-only stages.",
+    "   Route: Initiative → Discussion → Collective Decision → Archive.",
+    "No Decision Session substrate. No Public Impact substrate.",
   );
 
   const { createInitiativeDraft, publishInitiative } = await import(
@@ -552,12 +547,8 @@ async function runPublicChoicePath(
   const { completeInitiativeDiscussionStage } = await import(
     "../modules/initiative-discussion-lifecycle/initiative-discussion-lifecycle.service.js"
   );
-  const { createSession } = await import("../modules/decision-session/decision-session.store.js");
   const { generateInitiativeCollectiveDecisionDraft, publishInitiativeCollectiveDecisionStage } =
     await import("../modules/initiative-collective-decision-lifecycle/index.js");
-  const { upsertReport } = await import(
-    "../modules/initiative-public-impact-lifecycle/initiative-public-impact-report.store.js"
-  );
   const {
     generateInitiativeCivicArchiveDraft,
     getInitiativeCivicArchiveWorkspaceContext,
@@ -607,50 +598,14 @@ async function runPublicChoicePath(
     "after Discussion complete",
   );
 
-  console.log("3. Minimal Decision Session substrate (ballot options; zero votes later)");
-  const now = new Date().toISOString();
-  const closesAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
-  const sessionId = `public-choice-session-${initiativeId}`;
-  createSession({
-    sessionId,
-    initiativeId,
-    initiativeVersion: 1,
-    stewardId: steward.participantId,
-    title: "PUBLIC_CHOICE ballot substrate",
-    purpose: "Minimal Decision Session so Collective Decision generate/publish can run.",
-    decisionQuestion: "Which PUBLIC_CHOICE outcome should proceed?",
-    status: "published",
-    opensAt: now,
-    closesAt,
-    createdAt: now,
-    updatedAt: now,
-    publishedAt: now,
-    packageReferences: {
-      revisionIds: [],
-      analysisIds: [],
-      proposalIds: [],
-      petitionId: null,
-    },
-    structuredContent: {
-      decisionContext: "PUBLIC_CHOICE zero-community golden path.",
-      objectives: ["Select an outcome without community ballots yet cast."],
-      options: ["Approve candidate A", "Approve candidate B", "Defer"],
-      supportingArguments: [],
-      risks: [],
-      dependencies: [],
-      requiredResources: [],
-      suggestedTimeline: "Immediate",
-      suggestedParticipants: [],
-      suggestedResponsibleRoles: ["Steward"],
-      unresolvedQuestions: [],
-    },
-    traceability: null,
-  });
-
-  console.log("4. Collective Decision (zero votes)");
+  console.log("3. Collective Decision (no Decision Session substrate; zero votes)");
   await generateInitiativeCollectiveDecisionDraft(steward, initiativeId);
   const closedDecision = await publishInitiativeCollectiveDecisionStage(steward, initiativeId);
   assert(closedDecision.status === "closed", "PUBLIC_CHOICE Collective Decision must close.");
+  assert(
+    closedDecision.decisionSessionId === null,
+    "PUBLIC_CHOICE Collective Decision must not require a Decision Session id.",
+  );
   assert(
     getDecisionById(closedDecision.decisionId)?.status === "closed",
     "PUBLIC_CHOICE Collective Decision must be store-readable.",
@@ -662,61 +617,15 @@ async function runPublicChoicePath(
     "after Collective Decision publish",
   );
 
-  console.log("5. Minimal Public Impact Report substrate (Archive still requires it today)");
-  const reportId = `public-choice-impact-${initiativeId}`;
-  upsertReport({
-    reportId,
-    initiativeId,
-    stewardId: steward.participantId,
-    title: "PUBLIC_CHOICE Public Impact substrate",
-    sections: [
-      {
-        sectionId: "executive_summary",
-        title: "Executive Summary",
-        body: "Minimal Public Impact Report so Civic Archive generate/publish can run on PUBLIC_CHOICE.",
-        evidenceReferences: [],
-      },
-    ],
-    participationStatistics: {
-      signatureCount: 0,
-      supportCount: 0,
-      reactionCount: 0,
-      activeAllyCount: 0,
-    },
-    officialResponsePackageId: null,
-    trackingPackageId: null,
-    commitmentPackageId: null,
-    decisionId: closedDecision.decisionId,
-    traceability: {
-      analysisId: null,
-      analysisVersion: null,
-      proposalIds: [],
-      revisionId: null,
-      revisionVersion: null,
-      petitionId: null,
-      petitionVersion: null,
-      decisionSessionId: sessionId,
-      decisionSessionVersion: 1,
-      decisionId: closedDecision.decisionId,
-      commitmentPackageId: null,
-      trackingPackageId: null,
-      officialResponsePackageId: null,
-      relatedTrackingIds: [],
-      relatedCommitmentIds: [],
-      relatedOfficialResponseIds: [],
-      evidenceReferences: [],
-    },
-    status: "published",
-    publishedAt: now,
-    createdAt: now,
-    updatedAt: now,
-  });
-
-  console.log("6. Civic Archive");
+  console.log("4. Civic Archive (no Public Impact substrate)");
   await getInitiativeCivicArchiveWorkspaceContext(steward, initiativeId);
   await generateInitiativeCivicArchiveDraft(steward, initiativeId);
   const archive = await publishInitiativeCivicArchiveStage(steward, initiativeId);
   assert(archive.archiveVersion === 1, "PUBLIC_CHOICE Archive publish must be version 1.");
+  assert(
+    archive.publicImpactReportId === null,
+    "PUBLIC_CHOICE Archive must not require a Public Impact Report id.",
+  );
   await assertCurrentStage(initiativeId, "PUBLIC_CHOICE", "archive", "after Archive publish");
 
   const finalSnap = await resolveLifecycleSnapshot(initiativeId, "PUBLIC_CHOICE");

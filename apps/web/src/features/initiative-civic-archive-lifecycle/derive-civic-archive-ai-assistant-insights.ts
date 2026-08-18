@@ -1,7 +1,10 @@
 import type {
   InitiativeCivicArchiveIntelligenceSnapshot,
   InitiativeCivicArchiveLifecycleDraft,
+  InitiativeLifecycleProfile,
 } from "@hu/types";
+
+import { requiresPublicImpactBeforeCivicArchive } from "../public-initiative-experience/initiative-lifecycle-shell";
 
 export interface CivicArchiveAiAssistantInsights {
   sourcesUsedSummary: string;
@@ -20,14 +23,16 @@ export interface CivicArchiveAiAssistantInsights {
 export function deriveCivicArchiveAiAssistantInsights(
   snapshot: InitiativeCivicArchiveIntelligenceSnapshot,
   draft: InitiativeCivicArchiveLifecycleDraft | null,
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null,
 ): CivicArchiveAiAssistantInsights {
   const completenessWarnings: string[] = [];
   const missingFinalFieldWarnings: string[] = [];
   const outstandingWorkWarnings: string[] = [];
   const neutralityWarnings: string[] = [];
   const clarityWarnings: string[] = [];
+  const requirePublicImpact = requiresPublicImpactBeforeCivicArchive(lifecycleProfile);
 
-  if (!snapshot.isPublicImpactReportAvailable) {
+  if (requirePublicImpact && !snapshot.isPublicImpactReportAvailable) {
     completenessWarnings.push(
       "Publish a Public Impact Report before generating the Civic Archive.",
     );

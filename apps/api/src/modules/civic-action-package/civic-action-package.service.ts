@@ -37,9 +37,9 @@ async function buildCapContent(decisionId: string): Promise<CivicActionPackageCo
     throw new Error("Initiative not found.");
   }
 
-  const session = getSessionById(decision.decisionSessionId);
+  const session = decision.decisionSessionId ? getSessionById(decision.decisionSessionId) : null;
 
-  if (!session) {
+  if (decision.decisionSessionId && !session) {
     throw new Error("Decision session not found.");
   }
 
@@ -64,7 +64,7 @@ async function buildCapContent(decisionId: string): Promise<CivicActionPackageCo
     ).length,
     revisionCount: listRevisionsByInitiative(decision.initiativeId).length,
     decisionSessionId: decision.decisionSessionId,
-    decisionSessionTitle: session.title,
+    decisionSessionTitle: session?.title ?? "No Decision Session (Public Choice)",
     decisionId: decision.decisionId,
     decisionQuestion: decision.question,
     decisionResultSummary: results.outcomeSummary,

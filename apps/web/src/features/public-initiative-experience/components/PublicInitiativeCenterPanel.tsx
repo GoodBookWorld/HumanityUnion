@@ -441,6 +441,7 @@ export function PublicInitiativeCenterPanel({
                 ) : activeStage.stageId === "collective_decision" ? (
                   <InitiativeCollectiveDecisionAuthorWorkspace
                     initiativeId={experience.initiativeId}
+                    lifecycleProfile={experience.lifecycleProfile}
                     onTogglePreview={onToggleStagePreviewMode ?? (() => undefined)}
                     onNavigate={onNavigateStage}
                   />
@@ -471,6 +472,7 @@ export function PublicInitiativeCenterPanel({
                 ) : activeStage.stageId === "archive" ? (
                   <InitiativeCivicArchiveAuthorWorkspace
                     initiativeId={experience.initiativeId}
+                    lifecycleProfile={experience.lifecycleProfile}
                     onTogglePreview={onToggleStagePreviewMode ?? (() => undefined)}
                   />
                 ) : undefined

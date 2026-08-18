@@ -8,6 +8,7 @@ import type {
   InitiativeCivicArchiveVersion,
   InitiativeLifecycleArchiveDocument,
 } from "@hu/types";
+import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
@@ -230,14 +231,16 @@ export async function generateInitiativeCivicArchiveDraft(
 ): Promise<InitiativeCivicArchiveLifecycleDraft> {
   const initiative = getOwnedInitiative(initiativeId, identity);
   const snapshot = await buildInitiativeCivicArchiveIntelligenceSnapshot(initiativeId);
+  const publicChoice =
+    resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE";
 
-  if (!snapshot.isPublicImpactReportAvailable) {
+  if (!publicChoice && !snapshot.isPublicImpactReportAvailable) {
     throw new Error(
       "A published Public Impact Report is required before generating Civic Archive.",
     );
   }
 
-  const content = generateCivicArchiveDraftContent(snapshot);
+  const content = generateCivicArchiveDraftContent(snapshot, initiative.lifecycleProfile);
   const existing = getOrCreateWorkingDraft(identity, initiative);
   const updated = updateInitiativeCivicArchiveLifecycleDraft(initiativeId, {
     finalArchiveTitle: content.finalArchiveTitle,
@@ -307,16 +310,32 @@ export async function publishInitiativeCivicArchiveStage(
     throw new Error("Civic Archive draft not found.");
   }
 
-  validateInitiativeCivicArchiveLifecycleDraftForPublication(draft);
+  validateInitiativeCivicArchiveLifecycleDraftForPublication(draft, {
+    lifecycleProfile: initiative.lifecycleProfile,
+  });
 
   const snapshot = await buildInitiativeCivicArchiveIntelligenceSnapshot(initiativeId);
   const currentPublicImpact = getPublicImpactReportByInitiativeId(initiativeId);
+  const publicChoice =
+    resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE";
 
-  if (
-    !snapshot.publicImpactReportReference ||
-    !currentPublicImpact ||
-    snapshot.publicImpactReportReference.recordId !== draft.publicImpactReportId ||
-    currentPublicImpact.reportId !== draft.publicImpactReportId
+  if (!publicChoice) {
+    if (
+      !snapshot.publicImpactReportReference ||
+      !currentPublicImpact ||
+      snapshot.publicImpactReportReference.recordId !== draft.publicImpactReportId ||
+      currentPublicImpact.reportId !== draft.publicImpactReportId
+    ) {
+      throw new Error(
+        "The Public Impact Report this draft was generated from is no longer current. Generate Civic Archive again before publishing.",
+      );
+    }
+  } else if (
+    draft.publicImpactReportId &&
+    (!snapshot.publicImpactReportReference ||
+      !currentPublicImpact ||
+      snapshot.publicImpactReportReference.recordId !== draft.publicImpactReportId ||
+      currentPublicImpact.reportId !== draft.publicImpactReportId)
   ) {
     throw new Error(
       "The Public Impact Report this draft was generated from is no longer current. Generate Civic Archive again before publishing.",
@@ -378,6 +397,7 @@ export async function publishInitiativeCivicArchiveStage(
     await publishInitiativeLifecycleStage({
       initiativeId,
       initiativeTitle: initiative.title,
+      lifecycleProfile: initiative.lifecycleProfile,
       stageId: "archive",
       stageLabel: "Civic Archive",
       stageArtifactId: archiveVersionId,

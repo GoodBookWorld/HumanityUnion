@@ -2,6 +2,7 @@ import type { DecisionSessionEligibility, Initiative } from "@hu/types";
 
 import { listPublishedAnalysesByInitiative } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import { listProposalsByInitiative } from "../initiative-improvement-proposal/initiative-improvement-proposal.store.js";
+import { listPublishedCollectionsByInitiative } from "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js";
 import {
   getCurrentPublishedVersion,
   getLatestRevisionForInitiative,
@@ -39,6 +40,10 @@ async function hasPublishedPetitionForInitiative(initiativeId: string): Promise<
  * by this same `initiative.initiativeId`, so cross-artifact Initiative
  * consistency is guaranteed structurally — there is no independently
  * supplied Analysis/Proposal identifier here that could disagree.
+ *
+ * Final Certification Fix 01: steward-reviewed proposals are NOT required when
+ * the Improvement Proposals stage has been explicitly completed (published
+ * collection), including zero-proposal Author completion.
  */
 export async function assessDecisionSessionEligibilityForInitiative(
   initiative: Initiative,
@@ -61,13 +66,17 @@ export async function assessDecisionSessionEligibilityForInitiative(
   const stewardReviewedProposals = listProposalsByInitiative(initiativeId).filter((proposal) =>
     STEWARD_REVIEWED_STATUSES.has(proposal.status),
   );
+  const publishedProposalCollections = await listPublishedCollectionsByInitiative(initiativeId);
+  const improvementProposalsStageCompleted = publishedProposalCollections.length > 0;
 
   if (publishedAnalyses.length === 0) {
     reasons.push("At least one published collaborative analysis is required.");
   }
 
-  if (stewardReviewedProposals.length === 0) {
-    reasons.push("At least one steward-reviewed improvement proposal is required.");
+  if (stewardReviewedProposals.length === 0 && !improvementProposalsStageCompleted) {
+    reasons.push(
+      "At least one steward-reviewed improvement proposal is required, or the Improvement Proposals stage must be explicitly completed.",
+    );
   }
 
   const hasPublishedPetition = await hasPublishedPetitionForInitiative(initiativeId);

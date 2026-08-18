@@ -391,6 +391,7 @@ export async function publishInitiativeImplementationTrackingStage(
     await publishInitiativeLifecycleStage({
       initiativeId,
       initiativeTitle: initiative.title,
+      lifecycleProfile: initiative.lifecycleProfile,
       stageId: "tracking",
       stageLabel: "Implementation Tracking",
       stageArtifactId: packageId,

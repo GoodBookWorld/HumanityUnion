@@ -5,10 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 import type {
   InitiativeCollectiveDecisionLifecycleDraft,
   InitiativeCollectiveDecisionLifecycleDraftContext,
+  InitiativeLifecycleProfile,
 } from "@hu/types";
+import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
+import { requiresDecisionSessionBeforeCollectiveDecision } from "../../public-initiative-experience/initiative-lifecycle-shell";
 import {
   generateInitiativeCollectiveDecisionDraft,
   getInitiativeCollectiveDecisionWorkspace,
@@ -23,13 +26,18 @@ interface InitiativeCollectiveDecisionAuthorWorkspaceProps {
   readonly onTogglePreview: () => void;
   /** Threaded from the shared Lifecycle shell so Publish can offer "Open Implementation Commitments" navigation. */
   readonly onNavigate?: (stageId: string, hash: string) => void;
+  /** Canonical shell/resolver profile — no frontend progression logic. */
+  readonly lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }
 
 export function InitiativeCollectiveDecisionAuthorWorkspace({
   initiativeId,
   onTogglePreview,
   onNavigate,
+  lifecycleProfile,
 }: InitiativeCollectiveDecisionAuthorWorkspaceProps) {
+  const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
+  const requireDecisionSession = requiresDecisionSessionBeforeCollectiveDecision(profile);
   const [context, setContext] = useState<InitiativeCollectiveDecisionLifecycleDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -109,15 +117,18 @@ export function InitiativeCollectiveDecisionAuthorWorkspace({
       </div>
 
       {showSourcePanel ? (
-        <InitiativeCollectiveDecisionIntelligenceSnapshotPanel snapshot={context.intelligenceSnapshot} />
+        <InitiativeCollectiveDecisionIntelligenceSnapshotPanel
+          snapshot={context.intelligenceSnapshot}
+          lifecycleProfile={profile}
+        />
       ) : null}
 
       {!hasContent || !context.draft ? (
         <div className="icd-editor">
           <p className="icd-source-panel__empty">
-            Generate a structured Decision Result from the published Decision Session and upstream
-            Lifecycle sources. The Decision Assistant remains advisory — nothing publishes
-            automatically.
+            {requireDecisionSession
+              ? "Generate a structured Decision Result from the published Decision Session and upstream Lifecycle sources. The Decision Assistant remains advisory — nothing publishes automatically."
+              : "Generate a structured Decision Result from upstream Lifecycle sources. The Decision Assistant remains advisory — nothing publishes automatically."}
           </p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
             {resolveSaveButtonLabel(generatePhase.phase, "Generate Collective Decision Draft")}

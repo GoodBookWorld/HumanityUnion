@@ -352,6 +352,7 @@ export async function publishInitiativeOfficialResponseStage(
     await publishInitiativeLifecycleStage({
       initiativeId,
       initiativeTitle: initiative.title,
+      lifecycleProfile: initiative.lifecycleProfile,
       stageId: "official_response",
       stageLabel: "Official Responses",
       stageArtifactId: packageId,

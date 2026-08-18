@@ -1,7 +1,10 @@
 import type {
   InitiativeCollectiveDecisionIntelligenceSnapshot,
   InitiativeCollectiveDecisionLifecycleDraft,
+  InitiativeLifecycleProfile,
 } from "@hu/types";
+
+import { requiresDecisionSessionBeforeCollectiveDecision } from "../public-initiative-experience/initiative-lifecycle-shell";
 
 export interface CollectiveDecisionAiAssistantInsights {
   sourcesUsedSummary: string;
@@ -18,6 +21,7 @@ export interface CollectiveDecisionAiAssistantInsights {
 export function deriveCollectiveDecisionAiAssistantInsights(
   snapshot: InitiativeCollectiveDecisionIntelligenceSnapshot,
   draft: InitiativeCollectiveDecisionLifecycleDraft | null,
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null,
 ): CollectiveDecisionAiAssistantInsights {
   const missingActionsWarnings: string[] = [];
   const duplicatedActionsWarnings: string[] = [];
@@ -27,8 +31,9 @@ export function deriveCollectiveDecisionAiAssistantInsights(
   const missingSuccessCriteriaWarnings: string[] = [];
   const unsupportedConclusionsWarnings: string[] = [];
   const clarityWarnings: string[] = [];
+  const requireDecisionSession = requiresDecisionSessionBeforeCollectiveDecision(lifecycleProfile);
 
-  if (!snapshot.decisionSessionReference) {
+  if (requireDecisionSession && !snapshot.decisionSessionReference) {
     missingActionsWarnings.push("Publish a Decision Session before generating Decision actions.");
   }
 
@@ -60,11 +65,19 @@ export function deriveCollectiveDecisionAiAssistantInsights(
     }
 
     if (!draft.decisionRationale.trim()) {
-      unsupportedConclusionsWarnings.push("Decision Rationale is empty — cite the Decision Session's supporting arguments.");
+      unsupportedConclusionsWarnings.push(
+        requireDecisionSession
+          ? "Decision Rationale is empty — cite the Decision Session's supporting arguments."
+          : "Decision Rationale is empty — explain why this Collective Decision outcome follows from upstream sources.",
+      );
     }
 
     if (!draft.decisionSummary.trim() || draft.decisionSummary.length < 20) {
-      clarityWarnings.push("Decision Summary should clearly restate the Decision Session question and purpose.");
+      clarityWarnings.push(
+        requireDecisionSession
+          ? "Decision Summary should clearly restate the Decision Session question and purpose."
+          : "Decision Summary should clearly state the Collective Decision outcome and purpose.",
+      );
     }
   }
 
@@ -75,7 +88,11 @@ export function deriveCollectiveDecisionAiAssistantInsights(
   }
 
   const sourcesUsedSummary = [
-    snapshot.decisionSessionReference ? "Published Decision Session" : null,
+    snapshot.decisionSessionReference
+      ? requireDecisionSession
+        ? "Published Decision Session"
+        : "Decision Session (optional)"
+      : null,
     snapshot.petitionReference ? "Published Petition" : null,
     snapshot.revisionReference ? `Revision v${snapshot.revisionReference.version}` : null,
     snapshot.analysisReference ? "Collaborative Analysis" : null,

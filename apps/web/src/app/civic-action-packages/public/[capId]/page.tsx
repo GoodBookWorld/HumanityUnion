@@ -125,9 +125,11 @@ export default async function PublicCivicActionPackagePage({
           <li>
             <Link href={capPackage.references.decisionUrl}>Collective Decision</Link>
           </li>
-          <li>
-            <Link href={capPackage.references.decisionSessionUrl}>Decision Session</Link>
-          </li>
+          {capPackage.references.decisionSessionUrl ? (
+            <li>
+              <Link href={capPackage.references.decisionSessionUrl}>Decision Session</Link>
+            </li>
+          ) : null}
           {capPackage.references.civicCompatibilityReviewUrl ? (
             <li>
               <Link href={capPackage.references.civicCompatibilityReviewUrl}>

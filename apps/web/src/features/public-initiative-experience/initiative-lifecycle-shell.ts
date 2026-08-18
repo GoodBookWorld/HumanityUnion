@@ -30,6 +30,28 @@ export type LifecycleShellHashResolution =
   | { kind: "fallback_overview"; reason: "empty" | "invalid" | "locked" | "not_applicable" };
 
 /**
+ * Final Certification Fix 02 — Archive Author workspace prerequisite.
+ * Uses the canonical profile resolver only (no second progression engine).
+ * STANDARD: Public Impact remains required. PUBLIC_CHOICE: not required.
+ */
+export function requiresPublicImpactBeforeCivicArchive(
+  lifecycleProfile: InitiativeLifecycleProfile | string | null | undefined,
+): boolean {
+  return resolveInitiativeLifecycleProfile(lifecycleProfile) !== "PUBLIC_CHOICE";
+}
+
+/**
+ * Final Certification Fix 03 — Collective Decision Author workspace prerequisite.
+ * Uses the canonical profile resolver only (no second progression engine).
+ * STANDARD: Decision Session remains required. PUBLIC_CHOICE: not required.
+ */
+export function requiresDecisionSessionBeforeCollectiveDecision(
+  lifecycleProfile: InitiativeLifecycleProfile | string | null | undefined,
+): boolean {
+  return resolveInitiativeLifecycleProfile(lifecycleProfile) !== "PUBLIC_CHOICE";
+}
+
+/**
  * Stages shown in the Lifecycle nav. NOT_APPLICABLE stages are omitted so
  * PUBLIC_CHOICE does not render STANDARD-only stages as broken/missing.
  * Full stage list remains on `experience.lifecycleStages` for Guide/read models.

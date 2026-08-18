@@ -359,6 +359,7 @@ export async function publishInitiativePublicImpactStage(
     await publishInitiativeLifecycleStage({
       initiativeId,
       initiativeTitle: initiative.title,
+      lifecycleProfile: initiative.lifecycleProfile,
       stageId: "public_impact",
       stageLabel: "Public Impact",
       stageArtifactId: reportId,

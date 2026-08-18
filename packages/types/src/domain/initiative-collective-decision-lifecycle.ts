@@ -184,8 +184,9 @@ export interface CollectiveDecisionTraceability {
   readonly revisionVersion: number | null;
   readonly petitionId: string | null;
   readonly petitionVersion: number | null;
-  readonly decisionSessionId: string;
-  readonly decisionSessionVersion: number;
+  /** Null on PUBLIC_CHOICE when no Decision Session substrate exists. */
+  readonly decisionSessionId: string | null;
+  readonly decisionSessionVersion: number | null;
   readonly participantSignatures: number;
   readonly memberSignatures: number;
   readonly visitorSignals: number;

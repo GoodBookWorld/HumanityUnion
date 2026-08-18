@@ -388,7 +388,9 @@ export async function closeInitiativeCollectiveDecision(
     throw new Error("Collective decision not found.");
   }
 
-  await generateCivicActionPackageForDecision(updated.decisionId);
+  if (updated.decisionSessionId) {
+    await generateCivicActionPackageForDecision(updated.decisionId);
+  }
 
   emitCivicNotificationEvent({
     eventType: "decision_closed",

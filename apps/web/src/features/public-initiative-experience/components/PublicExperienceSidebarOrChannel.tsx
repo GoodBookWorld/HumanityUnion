@@ -2,7 +2,11 @@
 
 import { type ComponentProps, useEffect, useState } from "react";
 
-import { isInitiativeLifecycleAuthorWorkspaceStage, PUBLIC_INITIATIVE_EXPERIENCE_STAGES } from "@hu/types";
+import {
+  isInitiativeLifecycleAuthorWorkspaceStage,
+  PUBLIC_INITIATIVE_EXPERIENCE_STAGES,
+  type InitiativeLifecycleProfile,
+} from "@hu/types";
 
 import { getInitiativeActiveAlliesTeam } from "../../initiative-active-allies/api";
 import { InitiativeLifecycleWorkingSidebar } from "../../initiative-lifecycle-stage-workspace";
@@ -33,6 +37,8 @@ interface PublicExperienceSidebarOrChannelProps extends PublicExperienceSidebarP
    * lifecycle nav back to view an earlier stage's public record.
    */
   currentStageId: string;
+  /** Canonical Lifecycle Profile from the experience projection (Fix 02 Archive gating). */
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null;
   /** Communication UX Pack 03.7 Part 10 — forwarded to `InitiativeCollaborationWorkspace` so a Shared Document notification can deep-link straight to the right tab. */
   collaborationTab?: CollaborationTab;
   /**
@@ -74,6 +80,7 @@ interface PublicExperienceSidebarOrChannelProps extends PublicExperienceSidebarP
  */
 export function PublicExperienceSidebarOrChannel({
   currentStageId,
+  lifecycleProfile,
   collaborationTab,
   workspaceStageId,
   onOpenPublicPreview,
@@ -143,6 +150,7 @@ export function PublicExperienceSidebarOrChannel({
       <InitiativeLifecycleWorkingSidebar
         initiativeId={sidebarProps.initiativeId}
         stageId={workspaceStageId}
+        lifecycleProfile={lifecycleProfile}
         onOpenPublicPreview={onOpenPublicPreview}
         onNavigateNextStage={onNavigateStage}
       />

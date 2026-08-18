@@ -8,6 +8,8 @@ import { isLifecycleStageSelectable } from "./lifecycle-stage-navigation";
 import {
   buildLifecycleGuideReadModel,
   publicSafeOptionalSectionMessage,
+  requiresDecisionSessionBeforeCollectiveDecision,
+  requiresPublicImpactBeforeCivicArchive,
   resolveLifecycleShellHash,
   resolveShellAuthorModeEligible,
   selectLifecycleNavStagesForDisplay,
@@ -159,5 +161,48 @@ describe("Phase 03 — lifecycle shell helpers", () => {
   it("completed prior stage remains selectable for review", () => {
     assert.equal(isLifecycleStageSelectable(standardStages, "analysis"), true);
     assert.equal(isLifecycleStageSelectable(standardStages, "initiative"), true);
+  });
+
+  it("STANDARD Archive remains gated by Public Impact prerequisite", () => {
+    assert.equal(requiresPublicImpactBeforeCivicArchive("STANDARD"), true);
+    assert.equal(requiresPublicImpactBeforeCivicArchive(null), true);
+  });
+
+  it("PUBLIC_CHOICE Archive does not require Public Impact after Collective Decision", () => {
+    assert.equal(requiresPublicImpactBeforeCivicArchive("PUBLIC_CHOICE"), false);
+  });
+
+  it("STANDARD Collective Decision remains gated by Decision Session prerequisite", () => {
+    assert.equal(requiresDecisionSessionBeforeCollectiveDecision("STANDARD"), true);
+    assert.equal(requiresDecisionSessionBeforeCollectiveDecision(null), true);
+  });
+
+  it("PUBLIC_CHOICE Collective Decision does not require Decision Session", () => {
+    assert.equal(requiresDecisionSessionBeforeCollectiveDecision("PUBLIC_CHOICE"), false);
+  });
+
+  it("PUBLIC_CHOICE guide selectedStage does not alter currentStage after Collective Decision", () => {
+    const stages = [
+      stage("initiative", "completed"),
+      stage("discussion", "completed"),
+      stage("collective_decision", "completed"),
+      stage("archive", "in_progress"),
+      stage("public_impact", "not_applicable"),
+    ];
+    const experience = {
+      currentStageId: "archive",
+      lifecycleStages: stages,
+      lifecycleProfile: "PUBLIC_CHOICE",
+      viewerIsSteward: true,
+    } as PublicInitiativeExperienceProjection;
+
+    const guide = buildLifecycleGuideReadModel({
+      experience,
+      selectedStageId: "collective_decision",
+    });
+    assert.equal(guide.currentStageId, "archive");
+    assert.equal(guide.selectedStageId, "collective_decision");
+    assert.notEqual(guide.currentStageId, guide.selectedStageId);
+    assert.equal(requiresPublicImpactBeforeCivicArchive(guide.lifecycleProfile), false);
   });
 });

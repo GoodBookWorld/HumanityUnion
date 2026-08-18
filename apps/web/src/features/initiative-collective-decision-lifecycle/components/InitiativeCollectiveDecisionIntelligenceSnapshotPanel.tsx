@@ -1,16 +1,27 @@
 "use client";
 
-import type { InitiativeCollectiveDecisionIntelligenceSnapshot } from "@hu/types";
+import type {
+  InitiativeCollectiveDecisionIntelligenceSnapshot,
+  InitiativeLifecycleProfile,
+} from "@hu/types";
+
+import { requiresDecisionSessionBeforeCollectiveDecision } from "../../public-initiative-experience/initiative-lifecycle-shell";
 
 export function InitiativeCollectiveDecisionIntelligenceSnapshotPanel({
   snapshot,
+  lifecycleProfile,
 }: {
   snapshot: InitiativeCollectiveDecisionIntelligenceSnapshot;
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }) {
+  const requireDecisionSession = requiresDecisionSessionBeforeCollectiveDecision(lifecycleProfile);
+
   if (snapshot.isEmpty) {
     return (
       <p className="icd-source-panel__empty">
-        Decision Sources are empty until a Decision Session is published.
+        {requireDecisionSession
+          ? "Decision Sources are empty until a Decision Session is published."
+          : "Decision Sources are empty until the Initiative is available."}
       </p>
     );
   }
@@ -18,14 +29,23 @@ export function InitiativeCollectiveDecisionIntelligenceSnapshotPanel({
   return (
     <section className="icd-source-panel" aria-label="Decision Sources">
       <ul className="icd-source-panel__list">
-        <li className="icd-source-panel__item">
-          <span className="icd-source-panel__label">Published Decision Session</span>
-          <p className="icd-source-panel__summary">
-            {snapshot.decisionSessionReference
-              ? `${snapshot.decisionSessionReference.title} — ${snapshot.decisionSessionReference.options.length} option(s), ${snapshot.decisionSessionReference.risks.length} risk(s)`
-              : "No published Decision Session yet"}
-          </p>
-        </li>
+        {requireDecisionSession ? (
+          <li className="icd-source-panel__item">
+            <span className="icd-source-panel__label">Published Decision Session</span>
+            <p className="icd-source-panel__summary">
+              {snapshot.decisionSessionReference
+                ? `${snapshot.decisionSessionReference.title} — ${snapshot.decisionSessionReference.options.length} option(s), ${snapshot.decisionSessionReference.risks.length} risk(s)`
+                : "No published Decision Session yet"}
+            </p>
+          </li>
+        ) : snapshot.decisionSessionReference ? (
+          <li className="icd-source-panel__item">
+            <span className="icd-source-panel__label">Decision Session (optional)</span>
+            <p className="icd-source-panel__summary">
+              {`${snapshot.decisionSessionReference.title} — ${snapshot.decisionSessionReference.options.length} option(s), ${snapshot.decisionSessionReference.risks.length} risk(s)`}
+            </p>
+          </li>
+        ) : null}
         <li className="icd-source-panel__item">
           <span className="icd-source-panel__label">Published Petition</span>
           <p className="icd-source-panel__summary">

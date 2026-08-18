@@ -302,6 +302,7 @@ export function PublicInitiativeExperiencePage({
         <PublicExperienceSidebarOrChannel
           initiativeId={experience.initiativeId}
           currentStageId={experience.currentStageId}
+          lifecycleProfile={experience.lifecycleProfile}
           workspaceStageId={
             showLifecyclePanel && isInitiativeLifecycleAuthorWorkspaceStage(selectedStageId)
               ? selectedStageId

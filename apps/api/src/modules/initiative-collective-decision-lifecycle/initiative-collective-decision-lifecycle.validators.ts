@@ -1,4 +1,9 @@
-import type { InitiativeCollectiveDecisionLifecycleDraft, ParticipationScope } from "@hu/types";
+import type {
+  InitiativeCollectiveDecisionLifecycleDraft,
+  InitiativeLifecycleProfile,
+  ParticipationScope,
+} from "@hu/types";
+import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import type { InitiativeCollectiveDecisionLifecycleDraftUpdate } from "./initiative-collective-decision-lifecycle-draft.store.js";
 
@@ -73,6 +78,7 @@ export function validateSaveInitiativeCollectiveDecisionLifecycleDraftInput(
 
 export function validateInitiativeCollectiveDecisionLifecycleDraftForPublication(
   draft: InitiativeCollectiveDecisionLifecycleDraft,
+  options?: { lifecycleProfile?: InitiativeLifecycleProfile | string | null },
 ): void {
   if (!draft.title.trim()) {
     throw new Error("Decision title is required.");
@@ -86,7 +92,8 @@ export function validateInitiativeCollectiveDecisionLifecycleDraftForPublication
     throw new Error("At least one approved action is required.");
   }
 
-  if (!draft.decisionSessionId) {
+  const profile = resolveInitiativeLifecycleProfile(options?.lifecycleProfile);
+  if (!draft.decisionSessionId && profile !== "PUBLIC_CHOICE") {
     throw new Error("A Decision Session reference is required before publishing a Collective Decision.");
   }
 

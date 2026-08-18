@@ -54,13 +54,17 @@ function generateDeterministicCollectiveDecisionDraftContent(
 
   const decisionSummary = session
     ? [session.decisionQuestion, session.purpose].filter((part) => part.trim()).join(" — ")
-    : "";
+    : snapshot.initiativeTitle
+      ? `Public Choice decision for "${snapshot.initiativeTitle}".`
+      : "Public Choice collective decision.";
 
   const approvedActions =
     session && session.options.length > 0
       ? uniqueNonEmpty([session.options[0]!, ...session.objectives])
       : uniqueNonEmpty([
-          "Proceed with the Decision Session question as framed.",
+          snapshot.initiativeTitle
+            ? `Advance "${snapshot.initiativeTitle}" as the Public Choice outcome`
+            : "Advance the Public Choice outcome",
           ...(session?.objectives ?? []),
         ]);
 
@@ -72,7 +76,11 @@ function generateDeterministicCollectiveDecisionDraftContent(
 
   const implementationTimeline = session?.suggestedTimeline ?? "";
 
-  const decisionRationale = session ? session.supportingArguments.join(" ") : "";
+  const decisionRationale = session
+    ? session.supportingArguments.join(" ")
+    : snapshot.initiativeTitle
+      ? `Author-published Public Choice outcome for "${snapshot.initiativeTitle}" without a Decision Session substrate.`
+      : "Author-published Public Choice outcome without a Decision Session substrate.";
 
   const decisionRisks = session ? uniqueNonEmpty(session.risks) : [];
 
