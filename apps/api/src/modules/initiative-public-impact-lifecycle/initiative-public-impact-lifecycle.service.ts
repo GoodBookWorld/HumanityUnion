@@ -121,11 +121,8 @@ export async function generateInitiativePublicImpactDraft(
 
   const snapshot = await buildInitiativePublicImpactIntelligenceSnapshot(initiativeId);
 
-  if (!snapshot.isOfficialResponsePackageAvailable) {
-    throw new Error(
-      "A published Official Response Package is required before generating Public Impact.",
-    );
-  }
+  // Official Response Package is SOURCE_OPTIONAL — missing upstream becomes
+  // uncertainty / empty sections, not a hard block.
 
   const content = await generatePublicImpactDraftContent(snapshot);
   const existing = getOrCreateWorkingDraft(identity, initiative);
@@ -342,10 +339,12 @@ export async function publishInitiativePublicImpactStage(
   const snapshot = await buildInitiativePublicImpactIntelligenceSnapshot(initiativeId);
   const currentOfficialResponsePackage = getOfficialResponsePackageByInitiativeId(initiativeId);
 
+  // When Official Responses were linked, they must still be current.
   if (
-    !snapshot.officialResponsePackageReference ||
-    !currentOfficialResponsePackage ||
-    snapshot.officialResponsePackageReference.packageId !== draft.officialResponsePackageId
+    draft.officialResponsePackageId &&
+    (!snapshot.officialResponsePackageReference ||
+      !currentOfficialResponsePackage ||
+      snapshot.officialResponsePackageReference.packageId !== draft.officialResponsePackageId)
   ) {
     throw new Error(
       "The Official Response Package this draft was generated from is no longer current. Generate Public Impact again before publishing.",

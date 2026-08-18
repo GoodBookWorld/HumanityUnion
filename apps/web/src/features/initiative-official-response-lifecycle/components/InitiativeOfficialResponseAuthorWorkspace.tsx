@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAfterLifecyclePublish } from "../../public-initiative-experience/initiative-experience-refresh-context";
 
 import type {
   InitiativeOfficialResponseLifecycleDraft,
@@ -51,6 +52,8 @@ export function InitiativeOfficialResponseAuthorWorkspace({
     void loadWorkspace();
   }, [loadWorkspace]);
 
+  const onLifecyclePublished = useAfterLifecyclePublish(loadWorkspace);
+
   function handleDraftUpdated(draft: InitiativeOfficialResponseLifecycleDraft) {
     setContext((current) => (current ? { ...current, draft } : current));
   }
@@ -90,17 +93,6 @@ export function InitiativeOfficialResponseAuthorWorkspace({
     );
   }
 
-  if (!context.intelligenceSnapshot.isTrackingPackageAvailable) {
-    return (
-      <div className="lsw-main">
-        <InitiativeOfficialResponseIntelligenceSnapshotPanel snapshot={context.intelligenceSnapshot} />
-        <p className="ior-source-panel__empty">
-          A published Implementation Tracking Package is required before generating Official Responses.
-        </p>
-      </div>
-    );
-  }
-
   const hasContent = Boolean(
     context.draft &&
       (context.draft.title.trim() ||
@@ -137,7 +129,7 @@ export function InitiativeOfficialResponseAuthorWorkspace({
           initiativeId={initiativeId}
           draft={context.draft}
           onDraftUpdated={handleDraftUpdated}
-          onPublished={() => void loadWorkspace()}
+          onPublished={onLifecyclePublished}
           onTogglePreview={onTogglePreview}
           onNavigate={onNavigate}
         />

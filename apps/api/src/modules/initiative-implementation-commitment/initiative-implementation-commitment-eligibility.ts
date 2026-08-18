@@ -9,6 +9,11 @@ export interface InitiativeImplementationCommitmentEligibility {
 }
 
 /**
+ * LEGACY / KEEP_DATA_COMPATIBILITY — participant & e2e create path only.
+ *
+ * NOT Author Lifecycle progression authority. Canonical Author Implementation
+ * Commitment publish creates commitments from the Author pack without this gate.
+ *
  * Assesses Collective Decision eligibility for an Initiative that the
  * caller has already resolved (Recovery Task 15), mirroring the
  * single-resolution pattern established for Collective Decision itself in

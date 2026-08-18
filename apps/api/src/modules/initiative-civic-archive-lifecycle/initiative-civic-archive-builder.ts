@@ -129,7 +129,8 @@ export function generateCivicArchiveDraftContent(
   const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
   const onRoute = (stageId: InitiativeLifecycleStageId) =>
     isLifecycleStageApplicableToProfile(stageId, profile);
-  const requirePublicImpact = profile !== "PUBLIC_CHOICE";
+  // Step 03 — Public Impact is SOURCE_OPTIONAL for Archive on all profiles.
+  const requirePublicImpact = false;
 
   const participation = snapshot.participationStatistics;
   const discussionBody = [

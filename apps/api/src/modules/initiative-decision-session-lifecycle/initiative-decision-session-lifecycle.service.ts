@@ -155,13 +155,12 @@ export async function generateInitiativeDecisionSessionDraft(
   }
 
   const snapshot = await buildInitiativeDecisionSessionIntelligenceSnapshot(initiativeId);
-
-  if (!snapshot.isPetitionAvailable || !snapshot.petitionReference) {
-    throw new Error("A Published Petition is required before generating a Decision Session draft.");
-  }
+  // Petition is SOURCE_OPTIONAL — generate from Initiative / Analysis / Proposal
+  // context when Petition is absent. Never invent a fake Petition.
 
   const content = await generateDecisionSessionDraftContent(snapshot);
   const existing = getOrCreateWorkingDecisionSessionDraft(identity, initiative);
+  const petition = snapshot.petitionReference;
   const updated = updateInitiativeDecisionSessionDraft(initiativeId, {
     title: content.title,
     decisionQuestion: content.decisionQuestion,
@@ -177,16 +176,15 @@ export async function generateInitiativeDecisionSessionDraft(
     suggestedResponsibleRoles: [...content.suggestedResponsibleRoles],
     unresolvedQuestions: [...content.unresolvedQuestions],
     purpose: content.purpose,
-    petitionId: snapshot.petitionReference.petitionId,
-    revisionId: snapshot.revisionReference?.revisionId ?? snapshot.petitionReference.revisionId,
-    revisionVersion:
-      snapshot.revisionReference?.version ?? snapshot.petitionReference.revisionVersion,
-    analysisId: snapshot.analysisReference?.analysisId ?? snapshot.petitionReference.analysisId,
+    petitionId: petition?.petitionId ?? null,
+    revisionId: snapshot.revisionReference?.revisionId ?? petition?.revisionId ?? null,
+    revisionVersion: snapshot.revisionReference?.version ?? petition?.revisionVersion ?? null,
+    analysisId: snapshot.analysisReference?.analysisId ?? petition?.analysisId ?? null,
     analysisVersion:
-      snapshot.analysisReference?.initiativeVersion ?? snapshot.petitionReference.analysisVersion,
+      snapshot.analysisReference?.initiativeVersion ?? petition?.analysisVersion ?? null,
     proposalIds: [
-      ...(snapshot.petitionReference.proposalIds.length > 0
-        ? snapshot.petitionReference.proposalIds
+      ...(petition && petition.proposalIds.length > 0
+        ? petition.proposalIds
         : snapshot.proposalReferences.map((proposal) => proposal.proposalId)),
     ],
   });
@@ -222,21 +220,20 @@ export function saveInitiativeDecisionSessionDraft(
 
 function buildTraceability(
   draft: InitiativeDecisionSessionDraft,
-  snapshotPetition: NonNullable<
-    Awaited<ReturnType<typeof buildInitiativeDecisionSessionIntelligenceSnapshot>>["petitionReference"]
-  >,
+  snapshot: Awaited<ReturnType<typeof buildInitiativeDecisionSessionIntelligenceSnapshot>>,
 ): DecisionSessionTraceability {
+  const petition = snapshot.petitionReference;
   return {
     analysisId: draft.analysisId,
     analysisVersion: draft.analysisVersion,
     proposalIds: [...draft.proposalIds],
     revisionId: draft.revisionId ?? "",
     revisionVersion: draft.revisionVersion ?? 0,
-    petitionId: draft.petitionId ?? snapshotPetition.petitionId,
+    petitionId: draft.petitionId ?? petition?.petitionId ?? "",
     petitionVersion: 1,
-    participantSignatures: snapshotPetition.participantSignatures,
-    memberSignatures: snapshotPetition.memberSignatures,
-    visitorSignals: snapshotPetition.visitorSignals,
+    participantSignatures: petition?.participantSignatures ?? 0,
+    memberSignatures: petition?.memberSignatures ?? 0,
+    visitorSignals: petition?.visitorSignals ?? 0,
   };
 }
 
@@ -309,7 +306,12 @@ export async function publishInitiativeDecisionSessionStage(
 
   const snapshot = await buildInitiativeDecisionSessionIntelligenceSnapshot(initiativeId);
 
-  if (!snapshot.petitionReference || snapshot.petitionReference.petitionId !== draft.petitionId) {
+  // When a Petition was linked on the draft, it must still be current.
+  // Absence of Petition is allowed (SOURCE_OPTIONAL).
+  if (
+    draft.petitionId &&
+    (!snapshot.petitionReference || snapshot.petitionReference.petitionId !== draft.petitionId)
+  ) {
     throw new Error(
       "The Petition this draft was generated from is no longer current. Generate the Decision Session again before publishing.",
     );
@@ -357,7 +359,7 @@ export async function publishInitiativeDecisionSessionStage(
       suggestedResponsibleRoles: [...draft.suggestedResponsibleRoles],
       unresolvedQuestions: [...draft.unresolvedQuestions],
     },
-    traceability: buildTraceability(draft, snapshot.petitionReference),
+    traceability: buildTraceability(draft, snapshot),
   });
 
   session = await publishDecisionSession(identity, session.sessionId);

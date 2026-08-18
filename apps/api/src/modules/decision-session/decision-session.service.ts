@@ -259,10 +259,13 @@ export async function publishDecisionSession(
   await assertDecisionSessionEligible(session.initiativeId);
 
   const publishedAt = new Date().toISOString();
-  // Initiative Lifecycle — Part F, Section 11: the Published Petition this
-  // session's decision is built on top of, frozen into the same
-  // reference-only package as Revisions/Analyses/Proposals.
-  const publishedPetition = await getPetitionByInitiativeId(session.initiativeId);
+  // Petition is SOURCE_OPTIONAL — package references omit it when unavailable.
+  let publishedPetition = null;
+  try {
+    publishedPetition = await getPetitionByInitiativeId(session.initiativeId);
+  } catch {
+    publishedPetition = null;
+  }
   const packageReferences = {
     ...buildDecisionSessionPackageReferences(session.initiativeId),
     petitionId: publishedPetition?.petitionId ?? null,

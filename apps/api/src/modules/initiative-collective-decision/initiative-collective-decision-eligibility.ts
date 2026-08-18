@@ -5,6 +5,12 @@ import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getCurrentPublishedVersion } from "../initiative-version-revision/initiative-version-revision.store.js";
 
 /**
+ * LEGACY / KEEP_DATA_COMPATIBILITY — participant & e2e create path only.
+ *
+ * NOT Author Lifecycle progression authority. Canonical Author Collective
+ * Decision publish (`initiative-collective-decision-lifecycle`) creates
+ * decisions directly and treats Decision Session as SOURCE_OPTIONAL.
+ *
  * Assesses Collective Decision eligibility for an Initiative and Decision
  * Session that the caller has already resolved (Recovery Task 09),
  * mirroring the single-resolution pattern established for Decision Session

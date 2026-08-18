@@ -8,8 +8,6 @@ import { isLifecycleStageSelectable } from "./lifecycle-stage-navigation";
 import {
   buildLifecycleGuideReadModel,
   publicSafeOptionalSectionMessage,
-  requiresDecisionSessionBeforeCollectiveDecision,
-  requiresPublicImpactBeforeCivicArchive,
   resolveLifecycleShellHash,
   resolveShellAuthorModeEligible,
   selectLifecycleNavStagesForDisplay,
@@ -120,14 +118,30 @@ describe("Phase 03 — lifecycle shell helpers", () => {
     }
   });
 
-  it("locked future stage hash falls back (does not open)", () => {
-    const resolution = resolveLifecycleShellHash("#decision-session", [
-      ...standardStages,
-      stage("decision_session", "not_started", "decision-session"),
-    ]);
+  it("locked future stage hash falls back for non-steward (does not open)", () => {
+    const resolution = resolveLifecycleShellHash(
+      "#decision-session",
+      [...standardStages, stage("decision_session", "not_started", "decision-session")],
+      { viewerIsSteward: false },
+    );
     assert.equal(resolution.kind, "fallback_overview");
     if (resolution.kind === "fallback_overview") {
       assert.equal(resolution.reason, "locked");
+    }
+  });
+
+  it("Step 02 — Author hash opens far applicable stages without progression lock", () => {
+    const stages = [
+      ...standardStages,
+      stage("decision_session", "not_started", "decision-session"),
+      stage("archive", "not_started", "civic-archive"),
+    ];
+    const resolution = resolveLifecycleShellHash("#civic-archive", stages, {
+      viewerIsSteward: true,
+    });
+    assert.equal(resolution.kind, "lifecycle_stage");
+    if (resolution.kind === "lifecycle_stage") {
+      assert.equal(resolution.stageId, "archive");
     }
   });
 
@@ -180,22 +194,72 @@ describe("Phase 03 — lifecycle shell helpers", () => {
     assert.equal(isLifecycleStageSelectable(standardStages, "initiative"), true);
   });
 
-  it("STANDARD Archive remains gated by Public Impact prerequisite", () => {
-    assert.equal(requiresPublicImpactBeforeCivicArchive("STANDARD"), true);
-    assert.equal(requiresPublicImpactBeforeCivicArchive(null), true);
+  it("Step 02 — Author guide lists all applicable stages as available; recommended ≠ selected lock", () => {
+    const stages = [
+      stage("initiative", "completed"),
+      stage("discussion", "completed"),
+      stage("analysis", "completed"),
+      stage("proposal", "in_progress"),
+      stage("petition", "not_started"),
+      stage("decision_session", "not_started"),
+      stage("archive", "not_started"),
+    ];
+    const experience = {
+      currentStageId: "proposal",
+      recommendedStageId: "proposal",
+      lifecycleStages: stages,
+      lifecycleProfile: "STANDARD",
+      viewerIsSteward: true,
+    } as PublicInitiativeExperienceProjection;
+
+    const guide = buildLifecycleGuideReadModel({
+      experience,
+      selectedStageId: "archive",
+      viewerIsSteward: true,
+    });
+
+    assert.equal(guide.selectedStageId, "archive");
+    assert.equal(guide.recommendedStageId, "proposal");
+    assert.equal(guide.currentStageId, "proposal");
+    assert.notEqual(guide.selectedStageId, guide.recommendedStageId);
+    assert.equal(guide.availableStageIds.includes("archive"), true);
+    assert.equal(guide.availableStageIds.includes("decision_session"), true);
+    assert.equal(guide.lockedStageIds.length, 0);
   });
 
-  it("PUBLIC_CHOICE Archive does not require Public Impact after Collective Decision", () => {
-    assert.equal(requiresPublicImpactBeforeCivicArchive("PUBLIC_CHOICE"), false);
+  it("Step 02 — non-steward guide still locks far Not Started stages", () => {
+    const stages = [
+      stage("initiative", "completed"),
+      stage("proposal", "in_progress"),
+      stage("petition", "not_started"),
+      stage("decision_session", "not_started"),
+    ];
+    const experience = {
+      currentStageId: "proposal",
+      lifecycleStages: stages,
+      lifecycleProfile: "STANDARD",
+      viewerIsSteward: false,
+    } as PublicInitiativeExperienceProjection;
+
+    const guide = buildLifecycleGuideReadModel({
+      experience,
+      selectedStageId: "proposal",
+      viewerIsSteward: false,
+    });
+
+    assert.equal(guide.availableStageIds.includes("petition"), true);
+    assert.equal(guide.availableStageIds.includes("decision_session"), false);
+    assert.equal(guide.lockedStageIds.includes("decision_session"), true);
   });
 
-  it("STANDARD Collective Decision remains gated by Decision Session prerequisite", () => {
-    assert.equal(requiresDecisionSessionBeforeCollectiveDecision("STANDARD"), true);
-    assert.equal(requiresDecisionSessionBeforeCollectiveDecision(null), true);
-  });
-
-  it("PUBLIC_CHOICE Collective Decision does not require Decision Session", () => {
-    assert.equal(requiresDecisionSessionBeforeCollectiveDecision("PUBLIC_CHOICE"), false);
+  it("Step 04 — obsolete cross-stage requires* helpers are removed from the shell", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const shellPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "initiative-lifecycle-shell.ts");
+    const source = fs.readFileSync(shellPath, "utf8");
+    assert.equal(source.includes("requiresPublicImpactBeforeCivicArchive"), false);
+    assert.equal(source.includes("requiresDecisionSessionBeforeCollectiveDecision"), false);
   });
 
   it("PUBLIC_CHOICE guide selectedStage does not alter currentStage after Collective Decision", () => {
@@ -220,6 +284,5 @@ describe("Phase 03 — lifecycle shell helpers", () => {
     assert.equal(guide.currentStageId, "archive");
     assert.equal(guide.selectedStageId, "collective_decision");
     assert.notEqual(guide.currentStageId, guide.selectedStageId);
-    assert.equal(requiresPublicImpactBeforeCivicArchive(guide.lifecycleProfile), false);
   });
 });

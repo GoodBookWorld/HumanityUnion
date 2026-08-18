@@ -120,9 +120,10 @@ export function buildLifecycleNavigation(
       state = index === currentIndex ? "published" : "completed";
     } else if (inProgressStageIds.has(stage.stageId) || index === currentIndex) {
       state = "in_progress";
-    } else if (index < currentIndex) {
-      state = "not_applicable";
     } else {
+      // Applicable stages without artifacts are Not Started — including
+      // historical gaps before the guidance cursor. Never reuse
+      // not_applicable for progression (profile-only not_applicable above).
       state = "not_started";
     }
 

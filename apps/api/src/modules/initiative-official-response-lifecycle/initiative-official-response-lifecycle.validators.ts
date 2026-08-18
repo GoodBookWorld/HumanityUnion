@@ -201,11 +201,7 @@ export function validateInitiativeOfficialResponseLifecycleDraftForPublication(
     throw new Error("Official Responses title is required.");
   }
 
-  if (!draft.trackingPackageId) {
-    throw new Error(
-      "A published Implementation Tracking Package is required before publishing Official Responses.",
-    );
-  }
+  // Tracking Package reference is SOURCE_OPTIONAL (Step 03).
 
   const outcomeKind = normalizeOfficialResponseOutcomeKind(draft.outcomeKind, draft.candidates.length);
 

@@ -4,6 +4,12 @@
  * Read-only presentation over Phase 02 resolver outputs already embedded in
  * `PublicInitiativeExperienceProjection`. Never invents a second lifecycle
  * state authority. Hash/selection is DISPLAY-ONLY.
+ *
+ * Step 02 — Author stage freedom: stewardship unlocks all applicable stages;
+ * recommended/current guidance never disables Author navigation.
+ *
+ * Step 03/04 — upstream artifacts are SOURCE_OPTIONAL; no hard prerequisite
+ * helpers remain on this shell.
  */
 
 import type {
@@ -18,7 +24,10 @@ import {
 } from "@hu/types";
 
 import { parseDiscussionCommentFocusFromHash } from "./discussion-comment-deep-link";
-import { isLifecycleStageSelectable } from "./lifecycle-stage-navigation";
+import {
+  isLifecycleStageSelectable,
+  resolveRecommendedLifecycleStageId,
+} from "./lifecycle-stage-navigation";
 
 /** Display/navigation selection — never mutates lifecycle progression. */
 export type LifecycleShellSelectedStageId = string;
@@ -29,28 +38,6 @@ export type LifecycleShellHashResolution =
   | { kind: "collaboration"; tab: "channel" | "sessions" }
   | { kind: "lifecycle_stage"; stageId: string; hash: string; selectable: boolean }
   | { kind: "fallback_overview"; reason: "empty" | "invalid" | "locked" | "not_applicable" };
-
-/**
- * Final Certification Fix 02 — Archive Author workspace prerequisite.
- * Uses the canonical profile resolver only (no second progression engine).
- * STANDARD: Public Impact remains required. PUBLIC_CHOICE: not required.
- */
-export function requiresPublicImpactBeforeCivicArchive(
-  lifecycleProfile: InitiativeLifecycleProfile | string | null | undefined,
-): boolean {
-  return resolveInitiativeLifecycleProfile(lifecycleProfile) !== "PUBLIC_CHOICE";
-}
-
-/**
- * Final Certification Fix 03 — Collective Decision Author workspace prerequisite.
- * Uses the canonical profile resolver only (no second progression engine).
- * STANDARD: Decision Session remains required. PUBLIC_CHOICE: not required.
- */
-export function requiresDecisionSessionBeforeCollectiveDecision(
-  lifecycleProfile: InitiativeLifecycleProfile | string | null | undefined,
-): boolean {
-  return resolveInitiativeLifecycleProfile(lifecycleProfile) !== "PUBLIC_CHOICE";
-}
 
 /**
  * Stages shown in the Lifecycle nav. NOT_APPLICABLE stages are omitted so
@@ -79,14 +66,14 @@ export function resolveLifecycleStageFromHash(hash: string): string | null {
  *   does not invent a second Discussion workspace).
  * - `#comment-{commentId}` opens the same Discussion tab and focuses that
  *   comment (Collaborative Analysis "View in Discussion" deep link).
- * - Lifecycle stage hashes open the stage panel when selectable.
+ * - Lifecycle stage hashes open the stage panel when selectable for the viewer.
  * - Invalid / locked / not_applicable hashes fall back to Overview (do not
  *   mutate currentStage; do not show false "missing" errors).
  */
 export function resolveLifecycleShellHash(
   hash: string,
   stages: readonly PublicInitiativeLifecycleStageNavItem[],
-  options?: { allowManage?: boolean },
+  options?: { allowManage?: boolean; viewerIsSteward?: boolean },
 ): LifecycleShellHashResolution {
   const normalized = hash.replace(/^#/, "").trim().toLowerCase();
 
@@ -125,7 +112,11 @@ export function resolveLifecycleShellHash(
     return { kind: "fallback_overview", reason: "not_applicable" };
   }
 
-  if (!isLifecycleStageSelectable(stages, stageId)) {
+  if (
+    !isLifecycleStageSelectable(stages, stageId, {
+      viewerIsSteward: options?.viewerIsSteward,
+    })
+  ) {
     return { kind: "fallback_overview", reason: "locked" };
   }
 
@@ -135,10 +126,15 @@ export function resolveLifecycleShellHash(
 /**
  * Read-only model for a future Lifecycle Guide sidebar.
  * Never owns or mutates lifecycle state.
+ *
+ * selectedStageId — UI choice only.
+ * recommendedStageId — guidance cursor (best next unfinished); never locks Authors.
+ * currentStageId — resolver progress cursor (same derivation family as recommended).
  */
 export interface InitiativeLifecycleGuideReadModel {
   readonly lifecycleProfile: InitiativeLifecycleProfile;
   readonly currentStageId: string;
+  readonly recommendedStageId: string;
   readonly selectedStageId: string;
   readonly completedStageIds: readonly string[];
   readonly availableStageIds: readonly string[];
@@ -157,18 +153,30 @@ export function buildLifecycleGuideReadModel(input: {
 }): InitiativeLifecycleGuideReadModel {
   const { experience } = input;
   const stages = experience.lifecycleStages;
+  const viewerIsSteward = Boolean(input.viewerIsSteward ?? experience.viewerIsSteward);
+  const selectOpts = { viewerIsSteward };
+
   const completedStageIds = stages
     .filter((stage) => stage.state === "completed" || stage.state === "archived" || stage.state === "published")
     .map((stage) => stage.stageId);
   const availableStageIds = stages
-    .filter((stage) => isLifecycleStageSelectable(stages, stage.stageId))
+    .filter((stage) => isLifecycleStageSelectable(stages, stage.stageId, selectOpts))
     .map((stage) => stage.stageId);
   const lockedStageIds = stages
-    .filter((stage) => stage.state === "not_started" && !isLifecycleStageSelectable(stages, stage.stageId))
+    .filter(
+      (stage) =>
+        stage.state !== "not_applicable" &&
+        stage.state !== "unavailable" &&
+        !isLifecycleStageSelectable(stages, stage.stageId, selectOpts),
+    )
     .map((stage) => stage.stageId);
   const notApplicableStageIds = stages
     .filter((stage) => stage.state === "not_applicable")
     .map((stage) => stage.stageId);
+
+  const recommendedStageId =
+    experience.recommendedStageId ??
+    resolveRecommendedLifecycleStageId(stages, experience.currentStageId);
 
   const currentIndex = stages.findIndex((stage) => stage.stageId === experience.currentStageId);
   const nextStageId =
@@ -180,13 +188,14 @@ export function buildLifecycleGuideReadModel(input: {
   return {
     lifecycleProfile: resolveInitiativeLifecycleProfile(experience.lifecycleProfile),
     currentStageId: experience.currentStageId,
+    recommendedStageId,
     selectedStageId: input.selectedStageId,
     completedStageIds,
     availableStageIds,
     lockedStageIds,
     notApplicableStageIds,
     nextStageId,
-    viewerIsSteward: Boolean(input.viewerIsSteward ?? experience.viewerIsSteward),
+    viewerIsSteward,
     optionalStageDiagnostics: experience.optionalStageDiagnostics,
     stages,
   };

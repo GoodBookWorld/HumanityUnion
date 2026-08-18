@@ -135,11 +135,7 @@ export function validateInitiativePublicImpactLifecycleDraftForPublication(
     throw new Error("Public Impact Report title is required.");
   }
 
-  if (!draft.officialResponsePackageId) {
-    throw new Error(
-      "A published Official Response Package is required before publishing Public Impact.",
-    );
-  }
+  // Official Response Package is SOURCE_OPTIONAL (Step 03).
 
   const byId = new Map(draft.sections.map((section) => [section.sectionId, section]));
   const executive = byId.get("executive_summary");

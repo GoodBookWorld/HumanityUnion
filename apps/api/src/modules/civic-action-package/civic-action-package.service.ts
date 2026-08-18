@@ -86,9 +86,12 @@ async function resolveCountry(initiativeId: string): Promise<string> {
     return "Unknown";
   }
 
-  const steward = await getMemberById(initiative.stewardId);
-
-  return steward?.profile.country ?? "Canada";
+  try {
+    const steward = await getMemberById(initiative.stewardId);
+    return steward?.profile.country ?? "Canada";
+  } catch {
+    return "Unknown";
+  }
 }
 
 function buildCapTitle(content: CivicActionPackageContent): string {

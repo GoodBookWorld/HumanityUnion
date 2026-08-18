@@ -15,8 +15,8 @@ export interface GeneratedOfficialResponseDraftContent {
   readonly title: string;
   readonly summary: string;
   readonly trackingPackageId: string | null;
-  /** Generate never invents an official reply — scaffolds are Author-editable placeholders. */
-  readonly outcomeKind: "responses_received";
+  /** Scaffold may open as responses_received or no_official_response_received for Author editing. */
+  readonly outcomeKind: "responses_received" | "no_official_response_received";
   readonly candidates: readonly InitiativeOfficialResponseCandidate[];
 }
 
@@ -99,7 +99,14 @@ function generateDeterministicOfficialResponseDraftContent(
   const summary = trackingPackageReference?.summary ?? "";
 
   if (!trackingPackageReference) {
-    return { title, summary, trackingPackageId: null, outcomeKind: "responses_received", candidates: [] };
+    return {
+      title,
+      summary:
+        "No published Implementation Tracking Package yet — record Official Responses or document No official response received.",
+      trackingPackageId: null,
+      outcomeKind: "no_official_response_received",
+      candidates: [],
+    };
   }
 
   const receivedAt = receivedAtFromGeneratedAt(snapshot.generatedAt);

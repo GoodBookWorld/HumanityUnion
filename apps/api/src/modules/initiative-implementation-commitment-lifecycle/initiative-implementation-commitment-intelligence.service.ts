@@ -94,7 +94,7 @@ function buildConsistencyChecks(
           checkId: "collective-decision-available",
           label: "Published Collective Decision",
           status: "warning",
-          detail: "A published (closed) Collective Decision is required before Implementation Commitments can be generated.",
+          detail: "No published (closed) Collective Decision yet — Implementation Commitments can still be authored manually.",
         },
   );
 
@@ -214,6 +214,6 @@ export async function buildInitiativeImplementationCommitmentIntelligenceSnapsho
     activeAllyCount,
     consistencyChecks,
     isCollectiveDecisionAvailable: decisionReference !== null,
-    isEmpty: !initiative || !decisionReference,
+    isEmpty: !initiative,
   };
 }

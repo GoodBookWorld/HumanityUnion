@@ -35,7 +35,6 @@ import { buildInitiativePublicImpactIntelligenceSnapshot } from "../initiative-p
 import { getReportByInitiativeId as getPublicImpactReportByInitiativeId } from "../initiative-public-impact-lifecycle/initiative-public-impact-report.store.js";
 import { buildInitiativeCivicArchiveIntelligenceSnapshot } from "../initiative-civic-archive-lifecycle/initiative-civic-archive-intelligence.service.js";
 import { getLatestArchiveVersionByInitiativeId } from "../initiative-civic-archive-lifecycle/initiative-civic-archive-version.store.js";
-import { getLatestPublishedPublicCivicArchiveForInitiative } from "../public-civic-archive/public-civic-archive.projection.js";
 import { getSessionById } from "../decision-session/decision-session.store.js";
 import { logger } from "../../shared/observability/logger.js";
 
@@ -450,8 +449,9 @@ async function adaptPublicImpactStage(initiativeId: string): Promise<InitiativeL
 }
 
 async function adaptArchiveStage(initiativeId: string): Promise<InitiativeLifecycleStageAdapterResult> {
-  // Prefer Part M versioned lifecycle Archive; fall back to TASK-037 only
-  // when no lifecycle version exists (legacy records). Never mutate TASK-037.
+  // Canonical Author Archive (Part M) only. TASK-037 public-civic-archive is
+  // KEEP_PUBLIC_HISTORY — browsable at /civic-archive — and must not mark the
+  // Lifecycle archive stage as published for progression / stage projection.
   const lifecycleVersion = getLatestArchiveVersionByInitiativeId(initiativeId);
 
   if (lifecycleVersion) {
@@ -464,17 +464,7 @@ async function adaptArchiveStage(initiativeId: string): Promise<InitiativeLifecy
     };
   }
 
-  const archive = await getLatestPublishedPublicCivicArchiveForInitiative(initiativeId);
-
-  return archive
-    ? {
-        presentationStatus: "published",
-        hasPublicResult: true,
-        version: archive.archivedVersion,
-        publishedAt: archive.archivedAt ?? null,
-        publishedRecordId: null,
-      }
-    : EMPTY_RESULT;
+  return EMPTY_RESULT;
 }
 
 /**

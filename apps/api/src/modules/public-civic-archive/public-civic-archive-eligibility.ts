@@ -19,6 +19,10 @@ export interface PublicCivicArchiveEligibility {
 }
 
 /**
+ * LEGACY / KEEP_PUBLIC_HISTORY — TASK-037 public-civic-archive write path only.
+ *
+ * NOT Author Lifecycle progression authority. Canonical Author Civic Archive
+ * (Part M) publishes independently and never consults this eligibility.
  * Public Impact, Initiative, and (where resolvable) Tracking/Commitment/
  * Decision already resolved by the caller — see
  * `resolvePublicCivicArchiveSource` in `public-civic-archive.service.ts`.

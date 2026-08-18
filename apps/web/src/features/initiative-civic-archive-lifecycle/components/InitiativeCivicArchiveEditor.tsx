@@ -10,7 +10,6 @@ import type {
 
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
-import { requiresPublicImpactBeforeCivicArchive } from "../../public-initiative-experience/initiative-lifecycle-shell";
 import {
   generateInitiativeCivicArchiveDraft,
   publishInitiativeCivicArchiveStage,
@@ -34,9 +33,7 @@ export function InitiativeCivicArchiveEditor({
   onDraftUpdated,
   onPublished,
   onTogglePreview,
-  lifecycleProfile,
 }: InitiativeCivicArchiveEditorProps) {
-  const requirePublicImpact = requiresPublicImpactBeforeCivicArchive(lifecycleProfile);
   const [finalArchiveTitle, setFinalArchiveTitle] = useState(draft.finalArchiveTitle);
   const [finalSummary, setFinalSummary] = useState(draft.finalSummary);
   const [lessonsLearned, setLessonsLearned] = useState(draft.lessonsLearned);
@@ -103,10 +100,7 @@ export function InitiativeCivicArchiveEditor({
     <div className="ica-editor">
       <InitiativeCivicArchiveShareToolbar initiativeId={initiativeId} mode="preview" />
 
-      <InitiativeCivicArchiveCompletenessPanel
-        completeness={draft.completeness}
-        lifecycleProfile={lifecycleProfile}
-      />
+      <InitiativeCivicArchiveCompletenessPanel completeness={draft.completeness} />
 
       <div className="ica-editor__field">
         <label htmlFor="ica-title">Final Archive Title</label>
@@ -151,9 +145,8 @@ export function InitiativeCivicArchiveEditor({
 
       {draft.sections.length === 0 ? (
         <p className="ica-source-panel__empty">
-          {requirePublicImpact
-            ? "No Archive sections yet. Generate from the published Public Impact Report and upstream Lifecycle sources."
-            : "No Archive sections yet. Generate from published Public Choice lifecycle sources (Collective Decision)."}
+          No Archive sections yet. Generate from available Lifecycle sources — missing optional
+          upstream artifacts are recorded honestly.
         </p>
       ) : (
         draft.sections.map((section) => (

@@ -24,6 +24,12 @@ function isDuplicateKeyError(error: unknown): boolean {
 }
 
 async function ensurePetitionMongoReady(): Promise<void> {
+  // Author Lifecycle treats Petition as SOURCE_OPTIONAL. Unit certification
+  // must not hang on Mongo selection when Petition substrate is unavailable.
+  if (process.env.NODE_TEST_ENV === "true") {
+    throw new PetitionPersistenceError("MongoDB skipped in NODE_TEST_ENV.");
+  }
+
   if (!isMongoConfigured()) {
     throw new PetitionPersistenceError("MongoDB is not configured.");
   }

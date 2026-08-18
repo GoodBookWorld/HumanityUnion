@@ -8,7 +8,6 @@ import type {
   InitiativeCivicArchiveVersion,
   InitiativeLifecycleArchiveDocument,
 } from "@hu/types";
-import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
@@ -235,14 +234,8 @@ export async function generateInitiativeCivicArchiveDraft(
 ): Promise<InitiativeCivicArchiveLifecycleDraft> {
   const initiative = getOwnedInitiative(initiativeId, identity);
   const snapshot = await buildInitiativeCivicArchiveIntelligenceSnapshot(initiativeId);
-  const publicChoice =
-    resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE";
 
-  if (!publicChoice && !snapshot.isPublicImpactReportAvailable) {
-    throw new Error(
-      "A published Public Impact Report is required before generating Civic Archive.",
-    );
-  }
+  // Public Impact is SOURCE_OPTIONAL for all profiles — archive whatever exists.
 
   const content = generateCivicArchiveDraftContent(snapshot, initiative.lifecycleProfile);
   const existing = getOrCreateWorkingDraft(identity, initiative);
@@ -320,21 +313,9 @@ export async function publishInitiativeCivicArchiveStage(
 
   const snapshot = await buildInitiativeCivicArchiveIntelligenceSnapshot(initiativeId);
   const currentPublicImpact = getPublicImpactReportByInitiativeId(initiativeId);
-  const publicChoice =
-    resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE";
 
-  if (!publicChoice) {
-    if (
-      !snapshot.publicImpactReportReference ||
-      !currentPublicImpact ||
-      snapshot.publicImpactReportReference.recordId !== draft.publicImpactReportId ||
-      currentPublicImpact.reportId !== draft.publicImpactReportId
-    ) {
-      throw new Error(
-        "The Public Impact Report this draft was generated from is no longer current. Generate Civic Archive again before publishing.",
-      );
-    }
-  } else if (
+  // When Public Impact was linked, it must still be current.
+  if (
     draft.publicImpactReportId &&
     (!snapshot.publicImpactReportReference ||
       !currentPublicImpact ||

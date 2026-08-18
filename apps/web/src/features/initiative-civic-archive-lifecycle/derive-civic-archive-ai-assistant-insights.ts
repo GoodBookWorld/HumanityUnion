@@ -1,10 +1,7 @@
 import type {
   InitiativeCivicArchiveIntelligenceSnapshot,
   InitiativeCivicArchiveLifecycleDraft,
-  InitiativeLifecycleProfile,
 } from "@hu/types";
-
-import { requiresPublicImpactBeforeCivicArchive } from "../public-initiative-experience/initiative-lifecycle-shell";
 
 export interface CivicArchiveAiAssistantInsights {
   sourcesUsedSummary: string;
@@ -23,20 +20,15 @@ export interface CivicArchiveAiAssistantInsights {
 export function deriveCivicArchiveAiAssistantInsights(
   snapshot: InitiativeCivicArchiveIntelligenceSnapshot,
   draft: InitiativeCivicArchiveLifecycleDraft | null,
-  lifecycleProfile?: InitiativeLifecycleProfile | string | null,
+  _lifecycleProfile?: string | null,
 ): CivicArchiveAiAssistantInsights {
   const completenessWarnings: string[] = [];
   const missingFinalFieldWarnings: string[] = [];
   const outstandingWorkWarnings: string[] = [];
   const neutralityWarnings: string[] = [];
   const clarityWarnings: string[] = [];
-  const requirePublicImpact = requiresPublicImpactBeforeCivicArchive(lifecycleProfile);
 
-  if (requirePublicImpact && !snapshot.isPublicImpactReportAvailable) {
-    completenessWarnings.push(
-      "Publish a Public Impact Report before generating the Civic Archive.",
-    );
-  }
+  // Public Impact is SOURCE_OPTIONAL; missing PI is incompleteness, not a hard block.
 
   if (snapshot.officialResponsePackageReference?.outcomeKind === "no_official_response_received") {
     clarityWarnings.push(

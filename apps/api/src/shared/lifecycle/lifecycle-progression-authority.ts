@@ -23,7 +23,12 @@ export const LIFECYCLE_PROGRESSION_DISCONNECTED_AUTHORITIES = [
   "capability02.buildPipelineStatus",
   "legacy.collaborativeAnalysis.progressPolicyThresholds",
   "legacy.collectiveDecision.quorumNextLifecycleStage",
+  "legacy.collectiveDecision.sessionBoundEligibility",
   "legacy.implementationCommitment.readinessThresholds",
+  "legacy.implementationCommitment.perRecordEligibility",
+  "legacy.implementationTracking.perRecordEligibility",
+  "legacy.publicImpact.perRecordEligibility",
+  "task037.publicCivicArchive.progressionCounts",
   "initiative.status",
   "frontend.hashSelectedStageId",
 ] as const;

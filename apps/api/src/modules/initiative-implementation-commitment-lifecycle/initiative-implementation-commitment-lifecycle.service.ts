@@ -120,11 +120,7 @@ export async function generateInitiativeImplementationCommitmentDraft(
 
   const snapshot = await buildInitiativeImplementationCommitmentIntelligenceSnapshot(initiativeId);
 
-  if (!snapshot.isCollectiveDecisionAvailable || !snapshot.decisionReference) {
-    throw new Error(
-      "A published (closed) Collective Decision is required before generating Implementation Commitments.",
-    );
-  }
+  // Collective Decision is SOURCE_OPTIONAL — Author may define commitments manually.
 
   const content = await generateImplementationCommitmentDraftContent(snapshot);
   const existing = getOrCreateWorkingDraft(identity, initiative);
@@ -168,24 +164,24 @@ function buildCandidateTraceability(
   decisionId: string,
   candidate: InitiativeImplementationCommitmentCandidate,
   actionIndex: number,
-  decisionReference: InitiativeImplementationCommitmentDecisionReference,
+  decisionReference: InitiativeImplementationCommitmentDecisionReference | null | undefined,
 ): ImplementationCommitmentTraceability {
   return {
-    analysisId: decisionReference.analysisId,
-    analysisVersion: decisionReference.analysisVersion,
-    proposalIds: [...decisionReference.proposalIds],
-    revisionId: decisionReference.revisionId,
-    revisionVersion: decisionReference.revisionVersion,
-    petitionId: decisionReference.petitionId,
-    petitionVersion: decisionReference.petitionVersion,
-    decisionSessionId: decisionReference.decisionSessionId,
-    decisionSessionVersion: decisionReference.decisionSessionVersion,
+    analysisId: decisionReference?.analysisId ?? null,
+    analysisVersion: decisionReference?.analysisVersion ?? null,
+    proposalIds: [...(decisionReference?.proposalIds ?? [])],
+    revisionId: decisionReference?.revisionId ?? null,
+    revisionVersion: decisionReference?.revisionVersion ?? null,
+    petitionId: decisionReference?.petitionId ?? null,
+    petitionVersion: decisionReference?.petitionVersion ?? null,
+    decisionSessionId: decisionReference?.decisionSessionId ?? null,
+    decisionSessionVersion: decisionReference?.decisionSessionVersion ?? null,
     decisionId,
     approvedAction: candidate.approvedAction,
     actionIndex,
-    participantSignatures: decisionReference.participantSignatures,
-    memberSignatures: decisionReference.memberSignatures,
-    visitorSignals: decisionReference.visitorSignals,
+    participantSignatures: decisionReference?.participantSignatures ?? 0,
+    memberSignatures: decisionReference?.memberSignatures ?? 0,
+    visitorSignals: decisionReference?.visitorSignals ?? 0,
   };
 }
 
@@ -291,7 +287,11 @@ export async function publishInitiativeImplementationCommitmentStage(
 
   const snapshot = await buildInitiativeImplementationCommitmentIntelligenceSnapshot(initiativeId);
 
-  if (!snapshot.decisionReference || snapshot.decisionReference.decisionId !== draft.decisionId) {
+  // When a Collective Decision was linked, it must still be current.
+  if (
+    draft.decisionId &&
+    (!snapshot.decisionReference || snapshot.decisionReference.decisionId !== draft.decisionId)
+  ) {
     throw new Error(
       "The Collective Decision this draft was generated from is no longer current. Generate Implementation Commitments again before publishing.",
     );
@@ -302,6 +302,7 @@ export async function publishInitiativeImplementationCommitmentStage(
   }
 
   const decisionReference = snapshot.decisionReference;
+  const resolvedDecisionId = draft.decisionId ?? decisionReference?.decisionId ?? "";
   const now = new Date().toISOString();
   const packageId = `implementation-commitment-package-${randomUUID()}`;
   const commitmentIds: string[] = [];
@@ -315,7 +316,7 @@ export async function publishInitiativeImplementationCommitmentStage(
     const commitment: InitiativeImplementationCommitment = {
       commitmentId,
       initiativeId,
-      decisionId: decisionReference.decisionId,
+      decisionId: resolvedDecisionId,
       participantId,
       commitmentTitle: candidate.approvedAction.slice(0, COMMITMENT_TITLE_MAX_LENGTH),
       commitmentSummary: candidate.description,
@@ -336,7 +337,7 @@ export async function publishInitiativeImplementationCommitmentStage(
       acceptedAt: null,
       declinedAt: null,
       traceability: buildCandidateTraceability(
-        decisionReference.decisionId,
+        resolvedDecisionId,
         candidate,
         index,
         decisionReference,
@@ -353,7 +354,7 @@ export async function publishInitiativeImplementationCommitmentStage(
   const pkg: InitiativeImplementationCommitmentPackage = {
     packageId,
     initiativeId,
-    decisionId: decisionReference.decisionId,
+    decisionId: resolvedDecisionId,
     stewardId: initiative.stewardId,
     title: draft.title,
     summary: draft.summary,

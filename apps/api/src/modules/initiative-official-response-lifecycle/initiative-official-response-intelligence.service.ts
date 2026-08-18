@@ -29,7 +29,7 @@ function buildConsistencyChecks(input: {
           checkId: "tracking-package-available",
           label: "Published Implementation Tracking Package",
           status: "warning",
-          detail: "A published Implementation Tracking Package is required before Official Responses can be generated.",
+          detail: "No published Implementation Tracking Package yet — Official Responses can still be authored from Initiative context, including No official response received.",
         },
   );
 
@@ -153,6 +153,6 @@ export async function buildInitiativeOfficialResponseIntelligenceSnapshot(
     decisionId: trackingPackageReference?.decisionId ?? null,
     consistencyChecks,
     isTrackingPackageAvailable,
-    isEmpty: !initiative || !isTrackingPackageAvailable,
+    isEmpty: !initiative,
   };
 }

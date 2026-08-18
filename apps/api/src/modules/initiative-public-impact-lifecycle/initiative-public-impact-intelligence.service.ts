@@ -155,7 +155,7 @@ function buildConsistencyChecks(input: {
           checkId: "official-response-package-available",
           label: "Published Official Response Package",
           status: "warning",
-          detail: "A published Official Response Package is required before Public Impact can be generated.",
+          detail: "No published Official Response Package yet — Public Impact can still be authored; treat missing responses as uncertainty / missing evidence.",
         },
   );
 
@@ -454,6 +454,6 @@ export async function buildInitiativePublicImpactIntelligenceSnapshot(
     evidenceItems,
     consistencyChecks,
     isOfficialResponsePackageAvailable,
-    isEmpty: !initiative || !isOfficialResponsePackageAvailable,
+    isEmpty: !initiative,
   };
 }

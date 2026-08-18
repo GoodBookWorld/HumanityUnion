@@ -20,27 +20,24 @@ function emptySnapshot(
     proposalReferences: [],
     consistencyChecks: [],
     isDecisionSessionAvailable: false,
-    isEmpty: true,
+    isEmpty: false,
     ...overrides,
   };
 }
 
-describe("Final Certification Fix 03 — Collective Decision Decision Session prerequisite copy", () => {
-  it("STANDARD still warns when Decision Session is missing", () => {
+describe("Step 03 — Collective Decision Decision Session is SOURCE_OPTIONAL", () => {
+  it("STANDARD does not hard-warn Authors to publish Decision Session first", () => {
     const insights = deriveCollectiveDecisionAiAssistantInsights(emptySnapshot(), null, "STANDARD");
-    assert.ok(
+    assert.equal(
       insights.missingActionsWarnings.some((warning) =>
         warning.includes("Publish a Decision Session before generating Decision actions"),
       ),
+      false,
     );
   });
 
   it("PUBLIC_CHOICE does not show Decision Session prerequisite copy", () => {
-    const insights = deriveCollectiveDecisionAiAssistantInsights(
-      emptySnapshot({ isEmpty: false }),
-      null,
-      "PUBLIC_CHOICE",
-    );
+    const insights = deriveCollectiveDecisionAiAssistantInsights(emptySnapshot(), null, "PUBLIC_CHOICE");
     assert.equal(
       insights.missingActionsWarnings.some((warning) => warning.includes("Decision Session")),
       false,
@@ -48,9 +45,9 @@ describe("Final Certification Fix 03 — Collective Decision Decision Session pr
     );
   });
 
-  it("PUBLIC_CHOICE draft copy does not cite Decision Session for rationale/summary", () => {
+  it("draft copy does not cite Decision Session for rationale/summary when absent", () => {
     const insights = deriveCollectiveDecisionAiAssistantInsights(
-      emptySnapshot({ isEmpty: false }),
+      emptySnapshot(),
       {
         draftId: "d1",
         initiativeId: "initiative-1",
@@ -81,7 +78,7 @@ describe("Final Certification Fix 03 — Collective Decision Decision Session pr
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
-      "PUBLIC_CHOICE",
+      "STANDARD",
     );
 
     assert.equal(

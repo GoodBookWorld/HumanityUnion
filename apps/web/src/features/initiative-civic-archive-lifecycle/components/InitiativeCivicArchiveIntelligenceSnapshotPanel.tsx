@@ -1,28 +1,20 @@
 "use client";
 
-import type {
-  InitiativeCivicArchiveIntelligenceSnapshot,
-  InitiativeLifecycleProfile,
-} from "@hu/types";
+import type { InitiativeCivicArchiveIntelligenceSnapshot } from "@hu/types";
 
-import { requiresPublicImpactBeforeCivicArchive } from "../../public-initiative-experience/initiative-lifecycle-shell";
 import { InitiativeCivicArchiveCompletenessPanel } from "./InitiativeCivicArchiveCompletenessPanel";
 
 export function InitiativeCivicArchiveIntelligenceSnapshotPanel({
   snapshot,
-  lifecycleProfile,
 }: {
   snapshot: InitiativeCivicArchiveIntelligenceSnapshot;
-  lifecycleProfile?: InitiativeLifecycleProfile | string | null;
+  /** @deprecated Unused after Step 04 — Public Impact is SOURCE_OPTIONAL. */
+  lifecycleProfile?: string | null;
 }) {
-  const requirePublicImpact = requiresPublicImpactBeforeCivicArchive(lifecycleProfile);
-
   if (snapshot.isEmpty) {
     return (
       <p className="ica-source-panel__empty">
-        {requirePublicImpact
-          ? "Civic Archive Sources are empty until a Public Impact Report has been published."
-          : "Civic Archive Sources are empty until the Initiative is available."}
+        Civic Archive Sources are empty until the Initiative is available.
       </p>
     );
   }
@@ -31,16 +23,6 @@ export function InitiativeCivicArchiveIntelligenceSnapshotPanel({
     <div className="ica-source-panel">
       <section aria-label="Civic Archive Sources">
         <ul className="ica-source-panel__list">
-          {requirePublicImpact ? (
-            <li className="ica-source-panel__item">
-              <span className="ica-source-panel__label">Published Public Impact Report</span>
-              <p className="ica-source-panel__summary">
-                {snapshot.publicImpactReportReference
-                  ? snapshot.publicImpactReportReference.label
-                  : "No published Public Impact Report yet"}
-              </p>
-            </li>
-          ) : null}
           <li className="ica-source-panel__item">
             <span className="ica-source-panel__label">Upstream Packages</span>
             <p className="ica-source-panel__summary">
@@ -56,15 +38,11 @@ export function InitiativeCivicArchiveIntelligenceSnapshotPanel({
                 snapshot.commitmentPackageReference ? "Commitments" : null,
                 snapshot.trackingPackageReference ? "Tracking" : null,
                 snapshot.officialResponsePackageReference ? "Official Responses" : null,
-                !requirePublicImpact && snapshot.publicImpactReportReference
-                  ? "Public Impact (optional)"
-                  : null,
+                snapshot.publicImpactReportReference ? "Public Impact (optional)" : null,
               ]
                 .filter(Boolean)
                 .join(" · ") ||
-                (requirePublicImpact
-                  ? "No upstream published packages yet"
-                  : "No upstream published packages yet — Collective Decision completion is sufficient on Public Choice")}
+                "No upstream published packages yet — missing optional sources are recorded honestly"}
             </p>
           </li>
           <li className="ica-source-panel__item">
@@ -84,10 +62,7 @@ export function InitiativeCivicArchiveIntelligenceSnapshotPanel({
           </li>
         </ul>
       </section>
-      <InitiativeCivicArchiveCompletenessPanel
-        completeness={snapshot.completeness}
-        lifecycleProfile={lifecycleProfile}
-      />
+      <InitiativeCivicArchiveCompletenessPanel completeness={snapshot.completeness} />
     </div>
   );
 }

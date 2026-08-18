@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAfterLifecyclePublish } from "../../public-initiative-experience/initiative-experience-refresh-context";
 
 import type {
   InitiativeImplementationTrackingLifecycleDraft,
@@ -55,6 +56,8 @@ export function InitiativeImplementationTrackingAuthorWorkspace({
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  const onLifecyclePublished = useAfterLifecyclePublish(loadWorkspace);
 
   function handleDraftUpdated(draft: InitiativeImplementationTrackingLifecycleDraft) {
     setContext((current) => (current ? { ...current, draft } : current));
@@ -138,7 +141,7 @@ export function InitiativeImplementationTrackingAuthorWorkspace({
           initiativeId={initiativeId}
           draft={context.draft}
           onDraftUpdated={handleDraftUpdated}
-          onPublished={() => void loadWorkspace()}
+          onPublished={onLifecyclePublished}
           onTogglePreview={onTogglePreview}
           onNavigate={onNavigate}
         />

@@ -108,8 +108,9 @@ function verifyLifecycleAndTabs(): void {
   assert(center.includes("Related Civic Records"), "Center must include related records tab.");
   assert(center.includes("Discussion"), "Center must include Discussion tab.");
   assert(
-    routePage.includes("PublicInitiativeExperiencePage"),
-    "Route must render experience page.",
+    routePage.includes("CanonicalInitiativeExperienceLoader") ||
+      routePage.includes("PublicInitiativeExperiencePage"),
+    "Route must render canonical experience loader/page.",
   );
 }
 

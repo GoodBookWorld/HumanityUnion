@@ -30,7 +30,7 @@ function preferenceMatches(
     .map((item) => ({
       initiativeId: item.initiativeId,
       title: item.title,
-      href: item.href || `/initiatives/${item.initiativeId}`,
+      href: item.href || `/initiatives/public/${item.initiativeId}`,
       explanation: item.reasons[0]?.message,
       source: "preference" as const,
     }));
@@ -41,7 +41,7 @@ async function loadNewestPublicInitiatives(): Promise<FeedItem[]> {
   return (world.initiatives ?? []).map((item) => ({
     initiativeId: item.initiativeId,
     title: item.title,
-    href: item.publicInitiativeHref || `/initiatives/${item.initiativeId}`,
+    href: item.publicInitiativeHref || `/initiatives/public/${item.initiativeId}`,
     context: [item.activityArea, item.geographyLabel].filter(Boolean).join(" · ") || undefined,
     explanation: item.currentStageLabel || undefined,
     source: "newest" as const,

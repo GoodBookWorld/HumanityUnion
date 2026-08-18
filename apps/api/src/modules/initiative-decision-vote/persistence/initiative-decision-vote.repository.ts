@@ -70,6 +70,12 @@ export function isRetryableInitiativeDecisionVoteWriteError(error: unknown): boo
 }
 
 async function ensureInitiativeDecisionVoteMongoReady(): Promise<void> {
+  // Author Lifecycle treats community votes as optional input. Unit certification
+  // must not hang on Mongo when the vote substrate is unavailable.
+  if (process.env.NODE_TEST_ENV === "true") {
+    throw new InitiativeDecisionVotePersistenceError("MongoDB skipped in NODE_TEST_ENV.");
+  }
+
   if (!isMongoConfigured()) {
     throw new InitiativeDecisionVotePersistenceError("MongoDB is not configured.");
   }

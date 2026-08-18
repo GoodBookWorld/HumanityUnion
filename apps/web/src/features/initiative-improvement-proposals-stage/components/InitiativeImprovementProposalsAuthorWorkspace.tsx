@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAfterLifecyclePublish } from "../../public-initiative-experience/initiative-experience-refresh-context";
 
 import type {
   InitiativeImprovementProposalsCollection,
@@ -75,6 +76,8 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  const onLifecyclePublished = useAfterLifecyclePublish(loadWorkspace);
 
   function handleDraftUpdated(draft: InitiativeRevisionDraft) {
     setRevisionContext((current) => (current ? { ...current, draft } : current));
@@ -159,7 +162,7 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
           onUpdated={setCollection}
           onTogglePreview={onTogglePreview}
           onNavigate={onNavigate}
-          onCompleted={() => void loadWorkspace()}
+          onCompleted={onLifecyclePublished}
         />
       ) : (
         <div className="iip-editor">
@@ -219,7 +222,7 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
               context={revisionContext}
               draft={revisionContext.draft}
               onDraftUpdated={handleDraftUpdated}
-              onPublished={() => void loadWorkspace()}
+              onPublished={onLifecyclePublished}
               onTogglePreview={onTogglePreview}
               embeddedInProposals
             />

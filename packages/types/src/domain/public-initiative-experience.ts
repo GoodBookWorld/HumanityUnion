@@ -201,7 +201,16 @@ export interface PublicInitiativeExperienceProjection {
   initiativeId: string;
   hero: PublicInitiativeExperienceHero;
   initiative: PublicInitiativeProjection;
+  /**
+   * Resolver progress / guidance cursor (first unfinished applicable stage).
+   * Informational — must not lock Author stage navigation (Step 02).
+   */
   currentStageId: string;
+  /**
+   * Best next unfinished applicable stage for guidance. Same derivation family
+   * as currentStageId; selectedStageId on the shell is the UI choice only.
+   */
+  recommendedStageId?: string;
   lifecycleStages: PublicInitiativeLifecycleStageNavItem[];
   stageContent: PublicInitiativeLifecycleStageContent[];
   supportStatistics: PublicInitiativeSupportStatistics;

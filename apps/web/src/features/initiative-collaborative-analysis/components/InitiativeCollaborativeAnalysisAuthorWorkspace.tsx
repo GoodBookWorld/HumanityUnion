@@ -13,6 +13,7 @@ import {
 } from "../api";
 import { InitiativeAnalysisSourceSnapshotPanel } from "./InitiativeAnalysisSourceSnapshotPanel";
 import { InitiativeCollaborativeAnalysisForm } from "./InitiativeCollaborativeAnalysisForm";
+import { useInitiativeExperienceRefresh } from "../../public-initiative-experience/initiative-experience-refresh-context";
 
 import "./initiative-collaborative-analysis-workspace.css";
 
@@ -38,6 +39,7 @@ export function InitiativeCollaborativeAnalysisAuthorWorkspace({
   initiativeId,
   onTogglePreview,
 }: InitiativeCollaborativeAnalysisAuthorWorkspaceProps) {
+  const experienceRefresh = useInitiativeExperienceRefresh();
   const [analysis, setAnalysis] = useState<InitiativeCollaborativeAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -109,7 +111,12 @@ export function InitiativeCollaborativeAnalysisAuthorWorkspace({
         <InitiativeCollaborativeAnalysisForm
           initiativeId={initiativeId}
           analysis={analysis}
-          onUpdated={setAnalysis}
+          onUpdated={(updated) => {
+            setAnalysis(updated);
+            if (updated.status === "published") {
+              void experienceRefresh?.refresh();
+            }
+          }}
           onTogglePreview={onTogglePreview}
         />
       ) : (

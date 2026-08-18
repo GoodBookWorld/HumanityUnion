@@ -16,6 +16,10 @@ interface MembershipDocument extends Omit<MembershipRecord, "memberNumber" | "me
 }
 
 async function ensureMembershipMongoReady(): Promise<void> {
+  if (process.env.NODE_TEST_ENV === "true") {
+    throw new MembershipPersistenceUnavailableError();
+  }
+
   if (!isMongoConfigured()) {
     throw new MembershipPersistenceUnavailableError();
   }

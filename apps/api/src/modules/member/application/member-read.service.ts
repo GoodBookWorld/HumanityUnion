@@ -21,12 +21,16 @@ import {
 
 class MemberReadService implements MemberQueryPort {
   async getMemberById(memberId: string): Promise<Member | null> {
-    const persisted = await findMemberById(memberId);
+    try {
+      const persisted = await findMemberById(memberId);
 
-    if (persisted) {
-      const member = toMemberDomain(persisted);
-      writeCachedMember(member);
-      return member;
+      if (persisted) {
+        const member = toMemberDomain(persisted);
+        writeCachedMember(member);
+        return member;
+      }
+    } catch {
+      // Member substrate optional for Author Lifecycle CAP side-effects.
     }
 
     const fixture = getLegacyFixtureMemberById(memberId);

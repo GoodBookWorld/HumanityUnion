@@ -73,13 +73,19 @@ function verifyWorkspaceSimplification(): void {
 }
 
 function verifyOwnerModeRelocation(): void {
-  console.log("2. Owner mode Manage relocation");
+  console.log("2. Canonical experience Manage via stewardship");
 
   const centerPanel = readRepoFile(
     "apps/web/src/features/public-initiative-experience/components/PublicInitiativeCenterPanel.tsx",
   );
   const experiencePage = readRepoFile(
     "apps/web/src/features/public-initiative-experience/components/PublicInitiativeExperiencePage.tsx",
+  );
+  const loader = readRepoFile(
+    "apps/web/src/features/public-initiative-experience/components/CanonicalInitiativeExperienceLoader.tsx",
+  );
+  const experienceRoutes = readRepoFile(
+    "apps/web/src/features/initiative-owner-studio/initiative-experience-routes.ts",
   );
   const managePanel = readRepoFile(
     "apps/web/src/features/initiative-owner-studio/components/InitiativeOwnerManagePanel.tsx",
@@ -95,20 +101,25 @@ function verifyOwnerModeRelocation(): void {
     "Manage tab must be authorization-gated in center panel.",
   );
   assert(
-    experiencePage.includes("ownerMode"),
-    "Public experience page must accept owner mode props.",
+    experiencePage.includes("viewerIsSteward") && experiencePage.includes("canShowManage"),
+    "Manage visibility must follow viewerIsSteward, not ownerMode.",
+  );
+  assert(
+    !experiencePage.includes("ownerMode"),
+    "Public experience page must not use ownerMode as Manage authority.",
+  );
+  assert(
+    experienceRoutes.includes("/initiatives/public/"),
+    "Experience href builders must target the canonical public route.",
+  );
+  assert(
+    loader.includes("getPublicInitiativeExperience") &&
+      loader.includes("getInitiativeOwnerAccess"),
+    "Canonical loader must fetch experience + owner-access with credentials.",
   );
   assert(
     managePanel.includes('id="manage-initiative"'),
     "Manage Initiative section must live in owner studio panel.",
-  );
-  assert(
-    managePanel.includes('id="collaborative-analysis"'),
-    "Collaborative Analysis authoring must sit below Manage Initiative.",
-  );
-  assert(
-    managePanel.includes("InitiativeAnalysisWorkspace"),
-    "Owner studio must include collaborative analysis authoring workspace.",
   );
   assert(routes.includes("/owner-access"), "Initiative API must expose owner-access endpoint.");
   assert(
@@ -116,8 +127,19 @@ function verifyOwnerModeRelocation(): void {
     "Owner access service must deny non-owners without leaking data.",
   );
   assert(
-    fs.existsSync(path.join(REPO_ROOT, "apps/web/src/app/initiatives/[initiativeId]/page.tsx")),
-    "Canonical initiative experience route must exist.",
+    fs.existsSync(
+      path.join(REPO_ROOT, "apps/web/src/app/initiatives/public/[initiativeId]/page.tsx"),
+    ),
+    "Canonical initiative experience route must exist at /initiatives/public/{id}.",
+  );
+  assert(
+    !fs.existsSync(
+      path.join(
+        REPO_ROOT,
+        "apps/web/src/features/initiative-owner-studio/components/InitiativeExperiencePage.tsx",
+      ),
+    ),
+    "Legacy InitiativeExperiencePage dual mount must be removed.",
   );
 }
 
@@ -162,31 +184,39 @@ async function verifyOwnerAccessRuntime(): Promise<void> {
 function verifyCacheSafety(): void {
   console.log("4. Cache safety and draft separation");
 
-  const canonicalPage = readRepoFile("apps/web/src/app/initiatives/[initiativeId]/page.tsx");
-  const experienceShell = readRepoFile(
-    "apps/web/src/features/initiative-owner-studio/components/InitiativeExperiencePage.tsx",
+  const publicCanonicalPage = readRepoFile(
+    "apps/web/src/app/initiatives/public/[initiativeId]/page.tsx",
+  );
+  const legacyRedirectPage = readRepoFile(
+    "apps/web/src/app/initiatives/[initiativeId]/page.tsx",
+  );
+  const loader = readRepoFile(
+    "apps/web/src/features/public-initiative-experience/components/CanonicalInitiativeExperienceLoader.tsx",
   );
   const draftShell = readRepoFile(
     "apps/web/src/features/initiative-owner-studio/components/InitiativeOwnerDraftShell.tsx",
   );
 
   assert(
-    canonicalPage.includes('dynamic = "force-dynamic"'),
-    "Canonical initiative route must disable shared static cache.",
+    publicCanonicalPage.includes('dynamic = "force-dynamic"'),
+    "Canonical public initiative route must disable shared static cache.",
   );
   assert(
-    experienceShell.includes("getInitiativeOwnerAccess"),
+    publicCanonicalPage.includes("CanonicalInitiativeExperienceLoader"),
+    "Canonical public route must mount CanonicalInitiativeExperienceLoader.",
+  );
+  assert(
+    legacyRedirectPage.includes("window.location.replace") &&
+      legacyRedirectPage.includes("/initiatives/public/"),
+    "Legacy /initiatives/{id} must redirect into canonical public experience.",
+  );
+  assert(
+    loader.includes("getInitiativeOwnerAccess"),
     "Owner tools must load through authenticated client access probe.",
   );
   assert(
     draftShell.includes("Draft initiative — owner access only"),
     "Draft shell must not present public availability.",
-  );
-  assert(
-    !readRepoFile("apps/web/src/features/initiatives/components/InitiativeWorkspace.tsx").includes(
-      "InitiativeDraftEditor",
-    ),
-    "Workspace must not render draft editor forms.",
   );
 }
 

@@ -115,9 +115,7 @@ export function validateInitiativeImplementationCommitmentLifecycleDraftForPubli
     throw new Error("Implementation Commitments title is required.");
   }
 
-  if (!draft.decisionId) {
-    throw new Error("A Collective Decision reference is required before publishing Implementation Commitments.");
-  }
+  // Collective Decision reference is SOURCE_OPTIONAL.
 
   if (draft.candidates.length === 0) {
     throw new Error("At least one Commitment Candidate is required.");

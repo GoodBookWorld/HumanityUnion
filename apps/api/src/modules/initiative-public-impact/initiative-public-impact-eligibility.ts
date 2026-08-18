@@ -7,6 +7,10 @@ export interface InitiativePublicImpactEligibility {
   reasons: string[];
 }
 
+/**
+ * LEGACY / KEEP_DATA_COMPATIBILITY — participant & e2e create path only.
+ * NOT Author Lifecycle progression authority (Author Public Impact pack bypasses).
+ */
 export function assessInitiativePublicImpactEligibility(
   trackingId: string,
   participantId: string,

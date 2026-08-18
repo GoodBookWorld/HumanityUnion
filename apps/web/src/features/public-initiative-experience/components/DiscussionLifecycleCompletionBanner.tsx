@@ -55,12 +55,9 @@ export function DiscussionLifecycleCompletionBanner({
       await completeInitiativeDiscussionStage(initiativeId);
       setMessage({
         tone: "success",
-        text: "Discussion completed. Refreshing lifecycle progress…",
+        text: "Discussion completed. Lifecycle progress updated.",
       });
       onCompleted();
-      window.setTimeout(() => {
-        window.location.reload();
-      }, 600);
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Unknown error";
       setMessage({ tone: "error", text: `Could not complete Discussion: ${detail}` });

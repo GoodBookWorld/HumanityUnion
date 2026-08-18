@@ -7,6 +7,10 @@ export interface InitiativeImplementationTrackingEligibility {
   reasons: string[];
 }
 
+/**
+ * LEGACY / KEEP_DATA_COMPATIBILITY — participant & e2e create path only.
+ * NOT Author Lifecycle progression authority (Author Tracking pack bypasses).
+ */
 export function assessInitiativeImplementationTrackingEligibility(
   commitmentId: string,
   participantId: string,

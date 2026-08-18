@@ -98,9 +98,7 @@ export function validateInitiativeDecisionSessionDraftForPublication(
     throw new Error("At least one decision option is required.");
   }
 
-  if (!draft.petitionId) {
-    throw new Error("A Petition reference is required before publishing a Decision Session.");
-  }
+  // Petition reference is SOURCE_OPTIONAL — intrinsic publication rules only.
 
   if (Date.parse(draft.closesAt) <= Date.parse(draft.opensAt)) {
     throw new Error("Closing date must be after opening date.");

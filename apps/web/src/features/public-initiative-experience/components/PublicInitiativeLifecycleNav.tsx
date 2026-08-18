@@ -8,10 +8,12 @@ import { isLifecycleStageSelectable } from "../lifecycle-stage-navigation";
 
 interface PublicInitiativeLifecycleNavProps {
   stages: PublicInitiativeLifecycleStageNavItem[];
-  /** Canonical lifecycle progress (Phase 02 resolver). */
+  /** Resolver progress / guidance cursor — informational only for Authors. */
   currentStageId: string;
-  /** DISPLAY-ONLY selected stage (may differ from current). */
+  /** DISPLAY-ONLY selected stage (may differ from current/recommended). */
   selectedStageId: string;
+  /** Steward Author — all applicable stages selectable (Step 02). */
+  viewerIsSteward?: boolean;
   onStageSelect?: (stageId: string, hash: string) => void;
   resolveStageHref?: (stageId: string, hash: string) => string | null;
   activeRecordId?: string;
@@ -21,6 +23,7 @@ export function PublicInitiativeLifecycleNav({
   stages,
   currentStageId,
   selectedStageId,
+  viewerIsSteward = false,
   onStageSelect,
   resolveStageHref,
   activeRecordId,
@@ -34,7 +37,9 @@ export function PublicInitiativeLifecycleNav({
             stage.recordCount > 0 ? `${stage.label} (${stage.recordCount})` : stage.label;
           const isSelected = stage.stageId === selectedStageId;
           const isCurrent = stage.stageId === currentStageId;
-          const selectable = isLifecycleStageSelectable(stages, stage.stageId);
+          const selectable = isLifecycleStageSelectable(stages, stage.stageId, {
+            viewerIsSteward,
+          });
           const href = selectable
             ? (resolveStageHref?.(stage.stageId, stage.hash) ?? null)
             : null;

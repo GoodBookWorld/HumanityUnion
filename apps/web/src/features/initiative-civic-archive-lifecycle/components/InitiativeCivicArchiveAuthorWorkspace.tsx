@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAfterLifecyclePublish } from "../../public-initiative-experience/initiative-experience-refresh-context";
 
 import type {
   InitiativeCivicArchiveLifecycleDraft,
@@ -11,7 +12,6 @@ import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
-import { requiresPublicImpactBeforeCivicArchive } from "../../public-initiative-experience/initiative-lifecycle-shell";
 import { generateInitiativeCivicArchiveDraft, getInitiativeCivicArchiveWorkspace } from "../api";
 import { InitiativeCivicArchiveEditor } from "./InitiativeCivicArchiveEditor";
 import { InitiativeCivicArchiveIntelligenceSnapshotPanel } from "./InitiativeCivicArchiveIntelligenceSnapshotPanel";
@@ -31,7 +31,6 @@ export function InitiativeCivicArchiveAuthorWorkspace({
   lifecycleProfile,
 }: InitiativeCivicArchiveAuthorWorkspaceProps) {
   const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
-  const requirePublicImpact = requiresPublicImpactBeforeCivicArchive(profile);
   const [context, setContext] = useState<InitiativeCivicArchiveLifecycleDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -55,6 +54,8 @@ export function InitiativeCivicArchiveAuthorWorkspace({
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  const onLifecyclePublished = useAfterLifecyclePublish(loadWorkspace);
 
   function handleDraftUpdated(draft: InitiativeCivicArchiveLifecycleDraft) {
     setContext((current) => (current ? { ...current, draft } : current));
@@ -84,23 +85,6 @@ export function InitiativeCivicArchiveAuthorWorkspace({
 
   if (loading || !context) {
     return <p className="ica-source-panel__empty">Loading Civic Archive workspace…</p>;
-  }
-
-  if (
-    requirePublicImpact &&
-    !context.intelligenceSnapshot.isPublicImpactReportAvailable
-  ) {
-    return (
-      <div className="lsw-main">
-        <InitiativeCivicArchiveIntelligenceSnapshotPanel
-          snapshot={context.intelligenceSnapshot}
-          lifecycleProfile={profile}
-        />
-        <p className="ica-source-panel__empty">
-          A published Public Impact Report is required before generating Civic Archive.
-        </p>
-      </div>
-    );
   }
 
   const hasContent = Boolean(
@@ -135,9 +119,10 @@ export function InitiativeCivicArchiveAuthorWorkspace({
       {!hasContent || !context.draft ? (
         <div className="ica-editor">
           <p className="ica-source-panel__empty">
-            {requirePublicImpact
-              ? "Generate a Civic Archive from the published Public Impact Report and upstream Lifecycle sources. The Archive Assistant remains advisory — nothing publishes automatically, and historical records are never invented or deleted."
-              : "Generate a Civic Archive from published Public Choice lifecycle sources (Collective Decision). Public Impact is not required on this route. The Archive Assistant remains advisory — nothing publishes automatically."}
+            Generate a Civic Archive from whatever canonical Lifecycle history exists for this
+            Initiative. Missing optional upstream stages become incompleteness notes — not blockers.
+            The Archive Assistant remains advisory — nothing publishes automatically, and historical
+            records are never invented or deleted.
           </p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
             {resolveSaveButtonLabel(generatePhase.phase, "Generate Civic Archive Draft")}
@@ -149,7 +134,7 @@ export function InitiativeCivicArchiveAuthorWorkspace({
           draft={context.draft}
           lifecycleProfile={profile}
           onDraftUpdated={handleDraftUpdated}
-          onPublished={() => void loadWorkspace()}
+          onPublished={onLifecyclePublished}
           onTogglePreview={onTogglePreview}
         />
       )}

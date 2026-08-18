@@ -118,11 +118,7 @@ export async function generateInitiativeOfficialResponseDraft(
 
   const snapshot = await buildInitiativeOfficialResponseIntelligenceSnapshot(initiativeId);
 
-  if (!snapshot.isTrackingPackageAvailable) {
-    throw new Error(
-      "A published Implementation Tracking Package is required before generating Official Responses.",
-    );
-  }
+  // Tracking Package is SOURCE_OPTIONAL — Author may record responses or No Response.
 
   const content = await generateOfficialResponseDraftContent(snapshot);
   const existing = getOrCreateWorkingDraft(identity, initiative);
@@ -297,7 +293,12 @@ export async function publishInitiativeOfficialResponseStage(
 
   const snapshot = await buildInitiativeOfficialResponseIntelligenceSnapshot(initiativeId);
 
-  if (!snapshot.trackingPackageReference || snapshot.trackingPackageReference.packageId !== draft.trackingPackageId) {
+  // When Tracking was linked, it must still be current.
+  if (
+    draft.trackingPackageId &&
+    (!snapshot.trackingPackageReference ||
+      snapshot.trackingPackageReference.packageId !== draft.trackingPackageId)
+  ) {
     throw new Error(
       "The Implementation Tracking Package this draft was generated from is no longer current. Generate Official Responses again before publishing.",
     );
@@ -341,7 +342,10 @@ export async function publishInitiativeOfficialResponseStage(
         verificationStatus: candidate.verificationStatus,
         notes: candidate.notes,
         references: [...candidate.references],
-        traceability: buildOfficialResponseTraceability(candidate, snapshot.trackingPackageReference!.packageId),
+        traceability: buildOfficialResponseTraceability(
+          candidate,
+          snapshot.trackingPackageReference?.packageId ?? draft.trackingPackageId,
+        ),
         createdAt: now,
         updatedAt: now,
       };
@@ -355,8 +359,8 @@ export async function publishInitiativeOfficialResponseStage(
   const pkg: InitiativeOfficialResponsePackage = {
     packageId,
     initiativeId,
-    trackingPackageId: snapshot.trackingPackageReference.packageId,
-    decisionId: snapshot.trackingPackageReference.decisionId,
+    trackingPackageId: snapshot.trackingPackageReference?.packageId ?? draft.trackingPackageId,
+    decisionId: snapshot.trackingPackageReference?.decisionId ?? null,
     stewardId: initiative.stewardId,
     title: draft.title,
     summary: draft.summary,

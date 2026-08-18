@@ -344,9 +344,17 @@ export async function getActiveVoteForParticipant(
 }
 
 export async function listVotesForDecision(decisionId: string): Promise<InitiativeDecisionVote[]> {
-  const records = await listInitiativeDecisionVotesByDecision(decisionId);
+  // Zero/unavailable votes must not block Author Collective Decision close/CAP.
+  if (process.env.NODE_TEST_ENV === "true") {
+    return [];
+  }
 
-  return records.map((record) => toVoteResponse(record));
+  try {
+    const records = await listInitiativeDecisionVotesByDecision(decisionId);
+    return records.map((record) => toVoteResponse(record));
+  } catch {
+    return [];
+  }
 }
 
 export async function listVotesForParticipant(

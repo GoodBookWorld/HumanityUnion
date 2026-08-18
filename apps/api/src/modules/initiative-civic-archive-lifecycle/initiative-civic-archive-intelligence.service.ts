@@ -466,7 +466,7 @@ function buildConsistencyChecks(input: {
             checkId: "public-impact-available",
             label: "Published Public Impact Report",
             status: "warning",
-            detail: "A published Public Impact Report is required before Archive can be generated.",
+            detail: "No published Public Impact Report yet — Archive can still finalize from available Lifecycle history.",
           },
     );
   } else if (input.publicImpactAvailable) {
@@ -474,7 +474,7 @@ function buildConsistencyChecks(input: {
       checkId: "public-impact-available",
       label: "Published Public Impact Report",
       status: "ok",
-      detail: "A published Public Impact Report is available (optional on Public Choice).",
+      detail: "A published Public Impact Report is available as an optional Archive source.",
     });
   }
 

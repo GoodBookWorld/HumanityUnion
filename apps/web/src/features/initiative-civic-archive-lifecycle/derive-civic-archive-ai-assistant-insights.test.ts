@@ -54,13 +54,14 @@ function emptySnapshot(
   } as InitiativeCivicArchiveIntelligenceSnapshot;
 }
 
-describe("Final Certification Fix 02 — Civic Archive Public Impact prerequisite copy", () => {
-  it("STANDARD still warns when Public Impact is missing", () => {
+describe("Step 03 — Civic Archive Public Impact is SOURCE_OPTIONAL", () => {
+  it("STANDARD does not hard-warn Authors to publish Public Impact first", () => {
     const insights = deriveCivicArchiveAiAssistantInsights(emptySnapshot(), null, "STANDARD");
-    assert.ok(
+    assert.equal(
       insights.completenessWarnings.some((warning) =>
         warning.includes("Public Impact Report before generating the Civic Archive"),
       ),
+      false,
     );
   });
 

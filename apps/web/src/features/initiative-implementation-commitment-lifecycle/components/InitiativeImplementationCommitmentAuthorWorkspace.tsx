@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAfterLifecyclePublish } from "../../public-initiative-experience/initiative-experience-refresh-context";
 
 import type {
   InitiativeImplementationCommitmentLifecycleDraft,
@@ -55,6 +56,8 @@ export function InitiativeImplementationCommitmentAuthorWorkspace({
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  const onLifecyclePublished = useAfterLifecyclePublish(loadWorkspace);
 
   function handleDraftUpdated(draft: InitiativeImplementationCommitmentLifecycleDraft) {
     setContext((current) => (current ? { ...current, draft } : current));
@@ -130,7 +133,7 @@ export function InitiativeImplementationCommitmentAuthorWorkspace({
           initiativeId={initiativeId}
           draft={context.draft}
           onDraftUpdated={handleDraftUpdated}
-          onPublished={() => void loadWorkspace()}
+          onPublished={onLifecyclePublished}
           onTogglePreview={onTogglePreview}
           onNavigate={onNavigate}
         />

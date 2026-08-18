@@ -45,6 +45,7 @@ import { InitiativeCivicArchiveDraftPreview } from "../../initiative-civic-archi
 import { InitiativeCivicArchivePublicResult } from "../../initiative-civic-archive-lifecycle/components/InitiativeCivicArchivePublicResult";
 import { CurrentLifecycleStageBanner } from "./CurrentLifecycleStageBanner";
 import { DiscussionLifecycleCompletionBanner } from "./DiscussionLifecycleCompletionBanner";
+import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
 import { PublicDiscussionPanel } from "./PublicDiscussionPanel";
 
 /**
@@ -319,14 +320,9 @@ interface PublicInitiativeCenterPanelProps {
   isStagePreviewMode?: boolean;
   onToggleStagePreviewMode?: () => void;
   /**
-   * True only on the Author's own `/initiatives/{id}` route (i.e.
-   * `ownerMode` is present there — Part 4's client-side attempt gate; the
-   * shell itself still independently re-confirms Author Mode
-   * server-authoritatively via the stage projection, Part 4/5). Every
-   * other viewer, on every route, keeps seeing the unchanged
-   * `LifecycleStagePanel` real record list below — this never removes or
-   * replaces existing public stage content (proposals, petitions,
-   * decisions, …) for ordinary visitors.
+   * True when the authenticated viewer is the Initiative steward
+   * (`experience.viewerIsSteward`). Stage Author Mode is still confirmed
+   * server-side via the lifecycle-stage projection.
    */
   isOwnerRoute?: boolean;
 }
@@ -348,6 +344,7 @@ export function PublicInitiativeCenterPanel({
   isStagePreviewMode,
   onToggleStagePreviewMode,
 }: PublicInitiativeCenterPanelProps) {
+  const experienceRefresh = useInitiativeExperienceRefresh();
   const [discussionCompletedOverride, setDiscussionCompletedOverride] = useState(false);
   const activeStage = experience.stageContent.find((stage) => stage.stageId === activeStageId);
   /**
@@ -656,7 +653,10 @@ export function PublicInitiativeCenterPanel({
                   ? "completed"
                   : experience.lifecycleStages.find((stage) => stage.stageId === "discussion")?.state
               }
-              onDiscussionCompleted={() => setDiscussionCompletedOverride(true)}
+              onDiscussionCompleted={() => {
+                setDiscussionCompletedOverride(true);
+                void experienceRefresh?.refresh();
+              }}
             />
           </section>
         ) : null}

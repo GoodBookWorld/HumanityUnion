@@ -9,16 +9,28 @@ const UNLOCKED_STATES = new Set([
   "preview",
 ]);
 
+export interface LifecycleStageSelectabilityOptions {
+  /**
+   * Steward Author — every lifecycleProfile-applicable stage is openable.
+   * Status / furthestUnlocked / recommended cursor must not lock Author nav.
+   * Non-stewards keep participant next-only unlock.
+   */
+  readonly viewerIsSteward?: boolean;
+}
+
 /**
- * Lifecycle UX Completion Pack 02 Part 6 + Phase 03 profile-awareness —
- * a stage is selectable when already unlocked by publication progress, or
- * is the single next applicable Not Started stage after the furthest
- * unlocked *applicable* stage. NOT_APPLICABLE stages are skipped (never
- * treated as the "next" gate).
+ * Lifecycle stage click/hash selectability.
+ *
+ * Author (viewerIsSteward): all applicable stages (not not_applicable /
+ * unavailable) — status is informational only.
+ *
+ * Participant: published/in-progress stages plus the single next Not Started
+ * applicable stage after the furthest unlocked applicable stage.
  */
 export function isLifecycleStageSelectable(
   stages: readonly PublicInitiativeLifecycleStageNavItem[],
   stageId: string,
+  options?: LifecycleStageSelectabilityOptions,
 ): boolean {
   const index = stages.findIndex((stage) => stage.stageId === stageId);
   const stage = index >= 0 ? stages[index] : null;
@@ -29,6 +41,10 @@ export function isLifecycleStageSelectable(
 
   if (stage.state === "not_applicable" || stage.state === "unavailable") {
     return false;
+  }
+
+  if (options?.viewerIsSteward) {
+    return true;
   }
 
   if (UNLOCKED_STATES.has(stage.state)) {
@@ -58,5 +74,38 @@ export function isLifecycleStageSelectable(
     return false;
   }
 
-  return targetOrdinal <= furthestUnlockedApplicableOrdinal + 1;
+  // Participants: only the immediate next Not Started after furthest unlocked
+  // (not earlier empty gaps — avoids broadening non-steward access).
+  return targetOrdinal === furthestUnlockedApplicableOrdinal + 1;
+}
+
+/**
+ * Guidance cursor: first applicable unfinished stage (Not Started / In Progress),
+ * else the last applicable stage. Never used to disable Author stages.
+ */
+export function resolveRecommendedLifecycleStageId(
+  stages: readonly PublicInitiativeLifecycleStageNavItem[],
+  fallbackStageId?: string,
+): string {
+  const applicable = stages.filter(
+    (stage) => stage.state !== "not_applicable" && stage.state !== "unavailable",
+  );
+
+  const unfinished = applicable.find(
+    (stage) =>
+      stage.state === "not_started" ||
+      stage.state === "in_progress" ||
+      stage.state === "draft_saved" ||
+      stage.state === "preview",
+  );
+
+  if (unfinished) {
+    return unfinished.stageId;
+  }
+
+  if (applicable.length > 0) {
+    return applicable[applicable.length - 1]!.stageId;
+  }
+
+  return fallbackStageId ?? stages[0]?.stageId ?? "initiative";
 }

@@ -5,6 +5,7 @@ import { isInitiativeLifecycleAuthorWorkspaceStage } from "@hu/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { toggleInitiativeBookmark, updateInitiativeSupportSignal } from "../api";
+import { InitiativeExperienceRefreshProvider } from "../initiative-experience-refresh-context";
 import { isLifecycleStageSelectable } from "../lifecycle-stage-navigation";
 import {
   publicSafeOptionalSectionMessage,
@@ -18,29 +19,28 @@ import type { CollaborationTab } from "./InitiativeCollaborationWorkspace";
 import { PublicInitiativeCenterPanel, type CenterTab } from "./PublicInitiativeCenterPanel";
 import { PublicInitiativeLifecycleNav } from "./PublicInitiativeLifecycleNav";
 import { InitiativeOwnerManagePanel } from "../../initiative-owner-studio/components/InitiativeOwnerManagePanel";
+import { buildInitiativeExperienceHref } from "../../initiative-owner-studio/initiative-experience-routes";
 
 import "../public-initiative-experience.css";
 
-export interface InitiativeExperienceOwnerMode {
-  initiative: Initiative;
-  showManageTab: boolean;
-  onShowManageTabChange: (active: boolean) => void;
-  onInitiativeUpdated: (initiative: Initiative) => void;
-}
-
 interface PublicInitiativeExperiencePageProps {
   experience: PublicInitiativeExperienceProjection;
-  ownerMode?: InitiativeExperienceOwnerMode;
+  /** Steward Manage panel record — loaded only when viewer is steward; never grants Manage by itself. */
+  manageInitiative?: Initiative | null;
+  onManageInitiativeUpdated?: (initiative: Initiative) => void;
+  /** Refetch canonical experience (lifecycleStages, viewerIsSteward, sidebar). */
+  onExperienceRefetch?: () => Promise<void>;
 }
 
 export function PublicInitiativeExperiencePage({
   experience: initialExperience,
-  ownerMode,
+  manageInitiative = null,
+  onManageInitiativeUpdated,
+  onExperienceRefetch,
 }: PublicInitiativeExperiencePageProps) {
   const [experience, setExperience] = useState(initialExperience);
-  const [activeTab, setActiveTab] = useState<CenterTab>(
-    ownerMode?.showManageTab ? "manage" : "overview",
-  );
+  const [showManageTab, setShowManageTab] = useState(false);
+  const [activeTab, setActiveTab] = useState<CenterTab>("overview");
   /** DISPLAY-ONLY selected stage — never mutates experience.currentStageId. */
   const [selectedStageId, setSelectedStageId] = useState(initialExperience.currentStageId);
   const [showLifecyclePanel, setShowLifecyclePanel] = useState(false);
@@ -55,7 +55,8 @@ export function PublicInitiativeExperiencePage({
   const [collaborationTab, setCollaborationTab] = useState<CollaborationTab | undefined>(undefined);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const viewerIsSteward = Boolean(ownerMode || experience.viewerIsSteward);
+  const viewerIsSteward = Boolean(experience.viewerIsSteward);
+  const canShowManage = viewerIsSteward && manageInitiative != null;
   const navStages = useMemo(
     () => selectLifecycleNavStagesForDisplay(experience.lifecycleStages),
     [experience.lifecycleStages],
@@ -64,17 +65,29 @@ export function PublicInitiativeExperiencePage({
     experience.optionalStageDiagnostics,
     "petition",
   );
+  const returnToInitiativeHref = buildInitiativeExperienceHref(experience.initiativeId);
+
+  const refreshExperience = useCallback(async () => {
+    if (onExperienceRefetch) {
+      await onExperienceRefetch();
+      return;
+    }
+
+    const { getPublicInitiativeExperience } = await import("../api");
+    const next = await getPublicInitiativeExperience(experience.initiativeId);
+    setExperience(next);
+  }, [experience.initiativeId, onExperienceRefetch]);
 
   useEffect(() => {
     setExperience(initialExperience);
   }, [initialExperience]);
 
   useEffect(() => {
-    if (ownerMode?.showManageTab) {
+    if (showManageTab && canShowManage) {
       setActiveTab("manage");
       setShowLifecyclePanel(false);
     }
-  }, [ownerMode?.showManageTab]);
+  }, [showManageTab, canShowManage]);
 
   const scrollToContent = useCallback(() => {
     contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -83,7 +96,8 @@ export function PublicInitiativeExperiencePage({
   const applyHash = useCallback(
     (hash: string) => {
       const resolution = resolveLifecycleShellHash(hash, experience.lifecycleStages, {
-        allowManage: Boolean(ownerMode),
+        allowManage: canShowManage,
+        viewerIsSteward,
       });
 
       switch (resolution.kind) {
@@ -91,38 +105,37 @@ export function PublicInitiativeExperiencePage({
           setShowLifecyclePanel(false);
           setActiveTab("manage");
           setFocusDiscussionCommentId(undefined);
-          ownerMode?.onShowManageTabChange(true);
+          setShowManageTab(true);
           return;
         case "discussion_tab":
-          // Discussion stage reuses the Center-tab Discussion contract.
           setShowLifecyclePanel(false);
           setActiveTab("discussion");
           setSelectedStageId("discussion");
           setFocusDiscussionCommentId(resolution.focusCommentId);
-          ownerMode?.onShowManageTabChange(false);
+          setShowManageTab(false);
           return;
         case "collaboration":
           setCollaborationTab(resolution.tab);
           setShowLifecyclePanel(false);
           setActiveTab("overview");
           setFocusDiscussionCommentId(undefined);
-          ownerMode?.onShowManageTabChange(false);
+          setShowManageTab(false);
           return;
         case "lifecycle_stage":
           setSelectedStageId(resolution.stageId);
           setShowLifecyclePanel(true);
           setFocusDiscussionCommentId(undefined);
-          ownerMode?.onShowManageTabChange(false);
+          setShowManageTab(false);
           return;
         case "fallback_overview":
         default:
           setShowLifecyclePanel(false);
           setActiveTab("overview");
           setFocusDiscussionCommentId(undefined);
-          ownerMode?.onShowManageTabChange(false);
+          setShowManageTab(false);
       }
     },
-    [experience.lifecycleStages, ownerMode],
+    [experience.lifecycleStages, canShowManage, viewerIsSteward],
   );
 
   useEffect(() => {
@@ -134,39 +147,39 @@ export function PublicInitiativeExperiencePage({
     return () => window.removeEventListener("hashchange", onHashChange);
   }, [applyHash]);
 
-  const applyQueryParams = useCallback(
-    (search: string) => {
-      const filterParam = new URLSearchParams(search).get("filter");
+  const applyQueryParams = useCallback((search: string) => {
+    const filterParam = new URLSearchParams(search).get("filter");
 
-      if (filterParam !== "collaboration") {
-        return;
-      }
+    if (filterParam !== "collaboration") {
+      return;
+    }
 
-      setShowLifecyclePanel(false);
-      setActiveTab("discussion");
-      ownerMode?.onShowManageTabChange(false);
-      setInitialDiscussionFilter("collaboration");
-    },
-    [ownerMode],
-  );
+    setShowLifecyclePanel(false);
+    setActiveTab("discussion");
+    setShowManageTab(false);
+    setInitialDiscussionFilter("collaboration");
+  }, []);
 
   useEffect(() => {
     applyQueryParams(window.location.search);
   }, [applyQueryParams]);
 
   const handleStageSelect = (stageId: string, hash: string) => {
-    if (!isLifecycleStageSelectable(experience.lifecycleStages, stageId)) {
+    if (
+      !isLifecycleStageSelectable(experience.lifecycleStages, stageId, {
+        viewerIsSteward,
+      })
+    ) {
       return;
     }
 
-    // Discussion lifecycle stage → Center Discussion tab (no second Discussion UI).
     if (stageId === "discussion") {
       setSelectedStageId("discussion");
       setShowLifecyclePanel(false);
       setActiveTab("discussion");
       setIsStagePreviewMode(false);
       setFocusDiscussionCommentId(undefined);
-      ownerMode?.onShowManageTabChange(false);
+      setShowManageTab(false);
       window.history.replaceState(null, "", "#discussion");
       scrollToContent();
       return;
@@ -175,7 +188,7 @@ export function PublicInitiativeExperiencePage({
     setSelectedStageId(stageId);
     setShowLifecyclePanel(true);
     setIsStagePreviewMode(false);
-    ownerMode?.onShowManageTabChange(false);
+    setShowManageTab(false);
     window.history.replaceState(null, "", `#${hash}`);
     scrollToContent();
   };
@@ -190,15 +203,15 @@ export function PublicInitiativeExperiencePage({
     setShowLifecyclePanel(false);
 
     if (tab === "manage") {
-      ownerMode?.onShowManageTabChange(true);
+      setShowManageTab(true);
       window.history.replaceState(null, "", "#manage");
     } else if (tab === "discussion") {
       setSelectedStageId("discussion");
       setFocusDiscussionCommentId(undefined);
-      ownerMode?.onShowManageTabChange(false);
+      setShowManageTab(false);
       window.history.replaceState(null, "", "#discussion");
     } else {
-      ownerMode?.onShowManageTabChange(false);
+      setShowManageTab(false);
       window.history.replaceState(null, "", window.location.pathname);
     }
 
@@ -206,7 +219,7 @@ export function PublicInitiativeExperiencePage({
   };
 
   const handleRevisionSelect = (version: number) => {
-    const href = `/initiatives/public/${encodeURIComponent(experience.initiativeId)}/revisions/${version}`;
+    const href = `${returnToInitiativeHref}/revisions/${version}`;
     window.location.assign(href);
   };
 
@@ -250,88 +263,97 @@ export function PublicInitiativeExperiencePage({
     }
   };
 
+  const refreshApi = useMemo(
+    () => ({
+      refresh: refreshExperience,
+    }),
+    [refreshExperience],
+  );
+
   return (
-    <PublicCivicRecordExperienceLayout
-      hero={
-        <PublicExperienceHero
-          {...buildInitiativeHeroProps(experience.hero)}
-          initiativeId={experience.initiativeId}
-        />
-      }
-      lifecycle={
-        <PublicInitiativeLifecycleNav
-          stages={navStages}
-          currentStageId={experience.currentStageId}
-          selectedStageId={selectedStageId}
-          onStageSelect={handleStageSelect}
-        />
-      }
-      center={
-        <>
-          {petitionDegradedMessage &&
-          showLifecyclePanel &&
-          selectedStageId === "petition" ? (
-            <p className="pie-optional-degraded" role="status">
-              {petitionDegradedMessage}
-            </p>
-          ) : null}
-          <PublicInitiativeCenterPanel
-            experience={experience}
-            activeTab={activeTab}
-            activeStageId={selectedStageId}
-            showLifecyclePanel={showLifecyclePanel}
-            onTabChange={handleTabChange}
-            contentRef={contentRef}
-            showManageTab={Boolean(ownerMode)}
-            initialDiscussionFilter={initialDiscussionFilter}
-            focusDiscussionCommentId={focusDiscussionCommentId}
-            managePanel={
-              ownerMode ? (
-                <InitiativeOwnerManagePanel
-                  initiative={ownerMode.initiative}
-                  onInitiativeUpdated={ownerMode.onInitiativeUpdated}
-                />
-              ) : null
-            }
-            onNavigateStage={handleStageSelect}
-            returnToInitiativeHref={
-              ownerMode
-                ? `/initiatives/${experience.initiativeId}`
-                : `/initiatives/public/${experience.initiativeId}`
-            }
-            isOwnerRoute={viewerIsSteward}
-            isStagePreviewMode={isStagePreviewMode}
-            onToggleStagePreviewMode={() => setIsStagePreviewMode((current) => !current)}
+    <InitiativeExperienceRefreshProvider value={refreshApi}>
+      <PublicCivicRecordExperienceLayout
+        hero={
+          <PublicExperienceHero
+            {...buildInitiativeHeroProps(experience.hero)}
+            initiativeId={experience.initiativeId}
           />
-        </>
-      }
-      sidebar={
-        <PublicExperienceSidebarOrChannel
-          initiativeId={experience.initiativeId}
-          currentStageId={experience.currentStageId}
-          lifecycleProfile={experience.lifecycleProfile}
-          workspaceStageId={
-            showLifecyclePanel && isInitiativeLifecycleAuthorWorkspaceStage(selectedStageId)
-              ? selectedStageId
-              : null
-          }
-          isStagePreviewMode={isStagePreviewMode}
-          isInitiativeSteward={viewerIsSteward}
-          onOpenPublicPreview={handleOpenStagePublicPreview}
-          onNavigateStage={handleStageSelect}
-          collaborationTab={collaborationTab}
-          statistics={experience.supportStatistics}
-          revisionHistory={experience.revisionHistory}
-          latestInitiatives={experience.latestInitiatives}
-          relatedInitiatives={experience.relatedInitiatives ?? []}
-          onSignalChange={(signal) => void handleSignalChange(signal)}
-          onBookmarkToggle={() => void handleBookmarkToggle()}
-          onRevisionSelect={handleRevisionSelect}
-          supportBusy={supportBusy}
-          participationJourney={experience.participationJourney ?? null}
-          viewerIsSteward={viewerIsSteward}
-        />
-      }
-    />
+        }
+        lifecycle={
+          <PublicInitiativeLifecycleNav
+            stages={navStages}
+            currentStageId={experience.currentStageId}
+            selectedStageId={selectedStageId}
+            viewerIsSteward={viewerIsSteward}
+            onStageSelect={handleStageSelect}
+          />
+        }
+        center={
+          <>
+            {petitionDegradedMessage &&
+            showLifecyclePanel &&
+            selectedStageId === "petition" ? (
+              <p className="pie-optional-degraded" role="status">
+                {petitionDegradedMessage}
+              </p>
+            ) : null}
+            <PublicInitiativeCenterPanel
+              experience={experience}
+              activeTab={activeTab}
+              activeStageId={selectedStageId}
+              showLifecyclePanel={showLifecyclePanel}
+              onTabChange={handleTabChange}
+              contentRef={contentRef}
+              showManageTab={canShowManage}
+              initialDiscussionFilter={initialDiscussionFilter}
+              focusDiscussionCommentId={focusDiscussionCommentId}
+              managePanel={
+                canShowManage && manageInitiative ? (
+                  <InitiativeOwnerManagePanel
+                    initiative={manageInitiative}
+                    onInitiativeUpdated={(updated) => {
+                      onManageInitiativeUpdated?.(updated);
+                      void refreshExperience();
+                    }}
+                  />
+                ) : null
+              }
+              onNavigateStage={handleStageSelect}
+              returnToInitiativeHref={returnToInitiativeHref}
+              isOwnerRoute={viewerIsSteward}
+              isStagePreviewMode={isStagePreviewMode}
+              onToggleStagePreviewMode={() => setIsStagePreviewMode((current) => !current)}
+            />
+          </>
+        }
+        sidebar={
+          <PublicExperienceSidebarOrChannel
+            initiativeId={experience.initiativeId}
+            currentStageId={experience.currentStageId}
+            lifecycleProfile={experience.lifecycleProfile}
+            workspaceStageId={
+              showLifecyclePanel && isInitiativeLifecycleAuthorWorkspaceStage(selectedStageId)
+                ? selectedStageId
+                : null
+            }
+            isStagePreviewMode={isStagePreviewMode}
+            isInitiativeSteward={viewerIsSteward}
+            onOpenPublicPreview={handleOpenStagePublicPreview}
+            onNavigateStage={handleStageSelect}
+            collaborationTab={collaborationTab}
+            statistics={experience.supportStatistics}
+            revisionHistory={experience.revisionHistory}
+            latestInitiatives={experience.latestInitiatives}
+            relatedInitiatives={experience.relatedInitiatives ?? []}
+            onSignalChange={(signal) => void handleSignalChange(signal)}
+            onBookmarkToggle={() => void handleBookmarkToggle()}
+            onRevisionSelect={handleRevisionSelect}
+            supportBusy={supportBusy}
+            participationJourney={experience.participationJourney ?? null}
+            viewerIsSteward={viewerIsSteward}
+          />
+        }
+      />
+    </InitiativeExperienceRefreshProvider>
   );
 }

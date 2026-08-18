@@ -1,21 +1,14 @@
 "use client";
 
-import type {
-  InitiativeCivicArchiveCompleteness,
-  InitiativeLifecycleProfile,
-} from "@hu/types";
-
-import { requiresPublicImpactBeforeCivicArchive } from "../../public-initiative-experience/initiative-lifecycle-shell";
+import type { InitiativeCivicArchiveCompleteness } from "@hu/types";
 
 export function InitiativeCivicArchiveCompletenessPanel({
   completeness,
-  lifecycleProfile,
 }: {
   readonly completeness: InitiativeCivicArchiveCompleteness;
-  readonly lifecycleProfile?: InitiativeLifecycleProfile | string | null;
+  /** @deprecated Unused after Step 04 — Public Impact is SOURCE_OPTIONAL. */
+  readonly lifecycleProfile?: string | null;
 }) {
-  const requirePublicImpact = requiresPublicImpactBeforeCivicArchive(lifecycleProfile);
-
   return (
     <section className="ica-source-panel" aria-label="Archive Completeness">
       <ul className="ica-source-panel__list">
@@ -48,15 +41,13 @@ export function InitiativeCivicArchiveCompletenessPanel({
           </p>
         </li>
         <li className="ica-source-panel__item">
-          <span className="ica-source-panel__label">Public Impact</span>
+          <span className="ica-source-panel__label">Public Impact (optional)</span>
           <p className="ica-source-panel__summary">
-            {requirePublicImpact
-              ? `${completeness.publicImpactAvailable ? "Available" : "Not available"}${
-                  completeness.traceabilityComplete
-                    ? " · Traceability complete"
-                    : " · Traceability incomplete"
-                }`
-              : "Not applicable on Public Choice — Collective Decision completion is sufficient"}
+            {`${completeness.publicImpactAvailable ? "Available" : "Not available"}${
+              completeness.traceabilityComplete
+                ? " · Traceability complete"
+                : " · Traceability incomplete"
+            }`}
           </p>
         </li>
       </ul>

@@ -9,7 +9,6 @@ import type {
   InitiativeCollectiveDecisionLifecycleDraftContext,
   InitiativeCollectiveDecisionSessionReference,
 } from "@hu/types";
-import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
@@ -17,7 +16,6 @@ import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { listActiveAlliesByInitiative } from "../initiative-discussion-collaboration/initiative-ally.store.js";
 import {
   closeInitiativeCollectiveDecision,
-  createInitiativeCollectiveDecisionDraft,
   openInitiativeCollectiveDecision,
 } from "../initiative-collective-decision/initiative-collective-decision.service.js";
 import {
@@ -39,10 +37,6 @@ import {
 } from "./initiative-collective-decision-lifecycle-draft.store.js";
 import { buildInitiativeCollectiveDecisionIntelligenceSnapshot } from "./initiative-collective-decision-intelligence.service.js";
 import { validateInitiativeCollectiveDecisionLifecycleDraftForPublication } from "./initiative-collective-decision-lifecycle.validators.js";
-
-function isPublicChoiceProfile(initiative: Initiative): boolean {
-  return resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE";
-}
 
 function getOwnedInitiative(initiativeId: string, identity: RequestIdentity): Initiative {
   const initiative = getInitiativeById(initiativeId);
@@ -149,13 +143,9 @@ export async function generateInitiativeCollectiveDecisionDraft(
   }
 
   const snapshot = await buildInitiativeCollectiveDecisionIntelligenceSnapshot(initiativeId);
-  const publicChoice = isPublicChoiceProfile(initiative);
 
-  if (!publicChoice && (!snapshot.isDecisionSessionAvailable || !snapshot.decisionSessionReference)) {
-    throw new Error(
-      "A Published Decision Session is required before generating a Collective Decision draft.",
-    );
-  }
+  // Decision Session is SOURCE_OPTIONAL — STANDARD and PUBLIC_CHOICE may generate
+  // from Initiative context when no Decision Session exists.
 
   const session = snapshot.decisionSessionReference;
   const content = await generateCollectiveDecisionDraftContent(snapshot);
@@ -296,7 +286,6 @@ export async function publishInitiativeCollectiveDecisionStage(
 ): Promise<InitiativeCollectiveDecision> {
   const initiative = getOwnedInitiative(initiativeId, identity);
   const draft = getInitiativeCollectiveDecisionLifecycleDraftByInitiativeId(initiativeId);
-  const publicChoice = isPublicChoiceProfile(initiative);
 
   if (!draft) {
     throw new Error("Collective Decision draft not found.");
@@ -308,15 +297,16 @@ export async function publishInitiativeCollectiveDecisionStage(
 
   const snapshot = await buildInitiativeCollectiveDecisionIntelligenceSnapshot(initiativeId);
 
-  if (!publicChoice) {
-    if (
-      !snapshot.decisionSessionReference ||
-      snapshot.decisionSessionReference.sessionId !== draft.decisionSessionId
-    ) {
-      throw new Error(
-        "The Decision Session this draft was generated from is no longer current. Generate the Collective Decision again before publishing.",
-      );
-    }
+  // When a Decision Session was linked on the draft, it must still be current.
+  // Absence of Decision Session is allowed (SOURCE_OPTIONAL).
+  if (
+    draft.decisionSessionId &&
+    (!snapshot.decisionSessionReference ||
+      snapshot.decisionSessionReference.sessionId !== draft.decisionSessionId)
+  ) {
+    throw new Error(
+      "The Decision Session this draft was generated from is no longer current. Generate the Collective Decision again before publishing.",
+    );
   }
 
   const existingForInitiative = listDecisionsByInitiative(initiativeId);
@@ -328,37 +318,31 @@ export async function publishInitiativeCollectiveDecisionStage(
 
   let decision: InitiativeCollectiveDecision;
 
-  if (publicChoice && !draft.decisionSessionId) {
-    const existingWithoutSession = existingForInitiative.find(
-      (candidate) => candidate.decisionSessionId === null,
-    );
-    if (existingWithoutSession) {
-      decision = existingWithoutSession;
-    } else {
-      const now = new Date().toISOString();
-      decision = createDecision({
-        decisionId: `collective-decision-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        initiativeId,
-        decisionSessionId: null,
-        stewardId: identity.participantId,
-        sequenceNumber: getNextSequenceNumber(initiativeId),
-        participationScope: draft.participationScope,
-        status: "draft",
-        question: draft.title.trim() || draft.decisionSummary.trim() || initiative.title,
-        closesAt: draft.closesAt,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
+  // Author Lifecycle never uses legacy session-bound create eligibility.
+  // Decision Session id is optional Source linkage only — createDecision directly.
+  const existingMatching = existingForInitiative.find((candidate) =>
+    draft.decisionSessionId
+      ? candidate.decisionSessionId === draft.decisionSessionId
+      : candidate.decisionSessionId === null,
+  );
+
+  if (existingMatching) {
+    decision = existingMatching;
   } else {
-    decision =
-      existingForInitiative.find((candidate) => candidate.decisionSessionId === draft.decisionSessionId) ??
-      (await createInitiativeCollectiveDecisionDraft(identity, {
-        initiativeId,
-        decisionSessionId: draft.decisionSessionId!,
-        participationScope: draft.participationScope,
-        closesAt: draft.closesAt,
-      }));
+    const now = new Date().toISOString();
+    decision = createDecision({
+      decisionId: `collective-decision-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      initiativeId,
+      decisionSessionId: draft.decisionSessionId,
+      stewardId: identity.participantId,
+      sequenceNumber: getNextSequenceNumber(initiativeId),
+      participationScope: draft.participationScope,
+      status: "draft",
+      question: draft.title.trim() || draft.decisionSummary.trim() || initiative.title,
+      closesAt: draft.closesAt,
+      createdAt: now,
+      updatedAt: now,
+    });
   }
 
   const structuredContent: CollectiveDecisionStructuredContent = {

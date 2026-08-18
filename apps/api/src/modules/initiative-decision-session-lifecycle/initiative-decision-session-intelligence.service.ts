@@ -27,7 +27,13 @@ const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed
 async function buildPetitionReference(
   initiativeId: string,
 ): Promise<InitiativeDecisionSessionPetitionReference | null> {
-  const petition = await getPetitionByInitiativeId(initiativeId);
+  // Petition is SOURCE_OPTIONAL — Mongo/infrastructure failure must not block Author DS.
+  let petition;
+  try {
+    petition = await getPetitionByInitiativeId(initiativeId);
+  } catch {
+    return null;
+  }
 
   if (!petition || !PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
     return null;
@@ -133,14 +139,17 @@ async function buildProposalReferences(
 async function buildOpenComments(
   initiativeId: string,
 ): Promise<readonly InitiativeDecisionSessionOpenCommentReference[]> {
-  const result = await listApprovedInitiativeComments({ initiativeId, limit: 8 });
-
-  return result.comments.map((comment) => ({
-    commentId: comment.commentId,
-    excerpt: comment.body.trim().slice(0, 240),
-    authorDisplayName: comment.authorDisplayName || "Participant",
-    createdAt: comment.createdAt,
-  }));
+  try {
+    const result = await listApprovedInitiativeComments({ initiativeId, limit: 8 });
+    return result.comments.map((comment) => ({
+      commentId: comment.commentId,
+      excerpt: comment.body.trim().slice(0, 240),
+      authorDisplayName: comment.authorDisplayName || "Participant",
+      createdAt: comment.createdAt,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 function buildConsistencyChecks(input: {
@@ -164,7 +173,7 @@ function buildConsistencyChecks(input: {
           checkId: "petition-available",
           label: "Published Petition",
           status: "warning",
-          detail: "A Published Petition is required before a Decision Session can be generated.",
+          detail: "No published Petition yet — Decision Session can use Initiative / Analysis / Proposal context instead.",
         },
   );
 

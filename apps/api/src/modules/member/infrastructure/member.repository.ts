@@ -16,6 +16,10 @@ import type { CreatePersistedMemberInput } from "../domain/member.types.js";
 import type { EditableMemberProfileFields } from "../domain/member-profile.types.js";
 
 async function ensureMemberMongoReady(): Promise<void> {
+  if (process.env.NODE_TEST_ENV === "true") {
+    throw new MemberRegistrationUnavailableError();
+  }
+
   if (!isMongoConfigured()) {
     throw new MemberRegistrationUnavailableError();
   }

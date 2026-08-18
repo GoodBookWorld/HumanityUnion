@@ -34,6 +34,7 @@ function withRecords(
 const initiative = {
   initiativeId: "initiative-ux02",
   status: "proposal",
+  lifecycleProfile: "STANDARD",
 } as Initiative;
 
 describe("Lifecycle UX Completion Pack 02 — navigation progress", () => {
@@ -93,5 +94,80 @@ describe("Lifecycle UX Completion Pack 02 — navigation progress", () => {
     assert.equal(currentStageId, "archive");
     assert.equal(stages.find((stage) => stage.stageId === "archive")?.stateLabel, "Archived");
     assert.equal(stages.some((stage) => stage.stageId === "revision"), false);
+  });
+});
+
+describe("Initiative Lifecycle Step 02 — historical continuation", () => {
+  it("stopped at Petition: later stages are Not Started, not incompatible", () => {
+    const { stages, currentStageId } = buildLifecycleNavigation(
+      initiative,
+      withRecords([
+        ["initiative", 1],
+        ["discussion", 1],
+        ["analysis", 1],
+        ["proposal", 1],
+        ["petition", 1],
+      ]),
+    );
+
+    assert.equal(currentStageId, "decision_session");
+    for (const stageId of [
+      "decision_session",
+      "collective_decision",
+      "commitment",
+      "tracking",
+      "official_response",
+      "public_impact",
+      "archive",
+    ]) {
+      const item = stages.find((stage) => stage.stageId === stageId);
+      assert.ok(item, `${stageId} must exist`);
+      assert.notEqual(item.state, "not_applicable");
+      assert.notEqual(item.state, "unavailable");
+      assert.equal(
+        item.state === "not_started" || item.state === "in_progress",
+        true,
+        `${stageId} must be empty/Not Started-family, got ${item.state}`,
+      );
+    }
+    assert.equal(stages.find((stage) => stage.stageId === "petition")?.state, "completed");
+  });
+
+  it("historical gap before cursor stays Not Started (not not_applicable)", () => {
+    const { stages, currentStageId } = buildLifecycleNavigation(
+      initiative,
+      withRecords([
+        ["initiative", 1],
+        ["discussion", 1],
+        ["analysis", 1],
+        // proposal skipped — no artifact
+        ["petition", 1],
+      ]),
+    );
+
+    assert.equal(currentStageId, "decision_session");
+    const proposal = stages.find((stage) => stage.stageId === "proposal");
+    assert.equal(proposal?.state, "not_started");
+    assert.notEqual(proposal?.state, "not_applicable");
+  });
+
+  it("published artifacts remain visible as Completed/Published", () => {
+    const { stages } = buildLifecycleNavigation(
+      initiative,
+      withRecords([
+        ["initiative", 1],
+        ["discussion", 1],
+        ["analysis", 1],
+        ["petition", 1],
+      ]),
+    );
+
+    assert.equal(stages.find((s) => s.stageId === "analysis")?.recordCount, 1);
+    assert.equal(
+      ["completed", "published"].includes(
+        stages.find((s) => s.stageId === "analysis")?.state ?? "",
+      ),
+      true,
+    );
   });
 });

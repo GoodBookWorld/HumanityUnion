@@ -436,7 +436,9 @@ export async function buildStageRecords(
   }
 
   const lifecycleArchiveVersion = getLatestArchiveVersionByInitiativeId(initiativeId);
-  // Prefer Part M versioned lifecycle Archive for progression; TASK-037 fallback only.
+  // Canonical progression counts Author Part M Archive only.
+  // TASK-037 public-civic-archive remains KEEP_PUBLIC_HISTORY via optional
+  // diagnostics / Cap02 display — never advances experience.currentStageId.
   records.set(
     "archive",
     lifecycleArchiveVersion
@@ -450,18 +452,7 @@ export async function buildStageRecords(
             publicHref: lifecycleArchiveVersion.publicUrlPath,
           },
         ]
-      : archive
-        ? [
-            {
-              recordId: archive.archiveRecordId,
-              title: archive.title,
-              summary: archive.summary,
-              status: archive.archivedStatus,
-              updatedAt: archive.archivedAt,
-              publicHref: `/civic-archive/${encodeURIComponent(initiativeId)}`,
-            },
-          ]
-        : [],
+      : [],
   );
 
   return {
@@ -730,6 +721,8 @@ export async function buildPublicInitiativeExperienceProjection(input: {
     },
     initiative: publicInitiative,
     currentStageId,
+    /** Guidance cursor — same derivation as currentStageId; never locks Author nav. */
+    recommendedStageId: currentStageId,
     lifecycleStages: stages,
     stageContent: buildStageContent(stageRecords, optionalStageDiagnostics),
     supportStatistics: {

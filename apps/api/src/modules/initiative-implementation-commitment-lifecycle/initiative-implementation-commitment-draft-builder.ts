@@ -54,7 +54,32 @@ function generateDeterministicImplementationCommitmentDraftContent(
   const summary = decision?.decisionSummary ?? "";
 
   if (!decision) {
-    return { title, summary, decisionId: null, candidates: [] };
+    const starterAction = snapshot.initiativeTitle
+      ? `Implement: ${snapshot.initiativeTitle}`
+      : "Define the first implementation commitment";
+    return {
+      title,
+      summary:
+        "No published Collective Decision yet — draft commitments manually from Initiative scope.",
+      decisionId: null,
+      candidates: [
+        {
+          candidateId: "candidate-0",
+          approvedAction: starterAction,
+          description: starterAction,
+          suggestedResponsibleRole: "Initiative Steward",
+          suggestedTimeline: "",
+          priority: "medium",
+          requiredResources: [],
+          relatedRisks: [],
+          references: snapshot.initiativeTitle
+            ? [`Initiative: ${snapshot.initiativeTitle}`]
+            : [],
+          proposedParticipantId: null,
+          status: "draft",
+        },
+      ],
+    };
   }
 
   const candidates: InitiativeImplementationCommitmentCandidate[] = decision.approvedActions.map(

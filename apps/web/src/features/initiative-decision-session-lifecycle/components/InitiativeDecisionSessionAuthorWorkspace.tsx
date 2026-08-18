@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAfterLifecyclePublish } from "../../public-initiative-experience/initiative-experience-refresh-context";
 
 import type {
   InitiativeDecisionSessionDraft,
@@ -50,6 +51,8 @@ export function InitiativeDecisionSessionAuthorWorkspace({
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  const onLifecyclePublished = useAfterLifecyclePublish(loadWorkspace);
 
   function handleDraftUpdated(draft: InitiativeDecisionSessionDraft) {
     setContext((current) => (current ? { ...current, draft } : current));
@@ -112,8 +115,9 @@ export function InitiativeDecisionSessionAuthorWorkspace({
       {!hasContent || !context.draft ? (
         <div className="ids-editor">
           <p className="ids-source-panel__empty">
-            Generate a structured Decision Draft from the published Petition and upstream Lifecycle
-            sources. The Decision Assistant remains advisory — nothing publishes automatically.
+            Generate a structured Decision Draft from available Petition / Analysis / Proposal /
+            Initiative context. Petition is optional — missing sources stay empty for editing. The
+            Decision Assistant remains advisory — nothing publishes automatically.
           </p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
             {resolveSaveButtonLabel(generatePhase.phase, "Generate Decision Draft")}
@@ -124,7 +128,7 @@ export function InitiativeDecisionSessionAuthorWorkspace({
           initiativeId={initiativeId}
           draft={context.draft}
           onDraftUpdated={handleDraftUpdated}
-          onPublished={() => void loadWorkspace()}
+          onPublished={onLifecyclePublished}
           onTogglePreview={onTogglePreview}
         />
       )}

@@ -1,5 +1,5 @@
 export function buildInitiativeExperienceHref(initiativeId: string): string {
-  return `/initiatives/${encodeURIComponent(initiativeId)}`;
+  return `/initiatives/public/${encodeURIComponent(initiativeId)}`;
 }
 
 export function buildInitiativeExperienceManageHref(initiativeId: string): string {

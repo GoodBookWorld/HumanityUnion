@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAfterLifecyclePublish } from "../../public-initiative-experience/initiative-experience-refresh-context";
 
 import type {
   InitiativeCollectiveDecisionLifecycleDraft,
@@ -11,7 +12,6 @@ import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
-import { requiresDecisionSessionBeforeCollectiveDecision } from "../../public-initiative-experience/initiative-lifecycle-shell";
 import {
   generateInitiativeCollectiveDecisionDraft,
   getInitiativeCollectiveDecisionWorkspace,
@@ -37,7 +37,6 @@ export function InitiativeCollectiveDecisionAuthorWorkspace({
   lifecycleProfile,
 }: InitiativeCollectiveDecisionAuthorWorkspaceProps) {
   const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
-  const requireDecisionSession = requiresDecisionSessionBeforeCollectiveDecision(profile);
   const [context, setContext] = useState<InitiativeCollectiveDecisionLifecycleDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -61,6 +60,8 @@ export function InitiativeCollectiveDecisionAuthorWorkspace({
   useEffect(() => {
     void loadWorkspace();
   }, [loadWorkspace]);
+
+  const onLifecyclePublished = useAfterLifecyclePublish(loadWorkspace);
 
   function handleDraftUpdated(draft: InitiativeCollectiveDecisionLifecycleDraft) {
     setContext((current) => (current ? { ...current, draft } : current));
@@ -126,9 +127,8 @@ export function InitiativeCollectiveDecisionAuthorWorkspace({
       {!hasContent || !context.draft ? (
         <div className="icd-editor">
           <p className="icd-source-panel__empty">
-            {requireDecisionSession
-              ? "Generate a structured Decision Result from the published Decision Session and upstream Lifecycle sources. The Decision Assistant remains advisory — nothing publishes automatically."
-              : "Generate a structured Decision Result from upstream Lifecycle sources. The Decision Assistant remains advisory — nothing publishes automatically."}
+            Generate a structured Decision Result from upstream Lifecycle sources. The Decision
+            Assistant remains advisory — nothing publishes automatically.
           </p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
             {resolveSaveButtonLabel(generatePhase.phase, "Generate Collective Decision Draft")}
@@ -139,7 +139,7 @@ export function InitiativeCollectiveDecisionAuthorWorkspace({
           initiativeId={initiativeId}
           draft={context.draft}
           onDraftUpdated={handleDraftUpdated}
-          onPublished={() => void loadWorkspace()}
+          onPublished={onLifecyclePublished}
           onTogglePreview={onTogglePreview}
           onNavigate={onNavigate}
         />

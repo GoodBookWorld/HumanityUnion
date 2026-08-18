@@ -29,7 +29,13 @@ const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed
 async function buildPetitionReference(
   initiativeId: string,
 ): Promise<InitiativeCollectiveDecisionPetitionReference | null> {
-  const petition = await getPetitionByInitiativeId(initiativeId);
+  // Petition is SOURCE_OPTIONAL — Mongo/infrastructure failure must not block Author CD.
+  let petition;
+  try {
+    petition = await getPetitionByInitiativeId(initiativeId);
+  } catch {
+    return null;
+  }
 
   if (!petition || !PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
     return null;
@@ -191,7 +197,7 @@ function buildConsistencyChecks(
           checkId: "decision-session-available",
           label: "Published Decision Session",
           status: "warning",
-          detail: "A Published Decision Session is required before a Collective Decision can be generated.",
+          detail: "No published Decision Session yet — Collective Decision can be configured from Initiative context.",
         },
   );
 
