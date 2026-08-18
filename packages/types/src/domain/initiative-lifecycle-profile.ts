@@ -25,9 +25,12 @@ export const INITIATIVE_LIFECYCLE_PROFILES = ["STANDARD", "PUBLIC_CHOICE"] as co
 /**
  * STANDARD: full civic lifecycle (registry order), including Discussion after Initiative.
  * Discussion remains the Center-tab civic surface (#discussion).
+ * Revision version history remains available as content — not a route stage.
  */
 export const STANDARD_LIFECYCLE_STAGE_ROUTE: readonly InitiativeLifecycleStageId[] =
-  INITIATIVE_LIFECYCLE_STAGE_REGISTRY.map((stage) => stage.stageId);
+  INITIATIVE_LIFECYCLE_STAGE_REGISTRY.map((stage) => stage.stageId).filter(
+    (stageId) => stageId !== "revision",
+  );
 
 /**
  * PUBLIC_CHOICE: Initiative → Discussion → Collective Decision → Civic Archive.

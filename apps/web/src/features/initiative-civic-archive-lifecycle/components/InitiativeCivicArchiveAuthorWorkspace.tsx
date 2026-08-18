@@ -113,8 +113,9 @@ export function InitiativeCivicArchiveAuthorWorkspace({
     <div className="lsw-main">
       {context.latestPublishedVersion != null ? (
         <p className="ica-source-panel__empty">
-          Latest published Archive version: v{context.latestPublishedVersion}. Generate again to
-          prepare the next immutable version — prior versions are never mutated.
+          Latest published Archive version: v{context.latestPublishedVersion}. Lifecycle is complete
+          after Publish & Complete Initiative Lifecycle. Generate again only to prepare the next
+          immutable Archive version — prior versions are never mutated.
         </p>
       ) : null}
 

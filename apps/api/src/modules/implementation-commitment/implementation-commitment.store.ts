@@ -582,6 +582,14 @@ export function completeImplementationCommitment(
 
   refreshDerivedState(commitment);
 
+  /**
+   * Legacy Activity Implementation Commitment readiness / policy gates.
+   *
+   * AUTHORITY FREEZE — COMPATIBILITY_DISPLAY_ONLY for Initiative Lifecycle.
+   * These thresholds complete this legacy commitment aggregate only. They
+   * MUST NOT block Initiative Lifecycle `commitment` / `tracking` stage
+   * unlock (canonical: published lifecycle artifacts → resolveInitiativeLifecycleState).
+   */
   if (!commitment.implementationReadiness.readinessReached) {
     throw new Error(
       "Implementation Commitment cannot be completed until Implementation Readiness is reached.",

@@ -21,7 +21,7 @@ import "./auth-form.css";
 export function ConfirmEmailForm() {
   const router = useRouter();
   const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
-  const [emailSent, setEmailSent] = useState(true);
+  const [emailSent, setEmailSent] = useState(false);
   const [resendAvailableAt, setResendAvailableAt] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
 

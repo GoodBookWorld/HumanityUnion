@@ -19,9 +19,6 @@ import { InitiativeCollaborativeAnalysisPublicResult } from "../../initiative-co
 import { InitiativeImprovementProposalsAuthorWorkspace } from "../../initiative-improvement-proposals-stage/components/InitiativeImprovementProposalsAuthorWorkspace";
 import { InitiativeImprovementProposalsDraftPreview } from "../../initiative-improvement-proposals-stage/components/InitiativeImprovementProposalsDraftPreview";
 import { InitiativeImprovementProposalsPublicResult } from "../../initiative-improvement-proposals-stage/components/InitiativeImprovementProposalsPublicResult";
-import { InitiativeRevisionAuthorWorkspace } from "../../initiative-version-revision/components/InitiativeRevisionAuthorWorkspace";
-import { InitiativeRevisionDraftPreview } from "../../initiative-version-revision/components/InitiativeRevisionDraftPreview";
-import { InitiativeRevisionPublicResult } from "../../initiative-version-revision/components/InitiativeRevisionPublicResult";
 import { InitiativePetitionAuthorWorkspace } from "../../initiative-petition-lifecycle/components/InitiativePetitionAuthorWorkspace";
 import { InitiativePetitionDraftPreview } from "../../initiative-petition-lifecycle/components/InitiativePetitionDraftPreview";
 import { InitiativePetitionPublicResult } from "../../initiative-petition-lifecycle/components/InitiativePetitionPublicResult";
@@ -256,6 +253,7 @@ function DiscussionPanel({
   initiativeId,
   discussion,
   initialDiscussionFilter,
+  focusCommentId,
   isOwnerRoute,
   discussionStageState,
   onDiscussionCompleted,
@@ -263,6 +261,7 @@ function DiscussionPanel({
   initiativeId: string;
   discussion: PublicInitiativeExperienceProjection["discussion"];
   initialDiscussionFilter?: "collaboration";
+  focusCommentId?: string;
   isOwnerRoute: boolean;
   discussionStageState?: string;
   onDiscussionCompleted: () => void;
@@ -288,6 +287,7 @@ function DiscussionPanel({
         commentCount={discussion.commentCount}
         hasMoreComments={discussion.hasMoreComments}
         initialFilter={initialDiscussionFilter}
+        focusCommentId={focusCommentId}
       />
     </>
   );
@@ -304,6 +304,8 @@ interface PublicInitiativeCenterPanelProps {
   managePanel?: ReactNode;
   /** Profile UX Pack 01 Part 4 — deep-link from the collaboration-request notification. */
   initialDiscussionFilter?: "collaboration";
+  /** Collaborative Analysis "View in Discussion" — scroll to `#comment-{id}`. */
+  focusDiscussionCommentId?: string;
   /**
    * Initiative Lifecycle — Part A Completion Part 4/5 — Previous/Next
    * stage navigation from inside the shared
@@ -339,6 +341,7 @@ export function PublicInitiativeCenterPanel({
   showManageTab = false,
   managePanel = null,
   initialDiscussionFilter,
+  focusDiscussionCommentId,
   onNavigateStage,
   returnToInitiativeHref,
   isOwnerRoute = false,
@@ -351,9 +354,9 @@ export function PublicInitiativeCenterPanel({
    * Initiative Lifecycle — Part B, Section 0 (Mandatory Architectural
    * Rule): Collaborative Analysis was the first stage with a real
    * implementation behind every Presentation Mode; Part D extends this to
-   * Improvement Proposals, Part E extends it identically to Revision, and
-   * Part F extends it identically to Petition, and Part G extends it
-   * identically to Decision Session. These stages render through the
+   * Improvement Proposals, Part F extends it identically to Petition, and Part G extends it
+   * identically to Decision Session. Revision is content/history only (not a lifecycle stage).
+   * These stages render through the
    * shared shell for EVERY viewer — Author, Public Preview, and Public
    * Viewer alike — never a second guest-only page. Remaining stages still
    * only mount the shell for the owner-route Author until their own Part
@@ -362,7 +365,6 @@ export function PublicInitiativeCenterPanel({
   const showLifecycleWorkspaceShell =
     activeStageId === "analysis" ||
     activeStageId === "proposal" ||
-    activeStageId === "revision" ||
     activeStageId === "petition" ||
     activeStageId === "decision_session" ||
     activeStageId === "collective_decision" ||
@@ -422,11 +424,7 @@ export function PublicInitiativeCenterPanel({
                   <InitiativeImprovementProposalsAuthorWorkspace
                     initiativeId={experience.initiativeId}
                     onTogglePreview={onToggleStagePreviewMode ?? (() => undefined)}
-                  />
-                ) : activeStage.stageId === "revision" ? (
-                  <InitiativeRevisionAuthorWorkspace
-                    initiativeId={experience.initiativeId}
-                    onTogglePreview={onToggleStagePreviewMode ?? (() => undefined)}
+                    onNavigate={onNavigateStage}
                   />
                 ) : activeStage.stageId === "petition" ? (
                   <InitiativePetitionAuthorWorkspace
@@ -498,18 +496,7 @@ export function PublicInitiativeCenterPanel({
                         ) : isStagePreviewMode ? (
                           <InitiativeImprovementProposalsDraftPreview initiativeId={experience.initiativeId} />
                         ) : null
-                    : activeStage.stageId === "revision"
-                      ? (projection) =>
-                          projection.metadata.publishedRecordId ? (
-                            <InitiativeRevisionPublicResult
-                              initiativeId={experience.initiativeId}
-                              version={Number.parseInt(projection.metadata.publishedRecordId, 10)}
-                              isPreview={isStagePreviewMode}
-                            />
-                          ) : isStagePreviewMode ? (
-                            <InitiativeRevisionDraftPreview initiativeId={experience.initiativeId} />
-                          ) : null
-                      : activeStage.stageId === "petition"
+                    : activeStage.stageId === "petition"
                         ? (projection) =>
                             projection.metadata.publishedRecordId ? (
                               <InitiativePetitionPublicResult
@@ -662,6 +649,7 @@ export function PublicInitiativeCenterPanel({
               initiativeId={experience.initiativeId}
               discussion={experience.discussion}
               initialDiscussionFilter={initialDiscussionFilter}
+              focusCommentId={focusDiscussionCommentId}
               isOwnerRoute={isOwnerRoute}
               discussionStageState={
                 discussionCompletedOverride

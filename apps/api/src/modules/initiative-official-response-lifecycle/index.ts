@@ -2,6 +2,7 @@ export { default as initiativeOfficialResponseLifecycleRouter } from "./initiati
 export {
   generateInitiativeOfficialResponseDraft,
   getInitiativeOfficialResponseWorkspaceContext,
+  getPublishedOfficialResponsePackageView,
   listPublishedInitiativeOfficialResponses,
   listPublishedPackageResponses,
   publishInitiativeOfficialResponseStage,

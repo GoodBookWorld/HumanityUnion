@@ -1,8 +1,14 @@
 import type {
   InitiativeOfficialResponseCandidate,
   InitiativeOfficialResponseLifecycleDraft,
+  InitiativeOfficialResponseNoResponseDetail,
+  InitiativeOfficialResponseOutcomeKind,
 } from "@hu/types";
 
+import {
+  emptyOfficialResponseNoResponseDetail,
+  normalizeOfficialResponseOutcomeKind,
+} from "./initiative-official-response-outcome.js";
 import { resolveInitiativeOfficialResponseLifecycleDraftPersistenceAdapter } from "./persistence/resolve-initiative-official-response-lifecycle-draft-persistence.js";
 import { snapshotFromInitiativeOfficialResponseLifecycleDrafts } from "./persistence/initiative-official-response-lifecycle-draft-persistence.types.js";
 
@@ -10,10 +16,29 @@ export interface InitiativeOfficialResponseLifecycleDraftUpdate {
   title?: string;
   summary?: string;
   trackingPackageId?: string | null;
+  outcomeKind?: InitiativeOfficialResponseOutcomeKind;
+  noResponseDetail?: InitiativeOfficialResponseNoResponseDetail;
   candidates?: InitiativeOfficialResponseCandidate[];
 }
 
 const persistence = resolveInitiativeOfficialResponseLifecycleDraftPersistenceAdapter();
+
+function normalizeDraft(
+  draft: InitiativeOfficialResponseLifecycleDraft,
+): InitiativeOfficialResponseLifecycleDraft {
+  return {
+    ...draft,
+    outcomeKind: normalizeOfficialResponseOutcomeKind(draft.outcomeKind, draft.candidates.length),
+    noResponseDetail: draft.noResponseDetail
+      ? {
+          contactedOrganizations: [...draft.noResponseDetail.contactedOrganizations],
+          contactedDates: [...draft.noResponseDetail.contactedDates],
+          note: draft.noResponseDetail.note,
+        }
+      : emptyOfficialResponseNoResponseDetail(),
+    candidates: draft.candidates.map((candidate) => structuredClone(candidate)),
+  };
+}
 
 function loadDraftsMap(): Map<string, InitiativeOfficialResponseLifecycleDraft> {
   const snapshot = persistence.load();
@@ -21,7 +46,7 @@ function loadDraftsMap(): Map<string, InitiativeOfficialResponseLifecycleDraft> 
   return new Map<string, InitiativeOfficialResponseLifecycleDraft>(
     Object.entries(snapshot.drafts).map(([initiativeId, draft]) => [
       initiativeId,
-      structuredClone(draft),
+      normalizeDraft(structuredClone(draft)),
     ]),
   );
 }
@@ -37,16 +62,17 @@ export function getInitiativeOfficialResponseLifecycleDraftByInitiativeId(
 ): InitiativeOfficialResponseLifecycleDraft | null {
   const draft = drafts.get(initiativeId);
 
-  return draft ? structuredClone(draft) : null;
+  return draft ? normalizeDraft(structuredClone(draft)) : null;
 }
 
 export function upsertInitiativeOfficialResponseLifecycleDraft(
   draft: InitiativeOfficialResponseLifecycleDraft,
 ): InitiativeOfficialResponseLifecycleDraft {
-  drafts.set(draft.initiativeId, structuredClone(draft));
+  const normalized = normalizeDraft(draft);
+  drafts.set(normalized.initiativeId, structuredClone(normalized));
   persistDraftsMap(drafts);
 
-  return structuredClone(draft);
+  return structuredClone(normalized);
 }
 
 export function updateInitiativeOfficialResponseLifecycleDraft(
@@ -68,15 +94,26 @@ export function updateInitiativeOfficialResponseLifecycleDraft(
   if (update.trackingPackageId !== undefined) {
     draft.trackingPackageId = update.trackingPackageId;
   }
+  if (update.outcomeKind !== undefined) {
+    draft.outcomeKind = update.outcomeKind;
+  }
+  if (update.noResponseDetail !== undefined) {
+    draft.noResponseDetail = {
+      contactedOrganizations: [...update.noResponseDetail.contactedOrganizations],
+      contactedDates: [...update.noResponseDetail.contactedDates],
+      note: update.noResponseDetail.note,
+    };
+  }
   if (update.candidates !== undefined) {
     draft.candidates = update.candidates.map((candidate) => structuredClone(candidate));
   }
 
   draft.updatedAt = new Date().toISOString();
-  drafts.set(initiativeId, draft);
+  const normalized = normalizeDraft(draft);
+  drafts.set(initiativeId, normalized);
   persistDraftsMap(drafts);
 
-  return structuredClone(draft);
+  return structuredClone(normalized);
 }
 
 export function deleteInitiativeOfficialResponseLifecycleDraft(initiativeId: string): void {

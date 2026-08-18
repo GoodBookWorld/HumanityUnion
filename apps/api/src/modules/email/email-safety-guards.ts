@@ -50,6 +50,27 @@ export function isRealEmailAllowedInTests(): boolean {
 }
 
 /**
+ * Staging / beta / production must never treat mock delivery as a successful
+ * auth-code send. Local development may still use EMAIL_PROVIDER=mock.
+ */
+export function isDeployedPlatformRequiringRealEmail(): boolean {
+  if (mustForceMockEmailProvider()) {
+    return false;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return true;
+  }
+
+  const platformMode = process.env.PLATFORM_MODE?.trim();
+  return (
+    platformMode === "staging" ||
+    platformMode === "beta" ||
+    platformMode === "production"
+  );
+}
+
+/**
  * Real SMTP/Resend must never be selected during automated tests/verification
  * unless a human explicitly opts in for a one-off smoke (`ALLOW_REAL_EMAIL_IN_TESTS`).
  */

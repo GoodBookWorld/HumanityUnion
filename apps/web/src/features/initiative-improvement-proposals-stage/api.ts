@@ -127,6 +127,31 @@ export async function publishImprovementProposalsCollection(
   );
 }
 
+/** Open an empty draft collection (zero community proposals path). */
+export async function ensureEmptyImprovementProposalsDraft(
+  initiativeId: string,
+): Promise<InitiativeImprovementProposalsCollection> {
+  return apiRequest<InitiativeImprovementProposalsCollection>(
+    `/api/v1/improvement-proposal-collections/by-initiative/${encodeURIComponent(initiativeId)}/ensure-empty-draft`,
+    { method: "POST" },
+  );
+}
+
+/**
+ * Final Author completion: commit InitiativeVersionRevision + publish proposals
+ * collection + unlock Petition.
+ */
+export async function completeImprovementProposalsWithVersionCommit(initiativeId: string): Promise<{
+  collection: InitiativeImprovementProposalsCollection;
+  revision: { revisionId: string; version: number };
+  initiative: { initiativeId: string; title: string };
+}> {
+  return apiRequest(
+    `/api/v1/improvement-proposal-collections/by-initiative/${encodeURIComponent(initiativeId)}/complete-with-version`,
+    { method: "POST" },
+  );
+}
+
 export async function archiveImprovementProposalsCollection(
   collectionId: string,
 ): Promise<InitiativeImprovementProposalsCollection> {

@@ -13,13 +13,12 @@ import {
 } from "@hu/types";
 
 describe("Lifecycle Finalization Phase 02 — profiles + state resolver", () => {
-  it("STANDARD route includes Discussion then full civic lifecycle", () => {
+  it("STANDARD route is 12 user-visible stages without Revision", () => {
     assert.deepEqual([...STANDARD_LIFECYCLE_STAGE_ROUTE], [
       "initiative",
       "discussion",
       "analysis",
       "proposal",
-      "revision",
       "petition",
       "decision_session",
       "collective_decision",
@@ -29,6 +28,8 @@ describe("Lifecycle Finalization Phase 02 — profiles + state resolver", () => 
       "public_impact",
       "archive",
     ]);
+    assert.equal(STANDARD_LIFECYCLE_STAGE_ROUTE.length, 12);
+    assert.equal(STANDARD_LIFECYCLE_STAGE_ROUTE.includes("revision"), false);
   });
 
   it("PUBLIC_CHOICE route is Initiative → Discussion → Collective Decision → Archive", () => {
@@ -61,10 +62,29 @@ describe("Lifecycle Finalization Phase 02 — profiles + state resolver", () => 
       publishedStageCounts: { initiative: 1, discussion: 1, analysis: 1 },
     });
     assert.equal(state.currentStageId, "proposal");
-    assert.equal(state.nextStageId, "revision");
+    assert.equal(state.nextStageId, "petition");
     assert.equal(state.stageApplicability.analysis, "COMPLETED");
     assert.equal(state.stageApplicability.proposal, "CURRENT");
     assert.equal(state.stageApplicability.petition, "LOCKED");
+  });
+
+  it("proposal next applicable stage is petition (Revision not on route)", () => {
+    assert.equal(getNextApplicableLifecycleStageId("proposal", "STANDARD"), "petition");
+  });
+
+  it("legacy Revision counts do not become currentStageId", () => {
+    const state = resolveInitiativeLifecycleState({
+      lifecycleProfile: "STANDARD",
+      publishedStageCounts: {
+        initiative: 1,
+        discussion: 1,
+        analysis: 1,
+        proposal: 1,
+        revision: 3,
+      },
+    });
+    assert.notEqual(state.currentStageId, "revision");
+    assert.equal(state.currentStageId, "petition");
   });
 
   it("profile-aware next-stage: Initiative → Discussion for both profiles", () => {

@@ -6,11 +6,32 @@ import type { InitiativeOfficialResponsePackage, InitiativeOfficialResponseRecor
 import { isMongoPersistenceMode } from "../../config/production-persistence-contract.js";
 import { createLegacyFileStoreMongoBridge } from "../../infrastructure/mongodb/legacy-file-store-mongo-bridge.js";
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
+import { emptyOfficialResponseNoResponseDetail } from "./initiative-official-response-outcome.js";
 
 interface PackageAndRecordSnapshot {
   version: 1;
   packages: Record<string, InitiativeOfficialResponsePackage>;
   responses: Record<string, InitiativeOfficialResponseRecord>;
+}
+
+function normalizePackage(pkg: InitiativeOfficialResponsePackage): InitiativeOfficialResponsePackage {
+  return {
+    ...pkg,
+    outcomeKind:
+      pkg.outcomeKind === "no_official_response_received" || pkg.outcomeKind === "responses_received"
+        ? pkg.outcomeKind
+        : pkg.responseIds.length === 0
+          ? "no_official_response_received"
+          : "responses_received",
+    noResponseDetail: pkg.noResponseDetail
+      ? {
+          contactedOrganizations: [...pkg.noResponseDetail.contactedOrganizations],
+          contactedDates: [...pkg.noResponseDetail.contactedDates],
+          note: pkg.noResponseDetail.note,
+        }
+      : emptyOfficialResponseNoResponseDetail(),
+    responseIds: [...pkg.responseIds],
+  };
 }
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -60,7 +81,7 @@ const bridge = createLegacyFileStoreMongoBridge<PackageAndRecordSnapshot>({
 
 const initial = bridge.loadInitial();
 const packages = new Map<string, InitiativeOfficialResponsePackage>(
-  Object.entries(initial.packages).map(([id, pkg]) => [id, structuredClone(pkg)]),
+  Object.entries(initial.packages).map(([id, pkg]) => [id, normalizePackage(structuredClone(pkg))]),
 );
 const responses = new Map<string, InitiativeOfficialResponseRecord>(
   Object.entries(initial.responses).map(([id, response]) => [id, structuredClone(response)]),
@@ -70,7 +91,7 @@ function replaceFromSnapshot(snapshot: PackageAndRecordSnapshot): void {
   packages.clear();
   responses.clear();
   for (const [id, pkg] of Object.entries(snapshot.packages)) {
-    packages.set(id, structuredClone(pkg));
+    packages.set(id, normalizePackage(structuredClone(pkg)));
   }
   for (const [id, response] of Object.entries(snapshot.responses)) {
     responses.set(id, structuredClone(response));
@@ -102,7 +123,7 @@ export async function flushInitiativeOfficialResponsePackageMongoPersistence(): 
 
 export function getPackageById(packageId: string): InitiativeOfficialResponsePackage | null {
   const pkg = packages.get(packageId);
-  return pkg ? structuredClone(pkg) : null;
+  return pkg ? normalizePackage(structuredClone(pkg)) : null;
 }
 
 export function getPackageByInitiativeId(initiativeId: string): InitiativeOfficialResponsePackage | null {
@@ -110,13 +131,14 @@ export function getPackageByInitiativeId(initiativeId: string): InitiativeOffici
     .filter((pkg) => pkg.initiativeId === initiativeId)
     .sort((left, right) => right.publishedAt.localeCompare(left.publishedAt));
 
-  return matches[0] ? structuredClone(matches[0]) : null;
+  return matches[0] ? normalizePackage(structuredClone(matches[0])) : null;
 }
 
 export function upsertPackage(pkg: InitiativeOfficialResponsePackage): InitiativeOfficialResponsePackage {
-  packages.set(pkg.packageId, structuredClone(pkg));
+  const normalized = normalizePackage(pkg);
+  packages.set(normalized.packageId, structuredClone(normalized));
   persist();
-  return structuredClone(pkg);
+  return structuredClone(normalized);
 }
 
 export function getResponseById(responseId: string): InitiativeOfficialResponseRecord | null {

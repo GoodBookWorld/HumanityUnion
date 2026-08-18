@@ -56,17 +56,17 @@ describe("Lifecycle Finalization Phase 04 — Author workflow contract", () => {
     assert.equal(creates, 1);
   });
 
-  it("Revision→Petition transition postcondition holds for STANDARD", () => {
-    assert.equal(resolveNextStageAfterPublish("revision", "STANDARD"), "petition");
+  it("proposal→Petition transition postcondition holds for STANDARD (Revision not on route)", () => {
+    assert.equal(resolveNextStageAfterPublish("proposal", "STANDARD"), "petition");
+    assert.equal(resolveNextStageAfterPublish("revision", "STANDARD"), null);
     const state = assertLifecycleTransitionPostcondition({
-      publishedStageId: "revision",
+      publishedStageId: "proposal",
       lifecycleProfile: "STANDARD",
       nextStageId: "petition",
       priorPublishedStageCounts: {
         initiative: 1,
         discussion: 1,
         analysis: 1,
-        proposal: 1,
       },
     });
     assert.equal(state.currentStageId, "petition");
@@ -131,7 +131,7 @@ describe("Lifecycle Finalization Phase 04 — Author workflow contract", () => {
       ["discussion", [{ recordId: "d1" } as never]],
       ["analysis", [{ recordId: "a1" } as never]],
       ["proposal", [{ recordId: "p1" } as never]],
-      ["revision", []],
+      ["revision", [{ recordId: "r1" } as never]],
     ]);
     const { currentStageId, stages } = buildLifecycleNavigation(
       {
@@ -142,11 +142,13 @@ describe("Lifecycle Finalization Phase 04 — Author workflow contract", () => {
       } as never,
       records,
     );
-    assert.equal(currentStageId, "revision");
+    assert.equal(currentStageId, "petition");
+    assert.notEqual(currentStageId, "revision");
     const analysis = stages.find((stage) => stage.stageId === "analysis");
     assert.equal(analysis?.state, "completed");
+    assert.equal(stages.some((stage) => stage.stageId === "revision"), false);
     // DISPLAY-ONLY selection of analysis must not change currentStageId authority.
-    assert.equal(currentStageId, "revision");
+    assert.equal(currentStageId, "petition");
   });
 
   it("Revision publish validation requires revisionSummary and allows empty communitySlug", () => {

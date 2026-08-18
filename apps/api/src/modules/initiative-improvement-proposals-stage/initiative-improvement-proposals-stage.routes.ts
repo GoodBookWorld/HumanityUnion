@@ -6,6 +6,8 @@ import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-
 import {
   addManualInitiativeStructuredProposal,
   archiveImprovementProposalsCollection,
+  completeImprovementProposalsWithVersionCommit,
+  ensureEmptyImprovementProposalsDraft,
   generateImprovementProposalsDraft,
   getMyImprovementProposalsCollection,
   getMyImprovementProposalsCollectionForInitiative,
@@ -47,7 +49,10 @@ function resolveErrorStatus(message: string): number {
     message.includes("must be marked") ||
     message.includes("is required to publish") ||
     message.includes("Once published") ||
-    message.includes("archived and its proposals")
+    message.includes("archived and its proposals") ||
+    message.includes("already published") ||
+    message.includes("Accept / Partial") ||
+    message.includes("Initial version must be published")
   ) {
     return 409;
   }
@@ -109,6 +114,46 @@ initiativeImprovementProposalsStageRouter.post(
       const collection = await generateImprovementProposalsDraft(identity, param(req, "initiativeId"));
 
       res.json(createSuccessResponse(collection, "Improvement Proposals draft generated."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+/** Zero-proposal path — open an empty draft so Author can commit Initiative version. */
+initiativeImprovementProposalsStageRouter.post(
+  "/by-initiative/:initiativeId/ensure-empty-draft",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const collection = await ensureEmptyImprovementProposalsDraft(identity, param(req, "initiativeId"));
+
+      res.json(createSuccessResponse(collection, "Improvement Proposals draft ready."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+/**
+ * Final Author completion: commit InitiativeVersionRevision progress version,
+ * publish the proposal collection, unlock Petition.
+ */
+initiativeImprovementProposalsStageRouter.post(
+  "/by-initiative/:initiativeId/complete-with-version",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const result = await completeImprovementProposalsWithVersionCommit(
+        identity,
+        param(req, "initiativeId"),
+      );
+
+      res.json(
+        createSuccessResponse(result, "Improvement Proposals completed and Initiative version committed."),
+      );
     } catch (error) {
       handleServiceError(res, error);
     }

@@ -49,6 +49,9 @@ export function PublicInitiativeExperiencePage({
   const [initialDiscussionFilter, setInitialDiscussionFilter] = useState<"collaboration" | undefined>(
     undefined,
   );
+  const [focusDiscussionCommentId, setFocusDiscussionCommentId] = useState<string | undefined>(
+    undefined,
+  );
   const [collaborationTab, setCollaborationTab] = useState<CollaborationTab | undefined>(undefined);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +90,7 @@ export function PublicInitiativeExperiencePage({
         case "manage":
           setShowLifecyclePanel(false);
           setActiveTab("manage");
+          setFocusDiscussionCommentId(undefined);
           ownerMode?.onShowManageTabChange(true);
           return;
         case "discussion_tab":
@@ -94,23 +98,27 @@ export function PublicInitiativeExperiencePage({
           setShowLifecyclePanel(false);
           setActiveTab("discussion");
           setSelectedStageId("discussion");
+          setFocusDiscussionCommentId(resolution.focusCommentId);
           ownerMode?.onShowManageTabChange(false);
           return;
         case "collaboration":
           setCollaborationTab(resolution.tab);
           setShowLifecyclePanel(false);
           setActiveTab("overview");
+          setFocusDiscussionCommentId(undefined);
           ownerMode?.onShowManageTabChange(false);
           return;
         case "lifecycle_stage":
           setSelectedStageId(resolution.stageId);
           setShowLifecyclePanel(true);
+          setFocusDiscussionCommentId(undefined);
           ownerMode?.onShowManageTabChange(false);
           return;
         case "fallback_overview":
         default:
           setShowLifecyclePanel(false);
           setActiveTab("overview");
+          setFocusDiscussionCommentId(undefined);
           ownerMode?.onShowManageTabChange(false);
       }
     },
@@ -157,6 +165,7 @@ export function PublicInitiativeExperiencePage({
       setShowLifecyclePanel(false);
       setActiveTab("discussion");
       setIsStagePreviewMode(false);
+      setFocusDiscussionCommentId(undefined);
       ownerMode?.onShowManageTabChange(false);
       window.history.replaceState(null, "", "#discussion");
       scrollToContent();
@@ -185,6 +194,7 @@ export function PublicInitiativeExperiencePage({
       window.history.replaceState(null, "", "#manage");
     } else if (tab === "discussion") {
       setSelectedStageId("discussion");
+      setFocusDiscussionCommentId(undefined);
       ownerMode?.onShowManageTabChange(false);
       window.history.replaceState(null, "", "#discussion");
     } else {
@@ -196,12 +206,8 @@ export function PublicInitiativeExperiencePage({
   };
 
   const handleRevisionSelect = (version: number) => {
-    setSelectedStageId("revision");
-    setShowLifecyclePanel(true);
-    ownerMode?.onShowManageTabChange(false);
-    window.history.replaceState(null, "", "#revision");
-    scrollToContent();
-    void version;
+    const href = `/initiatives/public/${encodeURIComponent(experience.initiativeId)}/revisions/${version}`;
+    window.location.assign(href);
   };
 
   const handleSignalChange = async (
@@ -278,6 +284,7 @@ export function PublicInitiativeExperiencePage({
             contentRef={contentRef}
             showManageTab={Boolean(ownerMode)}
             initialDiscussionFilter={initialDiscussionFilter}
+            focusDiscussionCommentId={focusDiscussionCommentId}
             managePanel={
               ownerMode ? (
                 <InitiativeOwnerManagePanel

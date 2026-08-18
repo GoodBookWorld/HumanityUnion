@@ -373,6 +373,8 @@ export type {
   InitiativeOfficialResponseIntelligenceSnapshot,
   InitiativeOfficialResponseLifecycleDraft,
   InitiativeOfficialResponseLifecycleDraftContext,
+  InitiativeOfficialResponseNoResponseDetail,
+  InitiativeOfficialResponseOutcomeKind,
   InitiativeOfficialResponsePackage,
   InitiativeOfficialResponseRecord,
   InitiativeOfficialResponseTrackingPackageReference,
@@ -577,6 +579,7 @@ export {
   resolveInitiativeLifecycleState,
 } from "./initiative-lifecycle-state.js";
 export type {
+  InitiativeLifecycleFieldAuthority,
   InitiativeLifecycleStageApplicability,
   InitiativeLifecycleStateSnapshot,
   ResolveInitiativeLifecycleStateInput,

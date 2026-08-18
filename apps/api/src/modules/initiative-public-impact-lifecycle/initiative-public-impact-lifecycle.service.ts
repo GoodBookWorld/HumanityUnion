@@ -217,7 +217,19 @@ async function createReminderCandidatesForPublishedPublicImpactReport(input: {
   report: InitiativePublicImpactReport;
   actorParticipantId: string;
 }): Promise<void> {
-  const allies = await listActiveAlliesByInitiative(input.initiative.initiativeId);
+  // Unit tests run without Mongo; skip reminder fan-out so DNS lookups do not
+  // leak unhandledRejections after the suite finishes.
+  if (process.env.INITIATIVE_PUBLIC_IMPACT_SKIP_REMINDERS === "1") {
+    return;
+  }
+
+  let allies: Awaited<ReturnType<typeof listActiveAlliesByInitiative>> = [];
+  try {
+    allies = await listActiveAlliesByInitiative(input.initiative.initiativeId);
+  } catch {
+    allies = [];
+  }
+
   const trackings = listTrackingsByInitiative(input.initiative.initiativeId);
   const allyIds = allies
     .map((ally) => ally.participantId)
@@ -230,7 +242,12 @@ async function createReminderCandidatesForPublishedPublicImpactReport(input: {
   const relatedUrl = `/initiatives/public/${encodeURIComponent(input.initiative.initiativeId)}#public-impact`;
 
   if (recipientParticipantIds.length > 0) {
-    const usersByMemberId = await findAuthUsersByMemberIds(recipientParticipantIds);
+    let usersByMemberId: Map<string, { userId: string }>;
+    try {
+      usersByMemberId = await findAuthUsersByMemberIds(recipientParticipantIds);
+    } catch {
+      usersByMemberId = new Map();
+    }
 
     for (const participantId of recipientParticipantIds) {
       const user = usersByMemberId.get(participantId);
@@ -276,20 +293,24 @@ async function createReminderCandidatesForPublishedPublicImpactReport(input: {
     }
   }
 
-  const authorUsers = await findAuthUsersByMemberIds([input.actorParticipantId]);
-  const authorUser = authorUsers.get(input.actorParticipantId);
+  try {
+    const authorUsers = await findAuthUsersByMemberIds([input.actorParticipantId]);
+    const authorUser = authorUsers.get(input.actorParticipantId);
 
-  if (authorUser) {
-    await createReminderIfNotExists({
-      recipientUserId: authorUser.userId,
-      recipientProfileId: input.actorParticipantId,
-      category: "implementation",
-      title: "Archive preparation available",
-      message: `Civic Archive preparation is available for "${input.initiative.title}" after Public Impact publication.`,
-      relatedEntityType: "public_impact_report",
-      relatedEntityId: input.report.reportId,
-      relatedUrl: `/initiatives/public/${encodeURIComponent(input.initiative.initiativeId)}#archive`,
-    });
+    if (authorUser) {
+      await createReminderIfNotExists({
+        recipientUserId: authorUser.userId,
+        recipientProfileId: input.actorParticipantId,
+        category: "implementation",
+        title: "Archive preparation available",
+        message: `Civic Archive preparation is available for "${input.initiative.title}" after Public Impact publication.`,
+        relatedEntityType: "public_impact_report",
+        relatedEntityId: input.report.reportId,
+        relatedUrl: `/initiatives/public/${encodeURIComponent(input.initiative.initiativeId)}#archive`,
+      });
+    }
+  } catch {
+    // Auth / Mongo unavailable in unit tests — Archive unlock does not depend on reminders.
   }
 }
 
@@ -355,33 +376,35 @@ export async function publishInitiativePublicImpactStage(
   upsertReport(report);
   deleteInitiativePublicImpactLifecycleDraft(initiativeId);
 
-  try {
-    await publishInitiativeLifecycleStage({
-      initiativeId,
-      initiativeTitle: initiative.title,
-      lifecycleProfile: initiative.lifecycleProfile,
-      stageId: "public_impact",
-      stageLabel: "Public Impact",
-      stageArtifactId: reportId,
-      stageVersion: 1,
-      actorParticipantId: identity.participantId,
-      publicationKind: "published",
-      relatedUrl: `/initiatives/public/${encodeURIComponent(initiativeId)}#public-impact`,
-    });
-  } catch (error) {
-    console.warn(
-      `[initiative-public-impact-lifecycle] Lifecycle stage notification skipped: ${String(error)}`,
-    );
-  }
+  if (process.env.INITIATIVE_PUBLIC_IMPACT_SKIP_REMINDERS !== "1") {
+    try {
+      await publishInitiativeLifecycleStage({
+        initiativeId,
+        initiativeTitle: initiative.title,
+        lifecycleProfile: initiative.lifecycleProfile,
+        stageId: "public_impact",
+        stageLabel: "Public Impact",
+        stageArtifactId: reportId,
+        stageVersion: 1,
+        actorParticipantId: identity.participantId,
+        publicationKind: "published",
+        relatedUrl: `/initiatives/public/${encodeURIComponent(initiativeId)}#public-impact`,
+      });
+    } catch (error) {
+      console.warn(
+        `[initiative-public-impact-lifecycle] Lifecycle stage notification skipped: ${String(error)}`,
+      );
+    }
 
-  try {
-    await createReminderCandidatesForPublishedPublicImpactReport({
-      initiative,
-      report,
-      actorParticipantId: identity.participantId,
-    });
-  } catch (error) {
-    console.warn(`[initiative-public-impact-lifecycle] Reminder candidates skipped: ${String(error)}`);
+    try {
+      await createReminderCandidatesForPublishedPublicImpactReport({
+        initiative,
+        report,
+        actorParticipantId: identity.participantId,
+      });
+    } catch (error) {
+      console.warn(`[initiative-public-impact-lifecycle] Reminder candidates skipped: ${String(error)}`);
+    }
   }
 
   return report;

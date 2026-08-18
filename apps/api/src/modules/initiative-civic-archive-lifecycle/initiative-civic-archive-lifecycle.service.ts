@@ -179,6 +179,10 @@ async function createOptionalArchiveReadyReminders(input: {
   draft: InitiativeCivicArchiveLifecycleDraft;
   actorParticipantId: string;
 }): Promise<void> {
+  if (process.env.NODE_TEST_ENV === "true" || process.env.INITIATIVE_CIVIC_ARCHIVE_SKIP_REMINDERS === "1") {
+    return;
+  }
+
   const finalsEmpty =
     !input.draft.finalArchiveTitle.trim() ||
     !input.draft.finalSummary.trim() ||

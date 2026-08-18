@@ -6,7 +6,7 @@ import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-
 import {
   generateInitiativeOfficialResponseDraft,
   getInitiativeOfficialResponseWorkspaceContext,
-  listPublishedInitiativeOfficialResponses,
+  getPublishedOfficialResponsePackageView,
   listPublishedPackageResponses,
   publishInitiativeOfficialResponseStage,
   saveInitiativeOfficialResponseDraft,
@@ -145,9 +145,9 @@ initiativeOfficialResponseLifecycleRouter.get(
 
 initiativeOfficialResponseLifecycleRouter.get("/initiative/:initiativeId/published", async (req, res) => {
   try {
-    const responses = listPublishedInitiativeOfficialResponses(getInitiativeId(req));
+    const view = getPublishedOfficialResponsePackageView(getInitiativeId(req));
 
-    res.json(createSuccessResponse(responses, "Published Official Responses loaded."));
+    res.json(createSuccessResponse(view, "Published Official Responses loaded."));
   } catch (error) {
     handleServiceError(res, error);
   }

@@ -30,10 +30,13 @@ function listToLines(values: readonly string[]): string {
 interface CandidateFormState {
   candidateId: string;
   commitmentId: string;
+  title: string;
+  description: string;
   approvedAction: string;
   responsibleParticipantId: string;
   currentStatus: string;
   progress: string;
+  plannedStartDate: string;
   targetDate: string;
   startedDate: string;
   completedDate: string;
@@ -47,10 +50,13 @@ function toFormState(candidate: InitiativeImplementationTrackingCandidate): Cand
   return {
     candidateId: candidate.candidateId,
     commitmentId: candidate.commitmentId,
-    approvedAction: candidate.approvedAction,
+    title: candidate.title || candidate.approvedAction,
+    description: candidate.description || "",
+    approvedAction: candidate.approvedAction || candidate.title,
     responsibleParticipantId: candidate.responsibleParticipantId,
     currentStatus: candidate.currentStatus,
     progress: String(candidate.progress),
+    plannedStartDate: candidate.plannedStartDate ?? "",
     targetDate: candidate.targetDate ?? "",
     startedDate: candidate.startedDate ?? "",
     completedDate: candidate.completedDate ?? "",
@@ -63,14 +69,18 @@ function toFormState(candidate: InitiativeImplementationTrackingCandidate): Cand
 
 function fromFormState(state: CandidateFormState): InitiativeImplementationTrackingCandidate {
   const progress = Number(state.progress);
+  const title = state.title.trim() || state.approvedAction.trim();
 
   return {
     candidateId: state.candidateId,
     commitmentId: state.commitmentId,
-    approvedAction: state.approvedAction,
-    responsibleParticipantId: state.responsibleParticipantId,
+    title,
+    description: state.description,
+    approvedAction: state.approvedAction.trim() || title,
+    responsibleParticipantId: state.responsibleParticipantId.trim(),
     currentStatus: state.currentStatus,
     progress: Number.isFinite(progress) ? Math.min(100, Math.max(0, progress)) : 0,
+    plannedStartDate: state.plannedStartDate.trim() || null,
     targetDate: state.targetDate.trim() || null,
     startedDate: state.startedDate.trim() || null,
     completedDate: state.completedDate.trim() || null,
@@ -87,7 +97,6 @@ interface InitiativeImplementationTrackingEditorProps {
   readonly onDraftUpdated: (draft: InitiativeImplementationTrackingLifecycleDraft) => void;
   readonly onPublished: (pkg: InitiativeImplementationTrackingPackage) => void;
   readonly onTogglePreview: () => void;
-  /** Threaded from the shared Lifecycle shell so Publish can offer "Open Official Responses" navigation. */
   readonly onNavigate?: (stageId: string, hash: string) => void;
 }
 
@@ -155,6 +164,14 @@ export function InitiativeImplementationTrackingEditor({
   }
 
   async function handlePublish() {
+    if (
+      !window.confirm(
+        "Publishing Implementation Tracking completes this stage and unlocks Official Responses. Continue?",
+      )
+    ) {
+      return;
+    }
+
     setError(null);
     try {
       await saveInitiativeImplementationTrackingDraft(initiativeId, buildSavePayload());
@@ -163,6 +180,7 @@ export function InitiativeImplementationTrackingEditor({
       );
       setPublished(true);
       onPublished(pkg);
+      onNavigate?.("official_response", "official-responses");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Publish failed.");
     }
@@ -186,20 +204,44 @@ export function InitiativeImplementationTrackingEditor({
 
       {candidates.length === 0 ? (
         <p className="iit-source-panel__empty">
-          No Tracking Candidates yet. Generate a draft from the published Implementation
-          Commitments&rsquo; Accepted Commitments.
+          No Tracking milestones yet. Generate a plan from Collective Decision / Commitments /
+          Initiative scope.
         </p>
       ) : (
         candidates.map((candidate, index) => (
           <div className="iit-candidate" key={candidate.candidateId}>
             <div className="iit-candidate__header">
               <h4 className="iit-candidate__title">
-                Action {index + 1}: {candidate.approvedAction}
+                Milestone {index + 1}: {candidate.title || candidate.approvedAction || "Untitled"}
               </h4>
               <span className="iit-candidate__status">{candidate.currentStatus}</span>
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-status-${candidate.candidateId}`}>Current Status</label>
+              <label htmlFor={`iit-milestone-title-${candidate.candidateId}`}>Title</label>
+              <input
+                id={`iit-milestone-title-${candidate.candidateId}`}
+                value={candidate.title}
+                onChange={(event) =>
+                  updateCandidate(candidate.candidateId, {
+                    title: event.target.value,
+                    approvedAction: event.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="iit-editor__field">
+              <label htmlFor={`iit-description-${candidate.candidateId}`}>Description</label>
+              <textarea
+                id={`iit-description-${candidate.candidateId}`}
+                rows={2}
+                value={candidate.description}
+                onChange={(event) =>
+                  updateCandidate(candidate.candidateId, { description: event.target.value })
+                }
+              />
+            </div>
+            <div className="iit-editor__field">
+              <label htmlFor={`iit-status-${candidate.candidateId}`}>Status</label>
               <input
                 id={`iit-status-${candidate.candidateId}`}
                 value={candidate.currentStatus}
@@ -222,10 +264,13 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-responsible-${candidate.candidateId}`}>Responsible Participant ID</label>
+              <label htmlFor={`iit-responsible-${candidate.candidateId}`}>
+                Responsible participant / team (leave blank for Unassigned)
+              </label>
               <input
                 id={`iit-responsible-${candidate.candidateId}`}
                 value={candidate.responsibleParticipantId}
+                placeholder="Unassigned"
                 onChange={(event) =>
                   updateCandidate(candidate.candidateId, {
                     responsibleParticipantId: event.target.value,
@@ -234,7 +279,18 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-target-${candidate.candidateId}`}>Target Date</label>
+              <label htmlFor={`iit-planned-start-${candidate.candidateId}`}>Planned start</label>
+              <input
+                id={`iit-planned-start-${candidate.candidateId}`}
+                type="date"
+                value={candidate.plannedStartDate}
+                onChange={(event) =>
+                  updateCandidate(candidate.candidateId, { plannedStartDate: event.target.value })
+                }
+              />
+            </div>
+            <div className="iit-editor__field">
+              <label htmlFor={`iit-target-${candidate.candidateId}`}>Planned end / target date</label>
               <input
                 id={`iit-target-${candidate.candidateId}`}
                 type="date"
@@ -256,7 +312,7 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-obstacles-${candidate.candidateId}`}>Obstacles (one per line)</label>
+              <label htmlFor={`iit-obstacles-${candidate.candidateId}`}>Obstacles / risks (one per line)</label>
               <textarea
                 id={`iit-obstacles-${candidate.candidateId}`}
                 rows={2}
@@ -267,7 +323,9 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-evidence-${candidate.candidateId}`}>Evidence References (one per line)</label>
+              <label htmlFor={`iit-evidence-${candidate.candidateId}`}>
+                Notes / evidence references (one per line)
+              </label>
               <textarea
                 id={`iit-evidence-${candidate.candidateId}`}
                 rows={2}
@@ -286,6 +344,11 @@ export function InitiativeImplementationTrackingEditor({
                 onChange={(event) => updateCandidate(candidate.candidateId, { notes: event.target.value })}
               />
             </div>
+            {candidate.commitmentId ? (
+              <p className="iit-source-panel__empty">Source commitment: {candidate.commitmentId}</p>
+            ) : (
+              <p className="iit-source-panel__empty">Author-originated milestone (no accepted commitment)</p>
+            )}
           </div>
         ))
       )}
@@ -303,7 +366,7 @@ export function InitiativeImplementationTrackingEditor({
           Preview
         </WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish")}
+          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Official Responses")}
         </WorkspaceButton>
         {published && onNavigate ? (
           <WorkspaceButton

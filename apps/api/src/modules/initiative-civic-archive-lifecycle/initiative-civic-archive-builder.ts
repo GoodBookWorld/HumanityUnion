@@ -8,7 +8,11 @@ import type {
   InitiativeLifecycleProfile,
   InitiativeLifecycleStageId,
 } from "@hu/types";
-import { INITIATIVE_CIVIC_ARCHIVE_SECTION_IDS, resolveInitiativeLifecycleProfile } from "@hu/types";
+import {
+  INITIATIVE_CIVIC_ARCHIVE_SECTION_IDS,
+  isLifecycleStageApplicableToProfile,
+  resolveInitiativeLifecycleProfile,
+} from "@hu/types";
 
 /**
  * Initiative Lifecycle — Part M, Section 3 (Archive Builder). Deterministic
@@ -35,7 +39,7 @@ const SECTION_TITLES: Record<InitiativeCivicArchiveSectionId, string> = {
   discussion_and_participation: "Discussion and Participation",
   collaborative_analysis: "Collaborative Analysis",
   improvement_proposals: "Improvement Proposals",
-  revision_and_change_history: "Revision and Change History",
+  revision_and_change_history: "Version / revision history",
   petition_and_public_participation: "Petition and Public Participation",
   decision_session: "Decision Session",
   collective_decision: "Collective Decision",
@@ -57,7 +61,7 @@ const STAGE_FOR_SECTION: Partial<Record<InitiativeCivicArchiveSectionId, Initiat
     original_initiative: "initiative",
     collaborative_analysis: "analysis",
     improvement_proposals: "proposal",
-    revision_and_change_history: "revision",
+    // revision_and_change_history: version/history content only — never a route stage
     petition_and_public_participation: "petition",
     decision_session: "decision_session",
     collective_decision: "collective_decision",
@@ -88,6 +92,26 @@ function missingStageBody(label: string): string {
   return `No published ${label} record was available when this Archive was assembled.`;
 }
 
+function notOnRouteBody(label: string): string {
+  return `${label} is not on this Initiative's LifecycleProfile route and was not required for this journey.`;
+}
+
+function historicalOutcomeBody(
+  applicable: boolean,
+  hasRecord: boolean,
+  presentBody: string,
+  label: string,
+  emptyValidBody?: string,
+): string {
+  if (!applicable) {
+    return notOnRouteBody(label);
+  }
+  if (!hasRecord) {
+    return emptyValidBody ?? missingStageBody(label);
+  }
+  return presentBody;
+}
+
 /**
  * Builds assembled Archive content. The builder accepts only an intelligence
  * snapshot of published sources — it never receives DM, channel, private
@@ -102,131 +126,210 @@ export function generateCivicArchiveDraftContent(
     : "Civic Archive";
 
   const publicImpactReportId = snapshot.publicImpactReportReference?.recordId ?? null;
-  const requirePublicImpact =
-    resolveInitiativeLifecycleProfile(lifecycleProfile) !== "PUBLIC_CHOICE";
+  const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
+  const onRoute = (stageId: InitiativeLifecycleStageId) =>
+    isLifecycleStageApplicableToProfile(stageId, profile);
+  const requirePublicImpact = profile !== "PUBLIC_CHOICE";
 
   const participation = snapshot.participationStatistics;
   const discussionBody = [
+    `LifecycleProfile: ${profile}.`,
     `Active Allies: ${participation.activeAllyCount}`,
     `Initiative support likes: ${participation.supportCount}`,
     `Analysis reactions: ${participation.reactionCount}`,
     `Petition signatures: ${participation.signatureCount}`,
+    "Zero comments / participation counts are valid historical outcomes — not Archive blockers.",
   ].join("\n");
 
-  const analysisBody = snapshot.analysisReference
-    ? [
-        `Published Analysis "${snapshot.analysisReference.label}" (${snapshot.analysisReference.recordId}).`,
-        snapshot.analysisReference.summary
-          ? `Summary: ${snapshot.analysisReference.summary}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : missingStageBody("Collaborative Analysis");
+  const analysisBody = historicalOutcomeBody(
+    onRoute("analysis"),
+    Boolean(snapshot.analysisReference),
+    snapshot.analysisReference
+      ? [
+          `Published Analysis "${snapshot.analysisReference.label}" (${snapshot.analysisReference.recordId}).`,
+          snapshot.analysisReference.summary
+            ? `Summary: ${snapshot.analysisReference.summary}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : missingStageBody("Collaborative Analysis"),
+    "Collaborative Analysis",
+  );
 
-  const proposalsBody =
-    snapshot.proposalReferences.length > 0
-      ? `Published Improvement Proposals (${snapshot.proposalReferences.length}):\n${snapshot.proposalReferences
-          .map((proposal) => `- ${proposal.recordId}: ${proposal.label}`)
-          .join("\n")}`
-      : missingStageBody("Improvement Proposal");
+  const proposalsBody = historicalOutcomeBody(
+    onRoute("proposal"),
+    snapshot.proposalReferences.length > 0,
+    `Published Improvement Proposals (${snapshot.proposalReferences.length}):\n${snapshot.proposalReferences
+      .map((proposal) => `- ${proposal.recordId}: ${proposal.label}`)
+      .join("\n")}`,
+    "Improvement Proposals",
+    "Zero Improvement Proposals were published — a valid historical outcome.",
+  );
 
   const revisionBody = snapshot.revisionReference
     ? [
-        `Published Revision "${snapshot.revisionReference.label}" (v${snapshot.revisionReference.version ?? "?"}).`,
+        "Version / revision history (content only — Revision is not a Lifecycle stage):",
+        `Published version record "${snapshot.revisionReference.label}" (v${snapshot.revisionReference.version ?? "?"}).`,
         snapshot.revisionReference.summary
           ? `Summary: ${snapshot.revisionReference.summary}`
           : null,
       ]
         .filter(Boolean)
         .join("\n")
-    : missingStageBody("Revision");
+    : "No published Initiative version/revision history record was available. Version infrastructure may still exist without a Revision lifecycle stage.";
 
-  const petitionBody = snapshot.petitionReference
-    ? [
-        `Published Petition "${snapshot.petitionReference.label}" (${snapshot.petitionReference.recordId}).`,
-        snapshot.petitionReference.summary
-          ? `Summary: ${snapshot.petitionReference.summary}`
-          : null,
-        `Signatures recorded: ${participation.signatureCount}`,
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : missingStageBody("Petition");
+  const petitionBody = historicalOutcomeBody(
+    onRoute("petition"),
+    Boolean(snapshot.petitionReference),
+    snapshot.petitionReference
+      ? [
+          `Published Petition "${snapshot.petitionReference.label}" (${snapshot.petitionReference.recordId}).`,
+          snapshot.petitionReference.summary
+            ? `Summary: ${snapshot.petitionReference.summary}`
+            : null,
+          `Signatures recorded: ${participation.signatureCount}`,
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : missingStageBody("Petition"),
+    "Petition",
+  );
 
-  const decisionSessionBody = snapshot.decisionSessionReference
-    ? [
-        `Published Decision Session "${snapshot.decisionSessionReference.label}" (${snapshot.decisionSessionReference.recordId}).`,
-        snapshot.decisionSessionReference.summary
-          ? `Focus: ${snapshot.decisionSessionReference.summary}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : missingStageBody("Decision Session");
+  const decisionSessionBody = historicalOutcomeBody(
+    onRoute("decision_session"),
+    Boolean(snapshot.decisionSessionReference),
+    snapshot.decisionSessionReference
+      ? [
+          `Published Decision Session "${snapshot.decisionSessionReference.label}" (${snapshot.decisionSessionReference.recordId}).`,
+          snapshot.decisionSessionReference.summary
+            ? `Focus: ${snapshot.decisionSessionReference.summary}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : missingStageBody("Decision Session"),
+    "Decision Session",
+  );
 
-  const collectiveDecisionBody = snapshot.decisionReference
-    ? [
-        `Published Collective Decision "${snapshot.decisionReference.label}" (${snapshot.decisionReference.recordId}).`,
-        snapshot.decisionReference.summary
-          ? `Summary: ${snapshot.decisionReference.summary}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : missingStageBody("Collective Decision");
+  const collectiveDecisionBody = historicalOutcomeBody(
+    onRoute("collective_decision"),
+    Boolean(snapshot.decisionReference),
+    snapshot.decisionReference
+      ? [
+          `Published Collective Decision "${snapshot.decisionReference.label}" (${snapshot.decisionReference.recordId}).`,
+          snapshot.decisionReference.summary
+            ? `Summary: ${snapshot.decisionReference.summary}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : missingStageBody("Collective Decision"),
+    "Collective Decision",
+  );
 
-  const approvedActionsBody = snapshot.decisionReference
-    ? `Approved Actions are recorded against Collective Decision ${snapshot.decisionReference.recordId}. See Implementation Commitments and Tracking for how those actions were carried forward.`
-    : missingStageBody("Approved Action set");
+  const approvedActionsBody = historicalOutcomeBody(
+    onRoute("collective_decision"),
+    Boolean(snapshot.decisionReference),
+    snapshot.decisionReference
+      ? `Approved Actions are recorded against Collective Decision ${snapshot.decisionReference.recordId}. See Implementation Commitments and Tracking for how those actions were carried forward.`
+      : missingStageBody("Approved Action set"),
+    "Approved Actions",
+  );
 
-  const commitmentsBody = snapshot.commitmentPackageReference
-    ? [
-        `Published Commitment Package "${snapshot.commitmentPackageReference.label}" (${snapshot.commitmentPackageReference.recordId}).`,
-        snapshot.commitmentPackageReference.summary
-          ? `Summary: ${snapshot.commitmentPackageReference.summary}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : missingStageBody("Implementation Commitment Package");
+  const commitmentsBody = historicalOutcomeBody(
+    onRoute("commitment"),
+    Boolean(snapshot.commitmentPackageReference),
+    snapshot.commitmentPackageReference
+      ? [
+          `Published Commitment Package "${snapshot.commitmentPackageReference.label}" (${snapshot.commitmentPackageReference.recordId}).`,
+          snapshot.commitmentPackageReference.summary
+            ? `Summary: ${snapshot.commitmentPackageReference.summary}`
+            : null,
+          "Zero accepted commitments (when applicable) remain a valid historical outcome.",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "",
+    "Implementation Commitment Package",
+    "Zero Implementation Commitments were published — a valid historical outcome.",
+  );
 
-  const trackingBody = snapshot.trackingPackageReference
-    ? [
-        `Published Tracking Package "${snapshot.trackingPackageReference.label}" (${snapshot.trackingPackageReference.recordId}).`,
-        snapshot.trackingPackageReference.summary
-          ? `Summary: ${snapshot.trackingPackageReference.summary}`
-          : null,
-        snapshot.completeness.unresolvedTrackingCount > 0
-          ? `${snapshot.completeness.unresolvedTrackingCount} Tracking Record(s) remain unresolved.`
-          : "No unresolved Tracking Records were reported at assembly time.",
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : missingStageBody("Implementation Tracking Package");
+  const trackingBody = historicalOutcomeBody(
+    onRoute("tracking"),
+    Boolean(snapshot.trackingPackageReference),
+    snapshot.trackingPackageReference
+      ? [
+          `Published Tracking Package "${snapshot.trackingPackageReference.label}" (${snapshot.trackingPackageReference.recordId}).`,
+          snapshot.trackingPackageReference.summary
+            ? `Summary: ${snapshot.trackingPackageReference.summary}`
+            : null,
+          snapshot.completeness.unresolvedTrackingCount > 0
+            ? `${snapshot.completeness.unresolvedTrackingCount} Tracking Record(s) remain unresolved.`
+            : "No unresolved Tracking Records were reported at assembly time.",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : missingStageBody("Implementation Tracking Package"),
+    "Implementation Tracking Package",
+  );
 
-  const officialResponsesBody = snapshot.officialResponsePackageReference
-    ? [
-        `Published Official Response Package "${snapshot.officialResponsePackageReference.label}" (${snapshot.officialResponsePackageReference.recordId}).`,
-        snapshot.officialResponsePackageReference.summary
-          ? `Summary: ${snapshot.officialResponsePackageReference.summary}`
-          : null,
-        `Official response count: ${snapshot.completeness.officialResponseCount}`,
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : missingStageBody("Official Response Package");
+  const noOfficialResponse =
+    snapshot.officialResponsePackageReference?.outcomeKind === "no_official_response_received";
+  const officialResponsesBody = historicalOutcomeBody(
+    onRoute("official_response"),
+    Boolean(snapshot.officialResponsePackageReference),
+    snapshot.officialResponsePackageReference
+      ? noOfficialResponse
+        ? [
+            `Published Official Response Package "${snapshot.officialResponsePackageReference.label}" (${snapshot.officialResponsePackageReference.recordId}).`,
+            "Official response outcome: No official response received.",
+            snapshot.officialResponsePackageReference.noResponseDetail?.note?.trim()
+              ? `Author note: ${snapshot.officialResponsePackageReference.noResponseDetail.note.trim()}`
+              : null,
+            snapshot.officialResponsePackageReference.noResponseDetail?.contactedOrganizations
+              ?.length
+              ? `Organizations / recipients contacted: ${snapshot.officialResponsePackageReference.noResponseDetail.contactedOrganizations.join(", ")}`
+              : null,
+            snapshot.officialResponsePackageReference.summary
+              ? `Package summary: ${snapshot.officialResponsePackageReference.summary}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join("\n")
+        : [
+            `Published Official Response Package "${snapshot.officialResponsePackageReference.label}" (${snapshot.officialResponsePackageReference.recordId}).`,
+            snapshot.officialResponsePackageReference.summary
+              ? `Summary: ${snapshot.officialResponsePackageReference.summary}`
+              : null,
+            `Official response count: ${snapshot.completeness.officialResponseCount}`,
+          ]
+            .filter(Boolean)
+            .join("\n")
+      : missingStageBody("Official Response Package"),
+    "Official Response Package",
+  );
 
-  const publicImpactBody = snapshot.publicImpactReportReference
-    ? [
-        `Published Public Impact Report "${snapshot.publicImpactReportReference.label}" (${snapshot.publicImpactReportReference.recordId}).`,
-        snapshot.publicImpactReportReference.summary
-          ? `Summary excerpt: ${snapshot.publicImpactReportReference.summary}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : missingStageBody("Public Impact Report");
+  const publicImpactBody = historicalOutcomeBody(
+    onRoute("public_impact"),
+    Boolean(snapshot.publicImpactReportReference),
+    snapshot.publicImpactReportReference
+      ? [
+          `Published Public Impact Report "${snapshot.publicImpactReportReference.label}" (${snapshot.publicImpactReportReference.recordId}).`,
+          snapshot.publicImpactReportReference.summary
+            ? `Summary excerpt: ${snapshot.publicImpactReportReference.summary}`
+            : null,
+          /no measurable impact|incomplete|insufficient/i.test(
+            snapshot.publicImpactReportReference.summary ?? "",
+          )
+            ? "Zero / no measurable impact (or incomplete evidence) is preserved as a valid Public Impact conclusion."
+            : null,
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : missingStageBody("Public Impact Report"),
+    "Public Impact Report",
+  );
 
   const outstandingBody = [
     snapshot.completeness.unresolvedTrackingCount > 0
@@ -243,10 +346,16 @@ export function generateCivicArchiveDraftContent(
   const finalResultsBody = [
     snapshot.publicImpactReportReference
       ? `Public Impact Report ${snapshot.publicImpactReportReference.recordId} summarises published outcomes.`
-      : null,
+      : requirePublicImpact
+        ? null
+        : "Public Impact was not required on this LifecycleProfile route.",
     snapshot.officialResponsePackageReference
-      ? `Official Responses package ${snapshot.officialResponsePackageReference.recordId} is cited.`
-      : null,
+      ? noOfficialResponse
+        ? `Official Responses package ${snapshot.officialResponsePackageReference.recordId} records No official response received.`
+        : `Official Responses package ${snapshot.officialResponsePackageReference.recordId} is cited.`
+      : onRoute("official_response")
+        ? null
+        : "Official Responses not on this LifecycleProfile route.",
     outstandingBody.includes("remain unresolved") || outstandingBody.includes("not marked completed")
       ? "Outstanding work remains — see the Outstanding Work section."
       : "No outstanding Tracking or Commitment gaps were reported at assembly time.",
@@ -259,7 +368,7 @@ export function generateCivicArchiveDraftContent(
       ? `Analysis summary cited: ${snapshot.analysisReference.summary}`
       : null,
     snapshot.revisionReference?.summary
-      ? `Revision summary cited: ${snapshot.revisionReference.summary}`
+      ? `Version/revision history cited: ${snapshot.revisionReference.summary}`
       : null,
     snapshot.publicImpactReportReference?.summary
       ? `Public Impact summary cited: ${snapshot.publicImpactReportReference.summary}`
@@ -286,6 +395,7 @@ export function generateCivicArchiveDraftContent(
     snapshot.initiativeTitle
       ? `This Civic Archive records published Lifecycle activity for "${snapshot.initiativeTitle}".`
       : "This Civic Archive records published Lifecycle activity for this Initiative.",
+    `LifecycleProfile: ${profile}.`,
     snapshot.completeness.summary,
   ].join(" ");
 
@@ -302,7 +412,9 @@ export function generateCivicArchiveDraftContent(
   const sourcesBody = [
     snapshot.analysisReference ? `Analysis: ${snapshot.analysisReference.recordId}` : null,
     ...snapshot.proposalReferences.map((proposal) => `Proposal: ${proposal.recordId}`),
-    snapshot.revisionReference ? `Revision: ${snapshot.revisionReference.recordId}` : null,
+    snapshot.revisionReference
+      ? `Version/revision history: ${snapshot.revisionReference.recordId}`
+      : null,
     snapshot.petitionReference ? `Petition: ${snapshot.petitionReference.recordId}` : null,
     snapshot.decisionSessionReference
       ? `Decision Session: ${snapshot.decisionSessionReference.recordId}`
@@ -315,7 +427,9 @@ export function generateCivicArchiveDraftContent(
       ? `Tracking Package: ${snapshot.trackingPackageReference.recordId}`
       : null,
     snapshot.officialResponsePackageReference
-      ? `Official Response Package: ${snapshot.officialResponsePackageReference.recordId}`
+      ? noOfficialResponse
+        ? `Official Response Package: ${snapshot.officialResponsePackageReference.recordId} (no_official_response_received)`
+        : `Official Response Package: ${snapshot.officialResponsePackageReference.recordId}`
       : null,
     publicImpactReportId ? `Public Impact Report: ${publicImpactReportId}` : null,
   ]
@@ -462,6 +576,7 @@ export function generateCivicArchiveDraftContent(
     snapshot.initiativeTitle
       ? `Archive of published Lifecycle records for "${snapshot.initiativeTitle}".`
       : "Archive of published Lifecycle records for this Initiative.",
+    `LifecycleProfile: ${profile}.`,
     `${snapshot.completeness.stagesPublished.length} stage(s) with published records; ${
       snapshot.isPublicImpactReportAvailable
         ? "Public Impact available"

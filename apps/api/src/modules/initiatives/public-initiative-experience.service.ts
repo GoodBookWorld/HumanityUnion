@@ -35,7 +35,8 @@ import {
   getInitiativeSupportStatistics,
   recordInitiativeView,
 } from "../initiative-support/initiative-support.service.js";
-import { listPublicInitiativeCollaborativeAnalyses } from "../initiative-collaborative-analysis/public-initiative-collaborative-analysis.projection.js";
+import { resolveStewardCollaborativeAnalysisLifecycleProgress } from "../initiative-collaborative-analysis/initiative-collaborative-analysis-lifecycle-progress.js";
+import { toPublicInitiativeCollaborativeAnalysisListItem } from "../initiative-collaborative-analysis/public-initiative-collaborative-analysis.projection.js";
 import { listPublicInitiativeCollectiveDecisionsForInitiative } from "../initiative-collective-decision/public-initiative-collective-decision.projection.js";
 import { listPublicInitiativeImplementationCommitmentsForInitiative } from "../initiative-implementation-commitment/public-initiative-implementation-commitment.projection.js";
 import { listPublicInitiativeImplementationTrackingsForInitiative } from "../initiative-implementation-tracking/public-initiative-implementation-tracking.projection.js";
@@ -131,6 +132,7 @@ export async function buildStageRecords(
 ): Promise<{
   records: Map<string, PublicInitiativeLifecycleRecordItem[]>;
   optionalStageDiagnostics: PublicInitiativeOptionalStageDiagnostics;
+  inProgressStageIds: readonly string[];
 }> {
   const initiativeId = initiative.initiativeId;
   const records = new Map<string, PublicInitiativeLifecycleRecordItem[]>();
@@ -169,8 +171,17 @@ export async function buildStageRecords(
       : [],
   );
 
+  // Collaborative Analysis lifecycle progress is steward-canonical (same
+  // authority as the stage adapter / Public Preview presentationStatus).
+  const analysisProgress = resolveStewardCollaborativeAnalysisLifecycleProgress(
+    initiativeId,
+    initiative.stewardId,
+  );
+  const analyses = await Promise.all(
+    analysisProgress.published.map((analysis) => toPublicInitiativeCollaborativeAnalysisListItem(analysis)),
+  );
+
   const [
-    analyses,
     legacyProposals,
     publishedProposalCollections,
     versionHistory,
@@ -181,7 +192,6 @@ export async function buildStageRecords(
     publicImpacts,
     archiveLookup,
   ] = await Promise.all([
-    listPublicInitiativeCollaborativeAnalyses(initiativeId),
     listPublicInitiativeImprovementProposals(initiativeId),
     listPublishedCollectionsByInitiative(initiativeId),
     precomputedVersionHistory ?? getPublicInitiativeVersionHistory(initiativeId),
@@ -362,16 +372,54 @@ export async function buildStageRecords(
       }))
     : [];
 
+  // Published package with zero responses (explicit No Response) must still
+  // count as a completed Official Responses stage so Public Impact unlocks.
+  const lifecycleOfficialNavRecords =
+    lifecycleOfficialResponses.length > 0
+      ? lifecycleOfficialResponses
+      : lifecycleOfficialPackage
+        ? [
+            {
+              recordId: lifecycleOfficialPackage.packageId,
+              title: lifecycleOfficialPackage.title,
+              summary:
+                lifecycleOfficialPackage.outcomeKind === "no_official_response_received"
+                  ? lifecycleOfficialPackage.noResponseDetail?.note ||
+                    "No official response received"
+                  : lifecycleOfficialPackage.summary,
+              status:
+                lifecycleOfficialPackage.outcomeKind === "no_official_response_received"
+                  ? "no_official_response_received"
+                  : "published",
+              updatedAt: lifecycleOfficialPackage.publishedAt,
+              publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#official-responses`,
+            },
+          ]
+        : [];
+
+  // Prefer Part K lifecycle Official Response package for progression.
+  // Cap02 official responses remain SAFE_COMPATIBILITY display fallback only.
   records.set(
     "official_response",
-    capOfficialResponses.length > 0 ? capOfficialResponses : lifecycleOfficialResponses,
+    lifecycleOfficialNavRecords.length > 0 ? lifecycleOfficialNavRecords : capOfficialResponses,
   );
 
   const lifecyclePublicImpactReport = getPublicImpactReportByInitiativeId(initiativeId);
+  // Prefer Part L Public Impact Report for progression; TASK-033 is fallback only.
   records.set(
     "public_impact",
-    publicImpacts.length > 0
-      ? publicImpacts.map((impact) => ({
+    lifecyclePublicImpactReport
+      ? [
+          {
+            recordId: lifecyclePublicImpactReport.reportId,
+            title: lifecyclePublicImpactReport.title,
+            summary: lifecyclePublicImpactReport.sections[0]?.body,
+            status: lifecyclePublicImpactReport.status,
+            updatedAt: lifecyclePublicImpactReport.publishedAt,
+            publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#public-impact`,
+          },
+        ]
+      : publicImpacts.map((impact) => ({
           recordId: impact.impactId,
           title: impact.title,
           summary: impact.observedImpact,
@@ -379,19 +427,7 @@ export async function buildStageRecords(
           updatedAt: impact.publishedAt ?? impact.verifiedAt ?? initiative.updatedAt,
           publicHref: `/public-impact/${encodeURIComponent(impact.impactId)}`,
           authorDisplayName: impact.authorDisplayName,
-        }))
-      : lifecyclePublicImpactReport
-        ? [
-            {
-              recordId: lifecyclePublicImpactReport.reportId,
-              title: lifecyclePublicImpactReport.title,
-              summary: lifecyclePublicImpactReport.sections[0]?.body,
-              status: lifecyclePublicImpactReport.status,
-              updatedAt: lifecyclePublicImpactReport.publishedAt,
-              publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#public-impact`,
-            },
-          ]
-        : [],
+        })),
   );
 
   const archive = archiveLookup.value;
@@ -400,28 +436,29 @@ export async function buildStageRecords(
   }
 
   const lifecycleArchiveVersion = getLatestArchiveVersionByInitiativeId(initiativeId);
+  // Prefer Part M versioned lifecycle Archive for progression; TASK-037 fallback only.
   records.set(
     "archive",
-    archive
+    lifecycleArchiveVersion
       ? [
           {
-            recordId: archive.archiveRecordId,
-            title: archive.title,
-            summary: archive.summary,
-            status: archive.archivedStatus,
-            updatedAt: archive.archivedAt,
-            publicHref: `/civic-archive/${encodeURIComponent(initiativeId)}`,
+            recordId: lifecycleArchiveVersion.archiveVersionId,
+            title: lifecycleArchiveVersion.finalArchiveTitle,
+            summary: lifecycleArchiveVersion.finalSummary,
+            status: "archived",
+            updatedAt: lifecycleArchiveVersion.publishedAt,
+            publicHref: lifecycleArchiveVersion.publicUrlPath,
           },
         ]
-      : lifecycleArchiveVersion
+      : archive
         ? [
             {
-              recordId: lifecycleArchiveVersion.archiveVersionId,
-              title: lifecycleArchiveVersion.finalArchiveTitle,
-              summary: lifecycleArchiveVersion.finalSummary,
-              status: "archived",
-              updatedAt: lifecycleArchiveVersion.publishedAt,
-              publicHref: lifecycleArchiveVersion.publicUrlPath,
+              recordId: archive.archiveRecordId,
+              title: archive.title,
+              summary: archive.summary,
+              status: archive.archivedStatus,
+              updatedAt: archive.archivedAt,
+              publicHref: `/civic-archive/${encodeURIComponent(initiativeId)}`,
             },
           ]
         : [],
@@ -430,6 +467,9 @@ export async function buildStageRecords(
   return {
     records,
     optionalStageDiagnostics: optionalStageDiagnostics as PublicInitiativeOptionalStageDiagnostics,
+    // Draft without a published public result → In Progress for every viewer.
+    inProgressStageIds:
+      analysisProgress.hasDraft && analysisProgress.published.length === 0 ? (["analysis"] as const) : [],
   };
 }
 
@@ -618,12 +658,14 @@ export async function buildPublicInitiativeExperienceProjection(input: {
   // exact result for its "revision" stage instead of fetching it a second
   // time (it was previously fetched twice per request — once here for the
   // top-level `revisionHistory` field, once inside `buildStageRecords`).
-  const { records: stageRecords, optionalStageDiagnostics } = await buildStageRecords(
+  const { records: stageRecords, optionalStageDiagnostics, inProgressStageIds } = await buildStageRecords(
     initiative,
     publicInitiative,
     versionHistory,
   );
-  const { stages, currentStageId } = buildLifecycleNavigation(initiative, stageRecords);
+  const { stages, currentStageId } = buildLifecycleNavigation(initiative, stageRecords, {
+    inProgressStageIds,
+  });
   const currentStage = stages.find((stage) => stage.stageId === currentStageId);
   // UX Evolution Pack 02.3 Part 1 diagnosis: `buildInitiativeDiscussionSummary`
   // alone never attached collaboration state, so every server-rendered

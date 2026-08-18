@@ -17,10 +17,13 @@ function buildCandidate(
   return {
     candidateId: "tracking-candidate-0",
     commitmentId: "commitment-1",
+    title: "Pilot in two districts first",
+    description: "Ally will pilot the compost hub.",
     approvedAction: "Pilot in two districts first",
     responsibleParticipantId: "ally-1",
     currentStatus: "Preparation",
     progress: 0,
+    plannedStartDate: null,
     targetDate: "2026-12-01",
     startedDate: null,
     completedDate: null,
@@ -81,9 +84,9 @@ describe("validateSaveInitiativeImplementationTrackingLifecycleDraftInput", () =
     assert.throws(
       () =>
         validateSaveInitiativeImplementationTrackingLifecycleDraftInput({
-          candidates: [{ candidateId: "tracking-candidate-0" }],
+          candidates: [{ candidateId: "tracking-candidate-0", commitmentId: "" }],
         }),
-      /commitmentId/i,
+      /title/i,
     );
   });
 
@@ -129,13 +132,14 @@ describe("validateInitiativeImplementationTrackingLifecycleDraftForPublication",
     );
   });
 
-  it("rejects a missing packageId — the stage's one mandatory source", () => {
-    assert.throws(
-      () =>
-        validateInitiativeImplementationTrackingLifecycleDraftForPublication(
-          buildDraft({ packageId: null }),
-        ),
-      /Commitment Package/i,
+  it("allows publishing without a Commitment Package (zero-commitment Author path)", () => {
+    assert.doesNotThrow(() =>
+      validateInitiativeImplementationTrackingLifecycleDraftForPublication(
+        buildDraft({
+          packageId: null,
+          candidates: [buildCandidate({ commitmentId: "", responsibleParticipantId: "" })],
+        }),
+      ),
     );
   });
 
@@ -145,17 +149,15 @@ describe("validateInitiativeImplementationTrackingLifecycleDraftForPublication",
         validateInitiativeImplementationTrackingLifecycleDraftForPublication(
           buildDraft({ candidates: [] }),
         ),
-      /candidate/i,
+      /milestone/i,
     );
   });
 
-  it("rejects a candidate with an empty commitmentId", () => {
-    assert.throws(
-      () =>
-        validateInitiativeImplementationTrackingLifecycleDraftForPublication(
-          buildDraft({ candidates: [buildCandidate({ commitmentId: "  " })] }),
-        ),
-      /Commitment reference/i,
+  it("allows a candidate with an empty commitmentId (Author-originated milestone)", () => {
+    assert.doesNotThrow(() =>
+      validateInitiativeImplementationTrackingLifecycleDraftForPublication(
+        buildDraft({ candidates: [buildCandidate({ commitmentId: "" })] }),
+      ),
     );
   });
 });

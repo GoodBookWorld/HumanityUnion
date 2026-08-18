@@ -32,6 +32,59 @@ function collectInvalidCorsOrigins(): string[] {
   return invalid;
 }
 
+/**
+ * Auth email codes (login two-step / registration confirmation) must reach real
+ * inboxes on deployed platforms. Default EMAIL_PROVIDER=mock reports "sent"
+ * without outbound mail — reject that misconfiguration at boot.
+ */
+export function collectInvalidEmailConfig(): string[] {
+  const provider = (readEnv("EMAIL_PROVIDER") ?? "mock").toLowerCase();
+
+  if (provider === "mock") {
+    return [
+      "EMAIL_PROVIDER=mock is not allowed in production (login/registration codes would not be delivered)",
+    ];
+  }
+
+  if (provider === "smtp") {
+    const problems: string[] = [];
+    if (!readEnv("SMTP_HOST")) {
+      problems.push("SMTP_HOST is required when EMAIL_PROVIDER=smtp");
+    }
+    if (!readEnv("SMTP_USERNAME") && !readEnv("SMTP_USER")) {
+      problems.push("SMTP_USERNAME (or SMTP_USER) is required when EMAIL_PROVIDER=smtp");
+    }
+    if (!readEnv("SMTP_PASSWORD")) {
+      problems.push("SMTP_PASSWORD is required when EMAIL_PROVIDER=smtp");
+    }
+    const from =
+      readEnv("SMTP_FROM_EMAIL") ?? readEnv("SMTP_FROM") ?? readEnv("EMAIL_FROM");
+    if (!from) {
+      problems.push(
+        "SMTP_FROM_EMAIL (or SMTP_FROM / EMAIL_FROM) is required when EMAIL_PROVIDER=smtp",
+      );
+    }
+    return problems;
+  }
+
+  if (provider === "resend") {
+    const problems: string[] = [];
+    if (!readEnv("RESEND_API_KEY")) {
+      problems.push("RESEND_API_KEY is required when EMAIL_PROVIDER=resend");
+    }
+    const from =
+      readEnv("SMTP_FROM_EMAIL") ?? readEnv("SMTP_FROM") ?? readEnv("EMAIL_FROM");
+    if (!from) {
+      problems.push(
+        "EMAIL_FROM (or SMTP_FROM / SMTP_FROM_EMAIL) is required when EMAIL_PROVIDER=resend",
+      );
+    }
+    return problems;
+  }
+
+  return [`EMAIL_PROVIDER=${provider} is unsupported (use smtp|resend)`];
+}
+
 export function collectInvalidMediaStorageConfig(): string[] {
   const provider = (readEnv("MEDIA_STORAGE_PROVIDER") ?? "local").toLowerCase();
   const allowEphemeralLocal = readEnv("MEDIA_ALLOW_EPHEMERAL_LOCAL_STORAGE") === "true";
@@ -98,6 +151,7 @@ export function validateProductionEnvironment(): void {
   problems.push(...collectInvalidCorsOrigins());
   problems.push(...collectInvalidProductionPersistenceModes().map((item) => `Invalid persistence ${item}`));
   problems.push(...collectInvalidMediaStorageConfig());
+  problems.push(...collectInvalidEmailConfig());
 
   if (problems.length > 0) {
     throw new Error(

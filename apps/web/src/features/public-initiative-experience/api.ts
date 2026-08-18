@@ -99,6 +99,20 @@ export async function inviteCommentAuthorToAllies(
   );
 }
 
+export async function respondToAlliesInvitation(
+  initiativeId: string,
+  response: "accept" | "decline",
+): Promise<InitiativeAlly> {
+  return apiRequest<InitiativeAlly>(
+    `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/allies-invitation/respond`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ response }),
+    },
+  );
+}
+
 /** Profile UX Pack 01 Part 2/8 — the Initiative Author's Collaboration working list. */
 export async function fetchInitiativeCollaborationParticipants(
   initiativeId: string,

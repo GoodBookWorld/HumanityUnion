@@ -52,10 +52,16 @@ describe("assertProposalStatusTransitionAllowed", () => {
       assert.throws(() => assertProposalStatusTransitionAllowed(proposal, "draft", "published"));
     });
 
-    it("rejects setting a post-publication curation status before publishing", () => {
+    it("allows Accept / Partial / Decline treatment before collection publish (Revision re-home)", () => {
       const proposal = buildProposal({ status: "ready" });
-      assert.throws(() =>
+      assert.doesNotThrow(() =>
         assertProposalStatusTransitionAllowed(proposal, "draft", "included_in_revision"),
+      );
+      assert.doesNotThrow(() =>
+        assertProposalStatusTransitionAllowed(proposal, "draft", "keep_for_later"),
+      );
+      assert.doesNotThrow(() =>
+        assertProposalStatusTransitionAllowed(proposal, "draft", "not_applicable"),
       );
     });
   });

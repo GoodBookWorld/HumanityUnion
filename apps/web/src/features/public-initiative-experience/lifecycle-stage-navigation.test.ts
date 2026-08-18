@@ -24,8 +24,8 @@ describe("isLifecycleStageSelectable", () => {
     stage("initiative", "completed"),
     stage("analysis", "completed"),
     stage("proposal", "in_progress"),
-    stage("revision", "not_started"),
     stage("petition", "not_started"),
+    stage("decision_session", "not_started"),
   ];
 
   it("allows completed and in-progress stages", () => {
@@ -34,8 +34,12 @@ describe("isLifecycleStageSelectable", () => {
   });
 
   it("allows only the immediate next Not Started stage", () => {
-    assert.equal(isLifecycleStageSelectable(stages, "revision"), true);
-    assert.equal(isLifecycleStageSelectable(stages, "petition"), false);
+    assert.equal(isLifecycleStageSelectable(stages, "petition"), true);
+    assert.equal(isLifecycleStageSelectable(stages, "decision_session"), false);
+  });
+
+  it("does not treat Revision as a selectable lifecycle stage", () => {
+    assert.equal(isLifecycleStageSelectable(stages, "revision"), false);
   });
 
   it("blocks not_applicable stages", () => {

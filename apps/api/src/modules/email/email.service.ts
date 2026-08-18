@@ -8,6 +8,7 @@ import { enqueueEmailDelivery } from "./email.queue.js";
 import { resolveEmailProvider } from "./email.provider.js";
 import {
   assertRecipientAllowedForExternalDelivery,
+  isDeployedPlatformRequiringRealEmail,
   maskRecipientEmail,
   recipientDomainForLogs,
   TestRecipientBlockedError,
@@ -113,6 +114,20 @@ export async function sendTransactionalEmailAndAwait(
     provider: provider.providerId,
     recipientEmail: input.to,
   });
+
+  if (provider.providerId === "mock" && isDeployedPlatformRequiringRealEmail()) {
+    console.error(
+      `[email:delivery] ${input.template} failed | EMAIL_PROVIDER=mock on deployed platform (no outbound mail) domain=${recipientDomainForLogs(input.to)}`,
+    );
+    await markEmailAuditFailed(auditRecord.emailId, "email_provider_mock", "failed");
+    return {
+      emailId: auditRecord.emailId,
+      emailSent: false,
+      status: "failed",
+      emailDeliveryError: "email_provider_mock",
+      attemptCount: 0,
+    };
+  }
 
   try {
     assertRecipientAllowedForExternalDelivery(input.to, provider.providerId);

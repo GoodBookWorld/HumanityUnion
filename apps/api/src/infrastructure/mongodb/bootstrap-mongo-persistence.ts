@@ -101,5 +101,9 @@ export async function bootstrapMongoPersistence(): Promise<void> {
     "../../modules/initiatives/initiative.store.js"
   );
   syncInitiativeStoreAfterMongoHydrate();
+  const { syncInitiativeCollaborativeAnalysisStoreAfterMongoHydrate } = await import(
+    "../../modules/initiative-collaborative-analysis/initiative-collaborative-analysis.store.js"
+  );
+  syncInitiativeCollaborativeAnalysisStoreAfterMongoHydrate();
   await flushInitiativeMongoPersistence();
 }

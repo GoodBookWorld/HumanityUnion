@@ -45,7 +45,8 @@ describe("Lifecycle UX Completion Pack 02 — navigation progress", () => {
       ["revision", 1],
     ]);
 
-    assert.equal(resolveCurrentStageIdFromPublicationMetadata(counts), "petition");
+    assert.equal(resolveCurrentStageIdFromPublicationMetadata(counts), "proposal");
+    assert.notEqual(resolveCurrentStageIdFromPublicationMetadata(counts), "revision");
   });
 
   it("labels past published stages Completed and future stages Not Started", () => {
@@ -61,7 +62,8 @@ describe("Lifecycle UX Completion Pack 02 — navigation progress", () => {
     assert.equal(currentStageId, "proposal");
     assert.equal(stages.find((stage) => stage.stageId === "analysis")?.stateLabel, "Completed");
     assert.equal(stages.find((stage) => stage.stageId === "proposal")?.stateLabel, "In Progress");
-    assert.equal(stages.find((stage) => stage.stageId === "revision")?.stateLabel, "Not Started");
+    assert.equal(stages.find((stage) => stage.stageId === "petition")?.stateLabel, "Not Started");
+    assert.equal(stages.some((stage) => stage.stageId === "revision"), false);
     assert.equal(
       stages.some((stage) => stage.stateLabel === "Upcoming"),
       false,
@@ -90,5 +92,6 @@ describe("Lifecycle UX Completion Pack 02 — navigation progress", () => {
 
     assert.equal(currentStageId, "archive");
     assert.equal(stages.find((stage) => stage.stageId === "archive")?.stateLabel, "Archived");
+    assert.equal(stages.some((stage) => stage.stageId === "revision"), false);
   });
 });

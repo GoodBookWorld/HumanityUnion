@@ -23,9 +23,10 @@
  *  - `activeAlliesCount` / `readyToCollaborateCount` — existing Ally
  *    store counts.
  *
- * Every item links back to Discussion via `discussionUrl` (the existing
- * `#discussion` hash — there is no per-comment deep-link in this
- * codebase, so linking is at the Discussion-panel granularity).
+ * Every item links back to Discussion via `discussionUrl`
+ * (`/initiatives/public/{id}#comment-{commentId}`). The snapshot-level
+ * `discussionUrl` remains `#discussion` (panel entry). There is no second
+ * Discussion route.
  */
 export interface InitiativeAnalysisSourceCommentRef {
   readonly commentId: string;

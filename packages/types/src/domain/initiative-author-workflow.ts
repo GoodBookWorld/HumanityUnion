@@ -101,7 +101,8 @@ export const INITIATIVE_AUTHOR_WORKFLOW_MATRIX: readonly InitiativeAuthorWorkflo
     supportsPreview: true,
     supportsPublishOrComplete: true,
     postPublishEditPolicy: "read_only",
-    classification: "CANONICAL",
+    /** Version history remains; Revision is not a user-visible Lifecycle stage. */
+    classification: "COMPATIBILITY",
   },
   {
     stageId: "petition",

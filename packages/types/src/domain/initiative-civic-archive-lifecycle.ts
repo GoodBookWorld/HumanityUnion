@@ -2,6 +2,10 @@ import type { InitiativeCollectiveDecisionId } from "./initiative-collective-dec
 import type { InitiativeDescription, InitiativeId, InitiativeTitle } from "./initiative.js";
 import type { InitiativeLifecycleStageId } from "./initiative-lifecycle-stage.js";
 import type { MemberId } from "./member.js";
+import type {
+  InitiativeOfficialResponseNoResponseDetail,
+  InitiativeOfficialResponseOutcomeKind,
+} from "./initiative-official-response-lifecycle.js";
 
 /**
  * Initiative Lifecycle — Part M. Canonical Archive Document disclaimer
@@ -131,6 +135,9 @@ export interface InitiativeCivicArchiveSourceReference {
   readonly summary: string;
   readonly publishedAt: string | null;
   readonly version: number | null;
+  /** Present when this reference is an Official Response Package. */
+  readonly outcomeKind?: InitiativeOfficialResponseOutcomeKind;
+  readonly noResponseDetail?: InitiativeOfficialResponseNoResponseDetail;
 }
 
 export interface InitiativeCivicArchiveIntelligenceSnapshot {

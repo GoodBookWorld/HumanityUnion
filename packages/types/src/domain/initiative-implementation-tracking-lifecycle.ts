@@ -52,7 +52,8 @@ export interface InitiativeImplementationTrackingConsistencyCheck {
 
 /**
  * Initiative Lifecycle — Part J, Section 2/3. Read-only aggregation of
- * Published Commitments (Accepted) and their upstream Decision provenance.
+ * Commitment Package (optional), Accepted Commitments (optional), and
+ * Collective Decision / Initiative scope for automatic plan generation.
  */
 export interface InitiativeImplementationTrackingIntelligenceSnapshot {
   readonly initiativeId: InitiativeId;
@@ -61,25 +62,38 @@ export interface InitiativeImplementationTrackingIntelligenceSnapshot {
   readonly initiativeDescription: InitiativeDescription;
   readonly packageReference: InitiativeImplementationTrackingPackageReference | null;
   readonly acceptedCommitments: readonly InitiativeImplementationTrackingCommitmentReference[];
+  /** Approved actions from the closed Collective Decision when available. */
+  readonly decisionApprovedActions: readonly string[];
   readonly activeAllyCount: number;
   readonly consistencyChecks: readonly InitiativeImplementationTrackingConsistencyCheck[];
-  /** `false` until a published Commitment Package with ≥1 Accepted Commitment exists. */
+  /**
+   * True when a published Commitment Package with ≥1 Accepted Commitment exists.
+   * Advisory for Sources UI — Generate does NOT require this (zero-commitment path).
+   */
   readonly isCommitmentPackageAvailable: boolean;
+  /** True when the Initiative record itself is missing. */
   readonly isEmpty: boolean;
 }
 
 /**
- * Initiative Lifecycle — Part J, Section 3/7. One Tracking Candidate per
- * Accepted Commitment — generated deterministically, edited by the Author,
- * never itself a public record until Package Publish.
+ * Initiative Lifecycle — Part J, Section 3/7. One Tracking milestone /
+ * Candidate — generated from Accepted Commitments when present, otherwise
+ * from Collective Decision / Initiative scope with Unassigned ownership.
+ * Never itself a public record until Package Publish.
  */
 export interface InitiativeImplementationTrackingCandidate {
   candidateId: string;
+  /** Empty string when milestone is Author-originated (no accepted commitment). */
   commitmentId: string;
+  /** Milestone title (also mirrored to approvedAction for published records). */
+  title: string;
+  description: string;
   approvedAction: string;
+  /** Empty string means Unassigned — never invent a Participant. */
   responsibleParticipantId: string;
   currentStatus: string;
   progress: number;
+  plannedStartDate: string | null;
   targetDate: string | null;
   startedDate: string | null;
   completedDate: string | null;
@@ -126,6 +140,7 @@ export interface ImplementationTrackingTraceability {
   readonly decisionSessionId: string | null;
   readonly decisionSessionVersion: number | null;
   readonly decisionId: string;
+  /** Empty when the Tracking Record is Author-originated without an Accepted Commitment. */
   readonly commitmentId: string;
   readonly commitmentPackageId: string | null;
   readonly approvedAction: string;

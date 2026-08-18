@@ -22,7 +22,7 @@ function LoginVerifyFormFields() {
   const searchParams = useSearchParams();
   const returnTo = resolveSafeReturnTo(searchParams.get("returnTo"), "/workspace");
   const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
-  const [emailSent, setEmailSent] = useState(true);
+  const [emailSent, setEmailSent] = useState(false);
   const [resendAvailableAt, setResendAvailableAt] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
 

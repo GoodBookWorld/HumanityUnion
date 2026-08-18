@@ -188,7 +188,7 @@ export function InitiativeCivicArchiveEditor({
           Preview
         </WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish")}
+          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Complete Initiative Lifecycle")}
         </WorkspaceButton>
       </div>
     </div>

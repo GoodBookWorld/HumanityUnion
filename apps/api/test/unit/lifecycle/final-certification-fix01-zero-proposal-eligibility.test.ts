@@ -1,10 +1,22 @@
+process.env.NODE_TEST_ENV = "true";
+process.env.INITIATIVE_PERSISTENCE = "memory";
+process.env.INITIATIVE_IMPROVEMENT_PROPOSALS_STAGE_PERSISTENCE = "memory";
+process.env.INITIATIVE_ANALYSIS_PERSISTENCE = "memory";
+process.env.INITIATIVE_VERSION_REVISION_PERSISTENCE = "memory";
+process.env.MONGODB_URI =
+  "mongodb://127.0.0.1:27017/?serverSelectionTimeoutMS=1&connectTimeoutMS=1";
+
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import type { Initiative } from "@hu/types";
 
-import { assessDecisionSessionEligibilityForInitiative } from "../../../src/modules/decision-session/decision-session-eligibility.js";
-import { createCollection } from "../../../src/modules/initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js";
+const { assessDecisionSessionEligibilityForInitiative } = await import(
+  "../../../src/modules/decision-session/decision-session-eligibility.js"
+);
+const { createCollection } = await import(
+  "../../../src/modules/initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js"
+);
 
 function baseInitiative(initiativeId: string): Initiative {
   return {

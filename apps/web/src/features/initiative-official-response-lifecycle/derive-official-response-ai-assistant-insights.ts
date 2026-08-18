@@ -13,6 +13,7 @@ export interface OfficialResponseAiAssistantInsights {
   unsupportedSummaryWarnings: string[];
   inconsistentDateWarnings: string[];
   clarityWarnings: string[];
+  advisoryNotes: string[];
 }
 
 const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
@@ -23,7 +24,7 @@ const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
  * summary, or verification status, and never invents an institution/
  * organization name or a response that was not entered by the Author.
  * Every field it inspects mirrors what the Author can already see and
- * edit directly in the Editor.
+ * edit directly in the Editor. AI cannot publish or advance Lifecycle.
  */
 export function deriveOfficialResponseAiAssistantInsights(
   snapshot: InitiativeOfficialResponseIntelligenceSnapshot,
@@ -37,6 +38,7 @@ export function deriveOfficialResponseAiAssistantInsights(
   const unsupportedSummaryWarnings: string[] = [];
   const inconsistentDateWarnings: string[] = [];
   const clarityWarnings: string[] = [];
+  const advisoryNotes: string[] = [];
 
   if (!snapshot.trackingPackageReference) {
     missingTrackingPackageWarnings.push(
@@ -45,51 +47,70 @@ export function deriveOfficialResponseAiAssistantInsights(
   }
 
   if (draft) {
-    if (draft.candidates.length === 0) {
+    const isNoResponse = draft.outcomeKind === "no_official_response_received";
+
+    if (isNoResponse) {
+      advisoryNotes.push(
+        "Author is documenting No official response received — a legitimate stage outcome. AI must not invent statements or invent response records.",
+      );
+      if (!draft.noResponseDetail?.note?.trim()) {
+        clarityWarnings.push(
+          "Optional: add a short factual note explaining outreach or why no reply was received.",
+        );
+      }
+    } else if (draft.candidates.length === 0) {
       incompleteCandidateWarnings.push(
-        "No Response Candidates yet — generate a draft from the published Tracking Records.",
+        "No Response Candidates yet — generate a draft, add received responses, or record No official response received.",
       );
     }
 
     const today = TODAY_ISO();
 
-    draft.candidates.forEach((candidate, index) => {
-      const label = candidate.subject.trim() || `Candidate ${index + 1}`;
+    if (!isNoResponse) {
+      draft.candidates.forEach((candidate, index) => {
+        const label = candidate.subject.trim() || `Candidate ${index + 1}`;
 
-      if (!candidate.institution.trim() && !candidate.organization.trim()) {
-        missingInstitutionWarnings.push(`"${label}" has no institution or organization filled in yet.`);
-      }
+        if (!candidate.institution.trim() && !candidate.organization.trim()) {
+          missingInstitutionWarnings.push(`"${label}" has no institution or organization filled in yet.`);
+        }
 
-      if (!candidate.summary.trim()) {
-        incompleteCandidateWarnings.push(`"${label}" has no summary yet.`);
-      }
+        if (!candidate.summary.trim()) {
+          incompleteCandidateWarnings.push(`"${label}" has no summary yet.`);
+        }
 
-      if (candidate.relatedActions.length === 0 && candidate.relatedTrackingIds.length === 0) {
-        missingReferenceWarnings.push(`"${label}" is not linked to any Tracking Record or Approved Action.`);
-      }
+        if (candidate.relatedActions.length === 0 && candidate.relatedTrackingIds.length === 0) {
+          missingReferenceWarnings.push(`"${label}" is not linked to any Tracking Record or Approved Action.`);
+        }
 
-      if (candidate.summary.trim() && candidate.relatedTrackingIds.length === 0) {
-        unsupportedSummaryWarnings.push(
-          `"${label}" has a summary but no Tracking Record reference to support it.`,
-        );
-      }
+        if (candidate.summary.trim() && candidate.relatedTrackingIds.length === 0) {
+          unsupportedSummaryWarnings.push(
+            `"${label}" has a summary but no Tracking Record reference to support it.`,
+          );
+        }
 
-      if (candidate.receivedAt && candidate.receivedAt > today) {
-        inconsistentDateWarnings.push(`"${label}" has a received date in the future.`);
-      }
-    });
+        if (candidate.documentIds.length === 0 && candidate.links.length === 0) {
+          missingReferenceWarnings.push(
+            `"${label}" has no document ID or external URL — consider attaching evidence if available.`,
+          );
+        }
 
-    const seenSubjects = new Map<string, number>();
-    for (const candidate of draft.candidates) {
-      const key = candidate.subject.trim().toLowerCase();
-      if (!key) {
-        continue;
+        if (candidate.receivedAt && candidate.receivedAt > today) {
+          inconsistentDateWarnings.push(`"${label}" has a received date in the future.`);
+        }
+      });
+
+      const seenSubjects = new Map<string, number>();
+      for (const candidate of draft.candidates) {
+        const key = candidate.subject.trim().toLowerCase();
+        if (!key) {
+          continue;
+        }
+        seenSubjects.set(key, (seenSubjects.get(key) ?? 0) + 1);
       }
-      seenSubjects.set(key, (seenSubjects.get(key) ?? 0) + 1);
-    }
-    for (const [subject, count] of seenSubjects) {
-      if (count > 1) {
-        duplicateCandidateWarnings.push(`${count} Candidates share the subject "${subject}".`);
+      for (const [subject, count] of seenSubjects) {
+        if (count > 1) {
+          duplicateCandidateWarnings.push(`${count} Candidates share the subject "${subject}".`);
+        }
       }
     }
 
@@ -97,7 +118,7 @@ export function deriveOfficialResponseAiAssistantInsights(
       clarityWarnings.push("Title is empty — Official Responses should be clearly labeled.");
     }
 
-    if (!draft.summary.trim()) {
+    if (!draft.summary.trim() && !isNoResponse) {
       clarityWarnings.push("Summary is empty — restate the Tracking Package's outcome.");
     }
   }
@@ -107,6 +128,10 @@ export function deriveOfficialResponseAiAssistantInsights(
       clarityWarnings.push(check.detail);
     }
   }
+
+  advisoryNotes.push(
+    "AI suggestions are advisory only — distinguish source facts from Author interpretation. AI cannot publish or advance Lifecycle.",
+  );
 
   const sourcesUsedSummary = [
     snapshot.trackingPackageReference ? `Tracking Package "${snapshot.trackingPackageReference.title}"` : null,
@@ -126,5 +151,6 @@ export function deriveOfficialResponseAiAssistantInsights(
     unsupportedSummaryWarnings,
     inconsistentDateWarnings,
     clarityWarnings,
+    advisoryNotes,
   };
 }

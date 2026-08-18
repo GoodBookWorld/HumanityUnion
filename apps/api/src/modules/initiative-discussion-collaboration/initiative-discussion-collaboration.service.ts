@@ -630,8 +630,14 @@ export async function attachCollaborationStateToComments(input: {
     ? (allyByParticipantId.get(input.viewerParticipantId) ?? null)
     : null;
   const viewerAllyStatus: InitiativeAllyStatus | "none" = viewerAlly?.status ?? "none";
+  // Ready to Collaborate is for other Participants only — Authors/stewards
+  // are refused by expressCollaborationInterest and must not see the control.
+  // interest_pending / invitation_pending / active are already in-flight or
+  // complete; declined may re-express (see expressCollaborationInterest).
   const canReadyToCollaborate =
     isAuthenticatedViewer &&
+    !isViewerSteward &&
+    viewerAlly?.status !== "interest_pending" &&
     viewerAlly?.status !== "active" &&
     viewerAlly?.status !== "invitation_pending";
 

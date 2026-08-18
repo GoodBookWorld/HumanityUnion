@@ -197,8 +197,71 @@ describe("generateCivicArchiveDraftContent", () => {
       (section) => section.sectionId === "petition_and_public_participation",
     );
 
-    assert.ok(proposals?.body.includes("No published"));
+    assert.ok(proposals?.body.includes("Zero Improvement Proposals"));
     assert.ok(petition?.body.includes("No published"));
+  });
+
+  it("preserves No Official Response and profile-aware N/A stages", () => {
+    const content = generateCivicArchiveDraftContent(
+      buildSnapshot({
+        officialResponsePackageReference: {
+          recordId: "or-none",
+          label: "Official Responses: Community Compost Network",
+          summary: "Author certified no official response.",
+          publishedAt: "2026-08-08T12:00:00.000Z",
+          version: null,
+          outcomeKind: "no_official_response_received",
+          noResponseDetail: {
+            contactedOrganizations: ["City Hall"],
+            contactedDates: ["2026-08-01"],
+            note: "No reply after written request.",
+          },
+        },
+        publicImpactReportReference: {
+          recordId: "pi-zero",
+          label: "Public Impact Report: Community Compost Network",
+          summary: "No measurable impact recorded yet.",
+          publishedAt: "2026-08-09T00:00:00.000Z",
+          version: 1,
+        },
+      }),
+    );
+
+    const official = content.sections.find((section) => section.sectionId === "official_responses");
+    const impact = content.sections.find((section) => section.sectionId === "public_impact");
+    const revision = content.sections.find(
+      (section) => section.sectionId === "revision_and_change_history",
+    );
+
+    assert.ok(official?.body.includes("No official response received"));
+    assert.ok(impact?.body.includes("no measurable impact"));
+    assert.equal(revision?.title, "Version / revision history");
+    assert.ok(revision?.body.includes("not a Lifecycle stage"));
+  });
+
+  it("PUBLIC_CHOICE marks hidden STANDARD stages as not on route", () => {
+    const content = generateCivicArchiveDraftContent(
+      buildSnapshot({
+        analysisReference: null,
+        proposalReferences: [],
+        petitionReference: null,
+        decisionSessionReference: null,
+        commitmentPackageReference: null,
+        trackingPackageReference: null,
+        officialResponsePackageReference: null,
+        publicImpactReportReference: null,
+      }),
+      "PUBLIC_CHOICE",
+    );
+
+    const analysis = content.sections.find((section) => section.sectionId === "collaborative_analysis");
+    const decisionSession = content.sections.find((section) => section.sectionId === "decision_session");
+    const impact = content.sections.find((section) => section.sectionId === "public_impact");
+
+    assert.ok(analysis?.body.includes("not on this Initiative's LifecycleProfile route"));
+    assert.ok(decisionSession?.body.includes("not on this Initiative's LifecycleProfile route"));
+    assert.ok(impact?.body.includes("not on this Initiative's LifecycleProfile route"));
+    assert.match(content.finalSummary, /LifecycleProfile: PUBLIC_CHOICE/);
   });
 
   it("keeps incomplete implementation and outstanding work visible", () => {

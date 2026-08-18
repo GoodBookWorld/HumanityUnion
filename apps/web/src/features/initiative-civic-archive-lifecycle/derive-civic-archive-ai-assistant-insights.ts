@@ -38,12 +38,21 @@ export function deriveCivicArchiveAiAssistantInsights(
     );
   }
 
-  if (snapshot.completeness.missingOptionalStages.length > 0) {
-    completenessWarnings.push(
-      `Optional stage(s) without published records: ${snapshot.completeness.missingOptionalStages.join(", ")}.`,
+  if (snapshot.officialResponsePackageReference?.outcomeKind === "no_official_response_received") {
+    clarityWarnings.push(
+      "Official Responses record No official response received — preserve that outcome in the Archive summary.",
     );
   }
 
+  if (snapshot.completeness.missingOptionalStages.length > 0) {
+    completenessWarnings.push(
+      `Optional stage(s) without published records: ${snapshot.completeness.missingOptionalStages.join(", ")}. Empty optional history is valid and does not block Archive.`,
+    );
+  }
+
+  clarityWarnings.push(
+    "AI is advisory only — it cannot publish Civic Archive or close the Initiative Lifecycle.",
+  );
   if (snapshot.completeness.unresolvedTrackingCount > 0) {
     outstandingWorkWarnings.push(
       `${snapshot.completeness.unresolvedTrackingCount} Tracking Record(s) remain unresolved — record them honestly in Outstanding Work.`,

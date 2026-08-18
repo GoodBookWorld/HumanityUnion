@@ -42,6 +42,12 @@ function buildDraft(
     title: "Official Responses: Test",
     summary: "Two compost hubs were piloted and evidence was published.",
     trackingPackageId: "tracking-package-1",
+    outcomeKind: "responses_received",
+    noResponseDetail: {
+      contactedOrganizations: [],
+      contactedDates: [],
+      note: "",
+    },
     candidates: [buildCandidate()],
     createdAt: "2026-08-08T00:00:00.000Z",
     updatedAt: "2026-08-08T00:00:00.000Z",
@@ -143,10 +149,39 @@ describe("validateInitiativeOfficialResponseLifecycleDraftForPublication", () =>
     );
   });
 
-  it("rejects a draft with no candidates", () => {
+  it("rejects a draft with no candidates unless No Response is recorded", () => {
     assert.throws(
       () => validateInitiativeOfficialResponseLifecycleDraftForPublication(buildDraft({ candidates: [] })),
-      /candidate/i,
+      /candidate|No official response/i,
+    );
+  });
+
+  it("accepts an explicit No Response outcome with zero candidates", () => {
+    assert.doesNotThrow(() =>
+      validateInitiativeOfficialResponseLifecycleDraftForPublication(
+        buildDraft({
+          outcomeKind: "no_official_response_received",
+          candidates: [],
+          noResponseDetail: {
+            contactedOrganizations: ["City Hall"],
+            contactedDates: ["2026-08-01"],
+            note: "No reply after two follow-ups.",
+          },
+        }),
+      ),
+    );
+  });
+
+  it("rejects No Response outcome that still includes candidates", () => {
+    assert.throws(
+      () =>
+        validateInitiativeOfficialResponseLifecycleDraftForPublication(
+          buildDraft({
+            outcomeKind: "no_official_response_received",
+            candidates: [buildCandidate()],
+          }),
+        ),
+      /No-response outcome cannot include/i,
     );
   });
 

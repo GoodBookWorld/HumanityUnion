@@ -103,7 +103,10 @@ export function InitiativeOfficialResponseAuthorWorkspace({
 
   const hasContent = Boolean(
     context.draft &&
-      (context.draft.title.trim() || context.draft.summary.trim() || context.draft.candidates.length > 0),
+      (context.draft.title.trim() ||
+        context.draft.summary.trim() ||
+        context.draft.candidates.length > 0 ||
+        context.draft.outcomeKind === "no_official_response_received"),
   );
 
   return (
@@ -121,12 +124,12 @@ export function InitiativeOfficialResponseAuthorWorkspace({
       {!hasContent || !context.draft ? (
         <div className="ior-editor">
           <p className="ior-source-panel__empty">
-            Generate Response Candidates from the published Implementation Tracking Records. The Response
-            Assistant remains advisory — nothing publishes automatically, and no institution or
-            organization name is ever invented.
+            Generate an editable Official Responses draft from Tracking / Initiative context, or open
+            the editor to record received responses — or explicitly document No official response
+            received. The Assistant is advisory only and never invents official statements or publishes.
           </p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate Official Responses Draft")}
+            {resolveSaveButtonLabel(generatePhase.phase, "Generate / Open Draft")}
           </WorkspaceButton>
         </div>
       ) : (

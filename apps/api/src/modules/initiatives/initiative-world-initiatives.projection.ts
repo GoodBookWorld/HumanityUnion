@@ -67,6 +67,11 @@ export function toWorldInitiativeCardProjection(
     startDate: initiative.metadata.startDate,
     completionDate: initiative.metadata.completionDate,
     publicStatus: formatPublicStatus(initiative.status),
+    /**
+     * Display label only — AUTHORITY FREEZE: `Initiative.status` must never
+     * drive experience.currentStageId (canonical: published artifacts →
+     * resolveInitiativeLifecycleState).
+     */
     currentStageLabel: formatPublicStatus(initiative.status),
     publicInitiativeHref: buildPublicInitiativeHref(initiative.initiativeId),
     publishedAt: initiative.updatedAt,

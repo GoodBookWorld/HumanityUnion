@@ -38,12 +38,27 @@ function buildFormState(proposal: InitiativeStructuredProposal): ProposalFormSta
   };
 }
 
-const PRE_PUBLICATION_STATUS_OPTIONS: readonly InitiativeStructuredProposalStatus[] = ["draft", "ready"];
+const PRE_PUBLICATION_STATUS_OPTIONS: readonly InitiativeStructuredProposalStatus[] = [
+  "draft",
+  "ready",
+  "included_in_revision",
+  "keep_for_later",
+  "not_applicable",
+];
 const POST_PUBLICATION_STATUS_OPTIONS: readonly InitiativeStructuredProposalStatus[] = [
   "included_in_revision",
   "keep_for_later",
   "not_applicable",
 ];
+
+const STATUS_LABELS: Record<InitiativeStructuredProposalStatus, string> = {
+  draft: "Draft",
+  ready: "Ready",
+  published: "Published",
+  included_in_revision: "Accept",
+  keep_for_later: "Partially accept",
+  not_applicable: "Decline",
+};
 
 interface InitiativeStructuredProposalCardProps {
   readonly collectionId: string;
@@ -85,6 +100,7 @@ export function InitiativeStructuredProposalCard({
   const canChangeStatus =
     isDraftCollection ||
     proposal.status === "published" ||
+    proposal.status === "ready" ||
     POST_PUBLICATION_STATUS_OPTIONS.includes(proposal.status);
 
   async function handleSave() {
@@ -247,7 +263,7 @@ export function InitiativeStructuredProposalCard({
             >
               {statusOptions.map((option) => (
                 <option key={option} value={option}>
-                  {option.replace(/_/g, " ")}
+                  {STATUS_LABELS[option] ?? option.replace(/_/g, " ")}
                 </option>
               ))}
             </select>

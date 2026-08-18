@@ -142,19 +142,54 @@ export function resolveInitiativeLifecycleState(
 }
 
 /**
- * Field authority classification (Phase 02 documentation aid).
+ * Field / subsystem authority for Initiative Lifecycle progression.
+ *
+ * Canonical progression is ONLY:
+ *   Stage Registry + LifecycleProfile route + Author completion/published
+ *   artifacts → resolveInitiativeLifecycleState
+ *
+ * Anything marked COMPATIBILITY_DISPLAY_ONLY or LEGACY must not advance,
+ * block, or recalculate `experience.currentStageId`.
  */
 export const INITIATIVE_LIFECYCLE_FIELD_AUTHORITY = {
   /** Initiative configuration selecting the Stage Registry route — not progress. */
   lifecycleProfile: "CANONICAL_CONFIGURATION",
+  /** Stage Registry order / applicability metadata. */
+  lifecycleStageRegistry: "CANONICAL_CONFIGURATION",
+  /** Author completion markers + published stage artifacts (counts). */
   publishedLifecycleArtifacts: "CANONICAL",
+  /** Output of resolveInitiativeLifecycleState / buildLifecycleNavigation. */
   derivedLifecycleState: "DERIVED",
+  /** Initiative record draft→published→projected→archived only. */
   initiativeLifecyclePhase: "CANONICAL_FOR_INITIATIVE_RECORD_ONLY",
+  /** Informational pipeline-stage label — never progress. */
   initiativeStatus: "LEGACY_DO_NOT_USE_FOR_PROGRESS",
+  /** Hash / selectedStageId on the experience shell. */
   frontendActiveStageHash: "DISPLAY_ONLY",
   /**
+   * Cap02 `buildPipelineStatus` / civic integration widgets — reference UI
+   * only. Must never feed experience.currentStageId.
+   */
+  capability02PipelineStatus: "COMPATIBILITY_DISPLAY_ONLY",
+  /**
+   * Legacy Activity Collaborative Analysis progressPolicy thresholds
+   * (minimumContributions / signals / participants).
+   */
+  legacyCollaborativeAnalysisThresholds: "COMPATIBILITY_DISPLAY_ONLY",
+  /**
+   * Legacy Activity Collective Decision quorum / nextLifecycleStage outcome.
+   */
+  legacyCollectiveDecisionQuorumNextStage: "COMPATIBILITY_DISPLAY_ONLY",
+  /**
+   * Legacy Activity Implementation Commitment readiness / policy thresholds.
+   */
+  legacyImplementationCommitmentReadiness: "COMPATIBILITY_DISPLAY_ONLY",
+  /**
    * GET /api/v1/initiatives/:id/analysis — COMPATIBILITY_READ_ONLY.
-   * Write authority remains initiative-analyses. Deprecate/remove in Phase 03–04.
+   * Write authority remains initiative-analyses.
    */
   legacyInitiativeAnalysisRoute: "COMPATIBILITY_READ_ONLY",
 } as const;
+
+export type InitiativeLifecycleFieldAuthority =
+  (typeof INITIATIVE_LIFECYCLE_FIELD_AUTHORITY)[keyof typeof INITIATIVE_LIFECYCLE_FIELD_AUTHORITY];

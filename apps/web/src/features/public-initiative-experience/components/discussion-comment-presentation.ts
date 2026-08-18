@@ -214,6 +214,10 @@ export function resolveProposalActionState(
  * (this action always targets `(initiativeId, viewer)`, never the
  * comment's author), so its completed-state label is the same for every
  * comment in a given response.
+ *
+ * Initiative Authors/stewards never see this control (server also rejects
+ * self-interest). Invited Participants use Accept/Decline instead
+ * (`resolveAlliesInvitationResponseState`).
  */
 export function resolveReadyToCollaborateActionState(
   collaboration: PublicCommentCollaborationState | undefined,
@@ -223,11 +227,16 @@ export function resolveReadyToCollaborateActionState(
     return { visible: false, disabled: true, label: "Ready to Collaborate" };
   }
 
+  if (collaboration.isViewerInitiativeSteward) {
+    return { visible: false, disabled: true, label: "Ready to Collaborate" };
+  }
+
   switch (collaboration.viewerAllyStatus) {
     case "interest_pending":
       return { visible: true, disabled: true, label: "Ready to Collaborate" };
     case "invitation_pending":
-      return { visible: true, disabled: true, label: "Invitation Pending" };
+      // Accept/Decline are rendered by resolveAlliesInvitationResponseState.
+      return { visible: false, disabled: true, label: "Invitation Pending" };
     case "active":
       return { visible: true, disabled: true, label: "Ally" };
     default:
@@ -239,6 +248,31 @@ export function resolveReadyToCollaborateActionState(
   }
 
   return { visible: true, disabled: busy, label: busy ? "Recording…" : "Ready to Collaborate" };
+}
+
+export interface AlliesInvitationResponseActionState {
+  visible: boolean;
+  disabled: boolean;
+}
+
+/**
+ * Invited Participant responds to a steward-initiated Allies invitation
+ * (`invitation_pending` on the viewer's own Ally row). Reuses the canonical
+ * `respondToAlliesInvitation` API — no second model.
+ */
+export function resolveAlliesInvitationResponseState(
+  collaboration: PublicCommentCollaborationState | undefined,
+  busy: boolean,
+): AlliesInvitationResponseActionState {
+  if (!collaboration || collaboration.isViewerInitiativeSteward) {
+    return { visible: false, disabled: true };
+  }
+
+  if (collaboration.viewerAllyStatus !== "invitation_pending") {
+    return { visible: false, disabled: true };
+  }
+
+  return { visible: true, disabled: busy };
 }
 
 /**

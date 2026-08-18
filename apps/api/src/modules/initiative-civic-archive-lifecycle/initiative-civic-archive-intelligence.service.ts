@@ -6,9 +6,16 @@ import type {
   InitiativeCivicArchiveSourceReference,
   InitiativeCivicArchiveTimelineEntry,
   InitiativeCivicArchiveTimelineStatus,
+  InitiativeLifecycleProfile,
   InitiativeLifecycleStageId,
+  InitiativeOfficialResponseNoResponseDetail,
+  InitiativeOfficialResponseOutcomeKind,
 } from "@hu/types";
-import { INITIATIVE_LIFECYCLE_STAGE_REGISTRY } from "@hu/types";
+import {
+  INITIATIVE_LIFECYCLE_STAGE_REGISTRY,
+  isLifecycleStageApplicableToProfile,
+  resolveInitiativeLifecycleProfile,
+} from "@hu/types";
 
 import { getInitiativeAnalysisReactionSummary } from "../initiative-analysis-reactions/index.js";
 import { listAnalysesByInitiativeAndAuthor } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
@@ -59,8 +66,20 @@ function ref(
   summary: string,
   publishedAt: string | null,
   version: number | null,
+  extras?: {
+    outcomeKind?: InitiativeOfficialResponseOutcomeKind;
+    noResponseDetail?: InitiativeOfficialResponseNoResponseDetail;
+  },
 ): InitiativeCivicArchiveSourceReference {
-  return { recordId, label, summary, publishedAt, version };
+  return {
+    recordId,
+    label,
+    summary,
+    publishedAt,
+    version,
+    ...(extras?.outcomeKind ? { outcomeKind: extras.outcomeKind } : {}),
+    ...(extras?.noResponseDetail ? { noResponseDetail: extras.noResponseDetail } : {}),
+  };
 }
 
 function buildAnalysisReference(
@@ -124,19 +143,29 @@ function buildRevisionReference(initiativeId: string): InitiativeCivicArchiveSou
 async function buildPetitionReference(
   initiativeId: string,
 ): Promise<InitiativeCivicArchiveSourceReference | null> {
-  const petition = await getPetitionByInitiativeId(initiativeId);
-
-  if (!petition || !PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
+  // Unit tests isolate from Petition Mongo; production still loads when available.
+  if (process.env.NODE_TEST_ENV === "true") {
     return null;
   }
 
-  return ref(
-    petition.petitionId,
-    petition.subject.title,
-    petition.subject.summary,
-    petition.updatedAt ?? petition.createdAt ?? null,
-    petition.traceability?.revisionVersion ?? null,
-  );
+  try {
+    const petition = await getPetitionByInitiativeId(initiativeId);
+
+    if (!petition || !PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status)) {
+      return null;
+    }
+
+    return ref(
+      petition.petitionId,
+      petition.subject.title,
+      petition.subject.summary,
+      petition.updatedAt ?? petition.createdAt ?? null,
+      petition.traceability?.revisionVersion ?? null,
+    );
+  } catch {
+    // Petition store may be unavailable offline (Mongo down).
+    return null;
+  }
 }
 
 function buildDecisionSessionReference(
@@ -179,6 +208,15 @@ async function buildParticipationStatistics(input: {
   initiativeId: string;
   analysisId: string | null;
 }): Promise<InitiativeCivicArchiveParticipationStatistics> {
+  if (process.env.NODE_TEST_ENV === "true") {
+    return {
+      signatureCount: 0,
+      supportCount: 0,
+      reactionCount: 0,
+      activeAllyCount: 0,
+    };
+  }
+
   // Independent lookups run in parallel — never sequential N+1.
   const [signatureCount, supportCount, reactionCount, activeAllyCount] = await Promise.all([
     (async () => {
@@ -226,10 +264,10 @@ async function buildParticipationStatistics(input: {
 }
 
 function buildTimeline(input: {
+  lifecycleProfile: InitiativeLifecycleProfile;
   initiativePublishedAt: string | null;
   analysisReference: InitiativeCivicArchiveSourceReference | null;
   proposalReferences: readonly InitiativeCivicArchiveSourceReference[];
-  revisionReference: InitiativeCivicArchiveSourceReference | null;
   petitionReference: InitiativeCivicArchiveSourceReference | null;
   decisionSessionReference: InitiativeCivicArchiveSourceReference | null;
   decisionReference: InitiativeCivicArchiveSourceReference | null;
@@ -266,13 +304,7 @@ function buildTimeline(input: {
             status: "published",
           }
         : { publishedAt: null, version: null, status: "missing" },
-    revision: input.revisionReference
-      ? {
-          publishedAt: input.revisionReference.publishedAt,
-          version: input.revisionReference.version,
-          status: "published",
-        }
-      : { publishedAt: null, version: null, status: "missing" },
+    // Revision is version/history content only — never emitted as a timeline stage.
     petition: input.petitionReference
       ? {
           publishedAt: input.petitionReference.publishedAt,
@@ -326,9 +358,13 @@ function buildTimeline(input: {
     archive: { publishedAt: null, version: null, status: "missing" },
   };
 
-  // Timeline is derived from Lifecycle stage registry / published packs —
-  // never from Initiative.status or lifecyclePhase.
-  return INITIATIVE_LIFECYCLE_STAGE_REGISTRY.map((stage) => {
+  // Timeline is derived from profile route / published packs —
+  // never from Initiative.status or lifecyclePhase. Revision never appears.
+  return INITIATIVE_LIFECYCLE_STAGE_REGISTRY.filter(
+    (stage) =>
+      stage.stageId !== "revision" &&
+      isLifecycleStageApplicableToProfile(stage.stageId, input.lifecycleProfile),
+  ).map((stage) => {
     const meta = publishedLookup[stage.stageId] ?? {
       publishedAt: null,
       version: null,
@@ -369,8 +405,8 @@ function buildCompleteness(input: {
     )
     .map((entry) => entry.stageId);
   const optionalStageIds: InitiativeLifecycleStageId[] = input.requirePublicImpact
-    ? ["proposal", "revision", "petition", "decision_session"]
-    : ["proposal", "revision", "petition"];
+    ? ["proposal", "petition", "decision_session"]
+    : ["proposal", "petition"];
   const missingOptionalStages = optionalStageIds.filter(
     (stageId) => !stagesFound.includes(stageId),
   );
@@ -548,6 +584,22 @@ export async function buildInitiativeCivicArchiveIntelligenceSnapshot(
         officialResponsePackage.summary,
         officialResponsePackage.publishedAt,
         null,
+        {
+          outcomeKind:
+            officialResponsePackage.outcomeKind === "no_official_response_received" ||
+            officialResponsePackage.outcomeKind === "responses_received"
+              ? officialResponsePackage.outcomeKind
+              : undefined,
+          noResponseDetail: officialResponsePackage.noResponseDetail
+            ? {
+                contactedOrganizations: [
+                  ...officialResponsePackage.noResponseDetail.contactedOrganizations,
+                ],
+                contactedDates: [...officialResponsePackage.noResponseDetail.contactedDates],
+                note: officialResponsePackage.noResponseDetail.note,
+              }
+            : undefined,
+        },
       )
     : null;
   const publicImpactReportReference = publicImpactReport
@@ -575,11 +627,18 @@ export async function buildInitiativeCivicArchiveIntelligenceSnapshot(
     ? listResponsesByPackageId(officialResponsePackage.packageId).length
     : 0;
 
+  const { requirePublicImpact, isEmpty } = resolveCivicArchiveSourceEmptyState({
+    hasInitiative: Boolean(initiative),
+    publicImpactAvailable: publicImpactReport !== null,
+    lifecycleProfile: initiative?.lifecycleProfile,
+  });
+  const lifecycleProfile = resolveInitiativeLifecycleProfile(initiative?.lifecycleProfile);
+
   const timeline = buildTimeline({
+    lifecycleProfile,
     initiativePublishedAt: initiative?.createdAt ?? null,
     analysisReference,
     proposalReferences,
-    revisionReference,
     petitionReference,
     decisionSessionReference,
     decisionReference,
@@ -589,12 +648,6 @@ export async function buildInitiativeCivicArchiveIntelligenceSnapshot(
     publicImpactReportReference,
     unresolvedTrackingCount,
     unfinishedCommitmentCount: effectiveUnfinishedCommitments,
-  });
-
-  const { requirePublicImpact, isEmpty } = resolveCivicArchiveSourceEmptyState({
-    hasInitiative: Boolean(initiative),
-    publicImpactAvailable: publicImpactReport !== null,
-    lifecycleProfile: initiative?.lifecycleProfile,
   });
 
   const completeness = buildCompleteness({

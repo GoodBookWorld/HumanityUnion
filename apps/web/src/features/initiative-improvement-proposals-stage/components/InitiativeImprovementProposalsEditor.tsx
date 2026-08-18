@@ -8,8 +8,8 @@ import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile
 import { WorkspaceButton, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import {
   addManualInitiativeStructuredProposal,
+  completeImprovementProposalsWithVersionCommit,
   generateImprovementProposalsDraft,
-  publishImprovementProposalsCollection,
   type CreateManualInitiativeStructuredProposalInput,
 } from "../api";
 import { InitiativeStructuredProposalCard } from "./InitiativeStructuredProposalCard";
@@ -35,6 +35,8 @@ interface InitiativeImprovementProposalsEditorProps {
   readonly collection: InitiativeImprovementProposalsCollection;
   readonly onUpdated: (collection: InitiativeImprovementProposalsCollection) => void;
   readonly onTogglePreview: () => void;
+  readonly onNavigate?: (stageId: string, hash: string) => void;
+  readonly onCompleted?: () => void;
 }
 
 /**
@@ -54,6 +56,8 @@ export function InitiativeImprovementProposalsEditor({
   collection,
   onUpdated,
   onTogglePreview,
+  onNavigate,
+  onCompleted,
 }: InitiativeImprovementProposalsEditorProps) {
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [showManualForm, setShowManualForm] = useState(false);
@@ -64,7 +68,15 @@ export function InitiativeImprovementProposalsEditor({
 
   const isDraft = collection.status === "draft";
   const readyCount = collection.proposals.filter((proposal) => proposal.status === "ready").length;
+  const treatedCount = collection.proposals.filter(
+    (proposal) =>
+      proposal.status === "included_in_revision" ||
+      proposal.status === "keep_for_later" ||
+      proposal.status === "not_applicable",
+  ).length;
   const isBusy = generatePhase.isBusy || publishPhase.isBusy || addPhase.isBusy;
+  const canComplete =
+    collection.proposals.length === 0 || readyCount > 0 || treatedCount > 0;
 
   function handleProposalUpdated(updatedProposal: InitiativeStructuredProposal) {
     onUpdated({
@@ -110,7 +122,7 @@ export function InitiativeImprovementProposalsEditor({
   async function handlePublish() {
     if (
       !window.confirm(
-        `Publishing makes every "Ready" proposal (${readyCount}) visible to the public and notifies every Active Ally. Continue?`,
+        "This commits the Initiative progress version (if not already committed), publishes Improvement Proposals, notifies Active Allies, and unlocks Petition. Continue?",
       )
     ) {
       return;
@@ -119,14 +131,19 @@ export function InitiativeImprovementProposalsEditor({
     setMessage(null);
 
     try {
-      const updated = await publishPhase.runSave(() =>
-        publishImprovementProposalsCollection(collection.collectionId),
+      const result = await publishPhase.runSave(() =>
+        completeImprovementProposalsWithVersionCommit(initiativeId),
       );
-      onUpdated(updated);
-      setMessage({ tone: "success", text: "Improvement Proposals published. Active Allies have been notified." });
+      onUpdated(result.collection);
+      setMessage({
+        tone: "success",
+        text: "Improvement Proposals completed. Initiative version committed. Petition is unlocked.",
+      });
+      onCompleted?.();
+      onNavigate?.("petition", "petition");
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Publish failed: ${detail}` });
+      setMessage({ tone: "error", text: `Publish & Continue failed: ${detail}` });
     }
   }
 
@@ -163,10 +180,10 @@ export function InitiativeImprovementProposalsEditor({
         {isDraft ? (
           <WorkspaceButton
             variant="primary"
-            disabled={isBusy || readyCount === 0}
+            disabled={isBusy || !canComplete}
             onClick={() => void handlePublish()}
           >
-            {resolveSaveButtonLabel(publishPhase.phase, `Publish (${readyCount} Ready)`)}
+            {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Petition")}
           </WorkspaceButton>
         ) : null}
       </div>

@@ -22,7 +22,10 @@ export function InitiativePublicImpactIntelligenceSnapshotPanel({
           <span className="ipi-source-panel__label">Published Official Response Package</span>
           <p className="ipi-source-panel__summary">
             {snapshot.officialResponsePackageReference
-              ? `${snapshot.officialResponsePackageReference.title} — ${snapshot.officialResponseSummaries.length} Response(s)`
+              ? snapshot.officialResponsePackageReference.outcomeKind ===
+                "no_official_response_received"
+                ? `${snapshot.officialResponsePackageReference.title} — No official response received`
+                : `${snapshot.officialResponsePackageReference.title} — ${snapshot.officialResponseSummaries.length} Response(s)`
               : "No published Official Response Package yet"}
           </p>
         </li>

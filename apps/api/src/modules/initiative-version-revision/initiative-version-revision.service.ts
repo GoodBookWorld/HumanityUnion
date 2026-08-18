@@ -581,11 +581,12 @@ export function publishInitiativeRevision(
  * stage-agnostic, so calling it with `stageId: "revision"` alone is
  * sufficient for the existing consumer to fan out one Notification to
  * every Active Ally (Author excluded), advance Lifecycle Progress, and
- * generate the standard "continue to next stage" (Petition) Reminder —
+ * generate the standard "continue to next stage" Reminder when Revision
+ * remains a registry stage. After the route cut, Revision is content/history
+ * only — publication still notifies Allies, but next-stage unlock for Authors
+ * is proposal → petition via the Stage Registry route.
  * see `mapLifecycleStageIdToReminderCategory` in
- * `initiative-lifecycle-stage-notification.consumer.ts`, which already
- * maps `"revision"` → its own reminder category and `"petition"` → the
- * next-stage Reminder this publish produces.
+ * `initiative-lifecycle-stage-notification.consumer.ts`.
  */
 async function notifyLifecycleStageRevisionPublished(
   revision: InitiativeVersionRevision,
@@ -604,7 +605,7 @@ async function notifyLifecycleStageRevisionPublished(
       stageVersion: revision.version,
       actorParticipantId,
       publicationKind: "published",
-      relatedUrl: `/initiatives/public/${encodeURIComponent(revision.initiativeId)}#revision`,
+      relatedUrl: `/initiatives/public/${encodeURIComponent(revision.initiativeId)}/revisions/${revision.version}`,
     });
   } catch (error) {
     console.warn(`[initiative-version-revision] Lifecycle stage notification skipped: ${String(error)}`);

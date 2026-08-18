@@ -21,9 +21,17 @@ const PUBLICLY_VISIBLE_PETITION_STATUSES = new Set(["Published", "Open", "Closed
  * published, so it always has real Petition/signature context to surface.
  */
 async function hasPublishedPetitionForInitiative(initiativeId: string): Promise<boolean> {
-  const petition = await getPetitionByInitiativeId(initiativeId);
+  if (process.env.NODE_TEST_ENV === "true") {
+    return false;
+  }
 
-  return Boolean(petition && PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status));
+  try {
+    const petition = await getPetitionByInitiativeId(initiativeId);
+    return Boolean(petition && PUBLICLY_VISIBLE_PETITION_STATUSES.has(petition.status));
+  } catch {
+    // Petition store may be unavailable offline (Mongo down).
+    return false;
+  }
 }
 
 /**

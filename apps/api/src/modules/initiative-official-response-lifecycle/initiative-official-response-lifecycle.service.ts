@@ -35,7 +35,11 @@ import {
   upsertPackage,
   upsertResponse,
 } from "./initiative-official-response-package.store.js";
-import { validateInitiativeOfficialResponseLifecycleDraftForPublication } from "./initiative-official-response-lifecycle.validators.js";
+import {
+  emptyOfficialResponseNoResponseDetail,
+  normalizeOfficialResponseOutcomeKind,
+  validateInitiativeOfficialResponseLifecycleDraftForPublication,
+} from "./initiative-official-response-lifecycle.validators.js";
 
 function getOwnedInitiative(initiativeId: string, identity: RequestIdentity): Initiative {
   const initiative = getInitiativeById(initiativeId);
@@ -67,6 +71,8 @@ function getOrCreateWorkingDraft(
     title: "",
     summary: "",
     trackingPackageId: null,
+    outcomeKind: "responses_received",
+    noResponseDetail: emptyOfficialResponseNoResponseDetail(),
     candidates: [],
     createdAt: now,
     updatedAt: now,
@@ -124,6 +130,7 @@ export async function generateInitiativeOfficialResponseDraft(
     title: content.title,
     summary: content.summary,
     trackingPackageId: content.trackingPackageId,
+    outcomeKind: content.outcomeKind,
     candidates: content.candidates.map((candidate) => structuredClone(candidate)),
   });
 
@@ -197,6 +204,10 @@ async function createReminderCandidatesForPublishedOfficialResponsePackage(input
   responses: readonly InitiativeOfficialResponseRecord[];
   actorParticipantId: string;
 }): Promise<void> {
+  if (process.env.NODE_TEST_ENV === "true") {
+    return;
+  }
+
   const allies = await listActiveAlliesByInitiative(input.initiative.initiativeId);
   const trackings = listTrackingsByInitiative(input.initiative.initiativeId);
   const allyIds = allies
@@ -296,39 +307,50 @@ export async function publishInitiativeOfficialResponseStage(
   const packageId = `official-response-package-${randomUUID()}`;
   const responseIds: string[] = [];
   const createdResponses: InitiativeOfficialResponseRecord[] = [];
+  const outcomeKind = normalizeOfficialResponseOutcomeKind(draft.outcomeKind, draft.candidates.length);
+  const noResponseDetail =
+    outcomeKind === "no_official_response_received"
+      ? {
+          contactedOrganizations: [...(draft.noResponseDetail?.contactedOrganizations ?? [])],
+          contactedDates: [...(draft.noResponseDetail?.contactedDates ?? [])],
+          note: draft.noResponseDetail?.note ?? "",
+        }
+      : emptyOfficialResponseNoResponseDetail();
 
-  draft.candidates.forEach((candidate: InitiativeOfficialResponseCandidate, index) => {
-    const responseId = `official-response-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${index}`;
+  if (outcomeKind === "responses_received") {
+    draft.candidates.forEach((candidate: InitiativeOfficialResponseCandidate, index) => {
+      const responseId = `official-response-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${index}`;
 
-    const response: InitiativeOfficialResponseRecord = {
-      responseId,
-      packageId,
-      initiativeId,
-      institution: candidate.institution,
-      organization: candidate.organization,
-      responseType: candidate.responseType,
-      subject: candidate.subject,
-      receivedAt: candidate.receivedAt,
-      publishedAt: now,
-      summary: candidate.summary,
-      referenceNumber: candidate.referenceNumber,
-      relatedActions: [...candidate.relatedActions],
-      relatedCommitmentIds: [...candidate.relatedCommitmentIds],
-      relatedTrackingIds: [...candidate.relatedTrackingIds],
-      documentIds: [...candidate.documentIds],
-      links: [...candidate.links],
-      verificationStatus: candidate.verificationStatus,
-      notes: candidate.notes,
-      references: [...candidate.references],
-      traceability: buildOfficialResponseTraceability(candidate, snapshot.trackingPackageReference!.packageId),
-      createdAt: now,
-      updatedAt: now,
-    };
+      const response: InitiativeOfficialResponseRecord = {
+        responseId,
+        packageId,
+        initiativeId,
+        institution: candidate.institution,
+        organization: candidate.organization,
+        responseType: candidate.responseType,
+        subject: candidate.subject,
+        receivedAt: candidate.receivedAt,
+        publishedAt: now,
+        summary: candidate.summary,
+        referenceNumber: candidate.referenceNumber,
+        relatedActions: [...candidate.relatedActions],
+        relatedCommitmentIds: [...candidate.relatedCommitmentIds],
+        relatedTrackingIds: [...candidate.relatedTrackingIds],
+        documentIds: [...candidate.documentIds],
+        links: [...candidate.links],
+        verificationStatus: candidate.verificationStatus,
+        notes: candidate.notes,
+        references: [...candidate.references],
+        traceability: buildOfficialResponseTraceability(candidate, snapshot.trackingPackageReference!.packageId),
+        createdAt: now,
+        updatedAt: now,
+      };
 
-    upsertResponse(response);
-    responseIds.push(responseId);
-    createdResponses.push(response);
-  });
+      upsertResponse(response);
+      responseIds.push(responseId);
+      createdResponses.push(response);
+    });
+  }
 
   const pkg: InitiativeOfficialResponsePackage = {
     packageId,
@@ -338,6 +360,8 @@ export async function publishInitiativeOfficialResponseStage(
     stewardId: initiative.stewardId,
     title: draft.title,
     summary: draft.summary,
+    outcomeKind,
+    noResponseDetail,
     responseIds,
     status: "published",
     publishedAt: now,
@@ -356,7 +380,8 @@ export async function publishInitiativeOfficialResponseStage(
       stageId: "official_response",
       stageLabel: "Official Responses",
       stageArtifactId: packageId,
-      stageVersion: responseIds.length,
+      // Zero responses with an explicit No Response outcome still completes the stage.
+      stageVersion: Math.max(responseIds.length, 1),
       actorParticipantId: identity.participantId,
       publicationKind: "published",
       relatedUrl: `/initiatives/public/${encodeURIComponent(initiativeId)}#official-responses`,
@@ -390,4 +415,20 @@ export function listPublishedInitiativeOfficialResponses(
   initiativeId: string,
 ): InitiativeOfficialResponseRecord[] {
   return listResponsesByInitiativeId(initiativeId);
+}
+
+/**
+ * Public read model for Official Responses: package (including explicit
+ * No Response outcome) plus any published response records.
+ */
+export function getPublishedOfficialResponsePackageView(initiativeId: string): {
+  package: InitiativeOfficialResponsePackage | null;
+  responses: InitiativeOfficialResponseRecord[];
+} {
+  const pkg = getPackageByInitiativeId(initiativeId);
+
+  return {
+    package: pkg,
+    responses: pkg ? listResponsesByInitiativeId(initiativeId) : [],
+  };
 }

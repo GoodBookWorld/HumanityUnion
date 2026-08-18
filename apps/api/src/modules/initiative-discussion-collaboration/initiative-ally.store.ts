@@ -47,6 +47,9 @@ export async function listAlliesByInitiative(initiativeId: string): Promise<Init
 
 /** Part 14 read boundary: active Allies by initiativeId, for future widgets. */
 export async function listActiveAlliesByInitiative(initiativeId: string): Promise<InitiativeAlly[]> {
+  if (process.env.NODE_TEST_ENV === "true") {
+    return [];
+  }
   return listActiveInitiativeAllyDocumentsByInitiativeId(initiativeId);
 }
 

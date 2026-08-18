@@ -1,11 +1,19 @@
 import type {
   InitiativeOfficialResponseCandidate,
   InitiativeOfficialResponseLifecycleDraft,
+  InitiativeOfficialResponseNoResponseDetail,
+  InitiativeOfficialResponseOutcomeKind,
   OfficialResponseType,
   OfficialResponseVerificationState,
 } from "@hu/types";
 
 import type { InitiativeOfficialResponseLifecycleDraftUpdate } from "./initiative-official-response-lifecycle-draft.store.js";
+import { normalizeOfficialResponseOutcomeKind } from "./initiative-official-response-outcome.js";
+
+export {
+  emptyOfficialResponseNoResponseDetail,
+  normalizeOfficialResponseOutcomeKind,
+} from "./initiative-official-response-outcome.js";
 
 const RESPONSE_TYPES: readonly OfficialResponseType[] = [
   "official_letter",
@@ -22,6 +30,11 @@ const VERIFICATION_STATES: readonly OfficialResponseVerificationState[] = [
   "pending",
   "verified",
   "unable_to_verify",
+];
+
+const OUTCOME_KINDS: readonly InitiativeOfficialResponseOutcomeKind[] = [
+  "responses_received",
+  "no_official_response_received",
 ];
 
 function assertOptionalString(value: unknown, fieldName: string): asserts value is string | undefined {
@@ -64,6 +77,35 @@ function assertVerificationStatus(
   if (typeof value !== "string" || !VERIFICATION_STATES.includes(value as OfficialResponseVerificationState)) {
     throw new Error(`${fieldName} must be one of: ${VERIFICATION_STATES.join(", ")}.`);
   }
+}
+
+function assertOutcomeKind(
+  value: unknown,
+  fieldName: string,
+): asserts value is InitiativeOfficialResponseOutcomeKind {
+  if (typeof value !== "string" || !OUTCOME_KINDS.includes(value as InitiativeOfficialResponseOutcomeKind)) {
+    throw new Error(`${fieldName} must be one of: ${OUTCOME_KINDS.join(", ")}.`);
+  }
+}
+
+function assertNoResponseDetail(
+  value: unknown,
+  fieldName: string,
+): InitiativeOfficialResponseNoResponseDetail {
+  if (!value || typeof value !== "object") {
+    throw new Error(`${fieldName} must be an object.`);
+  }
+
+  const record = value as Record<string, unknown>;
+  assertStringArray(record.contactedOrganizations, `${fieldName}.contactedOrganizations`);
+  assertStringArray(record.contactedDates, `${fieldName}.contactedDates`);
+  assertString(record.note, `${fieldName}.note`);
+
+  return {
+    contactedOrganizations: [...(record.contactedOrganizations as string[])],
+    contactedDates: [...(record.contactedDates as string[])],
+    note: record.note as string,
+  };
 }
 
 function assertCandidate(value: unknown, index: number): InitiativeOfficialResponseCandidate {
@@ -126,6 +168,14 @@ export function validateSaveInitiativeOfficialResponseLifecycleDraftInput(
   assertOptionalString(record.summary, "summary");
   assertOptionalNullableString(record.trackingPackageId, "trackingPackageId");
 
+  if (record.outcomeKind !== undefined) {
+    assertOutcomeKind(record.outcomeKind, "outcomeKind");
+  }
+
+  if (record.noResponseDetail !== undefined) {
+    assertNoResponseDetail(record.noResponseDetail, "noResponseDetail");
+  }
+
   if (record.candidates !== undefined && !Array.isArray(record.candidates)) {
     throw new Error("candidates must be an array.");
   }
@@ -138,6 +188,8 @@ export function validateSaveInitiativeOfficialResponseLifecycleDraftInput(
     title: record.title as string | undefined,
     summary: record.summary as string | undefined,
     trackingPackageId: record.trackingPackageId as string | null | undefined,
+    outcomeKind: record.outcomeKind as InitiativeOfficialResponseOutcomeKind | undefined,
+    noResponseDetail: record.noResponseDetail as InitiativeOfficialResponseNoResponseDetail | undefined,
     candidates,
   };
 }
@@ -155,8 +207,22 @@ export function validateInitiativeOfficialResponseLifecycleDraftForPublication(
     );
   }
 
+  const outcomeKind = normalizeOfficialResponseOutcomeKind(draft.outcomeKind, draft.candidates.length);
+
+  if (outcomeKind === "no_official_response_received") {
+    if (draft.candidates.length > 0) {
+      throw new Error(
+        "No-response outcome cannot include Response Candidates — clear them or switch to Responses Received.",
+      );
+    }
+
+    return;
+  }
+
   if (draft.candidates.length === 0) {
-    throw new Error("At least one Response Candidate is required.");
+    throw new Error(
+      "At least one Response Candidate is required, or record No official response received.",
+    );
   }
 
   for (const [index, candidate] of draft.candidates.entries()) {

@@ -28,6 +28,7 @@ import type {
 import {
   DISCUSSION_ACTION_DEFINITIONS,
   matchesDiscussionFilter,
+  resolveAlliesInvitationResponseState,
   resolveAuthorBadges,
   resolveAuthorLinkPresentation,
   resolveCollaborationReviewActionState,
@@ -158,9 +159,25 @@ describe("Ready to Collaborate action state (Parts 1, 6, 7)", () => {
     assert.equal(state.visible, false);
   });
 
+  it("is hidden for the Initiative Author/steward even when canReadyToCollaborate is wrongly true", () => {
+    const state = resolveReadyToCollaborateActionState(
+      buildCollaboration({
+        isViewerInitiativeSteward: true,
+        canReadyToCollaborate: true,
+        viewerAllyStatus: "none",
+      }),
+      false,
+    );
+    assert.equal(state.visible, false);
+  });
+
   it("is visible and enabled when the viewer has not yet expressed interest", () => {
     const state = resolveReadyToCollaborateActionState(
-      buildCollaboration({ canReadyToCollaborate: true, viewerAllyStatus: "none" }),
+      buildCollaboration({
+        isViewerInitiativeSteward: false,
+        canReadyToCollaborate: true,
+        viewerAllyStatus: "none",
+      }),
       false,
     );
     assert.equal(state.visible, true);
@@ -170,7 +187,10 @@ describe("Ready to Collaborate action state (Parts 1, 6, 7)", () => {
 
   it("shows a disabled 'Ready to Collaborate' label once interest was already expressed", () => {
     const state = resolveReadyToCollaborateActionState(
-      buildCollaboration({ viewerAllyStatus: "interest_pending" }),
+      buildCollaboration({
+        isViewerInitiativeSteward: false,
+        viewerAllyStatus: "interest_pending",
+      }),
       false,
     );
     assert.equal(state.visible, true);
@@ -178,27 +198,71 @@ describe("Ready to Collaborate action state (Parts 1, 6, 7)", () => {
     assert.equal(state.label, "Ready to Collaborate");
   });
 
-  it("shows a disabled 'Invitation Pending' label once invited", () => {
+  it("does not render Ready to Collaborate for invitation_pending (Accept/Decline instead)", () => {
     const state = resolveReadyToCollaborateActionState(
-      buildCollaboration({ viewerAllyStatus: "invitation_pending" }),
+      buildCollaboration({
+        isViewerInitiativeSteward: false,
+        viewerAllyStatus: "invitation_pending",
+      }),
       false,
     );
-    assert.equal(state.disabled, true);
-    assert.equal(state.label, "Invitation Pending");
+    assert.equal(state.visible, false);
   });
 
   it("shows a disabled 'Ally' label once the viewer is an Ally", () => {
     const state = resolveReadyToCollaborateActionState(
-      buildCollaboration({ viewerAllyStatus: "active" }),
+      buildCollaboration({ isViewerInitiativeSteward: false, viewerAllyStatus: "active" }),
       false,
     );
+    assert.equal(state.visible, true);
     assert.equal(state.disabled, true);
     assert.equal(state.label, "Ally");
   });
 
   it("is hidden for an unauthenticated / not-permitted viewer", () => {
     const state = resolveReadyToCollaborateActionState(
-      buildCollaboration({ canReadyToCollaborate: false, viewerAllyStatus: "none" }),
+      buildCollaboration({
+        isViewerInitiativeSteward: false,
+        canReadyToCollaborate: false,
+        viewerAllyStatus: "none",
+      }),
+      false,
+    );
+    assert.equal(state.visible, false);
+  });
+});
+
+describe("Allies invitation Accept/Decline action state", () => {
+  it("is visible for an invited Participant", () => {
+    const state = resolveAlliesInvitationResponseState(
+      buildCollaboration({
+        isViewerInitiativeSteward: false,
+        viewerAllyStatus: "invitation_pending",
+      }),
+      false,
+    );
+    assert.equal(state.visible, true);
+    assert.equal(state.disabled, false);
+  });
+
+  it("is hidden for the steward", () => {
+    const state = resolveAlliesInvitationResponseState(
+      buildCollaboration({
+        isViewerInitiativeSteward: true,
+        viewerAllyStatus: "invitation_pending",
+      }),
+      false,
+    );
+    assert.equal(state.visible, false);
+  });
+
+  it("is hidden when the viewer has no pending invitation", () => {
+    const state = resolveAlliesInvitationResponseState(
+      buildCollaboration({
+        isViewerInitiativeSteward: false,
+        viewerAllyStatus: "none",
+        canReadyToCollaborate: true,
+      }),
       false,
     );
     assert.equal(state.visible, false);

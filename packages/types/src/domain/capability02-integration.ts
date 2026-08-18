@@ -88,13 +88,22 @@ export interface CivicPipelineStageStatus {
   complete: boolean;
 }
 
-/** Informational pipeline widget — no controls. */
+/**
+ * Informational Cap02 pipeline widget — COMPATIBILITY_DISPLAY_ONLY.
+ * Must never advance or block canonical Initiative Lifecycle progression
+ * (`resolveInitiativeLifecycleState` / `experience.currentStageId`).
+ */
 export interface CivicPipelineStatus {
   stages: CivicPipelineStageStatus[];
+  /**
+   * Cap02 widget cursor only — NOT `PublicInitiativeExperienceProjection.currentStageId`.
+   */
   currentStageId: CivicPipelineStageId | null;
   previousStageId: CivicPipelineStageId | null;
   nextStageId: CivicPipelineStageId | null;
   nextAvailableStep: string | null;
+  /** Frozen authority marker — always compatibility display. */
+  progressionAuthority: "compatibility_display_only";
 }
 
 export interface CivicBreadcrumbItem {

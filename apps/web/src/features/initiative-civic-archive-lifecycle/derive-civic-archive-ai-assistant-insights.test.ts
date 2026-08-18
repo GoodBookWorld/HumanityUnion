@@ -83,6 +83,11 @@ describe("Final Certification Fix 02 — Civic Archive Public Impact prerequisit
       "PUBLIC_CHOICE",
     );
     assert.equal(insights.completenessWarnings.length, 0);
+    assert.ok(
+      insights.clarityWarnings.some((warning) =>
+        warning.includes("cannot publish Civic Archive or close the Initiative Lifecycle"),
+      ),
+    );
   });
 
   it("backend-aligned PUBLIC_CHOICE snapshot with isEmpty false stays free of PI blockers", () => {

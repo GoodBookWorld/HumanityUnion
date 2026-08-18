@@ -117,6 +117,15 @@ function computeMetrics(analysis: CollaborativeAnalysis): AnalysisMetrics {
 }
 
 function evaluateReadiness(analysis: CollaborativeAnalysis): Readiness {
+  /**
+   * Legacy Activity Collaborative Analysis progressPolicy thresholds.
+   *
+   * AUTHORITY FREEZE — COMPATIBILITY_DISPLAY_ONLY.
+   * These contribution/signal/participant thresholds apply only inside the
+   * legacy Collaborative Analysis Activity domain. They MUST NOT gate
+   * Initiative Lifecycle stage progression (`initiative-collaborative-analysis`
+   * publish / experience.currentStageId).
+   */
   const policy = analysis.progressPolicy;
   const satisfiedRequirements: string[] = [];
   const missingRequirements: string[] = [];

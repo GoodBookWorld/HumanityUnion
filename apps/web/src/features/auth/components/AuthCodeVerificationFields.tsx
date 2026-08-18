@@ -197,6 +197,12 @@ export function AuthCodeVerificationFields({
         </AuthFeedbackMessage>
       ) : null}
 
+      {!loadingStatus && !emailSent && !showDevOutboxNote ? (
+        <AuthFeedbackMessage variant="warning" title="Email not delivered">
+          <p>{copy.deliveryFailureMessage}</p>
+        </AuthFeedbackMessage>
+      ) : null}
+
       <label className="auth-form__field" htmlFor="auth-code-input">
         <span>{copy.codeLabel}</span>
         <input

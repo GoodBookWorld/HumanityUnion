@@ -60,8 +60,16 @@ function safely<T>(operation: () => Promise<T>, fallback: T, label: string): Pro
   });
 }
 
-function buildDiscussionUrl(initiativeId: string): string {
+function buildDiscussionPanelUrl(initiativeId: string): string {
   return `/initiatives/public/${encodeURIComponent(initiativeId)}#discussion`;
+}
+
+/**
+ * Canonical per-comment deep link: opens Discussion Center and targets
+ * `#comment-{commentId}` (stable DOM id on the public Initiative shell).
+ */
+export function buildDiscussionCommentUrl(initiativeId: string, commentId: string): string {
+  return `/initiatives/public/${encodeURIComponent(initiativeId)}#comment-${encodeURIComponent(commentId)}`;
 }
 
 function buildExcerpt(body: string): string {
@@ -69,12 +77,12 @@ function buildExcerpt(body: string): string {
   return trimmed.length > EXCERPT_MAX_LENGTH ? `${trimmed.slice(0, EXCERPT_MAX_LENGTH - 1)}…` : trimmed;
 }
 
-function toCommentRef(comment: InitiativeComment, discussionUrl: string): InitiativeAnalysisSourceCommentRef {
+function toCommentRef(comment: InitiativeComment, initiativeId: string): InitiativeAnalysisSourceCommentRef {
   return {
     commentId: comment.commentId,
     excerpt: buildExcerpt(comment.body),
     authorDisplayName: comment.authorDisplayName,
-    discussionUrl,
+    discussionUrl: buildDiscussionCommentUrl(initiativeId, comment.commentId),
   };
 }
 
@@ -128,7 +136,7 @@ async function collectAllApprovedComments(initiativeId: string): Promise<Initiat
 export async function buildInitiativeAnalysisSourceSnapshot(
   initiativeId: string,
 ): Promise<InitiativeAnalysisSourceSnapshot> {
-  const discussionUrl = buildDiscussionUrl(initiativeId);
+  const discussionUrl = buildDiscussionPanelUrl(initiativeId);
 
   const [comments, activeAllies, collaborationResult] = await Promise.all([
     safely(() => collectAllApprovedComments(initiativeId), [], "discussion comments"),
@@ -172,7 +180,7 @@ export async function buildInitiativeAnalysisSourceSnapshot(
     notHelpfulCount += summary.dislikes;
 
     if (comment.body.trim().endsWith("?")) {
-      openQuestions.push(toCommentRef(comment, discussionUrl));
+      openQuestions.push(toCommentRef(comment, initiativeId));
     } else {
       argumentCandidates.push({ comment, helpfulCount: summary.likes });
       concernCandidates.push({ comment, notHelpfulCount: summary.dislikes });
@@ -182,7 +190,7 @@ export async function buildInitiativeAnalysisSourceSnapshot(
 
     if (candidate) {
       proposalCandidates.push({
-        ...toCommentRef(comment, discussionUrl),
+        ...toCommentRef(comment, initiativeId),
         candidateId: candidate.candidateId,
       });
     }
@@ -192,13 +200,19 @@ export async function buildInitiativeAnalysisSourceSnapshot(
     .filter((entry) => entry.helpfulCount > 0)
     .sort((left, right) => right.helpfulCount - left.helpfulCount)
     .slice(0, TOP_ARGUMENTS_LIMIT)
-    .map((entry) => ({ ...toCommentRef(entry.comment, discussionUrl), helpfulCount: entry.helpfulCount }));
+    .map((entry) => ({
+      ...toCommentRef(entry.comment, initiativeId),
+      helpfulCount: entry.helpfulCount,
+    }));
 
   const repeatedConcerns: InitiativeAnalysisSourceConcern[] = concernCandidates
     .filter((entry) => entry.notHelpfulCount > 0)
     .sort((left, right) => right.notHelpfulCount - left.notHelpfulCount)
     .slice(0, TOP_CONCERNS_LIMIT)
-    .map((entry) => ({ ...toCommentRef(entry.comment, discussionUrl), notHelpfulCount: entry.notHelpfulCount }));
+    .map((entry) => ({
+      ...toCommentRef(entry.comment, initiativeId),
+      notHelpfulCount: entry.notHelpfulCount,
+    }));
 
   const readyToCollaborateCount = collaborationResult.participants.filter(
     (participant) => participant.status === "interest_pending",

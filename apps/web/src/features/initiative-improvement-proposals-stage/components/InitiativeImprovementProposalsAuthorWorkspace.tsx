@@ -5,11 +5,25 @@ import { useCallback, useEffect, useState } from "react";
 import type {
   InitiativeImprovementProposalsCollection,
   InitiativeProposalIntelligenceSnapshot,
+  InitiativeRevisionDraft,
+  InitiativeRevisionDraftContext,
 } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
-import { generateImprovementProposalsDraft, getInitiativeProposalIntelligenceSnapshot, getMyCurrentImprovementProposalsCollection } from "../api";
+import {
+  createInitiativeRevisionDraft,
+  getInitiativeRevisionWorkspace,
+} from "../../initiative-version-revision/api";
+import { InitiativeRevisionEditor } from "../../initiative-version-revision/components/InitiativeRevisionEditor";
+import { InitiativeRevisionIntelligenceSnapshotPanel } from "../../initiative-version-revision/components/InitiativeRevisionIntelligenceSnapshotPanel";
+import "../../initiative-version-revision/components/initiative-revision-stage-workspace.css";
+import {
+  ensureEmptyImprovementProposalsDraft,
+  generateImprovementProposalsDraft,
+  getInitiativeProposalIntelligenceSnapshot,
+  getMyCurrentImprovementProposalsCollection,
+} from "../api";
 import { InitiativeImprovementProposalsEditor } from "./InitiativeImprovementProposalsEditor";
 import { InitiativeProposalIntelligenceSnapshotPanel } from "./InitiativeProposalIntelligenceSnapshotPanel";
 
@@ -18,37 +32,39 @@ import "./initiative-improvement-proposals-stage-workspace.css";
 interface InitiativeImprovementProposalsAuthorWorkspaceProps {
   readonly initiativeId: string;
   readonly onTogglePreview: () => void;
+  readonly onNavigate?: (stageId: string, hash: string) => void;
 }
 
 /**
- * Initiative Lifecycle — Part D. The Improvement Proposals stage's
- * `authorEditorSlot` for `InitiativeLifecycleStageWorkspace` — this
- * component only ever renders inside the Author Workspace branch of that
- * shared shell, never a second standalone page (Part 14).
- *
- * Self-fetches (mirrors `InitiativeCollaborativeAnalysisAuthorWorkspace`,
- * Part B): loads the Author's one canonical collection (Section 5) and
- * the full Proposal Intelligence Snapshot (Section 2/3), then renders the
- * Generate-draft empty state or the Proposal Editor, entirely from real
- * persisted data.
+ * Improvement Proposals Author stage — reviews proposals AND edits/commits
+ * the resulting Initiative version (Revision re-homed here; not a nav stage).
  */
 export function InitiativeImprovementProposalsAuthorWorkspace({
   initiativeId,
   onTogglePreview,
+  onNavigate,
 }: InitiativeImprovementProposalsAuthorWorkspaceProps) {
   const [collection, setCollection] = useState<InitiativeImprovementProposalsCollection | null>(null);
+  const [revisionContext, setRevisionContext] = useState<InitiativeRevisionDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [showSourcePanel, setShowSourcePanel] = useState(false);
+  const [showVersionSources, setShowVersionSources] = useState(false);
   const generatePhase = useSaveButtonPhase();
+  const emptyDraftPhase = useSaveButtonPhase();
+  const revisionCreatePhase = useSaveButtonPhase();
 
-  const loadCollection = useCallback(async () => {
+  const loadWorkspace = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
 
     try {
-      const current = await getMyCurrentImprovementProposalsCollection(initiativeId);
+      const [current, revisionWorkspace] = await Promise.all([
+        getMyCurrentImprovementProposalsCollection(initiativeId),
+        getInitiativeRevisionWorkspace(initiativeId).catch(() => null),
+      ]);
       setCollection(current);
+      setRevisionContext(revisionWorkspace);
     } catch {
       setLoadFailed(true);
     } finally {
@@ -57,17 +73,48 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
   }, [initiativeId]);
 
   useEffect(() => {
-    void loadCollection();
-  }, [loadCollection]);
+    void loadWorkspace();
+  }, [loadWorkspace]);
+
+  function handleDraftUpdated(draft: InitiativeRevisionDraft) {
+    setRevisionContext((current) => (current ? { ...current, draft } : current));
+  }
 
   async function handleGenerateFirstDraft() {
     try {
       const created = await generatePhase.runSave(() => generateImprovementProposalsDraft(initiativeId));
       setCollection(created);
     } catch {
-      // The Save-button phase already reverts to idle on failure; the
-      // Proposal Sources panel below (toggled open) lets the Author see
-      // what data exists to retry with informed context.
+      // Save-button phase reverts; Sources panel remains available.
+    }
+  }
+
+  async function handleStartWithoutProposals() {
+    try {
+      const created = await emptyDraftPhase.runSave(() =>
+        ensureEmptyImprovementProposalsDraft(initiativeId),
+      );
+      setCollection(created);
+
+      if (!revisionContext?.draft) {
+        const draft = await createInitiativeRevisionDraft(initiativeId);
+        setRevisionContext((current) =>
+          current ? { ...current, draft } : current,
+        );
+      }
+    } catch {
+      // Save-button phase reverts.
+    }
+  }
+
+  async function handleCreateRevisionDraft() {
+    try {
+      const created = await revisionCreatePhase.runSave(() =>
+        createInitiativeRevisionDraft(initiativeId),
+      );
+      setRevisionContext((current) => (current ? { ...current, draft: created } : current));
+    } catch {
+      // Save-button phase reverts.
     }
   }
 
@@ -75,7 +122,7 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
     return (
       <div className="lsw-main">
         <WorkspaceErrorState message="Improvement Proposals could not be loaded." />
-        <WorkspaceButton variant="secondary" onClick={() => void loadCollection()}>
+        <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
           Retry
         </WorkspaceButton>
       </div>
@@ -85,6 +132,8 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
   if (loading) {
     return <p className="lsw-sources__missing">Loading Improvement Proposals…</p>;
   }
+
+  const canEditVersion = Boolean(revisionContext && revisionContext.currentVersion > 0);
 
   return (
     <div className="lsw-main">
@@ -109,25 +158,84 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
           collection={collection}
           onUpdated={setCollection}
           onTogglePreview={onTogglePreview}
+          onNavigate={onNavigate}
+          onCompleted={() => void loadWorkspace()}
         />
       ) : (
         <div className="iip-editor">
           <h3>No proposals yet</h3>
           <p>
-            Generate structured proposals from the collected proposal-marked Discussion comments above, or
-            start from a blank draft and add proposals yourself.
+            Generate structured proposals from proposal-marked Discussion comments, or continue with
+            zero proposals by confirming the Initiative version and advancing to Petition.
           </p>
           <div className="iip-editor__header-actions">
             <WorkspaceButton
               variant="primary"
-              disabled={generatePhase.isBusy}
+              disabled={generatePhase.isBusy || emptyDraftPhase.isBusy}
               onClick={() => void handleGenerateFirstDraft()}
             >
               {resolveSaveButtonLabel(generatePhase.phase, "Generate Improvement Proposals Draft")}
             </WorkspaceButton>
+            <WorkspaceButton
+              variant="secondary"
+              disabled={generatePhase.isBusy || emptyDraftPhase.isBusy}
+              onClick={() => void handleStartWithoutProposals()}
+            >
+              {resolveSaveButtonLabel(emptyDraftPhase.phase, "Continue without proposals")}
+            </WorkspaceButton>
           </div>
         </div>
       )}
+
+      {canEditVersion ? (
+        <section className="iip-editor" aria-label="Updated Initiative version">
+          <div className="iip-editor__header">
+            <h3>Updated Initiative Version</h3>
+          </div>
+          <p>
+            Review accepted proposals, edit the Initiative text, Preview or Save Draft without advancing
+            lifecycle, then Commit the progress version. Publish &amp; Continue to Petition completes this
+            stage.
+          </p>
+
+          {revisionContext?.draft ? (
+            <button
+              type="button"
+              className="workspace-button workspace-button--secondary"
+              aria-expanded={showVersionSources}
+              onClick={() => setShowVersionSources((current) => !current)}
+            >
+              {showVersionSources ? "Hide Version Sources" : "Show Version Sources"}
+            </button>
+          ) : null}
+
+          {(!revisionContext?.draft || showVersionSources) && revisionContext ? (
+            <InitiativeRevisionIntelligenceSnapshotPanel snapshot={revisionContext.intelligenceSnapshot} />
+          ) : null}
+
+          {revisionContext?.draft ? (
+            <InitiativeRevisionEditor
+              initiativeId={initiativeId}
+              context={revisionContext}
+              draft={revisionContext.draft}
+              onDraftUpdated={handleDraftUpdated}
+              onPublished={() => void loadWorkspace()}
+              onTogglePreview={onTogglePreview}
+              embeddedInProposals
+            />
+          ) : (
+            <div className="iip-editor__header-actions">
+              <WorkspaceButton
+                variant="primary"
+                disabled={revisionCreatePhase.isBusy}
+                onClick={() => void handleCreateRevisionDraft()}
+              >
+                {resolveSaveButtonLabel(revisionCreatePhase.phase, "Start Initiative Version Draft")}
+              </WorkspaceButton>
+            </div>
+          )}
+        </section>
+      ) : null}
     </div>
   );
 }

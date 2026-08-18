@@ -74,7 +74,27 @@ describe("Lifecycle Finalization Phase 02 — revision + transition contracts", 
     assert.equal(state.stageApplicability.analysis, "NOT_APPLICABLE");
   });
 
-  it("STANDARD Revision publication → Petition available (resolver postcondition)", () => {
+  it("STANDARD proposal publication → Petition available (Revision not a route stage)", () => {
+    assert.equal(resolveNextStageAfterPublish("proposal", "STANDARD"), "petition");
+    const state = resolveLifecycleStateAfterStagePublication({
+      lifecycleProfile: "STANDARD",
+      publishedStageId: "proposal",
+      priorPublishedStageCounts: {
+        initiative: 1,
+        discussion: 1,
+        analysis: 1,
+      },
+    });
+    assert.equal(state.currentStageId, "petition");
+    assert.equal(state.nextStageId, "decision_session");
+    assert.ok(state.completedStageIds.includes("proposal"));
+    assert.ok(state.availableStageIds.includes("petition"));
+    assert.equal(state.stageApplicability.petition, "CURRENT");
+    assert.equal(state.stageApplicability.decision_session, "LOCKED");
+    assert.notEqual(state.currentStageId, "revision");
+  });
+
+  it("legacy Revision publication counts do not set currentStageId to revision", () => {
     const state = resolveLifecycleStateAfterStagePublication({
       lifecycleProfile: "STANDARD",
       publishedStageId: "revision",
@@ -85,12 +105,9 @@ describe("Lifecycle Finalization Phase 02 — revision + transition contracts", 
         proposal: 1,
       },
     });
+    assert.notEqual(state.currentStageId, "revision");
     assert.equal(state.currentStageId, "petition");
-    assert.equal(state.nextStageId, "decision_session");
-    assert.ok(state.completedStageIds.includes("revision"));
-    assert.ok(state.availableStageIds.includes("petition"));
-    assert.equal(state.stageApplicability.petition, "CURRENT");
-    assert.equal(state.stageApplicability.decision_session, "LOCKED");
+    assert.equal(resolveNextStageAfterPublish("revision", "STANDARD"), null);
   });
 
   it("resolves next stage after publish for STANDARD and PUBLIC_CHOICE", () => {

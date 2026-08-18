@@ -60,7 +60,8 @@ export interface ImplementationTrackingUpdate {
 /** TASK-032 Implementation Tracking aggregate root. */
 export interface InitiativeImplementationTracking {
   trackingId: InitiativeImplementationTrackingId;
-  commitmentId: InitiativeImplementationCommitmentId;
+  /** Empty string when Tracking was published without an Accepted Commitment. */
+  commitmentId: InitiativeImplementationCommitmentId | "";
   initiativeId: InitiativeId;
   participantId: MemberId;
   status: InitiativeImplementationTrackingStatus;

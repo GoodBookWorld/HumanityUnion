@@ -33,11 +33,29 @@ function loadAnalysesMap(): Map<string, InitiativeCollaborativeAnalysis> {
   );
 }
 
-function persistAnalysesMap(analyses: Map<string, InitiativeCollaborativeAnalysis>): void {
-  persistence.save(snapshotFromAnalyses(analyses));
+function persistAnalysesMap(analysesMap: Map<string, InitiativeCollaborativeAnalysis>): void {
+  persistence.save(snapshotFromAnalyses(analysesMap));
 }
 
 const analyses = loadAnalysesMap();
+
+/**
+ * Re-bind the Collaborative Analysis store from the Mongo adapter cache after
+ * hydrate. Mirrors `syncInitiativeStoreAfterMongoHydrate` so published
+ * analyses survive process restart and feed lifecycle nav + Public Preview
+ * from the same in-memory map.
+ */
+export function syncInitiativeCollaborativeAnalysisStoreAfterMongoHydrate(): void {
+  if (persistence.mode !== "mongodb") {
+    return;
+  }
+
+  const reloaded = loadAnalysesMap();
+  analyses.clear();
+  for (const [analysisId, analysis] of reloaded) {
+    analyses.set(analysisId, analysis);
+  }
+}
 
 export function getAnalysisById(analysisId: string): InitiativeCollaborativeAnalysis | null {
   const analysis = analyses.get(analysisId);

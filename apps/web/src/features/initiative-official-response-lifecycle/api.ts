@@ -2,6 +2,8 @@ import type {
   InitiativeOfficialResponseCandidate,
   InitiativeOfficialResponseLifecycleDraft,
   InitiativeOfficialResponseLifecycleDraftContext,
+  InitiativeOfficialResponseNoResponseDetail,
+  InitiativeOfficialResponseOutcomeKind,
   InitiativeOfficialResponsePackage,
   InitiativeOfficialResponseRecord,
 } from "@hu/types";
@@ -28,8 +30,13 @@ export async function generateInitiativeOfficialResponseDraft(
 export async function saveInitiativeOfficialResponseDraft(
   initiativeId: string,
   input: Partial<
-    Pick<InitiativeOfficialResponseLifecycleDraft, "title" | "summary"> & {
+    Pick<
+      InitiativeOfficialResponseLifecycleDraft,
+      "title" | "summary" | "outcomeKind" | "noResponseDetail"
+    > & {
       candidates: InitiativeOfficialResponseCandidate[];
+      outcomeKind: InitiativeOfficialResponseOutcomeKind;
+      noResponseDetail: InitiativeOfficialResponseNoResponseDetail;
     }
   >,
 ): Promise<InitiativeOfficialResponseLifecycleDraft> {
@@ -52,12 +59,24 @@ export async function publishInitiativeOfficialResponseStage(
   );
 }
 
+export async function getPublishedOfficialResponses(initiativeId: string): Promise<{
+  package: InitiativeOfficialResponsePackage | null;
+  responses: InitiativeOfficialResponseRecord[];
+}> {
+  return apiRequest<{
+    package: InitiativeOfficialResponsePackage | null;
+    responses: InitiativeOfficialResponseRecord[];
+  }>(
+    `/api/v1/initiative-official-response-lifecycle/initiative/${encodeURIComponent(initiativeId)}/published`,
+  );
+}
+
+/** @deprecated Prefer getPublishedOfficialResponses — kept for callers that only need records. */
 export async function listPublishedInitiativeOfficialResponses(
   initiativeId: string,
 ): Promise<InitiativeOfficialResponseRecord[]> {
-  return apiRequest<InitiativeOfficialResponseRecord[]>(
-    `/api/v1/initiative-official-response-lifecycle/initiative/${encodeURIComponent(initiativeId)}/published`,
-  );
+  const view = await getPublishedOfficialResponses(initiativeId);
+  return view.responses;
 }
 
 export async function getInitiativeOfficialResponsePackage(packageId: string): Promise<{

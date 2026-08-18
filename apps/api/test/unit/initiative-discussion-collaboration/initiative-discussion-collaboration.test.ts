@@ -1113,6 +1113,56 @@ describe("Initiative Discussion Collaboration (UX Evolution Pack 02)", () => {
       assert.equal(withCollaboration[0]?.collaboration?.isViewerAuthor, false);
       assert.equal(withCollaboration[0]?.collaboration?.isViewerInitiativeSteward, false);
     });
+
+    it("hides Ready to Collaborate for the Initiative Author/steward (eligibility not inverted)", async () => {
+      const comment = seedComment({});
+      const projected = [toFakeProjectedComment(comment)];
+      const withCollaboration = await attachCollaborationStateToComments({
+        initiativeId: INITIATIVE_ID,
+        rawComments: [comment],
+        projectedComments: projected,
+        viewerParticipantId: STEWARD_PARTICIPANT_ID,
+        deps,
+      });
+
+      assert.equal(withCollaboration[0]?.collaboration?.isViewerInitiativeSteward, true);
+      assert.equal(withCollaboration[0]?.collaboration?.canReadyToCollaborate, false);
+    });
+
+    it("exposes Ready to Collaborate for an eligible authenticated Participant", async () => {
+      const comment = seedComment({});
+      const projected = [toFakeProjectedComment(comment)];
+      const withCollaboration = await attachCollaborationStateToComments({
+        initiativeId: INITIATIVE_ID,
+        rawComments: [comment],
+        projectedComments: projected,
+        viewerParticipantId: thirdPartyIdentity.participantId,
+        deps,
+      });
+
+      assert.equal(withCollaboration[0]?.collaboration?.isViewerInitiativeSteward, false);
+      assert.equal(withCollaboration[0]?.collaboration?.canReadyToCollaborate, true);
+      assert.equal(withCollaboration[0]?.collaboration?.viewerAllyStatus, "none");
+    });
+
+    it("expressCollaborationInterest updates canonical Ally to interest_pending", async () => {
+      const ally = await expressCollaborationInterest(thirdPartyIdentity, INITIATIVE_ID, deps);
+      assert.equal(ally.status, "interest_pending");
+      assert.equal(ally.participantId, thirdPartyIdentity.participantId);
+
+      const comment = seedComment({});
+      const projected = [toFakeProjectedComment(comment)];
+      const withCollaboration = await attachCollaborationStateToComments({
+        initiativeId: INITIATIVE_ID,
+        rawComments: [comment],
+        projectedComments: projected,
+        viewerParticipantId: thirdPartyIdentity.participantId,
+        deps,
+      });
+
+      assert.equal(withCollaboration[0]?.collaboration?.viewerAllyStatus, "interest_pending");
+      assert.equal(withCollaboration[0]?.collaboration?.canReadyToCollaborate, false);
+    });
   });
 
   describe("Comment collaboration state — badges and completed-state fields (Pack 02.3)", () => {

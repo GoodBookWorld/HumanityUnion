@@ -40,7 +40,7 @@ describe("Lifecycle Finalization Phase 04 — Author Mode resilience", () => {
     assert.equal(
       resolveShellAuthorModeEligible({
         viewerIsSteward: false,
-        selectedStageId: "revision",
+        selectedStageId: "petition",
         isAuthorWorkspaceStage: isInitiativeLifecycleAuthorWorkspaceStage,
       }),
       false,

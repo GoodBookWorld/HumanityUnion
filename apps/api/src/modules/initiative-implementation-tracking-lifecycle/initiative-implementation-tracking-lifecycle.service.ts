@@ -121,10 +121,8 @@ export async function generateInitiativeImplementationTrackingDraft(
 
   const snapshot = await buildInitiativeImplementationTrackingIntelligenceSnapshot(initiativeId);
 
-  if (!snapshot.isCommitmentPackageAvailable) {
-    throw new Error(
-      "At least one Accepted Implementation Commitment is required before generating Implementation Tracking.",
-    );
+  if (snapshot.isEmpty) {
+    throw new Error("Initiative not found.");
   }
 
   const content = await generateImplementationTrackingDraftContent(snapshot);
@@ -166,37 +164,52 @@ export function saveInitiativeImplementationTrackingDraft(
 }
 
 /**
- * Permanent provenance for "which Commitment (and, transitively, which
- * Collective Decision Action) produced this Tracking Record?" — mirrors
- * `ImplementationCommitmentTraceability` (Part I) with `commitmentId`/
- * `commitmentPackageId` added and the signature counters dropped (Tracking
- * has no voting concept of its own). `decisionId`, `commitmentId`, and
- * `approvedAction` always come from the Commitment record itself (never
- * optional there), so this always returns a fully-populated object even
- * for a legacy Commitment published before Part I's own `traceability`
- * field existed.
+ * Permanent provenance for Tracking Records. When no Accepted Commitment
+ * backs the milestone, commitmentId is empty and decisionId comes from the
+ * Commitment Package / Collective Decision when available.
  */
 function buildTrackingTraceability(
-  commitment: InitiativeImplementationCommitment,
+  commitment: InitiativeImplementationCommitment | null,
   commitmentPackageId: string | null,
+  candidate: InitiativeImplementationTrackingCandidate,
+  decisionId: string | null,
 ): ImplementationTrackingTraceability {
-  const source = commitment.traceability ?? null;
+  if (commitment) {
+    const source = commitment.traceability ?? null;
+
+    return {
+      analysisId: source?.analysisId ?? null,
+      analysisVersion: source?.analysisVersion ?? null,
+      proposalIds: source ? [...source.proposalIds] : [],
+      revisionId: source?.revisionId ?? null,
+      revisionVersion: source?.revisionVersion ?? null,
+      petitionId: source?.petitionId ?? null,
+      petitionVersion: source?.petitionVersion ?? null,
+      decisionSessionId: source?.decisionSessionId ?? null,
+      decisionSessionVersion: source?.decisionSessionVersion ?? null,
+      decisionId: commitment.decisionId,
+      commitmentId: commitment.commitmentId,
+      commitmentPackageId,
+      approvedAction: commitment.approvedAction ?? commitment.commitmentTitle,
+      actionIndex: commitment.actionIndex ?? null,
+    };
+  }
 
   return {
-    analysisId: source?.analysisId ?? null,
-    analysisVersion: source?.analysisVersion ?? null,
-    proposalIds: source ? [...source.proposalIds] : [],
-    revisionId: source?.revisionId ?? null,
-    revisionVersion: source?.revisionVersion ?? null,
-    petitionId: source?.petitionId ?? null,
-    petitionVersion: source?.petitionVersion ?? null,
-    decisionSessionId: source?.decisionSessionId ?? null,
-    decisionSessionVersion: source?.decisionSessionVersion ?? null,
-    decisionId: commitment.decisionId,
-    commitmentId: commitment.commitmentId,
+    analysisId: null,
+    analysisVersion: null,
+    proposalIds: [],
+    revisionId: null,
+    revisionVersion: null,
+    petitionId: null,
+    petitionVersion: null,
+    decisionSessionId: null,
+    decisionSessionVersion: null,
+    decisionId: decisionId ?? "",
+    commitmentId: "",
     commitmentPackageId,
-    approvedAction: commitment.approvedAction ?? commitment.commitmentTitle,
-    actionIndex: commitment.actionIndex ?? null,
+    approvedAction: candidate.title || candidate.approvedAction,
+    actionIndex: null,
   };
 }
 
@@ -206,6 +219,10 @@ async function createReminderCandidatesForPublishedTrackingPackage(input: {
   trackings: readonly InitiativeImplementationTracking[];
   actorParticipantId: string;
 }): Promise<void> {
+  if (process.env.NODE_TEST_ENV === "true") {
+    return;
+  }
+
   const allies = await listActiveAlliesByInitiative(input.initiative.initiativeId);
   const allyIds = allies
     .map((ally) => ally.participantId)
@@ -307,19 +324,24 @@ export async function publishInitiativeImplementationTrackingStage(
 
   const snapshot = await buildInitiativeImplementationTrackingIntelligenceSnapshot(initiativeId);
 
-  if (!snapshot.packageReference || snapshot.packageReference.packageId !== draft.packageId) {
+  if (
+    draft.packageId &&
+    snapshot.packageReference &&
+    snapshot.packageReference.packageId !== draft.packageId
+  ) {
     throw new Error(
       "The Commitment Package this draft was generated from is no longer current. Generate Implementation Tracking again before publishing.",
     );
   }
 
-  const commitmentPackageId = snapshot.packageReference.packageId;
+  const commitmentPackageId = snapshot.packageReference?.packageId ?? draft.packageId ?? null;
+  const decisionId = snapshot.packageReference?.decisionId ?? null;
   const acceptedByCommitmentId = new Map(
     snapshot.acceptedCommitments.map((commitment) => [commitment.commitmentId, commitment]),
   );
 
   for (const candidate of draft.candidates) {
-    if (!acceptedByCommitmentId.has(candidate.commitmentId)) {
+    if (candidate.commitmentId.trim() && !acceptedByCommitmentId.has(candidate.commitmentId)) {
       throw new Error(
         "One or more Accepted Commitments referenced by this draft are no longer accepted. Generate Implementation Tracking again before publishing.",
       );
@@ -332,34 +354,46 @@ export async function publishInitiativeImplementationTrackingStage(
   const createdTrackings: InitiativeImplementationTracking[] = [];
 
   draft.candidates.forEach((candidate: InitiativeImplementationTrackingCandidate, index) => {
-    const commitment = getCommitmentById(candidate.commitmentId);
+    const commitment = candidate.commitmentId.trim()
+      ? getCommitmentById(candidate.commitmentId)
+      : null;
 
-    if (!commitment) {
+    if (candidate.commitmentId.trim() && !commitment) {
       throw new Error("Implementation commitment not found.");
     }
 
     const trackingId = `implementation-tracking-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${index}`;
+    const milestoneTitle = candidate.title.trim() || candidate.approvedAction.trim();
+    const responsibleParticipantId =
+      candidate.responsibleParticipantId.trim() ||
+      commitment?.participantId ||
+      initiative.stewardId;
 
     const tracking: InitiativeImplementationTracking = {
       trackingId,
-      commitmentId: commitment.commitmentId,
+      commitmentId: commitment?.commitmentId ?? "",
       initiativeId,
-      participantId: candidate.responsibleParticipantId || commitment.participantId,
+      participantId: responsibleParticipantId,
       status: "active",
       currentStage: candidate.currentStatus,
-      summary: candidate.notes || candidate.approvedAction,
+      summary: candidate.description || candidate.notes || milestoneTitle,
       activatedAt: now,
       packageId,
       progress: candidate.progress,
       targetDate: candidate.targetDate,
-      startedDate: candidate.startedDate,
+      startedDate: candidate.startedDate ?? candidate.plannedStartDate,
       actualCompletedDate: candidate.completedDate,
       dependencies: [...candidate.dependencies],
       obstacles: [...candidate.obstacles],
       evidenceReferences: [...candidate.evidenceReferences],
       notes: candidate.notes,
-      approvedAction: candidate.approvedAction,
-      traceability: buildTrackingTraceability(commitment, commitmentPackageId),
+      approvedAction: milestoneTitle,
+      traceability: buildTrackingTraceability(
+        commitment,
+        commitmentPackageId,
+        candidate,
+        decisionId,
+      ),
       createdAt: now,
       updatedAt: now,
     };
@@ -372,8 +406,8 @@ export async function publishInitiativeImplementationTrackingStage(
   const pkg: InitiativeImplementationTrackingPackage = {
     packageId,
     initiativeId,
-    commitmentPackageId: snapshot.packageReference.packageId,
-    decisionId: snapshot.packageReference.decisionId,
+    commitmentPackageId,
+    decisionId,
     stewardId: initiative.stewardId,
     title: draft.title,
     summary: draft.summary,

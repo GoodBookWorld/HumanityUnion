@@ -171,7 +171,7 @@ export function InitiativePublicImpactEditor({
           Preview
         </WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish")}
+          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Civic Archive")}
         </WorkspaceButton>
         {published && onNavigate ? (
           <WorkspaceButton

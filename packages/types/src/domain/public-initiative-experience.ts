@@ -54,7 +54,6 @@ export const PUBLIC_INITIATIVE_EXPERIENCE_STAGES: readonly PublicInitiativeExper
       label: "Improvement Proposals",
       hash: "improvement-proposals",
     },
-    { stageId: "revision", label: "Revision", hash: "revision" },
     { stageId: "petition", label: "Petition", hash: "petition" },
     {
       stageId: "decision_session",

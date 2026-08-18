@@ -753,6 +753,20 @@
   background: var(--hu-color-bg-muted);
   padding: 0.85rem 0.95rem 0;
   overflow: hidden;
+  scroll-margin-block: 6rem;
+}
+
+@keyframes pie-discussion-comment-deep-link-focus {
+  0% {
+    background-color: color-mix(in srgb, var(--hu-color-accent, #2f6fed) 22%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.pie-discussion__comment-card--deep-link-target {
+  animation: pie-discussion-comment-deep-link-focus 1.6s ease-out;
 }
 
 .pie-discussion__author {

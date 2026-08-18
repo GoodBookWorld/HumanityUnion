@@ -402,6 +402,26 @@ function ProposalAiAssistantContent({
         <h4>Open Proposal Questions</h4>
         <p>{insights.openProposalQuestionCount} unresolved question(s) in Discussion.</p>
       </div>
+
+      <div className="iip-ai-assistant__group">
+        <h4>Suggested Treatment (advisory)</h4>
+        {insights.suggestedTreatments.length > 0 ? (
+          <ul>
+            {insights.suggestedTreatments.map((entry) => (
+              <li key={entry.proposalId}>
+                &ldquo;{entry.title || "Untitled"}&rdquo; — {entry.suggestion.replace(/_/g, " ")}:{" "}
+                {entry.rationale}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="iip-ai-assistant__empty">No undecided proposals to review.</p>
+        )}
+        <p className="iip-ai-assistant__empty">
+          Assistant never publishes automatically. Author confirms Accept / Partial / Decline and
+          commits the Initiative version.
+        </p>
+      </div>
     </div>
   );
 }
@@ -1252,6 +1272,14 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
               <p>No clarity issues identified.</p>
             )}
           </div>
+          <div className="ior-assistant-block">
+            <h4>Advisory (AI cannot publish)</h4>
+            <ul>
+              {insights.advisoryNotes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </section>
@@ -1367,6 +1395,14 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
             ) : (
               <p>No clarity or neutrality issues identified.</p>
             )}
+          </div>
+          <div className="ipi-assistant-block">
+            <h4>Advisory (AI cannot publish)</h4>
+            <ul>
+              {insights.advisoryNotes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
           </div>
         </div>
       )}

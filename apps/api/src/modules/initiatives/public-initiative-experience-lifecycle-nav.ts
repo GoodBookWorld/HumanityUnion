@@ -62,10 +62,22 @@ function isPetitionStageApplicable(initiative: Initiative): boolean {
 /**
  * Derive menu state + marker class from publication metadata, registry order,
  * and LifecycleProfile applicability.
+ *
+ * AUTHORITY FREEZE — this is the canonical nav derivation for
+ * `experience.lifecycleStages` / `currentStageId`. It must never consult
+ * Cap02 pipeline status, Initiative.status, frontend hash, community
+ * engagement counts, or legacy Activity quorum/threshold helpers.
+ *
+ * Optional `inProgressStageIds` marks stages that have started working
+ * artifacts (e.g. Collaborative Analysis draft) but are not yet published.
+ * Viewer identity never enters this function.
  */
 export function buildLifecycleNavigation(
   initiative: Initiative,
   stageRecords: Map<string, PublicInitiativeLifecycleRecordItem[]>,
+  options?: {
+    readonly inProgressStageIds?: ReadonlySet<string> | readonly string[];
+  },
 ): {
   stages: PublicInitiativeLifecycleStageNavItem[];
   currentStageId: string;
@@ -80,6 +92,12 @@ export function buildLifecycleNavigation(
   if ((stageCounts.get("initiative") ?? 0) === 0) {
     stageCounts.set("initiative", 1);
   }
+
+  const inProgressStageIds = new Set(
+    options?.inProgressStageIds
+      ? Array.from(options.inProgressStageIds)
+      : [],
+  );
 
   const lifecycleProfile = resolveInitiativeLifecycleProfile(initiative.lifecycleProfile);
   const currentStageId = resolveCurrentStageIdFromPublicationMetadata(stageCounts, lifecycleProfile);
@@ -96,14 +114,14 @@ export function buildLifecycleNavigation(
       state = "not_applicable";
     } else if (stage.stageId === "archive" && recordCount > 0) {
       state = "archived";
+    } else if (recordCount > 0) {
+      // Published artifacts always win — never label a published stage
+      // Not Started even if currentStageId temporarily sits earlier.
+      state = index === currentIndex ? "published" : "completed";
+    } else if (inProgressStageIds.has(stage.stageId) || index === currentIndex) {
+      state = "in_progress";
     } else if (index < currentIndex) {
-      state = recordCount > 0 ? "completed" : "not_applicable";
-    } else if (index === currentIndex) {
-      if (recordCount > 0) {
-        state = stage.stageId === "archive" ? "archived" : "published";
-      } else {
-        state = "in_progress";
-      }
+      state = "not_applicable";
     } else {
       state = "not_started";
     }

@@ -49,13 +49,27 @@ function assertCandidate(value: unknown, index: number): InitiativeImplementatio
     throw new Error(`candidates[${index}].candidateId is required.`);
   }
 
-  if (typeof record.commitmentId !== "string" || !record.commitmentId.trim()) {
-    throw new Error(`candidates[${index}].commitmentId is required.`);
+  // commitmentId may be empty for Author-originated / zero-commitment milestones.
+  if (typeof record.commitmentId !== "string") {
+    throw new Error(`candidates[${index}].commitmentId must be a string.`);
   }
 
-  if (typeof record.approvedAction !== "string") {
-    throw new Error(`candidates[${index}].approvedAction must be a string.`);
+  const title =
+    typeof record.title === "string" && record.title.trim()
+      ? record.title
+      : typeof record.approvedAction === "string"
+        ? record.approvedAction
+        : "";
+
+  if (!title.trim()) {
+    throw new Error(`candidates[${index}].title is required.`);
   }
+
+  const description = typeof record.description === "string" ? record.description : "";
+  const approvedAction =
+    typeof record.approvedAction === "string" && record.approvedAction.trim()
+      ? record.approvedAction
+      : title;
 
   if (typeof record.responsibleParticipantId !== "string") {
     throw new Error(`candidates[${index}].responsibleParticipantId must be a string.`);
@@ -66,6 +80,13 @@ function assertCandidate(value: unknown, index: number): InitiativeImplementatio
   }
 
   assertProgress(record.progress, `candidates[${index}].progress`);
+
+  let plannedStartDate: string | null = null;
+  if (record.plannedStartDate !== undefined) {
+    assertNullableString(record.plannedStartDate, `candidates[${index}].plannedStartDate`);
+    plannedStartDate = record.plannedStartDate as string | null;
+  }
+
   assertNullableString(record.targetDate, `candidates[${index}].targetDate`);
   assertNullableString(record.startedDate, `candidates[${index}].startedDate`);
   assertNullableString(record.completedDate, `candidates[${index}].completedDate`);
@@ -80,10 +101,13 @@ function assertCandidate(value: unknown, index: number): InitiativeImplementatio
   return {
     candidateId: record.candidateId,
     commitmentId: record.commitmentId,
-    approvedAction: record.approvedAction,
+    title,
+    description,
+    approvedAction,
     responsibleParticipantId: record.responsibleParticipantId,
     currentStatus: record.currentStatus,
     progress: record.progress as number,
+    plannedStartDate,
     targetDate: record.targetDate as string | null,
     startedDate: record.startedDate as string | null,
     completedDate: record.completedDate as string | null,
@@ -130,19 +154,14 @@ export function validateInitiativeImplementationTrackingLifecycleDraftForPublica
     throw new Error("Implementation Tracking title is required.");
   }
 
-  if (!draft.packageId) {
-    throw new Error(
-      "A published Implementation Commitment Package is required before publishing Implementation Tracking.",
-    );
-  }
-
   if (draft.candidates.length === 0) {
-    throw new Error("At least one Tracking Candidate is required.");
+    throw new Error("At least one Tracking milestone is required.");
   }
 
   for (const [index, candidate] of draft.candidates.entries()) {
-    if (!candidate.commitmentId.trim()) {
-      throw new Error(`Candidate ${index + 1} is missing its Commitment reference.`);
+    const title = (candidate.title || candidate.approvedAction || "").trim();
+    if (!title) {
+      throw new Error(`Milestone ${index + 1} requires a title.`);
     }
   }
 }

@@ -100,12 +100,16 @@ export function validateProposalStatusInput(body: unknown): InitiativeStructured
 
 /**
  * Part 6/7 — pre-publication, the Author freely toggles between `"draft"`
- * and `"ready"`. Once a proposal is `"published"`, ONLY the three
- * Author-decision curation statuses may be applied — never back to
- * `"draft"`/`"ready"` (that would silently un-publish a proposal without
- * going through a real republish), and never directly to `"published"`
- * by hand (only the collection-level Publish action sets that, in bulk,
- * for every `"ready"` proposal).
+ * and `"ready"`, and may also apply Accept / Partial / Decline treatment
+ * (`included_in_revision` / `keep_for_later` / `not_applicable`) so the
+ * Improvement Proposals stage can feed an Initiative version commit before
+ * the collection itself is published.
+ *
+ * Once a proposal is `"published"`, ONLY the three Author-decision curation
+ * statuses may be applied — never back to `"draft"`/`"ready"` (that would
+ * silently un-publish a proposal without going through a real republish),
+ * and never directly to `"published"` by hand (only the collection-level
+ * Publish / complete action sets that, in bulk, for every `"ready"` proposal).
  */
 export function assertProposalStatusTransitionAllowed(
   proposal: InitiativeStructuredProposal,
@@ -113,15 +117,25 @@ export function assertProposalStatusTransitionAllowed(
   nextStatus: InitiativeStructuredProposalStatus,
 ): void {
   if (collectionStatus === "draft") {
-    if (!PRE_PUBLICATION_STATUSES.includes(nextStatus)) {
-      throw new Error('Only "draft" or "ready" may be set before this collection is published.');
+    const allowedOnDraft: readonly InitiativeStructuredProposalStatus[] = [
+      ...PRE_PUBLICATION_STATUSES,
+      ...CURATION_STATUSES,
+    ];
+
+    if (!allowedOnDraft.includes(nextStatus)) {
+      throw new Error(
+        'Only "draft", "ready", "included_in_revision", "keep_for_later", or "not_applicable" may be set before this collection is published.',
+      );
     }
 
     return;
   }
 
   if (collectionStatus === "published") {
-    const isCurrentlyCuratable = proposal.status === "published" || CURATION_STATUSES.includes(proposal.status);
+    const isCurrentlyCuratable =
+      proposal.status === "published" ||
+      proposal.status === "ready" ||
+      CURATION_STATUSES.includes(proposal.status);
 
     if (!isCurrentlyCuratable || !CURATION_STATUSES.includes(nextStatus)) {
       throw new Error(

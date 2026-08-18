@@ -90,6 +90,24 @@ export interface InitiativeOfficialResponseCandidate {
 }
 
 /**
+ * Legitimate Official Responses stage outcomes. Zero institution replies is
+ * a valid completion — it must never invent fake response records.
+ */
+export type InitiativeOfficialResponseOutcomeKind =
+  | "responses_received"
+  | "no_official_response_received";
+
+/**
+ * Optional Author-entered context when documenting that no official
+ * response was received. Never treated as a fake response record.
+ */
+export interface InitiativeOfficialResponseNoResponseDetail {
+  contactedOrganizations: string[];
+  contactedDates: string[];
+  note: string;
+}
+
+/**
  * Initiative Lifecycle — Part K, Section 5. Author Workspace working draft.
  */
 export interface InitiativeOfficialResponseLifecycleDraft {
@@ -99,6 +117,9 @@ export interface InitiativeOfficialResponseLifecycleDraft {
   title: string;
   summary: string;
   trackingPackageId: string | null;
+  /** Defaults to `responses_received` when omitted on legacy drafts. */
+  outcomeKind: InitiativeOfficialResponseOutcomeKind;
+  noResponseDetail: InitiativeOfficialResponseNoResponseDetail;
   candidates: InitiativeOfficialResponseCandidate[];
   createdAt: string;
   updatedAt: string;
@@ -164,7 +185,8 @@ export interface InitiativeOfficialResponseRecord {
 
 /**
  * Initiative Lifecycle — Part K. Published package grouping Official
- * Response records prepared from Implementation Tracking.
+ * Response records prepared from Implementation Tracking. May publish with
+ * zero response records when `outcomeKind` is `no_official_response_received`.
  */
 export interface InitiativeOfficialResponsePackage {
   packageId: string;
@@ -174,6 +196,9 @@ export interface InitiativeOfficialResponsePackage {
   stewardId: MemberId;
   title: string;
   summary: string;
+  /** Defaults to `responses_received` when omitted on legacy packages. */
+  outcomeKind: InitiativeOfficialResponseOutcomeKind;
+  noResponseDetail: InitiativeOfficialResponseNoResponseDetail;
   responseIds: string[];
   status: "published";
   publishedAt: string;

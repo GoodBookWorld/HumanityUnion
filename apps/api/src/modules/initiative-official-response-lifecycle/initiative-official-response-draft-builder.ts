@@ -15,6 +15,8 @@ export interface GeneratedOfficialResponseDraftContent {
   readonly title: string;
   readonly summary: string;
   readonly trackingPackageId: string | null;
+  /** Generate never invents an official reply — scaffolds are Author-editable placeholders. */
+  readonly outcomeKind: "responses_received";
   readonly candidates: readonly InitiativeOfficialResponseCandidate[];
 }
 
@@ -97,16 +99,17 @@ function generateDeterministicOfficialResponseDraftContent(
   const summary = trackingPackageReference?.summary ?? "";
 
   if (!trackingPackageReference) {
-    return { title, summary, trackingPackageId: null, candidates: [] };
+    return { title, summary, trackingPackageId: null, outcomeKind: "responses_received", candidates: [] };
   }
 
   const receivedAt = receivedAtFromGeneratedAt(snapshot.generatedAt);
 
   // Every Tracking Record with visible progress or an active/completed
-  // status becomes its own Response Candidate; a brand-new Tracking
-  // Package with every Record still at "Preparation"/0% falls back to one
-  // general Candidate for the Initiative as a whole, rather than
-  // generating zero candidates.
+  // status becomes its own Response Candidate scaffold (empty institution —
+  // never an invented official statement). A brand-new Tracking Package with
+  // every Record still at "Preparation"/0% falls back to one general
+  // Candidate for the Initiative as a whole. Authors may clear candidates and
+  // publish an explicit No Response outcome instead.
   const eligibleTrackings = snapshot.trackingRecords.filter(
     (tracking) => (tracking.progress ?? 0) > 0 || tracking.status === "completed" || tracking.status === "active",
   );
@@ -116,6 +119,7 @@ function generateDeterministicOfficialResponseDraftContent(
       title,
       summary,
       trackingPackageId: trackingPackageReference.packageId,
+      outcomeKind: "responses_received",
       candidates: [buildGeneralCandidate(snapshot.initiativeTitle, trackingPackageReference.packageId, receivedAt)],
     };
   }
@@ -134,6 +138,7 @@ function generateDeterministicOfficialResponseDraftContent(
     title,
     summary,
     trackingPackageId: trackingPackageReference.packageId,
+    outcomeKind: "responses_received",
     candidates,
   };
 }

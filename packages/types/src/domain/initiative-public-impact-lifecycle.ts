@@ -1,10 +1,18 @@
 import type { InitiativeCollectiveDecisionId } from "./initiative-collective-decision.js";
 import type { InitiativeDescription, InitiativeId, InitiativeTitle } from "./initiative.js";
 import type { MemberId } from "./member.js";
+import type {
+  InitiativeOfficialResponseNoResponseDetail,
+  InitiativeOfficialResponseOutcomeKind,
+} from "./initiative-official-response-lifecycle.js";
 
 /**
  * Initiative Lifecycle — Part L. Canonical section ids for the one
  * Public Impact Report per Initiative.
+ *
+ * Display titles map to the Author-facing structure (Decision / intended
+ * outcome, What was implemented, Official response result, etc.) while
+ * keeping these stable ids for persistence and validators.
  */
 export type InitiativePublicImpactReportSectionId =
   | "executive_summary"
@@ -138,6 +146,9 @@ export interface InitiativePublicImpactOfficialResponsePackageReference {
   readonly trackingPackageId: string | null;
   readonly decisionId: InitiativeCollectiveDecisionId | null;
   readonly publishedAt: string;
+  /** Defaults to `responses_received` when omitted on legacy packages. */
+  readonly outcomeKind: InitiativeOfficialResponseOutcomeKind;
+  readonly noResponseDetail: InitiativeOfficialResponseNoResponseDetail;
 }
 
 /** One Tracking Record summarised for Impact Sources. */

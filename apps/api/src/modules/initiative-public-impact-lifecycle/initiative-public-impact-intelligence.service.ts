@@ -133,6 +133,7 @@ function buildDecisionReference(initiativeId: string): InitiativePublicImpactDec
 
 function buildConsistencyChecks(input: {
   officialResponsePackageReference: InitiativePublicImpactOfficialResponsePackageReference | null;
+  officialResponseSummaries: readonly InitiativePublicImpactOfficialResponseSummary[];
   trackingPackageReference: InitiativePublicImpactTrackingPackageReference | null;
   trackingRecords: readonly InitiativePublicImpactTrackingRecordSummary[];
   evidenceItems: readonly string[];
@@ -145,7 +146,10 @@ function buildConsistencyChecks(input: {
           checkId: "official-response-package-available",
           label: "Published Official Response Package",
           status: "ok",
-          detail: `Official Responses "${input.officialResponsePackageReference.title}" are available as the Public Impact source.`,
+          detail:
+            input.officialResponsePackageReference.outcomeKind === "no_official_response_received"
+              ? `Official Responses "${input.officialResponsePackageReference.title}" published with outcome: No official response received.`
+              : `Official Responses "${input.officialResponsePackageReference.title}" are available as the Public Impact source.`,
         }
       : {
           checkId: "official-response-package-available",
@@ -154,6 +158,21 @@ function buildConsistencyChecks(input: {
           detail: "A published Official Response Package is required before Public Impact can be generated.",
         },
   );
+
+  if (
+    input.officialResponsePackageReference?.outcomeKind === "no_official_response_received" ||
+    (input.officialResponsePackageReference &&
+      input.officialResponsePackageReference.responseIds.length === 0 &&
+      input.officialResponseSummaries.length === 0)
+  ) {
+    checks.push({
+      checkId: "official-response-outcome",
+      label: "Official Response Outcome",
+      status: "ok",
+      detail:
+        "No official response received is a published stage outcome — treat it as factual input, not a missing source.",
+    });
+  }
 
   checks.push(
     input.trackingPackageReference
@@ -186,8 +205,8 @@ function buildConsistencyChecks(input: {
           status: "warning",
           detail:
             outstanding.length > 0
-              ? `${outstanding.length} Tracking Record(s) are not yet completed.`
-              : "No Tracking Records are available to assess completeness.",
+              ? `${outstanding.length} Tracking Record(s) are not yet completed — incomplete implementation is a valid Public Impact conclusion, not a publish blocker.`
+              : "No Tracking Records are available to assess completeness — low/zero measurable impact remains publishable.",
         },
   );
 
@@ -203,7 +222,8 @@ function buildConsistencyChecks(input: {
           checkId: "evidence-visible",
           label: "Evidence Visibility",
           status: "warning",
-          detail: "No evidence references are visible yet from Tracking or Official Responses.",
+          detail:
+            "No evidence references are visible yet — record evidence insufficiency as uncertainty; do not invent evidence. This does not block Publish.",
         },
   );
 
@@ -214,6 +234,16 @@ async function buildParticipationStatistics(input: {
   initiativeId: string;
   analysisId: string | null;
 }): Promise<InitiativePublicImpactParticipationStatistics> {
+  // Avoid remote Mongo DNS fan-out in unit tests (participation is display-only).
+  if (process.env.INITIATIVE_PUBLIC_IMPACT_SKIP_REMINDERS === "1") {
+    return {
+      signatureCount: 0,
+      supportCount: 0,
+      reactionCount: 0,
+      activeAllyCount: 0,
+    };
+  }
+
   let signatureCount = 0;
   let supportCount = 0;
   let reactionCount = 0;
@@ -276,7 +306,14 @@ export async function buildInitiativePublicImpactIntelligenceSnapshot(
     ? buildAnalysisReference(initiativeId, initiative.stewardId)
     : null;
   const revisionReference = buildRevisionReference(initiativeId);
-  const petitionReference = await buildPetitionReference(initiativeId);
+  let petitionReference: InitiativePublicImpactPetitionReference | null = null;
+  if (process.env.INITIATIVE_PUBLIC_IMPACT_SKIP_REMINDERS !== "1") {
+    try {
+      petitionReference = await buildPetitionReference(initiativeId);
+    } catch {
+      petitionReference = null;
+    }
+  }
   const decisionSessionReference = buildDecisionSessionReference(initiativeId);
   const decisionReference = buildDecisionReference(initiativeId);
 
@@ -313,6 +350,9 @@ export async function buildInitiativePublicImpactIntelligenceSnapshot(
         ].filter((value): value is string => Boolean(value)),
       ),
       ...(officialResponsePackage ? [officialResponsePackage.packageId] : []),
+      ...(officialResponsePackage?.outcomeKind === "no_official_response_received"
+        ? ["outcome:no_official_response_received"]
+        : []),
       ...(trackingPackage ? [trackingPackage.packageId] : []),
       ...(commitmentPackage ? [commitmentPackage.packageId] : []),
     ]),
@@ -359,6 +399,23 @@ export async function buildInitiativePublicImpactIntelligenceSnapshot(
           trackingPackageId: officialResponsePackage.trackingPackageId,
           decisionId: officialResponsePackage.decisionId,
           publishedAt: officialResponsePackage.publishedAt,
+          outcomeKind:
+            officialResponsePackage.outcomeKind === "no_official_response_received"
+              ? "no_official_response_received"
+              : "responses_received",
+          noResponseDetail: officialResponsePackage.noResponseDetail
+            ? {
+                contactedOrganizations: [
+                  ...officialResponsePackage.noResponseDetail.contactedOrganizations,
+                ],
+                contactedDates: [...officialResponsePackage.noResponseDetail.contactedDates],
+                note: officialResponsePackage.noResponseDetail.note,
+              }
+            : {
+                contactedOrganizations: [],
+                contactedDates: [],
+                note: "",
+              },
         }
       : null;
 
@@ -369,6 +426,7 @@ export async function buildInitiativePublicImpactIntelligenceSnapshot(
 
   const consistencyChecks = buildConsistencyChecks({
     officialResponsePackageReference,
+    officialResponseSummaries,
     trackingPackageReference,
     trackingRecords,
     evidenceItems,

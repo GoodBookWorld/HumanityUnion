@@ -121,12 +121,13 @@ export function InitiativePublicImpactAuthorWorkspace({
       {!hasContent || !context.draft ? (
         <div className="ipi-editor">
           <p className="ipi-source-panel__empty">
-            Generate a Public Impact Report from published Official Responses and upstream Lifecycle
-            sources. The Impact Assistant remains advisory — nothing publishes automatically, and no
-            achievements are ever invented.
+            Generate a Public Impact Report from Initiative, Collective Decision, Tracking, Official
+            Responses (including No official response received), and linked evidence. The Assistant is
+            advisory only — it cannot invent results, publish, or advance Lifecycle. Zero measurable
+            impact is a valid publishable conclusion.
           </p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate Public Impact Draft")}
+            {resolveSaveButtonLabel(generatePhase.phase, "Generate")}
           </WorkspaceButton>
         </div>
       ) : (

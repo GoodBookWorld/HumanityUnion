@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-import type { InitiativeOfficialResponseRecord } from "@hu/types";
+import type {
+  InitiativeOfficialResponsePackage,
+  InitiativeOfficialResponseRecord,
+} from "@hu/types";
 
-import { listPublishedInitiativeOfficialResponses } from "../api";
+import { getPublishedOfficialResponses } from "../api";
 
 import "./initiative-official-response-stage-workspace.css";
 
@@ -22,6 +25,7 @@ export function InitiativeOfficialResponsePublicResult({
   initiativeId,
   isPreview = false,
 }: InitiativeOfficialResponsePublicResultProps) {
+  const [pkg, setPackage] = useState<InitiativeOfficialResponsePackage | null | undefined>(undefined);
   const [responses, setResponses] = useState<readonly InitiativeOfficialResponseRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,9 +34,10 @@ export function InitiativeOfficialResponsePublicResult({
 
     void (async () => {
       try {
-        const result = await listPublishedInitiativeOfficialResponses(initiativeId);
+        const result = await getPublishedOfficialResponses(initiativeId);
         if (!cancelled) {
-          setResponses(result);
+          setPackage(result.package);
+          setResponses(result.responses);
         }
       } catch {
         if (!cancelled) {
@@ -50,20 +55,49 @@ export function InitiativeOfficialResponsePublicResult({
     return <p className="ior-source-panel__empty">{error}</p>;
   }
 
-  if (!responses) {
+  if (pkg === undefined || !responses) {
     return <p className="ior-source-panel__empty">Loading published Official Responses…</p>;
   }
 
-  if (responses.length === 0) {
+  if (!pkg) {
     return <p className="ior-source-panel__empty">No Official Responses published yet.</p>;
+  }
+
+  const isNoResponse = pkg.outcomeKind === "no_official_response_received" || responses.length === 0;
+
+  if (isNoResponse) {
+    return (
+      <article className="ior-public" aria-label="No official response received">
+        {isPreview ? <p className="ior-public__meta">Author Preview of published Official Responses</p> : null}
+        <section className="ior-public__section">
+          <h3>{pkg.title || "Official Responses"}</h3>
+          <p className="ior-public__meta">Published outcome</p>
+          <h3>No official response received</h3>
+          <p>
+            {pkg.noResponseDetail?.note?.trim() ||
+              pkg.summary ||
+              "The Author documented that no official response was received."}
+          </p>
+          {pkg.noResponseDetail?.contactedOrganizations?.length ? (
+            <p className="ior-public__meta">
+              Contacted: {pkg.noResponseDetail.contactedOrganizations.join(", ")}
+            </p>
+          ) : null}
+          {pkg.noResponseDetail?.contactedDates?.length ? (
+            <p className="ior-public__meta">Dates: {pkg.noResponseDetail.contactedDates.join(", ")}</p>
+          ) : null}
+        </section>
+      </article>
+    );
   }
 
   return (
     <article className="ior-public" aria-label="Published Official Responses">
       {isPreview ? <p className="ior-public__meta">Author Preview of published Official Responses</p> : null}
       <section className="ior-public__section">
-        <h3>Official Responses</h3>
+        <h3>Received official responses</h3>
         <p className="ior-public__meta">{responses.length} Response(s) published</p>
+        {pkg.summary ? <p>{pkg.summary}</p> : null}
       </section>
 
       {responses.map((response) => (
@@ -79,7 +113,6 @@ export function InitiativeOfficialResponsePublicResult({
               {response.documentIds.length} document(s) · {response.links.length} link(s)
             </p>
           ) : null}
-          <span className="ior-public__response-status">{response.verificationStatus}</span>
         </div>
       ))}
     </article>

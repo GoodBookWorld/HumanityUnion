@@ -36,7 +36,6 @@ describe("Phase 03 — lifecycle shell helpers", () => {
     stage("discussion", "completed"),
     stage("analysis", "completed"),
     stage("proposal", "in_progress"),
-    stage("revision", "not_started"),
     stage("petition", "not_started"),
   ];
 
@@ -45,7 +44,6 @@ describe("Phase 03 — lifecycle shell helpers", () => {
     stage("discussion", "in_progress"),
     stage("analysis", "not_applicable"),
     stage("proposal", "not_applicable"),
-    stage("revision", "not_applicable"),
     stage("petition", "not_applicable"),
     stage("decision_session", "not_applicable"),
     stage("collective_decision", "not_started"),
@@ -114,8 +112,19 @@ describe("Phase 03 — lifecycle shell helpers", () => {
     }
   });
 
+  it("#revision is not lifecycle navigation (content/history only)", () => {
+    const resolution = resolveLifecycleShellHash("#revision", standardStages);
+    assert.equal(resolution.kind, "fallback_overview");
+    if (resolution.kind === "fallback_overview") {
+      assert.equal(resolution.reason, "invalid");
+    }
+  });
+
   it("locked future stage hash falls back (does not open)", () => {
-    const resolution = resolveLifecycleShellHash("#petition", standardStages);
+    const resolution = resolveLifecycleShellHash("#decision-session", [
+      ...standardStages,
+      stage("decision_session", "not_started", "decision-session"),
+    ]);
     assert.equal(resolution.kind, "fallback_overview");
     if (resolution.kind === "fallback_overview") {
       assert.equal(resolution.reason, "locked");
@@ -134,6 +143,14 @@ describe("Phase 03 — lifecycle shell helpers", () => {
   it("#discussion opens Discussion Center tab (not a second Discussion workspace)", () => {
     const resolution = resolveLifecycleShellHash("#discussion", publicChoiceStages);
     assert.equal(resolution.kind, "discussion_tab");
+  });
+
+  it("#comment-{id} opens Discussion Center and focuses that comment", () => {
+    const resolution = resolveLifecycleShellHash("#comment-cmt-source-9", publicChoiceStages);
+    assert.equal(resolution.kind, "discussion_tab");
+    if (resolution.kind === "discussion_tab") {
+      assert.equal(resolution.focusCommentId, "cmt-source-9");
+    }
   });
 
   it("not-applicable stage hash falls back without false missing error", () => {

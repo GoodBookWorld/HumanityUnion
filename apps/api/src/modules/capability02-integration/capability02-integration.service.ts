@@ -212,6 +212,16 @@ async function resolveInitiativeId(
   }
 }
 
+/**
+ * Cap02 civic pipeline completion map.
+ *
+ * AUTHORITY FREEZE — COMPATIBILITY_DISPLAY_ONLY.
+ * This function feeds `buildPipelineStatus` widgets / search context only.
+ * It MUST NOT be used to compute `PublicInitiativeExperienceProjection.currentStageId`,
+ * unlock Lifecycle nav stages, or block Author progression.
+ * Canonical progression: Stage Registry + LifecycleProfile + published artifacts
+ * → `resolveInitiativeLifecycleState`.
+ */
 function buildInitiativePipelineCompletion(
   initiativeId: string,
 ): Record<CivicPipelineStageId, boolean> {
@@ -254,6 +264,14 @@ function buildInitiativePipelineCompletion(
   };
 }
 
+/**
+ * Cap02 informational pipeline cursor for civic integration widgets.
+ *
+ * AUTHORITY FREEZE — COMPATIBILITY_DISPLAY_ONLY.
+ * `currentStageId` here is NOT canonical Lifecycle progress. Callers must
+ * use `buildLifecycleNavigation` / `resolveInitiativeLifecycleState` for
+ * Initiative experience progression.
+ */
 export function buildPipelineStatus(initiativeId: string): CivicPipelineStatus {
   const completion = buildInitiativePipelineCompletion(initiativeId);
   const stages: CivicPipelineStageStatus[] = PIPELINE_STAGE_ORDER.map((stage) => ({
@@ -284,6 +302,7 @@ export function buildPipelineStatus(initiativeId: string): CivicPipelineStatus {
     previousStageId,
     nextStageId,
     nextAvailableStep: nextStage && !completion[nextStage.id] ? nextStage.label : null,
+    progressionAuthority: "compatibility_display_only",
   };
 }
 

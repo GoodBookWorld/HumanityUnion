@@ -173,6 +173,14 @@ export function buildOutcome(decision: CollectiveDecision, result: DecisionResul
   const winningOption = decision.ballot.options.find(
     (option) => option.optionId === result.winningOptionId,
   );
+  /**
+   * Legacy Activity Collective Decision outcome pointer.
+   *
+   * AUTHORITY FREEZE — COMPATIBILITY_DISPLAY_ONLY.
+   * `nextLifecycleStage` here describes the Activity Decision module's own
+   * outcome string only. It MUST NOT advance Initiative Lifecycle
+   * `currentStageId` (canonical: published artifacts → resolveInitiativeLifecycleState).
+   */
   const approved =
     winningOption?.value === "Approve" && result.quorumSatisfied && result.thresholdSatisfied;
 

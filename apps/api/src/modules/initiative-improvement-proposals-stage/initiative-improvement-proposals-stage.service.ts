@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import type { Initiative, InitiativeImprovementProposalsCollection, InitiativeStructuredProposalStatus } from "@hu/types";
+import type {
+  Initiative,
+  InitiativeImprovementProposalsCollection,
+  InitiativeStructuredProposalStatus,
+  InitiativeVersionRevision,
+} from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
@@ -20,6 +25,17 @@ import {
 import { buildInitiativeProposalIntelligenceSnapshot } from "./initiative-proposal-intelligence.service.js";
 import { generateImprovementProposalDrafts, toStructuredProposal } from "./initiative-proposal-draft-builder.js";
 import { publishInitiativeLifecycleStage } from "../../shared/initiative-lifecycle-stage/index.js";
+import {
+  createInitiativeRevisionDraft,
+  publishInitiativeRevisionStage,
+  saveInitiativeRevisionDraft,
+} from "../initiative-version-revision/initiative-version-revision.service.js";
+import {
+  getCurrentPublishedVersion,
+  getRevisionDraftByInitiativeId,
+  listRevisionsByInitiative,
+} from "../initiative-version-revision/initiative-version-revision.store.js";
+import { filterLifecycleProgressRevisions } from "../../shared/lifecycle/lifecycle-progress-revision.js";
 
 export interface InitiativeImprovementProposalsAncestryDependencies {
   readonly getInitiative: (initiativeId: string) => Initiative | null;
@@ -288,12 +304,12 @@ async function notifyLifecycleStageProposalPublished(
 
 /**
  * Publishes every `"ready"` proposal in this draft collection in bulk
- * (Part 6: "the last three [curation statuses] are Author decisions" —
- * implying the move from `"ready"` to `"published"` is NOT itself an
- * individual per-proposal Author click, but the single collection-level
- * Publish action). Any proposal still `"draft"` is left untouched and
- * carries forward for the next drafting round — Publish never force-
- * finishes an incomplete proposal and never silently drops it.
+ * (Part 6). Proposals already given Accept / Partial / Decline treatment
+ * keep their curation status. Any proposal still `"draft"` is left
+ * untouched and carries forward for the next drafting round.
+ *
+ * Zero proposals is a valid Author outcome — continue after confirming the
+ * Initiative version without community contributions.
  */
 export async function publishImprovementProposalsCollection(
   identity: RequestIdentity,
@@ -303,11 +319,22 @@ export async function publishImprovementProposalsCollection(
   assertDraftStatus(collection);
 
   const readyProposals = collection.proposals.filter((proposal) => proposal.status === "ready");
+  const treatedProposals = collection.proposals.filter((proposal) =>
+    proposal.status === "included_in_revision" ||
+    proposal.status === "keep_for_later" ||
+    proposal.status === "not_applicable",
+  );
 
-  // Phase 05A — zero proposals is a valid Author outcome (continue without
-  // community contributions). If draft proposals exist, at least one must be Ready.
-  if (readyProposals.length === 0 && collection.proposals.length > 0) {
-    throw new Error('At least one proposal must be marked "Ready" before publishing.');
+  // Zero proposals is valid. If draft-only proposals exist with no Ready and
+  // no treatment decision, block — Author must Ready or Accept/Partial/Decline.
+  if (
+    readyProposals.length === 0 &&
+    treatedProposals.length === 0 &&
+    collection.proposals.length > 0
+  ) {
+    throw new Error(
+      'At least one proposal must be marked "Ready" or given Accept / Partial / Decline treatment before publishing.',
+    );
   }
 
   for (const proposal of readyProposals) {
@@ -355,4 +382,134 @@ export async function archiveImprovementProposalsCollection(
   }
 
   return archived;
+}
+
+/**
+ * Creates an empty draft collection so Authors can confirm / commit an
+ * Initiative version and continue to Petition with zero community proposals.
+ */
+export async function ensureEmptyImprovementProposalsDraft(
+  identity: RequestIdentity,
+  initiativeId: string,
+  deps: InitiativeImprovementProposalsAncestryDependencies = defaultDeps,
+): Promise<InitiativeImprovementProposalsCollection> {
+  const initiative = deps.getInitiative(initiativeId);
+
+  if (!initiative) {
+    throw new Error("Initiative not found.");
+  }
+
+  if (initiative.stewardId !== identity.participantId) {
+    throw new Error("You do not have access to edit Improvement Proposals for this Initiative.");
+  }
+
+  const existing = await getMyImprovementProposalsCollectionForInitiative(identity, initiativeId);
+
+  if (existing?.status === "draft") {
+    return existing;
+  }
+
+  if (existing?.status === "published") {
+    throw new Error("Improvement Proposals for this Initiative are already published.");
+  }
+
+  const now = new Date().toISOString();
+  const snapshot = await buildInitiativeProposalIntelligenceSnapshot(initiativeId);
+
+  return createCollection({
+    collectionId: `initiative-proposals-collection-${randomUUID()}`,
+    initiativeId,
+    authorId: identity.participantId,
+    analysisId: snapshot.analysisReference?.analysisId ?? null,
+    status: "draft",
+    proposals: [],
+    sourceSnapshotCreatedAt: snapshot.generatedAt,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+const DEFAULT_PROPOSALS_VERSION_SUMMARY =
+  "Confirmed Initiative version after Improvement Proposals review.";
+
+/**
+ * Final Author completion for Improvement Proposals:
+ * 1. ensure draft collection (empty allowed)
+ * 2. ensure / finalize revision draft
+ * 3. commit canonical InitiativeVersionRevision progress version
+ * 4. publish the proposal collection (marks proposal stage complete → unlocks Petition)
+ *
+ * Save Draft / Preview / Commit-version-alone must NOT call this.
+ */
+export async function completeImprovementProposalsWithVersionCommit(
+  identity: RequestIdentity,
+  initiativeId: string,
+): Promise<{
+  collection: InitiativeImprovementProposalsCollection;
+  revision: InitiativeVersionRevision;
+  initiative: Initiative;
+}> {
+  const collection = await ensureEmptyImprovementProposalsDraft(identity, initiativeId);
+
+  if (collection.status !== "draft") {
+    throw new Error("Only a draft Improvement Proposals collection can be completed from this workflow.");
+  }
+
+  if (getCurrentPublishedVersion(initiativeId) === 0) {
+    throw new Error("Initial version must be published before creating a revision.");
+  }
+
+  const existingProgressVersions = filterLifecycleProgressRevisions(
+    listRevisionsByInitiative(initiativeId),
+  );
+  let revision: InitiativeVersionRevision;
+  let initiative: Initiative;
+
+  const existingDraft = getRevisionDraftByInitiativeId(initiativeId);
+
+  if (existingDraft) {
+    let draft = existingDraft;
+    if (!draft.revisionSummary.trim()) {
+      draft = saveInitiativeRevisionDraft(identity, initiativeId, {
+        revisionSummary: DEFAULT_PROPOSALS_VERSION_SUMMARY,
+      });
+    }
+    const published = await publishInitiativeRevisionStage(identity, initiativeId);
+    revision = published.revision;
+    initiative = published.initiative;
+  } else if (existingProgressVersions.length === 0) {
+    let draft = createInitiativeRevisionDraft(identity, initiativeId);
+    if (!draft.revisionSummary.trim()) {
+      draft = saveInitiativeRevisionDraft(identity, initiativeId, {
+        revisionSummary: DEFAULT_PROPOSALS_VERSION_SUMMARY,
+      });
+    }
+    const published = await publishInitiativeRevisionStage(identity, initiativeId);
+    revision = published.revision;
+    initiative = published.initiative;
+  } else {
+    const latest = existingProgressVersions[existingProgressVersions.length - 1]!;
+    revision = latest;
+    const current = getInitiativeById(initiativeId);
+    if (!current) {
+      throw new Error("Initiative not found.");
+    }
+    initiative = current;
+  }
+
+  const publishedCollection = await publishImprovementProposalsCollection(identity, collection.collectionId);
+
+  return {
+    collection: publishedCollection,
+    revision,
+    initiative,
+  };
+}
+
+/**
+ * True when at least one non-bootstrap progress revision exists for Petition
+ * to consume after Improvement Proposals completion.
+ */
+export function hasCommittedProgressVersionForInitiative(initiativeId: string): boolean {
+  return filterLifecycleProgressRevisions(listRevisionsByInitiative(initiativeId)).length > 0;
 }

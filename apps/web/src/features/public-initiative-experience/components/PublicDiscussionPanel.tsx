@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   PublicInitiativeCollaborationParticipant,
@@ -19,13 +19,20 @@ import {
   inviteCommentAuthorToAllies,
   markCommentAsProposalCandidate,
   postInitiativeComment,
+  respondToAlliesInvitation,
   respondToInitiativeCollaborationInterest,
   updateInitiativeCommentReaction,
 } from "../api";
 import {
+  buildDiscussionCommentDomId,
+  planDiscussionCommentDeepLinkScroll,
+  resolveDiscussionCommentFocusTarget,
+} from "../discussion-comment-deep-link";
+import {
   DISCUSSION_ACTION_DEFINITIONS,
   DISCUSSION_FILTERS,
   matchesDiscussionFilter,
+  resolveAlliesInvitationResponseState,
   resolveAuthorBadges,
   resolveAuthorLinkPresentation,
   resolveCollaborationReviewActionState,
@@ -52,6 +59,12 @@ interface PublicDiscussionPanelProps {
    * `PublicInitiativeExperiencePage`).
    */
   initialFilter?: DiscussionFilter;
+  /**
+   * Canonical `#comment-{commentId}` deep-link target. When set, the panel
+   * ensures the "all" filter, loads pages until the comment is rendered,
+   * then scrolls it into view (no fixed timeouts).
+   */
+  focusCommentId?: string;
 }
 
 const DRAFT_STORAGE_PREFIX = "pie-discussion-draft:";
@@ -139,9 +152,9 @@ function CommentActions({
   onCollaborationChanged: () => void;
 }) {
   const [reactionBusy, setReactionBusy] = useState(false);
-  const [collabAction, setCollabAction] = useState<"proposal" | "collaborate" | "invite" | null>(
-    null,
-  );
+  const [collabAction, setCollabAction] = useState<
+    "proposal" | "collaborate" | "invite" | "accept-invitation" | "decline-invitation" | null
+  >(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const currentReaction = comment.currentUserReaction ?? "none";
   const collaboration = comment.collaboration;
@@ -164,7 +177,7 @@ function CommentActions({
   }
 
   async function runCollaborationAction(
-    action: "proposal" | "collaborate" | "invite",
+    action: "proposal" | "collaborate" | "invite" | "accept-invitation" | "decline-invitation",
     perform: () => Promise<unknown>,
   ): Promise<void> {
     setCollabAction(action);
@@ -235,6 +248,10 @@ function CommentActions({
   const readyState = resolveReadyToCollaborateActionState(
     collaboration,
     collabAction === "collaborate",
+  );
+  const invitationResponseState = resolveAlliesInvitationResponseState(
+    collaboration,
+    collabAction === "accept-invitation" || collabAction === "decline-invitation",
   );
   const inviteState = resolveInviteToAlliesActionState(collaboration, collabAction === "invite");
 
@@ -338,6 +355,46 @@ function CommentActions({
           <span className="pie-discussion__action-label">{readyState.label}</span>
         </button>
       ) : null}
+      {invitationResponseState.visible ? (
+        <>
+          <button
+            type="button"
+            className="pie-discussion__action"
+            disabled={invitationResponseState.disabled}
+            onClick={() =>
+              void runCollaborationAction("accept-invitation", () =>
+                respondToAlliesInvitation(initiativeId, "accept"),
+              )
+            }
+          >
+            <img
+              className="pie-discussion__action-icon"
+              src={ICON_BY_ACTION_ID.get("ready-to-collaborate")}
+              alt=""
+              aria-hidden="true"
+              width={18}
+              height={18}
+            />
+            <span className="pie-discussion__action-label">
+              {collabAction === "accept-invitation" ? "Accepting…" : "Accept Invitation"}
+            </span>
+          </button>
+          <button
+            type="button"
+            className="pie-discussion__action"
+            disabled={invitationResponseState.disabled}
+            onClick={() =>
+              void runCollaborationAction("decline-invitation", () =>
+                respondToAlliesInvitation(initiativeId, "decline"),
+              )
+            }
+          >
+            <span className="pie-discussion__action-label">
+              {collabAction === "decline-invitation" ? "Declining…" : "Decline"}
+            </span>
+          </button>
+        </>
+      ) : null}
       {inviteState.visible ? (
         <button
           type="button"
@@ -376,6 +433,7 @@ function DiscussionCommentCard({
   comment,
   authStatus,
   returnTo,
+  isDeepLinkTarget,
   onReactionUpdated,
   onCollaborationChanged,
 }: {
@@ -383,6 +441,7 @@ function DiscussionCommentCard({
   comment: PublicInitiativeDiscussionComment;
   authStatus: ReturnType<typeof useClientAuthStatus>;
   returnTo: string;
+  isDeepLinkTarget?: boolean;
   onReactionUpdated: (comment: PublicInitiativeDiscussionComment) => void;
   onCollaborationChanged: () => void;
 }) {
@@ -391,7 +450,14 @@ function DiscussionCommentCard({
   const indicators = resolveStatusIndicators(comment.collaboration);
 
   return (
-    <li className="pie-discussion__comment-card">
+    <li
+      id={buildDiscussionCommentDomId(comment.commentId)}
+      className={
+        isDeepLinkTarget
+          ? "pie-discussion__comment-card pie-discussion__comment-card--deep-link-target"
+          : "pie-discussion__comment-card"
+      }
+    >
       <p className="pie-discussion__author">
         {comment.author.avatarUrl ? (
           <img
@@ -565,6 +631,7 @@ export function PublicDiscussionPanel({
   panelId,
   scopeLabel,
   initialFilter,
+  focusCommentId,
 }: PublicDiscussionPanelProps) {
   const authStatus = useClientAuthStatus();
   const [comments, setComments] = useState(initialComments);
@@ -580,11 +647,13 @@ export function PublicDiscussionPanel({
   const [submitting, setSubmitting] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState<DiscussionFilter>(initialFilter ?? "all");
+  const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
   const [collaborationData, setCollaborationData] =
     useState<PublicInitiativeCollaborationParticipantsResult | null>(null);
   const [collaborationLoading, setCollaborationLoading] = useState(false);
   const returnTo = buildDiscussionReturnTo(initiativeId);
   const draftStorageKey = `${DRAFT_STORAGE_PREFIX}${initiativeId}`;
+  const deepLinkScrollCompletedFor = useRef<string | null>(null);
 
   useEffect(() => {
     setComments(initialComments);
@@ -674,30 +743,6 @@ export function PublicDiscussionPanel({
   };
 
   /**
-   * A single collaboration action (Proposal / Ready to Collaborate / Invite
-   * to Allies) can change the collaboration state of every comment by the
-   * same author, not just the one that was clicked. Re-fetching the
-   * currently loaded page is simpler and more correct than optimistic
-   * per-comment patching, and the list is bounded (default 40).
-   */
-  const handleCollaborationChanged = async (): Promise<void> => {
-    try {
-      const response = await fetchInitiativeComments(initiativeId, 0, Math.max(comments.length, 40));
-      setComments(response.comments);
-      setTotalCount(response.total);
-      setHasMore(response.hasMore);
-    } catch {
-      // Keep the existing list; the action itself already succeeded.
-    }
-  };
-
-  const filteredComments = useMemo(
-    () => comments.filter((comment) => matchesDiscussionFilter(comment, filter)),
-    [comments, filter],
-  );
-  const filterHeading = resolveFilterHeading(filter);
-
-  /**
    * Profile UX Pack 01 Part 2/8 — the Collaboration working list is sourced
    * directly from the Ally store (not derived from loaded comments), so it
    * correctly includes every Participant who expressed interest, even one
@@ -716,6 +761,81 @@ export function PublicDiscussionPanel({
       setCollaborationLoading(false);
     }
   }, [initiativeId]);
+
+  /**
+   * A single collaboration action (Proposal / Ready to Collaborate / Invite
+   * to Allies) can change the collaboration state of every comment by the
+   * same author, not just the one that was clicked. Re-fetching the
+   * currently loaded page is simpler and more correct than optimistic
+   * per-comment patching, and the list is bounded (default 40).
+   */
+  const handleCollaborationChanged = async (): Promise<void> => {
+    try {
+      const response = await fetchInitiativeComments(initiativeId, 0, Math.max(comments.length, 40));
+      setComments(response.comments);
+      setTotalCount(response.total);
+      setHasMore(response.hasMore);
+      if (filter === "collaboration") {
+        void loadCollaborationParticipants();
+      }
+    } catch {
+      // Keep the existing list; the action itself already succeeded.
+    }
+  };
+
+  const filteredComments = useMemo(
+    () => comments.filter((comment) => matchesDiscussionFilter(comment, filter)),
+    [comments, filter],
+  );
+  const filterHeading = resolveFilterHeading(filter);
+  const focusedRenderedCommentId = resolveDiscussionCommentFocusTarget(
+    filteredComments.map((comment) => comment.commentId),
+    focusCommentId,
+  );
+
+  useEffect(() => {
+    deepLinkScrollCompletedFor.current = null;
+  }, [focusCommentId]);
+
+  useEffect(() => {
+    const plan = planDiscussionCommentDeepLinkScroll({
+      focusCommentId,
+      filter,
+      renderedCommentIds: filteredComments.map((comment) => comment.commentId),
+      hasMore,
+      loadingMore,
+      alreadyScrolledFor: deepLinkScrollCompletedFor.current,
+    });
+
+    if (plan.action === "reset_filter_all") {
+      setFilter("all");
+      return;
+    }
+
+    if (plan.action === "load_more") {
+      void handleLoadMore();
+      return;
+    }
+
+    if (plan.action !== "scroll") {
+      return;
+    }
+
+    const element = document.getElementById(plan.domId);
+    if (!element) {
+      return;
+    }
+
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightedCommentId(plan.commentId);
+    deepLinkScrollCompletedFor.current = plan.commentId;
+
+    const clearHighlight = () => {
+      setHighlightedCommentId((current) => (current === plan.commentId ? null : current));
+    };
+    element.addEventListener("animationend", clearHighlight, { once: true });
+    return () => element.removeEventListener("animationend", clearHighlight);
+  }, [focusCommentId, filter, filteredComments, hasMore, loadingMore]);
 
   useEffect(() => {
     if (filter === "collaboration") {
@@ -847,6 +967,10 @@ export function PublicDiscussionPanel({
                   comment={comment}
                   authStatus={authStatus}
                   returnTo={returnTo}
+                  isDeepLinkTarget={
+                    highlightedCommentId === comment.commentId ||
+                    focusedRenderedCommentId === comment.commentId
+                  }
                   onReactionUpdated={(updated) => {
                     setComments((current) =>
                       current.map((entry) =>

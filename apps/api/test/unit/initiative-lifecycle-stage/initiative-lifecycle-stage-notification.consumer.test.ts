@@ -286,7 +286,7 @@ describe("Initiative Lifecycle Part A — Active Ally notification fan-out consu
       assert.ok(createdReminders.every((reminder) => reminder.category === "proposal"));
     });
 
-    it("generates a 'Review Revision' Reminder when Improvement Proposals is published (Part D unlocks Revision)", async () => {
+    it("generates a 'Review Petition' Reminder when Improvement Proposals is published", async () => {
       const { deps, createdReminders } = buildDeps({
         listActiveAllies: async () => [buildAlly("participant-ally-1")],
       });
@@ -301,9 +301,9 @@ describe("Initiative Lifecycle Part A — Active Ally notification fan-out consu
       );
 
       assert.equal(createdReminders.length, 1);
-      assert.equal(createdReminders[0]!.title, "Review Revision");
-      assert.ok(createdReminders[0]!.relatedUrl.endsWith("#revision"));
-      assert.equal(createdReminders[0]!.category, "revision");
+      assert.equal(createdReminders[0]!.title, "Review Petition");
+      assert.ok(createdReminders[0]!.relatedUrl.endsWith("#petition"));
+      assert.equal(createdReminders[0]!.category, "petition");
     });
 
     it("never generates a Reminder for the last stage in the lifecycle (no next stage)", async () => {

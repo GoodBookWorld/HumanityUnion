@@ -8,6 +8,7 @@ import type {
 
 import { listAnalysesByInitiativeAndAuthor } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { listCollectionsByInitiative } from "../initiative-improvement-proposals-stage/initiative-improvement-proposals-stage.store.js";
 import { listPublicInitiativeImprovementProposalsCollections } from "../initiative-improvement-proposals-stage/public-initiative-improvement-proposals-stage.projection.js";
 import { getRevisionDraftByInitiativeId } from "./initiative-version-revision.store.js";
 
@@ -53,36 +54,67 @@ function resolveAnalysisReference(
 }
 
 /**
- * Part 2 — "Published Improvement Proposals" + "Proposal IDs" +
- * "Proposal Authors". Sourced from Part D's already-public projection
- * (never the raw draft/ready statuses a visitor would never see) across
- * every Author who has published a proposals collection for this
- * Initiative — mirrors `adaptProposalStage`'s own canonical-record choice
- * (Part D), which is likewise not restricted to the Initiative steward.
+ * Part 2 — Improvement Proposals eligible to feed Revision changes.
+ * Includes published collections (public) and the Author's in-progress draft
+ * collection so Accept / Partial decisions can generate suggested Initiative
+ * text before the proposal collection itself is published.
  */
 async function listEligibleStructuredProposals(
   initiativeId: string,
 ): Promise<InitiativeRevisionEligibleStructuredProposal[]> {
-  const collections = await listPublicInitiativeImprovementProposalsCollections(initiativeId);
   const eligible: InitiativeRevisionEligibleStructuredProposal[] = [];
+  const seenProposalIds = new Set<string>();
+
+  function pushEligible(
+    collectionId: string,
+    proposal: {
+      proposalId: string;
+      title: string;
+      summary: string;
+      reason: string;
+      expectedImprovement: string;
+      status: string;
+      originalAuthorDisplayNames: readonly string[];
+      relatedDiscussionReferences: string;
+    },
+  ): void {
+    if (seenProposalIds.has(proposal.proposalId)) {
+      return;
+    }
+
+    if (proposal.status !== "published" && proposal.status !== "included_in_revision") {
+      return;
+    }
+
+    seenProposalIds.add(proposal.proposalId);
+    eligible.push({
+      proposalId: proposal.proposalId,
+      collectionId,
+      title: proposal.title,
+      summary: proposal.summary,
+      reason: proposal.reason,
+      expectedImprovement: proposal.expectedImprovement,
+      status: proposal.status,
+      originalAuthorDisplayNames: [...proposal.originalAuthorDisplayNames],
+      relatedDiscussionReferences: proposal.relatedDiscussionReferences,
+    });
+  }
+
+  const collections = await listPublicInitiativeImprovementProposalsCollections(initiativeId);
 
   for (const collection of collections) {
     for (const proposal of collection.proposals) {
-      if (proposal.status !== "published" && proposal.status !== "included_in_revision") {
-        continue;
-      }
+      pushEligible(collection.collectionId, proposal);
+    }
+  }
 
-      eligible.push({
-        proposalId: proposal.proposalId,
-        collectionId: collection.collectionId,
-        title: proposal.title,
-        summary: proposal.summary,
-        reason: proposal.reason,
-        expectedImprovement: proposal.expectedImprovement,
-        status: proposal.status,
-        originalAuthorDisplayNames: proposal.originalAuthorDisplayNames,
-        relatedDiscussionReferences: proposal.relatedDiscussionReferences,
-      });
+  for (const collection of await listCollectionsByInitiative(initiativeId)) {
+    if (collection.status !== "draft") {
+      continue;
+    }
+
+    for (const proposal of collection.proposals) {
+      pushEligible(collection.collectionId, proposal);
     }
   }
 

@@ -17,6 +17,7 @@ import {
   resolveInitiativeLifecycleProfile,
 } from "@hu/types";
 
+import { parseDiscussionCommentFocusFromHash } from "./discussion-comment-deep-link";
 import { isLifecycleStageSelectable } from "./lifecycle-stage-navigation";
 
 /** Display/navigation selection — never mutates lifecycle progression. */
@@ -24,7 +25,7 @@ export type LifecycleShellSelectedStageId = string;
 
 export type LifecycleShellHashResolution =
   | { kind: "manage" }
-  | { kind: "discussion_tab" }
+  | { kind: "discussion_tab"; focusCommentId?: string }
   | { kind: "collaboration"; tab: "channel" | "sessions" }
   | { kind: "lifecycle_stage"; stageId: string; hash: string; selectable: boolean }
   | { kind: "fallback_overview"; reason: "empty" | "invalid" | "locked" | "not_applicable" };
@@ -76,6 +77,8 @@ export function resolveLifecycleStageFromHash(hash: string): string | null {
  *
  * - `#discussion` opens the Center Discussion tab (reuses Center-tab contract;
  *   does not invent a second Discussion workspace).
+ * - `#comment-{commentId}` opens the same Discussion tab and focuses that
+ *   comment (Collaborative Analysis "View in Discussion" deep link).
  * - Lifecycle stage hashes open the stage panel when selectable.
  * - Invalid / locked / not_applicable hashes fall back to Overview (do not
  *   mutate currentStage; do not show false "missing" errors).
@@ -97,6 +100,11 @@ export function resolveLifecycleShellHash(
 
   if (normalized === "discussion") {
     return { kind: "discussion_tab" };
+  }
+
+  const focusCommentId = parseDiscussionCommentFocusFromHash(hash);
+  if (focusCommentId) {
+    return { kind: "discussion_tab", focusCommentId };
   }
 
   if (normalized === "collaboration-channel") {

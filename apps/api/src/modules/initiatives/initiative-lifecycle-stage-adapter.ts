@@ -7,7 +7,7 @@ import type {
   InitiativeLifecycleStageId,
 } from "@hu/types";
 
-import { listAnalysesByInitiativeAndAuthor } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
+import { resolveStewardCollaborativeAnalysisLifecycleProgress } from "../initiative-collaborative-analysis/initiative-collaborative-analysis-lifecycle-progress.js";
 import { buildInitiativeAnalysisSourceSnapshot } from "../initiative-collaborative-analysis/initiative-analysis-source-snapshot.service.js";
 import { buildInitiativeProposalIntelligenceSnapshot } from "../initiative-improvement-proposals-stage/initiative-proposal-intelligence.service.js";
 import { listPublicInitiativeCollectiveDecisionsForInitiative } from "../initiative-collective-decision/public-initiative-collective-decision.projection.js";
@@ -114,21 +114,33 @@ function adaptInitiativeRecordStage(initiative: Initiative): InitiativeLifecycle
  * left untouched; those are simply not this stage's canonical artifact).
  */
 async function adaptAnalysisStage(initiative: Initiative): Promise<InitiativeLifecycleStageAdapterResult> {
-  const authored = listAnalysesByInitiativeAndAuthor(initiative.initiativeId, initiative.stewardId);
-  const published = authored
-    .filter((analysis) => analysis.status === "published")
-    .sort((left, right) => (right.publishedAt ?? "").localeCompare(left.publishedAt ?? ""));
-  const latest = published[0] ?? null;
+  const progress = resolveStewardCollaborativeAnalysisLifecycleProgress(
+    initiative.initiativeId,
+    initiative.stewardId,
+  );
+  const latest = progress.latestPublished;
 
-  return latest
-    ? {
-        presentationStatus: "published",
-        hasPublicResult: true,
-        version: published.length,
-        publishedAt: latest.publishedAt ?? null,
-        publishedRecordId: latest.analysisId,
-      }
-    : EMPTY_RESULT;
+  if (latest) {
+    return {
+      presentationStatus: "published",
+      hasPublicResult: true,
+      version: progress.published.length,
+      publishedAt: latest.publishedAt ?? null,
+      publishedRecordId: latest.analysisId,
+    };
+  }
+
+  if (progress.hasDraft) {
+    return {
+      presentationStatus: "draft",
+      hasPublicResult: false,
+      version: null,
+      publishedAt: null,
+      publishedRecordId: null,
+    };
+  }
+
+  return EMPTY_RESULT;
 }
 
 /**
@@ -377,7 +389,8 @@ async function adaptOfficialResponseStage(
     return {
       presentationStatus: "published",
       hasPublicResult: true,
-      version: publishedPackage.responseIds.length,
+      // Explicit No Response completes the stage with zero response records.
+      version: Math.max(publishedPackage.responseIds.length, 1),
       publishedAt: publishedPackage.publishedAt,
       publishedRecordId: publishedPackage.packageId,
     };

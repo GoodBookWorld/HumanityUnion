@@ -24,6 +24,7 @@ export type InitiativeLifecycleStageId =
   | "discussion"
   | "analysis"
   | "proposal"
+  /** Content/history only — not a user-visible Lifecycle route stage. */
   | "revision"
   | "petition"
   | "decision_session"
@@ -127,21 +128,10 @@ export const INITIATIVE_LIFECYCLE_STAGE_REGISTRY: readonly InitiativeLifecycleSt
     aiAssistCapable: true,
   },
   {
-    stageId: "revision",
-    label: "Revision",
-    hash: "revision",
-    order: 4,
-    authorModeApplies: true,
-    supportsDraft: true,
-    supportsPublication: true,
-    hasPublicParticipationAction: false,
-    aiAssistCapable: true,
-  },
-  {
     stageId: "petition",
     label: "Petition",
     hash: "petition",
-    order: 5,
+    order: 4,
     authorModeApplies: true,
     supportsDraft: true,
     supportsPublication: true,
@@ -152,7 +142,7 @@ export const INITIATIVE_LIFECYCLE_STAGE_REGISTRY: readonly InitiativeLifecycleSt
     stageId: "decision_session",
     label: "Decision Session",
     hash: "decision-session",
-    order: 6,
+    order: 5,
     authorModeApplies: true,
     supportsDraft: true,
     supportsPublication: true,
@@ -163,7 +153,7 @@ export const INITIATIVE_LIFECYCLE_STAGE_REGISTRY: readonly InitiativeLifecycleSt
     stageId: "collective_decision",
     label: "Collective Decision",
     hash: "collective-decision",
-    order: 7,
+    order: 6,
     authorModeApplies: true,
     supportsDraft: true,
     supportsPublication: true,
@@ -174,7 +164,7 @@ export const INITIATIVE_LIFECYCLE_STAGE_REGISTRY: readonly InitiativeLifecycleSt
     stageId: "commitment",
     label: "Implementation Commitments",
     hash: "implementation-commitments",
-    order: 8,
+    order: 7,
     authorModeApplies: true,
     supportsDraft: true,
     supportsPublication: true,
@@ -185,7 +175,7 @@ export const INITIATIVE_LIFECYCLE_STAGE_REGISTRY: readonly InitiativeLifecycleSt
     stageId: "tracking",
     label: "Implementation Tracking",
     hash: "implementation-tracking",
-    order: 9,
+    order: 8,
     authorModeApplies: true,
     supportsDraft: true,
     supportsPublication: true,
@@ -196,7 +186,7 @@ export const INITIATIVE_LIFECYCLE_STAGE_REGISTRY: readonly InitiativeLifecycleSt
     stageId: "official_response",
     label: "Official Responses",
     hash: "official-responses",
-    order: 10,
+    order: 9,
     authorModeApplies: true,
     supportsDraft: true,
     supportsPublication: true,
@@ -207,7 +197,7 @@ export const INITIATIVE_LIFECYCLE_STAGE_REGISTRY: readonly InitiativeLifecycleSt
     stageId: "public_impact",
     label: "Public Impact",
     hash: "public-impact",
-    order: 11,
+    order: 10,
     authorModeApplies: true,
     supportsDraft: true,
     supportsPublication: true,
@@ -218,7 +208,7 @@ export const INITIATIVE_LIFECYCLE_STAGE_REGISTRY: readonly InitiativeLifecycleSt
     stageId: "archive",
     label: "Civic Archive",
     hash: "civic-archive",
-    order: 12,
+    order: 11,
     authorModeApplies: true,
     supportsDraft: true,
     supportsPublication: true,

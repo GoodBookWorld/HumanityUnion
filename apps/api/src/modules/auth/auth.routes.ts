@@ -232,9 +232,11 @@ authRouter.post("/register", registerRateLimit, async (req, res) => {
         createSuccessResponse(
           {
             emailConfirmationRequired: true,
+            emailSent: result.confirmation.emailSent,
             maskedEmail: result.confirmation.maskedEmail,
             resendAvailableAt: result.confirmation.resendAvailableAt,
             pendingConfirmationToken: result.confirmation.pendingConfirmationToken,
+            emailDeliveryError: result.confirmation.emailDeliveryError,
           },
           "Registration accepted. Email confirmation required.",
         ),
@@ -281,9 +283,11 @@ authRouter.post("/login", loginRateLimit, async (req, res) => {
         createSuccessResponse(
           {
             emailConfirmationRequired: true,
+            emailSent: result.confirmation.emailSent,
             maskedEmail: result.confirmation.maskedEmail,
             resendAvailableAt: result.confirmation.resendAvailableAt,
             pendingConfirmationToken: result.confirmation.pendingConfirmationToken,
+            emailDeliveryError: result.confirmation.emailDeliveryError,
           },
           "Email confirmation required.",
         ),
@@ -299,11 +303,15 @@ authRouter.post("/login", loginRateLimit, async (req, res) => {
           {
             authenticationComplete: false,
             twoStepRequired: true,
+            emailSent: result.challenge.emailSent,
             maskedEmail: result.challenge.maskedEmail,
             resendAvailableAt: result.challenge.resendAvailableAt,
             challengeToken: result.challenge.challengeToken,
+            emailDeliveryError: result.challenge.emailDeliveryError,
           },
-          "Two-Step Login required.",
+          result.challenge.emailSent
+            ? "Two-Step Login required."
+            : "Two-Step Login required, but the login code email could not be sent.",
         ),
       );
       return;

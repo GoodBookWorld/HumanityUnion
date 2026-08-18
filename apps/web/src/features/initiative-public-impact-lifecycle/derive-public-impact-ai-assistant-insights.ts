@@ -11,13 +11,15 @@ export interface PublicImpactAiAssistantInsights {
   duplicatedClaimWarnings: string[];
   missingInstitutionOutcomeWarnings: string[];
   clarityWarnings: string[];
+  advisoryNotes: string[];
 }
 
 /**
  * Initiative Lifecycle — Part L, Section 9. Advisory-only derived
  * insights — never itself judges success/failure, never invents
- * achievements, and never edits section bodies. Every field it inspects
- * mirrors what the Author can already see and edit directly in the Editor.
+ * achievements, and never edits section bodies. AI cannot publish or
+ * advance Lifecycle. Missing evidence yields uncertainty warnings, not
+ * invent-or-block instructions.
  */
 export function derivePublicImpactAiAssistantInsights(
   snapshot: InitiativePublicImpactIntelligenceSnapshot,
@@ -29,20 +31,26 @@ export function derivePublicImpactAiAssistantInsights(
   const duplicatedClaimWarnings: string[] = [];
   const missingInstitutionOutcomeWarnings: string[] = [];
   const clarityWarnings: string[] = [];
+  const advisoryNotes: string[] = [];
 
   if (!snapshot.officialResponsePackageReference) {
     missingEvidenceWarnings.push(
       "Publish an Official Response Package before generating Public Impact.",
     );
+  } else if (snapshot.officialResponsePackageReference.outcomeKind === "no_official_response_received") {
+    advisoryNotes.push(
+      "Official Responses published No official response received — treat that as a factual outcome. Do not invent institutional replies.",
+    );
   }
 
   if (snapshot.evidenceItems.length === 0) {
     missingEvidenceWarnings.push(
-      "No evidence references are visible yet from Tracking or Official Responses.",
+      "No evidence references are visible yet from Tracking or Official Responses — keep uncertainty explicit; do not fabricate evidence. This does not block Publish.",
     );
   }
 
   if (
+    snapshot.officialResponsePackageReference?.outcomeKind !== "no_official_response_received" &&
     snapshot.officialResponseSummaries.some(
       (response) => !response.institution.trim() && !response.organization.trim(),
     )
@@ -53,10 +61,17 @@ export function derivePublicImpactAiAssistantInsights(
   }
 
   if (
+    snapshot.officialResponsePackageReference?.outcomeKind !== "no_official_response_received" &&
     snapshot.officialResponseSummaries.some((response) => !response.summary.trim())
   ) {
     missingInstitutionOutcomeWarnings.push(
       "One or more Official Responses still lack an outcome summary.",
+    );
+  }
+
+  if (snapshot.completedCommitmentCount === 0 && snapshot.trackingRecords.every((t) => t.status !== "completed")) {
+    advisoryNotes.push(
+      "Little or no measurable completion is visible — a valid Author conclusion may be: no measurable impact yet, implementation incomplete, or outcome not achieved.",
     );
   }
 
@@ -131,10 +146,18 @@ export function derivePublicImpactAiAssistantInsights(
     }
   }
 
+  advisoryNotes.push(
+    "AI suggestions are advisory only — separate confirmed facts from assumptions. AI cannot invent results, publish, or advance Lifecycle.",
+  );
+
+  const officialLabel = snapshot.officialResponsePackageReference
+    ? snapshot.officialResponsePackageReference.outcomeKind === "no_official_response_received"
+      ? `Official Responses "${snapshot.officialResponsePackageReference.title}" (No official response received)`
+      : `Official Responses "${snapshot.officialResponsePackageReference.title}"`
+    : null;
+
   const sourcesUsedSummary = [
-    snapshot.officialResponsePackageReference
-      ? `Official Responses "${snapshot.officialResponsePackageReference.title}"`
-      : null,
+    officialLabel,
     snapshot.trackingPackageReference
       ? `Tracking Package "${snapshot.trackingPackageReference.title}"`
       : null,
@@ -152,5 +175,6 @@ export function derivePublicImpactAiAssistantInsights(
     duplicatedClaimWarnings,
     missingInstitutionOutcomeWarnings,
     clarityWarnings,
+    advisoryNotes,
   };
 }

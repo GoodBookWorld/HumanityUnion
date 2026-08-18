@@ -10,6 +10,7 @@ import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { listActiveAlliesByInitiative } from "../initiative-discussion-collaboration/initiative-ally.store.js";
 import { listCommitmentsByInitiative } from "../initiative-implementation-commitment/initiative-implementation-commitment.store.js";
 import { getPackageByInitiativeId as getCommitmentPackageByInitiativeId } from "../initiative-implementation-commitment-lifecycle/initiative-implementation-commitment-package.store.js";
+import { listDecisionsByInitiative } from "../initiative-collective-decision/initiative-collective-decision.store.js";
 
 function toCommitmentReference(
   commitment: InitiativeImplementationCommitment,
@@ -33,9 +34,23 @@ function toCommitmentReference(
   };
 }
 
+function resolveDecisionApprovedActions(initiativeId: string): string[] {
+  const closed = listDecisionsByInitiative(initiativeId)
+    .filter((decision) => decision.status === "closed")
+    .sort((left, right) => (right.closedAt ?? right.updatedAt).localeCompare(left.closedAt ?? left.updatedAt));
+
+  const latest = closed[0];
+  if (!latest?.structuredContent?.approvedActions?.length) {
+    return [];
+  }
+
+  return [...latest.structuredContent.approvedActions];
+}
+
 function buildConsistencyChecks(input: {
   packageReference: InitiativeImplementationTrackingPackageReference | null;
   acceptedCommitments: readonly InitiativeImplementationTrackingCommitmentReference[];
+  decisionApprovedActions: readonly string[];
 }): readonly InitiativeImplementationTrackingConsistencyCheck[] {
   const checks: InitiativeImplementationTrackingConsistencyCheck[] = [];
 
@@ -45,13 +60,14 @@ function buildConsistencyChecks(input: {
           checkId: "commitment-package-available",
           label: "Published Commitment Package",
           status: "ok",
-          detail: `Implementation Commitments "${input.packageReference.title}" are available as the Tracking source.`,
+          detail: `Implementation Commitments "${input.packageReference.title}" are available as Tracking source data.`,
         }
       : {
           checkId: "commitment-package-available",
           label: "Published Commitment Package",
           status: "warning",
-          detail: "A published Implementation Commitment Package is required before Implementation Tracking can be generated.",
+          detail:
+            "No published Commitment Package yet — Tracking can still generate from Collective Decision / Initiative scope with Unassigned ownership.",
         },
   );
 
@@ -61,13 +77,30 @@ function buildConsistencyChecks(input: {
           checkId: "accepted-commitments-available",
           label: "Accepted Commitments",
           status: "ok",
-          detail: `${input.acceptedCommitments.length} Accepted Commitment(s) are available from the Commitment Package.`,
+          detail: `${input.acceptedCommitments.length} Accepted Commitment(s) will populate assignees and context.`,
         }
       : {
           checkId: "accepted-commitments-available",
           label: "Accepted Commitments",
           status: "warning",
-          detail: "No Commitment has been Accepted by its proposed Participant yet.",
+          detail:
+            "No Accepted Commitments yet — plan milestones remain Unassigned / To be determined. Lifecycle does not block.",
+        },
+  );
+
+  checks.push(
+    input.decisionApprovedActions.length > 0
+      ? {
+          checkId: "decision-actions-available",
+          label: "Collective Decision Actions",
+          status: "ok",
+          detail: `${input.decisionApprovedActions.length} approved Decision action(s) available for automatic plan milestones.`,
+        }
+      : {
+          checkId: "decision-actions-available",
+          label: "Collective Decision Actions",
+          status: "warning",
+          detail: "No closed Collective Decision approved actions found — Initiative scope will seed the plan.",
         },
   );
 
@@ -86,45 +119,7 @@ function buildConsistencyChecks(input: {
           checkId: "timelines-visible",
           label: "Timelines",
           status: "warning",
-          detail: "No Accepted Commitment carries an expected completion date yet.",
-        },
-  );
-
-  const withResources = input.acceptedCommitments.filter(
-    (commitment) => commitment.requiredResources.length > 0,
-  );
-  checks.push(
-    withResources.length > 0
-      ? {
-          checkId: "resources-visible",
-          label: "Required Resources",
-          status: "ok",
-          detail: `${withResources.length} Accepted Commitment(s) carry Required Resources.`,
-        }
-      : {
-          checkId: "resources-visible",
-          label: "Required Resources",
-          status: "warning",
-          detail: "No Accepted Commitment carries Required Resources yet.",
-        },
-  );
-
-  const withRisks = input.acceptedCommitments.filter(
-    (commitment) => commitment.relatedRisks.length > 0,
-  );
-  checks.push(
-    withRisks.length > 0
-      ? {
-          checkId: "risks-visible",
-          label: "Related Risks",
-          status: "ok",
-          detail: `${withRisks.length} Accepted Commitment(s) carry Related Risks to watch during Tracking.`,
-        }
-      : {
-          checkId: "risks-visible",
-          label: "Related Risks",
-          status: "warning",
-          detail: "No Accepted Commitment carries Related Risks yet.",
+          detail: "No expected completion dates from Accepted Commitments — Author sets target dates.",
         },
   );
 
@@ -132,16 +127,13 @@ function buildConsistencyChecks(input: {
 }
 
 /**
- * Initiative Lifecycle — Part J, Section 2/9. Read-only aggregation of the
- * published Implementation Commitment Package (Part I) and its Accepted
- * Commitments — Tracking's one mandatory source unit. Never mutates a
- * Commitment and never itself makes an AI decision.
+ * Initiative Lifecycle — Part J, Section 2/9. Read-only aggregation for
+ * Tracking plan generation. Accepted Commitments are preferred source data
+ * but are NOT required — zero-commitment Author path remains open.
  */
 export async function buildInitiativeImplementationTrackingIntelligenceSnapshot(
   initiativeId: string,
 ): Promise<InitiativeImplementationTrackingIntelligenceSnapshot> {
-  // Mirror Implementation Commitment Intelligence: degrade gracefully when
-  // the Initiative is not yet readable from the store.
   const initiative = getInitiativeById(initiativeId);
   const commitmentPackage = getCommitmentPackageByInitiativeId(initiativeId);
   const commitments = listCommitmentsByInitiative(initiativeId);
@@ -162,6 +154,8 @@ export async function buildInitiativeImplementationTrackingIntelligenceSnapshot(
       }
     : null;
 
+  const decisionApprovedActions = resolveDecisionApprovedActions(initiativeId);
+
   let activeAllyCount = 0;
   try {
     activeAllyCount = (await listActiveAlliesByInitiative(initiativeId)).length;
@@ -169,7 +163,11 @@ export async function buildInitiativeImplementationTrackingIntelligenceSnapshot(
     activeAllyCount = 0;
   }
 
-  const consistencyChecks = buildConsistencyChecks({ packageReference, acceptedCommitments });
+  const consistencyChecks = buildConsistencyChecks({
+    packageReference,
+    acceptedCommitments,
+    decisionApprovedActions,
+  });
   const isCommitmentPackageAvailable = commitmentPackage !== null && acceptedCommitments.length > 0;
 
   return {
@@ -179,9 +177,10 @@ export async function buildInitiativeImplementationTrackingIntelligenceSnapshot(
     initiativeDescription: initiative?.description ?? "",
     packageReference,
     acceptedCommitments,
+    decisionApprovedActions,
     activeAllyCount,
     consistencyChecks,
     isCommitmentPackageAvailable,
-    isEmpty: !initiative || !isCommitmentPackageAvailable,
+    isEmpty: !initiative,
   };
 }

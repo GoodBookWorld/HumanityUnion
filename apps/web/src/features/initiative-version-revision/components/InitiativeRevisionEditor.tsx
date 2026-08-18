@@ -22,6 +22,11 @@ interface InitiativeRevisionEditorProps {
   readonly onDraftUpdated: (draft: InitiativeRevisionDraft) => void;
   readonly onPublished: () => void;
   readonly onTogglePreview: () => void;
+  /**
+   * When true, this editor is hosted inside Improvement Proposals Author stage.
+   * Commit creates the progress version but does not complete the proposal stage.
+   */
+  readonly embeddedInProposals?: boolean;
 }
 
 /**
@@ -40,6 +45,7 @@ export function InitiativeRevisionEditor({
   onDraftUpdated,
   onPublished,
   onTogglePreview,
+  embeddedInProposals = false,
 }: InitiativeRevisionEditorProps) {
   const [title, setTitle] = useState(draft.title);
   const [description, setDescription] = useState(draft.description);
@@ -114,16 +120,16 @@ export function InitiativeRevisionEditor({
     if (missing.length > 0) {
       setMessage({
         tone: "error",
-        text: `Publish blocked — complete required fields first: ${missing.join("; ")}.`,
+        text: `Commit blocked — complete required fields first: ${missing.join("; ")}.`,
       });
       return;
     }
 
-    if (
-      !window.confirm(
-        "Publishing creates a new Initiative version, notifies every Active Ally, and unlocks the Petition stage. Continue?",
-      )
-    ) {
+    const confirmMessage = embeddedInProposals
+      ? "Commit creates a new Initiative progress version and preserves version history. Improvement Proposals are not completed until you Publish & Continue to Petition. Continue?"
+      : "Publishing creates a new Initiative version, notifies every Active Ally, and unlocks the Petition stage. Continue?";
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
@@ -136,18 +142,27 @@ export function InitiativeRevisionEditor({
       }
 
       await publishPhase.runSave(() => publishInitiativeRevision(initiativeId));
-      setMessage({ tone: "success", text: "Revision published. Active Allies have been notified." });
+      setMessage({
+        tone: "success",
+        text: embeddedInProposals
+          ? "Initiative version committed. Publish & Continue to Petition when ready."
+          : "Revision published. Active Allies have been notified.",
+      });
       onPublished();
     } catch (error) {
       const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Publish failed: ${detail}` });
+      setMessage({ tone: "error", text: `Commit failed: ${detail}` });
     }
   }
 
   return (
     <div className="irv-editor" aria-labelledby="irv-editor-title">
       <div className="irv-editor__header">
-        <h3 id="irv-editor-title">Revision Draft — current version {context.currentVersion || 1}</h3>
+        <h3 id="irv-editor-title">
+          {embeddedInProposals
+            ? `Updated Initiative Version — current version ${context.currentVersion || 1}`
+            : `Revision Draft — current version ${context.currentVersion || 1}`}
+        </h3>
       </div>
 
       <div className="irv-editor__header-actions">
@@ -165,13 +180,16 @@ export function InitiativeRevisionEditor({
           disabled={isBusy || unresolvedPublishRequirements().length > 0}
           onClick={() => void handlePublish()}
         >
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish Revision")}
+          {resolveSaveButtonLabel(
+            publishPhase.phase,
+            embeddedInProposals ? "Commit Updated Initiative Version" : "Publish Revision",
+          )}
         </WorkspaceButton>
       </div>
 
       {unresolvedPublishRequirements().length > 0 ? (
         <p className="irv-editor__message" data-tone="error" role="status">
-          Required before Publish: {unresolvedPublishRequirements().join("; ")}.
+          Required before Commit: {unresolvedPublishRequirements().join("; ")}.
         </p>
       ) : null}
 

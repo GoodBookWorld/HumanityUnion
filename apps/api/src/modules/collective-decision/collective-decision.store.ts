@@ -27,7 +27,9 @@ const decisions = new Map<string, CollectiveDecision>([
   [bootstrapCollectiveDecision.decisionId, structuredClone(bootstrapCollectiveDecision)],
 ]);
 
-void refreshDerivedState(decisions.get(bootstrapCollectiveDecision.decisionId)!);
+void refreshDerivedState(decisions.get(bootstrapCollectiveDecision.decisionId)!).catch(() => {
+  // Bootstrap statistics may be unavailable when Mongo is offline (unit tests).
+});
 
 async function refreshDerivedState(decision: CollectiveDecision): Promise<void> {
   decision.statistics = await calculateDecisionStatistics(decision);

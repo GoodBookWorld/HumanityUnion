@@ -95,24 +95,12 @@ export function InitiativeImplementationTrackingAuthorWorkspace({
     );
   }
 
-  if (!context.intelligenceSnapshot.isCommitmentPackageAvailable) {
-    return (
-      <div className="lsw-main">
-        <InitiativeImplementationTrackingIntelligenceSnapshotPanel
-          snapshot={context.intelligenceSnapshot}
-        />
-        <p className="iit-source-panel__empty">
-          At least one Accepted Implementation Commitment is required before generating Implementation
-          Tracking.
-        </p>
-      </div>
-    );
-  }
-
   const hasContent = Boolean(
     context.draft &&
       (context.draft.title.trim() || context.draft.summary.trim() || context.draft.candidates.length > 0),
   );
+
+  const zeroCommitmentHint = !context.intelligenceSnapshot.isCommitmentPackageAvailable;
 
   return (
     <div className="lsw-main">
@@ -131,9 +119,16 @@ export function InitiativeImplementationTrackingAuthorWorkspace({
       {!hasContent || !context.draft ? (
         <div className="iit-editor">
           <p className="iit-source-panel__empty">
-            Generate Tracking Candidates from the published Implementation Commitments&rsquo; Accepted
-            Commitments. The Implementation Assistant remains advisory — nothing publishes automatically.
+            Generate an initial implementation plan from Collective Decision results, Implementation
+            Commitments (when accepted), and Initiative scope. With zero accepted commitments,
+            milestones are created as Unassigned / To be determined — Lifecycle does not block.
+            The Assistant remains advisory and never publishes.
           </p>
+          {zeroCommitmentHint ? (
+            <p className="iit-source-panel__empty">
+              No Accepted Commitments yet — Generate will still produce an editable plan.
+            </p>
+          ) : null}
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
             {resolveSaveButtonLabel(generatePhase.phase, "Generate Implementation Tracking Draft")}
           </WorkspaceButton>

@@ -58,6 +58,7 @@ function buildSnapshot(
         publishedAt: "2026-08-06T00:00:00.000Z",
       },
     ],
+    decisionApprovedActions: ["Pilot in two districts first", "Publish a community update"],
     activeAllyCount: 2,
     consistencyChecks: [],
     isCommitmentPackageAvailable: true,
@@ -89,6 +90,14 @@ describe("generateImplementationTrackingDraftContent (Tracking Candidate Builder
     assert.equal(content.candidates[1]!.commitmentId, "commitment-2");
   });
 
+  it("accepted commitments populate assignees and context", async () => {
+    const content = await generateImplementationTrackingDraftContent(buildSnapshot());
+    assert.equal(content.candidates[0]!.responsibleParticipantId, "ally-1");
+    assert.equal(content.candidates[0]!.title, "Pilot in two districts first");
+    assert.deepEqual(content.candidates[0]!.obstacles, ["Insufficient municipal budget"]);
+    assert.equal(content.candidates[0]!.targetDate, "2026-12-01");
+  });
+
   it("never invents a Commitment beyond the snapshot's own acceptedCommitments list", async () => {
     const content = await generateImplementationTrackingDraftContent(buildSnapshot());
     const acceptedCommitmentIds = new Set(
@@ -105,35 +114,17 @@ describe("generateImplementationTrackingDraftContent (Tracking Candidate Builder
     assert.equal(content.candidates[1]!.candidateId, "tracking-candidate-1");
   });
 
-  it("initializes every Candidate to Preparation with 0% progress and no dates", async () => {
+  it("initializes every Candidate to Preparation with 0% progress", async () => {
     const content = await generateImplementationTrackingDraftContent(buildSnapshot());
     for (const candidate of content.candidates) {
       assert.equal(candidate.currentStatus, "Preparation");
       assert.equal(candidate.progress, 0);
+      assert.equal(candidate.plannedStartDate, null);
       assert.equal(candidate.startedDate, null);
       assert.equal(candidate.completedDate, null);
       assert.deepEqual(candidate.dependencies, []);
       assert.deepEqual(candidate.evidenceReferences, []);
-      assert.equal(candidate.notes, "");
     }
-  });
-
-  it("carries the Commitment's expectedCompletionDate onto the Candidate's targetDate", async () => {
-    const content = await generateImplementationTrackingDraftContent(buildSnapshot());
-    assert.equal(content.candidates[0]!.targetDate, "2026-12-01");
-    assert.equal(content.candidates[1]!.targetDate, null);
-  });
-
-  it("carries the Commitment's relatedRisks onto the Candidate's obstacles as a starting watchlist", async () => {
-    const content = await generateImplementationTrackingDraftContent(buildSnapshot());
-    assert.deepEqual(content.candidates[0]!.obstacles, ["Insufficient municipal budget"]);
-    assert.deepEqual(content.candidates[1]!.obstacles, []);
-  });
-
-  it("carries the Commitment's approvedAction and participantId onto the Candidate", async () => {
-    const content = await generateImplementationTrackingDraftContent(buildSnapshot());
-    assert.equal(content.candidates[0]!.approvedAction, "Pilot in two districts first");
-    assert.equal(content.candidates[0]!.responsibleParticipantId, "ally-1");
   });
 
   it("produces byte-identical output for the same snapshot on every call (deterministic)", async () => {
@@ -143,27 +134,35 @@ describe("generateImplementationTrackingDraftContent (Tracking Candidate Builder
     assert.deepEqual(first, second);
   });
 
-  it("never invents any content when no Commitment Package is available", async () => {
+  it("zero commitments → plan generated from Decision approved actions (Unassigned)", async () => {
+    const content = await generateImplementationTrackingDraftContent(
+      buildSnapshot({
+        acceptedCommitments: [],
+        isCommitmentPackageAvailable: false,
+        decisionApprovedActions: ["Fund compost bins", "Train volunteers"],
+      }),
+    );
+    assert.equal(content.candidates.length, 2);
+    assert.equal(content.candidates[0]!.commitmentId, "");
+    assert.equal(content.candidates[0]!.responsibleParticipantId, "");
+    assert.equal(content.candidates[0]!.title, "Fund compost bins");
+    assert.equal(content.candidates[1]!.title, "Train volunteers");
+  });
+
+  it("zero commitments and no Decision actions → seeds Initiative-scope Unassigned milestone", async () => {
     const content = await generateImplementationTrackingDraftContent(
       buildSnapshot({
         packageReference: null,
         acceptedCommitments: [],
+        decisionApprovedActions: [],
         isCommitmentPackageAvailable: false,
-        isEmpty: true,
+        isEmpty: false,
       }),
     );
-    assert.equal(content.summary, "");
-    assert.equal(content.packageId, null);
-    assert.deepEqual(content.candidates, []);
-  });
-
-  it("never invents any content when a Commitment Package exists but has no Accepted Commitments", async () => {
-    const content = await generateImplementationTrackingDraftContent(
-      buildSnapshot({
-        acceptedCommitments: [],
-        isCommitmentPackageAvailable: false,
-      }),
-    );
-    assert.deepEqual(content.candidates, []);
+    assert.equal(content.candidates.length, 1);
+    assert.equal(content.candidates[0]!.commitmentId, "");
+    assert.equal(content.candidates[0]!.responsibleParticipantId, "");
+    assert.match(content.candidates[0]!.title, /Community Compost Network/);
+    assert.ok(content.candidates[0]!.description.includes("Build neighborhood compost hubs"));
   });
 });

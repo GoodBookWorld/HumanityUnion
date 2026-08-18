@@ -68,6 +68,12 @@ function buildSnapshot(
       trackingPackageId: "tracking-package-1",
       decisionId: "decision-1",
       publishedAt: "2026-08-07T00:00:00.000Z",
+      outcomeKind: "responses_received",
+      noResponseDetail: {
+        contactedOrganizations: [],
+        contactedDates: [],
+        note: "",
+      },
     },
     trackingRecords: [
       {
@@ -233,6 +239,51 @@ describe("generatePublicImpactDraftContent (Impact Builder)", () => {
     assert.equal(content.sections.length, 11);
     assert.ok(content.sections.every((section) => section.body === ""));
     assert.ok(content.sections.every((section) => section.evidenceReferences.length === 0));
+  });
+
+  it("includes No official response received as a factual outcome", async () => {
+    const content = await generatePublicImpactDraftContent(
+      buildSnapshot({
+        officialResponsePackageReference: {
+          packageId: "official-response-package-1",
+          title: "Official Responses: Community Compost Network",
+          summary: "No reply after outreach.",
+          responseIds: [],
+          trackingPackageId: "tracking-package-1",
+          decisionId: "decision-1",
+          publishedAt: "2026-08-07T00:00:00.000Z",
+          outcomeKind: "no_official_response_received",
+          noResponseDetail: {
+            contactedOrganizations: ["City Hall"],
+            contactedDates: ["2026-08-01"],
+            note: "Two follow-ups; no reply.",
+          },
+        },
+        officialResponseSummaries: [],
+      }),
+    );
+    const official = content.sections.find((section) => section.sectionId === "official_responses");
+    const executive = content.sections.find((section) => section.sectionId === "executive_summary");
+    assert.ok(official?.body.includes("No official response received"));
+    assert.ok(official?.body.includes("City Hall"));
+    assert.ok(!/no response summaries loaded/i.test(official?.body ?? ""));
+    assert.ok(!/unavailable|not started/i.test(official?.body ?? ""));
+    assert.ok(executive?.body.includes("No official response received"));
+  });
+
+  it("zero measurable completion remains a publishable draft conclusion", async () => {
+    const content = await generatePublicImpactDraftContent(
+      buildSnapshot({
+        trackingRecords: [],
+        completedCommitmentCount: 0,
+        evidenceItems: ["official-response-package-1", "tracking-package-1"],
+      }),
+    );
+    const executive = content.sections.find((section) => section.sectionId === "executive_summary");
+    const confirmed = content.sections.find((section) => section.sectionId === "completed_commitments");
+    assert.ok(executive?.body.includes("no measurable impact yet") || executive?.body.includes("incomplete"));
+    assert.ok(confirmed?.body.includes("none yet") || confirmed?.body.includes("No Tracking Records"));
+    assert.ok(executive?.evidenceReferences.length >= 1);
   });
 
   it("lists Approved Actions only when present on Tracking Records", async () => {

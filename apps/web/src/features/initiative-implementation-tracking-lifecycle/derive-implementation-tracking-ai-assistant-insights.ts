@@ -37,14 +37,20 @@ export function deriveImplementationTrackingAiAssistantInsights(
 
   if (!snapshot.packageReference) {
     missingCommitmentPackageWarnings.push(
-      "Publish Implementation Commitments before generating Implementation Tracking.",
+      "No Commitment Package yet — Generate still works from Collective Decision / Initiative scope.",
+    );
+  }
+
+  if (snapshot.acceptedCommitments.length === 0) {
+    missingCommitmentPackageWarnings.push(
+      "No Accepted Commitments — milestones stay Unassigned until Author assigns responsible parties. AI never auto-assigns Participants.",
     );
   }
 
   if (draft) {
     if (draft.candidates.length === 0) {
       missingCommitmentPackageWarnings.push(
-        "No Tracking Candidates yet — generate a draft from the Accepted Commitments.",
+        "No Tracking milestones yet — generate a draft from Decision / Commitments / Initiative scope.",
       );
     }
 
@@ -58,12 +64,12 @@ export function deriveImplementationTrackingAiAssistantInsights(
         candidate.progress < 100,
     );
     if (overdue.length > 0) {
-      overdueWarnings.push(`${overdue.length} Candidate(s) are past their target date.`);
+      overdueWarnings.push(`${overdue.length} milestone(s) are past their target date — review dates.`);
     }
 
     const blocked = draft.candidates.filter((candidate) => candidate.obstacles.length > 0);
     if (blocked.length > 0) {
-      blockedWarnings.push(`${blocked.length} Candidate(s) list unresolved Obstacles.`);
+      blockedWarnings.push(`${blocked.length} milestone(s) list unresolved risks/obstacles.`);
     }
 
     const missingEvidence = draft.candidates.filter(
@@ -71,7 +77,7 @@ export function deriveImplementationTrackingAiAssistantInsights(
     );
     if (missingEvidence.length > 0) {
       missingEvidenceWarnings.push(
-        `${missingEvidence.length} Candidate(s) report 100% progress with no Evidence Reference yet.`,
+        `${missingEvidence.length} milestone(s) report 100% progress with no evidence yet.`,
       );
     }
 
@@ -79,13 +85,20 @@ export function deriveImplementationTrackingAiAssistantInsights(
       (candidate) => candidate.progress === 0 && candidate.currentStatus === "Preparation",
     );
     if (stalled.length > 0) {
-      stalledWarnings.push(`${stalled.length} Candidate(s) have not been started yet.`);
+      stalledWarnings.push(`${stalled.length} milestone(s) have not been started yet.`);
     }
 
     const missingTargetDate = draft.candidates.filter((candidate) => !candidate.targetDate);
     if (missingTargetDate.length > 0) {
       timelineConflictWarnings.push(
-        `${missingTargetDate.length} Candidate(s) have no target date set.`,
+        `${missingTargetDate.length} milestone(s) have no target date — set dates carefully; AI never finalizes them.`,
+      );
+    }
+
+    const unassigned = draft.candidates.filter((candidate) => !candidate.responsibleParticipantId.trim());
+    if (unassigned.length > 0) {
+      clarityWarnings.push(
+        `${unassigned.length} milestone(s) are Unassigned — assign only known responsible parties.`,
       );
     }
 
@@ -94,7 +107,7 @@ export function deriveImplementationTrackingAiAssistantInsights(
     }
 
     if (!draft.summary.trim()) {
-      clarityWarnings.push("Summary is empty — restate the Commitment Package's implementation intent.");
+      clarityWarnings.push("Summary is empty — restate the implementation intent.");
     }
   }
 
@@ -107,13 +120,14 @@ export function deriveImplementationTrackingAiAssistantInsights(
   const sourcesUsedSummary = [
     snapshot.packageReference ? `Commitment Package "${snapshot.packageReference.title}"` : null,
     `${snapshot.acceptedCommitments.length} Accepted Commitment(s)`,
+    `${snapshot.decisionApprovedActions.length} Decision action(s)`,
     `${snapshot.activeAllyCount} Active Ally(ies)`,
   ]
     .filter(Boolean)
     .join(" · ");
 
   return {
-    sourcesUsedSummary: sourcesUsedSummary || "No Implementation Tracking Sources available yet.",
+    sourcesUsedSummary: sourcesUsedSummary || "Initiative scope available for automatic plan generation.",
     missingCommitmentPackageWarnings,
     overdueWarnings,
     blockedWarnings,
