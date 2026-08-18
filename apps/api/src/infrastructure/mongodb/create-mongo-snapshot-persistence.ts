@@ -20,11 +20,21 @@ interface RecordMapBinding<TSnapshot extends { version: 1 }> {
 export function createMongoSnapshotPersistence<TSnapshot extends { version: 1 }>(config: {
   createEmpty: () => TSnapshot;
   bindings: RecordMapBinding<TSnapshot>[];
+  /**
+   * Test seam / optional override. Defaults to writing each binding via
+   * replaceRecordMap. Production callers omit this.
+   */
+  persistSnapshot?: (snapshot: TSnapshot) => Promise<void>;
 }): MongoSnapshotPersistenceHandles<TSnapshot> {
   let cache: TSnapshot = config.createEmpty();
   let pendingWrite: Promise<void> | null = null;
+  let lastPersistError: Error | null = null;
 
   async function persistSnapshot(snapshot: TSnapshot): Promise<void> {
+    if (config.persistSnapshot) {
+      await config.persistSnapshot(snapshot);
+      return;
+    }
     for (const binding of config.bindings) {
       await replaceRecordMap(binding.collectionName, binding.select(snapshot), binding.idField);
     }
@@ -40,10 +50,18 @@ export function createMongoSnapshotPersistence<TSnapshot extends { version: 1 }>
         cache = structuredClone(snapshot);
         // Chain writes so a later save never drops an in-flight earlier persist
         // (flush must observe every queued write before disconnect/reconnect).
+        // CRITICAL: catch at the end so a failed background persist never becomes an
+        // unhandledRejection that crashes the process before verification dispose().
         const snapshotToPersist = cache;
         pendingWrite = (pendingWrite ?? Promise.resolve())
           .catch(() => undefined)
-          .then(() => persistSnapshot(snapshotToPersist));
+          .then(() => persistSnapshot(snapshotToPersist))
+          .then(() => {
+            lastPersistError = null;
+          })
+          .catch((error: unknown) => {
+            lastPersistError = error instanceof Error ? error : new Error(String(error));
+          });
       },
     },
     async hydrate(): Promise<void> {
@@ -60,6 +78,11 @@ export function createMongoSnapshotPersistence<TSnapshot extends { version: 1 }>
       if (pendingWrite) {
         await pendingWrite;
         pendingWrite = null;
+      }
+      if (lastPersistError) {
+        const error = lastPersistError;
+        lastPersistError = null;
+        throw error;
       }
     },
   };

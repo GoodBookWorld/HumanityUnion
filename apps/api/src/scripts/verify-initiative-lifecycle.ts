@@ -147,8 +147,11 @@ async function flushLifecycleMongoWrites(): Promise<void> {
 
 async function reconnectAndHydrateFromMongo(): Promise<void> {
   const { disconnectMongoClient } = await import("../infrastructure/mongodb/mongo-connection.js");
-  // Drain chained snapshot writes twice so late notification/outbox saves settle.
+  // Drain chained snapshot writes, then one event-loop turn for late saves
+  // (notifications/outbox) that enqueue after the first flush wave settles.
   await flushLifecycleMongoWrites();
+  await flushLifecycleMongoWrites();
+  await new Promise<void>((resolve) => setImmediate(resolve));
   await flushLifecycleMongoWrites();
   await disconnectMongoClient().catch(() => undefined);
 
@@ -743,6 +746,7 @@ async function main(): Promise<void> {
     isolation = await activateVerificationDatabaseIsolationAsync("GOLDEN-LIFECYCLE");
     assertVerificationDatabaseIsolated();
     forceMongoDurablePersistence();
+    console.log(`Owned verification database: ${isolation.databaseName}`);
 
     const { connectMongoClient } = await import("../infrastructure/mongodb/mongo-connection.js");
     const { ensureMongoIndexes } = await import("../infrastructure/mongodb/mongo-indexes.js");

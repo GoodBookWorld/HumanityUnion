@@ -11,7 +11,49 @@ import { disposeActiveVerificationIsolations } from "./verification-database-iso
  * Also disposes any still-active verification database isolations (owned
  * hu_verify_* drop + environment restore). Environment restore alone never
  * substitutes for database cleanup.
+ *
+ * Pack 01 recurrence fix: fire-and-forget Mongo snapshot persists can reject
+ * after disconnect and become unhandledRejections that abort the process
+ * before `finally` dispose runs. We install process handlers for the duration
+ * of the verification script so owned hu_verify_* DBs are still disposed.
  */
+
+let emergencyCleanupInFlight: Promise<void> | null = null;
+
+async function emergencyDisposeOwnedVerificationDatabases(reason: string): Promise<void> {
+  if (emergencyCleanupInFlight) {
+    await emergencyCleanupInFlight;
+    return;
+  }
+
+  emergencyCleanupInFlight = (async () => {
+    console.error(`[verification-lifecycle] emergency dispose (${reason})`);
+    try {
+      if (isMongoConfigured()) {
+        await disconnectMongoClient().catch(() => undefined);
+      }
+      const cleanupResults = await disposeActiveVerificationIsolations();
+      for (const result of cleanupResults) {
+        if (result.attempted && !result.succeeded && result.error) {
+          console.error(
+            `[verification-lifecycle] WARNING: emergency cleanup failed for "${result.databaseName}": ${result.error.message}`,
+          );
+        } else if (result.attempted && result.succeeded) {
+          console.error(
+            `[verification-lifecycle] emergency dropped owned verification database: ${result.databaseName}`,
+          );
+        }
+      }
+    } catch (error) {
+      console.error(
+        `[verification-lifecycle] emergency dispose threw: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  })();
+
+  await emergencyCleanupInFlight;
+}
+
 export async function finalizeVerificationResources(): Promise<void> {
   const { drainCivicNotificationEventsForTests } =
     await import("../modules/notifications/notification.service.js");
@@ -39,12 +81,46 @@ export async function finalizeVerificationResources(): Promise<void> {
 }
 
 export async function runVerificationScript(main: () => Promise<void>): Promise<void> {
+  let fatalExitRequested = false;
+
+  const onUnhandledRejection = (reason: unknown): void => {
+    console.error(
+      "[verification-lifecycle] unhandledRejection during verification:",
+      reason instanceof Error ? reason.message : String(reason),
+    );
+    process.exitCode = 1;
+    // Prefer allowing runVerificationScript's finally to dispose. Kick emergency
+    // dispose only as a safety net if the rejection becomes a fatal exit path.
+    void emergencyDisposeOwnedVerificationDatabases("unhandledRejection");
+  };
+
+  const onUncaughtException = (error: Error): void => {
+    console.error("[verification-lifecycle] uncaughtException during verification:", error.message);
+    process.exitCode = 1;
+    if (fatalExitRequested) {
+      return;
+    }
+    fatalExitRequested = true;
+    // Registering this listener suppresses Node's default abrupt exit; await
+    // owned hu_verify_* dispose, then exit explicitly.
+    void emergencyDisposeOwnedVerificationDatabases("uncaughtException").finally(() => {
+      process.exit(process.exitCode ?? 1);
+    });
+  };
+
+  process.on("unhandledRejection", onUnhandledRejection);
+  process.on("uncaughtException", onUncaughtException);
+
   try {
     await main();
   } catch (error) {
     console.error(error);
     process.exitCode = 1;
   } finally {
-    await finalizeVerificationResources();
+    process.off("unhandledRejection", onUnhandledRejection);
+    process.off("uncaughtException", onUncaughtException);
+    if (!fatalExitRequested) {
+      await finalizeVerificationResources();
+    }
   }
 }
