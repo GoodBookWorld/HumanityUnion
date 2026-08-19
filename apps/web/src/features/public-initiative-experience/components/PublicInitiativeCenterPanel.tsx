@@ -255,6 +255,7 @@ function DiscussionPanel({
   discussion,
   initialDiscussionFilter,
   focusCommentId,
+  focusCollaborationParticipantId,
   isOwnerRoute,
   discussionStageState,
   onDiscussionCompleted,
@@ -263,6 +264,7 @@ function DiscussionPanel({
   discussion: PublicInitiativeExperienceProjection["discussion"];
   initialDiscussionFilter?: "collaboration";
   focusCommentId?: string;
+  focusCollaborationParticipantId?: string;
   isOwnerRoute: boolean;
   discussionStageState?: string;
   onDiscussionCompleted: () => void;
@@ -289,6 +291,7 @@ function DiscussionPanel({
         hasMoreComments={discussion.hasMoreComments}
         initialFilter={initialDiscussionFilter}
         focusCommentId={focusCommentId}
+        focusCollaborationParticipantId={focusCollaborationParticipantId}
       />
     </>
   );
@@ -307,6 +310,8 @@ interface PublicInitiativeCenterPanelProps {
   initialDiscussionFilter?: "collaboration";
   /** Collaborative Analysis "View in Discussion" — scroll to `#comment-{id}`. */
   focusDiscussionCommentId?: string;
+  /** Lifecycle Staging Fix 05D — Ally-row participant from notification query. */
+  focusCollaborationParticipantId?: string;
   /**
    * Initiative Lifecycle — Part A Completion Part 4/5 — Previous/Next
    * stage navigation from inside the shared
@@ -338,6 +343,7 @@ export function PublicInitiativeCenterPanel({
   managePanel = null,
   initialDiscussionFilter,
   focusDiscussionCommentId,
+  focusCollaborationParticipantId,
   onNavigateStage,
   returnToInitiativeHref,
   isOwnerRoute = false,
@@ -647,6 +653,7 @@ export function PublicInitiativeCenterPanel({
               discussion={experience.discussion}
               initialDiscussionFilter={initialDiscussionFilter}
               focusCommentId={focusDiscussionCommentId}
+              focusCollaborationParticipantId={focusCollaborationParticipantId}
               isOwnerRoute={isOwnerRoute}
               discussionStageState={
                 discussionCompletedOverride

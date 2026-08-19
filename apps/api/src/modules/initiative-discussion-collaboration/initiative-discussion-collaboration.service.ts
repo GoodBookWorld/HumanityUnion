@@ -271,6 +271,7 @@ export async function expressCollaborationInterest(
   deps.notifier({
     recipientParticipantId: initiative.stewardId,
     actorParticipantId: identity.participantId,
+    subjectParticipantId: identity.participantId,
     eventType: "initiative_collaboration_interest_expressed",
     initiativeId,
   });
@@ -333,6 +334,7 @@ export async function inviteCommentAuthorToAllies(
   deps.notifier({
     recipientParticipantId: targetParticipantId,
     actorParticipantId: identity.participantId,
+    subjectParticipantId: targetParticipantId,
     eventType: "initiative_allies_invitation_received",
     initiativeId,
   });
@@ -366,6 +368,7 @@ export async function respondToAlliesInvitation(
   deps.notifier({
     recipientParticipantId: existing.requestedByParticipantId,
     actorParticipantId: identity.participantId,
+    subjectParticipantId: identity.participantId,
     eventType:
       response === "accept"
         ? "initiative_allies_invitation_accepted"
@@ -437,6 +440,7 @@ export async function respondToCollaborationInterest(
     deps.notifier({
       recipientParticipantId: participantId,
       actorParticipantId: identity.participantId,
+      subjectParticipantId: participantId,
       eventType:
         response === "accept"
           ? "initiative_collaboration_interest_accepted"

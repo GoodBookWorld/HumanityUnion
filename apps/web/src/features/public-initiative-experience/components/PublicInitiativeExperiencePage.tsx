@@ -12,6 +12,7 @@ import {
   resolveLifecycleShellHash,
   selectLifecycleNavStagesForDisplay,
 } from "../initiative-lifecycle-shell";
+import { parseCollaborationParticipantIdFromSearch } from "../discussion-comment-deep-link";
 import { PublicCivicRecordExperienceLayout } from "./PublicCivicRecordExperienceLayout";
 import { PublicExperienceHero, buildInitiativeHeroProps } from "./PublicExperienceHero";
 import { PublicExperienceSidebarOrChannel } from "./PublicExperienceSidebarOrChannel";
@@ -52,6 +53,9 @@ export function PublicInitiativeExperiencePage({
   const [focusDiscussionCommentId, setFocusDiscussionCommentId] = useState<string | undefined>(
     undefined,
   );
+  const [focusCollaborationParticipantId, setFocusCollaborationParticipantId] = useState<
+    string | undefined
+  >(undefined);
   const [collaborationTab, setCollaborationTab] = useState<CollaborationTab | undefined>(undefined);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -149,7 +153,8 @@ export function PublicInitiativeExperiencePage({
 
   const applyQueryParams = useCallback(
     (search: string) => {
-      const filterParam = new URLSearchParams(search).get("filter");
+      const params = new URLSearchParams(search);
+      const filterParam = params.get("filter");
 
       if (filterParam !== "collaboration") {
         return;
@@ -160,7 +165,9 @@ export function PublicInitiativeExperiencePage({
       setSelectedStageId("discussion");
       setShowManageTab(false);
       setInitialDiscussionFilter("collaboration");
-      // Fix 05C — desktop Collaboration deep-links are owned by pie-layout__center
+      const participantId = parseCollaborationParticipantIdFromSearch(search);
+      setFocusCollaborationParticipantId(participantId ?? undefined);
+      // Fix 05C/05D — desktop Collaboration deep-links are owned by pie-layout__center
       // (PublicDiscussionPanel). Avoid document scrollIntoView that lifts the Hero.
       if (window.matchMedia("(max-width: 767px)").matches) {
         scrollToContent();
@@ -316,6 +323,7 @@ export function PublicInitiativeExperiencePage({
               showManageTab={canShowManage}
               initialDiscussionFilter={initialDiscussionFilter}
               focusDiscussionCommentId={focusDiscussionCommentId}
+              focusCollaborationParticipantId={focusCollaborationParticipantId}
               managePanel={
                 canShowManage && manageInitiative ? (
                   <InitiativeOwnerManagePanel

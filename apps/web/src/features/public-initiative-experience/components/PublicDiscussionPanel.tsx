@@ -26,6 +26,7 @@ import {
 import {
   applyCollaborationNotificationScroll,
   applyDiscussionCommentDeepLinkScroll,
+  buildCollaborationParticipantDomId,
   buildDiscussionCommentDomId,
   COLLABORATION_LIST_DOM_ID,
   planDiscussionCommentDeepLinkScroll,
@@ -73,6 +74,12 @@ interface PublicDiscussionPanelProps {
    * then scrolls it into view (no fixed timeouts).
    */
   focusCommentId?: string;
+  /**
+   * Lifecycle Staging Fix 05D — Ally-row participant id from
+   * `?filter=collaboration&participant=…`. Scrolls that exact row once
+   * collaboration data has rendered.
+   */
+  focusCollaborationParticipantId?: string;
 }
 
 const DRAFT_STORAGE_PREFIX = "pie-discussion-draft:";
@@ -611,7 +618,9 @@ function CollaborationParticipantList({
         return (
           <li
             key={entry.participantId}
+            id={buildCollaborationParticipantDomId(entry.participantId)}
             className="pie-collab-list__item"
+            data-participant-id={entry.participantId}
             data-own-invitation-pending={invitationAcceptState.visible ? "true" : undefined}
           >
             <span className="pie-collab-list__identity">
@@ -691,6 +700,7 @@ export function PublicDiscussionPanel({
   scopeLabel,
   initialFilter,
   focusCommentId,
+  focusCollaborationParticipantId,
 }: PublicDiscussionPanelProps) {
   const authStatus = useClientAuthStatus();
   const [comments, setComments] = useState(initialComments);
@@ -911,9 +921,9 @@ export function PublicDiscussionPanel({
   }, [filter, loadCollaborationParticipants]);
 
   /**
-   * Lifecycle Staging Fix 02 / 05B / 05C — collaboration notification deep-link.
-   * Desktop: scroll only `pie-layout__center` (never the document / Hero).
-   * Mobile: normal document positioning with header scroll-margin.
+   * Lifecycle Staging Fix 02 / 05B / 05C / 05D — collaboration notification deep-link.
+   * With `focusCollaborationParticipantId`: scroll that Ally row once it exists.
+   * Without: generic title + list (05C). Desktop uses center pane only.
    */
   useEffect(() => {
     if (filter !== "collaboration" || collaborationLoading) {
@@ -924,12 +934,33 @@ export function PublicDiscussionPanel({
       return;
     }
 
-    const applied = applyCollaborationNotificationScroll();
+    if (!collaborationData) {
+      return;
+    }
+
+    const participantId = focusCollaborationParticipantId?.trim() || null;
+    if (participantId) {
+      const present = collaborationData.participants.some(
+        (entry) => entry.participantId === participantId,
+      );
+      if (!present) {
+        return;
+      }
+    }
+
+    const applied = applyCollaborationNotificationScroll({
+      participantId,
+    });
     if (!applied) {
       return;
     }
     collaborationDeepLinkScrolled.current = true;
-  }, [filter, collaborationLoading, collaborationData]);
+  }, [
+    filter,
+    collaborationLoading,
+    collaborationData,
+    focusCollaborationParticipantId,
+  ]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

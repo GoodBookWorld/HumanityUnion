@@ -3,19 +3,35 @@
  *
  * Format: `/initiatives/public/{initiativeId}#comment-{commentId}`
  * Collaboration: `?filter=collaboration#discussion`
+ * Participant row (Fix 05D): `?filter=collaboration&participant={participantId}#discussion`
  *
- * Lifecycle Staging Fix 05C — desktop Collaboration/Discussion deep-links are
- * owned by `pie-layout__center` (not the document). Mobile keeps document scroll.
+ * Lifecycle Staging Fix 05C/05D — desktop Collaboration deep-links are owned by
+ * `pie-layout__center` (not the document). Mobile keeps document scroll.
  */
 
 export const DISCUSSION_COMMENT_HASH_PREFIX = "comment-";
 export const DISCUSSION_TITLE_DOM_ID = "pie-discussion-title";
 export const COLLABORATION_LIST_DOM_ID = "pie-collaboration-list";
+export const COLLABORATION_PARTICIPANT_DOM_ID_PREFIX = "pie-collaboration-participant-";
 export const CENTER_SCROLL_CONTAINER_SELECTOR = ".pie-layout__center";
 export const DESKTOP_COLUMN_SCROLL_MIN_WIDTH_PX = 768;
+/** Query param naming the Ally-row participant (canonical collaboration identity). */
+export const COLLABORATION_PARTICIPANT_QUERY_PARAM = "participant";
 
 export function buildDiscussionCommentDomId(commentId: string): string {
   return `${DISCUSSION_COMMENT_HASH_PREFIX}${commentId}`;
+}
+
+export function buildCollaborationParticipantDomId(participantId: string): string {
+  return `${COLLABORATION_PARTICIPANT_DOM_ID_PREFIX}${participantId}`;
+}
+
+export function parseCollaborationParticipantIdFromSearch(search: string): string | null {
+  const value = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search).get(
+    COLLABORATION_PARTICIPANT_QUERY_PARAM,
+  );
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }
 
 export function buildInitiativeDiscussionCommentHref(
@@ -38,26 +54,30 @@ export function resolveDiscussionDeepLinkScrollOwner(
 }
 
 /**
- * Lifecycle Staging Fix 05C — collaboration notification scroll plan.
- * Desktop: center pane owns scroll (never document). Mobile: document scroll.
+ * Lifecycle Staging Fix 05C/05D — collaboration notification scroll plan.
+ * With a participant id: target that Ally row. Without: generic list (title + list).
  */
 export function planCollaborationNotificationScroll(input?: {
   readonly viewportWidth?: number;
+  readonly participantId?: string | null;
 }): {
   readonly scrollOwner: DiscussionDeepLinkScrollOwner;
   readonly titleDomId: string;
   readonly listDomId: string;
+  readonly rowDomId: string | null;
   readonly containerSelector: string;
-  readonly titleBlock: "start";
-  readonly listBlock: "nearest";
+  readonly primaryBlock: "start";
+  readonly secondaryBlock: "nearest";
 } {
+  const participantId = input?.participantId?.trim() || null;
   return {
     scrollOwner: resolveDiscussionDeepLinkScrollOwner(input?.viewportWidth),
     titleDomId: DISCUSSION_TITLE_DOM_ID,
     listDomId: COLLABORATION_LIST_DOM_ID,
+    rowDomId: participantId ? buildCollaborationParticipantDomId(participantId) : null,
     containerSelector: CENTER_SCROLL_CONTAINER_SELECTOR,
-    titleBlock: "start",
-    listBlock: "nearest",
+    primaryBlock: "start",
+    secondaryBlock: "nearest",
   };
 }
 
@@ -122,12 +142,34 @@ export function resolveCenterScrollContainer(from: Element | null): HTMLElement 
 
 /**
  * Apply collaboration notification positioning with a single scroll owner.
- * Desktop scrolls only `pie-layout__center`; mobile uses document scrollIntoView.
+ * When `participantId` is set, scrolls to that Ally row (primary).
+ * Otherwise keeps generic title + list positioning from Fix 05C.
  */
 export function applyCollaborationNotificationScroll(input?: {
   readonly viewportWidth?: number;
+  readonly participantId?: string | null;
 }): boolean {
   const plan = planCollaborationNotificationScroll(input);
+
+  if (plan.rowDomId) {
+    const row = document.getElementById(plan.rowDomId);
+    if (!row) {
+      return false;
+    }
+
+    if (plan.scrollOwner === "center_pane") {
+      const container = resolveCenterScrollContainer(row);
+      if (!container) {
+        return false;
+      }
+      scrollElementWithinContainer(container, row, plan.primaryBlock);
+      return true;
+    }
+
+    row.scrollIntoView({ behavior: "smooth", block: plan.primaryBlock });
+    return true;
+  }
+
   const list = document.getElementById(plan.listDomId);
   if (!list) {
     return false;
@@ -143,14 +185,14 @@ export function applyCollaborationNotificationScroll(input?: {
       return false;
     }
     if (title instanceof HTMLElement) {
-      scrollElementWithinContainer(container, title, plan.titleBlock);
+      scrollElementWithinContainer(container, title, plan.primaryBlock);
     }
-    scrollElementWithinContainer(container, list, plan.listBlock);
+    scrollElementWithinContainer(container, list, plan.secondaryBlock);
     return true;
   }
 
-  title?.scrollIntoView({ behavior: "smooth", block: plan.titleBlock });
-  list.scrollIntoView({ behavior: "smooth", block: plan.listBlock });
+  title?.scrollIntoView({ behavior: "smooth", block: plan.primaryBlock });
+  list.scrollIntoView({ behavior: "smooth", block: plan.secondaryBlock });
   return true;
 }
 

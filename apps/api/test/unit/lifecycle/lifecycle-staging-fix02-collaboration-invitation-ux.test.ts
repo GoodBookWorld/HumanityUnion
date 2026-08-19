@@ -78,6 +78,17 @@ describe("Lifecycle Staging Fix 02 — collaboration invitation UX", () => {
     assert.match(href, /filter=collaboration/);
     assert.match(href, /#discussion$/);
     assert.doesNotMatch(href, /\/collaboration\//);
+    assert.doesNotMatch(href, /[?&]participant=/);
+  });
+
+  it("participant-specific notification deep-link targets the Ally-row participant", () => {
+    const href = buildInitiativeCollaborationDeepLink(INITIATIVE_ID, INVITED_ID);
+    assert.equal(
+      href,
+      `/initiatives/public/${INITIATIVE_ID}?filter=collaboration&participant=${INVITED_ID}#discussion`,
+    );
+    assert.match(href, /participant=fix02-invited/);
+    assert.match(href, /#discussion$/);
   });
 
   describe("working list + canonical Accept", () => {

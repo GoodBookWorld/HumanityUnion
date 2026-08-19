@@ -705,6 +705,7 @@ describe("Initiative Discussion Collaboration (UX Evolution Pack 02)", () => {
         actorParticipantId: "participant-x",
         eventType: "initiative_collaboration_interest_expressed",
         initiativeId: INITIATIVE_ID,
+        subjectParticipantId: "participant-x",
       });
 
       await drainInitiativeCollaborationNotificationsForTests();

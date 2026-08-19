@@ -79,8 +79,9 @@ describe("Lifecycle Staging Fix 05B — columns scroll + header-safe deep links"
     assert.equal(plan.scrollOwner, "center_pane");
     assert.equal(plan.titleDomId, DISCUSSION_TITLE_DOM_ID);
     assert.equal(plan.listDomId, COLLABORATION_LIST_DOM_ID);
-    assert.equal(plan.titleBlock, "start");
-    assert.equal(plan.listBlock, "nearest");
+    assert.equal(plan.rowDomId, null);
+    assert.equal(plan.primaryBlock, "start");
+    assert.equal(plan.secondaryBlock, "nearest");
     assert.match(discussion, /applyCollaborationNotificationScroll/);
   });
 

@@ -278,6 +278,7 @@ describe("Notification recipient identity (Reliability Task)", () => {
         actorParticipantId: requester.memberId,
         eventType: "initiative_collaboration_interest_expressed",
         initiativeId,
+        subjectParticipantId: requester.memberId,
       });
 
       await drainInitiativeCollaborationNotificationsForTests();

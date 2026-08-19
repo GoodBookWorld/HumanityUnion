@@ -3,24 +3,45 @@ import { resolveRecipientIdentity } from "../notifications/notification.recipien
 import { getNotificationTemplate } from "../notifications/notification.templates.js";
 
 /**
- * Profile UX Pack 01 Part 4 / Lifecycle Staging Fix 02 —
- * `?filter=collaboration` is read once on initial load by
- * `PublicInitiativeExperiencePage` to land the notification recipient on the
- * Collaboration working list (Discussion tab; `#discussion` activates that
- * tab via existing shell hash routing). Same canonical Initiative route —
- * never a parallel page.
+ * Profile UX Pack 01 Part 4 / Lifecycle Staging Fix 02 / 05D —
+ * Collaboration notifications deep-link to the canonical Initiative Discussion
+ * Collaboration list. When `subjectParticipantId` is provided (the Ally row's
+ * participantId), the URL targets that exact Participant row.
+ *
+ * Query contract:
+ *   ?filter=collaboration&participant={subjectParticipantId}#discussion
+ *
+ * Generic Collaboration (no participant) remains valid without `&participant=`.
  */
-export function buildInitiativeCollaborationDeepLink(initiativeId: string): string {
-  return `/initiatives/public/${encodeURIComponent(initiativeId)}?filter=collaboration#discussion`;
+export function buildInitiativeCollaborationDeepLink(
+  initiativeId: string,
+  subjectParticipantId?: string | null,
+): string {
+  const params = new URLSearchParams();
+  params.set("filter", "collaboration");
+  const trimmed = subjectParticipantId?.trim();
+  if (trimmed) {
+    params.set("participant", trimmed);
+  }
+  return `/initiatives/public/${encodeURIComponent(initiativeId)}?${params.toString()}#discussion`;
 }
 
-function initiativeCollaborationUrl(initiativeId: string): string {
-  return buildInitiativeCollaborationDeepLink(initiativeId);
+function initiativeCollaborationUrl(
+  initiativeId: string,
+  subjectParticipantId: string,
+): string {
+  return buildInitiativeCollaborationDeepLink(initiativeId, subjectParticipantId);
 }
 
 export interface CollaborationNotificationInput {
   recipientParticipantId: string;
   actorParticipantId: string;
+  /**
+   * Canonical Ally-row participant (initiativeId + participantId uniqueness).
+   * Used as the deep-link target so invitee/Author notifications land on the
+   * same Participant row.
+   */
+  subjectParticipantId: string;
   eventType:
     | "initiative_collaboration_interest_expressed"
     | "initiative_collaboration_interest_accepted"
@@ -52,7 +73,7 @@ async function notify(input: CollaborationNotificationInput): Promise<void> {
     message: template.message,
     relatedEntityType: "initiative",
     relatedEntityId: input.initiativeId,
-    relatedUrl: initiativeCollaborationUrl(input.initiativeId),
+    relatedUrl: initiativeCollaborationUrl(input.initiativeId, input.subjectParticipantId),
     priority: template.priority,
   });
 }

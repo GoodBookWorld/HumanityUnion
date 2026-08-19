@@ -35,8 +35,9 @@ describe("Lifecycle Staging Fix 05C — deep-link scroll ownership + footer hand
     assert.equal(desktop.containerSelector, CENTER_SCROLL_CONTAINER_SELECTOR);
     assert.equal(desktop.titleDomId, DISCUSSION_TITLE_DOM_ID);
     assert.equal(desktop.listDomId, COLLABORATION_LIST_DOM_ID);
-    assert.equal(desktop.titleBlock, "start");
-    assert.equal(desktop.listBlock, "nearest");
+    assert.equal(desktop.rowDomId, null);
+    assert.equal(desktop.primaryBlock, "start");
+    assert.equal(desktop.secondaryBlock, "nearest");
     assert.equal(resolveDiscussionDeepLinkScrollOwner(767), "document");
     assert.equal(resolveDiscussionDeepLinkScrollOwner(768), "center_pane");
   });

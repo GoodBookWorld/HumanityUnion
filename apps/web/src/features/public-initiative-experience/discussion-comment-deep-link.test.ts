@@ -81,11 +81,18 @@ describe("Discussion comment deep link", () => {
     assert.equal(desktop.scrollOwner, "center_pane");
     assert.equal(desktop.titleDomId, "pie-discussion-title");
     assert.equal(desktop.listDomId, "pie-collaboration-list");
-    assert.equal(desktop.titleBlock, "start");
-    assert.equal(desktop.listBlock, "nearest");
+    assert.equal(desktop.rowDomId, null);
+    assert.equal(desktop.primaryBlock, "start");
+    assert.equal(desktop.secondaryBlock, "nearest");
     assert.equal(desktop.containerSelector, ".pie-layout__center");
 
     const mobile = planCollaborationNotificationScroll({ viewportWidth: 400 });
     assert.equal(mobile.scrollOwner, "document");
+
+    const targeted = planCollaborationNotificationScroll({
+      viewportWidth: 1024,
+      participantId: "invitee-1",
+    });
+    assert.equal(targeted.rowDomId, "pie-collaboration-participant-invitee-1");
   });
 });

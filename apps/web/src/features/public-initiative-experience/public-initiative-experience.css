@@ -395,7 +395,8 @@
 #pie-discussion-title,
 .pie-discussion__title,
 #pie-collaboration-list,
-#pie-panel-discussion {
+#pie-panel-discussion,
+.pie-collab-list__item {
   scroll-margin-top: var(--hu-scroll-margin-top);
 }
 
