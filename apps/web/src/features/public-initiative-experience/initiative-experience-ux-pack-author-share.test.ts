@@ -132,9 +132,24 @@ describe("Initiative Experience UX Pack — author identity + reaction + civic s
     assert.match(viaRef.url, /\/initiatives\/public\/init-1#petition$/);
   });
 
-  it("card share stops propagation and keeps compact trigger", () => {
+  it("card share stops propagation and keeps compact trigger outside the Link", () => {
     assert.match(miniCard, /stopPropagation/);
     assert.match(miniCard, /compact/);
+    assert.match(miniCard, /public-initiative-mini-card__link/);
+    assert.doesNotMatch(
+      miniCard.slice(miniCard.indexOf('className="public-initiative-mini-card__link"')),
+      /CivicShareButton/,
+    );
+  });
+
+  it("main Share trigger does not immediately call navigator.share", () => {
+    const buttonSource = readFileSync(
+      path.resolve(dir, "../civic-share/CivicShareButton.tsx"),
+      "utf8",
+    );
+    assert.match(buttonSource, /never invoke Web Share API here/);
+    assert.match(buttonSource, /createPortal/);
+    assert.match(buttonSource, /shouldOfferNativeShareShortcut/);
   });
 
   it("Facebook / X / LinkedIn / email targets receive the canonical URL", () => {

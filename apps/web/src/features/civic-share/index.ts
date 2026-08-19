@@ -17,3 +17,4 @@ export {
   shareCivicViaNative,
 } from "./civic-share.actions";
 export { CivicShareButton } from "./CivicShareButton";
+export { shouldOfferNativeShareShortcut } from "./civic-share-native-policy";

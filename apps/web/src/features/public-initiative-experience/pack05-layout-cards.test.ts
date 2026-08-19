@@ -23,12 +23,18 @@ describe("Pack 05 Initiative public layout + mini-cards + media", () => {
     assert.match(css, /\.pie-hero__description/);
   });
 
-  it("mini-card is one Link with image+body navigation and View Initiative CTA span", () => {
+  it("mini-card keeps one navigation Link for media+body; Share stays outside that Link", () => {
     const card = read("features/public-initiative-mini-card/PublicInitiativeMiniCard.tsx");
     assert.match(card, /resolvePublicInitiativeHref/);
     assert.match(card, /View Initiative →/);
     assert.match(card, /aria-label=\{buildAccessibleName/);
+    assert.match(card, /public-initiative-mini-card__link/);
+    assert.match(card, /CivicShareButton/);
     assert.doesNotMatch(card, /<Link[^>]*>[\s\S]*<Link/);
+    assert.doesNotMatch(
+      card.slice(card.indexOf('className="public-initiative-mini-card__link"')),
+      /CivicShareButton/,
+    );
   });
 
   it("world initiative cards navigate via single Link wrapping media and body", () => {

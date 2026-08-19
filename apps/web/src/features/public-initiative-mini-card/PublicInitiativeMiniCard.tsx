@@ -34,6 +34,10 @@ export function resolvePublicInitiativeHref(initiative: WorldInitiativeCardProje
   );
 }
 
+/**
+ * Share Fix 01 — Share lives outside the navigation Link so the civic
+ * popover never competes with card navigation or nested-interactive quirks.
+ */
 export function PublicInitiativeMiniCard({
   initiative,
 }: {
@@ -42,54 +46,54 @@ export function PublicInitiativeMiniCard({
   const href = resolvePublicInitiativeHref(initiative);
 
   return (
-    <Link
-      href={href}
-      className="public-initiative-mini-card"
-      aria-label={buildAccessibleName(initiative)}
-    >
-      <div className="public-initiative-mini-card__media">
-        <div className="public-initiative-mini-card__media-visual" aria-hidden="true">
+    <article className="public-initiative-mini-card">
+      <div className="public-initiative-mini-card__share">
+        <CivicShareButton
+          compact
+          stopPropagation
+          payload={buildPublicInitiativeSharePayload({
+            initiativeId: initiative.initiativeId,
+            title: initiative.title,
+            image: initiative.imageUrl,
+            optionalText: initiative.summary,
+          })}
+          ariaLabel={`Share initiative: ${initiative.title}`}
+        />
+      </div>
+      <Link
+        href={href}
+        className="public-initiative-mini-card__link"
+        aria-label={buildAccessibleName(initiative)}
+      >
+        <div className="public-initiative-mini-card__media" aria-hidden="true">
           <MiniCardImage title={initiative.title} imageUrl={initiative.imageUrl} />
         </div>
-        <div className="public-initiative-mini-card__share">
-          <CivicShareButton
-            compact
-            stopPropagation
-            payload={buildPublicInitiativeSharePayload({
-              initiativeId: initiative.initiativeId,
-              title: initiative.title,
-              image: initiative.imageUrl,
-              optionalText: initiative.summary,
-            })}
-            ariaLabel={`Share initiative: ${initiative.title}`}
-          />
-        </div>
-      </div>
-      <div className="public-initiative-mini-card__body">
-        <h3 className="public-initiative-mini-card__title">{initiative.title}</h3>
-        <p className="public-initiative-mini-card__summary">{initiative.summary}</p>
-        <p className="public-initiative-mini-card__meta">
-          {initiative.activityArea} · {initiative.geographyLabel}
-        </p>
-        <div className="public-initiative-mini-card__footer">
-          <span className="public-initiative-mini-card__status">
-            {initiative.currentStageLabel ?? initiative.publicStatus}
-          </span>
-          <span className="public-initiative-mini-card__date">
-            Updated {formatDate(initiative.publishedAt)}
-          </span>
-          {initiative.supportSummary ? (
-            <span className="public-initiative-mini-card__support">
-              {initiative.supportSummary.likes} likes · {initiative.supportSummary.dislikes}{" "}
-              dislikes
+        <div className="public-initiative-mini-card__body">
+          <h3 className="public-initiative-mini-card__title">{initiative.title}</h3>
+          <p className="public-initiative-mini-card__summary">{initiative.summary}</p>
+          <p className="public-initiative-mini-card__meta">
+            {initiative.activityArea} · {initiative.geographyLabel}
+          </p>
+          <div className="public-initiative-mini-card__footer">
+            <span className="public-initiative-mini-card__status">
+              {initiative.currentStageLabel ?? initiative.publicStatus}
             </span>
-          ) : null}
+            <span className="public-initiative-mini-card__date">
+              Updated {formatDate(initiative.publishedAt)}
+            </span>
+            {initiative.supportSummary ? (
+              <span className="public-initiative-mini-card__support">
+                {initiative.supportSummary.likes} likes · {initiative.supportSummary.dislikes}{" "}
+                dislikes
+              </span>
+            ) : null}
+          </div>
+          <span className="public-initiative-mini-card__cta" aria-hidden="true">
+            View Initiative →
+          </span>
         </div>
-        <span className="public-initiative-mini-card__cta" aria-hidden="true">
-          View Initiative →
-        </span>
-      </div>
-    </Link>
+      </Link>
+    </article>
   );
 }
 
