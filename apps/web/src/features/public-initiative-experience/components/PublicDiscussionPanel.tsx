@@ -24,9 +24,10 @@ import {
   updateInitiativeCommentReaction,
 } from "../api";
 import {
+  applyCollaborationNotificationScroll,
+  applyDiscussionCommentDeepLinkScroll,
   buildDiscussionCommentDomId,
   COLLABORATION_LIST_DOM_ID,
-  planCollaborationNotificationScroll,
   planDiscussionCommentDeepLinkScroll,
   resolveDiscussionCommentFocusTarget,
 } from "../discussion-comment-deep-link";
@@ -887,20 +888,20 @@ export function PublicDiscussionPanel({
       return;
     }
 
-    const element = document.getElementById(plan.domId);
-    if (!element) {
+    const scrolled = applyDiscussionCommentDeepLinkScroll(plan.domId);
+    if (!scrolled) {
       return;
     }
 
-    element.scrollIntoView({ behavior: "smooth", block: "center" });
     setHighlightedCommentId(plan.commentId);
     deepLinkScrollCompletedFor.current = plan.commentId;
 
+    const element = document.getElementById(plan.domId);
     const clearHighlight = () => {
       setHighlightedCommentId((current) => (current === plan.commentId ? null : current));
     };
-    element.addEventListener("animationend", clearHighlight, { once: true });
-    return () => element.removeEventListener("animationend", clearHighlight);
+    element?.addEventListener("animationend", clearHighlight, { once: true });
+    return () => element?.removeEventListener("animationend", clearHighlight);
   }, [focusCommentId, filter, filteredComments, hasMore, loadingMore]);
 
   useEffect(() => {
@@ -910,9 +911,9 @@ export function PublicDiscussionPanel({
   }, [filter, loadCollaborationParticipants]);
 
   /**
-   * Lifecycle Staging Fix 02 / 05B — notification `?filter=collaboration#discussion`
-   * must land on Collaboration while keeping the Discussion heading visible below
-   * the sticky site header (scroll-margin + title-first scroll).
+   * Lifecycle Staging Fix 02 / 05B / 05C — collaboration notification deep-link.
+   * Desktop: scroll only `pie-layout__center` (never the document / Hero).
+   * Mobile: normal document positioning with header scroll-margin.
    */
   useEffect(() => {
     if (filter !== "collaboration" || collaborationLoading) {
@@ -923,17 +924,10 @@ export function PublicDiscussionPanel({
       return;
     }
 
-    const plan = planCollaborationNotificationScroll();
-    const list = document.getElementById(plan.listDomId);
-    if (!list) {
+    const applied = applyCollaborationNotificationScroll();
+    if (!applied) {
       return;
     }
-
-    const title =
-      document.getElementById(plan.titleDomId) ??
-      document.querySelector(".pie-discussion__title");
-    title?.scrollIntoView({ behavior: "smooth", block: plan.titleBlock });
-    list.scrollIntoView({ behavior: "smooth", block: plan.listBlock });
     collaborationDeepLinkScrolled.current = true;
   }, [filter, collaborationLoading, collaborationData]);
 

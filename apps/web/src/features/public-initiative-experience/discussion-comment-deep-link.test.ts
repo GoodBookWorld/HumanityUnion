@@ -77,10 +77,15 @@ describe("Discussion comment deep link", () => {
   });
 
   it("collaboration notification keeps Discussion title visible then list nearest", () => {
-    const plan = planCollaborationNotificationScroll();
-    assert.equal(plan.titleDomId, "pie-discussion-title");
-    assert.equal(plan.listDomId, "pie-collaboration-list");
-    assert.equal(plan.titleBlock, "start");
-    assert.equal(plan.listBlock, "nearest");
+    const desktop = planCollaborationNotificationScroll({ viewportWidth: 1024 });
+    assert.equal(desktop.scrollOwner, "center_pane");
+    assert.equal(desktop.titleDomId, "pie-discussion-title");
+    assert.equal(desktop.listDomId, "pie-collaboration-list");
+    assert.equal(desktop.titleBlock, "start");
+    assert.equal(desktop.listBlock, "nearest");
+    assert.equal(desktop.containerSelector, ".pie-layout__center");
+
+    const mobile = planCollaborationNotificationScroll({ viewportWidth: 400 });
+    assert.equal(mobile.scrollOwner, "document");
   });
 });

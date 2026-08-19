@@ -33,7 +33,7 @@ describe("Lifecycle Staging Fix 04 — independent desktop scrolling", () => {
     assert.match(css, /\.pie-layout\.pie-layout__columns/);
     assert.match(css, /\.pie-layout__lifecycle,\s*\n\s*\.pie-layout__center,\s*\n\s*\.pie-layout__sidebar/);
     assert.match(css, /overflow-y:\s*auto/);
-    assert.match(css, /overscroll-behavior:\s*contain/);
+    assert.doesNotMatch(css, /overscroll-behavior:\s*contain/);
   });
 
   it("mobile: single-page scroll; no independent three-pane overflow traps", () => {
@@ -44,8 +44,7 @@ describe("Lifecycle Staging Fix 04 — independent desktop scrolling", () => {
   });
 
   it("collaboration + comment deep-link targets remain in the same shell", () => {
-    assert.match(discussion, /COLLABORATION_LIST_DOM_ID|pie-collaboration-list/);
-    assert.match(discussion, /scrollIntoView/);
+    assert.match(discussion, /COLLABORATION_LIST_DOM_ID|pie-collaboration-list|applyCollaborationNotificationScroll/);
     assert.match(css, /#pie-collaboration-list/);
     assert.match(page, /filter=collaboration|#discussion|pie-collaboration-list/);
     assert.match(page, /focusDiscussionCommentId/);

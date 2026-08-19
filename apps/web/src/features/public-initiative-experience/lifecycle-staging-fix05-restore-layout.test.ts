@@ -76,8 +76,7 @@ describe("Lifecycle Staging Fix 05 — restore canonical Initiative layout", () 
   });
 
   it("collaboration and comment deep-links still target the same shell", () => {
-    assert.match(discussion, /COLLABORATION_LIST_DOM_ID|planCollaborationNotificationScroll/);
-    assert.match(discussion, /scrollIntoView/);
+    assert.match(discussion, /COLLABORATION_LIST_DOM_ID|applyCollaborationNotificationScroll/);
     assert.match(page, /focusDiscussionCommentId/);
     assert.match(page, /filter/);
   });

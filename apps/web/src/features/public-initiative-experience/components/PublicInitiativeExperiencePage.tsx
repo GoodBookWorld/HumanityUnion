@@ -160,8 +160,11 @@ export function PublicInitiativeExperiencePage({
       setSelectedStageId("discussion");
       setShowManageTab(false);
       setInitialDiscussionFilter("collaboration");
-      // Discussion panel then scrolls to `#pie-collaboration-list` once loaded.
-      scrollToContent();
+      // Fix 05C — desktop Collaboration deep-links are owned by pie-layout__center
+      // (PublicDiscussionPanel). Avoid document scrollIntoView that lifts the Hero.
+      if (window.matchMedia("(max-width: 767px)").matches) {
+        scrollToContent();
+      }
     },
     [scrollToContent],
   );

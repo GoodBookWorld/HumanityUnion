@@ -151,7 +151,7 @@
     max-height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
-    overscroll-behavior: contain;
+    /* Fix 05C — leave overscroll default so pane edges chain to document/Footer. */
     -webkit-overflow-scrolling: touch;
   }
 

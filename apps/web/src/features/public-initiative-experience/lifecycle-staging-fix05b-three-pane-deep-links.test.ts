@@ -57,8 +57,7 @@ describe("Lifecycle Staging Fix 05B — columns scroll + header-safe deep links"
       /\.pie-layout\.pie-layout__columns\s*\{[^}]*height:\s*calc\(100dvh - var\(--humanity-header-offset\)\)/s,
     );
     assert.match(css, /overflow-y:\s*auto/);
-    assert.match(css, /overscroll-behavior:\s*contain/);
-    assert.match(css, /min-height:\s*0/);
+    assert.doesNotMatch(css, /overscroll-behavior:\s*contain/);
   });
 
   it("mobile clears pane overflow traps for normal page scroll", () => {
@@ -76,14 +75,13 @@ describe("Lifecycle Staging Fix 05B — columns scroll + header-safe deep links"
   });
 
   it("collaboration notification scroll keeps Discussion title visible then list nearest", () => {
-    const plan = planCollaborationNotificationScroll();
+    const plan = planCollaborationNotificationScroll({ viewportWidth: 1200 });
+    assert.equal(plan.scrollOwner, "center_pane");
     assert.equal(plan.titleDomId, DISCUSSION_TITLE_DOM_ID);
     assert.equal(plan.listDomId, COLLABORATION_LIST_DOM_ID);
     assert.equal(plan.titleBlock, "start");
     assert.equal(plan.listBlock, "nearest");
-    assert.match(discussion, /planCollaborationNotificationScroll/);
-    assert.match(discussion, /titleBlock/);
-    assert.match(discussion, /listBlock/);
+    assert.match(discussion, /applyCollaborationNotificationScroll/);
   });
 
   it("Ask Assistant remains horizontal 28x28 intel icon", () => {
