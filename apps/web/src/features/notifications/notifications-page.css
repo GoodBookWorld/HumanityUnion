@@ -19,6 +19,18 @@
   min-width: 0;
 }
 
+.notifications-page__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hu-space-3);
+}
+
+.notifications-page__participant-identity {
+  flex: 0 1 auto;
+  max-width: min(16rem, 100%);
+}
+
 .notifications-page__header-assistant {
   min-width: 0;
 }

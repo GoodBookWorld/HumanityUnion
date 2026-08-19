@@ -21,6 +21,7 @@ export interface NotificationPersistenceAdapter {
   findById(notificationId: string): Promise<MemberNotification | null>;
   update(notification: MemberNotification): Promise<void>;
   delete(notificationId: string): Promise<void>;
+  deleteArchivedByUserId(userId: string): Promise<number>;
   deleteByRelatedEntity(
     relatedEntityType: MemberNotification["relatedEntityType"],
     relatedEntityId: string,

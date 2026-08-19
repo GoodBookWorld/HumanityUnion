@@ -397,7 +397,8 @@ export const TRUSTED_GLOBAL_MEDIA_REGISTRY: readonly MediaRegistryProvider[] = [
         defaultCategory: "democracy",
       },
     ],
-    // No dedicated asset in /images/media — text logoLabel fallback.
+    // Dedicated logo asset for the Trusted Media / discovery rails.
+    logoUrl: "/images/media/politico.webp",
     logoLabel: "POL",
     website: "https://www.politico.com/",
     categories: ["democracy", "institutional accountability", "public participation"],

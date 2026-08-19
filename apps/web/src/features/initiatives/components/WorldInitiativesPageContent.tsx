@@ -2,6 +2,10 @@ import Link from "next/link";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
+import {
+  buildPublicInitiativeSharePayload,
+  CivicShareButton,
+} from "../../civic-share";
 import { Button } from "../../../design-system/components/Button";
 import { formatStableCalendarDate } from "../initiative-lifecycle-labels";
 import { InitiativeImage } from "./InitiativeImage";
@@ -18,45 +22,60 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
     `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`;
 
   return (
-    <Link
-      href={href}
-      className="world-initiative-card"
-      aria-label={`View initiative: ${initiative.title}`}
-    >
-      <div className="world-initiative-card__media" aria-hidden="true">
-        <InitiativeImage
-          title={initiative.title}
-          imageUrl={initiative.imageUrl}
-          coverMedia={initiative.coverMedia}
-          className="world-initiative-card__image"
-          decorative
+    <article className="world-initiative-card">
+      <div className="world-initiative-card__share">
+        <CivicShareButton
+          compact
+          stopPropagation
+          payload={buildPublicInitiativeSharePayload({
+            initiativeId: initiative.initiativeId,
+            title: initiative.title,
+            image: initiative.imageUrl,
+            optionalText: initiative.summary,
+          })}
+          ariaLabel={`Share initiative: ${initiative.title}`}
         />
       </div>
-      <div className="world-initiative-card__body">
-        <h2 className="world-initiative-card__title">{initiative.title}</h2>
-        <dl className="world-initiative-card__meta">
-          <div>
-            <dt>Activity Area</dt>
-            <dd>{initiative.activityArea}</dd>
-          </div>
-          <div>
-            <dt>Start date</dt>
-            <dd>{formatStableCalendarDate(initiative.startDate)}</dd>
-          </div>
-          <div>
-            <dt>Completion date</dt>
-            <dd>{formatStableCalendarDate(initiative.completionDate)}</dd>
-          </div>
-          <div>
-            <dt>Status</dt>
-            <dd>{initiative.publicStatus}</dd>
-          </div>
-        </dl>
-        <span className="world-initiative-card__link" aria-hidden="true">
-          View Initiative →
-        </span>
-      </div>
-    </Link>
+      <Link
+        href={href}
+        className="world-initiative-card__link"
+        aria-label={`View initiative: ${initiative.title}`}
+      >
+        <div className="world-initiative-card__media" aria-hidden="true">
+          <InitiativeImage
+            title={initiative.title}
+            imageUrl={initiative.imageUrl}
+            coverMedia={initiative.coverMedia}
+            className="world-initiative-card__image"
+            decorative
+          />
+        </div>
+        <div className="world-initiative-card__body">
+          <h2 className="world-initiative-card__title">{initiative.title}</h2>
+          <dl className="world-initiative-card__meta">
+            <div>
+              <dt>Activity Area</dt>
+              <dd>{initiative.activityArea}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{initiative.publicStatus}</dd>
+            </div>
+            <div>
+              <dt>Start</dt>
+              <dd>{formatStableCalendarDate(initiative.startDate)}</dd>
+            </div>
+            <div>
+              <dt>Completion</dt>
+              <dd>{formatStableCalendarDate(initiative.completionDate)}</dd>
+            </div>
+          </dl>
+          <span className="world-initiative-card__cta" aria-hidden="true">
+            View Initiative →
+          </span>
+        </div>
+      </Link>
+    </article>
   );
 }
 

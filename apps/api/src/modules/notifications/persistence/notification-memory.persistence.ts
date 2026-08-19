@@ -61,6 +61,19 @@ export class MemoryNotificationPersistenceAdapter implements NotificationPersist
     this.notifications.delete(notificationId);
   }
 
+  async deleteArchivedByUserId(userId: string): Promise<number> {
+    let deletedCount = 0;
+
+    for (const [notificationId, notification] of this.notifications.entries()) {
+      if (notification.recipientUserId === userId && notification.status === "archived") {
+        this.notifications.delete(notificationId);
+        deletedCount += 1;
+      }
+    }
+
+    return deletedCount;
+  }
+
   async deleteByRelatedEntity(
     relatedEntityType: MemberNotification["relatedEntityType"],
     relatedEntityId: string,

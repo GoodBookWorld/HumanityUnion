@@ -6,6 +6,7 @@ export {
   createNotificationsForEvent,
   deleteArchivedNotification,
   deleteNotificationsByRelatedEntity,
+  clearArchivedNotificationsForUser,
   emitCivicNotificationEvent,
   listMyNotifications,
   markAllNotificationsRead,

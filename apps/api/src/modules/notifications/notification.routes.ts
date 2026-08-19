@@ -4,6 +4,7 @@ import { createSuccessResponse } from "../../shared/http-response.js";
 import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import {
   archiveNotification,
+  clearArchivedNotificationsForUser,
   countUnreadNotifications,
   deleteArchivedNotification,
   listMyNotifications,
@@ -78,6 +79,16 @@ notificationRouter.post("/read-all", async (req, res: Response) => {
     res.json(createSuccessResponse(result, "All notifications marked as read."));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Mark all read failed.";
+    res.status(400).json(createFailureResponse(message));
+  }
+});
+
+notificationRouter.delete("/archive", async (req, res: Response) => {
+  try {
+    const result = await clearArchivedNotificationsForUser(req.auth!.id);
+    res.json(createSuccessResponse(result, "Archived notifications cleared."));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Clear archive failed.";
     res.status(400).json(createFailureResponse(message));
   }
 });

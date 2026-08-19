@@ -171,6 +171,18 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     sortOrder: 14,
   },
   {
+    id: "politico",
+    name: "POLITICO",
+    logoLabel: "POL",
+    logoUrl: "/images/media/politico.webp",
+    country: "United States",
+    categoryId: "independent-investigative",
+    explanation:
+      "Political journalism covering democratic institutions, elections, and public policy with published editorial standards.",
+    websiteUrl: "https://www.politico.com/",
+    sortOrder: 15,
+  },
+  {
     id: "cbc",
     name: "CBC",
     logoLabel: "CBC",
@@ -181,7 +193,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Canadian public broadcaster with journalistic standards and regional news coverage.",
     websiteUrl: "https://www.cbc.ca/",
-    sortOrder: 15,
+    sortOrder: 16,
   },
   {
     id: "globe-and-mail",
@@ -194,7 +206,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Canadian national newspaper covering civic affairs, policy, and regional public interest reporting.",
     websiteUrl: "https://www.theglobeandmail.com/",
-    sortOrder: 15,
+    sortOrder: 17,
   },
   {
     id: "global-news-canada",
@@ -207,7 +219,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Canadian national news network covering civic affairs and regional public interest reporting.",
     websiteUrl: "https://globalnews.ca/",
-    sortOrder: 16,
+    sortOrder: 18,
   },
   {
     id: "la-presse-canada",
@@ -220,7 +232,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Canadian French-language news organization covering civic affairs and public policy.",
     websiteUrl: "https://www.lapresse.ca/",
-    sortOrder: 17,
+    sortOrder: 19,
   },
   {
     id: "canadian-press",
@@ -233,7 +245,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Canadian news cooperative providing national and regional reporting with editorial standards.",
     websiteUrl: "https://www.thecanadianpress.com/",
-    sortOrder: 18,
+    sortOrder: 20,
   },
   {
     id: "ctv-news-canada",
@@ -245,7 +257,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     categoryId: "regional-public-media",
     explanation: "Canadian television news network covering national and regional civic affairs.",
     websiteUrl: "https://www.ctvnews.ca/",
-    sortOrder: 19,
+    sortOrder: 21,
   },
   {
     id: "tagesschau",
@@ -258,7 +270,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "German public news service providing national and regional civic reporting with editorial standards.",
     websiteUrl: "https://www.tagesschau.de/",
-    sortOrder: 20,
+    sortOrder: 22,
   },
   {
     id: "der-spiegel",
@@ -271,7 +283,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "German news magazine covering public policy, civic affairs, and investigative reporting.",
     websiteUrl: "https://www.spiegel.de/",
-    sortOrder: 21,
+    sortOrder: 23,
   },
   {
     id: "suspilne",
@@ -284,7 +296,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Ukrainian public broadcaster providing national news coverage with published editorial standards.",
     websiteUrl: "https://suspilne.media/",
-    sortOrder: 22,
+    sortOrder: 24,
   },
   {
     id: "ukrinform-ukraine",
@@ -297,7 +309,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Ukrainian national news agency providing civic and public interest reporting.",
     websiteUrl: "https://www.ukrinform.net/",
-    sortOrder: 23,
+    sortOrder: 25,
   },
   {
     id: "european-pravda",
@@ -310,7 +322,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Ukrainian English-language outlet covering European integration, civic reform, and public policy.",
     websiteUrl: "https://www.eurointegration.com.ua/en",
-    sortOrder: 24,
+    sortOrder: 26,
   },
   {
     id: "kyiv-independent",
@@ -323,7 +335,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Independent English-language newsroom reporting on civic life, policy, and public accountability in Ukraine.",
     websiteUrl: "https://kyivindependent.com/",
-    sortOrder: 25,
+    sortOrder: 27,
   },
   {
     id: "le-monde",
@@ -335,7 +347,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "French national newspaper with published editorial standards and civic affairs coverage.",
     websiteUrl: "https://www.lemonde.fr/",
-    sortOrder: 26,
+    sortOrder: 28,
   },
   {
     id: "abc-australia",
@@ -347,7 +359,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Australian public broadcaster providing national and regional news with editorial accountability.",
     websiteUrl: "https://www.abc.net.au/",
-    sortOrder: 27,
+    sortOrder: 29,
   },
   {
     id: "nature",
@@ -359,7 +371,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Peer-reviewed scientific journal publishing research with rigorous editorial and review processes.",
     websiteUrl: "https://www.nature.com/",
-    sortOrder: 28,
+    sortOrder: 30,
   },
   {
     id: "science-magazine",
@@ -371,7 +383,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Peer-reviewed journal of the American Association for the Advancement of Science.",
     websiteUrl: "https://www.science.org/",
-    sortOrder: 29,
+    sortOrder: 31,
   },
   {
     id: "jstor",
@@ -383,7 +395,7 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     explanation:
       "Digital library of academic journals, books, and primary sources for evidence-based research.",
     websiteUrl: "https://www.jstor.org/",
-    sortOrder: 30,
+    sortOrder: 32,
   },
   {
     id: "britannica",
@@ -394,6 +406,6 @@ export const TRUSTED_MEDIA_RESOURCES: readonly TrustedMediaResource[] = [
     categoryId: "academic-resource",
     explanation: "Encyclopedic reference resource with editorial review and source citations.",
     websiteUrl: "https://www.britannica.com/",
-    sortOrder: 31,
+    sortOrder: 33,
   },
 ] as const;

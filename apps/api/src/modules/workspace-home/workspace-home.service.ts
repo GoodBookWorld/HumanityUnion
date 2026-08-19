@@ -65,44 +65,47 @@ function resolveCivicStage(initiatives: ReturnType<typeof listMyInitiatives>): s
 }
 
 /**
- * UX Evolution Pack 01 — Quick Actions Finalization.
+ * UX Evolution Pack 01 / Participant UX Pack 01 — Quick Actions Finalization.
  *
- * "Notification Center" was removed (previously id: "notification-center",
- * href: "/notifications") — it duplicated the notification bell and the
- * Settings → Notifications sidebar link. The `/notifications` route, its
- * API, and its data are untouched; this list simply no longer links to it
- * a second time from here.
+ * Each action opens the canonical surface its label represents.
+ * "Notification Center" remains intentionally omitted (bell + Settings cover it).
  */
-function buildQuickActions(): WorkspaceHomeQuickAction[] {
+/** Participant UX Pack 01 — Quick Actions map widget labels to canonical routes. */
+export function buildQuickActions(input?: {
+  readonly draftInitiatives?: readonly WorkspaceHomeLinkItem[];
+}): WorkspaceHomeQuickAction[] {
+  const firstDraftHref = input?.draftInitiatives?.[0]?.href;
+  const myInitiativesHref = "/workspace/initiatives";
+
   return [
     {
       id: "continue-draft-initiative",
       label: "Continue Draft Initiative",
-      href: "/initiatives",
+      href: firstDraftHref ?? myInitiativesHref,
       available: true,
     },
     {
       id: "continue-analysis",
       label: "Continue Analysis",
-      href: "/initiatives",
+      href: myInitiativesHref,
       available: true,
     },
     {
       id: "continue-proposal",
       label: "Continue Proposal",
-      href: "/initiatives",
+      href: myInitiativesHref,
       available: true,
     },
     {
       id: "continue-revision",
       label: "Continue Revision",
-      href: "/initiatives",
+      href: myInitiativesHref,
       available: true,
     },
     {
       id: "open-initiatives",
       label: "Open My Initiatives",
-      href: "/initiatives",
+      href: myInitiativesHref,
       available: true,
     },
     {
@@ -126,7 +129,7 @@ function buildQuickActions(): WorkspaceHomeQuickAction[] {
     {
       id: "create-initiative",
       label: "Create New Initiative",
-      href: "/initiatives",
+      href: "/initiatives/create",
       available: true,
     },
   ];
@@ -557,7 +560,7 @@ export async function getWorkspaceHomeForParticipant(input: {
       participationArea,
     },
     statistics,
-    quickActions: buildQuickActions(),
+    quickActions: buildQuickActions({ draftInitiatives: activeWork.draftInitiatives }),
     activeWork,
     recentActivity,
     responsibilities,

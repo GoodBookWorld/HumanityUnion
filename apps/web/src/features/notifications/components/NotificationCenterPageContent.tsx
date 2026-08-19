@@ -14,6 +14,7 @@ import { formatDirectConversationActivity } from "../../direct-messaging/direct-
 
 import {
   archiveNotification,
+  clearArchivedNotifications,
   deleteNotification,
   fetchMyNotifications,
   markAllNotificationsRead,
@@ -31,6 +32,8 @@ import {
 
 import { CommunicationCard } from "./CommunicationCard";
 import { CommunicationSummary } from "./CommunicationSummary";
+import { NotificationCenterParticipantIdentity } from "./NotificationCenterParticipantIdentity";
+import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 
 import "../notifications-page.css";
 
@@ -298,6 +301,8 @@ export function NotificationCenterPageContent() {
 
   const [remindersState, setRemindersState] = useState<SectionLoadState>("loading");
   const [reminders, setReminders] = useState<CommunicationReminderView[]>([]);
+  const [clearArchiveOpen, setClearArchiveOpen] = useState(false);
+  const [clearingArchive, setClearingArchive] = useState(false);
 
   const loadNotifications = useCallback(async () => {
     setNotificationsState((current) => (current === "ready" ? current : "loading"));
@@ -456,11 +461,28 @@ export function NotificationCenterPageContent() {
     );
   }
 
+  async function handleClearArchiveConfirm() {
+    setClearingArchive(true);
+    try {
+      await clearArchivedNotifications();
+      setClearArchiveOpen(false);
+      await loadNotifications();
+      dispatchNotificationsChanged();
+    } catch {
+      // Keep dialog open so the participant can retry or cancel.
+    } finally {
+      setClearingArchive(false);
+    }
+  }
+
   return (
     <main className="notifications-page">
       <header className="notifications-page__header">
         <div className="notifications-page__header-copy">
-          <h1 className="notifications-page__title hu-heading-1">Notification Center</h1>
+          <div className="notifications-page__title-row">
+            {authenticated ? <NotificationCenterParticipantIdentity /> : null}
+            <h1 className="notifications-page__title hu-heading-1">Notification Center</h1>
+          </div>
           <p className="notifications-page__summary">
             Your active hub for civic notifications, incoming messages, and personal reminders.
           </p>
@@ -600,6 +622,15 @@ export function NotificationCenterPageContent() {
               <h2 id="archive-section-heading" className="notifications-page__section-title">
                 Archive
               </h2>
+              {archivedNotifications.length > 0 ? (
+                <button
+                  type="button"
+                  className="notifications-page__button"
+                  onClick={() => setClearArchiveOpen(true)}
+                >
+                  Clear archive
+                </button>
+              ) : null}
             </div>
 
             {archiveItems.length === 0 ? (
@@ -621,6 +652,22 @@ export function NotificationCenterPageContent() {
               </ul>
             )}
           </section>
+
+          <ConfirmDialog
+            isOpen={clearArchiveOpen}
+            title="Clear notification archive?"
+            description="This will permanently remove all archived notifications. This action cannot be undone."
+            cancelLabel="Cancel"
+            confirmLabel="Clear archive"
+            destructive
+            isConfirming={clearingArchive}
+            onCancel={() => {
+              if (!clearingArchive) {
+                setClearArchiveOpen(false);
+              }
+            }}
+            onConfirm={() => void handleClearArchiveConfirm()}
+          />
         </>
       )}
     </main>

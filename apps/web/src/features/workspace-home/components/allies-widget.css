@@ -11,17 +11,8 @@
 }
 
 /*
- * 4 cards visible (~68px each incl. gap); remaining up to 8 scroll
- * internally via `overflow-y: auto` — no custom wheel handling, so normal
- * page scrolling is never intercepted while the pointer is over this list
- * (Profile UX Pack 01 Part 10/19).
- *
- * Communication UX Pack 03.2 Part 17 — `overscroll-behavior: contain` was
- * removed here: it stops wheel/touch scroll from chaining to the page once
- * this list reaches its own top/bottom boundary, which is exactly the
- * "dead zone" a user hits when continuing to scroll past a nested list
- * (the page appears to stop responding). The default `auto` chaining is
- * kept instead so page scroll never gets trapped.
+ * Participant UX Pack 01 — show every Ally; scroll the list independently
+ * at 320px without trapping page scroll (no overscroll-behavior: contain).
  */
 .allies-widget__list {
   margin: 0;
@@ -29,7 +20,7 @@
   list-style: none;
   display: grid;
   gap: var(--hu-space-2);
-  max-height: 280px;
+  max-height: 320px;
   overflow-y: auto;
 }
 

@@ -26,7 +26,7 @@ describe("Civic Media RSS Integration Pack 01 — logos & rail", () => {
     assert.equal(economist.logoLabel, "TE");
 
     const politico = resolveProviderPresentation("POLITICO");
-    assert.equal(politico.logoUrl, undefined);
+    assert.equal(politico.logoUrl, "/images/media/politico.webp");
     assert.equal(politico.logoLabel, "POL");
   });
 

@@ -109,6 +109,18 @@ export class MongoNotificationPersistenceAdapter implements NotificationPersiste
     await collection.deleteOne({ notificationId });
   }
 
+  async deleteArchivedByUserId(userId: string): Promise<number> {
+    await ensureMongoReady();
+    const collection = getMongoCollection<MemberNotificationDocument>(
+      MONGO_COLLECTIONS.memberNotifications,
+    );
+    const result = await collection.deleteMany({
+      recipientUserId: userId,
+      status: "archived",
+    });
+    return result.deletedCount ?? 0;
+  }
+
   async deleteByRelatedEntity(
     relatedEntityType: MemberNotification["relatedEntityType"],
     relatedEntityId: string,

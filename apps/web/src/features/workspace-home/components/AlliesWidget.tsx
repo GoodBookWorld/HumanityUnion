@@ -80,8 +80,6 @@ interface AlliesWidgetProps {
   allies?: AllyCard[];
 }
 
-const MAX_ALLIES = 8;
-
 /**
  * Recovery Task 33 — Workspace UX Evolution, Part 11.
  * Profile UX Pack 01 Part 9/10 — wired to the real Workspace Allies data
@@ -90,29 +88,20 @@ const MAX_ALLIES = 8;
  * empty state below only ever renders when there really are none — no
  * fake Allies.
  *
- * Profile UX Pack 02 Part 2 — each entry became avatar + name only, both
- * linking to the public profile as one unit (no buttons, no chat), because
- * Direct Collaboration messaging did not exist yet at that point.
- *
- * Communication UX Pack 03.2 Part 3/4 — Direct Collaboration messaging now
- * exists (Profile UX Pack 03), so a compact Message control (with an
- * unread marker, Part 4) is reintroduced on the right side of each card.
- * The identity link itself is unchanged: it still opens the public profile
- * as one unit, never the conversation.
+ * Participant UX Pack 01 — render every Ally from the Workspace response
+ * (no client-side truncation). The list scrolls independently at 320px.
  */
 export function AlliesWidget({ allies = [] }: AlliesWidgetProps) {
-  const visibleAllies = allies.slice(0, MAX_ALLIES);
-
   return (
     <div className="allies-widget">
-      {visibleAllies.length === 0 ? (
+      {allies.length === 0 ? (
         <p className="allies-widget__empty">
           Your active Initiative Allies will appear here after collaboration requests are
           accepted.
         </p>
       ) : (
         <ul className="allies-widget__list" aria-label="Allies">
-          {visibleAllies.map((ally) => {
+          {allies.map((ally) => {
             const identityContent = (
               <>
                 <HumanityAvatar

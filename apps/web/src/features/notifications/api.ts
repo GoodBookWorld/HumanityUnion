@@ -83,6 +83,13 @@ export async function deleteNotification(notificationId: string): Promise<{ dele
   });
 }
 
+/** Participant UX Pack 01 — permanently clear every archived notification for the signed-in user. */
+export async function clearArchivedNotifications(): Promise<{ deletedCount: number }> {
+  return apiRequest<{ deletedCount: number }>("/api/v1/notifications/archive", {
+    method: "DELETE",
+  });
+}
+
 export function priorityLabel(priority: NotificationPriority): string {
   switch (priority) {
     case "critical":

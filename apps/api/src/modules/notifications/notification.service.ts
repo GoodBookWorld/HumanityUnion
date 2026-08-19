@@ -310,6 +310,19 @@ export async function deleteArchivedNotification(notificationId: string, userId:
 }
 
 /**
+ * Participant UX Pack 01 — permanently remove every archived notification
+ * owned by the authenticated user. Active/unread/read notifications are
+ * never touched. Authority is always the session userId — never a client
+ * participantId.
+ */
+export async function clearArchivedNotificationsForUser(
+  userId: string,
+): Promise<{ deletedCount: number }> {
+  const deletedCount = await persistence.deleteArchivedByUserId(userId);
+  return { deletedCount };
+}
+
+/**
  * Initiative UX Pack 01.1 — Draft Initiative Safe Delete.
  *
  * Draft-only collaboration (Collaboration Channel, Sessions, Ally interest)

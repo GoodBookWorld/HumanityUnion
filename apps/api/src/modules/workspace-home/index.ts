@@ -1,5 +1,9 @@
 export { default as workspaceHomeRouter } from "./workspace-home.routes.js";
-export { buildAlliesSummary, getWorkspaceHomeForParticipant } from "./workspace-home.service.js";
+export {
+  buildAlliesSummary,
+  buildQuickActions,
+  getWorkspaceHomeForParticipant,
+} from "./workspace-home.service.js";
 export type { AlliesSummaryDependencies } from "./workspace-home.service.js";
 export type {
   WorkspaceHomeAlliesSummary,
