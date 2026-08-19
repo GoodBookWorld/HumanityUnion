@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 
 import type { InitiativeActiveAllyEntry } from "@hu/types";
 
-import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
 import { useOpenDirectConversation } from "../../direct-messaging/use-open-direct-conversation";
 import { getInitiativeActiveAlliesTeam } from "../api";
+import { InitiativeAuthorIdentity } from "./InitiativeAuthorIdentity";
 
 import "./initiative-active-allies-widget.css";
 
@@ -61,24 +61,13 @@ function ActiveAllyMessageButton({ entry }: { entry: InitiativeActiveAllyEntry }
  * only; role, shared Initiatives, and statistics are never rendered here.
  */
 function ActiveAllyRow({ entry }: { entry: InitiativeActiveAllyEntry }) {
-  const identityContent = (
-    <>
-      <HumanityAvatar className="iaa-widget__avatar" avatarUrl={entry.avatarUrl} size={36} alt="" />
-      <span className="iaa-widget__identity-text">
-        <span className="iaa-widget__name">{entry.displayName}</span>
-      </span>
-    </>
-  );
-
   return (
     <li className="iaa-widget__row">
-      {entry.profileUrl ? (
-        <Link className="iaa-widget__identity" href={entry.profileUrl}>
-          {identityContent}
-        </Link>
-      ) : (
-        <span className="iaa-widget__identity">{identityContent}</span>
-      )}
+      <InitiativeAuthorIdentity
+        displayName={entry.displayName}
+        avatarUrl={entry.avatarUrl}
+        profileUrl={entry.profileUrl}
+      />
       {entry.canMessage ? <ActiveAllyMessageButton entry={entry} /> : null}
     </li>
   );

@@ -4,6 +4,10 @@ import Link from "next/link";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
+import {
+  buildPublicInitiativeSharePayload,
+  CivicShareButton,
+} from "../civic-share";
 import { InitiativeImage } from "../initiatives/components/InitiativeImage";
 
 import "./public-initiative-mini-card.css";
@@ -43,8 +47,23 @@ export function PublicInitiativeMiniCard({
       className="public-initiative-mini-card"
       aria-label={buildAccessibleName(initiative)}
     >
-      <div className="public-initiative-mini-card__media" aria-hidden="true">
-        <MiniCardImage title={initiative.title} imageUrl={initiative.imageUrl} />
+      <div className="public-initiative-mini-card__media">
+        <div className="public-initiative-mini-card__media-visual" aria-hidden="true">
+          <MiniCardImage title={initiative.title} imageUrl={initiative.imageUrl} />
+        </div>
+        <div className="public-initiative-mini-card__share">
+          <CivicShareButton
+            compact
+            stopPropagation
+            payload={buildPublicInitiativeSharePayload({
+              initiativeId: initiative.initiativeId,
+              title: initiative.title,
+              image: initiative.imageUrl,
+              optionalText: initiative.summary,
+            })}
+            ariaLabel={`Share initiative: ${initiative.title}`}
+          />
+        </div>
       </div>
       <div className="public-initiative-mini-card__body">
         <h3 className="public-initiative-mini-card__title">{initiative.title}</h3>

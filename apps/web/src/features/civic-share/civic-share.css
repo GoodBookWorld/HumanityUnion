@@ -1,0 +1,112 @@
+.civic-share {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.civic-share__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  cursor: pointer;
+  color: inherit;
+}
+
+.civic-share--compact .civic-share__trigger {
+  width: 1.85rem;
+  height: 1.85rem;
+  background: color-mix(in srgb, var(--hu-color-surface) 88%, transparent);
+}
+
+.civic-share__trigger:hover:not(:disabled),
+.civic-share__trigger:focus-visible {
+  border-color: var(--hu-color-primary);
+  outline: 2px solid color-mix(in srgb, var(--hu-color-primary) 35%, transparent);
+  outline-offset: 1px;
+}
+
+.civic-share__trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.civic-share__popover {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 40;
+  width: min(16.5rem, calc(100vw - 1.5rem));
+  padding: var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--hu-color-text) 12%, transparent);
+}
+
+.civic-share__heading {
+  margin: 0 0 var(--hu-space-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hu-color-text-muted);
+}
+
+.civic-share__options {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.civic-share__option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--hu-space-2);
+  padding: 0.45rem 0.5rem;
+  border: 0;
+  border-radius: var(--hu-radius-sm, 0.35rem);
+  background: transparent;
+  color: var(--hu-color-text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.civic-share__option:hover,
+.civic-share__option:focus-visible {
+  background: var(--hu-color-bg-muted);
+  outline: none;
+}
+
+.civic-share__option--native {
+  margin-bottom: var(--hu-space-2);
+  border: 1px solid var(--hu-color-border);
+}
+
+.civic-share__status {
+  margin: var(--hu-space-2) 0 0;
+  font-size: 0.75rem;
+  color: var(--hu-color-text-muted);
+}
+
+@media (max-width: 767px) {
+  .civic-share__popover {
+    right: auto;
+    left: 0;
+  }
+
+  .civic-share--compact .civic-share__popover {
+    left: auto;
+    right: 0;
+  }
+}

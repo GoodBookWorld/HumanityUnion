@@ -58,6 +58,7 @@ export async function toPublicInitiativeProjection(
       completionDate: initiative.metadata.completionDate,
     },
     stewardDisplayName: steward.displayName,
+    stewardAvatarUrl: steward.avatarUrl,
     stewardProfileUrl: steward.profileUrl,
     createdAt: initiative.createdAt,
     currentVersion: getCurrentPublishedVersion(initiative.initiativeId) || 1,

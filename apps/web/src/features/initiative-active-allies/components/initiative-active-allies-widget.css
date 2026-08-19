@@ -82,6 +82,14 @@ a.iaa-widget__identity:focus-visible .iaa-widget__name {
   white-space: nowrap;
 }
 
+.iaa-widget__role {
+  font-size: 0.7rem;
+  color: var(--hu-color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .iaa-widget__message-wrap {
   flex-shrink: 0;
   display: flex;

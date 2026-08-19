@@ -47,6 +47,11 @@ import { CurrentLifecycleStageBanner } from "./CurrentLifecycleStageBanner";
 import { DiscussionLifecycleCompletionBanner } from "./DiscussionLifecycleCompletionBanner";
 import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
 import { PublicDiscussionPanel } from "./PublicDiscussionPanel";
+import { InitiativeAuthorIdentity } from "../../initiative-active-allies/components/InitiativeAuthorIdentity";
+import {
+  buildPublicInitiativeSharePayload,
+  CivicShareButton,
+} from "../../civic-share";
 
 /**
  * UX Evolution Pack 02.4 Part 2 — "Related Civic Records" removed from the
@@ -390,21 +395,46 @@ export function PublicInitiativeCenterPanel({
 
   return (
     <div className="pie-center">
-      <div className="pie-center__tabs" role="tablist" aria-label="Initiative content">
-        {tabs.map(([tabId, label]) => (
-          <button
-            key={tabId}
-            type="button"
-            role="tab"
-            id={`pie-tab-${tabId}`}
-            aria-selected={activeTab === tabId && !showLifecyclePanel}
-            aria-controls={`pie-panel-${tabId}`}
-            className={`pie-center__tab${activeTab === tabId && !showLifecyclePanel ? " pie-center__tab--active" : ""}`}
-            onClick={() => onTabChange(tabId)}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="pie-center__nav">
+        <div className="pie-center__tabs" role="tablist" aria-label="Initiative content">
+          {tabs.map(([tabId, label]) => (
+            <button
+              key={tabId}
+              type="button"
+              role="tab"
+              id={`pie-tab-${tabId}`}
+              aria-selected={activeTab === tabId && !showLifecyclePanel}
+              aria-controls={`pie-panel-${tabId}`}
+              className={`pie-center__tab${activeTab === tabId && !showLifecyclePanel ? " pie-center__tab--active" : ""}`}
+              onClick={() => onTabChange(tabId)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="pie-center__nav-aside" aria-label="Initiative author and share">
+          <CivicShareButton
+            payload={buildPublicInitiativeSharePayload({
+              initiativeId: experience.initiativeId,
+              title: experience.initiative.title,
+              image:
+                experience.hero.imageUrl ??
+                experience.initiative.metadata.imageUrl ??
+                experience.initiative.metadata.coverMedia?.thumbnailUrl ??
+                experience.initiative.metadata.coverMedia?.url,
+              optionalText: experience.hero.summary || experience.initiative.description,
+            })}
+            ariaLabel={`Share initiative: ${experience.initiative.title}`}
+          />
+          <InitiativeAuthorIdentity
+            className="pie-center__author-identity"
+            displayName={experience.initiative.stewardDisplayName}
+            avatarUrl={experience.initiative.stewardAvatarUrl}
+            profileUrl={experience.initiative.stewardProfileUrl}
+            roleLabel="Author"
+            avatarSize={32}
+          />
+        </div>
       </div>
 
       <div ref={contentRef} className="pie-center__content">

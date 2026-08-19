@@ -6,6 +6,10 @@ import type { PublicPetitionProjection } from "@hu/types";
 
 import { PublicTranslatedFields } from "../../language";
 import { getPublicPetition, recordPetitionVisitorSignal } from "../../petition/api";
+import {
+  buildPublicPetitionSharePayload,
+  CivicShareButton,
+} from "../../civic-share";
 import { InitiativePetitionSignatureWidget } from "./InitiativePetitionSignatureWidget";
 
 import "./initiative-petition-stage-workspace.css";
@@ -160,7 +164,25 @@ export function InitiativePetitionPublicResult({
       {publishedAtLabel ? <p className="ipl-public-result__empty">Published {publishedAtLabel}</p> : null}
 
       <section className="ipl-support" aria-label="Representative signatures">
-        <p className="ipl-support__title">Representative Signatures</p>
+        <div className="ipl-support__header">
+          <p className="ipl-support__title">Representative Signatures</p>
+          <CivicShareButton
+            payload={
+              projection.shareReference.available
+                ? buildPublicPetitionSharePayload({
+                    initiativeId: petitionSubject.initiativeId,
+                    petitionId: petitionIdentity.petitionId,
+                    title: petitionIdentity.title,
+                    shareUrl: projection.shareReference.url,
+                    optionalText: petitionSubject.summary || undefined,
+                  })
+                : null
+            }
+            disabled={!projection.shareReference.available}
+            disabledReason={projection.shareReference.sharingNote}
+            ariaLabel={`Share petition: ${petitionIdentity.title}`}
+          />
+        </div>
         <div className="ipl-support__counters" role="list" aria-label="Petition support counters">
           <div className="ipl-support__counter" role="listitem">
             <span className="ipl-support__counter-value">{supportBreakdown.participantSignatures}</span>

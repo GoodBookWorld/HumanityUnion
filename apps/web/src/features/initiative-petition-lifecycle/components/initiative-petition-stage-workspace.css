@@ -173,6 +173,14 @@
   border-top: 1px solid var(--workspace-border, #e5e7eb);
 }
 
+.ipl-support__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .ipl-support__title {
   margin: 0;
   font-weight: 600;
