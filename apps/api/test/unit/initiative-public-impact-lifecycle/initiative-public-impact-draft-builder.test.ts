@@ -226,19 +226,34 @@ describe("generatePublicImpactDraftContent (Impact Builder)", () => {
     assert.deepEqual(first, second);
   });
 
-  it("never invents section bodies when no Official Response Package is available", async () => {
+  it("assembles useful editable content when Official Responses package is absent (Fix 03)", async () => {
     const content = await generatePublicImpactDraftContent(
       buildSnapshot({
         officialResponsePackageReference: null,
         officialResponseSummaries: [],
         isOfficialResponsePackageAvailable: false,
-        isEmpty: true,
+        isEmpty: false,
+        trackingPackageReference: null,
+        trackingRecords: [],
+        completedCommitmentCount: 0,
+        evidenceItems: [],
       }),
     );
     assert.equal(content.officialResponsePackageId, null);
     assert.equal(content.sections.length, 11);
-    assert.ok(content.sections.every((section) => section.body === ""));
-    assert.ok(content.sections.every((section) => section.evidenceReferences.length === 0));
+    const executive = content.sections.find((section) => section.sectionId === "executive_summary");
+    const official = content.sections.find((section) => section.sectionId === "official_responses");
+    const objectives = content.sections.find((section) => section.sectionId === "objectives");
+    assert.ok(executive?.body.includes("Community Compost Network"));
+    assert.ok(executive?.body.includes("not published yet"));
+    assert.ok(official?.body.includes("No official statement is invented"));
+    assert.ok(objectives?.body.includes("Should the city fund the compost pilot"));
+    assert.ok(content.sections.every((section) => section.body.trim().length > 0));
+    assert.ok(
+      content.sections.every((section) => section.evidenceReferences.length >= 1),
+      "every section must remain editable with factual anchors",
+    );
+    assert.ok(!/City Hall confirmed|invented vote|100% approval/i.test(JSON.stringify(content)));
   });
 
   it("includes No official response received as a factual outcome", async () => {

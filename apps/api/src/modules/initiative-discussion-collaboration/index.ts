@@ -1,5 +1,6 @@
 export { initiativeDiscussionCollaborationRouter } from "./initiative-discussion-collaboration.routes.js";
 export {
+  buildInitiativeCollaborationDeepLink,
   drainInitiativeCollaborationNotificationsForTests,
   emitInitiativeCollaborationNotification,
 } from "./initiative-discussion-collaboration-notifications.js";

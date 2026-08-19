@@ -210,6 +210,7 @@ export async function requestLifecycleAiAssist(
     operation: providerContext.operation,
     participantDisplayName: providerContext.participantDisplayName,
     initiativeTitle: providerContext.initiativeTitle,
+    lifecycleProfile: providerContext.lifecycleProfile,
     presentationMode: providerContext.presentationMode,
     availableSourceLabels: providerContext.availableSourceLabels,
     instructions: providerContext.instructions,

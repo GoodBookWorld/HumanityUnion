@@ -112,6 +112,12 @@ export interface PublicInitiativeCollaborationParticipant {
 export interface PublicInitiativeCollaborationParticipantsResult {
   participants: PublicInitiativeCollaborationParticipant[];
   isViewerInitiativeSteward: boolean;
+  /**
+   * Authenticated viewer's participant id when known — used so an invited
+   * Participant can Accept on their own `invitation_pending` row. Null for
+   * guests. Never used as progression authority.
+   */
+  viewerParticipantId: string | null;
 }
 
 /**

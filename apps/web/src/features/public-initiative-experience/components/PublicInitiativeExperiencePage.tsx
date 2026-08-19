@@ -147,18 +147,24 @@ export function PublicInitiativeExperiencePage({
     return () => window.removeEventListener("hashchange", onHashChange);
   }, [applyHash]);
 
-  const applyQueryParams = useCallback((search: string) => {
-    const filterParam = new URLSearchParams(search).get("filter");
+  const applyQueryParams = useCallback(
+    (search: string) => {
+      const filterParam = new URLSearchParams(search).get("filter");
 
-    if (filterParam !== "collaboration") {
-      return;
-    }
+      if (filterParam !== "collaboration") {
+        return;
+      }
 
-    setShowLifecyclePanel(false);
-    setActiveTab("discussion");
-    setShowManageTab(false);
-    setInitialDiscussionFilter("collaboration");
-  }, []);
+      setShowLifecyclePanel(false);
+      setActiveTab("discussion");
+      setSelectedStageId("discussion");
+      setShowManageTab(false);
+      setInitialDiscussionFilter("collaboration");
+      // Discussion panel then scrolls to `#pie-collaboration-list` once loaded.
+      scrollToContent();
+    },
+    [scrollToContent],
+  );
 
   useEffect(() => {
     applyQueryParams(window.location.search);

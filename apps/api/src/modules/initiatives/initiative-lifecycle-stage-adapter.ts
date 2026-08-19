@@ -290,16 +290,23 @@ async function adaptCollectiveDecisionStage(
     return EMPTY_RESULT;
   }
 
-  // Initiative Lifecycle — Part H: a closed Collective Decision is the
-  // public civic document (Section 6/8) — draft/opened stay in-progress.
-  const isPublic = latest.status === "closed";
+  // Initiative Lifecycle — Part H: closed CD is the completed civic document.
+  // Opened (and cancelled) decisions must still expose publishedRecordId so
+  // Voting Results + ballot can load live aggregates from Initiative Decision Votes.
+  const isClosed = latest.status === "closed";
+  const exposesPublicResult =
+    latest.status === "opened" || isClosed || latest.status === "cancelled";
 
   return {
-    presentationStatus: isPublic ? "published" : "ready_for_review",
-    hasPublicResult: isPublic,
+    presentationStatus: isClosed
+      ? "published"
+      : latest.status === "opened"
+        ? "ready_for_review"
+        : "draft",
+    hasPublicResult: exposesPublicResult,
     version: null,
-    publishedAt: latest.closedAt ?? latest.closesAt ?? null,
-    publishedRecordId: isPublic ? latest.decisionId : null,
+    publishedAt: latest.closedAt ?? latest.openedAt ?? latest.closesAt ?? null,
+    publishedRecordId: exposesPublicResult ? latest.decisionId : null,
   };
 }
 

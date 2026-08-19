@@ -19,6 +19,10 @@ export interface HumanityUnionAssistantOpenButtonProps {
   readonly className?: string;
 }
 
+/**
+ * Canonical Ask Assistant launcher. Lifecycle Staging Fix 03 — larger
+ * control with intel.webp (28×28) while preserving existing design language.
+ */
 export function HumanityUnionAssistantOpenButton({
   surfaceId,
   initiativeId,
@@ -39,6 +43,7 @@ export function HumanityUnionAssistantOpenButton({
       type="button"
       className={className ?? "hu-assistant-open-button"}
       aria-haspopup="dialog"
+      aria-label={label}
       onClick={() =>
         assistant.openAssistant({
           surfaceId,
@@ -48,7 +53,18 @@ export function HumanityUnionAssistantOpenButton({
         })
       }
     >
-      {label}
+      <img
+        src="/icons/workspace/intel.webp"
+        alt=""
+        width={28}
+        height={28}
+        className="hu-assistant-open-button__icon"
+        decoding="async"
+        loading="lazy"
+        fetchPriority="low"
+        aria-hidden="true"
+      />
+      <span className="hu-assistant-open-button__label">{label}</span>
     </button>
   );
 }

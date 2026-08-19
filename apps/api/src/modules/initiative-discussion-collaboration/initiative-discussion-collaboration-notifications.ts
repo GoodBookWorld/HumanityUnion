@@ -3,13 +3,19 @@ import { resolveRecipientIdentity } from "../notifications/notification.recipien
 import { getNotificationTemplate } from "../notifications/notification.templates.js";
 
 /**
- * Profile UX Pack 01 Part 4 — `?filter=collaboration` is read once on initial
- * load by `PublicInitiativeExperiencePage` to land the notification's
- * recipient directly on the Collaboration working list (Discussion tab,
- * `#discussion`, already handled by that page's existing hash routing).
+ * Profile UX Pack 01 Part 4 / Lifecycle Staging Fix 02 —
+ * `?filter=collaboration` is read once on initial load by
+ * `PublicInitiativeExperiencePage` to land the notification recipient on the
+ * Collaboration working list (Discussion tab; `#discussion` activates that
+ * tab via existing shell hash routing). Same canonical Initiative route —
+ * never a parallel page.
  */
-function initiativeCollaborationUrl(initiativeId: string): string {
+export function buildInitiativeCollaborationDeepLink(initiativeId: string): string {
   return `/initiatives/public/${encodeURIComponent(initiativeId)}?filter=collaboration#discussion`;
+}
+
+function initiativeCollaborationUrl(initiativeId: string): string {
+  return buildInitiativeCollaborationDeepLink(initiativeId);
 }
 
 export interface CollaborationNotificationInput {

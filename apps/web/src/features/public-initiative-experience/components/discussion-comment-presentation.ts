@@ -134,6 +134,35 @@ export function resolveCollaborationReviewActionState(
   return { visible: true, disabled: busy };
 }
 
+export interface CollaborationInvitationAcceptActionState {
+  /** Invited Participant may Accept on their own pending invitation row. */
+  visible: boolean;
+  disabled: boolean;
+}
+
+/**
+ * Lifecycle Staging Fix 02 — invited Participant Accept on the Collaboration
+ * working list. Visible only on the viewer's own `invitation_pending` row.
+ * Author/steward and other Participants' rows never show Accept here.
+ * Reuses `respondToAlliesInvitation` (same as comment-level Accept).
+ */
+export function resolveCollaborationInvitationAcceptState(input: {
+  status: InitiativeAllyStatus;
+  isOwnRow: boolean;
+  isViewerInitiativeSteward: boolean;
+  busy: boolean;
+}): CollaborationInvitationAcceptActionState {
+  if (input.isViewerInitiativeSteward || !input.isOwnRow) {
+    return { visible: false, disabled: true };
+  }
+
+  if (input.status !== "invitation_pending") {
+    return { visible: false, disabled: true };
+  }
+
+  return { visible: true, disabled: input.busy };
+}
+
 export interface AuthorLinkPresentation {
   isLink: boolean;
   href?: string;

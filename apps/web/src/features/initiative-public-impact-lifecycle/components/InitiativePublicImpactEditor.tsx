@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type {
   InitiativePublicImpactLifecycleDraft,
@@ -10,6 +10,12 @@ import type {
 
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
+import {
+  LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT,
+  applyLifecycleAiSuggestionsToPublicImpactSections,
+  setLifecycleAiDraftExcerpt,
+  type LifecycleAiApplySuggestionsDetail,
+} from "../../lifecycle-ai-assistant";
 import {
   generateInitiativePublicImpactDraft,
   publishInitiativePublicImpactStage,
@@ -39,11 +45,58 @@ export function InitiativePublicImpactEditor({
     draft.sections.map((section) => structuredClone(section)),
   );
   const [error, setError] = useState<string | null>(null);
+  const [applyNotice, setApplyNotice] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
 
   const generatePhase = useSaveButtonPhase();
   const savePhase = useSaveButtonPhase();
   const publishPhase = useSaveButtonPhase();
+
+  useEffect(() => {
+    setTitle(draft.title);
+    setSections(draft.sections.map((section) => structuredClone(section)));
+  }, [draft]);
+
+  useEffect(() => {
+    const excerpt = [
+      `Title: ${title}`,
+      ...sections.map((section) => `${section.sectionId}: ${section.body}`),
+    ].join("\n");
+    setLifecycleAiDraftExcerpt("public_impact", excerpt);
+  }, [title, sections]);
+
+  useEffect(() => {
+    function handleApplySuggestions(event: Event) {
+      const custom = event as CustomEvent<LifecycleAiApplySuggestionsDetail>;
+      const detail = custom.detail;
+
+      if (!detail || detail.initiativeId !== initiativeId || detail.stageId !== "public_impact") {
+        return;
+      }
+
+      const result = applyLifecycleAiSuggestionsToPublicImpactSections({
+        title,
+        sections,
+        suggestions: detail.suggestions,
+      });
+
+      if (!result.applied) {
+        return;
+      }
+
+      setTitle(result.title);
+      setSections(result.sections);
+      setApplyNotice(
+        "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
+      );
+      setError(null);
+    }
+
+    window.addEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
+    return () => {
+      window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
+    };
+  }, [initiativeId, sections, title]);
 
   function updateSection(sectionId: string, patch: Partial<InitiativePublicImpactReportSection>) {
     setSections((current) =>
@@ -70,6 +123,7 @@ export function InitiativePublicImpactEditor({
 
   async function handleGenerate() {
     setError(null);
+    setApplyNotice(null);
     try {
       const generated = await generatePhase.runSave(() =>
         generateInitiativePublicImpactDraft(initiativeId),
@@ -117,8 +171,7 @@ export function InitiativePublicImpactEditor({
 
       {sections.length === 0 ? (
         <p className="ipi-source-panel__empty">
-          No Report sections yet. Generate a draft from the published Official Response Package and
-          upstream Lifecycle sources.
+          No Report sections yet. Generate a draft from available Initiative Lifecycle sources.
         </p>
       ) : (
         sections.map((section) => (
@@ -159,6 +212,7 @@ export function InitiativePublicImpactEditor({
       )}
 
       {error ? <p className="ipi-source-panel__empty">{error}</p> : null}
+      {applyNotice ? <p className="ipi-source-panel__empty">{applyNotice}</p> : null}
 
       <div className="ipi-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>

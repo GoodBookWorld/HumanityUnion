@@ -11,7 +11,7 @@ import type {
 
 import { trapTabKey } from "../../../design-system/focus-trap";
 import { getLifecycleAiSessionContext, requestLifecycleAiAssist } from "../api";
-import { getLifecycleAiAnalysisDraftExcerpt } from "../lifecycle-ai-draft-excerpt-bridge";
+import { getLifecycleAiDraftExcerpt } from "../lifecycle-ai-draft-excerpt-bridge";
 import { dispatchLifecycleAiApplySuggestions } from "../lifecycle-ai-suggestion-events";
 
 import "../lifecycle-ai-assistant.css";
@@ -150,7 +150,9 @@ export function LifecycleAiAssistantModal({
         instructions: operation === "answer_question" ? question.trim() || undefined : undefined,
         currentDraftExcerpt:
           operation === "improve_wording" || operation === "regenerate_section"
-            ? currentDraftExcerpt || getLifecycleAiAnalysisDraftExcerpt() || undefined
+            ? currentDraftExcerpt ||
+              getLifecycleAiDraftExcerpt(stageId ?? "analysis") ||
+              undefined
             : undefined,
       });
 

@@ -387,6 +387,7 @@ export async function requestHumanityUnionAssistantAssist(
       `Surface: ${surfaceId}. Feature: ${specialization.featureLabel}. ` +
       specialization.specializationSummary;
     let allowedOperations = [...specialization.defaultOperations];
+    let lifecycleProfile: string | undefined;
 
     if (initiativeId) {
       const initiative = getInitiativeById(initiativeId);
@@ -395,6 +396,7 @@ export async function requestHumanityUnionAssistantAssist(
       }
 
       initiativeTitle = initiative.title;
+      lifecycleProfile = initiative.lifecycleProfile ?? "STANDARD";
       const projection = await buildInitiativeLifecycleStageProjection({
         initiative,
         stageId,
@@ -430,6 +432,7 @@ export async function requestHumanityUnionAssistantAssist(
           targetSectionId: body.targetSectionId,
         });
         availableSourceLabels = providerContext.availableSourceLabels;
+        lifecycleProfile = providerContext.lifecycleProfile;
         // Context minimization: only attach source snapshot when needed.
         const isPlatformOrientation =
           body.operation === "answer_question" &&
@@ -536,6 +539,7 @@ export async function requestHumanityUnionAssistantAssist(
       operation: body.operation,
       participantDisplayName: displayName,
       initiativeTitle,
+      lifecycleProfile,
       presentationMode,
       availableSourceLabels,
       instructions: body.instructions,

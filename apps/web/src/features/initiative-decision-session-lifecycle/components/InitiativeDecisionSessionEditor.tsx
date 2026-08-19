@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { DecisionSession, InitiativeDecisionSessionDraft } from "@hu/types";
 
+import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -21,6 +22,22 @@ function linesToList(value: string): string[] {
 
 function listToLines(values: readonly string[]): string {
   return values.join("\n");
+}
+
+interface DecisionSessionApplyForm {
+  title: string;
+  decisionQuestion: string;
+  decisionContext: string;
+  objectives: string;
+  options: string;
+  supportingArguments: string;
+  risks: string;
+  dependencies: string;
+  requiredResources: string;
+  suggestedTimeline: string;
+  suggestedParticipants: string;
+  suggestedResponsibleRoles: string;
+  unresolvedQuestions: string;
 }
 
 interface InitiativeDecisionSessionEditorProps {
@@ -60,10 +77,69 @@ export function InitiativeDecisionSessionEditor({
     listToLines(draft.unresolvedQuestions),
   );
   const [error, setError] = useState<string | null>(null);
+  const [applyNotice, setApplyNotice] = useState<string | null>(null);
 
   const generatePhase = useSaveButtonPhase();
   const savePhase = useSaveButtonPhase();
   const publishPhase = useSaveButtonPhase();
+
+  const applyForm = useMemo<DecisionSessionApplyForm>(
+    () => ({
+      title,
+      decisionQuestion,
+      decisionContext,
+      objectives,
+      options,
+      supportingArguments,
+      risks,
+      dependencies,
+      requiredResources,
+      suggestedTimeline,
+      suggestedParticipants,
+      suggestedResponsibleRoles,
+      unresolvedQuestions,
+    }),
+    [
+      title,
+      decisionQuestion,
+      decisionContext,
+      objectives,
+      options,
+      supportingArguments,
+      risks,
+      dependencies,
+      requiredResources,
+      suggestedTimeline,
+      suggestedParticipants,
+      suggestedResponsibleRoles,
+      unresolvedQuestions,
+    ],
+  );
+
+  useLifecycleAiFormApply({
+    initiativeId,
+    stageId: "decision_session",
+    form: applyForm,
+    onFormApplied: (next) => {
+      setTitle(next.title);
+      setDecisionQuestion(next.decisionQuestion);
+      setDecisionContext(next.decisionContext);
+      setObjectives(next.objectives);
+      setOptions(next.options);
+      setSupportingArguments(next.supportingArguments);
+      setRisks(next.risks);
+      setDependencies(next.dependencies);
+      setRequiredResources(next.requiredResources);
+      setSuggestedTimeline(next.suggestedTimeline);
+      setSuggestedParticipants(next.suggestedParticipants);
+      setSuggestedResponsibleRoles(next.suggestedResponsibleRoles);
+      setUnresolvedQuestions(next.unresolvedQuestions);
+    },
+    onAppliedNotice: (text) => {
+      setApplyNotice(text);
+      setError(null);
+    },
+  });
 
   async function handleGenerate() {
     setError(null);
@@ -259,6 +335,7 @@ export function InitiativeDecisionSessionEditor({
       </div>
 
       {error ? <p className="ids-source-panel__empty">{error}</p> : null}
+      {applyNotice ? <p className="ids-source-panel__empty">{applyNotice}</p> : null}
 
       <div className="ids-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>

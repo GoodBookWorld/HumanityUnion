@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { InitiativeImprovementProposalsCollection, InitiativeStructuredProposal } from "@hu/types";
 
+import {
+  LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT,
+  applyLifecycleAiSuggestionsToFields,
+  getLifecycleAiStageApplyContract,
+  setLifecycleAiDraftExcerpt,
+  type LifecycleAiApplySuggestionsDetail,
+} from "../../lifecycle-ai-assistant";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import {
@@ -22,6 +29,16 @@ interface ManualProposalFormState {
   expectedImprovement: string;
 }
 
+interface ProposalApplyForm {
+  title: string;
+  summary: string;
+  description: string;
+  reason: string;
+  expectedImprovement: string;
+  supportingSources: string;
+  relatedDiscussionReferences: string;
+}
+
 const EMPTY_MANUAL_FORM: ManualProposalFormState = {
   title: "",
   summary: "",
@@ -29,6 +46,24 @@ const EMPTY_MANUAL_FORM: ManualProposalFormState = {
   reason: "",
   expectedImprovement: "",
 };
+
+function toProposalApplyForm(proposal: InitiativeStructuredProposal): ProposalApplyForm {
+  return {
+    title: proposal.title,
+    summary: proposal.summary,
+    description: proposal.description,
+    reason: proposal.reason,
+    expectedImprovement: proposal.expectedImprovement,
+    supportingSources: proposal.supportingSources,
+    relatedDiscussionReferences: proposal.relatedDiscussionReferences,
+  };
+}
+
+function findEditableProposal(
+  proposals: readonly InitiativeStructuredProposal[],
+): InitiativeStructuredProposal | undefined {
+  return proposals.find((proposal) => proposal.status === "draft" || proposal.status === "ready");
+}
 
 interface InitiativeImprovementProposalsEditorProps {
   readonly initiativeId: string;
@@ -77,6 +112,91 @@ export function InitiativeImprovementProposalsEditor({
   const isBusy = generatePhase.isBusy || publishPhase.isBusy || addPhase.isBusy;
   const canComplete =
     collection.proposals.length === 0 || readyCount > 0 || treatedCount > 0;
+
+  useEffect(() => {
+    const firstProposal = collection.proposals[0];
+    if (!firstProposal) {
+      setLifecycleAiDraftExcerpt("proposal", "");
+      return;
+    }
+
+    const form = toProposalApplyForm(firstProposal);
+    const excerpt = Object.entries(form)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join("\n");
+    setLifecycleAiDraftExcerpt("proposal", excerpt);
+  }, [collection.proposals]);
+
+  useEffect(() => {
+    if (!isDraft) {
+      return;
+    }
+
+    const contract = getLifecycleAiStageApplyContract("proposal");
+    if (!contract) {
+      return;
+    }
+
+    function handleApplySuggestions(event: Event) {
+      const custom = event as CustomEvent<LifecycleAiApplySuggestionsDetail>;
+      const detail = custom.detail;
+
+      if (!detail || detail.initiativeId !== initiativeId || detail.stageId !== "proposal") {
+        return;
+      }
+
+      const target = findEditableProposal(collection.proposals);
+      if (!target) {
+        return;
+      }
+
+      const current = toProposalApplyForm(target);
+      const knownKeys = contract!.knownKeys.filter(
+        (key): key is keyof ProposalApplyForm => key in current,
+      );
+      if (knownKeys.length === 0) {
+        return;
+      }
+
+      const fallbackKey = (
+        contract!.fallbackKey in current ? contract!.fallbackKey : knownKeys[0]!
+      ) as keyof ProposalApplyForm;
+
+      const result = applyLifecycleAiSuggestionsToFields({
+        current,
+        suggestions: detail.suggestions,
+        knownKeys,
+        fallbackKey,
+        forbiddenKeys: contract!.forbiddenKeys,
+      });
+
+      if (!result.applied) {
+        return;
+      }
+
+      const updatedProposal: InitiativeStructuredProposal = {
+        ...target,
+        ...result.next,
+        updatedAt: new Date().toISOString(),
+      };
+
+      onUpdated({
+        ...collection,
+        proposals: collection.proposals.map((proposal) =>
+          proposal.proposalId === updatedProposal.proposalId ? updatedProposal : proposal,
+        ),
+      });
+      setMessage({
+        tone: "success",
+        text: "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
+      });
+    }
+
+    window.addEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
+    return () => {
+      window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
+    };
+  }, [collection, initiativeId, isDraft, onUpdated]);
 
   function handleProposalUpdated(updatedProposal: InitiativeStructuredProposal) {
     onUpdated({

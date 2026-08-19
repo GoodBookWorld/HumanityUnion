@@ -28,6 +28,7 @@ import {
   planDiscussionCommentDeepLinkScroll,
   resolveDiscussionCommentFocusTarget,
 } from "../discussion-comment-deep-link";
+import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
 import {
   DISCUSSION_ACTION_DEFINITIONS,
   DISCUSSION_FILTERS,
@@ -35,6 +36,7 @@ import {
   resolveAlliesInvitationResponseState,
   resolveAuthorBadges,
   resolveAuthorLinkPresentation,
+  resolveCollaborationInvitationAcceptState,
   resolveCollaborationReviewActionState,
   resolveCollaborationStatusLabel,
   resolveFilterHeading,
@@ -44,6 +46,9 @@ import {
   resolveStatusIndicators,
   type DiscussionFilter,
 } from "./discussion-comment-presentation";
+
+/** DOM target for `?filter=collaboration#discussion` notification deep-links. */
+export const COLLABORATION_LIST_DOM_ID = "pie-collaboration-list";
 
 interface PublicDiscussionPanelProps {
   initiativeId: string;
@@ -509,25 +514,30 @@ function DiscussionCommentCard({
 /**
  * Profile UX Pack 01 Parts 2/8 — the "Collaboration" filter's compact
  * Participant list: avatar, name, status, and (for the Initiative Author
- * only, on still-pending requests) Accept/Decline. Deliberately does not
- * reuse `DiscussionCommentCard` — no comment text, no Helpful / Not Helpful
- * / Proposal, no duplicate Discussion card. Sourced directly from the Ally
- * store via `fetchInitiativeCollaborationParticipants` (see that module's
- * doc comment for why this cannot be derived from loaded comments).
+ * only, on still-pending interest requests) Accept/Decline. Lifecycle
+ * Staging Fix 02 — invited Participants see Accept invitation on their own
+ * `invitation_pending` row via the same `respondToAlliesInvitation` API as
+ * the comment-level control. Deliberately does not reuse
+ * `DiscussionCommentCard`. Sourced from the Ally store via
+ * `fetchInitiativeCollaborationParticipants`.
  */
 function CollaborationParticipantList({
   initiativeId,
   participants,
   isViewerInitiativeSteward,
+  viewerParticipantId,
   onChanged,
 }: {
   initiativeId: string;
   participants: readonly PublicInitiativeCollaborationParticipant[];
   isViewerInitiativeSteward: boolean;
+  viewerParticipantId: string | null;
   onChanged: () => void;
 }) {
   const [busyParticipantId, setBusyParticipantId] = useState<string | null>(null);
+  const [busyOwnInvitation, setBusyOwnInvitation] = useState(false);
   const [errorByParticipantId, setErrorByParticipantId] = useState<Record<string, string>>({});
+  const [ownInvitationError, setOwnInvitationError] = useState<string | null>(null);
 
   async function handleRespond(participantId: string, response: "accept" | "decline"): Promise<void> {
     setBusyParticipantId(participantId);
@@ -555,12 +565,39 @@ function CollaborationParticipantList({
     }
   }
 
+  async function handleAcceptOwnInvitation(): Promise<void> {
+    setBusyOwnInvitation(true);
+    setOwnInvitationError(null);
+
+    try {
+      await respondToAlliesInvitation(initiativeId, "accept");
+      onChanged();
+    } catch (error) {
+      setOwnInvitationError(
+        error instanceof Error ? error.message : "This invitation could not be accepted.",
+      );
+    } finally {
+      setBusyOwnInvitation(false);
+    }
+  }
+
   return (
-    <ul className="pie-collab-list">
+    <ul className="pie-collab-list" id={COLLABORATION_LIST_DOM_ID}>
       {participants.map((entry) => {
         const authorLink = resolveAuthorLinkPresentation(entry.author);
         const name = entry.author.displayName;
-        const statusLabel = resolveCollaborationStatusLabel(entry.status);
+        const isOwnRow = Boolean(
+          viewerParticipantId && entry.participantId === viewerParticipantId,
+        );
+        const invitationAcceptState = resolveCollaborationInvitationAcceptState({
+          status: entry.status,
+          isOwnRow,
+          isViewerInitiativeSteward,
+          busy: busyOwnInvitation,
+        });
+        const statusLabel = invitationAcceptState.visible
+          ? null
+          : resolveCollaborationStatusLabel(entry.status);
         const reviewState = resolveCollaborationReviewActionState(
           entry.status,
           isViewerInitiativeSteward,
@@ -569,7 +606,11 @@ function CollaborationParticipantList({
         const entryError = errorByParticipantId[entry.participantId];
 
         return (
-          <li key={entry.participantId} className="pie-collab-list__item">
+          <li
+            key={entry.participantId}
+            className="pie-collab-list__item"
+            data-own-invitation-pending={invitationAcceptState.visible ? "true" : undefined}
+          >
             <span className="pie-collab-list__identity">
               {entry.author.avatarUrl ? (
                 <img
@@ -593,7 +634,19 @@ function CollaborationParticipantList({
               ) : (
                 <span className="pie-collab-list__name">{name}</span>
               )}
-              <span className="pie-collab-list__status">{statusLabel}</span>
+              {statusLabel ? (
+                <span className="pie-collab-list__status">{statusLabel}</span>
+              ) : null}
+              {invitationAcceptState.visible ? (
+                <button
+                  type="button"
+                  className="hu-button hu-button--primary pie-collab-list__review-button"
+                  disabled={invitationAcceptState.disabled}
+                  onClick={() => void handleAcceptOwnInvitation()}
+                >
+                  {busyOwnInvitation ? "Accepting…" : "Accept invitation"}
+                </button>
+              ) : null}
             </span>
             {reviewState.visible ? (
               <span className="pie-collab-list__review-actions">
@@ -616,6 +669,9 @@ function CollaborationParticipantList({
               </span>
             ) : null}
             {entryError ? <p className="pie-collab-list__error">{entryError}</p> : null}
+            {invitationAcceptState.visible && ownInvitationError ? (
+              <p className="pie-collab-list__error">{ownInvitationError}</p>
+            ) : null}
           </li>
         );
       })}
@@ -651,9 +707,11 @@ export function PublicDiscussionPanel({
   const [collaborationData, setCollaborationData] =
     useState<PublicInitiativeCollaborationParticipantsResult | null>(null);
   const [collaborationLoading, setCollaborationLoading] = useState(false);
+  const experienceRefresh = useInitiativeExperienceRefresh();
   const returnTo = buildDiscussionReturnTo(initiativeId);
   const draftStorageKey = `${DRAFT_STORAGE_PREFIX}${initiativeId}`;
   const deepLinkScrollCompletedFor = useRef<string | null>(null);
+  const collaborationDeepLinkScrolled = useRef(false);
 
   useEffect(() => {
     setComments(initialComments);
@@ -778,10 +836,16 @@ export function PublicDiscussionPanel({
       if (filter === "collaboration") {
         void loadCollaborationParticipants();
       }
+      await experienceRefresh?.refresh();
     } catch {
       // Keep the existing list; the action itself already succeeded.
     }
   };
+
+  const handleCollaborationListChanged = useCallback(async (): Promise<void> => {
+    await loadCollaborationParticipants();
+    await experienceRefresh?.refresh();
+  }, [loadCollaborationParticipants, experienceRefresh]);
 
   const filteredComments = useMemo(
     () => comments.filter((comment) => matchesDiscussionFilter(comment, filter)),
@@ -842,6 +906,29 @@ export function PublicDiscussionPanel({
       void loadCollaborationParticipants();
     }
   }, [filter, loadCollaborationParticipants]);
+
+  /**
+   * Lifecycle Staging Fix 02 — notification `?filter=collaboration#discussion`
+   * must land on the Collaboration working list, not the top of the page.
+   * Scroll once the list (or empty state) is mounted; never invent a second route.
+   */
+  useEffect(() => {
+    if (filter !== "collaboration" || collaborationLoading) {
+      return;
+    }
+
+    if (collaborationDeepLinkScrolled.current) {
+      return;
+    }
+
+    const element = document.getElementById(COLLABORATION_LIST_DOM_ID);
+    if (!element) {
+      return;
+    }
+
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+    collaborationDeepLinkScrolled.current = true;
+  }, [filter, collaborationLoading, collaborationData]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -946,16 +1033,21 @@ export function PublicDiscussionPanel({
       {comments.length > 0 || filter === "collaboration" ? (
         filter === "collaboration" ? (
           collaborationLoading && !collaborationData ? (
-            <p className="pie-empty">Loading collaboration requests…</p>
+            <p className="pie-empty" id={COLLABORATION_LIST_DOM_ID}>
+              Loading collaboration requests…
+            </p>
           ) : collaborationData && collaborationData.participants.length > 0 ? (
             <CollaborationParticipantList
               initiativeId={initiativeId}
               participants={collaborationData.participants}
               isViewerInitiativeSteward={collaborationData.isViewerInitiativeSteward}
-              onChanged={() => void loadCollaborationParticipants()}
+              viewerParticipantId={collaborationData.viewerParticipantId}
+              onChanged={() => void handleCollaborationListChanged()}
             />
           ) : (
-            <p className="pie-empty">No participants have expressed interest yet.</p>
+            <p className="pie-empty" id={COLLABORATION_LIST_DOM_ID}>
+              No participants have expressed interest yet.
+            </p>
           )
         ) : filteredComments.length > 0 ? (
           <div className="pie-discussion__comments-wrap">

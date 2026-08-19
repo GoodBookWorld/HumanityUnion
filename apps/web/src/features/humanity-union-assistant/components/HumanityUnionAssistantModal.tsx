@@ -12,7 +12,7 @@ import type {
 } from "@hu/types";
 
 import { isAuthenticationRequiredError } from "../../../lib/api-client";
-import { getLifecycleAiAnalysisDraftExcerpt } from "../../lifecycle-ai-assistant/lifecycle-ai-draft-excerpt-bridge";
+import { getLifecycleAiDraftExcerpt } from "../../lifecycle-ai-assistant/lifecycle-ai-draft-excerpt-bridge";
 import { dispatchLifecycleAiApplySuggestions } from "../../lifecycle-ai-assistant/lifecycle-ai-suggestion-events";
 import {
   getHumanityUnionAssistantSessionContext,
@@ -311,7 +311,7 @@ export function HumanityUnionAssistantModal({
         conversationHistory: toAssistConversationHistory(nextTurns),
         currentDraftExcerpt:
           operation === "improve_wording" || operation === "regenerate_section"
-            ? getLifecycleAiAnalysisDraftExcerpt() || undefined
+            ? getLifecycleAiDraftExcerpt(stageId ?? context?.stageId ?? "analysis") || undefined
             : undefined,
       });
 

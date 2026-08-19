@@ -561,6 +561,7 @@ export async function listCollaborationParticipantsForInitiative(
     isViewerInitiativeSteward: Boolean(
       viewerParticipantId && initiative.stewardId === viewerParticipantId,
     ),
+    viewerParticipantId,
   };
 }
 

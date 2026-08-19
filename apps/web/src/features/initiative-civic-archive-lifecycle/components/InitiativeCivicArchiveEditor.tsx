@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type {
   InitiativeCivicArchiveLifecycleDraft,
@@ -8,6 +8,7 @@ import type {
   InitiativeLifecycleProfile,
 } from "@hu/types";
 
+import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -17,6 +18,13 @@ import {
 } from "../api";
 import { InitiativeCivicArchiveCompletenessPanel } from "./InitiativeCivicArchiveCompletenessPanel";
 import { InitiativeCivicArchiveShareToolbar } from "./InitiativeCivicArchiveShareToolbar";
+
+interface ArchiveApplyForm {
+  finalArchiveTitle: string;
+  finalSummary: string;
+  lessonsLearned: string;
+  knowledgeContribution: string;
+}
 
 interface InitiativeCivicArchiveEditorProps {
   readonly initiativeId: string;
@@ -39,11 +47,38 @@ export function InitiativeCivicArchiveEditor({
   const [lessonsLearned, setLessonsLearned] = useState(draft.lessonsLearned);
   const [knowledgeContribution, setKnowledgeContribution] = useState(draft.knowledgeContribution);
   const [error, setError] = useState<string | null>(null);
+  const [applyNotice, setApplyNotice] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
 
   const generatePhase = useSaveButtonPhase();
   const savePhase = useSaveButtonPhase();
   const publishPhase = useSaveButtonPhase();
+
+  const applyForm = useMemo<ArchiveApplyForm>(
+    () => ({
+      finalArchiveTitle,
+      finalSummary,
+      lessonsLearned,
+      knowledgeContribution,
+    }),
+    [finalArchiveTitle, finalSummary, lessonsLearned, knowledgeContribution],
+  );
+
+  useLifecycleAiFormApply({
+    initiativeId,
+    stageId: "archive",
+    form: applyForm,
+    onFormApplied: (next) => {
+      setFinalArchiveTitle(next.finalArchiveTitle);
+      setFinalSummary(next.finalSummary);
+      setLessonsLearned(next.lessonsLearned);
+      setKnowledgeContribution(next.knowledgeContribution);
+    },
+    onAppliedNotice: (text) => {
+      setApplyNotice(text);
+      setError(null);
+    },
+  });
 
   function buildSavePayload() {
     return {
@@ -163,6 +198,7 @@ export function InitiativeCivicArchiveEditor({
       )}
 
       {error ? <p className="ica-source-panel__empty">{error}</p> : null}
+      {applyNotice ? <p className="ica-source-panel__empty">{applyNotice}</p> : null}
       {published ? (
         <p className="ica-source-panel__empty">
           Archive published. Use Public Preview to review the versioned document, or generate again

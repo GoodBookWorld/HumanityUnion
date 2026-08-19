@@ -32,7 +32,16 @@ export async function computeInitiativeDecisionVoteAggregates(
 ): Promise<InitiativeDecisionVoteAggregates> {
   const aggregates = createEmptyInitiativeDecisionVoteAggregates();
 
-  for (const vote of await listVotesForDecision(decisionId)) {
+  // Honest empty totals when the Vote substrate is unavailable — never a
+  // Lifecycle blocker, and never invents a parallel vote model.
+  let votes: InitiativeDecisionVote[];
+  try {
+    votes = await listVotesForDecision(decisionId);
+  } catch {
+    return aggregates;
+  }
+
+  for (const vote of votes) {
     incrementChoiceCount(aggregates.total, vote.choice);
 
     if (vote.transparencyCohort === "verified") {

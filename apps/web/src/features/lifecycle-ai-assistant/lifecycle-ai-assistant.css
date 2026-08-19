@@ -159,14 +159,28 @@
 }
 
 .lifecycle-ai-modal__open-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.65rem;
   width: 100%;
+  min-height: 3.1rem;
   margin-top: 0.75rem;
   border: 1px solid rgba(28, 36, 40, 0.22);
   background: #1c2428;
   color: #f7f4ef;
-  padding: 0.55rem 0.75rem;
+  padding: 0.75rem 0.95rem;
   cursor: pointer;
-  font-size: 0.92rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.lifecycle-ai-modal__open-button .hu-assistant-open-button__icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  object-fit: contain;
 }
 
 .lifecycle-ai-modal__open-button:hover {

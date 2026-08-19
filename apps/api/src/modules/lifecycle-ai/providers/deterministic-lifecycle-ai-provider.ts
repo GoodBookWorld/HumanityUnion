@@ -41,29 +41,7 @@ function buildDeterministicContent(request: LifecycleAiProviderRequest): string 
 
   switch (request.operation) {
     case "generate_draft":
-      if (request.stageId === "analysis") {
-        return [
-          "Section: title",
-          `Collaborative Analysis — ${request.initiativeTitle}`,
-          "Section: summary",
-          `Suggested summary for "${request.initiativeTitle}" based on ${sources}. ${request.sourceContextSummary.slice(0, 400)}`,
-          "Section: supportingEvidence",
-          "List the strongest Helpful discussion arguments and proposal-marked contributions from the Source Snapshot.",
-          "Section: risks",
-          "List the main concerns and Not Helpful themes from Discussion.",
-          "Section: openQuestions",
-          "Capture unanswered questions still open in Discussion.",
-          "Section: suggestedImprovements",
-          "Note areas that need clarification before an Improvement Proposal stage.",
-          "Section: references",
-          "Reference Discussion comments, Active Allies, and Ready-to-Collaborate signals used above.",
-        ].join("\n");
-      }
-      return [
-        "Section: assistant",
-        `Suggested ${request.stageLabel} draft outline for "${request.initiativeTitle}" using ${sources}.`,
-        request.sourceContextSummary.slice(0, 600),
-      ].join("\n");
+      return buildDeterministicWholeDocumentDraft(request, sources);
 
     case "improve_wording":
       return [
@@ -121,6 +99,177 @@ function buildDeterministicContent(request: LifecycleAiProviderRequest): string 
       const _exhaustive: never = request.operation;
       return _exhaustive;
     }
+  }
+}
+
+function buildDeterministicWholeDocumentDraft(
+  request: LifecycleAiProviderRequest,
+  sources: string,
+): string {
+  const context = request.sourceContextSummary.slice(0, 400);
+  const title = request.initiativeTitle;
+
+  switch (request.stageId) {
+    case "analysis":
+      return [
+        "Section: title",
+        `Collaborative Analysis — ${title}`,
+        "Section: summary",
+        `Suggested summary for "${title}" based on ${sources}. ${context}`,
+        "Section: supportingEvidence",
+        "List the strongest Helpful discussion arguments and proposal-marked contributions from the Source Snapshot.",
+        "Section: risks",
+        "List the main concerns and Not Helpful themes from Discussion.",
+        "Section: openQuestions",
+        "Capture unanswered questions still open in Discussion.",
+        "Section: suggestedImprovements",
+        "Note areas that need clarification before an Improvement Proposal stage.",
+        "Section: references",
+        "Reference Discussion comments, Active Allies, and Ready-to-Collaborate signals used above.",
+      ].join("\n");
+    case "proposal":
+      return [
+        "Section: title",
+        `Improvement proposal for ${title}`,
+        "Section: summary",
+        `Concise proposal summary grounded in ${sources}.`,
+        "Section: description",
+        `Describe the proposed change using available Analysis/Discussion context. ${context}`,
+        "Section: reason",
+        "Explain why this improvement addresses evidenced community needs.",
+        "Section: expectedImprovement",
+        "State the expected civic improvement without inventing outcomes.",
+        "Section: supportingSources",
+        "Cite Discussion/Analysis sources from the authorized context only.",
+      ].join("\n");
+    case "petition":
+      return [
+        "Section: title",
+        `Petition: ${title}`,
+        "Section: publicSummary",
+        `Public summary for a petition about "${title}" using ${sources}.`,
+        "Section: requestStatement",
+        "State the public request clearly and neutrally.",
+        "Section: expectedOutcome",
+        "Describe the intended civic outcome without inventing commitments from institutions.",
+        "Section: supportingContext",
+        context || "Add supporting context from available Initiative sources.",
+        "Section: keyArguments",
+        "List key arguments, one per line, grounded in available evidence.",
+      ].join("\n");
+    case "decision_session":
+      return [
+        "Section: title",
+        `Decision Session: ${title}`,
+        "Section: decisionQuestion",
+        `What decision should Participants consider for "${title}"?`,
+        "Section: decisionContext",
+        `Context from available Initiative sources (${sources}). ${context}`,
+        "Section: objectives",
+        "List decision objectives, one per line.",
+        "Section: options",
+        "List options for comparison, one per line. Do not recommend a vote.",
+        "Section: risks",
+        "List risks and unknowns, one per line.",
+        "Section: unresolvedQuestions",
+        "List unresolved questions, one per line.",
+      ].join("\n");
+    case "collective_decision":
+      return [
+        "Section: title",
+        `Collective Decision: ${title}`,
+        "Section: decisionSummary",
+        `Neutral summary of the decision framing for "${title}". Do not invent vote totals.`,
+        "Section: approvedActions",
+        "List approved actions only when present in authorized context; otherwise leave planning placeholders.",
+        "Section: decisionRationale",
+        "Explain rationale without fabricating voting results.",
+        "Section: decisionRisks",
+        "List implementation risks, one per line.",
+        "Section: successCriteria",
+        "List success criteria, one per line.",
+        "Section: implementationPriorities",
+        "List implementation priorities, one per line.",
+      ].join("\n");
+    case "commitment":
+      return [
+        "Section: title",
+        `Implementation Commitments: ${title}`,
+        "Section: summary",
+        `Commitment package summary from available decision/Initiative data (${sources}).`,
+        "Section: description",
+        "Describe the first commitment action. Do not invent participant assignees — use Unassigned roles.",
+        "Section: suggestedResponsibleRole",
+        "Unassigned",
+        "Section: suggestedTimeline",
+        "Editable planning template — suggest a timeline window without inventing people.",
+        "Section: relatedRisks",
+        "List related risks, one per line.",
+      ].join("\n");
+    case "tracking":
+      return [
+        "Section: title",
+        `Implementation Tracking: ${title}`,
+        "Section: summary",
+        `Tracking plan summary using available commitments/scope (${sources}).`,
+        "Section: milestoneTitle",
+        "First milestone title from available approved actions or Initiative scope.",
+        "Section: description",
+        "Describe the milestone. Never invent responsible Participant ids — leave Unassigned.",
+        "Section: plannedStartDate",
+        "YYYY-MM-DD (editable planning template)",
+        "Section: targetDate",
+        "YYYY-MM-DD (editable planning template)",
+        "Section: notes",
+        "Planning notes and evidence gaps. Do not invent assignees.",
+      ].join("\n");
+    case "official_response":
+      return [
+        "Section: title",
+        `Official Responses: ${title}`,
+        "Section: summary",
+        `Author package summary. Never fabricate received official statements.`,
+        "Section: noResponseNote",
+        "If no reply: document outreach factually. Do not invent institutional responses.",
+        "Section: subject",
+        "Subject line for an Author-recorded response entry (only when real evidence exists).",
+        "Section: responseSummary",
+        "Author summary of a received response — never invent the official text.",
+        "Section: notes",
+        "Author notes and verification needs.",
+      ].join("\n");
+    case "public_impact":
+      return [
+        "Section: title",
+        `Public Impact Report: ${title}`,
+        "Section: executive_summary",
+        `Author conclusion draft for "${title}" from available Lifecycle sources (${sources}). Missing optional upstream stages are noted, not invented.`,
+        "Section: objectives",
+        "Summarize intended outcomes from Collective Decision / Initiative scope when present. Do not invent decisions.",
+        "Section: official_responses",
+        "State only published Official Response facts or explicitly that no package is published / No Official Response was recorded. Never fabricate an official statement.",
+        "Section: evidence",
+        "List only evidence ids present in the authorized context. Mark gaps as unconfirmed.",
+        "Section: lessons_learned",
+        "Record uncertainties and unconfirmed impact honestly.",
+      ].join("\n");
+    case "archive":
+      return [
+        "Section: finalArchiveTitle",
+        `Civic Archive: ${title}`,
+        "Section: finalSummary",
+        `Final summary of available Lifecycle history for "${title}" (${sources}). Do not rewrite historical source artifacts.`,
+        "Section: lessonsLearned",
+        "Author lessons learned from available canonical records.",
+        "Section: knowledgeContribution",
+        "Knowledge contribution for future Initiatives — factual and reflective only.",
+      ].join("\n");
+    default:
+      return [
+        "Section: assistant",
+        `Suggested ${request.stageLabel} draft outline for "${title}" using ${sources}.`,
+        context,
+      ].join("\n");
   }
 }
 

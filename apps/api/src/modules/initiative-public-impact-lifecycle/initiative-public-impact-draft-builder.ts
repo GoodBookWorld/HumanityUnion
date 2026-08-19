@@ -86,19 +86,10 @@ function generateDeterministicPublicImpactDraftContent(
   const commitmentPackageId = snapshot.commitmentPackageReference?.packageId ?? null;
   const decisionId = snapshot.decisionReference?.decisionId ?? null;
 
-  if (!snapshot.officialResponsePackageReference) {
-    return {
-      title,
-      officialResponsePackageId: null,
-      trackingPackageId,
-      commitmentPackageId,
-      decisionId,
-      sections: (Object.keys(SECTION_TITLES) as InitiativePublicImpactReportSectionId[]).map((sectionId) =>
-        section(sectionId, "", []),
-      ),
-      participationStatistics: { ...snapshot.participationStatistics },
-    };
-  }
+  // Lifecycle Staging Fix 03 — Official Responses is SOURCE_OPTIONAL. Missing
+  // upstream packages must still yield an editable draft from available
+  // Initiative / Decision / Tracking / Commitment facts — never an empty form
+  // and never invented Official Responses or voting results.
 
   const packageRefs = [
     officialResponsePackageId,
@@ -120,26 +111,35 @@ function generateDeterministicPublicImpactDraftContent(
   ];
 
   const noOfficialResponse = isNoOfficialResponse(snapshot);
+  const hasOfficialPackage = Boolean(snapshot.officialResponsePackageReference);
   const hasMeasurableCompletion = completedTrackings.length > 0 || snapshot.completedCommitmentCount > 0;
   const evidenceSparse = snapshot.evidenceItems.length === 0;
 
   const executiveSummaryParts = [
     snapshot.initiativeTitle
-      ? `This Public Impact Report summarises published Lifecycle outcomes for "${snapshot.initiativeTitle}".`
-      : "This Public Impact Report summarises published Lifecycle outcomes for this Initiative.",
+      ? `This Public Impact Report summarises available Lifecycle outcomes for "${snapshot.initiativeTitle}".`
+      : "This Public Impact Report summarises available Lifecycle outcomes for this Initiative.",
     snapshot.officialResponsePackageReference
       ? noOfficialResponse
         ? `Official Responses published outcome: No official response received (package "${snapshot.officialResponsePackageReference.title}").`
         : `It is based on Official Responses package "${snapshot.officialResponsePackageReference.title}".`
-      : null,
+      : "Official Responses package is not published yet — no official statements are invented.",
     snapshot.trackingPackageReference
       ? `Implementation Tracking package "${snapshot.trackingPackageReference.title}" is cited.`
+      : "Implementation Tracking package is not published yet.",
+    snapshot.commitmentPackageReference
+      ? `Implementation Commitments package "${snapshot.commitmentPackageReference.title}" is cited.`
       : null,
-    noOfficialResponse
-      ? "Zero received official responses is a documented stage result, not a missing source."
-      : `${snapshot.completedCommitmentCount} completed commitment/tracking record(s) and ${snapshot.officialResponseSummaries.length} official response(s) are included.`,
+    snapshot.decisionReference
+      ? `Collective Decision "${snapshot.decisionReference.title}" is available as intended-outcome context.`
+      : "Collective Decision is not published yet — intended outcomes use Initiative scope where available.",
+    hasOfficialPackage
+      ? noOfficialResponse
+        ? "Zero received official responses is a documented stage result, not a missing source."
+        : `${snapshot.completedCommitmentCount} completed commitment/tracking record(s) and ${snapshot.officialResponseSummaries.length} official response(s) are included.`
+      : `${snapshot.completedCommitmentCount} completed commitment/tracking record(s) are included from available sources.`,
     !hasMeasurableCompletion
-      ? "Author conclusion (factual): no measurable impact yet / implementation incomplete relative to published Tracking sources. This is a valid publishable result."
+      ? "Author conclusion (factual): no measurable impact yet / implementation incomplete relative to available sources. This is a valid publishable result."
       : null,
     evidenceSparse
       ? "Evidence is sparse or unavailable from published sources — treat impact claims as unconfirmed until cited."
@@ -193,29 +193,35 @@ function generateDeterministicPublicImpactDraftContent(
         ? `Tracking Package ${trackingPackageId} is published but no Tracking Records were loaded — timeline/milestone result cannot be confirmed beyond the package citation.`
         : "No Tracking Records are available for a timeline / milestone result.";
 
-  const noResponseDetail = snapshot.officialResponsePackageReference.noResponseDetail;
-  const officialResponsesBody = noOfficialResponse
+  const noResponseDetail = snapshot.officialResponsePackageReference?.noResponseDetail;
+  const officialResponsesBody = !hasOfficialPackage
     ? [
-        "Official response result: No official response received.",
-        noResponseDetail?.note?.trim() ? `Author note: ${noResponseDetail.note.trim()}` : null,
-        noResponseDetail?.contactedOrganizations?.length
-          ? `Organizations / recipients contacted: ${noResponseDetail.contactedOrganizations.join(", ")}`
-          : null,
-        noResponseDetail?.contactedDates?.length
-          ? `Contact / follow-up dates: ${noResponseDetail.contactedDates.join(", ")}`
-          : null,
-        `Cited Official Response Package: ${officialResponsePackageId}.`,
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : snapshot.officialResponseSummaries.length > 0
-      ? `Received official responses (${snapshot.officialResponseSummaries.length}):\n${snapshot.officialResponseSummaries
-          .map((response) => {
-            const institution = response.institution || response.organization || "Institution not named";
-            return `- ${response.responseId}: ${response.subject} (${institution}; verification=${response.verificationStatus})`;
-          })
-          .join("\n")}`
-      : `Official Response Package ${officialResponsePackageId} is published. No individual response records are attached.`;
+        "Official Responses package is not published yet.",
+        "No official statement is invented.",
+        "Outcome remains Unassigned / not yet recorded until the Author publishes Official Responses or records No Official Response.",
+      ].join("\n")
+    : noOfficialResponse
+      ? [
+          "Official response result: No official response received.",
+          noResponseDetail?.note?.trim() ? `Author note: ${noResponseDetail.note.trim()}` : null,
+          noResponseDetail?.contactedOrganizations?.length
+            ? `Organizations / recipients contacted: ${noResponseDetail.contactedOrganizations.join(", ")}`
+            : null,
+          noResponseDetail?.contactedDates?.length
+            ? `Contact / follow-up dates: ${noResponseDetail.contactedDates.join(", ")}`
+            : null,
+          `Cited Official Response Package: ${officialResponsePackageId}.`,
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : snapshot.officialResponseSummaries.length > 0
+        ? `Received official responses (${snapshot.officialResponseSummaries.length}):\n${snapshot.officialResponseSummaries
+            .map((response) => {
+              const institution = response.institution || response.organization || "Institution not named";
+              return `- ${response.responseId}: ${response.subject} (${institution}; verification=${response.verificationStatus})`;
+            })
+            .join("\n")}`
+        : `Official Response Package ${officialResponsePackageId} is published. No individual response records are attached.`;
 
   const participation = snapshot.participationStatistics;
   const communityParticipationBody = [
@@ -245,6 +251,9 @@ function generateDeterministicPublicImpactDraftContent(
     evidenceSparse
       ? "Unconfirmed / uncertain: evidence references are insufficient to convert assumptions into facts."
       : null,
+    !hasOfficialPackage
+      ? "Official Responses are absent — do not treat silence as an invented institutional reply."
+      : null,
     noOfficialResponse
       ? "Institutional reply status is confirmed as No official response received — do not treat that as unavailable."
       : null,
@@ -257,12 +266,24 @@ function generateDeterministicPublicImpactDraftContent(
     snapshot.trackingPackageReference?.summary
       ? `Tracking Package summary cited: ${snapshot.trackingPackageReference.summary}`
       : null,
-    snapshot.officialResponsePackageReference.summary
+    snapshot.officialResponsePackageReference?.summary
       ? `Official Responses summary cited: ${snapshot.officialResponsePackageReference.summary}`
+      : null,
+    snapshot.initiativeDescription
+      ? `Initiative scope cited: ${snapshot.initiativeDescription}`
       : null,
   ]
     .filter(Boolean)
     .join("\n");
+
+  const factualAnchors = [
+    ...packageRefs,
+    snapshot.analysisReference?.analysisId,
+    snapshot.revisionReference?.revisionId,
+    snapshot.petitionReference?.petitionId,
+    snapshot.decisionSessionReference?.sessionId,
+    snapshot.initiativeId,
+  ].filter((value): value is string => Boolean(value));
 
   const evidenceBody =
     snapshot.evidenceItems.length > 0
@@ -272,8 +293,8 @@ function generateDeterministicPublicImpactDraftContent(
       : [
           "Evidence insufficient from published Tracking / Official Response sources.",
           "Do not invent documents or results. Record uncertainty explicitly.",
-          packageRefs.length > 0
-            ? `Cited lifecycle packages (factual anchors only): ${packageRefs.join(", ")}.`
+          factualAnchors.length > 0
+            ? `Cited lifecycle anchors (factual only): ${factualAnchors.join(", ")}.`
             : null,
         ]
           .filter(Boolean)
@@ -291,17 +312,14 @@ function generateDeterministicPublicImpactDraftContent(
     trackingPackageId ? `Tracking Package: ${trackingPackageId}` : null,
     officialResponsePackageId ? `Official Response Package: ${officialResponsePackageId}` : null,
     noOfficialResponse ? "Official Response outcome: no_official_response_received" : null,
+    !hasOfficialPackage ? "Official Responses: not published yet" : null,
+    `Initiative: ${snapshot.initiativeId}`,
   ]
     .filter(Boolean)
     .join("\n");
 
-  const trackingEvidenceRefs = [
-    ...packageRefs,
-    ...completedTrackings.map((tracking) => tracking.trackingId),
-  ];
-
   const sections: InitiativePublicImpactReportSection[] = [
-    section("executive_summary", executiveSummaryParts.join(" "), packageRefs),
+    section("executive_summary", executiveSummaryParts.join(" "), factualAnchors),
     section(
       "objectives",
       objectivesBody,
@@ -310,14 +328,15 @@ function generateDeterministicPublicImpactDraftContent(
           snapshot.decisionReference?.decisionId,
           snapshot.decisionSessionReference?.sessionId,
           snapshot.petitionReference?.petitionId,
+          snapshot.initiativeId,
         ].filter((value): value is string => Boolean(value));
-        return refs.length > 0 ? refs : packageRefs;
+        return refs.length > 0 ? refs : factualAnchors;
       })(),
     ),
     section(
       "implemented_actions",
       implementedActionsBody,
-      trackingPackageId ? [trackingPackageId, ...approvedActions.slice(0, 5)] : packageRefs,
+      trackingPackageId ? [trackingPackageId, ...approvedActions.slice(0, 5)] : factualAnchors,
     ),
     section(
       "completed_commitments",
@@ -326,23 +345,24 @@ function generateDeterministicPublicImpactDraftContent(
         ? [commitmentPackageId, ...completedTrackings.map((tracking) => tracking.trackingId)]
         : completedTrackings.length > 0
           ? completedTrackings.map((tracking) => tracking.trackingId)
-          : packageRefs,
+          : factualAnchors,
     ),
     section(
       "implementation_progress",
       progressBody,
       trackingPackageId
         ? [trackingPackageId, ...snapshot.trackingRecords.map((tracking) => tracking.trackingId)]
-        : packageRefs,
+        : factualAnchors,
     ),
     section(
       "official_responses",
       officialResponsesBody,
       [
-        officialResponsePackageId!,
+        officialResponsePackageId,
         ...snapshot.officialResponseSummaries.map((response) => response.responseId),
         ...(noOfficialResponse ? ["outcome:no_official_response_received"] : []),
-      ],
+        ...(!hasOfficialPackage ? ["outcome:official_responses_not_published"] : []),
+      ].filter((value): value is string => Boolean(value)),
     ),
     section(
       "community_participation",
@@ -351,6 +371,7 @@ function generateDeterministicPublicImpactDraftContent(
         snapshot.petitionReference?.petitionId,
         snapshot.analysisReference?.analysisId,
         officialResponsePackageId,
+        snapshot.initiativeId,
       ].filter((value): value is string => Boolean(value)),
     ),
     section(
@@ -358,7 +379,7 @@ function generateDeterministicPublicImpactDraftContent(
       outstandingBody,
       trackingPackageId
         ? [trackingPackageId, ...outstandingTrackings.map((tracking) => tracking.trackingId)]
-        : packageRefs,
+        : factualAnchors,
     ),
     section(
       "lessons_learned",
@@ -368,14 +389,19 @@ function generateDeterministicPublicImpactDraftContent(
         snapshot.revisionReference?.revisionId,
         trackingPackageId,
         officialResponsePackageId,
+        snapshot.initiativeId,
       ].filter((value): value is string => Boolean(value)),
     ),
     section(
       "evidence",
       evidenceBody,
-      snapshot.evidenceItems.length > 0 ? [...snapshot.evidenceItems] : packageRefs,
+      snapshot.evidenceItems.length > 0 ? [...snapshot.evidenceItems] : factualAnchors,
     ),
-    section("impact_references", impactReferencesBody, packageRefs.length > 0 ? packageRefs : trackingEvidenceRefs),
+    section(
+      "impact_references",
+      impactReferencesBody || `Initiative: ${snapshot.initiativeId}`,
+      factualAnchors.length > 0 ? factualAnchors : [snapshot.initiativeId],
+    ),
   ];
 
   return {

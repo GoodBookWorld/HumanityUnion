@@ -35,18 +35,18 @@ function baseInitiative(initiativeId: string): Initiative {
 }
 
 describe("Final Certification Fix 01 — Decision Session zero-proposal eligibility", () => {
-  it("blocks when zero proposals and Improvement Proposals stage is not completed", async () => {
+  it("allows Decision Session when Improvement Proposals are absent (independent Author stages — Step 03 / Fix 03)", async () => {
     const eligibility = await assessDecisionSessionEligibilityForInitiative(
-      baseInitiative(`initiative-ds-block-${Date.now()}`),
+      baseInitiative(`initiative-ds-independent-${Date.now()}`),
     );
 
-    assert.equal(eligibility.eligible, false);
-    assert.ok(
-      eligibility.reasons.some(
-        (reason) =>
-          reason.includes("steward-reviewed improvement proposal") ||
-          reason.includes("Improvement Proposals stage"),
-      ),
+    // Obsolete sequential architecture expected eligible === false. Current
+    // contract: missing proposals are SOURCE_OPTIONAL, not a hard block.
+    assert.equal(eligibility.eligible, true);
+    assert.equal(eligibility.stewardReviewedProposalCount, 0);
+    assert.equal(
+      eligibility.reasons.some((reason) => reason.includes("improvement proposal")),
+      false,
     );
   });
 
@@ -71,6 +71,7 @@ describe("Final Certification Fix 01 — Decision Session zero-proposal eligibil
       baseInitiative(initiativeId),
     );
 
+    assert.equal(eligibility.eligible, true);
     assert.equal(
       eligibility.reasons.some((reason) => reason.includes("improvement proposal")),
       false,

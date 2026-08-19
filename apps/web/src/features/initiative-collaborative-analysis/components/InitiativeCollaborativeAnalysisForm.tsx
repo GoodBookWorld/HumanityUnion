@@ -9,9 +9,10 @@ import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile
 import { WorkspaceButton, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import {
   LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT,
-  setLifecycleAiAnalysisDraftExcerpt,
+  setLifecycleAiDraftExcerpt,
   type LifecycleAiApplySuggestionsDetail,
 } from "../../lifecycle-ai-assistant";
+import { applyLifecycleAiSuggestionsToFields } from "../../lifecycle-ai-assistant/lifecycle-ai-apply-suggestions";
 import {
   generateInitiativeAnalysisDraft,
   publishInitiativeAnalysis,
@@ -38,10 +39,6 @@ const ANALYSIS_FORM_SECTION_KEYS = [
   "suggestedImprovements",
   "references",
 ] as const satisfies ReadonlyArray<keyof AnalysisFormState>;
-
-function isAnalysisFormSectionKey(value: string): value is keyof AnalysisFormState {
-  return (ANALYSIS_FORM_SECTION_KEYS as readonly string[]).includes(value);
-}
 
 interface InitiativeCollaborativeAnalysisFormProps {
   initiativeId: string;
@@ -91,7 +88,8 @@ export function InitiativeCollaborativeAnalysisForm({
   }, [analysis]);
 
   useEffect(() => {
-    setLifecycleAiAnalysisDraftExcerpt(
+    setLifecycleAiDraftExcerpt(
+      "analysis",
       [form.title, form.summary, form.supportingEvidence, form.risks, form.openQuestions]
         .filter((part) => part.trim())
         .join("\n\n"),
@@ -116,27 +114,13 @@ export function InitiativeCollaborativeAnalysisForm({
       }
 
       setForm((current) => {
-        const next = { ...current };
-        let applied = false;
-
-        for (const suggestion of detail.suggestions) {
-          if (suggestion.targetSectionId && isAnalysisFormSectionKey(suggestion.targetSectionId)) {
-            next[suggestion.targetSectionId] = suggestion.suggestedText;
-            applied = true;
-          }
-        }
-
-        if (!applied) {
-          const advisory = detail.suggestions.map((item) => item.suggestedText).join("\n\n");
-          if (advisory.trim()) {
-            next.summary = next.summary.trim()
-              ? `${next.summary.trim()}\n\n${advisory}`
-              : advisory;
-            applied = true;
-          }
-        }
-
-        return applied ? next : current;
+        const result = applyLifecycleAiSuggestionsToFields<AnalysisFormState>({
+          current,
+          suggestions: detail.suggestions,
+          knownKeys: ANALYSIS_FORM_SECTION_KEYS,
+          fallbackKey: "summary",
+        });
+        return result.applied ? result.next : current;
       });
 
       setMessage({

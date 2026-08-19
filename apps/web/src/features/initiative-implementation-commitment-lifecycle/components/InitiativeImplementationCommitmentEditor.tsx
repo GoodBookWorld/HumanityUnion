@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type {
   InitiativeImplementationCommitmentCandidate,
@@ -8,6 +8,13 @@ import type {
   InitiativeImplementationCommitmentPackage,
 } from "@hu/types";
 
+import {
+  LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT,
+  applyLifecycleAiSuggestionsToCandidateCollection,
+  getLifecycleAiStageApplyContract,
+  setLifecycleAiDraftExcerpt,
+  type LifecycleAiApplySuggestionsDetail,
+} from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -95,11 +102,75 @@ export function InitiativeImplementationCommitmentEditor({
     draft.candidates.map((candidate) => toFormState(candidate)),
   );
   const [error, setError] = useState<string | null>(null);
+  const [applyNotice, setApplyNotice] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
 
   const generatePhase = useSaveButtonPhase();
   const savePhase = useSaveButtonPhase();
   const publishPhase = useSaveButtonPhase();
+
+  useEffect(() => {
+    const excerpt = [
+      `Title: ${title}`,
+      `Summary: ${summary}`,
+      ...candidates.map(
+        (candidate, index) =>
+          `Candidate ${index + 1}: ${candidate.approvedAction}\n${candidate.description}`,
+      ),
+    ].join("\n");
+    setLifecycleAiDraftExcerpt("commitment", excerpt);
+  }, [title, summary, candidates]);
+
+  useEffect(() => {
+    const contract = getLifecycleAiStageApplyContract("commitment");
+    if (!contract) {
+      return;
+    }
+
+    function handleApplySuggestions(event: Event) {
+      const custom = event as CustomEvent<LifecycleAiApplySuggestionsDetail>;
+      const detail = custom.detail;
+
+      if (!detail || detail.initiativeId !== initiativeId || detail.stageId !== "commitment") {
+        return;
+      }
+
+      const result = applyLifecycleAiSuggestionsToCandidateCollection({
+        packageFields: { title, summary },
+        candidates,
+        suggestions: detail.suggestions,
+        packageKeys: ["title", "summary"],
+        candidateKeys: [
+          "description",
+          "suggestedResponsibleRole",
+          "suggestedTimeline",
+          "priority",
+          "requiredResources",
+          "relatedRisks",
+          "references",
+        ],
+        forbiddenKeys: contract!.forbiddenKeys,
+        fallbackKey: "summary",
+      });
+
+      if (!result.applied) {
+        return;
+      }
+
+      setTitle(result.packageFields.title);
+      setSummary(result.packageFields.summary);
+      setCandidates(result.candidates);
+      setApplyNotice(
+        "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
+      );
+      setError(null);
+    }
+
+    window.addEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
+    return () => {
+      window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
+    };
+  }, [initiativeId, title, summary, candidates]);
 
   function updateCandidate(candidateId: string, patch: Partial<CandidateFormState>) {
     setCandidates((current) =>
@@ -119,6 +190,7 @@ export function InitiativeImplementationCommitmentEditor({
 
   async function handleGenerate() {
     setError(null);
+    setApplyNotice(null);
     try {
       const generated = await generatePhase.runSave(() =>
         generateInitiativeImplementationCommitmentDraft(initiativeId),
@@ -278,6 +350,7 @@ export function InitiativeImplementationCommitmentEditor({
       )}
 
       {error ? <p className="iic-source-panel__empty">{error}</p> : null}
+      {applyNotice ? <p className="iic-source-panel__empty">{applyNotice}</p> : null}
 
       <div className="iic-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>

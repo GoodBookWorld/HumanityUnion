@@ -143,7 +143,7 @@ export async function buildInitiativeAnalysisSourceSnapshot(
     safely(() => listActiveAlliesForInitiative(initiativeId), [], "active allies"),
     safely(
       () => listCollaborationParticipantsForInitiative(initiativeId, null),
-      { participants: [], isViewerInitiativeSteward: false },
+      { participants: [], isViewerInitiativeSteward: false, viewerParticipantId: null },
       "collaboration participants",
     ),
   ]);

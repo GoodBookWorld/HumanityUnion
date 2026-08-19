@@ -405,12 +405,32 @@
 }
 
 .hu-assistant-open-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 3rem;
   border: 1px solid rgba(28, 36, 48, 0.2);
   background: #f7f4ef;
   color: #1c2430;
-  padding: 0.55rem 0.85rem;
+  padding: 0.7rem 1rem;
   cursor: pointer;
   font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.hu-assistant-open-button__icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  object-fit: contain;
+  display: block;
+}
+
+.hu-assistant-open-button__label {
+  text-align: start;
 }
 
 .hu-assistant-open-button:hover {

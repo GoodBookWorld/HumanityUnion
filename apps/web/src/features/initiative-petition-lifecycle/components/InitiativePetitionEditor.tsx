@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { InitiativePetitionDraft } from "@hu/types";
 
 import { TranslateDraftControl } from "../../language";
+import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -12,6 +13,15 @@ import {
   publishInitiativePetitionStage,
   saveInitiativePetitionDraft,
 } from "../api";
+
+interface PetitionApplyForm {
+  title: string;
+  publicSummary: string;
+  requestStatement: string;
+  expectedOutcome: string;
+  supportingContext: string;
+  keyArguments: string;
+}
 
 interface InitiativePetitionEditorProps {
   readonly initiativeId: string;
@@ -53,6 +63,38 @@ export function InitiativePetitionEditor({
   const savePhase = useSaveButtonPhase();
   const publishPhase = useSaveButtonPhase();
   const isBusy = generatePhase.isBusy || savePhase.isBusy || publishPhase.isBusy;
+
+  const applyForm = useMemo<PetitionApplyForm>(
+    () => ({
+      title,
+      publicSummary,
+      requestStatement,
+      expectedOutcome,
+      supportingContext,
+      keyArguments: keyArguments.join("\n"),
+    }),
+    [title, publicSummary, requestStatement, expectedOutcome, supportingContext, keyArguments],
+  );
+
+  useLifecycleAiFormApply({
+    initiativeId,
+    stageId: "petition",
+    form: applyForm,
+    onFormApplied: (next) => {
+      setTitle(next.title);
+      setPublicSummary(next.publicSummary);
+      setRequestStatement(next.requestStatement);
+      setExpectedOutcome(next.expectedOutcome);
+      setSupportingContext(next.supportingContext);
+      setKeyArguments(
+        next.keyArguments
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean),
+      );
+    },
+    onAppliedNotice: (text) => setMessage({ tone: "success", text }),
+  });
 
   function applyDraftToFields(updated: InitiativePetitionDraft) {
     setTitle(updated.title);

@@ -31,6 +31,7 @@ import {
   resolveAlliesInvitationResponseState,
   resolveAuthorBadges,
   resolveAuthorLinkPresentation,
+  resolveCollaborationInvitationAcceptState,
   resolveCollaborationReviewActionState,
   resolveCollaborationStatusLabel,
   resolveFilterHeading,
@@ -469,6 +470,62 @@ describe("Collaboration review action state (Profile UX Pack 01 Parts 2/5/6/7/12
   it("is hidden for the reverse-direction invitation_pending state (reviewed by the invited Participant, not the steward)", () => {
     const state = resolveCollaborationReviewActionState("invitation_pending", true, false);
     assert.equal(state.visible, false);
+  });
+});
+
+describe("Collaboration invitation Accept on working list (Lifecycle Staging Fix 02)", () => {
+  it("shows Accept invitation only on the invited Participant's own invitation_pending row", () => {
+    const state = resolveCollaborationInvitationAcceptState({
+      status: "invitation_pending",
+      isOwnRow: true,
+      isViewerInitiativeSteward: false,
+      busy: false,
+    });
+    assert.equal(state.visible, true);
+    assert.equal(state.disabled, false);
+  });
+
+  it("keeps Invitation Sent informational for another Participant's pending invitation", () => {
+    const state = resolveCollaborationInvitationAcceptState({
+      status: "invitation_pending",
+      isOwnRow: false,
+      isViewerInitiativeSteward: false,
+      busy: false,
+    });
+    assert.equal(state.visible, false);
+    assert.equal(resolveCollaborationStatusLabel("invitation_pending"), "Invitation Sent");
+  });
+
+  it("never shows Accept invitation to the Author/steward on invitations they sent", () => {
+    const state = resolveCollaborationInvitationAcceptState({
+      status: "invitation_pending",
+      isOwnRow: false,
+      isViewerInitiativeSteward: true,
+      busy: false,
+    });
+    assert.equal(state.visible, false);
+  });
+
+  it("hides Accept once the row is already Ally (active)", () => {
+    const state = resolveCollaborationInvitationAcceptState({
+      status: "active",
+      isOwnRow: true,
+      isViewerInitiativeSteward: false,
+      busy: false,
+    });
+    assert.equal(state.visible, false);
+    assert.equal(resolveCollaborationStatusLabel("active"), "Ally");
+  });
+
+  it("disables Accept while the canonical respondToAlliesInvitation call is in flight", () => {
+    const state = resolveCollaborationInvitationAcceptState({
+      status: "invitation_pending",
+      isOwnRow: true,
+      isViewerInitiativeSteward: false,
+      busy: true,
+    });
+    assert.equal(state.visible, true);
+    assert.equal(state.disabled, true);
   });
 });
 

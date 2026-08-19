@@ -911,6 +911,8 @@ describe("Initiative Discussion Collaboration (UX Evolution Pack 02)", () => {
 
       assert.equal(asSteward.isViewerInitiativeSteward, true);
       assert.equal(asGuest.isViewerInitiativeSteward, false);
+      assert.equal(asSteward.viewerParticipantId, stewardIdentity.participantId);
+      assert.equal(asGuest.viewerParticipantId, null);
     });
 
     it("Communication UX Pack 03.8 Part 11 — never surfaces the Initiative Author's own row, even if a malformed self-Ally record exists in the store", async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type {
   InitiativeOfficialResponseCandidate,
@@ -12,6 +12,13 @@ import type {
   OfficialResponseVerificationState,
 } from "@hu/types";
 
+import {
+  LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT,
+  applyLifecycleAiSuggestionsToCandidateCollection,
+  getLifecycleAiStageApplyContract,
+  setLifecycleAiDraftExcerpt,
+  type LifecycleAiApplySuggestionsDetail,
+} from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -168,11 +175,85 @@ export function InitiativeOfficialResponseEditor({
     draft.candidates.map((candidate) => toFormState(candidate)),
   );
   const [error, setError] = useState<string | null>(null);
+  const [applyNotice, setApplyNotice] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
 
   const generatePhase = useSaveButtonPhase();
   const savePhase = useSaveButtonPhase();
   const publishPhase = useSaveButtonPhase();
+
+  useEffect(() => {
+    const excerpt = [
+      `Title: ${title}`,
+      `Summary: ${summary}`,
+      outcomeKind === "no_official_response_received"
+        ? `No response note: ${noResponseDetail.note}`
+        : "",
+      ...candidates.map(
+        (candidate, index) =>
+          `Response ${index + 1}: ${candidate.subject}\n${candidate.summary}`,
+      ),
+    ]
+      .filter(Boolean)
+      .join("\n");
+    setLifecycleAiDraftExcerpt("official_response", excerpt);
+  }, [title, summary, outcomeKind, noResponseDetail.note, candidates]);
+
+  useEffect(() => {
+    const contract = getLifecycleAiStageApplyContract("official_response");
+    if (!contract) {
+      return;
+    }
+
+    function handleApplySuggestions(event: Event) {
+      const custom = event as CustomEvent<LifecycleAiApplySuggestionsDetail>;
+      const detail = custom.detail;
+
+      if (!detail || detail.initiativeId !== initiativeId || detail.stageId !== "official_response") {
+        return;
+      }
+
+      const packageFields = {
+        title,
+        summary,
+        noResponseNote: noResponseDetail.note,
+      };
+
+      const result = applyLifecycleAiSuggestionsToCandidateCollection({
+        packageFields,
+        candidates,
+        suggestions: detail.suggestions,
+        packageKeys: ["title", "summary", "noResponseNote"],
+        candidateKeys: ["institution", "organization", "subject", "summary", "notes", "links"],
+        candidateKeyAliases: { responseSummary: "summary" },
+        forbiddenKeys: contract!.forbiddenKeys,
+        fallbackKey: "summary",
+      });
+
+      if (!result.applied) {
+        return;
+      }
+
+      setTitle(result.packageFields.title);
+      setSummary(result.packageFields.summary);
+      if (result.packageFields.noResponseNote !== noResponseDetail.note) {
+        setNoResponseDetail((current) => ({
+          ...current,
+          note: result.packageFields.noResponseNote,
+        }));
+      }
+      setCandidates(result.candidates);
+      setApplyNotice(
+        "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
+      );
+      setError(null);
+    }
+
+    window.addEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
+    return () => {
+      window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
+    };
+  }, [initiativeId, title, summary, noResponseDetail.note, candidates]);
 
   function updateCandidate(candidateId: string, patch: Partial<CandidateFormState>) {
     setCandidates((current) =>
@@ -217,6 +298,7 @@ export function InitiativeOfficialResponseEditor({
 
   async function handleGenerate() {
     setError(null);
+    setApplyNotice(null);
     try {
       const generated = await generatePhase.runSave(() =>
         generateInitiativeOfficialResponseDraft(initiativeId),
@@ -501,6 +583,7 @@ export function InitiativeOfficialResponseEditor({
       ) : null}
 
       {error ? <p className="ior-source-panel__empty">{error}</p> : null}
+      {applyNotice ? <p className="ior-source-panel__empty">{applyNotice}</p> : null}
 
       <div className="ior-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { InitiativeCollectiveDecision, InitiativeCollectiveDecisionLifecycleDraft, ParticipationScope } from "@hu/types";
 
+import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -51,6 +52,21 @@ function fromDatetimeLocalValue(value: string): string {
   return Number.isNaN(date.getTime()) ? "" : date.toISOString();
 }
 
+interface CollectiveDecisionApplyForm {
+  title: string;
+  decisionSummary: string;
+  approvedActions: string;
+  rejectedAlternatives: string;
+  responsibleRoles: string;
+  implementationPriorities: string;
+  implementationTimeline: string;
+  decisionRationale: string;
+  decisionRisks: string;
+  successCriteria: string;
+  requiredResources: string;
+  supportingReferences: string;
+}
+
 interface InitiativeCollectiveDecisionEditorProps {
   readonly initiativeId: string;
   readonly draft: InitiativeCollectiveDecisionLifecycleDraft;
@@ -86,11 +102,67 @@ export function InitiativeCollectiveDecisionEditor({
   const [participationScope, setParticipationScope] = useState<ParticipationScope>(draft.participationScope);
   const [closesAt, setClosesAt] = useState(draft.closesAt);
   const [error, setError] = useState<string | null>(null);
+  const [applyNotice, setApplyNotice] = useState<string | null>(null);
   const [published, setPublished] = useState(false);
 
   const generatePhase = useSaveButtonPhase();
   const savePhase = useSaveButtonPhase();
   const publishPhase = useSaveButtonPhase();
+
+  const applyForm = useMemo<CollectiveDecisionApplyForm>(
+    () => ({
+      title,
+      decisionSummary,
+      approvedActions,
+      rejectedAlternatives,
+      responsibleRoles,
+      implementationPriorities,
+      implementationTimeline,
+      decisionRationale,
+      decisionRisks,
+      successCriteria,
+      requiredResources,
+      supportingReferences,
+    }),
+    [
+      title,
+      decisionSummary,
+      approvedActions,
+      rejectedAlternatives,
+      responsibleRoles,
+      implementationPriorities,
+      implementationTimeline,
+      decisionRationale,
+      decisionRisks,
+      successCriteria,
+      requiredResources,
+      supportingReferences,
+    ],
+  );
+
+  useLifecycleAiFormApply({
+    initiativeId,
+    stageId: "collective_decision",
+    form: applyForm,
+    onFormApplied: (next) => {
+      setTitle(next.title);
+      setDecisionSummary(next.decisionSummary);
+      setApprovedActions(next.approvedActions);
+      setRejectedAlternatives(next.rejectedAlternatives);
+      setResponsibleRoles(next.responsibleRoles);
+      setImplementationPriorities(next.implementationPriorities);
+      setImplementationTimeline(next.implementationTimeline);
+      setDecisionRationale(next.decisionRationale);
+      setDecisionRisks(next.decisionRisks);
+      setSuccessCriteria(next.successCriteria);
+      setRequiredResources(next.requiredResources);
+      setSupportingReferences(next.supportingReferences);
+    },
+    onAppliedNotice: (text) => {
+      setApplyNotice(text);
+      setError(null);
+    },
+  });
 
   function buildSavePayload() {
     return {
@@ -291,6 +363,7 @@ export function InitiativeCollectiveDecisionEditor({
       </div>
 
       {error ? <p className="icd-source-panel__empty">{error}</p> : null}
+      {applyNotice ? <p className="icd-source-panel__empty">{applyNotice}</p> : null}
 
       <div className="icd-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>

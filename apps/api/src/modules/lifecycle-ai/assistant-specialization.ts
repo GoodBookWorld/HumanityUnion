@@ -203,8 +203,9 @@ const SURFACE_SPECIALIZATIONS: Record<HumanityUnionAssistantSurfaceId, Assistant
       "What should remain neutral in the results summary?",
     ],
     stageId: "collective_decision",
-    defaultOperations: PLATFORM_ORIENTATION_OPS,
-    canApplySuggestionsToDraft: false,
+    defaultOperations: AUTHOR_DRAFT_OPS,
+    // Fix 03B — Apply is allowed for Author prose fields only; vote totals remain forbidden.
+    canApplySuggestionsToDraft: true,
   },
   commitment: {
     featureLabel: "Implementation Commitments",

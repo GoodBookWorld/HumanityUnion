@@ -22,6 +22,7 @@ export interface LifecycleAiProviderRequest {
   readonly operation: InitiativeLifecycleAiAssistOperation;
   readonly participantDisplayName: string;
   readonly initiativeTitle: string;
+  readonly lifecycleProfile?: string;
   readonly presentationMode: string;
   readonly availableSourceLabels: readonly string[];
   readonly instructions?: string;
