@@ -25,6 +25,8 @@ import {
 } from "../api";
 import {
   buildDiscussionCommentDomId,
+  COLLABORATION_LIST_DOM_ID,
+  planCollaborationNotificationScroll,
   planDiscussionCommentDeepLinkScroll,
   resolveDiscussionCommentFocusTarget,
 } from "../discussion-comment-deep-link";
@@ -47,8 +49,8 @@ import {
   type DiscussionFilter,
 } from "./discussion-comment-presentation";
 
-/** DOM target for `?filter=collaboration#discussion` notification deep-links. */
-export const COLLABORATION_LIST_DOM_ID = "pie-collaboration-list";
+/** @deprecated Prefer importing from discussion-comment-deep-link. */
+export { COLLABORATION_LIST_DOM_ID };
 
 interface PublicDiscussionPanelProps {
   initiativeId: string;
@@ -908,9 +910,9 @@ export function PublicDiscussionPanel({
   }, [filter, loadCollaborationParticipants]);
 
   /**
-   * Lifecycle Staging Fix 02 — notification `?filter=collaboration#discussion`
-   * must land on the Collaboration working list, not the top of the page.
-   * Scroll once the list (or empty state) is mounted; never invent a second route.
+   * Lifecycle Staging Fix 02 / 05B — notification `?filter=collaboration#discussion`
+   * must land on Collaboration while keeping the Discussion heading visible below
+   * the sticky site header (scroll-margin + title-first scroll).
    */
   useEffect(() => {
     if (filter !== "collaboration" || collaborationLoading) {
@@ -921,12 +923,17 @@ export function PublicDiscussionPanel({
       return;
     }
 
-    const element = document.getElementById(COLLABORATION_LIST_DOM_ID);
-    if (!element) {
+    const plan = planCollaborationNotificationScroll();
+    const list = document.getElementById(plan.listDomId);
+    if (!list) {
       return;
     }
 
-    element.scrollIntoView({ behavior: "smooth", block: "start" });
+    const title =
+      document.getElementById(plan.titleDomId) ??
+      document.querySelector(".pie-discussion__title");
+    title?.scrollIntoView({ behavior: "smooth", block: plan.titleBlock });
+    list.scrollIntoView({ behavior: "smooth", block: plan.listBlock });
     collaborationDeepLinkScrolled.current = true;
   }, [filter, collaborationLoading, collaborationData]);
 

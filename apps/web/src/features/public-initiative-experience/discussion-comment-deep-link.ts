@@ -8,6 +8,8 @@
  */
 
 export const DISCUSSION_COMMENT_HASH_PREFIX = "comment-";
+export const DISCUSSION_TITLE_DOM_ID = "pie-discussion-title";
+export const COLLABORATION_LIST_DOM_ID = "pie-collaboration-list";
 
 export function buildDiscussionCommentDomId(commentId: string): string {
   return `${DISCUSSION_COMMENT_HASH_PREFIX}${commentId}`;
@@ -18,6 +20,25 @@ export function buildInitiativeDiscussionCommentHref(
   commentId: string,
 ): string {
   return `/initiatives/public/${encodeURIComponent(initiativeId)}#${DISCUSSION_COMMENT_HASH_PREFIX}${encodeURIComponent(commentId)}`;
+}
+
+/**
+ * Lifecycle Staging Fix 05B — collaboration notification scroll plan.
+ * Keep Discussion heading visible under the sticky header, then bring the
+ * Collaboration list into view without covering that heading.
+ */
+export function planCollaborationNotificationScroll(): {
+  readonly titleDomId: string;
+  readonly listDomId: string;
+  readonly titleBlock: ScrollLogicalPosition;
+  readonly listBlock: ScrollLogicalPosition;
+} {
+  return {
+    titleDomId: DISCUSSION_TITLE_DOM_ID,
+    listDomId: COLLABORATION_LIST_DOM_ID,
+    titleBlock: "start",
+    listBlock: "nearest",
+  };
 }
 
 /**

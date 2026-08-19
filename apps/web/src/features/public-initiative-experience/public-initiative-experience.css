@@ -131,6 +131,40 @@
   min-width: 0;
 }
 
+/*
+ * Lifecycle Staging Fix 05B — desktop independent scroll inside columns only.
+ * Hero + footer stay in normal document flow. No page/document scroll lock.
+ */
+@media (min-width: 768px) {
+  .pie-layout.pie-layout__columns {
+    align-items: stretch;
+    height: calc(100dvh - var(--humanity-header-offset));
+    max-height: calc(100dvh - var(--humanity-header-offset));
+    min-height: 0;
+  }
+
+  .pie-layout__lifecycle,
+  .pie-layout__center,
+  .pie-layout__sidebar {
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pie-layout__lifecycle {
+    position: static;
+    top: auto;
+  }
+
+  .pie-layout__center {
+    scroll-padding-top: var(--hu-space-4);
+  }
+}
+
 .pie-lifecycle__title,
 .pie-support__title,
 .pie-revisions__header h2,
@@ -349,13 +383,20 @@
 }
 
 .pie-center__content {
-  scroll-margin-top: var(--humanity-header-offset);
+  scroll-margin-top: var(--hu-scroll-margin-top);
   margin-top: 1rem;
 }
 
-/* Deep-link targets inside the center scroll pane */
-#pie-collaboration-list {
-  scroll-margin-top: var(--hu-space-4, 1rem);
+/*
+ * Lifecycle Staging Fix 05B — header-aware deep-link offsets so Discussion /
+ * Collaboration / comment targets are not covered by the sticky site header.
+ */
+.pie-discussion,
+#pie-discussion-title,
+.pie-discussion__title,
+#pie-collaboration-list,
+#pie-panel-discussion {
+  scroll-margin-top: var(--hu-scroll-margin-top);
 }
 
 .pie-center__panel {
@@ -765,7 +806,8 @@
   background: var(--hu-color-bg-muted);
   padding: 0.85rem 0.95rem 0;
   overflow: hidden;
-  scroll-margin-block: 6rem;
+  scroll-margin-top: var(--hu-scroll-margin-top);
+  scroll-margin-bottom: var(--hu-space-4);
 }
 
 @keyframes pie-discussion-comment-deep-link-focus {
@@ -1036,6 +1078,11 @@
 
 /* Below 768px: single-page scroll; Hero → Lifecycle → Center → Sidebar */
 @media (max-width: 767px) {
+  .pie-layout.pie-layout__columns {
+    height: auto;
+    max-height: none;
+  }
+
   .pie-layout {
     display: grid;
     grid-template-columns: 1fr;
@@ -1050,6 +1097,7 @@
     width: 100%;
     min-width: 0;
     max-width: 100%;
+    height: auto;
     max-height: none;
     overflow: visible;
   }

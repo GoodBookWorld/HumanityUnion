@@ -5,6 +5,7 @@ import {
   buildDiscussionCommentDomId,
   buildInitiativeDiscussionCommentHref,
   parseDiscussionCommentFocusFromHash,
+  planCollaborationNotificationScroll,
   planDiscussionCommentDeepLinkScroll,
   resolveDiscussionCommentFocusTarget,
 } from "./discussion-comment-deep-link.js";
@@ -73,5 +74,13 @@ describe("Discussion comment deep link", () => {
     );
     assert.equal(resolveDiscussionCommentFocusTarget(["cmt-a", "cmt-b"], "cmt-b"), "cmt-b");
     assert.equal(resolveDiscussionCommentFocusTarget(["cmt-a", "cmt-b"], "cmt-a"), "cmt-a");
+  });
+
+  it("collaboration notification keeps Discussion title visible then list nearest", () => {
+    const plan = planCollaborationNotificationScroll();
+    assert.equal(plan.titleDomId, "pie-discussion-title");
+    assert.equal(plan.listDomId, "pie-collaboration-list");
+    assert.equal(plan.titleBlock, "start");
+    assert.equal(plan.listBlock, "nearest");
   });
 });
