@@ -406,6 +406,8 @@
 
 .hu-assistant-open-button {
   display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
   gap: 0.65rem;
@@ -430,7 +432,10 @@
 }
 
 .hu-assistant-open-button__label {
+  flex: 0 1 auto;
+  min-width: 0;
   text-align: start;
+  white-space: nowrap;
 }
 
 .hu-assistant-open-button:hover {

@@ -114,73 +114,21 @@
   max-width: 100%;
 }
 
+.pie-layout__hero {
+  width: 100%;
+  min-width: 0;
+}
+
 .pie-layout__lifecycle {
+  position: sticky;
+  top: var(--humanity-header-offset);
   align-self: start;
   min-width: 0;
 }
 
-.pie-layout__center {
-  min-width: 0;
-}
-
-.pie-layout__hero,
+.pie-layout__center,
 .pie-layout__center-body {
   min-width: 0;
-}
-
-/* Lifecycle Staging Fix 04 — three independent desktop scroll panes */
-@media (min-width: 768px) {
-  /*
-   * Lock the site shell to the viewport so Initiative panes own vertical
-   * scroll; footer stays visible without a second document scroller.
-   */
-  .humanity-layout:has(.pie-page) {
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow: hidden;
-  }
-
-  .humanity-layout:has(.pie-page) > .humanity-layout__main {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .pie-page {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    height: auto;
-    max-height: none;
-    overflow-x: clip;
-    overflow-y: hidden;
-    padding-block: var(--hu-space-4);
-  }
-
-  .pie-layout {
-    flex: 1 1 auto;
-    min-height: 0;
-    align-items: stretch;
-  }
-
-  .pie-layout__lifecycle,
-  .pie-layout__center,
-  .pie-layout__sidebar {
-    min-height: 0;
-    max-height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .pie-layout__lifecycle {
-    position: static;
-    top: auto;
-  }
 }
 
 .pie-lifecycle__title,
@@ -1088,66 +1036,31 @@
 
 /* Below 768px: single-page scroll; Hero → Lifecycle → Center → Sidebar */
 @media (max-width: 767px) {
-  .pie-page {
-    height: auto;
-    max-height: none;
-    overflow-x: clip;
-    overflow-y: visible;
-    padding-block: var(--hu-section-gap) var(--hu-space-12);
-  }
-
   .pie-layout {
-    display: flex;
-    flex-direction: column;
-    grid-template-columns: none;
+    display: grid;
+    grid-template-columns: 1fr;
     width: 100%;
-    min-height: 0;
-    align-items: stretch;
   }
 
-  /*
-   * Hero lives inside center on desktop; on mobile flatten so stacked order
-   * remains Hero → Lifecycle → Center body → Sidebar (no trapped panes).
-   */
-  .pie-layout__center {
-    display: contents;
-  }
-
-  .pie-layout__hero {
-    order: 1;
+  .pie-layout__hero,
+  .pie-layout__lifecycle,
+  .pie-layout__center,
+  .pie-layout__center-body,
+  .pie-layout__sidebar {
     width: 100%;
     min-width: 0;
     max-width: 100%;
+    max-height: none;
+    overflow: visible;
   }
 
   .pie-layout__lifecycle {
-    order: 2;
     position: static;
     top: auto;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .pie-layout__center-body {
-    order: 3;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    max-height: none;
-    overflow: visible;
   }
 
   .pie-layout__sidebar {
-    order: 4;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    max-height: none;
-    overflow: visible;
-    grid-column: auto;
+    grid-column: 1 / -1;
     grid-template-columns: 1fr;
   }
 

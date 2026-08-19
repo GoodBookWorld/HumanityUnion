@@ -37,11 +37,13 @@ export function HumanityUnionAssistantOpenButton({
     return null;
   }
 
+  const resolvedClassName = ["hu-assistant-open-button", className].filter(Boolean).join(" ");
+
   return (
     <button
       ref={buttonRef}
       type="button"
-      className={className ?? "hu-assistant-open-button"}
+      className={resolvedClassName}
       aria-haspopup="dialog"
       aria-label={label}
       onClick={() =>

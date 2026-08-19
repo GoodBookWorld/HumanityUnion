@@ -1,5 +1,6 @@
 /**
- * Lifecycle Staging Fix 04 — independent desktop scrolling for canonical Initiative Experience.
+ * Lifecycle Staging Fix 04 — independent desktop scrolling regressions,
+ * updated by Fix 05: natural page/footer flow; hero above columns.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -19,32 +20,28 @@ describe("Lifecycle Staging Fix 04 — independent desktop scrolling", () => {
   const page = read("./components/PublicInitiativeExperiencePage.tsx");
   const discussion = read("./components/PublicDiscussionPanel.tsx");
 
-  it("desktop: three panes each have independent vertical overflow", () => {
-    assert.match(css, /@media \(min-width: 768px\)/);
-    assert.match(css, /\.pie-layout__lifecycle,\s*\n\s*\.pie-layout__center,\s*\n\s*\.pie-layout__sidebar/);
-    assert.match(css, /overflow-y:\s*auto/);
-    assert.match(css, /overscroll-behavior:\s*contain/);
+  it("desktop: does not lock document scroll via :has(.pie-page) viewport box", () => {
+    assert.doesNotMatch(css, /\.humanity-layout:has\(\.pie-page\)/);
+    assert.doesNotMatch(css, /height:\s*100dvh/);
+    assert.doesNotMatch(css, /\.pie-page\s*\{[^}]*overflow-y:\s*hidden/s);
   });
 
-  it("desktop: center scroll must not rely on sticky-only left sidebar", () => {
-    // Left is a peer scroll pane, not the only sticky column.
+  it("desktop: left Lifecycle may stick under header without trapping center/right panes", () => {
     assert.match(layout, /pie-layout__lifecycle/);
     assert.match(layout, /pie-layout__center/);
     assert.match(layout, /pie-layout__sidebar/);
-    assert.match(layout, /pie-layout__hero/);
-    assert.match(css, /\.humanity-layout:has\(\.pie-page\)/);
-    assert.match(css, /overflow:\s*hidden/);
+    assert.match(css, /\.pie-layout__lifecycle\s*\{[^}]*position:\s*sticky/s);
+    assert.doesNotMatch(
+      css,
+      /\.pie-layout__lifecycle,\s*\n\s*\.pie-layout__center,\s*\n\s*\.pie-layout__sidebar\s*\{[^}]*overflow-y:\s*auto/s,
+    );
   });
 
-  it("mobile: restores single-page scroll and Hero → Lifecycle → Center order", () => {
+  it("mobile: single-page scroll; no independent three-pane overflow traps", () => {
     assert.match(css, /@media \(max-width: 767px\)/);
-    assert.match(css, /\.pie-layout__center\s*\{\s*display:\s*contents/);
-    assert.match(css, /\.pie-layout__hero\s*\{[^}]*order:\s*1/s);
-    assert.match(css, /\.pie-layout__lifecycle\s*\{[^}]*order:\s*2/s);
-    assert.match(css, /\.pie-layout__center-body\s*\{[^}]*order:\s*3/s);
-    assert.match(css, /\.pie-layout__sidebar\s*\{[^}]*order:\s*4/s);
-    assert.match(css, /overflow:\s*visible/);
     assert.match(css, /max-height:\s*none/);
+    assert.match(css, /overflow:\s*visible/);
+    assert.match(css, /\.pie-layout__lifecycle\s*\{[^}]*position:\s*static/s);
   });
 
   it("collaboration + comment deep-link targets remain in the same shell", () => {
@@ -57,7 +54,7 @@ describe("Lifecycle Staging Fix 04 — independent desktop scrolling", () => {
 
   it("does not invent a second Initiative shell or route", () => {
     assert.match(layout, /className="pie-page"/);
-    assert.match(layout, /className="pie-layout"/);
+    assert.match(layout, /pie-layout/);
     assert.doesNotMatch(layout, /pie-page--alt|SecondShell|duplicate-experience/);
     assert.doesNotMatch(page, /createPortal\(\s*<main/);
   });

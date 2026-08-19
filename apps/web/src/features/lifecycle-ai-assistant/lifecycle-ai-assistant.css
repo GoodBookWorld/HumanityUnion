@@ -160,6 +160,8 @@
 
 .lifecycle-ai-modal__open-button {
   display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-start;
   gap: 0.65rem;
@@ -181,6 +183,10 @@
   height: 28px;
   flex: 0 0 28px;
   object-fit: contain;
+}
+
+.lifecycle-ai-modal__open-button .hu-assistant-open-button__label {
+  white-space: nowrap;
 }
 
 .lifecycle-ai-modal__open-button:hover {
