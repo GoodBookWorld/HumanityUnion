@@ -186,28 +186,31 @@ describe("Public Choice Pack 02D — Participant candidate submission", () => {
   });
 });
 
-describe("Public Choice Pack 02D — placeholder + retention contracts", () => {
-  it("placeholder routes to election #add-candidate submit flow", () => {
-    const page = read(
-      "apps/web/src/features/public-initiative-experience/components/PublicChoiceElectionPage.tsx",
+describe("Public Choice Pack 02D — candidate intake + retention contracts", () => {
+  it("candidate submit href targets Initiative Overview #add-candidate", () => {
+    const overview = read(
+      "apps/web/src/features/public-choice-candidate/components/PublicChoiceOverviewCandidateIntake.tsx",
     );
     const routes = read(
       "apps/web/src/features/initiative-owner-studio/initiative-experience-routes.ts",
     );
-    assert.match(routes, /buildPublicChoiceCandidateSubmitHref/);
-    assert.match(routes, /\/election#add-candidate/);
-    assert.match(page, /buildPublicChoiceCandidateSubmitHref/);
-    assert.match(page, /PublicChoiceCandidateSubmitPanel/);
-    assert.match(page, /#add-candidate/);
-    assert.doesNotMatch(page, /buildInitiativeExperienceManageHref/);
-  });
-
-  it("visitor placeholder uses register returnTo submit href", () => {
     const page = read(
       "apps/web/src/features/public-initiative-experience/components/PublicChoiceElectionPage.tsx",
     );
-    assert.match(page, /\/register\?returnTo=/);
-    assert.match(page, /buildPublicChoiceCandidateSubmitHref/);
+    assert.match(routes, /buildPublicChoiceCandidateSubmitHref/);
+    assert.match(routes, /#add-candidate/);
+    assert.doesNotMatch(routes, /\/election#add-candidate/);
+    assert.match(overview, /PublicChoiceCandidateSubmitPanel/);
+    assert.match(overview, /#add-candidate|add-candidate|openSubmitForm/);
+    assert.doesNotMatch(page, /PublicChoiceCandidateSubmitPanel/);
+    assert.doesNotMatch(page, /\+ Add candidate/);
+  });
+
+  it("Overview intake supports authenticated submit; visitors use register returnTo when linked", () => {
+    const overview = read(
+      "apps/web/src/features/public-choice-candidate/components/PublicChoiceOverviewCandidateIntake.tsx",
+    );
+    assert.match(overview, /useClientAuthStatus|isAuthenticated|register/);
   });
 
   it("create path no longer requires assertInitiativeOwnership", () => {

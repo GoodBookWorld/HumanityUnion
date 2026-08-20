@@ -10,6 +10,10 @@ import type {
   PublicInitiativeWithVersionHistory,
   WorldInitiativeCardProjection,
 } from "@hu/types";
+import {
+  resolveInitiativeLifecycleProfile,
+  resolvePublicChoiceBallotMode,
+} from "@hu/types";
 
 import { RelatedInitiativesWidget } from "../../community-intelligence/components/RelatedInitiativesWidget";
 import { InitiativeActiveAlliesWidget } from "../../initiative-active-allies/components/InitiativeActiveAlliesWidget";
@@ -36,6 +40,8 @@ interface PublicExperienceSidebarProps {
   viewerIsSteward?: boolean;
   /** Pack 02A — gates Election/Candidates widget (PUBLIC_CHOICE only). */
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
+  /** Pack 03 — hide Initiative Support for SELECT_ONE candidate elections. */
+  ballotMode?: string | null;
 }
 
 export function PublicExperienceSidebar({
@@ -53,16 +59,23 @@ export function PublicExperienceSidebar({
   participationJourney = null,
   viewerIsSteward = false,
   lifecycleProfile = null,
+  ballotMode = null,
 }: PublicExperienceSidebarProps) {
+  const hideSupportForSelectOne =
+    resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE" &&
+    resolvePublicChoiceBallotMode(ballotMode) === "SELECT_ONE_CANDIDATE";
+
   return (
     <>
-      <PublicInitiativeSupportStatistics
-        statistics={statistics}
-        onSignalChange={onSignalChange}
-        onBookmarkToggle={onBookmarkToggle}
-        busy={supportBusy}
-        title={supportLabel}
-      />
+      {!hideSupportForSelectOne ? (
+        <PublicInitiativeSupportStatistics
+          statistics={statistics}
+          onSignalChange={onSignalChange}
+          onBookmarkToggle={onBookmarkToggle}
+          busy={supportBusy}
+          title={supportLabel}
+        />
+      ) : null}
       <PublicChoiceElectionSidebarWidget
         initiativeId={initiativeId}
         lifecycleProfile={lifecycleProfile}
@@ -73,15 +86,6 @@ export function PublicExperienceSidebar({
           isAuthorPrimary={viewerIsSteward || participationJourney.viewerIsSteward}
         />
       ) : null}
-      {/*
-       * Communication UX Pack 03.3 Part 6 — placed right after Initiative
-       * Support. This is the one sidebar shared by every lifecycle-stage
-       * view of the single Initiative page (the base Initiative stage, the
-       * Author's Manage/Analysis working tabs, and the Collaborative
-       * Analysis public record view), so it is a working team tool that
-       * stays visible across the whole lifecycle without any per-stage
-       * duplication.
-       */}
       <InitiativeActiveAlliesWidget
         initiativeId={initiativeId}
         reviewCollaborationRequestsHref={`/initiatives/public/${encodeURIComponent(initiativeId)}?filter=collaboration#discussion`}

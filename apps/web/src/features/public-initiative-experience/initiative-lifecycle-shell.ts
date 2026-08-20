@@ -37,7 +37,7 @@ export type LifecycleShellHashResolution =
   | { kind: "discussion_tab"; focusCommentId?: string }
   | { kind: "collaboration"; tab: "channel" | "sessions" }
   | { kind: "lifecycle_stage"; stageId: string; hash: string; selectable: boolean }
-  | { kind: "fallback_overview"; reason: "empty" | "invalid" | "locked" | "not_applicable" };
+  | { kind: "fallback_overview"; reason: "empty" | "invalid" | "locked" | "not_applicable" | "add_candidate" };
 
 /**
  * Stages shown in the Lifecycle nav. NOT_APPLICABLE stages are omitted so
@@ -87,6 +87,11 @@ export function resolveLifecycleShellHash(
 
   if (normalized === "discussion") {
     return { kind: "discussion_tab" };
+  }
+
+  /** Pack 03 — candidate intake deep-link opens Overview (+ form via page state). */
+  if (normalized === "add-candidate" || normalized === "overview") {
+    return { kind: "fallback_overview", reason: normalized === "add-candidate" ? "add_candidate" : "empty" };
   }
 
   const focusCommentId = parseDiscussionCommentFocusFromHash(hash);

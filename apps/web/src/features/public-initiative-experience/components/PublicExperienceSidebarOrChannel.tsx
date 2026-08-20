@@ -151,6 +151,7 @@ export function PublicExperienceSidebarOrChannel({
         initiativeId={sidebarProps.initiativeId}
         stageId={workspaceStageId}
         lifecycleProfile={lifecycleProfile}
+        ballotMode={sidebarProps.ballotMode}
         onOpenPublicPreview={onOpenPublicPreview}
         onNavigateNextStage={onNavigateStage}
         supportStatistics={sidebarProps.statistics}

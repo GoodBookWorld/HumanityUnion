@@ -1048,8 +1048,8 @@ export function PublicDiscussionPanel({
           </>
         ) : (
           <>
-            Share comments about this Public Choice. Use the vote control below to Support, Do not
-            support, or Abstain. Comments require a signed-in Participant.
+            Share comments about this Public Choice. Candidate voting is on Collective Decision.
+            Comments require a signed-in Participant.
           </>
         )}
       </p>

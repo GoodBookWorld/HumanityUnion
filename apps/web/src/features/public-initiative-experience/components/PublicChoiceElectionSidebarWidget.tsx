@@ -128,7 +128,9 @@ export function PublicChoiceElectionSidebarWidget({
       </h2>
       <p className="pie-election__name">{electionName}</p>
       <p className="pie-election__link">
-        <Link href={electionHref}>View election</Link>
+        <Link className="hu-button hu-button--primary pie-election__cta" href={electionHref}>
+          View election
+        </Link>
       </p>
 
       {ballotMode === "SELECT_ONE_CANDIDATE" ? (

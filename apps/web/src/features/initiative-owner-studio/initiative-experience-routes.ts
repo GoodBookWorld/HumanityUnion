@@ -7,8 +7,9 @@ export function buildInitiativeExperienceManageHref(initiativeId: string): strin
 }
 
 /** Pack 02D — canonical Participant candidate submission entry on the election page. */
+/** Pack 03 — candidate intake lives on Initiative Overview, not the results page. */
 export function buildPublicChoiceCandidateSubmitHref(initiativeId: string): string {
-  return `${buildInitiativeExperienceHref(initiativeId)}/election#add-candidate`;
+  return `${buildInitiativeExperienceHref(initiativeId)}#add-candidate`;
 }
 
 export function buildWorkspaceInitiativesHref(): string {

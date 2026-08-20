@@ -35,7 +35,8 @@ import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 /**
  * Public Choice Architecture Pack 02A — Discussion-stage voting control.
  * SUPPORT_OPPOSE: Support / Do not support / Abstain.
- * SELECT_ONE_CANDIDATE: candidate roster + Abstain.
+ * SUPPORT_OPPOSE: Support / Do not support / Abstain ternary ballot.
+ * SELECT_ONE_CANDIDATE: pointer to Collective Decision (voting lives there).
  * Visitors may vote without sign-in (credentials/cookies).
  */
 export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId: string }) {
@@ -171,25 +172,33 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
     )}`;
   }
 
+  /** Pack 03 — SELECT_ONE voting lives on Collective Decision, not Discussion. */
+  if (ballotMode === "SELECT_ONE_CANDIDATE" && loadState !== "loading") {
+    return (
+      <section className="pie-public-choice-vote" aria-labelledby="pie-public-choice-vote-title">
+        <h3 id="pie-public-choice-vote-title" className="pie-public-choice-vote__title">
+          Candidate voting
+        </h3>
+        <p className="pie-public-choice-vote__help">
+          Vote for candidates on the Collective Decision stage. Discussion is for comments and
+          election conversation only.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="pie-public-choice-vote" aria-labelledby="pie-public-choice-vote-title">
       <h3 id="pie-public-choice-vote-title" className="pie-public-choice-vote__title">
         Public Choice vote
       </h3>
 
-      {ballotMode === "SUPPORT_OPPOSE" ? (
-        <p className="pie-public-choice-vote__help">
-          Choose one: {localizedInitiativeDecisionVoteChoice("support")},{" "}
-          {localizedInitiativeDecisionVoteChoice("do_not_support")}, or{" "}
-          {localizedInitiativeDecisionVoteChoice("abstain")}. Changing your choice replaces the
-          previous selection. Sign-in is optional.
-        </p>
-      ) : (
-        <p className="pie-public-choice-vote__help">
-          Choose one candidate, or Abstain. Changing your choice replaces the previous selection.
-          Sign-in is optional.
-        </p>
-      )}
+      <p className="pie-public-choice-vote__help">
+        Choose one: {localizedInitiativeDecisionVoteChoice("support")},{" "}
+        {localizedInitiativeDecisionVoteChoice("do_not_support")}, or{" "}
+        {localizedInitiativeDecisionVoteChoice("abstain")}. Changing your choice replaces the
+        previous selection. Sign-in is optional.
+      </p>
 
       {loadState === "loading" || authStatus === "pending" ? (
         <p role="status">Loading vote…</p>

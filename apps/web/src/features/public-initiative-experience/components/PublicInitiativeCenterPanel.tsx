@@ -4,12 +4,17 @@ import type { RefObject, ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import type {
+  InitiativeLifecycleProfile,
   PublicInitiativeExperienceProjection,
   PublicInitiativeLifecycleRecordItem,
   PublicInitiativeLifecycleStageContent,
   PublicInitiativeProjection,
 } from "@hu/types";
-import { isInitiativeLifecycleAuthorWorkspaceStage } from "@hu/types";
+import {
+  getInitiativeLifecycleProfilePresentation,
+  isInitiativeLifecycleAuthorWorkspaceStage,
+  resolvePublicChoiceBallotMode,
+} from "@hu/types";
 
 import { formatPublicGeography } from "@hu/geography";
 import { InitiativeLifecycleStageWorkspace } from "../../initiative-lifecycle-stage-workspace";
@@ -47,6 +52,7 @@ import { CurrentLifecycleStageBanner } from "./CurrentLifecycleStageBanner";
 import { DiscussionLifecycleCompletionBanner } from "./DiscussionLifecycleCompletionBanner";
 import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
 import { PublicDiscussionPanel } from "./PublicDiscussionPanel";
+import { PublicChoiceOverviewCandidateIntake } from "../../public-choice-candidate/components/PublicChoiceOverviewCandidateIntake";
 import { InitiativeAuthorIdentity } from "../../initiative-active-allies/components/InitiativeAuthorIdentity";
 import {
   buildPublicInitiativeSharePayload,
@@ -132,18 +138,30 @@ function OverviewAuthorItem({
 
 function PublicInitiativeOverview({
   initiative,
+  lifecycleProfile,
   currentStageId,
   currentStageLabel,
+  openCandidateSubmit = false,
+  onOpenCandidateSubmitConsumed,
+  onNavigateToCollectiveDecision,
 }: {
   initiative: PublicInitiativeProjection;
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null;
   currentStageId: string;
   currentStageLabel: string;
+  openCandidateSubmit?: boolean;
+  onOpenCandidateSubmitConsumed?: () => void;
+  onNavigateToCollectiveDecision?: () => void;
 }) {
   const metadata = initiative.metadata;
   const activityArea =
     metadata.activityArea === "Other" && metadata.activityAreaOther
       ? metadata.activityAreaOther
       : metadata.activityArea;
+  const presentation = getInitiativeLifecycleProfilePresentation(lifecycleProfile);
+  const isSelectOne =
+    presentation.isPublicChoice &&
+    resolvePublicChoiceBallotMode(metadata.ballotMode) === "SELECT_ONE_CANDIDATE";
 
   return (
     <div className="pie-overview">
@@ -152,10 +170,20 @@ function PublicInitiativeOverview({
         stageId={currentStageId}
         stageLabel={currentStageLabel}
       />
+      {isSelectOne ? (
+        <PublicChoiceOverviewCandidateIntake
+          initiativeId={initiative.initiativeId}
+          openSubmitInitially={openCandidateSubmit}
+          onOpenSubmitConsumed={onOpenCandidateSubmitConsumed}
+          onSubmittedNavigateToCollectiveDecision={onNavigateToCollectiveDecision}
+        />
+      ) : null}
       <OverviewSection label="Full Description" value={initiative.description} />
       <div className="pie-overview__grid">
         <div className="pie-overview__column">
-          <OverviewMetadataItem label="Activity Area" value={activityArea} />
+          {presentation.showActivityArea ? (
+            <OverviewMetadataItem label="Activity Area" value={activityArea} />
+          ) : null}
           <OverviewMetadataItem label="Category" value={metadata.category} />
           <OverviewMetadataItem
             label="Start Date"
@@ -182,7 +210,7 @@ function PublicInitiativeOverview({
             })}
           />
           <OverviewMetadataItem
-            label="Community Association"
+            label={presentation.communityAssociationLabel}
             value={metadata.communityAssociation ?? metadata.communitySlug}
           />
           <OverviewMetadataItem label="Language" value={metadata.language} />
@@ -190,12 +218,6 @@ function PublicInitiativeOverview({
             label="Completion Date"
             value={metadata.completionDate ? formatDate(metadata.completionDate) : undefined}
           />
-          {/*
-            Lifecycle UX Completion Pack 02 Part 8 — Overview Status reflects
-            the current Lifecycle stage from publication metadata, never the
-            independent Initiative.status domain value (often stuck on
-            "proposal" after later stages have published).
-          */}
           <OverviewMetadataItem label="Status" value={currentStageLabel} />
           <OverviewMetadataItem label="Tags" value={formatList(metadata.tags) ?? undefined} />
         </div>
@@ -338,6 +360,9 @@ interface PublicInitiativeCenterPanelProps {
    * server-side via the lifecycle-stage projection.
    */
   isOwnerRoute?: boolean;
+  /** Pack 03 — open Overview candidate form immediately (no reload). */
+  openCandidateSubmit?: boolean;
+  onOpenCandidateSubmitConsumed?: () => void;
 }
 
 export function PublicInitiativeCenterPanel({
@@ -357,6 +382,8 @@ export function PublicInitiativeCenterPanel({
   isOwnerRoute = false,
   isStagePreviewMode,
   onToggleStagePreviewMode,
+  openCandidateSubmit = false,
+  onOpenCandidateSubmitConsumed,
 }: PublicInitiativeCenterPanelProps) {
   const experienceRefresh = useInitiativeExperienceRefresh();
   const [discussionCompletedOverride, setDiscussionCompletedOverride] = useState(false);
@@ -666,10 +693,16 @@ export function PublicInitiativeCenterPanel({
           >
             <PublicInitiativeOverview
               initiative={experience.initiative}
+              lifecycleProfile={experience.lifecycleProfile}
               currentStageId={experience.currentStageId}
               currentStageLabel={
                 experience.lifecycleStages.find((stage) => stage.stageId === experience.currentStageId)
                   ?.label ?? "Initiative"
+              }
+              openCandidateSubmit={openCandidateSubmit}
+              onOpenCandidateSubmitConsumed={onOpenCandidateSubmitConsumed}
+              onNavigateToCollectiveDecision={() =>
+                onNavigateStage?.("collective_decision", "collective-decision")
               }
             />
           </section>

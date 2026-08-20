@@ -1,5 +1,5 @@
 /**
- * Public Choice Pack 02C — web presentation contracts.
+ * Public Choice Pack 02C — web presentation contracts (Pack 03 realigned).
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -15,15 +15,18 @@ function read(relativePath: string): string {
 }
 
 describe("Public Choice Pack 02C — web contracts", () => {
-  it("placeholder opens candidate submission flow for authenticated Participant", () => {
+  it("election page is results-only; candidate intake lives on Overview", () => {
     const page = read(
       "features/public-initiative-experience/components/PublicChoiceElectionPage.tsx",
     );
-    assert.match(page, /buildPublicChoiceCandidatePresentationSlotPlan/);
-    assert.match(page, /placeholderCount/);
-    assert.match(page, /Add candidate/);
-    assert.match(page, /buildPublicChoiceCandidateSubmitHref/);
-    assert.match(page, /\/register\?returnTo=/);
+    const overview = read(
+      "features/public-choice-candidate/components/PublicChoiceOverviewCandidateIntake.tsx",
+    );
+    assert.doesNotMatch(page, /\+ Add candidate|buildPublicChoiceCandidateSubmitHref/);
+    assert.doesNotMatch(page, /placeholderCount/);
+    assert.match(page, /Add candidates from the Initiative Overview|Overview/);
+    assert.match(overview, /Add candidate/);
+    assert.match(overview, /buildPublicChoiceCandidateSubmitHref|openSubmit|setShowSubmit/);
   });
 
   it("progress bars use canonical percentage; abstain separate", () => {
@@ -44,13 +47,13 @@ describe("Public Choice Pack 02C — web contracts", () => {
     assert.match(page, /Results no longer available/);
   });
 
-  it("Initiative Support remains first sidebar widget", () => {
+  it("PUBLIC_CHOICE SELECT_ONE hides Initiative Support; Candidates widget remains", () => {
     const sidebar = read(
       "features/public-initiative-experience/components/PublicExperienceSidebar.tsx",
     );
-    const supportIdx = sidebar.indexOf("PublicInitiativeSupportStatistics");
-    const electionIdx = sidebar.indexOf("PublicChoiceElectionSidebarWidget");
-    assert.ok(supportIdx >= 0);
-    assert.ok(electionIdx > supportIdx);
+    assert.match(sidebar, /PublicInitiativeSupportStatistics/);
+    assert.match(sidebar, /PublicChoiceElectionSidebarWidget/);
+    assert.match(sidebar, /hideSupportForSelectOne/);
+    assert.match(sidebar, /SELECT_ONE_CANDIDATE/);
   });
 });

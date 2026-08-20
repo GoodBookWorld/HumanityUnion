@@ -47,16 +47,17 @@ describe("Public Choice Candidates & Voting Pack 02A — contracts", () => {
     assert.match(voteRoutes, /castOrUpdateVisitorInitiativeDecisionVote/);
   });
 
-  it("form exposes Ballot type only for PUBLIC_CHOICE", () => {
+  it("form exposes Ballot type only for PUBLIC_CHOICE (candidates added after create)", () => {
     const form = readRepo("apps/web/src/features/initiatives/components/InitiativeFormFields.tsx");
     assert.match(form, /Ballot type/);
     assert.match(form, /Support \/ Oppose/);
     assert.match(form, /Choose one candidate/);
     assert.match(form, /presentation\.isPublicChoice/);
-    assert.match(form, /PublicChoiceCandidateManager/);
+    assert.doesNotMatch(form, /PublicChoiceCandidateManager/);
+    assert.match(form, /Create the election first|candidates can be added/i);
   });
 
-  it("Discussion vote panel supports both ballot modes and visitor casting", () => {
+  it("Discussion vote panel keeps SUPPORT_OPPOSE casting; SELECT_ONE defers to Collective Decision", () => {
     const votePanel = readRepo(
       "apps/web/src/features/public-initiative-experience/components/PublicChoiceDiscussionVotePanel.tsx",
     );
@@ -64,16 +65,17 @@ describe("Public Choice Candidates & Voting Pack 02A — contracts", () => {
     assert.match(votePanel, /SUPPORT_OPPOSE/);
     assert.match(votePanel, /castOrUpdateInitiativeDecisionVote/);
     assert.match(votePanel, /Sign-in is optional/);
+    assert.match(votePanel, /Collective Decision|candidate voting lives/i);
   });
 
-  it("sidebar places Election widget after Initiative Support", () => {
+  it("sidebar mounts Candidates widget and gates Initiative Support for SELECT_ONE", () => {
     const sidebar = readRepo(
       "apps/web/src/features/public-initiative-experience/components/PublicExperienceSidebar.tsx",
     );
-    const supportIdx = sidebar.indexOf("<PublicInitiativeSupportStatistics");
-    const electionIdx = sidebar.indexOf("<PublicChoiceElectionSidebarWidget");
-    assert.ok(supportIdx > 0);
-    assert.ok(electionIdx > supportIdx);
+    assert.match(sidebar, /PublicChoiceElectionSidebarWidget/);
+    assert.match(sidebar, /PublicInitiativeSupportStatistics/);
+    assert.match(sidebar, /hideSupportForSelectOne/);
+    assert.match(sidebar, /SELECT_ONE_CANDIDATE/);
   });
 
   it("election detail route exists under public initiative", () => {

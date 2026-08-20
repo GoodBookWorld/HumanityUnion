@@ -15,32 +15,34 @@ function read(relativePath: string): string {
 }
 
 describe("Public Choice Pack 02C — presentation + retention contracts", () => {
-  it("election page uses six-slot placeholders, download, expired state, and disclaimer", () => {
+  it("election page is results-only with download, expired state, and disclaimer", () => {
     const page = read(
       "apps/web/src/features/public-initiative-experience/components/PublicChoiceElectionPage.tsx",
     );
-    assert.match(page, /buildPublicChoiceCandidatePresentationSlotPlan/);
-    assert.match(page, /Add candidate/);
-    assert.match(page, /buildPublicChoiceCandidateSubmitHref/);
-    assert.match(page, /\/register\?returnTo=/);
+    assert.doesNotMatch(page, /buildPublicChoiceCandidatePresentationSlotPlan/);
+    assert.doesNotMatch(page, /\+ Add candidate|buildPublicChoiceCandidateSubmitHref/);
+    assert.doesNotMatch(page, /PublicChoiceCandidateSubmitPanel/);
     assert.match(page, /Download results/);
     assert.match(page, /Results no longer available/);
-    assert.match(page, /Community voting results/);
-    assert.match(page, /PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER/);
+    assert.match(page, /Community voting results|PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER/);
     assert.match(page, /CURRENT RESULTS/);
     assert.match(page, /FINAL RESULTS/);
     assert.match(page, /tally\.percentage/);
     assert.doesNotMatch(page, /visitorKey/);
   });
 
-  it("placeholder navigation uses candidate submit href; visitors register with returnTo", () => {
-    const page = read(
-      "apps/web/src/features/public-initiative-experience/components/PublicChoiceElectionPage.tsx",
+  it("candidate intake lives on Overview, not election results placeholders", () => {
+    const overview = read(
+      "apps/web/src/features/public-choice-candidate/components/PublicChoiceOverviewCandidateIntake.tsx",
     );
-    assert.match(page, /buildAddCandidateHref/);
-    assert.match(page, /useClientAuthStatus/);
-    assert.match(page, /buildPublicChoiceCandidateSubmitHref/);
-    assert.doesNotMatch(page, /buildInitiativeExperienceManageHref/);
+    const routes = read(
+      "apps/web/src/features/initiative-owner-studio/initiative-experience-routes.ts",
+    );
+    assert.match(overview, /Add candidate/);
+    assert.match(overview, /PublicChoiceCandidateSubmitPanel/);
+    assert.match(routes, /buildPublicChoiceCandidateSubmitHref/);
+    assert.match(routes, /#add-candidate/);
+    assert.doesNotMatch(routes, /\/election#add-candidate/);
   });
 
   it("candidate create is authenticated-Participant (Pack 02D closes steward-only gap)", () => {

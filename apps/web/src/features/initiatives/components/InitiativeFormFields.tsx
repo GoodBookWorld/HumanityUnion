@@ -33,7 +33,6 @@ import {
 } from "../initiative-activity-areas";
 
 import { InitiativeCoverMediaField } from "../../media-upload/components/InitiativeCoverMediaField";
-import { PublicChoiceCandidateManager } from "../../public-choice-candidate/components/PublicChoiceCandidateManager";
 import { InitiativeNewsSourcePanel } from "./InitiativeNewsSourcePanel";
 
 import "./initiative-form-fields.css";
@@ -165,20 +164,25 @@ export function InitiativeFormFields({
             <option value="SUPPORT_OPPOSE">Support / Oppose</option>
             <option value="SELECT_ONE_CANDIDATE">Choose one candidate</option>
           </select>
+          {ballotMode === "SELECT_ONE_CANDIDATE" ? (
+            <span className="initiative-form-fields__helper">
+              Create the election first. Candidates can be added after the election is published
+              from the election Initiative page.
+            </span>
+          ) : (
+            <span className="initiative-form-fields__helper">
+              Voters choose Support, Do not support, or Abstain.
+            </span>
+          )}
         </label>
       ) : null}
 
       {presentation.isPublicChoice &&
       ballotMode === "SELECT_ONE_CANDIDATE" &&
       initiativeId ? (
-        <PublicChoiceCandidateManager initiativeId={initiativeId} />
-      ) : null}
-
-      {presentation.isPublicChoice &&
-      ballotMode === "SELECT_ONE_CANDIDATE" &&
-      !initiativeId ? (
         <p className="initiative-form-fields__helper" role="status">
-          Save a draft first to add and manage candidates.
+          Candidate roster is managed on the published election Overview — not on this creation
+          form.
         </p>
       ) : null}
 

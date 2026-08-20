@@ -13,21 +13,20 @@ import type {
 } from "@hu/types";
 import {
   PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER,
-  buildPublicChoiceCandidatePresentationSlotPlan,
   resolvePublicChoiceBallotMode,
 } from "@hu/types";
 
-import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import {
   getPublicInitiativeCollectiveDecision,
   listPublicInitiativeCollectiveDecisions,
 } from "../../initiative-collective-decision/api";
 import { isCollectiveDecisionVotingWindowOpen } from "../../initiative-collective-decision-lifecycle/collective-decision-voting";
-import { buildPublicChoiceCandidateSubmitHref } from "../../initiative-owner-studio/initiative-experience-routes";
+import {
+  buildInitiativeExperienceHref,
+} from "../../initiative-owner-studio/initiative-experience-routes";
 import { getPublicInitiative } from "../../initiatives/api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { listPublicChoiceCandidates } from "../../public-choice-candidate/api";
-import { PublicChoiceCandidateSubmitPanel } from "../../public-choice-candidate/components/PublicChoiceCandidateSubmitPanel";
 import { downloadPublicChoiceResultsPdf } from "../../public-choice-results-retention/api";
 
 import "../public-initiative-experience.css";
@@ -43,14 +42,6 @@ function formatGeo(initiative: PublicInitiativeProjection): string {
 
 function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
-}
-
-function buildAddCandidateHref(initiativeId: string, authenticated: boolean): string {
-  const submitHref = buildPublicChoiceCandidateSubmitHref(initiativeId);
-  if (authenticated) {
-    return submitHref;
-  }
-  return `/register?returnTo=${encodeURIComponent(submitHref)}`;
 }
 
 function ParticipationBreakdown({
@@ -101,39 +92,6 @@ function ParticipationBreakdown({
   );
 }
 
-function CandidatePlaceholderRow({
-  href,
-  index,
-}: {
-  href: string;
-  index: number;
-}) {
-  return (
-    <li className="pie-election-results__row pie-election-results__row--placeholder">
-      <Link
-        href={href}
-        className="pie-election-results__placeholder-link"
-        aria-label={`Add candidate, empty slot ${index + 1}`}
-      >
-        <span className="pie-election-results__photo-placeholder" aria-hidden>
-          +
-        </span>
-        <span className="pie-election-results__placeholder-copy">
-          <strong>Add candidate</strong>
-          <span className="pie-election-results__placeholder-muted">Empty candidate slot</span>
-        </span>
-        <span className="pie-election-results__metrics pie-election-results__metrics--placeholder">
-          <span className="pie-election-results__percent">—</span>
-          <span className="pie-election-results__bar pie-election-results__bar--empty" aria-hidden>
-            <span style={{ width: "0%" }} />
-          </span>
-          <span className="pie-election-results__count">—</span>
-        </span>
-      </Link>
-    </li>
-  );
-}
-
 function SelectOneResults({
   initiativeId,
   candidates,
@@ -143,7 +101,6 @@ function SelectOneResults({
   downloadAvailable,
   onDownload,
   downloadBusy,
-  authenticated,
 }: {
   initiativeId: string;
   candidates: PublicChoiceCandidatePublicProjection[];
@@ -153,13 +110,11 @@ function SelectOneResults({
   downloadAvailable: boolean;
   onDownload: () => void;
   downloadBusy: boolean;
-  authenticated: boolean;
 }) {
   const byId = new Map(candidates.map((candidate) => [candidate.candidateId, candidate]));
-  const slotPlan = buildPublicChoiceCandidatePresentationSlotPlan(candidates.length);
-  const addHref = buildAddCandidateHref(initiativeId, authenticated);
   const rankedIds = new Set(aggregates.candidates.map((item) => item.candidateId));
   const unrankedCandidates = candidates.filter((candidate) => !rankedIds.has(candidate.candidateId));
+  const voteHref = `${buildInitiativeExperienceHref(initiativeId)}#collective-decision`;
 
   return (
     <section className="pie-election-results" aria-labelledby="pie-election-results-title">
@@ -178,7 +133,10 @@ function SelectOneResults({
           ) : null}
         </div>
         {votingOpen ? (
-          <p role="status">Voting is open. Current community ranking — no winner is declared.</p>
+          <p role="status">
+            Voting is open. Current community ranking — no winner is declared.{" "}
+            <Link href={voteHref}>Go to Collective Decision to vote</Link>
+          </p>
         ) : (
           <p role="status">
             Voting is closed. Top-ranked candidates reflect effective votes. Ties remain ties.
@@ -189,6 +147,12 @@ function SelectOneResults({
       <p className="pie-election-results__total">
         Total effective voters: <strong>{aggregates.totalEffectiveVoters}</strong>
       </p>
+
+      {candidates.length === 0 ? (
+        <p className="pie-election-results__empty" role="status">
+          No candidates listed yet. Add candidates from the Initiative Overview.
+        </p>
+      ) : null}
 
       <ol className="pie-election-results__ranking">
         {aggregates.candidates.map((tally) => {
@@ -283,10 +247,6 @@ function SelectOneResults({
             </li>
           );
         })}
-
-        {Array.from({ length: slotPlan.placeholderCount }, (_, index) => (
-          <CandidatePlaceholderRow key={`placeholder-${index}`} href={addHref} index={index} />
-        ))}
       </ol>
 
       <div className="pie-election-results__abstain">
@@ -392,8 +352,6 @@ function SupportOpposeResults({
  * Canonical Decision Vote aggregates only; temporary 72-hour retention.
  */
 export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: string }) {
-  const authStatus = useClientAuthStatus();
-  const authenticated = authStatus === "authenticated";
   const [initiative, setInitiative] = useState<PublicInitiativeProjection | null>(null);
   const [candidates, setCandidates] = useState<PublicChoiceCandidatePublicProjection[]>([]);
   const [decision, setDecision] = useState<PublicInitiativeCollectiveDecisionProjection | null>(
@@ -402,7 +360,6 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
-  const [showCandidateSubmit, setShowCandidateSubmit] = useState(false);
 
   const reload = useCallback(async () => {
     setLoadState("loading");
@@ -429,16 +386,6 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
   useEffect(() => {
     void reload();
   }, [reload]);
-
-  useEffect(() => {
-    function syncHash(): void {
-      setShowCandidateSubmit(window.location.hash === "#add-candidate");
-    }
-
-    syncHash();
-    window.addEventListener("hashchange", syncHash);
-    return () => window.removeEventListener("hashchange", syncHash);
-  }, []);
 
   const ballotMode: PublicChoiceBallotMode = resolvePublicChoiceBallotMode(
     decision?.ballotMode ?? initiative?.metadata.ballotMode,
@@ -573,24 +520,6 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
 
       {downloadError ? <p role="alert">{downloadError}</p> : null}
 
-      {showCandidateSubmit && authenticated ? (
-        <PublicChoiceCandidateSubmitPanel
-          initiativeId={initiativeId}
-          onSubmitted={() => {
-            void reload();
-          }}
-        />
-      ) : null}
-
-      {showCandidateSubmit && !authenticated && authStatus !== "pending" ? (
-        <p role="status">
-          <a href={`/register?returnTo=${encodeURIComponent(buildPublicChoiceCandidateSubmitHref(initiativeId))}`}>
-            Register
-          </a>{" "}
-          to add a candidate.
-        </p>
-      ) : null}
-
       {ballotMode === "SELECT_ONE_CANDIDATE" ? (
         <SelectOneResults
           initiativeId={initiativeId}
@@ -620,7 +549,6 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
             void handleDownload();
           }}
           downloadBusy={downloadBusy}
-          authenticated={authenticated}
         />
       ) : (
         <SupportOpposeResults

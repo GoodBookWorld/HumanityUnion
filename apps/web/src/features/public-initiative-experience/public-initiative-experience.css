@@ -1750,3 +1750,225 @@
   padding: 0.45rem 0.85rem;
   cursor: pointer;
 }
+
+/* Pack 03 — Overview candidate intake */
+.pie-overview-candidates {
+  display: grid;
+  gap: var(--hu-space-3);
+  margin-bottom: var(--hu-space-6);
+}
+
+.pie-overview-candidates__lead {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+}
+
+.pie-overview-candidates__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.pie-overview-candidates__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-3);
+  color: inherit;
+  text-decoration: none;
+}
+
+.pie-overview-candidates__photo {
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: var(--hu-radius-sm);
+  background: color-mix(in srgb, var(--hu-color-accent) 18%, var(--hu-color-surface));
+}
+
+.pie-overview-candidates__photo--empty {
+  display: inline-block;
+}
+
+.pie-overview-candidates__add {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.25rem;
+  border: 1px dashed var(--hu-color-border);
+  border-radius: var(--hu-radius-sm);
+  background: color-mix(in srgb, var(--hu-color-accent) 10%, var(--hu-color-surface));
+  color: var(--hu-color-text);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pie-election-results__row--add {
+  padding: 0;
+}
+
+.pie-election-candidate-submit__preview {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: cover;
+  border-radius: var(--hu-radius-sm);
+}
+
+.pie-election-candidate-submit__actions {
+  display: flex;
+  gap: var(--hu-space-2);
+  flex-wrap: wrap;
+}
+
+.pie-election__cta {
+  display: inline-flex;
+  text-decoration: none;
+}
+
+/* Pack 03 — SELECT_ONE voting cards (Collective Decision) */
+.pc-vote-board {
+  display: grid;
+  gap: var(--hu-space-4);
+}
+
+.pc-vote-board__lead {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+}
+
+.pc-vote-board__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.pc-vote-card {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(7rem, 3fr);
+  gap: var(--hu-space-3);
+  padding: var(--hu-space-3);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-sm);
+  background: var(--hu-color-surface);
+}
+
+.pc-vote-card--selected {
+  border-color: var(--hu-color-primary);
+  box-shadow: 0 0 0 1px var(--hu-color-primary-soft);
+}
+
+.pc-vote-card--dimmed {
+  filter: blur(0.6px);
+  opacity: 0.72;
+}
+
+.pc-vote-card__main {
+  display: grid;
+  gap: var(--hu-space-3);
+  min-width: 0;
+}
+
+.pc-vote-card__preview {
+  padding: var(--hu-space-3);
+  border-radius: var(--hu-radius-sm);
+  background: color-mix(in srgb, var(--hu-color-accent) 16%, var(--hu-color-surface));
+}
+
+.pc-vote-card__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-3);
+  color: inherit;
+  text-decoration: none;
+}
+
+.pc-vote-card__photo {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: cover;
+  border-radius: var(--hu-radius-sm);
+  background: var(--hu-color-bg-muted);
+}
+
+.pc-vote-card__photo--empty {
+  display: inline-block;
+}
+
+.pc-vote-card__name {
+  font-weight: 700;
+  font-size: var(--hu-font-size-lg);
+}
+
+.pc-vote-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  align-items: center;
+}
+
+.pc-vote-card__badge {
+  font-weight: 700;
+  color: var(--hu-color-primary);
+}
+
+.pc-vote-card__stats {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  padding: var(--hu-space-2);
+  border-left: 1px solid var(--hu-color-border);
+}
+
+.pc-vote-card__count {
+  margin: 0;
+  font-size: var(--hu-font-size-xl);
+  font-weight: 700;
+}
+
+.pc-vote-card__pct,
+.pc-vote-card__live {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+}
+
+.pc-vote-card__bar {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--hu-color-bg-muted);
+  overflow: hidden;
+}
+
+.pc-vote-card__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--hu-color-primary);
+}
+
+.pc-vote-board__totals,
+.pc-vote-board__status,
+.pc-vote-board__closed {
+  margin: 0;
+}
+
+.pc-vote-board__error {
+  margin: 0;
+  color: var(--hu-color-danger);
+}
+
+@media (max-width: 767px) {
+  .pc-vote-card {
+    grid-template-columns: 1fr;
+  }
+
+  .pc-vote-card__stats {
+    border-left: 0;
+    border-top: 1px solid var(--hu-color-border);
+    padding-top: var(--hu-space-3);
+  }
+}

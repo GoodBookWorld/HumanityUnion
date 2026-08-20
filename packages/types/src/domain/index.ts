@@ -574,7 +574,10 @@ export {
   resolveInitiativeLifecycleProfile,
 } from "./initiative-lifecycle-profile.js";
 export type { InitiativeLifecycleProfile } from "./initiative-lifecycle-profile.js";
-export { getInitiativeLifecycleProfilePresentation } from "./initiative-lifecycle-profile-presentation.js";
+export {
+  getInitiativeLifecycleProfilePresentation,
+  PUBLIC_CHOICE_SELECT_ONE_BALLOT_HELPER,
+} from "./initiative-lifecycle-profile-presentation.js";
 export type { InitiativeLifecycleProfilePresentation } from "./initiative-lifecycle-profile-presentation.js";
 export {
   DEFAULT_PUBLIC_CHOICE_BALLOT_MODE,

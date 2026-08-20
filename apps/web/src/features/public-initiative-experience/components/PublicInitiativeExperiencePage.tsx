@@ -57,6 +57,7 @@ export function PublicInitiativeExperiencePage({
     string | undefined
   >(undefined);
   const [collaborationTab, setCollaborationTab] = useState<CollaborationTab | undefined>(undefined);
+  const [openCandidateSubmit, setOpenCandidateSubmit] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const viewerIsSteward = Boolean(experience.viewerIsSteward);
@@ -137,6 +138,12 @@ export function PublicInitiativeExperiencePage({
           setActiveTab("overview");
           setFocusDiscussionCommentId(undefined);
           setShowManageTab(false);
+          if (
+            resolution.kind === "fallback_overview" &&
+            resolution.reason === "add_candidate"
+          ) {
+            setOpenCandidateSubmit(true);
+          }
       }
     },
     [experience.lifecycleStages, canShowManage, viewerIsSteward],
@@ -340,6 +347,8 @@ export function PublicInitiativeExperiencePage({
               isOwnerRoute={viewerIsSteward}
               isStagePreviewMode={isStagePreviewMode}
               onToggleStagePreviewMode={() => setIsStagePreviewMode((current) => !current)}
+              openCandidateSubmit={openCandidateSubmit}
+              onOpenCandidateSubmitConsumed={() => setOpenCandidateSubmit(false)}
             />
           </>
         }
@@ -368,6 +377,7 @@ export function PublicInitiativeExperiencePage({
             supportBusy={supportBusy}
             participationJourney={experience.participationJourney ?? null}
             viewerIsSteward={viewerIsSteward}
+            ballotMode={experience.initiative.metadata.ballotMode}
           />
         }
       />

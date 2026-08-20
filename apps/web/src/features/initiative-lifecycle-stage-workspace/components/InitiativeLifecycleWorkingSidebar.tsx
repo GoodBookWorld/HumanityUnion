@@ -26,6 +26,10 @@ import type {
   InitiativeRevisionIntelligenceSnapshot,
   InitiativeStructuredProposal,
 } from "@hu/types";
+import {
+  resolveInitiativeLifecycleProfile,
+  resolvePublicChoiceBallotMode,
+} from "@hu/types";
 
 import { InitiativeActiveAlliesWidget } from "../../initiative-active-allies/components/InitiativeActiveAlliesWidget";
 import { PublicInitiativeSupportStatistics } from "../../public-initiative-experience/components/PublicInitiativeSupportStatistics";
@@ -96,10 +100,12 @@ export interface InitiativeLifecycleWorkingSidebarProps {
   readonly onNavigateNextStage: (stageId: string, hash: string) => void;
   /** Canonical profile from the Lifecycle shell — Archive assistant gating only. */
   readonly lifecycleProfile?: InitiativeLifecycleProfile | string | null;
+  /** Pack 03 — hide Initiative Support for SELECT_ONE candidate elections. */
+  readonly ballotMode?: string | null;
   /**
    * Public Choice Experience Pack 01 — restore Initiative Support as the
    * first right-sidebar widget even while the Author working tools replace
-   * the public sidebar composition.
+   * the public sidebar composition (except SELECT_ONE Pack 03).
    */
   readonly supportStatistics?: ComponentProps<typeof PublicInitiativeSupportStatistics>["statistics"];
   readonly onSupportSignalChange?: ComponentProps<
@@ -1538,6 +1544,7 @@ export function InitiativeLifecycleWorkingSidebar({
   onOpenPublicPreview,
   onNavigateNextStage,
   lifecycleProfile,
+  ballotMode = null,
   supportStatistics,
   onSupportSignalChange,
   onSupportBookmarkToggle,
@@ -1594,7 +1601,13 @@ export function InitiativeLifecycleWorkingSidebar({
 
   return (
     <div className="lsw-sidebar" aria-label="Stage working tools">
-      {supportStatistics && onSupportSignalChange && onSupportBookmarkToggle ? (
+      {supportStatistics &&
+      onSupportSignalChange &&
+      onSupportBookmarkToggle &&
+      !(
+        resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE" &&
+        resolvePublicChoiceBallotMode(ballotMode) === "SELECT_ONE_CANDIDATE"
+      ) ? (
         <PublicInitiativeSupportStatistics
           statistics={supportStatistics}
           onSignalChange={onSupportSignalChange}

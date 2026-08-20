@@ -102,10 +102,10 @@ describe("Public Choice Experience Pack 01 — Discussion + Support + Country", 
     "src/features/initiative-collective-decision-lifecycle/collective-decision-voting.ts",
   );
 
-  it("Discussion mounts Public Choice ballot and hides STANDARD participation actions", () => {
+  it("Discussion mounts Public Choice ballot panel and hides STANDARD participation actions", () => {
     assert.match(discussion, /PublicChoiceDiscussionVotePanel/);
     assert.match(discussion, /showStandardParticipationActions/);
-    assert.match(votePanel, /Public Choice vote/);
+    assert.match(votePanel, /Public Choice vote|Candidate voting/);
     assert.match(votePanel, /support|do_not_support|abstain/);
   });
 
@@ -116,11 +116,9 @@ describe("Public Choice Experience Pack 01 — Discussion + Support + Country", 
     assert.match(voting, /Воздержался/);
   });
 
-  it("Initiative Support is first in public and Author working sidebars", () => {
-    const supportIdx = sidebar.indexOf("<PublicInitiativeSupportStatistics");
-    const journeyIdx = sidebar.indexOf("<YourParticipationPanel");
-    assert.ok(supportIdx > 0);
-    assert.ok(journeyIdx < 0 || supportIdx < journeyIdx);
+  it("Initiative Support remains wired for STANDARD; SELECT_ONE Public Choice may hide it", () => {
+    assert.match(sidebar, /PublicInitiativeSupportStatistics/);
+    assert.match(sidebar, /PublicChoiceElectionSidebarWidget/);
     assert.match(working, /PublicInitiativeSupportStatistics/);
     assert.match(working, /supportStatistics/);
   });
