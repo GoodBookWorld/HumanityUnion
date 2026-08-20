@@ -8,6 +8,8 @@ export const MONGO_COLLECTIONS = {
   initiativeCollectiveDecisions: "initiative_collective_decisions",
   initiativeDecisionVotes: "initiative_decision_votes",
   initiativeDecisionVoteHistory: "initiative_decision_vote_history",
+  publicChoiceCandidates: "public_choice_candidates",
+  publicChoiceResultsSnapshots: "public_choice_results_snapshots",
   participationAreas: "participation_areas",
   participationAreaTransitions: "participation_area_transitions",
   civicActionPackages: "civic_action_packages",

@@ -48,13 +48,31 @@ const MODULE_INDEXES: ReadonlyArray<{
     indexes: [
       { key: { voteId: 1 }, unique: true, name: "initiative_decision_votes_vote_id_unique" },
       {
+        // Pack 02B — partial unique so visitor rows (no participantId) do not collide.
         key: { decisionId: 1, participantId: 1 },
         unique: true,
-        name: "initiative_decision_votes_decision_participant_unique",
+        name: "initiative_decision_votes_decision_participant_unique_v2",
+        partialFilterExpression: { participantId: { $exists: true, $type: "string" } },
+      },
+      {
+        key: { decisionId: 1, visitorKey: 1 },
+        unique: true,
+        name: "initiative_decision_votes_decision_visitor_unique",
+        partialFilterExpression: { visitorKey: { $exists: true, $type: "string" } },
       },
       { key: { decisionId: 1 }, name: "initiative_decision_votes_decision_id" },
       { key: { participantId: 1 }, name: "initiative_decision_votes_participant_id" },
+      { key: { visitorKey: 1 }, name: "initiative_decision_votes_visitor_key" },
       { key: { decisionId: 1, choice: 1 }, name: "initiative_decision_votes_decision_choice" },
+      {
+        key: { initiativeId: 1, candidateId: 1 },
+        name: "initiative_decision_votes_initiative_candidate",
+      },
+      {
+        key: { expireAt: 1 },
+        expireAfterSeconds: 0,
+        name: "initiative_decision_votes_expire_at_ttl",
+      },
     ],
   },
   {
@@ -76,6 +94,56 @@ const MODULE_INDEXES: ReadonlyArray<{
       {
         key: { participantId: 1, changedAt: 1 },
         name: "initiative_decision_vote_history_participant_id_changed_at",
+      },
+      {
+        key: { visitorKey: 1, changedAt: 1 },
+        name: "initiative_decision_vote_history_visitor_key_changed_at",
+      },
+      {
+        key: { expireAt: 1 },
+        expireAfterSeconds: 0,
+        name: "initiative_decision_vote_history_expire_at_ttl",
+      },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.publicChoiceCandidates,
+    indexes: [
+      {
+        key: { candidateId: 1 },
+        unique: true,
+        name: "public_choice_candidates_candidate_id_unique",
+      },
+      { key: { initiativeId: 1 }, name: "public_choice_candidates_initiative_id" },
+      {
+        key: { initiativeId: 1, sortOrder: 1 },
+        name: "public_choice_candidates_initiative_sort",
+      },
+      {
+        key: { expireAt: 1 },
+        expireAfterSeconds: 0,
+        name: "public_choice_candidates_expire_at_ttl",
+      },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.publicChoiceResultsSnapshots,
+    indexes: [
+      {
+        key: { snapshotId: 1 },
+        unique: true,
+        name: "public_choice_results_snapshots_snapshot_id_unique",
+      },
+      {
+        key: { decisionId: 1 },
+        unique: true,
+        name: "public_choice_results_snapshots_decision_id_unique",
+      },
+      { key: { initiativeId: 1 }, name: "public_choice_results_snapshots_initiative_id" },
+      {
+        key: { expiresAt: 1 },
+        expireAfterSeconds: 0,
+        name: "public_choice_results_snapshots_expires_at_ttl",
       },
     ],
   },
@@ -995,8 +1063,34 @@ async function dropDeadInitiativeDecisionVoteStatusIndex(): Promise<void> {
   }
 }
 
+/**
+ * Pack 02B — replace non-partial unique(decisionId, participantId) so visitor
+ * rows without participantId do not collide on null. Safe if already dropped.
+ */
+async function dropLegacyDecisionParticipantUniqueIndex(): Promise<void> {
+  try {
+    await getMongoCollection(MONGO_COLLECTIONS.initiativeDecisionVotes).dropIndex(
+      "initiative_decision_votes_decision_participant_unique",
+    );
+  } catch (error) {
+    const mongoError = error as { code?: number; codeName?: string };
+
+    if (
+      mongoError.code === 27 ||
+      mongoError.codeName === "IndexNotFound" ||
+      mongoError.code === 26 ||
+      mongoError.codeName === "NamespaceNotFound"
+    ) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
 export async function ensureMongoIndexes(): Promise<void> {
   await dropDeadInitiativeDecisionVoteStatusIndex();
+  await dropLegacyDecisionParticipantUniqueIndex();
 
   for (const entry of MODULE_INDEXES) {
     await ensureCollectionIndexes(entry.collectionName, entry.indexes);

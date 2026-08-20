@@ -35,6 +35,19 @@ export const PARTICIPANT_ACTION_INITIATIVE_DECISION_VOTE_CHANGED_CONSUMER_ID =
 export async function handleInitiativeDecisionVoteChangedForParticipantAction(
   envelope: CanonicalDomainEventEnvelope,
 ): Promise<void> {
+  // Pack 02B — Visitors never create Participant Actions.
+  if (
+    typeof envelope.payload.participantId !== "string" ||
+    envelope.payload.participantId.trim() === ""
+  ) {
+    logger.info("participant_action.skipped_visitor_vote", {
+      component: "participant-action",
+      consumerId: PARTICIPANT_ACTION_INITIATIVE_DECISION_VOTE_CHANGED_CONSUMER_ID,
+      eventId: envelope.eventId,
+    });
+    return;
+  }
+
   try {
     const record = mapInitiativeDecisionVoteChangedToParticipantAction(
       envelope,

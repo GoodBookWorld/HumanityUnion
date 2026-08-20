@@ -1,53 +1,98 @@
 import type { Document } from "mongodb";
 
 import type {
-  InitiativeDecisionVoteChoice,
+  InitiativeDecisionVoteChoiceExtended,
   InitiativeDecisionVoteHistoryEntry,
   ParticipationTransparencyCohort,
+  PublicChoiceVoterCategory,
 } from "@hu/types";
+import { INITIATIVE_DECISION_VOTE_CHOICES_EXTENDED } from "@hu/types";
 
 import { InitiativeDecisionVotePersistenceError } from "../initiative-decision-vote.errors.js";
 
-const VALID_CHOICES = new Set<InitiativeDecisionVoteChoice>([
-  "support",
-  "do_not_support",
-  "abstain",
-]);
+const VALID_CHOICES = new Set<string>(INITIATIVE_DECISION_VOTE_CHOICES_EXTENDED);
 const VALID_COHORTS = new Set<ParticipationTransparencyCohort>(["verified", "unverified"]);
 
 /**
- * Authoritative Mongo document for the append-only
- * `initiative_decision_vote_history` collection (Recovery Task 31 Part 5/6).
- * One immutable row per cast/change; never updated or deleted by production
- * code (only narrow `ForTests` cleanup helpers may remove rows).
+ * Authoritative Mongo document for append-only
+ * `initiative_decision_vote_history` (Recovery Task 31 Part 5/6).
+ * Pack 02B — optional visitorKey + candidate fields; never updated.
  */
 export interface InitiativeDecisionVoteHistoryMongoDocument extends Document {
   historyId: string;
   voteId: string;
   decisionId: string;
-  participantId: string;
-  previousChoice?: InitiativeDecisionVoteChoice;
-  newChoice: InitiativeDecisionVoteChoice;
+  participantId?: string;
+  visitorKey?: string;
+  previousChoice?: InitiativeDecisionVoteChoiceExtended;
+  previousCandidateId?: string;
+  newChoice: InitiativeDecisionVoteChoiceExtended;
+  newCandidateId?: string;
   changedAt: string;
   transparencyCohort: ParticipationTransparencyCohort;
+  voterCategory?: PublicChoiceVoterCategory;
+}
+
+function assertHistoryChoice(
+  choice: unknown,
+  historyId: string,
+  field: string,
+): InitiativeDecisionVoteChoiceExtended {
+  if (typeof choice === "string" && VALID_CHOICES.has(choice)) {
+    return choice as InitiativeDecisionVoteChoiceExtended;
+  }
+
+  throw new InitiativeDecisionVotePersistenceError(
+    `Persisted history entry "${historyId}" has an invalid ${field}.`,
+  );
 }
 
 export function toInitiativeDecisionVoteHistoryMongoDocument(
   entry: InitiativeDecisionVoteHistoryEntry,
 ): InitiativeDecisionVoteHistoryMongoDocument {
-  return {
+  const hasParticipant = Boolean(entry.participantId?.trim());
+  const hasVisitor = Boolean(entry.visitorKey?.trim());
+  if (hasParticipant === hasVisitor) {
+    throw new InitiativeDecisionVotePersistenceError(
+      `Mongo Initiative Decision Vote History "${entry.historyId}" requires exactly one of participantId or visitorKey.`,
+    );
+  }
+
+  const document: InitiativeDecisionVoteHistoryMongoDocument = {
     historyId: entry.historyId,
     voteId: entry.voteId,
     decisionId: entry.decisionId,
-    participantId: entry.participantId,
-    previousChoice: entry.previousChoice,
-    newChoice: entry.newChoice,
+    newChoice: assertHistoryChoice(entry.newChoice, entry.historyId, "newChoice"),
     changedAt: entry.changedAt,
     transparencyCohort: entry.transparencyCohort,
   };
+
+  if (entry.participantId) {
+    document.participantId = entry.participantId;
+  }
+  if (entry.visitorKey) {
+    document.visitorKey = entry.visitorKey;
+  }
+  if (entry.previousChoice !== undefined) {
+    document.previousChoice = assertHistoryChoice(
+      entry.previousChoice,
+      entry.historyId,
+      "previousChoice",
+    );
+  }
+  if (entry.previousCandidateId) {
+    document.previousCandidateId = entry.previousCandidateId;
+  }
+  if (entry.newCandidateId) {
+    document.newCandidateId = entry.newCandidateId;
+  }
+  if (entry.voterCategory) {
+    document.voterCategory = entry.voterCategory;
+  }
+
+  return document;
 }
 
-/** Rejects malformed persisted history documents rather than coercing them (Part 6). */
 export function fromInitiativeDecisionVoteHistoryMongoDocument(
   document: InitiativeDecisionVoteHistoryMongoDocument,
 ): InitiativeDecisionVoteHistoryEntry {
@@ -69,9 +114,18 @@ export function fromInitiativeDecisionVoteHistoryMongoDocument(
     );
   }
 
-  if (typeof document.participantId !== "string" || document.participantId.length === 0) {
+  const participantId =
+    typeof document.participantId === "string" && document.participantId.length > 0
+      ? document.participantId
+      : undefined;
+  const visitorKey =
+    typeof document.visitorKey === "string" && document.visitorKey.length > 0
+      ? document.visitorKey
+      : undefined;
+
+  if (Boolean(participantId) === Boolean(visitorKey)) {
     throw new InitiativeDecisionVotePersistenceError(
-      `Persisted history entry "${document.historyId}" is missing a valid participantId.`,
+      `Persisted history entry "${document.historyId}" must have exactly one of participantId or visitorKey.`,
     );
   }
 
@@ -85,11 +139,7 @@ export function fromInitiativeDecisionVoteHistoryMongoDocument(
     );
   }
 
-  if (!VALID_CHOICES.has(document.newChoice)) {
-    throw new InitiativeDecisionVotePersistenceError(
-      `Persisted history entry "${document.historyId}" has an invalid newChoice.`,
-    );
-  }
+  const newChoice = assertHistoryChoice(document.newChoice, document.historyId, "newChoice");
 
   if (typeof document.changedAt !== "string" || Number.isNaN(Date.parse(document.changedAt))) {
     throw new InitiativeDecisionVotePersistenceError(
@@ -107,21 +157,21 @@ export function fromInitiativeDecisionVoteHistoryMongoDocument(
     historyId: document.historyId,
     voteId: document.voteId,
     decisionId: document.decisionId,
-    participantId: document.participantId,
+    participantId,
+    visitorKey,
     previousChoice: document.previousChoice ?? undefined,
-    newChoice: document.newChoice,
+    previousCandidateId: document.previousCandidateId,
+    newChoice,
+    newCandidateId: document.newCandidateId,
     changedAt: document.changedAt,
     transparencyCohort: document.transparencyCohort,
+    voterCategory: document.voterCategory,
   };
 }
 
 /**
- * Deterministic history identity (Part 5 "deterministic history identity
- * where practical"): keyed off the same natural key as the Vote itself plus
- * the new version being recorded. Since `version` increments by exactly one
- * per committed transition, this is collision-free across a Vote's
- * lifetime and stable across a transaction retry of the same logical
- * transition (unlike the prior `vote-history-${Date.now()}-${random}` id).
+ * Deterministic history identity. Participant path preserves Task 31 IDs.
+ * Visitor path uses visitorKey segment.
  */
 export function buildInitiativeDecisionVoteHistoryId(
   decisionId: string,
@@ -129,4 +179,39 @@ export function buildInitiativeDecisionVoteHistoryId(
   newVersion: number,
 ): string {
   return `initiative-decision-vote-history:${decisionId}:${participantId}:${newVersion}`;
+}
+
+export function buildInitiativeDecisionVoteHistoryIdForVisitor(
+  decisionId: string,
+  visitorKey: string,
+  newVersion: number,
+): string {
+  return `initiative-decision-vote-history:${decisionId}:visitor:${visitorKey}:${newVersion}`;
+}
+
+export function buildInitiativeDecisionVoteHistoryIdForVoter(input: {
+  decisionId: string;
+  participantId?: string;
+  visitorKey?: string;
+  newVersion: number;
+}): string {
+  if (input.participantId) {
+    return buildInitiativeDecisionVoteHistoryId(
+      input.decisionId,
+      input.participantId,
+      input.newVersion,
+    );
+  }
+
+  if (!input.visitorKey) {
+    throw new InitiativeDecisionVotePersistenceError(
+      "History identity requires participantId or visitorKey.",
+    );
+  }
+
+  return buildInitiativeDecisionVoteHistoryIdForVisitor(
+    input.decisionId,
+    input.visitorKey,
+    input.newVersion,
+  );
 }

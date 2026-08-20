@@ -6,12 +6,17 @@ import type {
 } from "@hu/types";
 import { createEmptyInitiativeDecisionVoteAggregates } from "@hu/types";
 
+import { listEffectiveVotesForDecision } from "./list-effective-decision-votes.js";
 import { listVotesForDecision } from "./initiative-decision-vote.store.js";
 
 function incrementChoiceCount(
   counts: InitiativeDecisionVoteChoiceCounts,
-  choice: InitiativeDecisionVoteChoice,
+  choice: InitiativeDecisionVoteChoice | "candidate",
 ): void {
+  if (choice === "candidate") {
+    return;
+  }
+
   counts.totalVotes += 1;
 
   switch (choice) {
@@ -27,18 +32,27 @@ function incrementChoiceCount(
   }
 }
 
+/**
+ * Canonical SUPPORT_OPPOSE / ternary aggregation authority.
+ * Pack 02B — reads solely from the durable Decision Vote repository
+ * (`listEffectiveVotesForDecision`). SELECT_ONE candidate rows are skipped
+ * here; use `computePublicChoiceBallotAggregatesForDecision` /
+ * `buildBallotAggregates` for ballot-mode-aware totals.
+ */
 export async function computeInitiativeDecisionVoteAggregates(
   decisionId: string,
 ): Promise<InitiativeDecisionVoteAggregates> {
   const aggregates = createEmptyInitiativeDecisionVoteAggregates();
 
-  // Honest empty totals when the Vote substrate is unavailable — never a
-  // Lifecycle blocker, and never invents a parallel vote model.
   let votes: InitiativeDecisionVote[];
   try {
-    votes = await listVotesForDecision(decisionId);
+    votes = await listEffectiveVotesForDecision(decisionId);
   } catch {
-    return aggregates;
+    try {
+      votes = await listVotesForDecision(decisionId);
+    } catch {
+      return aggregates;
+    }
   }
 
   for (const vote of votes) {

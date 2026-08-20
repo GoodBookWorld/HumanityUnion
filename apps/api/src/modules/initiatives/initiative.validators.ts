@@ -5,12 +5,15 @@ import type {
   InitiativeNewsSourceReference,
   ParticipationScope,
   InitiativeActivityAreaOption,
+  PublicChoiceBallotMode,
 } from "@hu/types";
 import {
   INITIATIVE_ACTIVITY_AREA_OTHER,
   isInitiativeLifecycleProfile,
   isKnownInitiativeActivityArea,
+  isPublicChoiceBallotMode,
   parseExternalVideoUrl,
+  resolvePublicChoiceBallotMode,
 } from "@hu/types";
 import { isPlatformMediaUrl } from "../media-upload/media-upload.validation.js";
 
@@ -23,7 +26,8 @@ export interface CreateInitiativeDraftInput {
   regionSlug?: string;
   region?: string;
   communityAssociation?: string;
-  activityArea: string;
+  /** Required for STANDARD; optional/empty for PUBLIC_CHOICE. */
+  activityArea?: string;
   activityAreaOther?: string;
   participationScope?: ParticipationScope;
   imageUrl?: string;
@@ -36,6 +40,8 @@ export interface CreateInitiativeDraftInput {
   sourceReferences?: InitiativeNewsSourceReference[];
   /** Phase 02 — optional Lifecycle Profile; omitted → STANDARD at persist time. */
   lifecycleProfile?: InitiativeLifecycleProfile;
+  /** Pack 02A — PUBLIC_CHOICE only. STANDARD must omit. */
+  ballotMode?: PublicChoiceBallotMode;
 }
 
 export interface SaveInitiativeDraftInput {
@@ -59,6 +65,8 @@ export interface SaveInitiativeDraftInput {
   startDate?: string;
   completionDate?: string;
   clearSourceReferences?: boolean;
+  /** Pack 02A — PUBLIC_CHOICE only. */
+  ballotMode?: PublicChoiceBallotMode;
 }
 
 function normalizeText(value: unknown, fieldName: string): string {
@@ -95,6 +103,25 @@ function validateOptionalLifecycleProfile(value: unknown): InitiativeLifecyclePr
 
   if (!isInitiativeLifecycleProfile(value)) {
     throw new Error('lifecycleProfile must be "STANDARD" or "PUBLIC_CHOICE".');
+  }
+
+  return value;
+}
+
+function validateOptionalBallotMode(
+  value: unknown,
+  isPublicChoice: boolean,
+): PublicChoiceBallotMode | undefined {
+  if (value === undefined || value === null || value === "") {
+    return isPublicChoice ? undefined : undefined;
+  }
+
+  if (!isPublicChoice) {
+    throw new Error("ballotMode is only valid for PUBLIC_CHOICE initiatives.");
+  }
+
+  if (!isPublicChoiceBallotMode(value)) {
+    throw new Error('ballotMode must be "SUPPORT_OPPOSE" or "SELECT_ONE_CANDIDATE".');
   }
 
   return value;
@@ -227,16 +254,33 @@ function normalizeActivityAreaValue(value: string): string {
   return LEGACY_ACTIVITY_AREA_ALIASES[value] ?? value;
 }
 
-function readActivityAreaFields(record: Record<string, unknown>): {
-  activityArea: string;
+function readActivityAreaFields(
+  record: Record<string, unknown>,
+  options: { required: boolean },
+): {
+  activityArea?: string;
   activityAreaOther?: string;
 } {
-  const activityArea = normalizeActivityAreaValue(
-    normalizeText(record.activityArea, "Activity area"),
-  );
+  const raw = typeof record.activityArea === "string" ? record.activityArea.trim() : "";
+
+  if (!raw) {
+    if (options.required) {
+      throw new Error("Activity area is required.");
+    }
+
+    return {};
+  }
+
+  const activityArea = normalizeActivityAreaValue(raw);
   const activityAreaOther = normalizeOptionalText(record.activityAreaOther);
 
   return validateActivityAreaFields(activityArea, activityAreaOther);
+}
+
+function assertPublicChoiceCountry(countrySlug: string | undefined): void {
+  if (!countrySlug?.trim()) {
+    throw new Error("Country is required for Public Choice initiatives.");
+  }
 }
 
 export function validateCreateInitiativeDraftInput(body: unknown): CreateInitiativeDraftInput {
@@ -245,13 +289,21 @@ export function validateCreateInitiativeDraftInput(body: unknown): CreateInitiat
   }
 
   const record = body as Record<string, unknown>;
-  const activityAreaFields = readActivityAreaFields(record);
+  const lifecycleProfile = validateOptionalLifecycleProfile(record.lifecycleProfile);
+  const isPublicChoice = lifecycleProfile === "PUBLIC_CHOICE";
+  const activityAreaFields = readActivityAreaFields(record, { required: !isPublicChoice });
+  const countrySlug = normalizeOptionalText(record.countrySlug);
+  const ballotMode = validateOptionalBallotMode(record.ballotMode, isPublicChoice);
+
+  if (isPublicChoice) {
+    assertPublicChoiceCountry(countrySlug);
+  }
 
   return {
     title: normalizeText(record.title, "Title"),
     description: normalizeText(record.description, "Short description"),
     communitySlug: normalizeOptionalText(record.communitySlug),
-    countrySlug: normalizeOptionalText(record.countrySlug),
+    countrySlug,
     regionSlug: normalizeOptionalText(record.regionSlug),
     communityAssociation: normalizeOptionalText(record.communityAssociation),
     participationScope: validateParticipationScope(record.participationScope),
@@ -262,7 +314,10 @@ export function validateCreateInitiativeDraftInput(body: unknown): CreateInitiat
     startDate: normalizeOptionalIsoDate(record.startDate, "Start date"),
     completionDate: normalizeOptionalIsoDate(record.completionDate, "Completion date"),
     sourceNewsId: normalizeOptionalText(record.sourceNewsId),
-    lifecycleProfile: validateOptionalLifecycleProfile(record.lifecycleProfile),
+    lifecycleProfile,
+    ballotMode: isPublicChoice
+      ? resolvePublicChoiceBallotMode(ballotMode)
+      : undefined,
   };
 }
 
@@ -358,6 +413,10 @@ export function validateSaveInitiativeDraftInput(body: unknown): SaveInitiativeD
     update.clearSourceReferences = record.clearSourceReferences;
   }
 
+  if (record.ballotMode !== undefined) {
+    update.ballotMode = validateOptionalBallotMode(record.ballotMode, true);
+  }
+
   if (Object.keys(update).length === 0) {
     throw new Error("At least one editable field is required.");
   }
@@ -368,19 +427,26 @@ export function validateSaveInitiativeDraftInput(body: unknown): SaveInitiativeD
 export function validateInitiativeForPublication(initiative: Initiative): void {
   normalizeText(initiative.title, "Title");
   normalizeText(initiative.description, "Short description");
-  normalizeText(initiative.metadata.activityArea, "Activity area");
 
-  const normalizedActivityArea = normalizeActivityAreaValue(initiative.metadata.activityArea);
+  const isPublicChoice = initiative.lifecycleProfile === "PUBLIC_CHOICE";
 
-  if (!isKnownInitiativeActivityArea(normalizedActivityArea)) {
-    throw new Error("Activity area must be selected from the canonical list.");
-  }
+  if (isPublicChoice) {
+    assertPublicChoiceCountry(initiative.metadata.countrySlug);
+  } else {
+    normalizeText(initiative.metadata.activityArea, "Activity area");
 
-  if (
-    normalizedActivityArea === INITIATIVE_ACTIVITY_AREA_OTHER &&
-    !initiative.metadata.activityAreaOther
-  ) {
-    throw new Error("Activity area (Other) is required when Activity area is Other.");
+    const normalizedActivityArea = normalizeActivityAreaValue(initiative.metadata.activityArea);
+
+    if (!isKnownInitiativeActivityArea(normalizedActivityArea)) {
+      throw new Error("Activity area must be selected from the canonical list.");
+    }
+
+    if (
+      normalizedActivityArea === INITIATIVE_ACTIVITY_AREA_OTHER &&
+      !initiative.metadata.activityAreaOther
+    ) {
+      throw new Error("Activity area (Other) is required when Activity area is Other.");
+    }
   }
 
   if (initiative.visibility.policy !== "public") {

@@ -1,4 +1,5 @@
 import type {
+  CastInitiativeDecisionVotePayload,
   InitiativeCollectiveDecisionMetrics,
   InitiativeDecisionVote,
   PublicInitiativeCollectiveDecisionListItem,
@@ -65,14 +66,17 @@ export async function getMyInitiativeDecisionVote(
 }
 
 /**
- * Lifecycle UX Pack 01 — cast or change the signed-in Participant's vote.
- * Choice values are the canonical InitiativeDecisionVoteChoice set.
+ * Lifecycle UX Pack 01 / Pack 02A — cast or change vote.
+ * credentials:include carries auth cookies and visitor cookie when present.
  * Server resolves actor identity; never send participantId from the client.
  */
 export async function castOrUpdateInitiativeDecisionVote(
   decisionId: string,
-  choice: InitiativeDecisionVote["choice"],
+  payload: CastInitiativeDecisionVotePayload | InitiativeDecisionVote["choice"],
 ): Promise<InitiativeDecisionVote> {
+  const body: CastInitiativeDecisionVotePayload =
+    typeof payload === "string" ? { choice: payload } : payload;
+
   return apiRequest<InitiativeDecisionVote>(
     `/api/v1/initiative-collective-decisions/${encodeURIComponent(decisionId)}/vote`,
     {
@@ -80,7 +84,7 @@ export async function castOrUpdateInitiativeDecisionVote(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ choice }),
+      body: JSON.stringify(body),
     },
   );
 }

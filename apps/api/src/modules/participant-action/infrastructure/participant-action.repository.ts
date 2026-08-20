@@ -274,3 +274,25 @@ export async function deleteParticipantActionsByInitiativeIdForTests(
 
   return result.deletedCount ?? 0;
 }
+
+/**
+ * Pack 02D — remove recoverable PUBLIC_CHOICE vote choices from Participant Actions.
+ * Preserves petition_signed and other non-vote ledger rows for the Initiative.
+ */
+export async function deletePublicChoiceVoteParticipantActionsForInitiative(
+  initiativeId: string,
+): Promise<number> {
+  if (!isMongoConfigured()) {
+    return 0;
+  }
+
+  await ensureParticipantActionMongoReady();
+  const result = await collection().deleteMany({
+    initiativeId,
+    actionType: {
+      $in: ["initiative_decision_vote_cast", "initiative_decision_vote_changed"],
+    },
+  });
+
+  return result.deletedCount ?? 0;
+}

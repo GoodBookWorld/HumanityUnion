@@ -1,4 +1,10 @@
-import type { InitiativeDecisionVote, InitiativeDecisionVoteHistoryEntry } from "@hu/types";
+import type {
+  InitiativeDecisionVote,
+  InitiativeDecisionVoteChoiceExtended,
+  InitiativeDecisionVoteHistoryEntry,
+  PublicChoiceVoterCategory,
+} from "@hu/types";
+import { assertDecisionVoteVoterIdentity } from "@hu/types";
 
 import { runMongoTransaction } from "../../infrastructure/mongodb/mongo-transaction.js";
 import { enqueueDomainEvent } from "../../infrastructure/outbox/outbox.repository.js";
@@ -8,11 +14,9 @@ import {
   InitiativeDecisionVoteConcurrencyConflictError,
   InitiativeDecisionVoteEventInvariantConflictError,
 } from "./initiative-decision-vote.errors.js";
+import { buildInitiativeDecisionVoteHistoryIdForVoter } from "./persistence/initiative-decision-vote-history.mongo-document.js";
 import {
-  buildInitiativeDecisionVoteHistoryId,
-} from "./persistence/initiative-decision-vote-history.mongo-document.js";
-import {
-  buildInitiativeDecisionVoteId,
+  buildInitiativeDecisionVoteIdForVoter,
   toVoteResponse,
   type InitiativeDecisionVoteMongoRecord,
 } from "./persistence/initiative-decision-vote.mongo-document.js";
@@ -21,6 +25,7 @@ import {
   deleteInitiativeDecisionVotesByDecisionIdForTests,
   deleteInitiativeDecisionVotesByParticipantIdForTests,
   findInitiativeDecisionVoteByDecisionAndParticipant,
+  findInitiativeDecisionVoteByDecisionAndVisitor,
   findInitiativeDecisionVoteById,
   insertInitiativeDecisionVote,
   insertInitiativeDecisionVoteHistory,
@@ -103,66 +108,68 @@ const MAX_CONCURRENT_MUTATION_ATTEMPTS = 5;
 
 export interface CastOrChangeInitiativeDecisionVoteInput {
   decisionId: string;
-  participantId: string;
   initiativeId: string;
-  choice: InitiativeDecisionVote["choice"];
+  /** XOR with visitorKey — STANDARD and PUBLIC_CHOICE Participant/Member. */
+  participantId?: string;
+  /** XOR with participantId — PUBLIC_CHOICE Visitor only. */
+  visitorKey?: string;
+  choice: InitiativeDecisionVoteChoiceExtended;
+  candidateId?: string;
+  voterCategory?: PublicChoiceVoterCategory;
   transparencyCohort: InitiativeDecisionVote["transparencyCohort"];
 }
 
+function ballotEquals(
+  left: { choice: string; candidateId?: string },
+  right: { choice: string; candidateId?: string },
+): boolean {
+  return (
+    left.choice === right.choice &&
+    (left.candidateId ?? undefined) === (right.candidateId ?? undefined)
+  );
+}
+
+async function findExistingVoteForVoter(input: {
+  decisionId: string;
+  participantId?: string;
+  visitorKey?: string;
+}): Promise<InitiativeDecisionVoteMongoRecord | null> {
+  if (input.participantId) {
+    return findInitiativeDecisionVoteByDecisionAndParticipant(
+      input.decisionId,
+      input.participantId,
+    );
+  }
+
+  if (input.visitorKey) {
+    return findInitiativeDecisionVoteByDecisionAndVisitor(input.decisionId, input.visitorKey);
+  }
+
+  return null;
+}
+
 /**
- * The sole write path for Vote mutations (Recovery Task 31 Part 9).
- *
- * - First cast: `insert Vote` + `insert cast history row` inside one
- *   `runMongoTransaction` — commits atomically or not at all.
- * - Changed choice: optimistic-concurrency-guarded `update Vote` (Part 11,
- *   `voteId` + expected `version`) + `insert choice-changed history row`
- *   inside one `runMongoTransaction`.
- * - Same-choice re-submit: pure read, no transaction, no write, no history
- *   row (Part 9 no-op contract).
- *
- * Concurrency (Part 10): a first-cast duplicate-key race (two concurrent
- * callers computing the same deterministic `voteId`) and a changed-choice
- * version-mismatch race are both detected and resolved by re-reading
- * authoritative state and retrying — bounded by
- * `MAX_CONCURRENT_MUTATION_ATTEMPTS` — rather than surfacing a new
- * public error type to preserve Part 17 API compatibility. A real
- * multi-document transaction can also surface the same underlying race as
- * a driver-level `WriteConflict`/`TransientTransactionError` rather than a
- * clean duplicate-key error, depending on how two concurrent transactions
- * interleave; `isRetryableInitiativeDecisionVoteWriteError` recognizes both
- * shapes (including when wrapped in `InitiativeDecisionVotePersistenceError`)
- * so the retry loop, not raw driver error plumbing, is what a caller ever
- * observes. Only if the retry budget is exhausted (unreached by any tested
- * scenario) does a plain `Error`, consistent with this module's existing
- * all-plain-`Error` convention, escape to the caller.
+ * The sole write path for Vote mutations (Recovery Task 31 Part 9 + Pack 02B).
+ * Supports participant XOR visitor on one Mongo Decision Vote collection.
  */
 export async function castOrChangeInitiativeDecisionVote(
   input: CastOrChangeInitiativeDecisionVoteInput,
 ): Promise<InitiativeDecisionVote> {
-  const voteId = buildInitiativeDecisionVoteId(input.decisionId, input.participantId);
+  assertDecisionVoteVoterIdentity(input);
+  const voteId = buildInitiativeDecisionVoteIdForVoter(input);
+  const nextCandidateId = input.choice === "candidate" ? input.candidateId : undefined;
 
   for (let attempt = 0; attempt < MAX_CONCURRENT_MUTATION_ATTEMPTS; attempt += 1) {
-    const existing = await findInitiativeDecisionVoteByDecisionAndParticipant(
-      input.decisionId,
-      input.participantId,
-    );
+    const existing = await findExistingVoteForVoter(input);
 
     if (existing) {
-      if (existing.choice === input.choice) {
+      if (ballotEquals(existing, { choice: input.choice, candidateId: nextCandidateId })) {
         return toVoteResponse(existing);
       }
 
       const timestamp = new Date().toISOString();
       const newVersion = existing.version + 1;
 
-      // Recovery Task 32 Part 10/16 — constructed once per attempt, before
-      // `runMongoTransaction` is entered, from the exact transition this
-      // attempt is trying to commit. If this attempt loses the version race
-      // (see the `!result` branch below, or a driver-level
-      // TransientTransactionError), the transaction throws before the
-      // enqueue is ever reached and this constant is simply discarded; the
-      // next loop iteration re-reads authoritative state and builds a fresh
-      // event from the actual winning transition — never a stale one.
       const changedEvent = createInitiativeDecisionVoteChangedEvent({
         voteId: existing.voteId,
         decisionId: input.decisionId,
@@ -170,6 +177,8 @@ export async function castOrChangeInitiativeDecisionVote(
         initiativeId: existing.initiativeId,
         previousChoice: existing.choice,
         newChoice: input.choice,
+        previousCandidateId: existing.candidateId,
+        newCandidateId: nextCandidateId,
         changedAt: timestamp,
         previousVoteVersion: existing.version,
         newVoteVersion: newVersion,
@@ -182,6 +191,8 @@ export async function castOrChangeInitiativeDecisionVote(
               voteId: existing.voteId,
               expectedVersion: existing.version,
               choice: input.choice,
+              candidateId: nextCandidateId ?? null,
+              voterCategory: input.voterCategory,
               transparencyCohort: input.transparencyCohort,
               updatedAt: timestamp,
             },
@@ -194,27 +205,27 @@ export async function castOrChangeInitiativeDecisionVote(
 
           await insertInitiativeDecisionVoteHistory(
             {
-              historyId: buildInitiativeDecisionVoteHistoryId(
-                input.decisionId,
-                input.participantId,
+              historyId: buildInitiativeDecisionVoteHistoryIdForVoter({
+                decisionId: input.decisionId,
+                participantId: input.participantId,
+                visitorKey: input.visitorKey,
                 newVersion,
-              ),
+              }),
               voteId: existing.voteId,
               decisionId: input.decisionId,
               participantId: input.participantId,
+              visitorKey: input.visitorKey,
               previousChoice: existing.choice,
+              previousCandidateId: existing.candidateId,
               newChoice: input.choice,
+              newCandidateId: nextCandidateId,
               changedAt: timestamp,
               transparencyCohort: input.transparencyCohort,
+              voterCategory: input.voterCategory,
             },
             { session },
           );
 
-          // Recovery Task 32 Part 10 — enqueued only after the
-          // version-guarded update above has already succeeded within this
-          // same, still-uncommitted transaction: Vote update, history row,
-          // and event share one ClientSession and commit or roll back
-          // together (Part 9/17).
           await enqueueDomainEvent(changedEvent, { session });
 
           return result;
@@ -246,29 +257,23 @@ export async function castOrChangeInitiativeDecisionVote(
       decisionId: input.decisionId,
       initiativeId: input.initiativeId,
       participantId: input.participantId,
+      visitorKey: input.visitorKey,
       choice: input.choice,
+      candidateId: nextCandidateId,
+      voterCategory: input.voterCategory,
       transparencyCohort: input.transparencyCohort,
       castAt: timestamp,
       updatedAt: timestamp,
       version: 1,
     };
 
-    // Recovery Task 32 Part 7/12 — constructed once per attempt, before
-    // `runMongoTransaction` is entered, from the same deterministic `voteId`
-    // and the single `timestamp` already used for the Vote document and its
-    // cast history row (Part 8). A first-cast duplicate-key race (another
-    // concurrent caller wins the same deterministic `voteId`) aborts this
-    // attempt's whole transaction before the event is ever enqueued; the
-    // next loop iteration re-reads authoritative state, finds the Vote now
-    // exists, and falls into the "existing" branch above instead of
-    // re-attempting a first cast — so this event is never constructed twice
-    // for the same Vote.
     const castEvent = createInitiativeDecisionVoteCastEvent({
       voteId,
       decisionId: input.decisionId,
       participantId: input.participantId,
       initiativeId: input.initiativeId,
       choice: input.choice,
+      candidateId: nextCandidateId,
       votedAt: timestamp,
       voteVersion: 1,
     });
@@ -278,31 +283,27 @@ export async function castOrChangeInitiativeDecisionVote(
         await insertInitiativeDecisionVote(vote, { session });
         await insertInitiativeDecisionVoteHistory(
           {
-            historyId: buildInitiativeDecisionVoteHistoryId(
-              input.decisionId,
-              input.participantId,
-              1,
-            ),
+            historyId: buildInitiativeDecisionVoteHistoryIdForVoter({
+              decisionId: input.decisionId,
+              participantId: input.participantId,
+              visitorKey: input.visitorKey,
+              newVersion: 1,
+            }),
             voteId,
             decisionId: input.decisionId,
             participantId: input.participantId,
+            visitorKey: input.visitorKey,
             newChoice: input.choice,
+            newCandidateId: nextCandidateId,
             changedAt: timestamp,
             transparencyCohort: input.transparencyCohort,
+            voterCategory: input.voterCategory,
           },
           { session },
         );
 
-        // Recovery Task 32 Part 9 — enqueued only after the Vote insert
-        // above has already succeeded within this same, still-uncommitted
-        // transaction: Vote, history row, and event share one
-        // ClientSession and commit or roll back together (Part 17).
         await enqueueDomainEvent(castEvent, { session });
 
-        // runMongoTransaction (Part 8) treats an `undefined` callback result
-        // as "completed without returning a result" — an explicit true is
-        // required even though this branch's real output is the `vote`
-        // constant already in scope below.
         return true;
       });
 
@@ -339,6 +340,15 @@ export async function getActiveVoteForParticipant(
   participantId: string,
 ): Promise<InitiativeDecisionVote | null> {
   const record = await findInitiativeDecisionVoteByDecisionAndParticipant(decisionId, participantId);
+
+  return record ? toVoteResponse(record) : null;
+}
+
+export async function getActiveVoteForVisitor(
+  decisionId: string,
+  visitorKey: string,
+): Promise<InitiativeDecisionVote | null> {
+  const record = await findInitiativeDecisionVoteByDecisionAndVisitor(decisionId, visitorKey);
 
   return record ? toVoteResponse(record) : null;
 }

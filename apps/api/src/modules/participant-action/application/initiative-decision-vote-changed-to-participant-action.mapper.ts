@@ -122,7 +122,7 @@ export function mapInitiativeDecisionVoteChangedToParticipantAction(
 
   return {
     participantActionId: buildParticipantActionId(envelope.eventId),
-    participantId: payload.participantId,
+    participantId: payload.participantId!,
     initiativeId: payload.initiativeId,
     actionType: "initiative_decision_vote_changed",
     sourceType: "initiative_decision_vote",

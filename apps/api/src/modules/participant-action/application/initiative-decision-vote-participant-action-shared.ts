@@ -1,22 +1,17 @@
-import type { InitiativeDecisionVoteChoice } from "@hu/types";
+import type { InitiativeDecisionVoteChoiceExtended } from "@hu/types";
 
 import { ParticipantActionValidationError } from "../participant-action.errors.js";
 
 /**
- * Recovery Task 33 Part 8 — narrow, pure, runtime validation shared by the
- * two Vote-to-Participant-Action mappers only (`initiative-decision-vote-
- * cast-to-participant-action.mapper.ts` and `initiative-decision-vote-
- * changed-to-participant-action.mapper.ts`). This mirrors the producer's own
- * `initiative-decision-vote-event-shared.ts` precedent — a narrowly-scoped,
- * two-consumer shared helper file, not a generic cross-module validation
- * framework — and never re-validates Vote/Decision/Initiative/Participant/
- * Member existence: it only checks the shape of an envelope that was
- * already durably recorded by the Recovery Task 32 producer.
+ * Recovery Task 33 Part 8 — narrow validation for Vote→ParticipantAction mappers.
+ * Pack 02B: `candidate` allowed for SELECT_ONE Participant/Member votes.
+ * Visitor casts are skipped in handlers (no Participant Action for Visitors).
  */
-const VALID_INITIATIVE_DECISION_VOTE_CHOICES = new Set<InitiativeDecisionVoteChoice>([
+const VALID_INITIATIVE_DECISION_VOTE_CHOICES = new Set<string>([
   "support",
   "do_not_support",
   "abstain",
+  "candidate",
 ]);
 
 export function requireNonEmptyStringField(value: unknown, field: string, eventName: string): string {
@@ -45,17 +40,14 @@ export function requireValidVoteChoiceField(
   value: unknown,
   field: string,
   eventName: string,
-): InitiativeDecisionVoteChoice {
-  if (
-    typeof value !== "string" ||
-    !VALID_INITIATIVE_DECISION_VOTE_CHOICES.has(value as InitiativeDecisionVoteChoice)
-  ) {
+): InitiativeDecisionVoteChoiceExtended {
+  if (typeof value !== "string" || !VALID_INITIATIVE_DECISION_VOTE_CHOICES.has(value)) {
     throw new ParticipantActionValidationError(
       `${eventName} payload field "${field}" must be a valid Initiative Decision Vote choice.`,
     );
   }
 
-  return value as InitiativeDecisionVoteChoice;
+  return value as InitiativeDecisionVoteChoiceExtended;
 }
 
 export function requireValidVoteVersionField(value: unknown, field: string, eventName: string): number {

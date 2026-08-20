@@ -264,6 +264,7 @@ function DiscussionPanel({
   isOwnerRoute,
   discussionStageState,
   onDiscussionCompleted,
+  lifecycleProfile,
 }: {
   initiativeId: string;
   discussion: PublicInitiativeExperienceProjection["discussion"];
@@ -273,6 +274,7 @@ function DiscussionPanel({
   isOwnerRoute: boolean;
   discussionStageState?: string;
   onDiscussionCompleted: () => void;
+  lifecycleProfile?: PublicInitiativeExperienceProjection["lifecycleProfile"];
 }) {
   const discussionCompleted =
     discussionStageState === "completed" || discussionStageState === "published";
@@ -297,6 +299,7 @@ function DiscussionPanel({
         initialFilter={initialDiscussionFilter}
         focusCommentId={focusCommentId}
         focusCollaborationParticipantId={focusCollaborationParticipantId}
+        lifecycleProfile={lifecycleProfile}
       />
     </>
   );
@@ -443,6 +446,7 @@ export function PublicInitiativeCenterPanel({
             <InitiativeLifecycleStageWorkspace
               initiativeId={experience.initiativeId}
               stageId={activeStage.stageId}
+              lifecycleProfile={experience.lifecycleProfile}
               onNavigateStage={onNavigateStage}
               returnToInitiativeHref={returnToInitiativeHref}
               isPreviewMode={isStagePreviewMode}
@@ -694,6 +698,7 @@ export function PublicInitiativeCenterPanel({
                 setDiscussionCompletedOverride(true);
                 void experienceRefresh?.refresh();
               }}
+              lifecycleProfile={experience.lifecycleProfile}
             />
           </section>
         ) : null}

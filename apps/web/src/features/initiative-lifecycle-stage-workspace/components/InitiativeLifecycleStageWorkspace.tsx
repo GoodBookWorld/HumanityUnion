@@ -4,8 +4,11 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-import type { InitiativeLifecycleStageProjection } from "@hu/types";
-import { INITIATIVE_LIFECYCLE_STAGE_REGISTRY } from "@hu/types";
+import type { InitiativeLifecycleProfile, InitiativeLifecycleStageProjection } from "@hu/types";
+import {
+  getInitiativeLifecycleProfilePresentation,
+  INITIATIVE_LIFECYCLE_STAGE_REGISTRY,
+} from "@hu/types";
 
 import {
   WorkspaceButton,
@@ -76,6 +79,8 @@ export interface InitiativeLifecycleStageWorkspaceProps {
    */
   readonly isPreviewMode?: boolean;
   readonly onTogglePreview?: () => void;
+  /** Public Choice Experience Pack 01 — hide STANDARD ordinals for PUBLIC_CHOICE. */
+  readonly lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }
 
 function formatTimestamp(value: string | null): string | null {
@@ -99,9 +104,11 @@ function formatTimestamp(value: string | null): string | null {
 function StageHeader({
   projection,
   isPreviewMode,
+  showStageOrdinal,
 }: {
   projection: InitiativeLifecycleStageProjection;
   isPreviewMode: boolean;
+  showStageOrdinal: boolean;
 }) {
   const publishedAtLabel = formatTimestamp(projection.metadata.publishedAt);
   const draftUpdatedAtLabel = formatTimestamp(projection.metadata.draftUpdatedAt);
@@ -109,9 +116,11 @@ function StageHeader({
   return (
     <header className="lsw-header">
       <div className="lsw-header__top">
-        <p className="lsw-header__order" aria-hidden="true">
-          Stage {projection.stageOrder + 1} of {INITIATIVE_LIFECYCLE_STAGE_REGISTRY.length}
-        </p>
+        {showStageOrdinal ? (
+          <p className="lsw-header__order" aria-hidden="true">
+            Stage {projection.stageOrder + 1} of {INITIATIVE_LIFECYCLE_STAGE_REGISTRY.length}
+          </p>
+        ) : null}
         <h2 id={`lsw-stage-title-${projection.stageId}`} className="lsw-header__title">
           {projection.stageLabel}
         </h2>
@@ -252,11 +261,14 @@ export function InitiativeLifecycleStageWorkspace({
   participationSlot,
   isPreviewMode: controlledIsPreviewMode,
   onTogglePreview,
+  lifecycleProfile,
 }: InitiativeLifecycleStageWorkspaceProps) {
   const [projection, setProjection] = useState<InitiativeLifecycleStageProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [localIsPreviewMode, setLocalIsPreviewMode] = useState(false);
   const isPreviewMode = controlledIsPreviewMode ?? localIsPreviewMode;
+  const showStageOrdinal =
+    getInitiativeLifecycleProfilePresentation(lifecycleProfile).showLifecycleStageOrdinal;
 
   useEffect(() => {
     let cancelled = false;
@@ -342,7 +354,11 @@ export function InitiativeLifecycleStageWorkspace({
       aria-labelledby={`lsw-stage-title-${projection.stageId}`}
       data-presentation-mode={isPreviewMode ? "public_preview" : projection.presentationMode}
     >
-      <StageHeader projection={projection} isPreviewMode={isPreviewMode} />
+      <StageHeader
+        projection={projection}
+        isPreviewMode={isPreviewMode}
+        showStageOrdinal={showStageOrdinal}
+      />
 
       {isAuthorWorkspace ? (
         <AuthorWorkspaceMainContent

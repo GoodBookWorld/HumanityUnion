@@ -11,7 +11,8 @@ export interface CreateInitiativeDraftInput {
   title: string;
   description: string;
   communityAssociation?: string;
-  activityArea: string;
+  /** Required for STANDARD; omitted for PUBLIC_CHOICE. */
+  activityArea?: string;
   activityAreaOther?: string;
   participationScope?: ParticipationScope;
   imageUrl?: string;
@@ -21,11 +22,16 @@ export interface CreateInitiativeDraftInput {
   startDate?: string;
   completionDate?: string;
   sourceNewsId?: string;
+  countrySlug?: string;
+  regionSlug?: string;
+  communitySlug?: string;
   /**
    * Lifecycle Finalization Phase 05A — explicit route selector.
    * STANDARD (default) or PUBLIC_CHOICE. Never inferred silently.
    */
   lifecycleProfile?: "STANDARD" | "PUBLIC_CHOICE";
+  /** Pack 02A — PUBLIC_CHOICE ballot mode only. */
+  ballotMode?: "SUPPORT_OPPOSE" | "SELECT_ONE_CANDIDATE";
 }
 
 export interface SaveInitiativeDraftInput {
@@ -47,6 +53,8 @@ export interface SaveInitiativeDraftInput {
   startDate?: string;
   completionDate?: string;
   clearSourceReferences?: boolean;
+  /** Pack 02A — PUBLIC_CHOICE ballot mode only. */
+  ballotMode?: "SUPPORT_OPPOSE" | "SELECT_ONE_CANDIDATE";
 }
 
 /** @deprecated Legacy bootstrap community options retained for revision workspace compatibility. */

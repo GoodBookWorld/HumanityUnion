@@ -59,6 +59,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
   const [communityCode, setCommunityCode] = useState("");
   const [activityArea, setActivityArea] = useState("");
   const [entityType, setEntityType] = useState("");
+  const [lifecycleProfile, setLifecycleProfile] = useState<"" | "STANDARD" | "PUBLIC_CHOICE">("");
   const [communityOptions, setCommunityOptions] = useState<
     Awaited<ReturnType<typeof fetchCommunitiesByRegion>>
   >([]);
@@ -131,6 +132,10 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
       params.set("entityType", entityType);
     }
 
+    if (lifecycleProfile) {
+      params.set("lifecycleProfile", lifecycleProfile);
+    }
+
     router.push(`/search?${params.toString()}`);
   }
 
@@ -140,6 +145,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
     setCommunityCode("");
     setActivityArea("");
     setEntityType("");
+    setLifecycleProfile("");
   }
 
   return (
@@ -223,6 +229,19 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search initiatives, decisions, archive records…"
               />
+            </label>
+            <label className="country-experience-dynamic__search-query">
+              <span>Initiative type</span>
+              <select
+                value={lifecycleProfile}
+                onChange={(event) =>
+                  setLifecycleProfile(event.target.value as "" | "STANDARD" | "PUBLIC_CHOICE")
+                }
+              >
+                <option value="">All</option>
+                <option value="STANDARD">Standard Initiatives</option>
+                <option value="PUBLIC_CHOICE">Public Choice</option>
+              </select>
             </label>
             <div className="hu-form-actions country-experience-dynamic__search-primary-actions">
               <button type="submit" className="hu-button hu-button--primary">

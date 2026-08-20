@@ -5,6 +5,7 @@ import type { ComponentProps, ReactNode } from "react";
 import type {
   CollectiveParticipationJourney,
   CommunityInitiativeRelationshipProjection,
+  InitiativeLifecycleProfile,
   PublicInitiativeSupportStatistics as PublicInitiativeSupportStatisticsModel,
   PublicInitiativeWithVersionHistory,
   WorldInitiativeCardProjection,
@@ -12,6 +13,7 @@ import type {
 
 import { RelatedInitiativesWidget } from "../../community-intelligence/components/RelatedInitiativesWidget";
 import { InitiativeActiveAlliesWidget } from "../../initiative-active-allies/components/InitiativeActiveAlliesWidget";
+import { PublicChoiceElectionSidebarWidget } from "./PublicChoiceElectionSidebarWidget";
 import { PublicInitiativeLatestInitiatives } from "./PublicInitiativeLatestInitiatives";
 import { PublicInitiativeRevisionHistory } from "./PublicInitiativeRevisionHistory";
 import { PublicInitiativeSupportStatistics } from "./PublicInitiativeSupportStatistics";
@@ -32,6 +34,8 @@ interface PublicExperienceSidebarProps {
   /** Phase 05 — Collective Participation Journey (optional soft field). */
   participationJourney?: CollectiveParticipationJourney | null;
   viewerIsSteward?: boolean;
+  /** Pack 02A — gates Election/Candidates widget (PUBLIC_CHOICE only). */
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }
 
 export function PublicExperienceSidebar({
@@ -48,15 +52,10 @@ export function PublicExperienceSidebar({
   latestInitiativesSlot,
   participationJourney = null,
   viewerIsSteward = false,
+  lifecycleProfile = null,
 }: PublicExperienceSidebarProps) {
   return (
     <>
-      {participationJourney ? (
-        <YourParticipationPanel
-          journey={participationJourney}
-          isAuthorPrimary={viewerIsSteward || participationJourney.viewerIsSteward}
-        />
-      ) : null}
       <PublicInitiativeSupportStatistics
         statistics={statistics}
         onSignalChange={onSignalChange}
@@ -64,6 +63,16 @@ export function PublicExperienceSidebar({
         busy={supportBusy}
         title={supportLabel}
       />
+      <PublicChoiceElectionSidebarWidget
+        initiativeId={initiativeId}
+        lifecycleProfile={lifecycleProfile}
+      />
+      {participationJourney ? (
+        <YourParticipationPanel
+          journey={participationJourney}
+          isAuthorPrimary={viewerIsSteward || participationJourney.viewerIsSteward}
+        />
+      ) : null}
       {/*
        * Communication UX Pack 03.3 Part 6 — placed right after Initiative
        * Support. This is the one sidebar shared by every lifecycle-stage

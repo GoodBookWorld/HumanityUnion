@@ -211,3 +211,25 @@ export async function deleteOutboxRecordsByEventIdPrefix(prefix: string): Promis
 
   return result.deletedCount;
 }
+
+/**
+ * Pack 02D — remove recoverable Decision Vote event payloads from outbox.
+ * Matches Vote cast/changed events for one decision; leaves other outbox traffic.
+ */
+export async function deleteInitiativeDecisionVoteOutboxForDecision(
+  decisionId: string,
+): Promise<number> {
+  if (!isMongoConfigured()) {
+    return 0;
+  }
+
+  assertMongoAvailable();
+  const collection = getMongoCollection<OutboxMongoDocument>(MONGO_COLLECTIONS.outbox);
+  const escaped = decisionId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const result = await collection.deleteMany({
+    aggregateType: "InitiativeDecisionVote",
+    aggregateId: { $regex: `^initiative-decision-vote:${escaped}` },
+  });
+
+  return result.deletedCount ?? 0;
+}

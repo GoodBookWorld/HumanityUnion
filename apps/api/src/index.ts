@@ -19,6 +19,11 @@ async function start(): Promise<void> {
   const { startPublicNewsScheduler } = await import("./modules/public-news/public-news.scheduler.js");
   startPublicNewsScheduler();
 
+  const { startPublicChoiceResultsRetentionScheduler } = await import(
+    "./modules/public-choice-results-retention/public-choice-results-retention.scheduler.js"
+  );
+  startPublicChoiceResultsRetentionScheduler();
+
   const { default: app } = await import("./app.js");
 
   app.listen(environment.apiPort, () => {

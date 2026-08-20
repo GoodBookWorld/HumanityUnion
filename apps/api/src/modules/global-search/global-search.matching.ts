@@ -1,6 +1,8 @@
 import type { CivicSearchQuery, CivicSearchResult } from "@hu/types";
+import { resolveInitiativeLifecycleProfile } from "@hu/types";
 import { resolveCountrySearchSlug, resolveRegionSearchSlug } from "@hu/geography";
 
+import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { GLOBAL_SEARCH_ENTITY_TYPE_LABELS } from "./global-search.types.js";
 import type { GlobalSearchIndexEntry, GlobalSearchRankedMatch } from "./global-search.types.js";
 
@@ -109,6 +111,23 @@ function passesFilters(query: CivicSearchQuery, entry: GlobalSearchIndexEntry): 
 
   if (query.status && normalize(entry.status) !== normalize(query.status)) {
     return false;
+  }
+
+  if (query.lifecycleProfile) {
+    const initiativeId =
+      entry.entityType === "initiative" ? entry.entityId : entry.initiativeId;
+    if (!initiativeId) {
+      return false;
+    }
+
+    const initiative = getInitiativeById(initiativeId);
+    if (!initiative) {
+      return false;
+    }
+
+    if (resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) !== query.lifecycleProfile) {
+      return false;
+    }
   }
 
   if (!withinDateRange(entry.updatedAt, query.fromDate, query.toDate)) {

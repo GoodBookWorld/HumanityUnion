@@ -4,12 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 
 import type {
   InitiativeDecisionVote,
+  PublicChoiceCandidatePublicProjection,
   PublicInitiativeCollectiveDecisionProjection,
 } from "@hu/types";
 
 import { getPublicInitiativeCollectiveDecisionOrThrow } from "../../initiative-collective-decision/api";
+import { listPublicChoiceCandidates } from "../../public-choice-candidate/api";
+import { resolveMediaUrl } from "../../media-upload/media-url";
 
 import { InitiativeCollectiveDecisionBallotWidget } from "./InitiativeCollectiveDecisionBallotWidget";
+import { PublicChoiceDiscussionVotePanel } from "../../public-initiative-experience/components/PublicChoiceDiscussionVotePanel";
 
 import "./initiative-collective-decision-stage-workspace.css";
 
@@ -92,6 +96,8 @@ export function InitiativeCollectiveDecisionPublicResult({
 
   const structured = projection.structuredContent;
   const stats = projection.statistics;
+  const ballotAggregates = projection.ballotAggregates;
+  const isPublicChoiceBallot = Boolean(projection.ballotMode || ballotAggregates);
 
   return (
     <article className="icd-public" aria-label="Published Collective Decision">
@@ -134,22 +140,59 @@ export function InitiativeCollectiveDecisionPublicResult({
       <ListSection title="Required Resources" items={structured?.requiredResources} />
 
       <section className="icd-public__section">
-        <h3>Voting Results</h3>
+        <h3>
+          {projection.status === "opened"
+            ? "CURRENT RESULTS"
+            : projection.status === "closed"
+              ? "FINAL RESULTS"
+              : "Voting Results"}
+        </h3>
         <p>{projection.outcomeSummary}</p>
-        <ul className="icd-public__stats" aria-label="Vote totals">
-          <li>Support: {stats.supportCount}</li>
-          <li>Do Not Support: {stats.doNotSupportCount}</li>
-          <li>Abstain: {stats.abstainCount}</li>
-          <li>Total votes: {stats.totalVotesCast}</li>
-        </ul>
+        {ballotAggregates?.ballotMode === "SELECT_ONE_CANDIDATE" ? (
+          <PublicChoiceSelectOneResults
+            initiativeId={projection.initiativeId}
+            aggregates={ballotAggregates}
+          />
+        ) : (
+          <ul className="icd-public__stats" aria-label="Vote totals">
+            <li>
+              Support:{" "}
+              {ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
+                ? ballotAggregates.total.support
+                : stats.supportCount}
+            </li>
+            <li>
+              Do Not Support:{" "}
+              {ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
+                ? ballotAggregates.total.doNotSupport
+                : stats.doNotSupportCount}
+            </li>
+            <li>
+              Abstain:{" "}
+              {ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
+                ? ballotAggregates.total.abstain
+                : stats.abstainCount}
+            </li>
+            <li>
+              Total votes:{" "}
+              {ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
+                ? ballotAggregates.total.totalVotes
+                : stats.totalVotesCast}
+            </li>
+          </ul>
+        )}
         <p className="icd-public__meta">{projection.transparencyNote}</p>
       </section>
 
-      <InitiativeCollectiveDecisionBallotWidget
-        decisionId={decisionId}
-        projection={projection}
-        onVoteSucceeded={handleVoteSucceeded}
-      />
+      {isPublicChoiceBallot ? (
+        <PublicChoiceDiscussionVotePanel initiativeId={projection.initiativeId} />
+      ) : (
+        <InitiativeCollectiveDecisionBallotWidget
+          decisionId={decisionId}
+          projection={projection}
+          onVoteSucceeded={handleVoteSucceeded}
+        />
+      )}
 
       {projection.traceability ? (
         <section className="icd-public__section">
@@ -174,5 +217,76 @@ export function InitiativeCollectiveDecisionPublicResult({
 
       <ListSection title="Supporting References" items={structured?.supportingReferences} />
     </article>
+  );
+}
+
+function PublicChoiceSelectOneResults({
+  initiativeId,
+  aggregates,
+}: {
+  initiativeId: string;
+  aggregates: Extract<
+    NonNullable<PublicInitiativeCollectiveDecisionProjection["ballotAggregates"]>,
+    { ballotMode: "SELECT_ONE_CANDIDATE" }
+  >;
+}) {
+  const [candidates, setCandidates] = useState<PublicChoiceCandidatePublicProjection[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void listPublicChoiceCandidates(initiativeId)
+      .then((listed) => {
+        if (!cancelled) {
+          setCandidates(listed);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCandidates([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [initiativeId]);
+
+  const byId = new Map(candidates.map((candidate) => [candidate.candidateId, candidate]));
+
+  return (
+    <ol className="icd-public__stats" aria-label="Candidate results">
+      {aggregates.candidates.map((tally) => {
+        const candidate = byId.get(tally.candidateId);
+        const photo = resolveMediaUrl(candidate?.photoUrl);
+        return (
+          <li key={tally.candidateId}>
+            #{tally.rank}
+            {tally.isTie ? " (tie)" : ""}{" "}
+            {photo ? (
+              <img src={photo} alt="" width={28} height={28} />
+            ) : null}{" "}
+            {candidate?.name ?? tally.candidateId}: {tally.count} (
+            {tally.percentage.toFixed(1)}%)
+            {candidate?.campaignPageUrl ? (
+              <>
+                {" "}
+                ·{" "}
+                <a href={candidate.campaignPageUrl} target="_blank" rel="noopener noreferrer">
+                  Campaign page
+                </a>
+              </>
+            ) : null}
+          </li>
+        );
+      })}
+      <li>
+        Abstain: {aggregates.abstain} ({aggregates.abstainPercentage.toFixed(1)}%)
+      </li>
+      <li>Total voters: {aggregates.totalEffectiveVoters}</li>
+      <li>
+        Visitors: {aggregates.participationBreakdown.visitors} · Participants:{" "}
+        {aggregates.participationBreakdown.participants} · Members:{" "}
+        {aggregates.participationBreakdown.members}
+      </li>
+    </ol>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 
 import type {
   InitiativeAnalysisSourceSnapshot,
@@ -28,6 +28,8 @@ import type {
 } from "@hu/types";
 
 import { InitiativeActiveAlliesWidget } from "../../initiative-active-allies/components/InitiativeActiveAlliesWidget";
+import { PublicInitiativeSupportStatistics } from "../../public-initiative-experience/components/PublicInitiativeSupportStatistics";
+import { PublicChoiceElectionSidebarWidget } from "../../public-initiative-experience/components/PublicChoiceElectionSidebarWidget";
 import { getInitiativeAnalysisSourceSnapshot } from "../../initiative-collaborative-analysis/api";
 import { deriveAiAssistantInsights } from "../../initiative-collaborative-analysis/derive-ai-assistant-insights";
 import "../../initiative-collaborative-analysis/components/initiative-collaborative-analysis-workspace.css";
@@ -94,6 +96,17 @@ export interface InitiativeLifecycleWorkingSidebarProps {
   readonly onNavigateNextStage: (stageId: string, hash: string) => void;
   /** Canonical profile from the Lifecycle shell — Archive assistant gating only. */
   readonly lifecycleProfile?: InitiativeLifecycleProfile | string | null;
+  /**
+   * Public Choice Experience Pack 01 — restore Initiative Support as the
+   * first right-sidebar widget even while the Author working tools replace
+   * the public sidebar composition.
+   */
+  readonly supportStatistics?: ComponentProps<typeof PublicInitiativeSupportStatistics>["statistics"];
+  readonly onSupportSignalChange?: ComponentProps<
+    typeof PublicInitiativeSupportStatistics
+  >["onSignalChange"];
+  readonly onSupportBookmarkToggle?: () => void;
+  readonly supportBusy?: boolean;
 }
 
 function AiAssistantSlot({
@@ -1525,6 +1538,10 @@ export function InitiativeLifecycleWorkingSidebar({
   onOpenPublicPreview,
   onNavigateNextStage,
   lifecycleProfile,
+  supportStatistics,
+  onSupportSignalChange,
+  onSupportBookmarkToggle,
+  supportBusy = false,
 }: InitiativeLifecycleWorkingSidebarProps) {
   const [projection, setProjection] = useState<InitiativeLifecycleStageProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -1577,6 +1594,18 @@ export function InitiativeLifecycleWorkingSidebar({
 
   return (
     <div className="lsw-sidebar" aria-label="Stage working tools">
+      {supportStatistics && onSupportSignalChange && onSupportBookmarkToggle ? (
+        <PublicInitiativeSupportStatistics
+          statistics={supportStatistics}
+          onSignalChange={onSupportSignalChange}
+          onBookmarkToggle={onSupportBookmarkToggle}
+          busy={supportBusy}
+        />
+      ) : null}
+      <PublicChoiceElectionSidebarWidget
+        initiativeId={initiativeId}
+        lifecycleProfile={lifecycleProfile}
+      />
       {isAnalysisStage ? (
         <AnalysisAiAssistantSlot initiativeId={initiativeId} />
       ) : isProposalStage ? (

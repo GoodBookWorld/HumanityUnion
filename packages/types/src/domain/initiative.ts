@@ -4,6 +4,7 @@ import type { ParticipationScope } from "./initiative-collective-decision.js";
 import type { MemberId } from "./member.js";
 import type { InitiativeNewsSourceReference } from "./public-news-article.js";
 import type { InitiativeCoverMedia } from "./initiative-cover-media.js";
+import type { PublicChoiceBallotMode } from "./public-choice-ballot-mode.js";
 
 export type InitiativeId = string;
 
@@ -56,6 +57,20 @@ export interface InitiativeMetadata {
   activityArea: string;
   /** Supplemental activity area label when activityArea is Other. */
   activityAreaOther?: string;
+  /**
+   * Public Choice Architecture Pack 02A — ballot mode for PUBLIC_CHOICE only.
+   * STANDARD must omit this field.
+   */
+  ballotMode?: PublicChoiceBallotMode;
+  /**
+   * Pack 02C — tombstone only. Set after temporary election data is purged.
+   * Must never contain candidates, tallies, rankings, or voter identities.
+   */
+  publicChoiceResultsExpiredAt?: string;
+  /**
+   * Pack 02C — scheduled purge instant (closedAt + retention). Cleared after purge.
+   */
+  publicChoiceResultsExpireAt?: string;
   /**
    * Optional initiative image URL from authenticated media upload.
    * Legacy field, retained for backward compatibility with existing

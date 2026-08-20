@@ -2,8 +2,13 @@ import type {
   Initiative,
   InitiativeCollectiveDecision,
   InitiativeDecisionVote,
-  InitiativeDecisionVoteChoice,
+  InitiativeDecisionVoteChoiceExtended,
   TransitiveInitiativeAncestry,
+} from "@hu/types";
+import {
+  resolveInitiativeLifecycleProfile,
+  resolvePublicChoiceBallotMode,
+  validateVotePayloadForBallotMode,
 } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
@@ -21,10 +26,23 @@ import {
 import {
   castOrChangeInitiativeDecisionVote,
   getActiveVoteForParticipant,
+  getActiveVoteForVisitor,
 } from "./initiative-decision-vote.store.js";
+import { listEffectiveVotesForDecision } from "./list-effective-decision-votes.js";
+import { assertCandidateBelongsToInitiative } from "../public-choice-candidate/public-choice-candidate.service.js";
+import { listPublicChoiceCandidatesByInitiative } from "../public-choice-candidate/persistence/public-choice-candidate.repository.js";
+import { buildBallotAggregates } from "./initiative-decision-vote-ballot-aggregates.js";
+import { assertVotePayloadMatchesBallotMode } from "./initiative-decision-vote.validators.js";
+import {
+  resolveAuthenticatedPublicChoiceVoterCategory,
+  visitorPublicChoiceVoterCategory,
+} from "./resolve-public-choice-voter-category.js";
+
+export { listEffectiveVotesForDecision } from "./list-effective-decision-votes.js";
 
 export interface CastOrUpdateInitiativeDecisionVoteInput {
-  choice: InitiativeDecisionVoteChoice;
+  choice: InitiativeDecisionVoteChoiceExtended;
+  candidateId?: string;
 }
 
 /**
@@ -246,15 +264,8 @@ async function evaluateVoteEligibility(
 }
 
 /**
- * Recovery Task 31 Part 9: the read-then-branch decision (first cast vs.
- * changed choice vs. same-choice no-op) that used to be composed here from
- * two independent, non-atomic store calls (`saveVoteRecord` +
- * `appendVoteHistoryEntry`) now delegates entirely to
- * `castOrChangeInitiativeDecisionVote`, the sole transactional write
- * boundary for Vote mutations. This function's own responsibility is
- * unchanged: Initiative ancestry validation, Decision-open validation, and
- * Member/participation eligibility — all governed by the domain/application
- * layer, never by the database (Part 12).
+ * Pack 02B — PUBLIC_CHOICE and STANDARD share durable Mongo Decision Vote.
+ * VISITOR_TO_PARTICIPANT_VOTE_RECONCILIATION_GAP=YES — identities never auto-merged.
  */
 export async function castOrUpdateInitiativeDecisionVote(
   identity: RequestIdentity,
@@ -264,6 +275,22 @@ export async function castOrUpdateInitiativeDecisionVote(
 ): Promise<InitiativeDecisionVote> {
   const { decision, initiative } = await resolveVoteInitiativeAncestry(decisionId, deps);
   assertDecisionAcceptsVotes(decision);
+
+  const lifecycle = resolveInitiativeLifecycleProfile(initiative.lifecycleProfile);
+  if (lifecycle === "PUBLIC_CHOICE") {
+    return castPublicChoiceParticipantVote({
+      decision,
+      initiative,
+      participantId: identity.participantId,
+      choice: input.choice,
+      candidateId: input.candidateId,
+    });
+  }
+
+  if (input.choice === "candidate" || input.candidateId) {
+    throw new Error("Candidate ballots are only valid for PUBLIC_CHOICE.");
+  }
+
   const eligibility = await evaluateVoteEligibility(decision, initiative, identity);
 
   if (!eligibility.eligible) {
@@ -279,6 +306,82 @@ export async function castOrUpdateInitiativeDecisionVote(
   });
 }
 
+async function castPublicChoiceParticipantVote(args: {
+  decision: InitiativeCollectiveDecision;
+  initiative: Initiative;
+  participantId: string;
+  choice: InitiativeDecisionVoteChoiceExtended;
+  candidateId?: string;
+}): Promise<InitiativeDecisionVote> {
+  const ballotMode = resolvePublicChoiceBallotMode(args.initiative.metadata.ballotMode);
+  assertVotePayloadMatchesBallotMode(ballotMode, {
+    choice: args.choice,
+    candidateId: args.candidateId,
+  });
+
+  if (ballotMode === "SELECT_ONE_CANDIDATE" && args.choice === "candidate" && args.candidateId) {
+    await assertCandidateBelongsToInitiative(args.initiative.initiativeId, args.candidateId);
+  }
+
+  const eligibility = await evaluateVoteEligibility(args.decision, args.initiative, {
+    participantId: args.participantId,
+  } as RequestIdentity);
+
+  if (!eligibility.eligible) {
+    throw new Error(eligibility.explanation);
+  }
+
+  return castOrChangeInitiativeDecisionVote({
+    decisionId: args.decision.decisionId,
+    initiativeId: args.initiative.initiativeId,
+    participantId: args.participantId,
+    choice: args.choice,
+    candidateId: args.candidateId,
+    voterCategory: await resolveAuthenticatedPublicChoiceVoterCategory(args.participantId),
+    transparencyCohort: eligibility.transparencyCohort,
+  });
+}
+
+export async function castOrUpdateVisitorInitiativeDecisionVote(
+  visitorKey: string,
+  decisionId: string,
+  input: CastOrUpdateInitiativeDecisionVoteInput,
+  deps: InitiativeDecisionVoteAncestryDependencies = defaultInitiativeDecisionVoteAncestryDependencies,
+): Promise<InitiativeDecisionVote> {
+  const key = visitorKey.trim();
+  if (!key || key.length < 8 || key.length > 128 || !/^[A-Za-z0-9_-]+$/.test(key)) {
+    throw new Error("Malformed visitor identity.");
+  }
+
+  const { decision, initiative } = await resolveVoteInitiativeAncestry(decisionId, deps);
+  assertDecisionAcceptsVotes(decision);
+
+  const lifecycle = resolveInitiativeLifecycleProfile(initiative.lifecycleProfile);
+  if (lifecycle !== "PUBLIC_CHOICE") {
+    throw new Error("Visitor voting is only available for PUBLIC_CHOICE.");
+  }
+
+  const ballotMode = resolvePublicChoiceBallotMode(initiative.metadata.ballotMode);
+  assertVotePayloadMatchesBallotMode(ballotMode, {
+    choice: input.choice,
+    candidateId: input.candidateId,
+  });
+
+  if (ballotMode === "SELECT_ONE_CANDIDATE" && input.choice === "candidate" && input.candidateId) {
+    await assertCandidateBelongsToInitiative(initiative.initiativeId, input.candidateId);
+  }
+
+  return castOrChangeInitiativeDecisionVote({
+    decisionId: decision.decisionId,
+    initiativeId: initiative.initiativeId,
+    visitorKey: key,
+    choice: input.choice,
+    candidateId: input.candidateId,
+    voterCategory: visitorPublicChoiceVoterCategory(),
+    transparencyCohort: "unverified",
+  });
+}
+
 export async function getMyInitiativeDecisionVote(
   identity: RequestIdentity,
   decisionId: string,
@@ -291,3 +394,34 @@ export async function getMyInitiativeDecisionVote(
 
   return getActiveVoteForParticipant(decisionId, identity.participantId);
 }
+
+export async function getVisitorInitiativeDecisionVote(
+  visitorKey: string,
+  decisionId: string,
+): Promise<InitiativeDecisionVote | null> {
+  const decision = getDecisionById(decisionId);
+  if (!decision) {
+    throw new Error("Collective decision not found.");
+  }
+  return getActiveVoteForVisitor(decisionId, visitorKey.trim());
+}
+
+/** Pack 02B — durable repository is the sole aggregation authority. */
+
+export async function computePublicChoiceBallotAggregatesForDecision(
+  decisionId: string,
+  initiative: Initiative,
+) {
+  const votes = await listEffectiveVotesForDecision(decisionId);
+  const ballotMode = resolvePublicChoiceBallotMode(initiative.metadata.ballotMode);
+  const candidateIds =
+    ballotMode === "SELECT_ONE_CANDIDATE"
+      ? (await listPublicChoiceCandidatesByInitiative(initiative.initiativeId)).map(
+          (c) => c.candidateId,
+        )
+      : [];
+  return buildBallotAggregates({ ballotMode, votes, candidateIds });
+}
+
+// Re-export for callers that still import validate helpers from this module surface.
+export { validateVotePayloadForBallotMode };

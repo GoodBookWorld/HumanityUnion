@@ -47,6 +47,7 @@ const DEFAULT_FORM_VALUES: InitiativeFormValues = {
   regionLabel: "",
   communityCode: "",
   communityLabel: "",
+  ballotMode: "SUPPORT_OPPOSE",
 };
 
 function formatInitiativeError(error: unknown): string {
@@ -189,7 +190,22 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
   ]);
 
   async function persistDraft(): Promise<Initiative> {
-    const saveInput = initiativeFormValuesToSaveInput(formValues);
+    if (lifecycleProfile === "PUBLIC_CHOICE" && !formValues.countryCode.trim()) {
+      throw new Error("Country is required for Public Choice initiatives.");
+    }
+
+    const saveInput = initiativeFormValuesToSaveInput(formValues, {
+      isPublicChoice: lifecycleProfile === "PUBLIC_CHOICE",
+    });
+    const payloadBase =
+      lifecycleProfile === "PUBLIC_CHOICE"
+        ? {
+            ...saveInput,
+            // Do not invent an Activity area merely to satisfy STANDARD validation.
+            activityArea: undefined as string | undefined,
+            activityAreaOther: undefined as string | undefined,
+          }
+        : { ...saveInput, ballotMode: undefined };
 
     if (pendingImageFile) {
       // The selected file has not been uploaded yet — `formValues.coverMedia`
@@ -197,15 +213,15 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
       // `onImageUpload` below), which must never be sent to the API. The
       // real, platform-hosted coverMedia is saved in a follow-up call below,
       // once the file has actually been uploaded.
-      saveInput.coverMedia = undefined;
-      saveInput.clearCoverMedia = false;
+      payloadBase.coverMedia = undefined;
+      payloadBase.clearCoverMedia = false;
     }
 
     const payload = {
       title,
       description,
       lifecycleProfile,
-      ...saveInput,
+      ...payloadBase,
       ...(draftId || !activeSourceNewsId || sourceRemoved ? {} : { sourceNewsId: activeSourceNewsId }),
       ...(draftId && sourceRemoved ? { clearSourceReferences: true } : {}),
     };
@@ -402,7 +418,14 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
             name="lifecycleProfile"
             value="PUBLIC_CHOICE"
             checked={lifecycleProfile === "PUBLIC_CHOICE"}
-            onChange={() => setLifecycleProfile("PUBLIC_CHOICE")}
+            onChange={() => {
+              setLifecycleProfile("PUBLIC_CHOICE");
+              setFormValues((current) =>
+                current.participationScope === "world"
+                  ? { ...current, participationScope: "country" }
+                  : current,
+              );
+            }}
           />
           <span>
             <strong>Public Choice</strong>
@@ -416,6 +439,8 @@ export function StartNewInitiativeButton({ onCreated }: StartNewInitiativeButton
 
       <InitiativeFormFields
         values={formValues}
+        lifecycleProfile={lifecycleProfile}
+        initiativeId={draftId ?? undefined}
         onChange={(patch) => setFormValues((current) => ({ ...current, ...patch }))}
         sourceArticle={sourceRemoved ? null : sourceArticle}
         onSourceRemove={sourceArticle && !sourceRemoved ? handleRemoveSource : undefined}

@@ -574,6 +574,51 @@ export {
   resolveInitiativeLifecycleProfile,
 } from "./initiative-lifecycle-profile.js";
 export type { InitiativeLifecycleProfile } from "./initiative-lifecycle-profile.js";
+export { getInitiativeLifecycleProfilePresentation } from "./initiative-lifecycle-profile-presentation.js";
+export type { InitiativeLifecycleProfilePresentation } from "./initiative-lifecycle-profile-presentation.js";
+export {
+  DEFAULT_PUBLIC_CHOICE_BALLOT_MODE,
+  PUBLIC_CHOICE_BALLOT_MODES,
+  PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER,
+  PUBLIC_CHOICE_VOTER_CATEGORIES,
+  createEmptyPublicChoiceVoterCategoryBreakdown,
+  isPublicChoiceBallotMode,
+  isPublicChoiceVoterCategory,
+  percentageOfTotal,
+  resolvePublicChoiceBallotMode,
+} from "./public-choice-ballot-mode.js";
+export type {
+  PublicChoiceBallotMode,
+  PublicChoiceVoterCategory,
+  PublicChoiceVoterCategoryBreakdown,
+} from "./public-choice-ballot-mode.js";
+export {
+  PUBLIC_CHOICE_CANDIDATE_PRESENTATION_SLOT_MINIMUM,
+  PUBLIC_CHOICE_RESULTS_RETENTION_HOURS,
+  buildPublicChoiceCandidatePresentationSlotPlan,
+  computePublicChoiceResultsExpireAt,
+  isPublicChoiceResultsDownloadAvailable,
+  isPublicChoiceResultsRetentionExpired,
+  isPublicChoiceResultsWithinRetentionWindow,
+  resolvePublicChoiceResultsRetentionStatus,
+  resolvePublicChoiceVotingCloseAt,
+} from "./public-choice-results-retention.js";
+export type { PublicChoiceResultsRetentionStatus } from "./public-choice-results-retention.js";
+export { toPublicChoiceCandidatePublicProjection } from "./public-choice-candidate.js";
+export type {
+  PublicChoiceCandidate,
+  PublicChoiceCandidateId,
+  PublicChoiceCandidatePublicProjection,
+} from "./public-choice-candidate.js";
+export {
+  INITIATIVE_DECISION_VOTE_CHOICES_EXTENDED,
+  validateVotePayloadForBallotMode,
+} from "./initiative-decision-vote-ballot.js";
+export type {
+  CastInitiativeDecisionVotePayload,
+  InitiativeDecisionVoteChoiceExtended,
+  InitiativeDecisionVoterKind,
+} from "./initiative-decision-vote-ballot.js";
 export {
   INITIATIVE_LIFECYCLE_FIELD_AUTHORITY,
   resolveInitiativeLifecycleState,
@@ -866,8 +911,12 @@ export {
   isParticipationAreaMatch,
 } from "./participation-eligibility.js";
 export type {
+  InitiativeDecisionBallotAggregates,
+  InitiativeDecisionSelectOneAggregates,
+  InitiativeDecisionSupportOpposeAggregates,
   InitiativeDecisionVote,
   InitiativeDecisionVoteAggregates,
+  InitiativeDecisionVoteCandidateTally,
   InitiativeDecisionVoteChoice,
   InitiativeDecisionVoteChoiceCounts,
   InitiativeDecisionVoteHistoryEntry,
@@ -875,8 +924,10 @@ export type {
   InitiativeDecisionVoteId,
 } from "./initiative-decision-vote.js";
 export {
+  assertDecisionVoteVoterIdentity,
   createEmptyInitiativeDecisionVoteAggregates,
   createEmptyInitiativeDecisionVoteChoiceCounts,
+  resolveDecisionVoteVoterCategory,
 } from "./initiative-decision-vote.js";
 export type {
   CivicBreadcrumbItem,

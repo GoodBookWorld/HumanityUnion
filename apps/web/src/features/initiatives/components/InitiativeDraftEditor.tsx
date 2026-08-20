@@ -73,7 +73,9 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
     return {
       title: form.title,
       description: form.description,
-      ...initiativeFormValuesToSaveInput(form.fields),
+      ...initiativeFormValuesToSaveInput(form.fields, {
+        isPublicChoice: initiative.lifecycleProfile === "PUBLIC_CHOICE",
+      }),
     };
   }
 
@@ -228,6 +230,7 @@ export function InitiativeDraftEditor({ initiative, onUpdated }: InitiativeDraft
 
       <InitiativeFormFields
         values={form.fields}
+        lifecycleProfile={initiative.lifecycleProfile}
         initiativeId={initiative.initiativeId}
         onChange={(patch) =>
           setForm((current) => ({

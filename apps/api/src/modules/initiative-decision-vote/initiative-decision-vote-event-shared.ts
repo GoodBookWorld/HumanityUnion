@@ -1,35 +1,20 @@
-import type { InitiativeDecisionVoteChoice } from "@hu/types";
+import type { InitiativeDecisionVoteChoiceExtended } from "@hu/types";
 
 import { InitiativeDecisionVoteEventValidationError } from "./initiative-decision-vote.errors.js";
 
 /**
- * Recovery Task 32 Part 4 — both `InitiativeDecisionVoteCast` and
- * `InitiativeDecisionVoteChanged` share the same owning Aggregate: the
- * `InitiativeDecisionVote` itself (never the parent Collective Decision, the
- * Participant, the history row, or the outbox document). `aggregateId` is
- * always the deterministic `voteId` recovered in Recovery Task 31.
+ * Recovery Task 32 Part 4 — both cast and changed events share Aggregate
+ * `InitiativeDecisionVote`; aggregateId is always the deterministic voteId.
  */
 export const INITIATIVE_DECISION_VOTE_AGGREGATE_TYPE = "InitiativeDecisionVote" as const;
 
-const VALID_EVENT_CHOICES = new Set<InitiativeDecisionVoteChoice>([
+const VALID_EVENT_CHOICES = new Set<string>([
   "support",
   "do_not_support",
   "abstain",
+  "candidate",
 ]);
 
-/**
- * Recovery Task 32 Part 15 — narrow, pure, runtime payload validation shared
- * by both event factories. This intentionally does not become "a parallel
- * Vote-specific event framework" (Part 1): it validates only these two
- * payload shapes, reuses the existing `DomainEvent`/outbox/dispatcher
- * infrastructure unchanged, and does not introduce a generic schema
- * registry. The repository's established precedent (`PetitionSignedPayload`
- * in `petition-signed.event.ts`) relies on TypeScript compile-time typing
- * alone with no runtime payload validator; Part 15 explicitly requires more
- * for Vote, so this is an intentional, narrowly-scoped addition rather than
- * a divergence made silently — see the Task 32 readiness-doc addendum for
- * the documented difference from the Petition precedent.
- */
 export function assertNonEmptyEventField(
   value: unknown,
   field: string,
@@ -46,8 +31,8 @@ export function assertValidEventChoice(
   value: unknown,
   field: string,
   eventName: string,
-): asserts value is InitiativeDecisionVoteChoice {
-  if (typeof value !== "string" || !VALID_EVENT_CHOICES.has(value as InitiativeDecisionVoteChoice)) {
+): asserts value is InitiativeDecisionVoteChoiceExtended {
+  if (typeof value !== "string" || !VALID_EVENT_CHOICES.has(value)) {
     throw new InitiativeDecisionVoteEventValidationError(
       `${eventName} payload has an invalid ${field}.`,
     );

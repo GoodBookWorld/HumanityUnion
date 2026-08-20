@@ -16,6 +16,11 @@ export interface CivicSearchQuery {
   offset: number;
   /** Grouped mode paginates initiative lifecycle groups; flat mode paginates individual records. */
   view?: CivicSearchView;
+  /**
+   * Public Choice Experience Pack 01 — optional Initiative lifecycle profile filter.
+   * `STANDARD` | `PUBLIC_CHOICE`. Omit / empty = All.
+   */
+  lifecycleProfile?: "STANDARD" | "PUBLIC_CHOICE";
 }
 
 export interface CivicSearchResult {

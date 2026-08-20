@@ -10,6 +10,7 @@ import type {
 import {
   canTransitionInitiativeCollectiveDecision,
   isInitiativeCollectiveDecisionTerminal,
+  resolveInitiativeLifecycleProfile,
 } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
@@ -399,6 +400,27 @@ export async function closeInitiativeCollectiveDecision(
     initiativeId: updated.initiativeId,
     actorMemberId: identity.participantId,
   });
+
+  // Pack 02C — freeze temporary Final Results snapshot for PUBLIC_CHOICE retention.
+  try {
+    const initiative = getInitiativeById(updated.initiativeId);
+    if (
+      initiative &&
+      resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE" &&
+      updated.closedAt
+    ) {
+      const { freezePublicChoiceResultsSnapshot } = await import(
+        "../public-choice-results-retention/public-choice-results-retention.service.js"
+      );
+      await freezePublicChoiceResultsSnapshot({
+        initiative,
+        decision: updated,
+        votingCloseAt: updated.closedAt,
+      });
+    }
+  } catch {
+    // Closing must succeed even if snapshot freeze fails; scheduler can retry.
+  }
 
   return updated;
 }

@@ -3,76 +3,97 @@ import type { Document } from "mongodb";
 import type {
   InitiativeCollectiveDecisionId,
   InitiativeDecisionVote,
-  InitiativeDecisionVoteChoice,
+  InitiativeDecisionVoteChoiceExtended,
   InitiativeDecisionVoteId,
   ParticipationTransparencyCohort,
+  PublicChoiceVoterCategory,
+} from "@hu/types";
+import {
+  assertDecisionVoteVoterIdentity,
+  INITIATIVE_DECISION_VOTE_CHOICES_EXTENDED,
 } from "@hu/types";
 
 import { InitiativeDecisionVotePersistenceError } from "../initiative-decision-vote.errors.js";
 
-const VALID_CHOICES = new Set<InitiativeDecisionVoteChoice>([
-  "support",
-  "do_not_support",
-  "abstain",
-]);
+const VALID_CHOICES = new Set<string>(INITIATIVE_DECISION_VOTE_CHOICES_EXTENDED);
 const VALID_COHORTS = new Set<ParticipationTransparencyCohort>(["verified", "unverified"]);
+const VALID_VOTER_CATEGORIES = new Set<PublicChoiceVoterCategory>([
+  "visitor",
+  "participant",
+  "member",
+]);
 
 /**
- * Authoritative Mongo document for the `initiative_decision_votes`
- * collection (Recovery Task 31 Part 4/6).
+ * Authoritative Mongo document for `initiative_decision_votes`.
+ * Pack 02B — XOR voter identity (participantId | visitorKey) and SELECT_ONE
+ * candidateId on the same Decision Vote collection (no parallel engine).
  *
- * `initiativeId` is an intentional duplication of the parent Collective
- * Decision's already-validated, immutable Initiative ancestry, captured at
- * first-cast time (Part 13). It exists only so a future durable event can be
- * constructed with zero post-commit Initiative/Decision lookup (Part 18); it
- * is never exposed on the externally visible `InitiativeDecisionVote`
- * response shape (`fromInitiativeDecisionVoteMongoDocument` below strips it,
- * matching `toSignatureResponse`'s treatment of Petition Signature's own
- * `initiativeId`).
+ * Legacy STANDARD rows remain participant-only ternary votes.
  */
 export interface InitiativeDecisionVoteMongoDocument extends Document {
   voteId: InitiativeDecisionVoteId;
   decisionId: InitiativeCollectiveDecisionId;
   initiativeId: string;
-  participantId: string;
-  choice: InitiativeDecisionVoteChoice;
+  participantId?: string;
+  visitorKey?: string;
+  choice: InitiativeDecisionVoteChoiceExtended;
+  candidateId?: string;
+  voterCategory?: PublicChoiceVoterCategory;
   transparencyCohort: ParticipationTransparencyCohort;
   castAt: string;
   updatedAt: string;
   version: number;
 }
 
-/**
- * Internal repository-facing record: the full persisted shape, including
- * `initiativeId`. Distinct from the public `InitiativeDecisionVote` (which
- * has no `initiativeId` field — Model C, unchanged since Recovery Task 10).
- */
 export type InitiativeDecisionVoteMongoRecord = InitiativeDecisionVote & {
   initiativeId: string;
 };
 
+function assertPersistedChoice(
+  choice: unknown,
+  voteId: string,
+): InitiativeDecisionVoteChoiceExtended {
+  if (typeof choice === "string" && VALID_CHOICES.has(choice)) {
+    return choice as InitiativeDecisionVoteChoiceExtended;
+  }
+
+  throw new InitiativeDecisionVotePersistenceError(
+    `Persisted Initiative Decision Vote "${voteId}" has an invalid choice.`,
+  );
+}
+
 export function toInitiativeDecisionVoteMongoDocument(
   record: InitiativeDecisionVoteMongoRecord,
 ): InitiativeDecisionVoteMongoDocument {
-  return {
+  assertDecisionVoteVoterIdentity(record);
+
+  const document: InitiativeDecisionVoteMongoDocument = {
     voteId: record.voteId,
     decisionId: record.decisionId,
     initiativeId: record.initiativeId,
-    participantId: record.participantId,
-    choice: record.choice,
+    choice: assertPersistedChoice(record.choice, record.voteId),
     transparencyCohort: record.transparencyCohort,
     castAt: record.castAt,
     updatedAt: record.updatedAt,
     version: record.version,
   };
+
+  if (record.participantId) {
+    document.participantId = record.participantId;
+  }
+  if (record.visitorKey) {
+    document.visitorKey = record.visitorKey;
+  }
+  if (record.candidateId) {
+    document.candidateId = record.candidateId;
+  }
+  if (record.voterCategory) {
+    document.voterCategory = record.voterCategory;
+  }
+
+  return document;
 }
 
-/**
- * Rejects malformed persisted Vote documents rather than silently coercing
- * them (Part 6) — a legacy or corrupted document missing a required field,
- * carrying an invalid `choice`/`transparencyCohort`, or a non-positive
- * `version` fails loudly instead of being handed to the domain layer.
- */
 export function fromInitiativeDecisionVoteMongoDocument(
   document: InitiativeDecisionVoteMongoDocument,
 ): InitiativeDecisionVoteMongoRecord {
@@ -94,17 +115,24 @@ export function fromInitiativeDecisionVoteMongoDocument(
     );
   }
 
-  if (typeof document.participantId !== "string" || document.participantId.length === 0) {
+  const participantId =
+    typeof document.participantId === "string" && document.participantId.length > 0
+      ? document.participantId
+      : undefined;
+  const visitorKey =
+    typeof document.visitorKey === "string" && document.visitorKey.length > 0
+      ? document.visitorKey
+      : undefined;
+
+  try {
+    assertDecisionVoteVoterIdentity({ participantId, visitorKey });
+  } catch {
     throw new InitiativeDecisionVotePersistenceError(
-      `Persisted Initiative Decision Vote "${document.voteId}" is missing a valid participantId.`,
+      `Persisted Initiative Decision Vote "${document.voteId}" must have exactly one of participantId or visitorKey.`,
     );
   }
 
-  if (!VALID_CHOICES.has(document.choice)) {
-    throw new InitiativeDecisionVotePersistenceError(
-      `Persisted Initiative Decision Vote "${document.voteId}" has an invalid choice.`,
-    );
-  }
+  const choice = assertPersistedChoice(document.choice, document.voteId);
 
   if (!VALID_COHORTS.has(document.transparencyCohort)) {
     throw new InitiativeDecisionVotePersistenceError(
@@ -124,18 +152,35 @@ export function fromInitiativeDecisionVoteMongoDocument(
     );
   }
 
-  if (typeof document.version !== "number" || !Number.isInteger(document.version) || document.version < 1) {
+  if (
+    typeof document.version !== "number" ||
+    !Number.isInteger(document.version) ||
+    document.version < 1
+  ) {
     throw new InitiativeDecisionVotePersistenceError(
       `Persisted Initiative Decision Vote "${document.voteId}" has an invalid version.`,
     );
   }
 
+  const candidateId =
+    typeof document.candidateId === "string" && document.candidateId.length > 0
+      ? document.candidateId
+      : undefined;
+
+  const voterCategory =
+    document.voterCategory && VALID_VOTER_CATEGORIES.has(document.voterCategory)
+      ? document.voterCategory
+      : undefined;
+
   return {
     voteId: document.voteId,
     decisionId: document.decisionId,
     initiativeId: document.initiativeId,
-    participantId: document.participantId,
-    choice: document.choice,
+    participantId,
+    visitorKey,
+    choice,
+    candidateId,
+    voterCategory,
     transparencyCohort: document.transparencyCohort,
     castAt: document.castAt,
     updatedAt: document.updatedAt,
@@ -143,17 +188,15 @@ export function fromInitiativeDecisionVoteMongoDocument(
   };
 }
 
-/**
- * Strips persistence-only fields (`initiativeId`) to produce the exact
- * externally visible `InitiativeDecisionVote` shape the pre-existing routes
- * and aggregate calculations already depend on (Part 17 compatibility).
- */
 export function toVoteResponse(record: InitiativeDecisionVoteMongoRecord): InitiativeDecisionVote {
   return {
     voteId: record.voteId,
     decisionId: record.decisionId,
     participantId: record.participantId,
+    visitorKey: record.visitorKey,
     choice: record.choice,
+    candidateId: record.candidateId,
+    voterCategory: record.voterCategory,
     transparencyCohort: record.transparencyCohort,
     castAt: record.castAt,
     updatedAt: record.updatedAt,
@@ -162,15 +205,35 @@ export function toVoteResponse(record: InitiativeDecisionVoteMongoRecord): Initi
 }
 
 /**
- * Deterministic, natural-key-derived Vote identity (Recovery Task 31 Part 3,
- * Option A): stable across retries and concurrent first-cast attempts, safe
- * as a Mongo unique-indexed field, carries no timestamp/randomness, and does
- * not depend on `choice`. Mirrors the precedent already established for
- * Petition Signature's `signature-${petitionId}-${participantId}`.
+ * Deterministic Vote identity.
+ * Participant path preserves Recovery Task 31 IDs for existing STANDARD rows:
+ *   initiative-decision-vote:${decisionId}:${participantId}
+ * Visitor path (Pack 02B):
+ *   initiative-decision-vote:${decisionId}:visitor:${visitorKey}
  */
 export function buildInitiativeDecisionVoteId(
   decisionId: string,
   participantId: string,
 ): InitiativeDecisionVoteId {
   return `initiative-decision-vote:${decisionId}:${participantId}`;
+}
+
+export function buildInitiativeDecisionVoteIdForVisitor(
+  decisionId: string,
+  visitorKey: string,
+): InitiativeDecisionVoteId {
+  return `initiative-decision-vote:${decisionId}:visitor:${visitorKey}`;
+}
+
+export function buildInitiativeDecisionVoteIdForVoter(input: {
+  decisionId: string;
+  participantId?: string;
+  visitorKey?: string;
+}): InitiativeDecisionVoteId {
+  assertDecisionVoteVoterIdentity(input);
+  if (input.participantId) {
+    return buildInitiativeDecisionVoteId(input.decisionId, input.participantId);
+  }
+
+  return buildInitiativeDecisionVoteIdForVisitor(input.decisionId, input.visitorKey!);
 }

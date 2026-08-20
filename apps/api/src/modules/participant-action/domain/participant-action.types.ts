@@ -1,4 +1,4 @@
-import type { InitiativeDecisionVoteChoice } from "@hu/types";
+import type { InitiativeDecisionVoteChoiceExtended } from "@hu/types";
 
 import type { DomainEventSchemaVersion } from "../../../infrastructure/events/domain-event.js";
 
@@ -51,15 +51,15 @@ export type ParticipantActionValidityStatus = "valid";
 export interface InitiativeDecisionVoteCastParticipantActionMetadata {
   kind: "initiative_decision_vote_cast";
   decisionId: string;
-  choice: InitiativeDecisionVoteChoice;
+  choice: InitiativeDecisionVoteChoiceExtended;
   voteVersion: number;
 }
 
 export interface InitiativeDecisionVoteChangedParticipantActionMetadata {
   kind: "initiative_decision_vote_changed";
   decisionId: string;
-  previousChoice: InitiativeDecisionVoteChoice;
-  newChoice: InitiativeDecisionVoteChoice;
+  previousChoice: InitiativeDecisionVoteChoiceExtended;
+  newChoice: InitiativeDecisionVoteChoiceExtended;
   previousVoteVersion: number;
   newVoteVersion: number;
 }

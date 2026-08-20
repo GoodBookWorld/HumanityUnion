@@ -4,9 +4,22 @@ import type {
   PublicInitiativeCollectiveDecisionListItem,
   PublicInitiativeCollectiveDecisionProjection,
 } from "@hu/types";
+import {
+  computePublicChoiceResultsExpireAt,
+  createEmptyInitiativeCollectiveDecisionStatistics,
+  isPublicChoiceResultsDownloadAvailable,
+  resolveInitiativeLifecycleProfile,
+  resolvePublicChoiceBallotMode,
+  resolvePublicChoiceResultsRetentionStatus,
+  resolvePublicChoiceVotingCloseAt,
+} from "@hu/types";
 
 import { getMemberById } from "../member/member-access.js";
 import { computeInitiativeDecisionVoteAggregates } from "../initiative-decision-vote/initiative-decision-vote-aggregates.js";
+import { computePublicChoiceBallotAggregatesForDecision } from "../initiative-decision-vote/initiative-decision-vote.service.js";
+import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { findPublicChoiceResultsSnapshotByDecision } from "../public-choice-results-retention/public-choice-results-snapshot.repository.js";
+import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { buildPublicCollectiveDecisionResults } from "./initiative-collective-decision-results.js";
 import {
   getDecisionById,
@@ -36,7 +49,114 @@ function toPublicStatus(
   return status as PublicInitiativeCollectiveDecisionProjection["status"];
 }
 
+function isVotingWindowOpen(decision: InitiativeCollectiveDecision, nowIso: string): boolean {
+  if (decision.status !== "opened" || !decision.openedAt) {
+    return false;
+  }
+  const now = Date.parse(nowIso);
+  const opened = Date.parse(decision.openedAt);
+  const closes = Date.parse(decision.closesAt);
+  return !Number.isNaN(now) && !Number.isNaN(opened) && !Number.isNaN(closes) && opened <= now && closes >= now;
+}
+
+async function buildPublicChoiceBallotFields(decision: InitiativeCollectiveDecision) {
+  const initiative = getInitiativeById(decision.initiativeId);
+  if (
+    !initiative ||
+    resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) !== "PUBLIC_CHOICE"
+  ) {
+    return {};
+  }
+
+  const nowIso = new Date().toISOString();
+  const votingOpen = isVotingWindowOpen(decision, nowIso);
+  const votingCloseAt = resolvePublicChoiceVotingCloseAt({
+    status: decision.status,
+    closedAt: decision.closedAt,
+    closesAt: decision.closesAt,
+    nowIso,
+  });
+  const resultsExpiredAt = initiative.metadata.publicChoiceResultsExpiredAt;
+  const retentionStatus = resolvePublicChoiceResultsRetentionStatus({
+    lifecycleProfile: initiative.lifecycleProfile,
+    votingOpen,
+    votingCloseAt,
+    resultsExpiredAt,
+    hasElectionData: Boolean(votingCloseAt) || decision.status === "opened",
+    nowIso,
+  });
+
+  const expiresAt =
+    votingCloseAt && !resultsExpiredAt
+      ? initiative.metadata.publicChoiceResultsExpireAt ??
+        computePublicChoiceResultsExpireAt(votingCloseAt)
+      : undefined;
+
+  const resultsRetention = {
+    status: retentionStatus,
+    downloadAvailable: isPublicChoiceResultsDownloadAvailable({
+      votingOpen,
+      votingCloseAt,
+      resultsExpiredAt,
+      nowIso,
+    }),
+    votingCloseAt: votingCloseAt ?? undefined,
+    expiresAt,
+    resultsExpiredAt: resultsExpiredAt ?? undefined,
+  };
+
+  // After retention purge / policy expiry: do not reconstruct deleted tallies.
+  if (retentionStatus === "results_expired") {
+    const ballotMode = resolvePublicChoiceBallotMode(initiative.metadata.ballotMode);
+    return { ballotMode, resultsRetention };
+  }
+
+  // Prefer frozen Final Results snapshot during retention window when available.
+  if (
+    !votingOpen &&
+    votingCloseAt &&
+    isMongoConfigured() &&
+    retentionStatus === "results_available"
+  ) {
+    try {
+      const snapshot = await findPublicChoiceResultsSnapshotByDecision(decision.decisionId);
+      if (snapshot) {
+        return {
+          ballotMode: snapshot.ballotMode,
+          ballotAggregates: snapshot.ballotAggregates,
+          resultsRetention,
+        };
+      }
+    } catch {
+      // Fall through to live aggregates.
+    }
+  }
+
+  const ballotMode = resolvePublicChoiceBallotMode(initiative.metadata.ballotMode);
+  const ballotAggregates = await computePublicChoiceBallotAggregatesForDecision(
+    decision.decisionId,
+    initiative,
+  );
+
+  return { ballotMode, ballotAggregates, resultsRetention };
+}
+
 async function buildPublicResultFields(decision: InitiativeCollectiveDecision) {
+  const publicChoiceFields = await buildPublicChoiceBallotFields(decision);
+  const retentionStatus = publicChoiceFields.resultsRetention?.status;
+
+  if (retentionStatus === "results_expired") {
+    return {
+      statistics: createEmptyInitiativeCollectiveDecisionStatistics(),
+      outcome: null,
+      participationConfidenceLevel: "insufficient" as const,
+      outcomeSummary: "Results no longer available.",
+      transparencyNote:
+        "The temporary Public Choice results retention period has ended.",
+      ...publicChoiceFields,
+    };
+  }
+
   const results = await buildPublicCollectiveDecisionResults(decision);
 
   return {
@@ -50,6 +170,7 @@ async function buildPublicResultFields(decision: InitiativeCollectiveDecision) {
     participationConfidenceLevel: results.participationConfidenceLevel,
     outcomeSummary: results.outcomeSummary,
     transparencyNote: results.transparencyNote,
+    ...publicChoiceFields,
   };
 }
 

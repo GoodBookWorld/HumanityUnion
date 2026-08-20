@@ -1,6 +1,8 @@
 import { Router, type Request, type Response } from "express";
+import cookieParser from "cookie-parser";
 
 import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
+import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
 import {
@@ -10,11 +12,17 @@ import {
 } from "../../shared/initiative-ancestry/index.js";
 import {
   castOrUpdateInitiativeDecisionVote,
+  castOrUpdateVisitorInitiativeDecisionVote,
   getMyInitiativeDecisionVote,
+  getVisitorInitiativeDecisionVote,
 } from "../initiative-decision-vote/initiative-decision-vote.service.js";
 import { validateCastInitiativeDecisionVoteInput } from "../initiative-decision-vote/initiative-decision-vote.validators.js";
 
 const initiativeCollectiveDecisionVoteRouter = Router();
+
+initiativeCollectiveDecisionVoteRouter.use(cookieParser());
+
+const VISITOR_COOKIE = "hu_initiative_visitor";
 
 function createFailureResponse(message: string) {
   return {
@@ -31,7 +39,7 @@ function resolveErrorStatus(message: string): number {
     return 404;
   }
 
-  if (message.includes("do not have access")) {
+  if (message.includes("do not have access") || message.includes("Visitor voting")) {
     return 403;
   }
 
@@ -51,11 +59,6 @@ function resolveErrorStatus(message: string): number {
 }
 
 function handleServiceError(res: Response, error: unknown): void {
-  // Shared Initiative ancestry errors (Recovery Task 10): mapped explicitly
-  // because their messages ("Referenced Initiative does not exist.", etc.)
-  // do not match the pre-existing substring heuristic in resolveErrorStatus
-  // (e.g. InitiativeNotFoundError's message contains no "not found"
-  // substring and would otherwise fall through to the 400 default).
   if (error instanceof InitiativeNotFoundError) {
     res.status(404).json(createFailureResponse(error.message));
     return;
@@ -75,16 +78,49 @@ function getDecisionId(req: Request): string {
   return Array.isArray(decisionId) ? (decisionId[0] ?? "") : (decisionId ?? "");
 }
 
+function resolveVisitorKey(req: Request): string {
+  const existing = req.cookies?.[VISITOR_COOKIE];
+
+  if (typeof existing === "string" && existing.length > 0) {
+    return existing;
+  }
+
+  const generated = `visitor-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  req.res?.cookie(VISITOR_COOKIE, generated, {
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 1000 * 60 * 60 * 24 * 365,
+    path: "/",
+  });
+
+  return generated;
+}
+
+/**
+ * Pack 02A — optional auth cast.
+ * Authenticated → participant identity only (visitor cookie ignored for ownership).
+ * Unauthenticated → visitor cookie identity (PUBLIC_CHOICE only; service enforces).
+ */
 initiativeCollectiveDecisionVoteRouter.post(
   "/:decisionId/vote",
-  ...authenticatedWorkspaceWriteMiddleware,
+  optionalAuthenticationMiddleware,
   async (req, res) => {
     try {
-      const identity = await resolveRequestIdentity(req);
       const input = validateCastInitiativeDecisionVoteInput(req.body);
-      const vote = await castOrUpdateInitiativeDecisionVote(identity, getDecisionId(req), input);
 
-      res.status(201).json(createSuccessResponse(vote, "Vote recorded."));
+      if (req.auth?.id) {
+        const identity = await resolveRequestIdentity(req);
+        const vote = await castOrUpdateInitiativeDecisionVote(identity, getDecisionId(req), input);
+        res.status(201).json(createSuccessResponse(vote, "Vote recorded."));
+        return;
+      }
+
+      const vote = await castOrUpdateVisitorInitiativeDecisionVote(
+        resolveVisitorKey(req),
+        getDecisionId(req),
+        input,
+      );
+      res.status(201).json(createSuccessResponse(vote, "Visitor vote recorded."));
     } catch (error) {
       handleServiceError(res, error);
     }
@@ -93,13 +129,41 @@ initiativeCollectiveDecisionVoteRouter.post(
 
 initiativeCollectiveDecisionVoteRouter.get(
   "/:decisionId/my-vote",
+  optionalAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      if (req.auth?.id) {
+        const identity = await resolveRequestIdentity(req);
+        const vote = await getMyInitiativeDecisionVote(identity, getDecisionId(req));
+        res.json(createSuccessResponse(vote, vote ? "Vote loaded." : "No vote recorded yet."));
+        return;
+      }
+
+      const existing = req.cookies?.[VISITOR_COOKIE];
+      if (typeof existing !== "string" || !existing) {
+        res.json(createSuccessResponse(null, "No vote recorded yet."));
+        return;
+      }
+
+      const vote = await getVisitorInitiativeDecisionVote(existing, getDecisionId(req));
+      res.json(createSuccessResponse(vote, vote ? "Vote loaded." : "No vote recorded yet."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+/** Authenticated workspace write gate — same cast, for clients that require the gate. */
+initiativeCollectiveDecisionVoteRouter.post(
+  "/:decisionId/vote/authenticated",
   ...authenticatedWorkspaceWriteMiddleware,
   async (req, res) => {
     try {
       const identity = await resolveRequestIdentity(req);
-      const vote = await getMyInitiativeDecisionVote(identity, getDecisionId(req));
+      const input = validateCastInitiativeDecisionVoteInput(req.body);
+      const vote = await castOrUpdateInitiativeDecisionVote(identity, getDecisionId(req), input);
 
-      res.json(createSuccessResponse(vote, vote ? "Vote loaded." : "No vote recorded yet."));
+      res.status(201).json(createSuccessResponse(vote, "Vote recorded."));
     } catch (error) {
       handleServiceError(res, error);
     }

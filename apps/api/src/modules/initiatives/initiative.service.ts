@@ -2,6 +2,7 @@ import type { Initiative, InitiativeCoverMedia, MyInitiativeGroupSummary, Timeli
 import {
   canTransitionInitiativeLifecycle,
   resolveInitiativeLifecycleProfile,
+  resolvePublicChoiceBallotMode,
 } from "@hu/types";
 
 import type { RequestIdentity } from "./identity/request-identity.types.js";
@@ -175,6 +176,12 @@ function buildMetadataPatch(
     activityArea: content.activityArea ?? initiative.metadata.activityArea,
     activityAreaOther: content.activityAreaOther,
     category: content.activityArea ?? initiative.metadata.activityArea,
+    ballotMode:
+      resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE"
+        ? resolvePublicChoiceBallotMode(
+            input.ballotMode !== undefined ? input.ballotMode : initiative.metadata.ballotMode,
+          )
+        : undefined,
     imageUrl: content.imageUrl,
     imageAltText: content.imageAltText,
     coverMedia: content.coverMedia,
@@ -304,7 +311,7 @@ export function createInitiativeDraft(
       policy: "public",
     },
     metadata: {
-      category: input.activityArea,
+      category: input.activityArea ?? "",
       tags: [],
       region: "",
       language: "en",
@@ -313,8 +320,12 @@ export function createInitiativeDraft(
       communitySlug: input.communitySlug ?? "",
       communityAssociation: input.communityAssociation,
       participationScope: input.participationScope ?? "community",
-      activityArea: input.activityArea,
+      activityArea: input.activityArea ?? "",
       activityAreaOther: input.activityAreaOther,
+      ballotMode:
+        resolveInitiativeLifecycleProfile(input.lifecycleProfile) === "PUBLIC_CHOICE"
+          ? resolvePublicChoiceBallotMode(input.ballotMode)
+          : undefined,
       imageUrl: input.coverMedia
         ? input.coverMedia.type === "image"
           ? input.coverMedia.url
@@ -347,6 +358,13 @@ export function saveInitiativeDraft(
   const initiative = getOwnedInitiative(initiativeId, identity);
 
   assertDraftLifecycle(initiative);
+
+  if (
+    input.ballotMode !== undefined &&
+    resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) !== "PUBLIC_CHOICE"
+  ) {
+    throw new Error("ballotMode is only valid for PUBLIC_CHOICE initiatives.");
+  }
 
   const updated = updateInitiative(initiativeId, {
     title: input.title,

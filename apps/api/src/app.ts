@@ -151,6 +151,8 @@ import publicInitiativeRouter from "./modules/initiatives/public-initiative.rout
 import publicLatestInitiativesRouter from "./modules/initiatives/public-latest-initiatives.routes.js";
 import publicWorldInitiativesRouter from "./modules/initiatives/public-world-initiatives.routes.js";
 import { initiativeSupportRouter } from "./modules/initiative-support/index.js";
+import { publicChoiceCandidateRouter } from "./modules/public-choice-candidate/index.js";
+import { publicChoiceResultsRetentionRouter } from "./modules/public-choice-results-retention/index.js";
 import { initiativeCommentRouter } from "./modules/initiative-comments/index.js";
 import { initiativeDiscussionCollaborationRouter } from "./modules/initiative-discussion-collaboration/index.js";
 import { initiativeCollaborationChannelRouter } from "./modules/initiative-collaboration-channel/index.js";
@@ -253,6 +255,8 @@ app.use("/api/v1/public", publicCommunityIntelligenceRouter);
 app.use("/api/v1/members", memberRouter);
 app.use("/api/v1/initiatives", initiativeCollaborativeAnalysisRouter);
 app.use("/api/v1/initiatives", initiativeCollectiveDecisionRouter);
+app.use("/api/v1/initiatives", publicChoiceCandidateRouter);
+app.use("/api/v1/initiatives", publicChoiceResultsRetentionRouter);
 app.use("/api/v1/initiatives", initiativesRouter);
 app.use("/api/v1/initiative-analyses", initiativeCollaborativeAnalysisLifecycleRouter);
 app.use("/api/v1/improvement-proposals", initiativeImprovementProposalRouter);

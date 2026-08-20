@@ -83,6 +83,13 @@ function parseView(value: string | undefined): CivicSearchView | undefined {
 export function parseCivicSearchQuery(
   input: Record<string, string | string[] | undefined>,
 ): CivicSearchQuery {
+  const lifecycleProfileRaw =
+    typeof input.lifecycleProfile === "string" ? input.lifecycleProfile.trim() : "";
+  const lifecycleProfile =
+    lifecycleProfileRaw === "STANDARD" || lifecycleProfileRaw === "PUBLIC_CHOICE"
+      ? lifecycleProfileRaw
+      : undefined;
+
   return {
     q: typeof input.q === "string" ? input.q : undefined,
     entityTypes: parseEntityTypes(input.entityType ?? input.entityTypes ?? input.type),
@@ -99,6 +106,7 @@ export function parseCivicSearchQuery(
     limit: parseLimit(typeof input.limit === "string" ? input.limit : undefined),
     offset: parseOffset(typeof input.offset === "string" ? input.offset : undefined),
     view: parseView(typeof input.view === "string" ? input.view : undefined),
+    lifecycleProfile,
   };
 }
 

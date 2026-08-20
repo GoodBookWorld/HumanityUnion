@@ -14,6 +14,8 @@ import type {
 } from "./collective-decision-transparent-results.js";
 import type { DecisionSessionId } from "./decision-session.js";
 import type { InitiativeId } from "./initiative.js";
+import type { InitiativeDecisionBallotAggregates } from "./initiative-decision-vote.js";
+import type { PublicChoiceBallotMode } from "./public-choice-ballot-mode.js";
 
 export interface PublicInitiativeCollectiveDecisionProjection {
   decisionId: InitiativeCollectiveDecisionId;
@@ -38,6 +40,23 @@ export interface PublicInitiativeCollectiveDecisionProjection {
   structuredContent: CollectiveDecisionStructuredContent | null;
   /** Initiative Lifecycle — Part H, Section 9. Decision Session provenance. */
   traceability: CollectiveDecisionTraceability | null;
+  /**
+   * Public Choice Architecture Pack 02A — present on PUBLIC_CHOICE decisions.
+   * STANDARD projections omit these fields.
+   */
+  ballotMode?: PublicChoiceBallotMode;
+  ballotAggregates?: InitiativeDecisionBallotAggregates;
+  /**
+   * Pack 02C — temporary results retention presentation.
+   * Download availability is policy-based (closedAt + 72h), not physical TTL state.
+   */
+  resultsRetention?: {
+    status: "voting_open" | "results_available" | "results_expired" | "no_results";
+    downloadAvailable: boolean;
+    votingCloseAt?: string;
+    expiresAt?: string;
+    resultsExpiredAt?: string;
+  };
 }
 
 export interface PublicInitiativeCollectiveDecisionListItem {
@@ -54,6 +73,20 @@ export interface PublicInitiativeCollectiveDecisionListItem {
   participationConfidenceLevel: ParticipationConfidenceLevel;
   outcomeSummary: string;
   transparencyNote: string;
+  /** Pack 02A — PUBLIC_CHOICE only. */
+  ballotMode?: PublicChoiceBallotMode;
+  ballotAggregates?: InitiativeDecisionBallotAggregates;
+  /**
+   * Pack 02C — temporary results retention presentation.
+   * Download availability is policy-based (closedAt + 72h), not physical TTL state.
+   */
+  resultsRetention?: {
+    status: "voting_open" | "results_available" | "results_expired" | "no_results";
+    downloadAvailable: boolean;
+    votingCloseAt?: string;
+    expiresAt?: string;
+    resultsExpiredAt?: string;
+  };
 }
 
 export interface InitiativeCollectiveDecisionMetrics {

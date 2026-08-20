@@ -2,11 +2,18 @@
 
 import type {
   InitiativeCoverMedia,
+  InitiativeLifecycleProfile,
   InitiativeMetadata,
   ParticipationScope,
+  PublicChoiceBallotMode,
   PublicNewsArticleItem,
 } from "@hu/types";
-import { resolveInitiativeCoverMedia } from "@hu/types";
+import {
+  DEFAULT_PUBLIC_CHOICE_BALLOT_MODE,
+  getInitiativeLifecycleProfilePresentation,
+  resolveInitiativeCoverMedia,
+  resolvePublicChoiceBallotMode,
+} from "@hu/types";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -26,6 +33,7 @@ import {
 } from "../initiative-activity-areas";
 
 import { InitiativeCoverMediaField } from "../../media-upload/components/InitiativeCoverMediaField";
+import { PublicChoiceCandidateManager } from "../../public-choice-candidate/components/PublicChoiceCandidateManager";
 import { InitiativeNewsSourcePanel } from "./InitiativeNewsSourcePanel";
 
 import "./initiative-form-fields.css";
@@ -46,11 +54,15 @@ export interface InitiativeFormValues {
   imageAltText?: string;
   startDate?: string;
   completionDate?: string;
+  /** Pack 02A — PUBLIC_CHOICE only; ignored for STANDARD. */
+  ballotMode?: PublicChoiceBallotMode;
 }
 
 interface InitiativeFormFieldsProps {
   values: InitiativeFormValues;
   onChange: (patch: Partial<InitiativeFormValues>) => void;
+  /** Public Choice Experience Pack 01 — profile-aware labels/validation presentation. */
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null;
   initiativeId?: string;
   onImageUpload: (file: File) => Promise<string>;
   onVideoLinkSubmit: (url: string) => Promise<InitiativeCoverMedia>;
@@ -62,19 +74,27 @@ interface InitiativeFormFieldsProps {
 export function InitiativeFormFields({
   values,
   onChange,
+  lifecycleProfile,
+  initiativeId,
   onImageUpload,
   onVideoLinkSubmit,
   onImageRemove,
   sourceArticle,
   onSourceRemove,
 }: InitiativeFormFieldsProps) {
+  const presentation = getInitiativeLifecycleProfilePresentation(lifecycleProfile);
   const countryOptions = useMemo(() => toGeographyCountryOptions(), []);
   const [communityOptions, setCommunityOptions] = useState<
     ReturnType<typeof toGeographyCommunityOptions>
   >([]);
   const [communitiesLoading, setCommunitiesLoading] = useState(false);
 
+  const ballotMode = resolvePublicChoiceBallotMode(
+    values.ballotMode ?? DEFAULT_PUBLIC_CHOICE_BALLOT_MODE,
+  );
+
   const showGeography =
+    presentation.requireCountry ||
     values.participationScope === "community" ||
     values.participationScope === "region" ||
     values.participationScope === "country";
@@ -119,7 +139,7 @@ export function InitiativeFormFields({
   return (
     <div className="initiative-form-fields">
       <label className="initiative-form-fields__field">
-        <span>Community association</span>
+        <span>{presentation.communityAssociationLabel}</span>
         <input
           type="text"
           className="hu-form-control"
@@ -127,10 +147,40 @@ export function InitiativeFormFields({
           onChange={(event) => onChange({ communityAssociation: event.target.value })}
         />
         <span className="initiative-form-fields__helper">
-          Optional descriptive association with a community or organization. This does not replace
-          your Participation Area eligibility scope.
+          {presentation.communityAssociationHelper ??
+            "Optional descriptive association with a community or organization. This does not replace your Participation Area eligibility scope."}
         </span>
       </label>
+
+      {presentation.isPublicChoice ? (
+        <label className="initiative-form-fields__field">
+          <span>Ballot type</span>
+          <select
+            className="hu-form-control"
+            value={ballotMode}
+            onChange={(event) =>
+              onChange({ ballotMode: event.target.value as PublicChoiceBallotMode })
+            }
+          >
+            <option value="SUPPORT_OPPOSE">Support / Oppose</option>
+            <option value="SELECT_ONE_CANDIDATE">Choose one candidate</option>
+          </select>
+        </label>
+      ) : null}
+
+      {presentation.isPublicChoice &&
+      ballotMode === "SELECT_ONE_CANDIDATE" &&
+      initiativeId ? (
+        <PublicChoiceCandidateManager initiativeId={initiativeId} />
+      ) : null}
+
+      {presentation.isPublicChoice &&
+      ballotMode === "SELECT_ONE_CANDIDATE" &&
+      !initiativeId ? (
+        <p className="initiative-form-fields__helper" role="status">
+          Save a draft first to add and manage candidates.
+        </p>
+      ) : null}
 
       <label className="initiative-form-fields__field">
         <span>Participation scope</span>
@@ -144,7 +194,7 @@ export function InitiativeFormFields({
           <option value="community">Community</option>
           <option value="region">Region</option>
           <option value="country">Country</option>
-          <option value="world">World</option>
+          {presentation.requireCountry ? null : <option value="world">World</option>}
         </select>
       </label>
 
@@ -165,7 +215,7 @@ export function InitiativeFormFields({
                 communityLabel: "",
               });
             }}
-            required
+            required={presentation.requireCountry || values.participationScope !== "world"}
           />
           {(values.participationScope === "region" ||
             values.participationScope === "community") && (
@@ -229,31 +279,35 @@ export function InitiativeFormFields({
         </>
       ) : null}
 
-      <label className="initiative-form-fields__field">
-        <span>Activity area</span>
-        <select
-          className="hu-form-control"
-          value={values.activityArea}
-          onChange={(event) => onChange({ activityArea: event.target.value })}
-        >
-          {INITIATIVE_ACTIVITY_AREA_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </label>
+      {presentation.showActivityArea ? (
+        <>
+          <label className="initiative-form-fields__field">
+            <span>Activity area</span>
+            <select
+              className="hu-form-control"
+              value={values.activityArea}
+              onChange={(event) => onChange({ activityArea: event.target.value })}
+            >
+              {INITIATIVE_ACTIVITY_AREA_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
 
-      {values.activityArea === INITIATIVE_ACTIVITY_AREA_OTHER ? (
-        <label className="initiative-form-fields__field">
-          <span>Activity area (Other)</span>
-          <input
-            type="text"
-            className="hu-form-control"
-            value={values.activityAreaOther}
-            onChange={(event) => onChange({ activityAreaOther: event.target.value })}
-          />
-        </label>
+          {values.activityArea === INITIATIVE_ACTIVITY_AREA_OTHER ? (
+            <label className="initiative-form-fields__field">
+              <span>Activity area (Other)</span>
+              <input
+                type="text"
+                className="hu-form-control"
+                value={values.activityAreaOther}
+                onChange={(event) => onChange({ activityAreaOther: event.target.value })}
+              />
+            </label>
+          ) : null}
+        </>
       ) : null}
 
       <label className="initiative-form-fields__field">
@@ -339,10 +393,16 @@ export function buildInitiativeFormValuesFromMetadata(
     imageAltText: metadata.imageAltText,
     startDate: metadata.startDate,
     completionDate: metadata.completionDate,
+    ballotMode: metadata.ballotMode
+      ? resolvePublicChoiceBallotMode(metadata.ballotMode)
+      : DEFAULT_PUBLIC_CHOICE_BALLOT_MODE,
   };
 }
 
-export function initiativeFormValuesToSaveInput(values: InitiativeFormValues) {
+export function initiativeFormValuesToSaveInput(
+  values: InitiativeFormValues,
+  options?: { isPublicChoice?: boolean },
+) {
   return {
     communityAssociation: values.communityAssociation || undefined,
     activityArea: values.activityArea,
@@ -362,5 +422,8 @@ export function initiativeFormValuesToSaveInput(values: InitiativeFormValues) {
     imageAltText: values.imageAltText || undefined,
     startDate: values.startDate || undefined,
     completionDate: values.completionDate || undefined,
+    ballotMode: options?.isPublicChoice
+      ? resolvePublicChoiceBallotMode(values.ballotMode ?? DEFAULT_PUBLIC_CHOICE_BALLOT_MODE)
+      : undefined,
   };
 }

@@ -9,6 +9,7 @@ import type {
   InitiativeCollectiveDecisionLifecycleDraftContext,
   InitiativeCollectiveDecisionSessionReference,
 } from "@hu/types";
+import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
@@ -373,9 +374,16 @@ export async function publishInitiativeCollectiveDecisionStage(
 
   if (decision.status === "draft") {
     decision = openInitiativeCollectiveDecision(identity, decision.decisionId);
-    decision = await closeInitiativeCollectiveDecision(identity, decision.decisionId);
+    // Public Choice Experience Pack 01 — leave voting open so Discussion can
+    // collect Support / Do not support / Abstain; Collective Decision is the
+    // result surface. STANDARD still closes immediately after Author publish.
+    if (resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) !== "PUBLIC_CHOICE") {
+      decision = await closeInitiativeCollectiveDecision(identity, decision.decisionId);
+    }
   } else if (decision.status === "opened") {
-    decision = await closeInitiativeCollectiveDecision(identity, decision.decisionId);
+    if (resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) !== "PUBLIC_CHOICE") {
+      decision = await closeInitiativeCollectiveDecision(identity, decision.decisionId);
+    }
   } else {
     throw new Error("A Collective Decision has already been published for this Initiative.");
   }

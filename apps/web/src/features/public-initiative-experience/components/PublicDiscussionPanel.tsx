@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
+  InitiativeLifecycleProfile,
   PublicInitiativeCollaborationParticipant,
   PublicInitiativeCollaborationParticipantsResult,
   PublicInitiativeDiscussionComment,
 } from "@hu/types";
+import { getInitiativeLifecycleProfilePresentation } from "@hu/types";
 
 import { Button, HuFeedbackMessage } from "../../../design-system";
 import { getMe } from "../../auth/auth-api";
@@ -50,6 +52,7 @@ import {
   resolveStatusIndicators,
   type DiscussionFilter,
 } from "./discussion-comment-presentation";
+import { PublicChoiceDiscussionVotePanel } from "./PublicChoiceDiscussionVotePanel";
 
 /** @deprecated Prefer importing from discussion-comment-deep-link. */
 export { COLLABORATION_LIST_DOM_ID };
@@ -80,6 +83,8 @@ interface PublicDiscussionPanelProps {
    * collaboration data has rendered.
    */
   focusCollaborationParticipantId?: string;
+  /** Public Choice Experience Pack 01 — profile-aware Discussion presentation. */
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }
 
 const DRAFT_STORAGE_PREFIX = "pie-discussion-draft:";
@@ -158,6 +163,7 @@ function CommentActions({
   returnTo,
   onReactionUpdated,
   onCollaborationChanged,
+  showStandardParticipationActions = true,
 }: {
   initiativeId: string;
   comment: PublicInitiativeDiscussionComment;
@@ -165,6 +171,7 @@ function CommentActions({
   returnTo: string;
   onReactionUpdated: (comment: PublicInitiativeDiscussionComment) => void;
   onCollaborationChanged: () => void;
+  showStandardParticipationActions?: boolean;
 }) {
   const [reactionBusy, setReactionBusy] = useState(false);
   const [collabAction, setCollabAction] = useState<
@@ -270,6 +277,12 @@ function CommentActions({
   );
   const inviteState = resolveInviteToAlliesActionState(collaboration, collabAction === "invite");
 
+  const showProposal = showStandardParticipationActions && proposalState.visible;
+  const showReady = showStandardParticipationActions && readyState.visible;
+  const showInvitationResponse =
+    showStandardParticipationActions && invitationResponseState.visible;
+  const showInvite = showStandardParticipationActions && inviteState.visible;
+
   return (
     <div className="pie-discussion__actions" role="group" aria-label="Comment feedback actions">
       <button
@@ -318,7 +331,7 @@ function CommentActions({
           {comment.dislikes}
         </span>
       </button>
-      {proposalState.visible ? (
+      {showProposal ? (
         <button
           type="button"
           className={`pie-discussion__action${
@@ -344,7 +357,7 @@ function CommentActions({
           <span className="pie-discussion__action-label">{proposalState.label}</span>
         </button>
       ) : null}
-      {readyState.visible ? (
+      {showReady ? (
         <button
           type="button"
           className={`pie-discussion__action${
@@ -370,7 +383,7 @@ function CommentActions({
           <span className="pie-discussion__action-label">{readyState.label}</span>
         </button>
       ) : null}
-      {invitationResponseState.visible ? (
+      {showInvitationResponse ? (
         <>
           <button
             type="button"
@@ -410,7 +423,7 @@ function CommentActions({
           </button>
         </>
       ) : null}
-      {inviteState.visible ? (
+      {showInvite ? (
         <button
           type="button"
           className={`pie-discussion__action${
@@ -451,6 +464,7 @@ function DiscussionCommentCard({
   isDeepLinkTarget,
   onReactionUpdated,
   onCollaborationChanged,
+  showStandardParticipationActions = true,
 }: {
   initiativeId: string;
   comment: PublicInitiativeDiscussionComment;
@@ -459,6 +473,7 @@ function DiscussionCommentCard({
   isDeepLinkTarget?: boolean;
   onReactionUpdated: (comment: PublicInitiativeDiscussionComment) => void;
   onCollaborationChanged: () => void;
+  showStandardParticipationActions?: boolean;
 }) {
   const authorLink = resolveAuthorLinkPresentation(comment.author);
   const badges = resolveAuthorBadges(comment.collaboration);
@@ -516,6 +531,7 @@ function DiscussionCommentCard({
         returnTo={returnTo}
         onReactionUpdated={onReactionUpdated}
         onCollaborationChanged={onCollaborationChanged}
+        showStandardParticipationActions={showStandardParticipationActions}
       />
     </li>
   );
@@ -701,7 +717,9 @@ export function PublicDiscussionPanel({
   initialFilter,
   focusCommentId,
   focusCollaborationParticipantId,
+  lifecycleProfile,
 }: PublicDiscussionPanelProps) {
+  const presentation = getInitiativeLifecycleProfilePresentation(lifecycleProfile);
   const authStatus = useClientAuthStatus();
   const [comments, setComments] = useState(initialComments);
   const [totalCount, setTotalCount] = useState(commentCount);
@@ -1021,11 +1039,24 @@ export function PublicDiscussionPanel({
        * single short paragraph, not an instruction panel.
        */}
       <p className="pie-discussion__guidance">
-        Comments help improve this Initiative. Select <strong>Proposal</strong> to add a comment
-        to the improvement ideas list. Select <strong>Ready to Collaborate</strong> to let the
-        Initiative Author know that you want to help. The Initiative Author can then select{" "}
-        <strong>Invite to Allies</strong> to invite that Participant into the Initiative team.
+        {presentation.discussionShowsStandardParticipationActions ? (
+          <>
+            Comments help improve this Initiative. Select <strong>Proposal</strong> to add a comment
+            to the improvement ideas list. Select <strong>Ready to Collaborate</strong> to let the
+            Initiative Author know that you want to help. The Initiative Author can then select{" "}
+            <strong>Invite to Allies</strong> to invite that Participant into the Initiative team.
+          </>
+        ) : (
+          <>
+            Share comments about this Public Choice. Use the vote control below to Support, Do not
+            support, or Abstain. Comments require a signed-in Participant.
+          </>
+        )}
       </p>
+
+      {presentation.discussionShowsVoteBallot ? (
+        <PublicChoiceDiscussionVotePanel initiativeId={initiativeId} />
+      ) : null}
 
       {/*
        * Profile UX Pack 01 Part 8 — the Collaboration filter/tab must remain
@@ -1033,7 +1064,8 @@ export function PublicDiscussionPanel({
        * has zero Discussion comments, since it is sourced from the Ally
        * store rather than from comments.
        */}
-      {comments.length > 0 || filter === "collaboration" ? (
+      {presentation.discussionShowsStandardParticipationActions &&
+      (comments.length > 0 || filter === "collaboration") ? (
         <div className="pie-discussion__filters" role="group" aria-label="Filter comments">
           {DISCUSSION_FILTERS.map((option) => (
             <button
@@ -1094,6 +1126,9 @@ export function PublicDiscussionPanel({
                   isDeepLinkTarget={
                     highlightedCommentId === comment.commentId ||
                     focusedRenderedCommentId === comment.commentId
+                  }
+                  showStandardParticipationActions={
+                    presentation.discussionShowsStandardParticipationActions
                   }
                   onReactionUpdated={(updated) => {
                     setComments((current) =>

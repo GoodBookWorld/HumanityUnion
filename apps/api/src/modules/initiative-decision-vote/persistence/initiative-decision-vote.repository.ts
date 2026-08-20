@@ -1,6 +1,7 @@
 import type { ClientSession } from "mongodb";
 
-import type { InitiativeDecisionVoteChoice, InitiativeDecisionVoteHistoryEntry } from "@hu/types";
+import type { InitiativeDecisionVoteChoiceExtended, InitiativeDecisionVoteHistoryEntry } from "@hu/types";
+import type { PublicChoiceVoterCategory } from "@hu/types";
 
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.js";
@@ -138,6 +139,34 @@ export async function findInitiativeDecisionVoteByDecisionAndParticipant(
   return document ? fromInitiativeDecisionVoteMongoDocument(document) : null;
 }
 
+export async function findInitiativeDecisionVoteByDecisionAndVisitor(
+  decisionId: string,
+  visitorKey: string,
+  options: RepositorySessionOptions = {},
+): Promise<InitiativeDecisionVoteMongoRecord | null> {
+  await ensureInitiativeDecisionVoteMongoReady();
+
+  const document = await votesCollection().findOne(
+    { decisionId, visitorKey },
+    { session: options.session },
+  );
+
+  return document ? fromInitiativeDecisionVoteMongoDocument(document) : null;
+}
+
+export async function countInitiativeDecisionVotesForCandidate(
+  initiativeId: string,
+  candidateId: string,
+): Promise<number> {
+  await ensureInitiativeDecisionVoteMongoReady();
+
+  return votesCollection().countDocuments({
+    initiativeId,
+    choice: "candidate",
+    candidateId,
+  });
+}
+
 export async function listInitiativeDecisionVotesByDecision(
   decisionId: string,
   options: RepositorySessionOptions = {},
@@ -191,7 +220,9 @@ export async function updateInitiativeDecisionVoteChoice(
   params: {
     voteId: string;
     expectedVersion: number;
-    choice: InitiativeDecisionVoteChoice;
+    choice: InitiativeDecisionVoteChoiceExtended;
+    candidateId?: string | null;
+    voterCategory?: PublicChoiceVoterCategory;
     transparencyCohort: InitiativeDecisionVoteMongoRecord["transparencyCohort"];
     updatedAt: string;
   },
@@ -199,30 +230,33 @@ export async function updateInitiativeDecisionVoteChoice(
 ): Promise<InitiativeDecisionVoteMongoRecord | null> {
   await ensureInitiativeDecisionVoteMongoReady();
 
-  // Deliberately wraps every thrown error (never rethrows a raw driver
-  // error, unlike the insert helpers above, which rethrow raw duplicate-key
-  // errors). A raw `TransientTransactionError`-labeled error left to escape
-  // this function would let the MongoDB driver's own `session.withTransaction`
-  // retry logic re-invoke the transaction callback on the *same* session —
-  // a second, independent retry authority racing against
-  // `castOrChangeInitiativeDecisionVote`'s own read-then-retry loop (Part
-  // 9/10), which is what produced a real observed
-  // `MongoExpiredSessionError` from a stray background operation on an
-  // already-ended session during Part 21 verification. Wrapping here
-  // guarantees `runMongoTransaction`'s callback always throws a
-  // non-transient-labeled error, so the *only* retry authority is the
-  // application-level loop, always with a fresh session per attempt.
   try {
+    const setFields: Record<string, unknown> = {
+      choice: params.choice,
+      transparencyCohort: params.transparencyCohort,
+      updatedAt: params.updatedAt,
+      version: params.expectedVersion + 1,
+    };
+
+    if (params.voterCategory) {
+      setFields.voterCategory = params.voterCategory;
+    }
+
+    const unsetFields: Record<string, "" > = {};
+    if (params.candidateId === null || params.candidateId === undefined) {
+      unsetFields.candidateId = "";
+    } else {
+      setFields.candidateId = params.candidateId;
+    }
+
+    const update: Record<string, unknown> = { $set: setFields };
+    if (Object.keys(unsetFields).length > 0) {
+      update.$unset = unsetFields;
+    }
+
     const document = await votesCollection().findOneAndUpdate(
       { voteId: params.voteId, version: params.expectedVersion },
-      {
-        $set: {
-          choice: params.choice,
-          transparencyCohort: params.transparencyCohort,
-          updatedAt: params.updatedAt,
-          version: params.expectedVersion + 1,
-        },
-      },
+      update,
       { returnDocument: "after", session: options.session },
     );
 
@@ -329,4 +363,27 @@ export async function deleteInitiativeDecisionVoteHistoryByVoteIdForTests(
   const result = await historyCollection().deleteMany({ voteId });
 
   return result.deletedCount ?? 0;
+}
+
+/** Pack 02C — stamp temporary retention expiry on effective votes + history for one Decision. */
+export async function stampInitiativeDecisionVoteExpireAtForDecision(
+  decisionId: string,
+  expireAt: string,
+): Promise<void> {
+  await ensureInitiativeDecisionVoteMongoReady();
+  await votesCollection().updateMany({ decisionId }, { $set: { expireAt } });
+  await historyCollection().updateMany({ decisionId }, { $set: { expireAt } });
+}
+
+/** Pack 02C — purge temporary PUBLIC_CHOICE election votes + history for one Decision. */
+export async function deleteInitiativeDecisionVotesAndHistoryForDecision(
+  decisionId: string,
+): Promise<{ votes: number; history: number }> {
+  await ensureInitiativeDecisionVoteMongoReady();
+  const votes = await votesCollection().deleteMany({ decisionId });
+  const history = await historyCollection().deleteMany({ decisionId });
+  return {
+    votes: votes.deletedCount ?? 0,
+    history: history.deletedCount ?? 0,
+  };
 }

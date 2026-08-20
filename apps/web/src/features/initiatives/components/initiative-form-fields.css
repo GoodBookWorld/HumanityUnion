@@ -33,3 +33,71 @@
   display: grid;
   gap: var(--hu-space-4, 1rem);
 }
+
+.initiative-form-fields__candidates {
+  display: grid;
+  gap: var(--hu-space-3, 0.75rem);
+  margin: 0;
+  padding: var(--hu-space-3, 0.75rem);
+  border: 1px solid var(--hu-color-border, #d5d9e0);
+  border-radius: var(--hu-radius-sm, 0.35rem);
+}
+
+.initiative-form-fields__candidates legend {
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  font-weight: 600;
+  padding: 0 0.25rem;
+}
+
+.initiative-form-fields__candidate-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hu-space-3, 0.75rem);
+}
+
+.initiative-form-fields__candidate-item {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: var(--hu-space-3, 0.75rem);
+  align-items: start;
+}
+
+.initiative-form-fields__candidate-photo,
+.initiative-form-fields__candidate-photo-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--hu-radius-sm, 0.35rem);
+  object-fit: cover;
+  background: var(--hu-color-surface-muted, #f3f4f7);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hu-color-text-muted, #5f6775);
+}
+
+.initiative-form-fields__candidate-body,
+.initiative-form-fields__candidate-edit,
+.initiative-form-fields__candidate-add {
+  display: grid;
+  gap: var(--hu-space-2, 0.5rem);
+}
+
+.initiative-form-fields__candidate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.initiative-form-fields__photo-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  cursor: pointer;
+}
+
+.initiative-form-fields__photo-upload input {
+  max-width: 12rem;
+}

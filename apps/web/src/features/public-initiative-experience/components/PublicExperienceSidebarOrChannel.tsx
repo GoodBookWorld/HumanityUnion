@@ -153,6 +153,10 @@ export function PublicExperienceSidebarOrChannel({
         lifecycleProfile={lifecycleProfile}
         onOpenPublicPreview={onOpenPublicPreview}
         onNavigateNextStage={onNavigateStage}
+        supportStatistics={sidebarProps.statistics}
+        onSupportSignalChange={sidebarProps.onSignalChange}
+        onSupportBookmarkToggle={sidebarProps.onBookmarkToggle}
+        supportBusy={sidebarProps.supportBusy}
       />
     );
   }
@@ -166,5 +170,5 @@ export function PublicExperienceSidebarOrChannel({
     return <InitiativeCollaborationWorkspace initiativeId={sidebarProps.initiativeId} initialTab={collaborationTab} />;
   }
 
-  return <PublicExperienceSidebar {...sidebarProps} />;
+  return <PublicExperienceSidebar {...sidebarProps} lifecycleProfile={lifecycleProfile} />;
 }
