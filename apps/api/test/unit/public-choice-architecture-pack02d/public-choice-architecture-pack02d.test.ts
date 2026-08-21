@@ -206,13 +206,15 @@ describe("Public Choice Pack 02D — candidate intake + retention contracts", ()
     assert.doesNotMatch(page, /\+ Add candidate/);
   });
 
-  it("Overview intake is authenticated-only for Add candidate", () => {
+  it("Overview Add candidate: authenticated opens form; Visitor CTA registers", () => {
     const overview = read(
       "apps/web/src/features/public-choice-candidate/components/PublicChoiceOverviewCandidateIntake.tsx",
     );
     assert.match(overview, /authenticated/);
     assert.match(overview, /Add candidate/);
-    assert.doesNotMatch(overview, /\/register\?returnTo=/);
+    assert.match(overview, /PublicChoiceCandidateSubmitPanel/);
+    assert.match(overview, /\/register\?returnTo=/);
+    assert.match(overview, /#add-candidate/);
   });
 
   it("create path no longer requires assertInitiativeOwnership", () => {

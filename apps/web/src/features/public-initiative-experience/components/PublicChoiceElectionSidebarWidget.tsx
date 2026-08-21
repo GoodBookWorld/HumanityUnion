@@ -14,16 +14,17 @@ import type {
 import {
   resolveInitiativeLifecycleProfile,
   resolvePublicChoiceBallotMode,
+  resolvePublicChoiceElectionVotingStatus,
 } from "@hu/types";
 
 import {
   getPublicInitiativeCollectiveDecision,
   listPublicInitiativeCollectiveDecisions,
 } from "../../initiative-collective-decision/api";
-import { isCollectiveDecisionVotingWindowOpen } from "../../initiative-collective-decision-lifecycle/collective-decision-voting";
 import { getPublicInitiative } from "../../initiatives/api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { listPublicChoiceCandidates } from "../../public-choice-candidate/api";
+import { usePublicChoiceElectionRefresh } from "../../public-choice-candidate/public-choice-election-refresh";
 
 interface PublicChoiceElectionSidebarWidgetProps {
   initiativeId: string;
@@ -102,6 +103,8 @@ export function PublicChoiceElectionSidebarWidget({
     void reload();
   }, [reload]);
 
+  usePublicChoiceElectionRefresh(initiativeId, reload);
+
   const ballotMode: PublicChoiceBallotMode = resolvePublicChoiceBallotMode(
     decision?.ballotMode ?? initiative?.metadata.ballotMode,
   );
@@ -109,7 +112,15 @@ export function PublicChoiceElectionSidebarWidget({
   const electionName =
     initiative?.metadata.communityAssociation?.trim() || initiative?.title || "Election";
   const electionHref = `/initiatives/public/${encodeURIComponent(initiativeId)}/election`;
-  const votingOpen = decision ? isCollectiveDecisionVotingWindowOpen(decision) : false;
+  const votingStatus = resolvePublicChoiceElectionVotingStatus({
+    decisionStatus: decision?.status,
+    openedAt: decision?.openedAt,
+    closesAt: decision?.closesAt,
+    closedAt: decision?.closedAt,
+    resultsExpiredAt: decision?.resultsRetention?.resultsExpiredAt,
+    resultsRetentionStatus: decision?.resultsRetention?.status,
+  });
+  const votingOpen = votingStatus === "OPEN";
   const ranked = useMemo(
     () => sortSelectOneCandidates(candidates, decision?.ballotAggregates),
     [candidates, decision?.ballotAggregates],

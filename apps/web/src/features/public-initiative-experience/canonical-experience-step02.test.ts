@@ -30,7 +30,7 @@ describe("Initiative Lifecycle Step 02 — Author freedom + Step 01 parity", () 
     assert.equal(buildInitiativeExperienceManageHref("i1"), "/initiatives/public/i1#manage");
   });
 
-  it("PUBLIC_CHOICE nav display is Initiative / Discussion / Collective Decision / Civic Archive", () => {
+  it("PUBLIC_CHOICE nav display is Initiative / Discussion / Collective Decision (no Civic Archive)", () => {
     const publicChoice = [
       stage("initiative", "completed"),
       stage("discussion", "in_progress"),
@@ -46,8 +46,8 @@ describe("Initiative Lifecycle Step 02 — Author freedom + Step 01 parity", () 
       stage("archive", "not_started"),
     ];
     assert.deepEqual(
-      selectLifecycleNavStagesForDisplay(publicChoice).map((s) => s.stageId),
-      ["initiative", "discussion", "collective_decision", "archive"],
+      selectLifecycleNavStagesForDisplay(publicChoice, "PUBLIC_CHOICE").map((s) => s.stageId),
+      ["initiative", "discussion", "collective_decision"],
     );
   });
 

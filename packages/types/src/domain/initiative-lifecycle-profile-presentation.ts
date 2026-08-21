@@ -23,6 +23,8 @@ export interface InitiativeLifecycleProfilePresentation {
   readonly discussionShowsStandardParticipationActions: boolean;
   /** Collective Decision is a result surface, not a decision-building workflow. */
   readonly collectiveDecisionIsResultOnly: boolean;
+  /** PUBLIC_CHOICE: profile-specific CD meaning without renaming stage id. */
+  readonly collectiveDecisionResultLabel: string | null;
   /** Hide misleading STANDARD "Stage X of Y" ordinals. */
   readonly showLifecycleStageOrdinal: boolean;
 }
@@ -56,6 +58,7 @@ export function getInitiativeLifecycleProfilePresentation(
       discussionShowsVoteBallot: false,
       discussionShowsStandardParticipationActions: false,
       collectiveDecisionIsResultOnly: true,
+      collectiveDecisionResultLabel: "Election Results",
       showLifecycleStageOrdinal: false,
     };
   }
@@ -71,6 +74,7 @@ export function getInitiativeLifecycleProfilePresentation(
     discussionShowsVoteBallot: false,
     discussionShowsStandardParticipationActions: true,
     collectiveDecisionIsResultOnly: false,
+    collectiveDecisionResultLabel: null,
     showLifecycleStageOrdinal: true,
   };
 }

@@ -42,12 +42,23 @@ export type LifecycleShellHashResolution =
 /**
  * Stages shown in the Lifecycle nav. NOT_APPLICABLE stages are omitted so
  * PUBLIC_CHOICE does not render STANDARD-only stages as broken/missing.
+ * Fix 05 — PUBLIC_CHOICE also hides Civic Archive from visible nav (domain retained).
  * Full stage list remains on `experience.lifecycleStages` for Guide/read models.
  */
 export function selectLifecycleNavStagesForDisplay(
   stages: readonly PublicInitiativeLifecycleStageNavItem[],
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null,
 ): PublicInitiativeLifecycleStageNavItem[] {
-  return stages.filter((stage) => stage.state !== "not_applicable");
+  const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
+  return stages
+    .filter((stage) => stage.state !== "not_applicable")
+    .filter((stage) => !(profile === "PUBLIC_CHOICE" && stage.stageId === "archive"))
+    .map((stage) => {
+      if (profile === "PUBLIC_CHOICE" && stage.stageId === "collective_decision") {
+        return { ...stage, label: "Collective Decision" };
+      }
+      return stage;
+    });
 }
 
 export function resolveLifecycleStageFromHash(hash: string): string | null {
@@ -73,9 +84,14 @@ export function resolveLifecycleStageFromHash(hash: string): string | null {
 export function resolveLifecycleShellHash(
   hash: string,
   stages: readonly PublicInitiativeLifecycleStageNavItem[],
-  options?: { allowManage?: boolean; viewerIsSteward?: boolean },
+  options?: {
+    allowManage?: boolean;
+    viewerIsSteward?: boolean;
+    lifecycleProfile?: InitiativeLifecycleProfile | string | null;
+  },
 ): LifecycleShellHashResolution {
   const normalized = hash.replace(/^#/, "").trim().toLowerCase();
+  const profile = resolveInitiativeLifecycleProfile(options?.lifecycleProfile);
 
   if (!normalized) {
     return { kind: "fallback_overview", reason: "empty" };
@@ -110,6 +126,11 @@ export function resolveLifecycleShellHash(
   const stageId = resolveLifecycleStageFromHash(hash);
   if (!stageId) {
     return { kind: "fallback_overview", reason: "invalid" };
+  }
+
+  /** Fix 05 — Civic Archive is not a visible PUBLIC_CHOICE stage. */
+  if (profile === "PUBLIC_CHOICE" && stageId === "archive") {
+    return { kind: "fallback_overview", reason: "not_applicable" };
   }
 
   const stage = stages.find((item) => item.stageId === stageId);
@@ -184,14 +205,20 @@ export function buildLifecycleGuideReadModel(input: {
     resolveRecommendedLifecycleStageId(stages, experience.currentStageId);
 
   const currentIndex = stages.findIndex((stage) => stage.stageId === experience.currentStageId);
+  const profile = resolveInitiativeLifecycleProfile(experience.lifecycleProfile);
   const nextStageId =
     currentIndex >= 0 && currentIndex < stages.length - 1
-      ? (stages.slice(currentIndex + 1).find((stage) => stage.state !== "not_applicable")?.stageId ??
-        null)
+      ? (stages
+          .slice(currentIndex + 1)
+          .find(
+            (stage) =>
+              stage.state !== "not_applicable" &&
+              !(profile === "PUBLIC_CHOICE" && stage.stageId === "archive"),
+          )?.stageId ?? null)
       : null;
 
   return {
-    lifecycleProfile: resolveInitiativeLifecycleProfile(experience.lifecycleProfile),
+    lifecycleProfile: profile,
     currentStageId: experience.currentStageId,
     recommendedStageId,
     selectedStageId: input.selectedStageId,

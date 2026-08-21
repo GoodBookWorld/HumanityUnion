@@ -22,13 +22,14 @@ import {
   listPublicInitiativeCollectiveDecisions,
   recallInitiativeDecisionVote,
 } from "../../initiative-collective-decision/api";
-import {
-  describeCollectiveDecisionVotingUnavailable,
-  isCollectiveDecisionVotingWindowOpen,
-} from "../../initiative-collective-decision-lifecycle/collective-decision-voting";
+import { describeCollectiveDecisionVotingUnavailable } from "../../initiative-collective-decision-lifecycle/collective-decision-voting";
 import { getPublicInitiative } from "../../initiatives/api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { listPublicChoiceCandidates } from "../api";
+import {
+  notifyPublicChoiceElectionRefresh,
+  usePublicChoiceElectionRefresh,
+} from "../public-choice-election-refresh";
 import { PublicChoiceCandidateSubmitPanel } from "./PublicChoiceCandidateSubmitPanel";
 
 import "../../public-initiative-experience/public-initiative-experience.css";
@@ -41,9 +42,10 @@ interface PublicChoiceOverviewCandidateIntakeProps {
 }
 
 /**
- * Pack 04 — PUBLIC_CHOICE candidate-election Overview surface.
- * Roster + Select / Selected / Recall (Decision Vote authority).
- * Add candidate: authenticated Participants only. Stay on Overview after submit.
+ * Pack 04 / Fix 05 — PUBLIC_CHOICE candidate-election Overview surface.
+ * Roster + Select / Selected / Recall (Decision Vote authority) for all voters.
+ * Add candidate: authenticated Participants open the form; Visitors get Register CTA.
+ * Stay on Overview after submit.
  */
 export function PublicChoiceOverviewCandidateIntake({
   initiativeId,
@@ -116,6 +118,8 @@ export function PublicChoiceOverviewCandidateIntake({
     void reload();
   }, [reload]);
 
+  usePublicChoiceElectionRefresh(initiativeId, reload);
+
   useEffect(() => {
     if (openSubmitInitially) {
       setShowSubmit(true);
@@ -123,11 +127,11 @@ export function PublicChoiceOverviewCandidateIntake({
     }
   }, [openSubmitInitially, onOpenSubmitConsumed]);
 
-  const votingOpen = projection ? isCollectiveDecisionVotingWindowOpen(projection) : false;
-  const unavailableReason = projection
-    ? describeCollectiveDecisionVotingUnavailable(projection)
-    : "Voting opens when the election ballot is published.";
-
+  /**
+   * Fix 05 — Align Select/Recall with Pack 04 election status (OPEN).
+   * Do not gate controls on the older openedAt-required window helper; that
+   * hid Select/Recall while the status label still displayed "Open".
+   */
   const electionStatus = resolvePublicChoiceElectionVotingStatus({
     decisionStatus: projection?.status,
     openedAt: projection?.openedAt,
@@ -136,6 +140,10 @@ export function PublicChoiceOverviewCandidateIntake({
     resultsExpiredAt: projection?.resultsRetention?.resultsExpiredAt,
     resultsRetentionStatus: projection?.resultsRetention?.status,
   });
+  const votingOpen = electionStatus === "OPEN";
+  const unavailableReason = projection
+    ? describeCollectiveDecisionVotingUnavailable(projection)
+    : "Voting opens when the election ballot is published.";
   const electionStatusLabel = publicChoiceElectionVotingStatusLabel(electionStatus);
 
   const selectedCandidateId =
@@ -174,6 +182,7 @@ export function PublicChoiceOverviewCandidateIntake({
       if (refreshed) {
         setProjection(refreshed);
       }
+      notifyPublicChoiceElectionRefresh(initiativeId);
     } catch (submissionError) {
       setError(
         submissionError instanceof Error ? submissionError.message : "Could not record selection.",
@@ -202,6 +211,7 @@ export function PublicChoiceOverviewCandidateIntake({
       if (refreshed) {
         setProjection(refreshed);
       }
+      notifyPublicChoiceElectionRefresh(initiativeId);
     } catch (submissionError) {
       setError(
         submissionError instanceof Error ? submissionError.message : "Could not recall selection.",
@@ -271,7 +281,7 @@ export function PublicChoiceOverviewCandidateIntake({
           return (
             <li
               key={candidate.candidateId}
-              className={`pie-election-results__row pc-overview-vote-row${
+              className={`pc-overview-vote-row${
                 selected ? " pc-overview-vote-row--selected" : ""
               }${dimmed ? " pc-overview-vote-row--dimmed" : ""}`}
             >
@@ -327,7 +337,7 @@ export function PublicChoiceOverviewCandidateIntake({
 
         {votingOpen && decisionId ? (
           <li
-            className={`pie-election-results__row pc-overview-vote-row${
+            className={`pc-overview-vote-row${
               selectedAbstain ? " pc-overview-vote-row--selected" : ""
             }${rosterLocked && !selectedAbstain ? " pc-overview-vote-row--dimmed" : ""}`}
           >
@@ -364,14 +374,27 @@ export function PublicChoiceOverviewCandidateIntake({
         ) : null}
 
         {!resultsExpired && authenticated ? (
-          <li className="pie-election-results__row pie-election-results__row--add">
+          <li className="pie-overview-candidates__add-row">
             <button
               type="button"
-              className="pie-overview-candidates__add"
+              className="pie-overview-candidates__add hu-button hu-button--secondary"
               onClick={openSubmitForm}
             >
               + Add candidate
             </button>
+          </li>
+        ) : null}
+
+        {!resultsExpired && authStatus === "unauthenticated" ? (
+          <li className="pie-overview-candidates__add-row">
+            <a
+              className="pie-overview-candidates__add hu-button hu-button--secondary"
+              href={`/register?returnTo=${encodeURIComponent(
+                `/initiatives/public/${encodeURIComponent(initiativeId)}#add-candidate`,
+              )}`}
+            >
+              + Add candidate
+            </a>
           </li>
         ) : null}
       </ul>

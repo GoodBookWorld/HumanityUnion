@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 
-import type { PublicInitiativeLifecycleStageNavItem } from "@hu/types";
+import type { InitiativeLifecycleProfile, PublicInitiativeLifecycleStageNavItem } from "@hu/types";
+import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import { isLifecycleStageSelectable } from "../lifecycle-stage-navigation";
 
@@ -14,6 +15,7 @@ interface PublicInitiativeLifecycleNavProps {
   selectedStageId: string;
   /** Steward Author — all applicable stages selectable (Step 02). */
   viewerIsSteward?: boolean;
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null;
   onStageSelect?: (stageId: string, hash: string) => void;
   resolveStageHref?: (stageId: string, hash: string) => string | null;
   activeRecordId?: string;
@@ -24,10 +26,12 @@ export function PublicInitiativeLifecycleNav({
   currentStageId,
   selectedStageId,
   viewerIsSteward = false,
+  lifecycleProfile,
   onStageSelect,
   resolveStageHref,
   activeRecordId,
 }: PublicInitiativeLifecycleNavProps) {
+  const isPublicChoice = resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE";
   return (
     <nav className="pie-lifecycle" aria-label="Initiative lifecycle">
       <h2 className="pie-lifecycle__title">Lifecycle</h2>
@@ -40,6 +44,8 @@ export function PublicInitiativeLifecycleNav({
           const selectable = isLifecycleStageSelectable(stages, stage.stageId, {
             viewerIsSteward,
           });
+          const showElectionResultsSubtitle =
+            isPublicChoice && stage.stageId === "collective_decision";
           const href = selectable
             ? (resolveStageHref?.(stage.stageId, stage.hash) ?? null)
             : null;
@@ -61,6 +67,9 @@ export function PublicInitiativeLifecycleNav({
                 aria-hidden="true"
               />
               <span className="pie-lifecycle__label">{label}</span>
+              {showElectionResultsSubtitle ? (
+                <span className="pie-lifecycle__subtitle">Election Results</span>
+              ) : null}
               <span className="pie-lifecycle__state">
                 {stage.stateLabel}
                 {isCurrent ? " · Current" : ""}

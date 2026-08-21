@@ -30,6 +30,7 @@ import { getPublicInitiative } from "../../initiatives/api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { listPublicChoiceCandidates } from "../../public-choice-candidate/api";
 import { PublicChoiceElectionResultsBoard } from "../../public-choice-candidate/components/PublicChoiceElectionResultsBoard";
+import { usePublicChoiceElectionRefresh } from "../../public-choice-candidate/public-choice-election-refresh";
 import { downloadPublicChoiceResultsPdf } from "../../public-choice-results-retention/api";
 
 import "../public-initiative-experience.css";
@@ -183,6 +184,8 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  usePublicChoiceElectionRefresh(initiativeId, reload);
 
   const ballotMode: PublicChoiceBallotMode = resolvePublicChoiceBallotMode(
     decision?.ballotMode ?? initiative?.metadata.ballotMode,

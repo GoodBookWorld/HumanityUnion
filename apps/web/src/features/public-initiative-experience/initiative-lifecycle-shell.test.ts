@@ -52,16 +52,16 @@ describe("Phase 03 — lifecycle shell helpers", () => {
     stage("archive", "not_started"),
   ];
 
-  it("omits NOT_APPLICABLE stages from PUBLIC_CHOICE nav display", () => {
-    const displayed = selectLifecycleNavStagesForDisplay(publicChoiceStages);
+  it("omits NOT_APPLICABLE stages and Civic Archive from PUBLIC_CHOICE nav display", () => {
+    const displayed = selectLifecycleNavStagesForDisplay(publicChoiceStages, "PUBLIC_CHOICE");
     assert.deepEqual(
       displayed.map((item) => item.stageId),
-      ["initiative", "discussion", "collective_decision", "archive"],
+      ["initiative", "discussion", "collective_decision"],
     );
   });
 
-  it("STANDARD nav display keeps full applicable route stages", () => {
-    const displayed = selectLifecycleNavStagesForDisplay(standardStages);
+  it("STANDARD nav display keeps full applicable route stages including archive", () => {
+    const displayed = selectLifecycleNavStagesForDisplay(standardStages, "STANDARD");
     assert.equal(displayed.length, standardStages.length);
   });
 

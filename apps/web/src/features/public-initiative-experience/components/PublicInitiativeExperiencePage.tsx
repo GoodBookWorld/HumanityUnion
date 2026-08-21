@@ -63,8 +63,8 @@ export function PublicInitiativeExperiencePage({
   const viewerIsSteward = Boolean(experience.viewerIsSteward);
   const canShowManage = viewerIsSteward && manageInitiative != null;
   const navStages = useMemo(
-    () => selectLifecycleNavStagesForDisplay(experience.lifecycleStages),
-    [experience.lifecycleStages],
+    () => selectLifecycleNavStagesForDisplay(experience.lifecycleStages, experience.lifecycleProfile),
+    [experience.lifecycleStages, experience.lifecycleProfile],
   );
   const petitionDegradedMessage = publicSafeOptionalSectionMessage(
     experience.optionalStageDiagnostics,
@@ -103,6 +103,7 @@ export function PublicInitiativeExperiencePage({
       const resolution = resolveLifecycleShellHash(hash, experience.lifecycleStages, {
         allowManage: canShowManage,
         viewerIsSteward,
+        lifecycleProfile: experience.lifecycleProfile,
       });
 
       switch (resolution.kind) {
@@ -146,7 +147,7 @@ export function PublicInitiativeExperiencePage({
           }
       }
     },
-    [experience.lifecycleStages, canShowManage, viewerIsSteward],
+    [experience.lifecycleStages, experience.lifecycleProfile, canShowManage, viewerIsSteward],
   );
 
   useEffect(() => {
@@ -308,6 +309,7 @@ export function PublicInitiativeExperiencePage({
             currentStageId={experience.currentStageId}
             selectedStageId={selectedStageId}
             viewerIsSteward={viewerIsSteward}
+            lifecycleProfile={experience.lifecycleProfile}
             onStageSelect={handleStageSelect}
           />
         }

@@ -53,6 +53,7 @@ import { DiscussionLifecycleCompletionBanner } from "./DiscussionLifecycleComple
 import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
 import { PublicDiscussionPanel } from "./PublicDiscussionPanel";
 import { PublicChoiceOverviewCandidateIntake } from "../../public-choice-candidate/components/PublicChoiceOverviewCandidateIntake";
+import { PublicChoiceCollectiveDecisionStage } from "../../public-choice-candidate/components/PublicChoiceCollectiveDecisionStage";
 import { InitiativeAuthorIdentity } from "../../initiative-active-allies/components/InitiativeAuthorIdentity";
 import {
   buildPublicInitiativeSharePayload,
@@ -391,6 +392,14 @@ export function PublicInitiativeCenterPanel({
   const experienceRefresh = useInitiativeExperienceRefresh();
   const [discussionCompletedOverride, setDiscussionCompletedOverride] = useState(false);
   const activeStage = experience.stageContent.find((stage) => stage.stageId === activeStageId);
+  const isPublicChoice =
+    getInitiativeLifecycleProfilePresentation(experience.lifecycleProfile).isPublicChoice;
+  /**
+   * Fix 05 — PUBLIC_CHOICE Collective Decision never uses STANDARD Author Workspace.
+   * All roles mount PublicChoiceCollectiveDecisionStage (election results board).
+   */
+  const showPublicChoiceCollectiveDecision =
+    showLifecyclePanel && isPublicChoice && activeStageId === "collective_decision";
   /**
    * Initiative Lifecycle — Part B, Section 0 (Mandatory Architectural
    * Rule): Collaborative Analysis was the first stage with a real
@@ -404,17 +413,18 @@ export function PublicInitiativeCenterPanel({
    * lands.
    */
   const showLifecycleWorkspaceShell =
-    activeStageId === "analysis" ||
-    activeStageId === "proposal" ||
-    activeStageId === "petition" ||
-    activeStageId === "decision_session" ||
-    activeStageId === "collective_decision" ||
-    activeStageId === "commitment" ||
-    activeStageId === "tracking" ||
-    activeStageId === "official_response" ||
-    activeStageId === "public_impact" ||
-    activeStageId === "archive" ||
-    (isOwnerRoute && isInitiativeLifecycleAuthorWorkspaceStage(activeStageId));
+    !showPublicChoiceCollectiveDecision &&
+    (activeStageId === "analysis" ||
+      activeStageId === "proposal" ||
+      activeStageId === "petition" ||
+      activeStageId === "decision_session" ||
+      activeStageId === "collective_decision" ||
+      activeStageId === "commitment" ||
+      activeStageId === "tracking" ||
+      activeStageId === "official_response" ||
+      activeStageId === "public_impact" ||
+      activeStageId === "archive" ||
+      (isOwnerRoute && isInitiativeLifecycleAuthorWorkspaceStage(activeStageId)));
   const tabs: Array<[CenterTab, string]> = showManageTab
     ? [
         ["manage", "Manage"],
@@ -471,6 +481,15 @@ export function PublicInitiativeCenterPanel({
       </div>
 
       <div ref={contentRef} className="pie-center__content">
+        {showPublicChoiceCollectiveDecision ? (
+          <section
+            className="pie-center__panel"
+            aria-label="Collective Decision election results"
+          >
+            <PublicChoiceCollectiveDecisionStage initiativeId={experience.initiativeId} />
+          </section>
+        ) : null}
+
         {showLifecyclePanel && activeStage && showLifecycleWorkspaceShell && onNavigateStage && returnToInitiativeHref ? (
           <section className="pie-center__panel" aria-label={`${activeStage.stageId} lifecycle stage`}>
             <InitiativeLifecycleStageWorkspace
