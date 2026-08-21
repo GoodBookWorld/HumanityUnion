@@ -229,6 +229,12 @@ export function computeInitiativeCollectiveDecisionMetrics(
 export async function listPublicInitiativeCollectiveDecisionsForInitiative(
   initiativeId: string,
 ): Promise<PublicInitiativeCollectiveDecisionListItem[]> {
+  // Fix 06 — existing PUBLIC_CHOICE elections missing a voting decision get one lazily.
+  const { ensurePublicChoiceElectionVotingDecision } = await import(
+    "./ensure-public-choice-election-decision.js"
+  );
+  ensurePublicChoiceElectionVotingDecision(initiativeId);
+
   return Promise.all(
     listPublicDecisionsByInitiative(initiativeId).map((decision) =>
       toPublicInitiativeCollectiveDecisionListItem(decision),

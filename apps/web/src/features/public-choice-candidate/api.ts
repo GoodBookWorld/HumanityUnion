@@ -23,14 +23,15 @@ export interface UpdatePublicChoiceCandidateInput {
 }
 
 /**
- * Pack 02A — Candidate CRUD. `apiRequest` already sends credentials:include
- * so visitor cookies and auth cookies travel with every call.
+ * Pack 02A / Fix 06 — Candidate CRUD.
+ * List uses the public initiatives path so Visitors and Participants share one roster.
+ * credentials:include still carries visitor/auth cookies for writes and votes.
  */
 export async function listPublicChoiceCandidates(
   initiativeId: string,
 ): Promise<PublicChoiceCandidatePublicProjection[]> {
   const result = await apiRequest<ListPublicChoiceCandidatesResponse>(
-    `/api/v1/initiatives/${encodeURIComponent(initiativeId)}/candidates`,
+    `/api/v1/public/initiatives/${encodeURIComponent(initiativeId)}/candidates`,
   );
   return result.candidates;
 }

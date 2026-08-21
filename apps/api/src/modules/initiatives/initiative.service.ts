@@ -36,6 +36,7 @@ import { notifyInterestedParticipantsOfPublishedInitiative } from "../notificati
 import { deleteRemindersByRelatedEntity } from "../reminders/reminder.service.js";
 import { enrichInitiativeMetadataGeography } from "./initiative-geography.js";
 import { assertInitiativeOwnership } from "./initiative-ownership.js";
+import { ensurePublicChoiceElectionVotingDecision } from "../initiative-collective-decision/ensure-public-choice-election-decision.js";
 import {
   createInitiative,
   deleteInitiative,
@@ -499,6 +500,16 @@ export function publishInitiative(identity: RequestIdentity, initiativeId: strin
 
   invalidateGlobalSearchIndex();
   invalidateCommunityIntelligenceCache(initiativeId);
+
+  if (resolveInitiativeLifecycleProfile(projectedWithGeography.lifecycleProfile) === "PUBLIC_CHOICE") {
+    try {
+      ensurePublicChoiceElectionVotingDecision(initiativeId);
+    } catch (error) {
+      console.warn(
+        `[publishInitiative] Public Choice election decision ensure skipped: ${String(error)}`,
+      );
+    }
+  }
 
   return projectedWithGeography;
 }

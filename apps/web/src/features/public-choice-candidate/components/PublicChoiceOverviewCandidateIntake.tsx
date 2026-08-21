@@ -71,18 +71,27 @@ export function PublicChoiceOverviewCandidateIntake({
   const reload = useCallback(async () => {
     setLoadState("loading");
     try {
-      const [initiative, listed, candidateList] = await Promise.all([
-        getPublicInitiative(initiativeId),
-        listPublicInitiativeCollectiveDecisions(initiativeId),
-        listPublicChoiceCandidates(initiativeId),
-      ]);
-
+      const initiative = await getPublicInitiative(initiativeId);
       if (!isPublicChoiceCandidateElectionBallot(initiative.metadata.ballotMode)) {
         setLoadState("hidden");
         return;
       }
 
       setResultsExpired(Boolean(initiative.metadata.publicChoiceResultsExpiredAt));
+
+      const [listed, candidateList] = await Promise.all([
+        listPublicInitiativeCollectiveDecisions(initiativeId).catch(() => ({
+          decisions: [],
+          metrics: {
+            decisionCount: 0,
+            openedCount: 0,
+            closedCount: 0,
+            cancelledCount: 0,
+          },
+        })),
+        listPublicChoiceCandidates(initiativeId).catch(() => []),
+      ]);
+
       setCandidates(candidateList);
 
       const opened =

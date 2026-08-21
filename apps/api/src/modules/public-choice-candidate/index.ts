@@ -1,4 +1,7 @@
-export { publicChoiceCandidateRouter } from "./public-choice-candidate.routes.js";
+export {
+  publicChoiceCandidateRouter,
+  publicChoiceCandidatesByInitiativeRouter,
+} from "./public-choice-candidate.routes.js";
 export {
   assertCandidateBelongsToInitiative,
   createPublicChoiceCandidateForInitiative,

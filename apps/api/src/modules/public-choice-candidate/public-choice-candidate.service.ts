@@ -100,6 +100,15 @@ export async function listPublicChoiceCandidatesForInitiative(
   initiativeId: string,
 ): Promise<PublicChoiceCandidatePublicProjection[]> {
   assertPublicChoiceInitiative(initiativeId);
+  // Fix 06 — ensure voting substrate exists when the public roster is read.
+  try {
+    const { ensurePublicChoiceElectionVotingDecision } = await import(
+      "../initiative-collective-decision/ensure-public-choice-election-decision.js"
+    );
+    ensurePublicChoiceElectionVotingDecision(initiativeId);
+  } catch {
+    // Candidate listing must not fail if decision ensure is unavailable.
+  }
   const candidates = await listPublicChoiceCandidatesByInitiative(initiativeId);
   return candidates.map(toPublicChoiceCandidatePublicProjection);
 }

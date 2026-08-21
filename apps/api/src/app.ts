@@ -151,7 +151,7 @@ import publicInitiativeRouter from "./modules/initiatives/public-initiative.rout
 import publicLatestInitiativesRouter from "./modules/initiatives/public-latest-initiatives.routes.js";
 import publicWorldInitiativesRouter from "./modules/initiatives/public-world-initiatives.routes.js";
 import { initiativeSupportRouter } from "./modules/initiative-support/index.js";
-import { publicChoiceCandidateRouter } from "./modules/public-choice-candidate/index.js";
+import { publicChoiceCandidateRouter, publicChoiceCandidatesByInitiativeRouter } from "./modules/public-choice-candidate/index.js";
 import { publicChoiceResultsRetentionRouter } from "./modules/public-choice-results-retention/index.js";
 import { initiativeCommentRouter } from "./modules/initiative-comments/index.js";
 import { initiativeDiscussionCollaborationRouter } from "./modules/initiative-discussion-collaboration/index.js";
@@ -367,6 +367,7 @@ app.use("/api/v1/public/initiatives", publicInitiativeImprovementProposalsByInit
 app.use("/api/v1/public/initiatives", publicInitiativeImprovementProposalsStageByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicDecisionSessionsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeCollectiveDecisionsByInitiativeRouter);
+app.use("/api/v1/public/initiatives", publicChoiceCandidatesByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeImplementationCommitmentsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeImplementationTrackingsByInitiativeRouter);
 app.use("/api/v1/public/initiatives", publicInitiativePublicImpactsByInitiativeRouter);

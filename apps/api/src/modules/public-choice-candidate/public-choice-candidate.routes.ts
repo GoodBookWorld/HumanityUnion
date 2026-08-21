@@ -1,9 +1,11 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
+import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { canExposePublicInitiativeProjection } from "../initiatives/public-initiative.projection.js";
 import {
   createPublicChoiceCandidateForInitiative,
   deletePublicChoiceCandidateForInitiative,
@@ -12,6 +14,9 @@ import {
 } from "./public-choice-candidate.service.js";
 
 export const publicChoiceCandidateRouter = Router();
+
+/** Fix 06 — Visitor-safe public roster (same service as authenticated list). */
+export const publicChoiceCandidatesByInitiativeRouter = Router();
 
 function createFailureResponse(message: string) {
   return {
@@ -27,22 +32,30 @@ function getParam(value: string | string[] | undefined): string {
   return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 }
 
+async function handleListCandidates(req: Request, res: Response): Promise<void> {
+  try {
+    const initiativeId = getParam(req.params.initiativeId);
+    const initiative = getInitiativeById(initiativeId);
+    if (!initiative || !canExposePublicInitiativeProjection(initiative)) {
+      res.status(404).json(createFailureResponse("Initiative not found."));
+      return;
+    }
+    const candidates = await listPublicChoiceCandidatesForInitiative(initiativeId);
+    res.json(createSuccessResponse({ candidates }, "Candidates loaded."));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Candidates request failed.";
+    const status = message.includes("not found") ? 404 : 400;
+    res.status(status).json(createFailureResponse(message));
+  }
+}
+
 publicChoiceCandidateRouter.get(
   "/:initiativeId/candidates",
   optionalAuthenticationMiddleware,
-  async (req, res) => {
-    try {
-      const candidates = await listPublicChoiceCandidatesForInitiative(
-        getParam(req.params.initiativeId),
-      );
-      res.json(createSuccessResponse({ candidates }, "Candidates loaded."));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Candidates request failed.";
-      const status = message.includes("not found") ? 404 : 400;
-      res.status(status).json(createFailureResponse(message));
-    }
-  },
+  handleListCandidates,
 );
+
+publicChoiceCandidatesByInitiativeRouter.get("/:initiativeId/candidates", handleListCandidates);
 
 publicChoiceCandidateRouter.post(
   "/:initiativeId/candidates",
