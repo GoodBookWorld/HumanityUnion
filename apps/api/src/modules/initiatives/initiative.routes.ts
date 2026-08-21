@@ -293,6 +293,27 @@ initiativesRouter.post(
   },
 );
 
+/** Pack 04 — Author closes PUBLIC_CHOICE election (stops voting; starts 72h retention). */
+initiativesRouter.post(
+  "/:initiativeId/public-choice/close-election",
+  ...authenticatedWorkspaceWriteMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const { closePublicChoiceElectionForInitiative } = await import(
+        "../initiative-collective-decision/initiative-collective-decision.service.js"
+      );
+      const decision = await closePublicChoiceElectionForInitiative(
+        identity,
+        getInitiativeId(req),
+      );
+      res.json(createSuccessResponse(decision, "Election closed."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
 /** Public read — member-visible public projection when eligible. */
 initiativesRouter.get("/:initiativeId/public-projection", async (req, res) => {
   const initiative = getInitiativeById(getInitiativeId(req));

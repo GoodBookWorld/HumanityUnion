@@ -13,7 +13,7 @@ import type {
 import {
   getInitiativeLifecycleProfilePresentation,
   isInitiativeLifecycleAuthorWorkspaceStage,
-  resolvePublicChoiceBallotMode,
+  isPublicChoiceCandidateElectionBallot,
 } from "@hu/types";
 
 import { formatPublicGeography } from "@hu/geography";
@@ -143,7 +143,6 @@ function PublicInitiativeOverview({
   currentStageLabel,
   openCandidateSubmit = false,
   onOpenCandidateSubmitConsumed,
-  onNavigateToCollectiveDecision,
 }: {
   initiative: PublicInitiativeProjection;
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
@@ -151,7 +150,6 @@ function PublicInitiativeOverview({
   currentStageLabel: string;
   openCandidateSubmit?: boolean;
   onOpenCandidateSubmitConsumed?: () => void;
-  onNavigateToCollectiveDecision?: () => void;
 }) {
   const metadata = initiative.metadata;
   const activityArea =
@@ -159,9 +157,8 @@ function PublicInitiativeOverview({
       ? metadata.activityAreaOther
       : metadata.activityArea;
   const presentation = getInitiativeLifecycleProfilePresentation(lifecycleProfile);
-  const isSelectOne =
-    presentation.isPublicChoice &&
-    resolvePublicChoiceBallotMode(metadata.ballotMode) === "SELECT_ONE_CANDIDATE";
+  const showCandidateIntake =
+    presentation.isPublicChoice && isPublicChoiceCandidateElectionBallot(metadata.ballotMode);
 
   return (
     <div className="pie-overview">
@@ -170,72 +167,78 @@ function PublicInitiativeOverview({
         stageId={currentStageId}
         stageLabel={currentStageLabel}
       />
-      {isSelectOne ? (
+      {showCandidateIntake ? (
         <PublicChoiceOverviewCandidateIntake
           initiativeId={initiative.initiativeId}
           openSubmitInitially={openCandidateSubmit}
           onOpenSubmitConsumed={onOpenCandidateSubmitConsumed}
-          onSubmittedNavigateToCollectiveDecision={onNavigateToCollectiveDecision}
         />
       ) : null}
-      <OverviewSection label="Full Description" value={initiative.description} />
-      <div className="pie-overview__grid">
-        <div className="pie-overview__column">
-          {presentation.showActivityArea ? (
-            <OverviewMetadataItem label="Activity Area" value={activityArea} />
-          ) : null}
-          <OverviewMetadataItem label="Category" value={metadata.category} />
-          <OverviewMetadataItem
-            label="Start Date"
-            value={metadata.startDate ? formatDate(metadata.startDate) : undefined}
-          />
-          <OverviewAuthorItem
-            displayName={initiative.stewardDisplayName}
-            profileUrl={initiative.stewardProfileUrl}
-          />
-          <OverviewMetadataItem
-            label="Current Version"
-            value={`Version ${initiative.currentVersion}`}
-          />
-        </div>
-        <div className="pie-overview__column">
-          <OverviewMetadataItem
-            label="Geographic Scope"
-            value={formatPublicGeography({
-              countryCode: metadata.countrySlug,
-              regionCode: metadata.regionSlug,
-              communitySlug: metadata.communitySlug,
-              regionLabel: metadata.region,
-              communityAssociation: metadata.communityAssociation,
-            })}
-          />
-          <OverviewMetadataItem
-            label={presentation.communityAssociationLabel}
-            value={metadata.communityAssociation ?? metadata.communitySlug}
-          />
-          <OverviewMetadataItem label="Language" value={metadata.language} />
-          <OverviewMetadataItem
-            label="Completion Date"
-            value={metadata.completionDate ? formatDate(metadata.completionDate) : undefined}
-          />
-          <OverviewMetadataItem label="Status" value={currentStageLabel} />
-          <OverviewMetadataItem label="Tags" value={formatList(metadata.tags) ?? undefined} />
-        </div>
-      </div>
-      {initiative.sourceReferences?.map((reference) => (
-        <section key={`${reference.type}-${reference.sourceRecordId}`} className="pie-overview__section">
-          <h3>Source article</h3>
-          <p className="pie-overview__meta">{reference.sourceName}</p>
-          <p>{reference.title}</p>
-          {reference.summary ? <p>{reference.summary}</p> : null}
-          <p className="pie-overview__meta">Published {formatDate(reference.publishedAt)}</p>
-          <p>
-            <a href={reference.articleUrl} target="_blank" rel="noopener noreferrer">
-              View original source
-            </a>
-          </p>
-        </section>
-      ))}
+      {!presentation.isPublicChoice ? (
+        <>
+          <OverviewSection label="Full Description" value={initiative.description} />
+          <div className="pie-overview__grid">
+            <div className="pie-overview__column">
+              {presentation.showActivityArea ? (
+                <OverviewMetadataItem label="Activity Area" value={activityArea} />
+              ) : null}
+              <OverviewMetadataItem label="Category" value={metadata.category} />
+              <OverviewMetadataItem
+                label="Start Date"
+                value={metadata.startDate ? formatDate(metadata.startDate) : undefined}
+              />
+              <OverviewAuthorItem
+                displayName={initiative.stewardDisplayName}
+                profileUrl={initiative.stewardProfileUrl}
+              />
+              <OverviewMetadataItem
+                label="Current Version"
+                value={`Version ${initiative.currentVersion}`}
+              />
+            </div>
+            <div className="pie-overview__column">
+              <OverviewMetadataItem
+                label="Geographic Scope"
+                value={formatPublicGeography({
+                  countryCode: metadata.countrySlug,
+                  regionCode: metadata.regionSlug,
+                  communitySlug: metadata.communitySlug,
+                  regionLabel: metadata.region,
+                  communityAssociation: metadata.communityAssociation,
+                })}
+              />
+              <OverviewMetadataItem
+                label={presentation.communityAssociationLabel}
+                value={metadata.communityAssociation ?? metadata.communitySlug}
+              />
+              <OverviewMetadataItem label="Language" value={metadata.language} />
+              <OverviewMetadataItem
+                label="Completion Date"
+                value={metadata.completionDate ? formatDate(metadata.completionDate) : undefined}
+              />
+              <OverviewMetadataItem label="Status" value={currentStageLabel} />
+              <OverviewMetadataItem label="Tags" value={formatList(metadata.tags) ?? undefined} />
+            </div>
+          </div>
+          {initiative.sourceReferences?.map((reference) => (
+            <section
+              key={`${reference.type}-${reference.sourceRecordId}`}
+              className="pie-overview__section"
+            >
+              <h3>Source article</h3>
+              <p className="pie-overview__meta">{reference.sourceName}</p>
+              <p>{reference.title}</p>
+              {reference.summary ? <p>{reference.summary}</p> : null}
+              <p className="pie-overview__meta">Published {formatDate(reference.publishedAt)}</p>
+              <p>
+                <a href={reference.articleUrl} target="_blank" rel="noopener noreferrer">
+                  View original source
+                </a>
+              </p>
+            </section>
+          ))}
+        </>
+      ) : null}
     </div>
   );
 }
@@ -701,9 +704,6 @@ export function PublicInitiativeCenterPanel({
               }
               openCandidateSubmit={openCandidateSubmit}
               onOpenCandidateSubmitConsumed={onOpenCandidateSubmitConsumed}
-              onNavigateToCollectiveDecision={() =>
-                onNavigateStage?.("collective_decision", "collective-decision")
-              }
             />
           </section>
         ) : null}

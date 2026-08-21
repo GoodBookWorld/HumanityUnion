@@ -47,35 +47,31 @@ describe("Public Choice Candidates & Voting Pack 02A — contracts", () => {
     assert.match(voteRoutes, /castOrUpdateVisitorInitiativeDecisionVote/);
   });
 
-  it("form exposes Ballot type only for PUBLIC_CHOICE (candidates added after create)", () => {
+  it("form creates Public Choice election without ballot-mode selector", () => {
     const form = readRepo("apps/web/src/features/initiatives/components/InitiativeFormFields.tsx");
-    assert.match(form, /Ballot type/);
-    assert.match(form, /Support \/ Oppose/);
-    assert.match(form, /Choose one candidate/);
+    assert.doesNotMatch(form, /Ballot type/);
+    assert.doesNotMatch(form, /Choose one candidate/);
     assert.match(form, /presentation\.isPublicChoice/);
     assert.doesNotMatch(form, /PublicChoiceCandidateManager/);
-    assert.match(form, /Create the election first|candidates can be added/i);
+    assert.match(form, /Create the election first|PUBLIC_CHOICE_ELECTION_CREATE_HELPER/);
   });
 
-  it("Discussion vote panel keeps SUPPORT_OPPOSE casting; SELECT_ONE defers to Collective Decision", () => {
+  it("Discussion vote panel is legacy-compat only; SELECT_ONE points to Overview", () => {
     const votePanel = readRepo(
       "apps/web/src/features/public-initiative-experience/components/PublicChoiceDiscussionVotePanel.tsx",
     );
     assert.match(votePanel, /SELECT_ONE_CANDIDATE/);
     assert.match(votePanel, /SUPPORT_OPPOSE/);
-    assert.match(votePanel, /castOrUpdateInitiativeDecisionVote/);
-    assert.match(votePanel, /Sign-in is optional/);
-    assert.match(votePanel, /Collective Decision|candidate voting lives/i);
+    assert.match(votePanel, /Overview|castOrUpdateInitiativeDecisionVote/);
   });
 
-  it("sidebar mounts Candidates widget and gates Initiative Support for SELECT_ONE", () => {
+  it("sidebar mounts Candidates widget and hides Initiative Support for PUBLIC_CHOICE", () => {
     const sidebar = readRepo(
       "apps/web/src/features/public-initiative-experience/components/PublicExperienceSidebar.tsx",
     );
     assert.match(sidebar, /PublicChoiceElectionSidebarWidget/);
     assert.match(sidebar, /PublicInitiativeSupportStatistics/);
-    assert.match(sidebar, /hideSupportForSelectOne/);
-    assert.match(sidebar, /SELECT_ONE_CANDIDATE/);
+    assert.match(sidebar, /hideInitiativeSupport/);
   });
 
   it("election detail route exists under public initiative", () => {
@@ -89,11 +85,14 @@ describe("Public Choice Candidates & Voting Pack 02A — contracts", () => {
     const page = readRepo(
       "apps/web/src/features/public-initiative-experience/components/PublicChoiceElectionPage.tsx",
     );
+    const board = readRepo(
+      "apps/web/src/features/public-choice-candidate/components/PublicChoiceElectionResultsBoard.tsx",
+    );
     assert.match(page, /CURRENT RESULTS/);
     assert.match(page, /FINAL RESULTS/);
-    assert.match(page, /Participation breakdown/);
+    assert.match(board, /Participation breakdown/);
     assert.match(page, /PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER/);
-    assert.match(page, /pie-election-results__bar/);
+    assert.match(board, /pie-election-results__bar/);
     assert.doesNotMatch(page, /official election results/i);
   });
 

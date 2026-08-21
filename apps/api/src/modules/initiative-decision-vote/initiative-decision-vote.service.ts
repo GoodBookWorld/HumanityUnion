@@ -27,6 +27,7 @@ import {
   castOrChangeInitiativeDecisionVote,
   getActiveVoteForParticipant,
   getActiveVoteForVisitor,
+  recallInitiativeDecisionVoteForVoter,
 } from "./initiative-decision-vote.store.js";
 import { listEffectiveVotesForDecision } from "./list-effective-decision-votes.js";
 import { assertCandidateBelongsToInitiative } from "../public-choice-candidate/public-choice-candidate.service.js";
@@ -404,6 +405,51 @@ export async function getVisitorInitiativeDecisionVote(
     throw new Error("Collective decision not found.");
   }
   return getActiveVoteForVisitor(decisionId, visitorKey.trim());
+}
+
+/** Pack 04 — Recall current effective vote (participant or visitor). */
+export async function recallInitiativeDecisionVote(
+  identity: RequestIdentity,
+  decisionId: string,
+  deps: InitiativeDecisionVoteAncestryDependencies = defaultInitiativeDecisionVoteAncestryDependencies,
+): Promise<void> {
+  const { decision } = await resolveVoteInitiativeAncestry(decisionId, deps);
+  assertDecisionAcceptsVotes(decision);
+
+  const removed = await recallInitiativeDecisionVoteForVoter({
+    decisionId,
+    participantId: identity.participantId,
+  });
+  if (!removed) {
+    throw new Error("No vote to recall.");
+  }
+}
+
+export async function recallVisitorInitiativeDecisionVote(
+  visitorKey: string,
+  decisionId: string,
+  deps: InitiativeDecisionVoteAncestryDependencies = defaultInitiativeDecisionVoteAncestryDependencies,
+): Promise<void> {
+  const key = visitorKey.trim();
+  if (!key || key.length < 8 || key.length > 128 || !/^[A-Za-z0-9_-]+$/.test(key)) {
+    throw new Error("Malformed visitor identity.");
+  }
+
+  const { decision, initiative } = await resolveVoteInitiativeAncestry(decisionId, deps);
+  assertDecisionAcceptsVotes(decision);
+
+  const lifecycle = resolveInitiativeLifecycleProfile(initiative.lifecycleProfile);
+  if (lifecycle !== "PUBLIC_CHOICE") {
+    throw new Error("Visitor voting is only available for PUBLIC_CHOICE.");
+  }
+
+  const removed = await recallInitiativeDecisionVoteForVoter({
+    decisionId,
+    visitorKey: key,
+  });
+  if (!removed) {
+    throw new Error("No vote to recall.");
+  }
 }
 
 /** Pack 02B — durable repository is the sole aggregation authority. */

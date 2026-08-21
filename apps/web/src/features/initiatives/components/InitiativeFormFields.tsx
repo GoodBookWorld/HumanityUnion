@@ -11,6 +11,7 @@ import type {
 import {
   DEFAULT_PUBLIC_CHOICE_BALLOT_MODE,
   getInitiativeLifecycleProfilePresentation,
+  PUBLIC_CHOICE_ELECTION_CREATE_HELPER,
   resolveInitiativeCoverMedia,
   resolvePublicChoiceBallotMode,
 } from "@hu/types";
@@ -74,7 +75,7 @@ export function InitiativeFormFields({
   values,
   onChange,
   lifecycleProfile,
-  initiativeId,
+  initiativeId: _initiativeId,
   onImageUpload,
   onVideoLinkSubmit,
   onImageRemove,
@@ -87,10 +88,6 @@ export function InitiativeFormFields({
     ReturnType<typeof toGeographyCommunityOptions>
   >([]);
   const [communitiesLoading, setCommunitiesLoading] = useState(false);
-
-  const ballotMode = resolvePublicChoiceBallotMode(
-    values.ballotMode ?? DEFAULT_PUBLIC_CHOICE_BALLOT_MODE,
-  );
 
   const showGeography =
     presentation.requireCountry ||
@@ -152,37 +149,8 @@ export function InitiativeFormFields({
       </label>
 
       {presentation.isPublicChoice ? (
-        <label className="initiative-form-fields__field">
-          <span>Ballot type</span>
-          <select
-            className="hu-form-control"
-            value={ballotMode}
-            onChange={(event) =>
-              onChange({ ballotMode: event.target.value as PublicChoiceBallotMode })
-            }
-          >
-            <option value="SUPPORT_OPPOSE">Support / Oppose</option>
-            <option value="SELECT_ONE_CANDIDATE">Choose one candidate</option>
-          </select>
-          {ballotMode === "SELECT_ONE_CANDIDATE" ? (
-            <span className="initiative-form-fields__helper">
-              Create the election first. Candidates can be added after the election is published
-              from the election Initiative page.
-            </span>
-          ) : (
-            <span className="initiative-form-fields__helper">
-              Voters choose Support, Do not support, or Abstain.
-            </span>
-          )}
-        </label>
-      ) : null}
-
-      {presentation.isPublicChoice &&
-      ballotMode === "SELECT_ONE_CANDIDATE" &&
-      initiativeId ? (
         <p className="initiative-form-fields__helper" role="status">
-          Candidate roster is managed on the published election Overview — not on this creation
-          form.
+          {PUBLIC_CHOICE_ELECTION_CREATE_HELPER}
         </p>
       ) : null}
 
@@ -315,7 +283,7 @@ export function InitiativeFormFields({
       ) : null}
 
       <label className="initiative-form-fields__field">
-        <span>Start date</span>
+        <span>{presentation.isPublicChoice ? "Start of Voting" : "Start date"}</span>
         <input
           type="date"
           className="hu-form-control"
@@ -327,7 +295,7 @@ export function InitiativeFormFields({
       </label>
 
       <label className="initiative-form-fields__field">
-        <span>Completion date</span>
+        <span>{presentation.isPublicChoice ? "End of Voting" : "Completion date"}</span>
         <input
           type="date"
           className="hu-form-control"
@@ -406,7 +374,22 @@ export function buildInitiativeFormValuesFromMetadata(
 export function initiativeFormValuesToSaveInput(
   values: InitiativeFormValues,
   options?: { isPublicChoice?: boolean },
-) {
+): {
+  communityAssociation: string | undefined;
+  activityArea: string;
+  activityAreaOther: string | undefined;
+  participationScope: ParticipationScope;
+  countrySlug: string | undefined;
+  regionSlug: string | undefined;
+  region: string | undefined;
+  communitySlug: string | undefined;
+  coverMedia: InitiativeFormValues["coverMedia"];
+  clearCoverMedia: boolean;
+  imageAltText: string | undefined;
+  startDate: string | undefined;
+  completionDate: string | undefined;
+  ballotMode: PublicChoiceBallotMode | undefined;
+} {
   return {
     communityAssociation: values.communityAssociation || undefined,
     activityArea: values.activityArea,
@@ -417,17 +400,11 @@ export function initiativeFormValuesToSaveInput(
     regionSlug: values.regionCode || undefined,
     region: values.regionCode === OTHER_REGION_SLUG ? values.regionLabel || undefined : undefined,
     communitySlug: values.communityCode || undefined,
-    // UX Evolution Pack 03 — coverMedia is now the single source of truth;
-    // the legacy `imageUrl` field is derived server-side from it (see
-    // `resolveCoverMediaUpdate` in `initiative.service.ts`) rather than sent
-    // directly, so the two can never disagree.
     coverMedia: values.coverMedia,
     clearCoverMedia: !values.coverMedia,
     imageAltText: values.imageAltText || undefined,
     startDate: values.startDate || undefined,
     completionDate: values.completionDate || undefined,
-    ballotMode: options?.isPublicChoice
-      ? resolvePublicChoiceBallotMode(values.ballotMode ?? DEFAULT_PUBLIC_CHOICE_BALLOT_MODE)
-      : undefined,
+    ballotMode: options?.isPublicChoice ? ("SELECT_ONE_CANDIDATE" as const) : undefined,
   };
 }

@@ -172,7 +172,7 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
     )}`;
   }
 
-  /** Pack 03 — SELECT_ONE voting lives on Collective Decision, not Discussion. */
+  /** Pack 03/04 — SELECT_ONE: pointer only (no ballot). Pack 04: usually unmounted via discussionShowsVoteBallot=false. */
   if (ballotMode === "SELECT_ONE_CANDIDATE" && loadState !== "loading") {
     return (
       <section className="pie-public-choice-vote" aria-labelledby="pie-public-choice-vote-title">
@@ -180,7 +180,7 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
           Candidate voting
         </h3>
         <p className="pie-public-choice-vote__help">
-          Vote for candidates on the Collective Decision stage. Discussion is for comments and
+          Select or recall candidates on the Initiative Overview. Discussion is for comments and
           election conversation only.
         </p>
       </section>

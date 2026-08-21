@@ -88,3 +88,15 @@ export async function castOrUpdateInitiativeDecisionVote(
     },
   );
 }
+
+/**
+ * Pack 04 — clear the caller's effective Decision Vote (Select → Recall).
+ * Backend: DELETE /api/v1/initiative-collective-decisions/:decisionId/vote
+ * credentials:include (auth cookies / visitor cookie). Stub until API lands.
+ */
+export async function recallInitiativeDecisionVote(decisionId: string): Promise<void> {
+  await apiRequest<null>(
+    `/api/v1/initiative-collective-decisions/${encodeURIComponent(decisionId)}/vote`,
+    { method: "DELETE" },
+  );
+}

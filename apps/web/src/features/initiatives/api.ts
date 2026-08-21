@@ -158,6 +158,14 @@ export async function archiveInitiative(initiativeId: string): Promise<Initiativ
   });
 }
 
+/** Pack 04 — Author closes Public Choice election voting. */
+export async function closePublicChoiceElection(initiativeId: string): Promise<unknown> {
+  return apiRequest(
+    `/api/v1/initiatives/${encodeURIComponent(initiativeId)}/public-choice/close-election`,
+    { method: "POST" },
+  );
+}
+
 /**
  * Initiative UX Pack 01.1 — permanently removes an unpublished Draft
  * Initiative owned by the current Author. Server-side rejects anything

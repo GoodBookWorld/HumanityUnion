@@ -10,10 +10,7 @@ import type {
   PublicInitiativeWithVersionHistory,
   WorldInitiativeCardProjection,
 } from "@hu/types";
-import {
-  resolveInitiativeLifecycleProfile,
-  resolvePublicChoiceBallotMode,
-} from "@hu/types";
+import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import { RelatedInitiativesWidget } from "../../community-intelligence/components/RelatedInitiativesWidget";
 import { InitiativeActiveAlliesWidget } from "../../initiative-active-allies/components/InitiativeActiveAlliesWidget";
@@ -40,7 +37,7 @@ interface PublicExperienceSidebarProps {
   viewerIsSteward?: boolean;
   /** Pack 02A — gates Election/Candidates widget (PUBLIC_CHOICE only). */
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
-  /** Pack 03 — hide Initiative Support for SELECT_ONE candidate elections. */
+  /** Pack 04 — reserved; Initiative Support hidden for all PUBLIC_CHOICE. */
   ballotMode?: string | null;
 }
 
@@ -59,15 +56,14 @@ export function PublicExperienceSidebar({
   participationJourney = null,
   viewerIsSteward = false,
   lifecycleProfile = null,
-  ballotMode = null,
+  ballotMode: _ballotMode = null,
 }: PublicExperienceSidebarProps) {
-  const hideSupportForSelectOne =
-    resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE" &&
-    resolvePublicChoiceBallotMode(ballotMode) === "SELECT_ONE_CANDIDATE";
+  const hideInitiativeSupport =
+    resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE";
 
   return (
     <>
-      {!hideSupportForSelectOne ? (
+      {!hideInitiativeSupport ? (
         <PublicInitiativeSupportStatistics
           statistics={statistics}
           onSignalChange={onSignalChange}

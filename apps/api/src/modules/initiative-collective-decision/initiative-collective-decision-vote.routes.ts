@@ -15,6 +15,8 @@ import {
   castOrUpdateVisitorInitiativeDecisionVote,
   getMyInitiativeDecisionVote,
   getVisitorInitiativeDecisionVote,
+  recallInitiativeDecisionVote,
+  recallVisitorInitiativeDecisionVote,
 } from "../initiative-decision-vote/initiative-decision-vote.service.js";
 import { validateCastInitiativeDecisionVoteInput } from "../initiative-decision-vote/initiative-decision-vote.validators.js";
 
@@ -147,6 +149,27 @@ initiativeCollectiveDecisionVoteRouter.get(
 
       const vote = await getVisitorInitiativeDecisionVote(existing, getDecisionId(req));
       res.json(createSuccessResponse(vote, vote ? "Vote loaded." : "No vote recorded yet."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+/** Pack 04 — Recall: clear the caller's effective vote. */
+initiativeCollectiveDecisionVoteRouter.delete(
+  "/:decisionId/vote",
+  optionalAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      if (req.auth?.id) {
+        const identity = await resolveRequestIdentity(req);
+        await recallInitiativeDecisionVote(identity, getDecisionId(req));
+        res.json(createSuccessResponse(null, "Vote recalled."));
+        return;
+      }
+
+      await recallVisitorInitiativeDecisionVote(resolveVisitorKey(req), getDecisionId(req));
+      res.json(createSuccessResponse(null, "Visitor vote recalled."));
     } catch (error) {
       handleServiceError(res, error);
     }

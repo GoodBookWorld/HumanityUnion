@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { submitInitiativeVideoLink, uploadInitiativeImage } from "../../media-upload/media-upload-api";
 import {
   archiveInitiative,
+  closePublicChoiceElection,
   republishInitiative,
   updatePublishedInitiative,
   type SaveInitiativeDraftInput,
@@ -47,6 +48,8 @@ export function InitiativePublishedEditor({
   const [saving, setSaving] = useState(false);
   const [republishing, setRepublishing] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [closingElection, setClosingElection] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -55,13 +58,14 @@ export function InitiativePublishedEditor({
   }, [initiative]);
 
   const isArchived = initiative.lifecyclePhase === "archived";
+  const isPublicChoice = initiative.lifecycleProfile === "PUBLIC_CHOICE";
 
   function buildInput(): SaveInitiativeDraftInput {
     return {
       title: form.title,
       description: form.description,
       ...initiativeFormValuesToSaveInput(form.fields, {
-        isPublicChoice: initiative.lifecycleProfile === "PUBLIC_CHOICE",
+        isPublicChoice,
       }),
     };
   }
@@ -114,6 +118,21 @@ export function InitiativePublishedEditor({
     }
   }
 
+  async function handleCloseElection() {
+    setClosingElection(true);
+    setMessage(null);
+    try {
+      await closePublicChoiceElection(initiative.initiativeId);
+      setConfirmClose(false);
+      setMessage("Election closed. Voting stopped; Final Results are available for 72 hours.");
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Unknown error";
+      setMessage(`Close election failed: ${detail}`);
+    } finally {
+      setClosingElection(false);
+    }
+  }
+
   if (isArchived) {
     return (
       <div className="initiative-draft-editor">
@@ -123,6 +142,8 @@ export function InitiativePublishedEditor({
       </div>
     );
   }
+
+  const busy = saving || republishing || archiving || closingElection;
 
   return (
     <div className="initiative-draft-editor">
@@ -164,28 +185,44 @@ export function InitiativePublishedEditor({
       />
 
       <div className="initiative-draft-editor__actions">
-        <button
-          type="button"
-          onClick={() => void handleUpdate()}
-          disabled={saving || republishing || archiving}
-        >
+        <button type="button" onClick={() => void handleUpdate()} disabled={busy}>
           {saving ? "Updating..." : "Update"}
         </button>
-        <button
-          type="button"
-          onClick={() => void handleRepublish()}
-          disabled={saving || republishing || archiving}
-        >
+        <button type="button" onClick={() => void handleRepublish()} disabled={busy}>
           {republishing ? "Republishing..." : "Republish"}
         </button>
-        <button
-          type="button"
-          onClick={() => void handleArchive()}
-          disabled={saving || republishing || archiving}
-        >
-          {archiving ? "Archiving..." : "Archive"}
-        </button>
+        {isPublicChoice ? (
+          <button type="button" onClick={() => setConfirmClose(true)} disabled={busy}>
+            {closingElection ? "Closing…" : "Close election"}
+          </button>
+        ) : (
+          <button type="button" onClick={() => void handleArchive()} disabled={busy}>
+            {archiving ? "Archiving..." : "Archive"}
+          </button>
+        )}
       </div>
+
+      {confirmClose ? (
+        <div
+          className="initiative-draft-editor__confirm"
+          role="dialog"
+          aria-labelledby="close-election-title"
+        >
+          <h3 id="close-election-title">Close election?</h3>
+          <p>
+            This will stop voting and finalize the current results. Temporary election results will
+            remain available for 72 hours.
+          </p>
+          <div className="initiative-draft-editor__actions">
+            <button type="button" onClick={() => setConfirmClose(false)} disabled={busy}>
+              Cancel
+            </button>
+            <button type="button" onClick={() => void handleCloseElection()} disabled={busy}>
+              {closingElection ? "Closing…" : "Close election"}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {message ? <p className="initiative-draft-editor__message">{message}</p> : null}
     </div>

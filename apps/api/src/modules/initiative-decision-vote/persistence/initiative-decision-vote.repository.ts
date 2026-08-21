@@ -195,6 +195,17 @@ export async function listInitiativeDecisionVotesByParticipant(
   return documents.map((document) => fromInitiativeDecisionVoteMongoDocument(document));
 }
 
+/** Pack 04 — remove one effective vote (Recall). Exact voteId only. */
+export async function deleteInitiativeDecisionVoteById(
+  voteId: string,
+  options: RepositorySessionOptions = {},
+): Promise<boolean> {
+  await ensureInitiativeDecisionVoteMongoReady();
+
+  const result = await votesCollection().deleteOne({ voteId }, { session: options.session });
+  return (result.deletedCount ?? 0) > 0;
+}
+
 /**
  * Global scan preserving the pre-existing `listAllVotes()` capability that
  * `platform-statistics.service.ts` depends on for active-member computation

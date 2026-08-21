@@ -28,6 +28,7 @@ import {
   createDecision,
   getDecisionById,
   getNextSequenceNumber,
+  listDecisions,
   listDecisionsByInitiative,
   listDecisionsBySteward,
   updateDecision,
@@ -380,9 +381,21 @@ export async function closeInitiativeCollectiveDecision(
 
   assertTransitionAllowed(decision, "closed");
 
-  const updated = updateDecision(decisionId, {
+  return finalizeCollectiveDecisionClose(decision, new Date().toISOString(), identity.participantId);
+}
+
+/**
+ * Pack 04A — shared close/finalize (manual + scheduled).
+ * Sets status=closed, persists closedAt once, freezes PUBLIC_CHOICE Final Results.
+ */
+async function finalizeCollectiveDecisionClose(
+  decision: InitiativeCollectiveDecision,
+  closedAt: string,
+  actorParticipantId: string | null,
+): Promise<InitiativeCollectiveDecision> {
+  const updated = updateDecision(decision.decisionId, {
     status: "closed",
-    closedAt: new Date().toISOString(),
+    closedAt,
   });
 
   if (!updated) {
@@ -390,16 +403,22 @@ export async function closeInitiativeCollectiveDecision(
   }
 
   if (updated.decisionSessionId) {
-    await generateCivicActionPackageForDecision(updated.decisionId);
+    try {
+      await generateCivicActionPackageForDecision(updated.decisionId);
+    } catch {
+      // PUBLIC_CHOICE / scheduled close must not fail if CAP generation has no Decision Session.
+    }
   }
 
-  emitCivicNotificationEvent({
-    eventType: "decision_closed",
-    entityType: "collective_decision",
-    entityId: decisionId,
-    initiativeId: updated.initiativeId,
-    actorMemberId: identity.participantId,
-  });
+  if (actorParticipantId) {
+    emitCivicNotificationEvent({
+      eventType: "decision_closed",
+      entityType: "collective_decision",
+      entityId: decision.decisionId,
+      initiativeId: updated.initiativeId,
+      actorMemberId: actorParticipantId,
+    });
+  }
 
   // Pack 02C — freeze temporary Final Results snapshot for PUBLIC_CHOICE retention.
   try {
@@ -409,13 +428,12 @@ export async function closeInitiativeCollectiveDecision(
       resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE" &&
       updated.closedAt
     ) {
-      const { freezePublicChoiceResultsSnapshot } = await import(
+      const { ensurePublicChoiceResultsFrozenForClosedDecision } = await import(
         "../public-choice-results-retention/public-choice-results-retention.service.js"
       );
-      await freezePublicChoiceResultsSnapshot({
+      await ensurePublicChoiceResultsFrozenForClosedDecision({
         initiative,
         decision: updated,
-        votingCloseAt: updated.closedAt,
       });
     }
   } catch {
@@ -423,6 +441,123 @@ export async function closeInitiativeCollectiveDecision(
   }
 
   return updated;
+}
+
+/**
+ * Pack 04A — scheduled End of Voting auto-close (system path, no steward identity).
+ * Idempotent: already-closed decisions are returned unchanged (closedAt preserved).
+ * closedAt = scheduled closesAt so late scheduler discovery does not extend retention.
+ */
+export async function closeInitiativeCollectiveDecisionAtScheduledEnd(
+  decisionId: string,
+  nowIso?: string,
+): Promise<InitiativeCollectiveDecision | null> {
+  const decision = getDecisionById(decisionId);
+  if (!decision) {
+    return null;
+  }
+
+  if (decision.status === "closed") {
+    const initiative = getInitiativeById(decision.initiativeId);
+    if (
+      initiative &&
+      resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE"
+    ) {
+      const { ensurePublicChoiceResultsFrozenForClosedDecision } = await import(
+        "../public-choice-results-retention/public-choice-results-retention.service.js"
+      );
+      await ensurePublicChoiceResultsFrozenForClosedDecision({
+        initiative,
+        decision,
+        nowIso,
+      });
+    }
+    return decision;
+  }
+
+  if (decision.status !== "opened") {
+    return null;
+  }
+
+  const now = Date.parse(nowIso ?? new Date().toISOString());
+  const closesAt = Date.parse(decision.closesAt);
+  if (Number.isNaN(now) || Number.isNaN(closesAt) || now < closesAt) {
+    return null;
+  }
+
+  return finalizeCollectiveDecisionClose(decision, decision.closesAt, null);
+}
+
+/**
+ * Pack 04A — discover overdue opened PUBLIC_CHOICE elections and close them once.
+ * Invoked from the existing retention scheduler (no second scheduler).
+ */
+export async function closeOverduePublicChoiceElections(nowIso?: string): Promise<{
+  closedCount: number;
+  decisionIds: string[];
+}> {
+  const now = nowIso ?? new Date().toISOString();
+  const nowMs = Date.parse(now);
+  const closedIds: string[] = [];
+
+  for (const decision of listDecisions()) {
+    if (decision.status !== "opened") {
+      continue;
+    }
+
+    const initiative = getInitiativeById(decision.initiativeId);
+    if (
+      !initiative ||
+      resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) !== "PUBLIC_CHOICE"
+    ) {
+      continue;
+    }
+
+    const closesAt = Date.parse(decision.closesAt);
+    if (Number.isNaN(nowMs) || Number.isNaN(closesAt) || nowMs < closesAt) {
+      continue;
+    }
+
+    const closed = await closeInitiativeCollectiveDecisionAtScheduledEnd(
+      decision.decisionId,
+      now,
+    );
+    if (closed?.status === "closed") {
+      closedIds.push(closed.decisionId);
+    }
+  }
+
+  return { closedCount: closedIds.length, decisionIds: closedIds };
+}
+
+/**
+ * Pack 04 — Author Manage "Close election": close the open PUBLIC_CHOICE
+ * Collective Decision. Sets canonical closedAt for 72h retention.
+ */
+export async function closePublicChoiceElectionForInitiative(
+  identity: RequestIdentity,
+  initiativeId: string,
+): Promise<InitiativeCollectiveDecision> {
+  const initiative = getInitiativeById(initiativeId);
+  if (!initiative) {
+    throw new Error("Initiative not found.");
+  }
+
+  assertInitiativeOwnership(initiative, identity);
+
+  if (resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) !== "PUBLIC_CHOICE") {
+    throw new Error("Close election is only available for Public Choice initiatives.");
+  }
+
+  const openDecision = listDecisionsByInitiative(initiativeId).find(
+    (decision) => decision.status === "opened",
+  );
+
+  if (!openDecision) {
+    throw new Error("No open election to close.");
+  }
+
+  return closeInitiativeCollectiveDecision(identity, openDecision.decisionId);
 }
 
 export function cancelInitiativeCollectiveDecision(

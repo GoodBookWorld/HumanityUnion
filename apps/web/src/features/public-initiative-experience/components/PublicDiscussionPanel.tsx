@@ -1048,7 +1048,7 @@ export function PublicDiscussionPanel({
           </>
         ) : (
           <>
-            Share comments about this Public Choice. Candidate voting is on Collective Decision.
+            Share comments about this Public Choice. Candidate voting is on Overview.
             Comments require a signed-in Participant.
           </>
         )}

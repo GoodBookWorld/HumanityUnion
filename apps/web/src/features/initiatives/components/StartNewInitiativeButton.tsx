@@ -47,7 +47,7 @@ const DEFAULT_FORM_VALUES: InitiativeFormValues = {
   regionLabel: "",
   communityCode: "",
   communityLabel: "",
-  ballotMode: "SUPPORT_OPPOSE",
+  ballotMode: "SELECT_ONE_CANDIDATE",
 };
 
 function formatInitiativeError(error: unknown): string {

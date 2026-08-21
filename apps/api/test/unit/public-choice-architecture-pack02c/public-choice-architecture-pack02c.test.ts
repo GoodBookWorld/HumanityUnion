@@ -19,6 +19,9 @@ describe("Public Choice Pack 02C — presentation + retention contracts", () => 
     const page = read(
       "apps/web/src/features/public-initiative-experience/components/PublicChoiceElectionPage.tsx",
     );
+    const board = read(
+      "apps/web/src/features/public-choice-candidate/components/PublicChoiceElectionResultsBoard.tsx",
+    );
     assert.doesNotMatch(page, /buildPublicChoiceCandidatePresentationSlotPlan/);
     assert.doesNotMatch(page, /\+ Add candidate|buildPublicChoiceCandidateSubmitHref/);
     assert.doesNotMatch(page, /PublicChoiceCandidateSubmitPanel/);
@@ -27,7 +30,7 @@ describe("Public Choice Pack 02C — presentation + retention contracts", () => 
     assert.match(page, /Community voting results|PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER/);
     assert.match(page, /CURRENT RESULTS/);
     assert.match(page, /FINAL RESULTS/);
-    assert.match(page, /tally\.percentage/);
+    assert.match(board, /tally\.percentage/);
     assert.doesNotMatch(page, /visitorKey/);
   });
 

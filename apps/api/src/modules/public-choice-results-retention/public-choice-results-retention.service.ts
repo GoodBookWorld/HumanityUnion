@@ -207,6 +207,16 @@ export async function cleanupExpiredPublicChoiceResults(): Promise<{
   const nowIso = new Date().toISOString();
   let frozenDecisions = 0;
 
+  // Pack 04A — close overdue opened PUBLIC_CHOICE elections (status → closed + freeze).
+  try {
+    const { closeOverduePublicChoiceElections } = await import(
+      "../initiative-collective-decision/initiative-collective-decision.service.js"
+    );
+    await closeOverduePublicChoiceElections(nowIso);
+  } catch {
+    // Retention purge still proceeds.
+  }
+
   // Freeze any PUBLIC_CHOICE decision whose voting window has ended but snapshot is missing.
   try {
     const { listDecisions } = await import(

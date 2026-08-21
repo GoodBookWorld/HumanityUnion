@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type {
-  InitiativeDecisionSelectOneAggregates,
   InitiativeDecisionSupportOpposeAggregates,
   PublicChoiceBallotMode,
   PublicChoiceCandidatePublicProjection,
@@ -13,251 +12,47 @@ import type {
 } from "@hu/types";
 import {
   PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER,
+  publicChoiceElectionVotingStatusLabel,
   resolvePublicChoiceBallotMode,
+  resolvePublicChoiceElectionVotingStatus,
 } from "@hu/types";
+import { formatPublicGeography } from "@hu/geography";
 
 import {
   getPublicInitiativeCollectiveDecision,
   listPublicInitiativeCollectiveDecisions,
 } from "../../initiative-collective-decision/api";
-import { isCollectiveDecisionVotingWindowOpen } from "../../initiative-collective-decision-lifecycle/collective-decision-voting";
 import {
-  buildInitiativeExperienceHref,
-} from "../../initiative-owner-studio/initiative-experience-routes";
+  CivicShareButton,
+  resolveAbsoluteCivicShareUrl,
+} from "../../civic-share";
 import { getPublicInitiative } from "../../initiatives/api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { listPublicChoiceCandidates } from "../../public-choice-candidate/api";
+import { PublicChoiceElectionResultsBoard } from "../../public-choice-candidate/components/PublicChoiceElectionResultsBoard";
 import { downloadPublicChoiceResultsPdf } from "../../public-choice-results-retention/api";
 
 import "../public-initiative-experience.css";
 
-function formatGeo(initiative: PublicInitiativeProjection): string {
-  const parts = [
-    initiative.metadata.communityAssociation,
-    initiative.metadata.region,
-    initiative.metadata.countrySlug,
-  ].filter((part): part is string => Boolean(part?.trim()));
-  return parts.join(" · ") || "—";
+function formatDateTime(value: string | null | undefined): string | null {
+  if (!value?.trim()) {
+    return null;
+  }
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+  return new Date(parsed).toLocaleString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
-}
-
-function ParticipationBreakdown({
-  breakdown,
-}: {
-  breakdown: {
-    visitors: number;
-    participants: number;
-    members: number;
-    visitorPercentage: number;
-    participantPercentage: number;
-    memberPercentage: number;
-    totalEffectiveVoters: number;
-  };
-}) {
-  return (
-    <section className="pie-election-results__participation" aria-labelledby="pie-participation-title">
-      <h3 id="pie-participation-title">Participation breakdown</h3>
-      <p className="pie-election-results__participation-note">
-        Visitor, Participant, and Member are mutually exclusive. A Member vote counts once as Member —
-        never also as Participant. Visitor identity is never shown publicly.
-      </p>
-      <ul className="pie-election-results__participation-list">
-        <li>
-          <span>Total voters</span>
-          <strong>{breakdown.totalEffectiveVoters}</strong>
-        </li>
-        <li>
-          <span>Visitors</span>
-          <strong>
-            {breakdown.visitors} ({formatPercent(breakdown.visitorPercentage)})
-          </strong>
-        </li>
-        <li>
-          <span>Participants</span>
-          <strong>
-            {breakdown.participants} ({formatPercent(breakdown.participantPercentage)})
-          </strong>
-        </li>
-        <li>
-          <span>Members</span>
-          <strong>
-            {breakdown.members} ({formatPercent(breakdown.memberPercentage)})
-          </strong>
-        </li>
-      </ul>
-    </section>
-  );
-}
-
-function SelectOneResults({
-  initiativeId,
-  candidates,
-  aggregates,
-  resultsLabel,
-  votingOpen,
-  downloadAvailable,
-  onDownload,
-  downloadBusy,
-}: {
-  initiativeId: string;
-  candidates: PublicChoiceCandidatePublicProjection[];
-  aggregates: InitiativeDecisionSelectOneAggregates;
-  resultsLabel: string;
-  votingOpen: boolean;
-  downloadAvailable: boolean;
-  onDownload: () => void;
-  downloadBusy: boolean;
-}) {
-  const byId = new Map(candidates.map((candidate) => [candidate.candidateId, candidate]));
-  const rankedIds = new Set(aggregates.candidates.map((item) => item.candidateId));
-  const unrankedCandidates = candidates.filter((candidate) => !rankedIds.has(candidate.candidateId));
-  const voteHref = `${buildInitiativeExperienceHref(initiativeId)}#collective-decision`;
-
-  return (
-    <section className="pie-election-results" aria-labelledby="pie-election-results-title">
-      <header className="pie-election-results__heading">
-        <div className="pie-election-results__heading-row">
-          <h2 id="pie-election-results-title">{resultsLabel}</h2>
-          {downloadAvailable ? (
-            <button
-              type="button"
-              className="pie-election-results__download"
-              onClick={onDownload}
-              disabled={downloadBusy}
-            >
-              {downloadBusy ? "Preparing…" : "Download results"}
-            </button>
-          ) : null}
-        </div>
-        {votingOpen ? (
-          <p role="status">
-            Voting is open. Current community ranking — no winner is declared.{" "}
-            <Link href={voteHref}>Go to Collective Decision to vote</Link>
-          </p>
-        ) : (
-          <p role="status">
-            Voting is closed. Top-ranked candidates reflect effective votes. Ties remain ties.
-          </p>
-        )}
-      </header>
-
-      <p className="pie-election-results__total">
-        Total effective voters: <strong>{aggregates.totalEffectiveVoters}</strong>
-      </p>
-
-      {candidates.length === 0 ? (
-        <p className="pie-election-results__empty" role="status">
-          No candidates listed yet. Add candidates from the Initiative Overview.
-        </p>
-      ) : null}
-
-      <ol className="pie-election-results__ranking">
-        {aggregates.candidates.map((tally) => {
-          const candidate = byId.get(tally.candidateId);
-          const photo = resolveMediaUrl(candidate?.photoUrl);
-          const barWidth = Math.max(0, Math.min(100, tally.percentage));
-
-          return (
-            <li key={tally.candidateId} className="pie-election-results__row">
-              <div className="pie-election-results__rank" aria-label={`Rank ${tally.rank}`}>
-                {tally.rank}
-                {tally.isTie ? <span className="pie-election-results__tie">Tie</span> : null}
-              </div>
-              <div className="pie-election-results__identity">
-                {photo ? (
-                  <img
-                    src={photo}
-                    alt=""
-                    width={72}
-                    height={72}
-                    className="pie-election-results__photo"
-                  />
-                ) : (
-                  <span className="pie-election-results__photo-placeholder" aria-hidden>
-                    —
-                  </span>
-                )}
-                <div>
-                  <strong>{candidate?.name ?? "Candidate"}</strong>
-                  {candidate?.campaignPageUrl ? (
-                    <p>
-                      <a href={candidate.campaignPageUrl} target="_blank" rel="noopener noreferrer">
-                        Campaign page
-                      </a>
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <div
-                className="pie-election-results__metrics"
-                aria-label={`${tally.count} votes, ${formatPercent(tally.percentage)}`}
-              >
-                <div className="pie-election-results__count">{tally.count} votes</div>
-                <div className="pie-election-results__percent">{formatPercent(tally.percentage)}</div>
-                <div
-                  className="pie-election-results__bar"
-                  role="meter"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Number(tally.percentage.toFixed(1))}
-                  aria-label={`${candidate?.name ?? "Candidate"} share of effective votes`}
-                >
-                  <span style={{ width: `${barWidth}%` }} />
-                </div>
-              </div>
-            </li>
-          );
-        })}
-
-        {unrankedCandidates.map((candidate) => {
-          const photo = resolveMediaUrl(candidate.photoUrl);
-          return (
-            <li key={candidate.candidateId} className="pie-election-results__row">
-              <div className="pie-election-results__rank" aria-hidden>
-                —
-              </div>
-              <div className="pie-election-results__identity">
-                {photo ? (
-                  <img
-                    src={photo}
-                    alt=""
-                    width={72}
-                    height={72}
-                    className="pie-election-results__photo"
-                  />
-                ) : (
-                  <span className="pie-election-results__photo-placeholder" aria-hidden>
-                    —
-                  </span>
-                )}
-                <div>
-                  <strong>{candidate.name}</strong>
-                </div>
-              </div>
-              <div className="pie-election-results__metrics">
-                <div className="pie-election-results__count">0 votes</div>
-                <div className="pie-election-results__percent">0.0%</div>
-                <div className="pie-election-results__bar" role="presentation" aria-hidden>
-                  <span style={{ width: "0%" }} />
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-
-      <div className="pie-election-results__abstain">
-        <strong>Abstain</strong>
-        <span>{aggregates.abstain} votes</span>
-        <span>{formatPercent(aggregates.abstainPercentage)}</span>
-      </div>
-
-      <ParticipationBreakdown breakdown={aggregates.participationBreakdown} />
-    </section>
-  );
 }
 
 function SupportOpposeResults({
@@ -268,6 +63,7 @@ function SupportOpposeResults({
   downloadAvailable,
   onDownload,
   downloadBusy,
+  shareSlot,
 }: {
   aggregates: InitiativeDecisionSupportOpposeAggregates | null;
   resultsLabel: string;
@@ -276,6 +72,7 @@ function SupportOpposeResults({
   downloadAvailable: boolean;
   onDownload: () => void;
   downloadBusy: boolean;
+  shareSlot?: ReactNode;
 }) {
   const support = aggregates?.total.support ?? fallback.support;
   const doNotSupport = aggregates?.total.doNotSupport ?? fallback.doNotSupport;
@@ -293,16 +90,19 @@ function SupportOpposeResults({
       <header className="pie-election-results__heading">
         <div className="pie-election-results__heading-row">
           <h2 id="pie-election-results-title">{resultsLabel}</h2>
-          {downloadAvailable ? (
-            <button
-              type="button"
-              className="pie-election-results__download"
-              onClick={onDownload}
-              disabled={downloadBusy}
-            >
-              {downloadBusy ? "Preparing…" : "Download results"}
-            </button>
-          ) : null}
+          <div className="pie-election-results__heading-actions">
+            {shareSlot}
+            {downloadAvailable ? (
+              <button
+                type="button"
+                className="pie-election-results__download"
+                onClick={onDownload}
+                disabled={downloadBusy}
+              >
+                {downloadBusy ? "Preparing…" : "Download results"}
+              </button>
+            ) : null}
+          </div>
         </div>
         {votingOpen ? (
           <p role="status">Voting is open. These are current community results.</p>
@@ -340,16 +140,13 @@ function SupportOpposeResults({
           );
         })}
       </ul>
-      {aggregates?.participationBreakdown ? (
-        <ParticipationBreakdown breakdown={aggregates.participationBreakdown} />
-      ) : null}
     </section>
   );
 }
 
 /**
- * Pack 02C — presentation-ready Public Choice election results.
- * Canonical Decision Vote aggregates only; temporary 72-hour retention.
+ * Pack 04 — presentation-ready Public Choice election results page.
+ * Select/Recall voting lives on Overview; this page is results + share.
  */
 export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: string }) {
   const [initiative, setInitiative] = useState<PublicInitiativeProjection | null>(null);
@@ -390,16 +187,26 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
   const ballotMode: PublicChoiceBallotMode = resolvePublicChoiceBallotMode(
     decision?.ballotMode ?? initiative?.metadata.ballotMode,
   );
-  const votingOpen = decision ? isCollectiveDecisionVotingWindowOpen(decision) : false;
-  const retention = decision?.resultsRetention;
-  const resultsExpired =
-    retention?.status === "results_expired" ||
-    Boolean(initiative?.metadata.publicChoiceResultsExpiredAt);
+
+  const votingStatus = resolvePublicChoiceElectionVotingStatus({
+    decisionStatus: decision?.status,
+    openedAt: decision?.openedAt,
+    closesAt: decision?.closesAt,
+    closedAt: decision?.closedAt,
+    resultsExpiredAt:
+      decision?.resultsRetention?.resultsExpiredAt ??
+      initiative?.metadata.publicChoiceResultsExpiredAt,
+    resultsRetentionStatus: decision?.resultsRetention?.status,
+  });
+  const votingOpen = votingStatus === "OPEN";
+  const resultsExpired = votingStatus === "EXPIRED";
+  const electionStatusLabel = publicChoiceElectionVotingStatusLabel(votingStatus);
+
   const resultsLabel = votingOpen
     ? "CURRENT RESULTS"
     : resultsExpired
       ? "RESULTS"
-      : decision?.status === "closed" || retention?.status === "results_available"
+      : decision?.status === "closed" || decision?.resultsRetention?.status === "results_available"
         ? "FINAL RESULTS"
         : "RESULTS";
 
@@ -408,7 +215,15 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
     return aggregates?.ballotMode === "SELECT_ONE_CANDIDATE" ? aggregates : null;
   }, [decision?.ballotAggregates]);
 
-  const downloadAvailable = Boolean(retention?.downloadAvailable) && !resultsExpired;
+  const downloadAvailable =
+    Boolean(decision?.resultsRetention?.downloadAvailable) && !resultsExpired;
+
+  const totalVoters =
+    selectOneAggregates?.totalEffectiveVoters ??
+    (decision?.ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
+      ? decision.ballotAggregates.total.totalVotes
+      : decision?.statistics.totalVotesCast) ??
+    0;
 
   async function handleDownload(): Promise<void> {
     if (!decision || downloadBusy) {
@@ -442,6 +257,34 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
     ) ?? undefined;
   const aggregates = decision?.ballotAggregates;
   const initiativeHref = `/initiatives/public/${encodeURIComponent(initiativeId)}`;
+  const overviewVoteHref = `${initiativeHref}#overview`;
+  const electionPath = `/initiatives/public/${encodeURIComponent(initiativeId)}/election`;
+
+  const startOfVoting =
+    formatDateTime(decision?.openedAt) ?? formatDateTime(initiative.metadata.startDate);
+  const endOfVoting =
+    formatDateTime(decision?.closedAt) ??
+    formatDateTime(decision?.closesAt) ??
+    formatDateTime(initiative.metadata.completionDate);
+
+  const geography = formatPublicGeography({
+    countryCode: initiative.metadata.countrySlug,
+    regionCode: initiative.metadata.regionSlug,
+    communitySlug: initiative.metadata.communitySlug,
+    regionLabel: initiative.metadata.region,
+    communityAssociation: initiative.metadata.communityAssociation,
+  });
+
+  const sharePayload = {
+    url: resolveAbsoluteCivicShareUrl(electionPath),
+    title: electionName,
+    image: cover,
+    optionalText: initiative.description?.slice(0, 160),
+    contentType: "initiative" as const,
+    initiativeId,
+  };
+
+  const shareSlot = <CivicShareButton payload={sharePayload} ariaLabel={`Share ${electionName}`} />;
 
   if (resultsExpired) {
     return (
@@ -451,7 +294,7 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
         </p>
         <header className="pie-election-page__header">
           <p className="pie-election-page__eyebrow">Humanity Union community vote</p>
-          <h1>{electionName}</h1>
+          <h1 className="pie-election-page__title">{electionName}</h1>
           <p role="status" className="pie-election-page__expired-message">
             Results no longer available
           </p>
@@ -467,88 +310,77 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
     );
   }
 
+  const emptySelectOne = {
+    ballotMode: "SELECT_ONE_CANDIDATE" as const,
+    candidates: [],
+    abstain: 0,
+    abstainPercentage: 0,
+    totalEffectiveVoters: 0,
+    participationBreakdown: {
+      visitors: 0,
+      participants: 0,
+      members: 0,
+      totalEffectiveVoters: 0,
+      visitorPercentage: 0,
+      participantPercentage: 0,
+      memberPercentage: 0,
+    },
+  };
+
   return (
     <article className="pie-election-page">
       <p>
         <Link href={initiativeHref}>← Back to Initiative</Link>
       </p>
 
-      <header className="pie-election-page__header">
-        <p className="pie-election-page__eyebrow">Humanity Union community vote</p>
-        <h1>{electionName}</h1>
-        <p>{initiative.description}</p>
-        {cover ? (
-          <img src={cover} alt={initiative.metadata.imageAltText || electionName} />
-        ) : null}
-        <ul className="pie-election-page__meta">
-          <li>Geography: {formatGeo(initiative)}</li>
-          <li>
-            Voting status:{" "}
-            {decision
-              ? votingOpen
-                ? "Open"
-                : decision.status === "closed" || retention?.status === "results_available"
-                  ? "Closed"
-                  : decision.status
-              : "Not opened"}
-          </li>
-          <li>
-            Ballot type:{" "}
-            {ballotMode === "SELECT_ONE_CANDIDATE" ? "Choose one candidate" : "Support / Oppose"}
-          </li>
-          {decision ? (
-            <li>
-              Voting period:{" "}
-              {decision.openedAt
-                ? `Opened ${new Date(decision.openedAt).toLocaleString()}`
-                : "—"}
-              {" · "}
-              {votingOpen
-                ? `Closes ${new Date(decision.closesAt).toLocaleString()}`
-                : decision.closedAt
-                  ? `Closed ${new Date(decision.closedAt).toLocaleString()}`
-                  : `Scheduled close ${new Date(decision.closesAt).toLocaleString()}`}
-            </li>
+      <p className="pie-election-page__eyebrow">Humanity Union community vote</p>
+      <h1 className="pie-election-page__title">{electionName}</h1>
+
+      <div className="pie-election-page__intro">
+        <div className="pie-election-page__intro-media">
+          {cover ? (
+            <img src={cover} alt={initiative.metadata.imageAltText || electionName} />
+          ) : (
+            <div className="pie-election-page__intro-media-empty" aria-hidden />
+          )}
+        </div>
+        <div className="pie-election-page__intro-body">
+          {initiative.description ? <p>{initiative.description}</p> : null}
+          <ul className="pie-election-page__meta">
+            <li>Geography: {geography || "—"}</li>
+            <li>Start of Voting: {startOfVoting ?? "—"}</li>
+            <li>End of Voting: {endOfVoting ?? "—"}</li>
+            <li>Status: {electionStatusLabel}</li>
+            <li>Total voters: {totalVoters}</li>
+          </ul>
+          {votingOpen ? (
+            <p>
+              <Link className="hu-button hu-button--primary" href={overviewVoteHref}>
+                Vote on Overview
+              </Link>
+            </p>
           ) : null}
-          {retention?.expiresAt ? (
-            <li>
-              Temporary results available until {new Date(retention.expiresAt).toLocaleString()}
-            </li>
-          ) : null}
-        </ul>
-      </header>
+        </div>
+      </div>
 
       {downloadError ? <p role="alert">{downloadError}</p> : null}
 
       {ballotMode === "SELECT_ONE_CANDIDATE" ? (
-        <SelectOneResults
+        <PublicChoiceElectionResultsBoard
           initiativeId={initiativeId}
           candidates={candidates}
-          aggregates={
-            selectOneAggregates ?? {
-              ballotMode: "SELECT_ONE_CANDIDATE",
-              candidates: [],
-              abstain: 0,
-              abstainPercentage: 0,
-              totalEffectiveVoters: 0,
-              participationBreakdown: {
-                visitors: 0,
-                participants: 0,
-                members: 0,
-                totalEffectiveVoters: 0,
-                visitorPercentage: 0,
-                participantPercentage: 0,
-                memberPercentage: 0,
-              },
-            }
-          }
+          aggregates={selectOneAggregates ?? emptySelectOne}
           resultsLabel={resultsLabel}
           votingOpen={votingOpen}
+          electionStatus={electionStatusLabel}
           downloadAvailable={downloadAvailable}
           onDownload={() => {
             void handleDownload();
           }}
           downloadBusy={downloadBusy}
+          shareSlot={shareSlot}
+          voteHref={overviewVoteHref}
+          showDisclaimer={false}
         />
       ) : (
         <SupportOpposeResults
@@ -560,6 +392,7 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
             void handleDownload();
           }}
           downloadBusy={downloadBusy}
+          shareSlot={shareSlot}
           fallback={{
             support: decision?.statistics.supportCount ?? 0,
             doNotSupport: decision?.statistics.doNotSupportCount ?? 0,

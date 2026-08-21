@@ -576,6 +576,7 @@ export {
 export type { InitiativeLifecycleProfile } from "./initiative-lifecycle-profile.js";
 export {
   getInitiativeLifecycleProfilePresentation,
+  PUBLIC_CHOICE_ELECTION_CREATE_HELPER,
   PUBLIC_CHOICE_SELECT_ONE_BALLOT_HELPER,
 } from "./initiative-lifecycle-profile-presentation.js";
 export type { InitiativeLifecycleProfilePresentation } from "./initiative-lifecycle-profile-presentation.js";
@@ -586,12 +587,16 @@ export {
   PUBLIC_CHOICE_VOTER_CATEGORIES,
   createEmptyPublicChoiceVoterCategoryBreakdown,
   isPublicChoiceBallotMode,
+  isPublicChoiceCandidateElectionBallot,
   isPublicChoiceVoterCategory,
   percentageOfTotal,
+  publicChoiceElectionVotingStatusLabel,
   resolvePublicChoiceBallotMode,
+  resolvePublicChoiceElectionVotingStatus,
 } from "./public-choice-ballot-mode.js";
 export type {
   PublicChoiceBallotMode,
+  PublicChoiceElectionVotingStatus,
   PublicChoiceVoterCategory,
   PublicChoiceVoterCategoryBreakdown,
 } from "./public-choice-ballot-mode.js";

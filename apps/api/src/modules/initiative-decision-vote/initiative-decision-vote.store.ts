@@ -38,6 +38,7 @@ import {
   listInitiativeDecisionVotesByDecision,
   listInitiativeDecisionVotesByParticipant,
   updateInitiativeDecisionVoteChoice,
+  deleteInitiativeDecisionVoteById,
 } from "./persistence/initiative-decision-vote.repository.js";
 
 /**
@@ -394,6 +395,24 @@ export async function countActiveVotesForDecision(decisionId: string): Promise<n
   const votes = await listVotesForDecision(decisionId);
 
   return votes.length;
+}
+
+/**
+ * Pack 04 — Recall: remove the caller's effective vote so Select is unlocked again.
+ * Prior history rows remain; the active vote document is deleted.
+ */
+export async function recallInitiativeDecisionVoteForVoter(input: {
+  decisionId: string;
+  participantId?: string;
+  visitorKey?: string;
+}): Promise<boolean> {
+  assertDecisionVoteVoterIdentity(input);
+  const existing = await findExistingVoteForVoter(input);
+  if (!existing) {
+    return false;
+  }
+
+  return deleteInitiativeDecisionVoteById(existing.voteId);
 }
 
 /**

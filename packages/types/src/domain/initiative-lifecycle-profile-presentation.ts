@@ -30,9 +30,12 @@ export interface InitiativeLifecycleProfilePresentation {
 const PUBLIC_CHOICE_COMMUNITY_ASSOCIATION_HELPER =
   "Enter the name of the election or public choice. Examples: “New York City Mayoral Election” or “Kelowna City Council Election”.";
 
-/** Pack 03 — SELECT_ONE creation guidance (candidates added after publish, not on this form). */
-export const PUBLIC_CHOICE_SELECT_ONE_BALLOT_HELPER =
-  "This creates the election. Candidates are not entered here — add them later from the election Initiative page after it is published.";
+/** Pack 04 — Public Choice election creation guidance (no ballot-mode selector). */
+export const PUBLIC_CHOICE_ELECTION_CREATE_HELPER =
+  "Create the election first. Registered Participants can add candidates on the election page after publication.";
+
+/** @deprecated Pack 04 — use PUBLIC_CHOICE_ELECTION_CREATE_HELPER. */
+export const PUBLIC_CHOICE_SELECT_ONE_BALLOT_HELPER = PUBLIC_CHOICE_ELECTION_CREATE_HELPER;
 
 export function getInitiativeLifecycleProfilePresentation(
   profile: InitiativeLifecycleProfile | string | null | undefined,
@@ -49,11 +52,8 @@ export function getInitiativeLifecycleProfilePresentation(
       requireCountry: true,
       showActivityArea: false,
       requireActivityArea: false,
-      /**
-       * Pack 03 — SUPPORT_OPPOSE keeps Discussion ballot; SELECT_ONE voting
-       * moves to Collective Decision (callers must gate on ballotMode).
-       */
-      discussionShowsVoteBallot: true,
+      /** Pack 04 — candidate Select/Recall lives on Overview; Discussion is comments only. */
+      discussionShowsVoteBallot: false,
       discussionShowsStandardParticipationActions: false,
       collectiveDecisionIsResultOnly: true,
       showLifecycleStageOrdinal: false,

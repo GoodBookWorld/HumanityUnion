@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * @deprecated Pack 04 — Select/Recall voting lives on Overview
+ * (`PublicChoiceOverviewCandidateIntake`). Collective Decision mounts
+ * `PublicChoiceElectionResultsBoard` only. Do not mount from new surfaces.
+ */
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
@@ -34,8 +40,7 @@ interface PublicChoiceSelectOneVotingBoardProps {
 }
 
 /**
- * Pack 03 — SELECT_ONE Collective Decision voting cards (70/30 desktop).
- * Canonical Decision Vote authority; one effective selection at a time.
+ * @deprecated Pack 04 — legacy CD voting cards. Prefer Overview intake.
  */
 export function PublicChoiceSelectOneVotingBoard({
   initiativeId,

@@ -52,7 +52,7 @@ describe("Public Choice Experience Pack 01 — presentation contract", () => {
     assert.equal(publicChoice.requireCountry, true);
     assert.equal(publicChoice.showActivityArea, false);
     assert.equal(publicChoice.requireActivityArea, false);
-    assert.equal(publicChoice.discussionShowsVoteBallot, true);
+    assert.equal(publicChoice.discussionShowsVoteBallot, false);
     assert.equal(publicChoice.discussionShowsStandardParticipationActions, false);
     assert.equal(publicChoice.collectiveDecisionIsResultOnly, true);
     assert.equal(publicChoice.showLifecycleStageOrdinal, false);
@@ -102,11 +102,10 @@ describe("Public Choice Experience Pack 01 — Discussion + Support + Country", 
     "src/features/initiative-collective-decision-lifecycle/collective-decision-voting.ts",
   );
 
-  it("Discussion mounts Public Choice ballot panel and hides STANDARD participation actions", () => {
+  it("Discussion can mount Public Choice vote panel for legacy SUPPORT_OPPOSE; STANDARD actions gated", () => {
     assert.match(discussion, /PublicChoiceDiscussionVotePanel/);
     assert.match(discussion, /showStandardParticipationActions/);
-    assert.match(votePanel, /Public Choice vote|Candidate voting/);
-    assert.match(votePanel, /support|do_not_support|abstain/);
+    assert.match(votePanel, /support|do_not_support|abstain|Overview/);
   });
 
   it("vote labels use Support / Do not support / Abstain identities", () => {
