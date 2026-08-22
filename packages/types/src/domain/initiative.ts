@@ -132,6 +132,17 @@ export interface Initiative {
    */
   lifecycleProfile?: InitiativeLifecycleProfile;
   visibility: InitiativeVisibility;
+  /**
+   * Fix 08C — Admin soft-block. Missing/false = not blocked (legacy safe).
+   * Distinct from visibility.policy hide (steward_only). Does not close elections
+   * or alter lifecycle timestamps.
+   */
+  administrativelyBlocked?: boolean;
+  administrativelyBlockedAt?: string;
+  /** Admin member/participant id — internal only; not projected publicly. */
+  administrativelyBlockedByParticipantId?: string;
+  /** Optional admin-facing reason — internal only; not projected publicly. */
+  administrativeBlockReason?: string;
   metadata: InitiativeMetadata;
   revisions: InitiativeRevision[];
   contributions: InitiativeContribution[];
@@ -156,3 +167,16 @@ export interface MyInitiativeGroupSummary {
   lifecyclePhase: InitiativeLifecyclePhase;
   role: MyInitiativeGroupRole;
 }
+
+/** Fix 08C — legacy Initiatives without the field resolve as not blocked. */
+export function isInitiativeAdministrativelyBlocked(
+  initiative: Pick<Initiative, "administrativelyBlocked">,
+): boolean {
+  return initiative.administrativelyBlocked === true;
+}
+
+export const INITIATIVE_ADMIN_BLOCKED_MUTATION_MESSAGE =
+  "This initiative has been blocked by an administrator. Please contact the administrator.";
+
+export const PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE =
+  "This election has been blocked by an administrator. Please contact the administrator.";

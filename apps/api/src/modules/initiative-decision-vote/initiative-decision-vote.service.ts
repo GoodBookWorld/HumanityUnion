@@ -6,6 +6,7 @@ import type {
   TransitiveInitiativeAncestry,
 } from "@hu/types";
 import {
+  isInitiativeAdministrativelyBlocked,
   resolveInitiativeLifecycleProfile,
   resolvePublicChoiceBallotMode,
   validateVotePayloadForBallotMode,
@@ -30,7 +31,10 @@ import {
   recallInitiativeDecisionVoteForVoter,
 } from "./initiative-decision-vote.store.js";
 import { listEffectiveVotesForDecision } from "./list-effective-decision-votes.js";
-import { assertCandidateBelongsToInitiative } from "../public-choice-candidate/public-choice-candidate.service.js";
+import {
+  assertCandidateAcceptsNewSelectVote,
+  PUBLIC_CHOICE_ELECTION_BLOCKED_INTERACTION_MESSAGE,
+} from "../public-choice-candidate/public-choice-candidate.service.js";
 import { listPublicChoiceCandidatesByInitiative } from "../public-choice-candidate/persistence/public-choice-candidate.repository.js";
 import { buildBallotAggregates } from "./initiative-decision-vote-ballot-aggregates.js";
 import { assertVotePayloadMatchesBallotMode } from "./initiative-decision-vote.validators.js";
@@ -243,6 +247,13 @@ function assertDecisionAcceptsVotes(decision: InitiativeCollectiveDecision): voi
   }
 }
 
+/** Fix 08C — election-wide admin freeze blocks Select and Recall. */
+function assertPublicChoiceElectionNotAdministrativelyBlocked(initiative: Initiative): void {
+  if (isInitiativeAdministrativelyBlocked(initiative)) {
+    throw new Error(PUBLIC_CHOICE_ELECTION_BLOCKED_INTERACTION_MESSAGE);
+  }
+}
+
 async function evaluateVoteEligibility(
   decision: InitiativeCollectiveDecision,
   initiative: Initiative,
@@ -294,6 +305,7 @@ export async function castOrUpdateInitiativeDecisionVote(
 
   const lifecycle = resolveInitiativeLifecycleProfile(initiative.lifecycleProfile);
   if (lifecycle === "PUBLIC_CHOICE") {
+    assertPublicChoiceElectionNotAdministrativelyBlocked(initiative);
     return castPublicChoiceParticipantVote({
       decision,
       initiative,
@@ -336,7 +348,9 @@ async function castPublicChoiceParticipantVote(args: {
   });
 
   if (ballotMode === "SELECT_ONE_CANDIDATE" && args.choice === "candidate" && args.candidateId) {
-    await assertCandidateBelongsToInitiative(args.initiative.initiativeId, args.candidateId);
+    await assertCandidateAcceptsNewSelectVote(args.initiative.initiativeId, args.candidateId, {
+      parentElectionAcceptsVotes: true,
+    });
   }
 
   const { transparencyCohort } = await assertPublicChoiceAuthenticatedVoter(args.participantId);
@@ -371,6 +385,8 @@ export async function castOrUpdateVisitorInitiativeDecisionVote(
     throw new Error("Visitor voting is only available for PUBLIC_CHOICE.");
   }
 
+  assertPublicChoiceElectionNotAdministrativelyBlocked(initiative);
+
   const ballotMode = resolvePublicChoiceBallotMode(initiative.metadata.ballotMode);
   assertVotePayloadMatchesBallotMode(ballotMode, {
     choice: input.choice,
@@ -378,7 +394,10 @@ export async function castOrUpdateVisitorInitiativeDecisionVote(
   });
 
   if (ballotMode === "SELECT_ONE_CANDIDATE" && input.choice === "candidate" && input.candidateId) {
-    await assertCandidateBelongsToInitiative(initiative.initiativeId, input.candidateId);
+    await assertCandidateAcceptsNewSelectVote(initiative.initiativeId, input.candidateId, {
+      parentElectionAcceptsVotes: true,
+      parentElectionAdministrativelyBlocked: false,
+    });
   }
 
   return castOrChangeInitiativeDecisionVote({
@@ -422,8 +441,11 @@ export async function recallInitiativeDecisionVote(
   decisionId: string,
   deps: InitiativeDecisionVoteAncestryDependencies = defaultInitiativeDecisionVoteAncestryDependencies,
 ): Promise<void> {
-  const { decision } = await resolveVoteInitiativeAncestry(decisionId, deps);
+  const { decision, initiative } = await resolveVoteInitiativeAncestry(decisionId, deps);
   assertDecisionAcceptsVotes(decision);
+  if (resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE") {
+    assertPublicChoiceElectionNotAdministrativelyBlocked(initiative);
+  }
 
   const removed = await recallInitiativeDecisionVoteForVoter({
     decisionId,
@@ -451,6 +473,8 @@ export async function recallVisitorInitiativeDecisionVote(
   if (lifecycle !== "PUBLIC_CHOICE") {
     throw new Error("Visitor voting is only available for PUBLIC_CHOICE.");
   }
+
+  assertPublicChoiceElectionNotAdministrativelyBlocked(initiative);
 
   const removed = await recallInitiativeDecisionVoteForVoter({
     decisionId,

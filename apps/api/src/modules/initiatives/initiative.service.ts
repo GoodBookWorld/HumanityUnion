@@ -1,6 +1,9 @@
 import type { Initiative, InitiativeCoverMedia, MyInitiativeGroupSummary, TimelineEvent } from "@hu/types";
 import {
   canTransitionInitiativeLifecycle,
+  INITIATIVE_ADMIN_BLOCKED_MUTATION_MESSAGE,
+  PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE,
+  isInitiativeAdministrativelyBlocked,
   resolveInitiativeLifecycleProfile,
   resolvePublicChoiceBallotMode,
 } from "@hu/types";
@@ -521,6 +524,14 @@ export function republishInitiative(
 ): Initiative {
   const initiative = getOwnedInitiative(initiativeId, identity);
 
+  if (isInitiativeAdministrativelyBlocked(initiative)) {
+    throw new Error(
+      resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE"
+        ? PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE
+        : INITIATIVE_ADMIN_BLOCKED_MUTATION_MESSAGE,
+    );
+  }
+
   assertEditablePublishedLifecycle(initiative);
 
   const previousCommunitySlug = initiative.metadata.communitySlug;
@@ -609,6 +620,14 @@ export function updateManagedInitiative(
   input: SaveInitiativeDraftInput,
 ): Initiative {
   const initiative = getOwnedInitiative(initiativeId, identity);
+
+  if (isInitiativeAdministrativelyBlocked(initiative)) {
+    throw new Error(
+      resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE"
+        ? PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE
+        : INITIATIVE_ADMIN_BLOCKED_MUTATION_MESSAGE,
+    );
+  }
 
   switch (initiative.lifecyclePhase) {
     case "draft":

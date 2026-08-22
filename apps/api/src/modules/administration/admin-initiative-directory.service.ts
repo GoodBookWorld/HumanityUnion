@@ -12,6 +12,10 @@ import type {
   InitiativeStatus,
   InitiativeVisibilityPolicy,
 } from "@hu/types";
+import {
+  isInitiativeAdministrativelyBlocked,
+  resolveInitiativeLifecycleProfile,
+} from "@hu/types";
 
 import { findAuthUserById, findAuthUserByMemberId } from "../auth/auth-user.repository.js";
 import { listAnalysesByInitiative } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
@@ -264,6 +268,7 @@ async function toDirectoryItem(initiative: Initiative): Promise<AdminInitiativeD
     decisionSummary: decisionSummaryFor(initiativeId),
     civicArchiveState: civicArchiveStateFor(initiativeId),
     integrityStatus: integrityStatusFor(initiative, steward.missing),
+    administrativelyBlocked: isInitiativeAdministrativelyBlocked(initiative),
   };
 }
 
@@ -278,7 +283,11 @@ export async function listAdminInitiatives(
 
   const limit = clampLimit(input.limit);
   const offset = clampOffset(input.offset);
-  const all = listInitiatives();
+  // Fix 08C — Admin → Initiatives shows STANDARD only (PUBLIC_CHOICE has its own page).
+  const all = listInitiatives().filter(
+    (initiative) =>
+      resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "STANDARD",
+  );
   const aggregates = computeAggregates(all);
 
   const stewardCache = new Map<string, Awaited<ReturnType<typeof resolveStewardDisplay>>>();
@@ -666,7 +675,10 @@ export async function getAdminInitiativeDetail(
     adminActions: {
       canHideFromPublic,
       canRestorePublicVisibility,
+      canBlock: !isInitiativeAdministrativelyBlocked(initiative),
+      canUnblock: isInitiativeAdministrativelyBlocked(initiative),
     },
+    administrativelyBlocked: isInitiativeAdministrativelyBlocked(initiative),
   };
 }
 

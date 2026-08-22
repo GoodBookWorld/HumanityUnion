@@ -27,7 +27,21 @@ export {
   restoreAdminInitiativePublicVisibility,
   AdminInitiativeCommandValidationError,
 } from "./admin-initiative-visibility.service.js";
+export {
+  blockAdminInitiative,
+  unblockAdminInitiative,
+  AdminInitiativeModerationValidationError,
+} from "./admin-initiative-moderation.service.js";
+export {
+  listAdminPublicChoiceElections,
+  getAdminPublicChoiceDetail,
+  blockAdminPublicChoiceCandidate,
+  unblockAdminPublicChoiceCandidate,
+  updateAdminPublicChoiceCandidate,
+  AdminPublicChoiceValidationError,
+} from "./admin-public-choice.service.js";
 export { default as adminInitiativeDirectoryRouter } from "./admin-initiative-directory.routes.js";
+export { default as adminPublicChoiceRouter } from "./admin-public-choice.routes.js";
 export {
   AuditService,
   deleteAdministrationAudit,

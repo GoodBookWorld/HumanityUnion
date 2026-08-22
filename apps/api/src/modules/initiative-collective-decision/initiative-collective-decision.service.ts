@@ -9,8 +9,10 @@ import type {
 } from "@hu/types";
 import {
   canTransitionInitiativeCollectiveDecision,
+  isInitiativeAdministrativelyBlocked,
   isInitiativeCollectiveDecisionTerminal,
   resolveInitiativeLifecycleProfile,
+  PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE,
 } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
@@ -547,6 +549,10 @@ export async function closePublicChoiceElectionForInitiative(
 
   if (resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) !== "PUBLIC_CHOICE") {
     throw new Error("Close election is only available for Public Choice initiatives.");
+  }
+
+  if (isInitiativeAdministrativelyBlocked(initiative)) {
+    throw new Error(PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE);
   }
 
   const openDecision = listDecisionsByInitiative(initiativeId).find(

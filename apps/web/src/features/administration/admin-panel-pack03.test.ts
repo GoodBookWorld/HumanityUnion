@@ -22,8 +22,12 @@ describe("Admin Panel Pack 03 — Views & Participant directory", () => {
   it("Views appears in canonical Admin navigation after Overview", () => {
     const labels = ADMIN_PANEL_SECTIONS.map((section) => section.label);
     assert.deepEqual(labels.slice(0, 3), ["Overview", "Views", "Participants"]);
+    const initiativesIndex = labels.indexOf("Initiatives");
+    assert.equal(labels[initiativesIndex + 1], "Public Choice");
+    assert.equal(labels[initiativesIndex + 2], "Publishing");
     assert.equal(resolveAdminPanelSectionId("/admin/views"), "views");
     assert.equal(resolveAdminPanelSectionId("/admin/views/insights"), "views");
+    assert.equal(resolveAdminPanelSectionId("/admin/public-choice"), "public-choice");
   });
 
   it("Views secondary navigation has Traffic, Insights, Subscribers", () => {

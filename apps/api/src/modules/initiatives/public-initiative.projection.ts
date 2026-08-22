@@ -1,5 +1,5 @@
 import type { Initiative, PublicInitiativeProjection } from "@hu/types";
-import { resolveInitiativeCoverMedia } from "@hu/types";
+import { isInitiativeAdministrativelyBlocked, resolveInitiativeCoverMedia } from "@hu/types";
 
 import { findAuthUserByMemberId } from "../auth/auth-user.repository.js";
 import { findMemberProfileByUserId } from "../member-profile/member-profile.repository.js";
@@ -70,6 +70,9 @@ export async function toPublicInitiativeProjection(
     sourceReferences: initiative.sourceReferences
       ? structuredClone(initiative.sourceReferences)
       : undefined,
+    ...(isInitiativeAdministrativelyBlocked(initiative)
+      ? { isAdministrativelyBlocked: true as const }
+      : {}),
   };
 }
 

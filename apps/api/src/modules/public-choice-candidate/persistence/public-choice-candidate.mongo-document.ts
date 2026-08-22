@@ -10,6 +10,10 @@ export interface PublicChoiceCandidateMongoDocument extends Document {
   campaignPageUrl?: string;
   sortOrder: number;
   submittedByParticipantId?: string;
+  administrativelyBlocked?: boolean;
+  administrativelyBlockedAt?: string;
+  administrativelyBlockedByParticipantId?: string;
+  administrativeBlockReason?: string;
   createdAt: string;
   updatedAt: string;
   /** Pack 02C — temporary retention; set at voting close. */
@@ -37,6 +41,19 @@ export function toPublicChoiceCandidateMongoDocument(
   if (candidate.submittedByParticipantId) {
     document.submittedByParticipantId = candidate.submittedByParticipantId;
   }
+  if (candidate.administrativelyBlocked === true) {
+    document.administrativelyBlocked = true;
+    if (candidate.administrativelyBlockedAt) {
+      document.administrativelyBlockedAt = candidate.administrativelyBlockedAt;
+    }
+    if (candidate.administrativelyBlockedByParticipantId) {
+      document.administrativelyBlockedByParticipantId =
+        candidate.administrativelyBlockedByParticipantId;
+    }
+    if (candidate.administrativeBlockReason) {
+      document.administrativeBlockReason = candidate.administrativeBlockReason;
+    }
+  }
 
   return document;
 }
@@ -52,6 +69,15 @@ export function fromPublicChoiceCandidateMongoDocument(
     campaignPageUrl: document.campaignPageUrl,
     sortOrder: document.sortOrder,
     submittedByParticipantId: document.submittedByParticipantId,
+    ...(document.administrativelyBlocked === true
+      ? {
+          administrativelyBlocked: true as const,
+          administrativelyBlockedAt: document.administrativelyBlockedAt,
+          administrativelyBlockedByParticipantId:
+            document.administrativelyBlockedByParticipantId,
+          administrativeBlockReason: document.administrativeBlockReason,
+        }
+      : {}),
     createdAt: document.createdAt,
     updatedAt: document.updatedAt,
   };

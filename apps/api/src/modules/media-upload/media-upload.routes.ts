@@ -9,6 +9,7 @@ import { createSuccessResponse } from "../../shared/http-response.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { requestIdentityFromAuth } from "../initiatives/identity/bootstrap-request-identity.js";
+import { assertCanUploadPublicChoiceCandidateMedia } from "../public-choice-candidate/public-choice-candidate.service.js";
 import { MediaUploadService, getMediaRecordById } from "./media-upload.service.js";
 import { validateUploadedImageFile } from "./media-upload.validation.js";
 import { mediaUploadRateLimiter } from "./media-upload-rate-limit.js";
@@ -97,7 +98,7 @@ mediaUploadRouter.post(
         return;
       }
 
-      assertInitiativeOwnership(initiative, identity);
+      assertCanUploadPublicChoiceCandidateMedia(initiative, identity);
 
       const validated = validateUploadedImageFile("initiative-image", req.file);
       const record = await mediaUploadService.uploadMedia({
@@ -112,7 +113,12 @@ mediaUploadRouter.post(
       res.json(createSuccessResponse(record, "Initiative image uploaded."));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Initiative image upload failed.";
-      const status = message === "Initiative not found." ? 404 : 400;
+      const status =
+        message === "Initiative not found."
+          ? 404
+          : message.includes("access to this initiative")
+            ? 403
+            : 400;
       res.status(status).json(failure(message, status));
     }
   },
@@ -227,7 +233,13 @@ mediaUploadRouter.delete("/:mediaId", async (req, res) => {
       const initiative = getInitiativeById(existing.initiativeId);
 
       if (initiative) {
-        assertInitiativeOwnership(initiative, identity);
+        // Fix 08A — PUBLIC_CHOICE candidate photos may be deleted by the uploading
+        // Participant (ownerUserId already checked) without steward ownership.
+        try {
+          assertCanUploadPublicChoiceCandidateMedia(initiative, identity);
+        } catch {
+          assertInitiativeOwnership(initiative, identity);
+        }
       }
     }
 

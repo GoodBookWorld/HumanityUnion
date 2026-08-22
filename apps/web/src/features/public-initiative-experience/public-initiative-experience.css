@@ -2100,6 +2100,47 @@
   cursor: wait;
 }
 
+.pc-overview-vote-row__edit {
+  font-size: var(--hu-font-size-sm);
+  font-weight: 500;
+}
+
+.pc-overview-vote-row--blocked:not(.pc-overview-vote-row--selected) {
+  opacity: 0.72;
+}
+
+.pc-overview-vote-row--blocked.pc-overview-vote-row--selected {
+  opacity: 1;
+}
+
+.pc-overview-vote-row__blocked,
+.pie-election-results__blocked {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  color: var(--hu-color-text-muted, #5b6470);
+}
+
+.pie-election-candidate-submit__helper {
+  margin: 0;
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted, #5b6470);
+}
+
+.pie-election-candidate-submit__delete {
+  background: transparent;
+  border: 1px solid #b91c1c;
+  color: #b91c1c;
+}
+
+.pie-election-candidate-submit__confirm {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-sm);
+}
+
 .pc-overview-vote-row__actions {
   display: flex;
   flex-wrap: wrap;

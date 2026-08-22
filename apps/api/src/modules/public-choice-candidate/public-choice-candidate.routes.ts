@@ -40,7 +40,18 @@ async function handleListCandidates(req: Request, res: Response): Promise<void> 
       res.status(404).json(createFailureResponse("Initiative not found."));
       return;
     }
-    const candidates = await listPublicChoiceCandidatesForInitiative(initiativeId);
+    let viewerIdentity = null;
+    try {
+      if (req.auth) {
+        viewerIdentity = await resolveRequestIdentity(req);
+      }
+    } catch {
+      viewerIdentity = null;
+    }
+    const candidates = await listPublicChoiceCandidatesForInitiative(
+      initiativeId,
+      viewerIdentity,
+    );
     res.json(createSuccessResponse({ candidates }, "Candidates loaded."));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Candidates request failed.";
@@ -55,7 +66,11 @@ publicChoiceCandidateRouter.get(
   handleListCandidates,
 );
 
-publicChoiceCandidatesByInitiativeRouter.get("/:initiativeId/candidates", handleListCandidates);
+publicChoiceCandidatesByInitiativeRouter.get(
+  "/:initiativeId/candidates",
+  optionalAuthenticationMiddleware,
+  handleListCandidates,
+);
 
 publicChoiceCandidateRouter.post(
   "/:initiativeId/candidates",
@@ -79,9 +94,11 @@ publicChoiceCandidateRouter.post(
       const message = error instanceof Error ? error.message : "Create candidate failed.";
       const status = message.includes("not found")
         ? 404
-        : message.includes("access") || message.includes("owner")
-          ? 403
-          : 400;
+        : message.includes("maximum of 20")
+          ? 409
+          : message.includes("access") || message.includes("Authentication")
+            ? 403
+            : 400;
       res.status(status).json(createFailureResponse(message));
     }
   },
@@ -117,7 +134,14 @@ publicChoiceCandidateRouter.patch(
       res.json(createSuccessResponse(candidate, "Candidate updated."));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Update candidate failed.";
-      const status = message.includes("not found") ? 404 : 400;
+      const status =
+        message.includes("not found")
+          ? 404
+          : message.includes("blocked by an administrator") ||
+              message.includes("access") ||
+              message.includes("Authentication")
+            ? 403
+            : 400;
       res.status(status).json(createFailureResponse(message));
     }
   },
@@ -140,9 +164,14 @@ publicChoiceCandidateRouter.delete(
       const status =
         message.includes("not found")
           ? 404
-          : message.includes("already has votes")
+          : message.includes("cannot be deleted after voting") ||
+              message.includes("already has votes")
             ? 409
-            : 400;
+            : message.includes("blocked by an administrator") ||
+                message.includes("access") ||
+                message.includes("Authentication")
+              ? 403
+              : 400;
       res.status(status).json(createFailureResponse(message));
     }
   },

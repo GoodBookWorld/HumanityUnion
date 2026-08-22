@@ -168,7 +168,10 @@ export function PublicChoiceElectionSidebarWidget({
                     {photo ? (
                       <img src={photo} alt="" width={32} height={32} />
                     ) : null}
-                    <span>{candidate.name}</span>
+                    <span>
+                      {candidate.name}
+                      {candidate.isBlocked ? " (Blocked)" : ""}
+                    </span>
                     <strong>{candidate.votes}</strong>
                   </li>
                 );

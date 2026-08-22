@@ -55,6 +55,14 @@ function resolveErrorStatus(error: unknown): number {
     return 400;
   }
 
+  if (
+    error instanceof Error &&
+    (error.name === "AdminInitiativeModerationValidationError" ||
+      error.name === "AdminPublicChoiceValidationError")
+  ) {
+    return 400;
+  }
+
   return 500;
 }
 
@@ -206,6 +214,48 @@ adminInitiativeDirectoryRouter.post(
       });
 
       res.json(createSuccessResponse(result, "Initiative public visibility restored."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminInitiativeDirectoryRouter.post(
+  "/:initiativeId/block",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const initiativeId = String(req.params.initiativeId ?? "").trim();
+      const reason = typeof req.body?.reason === "string" ? req.body.reason : undefined;
+      const { blockAdminInitiative } = await import("./admin-initiative-moderation.service.js");
+      const result = await blockAdminInitiative({
+        actorUserId: req.auth!.id,
+        initiativeId,
+        reason,
+      });
+      res.json(createSuccessResponse(result, "Initiative blocked."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminInitiativeDirectoryRouter.post(
+  "/:initiativeId/unblock",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const initiativeId = String(req.params.initiativeId ?? "").trim();
+      const reason = typeof req.body?.reason === "string" ? req.body.reason : undefined;
+      const { unblockAdminInitiative } = await import("./admin-initiative-moderation.service.js");
+      const result = await unblockAdminInitiative({
+        actorUserId: req.auth!.id,
+        initiativeId,
+        reason,
+      });
+      res.json(createSuccessResponse(result, "Initiative unblocked."));
     } catch (error) {
       handleError(res, error);
     }

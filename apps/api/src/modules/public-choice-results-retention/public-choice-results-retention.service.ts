@@ -66,7 +66,7 @@ export async function freezePublicChoiceResultsSnapshot(input: {
     input.initiative,
   );
   const candidates = (await listPublicChoiceCandidatesByInitiative(input.initiative.initiativeId)).map(
-    toPublicChoiceCandidatePublicProjection,
+    (candidate) => toPublicChoiceCandidatePublicProjection(candidate),
   );
 
   const totalEffectiveVoters =

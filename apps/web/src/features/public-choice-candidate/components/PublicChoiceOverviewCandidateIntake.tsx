@@ -10,6 +10,7 @@ import type {
 } from "@hu/types";
 import {
   isPublicChoiceCandidateElectionBallot,
+  PUBLIC_CHOICE_MAX_CANDIDATES,
   publicChoiceElectionVotingStatusLabel,
   resolvePublicChoiceBallotMode,
   resolvePublicChoiceElectionVotingStatus,
@@ -61,7 +62,10 @@ export function PublicChoiceOverviewCandidateIntake({
   const [currentVote, setCurrentVote] = useState<InitiativeDecisionVote | null>(null);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "hidden" | "error">("loading");
   const [showSubmit, setShowSubmit] = useState(false);
+  const [editingCandidate, setEditingCandidate] =
+    useState<PublicChoiceCandidatePublicProjection | null>(null);
   const [resultsExpired, setResultsExpired] = useState(false);
+  const [electionBlocked, setElectionBlocked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +110,7 @@ export function PublicChoiceOverviewCandidateIntake({
             surface.decision?.resultsRetention?.resultsExpiredAt,
         ),
       );
+      setElectionBlocked(Boolean(surface.initiative?.isAdministrativelyBlocked));
       setCandidates(surface.candidates);
 
       if (!surface.decision) {
@@ -164,7 +169,7 @@ export function PublicChoiceOverviewCandidateIntake({
     resultsExpiredAt: projection?.resultsRetention?.resultsExpiredAt,
     resultsRetentionStatus: projection?.resultsRetention?.status,
   });
-  const votingOpen = electionStatus === "OPEN";
+  const votingOpen = electionStatus === "OPEN" && !electionBlocked;
   const unavailableReason = projection
     ? describeCollectiveDecisionVotingUnavailable(projection)
     : "Voting opens when the election ballot is published.";
@@ -177,14 +182,28 @@ export function PublicChoiceOverviewCandidateIntake({
   const rosterLocked = votingOpen && hasSelection;
 
   function openSubmitForm(): void {
+    setEditingCandidate(null);
     setShowSubmit(true);
     if (typeof window !== "undefined") {
       window.history.replaceState(null, "", "#add-candidate");
     }
   }
 
-  async function handleSubmitted(): Promise<void> {
+  function openEditForm(candidate: PublicChoiceCandidatePublicProjection): void {
+    setEditingCandidate(candidate);
+    setShowSubmit(true);
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", "#add-candidate");
+    }
+  }
+
+  function closeSubmitForm(): void {
     setShowSubmit(false);
+    setEditingCandidate(null);
+  }
+
+  async function handleSubmitted(): Promise<void> {
+    closeSubmitForm();
     await reload();
     notifyPublicChoiceElectionRefresh(initiativeId);
   }
@@ -275,6 +294,11 @@ export function PublicChoiceOverviewCandidateIntake({
         Select one candidate. Use Recall to clear your selection and choose again.
         {authStatus === "unauthenticated" ? " Visitors may vote without registering." : null}
       </p>
+      {electionBlocked ? (
+        <p className="pie-overview-candidates__status" role="status">
+          This election has been blocked by an administrator.
+        </p>
+      ) : null}
       <p className="pie-overview-candidates__status" role="status">
         Election status: {electionStatusLabel}
         {!votingOpen && projection ? ` — ${unavailableReason}` : null}
@@ -308,7 +332,9 @@ export function PublicChoiceOverviewCandidateIntake({
               key={candidate.candidateId}
               className={`pc-overview-vote-row${
                 selected ? " pc-overview-vote-row--selected" : ""
-              }${dimmed ? " pc-overview-vote-row--dimmed" : ""}`}
+              }${dimmed ? " pc-overview-vote-row--dimmed" : ""}${
+                candidate.isBlocked ? " pc-overview-vote-row--blocked" : ""
+              }`}
             >
               {candidate.campaignPageUrl ? (
                 <a
@@ -323,6 +349,21 @@ export function PublicChoiceOverviewCandidateIntake({
                 <div className="pie-overview-candidates__identity">{nameBlock}</div>
               )}
               <div className="pc-overview-vote-row__actions">
+                {candidate.isBlocked ? (
+                  <span className="pc-overview-vote-row__blocked" role="status">
+                    Blocked
+                  </span>
+                ) : null}
+                {candidate.viewerCanManage && !resultsExpired ? (
+                  <button
+                    type="button"
+                    className="hu-button hu-button--secondary pc-overview-vote-row__edit"
+                    disabled={busy}
+                    onClick={() => openEditForm(candidate)}
+                  >
+                    Edit
+                  </button>
+                ) : null}
                 {votingOpen ? (
                   selected ? (
                     <>
@@ -344,8 +385,8 @@ export function PublicChoiceOverviewCandidateIntake({
                     <button
                       type="button"
                       className="hu-button hu-button--primary"
-                      disabled={busy || dimmed || !decisionId}
-                      aria-disabled={dimmed || !decisionId}
+                      disabled={busy || dimmed || !decisionId || Boolean(candidate.isBlocked)}
+                      aria-disabled={dimmed || !decisionId || Boolean(candidate.isBlocked)}
                       aria-busy={pendingId === candidate.candidateId}
                       onClick={() =>
                         void cast(
@@ -363,7 +404,10 @@ export function PublicChoiceOverviewCandidateIntake({
           );
         })}
 
-        {!resultsExpired && authenticated ? (
+        {!resultsExpired &&
+        !electionBlocked &&
+        authenticated &&
+        candidates.length < PUBLIC_CHOICE_MAX_CANDIDATES ? (
           <li className="pie-overview-candidates__add-row">
             <button
               type="button"
@@ -375,7 +419,18 @@ export function PublicChoiceOverviewCandidateIntake({
           </li>
         ) : null}
 
-        {!resultsExpired && authStatus === "unauthenticated" ? (
+        {!resultsExpired &&
+        !electionBlocked &&
+        authenticated &&
+        candidates.length >= PUBLIC_CHOICE_MAX_CANDIDATES ? (
+          <li className="pie-overview-candidates__add-row">
+            <p className="pie-overview-candidates__status" role="status">
+              This election has reached the maximum of {PUBLIC_CHOICE_MAX_CANDIDATES} candidates.
+            </p>
+          </li>
+        ) : null}
+
+        {!resultsExpired && !electionBlocked && authStatus === "unauthenticated" ? (
           <li className="pie-overview-candidates__add-row">
             <a
               className="pie-overview-candidates__add hu-button hu-button--secondary"
@@ -408,11 +463,14 @@ export function PublicChoiceOverviewCandidateIntake({
         </p>
       ) : null}
 
-      {showSubmit && authenticated ? (
+      {showSubmit && authenticated && !electionBlocked ? (
         <PublicChoiceCandidateSubmitPanel
           initiativeId={initiativeId}
+          candidateCount={candidates.length}
+          editingCandidate={editingCandidate}
           onSubmitted={() => void handleSubmitted()}
-          onCancel={() => setShowSubmit(false)}
+          onDeleted={() => void handleSubmitted()}
+          onCancel={closeSubmitForm}
         />
       ) : null}
     </section>

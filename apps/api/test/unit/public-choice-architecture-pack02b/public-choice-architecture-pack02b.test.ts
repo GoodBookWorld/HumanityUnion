@@ -259,7 +259,7 @@ describe("Public Choice Pack 02B — Decision Vote durable identity + ballot", (
     await assert.rejects(
       () =>
         deletePublicChoiceCandidateForInitiative(steward, initiativeId, candidate.candidateId),
-      /already has votes/,
+      /cannot be deleted after voting has started/i,
     );
 
     const stillThere = await getPublicChoiceCandidateById(candidate.candidateId);

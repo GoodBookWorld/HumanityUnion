@@ -107,7 +107,11 @@ export type AdministrationAuditAction =
   | "safety.override"
   | "administration.bootstrap"
   | "initiative.visibility.hide"
-  | "initiative.visibility.restore";
+  | "initiative.visibility.restore"
+  | "initiative.administrative.block"
+  | "initiative.administrative.unblock"
+  | "public_choice.candidate.block"
+  | "public_choice.candidate.unblock";
 
 export interface AdministrationAuditRecord {
   readonly auditId: string;
@@ -191,6 +195,8 @@ export interface AdminInitiativeDirectoryItem {
   readonly decisionSummary: string | null;
   readonly civicArchiveState: "none" | "present";
   readonly integrityStatus: "ok" | "warning";
+  /** Fix 08C — admin soft-block (distinct from visibility hide). */
+  readonly administrativelyBlocked: boolean;
 }
 
 export interface AdminInitiativeDirectoryAggregates {
@@ -280,7 +286,11 @@ export interface AdminInitiativeDetail {
   readonly adminActions: {
     readonly canHideFromPublic: boolean;
     readonly canRestorePublicVisibility: boolean;
+    readonly canBlock: boolean;
+    readonly canUnblock: boolean;
   };
+  /** Fix 08C — admin soft-block. */
+  readonly administrativelyBlocked: boolean;
 }
 
 export interface AdminInitiativeVisibilityCommandResult {
@@ -288,4 +298,71 @@ export interface AdminInitiativeVisibilityCommandResult {
   readonly visibility: "steward_only" | "public";
   readonly publiclyProjected: boolean;
   readonly auditId: string;
+}
+
+export interface AdminInitiativeBlockCommandResult {
+  readonly initiativeId: string;
+  readonly administrativelyBlocked: boolean;
+  readonly auditId: string;
+}
+
+/** Fix 08C — Admin Public Choice election directory row. */
+export interface AdminPublicChoiceDirectoryItem {
+  readonly initiativeId: string;
+  readonly electionTitle: string;
+  readonly countrySlug?: string;
+  readonly stewardId: string;
+  readonly stewardDisplayName: string;
+  readonly stewardUniqueName?: string;
+  readonly votingStatus: string;
+  readonly openedAt?: string;
+  readonly closesAt?: string;
+  readonly closedAt?: string;
+  readonly candidateCount: number;
+  readonly effectiveVoterCount: number | null;
+  readonly administrativelyBlocked: boolean;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface AdminPublicChoiceDirectoryResponse {
+  readonly elections: readonly AdminPublicChoiceDirectoryItem[];
+  readonly total: number;
+  readonly limit: number;
+  readonly offset: number;
+  readonly hasMore: boolean;
+}
+
+export interface AdminPublicChoiceCandidateRow {
+  readonly candidateId: string;
+  readonly name: string;
+  readonly photoUrl?: string;
+  readonly campaignPageUrl?: string;
+  readonly voteCount: number;
+  readonly isBlocked: boolean;
+  readonly sortOrder: number;
+}
+
+export interface AdminPublicChoiceDetail {
+  readonly initiativeId: string;
+  readonly electionTitle: string;
+  readonly descriptionPreview: string;
+  readonly stewardId: string;
+  readonly stewardDisplayName: string;
+  readonly stewardUniqueName?: string;
+  readonly countrySlug?: string;
+  readonly votingStatus: string;
+  readonly openedAt?: string;
+  readonly closesAt?: string;
+  readonly closedAt?: string;
+  readonly decisionId: string | null;
+  readonly candidateCount: number;
+  readonly effectiveVoterCount: number | null;
+  readonly administrativelyBlocked: boolean;
+  readonly publicUrl: string;
+  readonly candidates: readonly AdminPublicChoiceCandidateRow[];
+  readonly resultSummary: {
+    readonly ballotMode: string;
+    readonly totalEffectiveVoters: number | null;
+  };
 }

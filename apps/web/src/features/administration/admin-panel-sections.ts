@@ -3,6 +3,7 @@ export type AdminPanelSectionId =
   | "views"
   | "participants"
   | "initiatives"
+  | "public-choice"
   | "publishing"
   | "seo"
   | "beta-access"
@@ -15,12 +16,13 @@ export interface AdminPanelSection {
   readonly href: string;
 }
 
-/** Canonical Admin Panel horizontal navigation — Pack 03 (+ Views). */
+/** Canonical Admin Panel horizontal navigation — Pack 03 (+ Views) + Fix 08C Public Choice. */
 export const ADMIN_PANEL_SECTIONS: readonly AdminPanelSection[] = [
   { id: "overview", label: "Overview", href: "/admin" },
   { id: "views", label: "Views", href: "/admin/views" },
   { id: "participants", label: "Participants", href: "/admin/participants" },
   { id: "initiatives", label: "Initiatives", href: "/admin/initiatives" },
+  { id: "public-choice", label: "Public Choice", href: "/admin/public-choice" },
   { id: "publishing", label: "Publishing", href: "/admin/publishing" },
   { id: "seo", label: "SEO", href: "/admin/seo" },
   { id: "beta-access", label: "Beta Access", href: "/admin/beta-access" },

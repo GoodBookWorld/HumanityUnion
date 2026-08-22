@@ -1,0 +1,72 @@
+.admin-public-choice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+}
+
+.admin-public-choice-actions .hu-button {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8rem;
+}
+
+.admin-public-choice-candidate-photo {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(26, 77, 109, 0.18);
+  background: rgba(1, 116, 176, 0.04);
+}
+
+.admin-public-choice-candidate-photo--empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+}
+
+.admin-public-choice-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.65rem;
+  max-width: 28rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(26, 77, 109, 0.14);
+  border-radius: 0.35rem;
+  background: rgba(1, 116, 176, 0.03);
+}
+
+.admin-public-choice-edit-form__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.admin-public-choice-edit-form__fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.admin-public-choice-edit-form__fields input {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid rgba(26, 77, 109, 0.28);
+  border-radius: 0.3rem;
+  font: inherit;
+  font-weight: 400;
+}
+
+.admin-public-choice-edit-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.admin-initiatives-table--public-choice {
+  min-width: 72rem;
+}

@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import type {
-  AdminInitiativeDirectoryAggregates,
-  AdminInitiativeDirectoryItem,
-  AuthUserPublic,
-  InitiativeLifecyclePhase,
-  InitiativeStatus,
-  InitiativeVisibilityPolicy,
-} from "@hu/types";
+import type { AdminPublicChoiceDirectoryItem, AuthUserPublic } from "@hu/types";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
@@ -18,27 +11,26 @@ import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
 import { formatAuthFormError, isForbiddenError } from "../../../lib/api-client";
-import { listAdminInitiatives } from "../admin-initiative-directory-api";
 import {
-  blockAdminInitiative,
-  unblockAdminInitiative,
+  blockAdminPublicChoiceElection,
+  listAdminPublicChoiceElections,
+  unblockAdminPublicChoiceElection,
 } from "../admin-public-choice-api";
-import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
 import "./admin-initiatives.css";
 import "./admin-public-choice.css";
 
-interface AdminInitiativesSectionProps {
+interface AdminPublicChoiceSectionProps {
   user: AuthUserPublic;
 }
 
 const PAGE_SIZE = 25;
 
 type PendingModeration =
-  | { kind: "block"; row: AdminInitiativeDirectoryItem }
-  | { kind: "unblock"; row: AdminInitiativeDirectoryItem }
+  | { kind: "block"; row: AdminPublicChoiceDirectoryItem }
+  | { kind: "unblock"; row: AdminPublicChoiceDirectoryItem }
   | null;
 
 function formatCompactDate(value?: string): string {
@@ -56,22 +48,15 @@ function formatCompactDate(value?: string): string {
   }
 }
 
-function formatGeography(row: AdminInitiativeDirectoryItem): string {
-  const parts = [
-    row.geography.countrySlug,
-    row.geography.regionSlug,
-    row.geography.region,
-  ].filter(Boolean);
-  return parts.length > 0 ? Array.from(new Set(parts)).join(" · ") : "—";
+function publicElectionHref(initiativeId: string): string {
+  return `/initiatives/public/${encodeURIComponent(initiativeId)}`;
 }
 
 /**
- * Admin Initiative directory — Pack 05.
- * Server-paginated via GET /api/v1/admin/initiatives (not the world list API).
+ * Fix 08C — Admin Public Choice election directory.
  */
-export function AdminInitiativesSection({ user: _user }: AdminInitiativesSectionProps) {
-  const [rows, setRows] = useState<readonly AdminInitiativeDirectoryItem[]>([]);
-  const [aggregates, setAggregates] = useState<AdminInitiativeDirectoryAggregates | null>(null);
+export function AdminPublicChoiceSection({ user: _user }: AdminPublicChoiceSectionProps) {
+  const [rows, setRows] = useState<readonly AdminPublicChoiceDirectoryItem[]>([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -80,11 +65,7 @@ export function AdminInitiativesSection({ user: _user }: AdminInitiativesSection
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [lifecyclePhase, setLifecyclePhase] = useState<"" | InitiativeLifecyclePhase>("");
-  const [status, setStatus] = useState<"" | InitiativeStatus>("");
-  const [visibility, setVisibility] = useState<"" | InitiativeVisibilityPolicy>("");
-  const [geographyInput, setGeographyInput] = useState("");
-  const [geography, setGeography] = useState("");
+  const [blockedFilter, setBlockedFilter] = useState<"" | "blocked" | "unblocked">("");
   const [sort, setSort] = useState<"updatedAt" | "createdAt" | "title">("updatedAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
 
@@ -99,34 +80,29 @@ export function AdminInitiativesSection({ user: _user }: AdminInitiativesSection
     setDenied(false);
 
     try {
-      const response = await listAdminInitiatives({
+      const response = await listAdminPublicChoiceElections({
         search: search || undefined,
-        lifecyclePhase: lifecyclePhase || undefined,
-        status: status || undefined,
-        visibility: visibility || undefined,
-        geography: geography || undefined,
+        blocked: blockedFilter || undefined,
         sort,
         order,
         limit: PAGE_SIZE,
         offset,
       });
-      setRows(response.initiatives);
-      setAggregates(response.aggregates);
+      setRows(response.elections);
       setTotal(response.total);
     } catch (loadError: unknown) {
       setRows([]);
-      setAggregates(null);
       setTotal(0);
       if (isForbiddenError(loadError)) {
         setDenied(true);
-        setError("Initiative directory requires an Administrator account.");
+        setError("Public Choice directory requires an Administrator account.");
       } else {
         setError(formatAuthFormError(loadError));
       }
     } finally {
       setLoading(false);
     }
-  }, [search, lifecyclePhase, status, visibility, geography, sort, order, offset]);
+  }, [search, blockedFilter, sort, order, offset]);
 
   useEffect(() => {
     void loadDirectory();
@@ -136,7 +112,6 @@ export function AdminInitiativesSection({ user: _user }: AdminInitiativesSection
     event.preventDefault();
     setOffset(0);
     setSearch(searchInput.trim());
-    setGeography(geographyInput.trim());
   }
 
   async function confirmModeration() {
@@ -150,11 +125,15 @@ export function AdminInitiativesSection({ user: _user }: AdminInitiativesSection
 
     try {
       if (pending.kind === "block") {
-        await blockAdminInitiative({ initiativeId: pending.row.initiativeId });
-        setActionMessage(`Blocked initiative “${pending.row.title}”.`);
+        await blockAdminPublicChoiceElection({
+          initiativeId: pending.row.initiativeId,
+        });
+        setActionMessage(`Blocked election “${pending.row.electionTitle}”.`);
       } else {
-        await unblockAdminInitiative({ initiativeId: pending.row.initiativeId });
-        setActionMessage(`Unblocked initiative “${pending.row.title}”.`);
+        await unblockAdminPublicChoiceElection({
+          initiativeId: pending.row.initiativeId,
+        });
+        setActionMessage(`Unblocked election “${pending.row.electionTitle}”.`);
       }
       setPending(null);
       await loadDirectory();
@@ -174,119 +153,39 @@ export function AdminInitiativesSection({ user: _user }: AdminInitiativesSection
     <div className="admin-panel">
       <AdminPanelNavigation />
 
-      <ProfileSection title="Initiative aggregates">
-        <AdminMetricDetailsGrid
-          aria-label="Initiative aggregates"
-          cells={[
-            {
-              label: "Total Initiatives",
-              value: aggregates ? String(aggregates.total) : "Unavailable",
-            },
-            {
-              label: "Public",
-              value: aggregates ? String(aggregates.public) : "Unavailable",
-            },
-            {
-              label: "Draft / non-public",
-              value: aggregates ? String(aggregates.nonPublic) : "Unavailable",
-            },
-            {
-              label: "Active lifecycle",
-              value: aggregates ? String(aggregates.activeLifecycle) : "Unavailable",
-            },
-            {
-              label: "Archived",
-              value: aggregates ? String(aggregates.archived) : "Unavailable",
-            },
-            {
-              label: "Proposals",
-              value: aggregates ? String(aggregates.proposals) : "Unavailable",
-            },
-          ]}
-        />
-      </ProfileSection>
-
-      <ProfileSection title="Initiative directory">
+      <ProfileSection title="Public Choice directory">
         <p className="hu-caption admin-panel__note">
-          Server-paginated administrative inventory of STANDARD Initiatives only. Public Choice
-          elections are managed separately under Public Choice. Author Workspace remains the
-          canonical content/lifecycle operator surface. Admin actions are explicit commands only.
+          Administrative inventory of PUBLIC_CHOICE elections only. STANDARD Initiatives remain
+          under Initiatives. Block freezes interaction without closing the election lifecycle.
         </p>
 
         <form className="admin-initiatives-filters" onSubmit={applyFilters}>
-          <label className="admin-panel__label" htmlFor="admin-initiative-search">
+          <label className="admin-panel__label" htmlFor="admin-public-choice-search">
             Search
           </label>
           <input
-            id="admin-initiative-search"
+            id="admin-public-choice-search"
             className="admin-panel__input"
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Title, ID, steward, or geography"
+            placeholder="Election title, ID, steward, or country"
           />
 
           <div className="admin-initiatives-filters__row">
             <label>
-              Lifecycle
+              Admin status
               <select
-                value={lifecyclePhase}
+                value={blockedFilter}
                 onChange={(event) => {
                   setOffset(0);
-                  setLifecyclePhase(event.target.value as "" | InitiativeLifecyclePhase);
+                  setBlockedFilter(event.target.value as "" | "blocked" | "unblocked");
                 }}
               >
                 <option value="">All</option>
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-                <option value="projected">Projected</option>
-                <option value="archived">Archived</option>
+                <option value="blocked">Blocked</option>
+                <option value="unblocked">Unblocked</option>
               </select>
-            </label>
-
-            <label>
-              Status
-              <select
-                value={status}
-                onChange={(event) => {
-                  setOffset(0);
-                  setStatus(event.target.value as "" | InitiativeStatus);
-                }}
-              >
-                <option value="">All</option>
-                <option value="draft">Draft</option>
-                <option value="discussion">Discussion</option>
-                <option value="revision">Revision</option>
-                <option value="petition">Petition</option>
-                <option value="implementation">Implementation</option>
-                <option value="completed">Completed</option>
-                <option value="archived">Archived</option>
-              </select>
-            </label>
-
-            <label>
-              Visibility
-              <select
-                value={visibility}
-                onChange={(event) => {
-                  setOffset(0);
-                  setVisibility(event.target.value as "" | InitiativeVisibilityPolicy);
-                }}
-              >
-                <option value="">All</option>
-                <option value="public">Public</option>
-                <option value="steward_only">Steward only</option>
-              </select>
-            </label>
-
-            <label>
-              Geography
-              <input
-                type="search"
-                value={geographyInput}
-                onChange={(event) => setGeographyInput(event.target.value)}
-                placeholder="Country / region"
-              />
             </label>
 
             <label>
@@ -328,78 +227,80 @@ export function AdminInitiativesSection({ user: _user }: AdminInitiativesSection
         ) : null}
         {actionError ? <StatusBanner title="Action failed" message={actionError} /> : null}
 
-        {loading ? <p className="hu-body">Loading initiatives…</p> : null}
+        {loading ? <p className="hu-body">Loading Public Choice elections…</p> : null}
 
         {!loading && !error ? (
           <>
             <div className="admin-initiatives-table-wrap">
-              <table className="admin-initiatives-table">
+              <table className="admin-initiatives-table admin-initiatives-table--public-choice">
                 <thead>
                   <tr>
-                    <th scope="col">Initiative</th>
+                    <th scope="col">Election</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">Country</th>
                     <th scope="col">Author</th>
-                    <th scope="col">Geography</th>
-                    <th scope="col">Lifecycle</th>
+                    <th scope="col">Start</th>
+                    <th scope="col">End</th>
                     <th scope="col">Status</th>
-                    <th scope="col">Visibility</th>
-                    <th scope="col">Proposals</th>
-                    <th scope="col">Decision</th>
-                    <th scope="col">Updated</th>
+                    <th scope="col">Candidates</th>
+                    <th scope="col">Voters</th>
+                    <th scope="col">Admin status</th>
                     <th scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={10}>No initiatives match these filters.</td>
+                      <td colSpan={11}>No Public Choice elections match these filters.</td>
                     </tr>
                   ) : (
                     rows.map((row) => (
                       <tr key={row.initiativeId}>
                         <td>
-                          <p className="admin-initiatives-table__title">{row.title}</p>
-                          <p className="hu-caption admin-initiatives-table__meta">
-                            {row.publiclyProjected ? "Publicly projected" : "Not public"}
-                            {row.integrityStatus === "warning" ? " · Integrity warning" : ""}
-                          </p>
+                          <p className="admin-initiatives-table__title">{row.electionTitle}</p>
                         </td>
                         <td>
-                          <p className="admin-initiatives-table__title">{row.stewardDisplayName}</p>
+                          <code>{row.initiativeId}</code>
+                        </td>
+                        <td>{row.countrySlug ?? "—"}</td>
+                        <td>
+                          <p className="admin-initiatives-table__title">
+                            {row.stewardDisplayName}
+                          </p>
                           {row.stewardUniqueName ? (
                             <p className="hu-caption">@{row.stewardUniqueName}</p>
                           ) : null}
                         </td>
-                        <td>{formatGeography(row)}</td>
+                        <td>{formatCompactDate(row.openedAt)}</td>
+                        <td>{formatCompactDate(row.closesAt ?? row.closedAt)}</td>
                         <td>
-                          <WorkspaceStatusBadge status={row.lifecyclePhase} />
+                          <WorkspaceStatusBadge status={row.votingStatus} />
                         </td>
+                        <td>{row.candidateCount}</td>
                         <td>
-                          <WorkspaceStatusBadge status={row.status} />
+                          {row.effectiveVoterCount === null
+                            ? "—"
+                            : String(row.effectiveVoterCount)}
                         </td>
                         <td>
                           <WorkspaceStatusBadge
-                            status={row.visibility === "public" ? "public" : "steward only"}
+                            status={row.administrativelyBlocked ? "blocked" : "active"}
                           />
                         </td>
-                        <td>{row.proposalCount}</td>
-                        <td>{row.decisionSummary ?? "—"}</td>
-                        <td>{formatCompactDate(row.updatedAt)}</td>
                         <td>
                           <div className="admin-public-choice-actions">
                             <Link
                               className="admin-panel__link"
-                              href={`/admin/initiatives/${encodeURIComponent(row.initiativeId)}`}
+                              href={publicElectionHref(row.initiativeId)}
                             >
-                              Inspect
+                              View
                             </Link>
-                            {row.publiclyProjected ? (
-                              <Link
-                                className="admin-panel__link"
-                                href={`/initiatives/public/${encodeURIComponent(row.initiativeId)}`}
-                              >
-                                Public page
-                              </Link>
-                            ) : null}
+                            <Link
+                              className="admin-panel__link"
+                              href={`/admin/public-choice/${encodeURIComponent(row.initiativeId)}`}
+                            >
+                              Manage
+                            </Link>
                             {row.administrativelyBlocked ? (
                               <Button
                                 type="button"
@@ -459,19 +360,11 @@ export function AdminInitiativesSection({ user: _user }: AdminInitiativesSection
         ) : null}
       </ProfileSection>
 
-      <ProfileSection title="Deferred administrative commands">
-        <p className="hu-body">
-          Force-edit of authored title/body, steward reassignment, and force lifecycle
-          transitions are not available. Public visibility hide/restore is available on the
-          Initiative detail page when the Initiative is projected.
-        </p>
-      </ProfileSection>
-
       <ConfirmDialog
         isOpen={pending?.kind === "block"}
-        title="Block initiative?"
-        description="This will prevent participant interaction until an administrator unblocks it."
-        confirmLabel="Block initiative"
+        title="Block election?"
+        description="This will stop participant interaction with this election until an administrator unblocks it."
+        confirmLabel="Block election"
         isConfirming={confirming}
         onCancel={() => setPending(null)}
         onConfirm={() => {
@@ -481,9 +374,9 @@ export function AdminInitiativesSection({ user: _user }: AdminInitiativesSection
 
       <ConfirmDialog
         isOpen={pending?.kind === "unblock"}
-        title="Unblock initiative?"
-        description="This will restore participant interaction if the initiative is otherwise available."
-        confirmLabel="Unblock initiative"
+        title="Unblock election?"
+        description="This will restore interaction if the election is otherwise open."
+        confirmLabel="Unblock election"
         destructive={false}
         isConfirming={confirming}
         onCancel={() => setPending(null)}

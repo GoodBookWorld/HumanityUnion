@@ -29,6 +29,10 @@ export interface InitiativeUpdate {
   contributions?: InitiativeContribution[];
   timeline?: TimelineEvent[];
   sourceReferences?: InitiativeNewsSourceReference[] | null;
+  administrativelyBlocked?: boolean | null;
+  administrativelyBlockedAt?: string | null;
+  administrativelyBlockedByParticipantId?: string | null;
+  administrativeBlockReason?: string | null;
 }
 
 const persistence = resolveInitiativePersistenceAdapter();
@@ -220,6 +224,37 @@ export function updateInitiative(
       delete initiative.sourceReferences;
     } else {
       initiative.sourceReferences = structuredClone(update.sourceReferences);
+    }
+  }
+
+  if (update.administrativelyBlocked === null || update.administrativelyBlocked === false) {
+    delete initiative.administrativelyBlocked;
+    delete initiative.administrativelyBlockedAt;
+    delete initiative.administrativelyBlockedByParticipantId;
+    delete initiative.administrativeBlockReason;
+  } else if (update.administrativelyBlocked === true) {
+    initiative.administrativelyBlocked = true;
+    if (update.administrativelyBlockedAt !== undefined) {
+      if (update.administrativelyBlockedAt === null) {
+        delete initiative.administrativelyBlockedAt;
+      } else {
+        initiative.administrativelyBlockedAt = update.administrativelyBlockedAt;
+      }
+    }
+    if (update.administrativelyBlockedByParticipantId !== undefined) {
+      if (update.administrativelyBlockedByParticipantId === null) {
+        delete initiative.administrativelyBlockedByParticipantId;
+      } else {
+        initiative.administrativelyBlockedByParticipantId =
+          update.administrativelyBlockedByParticipantId;
+      }
+    }
+    if (update.administrativeBlockReason !== undefined) {
+      if (update.administrativeBlockReason === null) {
+        delete initiative.administrativeBlockReason;
+      } else {
+        initiative.administrativeBlockReason = update.administrativeBlockReason;
+      }
     }
   }
 

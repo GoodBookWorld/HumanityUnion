@@ -172,6 +172,11 @@ export function PublicChoiceElectionResultsBoard({
                 )}
                 <div>
                   <strong>{candidate?.name ?? "Candidate"}</strong>
+                  {candidate?.isBlocked ? (
+                    <p className="pie-election-results__blocked" role="status">
+                      Blocked
+                    </p>
+                  ) : null}
                   {candidate?.campaignPageUrl ? (
                     <p>
                       <a href={candidate.campaignPageUrl} target="_blank" rel="noopener noreferrer">
@@ -225,6 +230,11 @@ export function PublicChoiceElectionResultsBoard({
                 )}
                 <div>
                   <strong>{candidate.name}</strong>
+                  {candidate.isBlocked ? (
+                    <p className="pie-election-results__blocked" role="status">
+                      Blocked
+                    </p>
+                  ) : null}
                 </div>
               </div>
               <div className="pie-election-results__metrics">

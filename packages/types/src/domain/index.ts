@@ -151,6 +151,11 @@ export type {
   TimelineEvent,
   TimelineEventId,
 } from "./initiative.js";
+export {
+  INITIATIVE_ADMIN_BLOCKED_MUTATION_MESSAGE,
+  PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE,
+  isInitiativeAdministrativelyBlocked,
+} from "./initiative.js";
 export type {
   InitiativeCoverMedia,
   InitiativeCoverMediaExternalProvider,
@@ -613,7 +618,13 @@ export {
   resolvePublicChoiceVotingCloseAt,
 } from "./public-choice-results-retention.js";
 export type { PublicChoiceResultsRetentionStatus } from "./public-choice-results-retention.js";
-export { toPublicChoiceCandidatePublicProjection } from "./public-choice-candidate.js";
+export {
+  PUBLIC_CHOICE_MAX_CANDIDATES,
+  isPublicChoiceCandidateAdministrativelyBlocked,
+  isPublicChoiceCandidateAvailableForNewSelect,
+  isPublicChoiceElectionAdministrativelyFrozen,
+  toPublicChoiceCandidatePublicProjection,
+} from "./public-choice-candidate.js";
 export type {
   PublicChoiceCandidate,
   PublicChoiceCandidateId,
@@ -1304,6 +1315,11 @@ export type {
   AdminInitiativeLifecycleStageId,
   AdminInitiativeLifecycleStageState,
   AdminInitiativeVisibilityCommandResult,
+  AdminInitiativeBlockCommandResult,
+  AdminPublicChoiceCandidateRow,
+  AdminPublicChoiceDetail,
+  AdminPublicChoiceDirectoryItem,
+  AdminPublicChoiceDirectoryResponse,
   AdminParticipantDirectoryItem,
   AdminParticipantDirectoryResponse,
   CapabilityScope,

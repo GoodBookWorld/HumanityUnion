@@ -21,4 +21,9 @@ export interface PublicInitiativeProjection {
   createdAt: string;
   currentVersion: number;
   sourceReferences?: InitiativeNewsSourceReference[];
+  /**
+   * Fix 08C — safe public moderation flag. True only when admin-blocked.
+   * Never exposes admin identity or reason.
+   */
+  isAdministrativelyBlocked?: boolean;
 }
