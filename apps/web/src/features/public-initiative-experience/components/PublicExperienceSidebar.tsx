@@ -12,8 +12,13 @@ import type {
 } from "@hu/types";
 import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
+import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { RelatedInitiativesWidget } from "../../community-intelligence/components/RelatedInitiativesWidget";
 import { InitiativeActiveAlliesWidget } from "../../initiative-active-allies/components/InitiativeActiveAlliesWidget";
+import {
+  publicChoiceSidebarAllows,
+  resolvePublicChoiceSidebarAllowlist,
+} from "../public-choice-sidebar-allowlist";
 import { PublicChoiceElectionSidebarWidget } from "./PublicChoiceElectionSidebarWidget";
 import { PublicInitiativeLatestInitiatives } from "./PublicInitiativeLatestInitiatives";
 import { PublicInitiativeRevisionHistory } from "./PublicInitiativeRevisionHistory";
@@ -58,20 +63,44 @@ export function PublicExperienceSidebar({
   lifecycleProfile = null,
   ballotMode: _ballotMode = null,
 }: PublicExperienceSidebarProps) {
-  const hideInitiativeSupport =
+  const authStatus = useClientAuthStatus();
+  const authenticated = authStatus === "authenticated";
+  const isPublicChoice =
     resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE";
+
+  if (isPublicChoice) {
+    const allowlist = resolvePublicChoiceSidebarAllowlist({ authenticated });
+
+    return (
+      <>
+        {publicChoiceSidebarAllows(allowlist, "candidates") ? (
+          <PublicChoiceElectionSidebarWidget
+            initiativeId={initiativeId}
+            lifecycleProfile={lifecycleProfile}
+          />
+        ) : null}
+        {publicChoiceSidebarAllows(allowlist, "your_participation") && participationJourney ? (
+          <YourParticipationPanel
+            journey={participationJourney}
+            isAuthorPrimary={viewerIsSteward || participationJourney.viewerIsSteward}
+          />
+        ) : null}
+        {publicChoiceSidebarAllows(allowlist, "related_initiatives") ? (
+          <RelatedInitiativesWidget items={relatedInitiatives} />
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <>
-      {!hideInitiativeSupport ? (
-        <PublicInitiativeSupportStatistics
-          statistics={statistics}
-          onSignalChange={onSignalChange}
-          onBookmarkToggle={onBookmarkToggle}
-          busy={supportBusy}
-          title={supportLabel}
-        />
-      ) : null}
+      <PublicInitiativeSupportStatistics
+        statistics={statistics}
+        onSignalChange={onSignalChange}
+        onBookmarkToggle={onBookmarkToggle}
+        busy={supportBusy}
+        title={supportLabel}
+      />
       <PublicChoiceElectionSidebarWidget
         initiativeId={initiativeId}
         lifecycleProfile={lifecycleProfile}

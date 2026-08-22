@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
   CastInitiativeDecisionVotePayload,
@@ -11,6 +11,7 @@ import type {
 import {
   isPublicChoiceCandidateElectionBallot,
   publicChoiceElectionVotingStatusLabel,
+  resolvePublicChoiceBallotMode,
   resolvePublicChoiceElectionVotingStatus,
 } from "@hu/types";
 
@@ -19,13 +20,11 @@ import {
   castOrUpdateInitiativeDecisionVote,
   getMyInitiativeDecisionVote,
   getPublicInitiativeCollectiveDecision,
-  listPublicInitiativeCollectiveDecisions,
   recallInitiativeDecisionVote,
 } from "../../initiative-collective-decision/api";
 import { describeCollectiveDecisionVotingUnavailable } from "../../initiative-collective-decision-lifecycle/collective-decision-voting";
-import { getPublicInitiative } from "../../initiatives/api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
-import { listPublicChoiceCandidates } from "../api";
+import { loadPublicChoiceElectionResultSurface } from "../public-choice-election-result-surface";
 import {
   notifyPublicChoiceElectionRefresh,
   usePublicChoiceElectionRefresh,
@@ -67,58 +66,74 @@ export function PublicChoiceOverviewCandidateIntake({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const loadGenerationRef = useRef(0);
+  const hasCompletedLoadRef = useRef(false);
 
   const reload = useCallback(async () => {
-    setLoadState("loading");
+    const generation = ++loadGenerationRef.current;
+    if (!hasCompletedLoadRef.current) {
+      setLoadState("loading");
+    }
     try {
-      const initiative = await getPublicInitiative(initiativeId);
-      if (!isPublicChoiceCandidateElectionBallot(initiative.metadata.ballotMode)) {
+      const surface = await loadPublicChoiceElectionResultSurface(initiativeId);
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
+
+      const ballotMode = resolvePublicChoiceBallotMode(
+        surface.decision?.ballotMode ?? surface.initiative?.metadata.ballotMode,
+      );
+      if (
+        surface.initiative &&
+        !isPublicChoiceCandidateElectionBallot(surface.initiative.metadata.ballotMode) &&
+        !isPublicChoiceCandidateElectionBallot(ballotMode)
+      ) {
+        hasCompletedLoadRef.current = true;
         setLoadState("hidden");
         return;
       }
 
-      setResultsExpired(Boolean(initiative.metadata.publicChoiceResultsExpiredAt));
+      // Soft-fail initiative GET: still show roster when candidates load.
+      if (surface.initiativeLoadFailed && surface.candidates.length === 0 && !surface.decision) {
+        hasCompletedLoadRef.current = true;
+        setLoadState("error");
+        return;
+      }
 
-      const [listed, candidateList] = await Promise.all([
-        listPublicInitiativeCollectiveDecisions(initiativeId).catch(() => ({
-          decisions: [],
-          metrics: {
-            decisionCount: 0,
-            openedCount: 0,
-            closedCount: 0,
-            cancelledCount: 0,
-          },
-        })),
-        listPublicChoiceCandidates(initiativeId).catch(() => []),
-      ]);
+      setResultsExpired(
+        Boolean(
+          surface.initiative?.metadata.publicChoiceResultsExpiredAt ??
+            surface.decision?.resultsRetention?.resultsExpiredAt,
+        ),
+      );
+      setCandidates(surface.candidates);
 
-      setCandidates(candidateList);
-
-      const opened =
-        listed.decisions.find((item) => item.status === "opened") ?? listed.decisions[0] ?? null;
-
-      if (!opened) {
+      if (!surface.decision) {
         setDecisionId(null);
         setProjection(null);
         setCurrentVote(null);
+        hasCompletedLoadRef.current = true;
         setLoadState("ready");
         return;
       }
 
-      const detail = await getPublicInitiativeCollectiveDecision(opened.decisionId);
-      setDecisionId(opened.decisionId);
-      setProjection(detail);
-      if (detail) {
-        try {
-          setCurrentVote(await getMyInitiativeDecisionVote(opened.decisionId));
-        } catch {
-          setCurrentVote(null);
-        }
-      } else {
+      setDecisionId(surface.decision.decisionId);
+      setProjection(surface.decision);
+      try {
+        setCurrentVote(await getMyInitiativeDecisionVote(surface.decision.decisionId));
+      } catch {
         setCurrentVote(null);
       }
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
+      hasCompletedLoadRef.current = true;
       setLoadState("ready");
     } catch {
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
+      hasCompletedLoadRef.current = true;
       setLoadState("error");
     }
   }, [initiativeId]);
@@ -157,8 +172,8 @@ export function PublicChoiceOverviewCandidateIntake({
 
   const selectedCandidateId =
     currentVote?.choice === "candidate" ? (currentVote.candidateId ?? null) : null;
-  const selectedAbstain = currentVote?.choice === "abstain";
-  const hasSelection = Boolean(selectedCandidateId || selectedAbstain);
+  /** Fix 07A — live UI locks only on an effective candidate Select (Abstain row removed). */
+  const hasSelection = Boolean(selectedCandidateId);
   const rosterLocked = votingOpen && hasSelection;
 
   function openSubmitForm(): void {
@@ -171,6 +186,7 @@ export function PublicChoiceOverviewCandidateIntake({
   async function handleSubmitted(): Promise<void> {
     setShowSubmit(false);
     await reload();
+    notifyPublicChoiceElectionRefresh(initiativeId);
   }
 
   async function cast(payload: CastInitiativeDecisionVotePayload, pending: string): Promise<void> {
@@ -315,8 +331,10 @@ export function PublicChoiceOverviewCandidateIntake({
                       </span>
                       <button
                         type="button"
-                        className="hu-button hu-button--secondary"
+                        className="hu-button pc-overview-vote-row__recall"
                         disabled={busy}
+                        aria-busy={pendingId === "recall"}
+                        aria-pressed="true"
                         onClick={() => void recall()}
                       >
                         {pendingId === "recall" ? "Recalling…" : "Recall"}
@@ -328,6 +346,7 @@ export function PublicChoiceOverviewCandidateIntake({
                       className="hu-button hu-button--primary"
                       disabled={busy || dimmed || !decisionId}
                       aria-disabled={dimmed || !decisionId}
+                      aria-busy={pendingId === candidate.candidateId}
                       onClick={() =>
                         void cast(
                           { choice: "candidate", candidateId: candidate.candidateId },
@@ -343,44 +362,6 @@ export function PublicChoiceOverviewCandidateIntake({
             </li>
           );
         })}
-
-        {votingOpen && decisionId ? (
-          <li
-            className={`pc-overview-vote-row${
-              selectedAbstain ? " pc-overview-vote-row--selected" : ""
-            }${rosterLocked && !selectedAbstain ? " pc-overview-vote-row--dimmed" : ""}`}
-          >
-            <div className="pie-overview-candidates__identity">
-              <span className="pie-overview-candidates__name">Abstain</span>
-            </div>
-            <div className="pc-overview-vote-row__actions">
-              {selectedAbstain ? (
-                <>
-                  <span className="pc-overview-vote-row__badge" role="status">
-                    Selected
-                  </span>
-                  <button
-                    type="button"
-                    className="hu-button hu-button--secondary"
-                    disabled={busy}
-                    onClick={() => void recall()}
-                  >
-                    {pendingId === "recall" ? "Recalling…" : "Recall"}
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="hu-button hu-button--secondary"
-                  disabled={busy || (rosterLocked && !selectedAbstain)}
-                  onClick={() => void cast({ choice: "abstain" }, "abstain")}
-                >
-                  {pendingId === "abstain" ? "Saving…" : "Select"}
-                </button>
-              )}
-            </div>
-          </li>
-        ) : null}
 
         {!resultsExpired && authenticated ? (
           <li className="pie-overview-candidates__add-row">

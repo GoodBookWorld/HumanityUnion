@@ -1,7 +1,10 @@
 "use client";
 
 import type { Initiative, PublicInitiativeExperienceProjection } from "@hu/types";
-import { isInitiativeLifecycleAuthorWorkspaceStage } from "@hu/types";
+import {
+  isInitiativeLifecycleAuthorWorkspaceStage,
+  resolveParticipantFacingCurrentStageId,
+} from "@hu/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { toggleInitiativeBookmark, updateInitiativeSupportSignal } from "../api";
@@ -66,6 +69,30 @@ export function PublicInitiativeExperiencePage({
     () => selectLifecycleNavStagesForDisplay(experience.lifecycleStages, experience.lifecycleProfile),
     [experience.lifecycleStages, experience.lifecycleProfile],
   );
+  /** Fix 07B — same presentation resolver for nav, hero, and sidebar stage cues. */
+  const presentationCurrentStageId = useMemo(
+    () =>
+      resolveParticipantFacingCurrentStageId(
+        experience.currentStageId,
+        experience.lifecycleProfile,
+      ),
+    [experience.currentStageId, experience.lifecycleProfile],
+  );
+  const presentationCurrentStageLabel = useMemo(() => {
+    const fromNav = navStages.find((stage) => stage.stageId === presentationCurrentStageId)?.label;
+    if (fromNav) {
+      return fromNav;
+    }
+    return (
+      experience.lifecycleStages.find((stage) => stage.stageId === presentationCurrentStageId)
+        ?.label ?? experience.hero.currentStageLabel
+    );
+  }, [
+    navStages,
+    presentationCurrentStageId,
+    experience.lifecycleStages,
+    experience.hero.currentStageLabel,
+  ]);
   const petitionDegradedMessage = publicSafeOptionalSectionMessage(
     experience.optionalStageDiagnostics,
     "petition",
@@ -299,14 +326,17 @@ export function PublicInitiativeExperiencePage({
       <PublicCivicRecordExperienceLayout
         hero={
           <PublicExperienceHero
-            {...buildInitiativeHeroProps(experience.hero)}
+            {...buildInitiativeHeroProps({
+              ...experience.hero,
+              currentStageLabel: presentationCurrentStageLabel,
+            })}
             initiativeId={experience.initiativeId}
           />
         }
         lifecycle={
           <PublicInitiativeLifecycleNav
             stages={navStages}
-            currentStageId={experience.currentStageId}
+            currentStageId={presentationCurrentStageId}
             selectedStageId={selectedStageId}
             viewerIsSteward={viewerIsSteward}
             lifecycleProfile={experience.lifecycleProfile}
@@ -357,7 +387,7 @@ export function PublicInitiativeExperiencePage({
         sidebar={
           <PublicExperienceSidebarOrChannel
             initiativeId={experience.initiativeId}
-            currentStageId={experience.currentStageId}
+            currentStageId={presentationCurrentStageId}
             lifecycleProfile={experience.lifecycleProfile}
             workspaceStageId={
               showLifecyclePanel && isInitiativeLifecycleAuthorWorkspaceStage(selectedStageId)

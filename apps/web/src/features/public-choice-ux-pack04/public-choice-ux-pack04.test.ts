@@ -89,9 +89,14 @@ describe("Public Choice Pack 04 — CD results + sidebar + election", () => {
     const sidebar = read(
       "features/public-initiative-experience/components/PublicExperienceSidebar.tsx",
     );
-    assert.match(sidebar, /hideInitiativeSupport/);
+    assert.match(sidebar, /resolvePublicChoiceSidebarAllowlist/);
     assert.match(sidebar, /PUBLIC_CHOICE/);
     assert.match(sidebar, /PublicChoiceElectionSidebarWidget/);
+    const pcBlock = sidebar.slice(
+      sidebar.indexOf("if (isPublicChoice)"),
+      sidebar.indexOf("return (", sidebar.indexOf("if (isPublicChoice)") + 1),
+    );
+    assert.doesNotMatch(pcBlock, /PublicInitiativeSupportStatistics/);
   });
 
   it("Election page has 40/60 intro, Download, Share, no Add candidate", () => {

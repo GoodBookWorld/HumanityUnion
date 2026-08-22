@@ -22,6 +22,7 @@ import {
   isLifecycleStageApplicableToProfile,
   resolveInitiativeLifecycleProfile,
   resolveInitiativeLifecycleState,
+  resolveParticipantFacingCurrentStageId,
 } from "@hu/types";
 
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
@@ -277,9 +278,14 @@ export async function buildCollectiveParticipationJourney(input: {
       deepLink: buildInitiativeShellDeepLink(input.initiativeId, "initiative"),
     });
 
+    const facingCurrentStageId = resolveParticipantFacingCurrentStageId(
+      lifecycleState.currentStageId,
+      lifecycleProfile,
+    ) as InitiativeLifecycleStageId;
+
     const nextAction = resolveNextMeaningfulParticipationAction({
       lifecycleProfile,
-      currentStageId: lifecycleState.currentStageId,
+      currentStageId: facingCurrentStageId,
       pastActions: [],
       availableActions: availableActions.map((action) =>
         action.eligibility === "requires_sign_in"
@@ -293,8 +299,8 @@ export async function buildCollectiveParticipationJourney(input: {
       initiativeId: input.initiativeId,
       participantId: null,
       lifecycleProfile,
-      currentStageId: lifecycleState.currentStageId,
-      currentStageLabel: stageLabel(lifecycleState.currentStageId),
+      currentStageId: facingCurrentStageId,
+      currentStageLabel: stageLabel(facingCurrentStageId),
       pastActions: [],
       availableActions,
       nextAction: nextAction
@@ -562,9 +568,14 @@ export async function buildCollectiveParticipationJourney(input: {
   // Sort past actions newest first
   pastActions.sort((left, right) => right.occurredAt.localeCompare(left.occurredAt));
 
+  const facingCurrentStageId = resolveParticipantFacingCurrentStageId(
+    lifecycleState.currentStageId,
+    lifecycleProfile,
+  ) as InitiativeLifecycleStageId;
+
   const nextAction = resolveNextMeaningfulParticipationAction({
     lifecycleProfile,
-    currentStageId: lifecycleState.currentStageId,
+    currentStageId: facingCurrentStageId,
     pastActions,
     availableActions,
     activeAlly,
@@ -574,8 +585,8 @@ export async function buildCollectiveParticipationJourney(input: {
     initiativeId: input.initiativeId,
     participantId,
     lifecycleProfile,
-    currentStageId: lifecycleState.currentStageId,
-    currentStageLabel: stageLabel(lifecycleState.currentStageId),
+    currentStageId: facingCurrentStageId,
+    currentStageLabel: stageLabel(facingCurrentStageId),
     pastActions,
     availableActions,
     nextAction,

@@ -21,6 +21,7 @@ import type {
 import {
   PUBLIC_INITIATIVE_EXPERIENCE_STAGES,
   resolveInitiativeLifecycleProfile,
+  resolveParticipantFacingCurrentStageId,
 } from "@hu/types";
 
 import { parseDiscussionCommentFocusFromHash } from "./discussion-comment-deep-link";
@@ -116,10 +117,17 @@ export function resolveLifecycleShellHash(
   }
 
   if (normalized === "collaboration-channel") {
+    /** Fix 07B — PUBLIC_CHOICE has no Channel sidebar; ignore legacy deep-links. */
+    if (profile === "PUBLIC_CHOICE") {
+      return { kind: "fallback_overview", reason: "not_applicable" };
+    }
     return { kind: "collaboration", tab: "channel" };
   }
 
   if (normalized === "collaboration-sessions") {
+    if (profile === "PUBLIC_CHOICE") {
+      return { kind: "fallback_overview", reason: "not_applicable" };
+    }
     return { kind: "collaboration", tab: "sessions" };
   }
 
@@ -128,7 +136,7 @@ export function resolveLifecycleShellHash(
     return { kind: "fallback_overview", reason: "invalid" };
   }
 
-  /** Fix 05 — Civic Archive is not a visible PUBLIC_CHOICE stage. */
+  /** Fix 05/07B — Civic Archive is not a visible PUBLIC_CHOICE stage. */
   if (profile === "PUBLIC_CHOICE" && stageId === "archive") {
     return { kind: "fallback_overview", reason: "not_applicable" };
   }
@@ -204,8 +212,13 @@ export function buildLifecycleGuideReadModel(input: {
     experience.recommendedStageId ??
     resolveRecommendedLifecycleStageId(stages, experience.currentStageId);
 
-  const currentIndex = stages.findIndex((stage) => stage.stageId === experience.currentStageId);
   const profile = resolveInitiativeLifecycleProfile(experience.lifecycleProfile);
+  /** Fix 07B — guide current stage uses the same participant-facing presentation resolver. */
+  const currentStageId = resolveParticipantFacingCurrentStageId(
+    experience.currentStageId,
+    profile,
+  );
+  const currentIndex = stages.findIndex((stage) => stage.stageId === currentStageId);
   const nextStageId =
     currentIndex >= 0 && currentIndex < stages.length - 1
       ? (stages
@@ -219,7 +232,7 @@ export function buildLifecycleGuideReadModel(input: {
 
   return {
     lifecycleProfile: profile,
-    currentStageId: experience.currentStageId,
+    currentStageId,
     recommendedStageId,
     selectedStageId: input.selectedStageId,
     completedStageIds,

@@ -22,7 +22,6 @@ import {
 } from "./persistence/initiative-decision-vote.mongo-document.js";
 import {
   deleteInitiativeDecisionVoteHistoryByVoteIdForTests,
-  deleteInitiativeDecisionVotesByDecisionIdForTests,
   deleteInitiativeDecisionVotesByParticipantIdForTests,
   findInitiativeDecisionVoteByDecisionAndParticipant,
   findInitiativeDecisionVoteByDecisionAndVisitor,
@@ -39,6 +38,7 @@ import {
   listInitiativeDecisionVotesByParticipant,
   updateInitiativeDecisionVoteChoice,
   deleteInitiativeDecisionVoteById,
+  deleteInitiativeDecisionVotesAndHistoryForDecision,
 } from "./persistence/initiative-decision-vote.repository.js";
 
 /**
@@ -150,6 +150,32 @@ async function findExistingVoteForVoter(input: {
 }
 
 /**
+ * Fix 07A — after Recall the active vote document is deleted but history remains.
+ * A later Select must allocate the next history/event version instead of colliding on `:1`.
+ */
+async function resolveNextVoteVersionForNewCast(input: {
+  decisionId: string;
+  participantId?: string;
+  visitorKey?: string;
+}): Promise<number> {
+  const history = input.participantId
+    ? await listInitiativeDecisionVoteHistoryByParticipant(input.decisionId, input.participantId)
+    : await listInitiativeDecisionVoteHistoryByDecision(input.decisionId).then((entries) =>
+        entries.filter((entry) => entry.visitorKey === input.visitorKey),
+      );
+
+  let maxVersion = 0;
+  for (const entry of history) {
+    const match = /:(\d+)$/.exec(entry.historyId);
+    if (match) {
+      maxVersion = Math.max(maxVersion, Number(match[1]));
+    }
+  }
+
+  return maxVersion + 1;
+}
+
+/**
  * The sole write path for Vote mutations (Recovery Task 31 Part 9 + Pack 02B).
  * Supports participant XOR visitor on one Mongo Decision Vote collection.
  */
@@ -253,6 +279,7 @@ export async function castOrChangeInitiativeDecisionVote(
     }
 
     const timestamp = new Date().toISOString();
+    const initialVersion = await resolveNextVoteVersionForNewCast(input);
     const vote: InitiativeDecisionVoteMongoRecord = {
       voteId,
       decisionId: input.decisionId,
@@ -265,7 +292,7 @@ export async function castOrChangeInitiativeDecisionVote(
       transparencyCohort: input.transparencyCohort,
       castAt: timestamp,
       updatedAt: timestamp,
-      version: 1,
+      version: initialVersion,
     };
 
     const castEvent = createInitiativeDecisionVoteCastEvent({
@@ -276,7 +303,7 @@ export async function castOrChangeInitiativeDecisionVote(
       choice: input.choice,
       candidateId: nextCandidateId,
       votedAt: timestamp,
-      voteVersion: 1,
+      voteVersion: initialVersion,
     });
 
     try {
@@ -288,7 +315,7 @@ export async function castOrChangeInitiativeDecisionVote(
               decisionId: input.decisionId,
               participantId: input.participantId,
               visitorKey: input.visitorKey,
-              newVersion: 1,
+              newVersion: initialVersion,
             }),
             voteId,
             decisionId: input.decisionId,
@@ -435,11 +462,6 @@ export async function deleteVotesByParticipantIdForTests(participantId: string):
 
 /** New in Recovery Task 31: decision-scoped counterpart, for concurrency fixtures spanning multiple participants on one Decision. */
 export async function deleteVotesByDecisionIdForTests(decisionId: string): Promise<void> {
-  const votes = await listInitiativeDecisionVotesByDecision(decisionId);
-
-  for (const vote of votes) {
-    await deleteInitiativeDecisionVoteHistoryByVoteIdForTests(vote.voteId);
-  }
-
-  await deleteInitiativeDecisionVotesByDecisionIdForTests(decisionId);
+  // Fix 07A — Recall leaves orphan history; purge votes + history for the Decision.
+  await deleteInitiativeDecisionVotesAndHistoryForDecision(decisionId);
 }

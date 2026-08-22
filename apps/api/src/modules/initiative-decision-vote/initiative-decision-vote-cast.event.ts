@@ -29,8 +29,16 @@ export interface InitiativeDecisionVoteCastPayload extends Record<string, unknow
   voteVersion: number;
 }
 
-export function buildInitiativeDecisionVoteCastEventId(voteId: string): string {
-  return `initiative-decision-vote-cast:${voteId}`;
+export function buildInitiativeDecisionVoteCastEventId(
+  voteId: string,
+  voteVersion = 1,
+): string {
+  // Version 1 keeps the historical eventId shape. Re-cast after Recall uses
+  // version > 1 and must not collide with the prior cast outbox identity.
+  if (voteVersion <= 1) {
+    return `initiative-decision-vote-cast:${voteId}`;
+  }
+  return `initiative-decision-vote-cast:${voteId}:v${voteVersion}`;
 }
 
 export function assertValidInitiativeDecisionVoteCastPayload(
@@ -83,7 +91,7 @@ export function createInitiativeDecisionVoteCastEvent(input: {
   assertValidInitiativeDecisionVoteCastPayload(payload);
 
   return createDomainEvent({
-    eventId: buildInitiativeDecisionVoteCastEventId(input.voteId),
+    eventId: buildInitiativeDecisionVoteCastEventId(input.voteId, input.voteVersion),
     eventName: CATALOGUE_EVENTS.initiativeDecisionVoteCast,
     aggregateType: INITIATIVE_DECISION_VOTE_AGGREGATE_TYPE,
     aggregateId: input.voteId,

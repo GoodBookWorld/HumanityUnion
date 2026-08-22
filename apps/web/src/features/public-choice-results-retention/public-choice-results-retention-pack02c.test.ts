@@ -57,6 +57,12 @@ describe("Public Choice Pack 02C — web contracts", () => {
     );
     assert.match(sidebar, /PublicInitiativeSupportStatistics/);
     assert.match(sidebar, /PublicChoiceElectionSidebarWidget/);
-    assert.match(sidebar, /hideInitiativeSupport/);
+    // Fix 07B — Support omitted via allowlist (not hideInitiativeSupport flag).
+    assert.match(sidebar, /resolvePublicChoiceSidebarAllowlist/);
+    const pcBlock = sidebar.slice(
+      sidebar.indexOf("if (isPublicChoice)"),
+      sidebar.indexOf("return (", sidebar.indexOf("if (isPublicChoice)") + 1),
+    );
+    assert.doesNotMatch(pcBlock, /PublicInitiativeSupportStatistics/);
   });
 });

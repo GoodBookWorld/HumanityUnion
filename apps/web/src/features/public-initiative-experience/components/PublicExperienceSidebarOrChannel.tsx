@@ -5,6 +5,7 @@ import { type ComponentProps, useEffect, useState } from "react";
 import {
   isInitiativeLifecycleAuthorWorkspaceStage,
   PUBLIC_INITIATIVE_EXPERIENCE_STAGES,
+  resolveInitiativeLifecycleProfile,
   type InitiativeLifecycleProfile,
 } from "@hu/types";
 
@@ -127,6 +128,17 @@ export function PublicExperienceSidebarOrChannel({
       cancelled = true;
     };
   }, [sidebarProps.initiativeId, isInitiativeSteward]);
+
+  const isPublicChoice =
+    resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE";
+
+  /**
+   * Fix 07B — PUBLIC_CHOICE Overview always uses the public allowlisted sidebar.
+   * Author must not enter Working Sidebar or icw-tabs / Channel on PC.
+   */
+  if (isPublicChoice) {
+    return <PublicExperienceSidebar {...sidebarProps} lifecycleProfile={lifecycleProfile} />;
+  }
 
   // Initiative Lifecycle Part A Completion Part 4/6 — the Author's working
   // sidebar takes priority over the pre-existing Channel swap below, but

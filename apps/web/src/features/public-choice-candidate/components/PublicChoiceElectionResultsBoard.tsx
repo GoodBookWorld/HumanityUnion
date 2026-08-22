@@ -140,7 +140,7 @@ export function PublicChoiceElectionResultsBoard({
 
       {candidates.length === 0 ? (
         <p className="pie-election-results__empty" role="status">
-          No candidates listed yet. Add candidates from the Initiative Overview.
+          No candidates have been added yet.
         </p>
       ) : null}
 

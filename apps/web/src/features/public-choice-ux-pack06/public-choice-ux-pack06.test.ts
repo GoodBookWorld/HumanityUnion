@@ -43,7 +43,7 @@ describe("Public Choice Fix 06 — role + zero-vote UI contracts", () => {
     const board = read(
       "features/public-choice-candidate/components/PublicChoiceElectionResultsBoard.tsx",
     );
-    assert.match(board, /No candidates listed yet/);
+    assert.match(board, /No candidates have been added yet/);
     assert.match(board, /unrankedCandidates/);
     assert.match(board, /0 votes|tally\.count/);
   });

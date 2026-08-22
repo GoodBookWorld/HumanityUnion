@@ -578,6 +578,7 @@ export {
   getInitiativeLifecycleProfilePresentation,
   PUBLIC_CHOICE_ELECTION_CREATE_HELPER,
   PUBLIC_CHOICE_SELECT_ONE_BALLOT_HELPER,
+  resolveParticipantFacingCurrentStageId,
 } from "./initiative-lifecycle-profile-presentation.js";
 export type { InitiativeLifecycleProfilePresentation } from "./initiative-lifecycle-profile-presentation.js";
 export {

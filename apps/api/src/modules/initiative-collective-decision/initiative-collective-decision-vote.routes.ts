@@ -80,6 +80,17 @@ function getDecisionId(req: Request): string {
   return Array.isArray(decisionId) ? (decisionId[0] ?? "") : (decisionId ?? "");
 }
 
+/** Fix 07A — never expose visitorKey in HTTP vote payloads (cookie remains httpOnly). */
+function toClientVoteProjection<T extends { visitorKey?: string }>(
+  vote: T | null,
+): Omit<T, "visitorKey"> | null {
+  if (!vote) {
+    return null;
+  }
+  const { visitorKey: _omit, ...rest } = vote;
+  return rest;
+}
+
 function resolveVisitorKey(req: Request): string {
   const existing = req.cookies?.[VISITOR_COOKIE];
 
@@ -113,7 +124,7 @@ initiativeCollectiveDecisionVoteRouter.post(
       if (req.auth?.id) {
         const identity = await resolveRequestIdentity(req);
         const vote = await castOrUpdateInitiativeDecisionVote(identity, getDecisionId(req), input);
-        res.status(201).json(createSuccessResponse(vote, "Vote recorded."));
+        res.status(201).json(createSuccessResponse(toClientVoteProjection(vote), "Vote recorded."));
         return;
       }
 
@@ -122,7 +133,7 @@ initiativeCollectiveDecisionVoteRouter.post(
         getDecisionId(req),
         input,
       );
-      res.status(201).json(createSuccessResponse(vote, "Visitor vote recorded."));
+      res.status(201).json(createSuccessResponse(toClientVoteProjection(vote), "Visitor vote recorded."));
     } catch (error) {
       handleServiceError(res, error);
     }
@@ -137,7 +148,12 @@ initiativeCollectiveDecisionVoteRouter.get(
       if (req.auth?.id) {
         const identity = await resolveRequestIdentity(req);
         const vote = await getMyInitiativeDecisionVote(identity, getDecisionId(req));
-        res.json(createSuccessResponse(vote, vote ? "Vote loaded." : "No vote recorded yet."));
+        res.json(
+          createSuccessResponse(
+            toClientVoteProjection(vote),
+            vote ? "Vote loaded." : "No vote recorded yet.",
+          ),
+        );
         return;
       }
 
@@ -148,7 +164,12 @@ initiativeCollectiveDecisionVoteRouter.get(
       }
 
       const vote = await getVisitorInitiativeDecisionVote(existing, getDecisionId(req));
-      res.json(createSuccessResponse(vote, vote ? "Vote loaded." : "No vote recorded yet."));
+      res.json(
+        createSuccessResponse(
+          toClientVoteProjection(vote),
+          vote ? "Vote loaded." : "No vote recorded yet.",
+        ),
+      );
     } catch (error) {
       handleServiceError(res, error);
     }
@@ -186,7 +207,7 @@ initiativeCollectiveDecisionVoteRouter.post(
       const input = validateCastInitiativeDecisionVoteInput(req.body);
       const vote = await castOrUpdateInitiativeDecisionVote(identity, getDecisionId(req), input);
 
-      res.status(201).json(createSuccessResponse(vote, "Vote recorded."));
+      res.status(201).json(createSuccessResponse(toClientVoteProjection(vote), "Vote recorded."));
     } catch (error) {
       handleServiceError(res, error);
     }

@@ -281,8 +281,7 @@ describe("Phase 03 — lifecycle shell helpers", () => {
       experience,
       selectedStageId: "collective_decision",
     });
-    assert.equal(guide.currentStageId, "archive");
+    assert.equal(guide.currentStageId, "collective_decision");
     assert.equal(guide.selectedStageId, "collective_decision");
-    assert.notEqual(guide.currentStageId, guide.selectedStageId);
   });
 });

@@ -71,7 +71,12 @@ describe("Public Choice Candidates & Voting Pack 02A — contracts", () => {
     );
     assert.match(sidebar, /PublicChoiceElectionSidebarWidget/);
     assert.match(sidebar, /PublicInitiativeSupportStatistics/);
-    assert.match(sidebar, /hideInitiativeSupport/);
+    assert.match(sidebar, /resolvePublicChoiceSidebarAllowlist/);
+    const pcBlock = sidebar.slice(
+      sidebar.indexOf("if (isPublicChoice)"),
+      sidebar.indexOf("return (", sidebar.indexOf("if (isPublicChoice)") + 1),
+    );
+    assert.doesNotMatch(pcBlock, /PublicInitiativeSupportStatistics/);
   });
 
   it("election detail route exists under public initiative", () => {

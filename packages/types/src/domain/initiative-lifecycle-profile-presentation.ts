@@ -78,3 +78,19 @@ export function getInitiativeLifecycleProfilePresentation(
     showLifecycleStageOrdinal: true,
   };
 }
+
+/**
+ * Fix 07B — participant-facing current stage for PUBLIC_CHOICE.
+ * Domain route still includes Civic Archive; visible/presentation lifecycle
+ * never reports Archive as the current stage (clamp to Collective Decision).
+ */
+export function resolveParticipantFacingCurrentStageId(
+  currentStageId: string,
+  lifecycleProfile?: InitiativeLifecycleProfile | string | null,
+): string {
+  const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
+  if (profile === "PUBLIC_CHOICE" && currentStageId === "archive") {
+    return "collective_decision";
+  }
+  return currentStageId;
+}

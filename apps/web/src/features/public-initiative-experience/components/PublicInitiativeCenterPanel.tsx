@@ -14,6 +14,7 @@ import {
   getInitiativeLifecycleProfilePresentation,
   isInitiativeLifecycleAuthorWorkspaceStage,
   isPublicChoiceCandidateElectionBallot,
+  resolveParticipantFacingCurrentStageId,
 } from "@hu/types";
 
 import { formatPublicGeography } from "@hu/geography";
@@ -713,17 +714,25 @@ export function PublicInitiativeCenterPanel({
             aria-labelledby="pie-tab-overview"
             className="pie-center__panel"
           >
-            <PublicInitiativeOverview
-              initiative={experience.initiative}
-              lifecycleProfile={experience.lifecycleProfile}
-              currentStageId={experience.currentStageId}
-              currentStageLabel={
-                experience.lifecycleStages.find((stage) => stage.stageId === experience.currentStageId)
-                  ?.label ?? "Initiative"
-              }
-              openCandidateSubmit={openCandidateSubmit}
-              onOpenCandidateSubmitConsumed={onOpenCandidateSubmitConsumed}
-            />
+            {(() => {
+              const facingStageId = resolveParticipantFacingCurrentStageId(
+                experience.currentStageId,
+                experience.lifecycleProfile,
+              );
+              const facingLabel =
+                experience.lifecycleStages.find((stage) => stage.stageId === facingStageId)?.label ??
+                "Initiative";
+              return (
+                <PublicInitiativeOverview
+                  initiative={experience.initiative}
+                  lifecycleProfile={experience.lifecycleProfile}
+                  currentStageId={facingStageId}
+                  currentStageLabel={facingLabel}
+                  openCandidateSubmit={openCandidateSubmit}
+                  onOpenCandidateSubmitConsumed={onOpenCandidateSubmitConsumed}
+                />
+              );
+            })()}
           </section>
         ) : null}
 

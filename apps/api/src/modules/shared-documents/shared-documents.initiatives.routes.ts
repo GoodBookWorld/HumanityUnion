@@ -31,7 +31,25 @@ const upload = multer({
   limits: { fileSize: MAX_SHARED_DOCUMENT_SIZE_BYTES, files: 1 },
 });
 
-sharedDocumentsInitiativesRouter.use(requireJwtAuthenticationMiddleware);
+/**
+ * Fix 07B — Auth must be path-scoped, not router-global.
+ * A bare `router.use(requireJwt…)` intercepted every
+ * `GET /api/v1/public/initiatives/:initiativeId` before
+ * `publicInitiativeRouter`, returning 401 to Visitors and breaking Overview
+ * candidate loading (which calls getPublicInitiative first).
+ */
+sharedDocumentsInitiativesRouter.use(
+  "/:initiativeId/collaboration-channel",
+  requireJwtAuthenticationMiddleware,
+);
+sharedDocumentsInitiativesRouter.use(
+  "/:initiativeId/collaboration-sessions",
+  requireJwtAuthenticationMiddleware,
+);
+sharedDocumentsInitiativesRouter.use(
+  "/:initiativeId/official-responses",
+  requireJwtAuthenticationMiddleware,
+);
 
 function extractUploadFile(req: Request) {
   return {

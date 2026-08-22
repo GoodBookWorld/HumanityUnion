@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   InitiativeDecisionBallotAggregates,
@@ -17,13 +17,8 @@ import {
   resolvePublicChoiceElectionVotingStatus,
 } from "@hu/types";
 
-import {
-  getPublicInitiativeCollectiveDecision,
-  listPublicInitiativeCollectiveDecisions,
-} from "../../initiative-collective-decision/api";
-import { getPublicInitiative } from "../../initiatives/api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
-import { listPublicChoiceCandidates } from "../../public-choice-candidate/api";
+import { loadPublicChoiceElectionResultSurface } from "../../public-choice-candidate/public-choice-election-result-surface";
 import { usePublicChoiceElectionRefresh } from "../../public-choice-candidate/public-choice-election-refresh";
 
 interface PublicChoiceElectionSidebarWidgetProps {
@@ -54,9 +49,8 @@ function sortSelectOneCandidates(
 }
 
 /**
- * Pack 02A — sidebar Election / Candidates widget.
- * Order contract: after Initiative Support, before remaining widgets.
- * STANDARD: not rendered.
+ * Pack 02A / Fix 07C — sidebar Candidates widget.
+ * Consumes the same canonical live aggregate as CD / Election while OPEN.
  */
 export function PublicChoiceElectionSidebarWidget({
   initiativeId,
@@ -70,32 +64,39 @@ export function PublicChoiceElectionSidebarWidget({
   const [decision, setDecision] = useState<PublicInitiativeCollectiveDecisionProjection | null>(
     null,
   );
+  const [selectOneAggregates, setSelectOneAggregates] = useState<
+    InitiativeDecisionBallotAggregates | undefined
+  >(undefined);
+  const loadGenerationRef = useRef(0);
+  const hasSurfaceRef = useRef(false);
 
   const reload = useCallback(async () => {
     if (!isPublicChoice) {
       return;
     }
 
+    const generation = ++loadGenerationRef.current;
     try {
-      const [publicInitiative, candidateList, listed] = await Promise.all([
-        getPublicInitiative(initiativeId),
-        listPublicChoiceCandidates(initiativeId).catch(() => []),
-        listPublicInitiativeCollectiveDecisions(initiativeId),
-      ]);
-      setInitiative(publicInitiative);
-      setCandidates(candidateList);
-
-      const opened =
-        listed.decisions.find((item) => item.status === "opened") ?? listed.decisions[0] ?? null;
-      if (opened) {
-        setDecision(await getPublicInitiativeCollectiveDecision(opened.decisionId));
-      } else {
-        setDecision(null);
+      const surface = await loadPublicChoiceElectionResultSurface(initiativeId);
+      if (generation !== loadGenerationRef.current) {
+        return;
       }
+      setInitiative(surface.initiative);
+      setCandidates(surface.candidates);
+      setDecision(surface.decision);
+      setSelectOneAggregates(surface.selectOneAggregates);
+      hasSurfaceRef.current = true;
     } catch {
-      setInitiative(null);
-      setCandidates([]);
-      setDecision(null);
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
+      // Soft path: keep last good tallies if a transient roster/initiative fetch fails.
+      if (!hasSurfaceRef.current) {
+        setInitiative(null);
+        setCandidates([]);
+        setDecision(null);
+        setSelectOneAggregates(undefined);
+      }
     }
   }, [initiativeId, isPublicChoice]);
 
@@ -122,15 +123,16 @@ export function PublicChoiceElectionSidebarWidget({
   });
   const votingOpen = votingStatus === "OPEN";
   const ranked = useMemo(
-    () => sortSelectOneCandidates(candidates, decision?.ballotAggregates),
-    [candidates, decision?.ballotAggregates],
+    () => sortSelectOneCandidates(candidates, selectOneAggregates),
+    [candidates, selectOneAggregates],
   );
 
-  if (!isPublicChoice || !initiative) {
+  // Fix 07C — still render when initiative GET soft-fails if candidates/results loaded.
+  if (!isPublicChoice || (!initiative && candidates.length === 0 && !decision)) {
     return null;
   }
 
-  const aggregates = decision?.ballotAggregates;
+  const aggregates = selectOneAggregates ?? decision?.ballotAggregates;
 
   return (
     <section className="pie-election" aria-labelledby="pie-election-title">

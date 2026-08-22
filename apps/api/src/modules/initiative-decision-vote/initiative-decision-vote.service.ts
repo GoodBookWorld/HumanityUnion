@@ -265,6 +265,21 @@ async function evaluateVoteEligibility(
 }
 
 /**
+ * Fix 07A — PUBLIC_CHOICE candidate Select/Recall does NOT require Participation Area.
+ * STANDARD ternary voting still uses evaluateVoteEligibility (area required).
+ */
+async function assertPublicChoiceAuthenticatedVoter(participantId: string): Promise<{
+  transparencyCohort: "verified" | "unverified";
+}> {
+  const member = await getMemberById(participantId);
+  if (member && member.status !== "active") {
+    throw new Error("Participant must be active to participate in collective decisions.");
+  }
+
+  return { transparencyCohort: "unverified" };
+}
+
+/**
  * Pack 02B — PUBLIC_CHOICE and STANDARD share durable Mongo Decision Vote.
  * VISITOR_TO_PARTICIPANT_VOTE_RECONCILIATION_GAP=YES — identities never auto-merged.
  */
@@ -324,13 +339,7 @@ async function castPublicChoiceParticipantVote(args: {
     await assertCandidateBelongsToInitiative(args.initiative.initiativeId, args.candidateId);
   }
 
-  const eligibility = await evaluateVoteEligibility(args.decision, args.initiative, {
-    participantId: args.participantId,
-  } as RequestIdentity);
-
-  if (!eligibility.eligible) {
-    throw new Error(eligibility.explanation);
-  }
+  const { transparencyCohort } = await assertPublicChoiceAuthenticatedVoter(args.participantId);
 
   return castOrChangeInitiativeDecisionVote({
     decisionId: args.decision.decisionId,
@@ -339,7 +348,7 @@ async function castPublicChoiceParticipantVote(args: {
     choice: args.choice,
     candidateId: args.candidateId,
     voterCategory: await resolveAuthenticatedPublicChoiceVoterCategory(args.participantId),
-    transparencyCohort: eligibility.transparencyCohort,
+    transparencyCohort,
   });
 }
 

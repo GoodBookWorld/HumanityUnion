@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import type {
+  InitiativeDecisionSelectOneAggregates,
   InitiativeDecisionSupportOpposeAggregates,
   PublicChoiceBallotMode,
   PublicChoiceCandidatePublicProjection,
@@ -19,17 +20,15 @@ import {
 import { formatPublicGeography } from "@hu/geography";
 
 import {
-  getPublicInitiativeCollectiveDecision,
-  listPublicInitiativeCollectiveDecisions,
-} from "../../initiative-collective-decision/api";
-import {
   CivicShareButton,
   resolveAbsoluteCivicShareUrl,
 } from "../../civic-share";
-import { getPublicInitiative } from "../../initiatives/api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
-import { listPublicChoiceCandidates } from "../../public-choice-candidate/api";
 import { PublicChoiceElectionResultsBoard } from "../../public-choice-candidate/components/PublicChoiceElectionResultsBoard";
+import {
+  createZeroSelectOneAggregates,
+  loadPublicChoiceElectionResultSurface,
+} from "../../public-choice-candidate/public-choice-election-result-surface";
 import { usePublicChoiceElectionRefresh } from "../../public-choice-candidate/public-choice-election-refresh";
 import { downloadPublicChoiceResultsPdf } from "../../public-choice-results-retention/api";
 
@@ -146,8 +145,8 @@ function SupportOpposeResults({
 }
 
 /**
- * Pack 04 — presentation-ready Public Choice election results page.
- * Select/Recall voting lives on Overview; this page is results + share.
+ * Pack 04 / Fix 07C — Public Choice election results page.
+ * OPEN → live aggregates; CLOSED → frozen snapshot via the same public projection path.
  */
 export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: string }) {
   const [initiative, setInitiative] = useState<PublicInitiativeProjection | null>(null);
@@ -155,28 +154,36 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
   const [decision, setDecision] = useState<PublicInitiativeCollectiveDecisionProjection | null>(
     null,
   );
+  const [selectOneAggregates, setSelectOneAggregates] =
+    useState<InitiativeDecisionSelectOneAggregates>(() => createZeroSelectOneAggregates([]));
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const loadGenerationRef = useRef(0);
 
   const reload = useCallback(async () => {
-    setLoadState("loading");
+    const generation = ++loadGenerationRef.current;
     try {
-      const [publicInitiative, candidateList, listed] = await Promise.all([
-        getPublicInitiative(initiativeId),
-        listPublicChoiceCandidates(initiativeId).catch(() => []),
-        listPublicInitiativeCollectiveDecisions(initiativeId),
-      ]);
-      setInitiative(publicInitiative);
-      setCandidates(candidateList);
+      const surface = await loadPublicChoiceElectionResultSurface(initiativeId);
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
 
-      const opened =
-        listed.decisions.find((item) => item.status === "opened") ?? listed.decisions[0] ?? null;
-      setDecision(
-        opened ? await getPublicInitiativeCollectiveDecision(opened.decisionId) : null,
+      setInitiative(surface.initiative);
+      setCandidates(surface.candidates);
+      setDecision(surface.decision);
+      setSelectOneAggregates(surface.selectOneAggregates);
+      setLoadState(
+        surface.initiative || surface.candidates.length > 0 || surface.decision
+          ? "ready"
+          : surface.initiativeLoadFailed
+            ? "error"
+            : "ready",
       );
-      setLoadState("ready");
     } catch {
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
       setLoadState("error");
     }
   }, [initiativeId]);
@@ -213,20 +220,15 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
         ? "FINAL RESULTS"
         : "RESULTS";
 
-  const selectOneAggregates = useMemo(() => {
-    const aggregates = decision?.ballotAggregates;
-    return aggregates?.ballotMode === "SELECT_ONE_CANDIDATE" ? aggregates : null;
-  }, [decision?.ballotAggregates]);
-
   const downloadAvailable =
     Boolean(decision?.resultsRetention?.downloadAvailable) && !resultsExpired;
 
   const totalVoters =
-    selectOneAggregates?.totalEffectiveVoters ??
-    (decision?.ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
-      ? decision.ballotAggregates.total.totalVotes
-      : decision?.statistics.totalVotesCast) ??
-    0;
+    ballotMode === "SELECT_ONE_CANDIDATE"
+      ? selectOneAggregates.totalEffectiveVoters
+      : decision?.ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
+        ? decision.ballotAggregates.total.totalVotes
+        : (decision?.statistics.totalVotesCast ?? 0);
 
   async function handleDownload(): Promise<void> {
     if (!decision || downloadBusy) {
@@ -247,16 +249,19 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
     return <p role="status">Loading election…</p>;
   }
 
-  if (loadState === "error" || !initiative) {
+  if (loadState === "error" && !initiative && candidates.length === 0 && !decision) {
     return <p role="alert">Election could not be loaded.</p>;
   }
 
-  const electionName = initiative.metadata.communityAssociation?.trim() || initiative.title;
+  const electionName =
+    initiative?.metadata.communityAssociation?.trim() ||
+    initiative?.title ||
+    "Election";
   const cover =
     resolveMediaUrl(
-      initiative.metadata.imageUrl ??
-        initiative.metadata.coverMedia?.thumbnailUrl ??
-        initiative.metadata.coverMedia?.url,
+      initiative?.metadata.imageUrl ??
+        initiative?.metadata.coverMedia?.thumbnailUrl ??
+        initiative?.metadata.coverMedia?.url,
     ) ?? undefined;
   const aggregates = decision?.ballotAggregates;
   const initiativeHref = `/initiatives/public/${encodeURIComponent(initiativeId)}`;
@@ -264,25 +269,25 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
   const electionPath = `/initiatives/public/${encodeURIComponent(initiativeId)}/election`;
 
   const startOfVoting =
-    formatDateTime(decision?.openedAt) ?? formatDateTime(initiative.metadata.startDate);
+    formatDateTime(decision?.openedAt) ?? formatDateTime(initiative?.metadata.startDate);
   const endOfVoting =
     formatDateTime(decision?.closedAt) ??
     formatDateTime(decision?.closesAt) ??
-    formatDateTime(initiative.metadata.completionDate);
+    formatDateTime(initiative?.metadata.completionDate);
 
   const geography = formatPublicGeography({
-    countryCode: initiative.metadata.countrySlug,
-    regionCode: initiative.metadata.regionSlug,
-    communitySlug: initiative.metadata.communitySlug,
-    regionLabel: initiative.metadata.region,
-    communityAssociation: initiative.metadata.communityAssociation,
+    countryCode: initiative?.metadata.countrySlug,
+    regionCode: initiative?.metadata.regionSlug,
+    communitySlug: initiative?.metadata.communitySlug,
+    regionLabel: initiative?.metadata.region,
+    communityAssociation: initiative?.metadata.communityAssociation,
   });
 
   const sharePayload = {
     url: resolveAbsoluteCivicShareUrl(electionPath),
     title: electionName,
     image: cover,
-    optionalText: initiative.description?.slice(0, 160),
+    optionalText: initiative?.description?.slice(0, 160),
     contentType: "initiative" as const,
     initiativeId,
   };
@@ -313,23 +318,6 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
     );
   }
 
-  const emptySelectOne = {
-    ballotMode: "SELECT_ONE_CANDIDATE" as const,
-    candidates: [],
-    abstain: 0,
-    abstainPercentage: 0,
-    totalEffectiveVoters: 0,
-    participationBreakdown: {
-      visitors: 0,
-      participants: 0,
-      members: 0,
-      totalEffectiveVoters: 0,
-      visitorPercentage: 0,
-      participantPercentage: 0,
-      memberPercentage: 0,
-    },
-  };
-
   return (
     <article className="pie-election-page">
       <p>
@@ -342,13 +330,13 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
       <div className="pie-election-page__intro">
         <div className="pie-election-page__intro-media">
           {cover ? (
-            <img src={cover} alt={initiative.metadata.imageAltText || electionName} />
+            <img src={cover} alt={initiative?.metadata.imageAltText || electionName} />
           ) : (
             <div className="pie-election-page__intro-media-empty" aria-hidden />
           )}
         </div>
         <div className="pie-election-page__intro-body">
-          {initiative.description ? <p>{initiative.description}</p> : null}
+          {initiative?.description ? <p>{initiative.description}</p> : null}
           <ul className="pie-election-page__meta">
             <li>Geography: {geography || "—"}</li>
             <li>Start of Voting: {startOfVoting ?? "—"}</li>
@@ -372,7 +360,7 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
         <PublicChoiceElectionResultsBoard
           initiativeId={initiativeId}
           candidates={candidates}
-          aggregates={selectOneAggregates ?? emptySelectOne}
+          aggregates={selectOneAggregates}
           resultsLabel={resultsLabel}
           votingOpen={votingOpen}
           electionStatus={electionStatusLabel}

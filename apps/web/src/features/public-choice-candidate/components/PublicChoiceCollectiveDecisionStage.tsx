@@ -1,25 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type {
+  InitiativeDecisionSelectOneAggregates,
   PublicChoiceCandidatePublicProjection,
   PublicInitiativeCollectiveDecisionProjection,
 } from "@hu/types";
 import {
-  isPublicChoiceCandidateElectionBallot,
   publicChoiceElectionVotingStatusLabel,
   resolvePublicChoiceElectionVotingStatus,
 } from "@hu/types";
 
-import {
-  getPublicInitiativeCollectiveDecision,
-  listPublicInitiativeCollectiveDecisions,
-} from "../../initiative-collective-decision/api";
-import { getPublicInitiative } from "../../initiatives/api";
 import { buildInitiativeExperienceHref } from "../../initiative-owner-studio/initiative-experience-routes";
 import { downloadPublicChoiceResultsPdf } from "../../public-choice-results-retention/api";
-import { listPublicChoiceCandidates } from "../api";
+import {
+  createZeroSelectOneAggregates,
+  loadPublicChoiceElectionResultSurface,
+} from "../public-choice-election-result-surface";
 import { usePublicChoiceElectionRefresh } from "../public-choice-election-refresh";
 import { PublicChoiceElectionResultsBoard } from "./PublicChoiceElectionResultsBoard";
 
@@ -30,8 +28,9 @@ interface PublicChoiceCollectiveDecisionStageProps {
 }
 
 /**
- * Fix 05 — PUBLIC_CHOICE Collective Decision for every viewer role.
- * Always the shared election results board — never STANDARD Author Workspace.
+ * Fix 05 / 07C — PUBLIC_CHOICE Collective Decision for every viewer role.
+ * Always the shared election results board — never STANDARD Author Workspace
+ * or the generic public Collective Decision page presentation.
  */
 export function PublicChoiceCollectiveDecisionStage({
   initiativeId,
@@ -40,41 +39,34 @@ export function PublicChoiceCollectiveDecisionStage({
     null,
   );
   const [candidates, setCandidates] = useState<PublicChoiceCandidatePublicProjection[]>([]);
+  const [selectOneAggregates, setSelectOneAggregates] =
+    useState<InitiativeDecisionSelectOneAggregates>(() => createZeroSelectOneAggregates([]));
   const [electionName, setElectionName] = useState("Election");
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
   const [downloadBusy, setDownloadBusy] = useState(false);
+  const loadGenerationRef = useRef(0);
 
   const reload = useCallback(async () => {
+    const generation = ++loadGenerationRef.current;
     try {
-      const [initiative, listed, candidateList] = await Promise.all([
-        getPublicInitiative(initiativeId),
-        listPublicInitiativeCollectiveDecisions(initiativeId),
-        listPublicChoiceCandidates(initiativeId).catch(() => []),
-      ]);
+      const surface = await loadPublicChoiceElectionResultSurface(initiativeId);
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
 
       setElectionName(
-        initiative.metadata.communityAssociation?.trim() || initiative.title || "Election",
+        surface.initiative?.metadata.communityAssociation?.trim() ||
+          surface.initiative?.title ||
+          "Election",
       );
-      setCandidates(candidateList);
-
-      if (!isPublicChoiceCandidateElectionBallot(initiative.metadata.ballotMode)) {
-        setDecision(null);
-        setLoadState("ready");
-        return;
-      }
-
-      const opened =
-        listed.decisions.find((item) => item.status === "opened") ?? listed.decisions[0] ?? null;
-      if (!opened) {
-        setDecision(null);
-        setLoadState("ready");
-        return;
-      }
-
-      const detail = await getPublicInitiativeCollectiveDecision(opened.decisionId);
-      setDecision(detail);
+      setCandidates(surface.candidates);
+      setDecision(surface.decision);
+      setSelectOneAggregates(surface.selectOneAggregates);
       setLoadState("ready");
     } catch {
+      if (generation !== loadGenerationRef.current) {
+        return;
+      }
       setLoadState("error");
     }
   }, [initiativeId]);
@@ -130,26 +122,6 @@ export function PublicChoiceCollectiveDecisionStage({
   const downloadAvailable =
     Boolean(decision?.resultsRetention?.downloadAvailable) && !resultsExpired;
   const overviewHref = buildInitiativeExperienceHref(initiativeId);
-  const emptySelectOne = {
-    ballotMode: "SELECT_ONE_CANDIDATE" as const,
-    candidates: [],
-    abstain: 0,
-    abstainPercentage: 0,
-    totalEffectiveVoters: 0,
-    participationBreakdown: {
-      visitors: 0,
-      participants: 0,
-      members: 0,
-      totalEffectiveVoters: 0,
-      visitorPercentage: 0,
-      participantPercentage: 0,
-      memberPercentage: 0,
-    },
-  };
-  const aggregates =
-    decision?.ballotAggregates?.ballotMode === "SELECT_ONE_CANDIDATE"
-      ? decision.ballotAggregates
-      : emptySelectOne;
 
   return (
     <section className="pie-pc-cd-stage" aria-labelledby="pie-pc-cd-title">
@@ -161,7 +133,7 @@ export function PublicChoiceCollectiveDecisionStage({
         </p>
       </header>
 
-      {!decision ? (
+      {!decision && candidates.length === 0 ? (
         <p className="pie-election-results__status">
           Results appear when the election ballot is published.
         </p>
@@ -169,7 +141,7 @@ export function PublicChoiceCollectiveDecisionStage({
         <PublicChoiceElectionResultsBoard
           initiativeId={initiativeId}
           candidates={candidates}
-          aggregates={aggregates}
+          aggregates={selectOneAggregates}
           resultsLabel={resultsLabel}
           votingOpen={votingOpen}
           electionStatus={publicChoiceElectionVotingStatusLabel(votingStatus)}

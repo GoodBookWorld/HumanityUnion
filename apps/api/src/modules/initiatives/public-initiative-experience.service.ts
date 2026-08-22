@@ -15,6 +15,7 @@ import {
   PUBLIC_INITIATIVE_EXPERIENCE_STAGES as EXPERIENCE_STAGES,
   resolveInitiativeCoverMedia,
   resolveInitiativeLifecycleProfile,
+  resolveParticipantFacingCurrentStageId,
 } from "@hu/types";
 
 import { settleOptionalLifecycleLookup } from "../../shared/lifecycle/optional-lifecycle-lookup.js";
@@ -308,15 +309,25 @@ export async function buildStageRecords(
     })),
   );
 
+  // Fix 07C — PUBLIC_CHOICE never surfaces generic `/collective-decisions/public/` links.
+  // Results live on the election page + Collective Decision ResultsBoard.
+  const isPublicChoiceLifecycle =
+    resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE";
   records.set(
     "collective_decision",
     collectiveDecisions.map((decision) => ({
       recordId: decision.decisionId,
-      title: decision.question,
+      title: isPublicChoiceLifecycle
+        ? initiative.metadata.communityAssociation?.trim() ||
+          initiative.title ||
+          "Election Results"
+        : decision.question,
       summary: decision.outcomeSummary,
       status: decision.status,
       updatedAt: decision.closedAt ?? decision.closesAt,
-      publicHref: `/collective-decisions/public/${encodeURIComponent(decision.decisionId)}`,
+      publicHref: isPublicChoiceLifecycle
+        ? `/initiatives/public/${encodeURIComponent(initiativeId)}/election`
+        : `/collective-decisions/public/${encodeURIComponent(decision.decisionId)}`,
     })),
   );
 
@@ -654,9 +665,14 @@ export async function buildPublicInitiativeExperienceProjection(input: {
     publicInitiative,
     versionHistory,
   );
-  const { stages, currentStageId } = buildLifecycleNavigation(initiative, stageRecords, {
+  const { stages, currentStageId: domainCurrentStageId } = buildLifecycleNavigation(initiative, stageRecords, {
     inProgressStageIds,
   });
+  // Fix 07B — PUBLIC_CHOICE participant-facing current stage never reports Civic Archive.
+  const currentStageId = resolveParticipantFacingCurrentStageId(
+    domainCurrentStageId,
+    initiative.lifecycleProfile,
+  );
   const currentStage = stages.find((stage) => stage.stageId === currentStageId);
   // UX Evolution Pack 02.3 Part 1 diagnosis: `buildInitiativeDiscussionSummary`
   // alone never attached collaboration state, so every server-rendered
