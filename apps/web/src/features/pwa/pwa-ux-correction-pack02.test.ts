@@ -165,12 +165,13 @@ describe("PWA UX Correction Pack 02", () => {
     assert.doesNotMatch(promo, /if \(uxState === "already_installed"\) \{\s*return null/);
     assert.match(promo, /Installed/);
     assert.match(promo, /Show install options/);
-    assert.match(promo, /Install Humanity/);
-    assert.match(promo, /Add Humanity to Home Screen/);
+    assert.match(promo, /Install App/);
+    assert.match(promo, /Add to Home Screen/);
     assert.match(promo, /How to install/);
     assert.match(promo, /handleDismiss[\s\S]*Later/);
     assert.match(promo, /clearObsoleteInstallPreferenceKeys/);
     assert.match(guidance, /How to install Humanity|Add to Home Screen/);
+    assert.match(guidance, /Add Humanity Union to your Home Screen from the Share menu/);
     assert.match(preference, /dismissal ≠ installed|not OS install proof/i);
     assert.match(preference, /OBSOLETE_KEYS|pwaInstalled/);
     assert.doesNotMatch(preference, /localStorage\.setItem/);

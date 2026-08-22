@@ -130,9 +130,13 @@ describe("Public Choice Experience Pack 01 — Discussion + Support + Country", 
   });
 
   it("Country search supports All / Standard / Public Choice lifecycleProfile filter", () => {
+    const entityTypes = readWeb(
+      "src/features/country-experience/country-discovery-entity-types.ts",
+    );
     assert.match(country, /lifecycleProfile/);
-    assert.match(country, /Standard Initiatives/);
-    assert.match(country, /Public Choice/);
+    assert.match(country, /COUNTRY_DISCOVERY_ENTITY_TYPE_OPTIONS|resolveCountrySearchFilterParams/);
+    assert.match(entityTypes, /Standard Initiatives/);
+    assert.match(entityTypes, /Public Choice/);
     assert.match(matching, /query\.lifecycleProfile/);
     assert.match(matching, /resolveInitiativeLifecycleProfile/);
   });

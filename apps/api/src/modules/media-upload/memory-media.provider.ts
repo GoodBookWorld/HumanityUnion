@@ -5,6 +5,7 @@ const PURPOSE_PREFIX: Record<MediaUploadPurpose, string> = {
   avatar: "avatars",
   "initiative-image": "initiatives",
   "blog-image": "blog",
+  "media-resource-logo": "media-resources",
 };
 
 /** Test-only in-memory object storage — never used for production durability. */

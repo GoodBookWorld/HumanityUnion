@@ -1,5 +1,8 @@
 import type {
+  CountryAffiliationEntryType,
+  CountryAffiliationPublic,
   CountryStatisticsCounts,
+  InitiativeLifecycleProfile,
   TrustedMediaResource,
   WorldInitiativeCardProjection,
 } from "@hu/types";
@@ -11,6 +14,12 @@ interface ApiEnvelope<T> {
   data: T;
   meta: Record<string, unknown>;
   message: string;
+}
+
+export interface FetchCountryInitiativesQuery {
+  regionCode?: string;
+  communityCode?: string;
+  lifecycleProfile?: InitiativeLifecycleProfile;
 }
 
 export async function fetchCountryStatistics(
@@ -36,9 +45,27 @@ export async function fetchCountryStatistics(
 
 export async function fetchCountryInitiatives(
   countryCode: string,
+  query: FetchCountryInitiativesQuery = {},
 ): Promise<WorldInitiativeCardProjection[]> {
+  const params = new URLSearchParams();
+
+  if (query.regionCode?.trim()) {
+    params.set("region", query.regionCode.trim());
+  }
+
+  if (query.communityCode?.trim()) {
+    params.set("community", query.communityCode.trim());
+  }
+
+  if (query.lifecycleProfile) {
+    params.set("lifecycleProfile", query.lifecycleProfile);
+  }
+
+  const suffix = params.toString();
   const response = await fetch(
-    `${API_BASE_URL}/api/v1/public/countries/${encodeURIComponent(countryCode)}/initiatives`,
+    `${API_BASE_URL}/api/v1/public/countries/${encodeURIComponent(countryCode)}/initiatives${
+      suffix ? `?${suffix}` : ""
+    }`,
     { cache: "no-store" },
   );
 
@@ -69,6 +96,35 @@ export async function fetchCountryMedia(countryCode: string): Promise<TrustedMed
 
   if (!body.success || !body.data) {
     throw new Error("Country civic media is temporarily unavailable.");
+  }
+
+  return body.data;
+}
+
+export async function fetchCountryAffiliations(
+  countryCode: string,
+  entryType?: CountryAffiliationEntryType,
+): Promise<CountryAffiliationPublic[]> {
+  const params = new URLSearchParams();
+  if (entryType) {
+    params.set("entryType", entryType);
+  }
+  const suffix = params.toString();
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/public/countries/${encodeURIComponent(countryCode)}/affiliations${
+      suffix ? `?${suffix}` : ""
+    }`,
+    { cache: "no-store" },
+  );
+
+  if (!response.ok) {
+    throw new Error("Country affiliations are temporarily unavailable.");
+  }
+
+  const body = (await response.json()) as ApiEnvelope<CountryAffiliationPublic[]>;
+
+  if (!body.success || !body.data) {
+    throw new Error("Country affiliations are temporarily unavailable.");
   }
 
   return body.data;

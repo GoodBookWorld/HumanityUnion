@@ -210,7 +210,7 @@ export async function buildGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]
     entries.push(toIndexEntry(knowledgeArticleToSearchMetadata(article)));
   }
 
-  for (const mediaRecord of getCivicMediaRecordsForSearch()) {
+  for (const mediaRecord of await getCivicMediaRecordsForSearch()) {
     entries.push(toIndexEntry(civicMediaToSearchMetadata(mediaRecord)));
   }
 

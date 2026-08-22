@@ -1,6 +1,7 @@
 import type { ApprovedNewsSource } from "@hu/types";
 import {
   deriveApprovedNewsSources,
+  isApprovedMediaRegistryFeedUrl,
   listEnabledMediaRegistryProviders,
   MEDIA_REGISTRY_CATEGORIES,
   resolveMediaRegistryConfig,
@@ -11,6 +12,9 @@ export type { ApprovedNewsSource };
 export const APPROVED_NEWS_SOURCES: readonly ApprovedNewsSource[] = deriveApprovedNewsSources();
 
 export const PUBLIC_NEWS_CATEGORIES = MEDIA_REGISTRY_CATEGORIES;
+
+/** Runtime cache populated from MediaResource NEWS_SOURCE after seed/admin mutations. */
+let approvedNewsSourcesFromMediaResources: ApprovedNewsSource[] = [];
 
 export interface PublicNewsRuntimeConfig {
   enabled: boolean;
@@ -64,23 +68,85 @@ export function resolvePublicNewsConfig(): PublicNewsRuntimeConfig {
   };
 }
 
-export function listActiveApprovedNewsSources(
-  language: string = resolveMediaRegistryConfig().defaultLanguage,
+function normalizeComparableUrl(value: string): string | undefined {
+  try {
+    const parsed = new URL(value.trim());
+    parsed.hash = "";
+    return parsed.toString().replace(/\/$/, "").toLowerCase();
+  } catch {
+    return undefined;
+  }
+}
+
+function filterSourcesByLanguage(
+  sources: readonly ApprovedNewsSource[],
+  language: string,
 ): ApprovedNewsSource[] {
   const registryConfig = resolveMediaRegistryConfig();
   const normalizedLanguage = language.trim().toLowerCase();
 
-  return APPROVED_NEWS_SOURCES.filter((source) => {
+  return sources.filter((source) => {
     if (source.language.toLowerCase() !== normalizedLanguage) {
       return false;
     }
 
-    const provider = listEnabledMediaRegistryProviders().find((entry) => entry.id === source.providerId);
+    const provider = listEnabledMediaRegistryProviders().find(
+      (entry) => entry.id === source.providerId,
+    );
 
+    // Custom admin NEWS_SOURCE entries may not exist in the static registry.
     if (!provider) {
-      return false;
+      return true;
     }
 
     return provider.reliabilityScore >= registryConfig.minReliabilityScore;
+  });
+}
+
+export async function refreshApprovedNewsSourcesFromMediaResources(): Promise<void> {
+  const { listMediaResources } = await import(
+    "../media-resources/persistence/media-resource.repository.js"
+  );
+  const { projectApprovedNewsSources } = await import(
+    "../media-resources/media-resource.projections.js"
+  );
+
+  const resources = await listMediaResources({
+    resourceType: "NEWS_SOURCE",
+    active: true,
+  });
+  approvedNewsSourcesFromMediaResources = projectApprovedNewsSources(resources);
+}
+
+export function resetApprovedNewsSourcesCacheForTests(): void {
+  approvedNewsSourcesFromMediaResources = [];
+}
+
+export function listActiveApprovedNewsSources(
+  language: string = resolveMediaRegistryConfig().defaultLanguage,
+): ApprovedNewsSource[] {
+  if (approvedNewsSourcesFromMediaResources.length > 0) {
+    return filterSourcesByLanguage(approvedNewsSourcesFromMediaResources, language);
+  }
+
+  return filterSourcesByLanguage(APPROVED_NEWS_SOURCES, language);
+}
+
+/**
+ * Allow-list check: active MediaResource NEWS_SOURCE rssUrl OR registry feed allow-list.
+ */
+export function isApprovedNewsFeedUrl(feedUrl: string): boolean {
+  if (isApprovedMediaRegistryFeedUrl(feedUrl)) {
+    return true;
+  }
+
+  const normalized = normalizeComparableUrl(feedUrl);
+  if (!normalized) {
+    return false;
+  }
+
+  return approvedNewsSourcesFromMediaResources.some((source) => {
+    const sourceNormalized = normalizeComparableUrl(source.rssFeedUrl);
+    return sourceNormalized === normalized;
   });
 }

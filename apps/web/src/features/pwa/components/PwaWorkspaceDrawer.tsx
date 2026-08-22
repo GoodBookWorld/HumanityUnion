@@ -32,6 +32,9 @@ export function PwaWorkspaceDrawer({ open, onClose, returnFocusRef }: PwaWorkspa
     const focusTarget = returnFocusRef?.current ?? previouslyFocused.current;
     panelRef.current?.focus();
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -45,6 +48,7 @@ export function PwaWorkspaceDrawer({ open, onClose, returnFocusRef }: PwaWorkspa
 
     document.addEventListener("keydown", onKeyDown);
     return () => {
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
       if (!skipFocusRestoreRef.current) {
         focusTarget?.focus?.();

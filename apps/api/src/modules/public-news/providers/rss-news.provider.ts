@@ -1,6 +1,8 @@
-import { isApprovedMediaRegistryFeedUrl } from "@hu/media-registry";
-
-import { listActiveApprovedNewsSources, resolvePublicNewsConfig } from "../public-news.config.js";
+import {
+  isApprovedNewsFeedUrl,
+  listActiveApprovedNewsSources,
+  resolvePublicNewsConfig,
+} from "../public-news.config.js";
 import type { ExternalNewsArticle } from "../public-news.normalize.js";
 import { fetchExternalDocument } from "../public-news.fetch.js";
 import { parseRssOrAtomFeed } from "../public-news.rss-parser.js";
@@ -16,7 +18,7 @@ export class RssNewsProvider implements NewsProvider {
 
     const batches = await Promise.all(
       sources.map(async (source): Promise<ExternalNewsArticle[]> => {
-        if (!isApprovedMediaRegistryFeedUrl(source.rssFeedUrl)) {
+        if (!isApprovedNewsFeedUrl(source.rssFeedUrl)) {
           console.warn(
             `[public-news] Skipping non-registry RSS URL for ${source.sourceName}.`,
           );

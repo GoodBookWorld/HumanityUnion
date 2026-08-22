@@ -257,6 +257,40 @@
   color: var(--hu-color-primary, #0174b0);
 }
 
+/* Pack 09G — Country/Region/City discovery rail cards: compact on tablet+mobile */
+@media (max-width: 1024px) {
+  .country-initiative-rail-card__summary {
+    display: none;
+  }
+
+  .country-initiative-rail-card__body {
+    gap: var(--hu-space-2);
+    padding: var(--hu-space-3);
+  }
+
+  .country-initiative-rail-card__title {
+    font-size: 1rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .country-initiative-rail-card__media {
+    aspect-ratio: 16 / 9;
+  }
+
+  .country-initiative-rail-card__media img {
+    object-fit: cover;
+  }
+
+  .country-election-rail-card .country-initiative-rail-card__summary {
+    display: none;
+  }
+}
+
+
 .country-media-rail-card {
   min-height: 18rem;
 }

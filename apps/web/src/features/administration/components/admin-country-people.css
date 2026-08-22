@@ -1,0 +1,94 @@
+.admin-country-people__form {
+  margin: 1rem 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid rgba(26, 77, 109, 0.16);
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.admin-country-people__form h3 {
+  margin: 0 0 0.85rem;
+}
+
+.admin-country-people__form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-country-people__form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.admin-country-people__form-grid input,
+.admin-country-people__form-grid select {
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgba(26, 77, 109, 0.28);
+  border-radius: 0.3rem;
+  font: inherit;
+  font-weight: 400;
+}
+
+.admin-country-people__checkbox {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
+}
+
+.admin-country-people__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.admin-country-people-table {
+  min-width: 64rem;
+}
+
+.admin-country-people__photo {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--hu-color-bg-muted, #f0f0f0);
+}
+
+.admin-country-people__logo {
+  width: 3rem;
+  height: 2rem;
+  border-radius: 0.25rem;
+  object-fit: contain;
+  background: var(--hu-color-bg-muted, #f0f0f0);
+}
+
+.admin-country-people__fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  background: rgba(1, 116, 176, 0.1);
+  color: var(--hu-workspace-primary, #0174b0);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.admin-country-people__row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+@media (max-width: 900px) {
+  .admin-country-people__form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

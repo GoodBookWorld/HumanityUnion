@@ -86,7 +86,7 @@ html {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .member-workspace__nav {
     position: static;
     max-height: none;

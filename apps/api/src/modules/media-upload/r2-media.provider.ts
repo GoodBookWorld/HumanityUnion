@@ -7,6 +7,7 @@ const PURPOSE_PREFIX: Record<MediaUploadPurpose, string> = {
   avatar: "avatars",
   "initiative-image": "initiatives",
   "blog-image": "blog",
+  "media-resource-logo": "media-resources",
 };
 
 export interface R2MediaStorageConfig {

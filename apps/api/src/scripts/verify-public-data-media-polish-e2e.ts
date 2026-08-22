@@ -85,7 +85,7 @@ function verifyCountryStatistics(): void {
   );
 }
 
-function verifyCountrySearchAndMedia(): void {
+async function verifyCountrySearchAndMedia(): Promise<void> {
   console.log("2. Country search layout and local civic media logos");
 
   const page = readRepoFile(
@@ -111,7 +111,7 @@ function verifyCountrySearchAndMedia(): void {
   );
   assert(page.includes("MediaLogo"), "Country media cards must use MediaLogo images.");
 
-  const canadaMedia = listCountryTrustedMediaResources("CA");
+  const canadaMedia = await listCountryTrustedMediaResources("CA");
   assert(canadaMedia.length === 6, "Canada must expose six local media resources.");
   assert(
     new Set(canadaMedia.map((resource) => resource.id)).size === canadaMedia.length,
@@ -313,7 +313,7 @@ function verifyDocumentation(): void {
 async function runPass(pass: number): Promise<void> {
   console.log(`\n=== verify:public-data-media-polish pass ${pass} ===`);
   verifyCountryStatistics();
-  verifyCountrySearchAndMedia();
+  await verifyCountrySearchAndMedia();
   verifyFooterPlatformLinks();
   await verifyCivicArchiveFilters();
   verifyHomeStatistics();

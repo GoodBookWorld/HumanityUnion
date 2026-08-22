@@ -123,13 +123,13 @@ export function PwaInstallPromotion() {
               onClick={() => void handleInstall()}
               disabled={busy}
             >
-              {busy ? "Installing…" : "Install Humanity"}
+              {busy ? "Installing…" : "Install App"}
             </Button>
           ) : null}
 
           {showIosAction ? (
             <Button type="button" variant="primary" onClick={() => openGuidance("ios")}>
-              Add Humanity to Home Screen
+              Add to Home Screen
             </Button>
           ) : null}
 

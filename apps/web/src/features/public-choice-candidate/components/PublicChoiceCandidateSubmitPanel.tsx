@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { PublicChoiceCandidatePublicProjection } from "@hu/types";
 import { PUBLIC_CHOICE_MAX_CANDIDATES } from "@hu/types";
 
+import { PersonImageUploadField } from "../../media-upload/components/PersonImageUploadField";
 import { uploadInitiativeImage } from "../../media-upload/media-upload-api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import {
@@ -25,8 +26,8 @@ interface PublicChoiceCandidateSubmitPanelProps {
 }
 
 /**
- * Pack 02D / Fix 08A — authenticated Participant candidate create + edit.
- * Hosted on Initiative Overview (`#add-candidate`). Includes photo via media upload.
+ * Pack 02D / Fix 08A / Pack 09A — authenticated Participant candidate create + edit.
+ * Hosted on Initiative Overview (`#add-candidate`). Photo uses Profile-aligned person image UX.
  */
 export function PublicChoiceCandidateSubmitPanel({
   initiativeId,
@@ -41,30 +42,35 @@ export function PublicChoiceCandidateSubmitPanel({
   const [campaignPageUrl, setCampaignPageUrl] = useState(
     editingCandidate?.campaignPageUrl ?? "",
   );
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(
-    editingCandidate?.photoUrl ?? null,
-  );
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [clearExistingPhoto, setClearExistingPhoto] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(editingCandidate?.photoUrl ?? null);
+  const [photoCleared, setPhotoCleared] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setName(editingCandidate?.name ?? "");
     setCampaignPageUrl(editingCandidate?.campaignPageUrl ?? "");
-    setPhotoPreviewUrl(editingCandidate?.photoUrl ?? null);
-    setPhotoFile(null);
-    setClearExistingPhoto(false);
+    setPhotoUrl(editingCandidate?.photoUrl ?? null);
+    setPhotoCleared(false);
     setMessage(null);
     setConfirmDelete(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   }, [editingCandidate]);
 
   const atLimit = !isEdit && candidateCount >= PUBLIC_CHOICE_MAX_CANDIDATES;
+  const photoPreview = photoCleared ? null : resolveMediaUrl(photoUrl) ?? photoUrl;
+
+  async function handlePhotoUpload(file: File): Promise<string> {
+    const uploaded = await uploadInitiativeImage(initiativeId, file);
+    setPhotoUrl(uploaded.mediaUrl);
+    setPhotoCleared(false);
+    return uploaded.mediaUrl;
+  }
+
+  async function handlePhotoRemove(): Promise<void> {
+    setPhotoUrl(null);
+    setPhotoCleared(true);
+  }
 
   async function handleSubmit(): Promise<void> {
     if (!name.trim() || busy || atLimit) {
@@ -74,35 +80,27 @@ export function PublicChoiceCandidateSubmitPanel({
     setBusy(true);
     setMessage(null);
     try {
-      let photoUrl: string | undefined | null;
-      if (photoFile) {
-        const uploaded = await uploadInitiativeImage(initiativeId, photoFile);
-        photoUrl = uploaded.mediaUrl;
-      } else if (isEdit && clearExistingPhoto) {
-        photoUrl = null;
-      }
-
       if (isEdit && editingCandidate) {
         await updatePublicChoiceCandidate(initiativeId, editingCandidate.candidateId, {
           name: name.trim(),
           campaignPageUrl: campaignPageUrl.trim() ? campaignPageUrl.trim() : null,
-          ...(photoUrl !== undefined ? { photoUrl } : {}),
+          ...(photoCleared
+            ? { photoUrl: null }
+            : photoUrl
+              ? { photoUrl }
+              : {}),
         });
         setMessage("Candidate updated.");
       } else {
         await createPublicChoiceCandidate(initiativeId, {
           name: name.trim(),
           campaignPageUrl: campaignPageUrl.trim() || undefined,
-          photoUrl: typeof photoUrl === "string" ? photoUrl : undefined,
+          photoUrl: photoUrl ?? undefined,
         });
         setName("");
         setCampaignPageUrl("");
-        setPhotoFile(null);
-        setPhotoPreviewUrl(null);
-        setClearExistingPhoto(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
+        setPhotoUrl(null);
+        setPhotoCleared(false);
         setMessage("Candidate submitted.");
       }
       onSubmitted?.();
@@ -162,47 +160,16 @@ export function PublicChoiceCandidateSubmitPanel({
           required
         />
       </label>
-      <label>
-        Candidate photo (optional)
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
+      <div className="pie-election-candidate-submit__photo">
+        <PersonImageUploadField
+          label="Candidate photo (optional)"
+          imageUrl={photoPreview}
           disabled={busy || atLimit}
-          onChange={(event) => {
-            const file = event.target.files?.[0] ?? null;
-            setPhotoFile(file);
-            setClearExistingPhoto(false);
-            setPhotoPreviewUrl(file ? URL.createObjectURL(file) : editingCandidate?.photoUrl ?? null);
-          }}
+          variant="person"
+          onUpload={handlePhotoUpload}
+          onRemove={isEdit || photoUrl ? handlePhotoRemove : undefined}
         />
-      </label>
-      {photoPreviewUrl && !clearExistingPhoto ? (
-        <img
-          className="pie-election-candidate-submit__preview"
-          src={resolveMediaUrl(photoPreviewUrl) ?? photoPreviewUrl}
-          alt=""
-          width={72}
-          height={72}
-        />
-      ) : null}
-      {isEdit && photoPreviewUrl && !clearExistingPhoto ? (
-        <button
-          type="button"
-          className="pie-election-candidate-submit__cancel"
-          disabled={busy}
-          onClick={() => {
-            setPhotoFile(null);
-            setClearExistingPhoto(true);
-            setPhotoPreviewUrl(null);
-            if (fileInputRef.current) {
-              fileInputRef.current.value = "";
-            }
-          }}
-        >
-          Remove photo
-        </button>
-      ) : null}
+      </div>
       <label>
         Campaign page URL (optional)
         <input
@@ -220,12 +187,12 @@ export function PublicChoiceCandidateSubmitPanel({
           onClick={() => void handleSubmit()}
           disabled={busy || !name.trim() || atLimit}
         >
-          {busy ? (isEdit ? "Saving…" : "Submitting…") : isEdit ? "Save changes" : "Submit candidate"}
+          {busy ? "Saving…" : isEdit ? "Save changes" : "Submit candidate"}
         </button>
         {onCancel ? (
           <button
             type="button"
-            className="pie-election-candidate-submit__cancel"
+            className="hu-button hu-button--secondary"
             onClick={onCancel}
             disabled={busy}
           >
@@ -235,7 +202,7 @@ export function PublicChoiceCandidateSubmitPanel({
         {isEdit ? (
           <button
             type="button"
-            className="pie-election-candidate-submit__delete"
+            className="pie-election-candidate-submit__delete hu-button"
             onClick={() => setConfirmDelete(true)}
             disabled={busy}
           >
@@ -244,18 +211,27 @@ export function PublicChoiceCandidateSubmitPanel({
         ) : null}
       </div>
       {confirmDelete ? (
-        <div className="pie-election-candidate-submit__confirm" role="alertdialog" aria-labelledby="pc-delete-title">
+        <div
+          className="pie-election-candidate-submit__confirm"
+          role="alertdialog"
+          aria-labelledby="pc-delete-title"
+        >
           <p id="pc-delete-title">
             <strong>Delete candidate?</strong>
           </p>
           <p>This candidate will be removed from the election.</p>
           <div className="pie-election-candidate-submit__actions">
-            <button type="button" disabled={busy} onClick={() => setConfirmDelete(false)}>
+            <button
+              type="button"
+              className="hu-button hu-button--secondary"
+              disabled={busy}
+              onClick={() => setConfirmDelete(false)}
+            >
               Cancel
             </button>
             <button
               type="button"
-              className="pie-election-candidate-submit__delete"
+              className="pie-election-candidate-submit__delete hu-button"
               disabled={busy}
               onClick={() => void handleDelete()}
             >

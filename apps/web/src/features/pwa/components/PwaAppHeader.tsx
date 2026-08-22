@@ -47,6 +47,8 @@ export function PwaAppHeader() {
 
   useEffect(() => {
     setShowBack(canGoBackMeaningfully(pathname));
+    setDrawerOpen(false);
+    setMenuOpen(false);
   }, [pathname]);
 
   useEffect(() => {

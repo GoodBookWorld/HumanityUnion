@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ProfileField } from "../../../components/member/ProfileField";
 import { ProfileSection } from "../../../components/member/ProfileSection";
-import { fetchCommunitiesByRegion, toGeographyCommunityOptions } from "@hu/geography";
 import { Button } from "../../../design-system/components/Button";
 import {
-  GeographySearchSelect,
-  OTHER_REGION_SLUG,
-} from "../../../design-system/components/GeographySearchSelect";
+  CitySelect,
+  CountrySelect,
+  isCanonicalOtherRegion,
+  RegionSelect,
+} from "../../geography-integrity";
 import {
   cancelMyParticipationAreaTransition,
   createMyParticipationArea,
@@ -32,10 +33,6 @@ export function ParticipationAreaSection() {
   const [regionSlug, setRegionSlug] = useState("");
   const [regionLabel, setRegionLabel] = useState("");
   const [communitySlug, setCommunitySlug] = useState("");
-  const [communityOptions, setCommunityOptions] = useState<
-    ReturnType<typeof toGeographyCommunityOptions>
-  >([]);
-  const [communitiesLoading, setCommunitiesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
@@ -84,43 +81,6 @@ export function ParticipationAreaSection() {
     setRegionLabel(state.labels.region ?? "");
   }, [state]);
 
-  useEffect(() => {
-    if (!regionSlug || !countrySlug || regionSlug === OTHER_REGION_SLUG) {
-      setCommunityOptions([]);
-      return;
-    }
-
-    let cancelled = false;
-    setCommunitiesLoading(true);
-
-    void fetchCommunitiesByRegion(countrySlug, regionSlug)
-      .then((communities) => {
-        if (!cancelled) {
-          setCommunityOptions(toGeographyCommunityOptions(countrySlug, regionSlug, communities));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCommunityOptions(toGeographyCommunityOptions(countrySlug, regionSlug, []));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setCommunitiesLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [countrySlug, regionSlug]);
-
-  const regions = useMemo(
-    () =>
-      state?.geographyOptions.regions.filter((region) => region.countrySlug === countrySlug) ?? [],
-    [countrySlug, state],
-  );
-
   async function refreshState(nextState: ParticipationAreaWorkspaceResponse) {
     setState(nextState);
     setError(null);
@@ -131,7 +91,7 @@ export function ParticipationAreaSection() {
       countrySlug,
       regionSlug: regionSlug || undefined,
       communitySlug: communitySlug || undefined,
-      regionLabel: regionSlug === OTHER_REGION_SLUG ? regionLabel : undefined,
+      regionLabel: isCanonicalOtherRegion(regionSlug) ? regionLabel : undefined,
     };
   }
 
@@ -233,12 +193,11 @@ export function ParticipationAreaSection() {
           <h3 className="participation-area-section__card-title">
             {hasActiveArea ? "Change Participation Area" : "Declare Participation Area"}
           </h3>
-          <GeographySearchSelect
+          <CountrySelect
             id="participation-country"
             label="Participation country (not nationality)"
             helperText="Choose the country where you participate in civic activity."
             value={countrySlug}
-            options={state.geographyOptions.countries}
             onChange={(nextCountry) => {
               setCountrySlug(nextCountry);
               setRegionSlug("");
@@ -247,21 +206,21 @@ export function ParticipationAreaSection() {
             }}
             required
           />
-          <GeographySearchSelect
+          <RegionSelect
             id="participation-region"
             label="Participation region (optional)"
+            countryCode={countrySlug}
             value={regionSlug}
-            options={regions}
+            includeOther
             onChange={(nextRegion) => {
               setRegionSlug(nextRegion);
               setCommunitySlug("");
-              if (nextRegion !== OTHER_REGION_SLUG) {
+              if (!isCanonicalOtherRegion(nextRegion)) {
                 setRegionLabel("");
               }
             }}
-            disabled={!countrySlug}
           />
-          {regionSlug === OTHER_REGION_SLUG ? (
+          {isCanonicalOtherRegion(regionSlug) ? (
             <label className="participation-area-section__field">
               <span>Region name</span>
               <input
@@ -269,22 +228,18 @@ export function ParticipationAreaSection() {
                 onChange={(event) => setRegionLabel(event.target.value)}
                 required
               />
+              <span className="participation-area-section__note">
+                Free-text fallback — not a canonical region identifier.
+              </span>
             </label>
           ) : null}
-          <GeographySearchSelect
+          <CitySelect
             id="participation-community"
-            label="City / Community"
+            countryCode={countrySlug}
+            regionCode={regionSlug}
             value={communitySlug}
-            options={communityOptions}
+            includeOther
             onChange={setCommunitySlug}
-            disabled={!regionSlug || regionSlug === OTHER_REGION_SLUG || communitiesLoading}
-            helperText={
-              !regionSlug
-                ? "Select a region first."
-                : communitiesLoading
-                  ? "Loading cities for the selected region…"
-                  : undefined
-            }
           />
           {error ? <p className="participation-area-section__error">{error}</p> : null}
           <Button type="submit" variant="primary" disabled={savePhase.isBusy} ariaLive="polite">

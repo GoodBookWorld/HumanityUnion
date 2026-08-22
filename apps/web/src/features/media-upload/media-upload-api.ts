@@ -73,6 +73,20 @@ export async function uploadBlogImage(file: File): Promise<MediaUploadResponse> 
   return normalizeMediaUploadResponse(await readUploadEnvelope<MediaUploadResponse>(response));
 }
 
+/** Pack 09D — Admin Media Resources logo upload (landscape purpose). */
+export async function uploadMediaResourceLogo(file: File): Promise<MediaUploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/media/media-resource-logo`, {
+    method: "POST",
+    ...credentialedFetchInit,
+    body: formData,
+  });
+
+  return normalizeMediaUploadResponse(await readUploadEnvelope<MediaUploadResponse>(response));
+}
+
 /**
  * UX Evolution Pack 03 Part 6 — validates and canonicalizes an approved
  * external video link (YouTube/Vimeo). The backend never fetches the URL

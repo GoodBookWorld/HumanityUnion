@@ -127,6 +127,42 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    collectionName: MONGO_COLLECTIONS.mediaResources,
+    indexes: [
+      {
+        key: { id: 1 },
+        unique: true,
+        name: "media_resources_id_unique",
+      },
+      {
+        key: { resourceType: 1, scopeType: 1, countryCode: 1, active: 1 },
+        name: "media_resources_type_scope_country_active",
+      },
+      {
+        key: { sortOrder: 1 },
+        name: "media_resources_sort_order",
+      },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.countryAffiliations,
+    indexes: [
+      {
+        key: { entryId: 1 },
+        unique: true,
+        name: "country_affiliations_entry_id_unique",
+      },
+      {
+        key: { countryCode: 1, entryType: 1, active: 1 },
+        name: "country_affiliations_country_type_active",
+      },
+      {
+        key: { sortOrder: 1 },
+        name: "country_affiliations_sort_order",
+      },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.publicChoiceResultsSnapshots,
     indexes: [
       {

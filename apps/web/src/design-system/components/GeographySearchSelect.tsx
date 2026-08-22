@@ -19,6 +19,14 @@ interface GeographySearchSelectProps {
   required?: boolean;
   placeholder?: string;
   helperText?: string;
+  error?: string;
+  loading?: boolean;
+  emptyMessage?: string;
+  /**
+   * When options exceed this count and the search box is empty,
+   * only the selected option (if any) is listed — forces search for large city sets.
+   */
+  requireSearchAbove?: number;
 }
 
 export function GeographySearchSelect({
@@ -31,6 +39,10 @@ export function GeographySearchSelect({
   required = false,
   placeholder = "Search…",
   helperText,
+  error,
+  loading = false,
+  emptyMessage,
+  requireSearchAbove,
 }: GeographySearchSelectProps) {
   const [query, setQuery] = useState("");
 
@@ -40,13 +52,18 @@ export function GeographySearchSelect({
     const needle = query.trim().toLowerCase();
 
     if (!needle) {
+      if (typeof requireSearchAbove === "number" && options.length > requireSearchAbove) {
+        const selectedOption = options.find((option) => option.slug === value);
+        return selectedOption ? [selectedOption] : [];
+      }
+
       return options;
     }
 
     return options.filter(
       (option) => option.label.toLowerCase().includes(needle) || option.slug.includes(needle),
     );
-  }, [options, query]);
+  }, [options, query, requireSearchAbove, value]);
 
   const visibleOptions = useMemo(() => {
     if (!value || filteredOptions.some((option) => option.slug === value)) {
@@ -62,27 +79,63 @@ export function GeographySearchSelect({
     return [selectedOption, ...filteredOptions];
   }, [filteredOptions, options, value]);
 
+  const showSearchHint =
+    typeof requireSearchAbove === "number" &&
+    options.length > requireSearchAbove &&
+    !query.trim() &&
+    !value;
+
+  const describedBy = [
+    helperText ? `${id}-helper` : null,
+    error ? `${id}-error` : null,
+    emptyMessage && options.length === 0 && !loading ? `${id}-empty` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <label className="geography-search-select" htmlFor={id}>
       <span className="geography-search-select__label">{label}</span>
-      {helperText ? <span className="geography-search-select__helper">{helperText}</span> : null}
+      {helperText ? (
+        <span className="geography-search-select__helper" id={`${id}-helper`}>
+          {helperText}
+        </span>
+      ) : null}
+      {error ? (
+        <span className="geography-search-select__error" id={`${id}-error`} role="alert">
+          {error}
+        </span>
+      ) : null}
+      {emptyMessage && options.length === 0 && !loading ? (
+        <span className="geography-search-select__empty" id={`${id}-empty`} role="status">
+          {emptyMessage}
+        </span>
+      ) : null}
       <input
         id={id}
         className="geography-search-select__search hu-form-control"
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder={placeholder}
-        disabled={disabled}
+        placeholder={
+          showSearchHint ? "Type to search…" : loading ? "Loading…" : placeholder
+        }
+        disabled={disabled || loading}
         autoComplete="off"
+        aria-busy={loading || undefined}
+        aria-describedby={describedBy || undefined}
+        aria-invalid={error ? true : undefined}
       />
       <select
         className="geography-search-select__select hu-form-control"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        disabled={disabled}
+        disabled={disabled || loading}
         required={required}
         aria-label={label}
+        aria-busy={loading || undefined}
+        aria-describedby={describedBy || undefined}
+        aria-invalid={error ? true : undefined}
       >
         <option value="">Select…</option>
         {visibleOptions.map((option) => (

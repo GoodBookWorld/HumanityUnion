@@ -1721,7 +1721,7 @@
   gap: 0.35rem;
 }
 
-/* Pack 02D — candidate submission panel on election page */
+/* Pack 02D / Pack 09A — candidate submission panel */
 .pie-election-candidate-submit {
   display: grid;
   gap: 0.75rem;
@@ -1741,21 +1741,31 @@
   font-size: var(--hu-font-size-sm);
 }
 
-.pie-election-candidate-submit input {
+.pie-election-candidate-submit input:not([type="file"]) {
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-sm);
   font: inherit;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.pie-election-candidate-submit button {
-  justify-self: start;
-  border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-sm);
-  background: var(--hu-color-surface);
-  font-weight: 600;
-  padding: 0.45rem 0.85rem;
-  cursor: pointer;
+/* Pack 09A — do NOT restyle .hu-button here; that washed out Submit candidate. */
+.pie-election-candidate-submit__actions {
+  display: flex;
+  gap: var(--hu-space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pie-election-candidate-submit__actions .hu-button--primary {
+  min-width: 10rem;
+  justify-content: center;
+  text-align: center;
+}
+
+.pie-election-candidate-submit__photo {
+  margin: 0;
 }
 
 /* Pack 03 — Overview candidate intake */
@@ -1847,19 +1857,6 @@
   padding: 0;
   grid-template-columns: 1fr;
   display: block;
-}
-
-.pie-election-candidate-submit__preview {
-  width: 4.5rem;
-  height: 4.5rem;
-  object-fit: cover;
-  border-radius: var(--hu-radius-sm);
-}
-
-.pie-election-candidate-submit__actions {
-  display: flex;
-  gap: var(--hu-space-2);
-  flex-wrap: wrap;
 }
 
 .pie-election__cta {
@@ -2128,9 +2125,15 @@
 }
 
 .pie-election-candidate-submit__delete {
-  background: transparent;
-  border: 1px solid #b91c1c;
-  color: #b91c1c;
+  background: transparent !important;
+  border: 1px solid #b91c1c !important;
+  color: #b91c1c !important;
+}
+
+.pie-election-candidate-submit__delete:hover:not(:disabled),
+.pie-election-candidate-submit__delete:focus-visible:not(:disabled) {
+  background: color-mix(in srgb, #b91c1c 10%, var(--hu-color-surface)) !important;
+  color: #991b1b !important;
 }
 
 .pie-election-candidate-submit__confirm {

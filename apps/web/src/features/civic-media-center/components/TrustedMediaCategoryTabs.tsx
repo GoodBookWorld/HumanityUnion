@@ -127,6 +127,19 @@ export function TrustedMediaCategoryTabs({
     availableCategories.find((category) => category.id === activeCategoryId) ??
     availableCategories[0];
 
+  useEffect(() => {
+    if (!activeCategory) {
+      return;
+    }
+
+    const activeTab = document.getElementById(`${sectionId}-${activeCategory.id}-tab`);
+    activeTab?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "nearest",
+    });
+  }, [activeCategory, sectionId]);
+
   const activeResources = useMemo(
     () =>
       activeCategory

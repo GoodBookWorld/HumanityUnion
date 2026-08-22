@@ -17,6 +17,8 @@ export interface FetchPublicSearchInput {
   limit?: number;
   offset?: number;
   view?: CivicSearchView;
+  /** Public Choice Experience Pack 01 / Country Discovery Pack 09F2 */
+  lifecycleProfile?: "STANDARD" | "PUBLIC_CHOICE";
   /** Launch Readiness Pack 06 — abort stale search navigations. */
   signal?: AbortSignal;
 }
@@ -72,6 +74,10 @@ export async function fetchPublicSearch(
 
   if (input.view) {
     params.set("view", input.view);
+  }
+
+  if (input.lifecycleProfile) {
+    params.set("lifecycleProfile", input.lifecycleProfile);
   }
 
   const query = params.toString();

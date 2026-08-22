@@ -8,14 +8,35 @@
   font-weight: 600;
 }
 
-.geography-search-select__helper {
+.geography-search-select__helper,
+.geography-search-select__empty {
   color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+}
+
+.geography-search-select__error {
+  color: var(--hu-color-danger, #b42318);
   font-size: var(--hu-font-size-sm);
 }
 
 .geography-search-select__search,
 .geography-search-select__select {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.geography-search-select__search:focus-visible,
+.geography-search-select__select:focus-visible {
+  outline: 2px solid var(--hu-color-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .geography-search-select__search,
+  .geography-search-select__select {
+    min-height: 2.75rem;
+  }
 }
 
 .geography-search-select__selected {

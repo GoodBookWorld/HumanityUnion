@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, type RefObject } from "react";
+import { useState, type RefObject } from "react";
 
-import {
-  fetchCommunitiesByRegion,
-  toGeographyCountryOptions,
-  toGeographyRegionOptions,
-} from "@hu/geography";
-import { GeographySearchSelect } from "../../../design-system/components/GeographySearchSelect";
+import { CitySelect, CountrySelect, RegionSelect } from "../../geography-integrity";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { type CivicArchiveDraftFilters, validateArchiveYearInput } from "../civic-archive-query";
 
@@ -28,61 +23,7 @@ export function CivicArchiveFiltersForm({
   emptySearchFeedback = null,
   searchFieldRef,
 }: CivicArchiveFiltersFormProps) {
-  const [communityOptions, setCommunityOptions] = useState<Array<{ slug: string; label: string }>>(
-    [],
-  );
   const [archiveYearError, setArchiveYearError] = useState<string | null>(null);
-
-  const countryOptions = useMemo(() => toGeographyCountryOptions(), []);
-  const regionOptions = useMemo(
-    () =>
-      draftFilters.countryCode ? toGeographyRegionOptions(draftFilters.countryCode, false) : [],
-    [draftFilters.countryCode],
-  );
-
-  useEffect(() => {
-    if (!draftFilters.countryCode) {
-      setCommunityOptions([]);
-      return;
-    }
-
-    if (draftFilters.regionId) {
-      void fetchCommunitiesByRegion(draftFilters.countryCode, draftFilters.regionId)
-        .then((communities) =>
-          setCommunityOptions(
-            communities.map((entry) => ({
-              slug: entry.code,
-              label: entry.name,
-            })),
-          ),
-        )
-        .catch(() => setCommunityOptions([]));
-      return;
-    }
-
-    const regions = toGeographyRegionOptions(draftFilters.countryCode, false);
-
-    void Promise.all(
-      regions.map((regionOption) =>
-        fetchCommunitiesByRegion(draftFilters.countryCode, regionOption.slug).then((communities) =>
-          communities.map((entry) => ({
-            slug: entry.code,
-            label: `${entry.name} (${regionOption.label})`,
-          })),
-        ),
-      ),
-    )
-      .then((groups) => {
-        const unique = new Map<string, { slug: string; label: string }>();
-
-        for (const group of groups.flat()) {
-          unique.set(group.slug, group);
-        }
-
-        setCommunityOptions([...unique.values()]);
-      })
-      .catch(() => setCommunityOptions([]));
-  }, [draftFilters.countryCode, draftFilters.regionId]);
 
   function updateDraft(patch: Partial<CivicArchiveDraftFilters>): void {
     onDraftChange({ ...draftFilters, ...patch });
@@ -148,33 +89,28 @@ export function CivicArchiveFiltersForm({
       ) : null}
 
       <div className="civic-archive-page__filters-row civic-archive-page__filters-row--geography">
-        <GeographySearchSelect
+        <CountrySelect
           id="civic-archive-country"
-          label="Country"
           value={draftFilters.countryCode}
-          options={countryOptions}
           onChange={handleCountryChange}
           placeholder="Search countries"
         />
-        <GeographySearchSelect
+        <RegionSelect
           id="civic-archive-region"
-          label="Region"
+          countryCode={draftFilters.countryCode}
           value={draftFilters.regionId}
-          options={regionOptions}
+          includeOther={false}
           onChange={handleRegionChange}
-          disabled={!draftFilters.countryCode}
           placeholder="Search regions"
-          helperText={!draftFilters.countryCode ? "Select a country first." : undefined}
         />
-        <GeographySearchSelect
+        <CitySelect
           id="civic-archive-community"
-          label="City / Community"
+          countryCode={draftFilters.countryCode}
+          regionCode={draftFilters.regionId}
           value={draftFilters.cityCommunityId}
-          options={communityOptions}
+          includeOther={false}
           onChange={(value) => updateDraft({ cityCommunityId: value })}
-          disabled={!draftFilters.countryCode}
           placeholder="Search cities and communities"
-          helperText={!draftFilters.countryCode ? "Select a country first." : undefined}
         />
       </div>
 

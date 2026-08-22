@@ -57,6 +57,18 @@
   font-weight: 600;
 }
 
+/* Pack 09G — Related Initiatives compact: hide long descriptive copy on phone */
+@media (max-width: 767px) {
+  .ci-related__why,
+  .ci-related__diff {
+    display: none;
+  }
+
+  .ci-related__title {
+    font-size: 1rem;
+  }
+}
+
 .ci-related__link {
   font-weight: 600;
   text-decoration: underline;

@@ -215,6 +215,27 @@
   overflow: hidden;
 }
 
+/* Pack 09G — archive mini/preview cards hide outcome excerpt on compact */
+@media (max-width: 1024px) {
+  .civic-archive-mini-card__summary,
+  .civic-archive-mini-card__summary-skeleton {
+    display: none;
+  }
+
+  .civic-archive-mini-card__body {
+    gap: 0.35rem;
+  }
+
+  .civic-archive-mini-card__title {
+    font-size: 1rem;
+  }
+
+  .civic-archive-mini-card__media img {
+    object-fit: cover;
+  }
+}
+
+
 .civic-archive-mini-card__meta {
   margin: 0;
   font-size: var(--hu-font-size-sm);

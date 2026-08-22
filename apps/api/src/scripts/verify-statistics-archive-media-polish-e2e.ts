@@ -245,10 +245,10 @@ function verifyFormControlsAndButtons(): void {
   );
 }
 
-function verifyCanadaMedia(): void {
+async function verifyCanadaMedia(): Promise<void> {
   console.log("4. Canada local civic media resources");
 
-  const canadaMedia = listCountryTrustedMediaResources("CA");
+  const canadaMedia = await listCountryTrustedMediaResources("CA");
   assertStrict.equal(canadaMedia.length, 6, "Canada must expose exactly six media resources.");
 
   for (const required of CANADA_MEDIA) {
@@ -340,7 +340,7 @@ async function runPass(pass: number): Promise<void> {
   verifyStatisticsConfig();
   verifyCivicArchiveFilters();
   verifyFormControlsAndButtons();
-  verifyCanadaMedia();
+  await verifyCanadaMedia();
   verifyCivicMediaCenterPolish();
   verifyDocumentation();
   console.log(`Pass ${pass} complete.`);

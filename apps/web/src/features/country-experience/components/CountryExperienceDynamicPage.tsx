@@ -4,34 +4,29 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import type {
-  CountryStatisticsCounts,
-  TrustedMediaResource,
-  WorldInitiativeCardProjection,
-} from "@hu/types";
+import type { CountryStatisticsCounts, TrustedMediaResource } from "@hu/types";
 
-import {
-  fetchCommunitiesByRegion,
-  getCountryByCode,
-  toGeographyRegionOptions,
-} from "@hu/geography";
-import { buildSearchUrlForGeographyScope } from "../../../data/geography/helpers";
-import { GeographySearchSelect } from "../../../design-system/components/GeographySearchSelect";
+import { getCountryByCode, getRegionLabel } from "@hu/geography";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
+import { CitySelect, RegionSelect, useGeographyCommunityOptions } from "../../geography-integrity";
 import { TrustedMediaRailCard } from "../../civic-media-center/components/TrustedMediaRailCard";
 import { CIVIC_MEDIA_ROUTE } from "../../civic-media-center/routes";
-import { HuxDiscoverySection, HuxDirectorySection } from "../../horizontal-experience";
-import { ENTITY_TYPE_OPTIONS } from "../../global-search/api";
+import { HuxDirectorySection } from "../../horizontal-experience";
 import { PublicStatisticsGrid } from "../../platform-statistics/components/PublicStatisticsGrid";
 import { formatPlatformStatisticValue } from "../../platform-statistics/platform-statistics-api";
 import { COUNTRY_STATISTIC_CARDS } from "../../platform-statistics/public-statistics-config";
 import {
-  fetchCountryInitiatives,
   fetchCountryMedia,
   fetchCountryStatistics,
 } from "../country-experience-api";
+import {
+  COUNTRY_DISCOVERY_ENTITY_TYPE_OPTIONS,
+  resolveCountrySearchFilterParams,
+} from "../country-discovery-entity-types";
 import { CountryPublicNewsWidget } from "../../public-news/components/CountryPublicNewsWidget";
-import { CountryInitiativeRailCard } from "./CountryInitiativeRailCard";
+import { CountryCivicActionSection } from "./CountryCivicActionSection";
+import { CountryPartnersSection } from "./CountryPartnersSection";
+import { CountryTeamSection } from "./CountryTeamSection";
 
 import "../../civic-media-center/components/civic-media-resource-cards.css";
 import "../../horizontal-experience/hux.css";
@@ -49,7 +44,6 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
   const router = useRouter();
   const country = getCountryByCode(countryCode);
   const [statistics, setStatistics] = useState<CountryStatisticsCounts | null>(null);
-  const [initiatives, setInitiatives] = useState<WorldInitiativeCardProjection[]>([]);
   const [media, setMedia] = useState<TrustedMediaResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -58,48 +52,61 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
   const [regionCode, setRegionCode] = useState("");
   const [communityCode, setCommunityCode] = useState("");
   const [activityArea, setActivityArea] = useState("");
-  const [entityType, setEntityType] = useState("");
-  const [lifecycleProfile, setLifecycleProfile] = useState<"" | "STANDARD" | "PUBLIC_CHOICE">("");
-  const [communityOptions, setCommunityOptions] = useState<
-    Awaited<ReturnType<typeof fetchCommunitiesByRegion>>
-  >([]);
+  const [entityTypeValue, setEntityTypeValue] = useState("");
 
-  const regionOptions = useMemo(() => toGeographyRegionOptions(countryCode, false), [countryCode]);
-
-  const countryInitiativesHref = buildSearchUrlForGeographyScope({ countrySlug: countryCode });
-
-  useEffect(() => {
-    if (!regionCode) {
-      setCommunityOptions([]);
-      return;
+  const regionLabel = useMemo(
+    () => (regionCode ? (getRegionLabel(countryCode, regionCode) ?? "") : ""),
+    [countryCode, regionCode],
+  );
+  const { options: cityOptions } = useGeographyCommunityOptions(countryCode, regionCode, false);
+  const communityLabel = useMemo(() => {
+    if (!communityCode) {
+      return "";
     }
 
-    void fetchCommunitiesByRegion(countryCode, regionCode)
-      .then((communities: Awaited<ReturnType<typeof fetchCommunitiesByRegion>>) =>
-        setCommunityOptions(communities),
-      )
-      .catch(() => setCommunityOptions([]));
-  }, [countryCode, regionCode]);
+    return cityOptions.find((option) => option.slug === communityCode)?.label ?? "";
+  }, [cityOptions, communityCode]);
 
   useEffect(() => {
-    void Promise.all([
-      fetchCountryStatistics(countryCode),
-      fetchCountryInitiatives(countryCode),
-      fetchCountryMedia(countryCode),
-    ])
-      .then(([statisticsResponse, initiativeItems, mediaItems]) => {
+    let cancelled = false;
+    setLoading(true);
+
+    void fetchCountryStatistics(countryCode)
+      .then((statisticsResponse) => {
+        if (cancelled) {
+          return;
+        }
+
         setStatistics(statisticsResponse.data);
-        setInitiatives(initiativeItems);
-        setMedia(mediaItems);
         setError(false);
       })
       .catch(() => {
-        setStatistics(null);
-        setInitiatives([]);
-        setMedia([]);
-        setError(true);
+        if (!cancelled) {
+          setStatistics(null);
+          setError(true);
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    void fetchCountryMedia(countryCode)
+      .then((mediaItems) => {
+        if (!cancelled) {
+          setMedia(mediaItems);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMedia([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [countryCode]);
 
   if (!country) {
@@ -128,12 +135,14 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
       params.set("activityArea", activityArea);
     }
 
-    if (entityType) {
-      params.set("entityType", entityType);
+    const filterParams = resolveCountrySearchFilterParams(entityTypeValue);
+
+    if (filterParams.entityType) {
+      params.set("entityType", filterParams.entityType);
     }
 
-    if (lifecycleProfile) {
-      params.set("lifecycleProfile", lifecycleProfile);
+    if (filterParams.lifecycleProfile) {
+      params.set("lifecycleProfile", filterParams.lifecycleProfile);
     }
 
     router.push(`/search?${params.toString()}`);
@@ -144,8 +153,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
     setRegionCode("");
     setCommunityCode("");
     setActivityArea("");
-    setEntityType("");
-    setLifecycleProfile("");
+    setEntityTypeValue("");
   }
 
   return (
@@ -211,6 +219,9 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
         />
       </section>
 
+      <CountryTeamSection countryCode={countryCode} countryName={country.name} />
+      <CountryPartnersSection countryCode={countryCode} countryName={country.name} />
+
       <section
         className="country-experience-dynamic__section"
         aria-labelledby="country-search-title"
@@ -227,21 +238,8 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search initiatives, decisions, archive records…"
+                placeholder="Search initiatives, elections, decisions, archive records…"
               />
-            </label>
-            <label className="country-experience-dynamic__search-query">
-              <span>Initiative type</span>
-              <select
-                value={lifecycleProfile}
-                onChange={(event) =>
-                  setLifecycleProfile(event.target.value as "" | "STANDARD" | "PUBLIC_CHOICE")
-                }
-              >
-                <option value="">All</option>
-                <option value="STANDARD">Standard Initiatives</option>
-                <option value="PUBLIC_CHOICE">Public Choice</option>
-              </select>
             </label>
             <div className="hu-form-actions country-experience-dynamic__search-primary-actions">
               <button type="submit" className="hu-button hu-button--primary">
@@ -257,29 +255,39 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
             </div>
           </div>
           <div className="country-experience-dynamic__search-filters">
-            <GeographySearchSelect
+            <RegionSelect
               id="country-page-region"
-              label="Region"
+              countryCode={countryCode}
               value={regionCode}
-              options={regionOptions}
+              includeOther={false}
               onChange={(value: string) => {
                 setRegionCode(value);
                 setCommunityCode("");
               }}
               placeholder="All regions"
             />
-            <GeographySearchSelect
+            <CitySelect
               id="country-page-community"
-              label="City / Community"
+              countryCode={countryCode}
+              regionCode={regionCode}
               value={communityCode}
-              options={communityOptions.map((community: (typeof communityOptions)[number]) => ({
-                slug: community.code,
-                label: community.name,
-              }))}
+              includeOther={false}
               onChange={setCommunityCode}
               placeholder="All communities"
-              disabled={!regionCode}
             />
+            <label>
+              <span>Entity Type</span>
+              <select
+                value={entityTypeValue}
+                onChange={(event) => setEntityTypeValue(event.target.value)}
+              >
+                {COUNTRY_DISCOVERY_ENTITY_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value || "all"} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label>
               <span>Activity Area</span>
               <select
@@ -294,23 +302,33 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
                 ))}
               </select>
             </label>
-            <label>
-              <span>Entity Type</span>
-              <select value={entityType} onChange={(event) => setEntityType(event.target.value)}>
-                <option value="">All entity types</option>
-                {ENTITY_TYPE_OPTIONS.map((option: { value: string; label: string }) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
           <p className="country-experience-dynamic__search-scope">
             Country scope: <strong>{country.name}</strong>
+            {regionLabel ? (
+              <>
+                {" "}
+                · Region: <strong>{regionLabel}</strong>
+              </>
+            ) : null}
+            {communityLabel ? (
+              <>
+                {" "}
+                · City: <strong>{communityLabel}</strong>
+              </>
+            ) : null}
           </p>
         </form>
       </section>
+
+      <CountryCivicActionSection
+        countryCode={countryCode}
+        countryName={country.name}
+        regionCode={regionCode}
+        regionLabel={regionLabel}
+        communityCode={communityCode}
+        communityLabel={communityLabel}
+      />
 
       <HuxDirectorySection
         sectionId={`country-media-${countryCode.toLowerCase()}`}
@@ -334,31 +352,6 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
         countryName={country.name}
         regionName={country.region}
         recommendedMedia={media}
-      />
-
-      <HuxDiscoverySection
-        sectionId={`country-initiatives-${countryCode.toLowerCase()}`}
-        surfaceStyle="grouped"
-        eyebrow="COUNTRY ACTION"
-        title="Country Initiatives"
-        description={`Active civic initiatives connected to ${country.name}.`}
-        label="country initiatives"
-        items={initiatives}
-        getItemKey={(initiative) => initiative.initiativeId}
-        renderItem={(initiative) => <CountryInitiativeRailCard initiative={initiative} />}
-        emptyState={
-          <div className="country-experience-dynamic__initiatives-empty">
-            <p>No public initiatives have been published for this country yet.</p>
-            <Link href="/initiatives/create" className="hu-button hu-button--primary">
-              Create Initiative
-            </Link>
-          </div>
-        }
-        footerAction={
-          initiatives.length > 0 ? (
-            <Link href={countryInitiativesHref}>View all country initiatives</Link>
-          ) : undefined
-        }
       />
     </div>
   );

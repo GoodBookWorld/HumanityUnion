@@ -5,8 +5,8 @@ import { getCivicMediaCenter, listCivicMediaCategories } from "./civic-media-cen
 
 const civicMediaCenterRouter = Router();
 
-civicMediaCenterRouter.get("/", (_req, res) => {
-  res.json(createSuccessResponse(getCivicMediaCenter(), "Civic Media Center loaded."));
+civicMediaCenterRouter.get("/", async (_req, res) => {
+  res.json(createSuccessResponse(await getCivicMediaCenter(), "Civic Media Center loaded."));
 });
 
 civicMediaCenterRouter.get("/categories", (_req, res) => {

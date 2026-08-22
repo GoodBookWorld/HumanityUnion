@@ -4,26 +4,34 @@ import type {
   CivicMediaCenterPublic,
 } from "@hu/types";
 
-import { FACT_CHECK_RESOURCES } from "./content/fact-checking.js";
+import {
+  listPublicWorldFactChecking,
+  listPublicWorldPropagandaAnalysis,
+  listPublicWorldTrustedMedia,
+} from "../media-resources/media-resource.service.js";
 import { CIVIC_MEDIA_INITIATIVE_FLOW } from "./content/initiative-flow.js";
-import { PROPAGANDA_ANALYSIS_RESOURCES } from "./content/propaganda-analysis.js";
 import {
   CIVIC_MEDIA_FAQ,
   CIVIC_MEDIA_OVERVIEW,
   CIVIC_MEDIA_SELECTION_PRINCIPLES,
 } from "./content/sections.js";
-import { TRUSTED_MEDIA_RESOURCES } from "./content/trusted-media.js";
 import { TRUSTED_MEDIA_CATEGORIES } from "./content/trusted-media-categories.js";
 
 const UPDATED_AT = "2026-06-27T00:00:00.000Z";
 
-export function getCivicMediaCenter(): CivicMediaCenterPublic {
+export async function getCivicMediaCenter(): Promise<CivicMediaCenterPublic> {
+  const [trustedMedia, factChecking, propagandaAnalysis] = await Promise.all([
+    listPublicWorldTrustedMedia(),
+    listPublicWorldFactChecking(),
+    listPublicWorldPropagandaAnalysis(),
+  ]);
+
   return {
     overview: CIVIC_MEDIA_OVERVIEW,
     trustedMediaCategories: [...TRUSTED_MEDIA_CATEGORIES],
-    trustedMedia: [...TRUSTED_MEDIA_RESOURCES],
-    factChecking: [...FACT_CHECK_RESOURCES],
-    propagandaAnalysis: [...PROPAGANDA_ANALYSIS_RESOURCES],
+    trustedMedia,
+    factChecking,
+    propagandaAnalysis,
     initiativeFlow: CIVIC_MEDIA_INITIATIVE_FLOW,
     selectionPrinciples: [...CIVIC_MEDIA_SELECTION_PRINCIPLES],
     faq: [...CIVIC_MEDIA_FAQ],
@@ -37,15 +45,17 @@ export function listCivicMediaCategories(): CivicMediaCategoriesListing {
   };
 }
 
-export function getCivicMediaRecordsForSearch(): Array<{
-  entityId: string;
-  title: string;
-  summary: string;
-  activityArea: string;
-  publicUrl: string;
-  updatedAt: string;
-}> {
-  const center = getCivicMediaCenter();
+export async function getCivicMediaRecordsForSearch(): Promise<
+  Array<{
+    entityId: string;
+    title: string;
+    summary: string;
+    activityArea: string;
+    publicUrl: string;
+    updatedAt: string;
+  }>
+> {
+  const center = await getCivicMediaCenter();
   const records = [
     {
       entityId: "civic-media-center",
@@ -149,7 +159,7 @@ export function resolveCivicMediaForAssistant(userPrompt?: string): CivicMediaAs
     });
   }
 
-  if (/\bnews\b/i.test(normalized) && /\binitiative/i.test(normalized)) {
+  if (/\bnews\b/i.test(normalized) && /\binitiative\b/i.test(normalized)) {
     references.push({
       sectionId: "initiative-flow",
       title: "How News Creates Initiatives",

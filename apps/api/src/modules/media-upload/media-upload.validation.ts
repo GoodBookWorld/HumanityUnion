@@ -6,6 +6,7 @@ export const MEDIA_UPLOAD_LIMITS = {
   avatar: 2 * 1024 * 1024,
   "initiative-image": 5 * 1024 * 1024,
   "blog-image": 5 * 1024 * 1024,
+  "media-resource-logo": 5 * 1024 * 1024,
 } as const satisfies Record<MediaUploadPurpose, number>;
 
 const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);

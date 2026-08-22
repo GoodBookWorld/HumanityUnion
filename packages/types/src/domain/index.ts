@@ -1361,6 +1361,16 @@ export type {
   MediaRegistryRssFeed,
 } from "./media-registry.js";
 export type {
+  MediaResource,
+  MediaResourceScopeType,
+  MediaResourceType,
+} from "./media-resource.js";
+export type {
+  CountryAffiliationEntry,
+  CountryAffiliationEntryType,
+  CountryAffiliationPublic,
+} from "./country-affiliation.js";
+export type {
   InitiativeNewsSourceReference,
   NewsArticleRecord,
   NewsArticleStatus,

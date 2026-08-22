@@ -144,11 +144,11 @@ describe("Civic Media Visual Mapping Pack 02", () => {
     assert.match(cardsCss, /header--logo-end/);
   });
 
-  it("uses canonical registry presentation for missing logos (POLITICO fallback)", () => {
+  it("uses canonical registry presentation for POLITICO logo", () => {
     const presentation = resolveProviderPresentation("POLITICO");
-    assert.equal(presentation.logoUrl, undefined);
+    assert.equal(presentation.logoUrl, "/images/media/politico.webp");
     assert.equal(presentation.logoLabel, "POL");
-    assert.equal(getMediaRegistryProviderById("politico")?.logoUrl, undefined);
+    assert.equal(getMediaRegistryProviderById("politico")?.logoUrl, "/images/media/politico.webp");
   });
 
   it("does not introduce a duplicate special-case logo resolver", () => {

@@ -52,6 +52,9 @@ export function PublicNewsCard({ article }: PublicNewsCardProps) {
   return (
     <article className="public-news-card" aria-labelledby={`public-news-title-${article.id}`}>
       <div className="public-news-card__header">
+        {article.category ? (
+          <span className="public-news-card__badge">{article.category}</span>
+        ) : null}
         <div className="public-news-card__provider">
           <MediaLogo
             name={article.sourceName}
@@ -69,9 +72,6 @@ export function PublicNewsCard({ article }: PublicNewsCardProps) {
             </p>
           </div>
         </div>
-        {article.category ? (
-          <span className="public-news-card__badge">{article.category}</span>
-        ) : null}
       </div>
 
       <div className="public-news-card__media">

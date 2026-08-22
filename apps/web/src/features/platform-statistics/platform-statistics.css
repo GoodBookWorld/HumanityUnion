@@ -107,13 +107,21 @@
   border-bottom-color: var(--hu-color-border);
 }
 
-.platform-statistics__card:hover .platform-statistics__description,
-.platform-statistics__card:focus-within .platform-statistics__description,
+/* Accessible non-hover reveal (touch / keyboard expand). */
 .platform-statistics__info-trigger[aria-expanded="true"] + .platform-statistics__description {
   display: block;
 }
 
+/*
+ * Desktop / fine-pointer: hover + focus-within reveal.
+ * Coarse pointer / touch must not depend on hover (Pack 09B).
+ */
 @media (hover: hover) and (pointer: fine) {
+  .platform-statistics__card:hover .platform-statistics__description,
+  .platform-statistics__card:focus-within .platform-statistics__description {
+    display: block;
+  }
+
   .platform-statistics__info-trigger {
     position: absolute;
     width: 1px;
@@ -169,8 +177,9 @@
   }
 
   .platform-statistics__card {
-    align-items: flex-start;
-    text-align: left;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
     min-height: 6.5rem;
     padding: var(--hu-space-3);
   }
@@ -178,9 +187,27 @@
   .platform-statistics__icon {
     width: 2.25rem;
     height: 2.25rem;
+    margin-inline: auto;
   }
 
   .platform-statistics__value {
     font-size: clamp(1.125rem, 4vw, 1.375rem);
+  }
+
+  .platform-statistics__label {
+    width: 100%;
+  }
+
+  /*
+   * Mobile / narrow: never reveal description via hover.
+   * "About this metric" remains available for essential copy.
+   */
+  .platform-statistics__card:hover .platform-statistics__description,
+  .platform-statistics__card:focus-within .platform-statistics__description {
+    display: none;
+  }
+
+  .platform-statistics__info-trigger[aria-expanded="true"] + .platform-statistics__description {
+    display: block;
   }
 }

@@ -15,24 +15,26 @@ import {
   resolveInitiativeCoverMedia,
   resolvePublicChoiceBallotMode,
 } from "@hu/types";
-import { useEffect, useMemo, useState } from "react";
 
 import {
-  fetchCommunitiesByRegion,
   getCountryLabel,
   getRegionLabel,
   OTHER_COMMUNITY_SLUG,
   OTHER_REGION_SLUG,
-  toGeographyCommunityOptions,
-  toGeographyCountryOptions,
-  toGeographyRegionOptions,
 } from "@hu/geography";
-import { GeographySearchSelect } from "../../../design-system/components/GeographySearchSelect";
 import {
   INITIATIVE_ACTIVITY_AREA_OPTIONS,
   INITIATIVE_ACTIVITY_AREA_OTHER,
 } from "../initiative-activity-areas";
 
+import {
+  CitySelect,
+  CountrySelect,
+  isCanonicalOtherRegion,
+  patchAfterCountryChange,
+  patchAfterRegionChange,
+  RegionSelect,
+} from "../../geography-integrity";
 import { InitiativeCoverMediaField } from "../../media-upload/components/InitiativeCoverMediaField";
 import { InitiativeNewsSourcePanel } from "./InitiativeNewsSourcePanel";
 
@@ -83,54 +85,12 @@ export function InitiativeFormFields({
   onSourceRemove,
 }: InitiativeFormFieldsProps) {
   const presentation = getInitiativeLifecycleProfilePresentation(lifecycleProfile);
-  const countryOptions = useMemo(() => toGeographyCountryOptions(), []);
-  const [communityOptions, setCommunityOptions] = useState<
-    ReturnType<typeof toGeographyCommunityOptions>
-  >([]);
-  const [communitiesLoading, setCommunitiesLoading] = useState(false);
 
   const showGeography =
     presentation.requireCountry ||
     values.participationScope === "community" ||
     values.participationScope === "region" ||
     values.participationScope === "country";
-
-  useEffect(() => {
-    if (!showGeography || !values.regionCode || !values.countryCode) {
-      setCommunityOptions([]);
-      return;
-    }
-
-    let cancelled = false;
-    setCommunitiesLoading(true);
-
-    void fetchCommunitiesByRegion(values.countryCode, values.regionCode)
-      .then((communities) => {
-        if (cancelled) {
-          return;
-        }
-
-        setCommunityOptions(
-          toGeographyCommunityOptions(values.countryCode, values.regionCode, communities),
-        );
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCommunityOptions(
-            toGeographyCommunityOptions(values.countryCode, values.regionCode, []),
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setCommunitiesLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [showGeography, values.countryCode, values.regionCode]);
 
   return (
     <div className="initiative-form-fields">
@@ -172,46 +132,37 @@ export function InitiativeFormFields({
 
       {showGeography ? (
         <>
-          <GeographySearchSelect
+          <CountrySelect
             id="initiative-country"
-            label="Country"
             value={values.countryCode}
-            options={countryOptions}
             onChange={(nextCountry) => {
-              onChange({
-                countryCode: nextCountry,
-                countryLabel: getCountryLabel(nextCountry) ?? "",
-                regionCode: "",
-                regionLabel: "",
-                communityCode: "",
-                communityLabel: "",
-              });
+              onChange(
+                patchAfterCountryChange(nextCountry, getCountryLabel(nextCountry) ?? ""),
+              );
             }}
             required={presentation.requireCountry || values.participationScope !== "world"}
           />
           {(values.participationScope === "region" ||
             values.participationScope === "community") && (
             <>
-              <GeographySearchSelect
+              <RegionSelect
                 id="initiative-region"
-                label="Region"
+                countryCode={values.countryCode}
                 value={values.regionCode}
-                options={toGeographyRegionOptions(values.countryCode, true)}
+                includeOther
                 onChange={(nextRegion) => {
-                  onChange({
-                    regionCode: nextRegion,
-                    regionLabel:
-                      nextRegion === OTHER_REGION_SLUG
+                  onChange(
+                    patchAfterRegionChange(
+                      nextRegion,
+                      isCanonicalOtherRegion(nextRegion)
                         ? values.regionLabel
                         : (getRegionLabel(values.countryCode, nextRegion) ?? ""),
-                    communityCode: "",
-                    communityLabel: "",
-                  });
+                    ),
+                  );
                 }}
-                disabled={!values.countryCode}
                 required
               />
-              {values.regionCode === OTHER_REGION_SLUG ? (
+              {isCanonicalOtherRegion(values.regionCode) ? (
                 <label className="initiative-form-fields__field">
                   <span>Region name</span>
                   <input
@@ -221,30 +172,29 @@ export function InitiativeFormFields({
                     onChange={(event) => onChange({ regionLabel: event.target.value })}
                     required
                   />
+                  <span className="initiative-form-fields__helper">
+                    Free-text fallback — not a canonical region identifier.
+                  </span>
                 </label>
               ) : null}
             </>
           )}
           {values.participationScope === "community" ? (
-            <GeographySearchSelect
+            <CitySelect
               id="initiative-community"
-              label="City / Community"
-              helperText={
-                communitiesLoading
-                  ? "Loading cities for the selected region…"
-                  : "City, municipality, or district within the selected region."
-              }
+              countryCode={values.countryCode}
+              regionCode={values.regionCode}
               value={values.communityCode}
-              options={communityOptions}
+              includeOther
               onChange={(nextCommunity) => {
                 onChange({
                   communityCode: nextCommunity,
                   communityLabel:
-                    communityOptions.find((option) => option.slug === nextCommunity)?.label ??
-                    (nextCommunity === OTHER_COMMUNITY_SLUG ? "Other / Not listed" : ""),
+                    nextCommunity === OTHER_COMMUNITY_SLUG
+                      ? "Other / Not listed"
+                      : nextCommunity,
                 });
               }}
-              disabled={!values.regionCode || communitiesLoading}
               required
             />
           ) : null}

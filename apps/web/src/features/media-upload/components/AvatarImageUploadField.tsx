@@ -125,7 +125,7 @@ export function AvatarImageUploadField({
       <div className="media-image-upload-field__actions">
         <button
           type="button"
-          className="media-image-upload-field__button"
+          className="hu-button hu-button--secondary hu-button--sm"
           disabled={uploading}
           onClick={() => inputRef.current?.click()}
         >
@@ -134,7 +134,7 @@ export function AvatarImageUploadField({
         {imageUrl && onRemove ? (
           <button
             type="button"
-            className="media-image-upload-field__button media-image-upload-field__button--secondary"
+            className="hu-button hu-button--secondary hu-button--sm"
             disabled={uploading}
             onClick={() => void handleRemove()}
           >

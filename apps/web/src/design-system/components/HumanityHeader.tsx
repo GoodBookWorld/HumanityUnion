@@ -10,6 +10,7 @@ import {
   type PrimaryNavLabel,
 } from "../../features/public-experience/constants";
 import { getFocusableElements, trapTabKey } from "../focus-trap";
+import { BrowserWorkspaceHeaderControls } from "./BrowserWorkspaceHeaderControls";
 import { HeaderAuthUtility } from "./HeaderAuthUtility";
 import { HumanityHeaderMenuButton, HumanityHeaderMobileMenu } from "./HumanityHeaderMobileMenu";
 
@@ -136,6 +137,7 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
       <div className="humanity-header__inner">
         <div className="humanity-header__row">
           <div className="humanity-header__brand">
+            <BrowserWorkspaceHeaderControls />
             <HumanityHeaderMenuButton
               ref={menuButtonRef}
               isOpen={mobileMenuOpen}

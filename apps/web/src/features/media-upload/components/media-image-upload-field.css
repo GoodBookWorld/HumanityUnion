@@ -23,10 +23,24 @@
   align-items: center;
   justify-content: center;
   background: var(--hu-color-bg-muted, #f7f8fa);
+  margin-inline: auto;
 }
 
 .media-image-upload-field__preview--avatar {
   border-radius: 999px;
+}
+
+.media-image-upload-field__preview--person {
+  width: min(100%, 10rem);
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  margin-inline: auto;
+}
+
+.media-image-upload-field__preview--landscape {
+  width: min(100%, 28rem);
+  aspect-ratio: 16 / 9;
+  border-radius: 0.5rem;
 }
 
 .media-image-upload-field__image {

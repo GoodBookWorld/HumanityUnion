@@ -392,6 +392,14 @@
   overflow-wrap: anywhere;
 }
 
+/* Pack 09G — legacy Latest Initiative preview: hide summary on phone */
+@media (max-width: 767px) {
+  .latest-initiative-card__summary {
+    display: none;
+  }
+}
+
+
 .latest-initiative-card__meta {
   display: grid;
   gap: 0.5rem;

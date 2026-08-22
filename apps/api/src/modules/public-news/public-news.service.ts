@@ -102,6 +102,11 @@ export async function refreshPublicNews(): Promise<{ upserted: number; fetched: 
   refreshInProgress = true;
 
   try {
+    const { ensureMediaResourcesSeededOnce } = await import(
+      "../media-resources/media-resource.service.js"
+    );
+    await ensureMediaResourcesSeededOnce();
+
     const config = resolvePublicNewsConfig();
     await markExpiredPublicNewsRecords();
     await markPlaceholderPublicNewsRecordsExpired();

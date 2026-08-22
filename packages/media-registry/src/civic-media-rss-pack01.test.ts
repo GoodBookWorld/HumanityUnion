@@ -53,8 +53,8 @@ const RSS_PACK_SOURCES = [
     id: "politico",
     name: "POLITICO",
     feedUrl: "https://www.politico.com/rss/politicopicks.xml",
-    logoPath: undefined,
-    assetRelative: undefined,
+    logoPath: "/images/media/politico.webp",
+    assetRelative: "politico.webp",
   },
   {
     id: "new-york-times",
@@ -96,7 +96,7 @@ describe("Civic Media RSS Integration Pack 01 — registry feeds", () => {
 
   it("canonical text fallback when logo missing (POLITICO)", () => {
     const politico = getMediaRegistryProviderById("politico");
-    assert.equal(politico?.logoUrl, undefined);
+    assert.equal(politico?.logoUrl, "/images/media/politico.webp");
     assert.equal(politico?.logoLabel, "POL");
     assert.equal(getMediaRegistryProviderById("the-economist")?.logoUrl, "/images/media/the-economist.webp");
   });

@@ -73,10 +73,10 @@ function verifyModuleStructure(): void {
   );
 }
 
-function verifyKnowledgeIntegration(): void {
+async function verifyKnowledgeIntegration(): Promise<void> {
   console.log("2. Knowledge integration");
 
-  const center = getCivicMediaCenter();
+  const center = await getCivicMediaCenter();
   assert(center.trustedMedia.length >= 10, "Trusted Media must include curated sources");
   assert(center.factChecking.length >= 5, "Fact-check section must include resources");
   assert(
@@ -285,7 +285,7 @@ function verifyPublicRoutes(): void {
 
 async function main(): Promise<void> {
   verifyModuleStructure();
-  verifyKnowledgeIntegration();
+  await verifyKnowledgeIntegration();
   verifySidebarNavigation();
   verifyNewsWidgetArchitecture();
   verifyAssistantReferences();

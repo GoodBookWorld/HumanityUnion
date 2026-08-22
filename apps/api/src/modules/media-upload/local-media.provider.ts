@@ -11,6 +11,7 @@ const PURPOSE_DIRECTORIES: Record<MediaUploadPurpose, string> = {
   avatar: "avatars",
   "initiative-image": "initiatives",
   "blog-image": "blog",
+  "media-resource-logo": "media-resources",
 };
 
 function purposeDirectory(purpose: MediaUploadPurpose): string {

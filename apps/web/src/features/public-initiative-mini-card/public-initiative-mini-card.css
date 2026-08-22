@@ -57,6 +57,48 @@
   object-fit: contain;
 }
 
+/* Pack 09G — compact preview: denser cover crop on narrow viewports */
+@media (max-width: 1024px) {
+  .public-initiative-mini-card__media img {
+    object-fit: cover;
+  }
+
+  .public-initiative-mini-card__body {
+    gap: 0.3rem;
+    padding: 0.65rem 0.75rem 0.75rem;
+  }
+
+  .public-initiative-mini-card__title {
+    font-size: 0.9375rem;
+    -webkit-line-clamp: 2;
+  }
+}
+
+/* Pack 09G — Home / grid mini cards: hide excerpt on phone; tablet grid may keep it */
+@media (max-width: 767px) {
+  .public-initiative-mini-card__summary {
+    display: none;
+  }
+
+  .public-initiative-mini-card-window__viewport {
+    max-height: calc(3 * 14.5rem + 2 * var(--hu-space-3, 0.75rem));
+  }
+
+  .public-initiative-mini-card--placeholder .public-initiative-mini-card__summary {
+    display: none;
+  }
+}
+
+/* Pack 09G — Hux / horizontal rails: compact at tablet+phone rail widths */
+@media (max-width: 1024px) {
+  .horizontal-rail__viewport .public-initiative-mini-card__summary,
+  .media-horizontal-rail__viewport .public-initiative-mini-card__summary,
+  .hux-section .public-initiative-mini-card__summary {
+    display: none;
+  }
+}
+
+
 .public-initiative-mini-card__body {
   display: flex;
   flex: 1;

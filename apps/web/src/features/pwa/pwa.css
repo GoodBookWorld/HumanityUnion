@@ -153,7 +153,8 @@
 .hu-pwa-global-menu {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  /* Above sticky website header (z-index 100) and mobile public nav panel (130). */
+  z-index: 140;
 }
 
 .hu-pwa-drawer__backdrop,
@@ -162,6 +163,7 @@
   inset: 0;
   border: 0;
   background: rgb(15 23 32 / 0.45);
+  backdrop-filter: blur(2px);
   cursor: pointer;
 }
 
@@ -170,7 +172,8 @@
   top: 0;
   left: 0;
   bottom: 0;
-  width: min(20rem, 88vw);
+  width: min(22rem, 80vw);
+  max-width: 22rem;
   padding: calc(var(--hu-safe-area-top) + var(--hu-space-3)) var(--hu-space-3)
     calc(var(--hu-safe-area-bottom) + var(--hu-space-3));
   overflow: auto;
@@ -325,10 +328,30 @@
   gap: var(--hu-space-2);
 }
 
+.hu-pwa-install-actions .hu-button {
+  min-height: var(--hu-touch-target, 2.75rem);
+}
+
 .hu-pwa-install-status {
   margin: 0;
   color: var(--hu-color-text-muted);
   font-size: var(--hu-font-size-sm);
+}
+
+@media (max-width: 768px) {
+  .hu-pwa-install-column {
+    padding: var(--hu-space-4);
+  }
+
+  .hu-pwa-install-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hu-pwa-install-actions .hu-button {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .public-home-v2__ecosystem-split {

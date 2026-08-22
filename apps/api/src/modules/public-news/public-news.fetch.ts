@@ -3,8 +3,9 @@ import net from "node:net";
 
 import {
   isApprovedMediaRegistryDomain,
-  isApprovedMediaRegistryFeedUrl,
 } from "@hu/media-registry";
+
+import { isApprovedNewsFeedUrl } from "./public-news.config.js";
 
 const BLOCKED_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
 const FEED_URL_PATTERN = /\/(?:feed|rss|atom)(?:\/|$|[?#])/i;
@@ -114,7 +115,7 @@ export async function fetchExternalDocument(
     throw new Error("Only http and https URLs are allowed.");
   }
 
-  if (options.requireApprovedRssFeed && !isApprovedMediaRegistryFeedUrl(url)) {
+  if (options.requireApprovedRssFeed && !isApprovedNewsFeedUrl(url)) {
     throw new Error("RSS feed URL is not in the approved media registry.");
   }
 

@@ -71,16 +71,21 @@ export function PwaInstallGuidance({ open, kind, onClose }: PwaInstallGuidancePr
       >
         <h2 id={titleId}>{title}</h2>
         {kind === "ios" ? (
-          <ol>
-            <li>Open the browser Share menu.</li>
-            <li>Choose Add to Home Screen.</li>
-            <li>Confirm Humanity Union.</li>
-          </ol>
+          <>
+            <p className="hu-pwa-install-status" role="note">
+              Add Humanity Union to your Home Screen from the Share menu.
+            </p>
+            <ol>
+              <li>Open the browser Share menu.</li>
+              <li>Choose Add to Home Screen.</li>
+              <li>Confirm Humanity Union.</li>
+            </ol>
+          </>
         ) : (
           <ol>
             <li>Open your browser menu (⋮ or ⋯).</li>
-            <li>Look for Install app, Install Humanity, or Add to Home Screen.</li>
-            <li>Confirm to add Humanity to your device.</li>
+            <li>Look for Install app, Install App, or Add to Home Screen.</li>
+            <li>Confirm to add Humanity Union to your device.</li>
           </ol>
         )}
         <p className="hu-pwa-install-status" role="note">

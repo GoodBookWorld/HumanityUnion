@@ -55,11 +55,62 @@
   margin-bottom: 2.5rem;
 }
 
-.country-experience-dynamic__initiatives-empty {
+.country-civic-action {
   display: grid;
-  gap: 1rem;
-  max-width: 36rem;
+  gap: 1.5rem;
 }
+
+.country-civic-action__header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.country-civic-action__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hu-color-text-muted, #5b6775);
+}
+
+.country-civic-action__header h2 {
+  margin: 0;
+}
+
+.country-civic-action__description,
+.country-civic-action__empty,
+.country-civic-action__error {
+  margin: 0;
+  color: var(--hu-color-text-muted, #5b6775);
+}
+
+.country-civic-action__error {
+  color: var(--hu-color-danger, #b42318);
+}
+
+.country-election-rail-card .country-initiative-rail-card__summary {
+  display: none;
+}
+
+/* Pack 09G — reinforce compact election rail body on tablet/mobile */
+@media (max-width: 1024px) {
+  .country-election-rail-card .country-initiative-rail-card__body {
+    gap: var(--hu-space-2);
+    padding: var(--hu-space-3);
+  }
+
+  .country-election-rail-card .country-initiative-rail-card__title {
+    font-size: 1rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+
 
 .country-experience-dynamic__search-card {
   display: grid;

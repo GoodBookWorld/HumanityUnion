@@ -111,7 +111,17 @@ export type AdministrationAuditAction =
   | "initiative.administrative.block"
   | "initiative.administrative.unblock"
   | "public_choice.candidate.block"
-  | "public_choice.candidate.unblock";
+  | "public_choice.candidate.unblock"
+  | "media_resource.create"
+  | "media_resource.update"
+  | "media_resource.activate"
+  | "media_resource.deactivate"
+  | "media_resource.delete"
+  | "country_affiliation.create"
+  | "country_affiliation.update"
+  | "country_affiliation.activate"
+  | "country_affiliation.deactivate"
+  | "country_affiliation.delete";
 
 export interface AdministrationAuditRecord {
   readonly auditId: string;

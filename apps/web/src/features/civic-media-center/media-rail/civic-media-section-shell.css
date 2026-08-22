@@ -314,21 +314,36 @@
   flex-shrink: 0;
 }
 
-/* Trusted media category tabs */
+/* Trusted media category tabs — single-line horizontal rail (scroll when needed) */
+.trusted-media-category-tabs {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .trusted-media-category-tabs__list {
   display: flex;
   flex-wrap: nowrap;
+  align-items: center;
   gap: var(--hu-space-2);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
+  touch-action: pan-x;
   padding-bottom: var(--hu-space-2);
   margin: 0 0 var(--hu-space-3);
   list-style: none;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .trusted-media-category-tabs__tab {
   flex: 0 0 auto;
+  width: max-content;
+  max-width: none;
+  min-width: max-content;
   min-height: 2.75rem;
   padding: 0.5rem 0.875rem;
   border: 1px solid var(--hu-color-border, #d7dde5);
@@ -340,6 +355,14 @@
   cursor: pointer;
   white-space: nowrap;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+/* Tablet and below: reinforce one-line touch-scrollable rail (no multi-row wrap). */
+@media (max-width: 1024px) {
+  .trusted-media-category-tabs__list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
 }
 
 .trusted-media-category-tabs__tab:hover {

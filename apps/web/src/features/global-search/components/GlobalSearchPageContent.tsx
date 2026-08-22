@@ -7,17 +7,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { InitiativeLifecycleSearchGroup } from "@hu/types";
 
 import {
-  fetchCommunitiesByRegion,
   formatPublicGeography,
   getCountryLabel,
   normalizeCountryInput,
-  toGeographyCommunityOptions,
-  toGeographyCountryOptions,
-  toGeographyRegionOptions,
 } from "@hu/geography";
 import { buildSearchUrlForGeographyScope } from "../../../data/geography/helpers";
 import { Button } from "../../../design-system";
-import { GeographySearchSelect } from "../../../design-system/components/GeographySearchSelect";
+import { CitySelect, CountrySelect, RegionSelect } from "../../geography-integrity";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
 import {
@@ -75,6 +71,7 @@ function buildActiveFilterSummary(input: {
   status: string;
   fromDate: string;
   toDate: string;
+  lifecycleProfile?: string;
 }): string[] {
   const summary: string[] = [];
 
@@ -82,7 +79,11 @@ function buildActiveFilterSummary(input: {
     summary.push(`Keywords: "${input.q}"`);
   }
 
-  if (input.entityType) {
+  if (input.lifecycleProfile === "STANDARD") {
+    summary.push("Type: Standard Initiatives");
+  } else if (input.lifecycleProfile === "PUBLIC_CHOICE") {
+    summary.push("Type: Public Choice");
+  } else if (input.entityType) {
     summary.push(`Type: ${entityTypeLabel(input.entityType)}`);
   }
 
@@ -138,6 +139,11 @@ export function GlobalSearchPageContent() {
 
   const q = searchParams.get("q") ?? "";
   const entityType = searchParams.get("entityType") ?? searchParams.get("type") ?? "";
+  const lifecycleProfileRaw = searchParams.get("lifecycleProfile") ?? "";
+  const lifecycleProfile =
+    lifecycleProfileRaw === "STANDARD" || lifecycleProfileRaw === "PUBLIC_CHOICE"
+      ? lifecycleProfileRaw
+      : "";
   const country = searchParams.get("country") ?? "";
   const region = searchParams.get("region") ?? "";
   const community = searchParams.get("community") ?? "";
@@ -150,19 +156,13 @@ export function GlobalSearchPageContent() {
   const [countryCode, setCountryCode] = useState(country);
   const [regionCode, setRegionCode] = useState(region);
   const [communityCode, setCommunityCode] = useState(community);
-  const [communityOptions, setCommunityOptions] = useState<
-    ReturnType<typeof toGeographyCommunityOptions>
-  >([]);
-  const [communitiesLoading, setCommunitiesLoading] = useState(false);
-
-  const countryOptions = useMemo(() => toGeographyCountryOptions(), []);
-  const regionOptions = useMemo(() => toGeographyRegionOptions(countryCode, false), [countryCode]);
 
   const hasActiveSearch = useMemo(
     () =>
       Boolean(
         q ||
         entityType ||
+        lifecycleProfile ||
         country ||
         region ||
         community ||
@@ -172,7 +172,19 @@ export function GlobalSearchPageContent() {
         toDate ||
         offset > 0,
       ),
-    [q, entityType, country, region, community, activityArea, status, fromDate, toDate, offset],
+    [
+      q,
+      entityType,
+      lifecycleProfile,
+      country,
+      region,
+      community,
+      activityArea,
+      status,
+      fromDate,
+      toDate,
+      offset,
+    ],
   );
 
   const activeFilterSummary = useMemo(
@@ -187,8 +199,20 @@ export function GlobalSearchPageContent() {
         status,
         fromDate,
         toDate,
+        lifecycleProfile,
       }),
-    [q, entityType, country, region, community, activityArea, status, fromDate, toDate],
+    [
+      q,
+      entityType,
+      country,
+      region,
+      community,
+      activityArea,
+      status,
+      fromDate,
+      toDate,
+      lifecycleProfile,
+    ],
   );
 
   useEffect(() => {
@@ -196,37 +220,6 @@ export function GlobalSearchPageContent() {
     setRegionCode(region);
     setCommunityCode(community);
   }, [country, region, community]);
-
-  useEffect(() => {
-    if (!regionCode || !countryCode) {
-      setCommunityOptions([]);
-      return;
-    }
-
-    let cancelled = false;
-    setCommunitiesLoading(true);
-
-    void fetchCommunitiesByRegion(countryCode, regionCode)
-      .then((communities) => {
-        if (!cancelled) {
-          setCommunityOptions(toGeographyCommunityOptions(countryCode, regionCode, communities));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCommunityOptions(toGeographyCommunityOptions(countryCode, regionCode, []));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setCommunitiesLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [countryCode, regionCode]);
 
   useEffect(() => {
     if (!hasActiveSearch) {
@@ -251,6 +244,7 @@ export function GlobalSearchPageContent() {
       status: status || undefined,
       fromDate: fromDate || undefined,
       toDate: toDate || undefined,
+      lifecycleProfile: lifecycleProfile || undefined,
       limit: 20,
       offset,
       view: "grouped",
@@ -284,6 +278,7 @@ export function GlobalSearchPageContent() {
     hasActiveSearch,
     q,
     entityType,
+    lifecycleProfile,
     country,
     region,
     community,
@@ -315,6 +310,10 @@ export function GlobalSearchPageContent() {
 
     if (entityType) {
       params.set("entityType", entityType);
+    }
+
+    if (lifecycleProfile) {
+      params.set("lifecycleProfile", lifecycleProfile);
     }
 
     if (country) {
@@ -360,6 +359,7 @@ export function GlobalSearchPageContent() {
       [
         q,
         entityType,
+        lifecycleProfile,
         country,
         region,
         community,
@@ -369,7 +369,19 @@ export function GlobalSearchPageContent() {
         toDate,
         offset,
       ].join("|"),
-    [q, entityType, country, region, community, activityArea, status, fromDate, toDate, offset],
+    [
+      q,
+      entityType,
+      lifecycleProfile,
+      country,
+      region,
+      community,
+      activityArea,
+      status,
+      fromDate,
+      toDate,
+      offset,
+    ],
   );
 
   useEffect(() => {
@@ -434,9 +446,18 @@ export function GlobalSearchPageContent() {
             params.delete("community");
           }
 
+          if (lifecycleProfile) {
+            params.set("lifecycleProfile", lifecycleProfile);
+          } else {
+            params.delete("lifecycleProfile");
+          }
+
           router.push(`/search${params.toString() ? `?${params.toString()}` : ""}`);
         }}
       >
+        {lifecycleProfile ? (
+          <input type="hidden" name="lifecycleProfile" value={lifecycleProfile} />
+        ) : null}
         <label>
           Search
           <input name="q" defaultValue={q} placeholder="Search titles, summaries, locations..." />
@@ -453,11 +474,9 @@ export function GlobalSearchPageContent() {
           </select>
         </label>
 
-        <GeographySearchSelect
+        <CountrySelect
           id="search-country"
-          label="Country"
           value={countryCode}
-          options={countryOptions}
           onChange={(nextCountry) => {
             setCountryCode(nextCountry);
             setRegionCode("");
@@ -465,29 +484,23 @@ export function GlobalSearchPageContent() {
           }}
         />
 
-        <GeographySearchSelect
+        <RegionSelect
           id="search-region"
-          label="Region"
+          countryCode={countryCode}
           value={regionCode}
-          options={regionOptions}
-          disabled={!countryCode}
+          includeOther={false}
           onChange={(nextRegion) => {
             setRegionCode(nextRegion);
             setCommunityCode("");
           }}
         />
 
-        <GeographySearchSelect
+        <CitySelect
           id="search-community"
-          label="City / Community"
-          helperText={
-            communitiesLoading
-              ? "Loading cities for the selected region…"
-              : "City, municipality, or district within the selected region."
-          }
+          countryCode={countryCode}
+          regionCode={regionCode}
           value={communityCode}
-          options={communityOptions}
-          disabled={!regionCode || communitiesLoading}
+          includeOther={false}
           onChange={setCommunityCode}
         />
 

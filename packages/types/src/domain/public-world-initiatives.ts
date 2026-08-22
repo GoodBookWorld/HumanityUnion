@@ -1,4 +1,6 @@
 import type { InitiativeCoverMedia } from "./initiative-cover-media.js";
+import type { InitiativeLifecycleProfile } from "./initiative-lifecycle-profile.js";
+import type { PublicChoiceElectionVotingStatus } from "./public-choice-ballot-mode.js";
 
 export interface WorldInitiativeCardProjection {
   initiativeId: string;
@@ -19,6 +21,12 @@ export interface WorldInitiativeCardProjection {
     likes: number;
     dislikes: number;
   };
+  /** Pack 09F2 — Country discovery rails. */
+  lifecycleProfile?: InitiativeLifecycleProfile;
+  electionVotingStatus?: PublicChoiceElectionVotingStatus;
+  electionVotingStatusLabel?: string;
+  candidateCount?: number;
+  administrativelyBlocked?: boolean;
 }
 
 export interface WorldInitiativesPublicProjection {

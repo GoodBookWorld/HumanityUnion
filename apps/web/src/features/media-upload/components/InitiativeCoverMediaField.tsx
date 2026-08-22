@@ -209,7 +209,7 @@ export function InitiativeCoverMediaField({
           <div className="initiative-cover-media-field__actions">
             <button
               type="button"
-              className="initiative-cover-media-field__button"
+              className="hu-button hu-button--secondary hu-button--sm"
               disabled={busy}
               onClick={() => inputRef.current?.click()}
             >
@@ -248,7 +248,7 @@ export function InitiativeCoverMediaField({
           <div className="initiative-cover-media-field__actions">
             <button
               type="button"
-              className="initiative-cover-media-field__button"
+              className="hu-button hu-button--secondary hu-button--sm"
               disabled={busy || !videoUrlDraft.trim()}
               onClick={() => void handleVideoLinkSubmit()}
             >
@@ -262,7 +262,7 @@ export function InitiativeCoverMediaField({
         <div className="initiative-cover-media-field__actions">
           <button
             type="button"
-            className="initiative-cover-media-field__button initiative-cover-media-field__button--secondary"
+            className="hu-button hu-button--secondary hu-button--sm"
             disabled={busy}
             onClick={() => void handleRemove()}
           >

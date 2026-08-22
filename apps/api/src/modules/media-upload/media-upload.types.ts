@@ -1,4 +1,4 @@
-export type MediaUploadPurpose = "avatar" | "initiative-image" | "blog-image";
+export type MediaUploadPurpose = "avatar" | "initiative-image" | "blog-image" | "media-resource-logo";
 
 export interface StoredMediaRecord {
   mediaId: string;

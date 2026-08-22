@@ -148,6 +148,35 @@ mediaUploadRouter.post(
   },
 );
 
+mediaUploadRouter.post(
+  "/media-resource-logo",
+  mediaUploadRateLimiter,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      const identity = await requestIdentityFromAuth(req.auth!);
+      if (!req.auth!.roles.includes("admin")) {
+        res.status(403).json(failure("Administrator access is required.", 403));
+        return;
+      }
+      const validated = validateUploadedImageFile("media-resource-logo", req.file);
+      const record = await mediaUploadService.uploadMedia({
+        purpose: "media-resource-logo",
+        file: validated,
+        ownerUserId: req.auth!.id,
+        ownerParticipantId: identity.participantId,
+        publicBaseUrl: resolvePublicBaseUrl(req),
+      });
+
+      res.json(createSuccessResponse(record, "Media resource logo uploaded."));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Media resource logo upload failed.";
+      res.status(400).json(failure(message));
+    }
+  },
+);
+
 /**
  * UX Evolution Pack 03 Part 6 — approved external video links. No backend
  * fetch of the URL is ever performed (Part 8, SSRF prevention): the URL is

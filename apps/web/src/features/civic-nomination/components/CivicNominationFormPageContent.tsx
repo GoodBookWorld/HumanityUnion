@@ -7,16 +7,14 @@ import { useEffect, useMemo, useState } from "react";
 import type { CivicNominationExpertiseArea, CivicNominationInstitutionRole } from "@hu/types";
 
 import { Button, Card } from "../../../design-system";
-import { GeographySearchSelect } from "../../../design-system/components/GeographySearchSelect";
+import { getCountryLabel, getRegionLabel, OTHER_COMMUNITY_SLUG } from "@hu/geography";
 import {
-  fetchCommunitiesByRegion,
-  getCountryLabel,
-  getRegionLabel,
-  OTHER_COMMUNITY_SLUG,
-  toGeographyCommunityOptions,
-  toGeographyCountryOptions,
-  toGeographyRegionOptions,
-} from "@hu/geography";
+  CitySelect,
+  CountrySelect,
+  patchAfterCountryChange,
+  patchAfterRegionChange,
+  RegionSelect,
+} from "../../geography-integrity";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import {
   createCivicNominationDraft,
@@ -68,16 +66,6 @@ export function CivicNominationFormPageContent() {
   const [submitting, setSubmitting] = useState(false);
   const [savedNominationId, setSavedNominationId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [communityOptions, setCommunityOptions] = useState<
-    ReturnType<typeof toGeographyCommunityOptions>
-  >([]);
-  const [communitiesLoading, setCommunitiesLoading] = useState(false);
-
-  const countryOptions = useMemo(() => toGeographyCountryOptions(), []);
-  const regionOptions = useMemo(
-    () => toGeographyRegionOptions(formState.countryCode, false),
-    [formState.countryCode],
-  );
 
   useEffect(() => {
     if (authStatus === "pending") {
@@ -99,43 +87,6 @@ export function CivicNominationFormPageContent() {
       institutionRole: initialRole,
     }));
   }, [initialRole]);
-
-  useEffect(() => {
-    if (!formState.regionCode) {
-      setCommunityOptions([]);
-      return;
-    }
-
-    let cancelled = false;
-    setCommunitiesLoading(true);
-
-    void fetchCommunitiesByRegion(formState.countryCode, formState.regionCode)
-      .then((communities) => {
-        if (cancelled) {
-          return;
-        }
-
-        setCommunityOptions(
-          toGeographyCommunityOptions(formState.countryCode, formState.regionCode, communities),
-        );
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCommunityOptions(
-            toGeographyCommunityOptions(formState.countryCode, formState.regionCode, []),
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setCommunitiesLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [formState.countryCode, formState.regionCode]);
 
   const countryRequired = COUNTRY_REQUIRED_ROLES.includes(formState.institutionRole);
 
@@ -338,22 +289,17 @@ export function CivicNominationFormPageContent() {
 
           <section className="civic-nomination-form__section">
             <h2>Civic Scope</h2>
-            <GeographySearchSelect
+            <CountrySelect
               id="civic-nomination-country"
               label={`Country${countryRequired ? " (required)" : " (optional)"}`}
               helperText="Select the country where civic scope applies."
               value={formState.countryCode}
-              options={countryOptions}
               required={countryRequired}
+              error={fieldErrors.countryCode}
               onChange={(nextCountry) => {
                 setFormState((current) => ({
                   ...current,
-                  countryCode: nextCountry,
-                  countryLabel: getCountryLabel(nextCountry) ?? "",
-                  regionCode: "",
-                  regionLabel: "",
-                  communityCode: "",
-                  communityLabel: "",
+                  ...patchAfterCountryChange(nextCountry, getCountryLabel(nextCountry) ?? ""),
                 }));
                 setFieldErrors((current) => ({
                   ...current,
@@ -362,45 +308,35 @@ export function CivicNominationFormPageContent() {
                 }));
               }}
             />
-            {fieldErrors.countryCode ? (
-              <p className="civic-nomination-form__field-error" role="alert">
-                {fieldErrors.countryCode}
-              </p>
-            ) : null}
-            <GeographySearchSelect
+            <RegionSelect
               id="civic-nomination-region"
               label="Region (optional)"
+              countryCode={formState.countryCode}
               value={formState.regionCode}
-              options={regionOptions}
-              disabled={!formState.countryCode}
+              includeOther={false}
               onChange={(nextRegion) => {
                 setFormState((current) => ({
                   ...current,
-                  regionCode: nextRegion,
-                  regionLabel: getRegionLabel(current.countryCode, nextRegion) ?? "",
-                  communityCode: "",
-                  communityLabel: "",
+                  ...patchAfterRegionChange(
+                    nextRegion,
+                    getRegionLabel(current.countryCode, nextRegion) ?? "",
+                  ),
                 }));
               }}
             />
-            <GeographySearchSelect
+            <CitySelect
               id="civic-nomination-community"
               label="Community (optional)"
-              helperText={
-                communitiesLoading
-                  ? "Loading communities for the selected region…"
-                  : "City, municipality, or district within the selected region."
-              }
+              countryCode={formState.countryCode}
+              regionCode={formState.regionCode}
               value={formState.communityCode}
-              options={communityOptions}
-              disabled={!formState.regionCode || communitiesLoading}
+              includeOther={false}
               onChange={(nextCommunity) => {
                 setFormState((current) => ({
                   ...current,
                   communityCode: nextCommunity,
                   communityLabel:
-                    communityOptions.find((option) => option.slug === nextCommunity)?.label ??
-                    (nextCommunity === OTHER_COMMUNITY_SLUG ? "Other / Not listed" : ""),
+                    nextCommunity === OTHER_COMMUNITY_SLUG ? "Other / Not listed" : nextCommunity,
                 }));
               }}
             />

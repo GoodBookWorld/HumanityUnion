@@ -16,6 +16,7 @@ import {
   resolvePublicChoiceBallotMode,
 } from "@hu/types";
 import { isPlatformMediaUrl } from "../media-upload/media-upload.validation.js";
+import { assertOptionalStructuredGeography } from "./initiative-geography.validators.js";
 
 export interface CreateInitiativeDraftInput {
   title: string;
@@ -299,6 +300,15 @@ export function validateCreateInitiativeDraftInput(body: unknown): CreateInitiat
     assertPublicChoiceCountry(countrySlug);
   }
 
+  assertOptionalStructuredGeography(
+    {
+      countrySlug,
+      regionSlug: normalizeOptionalText(record.regionSlug),
+      communitySlug: normalizeOptionalText(record.communitySlug),
+    },
+    { strictParents: true },
+  );
+
   return {
     title: normalizeText(record.title, "Title"),
     description: normalizeText(record.description, "Short description"),
@@ -421,6 +431,12 @@ export function validateSaveInitiativeDraftInput(body: unknown): SaveInitiativeD
     throw new Error("At least one editable field is required.");
   }
 
+  assertOptionalStructuredGeography({
+    countrySlug: update.countrySlug,
+    regionSlug: update.regionSlug,
+    communitySlug: update.communitySlug,
+  });
+
   return update;
 }
 
@@ -448,6 +464,15 @@ export function validateInitiativeForPublication(initiative: Initiative): void {
       throw new Error("Activity area (Other) is required when Activity area is Other.");
     }
   }
+
+  assertOptionalStructuredGeography(
+    {
+      countrySlug: initiative.metadata.countrySlug,
+      regionSlug: initiative.metadata.regionSlug,
+      communitySlug: initiative.metadata.communitySlug,
+    },
+    { strictParents: true },
+  );
 
   if (initiative.visibility.policy !== "public") {
     throw new Error("Visibility must be Public before publishing.");

@@ -61,7 +61,7 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     assert.match(help, /Add to Home Screen/);
     assert.match(help, /Share menu/);
     const promo = readWeb("features/pwa/components/PwaInstallPromotion.tsx");
-    assert.match(promo, /Add Humanity to Home Screen/);
+    assert.match(promo, /Add to Home Screen/);
   });
 
   it("9 — standalone does not show actionable install CTA", () => {

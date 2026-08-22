@@ -25,6 +25,7 @@
   justify-content: center;
   background: var(--hu-color-bg-muted, #f7f8fa);
   position: relative;
+  margin-inline: auto;
 }
 
 .initiative-cover-media-field__image {
@@ -105,7 +106,7 @@
 }
 
 .initiative-cover-media-field__input {
-  display: block;
+  display: none;
 }
 
 .initiative-cover-media-field__video-link-field {

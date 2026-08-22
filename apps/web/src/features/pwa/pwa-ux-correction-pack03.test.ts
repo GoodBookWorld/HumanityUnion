@@ -117,6 +117,7 @@ describe("PWA UX Correction Pack 03 — Profile, Knowledge drawer, Map zoom", ()
   it("Workspace Drawer auto-closes on navigation selection (Pack 03 addendum)", () => {
     const drawer = readWeb("features/pwa/components/PwaWorkspaceDrawer.tsx");
     const nav = readWeb("features/initiatives/components/WorkspaceNavigation.tsx");
+    const groups = readWeb("features/initiatives/components/build-workspace-nav-groups.ts");
 
     assert.match(drawer, /WorkspaceNavigation onNavigate=\{handleNavigate\}/);
     assert.match(drawer, /skipFocusRestoreRef/);
@@ -127,11 +128,11 @@ describe("PWA UX Correction Pack 03 — Profile, Knowledge drawer, Map zoom", ()
 
     assert.match(nav, /onNavigate\?:/);
     assert.match(nav, /onClick=\{onNavigate\}/);
-    assert.match(nav, /Workspace Home/);
-    assert.match(nav, /Initiatives/);
-    assert.match(nav, /Messages/);
-    assert.match(nav, /Profile/);
-    assert.match(nav, /Preferences/);
+    assert.match(groups, /Workspace Home/);
+    assert.match(groups, /Initiatives/);
+    assert.match(groups, /Messages/);
+    assert.match(groups, /Profile/);
+    assert.match(groups, /Preferences/);
     assert.match(nav, /Become an Author|Publishing/);
     assert.match(nav, /Editorial Review/);
 
