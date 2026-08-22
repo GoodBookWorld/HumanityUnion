@@ -59,6 +59,7 @@ describe("PWA UX Correction Pack 03 — Profile, Knowledge drawer, Map zoom", ()
     assert.match(sidebar, /onNavigate/);
     assert.match(css, /width:\s*min\(80vw/);
     assert.match(css, /backdrop-filter:\s*blur/);
+    assert.match(css, /z-index:\s*var\(--hu-z-overlay\)/);
     assert.ok(existsSync(path.join(webRoot, "public/icons/workspace/cross.svg")));
   });
 

@@ -2,6 +2,10 @@
   display: grid;
   gap: var(--hu-space-2);
   font-size: var(--hu-font-size-sm);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .geography-search-select__label {
@@ -24,6 +28,7 @@
   width: 100%;
   min-width: 0;
   max-width: 100%;
+  box-sizing: border-box;
 }
 
 .geography-search-select__search:focus-visible,

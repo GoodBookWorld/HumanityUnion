@@ -36,19 +36,20 @@ describe("Pack 09H — series certification contracts", () => {
     assert.ok(people === media + 1);
   });
 
-  it("Country page order: Statistics → Team → Partners → Search → Action → Media", () => {
+  it("Country page order: Statistics → Search → Action → Media → News → Team → Partners", () => {
     const page = readWeb(
       "features/country-experience/components/CountryExperienceDynamicPage.tsx",
     );
     const body = page.slice(page.indexOf("return ("));
     const markers = [
       "country-statistics-title",
-      "<CountryTeamSection",
-      "<CountryPartnersSection",
       "country-search-title",
       "country-experience-dynamic__search-card",
       "<CountryCivicActionSection",
       "country-media-",
+      "<CountryPublicNewsWidget",
+      "<CountryTeamSection",
+      "<CountryPartnersSection",
     ];
     let previous = -1;
     for (const marker of markers) {

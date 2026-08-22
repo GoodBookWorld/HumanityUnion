@@ -127,17 +127,43 @@ export function TrustedMediaCategoryTabs({
     availableCategories.find((category) => category.id === activeCategoryId) ??
     availableCategories[0];
 
+  /**
+   * Pack 10D — expose the active tab horizontally inside the tablist only.
+   * Never call scrollIntoView on the tab (that vertically jumps `/media` under the
+   * sticky header on mount / category restore).
+   */
   useEffect(() => {
     if (!activeCategory) {
       return;
     }
 
+    const tabList = document.getElementById(`${sectionId}-category-tablist`);
     const activeTab = document.getElementById(`${sectionId}-${activeCategory.id}-tab`);
-    activeTab?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "nearest",
-    });
+
+    if (!(tabList instanceof HTMLElement) || !(activeTab instanceof HTMLElement)) {
+      return;
+    }
+
+    const tabLeft = activeTab.offsetLeft;
+    const tabRight = tabLeft + activeTab.offsetWidth;
+    const viewLeft = tabList.scrollLeft;
+    const viewRight = viewLeft + tabList.clientWidth;
+    const pad = 8;
+
+    if (tabLeft < viewLeft + pad) {
+      tabList.scrollTo({
+        left: Math.max(0, tabLeft - pad),
+        behavior: "smooth",
+      });
+      return;
+    }
+
+    if (tabRight > viewRight - pad) {
+      tabList.scrollTo({
+        left: Math.max(0, tabRight - tabList.clientWidth + pad),
+        behavior: "smooth",
+      });
+    }
   }, [activeCategory, sectionId]);
 
   const activeResources = useMemo(
@@ -177,6 +203,7 @@ export function TrustedMediaCategoryTabs({
   return (
     <div className="trusted-media-category-tabs">
       <div
+        id={`${sectionId}-category-tablist`}
         role="tablist"
         aria-label="Trusted media categories"
         className="trusted-media-category-tabs__list"

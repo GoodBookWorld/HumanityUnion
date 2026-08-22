@@ -171,17 +171,19 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
       </nav>
 
       <header className="country-experience-dynamic__hero">
-        <img
-          src={countryFlagSrc(countryCode)}
-          alt=""
-          className="country-experience-dynamic__flag"
-          width={120}
-          height={80}
-          onError={(event) => {
-            event.currentTarget.src = "/images/flags/placeholder-country.svg";
-          }}
-        />
-        <div>
+        <div className="country-experience-dynamic__flag-wrap">
+          <img
+            src={countryFlagSrc(countryCode)}
+            alt=""
+            className="country-experience-dynamic__flag"
+            width={120}
+            height={80}
+            onError={(event) => {
+              event.currentTarget.src = "/images/flags/placeholder-country.svg";
+            }}
+          />
+        </div>
+        <div className="country-experience-dynamic__hero-copy">
           <h1>{country.name}</h1>
           <p className="country-experience-dynamic__region">
             {country.region} · {country.subregion}
@@ -218,9 +220,6 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
           formatValue={(_, value) => formatPlatformStatisticValue(value)}
         />
       </section>
-
-      <CountryTeamSection countryCode={countryCode} countryName={country.name} />
-      <CountryPartnersSection countryCode={countryCode} countryName={country.name} />
 
       <section
         className="country-experience-dynamic__section"
@@ -278,6 +277,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
             <label>
               <span>Entity Type</span>
               <select
+                className="hu-form-control"
                 value={entityTypeValue}
                 onChange={(event) => setEntityTypeValue(event.target.value)}
               >
@@ -291,6 +291,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
             <label>
               <span>Activity Area</span>
               <select
+                className="hu-form-control"
                 value={activityArea}
                 onChange={(event) => setActivityArea(event.target.value)}
               >
@@ -353,6 +354,9 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
         regionName={country.region}
         recommendedMedia={media}
       />
+
+      <CountryTeamSection countryCode={countryCode} countryName={country.name} />
+      <CountryPartnersSection countryCode={countryCode} countryName={country.name} />
     </div>
   );
 }

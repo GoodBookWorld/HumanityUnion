@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -14,14 +13,13 @@ import { PwaWorkspaceDrawer } from "../../features/pwa/components/PwaWorkspaceDr
 import { HumanityAvatar } from "./HumanityAvatar";
 
 /**
- * Mobile Shell Pack 09C — browser tablet/mobile Workspace access.
- * Reuses `PwaWorkspaceDrawer` + canonical `WorkspaceNavigation` (no second nav tree).
- * Avatar → `/workspace`. Menu trigger → left Workspace drawer.
+ * Pack 10A — authenticated Participant avatar opens the canonical Workspace drawer.
+ * Reuses `PwaWorkspaceDrawer` + `WorkspaceNavigation` (no second nav tree, no second burger).
  */
 export function BrowserWorkspaceHeaderControls() {
   const authStatus = useClientAuthStatus();
   const pathname = usePathname();
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const avatarRef = useRef<HTMLButtonElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [identity, setIdentity] = useState<WorkspaceMemberIdentity | null>(null);
 
@@ -71,30 +69,21 @@ export function BrowserWorkspaceHeaderControls() {
     <>
       <div className="humanity-header__workspace-shell">
         <button
-          ref={triggerRef}
+          ref={avatarRef}
           type="button"
-          className="humanity-header__workspace-trigger"
-          aria-label={drawerOpen ? "Close Workspace navigation" : "Open Workspace navigation"}
+          className="humanity-header__participant-avatar"
+          aria-label={drawerOpen ? "Close Workspace menu" : "Open Workspace menu"}
           aria-expanded={drawerOpen}
+          title="Workspace"
           onClick={() => setDrawerOpen((open) => !open)}
         >
-          <span className="humanity-header__workspace-trigger-glyph" aria-hidden="true">
-            ☰
-          </span>
-        </button>
-        <Link
-          href="/workspace"
-          className="humanity-header__participant-avatar"
-          aria-label="Workspace"
-          title="Workspace"
-        >
           <HumanityAvatar avatarUrl={identity?.avatarUrl} size={36} alt="" />
-        </Link>
+        </button>
       </div>
       <PwaWorkspaceDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        returnFocusRef={triggerRef}
+        returnFocusRef={avatarRef}
       />
     </>
   );

@@ -139,6 +139,16 @@
   --hu-focus-offset: 2px;
 
   /*
+   * Stacking layers (Pack 10A) — prefer these over ad-hoc z-index values:
+   * page < sticky local UI < header < overlay/drawer < modal/dialog
+   */
+  --hu-z-page: 1;
+  --hu-z-sticky: 20;
+  --hu-z-header: 100;
+  --hu-z-overlay: 140;
+  --hu-z-modal: 200;
+
+  /*
    * Canonical breakpoints (documented; media queries still use literals):
    * --hu-bp-mobile-max: 768px
    * --hu-bp-tablet-max: 1024px

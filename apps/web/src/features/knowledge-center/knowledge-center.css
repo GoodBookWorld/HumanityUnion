@@ -227,7 +227,8 @@
 .knowledge-center__drawer {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  /* Pack 10A — overlay layer above sticky header (--hu-z-header). */
+  z-index: var(--hu-z-overlay);
 }
 
 .knowledge-center__drawer-backdrop {

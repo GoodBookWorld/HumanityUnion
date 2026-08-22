@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 
 import type { CountryAffiliationPublic } from "@hu/types";
 
+import { buildAffiliationPresentationSlots } from "../country-affiliation-presentation";
 import { fetchCountryAffiliations } from "../country-experience-api";
-import { CountryAffiliationCard } from "./CountryAffiliationCard";
+import {
+  CountryAffiliationCard,
+  CountryAffiliationPlaceholderCard,
+} from "./CountryAffiliationCard";
 
 import "./country-affiliation-cards.css";
 
@@ -45,9 +49,7 @@ export function CountryPartnersSection({ countryCode, countryName }: CountryPart
     return null;
   }
 
-  if (entries.length === 0) {
-    return null;
-  }
+  const slots = buildAffiliationPresentationSlots(entries);
 
   return (
     <section
@@ -58,13 +60,27 @@ export function CountryPartnersSection({ countryCode, countryName }: CountryPart
       <p className="country-affiliation-section__intro">
         Organizations collaborating with Humanity Union in {countryName}.
       </p>
-      <ul className="country-affiliation-grid">
-        {entries.map((entry) => (
-          <li key={entry.entryId}>
-            <CountryAffiliationCard entry={entry} />
-          </li>
-        ))}
-      </ul>
+      <div
+        className="country-affiliation-rail"
+        role="list"
+        aria-label={`Our Partners in ${countryName}`}
+      >
+        {slots.map((slot) =>
+          slot.kind === "entry" ? (
+            <div key={slot.entry.entryId} className="country-affiliation-rail__item" role="listitem">
+              <CountryAffiliationCard entry={slot.entry} toneIndex={slot.toneIndex} />
+            </div>
+          ) : (
+            <div
+              key={`partner-placeholder-${slot.placeholderIndex}`}
+              className="country-affiliation-rail__item"
+              role="presentation"
+            >
+              <CountryAffiliationPlaceholderCard variant="partner" toneIndex={slot.toneIndex} />
+            </div>
+          ),
+        )}
+      </div>
     </section>
   );
 }

@@ -59,6 +59,12 @@ apps/api/.env.save
 !apps/web/src/data/geography/
 !apps/web/src/data/geography/**
 
+# Pack 10B — static City/Community JSON served at /data/geography/communities/*
+# (required at runtime by fetchCommunitiesByRegion; must ship with the Web artifact).
+!apps/web/public/data/
+!apps/web/public/data/geography/
+!apps/web/public/data/geography/**
+
 # Upstream geography source dump (local normalize input; keep LICENSE/README tracked)
 packages/geography/source/countries+states+cities.json
 packages/geography/source/regions.json

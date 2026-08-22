@@ -43,13 +43,18 @@
   flex-direction: column;
   gap: 0.65rem;
   margin: 0.75rem 0 1rem;
-  max-width: 56rem;
+  max-width: min(56rem, 100%);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .admin-initiatives-filters__row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .admin-initiatives-filters__row label {
@@ -58,11 +63,17 @@
   gap: 0.25rem;
   font-size: 0.85rem;
   font-weight: 600;
+  flex: 1 1 10rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .admin-initiatives-filters__row select,
 .admin-initiatives-filters__row input {
-  min-width: 9rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 0.4rem 0.5rem;
   border: 1px solid rgba(26, 77, 109, 0.28);
   border-radius: 0.3rem;

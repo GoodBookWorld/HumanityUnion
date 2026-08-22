@@ -1,5 +1,7 @@
 html {
   scroll-behavior: smooth;
+  /* Pack 10D — hash/section targets clear the sticky platform header. */
+  scroll-padding-top: var(--hu-scroll-margin-top, var(--humanity-header-offset));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -24,7 +26,8 @@ html {
   position: fixed;
   top: var(--hu-space-4);
   left: var(--hu-space-4);
-  z-index: 200;
+  /* Soft contact + ambient depth for floating admin chrome */
+  z-index: var(--hu-z-modal);
   width: auto;
   height: auto;
   margin: 0;

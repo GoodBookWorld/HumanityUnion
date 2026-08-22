@@ -14,7 +14,7 @@
 .humanity-header {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: var(--hu-z-header);
   border-bottom: none;
   background: var(--hu-color-bg-muted);
   box-shadow: none;
@@ -44,39 +44,22 @@
   align-items: center;
   gap: var(--hu-space-3);
   min-width: 0;
+  flex: 1 1 auto;
 }
 
-/* Pack 09C — authenticated Workspace trigger + avatar (tablet/mobile only). */
+/* Pack 10A — avatar-only Workspace entry (tablet/mobile); opens canonical drawer. */
 .humanity-header__workspace-shell {
   display: none;
   align-items: center;
-  gap: var(--hu-space-2);
   flex-shrink: 0;
 }
 
-.humanity-header__workspace-trigger {
-  display: inline-flex;
+.humanity-header__end {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: var(--hu-touch-target);
-  height: var(--hu-touch-target);
-  border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-md);
-  background: var(--hu-color-surface);
-  color: var(--hu-color-text);
-  cursor: pointer;
+  justify-content: flex-end;
+  gap: var(--hu-space-3);
   flex-shrink: 0;
-}
-
-.humanity-header__workspace-trigger:focus-visible,
-.humanity-header__participant-avatar:focus-visible {
-  outline: var(--hu-focus-ring);
-  outline-offset: var(--hu-focus-offset);
-}
-
-.humanity-header__workspace-trigger-glyph {
-  font-size: 1.125rem;
-  line-height: 1;
 }
 
 .humanity-header__participant-avatar {
@@ -85,9 +68,17 @@
   justify-content: center;
   width: var(--hu-touch-target);
   height: var(--hu-touch-target);
+  padding: 0;
+  border: 0;
   border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
   flex-shrink: 0;
-  text-decoration: none;
+}
+
+.humanity-header__participant-avatar:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
 }
 
 .humanity-header__participant-avatar .humanity-avatar {
@@ -111,6 +102,9 @@
   font-weight: 700;
   line-height: 1.2;
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .humanity-header__brand-name:hover,
@@ -126,6 +120,9 @@
   letter-spacing: 0.10em;
   line-height: 1.2;
   text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .humanity-header__logo-link {
@@ -249,6 +246,10 @@
   }
 
   .humanity-header__utility--desktop {
+    display: flex;
+  }
+
+  .humanity-header__end {
     grid-column: 3;
     justify-self: end;
   }
@@ -521,7 +522,7 @@
 .humanity-header__mobile-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 120;
+  z-index: calc(var(--hu-z-header) + 20);
   border: none;
   background: rgba(26, 43, 60, 0.35);
   cursor: pointer;
@@ -532,7 +533,7 @@
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 130;
+  z-index: calc(var(--hu-z-header) + 30);
   display: grid;
   gap: var(--hu-space-4);
   padding: var(--hu-space-4) var(--hu-space-6) var(--hu-space-6);
@@ -572,10 +573,42 @@
   }
 }
 
-/* Pack 09C — Workspace shell controls on tablet + mobile (sidebar replaced by drawer). */
+/* Pack 09C/10A — Workspace avatar on tablet + mobile (sidebar replaced by drawer). */
 @media (max-width: 1024px) {
   .humanity-header__workspace-shell {
     display: inline-flex;
+  }
+}
+
+/* Pack 10A — keep burger + brand + avatar inside the viewport at phone widths. */
+@media (max-width: 430px) {
+  .humanity-header__inner {
+    padding-inline: var(--hu-space-3);
+  }
+
+  .humanity-header__brand {
+    gap: var(--hu-space-2);
+  }
+
+  .humanity-header__brand-name {
+    font-size: var(--hu-font-size-base);
+  }
+
+  .humanity-header__tagline {
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+  }
+}
+
+@media (max-width: 360px) {
+  .humanity-header__logo {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .humanity-header__participant-avatar .humanity-avatar {
+    width: 2rem;
+    height: 2rem;
   }
 }
 

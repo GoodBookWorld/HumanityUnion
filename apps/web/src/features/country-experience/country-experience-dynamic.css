@@ -28,18 +28,28 @@
 
 .country-experience-dynamic__hero {
   display: grid;
-  grid-template-columns: auto 1fr;
   gap: 1.25rem;
   align-items: start;
   margin-bottom: 2rem;
 }
 
+.country-experience-dynamic__flag-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 .country-experience-dynamic__flag {
+  display: block;
   width: 7.5rem;
   height: auto;
   border: 1px solid var(--hu-color-border, #d8dee6);
   border-radius: 0.375rem;
   object-fit: cover;
+}
+
+.country-experience-dynamic__hero-copy {
+  min-width: 0;
 }
 
 .country-experience-dynamic__region {
@@ -164,18 +174,43 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.875rem;
+  align-items: start;
+  min-width: 0;
 }
 
 .country-experience-dynamic__search-filters label,
 .country-experience-dynamic__search-filters .geography-search-select {
   display: grid;
-  gap: 0.375rem;
-  font-size: 0.9375rem;
+  gap: var(--hu-space-2);
+  font-size: var(--hu-font-size-sm);
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  align-content: start;
 }
 
 .country-experience-dynamic__search-filters label span,
 .country-experience-dynamic__search-filters .geography-search-select__label {
   font-weight: 600;
+}
+
+/* Pack 10B — align Region/City/Entity Type/Activity Area control chrome. */
+.country-experience-dynamic__search-filters .hu-form-control,
+.country-experience-dynamic__search-filters .geography-search-select__search,
+.country-experience-dynamic__search-filters .geography-search-select__select,
+.country-experience-dynamic__search-filters select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 2.75rem;
+  box-sizing: border-box;
+  border: 1px solid var(--hu-control-border, var(--hu-color-border));
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-surface);
+  color: var(--hu-color-text);
+  font: inherit;
+  line-height: var(--hu-line-height);
+  padding: var(--hu-space-2) var(--hu-space-3);
 }
 
 .country-experience-dynamic__search-scope {
@@ -257,10 +292,6 @@
 }
 
 @media (max-width: 768px) {
-  .country-experience-dynamic__hero {
-    grid-template-columns: 1fr;
-  }
-
   .country-experience-dynamic__search-primary {
     grid-template-columns: minmax(0, 1fr);
   }

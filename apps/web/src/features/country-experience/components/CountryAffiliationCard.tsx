@@ -8,21 +8,23 @@ import "./country-affiliation-cards.css";
 
 interface CountryAffiliationCardProps {
   entry: CountryAffiliationPublic;
+  toneIndex?: number;
 }
 
-export function CountryAffiliationCard({ entry }: CountryAffiliationCardProps) {
+/**
+ * Pack 10C — real Team/Partner card.
+ * Missing image uses a clean neutral media plate (no visible initials fallback block).
+ */
+export function CountryAffiliationCard({ entry, toneIndex = 0 }: CountryAffiliationCardProps) {
   const imageSrc = resolveMediaUrl(entry.imageUrl) ?? entry.imageUrl;
   const isPartner = entry.entryType === "PARTNER";
-  const initials = entry.name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
+  const toneClass = `country-affiliation-card--tone-${toneIndex % 5}`;
 
   return (
     <article
-      className={`country-affiliation-card${isPartner ? " country-affiliation-card--partner" : " country-affiliation-card--team"}`}
+      className={`country-affiliation-card ${
+        isPartner ? "country-affiliation-card--partner" : "country-affiliation-card--team"
+      } ${toneClass}`}
     >
       <div className="country-affiliation-card__media" aria-hidden="true">
         {imageSrc ? (
@@ -33,17 +35,10 @@ export function CountryAffiliationCard({ entry }: CountryAffiliationCardProps) {
             width={isPartner ? 96 : 72}
             height={isPartner ? 64 : 72}
             onError={(event) => {
-              event.currentTarget.style.display = "none";
-              const fallback = event.currentTarget.nextElementSibling;
-              if (fallback instanceof HTMLElement) {
-                fallback.hidden = false;
-              }
+              event.currentTarget.remove();
             }}
           />
         ) : null}
-        <span className="country-affiliation-card__fallback" hidden={Boolean(imageSrc)}>
-          {initials || "?"}
-        </span>
       </div>
       <div className="country-affiliation-card__body">
         <h3 className="country-affiliation-card__name">{entry.name}</h3>
@@ -67,6 +62,32 @@ export function CountryAffiliationCard({ entry }: CountryAffiliationCardProps) {
             </a>
           ) : null}
         </div>
+      </div>
+    </article>
+  );
+}
+
+interface CountryAffiliationPlaceholderCardProps {
+  variant: "team" | "partner";
+  toneIndex?: number;
+}
+
+/** Presentation-only empty slot — never persisted, not interactive for Visitors. */
+export function CountryAffiliationPlaceholderCard({
+  variant,
+  toneIndex = 0,
+}: CountryAffiliationPlaceholderCardProps) {
+  const toneClass = `country-affiliation-card--tone-${toneIndex % 5}`;
+
+  return (
+    <article
+      className={`country-affiliation-card country-affiliation-card--placeholder country-affiliation-card--${variant} ${toneClass}`}
+      aria-hidden="true"
+    >
+      <div className="country-affiliation-card__media country-affiliation-card__media--empty" />
+      <div className="country-affiliation-card__body">
+        <span className="country-affiliation-card__placeholder-line" />
+        <span className="country-affiliation-card__placeholder-line country-affiliation-card__placeholder-line--short" />
       </div>
     </article>
   );

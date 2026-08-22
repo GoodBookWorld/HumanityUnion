@@ -39,8 +39,8 @@ export function PwaBottomNav() {
           className="hu-pwa-bottom-nav__icon"
           src="/icons/messenger/work-mob.svg"
           alt=""
-          width={24}
-          height={24}
+          width={36}
+          height={36}
           aria-hidden="true"
         />
         Workspace
@@ -55,8 +55,8 @@ export function PwaBottomNav() {
           className="hu-pwa-bottom-nav__icon"
           src="/icons/messenger/init-mob.svg"
           alt=""
-          width={24}
-          height={24}
+          width={36}
+          height={36}
           aria-hidden="true"
         />
         Initiatives
@@ -71,8 +71,8 @@ export function PwaBottomNav() {
           className="hu-pwa-bottom-nav__icon"
           src="/icons/messenger/add-mob.svg"
           alt=""
-          width={24}
-          height={24}
+          width={36}
+          height={36}
           aria-hidden="true"
         />
         Create
@@ -92,8 +92,8 @@ export function PwaBottomNav() {
           className="hu-pwa-bottom-nav__icon"
           src="/icons/messenger/not-mob.svg"
           alt=""
-          width={24}
-          height={24}
+          width={36}
+          height={36}
           aria-hidden="true"
         />
         {unreadCount > 0 ? (
@@ -126,8 +126,8 @@ export function PwaBottomNav() {
           className="hu-pwa-bottom-nav__icon"
           src="/icons/messenger/ai-mob.svg"
           alt=""
-          width={24}
-          height={24}
+          width={36}
+          height={36}
           aria-hidden="true"
         />
         Assistant

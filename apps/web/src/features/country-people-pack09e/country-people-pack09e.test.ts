@@ -37,27 +37,28 @@ describe("Country People Pack 09E", () => {
     assert.match(api, /\/api\/v1\/admin\/country-people/);
   });
 
-  it("Country page mounts Our Team and Our Partners outside Search/Action zone", () => {
+  it("Country page mounts Our Team and Our Partners after Country News", () => {
     const page = read("features/country-experience/components/CountryExperienceDynamicPage.tsx");
     const team = read("features/country-experience/components/CountryTeamSection.tsx");
     const partners = read("features/country-experience/components/CountryPartnersSection.tsx");
     const card = read("features/country-experience/components/CountryAffiliationCard.tsx");
     const api = read("features/country-experience/country-experience-api.ts");
 
-    const statsIdx = page.indexOf('id="country-statistics-title"');
+    const newsIdx = page.indexOf("<CountryPublicNewsWidget");
     const teamIdx = page.indexOf("<CountryTeamSection");
     const partnersIdx = page.indexOf("<CountryPartnersSection");
     const searchIdx = page.indexOf('id="country-search-title"');
     const actionIdx = page.indexOf("<CountryCivicActionSection");
-    assert.ok(statsIdx > 0 && teamIdx > statsIdx && partnersIdx > teamIdx);
-    assert.ok(searchIdx > partnersIdx && actionIdx > searchIdx);
+    assert.ok(newsIdx > 0 && teamIdx > newsIdx && partnersIdx > teamIdx);
+    assert.ok(searchIdx > 0 && actionIdx > searchIdx && newsIdx > actionIdx);
 
     assert.match(team, /Our Team/);
     assert.match(team, /TEAM_MEMBER/);
+    assert.match(team, /buildAffiliationPresentationSlots/);
     assert.match(partners, /Our Partners/);
     assert.match(partners, /PARTNER/);
     assert.match(card, /mailto:/);
-    assert.match(card, /country-affiliation-card__fallback/);
+    assert.doesNotMatch(card, /country-affiliation-card__fallback/);
     assert.match(api, /\/affiliations/);
   });
 });

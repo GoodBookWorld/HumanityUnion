@@ -30,7 +30,9 @@ describe("Media Responsive UX Pack 09B", () => {
     assert.match(css, /\.trusted-media-category-tabs__tab\s*\{[^}]*white-space:\s*nowrap/s);
     assert.match(css, /\.trusted-media-category-tabs__tab\s*\{[^}]*min-width:\s*max-content/s);
     assert.match(css, /@media \(max-width:\s*1024px\)/);
-    assert.match(tabs, /scrollIntoView/);
+    assert.match(tabs, /trusted-media-category-tabs__list/);
+    assert.match(tabs, /tabList\.scrollTo\s*\(/);
+    assert.doesNotMatch(tabs, /\.scrollIntoView\s*\(/);
     assert.match(tabs, /role="tablist"/);
     assert.match(tabs, /aria-selected/);
     assert.match(tabs, /ArrowRight|ArrowLeft/);

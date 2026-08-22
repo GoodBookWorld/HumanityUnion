@@ -12,6 +12,9 @@ apps/api/.env
 apps/web/.env
 **/.runtime
 data
+# Pack 10B — allow Web static geography community assets into the image.
+!apps/web/public/data/
+!apps/web/public/data/**
 tmp
 temp
 *.log

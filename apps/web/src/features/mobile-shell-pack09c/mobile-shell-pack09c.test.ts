@@ -17,21 +17,26 @@ function readWeb(relativePath: string): string {
 }
 
 describe("Mobile Shell Pack 09C", () => {
-  it("browser header mounts Workspace drawer trigger + avatar → /workspace", () => {
+  it("browser header mounts Workspace avatar that opens drawer (Pack 10A composition)", () => {
     const header = readWeb("design-system/components/HumanityHeader.tsx");
     const controls = readWeb("design-system/components/BrowserWorkspaceHeaderControls.tsx");
     const layoutCss = readWeb("design-system/layout.css");
 
     assert.match(header, /BrowserWorkspaceHeaderControls/);
-    assert.match(controls, /Open Workspace navigation/);
+    assert.match(header, /HumanityHeaderMenuButton/);
+    assert.match(controls, /Open Workspace menu/);
     assert.match(controls, /PwaWorkspaceDrawer/);
-    assert.match(controls, /href="\/workspace"/);
+    assert.doesNotMatch(controls, /href="\/workspace"/);
+    assert.doesNotMatch(controls, /humanity-header__workspace-trigger/);
     assert.match(controls, /HumanityAvatar/);
     assert.match(controls, /getWorkspaceMemberIdentity/);
     assert.match(controls, /authStatus !== "authenticated"/);
     assert.match(controls, /setDrawerOpen\(false\)/);
     assert.match(layoutCss, /humanity-header__workspace-shell/);
-    assert.match(layoutCss, /@media \(max-width:\s*1024px\)[\s\S]*workspace-shell[\s\S]*display:\s*inline-flex/s);
+    assert.match(
+      layoutCss,
+      /@media \(max-width:\s*1024px\)[\s\S]*workspace-shell[\s\S]*display:\s*inline-flex/s,
+    );
   });
 
   it("drawer reuses WorkspaceNavigation groups; closes via X/backdrop/Escape/nav; body scroll lock", () => {
@@ -49,7 +54,7 @@ describe("Mobile Shell Pack 09C", () => {
     assert.match(nav, /isAdminAccountRole/);
     assert.match(css, /width:\s*min\(22rem,\s*80vw\)/);
     assert.match(css, /backdrop-filter:\s*blur/);
-    assert.match(css, /z-index:\s*140/);
+    assert.match(css, /z-index:\s*var\(--hu-z-overlay\)/);
   });
 
   it("tablet/mobile hide sidebar so drawer is the sole Workspace nav surface", () => {
@@ -72,7 +77,8 @@ describe("Mobile Shell Pack 09C", () => {
     assert.match(promo, /Installed/);
     assert.match(promo, /prompt\.prompt\(\)/);
     assert.doesNotMatch(register, /\.prompt\(\)/);
-    assert.match(guidance, /Add Humanity Union to your Home Screen from the Share menu/);
+    assert.match(guidance, /Add to Home Screen/);
+    assert.match(guidance, /Open as Web App/);
     assert.match(manifest, /\/brand\/app-192\.png/);
     assert.match(manifest, /\/brand\/app-512\.png/);
     assert.ok(existsSync(path.join(webRoot, "public/brand/app-192.png")));

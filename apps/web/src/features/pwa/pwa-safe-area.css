@@ -6,7 +6,7 @@
   --hu-safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --hu-safe-area-left: env(safe-area-inset-left, 0px);
 
-  --hu-pwa-bottom-nav-content-height: 3.5rem;
+  --hu-pwa-bottom-nav-content-height: 4.5rem;
   --hu-pwa-bottom-nav-height: calc(
     var(--hu-pwa-bottom-nav-content-height) + var(--hu-safe-area-bottom)
   );

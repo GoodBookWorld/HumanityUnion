@@ -136,8 +136,8 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
     <header className="humanity-header" data-block="Header">
       <div className="humanity-header__inner">
         <div className="humanity-header__row">
+          {/* Pack 10A mobile order: platform burger → brand → avatar (end zone). */}
           <div className="humanity-header__brand">
-            <BrowserWorkspaceHeaderControls />
             <HumanityHeaderMenuButton
               ref={menuButtonRef}
               isOpen={mobileMenuOpen}
@@ -186,8 +186,11 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
               })}
             </ul>
           </nav>
-          <div className="humanity-header__utility humanity-header__utility--desktop">
-            <HeaderAuthUtility />
+          <div className="humanity-header__end">
+            <BrowserWorkspaceHeaderControls />
+            <div className="humanity-header__utility humanity-header__utility--desktop">
+              <HeaderAuthUtility />
+            </div>
           </div>
         </div>
       </div>

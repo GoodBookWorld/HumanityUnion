@@ -1521,14 +1521,6 @@
   font-size: 1.25rem;
 }
 
-.pie-election-results__tie {
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--hu-color-text-muted);
-}
-
 .pie-election-results__identity {
   display: grid;
   grid-template-columns: 64px 1fr;

@@ -73,12 +73,14 @@ export function PwaInstallGuidance({ open, kind, onClose }: PwaInstallGuidancePr
         {kind === "ios" ? (
           <>
             <p className="hu-pwa-install-status" role="note">
-              Add Humanity Union to your Home Screen from the Share menu.
+              Add Humanity Union from Safari’s Share menu. This site cannot force an icon onto your
+              Home Screen.
             </p>
             <ol>
-              <li>Open the browser Share menu.</li>
+              <li>Open Safari’s Share menu.</li>
               <li>Choose Add to Home Screen.</li>
-              <li>Confirm Humanity Union.</li>
+              <li>Confirm Open as Web App if shown.</li>
+              <li>Tap Add.</li>
             </ol>
           </>
         ) : (

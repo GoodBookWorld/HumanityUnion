@@ -36,29 +36,32 @@ describe("Country Civic Discovery Pack 09F2 — layout", () => {
     const mediaIdx = page.indexOf("country-media-", bodyStart);
     const teamIdx = page.indexOf("<CountryTeamSection", bodyStart);
     const partnersIdx = page.indexOf("<CountryPartnersSection", bodyStart);
+    const newsIdx = page.indexOf("<CountryPublicNewsWidget", bodyStart);
     const statsIdx = page.indexOf("country-statistics-title", bodyStart);
 
     assert.ok(searchIdx > 0);
     assert.ok(actionIdx > searchIdx);
     assert.ok(mediaIdx > actionIdx);
-    assert.ok(statsIdx > 0 && teamIdx > statsIdx && partnersIdx > teamIdx);
-    assert.ok(partnersIdx < searchIdx);
+    assert.ok(newsIdx > mediaIdx);
+    assert.ok(teamIdx > newsIdx && partnersIdx > teamIdx);
+    assert.ok(statsIdx > 0 && searchIdx > statsIdx);
     assert.doesNotMatch(page, /sectionId=\{`country-initiatives-/);
     assert.match(page, /CountryCivicActionSection/);
   });
 
-  it("Team/Partners remain after Statistics and before Search", () => {
+  it("Team/Partners sit after Country News at the bottom of the page", () => {
     const page = readWeb(
       "features/country-experience/components/CountryExperienceDynamicPage.tsx",
     );
     const bodyStart = page.indexOf("return (");
     const order = [
       "country-statistics-title",
-      "<CountryTeamSection",
-      "<CountryPartnersSection",
       "country-search-title",
       "<CountryCivicActionSection",
       "country-media-",
+      "<CountryPublicNewsWidget",
+      "<CountryTeamSection",
+      "<CountryPartnersSection",
     ];
     let previous = bodyStart;
     for (const token of order) {

@@ -72,9 +72,8 @@ export function CitySelect({
       helperText={resolvedHelper}
       error={error}
       loading={loading}
-      emptyMessage={
-        regionReady && !loading && options.length === 0 ? GEOGRAPHY_EMPTY_COPY.noCities : undefined
-      }
+      // Pack 10B — empty state lives only in helperText (avoid duplicate copy).
+      emptyMessage={undefined}
       requireSearchAbove={80}
     />
   );

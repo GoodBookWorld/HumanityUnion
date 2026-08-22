@@ -68,11 +68,8 @@ export function RegionSelect({
       placeholder={placeholder}
       helperText={resolvedHelper}
       error={error}
-      emptyMessage={
-        countryCode && !hasStructured && !includeOther
-          ? GEOGRAPHY_EMPTY_COPY.noRegions
-          : undefined
-      }
+      // Pack 10B — empty state lives only in helperText (avoid duplicate copy).
+      emptyMessage={undefined}
     />
   );
 }

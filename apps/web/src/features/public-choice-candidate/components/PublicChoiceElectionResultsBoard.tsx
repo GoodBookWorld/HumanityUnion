@@ -154,7 +154,6 @@ export function PublicChoiceElectionResultsBoard({
             <li key={tally.candidateId} className="pie-election-results__row">
               <div className="pie-election-results__rank" aria-label={`Rank ${tally.rank}`}>
                 {tally.rank}
-                {tally.isTie ? <span className="pie-election-results__tie">Tie</span> : null}
               </div>
               <div className="pie-election-results__identity">
                 {photo ? (
