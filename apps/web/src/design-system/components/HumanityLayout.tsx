@@ -4,6 +4,7 @@ import { BetaBanner } from "../../features/closed-beta/components/BetaBanner";
 import { HumanityUnionAssistantShell } from "../../features/humanity-union-assistant";
 import { DocumentLanguageAttributes } from "../../features/language";
 import { PwaShell } from "../../features/pwa/components/PwaShell";
+import { TrafficPageviewCollector } from "../../features/traffic-analytics/TrafficPageviewCollector";
 import { HumanityFooter } from "./HumanityFooter";
 import { HumanityHeader } from "./HumanityHeader";
 
@@ -18,6 +19,7 @@ export function HumanityLayout({ children }: HumanityLayoutProps) {
   return (
     <HumanityUnionAssistantShell>
       <DocumentLanguageAttributes />
+      <TrafficPageviewCollector />
       <PwaShell>
         <div className="humanity-layout">
           <a href="#main-content" className="hu-skip-link">

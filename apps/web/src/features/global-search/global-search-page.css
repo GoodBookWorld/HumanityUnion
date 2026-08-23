@@ -27,9 +27,10 @@
   gap: var(--hu-space-4) var(--hu-space-3);
   margin-bottom: var(--hu-space-6);
   padding: var(--hu-space-4);
-  border: 1px solid var(--hu-color-border);
+  /* Pack 11A — reuse accepted warm accent surface (same mix as PIE lifecycle track). */
+  border: 1px solid color-mix(in srgb, var(--hu-color-accent, #df9815) 28%, var(--hu-color-border));
   border-radius: var(--hu-radius-md);
-  background: var(--hu-color-surface);
+  background: color-mix(in srgb, var(--hu-color-accent, #df9815) 18%, var(--hu-color-bg, #fff));
   align-items: start;
 }
 

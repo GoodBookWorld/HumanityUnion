@@ -152,6 +152,92 @@
   }
 }
 
+/* Pack 11B — Editor authority summary on Overview */
+.admin-editor-authority {
+  display: grid;
+  gap: 1.1rem;
+  margin-top: 0.75rem;
+}
+
+.admin-editor-authority__heading {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+}
+
+.admin-editor-authority__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-editor-authority__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  min-width: 0;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid rgba(26, 77, 109, 0.1);
+  border-radius: 0.35rem;
+  background: #fff;
+}
+
+.admin-editor-authority__area {
+  font-size: 0.95rem;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.admin-editor-authority__status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-editor-authority__status--available {
+  color: var(--hu-color-text, #1a2b36);
+}
+
+.admin-editor-authority__status--unavailable {
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+}
+
+.admin-editor-authority__mark {
+  font-weight: 700;
+}
+
+.admin-editor-authority__scope-level {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.admin-editor-authority__scope-summary {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.admin-editor-authority__scope-detail {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+}
+
+@media (max-width: 520px) {
+  .admin-editor-authority__item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 .admin-panel__tech-details {
   margin-top: 0.85rem;
   font-size: 0.85rem;

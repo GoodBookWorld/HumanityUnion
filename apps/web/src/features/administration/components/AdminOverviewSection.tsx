@@ -14,6 +14,9 @@ import type {
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { fetchPublicBlogPosts } from "../../blog/api";
 import { getPlatformConfig } from "../../closed-beta/platform-api";
+import { getMyMemberProfile } from "../../member-profile/member-profile-api";
+import { MEMBER_PROFILE_UPDATED_EVENT } from "../../member-profile/member-profile-events";
+import { resolveDisplayName } from "../../member-profile/participant-profile-surface-presentation";
 import {
   fetchMembershipStatistics,
   formatMembershipStatisticValue,
@@ -23,10 +26,12 @@ import {
   fetchPlatformStatistics,
   formatPlatformStatisticValue,
 } from "../../platform-statistics/platform-statistics-api";
+import { resolveAdminEditorAuthority } from "../admin-editor-authority";
 import {
   ADMIN_OVERVIEW_STATISTIC_CARDS,
   type AdminOverviewStatisticKey,
 } from "../admin-overview-statistics-config";
+import { AdminEditorAuthoritySection } from "./AdminEditorAuthoritySection";
 import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
@@ -48,6 +53,38 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
   const [blogError, setBlogError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [techOpen, setTechOpen] = useState(false);
+  /** Pack 11A — Profile displayName authority (not auth.users snapshot). */
+  const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProfileDisplayName() {
+      try {
+        const profile = await getMyMemberProfile();
+        if (!cancelled) {
+          setProfileDisplayName(resolveDisplayName(profile));
+        }
+      } catch {
+        if (!cancelled) {
+          setProfileDisplayName(resolveDisplayName({ displayName: undefined }));
+        }
+      }
+    }
+
+    void loadProfileDisplayName();
+
+    function handleProfileUpdated() {
+      void loadProfileDisplayName();
+    }
+
+    window.addEventListener(MEMBER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener(MEMBER_PROFILE_UPDATED_EVENT, handleProfileUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -134,6 +171,7 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
   }
 
   const allUnavailable = platformStatsError && membershipError && blogError;
+  const editorAuthority = resolveAdminEditorAuthority({ role: user.role });
 
   return (
     <div className="admin-panel">
@@ -143,7 +181,10 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
         <AdminMetricDetailsGrid
           aria-label="Administrator details"
           cells={[
-            { label: "Display name", value: user.displayName },
+            {
+              label: "Display name",
+              value: profileDisplayName ?? resolveDisplayName({ displayName: undefined }),
+            },
             { label: "Email", value: user.email },
             { label: "Role", value: user.role === "admin" ? "Administrator" : user.role },
             { label: "Account status", value: user.status === "active" ? "Active" : "Disabled" },
@@ -171,6 +212,12 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
           </dl>
         </details>
       </ProfileSection>
+
+      {editorAuthority ? (
+        <ProfileSection title="Editor">
+          <AdminEditorAuthoritySection authority={editorAuthority} />
+        </ProfileSection>
+      ) : null}
 
       <ProfileSection title="Platform status">
         <AdminMetricDetailsGrid

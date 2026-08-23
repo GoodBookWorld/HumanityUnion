@@ -184,6 +184,10 @@ import adminInitiativeDirectoryRouter from "./modules/administration/admin-initi
 import adminPublicChoiceRouter from "./modules/administration/admin-public-choice.routes.js";
 import adminMediaResourcesRouter from "./modules/media-resources/admin-media-resources.routes.js";
 import adminCountryAffiliationRouter from "./modules/country-affiliation/admin-country-affiliation.routes.js";
+import {
+  adminTrafficAnalyticsRouter,
+  publicTrafficAnalyticsRouter,
+} from "./modules/traffic-analytics/index.js";
 import closedBetaRouter from "./modules/closed-beta/closed-beta.routes.js";
 import preferencesRouter from "./modules/preferences/preferences.routes.js";
 import healthRouter from "./routes/health.routes.js";
@@ -237,6 +241,8 @@ app.use("/api/v1/admin/initiatives", adminInitiativeDirectoryRouter);
 app.use("/api/v1/admin/public-choice", adminPublicChoiceRouter);
 app.use("/api/v1/admin/media-resources", adminMediaResourcesRouter);
 app.use("/api/v1/admin/country-people", adminCountryAffiliationRouter);
+app.use("/api/v1/admin/analytics", adminTrafficAnalyticsRouter);
+app.use("/api/v1/public/analytics", publicTrafficAnalyticsRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/email", emailRouter);
 app.use("/api/v1/member-profile", memberProfileRouter);

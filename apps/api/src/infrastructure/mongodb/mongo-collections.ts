@@ -107,6 +107,12 @@ export const MONGO_COLLECTIONS = {
   // Admin Foundation Pack 02 — generalized grants + append-only audit.
   platformCapabilityGrants: "platform_capability_grants",
   administrationAuditLog: "administration_audit_log",
+  // Pack 11C — first-party traffic analytics (stable names; 90d event TTL).
+  trafficEvents: "traffic_events",
+  trafficSessions: "traffic_sessions",
+  // Pack 11D — long-lived daily aggregates + opaque visitor first-seen registry.
+  trafficDailyAggregates: "traffic_daily_aggregates",
+  trafficVisitorRegistry: "traffic_visitor_registry",
 } as const;
 
 export type MongoCollectionName = (typeof MONGO_COLLECTIONS)[keyof typeof MONGO_COLLECTIONS];

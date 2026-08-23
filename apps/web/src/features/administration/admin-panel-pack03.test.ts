@@ -59,8 +59,11 @@ describe("Admin Panel Pack 03 — Views & Participant directory", () => {
 
   it("unsupported analytics metrics never invent values", () => {
     const traffic = read("features/administration/components/AdminViewsTrafficSection.tsx");
-    assert.match(traffic, /AdminCapabilityGap/);
-    assert.doesNotMatch(traffic, /\?\? 0|fakeViews|sampleTraffic/i);
+    // Pack 11C — Traffic uses live first-party analytics (no CapabilityGap placeholders).
+    assert.match(traffic, /fetchAdminTrafficReport/);
+    assert.match(traffic, /Analytics unavailable/);
+    assert.doesNotMatch(traffic, /fakeViews|sampleTraffic/i);
+    assert.doesNotMatch(traffic, /AdminCapabilityGap/);
 
     const subscribers = read(
       "features/administration/components/AdminViewsSubscribersSection.tsx",
@@ -75,15 +78,13 @@ describe("Admin Panel Pack 03 — Views & Participant directory", () => {
     );
   });
 
-  it("Insights does not duplicate Operational Overview and never invents traffic", () => {
+  it("Insights uses Pack 11D historical API and does not invent traffic", () => {
     const insights = read("features/administration/components/AdminViewsInsightsSection.tsx");
     assert.doesNotMatch(insights, /Operational totals|PublicStatisticsGrid|ADMIN_OVERVIEW/);
-    assert.match(insights, /AdminCapabilityGap/);
-    assert.doesNotMatch(insights, /wordpress|ga4|posthog/i);
-    assert.match(
-      read("features/administration/components/AdminCapabilityGap.tsx"),
-      /Not collected yet/,
-    );
+    assert.match(insights, /fetchAdminTrafficInsights/);
+    assert.match(insights, /Analytics unavailable/);
+    assert.doesNotMatch(insights, /AdminCapabilityGap/);
+    assert.doesNotMatch(insights, /wordpress|ga4|posthog|fakeViews|sampleTraffic/i);
   });
 
   it("Participant directory UI uses admin API with pagination and filters", () => {

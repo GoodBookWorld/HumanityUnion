@@ -1409,3 +1409,21 @@ export {
   isKnownInitiativeActivityArea,
 } from "./initiative-activity-areas.js";
 export type { InitiativeActivityAreaOption } from "./initiative-activity-areas.js";
+export type {
+  TrafficAdminReport,
+  TrafficAdminSummary,
+  TrafficGeographyRow,
+  TrafficInsightsAllTime,
+  TrafficInsightsGeographyRow,
+  TrafficInsightsPeriod,
+  TrafficInsightsReferrerRow,
+  TrafficInsightsReport,
+  TrafficInsightsSessionsPanel,
+  TrafficPageviewIngestRequest,
+  TrafficPeriod,
+  TrafficPeriodComparison,
+  TrafficReferrerRow,
+  TrafficReferrerType,
+  TrafficTopPageRow,
+  TrafficTrendPoint,
+} from "./traffic-analytics.js";

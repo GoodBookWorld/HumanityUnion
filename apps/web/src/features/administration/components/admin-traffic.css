@@ -1,0 +1,132 @@
+/* Pack 11C — Admin Views → Traffic */
+.admin-traffic__period {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.admin-traffic__period-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+}
+
+.admin-traffic__period-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.admin-traffic__period-btn {
+  border: 1px solid rgba(26, 77, 109, 0.18);
+  background: #fff;
+  color: var(--hu-color-text, #1a2b36);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.admin-traffic__period-btn--active {
+  border-color: var(--hu-color-primary, #0174b0);
+  background: rgba(1, 116, 176, 0.08);
+}
+
+.admin-traffic__unavailable {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--hu-color-danger, #b42318) 35%, var(--hu-color-border));
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--hu-color-danger, #b42318) 8%, #fff);
+  font-weight: 600;
+}
+
+.admin-traffic__section-title {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.admin-traffic__summary {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid rgba(26, 77, 109, 0.12);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+
+.admin-traffic__card {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  min-width: 0;
+}
+
+.admin-traffic__card--alt {
+  background: rgba(1, 116, 176, 0.05);
+}
+
+.admin-traffic__card-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+}
+
+.admin-traffic__card-value {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-traffic__table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+  border: 1px solid rgba(26, 77, 109, 0.12);
+  border-radius: 0.4rem;
+}
+
+.admin-traffic__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.admin-traffic__table th,
+.admin-traffic__table td {
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(26, 77, 109, 0.08);
+  vertical-align: top;
+}
+
+.admin-traffic__table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+  background: rgba(1, 116, 176, 0.04);
+}
+
+.admin-traffic__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+@media (max-width: 720px) {
+  .admin-traffic__summary {
+    grid-template-columns: 1fr;
+  }
+}

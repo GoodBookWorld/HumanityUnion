@@ -1066,6 +1066,60 @@ const MODULE_INDEXES: ReadonlyArray<{
       { key: { action: 1, createdAt: -1 }, name: "administration_audit_action_created" },
     ],
   },
+  {
+    // Pack 11C — platform traffic events (90-day TTL on expireAt).
+    collectionName: MONGO_COLLECTIONS.trafficEvents,
+    indexes: [
+      { key: { eventId: 1 }, unique: true, name: "traffic_events_event_id_unique" },
+      {
+        key: { visitorId: 1, pathname: 1, navigationId: 1 },
+        unique: true,
+        name: "traffic_events_visitor_path_nav_unique",
+        partialFilterExpression: { navigationId: { $exists: true, $type: "string" } },
+      },
+      { key: { occurredAt: -1 }, name: "traffic_events_occurred_at" },
+      { key: { occurredAt: 1, pathname: 1 }, name: "traffic_events_occurred_path" },
+      { key: { occurredAt: 1, sessionId: 1 }, name: "traffic_events_occurred_session" },
+      { key: { occurredAt: 1, visitorId: 1 }, name: "traffic_events_occurred_visitor" },
+      { key: { occurredAt: 1, referrerType: 1 }, name: "traffic_events_occurred_referrer" },
+      { key: { occurredAt: 1, countryCode: 1 }, name: "traffic_events_occurred_country" },
+      {
+        key: { expireAt: 1 },
+        expireAfterSeconds: 0,
+        name: "traffic_events_expire_at_ttl",
+      },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.trafficSessions,
+    indexes: [
+      { key: { sessionId: 1 }, unique: true, name: "traffic_sessions_session_id_unique" },
+      { key: { visitorId: 1, lastSeenAt: -1 }, name: "traffic_sessions_visitor_last_seen" },
+      { key: { startedAt: -1 }, name: "traffic_sessions_started_at" },
+      {
+        key: { expireAt: 1 },
+        expireAfterSeconds: 0,
+        name: "traffic_sessions_expire_at_ttl",
+      },
+    ],
+  },
+  {
+    // Pack 11D — long-lived daily aggregates (no TTL).
+    collectionName: MONGO_COLLECTIONS.trafficDailyAggregates,
+    indexes: [
+      { key: { aggregateKey: 1 }, unique: true, name: "traffic_daily_aggregates_key_unique" },
+      { key: { day: 1, dimension: 1 }, name: "traffic_daily_aggregates_day_dimension" },
+      { key: { dimension: 1, day: 1 }, name: "traffic_daily_aggregates_dimension_day" },
+    ],
+  },
+  {
+    // Pack 11D — opaque visitor first-seen / last-seen-day for exact all-time uniques.
+    collectionName: MONGO_COLLECTIONS.trafficVisitorRegistry,
+    indexes: [
+      { key: { visitorId: 1 }, unique: true, name: "traffic_visitor_registry_visitor_unique" },
+      { key: { firstSeenAt: 1 }, name: "traffic_visitor_registry_first_seen" },
+    ],
+  },
 ];
 
 /**

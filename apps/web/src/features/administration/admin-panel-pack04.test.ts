@@ -120,9 +120,8 @@ describe("Admin Panel Pack 04 — Overview information design + Proposal aggrega
     assert.doesNotMatch(insights, /Operational totals/);
     assert.doesNotMatch(insights, /ADMIN_OVERVIEW_STATISTIC_CARDS/);
     assert.doesNotMatch(insights, /PublicStatisticsGrid/);
-    assert.match(insights, /AdminCapabilityGap/);
+    assert.match(insights, /fetchAdminTrafficInsights/);
     assert.match(insights, /\/admin/);
-    assert.match(insights, /not collected|not persisted/i);
     assert.doesNotMatch(insights, /\?\? 0|fakeViews|sampleTraffic/i);
   });
 });
