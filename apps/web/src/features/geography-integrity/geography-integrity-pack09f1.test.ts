@@ -178,7 +178,8 @@ describe("Geography Integrity Pack 09F1 — a11y / responsive hooks", () => {
     const css = readWeb("design-system/components/geography-search-select.css");
     assert.match(select, /aria-busy/);
     assert.match(select, /aria-describedby/);
-    assert.match(select, /requireSearchAbove/);
+    assert.match(select, /role="listbox"/);
+    assert.match(select, /aria-expanded/);
     assert.match(css, /focus-visible/);
     assert.match(css, /min-height:\s*2\.75rem/);
     assert.match(css, /max-width:\s*100%/);

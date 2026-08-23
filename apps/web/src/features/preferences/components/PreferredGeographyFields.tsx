@@ -24,8 +24,7 @@ import {
 import { GeographyMultiSelect } from "../../../design-system/components/GeographyMultiSelect";
 import { HuFeedbackMessage } from "../../../design-system/components/HuFeedbackMessage";
 import {
-  CITY_REQUIRE_SEARCH_ABOVE,
-  formatLargeCitySearchHelper,
+  formatCityListHelper,
   GEOGRAPHY_EMPTY_COPY,
 } from "../../geography-integrity/geography-cascade-contract";
 
@@ -273,7 +272,6 @@ export function PreferredGeographyFields({
   }
 
   const citiesDisabled = preferredRegions.length === 0;
-  const isLargeCityList = communityStructuredCount > CITY_REQUIRE_SEARCH_ABOVE;
   const citiesHelperText = citiesDisabled
     ? "Select at least one preferred region to choose Cities / Communities."
     : communitiesLoading
@@ -282,9 +280,7 @@ export function PreferredGeographyFields({
         ? GEOGRAPHY_EMPTY_COPY.cityDeliveryFailure
         : communityStructuredCount === 0
           ? GEOGRAPHY_EMPTY_COPY.noCities
-          : isLargeCityList
-            ? formatLargeCitySearchHelper(communityStructuredCount)
-            : "Select cities or communities within your preferred regions to receive more locally relevant initiative recommendations and notifications.";
+          : `${formatCityListHelper(communityStructuredCount)} You can add preferred cities or communities from multiple regions.`;
 
   return (
     <>
@@ -326,7 +322,7 @@ export function PreferredGeographyFields({
           disabled={!regionCode || regionCode === OTHER_REGION_SLUG}
           onClick={handleAddPreferredRegion}
         >
-          Add preferred region
+          Add preferred cities
         </Button>
         {selectedRegionEntries.length > 0 ? (
           <ul className="preferences-workspace__region-list">
@@ -359,10 +355,7 @@ export function PreferredGeographyFields({
             (communityStructuredCount === 0 && !communitiesLoading)
           }
           placeholder={GEOGRAPHY_EMPTY_COPY.citySearchPlaceholder}
-          requireSearch={isLargeCityList}
-          requireSearchAbove={CITY_REQUIRE_SEARCH_ABOVE}
           noMatchMessage={GEOGRAPHY_EMPTY_COPY.noCityMatches}
-          searchInviteMessage="Type in the search field to find a city or community."
         />
       </div>
 

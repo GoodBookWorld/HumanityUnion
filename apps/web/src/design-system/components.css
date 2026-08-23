@@ -368,7 +368,8 @@ a.hu-button.hu-button--secondary:focus-visible:not([aria-disabled="true"]),
 .humanity-app .member-profile-workspace__field textarea,
 .humanity-app .member-profile-workspace__field select,
 .humanity-app .geography-search-select__search,
-.humanity-app .geography-search-select__select {
+.humanity-app .geography-search-select__select,
+.humanity-app .geography-search-select__trigger {
   width: 100%;
   padding: var(--hu-space-2) var(--hu-space-3);
   border: 1px solid var(--hu-control-border);
@@ -394,7 +395,8 @@ a.hu-button.hu-button--secondary:focus-visible:not([aria-disabled="true"]),
   .member-profile-workspace__field
   select:hover:not(:disabled):not([aria-invalid="true"]),
 .humanity-app .geography-search-select__search:hover:not(:disabled):not([aria-invalid="true"]),
-.humanity-app .geography-search-select__select:hover:not(:disabled):not([aria-invalid="true"]) {
+.humanity-app .geography-search-select__select:hover:not(:disabled):not([aria-invalid="true"]),
+.humanity-app .geography-search-select__trigger:hover:not(:disabled):not([aria-invalid="true"]) {
   border-color: color-mix(in srgb, var(--hu-color-primary) 35%, var(--hu-control-border));
 }
 
@@ -404,7 +406,8 @@ a.hu-button.hu-button--secondary:focus-visible:not([aria-disabled="true"]),
 .humanity-app .member-profile-workspace__field textarea:focus-visible,
 .humanity-app .member-profile-workspace__field select:focus-visible,
 .humanity-app .geography-search-select__search:focus-visible,
-.humanity-app .geography-search-select__select:focus-visible {
+.humanity-app .geography-search-select__select:focus-visible,
+.humanity-app .geography-search-select__trigger:focus-visible {
   border-color: var(--hu-color-primary);
   box-shadow: 0 0 0 1px var(--hu-color-primary);
 }
@@ -414,7 +417,8 @@ a.hu-button.hu-button--secondary:focus-visible:not([aria-disabled="true"]),
 .humanity-app .member-profile-workspace__field input[aria-invalid="true"],
 .humanity-app .member-profile-workspace__field textarea[aria-invalid="true"],
 .humanity-app .member-profile-workspace__field select[aria-invalid="true"],
-.humanity-app .auth-form__field--error input {
+.humanity-app .auth-form__field--error input,
+.humanity-app .geography-search-select__trigger[aria-invalid="true"] {
   border-color: var(--hu-color-danger);
 }
 
@@ -422,7 +426,8 @@ a.hu-button.hu-button--secondary:focus-visible:not([aria-disabled="true"]),
 .humanity-app .auth-form__field input:disabled,
 .humanity-app .member-profile-workspace__field input:disabled,
 .humanity-app .member-profile-workspace__field textarea:disabled,
-.humanity-app .member-profile-workspace__field select:disabled {
+.humanity-app .member-profile-workspace__field select:disabled,
+.humanity-app .geography-search-select__trigger:disabled {
   background: var(--hu-color-bg-muted);
   color: var(--hu-color-text-muted);
   cursor: not-allowed;

@@ -189,20 +189,15 @@
   align-content: start;
 }
 
-.country-experience-dynamic__search-filters label span,
-.country-experience-dynamic__search-filters .geography-search-select__label {
-  font-weight: 600;
-}
-
-/* Pack 10B — align Region/City/Entity Type/Activity Area control chrome. */
+/* Pack 10B/10H2 — align Region/City/Entity Type/Activity Area control chrome. */
 .country-experience-dynamic__search-filters .hu-form-control,
+.country-experience-dynamic__search-filters .geography-search-select__trigger,
 .country-experience-dynamic__search-filters .geography-search-select__search,
-.country-experience-dynamic__search-filters .geography-search-select__select,
 .country-experience-dynamic__search-filters select {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 2.75rem;
+  min-height: var(--hu-button-min-height, 2.5rem);
   box-sizing: border-box;
   border: 1px solid var(--hu-control-border, var(--hu-color-border));
   border-radius: var(--hu-radius-md);
@@ -211,6 +206,19 @@
   font: inherit;
   line-height: var(--hu-line-height);
   padding: var(--hu-space-2) var(--hu-space-3);
+}
+
+.country-experience-dynamic__search-filters label span,
+.country-experience-dynamic__search-filters .geography-search-select__label {
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-semibold, 600);
+  color: var(--hu-color-text);
+}
+
+.country-experience-dynamic__search-filters .geography-search-select__helper {
+  font-size: var(--hu-font-size-xs, 0.75rem);
+  font-weight: 400;
+  color: var(--hu-color-text-muted);
 }
 
 .country-experience-dynamic__search-scope {

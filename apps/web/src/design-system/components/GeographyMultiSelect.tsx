@@ -3,6 +3,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import "./geography-search-select.css";
+import {
+  computeGeographyWindowSlice,
+  GEOGRAPHY_LIST_ROW_HEIGHT_PX,
+  GEOGRAPHY_LIST_VIEWPORT_HEIGHT_PX,
+  shouldWindowGeographyOptions,
+} from "./geography-list-window";
 
 export interface GeographyOption {
   slug: string;
@@ -20,15 +26,13 @@ interface GeographyMultiSelectProps {
   helperText?: string;
   maxSelections?: number;
   limitReachedMessage?: string;
-  /**
-   * Pack 10G — for large city lists, hide options until the user types.
-   */
-  requireSearchAbove?: number;
-  requireSearch?: boolean;
   noMatchMessage?: string;
-  searchInviteMessage?: string;
 }
 
+/**
+ * Pack 10H1 — multi-select stays multi; list is always browseable.
+ * Search filters but is never required to reveal options.
+ */
 export function GeographyMultiSelect({
   id,
   label,
@@ -40,10 +44,7 @@ export function GeographyMultiSelect({
   helperText,
   maxSelections,
   limitReachedMessage,
-  requireSearchAbove,
-  requireSearch = false,
   noMatchMessage = "No matching cities or communities found.",
-  searchInviteMessage = "Type in the search field to find a city or community.",
 }: GeographyMultiSelectProps) {
   const generatedId = useId();
   const fieldId = id ?? generatedId;
@@ -51,7 +52,9 @@ export function GeographyMultiSelect({
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const selectedOptions = useMemo(
     () =>
@@ -67,19 +70,11 @@ export function GeographyMultiSelect({
     [options, values],
   );
 
-  const isLargeList =
-    requireSearch ||
-    (typeof requireSearchAbove === "number" && remainingOptions.length > requireSearchAbove);
-
   const needle = query.trim().toLowerCase();
   const hasQuery = needle.length > 0;
 
   const availableOptions = useMemo(() => {
     if (!hasQuery) {
-      if (isLargeList) {
-        return [];
-      }
-
       return remainingOptions;
     }
 
@@ -87,13 +82,27 @@ export function GeographyMultiSelect({
       (option) =>
         option.label.toLowerCase().includes(needle) || option.slug.toLowerCase().includes(needle),
     );
-  }, [hasQuery, isLargeList, needle, remainingOptions]);
+  }, [hasQuery, needle, remainingOptions]);
 
-  const awaitingSearch = isLargeList && !hasQuery && !disabled && options.length > 0;
   const noMatches =
     !disabled && hasQuery && remainingOptions.length > 0 && availableOptions.length === 0;
 
   const limitReached = typeof maxSelections === "number" && values.length >= maxSelections;
+
+  const useWindow = shouldWindowGeographyOptions(availableOptions.length);
+  const windowSlice = useMemo(
+    () =>
+      useWindow
+        ? computeGeographyWindowSlice(availableOptions.length, scrollTop)
+        : {
+            startIndex: 0,
+            endIndex: availableOptions.length,
+            offsetY: 0,
+            totalHeight: availableOptions.length * GEOGRAPHY_LIST_ROW_HEIGHT_PX,
+          },
+    [availableOptions.length, scrollTop, useWindow],
+  );
+  const windowedRows = availableOptions.slice(windowSlice.startIndex, windowSlice.endIndex);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -120,6 +129,10 @@ export function GeographyMultiSelect({
     onChange([...values, slug]);
     setQuery("");
     setActiveIndex(0);
+    setScrollTop(0);
+    if (listRef.current) {
+      listRef.current.scrollTop = 0;
+    }
   }
 
   function removeValue(slug: string) {
@@ -149,23 +162,14 @@ export function GeographyMultiSelect({
 
     if (event.key === "Escape") {
       setOpen(false);
+      setQuery("");
     }
   }
 
-  const showDropdown =
-    open &&
-    !limitReached &&
-    (availableOptions.length > 0 || awaitingSearch || noMatches);
+  const showDropdown = open && !limitReached;
 
   return (
-    <div
-      ref={containerRef}
-      className={
-        awaitingSearch
-          ? "geography-multi-select geography-multi-select--combobox geography-multi-select--awaiting-search"
-          : "geography-multi-select geography-multi-select--combobox"
-      }
-    >
+    <div ref={containerRef} className="geography-multi-select geography-multi-select--combobox">
       <label className="geography-search-select__label" htmlFor={fieldId}>
         {label}
       </label>
@@ -197,64 +201,98 @@ export function GeographyMultiSelect({
       </div>
 
       <div className="geography-multi-select__combobox">
-        <input
-          id={fieldId}
-          className="geography-search-select__search hu-form-control"
-          type="search"
-          role="combobox"
-          aria-expanded={open}
-          aria-controls={listboxId}
-          aria-autocomplete="list"
-          aria-describedby={helperText ? `${fieldId}-helper` : undefined}
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setOpen(true);
-            setActiveIndex(0);
-          }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={handleSearchKeyDown}
-          placeholder={placeholder}
-          disabled={disabled || limitReached}
-          autoComplete="off"
-        />
+        <div className="geography-search-select__search-wrap">
+          <span className="geography-search-select__search-icon" aria-hidden="true">
+            <svg viewBox="0 0 20 20" width="16" height="16" focusable="false">
+              <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.75" />
+              <path
+                d="M12.75 12.75 16.5 16.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+              />
+            </svg>
+          </span>
+          <input
+            id={fieldId}
+            className="geography-search-select__search hu-form-control"
+            type="search"
+            role="combobox"
+            aria-expanded={open}
+            aria-controls={listboxId}
+            aria-autocomplete="list"
+            aria-describedby={helperText ? `${fieldId}-helper` : undefined}
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setOpen(true);
+              setActiveIndex(0);
+              setScrollTop(0);
+              if (listRef.current) {
+                listRef.current.scrollTop = 0;
+              }
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder={placeholder}
+            disabled={disabled || limitReached}
+            autoComplete="off"
+          />
+        </div>
 
         {showDropdown ? (
-          <ul
+          <div
+            ref={listRef}
             id={listboxId}
             className="geography-multi-select__dropdown"
             role="listbox"
             aria-label={`${label} options`}
+            style={{ maxHeight: GEOGRAPHY_LIST_VIEWPORT_HEIGHT_PX }}
+            onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
           >
-            {awaitingSearch ? (
-              <li className="geography-multi-select__invite" role="presentation">
-                {searchInviteMessage}
-              </li>
-            ) : null}
             {noMatches ? (
-              <li className="geography-multi-select__invite" role="status">
+              <div className="geography-multi-select__invite" role="status">
                 {noMatchMessage}
-              </li>
-            ) : null}
-            {availableOptions.map((option, index) => (
-              <li key={option.slug}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={index === activeIndex}
-                  className={
-                    index === activeIndex
-                      ? "geography-multi-select__option geography-multi-select__option--active"
-                      : "geography-multi-select__option"
-                  }
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onClick={() => addValue(option.slug)}
+              </div>
+            ) : availableOptions.length === 0 ? (
+              <div className="geography-multi-select__invite" role="status">
+                No more options available.
+              </div>
+            ) : (
+              <div
+                className="geography-search-select__list-spacer"
+                style={{ height: windowSlice.totalHeight }}
+              >
+                <div
+                  className="geography-search-select__list-window"
+                  style={{ transform: `translateY(${windowSlice.offsetY}px)` }}
                 >
-                  {option.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+                  {windowedRows.map((option, offset) => {
+                    const index = windowSlice.startIndex + offset;
+                    return (
+                      <button
+                        key={option.slug}
+                        type="button"
+                        role="option"
+                        aria-selected={index === activeIndex}
+                        className={
+                          index === activeIndex
+                            ? "geography-multi-select__option geography-multi-select__option--active"
+                            : "geography-multi-select__option"
+                        }
+                        style={{ height: GEOGRAPHY_LIST_ROW_HEIGHT_PX }}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onClick={() => addValue(option.slug)}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         ) : null}
       </div>
 

@@ -460,12 +460,17 @@ export function GlobalSearchPageContent() {
         ) : null}
         <label>
           Search
-          <input name="q" defaultValue={q} placeholder="Search titles, summaries, locations..." />
+          <input
+            className="hu-form-control"
+            name="q"
+            defaultValue={q}
+            placeholder="Search titles, summaries, locations..."
+          />
         </label>
 
         <label>
           Record type
-          <select name="entityType" defaultValue={entityType}>
+          <select className="hu-form-control" name="entityType" defaultValue={entityType}>
             {ENTITY_TYPE_OPTIONS.map((option) => (
               <option key={option.label} value={option.value}>
                 {option.label}
@@ -506,7 +511,7 @@ export function GlobalSearchPageContent() {
 
         <label>
           Activity area
-          <select name="activityArea" defaultValue={activityArea}>
+          <select className="hu-form-control" name="activityArea" defaultValue={activityArea}>
             <option value="">All activity areas</option>
             {INITIATIVE_ACTIVITY_AREA_OPTIONS.map((option) => (
               <option key={option} value={option}>
@@ -518,22 +523,34 @@ export function GlobalSearchPageContent() {
 
         <label>
           Status
-          <input name="status" defaultValue={status} placeholder="Status" />
+          <input
+            className="hu-form-control"
+            name="status"
+            defaultValue={status}
+            placeholder="Status"
+          />
         </label>
 
         <label>
           From date
-          <input name="fromDate" type="date" defaultValue={fromDate} />
+          <input
+            className="hu-form-control"
+            name="fromDate"
+            type="date"
+            defaultValue={fromDate}
+          />
         </label>
 
         <label>
           To date
-          <input name="toDate" type="date" defaultValue={toDate} />
+          <input className="hu-form-control" name="toDate" type="date" defaultValue={toDate} />
         </label>
 
-        <Button type="submit" variant="primary">
-          Search
-        </Button>
+        <div className="global-search-page__actions">
+          <Button type="submit" variant="primary">
+            Search
+          </Button>
+        </div>
       </form>
 
       <section

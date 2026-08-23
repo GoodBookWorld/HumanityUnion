@@ -1,6 +1,7 @@
 export {
   CITY_REQUIRE_SEARCH_ABOVE,
   countryHasStructuredRegions,
+  formatCityListHelper,
   formatLargeCitySearchHelper,
   GEOGRAPHY_EMPTY_COPY,
   isCanonicalOtherCommunity,

@@ -2,8 +2,7 @@
 
 import { GeographySearchSelect } from "../../design-system/components/GeographySearchSelect";
 import {
-  CITY_REQUIRE_SEARCH_ABOVE,
-  formatLargeCitySearchHelper,
+  formatCityListHelper,
   GEOGRAPHY_EMPTY_COPY,
   isCanonicalOtherRegion,
 } from "./geography-cascade-contract";
@@ -26,7 +25,7 @@ export interface CitySelectProps {
 
 /**
  * City / Community control dependent on Country + Region.
- * Uses searchable select; does not render giant unfiltered option lists.
+ * Pack 10H1 — full community list is browseable after Region; search is optional.
  */
 export function CitySelect({
   id,
@@ -46,7 +45,6 @@ export function CitySelect({
     useGeographyCommunityOptions(countryCode, regionCode, includeOther);
 
   const regionReady = Boolean(countryCode && regionCode && !isCanonicalOtherRegion(regionCode));
-  const isLargeList = structuredCount > CITY_REQUIRE_SEARCH_ABOVE;
 
   const resolvedHelper =
     helperText ??
@@ -62,9 +60,7 @@ export function CitySelect({
               ? includeOther
                 ? GEOGRAPHY_EMPTY_COPY.noCitiesUseOther
                 : GEOGRAPHY_EMPTY_COPY.noCities
-              : isLargeList
-                ? formatLargeCitySearchHelper(structuredCount)
-                : GEOGRAPHY_EMPTY_COPY.cityHelper);
+              : formatCityListHelper(structuredCount));
 
   const resolvedError = error ?? (deliveryFailed ? GEOGRAPHY_EMPTY_COPY.cityDeliveryFailure : undefined);
 
@@ -82,11 +78,9 @@ export function CitySelect({
       helperText={resolvedHelper}
       error={resolvedError}
       loading={loading}
-      // Pack 10B/10G — empty / no-match states live in helperText + noMatchMessage.
       emptyMessage={undefined}
       noMatchMessage={GEOGRAPHY_EMPTY_COPY.noCityMatches}
-      requireSearch={isLargeList}
-      requireSearchAbove={CITY_REQUIRE_SEARCH_ABOVE}
+      emptyOptionLabel={includeOther ? "Select…" : "All communities"}
     />
   );
 }

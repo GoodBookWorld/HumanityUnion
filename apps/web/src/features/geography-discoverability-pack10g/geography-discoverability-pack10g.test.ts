@@ -1,5 +1,6 @@
 /**
- * Pack 10G — City select discoverability & large-list UX.
+ * Pack 10G — City select discoverability (superseded UX by Pack 10H1 browseable lists).
+ * Keeps error/empty/loading copy contracts from 10G/10F.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -8,8 +9,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
-  CITY_REQUIRE_SEARCH_ABOVE,
-  formatLargeCitySearchHelper,
+  formatCityListHelper,
   GEOGRAPHY_EMPTY_COPY,
 } from "../geography-integrity/geography-cascade-contract";
 
@@ -23,44 +23,31 @@ function readWeb(relativePath: string): string {
 describe("Pack 10G — city select large-list discoverability", () => {
   it("exposes distinct city UX copy for loading / large / empty / no-match / failure", () => {
     assert.match(GEOGRAPHY_EMPTY_COPY.loadingCities, /Loading cities and communities/);
-    assert.match(GEOGRAPHY_EMPTY_COPY.citySearchPlaceholder, /Search for a city or community/);
+    assert.match(GEOGRAPHY_EMPTY_COPY.citySearchPlaceholder, /Search cities or communities/);
     assert.match(GEOGRAPHY_EMPTY_COPY.noCities, /No cities or communities are listed/);
     assert.match(GEOGRAPHY_EMPTY_COPY.noCityMatches, /No matching cities or communities found/);
     assert.match(GEOGRAPHY_EMPTY_COPY.cityDeliveryFailure, /City data could not be loaded/);
     assert.match(GEOGRAPHY_EMPTY_COPY.selectRegionFirst, /Select a region to choose a city/);
-    assert.equal(CITY_REQUIRE_SEARCH_ABOVE, 80);
-    assert.equal(
-      formatLargeCitySearchHelper(139),
-      "139 cities and communities available. Start typing to search.",
-    );
-    assert.equal(
-      formatLargeCitySearchHelper(1066),
-      "1066 cities and communities available. Start typing to search.",
-    );
+    assert.match(formatCityListHelper(139), /139 cities and communities available/);
+    assert.match(formatCityListHelper(1066), /Scroll the list or search to filter/);
   });
 
-  it("CitySelect uses structured count helper and shared search affordance", () => {
+  it("CitySelect keeps shared search affordance without requiring search", () => {
     const city = readWeb("features/geography-integrity/CitySelect.tsx");
-    assert.match(city, /formatLargeCitySearchHelper\(structuredCount\)/);
-    assert.match(city, /requireSearch=\{isLargeList\}/);
-    assert.match(city, /CITY_REQUIRE_SEARCH_ABOVE/);
+    assert.match(city, /formatCityListHelper\(structuredCount\)/);
+    assert.doesNotMatch(city, /requireSearch=\{/);
     assert.match(city, /GEOGRAPHY_EMPTY_COPY\.citySearchPlaceholder/);
     assert.match(city, /GEOGRAPHY_EMPTY_COPY\.noCityMatches/);
     assert.match(city, /key=\{`\$\{countryCode\}::\$\{regionCode\}`\}/);
-    assert.doesNotMatch(city, /disabled=\{[^}]*loading/);
   });
 
-  it("GeographySearchSelect distinguishes awaiting-search from no-match empty", () => {
+  it("GeographySearchSelect treats search as optional filter over a browseable list", () => {
     const select = readWeb("design-system/components/GeographySearchSelect.tsx");
-    assert.match(select, /awaitingSearch/);
-    assert.match(select, /Start typing to search…/);
+    assert.match(select, /role="listbox"/);
     assert.match(select, /noMatchMessage/);
-    assert.match(select, /geography-search-select--awaiting-search/);
-    assert.match(select, /requireSearch/);
-    assert.doesNotMatch(
-      select,
-      /showSearchHint \? "Type to search…"/,
-    );
+    assert.doesNotMatch(select, /awaitingSearch/);
+    assert.doesNotMatch(select, /requireSearch/);
+    assert.doesNotMatch(select, /Start typing to search…/);
   });
 
   it("does not treat large-list pre-query as noCities emptyMessage", () => {
@@ -69,16 +56,15 @@ describe("Pack 10G — city select large-list discoverability", () => {
     assert.match(city, /noMatchMessage=\{GEOGRAPHY_EMPTY_COPY\.noCityMatches\}/);
   });
 
-  it("Preferences multi-select keeps multi semantics with large-list invite", () => {
+  it("Preferences multi-select keeps multi semantics with browseable city options", () => {
     const preferred = readWeb("features/preferences/components/PreferredGeographyFields.tsx");
     const multi = readWeb("design-system/components/GeographyMultiSelect.tsx");
     assert.match(preferred, /GeographyMultiSelect/);
-    assert.match(preferred, /formatLargeCitySearchHelper/);
-    assert.match(preferred, /requireSearch=\{isLargeCityList\}/);
-    assert.match(preferred, /GEOGRAPHY_EMPTY_COPY\.citySearchPlaceholder/);
-    assert.match(multi, /requireSearch/);
-    assert.match(multi, /awaitingSearch/);
-    assert.match(multi, /searchInviteMessage/);
+    assert.match(preferred, /formatCityListHelper/);
+    assert.doesNotMatch(preferred, /requireSearch=\{/);
+    assert.match(preferred, /Add preferred cities/);
+    assert.doesNotMatch(multi, /requireSearch/);
+    assert.doesNotMatch(multi, /awaitingSearch/);
   });
 
   it("Pack 10F packaging and delivery guards remain intact", () => {

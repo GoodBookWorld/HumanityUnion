@@ -33,14 +33,22 @@ export const GEOGRAPHY_EMPTY_COPY = {
   cityDeliveryFailure: "City data could not be loaded.",
   loadingCities: "Loading cities and communities…",
   cityHelper: "City, municipality, or district within the selected region.",
-  citySearchPlaceholder: "Search for a city or community",
+  citySearchPlaceholder: "Search cities or communities…",
 } as const;
 
-/** Pack 10G — lists larger than this require typing before options appear. */
+/**
+ * @deprecated Pack 10H1 — search is never required to reveal cities.
+ * Retained only as a windowing/perf alias constant for older tests.
+ */
 export const CITY_REQUIRE_SEARCH_ABOVE = 80;
 
+export function formatCityListHelper(count: number): string {
+  return `${count} cities and communities available. Scroll the list or search to filter.`;
+}
+
+/** @deprecated Pack 10H1 — use formatCityListHelper. */
 export function formatLargeCitySearchHelper(count: number): string {
-  return `${count} cities and communities available. Start typing to search.`;
+  return formatCityListHelper(count);
 }
 
 export interface GeographyCascadeValues {

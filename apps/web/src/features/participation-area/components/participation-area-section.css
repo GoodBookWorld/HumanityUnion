@@ -35,16 +35,34 @@
 
 .participation-area-section__field {
   display: grid;
-  gap: var(--hu-space-2);
-  font-size: var(--hu-text-sm);
+  gap: var(--hu-space-1);
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-semibold, 600);
+  color: var(--hu-color-text);
+  min-width: 0;
 }
 
-.participation-area-section__field select {
+.participation-area-section__field .geography-search-select__label {
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-semibold, 600);
+}
+
+.participation-area-section__field .geography-search-select__helper {
+  font-size: var(--hu-font-size-xs, 0.75rem);
+  font-weight: 400;
+}
+
+.participation-area-section__field select,
+.participation-area-section__field .hu-form-control,
+.participation-area-section__field .geography-search-select__trigger {
   width: 100%;
+  min-height: var(--hu-button-min-height, 2.5rem);
   padding: var(--hu-space-2) var(--hu-space-3);
-  border: 1px solid var(--hu-border-subtle);
+  border: 1px solid var(--hu-control-border, var(--hu-border-subtle));
   border-radius: var(--hu-radius-md);
-  background: var(--hu-surface-base);
+  background: var(--hu-color-surface, var(--hu-surface-base));
+  color: var(--hu-color-text);
+  box-sizing: border-box;
 }
 
 .participation-area-section__note,

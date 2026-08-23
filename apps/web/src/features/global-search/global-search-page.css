@@ -24,12 +24,66 @@
 
 .global-search-page__filters {
   display: grid;
-  gap: var(--hu-space-3);
+  gap: var(--hu-space-4) var(--hu-space-3);
   margin-bottom: var(--hu-space-6);
   padding: var(--hu-space-4);
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-md);
   background: var(--hu-color-surface);
+  align-items: start;
+}
+
+.global-search-page__filters > label,
+.global-search-page__filters > .geography-search-select {
+  display: grid;
+  gap: var(--hu-space-1);
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  align-content: start;
+}
+
+.global-search-page__filters > label {
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-semibold, 600);
+  color: var(--hu-color-text);
+}
+
+.global-search-page__filters .hu-form-control {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--hu-button-min-height, 2.5rem);
+  box-sizing: border-box;
+}
+
+/* Pack 10H2 — do not restyle design-system buttons; keep Search as hu-button--primary. */
+.global-search-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hu-space-3);
+  grid-column: 1 / -1;
+}
+
+.global-search-page__actions .hu-button--primary {
+  justify-self: start;
+}
+
+.global-search-page__clear {
+  border: 0;
+  background: transparent;
+  color: var(--hu-color-primary);
+  font: inherit;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.global-search-page__clear:hover,
+.global-search-page__clear:focus-visible {
+  color: var(--hu-color-primary-hover);
 }
 
 .global-search-page__results {
@@ -60,30 +114,6 @@
 .global-search-page__initial {
   margin: 0;
   color: var(--hu-color-text-muted);
-}
-
-.global-search-page__filters label {
-  display: grid;
-  gap: var(--hu-space-1);
-  font-size: var(--hu-font-size-sm);
-  font-weight: 600;
-}
-
-.global-search-page__filters input,
-.global-search-page__filters select,
-.global-search-page__filters button {
-  font: inherit;
-  padding: var(--hu-space-2) var(--hu-space-3);
-  border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-sm);
-}
-
-.global-search-page__filters button {
-  justify-self: start;
-  background: var(--hu-color-secondary-slate);
-  color: var(--hu-color-surface);
-  border-color: transparent;
-  cursor: pointer;
 }
 
 .global-search-page__status,
@@ -214,10 +244,21 @@
   .global-search-page__item {
     grid-template-columns: 1fr;
   }
+
+  .global-search-page__actions .hu-button--primary {
+    width: 100%;
+  }
 }
 
 @media (min-width: 768px) {
   .global-search-page__filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .global-search-page__filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--hu-space-4);
   }
 }

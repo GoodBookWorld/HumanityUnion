@@ -7,15 +7,24 @@
   display: grid;
   gap: var(--hu-space-2);
   font-size: var(--hu-font-size-sm);
+  min-width: 0;
 }
 
 .preferences-workspace__field-label {
-  font-weight: 600;
+  font-weight: var(--hu-font-weight-semibold, 600);
+  color: var(--hu-color-text);
 }
 
 .preferences-workspace__field input,
 .preferences-workspace__field select {
-  width: 50%;
+  width: 100%;
+  max-width: 28rem;
+}
+
+.preferences-workspace__field .geography-search-select,
+.preferences-workspace__field .geography-multi-select {
+  width: 100%;
+  max-width: 36rem;
 }
 
 .preferences-workspace__checkbox-grid {
@@ -50,28 +59,57 @@
 .preferences-workspace__helper {
   margin: 0;
   color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-xs, 0.75rem);
+  font-weight: 400;
 }
 
 .preferences-workspace__region-list {
-  display: grid;
-  gap: var(--hu-space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.preferences-workspace__region-list li {
   display: flex;
   flex-wrap: wrap;
   gap: var(--hu-space-2);
+  margin: 0;
+  padding: var(--hu-space-2);
+  list-style: none;
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-color-bg-muted);
+}
+
+.preferences-workspace__region-list li {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
   align-items: center;
+  border: 1px solid color-mix(in srgb, var(--hu-color-primary) 28%, var(--hu-color-border));
+  border-radius: var(--hu-radius-pill);
+  padding: 0.2rem 0.55rem;
+  background: var(--hu-color-primary-soft);
+  font-size: var(--hu-font-size-sm);
+  font-weight: 500;
+}
+
+.preferences-workspace__region-list button {
+  border: 0;
+  background: transparent;
+  color: var(--hu-color-text);
+  cursor: pointer;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  padding: 0.1rem 0.2rem;
+  text-decoration: underline;
+}
+
+.preferences-workspace__region-list button:hover,
+.preferences-workspace__region-list button:focus-visible {
+  color: var(--hu-color-danger);
 }
 
 @media (max-width: 768px) {
   .preferences-workspace__field input,
   .preferences-workspace__field select,
-  .preferences-workspace__field .geography-search-select__search,
+  .preferences-workspace__field .geography-search-select,
   .preferences-workspace__field .geography-multi-select {
     width: 100%;
+    max-width: 100%;
   }
 }
