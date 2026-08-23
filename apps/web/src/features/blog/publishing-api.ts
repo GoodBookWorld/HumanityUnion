@@ -22,6 +22,8 @@ export interface BlogPostWriteInput {
   tags?: readonly string[];
   coverMedia?: BlogCoverMedia | null;
   originalLanguage?: string;
+  /** Pack 13C — YYYY-MM-DD canonical publication calendar date. */
+  publicationDate?: string;
 }
 
 export async function listOwnBlogPosts(input?: {
@@ -81,9 +83,26 @@ export async function submitBlogPostForReview(postId: string): Promise<BlogAutho
   );
 }
 
-export async function publishBlogPost(postId: string): Promise<BlogAuthorWorkspacePost> {
+export async function publishBlogPost(
+  postId: string,
+  input?: { publicationDate?: string },
+): Promise<BlogAuthorWorkspacePost> {
   return apiRequest<BlogAuthorWorkspacePost>(
     `/api/v1/blog/posts/${encodeURIComponent(postId)}/publish`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input ?? {}),
+    },
+  );
+}
+
+/** Pack 13C — cancel a future schedule (returns to draft). */
+export async function cancelScheduledBlogPublication(
+  postId: string,
+): Promise<BlogAuthorWorkspacePost> {
+  return apiRequest<BlogAuthorWorkspacePost>(
+    `/api/v1/blog/posts/${encodeURIComponent(postId)}/cancel-schedule`,
     { method: "POST" },
   );
 }

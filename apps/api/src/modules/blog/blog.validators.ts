@@ -6,6 +6,7 @@ import { blogHtmlToPlainText, sanitizeBlogHtml } from "./blog-content-sanitize.j
 import { BlogValidationError } from "./blog.errors.js";
 import { resolveBlogCoverMedia } from "./blog-cover-media.js";
 import { normalizeBlogTags } from "./blog-tags.js";
+import { validatePublicationDateInput } from "./blog-publication-date.js";
 
 const MAX_TITLE = 160;
 const MAX_EXCERPT = 500;
@@ -20,6 +21,8 @@ export interface ValidatedBlogPostFields {
   tags: string[];
   coverMedia: ReturnType<typeof resolveBlogCoverMedia>;
   originalLanguage: LanguageCode;
+  /** Pack 13C — YYYY-MM-DD calendar date when provided. */
+  publicationDate?: string;
 }
 
 export function validateBlogTitle(value: unknown): string {
@@ -130,6 +133,8 @@ export function validateCreateBlogDraftInput(body: unknown): ValidatedBlogPostFi
     blogHtmlToPlainText(content).slice(0, MAX_EXCERPT) ||
     title;
 
+  const publicationDate = validatePublicationDateInput(input.publicationDate);
+
   return {
     title,
     excerpt,
@@ -138,6 +143,7 @@ export function validateCreateBlogDraftInput(body: unknown): ValidatedBlogPostFi
     tags: normalizeBlogTags(input.tags),
     coverMedia: resolveBlogCoverMedia(input.coverMedia),
     originalLanguage: validateOriginalLanguage(input.originalLanguage),
+    ...(publicationDate ? { publicationDate } : {}),
   };
 }
 
@@ -174,6 +180,12 @@ export function validateUpdateBlogDraftInput(body: unknown): Partial<ValidatedBl
   }
   if ("originalLanguage" in input) {
     patch.originalLanguage = validateOriginalLanguage(input.originalLanguage);
+  }
+  if ("publicationDate" in input) {
+    const publicationDate = validatePublicationDateInput(input.publicationDate);
+    if (publicationDate) {
+      patch.publicationDate = publicationDate;
+    }
   }
 
   if (Object.keys(patch).length === 0) {

@@ -10,7 +10,7 @@ import { formatAuthFormError, isAuthenticationRequiredError } from "../../../lib
 import { listOwnBlogPosts } from "../publishing-api";
 import { PublicationListItem } from "./PublicationListItem";
 
-type PublishingTab = "draft" | "submitted_for_review" | "published" | "archived";
+type PublishingTab = "draft" | "submitted_for_review" | "scheduled" | "published" | "archived";
 
 const TABS: readonly { id: PublishingTab; label: string; empty: string }[] = [
   {
@@ -22,6 +22,11 @@ const TABS: readonly { id: PublishingTab; label: string; empty: string }[] = [
     id: "submitted_for_review",
     label: "Under Review",
     empty: "No publications are currently under review.",
+  },
+  {
+    id: "scheduled",
+    label: "Scheduled",
+    empty: "No scheduled publications.",
   },
   {
     id: "published",

@@ -85,3 +85,69 @@
   color: var(--hu-color-danger, var(--hu-color-text));
   font-size: var(--hu-font-size-sm);
 }
+
+/* Pack 13A — Admin Author application review modal */
+.author-application-review-modal {
+  width: min(36rem, 100%);
+  max-height: min(90vh, 40rem);
+  overflow: auto;
+}
+
+.author-application-review-modal__body {
+  display: grid;
+  gap: var(--hu-space-4);
+}
+
+.author-application-review-modal__identity {
+  display: flex;
+  gap: var(--hu-space-3);
+  align-items: center;
+}
+
+.author-application-review-modal__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--hu-radius-md);
+  object-fit: cover;
+  background: var(--hu-color-surface-muted, #e8e8e8);
+}
+
+.author-application-review-modal__avatar--empty {
+  display: inline-block;
+}
+
+.author-application-review-modal__meta {
+  display: grid;
+  gap: var(--hu-space-2);
+  margin: 0;
+}
+
+.author-application-review-modal__meta div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.author-application-review-modal__meta dt {
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}
+
+.author-application-review-modal__meta dd {
+  margin: 0;
+}
+
+.author-application-review-modal__note {
+  display: grid;
+  gap: var(--hu-space-2);
+}
+
+.author-application-review-modal__note textarea {
+  width: 100%;
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.authoring-page__publications {
+  display: grid;
+  gap: var(--hu-space-3);
+}

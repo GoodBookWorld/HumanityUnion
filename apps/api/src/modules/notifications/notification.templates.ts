@@ -254,13 +254,15 @@ export const NOTIFICATION_TEMPLATES: Record<CivicNotificationEventType, Notifica
     priority: "normal",
   },
   blog_author_application_submitted: {
-    title: "Blog Author application received",
-    message: "Your Blog Author application has been received.",
+    title: "Application received",
+    message:
+      "Your Author application has been received. We will review it and respond as soon as possible.",
     priority: "informational",
   },
   blog_author_application_approved: {
-    title: "Blog Author application approved",
-    message: "Your Blog Author application has been approved.",
+    title: "Author application accepted",
+    message:
+      "Your Author application has been accepted. You can now use the Author tools in your Workspace.",
     priority: "important",
   },
   blog_author_application_changes_requested: {
@@ -269,8 +271,34 @@ export const NOTIFICATION_TEMPLATES: Record<CivicNotificationEventType, Notifica
     priority: "important",
   },
   blog_author_application_declined: {
-    title: "Blog Author application update",
-    message: "Your Blog Author application was declined. Open Authoring for details.",
+    title: "Author application update",
+    message: "Your Author application was not accepted at this time.",
+    priority: "informational",
+  },
+  blog_author_application_review_requested: {
+    title: "New Author application",
+    message: "A Participant submitted an Author application.",
+    priority: "important",
+  },
+  blog_author_access_blocked: {
+    title: "Author access blocked",
+    message:
+      "Your Author access has been blocked. Please contact the administrator.",
+    priority: "important",
+  },
+  blog_author_access_restored: {
+    title: "Author access restored",
+    message: "Your Author access has been restored. You can use Author tools in your Workspace again.",
+    priority: "important",
+  },
+  blog_publication_blocked: {
+    title: "Publication unavailable",
+    message: "One of your Blog publications is no longer publicly available.",
+    priority: "important",
+  },
+  blog_publication_restored: {
+    title: "Publication restored",
+    message: "Your Blog publication visibility has been restored according to its publication status.",
     priority: "informational",
   },
   blog_post_changes_requested: {

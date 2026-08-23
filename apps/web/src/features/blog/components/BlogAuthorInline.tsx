@@ -7,20 +7,20 @@ interface BlogAuthorInlineProps {
 }
 
 export function BlogAuthorInline({ author }: BlogAuthorInlineProps) {
-  const name = (
-    <span className="blog-author-inline__name">{author.displayName}</span>
+  const identity = (
+    <>
+      <HumanityAvatar avatarUrl={author.avatarUrl} alt="" size={28} />
+      <span className="blog-author-inline__name">{author.displayName}</span>
+    </>
   );
 
-  return (
-    <div className="blog-author-inline">
-      <HumanityAvatar avatarUrl={author.avatarUrl} alt="" size={28} />
-      {author.profileUrl ? (
-        <a href={author.profileUrl} className="blog-author-inline__link">
-          {name}
-        </a>
-      ) : (
-        name
-      )}
-    </div>
-  );
+  if (author.profileUrl) {
+    return (
+      <a href={author.profileUrl} className="blog-author-inline blog-author-inline__link">
+        {identity}
+      </a>
+    );
+  }
+
+  return <div className="blog-author-inline">{identity}</div>;
 }

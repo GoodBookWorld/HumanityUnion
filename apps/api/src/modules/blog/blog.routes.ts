@@ -40,7 +40,9 @@ import {
   archiveBlogPost,
   createBlogDraft,
   decideBlogAuthorApplication,
+  decideBlogAuthorApplicationAsAdmin,
   declineBlogPost,
+  getAdminAuthorApplicationReview,
   getBlogAuthoringAccessState,
   getBlogAuthorWorkspacePost,
   getEditorialReviewDetail,
@@ -49,10 +51,12 @@ import {
   listBlogCategories,
   listEditorialReviewQueue,
   listOwnBlogWorkspacePosts,
+  listPublicBlogAuthors,
   listPublicBlogPosts,
   previewBlogPost,
   publishBlogPost,
   publishBlogPostAfterSafetyReview,
+  cancelScheduledBlogPublication,
   requestBlogPostChanges,
   resubmitBlogAuthorApplication,
   submitBlogPostForReview,
@@ -133,6 +137,17 @@ function handleBlogError(res: Response, error: unknown): void {
 
 publicBlogRouter.get("/categories", (_req, res) => {
   res.json(createSuccessResponse({ categories: listBlogCategories() }, "Blog categories loaded."));
+});
+
+publicBlogRouter.get("/authors", async (req, res) => {
+  try {
+    const limit =
+      typeof req.query.limit === "string" ? Number.parseInt(req.query.limit, 10) : undefined;
+    const data = await listPublicBlogAuthors({ limit });
+    res.json(createSuccessResponse(data, "Public Blog authors loaded."));
+  } catch (error) {
+    handleBlogError(res, error);
+  }
 });
 
 publicBlogRouter.get("/", async (req, res) => {
@@ -394,6 +409,8 @@ blogRouter.post("/posts/:postId/publish", requireJwtAuthenticationMiddleware, as
       typeof req.body?.expectedUpdatedAt === "string" ? req.body.expectedUpdatedAt : undefined;
     const reviewNote =
       typeof req.body?.reviewNote === "string" ? req.body.reviewNote : undefined;
+    const publicationDate =
+      typeof req.body?.publicationDate === "string" ? req.body.publicationDate : undefined;
     // Never accept reviewedByParticipantId from the client.
     const data = await publishBlogPost({
       postId: routeParam(req.params.postId),
@@ -401,6 +418,7 @@ blogRouter.post("/posts/:postId/publish", requireJwtAuthenticationMiddleware, as
       role: identity.role,
       expectedUpdatedAt,
       reviewNote,
+      publicationDate,
     });
     res.json(createSuccessResponse(data, "Blog post published."));
   } catch (error) {
@@ -445,6 +463,24 @@ blogRouter.post("/posts/:postId/archive", requireJwtAuthenticationMiddleware, as
     handleBlogError(res, error);
   }
 });
+
+blogRouter.post(
+  "/posts/:postId/cancel-schedule",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const data = await cancelScheduledBlogPublication({
+        postId: routeParam(req.params.postId),
+        actorParticipantId: identity.participantId,
+        role: identity.role,
+      });
+      res.json(createSuccessResponse(data, "Scheduled publication cancelled."));
+    } catch (error) {
+      handleBlogError(res, error);
+    }
+  },
+);
 
 blogRouter.post(
   "/posts/:postId/request-changes",
@@ -674,6 +710,62 @@ blogRouter.post(
         reviewNote,
       });
       res.json(createSuccessResponse(data, "Blog author application decision recorded."));
+    } catch (error) {
+      handleBlogError(res, error);
+    }
+  },
+);
+
+/** Pack 13A — Admin Notification Center review modal payload. */
+blogRouter.get(
+  "/author-applications/:applicationId/admin-review",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const data = await getAdminAuthorApplicationReview({
+        actorUserId: req.auth!.id,
+        applicationId: routeParam(req.params.applicationId),
+      });
+      res.json(createSuccessResponse(data, "Author application loaded for Admin review."));
+    } catch (error) {
+      handleBlogError(res, error);
+    }
+  },
+);
+
+/** Pack 13A — Invite = accept application + grant Author capability. */
+blogRouter.post(
+  "/author-applications/:applicationId/invite",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const data = await decideBlogAuthorApplicationAsAdmin({
+        actorUserId: req.auth!.id,
+        applicationId: routeParam(req.params.applicationId),
+        decision: "approve",
+      });
+      res.json(createSuccessResponse(data, "Author application accepted."));
+    } catch (error) {
+      handleBlogError(res, error);
+    }
+  },
+);
+
+/** Pack 13A — Refuse application without granting Author access. */
+blogRouter.post(
+  "/author-applications/:applicationId/refuse",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const reviewNote =
+        typeof req.body?.reviewNote === "string" ? req.body.reviewNote : undefined;
+      const data = await decideBlogAuthorApplicationAsAdmin({
+        actorUserId: req.auth!.id,
+        applicationId: routeParam(req.params.applicationId),
+        decision: "decline",
+        reviewNote,
+      });
+      res.json(createSuccessResponse(data, "Author application refused."));
     } catch (error) {
       handleBlogError(res, error);
     }

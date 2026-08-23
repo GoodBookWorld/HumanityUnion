@@ -211,6 +211,16 @@ export type CivicNotificationEventType =
   | "blog_author_application_changes_requested"
   /** Author Access Pack 04 — Blog Author application declined. */
   | "blog_author_application_declined"
+  /** Pack 13A — Admin notified that a Blog Author application awaits review. */
+  | "blog_author_application_review_requested"
+  /** Pack 13B — Author publishing access administratively blocked. */
+  | "blog_author_access_blocked"
+  /** Pack 13B — Author publishing access restored. */
+  | "blog_author_access_restored"
+  /** Pack 13B — Publication soft-blocked from public surfaces. */
+  | "blog_publication_blocked"
+  /** Pack 13B — Publication soft-block cleared. */
+  | "blog_publication_restored"
   /** Editorial Review Pack 06 — Editor requested changes on a Blog publication. */
   | "blog_post_changes_requested"
   /** Editorial Review Pack 06 — Blog publication approved and published. */
@@ -492,6 +502,31 @@ export const CIVIC_NOTIFICATION_EVENT_REGISTRY: readonly CivicNotificationEventD
     eventType: "blog_author_application_declined",
     description: "A Blog Author application was declined.",
     entityType: "blog_author_application",
+  },
+  {
+    eventType: "blog_author_application_review_requested",
+    description: "Administrators were notified that a Blog Author application awaits review.",
+    entityType: "blog_author_application",
+  },
+  {
+    eventType: "blog_author_access_blocked",
+    description: "Author publishing access was administratively blocked.",
+    entityType: "blog_author_application",
+  },
+  {
+    eventType: "blog_author_access_restored",
+    description: "Author publishing access was restored after an administrative block.",
+    entityType: "blog_author_application",
+  },
+  {
+    eventType: "blog_publication_blocked",
+    description: "A Blog publication was soft-blocked from public visibility.",
+    entityType: "blog_post",
+  },
+  {
+    eventType: "blog_publication_restored",
+    description: "A Blog publication soft-block was cleared.",
+    entityType: "blog_post",
   },
   {
     eventType: "blog_post_changes_requested",

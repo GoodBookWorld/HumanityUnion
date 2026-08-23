@@ -1279,6 +1279,14 @@ export type {
 } from "./knowledge-center.js";
 export type { MediaUploadPurpose, MediaUploadResponse } from "./media-upload.js";
 export type {
+  AdminAuthorApplicationReview,
+  AdminAuthorDirectoryItem,
+  AdminAuthorDirectoryResponse,
+  AdminAuthorDirectoryStatusFilter,
+  AdminPublicationDirectoryItem,
+  AdminPublicationDirectoryResponse,
+  AdminPublicationDirectoryStatusFilter,
+  AdminPublishingBlockCommandResult,
   BlogAuthorApplication,
   BlogAuthorApplicationStatus,
   BlogAuthoringAccessState,
@@ -1308,6 +1316,9 @@ export type {
   BlogReviewStatus,
   PublicBlogComment,
   PublicBlogCommentListResponse,
+  PublicBlogAuthorDirectoryItem,
+  PublicBlogAuthorDirectoryLatestPublication,
+  PublicBlogAuthorDirectoryResponse,
   PublicBlogPostDetail,
   PublicBlogPostListItem,
   PublicBlogPostListResponse,
@@ -1319,6 +1330,7 @@ export {
   BLOG_CATEGORIES,
   BLOG_COMMENT_STATUSES,
   BLOG_POST_STATUSES,
+  BLOG_PUBLICATION_DATE_MIN,
 } from "./blog.js";
 export type {
   AdministrationAuditAction,

@@ -23,6 +23,8 @@ function statusLabel(post: BlogAuthorWorkspacePostSummary): string {
       return "Draft";
     case "submitted_for_review":
       return "Under Review";
+    case "scheduled":
+      return "Scheduled";
     case "published":
       return "Published";
     case "archived":
@@ -50,7 +52,10 @@ export interface PublicationListItemProps {
 
 export function PublicationListItem({ post, canDirectPublish }: PublicationListItemProps) {
   const editable =
-    post.status === "draft" || (post.status === "published" && canDirectPublish);
+    !post.administrativelyBlocked &&
+    (post.status === "draft" ||
+      post.status === "scheduled" ||
+      (post.status === "published" && canDirectPublish));
 
   return (
     <Card className="publication-list-item">
@@ -67,12 +72,17 @@ export function PublicationListItem({ post, canDirectPublish }: PublicationListI
         <p className="hu-caption">
           {categoryName(post.categoryId)} · {statusLabel(post)}
         </p>
+        {post.administrativelyBlocked ? (
+          <p className="hu-caption">Blocked by administrator</p>
+        ) : null}
         {post.review.reviewStatus === "changes_requested" && post.review.reviewNote ? (
           <p className="hu-body">Editor note: {post.review.reviewNote}</p>
         ) : null}
         <p className="hu-caption">Updated {formatDate(post.updatedAt)}</p>
         {post.publishedAt ? (
-          <p className="hu-caption">Published {formatDate(post.publishedAt)}</p>
+          <p className="hu-caption">
+            {post.status === "scheduled" ? "Scheduled" : "Published"} {formatDate(post.publishedAt)}
+          </p>
         ) : null}
         <div className="publication-list-item__actions hu-form-actions">
           {editable ? (
@@ -80,12 +90,14 @@ export function PublicationListItem({ post, canDirectPublish }: PublicationListI
               Edit
             </Button>
           ) : null}
-          {post.status === "draft" || post.status === "submitted_for_review" ? (
+          {post.status === "draft" ||
+          post.status === "submitted_for_review" ||
+          post.status === "scheduled" ? (
             <Button href={`/workspace/publishing/${post.postId}/preview`} variant="secondary">
               Preview
             </Button>
           ) : null}
-          {post.status === "published" ? (
+          {post.status === "published" && !post.administrativelyBlocked ? (
             <Button href={`/blog/${post.slug}`} variant="secondary">
               View Public
             </Button>

@@ -40,11 +40,15 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
 
   it("3/4/5 — category options and explicit search query wiring", () => {
     const index = read("features/blog/components/BlogIndexPageContent.tsx");
-    assert.match(index, /All Categories/);
+    assert.match(index, /BlogCategoriesSidebar/);
     assert.match(index, /fetchPublicBlogCategories/);
     assert.match(index, /onSearchSubmit/);
     assert.match(index, /type="search"/);
-    assert.match(index, /htmlFor="blog-category"/);
+    assert.match(index, /blog-layout__search/);
+
+    const categories = read("features/blog/components/BlogCategoriesSidebar.tsx");
+    assert.match(categories, /All Categories/);
+    assert.match(categories, /buildBlogIndexHref/);
 
     const api = read("features/blog/api.ts");
     assert.match(api, /params\.set\("q"/);
@@ -55,10 +59,10 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
   it("6/7/8/9/10 — card projection without fake reactions or unpublished fields", () => {
     const card = read("features/blog/components/BlogPostCard.tsx");
     assert.match(card, /BlogPostCard/);
-    assert.match(card, /Read Article/);
     assert.match(card, /post\.excerpt/);
     assert.match(card, /post\.author/);
     assert.match(card, /BlogAuthorInline/);
+    assert.match(card, /No Comments|1 Comment|Comments/);
     const authorInline = read("features/blog/components/BlogAuthorInline.tsx");
     assert.match(authorInline, /profileUrl/);
     // Pack 07 may show real commentCount; reaction totals stay detail-only.
@@ -134,6 +138,7 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
     assert.match(css, /--hu-page|hu-page-container|--hu-card-gap|--hu-section-gap/);
     assert.match(css, /@media \(max-width: 768px\)/);
     assert.match(css, /max-width:\s*var\(--hu-reading-max-width\)/);
+    assert.match(css, /blog-layout/);
     assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}/);
     assert.doesNotMatch(css, /box-shadow:\s*[^v]/);
   });

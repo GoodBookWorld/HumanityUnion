@@ -4,7 +4,9 @@ export {
   archiveBlogPost,
   createBlogDraft,
   decideBlogAuthorApplication,
+  decideBlogAuthorApplicationAsAdmin,
   declineBlogPost,
+  getAdminAuthorApplicationReview,
   getBlogAuthoringAccessState,
   getEditorialReviewDetail,
   getPublicBlogPostBySlug,
@@ -14,15 +16,22 @@ export {
   listEditorialReviewQueue,
   listOwnBlogWorkspacePosts,
   listPublicBlogPosts,
+  listPublicBlogAuthors,
   listPublishedBlogPostsForSearch,
   previewBlogPost,
   publishBlogPost,
   publishBlogPostAfterSafetyReview,
+  cancelScheduledBlogPublication,
+  releaseDueScheduledBlogPublications,
   requestBlogPostChanges,
   resubmitBlogAuthorApplication,
   submitBlogPostForReview,
   updateBlogDraft,
 } from "./blog.service.js";
+export {
+  startBlogScheduledPublishScheduler,
+  stopBlogScheduledPublishScheduler,
+} from "./blog-scheduled-publish.scheduler.js";
 export { blogPostToSearchMetadata } from "./blog.projection.js";
 export {
   BlogAccessDeniedError,

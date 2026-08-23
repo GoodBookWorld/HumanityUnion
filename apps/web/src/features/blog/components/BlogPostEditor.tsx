@@ -10,7 +10,7 @@ import type {
   BlogCoverMedia,
   LifecycleSafetyOutcome,
 } from "@hu/types";
-import { BLOG_CATEGORIES } from "@hu/types";
+import { BLOG_CATEGORIES, BLOG_PUBLICATION_DATE_MIN } from "@hu/types";
 
 import { Button } from "../../../design-system/components/Button";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
@@ -32,6 +32,14 @@ import { BlogCoverField } from "./BlogCoverField";
 import { BlogRichTextEditor } from "./BlogRichTextEditor";
 
 const MAX_TAGS = 12;
+
+function isoToPublicationDateOnly(iso: string | undefined): string {
+  if (!iso) {
+    return "";
+  }
+  const match = /^(\d{4}-\d{2}-\d{2})/.exec(iso);
+  return match?.[1] ?? "";
+}
 
 export interface BlogPostEditorProps {
   mode: "create" | "edit";
@@ -73,6 +81,7 @@ export function BlogPostEditor({
   const excerptId = useId();
   const contentLabelId = useId();
   const tagsId = useId();
+  const publicationDateId = useId();
   const savePhase = useSaveButtonPhase();
 
   const [postId, setPostId] = useState(initialPost?.postId ?? null);
@@ -86,6 +95,9 @@ export function BlogPostEditor({
   const [coverMedia, setCoverMedia] = useState<BlogCoverMedia | null>(
     initialPost?.coverMedia ?? null,
   );
+  const [publicationDate, setPublicationDate] = useState(
+    isoToPublicationDateOnly(initialPost?.publishedAt),
+  );
   const [status, setStatus] = useState(initialPost?.status ?? "draft");
   const [reviewStatus, setReviewStatus] = useState(
     initialPost?.review.reviewStatus ?? "none",
@@ -93,13 +105,15 @@ export function BlogPostEditor({
   const [reviewNote, setReviewNote] = useState(initialPost?.review.reviewNote ?? "");
   const [slug, setSlug] = useState(initialPost?.slug ?? "");
   const [safetyOutcome, setSafetyOutcome] = useState(initialPost?.safetyOutcome ?? null);
+  const [administrativelyBlocked] = useState(initialPost?.administrativelyBlocked === true);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [busyAction, setBusyAction] = useState<"submit" | "publish" | null>(null);
 
-  const readOnly = status === "submitted_for_review" || status === "archived";
+  const readOnly =
+    status === "submitted_for_review" || status === "archived" || administrativelyBlocked;
   const changesRequested = status === "draft" && reviewStatus === "changes_requested";
   const declined = status === "draft" && reviewStatus === "declined";
   const publishedLockedSlug = status === "published" || status === "archived";
@@ -145,6 +159,9 @@ export function BlogPostEditor({
     if (parseTags().length > MAX_TAGS) {
       return `Use at most ${MAX_TAGS} tags.`;
     }
+    if (publicationDate && publicationDate < BLOG_PUBLICATION_DATE_MIN) {
+      return `Publication date must be on or after ${BLOG_PUBLICATION_DATE_MIN}.`;
+    }
     return null;
   }
 
@@ -161,6 +178,7 @@ export function BlogPostEditor({
       content,
       tags: parseTags(),
       coverMedia,
+      ...(publicationDate ? { publicationDate } : {}),
     };
 
     if (postId) {
@@ -179,6 +197,7 @@ export function BlogPostEditor({
       setReviewStatus(saved.review.reviewStatus);
       setReviewNote(saved.review.reviewNote ?? "");
       setSafetyOutcome(saved.safetyOutcome);
+      setPublicationDate(isoToPublicationDateOnly(saved.publishedAt));
       setDirty(false);
       if (mode === "create" && !initialPost) {
         router.replace(`/workspace/publishing/${saved.postId}`);
@@ -229,12 +248,20 @@ export function BlogPostEditor({
         setSafetyOutcome(saved.safetyOutcome);
         setDirty(false);
       }
-      const published = await publishBlogPost(id!);
+      const published = await publishBlogPost(
+        id!,
+        publicationDate ? { publicationDate } : undefined,
+      );
       setStatus(published.status);
       setSlug(published.slug);
       setSafetyOutcome(published.safetyOutcome);
+      setPublicationDate(isoToPublicationDateOnly(published.publishedAt));
       setPublishOpen(false);
-      router.push(`/blog/${published.slug}`);
+      if (published.status === "scheduled") {
+        router.push("/workspace/publishing");
+      } else {
+        router.push(`/blog/${published.slug}`);
+      }
     } catch (publishError) {
       setError(formatAuthFormError(publishError));
       setPublishOpen(false);
@@ -246,7 +273,8 @@ export function BlogPostEditor({
   const safety = safetyMessage(safetyOutcome);
   const showPublish =
     canDirectPublish &&
-    (status === "draft" || status === "submitted_for_review") &&
+    !administrativelyBlocked &&
+    (status === "draft" || status === "submitted_for_review" || status === "scheduled") &&
     safetyOutcome !== "rejected";
 
   return (
@@ -255,6 +283,20 @@ export function BlogPostEditor({
         Author: {authorDisplayName ?? "Your Participant identity"} (attribution is set by the
         platform).
       </p>
+
+      {administrativelyBlocked ? (
+        <StatusBanner
+          title="Blocked by administrator"
+          message="This publication is blocked by an administrator and cannot be edited or made public."
+        />
+      ) : null}
+
+      {status === "scheduled" ? (
+        <StatusBanner
+          title="Scheduled"
+          message="This publication is scheduled and will become public automatically on the publication date (noon UTC)."
+        />
+      ) : null}
 
       {status === "submitted_for_review" ? (
         <StatusBanner
@@ -380,6 +422,27 @@ export function BlogPostEditor({
           />
           <HelperText>This short summary appears on the Blog listing.</HelperText>
 
+          <label className="hu-label" htmlFor={publicationDateId}>
+            Publication date
+          </label>
+          <input
+            id={publicationDateId}
+            className="hu-form-control"
+            type="date"
+            min={BLOG_PUBLICATION_DATE_MIN}
+            value={publicationDate}
+            disabled={readOnly}
+            onChange={(event) => {
+              setPublicationDate(event.target.value);
+              markDirty();
+            }}
+          />
+          <HelperText>
+            Optional. Past dates back to {BLOG_PUBLICATION_DATE_MIN} are allowed for historical
+            works. Future dates schedule publication (noon UTC on the chosen day). createdAt stays
+            the platform record time.
+          </HelperText>
+
           <p className="hu-label" id={contentLabelId}>
             Article Content
           </p>
@@ -428,7 +491,7 @@ export function BlogPostEditor({
           </Button>
         ) : null}
 
-        {status === "draft" ? (
+        {status === "draft" && !administrativelyBlocked ? (
           <Button
             type="button"
             variant="secondary"

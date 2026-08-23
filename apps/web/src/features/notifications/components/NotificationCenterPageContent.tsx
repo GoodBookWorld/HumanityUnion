@@ -34,6 +34,7 @@ import { CommunicationCard } from "./CommunicationCard";
 import { CommunicationSummary } from "./CommunicationSummary";
 import { NotificationCenterParticipantIdentity } from "./NotificationCenterParticipantIdentity";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
+import { AuthorApplicationReviewModal } from "../../blog/components/AuthorApplicationReviewModal";
 
 import "../notifications-page.css";
 
@@ -88,9 +89,11 @@ function dedupeChannelNotificationsByInitiative(
 function NotificationRow({
   notification,
   onUpdated,
+  onReviewAuthorApplication,
 }: {
   notification: MemberNotificationView;
   onUpdated: () => void;
+  onReviewAuthorApplication?: (applicationId: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
 
@@ -117,6 +120,9 @@ function NotificationRow({
     }
   }
 
+  const isAuthorApplicationReview =
+    notification.eventType === "blog_author_application_review_requested";
+
   return (
     <CommunicationCard
       mode="notification"
@@ -134,7 +140,20 @@ function NotificationRow({
       }
       actions={
         <>
-          {notification.relatedUrl ? (
+          {isAuthorApplicationReview && onReviewAuthorApplication ? (
+            <button
+              type="button"
+              className="notifications-page__link"
+              onClick={() => {
+                if (notification.status === "unread") {
+                  void handleMarkRead();
+                }
+                onReviewAuthorApplication(notification.relatedEntityId);
+              }}
+            >
+              Review application
+            </button>
+          ) : notification.relatedUrl ? (
             <Link
               className="notifications-page__link"
               href={notification.relatedUrl}
@@ -148,7 +167,9 @@ function NotificationRow({
               notification.eventType.startsWith("editor_permissions_") ||
               notification.eventType.startsWith("editor_editing_area_")
                 ? "View Editor Panel"
-                : "View related civic record"}
+                : notification.eventType.startsWith("blog_author_application_")
+                  ? "View Authoring"
+                  : "View related civic record"}
             </Link>
           ) : null}
           {notification.status === "unread" ? (
@@ -307,6 +328,7 @@ export function NotificationCenterPageContent() {
   const [reminders, setReminders] = useState<CommunicationReminderView[]>([]);
   const [clearArchiveOpen, setClearArchiveOpen] = useState(false);
   const [clearingArchive, setClearingArchive] = useState(false);
+  const [reviewApplicationId, setReviewApplicationId] = useState<string | null>(null);
 
   const loadNotifications = useCallback(async () => {
     setNotificationsState((current) => (current === "ready" ? current : "loading"));
@@ -547,6 +569,7 @@ export function NotificationCenterPageContent() {
                       key={notification.notificationId}
                       notification={notification}
                       onUpdated={() => void loadNotifications()}
+                      onReviewAuthorApplication={setReviewApplicationId}
                     />
                   ))}
                 </ul>
@@ -672,6 +695,15 @@ export function NotificationCenterPageContent() {
             }}
             onConfirm={() => void handleClearArchiveConfirm()}
           />
+
+          {reviewApplicationId ? (
+            <AuthorApplicationReviewModal
+              applicationId={reviewApplicationId}
+              isOpen
+              onClose={() => setReviewApplicationId(null)}
+              onDecided={() => void loadNotifications()}
+            />
+          ) : null}
         </>
       )}
     </main>

@@ -5,28 +5,40 @@ import type { PublicCommentAuthor } from "./initiative-comment.js";
 /**
  * Blog Implementation Pack 02 — Publishing Domain core contracts.
  *
- * Persisted status vocabulary (Pack 02 refinement of Pack 01):
+ * Persisted status vocabulary:
  * - draft
  * - submitted_for_review
+ * - scheduled (Pack 13C — future publicationDate; not public until due)
  * - published
  * - archived
  *
  * Pack 01 "Preview" is a presentation/API mode, not a persisted status.
  * Pack 01 "Updated" is expressed via publishedVersion + updatedAt, not a status.
+ * Pack 13B Admin soft-block is independent of status (`administrativelyBlocked`).
  */
 
 export type BlogPostStatus =
   | "draft"
   | "submitted_for_review"
+  | "scheduled"
   | "published"
   | "archived";
 
 export const BLOG_POST_STATUSES: readonly BlogPostStatus[] = [
   "draft",
   "submitted_for_review",
+  "scheduled",
   "published",
   "archived",
 ] as const;
+
+/** Pack 13C — earliest allowed Author-chosen publication calendar date (inclusive). */
+export const BLOG_PUBLICATION_DATE_MIN = "2022-01-01";
+
+/**
+ * Pack 13C — date-only publication dates are stored as noon UTC (`YYYY-MM-DDT12:00:00.000Z`)
+ * so Author / Admin / public surfaces share the same calendar day without local midnight shifts.
+ */
 
 /** Editorial quality review — separate from Lifecycle Safety outcomes. */
 export type BlogReviewStatus =
@@ -153,12 +165,27 @@ export interface BlogPost {
   readonly updatedAt: string;
   readonly submittedAt?: string;
   readonly submittedByParticipantId?: string;
+  /**
+   * Canonical publication timestamp (Pack 13C).
+   * Distinct from `createdAt` (platform record creation).
+   * Used for public visibility (`published` + publishedAt <= now) and chronological sort.
+   * Date-only Author input is stored as noon UTC for the chosen calendar day.
+   */
   readonly publishedAt?: string;
   readonly publishedByParticipantId?: string;
   readonly archivedAt?: string;
   readonly archivedByParticipantId?: string;
   /** Editorial Review Pack 06 — append-only review/publish accountability trail. */
   readonly editorialHistory?: readonly BlogEditorialHistoryEntry[];
+  /**
+   * Pack 13B — Admin soft-block. Independent of `status`.
+   * Blocked published posts remain stored but are excluded from public surfaces.
+   */
+  readonly administrativelyBlocked?: boolean;
+  readonly administrativeBlockAuthority?: "ADMIN" | "EDITOR";
+  readonly administrativelyBlockedAt?: string;
+  readonly administrativelyBlockedByParticipantId?: string;
+  readonly administrativeBlockReason?: string;
   /** Internal only — omitted from public API. */
   readonly legacy?: BlogPostLegacyMigration;
 }
@@ -182,6 +209,8 @@ export interface BlogAuthorWorkspacePost {
   readonly submittedAt?: string;
   readonly publishedAt?: string;
   readonly archivedAt?: string;
+  /** Pack 13B — Admin soft-block (independent of status). */
+  readonly administrativelyBlocked?: boolean;
   readonly editorialHistory?: readonly BlogEditorialHistoryEntry[];
 }
 
@@ -204,6 +233,8 @@ export interface BlogAuthorWorkspacePostSummary {
   readonly submittedAt?: string;
   readonly publishedAt?: string;
   readonly archivedAt?: string;
+  /** Pack 13B — Admin soft-block (independent of status). */
+  readonly administrativelyBlocked?: boolean;
 }
 
 export interface BlogAuthorWorkspacePostListResponse {
@@ -327,6 +358,23 @@ export interface PublicBlogPostListResponse {
   readonly offset: number;
 }
 
+/** Pack 13D — public Authors rail: authors with at least one visible publication. */
+export interface PublicBlogAuthorDirectoryLatestPublication {
+  readonly postId: string;
+  readonly slug: string;
+  readonly title: string;
+  readonly publishedAt: string;
+}
+
+export interface PublicBlogAuthorDirectoryItem {
+  readonly author: PublicCommentAuthor;
+  readonly latestPublication: PublicBlogAuthorDirectoryLatestPublication;
+}
+
+export interface PublicBlogAuthorDirectoryResponse {
+  readonly authors: readonly PublicBlogAuthorDirectoryItem[];
+}
+
 /**
  * Author Access Pack 04 — application lifecycle vocabulary.
  * Active (duplicate-blocked) statuses: submitted | under_review | changes_requested.
@@ -396,7 +444,9 @@ export interface BlogAuthoringAccessState {
     | "author"
     | "trusted_author"
     | "editor"
-    | "administrator";
+    | "administrator"
+    /** Pack 13B — Author grant present but administratively blocked. */
+    | "author_blocked";
   readonly canApply: boolean;
   readonly canResubmit: boolean;
   /** Publishing Workspace Pack 05 — Authors and above. */
@@ -404,6 +454,31 @@ export interface BlogAuthoringAccessState {
   readonly navLabel: "Become an Author" | "Publishing";
   /** Editorial Review Pack 06 — Editors/Administrators only. */
   readonly editorialReviewHref: "/workspace/editorial" | null;
+  /** Pack 13B — true when Author grant is administratively blocked. */
+  readonly authorAdministrativelyBlocked?: boolean;
+}
+
+/**
+ * Pack 13A — Admin Notification Center review modal projection.
+ * Applicant Profile identity resolved live; no duplicated auth secrets.
+ */
+export interface AdminAuthorApplicationReview {
+  readonly applicationId: string;
+  readonly participantId: string;
+  readonly displayName: string;
+  readonly uniqueName?: string;
+  readonly email: string;
+  readonly avatarUrl?: string;
+  readonly status: BlogAuthorApplicationStatus;
+  readonly motivation: string;
+  readonly topics: string;
+  readonly previousWritingUrl?: string;
+  readonly preferredCategoryIds: readonly BlogCategoryId[];
+  readonly agreedToStandards: boolean;
+  readonly submittedAt: string;
+  readonly updatedAt: string;
+  readonly decidedAt?: string;
+  readonly reviewNote?: string;
 }
 
 /** Editorial Review Pack 06 — queue row with Author identity. */
@@ -444,4 +519,83 @@ export interface BlogCapabilityGrant {
   readonly capabilities: readonly BlogCapability[];
   readonly updatedAt: string;
   readonly grantedByParticipantId?: string;
+  /**
+   * Pack 13B — Admin Author soft-block. Independent of Participant auth status.
+   * Grant (capabilities) remains; publishing mutations are denied while blocked.
+   */
+  readonly administrativelyBlocked?: boolean;
+  readonly administrativeBlockAuthority?: "ADMIN" | "EDITOR";
+  readonly administrativelyBlockedAt?: string;
+  readonly administrativelyBlockedByParticipantId?: string;
+  readonly administrativeBlockReason?: string;
+}
+
+/** Pack 13B — Admin Authors registry filter. */
+export type AdminAuthorDirectoryStatusFilter = "active" | "blocked" | "all";
+
+/** Pack 13B — Admin Publications registry filter. */
+export type AdminPublicationDirectoryStatusFilter =
+  | "all"
+  | "draft"
+  | "scheduled"
+  | "published"
+  | "blocked"
+  | "submitted_for_review"
+  | "archived";
+
+export interface AdminAuthorDirectoryItem {
+  readonly participantId: string;
+  readonly displayName: string;
+  readonly uniqueName?: string;
+  readonly email: string;
+  readonly avatarUrl?: string;
+  readonly profileHref: string;
+  readonly capabilities: readonly BlogCapability[];
+  readonly status: "active" | "blocked";
+  readonly publicationCount: number;
+  readonly acceptedAt: string;
+  readonly lastPublishedAt?: string;
+  readonly administrativelyBlockedAt?: string;
+  readonly administrativeBlockReason?: string;
+}
+
+export interface AdminAuthorDirectoryResponse {
+  readonly authors: readonly AdminAuthorDirectoryItem[];
+  readonly total: number;
+  readonly activeCount: number;
+  readonly blockedCount: number;
+  readonly limit: number;
+  readonly offset: number;
+}
+
+export interface AdminPublicationDirectoryItem {
+  readonly postId: string;
+  readonly title: string;
+  readonly slug: string;
+  readonly authorParticipantId: string;
+  readonly authorDisplayName: string;
+  readonly categoryId: BlogCategoryId;
+  readonly categoryName: string;
+  readonly status: BlogPostStatus;
+  readonly administrativelyBlocked: boolean;
+  readonly publishedAt?: string;
+  readonly updatedAt: string;
+  readonly createdAt: string;
+  readonly publicHref: string | null;
+  readonly editorialHref: string;
+  readonly publishingHref: string;
+  readonly administrativeBlockReason?: string;
+}
+
+export interface AdminPublicationDirectoryResponse {
+  readonly publications: readonly AdminPublicationDirectoryItem[];
+  readonly total: number;
+  readonly limit: number;
+  readonly offset: number;
+}
+
+export interface AdminPublishingBlockCommandResult {
+  readonly targetId: string;
+  readonly administrativelyBlocked: boolean;
+  readonly auditId: string;
 }

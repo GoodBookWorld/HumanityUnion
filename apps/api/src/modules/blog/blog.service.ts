@@ -5,6 +5,7 @@ import type {
   BlogAuthorApplication,
   BlogAuthorApplicationStatus,
   BlogAuthoringAccessState,
+  AdminAuthorApplicationReview,
   BlogAuthorWorkspacePost,
   BlogAuthorWorkspacePostListResponse,
   BlogCapability,
@@ -15,11 +16,15 @@ import type {
   BlogPostStatus,
   LifecycleSafetyDecision,
   PublicBlogPostDetail,
+  PublicBlogAuthorDirectoryResponse,
   PublicBlogPostListResponse,
 } from "@hu/types";
 import { BLOG_POST_STATUSES } from "@hu/types";
 
 import { recordAdministrationAuditBestEffort } from "../administration/audit.service.js";
+import { findAuthUserById, findAuthUserByMemberId } from "../auth/auth-user.repository.js";
+import { findMemberById } from "../member/infrastructure/member.repository.js";
+import { findMemberProfileByUserId } from "../member-profile/member-profile.repository.js";
 import { evaluateLifecycleSafety } from "../lifecycle-safety/lifecycle-safety.service.js";
 import { invalidateGlobalSearchIndex } from "../global-search/global-search.index.js";
 import { blogHtmlToPlainText } from "./blog-content-sanitize.js";
@@ -86,6 +91,10 @@ import {
   validateUpdateBlogDraftInput,
 } from "./blog.validators.js";
 import {
+  isPublicationDue,
+  publicationDateOnlyToIso,
+} from "./blog-publication-date.js";
+import {
   blogSlugExists,
   findActiveBlogAuthorApplication,
   findBlogAuthorApplicationById,
@@ -97,14 +106,37 @@ import {
   insertBlogPost,
   listBlogPostsByAuthor,
   listBlogPostsForEditorialQueue,
+  listDueScheduledBlogPosts,
+  listLatestPublicBlogPostsByAuthor,
   listPublishedBlogPosts,
   listPublishedBlogPostsForSearch,
   replaceBlogAuthorApplication,
   replaceBlogPost,
   upsertBlogCapabilityGrant,
 } from "./persistence/blog.repository.js";
+import { isBlogAuthorAdministrativelyBlocked } from "./admin-publishing.service.js";
 
 export { listBlogCategories, listPublishedBlogPostsForSearch };
+
+const AUTHOR_BLOCKED_MESSAGE =
+  "Your Author access has been blocked. Please contact the administrator.";
+
+/**
+ * Pack 13B — Author soft-block denies Author publishing mutations.
+ * Editors/Administrators retain editorial mutation paths.
+ */
+async function assertAuthorPublishingAllowed(input: {
+  actorParticipantId: string;
+  role?: AuthRole;
+  capabilities: ReadonlySet<BlogCapability>;
+}): Promise<void> {
+  if (input.capabilities.has("editor") || input.capabilities.has("administrator")) {
+    return;
+  }
+  if (await isBlogAuthorAdministrativelyBlocked(input.actorParticipantId)) {
+    throw new BlogAccessDeniedError(AUTHOR_BLOCKED_MESSAGE);
+  }
+}
 
 /**
  * Publishing Workspace Pack 05 — list posts the signed-in Author may manage.
@@ -131,7 +163,7 @@ export async function listOwnBlogWorkspacePosts(input: {
   if (input.status !== undefined && input.status !== "" && input.status !== "all") {
     if (!(BLOG_POST_STATUSES as readonly string[]).includes(input.status)) {
       throw new BlogValidationError(
-        "status must be one of: draft, submitted_for_review, published, archived.",
+        "status must be one of: draft, submitted_for_review, scheduled, published, archived.",
       );
     }
     status = input.status as BlogPostStatus;
@@ -145,6 +177,7 @@ export async function listOwnBlogWorkspacePosts(input: {
     status,
     limit,
     offset,
+    sortByPublicationDate: true,
   });
 
   return {
@@ -229,6 +262,11 @@ export async function createBlogDraft(input: {
   if (!canCreateBlogDraft(capabilities)) {
     throw new BlogAccessDeniedError("Author capability is required to create a Blog draft.");
   }
+  await assertAuthorPublishingAllowed({
+    actorParticipantId: input.actorParticipantId,
+    role: input.role,
+    capabilities,
+  });
 
   const fields = validateCreateBlogDraftInput(input.body);
   const safety = await evaluateBlogSafety({
@@ -258,6 +296,9 @@ export async function createBlogDraft(input: {
     publishedVersion: 0,
     createdAt: now,
     updatedAt: now,
+    ...(fields.publicationDate
+      ? { publishedAt: publicationDateOnlyToIso(fields.publicationDate) }
+      : {}),
   };
 
   await insertBlogPost(post);
@@ -285,6 +326,11 @@ export async function updateBlogDraft(input: {
     actorParticipantId: input.actorParticipantId,
     capabilities,
   });
+  await assertAuthorPublishingAllowed({
+    actorParticipantId: input.actorParticipantId,
+    role: input.role,
+    capabilities,
+  });
 
   if (existing.status === "submitted_for_review") {
     throw new BlogConflictError(
@@ -294,6 +340,12 @@ export async function updateBlogDraft(input: {
 
   if (existing.status === "archived") {
     throw new BlogConflictError("Archived posts cannot be edited.");
+  }
+
+  if (existing.administrativelyBlocked === true) {
+    throw new BlogAccessDeniedError(
+      "This publication is blocked by an administrator and cannot be edited or republished.",
+    );
   }
 
   const patch = validateUpdateBlogDraftInput(input.body);
@@ -311,14 +363,30 @@ export async function updateBlogDraft(input: {
 
   let nextSlug = existing.slug;
   // Published slug remains stable even if title changes.
-  if (existing.status === "draft" && patch.title && patch.title !== existing.title) {
+  if (
+    (existing.status === "draft" || existing.status === "scheduled") &&
+    patch.title &&
+    patch.title !== existing.title
+  ) {
     nextSlug = await allocateUniqueSlug(patch.title, existing.postId);
   }
 
   const now = new Date().toISOString();
   let publishedVersion = existing.publishedVersion;
+  let nextStatus = existing.status;
+  let nextPublishedAt = existing.publishedAt;
 
-  if (existing.status === "published") {
+  if (patch.publicationDate) {
+    nextPublishedAt = publicationDateOnlyToIso(patch.publicationDate);
+    if (existing.status === "scheduled" || existing.status === "published") {
+      nextStatus = isPublicationDue(nextPublishedAt, now) ? "published" : "scheduled";
+      if (nextStatus !== existing.status) {
+        assertBlogStatusTransition(existing.status, nextStatus);
+      }
+    }
+  }
+
+  if (existing.status === "published" && nextStatus === "published") {
     if (
       !canDirectPublish(capabilities) &&
       existing.authorParticipantId === input.actorParticipantId &&
@@ -339,8 +407,10 @@ export async function updateBlogDraft(input: {
     tags: patch.tags ?? existing.tags,
     coverMedia: patch.coverMedia !== undefined ? patch.coverMedia : existing.coverMedia,
     originalLanguage: patch.originalLanguage ?? existing.originalLanguage,
+    status: nextStatus,
     safetyOutcome: safety.outcome,
     publishedVersion,
+    ...(nextPublishedAt ? { publishedAt: nextPublishedAt } : {}),
     updatedAt: now,
   };
 
@@ -414,6 +484,11 @@ export async function submitBlogPostForReview(input: {
   if (!canCreateBlogDraft(capabilities)) {
     throw new BlogAccessDeniedError();
   }
+  await assertAuthorPublishingAllowed({
+    actorParticipantId: input.actorParticipantId,
+    role: input.role,
+    capabilities,
+  });
 
   const existing = await findBlogPostById(input.postId);
   if (!existing) {
@@ -491,6 +566,11 @@ export async function withdrawBlogPostToDraft(input: {
   if (!isOwner && !canEditorialPublish(capabilities)) {
     throw new BlogAccessDeniedError();
   }
+  await assertAuthorPublishingAllowed({
+    actorParticipantId: input.actorParticipantId,
+    role: input.role,
+    capabilities,
+  });
 
   assertBlogStatusTransition(existing.status, "draft");
 
@@ -664,25 +744,34 @@ async function publishBlogPostInternal(input: {
   allowNeedsReviewOverride?: boolean;
   reviewNote?: string;
   expectedUpdatedAt?: string;
+  /** Pack 13C — YYYY-MM-DD optional override at publish time. */
+  publicationDate?: string;
 }): Promise<BlogPost> {
   const { existing, actorParticipantId, capabilities } = input;
   assertExpectedUpdatedAt(existing, input.expectedUpdatedAt);
   requirePublishableContent(existing);
 
+  if (existing.administrativelyBlocked === true) {
+    throw new BlogAccessDeniedError(
+      "This publication is blocked by an administrator and cannot be published.",
+    );
+  }
+
   const isOwner = existing.authorParticipantId === actorParticipantId;
   const fromDraft = existing.status === "draft";
   const fromSubmitted = existing.status === "submitted_for_review";
+  const fromScheduled = existing.status === "scheduled";
   const fromArchived = existing.status === "archived";
 
   if (fromArchived) {
     if (!canRestoreArchived(capabilities)) {
       throw new BlogAccessDeniedError("Only Administrators may restore archived Blog posts.");
     }
-  } else if (fromDraft) {
+  } else if (fromDraft || fromScheduled) {
     if (!isOwner && !canEditorialPublish(capabilities)) {
       throw new BlogAccessDeniedError();
     }
-    if (isOwner && !canDirectPublish(capabilities)) {
+    if (isOwner && !canDirectPublish(capabilities) && fromDraft) {
       throw new BlogAccessDeniedError(
         "Standard Authors must submit for review; direct publish requires Trusted Author, Editor, or Administrator.",
       );
@@ -697,7 +786,17 @@ async function publishBlogPostInternal(input: {
     throw new BlogConflictError(`Cannot publish from status ${existing.status}.`);
   }
 
-  assertBlogStatusTransition(existing.status, "published");
+  const now = new Date().toISOString();
+  const resolvedPublishedAt = input.publicationDate
+    ? publicationDateOnlyToIso(input.publicationDate)
+    : existing.publishedAt ?? now;
+  const targetStatus: BlogPostStatus = isPublicationDue(resolvedPublishedAt, now)
+    ? "published"
+    : "scheduled";
+
+  if (existing.status !== targetStatus) {
+    assertBlogStatusTransition(existing.status, targetStatus);
+  }
 
   const safety = await evaluateBlogSafety({
     actorParticipantId,
@@ -735,81 +834,98 @@ async function publishBlogPostInternal(input: {
     ? requireReviewNote(input.reviewNote, "publish after Safety review")
     : input.reviewNote?.trim() || existing.review.reviewNote;
 
-  const now = new Date().toISOString();
   const nextVersion =
-    existing.publishedVersion > 0 ? existing.publishedVersion + 1 : 1;
+    targetStatus === "published"
+      ? existing.publishedVersion > 0
+        ? existing.publishedVersion + 1
+        : 1
+      : existing.publishedVersion;
   const historyAction = input.allowNeedsReviewOverride
     ? "published_after_safety_review"
     : "approved_published";
 
   const updated: BlogPost = {
     ...existing,
-    status: "published",
+    status: targetStatus,
     safetyOutcome: safety.outcome,
     review: {
-      reviewStatus: "approved",
+      reviewStatus: targetStatus === "published" ? "approved" : existing.review.reviewStatus,
       reviewedByParticipantId: actorParticipantId,
       reviewedAt: now,
       reviewNote: overrideNote,
     },
     publishedVersion: nextVersion,
-    publishedAt: existing.publishedAt ?? now,
+    publishedAt: resolvedPublishedAt,
     publishedByParticipantId: actorParticipantId,
     archivedAt: undefined,
     archivedByParticipantId: undefined,
     updatedAt: now,
-    editorialHistory: appendEditorialHistory(
-      existing,
-      buildEditorialHistoryEntry({
-        at: now,
-        actorParticipantId,
-        action: historyAction,
-        reviewNote: overrideNote,
-        safetyOutcome: safety.outcome,
-        publishedVersion: nextVersion,
-        contentUpdatedAt: existing.updatedAt,
-      }),
-    ),
+    editorialHistory:
+      targetStatus === "published"
+        ? appendEditorialHistory(
+            existing,
+            buildEditorialHistoryEntry({
+              at: now,
+              actorParticipantId,
+              action: historyAction,
+              reviewNote: overrideNote,
+              safetyOutcome: safety.outcome,
+              publishedVersion: nextVersion,
+              contentUpdatedAt: existing.updatedAt,
+            }),
+          )
+        : existing.editorialHistory,
   };
 
   await replaceBlogPost(updated);
-  invalidateGlobalSearchIndex();
-  await emitBlogPostPublished({
-    postId: updated.postId,
-    authorParticipantId: updated.authorParticipantId,
-    publishedByParticipantId: actorParticipantId,
-    publishedVersion: updated.publishedVersion,
-    slug: updated.slug,
-    afterSafetyReview: Boolean(input.allowNeedsReviewOverride),
-    safetyOutcome: safety.outcome,
-    reviewNote: overrideNote,
-  });
-  await emitBlogPostPublishedNotification({
-    authorParticipantId: updated.authorParticipantId,
-    postId: updated.postId,
-  });
 
-  // Admin Foundation Pack 02 — append-only audit (best-effort; does not alter publish behavior).
-  recordAdministrationAuditBestEffort({
-    actorParticipantId,
-    action: input.allowNeedsReviewOverride
-      ? "blog.publish_after_safety_review"
-      : "blog.publish",
-    targetType: "blog_post",
-    targetId: updated.postId,
-    scope: { scopeType: "blog", scopeId: updated.postId },
-    reason: input.allowNeedsReviewOverride ? overrideNote : undefined,
-    afterSummary: `status=published version=${updated.publishedVersion} safety=${safety.outcome}`,
-  });
-  if (input.allowNeedsReviewOverride) {
+  if (updated.status === "published") {
+    invalidateGlobalSearchIndex();
+    await emitBlogPostPublished({
+      postId: updated.postId,
+      authorParticipantId: updated.authorParticipantId,
+      publishedByParticipantId: actorParticipantId,
+      publishedVersion: updated.publishedVersion,
+      slug: updated.slug,
+      afterSafetyReview: Boolean(input.allowNeedsReviewOverride),
+      safetyOutcome: safety.outcome,
+      reviewNote: overrideNote,
+    });
+    await emitBlogPostPublishedNotification({
+      authorParticipantId: updated.authorParticipantId,
+      postId: updated.postId,
+    });
+
     recordAdministrationAuditBestEffort({
       actorParticipantId,
-      action: "safety.override",
+      action: input.allowNeedsReviewOverride
+        ? "blog.publish_after_safety_review"
+        : "blog.publish",
       targetType: "blog_post",
       targetId: updated.postId,
       scope: { scopeType: "blog", scopeId: updated.postId },
-      reason: overrideNote,
-      afterSummary: "published_after_safety_review",
+      reason: input.allowNeedsReviewOverride ? overrideNote : undefined,
+      afterSummary: `status=published version=${updated.publishedVersion} safety=${safety.outcome}`,
+    });
+    if (input.allowNeedsReviewOverride) {
+      recordAdministrationAuditBestEffort({
+        actorParticipantId,
+        action: "safety.override",
+        targetType: "blog_post",
+        targetId: updated.postId,
+        scope: { scopeType: "blog", scopeId: updated.postId },
+        reason: overrideNote,
+        afterSummary: "published_after_safety_review",
+      });
+    }
+  } else {
+    recordAdministrationAuditBestEffort({
+      actorParticipantId,
+      action: "blog.publish",
+      targetType: "blog_post",
+      targetId: updated.postId,
+      scope: { scopeType: "blog", scopeId: updated.postId },
+      afterSummary: `status=scheduled publishedAt=${updated.publishedAt}`,
     });
   }
 
@@ -822,6 +938,7 @@ export async function publishBlogPost(input: {
   role?: AuthRole;
   expectedUpdatedAt?: string;
   reviewNote?: string;
+  publicationDate?: string;
 }): Promise<BlogAuthorWorkspacePost> {
   const capabilities = await resolveBlogCapabilities({
     participantId: input.actorParticipantId,
@@ -832,15 +949,134 @@ export async function publishBlogPost(input: {
     throw new BlogNotFoundError();
   }
 
+  await assertAuthorPublishingAllowed({
+    actorParticipantId: input.actorParticipantId,
+    role: input.role,
+    capabilities,
+  });
+
   const published = await publishBlogPostInternal({
     existing,
     actorParticipantId: input.actorParticipantId,
     capabilities,
     expectedUpdatedAt: input.expectedUpdatedAt,
     reviewNote: input.reviewNote,
+    publicationDate: input.publicationDate,
   });
 
   return toBlogAuthorWorkspacePost(published);
+}
+
+/** Pack 13C — cancel future schedule; returns to draft retaining intended publishedAt. */
+export async function cancelScheduledBlogPublication(input: {
+  postId: string;
+  actorParticipantId: string;
+  role?: AuthRole;
+}): Promise<BlogAuthorWorkspacePost> {
+  const capabilities = await resolveBlogCapabilities({
+    participantId: input.actorParticipantId,
+    role: input.role,
+  });
+  await assertAuthorPublishingAllowed({
+    actorParticipantId: input.actorParticipantId,
+    role: input.role,
+    capabilities,
+  });
+
+  const existing = await findBlogPostById(input.postId);
+  if (!existing) {
+    throw new BlogNotFoundError();
+  }
+  if (existing.authorParticipantId !== input.actorParticipantId && !canEditorialPublish(capabilities)) {
+    throw new BlogAccessDeniedError();
+  }
+  if (existing.status !== "scheduled") {
+    throw new BlogConflictError("Only scheduled publications can cancel a schedule.");
+  }
+  if (existing.administrativelyBlocked === true) {
+    throw new BlogAccessDeniedError(
+      "This publication is blocked by an administrator and cannot be modified.",
+    );
+  }
+
+  assertBlogStatusTransition(existing.status, "draft");
+  const now = new Date().toISOString();
+  const updated: BlogPost = {
+    ...existing,
+    status: "draft",
+    updatedAt: now,
+  };
+  await replaceBlogPost(updated);
+  return toBlogAuthorWorkspacePost(updated);
+}
+
+/**
+ * Pack 13C — promote due scheduled posts to published.
+ * Called by in-process scheduler (not browser-dependent).
+ * Skips administratively blocked posts.
+ *
+ * Pack 13E certification policy:
+ * If the Author is soft-blocked at release time, do NOT newly go public.
+ * The post stays `scheduled` until the Author is unblocked (or an Editor publishes).
+ * Publication soft-block remains independent and also suppresses release.
+ */
+export async function releaseDueScheduledBlogPublications(input?: {
+  nowIso?: string;
+  limit?: number;
+}): Promise<{ releasedCount: number; releasedPostIds: string[] }> {
+  const nowIso = input?.nowIso ?? new Date().toISOString();
+  const due = await listDueScheduledBlogPosts({
+    nowIso,
+    limit: input?.limit ?? 100,
+  });
+
+  const releasedPostIds: string[] = [];
+  for (const post of due) {
+    if (!post.publishedAt || post.administrativelyBlocked === true) {
+      continue;
+    }
+    if (post.status !== "scheduled") {
+      continue;
+    }
+    if (await isBlogAuthorAdministrativelyBlocked(post.authorParticipantId)) {
+      continue;
+    }
+
+    const now = new Date().toISOString();
+    const nextVersion = post.publishedVersion > 0 ? post.publishedVersion + 1 : 1;
+    const updated: BlogPost = {
+      ...post,
+      status: "published",
+      publishedVersion: nextVersion,
+      updatedAt: now,
+      editorialHistory: appendEditorialHistory(
+        post,
+        buildEditorialHistoryEntry({
+          at: now,
+          actorParticipantId: post.publishedByParticipantId ?? post.authorParticipantId,
+          action: "approved_published",
+          publishedVersion: nextVersion,
+          contentUpdatedAt: post.updatedAt,
+        }),
+      ),
+    };
+    await replaceBlogPost(updated);
+    invalidateGlobalSearchIndex();
+    await emitBlogPostPublished({
+      postId: updated.postId,
+      authorParticipantId: updated.authorParticipantId,
+      publishedByParticipantId: updated.publishedByParticipantId ?? updated.authorParticipantId,
+      publishedVersion: updated.publishedVersion,
+      slug: updated.slug,
+    });
+    await emitBlogPostPublishedNotification({
+      authorParticipantId: updated.authorParticipantId,
+      postId: updated.postId,
+    });
+    releasedPostIds.push(updated.postId);
+  }
+
+  return { releasedCount: releasedPostIds.length, releasedPostIds };
 }
 
 /**
@@ -1079,12 +1315,49 @@ export async function listPublicBlogPosts(input: {
   return response;
 }
 
+/** Pack 13D — Authors rail: one row per author with a visible public publication. */
+export async function listPublicBlogAuthors(input?: {
+  limit?: number;
+}): Promise<PublicBlogAuthorDirectoryResponse> {
+  const rows = await listLatestPublicBlogPostsByAuthor({
+    limitAuthors: input?.limit ?? 40,
+  });
+
+  const authors = [];
+  for (const row of rows) {
+    const author = await resolveBlogPublicAuthor({
+      authorParticipantId: row.authorParticipantId,
+      authorDisplayNameSnapshot: row.authorDisplayNameSnapshot,
+    });
+    authors.push({
+      author,
+      latestPublication: {
+        postId: row.postId,
+        slug: row.slug,
+        title: row.title,
+        publishedAt: row.publishedAt,
+      },
+    });
+  }
+
+  const response: PublicBlogAuthorDirectoryResponse = { authors };
+  assertNoInternalBlogFields(response);
+  return response;
+}
+
 export async function getPublicBlogPostBySlug(
   slug: string,
   viewerParticipantId?: string | null,
 ): Promise<PublicBlogPostDetail> {
   const post = await findBlogPostBySlug(slug.trim());
-  if (!post || post.status !== "published") {
+  const now = new Date().toISOString();
+  if (
+    !post ||
+    post.status !== "published" ||
+    post.administrativelyBlocked === true ||
+    !post.publishedAt ||
+    post.publishedAt > now
+  ) {
     throw new BlogNotFoundError("Published Blog post not found.");
   }
 
@@ -1117,7 +1390,16 @@ export async function getPublicBlogPostBySlug(
 function deriveAuthoringPresentation(input: {
   capabilities: ReadonlySet<BlogCapability>;
   application: BlogAuthorApplication | null;
+  authorAdministrativelyBlocked: boolean;
 }): BlogAuthoringAccessState["presentation"] {
+  if (
+    input.authorAdministrativelyBlocked &&
+    (input.capabilities.has("author") || input.capabilities.has("trusted_author")) &&
+    !input.capabilities.has("editor") &&
+    !input.capabilities.has("administrator")
+  ) {
+    return "author_blocked";
+  }
   if (input.capabilities.has("administrator")) {
     return "administrator";
   }
@@ -1149,6 +1431,7 @@ function toAuthoringAccessState(input: {
   participantId: string;
   capabilities: ReadonlySet<BlogCapability>;
   application: BlogAuthorApplication | null;
+  authorAdministrativelyBlocked: boolean;
 }): BlogAuthoringAccessState {
   const presentation = deriveAuthoringPresentation(input);
   const hasAuthor =
@@ -1165,6 +1448,11 @@ function toAuthoringAccessState(input: {
   const isEditor =
     input.capabilities.has("editor") || input.capabilities.has("administrator");
 
+  const blockedAuthorOnly =
+    input.authorAdministrativelyBlocked &&
+    !input.capabilities.has("editor") &&
+    !input.capabilities.has("administrator");
+
   return {
     participantId: input.participantId,
     capabilities: [...input.capabilities],
@@ -1172,9 +1460,11 @@ function toAuthoringAccessState(input: {
     presentation,
     canApply: !hasAuthor && !active,
     canResubmit: !hasAuthor && input.application?.status === "changes_requested",
-    publishingWorkspaceHref: hasAuthor ? "/workspace/publishing" : null,
-    navLabel: hasAuthor ? "Publishing" : "Become an Author",
+    publishingWorkspaceHref:
+      hasAuthor && !blockedAuthorOnly ? "/workspace/publishing" : null,
+    navLabel: hasAuthor && !blockedAuthorOnly ? "Publishing" : "Become an Author",
     editorialReviewHref: isEditor ? "/workspace/editorial" : null,
+    authorAdministrativelyBlocked: input.authorAdministrativelyBlocked,
   };
 }
 
@@ -1204,6 +1494,16 @@ async function ensureAuthorGrantOnApproval(input: {
     capabilities: [...capabilities],
     updatedAt: new Date().toISOString(),
     grantedByParticipantId: input.grantedByParticipantId,
+    ...(existing?.administrativelyBlocked === true
+      ? {
+          administrativelyBlocked: existing.administrativelyBlocked,
+          administrativeBlockAuthority: existing.administrativeBlockAuthority,
+          administrativelyBlockedAt: existing.administrativelyBlockedAt,
+          administrativelyBlockedByParticipantId:
+            existing.administrativelyBlockedByParticipantId,
+          administrativeBlockReason: existing.administrativeBlockReason,
+        }
+      : {}),
   };
 
   await upsertBlogCapabilityGrant(grant);
@@ -1258,11 +1558,15 @@ export async function getBlogAuthoringAccessState(input: {
     role: input.role,
   });
   const application = await findLatestBlogAuthorApplication(input.actorParticipantId);
+  const authorAdministrativelyBlocked = await isBlogAuthorAdministrativelyBlocked(
+    input.actorParticipantId,
+  );
 
   return toAuthoringAccessState({
     participantId: input.actorParticipantId,
     capabilities,
     application,
+    authorAdministrativelyBlocked,
   });
 }
 
@@ -1313,6 +1617,14 @@ export async function applyForBlogAuthorCapability(input: {
     };
     await replaceBlogAuthorApplication(resubmitted);
     await ensureAuthorApplicantGrant(input.actorParticipantId);
+    recordAdministrationAuditBestEffort({
+      actorParticipantId: input.actorParticipantId,
+      action: "blog.author_application.submit",
+      targetType: "blog_author_application",
+      targetId: resubmitted.applicationId,
+      scope: { scopeType: "blog" },
+      afterSummary: `status=${resubmitted.status};resubmit=1`,
+    });
     await emitBlogAuthorApplicationSubmittedNotification({
       participantId: input.actorParticipantId,
       applicationId: resubmitted.applicationId,
@@ -1331,6 +1643,14 @@ export async function applyForBlogAuthorCapability(input: {
 
   await insertBlogAuthorApplication(application);
   await ensureAuthorApplicantGrant(input.actorParticipantId);
+  recordAdministrationAuditBestEffort({
+    actorParticipantId: input.actorParticipantId,
+    action: "blog.author_application.submit",
+    targetType: "blog_author_application",
+    targetId: application.applicationId,
+    scope: { scopeType: "blog" },
+    afterSummary: `status=${application.status}`,
+  });
   await emitBlogAuthorApplicationSubmittedNotification({
     participantId: input.actorParticipantId,
     applicationId: application.applicationId,
@@ -1387,6 +1707,11 @@ export async function decideBlogAuthorApplication(input: {
   const existing = await findBlogAuthorApplicationById(input.applicationId);
   if (!existing) {
     throw new BlogNotFoundError("Blog Author application not found.");
+  }
+
+  // Pack 13A — Invite is idempotent when already approved (no duplicate Author grant).
+  if (existing.status === "approved" && input.decision === "approve") {
+    return existing;
   }
 
   if (existing.status === "approved" || existing.status === "declined") {
@@ -1449,6 +1774,7 @@ export async function decideBlogAuthorApplication(input: {
     await emitBlogAuthorApplicationDeclinedNotification({
       participantId: existing.participantId,
       applicationId: existing.applicationId,
+      reviewNote,
     });
   }
 
@@ -1464,6 +1790,81 @@ export async function decideBlogAuthorApplication(input: {
   });
 
   return updated;
+}
+
+/**
+ * Pack 13A — Admin-only Author application review projection for Notification Center modal.
+ */
+export async function getAdminAuthorApplicationReview(input: {
+  actorUserId: string;
+  applicationId: string;
+}): Promise<AdminAuthorApplicationReview> {
+  const actor = await findAuthUserById(input.actorUserId);
+  if (!actor || actor.role !== "admin") {
+    throw new BlogAccessDeniedError("Administrator access is required.");
+  }
+
+  const application = await findBlogAuthorApplicationById(input.applicationId);
+  if (!application) {
+    throw new BlogNotFoundError("Blog Author application not found.");
+  }
+
+  const authUser = await findAuthUserByMemberId(application.participantId);
+  let uniqueName: string | undefined;
+  try {
+    const member = await findMemberById(application.participantId);
+    uniqueName = member?.uniqueName;
+  } catch {
+    // Member aggregate optional in some test paths.
+  }
+  const profile = authUser ? await findMemberProfileByUserId(authUser.userId) : null;
+  const displayName =
+    profile?.displayName?.trim() ||
+    authUser?.displayName?.trim() ||
+    authUser?.email ||
+    application.participantId;
+
+  return {
+    applicationId: application.applicationId,
+    participantId: application.participantId,
+    displayName,
+    ...(uniqueName ? { uniqueName } : {}),
+    email: authUser?.email ?? "",
+    ...(profile?.avatarUrl ? { avatarUrl: profile.avatarUrl } : {}),
+    status: application.status,
+    motivation: application.motivation,
+    topics: application.topics,
+    ...(application.previousWritingUrl
+      ? { previousWritingUrl: application.previousWritingUrl }
+      : {}),
+    preferredCategoryIds: application.preferredCategoryIds,
+    agreedToStandards: application.agreedToStandards,
+    submittedAt: application.createdAt,
+    updatedAt: application.updatedAt,
+    ...(application.decidedAt ? { decidedAt: application.decidedAt } : {}),
+    ...(application.reviewNote ? { reviewNote: application.reviewNote } : {}),
+  };
+}
+
+/** Admin Invite (approve) / Refuse (decline) — JWT Admin role required. */
+export async function decideBlogAuthorApplicationAsAdmin(input: {
+  actorUserId: string;
+  applicationId: string;
+  decision: "approve" | "decline";
+  reviewNote?: string;
+}): Promise<BlogAuthorApplication> {
+  const actor = await findAuthUserById(input.actorUserId);
+  if (!actor || actor.role !== "admin") {
+    throw new BlogAccessDeniedError("Administrator access is required.");
+  }
+
+  return decideBlogAuthorApplication({
+    actorParticipantId: actor.memberId,
+    role: actor.role,
+    applicationId: input.applicationId,
+    decision: input.decision,
+    reviewNote: input.reviewNote,
+  });
 }
 
 /** Admin-only grant for capability foundation / tests. */

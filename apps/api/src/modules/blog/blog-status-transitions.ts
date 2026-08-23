@@ -8,8 +8,12 @@ const ALLOWED: ReadonlyMap<BlogPostStatus, ReadonlySet<BlogPostStatus>> = new Ma
   BlogPostStatus,
   ReadonlySet<BlogPostStatus>
 >([
-  ["draft", new Set<BlogPostStatus>(["submitted_for_review", "published"])],
-  ["submitted_for_review", new Set<BlogPostStatus>(["draft", "published"])],
+  ["draft", new Set<BlogPostStatus>(["submitted_for_review", "published", "scheduled"])],
+  [
+    "submitted_for_review",
+    new Set<BlogPostStatus>(["draft", "published", "scheduled"]),
+  ],
+  ["scheduled", new Set<BlogPostStatus>(["draft", "published", "archived"])],
   ["published", new Set<BlogPostStatus>(["archived"])],
   ["archived", new Set<BlogPostStatus>(["published"])],
 ]);

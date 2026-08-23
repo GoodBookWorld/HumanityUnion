@@ -17,6 +17,8 @@ import {
   parseBlogPageParam,
   resolveCategoryIdFromSlug,
 } from "../blog-url";
+import { BlogAuthorsSidebar } from "./BlogAuthorsSidebar";
+import { BlogCategoriesSidebar } from "./BlogCategoriesSidebar";
 import { BlogPagination } from "./BlogPagination";
 import { BlogPostCard } from "./BlogPostCard";
 
@@ -122,10 +124,6 @@ export function BlogIndexPageContent() {
     router.push(buildBlogIndexHref({ q: draftQuery, categorySlug, page: 1 }));
   }
 
-  function onCategoryChange(nextSlug: string) {
-    router.push(buildBlogIndexHref({ q, categorySlug: nextSlug, page: 1 }));
-  }
-
   return (
     <main className="blog-page hu-page-container">
       <header className="blog-page__header">
@@ -135,84 +133,89 @@ export function BlogIndexPageContent() {
         </p>
       </header>
 
-      <form className="blog-filters" onSubmit={onSearchSubmit} role="search">
-        <div className="blog-filters__search">
-          <label className="hu-label" htmlFor="blog-search">
-            Search
-          </label>
-          <div className="blog-filters__search-row">
-            <input
-              id="blog-search"
-              name="q"
-              type="search"
-              className="hu-form-control"
-              value={draftQuery}
-              onChange={(event) => setDraftQuery(event.target.value)}
-              placeholder="Search publications"
-              autoComplete="off"
-            />
-            <button type="submit" className="hu-button hu-button--primary">
+      <div className="blog-layout">
+        <form className="blog-filters blog-layout__search" onSubmit={onSearchSubmit} role="search">
+          <div className="blog-filters__search">
+            <label className="hu-label" htmlFor="blog-search">
               Search
-            </button>
+            </label>
+            <div className="blog-filters__search-row">
+              <input
+                id="blog-search"
+                name="q"
+                type="search"
+                className="hu-form-control"
+                value={draftQuery}
+                onChange={(event) => setDraftQuery(event.target.value)}
+                placeholder="Search publications"
+                autoComplete="off"
+              />
+              <button type="submit" className="hu-button hu-button--primary">
+                Search
+              </button>
+            </div>
           </div>
-        </div>
+        </form>
 
-        <div className="blog-filters__category">
-          <label className="hu-label" htmlFor="blog-category">
-            Category
-          </label>
-          <select
-            id="blog-category"
-            className="hu-form-control"
-            value={categorySlug || "all"}
-            onChange={(event) => onCategoryChange(event.target.value)}
-          >
-            <option value="all">All Categories</option>
-            {categories.map((category) => (
-              <option key={category.categoryId} value={category.slug}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </form>
-
-      {error ? (
-        <p className="blog-page__status" role="alert">
-          {error}
-        </p>
-      ) : null}
-
-      {loading ? <p className="blog-page__status">Loading publications…</p> : null}
-
-      {!loading && !error && items.length === 0 ? (
-        <div className="blog-empty">
-          <p className="hu-body">No publications found.</p>
-          {filtersActive ? (
-            <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
-              Clear filters
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
-
-      {!loading && !error && items.length > 0 ? (
-        <>
-          <div className="blog-post-grid">
-            {items.map((post) => (
-              <BlogPostCard key={post.postId} post={post} />
-            ))}
-          </div>
-          <BlogPagination
-            page={page}
-            totalPages={totalPages}
-            totalItems={total}
-            pageSize={BLOG_PAGE_SIZE}
+        <aside className="blog-layout__categories" aria-label="Blog categories">
+          <BlogCategoriesSidebar
+            categories={categories}
+            activeCategorySlug={categorySlug}
             q={q}
-            categorySlug={categorySlug}
           />
-        </>
-      ) : null}
+        </aside>
+
+        <section className="blog-layout__center" aria-labelledby="blog-latest-heading">
+          <h2 id="blog-latest-heading" className="hu-heading-2">
+            Latest Publications
+          </h2>
+
+          {error ? (
+            <p className="blog-page__status" role="alert">
+              {error}
+            </p>
+          ) : null}
+
+          {loading ? <p className="blog-page__status">Loading publications…</p> : null}
+
+          {!loading && !error && items.length === 0 ? (
+            <div className="blog-empty">
+              <p className="hu-body">No publications found.</p>
+              {filtersActive ? (
+                <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
+                  Clear filters
+                </Link>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!loading && !error && items.length > 0 ? (
+            <>
+              <div className="blog-post-feed">
+                {items.map((post) => (
+                  <BlogPostCard key={post.postId} post={post} />
+                ))}
+              </div>
+              <BlogPagination
+                page={page}
+                totalPages={totalPages}
+                totalItems={total}
+                pageSize={BLOG_PAGE_SIZE}
+                q={q}
+                categorySlug={categorySlug}
+              />
+            </>
+          ) : null}
+        </section>
+
+        <aside className="blog-layout__authors" aria-label="Blog authors">
+          <BlogAuthorsSidebar />
+        </aside>
+
+        <aside className="blog-layout__right" aria-label="Blog sidebar">
+          {/* Pack 13D — no accepted right-rail widget on the index; container reserved. */}
+        </aside>
+      </div>
     </main>
   );
 }

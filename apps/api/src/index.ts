@@ -24,6 +24,11 @@ async function start(): Promise<void> {
   );
   startPublicChoiceResultsRetentionScheduler();
 
+  const { startBlogScheduledPublishScheduler } = await import(
+    "./modules/blog/blog-scheduled-publish.scheduler.js"
+  );
+  startBlogScheduledPublishScheduler();
+
   const { default: app } = await import("./app.js");
 
   app.listen(environment.apiPort, () => {

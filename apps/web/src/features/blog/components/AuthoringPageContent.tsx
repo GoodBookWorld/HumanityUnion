@@ -18,6 +18,7 @@ import {
   resubmitBlogAuthorApplication,
   submitBlogAuthorApplication,
 } from "../authoring-api";
+import { MyPublicationsTable } from "./MyPublicationsTable";
 
 import "../authoring.css";
 
@@ -36,12 +37,15 @@ function StatusMessage({ state }: { state: BlogAuthoringAccessState }) {
       return (
         <StatusBanner
           title="Application received"
-          message="Your application has been received."
+          message="Your Author application has been received. We will review it and respond as soon as possible."
         />
       );
     case "application_under_review":
       return (
-        <StatusBanner title="Under review" message="Your application is being reviewed." />
+        <StatusBanner
+          title="Application pending"
+          message="Your Author application is pending review. We will respond as soon as possible."
+        />
       );
     case "application_changes_requested":
       return (
@@ -50,19 +54,26 @@ function StatusMessage({ state }: { state: BlogAuthoringAccessState }) {
           message={
             state.application?.reviewNote
               ? state.application.reviewNote
-              : "An Editor requested changes before your application can continue."
+              : "Changes were requested before your application can continue."
           }
         />
       );
     case "application_declined":
       return (
         <StatusBanner
-          title="Application declined"
+          title="Author application update"
           message={
             state.application?.reviewNote
               ? state.application.reviewNote
-              : "This application was declined. You may contact support if you need clarification."
+              : "Your Author application was not accepted at this time. You may submit a new application."
           }
+        />
+      );
+    case "author_blocked":
+      return (
+        <StatusBanner
+          title="Author access blocked"
+          message="Your Author access has been blocked. Please contact the administrator."
         />
       );
     case "author":
@@ -97,6 +108,7 @@ export function AuthoringPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState<"idle" | "submitting" | "success">("idle");
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -175,6 +187,7 @@ export function AuthoringPageContent() {
     }
 
     setSubmitting(true);
+    setSubmitPhase("submitting");
     setFormError(null);
 
     const payload = {
@@ -193,7 +206,9 @@ export function AuthoringPageContent() {
       }
       const refreshed = await fetchBlogAuthoringAccessState();
       setState(refreshed);
+      setSubmitPhase("success");
     } catch (submitError: unknown) {
+      setSubmitPhase("idle");
       setFormError(formatAuthFormError(submitError));
     } finally {
       setSubmitting(false);
@@ -222,15 +237,34 @@ export function AuthoringPageContent() {
   }
 
   const showForm = state.canApply || state.canResubmit;
+  const isBlockedAuthor = state.presentation === "author_blocked";
   const isPublishingReady =
+    !isBlockedAuthor &&
+    (state.presentation === "author" ||
+      state.presentation === "trusted_author" ||
+      state.presentation === "editor" ||
+      state.presentation === "administrator");
+  const showMyPublications =
     state.presentation === "author" ||
     state.presentation === "trusted_author" ||
     state.presentation === "editor" ||
-    state.presentation === "administrator";
+    state.presentation === "administrator" ||
+    state.presentation === "author_blocked";
+  const canDirectPublish =
+    state.capabilities.includes("trusted_author") ||
+    state.capabilities.includes("editor") ||
+    state.capabilities.includes("administrator");
 
   return (
     <div className="authoring-page">
       <StatusMessage state={state} />
+
+      {isBlockedAuthor ? (
+        <p className="hu-body">
+          Your Participant Workspace remains available. Author publishing tools are suspended until
+          an Administrator restores access.
+        </p>
+      ) : null}
 
       {isPublishingReady ? (
         <Card className="authoring-page__card">
@@ -259,7 +293,7 @@ export function AuthoringPageContent() {
         </Card>
       ) : null}
 
-      {!isPublishingReady ? (
+      {!isPublishingReady && !isBlockedAuthor ? (
         <Card className="authoring-page__card">
           <h2 className="hu-heading-2">Become a Blog Author</h2>
           <p className="hu-body">
@@ -286,7 +320,7 @@ export function AuthoringPageContent() {
         </Card>
       ) : null}
 
-      {!isPublishingReady ? (
+      {!isPublishingReady && !isBlockedAuthor ? (
         <section className="authoring-page__categories" aria-labelledby="authoring-categories-title">
           <h2 id="authoring-categories-title" className="hu-heading-3">
             Publication categories
@@ -415,15 +449,30 @@ export function AuthoringPageContent() {
               </p>
             ) : null}
 
-            <Button type="submit" variant="primary" disabled={submitting}>
-              {submitting
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={submitting || submitPhase === "success"}
+              aria-busy={submitting || submitPhase === "success"}
+              ariaLive="polite"
+            >
+              {submitPhase === "submitting"
                 ? "Submitting…"
-                : state.canResubmit
-                  ? "Resubmit application"
-                  : "Submit application"}
+                : submitPhase === "success"
+                  ? "Submitted"
+                  : state.canResubmit
+                    ? "Resubmit application"
+                    : "Submit application"}
             </Button>
           </form>
         </Card>
+      ) : null}
+
+      {showMyPublications ? (
+        <MyPublicationsTable
+          mutationsDisabled={isBlockedAuthor}
+          canDirectPublish={canDirectPublish}
+        />
       ) : null}
     </div>
   );

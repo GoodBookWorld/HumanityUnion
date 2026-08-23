@@ -1,5 +1,6 @@
 import type {
   BlogCategory,
+  PublicBlogAuthorDirectoryResponse,
   PublicBlogPostDetail,
   PublicBlogPostListResponse,
 } from "@hu/types";
@@ -20,6 +21,22 @@ export interface FetchPublicBlogPostsOptions {
 export async function fetchPublicBlogCategories(): Promise<readonly BlogCategory[]> {
   const data = await apiRequest<{ categories: BlogCategory[] }>("/api/v1/public/blog/categories");
   return data.categories;
+}
+
+/** Pack 13D — Authors rail (authors with at least one visible public publication). */
+export async function fetchPublicBlogAuthors(input?: {
+  limit?: number;
+  signal?: AbortSignal;
+}): Promise<PublicBlogAuthorDirectoryResponse> {
+  const params = new URLSearchParams();
+  if (input?.limit !== undefined) {
+    params.set("limit", String(input.limit));
+  }
+  const query = params.toString();
+  return apiRequest<PublicBlogAuthorDirectoryResponse>(
+    `/api/v1/public/blog/authors${query ? `?${query}` : ""}`,
+    input?.signal ? { signal: input.signal } : undefined,
+  );
 }
 
 export async function fetchPublicBlogPosts(
@@ -65,9 +82,11 @@ export function formatBlogPublishedDate(isoDate: string): string {
 
   // Deterministic locale avoids SSR/client hydration mismatches until
   // Language Architecture supplies a Participant-facing date locale.
+  // UTC keeps noon-UTC publication dates on the intended calendar day.
   return new Intl.DateTimeFormat("en", {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   }).format(new Date(parsed));
 }

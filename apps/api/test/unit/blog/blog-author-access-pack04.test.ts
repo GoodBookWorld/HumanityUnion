@@ -1,19 +1,17 @@
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, it } from "node:test";
 
-import type { AuthUserRecord } from "../../../src/modules/auth/auth-user.repository.js";
 import {
   connectMongoClient,
   disconnectMongoClient,
 } from "../../../src/infrastructure/mongodb/mongo-connection.js";
 import { ensureMongoIndexes } from "../../../src/infrastructure/mongodb/mongo-indexes.js";
-import { confirmRegistrationEmailCode } from "../../../src/modules/auth/auth-email-confirmation.service.js";
-import { registerAuthUser } from "../../../src/modules/auth/auth.service.js";
 import {
   deleteAuthUsersByEmailPrefix,
-  findAuthUserByEmail,
+  insertAuthUser,
+  markAuthUserEmailVerified,
 } from "../../../src/modules/auth/auth-user.repository.js";
-import { getLastIssuedConfirmationCodeForTests } from "../../../src/modules/email/email-confirmation-code.repository.js";
+import { createMemberProfileForUser } from "../../../src/modules/member-profile/member-profile.service.js";
 import {
   BlogAccessDeniedError,
   BlogConflictError,
@@ -35,7 +33,6 @@ import {
   setSafetyProviderForTests,
   type SafetyProvider,
 } from "../../../src/modules/lifecycle-safety/safety-provider.js";
-import { findMemberProfileByUserId } from "../../../src/modules/member-profile/member-profile.repository.js";
 import { deleteMemberProfilesByUserIdPrefix } from "../../../src/modules/member-profile/member-profile.repository.js";
 import {
   clearMemoryNotificationRecipientsForTests,
@@ -58,26 +55,29 @@ interface TestParticipant {
   displayName: string;
 }
 
+/** Auth + Profile only — member aggregate is unavailable under NODE_TEST_ENV. */
 async function registerParticipant(label: string): Promise<TestParticipant> {
-  const email = `${TEST_PREFIX}-${label}@blog-auth.test`;
-  await registerAuthUser({ email, password: "Password123!", displayName: `Blog Auth ${label}` });
-
-  const user = (await findAuthUserByEmail(email)) as AuthUserRecord;
-  assert.ok(user);
+  const user = await insertAuthUser(
+    {
+      email: `${TEST_PREFIX}-${label}@blog-auth.test`,
+      password: "Password123!",
+      displayName: `Blog Auth ${label}`,
+    },
+    `member-${label}-${TEST_PREFIX}`,
+  );
   createdAuthUserIds.push(user.userId);
   createdParticipantIds.push(user.memberId);
 
-  const code = getLastIssuedConfirmationCodeForTests(user.userId);
-  assert.ok(code);
-  await confirmRegistrationEmailCode({ userId: user.userId, code: code! });
-
-  const profile = await findMemberProfileByUserId(user.userId);
-  assert.ok(profile);
+  await markAuthUserEmailVerified(user.userId);
+  const profile = await createMemberProfileForUser({
+    userId: user.userId,
+    displayName: user.displayName,
+  });
 
   registerMemoryNotificationRecipient({
     memberId: user.memberId,
     userId: user.userId,
-    profileId: profile!.profileId,
+    profileId: profile.profileId,
   });
 
   return {
@@ -410,7 +410,7 @@ describe("Blog Author Access Pack 04", () => {
       afterApprove.notifications.some((n) => n.eventType === "blog_author_application_approved"),
     );
     assert.ok(
-      afterApprove.notifications.some((n) => n.relatedUrl === "/workspace/authoring"),
+      afterApprove.notifications.some((n) => n.relatedUrl === "/workspace/publishing"),
     );
   });
 

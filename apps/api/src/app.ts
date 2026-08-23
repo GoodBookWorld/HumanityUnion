@@ -160,6 +160,7 @@ import { initiativeCollaborationSessionsRouter } from "./modules/initiative-coll
 import { memberProfileRouter, publicMemberProfileRouter } from "./modules/member-profile/index.js";
 import { directMessagingRouter } from "./modules/direct-messaging/index.js";
 import { blogRouter, publicBlogRouter } from "./modules/blog/index.js";
+import { adminPublishingRouter } from "./modules/blog/admin-publishing.routes.js";
 import {
   sharedDocumentsDirectMessagesRouter,
   sharedDocumentsInitiativesRouter,
@@ -239,6 +240,7 @@ app.use("/api/v1/platform", closedBetaRouter);
 app.use("/api/v1/beta-invites", betaInviteRouter);
 app.use("/api/v1/admin/participants", adminParticipantDirectoryRouter);
 app.use("/api/v1/admin/editors", adminEditorGrantsRouter);
+app.use("/api/v1/admin/publishing", adminPublishingRouter);
 app.use("/api/v1/workspace/editor", editorPanelRouter);
 app.use("/api/v1/admin/initiatives", adminInitiativeDirectoryRouter);
 app.use("/api/v1/admin/public-choice", adminPublicChoiceRouter);

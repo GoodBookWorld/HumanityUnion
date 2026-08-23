@@ -6,6 +6,7 @@ import type {
   BlogPost,
   BlogPostLegacyMigration,
   BlogPostReviewMetadata,
+  ModerationBlockAuthority,
 } from "@hu/types";
 
 export interface BlogPostMongoDocument {
@@ -33,6 +34,11 @@ export interface BlogPostMongoDocument {
   archivedAt?: string;
   archivedByParticipantId?: string;
   editorialHistory?: BlogEditorialHistoryEntry[];
+  administrativelyBlocked?: boolean;
+  administrativeBlockAuthority?: ModerationBlockAuthority;
+  administrativelyBlockedAt?: string;
+  administrativelyBlockedByParticipantId?: string;
+  administrativeBlockReason?: string;
   legacy?: BlogPostLegacyMigration;
 }
 
@@ -41,6 +47,11 @@ export interface BlogCapabilityGrantMongoDocument {
   capabilities: string[];
   updatedAt: string;
   grantedByParticipantId?: string;
+  administrativelyBlocked?: boolean;
+  administrativeBlockAuthority?: ModerationBlockAuthority;
+  administrativelyBlockedAt?: string;
+  administrativelyBlockedByParticipantId?: string;
+  administrativeBlockReason?: string;
 }
 
 export interface BlogAuthorApplicationMongoDocument {
@@ -59,6 +70,42 @@ export interface BlogAuthorApplicationMongoDocument {
   reviewNote?: string;
   /** Pack 02 seam field — migrated into motivation when reading legacy docs. */
   note?: string;
+}
+
+function pickModerationBlockFields(source: {
+  administrativelyBlocked?: boolean;
+  administrativeBlockAuthority?: ModerationBlockAuthority;
+  administrativelyBlockedAt?: string;
+  administrativelyBlockedByParticipantId?: string;
+  administrativeBlockReason?: string;
+}): {
+  administrativelyBlocked?: boolean;
+  administrativeBlockAuthority?: ModerationBlockAuthority;
+  administrativelyBlockedAt?: string;
+  administrativelyBlockedByParticipantId?: string;
+  administrativeBlockReason?: string;
+} {
+  if (source.administrativelyBlocked !== true) {
+    return {};
+  }
+  return {
+    administrativelyBlocked: true,
+    ...(source.administrativeBlockAuthority
+      ? { administrativeBlockAuthority: source.administrativeBlockAuthority }
+      : {}),
+    ...(source.administrativelyBlockedAt
+      ? { administrativelyBlockedAt: source.administrativelyBlockedAt }
+      : {}),
+    ...(source.administrativelyBlockedByParticipantId
+      ? {
+          administrativelyBlockedByParticipantId:
+            source.administrativelyBlockedByParticipantId,
+        }
+      : {}),
+    ...(source.administrativeBlockReason
+      ? { administrativeBlockReason: source.administrativeBlockReason }
+      : {}),
+  };
 }
 
 export function toBlogPostMongoDocument(post: BlogPost): BlogPostMongoDocument {
@@ -86,7 +133,10 @@ export function toBlogPostMongoDocument(post: BlogPost): BlogPostMongoDocument {
     publishedByParticipantId: post.publishedByParticipantId,
     archivedAt: post.archivedAt,
     archivedByParticipantId: post.archivedByParticipantId,
-    editorialHistory: post.editorialHistory ? post.editorialHistory.map((entry) => ({ ...entry })) : undefined,
+    editorialHistory: post.editorialHistory
+      ? post.editorialHistory.map((entry) => ({ ...entry }))
+      : undefined,
+    ...pickModerationBlockFields(post),
     legacy: post.legacy ? { ...post.legacy } : undefined,
   };
 }
@@ -122,6 +172,7 @@ export function fromBlogPostMongoDocument(doc: BlogPostMongoDocument): BlogPost 
     archivedAt: doc.archivedAt,
     archivedByParticipantId: doc.archivedByParticipantId,
     editorialHistory: doc.editorialHistory?.map((entry) => ({ ...entry })),
+    ...pickModerationBlockFields(doc),
     legacy: doc.legacy ? { ...doc.legacy } : undefined,
   };
 }
@@ -134,6 +185,7 @@ export function toBlogCapabilityGrantMongoDocument(
     capabilities: [...grant.capabilities],
     updatedAt: grant.updatedAt,
     grantedByParticipantId: grant.grantedByParticipantId,
+    ...pickModerationBlockFields(grant),
   };
 }
 
@@ -145,6 +197,7 @@ export function fromBlogCapabilityGrantMongoDocument(
     capabilities: [...(doc.capabilities ?? [])] as BlogCapabilityGrant["capabilities"],
     updatedAt: doc.updatedAt,
     grantedByParticipantId: doc.grantedByParticipantId,
+    ...pickModerationBlockFields(doc),
   };
 }
 

@@ -30,6 +30,9 @@ export function toBlogAuthorWorkspacePost(post: BlogPost): BlogAuthorWorkspacePo
     submittedAt: post.submittedAt,
     publishedAt: post.publishedAt,
     archivedAt: post.archivedAt,
+    ...(post.administrativelyBlocked === true
+      ? { administrativelyBlocked: true }
+      : {}),
     editorialHistory: post.editorialHistory?.map((entry) => ({ ...entry })),
   };
 }
