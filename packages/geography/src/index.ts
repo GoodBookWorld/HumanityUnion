@@ -43,6 +43,8 @@ export {
 export {
   OTHER_COMMUNITY_CODE,
   OTHER_COMMUNITY_SLUG,
+  GeographyCommunityDeliveryError,
+  clearCommunityOptionCacheForTests,
   fetchCommunitiesByRegion,
   getCommunityLabel,
   normalizeCommunityInput,

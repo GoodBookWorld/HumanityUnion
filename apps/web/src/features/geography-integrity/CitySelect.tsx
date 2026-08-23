@@ -1,7 +1,12 @@
 "use client";
 
 import { GeographySearchSelect } from "../../design-system/components/GeographySearchSelect";
-import { GEOGRAPHY_EMPTY_COPY, isCanonicalOtherRegion } from "./geography-cascade-contract";
+import {
+  CITY_REQUIRE_SEARCH_ABOVE,
+  formatLargeCitySearchHelper,
+  GEOGRAPHY_EMPTY_COPY,
+  isCanonicalOtherRegion,
+} from "./geography-cascade-contract";
 import { useGeographyCommunityOptions } from "./useGeographyCommunityOptions";
 
 export interface CitySelectProps {
@@ -32,18 +37,16 @@ export function CitySelect({
   includeOther = true,
   disabled = false,
   required = false,
-  placeholder = "Search cities…",
+  placeholder = GEOGRAPHY_EMPTY_COPY.citySearchPlaceholder,
   helperText,
   label = "City / Community",
   error,
 }: CitySelectProps) {
-  const { options, loading, hasStructuredData } = useGeographyCommunityOptions(
-    countryCode,
-    regionCode,
-    includeOther,
-  );
+  const { options, loading, hasStructuredData, structuredCount, deliveryFailed } =
+    useGeographyCommunityOptions(countryCode, regionCode, includeOther);
 
   const regionReady = Boolean(countryCode && regionCode && !isCanonicalOtherRegion(regionCode));
+  const isLargeList = structuredCount > CITY_REQUIRE_SEARCH_ABOVE;
 
   const resolvedHelper =
     helperText ??
@@ -53,28 +56,37 @@ export function CitySelect({
         ? GEOGRAPHY_EMPTY_COPY.selectRegionFirst
         : loading
           ? GEOGRAPHY_EMPTY_COPY.loadingCities
-          : !hasStructuredData
-            ? includeOther
-              ? GEOGRAPHY_EMPTY_COPY.noCitiesUseOther
-              : GEOGRAPHY_EMPTY_COPY.noCities
-            : GEOGRAPHY_EMPTY_COPY.cityHelper);
+          : deliveryFailed
+            ? undefined
+            : !hasStructuredData
+              ? includeOther
+                ? GEOGRAPHY_EMPTY_COPY.noCitiesUseOther
+                : GEOGRAPHY_EMPTY_COPY.noCities
+              : isLargeList
+                ? formatLargeCitySearchHelper(structuredCount)
+                : GEOGRAPHY_EMPTY_COPY.cityHelper);
+
+  const resolvedError = error ?? (deliveryFailed ? GEOGRAPHY_EMPTY_COPY.cityDeliveryFailure : undefined);
 
   return (
     <GeographySearchSelect
+      key={`${countryCode}::${regionCode}`}
       id={id}
       label={label}
       value={value}
       options={options}
       onChange={onChange}
-      disabled={disabled || !regionReady || loading}
+      disabled={disabled || !regionReady || deliveryFailed}
       required={required}
       placeholder={placeholder}
       helperText={resolvedHelper}
-      error={error}
+      error={resolvedError}
       loading={loading}
-      // Pack 10B — empty state lives only in helperText (avoid duplicate copy).
+      // Pack 10B/10G — empty / no-match states live in helperText + noMatchMessage.
       emptyMessage={undefined}
-      requireSearchAbove={80}
+      noMatchMessage={GEOGRAPHY_EMPTY_COPY.noCityMatches}
+      requireSearch={isLargeList}
+      requireSearchAbove={CITY_REQUIRE_SEARCH_ABOVE}
     />
   );
 }

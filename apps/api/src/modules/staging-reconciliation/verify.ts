@@ -32,6 +32,8 @@ export interface StagingVerificationSummary {
   authIntegrityIssues: number;
   reconciliationConflicts: number;
   webInitiativeImages: "PASS" | "FAIL" | "SKIP";
+  /** Pack 10F — representative public geography community JSON on the Web origin. */
+  webGeographyAssets: "PASS" | "FAIL" | "SKIP";
   participantAvatars: "PASS" | "FAIL" | "SKIP";
   allies: number;
   activeAllies: number;
@@ -53,6 +55,8 @@ export async function verifyStagingHistoricalState(input: {
   client: MongoClient;
   targetDatabase: string;
   checkMediaHttp?: boolean;
+  /** When set, probes Web origin for geography community JSON (Pack 10F). */
+  checkGeographyHttp?: boolean;
 }): Promise<StagingVerificationSummary> {
   const db = input.client.db(input.targetDatabase);
   const warnings: string[] = [];
@@ -277,6 +281,43 @@ export async function verifyStagingHistoricalState(input: {
     warnings.push("No Initiative Allies on staging yet (run reconcile --execute for Pack 05 ally bundle).");
   }
 
+  // Pack 10F — representative Web geography asset (shared City/Community authority).
+  let webGeographyAssets: "PASS" | "FAIL" | "SKIP" = "SKIP";
+  const webBaseRaw =
+    process.env.VERIFY_STAGING_WEB_URL?.trim() ||
+    process.env.WEB_ORIGIN?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    process.env.CORS_ORIGIN?.trim();
+  const shouldProbeGeography = Boolean(webBaseRaw) && (input.checkGeographyHttp !== false);
+  if (shouldProbeGeography && webBaseRaw) {
+    const geographyUrl = `${webBaseRaw.replace(/\/$/, "")}/data/geography/communities/CA/CA-BC.json`;
+    try {
+      const response = await fetch(geographyUrl, { method: "GET" });
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!response.ok || !contentType.toLowerCase().includes("json")) {
+        webGeographyAssets = "FAIL";
+        failures.push(
+          `webGeographyAssets FAIL: ${geographyUrl} → HTTP ${response.status} (${contentType || "no content-type"})`,
+        );
+      } else {
+        const payload = (await response.json()) as unknown;
+        if (!Array.isArray(payload) || payload.length === 0) {
+          webGeographyAssets = "FAIL";
+          failures.push(`webGeographyAssets FAIL: ${geographyUrl} returned empty/non-array JSON`);
+        } else {
+          webGeographyAssets = "PASS";
+        }
+      }
+    } catch {
+      webGeographyAssets = "FAIL";
+      failures.push(`webGeographyAssets FAIL: could not fetch ${geographyUrl}`);
+    }
+  } else if (input.checkMediaHttp) {
+    warnings.push(
+      "webGeographyAssets SKIP: set WEB_ORIGIN / NEXT_PUBLIC_SITE_URL / VERIFY_STAGING_WEB_URL to probe CA-BC community JSON.",
+    );
+  }
+
   let result: VerifyResult = "PASS";
   if (failures.length > 0) result = "FAIL";
   else if (warnings.length > 0 || loginReady < participants) result = "WARN";
@@ -301,6 +342,7 @@ export async function verifyStagingHistoricalState(input: {
     authIntegrityIssues,
     reconciliationConflicts,
     webInitiativeImages,
+    webGeographyAssets,
     participantAvatars,
     allies,
     activeAllies,
@@ -343,6 +385,7 @@ export function formatStagingVerificationSummary(summary: StagingVerificationSum
     `reconciliationConflicts: ${summary.reconciliationConflicts}`,
     "",
     `webInitiativeImages: ${summary.webInitiativeImages}`,
+    `webGeographyAssets: ${summary.webGeographyAssets}`,
     `participantAvatars: ${summary.participantAvatars}`,
     `initiativeMediaRendering: ${summary.initiativeMediaRendering}`,
     `initiativeCardNavigation: ${summary.initiativeCardNavigation}`,

@@ -50,6 +50,10 @@ describe("Production Hardening Pack 01 — Docker standalone packaging", () => {
     assert.match(dockerfile, /\.next\/standalone/);
     assert.match(dockerfile, /\.next\/static/);
     assert.match(dockerfile, /apps\/web\/public/);
+    // Pack 10F — public must be copied AFTER standalone so geography JSON is not clobbered.
+    const standaloneIdx = dockerfile.indexOf(".next/standalone");
+    const publicIdx = dockerfile.lastIndexOf("apps/web/public");
+    assert.ok(standaloneIdx >= 0 && publicIdx > standaloneIdx);
   });
 });
 

@@ -14,6 +14,13 @@ export interface UseGeographyCommunityOptionsResult {
   loading: boolean;
   /** True when at least one structured city record was returned (before Other). */
   hasStructuredData: boolean;
+  /** Structured community count before optional Other sentinel. */
+  structuredCount: number;
+  /**
+   * Pack 10F — true when the community asset request failed (404 / network / invalid).
+   * Distinct from a successful empty dataset.
+   */
+  deliveryFailed: boolean;
 }
 
 /**
@@ -28,17 +35,22 @@ export function useGeographyCommunityOptions(
   const [options, setOptions] = useState<readonly GeographyCommunityOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasStructuredData, setHasStructuredData] = useState(false);
+  const [structuredCount, setStructuredCount] = useState(0);
+  const [deliveryFailed, setDeliveryFailed] = useState(false);
 
   useEffect(() => {
     if (!countryCode || !regionCode || regionCode === OTHER_REGION_SLUG) {
       setOptions([]);
       setHasStructuredData(false);
+      setStructuredCount(0);
+      setDeliveryFailed(false);
       setLoading(false);
       return;
     }
 
     let cancelled = false;
     setLoading(true);
+    setDeliveryFailed(false);
 
     void fetchCommunitiesByRegion(countryCode, regionCode)
       .then((communities) => {
@@ -46,6 +58,8 @@ export function useGeographyCommunityOptions(
           return;
         }
 
+        setDeliveryFailed(false);
+        setStructuredCount(communities.length);
         setHasStructuredData(communities.length > 0);
         setOptions(
           toGeographyCommunityOptions(countryCode, regionCode, communities, includeOther),
@@ -53,8 +67,10 @@ export function useGeographyCommunityOptions(
       })
       .catch(() => {
         if (!cancelled) {
+          setDeliveryFailed(true);
           setHasStructuredData(false);
-          setOptions(toGeographyCommunityOptions(countryCode, regionCode, [], includeOther));
+          setStructuredCount(0);
+          setOptions([]);
         }
       })
       .finally(() => {
@@ -68,5 +84,5 @@ export function useGeographyCommunityOptions(
     };
   }, [countryCode, regionCode, includeOther]);
 
-  return { options, loading, hasStructuredData };
+  return { options, loading, hasStructuredData, structuredCount, deliveryFailed };
 }

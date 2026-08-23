@@ -23,12 +23,25 @@ export const GEOGRAPHY_EMPTY_COPY = {
   noRegions: "No regions available for this country.",
   noRegionsUseOther:
     "No structured regions for this country. Choose Other / Not listed if needed.",
-  noCities: "No matching cities found for this region.",
+  /** Valid empty dataset (HTTP 200, JSON []). */
+  noCities: "No cities or communities are listed for this region.",
   noCitiesUseOther:
     "No structured cities for this region. Choose Other / Not listed if needed.",
-  loadingCities: "Loading cities for the selected region…",
+  /** User typed a query with zero matches (dataset was non-empty). */
+  noCityMatches: "No matching cities or communities found.",
+  /** Pack 10F — distinct from empty dataset (valid JSON with 0 communities). */
+  cityDeliveryFailure: "City data could not be loaded.",
+  loadingCities: "Loading cities and communities…",
   cityHelper: "City, municipality, or district within the selected region.",
+  citySearchPlaceholder: "Search for a city or community",
 } as const;
+
+/** Pack 10G — lists larger than this require typing before options appear. */
+export const CITY_REQUIRE_SEARCH_ABOVE = 80;
+
+export function formatLargeCitySearchHelper(count: number): string {
+  return `${count} cities and communities available. Start typing to search.`;
+}
 
 export interface GeographyCascadeValues {
   countryCode: string;

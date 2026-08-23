@@ -5,6 +5,9 @@
  *   pnpm verify:staging
  *   pnpm verify:staging -- --check-media-http
  *
+ * Pack 10F — when WEB_ORIGIN / NEXT_PUBLIC_SITE_URL / VERIFY_STAGING_WEB_URL is set,
+ * also probes /data/geography/communities/CA/CA-BC.json (webGeographyAssets).
+ *
  * Never prints secrets, emails, or password hashes.
  *
  * Note: the older VPS runbook checker is available as:

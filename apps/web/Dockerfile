@@ -41,9 +41,11 @@ ENV PORT=3000
 
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs --ingroup nodejs
 
-# Next standalone output + static assets + public (required for Next 16).
-COPY --from=build /app/apps/web/public ./apps/web/public
+# Next standalone output first, then overlay public + static (required for Next 16).
+# Standalone does not embed apps/web/public; geography JSON must be copied explicitly.
+# Overlay order matters: copy public AFTER standalone so it cannot be clobbered.
 COPY --from=build --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=build /app/apps/web/public ./apps/web/public
 COPY --from=build --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
 USER nextjs

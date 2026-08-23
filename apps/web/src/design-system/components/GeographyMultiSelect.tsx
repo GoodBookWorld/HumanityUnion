@@ -20,6 +20,13 @@ interface GeographyMultiSelectProps {
   helperText?: string;
   maxSelections?: number;
   limitReachedMessage?: string;
+  /**
+   * Pack 10G — for large city lists, hide options until the user types.
+   */
+  requireSearchAbove?: number;
+  requireSearch?: boolean;
+  noMatchMessage?: string;
+  searchInviteMessage?: string;
 }
 
 export function GeographyMultiSelect({
@@ -33,6 +40,10 @@ export function GeographyMultiSelect({
   helperText,
   maxSelections,
   limitReachedMessage,
+  requireSearchAbove,
+  requireSearch = false,
+  noMatchMessage = "No matching cities or communities found.",
+  searchInviteMessage = "Type in the search field to find a city or community.",
 }: GeographyMultiSelectProps) {
   const generatedId = useId();
   const fieldId = id ?? generatedId;
@@ -51,23 +62,36 @@ export function GeographyMultiSelect({
     [options, values],
   );
 
+  const remainingOptions = useMemo(
+    () => options.filter((option) => !values.includes(option.slug)),
+    [options, values],
+  );
+
+  const isLargeList =
+    requireSearch ||
+    (typeof requireSearchAbove === "number" && remainingOptions.length > requireSearchAbove);
+
+  const needle = query.trim().toLowerCase();
+  const hasQuery = needle.length > 0;
+
   const availableOptions = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-
-    return options.filter((option) => {
-      if (values.includes(option.slug)) {
-        return false;
+    if (!hasQuery) {
+      if (isLargeList) {
+        return [];
       }
 
-      if (!needle) {
-        return true;
-      }
+      return remainingOptions;
+    }
 
-      return (
-        option.label.toLowerCase().includes(needle) || option.slug.toLowerCase().includes(needle)
-      );
-    });
-  }, [options, query, values]);
+    return remainingOptions.filter(
+      (option) =>
+        option.label.toLowerCase().includes(needle) || option.slug.toLowerCase().includes(needle),
+    );
+  }, [hasQuery, isLargeList, needle, remainingOptions]);
+
+  const awaitingSearch = isLargeList && !hasQuery && !disabled && options.length > 0;
+  const noMatches =
+    !disabled && hasQuery && remainingOptions.length > 0 && availableOptions.length === 0;
 
   const limitReached = typeof maxSelections === "number" && values.length >= maxSelections;
 
@@ -99,14 +123,14 @@ export function GeographyMultiSelect({
   }
 
   function removeValue(slug: string) {
-    onChange(values.filter((value) => value !== slug));
+    onChange(values.filter((entry) => entry !== slug));
   }
 
   function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setOpen(true);
-      setActiveIndex((index) => Math.min(index + 1, availableOptions.length - 1));
+      setActiveIndex((index) => Math.min(index + 1, Math.max(availableOptions.length - 1, 0)));
       return;
     }
 
@@ -128,12 +152,28 @@ export function GeographyMultiSelect({
     }
   }
 
+  const showDropdown =
+    open &&
+    !limitReached &&
+    (availableOptions.length > 0 || awaitingSearch || noMatches);
+
   return (
-    <div ref={containerRef} className="geography-multi-select geography-multi-select--combobox">
+    <div
+      ref={containerRef}
+      className={
+        awaitingSearch
+          ? "geography-multi-select geography-multi-select--combobox geography-multi-select--awaiting-search"
+          : "geography-multi-select geography-multi-select--combobox"
+      }
+    >
       <label className="geography-search-select__label" htmlFor={fieldId}>
         {label}
       </label>
-      {helperText ? <span className="geography-search-select__helper">{helperText}</span> : null}
+      {helperText ? (
+        <span className="geography-search-select__helper" id={`${fieldId}-helper`}>
+          {helperText}
+        </span>
+      ) : null}
 
       <div className="geography-multi-select__chips" aria-label={`Selected ${label}`}>
         {selectedOptions.length > 0 ? (
@@ -165,6 +205,7 @@ export function GeographyMultiSelect({
           aria-expanded={open}
           aria-controls={listboxId}
           aria-autocomplete="list"
+          aria-describedby={helperText ? `${fieldId}-helper` : undefined}
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -178,13 +219,23 @@ export function GeographyMultiSelect({
           autoComplete="off"
         />
 
-        {open && !limitReached && availableOptions.length > 0 ? (
+        {showDropdown ? (
           <ul
             id={listboxId}
             className="geography-multi-select__dropdown"
             role="listbox"
             aria-label={`${label} options`}
           >
+            {awaitingSearch ? (
+              <li className="geography-multi-select__invite" role="presentation">
+                {searchInviteMessage}
+              </li>
+            ) : null}
+            {noMatches ? (
+              <li className="geography-multi-select__invite" role="status">
+                {noMatchMessage}
+              </li>
+            ) : null}
             {availableOptions.map((option, index) => (
               <li key={option.slug}>
                 <button

@@ -23,6 +23,11 @@ import {
 } from "../../../design-system/components/GeographySearchSelect";
 import { GeographyMultiSelect } from "../../../design-system/components/GeographyMultiSelect";
 import { HuFeedbackMessage } from "../../../design-system/components/HuFeedbackMessage";
+import {
+  CITY_REQUIRE_SEARCH_ABOVE,
+  formatLargeCitySearchHelper,
+  GEOGRAPHY_EMPTY_COPY,
+} from "../../geography-integrity/geography-cascade-contract";
 
 interface PreferredGeographyFieldsProps {
   participationPreferences: ParticipationPreferences;
@@ -45,6 +50,8 @@ export function PreferredGeographyFields({
   const [regionCode, setRegionCode] = useState("");
   const [communityOptions, setCommunityOptions] = useState<{ slug: string; label: string }[]>([]);
   const [communitiesLoading, setCommunitiesLoading] = useState(false);
+  const [communitiesDeliveryFailed, setCommunitiesDeliveryFailed] = useState(false);
+  const [communityStructuredCount, setCommunityStructuredCount] = useState(0);
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
 
   const { preferredCountryIds, preferredRegions, preferredCityCommunityIds } =
@@ -76,11 +83,14 @@ export function PreferredGeographyFields({
   useEffect(() => {
     if (preferredRegions.length === 0) {
       setCommunityOptions([]);
+      setCommunitiesDeliveryFailed(false);
+      setCommunityStructuredCount(0);
       return;
     }
 
     let cancelled = false;
     setCommunitiesLoading(true);
+    setCommunitiesDeliveryFailed(false);
 
     void Promise.all(
       preferredRegions.map(async (regionId) => {
@@ -127,7 +137,9 @@ export function PreferredGeographyFields({
           return;
         }
 
+        setCommunitiesDeliveryFailed(false);
         const flattened = groups.flat();
+        setCommunityStructuredCount(flattened.length);
         const nameCounts = new Map<string, number>();
 
         for (const option of flattened) {
@@ -190,7 +202,9 @@ export function PreferredGeographyFields({
       })
       .catch(() => {
         if (!cancelled) {
+          setCommunitiesDeliveryFailed(true);
           setCommunityOptions([]);
+          setCommunityStructuredCount(0);
         }
       })
       .finally(() => {
@@ -259,13 +273,18 @@ export function PreferredGeographyFields({
   }
 
   const citiesDisabled = preferredRegions.length === 0;
+  const isLargeCityList = communityStructuredCount > CITY_REQUIRE_SEARCH_ABOVE;
   const citiesHelperText = citiesDisabled
     ? "Select at least one preferred region to choose Cities / Communities."
     : communitiesLoading
-      ? "Loading cities and communities for your selected regions…"
-      : communityOptions.length === 0
-        ? "No Cities / Communities are available for this region."
-        : "Select cities or communities within your preferred regions to receive more locally relevant initiative recommendations and notifications.";
+      ? GEOGRAPHY_EMPTY_COPY.loadingCities
+      : communitiesDeliveryFailed
+        ? GEOGRAPHY_EMPTY_COPY.cityDeliveryFailure
+        : communityStructuredCount === 0
+          ? GEOGRAPHY_EMPTY_COPY.noCities
+          : isLargeCityList
+            ? formatLargeCitySearchHelper(communityStructuredCount)
+            : "Select cities or communities within your preferred regions to receive more locally relevant initiative recommendations and notifications.";
 
   return (
     <>
@@ -333,8 +352,17 @@ export function PreferredGeographyFields({
           values={preferredCityCommunityIds}
           options={communityOptions}
           onChange={handlePreferredCitiesChange}
-          disabled={citiesDisabled || communitiesLoading || communityOptions.length === 0}
-          placeholder="Search cities or communities…"
+          disabled={
+            citiesDisabled ||
+            communitiesLoading ||
+            communitiesDeliveryFailed ||
+            (communityStructuredCount === 0 && !communitiesLoading)
+          }
+          placeholder={GEOGRAPHY_EMPTY_COPY.citySearchPlaceholder}
+          requireSearch={isLargeCityList}
+          requireSearchAbove={CITY_REQUIRE_SEARCH_ABOVE}
+          noMatchMessage={GEOGRAPHY_EMPTY_COPY.noCityMatches}
+          searchInviteMessage="Type in the search field to find a city or community."
         />
       </div>
 

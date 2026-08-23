@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build --webpack",
+    "build": "next build --webpack && node ./scripts/copy-standalone-public-assets.mjs",
     "start": "next start -p 3000",
+    "start:standalone": "cd .next/standalone && HOSTNAME=0.0.0.0 PORT=${PORT:-3000} node apps/web/server.js",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test \"src/**/*.test.ts\""
   },

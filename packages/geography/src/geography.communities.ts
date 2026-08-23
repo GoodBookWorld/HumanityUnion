@@ -4,6 +4,17 @@ import { normalizeCountryInput, normalizeRegionInput } from "./geography.helpers
 export const OTHER_COMMUNITY_CODE = "OTHER-NOT-LISTED";
 export const OTHER_COMMUNITY_SLUG = "other-not-listed";
 
+/** Thrown when community JSON cannot be loaded (404 / network / invalid body). */
+export class GeographyCommunityDeliveryError extends Error {
+  readonly status?: number;
+
+  constructor(message = "City data could not be loaded.", status?: number) {
+    super(message);
+    this.name = "GeographyCommunityDeliveryError";
+    this.status = status;
+  }
+}
+
 interface CommunityRecord {
   code: string;
   label: string;
@@ -28,6 +39,11 @@ function toCommunityOption(
   };
 }
 
+/** Test / recovery helper — does not clear in-flight requests. */
+export function clearCommunityOptionCacheForTests(): void {
+  communityCache.clear();
+}
+
 export async function fetchCommunitiesByRegion(
   countryCode: string,
   regionCode: string,
@@ -50,19 +66,42 @@ export async function fetchCommunitiesByRegion(
     `/data/geography/communities/${encodeURIComponent(normalizedCountry)}/${encodeURIComponent(normalizedRegion)}.json`,
   );
 
-  if (response.status === 404) {
-    communityCache.set(cacheKey, []);
-    return [];
+  // Pack 10F — delivery failure must not be treated as an empty dataset.
+  if (response.status === 404 || !response.ok) {
+    throw new GeographyCommunityDeliveryError(
+      "City data could not be loaded.",
+      response.status,
+    );
   }
 
-  if (!response.ok) {
-    throw new Error("Unable to load communities for the selected region.");
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("json")) {
+    throw new GeographyCommunityDeliveryError(
+      "City data could not be loaded.",
+      response.status,
+    );
   }
 
-  const records = (await response.json()) as CommunityRecord[];
-  const communities = records.map((record) =>
-    toCommunityOption(normalizedCountry, normalizedRegion, record),
-  );
+  let records: unknown;
+  try {
+    records = await response.json();
+  } catch {
+    throw new GeographyCommunityDeliveryError("City data could not be loaded.", response.status);
+  }
+
+  if (!Array.isArray(records)) {
+    throw new GeographyCommunityDeliveryError("City data could not be loaded.", response.status);
+  }
+
+  const communities = (records as CommunityRecord[])
+    .filter(
+      (record): record is CommunityRecord =>
+        Boolean(record) &&
+        typeof record === "object" &&
+        typeof record.code === "string" &&
+        typeof record.label === "string",
+    )
+    .map((record) => toCommunityOption(normalizedCountry, normalizedRegion, record));
 
   communityCache.set(cacheKey, communities);
   return communities;
