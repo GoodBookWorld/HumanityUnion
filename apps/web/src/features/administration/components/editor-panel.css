@@ -1,0 +1,82 @@
+.editor-panel__header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.85rem 1.25rem;
+  margin: 0;
+}
+
+.editor-panel__header dt {
+  font-size: 0.85rem;
+  color: var(--hu-color-text-muted, #5c5c5c);
+}
+
+.editor-panel__header dd {
+  margin: 0.2rem 0 0;
+}
+
+.editor-panel__status--active {
+  font-weight: 600;
+  color: var(--hu-color-success, #1f6b3a);
+}
+
+.editor-panel__stats {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.65rem;
+}
+
+.editor-panel__stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--hu-color-border, #d8d8d8);
+  border-radius: 0.35rem;
+}
+
+.editor-panel__table-wrap {
+  overflow-x: auto;
+}
+
+.editor-panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.editor-panel__table th,
+.editor-panel__table td {
+  text-align: left;
+  padding: 0.55rem 0.45rem;
+  border-bottom: 1px solid var(--hu-color-border, #d8d8d8);
+  vertical-align: top;
+}
+
+.editor-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.editor-panel__invite {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: end;
+  margin-bottom: 0.85rem;
+}
+
+.editor-panel__invite input {
+  min-width: 14rem;
+  padding: 0.4rem 0.55rem;
+}
+
+@media (max-width: 720px) {
+  .editor-panel__header,
+  .editor-panel__stats {
+    grid-template-columns: 1fr;
+  }
+}

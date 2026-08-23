@@ -37,7 +37,29 @@ function toPublicInvite(invite: BetaInviteRecord): BetaInvitePublic {
 async function assertAdminUser(userId: string): Promise<void> {
   const user = await findAuthUserById(userId);
 
-  if (!user || user.role !== "admin") {
+  if (!user || user.status !== "active") {
+    throw new BetaInviteAdminRequiredError();
+  }
+
+  if (user.role === "admin") {
+    return;
+  }
+
+  // Pack 12B — World Editors with BETA_ACCESS_EDIT may manage their own invites.
+  const { assertEditorCapability } = await import("../editor-grants/editor-grant.authorization.js");
+  const { findEditorGrantByParticipantId } = await import(
+    "../editor-grants/editor-grant.repository.js"
+  );
+  const { betaAccessCompatibleWithEditorScope } = await import(
+    "../editor-grants/editor-content-geography.js"
+  );
+
+  await assertEditorCapability({
+    actorUserId: userId,
+    capability: "BETA_ACCESS_EDIT",
+  });
+  const grant = await findEditorGrantByParticipantId(user.memberId);
+  if (!grant || !betaAccessCompatibleWithEditorScope(grant.geographicScope)) {
     throw new BetaInviteAdminRequiredError();
   }
 }

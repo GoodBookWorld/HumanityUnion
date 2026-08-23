@@ -59,6 +59,45 @@ async function assertAdminUser(userId: string): Promise<{
   return { userId: user.userId, memberId: user.memberId };
 }
 
+async function assertCountryPeopleMutationActor(
+  userId: string,
+  countryCode: string,
+): Promise<{ userId: string; memberId: string }> {
+  if (adminAssertOverrideForTests) {
+    return adminAssertOverrideForTests(userId);
+  }
+  const { assertAdminOrEditorCanMutate } = await import("../editor-grants/editor-grant.dual-auth.js");
+  const {
+    countryAffiliationCompatibleWithEditorScope,
+    countryAffiliationContentGeography,
+  } = await import("../editor-grants/editor-content-geography.js");
+  const { findEditorGrantByParticipantId } = await import(
+    "../editor-grants/editor-grant.repository.js"
+  );
+  const { findAuthUserById: findUser } = await import("../auth/auth-user.repository.js");
+
+  const actor = await assertAdminOrEditorCanMutate({
+    actorUserId: userId,
+    capability: "COUNTRY_PEOPLE_EDIT",
+    content: countryAffiliationContentGeography(countryCode),
+  });
+
+  if (actor.authority === "editor") {
+    const user = await findUser(userId);
+    const grant = user ? await findEditorGrantByParticipantId(user.memberId) : null;
+    if (
+      !grant ||
+      !countryAffiliationCompatibleWithEditorScope(grant.geographicScope, countryCode)
+    ) {
+      throw new AdministrationForbiddenError(
+        "You do not have Editor permission for this content.",
+      );
+    }
+  }
+
+  return { userId: actor.userId, memberId: actor.participantId };
+}
+
 function assertEntryType(value: string): CountryAffiliationEntryType {
   if (!ENTRY_TYPES.has(value as CountryAffiliationEntryType)) {
     throw new CountryAffiliationValidationError(
@@ -230,9 +269,9 @@ export async function getAdminCountryAffiliation(input: {
 export async function createAdminCountryAffiliation(
   input: AdminCountryAffiliationCreateInput,
 ): Promise<CountryAffiliationEntry> {
-  const admin = await assertAdminUser(input.actorUserId);
-
   const countryCode = assertCountryCode(input.countryCode);
+  const admin = await assertCountryPeopleMutationActor(input.actorUserId, countryCode);
+
   const entryType = assertEntryType(input.entryType);
   const name = input.name?.trim();
   if (!name) {
@@ -279,8 +318,6 @@ export async function createAdminCountryAffiliation(
 export async function updateAdminCountryAffiliation(
   input: AdminCountryAffiliationUpdateInput,
 ): Promise<CountryAffiliationEntry> {
-  const admin = await assertAdminUser(input.actorUserId);
-
   const existing = await getCountryAffiliationById(input.entryId);
   if (!existing) {
     throw new CountryAffiliationNotFoundError();
@@ -290,6 +327,9 @@ export async function updateAdminCountryAffiliation(
     input.countryCode !== undefined
       ? assertCountryCode(input.countryCode)
       : existing.countryCode;
+  const admin = await assertCountryPeopleMutationActor(input.actorUserId, existing.countryCode);
+  await assertCountryPeopleMutationActor(input.actorUserId, countryCode);
+
   const entryType =
     input.entryType !== undefined
       ? assertEntryType(input.entryType)
@@ -344,11 +384,11 @@ export async function activateAdminCountryAffiliation(input: {
   actorUserId: string;
   entryId: string;
 }): Promise<CountryAffiliationEntry> {
-  const admin = await assertAdminUser(input.actorUserId);
   const existing = await getCountryAffiliationById(input.entryId);
   if (!existing) {
     throw new CountryAffiliationNotFoundError();
   }
+  const admin = await assertCountryPeopleMutationActor(input.actorUserId, existing.countryCode);
   if (existing.active) {
     return existing;
   }
@@ -373,11 +413,11 @@ export async function deactivateAdminCountryAffiliation(input: {
   actorUserId: string;
   entryId: string;
 }): Promise<CountryAffiliationEntry> {
-  const admin = await assertAdminUser(input.actorUserId);
   const existing = await getCountryAffiliationById(input.entryId);
   if (!existing) {
     throw new CountryAffiliationNotFoundError();
   }
+  const admin = await assertCountryPeopleMutationActor(input.actorUserId, existing.countryCode);
   if (!existing.active) {
     return existing;
   }

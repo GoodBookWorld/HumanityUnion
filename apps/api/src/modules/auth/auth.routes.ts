@@ -797,7 +797,10 @@ authRouter.get("/me", requireJwtAuthenticationMiddleware, async (req, res) => {
       return;
     }
 
-    res.json(createSuccessResponse(user, "Current user loaded."));
+    const { resolveEditorViewerState } = await import("../editor-grants/editor-grant.admin.service.js");
+    const editor = await resolveEditorViewerState(user.memberId);
+
+    res.json(createSuccessResponse({ ...user, editor }, "Current user loaded."));
   } catch (error) {
     handleAuthError(res, error);
   }
@@ -839,11 +842,14 @@ authRouter.get("/session", optionalAuthenticationMiddleware, async (req, res) =>
       return;
     }
 
+    const { resolveEditorViewerState } = await import("../editor-grants/editor-grant.admin.service.js");
+    const editor = await resolveEditorViewerState(user.memberId);
+
     res.json(
       createSuccessResponse(
         {
           authenticated: true,
-          user,
+          user: { ...user, editor },
           authSource: "cookie_or_bearer",
         },
         "Authenticated session.",

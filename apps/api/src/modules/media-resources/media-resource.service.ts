@@ -109,6 +109,44 @@ async function assertAdminUser(userId: string): Promise<{
   return { userId: user.userId, memberId: user.memberId };
 }
 
+async function assertMediaMutationActor(
+  userId: string,
+  content: { scopeType: MediaResourceScopeType; countryCode?: string | null },
+): Promise<{ userId: string; memberId: string }> {
+  if (adminAssertOverrideForTests) {
+    return adminAssertOverrideForTests(userId);
+  }
+  const { assertAdminOrEditorCanMutate } = await import("../editor-grants/editor-grant.dual-auth.js");
+  const { mediaResourceContentGeography, mediaResourceCompatibleWithEditorScope } = await import(
+    "../editor-grants/editor-content-geography.js"
+  );
+  const { findEditorGrantByParticipantId } = await import(
+    "../editor-grants/editor-grant.repository.js"
+  );
+  const { findAuthUserById: findUser } = await import("../auth/auth-user.repository.js");
+
+  const actor = await assertAdminOrEditorCanMutate({
+    actorUserId: userId,
+    capability: "MEDIA_RESOURCE_EDIT",
+    content: mediaResourceContentGeography(content),
+  });
+
+  if (actor.authority === "editor") {
+    const user = await findUser(userId);
+    const grant = user ? await findEditorGrantByParticipantId(user.memberId) : null;
+    if (
+      !grant ||
+      !mediaResourceCompatibleWithEditorScope(grant.geographicScope, content)
+    ) {
+      throw new AdministrationForbiddenError(
+        "You do not have Editor permission for this content.",
+      );
+    }
+  }
+
+  return { userId: actor.userId, memberId: actor.participantId };
+}
+
 export function normalizeWebsiteHost(websiteUrl: string): string {
   try {
     return new URL(websiteUrl.trim()).hostname.replace(/^www\./i, "").toLowerCase();
@@ -307,14 +345,16 @@ export async function getAdminMediaResource(input: {
 export async function createAdminMediaResource(
   input: AdminMediaResourceCreateInput,
 ): Promise<MediaResource> {
-  const admin = await assertAdminUser(input.actorUserId);
-  await ensureMediaResourcesSeededOnce();
-
-  const resourceType = assertResourceType(input.resourceType);
   if (input.scopeType !== "WORLD" && input.scopeType !== "COUNTRY") {
     throw new MediaResourceValidationError("scopeType must be WORLD or COUNTRY.");
   }
+  const admin = await assertMediaMutationActor(input.actorUserId, {
+    scopeType: input.scopeType,
+    countryCode: input.countryCode ?? null,
+  });
+  await ensureMediaResourcesSeededOnce();
 
+  const resourceType = assertResourceType(input.resourceType);
   const countryCode = assertScopeInvariant(input.scopeType, input.countryCode ?? null);
   const name = input.name?.trim();
   const logoLabel = input.logoLabel?.trim();
@@ -402,7 +442,6 @@ export async function createAdminMediaResource(
 export async function updateAdminMediaResource(
   input: AdminMediaResourceUpdateInput,
 ): Promise<MediaResource> {
-  const admin = await assertAdminUser(input.actorUserId);
   await ensureMediaResourcesSeededOnce();
 
   const existing = await getMediaResourceById(input.id);
@@ -419,6 +458,10 @@ export async function updateAdminMediaResource(
     scopeType,
     input.countryCode !== undefined ? input.countryCode : existing.countryCode,
   );
+
+  // Must authorize both existing and target geography.
+  const admin = await assertMediaMutationActor(input.actorUserId, existing);
+  await assertMediaMutationActor(input.actorUserId, { scopeType, countryCode });
 
   const name = input.name !== undefined ? input.name.trim() : existing.name;
   const logoLabel =
@@ -529,12 +572,12 @@ export async function activateAdminMediaResource(input: {
   actorUserId: string;
   id: string;
 }): Promise<MediaResource> {
-  const admin = await assertAdminUser(input.actorUserId);
   await ensureMediaResourcesSeededOnce();
   const existing = await getMediaResourceById(input.id);
   if (!existing) {
     throw new MediaResourceNotFoundError();
   }
+  const admin = await assertMediaMutationActor(input.actorUserId, existing);
   if (
     existing.resourceType === "NEWS_SOURCE" &&
     !existing.rssUrl?.trim()
@@ -566,12 +609,12 @@ export async function deactivateAdminMediaResource(input: {
   actorUserId: string;
   id: string;
 }): Promise<MediaResource> {
-  const admin = await assertAdminUser(input.actorUserId);
   await ensureMediaResourcesSeededOnce();
   const existing = await getMediaResourceById(input.id);
   if (!existing) {
     throw new MediaResourceNotFoundError();
   }
+  const admin = await assertMediaMutationActor(input.actorUserId, existing);
   if (!existing.active) {
     return existing;
   }

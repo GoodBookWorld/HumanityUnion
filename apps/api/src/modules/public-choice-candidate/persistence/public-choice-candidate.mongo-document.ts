@@ -11,6 +11,7 @@ export interface PublicChoiceCandidateMongoDocument extends Document {
   sortOrder: number;
   submittedByParticipantId?: string;
   administrativelyBlocked?: boolean;
+  administrativeBlockAuthority?: "ADMIN" | "EDITOR";
   administrativelyBlockedAt?: string;
   administrativelyBlockedByParticipantId?: string;
   administrativeBlockReason?: string;
@@ -43,6 +44,9 @@ export function toPublicChoiceCandidateMongoDocument(
   }
   if (candidate.administrativelyBlocked === true) {
     document.administrativelyBlocked = true;
+    if (candidate.administrativeBlockAuthority) {
+      document.administrativeBlockAuthority = candidate.administrativeBlockAuthority;
+    }
     if (candidate.administrativelyBlockedAt) {
       document.administrativelyBlockedAt = candidate.administrativelyBlockedAt;
     }
@@ -72,6 +76,9 @@ export function fromPublicChoiceCandidateMongoDocument(
     ...(document.administrativelyBlocked === true
       ? {
           administrativelyBlocked: true as const,
+          ...(document.administrativeBlockAuthority
+            ? { administrativeBlockAuthority: document.administrativeBlockAuthority }
+            : {}),
           administrativelyBlockedAt: document.administrativelyBlockedAt,
           administrativelyBlockedByParticipantId:
             document.administrativelyBlockedByParticipantId,

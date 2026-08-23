@@ -15,7 +15,7 @@ export type WorkspaceNavGroup = {
 export function buildWorkspaceNavGroups(
   authoringRoute: WorkspaceNavRoute,
   editorialRoute: WorkspaceNavRoute | null,
-  options: { showAdminPanel?: boolean } = {},
+  options: { showAdminPanel?: boolean; showEditorPanel?: boolean } = {},
 ): readonly WorkspaceNavGroup[] {
   const civicRoutes: WorkspaceNavRoute[] = [
     { href: "/civic-activity", label: "My Civic Activity" },
@@ -27,12 +27,19 @@ export function buildWorkspaceNavGroups(
     civicRoutes.push(editorialRoute);
   }
 
+  const workspaceRoutes: WorkspaceNavRoute[] = [
+    { href: "/workspace", label: "Workspace Home" },
+  ];
+  if (options.showEditorPanel) {
+    workspaceRoutes.push({ href: "/workspace/editor", label: "Editor Panel" });
+  }
+
   const groups: WorkspaceNavGroup[] = [
     {
       id: "workspace",
       label: "Workspace",
       collapsible: false,
-      routes: [{ href: "/workspace", label: "Workspace Home" }],
+      routes: workspaceRoutes,
     },
   ];
 

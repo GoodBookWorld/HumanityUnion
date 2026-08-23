@@ -1,5 +1,9 @@
+/**
+ * Pack 12C — Fix08 Admin initiative/election soft-block with ADMIN provenance.
+ * Admin may upgrade an EDITOR block to ADMIN (reblock).
+ */
 import type { AdminInitiativeBlockCommandResult, Initiative } from "@hu/types";
-import { isInitiativeAdministrativelyBlocked } from "@hu/types";
+import { resolveEffectiveModerationBlock } from "@hu/types";
 
 import { findAuthUserById } from "../auth/auth-user.repository.js";
 import { getInitiativeById, updateInitiative } from "../initiatives/initiative.store.js";
@@ -45,7 +49,8 @@ function requireInitiative(initiativeId: string): Initiative {
 }
 
 /**
- * Fix 08C — Admin soft-block for STANDARD Initiatives and PUBLIC_CHOICE elections.
+ * Fix 08C / Pack 12C — Admin soft-block (authority=ADMIN).
+ * If already EDITOR-blocked, upgrades effective authority to ADMIN.
  * Does not change visibility.policy, closedAt, retention, or lifecycle phase.
  */
 export async function blockAdminInitiative(
@@ -53,8 +58,9 @@ export async function blockAdminInitiative(
 ): Promise<AdminInitiativeBlockCommandResult> {
   const admin = await assertAdminActor(input.actorUserId);
   const initiative = requireInitiative(input.initiativeId);
+  const existing = resolveEffectiveModerationBlock(initiative);
 
-  if (isInitiativeAdministrativelyBlocked(initiative)) {
+  if (existing.isBlocked && existing.authority === "ADMIN") {
     throw new AdminInitiativeModerationValidationError("Initiative is already blocked.");
   }
 
@@ -66,6 +72,7 @@ export async function blockAdminInitiative(
   const now = new Date().toISOString();
   const updated = updateInitiative(initiative.initiativeId, {
     administrativelyBlocked: true,
+    administrativeBlockAuthority: "ADMIN",
     administrativelyBlockedAt: now,
     administrativelyBlockedByParticipantId: admin.memberId,
     administrativeBlockReason: reason ?? null,
@@ -81,8 +88,10 @@ export async function blockAdminInitiative(
     targetType: "initiative",
     targetId: initiative.initiativeId,
     reason,
-    beforeSummary: "administrativelyBlocked=false",
-    afterSummary: "administrativelyBlocked=true",
+    beforeSummary: existing.isBlocked
+      ? `administrativelyBlocked=true;authority=${existing.authority}`
+      : "administrativelyBlocked=false",
+    afterSummary: "administrativelyBlocked=true;authority=ADMIN",
   });
 
   return {
@@ -93,15 +102,17 @@ export async function blockAdminInitiative(
 }
 
 /**
- * Fix 08C — Admin-only unblock. Does not reopen CLOSED Public Choice elections.
+ * Fix 08C / Pack 12C — Admin may clear ADMIN or EDITOR soft-blocks.
+ * Does not reopen CLOSED Public Choice elections.
  */
 export async function unblockAdminInitiative(
   input: AdminInitiativeBlockCommandInput,
 ): Promise<AdminInitiativeBlockCommandResult> {
   const admin = await assertAdminActor(input.actorUserId);
   const initiative = requireInitiative(input.initiativeId);
+  const existing = resolveEffectiveModerationBlock(initiative);
 
-  if (!isInitiativeAdministrativelyBlocked(initiative)) {
+  if (!existing.isBlocked) {
     throw new AdminInitiativeModerationValidationError("Initiative is not blocked.");
   }
 
@@ -119,7 +130,7 @@ export async function unblockAdminInitiative(
     targetType: "initiative",
     targetId: initiative.initiativeId,
     reason: input.reason?.trim() || undefined,
-    beforeSummary: "administrativelyBlocked=true",
+    beforeSummary: `administrativelyBlocked=true;authority=${existing.authority}`,
     afterSummary: "administrativelyBlocked=false",
   });
 

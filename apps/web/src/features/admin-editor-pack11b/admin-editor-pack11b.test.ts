@@ -46,17 +46,18 @@ describe("Pack 11B — Admin authorization architecture", () => {
   });
 });
 
-describe("Pack 11B — Editor widget contract", () => {
-  it("Overview mounts Editor widget from shared resolver", () => {
+describe("Pack 11B — Editor widget contract (superseded summary surface in Pack 12A)", () => {
+  it("Overview mounts Editors management summary (not Admin-as-Editor World widget)", () => {
     const overview = readWeb("features/administration/components/AdminOverviewSection.tsx");
-    assert.match(overview, /title="Editor"/);
-    assert.match(overview, /AdminEditorAuthoritySection/);
-    assert.match(overview, /resolveAdminEditorAuthority/);
+    assert.match(overview, /title="Editors"/);
+    assert.match(overview, /AdminEditorsOverviewSummary/);
+    assert.doesNotMatch(overview, /AdminEditorAuthoritySection/);
+    assert.doesNotMatch(overview, /resolveAdminEditorAuthority/);
     assert.match(overview, /getMyMemberProfile/);
     assert.match(overview, /profileDisplayName/);
   });
 
-  it("capabilities come from ADMIN_PANEL_SECTIONS labels for real editing areas only", () => {
+  it("legacy authority helper still describes real editing areas only", () => {
     const authority = resolveAdminEditorAuthority({ role: "admin" });
     assert.ok(authority);
 
@@ -88,13 +89,13 @@ describe("Pack 11B — Editor widget contract", () => {
     assert.equal(expectedLabels.includes("Platform"), false);
   });
 
-  it("does not duplicate Admin navigation into Overview Editor widget", () => {
+  it("does not duplicate Admin navigation into Overview Editors summary", () => {
     const section = readWeb(
-      "features/administration/components/AdminEditorAuthoritySection.tsx",
+      "features/administration/components/AdminEditorsOverviewSummary.tsx",
     );
-    assert.doesNotMatch(section, /ADMIN_PANEL_SECTIONS\.map|href=|Link /);
-    assert.match(section, /Editing access/);
-    assert.match(section, /Editing area/);
+    assert.match(section, /Manage Editors/);
+    assert.match(section, /Active editors/);
+    assert.match(section, /\/admin\/editors/);
   });
 });
 
@@ -165,13 +166,14 @@ describe("Pack 11B — responsive / a11y presentation", () => {
 });
 
 describe("Pack 11B — regression anchors", () => {
-  it("Admin navigation sections remain unchanged", () => {
+  it("Admin navigation includes Editors after Participants (Pack 12A)", () => {
     assert.deepEqual(
       ADMIN_PANEL_SECTIONS.map((section) => section.id),
       [
         "overview",
         "views",
         "participants",
+        "editors",
         "initiatives",
         "public-choice",
         "publishing",

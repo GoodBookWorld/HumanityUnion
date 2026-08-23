@@ -153,9 +153,28 @@ export type {
 } from "./initiative.js";
 export {
   INITIATIVE_ADMIN_BLOCKED_MUTATION_MESSAGE,
+  INITIATIVE_EDITOR_BLOCKED_MUTATION_MESSAGE,
   PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE,
+  PUBLIC_CHOICE_ELECTION_EDITOR_BLOCKED_MUTATION_MESSAGE,
   isInitiativeAdministrativelyBlocked,
 } from "./initiative.js";
+export type {
+  ClearModerationBlock,
+  EffectiveModerationBlock,
+  ModerationBlockAuthority,
+  ModerationBlockRecordFields,
+  ResolvedModerationBlock,
+} from "./moderation-block.js";
+export {
+  MODERATION_ADMIN_BLOCK_CONTACT_MESSAGE,
+  MODERATION_BLOCK_AUTHORITIES,
+  formatModerationBlockLabel,
+  isAdminModerationBlock,
+  isEditorModerationBlock,
+  isModerationBlockAuthority,
+  isModerationBlocked,
+  resolveEffectiveModerationBlock,
+} from "./moderation-block.js";
 export type {
   InitiativeCoverMedia,
   InitiativeCoverMediaExternalProvider,
@@ -1427,3 +1446,24 @@ export type {
   TrafficTopPageRow,
   TrafficTrendPoint,
 } from "./traffic-analytics.js";
+export type {
+  AdminEditorDirectoryItem,
+  AdminEditorDirectoryResponse,
+  AdminEditorSummary,
+  AssignEditorGrantInput,
+  EditorCapabilityId,
+  EditorGeographicScope,
+  EditorGeographicScopeLevel,
+  EditorGeographicScopePresentation,
+  EditorGrantRecord,
+  EditorGrantStatus,
+  EditorViewerProjection,
+  EditorViewerState,
+  NonEditorViewerProjection,
+  UpdateEditorGrantInput,
+} from "./editor-grant.js";
+export {
+  EDITOR_ASSIGNABLE_CAPABILITY_IDS,
+  EDITOR_CAPABILITY_IDS,
+  EDITOR_CAPABILITY_LABELS,
+} from "./editor-grant.js";

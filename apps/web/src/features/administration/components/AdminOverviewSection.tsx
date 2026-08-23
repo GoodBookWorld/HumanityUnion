@@ -26,17 +26,17 @@ import {
   fetchPlatformStatistics,
   formatPlatformStatisticValue,
 } from "../../platform-statistics/platform-statistics-api";
-import { resolveAdminEditorAuthority } from "../admin-editor-authority";
 import {
   ADMIN_OVERVIEW_STATISTIC_CARDS,
   type AdminOverviewStatisticKey,
 } from "../admin-overview-statistics-config";
-import { AdminEditorAuthoritySection } from "./AdminEditorAuthoritySection";
+import { AdminEditorsOverviewSummary } from "./AdminEditorsOverviewSummary";
 import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "../../platform-statistics/platform-statistics.css";
 import "./admin-panel.css";
+import "./admin-editors.css";
 
 interface AdminOverviewSectionProps {
   user: AuthUserPublic;
@@ -171,7 +171,6 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
   }
 
   const allUnavailable = platformStatsError && membershipError && blogError;
-  const editorAuthority = resolveAdminEditorAuthority({ role: user.role });
 
   return (
     <div className="admin-panel">
@@ -212,12 +211,6 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
           </dl>
         </details>
       </ProfileSection>
-
-      {editorAuthority ? (
-        <ProfileSection title="Editor">
-          <AdminEditorAuthoritySection authority={editorAuthority} />
-        </ProfileSection>
-      ) : null}
 
       <ProfileSection title="Platform status">
         <AdminMetricDetailsGrid
@@ -304,6 +297,10 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
             <span className="hu-caption"> — operational Initiative inventory</span>
           </li>
         </ul>
+      </ProfileSection>
+
+      <ProfileSection title="Editors">
+        <AdminEditorsOverviewSummary />
       </ProfileSection>
     </div>
   );

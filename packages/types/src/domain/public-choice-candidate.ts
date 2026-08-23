@@ -3,6 +3,8 @@
  * Not a civic root. Ancestry: Candidate → Initiative (PUBLIC_CHOICE only).
  */
 
+import type { ModerationBlockAuthority } from "./moderation-block.js";
+
 export type PublicChoiceCandidateId = string;
 
 /** Fix 08A — hard cap per PUBLIC_CHOICE election (active candidates). */
@@ -24,14 +26,16 @@ export interface PublicChoiceCandidate {
    */
   readonly submittedByParticipantId?: string;
   /**
-   * Fix 08B — admin moderation soft-block. Missing/false = not blocked (legacy safe).
+   * Fix 08B — soft-block. Missing/false = not blocked (legacy safe).
    * Does not delete the candidate or clear existing votes.
+   * Pack 12C — authority via administrativeBlockAuthority (legacy → ADMIN).
    */
   readonly administrativelyBlocked?: boolean;
+  readonly administrativeBlockAuthority?: ModerationBlockAuthority;
   readonly administrativelyBlockedAt?: string;
-  /** Admin member/participant id — internal only; not projected publicly. */
+  /** Actor participant id — internal only; not projected publicly. */
   readonly administrativelyBlockedByParticipantId?: string;
-  /** Optional admin-facing reason — internal only; not projected publicly. */
+  /** Optional reason — internal only; not projected publicly. */
   readonly administrativeBlockReason?: string;
   readonly createdAt: string;
   readonly updatedAt: string;

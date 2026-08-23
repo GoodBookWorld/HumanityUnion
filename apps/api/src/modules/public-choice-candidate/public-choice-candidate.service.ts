@@ -4,6 +4,7 @@ import {
   isInitiativeAdministrativelyBlocked,
   isPublicChoiceCandidateAdministrativelyBlocked,
   isPublicChoiceCandidateAvailableForNewSelect,
+  resolveEffectiveModerationBlock,
   resolveInitiativeLifecycleProfile,
   toPublicChoiceCandidatePublicProjection,
 } from "@hu/types";
@@ -369,8 +370,8 @@ export interface AdminPublicChoiceCandidateBlockInput {
 }
 
 /**
- * Fix 08B — Admin-only candidate block. Service capability for Fix 08C Admin Panel.
- * Does not delete votes, clear tallies, or reopen/close the parent election.
+ * Fix 08B / Pack 12C — Admin candidate block (authority=ADMIN).
+ * Upgrades an EDITOR block to ADMIN. Does not delete votes or alter election lifecycle.
  */
 export async function blockPublicChoiceCandidateAsAdmin(
   input: AdminPublicChoiceCandidateBlockInput,
@@ -383,18 +384,27 @@ export async function blockPublicChoiceCandidateAsAdmin(
     throw new Error("Candidate not found.");
   }
 
-  if (isPublicChoiceCandidateAdministrativelyBlocked(existing)) {
+  const resolved = resolveEffectiveModerationBlock(existing);
+  if (resolved.isBlocked && resolved.authority === "ADMIN") {
     return existing;
   }
 
   const reason = input.reason?.trim() || undefined;
   const now = new Date().toISOString();
   const updated: PublicChoiceCandidate = {
-    ...existing,
+    candidateId: existing.candidateId,
+    initiativeId: existing.initiativeId,
+    name: existing.name,
+    photoUrl: existing.photoUrl,
+    campaignPageUrl: existing.campaignPageUrl,
+    sortOrder: existing.sortOrder,
+    submittedByParticipantId: existing.submittedByParticipantId,
     administrativelyBlocked: true,
+    administrativeBlockAuthority: "ADMIN",
     administrativelyBlockedAt: now,
     administrativelyBlockedByParticipantId: admin.participantId,
     ...(reason ? { administrativeBlockReason: reason } : {}),
+    createdAt: existing.createdAt,
     updatedAt: now,
   };
 
@@ -469,11 +479,34 @@ export async function updatePublicChoiceCandidateAsAdmin(input: {
   photoUrl?: string | null;
   campaignPageUrl?: string | null;
 }): Promise<PublicChoiceCandidatePublicProjection> {
-  await assertAdminActor(input.actorUserId);
+  const user = await findAuthUserById(input.actorUserId);
+  if (!user || user.status !== "active") {
+    throw new Error("Authentication is required.");
+  }
+
+  if (user.role === "admin") {
+    await assertAdminActor(input.actorUserId);
+  } else {
+    const { assertEditorMayMutatePublicChoiceElection } = await import(
+      "../editor-grants/editor-panel.service.js"
+    );
+    await assertEditorMayMutatePublicChoiceElection({
+      actorUserId: input.actorUserId,
+      initiativeId: input.initiativeId,
+    });
+  }
+
   const initiative = assertPublicChoiceInitiative(input.initiativeId);
   const existing = await getPublicChoiceCandidateById(input.candidateId);
   if (!existing || existing.initiativeId !== input.initiativeId) {
     throw new Error("Candidate not found.");
+  }
+
+  if (
+    user.role !== "admin" &&
+    isPublicChoiceCandidateAdministrativelyBlocked(existing)
+  ) {
+    throw new Error(PUBLIC_CHOICE_CANDIDATE_ADMIN_BLOCKED_MUTATION_MESSAGE);
   }
 
   const name = input.name !== undefined ? input.name.trim() : existing.name;

@@ -13,7 +13,9 @@ import type {
   InitiativeVisibilityPolicy,
 } from "@hu/types";
 import {
+  formatModerationBlockLabel,
   isInitiativeAdministrativelyBlocked,
+  resolveEffectiveModerationBlock,
   resolveInitiativeLifecycleProfile,
 } from "@hu/types";
 
@@ -269,6 +271,11 @@ async function toDirectoryItem(initiative: Initiative): Promise<AdminInitiativeD
     civicArchiveState: civicArchiveStateFor(initiativeId),
     integrityStatus: integrityStatusFor(initiative, steward.missing),
     administrativelyBlocked: isInitiativeAdministrativelyBlocked(initiative),
+    blockAuthority: (() => {
+      const resolved = resolveEffectiveModerationBlock(initiative);
+      return resolved.isBlocked ? resolved.authority : null;
+    })(),
+    blockLabel: formatModerationBlockLabel(initiative),
   };
 }
 
@@ -679,6 +686,11 @@ export async function getAdminInitiativeDetail(
       canUnblock: isInitiativeAdministrativelyBlocked(initiative),
     },
     administrativelyBlocked: isInitiativeAdministrativelyBlocked(initiative),
+    blockAuthority: (() => {
+      const resolved = resolveEffectiveModerationBlock(initiative);
+      return resolved.isBlocked ? resolved.authority : null;
+    })(),
+    blockLabel: formatModerationBlockLabel(initiative),
   };
 }
 

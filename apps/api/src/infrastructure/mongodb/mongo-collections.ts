@@ -113,6 +113,8 @@ export const MONGO_COLLECTIONS = {
   // Pack 11D — long-lived daily aggregates + opaque visitor first-seen registry.
   trafficDailyAggregates: "traffic_daily_aggregates",
   trafficVisitorRegistry: "traffic_visitor_registry",
+  // Pack 12A — delegated Editor grants (one record per Participant).
+  editorGrants: "editor_grants",
 } as const;
 
 export type MongoCollectionName = (typeof MONGO_COLLECTIONS)[keyof typeof MONGO_COLLECTIONS];

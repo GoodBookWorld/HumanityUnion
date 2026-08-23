@@ -1120,6 +1120,19 @@ const MODULE_INDEXES: ReadonlyArray<{
       { key: { firstSeenAt: 1 }, name: "traffic_visitor_registry_first_seen" },
     ],
   },
+  {
+    // Pack 12A — one Editor grant per Participant (activate/deactivate in place).
+    collectionName: MONGO_COLLECTIONS.editorGrants,
+    indexes: [
+      { key: { editorGrantId: 1 }, unique: true, name: "editor_grants_grant_id_unique" },
+      { key: { participantId: 1 }, unique: true, name: "editor_grants_participant_unique" },
+      { key: { status: 1, updatedAt: -1 }, name: "editor_grants_status_updated" },
+      {
+        key: { "geographicScope.level": 1, "geographicScope.countryCode": 1 },
+        name: "editor_grants_scope_country",
+      },
+    ],
+  },
 ];
 
 /**

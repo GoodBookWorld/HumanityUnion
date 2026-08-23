@@ -400,18 +400,36 @@ export function AdminInitiativesSection({ user: _user }: AdminInitiativesSection
                                 Public page
                               </Link>
                             ) : null}
+                            {row.blockLabel ? (
+                              <span className="hu-caption">{row.blockLabel}</span>
+                            ) : null}
                             {row.administrativelyBlocked ? (
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={() => {
-                                  setActionError(null);
-                                  setActionMessage(null);
-                                  setPending({ kind: "unblock", row });
-                                }}
-                              >
-                                Unblock
-                              </Button>
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  onClick={() => {
+                                    setActionError(null);
+                                    setActionMessage(null);
+                                    setPending({ kind: "unblock", row });
+                                  }}
+                                >
+                                  Unblock
+                                </Button>
+                                {row.blockAuthority === "EDITOR" ? (
+                                  <Button
+                                    type="button"
+                                    variant="danger"
+                                    onClick={() => {
+                                      setActionError(null);
+                                      setActionMessage(null);
+                                      setPending({ kind: "block", row });
+                                    }}
+                                  >
+                                    Block as Administrator
+                                  </Button>
+                                ) : null}
+                              </>
                             ) : (
                               <Button
                                 type="button"

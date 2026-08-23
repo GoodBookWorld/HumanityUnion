@@ -5,6 +5,7 @@ import type { MemberId } from "./member.js";
 import type { InitiativeNewsSourceReference } from "./public-news-article.js";
 import type { InitiativeCoverMedia } from "./initiative-cover-media.js";
 import type { PublicChoiceBallotMode } from "./public-choice-ballot-mode.js";
+import type { ModerationBlockAuthority } from "./moderation-block.js";
 
 export type InitiativeId = string;
 
@@ -133,15 +134,22 @@ export interface Initiative {
   lifecycleProfile?: InitiativeLifecycleProfile;
   visibility: InitiativeVisibility;
   /**
-   * Fix 08C — Admin soft-block. Missing/false = not blocked (legacy safe).
+   * Fix 08C — soft-block. Missing/false = not blocked (legacy safe).
    * Distinct from visibility.policy hide (steward_only). Does not close elections
    * or alter lifecycle timestamps.
+   * Pack 12C — effective block may be ADMIN or EDITOR via administrativeBlockAuthority.
    */
   administrativelyBlocked?: boolean;
+  /**
+   * Pack 12C — ADMIN | EDITOR provenance for the effective soft-block.
+   * Legacy Fix08 Admin blocks omit this field; resolveEffectiveModerationBlock
+   * treats missing authority as ADMIN when administrativelyBlocked=true.
+   */
+  administrativeBlockAuthority?: ModerationBlockAuthority;
   administrativelyBlockedAt?: string;
-  /** Admin member/participant id — internal only; not projected publicly. */
+  /** Block actor participant id — internal only; not projected publicly. */
   administrativelyBlockedByParticipantId?: string;
-  /** Optional admin-facing reason — internal only; not projected publicly. */
+  /** Optional moderation reason — internal only; not projected publicly. */
   administrativeBlockReason?: string;
   metadata: InitiativeMetadata;
   revisions: InitiativeRevision[];
@@ -175,8 +183,23 @@ export function isInitiativeAdministrativelyBlocked(
   return initiative.administrativelyBlocked === true;
 }
 
+export {
+  resolveEffectiveModerationBlock,
+  isAdminModerationBlock,
+  isEditorModerationBlock,
+  formatModerationBlockLabel,
+  type ModerationBlockAuthority,
+  type ResolvedModerationBlock,
+} from "./moderation-block.js";
+
 export const INITIATIVE_ADMIN_BLOCKED_MUTATION_MESSAGE =
   "This initiative has been blocked by an administrator. Please contact the administrator.";
 
 export const PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE =
   "This election has been blocked by an administrator. Please contact the administrator.";
+
+export const INITIATIVE_EDITOR_BLOCKED_MUTATION_MESSAGE =
+  "This initiative has been blocked by an editor.";
+
+export const PUBLIC_CHOICE_ELECTION_EDITOR_BLOCKED_MUTATION_MESSAGE =
+  "This election has been blocked by an editor.";

@@ -1,6 +1,7 @@
 import type { MemberId } from "./member.js";
 import type { AuthRole } from "./auth.js";
 import type { EmailVerificationStatus } from "./email.js";
+import type { EditorViewerState } from "./editor-grant.js";
 
 /** Mongo-backed auth account status. */
 export type AuthUserAccountStatus = "active" | "disabled";
@@ -23,6 +24,11 @@ export interface AuthUserPublic {
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;
+  /**
+   * Pack 12A — delegated Editor grant projection (not an account role).
+   * Absent on older clients; treat missing as non-editor.
+   */
+  editor?: EditorViewerState;
 }
 
 export interface AuthTokenPair {

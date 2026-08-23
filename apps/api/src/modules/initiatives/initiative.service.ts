@@ -354,13 +354,14 @@ export function createInitiativeDraft(
   return createInitiative(initiative);
 }
 
-export function saveInitiativeDraft(
-  identity: RequestIdentity,
-  initiativeId: string,
+/**
+ * Pack 12B2 — ownership-agnostic draft content save (steward + delegated Editor).
+ * Caller must already authorize (ownership or Editor grant + scope + Admin-block).
+ */
+export function saveInitiativeDraftContent(
+  initiative: Initiative,
   input: SaveInitiativeDraftInput,
 ): Initiative {
-  const initiative = getOwnedInitiative(initiativeId, identity);
-
   assertDraftLifecycle(initiative);
 
   if (
@@ -370,7 +371,7 @@ export function saveInitiativeDraft(
     throw new Error("ballotMode is only valid for PUBLIC_CHOICE initiatives.");
   }
 
-  const updated = updateInitiative(initiativeId, {
+  const updated = updateInitiative(initiative.initiativeId, {
     title: input.title,
     description: input.description,
     metadata: buildMetadataPatch(initiative, input),
@@ -390,18 +391,35 @@ export function saveInitiativeDraft(
   return updated;
 }
 
-export function updatePublishedInitiative(
+export function saveInitiativeDraft(
   identity: RequestIdentity,
   initiativeId: string,
   input: SaveInitiativeDraftInput,
 ): Initiative {
   const initiative = getOwnedInitiative(initiativeId, identity);
+  return saveInitiativeDraftContent(initiative, input);
+}
 
+/**
+ * Pack 12B2 — ownership-agnostic published/projected content update.
+ * Caller must already authorize. Does not transfer stewardship.
+ */
+export function updatePublishedInitiativeContent(
+  initiative: Initiative,
+  input: SaveInitiativeDraftInput,
+): Initiative {
   assertEditablePublishedLifecycle(initiative);
+
+  if (
+    input.ballotMode !== undefined &&
+    resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) !== "PUBLIC_CHOICE"
+  ) {
+    throw new Error("ballotMode is only valid for PUBLIC_CHOICE initiatives.");
+  }
 
   const content = applyInitiativeContentUpdate(initiative, input);
 
-  const updated = updateInitiative(initiativeId, {
+  const updated = updateInitiative(initiative.initiativeId, {
     title: content.title,
     description: content.description,
     metadata: buildMetadataPatch(initiative, input),
@@ -418,9 +436,27 @@ export function updatePublishedInitiative(
   }
 
   invalidateGlobalSearchIndex();
-  invalidateCommunityIntelligenceCache(initiativeId);
+  invalidateCommunityIntelligenceCache(initiative.initiativeId);
 
   return updated;
+}
+
+export function updatePublishedInitiative(
+  identity: RequestIdentity,
+  initiativeId: string,
+  input: SaveInitiativeDraftInput,
+): Initiative {
+  const initiative = getOwnedInitiative(initiativeId, identity);
+
+  if (isInitiativeAdministrativelyBlocked(initiative)) {
+    throw new Error(
+      resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE"
+        ? PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE
+        : INITIATIVE_ADMIN_BLOCKED_MUTATION_MESSAGE,
+    );
+  }
+
+  return updatePublishedInitiativeContent(initiative, input);
 }
 
 export function publishInitiative(identity: RequestIdentity, initiativeId: string): Initiative {
@@ -517,23 +553,16 @@ export function publishInitiative(identity: RequestIdentity, initiativeId: strin
   return projectedWithGeography;
 }
 
-export function republishInitiative(
-  identity: RequestIdentity,
-  initiativeId: string,
+/**
+ * Pack 12B2 — ownership-agnostic republish. Caller must already authorize + Admin-block.
+ */
+export function republishInitiativeContent(
+  initiative: Initiative,
   input: SaveInitiativeDraftInput = {},
 ): Initiative {
-  const initiative = getOwnedInitiative(initiativeId, identity);
-
-  if (isInitiativeAdministrativelyBlocked(initiative)) {
-    throw new Error(
-      resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE"
-        ? PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE
-        : INITIATIVE_ADMIN_BLOCKED_MUTATION_MESSAGE,
-    );
-  }
-
   assertEditablePublishedLifecycle(initiative);
 
+  const initiativeId = initiative.initiativeId;
   const previousCommunitySlug = initiative.metadata.communitySlug;
   const content = applyInitiativeContentUpdate(initiative, input);
   const nextMetadata = buildMetadataPatch(initiative, input);
@@ -612,6 +641,24 @@ export function republishInitiative(
   invalidateCommunityIntelligenceCache(initiativeId);
 
   return republished;
+}
+
+export function republishInitiative(
+  identity: RequestIdentity,
+  initiativeId: string,
+  input: SaveInitiativeDraftInput = {},
+): Initiative {
+  const initiative = getOwnedInitiative(initiativeId, identity);
+
+  if (isInitiativeAdministrativelyBlocked(initiative)) {
+    throw new Error(
+      resolveInitiativeLifecycleProfile(initiative.lifecycleProfile) === "PUBLIC_CHOICE"
+        ? PUBLIC_CHOICE_ELECTION_ADMIN_BLOCKED_MUTATION_MESSAGE
+        : INITIATIVE_ADMIN_BLOCKED_MUTATION_MESSAGE,
+    );
+  }
+
+  return republishInitiativeContent(initiative, input);
 }
 
 export function updateManagedInitiative(

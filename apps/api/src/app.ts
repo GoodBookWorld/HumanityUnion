@@ -182,6 +182,7 @@ import betaInviteRouter from "./modules/beta-invite/beta-invite.routes.js";
 import adminParticipantDirectoryRouter from "./modules/administration/admin-participant-directory.routes.js";
 import adminInitiativeDirectoryRouter from "./modules/administration/admin-initiative-directory.routes.js";
 import adminPublicChoiceRouter from "./modules/administration/admin-public-choice.routes.js";
+import { adminEditorGrantsRouter, editorPanelRouter } from "./modules/editor-grants/index.js";
 import adminMediaResourcesRouter from "./modules/media-resources/admin-media-resources.routes.js";
 import adminCountryAffiliationRouter from "./modules/country-affiliation/admin-country-affiliation.routes.js";
 import {
@@ -237,6 +238,8 @@ app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/platform", closedBetaRouter);
 app.use("/api/v1/beta-invites", betaInviteRouter);
 app.use("/api/v1/admin/participants", adminParticipantDirectoryRouter);
+app.use("/api/v1/admin/editors", adminEditorGrantsRouter);
+app.use("/api/v1/workspace/editor", editorPanelRouter);
 app.use("/api/v1/admin/initiatives", adminInitiativeDirectoryRouter);
 app.use("/api/v1/admin/public-choice", adminPublicChoiceRouter);
 app.use("/api/v1/admin/media-resources", adminMediaResourcesRouter);

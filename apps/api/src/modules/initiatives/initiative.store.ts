@@ -30,6 +30,7 @@ export interface InitiativeUpdate {
   timeline?: TimelineEvent[];
   sourceReferences?: InitiativeNewsSourceReference[] | null;
   administrativelyBlocked?: boolean | null;
+  administrativeBlockAuthority?: "ADMIN" | "EDITOR" | null;
   administrativelyBlockedAt?: string | null;
   administrativelyBlockedByParticipantId?: string | null;
   administrativeBlockReason?: string | null;
@@ -229,11 +230,19 @@ export function updateInitiative(
 
   if (update.administrativelyBlocked === null || update.administrativelyBlocked === false) {
     delete initiative.administrativelyBlocked;
+    delete initiative.administrativeBlockAuthority;
     delete initiative.administrativelyBlockedAt;
     delete initiative.administrativelyBlockedByParticipantId;
     delete initiative.administrativeBlockReason;
   } else if (update.administrativelyBlocked === true) {
     initiative.administrativelyBlocked = true;
+    if (update.administrativeBlockAuthority !== undefined) {
+      if (update.administrativeBlockAuthority === null) {
+        delete initiative.administrativeBlockAuthority;
+      } else {
+        initiative.administrativeBlockAuthority = update.administrativeBlockAuthority;
+      }
+    }
     if (update.administrativelyBlockedAt !== undefined) {
       if (update.administrativelyBlockedAt === null) {
         delete initiative.administrativelyBlockedAt;

@@ -112,6 +112,8 @@ export type AdministrationAuditAction =
   | "initiative.administrative.unblock"
   | "public_choice.candidate.block"
   | "public_choice.candidate.unblock"
+  | "editor.moderation.block"
+  | "editor.moderation.unblock"
   | "media_resource.create"
   | "media_resource.update"
   | "media_resource.activate"
@@ -121,7 +123,12 @@ export type AdministrationAuditAction =
   | "country_affiliation.update"
   | "country_affiliation.activate"
   | "country_affiliation.deactivate"
-  | "country_affiliation.delete";
+  | "country_affiliation.delete"
+  | "editor.assign"
+  | "editor.update_permissions"
+  | "editor.update_scope"
+  | "editor.activate"
+  | "editor.deactivate";
 
 export interface AdministrationAuditRecord {
   readonly auditId: string;
@@ -205,8 +212,10 @@ export interface AdminInitiativeDirectoryItem {
   readonly decisionSummary: string | null;
   readonly civicArchiveState: "none" | "present";
   readonly integrityStatus: "ok" | "warning";
-  /** Fix 08C — admin soft-block (distinct from visibility hide). */
+  /** Fix 08C / Pack 12C — soft-block with ADMIN|EDITOR provenance. */
   readonly administrativelyBlocked: boolean;
+  readonly blockAuthority?: "ADMIN" | "EDITOR" | null;
+  readonly blockLabel?: string | null;
 }
 
 export interface AdminInitiativeDirectoryAggregates {
@@ -299,8 +308,10 @@ export interface AdminInitiativeDetail {
     readonly canBlock: boolean;
     readonly canUnblock: boolean;
   };
-  /** Fix 08C — admin soft-block. */
+  /** Fix 08C — soft-block. */
   readonly administrativelyBlocked: boolean;
+  readonly blockAuthority?: "ADMIN" | "EDITOR" | null;
+  readonly blockLabel?: string | null;
 }
 
 export interface AdminInitiativeVisibilityCommandResult {
@@ -331,6 +342,8 @@ export interface AdminPublicChoiceDirectoryItem {
   readonly candidateCount: number;
   readonly effectiveVoterCount: number | null;
   readonly administrativelyBlocked: boolean;
+  readonly blockAuthority?: "ADMIN" | "EDITOR" | null;
+  readonly blockLabel?: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -350,6 +363,8 @@ export interface AdminPublicChoiceCandidateRow {
   readonly campaignPageUrl?: string;
   readonly voteCount: number;
   readonly isBlocked: boolean;
+  readonly blockAuthority?: "ADMIN" | "EDITOR" | null;
+  readonly blockLabel?: string | null;
   readonly sortOrder: number;
 }
 
@@ -369,6 +384,8 @@ export interface AdminPublicChoiceDetail {
   readonly candidateCount: number;
   readonly effectiveVoterCount: number | null;
   readonly administrativelyBlocked: boolean;
+  readonly blockAuthority?: "ADMIN" | "EDITOR" | null;
+  readonly blockLabel?: string | null;
   readonly publicUrl: string;
   readonly candidates: readonly AdminPublicChoiceCandidateRow[];
   readonly resultSummary: {

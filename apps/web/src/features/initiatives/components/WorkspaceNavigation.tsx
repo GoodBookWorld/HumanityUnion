@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { getMe } from "../../auth/auth-api";
 import { isAdminAccountRole } from "../../administration/is-admin-role";
+import { isEligibleForEditorPanel } from "../../administration/editor-panel-eligibility";
 import { fetchBlogAuthoringAccessState } from "../../blog/authoring-api";
 import { WorkspaceMemberIdentity } from "../../member-profile/components/WorkspaceMemberIdentity";
 import {
@@ -62,6 +63,7 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
   });
   const [editorialRoute, setEditorialRoute] = useState<WorkspaceNavRoute | null>(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showEditorPanel, setShowEditorPanel] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,11 +105,13 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
       .then((user) => {
         if (!cancelled) {
           setShowAdminPanel(isAdminAccountRole(user.role));
+          setShowEditorPanel(isEligibleForEditorPanel(user));
         }
       })
       .catch(() => {
         if (!cancelled) {
           setShowAdminPanel(false);
+          setShowEditorPanel(false);
         }
       });
 
@@ -127,7 +131,10 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
     });
   }
 
-  const groups = buildWorkspaceNavGroups(authoringRoute, editorialRoute, { showAdminPanel });
+  const groups = buildWorkspaceNavGroups(authoringRoute, editorialRoute, {
+    showAdminPanel,
+    showEditorPanel,
+  });
 
   return (
     <nav className="workspace-navigation" aria-label="Main workspace navigation">

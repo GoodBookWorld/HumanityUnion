@@ -8,9 +8,11 @@ import type {
   PublicChoiceCandidate,
 } from "@hu/types";
 import {
+  formatModerationBlockLabel,
   isInitiativeAdministrativelyBlocked,
   isPublicChoiceCandidateAdministrativelyBlocked,
   publicChoiceElectionVotingStatusLabel,
+  resolveEffectiveModerationBlock,
   resolveInitiativeLifecycleProfile,
   resolvePublicChoiceElectionVotingStatus,
   toPublicChoiceCandidatePublicProjection,
@@ -179,6 +181,11 @@ async function toDirectoryItem(
     candidateCount: candidates.length,
     effectiveVoterCount,
     administrativelyBlocked: isInitiativeAdministrativelyBlocked(initiative),
+    blockAuthority: (() => {
+      const resolved = resolveEffectiveModerationBlock(initiative);
+      return resolved.isBlocked ? resolved.authority : null;
+    })(),
+    blockLabel: formatModerationBlockLabel(initiative),
     createdAt: initiative.createdAt,
     updatedAt: initiative.updatedAt,
   };
@@ -289,15 +296,20 @@ export async function getAdminPublicChoiceDetail(
     }
   }
 
-  const candidateRows: AdminPublicChoiceCandidateRow[] = candidates.map((candidate) => ({
-    candidateId: candidate.candidateId,
-    name: candidate.name,
-    ...(candidate.photoUrl ? { photoUrl: candidate.photoUrl } : {}),
-    ...(candidate.campaignPageUrl ? { campaignPageUrl: candidate.campaignPageUrl } : {}),
-    voteCount: voteCounts.get(candidate.candidateId) ?? 0,
-    isBlocked: isPublicChoiceCandidateAdministrativelyBlocked(candidate),
-    sortOrder: candidate.sortOrder,
-  }));
+  const candidateRows: AdminPublicChoiceCandidateRow[] = candidates.map((candidate) => {
+    const resolved = resolveEffectiveModerationBlock(candidate);
+    return {
+      candidateId: candidate.candidateId,
+      name: candidate.name,
+      ...(candidate.photoUrl ? { photoUrl: candidate.photoUrl } : {}),
+      ...(candidate.campaignPageUrl ? { campaignPageUrl: candidate.campaignPageUrl } : {}),
+      voteCount: voteCounts.get(candidate.candidateId) ?? 0,
+      isBlocked: resolved.isBlocked,
+      blockAuthority: resolved.isBlocked ? resolved.authority : null,
+      blockLabel: formatModerationBlockLabel(candidate),
+      sortOrder: candidate.sortOrder,
+    };
+  });
 
   return {
     initiativeId: initiative.initiativeId,
@@ -318,6 +330,11 @@ export async function getAdminPublicChoiceDetail(
     candidateCount: candidates.length,
     effectiveVoterCount: totalEffectiveVoters,
     administrativelyBlocked: isInitiativeAdministrativelyBlocked(initiative),
+    blockAuthority: (() => {
+      const resolved = resolveEffectiveModerationBlock(initiative);
+      return resolved.isBlocked ? resolved.authority : null;
+    })(),
+    blockLabel: formatModerationBlockLabel(initiative),
     publicUrl: `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`,
     candidates: candidateRows,
     resultSummary: {
