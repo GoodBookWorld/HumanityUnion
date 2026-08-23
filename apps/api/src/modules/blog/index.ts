@@ -32,6 +32,17 @@ export {
   startBlogScheduledPublishScheduler,
   stopBlogScheduledPublishScheduler,
 } from "./blog-scheduled-publish.scheduler.js";
+export {
+  listAdminPendingAuthorApplications,
+  markInvalidLegacyAuthorApplicationForResubmit,
+  reconcilePendingAuthorApplications,
+  startAuthorApplicationReconciliationOnce,
+} from "./blog-author-application-reconciliation.js";
+export {
+  listAdminPendingPublicationReviews,
+  reconcilePendingPublicationReviews,
+  startPublicationReviewReconciliationOnce,
+} from "./blog-publication-review-reconciliation.js";
 export { blogPostToSearchMetadata } from "./blog.projection.js";
 export {
   BlogAccessDeniedError,

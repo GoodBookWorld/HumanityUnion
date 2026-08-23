@@ -93,7 +93,7 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
       fetchPlatformStatistics(),
       fetchMembershipStatistics(),
       getPlatformConfig(),
-      fetchPublicBlogPosts({ limit: 1, offset: 0 }),
+      fetchPublicBlogPosts({ limit: 1, offset: 0, includeDiscovery: false }),
     ]).then(([platformResult, membershipResult, configResult, blogResult]) => {
       if (cancelled) {
         return;

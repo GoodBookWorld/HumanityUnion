@@ -6,6 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import type {
   AdminAuthorDirectoryItem,
   AdminAuthorDirectoryStatusFilter,
+  AdminPendingAuthorApplicationItem,
+  AdminPendingPublicationReviewItem,
   AdminPublicationDirectoryItem,
   AdminPublicationDirectoryStatusFilter,
   AuthUserPublic,
@@ -15,11 +17,17 @@ import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { formatAuthFormError, isForbiddenError } from "../../../lib/api-client";
+import { AuthorApplicationReviewModal } from "../../blog/components/AuthorApplicationReviewModal";
 import {
   blockAdminPublishingAuthor,
   blockAdminPublishingPublication,
+  listAdminPendingAuthorApplications,
+  listAdminPendingPublicationReviews,
   listAdminPublishingAuthors,
   listAdminPublishingPublications,
+  reconcileAdminPendingAuthorApplications,
+  reconcileAdminPendingPublicationReviews,
+  recoveryResetAdminAuthorApplication,
   unblockAdminPublishingAuthor,
   unblockAdminPublishingPublication,
 } from "../admin-publishing-api";
@@ -32,7 +40,7 @@ interface AdminPublishingSectionProps {
   user: AuthUserPublic;
 }
 
-type PublishingTab = "authors" | "publications";
+type PublishingTab = "pending" | "pending-review" | "authors" | "publications";
 
 function formatCompactDate(value?: string): string {
   if (!value) {
@@ -57,7 +65,13 @@ function publicationStatusLabel(row: AdminPublicationDirectoryItem): string {
 }
 
 export function AdminPublishingSection({ user: _user }: AdminPublishingSectionProps) {
-  const [tab, setTab] = useState<PublishingTab>("authors");
+  const [tab, setTab] = useState<PublishingTab>("pending");
+  const [pendingApps, setPendingApps] = useState<readonly AdminPendingAuthorApplicationItem[]>([]);
+  const [pendingTotal, setPendingTotal] = useState(0);
+  const [pendingReviews, setPendingReviews] = useState<
+    readonly AdminPendingPublicationReviewItem[]
+  >([]);
+  const [pendingReviewTotal, setPendingReviewTotal] = useState(0);
   const [authors, setAuthors] = useState<readonly AdminAuthorDirectoryItem[]>([]);
   const [authorTotal, setAuthorTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
@@ -74,6 +88,45 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
   const [denied, setDenied] = useState(false);
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [reviewApplicationId, setReviewApplicationId] = useState<string | null>(null);
+
+  const loadPending = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await listAdminPendingAuthorApplications({ limit: 50, offset: 0 });
+      setPendingApps(result.applications);
+      setPendingTotal(result.total);
+      setDenied(false);
+    } catch (err: unknown) {
+      if (isForbiddenError(err)) {
+        setDenied(true);
+      }
+      setError(formatAuthFormError(err));
+      setPendingApps([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadPendingReviews = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await listAdminPendingPublicationReviews({ limit: 50, offset: 0 });
+      setPendingReviews(result.publications);
+      setPendingReviewTotal(result.total);
+      setDenied(false);
+    } catch (err: unknown) {
+      if (isForbiddenError(err)) {
+        setDenied(true);
+      }
+      setError(formatAuthFormError(err));
+      setPendingReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const loadAuthors = useCallback(async () => {
     setLoading(true);
@@ -126,12 +179,62 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
   }, [publicationQuery, publicationStatus]);
 
   useEffect(() => {
-    if (tab === "authors") {
+    if (tab === "pending") {
+      void loadPending();
+    } else if (tab === "pending-review") {
+      void loadPendingReviews();
+    } else if (tab === "authors") {
       void loadAuthors();
     } else {
       void loadPublications();
     }
-  }, [tab, loadAuthors, loadPublications]);
+  }, [tab, loadPending, loadPendingReviews, loadAuthors, loadPublications]);
+
+  async function handleReconcile() {
+    setActionBusyId("reconcile");
+    setActionMessage(null);
+    try {
+      const result = await reconcileAdminPendingAuthorApplications();
+      setActionMessage(
+        `Reconciled: ${result.notifiedApplicationCount} application(s), ${result.notificationsCreated} notification(s) created (${result.skippedAlreadyNotified} already present).`,
+      );
+      await loadPending();
+    } catch (err: unknown) {
+      setError(formatAuthFormError(err));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  async function handleReconcilePublicationReviews() {
+    setActionBusyId("reconcile-reviews");
+    setActionMessage(null);
+    try {
+      const result = await reconcileAdminPendingPublicationReviews();
+      setActionMessage(
+        `Reconciled publication reviews: ${result.notifiedPublicationCount} publication(s), ${result.notificationsCreated} notification(s) created (${result.skippedAlreadyNotified} already present).`,
+      );
+      await loadPendingReviews();
+    } catch (err: unknown) {
+      setError(formatAuthFormError(err));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  async function handleRecoveryReset(applicationId: string) {
+    setActionBusyId(applicationId);
+    setActionMessage(null);
+    try {
+      await recoveryResetAdminAuthorApplication(applicationId);
+      setActionMessage("Invalid application marked for Participant resubmit (not deleted).");
+      await loadPending();
+    } catch (err: unknown) {
+      setError(formatAuthFormError(err));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
 
   async function handleAuthorBlock(participantId: string, currentlyBlocked: boolean) {
     setActionBusyId(participantId);
@@ -177,10 +280,37 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
 
       <ProfileSection title="Publishing">
         <p className="hu-body admin-publishing__lede">
-          Manage accepted Authors and Publication visibility. Author block and Publication block are
-          independent — blocking an Author does not hide existing public publications.
+          Review pending Author applications and publications, manage accepted Authors, and
+          Publication visibility. Author block and Publication block are independent. Notifications
+          alert Admins; these queues remain the canonical review authority.
         </p>
         <div className="admin-publishing__tabs" role="tablist" aria-label="Publishing areas">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "pending"}
+            className={
+              tab === "pending"
+                ? "admin-publishing__tab admin-publishing__tab--active"
+                : "admin-publishing__tab"
+            }
+            onClick={() => setTab("pending")}
+          >
+            Pending applications
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "pending-review"}
+            className={
+              tab === "pending-review"
+                ? "admin-publishing__tab admin-publishing__tab--active"
+                : "admin-publishing__tab"
+            }
+            onClick={() => setTab("pending-review")}
+          >
+            Pending Review
+          </button>
           <button
             type="button"
             role="tab"
@@ -227,6 +357,159 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
       ) : null}
       {error ? <StatusBanner title="Publishing admin unavailable" message={error} /> : null}
       {actionMessage ? <StatusBanner title="Action completed" message={actionMessage} /> : null}
+
+      {tab === "pending" ? (
+        <ProfileSection title="Pending Author Applications">
+          <p className="hu-caption">
+            Total pending: {pendingTotal}. Applications remain reviewable here even if a review
+            notification was never delivered.
+          </p>
+          <div className="admin-publishing__toolbar">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={actionBusyId === "reconcile"}
+              onClick={() => void handleReconcile()}
+            >
+              {actionBusyId === "reconcile" ? "Reconciling…" : "Reconcile legacy notifications"}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => void loadPending()}>
+              Refresh
+            </Button>
+          </div>
+          {loading ? <p className="hu-body">Loading pending applications…</p> : null}
+          {!loading && pendingApps.length === 0 ? (
+            <p className="hu-body">No pending Author applications.</p>
+          ) : null}
+          {!loading && pendingApps.length > 0 ? (
+            <div className="admin-publishing-table-wrap">
+              <table className="admin-publishing-table">
+                <thead>
+                  <tr>
+                    <th>Applicant</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th>Review notification</th>
+                    <th>Preview</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingApps.map((row) => (
+                    <tr key={row.applicationId}>
+                      <td>
+                        <strong>{row.displayName}</strong>
+                        <div className="hu-caption">{row.email}</div>
+                      </td>
+                      <td>{row.status.replaceAll("_", " ")}</td>
+                      <td>{formatCompactDate(row.submittedAt)}</td>
+                      <td>
+                        {row.hasAdminReviewNotification ? "Delivered" : "Missing"}
+                        {row.structurallyInvalid ? (
+                          <div className="hu-caption">Structurally invalid</div>
+                        ) : null}
+                      </td>
+                      <td>
+                        <span className="hu-caption">{row.motivationPreview || "—"}</span>
+                      </td>
+                      <td>
+                        <div className="admin-publishing-table__actions">
+                          <Button
+                            type="button"
+                            variant="primary"
+                            onClick={() => setReviewApplicationId(row.applicationId)}
+                          >
+                            Review
+                          </Button>
+                          {row.structurallyInvalid ? (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              disabled={actionBusyId === row.applicationId}
+                              onClick={() => void handleRecoveryReset(row.applicationId)}
+                            >
+                              Mark for resubmit
+                            </Button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </ProfileSection>
+      ) : null}
+
+      {tab === "pending-review" ? (
+        <ProfileSection title="Pending Review">
+          <p className="hu-caption">
+            Total awaiting review: {pendingReviewTotal}. Publications remain reviewable here even if
+            a review notification was never delivered.
+          </p>
+          <div className="admin-publishing__toolbar">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={actionBusyId === "reconcile-reviews"}
+              onClick={() => void handleReconcilePublicationReviews()}
+            >
+              {actionBusyId === "reconcile-reviews"
+                ? "Reconciling…"
+                : "Reconcile review notifications"}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => void loadPendingReviews()}>
+              Refresh
+            </Button>
+          </div>
+          {loading ? <p className="hu-body">Loading pending reviews…</p> : null}
+          {!loading && pendingReviews.length === 0 ? (
+            <p className="hu-body">No publications awaiting review.</p>
+          ) : null}
+          {!loading && pendingReviews.length > 0 ? (
+            <div className="admin-publishing-table-wrap">
+              <table className="admin-publishing-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Category</th>
+                    <th>Submitted</th>
+                    <th>Publication date</th>
+                    <th>Review notification</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingReviews.map((row) => (
+                    <tr key={row.postId}>
+                      <td>
+                        <strong>{row.title}</strong>
+                        {row.administrativelyBlocked ? (
+                          <div className="hu-caption">Blocked</div>
+                        ) : null}
+                      </td>
+                      <td>{row.authorDisplayName}</td>
+                      <td>{row.categoryName}</td>
+                      <td>{formatCompactDate(row.submittedAt)}</td>
+                      <td>{formatCompactDate(row.publishedAt)}</td>
+                      <td>{row.hasAdminReviewNotification ? "Delivered" : "Missing"}</td>
+                      <td>
+                        <div className="admin-publishing-table__actions">
+                          <Link className="admin-panel__link" href={row.editorialHref}>
+                            Review publication
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </ProfileSection>
+      ) : null}
 
       {tab === "authors" ? (
         <ProfileSection title="Authors">
@@ -459,6 +742,19 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
           ) : null}
         </ProfileSection>
       )}
+
+      {reviewApplicationId ? (
+        <AuthorApplicationReviewModal
+          applicationId={reviewApplicationId}
+          isOpen={Boolean(reviewApplicationId)}
+          onClose={() => setReviewApplicationId(null)}
+          onDecided={() => {
+            setReviewApplicationId(null);
+            void loadPending();
+            setActionMessage("Author application decision recorded.");
+          }}
+        />
+      ) : null}
     </div>
   );
 }

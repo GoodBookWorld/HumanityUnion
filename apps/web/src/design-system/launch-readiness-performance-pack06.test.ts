@@ -51,7 +51,7 @@ describe("Launch Readiness Pack 06 — Performance & Runtime Efficiency", () => 
   });
 
   it("3 — Blog list page size is bounded", () => {
-    assert.equal(BLOG_PAGE_SIZE, 12);
+    assert.equal(BLOG_PAGE_SIZE, 9);
     assert.ok(BLOG_PAGE_SIZE <= 50);
   });
 

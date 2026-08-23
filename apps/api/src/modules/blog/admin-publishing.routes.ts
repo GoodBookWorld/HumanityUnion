@@ -27,6 +27,16 @@ import {
   unblockAdminAuthor,
   unblockAdminPublication,
 } from "./admin-publishing.service.js";
+import {
+  listAdminPendingAuthorApplications,
+  markInvalidLegacyAuthorApplicationForResubmit,
+  reconcilePendingAuthorApplications,
+} from "./blog-author-application-reconciliation.js";
+import {
+  listAdminPendingPublicationReviews,
+  reconcilePendingPublicationReviews,
+} from "./blog-publication-review-reconciliation.js";
+import { BlogValidationError } from "./blog.errors.js";
 
 export const adminPublishingRouter = Router();
 
@@ -65,6 +75,9 @@ function resolveErrorStatus(error: unknown): number {
   }
   if (error instanceof BlogConflictError) {
     return 409;
+  }
+  if (error instanceof BlogValidationError) {
+    return 400;
   }
   return 500;
 }
@@ -119,6 +132,59 @@ adminPublishingRouter.get(
   },
 );
 
+adminPublishingRouter.get(
+  "/author-applications/pending",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const data = await listAdminPendingAuthorApplications({
+        actorUserId: req.auth!.id,
+        limit: req.query.limit ? Number(req.query.limit) : undefined,
+        offset: req.query.offset ? Number(req.query.offset) : undefined,
+      });
+      res.json(createSuccessResponse(data, "Pending Author applications loaded."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.post(
+  "/author-applications/reconcile",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const data = await reconcilePendingAuthorApplications({
+        actorUserId: req.auth!.id,
+      });
+      res.json(createSuccessResponse(data, "Pending Author applications reconciled."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.post(
+  "/author-applications/:applicationId/recovery-reset",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const reason = typeof req.body?.reason === "string" ? req.body.reason : undefined;
+      const data = await markInvalidLegacyAuthorApplicationForResubmit({
+        actorUserId: req.auth!.id,
+        applicationId: routeParam(req.params.applicationId),
+        reason,
+      });
+      res.json(createSuccessResponse(data, "Invalid application marked for Participant resubmit."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
 adminPublishingRouter.post(
   "/authors/:participantId/block",
   authenticationMiddleware,
@@ -151,6 +217,40 @@ adminPublishingRouter.post(
         reason,
       });
       res.json(createSuccessResponse(data, "Author unblocked."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.get(
+  "/publications/pending-review",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const data = await listAdminPendingPublicationReviews({
+        actorUserId: req.auth!.id,
+        limit: req.query.limit ? Number(req.query.limit) : undefined,
+        offset: req.query.offset ? Number(req.query.offset) : undefined,
+      });
+      res.json(createSuccessResponse(data, "Pending publication reviews loaded."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.post(
+  "/publications/reconcile-review-notifications",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const data = await reconcilePendingPublicationReviews({
+        actorUserId: req.auth!.id,
+      });
+      res.json(createSuccessResponse(data, "Pending publication review notifications reconciled."));
     } catch (error) {
       handleError(res, error);
     }

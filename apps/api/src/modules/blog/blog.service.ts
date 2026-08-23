@@ -10,6 +10,7 @@ import type {
   BlogAuthorWorkspacePostListResponse,
   BlogCapability,
   BlogCapabilityGrant,
+  BlogCategoryId,
   BlogEditorialQueueResponse,
   BlogEditorialReviewDetail,
   BlogPost,
@@ -60,6 +61,7 @@ import {
   emitBlogPostChangesRequestedNotification,
   emitBlogPostDeclinedNotification,
   emitBlogPostPublishedNotification,
+  emitBlogPublicationAdminReviewNotifications,
 } from "./blog-publication-notifications.js";
 import {
   canArchiveAny,
@@ -110,6 +112,7 @@ import {
   listLatestPublicBlogPostsByAuthor,
   listPublishedBlogPosts,
   listPublishedBlogPostsForSearch,
+  aggregatePublishedBlogPostCountsByCategory,
   replaceBlogAuthorApplication,
   replaceBlogPost,
   upsertBlogCapabilityGrant,
@@ -495,6 +498,12 @@ export async function submitBlogPostForReview(input: {
     throw new BlogNotFoundError();
   }
 
+  if (existing.administrativelyBlocked === true) {
+    throw new BlogAccessDeniedError(
+      "This publication is blocked by an administrator and cannot be submitted for review.",
+    );
+  }
+
   if (existing.authorParticipantId !== input.actorParticipantId && !canEditorialPublish(capabilities)) {
     throw new BlogAccessDeniedError();
   }
@@ -543,6 +552,13 @@ export async function submitBlogPostForReview(input: {
     postId: updated.postId,
     authorParticipantId: updated.authorParticipantId,
     actorParticipantId: input.actorParticipantId,
+  });
+  // Pack 14B — Admin attention only on material not-in-review → in-review transition.
+  await emitBlogPublicationAdminReviewNotifications({
+    authorParticipantId: updated.authorParticipantId,
+    postId: updated.postId,
+    title: updated.title,
+    submittedAt: updated.submittedAt ?? now,
   });
 
   return toBlogAuthorWorkspacePost(updated);
@@ -879,6 +895,14 @@ async function publishBlogPostInternal(input: {
 
   await replaceBlogPost(updated);
 
+  // Pack 14B — Author decision notification for both immediate publish and future schedule.
+  if (updated.status === "published" || updated.status === "scheduled") {
+    await emitBlogPostPublishedNotification({
+      authorParticipantId: updated.authorParticipantId,
+      postId: updated.postId,
+    });
+  }
+
   if (updated.status === "published") {
     invalidateGlobalSearchIndex();
     await emitBlogPostPublished({
@@ -890,10 +914,6 @@ async function publishBlogPostInternal(input: {
       afterSafetyReview: Boolean(input.allowNeedsReviewOverride),
       safetyOutcome: safety.outcome,
       reviewNote: overrideNote,
-    });
-    await emitBlogPostPublishedNotification({
-      authorParticipantId: updated.authorParticipantId,
-      postId: updated.postId,
     });
 
     recordAdministrationAuditBestEffort({
@@ -1267,11 +1287,23 @@ export async function getEditorialReviewDetail(input: {
 export async function listPublicBlogPosts(input: {
   limit?: number;
   offset?: number;
+  page?: number;
+  pageSize?: number;
   categoryId?: string;
   q?: string;
+  includeDiscovery?: boolean;
 }): Promise<PublicBlogPostListResponse> {
-  const limit = Math.min(Math.max(input.limit ?? 20, 1), 100);
-  const offset = Math.max(input.offset ?? 0, 0);
+  const pageSize =
+    input.pageSize !== undefined
+      ? Math.min(Math.max(input.pageSize, 1), 100)
+      : Math.min(Math.max(input.limit ?? 20, 1), 100);
+  const page =
+    input.page !== undefined
+      ? Math.max(input.page, 1)
+      : Math.floor(Math.max(input.offset ?? 0, 0) / pageSize) + 1;
+  const offset =
+    input.page !== undefined ? (page - 1) * pageSize : Math.max(input.offset ?? 0, 0);
+  const limit = pageSize;
 
   let categoryId: BlogPost["categoryId"] | undefined;
   if (input.categoryId) {
@@ -1282,34 +1314,78 @@ export async function listPublicBlogPosts(input: {
     categoryId = input.categoryId;
   }
 
-  const { items, total } = await listPublishedBlogPosts({
-    limit,
-    offset,
-    categoryId,
-    q: input.q,
-  });
+  const includeDiscovery = input.includeDiscovery !== false;
+
+  const [{ items, total }, categoryAgg, latestListed, blogIndexViews] = await Promise.all([
+    listPublishedBlogPosts({
+      limit,
+      offset,
+      categoryId,
+      q: input.q,
+    }),
+    includeDiscovery
+      ? aggregatePublishedBlogPostCountsByCategory()
+      : Promise.resolve([] as ReadonlyArray<{ categoryId: BlogCategoryId; count: number }>),
+    includeDiscovery
+      ? listPublishedBlogPosts({ limit: 4, offset: 0 })
+      : Promise.resolve({ items: [] as BlogPost[], total: 0 }),
+    includeDiscovery
+      ? import("../traffic-analytics/traffic-aggregate.repository.js").then((mod) =>
+          mod.getPublicBlogIndexViewCount().catch(() => 0),
+        )
+      : Promise.resolve(0),
+  ]);
 
   const { countVisibleBlogCommentsByPostIds } = await import(
     "./persistence/blog-comment.repository.js"
   );
-  const commentCounts = await countVisibleBlogCommentsByPostIds(items.map((post) => post.postId));
+  const feedIds = items.map((post) => post.postId);
+  const latestIds = latestListed.items.map((post) => post.postId);
+  const commentCounts = await countVisibleBlogCommentsByPostIds([
+    ...new Set([...feedIds, ...latestIds]),
+  ]);
 
-  const projected = [];
-  for (const post of items) {
-    const author = await resolveBlogPublicAuthor({
-      authorParticipantId: post.authorParticipantId,
-      authorDisplayNameSnapshot: post.authorDisplayNameSnapshot,
-    });
-    projected.push(
-      toPublicBlogPostListItem(post, author, commentCounts.get(post.postId) ?? 0),
-    );
+  async function projectPosts(posts: readonly BlogPost[]) {
+    const projected = [];
+    for (const post of posts) {
+      const author = await resolveBlogPublicAuthor({
+        authorParticipantId: post.authorParticipantId,
+        authorDisplayNameSnapshot: post.authorDisplayNameSnapshot,
+      });
+      projected.push(
+        toPublicBlogPostListItem(post, author, commentCounts.get(post.postId) ?? 0),
+      );
+    }
+    return projected;
   }
 
+  const projected = await projectPosts(items);
+  const latestPublications = includeDiscovery
+    ? await projectPosts(latestListed.items)
+    : undefined;
+
+  const countById = new Map(categoryAgg.map((row) => [row.categoryId, row.count]));
+  const categoryCounts = includeDiscovery
+    ? listBlogCategories().map((category) => ({
+        categoryId: category.categoryId,
+        name: category.name,
+        slug: category.slug,
+        count: countById.get(category.categoryId) ?? 0,
+      }))
+    : undefined;
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
   const response: PublicBlogPostListResponse = {
     items: projected,
     total,
     limit,
     offset,
+    page,
+    pageSize,
+    totalPages: total === 0 ? 0 : totalPages,
+    ...(categoryCounts ? { categoryCounts } : {}),
+    ...(latestPublications ? { latestPublications } : {}),
+    ...(includeDiscovery ? { blogIndexViews } : {}),
   };
   assertNoInternalBlogFields(response);
   return response;

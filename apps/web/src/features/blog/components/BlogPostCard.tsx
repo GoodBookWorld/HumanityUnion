@@ -89,6 +89,12 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
             <span>{post.category.name}</span>
           </Link>
         </p>
+
+        <p className="blog-post-card__cta">
+          <Link href={href} className="hu-button hu-button--secondary hu-button--sm">
+            Read more
+          </Link>
+        </p>
       </div>
     </article>
   );

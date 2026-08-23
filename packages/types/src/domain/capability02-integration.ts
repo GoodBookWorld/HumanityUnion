@@ -221,6 +221,8 @@ export type CivicNotificationEventType =
   | "blog_publication_blocked"
   /** Pack 13B — Publication soft-block cleared. */
   | "blog_publication_restored"
+  /** Pack 14B — Admin notified that a Blog publication awaits editorial review. */
+  | "blog_publication_review_requested"
   /** Editorial Review Pack 06 — Editor requested changes on a Blog publication. */
   | "blog_post_changes_requested"
   /** Editorial Review Pack 06 — Blog publication approved and published. */
@@ -526,6 +528,11 @@ export const CIVIC_NOTIFICATION_EVENT_REGISTRY: readonly CivicNotificationEventD
   {
     eventType: "blog_publication_restored",
     description: "A Blog publication soft-block was cleared.",
+    entityType: "blog_post",
+  },
+  {
+    eventType: "blog_publication_review_requested",
+    description: "Administrators were notified that a Blog publication awaits editorial review.",
     entityType: "blog_post",
   },
   {

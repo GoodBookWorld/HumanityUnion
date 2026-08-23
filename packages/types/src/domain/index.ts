@@ -1283,6 +1283,12 @@ export type {
   AdminAuthorDirectoryItem,
   AdminAuthorDirectoryResponse,
   AdminAuthorDirectoryStatusFilter,
+  AdminAuthorApplicationReconcileResult,
+  AdminPendingAuthorApplicationItem,
+  AdminPendingAuthorApplicationListResponse,
+  AdminPendingPublicationReviewItem,
+  AdminPendingPublicationReviewListResponse,
+  AdminPublicationReviewReconcileResult,
   AdminPublicationDirectoryItem,
   AdminPublicationDirectoryResponse,
   AdminPublicationDirectoryStatusFilter,
@@ -1322,6 +1328,7 @@ export type {
   PublicBlogPostDetail,
   PublicBlogPostListItem,
   PublicBlogPostListResponse,
+  PublicBlogCategoryCount,
 } from "./blog.js";
 export {
   BLOG_AUTHOR_APPLICATION_ACTIVE_STATUSES,

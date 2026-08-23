@@ -82,6 +82,7 @@ export function BlogPostEditor({
   const contentLabelId = useId();
   const tagsId = useId();
   const publicationDateId = useId();
+  const settingsToggleId = useId();
   const savePhase = useSaveButtonPhase();
 
   const [postId, setPostId] = useState(initialPost?.postId ?? null);
@@ -108,9 +109,11 @@ export function BlogPostEditor({
   const [administrativelyBlocked] = useState(initialPost?.administrativelyBlocked === true);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveFailed, setSaveFailed] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [busyAction, setBusyAction] = useState<"submit" | "publish" | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(true);
 
   const readOnly =
     status === "submitted_for_review" || status === "archived" || administrativelyBlocked;
@@ -124,6 +127,22 @@ export function BlogPostEditor({
     }
     return slug || previewBlogSlugFromTitle(title);
   }, [publishedLockedSlug, slug, title]);
+
+  const saveStatusLabel = useMemo(() => {
+    if (saveFailed) {
+      return "Save failed";
+    }
+    if (savePhase.phase === "saving") {
+      return "Saving…";
+    }
+    if (savePhase.phase === "success") {
+      return "Saved";
+    }
+    if (dirty) {
+      return "Unsaved changes";
+    }
+    return "All changes saved";
+  }, [dirty, saveFailed, savePhase.phase]);
 
   useEffect(() => {
     if (!dirty) {
@@ -139,6 +158,7 @@ export function BlogPostEditor({
 
   function markDirty() {
     setDirty(true);
+    setSaveFailed(false);
   }
 
   function parseTags(): string[] {
@@ -189,6 +209,7 @@ export function BlogPostEditor({
 
   async function handleSaveDraft() {
     setError(null);
+    setSaveFailed(false);
     try {
       const saved = await savePhase.runSave(persistDraft);
       setPostId(saved.postId);
@@ -203,6 +224,7 @@ export function BlogPostEditor({
         router.replace(`/workspace/publishing/${saved.postId}`);
       }
     } catch (saveError) {
+      setSaveFailed(true);
       setError(formatAuthFormError(saveError));
     }
   }
@@ -278,7 +300,7 @@ export function BlogPostEditor({
     safetyOutcome !== "rejected";
 
   return (
-    <div className="blog-post-editor">
+    <div className="blog-post-editor blog-post-editor--pack14c">
       <p className="hu-caption">
         Author: {authorDisplayName ?? "Your Participant identity"} (attribution is set by the
         platform).
@@ -330,14 +352,67 @@ export function BlogPostEditor({
       {safety ? <StatusBanner title={safety.title} message={safety.message} /> : null}
       {error ? <StatusBanner title="Could not complete the action" message={error} /> : null}
 
+      <div className="blog-post-editor__chrome">
+        <p className="blog-post-editor__save-status" aria-live="polite">
+          {saveStatusLabel}
+        </p>
+        <div className="blog-post-editor__actions blog-post-editor__actions--top hu-form-actions">
+          {!readOnly ? (
+            <Button
+              type="button"
+              variant="primary"
+              disabled={savePhase.isBusy}
+              ariaLive="polite"
+              onClick={() => {
+                void handleSaveDraft();
+              }}
+            >
+              {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+            </Button>
+          ) : null}
+
+          {postId ? (
+            <Button href={`/workspace/publishing/${postId}/preview`} variant="secondary">
+              Preview
+            </Button>
+          ) : null}
+
+          {status === "draft" && !administrativelyBlocked ? (
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={busyAction !== null}
+              onClick={() => setSubmitOpen(true)}
+            >
+              Submit for Review
+            </Button>
+          ) : null}
+
+          {showPublish ? (
+            <Button
+              type="button"
+              variant="primary"
+              disabled={busyAction !== null || safetyOutcome === "needs_review"}
+              onClick={() => setPublishOpen(true)}
+            >
+              Publish
+            </Button>
+          ) : null}
+
+          <Link href="/workspace/publishing" className="hu-button hu-button--tertiary">
+            Back to Publishing
+          </Link>
+        </div>
+      </div>
+
       <div className="blog-post-editor__layout">
         <div className="blog-post-editor__main">
-          <label className="hu-label" htmlFor={titleId}>
+          <label className="hu-label blog-post-editor__title-label" htmlFor={titleId}>
             Title
           </label>
           <input
             id={titleId}
-            className="hu-form-control"
+            className="hu-form-control blog-post-editor__title-input"
             value={title}
             disabled={readOnly}
             required
@@ -354,95 +429,6 @@ export function BlogPostEditor({
             {publishedLockedSlug ? " (stable after publication)" : ""}
           </p>
 
-          <label className="hu-label" htmlFor={categoryId}>
-            Category
-          </label>
-          <select
-            id={categoryId}
-            className="hu-form-control"
-            value={category}
-            disabled={readOnly}
-            required
-            onChange={(event) => {
-              setCategory(event.target.value as BlogCategoryId | "");
-              markDirty();
-            }}
-          >
-            <option value="">Select a category</option>
-            {BLOG_CATEGORIES.map((entry) => (
-              <option key={entry.categoryId} value={entry.categoryId}>
-                {entry.name}
-              </option>
-            ))}
-          </select>
-
-          <label className="hu-label" htmlFor={tagsId}>
-            Tags
-          </label>
-          <input
-            id={tagsId}
-            className="hu-form-control"
-            value={tagsInput}
-            disabled={readOnly}
-            placeholder="Optional, comma-separated (max 12)"
-            onChange={(event) => {
-              setTagsInput(event.target.value);
-              markDirty();
-            }}
-          />
-          <HelperText>Optional. Tags are normalized and limited to 12 by the server.</HelperText>
-
-          <fieldset className="blog-post-editor__cover" disabled={readOnly}>
-            <legend className="hu-label">Cover Image</legend>
-            <BlogCoverField
-              coverMedia={coverMedia}
-              title={title}
-              disabled={readOnly}
-              onChange={(next) => {
-                setCoverMedia(next);
-                markDirty();
-              }}
-            />
-          </fieldset>
-
-          <label className="hu-label" htmlFor={excerptId}>
-            Excerpt
-          </label>
-          <textarea
-            id={excerptId}
-            className="hu-form-control"
-            rows={3}
-            maxLength={500}
-            value={excerpt}
-            disabled={readOnly}
-            onChange={(event) => {
-              setExcerpt(event.target.value);
-              markDirty();
-            }}
-          />
-          <HelperText>This short summary appears on the Blog listing.</HelperText>
-
-          <label className="hu-label" htmlFor={publicationDateId}>
-            Publication date
-          </label>
-          <input
-            id={publicationDateId}
-            className="hu-form-control"
-            type="date"
-            min={BLOG_PUBLICATION_DATE_MIN}
-            value={publicationDate}
-            disabled={readOnly}
-            onChange={(event) => {
-              setPublicationDate(event.target.value);
-              markDirty();
-            }}
-          />
-          <HelperText>
-            Optional. Past dates back to {BLOG_PUBLICATION_DATE_MIN} are allowed for historical
-            works. Future dates schedule publication (noon UTC on the chosen day). createdAt stays
-            the platform record time.
-          </HelperText>
-
           <p className="hu-label" id={contentLabelId}>
             Article Content
           </p>
@@ -457,64 +443,135 @@ export function BlogPostEditor({
           />
         </div>
 
-        <aside className="blog-post-editor__aside">
-          <h2 className="hu-heading-3">Publication settings</h2>
-          <p className="hu-body">
-            SEO title/description controls are deferred — public pages use the publication title and
-            excerpt.
-          </p>
-          <p className="hu-caption">Status: {status}</p>
-          <p className="hu-caption">
-            Autosave: manual Save Draft only in Pack 05 (no aggressive background autosave).
-          </p>
+        <aside className="blog-post-editor__aside" aria-labelledby={settingsToggleId}>
+          <div className="blog-post-editor__aside-header">
+            <h2 className="hu-heading-3" id={settingsToggleId}>
+              Publication settings
+            </h2>
+            <button
+              type="button"
+              className="blog-post-editor__settings-toggle"
+              aria-expanded={settingsOpen}
+              onClick={() => setSettingsOpen((open) => !open)}
+            >
+              {settingsOpen ? "Hide settings" : "Show settings"}
+            </button>
+          </div>
+
+          {settingsOpen ? (
+            <div className="blog-post-editor__aside-body">
+              <p className="hu-caption">
+                Status: {status.replaceAll("_", " ")}
+                {reviewStatus !== "none" ? ` · Review: ${reviewStatus.replaceAll("_", " ")}` : ""}
+              </p>
+              <p className="hu-caption">
+                Autosave: manual Save Draft only (no aggressive background autosave).
+              </p>
+              <p className="hu-body">
+                SEO title/description controls are deferred — public pages use the publication title
+                and excerpt.
+              </p>
+
+              <label className="hu-label" htmlFor={categoryId}>
+                Category
+              </label>
+              <select
+                id={categoryId}
+                className="hu-form-control"
+                value={category}
+                disabled={readOnly}
+                required
+                onChange={(event) => {
+                  setCategory(event.target.value as BlogCategoryId | "");
+                  markDirty();
+                }}
+              >
+                <option value="">Select a category</option>
+                {BLOG_CATEGORIES.map((entry) => (
+                  <option key={entry.categoryId} value={entry.categoryId}>
+                    {entry.name}
+                  </option>
+                ))}
+              </select>
+
+              <label className="hu-label" htmlFor={tagsId}>
+                Tags
+              </label>
+              <input
+                id={tagsId}
+                className="hu-form-control"
+                value={tagsInput}
+                disabled={readOnly}
+                placeholder="Optional, comma-separated (max 12)"
+                onChange={(event) => {
+                  setTagsInput(event.target.value);
+                  markDirty();
+                }}
+              />
+              <HelperText>Optional. Tags are normalized and limited to 12 by the server.</HelperText>
+
+              <label className="hu-label" htmlFor={publicationDateId}>
+                Publication date
+              </label>
+              <input
+                id={publicationDateId}
+                className="hu-form-control"
+                type="date"
+                min={BLOG_PUBLICATION_DATE_MIN}
+                value={publicationDate}
+                disabled={readOnly}
+                onChange={(event) => {
+                  setPublicationDate(event.target.value);
+                  markDirty();
+                }}
+              />
+              <HelperText>
+                Optional. Past dates back to {BLOG_PUBLICATION_DATE_MIN} are allowed for historical
+                works. Future dates schedule publication (noon UTC on the chosen day). createdAt
+                stays the platform record time.
+              </HelperText>
+
+              <fieldset className="blog-post-editor__cover" disabled={readOnly}>
+                <legend className="hu-label">Cover Image</legend>
+                <HelperText>Cover is separate from inline article images.</HelperText>
+                <BlogCoverField
+                  coverMedia={coverMedia}
+                  title={title}
+                  disabled={readOnly}
+                  onChange={(next) => {
+                    setCoverMedia(next);
+                    markDirty();
+                  }}
+                />
+              </fieldset>
+
+              <label className="hu-label" htmlFor={excerptId}>
+                Excerpt
+              </label>
+              <textarea
+                id={excerptId}
+                className="hu-form-control"
+                rows={4}
+                maxLength={500}
+                value={excerpt}
+                disabled={readOnly}
+                onChange={(event) => {
+                  setExcerpt(event.target.value);
+                  markDirty();
+                }}
+              />
+              <HelperText>This short summary appears on the Blog listing cards.</HelperText>
+            </div>
+          ) : null}
         </aside>
       </div>
 
       <div className="blog-post-editor__actions hu-form-actions">
-        {!readOnly ? (
-          <Button
-            type="button"
-            variant="primary"
-            disabled={savePhase.isBusy}
-            ariaLive="polite"
-            onClick={() => {
-              void handleSaveDraft();
-            }}
-          >
-            {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
-          </Button>
-        ) : null}
-
-        {postId ? (
-          <Button href={`/workspace/publishing/${postId}/preview`} variant="secondary">
-            Preview
-          </Button>
-        ) : null}
-
-        {status === "draft" && !administrativelyBlocked ? (
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={busyAction !== null}
-            onClick={() => setSubmitOpen(true)}
-          >
-            Submit for Review
-          </Button>
-        ) : null}
-
-        {showPublish ? (
-          <Button
-            type="button"
-            variant="primary"
-            disabled={busyAction !== null || safetyOutcome === "needs_review"}
-            onClick={() => setPublishOpen(true)}
-          >
-            Publish
-          </Button>
-        ) : null}
-
         {!canDirectPublish && status === "draft" ? (
-          <HelperText>Standard Authors submit for review; direct Publish is for Trusted Authors when Safety allows.</HelperText>
+          <HelperText>
+            Standard Authors submit for review; direct Publish is for Trusted Authors when Safety
+            allows.
+          </HelperText>
         ) : null}
 
         {canDirectPublish && safetyOutcome === "needs_review" ? (
@@ -523,10 +580,6 @@ export function BlogPostEditor({
             review.
           </HelperText>
         ) : null}
-
-        <Link href="/workspace/publishing" className="hu-button hu-button--tertiary">
-          Back to Publishing
-        </Link>
       </div>
 
       <ConfirmDialog

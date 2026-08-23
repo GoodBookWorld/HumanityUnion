@@ -29,6 +29,16 @@ async function start(): Promise<void> {
   );
   startBlogScheduledPublishScheduler();
 
+  const { startAuthorApplicationReconciliationOnce } = await import(
+    "./modules/blog/blog-author-application-reconciliation.js"
+  );
+  startAuthorApplicationReconciliationOnce();
+
+  const { startPublicationReviewReconciliationOnce } = await import(
+    "./modules/blog/blog-publication-review-reconciliation.js"
+  );
+  startPublicationReviewReconciliationOnce();
+
   const { default: app } = await import("./app.js");
 
   app.listen(environment.apiPort, () => {

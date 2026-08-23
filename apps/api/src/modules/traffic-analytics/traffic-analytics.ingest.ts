@@ -162,6 +162,7 @@ export async function ingestTrafficPageview(input: {
       countryCode,
       referrerType: classified.referrerType,
       referrerHost: classified.referrerHost,
+      pathname,
     });
   } catch (error) {
     logger.warn("traffic_analytics.aggregate_update_failed", {

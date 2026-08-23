@@ -5,7 +5,8 @@
  * DOMPurify on the browser is never trusted as the only boundary.
  *
  * Allowed: h1–h3, p, ul, ol, li, a[href], blockquote, img[src|alt], hr,
- * strong, em, br. Everything else is stripped. Scripts / event handlers rejected.
+ * strong, em, u, br. Safe text-align style on block tags only.
+ * Everything else is stripped. Scripts / event handlers rejected.
  */
 
 const ALLOWED_TAGS = new Set([
@@ -22,10 +23,15 @@ const ALLOWED_TAGS = new Set([
   "hr",
   "strong",
   "em",
+  "u",
   "br",
 ]);
 
 const VOID_TAGS = new Set(["hr", "br", "img"]);
+
+const TEXT_ALIGN_STYLE_PATTERN = /^text-align:\s*(left|center|right|justify)\s*;?$/i;
+
+const BLOCK_TAGS_WITH_ALIGN = new Set(["p", "h1", "h2", "h3", "blockquote"]);
 
 function decodeEntities(value: string): string {
   return value
@@ -91,6 +97,18 @@ function isSafeImgSrc(src: string): boolean {
   );
 }
 
+function sanitizeTextAlignStyle(style: string | undefined): string | undefined {
+  if (!style) {
+    return undefined;
+  }
+  const trimmed = style.trim();
+  const match = TEXT_ALIGN_STYLE_PATTERN.exec(trimmed);
+  if (!match) {
+    return undefined;
+  }
+  return `text-align: ${match[1]!.toLowerCase()}`;
+}
+
 function parseAttributes(raw: string): Record<string, string> {
   const attrs: Record<string, string> = {};
   const attrPattern = /([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*("([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/g;
@@ -125,6 +143,13 @@ function serializeAllowedTag(tag: string, attrs: Record<string, string>, selfClo
 
   if (VOID_TAGS.has(tag)) {
     return selfClosing || tag === "hr" || tag === "br" ? `<${tag} />` : `<${tag}>`;
+  }
+
+  if (BLOCK_TAGS_WITH_ALIGN.has(tag)) {
+    const style = sanitizeTextAlignStyle(attrs.style);
+    if (style) {
+      return `<${tag} style="${escapeAttribute(style)}">`;
+    }
   }
 
   return `<${tag}>`;

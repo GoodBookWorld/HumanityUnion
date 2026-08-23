@@ -301,19 +301,24 @@ export const NOTIFICATION_TEMPLATES: Record<CivicNotificationEventType, Notifica
     message: "Your Blog publication visibility has been restored according to its publication status.",
     priority: "informational",
   },
+  blog_publication_review_requested: {
+    title: "Publication submitted for review",
+    message: "An Author submitted a publication for review.",
+    priority: "important",
+  },
   blog_post_changes_requested: {
-    title: "Changes requested on your Blog publication",
-    message: "Changes were requested for your Blog publication.",
+    title: "Publication returned for changes",
+    message: "Changes were requested for your Blog publication. Open Publishing to revise and resubmit.",
     priority: "important",
   },
   blog_post_published: {
-    title: "Blog publication published",
-    message: "Your Blog publication has been published.",
+    title: "Publication approved",
+    message: "Your Blog publication has been approved and published (or scheduled).",
     priority: "important",
   },
   blog_post_declined: {
-    title: "Blog publication update",
-    message: "Your Blog publication was declined. Open Publishing for details.",
+    title: "Publication not accepted",
+    message: "Your Blog publication was not accepted. Open Publishing for details.",
     priority: "informational",
   },
   blog_comment_posted: {

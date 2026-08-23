@@ -21,17 +21,18 @@ export default async function WorkspacePublishingEditPage({
     <main className="humanity-workspace-page">
       <MemberWorkspace
         title="Edit Publication"
-      subtitle="Update your draft or published article according to your Author permissions."
-      workspaceNavigation={<WorkspaceNavigation />}
-      assistant={
-        <HumanityUnionAssistantWidget
-          surfaceId="blog"
-          description="Help with clarity and review status. The Assistant cannot save, submit, or publish."
-        />
-      }
-    >
-      <BlogEditorPageContent mode="edit" postId={postId} />
-    </MemberWorkspace>
+        subtitle="Update your draft or published article according to your Author permissions."
+        workspaceNavigation={<WorkspaceNavigation />}
+        assistantPlacement="compact"
+        assistant={
+          <HumanityUnionAssistantWidget
+            surfaceId="blog"
+            description="Help with clarity and review status. The Assistant cannot save, submit, or publish."
+          />
+        }
+      >
+        <BlogEditorPageContent mode="edit" postId={postId} />
+      </MemberWorkspace>
     </main>
   );
 }

@@ -1,4 +1,4 @@
-import type { ClientSession } from "mongodb";
+import type { ClientSession, Filter } from "mongodb";
 
 import {
   BLOG_AUTHOR_APPLICATION_ACTIVE_STATUSES,
@@ -157,6 +157,31 @@ export async function listPublishedBlogPosts(input: {
   };
 }
 
+/** Pack 14D — single aggregation of eligible public posts by categoryId. */
+export async function aggregatePublishedBlogPostCountsByCategory(): Promise<
+  ReadonlyArray<{ categoryId: BlogCategoryId; count: number }>
+> {
+  await ensureBlogMongoReady();
+  const now = new Date().toISOString();
+  const rows = await postsCollection()
+    .aggregate<{ _id: BlogCategoryId; count: number }>([
+      {
+        $match: {
+          status: "published",
+          administrativelyBlocked: { $ne: true },
+          publishedAt: { $lte: now },
+        },
+      },
+      { $group: { _id: "$categoryId", count: { $sum: 1 } } },
+    ])
+    .toArray();
+
+  return rows.map((row) => ({
+    categoryId: row._id,
+    count: row.count,
+  }));
+}
+
 export async function listPublishedBlogPostsForSearch(): Promise<BlogPost[]> {
   await ensureBlogMongoReady();
   const now = new Date().toISOString();
@@ -290,16 +315,49 @@ export async function insertBlogAuthorApplication(
   return application;
 }
 
-/** Active = submitted | under_review | changes_requested (and legacy pending). */
+/** Active = submitted | under_review | changes_requested (and legacy Mongo `pending`). */
 export async function findActiveBlogAuthorApplication(
   participantId: string,
 ): Promise<BlogAuthorApplication | null> {
   await ensureBlogMongoReady();
-  const doc = await applicationsCollection().findOne({
+  // Legacy Pack 02 stored status "pending"; typed union excludes it, so cast the filter.
+  const filter = {
     participantId,
-    status: { $in: [...BLOG_AUTHOR_APPLICATION_ACTIVE_STATUSES] },
-  });
+    status: { $in: [...BLOG_AUTHOR_APPLICATION_ACTIVE_STATUSES, "pending"] },
+  } as Filter<BlogAuthorApplicationMongoDocument>;
+  const doc = await applicationsCollection().findOne(filter);
   return doc ? fromBlogAuthorApplicationMongoDocument(doc) : null;
+}
+
+/**
+ * Pack 14A — Admin pending-review queue (canonical, notification-independent).
+ * Includes legacy Mongo status `pending` (mapped to submitted on read).
+ */
+export async function listPendingBlogAuthorApplications(input?: {
+  limit?: number;
+  offset?: number;
+}): Promise<{ items: BlogAuthorApplication[]; total: number }> {
+  await ensureBlogMongoReady();
+  const limit = Math.min(Math.max(input?.limit ?? 50, 1), 100);
+  const offset = Math.max(input?.offset ?? 0, 0);
+  const filter = {
+    status: { $in: ["submitted", "under_review", "pending"] },
+  } as Filter<BlogAuthorApplicationMongoDocument>;
+
+  const [total, docs] = await Promise.all([
+    applicationsCollection().countDocuments(filter),
+    applicationsCollection()
+      .find(filter)
+      .sort({ createdAt: 1 })
+      .skip(offset)
+      .limit(limit)
+      .toArray(),
+  ]);
+
+  return {
+    total,
+    items: docs.map(fromBlogAuthorApplicationMongoDocument),
+  };
 }
 
 /** @deprecated Pack 02 name — use findActiveBlogAuthorApplication. */

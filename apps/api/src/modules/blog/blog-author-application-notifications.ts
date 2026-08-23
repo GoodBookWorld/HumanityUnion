@@ -11,7 +11,7 @@ import {
 import { listAuthUsersForAdmin } from "../auth/auth-user.repository.js";
 import { findAuthUserByMemberId } from "../auth/auth-user.repository.js";
 import { findMemberProfileByUserId } from "../member-profile/member-profile.repository.js";
-import { createNotification } from "../notifications/notification.service.js";
+import { createNotification, existsNotificationForRecipientEventAndRelatedEntity } from "../notifications/notification.service.js";
 import { resolveRecipientIdentity } from "../notifications/notification.recipients.js";
 import { getNotificationTemplate } from "../notifications/notification.templates.js";
 
@@ -82,13 +82,14 @@ async function resolveApplicantDisplayName(participantId: string): Promise<strin
 }
 
 /**
- * Pack 13A — notify every active Administrator account.
+ * Pack 13A / Pack 14A — notify every active Administrator account.
+ * Idempotent per (admin, eventType, applicationId): never duplicates review requests.
  * Best-effort; never throws to callers.
  */
 export async function emitBlogAuthorApplicationAdminReviewNotifications(input: {
   applicantParticipantId: string;
   applicationId: string;
-}): Promise<{ deliveredCount: number }> {
+}): Promise<{ deliveredCount: number; skippedExistingCount: number }> {
   try {
     const displayName = await resolveApplicantDisplayName(input.applicantParticipantId);
     const template = getNotificationTemplate("blog_author_application_review_requested");
@@ -104,8 +105,20 @@ export async function emitBlogAuthorApplicationAdminReviewNotifications(input: {
     });
 
     let deliveredCount = 0;
+    let skippedExistingCount = 0;
     for (const admin of admins.items) {
       try {
+        const alreadyExists = await existsNotificationForRecipientEventAndRelatedEntity({
+          recipientUserId: admin.userId,
+          eventType: "blog_author_application_review_requested",
+          relatedEntityType: "blog_author_application",
+          relatedEntityId: input.applicationId,
+        });
+        if (alreadyExists) {
+          skippedExistingCount += 1;
+          continue;
+        }
+
         const profile = await findMemberProfileByUserId(admin.userId);
         await createNotification({
           recipientUserId: admin.userId,
@@ -124,9 +137,9 @@ export async function emitBlogAuthorApplicationAdminReviewNotifications(input: {
       }
     }
 
-    return { deliveredCount };
+    return { deliveredCount, skippedExistingCount };
   } catch {
-    return { deliveredCount: 0 };
+    return { deliveredCount: 0, skippedExistingCount: 0 };
   }
 }
 

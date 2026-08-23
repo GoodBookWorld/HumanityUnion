@@ -87,6 +87,16 @@ export async function createNotification(input: {
   return notification;
 }
 
+/** Pack 14A — deterministic dedupe key for Admin review fan-out. */
+export async function existsNotificationForRecipientEventAndRelatedEntity(input: {
+  recipientUserId: string;
+  eventType: MemberNotification["eventType"];
+  relatedEntityType: MemberNotification["relatedEntityType"];
+  relatedEntityId: string;
+}): Promise<boolean> {
+  return persistence.existsForRecipientEventAndRelatedEntity(input);
+}
+
 const NOTIFY_ACTOR_EVENT_TYPES = new Set<MemberNotification["eventType"]>([
   "initiative_published",
   "proposal_decided",

@@ -40,15 +40,18 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
 
   it("3/4/5 — category options and explicit search query wiring", () => {
     const index = read("features/blog/components/BlogIndexPageContent.tsx");
-    assert.match(index, /BlogCategoriesSidebar/);
+    assert.match(index, /BlogCategoriesSidebar|BlogDiscoveryLeftRail/);
     assert.match(index, /fetchPublicBlogCategories/);
-    assert.match(index, /onSearchSubmit/);
-    assert.match(index, /type="search"/);
-    assert.match(index, /blog-layout__search/);
+    assert.match(index, /type="search"|BlogDiscoveryRightRail/);
+    assert.match(index, /blog-layout__search|BlogDiscoveryRightRail/);
 
     const categories = read("features/blog/components/BlogCategoriesSidebar.tsx");
     assert.match(categories, /All Categories/);
     assert.match(categories, /buildBlogIndexHref/);
+
+    const right = read("features/blog/components/BlogDiscoveryRightRail.tsx");
+    assert.match(right, /onSearchSubmit|type="search"/);
+    assert.match(right, /blog-layout__search/);
 
     const api = read("features/blog/api.ts");
     assert.match(api, /params\.set\("q"/);
@@ -96,7 +99,7 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
     assert.match(article, /BlogArticleBody/);
     assert.match(article, /BlogAuthorCard/);
     assert.match(article, /This publication could not be found/);
-    assert.doesNotMatch(article, /No Comments/);
+    assert.match(article, /No Comments|commentsLabel/);
     // Pack 07 adds Helpful/Not Helpful + Comments below the article body.
     assert.match(article, /BlogReactionControls/);
     assert.match(article, /BlogCommentsSection/);
@@ -163,7 +166,7 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
       ),
       "human_security",
     );
-    assert.equal(BLOG_PAGE_SIZE, 12);
+    assert.equal(BLOG_PAGE_SIZE, 9);
     assert.match(formatBlogPublishedDate("2026-01-15T12:00:00.000Z"), /2026/);
   });
 

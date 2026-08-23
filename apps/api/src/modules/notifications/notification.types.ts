@@ -26,6 +26,16 @@ export interface NotificationPersistenceAdapter {
     relatedEntityType: MemberNotification["relatedEntityType"],
     relatedEntityId: string,
   ): Promise<number>;
+  /**
+   * Pack 14A — existence check for idempotent Admin review notification delivery.
+   * Key: (recipientUserId, eventType, relatedEntityType, relatedEntityId).
+   */
+  existsForRecipientEventAndRelatedEntity(input: {
+    recipientUserId: string;
+    eventType: MemberNotification["eventType"];
+    relatedEntityType: MemberNotification["relatedEntityType"];
+    relatedEntityId: string;
+  }): Promise<boolean>;
   clearForTests?(): void;
 }
 

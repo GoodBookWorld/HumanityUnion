@@ -93,6 +93,25 @@ export class MemoryNotificationPersistenceAdapter implements NotificationPersist
     return deletedCount;
   }
 
+  async existsForRecipientEventAndRelatedEntity(input: {
+    recipientUserId: string;
+    eventType: MemberNotification["eventType"];
+    relatedEntityType: MemberNotification["relatedEntityType"];
+    relatedEntityId: string;
+  }): Promise<boolean> {
+    for (const notification of this.notifications.values()) {
+      if (
+        notification.recipientUserId === input.recipientUserId &&
+        notification.eventType === input.eventType &&
+        notification.relatedEntityType === input.relatedEntityType &&
+        notification.relatedEntityId === input.relatedEntityId
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   clearForTests(): void {
     this.notifications.clear();
   }

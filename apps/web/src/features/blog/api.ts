@@ -7,13 +7,17 @@ import type {
 
 import { apiRequest, apiRequestOptional } from "../../lib/api-client";
 
-export const BLOG_PAGE_SIZE = 12;
+/** Pack 14D — center feed page size. */
+export const BLOG_PAGE_SIZE = 9;
 
 export interface FetchPublicBlogPostsOptions {
   q?: string;
   categoryId?: string;
   limit?: number;
   offset?: number;
+  page?: number;
+  pageSize?: number;
+  includeDiscovery?: boolean;
   /** Launch Readiness Pack 06 — abort stale Blog list/search navigations. */
   signal?: AbortSignal;
 }
@@ -43,9 +47,14 @@ export async function fetchPublicBlogPosts(
   options: FetchPublicBlogPostsOptions = {},
 ): Promise<PublicBlogPostListResponse> {
   const params = new URLSearchParams();
-  const limit = options.limit ?? BLOG_PAGE_SIZE;
-  params.set("limit", String(limit));
-  params.set("offset", String(options.offset ?? 0));
+  const pageSize = options.pageSize ?? options.limit ?? BLOG_PAGE_SIZE;
+  params.set("pageSize", String(pageSize));
+
+  if (options.page !== undefined) {
+    params.set("page", String(options.page));
+  } else {
+    params.set("offset", String(options.offset ?? 0));
+  }
 
   if (options.q?.trim()) {
     params.set("q", options.q.trim());
@@ -53,6 +62,10 @@ export async function fetchPublicBlogPosts(
 
   if (options.categoryId?.trim()) {
     params.set("categoryId", options.categoryId.trim());
+  }
+
+  if (options.includeDiscovery === false) {
+    params.set("includeDiscovery", "0");
   }
 
   return apiRequest<PublicBlogPostListResponse>(

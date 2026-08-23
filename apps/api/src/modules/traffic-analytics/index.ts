@@ -21,5 +21,5 @@ export {
   percentChange,
 } from "./traffic-insights-period.js";
 export { clearTrafficAnalyticsRateLimitBucketsForTests } from "./traffic-analytics-rate-limit.js";
-export { recordAcceptedTrafficAggregates, utcDayKey } from "./traffic-aggregate.repository.js";
+export { recordAcceptedTrafficAggregates, getPublicBlogIndexViewCount, utcDayKey } from "./traffic-aggregate.repository.js";
 export { getTrafficInsightsReport } from "./traffic-insights.admin.service.js";

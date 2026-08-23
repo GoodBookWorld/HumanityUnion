@@ -356,6 +356,27 @@ export interface PublicBlogPostListResponse {
   readonly total: number;
   readonly limit: number;
   readonly offset: number;
+  /** Pack 14D — 1-based page when requested via page/pageSize. */
+  readonly page?: number;
+  readonly pageSize?: number;
+  readonly totalPages?: number;
+  /** Pack 14D — eligible public counts per category (visibility-filtered). */
+  readonly categoryCounts?: readonly PublicBlogCategoryCount[];
+  /** Pack 14D — latest 4 public publications (not page-filtered). */
+  readonly latestPublications?: readonly PublicBlogPostListItem[];
+  /**
+   * Pack 14D — all-time views of the `/blog` index page only (not article pages).
+   * Aggregate count; never includes visitor/session identity.
+   */
+  readonly blogIndexViews?: number;
+}
+
+/** Pack 14D — public category publication counts for discovery chart. */
+export interface PublicBlogCategoryCount {
+  readonly categoryId: BlogCategoryId;
+  readonly name: string;
+  readonly slug: string;
+  readonly count: number;
 }
 
 /** Pack 13D — public Authors rail: authors with at least one visible publication. */
@@ -598,4 +619,72 @@ export interface AdminPublishingBlockCommandResult {
   readonly targetId: string;
   readonly administrativelyBlocked: boolean;
   readonly auditId: string;
+}
+
+/** Pack 14A — Admin Pending Author Applications queue row. */
+export interface AdminPendingAuthorApplicationItem {
+  readonly applicationId: string;
+  readonly participantId: string;
+  readonly displayName: string;
+  readonly uniqueName?: string;
+  readonly email: string;
+  readonly avatarUrl?: string;
+  readonly profileHref?: string;
+  readonly status: BlogAuthorApplicationStatus;
+  readonly submittedAt: string;
+  readonly updatedAt: string;
+  readonly motivationPreview: string;
+  readonly hasAdminReviewNotification: boolean;
+  readonly structurallyInvalid: boolean;
+}
+
+export interface AdminPendingAuthorApplicationListResponse {
+  readonly applications: readonly AdminPendingAuthorApplicationItem[];
+  readonly total: number;
+  readonly limit: number;
+  readonly offset: number;
+}
+
+export interface AdminAuthorApplicationReconcileResult {
+  readonly scannedCount: number;
+  readonly notifiedApplicationCount: number;
+  readonly notificationsCreated: number;
+  readonly skippedAlreadyNotified: number;
+  readonly skippedInvalid: number;
+  readonly recoveredApplicationIds: readonly string[];
+}
+
+/** Pack 14B — Admin Pending Publication Review queue row (canonical review authority). */
+export interface AdminPendingPublicationReviewItem {
+  readonly postId: string;
+  readonly title: string;
+  readonly slug: string;
+  readonly authorParticipantId: string;
+  readonly authorDisplayName: string;
+  readonly categoryId: BlogCategoryId;
+  readonly categoryName: string;
+  readonly status: BlogPostStatus;
+  readonly reviewStatus: BlogReviewStatus;
+  readonly submittedAt: string;
+  readonly updatedAt: string;
+  readonly publishedAt?: string;
+  readonly administrativelyBlocked: boolean;
+  readonly hasAdminReviewNotification: boolean;
+  readonly editorialHref: string;
+  readonly publishingHref: string;
+}
+
+export interface AdminPendingPublicationReviewListResponse {
+  readonly publications: readonly AdminPendingPublicationReviewItem[];
+  readonly total: number;
+  readonly limit: number;
+  readonly offset: number;
+}
+
+export interface AdminPublicationReviewReconcileResult {
+  readonly scannedCount: number;
+  readonly notifiedPublicationCount: number;
+  readonly notificationsCreated: number;
+  readonly skippedAlreadyNotified: number;
+  readonly recoveredPostIds: readonly string[];
 }

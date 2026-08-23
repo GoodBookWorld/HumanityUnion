@@ -39,6 +39,15 @@ describe("Blog content sanitize (Pack 02)", () => {
     assert.match(html, /\/api\/v1\/media\/files\/blog\/x\.webp/);
   });
 
+  it("keeps underline and safe text-align; strips unsafe style", () => {
+    const html = sanitizeBlogHtml(
+      '<p style="text-align: center"><u>Centered</u></p><p style="color:red">No color</p>',
+    );
+    assert.match(html, /<u>Centered<\/u>/);
+    assert.match(html, /text-align:\s*center/);
+    assert.doesNotMatch(html, /color:red/);
+  });
+
   it("extracts plain text for Safety", () => {
     assert.equal(blogHtmlToPlainText("<p>Hello <em>there</em></p>"), "Hello there");
   });

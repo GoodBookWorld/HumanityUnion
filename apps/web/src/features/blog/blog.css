@@ -1,6 +1,7 @@
 /* Blog UX Pack 03 — Design System Pack 01 tokens only. */
 /* Launch Readiness UX Fix Pack 01 — outer geometry is `.hu-page-container` only. */
 /* Pack 13D — public three-column Blog discovery layout. */
+/* Pack 14D — Search in right rail; equal center/right; independent desktop scroll. */
 
 .blog-page,
 .blog-article {
@@ -40,14 +41,22 @@
     "categories"
     "center"
     "authors"
-    "right";
+    "views"
+    "chart"
+    "latest4";
   align-items: start;
   width: 100%;
   min-width: 0;
 }
 
+.blog-layout__left,
+.blog-layout__right {
+  display: contents;
+}
+
 .blog-layout__search {
   grid-area: search;
+  width: 100%;
 }
 
 .blog-layout__categories {
@@ -60,6 +69,7 @@
   display: grid;
   gap: var(--hu-space-4);
   min-width: 0;
+  align-content: start;
 }
 
 .blog-layout__authors {
@@ -67,8 +77,18 @@
   min-width: 0;
 }
 
-.blog-layout__right {
-  grid-area: right;
+.blog-layout__views {
+  grid-area: views;
+  min-width: 0;
+}
+
+.blog-layout__chart {
+  grid-area: chart;
+  min-width: 0;
+}
+
+.blog-layout__latest4 {
+  grid-area: latest4;
   min-width: 0;
 }
 
@@ -108,6 +128,128 @@
 
 .blog-rail-widget__title {
   margin: 0;
+}
+
+.blog-views-widget__value {
+  margin: 0;
+  font-size: clamp(1.75rem, 2.4vw, 2.35rem);
+  font-weight: var(--hu-font-weight-bold);
+  line-height: 1.1;
+}
+
+.blog-views-widget__caption {
+  margin: 0;
+}
+
+.blog-category-chart__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.blog-category-chart__link {
+  display: grid;
+  gap: var(--hu-space-2);
+  text-decoration: none;
+  color: inherit;
+}
+
+.blog-category-chart__link:hover .blog-category-chart__name,
+.blog-category-chart__link:focus-visible .blog-category-chart__name,
+.blog-category-chart__link.is-active .blog-category-chart__name {
+  color: var(--hu-color-primary);
+}
+
+.blog-category-chart__label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--hu-space-3);
+  align-items: baseline;
+}
+
+.blog-category-chart__name {
+  font-weight: var(--hu-font-weight-semibold);
+  font-size: var(--hu-font-size-sm);
+}
+
+.blog-category-chart__count {
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-sm);
+  white-space: nowrap;
+}
+
+.blog-category-chart__bar {
+  display: block;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--hu-color-primary);
+  opacity: 0.85;
+}
+
+.blog-latest-mini__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.blog-latest-mini__link {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: var(--hu-space-3);
+  align-items: start;
+  text-decoration: none;
+  color: inherit;
+}
+
+.blog-latest-mini__link:hover .blog-latest-mini__title,
+.blog-latest-mini__link:focus-visible .blog-latest-mini__title {
+  color: var(--hu-color-primary);
+  text-decoration: underline;
+}
+
+.blog-latest-mini__thumb {
+  width: 4.5rem;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--hu-radius-control);
+}
+
+.blog-latest-mini__body {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.blog-latest-mini__title {
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-semibold);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.blog-latest-mini__date,
+.blog-latest-mini__author {
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-xs, 0.75rem);
+}
+
+.blog-post-card__cta {
+  margin: 0;
+  margin-top: auto;
+  padding-top: var(--hu-space-2);
+}
+
+.blog-pagination__ellipsis {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 0.35rem;
+  color: var(--hu-color-text-muted);
 }
 
 .blog-categories-list,
@@ -398,6 +540,34 @@
   text-decoration: underline;
 }
 
+.blog-article__center {
+  display: grid;
+  gap: var(--hu-space-4);
+  align-content: start;
+}
+
+.blog-article__comments-meta {
+  color: var(--hu-color-text-muted);
+  text-decoration: none;
+}
+
+.blog-article__comments-meta:hover,
+.blog-article__comments-meta:focus-visible {
+  color: var(--hu-color-primary);
+  text-decoration: underline;
+}
+
+.blog-article__category a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.blog-article__category a:hover,
+.blog-article__category a:focus-visible {
+  color: var(--hu-color-primary);
+  text-decoration: underline;
+}
+
 .blog-article__title {
   max-width: 48rem;
   margin-inline: auto;
@@ -463,6 +633,10 @@
 
 .blog-article-body a {
   color: var(--hu-color-primary);
+}
+
+.blog-article-body u {
+  text-decoration: underline;
 }
 
 .blog-article-body blockquote {
@@ -594,7 +768,9 @@
       "search search"
       "categories center"
       "authors center"
-      "right right";
+      "views views"
+      "chart chart"
+      "latest4 latest4";
   }
 
   .blog-post-card__content {
@@ -623,11 +799,51 @@
 
 @media (min-width: 1100px) {
   .blog-layout {
-    grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr) minmax(12rem, 16rem);
-    grid-template-areas:
-      "search search search"
-      "categories center right"
-      "authors center right";
+    grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "left center right";
+    align-items: stretch;
+    height: calc(100vh - 10.5rem);
+    max-height: calc(100vh - 10.5rem);
+    gap: var(--hu-space-5);
+  }
+
+  .blog-layout__left,
+  .blog-layout__right {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hu-space-4);
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .blog-layout__left {
+    grid-area: left;
+    overflow: auto;
+    align-self: stretch;
+  }
+
+  .blog-layout__center {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: var(--hu-space-2);
+    min-height: 0;
+  }
+
+  .blog-layout__right {
+    grid-area: right;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: var(--hu-space-2);
+    min-height: 0;
+  }
+
+  .blog-layout__categories,
+  .blog-layout__authors,
+  .blog-layout__search,
+  .blog-layout__views,
+  .blog-layout__chart,
+  .blog-layout__latest4 {
+    grid-area: unset;
   }
 
   .blog-post-card__content {

@@ -21,7 +21,7 @@ export function BlogRelatedPosts({ categoryId, excludePostId }: BlogRelatedPosts
   useEffect(() => {
     let cancelled = false;
 
-    void fetchPublicBlogPosts({ categoryId, limit: 6, offset: 0 })
+    void fetchPublicBlogPosts({ categoryId, limit: 6, offset: 0, includeDiscovery: false })
       .then((response) => {
         if (cancelled) {
           return;

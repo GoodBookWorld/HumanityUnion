@@ -18,6 +18,8 @@ export interface TrafficDailyAggregateDocument {
   collectionStartedAt?: Date;
   allTimeViews?: number;
   allTimeSessions?: number;
+  /** Pack 14D — all-time views of pathname `/blog` only (public-safe aggregate). */
+  blogIndexAllTimeViews?: number;
 }
 
 export interface TrafficVisitorRegistryDocument {
@@ -157,7 +159,16 @@ async function touchAnalyticsMeta(input: {
   occurredAt: Date;
   views: number;
   sessions: number;
+  blogIndexViews?: number;
 }): Promise<void> {
+  const increment: Record<string, number> = {
+    allTimeViews: input.views,
+    allTimeSessions: input.sessions,
+  };
+  if (input.blogIndexViews && input.blogIndexViews > 0) {
+    increment.blogIndexAllTimeViews = input.blogIndexViews;
+  }
+
   await aggregatesCollection().updateOne(
     { aggregateKey: META_KEY },
     {
@@ -171,10 +182,7 @@ async function touchAnalyticsMeta(input: {
         sessions: 0,
         collectionStartedAt: input.occurredAt,
       },
-      $inc: {
-        allTimeViews: input.views,
-        allTimeSessions: input.sessions,
-      },
+      $inc: increment,
       $set: { updatedAt: input.occurredAt },
     },
     { upsert: true },
@@ -192,6 +200,8 @@ export async function recordAcceptedTrafficAggregates(input: {
   countryCode?: string;
   referrerType: TrafficReferrerType;
   referrerHost?: string | null;
+  /** Normalized pathname; `/blog` increments public Blog index view counter. */
+  pathname?: string;
 }): Promise<void> {
   const day = utcDayKey(input.occurredAt);
   const { isNewVisitorDay } = await touchTrafficVisitorDay({
@@ -202,6 +212,7 @@ export async function recordAcceptedTrafficAggregates(input: {
 
   const visitorInc = isNewVisitorDay ? 1 : 0;
   const sessionInc = input.isNewSession ? 1 : 0;
+  const blogIndexViews = input.pathname === "/blog" ? 1 : 0;
 
   await Promise.all([
     incrementAggregate({
@@ -241,6 +252,7 @@ export async function recordAcceptedTrafficAggregates(input: {
       occurredAt: input.occurredAt,
       views: 1,
       sessions: sessionInc,
+      blogIndexViews,
     }),
   ]);
 }
@@ -249,6 +261,7 @@ export async function getTrafficAnalyticsMeta(): Promise<{
   collectionStartedAt: Date | null;
   allTimeViews: number;
   allTimeSessions: number;
+  blogIndexAllTimeViews: number;
 } | null> {
   const meta = await aggregatesCollection().findOne({ aggregateKey: META_KEY });
   if (!meta) {
@@ -258,7 +271,14 @@ export async function getTrafficAnalyticsMeta(): Promise<{
     collectionStartedAt: meta.collectionStartedAt ?? null,
     allTimeViews: meta.allTimeViews ?? 0,
     allTimeSessions: meta.allTimeSessions ?? 0,
+    blogIndexAllTimeViews: meta.blogIndexAllTimeViews ?? 0,
   };
+}
+
+/** Pack 14D — public-safe aggregate: all-time `/blog` index views only. */
+export async function getPublicBlogIndexViewCount(): Promise<number> {
+  const meta = await getTrafficAnalyticsMeta();
+  return meta?.blogIndexAllTimeViews ?? 0;
 }
 
 export async function countAllTimeTrafficVisitors(): Promise<number> {

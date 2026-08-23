@@ -152,13 +152,31 @@ publicBlogRouter.get("/authors", async (req, res) => {
 
 publicBlogRouter.get("/", async (req, res) => {
   try {
-    const limit = typeof req.query.limit === "string" ? Number.parseInt(req.query.limit, 10) : undefined;
+    const page =
+      typeof req.query.page === "string" ? Number.parseInt(req.query.page, 10) : undefined;
+    const pageSizeRaw =
+      typeof req.query.pageSize === "string"
+        ? Number.parseInt(req.query.pageSize, 10)
+        : typeof req.query.limit === "string"
+          ? Number.parseInt(req.query.limit, 10)
+          : undefined;
     const offset =
       typeof req.query.offset === "string" ? Number.parseInt(req.query.offset, 10) : undefined;
     const categoryId = typeof req.query.categoryId === "string" ? req.query.categoryId : undefined;
     const q = typeof req.query.q === "string" ? req.query.q : undefined;
+    const includeDiscovery =
+      req.query.includeDiscovery === "0" || req.query.includeDiscovery === "false"
+        ? false
+        : true;
 
-    const data = await listPublicBlogPosts({ limit, offset, categoryId, q });
+    const data = await listPublicBlogPosts({
+      page: Number.isFinite(page) ? page : undefined,
+      pageSize: Number.isFinite(pageSizeRaw) ? pageSizeRaw : undefined,
+      offset: Number.isFinite(offset) ? offset : undefined,
+      categoryId,
+      q,
+      includeDiscovery,
+    });
     res.json(createSuccessResponse(data, "Public Blog listing loaded."));
   } catch (error) {
     handleBlogError(res, error);

@@ -19,6 +19,8 @@ describe("Pack 13B — Admin Publishing UI", () => {
     const section = readWeb("features/administration/components/AdminPublishingSection.tsx");
     assert.match(section, /Authors/);
     assert.match(section, /Publications/);
+    assert.match(section, /Pending applications/);
+    assert.match(section, /Pending Review/);
     assert.match(section, /Block/);
     assert.match(section, /Unblock/);
     assert.match(section, /View profile/);

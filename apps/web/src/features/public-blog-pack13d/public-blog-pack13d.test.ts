@@ -1,5 +1,6 @@
 /**
  * Pack 13D — Public Blog three-column experience contracts.
+ * Pack 14D evolves Search into the right rail and equal center/right columns.
  */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -16,24 +17,27 @@ function readWeb(relativePath: string): string {
 }
 
 describe("Pack 13D — Public Blog three-column experience", () => {
-  it("layout: search above columns; left categories/authors; center feed; right rail", () => {
+  it("layout: left categories/authors; center feed; right discovery with Search", () => {
     const index = readWeb("features/blog/components/BlogIndexPageContent.tsx");
-    assert.match(index, /blog-layout__search/);
-    assert.match(index, /blog-layout__categories/);
-    assert.match(index, /blog-layout__authors/);
+    assert.match(index, /BlogDiscoveryLeftRail/);
+    assert.match(index, /BlogDiscoveryRightRail/);
     assert.match(index, /blog-layout__center/);
-    assert.match(index, /blog-layout__right/);
-    assert.match(index, /Latest Publications/);
-    assert.match(index, /BlogCategoriesSidebar/);
-    assert.match(index, /BlogAuthorsSidebar/);
 
-    const searchIndex = index.indexOf("blog-layout__search");
-    const categoriesIndex = index.indexOf("blog-layout__categories");
-    const centerIndex = index.indexOf("blog-layout__center");
-    const authorsIndex = index.indexOf("blog-layout__authors");
-    assert.ok(searchIndex < categoriesIndex);
-    assert.ok(categoriesIndex < centerIndex);
-    assert.ok(centerIndex < authorsIndex);
+    const left = readWeb("features/blog/components/BlogDiscoveryLeftRail.tsx");
+    assert.match(left, /blog-layout__categories/);
+    assert.match(left, /blog-layout__authors/);
+    assert.match(left, /BlogCategoriesSidebar/);
+    assert.match(left, /BlogAuthorsSidebar/);
+
+    const right = readWeb("features/blog/components/BlogDiscoveryRightRail.tsx");
+    assert.match(right, /blog-layout__search/);
+    assert.match(right, /BlogViewsWidget/);
+    assert.match(right, /BlogCategoryChart/);
+    assert.match(right, /BlogLatestMiniCards/);
+
+    const searchIdx = right.indexOf("blog-layout__search");
+    const viewsIdx = right.indexOf("blog-layout__views");
+    assert.ok(searchIdx >= 0 && searchIdx < viewsIdx);
   });
 
   it("categories widget uses deep-linkable URL state with active state", () => {
@@ -71,6 +75,7 @@ describe("Pack 13D — Public Blog three-column experience", () => {
     assert.match(card, /post\.excerpt/);
     assert.match(card, /buildBlogIndexHref/);
     assert.match(card, /BlogCoverImage/);
+    assert.match(card, /Read more/);
     assert.doesNotMatch(card, /Read Article/);
   });
 
@@ -84,10 +89,9 @@ describe("Pack 13D — Public Blog three-column experience", () => {
   it("responsive CSS is 3-column desktop, stacked mobile, no page overflow", () => {
     const css = readWeb("features/blog/blog.css");
     assert.match(css, /grid-template-areas:/);
-    assert.match(css, /"search search search"/);
-    assert.match(css, /"categories center right"/);
-    assert.match(css, /"authors center right"/);
-    assert.match(css, /"search"\s*"categories"\s*"center"\s*"authors"\s*"right"/s);
+    assert.match(css, /"left center right"/);
+    assert.match(css, /minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/);
+    assert.match(css, /"search"\s*"categories"\s*"center"\s*"authors"\s*"views"\s*"chart"\s*"latest4"/s);
     assert.match(css, /overflow-x:\s*clip/);
     assert.match(css, /blog-post-card__content/);
     assert.match(css, /@media \(min-width: 1100px\)/);

@@ -1,12 +1,79 @@
 import type {
+  AdminAuthorApplicationReconcileResult,
   AdminAuthorDirectoryResponse,
   AdminAuthorDirectoryStatusFilter,
+  AdminPendingAuthorApplicationListResponse,
+  AdminPendingPublicationReviewListResponse,
   AdminPublicationDirectoryResponse,
   AdminPublicationDirectoryStatusFilter,
+  AdminPublicationReviewReconcileResult,
   AdminPublishingBlockCommandResult,
+  BlogAuthorApplication,
 } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
+
+export async function listAdminPendingAuthorApplications(query: {
+  limit?: number;
+  offset?: number;
+} = {}): Promise<AdminPendingAuthorApplicationListResponse> {
+  const params = new URLSearchParams();
+  if (query.limit !== undefined) {
+    params.set("limit", String(query.limit));
+  }
+  if (query.offset !== undefined) {
+    params.set("offset", String(query.offset));
+  }
+  const suffix = params.toString();
+  return apiRequest<AdminPendingAuthorApplicationListResponse>(
+    `/api/v1/admin/publishing/author-applications/pending${suffix ? `?${suffix}` : ""}`,
+  );
+}
+
+export async function reconcileAdminPendingAuthorApplications(): Promise<AdminAuthorApplicationReconcileResult> {
+  return apiRequest<AdminAuthorApplicationReconcileResult>(
+    "/api/v1/admin/publishing/author-applications/reconcile",
+    { method: "POST" },
+  );
+}
+
+export async function recoveryResetAdminAuthorApplication(
+  applicationId: string,
+  reason?: string,
+): Promise<BlogAuthorApplication> {
+  return apiRequest<BlogAuthorApplication>(
+    `/api/v1/admin/publishing/author-applications/${encodeURIComponent(applicationId)}/recovery-reset`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(reason ? { reason } : {}),
+    },
+  );
+}
+
+export async function listAdminPendingPublicationReviews(query: {
+  limit?: number;
+  offset?: number;
+} = {}): Promise<AdminPendingPublicationReviewListResponse> {
+  const params = new URLSearchParams();
+  if (query.limit !== undefined) {
+    params.set("limit", String(query.limit));
+  }
+  if (query.offset !== undefined) {
+    params.set("offset", String(query.offset));
+  }
+  const suffix = params.toString();
+  return apiRequest<AdminPendingPublicationReviewListResponse>(
+    `/api/v1/admin/publishing/publications/pending-review${suffix ? `?${suffix}` : ""}`,
+  );
+}
+
+export async function reconcileAdminPendingPublicationReviews(): Promise<AdminPublicationReviewReconcileResult> {
+  return apiRequest<AdminPublicationReviewReconcileResult>(
+    "/api/v1/admin/publishing/publications/reconcile-review-notifications",
+    { method: "POST" },
+  );
+}
 
 export async function listAdminPublishingAuthors(query: {
   status?: AdminAuthorDirectoryStatusFilter;

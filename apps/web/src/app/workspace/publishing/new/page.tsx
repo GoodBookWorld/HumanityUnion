@@ -15,17 +15,18 @@ export default function WorkspacePublishingNewPage() {
     <main className="humanity-workspace-page">
       <MemberWorkspace
         title="New Publication"
-      subtitle="Write a draft. Save often. Preview before you submit."
-      workspaceNavigation={<WorkspaceNavigation />}
-      assistant={
-        <HumanityUnionAssistantWidget
-          surfaceId="blog"
-          description="Help with structure and clarity only. Never overwrite Author text or publish automatically."
-        />
-      }
-    >
-      <BlogEditorPageContent mode="create" />
-    </MemberWorkspace>
+        subtitle="Write a draft. Save often. Preview before you submit."
+        workspaceNavigation={<WorkspaceNavigation />}
+        assistantPlacement="compact"
+        assistant={
+          <HumanityUnionAssistantWidget
+            surfaceId="blog"
+            description="Help with structure and clarity only. Never overwrite Author text or publish automatically."
+          />
+        }
+      >
+        <BlogEditorPageContent mode="create" />
+      </MemberWorkspace>
     </main>
   );
 }

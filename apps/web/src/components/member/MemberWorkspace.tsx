@@ -9,6 +9,11 @@ interface MemberWorkspaceProps {
   workspaceNavigation?: React.ReactNode;
   headerBar?: React.ReactNode;
   assistant?: React.ReactNode;
+  /**
+   * Pack 14C — `rail` keeps the classic side column.
+   * `compact` places Assistant above content so long-form editors are not permanently compressed.
+   */
+  assistantPlacement?: "rail" | "compact";
   children: React.ReactNode;
 }
 
@@ -19,10 +24,16 @@ export function MemberWorkspace({
   workspaceNavigation,
   headerBar,
   assistant,
+  assistantPlacement = "rail",
   children,
 }: MemberWorkspaceProps) {
+  const withAssistantRail = Boolean(assistant) && assistantPlacement === "rail";
+  const withAssistantCompact = Boolean(assistant) && assistantPlacement === "compact";
+
   return (
-    <div className={`member-workspace${assistant ? " member-workspace--with-assistant" : ""}`}>
+    <div
+      className={`member-workspace${withAssistantRail ? " member-workspace--with-assistant" : ""}`}
+    >
       <aside className="member-workspace__nav" aria-label="Workspace navigation">
         {workspaceNavigation}
         {navItems ? <WorkspaceSectionNav sections={navItems} /> : null}
@@ -36,7 +47,10 @@ export function MemberWorkspace({
             {subtitle ? <p className="member-workspace__subtitle">{subtitle}</p> : null}
           </header>
         )}
-        {assistant ? (
+        {withAssistantCompact ? (
+          <div className="member-workspace__assistant-compact">{assistant}</div>
+        ) : null}
+        {withAssistantRail ? (
           <div className="member-workspace__content-grid">
             <div className="member-workspace__content">{children}</div>
             {assistant}

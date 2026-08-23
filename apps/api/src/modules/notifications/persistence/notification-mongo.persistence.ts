@@ -134,6 +134,28 @@ export class MongoNotificationPersistenceAdapter implements NotificationPersiste
 
     return result.deletedCount ?? 0;
   }
+
+  async existsForRecipientEventAndRelatedEntity(input: {
+    recipientUserId: string;
+    eventType: MemberNotification["eventType"];
+    relatedEntityType: MemberNotification["relatedEntityType"];
+    relatedEntityId: string;
+  }): Promise<boolean> {
+    await ensureMongoReady();
+    const collection = getMongoCollection<MemberNotificationDocument>(
+      MONGO_COLLECTIONS.memberNotifications,
+    );
+    const found = await collection.findOne(
+      {
+        recipientUserId: input.recipientUserId,
+        eventType: input.eventType,
+        relatedEntityType: input.relatedEntityType,
+        relatedEntityId: input.relatedEntityId,
+      },
+      { projection: { notificationId: 1 } },
+    );
+    return Boolean(found);
+  }
 }
 
 export function createMongoNotificationPersistenceAdapter(): MongoNotificationPersistenceAdapter {

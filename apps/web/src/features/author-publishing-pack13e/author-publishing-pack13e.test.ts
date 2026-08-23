@@ -46,12 +46,12 @@ describe("Pack 13E — Author & Publishing certification (Web)", () => {
 
   it("public /blog three-column layout + card metadata + icons", () => {
     const index = readWeb("features/blog/components/BlogIndexPageContent.tsx");
-    assert.match(index, /blog-layout__search/);
-    assert.match(index, /blog-layout__categories/);
-    assert.match(index, /blog-layout__authors/);
+    assert.match(index, /BlogDiscoveryLeftRail/);
+    assert.match(index, /BlogDiscoveryRightRail/);
     assert.match(index, /blog-layout__center/);
-    assert.match(index, /blog-layout__right/);
-    assert.match(index, /Latest Publications/);
+
+    const latest = readWeb("features/blog/components/BlogLatestMiniCards.tsx");
+    assert.match(latest, /Latest Publications/);
 
     const card = readWeb("features/blog/components/BlogPostCard.tsx");
     assert.match(card, /\/icons\/workspace\/date\.png/);

@@ -167,9 +167,13 @@ function NotificationRow({
               notification.eventType.startsWith("editor_permissions_") ||
               notification.eventType.startsWith("editor_editing_area_")
                 ? "View Editor Panel"
-                : notification.eventType.startsWith("blog_author_application_")
-                  ? "View Authoring"
-                  : "View related civic record"}
+                : notification.eventType === "blog_publication_review_requested"
+                  ? "Review publication"
+                  : notification.eventType.startsWith("blog_author_application_")
+                    ? "View Authoring"
+                    : notification.eventType.startsWith("blog_post_")
+                      ? "Open Publishing"
+                      : "View related civic record"}
             </Link>
           ) : null}
           {notification.status === "unread" ? (

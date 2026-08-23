@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
-import type { BlogCategory, PublicBlogPostListItem } from "@hu/types";
+import type {
+  BlogCategory,
+  PublicBlogCategoryCount,
+  PublicBlogPostListItem,
+} from "@hu/types";
 
 import { isApiUnavailableError } from "../../../lib/api-client";
 import {
@@ -13,35 +17,34 @@ import {
   fetchPublicBlogPosts,
 } from "../api";
 import {
-  buildBlogIndexHref,
   parseBlogPageParam,
   resolveCategoryIdFromSlug,
 } from "../blog-url";
-import { BlogAuthorsSidebar } from "./BlogAuthorsSidebar";
-import { BlogCategoriesSidebar } from "./BlogCategoriesSidebar";
+import { BlogDiscoveryLeftRail } from "./BlogDiscoveryLeftRail";
+import { BlogDiscoveryRightRail } from "./BlogDiscoveryRightRail";
 import { BlogPagination } from "./BlogPagination";
 import { BlogPostCard } from "./BlogPostCard";
 
 import "../blog.css";
 
 export function BlogIndexPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const q = searchParams.get("q") ?? "";
   const categorySlug = searchParams.get("category") ?? "all";
   const page = parseBlogPageParam(searchParams.get("page"));
 
-  const [draftQuery, setDraftQuery] = useState(q);
   const [categories, setCategories] = useState<readonly BlogCategory[]>([]);
   const [items, setItems] = useState<PublicBlogPostListItem[]>([]);
   const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [categoryCounts, setCategoryCounts] = useState<readonly PublicBlogCategoryCount[]>([]);
+  const [latestPublications, setLatestPublications] = useState<readonly PublicBlogPostListItem[]>(
+    [],
+  );
+  const [blogIndexViews, setBlogIndexViews] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setDraftQuery(q);
-  }, [q]);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,13 +76,12 @@ export function BlogIndexPageContent() {
     setLoading(true);
     setError(null);
 
-    const offset = (page - 1) * BLOG_PAGE_SIZE;
-
     void fetchPublicBlogPosts({
       q: q || undefined,
       categoryId,
-      limit: BLOG_PAGE_SIZE,
-      offset,
+      page,
+      pageSize: BLOG_PAGE_SIZE,
+      includeDiscovery: true,
       signal: controller.signal,
     })
       .then((response) => {
@@ -89,6 +91,13 @@ export function BlogIndexPageContent() {
 
         setItems([...response.items]);
         setTotal(response.total);
+        setTotalPages(
+          response.totalPages ??
+            (response.total === 0 ? 0 : Math.max(1, Math.ceil(response.total / BLOG_PAGE_SIZE))),
+        );
+        setCategoryCounts(response.categoryCounts ?? []);
+        setLatestPublications(response.latestPublications ?? []);
+        setBlogIndexViews(response.blogIndexViews ?? 0);
         setLoading(false);
       })
       .catch((fetchError: unknown) => {
@@ -101,6 +110,10 @@ export function BlogIndexPageContent() {
 
         setItems([]);
         setTotal(0);
+        setTotalPages(0);
+        setCategoryCounts([]);
+        setLatestPublications([]);
+        setBlogIndexViews(0);
         setLoading(false);
         setError(
           isApiUnavailableError(fetchError)
@@ -116,16 +129,10 @@ export function BlogIndexPageContent() {
     };
   }, [q, categoryId, page, categories.length]);
 
-  const totalPages = Math.max(1, Math.ceil(total / BLOG_PAGE_SIZE));
   const filtersActive = Boolean(q.trim()) || (categorySlug !== "all" && Boolean(categorySlug));
 
-  function onSearchSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    router.push(buildBlogIndexHref({ q: draftQuery, categorySlug, page: 1 }));
-  }
-
   return (
-    <main className="blog-page hu-page-container">
+    <main className="blog-page hu-page-container blog-page--pack14d">
       <header className="blog-page__header">
         <h1 className="hu-heading-1">Blog</h1>
         <p className="hu-body blog-page__subtitle">
@@ -134,40 +141,15 @@ export function BlogIndexPageContent() {
       </header>
 
       <div className="blog-layout">
-        <form className="blog-filters blog-layout__search" onSubmit={onSearchSubmit} role="search">
-          <div className="blog-filters__search">
-            <label className="hu-label" htmlFor="blog-search">
-              Search
-            </label>
-            <div className="blog-filters__search-row">
-              <input
-                id="blog-search"
-                name="q"
-                type="search"
-                className="hu-form-control"
-                value={draftQuery}
-                onChange={(event) => setDraftQuery(event.target.value)}
-                placeholder="Search publications"
-                autoComplete="off"
-              />
-              <button type="submit" className="hu-button hu-button--primary">
-                Search
-              </button>
-            </div>
-          </div>
-        </form>
+        <BlogDiscoveryLeftRail
+          categories={categories}
+          activeCategorySlug={categorySlug}
+          q={q}
+        />
 
-        <aside className="blog-layout__categories" aria-label="Blog categories">
-          <BlogCategoriesSidebar
-            categories={categories}
-            activeCategorySlug={categorySlug}
-            q={q}
-          />
-        </aside>
-
-        <section className="blog-layout__center" aria-labelledby="blog-latest-heading">
-          <h2 id="blog-latest-heading" className="hu-heading-2">
-            Latest Publications
+        <section className="blog-layout__center" aria-labelledby="blog-feed-heading" tabIndex={0}>
+          <h2 id="blog-feed-heading" className="hu-heading-2">
+            Publications
           </h2>
 
           {error ? (
@@ -180,7 +162,9 @@ export function BlogIndexPageContent() {
 
           {!loading && !error && items.length === 0 ? (
             <div className="blog-empty">
-              <p className="hu-body">No publications found.</p>
+              <p className="hu-body">
+                {filtersActive ? "No publications match this search." : "No publications found."}
+              </p>
               {filtersActive ? (
                 <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
                   Clear filters
@@ -198,7 +182,7 @@ export function BlogIndexPageContent() {
               </div>
               <BlogPagination
                 page={page}
-                totalPages={totalPages}
+                totalPages={Math.max(totalPages, 1)}
                 totalItems={total}
                 pageSize={BLOG_PAGE_SIZE}
                 q={q}
@@ -208,13 +192,14 @@ export function BlogIndexPageContent() {
           ) : null}
         </section>
 
-        <aside className="blog-layout__authors" aria-label="Blog authors">
-          <BlogAuthorsSidebar />
-        </aside>
-
-        <aside className="blog-layout__right" aria-label="Blog sidebar">
-          {/* Pack 13D — no accepted right-rail widget on the index; container reserved. */}
-        </aside>
+        <BlogDiscoveryRightRail
+          blogIndexViews={blogIndexViews}
+          categoryCounts={categoryCounts}
+          latestPublications={latestPublications}
+          activeCategorySlug={categorySlug}
+          q={q}
+          searchInputId="blog-index-search"
+        />
       </div>
     </main>
   );
