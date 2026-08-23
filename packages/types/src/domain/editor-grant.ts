@@ -103,6 +103,14 @@ export interface AdminEditorDirectoryItem {
   readonly deactivatedAt?: string;
 }
 
+/**
+ * Pack 12E2 — Admin assign/update/activate/deactivate response.
+ * Grant persistence is primary; notificationDelivered reports best-effort notify.
+ */
+export interface AdminEditorMutationResult extends AdminEditorDirectoryItem {
+  readonly notificationDelivered: boolean;
+}
+
 export interface AdminEditorDirectoryResponse {
   readonly editors: readonly AdminEditorDirectoryItem[];
   readonly total: number;

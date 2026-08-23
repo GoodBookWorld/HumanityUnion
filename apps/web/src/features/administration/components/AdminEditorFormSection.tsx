@@ -62,8 +62,10 @@ export function AdminEditorFormSection({ mode, initial }: AdminEditorFormSection
     initial?.geographicScope.communityCode ?? "",
   );
   const [status, setStatus] = useState<EditorGrantStatus>(initial?.status ?? "ACTIVE");
-  const [submitting, setSubmitting] = useState(false);
+  /** Pack 12E1 — Assign Editor: idle → submitting → success | back to idle on failure. */
+  const [submitPhase, setSubmitPhase] = useState<"idle" | "submitting" | "success">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (mode !== "create") {
@@ -121,7 +123,12 @@ export function AdminEditorFormSection({ mode, initial }: AdminEditorFormSection
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    if (submitPhase === "submitting" || submitPhase === "success") {
+      return;
+    }
+
     setError(null);
+    setSuccessMessage(null);
 
     if (selectedCapabilityList.length === 0) {
       setError("Select at least one editing permission.");
@@ -147,7 +154,7 @@ export function AdminEditorFormSection({ mode, initial }: AdminEditorFormSection
                 communityCode,
               };
 
-    setSubmitting(true);
+    setSubmitPhase("submitting");
     try {
       if (mode === "create" && selectedParticipant) {
         const created = await assignAdminEditor({
@@ -156,24 +163,55 @@ export function AdminEditorFormSection({ mode, initial }: AdminEditorFormSection
           geographicScope,
           status,
         });
-        router.push(`/admin/editors/${created.editorGrantId}`);
+        setSubmitPhase("success");
+        const success = created.notificationDelivered
+          ? "Editor assigned successfully. Notification sent."
+          : "Editor assigned successfully. Notification could not be delivered.";
+        setSuccessMessage(success);
+        // Preferred UX: return to Editors list so the new grant is visible immediately.
+        router.push(
+          `/admin/editors?assigned=1&notify=${created.notificationDelivered ? "1" : "0"}`,
+        );
         return;
       }
 
       if (mode === "edit" && initial) {
-        await updateAdminEditor(initial.editorGrantId, {
+        const updated = await updateAdminEditor(initial.editorGrantId, {
           capabilities: selectedCapabilityList,
           geographicScope,
           status,
         });
-        router.push("/admin/editors");
+        setSubmitPhase("success");
+        const success = updated.notificationDelivered
+          ? "Editor updated successfully. Notification sent."
+          : "Editor updated successfully. Notification could not be delivered.";
+        setSuccessMessage(success);
+        router.push(
+          `/admin/editors?updated=1&notify=${updated.notificationDelivered ? "1" : "0"}`,
+        );
+        return;
       }
+
+      setSubmitPhase("idle");
     } catch (err: unknown) {
+      setSubmitPhase("idle");
       setError(formatAuthFormError(err));
-    } finally {
-      setSubmitting(false);
     }
   }
+
+  const submitBusy = submitPhase === "submitting" || submitPhase === "success";
+  const submitLabel =
+    mode === "create"
+      ? submitPhase === "submitting"
+        ? "Assigning…"
+        : submitPhase === "success"
+          ? "Assigned"
+          : "Assign Editor"
+      : submitPhase === "submitting"
+        ? "Saving…"
+        : submitPhase === "success"
+          ? "Saved"
+          : "Save changes";
 
   return (
     <div className="admin-panel">
@@ -187,6 +225,9 @@ export function AdminEditorFormSection({ mode, initial }: AdminEditorFormSection
 
         {error ? (
           <StatusBanner title="Could not save Editor" message={error} />
+        ) : null}
+        {successMessage ? (
+          <StatusBanner title="Action completed" message={successMessage} />
         ) : null}
 
         <form className="admin-editor-form" onSubmit={(event) => void handleSubmit(event)}>
@@ -362,8 +403,14 @@ export function AdminEditorFormSection({ mode, initial }: AdminEditorFormSection
           </fieldset>
 
           <div className="admin-editor-form__actions">
-            <Button type="submit" variant="primary" disabled={submitting}>
-              {submitting ? "Saving…" : mode === "create" ? "Assign Editor" : "Save changes"}
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={submitBusy}
+              aria-busy={submitBusy}
+              ariaLive="polite"
+            >
+              {submitLabel}
             </Button>
             <Button href="/admin/editors" variant="tertiary">
               Cancel

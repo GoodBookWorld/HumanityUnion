@@ -1,6 +1,7 @@
 import type {
   AdminEditorDirectoryItem,
   AdminEditorDirectoryResponse,
+  AdminEditorMutationResult,
   AdminEditorSummary,
   AssignEditorGrantInput,
   EditorGrantStatus,
@@ -40,9 +41,10 @@ export async function getAdminEditor(editorGrantId: string): Promise<AdminEditor
 
 export async function assignAdminEditor(
   body: AssignEditorGrantInput,
-): Promise<AdminEditorDirectoryItem> {
-  return apiRequest<AdminEditorDirectoryItem>("/api/v1/admin/editors", {
+): Promise<AdminEditorMutationResult> {
+  return apiRequest<AdminEditorMutationResult>("/api/v1/admin/editors", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 }
@@ -50,17 +52,18 @@ export async function assignAdminEditor(
 export async function updateAdminEditor(
   editorGrantId: string,
   body: UpdateEditorGrantInput,
-): Promise<AdminEditorDirectoryItem> {
-  return apiRequest<AdminEditorDirectoryItem>(`/api/v1/admin/editors/${editorGrantId}`, {
+): Promise<AdminEditorMutationResult> {
+  return apiRequest<AdminEditorMutationResult>(`/api/v1/admin/editors/${editorGrantId}`, {
     method: "PATCH",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 }
 
 export async function activateAdminEditor(
   editorGrantId: string,
-): Promise<AdminEditorDirectoryItem> {
-  return apiRequest<AdminEditorDirectoryItem>(
+): Promise<AdminEditorMutationResult> {
+  return apiRequest<AdminEditorMutationResult>(
     `/api/v1/admin/editors/${editorGrantId}/activate`,
     { method: "POST" },
   );
@@ -68,8 +71,8 @@ export async function activateAdminEditor(
 
 export async function deactivateAdminEditor(
   editorGrantId: string,
-): Promise<AdminEditorDirectoryItem> {
-  return apiRequest<AdminEditorDirectoryItem>(
+): Promise<AdminEditorMutationResult> {
+  return apiRequest<AdminEditorMutationResult>(
     `/api/v1/admin/editors/${editorGrantId}/deactivate`,
     { method: "POST" },
   );

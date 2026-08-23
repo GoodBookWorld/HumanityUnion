@@ -144,7 +144,11 @@ function NotificationRow({
                 }
               }}
             >
-              View related civic record
+              {notification.eventType.startsWith("editor_access_") ||
+              notification.eventType.startsWith("editor_permissions_") ||
+              notification.eventType.startsWith("editor_editing_area_")
+                ? "View Editor Panel"
+                : "View related civic record"}
             </Link>
           ) : null}
           {notification.status === "unread" ? (

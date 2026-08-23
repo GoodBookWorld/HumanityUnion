@@ -129,6 +129,9 @@ export function publicUrlForEntity(
     case "blog_author_application":
       // Author Access Pack 04 — applications live in Workspace Authoring.
       return "/workspace/authoring";
+    case "editor_grant":
+      // Pack 12E2 — Editor Panel (ACTIVE Editors only; gate enforces).
+      return "/workspace/editor";
   }
 }
 

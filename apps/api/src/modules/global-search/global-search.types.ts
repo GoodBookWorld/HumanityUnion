@@ -64,6 +64,8 @@ export const GLOBAL_SEARCH_ENTITY_TYPE_LABELS: Record<CivicEntityType, string> =
   blog_post: "Blog Post",
   // Author Access Pack 04 — applications are Workspace-private, never indexed.
   blog_author_application: "Blog Author Application",
+  // Pack 12E2 — Editor grants are Workspace-private, never indexed.
+  editor_grant: "Editor Grant",
 };
 
 export const PRIVATE_SEARCH_RESPONSE_KEYS = [

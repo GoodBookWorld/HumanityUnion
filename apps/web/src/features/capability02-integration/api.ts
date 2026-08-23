@@ -18,7 +18,10 @@ export type IntegrationUrlEntityType =
   | "knowledge";
 
 const ENTITY_TYPE_TO_URL: Record<
-  Exclude<CivicEntityType, "direct_conversation" | "blog_post" | "blog_author_application">,
+  Exclude<
+    CivicEntityType,
+    "direct_conversation" | "blog_post" | "blog_author_application" | "editor_grant"
+  >,
   IntegrationUrlEntityType
 > = {
   initiative: "initiative",
@@ -61,6 +64,10 @@ export function toIntegrationUrlEntityType(entityType: CivicEntityType): Integra
 
   if (entityType === "blog_author_application") {
     throw new Error("Blog Author applications do not have a Civic Integration lifecycle view.");
+  }
+
+  if (entityType === "editor_grant") {
+    throw new Error("Editor grants do not have a Civic Integration lifecycle view.");
   }
 
   return ENTITY_TYPE_TO_URL[entityType];

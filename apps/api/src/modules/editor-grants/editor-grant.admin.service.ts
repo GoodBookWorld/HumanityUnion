@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type {
   AdminEditorDirectoryItem,
   AdminEditorDirectoryResponse,
+  AdminEditorMutationResult,
   AdminEditorSummary,
   AssignEditorGrantInput,
   EditorCapabilityId,
@@ -23,6 +24,13 @@ import { findAuthUserById, findAuthUserByMemberId } from "../auth/auth-user.repo
 import { findMemberProfileByUserId } from "../member-profile/member-profile.repository.js";
 import { findMemberById } from "../member/infrastructure/member.repository.js";
 import { normalizeEditorCapabilities } from "./editor-grant.authorization.js";
+import {
+  notifyEditorAccessActivated,
+  notifyEditorAccessAssigned,
+  notifyEditorAccessDeactivated,
+  notifyEditorEditingAreaUpdated,
+  notifyEditorPermissionsUpdated,
+} from "./editor-grant-notifications.js";
 import {
   countEditorGrantsByStatus,
   findEditorGrantById,
@@ -161,7 +169,7 @@ export async function getAdminEditor(input: {
 export async function assignEditorGrant(input: {
   actorUserId: string;
   body: AssignEditorGrantInput;
-}): Promise<AdminEditorDirectoryItem> {
+}): Promise<AdminEditorMutationResult> {
   const admin = await assertAdminActor(input.actorUserId);
   const participantId = input.body.participantId?.trim();
   if (!participantId) {
@@ -213,14 +221,16 @@ export async function assignEditorGrant(input: {
     afterSummary: summarizeGrant(grant),
   });
 
-  return toDirectoryItem(grant);
+  const notificationDelivered = await notifyEditorAccessAssigned(grant);
+  const item = await toDirectoryItem(grant);
+  return { ...item, notificationDelivered };
 }
 
 export async function updateEditorGrant(input: {
   actorUserId: string;
   editorGrantId: string;
   body: UpdateEditorGrantInput;
-}): Promise<AdminEditorDirectoryItem> {
+}): Promise<AdminEditorMutationResult> {
   const admin = await assertAdminActor(input.actorUserId);
   const existing = await findEditorGrantById(input.editorGrantId);
   if (!existing) {
@@ -314,8 +324,9 @@ export async function updateEditorGrant(input: {
 
   const after = summarizeGrant(persisted);
   if (auditActions.length === 0) {
-    // No meaningful change — still allow idempotent PATCH.
-    return toDirectoryItem(persisted);
+    // No meaningful change — still allow idempotent PATCH; no notification spam.
+    const item = await toDirectoryItem(persisted);
+    return { ...item, notificationDelivered: true };
   }
 
   for (const action of auditActions) {
@@ -329,13 +340,31 @@ export async function updateEditorGrant(input: {
     });
   }
 
-  return toDirectoryItem(persisted);
+  // One transition family: status change takes precedence; else material field updates.
+  const deliveries: boolean[] = [];
+  if (auditActions.includes("editor.activate")) {
+    deliveries.push(await notifyEditorAccessActivated(persisted));
+  } else if (auditActions.includes("editor.deactivate")) {
+    deliveries.push(await notifyEditorAccessDeactivated(persisted));
+  } else {
+    if (auditActions.includes("editor.update_permissions")) {
+      deliveries.push(await notifyEditorPermissionsUpdated(persisted));
+    }
+    if (auditActions.includes("editor.update_scope")) {
+      deliveries.push(await notifyEditorEditingAreaUpdated(persisted));
+    }
+  }
+
+  const notificationDelivered =
+    deliveries.length === 0 ? true : deliveries.every((delivered) => delivered);
+  const item = await toDirectoryItem(persisted);
+  return { ...item, notificationDelivered };
 }
 
 export async function activateEditorGrant(input: {
   actorUserId: string;
   editorGrantId: string;
-}): Promise<AdminEditorDirectoryItem> {
+}): Promise<AdminEditorMutationResult> {
   return updateEditorGrant({
     actorUserId: input.actorUserId,
     editorGrantId: input.editorGrantId,
@@ -346,7 +375,7 @@ export async function activateEditorGrant(input: {
 export async function deactivateEditorGrant(input: {
   actorUserId: string;
   editorGrantId: string;
-}): Promise<AdminEditorDirectoryItem> {
+}): Promise<AdminEditorMutationResult> {
   return updateEditorGrant({
     actorUserId: input.actorUserId,
     editorGrantId: input.editorGrantId,

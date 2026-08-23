@@ -1449,6 +1449,7 @@ export type {
 export type {
   AdminEditorDirectoryItem,
   AdminEditorDirectoryResponse,
+  AdminEditorMutationResult,
   AdminEditorSummary,
   AssignEditorGrantInput,
   EditorCapabilityId,

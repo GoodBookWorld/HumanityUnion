@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
 import type { AdminEditorDirectoryItem, AuthUserPublic, EditorGrantStatus } from "@hu/types";
 
@@ -38,7 +39,9 @@ function formatCompactDate(value?: string): string {
   }
 }
 
-export function AdminEditorsSection({ user: _user }: AdminEditorsSectionProps) {
+function AdminEditorsSectionInner({ user: _user }: AdminEditorsSectionProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [rows, setRows] = useState<readonly AdminEditorDirectoryItem[]>([]);
   const [total, setTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
@@ -47,6 +50,7 @@ export function AdminEditorsSection({ user: _user }: AdminEditorsSectionProps) {
   const [denied, setDenied] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"" | EditorGrantStatus>("");
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,10 +80,32 @@ export function AdminEditorsSection({ user: _user }: AdminEditorsSectionProps) {
     void load();
   }, [load]);
 
+  // Pack 12E1/12E2 — durable confirmation after Assign/Save redirect; list uses no-store fetch.
+  useEffect(() => {
+    const assigned = searchParams.get("assigned");
+    const updated = searchParams.get("updated");
+    const notify = searchParams.get("notify");
+    const notifySuffix =
+      notify === "0"
+        ? " Notification could not be delivered."
+        : notify === "1"
+          ? " Notification sent."
+          : "";
+    if (assigned === "1") {
+      setActionMessage(`Editor assigned successfully.${notifySuffix}`);
+      router.replace("/admin/editors", { scroll: false });
+    } else if (updated === "1") {
+      setActionMessage(`Editor updated successfully.${notifySuffix}`);
+      router.replace("/admin/editors", { scroll: false });
+    }
+  }, [router, searchParams]);
+
   async function handleActivate(editorGrantId: string) {
     setActionBusyId(editorGrantId);
+    setActionMessage(null);
     try {
       await activateAdminEditor(editorGrantId);
+      setActionMessage("Editor activated.");
       await load();
     } catch (err: unknown) {
       setError(formatAuthFormError(err));
@@ -90,8 +116,10 @@ export function AdminEditorsSection({ user: _user }: AdminEditorsSectionProps) {
 
   async function handleDeactivate(editorGrantId: string) {
     setActionBusyId(editorGrantId);
+    setActionMessage(null);
     try {
       await deactivateAdminEditor(editorGrantId);
+      setActionMessage("Editor deactivated.");
       await load();
     } catch (err: unknown) {
       setError(formatAuthFormError(err));
@@ -138,6 +166,9 @@ export function AdminEditorsSection({ user: _user }: AdminEditorsSectionProps) {
             title="Access denied"
             message="Administrator access is required to manage Editors."
           />
+        ) : null}
+        {actionMessage ? (
+          <StatusBanner title="Action completed" message={actionMessage} />
         ) : null}
         {error && !denied ? (
           <StatusBanner title="Editors unavailable" message={error} />
@@ -241,5 +272,23 @@ export function AdminEditorsSection({ user: _user }: AdminEditorsSectionProps) {
         </div>
       </ProfileSection>
     </div>
+  );
+}
+
+/**
+ * Pack 12E1 — Suspense boundary required for useSearchParams in the App Router client tree.
+ */
+export function AdminEditorsSection(props: AdminEditorsSectionProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="admin-panel">
+          <AdminPanelNavigation />
+          <p className="hu-caption">Loading Editors…</p>
+        </div>
+      }
+    >
+      <AdminEditorsSectionInner {...props} />
+    </Suspense>
   );
 }

@@ -11,6 +11,7 @@ interface ButtonProps {
   className?: string;
   "aria-label"?: string;
   "aria-pressed"?: boolean | "true" | "false";
+  "aria-busy"?: boolean | "true" | "false";
   /**
    * Profile UX Pack 02 Part 3/12 — set to `"polite"` on buttons whose label
    * changes on its own (e.g. "Save Profile" -> "Saving..." -> "Saved" ->
@@ -30,6 +31,7 @@ export function Button({
   className,
   "aria-label": ariaLabel,
   "aria-pressed": ariaPressed,
+  "aria-busy": ariaBusy,
   ariaLive,
 }: ButtonProps) {
   const resolvedClassName = ["hu-button", `hu-button--${variant}`, className]
@@ -58,6 +60,7 @@ export function Button({
       aria-live={ariaLive}
       aria-label={ariaLabel}
       aria-pressed={ariaPressed}
+      aria-busy={ariaBusy}
     >
       {children}
     </button>

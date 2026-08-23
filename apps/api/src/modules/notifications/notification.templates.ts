@@ -298,6 +298,32 @@ export const NOTIFICATION_TEMPLATES: Record<CivicNotificationEventType, Notifica
     message: "A Participant replied to your Blog comment.",
     priority: "informational",
   },
+  editor_access_assigned: {
+    title: "Editor access assigned",
+    message:
+      "You can now use the Editor Panel for your assigned editing area and permissions.",
+    priority: "important",
+  },
+  editor_access_activated: {
+    title: "Editor access activated",
+    message: "Your Editor access has been activated. Open the Editor Panel to continue.",
+    priority: "important",
+  },
+  editor_access_deactivated: {
+    title: "Editor access deactivated",
+    message: "Your Editor access has been deactivated.",
+    priority: "important",
+  },
+  editor_permissions_updated: {
+    title: "Editor permissions updated",
+    message: "Your Editor permissions were updated.",
+    priority: "normal",
+  },
+  editor_editing_area_updated: {
+    title: "Editor editing area updated",
+    message: "Your Editor editing area was updated.",
+    priority: "normal",
+  },
 };
 
 export function getNotificationTemplate(

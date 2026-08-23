@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { getMe } from "../../auth/auth-api";
+import { AUTH_STATE_CHANGED_EVENT } from "../../auth/auth-events";
 import { isAdminAccountRole } from "../../administration/is-admin-role";
+import { EDITOR_GRANT_CHANGED_EVENT } from "../../administration/editor-grant-events";
 import { isEligibleForEditorPanel } from "../../administration/editor-panel-eligibility";
 import { fetchBlogAuthoringAccessState } from "../../blog/authoring-api";
 import { WorkspaceMemberIdentity } from "../../member-profile/components/WorkspaceMemberIdentity";
@@ -27,6 +29,7 @@ import "./workspace-navigation.css";
  * via `publishingWorkspaceHref` from authoring access state.
  * Editorial Review Pack 06 — Editors/Administrators also see Editorial Review.
  * Admin Panel Pack 02 — Administration group for admins only (see buildWorkspaceNavGroups).
+ * Pack 12E2 — Editor Panel eligibility refreshed from live `/me` (not JWT).
  */
 function isRouteActive(pathname: string, href: string): boolean {
   if (href === "/workspace") {
@@ -98,27 +101,44 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
+  const refreshAuthority = useCallback(() => {
     void getMe()
       .then((user) => {
-        if (!cancelled) {
-          setShowAdminPanel(isAdminAccountRole(user.role));
-          setShowEditorPanel(isEligibleForEditorPanel(user));
-        }
+        setShowAdminPanel(isAdminAccountRole(user.role));
+        setShowEditorPanel(isEligibleForEditorPanel(user));
       })
       .catch(() => {
-        if (!cancelled) {
-          setShowAdminPanel(false);
-          setShowEditorPanel(false);
-        }
+        setShowAdminPanel(false);
+        setShowEditorPanel(false);
       });
+  }, []);
+
+  useEffect(() => {
+    refreshAuthority();
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        refreshAuthority();
+      }
+    }
+
+    window.addEventListener(AUTH_STATE_CHANGED_EVENT, refreshAuthority);
+    window.addEventListener(EDITOR_GRANT_CHANGED_EVENT, refreshAuthority);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", refreshAuthority);
 
     return () => {
-      cancelled = true;
+      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, refreshAuthority);
+      window.removeEventListener(EDITOR_GRANT_CHANGED_EVENT, refreshAuthority);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", refreshAuthority);
     };
-  }, []);
+  }, [refreshAuthority]);
+
+  // Pack 12E2 — route transitions re-query `/me` so mid-session grants appear without logout.
+  useEffect(() => {
+    refreshAuthority();
+  }, [pathname, refreshAuthority]);
 
   function toggleGroup(groupId: string) {
     setCollapsedGroups((current) => {

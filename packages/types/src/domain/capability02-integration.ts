@@ -23,7 +23,9 @@ export type CivicEntityType =
   /** Blog Implementation Pack 02 — published Blog posts in Global Search. */
   | "blog_post"
   /** Author Access Pack 04 — Blog Author application (Workspace, not public). */
-  | "blog_author_application";
+  | "blog_author_application"
+  /** Pack 12E2 — Delegated Editor grant (Workspace Editor Panel, not public). */
+  | "editor_grant";
 
 /** Reference-only relationship semantics — no business logic. */
 export type CivicRelationshipType =
@@ -218,7 +220,17 @@ export type CivicNotificationEventType =
   /** Blog Interaction Pack 07 — new top-level comment on a publication. */
   | "blog_comment_posted"
   /** Blog Interaction Pack 07 — reply to your Blog comment. */
-  | "blog_comment_reply";
+  | "blog_comment_reply"
+  /** Pack 12E2 — Editor access assigned to Participant. */
+  | "editor_access_assigned"
+  /** Pack 12E2 — existing Editor grant activated. */
+  | "editor_access_activated"
+  /** Pack 12E2 — Editor grant deactivated. */
+  | "editor_access_deactivated"
+  /** Pack 12E2 — Editor permissions updated. */
+  | "editor_permissions_updated"
+  /** Pack 12E2 — Editor geographic editing area updated. */
+  | "editor_editing_area_updated";
 
 export interface CivicNotificationEventDefinition {
   eventType: CivicNotificationEventType;
