@@ -174,16 +174,38 @@ export async function updateMemberProfileRecord(
   const collection = getMongoCollection<MemberProfileDocument>(MONGO_COLLECTIONS.memberProfiles);
   const updatedAt = new Date().toISOString();
 
-  const result = await collection.findOneAndUpdate(
-    { userId },
-    {
-      $set: {
-        ...patch,
-        updatedAt,
-      },
-    },
-    { returnDocument: "after" },
-  );
+  /** Pack 17E — empty professional-link fields must remove the stored URL. */
+  const clearableLinkFields = new Set([
+    "website",
+    "linkedinUrl",
+    "facebookUrl",
+    "youtubeUrl",
+    "instagramUrl",
+    "xUrl",
+  ]);
+
+  const $set: Record<string, unknown> = { updatedAt };
+  const $unset: Record<string, ""> = {};
+
+  for (const [key, value] of Object.entries(patch)) {
+    if (clearableLinkFields.has(key) && value === undefined) {
+      $unset[key] = "";
+    } else {
+      $set[key] = value;
+    }
+  }
+
+  const update: {
+    $set: Record<string, unknown>;
+    $unset?: Record<string, "">;
+  } = { $set };
+  if (Object.keys($unset).length > 0) {
+    update.$unset = $unset;
+  }
+
+  const result = await collection.findOneAndUpdate({ userId }, update, {
+    returnDocument: "after",
+  });
 
   return result ? stripDocument(result) : null;
 }

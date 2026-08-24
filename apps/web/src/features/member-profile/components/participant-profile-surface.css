@@ -53,11 +53,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border: 1px solid var(--hu-color-border);
-  border-radius: var(--hu-radius-md);
-  background: var(--hu-color-surface);
-  box-shadow: var(--hu-shadow-sm);
   padding: var(--hu-space-5, 1.25rem);
+  /* Pack 17F — Pack 17A raised chrome via .hu-surface-raised; keep layout padding here. */
 }
 
 /* Launch Readiness UX Fix Pack 01 — Member badge + identity information stack. */
@@ -168,9 +165,35 @@
   text-align: center;
 }
 
+.public-member-page__section-heading--with-icon,
+.public-member-page__profile-context-heading--with-icon {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-2, 0.5rem);
+  text-align: start;
+}
+
+.public-member-page__heading-icon {
+  flex: 0 0 auto;
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+}
+
 /* Part 7 — three horizontal statistic cards now reuse the shared `personal-statistics__*` grid/card visuals (see personal-statistics.css) instead of a bespoke vertical list. */
 
-/* Part 11 — Biography typography inside the identity information zone. */
+/* Pack 17F — Biography full-width below the top identity/statistics row. */
+.public-member-page__biography {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-3, 0.75rem);
+  width: 100%;
+  min-width: 0;
+  padding: var(--hu-space-5, 1.25rem);
+  box-sizing: border-box;
+}
+
 .public-member-page__biography-text {
   margin: 0;
   white-space: pre-wrap;
@@ -179,7 +202,7 @@
   color: var(--hu-color-text);
 }
 
-/* Launch Readiness UX Fix Pack 01 — Participation Area / Skills under statistics. */
+/* Launch Readiness UX Fix Pack 01 / Pack 17F — Participation Area / Organization / Skills under statistics. */
 .public-member-page__statistics {
   justify-content: flex-start;
   gap: var(--hu-space-4, 1.25rem);
@@ -218,16 +241,66 @@
   background: var(--hu-color-bg-muted);
 }
 
-/* Part 13 — Recent Public Initiatives: scrollable, title-only, no pagination. */
+/* Pack 17F — Recent Public Initiatives disclosure (Pack 17A white 3D control). */
+.public-member-page__initiatives {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-3, 0.75rem);
+  width: 100%;
+  min-width: 0;
+  padding: var(--hu-space-5, 1.25rem);
+  box-sizing: border-box;
+}
+
+.public-member-page__initiatives-toggle {
+  width: 100%;
+  justify-content: flex-start;
+  background: linear-gradient(165deg, #ffffff 0%, #f7f9fb 55%, #eef2f5 100%);
+}
+
+.public-member-page__initiatives-toggle-label {
+  flex: 1 1 auto;
+  text-align: start;
+}
+
+.public-member-page__initiatives-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--hu-color-text-muted, #525252);
+}
+
+.public-member-page__initiatives-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 180ms ease,
+    opacity 160ms ease;
+}
+
+.public-member-page__initiatives-panel.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.public-member-page__initiatives-panel[hidden] {
+  display: none;
+}
+
+.public-member-page__initiatives-panel.is-open[hidden] {
+  display: grid;
+}
+
 .public-member-page__initiatives-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 9.5rem;
+  max-height: 14rem;
   overflow-y: auto;
   overscroll-behavior: contain;
   display: grid;
   gap: var(--hu-space-1, 0.35rem);
+  min-height: 0;
 }
 
 .public-member-page__initiatives-item a {
@@ -294,7 +367,8 @@
 @media (max-width: 480px) {
   /*
    * PWA UX Correction Pack 02/03 — center avatar + name only.
-   * Biography / Organization / Professional Links stay full-width, left-aligned.
+   * Professional Links stay full-width, left-aligned.
+   * Pack 17F — Biography / Initiatives are full-width blocks below the top row.
    * Member badge keeps absolute top-right clearance via identity-body padding-top.
    */
   .public-member-page__identity {
@@ -346,5 +420,10 @@
 
   .public-member-page__section-heading {
     text-align: left;
+  }
+
+  .public-member-page__biography,
+  .public-member-page__initiatives {
+    width: 100%;
   }
 }

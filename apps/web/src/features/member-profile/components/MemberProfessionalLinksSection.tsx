@@ -5,69 +5,123 @@ import { resolveSaveButtonLabel, type SaveButtonPhase } from "../use-save-button
 
 import "./member-professional-links.css";
 
-interface MemberProfessionalLinksSectionProps {
+/** Pack 17E — personal Participant professional / social link fields. */
+export interface MemberProfessionalLinksValues {
   website?: string;
   linkedinUrl?: string;
+  facebookUrl?: string;
+  youtubeUrl?: string;
+  instagramUrl?: string;
+  xUrl?: string;
+}
+
+const PROFESSIONAL_LINK_FIELDS: readonly {
+  key: keyof MemberProfessionalLinksValues;
+  label: string;
+  iconSrc: string;
+  placeholder: string;
+}[] = [
+  {
+    key: "website",
+    label: "Website",
+    iconSrc: "/icons/civic/website.svg",
+    placeholder: "https://example.com",
+  },
+  {
+    key: "linkedinUrl",
+    label: "LinkedIn",
+    iconSrc: "/icons/civic/icons8-linkedin.svg",
+    placeholder: "https://www.linkedin.com/in/your-profile",
+  },
+  {
+    key: "facebookUrl",
+    label: "Facebook",
+    iconSrc: "/icons/civic/icons8-facebook.svg",
+    placeholder: "https://www.facebook.com/your-profile",
+  },
+  {
+    key: "youtubeUrl",
+    label: "YouTube",
+    iconSrc: "/icons/civic/icons8-youtube.svg",
+    placeholder: "https://www.youtube.com/@your-channel",
+  },
+  {
+    key: "instagramUrl",
+    label: "Instagram",
+    iconSrc: "/icons/civic/icons8-instagram.svg",
+    placeholder: "https://www.instagram.com/your-profile",
+  },
+  {
+    key: "xUrl",
+    label: "X",
+    iconSrc: "/icons/civic/icons8-x.svg",
+    placeholder: "https://x.com/your-handle",
+  },
+];
+
+interface MemberProfessionalLinksSectionProps extends MemberProfessionalLinksValues {
   disabled?: boolean;
   /** Profile UX Pack 02 Part 3 — drives the reusable Save-button feedback. */
   phase?: SaveButtonPhase;
-  onWebsiteChange: (website: string) => void;
-  onLinkedInChange: (linkedinUrl: string) => void;
+  onChange: (patch: Partial<MemberProfessionalLinksValues>) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }
 
 export function MemberProfessionalLinksSection({
   website,
   linkedinUrl,
+  facebookUrl,
+  youtubeUrl,
+  instagramUrl,
+  xUrl,
   disabled = false,
   phase = "idle",
-  onWebsiteChange,
-  onLinkedInChange,
+  onChange,
   onSubmit,
 }: MemberProfessionalLinksSectionProps) {
   const busy = phase !== "idle";
+  const values: MemberProfessionalLinksValues = {
+    website,
+    linkedinUrl,
+    facebookUrl,
+    youtubeUrl,
+    instagramUrl,
+    xUrl,
+  };
+
   return (
     <form className="member-professional-links" onSubmit={onSubmit}>
-      <label className="member-professional-links__field member-professional-links__field--with-icon">
-        <span>Website</span>
-        <span className="member-professional-links__input-row">
-          <img
-            className="member-professional-links__field-icon"
-            src="/icons/civic/website.svg"
-            alt=""
-            aria-hidden="true"
-            width={30}
-            height={30}
-          />
-          <input
-            className="hu-form-control"
-            value={website ?? ""}
-            disabled={disabled || busy}
-            onChange={(event) => onWebsiteChange(event.target.value)}
-            placeholder="https://example.com"
-          />
-        </span>
-      </label>
-      <label className="member-professional-links__field member-professional-links__field--with-icon">
-        <span>LinkedIn</span>
-        <span className="member-professional-links__input-row">
-          <img
-            className="member-professional-links__field-icon"
-            src="/icons/civic/icons8-linkedin.svg"
-            alt=""
-            aria-hidden="true"
-            width={30}
-            height={30}
-          />
-          <input
-            className="hu-form-control"
-            value={linkedinUrl ?? ""}
-            disabled={disabled || busy}
-            onChange={(event) => onLinkedInChange(event.target.value)}
-            placeholder="https://www.linkedin.com/in/your-profile"
-          />
-        </span>
-      </label>
+      <p className="hu-caption member-professional-links__lede">
+        Personal links on your Participant profile. These are not Humanity Union publication
+        distribution destinations.
+      </p>
+      {PROFESSIONAL_LINK_FIELDS.map((field) => (
+        <label
+          key={field.key}
+          className="member-professional-links__field member-professional-links__field--with-icon"
+        >
+          <span>{field.label}</span>
+          <span className="member-professional-links__input-row">
+            <img
+              className="member-professional-links__field-icon"
+              src={field.iconSrc}
+              alt=""
+              aria-hidden="true"
+              width={30}
+              height={30}
+            />
+            <input
+              className="hu-form-control"
+              value={values[field.key] ?? ""}
+              disabled={disabled || busy}
+              onChange={(event) => onChange({ [field.key]: event.target.value })}
+              placeholder={field.placeholder}
+              autoComplete="off"
+              inputMode="url"
+            />
+          </span>
+        </label>
+      ))}
 
       <Button type="submit" variant="primary" disabled={disabled || busy} ariaLive="polite">
         {resolveSaveButtonLabel(phase, "Save professional links")}
@@ -76,51 +130,59 @@ export function MemberProfessionalLinksSection({
   );
 }
 
-interface MemberProfessionalLinksDisplayProps {
-  website?: string;
-  linkedinUrl?: string;
+interface MemberProfessionalLinksDisplayProps extends MemberProfessionalLinksValues {
   className?: string;
+}
+
+export function hasConfiguredProfessionalLinks(
+  values: MemberProfessionalLinksValues,
+): boolean {
+  return PROFESSIONAL_LINK_FIELDS.some((field) => Boolean(values[field.key]?.trim()));
 }
 
 export function MemberProfessionalLinksDisplay({
   website,
   linkedinUrl,
+  facebookUrl,
+  youtubeUrl,
+  instagramUrl,
+  xUrl,
   className,
 }: MemberProfessionalLinksDisplayProps) {
-  if (!website && !linkedinUrl) {
+  const values: MemberProfessionalLinksValues = {
+    website,
+    linkedinUrl,
+    facebookUrl,
+    youtubeUrl,
+    instagramUrl,
+    xUrl,
+  };
+
+  if (!hasConfiguredProfessionalLinks(values)) {
     return null;
   }
 
   return (
     <div className={["member-professional-links__display", className].filter(Boolean).join(" ")}>
-      {website ? (
-        <a
-          className="member-professional-links__external-link"
-          href={website}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="/icons/civic/website.svg" alt="" aria-hidden="true" width={30} height={30} />
-          <span>Website</span>
-        </a>
-      ) : null}
-      {linkedinUrl ? (
-        <a
-          className="member-professional-links__external-link"
-          href={linkedinUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img
-            src="/icons/civic/icons8-linkedin.svg"
-            alt=""
-            aria-hidden="true"
-            width={30}
-            height={30}
-          />
-          <span>LinkedIn</span>
-        </a>
-      ) : null}
+      {PROFESSIONAL_LINK_FIELDS.map((field) => {
+        const href = values[field.key]?.trim();
+        if (!href) {
+          return null;
+        }
+        return (
+          <a
+            key={field.key}
+            className="member-professional-links__external-link"
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={field.label}
+          >
+            <img src={field.iconSrc} alt="" aria-hidden="true" width={30} height={30} />
+            <span>{field.label}</span>
+          </a>
+        );
+      })}
     </div>
   );
 }

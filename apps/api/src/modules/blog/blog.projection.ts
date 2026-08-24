@@ -50,10 +50,19 @@ export function toBlogAuthorWorkspacePost(post: BlogPost): BlogAuthorWorkspacePo
               ? {
                   distribution: {
                     huSocialShare: post.optimization.distribution.huSocialShare,
-                    authorExternalAccounts:
-                      post.optimization.distribution.authorExternalAccounts.map((account) => ({
-                        ...account,
-                      })),
+                    ...(post.optimization.distribution.huPlatformChannels
+                      ? {
+                          huPlatformChannels:
+                            post.optimization.distribution.huPlatformChannels.map((channel) => ({
+                              ...channel,
+                            })),
+                        }
+                      : {}),
+                    authorExternalAccounts: (
+                      post.optimization.distribution.authorExternalAccounts ?? []
+                    ).map((account) => ({
+                      ...account,
+                    })),
                   },
                 }
               : {}),
@@ -183,6 +192,7 @@ export function assertNoInternalBlogFields(payload: unknown): void {
     '"optimization"',
     "huSocialShare",
     "authorExternalAccounts",
+    "huPlatformChannels",
   ];
 
   for (const key of forbidden) {

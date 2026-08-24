@@ -41,15 +41,20 @@ export function MemberWorkspace({
       <div className="member-workspace__main">
         {headerBar ? (
           headerBar
+        ) : withAssistantCompact ? (
+          <header className="member-workspace__header member-workspace__header--with-assistant">
+            <div className="member-workspace__header-copy">
+              <h1 className="member-workspace__title">{title}</h1>
+              {subtitle ? <p className="member-workspace__subtitle">{subtitle}</p> : null}
+            </div>
+            <div className="member-workspace__assistant-compact">{assistant}</div>
+          </header>
         ) : (
           <header className="member-workspace__header">
             <h1 className="member-workspace__title">{title}</h1>
             {subtitle ? <p className="member-workspace__subtitle">{subtitle}</p> : null}
           </header>
         )}
-        {withAssistantCompact ? (
-          <div className="member-workspace__assistant-compact">{assistant}</div>
-        ) : null}
         {withAssistantRail ? (
           <div className="member-workspace__content-grid">
             <div className="member-workspace__content">{children}</div>

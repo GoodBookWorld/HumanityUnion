@@ -165,7 +165,14 @@ function structuredCloneOptimization(
       ? {
           distribution: {
             huSocialShare: optimization.distribution.huSocialShare,
-            authorExternalAccounts: optimization.distribution.authorExternalAccounts.map(
+            ...(optimization.distribution.huPlatformChannels
+              ? {
+                  huPlatformChannels: optimization.distribution.huPlatformChannels.map(
+                    (channel) => ({ ...channel }),
+                  ),
+                }
+              : {}),
+            authorExternalAccounts: (optimization.distribution.authorExternalAccounts ?? []).map(
               (account) => ({ ...account }),
             ),
           },

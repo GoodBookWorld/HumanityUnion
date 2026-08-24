@@ -166,6 +166,22 @@ export function toPublicMemberProfile(
     if (profile.linkedinUrl) {
       publicProfile.linkedinUrl = profile.linkedinUrl;
     }
+
+    if (profile.facebookUrl) {
+      publicProfile.facebookUrl = profile.facebookUrl;
+    }
+
+    if (profile.youtubeUrl) {
+      publicProfile.youtubeUrl = profile.youtubeUrl;
+    }
+
+    if (profile.instagramUrl) {
+      publicProfile.instagramUrl = profile.instagramUrl;
+    }
+
+    if (profile.xUrl) {
+      publicProfile.xUrl = profile.xUrl;
+    }
   }
 
   const skillsVisible = isMemberProfileFieldVisible(
@@ -241,8 +257,22 @@ export function resolvePublicMemberProfileHiddenSections(
     biography: Boolean(profile.biography) && !projection.biography,
     skills: profile.skills.length > 0 && !(projection.skills && projection.skills.length > 0),
     professionalLinks:
-      Boolean(profile.website || profile.linkedinUrl) &&
-      !(projection.website || projection.linkedinUrl),
+      Boolean(
+        profile.website ||
+          profile.linkedinUrl ||
+          profile.facebookUrl ||
+          profile.youtubeUrl ||
+          profile.instagramUrl ||
+          profile.xUrl,
+      ) &&
+      !(
+        projection.website ||
+        projection.linkedinUrl ||
+        projection.facebookUrl ||
+        projection.youtubeUrl ||
+        projection.instagramUrl ||
+        projection.xUrl
+      ),
     recentPublicInitiatives: false,
   };
 }

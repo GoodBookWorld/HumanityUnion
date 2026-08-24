@@ -184,6 +184,10 @@ export function MemberProfileWorkspace() {
         const updated = await updateMyMemberProfile({
           website: profile.website,
           linkedinUrl: profile.linkedinUrl,
+          facebookUrl: profile.facebookUrl,
+          youtubeUrl: profile.youtubeUrl,
+          instagramUrl: profile.instagramUrl,
+          xUrl: profile.xUrl,
         });
         setProfile(updated);
         dispatchMemberProfileUpdated();
@@ -352,9 +356,12 @@ export function MemberProfileWorkspace() {
         <MemberProfessionalLinksSection
           website={profile.website}
           linkedinUrl={profile.linkedinUrl}
+          facebookUrl={profile.facebookUrl}
+          youtubeUrl={profile.youtubeUrl}
+          instagramUrl={profile.instagramUrl}
+          xUrl={profile.xUrl}
           phase={linksPhase.phase}
-          onWebsiteChange={(website) => setProfile({ ...profile, website })}
-          onLinkedInChange={(linkedinUrl) => setProfile({ ...profile, linkedinUrl })}
+          onChange={(patch) => setProfile({ ...profile, ...patch })}
           onSubmit={handleProfessionalLinksSave}
         />
       </ProfileSection>

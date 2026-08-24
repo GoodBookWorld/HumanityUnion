@@ -1,0 +1,84 @@
+.admin-platform-social {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.admin-platform-social__lede {
+  margin: 0;
+  max-width: 42rem;
+  color: var(--hu-text-muted, #4a5560);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.admin-platform-social__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-platform-social__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.admin-platform-social__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.admin-platform-social__icon {
+  flex: 0 0 auto;
+  display: block;
+}
+
+.admin-platform-social__label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.admin-platform-social__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.admin-platform-social__input {
+  flex: 1 1 16rem;
+  max-width: 36rem;
+  margin: 0;
+}
+
+.admin-platform-social__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-platform-social__success {
+  margin: 0;
+  color: var(--hu-success, #1f6b3a);
+}
+
+.admin-platform-social__error {
+  margin: 0;
+  color: var(--hu-danger, #9b1c1c);
+}
+
+@media (max-width: 640px) {
+  .admin-platform-social__controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-platform-social__input {
+    max-width: none;
+  }
+}

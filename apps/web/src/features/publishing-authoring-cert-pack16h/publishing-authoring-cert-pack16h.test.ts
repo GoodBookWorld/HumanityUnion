@@ -51,10 +51,12 @@ describe("Pack 16H — Final Publishing & Authoring certification", () => {
     assert.match(editorPage, /canInPlacePublish/);
   });
 
-  it("Sticky authoring stack + 25/50/25 blog grid remain wired", () => {
+  it("Authoring chrome + CK toolbar + 25/50/25 blog grid remain wired", () => {
     const publishingCss = readWeb("features/blog/publishing.css");
     assert.match(publishingCss, /blog-post-editor__chrome/);
-    assert.match(publishingCss, /Pack 16B/);
+    // Pack 17B superseded Pack 16B sticky chrome with document-flow chrome.
+    assert.match(publishingCss, /Pack 17B/);
+    assert.match(publishingCss, /position:\s*static/);
     assert.match(publishingCss, /ck-toolbar/);
 
     const blogCss = readWeb("features/blog/blog.css");

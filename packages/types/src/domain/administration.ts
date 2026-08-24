@@ -136,6 +136,8 @@ export type AdministrationAuditAction =
   | "blog.category.delete"
   | "blog.author.trusted_publishing.enable"
   | "blog.author.trusted_publishing.disable"
+  | "platform.social_account.update"
+  | "platform.social_account.clear"
   | "country_affiliation.create"
   | "country_affiliation.update"
   | "country_affiliation.activate"

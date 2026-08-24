@@ -191,6 +191,10 @@ import {
   publicTrafficAnalyticsRouter,
 } from "./modules/traffic-analytics/index.js";
 import closedBetaRouter from "./modules/closed-beta/closed-beta.routes.js";
+import {
+  adminPlatformSocialAccountsRouter,
+  publicPlatformSocialAccountsRouter,
+} from "./modules/platform-social-accounts/index.js";
 import preferencesRouter from "./modules/preferences/preferences.routes.js";
 import healthRouter from "./routes/health.routes.js";
 
@@ -237,6 +241,8 @@ if ((process.env.MEDIA_STORAGE_PROVIDER ?? "local").trim().toLowerCase() !== "r2
 app.use("/api/v1/media", mediaUploadRouter);
 app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/platform", closedBetaRouter);
+app.use("/api/v1/platform/social-accounts", publicPlatformSocialAccountsRouter);
+app.use("/api/v1/admin/platform/social-accounts", adminPlatformSocialAccountsRouter);
 app.use("/api/v1/beta-invites", betaInviteRouter);
 app.use("/api/v1/admin/participants", adminParticipantDirectoryRouter);
 app.use("/api/v1/admin/editors", adminEditorGrantsRouter);

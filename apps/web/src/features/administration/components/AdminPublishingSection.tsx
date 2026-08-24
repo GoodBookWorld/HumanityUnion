@@ -315,8 +315,8 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             aria-selected={tab === "pending"}
             className={
               tab === "pending"
-                ? "admin-publishing__tab admin-publishing__tab--active"
-                : "admin-publishing__tab"
+                ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
+                : "hu-tab-control admin-publishing__tab"
             }
             onClick={() => setTab("pending")}
           >
@@ -328,8 +328,8 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             aria-selected={tab === "pending-review"}
             className={
               tab === "pending-review"
-                ? "admin-publishing__tab admin-publishing__tab--active"
-                : "admin-publishing__tab"
+                ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
+                : "hu-tab-control admin-publishing__tab"
             }
             onClick={() => setTab("pending-review")}
           >
@@ -341,8 +341,8 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             aria-selected={tab === "authors"}
             className={
               tab === "authors"
-                ? "admin-publishing__tab admin-publishing__tab--active"
-                : "admin-publishing__tab"
+                ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
+                : "hu-tab-control admin-publishing__tab"
             }
             onClick={() => setTab("authors")}
           >
@@ -354,8 +354,8 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             aria-selected={tab === "publications"}
             className={
               tab === "publications"
-                ? "admin-publishing__tab admin-publishing__tab--active"
-                : "admin-publishing__tab"
+                ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
+                : "hu-tab-control admin-publishing__tab"
             }
             onClick={() => setTab("publications")}
           >
@@ -367,8 +367,8 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             aria-selected={tab === "categories"}
             className={
               tab === "categories"
-                ? "admin-publishing__tab admin-publishing__tab--active"
-                : "admin-publishing__tab"
+                ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
+                : "hu-tab-control admin-publishing__tab"
             }
             onClick={() => setTab("categories")}
           >

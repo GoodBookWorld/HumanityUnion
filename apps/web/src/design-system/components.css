@@ -1,4 +1,5 @@
 .hu-card,
+.hu-surface-raised,
 .workspace-record-item,
 .workspace-timeline__item,
 .workspace-empty,
@@ -6,10 +7,10 @@
 .workspace-error,
 .workspace-status-card,
 .workspace-civic-assistant__panel {
-  border: 1px solid var(--hu-color-border);
+  border: var(--hu-border-card, 1px solid var(--hu-color-border));
   border-radius: var(--hu-radius-card);
-  background: var(--hu-color-surface);
-  box-shadow: var(--hu-shadow-card);
+  background: var(--hu-surface-raised, var(--hu-color-surface));
+  box-shadow: var(--hu-shadow-elevated, var(--hu-shadow-card));
 }
 
 .hu-card {
@@ -17,8 +18,99 @@
 }
 
 .hu-card--interactive:hover,
-.hu-card--interactive:focus-within {
-  box-shadow: var(--hu-shadow-control);
+.hu-card--interactive:focus-within,
+.hu-surface-raised--interactive:hover,
+.hu-surface-raised--interactive:focus-within {
+  box-shadow: var(--hu-shadow-hover-elevated, var(--hu-shadow-control));
+}
+
+/* Pack 17A — inset field surface (forms); pairs with .hu-form-control */
+.hu-surface-inset {
+  border: 1px solid var(--hu-control-border);
+  border-radius: var(--hu-radius-md);
+  background: var(--hu-surface-inset, var(--hu-color-surface));
+  box-shadow: var(--hu-shadow-inset-field);
+}
+
+/*
+ * Pack 17A — shared tab / segmented navigation chip.
+ * Selected state uses weight + border + soft tint + shadow (not color alone).
+ */
+.hu-tab-control {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hu-space-1);
+  margin: 0;
+  min-height: var(--hu-button-min-height);
+  padding: var(--hu-button-padding-block) var(--hu-button-padding-inline);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-button-radius);
+  background: linear-gradient(165deg, #ffffff 0%, var(--hu-color-bg-muted) 55%, #e6ebef 100%);
+  color: var(--hu-color-text);
+  font-family: var(--hu-font-family);
+  font-size: var(--hu-font-size-sm);
+  font-weight: var(--hu-font-weight-medium);
+  line-height: var(--hu-line-height-tight);
+  box-shadow: var(--hu-shadow-3d, var(--hu-shadow-control));
+  cursor: pointer;
+  box-sizing: border-box;
+  max-width: 100%;
+  transition:
+    background-color var(--hu-button-transition),
+    border-color var(--hu-button-transition),
+    box-shadow var(--hu-button-transition),
+    color var(--hu-button-transition),
+    transform var(--hu-button-transition);
+}
+
+.hu-tab-control:hover:not(:disabled):not([aria-selected="true"]):not(.hu-tab-control--selected) {
+  border-color: color-mix(in srgb, var(--hu-color-primary) 35%, var(--hu-color-border));
+  background: linear-gradient(165deg, #ffffff 0%, var(--hu-color-primary-soft) 70%, #e6ebef 100%);
+}
+
+.hu-tab-control:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: var(--hu-shadow-control-pressed);
+}
+
+.hu-tab-control:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+}
+
+.hu-tab-control[aria-selected="true"],
+.hu-tab-control--selected,
+.hu-tab-control.is-active {
+  font-weight: var(--hu-font-weight-semibold);
+  color: var(--hu-color-primary-hover);
+  border-color: color-mix(in srgb, var(--hu-color-primary) 45%, var(--hu-color-border));
+  border-bottom-width: 3px;
+  border-bottom-color: var(--hu-color-primary);
+  background: linear-gradient(
+    165deg,
+    #ffffff 0%,
+    var(--hu-color-primary-soft) 50%,
+    color-mix(in srgb, var(--hu-color-primary-soft) 70%, #e6ebef) 100%
+  );
+  box-shadow: var(--hu-shadow-selected-control);
+}
+
+.hu-tab-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hu-tab-control {
+    transition: none;
+  }
+
+  .hu-tab-control:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 .hu-profile-card {
@@ -374,10 +466,13 @@ a.hu-button.hu-button--secondary:focus-visible:not([aria-disabled="true"]),
   padding: var(--hu-space-2) var(--hu-space-3);
   border: 1px solid var(--hu-control-border);
   border-radius: var(--hu-radius-md);
-  background: var(--hu-color-surface);
+  background: var(--hu-surface-inset, var(--hu-color-surface));
   color: var(--hu-color-text);
   font: inherit;
   line-height: var(--hu-line-height);
+  box-shadow: var(--hu-shadow-inset-field);
+  box-sizing: border-box;
+  max-width: 100%;
   transition:
     border-color 120ms ease,
     box-shadow 120ms ease;
@@ -409,7 +504,9 @@ a.hu-button.hu-button--secondary:focus-visible:not([aria-disabled="true"]),
 .humanity-app .geography-search-select__select:focus-visible,
 .humanity-app .geography-search-select__trigger:focus-visible {
   border-color: var(--hu-color-primary);
-  box-shadow: 0 0 0 1px var(--hu-color-primary);
+  box-shadow:
+    var(--hu-shadow-inset-field),
+    0 0 0 1px var(--hu-color-primary);
 }
 
 .humanity-app .hu-form-control[aria-invalid="true"],

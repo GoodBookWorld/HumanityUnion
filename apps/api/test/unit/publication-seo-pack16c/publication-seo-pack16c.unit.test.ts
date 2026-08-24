@@ -84,9 +84,9 @@ describe("Pack 16C — publication SEO and social distribution", () => {
     assert.equal(cleaned.seoTitle, "Safe Title");
     assert.equal(cleaned.seoDescription, "Desc with text");
     assert.equal(cleaned.distribution?.huSocialShare, "opt_in");
-    assert.equal(cleaned.distribution?.authorExternalAccounts[0]?.connectionStatus, "not_connected");
-    assert.equal(cleaned.distribution?.authorExternalAccounts[0]?.enabled, true);
-    assert.equal(cleaned.distribution?.authorExternalAccounts[0]?.label, "My Page");
+    assert.equal(cleaned.distribution?.authorExternalAccounts?.[0]?.connectionStatus, "not_connected");
+    assert.equal(cleaned.distribution?.authorExternalAccounts?.[0]?.enabled, false);
+    assert.equal(cleaned.distribution?.authorExternalAccounts?.[0]?.label, "My Page");
 
     assert.throws(
       () =>

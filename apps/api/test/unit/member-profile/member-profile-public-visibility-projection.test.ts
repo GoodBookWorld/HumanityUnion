@@ -101,22 +101,34 @@ describe("Launch Readiness UX Fix Pack 01 — public profile visibility projecti
 
   it("exposes professional links when visibility permits", () => {
     const projection = toPublicMemberProfile(
-      buildProfile({ professionalLinksVisibility: "public" }),
+      buildProfile({
+        professionalLinksVisibility: "public",
+        facebookUrl: "https://www.facebook.com/jane",
+        xUrl: "https://x.com/jane",
+      }),
       { viewerIsAuthenticated: false, viewerIsOwner: false },
     );
 
     assert.equal(projection!.website, "https://example.com");
     assert.equal(projection!.linkedinUrl, "https://www.linkedin.com/in/jane");
+    assert.equal(projection!.facebookUrl, "https://www.facebook.com/jane");
+    assert.equal(projection!.xUrl, "https://x.com/jane");
   });
 
   it("omits professional links when visibility is private", () => {
     const projection = toPublicMemberProfile(
-      buildProfile({ professionalLinksVisibility: "private" }),
+      buildProfile({
+        professionalLinksVisibility: "private",
+        facebookUrl: "https://www.facebook.com/jane",
+        youtubeUrl: "https://www.youtube.com/@jane",
+      }),
       { viewerIsAuthenticated: false, viewerIsOwner: false },
     );
 
     assert.equal(projection!.website, undefined);
     assert.equal(projection!.linkedinUrl, undefined);
+    assert.equal(projection!.facebookUrl, undefined);
+    assert.equal(projection!.youtubeUrl, undefined);
   });
 
   it("exposes biography and organization from the public projection when permitted", () => {

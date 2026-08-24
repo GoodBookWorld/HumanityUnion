@@ -117,6 +117,27 @@
     0 1px 2px rgba(26, 43, 60, 0.08) inset,
     0 1px 2px rgba(26, 43, 60, 0.04);
   --hu-shadow-floating: 0 8px 28px rgba(26, 43, 60, 0.12);
+
+  /*
+   * Pack 17A — Unified 3D surface & control system (semantic aliases).
+   * Professional subtle depth; reuse existing palette (no new colors).
+   */
+  --hu-surface-raised: var(--hu-color-surface);
+  --hu-surface-raised-muted: var(--hu-color-bg-muted);
+  --hu-surface-inset: var(--hu-color-surface);
+  --hu-border-card: 1px solid var(--hu-color-border);
+  --hu-shadow-3d: var(--hu-shadow-control);
+  --hu-shadow-elevated: var(--hu-shadow-card);
+  --hu-shadow-hover-elevated:
+    0 2px 4px rgba(26, 43, 60, 0.06),
+    0 8px 18px rgba(26, 43, 60, 0.08);
+  --hu-shadow-inset-field:
+    0 1px 2px rgba(26, 43, 60, 0.06) inset,
+    0 1px 0 rgba(255, 255, 255, 0.7);
+  --hu-shadow-selected-control:
+    0 1px 1px rgba(255, 255, 255, 0.55) inset,
+    0 1px 2px rgba(26, 43, 60, 0.07),
+    0 0 0 1px color-mix(in srgb, var(--hu-color-primary) 28%, transparent);
   /* Soft contact + ambient depth for the floating nav capsule */
   --hu-shadow-capsule:
     0 1px 2px rgba(26, 43, 60, 0.05),

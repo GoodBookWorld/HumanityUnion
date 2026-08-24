@@ -1,16 +1,18 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 
 import type {
-  BlogAuthorExternalSocialAccountPreference,
-  BlogCoverMedia,
-  BlogExternalSocialProviderId,
-  BlogHuSocialDistributionPreference,
+  BlogHuPlatformDistributionChannel,
   BlogPublicationOptimization,
+  BlogCoverMedia,
+  PlatformSocialAccountPublic,
+  PlatformSocialNetworkId,
 } from "@hu/types";
+import { PLATFORM_SOCIAL_NETWORKS } from "@hu/types";
 
 import { HelperText } from "../../../design-system/components/HelperText";
+import { fetchPublicPlatformSocialAccounts } from "../../platform-social-accounts/platform-social-accounts-public-api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { BlogCoverField } from "./BlogCoverField";
 
@@ -18,15 +20,6 @@ const SEO_TITLE_GUIDE = 60;
 const SEO_TITLE_MAX = 70;
 const SEO_DESCRIPTION_GUIDE = 160;
 const SEO_DESCRIPTION_MAX = 320;
-
-const EXTERNAL_PROVIDER_OPTIONS: readonly {
-  provider: BlogExternalSocialProviderId;
-  label: string;
-}[] = [
-  { provider: "facebook", label: "Facebook" },
-  { provider: "x", label: "X" },
-  { provider: "linkedin", label: "LinkedIn" },
-];
 
 export interface BlogPublicationOptimizationPanelProps {
   title: string;
@@ -42,20 +35,21 @@ function charHint(length: number, guide: number, max: number): string {
   return `${length} / ${guide} recommended · max ${max}`;
 }
 
-function accountFor(
-  accounts: readonly BlogAuthorExternalSocialAccountPreference[],
-  provider: BlogExternalSocialProviderId,
-): BlogAuthorExternalSocialAccountPreference {
-  const existing = accounts.find((account) => account.provider === provider);
+function channelFor(
+  channels: readonly BlogHuPlatformDistributionChannel[],
+  networkId: PlatformSocialNetworkId,
+): BlogHuPlatformDistributionChannel {
   return (
-    existing ?? {
-      provider,
-      enabled: false,
-      connectionStatus: "not_connected",
+    channels.find((channel) => channel.networkId === networkId) ?? {
+      networkId,
+      permitted: false,
     }
   );
 }
 
+/**
+ * Pack 16C / 17D — Publication Optimization (SEO, social preview, HU distribution intent).
+ */
 export function BlogPublicationOptimizationPanel({
   title,
   excerpt,
@@ -69,24 +63,50 @@ export function BlogPublicationOptimizationPanel({
   const seoDescriptionId = useId();
   const socialTitleId = useId();
   const socialDescriptionId = useId();
-  const huShareId = useId();
+  const distributionLegendId = useId();
+
+  const [configuredAccounts, setConfiguredAccounts] = useState<
+    readonly PlatformSocialAccountPublic[]
+  >([]);
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPublicPlatformSocialAccounts()
+      .then((response) => {
+        if (!cancelled) {
+          setConfiguredAccounts(response.accounts);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setConfiguredAccounts([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setAccountsLoaded(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const seoTitle = value.seoTitle ?? "";
   const seoDescription = value.seoDescription ?? "";
   const socialTitle = value.socialTitle ?? "";
   const socialDescription = value.socialDescription ?? "";
-  const socialImage =
-    value.socialImage === undefined ? null : value.socialImage;
-  const huSocialShare: BlogHuSocialDistributionPreference =
-    value.distribution?.huSocialShare ?? "unset";
-  const authorAccounts = value.distribution?.authorExternalAccounts ?? [];
+  const socialImage = value.socialImage === undefined ? null : value.socialImage;
+  const huPlatformChannels = value.distribution?.huPlatformChannels ?? [];
+
+  const configuredIds = new Set(configuredAccounts.map((account) => account.networkId));
 
   const previewTitle = seoTitle.trim() || title.trim() || "Untitled publication";
   const previewDescription =
     seoDescription.trim() || excerpt.trim() || "Add a meta description for search results.";
   const previewSocialTitle = socialTitle.trim() || previewTitle;
-  const previewSocialDescription =
-    socialDescription.trim() || previewDescription;
+  const previewSocialDescription = socialDescription.trim() || previewDescription;
   const previewSocialImage = socialImage?.mediaUrl || coverMedia?.mediaUrl || null;
   const canonicalPath = `/blog/${slug || "your-slug"}`;
 
@@ -97,32 +117,26 @@ export function BlogPublicationOptimizationPanel({
     });
   }
 
-  function setHuShare(next: BlogHuSocialDistributionPreference): void {
-    patch({
-      distribution: {
-        huSocialShare: next,
-        authorExternalAccounts: authorAccounts.map((account) => ({ ...account })),
-      },
-    });
-  }
-
-  function setExternalEnabled(provider: BlogExternalSocialProviderId, enabled: boolean): void {
-    const nextAccounts = EXTERNAL_PROVIDER_OPTIONS.map(({ provider: id, label }) => {
-      const current = accountFor(authorAccounts, id);
-      if (id !== provider) {
-        return { ...current, label: current.label ?? label };
+  function setChannelPermitted(networkId: PlatformSocialNetworkId, permitted: boolean): void {
+    if (!configuredIds.has(networkId)) {
+      return;
+    }
+    const nextChannels = PLATFORM_SOCIAL_NETWORKS.map(({ networkId: id }) => {
+      const current = channelFor(huPlatformChannels, id);
+      if (id !== networkId) {
+        return {
+          networkId: id,
+          permitted: configuredIds.has(id) ? current.permitted : false,
+        };
       }
-      return {
-        ...current,
-        label: current.label ?? label,
-        enabled,
-        connectionStatus: "not_connected" as const,
-      };
+      return { networkId: id, permitted };
     });
+    const anyPermitted = nextChannels.some((channel) => channel.permitted);
     patch({
       distribution: {
-        huSocialShare,
-        authorExternalAccounts: nextAccounts,
+        huSocialShare: anyPermitted ? "opt_in" : "unset",
+        huPlatformChannels: nextChannels,
+        authorExternalAccounts: [],
       },
     });
   }
@@ -135,19 +149,24 @@ export function BlogPublicationOptimizationPanel({
       <h2 className="hu-heading-3" id="blog-publication-optimization-heading">
         Publication Optimization
       </h2>
-      <p className="hu-caption">
-        SEO and social metadata stay on this publication. Distribution preferences enqueue through
-        the platform outbox — they never invent external credentials or claim a successful send.
+      <p className="hu-caption blog-publication-optimization__lede">
+        SEO and social metadata stay on this publication. Distribution permissions queue through the
+        platform outbox for official Humanity Union channels — they never invent external credentials
+        or claim a successful send.
       </p>
 
       <div className="blog-publication-optimization__grid">
         <section
-          className="blog-publication-optimization__section"
+          className="blog-publication-optimization__section blog-publication-optimization__section--seo"
           aria-labelledby="blog-seo-heading"
         >
           <h3 className="hu-heading-4" id="blog-seo-heading">
             Search Optimization
           </h3>
+          <p className="hu-caption blog-publication-optimization__section-copy">
+            Optional search title and description. Leave blank to fall back to the publication title
+            and excerpt on the public page.
+          </p>
 
           <label className="hu-label" htmlFor={seoTitleId}>
             SEO title
@@ -201,12 +220,16 @@ export function BlogPublicationOptimizationPanel({
         </section>
 
         <section
-          className="blog-publication-optimization__section"
+          className="blog-publication-optimization__section blog-publication-optimization__section--social"
           aria-labelledby="blog-social-heading"
         >
           <h3 className="hu-heading-4" id="blog-social-heading">
             Social Preview
           </h3>
+          <p className="hu-caption blog-publication-optimization__section-copy">
+            How this publication may appear when shared. Image defaults to the cover when a social
+            image is not set.
+          </p>
 
           <label className="hu-label" htmlFor={socialTitleId}>
             Social title
@@ -278,74 +301,61 @@ export function BlogPublicationOptimizationPanel({
         </section>
 
         <section
-          className="blog-publication-optimization__section"
+          className="blog-publication-optimization__section blog-publication-optimization__section--distribution"
           aria-labelledby="blog-distribution-heading"
         >
           <h3 className="hu-heading-4" id="blog-distribution-heading">
             Distribution
           </h3>
+          <p className="hu-caption blog-publication-optimization__section-copy">
+            Choose the Humanity Union social channels where this publication may be distributed.
+            This is not access to your personal social accounts.
+          </p>
 
-          <fieldset className="blog-publication-optimization__hu-share" disabled={disabled}>
-            <legend className="hu-label" id={huShareId}>
+          <fieldset
+            className="blog-publication-optimization__hu-share"
+            disabled={disabled}
+            aria-describedby={`${distributionLegendId}-help`}
+          >
+            <legend className="hu-label" id={distributionLegendId}>
               Humanity Union social distribution
             </legend>
-            <HelperText>
-              Opting in queues a platform outbox request for HU-owned channels. It does not post
-              immediately and does not confirm delivery by itself.
-            </HelperText>
-            {(
-              [
-                ["unset", "No preference"],
-                ["opt_in", "Opt in (queue for HU channels)"],
-                ["opt_out", "Opt out"],
-              ] as const
-            ).map(([valueOption, label]) => (
-              <label key={valueOption} className="blog-publication-optimization__radio">
-                <input
-                  type="radio"
-                  name={huShareId}
-                  value={valueOption}
-                  checked={huSocialShare === valueOption}
-                  disabled={disabled}
-                  onChange={() => {
-                    setHuShare(valueOption);
-                  }}
-                />
-                {label}
-              </label>
-            ))}
-          </fieldset>
-
-          <div className="blog-publication-optimization__external">
-            <p className="hu-label">Author connected social accounts</p>
-            <HelperText>
-              Personal external distribution is Author-controlled. Connections are not available yet —
-              preferences are saved as not connected until a real provider integration exists.
+            <HelperText id={`${distributionLegendId}-help`}>
+              Selecting a channel permits Humanity Union to distribute this publication through the
+              official configured channel. A profile URL alone does not auto-post — delivery waits
+              for a real provider integration. Preferences never bypass review, scheduling, or
+              blocks.
             </HelperText>
             <ul className="blog-publication-optimization__account-list">
-              {EXTERNAL_PROVIDER_OPTIONS.map(({ provider, label }) => {
-                const account = accountFor(authorAccounts, provider);
+              {PLATFORM_SOCIAL_NETWORKS.map(({ networkId, label }) => {
+                const configured = configuredIds.has(networkId);
+                const channel = channelFor(huPlatformChannels, networkId);
+                const unavailableReason = !accountsLoaded
+                  ? "Loading…"
+                  : configured
+                    ? "External API not connected — permission only"
+                    : "Official channel not configured";
                 return (
-                  <li key={provider} className="blog-publication-optimization__account">
+                  <li key={networkId} className="blog-publication-optimization__account">
                     <label className="blog-publication-optimization__account-toggle">
                       <input
                         type="checkbox"
-                        checked={account.enabled}
-                        disabled={disabled}
+                        checked={configured && channel.permitted}
+                        disabled={disabled || !configured}
                         onChange={(event) => {
-                          setExternalEnabled(provider, event.target.checked);
+                          setChannelPermitted(networkId, event.target.checked);
                         }}
                       />
                       <span>
                         {label}
-                        <span className="hu-caption"> · not connected</span>
+                        <span className="hu-caption"> · {unavailableReason}</span>
                       </span>
                     </label>
                   </li>
                 );
               })}
             </ul>
-          </div>
+          </fieldset>
         </section>
       </div>
     </section>

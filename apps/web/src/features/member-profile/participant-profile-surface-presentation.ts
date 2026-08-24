@@ -60,7 +60,7 @@ export function hasAnyStatistic(statistics: PublicParticipantStatistics | undefi
 
 /**
  * Launch Readiness UX Fix Pack 01 — identity-body metadata is country only.
- * Organization renders in its own identity-information block below Biography.
+ * Pack 17F — Organization renders in Participation Statistics above Skills.
  */
 export function buildIdentityMetaLines(profile: Pick<PublicMemberProfile, "country">): string[] {
   return [profile.country].filter(
@@ -77,9 +77,19 @@ export function hasVisibleSkills(profile: Pick<PublicMemberProfile, "skills">): 
 }
 
 export function hasVisibleProfessionalLinks(
-  profile: Pick<PublicMemberProfile, "website" | "linkedinUrl">,
+  profile: Pick<
+    PublicMemberProfile,
+    "website" | "linkedinUrl" | "facebookUrl" | "youtubeUrl" | "instagramUrl" | "xUrl"
+  >,
 ): boolean {
-  return Boolean(profile.website || profile.linkedinUrl);
+  return Boolean(
+    profile.website ||
+      profile.linkedinUrl ||
+      profile.facebookUrl ||
+      profile.youtubeUrl ||
+      profile.instagramUrl ||
+      profile.xUrl,
+  );
 }
 
 export function hasVisibleRecentInitiatives(

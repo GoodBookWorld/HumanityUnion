@@ -22,6 +22,11 @@ export interface MemberProfile {
   organization?: string;
   website?: string;
   linkedinUrl?: string;
+  /** Pack 17E — personal Participant social profile URLs (not HU platform destinations). */
+  facebookUrl?: string;
+  youtubeUrl?: string;
+  instagramUrl?: string;
+  xUrl?: string;
   skills: string[];
 
   country?: string;
@@ -105,6 +110,11 @@ export interface PublicMemberProfile {
   organization?: string;
   website?: string;
   linkedinUrl?: string;
+  /** Pack 17E — personal Participant social profile URLs (not HU platform destinations). */
+  facebookUrl?: string;
+  youtubeUrl?: string;
+  instagramUrl?: string;
+  xUrl?: string;
   skills?: string[];
   country?: string;
   region?: string;

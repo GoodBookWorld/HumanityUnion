@@ -3,6 +3,11 @@
   gap: var(--hu-space-4);
 }
 
+.member-professional-links__lede {
+  margin: 0;
+  max-width: 42rem;
+}
+
 .member-professional-links__field {
   display: grid;
   gap: var(--hu-space-2);

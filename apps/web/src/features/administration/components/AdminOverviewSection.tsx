@@ -33,10 +33,12 @@ import {
 import { AdminEditorsOverviewSummary } from "./AdminEditorsOverviewSummary";
 import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
+import { AdminPlatformSocialAccountsPanel } from "./AdminPlatformSocialAccountsPanel";
 
 import "../../platform-statistics/platform-statistics.css";
 import "./admin-panel.css";
 import "./admin-editors.css";
+import "./admin-platform-social-accounts.css";
 
 interface AdminOverviewSectionProps {
   user: AuthUserPublic;
@@ -301,6 +303,10 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
 
       <ProfileSection title="Editors">
         <AdminEditorsOverviewSummary />
+      </ProfileSection>
+
+      <ProfileSection title="Platform social accounts">
+        <AdminPlatformSocialAccountsPanel />
       </ProfileSection>
     </div>
   );

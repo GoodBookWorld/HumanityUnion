@@ -31,3 +31,54 @@ export interface PlatformConfigPublic {
   showBetaBanner: boolean;
   betaBannerMessage: string;
 }
+
+/**
+ * Pack 17C — Official Humanity Union public social destinations (URLs only; no credentials).
+ */
+export type PlatformSocialNetworkId = "facebook" | "youtube" | "instagram" | "x";
+
+export interface PlatformSocialNetworkDefinition {
+  readonly networkId: PlatformSocialNetworkId;
+  readonly label: string;
+}
+
+export const PLATFORM_SOCIAL_NETWORKS: readonly PlatformSocialNetworkDefinition[] = [
+  { networkId: "facebook", label: "Facebook" },
+  { networkId: "youtube", label: "YouTube" },
+  { networkId: "instagram", label: "Instagram" },
+  { networkId: "x", label: "X" },
+] as const;
+
+export const PLATFORM_SOCIAL_NETWORK_IDS: readonly PlatformSocialNetworkId[] =
+  PLATFORM_SOCIAL_NETWORKS.map((network) => network.networkId);
+
+/** Admin-managed canonical social account row. */
+export interface PlatformSocialAccount {
+  readonly networkId: PlatformSocialNetworkId;
+  readonly label: string;
+  /** HTTPS profile URL when configured; null when cleared / not set. */
+  readonly url: string | null;
+  readonly enabled: boolean;
+  readonly updatedAt: string;
+  readonly updatedByParticipantId?: string;
+}
+
+/** Public footer projection — only enabled networks with a configured URL. */
+export interface PlatformSocialAccountPublic {
+  readonly networkId: PlatformSocialNetworkId;
+  readonly label: string;
+  readonly url: string;
+}
+
+export interface PlatformSocialAccountListResponse {
+  readonly accounts: readonly PlatformSocialAccount[];
+}
+
+export interface PlatformSocialAccountPublicListResponse {
+  readonly accounts: readonly PlatformSocialAccountPublic[];
+}
+
+export interface PlatformSocialAccountUpsertInput {
+  readonly url: string | null;
+  readonly enabled?: boolean;
+}

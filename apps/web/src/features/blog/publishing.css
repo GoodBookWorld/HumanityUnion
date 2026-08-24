@@ -11,19 +11,9 @@
   margin-bottom: 1.25rem;
 }
 
+/* Pack 17A — visual system from .hu-tab-control; keep hook for layout tests */
 .publishing-dashboard__tab {
-  border: 1px solid var(--hu-border, rgba(28, 36, 48, 0.18));
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  padding: 0.45rem 0.85rem;
-  cursor: pointer;
-}
-
-.publishing-dashboard__tab.is-active {
-  background: var(--hu-color-primary, #0174b0);
-  border-color: var(--hu-color-primary, #0174b0);
-  color: #fff;
+  max-width: 100%;
 }
 
 .publishing-dashboard__list {
@@ -43,6 +33,13 @@
   grid-template-columns: 140px 1fr;
   gap: 1rem;
   align-items: start;
+  padding: var(--hu-space-3, 0.75rem);
+  border: var(--hu-border-card, 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.14)));
+  border-radius: var(--hu-radius-card, 12px);
+  background: var(--hu-surface-raised, #fff);
+  box-shadow: var(--hu-shadow-elevated, var(--hu-shadow-card));
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .publication-list-item__cover {
@@ -50,6 +47,7 @@
   height: auto;
   aspect-ratio: 16 / 9;
   object-fit: cover;
+  border-radius: var(--hu-radius-sm, 6px);
 }
 
 .publication-list-item__actions {
@@ -61,13 +59,11 @@
 .blog-post-editor--pack15b {
   max-width: none;
   /*
-   * Pack 16B — sticky stack offsets (not a one-off magic top).
-   * Chrome band ≈ primary button height + vertical padding + bottom border.
-   * CK toolbar / aside stick below: header + this chrome band.
+   * Pack 17B — chrome is no longer sticky; keep token for aside/toolbar math
+   * when chrome height is still needed for local layout, but CK sticks only
+   * under the platform header.
    */
-  --hu-publishing-editor-chrome-offset: calc(
-    var(--hu-button-min-height, 2.5rem) + (var(--hu-space-3, 0.75rem) * 2) + 1px
-  );
+  --hu-publishing-editor-chrome-offset: 0px;
 }
 
 .blog-post-editor__chrome {
@@ -80,11 +76,10 @@
   padding-block: var(--hu-space-3, 0.75rem);
   padding-inline: 0;
   border-bottom: 1px solid var(--hu-border, rgba(28, 36, 48, 0.12));
-  position: sticky;
-  top: var(--hu-scroll-margin-top, var(--humanity-header-offset));
-  /* Above CK toolbar within sticky local UI; below platform header */
-  z-index: calc(var(--hu-z-sticky, 20) + 1);
-  background: var(--hu-surface, #fff);
+  /* Pack 17B — normal document flow (not sticky) */
+  position: static;
+  z-index: auto;
+  background: transparent;
 }
 
 .blog-post-editor__save-status {
@@ -124,16 +119,17 @@
 
 .blog-post-editor__aside {
   padding: 1rem 1.1rem;
-  border: 1px solid var(--hu-border, rgba(28, 36, 48, 0.14));
-  background: var(--hu-surface-muted, #f7f9fb);
+  border: var(--hu-border-card, 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.14)));
+  border-radius: var(--hu-radius-card, 12px);
+  background: var(--hu-surface-raised-muted, var(--hu-color-bg-muted, #f4f7fa));
+  box-shadow: var(--hu-shadow-elevated, var(--hu-shadow-card));
+  box-sizing: border-box;
+  max-width: 100%;
   position: sticky;
-  top: calc(
-    var(--hu-scroll-margin-top, var(--humanity-header-offset)) +
-      var(--hu-publishing-editor-chrome-offset)
-  );
+  top: var(--hu-scroll-margin-top, var(--humanity-header-offset));
   max-height: calc(
     100vh - var(--hu-scroll-margin-top, var(--humanity-header-offset)) -
-      var(--hu-publishing-editor-chrome-offset) - var(--hu-space-4, 1rem)
+      var(--hu-space-4, 1rem)
   );
   overflow: auto;
 }
@@ -202,13 +198,65 @@
 
 .blog-publication-optimization {
   margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.12));
+  padding: 1.25rem 1.1rem 1.1rem;
+  border: var(--hu-border-card, 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.12)));
+  border-radius: var(--hu-radius-card, 12px);
+  background: var(--hu-surface-raised, #fff);
+  box-shadow: var(--hu-shadow-elevated, var(--hu-shadow-card));
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.blog-publication-optimization__lede {
+  margin: 0.35rem 0 0;
+}
+
+.blog-publication-optimization__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.blog-publication-optimization__section {
+  display: grid;
+  gap: 0.55rem;
+  min-inline-size: 0;
+  padding: 1rem 1.1rem;
+  border: var(--hu-border-card, 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.12)));
+  border-radius: var(--hu-radius-card, 12px);
+  box-shadow: var(--hu-shadow-subtle);
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.blog-publication-optimization__section-copy {
+  margin: 0 0 0.35rem;
+}
+
+/* Pack 17B — distinct HU light tints (existing palette only) */
+.blog-publication-optimization__section--seo {
+  background: var(--hu-color-primary-soft, #e8f4fa);
+}
+
+.blog-publication-optimization__section--social {
+  background: color-mix(in srgb, var(--hu-color-accent, #df9815) 10%, var(--hu-color-bg-muted, #f4f7fa));
+}
+
+.blog-publication-optimization__section--distribution {
+  background: var(--hu-color-bg-subtle, #eef3f7);
 }
 
 .blog-authoring-assistant {
   display: grid;
   gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border: var(--hu-border-card, 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.12)));
+  border-radius: var(--hu-radius-card, 12px);
+  background: var(--hu-surface-raised-muted, var(--hu-color-bg-muted, #f4f7fa));
+  box-shadow: var(--hu-shadow-subtle);
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .blog-authoring-assistant__header {
@@ -238,9 +286,12 @@
 
 .blog-authoring-assistant__suggestion {
   padding: 0.75rem;
-  border: 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.14));
-  border-radius: var(--hu-radius-control, 0.5rem);
-  background: var(--hu-color-bg-muted, rgba(28, 36, 48, 0.04));
+  border: var(--hu-border-card, 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.14)));
+  border-radius: var(--hu-radius-md, 8px);
+  background: var(--hu-surface-raised, #fff);
+  box-shadow: var(--hu-shadow-subtle);
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .blog-authoring-assistant__proposal {
@@ -253,25 +304,15 @@
   font: inherit;
   font-size: 0.875rem;
   line-height: 1.4;
-  background: var(--hu-color-surface, #fff);
-  border-radius: var(--hu-radius-control, 0.4rem);
+  background: var(--hu-surface-inset, #fff);
+  border: 1px solid var(--hu-control-border, #dadce0);
+  border-radius: var(--hu-radius-md, 8px);
+  box-shadow: var(--hu-shadow-inset-field);
 }
 
 .blog-authoring-assistant__confirm {
   display: grid;
   gap: 0.4rem;
-}
-
-.blog-publication-optimization__grid {
-  display: grid;
-  gap: 1.5rem;
-  margin-top: 1rem;
-}
-
-.blog-publication-optimization__section {
-  display: grid;
-  gap: 0.5rem;
-  min-inline-size: 0;
 }
 
 .blog-publication-optimization__canonical {
@@ -388,13 +429,6 @@
   margin: 0;
 }
 
-@media (min-width: 64rem) {
-  .blog-publication-optimization__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: start;
-  }
-}
-
 .blog-cover-field__preview {
   margin-bottom: 0.75rem;
   max-width: 100%;
@@ -429,20 +463,55 @@
 }
 
 .blog-rich-text {
-  border: 1px solid var(--hu-border, rgba(28, 36, 48, 0.18));
-  background: #fff;
+  border: var(--hu-border-card, 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.18)));
+  border-radius: var(--hu-radius-card, 12px);
+  background: var(--hu-surface-raised, #fff);
+  box-shadow: var(--hu-shadow-elevated, var(--hu-shadow-card));
   display: flex;
   flex-direction: column;
-  min-height: min(70vh, 720px);
+  min-height: min(50vh, 28rem);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* Pack 16B — CKEditor sticky toolbar below HumanityHeader + editor chrome */
+/*
+ * Pack 17B — desktop: toolbar associated with editor; main/editable is a
+ * bounded writing viewport with internal scroll. overscroll-behavior: auto
+ * so page scroll resumes at the inner boundary (no permanent scroll trap).
+ */
+@media (min-width: 769px) {
+  .blog-rich-text--ckeditor {
+    max-height: min(70vh, 42rem);
+  }
+
+  .blog-rich-text--ckeditor .ck.ck-editor {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .blog-rich-text--ckeditor .ck.ck-editor__main {
+    flex: 1 1 auto;
+    min-height: 16rem;
+    overflow-y: auto;
+    overscroll-behavior: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .blog-rich-text--ckeditor .ck-editor__editable {
+    min-height: 16rem;
+    max-width: 100%;
+  }
+}
+
+/* Pack 17B — toolbar sticks under platform header only (chrome is not sticky) */
 .blog-rich-text--ckeditor .ck.ck-editor__top {
   position: sticky;
-  top: calc(
-    var(--hu-scroll-margin-top, var(--humanity-header-offset)) +
-      var(--hu-publishing-editor-chrome-offset, 0px)
-  );
+  top: var(--hu-scroll-margin-top, var(--humanity-header-offset));
   z-index: var(--hu-z-sticky, 20);
   background: var(--hu-surface, #fff);
 }
@@ -453,7 +522,7 @@
 }
 
 .blog-rich-text--ckeditor .ck-editor__editable {
-  min-height: 420px;
+  min-height: 280px;
   max-width: 100%;
 }
 
@@ -545,17 +614,25 @@
     grid-template-columns: 1fr;
   }
 
+  .publishing-dashboard__tabs .hu-tab-control {
+    min-height: var(--hu-touch-target, 2.75rem);
+  }
+
   .blog-post-editor__title-input {
     font-size: 1.35rem !important;
   }
 
   /*
-   * Pack 16B — mobile: one sticky layer.
-   * Chrome scrolls with the page; toolbar sticks below HumanityHeader only.
+   * Pack 17B — mobile: prefer natural page flow for the writing surface
+   * (no nested scroll viewport). Toolbar remains under platform header.
    */
-  .blog-post-editor__chrome {
-    position: static;
-    z-index: auto;
+  .blog-rich-text--ckeditor {
+    max-height: none;
+  }
+
+  .blog-rich-text--ckeditor .ck.ck-editor__main {
+    overflow: visible;
+    max-height: none;
   }
 
   .blog-rich-text--ckeditor .ck.ck-editor__top {

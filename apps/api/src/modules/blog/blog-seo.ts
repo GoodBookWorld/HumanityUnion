@@ -1,18 +1,23 @@
 /**
  * Pack 16C — plain-text SEO/social metadata sanitization (no HTML/scripts).
+ * Pack 17D — HU platform channel distribution permissions (Pack 17C destinations).
  */
 import type {
   BlogAuthorExternalSocialAccountPreference,
   BlogCoverMedia,
+  BlogHuPlatformDistributionChannel,
   BlogHuSocialDistributionPreference,
   BlogPublicationDistribution,
   BlogPublicationOptimization,
   BlogPost,
+  PlatformSocialNetworkId,
   PublicBlogPostSeo,
 } from "@hu/types";
+import { PLATFORM_SOCIAL_NETWORK_IDS } from "@hu/types";
 
-import { BlogValidationError } from "./blog.errors.js";
+import { listPublicPlatformSocialAccounts } from "../platform-social-accounts/index.js";
 import { resolveBlogCoverMedia } from "./blog-cover-media.js";
+import { BlogValidationError } from "./blog.errors.js";
 
 export const BLOG_SEO_TITLE_MAX = 70;
 export const BLOG_SEO_DESCRIPTION_MAX = 320;
@@ -20,6 +25,7 @@ export const BLOG_SEO_TITLE_GUIDE = 60;
 export const BLOG_SEO_DESCRIPTION_GUIDE = 160;
 
 const EXTERNAL_PROVIDERS = new Set(["facebook", "x", "linkedin", "other"]);
+const PLATFORM_NETWORK_SET = new Set<string>(PLATFORM_SOCIAL_NETWORK_IDS);
 
 /** Strip tags/entities and collapse whitespace — SEO fields are plain text only. */
 export function sanitizeBlogPlainTextMeta(value: string): string {
@@ -68,6 +74,53 @@ function validateHuSocialShare(value: unknown): BlogHuSocialDistributionPreferen
   throw new BlogValidationError("distribution.huSocialShare is invalid.");
 }
 
+/**
+ * Pack 17D — accept networkId + permitted only.
+ * Reject client-supplied destination URLs / credentials.
+ */
+export function validateHuPlatformChannels(
+  value: unknown,
+): readonly BlogHuPlatformDistributionChannel[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new BlogValidationError("distribution.huPlatformChannels must be an array.");
+  }
+
+  const byNetwork = new Map<PlatformSocialNetworkId, BlogHuPlatformDistributionChannel>();
+  for (const [index, entry] of value.slice(0, 8).entries()) {
+    if (!entry || typeof entry !== "object") {
+      throw new BlogValidationError(`huPlatformChannels[${index}] is invalid.`);
+    }
+    const row = entry as Record<string, unknown>;
+    if ("url" in row || "destinationUrl" in row || "accountUrl" in row) {
+      throw new BlogValidationError(
+        "huPlatformChannels must not include account URLs — destinations are resolved server-side.",
+      );
+    }
+    if ("token" in row || "accessToken" in row || "password" in row || "oauth" in row) {
+      throw new BlogValidationError("huPlatformChannels must not include credentials.");
+    }
+    const networkId = typeof row.networkId === "string" ? row.networkId : "";
+    if (!PLATFORM_NETWORK_SET.has(networkId)) {
+      throw new BlogValidationError(`huPlatformChannels[${index}].networkId is unsupported.`);
+    }
+    byNetwork.set(networkId as PlatformSocialNetworkId, {
+      networkId: networkId as PlatformSocialNetworkId,
+      permitted: row.permitted === true,
+    });
+  }
+
+  return PLATFORM_SOCIAL_NETWORK_IDS.map(
+    (networkId) =>
+      byNetwork.get(networkId) ?? {
+        networkId,
+        permitted: false,
+      },
+  );
+}
+
 function validateExternalAccounts(
   value: unknown,
 ): readonly BlogAuthorExternalSocialAccountPreference[] {
@@ -89,7 +142,6 @@ function validateExternalAccounts(
     const label =
       typeof row.label === "string" ? sanitizeBlogPlainTextMeta(row.label).slice(0, 80) : undefined;
     const enabled = row.enabled === true;
-    // Pack 16C honesty: no credentials — only not_connected until a real integration exists.
     const connectionStatus =
       row.connectionStatus === "connected" || row.connectionStatus === "error"
         ? "not_connected"
@@ -101,6 +153,19 @@ function validateExternalAccounts(
       connectionStatus,
     };
   });
+}
+
+function deriveHuSocialShare(
+  channels: readonly BlogHuPlatformDistributionChannel[],
+  explicit: BlogHuSocialDistributionPreference,
+): BlogHuSocialDistributionPreference {
+  if (channels.some((channel) => channel.permitted)) {
+    return "opt_in";
+  }
+  if (explicit === "opt_out") {
+    return "opt_out";
+  }
+  return channels.length > 0 ? "unset" : explicit;
 }
 
 export function validateBlogPublicationOptimization(
@@ -141,9 +206,19 @@ export function validateBlogPublicationOptimization(
       throw new BlogValidationError("distribution must be an object.");
     }
     const dist = input.distribution as Record<string, unknown>;
+    const huPlatformChannels = validateHuPlatformChannels(dist.huPlatformChannels);
+    const explicitShare = validateHuSocialShare(dist.huSocialShare);
+    const authorExternalAccounts = validateExternalAccounts(dist.authorExternalAccounts).map(
+      (account) => ({
+        ...account,
+        enabled: false,
+        connectionStatus: "not_connected" as const,
+      }),
+    );
     distribution = {
-      huSocialShare: validateHuSocialShare(dist.huSocialShare),
-      authorExternalAccounts: validateExternalAccounts(dist.authorExternalAccounts),
+      huSocialShare: deriveHuSocialShare(huPlatformChannels, explicitShare),
+      huPlatformChannels,
+      authorExternalAccounts,
     };
   }
 
@@ -160,6 +235,43 @@ export function validateBlogPublicationOptimization(
     return undefined;
   }
   return optimization;
+}
+
+/**
+ * Pack 17D — only configured/enabled Pack 17C accounts may remain permitted.
+ */
+export async function gateBlogPublicationOptimizationAgainstPlatformAccounts(
+  optimization: BlogPublicationOptimization | undefined,
+): Promise<BlogPublicationOptimization | undefined> {
+  if (!optimization?.distribution?.huPlatformChannels) {
+    return optimization;
+  }
+
+  const publicAccounts = await listPublicPlatformSocialAccounts();
+  const configured = new Set(publicAccounts.accounts.map((account) => account.networkId));
+  const gatedChannels = optimization.distribution.huPlatformChannels.map((channel) => ({
+    networkId: channel.networkId,
+    permitted: channel.permitted === true && configured.has(channel.networkId),
+  }));
+
+  return {
+    ...optimization,
+    distribution: {
+      ...optimization.distribution,
+      huPlatformChannels: gatedChannels,
+      huSocialShare: deriveHuSocialShare(
+        gatedChannels,
+        optimization.distribution.huSocialShare,
+      ),
+      authorExternalAccounts: (optimization.distribution.authorExternalAccounts ?? []).map(
+        (account) => ({
+          ...account,
+          enabled: false,
+          connectionStatus: "not_connected" as const,
+        }),
+      ),
+    },
+  };
 }
 
 export function resolvePublicBlogPostSeo(post: BlogPost): PublicBlogPostSeo {

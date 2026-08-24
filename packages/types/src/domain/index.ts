@@ -1173,6 +1173,17 @@ export type {
   BetaOnboardingItem,
   PlatformConfigPublic,
   WorkspaceReadiness,
+  PlatformSocialNetworkId,
+  PlatformSocialNetworkDefinition,
+  PlatformSocialAccount,
+  PlatformSocialAccountPublic,
+  PlatformSocialAccountListResponse,
+  PlatformSocialAccountPublicListResponse,
+  PlatformSocialAccountUpsertInput,
+} from "./platform.js";
+export {
+  PLATFORM_SOCIAL_NETWORKS,
+  PLATFORM_SOCIAL_NETWORK_IDS,
 } from "./platform.js";
 export type {
   MembershipApplicationInput,
@@ -1319,6 +1330,7 @@ export type {
   BlogCoverMedia,
   BlogExternalSocialProviderId,
   BlogHuSocialDistributionPreference,
+  BlogHuPlatformDistributionChannel,
   BlogAuthorExternalSocialAccountPreference,
   BlogPublicationDistribution,
   BlogPublicationOptimization,

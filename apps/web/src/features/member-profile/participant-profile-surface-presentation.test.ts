@@ -155,9 +155,13 @@ describe("hasVisibleSkills / hasVisibleProfessionalLinks / hasVisibleRecentIniti
     assert.equal(hasVisibleSkills({ skills: undefined }), false);
   });
 
-  it("test 17 — hasVisibleProfessionalLinks is true when either website or linkedinUrl is present", () => {
+  it("test 17 — hasVisibleProfessionalLinks is true when website, LinkedIn, or social URLs are present", () => {
     assert.equal(hasVisibleProfessionalLinks({ website: "https://example.com" }), true);
     assert.equal(hasVisibleProfessionalLinks({ linkedinUrl: "https://linkedin.com/in/x" }), true);
+    assert.equal(hasVisibleProfessionalLinks({ facebookUrl: "https://facebook.com/x" }), true);
+    assert.equal(hasVisibleProfessionalLinks({ youtubeUrl: "https://youtube.com/@x" }), true);
+    assert.equal(hasVisibleProfessionalLinks({ instagramUrl: "https://instagram.com/x" }), true);
+    assert.equal(hasVisibleProfessionalLinks({ xUrl: "https://x.com/x" }), true);
     assert.equal(hasVisibleProfessionalLinks({}), false);
   });
 

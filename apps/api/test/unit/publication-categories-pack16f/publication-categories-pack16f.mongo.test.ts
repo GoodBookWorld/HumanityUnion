@@ -56,6 +56,7 @@ if (!isMongoAvailableForTests()) {
 }
 
 const TEST_PREFIX = createTestId("pack16f");
+const CATEGORY_ID_PREFIX = TEST_PREFIX.replace(/-/g, "_");
 const createdAuthUserIds: string[] = [];
 const createdParticipantIds: string[] = [];
 const createdPostIds: string[] = [];
@@ -69,13 +70,17 @@ const permissiveSafety: SafetyProvider = {
 };
 
 async function registerAdmin(): Promise<{ userId: string; participantId: string }> {
-  const email = `${TEST_PREFIX}-admin@example.com`;
-  const user = await insertAuthUser({
-    email,
-    passwordHash: "x",
-    displayName: "Pack16F Admin",
-    role: "admin",
-  });
+  const suffix = createTestId("a");
+  const memberId = `member-admin-${suffix}`;
+  const user = await insertAuthUser(
+    {
+      email: `${suffix}-admin@example.com`,
+      password: "Password123!",
+      displayName: "Pack16F Admin",
+      role: "admin",
+    },
+    memberId,
+  );
   await markAuthUserEmailVerified(user.userId);
   await createMemberProfileForUser({ userId: user.userId, displayName: "Pack16F Admin" });
   createdAuthUserIds.push(user.userId);
@@ -84,13 +89,17 @@ async function registerAdmin(): Promise<{ userId: string; participantId: string 
 }
 
 async function registerAuthor(): Promise<{ userId: string; participantId: string }> {
-  const email = `${TEST_PREFIX}-author@example.com`;
-  const user = await insertAuthUser({
-    email,
-    passwordHash: "x",
-    displayName: "Pack16F Author",
-    role: "member",
-  });
+  const suffix = createTestId("u");
+  const memberId = `member-author-${suffix}`;
+  const user = await insertAuthUser(
+    {
+      email: `${suffix}-author@example.com`,
+      password: "Password123!",
+      displayName: "Pack16F Author",
+      role: "member",
+    },
+    memberId,
+  );
   await markAuthUserEmailVerified(user.userId);
   await createMemberProfileForUser({ userId: user.userId, displayName: "Pack16F Author" });
   createdAuthUserIds.push(user.userId);
@@ -118,10 +127,13 @@ describe("Pack 16F — publication categories (Mongo)", () => {
       await deleteBlogPostsByIdsForTests(createdPostIds);
     }
     await deleteBlogCapabilityGrantsByParticipantIdsForTests(createdParticipantIds);
-    await deleteBlogCategoryRecordsByIdPrefixForTests(`${TEST_PREFIX}_`);
-    await deleteBlogCategoryRecordsByIdPrefixForTests(TEST_PREFIX);
-    await deleteMemberProfilesByUserIdPrefix(TEST_PREFIX);
-    await deleteAuthUsersByEmailPrefix(TEST_PREFIX);
+    await deleteBlogCategoryRecordsByIdPrefixForTests(`${CATEGORY_ID_PREFIX}_`);
+    await deleteBlogCategoryRecordsByIdPrefixForTests(CATEGORY_ID_PREFIX);
+    // Auth/profile rows use per-call createTestId suffixes; isolated DB drop covers leftovers.
+    await deleteMemberProfilesByUserIdPrefix("a-");
+    await deleteMemberProfilesByUserIdPrefix("u-");
+    await deleteAuthUsersByEmailPrefix("a-");
+    await deleteAuthUsersByEmailPrefix("u-");
     invalidateBlogCategoryCache();
     if (process.env.PACK16F_FOCUSED_MONGO === "1") {
       await dropIsolatedTestDatabase({
@@ -141,12 +153,12 @@ describe("Pack 16F — publication categories (Mongo)", () => {
       body: {
         name: `${TEST_PREFIX} Civic Notes`,
         slug: `${TEST_PREFIX}-civic-notes`,
-        categoryId: `${TEST_PREFIX}_civic_notes`,
+        categoryId: `${CATEGORY_ID_PREFIX}_civic_notes`,
         description: "Pack 16F test category",
       },
     });
     createdCategoryIds.push(created.categoryId);
-    assert.equal(created.categoryId, `${TEST_PREFIX}_civic_notes`);
+    assert.equal(created.categoryId, `${CATEGORY_ID_PREFIX}_civic_notes`);
 
     const renamed = await updateAdminBlogCategory({
       actorUserId: admin.userId,
@@ -179,7 +191,7 @@ describe("Pack 16F — publication categories (Mongo)", () => {
       body: {
         name: `${TEST_PREFIX} Delete Guard`,
         slug: `${TEST_PREFIX}-delete-guard`,
-        categoryId: `${TEST_PREFIX}_delete_guard`,
+        categoryId: `${CATEGORY_ID_PREFIX}_delete_guard`,
       },
     });
     createdCategoryIds.push(created.categoryId);

@@ -11,7 +11,10 @@ import {
   MAX_MEMBER_SKILLS,
   MAX_ORGANIZATION_LENGTH,
   MAX_PUBLIC_NAME_LENGTH,
+  MAX_SOCIAL_PROFILE_URL_LENGTH,
   MAX_WEBSITE_LENGTH,
+  PARTICIPANT_SOCIAL_PROFILE_HOSTS,
+  type ParticipantSocialProfileNetwork,
 } from "./member-profile.constants.js";
 import { isPlatformMediaUrl } from "../media-upload/media-upload.validation.js";
 import { MemberProfileValidationError } from "./member-profile.errors.js";
@@ -152,6 +155,56 @@ export function validateLinkedInUrl(linkedinUrl: unknown): string | undefined {
   return normalized;
 }
 
+function hostMatchesAllowlist(hostname: string, allowlist: readonly string[]): boolean {
+  const host = hostname.toLowerCase();
+  return allowlist.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
+}
+
+/**
+ * Pack 17E — optional personal social profile URL (HTTPS + network host).
+ * Empty / blank clears the link.
+ */
+export function validateParticipantSocialProfileUrl(
+  network: ParticipantSocialProfileNetwork,
+  rawUrl: unknown,
+  fieldLabel: string,
+): string | undefined {
+  const value = normalizeOptionalString(rawUrl);
+
+  if (!value) {
+    return undefined;
+  }
+
+  if (value.length > MAX_SOCIAL_PROFILE_URL_LENGTH) {
+    throw new MemberProfileValidationError(
+      `${fieldLabel} URL must be at most ${MAX_SOCIAL_PROFILE_URL_LENGTH} characters.`,
+    );
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new MemberProfileValidationError(`${fieldLabel} must be a valid https URL.`);
+  }
+
+  if (parsed.protocol !== "https:") {
+    throw new MemberProfileValidationError(`${fieldLabel} must use https.`);
+  }
+  if (parsed.username || parsed.password) {
+    throw new MemberProfileValidationError(`${fieldLabel} must not include credentials.`);
+  }
+
+  const allowlist = PARTICIPANT_SOCIAL_PROFILE_HOSTS[network];
+  if (!hostMatchesAllowlist(parsed.hostname, allowlist)) {
+    throw new MemberProfileValidationError(
+      `${fieldLabel} URL must use an official ${fieldLabel} domain.`,
+    );
+  }
+
+  return parsed.toString();
+}
+
 export function validateSkills(skills: unknown): string[] {
   if (skills === undefined || skills === null) {
     return [];
@@ -208,6 +261,10 @@ export interface ValidatedMemberProfilePatch {
   organization?: string;
   website?: string;
   linkedinUrl?: string;
+  facebookUrl?: string;
+  youtubeUrl?: string;
+  instagramUrl?: string;
+  xUrl?: string;
   skills?: string[];
   language?: string;
   timezone?: string;
@@ -271,6 +328,34 @@ export function validateMemberProfilePatch(body: unknown): ValidatedMemberProfil
 
   if ("linkedinUrl" in record) {
     patch.linkedinUrl = validateLinkedInUrl(record.linkedinUrl);
+  }
+
+  if ("facebookUrl" in record) {
+    patch.facebookUrl = validateParticipantSocialProfileUrl(
+      "facebook",
+      record.facebookUrl,
+      "Facebook",
+    );
+  }
+
+  if ("youtubeUrl" in record) {
+    patch.youtubeUrl = validateParticipantSocialProfileUrl(
+      "youtube",
+      record.youtubeUrl,
+      "YouTube",
+    );
+  }
+
+  if ("instagramUrl" in record) {
+    patch.instagramUrl = validateParticipantSocialProfileUrl(
+      "instagram",
+      record.instagramUrl,
+      "Instagram",
+    );
+  }
+
+  if ("xUrl" in record) {
+    patch.xUrl = validateParticipantSocialProfileUrl("x", record.xUrl, "X");
   }
 
   if ("skills" in record) {

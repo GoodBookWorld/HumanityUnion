@@ -1,6 +1,7 @@
 import type { LanguageCode } from "./language.js";
 import type { LifecycleSafetyOutcome } from "./lifecycle-safety.js";
 import type { PublicCommentAuthor } from "./initiative-comment.js";
+import type { PlatformSocialNetworkId } from "./platform.js";
 
 /**
  * Blog Implementation Pack 02 — Publishing Domain core contracts.
@@ -138,11 +139,22 @@ export interface BlogCoverMedia {
 /** Pack 16C — Humanity Union-owned social distribution preference (outbox-driven). */
 export type BlogHuSocialDistributionPreference = "opt_in" | "opt_out" | "unset";
 
+/**
+ * Pack 17D — per-publication permission for HU Platform Social Accounts (Pack 17C).
+ * `permitted: true` means HU may distribute this publication via that official channel.
+ * It does not grant access to an Author's personal social account.
+ */
+export interface BlogHuPlatformDistributionChannel {
+  readonly networkId: PlatformSocialNetworkId;
+  readonly permitted: boolean;
+}
+
 /** Pack 16C — modeled providers; credentials are never stored here. */
 export type BlogExternalSocialProviderId = "facebook" | "x" | "linkedin" | "other";
 
 /**
- * Pack 16C — Author personal external distribution preference.
+ * Pack 16C — Author personal external distribution preference (deprecated for UI).
+ * Pack 17D routes distribution intent through `huPlatformChannels` instead.
  * `connectionStatus` must stay honest: never claim delivery without a real provider.
  */
 export interface BlogAuthorExternalSocialAccountPreference {
@@ -154,7 +166,15 @@ export interface BlogAuthorExternalSocialAccountPreference {
 
 export interface BlogPublicationDistribution {
   readonly huSocialShare: BlogHuSocialDistributionPreference;
-  readonly authorExternalAccounts: readonly BlogAuthorExternalSocialAccountPreference[];
+  /**
+   * Pack 17D — Author permissions for official HU channels (Facebook / YouTube / Instagram / X).
+   * Destinations are resolved server-side from Pack 17C; clients never supply account URLs.
+   */
+  readonly huPlatformChannels?: readonly BlogHuPlatformDistributionChannel[];
+  /**
+   * @deprecated Pack 17D — personal-account distribution UI removed; ignored on write.
+   */
+  readonly authorExternalAccounts?: readonly BlogAuthorExternalSocialAccountPreference[];
 }
 
 /**

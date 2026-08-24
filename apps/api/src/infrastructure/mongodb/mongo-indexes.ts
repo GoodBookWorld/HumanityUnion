@@ -994,6 +994,17 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // Pack 17C — one document per official social network.
+    collectionName: MONGO_COLLECTIONS.platformSocialAccounts,
+    indexes: [
+      {
+        key: { networkId: 1 },
+        unique: true,
+        name: "platform_social_accounts_network_id_unique",
+      },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.blogCapabilityGrants,
     indexes: [
       {

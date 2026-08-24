@@ -58,6 +58,11 @@ describe("Launch Readiness UX Fix Pack 01 — Blog / Profile / Header", () => {
     assert.match(surface, /public-member-page__statistics/);
     assert.match(surface, /personal-statistics__grid/);
     assert.match(surface, /public-member-page__profile-context/);
+    // Pack 17F — Organization lives under statistics; Biography is full-width below the top row.
+    assert.match(surface, /public-member-page__biography/);
+    assert.match(surface, /icons\/workspace\/organization\.png/);
+    assert.match(surface, /icons\/workspace\/skills\.png/);
+    assert.match(surface, /icons\/workspace\/biography\.png/);
 
     assert.match(css, /\.public-member-page__member-badge\s*\{[\s\S]*width:\s*48px/m);
     assert.match(css, /\.public-member-page__member-badge\s*\{[\s\S]*height:\s*48px/m);

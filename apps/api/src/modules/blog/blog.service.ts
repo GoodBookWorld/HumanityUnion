@@ -64,6 +64,7 @@ import {
   emitBlogPublicationAdminReviewNotifications,
 } from "./blog-publication-notifications.js";
 import { enqueueBlogSocialDistributionBestEffort } from "./blog-social-distribution.js";
+import { gateBlogPublicationOptimizationAgainstPlatformAccounts } from "./blog-seo.js";
 import {
   canArchiveAny,
   canCreateBlogDraft,
@@ -275,6 +276,9 @@ export async function createBlogDraft(input: {
   });
 
   const fields = validateCreateBlogDraftInput(input.body);
+  const gatedOptimization = await gateBlogPublicationOptimizationAgainstPlatformAccounts(
+    fields.optimization,
+  );
   const safety = await evaluateBlogSafety({
     actorParticipantId: input.actorParticipantId,
     title: fields.title,
@@ -305,7 +309,7 @@ export async function createBlogDraft(input: {
     ...(fields.publicationDate
       ? { publishedAt: publicationDateOnlyToIso(fields.publicationDate) }
       : {}),
-    ...(fields.optimization ? { optimization: fields.optimization } : {}),
+    ...(gatedOptimization ? { optimization: gatedOptimization } : {}),
   };
 
   await insertBlogPost(post);
@@ -356,6 +360,11 @@ export async function updateBlogDraft(input: {
   }
 
   const patch = validateUpdateBlogDraftInput(input.body);
+  if ("optimization" in patch) {
+    patch.optimization = await gateBlogPublicationOptimizationAgainstPlatformAccounts(
+      patch.optimization,
+    );
+  }
   const nextTitle = patch.title ?? existing.title;
   const nextExcerpt = patch.excerpt ?? existing.excerpt;
   const nextContent = patch.content ?? existing.content;

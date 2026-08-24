@@ -2,10 +2,10 @@ import Link from "next/link";
 
 import type { PublicMemberProfile, PublicMemberProfileHiddenSections } from "@hu/types";
 
-import { ProfileSection } from "../../../components/member/ProfileSection";
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
 import { DirectMessageAction } from "../../direct-messaging/components/DirectMessageAction";
 import { MemberProfessionalLinksDisplay } from "./MemberProfessionalLinksSection";
+import { RecentPublicInitiativesDisclosure } from "./RecentPublicInitiativesDisclosure";
 import {
   buildIdentityMetaLines,
   buildParticipationAreaLabels,
@@ -29,43 +29,28 @@ import "../../personal-statistics/personal-statistics.css";
 import "./participant-profile-surface.css";
 
 /**
- * Profile UX Pack 03.3 — the one shared visual structure for both:
+ * Profile UX Pack 03.3 — shared visual structure for `/member/{publicName}`
+ * and `/profile` owner preview.
  *
- * - `/member/{publicName}` (`mode="public"`) — a visitor's exact view;
- * - `/profile` (`mode="owner_preview"`) — the signed-in owner's preview of
- *   that same exact view.
- *
- * Launch Readiness UX Fix Pack 01 — identity information order, Member badge,
- * and Participation Area / Skills under statistics. Renders only fields the
- * public projection already supplies (Privacy boundary stays server-side).
+ * Pack 17F — information architecture:
+ * top grid (identity + statistics) → full-width Biography → Initiatives disclosure.
+ * Organization sits in Participation Statistics above Skills.
  */
 export type ParticipantProfileSurfaceMode = "public" | "owner_preview";
 
 export interface ParticipantProfileOwnerActionLinks {
-  /** Profile UX Pack 03.3 Part 9 — used only by the empty-biography prompt. */
   editProfileHref: string;
-  /** Profile UX Pack 03.3 Part 5 — used only by hidden-section notices. */
   managePrivacyHref: string;
 }
 
 export interface ParticipantProfileSurfaceProps {
   mode: ParticipantProfileSurfaceMode;
   profile: PublicMemberProfile;
-  /** Required (and only meaningful) in `owner_preview` mode. */
   hiddenSections?: PublicMemberProfileHiddenSections;
-  /** Required (and only meaningful) in `owner_preview` mode. */
   ownerActionLinks?: ParticipantProfileOwnerActionLinks;
-  /**
-   * Route-specific trailing content rendered as the last row inside this
-   * surface's own centered grid (e.g. the public route's "Back to Home"
-   * link). Keeps that route-specific element sharing the exact same
-   * spacing rhythm as every other row without the surface itself knowing
-   * anything about the route that placed it there.
-   */
   footer?: React.ReactNode;
 }
 
-/** Part 8 — three horizontal Participation Statistics cards, only the fields Privacy allows. */
 function ParticipantStatisticsRow({
   cards,
 }: {
@@ -103,6 +88,32 @@ function OwnerHiddenSectionNotice({
       {text}
       <Link href={managePrivacyHref}>Manage Privacy</Link>
     </p>
+  );
+}
+
+function HeadingWithIcon({
+  as: Tag,
+  className,
+  iconSrc,
+  children,
+}: {
+  as: "h2" | "h3";
+  className: string;
+  iconSrc: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tag className={className}>
+      <img
+        className="public-member-page__heading-icon"
+        src={iconSrc}
+        alt=""
+        aria-hidden="true"
+        width={24}
+        height={24}
+      />
+      <span>{children}</span>
+    </Tag>
   );
 }
 
@@ -144,8 +155,10 @@ export function ParticipantProfileSurface({
     hasStatistics ||
     showStatisticsNotice ||
     hasParticipationArea ||
+    hasOrganization ||
     hasSkills ||
     showSkillsNotice;
+  const showBiographySection = hasBiography || showBiographyNotice || isOwnerPreview;
   const showInitiativesSection = hasRecentInitiatives || showInitiativesNotice;
 
   return (
@@ -157,7 +170,7 @@ export function ParticipantProfileSurface({
             : "public-member-page__top-row public-member-page__top-row--single"
         }
       >
-        <section className="public-member-page__identity">
+        <section className="public-member-page__identity hu-surface-raised">
           {showMemberBadge ? (
             <img
               className="public-member-page__member-badge"
@@ -188,14 +201,6 @@ export function ParticipantProfileSurface({
                 </div>
               ) : null}
             </div>
-            {/*
-             * Communication UX Pack 03.2 Part 6 — a flex sibling of the
-             * avatar/text group (not nested inside `identity-text`) so
-             * `margin-left: auto` places it on the right side of the
-             * identity card on desktop/tablet, while the identity card's
-             * own mobile breakpoint (which switches to a column layout)
-             * naturally drops it below the identity metadata instead.
-             */}
             {mode === "public" ? (
               <div className="public-member-page__message-action">
                 <DirectMessageAction publicName={profile.publicName} displayName={displayName} />
@@ -203,11 +208,7 @@ export function ParticipantProfileSurface({
             ) : null}
           </div>
 
-          {/*
-           * Launch Readiness UX Fix Pack 01 — identity information zone:
-           * Identity Body → Professional Links → Biography → Organization.
-           * Empty optional blocks are omitted entirely.
-           */}
+          {/* Pack 17F — Professional Links stay in identity; Biography / Organization move out. */}
           {hasLinks || showLinksNotice ? (
             <div className="public-member-page__identity-info" id="professional-links">
               <h2 className="public-member-page__identity-info-heading">Professional Links</h2>
@@ -215,6 +216,10 @@ export function ParticipantProfileSurface({
                 <MemberProfessionalLinksDisplay
                   website={profile.website}
                   linkedinUrl={profile.linkedinUrl}
+                  facebookUrl={profile.facebookUrl}
+                  youtubeUrl={profile.youtubeUrl}
+                  instagramUrl={profile.instagramUrl}
+                  xUrl={profile.xUrl}
                 />
               ) : (
                 <OwnerHiddenSectionNotice
@@ -224,37 +229,11 @@ export function ParticipantProfileSurface({
               )}
             </div>
           ) : null}
-
-          {hasBiography || showBiographyNotice || isOwnerPreview ? (
-            <div className="public-member-page__identity-info" id="biography">
-              <h2 className="public-member-page__identity-info-heading">Biography</h2>
-              {hasBiography ? (
-                <p className="public-member-page__biography-text">{profile.biography}</p>
-              ) : showBiographyNotice ? (
-                <OwnerHiddenSectionNotice
-                  text="Biography is hidden from your public profile."
-                  managePrivacyHref={ownerActionLinks!.managePrivacyHref}
-                />
-              ) : isOwnerPreview ? (
-                <p className="public-member-page__owner-empty-prompt">
-                  Add a biography to introduce yourself to collaborators.
-                  <Link href={ownerActionLinks!.editProfileHref}>Edit Profile</Link>
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
-          {hasOrganization ? (
-            <div className="public-member-page__identity-info" id="organization">
-              <h2 className="public-member-page__identity-info-heading">Organization</h2>
-              <p className="public-member-page__organization-text">{profile.organization}</p>
-            </div>
-          ) : null}
         </section>
 
         {showStatisticsColumn ? (
           <section
-            className="public-member-page__statistics"
+            className="public-member-page__statistics hu-surface-raised"
             aria-label="Participation Statistics"
           >
             <h2 className="public-member-page__section-heading">Participation Statistics</h2>
@@ -288,9 +267,29 @@ export function ParticipantProfileSurface({
               </div>
             ) : null}
 
+            {/* Pack 17F — Organization immediately above Skills. */}
+            {hasOrganization ? (
+              <div className="public-member-page__profile-context" id="organization">
+                <HeadingWithIcon
+                  as="h3"
+                  className="public-member-page__profile-context-heading public-member-page__profile-context-heading--with-icon"
+                  iconSrc="/icons/workspace/organization.png"
+                >
+                  Organization
+                </HeadingWithIcon>
+                <p className="public-member-page__organization-text">{profile.organization}</p>
+              </div>
+            ) : null}
+
             {hasSkills || showSkillsNotice ? (
               <div className="public-member-page__profile-context" id="skills">
-                <h3 className="public-member-page__profile-context-heading">Skills</h3>
+                <HeadingWithIcon
+                  as="h3"
+                  className="public-member-page__profile-context-heading public-member-page__profile-context-heading--with-icon"
+                  iconSrc="/icons/workspace/skills.png"
+                >
+                  Skills
+                </HeadingWithIcon>
                 {hasSkills ? (
                   <ul className="public-member-page__skills-list" aria-label="Skills">
                     {profile.skills?.map((skill) => (
@@ -311,26 +310,43 @@ export function ParticipantProfileSurface({
         ) : null}
       </div>
 
+      {/* Pack 17F — Biography full-width below identity + statistics. */}
+      {showBiographySection ? (
+        <section className="public-member-page__biography hu-surface-raised" id="biography">
+          <HeadingWithIcon
+            as="h2"
+            className="public-member-page__section-heading public-member-page__section-heading--with-icon"
+            iconSrc="/icons/workspace/biography.png"
+          >
+            Biography
+          </HeadingWithIcon>
+          {hasBiography ? (
+            <p className="public-member-page__biography-text">{profile.biography}</p>
+          ) : showBiographyNotice ? (
+            <OwnerHiddenSectionNotice
+              text="Biography is hidden from your public profile."
+              managePrivacyHref={ownerActionLinks!.managePrivacyHref}
+            />
+          ) : isOwnerPreview ? (
+            <p className="public-member-page__owner-empty-prompt">
+              Add a biography to introduce yourself to collaborators.
+              <Link href={ownerActionLinks!.editProfileHref}>Edit Profile</Link>
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
       {showInitiativesSection ? (
-        <ProfileSection title="Recent Public Initiatives" id="recent-public-initiatives">
-          {hasRecentInitiatives ? (
-            <ul
-              className="public-member-page__initiatives-list"
-              aria-label="Recent public initiatives"
-            >
-              {profile.recentPublicInitiatives?.map((initiative) => (
-                <li key={initiative.initiativeId} className="public-member-page__initiatives-item">
-                  <Link href={initiative.href}>{initiative.title}</Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
+        hasRecentInitiatives && profile.recentPublicInitiatives ? (
+          <RecentPublicInitiativesDisclosure initiatives={profile.recentPublicInitiatives} />
+        ) : (
+          <div className="public-member-page__initiatives hu-surface-raised" id="recent-public-initiatives">
             <OwnerHiddenSectionNotice
               text="Recent Public Initiatives are hidden from your public profile."
               managePrivacyHref={ownerActionLinks!.managePrivacyHref}
             />
-          )}
-        </ProfileSection>
+          </div>
+        )
       ) : null}
 
       {footer}

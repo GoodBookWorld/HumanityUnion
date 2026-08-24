@@ -70,6 +70,26 @@
   margin-bottom: var(--hu-space-6);
 }
 
+/* Pack 17B — Title | Assistant on one desktop row when compact placement is used */
+.member-workspace__header--with-assistant {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 22rem);
+  gap: var(--hu-space-4) var(--hu-space-6);
+  align-items: start;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.member-workspace__header-copy {
+  min-width: 0;
+}
+
+.member-workspace__header--with-assistant .member-workspace__assistant-compact {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .member-workspace__title {
   font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-2xl);
@@ -83,6 +103,7 @@
 .member-workspace__subtitle {
   color: var(--hu-color-text-muted);
   font-size: var(--hu-font-size-sm);
+  margin: 0;
 }
 
 .member-workspace__main {
@@ -111,6 +132,10 @@
   }
 
   .member-workspace__content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .member-workspace__header--with-assistant {
     grid-template-columns: 1fr;
   }
 }

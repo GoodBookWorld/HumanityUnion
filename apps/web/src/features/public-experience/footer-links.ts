@@ -39,13 +39,11 @@ export const FOOTER_LEGAL_LINKS: FooterLink[] = [
   { label: "Contact", href: "/contact", status: "active" },
 ];
 
-export const FOOTER_SOCIAL_LINKS = [
-  { label: "Facebook", href: "https://www.facebook.com/HumanityUnionWS/" },
-  { label: "YouTube", href: "https://www.youtube.com/@HumanityUnionWS" },
-  { label: "LinkedIn", href: "https://www.linkedin.com/company/105362851/" },
-  { label: "Instagram", href: "https://www.instagram.com/humanity_union/" },
-  { label: "X", href: "https://x.com/HumanityUnionWS" },
-] as const;
+/**
+ * @deprecated Pack 17C — official social destinations are Admin-managed via
+ * `/api/v1/platform/social-accounts`. Do not use this constant as a live URL source.
+ */
+export const FOOTER_SOCIAL_LINKS = [] as const;
 
 /** Live registration entry — Identity Capability is available at `/register`. */
 export const REGISTRATION_ROUTE = "/register";

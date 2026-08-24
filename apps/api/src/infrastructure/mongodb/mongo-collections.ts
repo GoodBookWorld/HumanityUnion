@@ -116,6 +116,8 @@ export const MONGO_COLLECTIONS = {
   trafficVisitorRegistry: "traffic_visitor_registry",
   // Pack 12A — delegated Editor grants (one record per Participant).
   editorGrants: "editor_grants",
+  // Pack 17C — canonical Admin-managed official social account URLs (no credentials).
+  platformSocialAccounts: "platform_social_accounts",
 } as const;
 
 export type MongoCollectionName = (typeof MONGO_COLLECTIONS)[keyof typeof MONGO_COLLECTIONS];

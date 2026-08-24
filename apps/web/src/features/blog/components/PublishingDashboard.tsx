@@ -101,7 +101,7 @@ export function PublishingDashboard({
             type="button"
             role="tab"
             aria-selected={tab === entry.id}
-            className={`publishing-dashboard__tab${tab === entry.id ? " is-active" : ""}`}
+            className={`hu-tab-control publishing-dashboard__tab${tab === entry.id ? " is-active" : ""}`}
             onClick={() => setTab(entry.id)}
           >
             {entry.label}

@@ -1,5 +1,7 @@
 /**
- * Pack 16B — Publishing editor sticky stack (header → chrome → CK toolbar).
+ * Pack 16B / 17B — Publishing editor sticky / scroll architecture.
+ * Pack 17B: chrome is no longer sticky; CK toolbar sticks under platform header;
+ * desktop writing viewport scrolls internally.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -14,25 +16,17 @@ function readWeb(relativePath: string): string {
   return readFileSync(path.join(webSrc, relativePath), "utf8");
 }
 
-describe("Pack 16B — Publishing editor sticky stack", () => {
-  it("defines chrome offset token and stacks CK toolbar below chrome + header", () => {
+describe("Pack 16B/17B — Publishing editor sticky & scroll architecture", () => {
+  it("chrome participates in normal flow (not sticky); toolbar under platform header", () => {
     const css = readWeb("features/blog/publishing.css");
-    assert.match(css, /--hu-publishing-editor-chrome-offset/);
-    assert.match(css, /--hu-button-min-height/);
-    assert.match(css, /--hu-scroll-margin-top/);
+    const chromeBlock = css.match(/\.blog-post-editor__chrome\s*\{[^}]+\}/);
+    assert.ok(chromeBlock, "chrome rule present");
+    assert.match(chromeBlock[0], /position:\s*static/);
+    assert.doesNotMatch(chromeBlock[0], /position:\s*sticky/);
 
     assert.match(
       css,
-      /\.blog-post-editor__chrome[\s\S]*top:\s*var\(--hu-scroll-margin-top/s,
-    );
-    assert.match(
-      css,
-      /\.blog-post-editor__chrome[\s\S]*z-index:\s*calc\(var\(--hu-z-sticky/s,
-    );
-
-    assert.match(
-      css,
-      /\.ck\.ck-editor__top[\s\S]*--hu-publishing-editor-chrome-offset/s,
+      /\.ck\.ck-editor__top[\s\S]*top:\s*var\(--hu-scroll-margin-top/s,
     );
     assert.match(
       css,
@@ -40,24 +34,27 @@ describe("Pack 16B — Publishing editor sticky stack", () => {
     );
   });
 
-  it("aside sticky clears the same chrome band (no magic 3.25rem)", () => {
+  it("aside sticky clears platform header without chrome band magic", () => {
     const css = readWeb("features/blog/publishing.css");
     assert.match(
       css,
-      /\.blog-post-editor__aside[\s\S]*--hu-publishing-editor-chrome-offset/s,
+      /\.blog-post-editor__aside[\s\S]*top:\s*var\(--hu-scroll-margin-top/s,
     );
     assert.doesNotMatch(css, /\+ 3\.25rem/);
   });
 
-  it("mobile uses a single sticky layer (chrome static; toolbar below header)", () => {
+  it("desktop CK main is a bounded internal scroll viewport; mobile prefers page flow", () => {
     const css = readWeb("features/blog/publishing.css");
+    assert.match(css, /\.ck\.ck-editor__main[\s\S]*overflow-y:\s*auto/s);
+    assert.match(css, /overscroll-behavior:\s*auto/);
+    assert.match(css, /max-height:\s*min\(70vh,\s*42rem\)/);
+
     const mobile = css.slice(css.indexOf("@media (max-width: 768px)"));
-    assert.match(mobile, /\.blog-post-editor__chrome[\s\S]*position:\s*static/s);
+    assert.match(mobile, /\.ck\.ck-editor__main[\s\S]*overflow:\s*visible/s);
     assert.match(
       mobile,
       /\.ck\.ck-editor__top[\s\S]*top:\s*var\(--hu-scroll-margin-top/s,
     );
-    assert.doesNotMatch(mobile, /\.ck\.ck-editor__top[\s\S]*top:\s*0\s*;/s);
   });
 
   it("new + edit publishing routes still mount BlogPostEditor", () => {
@@ -65,6 +62,8 @@ describe("Pack 16B — Publishing editor sticky stack", () => {
     const editPage = readWeb("app/workspace/publishing/[postId]/page.tsx");
     assert.match(newPage, /BlogEditorPageContent|BlogPostEditor/);
     assert.match(editPage, /BlogEditorPageContent|BlogPostEditor/);
+    assert.match(newPage, /HumanityUnionAssistantWidget/);
+    assert.match(editPage, /HumanityUnionAssistantWidget/);
 
     const editor = readWeb("features/blog/components/BlogPostEditor.tsx");
     assert.match(editor, /blog-post-editor__chrome/);

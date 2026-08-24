@@ -39,10 +39,11 @@ describe("Pack 16C — publication SEO and social distribution (web)", () => {
     assert.match(panel, /Social image/);
     assert.match(panel, /Social share preview card/);
     assert.match(panel, /Humanity Union social distribution/);
-    assert.match(panel, /opt_in|Opt in/);
-    assert.match(panel, /Author connected social accounts/);
-    assert.match(panel, /not connected/);
-    assert.match(panel, /never invent external credentials|does not confirm delivery/i);
+    assert.match(panel, /Choose the Humanity Union social channels/);
+    assert.match(panel, /PLATFORM_SOCIAL_NETWORKS/);
+    assert.match(panel, /setChannelPermitted/);
+    assert.match(panel, /claim a successful send|does not auto-post/i);
+    assert.doesNotMatch(panel, /Author connected social accounts/);
     assert.doesNotMatch(panel, /access_token|oauth_secret|posted to Facebook successfully/i);
   });
 

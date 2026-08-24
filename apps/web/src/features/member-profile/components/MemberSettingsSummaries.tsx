@@ -90,8 +90,17 @@ export function MemberSettingsSummaries({ profile }: MemberSettingsSummariesProp
         <MemberProfessionalLinksDisplay
           website={profile.website}
           linkedinUrl={profile.linkedinUrl}
+          facebookUrl={profile.facebookUrl}
+          youtubeUrl={profile.youtubeUrl}
+          instagramUrl={profile.instagramUrl}
+          xUrl={profile.xUrl}
         />
-        {!profile.website && !profile.linkedinUrl ? (
+        {!profile.website &&
+        !profile.linkedinUrl &&
+        !profile.facebookUrl &&
+        !profile.youtubeUrl &&
+        !profile.instagramUrl &&
+        !profile.xUrl ? (
           <ProfileField label="Links" value="None added" />
         ) : null}
         <p>
