@@ -1,11 +1,11 @@
 /**
  * Server-side Blog rich-content sanitization boundary.
  *
- * Representation: sanitized HTML (TipTap-compatible subset).
+ * Representation: sanitized HTML (CKEditor 5 / legacy TipTap-compatible subset).
  * DOMPurify on the browser is never trusted as the only boundary.
  *
- * Allowed: h1–h3, p, ul, ol, li, a[href], blockquote, img[src|alt], hr,
- * strong, em, u, br. Safe text-align style on block tags only.
+ * Allowed: headings, p, lists, links, blockquote, images (+ figure/figcaption),
+ * tables, hr, strong/em/u/br, safe text-align / width styles, safe image classes.
  * Everything else is stripped. Scripts / event handlers rejected.
  */
 
@@ -20,6 +20,14 @@ const ALLOWED_TAGS = new Set([
   "a",
   "blockquote",
   "img",
+  "figure",
+  "figcaption",
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "th",
+  "td",
   "hr",
   "strong",
   "em",
@@ -30,8 +38,21 @@ const ALLOWED_TAGS = new Set([
 const VOID_TAGS = new Set(["hr", "br", "img"]);
 
 const TEXT_ALIGN_STYLE_PATTERN = /^text-align:\s*(left|center|right|justify)\s*;?$/i;
+const WIDTH_STYLE_PATTERN = /^width:\s*(\d{1,3}(?:\.\d+)?)%\s*;?$/i;
 
-const BLOCK_TAGS_WITH_ALIGN = new Set(["p", "h1", "h2", "h3", "blockquote"]);
+const BLOCK_TAGS_WITH_ALIGN = new Set([
+  "p",
+  "h1",
+  "h2",
+  "h3",
+  "blockquote",
+  "figure",
+  "th",
+  "td",
+]);
+
+const SAFE_CLASS_PATTERN =
+  /^(image|image_resized|image-style-align-left|image-style-align-center|image-style-align-right|image-style-block|image-style-inline|image-style-side|table|ck-table-resized)(\s+(image|image_resized|image-style-align-left|image-style-align-center|image-style-align-right|image-style-block|image-style-inline|image-style-side|table|ck-table-resized))*$/;
 
 function decodeEntities(value: string): string {
   return value
@@ -97,16 +118,45 @@ function isSafeImgSrc(src: string): boolean {
   );
 }
 
-function sanitizeTextAlignStyle(style: string | undefined): string | undefined {
+function sanitizeStyle(style: string | undefined, allowWidth: boolean): string | undefined {
   if (!style) {
     return undefined;
   }
-  const trimmed = style.trim();
-  const match = TEXT_ALIGN_STYLE_PATTERN.exec(trimmed);
-  if (!match) {
+
+  const parts: string[] = [];
+  for (const rawPart of style.split(";")) {
+    const part = rawPart.trim();
+    if (!part) {
+      continue;
+    }
+    const align = TEXT_ALIGN_STYLE_PATTERN.exec(part);
+    if (align) {
+      parts.push(`text-align: ${align[1]!.toLowerCase()}`);
+      continue;
+    }
+    if (allowWidth) {
+      const width = WIDTH_STYLE_PATTERN.exec(part);
+      if (width) {
+        const pct = Number.parseFloat(width[1]!);
+        if (Number.isFinite(pct) && pct > 0 && pct <= 100) {
+          parts.push(`width: ${pct}%`);
+        }
+      }
+    }
+  }
+
+  return parts.length > 0 ? parts.join("; ") : undefined;
+}
+
+function sanitizeClass(className: string | undefined): string | undefined {
+  if (!className?.trim()) {
     return undefined;
   }
-  return `text-align: ${match[1]!.toLowerCase()}`;
+  const normalized = className.trim().replace(/\s+/g, " ");
+  if (!SAFE_CLASS_PATTERN.test(normalized)) {
+    return undefined;
+  }
+  return normalized;
 }
 
 function parseAttributes(raw: string): Record<string, string> {
@@ -138,21 +188,39 @@ function serializeAllowedTag(tag: string, attrs: Record<string, string>, selfClo
       return "";
     }
     const alt = attrs.alt ?? "";
-    return `<img src="${escapeAttribute(src)}" alt="${escapeAttribute(alt)}" />`;
+    const className = sanitizeClass(attrs.class);
+    const style = sanitizeStyle(attrs.style, true);
+    let open = `<img src="${escapeAttribute(src)}" alt="${escapeAttribute(alt)}"`;
+    if (className) {
+      open += ` class="${escapeAttribute(className)}"`;
+    }
+    if (style) {
+      open += ` style="${escapeAttribute(style)}"`;
+    }
+    return `${open} />`;
   }
 
   if (VOID_TAGS.has(tag)) {
     return selfClosing || tag === "hr" || tag === "br" ? `<${tag} />` : `<${tag}>`;
   }
 
-  if (BLOCK_TAGS_WITH_ALIGN.has(tag)) {
-    const style = sanitizeTextAlignStyle(attrs.style);
-    if (style) {
-      return `<${tag} style="${escapeAttribute(style)}">`;
+  const pieces: string[] = [`<${tag}`];
+  if (tag === "figure" || tag === "table") {
+    const className = sanitizeClass(attrs.class);
+    if (className) {
+      pieces.push(` class="${escapeAttribute(className)}"`);
     }
   }
 
-  return `<${tag}>`;
+  if (BLOCK_TAGS_WITH_ALIGN.has(tag) || tag === "figure" || tag === "table") {
+    const style = sanitizeStyle(attrs.style, tag === "figure" || tag === "table" || tag === "img");
+    if (style) {
+      pieces.push(` style="${escapeAttribute(style)}"`);
+    }
+  }
+
+  pieces.push(">");
+  return pieces.join("");
 }
 
 /**

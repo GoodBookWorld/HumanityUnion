@@ -42,16 +42,16 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
     const index = read("features/blog/components/BlogIndexPageContent.tsx");
     assert.match(index, /BlogCategoriesSidebar|BlogDiscoveryLeftRail/);
     assert.match(index, /fetchPublicBlogCategories/);
-    assert.match(index, /type="search"|BlogDiscoveryRightRail/);
-    assert.match(index, /blog-layout__search|BlogDiscoveryRightRail/);
+    assert.match(index, /BlogDiscoverySearch|type="search"/);
+    assert.match(index, /blog-layout__search|BlogDiscoverySearch/);
 
     const categories = read("features/blog/components/BlogCategoriesSidebar.tsx");
     assert.match(categories, /All Categories/);
     assert.match(categories, /buildBlogIndexHref/);
 
-    const right = read("features/blog/components/BlogDiscoveryRightRail.tsx");
-    assert.match(right, /onSearchSubmit|type="search"/);
-    assert.match(right, /blog-layout__search/);
+    const search = read("features/blog/components/BlogDiscoverySearch.tsx");
+    assert.match(search, /onSearchSubmit|type="search"/);
+    assert.match(search, /blog-layout__search/);
 
     const api = read("features/blog/api.ts");
     assert.match(api, /params\.set\("q"/);

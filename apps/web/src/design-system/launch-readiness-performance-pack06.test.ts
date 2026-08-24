@@ -36,18 +36,20 @@ describe("Launch Readiness Pack 06 — Performance & Runtime Efficiency", () => 
     assert.match(globe, /cancelAnimationFrame/);
   });
 
-  it("2 — TipTap stays on publishing editor paths, not public Blog presentation", () => {
+  it("2 — Rich editor stays on publishing paths, not public Blog presentation", () => {
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
     const body = readWeb("features/blog/components/BlogArticleBody.tsx");
     const index = readWeb("features/blog/components/BlogIndexPageContent.tsx");
     const editor = readWeb("features/blog/components/BlogPostEditor.tsx");
     const rich = readWeb("features/blog/components/BlogRichTextEditor.tsx");
 
-    assert.doesNotMatch(article, /@tiptap|BlogRichTextEditor/);
-    assert.doesNotMatch(body, /@tiptap|BlogRichTextEditor/);
-    assert.doesNotMatch(index, /@tiptap|BlogRichTextEditor/);
+    assert.doesNotMatch(article, /@tiptap|@ckeditor|BlogRichTextEditor/);
+    assert.doesNotMatch(body, /@tiptap|@ckeditor|BlogRichTextEditor/);
+    assert.doesNotMatch(index, /@tiptap|@ckeditor|BlogRichTextEditor/);
     assert.match(editor, /BlogRichTextEditor/);
-    assert.match(rich, /@tiptap\/react/);
+    assert.match(rich, /ssr:\s*false|@ckeditor\/ckeditor5-react|ckeditor5/);
+    const client = readWeb("features/blog/components/BlogRichTextEditorClient.tsx");
+    assert.match(client, /@ckeditor\/ckeditor5-react|ckeditor5/);
   });
 
   it("3 — Blog list page size is bounded", () => {

@@ -18,28 +18,32 @@ function readWeb(relativePath: string): string {
 }
 
 describe("Pack 14E — Single-post shell & Block 14 certification (Web)", () => {
-  it("single-post uses shared Pack 14D discovery rails (no duplicate sidebars)", () => {
+  it("single-post uses shared discovery rails + Search span (no duplicate sidebars)", () => {
     const article = readWeb("features/blog/components/BlogArticlePageContent.tsx");
+    assert.match(article, /BlogDiscoverySearch/);
     assert.match(article, /BlogDiscoveryLeftRail/);
     assert.match(article, /BlogDiscoveryRightRail/);
     assert.match(article, /usePublicBlogDiscovery/);
     assert.match(article, /blog-layout__center/);
-    assert.match(article, /blog-page--pack14e/);
+    assert.match(article, /blog-page--pack15c/);
     assert.doesNotMatch(article, /function BlogCategoriesSidebar/);
     assert.doesNotMatch(article, /function BlogViewsWidget/);
 
     const index = readWeb("features/blog/components/BlogIndexPageContent.tsx");
+    assert.match(index, /BlogDiscoverySearch/);
     assert.match(index, /BlogDiscoveryLeftRail/);
     assert.match(index, /BlogDiscoveryRightRail/);
 
     const left = readWeb("features/blog/components/BlogDiscoveryLeftRail.tsx");
     const right = readWeb("features/blog/components/BlogDiscoveryRightRail.tsx");
+    const search = readWeb("features/blog/components/BlogDiscoverySearch.tsx");
     assert.match(left, /BlogCategoriesSidebar/);
     assert.match(left, /BlogAuthorsSidebar/);
     assert.match(right, /BlogViewsWidget/);
     assert.match(right, /BlogCategoryChart/);
     assert.match(right, /BlogLatestMiniCards/);
-    assert.match(right, /blog-layout__search/);
+    assert.doesNotMatch(right, /blog-layout__search/);
+    assert.match(search, /blog-layout__search/);
   });
 
   it("center post renders canonical article fields + comments metadata", () => {
@@ -68,8 +72,9 @@ describe("Pack 14E — Single-post shell & Block 14 certification (Web)", () => 
     assert.match(css, /\.blog-article-body a/);
   });
 
-  it("desktop independent scroll shared with Pack 14D; mobile document order", () => {
+  it("desktop independent scroll; Pack 15C Search span; mobile document order", () => {
     const css = readWeb("features/blog/blog.css");
+    assert.match(css, /"left search search"/);
     assert.match(css, /"left center right"/);
     assert.match(css, /\.blog-layout__center\s*\{[^}]*overflow-y:\s*auto/s);
     assert.match(css, /\.blog-layout__right\s*\{[^}]*overflow-y:\s*auto/s);
@@ -92,9 +97,9 @@ describe("Pack 14E — Single-post shell & Block 14 certification (Web)", () => 
     assert.match(admin, /Pending Review/);
     assert.match(admin, /AuthorApplicationReviewModal/);
 
-    const editor = readWeb("features/blog/components/BlogRichTextEditor.tsx");
-    assert.match(editor, /toggleBold|toggleItalic/);
-    assert.match(editor, /setImage|TextAlign|Underline/);
+    const editor = readWeb("features/blog/components/BlogRichTextEditorClient.tsx");
+    assert.match(editor, /"bold"|"italic"|Bold|Italic/);
+    assert.match(editor, /Underline|Alignment|uploadImage/);
 
     const notifications = readWeb(
       "features/notifications/components/NotificationCenterPageContent.tsx",

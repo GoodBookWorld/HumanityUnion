@@ -71,6 +71,60 @@ function formatDate(value?: string): string {
   }
 }
 
+/** Pack 15D — human-readable lifecycle label (block is separate). */
+function publicationStatusLabel(
+  status: BlogEditorialReviewDetail["status"],
+  reviewStatus: BlogEditorialReviewDetail["review"]["reviewStatus"],
+): string {
+  if (status === "draft" && reviewStatus === "changes_requested") {
+    return "Draft · Changes Requested";
+  }
+  if (status === "draft" && reviewStatus === "declined") {
+    return "Draft · Declined";
+  }
+  switch (status) {
+    case "draft":
+      return "Draft";
+    case "submitted_for_review":
+      return "Pending Review";
+    case "scheduled":
+      return "Scheduled";
+    case "published":
+      return "Published";
+    case "archived":
+      return "Archived";
+    default:
+      return status;
+  }
+}
+
+function reviewStatusLabel(
+  reviewStatus: BlogEditorialReviewDetail["review"]["reviewStatus"],
+): string {
+  switch (reviewStatus) {
+    case "none":
+      return "None";
+    case "pending":
+      return "Pending";
+    case "changes_requested":
+      return "Changes Requested";
+    case "approved":
+      return "Approved";
+    case "declined":
+      return "Declined";
+    default:
+      return reviewStatus;
+  }
+}
+
+function isFuturePublicationDate(iso?: string): boolean {
+  if (!iso) {
+    return false;
+  }
+  const t = Date.parse(iso);
+  return Number.isFinite(t) && t > Date.now();
+}
+
 export function EditorialReviewPageContent({ postId }: { postId: string }) {
   const router = useRouter();
   const noteId = useId();
@@ -139,47 +193,115 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
 
   const safety = detail.safetyOutcome;
   const isSubmitted = detail.status === "submitted_for_review";
-  const ordinaryPublishOk = isSubmitted && (safety === "accepted" || safety === null);
-  const needsSafetyOverride = isSubmitted && safety === "needs_review";
+  const publicationBlocked = detail.administrativelyBlocked === true;
+  const authorBlocked = detail.authorAdministrativelyBlocked === true;
+  const ordinaryPublishOk =
+    isSubmitted && !publicationBlocked && (safety === "accepted" || safety === null);
+  const needsSafetyOverride =
+    isSubmitted && !publicationBlocked && safety === "needs_review";
   const rejected = safety === "rejected";
   const categoryName =
     BLOG_CATEGORIES.find((category) => category.categoryId === detail.categoryId)?.name ??
     detail.categoryId;
+  const tags = detail.tags.length > 0 ? detail.tags : preview.tags;
+  /** Canonical calendar date — never substitute review/submission time. */
+  const publicationDate = detail.publishedAt ?? preview.publishedAt;
+  const willScheduleOnApprove =
+    isSubmitted && !publicationBlocked && isFuturePublicationDate(publicationDate);
 
   return (
-    <div className="editorial-review">
-      <div className="editorial-review__preview">
+    <div className="editorial-review editorial-review--pack15d">
+      <aside className="editorial-review__context" aria-label="Publication context">
         <p className="hu-caption">
           <Link href="/workspace/editorial">← Editorial Review</Link>
         </p>
 
-        <section aria-labelledby="editorial-meta-heading">
-          <h2 id="editorial-meta-heading" className="hu-heading-2">
-            Publication metadata
-          </h2>
-          <p className="hu-body">
-            {categoryName} · Status: {detail.status} · Version: {detail.publishedVersion}
-          </p>
-          <p className="hu-caption">Updated {formatDate(detail.updatedAt)}</p>
-        </section>
-
         <section aria-labelledby="editorial-author-heading">
-          <h2 id="editorial-author-heading" className="hu-heading-2">
-            Author identity
+          <h2 id="editorial-author-heading" className="hu-heading-3">
+            Author
           </h2>
           <p className="hu-body">{detail.authorDisplayName}</p>
+          {authorBlocked ? (
+            <p className="hu-caption editorial-review__state-note" role="status">
+              Author is administratively blocked. This does not automatically block this
+              publication.
+            </p>
+          ) : null}
+        </section>
+
+        <section aria-labelledby="editorial-meta-heading">
+          <h2 id="editorial-meta-heading" className="hu-heading-3">
+            Publication metadata
+          </h2>
+          <dl className="editorial-review__meta-list">
+            <div>
+              <dt className="hu-caption">Category</dt>
+              <dd className="hu-body">{categoryName}</dd>
+            </div>
+            <div>
+              <dt className="hu-caption">Tags</dt>
+              <dd className="hu-body">{tags.length > 0 ? tags.join(", ") : "—"}</dd>
+            </div>
+            <div>
+              <dt className="hu-caption">Publication date</dt>
+              <dd className="hu-body">
+                {publicationDate ? formatBlogPublishedDate(publicationDate) : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="hu-caption">Submission date</dt>
+              <dd className="hu-body">{formatDate(detail.submittedAt)}</dd>
+            </div>
+            <div>
+              <dt className="hu-caption">Status</dt>
+              <dd className="hu-body">
+                {publicationStatusLabel(detail.status, detail.review.reviewStatus)}
+              </dd>
+            </div>
+            <div>
+              <dt className="hu-caption">Review</dt>
+              <dd className="hu-body">{reviewStatusLabel(detail.review.reviewStatus)}</dd>
+            </div>
+            <div>
+              <dt className="hu-caption">Admin block</dt>
+              <dd className="hu-body">
+                {publicationBlocked ? "Blocked" : "Not blocked"}
+              </dd>
+            </div>
+            <div>
+              <dt className="hu-caption">Version</dt>
+              <dd className="hu-body">{detail.publishedVersion}</dd>
+            </div>
+            <div>
+              <dt className="hu-caption">Updated</dt>
+              <dd className="hu-body">{formatDate(detail.updatedAt)}</dd>
+            </div>
+          </dl>
+          {detail.status === "scheduled" || willScheduleOnApprove ? (
+            <p className="hu-caption editorial-review__state-note" role="status">
+              {detail.status === "scheduled"
+                ? `Scheduled for ${publicationDate ? formatBlogPublishedDate(publicationDate) : "—"}.`
+                : `Future publication date — Approve will Schedule (not publish early).`}
+            </p>
+          ) : null}
         </section>
 
         <section aria-labelledby="editorial-safety-heading">
-          <h2 id="editorial-safety-heading" className="hu-heading-2">
+          <h2 id="editorial-safety-heading" className="hu-heading-3">
             Safety status
           </h2>
           <p className="hu-body" aria-live="polite">
             Safety: {safety ?? "not evaluated"}
           </p>
+          {publicationBlocked ? (
+            <StatusBanner
+              title="Publication administratively blocked"
+              message="This publication cannot be published while blocked. Block/Unblock remains on Admin Publishing — independent of Author block."
+            />
+          ) : null}
           {rejected ? (
             <StatusBanner
-              title="Publication blocked"
+              title="Safety rejected"
               message="This publication cannot be published in its current form."
             />
           ) : null}
@@ -190,33 +312,38 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
             />
           ) : null}
         </section>
+      </aside>
 
-        <section aria-labelledby="editorial-article-heading" className="blog-article">
+      <div className="editorial-review__preview">
+        <article
+          aria-labelledby="editorial-article-heading"
+          className="blog-article editorial-review__article"
+        >
           <h2 id="editorial-article-heading" className="hu-heading-2">
             Article Preview
           </h2>
           <p className="hu-caption blog-article__category">{preview.category.name}</p>
-          <p className="hu-heading-1 blog-article__title">{preview.title}</p>
+          <h3 className="hu-heading-1 blog-article__title">{preview.title}</h3>
           <div className="blog-article__meta">
             <BlogAuthorInline author={preview.author} />
-            <time className="hu-caption" dateTime={preview.publishedAt}>
-              {formatBlogPublishedDate(preview.publishedAt)}
-            </time>
+            {publicationDate ? (
+              <time className="hu-caption" dateTime={publicationDate}>
+                {formatBlogPublishedDate(publicationDate)}
+              </time>
+            ) : null}
           </div>
           <div className="blog-article__cover">
             <BlogCoverImage
               title={preview.title}
               imageUrl={preview.coverImage?.mediaUrl}
               altText={preview.coverImage?.altText}
+              className="blog-article__cover-image"
             />
           </div>
           {preview.excerpt ? <p className="hu-body blog-article__excerpt">{preview.excerpt}</p> : null}
           <BlogArticleBody html={preview.content} />
-          {preview.tags.length > 0 ? (
-            <p className="hu-caption">Tags: {preview.tags.join(", ")}</p>
-          ) : null}
           <BlogAuthorCard author={preview.author} />
-        </section>
+        </article>
       </div>
 
       <aside className="editorial-review__tools" aria-label="Editorial review tools">
@@ -272,8 +399,28 @@ export function EditorialReviewPageContent({ postId }: { postId: string }) {
                 )
               }
             >
-              {busy === "publish" ? "Publishing…" : "Approve & Publish"}
+              {busy === "publish"
+                ? willScheduleOnApprove
+                  ? "Scheduling…"
+                  : "Publishing…"
+                : willScheduleOnApprove
+                  ? "Approve & Schedule"
+                  : "Approve & Publish"}
             </Button>
+          ) : null}
+
+          {willScheduleOnApprove && ordinaryPublishOk ? (
+            <HelperText>
+              Selected publication date is in the future. Approval schedules the post; it will not
+              publish early.
+            </HelperText>
+          ) : null}
+
+          {publicationBlocked ? (
+            <HelperText>
+              Publication Block/Unblock is managed from Admin Publishing. Author block does not
+              cascade here.
+            </HelperText>
           ) : null}
 
           {isSubmitted && !rejected ? (

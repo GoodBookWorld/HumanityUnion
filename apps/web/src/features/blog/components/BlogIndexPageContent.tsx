@@ -22,6 +22,7 @@ import {
 } from "../blog-url";
 import { BlogDiscoveryLeftRail } from "./BlogDiscoveryLeftRail";
 import { BlogDiscoveryRightRail } from "./BlogDiscoveryRightRail";
+import { BlogDiscoverySearch } from "./BlogDiscoverySearch";
 import { BlogPagination } from "./BlogPagination";
 import { BlogPostCard } from "./BlogPostCard";
 
@@ -132,7 +133,7 @@ export function BlogIndexPageContent() {
   const filtersActive = Boolean(q.trim()) || (categorySlug !== "all" && Boolean(categorySlug));
 
   return (
-    <main className="blog-page hu-page-container blog-page--pack14d">
+    <main className="blog-page hu-page-container blog-page--pack15c">
       <header className="blog-page__header">
         <h1 className="hu-heading-1">Blog</h1>
         <p className="hu-body blog-page__subtitle">
@@ -141,6 +142,12 @@ export function BlogIndexPageContent() {
       </header>
 
       <div className="blog-layout">
+        <BlogDiscoverySearch
+          activeCategorySlug={categorySlug}
+          q={q}
+          searchInputId="blog-index-search"
+        />
+
         <BlogDiscoveryLeftRail
           categories={categories}
           activeCategorySlug={categorySlug}
@@ -198,7 +205,6 @@ export function BlogIndexPageContent() {
           latestPublications={latestPublications}
           activeCategorySlug={categorySlug}
           q={q}
-          searchInputId="blog-index-search"
         />
       </div>
     </main>

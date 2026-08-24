@@ -25,12 +25,15 @@ export function BlogLatestMiniCards({ posts }: BlogLatestMiniCardsProps) {
             return (
               <li key={post.postId} className="blog-latest-mini__item">
                 <Link href={href} className="blog-latest-mini__link">
-                  <BlogCoverImage
-                    title={post.title}
-                    imageUrl={post.coverImage?.mediaUrl}
-                    altText={post.coverImage?.altText}
-                    className="blog-latest-mini__thumb"
-                  />
+                  <span className="blog-latest-mini__thumb-frame" aria-hidden="true">
+                    <BlogCoverImage
+                      title={post.title}
+                      imageUrl={post.coverImage?.mediaUrl}
+                      altText={post.coverImage?.altText}
+                      allowTitleAsAltFallback={false}
+                      className="blog-latest-mini__thumb"
+                    />
+                  </span>
                   <span className="blog-latest-mini__body">
                     <span className="blog-latest-mini__title">{post.title}</span>
                     <time className="blog-latest-mini__date" dateTime={post.publishedAt}>

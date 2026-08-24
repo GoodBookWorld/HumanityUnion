@@ -19,21 +19,21 @@ function readWeb(relativePath: string): string {
 }
 
 describe("Pack 14D — Public Blog discovery (Web)", () => {
-  it("page size is exactly 9; Search lives in right rail first", () => {
+  it("page size is exactly 9; Search spans center+right (Pack 15C); right rail = Views→Chart→Latest", () => {
     assert.equal(BLOG_PAGE_SIZE, 9);
 
     const index = readWeb("features/blog/components/BlogIndexPageContent.tsx");
+    assert.match(index, /BlogDiscoverySearch/);
     assert.match(index, /BlogDiscoveryLeftRail/);
     assert.match(index, /BlogDiscoveryRightRail/);
     assert.match(index, /includeDiscovery:\s*true/);
 
     const right = readWeb("features/blog/components/BlogDiscoveryRightRail.tsx");
-    const searchIdx = right.indexOf("blog-layout__search");
+    assert.doesNotMatch(right, /blog-layout__search/);
     const viewsIdx = right.indexOf("blog-layout__views");
     const chartIdx = right.indexOf("blog-layout__chart");
     const latestIdx = right.indexOf("blog-layout__latest4");
-    assert.ok(searchIdx >= 0);
-    assert.ok(viewsIdx > searchIdx);
+    assert.ok(viewsIdx >= 0);
     assert.ok(chartIdx > viewsIdx);
     assert.ok(latestIdx > chartIdx);
     assert.match(right, /BlogViewsWidget/);
@@ -41,9 +41,10 @@ describe("Pack 14D — Public Blog discovery (Web)", () => {
     assert.match(right, /BlogLatestMiniCards/);
   });
 
-  it("desktop CSS: equal center/right, independent scroll; mobile document order", () => {
+  it("desktop CSS: 30/40/30, Search spans cols 2–3, independent scroll; mobile document order", () => {
     const css = readWeb("features/blog/blog.css");
-    assert.match(css, /minmax\(11rem,\s*14rem\)\s+minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/);
+    assert.match(css, /minmax\(0,\s*3fr\)\s+minmax\(0,\s*4fr\)\s+minmax\(0,\s*3fr\)/);
+    assert.match(css, /"left search search"/);
     assert.match(css, /"left center right"/);
     assert.match(
       css,

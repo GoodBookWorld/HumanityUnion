@@ -1276,11 +1276,15 @@ export async function getEditorialReviewDetail(input: {
     authorParticipantId: post.authorParticipantId,
     authorDisplayNameSnapshot: post.authorDisplayNameSnapshot,
   });
+  const authorAdministrativelyBlocked = await isBlogAuthorAdministrativelyBlocked(
+    post.authorParticipantId,
+  );
 
   return {
     ...toBlogAuthorWorkspacePost(post),
     authorParticipantId: post.authorParticipantId,
     authorDisplayName: author.displayName,
+    ...(authorAdministrativelyBlocked ? { authorAdministrativelyBlocked: true } : {}),
   };
 }
 

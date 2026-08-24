@@ -17,7 +17,7 @@ function readRepo(relativePath: string): string {
 }
 
 describe("Pack 14C — rich editor API contracts", () => {
-  it("sanitizer allows TipTap underline + safe text-align; rejects scripts/iframes", () => {
+  it("sanitizer allows underline + safe text-align; rejects scripts/iframes", () => {
     const html = sanitizeBlogHtml(
       '<p style="text-align: right"><u>Safe</u></p><script>x</script><iframe src="x"></iframe>',
     );
@@ -29,6 +29,7 @@ describe("Pack 14C — rich editor API contracts", () => {
     const sanitize = readRepo("apps/api/src/modules/blog/blog-content-sanitize.ts");
     assert.match(sanitize, /"u"/);
     assert.match(sanitize, /TEXT_ALIGN_STYLE_PATTERN/);
+    assert.match(sanitize, /figure|figcaption|table/);
   });
 
   it("submit-for-review path remains Pack 14B notification source", () => {

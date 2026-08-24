@@ -7,7 +7,7 @@ import {
 } from "../../../src/modules/blog/blog-content-sanitize.js";
 
 describe("Blog content sanitize (Pack 02)", () => {
-  it("keeps allowed TipTap-compatible tags", () => {
+  it("keeps allowed rich-text tags (CKEditor / legacy TipTap subset)", () => {
     const html = sanitizeBlogHtml(
       "<h2>Title</h2><p>Hello <strong>world</strong></p><ul><li>One</li></ul><hr /><blockquote>Q</blockquote>",
     );

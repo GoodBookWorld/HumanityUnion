@@ -2,6 +2,7 @@
 /* Launch Readiness UX Fix Pack 01 — outer geometry is `.hu-page-container` only. */
 /* Pack 13D — public three-column Blog discovery layout. */
 /* Pack 14D — Search in right rail; equal center/right; independent desktop scroll. */
+/* Pack 15C — desktop 30/40/30; Search spans center+right; left top aligns with Search. */
 
 .blog-page,
 .blog-article {
@@ -197,12 +198,12 @@
 }
 
 .blog-latest-mini__link {
-  display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
+  display: flex;
+  align-items: flex-start;
   gap: var(--hu-space-3);
-  align-items: start;
   text-decoration: none;
   color: inherit;
+  min-width: 0;
 }
 
 .blog-latest-mini__link:hover .blog-latest-mini__title,
@@ -211,10 +212,29 @@
   text-decoration: underline;
 }
 
+/* Pack 15C — fixed thumbnail box; height never follows text/card stretch */
+.blog-latest-mini__thumb-frame {
+  flex: none;
+  width: 5rem;
+  height: 5rem;
+  max-width: 5rem;
+  max-height: 5rem;
+  overflow: hidden;
+  border-radius: var(--hu-radius-control);
+  background: var(--hu-color-bg-muted);
+}
+
+.blog-latest-mini__thumb.blog-cover-image,
 .blog-latest-mini__thumb {
-  width: 4.5rem;
-  aspect-ratio: 1;
+  display: block;
+  flex: none;
+  width: 5rem !important;
+  height: 5rem !important;
+  max-width: 5rem;
+  max-height: 5rem;
+  aspect-ratio: 1 / 1 !important;
   object-fit: cover;
+  object-position: center;
   border-radius: var(--hu-radius-control);
 }
 
@@ -222,6 +242,7 @@
   display: grid;
   gap: 0.2rem;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .blog-latest-mini__title {
@@ -430,6 +451,7 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
+  object-position: center;
   background: var(--hu-color-bg-muted);
   border-radius: var(--hu-radius-control);
 }
@@ -653,6 +675,49 @@
   margin: var(--hu-space-4) 0;
 }
 
+.blog-article-body figure {
+  margin: var(--hu-space-4) 0;
+  max-width: 100%;
+}
+
+.blog-article-body figure.image-style-align-left,
+.blog-article-body figure.image-style-align-right {
+  max-width: 50%;
+}
+
+.blog-article-body figure.image-style-align-left {
+  float: left;
+  margin-right: var(--hu-space-4);
+}
+
+.blog-article-body figure.image-style-align-right {
+  float: right;
+  margin-left: var(--hu-space-4);
+}
+
+.blog-article-body figure.image-style-align-center {
+  margin-inline: auto;
+}
+
+.blog-article-body figcaption {
+  margin-top: var(--hu-space-2);
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}
+
+.blog-article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--hu-space-4) 0;
+}
+
+.blog-article-body th,
+.blog-article-body td {
+  border: 1px solid var(--hu-color-border);
+  padding: var(--hu-space-2) var(--hu-space-3);
+  vertical-align: top;
+}
+
 .blog-article-body hr {
   border: 0;
   border-top: 1px solid var(--hu-color-border);
@@ -773,6 +838,11 @@
       "latest4 latest4";
   }
 
+  .blog-layout__left,
+  .blog-layout__right {
+    display: contents;
+  }
+
   .blog-post-card__content {
     grid-template-columns: minmax(10rem, 42%) minmax(0, 1fr);
     align-items: stretch;
@@ -798,12 +868,16 @@
 }
 
 @media (min-width: 1100px) {
+  /* Pack 15C — explicit 30% | 40% | 30%; Search spans columns 2–3 */
   .blog-layout {
-    grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: "left center right";
+    grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 3fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "left search search"
+      "left center right";
     align-items: stretch;
-    height: calc(100vh - 10.5rem);
-    max-height: calc(100vh - 10.5rem);
+    height: calc(100vh - var(--hu-scroll-margin-top, 6.5rem) - 8rem);
+    max-height: calc(100vh - var(--hu-scroll-margin-top, 6.5rem) - 8rem);
     gap: var(--hu-space-5);
   }
 
@@ -822,7 +896,14 @@
     align-self: stretch;
   }
 
+  .blog-layout__search {
+    grid-area: search;
+    width: 100%;
+    min-width: 0;
+  }
+
   .blog-layout__center {
+    grid-area: center;
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: var(--hu-space-2);
@@ -839,11 +920,23 @@
 
   .blog-layout__categories,
   .blog-layout__authors,
-  .blog-layout__search,
   .blog-layout__views,
   .blog-layout__chart,
   .blog-layout__latest4 {
     grid-area: unset;
+  }
+
+  .blog-category-chart__label {
+    min-width: 0;
+  }
+
+  .blog-category-chart__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .blog-views-widget__value {
+    font-size: clamp(1.35rem, 1.8vw, 1.85rem);
   }
 
   .blog-post-card__content {

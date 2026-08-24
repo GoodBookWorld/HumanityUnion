@@ -1,5 +1,6 @@
 /**
  * Pack 14C — Author rich publication editor layout & toolbar contracts.
+ * Pack 15B retires TipTap for CKEditor while preserving layout/actions contracts.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -18,8 +19,8 @@ describe("Pack 14C — Author rich publication editor", () => {
   it("desktop layout dominates with settings rail; Assistant is compact", () => {
     const css = readWeb("features/blog/publishing.css");
     assert.match(css, /2\.6fr/);
-    assert.match(css, /blog-post-editor--pack14c/);
-    assert.match(css, /blog-rich-text__toolbar-sticky/);
+    assert.match(css, /blog-post-editor--pack14c|blog-post-editor--pack15b/);
+    assert.match(css, /ck-editor__top|--hu-scroll-margin-top/);
     assert.match(css, /member-workspace__assistant-compact/);
 
     const editor = readWeb("features/blog/components/BlogPostEditor.tsx");
@@ -35,21 +36,17 @@ describe("Pack 14C — Author rich publication editor", () => {
   });
 
   it("toolbar supports headings, marks, lists, link, align, inline image upload at caret", () => {
-    const rich = readWeb("features/blog/components/BlogRichTextEditor.tsx");
-    assert.match(rich, /toggleHeading\(\{ level: 2 \}\)/);
-    assert.match(rich, /toggleHeading\(\{ level: 3 \}\)/);
-    assert.match(rich, /toggleBold/);
-    assert.match(rich, /toggleItalic/);
-    assert.match(rich, /toggleUnderline/);
-    assert.match(rich, /toggleBulletList/);
-    assert.match(rich, /toggleOrderedList/);
-    assert.match(rich, /setTextAlign/);
-    assert.match(rich, /uploadBlogImage/);
-    assert.match(rich, /Insert at caret/);
-    assert.match(rich, /Image description \/ alt text/);
-    assert.match(rich, /Do not leave blank|never auto-generated/i);
-    assert.match(rich, /setImage\(\{ src: pendingImageSrc, alt:/);
-    assert.doesNotMatch(rich, /window\.prompt\("Image URL/);
+    const rich = readWeb("features/blog/components/BlogRichTextEditorClient.tsx");
+    assert.match(rich, /heading2|"heading"/);
+    assert.match(rich, /"bold"/);
+    assert.match(rich, /"italic"/);
+    assert.match(rich, /"underline"/);
+    assert.match(rich, /"bulletedList"/);
+    assert.match(rich, /"numberedList"/);
+    assert.match(rich, /"alignment"/);
+    assert.match(rich, /uploadImage|BlogCkeditorUploadAdapterPlugin/);
+    assert.match(rich, /imageTextAlternative/);
+    assert.doesNotMatch(rich, /@tiptap/);
   });
 
   it("settings sidebar holds category, tags, date, cover, excerpt; content is canvas-only", () => {

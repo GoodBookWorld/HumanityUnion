@@ -62,14 +62,13 @@ describe("Publishing Workspace Pack 05", () => {
     assert.match(cover, /altText/);
   });
 
-  it("15/16 — TipTap editor constrained; server remains sanitizer trust boundary", () => {
-    const rich = read("features/blog/components/BlogRichTextEditor.tsx");
-    assert.match(rich, /@tiptap\/react/);
-    assert.match(rich, /StarterKit/);
-    assert.match(rich, /heading: \{ levels: \[2, 3\] \}/);
-    assert.match(rich, /codeBlock: false/);
-    assert.doesNotMatch(rich, /@tiptap\/extension-table|iframe|plugin marketplace/i);
-    assert.match(rich, /trust boundary|sanitizer/i);
+  it("15/16 — rich editor constrained; server remains sanitizer trust boundary", () => {
+    const rich = read("features/blog/components/BlogRichTextEditorClient.tsx");
+    assert.match(rich, /@ckeditor\/ckeditor5-react|ckeditor5/);
+    assert.match(rich, /ClassicEditor|heading/);
+    assert.match(rich, /BlogCkeditorUploadAdapterPlugin|uploadImage/);
+    assert.doesNotMatch(rich, /@tiptap|EasyImage|ckeditor\.cloud/i);
+    assert.match(rich, /trust boundary|sanitizer|Pack 15B/i);
   });
 
   it("17/18 — Preview uses preview API and marks Draft Preview — Not Published", () => {

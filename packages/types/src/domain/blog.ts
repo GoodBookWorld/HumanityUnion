@@ -141,7 +141,7 @@ export interface BlogEditorialHistoryEntry {
 
 /**
  * Canonical BlogPost aggregate.
- * `content` is server-sanitized HTML (TipTap-compatible subset).
+ * `content` is server-sanitized HTML (CKEditor 5 / legacy TipTap-compatible subset).
  */
 export interface BlogPost {
   readonly postId: string;
@@ -533,6 +533,11 @@ export interface BlogEditorialQueueResponse {
 export interface BlogEditorialReviewDetail extends BlogAuthorWorkspacePost {
   readonly authorParticipantId: string;
   readonly authorDisplayName: string;
+  /**
+   * Pack 15D — factual Author soft-block context (Pack 13B).
+   * Independent of this publication's `administrativelyBlocked` flag.
+   */
+  readonly authorAdministrativelyBlocked?: boolean;
 }
 
 export interface BlogCapabilityGrant {

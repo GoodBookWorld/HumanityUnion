@@ -11,6 +11,7 @@ import { resolveMediaUrl } from "../../media-upload/media-url";
 import { BlogCoverImage } from "./BlogCoverImage";
 
 export interface BlogCoverFieldProps {
+  /** Pack 15A — single canonical cover value (preview + form + save). */
   coverMedia: BlogCoverMedia | null;
   title: string;
   disabled?: boolean;
@@ -31,6 +32,7 @@ export function BlogCoverField({ coverMedia, title, disabled, onChange }: BlogCo
     setError(null);
     try {
       const uploaded = await uploadBlogImage(file);
+      // Only update canonical cover after success — failed Replace keeps prior coverMedia.
       onChange({
         mediaId: uploaded.mediaId,
         mediaUrl: uploaded.mediaUrl,
@@ -43,20 +45,29 @@ export function BlogCoverField({ coverMedia, title, disabled, onChange }: BlogCo
     }
   }
 
+  const hasCover = Boolean(coverMedia?.mediaUrl);
+
   return (
     <div className="blog-cover-field">
       <div className="blog-cover-field__preview">
-        <BlogCoverImage
-          title={title || "Cover image"}
-          imageUrl={coverMedia?.mediaUrl}
-          altText={coverMedia?.altText}
-          className="blog-cover-field__image"
-        />
+        {hasCover ? (
+          <BlogCoverImage
+            title={title || "Cover image"}
+            imageUrl={coverMedia?.mediaUrl}
+            altText={coverMedia?.altText}
+            allowTitleAsAltFallback={false}
+            className="blog-cover-field__image"
+          />
+        ) : (
+          <div className="blog-cover-field__empty" role="img" aria-label="No cover image selected">
+            <span className="hu-caption">No cover image selected</span>
+          </div>
+        )}
       </div>
 
       <div className="blog-cover-field__actions hu-form-actions">
         <label className="hu-button hu-button--secondary hu-button--sm" htmlFor={inputId}>
-          {coverMedia ? "Replace Cover" : "Upload Cover"}
+          {hasCover ? "Replace Cover" : "Upload Cover"}
         </label>
         <input
           id={inputId}
@@ -69,12 +80,15 @@ export function BlogCoverField({ coverMedia, title, disabled, onChange }: BlogCo
             event.target.value = "";
           }}
         />
-        {coverMedia ? (
+        {hasCover ? (
           <Button
             type="button"
             variant="tertiary"
             disabled={disabled || uploading}
-            onClick={() => onChange(null)}
+            onClick={() => {
+              setError(null);
+              onChange(null);
+            }}
           >
             Remove Cover
           </Button>

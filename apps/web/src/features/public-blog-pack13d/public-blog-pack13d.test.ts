@@ -1,6 +1,6 @@
 /**
  * Pack 13D — Public Blog three-column experience contracts.
- * Pack 14D evolves Search into the right rail and equal center/right columns.
+ * Pack 15C: Search spans center+right; desktop columns 30/40/30.
  */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -17,8 +17,9 @@ function readWeb(relativePath: string): string {
 }
 
 describe("Pack 13D — Public Blog three-column experience", () => {
-  it("layout: left categories/authors; center feed; right discovery with Search", () => {
+  it("layout: left categories/authors; center feed; Search spanning; right discovery widgets", () => {
     const index = readWeb("features/blog/components/BlogIndexPageContent.tsx");
+    assert.match(index, /BlogDiscoverySearch/);
     assert.match(index, /BlogDiscoveryLeftRail/);
     assert.match(index, /BlogDiscoveryRightRail/);
     assert.match(index, /blog-layout__center/);
@@ -29,15 +30,14 @@ describe("Pack 13D — Public Blog three-column experience", () => {
     assert.match(left, /BlogCategoriesSidebar/);
     assert.match(left, /BlogAuthorsSidebar/);
 
+    const search = readWeb("features/blog/components/BlogDiscoverySearch.tsx");
+    assert.match(search, /blog-layout__search/);
+
     const right = readWeb("features/blog/components/BlogDiscoveryRightRail.tsx");
-    assert.match(right, /blog-layout__search/);
+    assert.doesNotMatch(right, /blog-layout__search/);
     assert.match(right, /BlogViewsWidget/);
     assert.match(right, /BlogCategoryChart/);
     assert.match(right, /BlogLatestMiniCards/);
-
-    const searchIdx = right.indexOf("blog-layout__search");
-    const viewsIdx = right.indexOf("blog-layout__views");
-    assert.ok(searchIdx >= 0 && searchIdx < viewsIdx);
   });
 
   it("categories widget uses deep-linkable URL state with active state", () => {
@@ -86,11 +86,12 @@ describe("Pack 13D — Public Blog three-column experience", () => {
     }
   });
 
-  it("responsive CSS is 3-column desktop, stacked mobile, no page overflow", () => {
+  it("responsive CSS is 30/40/30 desktop, stacked mobile, no page overflow", () => {
     const css = readWeb("features/blog/blog.css");
     assert.match(css, /grid-template-areas:/);
+    assert.match(css, /"left search search"/);
     assert.match(css, /"left center right"/);
-    assert.match(css, /minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/);
+    assert.match(css, /minmax\(0,\s*3fr\)\s+minmax\(0,\s*4fr\)\s+minmax\(0,\s*3fr\)/);
     assert.match(css, /"search"\s*"categories"\s*"center"\s*"authors"\s*"views"\s*"chart"\s*"latest4"/s);
     assert.match(css, /overflow-x:\s*clip/);
     assert.match(css, /blog-post-card__content/);

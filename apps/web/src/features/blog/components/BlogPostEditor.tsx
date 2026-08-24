@@ -218,6 +218,7 @@ export function BlogPostEditor({
       setReviewStatus(saved.review.reviewStatus);
       setReviewNote(saved.review.reviewNote ?? "");
       setSafetyOutcome(saved.safetyOutcome);
+      setCoverMedia(saved.coverMedia ?? null);
       setPublicationDate(isoToPublicationDateOnly(saved.publishedAt));
       setDirty(false);
       if (mode === "create" && !initialPost) {
@@ -300,7 +301,7 @@ export function BlogPostEditor({
     safetyOutcome !== "rejected";
 
   return (
-    <div className="blog-post-editor blog-post-editor--pack14c">
+    <div className="blog-post-editor blog-post-editor--pack15b">
       <p className="hu-caption">
         Author: {authorDisplayName ?? "Your Participant identity"} (attribution is set by the
         platform).
@@ -460,107 +461,136 @@ export function BlogPostEditor({
 
           {settingsOpen ? (
             <div className="blog-post-editor__aside-body">
-              <p className="hu-caption">
-                Status: {status.replaceAll("_", " ")}
-                {reviewStatus !== "none" ? ` · Review: ${reviewStatus.replaceAll("_", " ")}` : ""}
-              </p>
-              <p className="hu-caption">
-                Autosave: manual Save Draft only (no aggressive background autosave).
-              </p>
-              <p className="hu-body">
-                SEO title/description controls are deferred — public pages use the publication title
-                and excerpt.
-              </p>
+              <section className="blog-post-editor__settings-group" aria-labelledby="blog-settings-status">
+                <h3 className="hu-heading-4" id="blog-settings-status">
+                  Status &amp; review
+                </h3>
+                <p className="hu-caption">
+                  Lifecycle: {status.replaceAll("_", " ")}
+                  {reviewStatus !== "none" ? ` · Review: ${reviewStatus.replaceAll("_", " ")}` : ""}
+                </p>
+                <p className="hu-caption">
+                  Use Save Draft, Submit for Review, or Publish — not generic Public/Private toggles.
+                </p>
+                <p className="hu-caption">
+                  Autosave: manual Save Draft only (no aggressive background autosave).
+                </p>
+              </section>
 
-              <label className="hu-label" htmlFor={categoryId}>
-                Category
-              </label>
-              <select
-                id={categoryId}
-                className="hu-form-control"
-                value={category}
-                disabled={readOnly}
-                required
-                onChange={(event) => {
-                  setCategory(event.target.value as BlogCategoryId | "");
-                  markDirty();
-                }}
+              <section
+                className="blog-post-editor__settings-group"
+                aria-labelledby="blog-settings-publication"
               >
-                <option value="">Select a category</option>
-                {BLOG_CATEGORIES.map((entry) => (
-                  <option key={entry.categoryId} value={entry.categoryId}>
-                    {entry.name}
-                  </option>
-                ))}
-              </select>
-
-              <label className="hu-label" htmlFor={tagsId}>
-                Tags
-              </label>
-              <input
-                id={tagsId}
-                className="hu-form-control"
-                value={tagsInput}
-                disabled={readOnly}
-                placeholder="Optional, comma-separated (max 12)"
-                onChange={(event) => {
-                  setTagsInput(event.target.value);
-                  markDirty();
-                }}
-              />
-              <HelperText>Optional. Tags are normalized and limited to 12 by the server.</HelperText>
-
-              <label className="hu-label" htmlFor={publicationDateId}>
-                Publication date
-              </label>
-              <input
-                id={publicationDateId}
-                className="hu-form-control"
-                type="date"
-                min={BLOG_PUBLICATION_DATE_MIN}
-                value={publicationDate}
-                disabled={readOnly}
-                onChange={(event) => {
-                  setPublicationDate(event.target.value);
-                  markDirty();
-                }}
-              />
-              <HelperText>
-                Optional. Past dates back to {BLOG_PUBLICATION_DATE_MIN} are allowed for historical
-                works. Future dates schedule publication (noon UTC on the chosen day). createdAt
-                stays the platform record time.
-              </HelperText>
-
-              <fieldset className="blog-post-editor__cover" disabled={readOnly}>
-                <legend className="hu-label">Cover Image</legend>
-                <HelperText>Cover is separate from inline article images.</HelperText>
-                <BlogCoverField
-                  coverMedia={coverMedia}
-                  title={title}
+                <h3 className="hu-heading-4" id="blog-settings-publication">
+                  Publication
+                </h3>
+                <label className="hu-label" htmlFor={publicationDateId}>
+                  Publication date
+                </label>
+                <input
+                  id={publicationDateId}
+                  className="hu-form-control"
+                  type="date"
+                  min={BLOG_PUBLICATION_DATE_MIN}
+                  value={publicationDate}
                   disabled={readOnly}
-                  onChange={(next) => {
-                    setCoverMedia(next);
+                  onChange={(event) => {
+                    setPublicationDate(event.target.value);
                     markDirty();
                   }}
                 />
-              </fieldset>
+                <HelperText>
+                  Optional. Past dates back to {BLOG_PUBLICATION_DATE_MIN} are allowed for historical
+                  works. Future dates schedule publication (noon UTC on the chosen day). createdAt
+                  stays the platform record time.
+                </HelperText>
 
-              <label className="hu-label" htmlFor={excerptId}>
-                Excerpt
-              </label>
-              <textarea
-                id={excerptId}
-                className="hu-form-control"
-                rows={4}
-                maxLength={500}
-                value={excerpt}
-                disabled={readOnly}
-                onChange={(event) => {
-                  setExcerpt(event.target.value);
-                  markDirty();
-                }}
-              />
-              <HelperText>This short summary appears on the Blog listing cards.</HelperText>
+                <label className="hu-label" htmlFor={categoryId}>
+                  Category
+                </label>
+                <select
+                  id={categoryId}
+                  className="hu-form-control"
+                  value={category}
+                  disabled={readOnly}
+                  required
+                  onChange={(event) => {
+                    setCategory(event.target.value as BlogCategoryId | "");
+                    markDirty();
+                  }}
+                >
+                  <option value="">Select a category</option>
+                  {BLOG_CATEGORIES.map((entry) => (
+                    <option key={entry.categoryId} value={entry.categoryId}>
+                      {entry.name}
+                    </option>
+                  ))}
+                </select>
+
+                <label className="hu-label" htmlFor={tagsId}>
+                  Tags
+                </label>
+                <input
+                  id={tagsId}
+                  className="hu-form-control"
+                  value={tagsInput}
+                  disabled={readOnly}
+                  placeholder="Optional, comma-separated (max 12)"
+                  onChange={(event) => {
+                    setTagsInput(event.target.value);
+                    markDirty();
+                  }}
+                />
+                <HelperText>Optional. Tags are normalized and limited to 12 by the server.</HelperText>
+              </section>
+
+              <section className="blog-post-editor__settings-group" aria-labelledby="blog-settings-media">
+                <h3 className="hu-heading-4" id="blog-settings-media">
+                  Media
+                </h3>
+                <fieldset className="blog-post-editor__cover" disabled={readOnly}>
+                  <legend className="hu-label">Cover Image</legend>
+                  <HelperText>Cover is separate from inline article images.</HelperText>
+                  <BlogCoverField
+                    coverMedia={coverMedia}
+                    title={title}
+                    disabled={readOnly}
+                    onChange={(next) => {
+                      setCoverMedia(next);
+                      markDirty();
+                    }}
+                  />
+                </fieldset>
+              </section>
+
+              <section
+                className="blog-post-editor__settings-group"
+                aria-labelledby="blog-settings-discovery"
+              >
+                <h3 className="hu-heading-4" id="blog-settings-discovery">
+                  Discovery
+                </h3>
+                <label className="hu-label" htmlFor={excerptId}>
+                  Excerpt
+                </label>
+                <textarea
+                  id={excerptId}
+                  className="hu-form-control"
+                  rows={4}
+                  maxLength={500}
+                  value={excerpt}
+                  disabled={readOnly}
+                  onChange={(event) => {
+                    setExcerpt(event.target.value);
+                    markDirty();
+                  }}
+                />
+                <HelperText>This short summary appears on the Blog listing cards.</HelperText>
+                <p className="hu-caption">
+                  SEO title/description controls are deferred — public pages use the publication title
+                  and excerpt.
+                </p>
+              </section>
             </div>
           ) : null}
         </aside>

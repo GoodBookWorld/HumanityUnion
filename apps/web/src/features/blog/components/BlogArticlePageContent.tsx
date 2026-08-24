@@ -15,6 +15,7 @@ import { BlogCommentsSection } from "./BlogCommentsSection";
 import { BlogCoverImage } from "./BlogCoverImage";
 import { BlogDiscoveryLeftRail } from "./BlogDiscoveryLeftRail";
 import { BlogDiscoveryRightRail } from "./BlogDiscoveryRightRail";
+import { BlogDiscoverySearch } from "./BlogDiscoverySearch";
 import { BlogReactionControls } from "./BlogReactionControls";
 import { BlogRelatedPosts } from "./BlogRelatedPosts";
 import { usePublicBlogDiscovery } from "./usePublicBlogDiscovery";
@@ -104,7 +105,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
 
   if (error === "not_found") {
     return (
-      <main className="blog-page blog-article hu-page-container blog-page--pack14e">
+      <main className="blog-page blog-article hu-page-container blog-page--pack15c">
         <p className="hu-body" role="alert">
           This publication could not be found.
         </p>
@@ -117,7 +118,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
 
   if (error) {
     return (
-      <main className="blog-page blog-article hu-page-container blog-page--pack14e">
+      <main className="blog-page blog-article hu-page-container blog-page--pack15c">
         <p className="hu-body" role="alert">
           {error === "unavailable"
             ? "The Blog is temporarily unavailable. Please try again shortly."
@@ -132,8 +133,9 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
 
   if (!post) {
     return (
-      <main className="blog-page blog-article hu-page-container blog-page--pack14e">
+      <main className="blog-page blog-article hu-page-container blog-page--pack15c">
         <div className="blog-layout">
+          <BlogDiscoverySearch searchInputId="blog-article-search" />
           <BlogDiscoveryLeftRail categories={discovery.categories} />
           <section className="blog-layout__center" aria-busy="true" tabIndex={0}>
             <p className="blog-page__status">Loading publication…</p>
@@ -142,7 +144,6 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
             blogIndexViews={discovery.blogIndexViews}
             categoryCounts={discovery.categoryCounts}
             latestPublications={discovery.latestPublications}
-            searchInputId="blog-article-search"
           />
         </div>
       </main>
@@ -157,8 +158,12 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
   const categoryHref = buildBlogIndexHref({ categorySlug: post.category.slug });
 
   return (
-    <main className="blog-page blog-article hu-page-container blog-page--pack14e">
+    <main className="blog-page blog-article hu-page-container blog-page--pack15c">
       <div className="blog-layout">
+        <BlogDiscoverySearch
+          activeCategorySlug={post.category.slug}
+          searchInputId="blog-article-search"
+        />
         <BlogDiscoveryLeftRail
           categories={discovery.categories}
           activeCategorySlug={post.category.slug}
@@ -241,7 +246,6 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
           categoryCounts={discovery.categoryCounts}
           latestPublications={discovery.latestPublications}
           activeCategorySlug={post.category.slug}
-          searchInputId="blog-article-search"
         />
       </div>
     </main>
