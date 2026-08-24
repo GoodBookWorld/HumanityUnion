@@ -27,7 +27,7 @@ export default async function WorkspacePublishingEditPage({
         assistant={
           <HumanityUnionAssistantWidget
             surfaceId="blog"
-            description="Help with clarity and review status. The Assistant cannot save, submit, or publish."
+            description="Help with clarity, SEO, and review. Suggestions require Apply / Dismiss — the Assistant never saves, submits, or publishes."
           />
         }
       >

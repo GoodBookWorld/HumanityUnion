@@ -72,4 +72,14 @@ export {
   getAssistantUsageMetricSnapshotForTests,
 } from "./assistant-usage-metrics.js";
 export { resolveLifecycleAiConfig } from "./lifecycle-ai.config.js";
+export {
+  BLOG_AUTHORING_ASSISTANT_STAGE_KEY,
+  BLOG_PUBLICATION_ASSISTANT_SECTION_IDS,
+  BLOG_PUBLICATION_AUTHORING_OPS,
+  blogAuthoringInstructionBlock,
+  buildBlogAuthoringSourceContext,
+  isBlogPublicationAuthoringPath,
+} from "./blog-authoring-assistant.js";
+export type { BlogPublicationAssistantSectionId } from "./blog-authoring-assistant.js";
+export { resolveAssistantSpecialization } from "./assistant-specialization.js";
 

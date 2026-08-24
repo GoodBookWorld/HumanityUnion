@@ -64,6 +64,32 @@ export async function emitBlogAuthorAccessRestoredNotification(input: {
   });
 }
 
+/** Pack 16G — Author notified when Admin enables Trusted Publishing. */
+export async function emitBlogAuthorTrustedPublishingEnabledNotification(input: {
+  participantId: string;
+}): Promise<void> {
+  await notifyParticipant({
+    participantId: input.participantId,
+    eventType: "blog_author_trusted_publishing_enabled",
+    relatedEntityType: "blog_author_application",
+    relatedEntityId: input.participantId,
+    relatedUrl: PUBLISHING_URL,
+  });
+}
+
+/** Pack 16G — Author notified when Admin disables Trusted Publishing. */
+export async function emitBlogAuthorTrustedPublishingDisabledNotification(input: {
+  participantId: string;
+}): Promise<void> {
+  await notifyParticipant({
+    participantId: input.participantId,
+    eventType: "blog_author_trusted_publishing_disabled",
+    relatedEntityType: "blog_author_application",
+    relatedEntityId: input.participantId,
+    relatedUrl: PUBLISHING_URL,
+  });
+}
+
 export async function emitBlogPublicationBlockedNotification(input: {
   participantId: string;
   postId: string;

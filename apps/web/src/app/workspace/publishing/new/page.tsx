@@ -21,7 +21,7 @@ export default function WorkspacePublishingNewPage() {
         assistant={
           <HumanityUnionAssistantWidget
             surfaceId="blog"
-            description="Help with structure and clarity only. Never overwrite Author text or publish automatically."
+            description="Help with structure, SEO, and clarity. Suggestions require Apply / Dismiss — never overwrite or publish automatically."
           />
         }
       >

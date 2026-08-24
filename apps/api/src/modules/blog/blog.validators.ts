@@ -1,12 +1,13 @@
 import type { BlogCategoryId, LanguageCode } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE, PRIORITY_LANGUAGE_CODES } from "@hu/types";
 
-import { isBlogCategoryId } from "./blog-categories.js";
+import { isActiveBlogCategoryId, isBlogCategoryId } from "./blog-categories.js";
 import { blogHtmlToPlainText, sanitizeBlogHtml } from "./blog-content-sanitize.js";
 import { BlogValidationError } from "./blog.errors.js";
 import { resolveBlogCoverMedia } from "./blog-cover-media.js";
 import { normalizeBlogTags } from "./blog-tags.js";
 import { validatePublicationDateInput } from "./blog-publication-date.js";
+import { validateBlogPublicationOptimization } from "./blog-seo.js";
 
 const MAX_TITLE = 160;
 const MAX_EXCERPT = 500;
@@ -23,6 +24,8 @@ export interface ValidatedBlogPostFields {
   originalLanguage: LanguageCode;
   /** Pack 13C — YYYY-MM-DD calendar date when provided. */
   publicationDate?: string;
+  /** Pack 16C — SEO / social / distribution. */
+  optimization?: ReturnType<typeof validateBlogPublicationOptimization>;
 }
 
 export function validateBlogTitle(value: unknown): string {
@@ -85,12 +88,18 @@ export function validateAndSanitizeBlogContent(value: unknown, required: boolean
 }
 
 export function validateBlogCategoryId(value: unknown): BlogCategoryId {
-  if (typeof value !== "string" || !isBlogCategoryId(value)) {
-    throw new BlogValidationError(
-      "categoryId must be one of: conscious_existence, human_security, our_life.",
-    );
+  if (typeof value !== "string" || !value.trim()) {
+    throw new BlogValidationError("categoryId is required.");
   }
-  return value;
+  const categoryId = value.trim();
+  // Pack 16F — new writes must use an active managed category (not display name).
+  if (!isActiveBlogCategoryId(categoryId)) {
+    if (isBlogCategoryId(categoryId)) {
+      throw new BlogValidationError("categoryId is inactive and cannot be selected for new publications.");
+    }
+    throw new BlogValidationError("categoryId must be a valid active publication category.");
+  }
+  return categoryId;
 }
 
 export function validateOriginalLanguage(value: unknown): LanguageCode {
@@ -134,6 +143,7 @@ export function validateCreateBlogDraftInput(body: unknown): ValidatedBlogPostFi
     title;
 
   const publicationDate = validatePublicationDateInput(input.publicationDate);
+  const optimization = validateBlogPublicationOptimization(input.optimization);
 
   return {
     title,
@@ -144,6 +154,7 @@ export function validateCreateBlogDraftInput(body: unknown): ValidatedBlogPostFi
     coverMedia: resolveBlogCoverMedia(input.coverMedia),
     originalLanguage: validateOriginalLanguage(input.originalLanguage),
     ...(publicationDate ? { publicationDate } : {}),
+    ...(optimization ? { optimization } : {}),
   };
 }
 
@@ -185,6 +196,15 @@ export function validateUpdateBlogDraftInput(body: unknown): Partial<ValidatedBl
     const publicationDate = validatePublicationDateInput(input.publicationDate);
     if (publicationDate) {
       patch.publicationDate = publicationDate;
+    }
+  }
+  if ("optimization" in input) {
+    const optimization = validateBlogPublicationOptimization(input.optimization);
+    if (optimization) {
+      patch.optimization = optimization;
+    } else {
+      // Explicit empty optimization clears stored SEO/social prefs.
+      patch.optimization = undefined;
     }
   }
 
@@ -263,7 +283,7 @@ export function validateBlogAuthorApplicationInput(
 
   const preferredCategoryIds: BlogCategoryId[] = [];
   for (const raw of input.preferredCategoryIds) {
-    if (typeof raw !== "string" || !isBlogCategoryId(raw)) {
+    if (typeof raw !== "string" || !isActiveBlogCategoryId(raw)) {
       throw new BlogValidationError("preferredCategoryIds contains an invalid category.");
     }
     if (!preferredCategoryIds.includes(raw)) {

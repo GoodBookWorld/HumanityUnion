@@ -291,6 +291,18 @@ export const NOTIFICATION_TEMPLATES: Record<CivicNotificationEventType, Notifica
     message: "Your Author access has been restored. You can use Author tools in your Workspace again.",
     priority: "important",
   },
+  blog_author_trusted_publishing_enabled: {
+    title: "Trusted Publishing enabled",
+    message:
+      "An Administrator enabled Publish without manual review for your Author account. Future submissions may publish or schedule directly when eligible.",
+    priority: "important",
+  },
+  blog_author_trusted_publishing_disabled: {
+    title: "Trusted Publishing disabled",
+    message:
+      "An Administrator disabled Publish without manual review for your Author account. Future submissions require editorial review again.",
+    priority: "important",
+  },
   blog_publication_blocked: {
     title: "Publication unavailable",
     message: "One of your Blog publications is no longer publicly available.",

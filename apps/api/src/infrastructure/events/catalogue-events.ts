@@ -46,6 +46,8 @@ export const CATALOGUE_EVENTS = {
   blogPostSubmittedForReview: "BlogPostSubmittedForReview",
   blogPostChangesRequested: "BlogPostChangesRequested",
   blogPostPublished: "BlogPostPublished",
+  /** Pack 16C — HU social distribution intent (outbox); not a delivery confirmation. */
+  blogPostSocialDistributionRequested: "BlogPostSocialDistributionRequested",
   blogPostEditoriallyDeclined: "BlogPostEditoriallyDeclined",
   blogPostArchived: "BlogPostArchived",
   blogAuthorCapabilityGranted: "BlogAuthorCapabilityGranted",

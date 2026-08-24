@@ -39,6 +39,10 @@ function buildDeterministicContent(request: LifecycleAiProviderRequest): string 
       : "no listed sources yet";
   const question = request.instructions?.trim() ?? "";
 
+  if (request.surfaceId === "blog" && /AUTHORING|publication editor/i.test(request.sourceContextSummary)) {
+    return buildBlogAuthoringDeterministicContent(request);
+  }
+
   switch (request.operation) {
     case "generate_draft":
       return buildDeterministicWholeDocumentDraft(request, sources);
@@ -100,6 +104,97 @@ function buildDeterministicContent(request: LifecycleAiProviderRequest): string 
       return _exhaustive;
     }
   }
+}
+
+function buildBlogAuthoringDeterministicContent(request: LifecycleAiProviderRequest): string {
+  const excerpt = request.currentDraftExcerpt?.trim() ?? "";
+  const titleMatch = /^title:\s*(.+)$/im.exec(excerpt);
+  const currentTitle = titleMatch?.[1]?.trim() || "Untitled publication";
+  const section = request.targetSectionId?.trim() || inferBlogSectionFromInstructions(request.instructions);
+
+  switch (section) {
+    case "title":
+      return [
+        "Section: title",
+        `${currentTitle.replace(/\s+/g, " ").trim()} — clearer focus`.slice(0, 120),
+      ].join("\n");
+    case "content":
+      return [
+        "Section: content",
+        excerpt
+          ? `Proposed clarity pass (review before Apply):\n\n${excerpt.slice(0, 2500)}\n\nSuggestion: shorten long sentences, keep one idea per paragraph, and preserve the Author's voice.`
+          : "Provide article content in the draft excerpt, then ask for a text correction again.",
+      ].join("\n");
+    case "clarity":
+      return [
+        "Section: clarity",
+        "Clarity suggestions: lead with the main claim, define specialized terms once, and prefer concrete examples over abstractions. Author reviews before Apply.",
+      ].join("\n");
+    case "structure":
+      return [
+        "Section: structure",
+        "Structure suggestions: opening context → core argument → evidence or examples → practical takeaway. Use short subheadings where helpful.",
+      ].join("\n");
+    case "seoTitle":
+      return [
+        "Section: seoTitle",
+        `${currentTitle} | Humanity Union`.slice(0, 60),
+      ].join("\n");
+    case "seoDescription":
+      return [
+        "Section: seoDescription",
+        `A clear Humanity Union publication on ${currentTitle}. Read the Author's perspective and related civic context.`.slice(
+          0,
+          160,
+        ),
+      ].join("\n");
+    case "keywords":
+      return [
+        "Section: keywords",
+        "humanity union, civic publishing, conscious existence, human security, community",
+      ].join("\n");
+    case "socialTitle":
+      return [
+        "Section: socialTitle",
+        currentTitle.slice(0, 70),
+        "Section: socialDescription",
+        `Explore “${currentTitle}” on the Humanity Union Blog.`.slice(0, 160),
+      ].join("\n");
+    case "socialDescription":
+      return [
+        "Section: socialDescription",
+        `Explore “${currentTitle}” on the Humanity Union Blog.`.slice(0, 160),
+      ].join("\n");
+    default:
+      if (request.operation === "answer_question" || request.operation === "explain") {
+        return [
+          "Section: assistant",
+          request.instructions?.trim()
+            ? `Regarding: ${request.instructions.trim()}\n\nIn publication authoring, the Assistant suggests optional text. You Apply, Replace, or Dismiss each suggestion. Nothing is saved or published automatically.`
+            : "Ask for a title, clarity, structure, SEO, keyword, or social preview suggestion. You remain the Author of the final text.",
+        ].join("\n");
+      }
+      return [
+        "Section: title",
+        `${currentTitle}`.slice(0, 120),
+        "Section: seoDescription",
+        `A Humanity Union Blog draft about ${currentTitle}.`.slice(0, 160),
+      ].join("\n");
+  }
+}
+
+function inferBlogSectionFromInstructions(instructions?: string): string {
+  const text = instructions?.toLowerCase() ?? "";
+  if (/seo title|search title/.test(text)) return "seoTitle";
+  if (/meta description|seo description/.test(text)) return "seoDescription";
+  if (/social title/.test(text)) return "socialTitle";
+  if (/social (description|preview|card)/.test(text)) return "socialDescription";
+  if (/keyword|topic/.test(text)) return "keywords";
+  if (/structure|outline|heading/.test(text)) return "structure";
+  if (/clarity|readability/.test(text)) return "clarity";
+  if (/correct|wording|rewrite|grammar|article content|body/.test(text)) return "content";
+  if (/title/.test(text)) return "title";
+  return "assistant";
 }
 
 function buildDeterministicWholeDocumentDraft(

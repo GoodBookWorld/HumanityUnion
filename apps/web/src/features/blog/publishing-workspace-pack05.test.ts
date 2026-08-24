@@ -50,7 +50,7 @@ describe("Publishing Workspace Pack 05", () => {
     assert.match(editor, /Title must be at least 3 characters/);
     assert.match(editor, /Category is required/);
     assert.match(editor, /MAX_TAGS = 12/);
-    assert.match(editor, /BLOG_CATEGORIES/);
+    assert.match(editor, /fetchPublicBlogCategories|categoryOptions|BLOG_CATEGORIES/);
   });
 
   it("12/13/14 — Cover upload/remove/alt text field", () => {
@@ -128,9 +128,11 @@ describe("Publishing Workspace Pack 05", () => {
     assert.doesNotMatch(editor, /setInterval\(|autosaveTimer/);
   });
 
-  it("SEO settings deferred", () => {
+  it("SEO settings live in Publication Optimization", () => {
     const editor = read("features/blog/components/BlogPostEditor.tsx");
-    assert.match(editor, /SEO title\/description controls are deferred/);
+    assert.match(editor, /BlogPublicationOptimizationPanel/);
+    assert.match(editor, /Publication Optimization below the article/);
+    assert.doesNotMatch(editor, /SEO title\/description controls are deferred/);
   });
 
   it("Assistant surface resolves publishing path to blog", () => {

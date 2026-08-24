@@ -42,9 +42,14 @@ const TABS: readonly { id: PublishingTab; label: string; empty: string }[] = [
 
 export interface PublishingDashboardProps {
   canDirectPublish: boolean;
+  /** Pack 13B/16A — Author soft-block disables Edit/Correct/Delete. */
+  mutationsDisabled?: boolean;
 }
 
-export function PublishingDashboard({ canDirectPublish }: PublishingDashboardProps) {
+export function PublishingDashboard({
+  canDirectPublish,
+  mutationsDisabled = false,
+}: PublishingDashboardProps) {
   const [tab, setTab] = useState<PublishingTab>("draft");
   const [items, setItems] = useState<BlogAuthorWorkspacePostSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,10 +82,17 @@ export function PublishingDashboard({ canDirectPublish }: PublishingDashboardPro
   return (
     <div className="publishing-dashboard">
       <div className="publishing-dashboard__header">
-        <Button href="/workspace/publishing/new" variant="primary">
+        <Button href="/workspace/publishing/new" variant="primary" disabled={mutationsDisabled}>
           New Publication
         </Button>
       </div>
+
+      {mutationsDisabled ? (
+        <StatusBanner
+          title="Publishing actions unavailable"
+          message="Your Author access has been blocked. Edit, Correct, and Delete are unavailable."
+        />
+      ) : null}
 
       <div className="publishing-dashboard__tabs" role="tablist" aria-label="Publication status">
         {TABS.map((entry) => (
@@ -108,7 +120,12 @@ export function PublishingDashboard({ canDirectPublish }: PublishingDashboardPro
       <ul className="publishing-dashboard__list">
         {items.map((post) => (
           <li key={post.postId}>
-            <PublicationListItem post={post} canDirectPublish={canDirectPublish} />
+            <PublicationListItem
+              post={post}
+              canDirectPublish={canDirectPublish}
+              mutationsDisabled={mutationsDisabled}
+              onMutated={() => void load(tab)}
+            />
           </li>
         ))}
       </ul>

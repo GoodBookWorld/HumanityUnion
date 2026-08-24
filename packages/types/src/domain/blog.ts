@@ -63,17 +63,45 @@ export const BLOG_CAPABILITIES: readonly BlogCapability[] = [
   "administrator",
 ] as const;
 
-export type BlogCategoryId =
-  | "conscious_existence"
-  | "human_security"
-  | "our_life";
+export type BlogCategoryId = string;
 
+export type BlogCategoryStatus = "active" | "inactive";
+
+/** Public / author-facing category projection (stable id is never the display name). */
 export interface BlogCategory {
   readonly categoryId: BlogCategoryId;
   readonly slug: string;
   readonly name: string;
 }
 
+/**
+ * Pack 16F — persisted publication category record.
+ * `categoryId` is the canonical identity; name/slug may change.
+ */
+export interface BlogCategoryRecord {
+  readonly categoryId: BlogCategoryId;
+  readonly slug: string;
+  readonly name: string;
+  readonly status: BlogCategoryStatus;
+  readonly description?: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+/** Admin Publishing — category row with reference count. */
+export interface AdminBlogCategoryItem extends BlogCategoryRecord {
+  readonly publicationCount: number;
+}
+
+export interface AdminBlogCategoryListResponse {
+  readonly categories: readonly AdminBlogCategoryItem[];
+  readonly total: number;
+}
+
+/**
+ * Seed catalog — stable IDs for existing posts. Never rename these IDs.
+ * Pack 16F boots Mongo from this list; display names/slugs remain editable.
+ */
 export const BLOG_CATEGORIES: readonly BlogCategory[] = [
   {
     categoryId: "conscious_existence",
@@ -92,6 +120,11 @@ export const BLOG_CATEGORIES: readonly BlogCategory[] = [
   },
 ] as const;
 
+/** @deprecated Prefer BLOG_CATEGORIES seed ids; kept for call-site clarity. */
+export const BLOG_SEED_CATEGORY_IDS: readonly BlogCategoryId[] = BLOG_CATEGORIES.map(
+  (category) => category.categoryId,
+);
+
 export interface BlogCoverMedia {
   readonly mediaId: string;
   readonly mediaUrl: string;
@@ -100,6 +133,51 @@ export interface BlogCoverMedia {
    * Used as accessible alt text on public/cover surfaces when present.
    */
   readonly altText?: string;
+}
+
+/** Pack 16C — Humanity Union-owned social distribution preference (outbox-driven). */
+export type BlogHuSocialDistributionPreference = "opt_in" | "opt_out" | "unset";
+
+/** Pack 16C — modeled providers; credentials are never stored here. */
+export type BlogExternalSocialProviderId = "facebook" | "x" | "linkedin" | "other";
+
+/**
+ * Pack 16C — Author personal external distribution preference.
+ * `connectionStatus` must stay honest: never claim delivery without a real provider.
+ */
+export interface BlogAuthorExternalSocialAccountPreference {
+  readonly provider: BlogExternalSocialProviderId;
+  readonly label?: string;
+  readonly enabled: boolean;
+  readonly connectionStatus: "not_connected" | "connected" | "error";
+}
+
+export interface BlogPublicationDistribution {
+  readonly huSocialShare: BlogHuSocialDistributionPreference;
+  readonly authorExternalAccounts: readonly BlogAuthorExternalSocialAccountPreference[];
+}
+
+/**
+ * Pack 16C — Publication Optimization metadata on the canonical BlogPost.
+ * Optional for backward compatibility with existing posts.
+ */
+export interface BlogPublicationOptimization {
+  readonly seoTitle?: string;
+  readonly seoDescription?: string;
+  readonly socialTitle?: string;
+  readonly socialDescription?: string;
+  readonly socialImage?: BlogCoverMedia | null;
+  readonly distribution?: BlogPublicationDistribution;
+}
+
+/** Resolved public SEO/social projection (fallbacks applied server-side). */
+export interface PublicBlogPostSeo {
+  readonly title: string;
+  readonly description: string;
+  readonly canonicalPath: string;
+  readonly socialTitle: string;
+  readonly socialDescription: string;
+  readonly socialImage: BlogCoverMedia | null;
 }
 
 /** Internal-only HUWS migration fields — never appear in public projections. */
@@ -126,7 +204,9 @@ export type BlogEditorialHistoryAction =
   | "published_after_safety_review"
   | "declined"
   | "withdrawn"
-  | "archived";
+  | "archived"
+  /** Pack 16A — Author started correction; post returned to draft (not public). */
+  | "correction_started";
 
 export interface BlogEditorialHistoryEntry {
   readonly at: string;
@@ -186,6 +266,8 @@ export interface BlogPost {
   readonly administrativelyBlockedAt?: string;
   readonly administrativelyBlockedByParticipantId?: string;
   readonly administrativeBlockReason?: string;
+  /** Pack 16C — optional SEO / social / distribution metadata. */
+  readonly optimization?: BlogPublicationOptimization;
   /** Internal only — omitted from public API. */
   readonly legacy?: BlogPostLegacyMigration;
 }
@@ -212,6 +294,8 @@ export interface BlogAuthorWorkspacePost {
   /** Pack 13B — Admin soft-block (independent of status). */
   readonly administrativelyBlocked?: boolean;
   readonly editorialHistory?: readonly BlogEditorialHistoryEntry[];
+  /** Pack 16C — SEO / social / distribution (Author workspace). */
+  readonly optimization?: BlogPublicationOptimization;
 }
 
 /** Publishing Workspace Pack 05 — list row without full HTML body. */
@@ -283,6 +367,8 @@ export interface PublicBlogPostDetail {
   readonly currentUserReaction?: BlogReactionKind | "none";
   /** Visible top-level + reply comments (pending/removed excluded). */
   readonly commentCount: number;
+  /** Pack 16C — resolved SEO/social metadata for public head tags. */
+  readonly seo: PublicBlogPostSeo;
 }
 
 /** Blog Interaction Pack 07 — public visibility for Blog comments. */
@@ -477,6 +563,11 @@ export interface BlogAuthoringAccessState {
   readonly editorialReviewHref: "/workspace/editorial" | null;
   /** Pack 13B — true when Author grant is administratively blocked. */
   readonly authorAdministrativelyBlocked?: boolean;
+  /**
+   * Pack 16G — Admin-granted Trusted Publishing for this Author.
+   * Default false. Author cannot toggle; affects future submit/publish decisions only.
+   */
+  readonly publishWithoutManualReview?: boolean;
 }
 
 /**
@@ -554,6 +645,12 @@ export interface BlogCapabilityGrant {
   readonly administrativelyBlockedAt?: string;
   readonly administrativelyBlockedByParticipantId?: string;
   readonly administrativeBlockReason?: string;
+  /**
+   * Pack 16G — Trusted Publishing (publish without manual review).
+   * Admin-only; default false / omitted. Independent of `trusted_author` capability.
+   * Server resolves on every submit/publish decision — never trust a client flag.
+   */
+  readonly publishWithoutManualReview?: boolean;
 }
 
 /** Pack 13B — Admin Authors registry filter. */
@@ -578,6 +675,11 @@ export interface AdminAuthorDirectoryItem {
   readonly profileHref: string;
   readonly capabilities: readonly BlogCapability[];
   readonly status: "active" | "blocked";
+  /**
+   * Pack 16G — Trusted Publishing ON/OFF (distinct from Active/Blocked status).
+   * Default false for every Author.
+   */
+  readonly publishWithoutManualReview: boolean;
   readonly publicationCount: number;
   readonly acceptedAt: string;
   readonly lastPublishedAt?: string;
@@ -623,6 +725,13 @@ export interface AdminPublicationDirectoryResponse {
 export interface AdminPublishingBlockCommandResult {
   readonly targetId: string;
   readonly administrativelyBlocked: boolean;
+  readonly auditId: string;
+}
+
+/** Pack 16G — Admin Trusted Publishing toggle result. */
+export interface AdminAuthorTrustedPublishingCommandResult {
+  readonly participantId: string;
+  readonly publishWithoutManualReview: boolean;
   readonly auditId: string;
 }
 

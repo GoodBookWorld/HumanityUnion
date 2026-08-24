@@ -1,18 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import type { BlogAuthorWorkspacePostSummary, BlogCategoryId } from "@hu/types";
 import { BLOG_CATEGORIES } from "@hu/types";
 
 import { Button } from "../../../design-system/components/Button";
+import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { formatAuthFormError } from "../../../lib/api-client";
 import {
+  archiveBlogPost,
   cancelScheduledBlogPublication,
   listOwnBlogPosts,
   publishBlogPost,
+  startPublishedCorrection,
 } from "../publishing-api";
 
 import "../../administration/components/admin-panel.css";
@@ -83,11 +87,16 @@ export function MyPublicationsTable({
   mutationsDisabled,
   canDirectPublish,
 }: MyPublicationsTableProps) {
+  const router = useRouter();
   const [items, setItems] = useState<BlogAuthorWorkspacePostSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<BlogAuthorWorkspacePostSummary | null>(null);
+  const [correctionTarget, setCorrectionTarget] = useState<BlogAuthorWorkspacePostSummary | null>(
+    null,
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -132,6 +141,41 @@ export function MyPublicationsTable({
       await cancelScheduledBlogPublication(postId);
       setActionMessage("Schedule cancelled.");
       await load();
+    } catch (actionError) {
+      setActionMessage(formatAuthFormError(actionError));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) {
+      return;
+    }
+    setActionBusyId(deleteTarget.postId);
+    setActionMessage(null);
+    try {
+      await archiveBlogPost(deleteTarget.postId);
+      setActionMessage("Publication deleted (archived).");
+      setDeleteTarget(null);
+      await load();
+    } catch (actionError) {
+      setActionMessage(formatAuthFormError(actionError));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  async function handleCorrection() {
+    if (!correctionTarget) {
+      return;
+    }
+    setActionBusyId(correctionTarget.postId);
+    setActionMessage(null);
+    try {
+      await startPublishedCorrection(correctionTarget.postId);
+      setCorrectionTarget(null);
+      router.push(`/workspace/publishing/${encodeURIComponent(correctionTarget.postId)}`);
     } catch (actionError) {
       setActionMessage(formatAuthFormError(actionError));
     } finally {
@@ -187,6 +231,7 @@ export function MyPublicationsTable({
                   (post.status === "draft" ||
                     post.status === "scheduled" ||
                     (post.status === "published" && canDirectPublish));
+                const publishedManageable = canMutate && post.status === "published";
                 const canPublish =
                   canMutate &&
                   canDirectPublish &&
@@ -215,13 +260,41 @@ export function MyPublicationsTable({
                         <Link className="admin-panel__link" href={viewHref}>
                           View
                         </Link>
-                        {editable ? (
+                        {editable && post.status !== "published" ? (
                           <Link
                             className="admin-panel__link"
                             href={`/workspace/publishing/${post.postId}`}
                           >
                             Edit
                           </Link>
+                        ) : null}
+                        {publishedManageable && canDirectPublish ? (
+                          <Link
+                            className="admin-panel__link"
+                            href={`/workspace/publishing/${post.postId}`}
+                          >
+                            Edit / Correct
+                          </Link>
+                        ) : null}
+                        {publishedManageable && !canDirectPublish ? (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={actionBusyId === post.postId}
+                            onClick={() => setCorrectionTarget(post)}
+                          >
+                            Edit / Correct
+                          </Button>
+                        ) : null}
+                        {publishedManageable ? (
+                          <Button
+                            type="button"
+                            variant="danger"
+                            disabled={actionBusyId === post.postId}
+                            onClick={() => setDeleteTarget(post)}
+                          >
+                            Delete
+                          </Button>
                         ) : null}
                         {canPublish ? (
                           <Button
@@ -258,6 +331,30 @@ export function MyPublicationsTable({
           </table>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={Boolean(correctionTarget)}
+        title="Start correction?"
+        description="This removes the publication from the public Blog while you edit. Changes must be submitted for review before the article is public again."
+        confirmLabel={
+          actionBusyId === correctionTarget?.postId ? "Starting…" : "Start correction"
+        }
+        destructive={false}
+        isConfirming={actionBusyId === correctionTarget?.postId}
+        onCancel={() => setCorrectionTarget(null)}
+        onConfirm={() => void handleCorrection()}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        title="Delete this publication?"
+        description="The publication is archived and removed from the public Blog. The record is preserved for accountability."
+        confirmLabel={actionBusyId === deleteTarget?.postId ? "Deleting…" : "Delete"}
+        destructive
+        isConfirming={actionBusyId === deleteTarget?.postId}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void handleDelete()}
+      />
     </section>
   );
 }

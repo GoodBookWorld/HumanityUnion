@@ -310,9 +310,17 @@ export function HumanityUnionAssistantModal({
         instructions: asked || undefined,
         conversationHistory: toAssistConversationHistory(nextTurns),
         currentDraftExcerpt:
-          operation === "improve_wording" || operation === "regenerate_section"
-            ? getLifecycleAiDraftExcerpt(stageId ?? context?.stageId ?? "analysis") || undefined
+          operation === "improve_wording" ||
+          operation === "regenerate_section" ||
+          operation === "generate_draft" ||
+          operation === "identify_missing_information"
+            ? getLifecycleAiDraftExcerpt(
+                stageId ??
+                  context?.stageId ??
+                  (surfaceId === "blog" ? "blog_authoring" : "analysis"),
+              ) || undefined
             : undefined,
+        pagePath,
       });
 
       if (assistResult.autoApplied || assistResult.autoPublished) {
@@ -357,7 +365,23 @@ export function HumanityUnionAssistantModal({
   }
 
   function handleUseSuggestions() {
-    if (!result || !context?.canApplySuggestionsToDraft || !initiativeId || !context.stageId) {
+    if (!result || !context?.canApplySuggestionsToDraft) {
+      return;
+    }
+
+    if (surfaceId === "blog") {
+      dispatchLifecycleAiApplySuggestions({
+        initiativeId: "blog",
+        stageId: "blog_authoring",
+        suggestions: result.suggestions,
+      });
+      setApplyNotice(
+        "Suggestion queued for the publication editor. Review Apply / Replace / Dismiss there. Nothing was published automatically.",
+      );
+      return;
+    }
+
+    if (!initiativeId || !context.stageId) {
       return;
     }
 

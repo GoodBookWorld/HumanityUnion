@@ -6,8 +6,10 @@ import { useEffect, useId, useMemo, useState } from "react";
 
 import type {
   BlogAuthorWorkspacePost,
+  BlogCategory,
   BlogCategoryId,
   BlogCoverMedia,
+  BlogPublicationOptimization,
   LifecycleSafetyOutcome,
 } from "@hu/types";
 import { BLOG_CATEGORIES, BLOG_PUBLICATION_DATE_MIN } from "@hu/types";
@@ -21,6 +23,7 @@ import {
   resolveSaveButtonLabel,
   useSaveButtonPhase,
 } from "../../member-profile/use-save-button-phase";
+import { fetchPublicBlogCategories } from "../api";
 import {
   createBlogDraft,
   previewBlogSlugFromTitle,
@@ -28,7 +31,9 @@ import {
   submitBlogPostForReview,
   updateBlogDraft,
 } from "../publishing-api";
+import { BlogAuthoringAssistantPanel } from "./BlogAuthoringAssistantPanel";
 import { BlogCoverField } from "./BlogCoverField";
+import { BlogPublicationOptimizationPanel } from "./BlogPublicationOptimizationPanel";
 import { BlogRichTextEditor } from "./BlogRichTextEditor";
 
 const MAX_TAGS = 12;
@@ -90,6 +95,7 @@ export function BlogPostEditor({
   const [category, setCategory] = useState<BlogCategoryId | "">(
     initialPost?.categoryId ?? "",
   );
+  const [categoryOptions, setCategoryOptions] = useState<readonly BlogCategory[]>(BLOG_CATEGORIES);
   const [excerpt, setExcerpt] = useState(initialPost?.excerpt ?? "");
   const [content, setContent] = useState(initialPost?.content ?? "");
   const [tagsInput, setTagsInput] = useState((initialPost?.tags ?? []).join(", "));
@@ -98,6 +104,9 @@ export function BlogPostEditor({
   );
   const [publicationDate, setPublicationDate] = useState(
     isoToPublicationDateOnly(initialPost?.publishedAt),
+  );
+  const [optimization, setOptimization] = useState<BlogPublicationOptimization>(
+    () => initialPost?.optimization ?? {},
   );
   const [status, setStatus] = useState(initialPost?.status ?? "draft");
   const [reviewStatus, setReviewStatus] = useState(
@@ -127,6 +136,22 @@ export function BlogPostEditor({
     }
     return slug || previewBlogSlugFromTitle(title);
   }, [publishedLockedSlug, slug, title]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPublicBlogCategories()
+      .then((list) => {
+        if (!cancelled && list.length > 0) {
+          setCategoryOptions(list);
+        }
+      })
+      .catch(() => {
+        /* keep seed fallback */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const saveStatusLabel = useMemo(() => {
     if (saveFailed) {
@@ -198,6 +223,7 @@ export function BlogPostEditor({
       content,
       tags: parseTags(),
       coverMedia,
+      optimization,
       ...(publicationDate ? { publicationDate } : {}),
     };
 
@@ -220,6 +246,7 @@ export function BlogPostEditor({
       setSafetyOutcome(saved.safetyOutcome);
       setCoverMedia(saved.coverMedia ?? null);
       setPublicationDate(isoToPublicationDateOnly(saved.publishedAt));
+      setOptimization(saved.optimization ?? {});
       setDirty(false);
       if (mode === "create" && !initialPost) {
         router.replace(`/workspace/publishing/${saved.postId}`);
@@ -442,6 +469,19 @@ export function BlogPostEditor({
               markDirty();
             }}
           />
+
+          <BlogPublicationOptimizationPanel
+            title={title}
+            excerpt={excerpt}
+            slug={slugPreview}
+            coverMedia={coverMedia}
+            value={optimization}
+            disabled={readOnly}
+            onChange={(next) => {
+              setOptimization(next);
+              markDirty();
+            }}
+          />
         </div>
 
         <aside className="blog-post-editor__aside" aria-labelledby={settingsToggleId}>
@@ -520,7 +560,7 @@ export function BlogPostEditor({
                   }}
                 >
                   <option value="">Select a category</option>
-                  {BLOG_CATEGORIES.map((entry) => (
+                  {categoryOptions.map((entry) => (
                     <option key={entry.categoryId} value={entry.categoryId}>
                       {entry.name}
                     </option>
@@ -587,9 +627,69 @@ export function BlogPostEditor({
                 />
                 <HelperText>This short summary appears on the Blog listing cards.</HelperText>
                 <p className="hu-caption">
-                  SEO title/description controls are deferred — public pages use the publication title
-                  and excerpt.
+                  Search and social metadata live in Publication Optimization below the article.
                 </p>
+              </section>
+
+              <section
+                className="blog-post-editor__settings-group"
+                aria-labelledby="blog-settings-assistant"
+              >
+                <h3 className="hu-heading-4" id="blog-settings-assistant">
+                  Assistant
+                </h3>
+                <BlogAuthoringAssistantPanel
+                  postId={postId}
+                  title={title}
+                  excerpt={excerpt}
+                  content={content}
+                  optimization={optimization}
+                  disabled={readOnly}
+                  onApplyField={({ field, text, mode }) => {
+                    const next = text.trim();
+                    if (!next) {
+                      return;
+                    }
+                    if (field === "title") {
+                      setTitle(next.slice(0, 160));
+                    } else if (field === "content") {
+                      const html = next.includes("<")
+                        ? next
+                        : `<p>${next
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;")
+                            .replace(/\n\n/g, "</p><p>")
+                            .replace(/\n/g, "<br />")}</p>`;
+                      setContent(html);
+                    } else if (field === "excerpt") {
+                      setExcerpt(next.slice(0, 500));
+                    } else if (field === "keywords") {
+                      setTagsInput(next);
+                    } else if (field === "seoTitle") {
+                      setOptimization((prev) => ({ ...prev, seoTitle: next.slice(0, 70) }));
+                    } else if (field === "seoDescription") {
+                      setOptimization((prev) => ({ ...prev, seoDescription: next.slice(0, 320) }));
+                    } else if (field === "socialTitle") {
+                      setOptimization((prev) => ({ ...prev, socialTitle: next.slice(0, 70) }));
+                    } else if (field === "socialDescription") {
+                      setOptimization((prev) => ({
+                        ...prev,
+                        socialDescription: next.slice(0, 320),
+                      }));
+                    } else if (field === "structure" || field === "clarity") {
+                      const safe = next
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;");
+                      const block = `<blockquote><p><strong>${
+                        field === "structure" ? "Structure suggestion" : "Clarity suggestion"
+                      }</strong></p><p>${safe.replace(/\n/g, "<br />")}</p></blockquote>`;
+                      setContent(mode === "replace" ? block : `${block}${content}`);
+                    }
+                    markDirty();
+                  }}
+                />
               </section>
             </div>
           ) : null}

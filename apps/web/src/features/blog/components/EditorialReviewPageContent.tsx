@@ -52,6 +52,8 @@ function historyLabel(action: BlogEditorialHistoryEntry["action"]): string {
       return "Withdrawn";
     case "archived":
       return "Archived";
+    case "correction_started":
+      return "Correction Started";
     default:
       return action;
   }

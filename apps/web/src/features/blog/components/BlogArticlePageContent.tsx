@@ -136,7 +136,10 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
       <main className="blog-page blog-article hu-page-container blog-page--pack15c">
         <div className="blog-layout">
           <BlogDiscoverySearch searchInputId="blog-article-search" />
-          <BlogDiscoveryLeftRail categories={discovery.categories} />
+          <BlogDiscoveryLeftRail
+            categories={discovery.categories}
+            categoryCounts={discovery.categoryCounts}
+          />
           <section className="blog-layout__center" aria-busy="true" tabIndex={0}>
             <p className="blog-page__status">Loading publication…</p>
           </section>
@@ -167,6 +170,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
         <BlogDiscoveryLeftRail
           categories={discovery.categories}
           activeCategorySlug={post.category.slug}
+          categoryCounts={discovery.categoryCounts}
         />
 
         <article

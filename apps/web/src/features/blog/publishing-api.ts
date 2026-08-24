@@ -3,6 +3,7 @@ import type {
   BlogAuthorWorkspacePostListResponse,
   BlogCategoryId,
   BlogCoverMedia,
+  BlogPublicationOptimization,
   PublicBlogPostDetail,
 } from "@hu/types";
 
@@ -24,6 +25,8 @@ export interface BlogPostWriteInput {
   originalLanguage?: string;
   /** Pack 13C — YYYY-MM-DD canonical publication calendar date. */
   publicationDate?: string;
+  /** Pack 16C — SEO / social / distribution on the canonical post. */
+  optimization?: BlogPublicationOptimization;
 }
 
 export async function listOwnBlogPosts(input?: {
@@ -103,6 +106,27 @@ export async function cancelScheduledBlogPublication(
 ): Promise<BlogAuthorWorkspacePost> {
   return apiRequest<BlogAuthorWorkspacePost>(
     `/api/v1/blog/posts/${encodeURIComponent(postId)}/cancel-schedule`,
+    { method: "POST" },
+  );
+}
+
+/** Pack 16A — soft-delete / remove from public via canonical archive lifecycle. */
+export async function archiveBlogPost(postId: string): Promise<BlogAuthorWorkspacePost> {
+  return apiRequest<BlogAuthorWorkspacePost>(
+    `/api/v1/blog/posts/${encodeURIComponent(postId)}/archive`,
+    { method: "POST" },
+  );
+}
+
+/**
+ * Pack 16A — Standard Author correction: published → draft (same postId/slug).
+ * Trusted Authors correct in place via updateBlogDraft instead.
+ */
+export async function startPublishedCorrection(
+  postId: string,
+): Promise<BlogAuthorWorkspacePost> {
+  return apiRequest<BlogAuthorWorkspacePost>(
+    `/api/v1/blog/posts/${encodeURIComponent(postId)}/start-correction`,
     { method: "POST" },
   );
 }

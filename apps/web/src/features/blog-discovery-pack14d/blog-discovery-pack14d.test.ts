@@ -41,9 +41,9 @@ describe("Pack 14D — Public Blog discovery (Web)", () => {
     assert.match(right, /BlogLatestMiniCards/);
   });
 
-  it("desktop CSS: 30/40/30, Search spans cols 2–3, independent scroll; mobile document order", () => {
+  it("desktop CSS: 25/50/25, Search spans cols 2–3, independent scroll; mobile document order", () => {
     const css = readWeb("features/blog/blog.css");
-    assert.match(css, /minmax\(0,\s*3fr\)\s+minmax\(0,\s*4fr\)\s+minmax\(0,\s*3fr\)/);
+    assert.match(css, /minmax\(0,\s*1fr\)\s+minmax\(0,\s*2fr\)\s+minmax\(0,\s*1fr\)/);
     assert.match(css, /"left search search"/);
     assert.match(css, /"left center right"/);
     assert.match(

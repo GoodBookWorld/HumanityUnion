@@ -32,6 +32,8 @@ export const BLOG_AUTHORING_MODULES: readonly PlatformKnowledgeModule[] = [
       "Our Life (everyday life, communities, relationships, culture, environment, personal and collective experience).",
       "Category guidance is editorial orientation, not rigid censorship.",
       "Publishing workflow for Authors: draft → submit for review → Editor/Admin publish (Trusted Authors may publish accepted content directly unless Safety requires review).",
+      "In the publication editor, the Humanity Union Assistant may suggest title, wording, structure, SEO, and social preview text.",
+      "Suggestions require explicit Author Apply / Replace / Dismiss. The Assistant never silently rewrites, saves, submits, or publishes.",
       "Safety cannot be bypassed. The Assistant never publishes, approves, or grants Author rights.",
     ].join(" "),
   },

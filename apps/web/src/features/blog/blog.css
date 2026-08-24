@@ -2,7 +2,8 @@
 /* Launch Readiness UX Fix Pack 01 — outer geometry is `.hu-page-container` only. */
 /* Pack 13D — public three-column Blog discovery layout. */
 /* Pack 14D — Search in right rail; equal center/right; independent desktop scroll. */
-/* Pack 15C — desktop 30/40/30; Search spans center+right; left top aligns with Search. */
+/* Pack 15C — Search spans center+right; left top aligns with Search. */
+/* Pack 16E — desktop 25/50/25; category dropdown. */
 
 .blog-page,
 .blog-article {
@@ -280,6 +281,21 @@
   padding: 0;
   display: grid;
   gap: var(--hu-space-2);
+}
+
+/* Pack 16E — category dropdown (replaces permanently expanded list) */
+.blog-categories__label {
+  display: block;
+  margin-bottom: var(--hu-space-1);
+}
+
+.blog-categories__select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.blog-categories__current {
+  margin: var(--hu-space-2) 0 0;
 }
 
 .blog-categories-list__link {
@@ -868,9 +884,9 @@
 }
 
 @media (min-width: 1100px) {
-  /* Pack 15C — explicit 30% | 40% | 30%; Search spans columns 2–3 */
+  /* Pack 16E — explicit 25% | 50% | 25%; Search spans columns 2–3 */
   .blog-layout {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 3fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
       "left search search"

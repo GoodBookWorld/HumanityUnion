@@ -25,6 +25,7 @@ export {
   releaseDueScheduledBlogPublications,
   requestBlogPostChanges,
   resubmitBlogAuthorApplication,
+  startPublishedCorrection,
   submitBlogPostForReview,
   updateBlogDraft,
 } from "./blog.service.js";

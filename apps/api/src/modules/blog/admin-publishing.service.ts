@@ -5,6 +5,7 @@ import type {
   AdminAuthorDirectoryItem,
   AdminAuthorDirectoryResponse,
   AdminAuthorDirectoryStatusFilter,
+  AdminAuthorTrustedPublishingCommandResult,
   AdminPublicationDirectoryItem,
   AdminPublicationDirectoryResponse,
   AdminPublicationDirectoryStatusFilter,
@@ -30,6 +31,8 @@ import {
 import {
   emitBlogAuthorAccessBlockedNotification,
   emitBlogAuthorAccessRestoredNotification,
+  emitBlogAuthorTrustedPublishingDisabledNotification,
+  emitBlogAuthorTrustedPublishingEnabledNotification,
   emitBlogPublicationBlockedNotification,
   emitBlogPublicationRestoredNotification,
 } from "./blog-admin-publishing-notifications.js";
@@ -113,6 +116,7 @@ async function toAuthorDirectoryItem(
     profileHref: identity.profileHref,
     capabilities: grant.capabilities,
     status: blocked ? "blocked" : "active",
+    publishWithoutManualReview: grant.publishWithoutManualReview === true,
     publicationCount,
     acceptedAt: acceptedAt ?? grant.updatedAt,
     ...(lastPublishedAt ? { lastPublishedAt } : {}),
@@ -249,6 +253,10 @@ export async function unblockAdminAuthor(input: {
     capabilities: grant.capabilities,
     updatedAt: now,
     grantedByParticipantId: grant.grantedByParticipantId,
+    // Pack 16G — preserve Trusted Publishing across unblock (independent of Active/Blocked).
+    ...(grant.publishWithoutManualReview === true
+      ? { publishWithoutManualReview: true }
+      : {}),
   };
   await upsertBlogCapabilityGrant(updated);
 
@@ -269,6 +277,88 @@ export async function unblockAdminAuthor(input: {
   return {
     targetId: grant.participantId,
     administrativelyBlocked: false,
+    auditId: audit.auditId,
+  };
+}
+
+/**
+ * Pack 16G — Admin toggles Trusted Publishing (publish without manual review).
+ * Affects future submit/publish decisions only — does not release pending-review queue.
+ */
+export async function setAdminAuthorTrustedPublishing(input: {
+  actorUserId: string;
+  participantId: string;
+  publishWithoutManualReview: boolean;
+}): Promise<AdminAuthorTrustedPublishingCommandResult> {
+  const admin = await assertAdminActor(input.actorUserId);
+  const grant = await findBlogCapabilityGrant(input.participantId);
+  if (
+    !grant ||
+    !(grant.capabilities.includes("author") || grant.capabilities.includes("trusted_author"))
+  ) {
+    throw new BlogNotFoundError("Author grant not found.");
+  }
+
+  const next = input.publishWithoutManualReview === true;
+  const previous = grant.publishWithoutManualReview === true;
+  if (previous === next) {
+    throw new BlogConflictError(
+      next
+        ? "Trusted Publishing is already enabled for this Author."
+        : "Trusted Publishing is already disabled for this Author.",
+    );
+  }
+
+  const now = new Date().toISOString();
+  const persisted: BlogCapabilityGrant = next
+    ? {
+        ...grant,
+        updatedAt: now,
+        publishWithoutManualReview: true,
+      }
+    : {
+        participantId: grant.participantId,
+        capabilities: grant.capabilities,
+        updatedAt: now,
+        grantedByParticipantId: grant.grantedByParticipantId,
+        ...(grant.administrativelyBlocked === true
+          ? {
+              administrativelyBlocked: grant.administrativelyBlocked,
+              administrativeBlockAuthority: grant.administrativeBlockAuthority,
+              administrativelyBlockedAt: grant.administrativelyBlockedAt,
+              administrativelyBlockedByParticipantId:
+                grant.administrativelyBlockedByParticipantId,
+              administrativeBlockReason: grant.administrativeBlockReason,
+            }
+          : {}),
+      };
+
+  await upsertBlogCapabilityGrant(persisted);
+
+  const audit = await record({
+    actorParticipantId: admin.participantId,
+    action: next
+      ? "blog.author.trusted_publishing.enable"
+      : "blog.author.trusted_publishing.disable",
+    targetType: "blog_capability_grant",
+    targetId: grant.participantId,
+    beforeSummary: `publishWithoutManualReview=${previous}`,
+    afterSummary: `publishWithoutManualReview=${next}`,
+  });
+
+  if (next) {
+    await emitBlogAuthorTrustedPublishingEnabledNotification({
+      participantId: grant.participantId,
+    });
+  } else {
+    await emitBlogAuthorTrustedPublishingDisabledNotification({
+      participantId: grant.participantId,
+    });
+  }
+
+  return {
+    participantId: grant.participantId,
+    publishWithoutManualReview: next,
     auditId: audit.auditId,
   };
 }

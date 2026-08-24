@@ -986,6 +986,14 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    collectionName: MONGO_COLLECTIONS.blogCategories,
+    indexes: [
+      { key: { categoryId: 1 }, unique: true, name: "blog_categories_category_id_unique" },
+      { key: { slug: 1 }, unique: true, name: "blog_categories_slug_unique" },
+      { key: { status: 1, name: 1 }, name: "blog_categories_status_name" },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.blogCapabilityGrants,
     indexes: [
       {

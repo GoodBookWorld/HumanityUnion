@@ -694,7 +694,7 @@ describe("Blog service (Implementation Pack 02)", () => {
     assert.equal(stored?.content.includes("Canonical English"), true);
   });
 
-  it("29 — Assistant has Blog knowledge; canApplySuggestionsToDraft is false (no publish authority)", () => {
+  it("29 — Assistant Blog knowledge never grants publish authority; Apply only via authoring path", () => {
     const specialization = resolveAssistantSpecialization("blog");
     assert.equal(specialization.featureLabel, "Blog");
     assert.equal(specialization.canApplySuggestionsToDraft, false);

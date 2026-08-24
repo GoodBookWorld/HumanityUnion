@@ -108,6 +108,28 @@
   align-items: flex-start;
 }
 
+.admin-publishing-table__trusted {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: 14rem;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.admin-publishing-table__trusted input {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.admin-publishing-table__status--active {
+  color: inherit;
+}
+
+.admin-publishing-table__status--blocked {
+  font-weight: 600;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -135,4 +157,33 @@
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+/* Pack 16F — Publication Categories */
+.admin-blog-categories {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.admin-blog-categories__create,
+.admin-blog-categories__item {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.14));
+  border-radius: var(--hu-radius-control, 0.5rem);
+}
+
+.admin-blog-categories__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-blog-categories__edit,
+.admin-blog-categories__delete {
+  display: grid;
+  gap: 0.5rem;
 }

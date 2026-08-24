@@ -1,6 +1,6 @@
 /**
  * Pack 13D — Public Blog three-column experience contracts.
- * Pack 15C: Search spans center+right; desktop columns 30/40/30.
+ * Pack 16E: Search spans center+right; desktop columns 25/50/25.
  */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -40,12 +40,12 @@ describe("Pack 13D — Public Blog three-column experience", () => {
     assert.match(right, /BlogLatestMiniCards/);
   });
 
-  it("categories widget uses deep-linkable URL state with active state", () => {
+  it("categories widget uses deep-linkable select with current selection", () => {
     const categories = readWeb("features/blog/components/BlogCategoriesSidebar.tsx");
     assert.match(categories, /Categories/);
     assert.match(categories, /All Categories/);
-    assert.match(categories, /is-active/);
-    assert.match(categories, /aria-current/);
+    assert.match(categories, /<select/);
+    assert.match(categories, /Selected:/);
     assert.match(categories, /buildBlogIndexHref/);
   });
 
@@ -86,12 +86,12 @@ describe("Pack 13D — Public Blog three-column experience", () => {
     }
   });
 
-  it("responsive CSS is 30/40/30 desktop, stacked mobile, no page overflow", () => {
+  it("responsive CSS is 25/50/25 desktop, stacked mobile, no page overflow", () => {
     const css = readWeb("features/blog/blog.css");
     assert.match(css, /grid-template-areas:/);
     assert.match(css, /"left search search"/);
     assert.match(css, /"left center right"/);
-    assert.match(css, /minmax\(0,\s*3fr\)\s+minmax\(0,\s*4fr\)\s+minmax\(0,\s*3fr\)/);
+    assert.match(css, /minmax\(0,\s*1fr\)\s+minmax\(0,\s*2fr\)\s+minmax\(0,\s*1fr\)/);
     assert.match(css, /"search"\s*"categories"\s*"center"\s*"authors"\s*"views"\s*"chart"\s*"latest4"/s);
     assert.match(css, /overflow-x:\s*clip/);
     assert.match(css, /blog-post-card__content/);

@@ -100,6 +100,7 @@ export const MONGO_COLLECTIONS = {
   petitionVisitorSignals: "petition_visitor_signals",
   contentTranslations: "content_translations",
   blogPosts: "blog_posts",
+  blogCategories: "blog_categories",
   blogCapabilityGrants: "blog_capability_grants",
   blogAuthorApplications: "blog_author_applications",
   blogComments: "blog_comments",

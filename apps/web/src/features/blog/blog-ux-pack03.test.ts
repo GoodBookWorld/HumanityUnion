@@ -48,6 +48,7 @@ describe("Blog UX Pack 03 — Public Blog & Article Experience", () => {
     const categories = read("features/blog/components/BlogCategoriesSidebar.tsx");
     assert.match(categories, /All Categories/);
     assert.match(categories, /buildBlogIndexHref/);
+    assert.match(categories, /<select|router\.push/);
 
     const search = read("features/blog/components/BlogDiscoverySearch.tsx");
     assert.match(search, /onSearchSubmit|type="search"/);

@@ -24,12 +24,22 @@ function isAuthorCapable(state: BlogAuthoringAccessState): boolean {
   );
 }
 
-function canDirectPublish(state: BlogAuthoringAccessState): boolean {
+/** Capability-tier in-place publish/edit (Trusted Author / Editor / Admin). */
+function canInPlacePublish(state: BlogAuthoringAccessState): boolean {
   return (
     state.capabilities.includes("trusted_author") ||
     state.capabilities.includes("editor") ||
     state.capabilities.includes("administrator")
   );
+}
+
+/**
+ * Draft Publish button / submit bypass UI.
+ * Pack 16G Trusted Publishing OR capability-tier direct publish.
+ * Does not grant in-place published Edit (see PublishingPageContent).
+ */
+function canBypassManualReviewOnDraft(state: BlogAuthoringAccessState): boolean {
+  return canInPlacePublish(state) || state.publishWithoutManualReview === true;
 }
 
 export function BlogEditorPageContent(props: { postId?: string; mode: "create" | "edit" }) {
@@ -114,7 +124,7 @@ export function BlogEditorPageContent(props: { postId?: string; mode: "create" |
     <BlogPostEditor
       mode={props.mode}
       initialPost={post}
-      canDirectPublish={canDirectPublish(access)}
+      canDirectPublish={canBypassManualReviewOnDraft(access)}
     />
   );
 }

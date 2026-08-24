@@ -126,9 +126,9 @@ describe("Pack 15E — Blog authoring & layout final certification", () => {
     assert.match(editorialCss, /top:\s*var\(--hu-scroll-margin-top/);
   });
 
-  it("12–17 /blog 30/40/30, Search span, thumbs, pagination, widgets (15C)", () => {
+  it("12–17 /blog 25/50/25, Search span, thumbs, pagination, widgets (15C/16E)", () => {
     const css = readWeb("features/blog/blog.css");
-    assert.match(css, /minmax\(0,\s*3fr\)\s+minmax\(0,\s*4fr\)\s+minmax\(0,\s*3fr\)/);
+    assert.match(css, /minmax\(0,\s*1fr\)\s+minmax\(0,\s*2fr\)\s+minmax\(0,\s*1fr\)/);
     assert.match(css, /"left search search"/);
     assert.match(css, /"left center right"/);
     assert.match(css, /\.blog-latest-mini__thumb-frame[\s\S]*width:\s*5rem/s);

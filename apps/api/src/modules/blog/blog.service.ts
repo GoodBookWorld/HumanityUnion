@@ -63,6 +63,7 @@ import {
   emitBlogPostPublishedNotification,
   emitBlogPublicationAdminReviewNotifications,
 } from "./blog-publication-notifications.js";
+import { enqueueBlogSocialDistributionBestEffort } from "./blog-social-distribution.js";
 import {
   canArchiveAny,
   canCreateBlogDraft,
@@ -72,10 +73,12 @@ import {
   canManageAuthorGrants,
   canRestoreArchived,
   canReviewAuthorApplications,
+  actorMayBypassManualReview,
   resolveBlogCapabilities,
+  resolvePublishWithoutManualReview,
 } from "./blog-permissions.js";
 import { resolveBlogPublicAuthor } from "./blog-author-identity.js";
-import { listBlogCategories } from "./blog-categories.js";
+import { ensureBlogCategoriesSeeded, listBlogCategories } from "./blog-categories.js";
 import { slugifyBlogTitle, withSlugCollisionSuffix } from "./blog-slug.js";
 import { assertBlogStatusTransition } from "./blog-status-transitions.js";
 import {
@@ -302,6 +305,7 @@ export async function createBlogDraft(input: {
     ...(fields.publicationDate
       ? { publishedAt: publicationDateOnlyToIso(fields.publicationDate) }
       : {}),
+    ...(fields.optimization ? { optimization: fields.optimization } : {}),
   };
 
   await insertBlogPost(post);
@@ -395,13 +399,19 @@ export async function updateBlogDraft(input: {
       existing.authorParticipantId === input.actorParticipantId &&
       !capabilities.has("trusted_author")
     ) {
-      throw new BlogAccessDeniedError("Only Trusted Authors, Editors, or Administrators may update published posts.");
+      throw new BlogAccessDeniedError(
+        "Only Trusted Authors, Editors, or Administrators may update published posts in place. Start a correction to return the post to draft for review.",
+      );
     }
     publishedVersion = existing.publishedVersion + 1;
   }
 
+  const { optimization: existingOptimization, ...existingBase } = existing;
+  const nextOptimization =
+    "optimization" in patch ? patch.optimization : existingOptimization;
+
   const updated: BlogPost = {
-    ...existing,
+    ...existingBase,
     title: nextTitle,
     slug: nextSlug,
     excerpt: nextExcerpt,
@@ -415,6 +425,7 @@ export async function updateBlogDraft(input: {
     publishedVersion,
     ...(nextPublishedAt ? { publishedAt: nextPublishedAt } : {}),
     updatedAt: now,
+    ...(nextOptimization ? { optimization: nextOptimization } : {}),
   };
 
   await replaceBlogPost(updated);
@@ -428,6 +439,21 @@ export async function updateBlogDraft(input: {
       publishedVersion: updated.publishedVersion,
       slug: updated.slug,
     });
+    void enqueueBlogSocialDistributionBestEffort({
+      post: updated,
+      actorParticipantId: input.actorParticipantId,
+    });
+    if (publishedVersion > existing.publishedVersion) {
+      recordAdministrationAuditBestEffort({
+        actorParticipantId: input.actorParticipantId,
+        action: "blog.update_published",
+        targetType: "blog_post",
+        targetId: updated.postId,
+        scope: { scopeType: "blog", scopeId: updated.postId },
+        beforeSummary: `publishedVersion=${existing.publishedVersion}`,
+        afterSummary: `publishedVersion=${updated.publishedVersion}`,
+      });
+    }
   }
 
   return toBlogAuthorWorkspacePost(updated);
@@ -506,6 +532,22 @@ export async function submitBlogPostForReview(input: {
 
   if (existing.authorParticipantId !== input.actorParticipantId && !canEditorialPublish(capabilities)) {
     throw new BlogAccessDeniedError();
+  }
+
+  // Pack 16G — Trusted Publishing: server-resolved Author setting bypasses manual review.
+  // Never trust a client-supplied flag. Pending-review queue is not auto-released by setting changes.
+  const trustedPublishing =
+    existing.status === "draft" &&
+    existing.authorParticipantId === input.actorParticipantId &&
+    (await resolvePublishWithoutManualReview(input.actorParticipantId));
+  if (trustedPublishing) {
+    const published = await publishBlogPostInternal({
+      existing,
+      actorParticipantId: input.actorParticipantId,
+      capabilities,
+      allowTrustedPublishingBypass: true,
+    });
+    return toBlogAuthorWorkspacePost(published);
   }
 
   assertBlogStatusTransition(existing.status, "submitted_for_review");
@@ -612,6 +654,89 @@ export async function withdrawBlogPostToDraft(input: {
   };
 
   await replaceBlogPost(updated);
+  return toBlogAuthorWorkspacePost(updated);
+}
+
+/**
+ * Pack 16A — Standard Author correction path.
+ * Returns a published post to draft (same postId/slug/Author) so replacement
+ * content is never public until review/publish. Trusted Authors update in place.
+ */
+export async function startPublishedCorrection(input: {
+  postId: string;
+  actorParticipantId: string;
+  role?: AuthRole;
+}): Promise<BlogAuthorWorkspacePost> {
+  const capabilities = await resolveBlogCapabilities({
+    participantId: input.actorParticipantId,
+    role: input.role,
+  });
+  const existing = await findBlogPostById(input.postId);
+  if (!existing) {
+    throw new BlogNotFoundError();
+  }
+
+  const isOwner = existing.authorParticipantId === input.actorParticipantId;
+  if (!isOwner && !canEditOthersDrafts(capabilities)) {
+    throw new BlogAccessDeniedError();
+  }
+  await assertAuthorPublishingAllowed({
+    actorParticipantId: input.actorParticipantId,
+    role: input.role,
+    capabilities,
+  });
+
+  if (existing.administrativelyBlocked === true) {
+    throw new BlogAccessDeniedError(
+      "This publication is blocked by an administrator and cannot be corrected.",
+    );
+  }
+
+  if (existing.status !== "published") {
+    throw new BlogConflictError("Only published publications can start a correction.");
+  }
+
+  if (canDirectPublish(capabilities)) {
+    throw new BlogConflictError(
+      "Trusted Authors, Editors, and Administrators correct published posts in place via Edit.",
+    );
+  }
+
+  assertBlogStatusTransition(existing.status, "draft");
+
+  const now = new Date().toISOString();
+  const updated: BlogPost = {
+    ...existing,
+    status: "draft",
+    review: {
+      reviewStatus: "none",
+    },
+    updatedAt: now,
+    editorialHistory: appendEditorialHistory(
+      existing,
+      buildEditorialHistoryEntry({
+        at: now,
+        actorParticipantId: input.actorParticipantId,
+        action: "correction_started",
+        publishedVersion: existing.publishedVersion,
+        contentUpdatedAt: existing.updatedAt,
+      }),
+    ),
+  };
+
+  await replaceBlogPost(updated);
+  invalidateGlobalSearchIndex();
+
+  recordAdministrationAuditBestEffort({
+    actorParticipantId: input.actorParticipantId,
+    action: "blog.published_correction_started",
+    targetType: "blog_post",
+    targetId: updated.postId,
+    scope: { scopeType: "blog", scopeId: updated.postId },
+    beforeSummary: `status=published;publishedVersion=${existing.publishedVersion}`,
+    afterSummary: "status=draft;correction_started",
+  });
+
   return toBlogAuthorWorkspacePost(updated);
 }
 
@@ -762,6 +887,11 @@ async function publishBlogPostInternal(input: {
   expectedUpdatedAt?: string;
   /** Pack 13C — YYYY-MM-DD optional override at publish time. */
   publicationDate?: string;
+  /**
+   * Pack 16G — server already resolved Trusted Publishing for this owner submit/publish.
+   * Does not weaken Safety, blocks, or scheduling.
+   */
+  allowTrustedPublishingBypass?: boolean;
 }): Promise<BlogPost> {
   const { existing, actorParticipantId, capabilities } = input;
   assertExpectedUpdatedAt(existing, input.expectedUpdatedAt);
@@ -778,6 +908,12 @@ async function publishBlogPostInternal(input: {
   const fromSubmitted = existing.status === "submitted_for_review";
   const fromScheduled = existing.status === "scheduled";
   const fromArchived = existing.status === "archived";
+  const mayBypassManualReview =
+    input.allowTrustedPublishingBypass === true ||
+    (await actorMayBypassManualReview({
+      participantId: actorParticipantId,
+      capabilities,
+    }));
 
   if (fromArchived) {
     if (!canRestoreArchived(capabilities)) {
@@ -787,16 +923,14 @@ async function publishBlogPostInternal(input: {
     if (!isOwner && !canEditorialPublish(capabilities)) {
       throw new BlogAccessDeniedError();
     }
-    if (isOwner && !canDirectPublish(capabilities) && fromDraft) {
+    if (isOwner && !mayBypassManualReview && fromDraft) {
       throw new BlogAccessDeniedError(
-        "Standard Authors must submit for review; direct publish requires Trusted Author, Editor, or Administrator.",
+        "Standard Authors must submit for review; direct publish requires Trusted Author, Editor, Administrator, or Trusted Publishing.",
       );
     }
   } else if (fromSubmitted) {
-    if (!canEditorialPublish(capabilities) && !(isOwner && canDirectPublish(capabilities))) {
-      if (!(isOwner && capabilities.has("trusted_author"))) {
-        throw new BlogAccessDeniedError("Editor capability is required to publish submitted posts.");
-      }
+    if (!canEditorialPublish(capabilities) && !(isOwner && mayBypassManualReview)) {
+      throw new BlogAccessDeniedError("Editor capability is required to publish submitted posts.");
     }
   } else {
     throw new BlogConflictError(`Cannot publish from status ${existing.status}.`);
@@ -914,6 +1048,10 @@ async function publishBlogPostInternal(input: {
       afterSafetyReview: Boolean(input.allowNeedsReviewOverride),
       safetyOutcome: safety.outcome,
       reviewNote: overrideNote,
+    });
+    void enqueueBlogSocialDistributionBestEffort({
+      post: updated,
+      actorParticipantId,
     });
 
     recordAdministrationAuditBestEffort({
@@ -1089,6 +1227,10 @@ export async function releaseDueScheduledBlogPublications(input?: {
       publishedVersion: updated.publishedVersion,
       slug: updated.slug,
     });
+    void enqueueBlogSocialDistributionBestEffort({
+      post: updated,
+      actorParticipantId: updated.publishedByParticipantId ?? updated.authorParticipantId,
+    });
     await emitBlogPostPublishedNotification({
       authorParticipantId: updated.authorParticipantId,
       postId: updated.postId,
@@ -1155,6 +1297,18 @@ export async function archiveBlogPost(input: {
   const isOwner = existing.authorParticipantId === input.actorParticipantId;
   if (!isOwner && !canArchiveAny(capabilities)) {
     throw new BlogAccessDeniedError();
+  }
+
+  await assertAuthorPublishingAllowed({
+    actorParticipantId: input.actorParticipantId,
+    role: input.role,
+    capabilities,
+  });
+
+  if (existing.administrativelyBlocked === true) {
+    throw new BlogAccessDeniedError(
+      "This publication is blocked by an administrator and cannot be deleted or archived by the Author.",
+    );
   }
 
   assertBlogStatusTransition(existing.status, "archived");
@@ -1311,11 +1465,15 @@ export async function listPublicBlogPosts(input: {
 
   let categoryId: BlogPost["categoryId"] | undefined;
   if (input.categoryId) {
+    await ensureBlogCategoriesSeeded();
     const { isBlogCategoryId } = await import("./blog-categories.js");
+    // Pack 16F — inactive categories remain filterable for historical deep links.
     if (!isBlogCategoryId(input.categoryId)) {
       throw new BlogValidationError("Invalid categoryId filter.");
     }
     categoryId = input.categoryId;
+  } else {
+    await ensureBlogCategoriesSeeded();
   }
 
   const includeDiscovery = input.includeDiscovery !== false;
@@ -1512,6 +1670,7 @@ function toAuthoringAccessState(input: {
   capabilities: ReadonlySet<BlogCapability>;
   application: BlogAuthorApplication | null;
   authorAdministrativelyBlocked: boolean;
+  publishWithoutManualReview: boolean;
 }): BlogAuthoringAccessState {
   const presentation = deriveAuthoringPresentation(input);
   const hasAuthor =
@@ -1545,6 +1704,7 @@ function toAuthoringAccessState(input: {
     navLabel: hasAuthor && !blockedAuthorOnly ? "Publishing" : "Become an Author",
     editorialReviewHref: isEditor ? "/workspace/editorial" : null,
     authorAdministrativelyBlocked: input.authorAdministrativelyBlocked,
+    publishWithoutManualReview: input.publishWithoutManualReview,
   };
 }
 
@@ -1583,6 +1743,10 @@ async function ensureAuthorGrantOnApproval(input: {
             existing.administrativelyBlockedByParticipantId,
           administrativeBlockReason: existing.administrativeBlockReason,
         }
+      : {}),
+    // Pack 16G — Trusted Publishing defaults OFF; preserve if Admin already set it.
+    ...(existing?.publishWithoutManualReview === true
+      ? { publishWithoutManualReview: true }
       : {}),
   };
 
@@ -1641,12 +1805,16 @@ export async function getBlogAuthoringAccessState(input: {
   const authorAdministrativelyBlocked = await isBlogAuthorAdministrativelyBlocked(
     input.actorParticipantId,
   );
+  const publishWithoutManualReview = await resolvePublishWithoutManualReview(
+    input.actorParticipantId,
+  );
 
   return toAuthoringAccessState({
     participantId: input.actorParticipantId,
     capabilities,
     application,
     authorAdministrativelyBlocked,
+    publishWithoutManualReview,
   });
 }
 
@@ -2010,11 +2178,15 @@ export async function grantBlogCapabilities(input: {
 export async function grantBlogCapabilitiesForTests(input: {
   participantId: string;
   capabilities: readonly BlogCapability[];
+  publishWithoutManualReview?: boolean;
 }): Promise<BlogCapabilityGrant> {
   return upsertBlogCapabilityGrant({
     participantId: input.participantId,
     capabilities: input.capabilities,
     updatedAt: new Date().toISOString(),
     grantedByParticipantId: "system-test",
+    ...(input.publishWithoutManualReview === true
+      ? { publishWithoutManualReview: true }
+      : {}),
   });
 }

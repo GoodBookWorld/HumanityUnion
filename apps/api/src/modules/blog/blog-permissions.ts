@@ -78,6 +78,28 @@ export function canDirectPublish(capabilities: ReadonlySet<BlogCapability>): boo
   );
 }
 
+/**
+ * Pack 16G — Trusted Publishing (publish without manual review).
+ * Resolved from the Author grant on every decision; never from a client flag.
+ */
+export async function resolvePublishWithoutManualReview(
+  participantId: string,
+): Promise<boolean> {
+  const grant = await findBlogCapabilityGrant(participantId);
+  return grant?.publishWithoutManualReview === true;
+}
+
+/** Capability-tier direct publish OR Admin-granted Trusted Publishing. */
+export async function actorMayBypassManualReview(input: {
+  participantId: string;
+  capabilities: ReadonlySet<BlogCapability>;
+}): Promise<boolean> {
+  if (canDirectPublish(input.capabilities)) {
+    return true;
+  }
+  return resolvePublishWithoutManualReview(input.participantId);
+}
+
 export function canEditorialPublish(capabilities: ReadonlySet<BlogCapability>): boolean {
   return capabilities.has("editor") || capabilities.has("administrator");
 }

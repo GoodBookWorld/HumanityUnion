@@ -24,6 +24,7 @@ import {
   blockAdminPublication,
   listAdminAuthors,
   listAdminPublications,
+  setAdminAuthorTrustedPublishing,
   unblockAdminAuthor,
   unblockAdminPublication,
 } from "./admin-publishing.service.js";
@@ -223,6 +224,37 @@ adminPublishingRouter.post(
   },
 );
 
+/** Pack 16G — Admin Trusted Publishing toggle (publish without manual review). */
+adminPublishingRouter.patch(
+  "/authors/:participantId/trusted-publishing",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      if (typeof req.body?.publishWithoutManualReview !== "boolean") {
+        throw new AdministrationValidationError(
+          "publishWithoutManualReview (boolean) is required.",
+        );
+      }
+      const data = await setAdminAuthorTrustedPublishing({
+        actorUserId: req.auth!.id,
+        participantId: routeParam(req.params.participantId),
+        publishWithoutManualReview: req.body.publishWithoutManualReview,
+      });
+      res.json(
+        createSuccessResponse(
+          data,
+          data.publishWithoutManualReview
+            ? "Trusted Publishing enabled."
+            : "Trusted Publishing disabled.",
+        ),
+      );
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
 adminPublishingRouter.get(
   "/publications/pending-review",
   authenticationMiddleware,
@@ -309,6 +341,120 @@ adminPublishingRouter.post(
         reason,
       });
       res.json(createSuccessResponse(data, "Publication unblocked."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+/** Pack 16F — Publication Categories management */
+adminPublishingRouter.get(
+  "/categories",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { listAdminBlogCategories } = await import("./blog-category-admin.service.js");
+      const data = await listAdminBlogCategories({ actorUserId: req.auth!.id });
+      res.json(createSuccessResponse(data, "Publication categories loaded."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.post(
+  "/categories",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { createAdminBlogCategory } = await import("./blog-category-admin.service.js");
+      const data = await createAdminBlogCategory({
+        actorUserId: req.auth!.id,
+        body: req.body,
+      });
+      res.status(201).json(createSuccessResponse(data, "Publication category created."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.patch(
+  "/categories/:categoryId",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { updateAdminBlogCategory } = await import("./blog-category-admin.service.js");
+      const data = await updateAdminBlogCategory({
+        actorUserId: req.auth!.id,
+        categoryId: routeParam(req.params.categoryId),
+        body: req.body,
+      });
+      res.json(createSuccessResponse(data, "Publication category updated."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.post(
+  "/categories/:categoryId/activate",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { activateAdminBlogCategory } = await import("./blog-category-admin.service.js");
+      const data = await activateAdminBlogCategory({
+        actorUserId: req.auth!.id,
+        categoryId: routeParam(req.params.categoryId),
+      });
+      res.json(createSuccessResponse(data, "Publication category activated."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.post(
+  "/categories/:categoryId/deactivate",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { deactivateAdminBlogCategory } = await import("./blog-category-admin.service.js");
+      const data = await deactivateAdminBlogCategory({
+        actorUserId: req.auth!.id,
+        categoryId: routeParam(req.params.categoryId),
+      });
+      res.json(createSuccessResponse(data, "Publication category deactivated."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.delete(
+  "/categories/:categoryId",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { deleteAdminBlogCategory } = await import("./blog-category-admin.service.js");
+      const reassignToCategoryId =
+        typeof req.body?.reassignToCategoryId === "string"
+          ? req.body.reassignToCategoryId
+          : typeof req.query.reassignToCategoryId === "string"
+            ? req.query.reassignToCategoryId
+            : undefined;
+      const data = await deleteAdminBlogCategory({
+        actorUserId: req.auth!.id,
+        categoryId: routeParam(req.params.categoryId),
+        reassignToCategoryId,
+      });
+      res.json(createSuccessResponse(data, "Publication category deleted."));
     } catch (error) {
       handleError(res, error);
     }

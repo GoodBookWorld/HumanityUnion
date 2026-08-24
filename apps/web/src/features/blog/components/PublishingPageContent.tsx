@@ -77,6 +77,8 @@ export function PublishingPageContent() {
     );
   }
 
+  // Pack 16H — Trusted Publishing bypasses manual review on submit/publish only.
+  // It must NOT grant in-place Edit of published posts (that remains trusted_author/editor/admin).
   const canDirectPublish =
     state.capabilities.includes("trusted_author") ||
     state.capabilities.includes("editor") ||
@@ -85,9 +87,15 @@ export function PublishingPageContent() {
     state.presentation === "editor" ||
     state.presentation === "administrator";
 
+  const mutationsDisabled =
+    state.presentation === "author_blocked" || state.authorAdministrativelyBlocked === true;
+
   return (
     <div className="publishing-page">
-      <PublishingDashboard canDirectPublish={canDirectPublish} />
+      <PublishingDashboard
+        canDirectPublish={canDirectPublish}
+        mutationsDisabled={mutationsDisabled}
+      />
     </div>
   );
 }

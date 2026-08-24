@@ -1,5 +1,6 @@
 /**
- * Pack 15C — Public Blog 30/40/30 layout & Latest thumbnail contracts.
+ * Pack 15C — Public Blog layout & Latest thumbnail contracts.
+ * Pack 16E refines desktop columns to 25/50/25 (still Search spanning center+right).
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -14,10 +15,10 @@ function readWeb(relativePath: string): string {
   return readFileSync(path.join(webSrc, relativePath), "utf8");
 }
 
-describe("Pack 15C — Public Blog 30/40/30 layout", () => {
-  it("desktop grid is explicit 30/40/30 with Search spanning center+right", () => {
+describe("Pack 15C — Public Blog layout (refined 25/50/25 in Pack 16E)", () => {
+  it("desktop grid is explicit 25/50/25 with Search spanning center+right", () => {
     const css = readWeb("features/blog/blog.css");
-    assert.match(css, /minmax\(0,\s*3fr\)\s+minmax\(0,\s*4fr\)\s+minmax\(0,\s*3fr\)/);
+    assert.match(css, /minmax\(0,\s*1fr\)\s+minmax\(0,\s*2fr\)\s+minmax\(0,\s*1fr\)/);
     assert.match(css, /"left search search"/);
     assert.match(css, /"left center right"/);
 
@@ -45,7 +46,7 @@ describe("Pack 15C — Public Blog 30/40/30 layout", () => {
     assert.match(css, /flex:\s*none/);
   });
 
-  it("desktop keeps independent center/right scroll; tablet/mobile disable 30/40/30 panes", () => {
+  it("desktop keeps independent center/right scroll; tablet/mobile disable desktop panes", () => {
     const css = readWeb("features/blog/blog.css");
     assert.match(css, /\.blog-layout__center[\s\S]*overflow-y:\s*auto/s);
     assert.match(css, /\.blog-layout__right[\s\S]*overflow-y:\s*auto/s);

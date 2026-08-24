@@ -152,6 +152,7 @@ export function BlogIndexPageContent() {
           categories={categories}
           activeCategorySlug={categorySlug}
           q={q}
+          categoryCounts={categoryCounts}
         />
 
         <section className="blog-layout__center" aria-labelledby="blog-feed-heading" tabIndex={0}>

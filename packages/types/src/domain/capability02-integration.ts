@@ -217,6 +217,10 @@ export type CivicNotificationEventType =
   | "blog_author_access_blocked"
   /** Pack 13B — Author publishing access restored. */
   | "blog_author_access_restored"
+  /** Pack 16G — Admin enabled Trusted Publishing for an Author. */
+  | "blog_author_trusted_publishing_enabled"
+  /** Pack 16G — Admin disabled Trusted Publishing for an Author. */
+  | "blog_author_trusted_publishing_disabled"
   /** Pack 13B — Publication soft-blocked from public surfaces. */
   | "blog_publication_blocked"
   /** Pack 13B — Publication soft-block cleared. */
@@ -518,6 +522,16 @@ export const CIVIC_NOTIFICATION_EVENT_REGISTRY: readonly CivicNotificationEventD
   {
     eventType: "blog_author_access_restored",
     description: "Author publishing access was restored after an administrative block.",
+    entityType: "blog_author_application",
+  },
+  {
+    eventType: "blog_author_trusted_publishing_enabled",
+    description: "An Administrator enabled Trusted Publishing for an Author.",
+    entityType: "blog_author_application",
+  },
+  {
+    eventType: "blog_author_trusted_publishing_disabled",
+    description: "An Administrator disabled Trusted Publishing for an Author.",
     entityType: "blog_author_application",
   },
   {

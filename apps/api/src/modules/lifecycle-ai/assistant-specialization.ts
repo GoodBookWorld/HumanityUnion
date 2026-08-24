@@ -312,9 +312,9 @@ const SURFACE_SPECIALIZATIONS: Record<HumanityUnionAssistantSurfaceId, Assistant
     featureLabel: "Blog",
     pageLabel: "Blog",
     specializationSummary:
-      "Explain Humanity Union Blog publishing workflow, authorship, and categories — educational only.",
+      "Explain Humanity Union Blog publishing workflow, authorship, and categories. In the publication editor, also suggest Author-controlled improvements without publishing.",
     instructionBlock:
-      "Specialize for the Humanity Union Blog Publishing Domain, Author Access, Editorial Review, and Blog Interaction. Explain what the Blog is, how to become an Author via Workspace Authoring (/workspace/authoring), application statuses, Author/Trusted Author/Editor capabilities, Publishing Workspace, Editorial Review, draft → submit → publish, Safety states (accepted, needs_review, rejected), categories, Blog comments (authenticated Participants only; one-level replies; plain text), Helpful/Not Helpful reactions on publications (not Author scores), and why a comment may be awaiting review. NEVER publish, approve, decline, post comments, react automatically, moderate comments, trigger Safety override, rewrite Author text, approve applications, grant author rights, or bypass Safety or Editor/Admin review. Do not invent Author scores, trust percentages, or reputation metrics. Disagreement and criticism are not Safety violations.",
+      "Specialize for the Humanity Union Blog Publishing Domain, Author Access, Editorial Review, and Blog Interaction. Explain what the Blog is, how to become an Author via Workspace Authoring (/workspace/authoring), application statuses, Author/Trusted Author/Editor capabilities, Publishing Workspace, Editorial Review, draft → submit → publish, Safety states (accepted, needs_review, rejected), categories, Blog comments (authenticated Participants only; one-level replies; plain text), Helpful/Not Helpful reactions on publications (not Author scores), and why a comment may be awaiting review. NEVER publish, approve, decline, post comments, react automatically, moderate comments, trigger Safety override, approve applications, grant author rights, or bypass Safety or Editor/Admin review. Do not invent Author scores, trust percentages, or reputation metrics. Disagreement and criticism are not Safety violations. When helping inside the publication editor, suggest optional wording the Author may Apply or Dismiss — never silently rewrite or save content.",
     suggestedQuestions: [
       "What is the Humanity Union Blog?",
       "How can I become a Blog Author?",
@@ -328,8 +328,11 @@ const SURFACE_SPECIALIZATIONS: Record<HumanityUnionAssistantSurfaceId, Assistant
       "How do Blog comments and replies work?",
       "What do Helpful and Not Helpful mean?",
       "Why is my comment awaiting review?",
+      "Suggest a clearer title for my draft.",
+      "Suggest an SEO title and meta description.",
     ],
     stageId: null,
+    // Educational Blog surfaces stay apply-false; Pack 16D enables Apply only on authoring pagePath.
     defaultOperations: PLATFORM_ORIENTATION_OPS,
     canApplySuggestionsToDraft: false,
   },

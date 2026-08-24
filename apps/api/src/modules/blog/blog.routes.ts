@@ -48,7 +48,6 @@ import {
   getEditorialReviewDetail,
   getPublicBlogPostBySlug,
   grantBlogCapabilities,
-  listBlogCategories,
   listEditorialReviewQueue,
   listOwnBlogWorkspacePosts,
   listPublicBlogAuthors,
@@ -59,6 +58,7 @@ import {
   cancelScheduledBlogPublication,
   requestBlogPostChanges,
   resubmitBlogAuthorApplication,
+  startPublishedCorrection,
   submitBlogPostForReview,
   updateBlogDraft,
   withdrawBlogPostToDraft,
@@ -135,8 +135,16 @@ function handleBlogError(res: Response, error: unknown): void {
   res.status(500).json(failure(message));
 }
 
-publicBlogRouter.get("/categories", (_req, res) => {
-  res.json(createSuccessResponse({ categories: listBlogCategories() }, "Blog categories loaded."));
+publicBlogRouter.get("/categories", async (_req, res) => {
+  try {
+    const { ensureBlogCategoriesSeeded, listBlogCategories } = await import("./blog-categories.js");
+    await ensureBlogCategoriesSeeded();
+    res.json(
+      createSuccessResponse({ categories: listBlogCategories() }, "Blog categories loaded."),
+    );
+  } catch (error) {
+    handleBlogError(res, error);
+  }
 });
 
 publicBlogRouter.get("/authors", async (req, res) => {
@@ -481,6 +489,24 @@ blogRouter.post("/posts/:postId/archive", requireJwtAuthenticationMiddleware, as
     handleBlogError(res, error);
   }
 });
+
+blogRouter.post(
+  "/posts/:postId/start-correction",
+  requireJwtAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const data = await startPublishedCorrection({
+        postId: routeParam(req.params.postId),
+        actorParticipantId: identity.participantId,
+        role: identity.role,
+      });
+      res.json(createSuccessResponse(data, "Published correction started."));
+    } catch (error) {
+      handleBlogError(res, error);
+    }
+  },
+);
 
 blogRouter.post(
   "/posts/:postId/cancel-schedule",

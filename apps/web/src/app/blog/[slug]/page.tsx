@@ -20,19 +20,32 @@ export async function generateMetadata({ params }: BlogArticlePageProps): Promis
       };
     }
 
-    const imageUrl = resolveMediaUrl(post.coverImage?.mediaUrl);
+    const seo = post.seo;
+    const imageUrl = resolveMediaUrl(seo?.socialImage?.mediaUrl ?? post.coverImage?.mediaUrl);
+    const pageTitle = seo?.title || post.title;
+    const description = seo?.description || post.excerpt || post.title;
+    const socialTitle = seo?.socialTitle || pageTitle;
+    const socialDescription = seo?.socialDescription || description;
+    const canonical = seo?.canonicalPath || `/blog/${encodeURIComponent(post.slug)}`;
 
     return {
-      title: `${post.title} | Blog | Humanity Union`,
-      description: post.excerpt || post.title,
+      title: `${pageTitle} | Blog | Humanity Union`,
+      description,
       alternates: {
-        canonical: `/blog/${encodeURIComponent(post.slug)}`,
+        canonical,
       },
       openGraph: {
-        title: post.title,
-        description: post.excerpt || post.title,
+        title: socialTitle,
+        description: socialDescription,
         type: "article",
+        url: canonical,
         ...(imageUrl ? { images: [{ url: imageUrl }] } : {}),
+      },
+      twitter: {
+        card: imageUrl ? "summary_large_image" : "summary",
+        title: socialTitle,
+        description: socialDescription,
+        ...(imageUrl ? { images: [imageUrl] } : {}),
       },
     };
   } catch {

@@ -28,9 +28,11 @@ import {
   reconcileAdminPendingAuthorApplications,
   reconcileAdminPendingPublicationReviews,
   recoveryResetAdminAuthorApplication,
+  setAdminAuthorTrustedPublishing,
   unblockAdminPublishingAuthor,
   unblockAdminPublishingPublication,
 } from "../admin-publishing-api";
+import { AdminBlogCategoriesPanel } from "./AdminBlogCategoriesPanel";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
@@ -40,7 +42,7 @@ interface AdminPublishingSectionProps {
   user: AuthUserPublic;
 }
 
-type PublishingTab = "pending" | "pending-review" | "authors" | "publications";
+type PublishingTab = "pending" | "pending-review" | "authors" | "publications" | "categories";
 
 function formatCompactDate(value?: string): string {
   if (!value) {
@@ -185,7 +187,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
       void loadPendingReviews();
     } else if (tab === "authors") {
       void loadAuthors();
-    } else {
+    } else if (tab === "publications") {
       void loadPublications();
     }
   }, [tab, loadPending, loadPendingReviews, loadAuthors, loadPublications]);
@@ -247,6 +249,28 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
         await blockAdminPublishingAuthor(participantId);
         setActionMessage("Author blocked. Participant account remains active.");
       }
+      await loadAuthors();
+    } catch (err: unknown) {
+      setError(formatAuthFormError(err));
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  async function handleTrustedPublishingToggle(
+    participantId: string,
+    nextEnabled: boolean,
+  ) {
+    setActionBusyId(`trusted-${participantId}`);
+    setActionMessage(null);
+    setError(null);
+    try {
+      await setAdminAuthorTrustedPublishing(participantId, nextEnabled);
+      setActionMessage(
+        nextEnabled
+          ? "Trusted Publishing enabled. Future submissions may publish without manual review."
+          : "Trusted Publishing disabled. Future submissions require editorial review.",
+      );
       await loadAuthors();
     } catch (err: unknown) {
       setError(formatAuthFormError(err));
@@ -336,6 +360,19 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
             onClick={() => setTab("publications")}
           >
             Publications
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "categories"}
+            className={
+              tab === "categories"
+                ? "admin-publishing__tab admin-publishing__tab--active"
+                : "admin-publishing__tab"
+            }
+            onClick={() => setTab("categories")}
+          >
+            Categories
           </button>
         </div>
         <ul className="admin-panel__links">
@@ -565,6 +602,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                   <tr>
                     <th>Author</th>
                     <th>Status</th>
+                    <th>Trusted publishing</th>
                     <th>Publications</th>
                     <th>Joined/Accepted</th>
                     <th>Last publication</th>
@@ -596,7 +634,37 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                           </div>
                         </div>
                       </td>
-                      <td>{row.status === "blocked" ? "Blocked" : "Active"}</td>
+                      <td>
+                        <span
+                          className={
+                            row.status === "blocked"
+                              ? "admin-publishing-table__status admin-publishing-table__status--blocked"
+                              : "admin-publishing-table__status admin-publishing-table__status--active"
+                          }
+                        >
+                          {row.status === "blocked" ? "Blocked" : "Active"}
+                        </span>
+                      </td>
+                      <td>
+                        <label className="admin-publishing-table__trusted">
+                          <input
+                            type="checkbox"
+                            checked={row.publishWithoutManualReview === true}
+                            disabled={
+                              actionBusyId === `trusted-${row.participantId}` ||
+                              actionBusyId === row.participantId
+                            }
+                            aria-label={`Publish without manual review for ${row.displayName}`}
+                            onChange={(event) =>
+                              void handleTrustedPublishingToggle(
+                                row.participantId,
+                                event.target.checked,
+                              )
+                            }
+                          />
+                          <span>Publish without manual review</span>
+                        </label>
+                      </td>
                       <td>{row.publicationCount}</td>
                       <td>{formatCompactDate(row.acceptedAt)}</td>
                       <td>{formatCompactDate(row.lastPublishedAt)}</td>
@@ -742,6 +810,12 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
           ) : null}
         </ProfileSection>
       )}
+
+      {tab === "categories" && !denied ? (
+        <ProfileSection title="Publication Categories">
+          <AdminBlogCategoriesPanel />
+        </ProfileSection>
+      ) : null}
 
       {reviewApplicationId ? (
         <AuthorApplicationReviewModal

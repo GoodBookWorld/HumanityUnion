@@ -14,7 +14,11 @@ const ALLOWED: ReadonlyMap<BlogPostStatus, ReadonlySet<BlogPostStatus>> = new Ma
     new Set<BlogPostStatus>(["draft", "published", "scheduled"]),
   ],
   ["scheduled", new Set<BlogPostStatus>(["draft", "published", "archived"])],
-  ["published", new Set<BlogPostStatus>(["archived"])],
+  /**
+   * Pack 16A — Author correction: return published → draft so unreviewed
+   * replacement content is never public. Trusted Authors update in-place instead.
+   */
+  ["published", new Set<BlogPostStatus>(["archived", "draft"])],
   ["archived", new Set<BlogPostStatus>(["published"])],
 ]);
 

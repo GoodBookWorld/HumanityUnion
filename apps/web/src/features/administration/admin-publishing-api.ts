@@ -2,6 +2,9 @@ import type {
   AdminAuthorApplicationReconcileResult,
   AdminAuthorDirectoryResponse,
   AdminAuthorDirectoryStatusFilter,
+  AdminAuthorTrustedPublishingCommandResult,
+  AdminBlogCategoryItem,
+  AdminBlogCategoryListResponse,
   AdminPendingAuthorApplicationListResponse,
   AdminPendingPublicationReviewListResponse,
   AdminPublicationDirectoryResponse,
@@ -128,6 +131,21 @@ export async function unblockAdminPublishingAuthor(
   );
 }
 
+/** Pack 16G — Admin Trusted Publishing (publish without manual review). */
+export async function setAdminAuthorTrustedPublishing(
+  participantId: string,
+  publishWithoutManualReview: boolean,
+): Promise<AdminAuthorTrustedPublishingCommandResult> {
+  return apiRequest<AdminAuthorTrustedPublishingCommandResult>(
+    `/api/v1/admin/publishing/authors/${encodeURIComponent(participantId)}/trusted-publishing`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publishWithoutManualReview }),
+    },
+  );
+}
+
 export async function listAdminPublishingPublications(query: {
   status?: AdminPublicationDirectoryStatusFilter;
   q?: string;
@@ -177,6 +195,70 @@ export async function unblockAdminPublishingPublication(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(reason ? { reason } : {}),
+    },
+  );
+}
+
+/** Pack 16F — Publication Categories */
+export async function listAdminBlogCategories(): Promise<AdminBlogCategoryListResponse> {
+  return apiRequest<AdminBlogCategoryListResponse>("/api/v1/admin/publishing/categories");
+}
+
+export async function createAdminBlogCategory(input: {
+  name: string;
+  slug?: string;
+  description?: string;
+  categoryId?: string;
+}): Promise<AdminBlogCategoryItem> {
+  return apiRequest<AdminBlogCategoryItem>("/api/v1/admin/publishing/categories", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateAdminBlogCategory(
+  categoryId: string,
+  input: { name?: string; slug?: string; description?: string },
+): Promise<AdminBlogCategoryItem> {
+  return apiRequest<AdminBlogCategoryItem>(
+    `/api/v1/admin/publishing/categories/${encodeURIComponent(categoryId)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export async function activateAdminBlogCategory(
+  categoryId: string,
+): Promise<AdminBlogCategoryItem> {
+  return apiRequest<AdminBlogCategoryItem>(
+    `/api/v1/admin/publishing/categories/${encodeURIComponent(categoryId)}/activate`,
+    { method: "POST" },
+  );
+}
+
+export async function deactivateAdminBlogCategory(
+  categoryId: string,
+): Promise<AdminBlogCategoryItem> {
+  return apiRequest<AdminBlogCategoryItem>(
+    `/api/v1/admin/publishing/categories/${encodeURIComponent(categoryId)}/deactivate`,
+    { method: "POST" },
+  );
+}
+
+export async function deleteAdminBlogCategory(
+  categoryId: string,
+  input?: { reassignToCategoryId?: string },
+): Promise<{ deleted: true; reassignedCount: number }> {
+  return apiRequest<{ deleted: true; reassignedCount: number }>(
+    `/api/v1/admin/publishing/categories/${encodeURIComponent(categoryId)}`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input ?? {}),
     },
   );
 }

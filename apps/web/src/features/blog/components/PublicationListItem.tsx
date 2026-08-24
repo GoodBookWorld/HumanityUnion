@@ -1,10 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 import type { BlogAuthorWorkspacePostSummary, BlogCategoryId } from "@hu/types";
 import { BLOG_CATEGORIES } from "@hu/types";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
+import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
+import { formatAuthFormError } from "../../../lib/api-client";
+import { archiveBlogPost, startPublishedCorrection } from "../publishing-api";
 import { BlogCoverImage } from "./BlogCoverImage";
 
 function categoryName(categoryId: BlogCategoryId): string {
@@ -48,14 +54,56 @@ function formatDate(value?: string): string {
 export interface PublicationListItemProps {
   post: BlogAuthorWorkspacePostSummary;
   canDirectPublish: boolean;
+  /** Pack 13B — Author soft-block disables mutations. */
+  mutationsDisabled?: boolean;
+  onMutated?: () => void;
 }
 
-export function PublicationListItem({ post, canDirectPublish }: PublicationListItemProps) {
-  const editable =
-    !post.administrativelyBlocked &&
-    (post.status === "draft" ||
-      post.status === "scheduled" ||
-      (post.status === "published" && canDirectPublish));
+export function PublicationListItem({
+  post,
+  canDirectPublish,
+  mutationsDisabled = false,
+  onMutated,
+}: PublicationListItemProps) {
+  const router = useRouter();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [correctionOpen, setCorrectionOpen] = useState(false);
+
+  const blocked = post.administrativelyBlocked === true;
+  const canMutate = !mutationsDisabled && !blocked;
+  const editableDraftOrScheduled =
+    canMutate && (post.status === "draft" || post.status === "scheduled");
+  const publishedManageable = canMutate && post.status === "published";
+
+  async function runDelete() {
+    setBusy("delete");
+    setActionError(null);
+    try {
+      await archiveBlogPost(post.postId);
+      setDeleteOpen(false);
+      onMutated?.();
+    } catch (error) {
+      setActionError(formatAuthFormError(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runCorrection() {
+    setBusy("correct");
+    setActionError(null);
+    try {
+      await startPublishedCorrection(post.postId);
+      setCorrectionOpen(false);
+      router.push(`/workspace/publishing/${encodeURIComponent(post.postId)}`);
+    } catch (error) {
+      setActionError(formatAuthFormError(error));
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <Card className="publication-list-item">
@@ -72,8 +120,9 @@ export function PublicationListItem({ post, canDirectPublish }: PublicationListI
         <p className="hu-caption">
           {categoryName(post.categoryId)} · {statusLabel(post)}
         </p>
-        {post.administrativelyBlocked ? (
-          <p className="hu-caption">Blocked by administrator</p>
+        {blocked ? <p className="hu-caption">Blocked by administrator</p> : null}
+        {mutationsDisabled ? (
+          <p className="hu-caption">Author publishing is blocked — Edit/Delete unavailable.</p>
         ) : null}
         {post.review.reviewStatus === "changes_requested" && post.review.reviewNote ? (
           <p className="hu-body">Editor note: {post.review.reviewNote}</p>
@@ -84,10 +133,40 @@ export function PublicationListItem({ post, canDirectPublish }: PublicationListI
             {post.status === "scheduled" ? "Scheduled" : "Published"} {formatDate(post.publishedAt)}
           </p>
         ) : null}
+        {actionError ? (
+          <p className="hu-caption" role="alert">
+            {actionError}
+          </p>
+        ) : null}
         <div className="publication-list-item__actions hu-form-actions">
-          {editable ? (
+          {editableDraftOrScheduled ? (
             <Button href={`/workspace/publishing/${post.postId}`} variant="primary">
               Edit
+            </Button>
+          ) : null}
+          {publishedManageable && canDirectPublish ? (
+            <Button href={`/workspace/publishing/${post.postId}`} variant="primary">
+              Edit / Correct
+            </Button>
+          ) : null}
+          {publishedManageable && !canDirectPublish ? (
+            <Button
+              type="button"
+              variant="primary"
+              disabled={busy !== null}
+              onClick={() => setCorrectionOpen(true)}
+            >
+              Edit / Correct
+            </Button>
+          ) : null}
+          {publishedManageable ? (
+            <Button
+              type="button"
+              variant="danger"
+              disabled={busy !== null}
+              onClick={() => setDeleteOpen(true)}
+            >
+              Delete
             </Button>
           ) : null}
           {post.status === "draft" ||
@@ -97,7 +176,7 @@ export function PublicationListItem({ post, canDirectPublish }: PublicationListI
               Preview
             </Button>
           ) : null}
-          {post.status === "published" && !post.administrativelyBlocked ? (
+          {post.status === "published" && !blocked ? (
             <Button href={`/blog/${post.slug}`} variant="secondary">
               View Public
             </Button>
@@ -109,6 +188,28 @@ export function PublicationListItem({ post, canDirectPublish }: PublicationListI
           ) : null}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={correctionOpen}
+        title="Start correction?"
+        description="This removes the publication from the public Blog while you edit. Changes must be submitted for review before the article is public again. The same publication identity (post id and slug) is preserved."
+        confirmLabel={busy === "correct" ? "Starting…" : "Start correction"}
+        destructive={false}
+        isConfirming={busy === "correct"}
+        onCancel={() => setCorrectionOpen(false)}
+        onConfirm={() => void runCorrection()}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteOpen}
+        title="Delete this publication?"
+        description="The publication is archived and removed from the public Blog. The record is preserved for accountability — this is not a hard delete."
+        confirmLabel={busy === "delete" ? "Deleting…" : "Delete"}
+        destructive
+        isConfirming={busy === "delete"}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={() => void runDelete()}
+      />
     </Card>
   );
 }

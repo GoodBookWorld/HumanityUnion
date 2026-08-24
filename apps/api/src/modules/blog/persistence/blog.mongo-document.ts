@@ -40,6 +40,8 @@ export interface BlogPostMongoDocument {
   administrativelyBlockedByParticipantId?: string;
   administrativeBlockReason?: string;
   legacy?: BlogPostLegacyMigration;
+  /** Pack 16C */
+  optimization?: BlogPost["optimization"];
 }
 
 export interface BlogCapabilityGrantMongoDocument {
@@ -52,6 +54,8 @@ export interface BlogCapabilityGrantMongoDocument {
   administrativelyBlockedAt?: string;
   administrativelyBlockedByParticipantId?: string;
   administrativeBlockReason?: string;
+  /** Pack 16G — Trusted Publishing; omit/false = OFF. */
+  publishWithoutManualReview?: boolean;
 }
 
 export interface BlogAuthorApplicationMongoDocument {
@@ -138,6 +142,35 @@ export function toBlogPostMongoDocument(post: BlogPost): BlogPostMongoDocument {
       : undefined,
     ...pickModerationBlockFields(post),
     legacy: post.legacy ? { ...post.legacy } : undefined,
+    ...(post.optimization ? { optimization: structuredCloneOptimization(post.optimization) } : {}),
+  };
+}
+
+function structuredCloneOptimization(
+  optimization: NonNullable<BlogPost["optimization"]>,
+): NonNullable<BlogPost["optimization"]> {
+  return {
+    ...(optimization.seoTitle ? { seoTitle: optimization.seoTitle } : {}),
+    ...(optimization.seoDescription ? { seoDescription: optimization.seoDescription } : {}),
+    ...(optimization.socialTitle ? { socialTitle: optimization.socialTitle } : {}),
+    ...(optimization.socialDescription
+      ? { socialDescription: optimization.socialDescription }
+      : {}),
+    ...(optimization.socialImage !== undefined
+      ? {
+          socialImage: optimization.socialImage ? { ...optimization.socialImage } : null,
+        }
+      : {}),
+    ...(optimization.distribution
+      ? {
+          distribution: {
+            huSocialShare: optimization.distribution.huSocialShare,
+            authorExternalAccounts: optimization.distribution.authorExternalAccounts.map(
+              (account) => ({ ...account }),
+            ),
+          },
+        }
+      : {}),
   };
 }
 
@@ -174,6 +207,7 @@ export function fromBlogPostMongoDocument(doc: BlogPostMongoDocument): BlogPost 
     editorialHistory: doc.editorialHistory?.map((entry) => ({ ...entry })),
     ...pickModerationBlockFields(doc),
     legacy: doc.legacy ? { ...doc.legacy } : undefined,
+    ...(doc.optimization ? { optimization: structuredCloneOptimization(doc.optimization) } : {}),
   };
 }
 
@@ -186,6 +220,9 @@ export function toBlogCapabilityGrantMongoDocument(
     updatedAt: grant.updatedAt,
     grantedByParticipantId: grant.grantedByParticipantId,
     ...pickModerationBlockFields(grant),
+    ...(grant.publishWithoutManualReview === true
+      ? { publishWithoutManualReview: true }
+      : {}),
   };
 }
 
@@ -198,6 +235,9 @@ export function fromBlogCapabilityGrantMongoDocument(
     updatedAt: doc.updatedAt,
     grantedByParticipantId: doc.grantedByParticipantId,
     ...pickModerationBlockFields(doc),
+    ...(doc.publishWithoutManualReview === true
+      ? { publishWithoutManualReview: true }
+      : {}),
   };
 }
 

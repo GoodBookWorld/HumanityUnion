@@ -83,8 +83,9 @@ describe("Pack 15B — CKEditor 5 authoring workspace", () => {
     const css = readWeb("features/blog/publishing.css");
     assert.match(css, /minmax\(0,\s*2\.6fr\)/);
     assert.match(css, /--hu-scroll-margin-top/);
-    assert.match(css, /--hu-z-sticky/);
+    assert.match(css, /--hu-publishing-editor-chrome-offset|--hu-z-sticky/);
     assert.match(css, /\.ck\.ck-editor__top/);
+    assert.match(css, /--hu-publishing-editor-chrome-offset/);
 
     const newPage = readWeb("app/workspace/publishing/new/page.tsx");
     assert.match(newPage, /assistantPlacement="compact"/);

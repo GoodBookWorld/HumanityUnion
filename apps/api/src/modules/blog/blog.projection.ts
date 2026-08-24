@@ -9,6 +9,7 @@ import type {
 } from "@hu/types";
 
 import { getBlogCategoryById } from "./blog-categories.js";
+import { resolvePublicBlogPostSeo } from "./blog-seo.js";
 
 export function toBlogAuthorWorkspacePost(post: BlogPost): BlogAuthorWorkspacePost {
   return {
@@ -34,6 +35,31 @@ export function toBlogAuthorWorkspacePost(post: BlogPost): BlogAuthorWorkspacePo
       ? { administrativelyBlocked: true }
       : {}),
     editorialHistory: post.editorialHistory?.map((entry) => ({ ...entry })),
+    ...(post.optimization
+      ? {
+          optimization: {
+            ...post.optimization,
+            ...(post.optimization.socialImage !== undefined
+              ? {
+                  socialImage: post.optimization.socialImage
+                    ? { ...post.optimization.socialImage }
+                    : null,
+                }
+              : {}),
+            ...(post.optimization.distribution
+              ? {
+                  distribution: {
+                    huSocialShare: post.optimization.distribution.huSocialShare,
+                    authorExternalAccounts:
+                      post.optimization.distribution.authorExternalAccounts.map((account) => ({
+                        ...account,
+                      })),
+                  },
+                }
+              : {}),
+          },
+        }
+      : {}),
   };
 }
 
@@ -73,6 +99,7 @@ export function toBlogPreviewProjection(
     status: post.status,
     reactionCounts: { helpful: 0, notHelpful: 0 },
     commentCount: 0,
+    seo: resolvePublicBlogPostSeo(post),
   };
 }
 
@@ -134,6 +161,7 @@ export function toPublicBlogPostDetail(
     },
     currentUserReaction: engagement?.currentUserReaction,
     commentCount: engagement?.commentCount ?? 0,
+    seo: resolvePublicBlogPostSeo(post),
   };
 }
 
@@ -152,6 +180,9 @@ export function assertNoInternalBlogFields(payload: unknown): void {
     "authorParticipantId",
     "submittedByParticipantId",
     "publishedByParticipantId",
+    '"optimization"',
+    "huSocialShare",
+    "authorExternalAccounts",
   ];
 
   for (const key of forbidden) {
@@ -167,19 +198,20 @@ export function blogPostToSearchMetadata(post: BlogPost): CivicSearchMetadata | 
   }
 
   const category = getBlogCategoryById(post.categoryId);
+  const seo = resolvePublicBlogPostSeo(post);
 
   return {
     entityType: "blog_post",
     entityId: post.postId,
-    title: post.title,
-    summary: post.excerpt || post.title,
+    title: seo.title,
+    summary: seo.description,
     country: "",
     region: "",
     community: "",
     activityArea: category?.name ?? "",
     status: post.status,
-    publicUrl: `/blog/${encodeURIComponent(post.slug)}`,
+    publicUrl: seo.canonicalPath,
     updatedAt: post.updatedAt,
-    imageUrl: post.coverMedia?.mediaUrl,
+    imageUrl: seo.socialImage?.mediaUrl ?? post.coverMedia?.mediaUrl,
   };
 }

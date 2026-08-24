@@ -39,6 +39,12 @@ import {
   surfaceIdFromLifecycleStage,
 } from "./assistant-specialization.js";
 import {
+  BLOG_PUBLICATION_AUTHORING_OPS,
+  blogAuthoringInstructionBlock,
+  buildBlogAuthoringSourceContext,
+  isBlogPublicationAuthoringPath,
+} from "./blog-authoring-assistant.js";
+import {
   boundConversationHistory,
   enforcePromptBudget,
   estimatePromptChars,
@@ -179,6 +185,30 @@ export async function getHumanityUnionAssistantSessionContext(
   let allowedOperations = [...specialization.defaultOperations];
   let canApplySuggestionsToDraft = false;
   let sourceContentLanguage: HumanityUnionAssistantSessionContext["sourceContentLanguage"] = null;
+  let specializationSummary = specialization.specializationSummary;
+  let suggestedQuestions = specialization.suggestedQuestions;
+  let pageLabel = specialization.pageLabel;
+  let featureLabel = specialization.featureLabel;
+
+  const blogAuthoring = surfaceId === "blog" && isBlogPublicationAuthoringPath(query.pagePath);
+  if (blogAuthoring) {
+    allowedOperations = [...BLOG_PUBLICATION_AUTHORING_OPS];
+    canApplySuggestionsToDraft = true;
+    presentationMode = "author_workspace";
+    stageLabel = "Publication Authoring";
+    pageLabel = "Publication editor";
+    featureLabel = "Publication Authoring";
+    specializationSummary =
+      "Suggest title, wording, structure, SEO, and social preview improvements. Author must Apply or Dismiss — Assistant never publishes.";
+    suggestedQuestions = [
+      "Suggest a clearer title.",
+      "Improve clarity and readability.",
+      "Suggest structure improvements.",
+      "Suggest an SEO title and meta description.",
+      "Suggest keywords and topics.",
+      "Suggest social preview title and description.",
+    ];
+  }
 
   if (initiativeId) {
     const initiative = getInitiativeById(initiativeId);
@@ -237,10 +267,10 @@ export async function getHumanityUnionAssistantSessionContext(
 
   return {
     assistantName: HUMANITY_UNION_ASSISTANT_PRODUCT_NAME,
-    greeting: buildGreeting(displayName, specialization.featureLabel),
+    greeting: buildGreeting(displayName, featureLabel),
     participantDisplayName: displayName,
-    currentPageLabel: specialization.pageLabel,
-    currentFeatureLabel: specialization.featureLabel,
+    currentPageLabel: pageLabel,
+    currentFeatureLabel: featureLabel,
     surfaceId,
     initiativeId,
     initiativeTitle,
@@ -248,8 +278,8 @@ export async function getHumanityUnionAssistantSessionContext(
     stageLabel,
     presentationMode,
     viewerRole,
-    specializationSummary: specialization.specializationSummary,
-    suggestedQuestions: specialization.suggestedQuestions,
+    specializationSummary,
+    suggestedQuestions,
     availableSourceLabels,
     allowedOperations,
     allowedActionLabels: allowedOperations.map(operationLabel),
@@ -388,6 +418,22 @@ export async function requestHumanityUnionAssistantAssist(
       specialization.specializationSummary;
     let allowedOperations = [...specialization.defaultOperations];
     let lifecycleProfile: string | undefined;
+    let specializationInstructions = specialization.instructionBlock;
+    const blogAuthoring = surfaceId === "blog" && isBlogPublicationAuthoringPath(body.pagePath);
+
+    if (blogAuthoring) {
+      allowedOperations = [...BLOG_PUBLICATION_AUTHORING_OPS];
+      presentationMode = "author_workspace";
+      stageLabel = "Publication Authoring";
+      specializationInstructions = blogAuthoringInstructionBlock(specialization.instructionBlock);
+      sourceContextSummary = buildBlogAuthoringSourceContext({
+        pagePath: body.pagePath,
+        draftExcerpt: body.currentDraftExcerpt,
+      });
+      availableSourceLabels = ["Author-provided publication draft excerpt"];
+      initiativeTitle =
+        body.currentDraftExcerpt?.match(/^title:\s*(.+)$/im)?.[1]?.trim() || "Publication draft";
+    }
 
     if (initiativeId) {
       const initiative = getInitiativeById(initiativeId);
@@ -451,6 +497,14 @@ export async function requestHumanityUnionAssistantAssist(
             "Draft assistance is only available in Author Workspace.",
           );
         }
+      }
+    } else if (blogAuthoring) {
+      // Pack 16D — publication editor may use draft ops without an Initiative id.
+      if (!allowedOperations.includes(body.operation)) {
+        throw new LifecycleAiError(
+          "bad_request",
+          `Operation "${body.operation}" is not allowed for Blog publication authoring.`,
+        );
       }
     } else if (!specialization.defaultOperations.includes(body.operation)) {
       throw new LifecycleAiError(
@@ -547,8 +601,8 @@ export async function requestHumanityUnionAssistantAssist(
       targetSectionId: body.targetSectionId,
       sourceContextSummary,
       surfaceId,
-      featureLabel: specialization.featureLabel,
-      specializationInstructions: specialization.instructionBlock,
+      featureLabel: blogAuthoring ? "Publication Authoring" : specialization.featureLabel,
+      specializationInstructions,
       platformKnowledgePrompt: retrievedKnowledge.promptBlock,
       platformKnowledgeVersion: retrievedKnowledge.platformKnowledgeVersion,
       interfaceLanguage: languageContext.interfaceLanguage,
