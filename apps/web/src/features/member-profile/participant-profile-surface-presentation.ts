@@ -60,7 +60,7 @@ export function hasAnyStatistic(statistics: PublicParticipantStatistics | undefi
 
 /**
  * Launch Readiness UX Fix Pack 01 — identity-body metadata is country only.
- * Pack 17F — Organization renders in Participation Statistics above Skills.
+ * Pack 17F — Organization renders as its own public block (Pack 18C: left info card).
  */
 export function buildIdentityMetaLines(profile: Pick<PublicMemberProfile, "country">): string[] {
   return [profile.country].filter(

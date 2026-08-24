@@ -17,7 +17,7 @@ function read(relativeFromWebSrc: string): string {
 describe("Launch Readiness UX Fix Pack 01 — Blog / Profile / Header", () => {
   it("1 — Blog index uses the canonical page container", () => {
     const index = read("features/blog/components/BlogIndexPageContent.tsx");
-    assert.match(index, /className="blog-page hu-page-container"/);
+    assert.match(index, /className="blog-page hu-page-container[^"]*"/);
 
     const css = read("features/blog/blog.css");
     assert.match(css, /\.blog-page,\s*\n\.blog-article\s*\{[\s\S]*margin-inline:\s*auto/m);
@@ -27,7 +27,7 @@ describe("Launch Readiness UX Fix Pack 01 — Blog / Profile / Header", () => {
 
   it("2/3 — Article outer container is centered; reading measure stays narrower", () => {
     const article = read("features/blog/components/BlogArticlePageContent.tsx");
-    assert.match(article, /className="blog-article hu-page-container"/);
+    assert.match(article, /className="[^"]*\bblog-article\b[^"]*\bhu-page-container\b[^"]*"/);
 
     const css = read("features/blog/blog.css");
     assert.match(
@@ -58,14 +58,15 @@ describe("Launch Readiness UX Fix Pack 01 — Blog / Profile / Header", () => {
     assert.match(surface, /public-member-page__statistics/);
     assert.match(surface, /personal-statistics__grid/);
     assert.match(surface, /public-member-page__profile-context/);
-    // Pack 17F — Organization lives under statistics; Biography is full-width below the top row.
+    // Pack 18C — Organization in left info card; Biography full-width below body row.
     assert.match(surface, /public-member-page__biography/);
+    assert.match(surface, /public-member-page__info/);
     assert.match(surface, /icons\/workspace\/organization\.png/);
     assert.match(surface, /icons\/workspace\/skills\.png/);
     assert.match(surface, /icons\/workspace\/biography\.png/);
 
-    assert.match(css, /\.public-member-page__member-badge\s*\{[\s\S]*width:\s*48px/m);
-    assert.match(css, /\.public-member-page__member-badge\s*\{[\s\S]*height:\s*48px/m);
+    assert.match(css, /\.public-member-page__member-badge\s*\{[\s\S]*width:\s*40px/m);
+    assert.match(css, /\.public-member-page__member-badge\s*\{[\s\S]*height:\s*40px/m);
     assert.match(css, /object-fit:\s*contain/);
 
     assert.match(presentation, /MEMBER_BADGE_IMAGE_PATH/);

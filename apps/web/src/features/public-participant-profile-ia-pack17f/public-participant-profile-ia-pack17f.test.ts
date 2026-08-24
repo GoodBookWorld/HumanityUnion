@@ -1,5 +1,7 @@
 /**
  * Pack 17F — Public Participant profile information architecture.
+ * Pack 18C — Organization/Skills live in the left info card (still above Skills;
+ * not under Participation Statistics).
  */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -35,28 +37,29 @@ describe("Pack 17F — public participant profile information architecture", () 
     }
   });
 
-  it("orders Organization above Skills in statistics; Biography below top row once", () => {
+  it("orders Organization above Skills once; Biography below body; not in statistics", () => {
     const surface = readWeb("features/member-profile/components/ParticipantProfileSurface.tsx");
     const organizationIdx = surface.indexOf('id="organization"');
     const skillsIdx = surface.indexOf('id="skills"');
+    const infoIdx = surface.indexOf("public-member-page__info");
     const statisticsIdx = surface.indexOf("public-member-page__statistics");
     const biographySectionIdx = surface.indexOf("public-member-page__biography");
     const identityIdx = surface.indexOf("public-member-page__identity");
 
-    assert.ok(statisticsIdx > identityIdx);
-    assert.ok(organizationIdx > statisticsIdx);
+    assert.ok(infoIdx > identityIdx);
+    assert.ok(organizationIdx > infoIdx);
     assert.ok(skillsIdx > organizationIdx);
     assert.ok(biographySectionIdx > skillsIdx);
     assert.equal((surface.match(/id="biography"/g) ?? []).length, 1);
     assert.equal((surface.match(/id="organization"/g) ?? []).length, 1);
 
-    // Biography must not remain inside the identity card after Pack 17F.
-    const identityBlock = surface.slice(
-      identityIdx,
-      surface.indexOf("public-member-page__statistics"),
+    const statsBlock = surface.slice(
+      statisticsIdx,
+      surface.indexOf("public-member-page__biography"),
     );
-    assert.doesNotMatch(identityBlock, /id="biography"/);
-    assert.doesNotMatch(identityBlock, /id="organization"/);
+    assert.doesNotMatch(statsBlock, /id="organization"/);
+    assert.doesNotMatch(statsBlock, /id="skills"/);
+    assert.doesNotMatch(statsBlock, /id="biography"/);
 
     assert.match(surface, /icons\/workspace\/biography\.png/);
     assert.match(surface, /icons\/workspace\/organization\.png/);
@@ -77,10 +80,8 @@ describe("Pack 17F — public participant profile information architecture", () 
     );
     assert.match(links, /hasConfiguredProfessionalLinks/);
     assert.match(links, /rel="noopener noreferrer"/);
-    assert.match(links, /icons8-facebook\.svg/);
-    assert.match(links, /icons8-youtube\.svg/);
-    assert.match(links, /icons8-instagram\.svg/);
-    assert.match(links, /icons8-x\.svg/);
+    assert.match(links, /PLATFORM_SOCIAL_NETWORK_ICON_PATHS/);
+    assert.match(links, /platform-social-network-icons/);
   });
 
   it("Recent Public Initiatives uses Pack 17A disclosure semantics", () => {

@@ -13,6 +13,7 @@ import { PLATFORM_SOCIAL_NETWORKS } from "@hu/types";
 
 import { HelperText } from "../../../design-system/components/HelperText";
 import { fetchPublicPlatformSocialAccounts } from "../../platform-social-accounts/platform-social-accounts-public-api";
+import { PLATFORM_SOCIAL_NETWORK_ICON_PATHS } from "../../platform-social-accounts/platform-social-network-icons";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { BlogCoverField } from "./BlogCoverField";
 
@@ -345,6 +346,14 @@ export function BlogPublicationOptimizationPanel({
                         onChange={(event) => {
                           setChannelPermitted(networkId, event.target.checked);
                         }}
+                      />
+                      <img
+                        src={PLATFORM_SOCIAL_NETWORK_ICON_PATHS[networkId]}
+                        alt=""
+                        className="blog-publication-optimization__network-icon"
+                        width={18}
+                        height={18}
+                        aria-hidden="true"
                       />
                       <span>
                         {label}

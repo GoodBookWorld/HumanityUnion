@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "../../../design-system/components/Button";
+import { PLATFORM_SOCIAL_NETWORK_ICON_PATHS } from "../../platform-social-accounts/platform-social-network-icons";
 import { resolveSaveButtonLabel, type SaveButtonPhase } from "../use-save-button-phase";
 
 import "./member-professional-links.css";
@@ -36,25 +37,25 @@ const PROFESSIONAL_LINK_FIELDS: readonly {
   {
     key: "facebookUrl",
     label: "Facebook",
-    iconSrc: "/icons/civic/icons8-facebook.svg",
+    iconSrc: PLATFORM_SOCIAL_NETWORK_ICON_PATHS.facebook,
     placeholder: "https://www.facebook.com/your-profile",
   },
   {
     key: "youtubeUrl",
     label: "YouTube",
-    iconSrc: "/icons/civic/icons8-youtube.svg",
+    iconSrc: PLATFORM_SOCIAL_NETWORK_ICON_PATHS.youtube,
     placeholder: "https://www.youtube.com/@your-channel",
   },
   {
     key: "instagramUrl",
     label: "Instagram",
-    iconSrc: "/icons/civic/icons8-instagram.svg",
+    iconSrc: PLATFORM_SOCIAL_NETWORK_ICON_PATHS.instagram,
     placeholder: "https://www.instagram.com/your-profile",
   },
   {
     key: "xUrl",
     label: "X",
-    iconSrc: "/icons/civic/icons8-x.svg",
+    iconSrc: PLATFORM_SOCIAL_NETWORK_ICON_PATHS.x,
     placeholder: "https://x.com/your-handle",
   },
 ];

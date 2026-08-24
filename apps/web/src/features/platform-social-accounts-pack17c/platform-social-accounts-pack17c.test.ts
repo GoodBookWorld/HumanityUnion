@@ -32,16 +32,22 @@ describe("Pack 17C — platform social accounts UI", () => {
     const panel = readWeb(
       "features/administration/components/AdminPlatformSocialAccountsPanel.tsx",
     );
-    assert.match(panel, /facebook: "\/icons\/civic\/icons8-facebook\.svg"/);
-    assert.match(panel, /youtube: "\/icons\/civic\/icons8-youtube\.svg"/);
-    assert.match(panel, /instagram: "\/icons\/civic\/icons8-instagram\.svg"/);
-    assert.match(panel, /x: "\/icons\/civic\/icons8-x\.svg"/);
+    assert.match(panel, /PLATFORM_SOCIAL_NETWORK_ICON_PATHS/);
+    assert.match(panel, /platform-social-network-icons/);
     assert.match(panel, /saveAdminPlatformSocialAccount/);
     assert.match(panel, /clearAdminPlatformSocialAccount/);
     assert.match(panel, /URL saved/);
     assert.match(panel, /URL cleared/);
     assert.match(panel, /admin-platform-social__success/);
     assert.doesNotMatch(panel, /password|oauth|api[_-]?token|clientSecret/i);
+
+    const icons = readWeb(
+      "features/platform-social-accounts/platform-social-network-icons.ts",
+    );
+    assert.match(icons, /icons8-facebook\.svg/);
+    assert.match(icons, /icons8-youtube\.svg/);
+    assert.match(icons, /icons8-instagram\.svg/);
+    assert.match(icons, /icons8-x\.svg/);
   });
 
   it("footer social list resolves canonical API settings without hardcoded destination URLs", () => {

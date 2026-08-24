@@ -1,7 +1,7 @@
 /**
- * Pack 16B / 17B — Publishing editor sticky / scroll architecture.
- * Pack 17B: chrome is no longer sticky; CK toolbar sticks under platform header;
- * desktop writing viewport scrolls internally.
+ * Pack 16B / 17B / 18A — Publishing editor sticky / scroll architecture.
+ * Pack 17B: chrome is no longer sticky; desktop writing viewport scrolls internally.
+ * Pack 18A: CK toolbar is static at top of Article Content frame (not viewport-sticky).
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -17,21 +17,18 @@ function readWeb(relativePath: string): string {
 }
 
 describe("Pack 16B/17B — Publishing editor sticky & scroll architecture", () => {
-  it("chrome participates in normal flow (not sticky); toolbar under platform header", () => {
+  it("chrome participates in normal flow (not sticky); toolbar static in editor frame", () => {
     const css = readWeb("features/blog/publishing.css");
     const chromeBlock = css.match(/\.blog-post-editor__chrome\s*\{[^}]+\}/);
     assert.ok(chromeBlock, "chrome rule present");
     assert.match(chromeBlock[0], /position:\s*static/);
     assert.doesNotMatch(chromeBlock[0], /position:\s*sticky/);
 
-    assert.match(
-      css,
-      /\.ck\.ck-editor__top[\s\S]*top:\s*var\(--hu-scroll-margin-top/s,
+    const topStatic = css.match(
+      /\.blog-rich-text--ckeditor\s+\.ck\.ck-editor__top\s*\{[^}]*position:\s*static[^}]*\}/s,
     );
-    assert.match(
-      css,
-      /\.ck\.ck-editor__top[\s\S]*z-index:\s*var\(--hu-z-sticky/s,
-    );
+    assert.ok(topStatic);
+    assert.doesNotMatch(topStatic[0], /position:\s*sticky/);
   });
 
   it("aside sticky clears platform header without chrome band magic", () => {
@@ -51,10 +48,7 @@ describe("Pack 16B/17B — Publishing editor sticky & scroll architecture", () =
 
     const mobile = css.slice(css.indexOf("@media (max-width: 768px)"));
     assert.match(mobile, /\.ck\.ck-editor__main[\s\S]*overflow:\s*visible/s);
-    assert.match(
-      mobile,
-      /\.ck\.ck-editor__top[\s\S]*top:\s*var\(--hu-scroll-margin-top/s,
-    );
+    assert.match(mobile, /\.ck\.ck-editor__top[\s\S]*position:\s*static/s);
   });
 
   it("new + edit publishing routes still mount BlogPostEditor", () => {

@@ -2,16 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-import type { PlatformSocialAccountPublic, PlatformSocialNetworkId } from "@hu/types";
+import type { PlatformSocialAccountPublic } from "@hu/types";
 
 import { fetchPublicPlatformSocialAccounts } from "../../platform-social-accounts/platform-social-accounts-public-api";
-
-const SOCIAL_ICON_PATHS: Record<PlatformSocialNetworkId, string> = {
-  facebook: "/icons/civic/icons8-facebook.svg",
-  youtube: "/icons/civic/icons8-youtube.svg",
-  instagram: "/icons/civic/icons8-instagram.svg",
-  x: "/icons/civic/icons8-x.svg",
-};
+import { PLATFORM_SOCIAL_NETWORK_ICON_PATHS } from "../../platform-social-accounts/platform-social-network-icons";
 
 /**
  * Pack 17C — public footer social icons resolve from canonical Admin settings.
@@ -55,7 +49,7 @@ export function FooterSocialLinks() {
             aria-label={social.label}
           >
             <img
-              src={SOCIAL_ICON_PATHS[social.networkId]}
+              src={PLATFORM_SOCIAL_NETWORK_ICON_PATHS[social.networkId]}
               alt=""
               className="public-experience-footer__social-icon"
               width={24}

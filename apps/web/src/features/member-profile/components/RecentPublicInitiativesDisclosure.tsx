@@ -20,7 +20,7 @@ export function RecentPublicInitiativesDisclosure({
 
   return (
     <section
-      className="public-member-page__initiatives hu-surface-raised"
+      className="public-member-page__initiatives"
       aria-label="Recent Public Initiatives"
     >
       <button

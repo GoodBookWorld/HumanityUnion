@@ -11,15 +11,9 @@ import {
   fetchAdminPlatformSocialAccounts,
   saveAdminPlatformSocialAccount,
 } from "../admin-platform-social-accounts-api";
+import { PLATFORM_SOCIAL_NETWORK_ICON_PATHS } from "../../platform-social-accounts/platform-social-network-icons";
 
 import "./admin-platform-social-accounts.css";
-
-const SOCIAL_ICON_PATHS: Record<PlatformSocialNetworkId, string> = {
-  facebook: "/icons/civic/icons8-facebook.svg",
-  youtube: "/icons/civic/icons8-youtube.svg",
-  instagram: "/icons/civic/icons8-instagram.svg",
-  x: "/icons/civic/icons8-x.svg",
-};
 
 interface RowState {
   url: string;
@@ -160,7 +154,7 @@ export function AdminPlatformSocialAccountsPanel() {
             <li key={account.networkId} className="admin-platform-social__row">
               <div className="admin-platform-social__identity">
                 <img
-                  src={SOCIAL_ICON_PATHS[account.networkId]}
+                  src={PLATFORM_SOCIAL_NETWORK_ICON_PATHS[account.networkId]}
                   alt=""
                   className="admin-platform-social__icon"
                   width={24}

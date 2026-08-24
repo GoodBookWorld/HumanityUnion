@@ -92,11 +92,17 @@ describe("Pack 17H — final Block 17 social / publishing / profile certificatio
     const panel = readWeb(
       "features/administration/components/AdminPlatformSocialAccountsPanel.tsx",
     );
-    for (const network of ["facebook", "youtube", "instagram", "x"]) {
-      assert.match(panel, new RegExp(network));
-    }
+    assert.match(panel, /PLATFORM_SOCIAL_NETWORK_ICON_PATHS/);
+    assert.match(panel, /platform-social-network-icons/);
     assert.match(panel, /URL saved|URL cleared/);
     assert.doesNotMatch(panel, /password|oauth|api[_-]?token|clientSecret/i);
+
+    const icons = readWeb(
+      "features/platform-social-accounts/platform-social-network-icons.ts",
+    );
+    for (const network of ["facebook", "youtube", "instagram", "x"]) {
+      assert.match(icons, new RegExp(network));
+    }
 
     const collections = readApi("infrastructure/mongodb/mongo-collections.ts");
     assert.match(collections, /platform_social_accounts/);

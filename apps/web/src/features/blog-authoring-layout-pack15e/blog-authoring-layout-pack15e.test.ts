@@ -42,7 +42,7 @@ describe("Pack 15E — Blog authoring & layout final certification", () => {
     assert.match(css, /\.blog-cover-field__image[\s\S]*object-fit:\s*cover/s);
   });
 
-  it("3–6 CKEditor formatting, inline image, alt/caption, sticky toolbar (15B)", () => {
+  it("3–6 CKEditor formatting, inline image, alt/caption, toolbar at editor top (15B/18A)", () => {
     const rich = readWeb("features/blog/components/BlogRichTextEditorClient.tsx");
     const adapter = readWeb("features/blog/ckeditor-upload-adapter.ts");
     const css = readWeb("features/blog/publishing.css");
@@ -60,7 +60,12 @@ describe("Pack 15E — Blog authoring & layout final certification", () => {
     assert.match(rich, /ImageCaption|toggleImageCaption/);
     assert.match(adapter, /uploadBlogImage/);
     assert.doesNotMatch(adapter, /ckeditor\.cloud|CKBox|EasyImage/i);
-    assert.match(css, /\.ck\.ck-editor__top[\s\S]*--hu-scroll-margin-top/s);
+    // Pack 18A — toolbar stays at top of Article Content frame (not viewport-sticky).
+    assert.match(
+      css,
+      /\.blog-rich-text--ckeditor\s+\.ck\.ck-editor__top\s*\{[^}]*position:\s*static/s,
+    );
+    assert.doesNotMatch(css, /\.ck\.ck-editor__top[\s\S]{0,240}--hu-scroll-margin-top/s);
     assert.match(sanitize, /"figure"/);
     assert.match(sanitize, /"figcaption"/);
   });

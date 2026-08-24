@@ -32,9 +32,9 @@ import "./participant-profile-surface.css";
  * Profile UX Pack 03.3 — shared visual structure for `/member/{publicName}`
  * and `/profile` owner preview.
  *
- * Pack 17F — information architecture:
- * top grid (identity + statistics) → full-width Biography → Initiatives disclosure.
- * Organization sits in Participation Statistics above Skills.
+ * Pack 18C — compact desktop profile card:
+ * identity row → info (links / org / skills) + statistics → Biography → Initiatives.
+ * Organization lives in the left info card (not duplicated under statistics).
  */
 export type ParticipantProfileSurfaceMode = "public" | "owner_preview";
 
@@ -151,26 +151,18 @@ export function ParticipantProfileSurface({
     isOwnerPreview &&
     shouldShowOwnerHiddenSectionNotice(hasRecentInitiatives, hiddenSections?.recentPublicInitiatives);
 
+  const showInfoColumn =
+    hasLinks || showLinksNotice || hasOrganization || hasSkills || showSkillsNotice;
   const showStatisticsColumn =
-    hasStatistics ||
-    showStatisticsNotice ||
-    hasParticipationArea ||
-    hasOrganization ||
-    hasSkills ||
-    showSkillsNotice;
+    hasStatistics || showStatisticsNotice || hasParticipationArea;
+  const showBodyRow = showInfoColumn || showStatisticsColumn;
   const showBiographySection = hasBiography || showBiographyNotice || isOwnerPreview;
   const showInitiativesSection = hasRecentInitiatives || showInitiativesNotice;
 
   return (
     <div className="public-member-page">
-      <div
-        className={
-          showStatisticsColumn
-            ? "public-member-page__top-row"
-            : "public-member-page__top-row public-member-page__top-row--single"
-        }
-      >
-        <section className="public-member-page__identity hu-surface-raised">
+      <article className="public-member-page__card hu-surface-raised">
+        <header className="public-member-page__identity">
           {showMemberBadge ? (
             <img
               className="public-member-page__member-badge"
@@ -185,7 +177,7 @@ export function ParticipantProfileSurface({
             <HumanityAvatar
               className="public-member-page__avatar"
               avatarUrl={profile.avatarUrl}
-              size={96}
+              size={72}
               alt=""
             />
             <div className="public-member-page__identity-text">
@@ -207,147 +199,163 @@ export function ParticipantProfileSurface({
               </div>
             ) : null}
           </div>
+        </header>
 
-          {/* Pack 17F — Professional Links stay in identity; Biography / Organization move out. */}
-          {hasLinks || showLinksNotice ? (
-            <div className="public-member-page__identity-info" id="professional-links">
-              <h2 className="public-member-page__identity-info-heading">Professional Links</h2>
-              {hasLinks ? (
-                <MemberProfessionalLinksDisplay
-                  website={profile.website}
-                  linkedinUrl={profile.linkedinUrl}
-                  facebookUrl={profile.facebookUrl}
-                  youtubeUrl={profile.youtubeUrl}
-                  instagramUrl={profile.instagramUrl}
-                  xUrl={profile.xUrl}
-                />
-              ) : (
-                <OwnerHiddenSectionNotice
-                  text="Professional links are hidden from your public profile."
-                  managePrivacyHref={ownerActionLinks!.managePrivacyHref}
-                />
-              )}
-            </div>
-          ) : null}
-        </section>
-
-        {showStatisticsColumn ? (
-          <section
-            className="public-member-page__statistics hu-surface-raised"
-            aria-label="Participation Statistics"
+        {showBodyRow ? (
+          <div
+            className={
+              showInfoColumn && showStatisticsColumn
+                ? "public-member-page__body-row"
+                : "public-member-page__body-row public-member-page__body-row--single"
+            }
           >
-            <h2 className="public-member-page__section-heading">Participation Statistics</h2>
-            {hasStatistics ? (
-              <ParticipantStatisticsRow cards={statisticCards} />
-            ) : showStatisticsNotice ? (
-              <OwnerHiddenSectionNotice
-                text="Participation Statistics are hidden from your public profile."
-                managePrivacyHref={ownerActionLinks!.managePrivacyHref}
-              />
+            {showInfoColumn ? (
+              <section className="public-member-page__info" aria-label="Professional information">
+                {hasLinks || showLinksNotice ? (
+                  <div className="public-member-page__profile-context" id="professional-links">
+                    <h2 className="public-member-page__profile-context-heading">
+                      Professional Links
+                    </h2>
+                    {hasLinks ? (
+                      <MemberProfessionalLinksDisplay
+                        website={profile.website}
+                        linkedinUrl={profile.linkedinUrl}
+                        facebookUrl={profile.facebookUrl}
+                        youtubeUrl={profile.youtubeUrl}
+                        instagramUrl={profile.instagramUrl}
+                        xUrl={profile.xUrl}
+                      />
+                    ) : (
+                      <OwnerHiddenSectionNotice
+                        text="Professional links are hidden from your public profile."
+                        managePrivacyHref={ownerActionLinks!.managePrivacyHref}
+                      />
+                    )}
+                  </div>
+                ) : null}
+
+                {hasOrganization ? (
+                  <div className="public-member-page__profile-context" id="organization">
+                    <HeadingWithIcon
+                      as="h2"
+                      className="public-member-page__profile-context-heading public-member-page__profile-context-heading--with-icon"
+                      iconSrc="/icons/workspace/organization.png"
+                    >
+                      Organization
+                    </HeadingWithIcon>
+                    <p className="public-member-page__organization-text">{profile.organization}</p>
+                  </div>
+                ) : null}
+
+                {hasSkills || showSkillsNotice ? (
+                  <div className="public-member-page__profile-context" id="skills">
+                    <HeadingWithIcon
+                      as="h2"
+                      className="public-member-page__profile-context-heading public-member-page__profile-context-heading--with-icon"
+                      iconSrc="/icons/workspace/skills.png"
+                    >
+                      Skills
+                    </HeadingWithIcon>
+                    {hasSkills ? (
+                      <ul className="public-member-page__skills-list" aria-label="Skills">
+                        {profile.skills?.map((skill) => (
+                          <li key={skill} className="public-member-page__skill-tag">
+                            {skill}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <OwnerHiddenSectionNotice
+                        text="Skills are hidden from your public profile."
+                        managePrivacyHref={ownerActionLinks!.managePrivacyHref}
+                      />
+                    )}
+                  </div>
+                ) : null}
+              </section>
             ) : null}
 
-            {hasParticipationArea ? (
-              <div
-                className="public-member-page__profile-context"
-                id="participation-area"
+            {showStatisticsColumn ? (
+              <section
+                className="public-member-page__statistics"
+                aria-label="Participation Statistics"
               >
-                <h3 className="public-member-page__profile-context-heading">
-                  Participation Area
-                </h3>
-                <ul
-                  className="public-member-page__context-chips"
-                  aria-label="Participation Area"
-                >
-                  {participationAreaLabels.map((label) => (
-                    <li key={label} className="public-member-page__context-chip">
-                      {label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            {/* Pack 17F — Organization immediately above Skills. */}
-            {hasOrganization ? (
-              <div className="public-member-page__profile-context" id="organization">
-                <HeadingWithIcon
-                  as="h3"
-                  className="public-member-page__profile-context-heading public-member-page__profile-context-heading--with-icon"
-                  iconSrc="/icons/workspace/organization.png"
-                >
-                  Organization
-                </HeadingWithIcon>
-                <p className="public-member-page__organization-text">{profile.organization}</p>
-              </div>
-            ) : null}
-
-            {hasSkills || showSkillsNotice ? (
-              <div className="public-member-page__profile-context" id="skills">
-                <HeadingWithIcon
-                  as="h3"
-                  className="public-member-page__profile-context-heading public-member-page__profile-context-heading--with-icon"
-                  iconSrc="/icons/workspace/skills.png"
-                >
-                  Skills
-                </HeadingWithIcon>
-                {hasSkills ? (
-                  <ul className="public-member-page__skills-list" aria-label="Skills">
-                    {profile.skills?.map((skill) => (
-                      <li key={skill} className="public-member-page__skill-tag">
-                        {skill}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
+                <h2 className="public-member-page__section-heading">Participation Statistics</h2>
+                {hasStatistics ? (
+                  <ParticipantStatisticsRow cards={statisticCards} />
+                ) : showStatisticsNotice ? (
                   <OwnerHiddenSectionNotice
-                    text="Skills are hidden from your public profile."
+                    text="Participation Statistics are hidden from your public profile."
                     managePrivacyHref={ownerActionLinks!.managePrivacyHref}
                   />
-                )}
-              </div>
+                ) : null}
+
+                {hasParticipationArea ? (
+                  <div
+                    className="public-member-page__profile-context"
+                    id="participation-area"
+                  >
+                    <h3 className="public-member-page__profile-context-heading">
+                      Participation Area
+                    </h3>
+                    <ul
+                      className="public-member-page__context-chips"
+                      aria-label="Participation Area"
+                    >
+                      {participationAreaLabels.map((label) => (
+                        <li key={label} className="public-member-page__context-chip">
+                          {label}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+          </div>
+        ) : null}
+
+        {showBiographySection ? (
+          <section className="public-member-page__biography" id="biography">
+            <HeadingWithIcon
+              as="h2"
+              className="public-member-page__section-heading public-member-page__section-heading--with-icon"
+              iconSrc="/icons/workspace/biography.png"
+            >
+              Biography
+            </HeadingWithIcon>
+            {hasBiography ? (
+              <p className="public-member-page__biography-text">{profile.biography}</p>
+            ) : showBiographyNotice ? (
+              <OwnerHiddenSectionNotice
+                text="Biography is hidden from your public profile."
+                managePrivacyHref={ownerActionLinks!.managePrivacyHref}
+              />
+            ) : isOwnerPreview ? (
+              <p className="public-member-page__owner-empty-prompt">
+                Add a biography to introduce yourself to collaborators.
+                <Link href={ownerActionLinks!.editProfileHref}>Edit Profile</Link>
+              </p>
             ) : null}
           </section>
         ) : null}
-      </div>
 
-      {/* Pack 17F — Biography full-width below identity + statistics. */}
-      {showBiographySection ? (
-        <section className="public-member-page__biography hu-surface-raised" id="biography">
-          <HeadingWithIcon
-            as="h2"
-            className="public-member-page__section-heading public-member-page__section-heading--with-icon"
-            iconSrc="/icons/workspace/biography.png"
-          >
-            Biography
-          </HeadingWithIcon>
-          {hasBiography ? (
-            <p className="public-member-page__biography-text">{profile.biography}</p>
-          ) : showBiographyNotice ? (
-            <OwnerHiddenSectionNotice
-              text="Biography is hidden from your public profile."
-              managePrivacyHref={ownerActionLinks!.managePrivacyHref}
-            />
-          ) : isOwnerPreview ? (
-            <p className="public-member-page__owner-empty-prompt">
-              Add a biography to introduce yourself to collaborators.
-              <Link href={ownerActionLinks!.editProfileHref}>Edit Profile</Link>
-            </p>
-          ) : null}
-        </section>
-      ) : null}
-
-      {showInitiativesSection ? (
-        hasRecentInitiatives && profile.recentPublicInitiatives ? (
-          <RecentPublicInitiativesDisclosure initiatives={profile.recentPublicInitiatives} />
-        ) : (
-          <div className="public-member-page__initiatives hu-surface-raised" id="recent-public-initiatives">
-            <OwnerHiddenSectionNotice
-              text="Recent Public Initiatives are hidden from your public profile."
-              managePrivacyHref={ownerActionLinks!.managePrivacyHref}
-            />
-          </div>
-        )
-      ) : null}
+        {showInitiativesSection ? (
+          hasRecentInitiatives && profile.recentPublicInitiatives ? (
+            <RecentPublicInitiativesDisclosure initiatives={profile.recentPublicInitiatives} />
+          ) : (
+            <div
+              className="public-member-page__initiatives"
+              id="recent-public-initiatives"
+            >
+              <OwnerHiddenSectionNotice
+                text="Recent Public Initiatives are hidden from your public profile."
+                managePrivacyHref={ownerActionLinks!.managePrivacyHref}
+              />
+            </div>
+          )
+        ) : null}
+      </article>
 
       {footer}
     </div>

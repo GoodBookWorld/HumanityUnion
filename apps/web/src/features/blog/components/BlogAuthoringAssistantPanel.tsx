@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 
 import type {
   BlogPublicationOptimization,
@@ -220,7 +220,6 @@ export function BlogAuthoringAssistantPanel({
   disabled,
   onApplyField,
 }: BlogAuthoringAssistantPanelProps) {
-  const headingId = useId();
   const assistant = useOptionalHumanityUnionAssistant();
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -365,36 +364,33 @@ export function BlogAuthoringAssistantPanel({
   return (
     <section
       className="blog-authoring-assistant"
-      aria-labelledby={headingId}
+      aria-label="Humanity Union Assistant"
       data-post-id={postId ?? "new"}
     >
-      <div className="blog-authoring-assistant__header">
-        <h3 className="hu-heading-4" id={headingId}>
-          Humanity Union Assistant
-        </h3>
-        {assistant ? (
-          <button
-            type="button"
-            className="hu-button hu-button--tertiary hu-button--sm"
-            disabled={disabled}
-            onClick={() =>
-              assistant.openAssistant({
-                surfaceId: "blog",
-                pagePath:
-                  typeof window !== "undefined"
-                    ? window.location.pathname
-                    : "/workspace/publishing/new",
-              })
-            }
-          >
-            Open chat
-          </button>
-        ) : null}
-      </div>
       <HelperText>
         Ask for optional suggestions. You Apply, Replace, or Dismiss each one. The Assistant never
         silently rewrites, saves, submits, or publishes.
       </HelperText>
+
+      {assistant ? (
+        <Button
+          type="button"
+          variant="primary"
+          className="blog-authoring-assistant__open-chat"
+          disabled={disabled}
+          onClick={() =>
+            assistant.openAssistant({
+              surfaceId: "blog",
+              pagePath:
+                typeof window !== "undefined"
+                  ? window.location.pathname
+                  : "/workspace/publishing/new",
+            })
+          }
+        >
+          Open chat
+        </Button>
+      ) : null}
 
       <div className="blog-authoring-assistant__actions">
         {ACTIONS.map((action) => (

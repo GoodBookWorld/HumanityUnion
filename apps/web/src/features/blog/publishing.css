@@ -109,6 +109,21 @@
   font-size: 0.95rem;
 }
 
+.blog-post-editor__assistant-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.blog-post-editor__assistant-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: 1.375rem;
+  height: 1.375rem;
+  object-fit: contain;
+}
+
 .blog-post-editor__title-input {
   font-size: 1.65rem !important;
   font-weight: 650;
@@ -259,11 +274,10 @@
   max-width: 100%;
 }
 
-.blog-authoring-assistant__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+/* Pack 18B — Open chat uses shared hu-button primary; full width in sidebar */
+.blog-authoring-assistant__open-chat {
+  width: 100%;
+  justify-content: center;
 }
 
 .blog-authoring-assistant__actions {
@@ -417,6 +431,15 @@
   margin: 0.15rem 0;
 }
 
+.blog-publication-optimization__network-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.15rem;
+  object-fit: contain;
+}
+
 .blog-publication-optimization__account-list {
   margin: 0.5rem 0 0;
   padding: 0;
@@ -476,9 +499,12 @@
 }
 
 /*
- * Pack 17B — desktop: toolbar associated with editor; main/editable is a
- * bounded writing viewport with internal scroll. overscroll-behavior: auto
- * so page scroll resumes at the inner boundary (no permanent scroll trap).
+ * Pack 17B/18A — desktop: toolbar pinned to the top of the Article Content
+ * frame via flex (NOT viewport sticky). .ck-editor__main is the only scroll
+ * viewport. overscroll-behavior: auto so page scroll resumes at the boundary.
+ *
+ * Pack 18A root cause: sticky + top: header-offset inside overflow:hidden made
+ * the toolbar sit mid-frame and overlay editable text.
  */
 @media (min-width: 769px) {
   .blog-rich-text--ckeditor {
@@ -492,6 +518,10 @@
     flex: 1 1 auto;
     width: 100%;
     max-width: 100%;
+  }
+
+  .blog-rich-text--ckeditor .ck.ck-editor__top {
+    flex: 0 0 auto;
   }
 
   .blog-rich-text--ckeditor .ck.ck-editor__main {
@@ -508,11 +538,16 @@
   }
 }
 
-/* Pack 17B — toolbar sticks under platform header only (chrome is not sticky) */
+/*
+ * Pack 18A — toolbar stays at the top of the Article Content editor frame.
+ * Do not use viewport-sticky top: header-offset here: the sticky containing
+ * block is this overflow:hidden frame, so that inset places the toolbar in
+ * the middle of the viewport and overlays article text.
+ * Publishing chrome (.blog-post-editor__chrome) remains non-sticky (Pack 17B).
+ */
 .blog-rich-text--ckeditor .ck.ck-editor__top {
-  position: sticky;
-  top: var(--hu-scroll-margin-top, var(--humanity-header-offset));
-  z-index: var(--hu-z-sticky, 20);
+  position: static;
+  z-index: 1;
   background: var(--hu-surface, #fff);
 }
 
@@ -520,7 +555,6 @@
   width: 100%;
   max-width: 100%;
 }
-
 .blog-rich-text--ckeditor .ck-editor__editable {
   min-height: 280px;
   max-width: 100%;
@@ -623,8 +657,8 @@
   }
 
   /*
-   * Pack 17B — mobile: prefer natural page flow for the writing surface
-   * (no nested scroll viewport). Toolbar remains under platform header.
+   * Pack 17B/18A — mobile: prefer natural page flow (no nested scroll).
+   * Toolbar stays in document order at the top of the editor frame.
    */
   .blog-rich-text--ckeditor {
     max-height: none;
@@ -636,7 +670,7 @@
   }
 
   .blog-rich-text--ckeditor .ck.ck-editor__top {
-    top: var(--hu-scroll-margin-top, var(--humanity-header-offset));
+    position: static;
   }
 
   .blog-rich-text--ckeditor .ck-editor__editable {

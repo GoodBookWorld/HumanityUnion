@@ -635,7 +635,18 @@ export function BlogPostEditor({
                 className="blog-post-editor__settings-group"
                 aria-labelledby="blog-settings-assistant"
               >
-                <h3 className="hu-heading-4" id="blog-settings-assistant">
+                <h3
+                  className="hu-heading-4 blog-post-editor__assistant-heading"
+                  id="blog-settings-assistant"
+                >
+                  <img
+                    src="/icons/workspace/intel.webp"
+                    alt=""
+                    className="blog-post-editor__assistant-icon"
+                    width={22}
+                    height={22}
+                    aria-hidden="true"
+                  />
                   Assistant
                 </h3>
                 <BlogAuthoringAssistantPanel
