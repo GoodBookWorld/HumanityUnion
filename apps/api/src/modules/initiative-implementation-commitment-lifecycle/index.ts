@@ -4,9 +4,12 @@ export {
   declineInitiativeImplementationCommitment,
   generateInitiativeImplementationCommitmentDraft,
   getInitiativeImplementationCommitmentWorkspaceContext,
+  initiateImplementationCommitmentTransfer,
   listMyProposedInitiativeImplementationCommitments,
   publishInitiativeImplementationCommitmentStage,
+  reproposeInitiativeImplementationCommitment,
   saveInitiativeImplementationCommitmentDraft,
+  takeInitiativeImplementationCommitment,
 } from "./initiative-implementation-commitment-lifecycle.service.js";
 export { buildInitiativeImplementationCommitmentIntelligenceSnapshot } from "./initiative-implementation-commitment-intelligence.service.js";
 export { generateImplementationCommitmentDraftContent } from "./initiative-implementation-commitment-draft-builder.js";

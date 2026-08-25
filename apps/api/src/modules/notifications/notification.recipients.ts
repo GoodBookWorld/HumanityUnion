@@ -94,6 +94,18 @@ export function resolveNotificationRecipientMemberIds(
       ]);
     }
 
+    case "implementation_commitment_proposed": {
+      const commitment = getCommitmentById(input.entityId);
+      // Transfer invitee lives on pendingProposedParticipantId; normal proposal on participantId.
+      return uniqueMemberIds([
+        commitment?.pendingProposedParticipantId ?? commitment?.participantId,
+      ]);
+    }
+
+    case "implementation_commitment_taken": {
+      return uniqueMemberIds([initiativeId ? initiativeStewardId(initiativeId) : null]);
+    }
+
     case "tracking_updated": {
       const tracking = getTrackingById(input.entityId);
       return uniqueMemberIds([

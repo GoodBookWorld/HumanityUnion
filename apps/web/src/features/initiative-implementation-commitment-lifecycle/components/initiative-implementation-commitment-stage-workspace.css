@@ -136,6 +136,43 @@
   opacity: 0.75;
 }
 
+.iic-public__take-action {
+  margin-top: 0.35rem;
+}
+
+.iic-public__take-action .workspace-button {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.iic-public__success {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: color-mix(in srgb, currentColor 82%, #1a7a3c);
+}
+
+.iic-public__error {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: color-mix(in srgb, currentColor 70%, #b42318);
+}
+
+.iic-public__participant-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.iic-public__participant-field input {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+}
+
 .iic-assistant-block {
   display: grid;
   gap: 0.45rem;

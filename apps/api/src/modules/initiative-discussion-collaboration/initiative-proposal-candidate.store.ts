@@ -2,10 +2,12 @@ import type { InitiativeDiscussionProposalCandidate } from "@hu/types";
 
 import {
   deleteProposalCandidatesByInitiativeIdForTests,
+  deleteProposalCandidatesBySourceParticipantIdForTests,
   findProposalCandidateDocumentByCommentId,
   insertProposalCandidateDocument,
   isDuplicateProposalCandidateError,
   listProposalCandidateDocumentsByCommentIds,
+  listProposalCandidateDocumentsBySourceParticipantId,
 } from "./persistence/initiative-proposal-candidate.repository.js";
 
 /**
@@ -63,6 +65,40 @@ export async function listProposalCandidatesByCommentIds(
 }
 
 /**
+ * Pack 19C.2B — candidates attributed to the Discussion comment author
+ * (`sourceParticipantId`), not the Participant who clicked Proposal.
+ */
+export async function listProposalCandidatesBySourceParticipantId(
+  sourceParticipantId: string,
+): Promise<InitiativeDiscussionProposalCandidate[]> {
+  return listProposalCandidateDocumentsBySourceParticipantId(sourceParticipantId);
+}
+
+/**
+ * Pack 19C.2B — one count per distinct `candidateId` for the source Participant.
+ */
+export function countProposalCandidatesForSourceParticipant(
+  candidates: readonly Pick<
+    InitiativeDiscussionProposalCandidate,
+    "candidateId" | "sourceParticipantId" | "status"
+  >[],
+  sourceParticipantId: string,
+): number {
+  const seen = new Set<string>();
+
+  for (const candidate of candidates) {
+    if (
+      candidate.sourceParticipantId === sourceParticipantId &&
+      candidate.status === "candidate"
+    ) {
+      seen.add(candidate.candidateId);
+    }
+  }
+
+  return seen.size;
+}
+
+/**
  * Test-only, narrowly scoped to one initiative's candidates (Recovery Task
  * 31 Part 19 style: exact selector, no delete-all, no wildcard mode). A
  * no-op when MongoDB is not configured.
@@ -72,3 +108,7 @@ export async function resetInitiativeProposalCandidateStoreForTests(
 ): Promise<void> {
   await deleteProposalCandidatesByInitiativeIdForTests(initiativeId);
 }
+
+export {
+  deleteProposalCandidatesBySourceParticipantIdForTests,
+};

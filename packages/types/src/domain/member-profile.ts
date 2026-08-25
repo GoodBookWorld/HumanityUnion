@@ -55,6 +55,21 @@ export interface MemberProfile {
   showCollectiveDecisionsStatistics: boolean;
   showAlliesStatistics: boolean;
   /**
+   * Pack 19C.2B — gates Proposal statistics on the Public Profile.
+   * Defaults to shown.
+   */
+  showProposalsStatistics: boolean;
+  /**
+   * Pack 19C.2B — gates Petition statistics on the Public Profile.
+   * Defaults to shown.
+   */
+  showPetitionsStatistics: boolean;
+  /**
+   * Pack 19B — gates Implementation Commitment statistics on the Public
+   * Profile (accepted / active / fulfilled). Defaults to shown.
+   */
+  showCommitmentsStatistics: boolean;
+  /**
    * Profile UX Pack 03 Part 6 — "Who can message me?" Direct Collaboration
    * control. Defaults to `"active_allies"` for every profile, including
    * ones persisted before this pack existed (see `stripDocument`).
@@ -76,6 +91,9 @@ export interface MemberProfilePrivacySettings {
   showInitiativesStatistics: boolean;
   showCollectiveDecisionsStatistics: boolean;
   showAlliesStatistics: boolean;
+  showProposalsStatistics: boolean;
+  showPetitionsStatistics: boolean;
+  showCommitmentsStatistics: boolean;
   messagingPolicy: DirectMessagingPolicy;
 }
 

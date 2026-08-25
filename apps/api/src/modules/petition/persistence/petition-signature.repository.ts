@@ -113,6 +113,52 @@ export async function countSignaturesByPetitionId(petitionId: string): Promise<n
 }
 
 /**
+ * Pack 19C.2B — Participant Petition statistics.
+ * Lists Signature rows for a Participant (`memberId` is the persistence field
+ * for canonical Participant identity). Prefer Active-status filtering at the
+ * caller for the public petition-signing metric.
+ */
+export async function listSignaturesByMemberId(
+  memberId: string,
+): Promise<PetitionSignatureMongoRecord[]> {
+  const trimmed = memberId.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  if (!isMongoConfigured()) {
+    return [];
+  }
+
+  await connectMongoClient();
+
+  const documents = await collection().find({ memberId: trimmed }).toArray();
+
+  return documents.map((document) => fromPetitionSignatureMongoDocument(document));
+}
+
+export async function listActiveSignaturesByMemberId(
+  memberId: string,
+): Promise<PetitionSignatureMongoRecord[]> {
+  const trimmed = memberId.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  if (!isMongoConfigured()) {
+    return [];
+  }
+
+  await connectMongoClient();
+
+  const documents = await collection().find({ memberId: trimmed, status: "Active" }).toArray();
+
+  return documents.map((document) => fromPetitionSignatureMongoDocument(document));
+}
+
+/**
  * Initiative Lifecycle — Part F, Section 8 (Withdraw Signature). Updates an
  * EXISTING Signature's `status` in place — the Signature document itself
  * (`signatureId`, `signedAt`) is never deleted or replaced, only its

@@ -415,6 +415,9 @@ export function validateMemberProfilePrivacyPatch(
     "showInitiativesStatistics",
     "showCollectiveDecisionsStatistics",
     "showAlliesStatistics",
+    "showProposalsStatistics",
+    "showPetitionsStatistics",
+    "showCommitmentsStatistics",
   ] as const) {
     if (!(field in record)) {
       continue;

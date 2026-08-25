@@ -55,6 +55,9 @@ export function toMemberProfilePrivacySettings(
     showInitiativesStatistics: profile.showInitiativesStatistics ?? true,
     showCollectiveDecisionsStatistics: profile.showCollectiveDecisionsStatistics ?? true,
     showAlliesStatistics: profile.showAlliesStatistics ?? true,
+    showProposalsStatistics: profile.showProposalsStatistics ?? true,
+    showPetitionsStatistics: profile.showPetitionsStatistics ?? true,
+    showCommitmentsStatistics: profile.showCommitmentsStatistics ?? true,
     messagingPolicy: profile.messagingPolicy ?? "active_allies",
   };
 }
@@ -73,7 +76,12 @@ export function toPublicParticipantStatistics(
   statistics: ParticipantStatistics,
   profile: Pick<
     MemberProfile,
-    "showInitiativesStatistics" | "showCollectiveDecisionsStatistics" | "showAlliesStatistics"
+    | "showInitiativesStatistics"
+    | "showCollectiveDecisionsStatistics"
+    | "showAlliesStatistics"
+    | "showProposalsStatistics"
+    | "showPetitionsStatistics"
+    | "showCommitmentsStatistics"
   >,
   viewerIsOwner: boolean,
 ): PublicParticipantStatistics | undefined {
@@ -89,6 +97,20 @@ export function toPublicParticipantStatistics(
 
   if (viewerIsOwner || (profile.showAlliesStatistics ?? true)) {
     result.alliesCount = statistics.alliesCount;
+  }
+
+  if (viewerIsOwner || (profile.showProposalsStatistics ?? true)) {
+    result.proposalsCount = statistics.proposalsCount;
+  }
+
+  if (viewerIsOwner || (profile.showPetitionsStatistics ?? true)) {
+    result.petitionsCount = statistics.petitionsCount;
+  }
+
+  if (viewerIsOwner || (profile.showCommitmentsStatistics ?? true)) {
+    result.commitmentsAcceptedCount = statistics.commitmentsAcceptedCount;
+    result.commitmentsActiveCount = statistics.commitmentsActiveCount;
+    result.commitmentsFulfilledCount = statistics.commitmentsFulfilledCount;
   }
 
   return Object.keys(result).length > 0 ? result : undefined;

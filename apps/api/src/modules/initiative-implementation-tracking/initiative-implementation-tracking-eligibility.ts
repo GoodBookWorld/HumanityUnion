@@ -1,6 +1,7 @@
 import type { InitiativeImplementationCommitment } from "@hu/types";
 
 import { getCommitmentById } from "../initiative-implementation-commitment/initiative-implementation-commitment.store.js";
+import { hasAcceptedImplementationResponsibility } from "../initiative-implementation-commitment/initiative-implementation-commitment-responsibility.js";
 
 export interface InitiativeImplementationTrackingEligibility {
   eligible: boolean;
@@ -8,8 +9,9 @@ export interface InitiativeImplementationTrackingEligibility {
 }
 
 /**
- * LEGACY / KEEP_DATA_COMPATIBILITY — participant & e2e create path only.
- * NOT Author Lifecycle progression authority (Author Tracking pack bypasses).
+ * Tracking requires a published Commitment whose actor has canonical
+ * accepted responsibility (package Accept / future Take Commitment, or
+ * legacy TASK-031 self-authored ownership).
  */
 export function assessInitiativeImplementationTrackingEligibility(
   commitmentId: string,
@@ -22,8 +24,10 @@ export function assessInitiativeImplementationTrackingEligibility(
     reasons.push("Implementation commitment not found.");
   } else if (commitment.status !== "published") {
     reasons.push("Implementation tracking requires a published implementation commitment.");
-  } else if (commitment.participantId !== participantId) {
-    reasons.push("Only the commitment author may begin implementation tracking.");
+  } else if (!hasAcceptedImplementationResponsibility(commitment, participantId)) {
+    reasons.push(
+      "Implementation tracking requires accepted responsibility for this implementation commitment.",
+    );
   }
 
   return {
@@ -35,13 +39,7 @@ export function assessInitiativeImplementationTrackingEligibility(
 /**
  * Recovery Task 16 — eligibility variant for a Commitment already resolved
  * by `resolveTrackingInitiativeAncestry`, avoiding a second
- * `getCommitmentById` lookup (pre-Task-16 looked it up here, then again in
- * the service body). `commitment` is guaranteed non-null and to exist by the
- * time ancestry resolution succeeds, so the "not found" reason from
- * {@link assessInitiativeImplementationTrackingEligibility} is intentionally
- * omitted here — ancestry resolution (not eligibility) now owns that check.
- * The remaining business rules (published status, author-only) are preserved
- * verbatim, including their exact messages and else-if precedence.
+ * `getCommitmentById` lookup.
  */
 export function assessInitiativeImplementationTrackingEligibilityForResolved(
   commitment: InitiativeImplementationCommitment,
@@ -51,8 +49,10 @@ export function assessInitiativeImplementationTrackingEligibilityForResolved(
 
   if (commitment.status !== "published") {
     reasons.push("Implementation tracking requires a published implementation commitment.");
-  } else if (commitment.participantId !== participantId) {
-    reasons.push("Only the commitment author may begin implementation tracking.");
+  } else if (!hasAcceptedImplementationResponsibility(commitment, participantId)) {
+    reasons.push(
+      "Implementation tracking requires accepted responsibility for this implementation commitment.",
+    );
   }
 
   return {

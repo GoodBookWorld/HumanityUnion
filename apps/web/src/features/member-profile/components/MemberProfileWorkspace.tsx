@@ -518,6 +518,36 @@ export function MemberProfileWorkspace() {
             />
             <span>Show Allies statistics publicly</span>
           </label>
+          <label className="member-profile-workspace__checkbox">
+            <input
+              type="checkbox"
+              checked={privacy.showProposalsStatistics}
+              onChange={(event) =>
+                setPrivacy({ ...privacy, showProposalsStatistics: event.target.checked })
+              }
+            />
+            <span>Show Proposals statistics publicly</span>
+          </label>
+          <label className="member-profile-workspace__checkbox">
+            <input
+              type="checkbox"
+              checked={privacy.showPetitionsStatistics}
+              onChange={(event) =>
+                setPrivacy({ ...privacy, showPetitionsStatistics: event.target.checked })
+              }
+            />
+            <span>Show Petitions statistics publicly</span>
+          </label>
+          <label className="member-profile-workspace__checkbox">
+            <input
+              type="checkbox"
+              checked={privacy.showCommitmentsStatistics}
+              onChange={(event) =>
+                setPrivacy({ ...privacy, showCommitmentsStatistics: event.target.checked })
+              }
+            />
+            <span>Show Implementation Commitments statistics publicly</span>
+          </label>
           <Button type="submit" variant="primary" disabled={privacyPhase.isBusy} ariaLive="polite">
             {resolveSaveButtonLabel(privacyPhase.phase, "Save privacy settings")}
           </Button>

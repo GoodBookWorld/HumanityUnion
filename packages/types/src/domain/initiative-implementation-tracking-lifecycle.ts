@@ -11,7 +11,8 @@ export interface InitiativeImplementationTrackingCommitmentReference {
   readonly commitmentId: InitiativeImplementationCommitmentId;
   readonly packageId: string | null;
   readonly decisionId: InitiativeCollectiveDecisionId;
-  readonly participantId: MemberId;
+  /** Null only if data is inconsistent; accepted refs should always carry a Participant. */
+  readonly participantId: MemberId | null;
   readonly approvedAction: string;
   readonly commitmentTitle: string;
   readonly commitmentSummary: string;

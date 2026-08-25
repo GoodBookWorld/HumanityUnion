@@ -38,6 +38,9 @@ function stripDocument(document: MemberProfileDocument): MemberProfile {
     showInitiativesStatistics: record.showInitiativesStatistics ?? true,
     showCollectiveDecisionsStatistics: record.showCollectiveDecisionsStatistics ?? true,
     showAlliesStatistics: record.showAlliesStatistics ?? true,
+    showProposalsStatistics: record.showProposalsStatistics ?? true,
+    showPetitionsStatistics: record.showPetitionsStatistics ?? true,
+    showCommitmentsStatistics: record.showCommitmentsStatistics ?? true,
     // Profile UX Pack 03 Part 6 — defaults to the recommended "Active
     // Allies" policy for every profile persisted before this pack existed.
     messagingPolicy: record.messagingPolicy ?? "active_allies",
@@ -91,6 +94,9 @@ export function buildDefaultMemberProfile(input: {
     showInitiativesStatistics: true,
     showCollectiveDecisionsStatistics: true,
     showAlliesStatistics: true,
+    showProposalsStatistics: true,
+    showPetitionsStatistics: true,
+    showCommitmentsStatistics: true,
     messagingPolicy: "active_allies",
     status: "active",
   };

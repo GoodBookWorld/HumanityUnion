@@ -623,6 +623,7 @@ export function PublicInitiativeCenterPanel({
                                     <InitiativeImplementationCommitmentPublicResult
                                       initiativeId={experience.initiativeId}
                                       isPreview={isStagePreviewMode}
+                                      viewerIsSteward={Boolean(experience.viewerIsSteward)}
                                     />
                                   ) : isStagePreviewMode ? (
                                     <InitiativeImplementationCommitmentDraftPreview

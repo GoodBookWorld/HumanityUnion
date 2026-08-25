@@ -19,11 +19,23 @@ import {
   createCommitment,
   getCommitmentById,
   listCommitmentsByParticipant,
+  tryAcceptResponsibilityTransfer,
+  tryDeclineResponsibilityTransfer,
+  tryInitiateResponsibilityTransfer,
+  tryReproposeDeclinedCommitment,
+  tryTakeUnassignedCommitment,
   updateCommitment,
+  listCommitments,
 } from "../initiative-implementation-commitment/initiative-implementation-commitment.store.js";
+import {
+  buildTakeImplementationCommitmentAcceptanceUpdate,
+} from "../initiative-implementation-commitment/initiative-implementation-commitment-responsibility.js";
 import { publishInitiativeLifecycleStage } from "../../shared/initiative-lifecycle-stage/index.js";
+import { findAuthUserByMemberId, findAuthUsersByMemberIds } from "../auth/auth-user.repository.js";
 import { createReminderIfNotExists } from "../reminders/reminder.service.js";
-import { findAuthUsersByMemberIds } from "../auth/auth-user.repository.js";
+import { createNotification } from "../notifications/notification.service.js";
+import { getMemberById } from "../member/member-access.js";
+import { validateDirectInitiativeAncestry } from "../../shared/initiative-ancestry/index.js";
 import { generateImplementationCommitmentDraftContent } from "./initiative-implementation-commitment-draft-builder.js";
 import {
   deleteInitiativeImplementationCommitmentLifecycleDraft,
@@ -40,6 +52,44 @@ import {
 import { validateInitiativeImplementationCommitmentLifecycleDraftForPublication } from "./initiative-implementation-commitment-lifecycle.validators.js";
 
 const COMMITMENT_TITLE_MAX_LENGTH = 160;
+
+export type ResolveProposedParticipantExists = (participantId: string) => Promise<boolean>;
+
+/**
+ * Resolves a Proposed Participant ID to a real Participant identity
+ * (auth user memberId). Ally membership is NOT required.
+ */
+export async function defaultResolveProposedParticipantExists(
+  participantId: string,
+): Promise<boolean> {
+  const trimmed = participantId.trim();
+
+  if (!trimmed) {
+    return false;
+  }
+
+  const authUser = await findAuthUserByMemberId(trimmed);
+  return authUser !== null;
+}
+
+export async function assertProposedParticipantsExist(
+  candidates: readonly InitiativeImplementationCommitmentCandidate[],
+  resolveExists: ResolveProposedParticipantExists,
+): Promise<void> {
+  for (const [index, candidate] of candidates.entries()) {
+    const proposedId = candidate.proposedParticipantId?.trim() ?? "";
+
+    if (!proposedId) {
+      continue;
+    }
+
+    if (!(await resolveExists(proposedId))) {
+      throw new Error(
+        `Proposed Participant ID is unknown at candidates[${index}]: ${proposedId}`,
+      );
+    }
+  }
+}
 
 function getOwnedInitiative(initiativeId: string, identity: RequestIdentity): Initiative {
   const initiative = getInitiativeById(initiativeId);
@@ -211,11 +261,16 @@ async function createReminderCandidatesForPublishedPackage(input: {
 
   const proposedRecipients = input.commitments.filter(
     (commitment) =>
-      commitment.proposalStatus === "proposed" && commitment.participantId !== input.actorParticipantId,
+      commitment.proposalStatus === "proposed" &&
+      commitment.participantId != null &&
+      commitment.participantId !== input.actorParticipantId,
   );
 
   const recipientParticipantIds = [
-    ...new Set([...allyRecipientIds, ...proposedRecipients.map((commitment) => commitment.participantId)]),
+    ...new Set([
+      ...allyRecipientIds,
+      ...proposedRecipients.map((commitment) => commitment.participantId as string),
+    ]),
   ];
 
   if (recipientParticipantIds.length === 0) {
@@ -245,22 +300,23 @@ async function createReminderCandidatesForPublishedPackage(input: {
   }
 
   for (const commitment of proposedRecipients) {
-    const user = usersByMemberId.get(commitment.participantId);
+    const proposedParticipantId = commitment.participantId;
 
-    if (!user) {
+    if (!proposedParticipantId) {
       continue;
     }
 
-    await createReminderIfNotExists({
-      recipientUserId: user.userId,
-      recipientProfileId: commitment.participantId,
-      category: "implementation",
-      title: "You have a proposed responsibility",
-      message: `You have been proposed as responsible for "${commitment.commitmentTitle}" in "${input.initiative.title}". Your commitment is waiting for your response.`,
-      relatedEntityType: "implementation_commitment",
-      relatedEntityId: commitment.commitmentId,
-      relatedUrl,
-    });
+    try {
+      await notifyProposedParticipant({
+        commitment,
+        proposedParticipantId,
+        initiativeTitle: input.initiative.title,
+      });
+    } catch (error) {
+      console.warn(
+        `[initiative-implementation-commitment-lifecycle] Proposal notification skipped: ${String(error)}`,
+      );
+    }
   }
 }
 
@@ -275,6 +331,9 @@ async function createReminderCandidatesForPublishedPackage(input: {
 export async function publishInitiativeImplementationCommitmentStage(
   identity: RequestIdentity,
   initiativeId: string,
+  options: {
+    resolveProposedParticipantExists?: ResolveProposedParticipantExists;
+  } = {},
 ): Promise<InitiativeImplementationCommitmentPackage> {
   const initiative = getOwnedInitiative(initiativeId, identity);
   const draft = getInitiativeImplementationCommitmentLifecycleDraftByInitiativeId(initiativeId);
@@ -284,6 +343,10 @@ export async function publishInitiativeImplementationCommitmentStage(
   }
 
   validateInitiativeImplementationCommitmentLifecycleDraftForPublication(draft);
+  await assertProposedParticipantsExist(
+    draft.candidates,
+    options.resolveProposedParticipantExists ?? defaultResolveProposedParticipantExists,
+  );
 
   const snapshot = await buildInitiativeImplementationCommitmentIntelligenceSnapshot(initiativeId);
 
@@ -310,8 +373,9 @@ export async function publishInitiativeImplementationCommitmentStage(
 
   draft.candidates.forEach((candidate, index) => {
     const commitmentId = `implementation-commitment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${index}`;
-    const participantId = candidate.proposedParticipantId ?? initiative.stewardId;
-    const proposalStatus = candidate.proposedParticipantId ? "proposed" : "unassigned";
+    const proposedParticipantId = candidate.proposedParticipantId?.trim() || null;
+    const participantId = proposedParticipantId;
+    const proposalStatus = proposedParticipantId ? "proposed" : "unassigned";
 
     const commitment: InitiativeImplementationCommitment = {
       commitmentId,
@@ -334,8 +398,11 @@ export async function publishInitiativeImplementationCommitmentStage(
       relatedRisks: [...candidate.relatedRisks],
       references: [...candidate.references],
       proposedByParticipantId: initiative.stewardId,
+      proposedAt: proposalStatus === "proposed" ? now : null,
       acceptedAt: null,
       declinedAt: null,
+      pendingProposedParticipantId: null,
+      proposalHistory: [],
       traceability: buildCandidateTraceability(
         resolvedDecisionId,
         candidate,
@@ -404,21 +471,66 @@ export async function publishInitiativeImplementationCommitmentStage(
   return pkg;
 }
 
-function getOwnedProposedCommitment(
-  commitmentId: string,
+function resolveProposalActionMode(
+  commitment: InitiativeImplementationCommitment,
   identity: RequestIdentity,
-): InitiativeImplementationCommitment {
-  const commitment = getCommitmentById(commitmentId);
-
-  if (!commitment) {
-    throw new Error("Implementation commitment not found.");
+): "proposal" | "transfer" {
+  if (
+    commitment.proposalStatus === "accepted" &&
+    commitment.pendingProposedParticipantId === identity.participantId
+  ) {
+    return "transfer";
   }
 
-  if (commitment.participantId !== identity.participantId) {
+  if (commitment.participantId == null || commitment.participantId !== identity.participantId) {
     throw new Error("You do not have access to this implementation commitment.");
   }
 
-  return commitment;
+  return "proposal";
+}
+
+async function notifyProposedParticipant(input: {
+  commitment: InitiativeImplementationCommitment;
+  proposedParticipantId: string;
+  initiativeTitle: string;
+}): Promise<void> {
+  const user = await findAuthUserByMemberId(input.proposedParticipantId);
+
+  if (!user) {
+    return;
+  }
+
+  const relatedUrl = `/initiatives/public/${encodeURIComponent(input.commitment.initiativeId)}#implementation-commitments`;
+  const actionTitle = input.commitment.commitmentTitle;
+
+  await createReminderIfNotExists({
+    recipientUserId: user.userId,
+    recipientProfileId: input.proposedParticipantId,
+    category: "implementation",
+    title: "You have a proposed responsibility",
+    message: `You have been proposed as responsible for "${actionTitle}" in "${input.initiativeTitle}". Your commitment is waiting for your response.`,
+    relatedEntityType: "implementation_commitment",
+    relatedEntityId: input.commitment.commitmentId,
+    relatedUrl,
+  });
+
+  try {
+    await createNotification({
+      recipientUserId: user.userId,
+      recipientProfileId: input.proposedParticipantId,
+      eventType: "implementation_commitment_proposed",
+      title: "You have a proposed responsibility",
+      message: `You have been proposed as responsible for "${actionTitle}" in "${input.initiativeTitle}". Accept or decline to respond.`,
+      relatedEntityType: "implementation_commitment",
+      relatedEntityId: input.commitment.commitmentId,
+      relatedUrl,
+      priority: "important",
+    });
+  } catch (error) {
+    console.warn(
+      `[initiative-implementation-commitment-lifecycle] Proposal notification skipped: ${String(error)}`,
+    );
+  }
 }
 
 async function notifyAuthorOfProposalResponse(
@@ -457,15 +569,72 @@ async function notifyAuthorOfProposalResponse(
 }
 
 /**
- * Initiative Lifecycle — Part I, Section 6. Voluntary Accept — the
- * proposed Participant's own choice, never automatic and never performed
- * on their behalf by the Author.
+ * Initiative Lifecycle — Part I, Section 6 / Pack 19A.5.
+ * Accepts a normal proposal or a pending responsibility transfer.
  */
 export async function acceptInitiativeImplementationCommitment(
   identity: RequestIdentity,
   commitmentId: string,
 ): Promise<InitiativeImplementationCommitment> {
-  const commitment = getOwnedProposedCommitment(commitmentId, identity);
+  const commitment = getCommitmentById(commitmentId);
+
+  if (!commitment) {
+    throw new Error("Implementation commitment not found.");
+  }
+
+  const mode = resolveProposalActionMode(commitment, identity);
+  const now = new Date().toISOString();
+
+  if (mode === "transfer") {
+    const previousOwnerId = commitment.participantId;
+
+    if (!previousOwnerId) {
+      throw new Error("Implementation commitment has no current responsible Participant.");
+    }
+
+    const updated = tryAcceptResponsibilityTransfer(commitmentId, identity.participantId, now, {
+      participantId: previousOwnerId,
+      outcome: "transferred_away",
+      resolvedAt: now,
+      proposedByParticipantId: commitment.proposedByParticipantId ?? null,
+      proposedAt: commitment.proposedAt ?? null,
+      acceptedAt: commitment.acceptedAt ?? null,
+    });
+
+    if (!updated) {
+      throw new Error("This commitment transfer is no longer available.");
+    }
+
+    try {
+      await notifyAuthorOfProposalResponse(updated, "accepted");
+    } catch (error) {
+      console.warn(
+        `[initiative-implementation-commitment-lifecycle] Accept notification skipped: ${String(error)}`,
+      );
+    }
+
+    try {
+      await notifyPreviousOwnerOfTransfer({
+        commitment: updated,
+        previousOwnerId,
+        replacementParticipantId: identity.participantId,
+      });
+    } catch (error) {
+      console.warn(
+        `[initiative-implementation-commitment-lifecycle] Transfer owner notification skipped: ${String(error)}`,
+      );
+    }
+
+    return updated;
+  }
+
+  if (commitment.proposalStatus === "accepted") {
+    throw new Error("This implementation commitment has already been accepted.");
+  }
+
+  if (commitment.proposalStatus === "declined") {
+    throw new Error("A declined implementation commitment cannot be accepted without a new proposal.");
+  }
 
   if (commitment.proposalStatus !== "proposed") {
     throw new Error("Only a proposed commitment can be accepted.");
@@ -473,7 +642,9 @@ export async function acceptInitiativeImplementationCommitment(
 
   const updated = updateCommitment(commitmentId, {
     proposalStatus: "accepted",
-    acceptedAt: new Date().toISOString(),
+    acceptedAt: now,
+    pendingProposedParticipantId: null,
+    proposedAt: null,
   });
 
   if (!updated) {
@@ -491,20 +662,71 @@ export async function acceptInitiativeImplementationCommitment(
   return updated;
 }
 
-/** Initiative Lifecycle — Part I, Section 6. Voluntary Decline. */
+/** Initiative Lifecycle — Part I, Section 6 / Pack 19A.5. Decline proposal or pending transfer. */
 export async function declineInitiativeImplementationCommitment(
   identity: RequestIdentity,
   commitmentId: string,
 ): Promise<InitiativeImplementationCommitment> {
-  const commitment = getOwnedProposedCommitment(commitmentId, identity);
+  const commitment = getCommitmentById(commitmentId);
+
+  if (!commitment) {
+    throw new Error("Implementation commitment not found.");
+  }
+
+  const mode = resolveProposalActionMode(commitment, identity);
+  const now = new Date().toISOString();
+
+  if (mode === "transfer") {
+    const updated = tryDeclineResponsibilityTransfer(commitmentId, identity.participantId, {
+      participantId: identity.participantId,
+      outcome: "transfer_declined",
+      resolvedAt: now,
+      proposedByParticipantId: commitment.proposedByParticipantId ?? null,
+      proposedAt: commitment.proposedAt ?? null,
+    });
+
+    if (!updated) {
+      throw new Error("This commitment transfer is no longer available.");
+    }
+
+    try {
+      await notifyAuthorOfProposalResponse(updated, "declined");
+    } catch (error) {
+      console.warn(
+        `[initiative-implementation-commitment-lifecycle] Decline notification skipped: ${String(error)}`,
+      );
+    }
+
+    return updated;
+  }
+
+  if (commitment.proposalStatus === "accepted") {
+    throw new Error("An accepted implementation commitment cannot be declined.");
+  }
+
+  if (commitment.proposalStatus === "declined") {
+    throw new Error("This implementation commitment has already been declined.");
+  }
 
   if (commitment.proposalStatus !== "proposed") {
     throw new Error("Only a proposed commitment can be declined.");
   }
 
+  const history = [
+    ...(commitment.proposalHistory ?? []),
+    {
+      participantId: identity.participantId,
+      outcome: "declined" as const,
+      resolvedAt: now,
+      proposedByParticipantId: commitment.proposedByParticipantId ?? null,
+      proposedAt: commitment.proposedAt ?? null,
+    },
+  ];
+
   const updated = updateCommitment(commitmentId, {
     proposalStatus: "declined",
-    declinedAt: new Date().toISOString(),
+    declinedAt: now,
+    proposalHistory: history,
   });
 
   if (!updated) {
@@ -522,11 +744,342 @@ export async function declineInitiativeImplementationCommitment(
   return updated;
 }
 
-/** My proposed or already-accepted responsibilities across every Initiative (workspace inbox). */
+/** My proposed, transfer-pending, or already-accepted responsibilities. */
 export function listMyProposedInitiativeImplementationCommitments(
   identity: RequestIdentity,
 ): InitiativeImplementationCommitment[] {
-  return listCommitmentsByParticipant(identity.participantId).filter(
-    (commitment) => commitment.proposalStatus === "proposed" || commitment.proposalStatus === "accepted",
+  const byParticipant = listCommitmentsByParticipant(identity.participantId).filter(
+    (commitment) =>
+      commitment.proposalStatus === "proposed" || commitment.proposalStatus === "accepted",
   );
+
+  const transferPending = listCommitments().filter(
+    (commitment) =>
+      commitment.pendingProposedParticipantId === identity.participantId &&
+      !byParticipant.some((row) => row.commitmentId === commitment.commitmentId),
+  );
+
+  return [...byParticipant, ...transferPending];
+}
+
+/**
+ * Pack 19A.5 — Author re-proposes after Decline.
+ * Declined history is preserved; new invitee uses canonical proposed state + notification.
+ */
+export async function reproposeInitiativeImplementationCommitment(
+  identity: RequestIdentity,
+  commitmentId: string,
+  nextParticipantId: string,
+  options: {
+    resolveProposedParticipantExists?: ResolveProposedParticipantExists;
+  } = {},
+): Promise<InitiativeImplementationCommitment> {
+  const trimmedNext = nextParticipantId.trim();
+
+  if (!trimmedNext) {
+    throw new Error("Proposed Participant ID is required.");
+  }
+
+  const resolveExists =
+    options.resolveProposedParticipantExists ?? defaultResolveProposedParticipantExists;
+
+  if (!(await resolveExists(trimmedNext))) {
+    throw new Error(`Proposed Participant ID is unknown: ${trimmedNext}`);
+  }
+
+  const commitment = getCommitmentById(commitmentId);
+
+  if (!commitment) {
+    throw new Error("Implementation commitment not found.");
+  }
+
+  const initiative = getOwnedInitiative(commitment.initiativeId, identity);
+
+  if (commitment.status !== "published") {
+    throw new Error("Only a published Implementation Commitment can be re-proposed.");
+  }
+
+  if (commitment.proposalStatus !== "declined") {
+    throw new Error("Only a declined Implementation Commitment can be re-proposed.");
+  }
+
+  const now = new Date().toISOString();
+  const previousParticipantId = commitment.participantId;
+
+  const updated = tryReproposeDeclinedCommitment(
+    commitmentId,
+    trimmedNext,
+    now,
+    identity.participantId,
+    {
+      participantId: previousParticipantId ?? trimmedNext,
+      outcome: "superseded_by_reproposal",
+      resolvedAt: now,
+      proposedByParticipantId: commitment.proposedByParticipantId ?? null,
+      proposedAt: commitment.proposedAt ?? null,
+    },
+  );
+
+  if (!updated) {
+    throw new Error("This commitment can no longer be re-proposed.");
+  }
+
+  try {
+    await notifyProposedParticipant({
+      commitment: updated,
+      proposedParticipantId: trimmedNext,
+      initiativeTitle: initiative.title,
+    });
+  } catch (error) {
+    console.warn(
+      `[initiative-implementation-commitment-lifecycle] Re-proposal notification skipped: ${String(error)}`,
+    );
+  }
+
+  return updated;
+}
+
+/**
+ * Pack 19A.5 — Author initiates transfer while current accepted owner remains canonical
+ * until the replacement Participant Accepts.
+ */
+export async function initiateImplementationCommitmentTransfer(
+  identity: RequestIdentity,
+  commitmentId: string,
+  nextParticipantId: string,
+  options: {
+    resolveProposedParticipantExists?: ResolveProposedParticipantExists;
+  } = {},
+): Promise<InitiativeImplementationCommitment> {
+  const trimmedNext = nextParticipantId.trim();
+
+  if (!trimmedNext) {
+    throw new Error("Proposed Participant ID is required.");
+  }
+
+  const resolveExists =
+    options.resolveProposedParticipantExists ?? defaultResolveProposedParticipantExists;
+
+  if (!(await resolveExists(trimmedNext))) {
+    throw new Error(`Proposed Participant ID is unknown: ${trimmedNext}`);
+  }
+
+  const commitment = getCommitmentById(commitmentId);
+
+  if (!commitment) {
+    throw new Error("Implementation commitment not found.");
+  }
+
+  const initiative = getOwnedInitiative(commitment.initiativeId, identity);
+
+  if (commitment.status !== "published") {
+    throw new Error("Only a published Implementation Commitment can be transferred.");
+  }
+
+  if (commitment.proposalStatus !== "accepted") {
+    throw new Error("Only an accepted Implementation Commitment can be transferred.");
+  }
+
+  if (commitment.pendingProposedParticipantId) {
+    throw new Error("A responsibility transfer is already pending for this commitment.");
+  }
+
+  if (commitment.participantId === trimmedNext) {
+    throw new Error("Cannot transfer responsibility to the current responsible Participant.");
+  }
+
+  const now = new Date().toISOString();
+  const updated = tryInitiateResponsibilityTransfer(commitmentId, trimmedNext, now);
+
+  if (!updated) {
+    throw new Error("This commitment can no longer be transferred.");
+  }
+
+  try {
+    await notifyProposedParticipant({
+      commitment: updated,
+      proposedParticipantId: trimmedNext,
+      initiativeTitle: initiative.title,
+    });
+  } catch (error) {
+    console.warn(
+      `[initiative-implementation-commitment-lifecycle] Transfer proposal notification skipped: ${String(error)}`,
+    );
+  }
+
+  return updated;
+}
+
+async function notifyPreviousOwnerOfTransfer(input: {
+  commitment: InitiativeImplementationCommitment;
+  previousOwnerId: string;
+  replacementParticipantId: string;
+}): Promise<void> {
+  if (input.previousOwnerId === input.replacementParticipantId) {
+    return;
+  }
+
+  const authUser = await findAuthUserByMemberId(input.previousOwnerId);
+
+  if (!authUser) {
+    return;
+  }
+
+  const initiative = getInitiativeById(input.commitment.initiativeId);
+  const replacementName = await resolveActorDisplayName(input.replacementParticipantId);
+  const actionText =
+    input.commitment.approvedAction?.trim() ||
+    input.commitment.commitmentTitle.trim() ||
+    "an Implementation Action";
+  const initiativeTitle = initiative?.title ?? input.commitment.initiativeId;
+  const relatedUrl = `/initiatives/public/${encodeURIComponent(input.commitment.initiativeId)}#implementation-commitments`;
+
+  await createNotification({
+    recipientUserId: authUser.userId,
+    recipientProfileId: input.previousOwnerId,
+    eventType: "implementation_commitment_taken",
+    title: "Implementation Commitment transferred",
+    message: `Responsibility for "${actionText}" on "${initiativeTitle}" was transferred to ${replacementName}.`,
+    relatedEntityType: "implementation_commitment",
+    relatedEntityId: input.commitment.commitmentId,
+    relatedUrl,
+    priority: "normal",
+  });
+}
+
+async function resolveActorDisplayName(participantId: string): Promise<string> {
+  try {
+    const member = await getMemberById(participantId);
+    const displayName = member?.profile.displayName?.trim();
+
+    if (displayName) {
+      return displayName;
+    }
+  } catch {
+    // Best-effort display only.
+  }
+
+  return "A Participant";
+}
+
+async function notifyStewardOfTakenCommitment(input: {
+  commitment: InitiativeImplementationCommitment;
+  actorParticipantId: string;
+}): Promise<void> {
+  const initiative = getInitiativeById(input.commitment.initiativeId);
+  const stewardId = initiative?.stewardId ?? input.commitment.proposedByParticipantId;
+
+  if (!stewardId || stewardId === input.actorParticipantId) {
+    return;
+  }
+
+  const authUser = await findAuthUserByMemberId(stewardId);
+
+  if (!authUser) {
+    return;
+  }
+
+  const actorName = await resolveActorDisplayName(input.actorParticipantId);
+  const actionText =
+    input.commitment.approvedAction?.trim() ||
+    input.commitment.commitmentTitle.trim() ||
+    "an Implementation Action";
+  const initiativeTitle = initiative?.title ?? input.commitment.initiativeId;
+  const relatedUrl = `/initiatives/public/${encodeURIComponent(input.commitment.initiativeId)}#implementation-commitments`;
+
+  await createNotification({
+    recipientUserId: authUser.userId,
+    recipientProfileId: stewardId,
+    eventType: "implementation_commitment_taken",
+    title: "Implementation Commitment taken",
+    message: `${actorName} took responsibility for "${actionText}" on "${initiativeTitle}".`,
+    relatedEntityType: "implementation_commitment",
+    relatedEntityId: input.commitment.commitmentId,
+    relatedUrl,
+    priority: "normal",
+  });
+}
+
+/**
+ * Pack 19A.3 — voluntary Take Commitment.
+ * published + unassigned → same accepted-responsibility fact as proposal Accept.
+ * Ally status is not required. Admin/Editor gain no implicit responsibility.
+ */
+export async function takeInitiativeImplementationCommitment(
+  identity: RequestIdentity,
+  commitmentId: string,
+  options: {
+    notifySteward?: (input: {
+      commitment: InitiativeImplementationCommitment;
+      actorParticipantId: string;
+    }) => Promise<void>;
+  } = {},
+): Promise<InitiativeImplementationCommitment> {
+  const commitment = getCommitmentById(commitmentId);
+
+  if (!commitment) {
+    throw new Error("Implementation commitment not found.");
+  }
+
+  await validateDirectInitiativeAncestry(
+    { initiativeId: commitment.initiativeId },
+    {
+      initiativeExists(id) {
+        return getInitiativeById(id) !== null;
+      },
+    },
+  );
+
+  if (commitment.status !== "published") {
+    throw new Error("Only a published Implementation Commitment can be taken.");
+  }
+
+  if (commitment.proposalStatus == null) {
+    throw new Error("Only an unassigned Implementation Commitment can be taken.");
+  }
+
+  if (commitment.proposalStatus === "accepted") {
+    throw new Error("This commitment has already been taken.");
+  }
+
+  if (commitment.proposalStatus !== "unassigned") {
+    throw new Error("Only an unassigned Implementation Commitment can be taken.");
+  }
+
+  const acceptedAt = new Date().toISOString();
+  // Validates transition rules; acceptedAt is always server-stamped here.
+  buildTakeImplementationCommitmentAcceptanceUpdate(
+    commitment,
+    identity.participantId,
+    acceptedAt,
+  );
+
+  const taken = tryTakeUnassignedCommitment(
+    commitmentId,
+    identity.participantId,
+    acceptedAt,
+  );
+
+  if (!taken) {
+    const current = getCommitmentById(commitmentId);
+
+    if (current?.proposalStatus === "accepted") {
+      throw new Error("This commitment has already been taken.");
+    }
+
+    throw new Error("Only an unassigned Implementation Commitment can be taken.");
+  }
+
+  try {
+    await (options.notifySteward ?? notifyStewardOfTakenCommitment)({
+      commitment: taken,
+      actorParticipantId: identity.participantId,
+    });
+  } catch (error) {
+    console.warn(
+      `[initiative-implementation-commitment-lifecycle] Take notification skipped: ${String(error)}`,
+    );
+  }
+
+  return taken;
 }

@@ -146,6 +146,8 @@ export type CivicNotificationEventType =
   | "civic_accountability_event_added"
   | "civic_accountability_closed"
   | "commitment_published"
+  | "implementation_commitment_proposed"
+  | "implementation_commitment_taken"
   | "tracking_updated"
   | "impact_verified"
   | "archive_published"
@@ -318,6 +320,16 @@ export const CIVIC_NOTIFICATION_EVENT_REGISTRY: readonly CivicNotificationEventD
   {
     eventType: "commitment_published",
     description: "An implementation commitment was published.",
+    entityType: "implementation_commitment",
+  },
+  {
+    eventType: "implementation_commitment_proposed",
+    description: "A Participant was proposed as responsible for an Implementation Commitment Action.",
+    entityType: "implementation_commitment",
+  },
+  {
+    eventType: "implementation_commitment_taken",
+    description: "A Participant voluntarily took responsibility for an unassigned Implementation Commitment.",
     entityType: "implementation_commitment",
   },
   {

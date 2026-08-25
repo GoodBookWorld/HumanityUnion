@@ -102,6 +102,32 @@ export async function listProposalCandidateDocumentsByCommentIds(
   return result;
 }
 
+/**
+ * Pack 19C.2B — Participant Proposal statistics.
+ * Lists candidates attributed to the comment author (`sourceParticipantId`).
+ */
+export async function listProposalCandidateDocumentsBySourceParticipantId(
+  sourceParticipantId: string,
+): Promise<InitiativeDiscussionProposalCandidate[]> {
+  const trimmed = sourceParticipantId.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  if (!isMongoConfigured()) {
+    return [];
+  }
+
+  await connectMongoClient();
+
+  const documents = await candidatesCollection()
+    .find({ sourceParticipantId: trimmed, status: "candidate" })
+    .toArray();
+
+  return documents.map((document) => fromInitiativeDiscussionProposalCandidateMongoDocument(document));
+}
+
 // --- Narrow test-only cleanup helper. Exact selector only; no delete-all,
 // no wildcard mode, no production callers (Recovery Task 31 Part 19 style).
 
@@ -114,6 +140,19 @@ export async function deleteProposalCandidatesByInitiativeIdForTests(
 
   await connectMongoClient();
   const result = await candidatesCollection().deleteMany({ initiativeId });
+
+  return result.deletedCount ?? 0;
+}
+
+export async function deleteProposalCandidatesBySourceParticipantIdForTests(
+  sourceParticipantId: string,
+): Promise<number> {
+  if (!isMongoConfigured()) {
+    return 0;
+  }
+
+  await connectMongoClient();
+  const result = await candidatesCollection().deleteMany({ sourceParticipantId });
 
   return result.deletedCount ?? 0;
 }

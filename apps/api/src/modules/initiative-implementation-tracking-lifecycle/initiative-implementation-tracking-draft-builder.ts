@@ -82,7 +82,7 @@ function generateDeterministicImplementationTrackingDraftContent(
         commitmentId: commitment.commitmentId,
         title: commitment.approvedAction,
         description: commitment.commitmentSummary || commitment.approvedAction,
-        responsibleParticipantId: commitment.participantId,
+        responsibleParticipantId: commitment.participantId ?? "",
         targetDate: commitment.expectedCompletionDate,
         obstacles: commitment.relatedRisks,
         notes: commitment.suggestedResponsibleRole

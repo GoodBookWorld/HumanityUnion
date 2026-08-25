@@ -70,6 +70,43 @@ export async function declineInitiativeImplementationCommitment(
   );
 }
 
+export async function takeInitiativeImplementationCommitment(
+  commitmentId: string,
+): Promise<InitiativeImplementationCommitment> {
+  return apiRequest<InitiativeImplementationCommitment>(
+    `/api/v1/initiative-implementation-commitment-lifecycle/commitments/${encodeURIComponent(commitmentId)}/take`,
+    { method: "POST" },
+  );
+}
+
+export async function reproposeInitiativeImplementationCommitment(
+  commitmentId: string,
+  participantId: string,
+): Promise<InitiativeImplementationCommitment> {
+  return apiRequest<InitiativeImplementationCommitment>(
+    `/api/v1/initiative-implementation-commitment-lifecycle/commitments/${encodeURIComponent(commitmentId)}/repropose`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ participantId }),
+    },
+  );
+}
+
+export async function initiateImplementationCommitmentTransfer(
+  commitmentId: string,
+  participantId: string,
+): Promise<InitiativeImplementationCommitment> {
+  return apiRequest<InitiativeImplementationCommitment>(
+    `/api/v1/initiative-implementation-commitment-lifecycle/commitments/${encodeURIComponent(commitmentId)}/transfer`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ participantId }),
+    },
+  );
+}
+
 export async function listMyProposedInitiativeImplementationCommitments(): Promise<
   InitiativeImplementationCommitment[]
 > {

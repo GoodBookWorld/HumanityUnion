@@ -244,6 +244,7 @@ async function main(): Promise<void> {
     const publishedCommitmentPackage = await publishInitiativeImplementationCommitmentStage(
       steward,
       initiativeId,
+      { resolveProposedParticipantExists: async () => true },
     );
     const firstCommitmentId = publishedCommitmentPackage.commitmentIds[0]!;
     const secondCommitmentId = publishedCommitmentPackage.commitmentIds[1]!;

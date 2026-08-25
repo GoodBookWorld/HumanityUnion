@@ -36,12 +36,12 @@ function StatisticSkeletonCard({ label }: { label: string }) {
 }
 
 /**
- * Profile UX Pack 02 Part 1/4/11 — the ONE shared "Personal Statistics"
- * component reused verbatim by Workspace (Part 1) and the Member Profile
- * page (Part 4). Visually mirrors the existing `platform-statistics__card`
- * language (border, radius, shadow, icon-over-value-over-label), scoped
- * under its own `personal-statistics__` class names since these numbers
- * are per-Participant, not platform-wide.
+ * Profile UX Pack 02 Part 1/4/11 / Pack 19C.3 — the ONE shared "Personal
+ * Statistics" component reused verbatim by Workspace (Part 1) and the Member
+ * Profile page (Part 4). Visually mirrors the existing `platform-statistics__card`
+ * language (border, radius, shadow, icon-over-value-over-label), scoped under
+ * its own `personal-statistics__` class names since these numbers are
+ * per-Participant, not platform-wide. Six cards from `PERSONAL_STATISTICS_CARDS`.
  */
 export function PersonalStatisticsCards({
   statistics,

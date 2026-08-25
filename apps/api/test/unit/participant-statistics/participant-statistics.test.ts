@@ -22,6 +22,9 @@ function buildDeps(
     listInitiativesStewardedBy: () => [],
     listWorkspaceAlliesForParticipant: async () => [],
     countActiveCollaborationsForParticipant: async () => 0,
+    listProposalCandidatesForParticipant: async () => [],
+    listActivePetitionSignaturesForParticipant: async () => [],
+    listCommitmentsForParticipant: () => [],
     ...overrides,
   };
 }
@@ -34,6 +37,11 @@ describe("getParticipantStatistics (Profile UX Pack 02 Part 1/11)", () => {
       initiativesCount: 0,
       collectiveDecisionsCount: 0,
       alliesCount: 0,
+      proposalsCount: 0,
+      petitionsCount: 0,
+      commitmentsAcceptedCount: 0,
+      commitmentsActiveCount: 0,
+      commitmentsFulfilledCount: 0,
     });
   });
 
@@ -91,6 +99,11 @@ describe("getParticipantStatistics (Profile UX Pack 02 Part 1/11)", () => {
       initiativesCount: 1,
       collectiveDecisionsCount: 2,
       alliesCount: 3,
+      proposalsCount: 0,
+      petitionsCount: 0,
+      commitmentsAcceptedCount: 0,
+      commitmentsActiveCount: 0,
+      commitmentsFulfilledCount: 0,
     });
   });
 
@@ -109,10 +122,81 @@ describe("getParticipantStatistics (Profile UX Pack 02 Part 1/11)", () => {
         seenIds.push(participantId);
         return 0;
       },
+      listProposalCandidatesForParticipant: async (participantId) => {
+        seenIds.push(participantId);
+        return [];
+      },
+      listActivePetitionSignaturesForParticipant: async (participantId) => {
+        seenIds.push(participantId);
+        return [];
+      },
+      listCommitmentsForParticipant: (participantId) => {
+        seenIds.push(participantId);
+        return [];
+      },
     });
 
     await getParticipantStatistics(PARTICIPANT_ID, deps);
 
-    assert.deepEqual(seenIds, [PARTICIPANT_ID, PARTICIPANT_ID, PARTICIPANT_ID]);
+    assert.deepEqual(seenIds, [
+      PARTICIPANT_ID,
+      PARTICIPANT_ID,
+      PARTICIPANT_ID,
+      PARTICIPANT_ID,
+      PARTICIPANT_ID,
+      PARTICIPANT_ID,
+    ]);
+  });
+
+  it("Pack 19B — commitment counts flow through the shared aggregation", async () => {
+    const deps = buildDeps({
+      listCommitmentsForParticipant: () => [
+        {
+          participantId: PARTICIPANT_ID,
+          proposalStatus: "accepted",
+          acceptedAt: "2026-01-01T00:00:00.000Z",
+          status: "published",
+        },
+        {
+          participantId: PARTICIPANT_ID,
+          proposalStatus: "accepted",
+          acceptedAt: "2026-01-02T00:00:00.000Z",
+          status: "completed",
+        },
+      ],
+    });
+
+    const statistics = await getParticipantStatistics(PARTICIPANT_ID, deps);
+
+    assert.equal(statistics.commitmentsAcceptedCount, 2);
+    assert.equal(statistics.commitmentsActiveCount, 1);
+    assert.equal(statistics.commitmentsFulfilledCount, 1);
+  });
+
+  it("Pack 19C.2B — proposal and petition counts flow through the shared aggregation", async () => {
+    const deps = buildDeps({
+      listProposalCandidatesForParticipant: async () => [
+        {
+          candidateId: "cand-1",
+          sourceParticipantId: PARTICIPANT_ID,
+          status: "candidate",
+        },
+        {
+          candidateId: "cand-2",
+          sourceParticipantId: PARTICIPANT_ID,
+          status: "candidate",
+        },
+      ],
+      listActivePetitionSignaturesForParticipant: async () => [
+        { petitionId: "petition-1", memberId: PARTICIPANT_ID, status: "Active" },
+        { petitionId: "petition-2", memberId: PARTICIPANT_ID, status: "Active" },
+        { petitionId: "petition-3", memberId: PARTICIPANT_ID, status: "Active" },
+      ],
+    });
+
+    const statistics = await getParticipantStatistics(PARTICIPANT_ID, deps);
+
+    assert.equal(statistics.proposalsCount, 2);
+    assert.equal(statistics.petitionsCount, 3);
   });
 });

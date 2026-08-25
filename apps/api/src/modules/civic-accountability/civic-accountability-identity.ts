@@ -31,7 +31,9 @@ export function canRecordCivicAccountability(
   }
 
   const isCommitmentAuthor = listCommitmentsByInitiative(accountability.initiativeId).some(
-    (commitment) => commitment.participantId === identity.participantId,
+    (commitment) =>
+      commitment.participantId === identity.participantId &&
+      (commitment.proposalStatus == null || commitment.proposalStatus === "accepted"),
   );
 
   if (isCommitmentAuthor) {

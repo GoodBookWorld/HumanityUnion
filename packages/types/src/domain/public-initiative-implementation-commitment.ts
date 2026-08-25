@@ -35,6 +35,9 @@ export interface PublicInitiativeImplementationCommitmentProjection {
   relatedRisks: readonly string[];
   references: readonly string[];
   traceability: ImplementationCommitmentTraceability | null;
+  responsibleParticipantId: string | null;
+  /** Pack 19A.5 — transfer invitee while current owner remains responsible. */
+  pendingProposedParticipantId: string | null;
 }
 
 export interface PublicInitiativeImplementationCommitmentListItem {
@@ -55,6 +58,13 @@ export interface PublicInitiativeImplementationCommitmentListItem {
   approvedAction: string | null;
   proposalStatus: InitiativeImplementationCommitmentProposalStatus | null;
   priority: string | null;
+  /**
+   * Invitee (proposed) or responsible Participant (accepted).
+   * Null when unassigned or legacy records without a responsible Participant.
+   */
+  responsibleParticipantId: string | null;
+  /** Pack 19A.5 — transfer invitee while current owner remains responsible. */
+  pendingProposedParticipantId: string | null;
 }
 
 export interface InitiativeImplementationCommitmentMetrics {

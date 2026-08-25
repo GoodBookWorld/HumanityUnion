@@ -351,10 +351,14 @@ export type {
 } from "./initiative-implementation-commitment.js";
 export {
   canTransitionInitiativeImplementationCommitment,
+  hasAcceptedImplementationResponsibility,
   INITIATIVE_IMPLEMENTATION_COMMITMENT_TRANSITIONS,
   isInitiativeImplementationCommitmentTerminal,
+  isPackageActionImplementationCommitment,
 } from "./initiative-implementation-commitment.js";
 export type {
+  ImplementationCommitmentProposalHistoryEntry,
+  ImplementationCommitmentProposalHistoryOutcome,
   ImplementationCommitmentTraceability,
   InitiativeImplementationCommitmentCandidate,
   InitiativeImplementationCommitmentCandidateDraftStatus,

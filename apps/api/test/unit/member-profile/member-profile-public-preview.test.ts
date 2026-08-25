@@ -54,6 +54,9 @@ function buildProfile(overrides: Partial<MemberProfile> = {}): MemberProfile {
     showInitiativesStatistics: true,
     showCollectiveDecisionsStatistics: true,
     showAlliesStatistics: true,
+    showProposalsStatistics: true,
+    showPetitionsStatistics: true,
+    showCommitmentsStatistics: true,
     messagingPolicy: "active_allies",
     status: "active",
     ...overrides,
@@ -189,6 +192,9 @@ describe("getMyPublicMemberProfilePreview (Pack 03.3 — Privacy invariant with 
       showInitiativesStatistics: false,
       showCollectiveDecisionsStatistics: false,
       showAlliesStatistics: false,
+      showProposalsStatistics: false,
+      showPetitionsStatistics: false,
+      showCommitmentsStatistics: false,
     });
 
     const preview = await getMyPublicMemberProfilePreview(user.userId);

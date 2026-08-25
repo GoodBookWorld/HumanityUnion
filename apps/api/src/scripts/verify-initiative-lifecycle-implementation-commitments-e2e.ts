@@ -287,7 +287,9 @@ async function main(): Promise<void> {
     );
 
     console.log("6. Publish — Package created, Commitments published, draft deleted, Tracking unlocks");
-    const publishedPackage = await publishInitiativeImplementationCommitmentStage(steward, initiativeId);
+    const publishedPackage = await publishInitiativeImplementationCommitmentStage(steward, initiativeId, {
+      resolveProposedParticipantExists: async () => true,
+    });
     assert(publishedPackage.status === "published", "Published Package must be status=published.");
     assert(
       publishedPackage.decisionId === closedDecision.decisionId,
@@ -335,8 +337,8 @@ async function main(): Promise<void> {
       allyOne,
     );
     assert(
-      trackingEligibilityAfter.eligible === true,
-      "Implementation Tracking must unlock immediately after publication, for the proposed Participant.",
+      trackingEligibilityAfter.eligible === false,
+      "Implementation Tracking must stay locked for a proposed Participant until they Accept.",
     );
 
     console.log("8. Ally Accept — proposalStatus flips, appears in listCommitmentsByParticipant(ally)");
@@ -347,6 +349,15 @@ async function main(): Promise<void> {
     assert(
       allyCommitments.some((commitment) => commitment.commitmentId === firstCommitmentId),
       "Accepted Commitment must be listed under the Ally's own commitments.",
+    );
+
+    const trackingEligibilityAfterAccept = assessInitiativeImplementationTrackingEligibility(
+      firstCommitmentId,
+      allyOne,
+    );
+    assert(
+      trackingEligibilityAfterAccept.eligible === true,
+      "Implementation Tracking must unlock after Accept.",
     );
 
     const proposedForAllyTwo = await listMyProposedInitiativeImplementationCommitments({

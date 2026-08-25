@@ -40,20 +40,37 @@ import {
 } from "./participant-profile-surface-presentation.js";
 
 describe("buildVisibleStatisticCards", () => {
-  it("test 1 — renders all three statistics in the required order (Initiatives, Collective Decisions, Allies)", () => {
+  it("test 1 — renders all six statistics in the required order (Pack 19C.3)", () => {
     const cards = buildVisibleStatisticCards({
       initiativesCount: 2,
       collectiveDecisionsCount: 0,
       alliesCount: 5,
+      proposalsCount: 3,
+      petitionsCount: 4,
+      commitmentsFulfilledCount: 1,
     });
 
     assert.deepEqual(
       cards.map((card) => card.key),
-      ["initiativesCount", "collectiveDecisionsCount", "alliesCount"],
+      [
+        "initiativesCount",
+        "collectiveDecisionsCount",
+        "alliesCount",
+        "proposalsCount",
+        "petitionsCount",
+        "commitmentsFulfilledCount",
+      ],
     );
     assert.deepEqual(
       cards.map((card) => card.label),
-      ["Initiatives", "Collective Decisions", "Allies"],
+      [
+        "Initiatives",
+        "Collective Decisions",
+        "Allies",
+        "Proposals",
+        "Petitions",
+        "Implementation Commitments",
+      ],
     );
   });
 
@@ -62,11 +79,17 @@ describe("buildVisibleStatisticCards", () => {
       initiativesCount: 7,
       collectiveDecisionsCount: 3,
       alliesCount: 11,
+      proposalsCount: 9,
+      petitionsCount: 8,
+      commitmentsFulfilledCount: 2,
     });
 
     assert.equal(cards.find((card) => card.key === "initiativesCount")?.value, 7);
     assert.equal(cards.find((card) => card.key === "collectiveDecisionsCount")?.value, 3);
     assert.equal(cards.find((card) => card.key === "alliesCount")?.value, 11);
+    assert.equal(cards.find((card) => card.key === "proposalsCount")?.value, 9);
+    assert.equal(cards.find((card) => card.key === "petitionsCount")?.value, 8);
+    assert.equal(cards.find((card) => card.key === "commitmentsFulfilledCount")?.value, 2);
   });
 
   it("test 3 — omits a statistic Privacy hides entirely, rather than rendering a zero", () => {
@@ -84,6 +107,63 @@ describe("buildVisibleStatisticCards", () => {
       cards.some((card) => card.key === "collectiveDecisionsCount"),
       false,
     );
+  });
+
+  it("Pack 19C.3 — each new privacy flag independently hides its card", () => {
+    const base = {
+      initiativesCount: 1,
+      collectiveDecisionsCount: 2,
+      alliesCount: 3,
+      proposalsCount: 4,
+      petitionsCount: 5,
+      commitmentsFulfilledCount: 6,
+    };
+
+    assert.deepEqual(
+      buildVisibleStatisticCards({ ...base, proposalsCount: undefined }).map((c) => c.key),
+      [
+        "initiativesCount",
+        "collectiveDecisionsCount",
+        "alliesCount",
+        "petitionsCount",
+        "commitmentsFulfilledCount",
+      ],
+    );
+    assert.deepEqual(
+      buildVisibleStatisticCards({ ...base, petitionsCount: undefined }).map((c) => c.key),
+      [
+        "initiativesCount",
+        "collectiveDecisionsCount",
+        "alliesCount",
+        "proposalsCount",
+        "commitmentsFulfilledCount",
+      ],
+    );
+    assert.deepEqual(
+      buildVisibleStatisticCards({ ...base, commitmentsFulfilledCount: undefined }).map(
+        (c) => c.key,
+      ),
+      [
+        "initiativesCount",
+        "collectiveDecisionsCount",
+        "alliesCount",
+        "proposalsCount",
+        "petitionsCount",
+      ],
+    );
+  });
+
+  it("Pack 19C.3 — Implementation Commitments uses fulfilled count, not accepted/active", () => {
+    const cards = buildVisibleStatisticCards({
+      commitmentsAcceptedCount: 9,
+      commitmentsActiveCount: 8,
+      commitmentsFulfilledCount: 2,
+    });
+
+    assert.equal(cards.length, 1);
+    assert.equal(cards[0]!.key, "commitmentsFulfilledCount");
+    assert.equal(cards[0]!.value, 2);
+    assert.equal(cards[0]!.label, "Implementation Commitments");
   });
 
   it("test 4 — returns no cards when every statistic is Privacy-hidden", () => {

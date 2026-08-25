@@ -1,4 +1,5 @@
 import type {
+  ImplementationCommitmentProposalHistoryEntry,
   ImplementationCommitmentTraceability,
   InitiativeImplementationCommitment,
   InitiativeImplementationCommitmentProposalStatus,
@@ -29,8 +30,16 @@ export interface InitiativeImplementationCommitmentUpdate {
   relatedRisks?: string[] | null;
   references?: string[] | null;
   proposedByParticipantId?: string | null;
+  /**
+   * Null for package `unassigned`; set on Accept / Take Commitment.
+   * Never interpret a non-null value alone as accepted responsibility.
+   */
+  participantId?: string | null;
   acceptedAt?: string | null;
   declinedAt?: string | null;
+  pendingProposedParticipantId?: string | null;
+  proposedAt?: string | null;
+  proposalHistory?: ImplementationCommitmentProposalHistoryEntry[] | null;
   traceability?: ImplementationCommitmentTraceability | null;
 }
 
@@ -202,6 +211,10 @@ export function updateCommitment(
     commitment.proposedByParticipantId = update.proposedByParticipantId;
   }
 
+  if (update.participantId !== undefined) {
+    commitment.participantId = update.participantId;
+  }
+
   if (update.acceptedAt !== undefined) {
     commitment.acceptedAt = update.acceptedAt;
   }
@@ -210,10 +223,189 @@ export function updateCommitment(
     commitment.declinedAt = update.declinedAt;
   }
 
+  if (update.pendingProposedParticipantId !== undefined) {
+    commitment.pendingProposedParticipantId = update.pendingProposedParticipantId;
+  }
+
+  if (update.proposedAt !== undefined) {
+    commitment.proposedAt = update.proposedAt;
+  }
+
+  if (update.proposalHistory !== undefined) {
+    commitment.proposalHistory = update.proposalHistory;
+  }
+
   if (update.traceability !== undefined) {
     commitment.traceability = update.traceability;
   }
 
+  commitment.updatedAt = new Date().toISOString();
+
+  persistCommitmentsMap(commitments);
+
+  return structuredClone(commitment);
+}
+
+/**
+ * Pack 19A.3 — conditional Take transition.
+ * Succeeds only while `status === "published"` and `proposalStatus === "unassigned"`.
+ * Single-process atomic: sync Map check+update before persist (no silent overwrite).
+ */
+export function tryTakeUnassignedCommitment(
+  commitmentId: string,
+  actorParticipantId: string,
+  acceptedAt: string,
+): InitiativeImplementationCommitment | null {
+  const commitment = commitments.get(commitmentId);
+
+  if (!commitment) {
+    return null;
+  }
+
+  if (commitment.status !== "published" || commitment.proposalStatus !== "unassigned") {
+    return null;
+  }
+
+  commitment.participantId = actorParticipantId;
+  commitment.proposalStatus = "accepted";
+  commitment.acceptedAt = acceptedAt;
+  commitment.updatedAt = new Date().toISOString();
+
+  persistCommitmentsMap(commitments);
+
+  return structuredClone(commitment);
+}
+
+/**
+ * Pack 19A.5 — conditional re-propose: only while published + declined.
+ */
+export function tryReproposeDeclinedCommitment(
+  commitmentId: string,
+  nextParticipantId: string,
+  proposedAt: string,
+  proposedByParticipantId: string,
+  historyEntry: ImplementationCommitmentProposalHistoryEntry,
+): InitiativeImplementationCommitment | null {
+  const commitment = commitments.get(commitmentId);
+
+  if (!commitment) {
+    return null;
+  }
+
+  if (commitment.status !== "published" || commitment.proposalStatus !== "declined") {
+    return null;
+  }
+
+  const history = [...(commitment.proposalHistory ?? []), historyEntry];
+  commitment.proposalHistory = history;
+  commitment.participantId = nextParticipantId;
+  commitment.proposalStatus = "proposed";
+  commitment.proposedAt = proposedAt;
+  commitment.proposedByParticipantId = proposedByParticipantId;
+  commitment.declinedAt = null;
+  commitment.acceptedAt = null;
+  commitment.pendingProposedParticipantId = null;
+  commitment.updatedAt = new Date().toISOString();
+
+  persistCommitmentsMap(commitments);
+
+  return structuredClone(commitment);
+}
+
+/**
+ * Pack 19A.5 — conditional transfer initiate: accepted owner stays until Accept.
+ */
+export function tryInitiateResponsibilityTransfer(
+  commitmentId: string,
+  pendingProposedParticipantId: string,
+  proposedAt: string,
+): InitiativeImplementationCommitment | null {
+  const commitment = commitments.get(commitmentId);
+
+  if (!commitment) {
+    return null;
+  }
+
+  if (
+    commitment.status !== "published" ||
+    commitment.proposalStatus !== "accepted" ||
+    commitment.pendingProposedParticipantId
+  ) {
+    return null;
+  }
+
+  commitment.pendingProposedParticipantId = pendingProposedParticipantId;
+  commitment.proposedAt = proposedAt;
+  commitment.updatedAt = new Date().toISOString();
+
+  persistCommitmentsMap(commitments);
+
+  return structuredClone(commitment);
+}
+
+/**
+ * Pack 19A.5 — replacement Accept while previous owner remains canonical until this succeeds.
+ */
+export function tryAcceptResponsibilityTransfer(
+  commitmentId: string,
+  actorParticipantId: string,
+  acceptedAt: string,
+  historyEntry: ImplementationCommitmentProposalHistoryEntry,
+): InitiativeImplementationCommitment | null {
+  const commitment = commitments.get(commitmentId);
+
+  if (!commitment) {
+    return null;
+  }
+
+  if (
+    commitment.status !== "published" ||
+    commitment.proposalStatus !== "accepted" ||
+    commitment.pendingProposedParticipantId !== actorParticipantId
+  ) {
+    return null;
+  }
+
+  const history = [...(commitment.proposalHistory ?? []), historyEntry];
+  commitment.proposalHistory = history;
+  commitment.participantId = actorParticipantId;
+  commitment.acceptedAt = acceptedAt;
+  commitment.pendingProposedParticipantId = null;
+  commitment.declinedAt = null;
+  commitment.proposedAt = null;
+  commitment.updatedAt = new Date().toISOString();
+
+  persistCommitmentsMap(commitments);
+
+  return structuredClone(commitment);
+}
+
+/**
+ * Pack 19A.5 — decline a pending transfer without removing the current accepted owner.
+ */
+export function tryDeclineResponsibilityTransfer(
+  commitmentId: string,
+  actorParticipantId: string,
+  historyEntry: ImplementationCommitmentProposalHistoryEntry,
+): InitiativeImplementationCommitment | null {
+  const commitment = commitments.get(commitmentId);
+
+  if (!commitment) {
+    return null;
+  }
+
+  if (
+    commitment.status !== "published" ||
+    commitment.proposalStatus !== "accepted" ||
+    commitment.pendingProposedParticipantId !== actorParticipantId
+  ) {
+    return null;
+  }
+
+  const history = [...(commitment.proposalHistory ?? []), historyEntry];
+  commitment.proposalHistory = history;
+  commitment.pendingProposedParticipantId = null;
+  commitment.proposedAt = null;
   commitment.updatedAt = new Date().toISOString();
 
   persistCommitmentsMap(commitments);

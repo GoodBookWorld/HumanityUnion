@@ -17,6 +17,7 @@ import { validateDirectInitiativeAncestry } from "../../shared/initiative-ancest
 import type { InitiativeImplementationCommitmentEligibility } from "./initiative-implementation-commitment-eligibility.js";
 import { assessInitiativeImplementationCommitmentEligibilityForResolved } from "./initiative-implementation-commitment-eligibility.js";
 import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
+import { assertAcceptedImplementationResponsibility } from "./initiative-implementation-commitment-responsibility.js";
 import {
   createCommitment,
   getCommitmentById,
@@ -378,11 +379,16 @@ export function withdrawInitiativeImplementationCommitment(
 ): InitiativeImplementationCommitment {
   const commitment = getOwnedCommitment(commitmentId, identity);
 
+  assertAcceptedImplementationResponsibility(commitment, identity.participantId, "withdrawn");
   assertTransitionAllowed(commitment, "withdrawn");
 
   const updated = updateCommitment(commitmentId, {
     status: "withdrawn",
     withdrawnAt: new Date().toISOString(),
+    // Pack 19A.6 — terminal state clears any pending transfer invite so a
+    // stale Accept cannot race against a withdrawn Commitment.
+    pendingProposedParticipantId: null,
+    proposedAt: null,
   });
 
   if (!updated) {
@@ -398,11 +404,16 @@ export function completeInitiativeImplementationCommitment(
 ): InitiativeImplementationCommitment {
   const commitment = getOwnedCommitment(commitmentId, identity);
 
+  assertAcceptedImplementationResponsibility(commitment, identity.participantId, "completed");
   assertTransitionAllowed(commitment, "completed");
 
   const updated = updateCommitment(commitmentId, {
     status: "completed",
     completedAt: new Date().toISOString(),
+    // Pack 19A.6 — terminal state clears any pending transfer invite so a
+    // stale Accept cannot race against a completed Commitment.
+    pendingProposedParticipantId: null,
+    proposedAt: null,
   });
 
   if (!updated) {

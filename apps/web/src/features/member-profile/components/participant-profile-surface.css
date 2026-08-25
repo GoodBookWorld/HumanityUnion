@@ -33,7 +33,8 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--hu-space-3, 0.75rem);
-  align-items: start;
+  /* Pack 19C.3 — info + statistics panels stretch to equal height on desktop. */
+  align-items: stretch;
 }
 
 .public-member-page__body-row--single {
@@ -208,13 +209,18 @@
   background: var(--hu-surface-raised, #fff);
 }
 
-/* Pack 18C — compact equal metric cells inside statistics panel */
+/* Pack 18C / 19C.3 — compact equal metric cells (two rows of three) */
+.public-member-page__statistics {
+  height: 100%;
+}
+
 .public-member-page__statistics .personal-statistics__grid {
   gap: var(--hu-space-2, 0.5rem);
+  flex: 1 1 auto;
 }
 
 .public-member-page__statistics .personal-statistics__card {
-  min-height: 4.5rem;
+  min-height: 5rem;
   padding: var(--hu-space-2, 0.5rem);
   box-shadow: var(--hu-shadow-subtle);
   background: var(--hu-surface-raised, #fff);

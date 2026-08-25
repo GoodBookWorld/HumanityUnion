@@ -212,9 +212,9 @@ async function countActiveMembers(windowStartMs: number): Promise<number> {
   }
 
   for (const commitment of listImplementationCommitments()) {
-    registerActor(commitment.participantId, undefined, commitment.createdAt);
-    registerActor(commitment.participantId, undefined, commitment.updatedAt);
-    registerActor(commitment.participantId, undefined, commitment.publishedAt);
+    registerActor(commitment.participantId ?? undefined, undefined, commitment.createdAt);
+    registerActor(commitment.participantId ?? undefined, undefined, commitment.updatedAt);
+    registerActor(commitment.participantId ?? undefined, undefined, commitment.publishedAt);
   }
 
   for (const tracking of listImplementationTrackings()) {

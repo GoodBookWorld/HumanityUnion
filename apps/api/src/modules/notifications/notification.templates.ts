@@ -73,6 +73,16 @@ export const NOTIFICATION_TEMPLATES: Record<CivicNotificationEventType, Notifica
     message: "An implementation commitment was published.",
     priority: "normal",
   },
+  implementation_commitment_proposed: {
+    title: "You have a proposed responsibility",
+    message: "You were proposed as responsible for an Implementation Commitment. Accept or decline to respond.",
+    priority: "important",
+  },
+  implementation_commitment_taken: {
+    title: "Implementation Commitment taken",
+    message: "A Participant took responsibility for an Implementation Commitment.",
+    priority: "normal",
+  },
   tracking_updated: {
     title: "Implementation tracking updated",
     message: "Implementation tracking was updated.",

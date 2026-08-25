@@ -120,6 +120,27 @@ export type InitiativeImplementationCommitmentProposalStatus =
   | "declined";
 
 /**
+ * Pack 19A.5 — append-only proposal/responsibility history.
+ * Preserves declined proposals and previous acceptances across re-propose/transfer.
+ */
+export type ImplementationCommitmentProposalHistoryOutcome =
+  | "declined"
+  | "accepted"
+  | "superseded_by_reproposal"
+  | "transferred_away"
+  | "transfer_declined";
+
+export interface ImplementationCommitmentProposalHistoryEntry {
+  readonly participantId: string;
+  readonly outcome: ImplementationCommitmentProposalHistoryOutcome;
+  readonly resolvedAt: string;
+  readonly proposedByParticipantId?: string | null;
+  readonly proposedAt?: string | null;
+  /** Present when this entry records a prior acceptance that later ended. */
+  readonly acceptedAt?: string | null;
+}
+
+/**
  * Initiative Lifecycle — Part I, Section 9. Permanent answer to
  * "which Collective Decision Action created this Commitment?".
  */

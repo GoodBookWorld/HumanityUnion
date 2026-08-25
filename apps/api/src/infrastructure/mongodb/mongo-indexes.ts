@@ -660,6 +660,8 @@ const MODULE_INDEXES: ReadonlyArray<{
       },
       { key: { petitionId: 1, signedAt: 1 }, name: "petition_signatures_petition_signed_at" },
       { key: { initiativeId: 1 }, name: "petition_signatures_initiative_id" },
+      // Pack 19C.2B — Participant Petition statistics (`listActiveSignaturesByMemberId`).
+      { key: { memberId: 1, status: 1 }, name: "petition_signatures_member_status" },
     ],
   },
   {
@@ -783,16 +785,18 @@ const MODULE_INDEXES: ReadonlyArray<{
   {
     // UX Evolution Pack 02.1 — `sourceCommentId` is the sole uniqueness
     // authority ("one discussion comment -> at most one active Proposal
-    // Candidate"). No `initiativeId`/`createdAt` index is declared: the only
-    // real read patterns are find-by-candidateId's owning comment
-    // (`sourceCommentId`) and a batched `$in` lookup over comment ids, both
-    // already served by this one unique index.
+    // Candidate"). Pack 19C.2B adds `sourceParticipantId`+`status` for
+    // Participant Proposal statistics (`listProposalCandidatesBySourceParticipantId`).
     collectionName: MONGO_COLLECTIONS.initiativeDiscussionProposalCandidates,
     indexes: [
       {
         key: { sourceCommentId: 1 },
         unique: true,
         name: "initiative_discussion_proposal_candidates_source_comment_unique",
+      },
+      {
+        key: { sourceParticipantId: 1, status: 1 },
+        name: "initiative_discussion_proposal_candidates_source_participant_status",
       },
     ],
   },

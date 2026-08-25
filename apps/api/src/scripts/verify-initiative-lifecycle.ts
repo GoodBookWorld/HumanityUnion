@@ -470,6 +470,7 @@ async function runStandardZeroCommunityPath(
   const publishedCommitmentPackage = await publishInitiativeImplementationCommitmentStage(
     steward,
     initiativeId,
+    { resolveProposedParticipantExists: async () => true },
   );
   assert(
     publishedCommitmentPackage.commitmentIds.length > 0,

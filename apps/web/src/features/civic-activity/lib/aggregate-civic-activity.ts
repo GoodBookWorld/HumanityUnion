@@ -8,6 +8,7 @@ import type {
   InitiativeImprovementProposal,
   InitiativePublicImpact,
 } from "@hu/types";
+import { hasAcceptedImplementationResponsibility } from "@hu/types";
 
 import type {
   ActiveActivityGroup,
@@ -134,23 +135,18 @@ function buildDecisionParticipationGroup(
 }
 
 /**
- * Initiative Lifecycle — Part I, Section 6/10: a `published` Commitment
- * whose voluntary proposal is still `"unassigned"` or `"proposed"` is not
- * yet a real accepted responsibility for the participant it happens to be
- * keyed by (a steward placeholder, or an invitation awaiting response) —
- * only `"accepted"` (or a legacy record predating Part I, which carries no
- * `proposalStatus` at all) counts toward "My Implementation Commitments".
- * A `"proposed"` invitation is still surfaced, but only via its own
- * `proposed` metric, so it never inflates the accepted-commitment counts.
+ * Initiative Lifecycle — Part I, Section 6/10: only canonical accepted
+ * responsibility counts toward "My Implementation Commitments" totals.
+ * Proposed invitations and unassigned Actions never inflate accepted counts.
+ * Legacy TASK-031 records (null proposalStatus) remain countable via the
+ * shared responsibility predicate.
  */
 function isCountedCommitment(commitment: InitiativeImplementationCommitment): boolean {
-  if (commitment.status !== "published") {
-    return true;
+  if (commitment.participantId == null) {
+    return false;
   }
 
-  return commitment.proposalStatus === undefined || commitment.proposalStatus === null
-    ? true
-    : commitment.proposalStatus === "accepted";
+  return hasAcceptedImplementationResponsibility(commitment, commitment.participantId);
 }
 
 function buildCommitmentsGroup(

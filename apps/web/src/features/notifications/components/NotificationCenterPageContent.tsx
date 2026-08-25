@@ -35,8 +35,13 @@ import { CommunicationSummary } from "./CommunicationSummary";
 import { NotificationCenterParticipantIdentity } from "./NotificationCenterParticipantIdentity";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { AuthorApplicationReviewModal } from "../../blog/components/AuthorApplicationReviewModal";
+import { fetchAuthSession } from "../../auth/auth-api";
+import { ImplementationCommitmentProposalActions } from "./ImplementationCommitmentProposalActions";
 
 import "../notifications-page.css";
+
+const IMPLEMENTATION_COMMITMENT_PROPOSED_EVENT = "implementation_commitment_proposed";
+const IMPLEMENTATION_COMMITMENT_ENTITY = "implementation_commitment";
 
 /**
  * Lifecycle UX Correction Pack 01 Part 1 — Communication event types.
@@ -88,10 +93,12 @@ function dedupeChannelNotificationsByInitiative(
 
 function NotificationRow({
   notification,
+  viewerParticipantId,
   onUpdated,
   onReviewAuthorApplication,
 }: {
   notification: MemberNotificationView;
+  viewerParticipantId: string | null;
   onUpdated: () => void;
   onReviewAuthorApplication?: (applicationId: string) => void;
 }) {
@@ -122,6 +129,9 @@ function NotificationRow({
 
   const isAuthorApplicationReview =
     notification.eventType === "blog_author_application_review_requested";
+  const isCommitmentProposal =
+    notification.eventType === IMPLEMENTATION_COMMITMENT_PROPOSED_EVENT &&
+    notification.relatedEntityType === IMPLEMENTATION_COMMITMENT_ENTITY;
 
   return (
     <CommunicationCard
@@ -140,7 +150,20 @@ function NotificationRow({
       }
       actions={
         <>
-          {isAuthorApplicationReview && onReviewAuthorApplication ? (
+          {isCommitmentProposal ? (
+            <ImplementationCommitmentProposalActions
+              commitmentId={notification.relatedEntityId}
+              relatedUrl={notification.relatedUrl}
+              viewerParticipantId={viewerParticipantId}
+              onResolved={() => {
+                if (notification.status === "unread") {
+                  void handleMarkRead();
+                } else {
+                  onUpdated();
+                }
+              }}
+            />
+          ) : isAuthorApplicationReview && onReviewAuthorApplication ? (
             <button
               type="button"
               className="notifications-page__link"
@@ -241,11 +264,43 @@ function ChannelMessageRow({ notification }: { notification: MemberNotificationV
 
 function ReminderRow({
   reminder,
+  viewerParticipantId,
   onFollowed,
+  onUpdated,
 }: {
   reminder: CommunicationReminderView;
+  viewerParticipantId: string | null;
   onFollowed: (reminderId: string) => void;
+  onUpdated: () => void;
 }) {
+  const isCommitmentProposal = reminder.relatedEntityType === IMPLEMENTATION_COMMITMENT_ENTITY;
+
+  if (isCommitmentProposal) {
+    return (
+      <CommunicationCard
+        mode="reminder"
+        title={reminder.title}
+        description={reminder.message}
+        meta={formatInitiativeDate(reminder.createdAt)}
+        actions={
+          <ImplementationCommitmentProposalActions
+            commitmentId={reminder.relatedEntityId}
+            relatedUrl={reminder.relatedUrl}
+            viewerParticipantId={viewerParticipantId}
+            onResolved={() => {
+              void completeReminder(reminder.reminderId)
+                .catch(() => undefined)
+                .finally(() => {
+                  onFollowed(reminder.reminderId);
+                  onUpdated();
+                });
+            }}
+          />
+        }
+      />
+    );
+  }
+
   return (
     <CommunicationCard
       mode="reminder"
@@ -319,6 +374,7 @@ type SectionLoadState = "loading" | "unauthenticated" | "ready" | "error";
 
 export function NotificationCenterPageContent() {
   const [authenticated, setAuthenticated] = useState(false);
+  const [viewerParticipantId, setViewerParticipantId] = useState<string | null>(null);
 
   const [notificationsState, setNotificationsState] = useState<SectionLoadState>("loading");
   const [notifications, setNotifications] = useState<MemberNotificationView[]>([]);
@@ -349,9 +405,16 @@ export function NotificationCenterPageContent() {
       setAuthenticated(true);
       setNotifications(response.notifications);
       setNotificationsState("ready");
+      try {
+        const session = await fetchAuthSession();
+        setViewerParticipantId(session.user?.memberId ?? null);
+      } catch {
+        setViewerParticipantId(null);
+      }
     } catch (fetchError) {
       if (isAuthenticationRequiredError(fetchError)) {
         setAuthenticated(false);
+        setViewerParticipantId(null);
         setNotificationsState("unauthenticated");
         setNotifications([]);
       } else {
@@ -572,6 +635,7 @@ export function NotificationCenterPageContent() {
                     <NotificationRow
                       key={notification.notificationId}
                       notification={notification}
+                      viewerParticipantId={viewerParticipantId}
                       onUpdated={() => void loadNotifications()}
                       onReviewAuthorApplication={setReviewApplicationId}
                     />
@@ -633,7 +697,9 @@ export function NotificationCenterPageContent() {
                     <ReminderRow
                       key={reminder.reminderId}
                       reminder={reminder}
+                      viewerParticipantId={viewerParticipantId}
                       onFollowed={handleReminderFollowed}
+                      onUpdated={() => void loadReminders()}
                     />
                   ))}
                 </ul>

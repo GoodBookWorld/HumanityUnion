@@ -235,6 +235,7 @@ async function main(): Promise<void> {
     const publishedCommitmentPackage = await publishInitiativeImplementationCommitmentStage(
       steward,
       initiativeId,
+      { resolveProposedParticipantExists: async () => true },
     );
     assert(
       publishedCommitmentPackage.commitmentIds.length >= 2,

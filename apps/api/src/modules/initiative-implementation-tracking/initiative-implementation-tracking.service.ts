@@ -14,6 +14,7 @@ import {
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getCommitmentById } from "../initiative-implementation-commitment/initiative-implementation-commitment.store.js";
+import { hasAcceptedImplementationResponsibility } from "../initiative-implementation-commitment/initiative-implementation-commitment-responsibility.js";
 import { assessInitiativeImplementationTrackingEligibilityForResolved } from "./initiative-implementation-tracking-eligibility.js";
 import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 import {
@@ -251,7 +252,7 @@ function getOwnedTracking(
 
   const commitment = getCommitmentById(tracking.commitmentId);
 
-  if (!commitment || commitment.participantId !== identity.participantId) {
+  if (!commitment || !hasAcceptedImplementationResponsibility(commitment, identity.participantId)) {
     throw new Error("You do not have access to this implementation tracking.");
   }
 

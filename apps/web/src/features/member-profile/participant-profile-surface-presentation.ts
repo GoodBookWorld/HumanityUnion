@@ -35,9 +35,10 @@ export interface PublicMemberStatisticCard extends PersonalStatisticsCardConfig 
 
 /**
  * Preserves the exact key order defined by `PERSONAL_STATISTICS_CARDS`
- * (Initiatives, Collective Decisions, Allies) and omits any statistic the
- * profile owner's Privacy settings hide. Never invents a zero for a field
- * that is absent from the projection.
+ * (Initiatives, Collective Decisions, Allies, Proposals, Petitions,
+ * Implementation Commitments) and omits any statistic the profile owner's
+ * Privacy settings hide. Never invents a zero for a field that is absent
+ * from the projection.
  */
 export function buildVisibleStatisticCards(
   statistics: PublicParticipantStatistics | undefined,

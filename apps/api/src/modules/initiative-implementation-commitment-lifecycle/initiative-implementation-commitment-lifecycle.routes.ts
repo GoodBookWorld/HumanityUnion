@@ -8,9 +8,12 @@ import {
   declineInitiativeImplementationCommitment,
   generateInitiativeImplementationCommitmentDraft,
   getInitiativeImplementationCommitmentWorkspaceContext,
+  initiateImplementationCommitmentTransfer,
   listMyProposedInitiativeImplementationCommitments,
   publishInitiativeImplementationCommitmentStage,
+  reproposeInitiativeImplementationCommitment,
   saveInitiativeImplementationCommitmentDraft,
+  takeInitiativeImplementationCommitment,
 } from "./initiative-implementation-commitment-lifecycle.service.js";
 import { validateSaveInitiativeImplementationCommitmentLifecycleDraftInput } from "./initiative-implementation-commitment-lifecycle.validators.js";
 
@@ -40,7 +43,22 @@ function resolveErrorStatus(message: string): number {
     message.includes("already been published") ||
     message.includes("no longer current") ||
     message.includes("must be") ||
-    message.includes("Only a proposed commitment")
+    message.includes("Only a proposed commitment") ||
+    message.includes("already been accepted") ||
+    message.includes("already been declined") ||
+    message.includes("cannot be accepted") ||
+    message.includes("cannot be declined") ||
+    message.includes("Proposed Participant ID is unknown") ||
+    message.includes("already been taken") ||
+    message.includes("Only an unassigned") ||
+    message.includes("Only a published Implementation Commitment can be taken") ||
+    message.includes("can no longer be re-proposed") ||
+    message.includes("can no longer be transferred") ||
+    message.includes("Only a declined") ||
+    message.includes("Only an accepted Implementation Commitment can be transferred") ||
+    message.includes("transfer is already pending") ||
+    message.includes("Cannot transfer responsibility") ||
+    message.includes("transfer is no longer available")
   ) {
     return 409;
   }
@@ -153,6 +171,24 @@ initiativeImplementationCommitmentLifecycleRouter.post(
 );
 
 initiativeImplementationCommitmentLifecycleRouter.post(
+  "/commitments/:commitmentId/take",
+  authenticationMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const commitment = await takeInitiativeImplementationCommitment(
+        identity,
+        getCommitmentId(req),
+      );
+
+      res.json(createSuccessResponse(commitment, "Implementation commitment taken."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+initiativeImplementationCommitmentLifecycleRouter.post(
   "/commitments/:commitmentId/decline",
   authenticationMiddleware,
   async (req, res) => {
@@ -164,6 +200,48 @@ initiativeImplementationCommitmentLifecycleRouter.post(
       );
 
       res.json(createSuccessResponse(commitment, "Implementation commitment declined."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+initiativeImplementationCommitmentLifecycleRouter.post(
+  "/commitments/:commitmentId/repropose",
+  authenticationMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const nextParticipantId =
+        typeof req.body?.participantId === "string" ? req.body.participantId : "";
+      const commitment = await reproposeInitiativeImplementationCommitment(
+        identity,
+        getCommitmentId(req),
+        nextParticipantId,
+      );
+
+      res.json(createSuccessResponse(commitment, "Implementation commitment re-proposed."));
+    } catch (error) {
+      handleServiceError(res, error);
+    }
+  },
+);
+
+initiativeImplementationCommitmentLifecycleRouter.post(
+  "/commitments/:commitmentId/transfer",
+  authenticationMiddleware,
+  async (req, res) => {
+    try {
+      const identity = await resolveRequestIdentity(req);
+      const nextParticipantId =
+        typeof req.body?.participantId === "string" ? req.body.participantId : "";
+      const commitment = await initiateImplementationCommitmentTransfer(
+        identity,
+        getCommitmentId(req),
+        nextParticipantId,
+      );
+
+      res.json(createSuccessResponse(commitment, "Implementation commitment transfer initiated."));
     } catch (error) {
       handleServiceError(res, error);
     }

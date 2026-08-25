@@ -19,7 +19,11 @@ const PUBLIC_STATUSES = new Set<InitiativeImplementationCommitment["status"]>([
   "completed",
 ]);
 
-async function resolveAuthorDisplayName(participantId: string): Promise<string> {
+async function resolveAuthorDisplayName(participantId: string | null): Promise<string> {
+  if (!participantId) {
+    return "Unassigned";
+  }
+
   const member = await getMemberById(participantId);
 
   return member?.profile.displayName ?? "Unknown Participant";
@@ -56,6 +60,8 @@ async function toPublicListItem(
     approvedAction: commitment.approvedAction ?? null,
     proposalStatus: commitment.proposalStatus ?? null,
     priority: commitment.priority ?? null,
+    responsibleParticipantId: commitment.participantId,
+    pendingProposedParticipantId: commitment.pendingProposedParticipantId ?? null,
   };
 }
 
@@ -87,6 +93,8 @@ export async function toPublicInitiativeImplementationCommitmentProjection(
     relatedRisks: commitment.relatedRisks ?? [],
     references: commitment.references ?? [],
     traceability: commitment.traceability ?? null,
+    responsibleParticipantId: commitment.participantId,
+    pendingProposedParticipantId: commitment.pendingProposedParticipantId ?? null,
   };
 }
 

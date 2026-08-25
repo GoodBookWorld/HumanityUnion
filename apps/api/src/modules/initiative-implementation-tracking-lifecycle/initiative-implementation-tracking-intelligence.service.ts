@@ -5,6 +5,7 @@ import type {
   InitiativeImplementationTrackingIntelligenceSnapshot,
   InitiativeImplementationTrackingPackageReference,
 } from "@hu/types";
+import { hasAcceptedImplementationResponsibility } from "@hu/types";
 
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { listActiveAlliesByInitiative } from "../initiative-discussion-collaboration/initiative-ally.store.js";
@@ -138,7 +139,11 @@ export async function buildInitiativeImplementationTrackingIntelligenceSnapshot(
   const commitmentPackage = getCommitmentPackageByInitiativeId(initiativeId);
   const commitments = listCommitmentsByInitiative(initiativeId);
   const acceptedCommitments = commitments
-    .filter((commitment) => commitment.proposalStatus === "accepted")
+    .filter(
+      (commitment) =>
+        commitment.participantId != null &&
+        hasAcceptedImplementationResponsibility(commitment, commitment.participantId),
+    )
     .sort((left, right) => (left.actionIndex ?? 0) - (right.actionIndex ?? 0))
     .map((commitment) => toCommitmentReference(commitment));
 
