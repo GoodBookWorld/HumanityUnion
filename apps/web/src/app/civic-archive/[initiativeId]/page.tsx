@@ -1,8 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { CivicIntegrationPanel } from "../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getCivicArchiveLifecycleRecord } from "../../../features/public-civic-archive/api";
 import { CivicArchiveLifecycleTimeline } from "../../../features/public-civic-archive/components/CivicArchiveLifecycleTimeline";
+import { applyPageSeoOverrideToMetadataInput } from "../../../lib/seo/apply-page-seo-override";
+import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
+import { fetchPublicSeoPageOverride } from "../../../lib/seo/fetch-public-seo-page-override";
+import { buildUnavailablePublicMetadata } from "../../../lib/seo/public-surface-copy";
+import { JsonLdScript, buildWebPageJsonLd } from "../../../lib/seo/structured-data";
 
 import "../civic-archive-page.css";
 
@@ -10,6 +16,39 @@ interface CivicArchiveDetailPageProps {
   params: Promise<{
     initiativeId: string;
   }>;
+}
+
+export async function generateMetadata({
+  params,
+}: CivicArchiveDetailPageProps): Promise<Metadata> {
+  const { initiativeId } = await params;
+  const canonicalPath = `/civic-archive/${encodeURIComponent(initiativeId)}`;
+  const record = await getCivicArchiveLifecycleRecord(initiativeId);
+
+  if (!record) {
+    return buildUnavailablePublicMetadata("Civic Archive record not found | Humanity Union");
+  }
+
+  const description =
+    record.summary?.trim() || `${record.title} — Civic Archive on Humanity Union`;
+  const override = await fetchPublicSeoPageOverride({
+    family: "civic-archive",
+    entityKey: initiativeId,
+  });
+
+  return buildPublicPageMetadata(
+    applyPageSeoOverrideToMetadataInput(
+      {
+        title: record.title,
+        description,
+        canonicalPath,
+        socialTitle: record.title,
+        socialDescription: description,
+        openGraphType: "website",
+      },
+      override?.fields,
+    ),
+  );
 }
 
 function formatDate(value: string | undefined): string {
@@ -40,8 +79,32 @@ export default async function CivicArchiveDetailPage({ params }: CivicArchiveDet
     );
   }
 
+  const description =
+    record.summary?.trim() || `${record.title} — Civic Archive on Humanity Union`;
+  const canonicalPath = `/civic-archive/${encodeURIComponent(initiativeId)}`;
+  const override = await fetchPublicSeoPageOverride({
+    family: "civic-archive",
+    entityKey: initiativeId,
+  });
+  const effectiveTitle = override?.fields.seoTitle?.trim() || record.title;
+  const effectiveDescription = override?.fields.seoDescription?.trim() || description;
+  const effectiveImage = override?.fields.socialImageUrl?.trim() || undefined;
+  const structuredData = buildWebPageJsonLd({
+    name: effectiveTitle,
+    description: effectiveDescription,
+    canonicalPath,
+    imageUrl: effectiveImage,
+    breadcrumbs: [
+      { name: "Home", path: "/" },
+      { name: "Civic Archive", path: "/civic-archive" },
+      { name: effectiveTitle, path: canonicalPath },
+    ],
+  });
+
   return (
-    <main className="civic-archive-page civic-archive-page--detail">
+    <>
+      <JsonLdScript data={structuredData} />
+      <main className="civic-archive-page civic-archive-page--detail">
       <header className="civic-archive-detail__header">
         <p className="civic-archive-detail__eyebrow">Humanity Union Public Civic Archive</p>
         <h1>{record.title}</h1>
@@ -135,5 +198,6 @@ export default async function CivicArchiveDetailPage({ params }: CivicArchiveDet
 
       <CivicIntegrationPanel entityType="civic-archive" entityId={record.archiveRecordId} />
     </main>
+    </>
   );
 }

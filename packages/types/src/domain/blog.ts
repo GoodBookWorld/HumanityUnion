@@ -733,6 +733,11 @@ export interface AdminPublicationDirectoryItem {
   readonly editorialHref: string;
   readonly publishingHref: string;
   readonly administrativeBlockReason?: string;
+  /**
+   * SEO Pack 06 — read-only indicator for Admin SEO inventory.
+   * Customized when Blog optimization seoTitle/seoDescription is set.
+   */
+  readonly seoMode: "automatic" | "customized";
 }
 
 export interface AdminPublicationDirectoryResponse {

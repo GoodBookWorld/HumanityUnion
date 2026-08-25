@@ -86,7 +86,10 @@ export function publicUrlForEntity(
     case "initiative_revision":
       return `/initiatives/public/${encodeURIComponent(extra?.initiativeId ?? entityId)}/revisions/${extra?.version ?? 1}`;
     case "petition":
-      return `/petitions/public/${encodeURIComponent(entityId)}`;
+      // SEO Pack 10 — Strategy B: Initiative-owned public destination when ancestry is known.
+      return extra?.initiativeId
+        ? `/initiatives/public/${encodeURIComponent(extra.initiativeId)}#petition`
+        : `/petitions/public/${encodeURIComponent(entityId)}`;
     case "decision_session":
       return `/decision-sessions/public/${encodeURIComponent(entityId)}`;
     case "collective_decision":

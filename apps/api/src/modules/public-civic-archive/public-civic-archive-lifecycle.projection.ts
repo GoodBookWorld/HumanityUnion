@@ -85,7 +85,9 @@ function childRecord(
 ): CivicArchiveLifecycleChildRecord {
   const publicUrl =
     entityType === "petition"
-      ? `/petitions/public/${encodeURIComponent(entityId)}`
+      ? extra?.initiativeId
+        ? `/initiatives/public/${encodeURIComponent(extra.initiativeId)}#petition`
+        : `/petitions/public/${encodeURIComponent(entityId)}`
       : publicUrlForEntity(entityType, entityId, extra);
 
   return {
@@ -241,6 +243,7 @@ async function buildLifecycleStages(
         petition.subject.summary,
         petition.status,
         petition.updatedAt,
+        { initiativeId },
       ),
     );
   }

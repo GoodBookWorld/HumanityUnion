@@ -342,7 +342,7 @@ export async function publishPetition(petitionId: string): Promise<Petition | nu
 
   const updated = await updatePetitionConditionally(petitionId, record.status, {
     status: "Published",
-    shareLink: buildShareLink(petitionId, publishedAt),
+    shareLink: buildShareLink(record.subject.initiativeId, publishedAt),
     updatedAt: publishedAt,
   });
 

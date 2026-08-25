@@ -222,11 +222,16 @@ describe("Initiative Experience UX Pack — author identity + reaction + civic s
   });
 
   it("Open Graph metadata exposes title, image, and canonical URL", () => {
+    const metadataBuilder = readFileSync(
+      path.resolve(dir, "../../lib/seo/build-public-page-metadata.ts"),
+      "utf8",
+    );
     assert.match(initiativePage, /generateMetadata/);
-    assert.match(initiativePage, /openGraph/);
-    assert.match(initiativePage, /twitter/);
-    assert.match(initiativePage, /canonical/);
-    assert.match(initiativePage, /images/);
+    assert.match(initiativePage, /buildPublicPageMetadata/);
+    assert.match(metadataBuilder, /openGraph/);
+    assert.match(metadataBuilder, /twitter/);
+    assert.match(metadataBuilder, /canonical/);
+    assert.match(metadataBuilder, /images/);
   });
 
   it("absolute URL helper keeps public paths intact", () => {

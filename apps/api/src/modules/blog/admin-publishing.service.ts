@@ -369,6 +369,8 @@ function categoryName(categoryId: BlogPost["categoryId"]): string {
 
 function toPublicationDirectoryItem(post: BlogPost): AdminPublicationDirectoryItem {
   const blocked = post.administrativelyBlocked === true;
+  const seoTitle = post.optimization?.seoTitle?.trim();
+  const seoDescription = post.optimization?.seoDescription?.trim();
   return {
     postId: post.postId,
     title: post.title,
@@ -391,6 +393,7 @@ function toPublicationDirectoryItem(post: BlogPost): AdminPublicationDirectoryIt
     ...(post.administrativeBlockReason
       ? { administrativeBlockReason: post.administrativeBlockReason }
       : {}),
+    seoMode: seoTitle || seoDescription ? "customized" : "automatic",
   };
 }
 

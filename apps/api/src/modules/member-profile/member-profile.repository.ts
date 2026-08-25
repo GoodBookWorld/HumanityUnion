@@ -150,6 +150,38 @@ export async function findMemberProfileByPublicName(
   return document ? stripDocument(document) : null;
 }
 
+/**
+ * SEO Pack 11 — minimal projection for public sitemap enumeration.
+ * Privacy is enforced in the query: only active + public profiles leave Mongo.
+ */
+export async function listPublicSitemapMemberProfileDocuments(): Promise<
+  Array<{ publicName: string; updatedAt: string }>
+> {
+  await ensureMemberProfileMongoReady();
+
+  const collection = getMongoCollection<MemberProfileDocument>(MONGO_COLLECTIONS.memberProfiles);
+  const documents = await collection
+    .find(
+      {
+        profileVisibility: "public",
+        status: "active",
+      },
+      {
+        projection: {
+          publicName: 1,
+          updatedAt: 1,
+          _id: 0,
+        },
+      },
+    )
+    .toArray();
+
+  return documents.map((document) => ({
+    publicName: typeof document.publicName === "string" ? document.publicName : "",
+    updatedAt: typeof document.updatedAt === "string" ? document.updatedAt : "",
+  }));
+}
+
 export async function findMemberProfilesByUserIds(
   userIds: readonly string[],
 ): Promise<Map<string, MemberProfile>> {

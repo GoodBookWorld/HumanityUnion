@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 import { CanonicalInitiativeExperienceLoader } from "../../../../features/public-initiative-experience/components/CanonicalInitiativeExperienceLoader";
 import { getPublicInitiative } from "../../../../features/initiatives/api";
 import { resolveMediaUrl } from "../../../../features/media-upload/media-url";
+import { buildPublicPageMetadata } from "../../../../lib/seo/build-public-page-metadata";
+import { applyPageSeoOverrideToMetadataInput } from "../../../../lib/seo/apply-page-seo-override";
+import { fetchPublicSeoPageOverride } from "../../../../lib/seo/fetch-public-seo-page-override";
+import { JsonLdScript, buildWebPageJsonLd } from "../../../../lib/seo/structured-data";
 
 export const dynamic = "force-dynamic";
 
@@ -10,24 +14,6 @@ interface PublicInitiativePageProps {
   params: Promise<{
     initiativeId: string;
   }>;
-}
-
-function resolveSiteOrigin(): string {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (configured) {
-    return configured.replace(/\/$/, "");
-  }
-  return "";
-}
-
-function toAbsoluteUrl(pathOrUrl: string, origin: string): string {
-  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
-    return pathOrUrl;
-  }
-  if (!origin) {
-    return pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
-  }
-  return `${origin}${pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`}`;
 }
 
 /**
@@ -38,9 +24,7 @@ export async function generateMetadata({
   params,
 }: PublicInitiativePageProps): Promise<Metadata> {
   const { initiativeId } = await params;
-  const origin = resolveSiteOrigin();
   const canonicalPath = `/initiatives/public/${encodeURIComponent(initiativeId)}`;
-  const canonicalUrl = toAbsoluteUrl(canonicalPath, origin);
 
   try {
     const initiative = await getPublicInitiative(initiativeId);
@@ -50,53 +34,37 @@ export async function generateMetadata({
       initiative.metadata.coverMedia?.url ??
       undefined;
     const resolvedImage = resolveMediaUrl(rawImage);
-    const absoluteImage = resolvedImage
-      ? toAbsoluteUrl(resolvedImage, origin || process.env.NEXT_PUBLIC_API_BASE_URL || "")
-      : undefined;
     const description =
-      initiative.description.trim().slice(0, 200) ||
-      `${initiative.title} on Humanity Union`;
+      initiative.description.trim() || `${initiative.title} on Humanity Union`;
 
-    return {
-      title: `${initiative.title} | Humanity Union`,
-      description,
-      alternates: {
-        canonical: canonicalPath,
-      },
-      openGraph: {
-        title: initiative.title,
-        description,
-        url: canonicalUrl,
-        type: "website",
-        ...(absoluteImage
-          ? {
-              images: [
-                {
-                  url: absoluteImage,
-                  alt: initiative.metadata.imageAltText || initiative.title,
-                },
-              ],
-            }
-          : {}),
-      },
-      twitter: {
-        card: absoluteImage ? "summary_large_image" : "summary",
-        title: initiative.title,
-        description,
-        ...(absoluteImage ? { images: [absoluteImage] } : {}),
-      },
-    };
-  } catch {
-    return {
-      title: "Initiative | Humanity Union",
+    const override = await fetchPublicSeoPageOverride({
+      family: "initiative",
+      entityKey: initiativeId,
+    });
+
+    return buildPublicPageMetadata(
+      applyPageSeoOverrideToMetadataInput(
+        {
+          title: initiative.title,
+          description,
+          canonicalPath,
+          socialTitle: initiative.title,
+          socialDescription: description,
+          imageUrl: resolvedImage,
+          imageAlt: initiative.metadata.imageAltText || initiative.title,
+          openGraphType: "website",
+          descriptionMaxLength: 200,
+        },
+        override?.fields,
+      ),
+    );  } catch {
+    return buildPublicPageMetadata({
+      title: "Initiative",
       description: "Public Initiative on Humanity Union",
-      alternates: { canonical: canonicalPath },
-      openGraph: {
-        title: "Initiative | Humanity Union",
-        url: canonicalUrl,
-        type: "website",
-      },
-    };
+      canonicalPath,
+      openGraphType: "website",
+      indexable: false,
+    });
   }
 }
 
@@ -107,6 +75,38 @@ export async function generateMetadata({
  */
 export default async function PublicInitiativePage({ params }: PublicInitiativePageProps) {
   const { initiativeId } = await params;
+  const canonicalPath = `/initiatives/public/${encodeURIComponent(initiativeId)}`;
 
-  return <CanonicalInitiativeExperienceLoader initiativeId={initiativeId} />;
+  let structuredData = null;
+  try {
+    const initiative = await getPublicInitiative(initiativeId);
+    const rawImage =
+      initiative.metadata.imageUrl ??
+      initiative.metadata.coverMedia?.thumbnailUrl ??
+      initiative.metadata.coverMedia?.url ??
+      undefined;
+    const description =
+      initiative.description.trim() || `${initiative.title} on Humanity Union`;
+
+    structuredData = buildWebPageJsonLd({
+      name: initiative.title,
+      description,
+      canonicalPath,
+      imageUrl: resolveMediaUrl(rawImage),
+      breadcrumbs: [
+        { name: "Home", path: "/" },
+        { name: "Initiatives", path: "/initiatives" },
+        { name: initiative.title, path: canonicalPath },
+      ],
+    });
+  } catch {
+    structuredData = null;
+  }
+
+  return (
+    <>
+      <JsonLdScript data={structuredData} />
+      <CanonicalInitiativeExperienceLoader initiativeId={initiativeId} />
+    </>
+  );
 }

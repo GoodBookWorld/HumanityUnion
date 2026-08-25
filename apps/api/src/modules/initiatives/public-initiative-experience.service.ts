@@ -292,7 +292,7 @@ export async function buildStageRecords(
               petitionProjection.petitionSummary.publishedAt ??
               petitionProjection.petitionSummary.opensAt ??
               initiative.updatedAt,
-            publicHref: `/petitions/public/${encodeURIComponent(petitionProjection.petitionIdentity.petitionId)}`,
+            publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#petition`,
           },
         ]
       : [],

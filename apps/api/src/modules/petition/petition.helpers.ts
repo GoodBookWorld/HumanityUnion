@@ -249,9 +249,17 @@ export function mergePetitionPolicy(
   };
 }
 
-export function buildShareLink(petitionId: string, createdAt: string) {
+/**
+ * SEO Pack 10 — Strategy B: primary public Petition share URL is the
+ * Initiative experience shell (#petition), not the legacy /petitions/public route.
+ */
+export function buildPublicPetitionExperiencePath(initiativeId: string): string {
+  return `/initiatives/public/${encodeURIComponent(initiativeId)}#petition`;
+}
+
+export function buildShareLink(initiativeId: string, createdAt: string) {
   return {
-    url: `/petitions/public/${petitionId}`,
+    url: buildPublicPetitionExperiencePath(initiativeId),
     createdAt,
   };
 }

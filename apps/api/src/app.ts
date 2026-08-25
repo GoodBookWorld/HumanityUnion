@@ -150,6 +150,7 @@ import initiativeLifecycleStageProjectionRouter from "./modules/initiatives/init
 import publicInitiativeRouter from "./modules/initiatives/public-initiative.routes.js";
 import publicLatestInitiativesRouter from "./modules/initiatives/public-latest-initiatives.routes.js";
 import publicWorldInitiativesRouter from "./modules/initiatives/public-world-initiatives.routes.js";
+import { publicSitemapRouter } from "./modules/sitemap/index.js";
 import { initiativeSupportRouter } from "./modules/initiative-support/index.js";
 import { publicChoiceCandidateRouter, publicChoiceCandidatesByInitiativeRouter } from "./modules/public-choice-candidate/index.js";
 import { publicChoiceResultsRetentionRouter } from "./modules/public-choice-results-retention/index.js";
@@ -195,6 +196,10 @@ import {
   adminPlatformSocialAccountsRouter,
   publicPlatformSocialAccountsRouter,
 } from "./modules/platform-social-accounts/index.js";
+import {
+  adminSeoPageOverridesRouter,
+  publicSeoPageOverridesRouter,
+} from "./modules/seo-page-overrides/index.js";
 import preferencesRouter from "./modules/preferences/preferences.routes.js";
 import healthRouter from "./routes/health.routes.js";
 
@@ -243,6 +248,8 @@ app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/platform", closedBetaRouter);
 app.use("/api/v1/platform/social-accounts", publicPlatformSocialAccountsRouter);
 app.use("/api/v1/admin/platform/social-accounts", adminPlatformSocialAccountsRouter);
+app.use("/api/v1/admin/seo/page-overrides", adminSeoPageOverridesRouter);
+app.use("/api/v1/public/seo/page-overrides", publicSeoPageOverridesRouter);
 app.use("/api/v1/beta-invites", betaInviteRouter);
 app.use("/api/v1/admin/participants", adminParticipantDirectoryRouter);
 app.use("/api/v1/admin/editors", adminEditorGrantsRouter);
@@ -412,6 +419,7 @@ app.use("/api/v1/public/initiatives", sharedDocumentsInitiativesRouter);
 app.use("/api/v1/public/initiatives", publicInitiativeRouter);
 app.use("/api/v1/public/projections", publicLatestInitiativesRouter);
 app.use("/api/v1/public/projections", publicWorldInitiativesRouter);
+app.use("/api/v1/public/sitemap", publicSitemapRouter);
 app.use("/api/v1/participation", participationRouter);
 app.use("/api/v1/preferences", preferencesRouter);
 

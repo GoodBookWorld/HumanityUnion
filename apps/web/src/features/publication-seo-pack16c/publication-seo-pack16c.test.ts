@@ -47,13 +47,19 @@ describe("Pack 16C — publication SEO and social distribution (web)", () => {
     assert.doesNotMatch(panel, /access_token|oauth_secret|posted to Facebook successfully/i);
   });
 
-  it("public single-post metadata uses post.seo projection", () => {
+  it("public single-post metadata uses post.seo projection via shared Pack 01 builder", () => {
     const page = readWeb("app/blog/[slug]/page.tsx");
     assert.match(page, /post\.seo/);
-    assert.match(page, /openGraph/);
-    assert.match(page, /twitter/);
-    assert.match(page, /canonical/);
-    assert.match(page, /socialTitle|seo\?\.socialTitle/);
+    assert.match(page, /buildPublicPageMetadata/);
+    assert.match(page, /seo\?\.title|seo\?\.description|seo\?\.socialTitle|seo\?\.canonicalPath/);
+    assert.match(page, /canonicalPath/);
+    assert.match(page, /socialTitle/);
+    assert.match(page, /openGraphType:\s*"article"/);
+    assert.doesNotMatch(page, /seo_page_overrides|fetchPublicSeoPageOverride/);
+
+    const builder = readWeb("lib/seo/build-public-page-metadata.ts");
+    assert.match(builder, /openGraph/);
+    assert.match(builder, /twitter/);
   });
 
   it("write payload includes optimization on the canonical post", () => {

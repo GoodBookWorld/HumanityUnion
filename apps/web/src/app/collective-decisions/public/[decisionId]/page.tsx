@@ -348,7 +348,13 @@ export default async function PublicCollectiveDecisionPage({
               View Public Collaborative Analysis
             </Link>
           ) : null}
-          {linkedPetitionId ? (
+          {linkedPetitionId && decision.decisionSubject.subjectType === "Initiative" ? (
+            <Link
+              href={`/initiatives/public/${encodeURIComponent(decision.decisionSubject.subjectId)}#petition`}
+            >
+              View Public Petition
+            </Link>
+          ) : linkedPetitionId ? (
             <Link href={`/petitions/public/${encodeURIComponent(linkedPetitionId)}`}>
               View Public Petition
             </Link>

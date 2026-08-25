@@ -118,6 +118,8 @@ export const MONGO_COLLECTIONS = {
   editorGrants: "editor_grants",
   // Pack 17C — canonical Admin-managed official social account URLs (no credentials).
   platformSocialAccounts: "platform_social_accounts",
+  // SEO Pack 07 — sparse Admin page SEO overrides (non-Blog public pages).
+  seoPageOverrides: "seo_page_overrides",
 } as const;
 
 export type MongoCollectionName = (typeof MONGO_COLLECTIONS)[keyof typeof MONGO_COLLECTIONS];

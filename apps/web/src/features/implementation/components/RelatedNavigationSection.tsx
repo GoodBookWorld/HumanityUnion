@@ -56,7 +56,7 @@ export function RelatedNavigationSection({ implementation }: RelatedNavigationSe
       </Link>
       <Link
         className="related-navigation__link"
-        href={`/petitions/public/${encodeURIComponent(implementation.petitionId)}`}
+        href={`/initiatives/public/${encodeURIComponent(implementation.initiativeId)}#petition`}
       >
         Public Petition
       </Link>

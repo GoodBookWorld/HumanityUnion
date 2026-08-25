@@ -126,9 +126,17 @@ export default async function CollectiveDecisionPage({ params }: CollectiveDecis
             <Link href={`/petitions/${encodeURIComponent(linkedPetitionId)}`}>
               Petition Workspace
             </Link>
-            <Link href={`/petitions/public/${encodeURIComponent(linkedPetitionId)}`}>
-              Public Petition
-            </Link>
+            {decision.decisionSubjectType === "Initiative" ? (
+              <Link
+                href={`/initiatives/public/${encodeURIComponent(decision.decisionSubjectId)}#petition`}
+              >
+                Public Petition
+              </Link>
+            ) : (
+              <Link href={`/petitions/public/${encodeURIComponent(linkedPetitionId)}`}>
+                Public Petition
+              </Link>
+            )}
           </>
         ) : null}
       </nav>

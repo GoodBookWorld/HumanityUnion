@@ -1,90 +1,100 @@
 "use client";
 
-import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 
 import type { AuthUserPublic } from "@hu/types";
 
-import { ProfileField } from "../../../components/member/ProfileField";
-import { ProfileSection } from "../../../components/member/ProfileSection";
+import { formatAuthFormError } from "../../../lib/api-client";
 import {
-  resolvePlatformIndexingMode,
-  shouldDisallowSearchIndexing,
-} from "../../../lib/platform-indexing";
+  ADMIN_SEO_VIEWS,
+  ADMIN_SEO_VIEW_LABELS,
+  type AdminSeoViewId,
+  type SeoPageInventoryRow,
+} from "../admin-seo-console-model";
+import { buildSeoDiagnosticsSnapshot } from "../admin-seo-diagnostics-model";
+import { loadAdminSeoPageInventory } from "../admin-seo-page-inventory";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
+import { AdminSeoDiagnosticsView } from "./AdminSeoDiagnosticsView";
+import { AdminSeoOverviewView } from "./AdminSeoOverviewView";
+import { AdminSeoPagesView } from "./AdminSeoPagesView";
+import { AdminSeoStructuredDataView } from "./AdminSeoStructuredDataView";
 
 import "./admin-panel.css";
+import "./admin-seo-console.css";
 
 interface AdminSeoSectionProps {
   user: AuthUserPublic;
 }
 
 /**
- * SEO diagnostics from existing Web configuration — no ad-hoc SEO settings store.
+ * SEO Pack 06 — Admin SEO working console.
+ * Overview | Pages | Diagnostics | Structured Data. Read-only; no Page SEO editor.
  */
 export function AdminSeoSection({ user: _user }: AdminSeoSectionProps) {
-  const indexingMode = resolvePlatformIndexingMode();
-  const disallowIndexing = shouldDisallowSearchIndexing();
+  const [view, setView] = useState<AdminSeoViewId>("overview");
+  const diagnostics = buildSeoDiagnosticsSnapshot();
+  const [pageRows, setPageRows] = useState<readonly SeoPageInventoryRow[]>([]);
+  const [pagesLoading, setPagesLoading] = useState(false);
+  const [pagesError, setPagesError] = useState<string | null>(null);
+  const [pagesLoaded, setPagesLoaded] = useState(false);
+
+  const loadPages = useCallback(async () => {
+    setPagesLoading(true);
+    setPagesError(null);
+    try {
+      const rows = await loadAdminSeoPageInventory();
+      setPageRows(rows);
+      setPagesLoaded(true);
+    } catch (error: unknown) {
+      setPagesError(formatAuthFormError(error));
+    } finally {
+      setPagesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (view !== "pages" || pagesLoaded || pagesLoading) {
+      return;
+    }
+    void loadPages();
+  }, [view, pagesLoaded, pagesLoading, loadPages]);
 
   return (
-    <div className="admin-panel">
+    <div className="admin-panel admin-seo-console">
       <AdminPanelNavigation />
 
-      <ProfileSection title="SEO status / diagnostics">
-        <ProfileField label="Resolved indexing mode" value={indexingMode} />
-        <ProfileField
-          label="Search indexing"
-          value={disallowIndexing ? "Disallowed (noindex)" : "Allowed"}
-        />
-        <ProfileField
-          label="Driver"
-          value="NEXT_PUBLIC_PLATFORM_MODE / PLATFORM_MODE (env), not a runtime admin setting"
-        />
-        <p className="hu-caption admin-panel__note">
-          Root layout and `robots.ts` mirror `shouldDisallowSearchIndexing()`. Staging and
-          development disallow indexing; production remains indexable. Beta mode currently
-          remains indexable under the existing helper.
-        </p>
-      </ProfileSection>
+      <div className="admin-seo-console__tabs" role="tablist" aria-label="SEO areas">
+        {ADMIN_SEO_VIEWS.map((viewId) => (
+          <button
+            key={viewId}
+            type="button"
+            role="tab"
+            aria-selected={view === viewId}
+            className={
+              view === viewId
+                ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
+                : "hu-tab-control admin-publishing__tab"
+            }
+            onClick={() => setView(viewId)}
+          >
+            {ADMIN_SEO_VIEW_LABELS[viewId]}
+          </button>
+        ))}
+      </div>
 
-      <ProfileSection title="Existing SEO surfaces">
-        <ul className="admin-panel__links">
-          <li>
-            <Link className="admin-panel__link" href="/robots.txt">
-              robots.txt
-            </Link>
-            <span className="hu-caption"> — generated from platform indexing helper</span>
-          </li>
-          <li>
-            <span className="hu-body">Root metadata</span>
-            <span className="hu-caption">
-              {" "}
-              — title, description, robots in `app/layout.tsx`
-            </span>
-          </li>
-          <li>
-            <Link className="admin-panel__link" href="/blog">
-              Blog publications
-            </Link>
-            <span className="hu-caption">
-              {" "}
-              — per-post Open Graph / canonical via `app/blog/[slug]/page.tsx`
-            </span>
-          </li>
-        </ul>
-      </ProfileSection>
-
-      <ProfileSection title="Gaps (next pack recommendations)">
-        <ul className="admin-panel__gap-list hu-body">
-          <li>No `sitemap.xml` / `sitemap.ts` generation yet.</li>
-          <li>No shared JSON-LD / structured data helper.</li>
-          <li>Blog SEO title/description fields are deferred in authoring UX.</li>
-          <li>
-            No canonical runtime SEO settings domain/API — do not invent an ad-hoc config
-            store. Follow-up: a narrow platform metadata settings model if centralized
-            editable SEO is required.
-          </li>
-        </ul>
-      </ProfileSection>
+      {view === "overview" ? <AdminSeoOverviewView diagnostics={diagnostics} /> : null}
+      {view === "pages" ? (
+        <AdminSeoPagesView
+          rows={pageRows}
+          loading={pagesLoading}
+          error={pagesError}
+          onRetry={() => {
+            void loadPages();
+          }}
+        />
+      ) : null}
+      {view === "diagnostics" ? <AdminSeoDiagnosticsView diagnostics={diagnostics} /> : null}
+      {view === "structured-data" ? <AdminSeoStructuredDataView /> : null}
     </div>
   );
 }

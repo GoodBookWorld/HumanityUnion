@@ -1515,3 +1515,15 @@ export {
   EDITOR_CAPABILITY_IDS,
   EDITOR_CAPABILITY_LABELS,
 } from "./editor-grant.js";
+export type {
+  SeoPageOverride,
+  SeoPageOverrideFamily,
+  SeoPageOverrideFields,
+  SeoPageOverridePublicView,
+  SeoPageOverrideUpsertInput,
+} from "./seo-page-override.js";
+export {
+  SEO_PAGE_OVERRIDE_FAMILIES,
+  buildSeoPageOverrideId,
+  seoPageOverrideHasCustomFields,
+} from "./seo-page-override.js";

@@ -48,6 +48,7 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
       "Media Resources",
       "Country Team & Partners",
       "SEO",
+      "Diagnostics",
       "Beta Access",
       "Platform",
       "Audit",
@@ -104,6 +105,7 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
       "media-resources",
       "country-people",
       "seo",
+      "diagnostics",
       "beta-access",
       "platform",
       "audit",
@@ -138,8 +140,8 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
     assert.doesNotMatch(initiatives, /listInitiatives\(\)/);
 
     const publishing = read("features/administration/components/AdminPublishingSection.tsx");
-    assert.match(publishing, /listEditorialReviewQueue/);
-    assert.match(publishing, /fetchPublicBlogPosts/);
+    assert.match(publishing, /listAdminPendingPublicationReviews|listAdminPendingAuthorApplications/);
+    assert.match(publishing, /listAdminPublishingPublications|listAdminPublishingAuthors/);
     assert.match(publishing, /\/workspace\/editorial/);
   });
 
@@ -158,9 +160,11 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
 
   it("SEO section inventories existing indexing configuration without inventing a settings store", () => {
     const seo = read("features/administration/components/AdminSeoSection.tsx");
-    assert.match(seo, /shouldDisallowSearchIndexing|resolvePlatformIndexingMode/);
-    assert.match(seo, /robots\.txt/);
-    assert.match(seo, /sitemap/);
+    assert.match(seo, /ADMIN_SEO_VIEWS|buildSeoDiagnosticsSnapshot/);
+    assert.match(seo, /Overview|Pages|Diagnostics|Structured Data/);
     assert.doesNotMatch(seo, /localStorage|seoSettings|SEO_SETTINGS/);
+
+    const overview = read("features/administration/components/AdminSeoOverviewView.tsx");
+    assert.match(overview, /robots\.txt|sitemap\.xml/);
   });
 });

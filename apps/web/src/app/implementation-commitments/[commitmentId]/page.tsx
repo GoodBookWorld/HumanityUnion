@@ -114,7 +114,7 @@ export default async function ImplementationCommitmentPage({
         >
           Public Collective Decision
         </Link>
-        <Link href={`/petitions/public/${encodeURIComponent(commitment.petitionId)}`}>
+        <Link href={`/initiatives/public/${encodeURIComponent(commitment.initiativeId)}#petition`}>
           Public Petition
         </Link>
         <ViewImplementationLink

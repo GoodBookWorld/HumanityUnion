@@ -423,6 +423,11 @@ const MODULE_INDEXES: ReadonlyArray<{
       { key: { community: 1 }, name: "member_profile_community" },
       { key: { participationAreaId: 1 }, name: "member_profile_participation_area_id" },
       { key: { profileVisibility: 1 }, name: "member_profile_visibility" },
+      // SEO Pack 11 — sitemap enumeration of active public profiles.
+      {
+        key: { profileVisibility: 1, status: 1 },
+        name: "member_profile_visibility_status",
+      },
       { key: { updatedAt: -1 }, name: "member_profile_updated_at" },
     ],
   },

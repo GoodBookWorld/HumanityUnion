@@ -9,6 +9,7 @@ export type AdminPanelSectionId =
   | "media-resources"
   | "country-people"
   | "seo"
+  | "diagnostics"
   | "beta-access"
   | "platform"
   | "audit";
@@ -19,7 +20,7 @@ export interface AdminPanelSection {
   readonly href: string;
 }
 
-/** Canonical Admin Panel horizontal navigation — Pack 03–09E + Pack 12A Editors. */
+/** Canonical Admin Panel horizontal navigation — Pack 03–09E + Pack 12A Editors + Diagnostics Pack 01. */
 export const ADMIN_PANEL_SECTIONS: readonly AdminPanelSection[] = [
   { id: "overview", label: "Overview", href: "/admin" },
   { id: "views", label: "Views", href: "/admin/views" },
@@ -31,6 +32,7 @@ export const ADMIN_PANEL_SECTIONS: readonly AdminPanelSection[] = [
   { id: "media-resources", label: "Media Resources", href: "/admin/media-resources" },
   { id: "country-people", label: "Country Team & Partners", href: "/admin/country-people" },
   { id: "seo", label: "SEO", href: "/admin/seo" },
+  { id: "diagnostics", label: "Diagnostics", href: "/admin/diagnostics" },
   { id: "beta-access", label: "Beta Access", href: "/admin/beta-access" },
   { id: "platform", label: "Platform", href: "/admin/platform" },
   { id: "audit", label: "Audit", href: "/admin/audit" },

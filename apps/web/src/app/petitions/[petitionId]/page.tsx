@@ -106,7 +106,7 @@ export default async function PetitionPage({ params }: PetitionPageProps) {
         <Link href={`/collective-decisions/${encodeURIComponent(petition.collectiveDecisionId)}`}>
           Collective Decision Workspace
         </Link>
-        <Link href={`/petitions/public/${encodeURIComponent(petition.petitionId)}`}>
+        <Link href={`/initiatives/public/${encodeURIComponent(petition.subject.initiativeId)}#petition`}>
           Public Petition
         </Link>
         <Link href={`/initiatives/public/${encodeURIComponent(petition.subject.initiativeId)}`}>

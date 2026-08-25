@@ -29,7 +29,7 @@ export function RelatedLinks({ petition }: RelatedLinksProps) {
       <ViewImplementationLink petitionId={petitionId} />
       <Link
         className="related-links__link"
-        href={`/petitions/public/${encodeURIComponent(petitionId)}`}
+        href={`/initiatives/public/${encodeURIComponent(initiativeId)}#petition`}
       >
         Public Petition
       </Link>

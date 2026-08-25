@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { shouldDisallowSearchIndexing } from "../lib/platform-indexing";
+import { resolvePublicSiteOrigin, toAbsolutePublicUrl } from "../lib/seo/public-site-url";
 
 export default function robots(): MetadataRoute.Robots {
   if (shouldDisallowSearchIndexing()) {
@@ -11,6 +12,9 @@ export default function robots(): MetadataRoute.Robots {
       },
     };
   }
+
+  const origin = resolvePublicSiteOrigin();
+  const sitemapUrl = origin ? toAbsolutePublicUrl("/sitemap.xml", origin) : undefined;
 
   return {
     rules: {
@@ -27,5 +31,6 @@ export default function robots(): MetadataRoute.Robots {
         "/confirm-email-change",
       ],
     },
+    ...(sitemapUrl ? { sitemap: sitemapUrl } : {}),
   };
 }

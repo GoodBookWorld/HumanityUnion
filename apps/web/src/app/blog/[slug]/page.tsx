@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { fetchPublicBlogPostBySlugOptional } from "../../../features/blog/api";
 import { BlogArticlePageContent } from "../../../features/blog/components/BlogArticlePageContent";
 import { resolveMediaUrl } from "../../../features/media-upload/media-url";
+import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
+import { JsonLdScript, buildBlogPostingJsonLd } from "../../../lib/seo/structured-data";
 
 interface BlogArticlePageProps {
   params: Promise<{ slug: string }>;
@@ -15,9 +17,12 @@ export async function generateMetadata({ params }: BlogArticlePageProps): Promis
     const post = await fetchPublicBlogPostBySlugOptional(slug);
 
     if (!post) {
-      return {
-        title: "Publication not found | Blog | Humanity Union",
-      };
+      return buildPublicPageMetadata({
+        title: "Publication not found",
+        titleBrandSuffix: "Blog | Humanity Union",
+        canonicalPath: `/blog/${encodeURIComponent(slug)}`,
+        indexable: false,
+      });
     }
 
     const seo = post.seo;
@@ -28,30 +33,23 @@ export async function generateMetadata({ params }: BlogArticlePageProps): Promis
     const socialDescription = seo?.socialDescription || description;
     const canonical = seo?.canonicalPath || `/blog/${encodeURIComponent(post.slug)}`;
 
-    return {
-      title: `${pageTitle} | Blog | Humanity Union`,
+    return buildPublicPageMetadata({
+      title: pageTitle,
+      titleBrandSuffix: "Blog | Humanity Union",
       description,
-      alternates: {
-        canonical,
-      },
-      openGraph: {
-        title: socialTitle,
-        description: socialDescription,
-        type: "article",
-        url: canonical,
-        ...(imageUrl ? { images: [{ url: imageUrl }] } : {}),
-      },
-      twitter: {
-        card: imageUrl ? "summary_large_image" : "summary",
-        title: socialTitle,
-        description: socialDescription,
-        ...(imageUrl ? { images: [imageUrl] } : {}),
-      },
-    };
+      canonicalPath: canonical,
+      socialTitle,
+      socialDescription,
+      imageUrl,
+      openGraphType: "article",
+    });
   } catch {
-    return {
-      title: "Blog | Humanity Union",
-    };
+    return buildPublicPageMetadata({
+      title: "Blog",
+      titleBrandSuffix: "Humanity Union",
+      canonicalPath: "/blog",
+      indexable: false,
+    });
   }
 }
 
@@ -62,5 +60,30 @@ export default async function BlogArticlePage({ params }: BlogArticlePageProps) 
   // additional client-side refetch that previously always ran after hydration.
   const initialPost = await fetchPublicBlogPostBySlugOptional(slug);
 
-  return <BlogArticlePageContent slug={slug} initialPost={initialPost} />;
+  const structuredData =
+    initialPost == null
+      ? null
+      : buildBlogPostingJsonLd({
+          headline: initialPost.seo?.title || initialPost.title,
+          description: initialPost.seo?.description || initialPost.excerpt || initialPost.title,
+          canonicalPath:
+            initialPost.seo?.canonicalPath || `/blog/${encodeURIComponent(initialPost.slug)}`,
+          imageUrl: resolveMediaUrl(
+            initialPost.seo?.socialImage?.mediaUrl ?? initialPost.coverImage?.mediaUrl,
+          ),
+          datePublished: initialPost.publishedAt,
+          dateModified: initialPost.updatedAt,
+          author: {
+            name: initialPost.author.displayName,
+            profilePathOrUrl: initialPost.author.profileUrl,
+            avatarUrl: resolveMediaUrl(initialPost.author.avatarUrl),
+          },
+        });
+
+  return (
+    <>
+      <JsonLdScript data={structuredData} />
+      <BlogArticlePageContent slug={slug} initialPost={initialPost} />
+    </>
+  );
 }

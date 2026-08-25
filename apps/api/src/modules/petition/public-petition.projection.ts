@@ -296,7 +296,11 @@ function buildShareReference(petition: Petition): PublicShareReference {
   const available = isPubliclyVisible(petition.status);
 
   return {
-    url: available ? (petition.shareLink?.url ?? `/petitions/public/${petition.petitionId}`) : null,
+    // SEO Pack 10 — Strategy B: public share URL is always Initiative-owned.
+    // Legacy /petitions/public shareLink values remain stored for history but are not advertised.
+    url: available
+      ? `/initiatives/public/${encodeURIComponent(petition.subject.initiativeId)}#petition`
+      : null,
     available,
     sharingNote: SHARING_NOTE,
   };

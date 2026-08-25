@@ -1,19 +1,12 @@
 import type { Metadata, Viewport } from "next";
 
 import { HumanityLayout } from "../design-system/components/HumanityLayout";
-import { shouldDisallowSearchIndexing } from "../lib/platform-indexing";
+import { JsonLdScript, buildRootStructuredData } from "../lib/seo/structured-data";
 
 import "./globals.css";
 
-const disallowIndexing = shouldDisallowSearchIndexing();
-
 export const metadata: Metadata = {
-  title: "Humanity Union",
-  description: "World Solidarity civic technology platform",
   applicationName: "Humanity Union",
-  robots: disallowIndexing
-    ? { index: false, follow: false, nocache: true }
-    : { index: true, follow: true },
   appleWebApp: {
     capable: true,
     title: "Humanity Union",
@@ -49,9 +42,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const rootStructuredData = buildRootStructuredData();
+
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="humanity-app">
+        <JsonLdScript data={rootStructuredData} />
         <HumanityLayout>{children}</HumanityLayout>
       </body>
     </html>
