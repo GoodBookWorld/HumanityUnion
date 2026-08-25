@@ -1,9 +1,8 @@
 /*
- * Profile UX Pack 02 Part 1/4 — mirrors the visual language of
- * `platform-statistics__card` (border/radius/shadow/icon-value-label
- * layout) so Personal Statistics reads as the same design system, while
- * remaining a separate, per-Participant component (six cards in two rows of
- * three — Pack 19C.3 — not the platform-wide nine-card grid).
+ * Profile UX Pack 02 Part 1/4 / Pack 19C.3 / Pack 19C.4 —
+ * Personal Statistics cards (Workspace + Public Profile).
+ *
+ * Pack 19C.4 — container-aware label sizing; no mid-word fragmentation.
  */
 .personal-statistics__grid {
   display: grid;
@@ -16,6 +15,7 @@
 }
 
 .personal-statistics__card {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -28,11 +28,12 @@
   box-shadow: var(--hu-shadow-sm);
   text-align: center;
   box-sizing: border-box;
+  min-width: 0;
 }
 
 .personal-statistics__icon {
-  width: clamp(1.5rem, 2.5vw, 2rem);
-  height: clamp(1.5rem, 2.5vw, 2rem);
+  width: clamp(1.35rem, 22cqi, 2rem);
+  height: clamp(1.35rem, 22cqi, 2rem);
   margin-bottom: var(--hu-space-1);
   object-fit: contain;
   flex-shrink: 0;
@@ -40,7 +41,7 @@
 
 .personal-statistics__value {
   margin: 0 0 var(--hu-space-1);
-  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+  font-size: clamp(1rem, 16cqi, 1.35rem);
   line-height: var(--hu-line-height-tight);
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -49,11 +50,15 @@
 .personal-statistics__label {
   margin: 0;
   max-width: 100%;
-  font-size: var(--hu-font-size-sm);
-  line-height: 1.3;
+  font-size: clamp(0.62rem, 10cqi, 0.85rem);
+  line-height: 1.25;
   font-weight: 600;
   color: var(--hu-color-text-muted);
-  overflow-wrap: break-word;
+  /* Prefer shrinking before mid-word breaks (Pack 19C.4). */
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  text-wrap: balance;
 }
 
 .personal-statistics__card--loading {
@@ -87,7 +92,7 @@
 
 @media (max-width: 768px) {
   .personal-statistics__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--hu-space-2);
   }
 
@@ -97,19 +102,19 @@
   }
 
   .personal-statistics__value {
-    font-size: clamp(1rem, 3.6vw, 1.2rem);
+    font-size: clamp(0.95rem, 12cqi, 1.2rem);
   }
 
   .personal-statistics__label {
-    font-size: var(--hu-font-size-xs);
+    font-size: clamp(0.6rem, 9cqi, 0.78rem);
   }
 }
 
-/* PWA UX Correction Pack 02 — keep a compact horizontal row; scroll only at extreme width. */
+/* Extreme narrow — keep horizontal scroll for Workspace compactness (PWA Pack 02). */
 @media (max-width: 360px) {
   .personal-statistics__grid {
     grid-auto-flow: column;
-    grid-auto-columns: minmax(5.5rem, 70%);
+    grid-auto-columns: minmax(5.75rem, 70%);
     grid-template-columns: none;
     overflow-x: auto;
     overscroll-behavior-x: contain;

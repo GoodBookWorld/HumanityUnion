@@ -9,10 +9,5 @@
   display: inline-flex;
   align-items: center;
   gap: var(--hu-space-2);
-}
-
-.direct-message-action__unavailable {
-  margin: 0;
-  font-size: var(--hu-text-sm);
-  color: var(--hu-text-muted);
+  text-decoration: none;
 }

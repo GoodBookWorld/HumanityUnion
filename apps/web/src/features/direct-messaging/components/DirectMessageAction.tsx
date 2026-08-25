@@ -20,15 +20,28 @@ interface DirectMessageActionProps {
   displayName?: string;
 }
 
+function buildMemberProfileReturnPath(publicName: string): string {
+  return `/member/${encodeURIComponent(publicName)}`;
+}
+
+function buildGuestMessageLoginHref(publicName: string): string {
+  const returnTo = buildMemberProfileReturnPath(publicName);
+  return `/login?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
 /**
  * Part 7 — the public profile page (`page.tsx`) is a Next.js Server
  * Component, so its server-rendered fetch of `messagingAvailability` never
- * carries the viewer's access token (stored in browser `localStorage`) and
- * always resolves as a guest would ("hidden"). This client island
- * re-resolves the exact same server-computed field once an authenticated
- * session is confirmed, so the button a signed-in viewer sees always matches
- * what the server will actually authorize — the client never makes its own
- * authorization decision (Part 5).
+ * carries the viewer's access token. This client island re-resolves
+ * availability once an authenticated session is confirmed.
+ *
+ * Pack 19C.4F — unauthenticated visitors still see the Message CTA; click
+ * uses the established `/login?returnTo=` pattern back to
+ * `/member/{publicName}`. Guest visibility is not messaging authorization —
+ * after login, `messagingAvailability` remains server-authoritative.
+ *
+ * Authenticated self-view / blocked policy → no CTA (`hidden` /
+ * `unavailable`). Eligible authenticated viewers → `openConversation`.
  */
 export function DirectMessageAction({ publicName, displayName }: DirectMessageActionProps) {
   const authStatus = useClientAuthStatus();
@@ -61,19 +74,30 @@ export function DirectMessageAction({ publicName, displayName }: DirectMessageAc
     };
   }, [authStatus, publicName]);
 
-  if (availability === "hidden") {
+  const accessibleLabel = displayName ? `Message ${displayName}` : "Message";
+
+  if (authStatus === "pending") {
     return null;
   }
 
-  if (availability === "unavailable") {
+  if (authStatus === "unauthenticated") {
     return (
-      <p className="direct-message-action__unavailable">
-        Messaging is not available for this profile.
-      </p>
+      <div className="direct-message-action">
+        <a
+          href={buildGuestMessageLoginHref(publicName)}
+          className="direct-message-action__button hu-button hu-button--secondary"
+          aria-label={accessibleLabel}
+        >
+          <Image src={MESSAGE_ICON} alt="" width={18} height={18} aria-hidden="true" />
+          <span>Message</span>
+        </a>
+      </div>
     );
   }
 
-  const accessibleLabel = displayName ? `Message ${displayName}` : "Message";
+  if (availability === "hidden" || availability === "unavailable") {
+    return null;
+  }
 
   return (
     <div className="direct-message-action">
@@ -84,6 +108,7 @@ export function DirectMessageAction({ publicName, displayName }: DirectMessageAc
         disabled={isOpening}
         aria-label={accessibleLabel}
         aria-live="polite"
+        aria-busy={isOpening || undefined}
       >
         <Image src={MESSAGE_ICON} alt="" width={18} height={18} aria-hidden="true" />
         <span>{isOpening ? "Opening…" : "Message"}</span>

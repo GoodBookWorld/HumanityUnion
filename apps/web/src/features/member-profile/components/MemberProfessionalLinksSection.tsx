@@ -133,6 +133,11 @@ export function MemberProfessionalLinksSection({
 
 interface MemberProfessionalLinksDisplayProps extends MemberProfessionalLinksValues {
   className?: string;
+  /**
+   * Pack 19C.4 — public profile compact row: icons only (aria-label retained).
+   * Default keeps visible labels for Workspace / settings summaries.
+   */
+  variant?: "labeled" | "icons";
 }
 
 export function hasConfiguredProfessionalLinks(
@@ -149,6 +154,7 @@ export function MemberProfessionalLinksDisplay({
   instagramUrl,
   xUrl,
   className,
+  variant = "labeled",
 }: MemberProfessionalLinksDisplayProps) {
   const values: MemberProfessionalLinksValues = {
     website,
@@ -163,8 +169,16 @@ export function MemberProfessionalLinksDisplay({
     return null;
   }
 
+  const displayClass = [
+    "member-professional-links__display",
+    variant === "icons" ? "member-professional-links__display--icons" : null,
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={["member-professional-links__display", className].filter(Boolean).join(" ")}>
+    <div className={displayClass}>
       {PROFESSIONAL_LINK_FIELDS.map((field) => {
         const href = values[field.key]?.trim();
         if (!href) {
@@ -178,9 +192,10 @@ export function MemberProfessionalLinksDisplay({
             target="_blank"
             rel="noopener noreferrer"
             aria-label={field.label}
+            title={field.label}
           >
             <img src={field.iconSrc} alt="" aria-hidden="true" width={30} height={30} />
-            <span>{field.label}</span>
+            {variant === "icons" ? null : <span>{field.label}</span>}
           </a>
         );
       })}

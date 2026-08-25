@@ -1,6 +1,9 @@
 /*
- * Profile UX Pack 03.2 / 03.3 — shared public + owner-preview surface.
- * Pack 18C — compact centered profile card (desktop one-viewport density).
+ * Profile UX Pack 03.2 / 03.3 / Pack 18C / Pack 19C.4 —
+ * Public + owner-preview Participant Profile surface.
+ *
+ * Pack 19C.4 — branded hero, clearer hierarchy, Biography mountains (desktop),
+ * adaptive statistics labels, mobile gradient-only cover.
  */
 .public-member-page {
   width: min(100%, var(--hu-page-max-width, var(--hu-content-max-width, 72rem)));
@@ -14,14 +17,14 @@
   gap: var(--hu-space-4, 1rem);
 }
 
-/* Pack 18C — primary outer profile card */
 .public-member-page__card {
-  width: min(100%, 52rem);
-  max-width: 52rem;
+  width: min(100%, 54rem);
+  max-width: 54rem;
   margin-inline: auto;
   display: grid;
   gap: var(--hu-space-4, 1rem);
-  padding: var(--hu-space-4, 1rem) var(--hu-space-5, 1.25rem);
+  padding: 0;
+  overflow: hidden;
   box-sizing: border-box;
   background: var(--hu-surface-raised, #fff);
   border: var(--hu-border-card, 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.14)));
@@ -29,12 +32,184 @@
   box-shadow: var(--hu-shadow-elevated, var(--hu-shadow-card));
 }
 
+/* --- Pack 19C.4 branded hero / cover --- */
+.public-member-page__hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 11.5rem;
+  padding: var(--hu-space-5, 1.25rem) var(--hu-space-5, 1.25rem)
+    calc(var(--hu-space-4, 1rem) + 0.35rem);
+  overflow: hidden;
+  color: #f7fbff;
+  background:
+    linear-gradient(
+      128deg,
+      color-mix(in srgb, var(--hu-color-primary) 92%, #06263a) 0%,
+      var(--hu-color-primary) 38%,
+      color-mix(in srgb, var(--hu-color-secondary-blue) 70%, var(--hu-color-primary)) 72%,
+      color-mix(in srgb, var(--hu-color-accent) 28%, var(--hu-color-secondary-blue)) 100%
+    );
+}
+
+.public-member-page__hero-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.public-member-page__hero-network {
+  width: 100%;
+  height: 100%;
+  color: color-mix(in srgb, #ffffff 42%, transparent);
+  opacity: 0.55;
+}
+
+.public-member-page__hero-network-lines {
+  opacity: 0.7;
+}
+
+.public-member-page__hero-network-nodes {
+  opacity: 0.85;
+}
+
+.public-member-page__hero-signal {
+  fill: var(--hu-color-accent, #df9815);
+  opacity: 0.9;
+}
+
+.public-member-page__hero-signal--a {
+  offset-path: path("M32 148 L140 72 L260 156 L400 48 L560 168 L720 64 L900 142");
+  offset-rotate: 0deg;
+  animation: public-member-hero-signal 14s linear infinite;
+}
+
+.public-member-page__hero-signal--b {
+  offset-path: path("M80 40 L220 120 L360 36 L520 128 L680 44 L860 110");
+  offset-rotate: 0deg;
+  animation: public-member-hero-signal 18s linear infinite;
+  animation-delay: -5s;
+}
+
+.public-member-page__hero-signal--c {
+  offset-path: path("M48 180 L200 100 L340 190 L500 90 L660 186 L820 96");
+  offset-rotate: 0deg;
+  animation: public-member-hero-signal 16s linear infinite;
+  animation-delay: -9s;
+}
+
+@keyframes public-member-hero-signal {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.95;
+  }
+  88% {
+    opacity: 0.95;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+.public-member-page__hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-4, 1rem);
+  width: 100%;
+  padding-right: calc(2.75rem + var(--hu-space-3, 0.75rem));
+  box-sizing: border-box;
+}
+
+.public-member-page__member-badge {
+  position: absolute;
+  top: var(--hu-space-3, 0.75rem);
+  right: var(--hu-space-3, 0.75rem);
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(6, 28, 48, 0.28));
+}
+
+.public-member-page__avatar {
+  border-radius: 999px;
+  object-fit: cover;
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  border: 3px solid color-mix(in srgb, #ffffff 88%, transparent);
+  box-shadow: 0 6px 18px rgba(6, 28, 48, 0.22);
+  background: var(--hu-color-surface, #fff);
+}
+
+.public-member-page__identity-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.public-member-page__title {
+  font-size: clamp(1.35rem, 2.2vw, 1.7rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 0.2rem;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 2px rgba(6, 28, 48, 0.25);
+}
+
+.public-member-page__subtitle {
+  color: color-mix(in srgb, #ffffff 82%, transparent);
+  font-size: 0.95rem;
+  margin: 0 0 0.3rem;
+}
+
+.public-member-page__meta-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 0;
+}
+
+.public-member-page__meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, #ffffff 76%, transparent);
+}
+
+/* Pack 19C.4D — Direct Message CTA, bottom-right of cover */
+.public-member-page__message-action {
+  position: absolute;
+  right: var(--hu-space-3, 0.75rem);
+  bottom: var(--hu-space-3, 0.75rem);
+  z-index: 3;
+  margin: 0;
+  max-width: min(14rem, 48%);
+}
+
+.public-member-page__message-action .direct-message-action {
+  align-items: flex-end;
+}
+
+/* --- Main body panels --- */
 .public-member-page__body-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--hu-space-3, 0.75rem);
-  /* Pack 19C.3 — info + statistics panels stretch to equal height on desktop. */
+  gap: var(--hu-space-4, 1rem);
   align-items: stretch;
+  padding-inline: var(--hu-space-5, 1.25rem);
 }
 
 .public-member-page__body-row--single {
@@ -49,96 +224,32 @@
   flex-direction: column;
   gap: var(--hu-space-3, 0.75rem);
   min-width: 0;
-  padding: var(--hu-space-3, 0.75rem) var(--hu-space-4, 1rem);
+  padding: var(--hu-space-4, 1rem);
   box-sizing: border-box;
-  background: var(--hu-surface-raised-muted, var(--hu-color-bg-muted, #f4f7fa));
-  border: var(--hu-border-card, 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.12)));
+  background: var(--hu-color-surface, #fff);
+  border: 1px solid color-mix(in srgb, var(--hu-color-border) 88%, transparent);
   border-radius: var(--hu-radius-md, 8px);
   box-shadow: var(--hu-shadow-subtle);
 }
 
-.public-member-page__identity {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 0;
-  overflow: hidden;
-  padding: 0;
-  min-width: 0;
+.public-member-page__info {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    color-mix(in srgb, var(--hu-color-primary-soft) 35%, #ffffff) 100%
+  );
 }
 
-.public-member-page__member-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  flex-shrink: 0;
-  pointer-events: none;
-}
-
-.public-member-page__identity-body {
-  display: flex;
-  align-items: center;
-  gap: var(--hu-space-3, 0.75rem);
-  width: 100%;
-  padding-right: calc(40px + var(--hu-space-2, 0.5rem));
-  box-sizing: border-box;
+.public-member-page__info .public-member-page__profile-context + .public-member-page__profile-context {
+  padding-top: var(--hu-space-3, 0.75rem);
+  border-top: 1px solid color-mix(in srgb, var(--hu-color-border) 80%, transparent);
 }
 
 .public-member-page__organization-text {
   margin: 0;
-  font-size: 0.925rem;
+  font-size: 0.95rem;
   line-height: var(--hu-line-height, 1.5);
   color: var(--hu-color-text);
-}
-
-.public-member-page__identity-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.public-member-page__avatar {
-  border-radius: 999px;
-  object-fit: cover;
-  flex-shrink: 0;
-  width: 72px;
-  height: 72px;
-}
-
-.public-member-page__title {
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1.25;
-  margin: 0 0 0.15rem;
-}
-
-.public-member-page__subtitle {
-  color: var(--hu-color-text-muted, #525252);
-  font-size: 0.9rem;
-  margin: 0 0 0.25rem;
-}
-
-.public-member-page__meta-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  margin-bottom: 0;
-}
-
-.public-member-page__meta {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--hu-color-text-muted, #525252);
-}
-
-.public-member-page__message-action {
-  margin-left: auto;
-  flex-shrink: 0;
-  align-self: center;
 }
 
 .public-member-page__section-heading {
@@ -146,6 +257,7 @@
   font-size: 0.95rem;
   font-weight: 700;
   text-align: start;
+  color: var(--hu-color-text);
 }
 
 .public-member-page__section-heading--with-icon,
@@ -164,18 +276,6 @@
   object-fit: contain;
 }
 
-.public-member-page__biography {
-  width: 100%;
-}
-
-.public-member-page__biography-text {
-  margin: 0;
-  white-space: pre-wrap;
-  line-height: 1.5;
-  font-size: 0.95rem;
-  color: var(--hu-color-text);
-}
-
 .public-member-page__profile-context {
   display: flex;
   flex-direction: column;
@@ -188,6 +288,7 @@
   margin: 0;
   font-size: 0.9rem;
   font-weight: 700;
+  color: var(--hu-color-text);
 }
 
 .public-member-page__context-chips,
@@ -204,44 +305,120 @@
 .public-member-page__skill-tag {
   border: 1px solid var(--hu-color-border);
   border-radius: 999px;
-  padding: 0.2rem 0.65rem;
+  padding: 0.25rem 0.7rem;
   font-size: 0.8rem;
-  background: var(--hu-surface-raised, #fff);
+  background: color-mix(in srgb, var(--hu-color-primary-soft) 55%, #ffffff);
+  color: var(--hu-color-text);
 }
 
-/* Pack 18C / 19C.3 — compact equal metric cells (two rows of three) */
+/* Statistics panel */
 .public-member-page__statistics {
   height: 100%;
+  background: linear-gradient(
+    165deg,
+    #ffffff 0%,
+    color-mix(in srgb, var(--hu-color-bg-muted) 70%, #ffffff) 100%
+  );
 }
 
 .public-member-page__statistics .personal-statistics__grid {
-  gap: var(--hu-space-2, 0.5rem);
+  gap: var(--hu-space-2, 0.55rem);
   flex: 1 1 auto;
 }
 
 .public-member-page__statistics .personal-statistics__card {
-  min-height: 5rem;
-  padding: var(--hu-space-2, 0.5rem);
-  box-shadow: var(--hu-shadow-subtle);
-  background: var(--hu-surface-raised, #fff);
+  container-type: inline-size;
+  min-height: 5.25rem;
+  padding: var(--hu-space-2, 0.55rem) 0.4rem;
+  box-shadow: none;
+  background: #ffffff;
+  border-color: color-mix(in srgb, var(--hu-color-border) 92%, var(--hu-color-primary));
 }
 
 .public-member-page__statistics .personal-statistics__icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: clamp(1.15rem, 18cqi, 1.45rem);
+  height: clamp(1.15rem, 18cqi, 1.45rem);
 }
 
 .public-member-page__statistics .personal-statistics__value {
-  font-size: 1.1rem;
+  font-size: clamp(0.95rem, 14cqi, 1.2rem);
 }
 
-.public-member-page__initiatives {
-  width: 100%;
-  gap: var(--hu-space-2, 0.5rem);
-  padding: var(--hu-space-2, 0.5rem);
+.public-member-page__statistics .personal-statistics__label {
+  font-size: clamp(0.58rem, 9.2cqi, 0.78rem);
+  line-height: 1.2;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  text-wrap: balance;
+}
+
+/* --- Biography: section background mountains on the right; ~70% transparent copy --- */
+.public-member-page__biography {
+  position: relative;
+  display: block;
+  margin-inline: var(--hu-space-5, 1.25rem);
+  overflow: hidden;
+  isolation: isolate;
+  /* Base wash + right-side mountains (height-driven, natural width) + left readability fade */
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(
+      90deg,
+      #ffffff 0%,
+      color-mix(in srgb, #ffffff 92%, transparent) 48%,
+      color-mix(in srgb, #ffffff 55%, transparent) 68%,
+      transparent 86%
+    ),
+    url("/illustrations/mountains.webp"),
+    linear-gradient(
+      105deg,
+      #ffffff 0%,
+      color-mix(in srgb, var(--hu-color-primary-soft) 40%, #ffffff) 58%,
+      color-mix(in srgb, var(--hu-color-bg-muted) 55%, #ffffff) 100%
+    );
+  background-repeat: no-repeat;
+  background-position:
+    left center,
+    right center,
+    left center;
+  background-size:
+    100% 100%,
+    auto 100%,
+    100% 100%;
+}
+
+.public-member-page__biography-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--hu-space-3, 0.75rem);
+  width: 70%;
+  max-width: 70%;
+  min-width: 0;
+  box-sizing: border-box;
+  /* Pack 19C.4D — must stay transparent so section artwork shows through */
   background: transparent;
-  border: 0;
-  box-shadow: none;
+}
+
+.public-member-page__biography-text {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 0.98rem;
+  color: var(--hu-color-text);
+  max-width: none;
+}
+
+/* Initiatives */
+.public-member-page__initiatives {
+  width: auto;
+  gap: var(--hu-space-2, 0.5rem);
+  margin-inline: var(--hu-space-5, 1.25rem);
+  margin-bottom: var(--hu-space-5, 1.25rem);
+  padding: var(--hu-space-3, 0.75rem);
+  background: color-mix(in srgb, var(--hu-color-bg-muted) 55%, #ffffff);
 }
 
 .public-member-page__initiatives-toggle {
@@ -297,7 +474,8 @@
 
 .public-member-page__initiatives-item a {
   display: block;
-  padding: 0.35rem 0.1rem;
+  padding: 0.4rem 0.35rem;
+  border-radius: var(--hu-radius-sm, 6px);
   color: var(--hu-color-primary, #1a56db);
   text-decoration: none;
 }
@@ -305,6 +483,7 @@
 .public-member-page__initiatives-item a:hover,
 .public-member-page__initiatives-item a:focus-visible {
   text-decoration: underline;
+  background: color-mix(in srgb, var(--hu-color-primary-soft) 70%, transparent);
 }
 
 .public-member-page__back {
@@ -332,36 +511,93 @@
   margin-left: var(--hu-space-2, 0.5rem);
 }
 
-@media (max-width: 900px) {
-  .public-member-page__card {
-    width: min(100%, 44rem);
+/* Reduced motion — static gradient / network (no signal motion) */
+@media (prefers-reduced-motion: reduce) {
+  .public-member-page__hero-signal {
+    animation: none !important;
+    display: none;
+  }
+
+  .public-member-page__initiatives-panel {
+    transition: none;
   }
 }
 
+/* Tablet — hide mountains; keep network if still above mobile stack */
+@media (max-width: 900px) {
+  .public-member-page__card {
+    width: min(100%, 46rem);
+  }
+
+  .public-member-page__biography {
+    background-image: linear-gradient(
+      105deg,
+      #ffffff 0%,
+      color-mix(in srgb, var(--hu-color-primary-soft) 40%, #ffffff) 58%,
+      color-mix(in srgb, var(--hu-color-bg-muted) 55%, #ffffff) 100%
+    );
+    background-size: 100% 100%;
+    background-position: left center;
+  }
+
+  .public-member-page__biography-copy {
+    width: 100%;
+    max-width: none;
+    background: transparent;
+  }
+}
+
+/* Mobile — stack panels; gradient-only cover (no network animation) */
 @media (max-width: 767px) {
   .public-member-page__body-row {
     grid-template-columns: 1fr;
+    padding-inline: var(--hu-space-3, 0.75rem);
   }
 
   .public-member-page__card {
     width: 100%;
     max-width: 100%;
-    padding: var(--hu-space-3, 0.75rem);
+  }
+
+  .public-member-page__hero {
+    min-height: 10.5rem;
+    padding: var(--hu-space-4, 1rem) var(--hu-space-4, 1rem) var(--hu-space-3, 0.75rem);
+    /* Room for bottom-right messaging icon without crowding identity */
+    padding-bottom: calc(var(--hu-space-3, 0.75rem) + 2.75rem);
+  }
+
+  .public-member-page__hero-network {
+    display: none;
+  }
+
+  .public-member-page__message-action {
+    right: var(--hu-space-3, 0.75rem);
+    bottom: var(--hu-space-3, 0.75rem);
+    max-width: none;
+  }
+
+  .public-member-page__biography,
+  .public-member-page__initiatives {
+    margin-inline: var(--hu-space-3, 0.75rem);
+  }
+
+  .public-member-page__initiatives {
+    margin-bottom: var(--hu-space-3, 0.75rem);
+  }
+
+  .public-member-page__statistics .personal-statistics__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 480px) {
-  .public-member-page__identity {
-    align-items: stretch;
-    text-align: start;
-  }
-
+  .public-member-page__hero-content,
   .public-member-page__identity-body {
     flex-direction: column;
     align-items: center;
     text-align: center;
     padding-right: 0;
-    padding-top: calc(40px + var(--hu-space-2, 0.5rem));
+    padding-top: calc(36px + var(--hu-space-2, 0.5rem));
   }
 
   .public-member-page__identity-text {
@@ -374,8 +610,14 @@
   }
 
   .public-member-page__message-action {
-    margin-left: 0;
-    align-self: center;
+    /* Stay in the cover corner; identity is centered above padded footer band */
+    right: var(--hu-space-3, 0.75rem);
+    bottom: var(--hu-space-3, 0.75rem);
+  }
+
+  .public-member-page__avatar {
+    width: 76px;
+    height: 76px;
   }
 
   .public-member-page__statistics .personal-statistics__grid {
@@ -385,5 +627,11 @@
   .public-member-page__biography,
   .public-member-page__initiatives {
     width: 100%;
+  }
+
+  .public-member-page__biography-text,
+  .public-member-page__organization-text,
+  .public-member-page__identity-info {
+    text-align: start;
   }
 }

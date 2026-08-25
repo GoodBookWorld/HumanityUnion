@@ -42,8 +42,6 @@ describe("Launch Readiness UX Fix Pack 01 — Blog / Profile / Header", () => {
     const css = read("features/member-profile/components/participant-profile-surface.css");
     const presentation = read("features/member-profile/participant-profile-surface-presentation.ts");
 
-    assert.match(surface, /hasVisibleParticipationArea/);
-    assert.match(surface, /Participation Area/);
     assert.match(surface, /hasVisibleSkills/);
     assert.match(surface, /Professional Links/);
     assert.match(surface, /hasVisibleBiography/);
@@ -53,7 +51,11 @@ describe("Launch Readiness UX Fix Pack 01 — Blog / Profile / Header", () => {
     assert.match(surface, /id="professional-links"/);
     assert.match(surface, /id="biography"/);
     assert.match(surface, /id="organization"/);
-    assert.match(surface, /id="participation-area"/);
+    // Pack 19C.4B — Participation Area stays in presentation helpers / privacy, not public stats UI
+    assert.doesNotMatch(surface, /id="participation-area"/);
+    assert.doesNotMatch(surface, /Participation Area/);
+    assert.match(presentation, /buildParticipationAreaLabels/);
+    assert.match(presentation, /hasVisibleParticipationArea/);
     assert.match(surface, /id="skills"/);
     assert.match(surface, /public-member-page__statistics/);
     assert.match(surface, /personal-statistics__grid/);

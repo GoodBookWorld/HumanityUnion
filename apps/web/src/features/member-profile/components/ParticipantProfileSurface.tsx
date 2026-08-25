@@ -8,12 +8,10 @@ import { MemberProfessionalLinksDisplay } from "./MemberProfessionalLinksSection
 import { RecentPublicInitiativesDisclosure } from "./RecentPublicInitiativesDisclosure";
 import {
   buildIdentityMetaLines,
-  buildParticipationAreaLabels,
   buildVisibleStatisticCards,
   hasAnyStatistic,
   hasVisibleBiography,
   hasVisibleOrganization,
-  hasVisibleParticipationArea,
   hasVisibleProfessionalLinks,
   hasVisibleRecentInitiatives,
   hasVisibleSkills,
@@ -29,12 +27,12 @@ import "../../personal-statistics/personal-statistics.css";
 import "./participant-profile-surface.css";
 
 /**
- * Profile UX Pack 03.3 — shared visual structure for `/member/{publicName}`
- * and `/profile` owner preview.
+ * Profile UX Pack 03.3 / Pack 18C / Pack 19C.4 — shared visual structure for
+ * `/member/{publicName}` and `/profile` owner preview.
  *
- * Pack 18C — compact desktop profile card:
- * identity row → info (links / org / skills) + statistics → Biography → Initiatives.
- * Organization lives in the left info card (not duplicated under statistics).
+ * Pack 19C.4 / 19C.4D hierarchy:
+ * branded hero (Direct Message CTA bottom-right) → info + six statistics →
+ * Biography (section background mountains, transparent ~70% copy) → Initiatives.
  */
 export type ParticipantProfileSurfaceMode = "public" | "owner_preview";
 
@@ -117,6 +115,52 @@ function HeadingWithIcon({
   );
 }
 
+/**
+ * Pack 19C.4 — decorative communication-network layer (desktop/laptop only;
+ * CSS hides it on mobile and under prefers-reduced-motion).
+ */
+function ProfileHeroNetwork() {
+  return (
+    <svg
+      className="public-member-page__hero-network"
+      viewBox="0 0 960 220"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <g
+        className="public-member-page__hero-network-lines"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.15"
+        strokeLinecap="round"
+      >
+        <path d="M32 148 L140 72 L260 156 L400 48 L560 168 L720 64 L900 142" />
+        <path d="M80 40 L220 120 L360 36 L520 128 L680 44 L860 110" />
+        <path d="M48 180 L200 100 L340 190 L500 90 L660 186 L820 96" />
+        <path d="M180 56 L300 90 L420 70 L580 110 L740 80" />
+      </g>
+      <g className="public-member-page__hero-network-nodes" fill="currentColor">
+        <circle cx="140" cy="72" r="2.6" />
+        <circle cx="260" cy="156" r="2.2" />
+        <circle cx="400" cy="48" r="2.8" />
+        <circle cx="560" cy="168" r="2.3" />
+        <circle cx="720" cy="64" r="2.7" />
+        <circle cx="220" cy="120" r="2.1" />
+        <circle cx="520" cy="128" r="2.4" />
+        <circle cx="340" cy="190" r="2.2" />
+        <circle cx="660" cy="186" r="2.5" />
+        <circle cx="420" cy="70" r="2.0" />
+      </g>
+      <g className="public-member-page__hero-network-signals">
+        <circle className="public-member-page__hero-signal public-member-page__hero-signal--a" r="3.2" />
+        <circle className="public-member-page__hero-signal public-member-page__hero-signal--b" r="2.6" />
+        <circle className="public-member-page__hero-signal public-member-page__hero-signal--c" r="2.8" />
+      </g>
+    </svg>
+  );
+}
+
 export function ParticipantProfileSurface({
   mode,
   profile,
@@ -133,8 +177,6 @@ export function ParticipantProfileSurface({
   const hasOrganization = hasVisibleOrganization(profile);
   const hasSkills = hasVisibleSkills(profile);
   const hasLinks = hasVisibleProfessionalLinks(profile);
-  const hasParticipationArea = hasVisibleParticipationArea(profile);
-  const participationAreaLabels = buildParticipationAreaLabels(profile.participationArea);
   const hasRecentInitiatives = hasVisibleRecentInitiatives(profile);
   const showMemberBadge = shouldShowMemberBadge(profile);
 
@@ -153,8 +195,7 @@ export function ParticipantProfileSurface({
 
   const showInfoColumn =
     hasLinks || showLinksNotice || hasOrganization || hasSkills || showSkillsNotice;
-  const showStatisticsColumn =
-    hasStatistics || showStatisticsNotice || hasParticipationArea;
+  const showStatisticsColumn = hasStatistics || showStatisticsNotice;
   const showBodyRow = showInfoColumn || showStatisticsColumn;
   const showBiographySection = hasBiography || showBiographyNotice || isOwnerPreview;
   const showInitiativesSection = hasRecentInitiatives || showInitiativesNotice;
@@ -162,7 +203,11 @@ export function ParticipantProfileSurface({
   return (
     <div className="public-member-page">
       <article className="public-member-page__card hu-surface-raised">
-        <header className="public-member-page__identity">
+        <header className="public-member-page__hero public-member-page__identity">
+          <div className="public-member-page__hero-backdrop" aria-hidden="true">
+            <ProfileHeroNetwork />
+          </div>
+
           {showMemberBadge ? (
             <img
               className="public-member-page__member-badge"
@@ -173,11 +218,11 @@ export function ParticipantProfileSurface({
             />
           ) : null}
 
-          <div className="public-member-page__identity-body">
+          <div className="public-member-page__hero-content public-member-page__identity-body">
             <HumanityAvatar
               className="public-member-page__avatar"
               avatarUrl={profile.avatarUrl}
-              size={72}
+              size={88}
               alt=""
             />
             <div className="public-member-page__identity-text">
@@ -193,12 +238,13 @@ export function ParticipantProfileSurface({
                 </div>
               ) : null}
             </div>
-            {mode === "public" ? (
-              <div className="public-member-page__message-action">
-                <DirectMessageAction publicName={profile.publicName} displayName={displayName} />
-              </div>
-            ) : null}
           </div>
+
+          {mode === "public" ? (
+            <div className="public-member-page__message-action">
+              <DirectMessageAction publicName={profile.publicName} displayName={displayName} />
+            </div>
+          ) : null}
         </header>
 
         {showBodyRow ? (
@@ -213,11 +259,9 @@ export function ParticipantProfileSurface({
               <section className="public-member-page__info" aria-label="Professional information">
                 {hasLinks || showLinksNotice ? (
                   <div className="public-member-page__profile-context" id="professional-links">
-                    <h2 className="public-member-page__profile-context-heading">
-                      Professional Links
-                    </h2>
                     {hasLinks ? (
                       <MemberProfessionalLinksDisplay
+                        variant="icons"
                         website={profile.website}
                         linkedinUrl={profile.linkedinUrl}
                         facebookUrl={profile.facebookUrl}
@@ -226,10 +270,15 @@ export function ParticipantProfileSurface({
                         xUrl={profile.xUrl}
                       />
                     ) : (
-                      <OwnerHiddenSectionNotice
-                        text="Professional links are hidden from your public profile."
-                        managePrivacyHref={ownerActionLinks!.managePrivacyHref}
-                      />
+                      <>
+                        <h2 className="public-member-page__profile-context-heading">
+                          Professional Links
+                        </h2>
+                        <OwnerHiddenSectionNotice
+                          text="Professional links are hidden from your public profile."
+                          managePrivacyHref={ownerActionLinks!.managePrivacyHref}
+                        />
+                      </>
                     )}
                   </div>
                 ) : null}
@@ -289,27 +338,6 @@ export function ParticipantProfileSurface({
                     managePrivacyHref={ownerActionLinks!.managePrivacyHref}
                   />
                 ) : null}
-
-                {hasParticipationArea ? (
-                  <div
-                    className="public-member-page__profile-context"
-                    id="participation-area"
-                  >
-                    <h3 className="public-member-page__profile-context-heading">
-                      Participation Area
-                    </h3>
-                    <ul
-                      className="public-member-page__context-chips"
-                      aria-label="Participation Area"
-                    >
-                      {participationAreaLabels.map((label) => (
-                        <li key={label} className="public-member-page__context-chip">
-                          {label}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
               </section>
             ) : null}
           </div>
@@ -317,26 +345,28 @@ export function ParticipantProfileSurface({
 
         {showBiographySection ? (
           <section className="public-member-page__biography" id="biography">
-            <HeadingWithIcon
-              as="h2"
-              className="public-member-page__section-heading public-member-page__section-heading--with-icon"
-              iconSrc="/icons/workspace/biography.png"
-            >
-              Biography
-            </HeadingWithIcon>
-            {hasBiography ? (
-              <p className="public-member-page__biography-text">{profile.biography}</p>
-            ) : showBiographyNotice ? (
-              <OwnerHiddenSectionNotice
-                text="Biography is hidden from your public profile."
-                managePrivacyHref={ownerActionLinks!.managePrivacyHref}
-              />
-            ) : isOwnerPreview ? (
-              <p className="public-member-page__owner-empty-prompt">
-                Add a biography to introduce yourself to collaborators.
-                <Link href={ownerActionLinks!.editProfileHref}>Edit Profile</Link>
-              </p>
-            ) : null}
+            <div className="public-member-page__biography-copy">
+              <HeadingWithIcon
+                as="h2"
+                className="public-member-page__section-heading public-member-page__section-heading--with-icon"
+                iconSrc="/icons/workspace/biography.png"
+              >
+                Biography
+              </HeadingWithIcon>
+              {hasBiography ? (
+                <p className="public-member-page__biography-text">{profile.biography}</p>
+              ) : showBiographyNotice ? (
+                <OwnerHiddenSectionNotice
+                  text="Biography is hidden from your public profile."
+                  managePrivacyHref={ownerActionLinks!.managePrivacyHref}
+                />
+              ) : isOwnerPreview ? (
+                <p className="public-member-page__owner-empty-prompt">
+                  Add a biography to introduce yourself to collaborators.
+                  <Link href={ownerActionLinks!.editProfileHref}>Edit Profile</Link>
+                </p>
+              ) : null}
+            </div>
           </section>
         ) : null}
 
@@ -344,10 +374,7 @@ export function ParticipantProfileSurface({
           hasRecentInitiatives && profile.recentPublicInitiatives ? (
             <RecentPublicInitiativesDisclosure initiatives={profile.recentPublicInitiatives} />
           ) : (
-            <div
-              className="public-member-page__initiatives"
-              id="recent-public-initiatives"
-            >
+            <div className="public-member-page__initiatives" id="recent-public-initiatives">
               <OwnerHiddenSectionNotice
                 text="Recent Public Initiatives are hidden from your public profile."
                 managePrivacyHref={ownerActionLinks!.managePrivacyHref}

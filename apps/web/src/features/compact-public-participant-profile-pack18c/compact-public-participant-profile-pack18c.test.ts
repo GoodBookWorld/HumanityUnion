@@ -22,16 +22,17 @@ describe("Pack 18C — compact public participant profile card", () => {
     assert.match(surface, /public-member-page__body-row/);
     assert.match(surface, /public-member-page__info/);
     assert.match(surface, /public-member-page__statistics/);
-    assert.match(surface, /size=\{72\}/);
+    assert.match(surface, /size=\{88\}/);
 
     const identityIdx = surface.indexOf("public-member-page__identity");
+    const heroIdx = surface.indexOf("public-member-page__hero");
     const bodyIdx = surface.indexOf("public-member-page__body-row");
     const infoIdx = surface.indexOf("public-member-page__info");
     const statsIdx = surface.indexOf("public-member-page__statistics");
     const bioIdx = surface.indexOf('id="biography"');
     const initiativesIdx = surface.indexOf("<RecentPublicInitiativesDisclosure");
 
-    assert.ok(identityIdx > 0 && bodyIdx > identityIdx);
+    assert.ok(heroIdx > 0 && identityIdx > 0 && bodyIdx > heroIdx);
     assert.ok(infoIdx > bodyIdx && statsIdx > infoIdx);
     assert.ok(bioIdx > statsIdx && initiativesIdx > bioIdx);
 
@@ -48,7 +49,7 @@ describe("Pack 18C — compact public participant profile card", () => {
   it("compact card CSS uses Pack 17A tokens without fixed viewport clipping", () => {
     const css = readWeb("features/member-profile/components/participant-profile-surface.css");
     assert.match(css, /\.public-member-page__card/);
-    assert.match(css, /max-width:\s*52rem/);
+    assert.match(css, /max-width:\s*54rem/);
     assert.match(css, /--hu-shadow-elevated/);
     assert.match(css, /--hu-shadow-subtle/);
     assert.match(css, /\.public-member-page__body-row[\s\S]*grid-template-columns:\s*repeat\(2/s);

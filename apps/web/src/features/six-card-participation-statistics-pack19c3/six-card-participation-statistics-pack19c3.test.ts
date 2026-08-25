@@ -193,7 +193,7 @@ describe("Pack 19C.3 — equal-height desktop CSS", () => {
       css,
       /\.public-member-page__body-row\s*\{[^}]*align-items:\s*start/s,
     );
-    assert.match(css, /\.public-member-page__statistics\s*\{\s*height:\s*100%;\s*\}/);
+    assert.match(css, /\.public-member-page__statistics\s*\{[^}]*height:\s*100%/s);
     assert.doesNotMatch(
       css,
       /\.public-member-page__statistics\s*\{[^}]*height:\s*\d+px/s,
@@ -203,6 +203,9 @@ describe("Pack 19C.3 — equal-height desktop CSS", () => {
   it("shared grid stays three columns for two visual rows", () => {
     const css = readWeb("features/personal-statistics/personal-statistics.css");
     assert.match(css, /\.personal-statistics__grid[\s\S]*grid-template-columns:\s*repeat\(3/s);
-    assert.match(css, /overflow-wrap:\s*break-word/);
+    assert.match(css, /overflow-wrap:\s*normal/);
+    assert.match(css, /container-type:\s*inline-size/);
+    assert.doesNotMatch(css, /word-break:\s*break-all/);
+    assert.doesNotMatch(css, /overflow-wrap:\s*break-word/);
   });
 });
