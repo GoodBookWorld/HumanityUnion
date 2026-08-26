@@ -399,25 +399,33 @@
   gap: var(--hu-space-3);
 }
 
-.membership-public-preview__header {
-  align-items: center;
-  display: flex;
-  gap: var(--hu-space-3);
-}
-
-.membership-public-preview__meta {
-  display: grid;
-  gap: var(--hu-space-1);
-}
-
-.membership-public-preview__name {
-  font-weight: 600;
+/* Compact containment — reuses public-member-page hero tokens inside the card. */
+.membership-public-preview__surface.public-member-page {
+  width: 100%;
+  max-width: none;
   margin: 0;
+  padding: 0;
+  gap: 0;
 }
 
-.membership-public-preview__number {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: var(--hu-font-size-sm, 0.875rem);
-  margin: 0;
-  overflow-wrap: anywhere;
+.membership-public-preview__hero.public-member-page__hero {
+  min-height: 0;
+  padding: var(--hu-space-4, 1rem);
+  border-radius: var(--hu-radius-md, 8px);
+  overflow: hidden;
+}
+
+.membership-public-preview__hero .public-member-page__hero-content {
+  padding-right: 0;
+}
+
+.membership-public-preview__title.public-member-page__title {
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+}
+
+@media (max-width: 480px) {
+  .membership-public-preview__hero .public-member-page__hero-content,
+  .membership-public-preview__hero .public-member-page__identity-body {
+    padding-top: 0;
+  }
 }

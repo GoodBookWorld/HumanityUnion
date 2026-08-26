@@ -123,9 +123,10 @@ export function MembershipProfileSection() {
       />
       <MembershipPublicDisplayPreview
         displayName={profile.displayName}
+        publicName={profile.publicName}
         avatarUrl={profile.avatarUrl}
-        visible={privacy.membershipPubliclyVisible && isActiveMember}
-        memberNumber={membership.memberNumber}
+        membershipPubliclyVisible={privacy.membershipPubliclyVisible}
+        previewMemberStatus
       />
       <p className="membership-profile-section__note">
         Membership confirms voluntary support for Humanity Union. It does not change voting power or

@@ -15,17 +15,16 @@ import {
   hasVisibleProfessionalLinks,
   hasVisibleRecentInitiatives,
   hasVisibleSkills,
-  PUBLIC_MEMBER_BADGE_ALT,
-  PUBLIC_MEMBER_BADGE_SIZE_PX,
-  PUBLIC_MEMBER_BADGE_SRC,
+  PUBLIC_MEMBER_AVATAR_SIZE_PX,
   resolveDisplayName,
   shouldShowMemberBadge,
   shouldShowOwnerHiddenSectionNotice,
 } from "../participant-profile-surface-presentation";
+import { MemberStatusIndicator } from "./MemberStatusIndicator";
 
 import "../../personal-statistics/personal-statistics.css";
 import "./participant-profile-surface.css";
-
+import "./member-status-indicator.css";
 /**
  * Profile UX Pack 03.3 / Pack 18C / Pack 19C.4 — shared visual structure for
  * `/member/{publicName}` and `/profile` owner preview.
@@ -208,34 +207,29 @@ export function ParticipantProfileSurface({
             <ProfileHeroNetwork />
           </div>
 
-          {showMemberBadge ? (
-            <img
-              className="public-member-page__member-badge"
-              src={PUBLIC_MEMBER_BADGE_SRC}
-              alt={PUBLIC_MEMBER_BADGE_ALT}
-              width={PUBLIC_MEMBER_BADGE_SIZE_PX}
-              height={PUBLIC_MEMBER_BADGE_SIZE_PX}
-            />
-          ) : null}
-
           <div className="public-member-page__hero-content public-member-page__identity-body">
             <HumanityAvatar
               className="public-member-page__avatar"
               avatarUrl={profile.avatarUrl}
-              size={88}
+              size={PUBLIC_MEMBER_AVATAR_SIZE_PX}
               alt=""
             />
-            <div className="public-member-page__identity-text">
-              <h1 className="public-member-page__title">{displayName}</h1>
-              <p className="public-member-page__subtitle">@{profile.publicName}</p>
-              {metaLines.length > 0 ? (
-                <div className="public-member-page__meta-group">
-                  {metaLines.map((line) => (
-                    <p key={line} className="public-member-page__meta">
-                      {line}
-                    </p>
-                  ))}
-                </div>
+            <div className="public-member-page__identity-main">
+              <div className="public-member-page__identity-text">
+                <h1 className="public-member-page__title">{displayName}</h1>
+                <p className="public-member-page__subtitle">@{profile.publicName}</p>
+                {metaLines.length > 0 ? (
+                  <div className="public-member-page__meta-group">
+                    {metaLines.map((line) => (
+                      <p key={line} className="public-member-page__meta">
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              {showMemberBadge ? (
+                <MemberStatusIndicator className="public-member-page__member-status" />
               ) : null}
             </div>
           </div>

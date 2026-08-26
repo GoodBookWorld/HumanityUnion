@@ -113,11 +113,11 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
 
   it("11 — Member badge has meaningful semantics", () => {
     const surface = read("features/member-profile/components/ParticipantProfileSurface.tsx");
-    assert.match(surface, /PUBLIC_MEMBER_BADGE_ALT|alt=\{/);
-    const presentation = read(
-      "features/member-profile/participant-profile-surface-presentation.ts",
-    );
-    assert.match(presentation, /Humanity Union Member/);
+    assert.match(surface, /MemberStatusIndicator/);
+    const indicator = read("features/member-profile/components/MemberStatusIndicator.tsx");
+    assert.match(indicator, /MEMBER_STATUS_INDICATOR_LABEL/);
+    assert.match(indicator, /alt=""/);
+    assert.match(indicator, />Member</);
   });
 
   it("12 — Lifecycle status not color-only", () => {

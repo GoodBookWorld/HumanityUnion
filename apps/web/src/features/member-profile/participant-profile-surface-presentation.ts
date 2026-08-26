@@ -132,9 +132,12 @@ export function hasVisibleParticipationArea(
 }
 
 /**
- * Member badge uses the privacy-filtered public projection
+ * Honorary Member indicator uses the privacy-filtered public projection
  * (`memberBadgeVisible` / `membershipStatus === "member"`), never activity,
- * rank, points, or role.
+ * rank, points, role, preview state, or account age.
+ *
+ * Canonical domain status is `active_member`; public projection exposes only
+ * the safe `"member" | "participant"` pair via `resolvePublicMembershipFields`.
  */
 export function shouldShowMemberBadge(
   profile: Pick<PublicMemberProfile, "memberBadgeVisible" | "membershipStatus">,
@@ -142,10 +145,27 @@ export function shouldShowMemberBadge(
   return profile.memberBadgeVisible === true || profile.membershipStatus === "member";
 }
 
-export const PUBLIC_MEMBER_BADGE_SRC = MEMBER_BADGE_IMAGE_PATH;
-export const PUBLIC_MEMBER_BADGE_SIZE_PX = 48;
-export const PUBLIC_MEMBER_BADGE_ALT = "Humanity Union Member";
+/** Previous public hero avatar diameter (px) — kept for regression contracts. */
+export const PUBLIC_MEMBER_AVATAR_SIZE_PREVIOUS_PX = 88;
 
+/** Public hero / Membership preview avatar diameter (+50% vs previous). */
+export const PUBLIC_MEMBER_AVATAR_SIZE_PX = Math.round(PUBLIC_MEMBER_AVATAR_SIZE_PREVIOUS_PX * 1.5);
+
+/** Mobile (≤480px) previous / current avatar diameters. */
+export const PUBLIC_MEMBER_AVATAR_SIZE_MOBILE_PREVIOUS_PX = 76;
+export const PUBLIC_MEMBER_AVATAR_SIZE_MOBILE_PX = Math.round(
+  PUBLIC_MEMBER_AVATAR_SIZE_MOBILE_PREVIOUS_PX * 1.5,
+);
+
+/** Member badge ≈ 35–40% of avatar (0.375 midpoint). */
+export const PUBLIC_MEMBER_INDICATOR_BADGE_RATIO = 0.375;
+
+export const PUBLIC_MEMBER_BADGE_SRC = MEMBER_BADGE_IMAGE_PATH;
+/** @deprecated Prefer MemberStatusIndicator — size is CSS-token driven. */
+export const PUBLIC_MEMBER_BADGE_SIZE_PX = Math.round(
+  PUBLIC_MEMBER_AVATAR_SIZE_PX * PUBLIC_MEMBER_INDICATOR_BADGE_RATIO,
+);
+export const PUBLIC_MEMBER_BADGE_ALT = "Member badge";
 /**
  * Profile UX Pack 03.3 Part 5/8-11 — an owner-preview-only section is only
  * ever shown when Privacy is the reason a public visitor would see nothing

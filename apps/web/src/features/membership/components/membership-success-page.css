@@ -280,35 +280,6 @@
   gap: var(--hu-space-3);
 }
 
-.membership-public-preview__header {
-  align-items: center;
-  display: flex;
-  gap: var(--hu-space-3);
-}
-
-.membership-public-preview__meta {
-  display: grid;
-  gap: var(--hu-space-1);
-}
-
-.membership-public-preview__name {
-  font-weight: 600;
-  margin: 0;
-}
-
-.membership-public-preview__status {
-  color: var(--hu-color-text-muted, #5f6368);
-  font-size: var(--hu-font-size-sm, 0.875rem);
-  margin: 0;
-}
-
-.membership-public-preview__number {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: var(--hu-font-size-sm, 0.875rem);
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
 .workspace-personal-header__membership {
   align-items: center;
   display: flex;

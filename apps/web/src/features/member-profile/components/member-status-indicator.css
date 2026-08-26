@@ -1,0 +1,32 @@
+/**
+ * MemberStatusIndicator — badge + "Member" in one horizontal row.
+ * Badge size tracks --public-member-avatar-size (≈37.5% of avatar).
+ */
+
+.member-status-indicator {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0.35rem 0 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.member-status-indicator__badge {
+  width: var(--public-member-indicator-badge-size, calc(var(--public-member-avatar-size, 132px) * 0.375));
+  height: var(--public-member-indicator-badge-size, calc(var(--public-member-avatar-size, 132px) * 0.375));
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+
+.member-status-indicator__label {
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: inherit;
+  white-space: nowrap;
+}

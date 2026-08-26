@@ -31,9 +31,12 @@ import {
   hasVisibleProfessionalLinks,
   hasVisibleRecentInitiatives,
   hasVisibleSkills,
+  PUBLIC_MEMBER_AVATAR_SIZE_PREVIOUS_PX,
+  PUBLIC_MEMBER_AVATAR_SIZE_PX,
   PUBLIC_MEMBER_BADGE_ALT,
   PUBLIC_MEMBER_BADGE_SIZE_PX,
   PUBLIC_MEMBER_BADGE_SRC,
+  PUBLIC_MEMBER_INDICATOR_BADGE_RATIO,
   resolveDisplayName,
   shouldShowMemberBadge,
   shouldShowOwnerHiddenSectionNotice,
@@ -307,8 +310,15 @@ describe("Launch Readiness UX Fix Pack 01 — Participation Area, Skills, Member
       false,
     );
     assert.equal(PUBLIC_MEMBER_BADGE_SRC, "/illustrations/membership/member-badge.webp");
-    assert.equal(PUBLIC_MEMBER_BADGE_SIZE_PX, 48);
-    assert.equal(PUBLIC_MEMBER_BADGE_ALT, "Humanity Union Member");
+    assert.equal(PUBLIC_MEMBER_AVATAR_SIZE_PX, 132);
+    assert.equal(PUBLIC_MEMBER_AVATAR_SIZE_PREVIOUS_PX, 88);
+    assert.equal(
+      PUBLIC_MEMBER_BADGE_SIZE_PX,
+      Math.round(PUBLIC_MEMBER_AVATAR_SIZE_PX * PUBLIC_MEMBER_INDICATOR_BADGE_RATIO),
+    );
+    assert.ok(PUBLIC_MEMBER_INDICATOR_BADGE_RATIO >= 0.35);
+    assert.ok(PUBLIC_MEMBER_INDICATOR_BADGE_RATIO <= 0.4);
+    assert.equal(PUBLIC_MEMBER_BADGE_ALT, "Member badge");
   });
 
   it("keeps Skills / Professional Links / Biography projection helpers empty-safe", () => {

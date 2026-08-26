@@ -47,7 +47,9 @@ describe("Launch Readiness UX Fix Pack 01 — Blog / Profile / Header", () => {
     assert.match(surface, /hasVisibleBiography/);
     assert.match(surface, /hasVisibleOrganization/);
     assert.match(surface, /shouldShowMemberBadge/);
-    assert.match(surface, /PUBLIC_MEMBER_BADGE_SRC/);
+    assert.match(surface, /MemberStatusIndicator/);
+    assert.match(surface, /public-member-page__identity-text/);
+    assert.match(surface, /public-member-page__member-status/);
     assert.match(surface, /id="professional-links"/);
     assert.match(surface, /id="biography"/);
     assert.match(surface, /id="organization"/);
@@ -67,12 +69,12 @@ describe("Launch Readiness UX Fix Pack 01 — Blog / Profile / Header", () => {
     assert.match(surface, /icons\/workspace\/skills\.png/);
     assert.match(surface, /icons\/workspace\/biography\.png/);
 
-    assert.match(css, /\.public-member-page__member-badge\s*\{[\s\S]*width:\s*40px/m);
-    assert.match(css, /\.public-member-page__member-badge\s*\{[\s\S]*height:\s*40px/m);
-    assert.match(css, /object-fit:\s*contain/);
+    assert.match(css, /--public-member-avatar-size:\s*132px/);
+    assert.match(css, /--public-member-indicator-badge-size:\s*calc\(var\(--public-member-avatar-size\)\s*\*\s*0\.375\)/);
+    assert.doesNotMatch(css, /\.public-member-page__member-badge\s*\{/);
 
     assert.match(presentation, /MEMBER_BADGE_IMAGE_PATH/);
-    assert.match(presentation, /Humanity Union Member/);
+    assert.match(presentation, /Member badge/);
     assert.match(
       read("features/membership/membership.constants.ts"),
       /member-badge\.webp/,
