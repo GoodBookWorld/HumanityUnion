@@ -16,6 +16,8 @@
   --hu-color-text: #1a2b3c;
   --hu-color-text-muted: #5f6b7a;
   --hu-color-brand-tagline: #a57979;
+  /* Darker slogan-family tone for long principle lines on #f4f7fa. */
+  --hu-color-brand-principle: #8f6666;
   --hu-color-danger: #b42318;
 
   /* Form aliases */

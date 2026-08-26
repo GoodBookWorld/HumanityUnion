@@ -1,17 +1,23 @@
 /**
- * Focused presentation tests — Home hero Earth GIF + orbital communication.
+ * Home Hero signal field — no Earth GIF / no orbital curves.
  */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
 
 import {
-  HUMANITY_UNITY_EARTH_SRC,
-  HUMANITY_UNITY_ORBIT_COUNT,
+  HUMANITY_UNITY_AMBER,
+  HUMANITY_UNITY_SIGNAL_COUNT,
 } from "./hero-unity-visual.constants.js";
-import { HERO_UNITY_ORBIT_DEFS } from "./components/HumanityGlobe.js";
+import {
+  HERO_SIGNAL_FIELD,
+  buildHeroHexField,
+  buildHeroSignalPoints,
+  heroSignalPointPosition,
+} from "./hero-hex-matrix.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -19,82 +25,58 @@ function readFeature(relativePath: string): string {
   return readFileSync(path.join(here, relativePath), "utf8");
 }
 
-describe("Home hero Earth GIF + orbital communication", () => {
-  it("earth.gif path used", () => {
-    assert.equal(HUMANITY_UNITY_EARTH_SRC, "/illustrations/earth.gif");
-    assert.ok(
-      readFileSync(
-        path.resolve(here, "../../../public/illustrations/earth.gif"),
-      ).byteLength > 0,
-    );
+describe("Home hero quote signals (post Earth/orbit removal)", () => {
+  it("earth.gif asset may remain on disk but is unused by Home Hero", () => {
+    const asset = path.resolve(here, "../../../public/illustrations/earth.gif");
+    // Do not delete the file; only assert hero path no longer references it.
+    assert.equal(typeof existsSync(asset), "boolean");
     const globe = readFeature("components/HumanityGlobe.tsx");
-    assert.match(globe, /HUMANITY_UNITY_EARTH_SRC/);
+    const overlay = readFeature("components/HeroQuoteHoneycombVisual.tsx");
+    assert.doesNotMatch(globe, /earth\.gif|HUMANITY_UNITY_EARTH/);
+    assert.doesNotMatch(overlay, /earth\.gif|HUMANITY_UNITY_EARTH/);
   });
 
-  it("central Earth layer exists", () => {
-    const globe = readFeature("components/HumanityGlobe.tsx");
-    const css = readFeature("components/hero-unity-visual.css");
-    assert.match(globe, /hero-unity-globe__earth/);
-    assert.match(globe, /hero-unity-globe__earth-img/);
-    assert.match(css, /object-fit:\s*contain/);
+  it("foreground signal points exist without trajectory lines", () => {
+    assert.equal(HUMANITY_UNITY_SIGNAL_COUNT, HERO_SIGNAL_FIELD.desktopCount);
+    assert.equal(HUMANITY_UNITY_AMBER, "#ffd250");
+    const overlay = readFeature("components/HeroQuoteHoneycombVisual.tsx");
+    assert.match(overlay, /hero-quote-honeycomb__signals/);
+    assert.doesNotMatch(overlay, /<line|<ellipse|hero-unity-globe__comm/);
   });
 
-  it("orbital layers exist", () => {
-    assert.equal(HUMANITY_UNITY_ORBIT_COUNT, HERO_UNITY_ORBIT_DEFS.length);
-    assert.ok(HERO_UNITY_ORBIT_DEFS.length >= 3);
-    assert.ok(HERO_UNITY_ORBIT_DEFS.length <= 4);
-    const globe = readFeature("components/HumanityGlobe.tsx");
-    assert.match(globe, /hero-unity-globe__path/);
-    assert.match(globe, /<ellipse/);
-  });
-
-  it("front/back layering contract", () => {
-    const css = readFeature("components/hero-unity-visual.css");
-    assert.match(css, /layer--rear[\s\S]*?z-index:\s*1/);
-    assert.match(css, /\.hero-unity-globe__earth\s*\{[^}]*z-index:\s*2/s);
-    assert.match(css, /layer--front[\s\S]*?z-index:\s*3/);
-  });
-
-  it("signal point animation contract", () => {
-    const css = readFeature("components/hero-unity-visual.css");
-    assert.match(css, /hero-unity-globe__node/);
-    assert.match(css, /hero-unity-orbit-spin/);
-    assert.ok(HERO_UNITY_ORBIT_DEFS.every((o) => o.nodes.length >= 1));
-    assert.ok(
-      new Set(HERO_UNITY_ORBIT_DEFS.map((o) => o.durationSec)).size >= 3,
-    );
-  });
-
-  it("mobile density — panel hidden ≤768; tablet reduces density", () => {
-    const css = readFeature("components/hero-unity-visual.css");
-    assert.match(css, /@media \(max-width: 768px\)[\s\S]*\.hero-unity-visual[\s\S]*display:\s*none/);
-    assert.match(css, /max-width:\s*1100px\)\s*and\s*\(min-width:\s*769px\)/);
-  });
-
-  it("reduced-motion freezes orbits; documents GIF policy", () => {
-    const css = readFeature("components/hero-unity-visual.css");
-    assert.match(css, /prefers-reduced-motion:\s*reduce/);
-    assert.match(css, /animation:\s*none/);
-    assert.match(css, /Earth GIF continues native playback/);
+  it("signals move asynchronously between anchors", () => {
+    const field = buildHeroHexField({ width: 500, height: 380, seed: 4 });
+    const points = buildHeroSignalPoints({
+      width: 500,
+      height: 380,
+      clusters: field.clusters,
+      seed: 8,
+    });
+    assert.ok(points.length >= 4);
+    const durations = new Set(points.map((p) => Math.round(p.durationMs)));
+    assert.ok(durations.size >= 2);
+    const p0 = heroSignalPointPosition(points[0]!, 500, 500, 380);
+    const p1 = heroSignalPointPosition(points[1]!, 500, 500, 380);
+    assert.ok(Math.hypot(p0.x - p1.x, p0.y - p1.y) > 0.5);
   });
 
   it("no WebGL / external animation library", () => {
-    const globe = readFeature("components/HumanityGlobe.tsx");
-    assert.doesNotMatch(globe, /from ["']three["']/);
-    assert.doesNotMatch(globe, /WebGLRenderer|CanvasTexture|PerspectiveCamera/);
-    assert.doesNotMatch(globe, /gsap|framer-motion|@react-spring|lottie|anime\.js/i);
+    const overlay = readFeature("components/HeroQuoteHoneycombVisual.tsx");
+    assert.doesNotMatch(overlay, /from ["']three["']/);
+    assert.doesNotMatch(overlay, /WebGLRenderer|CanvasTexture|PerspectiveCamera/);
   });
 
   it("no unity-globe.webp in hero stack", () => {
-    const visual = readFeature("components/HumanityUnityVisual.tsx");
-    const globe = readFeature("components/HumanityGlobe.tsx");
-    const css = readFeature("components/hero-unity-visual.css");
-    const constants = readFeature("hero-unity-visual.constants.ts");
-    for (const src of [visual, globe, css, constants]) {
+    for (const file of [
+      "components/HumanityUnityVisual.tsx",
+      "components/HumanityGlobe.tsx",
+      "components/HeroQuoteHoneycombVisual.tsx",
+      "components/hero-unity-visual.css",
+    ]) {
+      const src = readFeature(file);
       assert.doesNotMatch(src, /url\([^)]*unity-globe\.webp/);
-      assert.doesNotMatch(src, /["'`]\/illustrations\/unity-globe\.webp["'`]/);
-      assert.doesNotMatch(src, /backgroundImage[\s\S]*unity-globe/);
+      assert.doesNotMatch(src, /["'`]\/illustrations\/unity-globe\.webp["'`]/
+      );
     }
-    assert.match(globe, /earth\.gif|HUMANITY_UNITY_EARTH_SRC/);
   });
 });

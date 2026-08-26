@@ -1,4 +1,4 @@
-/* Home Visual Pack — right-column unity visual (Earth GIF + orbital communication) */
+/* Home Visual Pack — quote underlay + honeycomb mask + foreground signals */
 
 .hero-unity-visual {
   --hero-unity-blue: #0174b0;
@@ -36,204 +36,111 @@
   background-repeat: no-repeat;
 }
 
-.hero-unity-visual__content {
+.hero-unity-visual__stage {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  place-items: center;
+  width: 100%;
   height: 100%;
   min-height: inherit;
-  padding: var(--hu-space-4) var(--hu-space-3) var(--hero-unity-quote-gap);
-  pointer-events: none;
+  padding: var(--hu-space-5) var(--hu-space-3);
   box-sizing: border-box;
+  pointer-events: none;
+  overflow: hidden;
 }
 
-.hero-unity-visual__globe-slot {
+.hero-unity-visual__quote-layer {
   position: relative;
-  flex: 1 1 auto;
-  width: min(100%, 20rem);
-  min-height: 11rem;
-  max-height: 16.5rem;
-  margin: 0 auto;
-  margin-bottom: 5.5rem;
+  z-index: 1;
+  width: min(100%, 22rem);
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
 }
 
-.hero-unity-globe {
+.hero-unity-visual__overlay-slot {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hero-quote-honeycomb {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 11rem;
   touch-action: pan-y;
   pointer-events: none;
-  display: grid;
-  place-items: center;
 }
 
-.hero-unity-globe__layer {
+.hero-quote-honeycomb__layer {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
   pointer-events: none;
+  overflow: hidden;
 }
 
-.hero-unity-globe__layer--rear {
+.hero-quote-honeycomb__layer--mask {
   z-index: 1;
 }
 
-.hero-unity-globe__earth {
-  position: relative;
+.hero-quote-honeycomb__layer--signals {
   z-index: 2;
-  width: 50%;
-  max-width: 10rem;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--hero-unity-blue) 18%, transparent),
-    0 0 18px 4px color-mix(in srgb, var(--hero-unity-blue) 22%, transparent);
 }
 
-.hero-unity-globe__earth-img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-  border-radius: 50%;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-
-.hero-unity-globe__layer--front {
-  z-index: 3;
-  clip-path: polygon(0% 52%, 100% 52%, 100% 100%, 0% 100%);
-}
-
-.hero-unity-globe__layer--hex {
-  z-index: 4;
-  overflow: hidden;
-  border-radius: inherit;
-}
-
-.hero-unity-globe__hex-matrix {
+.hero-quote-honeycomb__mask-canvas {
   display: block;
   width: 100%;
   height: 100%;
   pointer-events: none;
 }
 
-.hero-unity-globe__svg {
+.hero-quote-honeycomb__signals {
+  display: block;
   width: 100%;
   height: 100%;
   overflow: visible;
+  pointer-events: none;
 }
 
-.hero-unity-globe__path {
-  stroke: color-mix(in srgb, var(--hero-unity-blue) 38%, transparent);
-  stroke-width: 0.45;
-  opacity: 0.85;
-}
-
-.hero-unity-globe__layer--front .hero-unity-globe__path {
-  stroke: color-mix(in srgb, var(--hero-unity-blue) 48%, transparent);
-  opacity: 0.95;
-}
-
-.hero-unity-globe__node {
+.hero-quote-honeycomb__signal {
   fill: var(--hero-unity-amber);
   stroke: color-mix(in srgb, var(--hero-unity-amber) 40%, #ffffff);
-  stroke-width: 0.25;
-  filter: drop-shadow(0 0 1.2px color-mix(in srgb, var(--hero-unity-amber) 55%, transparent));
-}
-
-.hero-unity-globe__comm {
-  stroke: color-mix(in srgb, var(--hero-unity-amber) 55%, transparent);
-  stroke-width: 0.35;
-  stroke-linecap: round;
-  opacity: 0;
-}
-
-.hero-unity-globe__spin {
-  transform-origin: 50% 50%;
-  transform-box: view-box;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .hero-unity-globe__spin {
-    animation: hero-unity-orbit-spin var(--hero-orbit-duration, 40s) linear infinite;
-    animation-delay: var(--hero-orbit-delay, 0s);
-  }
-
-  .hero-unity-globe__comm {
-    animation: hero-unity-comm-pulse 5.5s ease-in-out infinite;
-    animation-delay: var(--hero-comm-delay, 0s);
-  }
-}
-
-@keyframes hero-unity-orbit-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes hero-unity-comm-pulse {
-  0%,
-  12% {
-    opacity: 0;
-  }
-  22%,
-  38% {
-    opacity: 0.55;
-  }
-  52%,
-  100% {
-    opacity: 0;
-  }
+  stroke-width: 0.6;
+  filter: drop-shadow(
+    0 0 1.4px color-mix(in srgb, var(--hero-unity-amber) 55%, transparent)
+  );
 }
 
 @media (max-width: 1100px) and (min-width: 769px) {
-  .hero-unity-globe__svg--rear .hero-unity-globe__orbit-group:nth-child(2) {
-    opacity: 0.4;
+  .hero-unity-visual__quote-layer {
+    width: min(100%, 18rem);
   }
 
-  .hero-unity-globe__earth {
-    width: 50%;
+  .hero-quote-honeycomb__signal {
+    /* Tablet: slightly quieter signals; density reduced in JS via width. */
+    opacity: 0.92;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-unity-globe__spin,
-  .hero-unity-globe__comm {
-    animation: none;
-  }
-
-  .hero-unity-globe__comm {
-    opacity: 0.28;
-  }
-
-  .hero-unity-globe__hex-matrix {
-    /* Canvas skips rAF when reduced-motion; keep layer inert. */
-    opacity: 0;
-  }
-
   /*
-   * Earth GIF continues native playback (decorative). Orbits freeze to static
-   * paths/nodes; hex matrix flicker/orbit motion are suppressed.
+   * Quote stays static (see .hero-unity-quote rules).
+   * Mask paints a mostly transparent static honeycomb; signals stay stationary.
+   * Canvas/SVG skip continuous rAF when reduced-motion is set.
    */
 }
 
 .hero-unity-quote {
-  position: absolute;
-  inset-inline: var(--hero-unity-quote-inline-pad);
-  bottom: var(--hero-unity-quote-gap);
-  inline-size: calc(100% - (2 * var(--hero-unity-quote-inline-pad)));
-  max-inline-size: calc(100% - (2 * var(--hero-unity-quote-inline-pad)));
+  position: relative;
+  inset: auto;
+  bottom: auto;
+  inline-size: 100%;
+  max-inline-size: 100%;
   display: flex;
   justify-content: center;
   box-sizing: border-box;

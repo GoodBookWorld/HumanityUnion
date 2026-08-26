@@ -1,24 +1,48 @@
 /**
- * Home Hero hex/honeycomb matrix geometry.
- * Shape language mirrors Pack 22I HU Matrix Reveal without PWA session/audio coupling.
+ * Home Hero quote honeycomb + signal field.
+ * Honeycomb geometry mirrors Pack 22I / prior hero hex work without Earth/orbit coupling.
+ * Mask phases sync to the existing CSS quote cycle (12s).
  */
+
+import { HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS } from "./hero-unity-visual.constants";
 
 export const HERO_HEX_BACKDROP = "#f4f7fa";
 
 export const HERO_HEX_MATRIX = {
-  minColumns: 18,
-  maxColumns: 28,
-  maxCells: 700,
+  minColumns: 14,
+  maxColumns: 24,
+  maxCells: 520,
+  tabletMaxColumns: 18,
 } as const;
 
-/** Timeline (ms) for the Home Hero hex reveal. */
-export const HERO_HEX_TIMING = {
-  /** Fully opaque cover before any reveal. */
-  holdMs: 2_300,
-  /** Active dissolve window end (near-complete). */
-  revealEndMs: 5_000,
-  /** Soft fade window per cell once its reveal time arrives. */
-  cellFadeMs: 700,
+/** Quote cycle length in ms — must match HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS. */
+export const HERO_QUOTE_CYCLE_MS = HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS * 1_000;
+
+/**
+ * Mask phase fractions aligned to hero-unity-quote CSS keyframes:
+ * line1 visible ~10%, line2 ~20%, line3 ~32%; hold through 58%; dissolve to 86%.
+ */
+export const HERO_QUOTE_MASK_PHASES = {
+  /** Quote starts appearing — clusters begin opening. */
+  openStart: 0.02,
+  /** All lines on-screen — target high readability. */
+  readableStart: 0.32,
+  /** Hold ends; dissolve begins. */
+  readableEnd: 0.58,
+  /** Quote fully gone / pause. */
+  closedEnd: 0.86,
+} as const;
+
+/** Target clear fraction of cells during the readable hold. */
+export const HERO_QUOTE_READABLE_CLEAR_FRACTION = {
+  min: 0.85,
+  max: 0.95,
+} as const;
+
+export const HERO_SIGNAL_FIELD = {
+  desktopCount: 6,
+  tabletCount: 4,
+  radiusCss: 3.2,
 } as const;
 
 /** Mulberry32 — deterministic, no external deps. */
@@ -39,14 +63,23 @@ export interface HeroHexCell {
   readonly cx: number;
   readonly cy: number;
   readonly radius: number;
-  readonly revealRank: number;
-  /** 0..1 — earlier cells open first after the hold. */
-  readonly revealAt: number;
-  readonly clusterWeight: number;
-  /** Phase for living flicker. */
+  readonly clusterId: number;
+  /** 0..1 offset within cluster open/close stagger. */
+  readonly clusterOffset: number;
   readonly phase: number;
-  /** Participates in subtle post-reveal living activity. */
+  /** Soft living flicker during readable hold (sparse). */
   readonly living: boolean;
+  readonly clusterWeight: number;
+}
+
+export interface HeroHexCluster {
+  readonly id: number;
+  readonly cx: number;
+  readonly cy: number;
+  /** 0..1 — when this cluster prefers to open within the open window. */
+  readonly openBias: number;
+  /** 0..1 — when this cluster prefers to close within the close window. */
+  readonly closeBias: number;
 }
 
 export interface HeroHexField {
@@ -55,15 +88,44 @@ export interface HeroHexField {
   readonly columns: number;
   readonly rows: number;
   readonly cells: readonly HeroHexCell[];
+  readonly clusters: readonly HeroHexCluster[];
+}
+
+export interface HeroSignalPoint {
+  readonly id: number;
+  readonly anchors: readonly { readonly x: number; readonly y: number }[];
+  readonly durationMs: number;
+  readonly phaseMs: number;
+  readonly clusterAffinity: number;
+  readonly radius: number;
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = clamp01((x - edge0) / Math.max(1e-6, edge1 - edge0));
+  return t * t * (3 - 2 * t);
 }
 
 function resolveColumns(width: number): number {
-  const approx = Math.round(width / 26);
+  const approx = Math.round(width / 28);
+  const maxCols =
+    width < 520 ? HERO_HEX_MATRIX.tabletMaxColumns : HERO_HEX_MATRIX.maxColumns;
   return Math.min(
-    HERO_HEX_MATRIX.maxColumns,
+    maxCols,
     Math.max(HERO_HEX_MATRIX.minColumns, approx),
   );
 }
+
+const CLUSTER_FOCI_NORM = [
+  { x: 0.5, y: 0.42 },
+  { x: 0.28, y: 0.55 },
+  { x: 0.72, y: 0.55 },
+  { x: 0.42, y: 0.68 },
+  { x: 0.58, y: 0.32 },
+] as const;
 
 export function buildHeroHexField(input: {
   width: number;
@@ -82,13 +144,15 @@ export function buildHeroHexField(input: {
   }
 
   const radius = cellW * 0.5;
-  const foci = [
-    { x: width * 0.5, y: height * 0.45 },
-    { x: width * 0.32, y: height * 0.58 },
-    { x: width * 0.68, y: height * 0.58 },
-  ];
+  const random = createHeroHexSeededRandom(input.seed ?? 0x5155_4f54); // "QUOT"
+  const foci = CLUSTER_FOCI_NORM.map((f, id) => ({
+    id,
+    cx: f.x * width,
+    cy: f.y * height,
+    openBias: random(),
+    closeBias: random(),
+  }));
 
-  const random = createHeroHexSeededRandom(input.seed ?? 0x4845_5831); // "HEX1"
   const draft: Array<{
     index: number;
     col: number;
@@ -96,10 +160,11 @@ export function buildHeroHexField(input: {
     cx: number;
     cy: number;
     radius: number;
-    noise: number;
-    cluster: number;
+    clusterId: number;
+    clusterOffset: number;
     phase: number;
     livingRoll: number;
+    clusterWeight: number;
   }> = [];
 
   let index = 0;
@@ -111,13 +176,17 @@ export function buildHeroHexField(input: {
       if (cx < -cellW || cx > width + cellW || cy < -cellH || cy > height + cellH) {
         continue;
       }
+
+      let bestId = 0;
       let minDist = Number.POSITIVE_INFINITY;
       for (const focus of foci) {
-        const dx = (cx - focus.x) / width;
-        const dy = (cy - focus.y) / height;
-        minDist = Math.min(minDist, Math.hypot(dx, dy));
+        const dist = Math.hypot(cx - focus.cx, cy - focus.cy);
+        if (dist < minDist) {
+          minDist = dist;
+          bestId = focus.id;
+        }
       }
-      const cluster = 1 - Math.min(1, minDist * 2.2);
+      const normDist = minDist / Math.hypot(width, height);
       draft.push({
         index,
         col,
@@ -125,10 +194,11 @@ export function buildHeroHexField(input: {
         cx,
         cy,
         radius,
-        noise: random(),
-        cluster,
+        clusterId: bestId,
+        clusterOffset: random(),
         phase: random() * Math.PI * 2,
         livingRoll: random(),
+        clusterWeight: 1 - Math.min(1, normDist * 3.2),
       });
       index += 1;
       if (draft.length >= HERO_HEX_MATRIX.maxCells) {
@@ -140,37 +210,29 @@ export function buildHeroHexField(input: {
     }
   }
 
-  const ranked = [...draft].sort((a, b) => {
-    const scoreA = a.noise * 0.74 + (1 - a.cluster) * 0.26;
-    const scoreB = b.noise * 0.74 + (1 - b.cluster) * 0.26;
-    return scoreB - scoreA;
-  });
+  const cells: HeroHexCell[] = draft.map((cell) => ({
+    index: cell.index,
+    col: cell.col,
+    row: cell.row,
+    cx: cell.cx,
+    cy: cell.cy,
+    radius: cell.radius,
+    clusterId: cell.clusterId,
+    clusterOffset: cell.clusterOffset,
+    phase: cell.phase,
+    living: cell.livingRoll < 0.12,
+    clusterWeight: cell.clusterWeight,
+  }));
 
-  const rankByIndex = new Map<number, number>();
-  ranked.forEach((cell, rank) => {
-    rankByIndex.set(cell.index, rank);
-  });
+  const clusters: HeroHexCluster[] = foci.map((f) => ({
+    id: f.id,
+    cx: f.cx,
+    cy: f.cy,
+    openBias: f.openBias,
+    closeBias: f.closeBias,
+  }));
 
-  const total = Math.max(1, draft.length);
-  const cells: HeroHexCell[] = draft.map((cell) => {
-    const revealRank = rankByIndex.get(cell.index) ?? 0;
-    return {
-      index: cell.index,
-      col: cell.col,
-      row: cell.row,
-      cx: cell.cx,
-      cy: cell.cy,
-      radius: cell.radius,
-      revealRank,
-      revealAt: (revealRank + 0.5) / total,
-      clusterWeight: cell.cluster,
-      phase: cell.phase,
-      // ~14% keep a soft living flicker after the main reveal.
-      living: cell.livingRoll < 0.14,
-    };
-  });
-
-  return { width, height, columns, rows, cells };
+  return { width, height, columns, rows, cells, clusters };
 }
 
 export function drawHeroHexCell(
@@ -196,46 +258,242 @@ export function drawHeroHexCell(
   ctx.fill();
 }
 
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
+/**
+ * Cluster openness 0..1 at cycle progress (0 opaque cover, 1 fully clear).
+ * Local clusters open/close with neighbor stagger — not a uniform global flicker.
+ */
+export function heroClusterOpenAmount(
+  cluster: Pick<HeroHexCluster, "openBias" | "closeBias">,
+  progress: number,
+  /** Optional boost 0..1 when a signal approaches this cluster. */
+  signalBoost = 0,
+): number {
+  const { openStart, readableStart, readableEnd, closedEnd } = HERO_QUOTE_MASK_PHASES;
+
+  if (progress < openStart) {
+    return 0;
+  }
+
+  // Opening window: clusters stagger by openBias within appear → readable.
+  if (progress < readableStart) {
+    const span = readableStart - openStart;
+    const localStart = openStart + cluster.openBias * span * 0.55;
+    const localEnd = openStart + span * (0.55 + cluster.openBias * 0.4);
+    const base = smoothstep(localStart, localEnd, progress);
+    return clamp01(base + signalBoost * 0.22);
+  }
+
+  // Readable hold: mostly open; sparse living flicker handled per-cell.
+  if (progress < readableEnd) {
+    return clamp01(0.92 + signalBoost * 0.05);
+  }
+
+  // Closing window: clusters return with closeBias stagger.
+  if (progress < closedEnd) {
+    const span = closedEnd - readableEnd;
+    const localStart = readableEnd + cluster.closeBias * span * 0.35;
+    const localEnd = readableEnd + span * (0.45 + cluster.closeBias * 0.5);
+    const remaining = 1 - smoothstep(localStart, localEnd, progress);
+    return clamp01(remaining * (0.95 - signalBoost * 0.08));
+  }
+
+  return 0;
 }
 
 /**
- * Per-cell opacity at elapsed time (0 = fully clear / shows underlay, 1 = opaque cover).
- * Supports hold → distributed reveal → brief re-opaque flicker → subtle living state.
+ * Per-cell mask opacity (1 = opaque #f4f7fa cover, 0 = clear / quote visible).
  */
-export function heroHexCellOpacity(
-  cell: Pick<HeroHexCell, "revealAt" | "phase" | "living" | "clusterWeight">,
-  elapsedMs: number,
-  timing: typeof HERO_HEX_TIMING = HERO_HEX_TIMING,
+export function heroQuoteHexCellOpacity(
+  cell: Pick<
+    HeroHexCell,
+    "clusterId" | "clusterOffset" | "phase" | "living" | "clusterWeight"
+  >,
+  cluster: Pick<HeroHexCluster, "openBias" | "closeBias">,
+  cycleElapsedMs: number,
+  signalBoost = 0,
+  cycleMs: number = HERO_QUOTE_CYCLE_MS,
 ): number {
-  if (elapsedMs < timing.holdMs) {
+  const progress = ((cycleElapsedMs % cycleMs) + cycleMs) % cycleMs / cycleMs;
+  const open = heroClusterOpenAmount(cluster, progress, signalBoost);
+
+  // Neighbor stagger within cluster — small timing offsets, not global noise.
+  const stagger = (cell.clusterOffset - 0.5) * 0.14;
+  let clear = clamp01(open + stagger * open);
+
+  // Soft living fragments during readable hold only.
+  const { readableStart, readableEnd } = HERO_QUOTE_MASK_PHASES;
+  if (
+    cell.living &&
+    progress >= readableStart &&
+    progress < readableEnd
+  ) {
+    const wave =
+      0.5 + 0.5 * Math.sin(cycleElapsedMs * 0.0024 + cell.phase);
+    clear = clamp01(clear - wave * 0.08 * (0.4 + 0.6 * cell.clusterWeight));
+  }
+
+  // During late dissolve, some cells return slightly ahead of the cluster mean.
+  if (progress >= readableEnd && progress < HERO_QUOTE_MASK_PHASES.closedEnd) {
+    const earlyReturn =
+      Math.max(0, 0.55 - cell.clusterOffset) *
+      smoothstep(readableEnd, readableEnd + 0.12, progress) *
+      0.35;
+    clear = clamp01(clear - earlyReturn);
+  }
+
+  return clamp01(1 - clear);
+}
+
+/** Mean clear fraction for a field at a cycle time — used by readability tests. */
+export function heroQuoteHexClearFraction(
+  field: HeroHexField,
+  cycleElapsedMs: number,
+  boostByCluster: ReadonlyMap<number, number> = new Map(),
+): number {
+  if (field.cells.length === 0) {
     return 1;
   }
+  let clearSum = 0;
+  for (const cell of field.cells) {
+    const cluster = field.clusters[cell.clusterId]!;
+    const boost = boostByCluster.get(cell.clusterId) ?? 0;
+    const opacity = heroQuoteHexCellOpacity(
+      cell,
+      cluster,
+      cycleElapsedMs,
+      boost,
+    );
+    clearSum += 1 - opacity;
+  }
+  return clearSum / field.cells.length;
+}
 
-  const revealSpan = Math.max(1, timing.revealEndMs - timing.holdMs);
-  const openAt = timing.holdMs + cell.revealAt * revealSpan;
-  const sinceOpen = elapsedMs - openAt;
-  const fade = clamp01(sinceOpen / timing.cellFadeMs);
-  let opacity = 1 - fade;
+export function buildHeroSignalPoints(input: {
+  width: number;
+  height: number;
+  count?: number;
+  seed?: number;
+  clusters: readonly HeroHexCluster[];
+}): readonly HeroSignalPoint[] {
+  const random = createHeroHexSeededRandom(input.seed ?? 0x5347_4e4c); // "SGNL"
+  const count =
+    input.count ??
+    (input.width < 520
+      ? HERO_SIGNAL_FIELD.tabletCount
+      : HERO_SIGNAL_FIELD.desktopCount);
+  const clusters =
+    input.clusters.length > 0
+      ? input.clusters
+      : [{ id: 0, cx: input.width * 0.5, cy: input.height * 0.5, openBias: 0.5, closeBias: 0.5 }];
 
-  // Active reveal (≈3–5s): some cells briefly re-opaque — living matrix, not one-way dissolve.
-  if (elapsedMs >= timing.holdMs + 700 && elapsedMs < timing.revealEndMs) {
-    const pulse =
-      0.5 + 0.5 * Math.sin(elapsedMs * 0.0042 + cell.phase + cell.revealAt * 9);
-    const reopen = Math.max(0, pulse - 0.62) * 1.4 * (1 - fade * 0.55);
-    opacity = clamp01(opacity + reopen * (0.45 + 0.4 * cell.clusterWeight));
+  const points: HeroSignalPoint[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const affinity = i % clusters.length;
+    const home = clusters[affinity]!;
+    const anchors = [
+      {
+        x: clamp01((home.cx + (random() - 0.5) * input.width * 0.18) / input.width),
+        y: clamp01((home.cy + (random() - 0.5) * input.height * 0.18) / input.height),
+      },
+      {
+        x: 0.18 + random() * 0.64,
+        y: 0.22 + random() * 0.56,
+      },
+      {
+        x: clamp01(
+          (clusters[(affinity + 2) % clusters.length]!.cx +
+            (random() - 0.5) * input.width * 0.12) /
+            input.width,
+        ),
+        y: clamp01(
+          (clusters[(affinity + 2) % clusters.length]!.cy +
+            (random() - 0.5) * input.height * 0.12) /
+            input.height,
+        ),
+      },
+      {
+        x: 0.22 + random() * 0.56,
+        y: 0.28 + random() * 0.48,
+      },
+    ];
+    points.push({
+      id: i,
+      anchors,
+      durationMs: 4_200 + random() * 5_800,
+      phaseMs: random() * 8_000,
+      clusterAffinity: affinity,
+      radius: HERO_SIGNAL_FIELD.radiusCss * (0.85 + random() * 0.3),
+    });
+  }
+  return points;
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/**
+ * Deterministic point position in CSS pixels.
+ * Moves between invisible anchors; optionally eases toward an active cluster.
+ */
+export function heroSignalPointPosition(
+  point: HeroSignalPoint,
+  elapsedMs: number,
+  width: number,
+  height: number,
+  attractor: { x: number; y: number; strength: number } | null = null,
+): { x: number; y: number } {
+  const local = ((elapsedMs + point.phaseMs) % point.durationMs) / point.durationMs;
+  const segmentCount = point.anchors.length;
+  const scaled = local * segmentCount;
+  const i0 = Math.floor(scaled) % segmentCount;
+  const i1 = (i0 + 1) % segmentCount;
+  const t = smoothstep(0, 1, scaled - Math.floor(scaled));
+  const a0 = point.anchors[i0]!;
+  const a1 = point.anchors[i1]!;
+  let x = lerp(a0.x, a1.x, t) * width;
+  let y = lerp(a0.y, a1.y, t) * height;
+
+  if (attractor && attractor.strength > 0) {
+    x = lerp(x, attractor.x, attractor.strength);
+    y = lerp(y, attractor.y, attractor.strength);
+  }
+  return { x, y };
+}
+
+/**
+ * Suggestive point→mask coordination: boost for clusters near signal points
+ * during the opening / early readable window.
+ */
+export function heroSignalClusterBoosts(
+  points: readonly HeroSignalPoint[],
+  clusters: readonly HeroHexCluster[],
+  elapsedMs: number,
+  width: number,
+  height: number,
+  cycleMs: number = HERO_QUOTE_CYCLE_MS,
+): Map<number, number> {
+  const progress = ((elapsedMs % cycleMs) + cycleMs) % cycleMs / cycleMs;
+  const boosts = new Map<number, number>();
+  if (
+    progress < HERO_QUOTE_MASK_PHASES.openStart ||
+    progress > HERO_QUOTE_MASK_PHASES.readableEnd
+  ) {
+    return boosts;
   }
 
-  // Stable living state after ~5s — sparse soft fragments only.
-  if (elapsedMs >= timing.revealEndMs) {
-    if (!cell.living) {
-      return 0;
+  for (const point of points) {
+    const pos = heroSignalPointPosition(point, elapsedMs, width, height);
+    for (const cluster of clusters) {
+      const dist = Math.hypot(pos.x - cluster.cx, pos.y - cluster.cy);
+      const radius = Math.min(width, height) * 0.16;
+      if (dist > radius) {
+        continue;
+      }
+      const proximity = 1 - dist / radius;
+      const prev = boosts.get(cluster.id) ?? 0;
+      boosts.set(cluster.id, Math.min(1, prev + proximity * 0.55));
     }
-    const livingWave =
-      0.5 + 0.5 * Math.sin(elapsedMs * 0.0018 + cell.phase);
-    return clamp01(0.06 + livingWave * 0.22 * (0.5 + 0.5 * cell.clusterWeight));
   }
-
-  return clamp01(opacity);
+  return boosts;
 }

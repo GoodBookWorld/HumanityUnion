@@ -1,3 +1,6 @@
+/**
+ * Home Hero unity visual — quote honeycomb communication regression suite.
+ */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -9,14 +12,12 @@ import {
   HUMANITY_GLOBE_INTERACTION,
   HUMANITY_UNITY_AMBER,
   HUMANITY_UNITY_BLUE,
-  HUMANITY_UNITY_EARTH_SRC,
-  HUMANITY_UNITY_ORBIT_COUNT,
   HUMANITY_UNITY_QUOTE,
   HUMANITY_UNITY_QUOTE_LINES,
+  HUMANITY_UNITY_SIGNAL_COUNT,
   HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS,
   HUMANITY_UNITY_VISUAL_MIN_WIDTH_PX,
 } from "./hero-unity-visual.constants.js";
-import { HERO_UNITY_ORBIT_DEFS } from "./components/HumanityGlobe.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -24,7 +25,7 @@ function readFeature(relativePath: string): string {
   return readFileSync(path.join(here, relativePath), "utf8");
 }
 
-describe("Home Visual Pack 01.1 / Earth GIF orbital — hero unity visual", () => {
+describe("Home Visual Pack — quote honeycomb communication visual", () => {
   it("keeps existing Hero content contract", () => {
     assert.ok(PUBLIC_HOME_HERO.headline.length > 0);
     assert.ok(PUBLIC_HOME_HERO.subheadline.length > 0);
@@ -61,11 +62,10 @@ describe("Home Visual Pack 01.1 / Earth GIF orbital — hero unity visual", () =
     assert.match(quote, /hero-unity-quote__line--/);
   });
 
-  it("pins a larger multiline quote near the panel bottom without nowrap clipping", () => {
+  it("centers a translation-safe multiline quote without nowrap clipping", () => {
     const visualCss = readFeature("components/hero-unity-visual.css");
     assert.match(visualCss, /--hero-unity-quote-gap:\s*5px/);
-    assert.match(visualCss, /\.hero-unity-quote\s*\{[^}]*bottom:\s*var\(--hero-unity-quote-gap\)/s);
-    assert.match(visualCss, /inset-inline:\s*var\(--hero-unity-quote-inline-pad\)/);
+    assert.match(visualCss, /\.hero-unity-visual__stage\s*\{[^}]*place-items:\s*center/s);
     assert.match(visualCss, /font-size:\s*clamp\(1rem,/);
     assert.match(visualCss, /overflow-wrap:\s*anywhere/);
     assert.match(visualCss, /\.hero-unity-quote__line--1\s*\{[^}]*text-align:\s*start/s);
@@ -77,59 +77,42 @@ describe("Home Visual Pack 01.1 / Earth GIF orbital — hero unity visual", () =
     assert.match(visualCss, /padding-inline-end:\s*0\.15em/);
   });
 
-  it("uses earth.gif centrally and does not reference unity-globe.webp in the hero", () => {
-    assert.equal(HUMANITY_UNITY_EARTH_SRC, "/illustrations/earth.gif");
+  it("does not use earth.gif or unity-globe.webp in the Home Hero", () => {
     const visual = readFeature("components/HumanityUnityVisual.tsx");
     const globe = readFeature("components/HumanityGlobe.tsx");
+    const overlay = readFeature("components/HeroQuoteHoneycombVisual.tsx");
     const visualCss = readFeature("components/hero-unity-visual.css");
     const constants = readFeature("hero-unity-visual.constants.ts");
 
-    assert.match(globe, /HUMANITY_UNITY_EARTH_SRC|\/illustrations\/earth\.gif/);
-    assert.match(globe, /hero-unity-globe__earth/);
-    assert.doesNotMatch(visual, /unity-globe\.webp|\/illustrations\/unity-globe/);
-    assert.doesNotMatch(globe, /["'`]\/illustrations\/unity-globe\.webp["'`]/);
-    assert.doesNotMatch(visualCss, /url\([^)]*unity-globe\.webp/);
-    assert.doesNotMatch(constants, /["'`]\/illustrations\/unity-globe\.webp["'`]/);
+    for (const src of [visual, globe, overlay, visualCss, constants]) {
+      assert.doesNotMatch(src, /earth\.gif|HUMANITY_UNITY_EARTH/);
+      assert.doesNotMatch(src, /unity-globe\.webp|\/illustrations\/unity-globe/);
+    }
     assert.doesNotMatch(visual, /backgroundImage/);
     assert.match(visualCss, /legacy unity globe background removed/);
   });
 
-  it("orbital layers exist with front/back depth contract", () => {
-    const globe = readFeature("components/HumanityGlobe.tsx");
+  it("quote → honeycomb → signals z-stack contract", () => {
+    const unity = readFeature("components/HumanityUnityVisual.tsx");
     const css = readFeature("components/hero-unity-visual.css");
-    assert.match(globe, /hero-unity-globe__layer--rear/);
-    assert.match(globe, /hero-unity-globe__layer--front/);
-    assert.match(globe, /layer:\s*"rear"/);
-    assert.match(globe, /layer:\s*"front"/);
-    assert.match(css, /\.hero-unity-globe__layer--rear\s*\{[^}]*z-index:\s*1/s);
-    assert.match(css, /\.hero-unity-globe__earth\s*\{[^}]*z-index:\s*2/s);
-    assert.match(css, /\.hero-unity-globe__layer--front\s*\{[^}]*z-index:\s*3/s);
-    assert.match(css, /clip-path:\s*polygon/);
-    assert.equal(HUMANITY_UNITY_ORBIT_COUNT, 4);
-    assert.equal(HERO_UNITY_ORBIT_DEFS.length, 4);
+    assert.match(unity, /hero-unity-visual__quote-layer/);
+    assert.match(unity, /hero-unity-visual__overlay-slot/);
+    assert.match(css, /\.hero-unity-visual__quote-layer\s*\{[^}]*z-index:\s*1/s);
+    assert.match(css, /\.hero-unity-visual__overlay-slot\s*\{[^}]*z-index:\s*2/s);
+    assert.match(css, /\.hero-quote-honeycomb__layer--mask\s*\{[^}]*z-index:\s*1/s);
+    assert.match(css, /\.hero-quote-honeycomb__layer--signals\s*\{[^}]*z-index:\s*2/s);
   });
 
-  it("signal point animation contract uses CSS orbit spin (no WebGL)", () => {
-    const globe = readFeature("components/HumanityGlobe.tsx");
+  it("signal points use amber accent without orbital spin", () => {
+    const overlay = readFeature("components/HeroQuoteHoneycombVisual.tsx");
     const css = readFeature("components/hero-unity-visual.css");
-    assert.match(globe, /hero-unity-globe__node/);
-    assert.match(globe, /hero-unity-globe__spin/);
-    assert.match(css, /hero-unity-orbit-spin/);
-    assert.match(css, /--hero-orbit-duration/);
-    assert.doesNotMatch(globe, /from ["']three["']|WebGLRenderer|PerspectiveCamera/);
-    assert.doesNotMatch(globe, /gsap|framer-motion|anime\.js|lottie/i);
-  });
-
-  it("communication lines are restrained and pulsed", () => {
-    const globe = readFeature("components/HumanityGlobe.tsx");
-    const css = readFeature("components/hero-unity-visual.css");
-    assert.match(globe, /hero-unity-globe__comm/);
-    assert.match(css, /hero-unity-comm-pulse/);
-  });
-
-  it("Earth visual scale is ~50% of the composition", () => {
-    const css = readFeature("components/hero-unity-visual.css");
-    assert.match(css, /\.hero-unity-globe__earth\s*\{[^}]*width:\s*50%/s);
+    assert.match(overlay, /HUMANITY_UNITY_AMBER|hero-quote-honeycomb__signal/);
+    assert.match(overlay, /buildHeroSignalPoints|heroSignalPointPosition/);
+    assert.doesNotMatch(overlay, /hero-unity-orbit-spin|ellipse/);
+    assert.doesNotMatch(css, /hero-unity-orbit-spin/);
+    assert.equal(HUMANITY_UNITY_SIGNAL_COUNT, 6);
+    assert.doesNotMatch(overlay, /from ["']three["']|WebGLRenderer|PerspectiveCamera/);
+    assert.doesNotMatch(overlay, /gsap|framer-motion|anime\.js|lottie/i);
   });
 
   it("does not configure page-scroll interception", () => {
@@ -138,20 +121,20 @@ describe("Home Visual Pack 01.1 / Earth GIF orbital — hero unity visual", () =
     assert.equal(HUMANITY_GLOBE_INTERACTION.enableOrbitControls, false);
     assert.equal(HUMANITY_GLOBE_INTERACTION.autoRotate, true);
 
-    const globe = readFeature("components/HumanityGlobe.tsx");
+    const overlay = readFeature("components/HeroQuoteHoneycombVisual.tsx");
     const css = readFeature("components/hero-unity-visual.css");
-    assert.doesNotMatch(globe, /OrbitControls|addEventListener\(["']wheel/);
-    assert.match(globe, /aria-hidden="true"/);
-    assert.match(css, /\.hero-unity-globe\s*\{[^}]*pointer-events:\s*none/s);
+    assert.doesNotMatch(overlay, /OrbitControls|addEventListener\(["']wheel/);
+    assert.match(overlay, /aria-hidden="true"/);
+    assert.match(css, /\.hero-quote-honeycomb\s*\{[^}]*pointer-events:\s*none/s);
   });
 
-  it("loads the globe only on the client and skips ≤768px", () => {
+  it("loads the overlay only on the client and skips ≤768px", () => {
     assert.equal(HUMANITY_UNITY_VISUAL_MIN_WIDTH_PX, 769);
     const visual = readFeature("components/HumanityUnityVisual.tsx");
     assert.match(visual, /dynamic\(/);
     assert.match(visual, /ssr:\s*false/);
     assert.match(visual, /HumanityGlobe/);
-    assert.match(visual, /min-width:\s*769px/);
+    assert.match(visual, /min-width:\s*769px|HUMANITY_UNITY_VISUAL_MIN_WIDTH_PX/);
     assert.match(visual, /mountGlobe/);
   });
 
@@ -168,12 +151,13 @@ describe("Home Visual Pack 01.1 / Earth GIF orbital — hero unity visual", () =
     assert.match(visualCss, /animation:\s*none/);
   });
 
-  it("tablet density reduction and reduced-motion freeze orbits", () => {
+  it("tablet density reduction and reduced-motion freeze motion", () => {
     const css = readFeature("components/hero-unity-visual.css");
+    const overlay = readFeature("components/HeroQuoteHoneycombVisual.tsx");
     assert.match(css, /max-width:\s*1100px\)\s*and\s*\(min-width:\s*769px\)/);
     assert.match(css, /prefers-reduced-motion:\s*reduce/);
-    assert.match(css, /\.hero-unity-globe__spin,\s*\n\s*\.hero-unity-globe__comm\s*\{\s*\n\s*animation:\s*none/s);
-    assert.match(css, /Earth GIF continues native playback/);
+    assert.match(overlay, /prefers-reduced-motion/);
+    assert.match(overlay, /paintStaticReducedMask|reduced/);
   });
 
   it("keeps atmospheric panel background without legacy globe image", () => {

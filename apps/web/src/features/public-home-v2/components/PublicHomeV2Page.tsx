@@ -6,6 +6,7 @@ import { PublicHomeCoreValuesSection } from "./PublicHomeCoreValuesSection";
 import { PublicHomeEcosystemStatementSection } from "./PublicHomeEcosystemStatementSection";
 import { PublicHomeGeographicNavigationSection } from "./PublicHomeGeographicNavigationSection";
 import { PublicHomeHeroSection } from "./PublicHomeHeroSection";
+import { PublicHomeHumanityAiPrinciple } from "./PublicHomeHumanityAiPrinciple";
 import { PublicHomeKnowledgeSection } from "./PublicHomeKnowledgeSection";
 import { PublicHomeLatestInitiativesSection } from "./PublicHomeLatestInitiativesSection";
 import { PublicHomeLatestPublicImpactSection } from "./PublicHomeLatestPublicImpactSection";
@@ -17,6 +18,7 @@ export function PublicHomeV2Page() {
   return (
     <div className="public-home-v2">
       <PublicHomeHeroSection />
+      <PublicHomeHumanityAiPrinciple />
       <HumanityUnionInNumbers />
       <PublicHomeCoreValuesSection />
       <PublicHomeOpportunitySection />

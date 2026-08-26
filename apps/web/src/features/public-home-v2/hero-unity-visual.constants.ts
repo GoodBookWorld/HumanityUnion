@@ -1,7 +1,7 @@
 /**
  * Home Visual Pack — Humanity Unity visual panel.
  *
- * Earth GIF + SVG/CSS orbital communication layer (no WebGL).
+ * Quote underlay + honeycomb mask + foreground signal points (no WebGL).
  * Quote: three semantic lines, translation-safe wrapping, sequential CSS reveal.
  */
 
@@ -14,30 +14,24 @@ export const HUMANITY_UNITY_QUOTE_LINES = [
 /** Full accessible phrase (single string for screen readers / translations). */
 export const HUMANITY_UNITY_QUOTE = HUMANITY_UNITY_QUOTE_LINES.join(" ");
 
-/** Central Earth animation — native GIF playback. */
-export const HUMANITY_UNITY_EARTH_SRC = "/illustrations/earth.gif";
-
-/** Earth diameter as a fraction of the orbital composition (~50%). */
-export const HUMANITY_UNITY_EARTH_SCALE = 0.5;
-
 /** Platform primary — matches `--hu-color-primary`. */
 export const HUMANITY_UNITY_BLUE = "#0174b0";
 
 /**
- * Signal / orbit amber. Design tokens do not define an amber accent today;
+ * Signal amber. Design tokens do not define an amber accent today;
  * matches the Pack 01 reference (#FFD250) as a local visual constant.
  */
 export const HUMANITY_UNITY_AMBER = "#ffd250";
 
-/** Desktop orbital path count (tablet/mobile CSS may hide some). */
-export const HUMANITY_UNITY_ORBIT_COUNT = 4;
+/** Desktop/tablet signal point count (tablet CSS/JS may use fewer). */
+export const HUMANITY_UNITY_SIGNAL_COUNT = 6;
 
 /** Full quote cycle (line reveals → hold → dissolve → pause). */
 export const HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS = 12;
 
 /**
  * Decorative interaction contract — page scroll must never be captured.
- * Orbits use CSS animation only (no OrbitControls / wheel handlers).
+ * Motion uses Canvas/SVG animation only (no OrbitControls / wheel handlers).
  */
 export const HUMANITY_GLOBE_INTERACTION = {
   autoRotate: true,

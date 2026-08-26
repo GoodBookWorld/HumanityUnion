@@ -20,18 +20,22 @@ function readApi(relativeFromApiSrc: string): string {
 }
 
 describe("Launch Readiness Pack 06 — Performance & Runtime Efficiency", () => {
-  it("1 — Home Earth visual skips ≤768px and uses lightweight SVG/CSS (no WebGL)", () => {
+  it("1 — Home quote honeycomb visual skips ≤768px and uses lightweight Canvas/SVG (no WebGL)", () => {
     assert.equal(HUMANITY_UNITY_VISUAL_MIN_WIDTH_PX, 769);
     const visual = readWeb("features/public-home-v2/components/HumanityUnityVisual.tsx");
     const globe = readWeb("features/public-home-v2/components/HumanityGlobe.tsx");
+    const overlay = readWeb(
+      "features/public-home-v2/components/HeroQuoteHoneycombVisual.tsx",
+    );
 
     assert.match(visual, /dynamic\(/);
     assert.match(visual, /ssr:\s*false/);
-    assert.match(visual, /min-width:\s*769px/);
+    assert.match(visual, /min-width:\s*769px|HUMANITY_UNITY_VISUAL_MIN_WIDTH_PX/);
     assert.match(visual, /mountGlobe/);
     assert.doesNotMatch(globe, /WebGLRenderer|setPixelRatio|from ["']three["']/);
-    assert.match(globe, /hero-unity-globe__earth|HUMANITY_UNITY_EARTH_SRC/);
-    assert.match(globe, /aria-hidden="true"/);
+    assert.doesNotMatch(overlay, /WebGLRenderer|setPixelRatio|from ["']three["']/);
+    assert.match(overlay, /hero-quote-honeycomb|aria-hidden="true"/);
+    assert.doesNotMatch(overlay, /earth\.gif|HUMANITY_UNITY_EARTH/);
   });
 
   it("2 — Rich editor stays on publishing paths, not public Blog presentation", () => {
@@ -86,12 +90,15 @@ describe("Launch Readiness Pack 06 — Performance & Runtime Efficiency", () => 
     assert.match(optimizer, /enforcePromptBudget/);
   });
 
-  it("8 — Home Earth composition stays CSS/SVG without WebGL teardown requirements", () => {
-    const globe = readWeb("features/public-home-v2/components/HumanityGlobe.tsx");
-    assert.doesNotMatch(globe, /renderer\.dispose|WebGLRenderer|disposables/);
-    assert.match(globe, /hero-unity-globe__layer--rear/);
-    assert.match(globe, /hero-unity-globe__layer--front/);
-    assert.match(globe, /aria-hidden="true"/);
+  it("8 — Home quote honeycomb composition stays Canvas/SVG without WebGL teardown requirements", () => {
+    const overlay = readWeb(
+      "features/public-home-v2/components/HeroQuoteHoneycombVisual.tsx",
+    );
+    assert.doesNotMatch(overlay, /renderer\.dispose|WebGLRenderer|disposables/);
+    assert.match(overlay, /hero-quote-honeycomb__layer--mask/);
+    assert.match(overlay, /hero-quote-honeycomb__layer--signals/);
+    assert.match(overlay, /cancelAnimationFrame/);
+    assert.match(overlay, /aria-hidden="true"/);
   });
 
   it("9 — Authenticated API client fetches use no-store", () => {

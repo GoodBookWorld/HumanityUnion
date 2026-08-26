@@ -3,13 +3,14 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
+import { HUMANITY_UNITY_VISUAL_MIN_WIDTH_PX } from "../hero-unity-visual.constants";
 import { HumanityTypewriterQuote } from "./HumanityTypewriterQuote";
 
 import "./hero-unity-visual.css";
 
 /**
  * Right-column Home hero visual.
- * Quote is CSS-animated (SSR-safe). Earth + orbits are client-only and skipped ≤768px.
+ * Quote is CSS-animated (SSR-safe). Honeycomb + signals are client-only (≥769px).
  */
 const HumanityGlobe = dynamic(
   () => import("./HumanityGlobe").then((module) => module.HumanityGlobe),
@@ -19,7 +20,7 @@ const HumanityGlobe = dynamic(
   },
 );
 
-const DESKTOP_VISUAL_QUERY = "(min-width: 769px)";
+const DESKTOP_VISUAL_QUERY = `(min-width: ${HUMANITY_UNITY_VISUAL_MIN_WIDTH_PX}px)`;
 
 export function HumanityUnityVisual() {
   const [mountGlobe, setMountGlobe] = useState(false);
@@ -43,11 +44,15 @@ export function HumanityUnityVisual() {
     >
       {/* Soft atmosphere only — no legacy unity-globe background asset. */}
       <div className="hero-unity-visual__background" aria-hidden="true" />
-      <div className="hero-unity-visual__content">
-        <div className="hero-unity-visual__globe-slot">
-          {mountGlobe ? <HumanityGlobe /> : null}
+      <div className="hero-unity-visual__stage">
+        <div className="hero-unity-visual__quote-layer">
+          <HumanityTypewriterQuote />
         </div>
-        <HumanityTypewriterQuote />
+        {mountGlobe ? (
+          <div className="hero-unity-visual__overlay-slot">
+            <HumanityGlobe />
+          </div>
+        ) : null}
       </div>
     </aside>
   );

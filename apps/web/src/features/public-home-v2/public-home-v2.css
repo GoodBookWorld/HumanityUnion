@@ -253,6 +253,40 @@
   gap: var(--hu-space-3);
 }
 
+/*
+ * Humanity AI principle — below Hero, above next-section divider.
+ * Hidden <900px (matches 2-col Hero start) so the one-liner never wraps or shrinks illegibly.
+ * Negative margins absorb .public-home-v2 flex gap so vertical length barely grows.
+ */
+.public-home-v2__humanity-ai-principle {
+  display: none;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding-inline: var(--hu-space-4);
+  text-align: center;
+  font-family: var(--hu-font-family);
+  font-weight: var(--hu-font-weight-regular);
+  /* Slogan family uses 0.08–0.10em; moderated for this long single-line sentence. */
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  color: var(--hu-color-brand-principle);
+  white-space: nowrap;
+  overflow-x: clip;
+  /* Floor matches header slogan size (0.6875rem); scales up on wide desktops. */
+  font-size: clamp(0.6875rem, 0.42rem + 0.55vw, 0.875rem);
+}
+
+@media (min-width: 900px) {
+  .public-home-v2__humanity-ai-principle {
+    display: block;
+    /* Collapse page flex gap: Hero → breathing → principle → tight → divider. */
+    margin-top: calc(-1 * var(--hu-space-10) + var(--hu-space-5));
+    margin-bottom: calc(-1 * var(--hu-space-10) + var(--hu-space-3));
+  }
+}
+
 /* Core values */
 .public-home-v2__core-values {
   border-top: none;

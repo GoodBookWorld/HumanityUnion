@@ -6,6 +6,10 @@ export const PUBLIC_HOME_HERO = {
   secondaryCta: { label: "Explore Knowledge", href: "/knowledge" },
 } as const;
 
+/** Branded Humanity AI principle — exact public copy (do not alter wording). */
+export const PUBLIC_HOME_HUMANITY_AI_PRINCIPLE =
+  "We put technology and AI in service of humanity—to improve life, deepen cooperation, advance progress, and overcome ignorance." as const;
+
 export const PUBLIC_HOME_CORE_VALUES = [
   {
     id: "responsibility",
