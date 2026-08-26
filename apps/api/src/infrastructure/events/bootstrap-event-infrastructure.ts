@@ -4,6 +4,8 @@ import { ensureMongoIndexes } from "../mongodb/mongo-indexes.js";
 import { registerWorkspaceProjectionHandlers } from "../../modules/workspace/index.js";
 import { registerParticipantActionHandlers } from "../../modules/participant-action/index.js";
 import { registerInitiativeLifecycleStageHandlers } from "../../shared/initiative-lifecycle-stage/index.js";
+import { registerBlogPublicationDeliveryHandlers } from "../../modules/blog/blog-publication-delivery.index.js";
+import { registerBlogAdminSubscriberMessageHandlers } from "../../modules/blog/blog-subscription-admin-message.index.js";
 import { startOutboxDispatcher } from "../outbox/outbox.dispatcher.js";
 import { logger } from "../../shared/observability/logger.js";
 
@@ -25,6 +27,8 @@ export async function bootstrapEventInfrastructure(): Promise<void> {
   registerWorkspaceProjectionHandlers();
   registerParticipantActionHandlers();
   registerInitiativeLifecycleStageHandlers();
+  registerBlogPublicationDeliveryHandlers();
+  registerBlogAdminSubscriberMessageHandlers();
   startOutboxDispatcher();
 
   logger.info("event_infrastructure.ready", { component: "event-infrastructure" });

@@ -14,6 +14,7 @@ import {
   listBlogCategoryRecords,
   upsertBlogCategoryRecord,
 } from "./persistence/blog-category.repository.js";
+import { compareBlogCategoryOrder } from "./blog-category-order.js";
 
 let recordsCache: BlogCategoryRecord[] | null = null;
 let seedPromise: Promise<void> | null = null;
@@ -24,11 +25,12 @@ function seedTimestamp(): string {
 
 function seedRecords(): BlogCategoryRecord[] {
   const at = seedTimestamp();
-  return BLOG_CATEGORIES.map((category) => ({
+  return BLOG_CATEGORIES.map((category, index) => ({
     categoryId: category.categoryId,
     slug: category.slug,
     name: category.name,
     status: "active" as const,
+    sortOrder: index + 1,
     createdAt: at,
     updatedAt: at,
   }));
@@ -57,12 +59,22 @@ export async function ensureBlogCategoriesSeeded(): Promise<void> {
         return;
       }
       try {
-        for (const seed of seedRecords()) {
+        for (const [index, seed] of seedRecords().entries()) {
           const existing = await findBlogCategoryRecordById(seed.categoryId);
           if (!existing) {
             await upsertBlogCategoryRecord(seed);
+          } else if (
+            !Number.isFinite(existing.sortOrder) ||
+            existing.sortOrder === Number.MAX_SAFE_INTEGER
+          ) {
+            await upsertBlogCategoryRecord({
+              ...existing,
+              sortOrder: index + 1,
+            });
           }
         }
+        recordsCache = [...(await listBlogCategoryRecords())];
+        await backfillMissingSortOrders(recordsCache);
         recordsCache = [...(await listBlogCategoryRecords())];
       } catch {
         recordsCache = seedRecords();
@@ -72,6 +84,28 @@ export async function ensureBlogCategoriesSeeded(): Promise<void> {
     });
   }
   await seedPromise;
+}
+
+async function backfillMissingSortOrders(
+  records: readonly BlogCategoryRecord[],
+): Promise<void> {
+  const missing = records.some(
+    (record) =>
+      !Number.isFinite(record.sortOrder) || record.sortOrder === Number.MAX_SAFE_INTEGER,
+  );
+  if (!missing) {
+    return;
+  }
+  const ordered = [...records].sort(compareBlogCategoryOrder);
+  for (const [index, record] of ordered.entries()) {
+    if (record.sortOrder !== index + 1) {
+      await upsertBlogCategoryRecord({
+        ...record,
+        sortOrder: index + 1,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+  }
 }
 
 export async function refreshBlogCategoryCache(): Promise<readonly BlogCategoryRecord[]> {
@@ -95,14 +129,15 @@ function cachedRecords(): readonly BlogCategoryRecord[] {
 
 /** Active categories for selectors, public dropdown, and chart axes. */
 export function listBlogCategories(): readonly BlogCategory[] {
-  return cachedRecords()
+  return [...cachedRecords()]
     .filter((record) => record.status === "active")
+    .sort(compareBlogCategoryOrder)
     .map(toPublicCategory);
 }
 
 /** All records including inactive (Admin + historical resolution). */
 export function listBlogCategoryRecordsCached(): readonly BlogCategoryRecord[] {
-  return cachedRecords();
+  return [...cachedRecords()].sort(compareBlogCategoryOrder);
 }
 
 export function getBlogCategoryById(categoryId: string): BlogCategory | undefined {

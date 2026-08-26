@@ -1357,6 +1357,27 @@ export type {
   PublicBlogPostListResponse,
   PublicBlogCategoryCount,
 } from "./blog.js";
+export type {
+  AdminBlogSubscriberDirectoryItem,
+  AdminBlogSubscriberDirectoryResponse,
+  AdminBlogSubscriberMessageQueueResponse,
+  AdminBlogSubscriberRemoveResponse,
+  AdminBlogSubscriberStatusFilter,
+  BlogAdminSubscriberMessageDeliveryRecord,
+  BlogAdminSubscriberMessageDeliveryStatus,
+  BlogAdminSubscriberMessageRecord,
+  BlogPublicationDeliveryRecord,
+  BlogPublicationDeliveryStatus,
+  BlogSubscriberRecord,
+  BlogSubscriptionSettings,
+  BlogSubscriptionSettingsResponse,
+  BlogSubscriptionStatus,
+  BlogSubscriptionType,
+  PublicBlogSubscribeResponse,
+  PublicBlogSubscriptionConfirmResponse,
+  PublicBlogSubscriptionUnsubscribeResponse,
+} from "./blog-subscription.js";
+export { BLOG_SUBSCRIPTION_TYPES } from "./blog-subscription.js";
 export {
   BLOG_AUTHOR_APPLICATION_ACTIVE_STATUSES,
   BLOG_AUTHOR_APPLICATION_STATUSES,

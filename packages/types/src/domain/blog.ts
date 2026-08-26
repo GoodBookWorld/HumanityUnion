@@ -78,12 +78,14 @@ export interface BlogCategory {
 /**
  * Pack 16F — persisted publication category record.
  * `categoryId` is the canonical identity; name/slug may change.
+ * Pack 20C — `sortOrder` is the canonical display priority (lower = earlier).
  */
 export interface BlogCategoryRecord {
   readonly categoryId: BlogCategoryId;
   readonly slug: string;
   readonly name: string;
   readonly status: BlogCategoryStatus;
+  readonly sortOrder: number;
   readonly description?: string;
   readonly createdAt: string;
   readonly updatedAt: string;

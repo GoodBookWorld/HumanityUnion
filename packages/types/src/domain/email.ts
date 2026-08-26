@@ -16,7 +16,15 @@ export type EmailTemplateId =
   /** Editorial Review Pack 06 — publication review/publish status summary. */
   | "blog_publication_status"
   /** Direct message alert — link only; never includes message content. */
-  | "workspace_message_alert";
+  | "workspace_message_alert"
+  /** Pack 21A — confirm Blog publication email subscription (opt-in). */
+  | "blog_subscription_confirm"
+  /** Pack 21B — welcome email after confirmed Blog subscription. */
+  | "blog_subscription_welcome"
+  /** Pack 21D — new Blog publication notice for confirmed subscribers. */
+  | "blog_publication_digest"
+  /** Pack 21E — Admin message to selected Blog subscribers. */
+  | "blog_subscription_admin_message";
 
 export type EmailDeliveryStatus = "queued" | "sent" | "failed" | "deferred" | "blocked";
 

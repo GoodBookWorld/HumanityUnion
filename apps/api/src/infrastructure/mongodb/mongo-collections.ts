@@ -101,6 +101,14 @@ export const MONGO_COLLECTIONS = {
   contentTranslations: "content_translations",
   blogPosts: "blog_posts",
   blogCategories: "blog_categories",
+  blogSubscribers: "blog_subscribers",
+  blogSubscriptionSettings: "blog_subscription_settings",
+  /** Pack 21D — (postId, subscriberId) publication email delivery ledger. */
+  blogPublicationDeliveries: "blog_publication_deliveries",
+  /** Pack 21E — Admin selected-subscriber message records. */
+  blogAdminSubscriberMessages: "blog_admin_subscriber_messages",
+  /** Pack 21E — (adminMessageId, subscriberId) delivery ledger. */
+  blogAdminSubscriberMessageDeliveries: "blog_admin_subscriber_message_deliveries",
   blogCapabilityGrants: "blog_capability_grants",
   blogAuthorApplications: "blog_author_applications",
   blogComments: "blog_comments",

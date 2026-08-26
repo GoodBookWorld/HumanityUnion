@@ -5,6 +5,10 @@ import type {
   AdminAuthorTrustedPublishingCommandResult,
   AdminBlogCategoryItem,
   AdminBlogCategoryListResponse,
+  AdminBlogSubscriberDirectoryResponse,
+  AdminBlogSubscriberMessageQueueResponse,
+  AdminBlogSubscriberRemoveResponse,
+  AdminBlogSubscriberStatusFilter,
   AdminPendingAuthorApplicationListResponse,
   AdminPendingPublicationReviewListResponse,
   AdminPublicationDirectoryResponse,
@@ -12,6 +16,7 @@ import type {
   AdminPublicationReviewReconcileResult,
   AdminPublishingBlockCommandResult,
   BlogAuthorApplication,
+  BlogSubscriptionSettingsResponse,
 } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
@@ -259,6 +264,95 @@ export async function deleteAdminBlogCategory(
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input ?? {}),
+    },
+  );
+}
+
+/** Pack 20C — persist canonical category display priority. */
+export async function reorderAdminBlogCategories(input: {
+  orderedCategoryIds: readonly string[];
+}): Promise<AdminBlogCategoryListResponse> {
+  return apiRequest<AdminBlogCategoryListResponse>(
+    "/api/v1/admin/publishing/categories/reorder",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+/** Pack 21B — Blog subscription Welcome Message settings */
+export async function fetchAdminBlogSubscriptionSettings(): Promise<BlogSubscriptionSettingsResponse> {
+  return apiRequest<BlogSubscriptionSettingsResponse>(
+    "/api/v1/admin/publishing/subscription-settings",
+  );
+}
+
+export async function updateAdminBlogSubscriptionSettings(input: {
+  welcomeMessage: string;
+}): Promise<BlogSubscriptionSettingsResponse> {
+  return apiRequest<BlogSubscriptionSettingsResponse>(
+    "/api/v1/admin/publishing/subscription-settings",
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+/** Pack 21C — Admin Blog subscriber directory */
+export async function listAdminBlogSubscribers(query: {
+  q?: string;
+  status?: AdminBlogSubscriberStatusFilter;
+  limit?: number;
+  offset?: number;
+} = {}): Promise<AdminBlogSubscriberDirectoryResponse> {
+  const params = new URLSearchParams();
+  if (query.q?.trim()) {
+    params.set("q", query.q.trim());
+  }
+  if (query.status && query.status !== "all") {
+    params.set("status", query.status);
+  } else if (query.status === "all") {
+    params.set("status", "all");
+  }
+  if (query.limit !== undefined) {
+    params.set("limit", String(query.limit));
+  }
+  if (query.offset !== undefined) {
+    params.set("offset", String(query.offset));
+  }
+  const suffix = params.toString();
+  return apiRequest<AdminBlogSubscriberDirectoryResponse>(
+    `/api/v1/admin/publishing/subscribers${suffix ? `?${suffix}` : ""}`,
+  );
+}
+
+export async function removeAdminBlogSubscriber(
+  subscriberId: string,
+): Promise<AdminBlogSubscriberRemoveResponse> {
+  return apiRequest<AdminBlogSubscriberRemoveResponse>(
+    `/api/v1/admin/publishing/subscribers/${encodeURIComponent(subscriberId)}`,
+    { method: "DELETE" },
+  );
+}
+
+/** Pack 21E — queue Admin selected-subscriber message (durable fan-out). */
+export async function queueAdminBlogSubscriberMessage(input: {
+  subject: string;
+  message: string;
+  subscriberIds: readonly string[];
+  ctaLabel?: string;
+  ctaUrl?: string;
+}): Promise<AdminBlogSubscriberMessageQueueResponse> {
+  return apiRequest<AdminBlogSubscriberMessageQueueResponse>(
+    "/api/v1/admin/publishing/subscribers/messages",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
     },
   );
 }

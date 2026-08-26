@@ -7,6 +7,8 @@ import { resolveEmailConfig } from "./email.config.js";
 const PRIMARY_COLOR = "#0174B0";
 const EMAIL_FOOTER_COPYRIGHT = "© 2024 Humanity Union. All rights reserved.";
 
+export type EmailLayoutKind = "transactional" | "subscription";
+
 function resolveBrandedLogoMarkup(): string {
   const config = resolveEmailConfig();
   const logoUrl = config.logoUrl;
@@ -27,9 +29,34 @@ function resolveBrandedLogoMarkup(): string {
 </table>`;
 }
 
-function wrapEmailLayout(content: string): string {
+function wrapEmailLayout(
+  content: string,
+  options?: {
+    kind?: EmailLayoutKind;
+    unsubscribeUrl?: string;
+    reasonLine?: string;
+  },
+): string {
   const config = resolveEmailConfig();
   const supportUrl = `${config.publicSiteUrl}/support`;
+  const kind = options?.kind ?? "transactional";
+
+  const footerBody =
+    kind === "subscription"
+      ? `
+              <p style="margin:0 0 8px;">${options?.reasonLine ?? "You received this email because of a Blog subscription request at Humanity Union."}</p>
+              ${
+                options?.unsubscribeUrl
+                  ? `<p style="margin:0 0 8px;"><a href="${options.unsubscribeUrl}" style="color:${PRIMARY_COLOR};">Unsubscribe</a> from Blog publication emails.</p>`
+                  : ""
+              }
+              <p style="margin:0 0 8px;">Need help? <a href="${supportUrl}" style="color:${PRIMARY_COLOR};">Contact support</a></p>
+              <p style="margin:0;">${EMAIL_FOOTER_COPYRIGHT}</p>`
+      : `
+              <p style="margin:0 0 8px;">Humanity Union — civic technology for collective decision-making.</p>
+              <p style="margin:0 0 8px;">This is a transactional message related to your account. Marketing emails are not sent through this channel.</p>
+              <p style="margin:0 0 8px;">Need help? <a href="${supportUrl}" style="color:${PRIMARY_COLOR};">Contact support</a></p>
+              <p style="margin:0;">${EMAIL_FOOTER_COPYRIGHT}</p>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -55,10 +82,7 @@ function wrapEmailLayout(content: string): string {
           </tr>
           <tr>
             <td style="padding:24px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;line-height:1.6;">
-              <p style="margin:0 0 8px;">Humanity Union — civic technology for collective decision-making.</p>
-              <p style="margin:0 0 8px;">This is a transactional message related to your account. Marketing emails are not sent through this channel.</p>
-              <p style="margin:0 0 8px;">Need help? <a href="${supportUrl}" style="color:${PRIMARY_COLOR};">Contact support</a></p>
-              <p style="margin:0;">${EMAIL_FOOTER_COPYRIGHT}</p>
+              ${footerBody}
             </td>
           </tr>
         </table>
@@ -425,6 +449,161 @@ export function renderWorkspaceMessageAlertEmail(
   };
 }
 
+export interface BlogSubscriptionConfirmTemplateInput {
+  confirmationUrl: string;
+  unsubscribeUrl?: string;
+}
+
+/** Pack 21A — confirm Blog publication email subscription. */
+export function renderBlogSubscriptionConfirmEmail(
+  input: BlogSubscriptionConfirmTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Confirm your Blog subscription</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Thank you for your interest in Humanity Union publications.</p>
+    <p style="margin:0 0 16px;line-height:1.6;">Please confirm your email address to receive Blog publication updates.</p>
+    ${primaryButton("Confirm subscription", input.confirmationUrl)}
+    <p style="margin:0;line-height:1.6;font-size:13px;color:#64748b;">If you did not request this subscription, you can ignore this message.</p>
+  `;
+
+  return {
+    subject: "Confirm your Humanity Union Blog subscription",
+    html: wrapEmailLayout(htmlBody, {
+      kind: "subscription",
+      reasonLine:
+        "You received this email because someone requested Blog publication updates for this address at Humanity Union.",
+      unsubscribeUrl: input.unsubscribeUrl,
+    }),
+    text: `Confirm your Humanity Union Blog subscription:\n${input.confirmationUrl}\n\nIf you did not request this subscription, you can ignore this message.${input.unsubscribeUrl ? `\n\nUnsubscribe: ${input.unsubscribeUrl}` : ""}`,
+  };
+}
+
+export interface BlogSubscriptionWelcomeTemplateInput {
+  welcomeMessage: string;
+  blogUrl: string;
+  unsubscribeUrl: string;
+}
+
+function escapeWelcomeHtml(message: string): string {
+  return message
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/\n/g, "<br />");
+}
+
+/** Pack 21B — welcome email after confirmed Blog subscription. */
+export function renderBlogSubscriptionWelcomeEmail(
+  input: BlogSubscriptionWelcomeTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Welcome to Humanity Union Blog updates</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Your Blog subscription is now active.</p>
+    <p style="margin:0 0 16px;line-height:1.6;">${escapeWelcomeHtml(input.welcomeMessage)}</p>
+    ${primaryButton("Visit the Blog", input.blogUrl)}
+  `;
+
+  return {
+    subject: "Welcome to Humanity Union Blog updates",
+    html: wrapEmailLayout(htmlBody, {
+      kind: "subscription",
+      reasonLine:
+        "You received this email because you confirmed a Blog subscription at Humanity Union.",
+      unsubscribeUrl: input.unsubscribeUrl,
+    }),
+    text: `Welcome to Humanity Union Blog updates.\n\nYour Blog subscription is now active.\n\n${input.welcomeMessage}\n\nVisit the Blog: ${input.blogUrl}\n\nUnsubscribe: ${input.unsubscribeUrl}`,
+  };
+}
+
+export interface BlogPublicationDigestTemplateInput {
+  title: string;
+  excerpt: string;
+  publicationUrl: string;
+  unsubscribeUrl: string;
+  coverImageUrl?: string;
+}
+
+/** Pack 21D — new publication notice for Blog subscribers. */
+export function renderBlogPublicationDigestEmail(
+  input: BlogPublicationDigestTemplateInput,
+): EmailTemplateContent {
+  const title = escapeWelcomeHtml(input.title);
+  const excerpt = escapeWelcomeHtml(input.excerpt);
+  const imageBlock =
+    input.coverImageUrl && /^https:\/\//i.test(input.coverImageUrl)
+      ? `<tr><td style="padding:0 0 16px;">
+          <img src="${escapeWelcomeHtml(input.coverImageUrl)}" alt="" width="560" style="display:block;width:100%;max-width:560px;height:auto;border:0;" />
+        </td></tr>`
+      : "";
+
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">New from Humanity Union Blog</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">A new publication is now available.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #d6dee8;border-radius:8px;overflow:hidden;">
+      ${imageBlock}
+      <tr><td style="padding:16px;">
+        <p style="margin:0 0 8px;font-size:18px;font-weight:600;color:#0f172a;line-height:1.35;">${title}</p>
+        ${
+          excerpt
+            ? `<p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#475569;">${excerpt}</p>`
+            : ""
+        }
+        ${primaryButton("Read publication", input.publicationUrl)}
+      </td></tr>
+    </table>
+  `;
+
+  return {
+    subject: `New publication: ${input.title}`.slice(0, 180),
+    html: wrapEmailLayout(htmlBody, {
+      kind: "subscription",
+      reasonLine:
+        "You received this email because you subscribed to Humanity Union Blog publication updates.",
+      unsubscribeUrl: input.unsubscribeUrl,
+    }),
+    text: `New from Humanity Union Blog\n\n${input.title}\n\n${input.excerpt}\n\nRead: ${input.publicationUrl}\n\nUnsubscribe: ${input.unsubscribeUrl}`,
+  };
+}
+
+export interface BlogSubscriptionAdminMessageTemplateInput {
+  subject: string;
+  message: string;
+  unsubscribeUrl: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+}
+
+/** Pack 21E — Admin message to selected Blog subscribers (Humanity Union sender). */
+export function renderBlogSubscriptionAdminMessageEmail(
+  input: BlogSubscriptionAdminMessageTemplateInput,
+): EmailTemplateContent {
+  const body = escapeWelcomeHtml(input.message);
+  const ctaBlock =
+    input.ctaLabel && input.ctaUrl
+      ? primaryButton(input.ctaLabel, input.ctaUrl)
+      : "";
+
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Humanity Union Blog</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">${body}</p>
+    ${ctaBlock}
+  `;
+
+  return {
+    subject: input.subject.slice(0, 180),
+    html: wrapEmailLayout(htmlBody, {
+      kind: "subscription",
+      reasonLine:
+        "You received this email because you subscribed to Humanity Union Blog publication updates.",
+      unsubscribeUrl: input.unsubscribeUrl,
+    }),
+    text: `${input.subject}\n\n${input.message}${
+      input.ctaLabel && input.ctaUrl ? `\n\n${input.ctaLabel}: ${input.ctaUrl}` : ""
+    }\n\nUnsubscribe: ${input.unsubscribeUrl}`,
+  };
+}
+
 export function renderEmailTemplate(
   template: EmailTemplateId,
   input: Record<string, string | number | undefined>,
@@ -480,6 +659,37 @@ export function renderEmailTemplate(
       return renderWorkspaceMessageAlertEmail({
         displayName: String(input.displayName ?? "Participant"),
         messagesUrl: String(input.messagesUrl ?? ""),
+      });
+    case "blog_subscription_confirm":
+      return renderBlogSubscriptionConfirmEmail({
+        confirmationUrl: String(input.confirmationUrl ?? ""),
+        unsubscribeUrl:
+          typeof input.unsubscribeUrl === "string" ? input.unsubscribeUrl : undefined,
+      });
+    case "blog_subscription_welcome":
+      return renderBlogSubscriptionWelcomeEmail({
+        welcomeMessage: String(input.welcomeMessage ?? ""),
+        blogUrl: String(input.blogUrl ?? ""),
+        unsubscribeUrl: String(input.unsubscribeUrl ?? ""),
+      });
+    case "blog_publication_digest":
+      return renderBlogPublicationDigestEmail({
+        title: String(input.title ?? ""),
+        excerpt: String(input.excerpt ?? ""),
+        publicationUrl: String(input.publicationUrl ?? ""),
+        unsubscribeUrl: String(input.unsubscribeUrl ?? ""),
+        ...(typeof input.coverImageUrl === "string" && input.coverImageUrl
+          ? { coverImageUrl: input.coverImageUrl }
+          : {}),
+      });
+    case "blog_subscription_admin_message":
+      return renderBlogSubscriptionAdminMessageEmail({
+        subject: String(input.subject ?? ""),
+        message: String(input.message ?? ""),
+        unsubscribeUrl: String(input.unsubscribeUrl ?? ""),
+        ...(typeof input.ctaLabel === "string" && typeof input.ctaUrl === "string"
+          ? { ctaLabel: input.ctaLabel, ctaUrl: input.ctaUrl }
+          : {}),
       });
     default: {
       const unsupported: never = template;

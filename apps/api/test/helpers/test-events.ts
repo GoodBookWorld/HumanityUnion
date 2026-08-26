@@ -25,6 +25,8 @@ import {
   setForceParticipantActionInsertFailureForTests,
 } from "../../src/modules/participant-action/index.js";
 import { resetInitiativeLifecycleStageHandlersForTests } from "../../src/shared/initiative-lifecycle-stage/index.js";
+import { resetBlogPublicationDeliveryHandlersForTests } from "../../src/modules/blog/blog-publication-delivery.index.js";
+import { resetBlogAdminSubscriberMessageHandlersForTests } from "../../src/modules/blog/blog-subscription-admin-message.index.js";
 
 export function resetEventInfrastructureForTests(): void {
   stopOutboxDispatcher();
@@ -33,6 +35,8 @@ export function resetEventInfrastructureForTests(): void {
   resetWorkspaceProjectionHandlersForTests();
   resetParticipantActionHandlersForTests();
   resetInitiativeLifecycleStageHandlersForTests();
+  resetBlogPublicationDeliveryHandlersForTests();
+  resetBlogAdminSubscriberMessageHandlersForTests();
   setForceEnqueueFailureForTests(false);
   setForceWorkspaceProjectionInsertFailureForTests(false);
   setForceWorkspaceActivityUpdateFailureForTests(false);

@@ -1,5 +1,6 @@
 /**
  * Pack 16F — Mongo persistence for managed Blog publication categories.
+ * Pack 20C — sortOrder is canonical display priority.
  */
 import type { BlogCategoryRecord, BlogCategoryStatus } from "@hu/types";
 
@@ -8,12 +9,14 @@ import { isMongoConfigured } from "../../../infrastructure/mongodb/mongo-config.
 import { connectMongoClient } from "../../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
 import { BlogPersistenceError, BlogPersistenceUnavailableError } from "../blog.errors.js";
+import { compareBlogCategoryOrder } from "../blog-category-order.js";
 
 export interface BlogCategoryMongoDocument {
   categoryId: string;
   slug: string;
   name: string;
   status: BlogCategoryStatus;
+  sortOrder?: number;
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -36,6 +39,10 @@ export function toBlogCategoryRecord(doc: BlogCategoryMongoDocument): BlogCatego
     slug: doc.slug,
     name: doc.name,
     status: doc.status === "inactive" ? "inactive" : "active",
+    sortOrder:
+      typeof doc.sortOrder === "number" && Number.isFinite(doc.sortOrder)
+        ? Math.trunc(doc.sortOrder)
+        : Number.MAX_SAFE_INTEGER,
     ...(doc.description ? { description: doc.description } : {}),
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
@@ -45,8 +52,9 @@ export function toBlogCategoryRecord(doc: BlogCategoryMongoDocument): BlogCatego
 export async function listBlogCategoryRecords(): Promise<readonly BlogCategoryRecord[]> {
   await ensureReady();
   try {
-    const docs = await categoriesCollection().find({}).sort({ name: 1 }).toArray();
-    return docs.map(toBlogCategoryRecord);
+    const docs = await categoriesCollection().find({}).toArray();
+    const records = docs.map(toBlogCategoryRecord).sort(compareBlogCategoryOrder);
+    return records;
   } catch (error) {
     throw new BlogPersistenceError("Failed to list Blog categories.", error);
   }
@@ -85,6 +93,7 @@ export async function upsertBlogCategoryRecord(
     slug: record.slug,
     name: record.name,
     status: record.status,
+    sortOrder: record.sortOrder,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
     ...(record.description ? { description: record.description } : {}),
@@ -96,6 +105,30 @@ export async function upsertBlogCategoryRecord(
     return record;
   } catch (error) {
     throw new BlogPersistenceError("Failed to upsert Blog category.", error);
+  }
+}
+
+/** Pack 20C — batch-write sequential sortOrder values. */
+export async function applyBlogCategorySortOrders(
+  assignments: readonly { categoryId: string; sortOrder: number }[],
+  updatedAt: string,
+): Promise<void> {
+  await ensureReady();
+  if (assignments.length === 0) {
+    return;
+  }
+  try {
+    await categoriesCollection().bulkWrite(
+      assignments.map((entry) => ({
+        updateOne: {
+          filter: { categoryId: entry.categoryId },
+          update: { $set: { sortOrder: entry.sortOrder, updatedAt } },
+        },
+      })),
+      { ordered: true },
+    );
+  } catch (error) {
+    throw new BlogPersistenceError("Failed to reorder Blog categories.", error);
   }
 }
 

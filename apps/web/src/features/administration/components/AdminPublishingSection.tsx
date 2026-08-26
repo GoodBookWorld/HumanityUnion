@@ -44,6 +44,33 @@ interface AdminPublishingSectionProps {
 
 type PublishingTab = "pending" | "pending-review" | "authors" | "publications" | "categories";
 
+const PUBLICATION_CATEGORIES_HASH = "publication-categories";
+
+function readInitialPublishingTab(): PublishingTab {
+  if (typeof window === "undefined") {
+    return "pending";
+  }
+  return window.location.hash.replace(/^#/, "") === PUBLICATION_CATEGORIES_HASH
+    ? "categories"
+    : "pending";
+}
+
+function setPublicationCategoriesHash(active: boolean): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const next = active
+    ? `#${PUBLICATION_CATEGORIES_HASH}`
+    : `${window.location.pathname}${window.location.search}`;
+  if (active) {
+    if (window.location.hash !== `#${PUBLICATION_CATEGORIES_HASH}`) {
+      window.history.replaceState(null, "", next);
+    }
+  } else if (window.location.hash === `#${PUBLICATION_CATEGORIES_HASH}`) {
+    window.history.replaceState(null, "", next);
+  }
+}
+
 function formatCompactDate(value?: string): string {
   if (!value) {
     return "—";
@@ -67,7 +94,7 @@ function publicationStatusLabel(row: AdminPublicationDirectoryItem): string {
 }
 
 export function AdminPublishingSection({ user: _user }: AdminPublishingSectionProps) {
-  const [tab, setTab] = useState<PublishingTab>("pending");
+  const [tab, setTab] = useState<PublishingTab>(readInitialPublishingTab);
   const [pendingApps, setPendingApps] = useState<readonly AdminPendingAuthorApplicationItem[]>([]);
   const [pendingTotal, setPendingTotal] = useState(0);
   const [pendingReviews, setPendingReviews] = useState<
@@ -191,6 +218,32 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
       void loadPublications();
     }
   }, [tab, loadPending, loadPendingReviews, loadAuthors, loadPublications]);
+
+  function selectPublishingTab(next: PublishingTab): void {
+    setTab(next);
+    setPublicationCategoriesHash(next === "categories");
+  }
+
+  useEffect(() => {
+    if (tab !== "categories") {
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      const section = document.getElementById(PUBLICATION_CATEGORIES_HASH);
+      section?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [tab]);
+
+  useEffect(() => {
+    function onHashChange(): void {
+      if (window.location.hash.replace(/^#/, "") === PUBLICATION_CATEGORIES_HASH) {
+        setTab("categories");
+      }
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   async function handleReconcile() {
     setActionBusyId("reconcile");
@@ -318,7 +371,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                 ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
                 : "hu-tab-control admin-publishing__tab"
             }
-            onClick={() => setTab("pending")}
+            onClick={() => selectPublishingTab("pending")}
           >
             Pending applications
           </button>
@@ -331,7 +384,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                 ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
                 : "hu-tab-control admin-publishing__tab"
             }
-            onClick={() => setTab("pending-review")}
+            onClick={() => selectPublishingTab("pending-review")}
           >
             Pending Review
           </button>
@@ -344,7 +397,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                 ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
                 : "hu-tab-control admin-publishing__tab"
             }
-            onClick={() => setTab("authors")}
+            onClick={() => selectPublishingTab("authors")}
           >
             Authors
           </button>
@@ -357,7 +410,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                 ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
                 : "hu-tab-control admin-publishing__tab"
             }
-            onClick={() => setTab("publications")}
+            onClick={() => selectPublishingTab("publications")}
           >
             Publications
           </button>
@@ -370,7 +423,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
                 ? "hu-tab-control hu-tab-control--selected admin-publishing__tab"
                 : "hu-tab-control admin-publishing__tab"
             }
-            onClick={() => setTab("categories")}
+            onClick={() => selectPublishingTab("categories")}
           >
             Categories
           </button>
@@ -812,7 +865,7 @@ export function AdminPublishingSection({ user: _user }: AdminPublishingSectionPr
       )}
 
       {tab === "categories" && !denied ? (
-        <ProfileSection title="Publication Categories">
+        <ProfileSection title="Publication Categories" id={PUBLICATION_CATEGORIES_HASH}>
           <AdminBlogCategoriesPanel />
         </ProfileSection>
       ) : null}

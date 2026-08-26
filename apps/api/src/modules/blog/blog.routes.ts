@@ -24,6 +24,7 @@ import {
   BlogCommentValidationError,
   BlogReactionRateLimitError,
 } from "./blog-interaction.errors.js";
+import { isBlogSubscriptionRateLimitError } from "./blog-subscription-rate-limit.js";
 import {
   approvePendingBlogComment,
   createBlogComment,
@@ -113,9 +114,10 @@ function handleBlogError(res: Response, error: unknown): void {
   }
   if (
     error instanceof BlogCommentRateLimitError ||
-    error instanceof BlogReactionRateLimitError
+    error instanceof BlogReactionRateLimitError ||
+    isBlogSubscriptionRateLimitError(error)
   ) {
-    res.status(429).json(failure(error.message));
+    res.status(429).json(failure(error instanceof Error ? error.message : "Too many requests."));
     return;
   }
   if (error instanceof BlogSafetyRejectedError) {
@@ -142,6 +144,58 @@ publicBlogRouter.get("/categories", async (_req, res) => {
     res.json(
       createSuccessResponse({ categories: listBlogCategories() }, "Blog categories loaded."),
     );
+  } catch (error) {
+    handleBlogError(res, error);
+  }
+});
+
+/** Pack 21A — public Blog email subscription (must register before /:slug). */
+publicBlogRouter.post("/subscriptions", async (req, res) => {
+  try {
+    const { requestBlogSubscription } = await import("./blog-subscription.service.js");
+    const ipKey =
+      typeof req.ip === "string" && req.ip.trim()
+        ? req.ip.trim()
+        : typeof req.headers["x-forwarded-for"] === "string"
+          ? req.headers["x-forwarded-for"].split(",")[0]!.trim()
+          : "unknown";
+    const data = await requestBlogSubscription({
+      email: req.body?.email,
+      ipKey,
+    });
+    res.status(202).json(createSuccessResponse(data, data.message));
+  } catch (error) {
+    handleBlogError(res, error);
+  }
+});
+
+publicBlogRouter.post("/subscriptions/confirm", async (req, res) => {
+  try {
+    const { confirmBlogSubscription } = await import("./blog-subscription.service.js");
+    const token =
+      typeof req.body?.token === "string"
+        ? req.body.token
+        : typeof req.query.token === "string"
+          ? req.query.token
+          : undefined;
+    const data = await confirmBlogSubscription({ token });
+    res.json(createSuccessResponse(data, data.message));
+  } catch (error) {
+    handleBlogError(res, error);
+  }
+});
+
+publicBlogRouter.post("/subscriptions/unsubscribe", async (req, res) => {
+  try {
+    const { unsubscribeBlogSubscription } = await import("./blog-subscription.service.js");
+    const token =
+      typeof req.body?.token === "string"
+        ? req.body.token
+        : typeof req.query.token === "string"
+          ? req.query.token
+          : undefined;
+    const data = await unsubscribeBlogSubscription({ token });
+    res.json(createSuccessResponse(data, data.message));
   } catch (error) {
     handleBlogError(res, error);
   }

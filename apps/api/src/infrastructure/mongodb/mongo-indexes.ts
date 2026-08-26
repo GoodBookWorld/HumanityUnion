@@ -1003,6 +1003,85 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // Pack 21A — Blog email subscribers (unique per normalized email + type).
+    collectionName: MONGO_COLLECTIONS.blogSubscribers,
+    indexes: [
+      {
+        key: { emailNormalized: 1, subscriptionType: 1 },
+        unique: true,
+        name: "blog_subscribers_email_type_unique",
+      },
+      { key: { subscriberId: 1 }, unique: true, name: "blog_subscribers_subscriber_id_unique" },
+      { key: { confirmTokenHash: 1 }, name: "blog_subscribers_confirm_token_hash" },
+      { key: { unsubscribeTokenHash: 1 }, name: "blog_subscribers_unsubscribe_token_hash" },
+      { key: { status: 1, subscribedAt: -1 }, name: "blog_subscribers_status_subscribed_at" },
+      // Pack 21C — Admin directory default sort (newest created first).
+      { key: { createdAt: -1 }, name: "blog_subscribers_created_at" },
+    ],
+  },
+  {
+    // Pack 21B — single Blog subscription welcome settings document.
+    collectionName: MONGO_COLLECTIONS.blogSubscriptionSettings,
+    indexes: [
+      {
+        key: { settingsId: 1 },
+        unique: true,
+        name: "blog_subscription_settings_id_unique",
+      },
+    ],
+  },
+  {
+    // Pack 21D — one delivery fact per (post, subscriber); preserves sent for dedupe.
+    collectionName: MONGO_COLLECTIONS.blogPublicationDeliveries,
+    indexes: [
+      {
+        key: { postId: 1, subscriberId: 1 },
+        unique: true,
+        name: "blog_publication_deliveries_post_subscriber_unique",
+      },
+      {
+        key: { deliveryId: 1 },
+        unique: true,
+        name: "blog_publication_deliveries_delivery_id_unique",
+      },
+      { key: { postId: 1, status: 1 }, name: "blog_publication_deliveries_post_status" },
+      { key: { createdAt: 1 }, name: "blog_publication_deliveries_created_at" },
+    ],
+  },
+  {
+    // Pack 21E — Admin selected-subscriber messages.
+    collectionName: MONGO_COLLECTIONS.blogAdminSubscriberMessages,
+    indexes: [
+      {
+        key: { adminMessageId: 1 },
+        unique: true,
+        name: "blog_admin_subscriber_messages_id_unique",
+      },
+      { key: { createdAt: -1 }, name: "blog_admin_subscriber_messages_created_at" },
+    ],
+  },
+  {
+    // Pack 21E — one delivery fact per (adminMessage, subscriber).
+    collectionName: MONGO_COLLECTIONS.blogAdminSubscriberMessageDeliveries,
+    indexes: [
+      {
+        key: { adminMessageId: 1, subscriberId: 1 },
+        unique: true,
+        name: "blog_admin_message_deliveries_message_subscriber_unique",
+      },
+      {
+        key: { deliveryId: 1 },
+        unique: true,
+        name: "blog_admin_message_deliveries_delivery_id_unique",
+      },
+      {
+        key: { adminMessageId: 1, status: 1 },
+        name: "blog_admin_message_deliveries_message_status",
+      },
+      { key: { createdAt: 1 }, name: "blog_admin_message_deliveries_created_at" },
+    ],
+  },
+  {
     // Pack 17C — one document per official social network.
     collectionName: MONGO_COLLECTIONS.platformSocialAccounts,
     indexes: [

@@ -381,6 +381,24 @@ adminPublishingRouter.post(
   },
 );
 
+adminPublishingRouter.post(
+  "/categories/reorder",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { reorderAdminBlogCategories } = await import("./blog-category-admin.service.js");
+      const data = await reorderAdminBlogCategories({
+        actorUserId: req.auth!.id,
+        body: req.body,
+      });
+      res.json(createSuccessResponse(data, "Publication category order updated."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
 adminPublishingRouter.patch(
   "/categories/:categoryId",
   authenticationMiddleware,
@@ -455,6 +473,119 @@ adminPublishingRouter.delete(
         reassignToCategoryId,
       });
       res.json(createSuccessResponse(data, "Publication category deleted."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+/** Pack 21B — Blog subscription Welcome Message settings */
+adminPublishingRouter.get(
+  "/subscription-settings",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { getAdminBlogSubscriptionSettings } = await import(
+        "./blog-subscription-settings.admin.service.js"
+      );
+      const data = await getAdminBlogSubscriptionSettings({ actorUserId: req.auth!.id });
+      res.json(createSuccessResponse(data, "Blog subscription settings loaded."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.patch(
+  "/subscription-settings",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { updateAdminBlogSubscriptionSettings } = await import(
+        "./blog-subscription-settings.admin.service.js"
+      );
+      const data = await updateAdminBlogSubscriptionSettings({
+        actorUserId: req.auth!.id,
+        body: req.body,
+      });
+      res.json(createSuccessResponse(data, "Blog subscription settings updated."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+/** Pack 21C — Admin Blog subscriber directory */
+adminPublishingRouter.get(
+  "/subscribers",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { listAdminBlogSubscribers } = await import("./blog-subscription-admin.service.js");
+      const statusRaw = typeof req.query.status === "string" ? req.query.status : undefined;
+      const status =
+        statusRaw === "not_confirmed" ||
+        statusRaw === "subscribed" ||
+        statusRaw === "unsubscribed" ||
+        statusRaw === "all"
+          ? statusRaw
+          : undefined;
+      const data = await listAdminBlogSubscribers({
+        actorUserId: req.auth!.id,
+        q: typeof req.query.q === "string" ? req.query.q : undefined,
+        status,
+        limit:
+          typeof req.query.limit === "string" && req.query.limit.trim()
+            ? Number(req.query.limit)
+            : undefined,
+        offset:
+          typeof req.query.offset === "string" && req.query.offset.trim()
+            ? Number(req.query.offset)
+            : undefined,
+      });
+      res.json(createSuccessResponse(data, "Blog subscribers loaded."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+adminPublishingRouter.delete(
+  "/subscribers/:subscriberId",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { removeAdminBlogSubscriber } = await import("./blog-subscription-admin.service.js");
+      const data = await removeAdminBlogSubscriber({
+        actorUserId: req.auth!.id,
+        subscriberId: routeParam(req.params.subscriberId),
+      });
+      res.json(createSuccessResponse(data, "Subscriber removed from Blog subscription emails."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+/** Pack 21E — queue Admin selected-subscriber message */
+adminPublishingRouter.post(
+  "/subscribers/messages",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { queueAdminBlogSubscriberMessage } = await import(
+        "./blog-subscription-admin-message.service.js"
+      );
+      const data = await queueAdminBlogSubscriberMessage({
+        actorUserId: req.auth!.id,
+        body: req.body,
+      });
+      res.status(202).json(createSuccessResponse(data, data.message));
     } catch (error) {
       handleError(res, error);
     }

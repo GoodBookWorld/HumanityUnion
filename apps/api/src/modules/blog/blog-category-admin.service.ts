@@ -22,6 +22,7 @@ import {
   ensureBlogCategoriesSeeded,
   invalidateBlogCategoryCache,
   isActiveBlogCategoryId,
+  listBlogCategoryRecordsCached,
   refreshBlogCategoryCache,
 } from "./blog-categories.js";
 import {
@@ -29,9 +30,15 @@ import {
   deleteBlogCategoryRecord,
   findBlogCategoryRecordById,
   findBlogCategoryRecordBySlug,
+  applyBlogCategorySortOrders,
+  listBlogCategoryRecords,
   reassignBlogPostsCategory,
   upsertBlogCategoryRecord,
 } from "./persistence/blog-category.repository.js";
+import {
+  compareBlogCategoryOrder,
+  planBlogCategoryReorder,
+} from "./blog-category-order.js";
 
 async function assertAdminActor(userId: string): Promise<{
   userId: string;
@@ -100,7 +107,7 @@ export async function listAdminBlogCategories(input: {
   await ensureBlogCategoriesSeeded();
   const records = await refreshBlogCategoryCache();
   const categories = await Promise.all(records.map((record) => toAdminItem(record)));
-  categories.sort((a, b) => a.name.localeCompare(b.name));
+  categories.sort(compareBlogCategoryOrder);
   return { categories, total: categories.length };
 }
 
@@ -139,11 +146,17 @@ export async function createAdminBlogCategory(input: {
 
   const now = new Date().toISOString();
   const description = sanitizeDescription(body.description);
+  const existingRecords = listBlogCategoryRecordsCached();
+  const maxSortOrder = existingRecords.reduce(
+    (max, record) => Math.max(max, Number.isFinite(record.sortOrder) ? record.sortOrder : 0),
+    0,
+  );
   const record: BlogCategoryRecord = {
     categoryId,
     slug,
     name,
     status: "active",
+    sortOrder: maxSortOrder + 1,
     ...(description ? { description } : {}),
     createdAt: now,
     updatedAt: now,
@@ -197,6 +210,7 @@ export async function updateAdminBlogCategory(input: {
     slug,
     name,
     status: existing.status,
+    sortOrder: existing.sortOrder,
     createdAt: existing.createdAt,
     updatedAt: new Date().toISOString(),
     ...(description ? { description } : {}),
@@ -303,7 +317,20 @@ export async function deleteAdminBlogCategory(input: {
 
   await deleteBlogCategoryRecord(existing.categoryId);
   invalidateBlogCategoryCache();
-  await refreshBlogCategoryCache();
+  const remaining = await refreshBlogCategoryCache();
+  if (remaining.length > 0) {
+    const ordered = [...remaining].sort(compareBlogCategoryOrder);
+    const now = new Date().toISOString();
+    await applyBlogCategorySortOrders(
+      ordered.map((record, index) => ({
+        categoryId: record.categoryId,
+        sortOrder: index + 1,
+      })),
+      now,
+    );
+    invalidateBlogCategoryCache();
+    await refreshBlogCategoryCache();
+  }
 
   await recordAdministrationAudit({
     actorParticipantId: admin.participantId,
@@ -319,4 +346,47 @@ export async function deleteAdminBlogCategory(input: {
   });
 
   return { deleted: true, reassignedCount };
+}
+
+/** Pack 20C — replace display priority with a canonical ordered id list. */
+export async function reorderAdminBlogCategories(input: {
+  actorUserId: string;
+  body: unknown;
+}): Promise<AdminBlogCategoryListResponse> {
+  const admin = await assertAdminActor(input.actorUserId);
+  await ensureBlogCategoriesSeeded();
+
+  if (!input.body || typeof input.body !== "object") {
+    throw new AdministrationValidationError("Reorder body is required.");
+  }
+  const body = input.body as Record<string, unknown>;
+  const orderedCategoryIds = body.orderedCategoryIds;
+  if (!Array.isArray(orderedCategoryIds) || !orderedCategoryIds.every((id) => typeof id === "string")) {
+    throw new BlogValidationError("orderedCategoryIds must be an array of category id strings.");
+  }
+
+  const existing = await listBlogCategoryRecords();
+  const plan = planBlogCategoryReorder({
+    existingCategoryIds: existing.map((record) => record.categoryId),
+    orderedCategoryIds,
+  });
+  if (!plan.ok) {
+    throw new BlogValidationError(plan.reason);
+  }
+
+  const now = new Date().toISOString();
+  await applyBlogCategorySortOrders(plan.assignments, now);
+  invalidateBlogCategoryCache();
+  await refreshBlogCategoryCache();
+
+  await recordAdministrationAudit({
+    actorParticipantId: admin.participantId,
+    action: "blog.category.reorder",
+    targetType: "blog_category",
+    targetId: "catalog",
+    scope: { scopeType: "blog", scopeId: "categories" },
+    afterSummary: `order=${plan.assignments.map((entry) => entry.categoryId).join(",")}`,
+  });
+
+  return listAdminBlogCategories({ actorUserId: input.actorUserId });
 }

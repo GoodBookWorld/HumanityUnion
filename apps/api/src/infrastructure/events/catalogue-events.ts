@@ -51,6 +51,8 @@ export const CATALOGUE_EVENTS = {
   blogPostEditoriallyDeclined: "BlogPostEditoriallyDeclined",
   blogPostArchived: "BlogPostArchived",
   blogAuthorCapabilityGranted: "BlogAuthorCapabilityGranted",
+  /** Pack 21E — Admin queued a selected-subscriber Blog message for durable fan-out. */
+  blogAdminSubscriberMessageQueued: "BlogAdminSubscriberMessageQueued",
   // Admin Foundation Pack 02 — immutable audit outbox signal.
   administrationAuditRecorded: "AdministrationAuditRecorded",
 } as const;

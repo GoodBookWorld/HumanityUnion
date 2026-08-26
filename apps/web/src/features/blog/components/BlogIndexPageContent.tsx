@@ -25,6 +25,7 @@ import { BlogDiscoveryRightRail } from "./BlogDiscoveryRightRail";
 import { BlogDiscoverySearch } from "./BlogDiscoverySearch";
 import { BlogPagination } from "./BlogPagination";
 import { BlogPostCard } from "./BlogPostCard";
+import { BlogSubscriptionForm } from "./BlogSubscriptionForm";
 
 import "../blog.css";
 
@@ -135,10 +136,13 @@ export function BlogIndexPageContent() {
   return (
     <main className="blog-page hu-page-container blog-page--pack15c">
       <header className="blog-page__header">
-        <h1 className="hu-heading-1">Blog</h1>
-        <p className="hu-body blog-page__subtitle">
-          Ideas, reflections and perspectives from Humanity Union authors.
-        </p>
+        <div className="blog-page__header-copy">
+          <h1 className="hu-heading-1">Blog</h1>
+          <p className="hu-body blog-page__subtitle">
+            Ideas, reflections and perspectives from Humanity Union authors.
+          </p>
+        </div>
+        <BlogSubscriptionForm />
       </header>
 
       <div className="blog-layout">
