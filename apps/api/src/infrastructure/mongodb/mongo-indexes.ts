@@ -588,6 +588,41 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    collectionName: MONGO_COLLECTIONS.adminNotifications,
+    indexes: [
+      {
+        key: { recipientAdminUserId: 1, createdAt: -1 },
+        name: "admin_notification_recipient_created",
+      },
+      {
+        key: { recipientAdminUserId: 1, sourceEventId: 1 },
+        unique: true,
+        sparse: true,
+        name: "admin_notification_recipient_source_event_unique",
+      },
+      {
+        key: { expireAt: 1 },
+        expireAfterSeconds: 0,
+        name: "admin_notification_expire_at_ttl",
+      },
+    ],
+  },
+  {
+    collectionName: MONGO_COLLECTIONS.adminOperationalIncidents,
+    indexes: [
+      {
+        key: { dedupeKey: 1 },
+        unique: true,
+        name: "admin_operational_incident_dedupe_unique",
+      },
+      {
+        key: { expireAt: 1 },
+        expireAfterSeconds: 0,
+        name: "admin_operational_incident_expire_at_ttl",
+      },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.members,
     indexes: [
       { key: { memberId: 1 }, unique: true, name: "members_member_id_unique" },

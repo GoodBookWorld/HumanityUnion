@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AUTH_STATE_CHANGED_EVENT } from "../auth/auth-events";
 import { useClientAuthStatus } from "../auth/use-client-auth-status";
 import { isAuthenticationRequiredError } from "../../lib/api-client";
+import { syncPwaAppBadgeFromUnreadCount } from "../pwa/pwa-app-badge";
 
 import { fetchUnreadNotificationCount } from "./api";
 import { NOTIFICATIONS_CHANGED_EVENT } from "./notification-events";
@@ -15,6 +16,16 @@ export interface UnreadNotificationCountState {
   refresh: () => void;
 }
 
+/**
+ * Canonical unread notifications count for:
+ * - website header badge
+ * - PWA bottom-nav badge
+ * - Pack 22B.1 OS/App icon badge (standalone + Badging API)
+ *
+ * Error semantics: failed fetch sets unreadCount=null and hasError=true;
+ * App Badge preserves the previous OS value (does not fabricate or clear).
+ * Unauthenticated / logout clears the App Badge.
+ */
 export function useUnreadNotificationCount(): UnreadNotificationCountState {
   const authStatus = useClientAuthStatus();
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
@@ -84,6 +95,16 @@ export function useUnreadNotificationCount(): UnreadNotificationCountState {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [authStatus, refresh]);
+
+  // Pack 22B.1 — keep OS/App badge aligned with the same canonical count.
+  useEffect(() => {
+    void syncPwaAppBadgeFromUnreadCount({
+      unreadCount,
+      authenticated: authStatus === "authenticated",
+      hasError,
+      standaloneOnly: true,
+    });
+  }, [authStatus, unreadCount, hasError]);
 
   return { unreadCount, hasError, refresh };
 }

@@ -1,5 +1,3 @@
-"use client";
-
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import {
   Alignment,
@@ -11,6 +9,7 @@ import {
   HorizontalLine,
   Image,
   ImageCaption,
+  ImageResize,
   ImageStyle,
   ImageToolbar,
   ImageUpload,
@@ -40,6 +39,7 @@ export interface BlogRichTextEditorClientProps {
 
 /**
  * Pack 15B — CKEditor 5 Classic editor (browser-only).
+ * Pack 22C.1 — ImageResize (%, drag handles) + configured image styles.
  * Loaded via next/dynamic `{ ssr: false }` from BlogRichTextEditor.
  */
 export function BlogRichTextEditorClient({
@@ -70,6 +70,7 @@ export function BlogRichTextEditorClient({
         ImageToolbar,
         ImageCaption,
         ImageStyle,
+        ImageResize,
         ImageUpload,
         HorizontalLine,
         Table,
@@ -138,6 +139,8 @@ export function BlogRichTextEditorClient({
         styles: {
           options: ["inline", "block", "side", "alignLeft", "alignCenter", "alignRight"],
         },
+        // Pack 22C.1 — percentage resize only (matches sanitizeBlogHtml allowlist).
+        resizeUnit: "%",
       },
       table: {
         contentToolbar: ["tableColumn", "tableRow", "mergeTableCells"],

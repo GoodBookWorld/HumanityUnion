@@ -72,7 +72,7 @@ export function BlogCoverField({ coverMedia, title, disabled, onChange }: BlogCo
         <input
           id={inputId}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/gif"
           hidden
           disabled={disabled || uploading}
           onChange={(event) => {

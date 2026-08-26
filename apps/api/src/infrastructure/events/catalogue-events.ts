@@ -53,6 +53,10 @@ export const CATALOGUE_EVENTS = {
   blogAuthorCapabilityGranted: "BlogAuthorCapabilityGranted",
   /** Pack 21E — Admin queued a selected-subscriber Blog message for durable fan-out. */
   blogAdminSubscriberMessageQueued: "BlogAdminSubscriberMessageQueued",
+  /** Pack 22E.1 — Blog subscriber confirmed (not_confirmed → subscribed). */
+  blogSubscriptionConfirmed: "BlogSubscriptionConfirmed",
+  /** Pack 22E.1 — Initiative reached projected/public publish (not draft create). */
+  initiativePublished: "InitiativePublished",
   // Admin Foundation Pack 02 — immutable audit outbox signal.
   administrationAuditRecorded: "AdministrationAuditRecorded",
 } as const;

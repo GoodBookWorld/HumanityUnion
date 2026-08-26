@@ -134,7 +134,8 @@
 .public-initiative-mini-card__meta {
   margin: 0;
   font-size: 0.75rem;
-  color: var(--hu-color-text-muted);
+  /* Pack 22A — Humanity Union warm accent on card surface */
+  color: var(--hu-color-accent, #df9815);
   line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 1;

@@ -287,6 +287,17 @@ export async function confirmBlogSubscription(input: {
   // Confirmation succeeds even if Welcome email fails.
   await sendWelcomeEmailBestEffort({ subscriber: confirmed });
 
+  // Pack 22E.1 — durable Admin inbox signal (skipped when outbox/Mongo unavailable).
+  const { emitBlogSubscriptionConfirmed } = await import(
+    "../admin-notifications/events/blog-subscription-confirmed.event.js"
+  );
+  await emitBlogSubscriptionConfirmed({
+    subscriberId: confirmed.subscriberId,
+    displayLabel: confirmed.emailDisplay,
+    confirmedAt: now,
+    actorId: confirmed.participantId ?? null,
+  });
+
   return { confirmed: true, message: GENERIC_CONFIRM_MESSAGE };
 }
 

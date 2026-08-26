@@ -1221,6 +1221,15 @@ export type {
   MemberNotificationView,
 } from "./member-notification.js";
 export type {
+  AdminNotification,
+  AdminNotificationCountResponse,
+  AdminNotificationListResponse,
+  AdminNotificationSeverity,
+  AdminNotificationType,
+  AdminOpsDedupeKey,
+} from "./admin-notification.js";
+export { ADMIN_NOTIFICATION_TYPES, ADMIN_OPS_DEDUPE_KEYS } from "./admin-notification.js";
+export type {
   MemberBadgeCheckoutSessionPayload,
   MemberBadgeContributionAvailability,
   MemberBadgeContributionDetail,

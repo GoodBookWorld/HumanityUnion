@@ -1,6 +1,7 @@
 import type { AuthTokenPair, AuthUserPublic } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
+import { clearPwaAppBadge } from "../pwa/pwa-app-badge";
 import { dispatchAuthStateChanged } from "./auth-events";
 import { refreshAuthSessionOnce, resetAuthRefreshState } from "./auth-token-refresh";
 import {
@@ -175,6 +176,8 @@ export async function logout(): Promise<void> {
     clearPendingLoginTwoStepToken();
     // Auth Recovery Hotfix — allow a later login after guest settle.
     resetAuthRefreshState();
+    // Pack 22B.1 — never leave a previous account's OS app badge after logout.
+    void clearPwaAppBadge();
     dispatchAuthStateChanged();
   }
 }

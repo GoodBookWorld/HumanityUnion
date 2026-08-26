@@ -14,6 +14,7 @@ import {
   fetchApiHealth,
   fetchApiReady,
 } from "../admin-diagnostics-api";
+import { evaluateAdminOperationalAlerts } from "../admin-notification-api";
 import {
   buildTechnicalHealthSnapshot,
   formatDiagnosticSeverityLabel,
@@ -77,6 +78,9 @@ export function AdminDiagnosticsSection({ user: _user }: AdminDiagnosticsSection
       checkedAt: new Date().toISOString(),
     });
     setError(null);
+
+    // Pack 22E.3 — idempotent ops alert evaluation (best-effort; never blocks Diagnostics UI).
+    void evaluateAdminOperationalAlerts().catch(() => undefined);
   }, []);
 
   useEffect(() => {

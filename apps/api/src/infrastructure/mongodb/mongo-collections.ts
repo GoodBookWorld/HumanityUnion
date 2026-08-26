@@ -39,6 +39,10 @@ export const MONGO_COLLECTIONS = {
   memberBadgeContributions: "member_badge_contributions",
   memberPreferences: "member_preferences",
   memberNotifications: "member_notifications",
+  /** Pack 22E.1 — Admin Notification Center inbox (per-Admin projection rows). */
+  adminNotifications: "admin_notifications",
+  /** Pack 22E.3 — operational incident state (separate from visible inbox rows). */
+  adminOperationalIncidents: "admin_operational_incidents",
   memberReminders: "member_reminders",
   emailAuditRecords: "email_audit_records",
   emailVerificationTokens: "email_verification_tokens",

@@ -1,11 +1,20 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import type { InitiativeCoverMedia } from "@hu/types";
 
 import { ExternalVideoEmbed } from "../../initiatives/components/ExternalVideoEmbed";
+import {
+  INITIATIVE_COVER_CROP_FRAME,
+  INITIATIVE_COVER_OUTPUT_HEIGHT,
+  INITIATIVE_COVER_OUTPUT_WIDTH,
+  initiativeCoverCropBlobToFile,
+  loadInitiativeCoverCropSource,
+  type InitiativeCoverCropSource,
+} from "../initiative-cover-crop";
 import { resolveMediaUrl } from "../media-url";
+import { ImageCropZoomEditor } from "./ImageCropZoomEditor";
 
 import "./initiative-cover-media-field.css";
 
@@ -39,9 +48,7 @@ export interface InitiativeCoverMediaFieldProps {
  * UX Evolution Pack 03 Part 3 — "Initiative cover media": a single component
  * shared by the create-draft and published-edit forms (see
  * `InitiativeFormFields.tsx`), offering the three explicit options the task
- * requires. "Upload video" is intentionally always disabled — see the
- * explanatory notice below and the Pack 03 final report for why raw video
- * upload is not offered as production-ready.
+ * requires. Pack 22D adds shared crop / centered-zoom before image upload.
  */
 export function InitiativeCoverMediaField({
   coverMedia,
@@ -60,6 +67,22 @@ export function InitiativeCoverMediaField({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);
+  const [cropSource, setCropSource] = useState<InitiativeCoverCropSource | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (cropSource) {
+        URL.revokeObjectURL(cropSource.objectUrl);
+      }
+    };
+  }, [cropSource]);
+
+  function closeCropEditor() {
+    if (cropSource) {
+      URL.revokeObjectURL(cropSource.objectUrl);
+    }
+    setCropSource(null);
+  }
 
   async function handleFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -68,17 +91,30 @@ export function InitiativeCoverMediaField({
       return;
     }
 
+    setError(null);
+
+    try {
+      const source = await loadInitiativeCoverCropSource(file);
+      setCropSource(source);
+    } catch (validationError) {
+      setError(validationError instanceof Error ? validationError.message : "Image upload failed.");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  async function handleCropSave(blob: Blob) {
     setBusy(true);
     setError(null);
 
     try {
-      await onImageUpload(file);
+      await onImageUpload(initiativeCoverCropBlobToFile(blob));
+      closeCropEditor();
       setShowPlayer(false);
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Image upload failed.");
     } finally {
       setBusy(false);
-      event.target.value = "";
     }
   }
 
@@ -165,6 +201,22 @@ export function InitiativeCoverMediaField({
         )}
       </div>
 
+      {cropSource ? (
+        <ImageCropZoomEditor
+          source={cropSource}
+          frame={INITIATIVE_COVER_CROP_FRAME}
+          mask="rect"
+          ariaLabel="Initiative cover crop editor"
+          instructions="Drag the image to position it. Use Zoom to adjust framing — left zooms out, center is the default crop, right zooms in. The 16:9 frame matches the public Initiative cover."
+          saveLabel="Save Cover"
+          savingLabel="Saving Cover…"
+          outputWidth={INITIATIVE_COVER_OUTPUT_WIDTH}
+          outputHeight={INITIATIVE_COVER_OUTPUT_HEIGHT}
+          onCancel={closeCropEditor}
+          onSave={handleCropSave}
+        />
+      ) : null}
+
       <fieldset className="initiative-cover-media-field__options">
         <legend>Cover media type</legend>
         <label>
@@ -210,7 +262,7 @@ export function InitiativeCoverMediaField({
             <button
               type="button"
               className="hu-button hu-button--secondary hu-button--sm"
-              disabled={busy}
+              disabled={busy || Boolean(cropSource)}
               onClick={() => inputRef.current?.click()}
             >
               {coverMedia?.type === "image" ? "Replace Media" : "Choose Image"}
@@ -263,7 +315,7 @@ export function InitiativeCoverMediaField({
           <button
             type="button"
             className="hu-button hu-button--secondary hu-button--sm"
-            disabled={busy}
+            disabled={busy || Boolean(cropSource)}
             onClick={() => void handleRemove()}
           >
             Remove Media

@@ -40,6 +40,7 @@ import { deleteRemindersByRelatedEntity } from "../reminders/reminder.service.js
 import { enrichInitiativeMetadataGeography } from "./initiative-geography.js";
 import { assertInitiativeOwnership } from "./initiative-ownership.js";
 import { ensurePublicChoiceElectionVotingDecision } from "../initiative-collective-decision/ensure-public-choice-election-decision.js";
+import { emitInitiativePublished } from "../admin-notifications/events/initiative-published.event.js";
 import {
   createInitiative,
   deleteInitiative,
@@ -549,6 +550,22 @@ export function publishInitiative(identity: RequestIdentity, initiativeId: strin
       );
     }
   }
+
+  // Pack 22E.1 — durable Admin Notification Center signal (projected/public only).
+  const lifecycleProfile = resolveInitiativeLifecycleProfile(
+    projectedWithGeography.lifecycleProfile,
+  );
+  const electionTitle =
+    projectedWithGeography.metadata.communityAssociation?.trim() || projectedWithGeography.title;
+  void emitInitiativePublished({
+    initiativeId,
+    title: projectedWithGeography.title,
+    actorParticipantId: identity.participantId,
+    actorLabel: identity.displayName?.trim() || null,
+    lifecycleProfile,
+    electionTitle,
+    publishedAt,
+  }).catch(() => undefined);
 
   return projectedWithGeography;
 }

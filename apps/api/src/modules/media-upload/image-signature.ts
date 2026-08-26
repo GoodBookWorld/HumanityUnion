@@ -6,9 +6,15 @@
  * file bytes. This module inspects the real bytes so the declared MIME type
  * can be cross-checked against what the file actually is, rather than
  * trusted on its own.
+ *
+ * Pack 22C.2 — GIF87a / GIF89a signatures for Blog publication media.
  */
 
-export type DetectedImageMimeType = "image/jpeg" | "image/png" | "image/webp";
+export type DetectedImageMimeType =
+  | "image/jpeg"
+  | "image/png"
+  | "image/webp"
+  | "image/gif";
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -27,6 +33,13 @@ export function detectImageSignature(buffer: Buffer): DetectedImageMimeType | nu
     buffer.toString("ascii", 8, 12) === "WEBP"
   ) {
     return "image/webp";
+  }
+
+  if (buffer.length >= 6) {
+    const header = buffer.toString("ascii", 0, 6);
+    if (header === "GIF87a" || header === "GIF89a") {
+      return "image/gif";
+    }
   }
 
   return null;

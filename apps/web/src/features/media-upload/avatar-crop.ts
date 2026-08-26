@@ -1,14 +1,17 @@
+import {
+  createDefaultImageCropTransform,
+  renderImageCropBlob,
+  type ImageCropTransform,
+} from "./image-crop-zoom";
+
 export const AVATAR_CROP_OUTPUT_SIZE = 512;
+export const AVATAR_CROP_VIEWPORT_SIZE = 280;
 export const AVATAR_MAX_SOURCE_BYTES = 2 * 1024 * 1024;
 export const AVATAR_MIN_SOURCE_DIMENSION = 128;
 
 const ACCEPTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-export interface AvatarCropTransform {
-  scale: number;
-  offsetX: number;
-  offsetY: number;
-}
+export type AvatarCropTransform = ImageCropTransform;
 
 export interface AvatarCropSource {
   objectUrl: string;
@@ -58,18 +61,16 @@ export async function loadAvatarCropSource(file: File): Promise<AvatarCropSource
   }
 }
 
+/** Pack 22D — default uses shared centered-zoom default (cover-min × 1.2). */
 export function createDefaultAvatarCropTransform(
   sourceWidth: number,
   sourceHeight: number,
-  viewportSize: number,
+  viewportSize: number = AVATAR_CROP_VIEWPORT_SIZE,
 ): AvatarCropTransform {
-  const scale = Math.max(viewportSize / sourceWidth, viewportSize / sourceHeight);
-
-  return {
-    scale,
-    offsetX: (viewportSize - sourceWidth * scale) / 2,
-    offsetY: (viewportSize - sourceHeight * scale) / 2,
-  };
+  return createDefaultImageCropTransform(sourceWidth, sourceHeight, {
+    width: viewportSize,
+    height: viewportSize,
+  });
 }
 
 export async function renderAvatarCropBlob(input: {
@@ -80,37 +81,18 @@ export async function renderAvatarCropBlob(input: {
   viewportSize: number;
   outputSize?: number;
 }): Promise<Blob> {
-  const image = await loadImage(input.sourceUrl);
-  const canvas = document.createElement("canvas");
   const outputSize = input.outputSize ?? AVATAR_CROP_OUTPUT_SIZE;
-  canvas.width = outputSize;
-  canvas.height = outputSize;
-
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    throw new Error("Unable to prepare avatar crop.");
-  }
-
-  const scaleFactor = outputSize / input.viewportSize;
-
-  context.fillStyle = "#ffffff";
-  context.fillRect(0, 0, outputSize, outputSize);
-  context.drawImage(
-    image,
-    input.transform.offsetX * scaleFactor,
-    input.transform.offsetY * scaleFactor,
-    input.sourceWidth * input.transform.scale * scaleFactor,
-    input.sourceHeight * input.transform.scale * scaleFactor,
-  );
-
-  const blob = await canvasToBlob(canvas, "image/webp", 0.92);
-
-  if (!blob) {
-    throw new Error("Unable to generate cropped avatar.");
-  }
-
-  return blob;
+  return renderImageCropBlob({
+    sourceUrl: input.sourceUrl,
+    sourceWidth: input.sourceWidth,
+    sourceHeight: input.sourceHeight,
+    transform: input.transform,
+    frame: { width: input.viewportSize, height: input.viewportSize },
+    outputWidth: outputSize,
+    outputHeight: outputSize,
+    mimeType: "image/webp",
+    quality: 0.92,
+  });
 }
 
 export function avatarCropBlobToFile(blob: Blob): File {
@@ -123,15 +105,5 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error("Unable to read image file."));
     image.src = src;
-  });
-}
-
-function canvasToBlob(
-  canvas: HTMLCanvasElement,
-  type: string,
-  quality: number,
-): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    canvas.toBlob(resolve, type, quality);
   });
 }

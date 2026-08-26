@@ -4,10 +4,11 @@
  *
  * Every format below stores its pixel dimensions in an uncompressed header
  * (PNG's `IHDR` chunk, WebP's `VP8`/`VP8L`/`VP8X` chunk header, JPEG's
- * `SOFx` marker segment). Reading them only requires scanning bytes — never
- * inflating/decoding pixel data — so this cannot itself be used to trigger a
- * decompression bomb, and it lets the caller reject implausibly large
- * declared dimensions before any decoder ever touches the file.
+ * `SOFx` marker segment, GIF Logical Screen Descriptor). Reading them only
+ * requires scanning bytes — never inflating/decoding pixel data — so this
+ * cannot itself be used to trigger a decompression bomb, and it lets the
+ * caller reject implausibly large declared dimensions before any decoder
+ * ever touches the file.
  */
 import type { DetectedImageMimeType } from "./image-signature.js";
 
@@ -129,6 +130,22 @@ function readJpegDimensions(buffer: Buffer): ImageDimensions | null {
   return null;
 }
 
+/** Pack 22C.2 — GIF Logical Screen Descriptor width/height (little-endian). */
+function readGifDimensions(buffer: Buffer): ImageDimensions | null {
+  if (buffer.length < 10) {
+    return null;
+  }
+
+  const header = buffer.toString("ascii", 0, 6);
+  if (header !== "GIF87a" && header !== "GIF89a") {
+    return null;
+  }
+
+  const width = buffer.readUInt16LE(6);
+  const height = buffer.readUInt16LE(8);
+  return width > 0 && height > 0 ? { width, height } : null;
+}
+
 export function readImageDimensions(
   buffer: Buffer,
   mimeType: DetectedImageMimeType,
@@ -140,6 +157,8 @@ export function readImageDimensions(
       return readWebpDimensions(buffer);
     case "image/jpeg":
       return readJpegDimensions(buffer);
+    case "image/gif":
+      return readGifDimensions(buffer);
     default:
       return null;
   }

@@ -755,23 +755,113 @@
   max-width: 100%;
 }
 
+/* Pack 22C.1 — CKEditor image styles must render without editor theme CSS. */
+.blog-article-body figure.image {
+  display: table;
+  clear: both;
+}
+
+.blog-article-body figure.image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0;
+}
+
 .blog-article-body figure.image-style-align-left,
-.blog-article-body figure.image-style-align-right {
-  max-width: 50%;
+.blog-article-body figure.image-style-align-right,
+.blog-article-body figure.image-style-side {
+  max-width: min(50%, 100%);
 }
 
 .blog-article-body figure.image-style-align-left {
   float: left;
-  margin-right: var(--hu-space-4);
+  margin: var(--hu-space-2) var(--hu-space-4) var(--hu-space-2) 0;
 }
 
-.blog-article-body figure.image-style-align-right {
+.blog-article-body figure.image-style-align-right,
+.blog-article-body figure.image-style-side {
   float: right;
-  margin-left: var(--hu-space-4);
+  margin: var(--hu-space-2) 0 var(--hu-space-2) var(--hu-space-4);
 }
 
-.blog-article-body figure.image-style-align-center {
+.blog-article-body figure.image-style-align-center,
+.blog-article-body figure.image-style-block {
+  float: none;
   margin-inline: auto;
+  clear: both;
+}
+
+.blog-article-body figure.image-style-block {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.blog-article-body figure.image-style-block img {
+  width: 100%;
+}
+
+.blog-article-body figure.image_resized,
+.blog-article-body img.image_resized {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.blog-article-body figure.image_resized img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Inline images/icons stay in text flow (override global img { display:block }). */
+.blog-article-body img.image-style-inline,
+.blog-article-body .image-style-inline > img,
+.blog-article-body span.image-style-inline img,
+.blog-article-body figure.image-style-inline {
+  display: inline-block;
+  float: none;
+  vertical-align: middle;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0.15em;
+  border-radius: var(--hu-radius-control);
+}
+
+.blog-article-body figure.image-style-inline {
+  margin: 0 0.15em;
+  clear: none;
+}
+
+.blog-article-body figure.image-style-inline img {
+  display: inline-block;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.blog-article-body::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+@media (max-width: 768px) {
+  .blog-article-body figure.image-style-align-left,
+  .blog-article-body figure.image-style-align-right,
+  .blog-article-body figure.image-style-side {
+    float: none;
+    display: block;
+    max-width: 100%;
+    margin: var(--hu-space-4) auto;
+  }
+
+  .blog-article-body img.image-style-inline,
+  .blog-article-body .image-style-inline > img,
+  .blog-article-body span.image-style-inline img,
+  .blog-article-body figure.image-style-inline {
+    display: inline-block;
+    max-width: min(100%, 8rem);
+  }
 }
 
 .blog-article-body figcaption {

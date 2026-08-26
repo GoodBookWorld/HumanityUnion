@@ -568,6 +568,62 @@
 
 .blog-rich-text--ckeditor .ck-content figure.image {
   margin: 1rem 0;
+  display: table;
+  clear: both;
+}
+
+/* Pack 22C.1 — authoring preview parity with public Blog image styles. */
+.blog-rich-text--ckeditor .ck-content figure.image-style-align-left,
+.blog-rich-text--ckeditor .ck-content figure.image-style-align-right,
+.blog-rich-text--ckeditor .ck-content figure.image-style-side {
+  max-width: min(50%, 100%);
+}
+
+.blog-rich-text--ckeditor .ck-content figure.image-style-align-left {
+  float: left;
+  margin: 0.5rem 1rem 0.5rem 0;
+}
+
+.blog-rich-text--ckeditor .ck-content figure.image-style-align-right,
+.blog-rich-text--ckeditor .ck-content figure.image-style-side {
+  float: right;
+  margin: 0.5rem 0 0.5rem 1rem;
+}
+
+.blog-rich-text--ckeditor .ck-content figure.image-style-align-center,
+.blog-rich-text--ckeditor .ck-content figure.image-style-block {
+  float: none;
+  margin-inline: auto;
+  clear: both;
+}
+
+.blog-rich-text--ckeditor .ck-content figure.image_resized,
+.blog-rich-text--ckeditor .ck-content img.image_resized {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.blog-rich-text--ckeditor .ck-content figure.image_resized img {
+  width: 100%;
+  height: auto;
+}
+
+.blog-rich-text--ckeditor .ck-content img.image-style-inline,
+.blog-rich-text--ckeditor .ck-content .image-style-inline > img,
+.blog-rich-text--ckeditor .ck-content span.image-style-inline img,
+.blog-rich-text--ckeditor .ck-content figure.image-style-inline {
+  display: inline-block;
+  float: none;
+  vertical-align: middle;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0.15em;
+}
+
+.blog-rich-text--ckeditor .ck-content figure.image-style-inline img {
+  display: inline-block;
+  margin: 0;
+  vertical-align: middle;
 }
 
 .blog-rich-text--ckeditor .ck-content figcaption {

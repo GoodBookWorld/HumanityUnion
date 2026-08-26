@@ -9,13 +9,32 @@ export const MEDIA_UPLOAD_LIMITS = {
   "media-resource-logo": 5 * 1024 * 1024,
 } as const satisfies Record<MediaUploadPurpose, number>;
 
-const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+/** Shared formats for profile / initiative / media-resource uploads. */
+const BASE_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+/**
+ * Pack 22C.2 — Blog publication media also accepts animated GIF.
+ * Avatar / initiative / logo surfaces keep the base allowlist only.
+ */
+const BLOG_IMAGE_MIME_TYPES = [...BASE_IMAGE_MIME_TYPES, "image/gif"] as const;
 
 const MIME_TO_EXTENSION: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
   "image/webp": ".webp",
+  "image/gif": ".gif",
 };
+
+function allowedMimeTypesForPurpose(purpose: MediaUploadPurpose): ReadonlySet<string> {
+  if (purpose === "blog-image") {
+    return new Set(BLOG_IMAGE_MIME_TYPES);
+  }
+  return new Set(BASE_IMAGE_MIME_TYPES);
+}
+
+function formatAllowedList(purpose: MediaUploadPurpose): string {
+  return purpose === "blog-image" ? "JPEG, PNG, WEBP, GIF" : "JPEG, PNG, WEBP";
+}
 
 /**
  * Part 4 decompression-bomb guard: dimensions are read from uncompressed
@@ -43,8 +62,10 @@ export function validateUploadedImageFile(
     throw new Error("An image file is required.");
   }
 
-  if (!ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) {
-    throw new Error("Unsupported image type. Allowed formats: JPEG, PNG, WEBP.");
+  const allowed = allowedMimeTypesForPurpose(purpose);
+
+  if (!allowed.has(file.mimetype)) {
+    throw new Error(`Unsupported image type. Allowed formats: ${formatAllowedList(purpose)}.`);
   }
 
   const extension = MIME_TO_EXTENSION[file.mimetype];
@@ -84,6 +105,11 @@ export function validateUploadedImageFile(
 
   if (detectedType !== file.mimetype) {
     throw new Error("The file's contents do not match its declared image type.");
+  }
+
+  // Blog-only GIF: if somehow detected as gif for another purpose, reject.
+  if (detectedType === "image/gif" && purpose !== "blog-image") {
+    throw new Error(`Unsupported image type. Allowed formats: ${formatAllowedList(purpose)}.`);
   }
 
   const dimensions = readImageDimensions(file.buffer, detectedType);

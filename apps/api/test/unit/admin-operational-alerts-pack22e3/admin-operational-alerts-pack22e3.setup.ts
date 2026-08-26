@@ -1,0 +1,1 @@
+process.env.ADMIN_NOTIFICATION_PERSISTENCE = "memory";
