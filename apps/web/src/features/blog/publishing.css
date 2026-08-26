@@ -644,6 +644,66 @@
   color: var(--hu-color-text-muted, #4a5563);
 }
 
+/* Pack 22G — compact local emoji picker (no remote CDN). */
+.blog-ck-emoji-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: min(18rem, 80vw);
+  max-width: 20rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+.blog-ck-emoji-panel__categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.blog-ck-emoji-panel__category {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  padding: 0.25rem 0.45rem;
+  border-radius: 0.35rem;
+  border: 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.18));
+  background: var(--hu-surface, #fff);
+  color: var(--hu-color-text, #1c2430);
+  cursor: pointer;
+}
+
+.blog-ck-emoji-panel__category--active,
+.blog-ck-emoji-panel__category[aria-selected="true"] {
+  border-color: var(--hu-color-accent, #2f6fed);
+  background: var(--hu-surface-raised-muted, #f4f7fa);
+}
+
+.blog-ck-emoji-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.2rem;
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.blog-ck-emoji-panel__emoji {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  border-radius: 0.35rem;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  padding: 0.2rem;
+  cursor: pointer;
+}
+
+.blog-ck-emoji-panel__emoji:hover,
+.blog-ck-emoji-panel__emoji:focus-visible {
+  background: var(--hu-surface-raised-muted, #f4f7fa);
+  outline: var(--hu-focus-ring, 2px solid #2f6fed);
+  outline-offset: 1px;
+}
+
 .blog-rich-text:focus-within {
   outline: var(--hu-focus-ring);
   outline-offset: var(--hu-focus-offset);

@@ -6,6 +6,8 @@ import type {
   AdminBlogCategoryItem,
   AdminBlogCategoryListResponse,
   AdminBlogSubscriberDirectoryResponse,
+  AdminBlogSubscriberImportMode,
+  AdminBlogSubscriberManualAddResponse,
   AdminBlogSubscriberMessageQueueResponse,
   AdminBlogSubscriberRemoveResponse,
   AdminBlogSubscriberStatusFilter,
@@ -336,6 +338,28 @@ export async function removeAdminBlogSubscriber(
   return apiRequest<AdminBlogSubscriberRemoveResponse>(
     `/api/v1/admin/publishing/subscribers/${encodeURIComponent(subscriberId)}`,
     { method: "DELETE" },
+  );
+}
+
+/** Pack 21G — Admin manual subscriber add / historical import. */
+export async function addAdminBlogSubscriber(input: {
+  email: string;
+  displayName?: string;
+  importMode: AdminBlogSubscriberImportMode;
+  restoreUnsubscribed?: boolean;
+}): Promise<AdminBlogSubscriberManualAddResponse> {
+  return apiRequest<AdminBlogSubscriberManualAddResponse>(
+    "/api/v1/admin/publishing/subscribers",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: input.email,
+        importMode: input.importMode,
+        ...(input.displayName?.trim() ? { displayName: input.displayName.trim() } : {}),
+        ...(input.restoreUnsubscribed ? { restoreUnsubscribed: true } : {}),
+      }),
+    },
   );
 }
 

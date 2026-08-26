@@ -255,7 +255,11 @@ describe("Pack 21C — Admin subscribers directory", () => {
     const service = readApi("src/modules/blog/blog-subscription-admin.service.ts");
     assert.match(service, /assertAdminActor/);
     assert.match(service, /blog\.subscriber\.remove/);
-    assert.doesNotMatch(service, /confirmTokenHash:/);
+    const directoryProjectionStart = service.indexOf("async function toDirectoryItem");
+    const directoryProjectionEnd = service.indexOf("function recordMatchesSearch");
+    assert.ok(directoryProjectionStart >= 0 && directoryProjectionEnd > directoryProjectionStart);
+    const directoryProjection = service.slice(directoryProjectionStart, directoryProjectionEnd);
+    assert.doesNotMatch(directoryProjection, /confirmTokenHash|unsubscribeTokenHash/);
   });
 
   it("subscriber counts reflect status totals", async () => {

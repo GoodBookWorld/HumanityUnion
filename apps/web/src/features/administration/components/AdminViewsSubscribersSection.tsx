@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 
 import type {
   AdminBlogSubscriberDirectoryItem,
+  AdminBlogSubscriberImportMode,
   AdminBlogSubscriberStatusFilter,
   AuthUserPublic,
 } from "@hu/types";
@@ -13,6 +14,7 @@ import { Button } from "../../../design-system/components/Button";
 import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { formatAuthFormError } from "../../../lib/api-client";
 import {
+  addAdminBlogSubscriber,
   fetchAdminBlogSubscriptionSettings,
   listAdminBlogSubscribers,
   queueAdminBlogSubscriberMessage,
@@ -60,6 +62,7 @@ function formatCompactDate(value?: string): string {
  * Pack 21B — Welcome Message settings.
  * Pack 21C — Subscribers directory table, search, selection, remove.
  * Pack 21E — selected-subscriber message composer (queues durable send).
+ * Pack 21G — Admin manual subscriber add (historical import / confirmation).
  */
 export function AdminViewsSubscribersSection({ user: _user }: AdminViewsSubscribersSectionProps) {
   const welcomeId = useId();
@@ -70,6 +73,10 @@ export function AdminViewsSubscribersSection({ user: _user }: AdminViewsSubscrib
   const composeMessageId = useId();
   const composeCtaLabelId = useId();
   const composeCtaUrlId = useId();
+  const addNameId = useId();
+  const addEmailId = useId();
+  const addImportModeId = useId();
+  const addRestoreId = useId();
 
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [isDefault, setIsDefault] = useState(true);
@@ -94,6 +101,15 @@ export function AdminViewsSubscribersSection({ user: _user }: AdminViewsSubscrib
   const [removeTarget, setRemoveTarget] = useState<AdminBlogSubscriberDirectoryItem | null>(null);
   const [removing, setRemoving] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const [addName, setAddName] = useState("");
+  const [addEmail, setAddEmail] = useState("");
+  const [addImportMode, setAddImportMode] =
+    useState<AdminBlogSubscriberImportMode>("confirmed_existing");
+  const [addRestoreUnsubscribed, setAddRestoreUnsubscribed] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addSuccess, setAddSuccess] = useState<string | null>(null);
 
   const [composeSubject, setComposeSubject] = useState("");
   const [composeMessage, setComposeMessage] = useState("");
@@ -195,6 +211,46 @@ export function AdminViewsSubscribersSection({ user: _user }: AdminViewsSubscrib
     setAppliedSearch(searchInput.trim());
   }
 
+  async function refreshSubscriberList(nextOffset = offset) {
+    const response = await listAdminBlogSubscribers({
+      q: appliedSearch || undefined,
+      status: statusFilter,
+      limit: PAGE_SIZE,
+      offset: nextOffset,
+    });
+    setRows(response.subscribers);
+    setTotal(response.total);
+    setSubscribedCount(response.subscribedCount);
+    setNotConfirmedCount(response.notConfirmedCount);
+    setUnsubscribedCount(response.unsubscribedCount);
+    setListError(null);
+  }
+
+  async function handleAddSubscriber() {
+    setAdding(true);
+    setAddError(null);
+    setAddSuccess(null);
+    setActionMessage(null);
+    try {
+      const result = await addAdminBlogSubscriber({
+        email: addEmail,
+        importMode: addImportMode,
+        ...(addName.trim() ? { displayName: addName.trim() } : {}),
+        ...(addRestoreUnsubscribed ? { restoreUnsubscribed: true } : {}),
+      });
+      setAddSuccess(result.message);
+      setAddEmail("");
+      setAddName("");
+      setAddRestoreUnsubscribed(false);
+      setOffset(0);
+      await refreshSubscriberList(0);
+    } catch (err: unknown) {
+      setAddError(formatAuthFormError(err));
+    } finally {
+      setAdding(false);
+    }
+  }
+
   const pageIds = rows.map((row) => row.subscriberId);
   const selectedOnPageCount = pageIds.filter((id) => selectedIds.has(id)).length;
   const allPageSelected = pageIds.length > 0 && selectedOnPageCount === pageIds.length;
@@ -243,17 +299,7 @@ export function AdminViewsSubscribersSection({ user: _user }: AdminViewsSubscrib
       });
       setActionMessage("Subscriber removed from Blog subscription emails.");
       setRemoveTarget(null);
-      const response = await listAdminBlogSubscribers({
-        q: appliedSearch || undefined,
-        status: statusFilter,
-        limit: PAGE_SIZE,
-        offset,
-      });
-      setRows(response.subscribers);
-      setTotal(response.total);
-      setSubscribedCount(response.subscribedCount);
-      setNotConfirmedCount(response.notConfirmedCount);
-      setUnsubscribedCount(response.unsubscribedCount);
+      await refreshSubscriberList(offset);
     } catch (err: unknown) {
       setActionMessage(formatAuthFormError(err));
       setRemoveTarget(null);
@@ -334,6 +380,98 @@ export function AdminViewsSubscribersSection({ user: _user }: AdminViewsSubscrib
             <dd>{unsubscribedCount}</dd>
           </div>
         </dl>
+
+        <div className="admin-panel__form admin-publishing__add-subscriber">
+          <h3 className="hu-heading-4">Add Subscriber</h3>
+          <p className="hu-caption admin-panel__note">
+            Manually import a historical Blog subscriber. Does not create a Participant account.
+            Confirmed imports do not send confirmation or Welcome email. Needs confirmation sends
+            the normal confirmation email; Welcome follows only after the subscriber confirms.
+          </p>
+          <label className="hu-label" htmlFor={addNameId}>
+            Name
+          </label>
+          <input
+            id={addNameId}
+            className="hu-form-control"
+            type="text"
+            value={addName}
+            maxLength={120}
+            disabled={adding}
+            autoComplete="off"
+            onChange={(event) => {
+              setAddName(event.target.value);
+              setAddError(null);
+              setAddSuccess(null);
+            }}
+          />
+          <label className="hu-label" htmlFor={addEmailId}>
+            Email
+          </label>
+          <input
+            id={addEmailId}
+            className="hu-form-control"
+            type="email"
+            value={addEmail}
+            required
+            disabled={adding}
+            autoComplete="off"
+            onChange={(event) => {
+              setAddEmail(event.target.value);
+              setAddError(null);
+              setAddSuccess(null);
+            }}
+          />
+          <label className="hu-label" htmlFor={addImportModeId}>
+            Subscription status
+          </label>
+          <select
+            id={addImportModeId}
+            className="hu-form-control"
+            value={addImportMode}
+            disabled={adding}
+            onChange={(event) => {
+              setAddImportMode(event.target.value as AdminBlogSubscriberImportMode);
+              setAddError(null);
+              setAddSuccess(null);
+            }}
+          >
+            <option value="confirmed_existing">Confirmed existing subscriber</option>
+            <option value="needs_confirmation">Needs confirmation</option>
+          </select>
+          <label className="admin-publishing__checkbox" htmlFor={addRestoreId}>
+            <input
+              id={addRestoreId}
+              type="checkbox"
+              checked={addRestoreUnsubscribed}
+              disabled={adding}
+              onChange={(event) => setAddRestoreUnsubscribed(event.target.checked)}
+            />
+            <span>Restore if currently unsubscribed</span>
+          </label>
+          <div className="admin-panel__links">
+            <Button
+              type="button"
+              variant="primary"
+              disabled={adding || addEmail.trim().length < 5}
+              onClick={() => {
+                void handleAddSubscriber();
+              }}
+            >
+              {adding ? "Adding…" : "Add Subscriber"}
+            </Button>
+          </div>
+          {addSuccess ? (
+            <p className="hu-caption" role="status">
+              {addSuccess}
+            </p>
+          ) : null}
+          {addError ? (
+            <p className="hu-body" role="alert">
+              {addError}
+            </p>
+          ) : null}
+        </div>
 
         <div className="admin-publishing__toolbar">
           <label className="admin-publishing__search" htmlFor={searchId}>

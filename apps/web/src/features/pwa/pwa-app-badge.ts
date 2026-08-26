@@ -1,5 +1,6 @@
 /**
  * Pack 22B.1 — OS/App icon badge from canonical unread notifications.
+ * Pack 22H — diagnostic sync results + hardened standalone/support handling.
  *
  * Number-only Badging API wrapper. No Push, no Service Worker involvement.
  * Foreground/open PWA only; closed-app badge updates require Web Push (out of scope).
@@ -10,6 +11,15 @@ export type NavigatorWithAppBadge = Navigator & {
   setAppBadge?: (contents?: number) => Promise<void>;
   clearAppBadge?: () => Promise<void>;
 };
+
+/** Internal observability only — never surfaced as noisy user UI. */
+export type PwaAppBadgeSyncResult =
+  | "applied"
+  | "cleared"
+  | "unsupported"
+  | "not_standalone"
+  | "api_error"
+  | "preserved";
 
 export function getNavigatorWithAppBadge(
   nav: Navigator | undefined = typeof navigator !== "undefined" ? navigator : undefined,
@@ -29,18 +39,27 @@ export function isAppBadgeSupported(
   );
 }
 
+function logBadgeDiagnostic(result: PwaAppBadgeSyncResult, unreadCount: number | null): void {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+  // Number + result only — never notification content, sender, or message text.
+  console.debug("[pwa-app-badge]", { result, unreadCount });
+}
+
 /** Clear OS app badge when supported. Never throws into UI. */
 export async function clearPwaAppBadge(
   nav: Navigator | undefined = typeof navigator !== "undefined" ? navigator : undefined,
-): Promise<void> {
+): Promise<PwaAppBadgeSyncResult> {
   const badgeNav = getNavigatorWithAppBadge(nav);
   if (typeof badgeNav?.clearAppBadge !== "function") {
-    return;
+    return "unsupported";
   }
   try {
     await badgeNav.clearAppBadge();
+    return "cleared";
   } catch {
-    // Unsupported / denied / transient OS errors must not break the app.
+    return "api_error";
   }
 }
 
@@ -51,20 +70,20 @@ export async function clearPwaAppBadge(
 export async function setPwaAppBadge(
   unreadCount: number,
   nav: Navigator | undefined = typeof navigator !== "undefined" ? navigator : undefined,
-): Promise<void> {
+): Promise<PwaAppBadgeSyncResult> {
   const badgeNav = getNavigatorWithAppBadge(nav);
   if (typeof badgeNav?.setAppBadge !== "function") {
-    return;
+    return "unsupported";
   }
   if (!Number.isFinite(unreadCount) || unreadCount <= 0) {
-    await clearPwaAppBadge(nav);
-    return;
+    return clearPwaAppBadge(nav);
   }
   const safeCount = Math.min(Math.floor(unreadCount), Number.MAX_SAFE_INTEGER);
   try {
     await badgeNav.setAppBadge(safeCount);
+    return "applied";
   } catch {
-    // Degrade silently (some platforms reject large values or deny the API).
+    return "api_error";
   }
 }
 
@@ -92,15 +111,20 @@ export interface SyncPwaAppBadgeInput {
  * - unreadCount === 0 → clear (standalone, or always if not standaloneOnly)
  * - unreadCount > 0 → set (standalone when standaloneOnly)
  */
-export async function syncPwaAppBadgeFromUnreadCount(input: SyncPwaAppBadgeInput): Promise<void> {
+export async function syncPwaAppBadgeFromUnreadCount(
+  input: SyncPwaAppBadgeInput,
+): Promise<PwaAppBadgeSyncResult> {
   const nav = input.navigator;
+
   if (!input.authenticated) {
-    await clearPwaAppBadge(nav);
-    return;
+    const result = await clearPwaAppBadge(nav);
+    logBadgeDiagnostic(result, null);
+    return result;
   }
 
   if (input.hasError || input.unreadCount === null) {
-    return;
+    logBadgeDiagnostic("preserved", input.unreadCount);
+    return "preserved";
   }
 
   const standaloneOnly = input.standaloneOnly !== false;
@@ -109,13 +133,22 @@ export async function syncPwaAppBadgeFromUnreadCount(input: SyncPwaAppBadgeInput
 
   if (standaloneOnly && !standalone) {
     // Browser tab: keep website header/nav badges only; do not touch OS icon.
-    return;
+    logBadgeDiagnostic("not_standalone", input.unreadCount);
+    return "not_standalone";
+  }
+
+  if (!isAppBadgeSupported(nav)) {
+    logBadgeDiagnostic("unsupported", input.unreadCount);
+    return "unsupported";
   }
 
   if (input.unreadCount > 0) {
-    await setPwaAppBadge(input.unreadCount, nav);
-    return;
+    const applied = await setPwaAppBadge(input.unreadCount, nav);
+    logBadgeDiagnostic(applied, input.unreadCount);
+    return applied;
   }
 
-  await clearPwaAppBadge(nav);
+  const cleared = await clearPwaAppBadge(nav);
+  logBadgeDiagnostic(cleared, 0);
+  return cleared;
 }

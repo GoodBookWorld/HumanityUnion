@@ -57,7 +57,8 @@ async function resolveOptionalParticipantId(emailNormalized: string): Promise<st
   }
 }
 
-function issueTokens(): {
+/** Pack 21G / Pack 21A — shared token issuance for confirmation lifecycle. */
+export function issueBlogSubscriptionTokens(): {
   rawConfirmToken: string;
   confirmTokenHash: string;
   confirmTokenExpiresAt: string;
@@ -75,7 +76,20 @@ function issueTokens(): {
   };
 }
 
-async function sendConfirmationEmail(input: {
+/** Pack 21G — unsubscribe-only token for confirmed historical imports (no confirm email). */
+export function issueBlogSubscriptionUnsubscribeToken(): {
+  rawUnsubscribeToken: string;
+  unsubscribeTokenHash: string;
+} {
+  const rawUnsubscribeToken = generateBlogSubscriptionRawToken();
+  return {
+    rawUnsubscribeToken,
+    unsubscribeTokenHash: hashBlogSubscriptionToken("unsubscribe", rawUnsubscribeToken),
+  };
+}
+
+/** Pack 21A / 21G — canonical confirmation email (does not increment emailsSent). */
+export async function sendBlogSubscriptionConfirmationEmail(input: {
   to: string;
   rawConfirmToken: string;
   rawUnsubscribeToken: string;
@@ -128,13 +142,14 @@ export async function requestBlogSubscription(input: {
   }
 
   if (existing) {
-    const tokens = issueTokens();
+    const tokens = issueBlogSubscriptionTokens();
     const updated: BlogSubscriberRecord = {
       subscriberId: existing.subscriberId,
       emailNormalized: existing.emailNormalized,
       emailDisplay,
       status: "not_confirmed",
       subscriptionType: "blog_publications",
+      ...(existing.displayName ? { displayName: existing.displayName } : {}),
       ...(participantId
         ? { participantId }
         : existing.participantId
@@ -150,7 +165,7 @@ export async function requestBlogSubscription(input: {
       updatedAt: now,
     };
     await upsertBlogSubscriberRecord(updated);
-    await sendConfirmationEmail({
+    await sendBlogSubscriptionConfirmationEmail({
       to: emailNormalized,
       rawConfirmToken: tokens.rawConfirmToken,
       rawUnsubscribeToken: tokens.rawUnsubscribeToken,
@@ -159,7 +174,7 @@ export async function requestBlogSubscription(input: {
   }
 
   const subscriberId = randomUUID();
-  const tokens = issueTokens();
+  const tokens = issueBlogSubscriptionTokens();
   const created: BlogSubscriberRecord = {
     subscriberId,
     emailNormalized,
@@ -175,7 +190,7 @@ export async function requestBlogSubscription(input: {
     updatedAt: now,
   };
   await upsertBlogSubscriberRecord(created);
-  await sendConfirmationEmail({
+  await sendBlogSubscriptionConfirmationEmail({
     to: emailNormalized,
     rawConfirmToken: tokens.rawConfirmToken,
     rawUnsubscribeToken: tokens.rawUnsubscribeToken,
@@ -270,6 +285,7 @@ export async function confirmBlogSubscription(input: {
     subscriberId: existing.subscriberId,
     emailNormalized: existing.emailNormalized,
     emailDisplay: existing.emailDisplay,
+    ...(existing.displayName ? { displayName: existing.displayName } : {}),
     status: "subscribed",
     subscriptionType: existing.subscriptionType,
     ...(existing.participantId ? { participantId: existing.participantId } : {}),
@@ -324,6 +340,7 @@ export async function unsubscribeBlogSubscription(input: {
     subscriberId: existing.subscriberId,
     emailNormalized: existing.emailNormalized,
     emailDisplay: existing.emailDisplay,
+    ...(existing.displayName ? { displayName: existing.displayName } : {}),
     status: "unsubscribed",
     subscriptionType: existing.subscriptionType,
     ...(existing.participantId ? { participantId: existing.participantId } : {}),

@@ -25,6 +25,8 @@ import {
 } from "ckeditor5";
 import { useMemo } from "react";
 
+import { BlogEmojiPlugin, BLOG_EMOJI_TOOLBAR_ITEM } from "../blog-emoji-plugin";
+import { BlogInlineIconPlugin, BLOG_INLINE_ICON_TOOLBAR_ITEM } from "../blog-inline-icon-plugin";
 import { BlogCkeditorUploadAdapterPlugin } from "../ckeditor-upload-adapter";
 
 import "ckeditor5/ckeditor5.css";
@@ -40,6 +42,7 @@ export interface BlogRichTextEditorClientProps {
 /**
  * Pack 15B — CKEditor 5 Classic editor (browser-only).
  * Pack 22C.1 — ImageResize (%, drag handles) + configured image styles.
+ * Pack 22G — local Unicode emoji picker + inline icon upload (Blog media path).
  * Loaded via next/dynamic `{ ssr: false }` from BlogRichTextEditor.
  */
 export function BlogRichTextEditorClient({
@@ -77,6 +80,8 @@ export function BlogRichTextEditorClient({
         TableToolbar,
         Undo,
         BlogCkeditorUploadAdapterPlugin,
+        BlogEmojiPlugin,
+        BlogInlineIconPlugin,
       ],
       toolbar: {
         items: [
@@ -97,6 +102,8 @@ export function BlogRichTextEditorClient({
           "alignment",
           "|",
           "uploadImage",
+          BLOG_INLINE_ICON_TOOLBAR_ITEM,
+          BLOG_EMOJI_TOOLBAR_ITEM,
           "insertTable",
           "horizontalLine",
         ],
@@ -169,7 +176,8 @@ export function BlogRichTextEditorClient({
         }}
       />
       <p className="blog-rich-text__status hu-caption">
-        Inline images upload via Humanity Union media. Cover image stays in Publication settings.
+        Upload image for illustrations; Inline icon for in-flow icons (JPEG/PNG/WEBP/GIF). Emoji
+        inserts Unicode text. Cover image stays in Publication settings.
       </p>
     </div>
   );

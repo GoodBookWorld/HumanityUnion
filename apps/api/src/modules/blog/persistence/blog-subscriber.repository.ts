@@ -155,7 +155,8 @@ export async function listBlogSubscribersForAdmin(
       rows = rows.filter(
         (row) =>
           row.emailNormalized.includes(emailQuery) ||
-          row.emailDisplay.toLowerCase().includes(emailQuery),
+          row.emailDisplay.toLowerCase().includes(emailQuery) ||
+          (row.displayName?.toLowerCase().includes(emailQuery) ?? false),
       );
     }
     rows = [...rows].sort(compareNewestCreatedFirst);
@@ -175,6 +176,7 @@ export async function listBlogSubscribersForAdmin(
       filter.$or = [
         { emailNormalized: { $regex: pattern, $options: "i" } },
         { emailDisplay: { $regex: pattern, $options: "i" } },
+        { displayName: { $regex: pattern, $options: "i" } },
       ];
     }
     const [total, documents] = await Promise.all([

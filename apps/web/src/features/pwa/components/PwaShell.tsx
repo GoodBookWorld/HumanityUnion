@@ -9,6 +9,7 @@ import {
 } from "../presentation-mode";
 import { PwaAppHeader } from "./PwaAppHeader";
 import { PwaBottomNav } from "./PwaBottomNav";
+import { PwaLaunchSequence } from "./PwaLaunchSequence";
 import { ServiceWorkerRegister } from "./ServiceWorkerRegister";
 
 interface PwaShellProps {
@@ -18,6 +19,7 @@ interface PwaShellProps {
 /**
  * Standalone presentation shell — App Header + Bottom Nav only when installed.
  * Browser mode keeps the website chrome from HumanityLayout.
+ * Pack 22I.1 — branded launch overlay mounts only in standalone PWA sessions.
  */
 export function PwaShell({ children }: PwaShellProps) {
   const [mode, setMode] = useState<HuPresentationMode>("browser");
@@ -37,6 +39,7 @@ export function PwaShell({ children }: PwaShellProps) {
   return (
     <>
       <ServiceWorkerRegister />
+      {standalone ? <PwaLaunchSequence standalone /> : null}
       {standalone ? <PwaAppHeader /> : null}
       {children}
       {standalone ? <PwaBottomNav /> : null}

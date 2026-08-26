@@ -23,6 +23,11 @@ export interface BlogSubscriberRecord {
   readonly emailNormalized: string;
   /** Safe display form for Admin UI (typically original trimmed input). */
   readonly emailDisplay: string;
+  /**
+   * Pack 21G — optional Admin/import display name (not a Participant account).
+   * Separate from participantId linkage.
+   */
+  readonly displayName?: string;
   readonly status: BlogSubscriptionStatus;
   readonly subscriptionType: BlogSubscriptionType;
   /** Optional link when an Auth user exists for the same email — metadata only. */
@@ -64,7 +69,9 @@ export interface BlogSubscriptionSettingsResponse {
 /** Pack 21C — Admin directory row (no token hashes / secrets). */
 export interface AdminBlogSubscriberDirectoryItem {
   readonly subscriberId: string;
-  /** Linked Participant display name when safely available. */
+  /**
+   * Stored subscriber displayName when set (Pack 21G), else linked Participant name.
+   */
   readonly displayName?: string;
   readonly email: string;
   readonly subscriptionType: BlogSubscriptionType;
@@ -75,6 +82,18 @@ export interface AdminBlogSubscriberDirectoryItem {
   readonly emailsSent: number;
   readonly hasLinkedParticipant: boolean;
   readonly createdAt: string;
+}
+
+/** Pack 21G — Admin manual subscriber import mode. */
+export type AdminBlogSubscriberImportMode = "confirmed_existing" | "needs_confirmation";
+
+export interface AdminBlogSubscriberManualAddResponse {
+  readonly subscriber: AdminBlogSubscriberDirectoryItem;
+  readonly created: boolean;
+  readonly reusedExisting: boolean;
+  readonly restoredFromUnsubscribed: boolean;
+  readonly confirmationEmailQueued: boolean;
+  readonly message: string;
 }
 
 export interface AdminBlogSubscriberDirectoryResponse {

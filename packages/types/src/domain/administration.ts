@@ -137,6 +137,7 @@ export type AdministrationAuditAction =
   | "blog.category.reorder"
   | "blog.subscription_settings.update"
   | "blog.subscriber.remove"
+  | "blog.subscriber.manual_add"
   | "blog.subscriber_message.queue"
   | "blog.author.trusted_publishing.enable"
   | "blog.author.trusted_publishing.disable"

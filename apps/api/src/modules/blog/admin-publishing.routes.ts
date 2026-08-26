@@ -553,6 +553,27 @@ adminPublishingRouter.get(
   },
 );
 
+/** Pack 21G — Admin manual subscriber add */
+adminPublishingRouter.post(
+  "/subscribers",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const { adminManualAddBlogSubscriber } = await import(
+        "./blog-subscription-admin.service.js"
+      );
+      const data = await adminManualAddBlogSubscriber({
+        actorUserId: req.auth!.id,
+        body: req.body,
+      });
+      res.status(data.created ? 201 : 200).json(createSuccessResponse(data, data.message));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
 adminPublishingRouter.delete(
   "/subscribers/:subscriberId",
   authenticationMiddleware,

@@ -63,6 +63,31 @@ function decodeEntities(value: string): string {
     .replace(/&amp;/gi, "&");
 }
 
+/**
+ * Pack 22F — Normalize unwanted NBSP artifacts before HTML sanitize/escape.
+ *
+ * CKEditor getData() often emits `&nbsp;` (empty paragraphs / soft spaces).
+ * escapeText() alone turns those into `&amp;nbsp;`, which then renders as the
+ * visible literal text "&nbsp;" on save → reload → public view.
+ *
+ * Also clears previously double-encoded artifacts already stored in content.
+ */
+export function normalizeBlogNbspArtifacts(html: string): string {
+  return html
+    .replace(/\u00A0/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#160;/gi, " ")
+    .replace(/&#x0*a0;/gi, " ")
+    .replace(/&amp;nbsp;/gi, " ")
+    .replace(/&amp;#160;/gi, " ")
+    .replace(/&amp;#x0*a0;/gi, " ");
+}
+
+/** Collapse whitespace-only empty paragraphs left after NBSP → space. */
+function collapseWhitespaceOnlyParagraphs(html: string): string {
+  return html.replace(/<p(\s[^>]*)?>\s+<\/p>/gi, "<p$1></p>");
+}
+
 function escapeAttribute(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -233,7 +258,7 @@ export function sanitizeBlogHtml(input: string): string {
     throw new Error("content must be a string.");
   }
 
-  const source = input.trim();
+  const source = normalizeBlogNbspArtifacts(input.trim());
   if (!source) {
     return "";
   }
@@ -304,7 +329,7 @@ export function sanitizeBlogHtml(input: string): string {
     output += `</${openStack.pop()}>`;
   }
 
-  const sanitized = output.trim();
+  const sanitized = collapseWhitespaceOnlyParagraphs(output.trim());
 
   if (!sanitized && /[^\s]/.test(source.replace(/<[^>]*>/g, ""))) {
     // Had text but lost it somehow — return escaped text fallback.
@@ -320,9 +345,8 @@ export function sanitizeBlogHtml(input: string): string {
 
 /** Plain-text extraction for Safety evaluation and search. */
 export function blogHtmlToPlainText(html: string): string {
-  return html
+  return normalizeBlogNbspArtifacts(html)
     .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")

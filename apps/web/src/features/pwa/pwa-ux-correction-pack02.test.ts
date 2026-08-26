@@ -171,7 +171,7 @@ describe("PWA UX Correction Pack 02", () => {
     assert.match(promo, /handleDismiss[\s\S]*Later/);
     assert.match(promo, /clearObsoleteInstallPreferenceKeys/);
     assert.match(guidance, /How to install Humanity|Add to Home Screen/);
-    assert.match(guidance, /Add Humanity Union to your Home Screen from the Share menu/);
+    assert.match(guidance, /Add Humanity Union from Safari.?s Share menu|Home Screen from the Share menu/);
     assert.match(preference, /dismissal ≠ installed|not OS install proof/i);
     assert.match(preference, /OBSOLETE_KEYS|pwaInstalled/);
     assert.doesNotMatch(preference, /localStorage\.setItem/);

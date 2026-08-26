@@ -34,6 +34,24 @@
   font-weight: 600;
 }
 
+.admin-publishing__add-subscriber {
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.admin-publishing__checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.admin-publishing__checkbox input {
+  margin-top: 0.2rem;
+}
+
 .admin-publishing__toolbar {
   display: flex;
   flex-wrap: wrap;

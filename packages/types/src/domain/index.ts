@@ -1369,6 +1369,8 @@ export type {
 export type {
   AdminBlogSubscriberDirectoryItem,
   AdminBlogSubscriberDirectoryResponse,
+  AdminBlogSubscriberImportMode,
+  AdminBlogSubscriberManualAddResponse,
   AdminBlogSubscriberMessageQueueResponse,
   AdminBlogSubscriberRemoveResponse,
   AdminBlogSubscriberStatusFilter,

@@ -10,6 +10,9 @@ import { syncPwaAppBadgeFromUnreadCount } from "../pwa/pwa-app-badge";
 import { fetchUnreadNotificationCount } from "./api";
 import { NOTIFICATIONS_CHANGED_EVENT } from "./notification-events";
 
+/** Pack 22H — light canonical unread refresh while foreground (not a badge-only loop). */
+export const UNREAD_COUNT_FOREGROUND_POLL_MS = 30_000;
+
 export interface UnreadNotificationCountState {
   unreadCount: number | null;
   hasError: boolean;
@@ -20,7 +23,7 @@ export interface UnreadNotificationCountState {
  * Canonical unread notifications count for:
  * - website header badge
  * - PWA bottom-nav badge
- * - Pack 22B.1 OS/App icon badge (standalone + Badging API)
+ * - Pack 22B.1 / 22H OS/App icon badge (standalone + Badging API)
  *
  * Error semantics: failed fetch sets unreadCount=null and hasError=true;
  * App Badge preserves the previous OS value (does not fabricate or clear).
@@ -85,18 +88,46 @@ export function useUnreadNotificationCount(): UnreadNotificationCountState {
       }
     }
 
+    /** Pack 22H — bfcache / resume when returning to the installed PWA. */
+    function handlePageShow() {
+      refresh();
+    }
+
     window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, handleNotificationsChanged);
     window.addEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthStateChanged);
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pageshow", handlePageShow);
 
     return () => {
       window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, handleNotificationsChanged);
       window.removeEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthStateChanged);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pageshow", handlePageShow);
     };
   }, [authStatus, refresh]);
 
-  // Pack 22B.1 — keep OS/App badge aligned with the same canonical count.
+  // Pack 22H — while the app is foregrounded, refresh the canonical unread
+  // count so Direct Message → member_notifications updates reach App Badge
+  // without a separate DM unread counter or badge-only poll loop.
+  useEffect(() => {
+    if (authStatus !== "authenticated") {
+      return;
+    }
+
+    function tick() {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return;
+      }
+      refresh();
+    }
+
+    const intervalId = window.setInterval(tick, UNREAD_COUNT_FOREGROUND_POLL_MS);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [authStatus, refresh]);
+
+  // Pack 22B.1 / 22H — keep OS/App badge aligned with the same canonical count.
   useEffect(() => {
     void syncPwaAppBadgeFromUnreadCount({
       unreadCount,
