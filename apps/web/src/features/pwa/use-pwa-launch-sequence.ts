@@ -6,7 +6,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { ClientAuthStatus } from "../auth/use-client-auth-status";
-import { attemptPwaLaunchAudio } from "./pwa-launch-audio";
+import {
+  attemptPwaLaunchAudio,
+  getPwaLaunchAudioStatus,
+  subscribePwaLaunchAudioStatus,
+  type PwaLaunchAudioStatus,
+} from "./pwa-launch-audio";
 import {
   advancePwaLaunchClock,
   type PwaLaunchTimingConfig,
@@ -15,6 +20,7 @@ import {
   PWA_LAUNCH_TIMING,
   type PwaLaunchPhase,
 } from "./pwa-launch-constants";
+import { clearPwaLaunchFirstPaintPending } from "./pwa-launch-first-paint";
 import {
   hasPwaLaunchPlayedThisSession,
   markPwaLaunchPlayedThisSession,
@@ -46,6 +52,7 @@ export interface UsePwaLaunchSequenceResult {
   readonly reducedMotion: boolean;
   readonly matrixSeed: number;
   readonly appReady: boolean;
+  readonly audioStatus: PwaLaunchAudioStatus;
 }
 
 function resolveReducedMotion(flag?: boolean): boolean {
@@ -107,6 +114,9 @@ export function usePwaLaunchSequence(
   const [logoScale, setLogoScale] = useState(0.92);
   const [overlayOpacity, setOverlayOpacity] = useState(shouldOffer ? 1 : 0);
   const [active, setActive] = useState(shouldOffer);
+  const [audioStatus, setAudioStatus] = useState<PwaLaunchAudioStatus>(() =>
+    getPwaLaunchAudioStatus(),
+  );
 
   const startRef = useRef<number | null>(null);
   const revealStartedAtRef = useRef<number | null>(null);
@@ -115,17 +125,35 @@ export function usePwaLaunchSequence(
   const rafRef = useRef<number | null>(null);
   const finishedRef = useRef(!shouldOffer);
 
+  useEffect(() => subscribePwaLaunchAudioStatus(setAudioStatus), []);
+
   useEffect(() => {
     if (!shouldOffer || claimedRef.current) {
       return;
     }
     claimedRef.current = true;
     markPwaLaunchPlayedThisSession(input.storage);
+    // React overlay now owns the surface — drop the pre-hydrate cover.
+    clearPwaLaunchFirstPaintPending();
     if (enableAudio && !audioStartedRef.current) {
       audioStartedRef.current = true;
-      attemptPwaLaunchAudio();
+      void attemptPwaLaunchAudio().then(setAudioStatus);
     }
   }, [shouldOffer, input.storage, enableAudio]);
+
+  useEffect(() => {
+    if (!active || phase === "complete") {
+      return;
+    }
+    // Keep cover cleared while the branded overlay is visible.
+    clearPwaLaunchFirstPaintPending();
+  }, [active, phase]);
+
+  useEffect(() => {
+    if (phase === "complete" || !active) {
+      clearPwaLaunchFirstPaintPending();
+    }
+  }, [phase, active]);
 
   useEffect(() => {
     if (!shouldOffer || finishedRef.current) {
@@ -142,6 +170,7 @@ export function usePwaLaunchSequence(
       setLogoOpacity(0);
       setOverlayOpacity(0);
       setActive(false);
+      clearPwaLaunchFirstPaintPending();
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
@@ -207,5 +236,6 @@ export function usePwaLaunchSequence(
     reducedMotion,
     matrixSeed,
     appReady: authReady,
+    audioStatus,
   };
 }

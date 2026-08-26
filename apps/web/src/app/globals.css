@@ -16,3 +16,18 @@ body {
   background: var(--hu-color-bg-muted);
   color: var(--hu-color-text);
 }
+
+/*
+ * Pack 22I.2 — installed-PWA first-paint cover.
+ * Applied by the root-layout bootstrap script before React hydrates so the
+ * Workspace never flashes between the OS splash and HU launch surface.
+ * Removed by React when the launch overlay mounts / completes, or by a 7s fail-safe.
+ */
+html.hu-pwa-launch-pending body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #f4f7fa;
+  pointer-events: none;
+}

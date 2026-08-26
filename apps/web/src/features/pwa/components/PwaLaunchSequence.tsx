@@ -1,10 +1,14 @@
 /**
- * Pack 22I.1 — branded PWA launch overlay (logo + HU Matrix Reveal).
+ * Pack 22I.1 / 22I.2 — branded PWA launch overlay (logo + HU Matrix Reveal).
+ * Pack 22I.2 — interactive HU logo Sound fallback when autoplay is blocked.
  */
 "use client";
 
+import { useState } from "react";
+
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { HuMatrixReveal } from "../hu-matrix-reveal";
+import { playPwaLaunchAudioFromUserGesture } from "../pwa-launch-audio";
 import {
   PWA_LAUNCH_BACKDROP,
   PWA_LAUNCH_LOGO_SRC,
@@ -29,6 +33,7 @@ export function PwaLaunchSequence(props: PwaLaunchSequenceProps = {}) {
     enableAudio: props.enableAudio,
     matrixSeed: props.matrixSeed,
   });
+  const [soundActivating, setSoundActivating] = useState(false);
 
   if (!launch.active) {
     return null;
@@ -37,6 +42,36 @@ export function PwaLaunchSequence(props: PwaLaunchSequenceProps = {}) {
   const showMatrix =
     !launch.reducedMotion &&
     (launch.phase === "reveal" || launch.phase === "finishing");
+
+  const soundFallback =
+    launch.audioStatus === "gesture_required" && !soundActivating;
+
+  const logoStyle = {
+    opacity: launch.logoOpacity,
+    transform: `scale(${launch.logoScale})`,
+  };
+
+  const logoImage = (
+    <img
+      className="hu-pwa-launch__logo"
+      src={PWA_LAUNCH_LOGO_SRC}
+      alt=""
+      width={160}
+      height={160}
+      draggable={false}
+      style={soundFallback ? undefined : logoStyle}
+    />
+  );
+
+  const onPlaySound = () => {
+    if (!soundFallback || soundActivating) {
+      return;
+    }
+    setSoundActivating(true);
+    void playPwaLaunchAudioFromUserGesture().finally(() => {
+      setSoundActivating(false);
+    });
+  };
 
   return (
     <div
@@ -47,8 +82,9 @@ export function PwaLaunchSequence(props: PwaLaunchSequenceProps = {}) {
         backgroundColor: showMatrix ? "transparent" : PWA_LAUNCH_BACKDROP,
         pointerEvents: "auto",
       }}
-      aria-hidden="true"
+      aria-hidden={soundFallback ? undefined : true}
       data-hu-pwa-launch-phase={launch.phase}
+      data-hu-pwa-launch-sound={soundFallback ? "fallback" : "off"}
     >
       {showMatrix ? (
         <HuMatrixReveal
@@ -57,19 +93,29 @@ export function PwaLaunchSequence(props: PwaLaunchSequenceProps = {}) {
           seed={launch.matrixSeed}
         />
       ) : null}
-      <div className="hu-pwa-launch__logo-wrap">
-        <img
-          className="hu-pwa-launch__logo"
-          src={PWA_LAUNCH_LOGO_SRC}
-          alt=""
-          width={160}
-          height={160}
-          draggable={false}
-          style={{
-            opacity: launch.logoOpacity,
-            transform: `scale(${launch.logoScale})`,
-          }}
-        />
+      <div className="hu-pwa-launch__logo-wrap" style={soundFallback ? logoStyle : undefined}>
+        {soundFallback ? (
+          <button
+            type="button"
+            className="hu-pwa-launch__logo-sound"
+            aria-label="Play intro sound"
+            onClick={onPlaySound}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onPlaySound();
+              }
+            }}
+          >
+            {logoImage}
+            <span className="hu-pwa-launch__sound-badge" aria-hidden="true">
+              <span className="hu-pwa-launch__sound-icon">♪</span>
+              <span className="hu-pwa-launch__sound-label">Sound</span>
+            </span>
+          </button>
+        ) : (
+          logoImage
+        )}
       </div>
     </div>
   );

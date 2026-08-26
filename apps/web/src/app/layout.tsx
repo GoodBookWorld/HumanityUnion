@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { HumanityLayout } from "../design-system/components/HumanityLayout";
+import { PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP } from "../features/pwa/pwa-launch-first-paint-bootstrap";
 import { JsonLdScript, buildRootStructuredData } from "../lib/seo/structured-data";
 
 import "./globals.css";
@@ -47,6 +48,10 @@ export default function RootLayout({
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="humanity-app">
+        {/* Pack 22I.2 — runs before React hydration; cover only for installed PWA + unplayed session. */}
+        <script
+          dangerouslySetInnerHTML={{ __html: PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP }}
+        />
         <JsonLdScript data={rootStructuredData} />
         <HumanityLayout>{children}</HumanityLayout>
       </body>

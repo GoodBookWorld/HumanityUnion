@@ -495,3 +495,63 @@
   transform-origin: center center;
   will-change: opacity, transform;
 }
+
+/* Pack 22I.2 — interactive HU logo Sound fallback (autoplay blocked only) */
+.hu-pwa-launch[data-hu-pwa-launch-sound="fallback"] .hu-pwa-launch__logo-wrap {
+  pointer-events: auto;
+}
+
+.hu-pwa-launch__logo-sound {
+  appearance: none;
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hu-pwa-launch__logo-sound:focus-visible {
+  outline: 2px solid var(--hu-color-primary, #0174b0);
+  outline-offset: 4px;
+  border-radius: 0.75rem;
+}
+
+.hu-pwa-launch__logo-sound .hu-pwa-launch__logo {
+  width: min(42vw, 10rem);
+  max-width: 160px;
+}
+
+.hu-pwa-launch__sound-badge {
+  position: absolute;
+  right: 0.15rem;
+  bottom: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(244, 247, 250, 0.92);
+  border: 1px solid rgba(1, 116, 176, 0.28);
+  color: #0174b0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  pointer-events: none;
+}
+
+.hu-pwa-launch__sound-icon {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.hu-pwa-launch__sound-label {
+  font-family: inherit;
+}

@@ -125,7 +125,7 @@ describe("Pack 22I.1 — HU Matrix Reveal PWA launch sequence", () => {
     assert.match(audio, /PWA_LAUNCH_AUDIO_SRC/);
   });
 
-  it("7 — audio playback attempted once", () => {
+  it("7 — audio playback attempted once", async () => {
     let plays = 0;
     const createAudio = () =>
       ({
@@ -136,10 +136,12 @@ describe("Pack 22I.1 — HU Matrix Reveal PWA launch sequence", () => {
         pause() {},
         removeAttribute() {},
         load() {},
+        paused: true,
+        currentTime: 0,
       }) as unknown as HTMLAudioElement;
 
-    attemptPwaLaunchAudio({ createAudio });
-    attemptPwaLaunchAudio({ createAudio });
+    await attemptPwaLaunchAudio({ createAudio });
+    await attemptPwaLaunchAudio({ createAudio });
     assert.equal(plays, 1);
     assert.equal(hasPwaLaunchAudioAttempted(), true);
   });
@@ -148,15 +150,19 @@ describe("Pack 22I.1 — HU Matrix Reveal PWA launch sequence", () => {
     const createAudio = () =>
       ({
         play: async () => {
-          throw new Error("NotAllowedError");
+          const error = new Error("play blocked");
+          error.name = "NotAllowedError";
+          throw error;
         },
         addEventListener() {},
         pause() {},
         removeAttribute() {},
         load() {},
+        paused: true,
+        currentTime: 0,
       }) as unknown as HTMLAudioElement;
 
-    assert.doesNotThrow(() => attemptPwaLaunchAudio({ createAudio }));
+    await assert.doesNotReject(() => attemptPwaLaunchAudio({ createAudio }));
     assert.equal(hasPwaLaunchAudioAttempted(), true);
 
     const tick = advancePwaLaunchClock({
@@ -284,7 +290,7 @@ describe("Pack 22I.1 — HU Matrix Reveal PWA launch sequence", () => {
     assert.doesNotMatch(overlay, /stopPwaLaunchAudio/);
   });
 
-  it("19 — audio does not overlap/restart during route remount", () => {
+  it("19 — audio does not overlap/restart during route remount", async () => {
     let plays = 0;
     const createAudio = () =>
       ({
@@ -295,9 +301,11 @@ describe("Pack 22I.1 — HU Matrix Reveal PWA launch sequence", () => {
         pause() {},
         removeAttribute() {},
         load() {},
+        paused: true,
+        currentTime: 0,
       }) as unknown as HTMLAudioElement;
-    attemptPwaLaunchAudio({ createAudio });
-    attemptPwaLaunchAudio({ createAudio });
+    await attemptPwaLaunchAudio({ createAudio });
+    await attemptPwaLaunchAudio({ createAudio });
     assert.equal(plays, 1);
   });
 
@@ -328,11 +336,11 @@ describe("Pack 22I.1 — HU Matrix Reveal PWA launch sequence", () => {
     assert.ok(PWA_LAUNCH_TIMING.reducedMotionMs <= 1_500);
   });
 
-  it("22 — offline/audio failure still completes", () => {
+  it("22 — offline/audio failure still completes", async () => {
     const createAudio = () => {
       throw new Error("offline");
     };
-    assert.doesNotThrow(() => attemptPwaLaunchAudio({ createAudio }));
+    await assert.doesNotReject(() => attemptPwaLaunchAudio({ createAudio }));
     const done = advancePwaLaunchClock({
       elapsedMs: nominalLaunchVisualDurationMs(fastTiming),
       revealElapsedMs: fastTiming.revealMs + fastTiming.finishingMs,

@@ -42,13 +42,18 @@ describe("Pack 22G — Blog emoji + inline icon insertion", () => {
 
   it("emoji palette is local Unicode with multi-codepoint examples", () => {
     const palette = readWeb("features/blog/blog-emoji-palette.ts");
-    assert.match(palette, /People/);
-    assert.match(palette, /Symbols/);
+    assert.match(palette, /Smileys/);
+    assert.match(palette, /Gestures/);
+    assert.match(palette, /Hearts/);
     assert.match(palette, /Nature/);
+    assert.match(palette, /Food/);
+    assert.match(palette, /Activities/);
+    assert.match(palette, /Travel/);
     assert.match(palette, /Objects/);
+    assert.match(palette, /Civic/);
     assert.match(palette, /Flags/);
     // Multi-codepoint / ZWJ-style sequences present in palette (flags / complex emoji).
-    assert.match(palette, /🇺🇳|🖥️|🗓️|❤️/);
+    assert.match(palette, /🇺🇳|🖥️|🗓️|❤️|🏳️‍🌈|🧑‍🤝‍🧑/);
   });
 
   it("inline icon reuses Blog FileRepository upload path", () => {

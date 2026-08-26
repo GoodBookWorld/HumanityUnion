@@ -650,21 +650,27 @@
   flex-direction: column;
   gap: 0.5rem;
   min-width: min(18rem, 80vw);
-  max-width: 20rem;
+  max-width: min(22rem, 92vw);
+  max-height: min(22rem, 70vh);
   padding: 0.5rem;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .blog-ck-emoji-panel__categories {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
+  max-height: 5.5rem;
+  overflow-y: auto;
+  flex: 0 0 auto;
 }
 
 .blog-ck-emoji-panel__category {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   line-height: 1.2;
-  padding: 0.25rem 0.45rem;
+  padding: 0.28rem 0.45rem;
+  min-height: 1.75rem;
   border-radius: 0.35rem;
   border: 1px solid var(--hu-color-border, rgba(28, 36, 48, 0.18));
   background: var(--hu-surface, #fff);
@@ -680,10 +686,12 @@
 
 .blog-ck-emoji-panel__grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 0.2rem;
-  max-height: 12rem;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.15rem;
+  max-height: min(14rem, 45vh);
   overflow-y: auto;
+  flex: 1 1 auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .blog-ck-emoji-panel__emoji {
@@ -691,9 +699,11 @@
   border: 0;
   background: transparent;
   border-radius: 0.35rem;
-  font-size: 1.25rem;
-  line-height: 1.4;
-  padding: 0.2rem;
+  font-size: 1.2rem;
+  line-height: 1.35;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.15rem;
   cursor: pointer;
 }
 
