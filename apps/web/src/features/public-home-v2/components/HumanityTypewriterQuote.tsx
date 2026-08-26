@@ -1,26 +1,19 @@
-import type { CSSProperties } from "react";
-
-import {
-  HUMANITY_UNITY_QUOTE,
-  HUMANITY_UNITY_QUOTE_LINES,
-  HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS,
-} from "../hero-unity-visual.constants";
-
 /**
  * Multiline adaptive quote for the Home Hero visual panel.
  *
  * - One stable accessible string for assistive tech.
  * - Three semantic visual lines (English composition).
  * - Lines wrap internally for longer translations; container grows upward.
- * - Sequential CSS opacity reveal (translation-safe; no width clipping).
+ * - Visibility is owned by the honeycomb mask (no independent quote show/hide).
  */
-export function HumanityTypewriterQuote() {
-  const style = {
-    "--hero-unity-quote-cycle": `${HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS}s`,
-  } as CSSProperties;
+import {
+  HUMANITY_UNITY_QUOTE,
+  HUMANITY_UNITY_QUOTE_LINES,
+} from "../hero-unity-visual.constants";
 
+export function HumanityTypewriterQuote() {
   return (
-    <div className="hero-unity-quote" style={style}>
+    <div className="hero-unity-quote" data-hero-quote-stable="true">
       <p className="hero-unity-quote__sr-only">{HUMANITY_UNITY_QUOTE}</p>
       <div className="hero-unity-quote__visual" aria-hidden="true">
         {HUMANITY_UNITY_QUOTE_LINES.map((line, index) => (

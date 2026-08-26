@@ -234,8 +234,10 @@ export function HeroQuoteHoneycombVisual() {
       data-hero-quote-honeycomb="true"
       data-hero-hex-backdrop={HERO_HEX_BACKDROP}
       data-hero-quote-cycle-ms={HERO_QUOTE_CYCLE_MS}
-      data-hero-mask-readable-start={HERO_QUOTE_MASK_PHASES.readableStart}
+      data-hero-mask-closed-hold-end={HERO_QUOTE_MASK_PHASES.closedHoldEnd}
+      data-hero-mask-open-end={HERO_QUOTE_MASK_PHASES.openEnd}
       data-hero-mask-readable-end={HERO_QUOTE_MASK_PHASES.readableEnd}
+      data-hero-mask-close-end={HERO_QUOTE_MASK_PHASES.closeEnd}
     >
       <div className="hero-quote-honeycomb__layer hero-quote-honeycomb__layer--mask">
         <canvas

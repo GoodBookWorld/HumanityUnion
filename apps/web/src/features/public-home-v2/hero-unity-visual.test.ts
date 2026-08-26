@@ -73,7 +73,8 @@ describe("Home Visual Pack — quote honeycomb communication visual", () => {
     assert.match(visualCss, /\.hero-unity-quote__line--3\s*\{[^}]*text-align:\s*end/s);
     assert.doesNotMatch(visualCss, /text-align:\s*right/);
     assert.doesNotMatch(visualCss, /\.hero-unity-quote__line[^{]*\{[^}]*white-space:\s*nowrap/s);
-    assert.match(visualCss, /hero-unity-quote-line-1/);
+    assert.doesNotMatch(visualCss, /@keyframes\s+hero-unity-quote-line/);
+    assert.match(visualCss, /\.hero-unity-quote__line\s*\{[^}]*opacity:\s*1/s);
     assert.match(visualCss, /padding-inline-end:\s*0\.15em/);
   });
 

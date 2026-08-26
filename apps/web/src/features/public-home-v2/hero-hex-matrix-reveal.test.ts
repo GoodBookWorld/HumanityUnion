@@ -107,17 +107,14 @@ describe("Home Hero quote honeycomb communication visual", () => {
     assert.doesNotMatch(visual, /fillText|strokeText/);
   });
 
-  it("6 — existing quote timing/rotation contract preserved", () => {
+  it("6 — existing quote cycle duration preserved; mask owns visibility", () => {
     assert.equal(HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS, 12);
     assert.equal(HERO_QUOTE_CYCLE_MS, 12_000);
     const quote = readFeature("components/HumanityTypewriterQuote.tsx");
     const css = readFeature("components/hero-unity-visual.css");
-    assert.match(quote, /HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS/);
-    assert.match(css, /hero-unity-quote-line-1/);
-    assert.match(css, /hero-unity-quote-line-2/);
-    assert.match(css, /hero-unity-quote-line-3/);
-    assert.match(css, /10%,\s*\n\s*58%/);
-    assert.match(css, /86%,\s*\n\s*100%/);
+    assert.match(quote, /data-hero-quote-stable/);
+    assert.doesNotMatch(css, /@keyframes\s+hero-unity-quote-line/);
+    assert.match(css, /\.hero-unity-quote__line\s*\{[^}]*opacity:\s*1/s);
   });
 
   it("7 — honeycomb mask overlays quote", () => {
@@ -136,9 +133,9 @@ describe("Home Hero quote honeycomb communication visual", () => {
     const clusterIds = new Set(field.cells.map((c) => c.clusterId));
     assert.ok(clusterIds.size >= 3);
 
-    const early = HERO_QUOTE_CYCLE_MS * 0.12;
-    const opens = field.clusters.map((c) => heroClusterOpenAmount(c, 0.12));
-    assert.ok(Math.max(...opens) - Math.min(...opens) > 0.05);
+    const early = HERO_QUOTE_CYCLE_MS * 0.25;
+    const opens = field.clusters.map((c) => heroClusterOpenAmount(c, 0.25));
+    assert.ok(Math.max(...opens) - Math.min(...opens) > 0.04);
 
     const cellA = field.cells.find((c) => c.clusterId === 0)!;
     const cellB = field.cells.find((c) => c.clusterId === 1)!;
@@ -147,16 +144,16 @@ describe("Home Hero quote honeycomb communication visual", () => {
     assert.notEqual(oA, oB);
   });
 
-  it("9 — readable quote phase exists (≈85–95% clear)", () => {
+  it("9 — readable quote phase exists (≈90–95% clear)", () => {
     const field = buildHeroHexField({ width: 520, height: 400, seed: 11 });
     const midReadable =
       HERO_QUOTE_CYCLE_MS *
-      ((HERO_QUOTE_MASK_PHASES.readableStart + HERO_QUOTE_MASK_PHASES.readableEnd) /
+      ((HERO_QUOTE_MASK_PHASES.openEnd + HERO_QUOTE_MASK_PHASES.readableEnd) /
         2);
     const clear = heroQuoteHexClearFraction(field, midReadable);
     assert.ok(
       clear >= HERO_QUOTE_READABLE_CLEAR_FRACTION.min - 0.02,
-      `expected clear≥~0.85, got ${clear}`,
+      `expected clear≥~0.90, got ${clear}`,
     );
     assert.ok(
       clear <= HERO_QUOTE_READABLE_CLEAR_FRACTION.max + 0.05,
@@ -164,20 +161,20 @@ describe("Home Hero quote honeycomb communication visual", () => {
     );
   });
 
-  it("10 — mask returns during quote disappearance", () => {
+  it("10 — mask returns during closing / swap window", () => {
     const field = buildHeroHexField({ width: 480, height: 360, seed: 3 });
     const readable =
       HERO_QUOTE_CYCLE_MS *
-      ((HERO_QUOTE_MASK_PHASES.readableStart + HERO_QUOTE_MASK_PHASES.readableEnd) /
+      ((HERO_QUOTE_MASK_PHASES.openEnd + HERO_QUOTE_MASK_PHASES.readableEnd) /
         2);
-    const closing = HERO_QUOTE_CYCLE_MS * 0.72;
-    const closed = HERO_QUOTE_CYCLE_MS * 0.92;
+    const closing = HERO_QUOTE_CYCLE_MS * 0.82;
+    const closed = HERO_QUOTE_CYCLE_MS * 0.95;
     const clearReadable = heroQuoteHexClearFraction(field, readable);
     const clearClosing = heroQuoteHexClearFraction(field, closing);
     const clearClosed = heroQuoteHexClearFraction(field, closed);
     assert.ok(clearReadable > clearClosing);
-    assert.ok(clearClosing > clearClosed);
-    assert.ok(clearClosed < 0.25);
+    assert.ok(clearClosing < 0.4);
+    assert.ok(clearClosed < 0.35);
   });
 
   it("11 — point/mask coordination contract exists", () => {
@@ -188,7 +185,7 @@ describe("Home Hero quote honeycomb communication visual", () => {
       clusters: field.clusters,
       seed: 9,
     });
-    const openMs = HERO_QUOTE_CYCLE_MS * 0.18;
+    const openMs = HERO_QUOTE_CYCLE_MS * 0.28;
     const boosts = heroSignalClusterBoosts(
       points,
       field.clusters,

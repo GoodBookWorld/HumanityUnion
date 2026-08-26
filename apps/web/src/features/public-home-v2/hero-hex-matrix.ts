@@ -1,7 +1,7 @@
 /**
  * Home Hero quote honeycomb + signal field.
  * Honeycomb geometry mirrors Pack 22I / prior hero hex work without Earth/orbit coupling.
- * Mask phases sync to the existing CSS quote cycle (12s).
+ * Mask phases alone reveal/hide the stable quote (12s cycle).
  */
 
 import { HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS } from "./hero-unity-visual.constants";
@@ -15,28 +15,44 @@ export const HERO_HEX_MATRIX = {
   tabletMaxColumns: 18,
 } as const;
 
-/** Quote cycle length in ms — must match HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS. */
+/** Quote / mask cycle length in ms — must match HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS. */
 export const HERO_QUOTE_CYCLE_MS = HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS * 1_000;
 
 /**
- * Mask phase fractions aligned to hero-unity-quote CSS keyframes:
- * line1 visible ~10%, line2 ~20%, line3 ~32%; hold through 58%; dissolve to 86%.
+ * Mask phase fractions on the 12s cycle (quote text stays opacity 1):
+ * 0–15% mostly closed → 15–40% open → 40–70% readable → 70–90% close → 90–100% swap window.
  */
 export const HERO_QUOTE_MASK_PHASES = {
-  /** Quote starts appearing — clusters begin opening. */
-  openStart: 0.02,
-  /** All lines on-screen — target high readability. */
-  readableStart: 0.32,
-  /** Hold ends; dissolve begins. */
-  readableEnd: 0.58,
-  /** Quote fully gone / pause. */
-  closedEnd: 0.86,
+  /** End of initial mostly-closed hold (≈75–90% coverage). */
+  closedHoldEnd: 0.15,
+  /** Clusters finish opening; readable phase begins. */
+  openEnd: 0.4,
+  /** Readable hold ends; clusters begin returning. */
+  readableEnd: 0.7,
+  /** Closing mostly done; swap/protection window begins. */
+  closeEnd: 0.9,
+  /** @deprecated alias — prefer closedHoldEnd */
+  openStart: 0.15,
+  /** @deprecated alias — prefer openEnd */
+  readableStart: 0.4,
+  /** @deprecated alias — prefer closeEnd */
+  closedEnd: 0.9,
 } as const;
 
-/** Target clear fraction of cells during the readable hold. */
+/** Target clear fraction during the readable hold. */
 export const HERO_QUOTE_READABLE_CLEAR_FRACTION = {
-  min: 0.85,
+  min: 0.9,
   max: 0.95,
+} as const;
+
+/** Target mask coverage (1 - clear) at cycle start / swap window. */
+export const HERO_QUOTE_MASK_COVERAGE = {
+  /** Initial closed hold ≈75–90% obscured. */
+  initialMin: 0.75,
+  initialMax: 0.9,
+  /** Pre-swap closing ≈60–85% obscured. */
+  swapMin: 0.6,
+  swapMax: 0.85,
 } as const;
 
 export const HERO_SIGNAL_FIELD = {
@@ -268,36 +284,39 @@ export function heroClusterOpenAmount(
   /** Optional boost 0..1 when a signal approaches this cluster. */
   signalBoost = 0,
 ): number {
-  const { openStart, readableStart, readableEnd, closedEnd } = HERO_QUOTE_MASK_PHASES;
+  const { closedHoldEnd, openEnd, readableEnd, closeEnd } = HERO_QUOTE_MASK_PHASES;
 
-  if (progress < openStart) {
-    return 0;
+  // 0–15%: mostly closed (~80% cover → open ≈ 0.2).
+  if (progress < closedHoldEnd) {
+    return clamp01(0.18 + signalBoost * 0.05);
   }
 
-  // Opening window: clusters stagger by openBias within appear → readable.
-  if (progress < readableStart) {
-    const span = readableStart - openStart;
-    const localStart = openStart + cluster.openBias * span * 0.55;
-    const localEnd = openStart + span * (0.55 + cluster.openBias * 0.4);
+  // 15–40%: clusters stagger open toward readable.
+  if (progress < openEnd) {
+    const span = openEnd - closedHoldEnd;
+    const localStart = closedHoldEnd + cluster.openBias * span * 0.55;
+    const localEnd = closedHoldEnd + span * (0.5 + cluster.openBias * 0.45);
     const base = smoothstep(localStart, localEnd, progress);
-    return clamp01(base + signalBoost * 0.22);
+    // Blend from initial openness to near-full clear.
+    return clamp01(0.18 + base * 0.75 + signalBoost * 0.18);
   }
 
-  // Readable hold: mostly open; sparse living flicker handled per-cell.
+  // 40–70%: readable hold — ~90–95% clear.
   if (progress < readableEnd) {
-    return clamp01(0.92 + signalBoost * 0.05);
+    return clamp01(0.93 + signalBoost * 0.03);
   }
 
-  // Closing window: clusters return with closeBias stagger.
-  if (progress < closedEnd) {
-    const span = closedEnd - readableEnd;
-    const localStart = readableEnd + cluster.closeBias * span * 0.35;
-    const localEnd = readableEnd + span * (0.45 + cluster.closeBias * 0.5);
-    const remaining = 1 - smoothstep(localStart, localEnd, progress);
-    return clamp01(remaining * (0.95 - signalBoost * 0.08));
+  // 70–90%: clusters return irregularly toward ~70–80% cover (open ≈ 0.2–0.3).
+  if (progress < closeEnd) {
+    const span = closeEnd - readableEnd;
+    const localStart = readableEnd + cluster.closeBias * span * 0.2;
+    const localEnd = readableEnd + span * (0.35 + cluster.closeBias * 0.35);
+    const closing = smoothstep(localStart, localEnd, progress);
+    return clamp01(0.93 - closing * 0.72 - signalBoost * 0.04);
   }
 
-  return 0;
+  // 90–100%: swap / protection window — stay mostly closed (~75–80% cover).
+  return clamp01(0.2 + signalBoost * 0.04);
 }
 
 /**
@@ -313,31 +332,26 @@ export function heroQuoteHexCellOpacity(
   signalBoost = 0,
   cycleMs: number = HERO_QUOTE_CYCLE_MS,
 ): number {
-  const progress = ((cycleElapsedMs % cycleMs) + cycleMs) % cycleMs / cycleMs;
+  const progress = (((cycleElapsedMs % cycleMs) + cycleMs) % cycleMs) / cycleMs;
   const open = heroClusterOpenAmount(cluster, progress, signalBoost);
 
   // Neighbor stagger within cluster — small timing offsets, not global noise.
-  const stagger = (cell.clusterOffset - 0.5) * 0.14;
-  let clear = clamp01(open + stagger * open);
+  const stagger = (cell.clusterOffset - 0.5) * 0.12;
+  let clear = clamp01(open + stagger * Math.min(1, open * 1.2));
 
-  // Soft living fragments during readable hold only.
-  const { readableStart, readableEnd } = HERO_QUOTE_MASK_PHASES;
-  if (
-    cell.living &&
-    progress >= readableStart &&
-    progress < readableEnd
-  ) {
-    const wave =
-      0.5 + 0.5 * Math.sin(cycleElapsedMs * 0.0024 + cell.phase);
-    clear = clamp01(clear - wave * 0.08 * (0.4 + 0.6 * cell.clusterWeight));
+  // Very sparse soft fragments during readable hold only (keep ~90–95% clear).
+  const { openEnd, readableEnd, closeEnd } = HERO_QUOTE_MASK_PHASES;
+  if (cell.living && progress >= openEnd && progress < readableEnd) {
+    const wave = 0.5 + 0.5 * Math.sin(cycleElapsedMs * 0.0024 + cell.phase);
+    clear = clamp01(clear - wave * 0.035 * (0.35 + 0.65 * cell.clusterWeight));
   }
 
-  // During late dissolve, some cells return slightly ahead of the cluster mean.
-  if (progress >= readableEnd && progress < HERO_QUOTE_MASK_PHASES.closedEnd) {
+  // During close, some cells return slightly ahead of the cluster mean (not exact reverse).
+  if (progress >= readableEnd && progress < closeEnd) {
     const earlyReturn =
       Math.max(0, 0.55 - cell.clusterOffset) *
-      smoothstep(readableEnd, readableEnd + 0.12, progress) *
-      0.35;
+      smoothstep(readableEnd, readableEnd + 0.1, progress) *
+      0.28;
     clear = clamp01(clear - earlyReturn);
   }
 
@@ -366,6 +380,24 @@ export function heroQuoteHexClearFraction(
     clearSum += 1 - opacity;
   }
   return clearSum / field.cells.length;
+}
+
+/** Mask coverage = 1 − clear fraction. */
+export function heroQuoteHexCoverageFraction(
+  field: HeroHexField,
+  cycleElapsedMs: number,
+  boostByCluster: ReadonlyMap<number, number> = new Map(),
+): number {
+  return 1 - heroQuoteHexClearFraction(field, cycleElapsedMs, boostByCluster);
+}
+
+/** True during the late-cycle window where a quote content swap would be masked. */
+export function heroQuoteIsSwapWindow(
+  cycleElapsedMs: number,
+  cycleMs: number = HERO_QUOTE_CYCLE_MS,
+): boolean {
+  const progress = (((cycleElapsedMs % cycleMs) + cycleMs) % cycleMs) / cycleMs;
+  return progress >= HERO_QUOTE_MASK_PHASES.closeEnd;
 }
 
 export function buildHeroSignalPoints(input: {
@@ -473,10 +505,10 @@ export function heroSignalClusterBoosts(
   height: number,
   cycleMs: number = HERO_QUOTE_CYCLE_MS,
 ): Map<number, number> {
-  const progress = ((elapsedMs % cycleMs) + cycleMs) % cycleMs / cycleMs;
+  const progress = (((elapsedMs % cycleMs) + cycleMs) % cycleMs) / cycleMs;
   const boosts = new Map<number, number>();
   if (
-    progress < HERO_QUOTE_MASK_PHASES.openStart ||
+    progress < HERO_QUOTE_MASK_PHASES.closedHoldEnd ||
     progress > HERO_QUOTE_MASK_PHASES.readableEnd
   ) {
     return boosts;

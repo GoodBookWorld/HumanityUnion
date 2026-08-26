@@ -2,7 +2,7 @@
  * Home Visual Pack — Humanity Unity visual panel.
  *
  * Quote underlay + honeycomb mask + foreground signal points (no WebGL).
- * Quote: three semantic lines, translation-safe wrapping, sequential CSS reveal.
+ * Quote lines stay visually stable; the 12s cycle coordinates mask phases only.
  */
 
 export const HUMANITY_UNITY_QUOTE_LINES = [
@@ -26,7 +26,10 @@ export const HUMANITY_UNITY_AMBER = "#ffd250";
 /** Desktop/tablet signal point count (tablet CSS/JS may use fewer). */
 export const HUMANITY_UNITY_SIGNAL_COUNT = 6;
 
-/** Full quote cycle (line reveals → hold → dissolve → pause). */
+/**
+ * Quote / mask cycle length (seconds).
+ * Content stays stable; honeycomb phases open → hold → close on this clock.
+ */
 export const HUMANITY_UNITY_TYPEWRITER_CYCLE_SECONDS = 12;
 
 /**
