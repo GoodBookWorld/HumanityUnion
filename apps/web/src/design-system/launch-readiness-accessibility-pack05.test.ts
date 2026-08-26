@@ -154,9 +154,8 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
   it("15 — reduced-motion rules exist for Home animations", () => {
     const hero = read("features/public-home-v2/components/hero-unity-visual.css");
     assert.match(hero, /prefers-reduced-motion:\s*reduce/);
-
-    const globe = read("features/public-home-v2/components/HumanityGlobe.tsx");
-    assert.match(globe, /prefers-reduced-motion/);
+    assert.match(hero, /\.hero-unity-globe__spin/);
+    assert.match(hero, /animation:\s*none/);
   });
 
   it("16 — no positive tabindex introduced in Pack 05 helpers", () => {

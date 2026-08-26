@@ -20,7 +20,7 @@ function readApi(relativeFromApiSrc: string): string {
 }
 
 describe("Launch Readiness Pack 06 — Performance & Runtime Efficiency", () => {
-  it("1 — Three.js globe skips WebGL ≤768px and caps DPR", () => {
+  it("1 — Home Earth visual skips ≤768px and uses lightweight SVG/CSS (no WebGL)", () => {
     assert.equal(HUMANITY_UNITY_VISUAL_MIN_WIDTH_PX, 769);
     const visual = readWeb("features/public-home-v2/components/HumanityUnityVisual.tsx");
     const globe = readWeb("features/public-home-v2/components/HumanityGlobe.tsx");
@@ -29,11 +29,9 @@ describe("Launch Readiness Pack 06 — Performance & Runtime Efficiency", () => 
     assert.match(visual, /ssr:\s*false/);
     assert.match(visual, /min-width:\s*769px/);
     assert.match(visual, /mountGlobe/);
-    assert.match(globe, /setPixelRatio\(Math\.min\(window\.devicePixelRatio \|\| 1, 1\.75\)\)/);
-    assert.match(globe, /visibilitychange/);
-    assert.match(globe, /visibilityState === "hidden"/);
-    assert.match(globe, /renderer\.dispose\(\)/);
-    assert.match(globe, /cancelAnimationFrame/);
+    assert.doesNotMatch(globe, /WebGLRenderer|setPixelRatio|from ["']three["']/);
+    assert.match(globe, /hero-unity-globe__earth|HUMANITY_UNITY_EARTH_SRC/);
+    assert.match(globe, /aria-hidden="true"/);
   });
 
   it("2 — Rich editor stays on publishing paths, not public Blog presentation", () => {
@@ -88,12 +86,12 @@ describe("Launch Readiness Pack 06 — Performance & Runtime Efficiency", () => 
     assert.match(optimizer, /enforcePromptBudget/);
   });
 
-  it("8 — Globe cleanup disposes renderer and stops RAF", () => {
+  it("8 — Home Earth composition stays CSS/SVG without WebGL teardown requirements", () => {
     const globe = readWeb("features/public-home-v2/components/HumanityGlobe.tsx");
-    assert.match(globe, /for \(const item of disposables\)/);
-    assert.match(globe, /item\.dispose\(\)/);
-    assert.match(globe, /removeEventListener\("visibilitychange"/);
-    assert.match(globe, /removeChild\(renderer\.domElement\)/);
+    assert.doesNotMatch(globe, /renderer\.dispose|WebGLRenderer|disposables/);
+    assert.match(globe, /hero-unity-globe__layer--rear/);
+    assert.match(globe, /hero-unity-globe__layer--front/);
+    assert.match(globe, /aria-hidden="true"/);
   });
 
   it("9 — Authenticated API client fetches use no-store", () => {

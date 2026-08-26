@@ -3,14 +3,13 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-import { HUMANITY_UNITY_BACKGROUND_SRC } from "../hero-unity-visual.constants";
 import { HumanityTypewriterQuote } from "./HumanityTypewriterQuote";
 
 import "./hero-unity-visual.css";
 
 /**
  * Right-column Home hero visual.
- * Quote is CSS-animated (SSR-safe). Globe is client-only and skipped ≤768px.
+ * Quote is CSS-animated (SSR-safe). Earth + orbits are client-only and skipped ≤768px.
  */
 const HumanityGlobe = dynamic(
   () => import("./HumanityGlobe").then((module) => module.HumanityGlobe),
@@ -42,11 +41,8 @@ export function HumanityUnityVisual() {
       className="hero-unity-visual"
       aria-label="Humanity unity illustration"
     >
-      <div
-        className="hero-unity-visual__background"
-        style={{ backgroundImage: `url(${HUMANITY_UNITY_BACKGROUND_SRC})` }}
-        aria-hidden="true"
-      />
+      {/* Soft atmosphere only — no legacy unity-globe background asset. */}
+      <div className="hero-unity-visual__background" aria-hidden="true" />
       <div className="hero-unity-visual__content">
         <div className="hero-unity-visual__globe-slot">
           {mountGlobe ? <HumanityGlobe /> : null}

@@ -1,4 +1,4 @@
-/* Home Visual Pack 01 / 01.1 / Refinement 02 — right-column unity visual */
+/* Home Visual Pack — right-column unity visual (Earth GIF + orbital communication) */
 
 .hero-unity-visual {
   --hero-unity-blue: #0174b0;
@@ -20,10 +20,20 @@
   position: absolute;
   inset: -4%;
   z-index: 0;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
   pointer-events: none;
+  /* Soft HU atmosphere — gradient only (legacy unity globe background removed). */
+  background:
+    radial-gradient(
+      ellipse 70% 60% at 50% 42%,
+      color-mix(in srgb, var(--hero-unity-blue) 10%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 55% 50% at 50% 48%,
+      color-mix(in srgb, #ffffff 55%, transparent) 0%,
+      transparent 75%
+    );
+  background-repeat: no-repeat;
 }
 
 .hero-unity-visual__content {
@@ -46,22 +56,160 @@
   min-height: 11rem;
   max-height: 16.5rem;
   margin: 0 auto;
-  /* Room for multiline quote anchored at the bottom. */
   margin-bottom: 5.5rem;
 }
 
 .hero-unity-globe {
+  position: relative;
   width: 100%;
   height: 100%;
   min-height: 11rem;
   touch-action: pan-y;
   pointer-events: none;
+  display: grid;
+  place-items: center;
 }
 
-/*
- * Quote — bottom-anchored; grows upward for wrapped translations.
- * Width comes from the panel, not from English ghost-string measurement.
- */
+.hero-unity-globe__layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.hero-unity-globe__layer--rear {
+  z-index: 1;
+}
+
+.hero-unity-globe__earth {
+  position: relative;
+  z-index: 2;
+  width: 60%;
+  max-width: 11.5rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--hero-unity-blue) 18%, transparent),
+    0 0 18px 4px color-mix(in srgb, var(--hero-unity-blue) 22%, transparent);
+}
+
+.hero-unity-globe__earth-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 50%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.hero-unity-globe__layer--front {
+  z-index: 3;
+  clip-path: polygon(0% 52%, 100% 52%, 100% 100%, 0% 100%);
+}
+
+.hero-unity-globe__svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.hero-unity-globe__path {
+  stroke: color-mix(in srgb, var(--hero-unity-blue) 38%, transparent);
+  stroke-width: 0.45;
+  opacity: 0.85;
+}
+
+.hero-unity-globe__layer--front .hero-unity-globe__path {
+  stroke: color-mix(in srgb, var(--hero-unity-blue) 48%, transparent);
+  opacity: 0.95;
+}
+
+.hero-unity-globe__node {
+  fill: var(--hero-unity-amber);
+  stroke: color-mix(in srgb, var(--hero-unity-amber) 40%, #ffffff);
+  stroke-width: 0.25;
+  filter: drop-shadow(0 0 1.2px color-mix(in srgb, var(--hero-unity-amber) 55%, transparent));
+}
+
+.hero-unity-globe__comm {
+  stroke: color-mix(in srgb, var(--hero-unity-amber) 55%, transparent);
+  stroke-width: 0.35;
+  stroke-linecap: round;
+  opacity: 0;
+}
+
+.hero-unity-globe__spin {
+  transform-origin: 50% 50%;
+  transform-box: view-box;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-unity-globe__spin {
+    animation: hero-unity-orbit-spin var(--hero-orbit-duration, 40s) linear infinite;
+    animation-delay: var(--hero-orbit-delay, 0s);
+  }
+
+  .hero-unity-globe__comm {
+    animation: hero-unity-comm-pulse 5.5s ease-in-out infinite;
+    animation-delay: var(--hero-comm-delay, 0s);
+  }
+}
+
+@keyframes hero-unity-orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hero-unity-comm-pulse {
+  0%,
+  12% {
+    opacity: 0;
+  }
+  22%,
+  38% {
+    opacity: 0.55;
+  }
+  52%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 769px) {
+  .hero-unity-globe__svg--rear .hero-unity-globe__orbit-group:nth-child(2) {
+    opacity: 0.4;
+  }
+
+  .hero-unity-globe__earth {
+    width: 58%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-unity-globe__spin,
+  .hero-unity-globe__comm {
+    animation: none;
+  }
+
+  .hero-unity-globe__comm {
+    opacity: 0.28;
+  }
+
+  /*
+   * Earth GIF continues native playback (decorative). Orbits freeze to static
+   * paths/nodes so the composition remains visible without spinning motion.
+   */
+}
+
 .hero-unity-quote {
   position: absolute;
   inset-inline: var(--hero-unity-quote-inline-pad);
@@ -71,7 +219,6 @@
   display: flex;
   justify-content: center;
   box-sizing: border-box;
-  /* Do not clip glyphs; panel overflow:hidden is the outer safety boundary. */
   overflow: visible;
 }
 
@@ -119,7 +266,6 @@
   padding-inline-end: 0.05em;
 }
 
-/* Logical alignment — LTR reads start/center/end; RTL-safe. */
 .hero-unity-quote__line--1 {
   text-align: start;
 }
@@ -146,10 +292,6 @@
   }
 }
 
-/*
- * Sequential reveal → hold → dissolve → pause (~12s).
- * Opacity/filter only — no width animation (avoids final-glyph clipping).
- */
 @keyframes hero-unity-quote-line-1 {
   0%,
   2% {
@@ -248,7 +390,6 @@
   }
 }
 
-/* Pack 01.1 — hide the entire right visual at 768px and below. */
 @media (max-width: 768px) {
   .hero-unity-visual {
     display: none;
