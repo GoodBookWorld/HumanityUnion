@@ -127,9 +127,9 @@ describe("Home Visual Pack 01.1 / Earth GIF orbital — hero unity visual", () =
     assert.match(css, /hero-unity-comm-pulse/);
   });
 
-  it("Earth visual scale is ~55–65% of the composition", () => {
+  it("Earth visual scale is ~50% of the composition", () => {
     const css = readFeature("components/hero-unity-visual.css");
-    assert.match(css, /\.hero-unity-globe__earth\s*\{[^}]*width:\s*60%/s);
+    assert.match(css, /\.hero-unity-globe__earth\s*\{[^}]*width:\s*50%/s);
   });
 
   it("does not configure page-scroll interception", () => {

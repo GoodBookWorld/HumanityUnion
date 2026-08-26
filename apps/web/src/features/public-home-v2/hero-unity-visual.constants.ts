@@ -17,6 +17,9 @@ export const HUMANITY_UNITY_QUOTE = HUMANITY_UNITY_QUOTE_LINES.join(" ");
 /** Central Earth animation — native GIF playback. */
 export const HUMANITY_UNITY_EARTH_SRC = "/illustrations/earth.gif";
 
+/** Earth diameter as a fraction of the orbital composition (~50%). */
+export const HUMANITY_UNITY_EARTH_SCALE = 0.5;
+
 /** Platform primary — matches `--hu-color-primary`. */
 export const HUMANITY_UNITY_BLUE = "#0174b0";
 

@@ -1,10 +1,11 @@
 /**
- * Home hero Earth + orbital communication composition.
- * Pack: earth.gif core with lightweight SVG/CSS orbits (no WebGL).
+ * Home hero Earth + orbital communication + hex matrix reveal.
+ * Pack: earth.gif core, SVG/CSS orbits, Canvas 2D honeycomb mask (no WebGL).
  */
 "use client";
 
 import { HUMANITY_UNITY_EARTH_SRC } from "../hero-unity-visual.constants";
+import { HeroHexMatrixReveal } from "./HeroHexMatrixReveal";
 
 type OrbitLayer = "rear" | "front";
 
@@ -22,7 +23,7 @@ interface OrbitDef {
 
 /**
  * ViewBox 0..100 centered at 50,50.
- * Earth GIF occupies ~60% of the composition (see CSS width).
+ * Earth GIF occupies ~50% of the composition (see CSS width).
  */
 const ORBITS: readonly OrbitDef[] = [
   {
@@ -99,7 +100,6 @@ function OrbitSvg({ layer }: { layer: OrbitLayer }) {
           key={orbit.id}
           className="hero-unity-globe__orbit-group"
           style={{
-            // CSS custom properties drive per-orbit spin timing.
             ["--hero-orbit-duration" as string]: `${orbit.durationSec}s`,
             ["--hero-orbit-delay" as string]: `${orbit.delaySec}s`,
             transform: `rotate(${orbit.rotate}deg)`,
@@ -116,7 +116,6 @@ function OrbitSvg({ layer }: { layer: OrbitLayer }) {
           />
           <g className="hero-unity-globe__spin">
             {orbit.nodes.map((offset, index) => {
-              // Place node on the ellipse: approximate via angle on major circle then scale Y.
               const angle = offset * Math.PI * 2;
               const x = 50 + orbit.rx * Math.cos(angle);
               const y = 50 + orbit.ry * Math.sin(angle);
@@ -152,12 +151,16 @@ function OrbitSvg({ layer }: { layer: OrbitLayer }) {
 
 export function HumanityGlobe() {
   return (
-    <div className="hero-unity-globe" aria-hidden="true" data-hero-earth="gif">
+    <div
+      className="hero-unity-globe"
+      aria-hidden="true"
+      data-hero-earth="gif"
+      data-hero-hex-matrix="true"
+    >
       <div className="hero-unity-globe__layer hero-unity-globe__layer--rear">
         <OrbitSvg layer="rear" />
       </div>
       <div className="hero-unity-globe__earth">
-        {/* Native GIF — no re-encode / duplicate asset */}
         <img
           className="hero-unity-globe__earth-img"
           src={HUMANITY_UNITY_EARTH_SRC}
@@ -170,6 +173,10 @@ export function HumanityGlobe() {
       </div>
       <div className="hero-unity-globe__layer hero-unity-globe__layer--front">
         <OrbitSvg layer="front" />
+      </div>
+      {/* Foreground honeycomb cover — sits above Earth + orbits. */}
+      <div className="hero-unity-globe__layer hero-unity-globe__layer--hex">
+        <HeroHexMatrixReveal />
       </div>
     </div>
   );

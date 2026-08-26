@@ -13,7 +13,7 @@
   min-height: 320px;
   height: 100%;
   border-radius: var(--hu-radius-lg);
-  background: color-mix(in srgb, var(--hu-color-bg-muted) 88%, #ffffff);
+  background: #f4f7fa;
 }
 
 .hero-unity-visual__background {
@@ -85,8 +85,8 @@
 .hero-unity-globe__earth {
   position: relative;
   z-index: 2;
-  width: 60%;
-  max-width: 11.5rem;
+  width: 50%;
+  max-width: 10rem;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -110,6 +110,19 @@
 .hero-unity-globe__layer--front {
   z-index: 3;
   clip-path: polygon(0% 52%, 100% 52%, 100% 100%, 0% 100%);
+}
+
+.hero-unity-globe__layer--hex {
+  z-index: 4;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.hero-unity-globe__hex-matrix {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .hero-unity-globe__svg {
@@ -190,7 +203,7 @@
   }
 
   .hero-unity-globe__earth {
-    width: 58%;
+    width: 50%;
   }
 }
 
@@ -204,9 +217,14 @@
     opacity: 0.28;
   }
 
+  .hero-unity-globe__hex-matrix {
+    /* Canvas skips rAF when reduced-motion; keep layer inert. */
+    opacity: 0;
+  }
+
   /*
    * Earth GIF continues native playback (decorative). Orbits freeze to static
-   * paths/nodes so the composition remains visible without spinning motion.
+   * paths/nodes; hex matrix flicker/orbit motion are suppressed.
    */
 }
 
