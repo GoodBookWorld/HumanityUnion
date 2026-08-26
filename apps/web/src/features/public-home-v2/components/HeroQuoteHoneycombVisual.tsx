@@ -1,6 +1,6 @@
 /**
- * Home Hero quote honeycomb mask + foreground signal points (Canvas 2D / SVG).
- * Sits above hero-unity-quote; syncs mask phases to the existing quote cycle.
+ * Home Hero quote honeycomb mask + solid full-close cover + signal points.
+ * Sits above hero-unity-quote; geometric hex dissolve owns reveal/hide.
  */
 "use client";
 
@@ -9,12 +9,15 @@ import { useEffect, useRef } from "react";
 import { HUMANITY_UNITY_AMBER } from "../hero-unity-visual.constants";
 import {
   HERO_HEX_BACKDROP,
+  HERO_HEX_SCALE_EPSILON,
   HERO_QUOTE_CYCLE_MS,
   HERO_QUOTE_MASK_PHASES,
+  HERO_QUOTE_SOLID_COVER,
   buildHeroHexField,
   buildHeroSignalPoints,
   drawHeroHexCell,
-  heroQuoteHexCellOpacity,
+  heroQuoteHexCellScale,
+  heroQuoteSolidCoverActive,
   heroSignalClusterBoosts,
   heroSignalPointPosition,
   type HeroHexField,
@@ -46,21 +49,17 @@ function paintMask(
     if (!cluster) {
       continue;
     }
-    const opacity = heroQuoteHexCellOpacity(
+    const scale = heroQuoteHexCellScale(
       cell,
       cluster,
       elapsedMs,
       boosts.get(cell.clusterId) ?? 0,
     );
-    if (opacity < 0.02) {
+    if (scale < HERO_HEX_SCALE_EPSILON) {
       continue;
     }
-    drawHeroHexCell(
-      ctx,
-      cell,
-      `rgba(244, 247, 250, ${opacity.toFixed(3)})`,
-      1.06,
-    );
+    // Solid platform hex — geometric scale owns visibility (not alpha).
+    drawHeroHexCell(ctx, cell, HERO_HEX_BACKDROP, scale);
   }
 }
 
@@ -70,17 +69,17 @@ function paintStaticReducedMask(
   width: number,
   height: number,
 ): void {
+  // Fully open static composition — quote readable, no honeycomb / no solid cover.
+  void field;
   ctx.clearRect(0, 0, width, height);
-  for (const cell of field.cells) {
-    // Mostly transparent static honeycomb — content stays readable.
-    const opacity = 0.06 + cell.clusterWeight * 0.08;
-    drawHeroHexCell(
-      ctx,
-      cell,
-      `rgba(244, 247, 250, ${opacity.toFixed(3)})`,
-      1.04,
-    );
+}
+
+function syncSolidCover(cover: HTMLElement | null, elapsedMs: number, reduced: boolean): void {
+  if (!cover) {
+    return;
   }
+  const active = !reduced && heroQuoteSolidCoverActive(elapsedMs);
+  cover.dataset.heroSolidCoverActive = active ? "true" : "false";
 }
 
 function renderSignals(
@@ -117,6 +116,7 @@ function renderSignals(
 export function HeroQuoteHoneycombVisual() {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const coverRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const fieldRef = useRef<HeroHexField | null>(null);
   const pointsRef = useRef<readonly HeroSignalPoint[]>([]);
@@ -127,6 +127,7 @@ export function HeroQuoteHoneycombVisual() {
   useEffect(() => {
     const root = rootRef.current;
     const canvas = canvasRef.current;
+    const cover = coverRef.current;
     const svg = svgRef.current;
     if (!root || !canvas || !svg) {
       return;
@@ -157,6 +158,7 @@ export function HeroQuoteHoneycombVisual() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (reduced) {
         paintStaticReducedMask(ctx, fieldRef.current, cssW, cssH);
+        syncSolidCover(cover, 0, true);
         renderSignals(svg, pointsRef.current, 0, cssW, cssH, true);
         return;
       }
@@ -170,6 +172,7 @@ export function HeroQuoteHoneycombVisual() {
         cssH,
       );
       paintMask(ctx, fieldRef.current, elapsed, boosts, cssW, cssH);
+      syncSolidCover(cover, elapsed, false);
       renderSignals(svg, pointsRef.current, elapsed, cssW, cssH, false);
     };
 
@@ -205,6 +208,7 @@ export function HeroQuoteHoneycombVisual() {
       );
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       paintMask(ctx, field, elapsed, boosts, w, h);
+      syncSolidCover(cover, elapsed, false);
       renderSignals(svg, pointsRef.current, elapsed, w, h, false);
       rafRef.current = window.requestAnimationFrame(tick);
     };
@@ -238,6 +242,7 @@ export function HeroQuoteHoneycombVisual() {
       data-hero-mask-open-end={HERO_QUOTE_MASK_PHASES.openEnd}
       data-hero-mask-readable-end={HERO_QUOTE_MASK_PHASES.readableEnd}
       data-hero-mask-close-end={HERO_QUOTE_MASK_PHASES.closeEnd}
+      data-hero-solid-cover-hold-ms={HERO_QUOTE_SOLID_COVER.holdMs}
     >
       <div className="hero-quote-honeycomb__layer hero-quote-honeycomb__layer--mask">
         <canvas
@@ -246,6 +251,14 @@ export function HeroQuoteHoneycombVisual() {
           aria-hidden="true"
         />
       </div>
+      <div
+        ref={coverRef}
+        className="hero-quote-honeycomb__layer hero-quote-honeycomb__layer--solid-cover"
+        aria-hidden="true"
+        data-hero-solid-cover="true"
+        data-hero-solid-cover-color={HERO_QUOTE_SOLID_COVER.color}
+        data-hero-solid-cover-active="false"
+      />
       <div className="hero-quote-honeycomb__layer hero-quote-honeycomb__layer--signals">
         <svg
           ref={svgRef}

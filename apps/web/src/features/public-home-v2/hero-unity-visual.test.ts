@@ -101,7 +101,8 @@ describe("Home Visual Pack — quote honeycomb communication visual", () => {
     assert.match(css, /\.hero-unity-visual__quote-layer\s*\{[^}]*z-index:\s*1/s);
     assert.match(css, /\.hero-unity-visual__overlay-slot\s*\{[^}]*z-index:\s*2/s);
     assert.match(css, /\.hero-quote-honeycomb__layer--mask\s*\{[^}]*z-index:\s*1/s);
-    assert.match(css, /\.hero-quote-honeycomb__layer--signals\s*\{[^}]*z-index:\s*2/s);
+    assert.match(css, /\.hero-quote-honeycomb__layer--solid-cover\s*\{[^}]*z-index:\s*2/s);
+    assert.match(css, /\.hero-quote-honeycomb__layer--signals\s*\{[^}]*z-index:\s*3/s);
   });
 
   it("signal points use amber accent without orbital spin", () => {

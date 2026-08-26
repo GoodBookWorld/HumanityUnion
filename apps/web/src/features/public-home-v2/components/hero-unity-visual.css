@@ -88,8 +88,20 @@
   z-index: 1;
 }
 
-.hero-quote-honeycomb__layer--signals {
+.hero-quote-honeycomb__layer--solid-cover {
   z-index: 2;
+  background: #f4f7fa;
+  opacity: 0;
+  /* Instant on/off — seam safety, not a decorative fade system. */
+  transition: none;
+}
+
+.hero-quote-honeycomb__layer--solid-cover[data-hero-solid-cover-active="true"] {
+  opacity: 1;
+}
+
+.hero-quote-honeycomb__layer--signals {
+  z-index: 3;
 }
 
 .hero-quote-honeycomb__mask-canvas {

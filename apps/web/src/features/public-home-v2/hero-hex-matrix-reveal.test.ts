@@ -24,7 +24,7 @@ import {
   createHeroHexSeededRandom,
   heroClusterOpenAmount,
   heroQuoteHexClearFraction,
-  heroQuoteHexCellOpacity,
+  heroQuoteHexCellScale,
   heroSignalClusterBoosts,
   heroSignalPointPosition,
 } from "./hero-hex-matrix.js";
@@ -82,7 +82,7 @@ describe("Home Hero quote honeycomb communication visual", () => {
     );
     assert.match(
       css,
-      /\.hero-quote-honeycomb__layer--signals\s*\{[^}]*z-index:\s*2/s,
+      /\.hero-quote-honeycomb__layer--signals\s*\{[^}]*z-index:\s*3/s,
     );
     assert.match(
       css,
@@ -133,15 +133,15 @@ describe("Home Hero quote honeycomb communication visual", () => {
     const clusterIds = new Set(field.cells.map((c) => c.clusterId));
     assert.ok(clusterIds.size >= 3);
 
-    const early = HERO_QUOTE_CYCLE_MS * 0.25;
-    const opens = field.clusters.map((c) => heroClusterOpenAmount(c, 0.25));
+    const early = HERO_QUOTE_CYCLE_MS * 0.28;
+    const opens = field.clusters.map((c) => heroClusterOpenAmount(c, 0.28));
     assert.ok(Math.max(...opens) - Math.min(...opens) > 0.04);
 
-    const cellA = field.cells.find((c) => c.clusterId === 0)!;
-    const cellB = field.cells.find((c) => c.clusterId === 1)!;
-    const oA = heroQuoteHexCellOpacity(cellA, field.clusters[0]!, early);
-    const oB = heroQuoteHexCellOpacity(cellB, field.clusters[1]!, early);
-    assert.notEqual(oA, oB);
+    const scales = field.cells.map((cell) =>
+      heroQuoteHexCellScale(cell, field.clusters[cell.clusterId]!, early),
+    );
+    const unique = new Set(scales.map((s) => s.toFixed(2)));
+    assert.ok(unique.size >= 2);
   });
 
   it("9 — readable quote phase exists (≈90–95% clear)", () => {
@@ -151,14 +151,7 @@ describe("Home Hero quote honeycomb communication visual", () => {
       ((HERO_QUOTE_MASK_PHASES.openEnd + HERO_QUOTE_MASK_PHASES.readableEnd) /
         2);
     const clear = heroQuoteHexClearFraction(field, midReadable);
-    assert.ok(
-      clear >= HERO_QUOTE_READABLE_CLEAR_FRACTION.min - 0.02,
-      `expected clear≥~0.90, got ${clear}`,
-    );
-    assert.ok(
-      clear <= HERO_QUOTE_READABLE_CLEAR_FRACTION.max + 0.05,
-      `expected clear≤~0.95, got ${clear}`,
-    );
+    assert.equal(clear, HERO_QUOTE_READABLE_CLEAR_FRACTION.min);
   });
 
   it("10 — mask returns during closing / swap window", () => {
@@ -167,14 +160,14 @@ describe("Home Hero quote honeycomb communication visual", () => {
       HERO_QUOTE_CYCLE_MS *
       ((HERO_QUOTE_MASK_PHASES.openEnd + HERO_QUOTE_MASK_PHASES.readableEnd) /
         2);
-    const closing = HERO_QUOTE_CYCLE_MS * 0.82;
-    const closed = HERO_QUOTE_CYCLE_MS * 0.95;
+    const closing = HERO_QUOTE_CYCLE_MS * 0.75;
+    const closed = HERO_QUOTE_CYCLE_MS * 0.9;
     const clearReadable = heroQuoteHexClearFraction(field, readable);
     const clearClosing = heroQuoteHexClearFraction(field, closing);
     const clearClosed = heroQuoteHexClearFraction(field, closed);
     assert.ok(clearReadable > clearClosing);
-    assert.ok(clearClosing < 0.4);
-    assert.ok(clearClosed < 0.35);
+    assert.equal(clearReadable, 1);
+    assert.equal(clearClosed, 0);
   });
 
   it("11 — point/mask coordination contract exists", () => {

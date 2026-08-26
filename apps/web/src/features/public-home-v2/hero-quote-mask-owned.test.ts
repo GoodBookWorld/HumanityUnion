@@ -68,7 +68,7 @@ describe("Home Hero quote reveal owned by honeycomb mask", () => {
   it("4 — honeycomb is sole reveal/hide mechanism", () => {
     const visual = readFeature("components/HeroQuoteHoneycombVisual.tsx");
     const css = readFeature("components/hero-unity-visual.css");
-    assert.match(visual, /heroQuoteHexCellOpacity|paintMask/);
+    assert.match(visual, /heroQuoteHexCellScale|paintMask/);
     assert.match(css, /hero-quote-honeycomb__layer--mask/);
     assert.doesNotMatch(css, /@keyframes\s+hero-unity-quote/);
     assert.equal(HERO_HEX_BACKDROP, "#f4f7fa");
@@ -78,14 +78,7 @@ describe("Home Hero quote reveal owned by honeycomb mask", () => {
     const field = buildHeroHexField({ width: 520, height: 400, seed: 11 });
     const early = HERO_QUOTE_CYCLE_MS * 0.08;
     const cover = heroQuoteHexCoverageFraction(field, early);
-    assert.ok(
-      cover >= HERO_QUOTE_MASK_COVERAGE.initialMin - 0.03,
-      `initial cover ${cover}`,
-    );
-    assert.ok(
-      cover <= HERO_QUOTE_MASK_COVERAGE.initialMax + 0.03,
-      `initial cover ${cover}`,
-    );
+    assert.equal(cover, HERO_QUOTE_MASK_COVERAGE.initialMin);
   });
 
   it("6 — mask opens in local pseudo-random clusters", () => {
@@ -102,14 +95,7 @@ describe("Home Hero quote reveal owned by honeycomb mask", () => {
       HERO_QUOTE_CYCLE_MS *
       ((HERO_QUOTE_MASK_PHASES.openEnd + HERO_QUOTE_MASK_PHASES.readableEnd) / 2);
     const clear = heroQuoteHexClearFraction(field, mid);
-    assert.ok(
-      clear >= HERO_QUOTE_READABLE_CLEAR_FRACTION.min - 0.02,
-      `readable clear ${clear}`,
-    );
-    assert.ok(
-      clear <= HERO_QUOTE_READABLE_CLEAR_FRACTION.max + 0.03,
-      `readable clear ${clear}`,
-    );
+    assert.equal(clear, HERO_QUOTE_READABLE_CLEAR_FRACTION.min);
   });
 
   it("8 — mask returns before quote swap", () => {
@@ -117,29 +103,21 @@ describe("Home Hero quote reveal owned by honeycomb mask", () => {
     const readable =
       HERO_QUOTE_CYCLE_MS *
       ((HERO_QUOTE_MASK_PHASES.openEnd + HERO_QUOTE_MASK_PHASES.readableEnd) / 2);
-    const closing = HERO_QUOTE_CYCLE_MS * 0.82;
+    const closing = HERO_QUOTE_CYCLE_MS * 0.75;
     const clearReadable = heroQuoteHexClearFraction(field, readable);
     const clearClosing = heroQuoteHexClearFraction(field, closing);
     assert.ok(clearReadable > clearClosing + 0.2);
-    const cover = heroQuoteHexCoverageFraction(field, closing);
-    assert.ok(cover >= HERO_QUOTE_MASK_COVERAGE.swapMin - 0.05);
-    assert.ok(cover <= HERO_QUOTE_MASK_COVERAGE.swapMax + 0.05);
+    const cover = heroQuoteHexCoverageFraction(field, HERO_QUOTE_CYCLE_MS * 0.9);
+    assert.equal(cover, HERO_QUOTE_MASK_COVERAGE.swapMin);
   });
 
   it("9 — quote swap occurs while sufficiently masked", () => {
     const field = buildHeroHexField({ width: 520, height: 400, seed: 5 });
-    const swapMs = HERO_QUOTE_CYCLE_MS * 0.95;
+    const swapMs = HERO_QUOTE_CYCLE_MS * 0.92;
     assert.equal(heroQuoteIsSwapWindow(swapMs), true);
     assert.equal(heroQuoteIsSwapWindow(HERO_QUOTE_CYCLE_MS * 0.5), false);
     const cover = heroQuoteHexCoverageFraction(field, swapMs);
-    assert.ok(
-      cover >= HERO_QUOTE_MASK_COVERAGE.swapMin - 0.02,
-      `swap cover ${cover}`,
-    );
-    assert.ok(
-      cover <= HERO_QUOTE_MASK_COVERAGE.swapMax + 0.05,
-      `swap cover ${cover}`,
-    );
+    assert.equal(cover, HERO_QUOTE_MASK_COVERAGE.swapMin);
   });
 
   it("10 — no visible quote crossfade", () => {
@@ -158,7 +136,7 @@ describe("Home Hero quote reveal owned by honeycomb mask", () => {
     );
     assert.match(
       css,
-      /\.hero-quote-honeycomb__layer--signals\s*\{[^}]*z-index:\s*2/s,
+      /\.hero-quote-honeycomb__layer--signals\s*\{[^}]*z-index:\s*3/s,
     );
   });
 
@@ -196,9 +174,9 @@ describe("Home Hero quote reveal owned by honeycomb mask", () => {
       "forge humanity",
     ]);
     assert.equal(HERO_QUOTE_MASK_PHASES.closedHoldEnd, 0.15);
-    assert.equal(HERO_QUOTE_MASK_PHASES.openEnd, 0.4);
-    assert.equal(HERO_QUOTE_MASK_PHASES.readableEnd, 0.7);
-    assert.equal(HERO_QUOTE_MASK_PHASES.closeEnd, 0.9);
+    assert.equal(HERO_QUOTE_MASK_PHASES.openEnd, 0.35);
+    assert.equal(HERO_QUOTE_MASK_PHASES.readableEnd, 0.65);
+    assert.equal(HERO_QUOTE_MASK_PHASES.closeEnd, 0.85);
   });
 
   it("15 — Humanity AI principle line unaffected", () => {
