@@ -1,7 +1,9 @@
 export { default as authRouter } from "./auth.routes.js";
 export { authenticationMiddleware, requireAuthenticationMiddleware } from "./auth.middleware.js";
 export {
+  ACCOUNT_ACCESS_SUSPENDED_MESSAGE,
   authenticatedWorkspaceWriteMiddleware,
+  requireActiveAccountForMutationsMiddleware,
   requireVerifiedEmailForMutationsMiddleware,
 } from "./auth-workspace-gate.js";
 export { createAuthRateLimiter, clearAuthRateLimitBucketsForTests } from "./auth-rate-limit.js";

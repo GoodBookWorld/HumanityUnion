@@ -1,0 +1,320 @@
+/**
+ * Pack 24C — ACTUC Home section + presentation modal (scoped; no global HU token changes).
+ */
+
+.public-home-v2__section--actuc {
+  --actuc-bg: #0b0f19;
+  --actuc-accent-cyan: #38bdf8;
+  --actuc-accent-yellow: #fad033;
+  --actuc-accent-yellow-subtle: rgba(250, 208, 51, 0.3);
+  --actuc-text: #f8fafc;
+  --actuc-text-muted: #94a3b8;
+  --actuc-border-slate: #334155;
+  --actuc-card: rgba(15, 23, 42, 0.75);
+
+  background: var(--actuc-bg);
+  color: var(--actuc-text);
+  border-color: var(--actuc-accent-yellow-subtle);
+}
+
+.public-home-v2__section--actuc::before {
+  display: none;
+}
+
+.actuc-home {
+  position: relative;
+  z-index: 1;
+}
+
+.actuc-home__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.25rem;
+}
+
+.actuc-home__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 0.85rem;
+  min-width: 0;
+}
+
+.actuc-home__logo {
+  width: 2.75rem;
+  height: auto;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.actuc-home__name {
+  width: auto;
+  height: 2.35rem;
+  max-width: min(11rem, 42vw);
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.actuc-home__slogan {
+  margin: 0;
+  font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+  letter-spacing: 0.02em;
+  color: var(--actuc-accent-cyan);
+  white-space: nowrap;
+}
+
+.actuc-home__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--actuc-accent-yellow-subtle);
+  border-radius: 0.2rem;
+  background: rgba(250, 208, 51, 0.08);
+  color: var(--actuc-accent-yellow);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.35;
+  max-width: 100%;
+}
+
+.actuc-home__badge:hover,
+.actuc-home__badge:focus-visible {
+  border-color: var(--actuc-accent-yellow);
+  outline: none;
+}
+
+.actuc-home__badge:focus-visible {
+  box-shadow: 0 0 0 2px var(--actuc-bg), 0 0 0 4px var(--actuc-accent-cyan);
+}
+
+.actuc-home__badge-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--actuc-accent-yellow);
+  box-shadow: 0 0 6px rgba(250, 208, 51, 0.55);
+}
+
+/* Modal — HU dialog contract (backdrop + centered panel + scroll) */
+.actuc-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.actuc-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(2, 6, 14, 0.72);
+  cursor: pointer;
+}
+
+.actuc-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(52rem, 100%);
+  max-height: min(88vh, 44rem);
+  overflow: auto;
+  padding: 1.25rem 1.35rem 1.5rem;
+  border: 1px solid var(--actuc-accent-yellow-subtle, rgba(250, 208, 51, 0.3));
+  border-radius: var(--hu-radius-lg, 0.75rem);
+  background: #0b0f19;
+  color: #f8fafc;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+.actuc-modal__dialog:focus {
+  outline: none;
+}
+
+.actuc-modal__chrome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.actuc-modal__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid rgba(250, 208, 51, 0.3);
+  border-radius: 0.2rem;
+  background: rgba(250, 208, 51, 0.08);
+  color: #fad033;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.actuc-modal__status-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: #fad033;
+  box-shadow: 0 0 6px rgba(250, 208, 51, 0.55);
+}
+
+.actuc-modal__title {
+  margin: 0 0 0.85rem;
+  font-size: clamp(1.45rem, 3vw, 2.15rem);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+}
+
+.actuc-modal__title span {
+  color: #fad033;
+}
+
+.actuc-modal__subtitle {
+  margin: 0 0 1.35rem;
+  max-width: 48rem;
+  color: #94a3b8;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.actuc-modal__subtitle strong {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.actuc-modal__pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.35rem;
+}
+
+.actuc-modal__pillar {
+  padding: 1.1rem 1rem;
+  border: 1px solid #334155;
+  border-radius: 0.4rem;
+  background: rgba(15, 23, 42, 0.75);
+}
+
+.actuc-modal__pillar-node {
+  margin: 0 0 0.55rem;
+  color: #fad033;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.actuc-modal__pillar-title {
+  margin: 0 0 0.45rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.actuc-modal__pillar-desc {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.actuc-modal__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.actuc-modal__motto {
+  margin: 0;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  line-height: 1.45;
+}
+
+.actuc-modal__motto strong {
+  color: #fad033;
+}
+
+.actuc-modal__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.35rem;
+  border-radius: 0.25rem;
+  background: #fad033;
+  color: #0b0f19;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.actuc-modal__cta:hover,
+.actuc-modal__cta:focus-visible {
+  background: #fde047;
+  outline: none;
+}
+
+@media (max-width: 900px) {
+  .actuc-modal__pillars {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .actuc-home__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actuc-home__identity {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actuc-home__slogan {
+    white-space: normal;
+  }
+
+  .actuc-home__badge {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .actuc-modal__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actuc-modal__cta {
+    width: 100%;
+  }
+}

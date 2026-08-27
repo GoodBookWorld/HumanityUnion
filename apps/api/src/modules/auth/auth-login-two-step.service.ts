@@ -17,7 +17,7 @@ import {
   revokeActiveEmailConfirmationCodesExcept,
 } from "../email/email-confirmation-code.repository.js";
 import { sendLoginTwoStepCodeEmail } from "../email/email.service.js";
-import { AuthValidationError } from "./auth.errors.js";
+import { AuthValidationError, UserDisabledError } from "./auth.errors.js";
 import { createPendingLoginTwoStepToken } from "./auth-pending-login-two-step.tokens.js";
 import { issueAuthSession } from "./auth-session.issue.js";
 import { findAuthUserById, updateAuthUserLastLogin } from "./auth-user.repository.js";
@@ -211,6 +211,10 @@ export async function confirmLoginTwoStepCode(input: {
 
   if (!user || user.emailVerificationStatus !== "verified" || !user.loginEmailTwoStepEnabled) {
     throw new AuthValidationError("Login verification session is invalid.");
+  }
+
+  if (user.status === "disabled") {
+    throw new UserDisabledError();
   }
 
   const activeCode = await findActiveEmailConfirmationCode({

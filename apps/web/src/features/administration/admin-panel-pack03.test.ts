@@ -94,10 +94,14 @@ describe("Admin Panel Pack 03 — Views & Participant directory", () => {
     assert.match(section, /Previous/);
     assert.match(section, /Next/);
     assert.match(section, /membershipStatus/);
+    assert.match(section, /adminParticipantPublicProfilePath/);
+    assert.match(section, /View profile/);
     assert.doesNotMatch(section, /passwordHash|refreshToken|accessToken/);
+    assert.doesNotMatch(section, /\/member\/\$\{encodeURIComponent\(row\.uniqueName\)\}/);
 
     const api = read("features/administration/admin-participant-directory-api.ts");
     assert.match(api, /\/api\/v1\/admin\/participants/);
+    assert.match(api, /public-profile/);
   });
 
   it("isAdminAccountRole remains canonical for client gates", () => {

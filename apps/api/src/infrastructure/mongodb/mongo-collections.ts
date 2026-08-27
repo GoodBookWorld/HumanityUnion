@@ -49,6 +49,8 @@ export const MONGO_COLLECTIONS = {
   emailConfirmationCodes: "email_confirmation_codes",
   emailConfirmationSendLog: "email_confirmation_send_log",
   betaInvites: "beta_invites",
+  /** Pack 24B — Participant suspension records (review token hash only; never raw token). */
+  participantSuspensions: "participant_suspensions",
   initiativeComments: "initiative_comments",
   initiativeCommentReactions: "initiative_comment_reactions",
   initiativeAnalysisReactions: "initiative_analysis_reactions",

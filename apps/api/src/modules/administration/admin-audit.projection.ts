@@ -67,6 +67,9 @@ export const ADMINISTRATION_AUDIT_ACTIONS: readonly AdministrationAuditAction[] 
   "editor.deactivate",
   "beta.invite.create",
   "beta.invite.revoke",
+  "participant.suspend",
+  "participant.restore",
+  "participant.suspension_review.submit",
 ] as const;
 
 const READ_SENSITIVE_PATTERNS = [
@@ -86,6 +89,9 @@ const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 
 /** Derive browser category from action taxonomy (not persisted). */
 export function deriveAdminAuditCategory(action: AdministrationAuditAction): AdminAuditCategory {
+  if (action.startsWith("participant.")) {
+    return "participants";
+  }
   if (action.startsWith("beta.")) {
     return "beta_access";
   }
@@ -159,6 +165,8 @@ export function resolveAdminAuditTargetHref(
       return "/admin/publishing";
     case "beta_invite":
       return "/admin/beta-access";
+    case "participant":
+      return "/admin/participants";
     case "seo_page_override":
       return "/admin/seo";
     case "media_resource":
@@ -179,6 +187,8 @@ export function formatAdminAuditTargetLabel(targetType: string, targetId: string
       return `Initiative ${shortId}`;
     case "beta_invite":
       return `Beta invite ${shortId}`;
+    case "participant":
+      return `Participant ${shortId}`;
     case "blog_post":
       return `Publication ${shortId}`;
     case "blog_subscriber":

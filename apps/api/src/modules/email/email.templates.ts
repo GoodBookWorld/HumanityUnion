@@ -604,6 +604,55 @@ export function renderBlogSubscriptionAdminMessageEmail(
   };
 }
 
+export interface ParticipantSuspendedTemplateInput {
+  displayName: string;
+  reasonLabel: string;
+  reviewUrl: string;
+}
+
+/** Pack 24B — suspension notice with review CTA (link only; no form/textarea). */
+export function renderParticipantSuspendedEmail(
+  input: ParticipantSuspendedTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Your participation has been suspended</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">Your Humanity Union account has been suspended due to: <strong>${input.reasonLabel}</strong>.</p>
+    <p style="margin:0 0 16px;line-height:1.6;">If you believe this was a mistake, you may request a review using the secure link below. This link does not require you to sign in.</p>
+    ${primaryButton("Request a review", input.reviewUrl)}
+    <p style="margin:0;line-height:1.6;font-size:13px;color:#64748b;">If you did not expect this message, you can ignore it or contact support.</p>
+  `;
+
+  return {
+    subject: "Your Humanity Union participation has been suspended",
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\nYour Humanity Union account has been suspended due to: ${input.reasonLabel}.\n\nRequest a review (no sign-in required):\n${input.reviewUrl}\n\nIf you did not expect this message, you can ignore it or contact support.`,
+  };
+}
+
+export interface ParticipantRestoredTemplateInput {
+  displayName: string;
+  accountUrl: string;
+}
+
+/** Pack 24B — optional notice that participation was restored. */
+export function renderParticipantRestoredEmail(
+  input: ParticipantRestoredTemplateInput,
+): EmailTemplateContent {
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Your participation has been restored</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">Hello ${input.displayName},</p>
+    <p style="margin:0 0 16px;line-height:1.6;">Your Humanity Union account access has been restored. You can sign in and continue participating.</p>
+    ${primaryButton("Go to your account", input.accountUrl)}
+  `;
+
+  return {
+    subject: "Your Humanity Union participation has been restored",
+    html: wrapEmailLayout(htmlBody),
+    text: `Hello ${input.displayName},\n\nYour Humanity Union account access has been restored.\n\nGo to your account:\n${input.accountUrl}`,
+  };
+}
+
 export function renderEmailTemplate(
   template: EmailTemplateId,
   input: Record<string, string | number | undefined>,
@@ -690,6 +739,17 @@ export function renderEmailTemplate(
         ...(typeof input.ctaLabel === "string" && typeof input.ctaUrl === "string"
           ? { ctaLabel: input.ctaLabel, ctaUrl: input.ctaUrl }
           : {}),
+      });
+    case "participant_suspended":
+      return renderParticipantSuspendedEmail({
+        displayName: String(input.displayName ?? "Participant"),
+        reasonLabel: String(input.reasonLabel ?? ""),
+        reviewUrl: String(input.reviewUrl ?? ""),
+      });
+    case "participant_restored":
+      return renderParticipantRestoredEmail({
+        displayName: String(input.displayName ?? "Participant"),
+        accountUrl: String(input.accountUrl ?? ""),
       });
     default: {
       const unsupported: never = template;

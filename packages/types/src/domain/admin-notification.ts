@@ -11,6 +11,8 @@ export const ADMIN_NOTIFICATION_TYPES = [
   "public_choice_published",
   "blog_post_published",
   "operational_alert",
+  /** Pack 24B — Participant submitted suspension review request. */
+  "participant_suspension_review_requested",
 ] as const;
 
 export type AdminNotificationType = (typeof ADMIN_NOTIFICATION_TYPES)[number];

@@ -18,6 +18,8 @@ export {
   sendWorkspaceMessageAlertEmail,
   sendBlogAuthorApplicationStatusEmail,
   sendBlogPublicationStatusEmail,
+  sendParticipantSuspendedEmail,
+  sendParticipantRestoredEmail,
   isParticipantEmailNotificationsEnabled,
   getEmailProviderHealth,
   drainEmailQueueForTests,

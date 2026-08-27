@@ -1428,6 +1428,17 @@ export type {
   AdminPublicChoiceDirectoryResponse,
   AdminParticipantDirectoryItem,
   AdminParticipantDirectoryResponse,
+  AdminParticipantPublicProfileResolve,
+  AdminParticipantSuspendInput,
+  AdminParticipantSuspendResult,
+  AdminParticipantRestoreResult,
+  AdminParticipantSuspensionSummary,
+  ParticipantSuspensionReasonCode,
+  ParticipantSuspensionRecordStatus,
+  ParticipantSuspensionReviewRequestStatus,
+  ParticipantSuspensionReviewPublic,
+  ParticipantSuspensionReviewSubmitInput,
+  ParticipantSuspensionReviewSubmitResult,
   CapabilityScope,
   CapabilityScopeType,
   OwnershipCheck,
@@ -1436,7 +1447,10 @@ export type {
   PlatformCapabilityGrantSource,
   PlatformCapabilityId,
 } from "./administration.js";
-export { PLATFORM_CAPABILITY_IDS } from "./administration.js";
+export {
+  PLATFORM_CAPABILITY_IDS,
+  PARTICIPANT_SUSPENSION_REASON_CODES,
+} from "./administration.js";
 export type {
   PlatformStatisticsCounts,
   PlatformStatisticsMeta,

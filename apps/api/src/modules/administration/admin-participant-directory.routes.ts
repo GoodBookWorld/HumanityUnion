@@ -12,7 +12,10 @@ import {
 } from "./administration.errors.js";
 import {
   AdminParticipantDirectoryValidationError,
+  AdminParticipantNotFoundError,
+  AdminParticipantPublicProfileUnavailableError,
   listAdminParticipants,
+  resolveAdminParticipantPublicProfile,
 } from "./admin-participant-directory.service.js";
 
 const adminParticipantDirectoryRouter = Router();
@@ -38,6 +41,14 @@ function resolveErrorStatus(error: unknown): number {
 
   if (error instanceof AdminParticipantDirectoryValidationError) {
     return 400;
+  }
+
+  if (error instanceof AdminParticipantNotFoundError) {
+    return 404;
+  }
+
+  if (error instanceof AdminParticipantPublicProfileUnavailableError) {
+    return 404;
   }
 
   return 500;
@@ -106,6 +117,27 @@ adminParticipantDirectoryRouter.get(
       });
 
       res.json(createSuccessResponse(result, "Admin Participant directory loaded."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+/**
+ * Pack 24A — Admin-only resolve of CURRENT `/member/{publicName}`.
+ * Path uses stable Participant memberId; never embeds a stale uniqueName.
+ */
+adminParticipantDirectoryRouter.get(
+  "/:participantId/public-profile",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const result = await resolveAdminParticipantPublicProfile({
+        actorUserId: req.auth!.id,
+        participantId: String(req.params.participantId ?? ""),
+      });
+      res.json(createSuccessResponse(result, "Public profile resolved."));
     } catch (error) {
       handleError(res, error);
     }

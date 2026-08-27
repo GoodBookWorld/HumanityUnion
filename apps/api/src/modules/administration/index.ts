@@ -14,7 +14,10 @@ export {
 } from "./administration.errors.js";
 export {
   listAdminParticipants,
+  resolveAdminParticipantPublicProfile,
   AdminParticipantDirectoryValidationError,
+  AdminParticipantNotFoundError,
+  AdminParticipantPublicProfileUnavailableError,
 } from "./admin-participant-directory.service.js";
 export { default as adminParticipantDirectoryRouter } from "./admin-participant-directory.routes.js";
 export {

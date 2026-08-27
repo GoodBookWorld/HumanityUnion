@@ -520,6 +520,44 @@ export async function sendBlogPublicationStatusEmail(input: {
   });
 }
 
+/** Pack 24B — suspension notice with tokenized review CTA (never embeds a form). */
+export async function sendParticipantSuspendedEmail(input: {
+  to: string;
+  displayName: string;
+  reasonLabel: string;
+  reviewToken: string;
+}): Promise<EmailDeliveryResult> {
+  const config = resolveEmailConfig();
+  const reviewUrl = `${config.publicSiteUrl}/account/suspension-review?token=${encodeURIComponent(input.reviewToken)}`;
+
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "participant_suspended",
+    templateInput: {
+      displayName: input.displayName,
+      reasonLabel: input.reasonLabel,
+      reviewUrl,
+    },
+  });
+}
+
+/** Pack 24B — optional restore notice (best-effort). */
+export async function sendParticipantRestoredEmail(input: {
+  to: string;
+  displayName: string;
+}): Promise<EmailDeliveryResult> {
+  const config = resolveEmailConfig();
+
+  return sendTransactionalEmailAndAwait({
+    to: input.to,
+    template: "participant_restored",
+    templateInput: {
+      displayName: input.displayName,
+      accountUrl: `${config.publicSiteUrl}/login`,
+    },
+  });
+}
+
 export async function getEmailProviderHealth(): Promise<EmailProviderHealth> {
   const provider = resolveEmailProvider();
   const health = await provider.health();
@@ -550,6 +588,8 @@ export const MailDeliveryService = {
   sendWorkspaceMessageAlertEmail,
   sendBlogAuthorApplicationStatusEmail,
   sendBlogPublicationStatusEmail,
+  sendParticipantSuspendedEmail,
+  sendParticipantRestoredEmail,
   isParticipantEmailNotificationsEnabled,
   getEmailProviderHealth,
 } as const;

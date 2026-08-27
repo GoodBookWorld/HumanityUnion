@@ -381,6 +381,11 @@ export async function getAuthUserPublicById(userId: string): Promise<AuthUserPub
   return toAuthUserPublic(user);
 }
 
+/**
+ * Maps access-token claims to AuthIdentity for request authentication evidence.
+ * Pack 24B.1 — claim-derived `status: "active"` is NOT authoritative for mutations;
+ * write gates re-load auth_users.status. Do not treat this helper as suspension SoT.
+ */
 export function authIdentityFromAccessTokenClaims(claims: {
   sub: string;
   memberId: string;

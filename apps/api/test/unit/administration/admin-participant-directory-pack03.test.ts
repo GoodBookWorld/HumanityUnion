@@ -16,6 +16,8 @@ describe("Admin Participant directory — Pack 03 contracts", () => {
     assert.match(routes, /authenticationMiddleware/);
     assert.match(routes, /requireAuthenticationMiddleware/);
     assert.match(routes, /listAdminParticipants/);
+    assert.match(routes, /\/:participantId\/public-profile/);
+    assert.match(routes, /resolveAdminParticipantPublicProfile/);
 
     const app = read("app.ts");
     assert.match(app, /\/api\/v1\/admin\/participants/);
@@ -27,6 +29,7 @@ describe("Admin Participant directory — Pack 03 contracts", () => {
     assert.match(service, /listAuthUsersForAdmin/);
     assert.match(service, /findMembersByIdentityIds/);
     assert.match(service, /findMembershipsByUserIds/);
+    assert.match(service, /resolveAdminParticipantPublicProfile/);
     assert.doesNotMatch(service, /passwordHash:/);
     assert.doesNotMatch(service, /refreshToken|accessToken/);
   });

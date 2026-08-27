@@ -1,0 +1,21 @@
+.suspension-review {
+  display: grid;
+  gap: 1rem;
+  max-width: 36rem;
+}
+
+.suspension-review__lede {
+  margin: 0;
+}
+
+.suspension-review__form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.suspension-review__textarea {
+  min-height: 8rem;
+  resize: vertical;
+  font: inherit;
+  line-height: 1.45;
+}

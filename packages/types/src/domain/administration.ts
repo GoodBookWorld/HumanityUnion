@@ -157,7 +157,10 @@ export type AdministrationAuditAction =
   | "editor.activate"
   | "editor.deactivate"
   | "beta.invite.create"
-  | "beta.invite.revoke";
+  | "beta.invite.revoke"
+  | "participant.suspend"
+  | "participant.restore"
+  | "participant.suspension_review.submit";
 
 export interface AdministrationAuditRecord {
   readonly auditId: string;
@@ -249,6 +252,69 @@ export interface AdminParticipantDirectoryItem {
     readonly applicationStatus: string;
     readonly memberNumber: string | null;
   };
+  /** Pack 24B — present when account is suspended (auth status disabled). */
+  readonly suspension?: AdminParticipantSuspensionSummary;
+}
+
+/** Pack 24B — three standard suspension reason codes. */
+export const PARTICIPANT_SUSPENSION_REASON_CODES = [
+  "community_standards_violation",
+  "spam_or_abusive_activity",
+  "security_or_account_integrity",
+] as const;
+
+export type ParticipantSuspensionReasonCode =
+  (typeof PARTICIPANT_SUSPENSION_REASON_CODES)[number];
+
+export type ParticipantSuspensionRecordStatus = "active" | "restored";
+
+export type ParticipantSuspensionReviewRequestStatus = "pending" | "resolved";
+
+export interface AdminParticipantSuspensionSummary {
+  readonly suspensionId: string;
+  readonly reasonCode: ParticipantSuspensionReasonCode;
+  readonly suspendedAt: string;
+  readonly hasPendingReview: boolean;
+  readonly reviewRequestId?: string;
+  readonly reviewExplanation?: string;
+  readonly reviewSubmittedAt?: string;
+}
+
+export interface AdminParticipantSuspendInput {
+  readonly reasonCode: ParticipantSuspensionReasonCode;
+}
+
+export interface AdminParticipantSuspendResult {
+  readonly participantId: string;
+  readonly suspensionId: string;
+  readonly status: "disabled";
+  readonly emailQueued: boolean;
+  readonly emailWarning?: string;
+}
+
+export interface AdminParticipantRestoreResult {
+  readonly participantId: string;
+  readonly suspensionId: string;
+  readonly status: "active";
+  readonly emailQueued: boolean;
+  readonly emailWarning?: string;
+}
+
+export interface ParticipantSuspensionReviewPublic {
+  readonly displayName: string;
+  readonly reasonLabel: string;
+  readonly suspendedAt: string;
+  readonly alreadySubmitted: boolean;
+}
+
+export interface ParticipantSuspensionReviewSubmitInput {
+  readonly token: string;
+  readonly explanation: string;
+}
+
+export interface ParticipantSuspensionReviewSubmitResult {
+  readonly requestId: string;
+  readonly status: "pending";
 }
 
 export interface AdminParticipantDirectoryResponse {
@@ -257,6 +323,15 @@ export interface AdminParticipantDirectoryResponse {
   readonly limit: number;
   readonly offset: number;
   readonly hasMore: boolean;
+}
+
+/**
+ * Pack 24A — Admin-only public-profile resolve result.
+ * Never includes email, private fields, or Member.uniqueName.
+ */
+export interface AdminParticipantPublicProfileResolve {
+  readonly publicName: string;
+  readonly publicHref: string;
 }
 
 /** Admin Panel Pack 05 — safe Initiative directory row. */

@@ -24,7 +24,11 @@ export type EmailTemplateId =
   /** Pack 21D — new Blog publication notice for confirmed subscribers. */
   | "blog_publication_digest"
   /** Pack 21E — Admin message to selected Blog subscribers. */
-  | "blog_subscription_admin_message";
+  | "blog_subscription_admin_message"
+  /** Pack 24B — Participant account suspension notice with review CTA. */
+  | "participant_suspended"
+  /** Pack 24B — optional notice that participation was restored. */
+  | "participant_restored";
 
 export type EmailDeliveryStatus = "queued" | "sent" | "failed" | "deferred" | "blocked";
 

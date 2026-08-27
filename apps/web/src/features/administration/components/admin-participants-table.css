@@ -96,6 +96,76 @@
   font-size: 0.88rem;
 }
 
+/* Pack 24A — Actions column sized for View profile + Pack 24B moderation slot */
+.admin-participants-table__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 12.5rem;
+}
+
+.admin-participants-table__action.hu-button {
+  min-height: 2rem;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.admin-participants-table__action-slot {
+  display: inline-block;
+  min-width: 5.5rem;
+  min-height: 2rem;
+}
+
+.admin-participants-table__action--unavailable {
+  display: inline-block;
+  min-height: 2rem;
+  line-height: 2rem;
+}
+
+.admin-participants-suspend {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-participants-suspend__label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.admin-participants-suspend__label select {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid rgba(26, 77, 109, 0.28);
+  border-radius: 0.3rem;
+}
+
+.admin-participants-suspend__meta {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.admin-participants-suspend__meta div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.admin-participants-suspend__meta dt {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--hu-workspace-text-muted, #4a5d6a);
+}
+
+.admin-participants-suspend__meta dd {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .admin-participants-pagination {
   display: flex;
   flex-wrap: wrap;

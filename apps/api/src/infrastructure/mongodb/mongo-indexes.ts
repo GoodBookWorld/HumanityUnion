@@ -485,6 +485,23 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    collectionName: MONGO_COLLECTIONS.participantSuspensions,
+    indexes: [
+      { key: { suspensionId: 1 }, unique: true, name: "participant_suspension_id_unique" },
+      {
+        key: { participantId: 1, status: 1 },
+        name: "participant_suspension_participant_status",
+      },
+      {
+        key: { reviewTokenHash: 1 },
+        unique: true,
+        sparse: true,
+        name: "participant_suspension_review_token_hash_unique",
+      },
+      { key: { userId: 1, status: 1 }, name: "participant_suspension_user_status" },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.civicNominationVotes,
     indexes: [
       { key: { nominationId: 1 } },

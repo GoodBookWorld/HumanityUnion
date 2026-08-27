@@ -1,4 +1,4 @@
-import type { AdminParticipantDirectoryResponse } from "@hu/types";
+import type { AdminParticipantDirectoryResponse, AdminParticipantPublicProfileResolve } from "@hu/types";
 
 import { apiRequest } from "../../lib/api-client";
 
@@ -46,5 +46,22 @@ export async function listAdminParticipants(
   const suffix = params.toString();
   return apiRequest<AdminParticipantDirectoryResponse>(
     `/api/v1/admin/participants${suffix ? `?${suffix}` : ""}`,
+  );
+}
+
+/** Pack 24A — Admin resolver path (stable memberId; never embeds publicName). */
+export function adminParticipantPublicProfilePath(participantId: string): string {
+  return `/admin/participants/${encodeURIComponent(participantId)}/public-profile`;
+}
+
+/**
+ * Pack 24A — resolve CURRENT canonical `/member/{publicName}` via Admin API.
+ * Does not trust directory-row uniqueName / stale slugs.
+ */
+export async function resolveAdminParticipantPublicProfile(
+  participantId: string,
+): Promise<AdminParticipantPublicProfileResolve> {
+  return apiRequest<AdminParticipantPublicProfileResolve>(
+    `/api/v1/admin/participants/${encodeURIComponent(participantId)}/public-profile`,
   );
 }

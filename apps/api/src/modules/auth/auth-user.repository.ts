@@ -183,6 +183,38 @@ export async function updateAuthUserLastLogin(userId: string, lastLoginAt: strin
   );
 }
 
+/**
+ * Pack 24B — Auth SoT for account suspension (`disabled`) / restore (`active`).
+ * Do not invent a parallel blocked boolean.
+ */
+export async function updateAuthUserAccountStatus(
+  userId: string,
+  status: "active" | "disabled",
+): Promise<AuthUserRecord | null> {
+  await ensureAuthMongoReady();
+
+  const now = new Date().toISOString();
+  const collection = getMongoCollection<AuthUserDocument>(MONGO_COLLECTIONS.authUsers);
+
+  const result = await collection.findOneAndUpdate(
+    { userId },
+    {
+      $set: {
+        status,
+        updatedAt: now,
+      },
+    },
+    { returnDocument: "after" },
+  );
+
+  if (!result) {
+    return null;
+  }
+
+  const { _id: _ignored, ...record } = result;
+  return record;
+}
+
 export async function deleteAuthUsersByEmailPrefix(emailPrefix: string): Promise<number> {
   await ensureAuthMongoReady();
 

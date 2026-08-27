@@ -2,6 +2,7 @@ import type { AuthIdentity } from "@hu/types";
 import type { NextFunction, Request, Response } from "express";
 
 import { isAuthBootstrapFallbackEnabled, resolveAuthConfig } from "../../config/auth.config.js";
+import { requireActiveAccountForMutationsMiddleware } from "./auth-active-account-gate.js";
 import { bootstrapAuthIdentity } from "./auth.identity.js";
 import { authIdentityFromAccessTokenClaims } from "./auth.service.js";
 import { verifyAccessToken } from "./auth-tokens.js";
@@ -70,12 +71,17 @@ function resolveJwtIdentity(req: Request): AuthIdentity | null {
   }
 }
 
-export function authenticationMiddleware(req: Request, _res: Response, next: NextFunction): void {
+/**
+ * Resolves JWT identity when present (else optional bootstrap).
+ * Pack 24B.1 — mutating requests with a JWT re-check auth_users.status === "active"
+ * (logout / revoke-all remain allowed so residual sessions can be cleared).
+ */
+export function authenticationMiddleware(req: Request, res: Response, next: NextFunction): void {
   const jwtIdentity = resolveJwtIdentity(req);
 
   if (jwtIdentity) {
     req.auth = jwtIdentity;
-    next();
+    void requireActiveAccountForMutationsMiddleware(req, res, next).catch(next);
     return;
   }
 
@@ -109,6 +115,10 @@ export function requireAuthenticationMiddleware(
 /**
  * Requires a valid JWT access credential (Bearer or HttpOnly cookie).
  * Bootstrap fallback is never accepted.
+ *
+ * Pack 24B.1 — after JWT verification, mutating requests re-load auth_users and
+ * require status === "active" so a residual access token cannot write after suspend.
+ * Token claims remain authentication evidence only; DB status is authoritative for writes.
  */
 export function requireJwtAuthenticationMiddleware(
   req: Request,
@@ -129,23 +139,29 @@ export function requireJwtAuthenticationMiddleware(
   }
 
   req.auth = jwtIdentity;
-  next();
+  void requireActiveAccountForMutationsMiddleware(req, res, next).catch(next);
 }
 
 export function isBootstrapAuthIdentity(auth?: AuthIdentity): boolean {
   return auth?.id === bootstrapAuthIdentity.id;
 }
 
-/** Resolves JWT when present without applying bootstrap fallback. */
+/**
+ * Resolves JWT when present without applying bootstrap fallback.
+ * Pack 24B.1 — when a JWT is present on a mutating request, enforce active status
+ * so optional-auth write handlers cannot treat a disabled residual token as active.
+ */
 export function optionalAuthenticationMiddleware(
   req: Request,
-  _res: Response,
+  res: Response,
   next: NextFunction,
 ): void {
   const jwtIdentity = resolveJwtIdentity(req);
 
   if (jwtIdentity) {
     req.auth = jwtIdentity;
+    void requireActiveAccountForMutationsMiddleware(req, res, next).catch(next);
+    return;
   }
 
   next();

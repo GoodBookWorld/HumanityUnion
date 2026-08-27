@@ -10,6 +10,7 @@ const ADMIN_NOTIFICATION_TYPE_LABELS: Record<AdminNotificationType, string> = {
   public_choice_published: "New Public Choice",
   blog_post_published: "New Blog publication",
   operational_alert: "Platform alert",
+  participant_suspension_review_requested: "Suspension review request",
 };
 
 export function resolveAdminNotificationTypeLabel(

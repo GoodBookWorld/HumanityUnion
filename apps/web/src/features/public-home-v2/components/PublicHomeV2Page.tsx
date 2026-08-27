@@ -1,4 +1,5 @@
 import { HumanityUnionInNumbers } from "../../platform-statistics/components/HumanityUnionInNumbers";
+import { PublicHomeActucSection } from "./PublicHomeActucSection";
 import { PublicHomeCivicArchiveSection } from "./PublicHomeCivicArchiveSection";
 import { PublicHomeCivicMediaSection } from "./PublicHomeCivicMediaSection";
 import { PublicHomeCivicPipelineSection } from "./PublicHomeCivicPipelineSection";
@@ -28,6 +29,7 @@ export function PublicHomeV2Page() {
       <PublicHomeKnowledgeSection />
       <PublicHomeCivicMediaSection />
       <PublicHomeCivicArchiveSection />
+      <PublicHomeActucSection />
       <PublicHomeEcosystemStatementSection />
       <PublicHomeGeographicNavigationSection />
     </div>

@@ -1,22 +1,29 @@
 import type {
   AdminParticipantDirectoryItem,
   AdminParticipantDirectoryResponse,
+  AdminParticipantPublicProfileResolve,
   MembershipRecord,
   MembershipStatus,
 } from "@hu/types";
 
 import {
   findAuthUserById,
+  findAuthUserByMemberId,
   listAuthUsersForAdmin,
   type AdminAuthUserListSort,
 } from "../auth/auth-user.repository.js";
 import type { AuthUserRecord } from "../auth/auth-user.types.js";
-import { findMemberProfilesByUserIds } from "../member-profile/member-profile.repository.js";
+import { toPublicMemberProfile } from "../member-profile/member-profile.projection.js";
+import {
+  findMemberProfileByUserId,
+  findMemberProfilesByUserIds,
+} from "../member-profile/member-profile.repository.js";
 import {
   findIdentityIdsByUniqueNameSearch,
   findMembersByIdentityIds,
 } from "../member/infrastructure/member.repository.js";
 import {
+  findMembershipByUserId,
   findMembershipsByUserIds,
   findUserIdsByMembershipStatus,
 } from "../membership/membership.repository.js";
@@ -25,11 +32,28 @@ import {
   AdministrationForbiddenError,
   AdministrationUnauthorizedError,
 } from "./administration.errors.js";
+import { findActiveSuspensionSummariesByParticipantIds } from "../participant-suspension/participant-suspension.service.js";
 
 export class AdminParticipantDirectoryValidationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "AdminParticipantDirectoryValidationError";
+  }
+}
+
+/** Pack 24A — no guest-visible/current public profile for this Participant. */
+export class AdminParticipantPublicProfileUnavailableError extends Error {
+  constructor(message = "A public profile is not currently available for this Participant.") {
+    super(message);
+    this.name = "AdminParticipantPublicProfileUnavailableError";
+  }
+}
+
+/** Pack 24A — Participant identity not found for Admin resolve. */
+export class AdminParticipantNotFoundError extends Error {
+  constructor(message = "Participant not found.") {
+    super(message);
+    this.name = "AdminParticipantNotFoundError";
   }
 }
 
@@ -78,6 +102,7 @@ function toDirectoryItem(
     : never,
   profile: { publicName?: string; displayName?: string; avatarUrl?: string } | undefined,
   membership: MembershipRecord | undefined,
+  suspension?: AdminParticipantDirectoryItem["suspension"],
 ): AdminParticipantDirectoryItem {
   const membershipPayload = membership ? toMembershipStatusPayload(membership) : undefined;
 
@@ -107,6 +132,7 @@ function toDirectoryItem(
           },
         }
       : {}),
+    ...(authUser.status === "disabled" && suspension ? { suspension } : {}),
   };
 }
 
@@ -168,13 +194,19 @@ export async function listAdminParticipants(
   });
 
   const userIds = listed.items.map((item) => item.userId);
-  const [membersByIdentity, profilesByUserId, membershipsByUserId] = await Promise.all([
-    findMembersByIdentityIds(userIds),
-    findMemberProfilesByUserIds(userIds),
-    findMembershipsByUserIds(userIds),
-  ]);
+  const disabledParticipantIds = listed.items
+    .filter((item) => item.status === "disabled")
+    .map((item) => item.memberId);
 
-    const participants = listed.items.map((authUser) => {
+  const [membersByIdentity, profilesByUserId, membershipsByUserId, suspensionsByParticipantId] =
+    await Promise.all([
+      findMembersByIdentityIds(userIds),
+      findMemberProfilesByUserIds(userIds),
+      findMembershipsByUserIds(userIds),
+      findActiveSuspensionSummariesByParticipantIds(disabledParticipantIds),
+    ]);
+
+  const participants = listed.items.map((authUser) => {
     const profile = profilesByUserId.get(authUser.userId);
     return toDirectoryItem(
       authUser,
@@ -187,6 +219,7 @@ export async function listAdminParticipants(
           }
         : undefined,
       membershipsByUserId.get(authUser.userId),
+      suspensionsByParticipantId.get(authUser.memberId),
     );
   });
 
@@ -196,5 +229,51 @@ export async function listAdminParticipants(
     limit,
     offset,
     hasMore: offset + participants.length < listed.total,
+  };
+}
+
+/**
+ * Pack 24A — resolve CURRENT canonical public profile for Admin View action.
+ * Stable key: Participant `memberId` (never Member.uniqueName / stale slug).
+ * Returns only publicName + publicHref — no email or private fields.
+ */
+export async function resolveAdminParticipantPublicProfile(input: {
+  actorUserId: string;
+  participantId: string;
+}): Promise<AdminParticipantPublicProfileResolve> {
+  await assertAdminUser(input.actorUserId);
+
+  const participantId = input.participantId.trim();
+  if (!participantId) {
+    throw new AdminParticipantDirectoryValidationError("Participant id is required.");
+  }
+
+  const authUser = await findAuthUserByMemberId(participantId);
+  if (!authUser) {
+    throw new AdminParticipantNotFoundError();
+  }
+
+  const profile = await findMemberProfileByUserId(authUser.userId);
+  const publicName = profile?.publicName?.trim();
+  if (!profile || !publicName) {
+    throw new AdminParticipantPublicProfileUnavailableError();
+  }
+
+  const membership = await findMembershipByUserId(authUser.userId);
+  // Authenticated non-owner view matches what Admin sees on /member/{publicName}.
+  const projection = toPublicMemberProfile(profile, {
+    viewerIsAuthenticated: true,
+    viewerIsOwner: false,
+    membership,
+  });
+
+  if (!projection?.publicName?.trim()) {
+    throw new AdminParticipantPublicProfileUnavailableError();
+  }
+
+  // Always use live profile.publicName — never members.uniqueName.
+  return {
+    publicName,
+    publicHref: `/member/${encodeURIComponent(publicName)}`,
   };
 }

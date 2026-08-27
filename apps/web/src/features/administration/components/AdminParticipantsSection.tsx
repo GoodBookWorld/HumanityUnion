@@ -1,18 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import type {
   AdminParticipantDirectoryItem,
   AuthUserPublic,
   MembershipStatisticsPayload,
+  ParticipantSuspensionReasonCode,
   PlatformStatisticsCounts,
   PlatformStatisticsMeta,
 } from "@hu/types";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
+import { ConfirmDialog } from "../../../design-system/components/ConfirmDialog";
 import { StatusBanner } from "../../../design-system/components/StatusBanner";
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
 import { formatAuthFormError, isForbiddenError } from "../../../lib/api-client";
@@ -24,7 +25,16 @@ import {
   fetchPlatformStatistics,
   formatPlatformStatisticValue,
 } from "../../platform-statistics/platform-statistics-api";
-import { listAdminParticipants } from "../admin-participant-directory-api";
+import {
+  adminParticipantPublicProfilePath,
+  listAdminParticipants,
+} from "../admin-participant-directory-api";
+import {
+  formatParticipantSuspensionReasonLabel,
+  PARTICIPANT_SUSPENSION_REASON_OPTIONS,
+  restoreAdminParticipant,
+  suspendAdminParticipant,
+} from "../admin-participant-suspension-api";
 import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
@@ -67,7 +77,7 @@ function participantSecondaryName(row: AdminParticipantDirectoryItem): string | 
 }
 
 function formatAccountStatus(status: AdminParticipantDirectoryItem["status"]): string {
-  return status === "active" ? "Active" : "Disabled";
+  return status === "active" ? "Active" : "Suspended";
 }
 
 function formatAccountRole(role: AdminParticipantDirectoryItem["role"]): string {
@@ -104,6 +114,7 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
   const [tableLoading, setTableLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [denied, setDenied] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -112,6 +123,15 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
   const [membershipStatus, setMembershipStatus] = useState("");
   const [sort, setSort] = useState<"createdAt" | "lastLoginAt" | "email">("createdAt");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
+
+  const [suspendTarget, setSuspendTarget] = useState<AdminParticipantDirectoryItem | null>(null);
+  const [suspendReason, setSuspendReason] = useState<ParticipantSuspensionReasonCode>(
+    "community_standards_violation",
+  );
+  const [suspending, setSuspending] = useState(false);
+
+  const [restoreTarget, setRestoreTarget] = useState<AdminParticipantDirectoryItem | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -187,6 +207,54 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
   const canPrev = offset > 0;
   const canNext = offset + PAGE_SIZE < total;
 
+  async function confirmSuspend() {
+    if (!suspendTarget) {
+      return;
+    }
+    setSuspending(true);
+    setActionMessage(null);
+    try {
+      const result = await suspendAdminParticipant(suspendTarget.memberId, suspendReason);
+      setSuspendTarget(null);
+      setActionMessage(
+        result.emailQueued
+          ? "Participant suspended. A review email was queued."
+          : result.emailWarning
+            ? `Participant suspended. ${result.emailWarning}`
+            : "Participant suspended. Review email could not be queued.",
+      );
+      await loadDirectory();
+    } catch (caught: unknown) {
+      setActionMessage(formatAuthFormError(caught));
+    } finally {
+      setSuspending(false);
+    }
+  }
+
+  async function confirmRestore() {
+    if (!restoreTarget) {
+      return;
+    }
+    setRestoring(true);
+    setActionMessage(null);
+    try {
+      const result = await restoreAdminParticipant(restoreTarget.memberId);
+      setRestoreTarget(null);
+      setActionMessage(
+        result.emailQueued
+          ? "Participant restored."
+          : result.emailWarning
+            ? `Participant restored. ${result.emailWarning}`
+            : "Participant restored.",
+      );
+      await loadDirectory();
+    } catch (caught: unknown) {
+      setActionMessage(formatAuthFormError(caught));
+    } finally {
+      setRestoring(false);
+    }
+  }
+
   return (
     <div className="admin-panel">
       <AdminPanelNavigation />
@@ -253,7 +321,7 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
               >
                 <option value="">All</option>
                 <option value="active">Active</option>
-                <option value="disabled">Disabled</option>
+                <option value="disabled">Suspended</option>
               </select>
             </label>
 
@@ -316,6 +384,10 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
           </Button>
         </form>
 
+        {actionMessage ? (
+          <StatusBanner title="Moderation update" message={actionMessage} />
+        ) : null}
+
         {error ? (
           <StatusBanner
             title={denied ? "Access restricted" : "Directory unavailable"}
@@ -349,8 +421,11 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                   ) : (
                     rows.map((row) => {
                       const secondary = participantSecondaryName(row);
-                      const profileHref = row.uniqueName
-                        ? `/member/${encodeURIComponent(row.uniqueName)}`
+                      // Pack 24A — enable only when CURRENT publicName exists; navigate via
+                      // Admin resolver keyed by stable memberId (never uniqueName).
+                      const canViewPublicProfile = Boolean(row.publicName?.trim());
+                      const profileHref = canViewPublicProfile
+                        ? adminParticipantPublicProfilePath(row.memberId)
                         : null;
 
                       return (
@@ -400,13 +475,47 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                           <td>{formatCompactDate(row.createdAt)}</td>
                           <td>{formatCompactDate(row.lastLoginAt)}</td>
                           <td>
-                            {profileHref ? (
-                              <Link className="admin-panel__link" href={profileHref}>
-                                View public profile
-                              </Link>
-                            ) : (
-                              <span className="hu-caption">No public name</span>
-                            )}
+                            <div className="admin-participants-table__actions">
+                              {profileHref ? (
+                                <Button
+                                  href={profileHref}
+                                  variant="secondary"
+                                  className="admin-participants-table__action"
+                                  aria-label={`View profile for ${participantPrimaryName(row)}`}
+                                >
+                                  View profile
+                                </Button>
+                              ) : (
+                                <span className="hu-caption admin-participants-table__action--unavailable">
+                                  Profile unavailable
+                                </span>
+                              )}
+                              {row.status === "active" && row.role !== "admin" ? (
+                                <Button
+                                  type="button"
+                                  variant="danger"
+                                  className="admin-participants-table__action"
+                                  aria-label={`Suspend ${participantPrimaryName(row)}`}
+                                  onClick={() => {
+                                    setSuspendReason("community_standards_violation");
+                                    setSuspendTarget(row);
+                                  }}
+                                >
+                                  Suspend
+                                </Button>
+                              ) : null}
+                              {row.status === "disabled" ? (
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  className="admin-participants-table__action"
+                                  aria-label={`Review or restore ${participantPrimaryName(row)}`}
+                                  onClick={() => setRestoreTarget(row)}
+                                >
+                                  Review / Restore
+                                </Button>
+                              ) : null}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -443,10 +552,108 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
 
       <ProfileSection title="Deferred administrative commands">
         <p className="hu-body">
-          Suspend/ban, role changes, password reset, Fair edits, and identity mutations are not
-          available on this directory. They require explicit admin command APIs.
+          Role changes, password reset, Fair edits, and identity mutations are not available on
+          this directory. They require explicit admin command APIs.
         </p>
       </ProfileSection>
+
+      <ConfirmDialog
+        isOpen={suspendTarget !== null}
+        title="Suspend Participant?"
+        description={
+          suspendTarget ? (
+            <div className="admin-participants-suspend">
+              <p className="hu-body">
+                Suspend <strong>{participantPrimaryName(suspendTarget)}</strong>
+                {suspendTarget.email ? ` (${suspendTarget.email})` : ""}. They will lose normal
+                access and receive a review request email.
+              </p>
+              <label className="admin-participants-suspend__label">
+                Reason
+                <select
+                  value={suspendReason}
+                  onChange={(event) =>
+                    setSuspendReason(event.target.value as ParticipantSuspensionReasonCode)
+                  }
+                  disabled={suspending}
+                >
+                  {PARTICIPANT_SUSPENSION_REASON_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : null
+        }
+        confirmLabel="Suspend Participant"
+        isConfirming={suspending}
+        onCancel={() => {
+          if (!suspending) {
+            setSuspendTarget(null);
+          }
+        }}
+        onConfirm={() => {
+          void confirmSuspend();
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={restoreTarget !== null}
+        title="Restore Participant?"
+        description={
+          restoreTarget ? (
+            <div className="admin-participants-suspend">
+              <p className="hu-body">
+                Restore access for <strong>{participantPrimaryName(restoreTarget)}</strong>.
+              </p>
+              {restoreTarget.suspension ? (
+                <dl className="admin-participants-suspend__meta">
+                  <div>
+                    <dt>Reason</dt>
+                    <dd>
+                      {formatParticipantSuspensionReasonLabel(restoreTarget.suspension.reasonCode)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Suspended</dt>
+                    <dd>{formatCompactDate(restoreTarget.suspension.suspendedAt)}</dd>
+                  </div>
+                  {restoreTarget.suspension.hasPendingReview ? (
+                    <div>
+                      <dt>Review request</dt>
+                      <dd>
+                        {restoreTarget.suspension.reviewExplanation?.trim()
+                          ? restoreTarget.suspension.reviewExplanation
+                          : "Pending (submitted)"}
+                      </dd>
+                    </div>
+                  ) : (
+                    <div>
+                      <dt>Review request</dt>
+                      <dd>None pending</dd>
+                    </div>
+                  )}
+                </dl>
+              ) : (
+                <p className="hu-caption">No suspension details available for this account.</p>
+              )}
+            </div>
+          ) : null
+        }
+        confirmLabel="Restore Participant"
+        destructive={false}
+        isConfirming={restoring}
+        onCancel={() => {
+          if (!restoring) {
+            setRestoreTarget(null);
+          }
+        }}
+        onConfirm={() => {
+          void confirmRestore();
+        }}
+      />
     </div>
   );
 }
