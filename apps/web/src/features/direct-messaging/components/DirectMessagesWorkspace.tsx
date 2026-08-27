@@ -4,8 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import type { AuthUserPublic } from "@hu/types";
+
 import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
 import { isAuthenticationRequiredError } from "../../../lib/api-client";
+import { getMe } from "../../auth/auth-api";
+import { isAdminAccountRole } from "../../administration/is-admin-role";
 import { InitiativeGroupChatWorkspace } from "../../initiative-group-chat/components/InitiativeGroupChatWorkspace";
 import { WorkspaceNavigation } from "../../initiatives/components/WorkspaceNavigation";
 import type { CollaborationTab } from "../../public-initiative-experience/components/InitiativeCollaborationWorkspace";
@@ -19,6 +23,7 @@ import {
 } from "../direct-messaging-format";
 
 import { ActiveAlliesPanel, type ActiveAlliesPanelState } from "./ActiveAlliesPanel";
+import { AdminAllParticipantsPanel } from "./AdminAllParticipantsPanel";
 import { CommunicationModeSwitch } from "./CommunicationModeSwitch";
 import { DirectConversationView } from "./DirectConversationView";
 import "./direct-messaging.css";
@@ -56,6 +61,8 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
   const groupSection = resolveCollaborationSection(searchParams);
 
   const [pageState, setPageState] = useState<PageState>("loading");
+  const [viewer, setViewer] = useState<AuthUserPublic | null>(null);
+  const isAdminViewer = isAdminAccountRole(viewer?.role);
 
   /**
    * Part 5/6 — the Active Allies directory is the sole selector, so its
@@ -83,7 +90,8 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
 
   const loadAllies = useCallback(async () => {
     try {
-      const summary = await fetchActiveAllies();
+      const [summary, me] = await Promise.all([fetchActiveAllies(), getMe()]);
+      setViewer(me);
       setAllies(summary.items);
       setAlliesCount(summary.alliesCount);
       setAlliesState("ready");
@@ -91,7 +99,21 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
     } catch (error) {
       if (isAuthenticationRequiredError(error)) {
         setPageState("unauthenticated");
+        setViewer(null);
         return;
+      }
+
+      // Admin may still use All Participants even if allies load fails.
+      try {
+        const me = await getMe();
+        setViewer(me);
+        if (isAdminAccountRole(me.role)) {
+          setAlliesState("ready");
+          setPageState("ready");
+          return;
+        }
+      } catch {
+        // fall through
       }
 
       setAlliesErrorMessage(
@@ -198,9 +220,13 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
             />
           ) : (
             <div className="direct-messaging-page__empty-state">
-              <p className="direct-messaging-page__empty-title">Select an Ally</p>
+              <p className="direct-messaging-page__empty-title">
+                {isAdminViewer ? "Select a Participant" : "Select an Ally"}
+              </p>
               <p className="direct-messaging-page__empty-text">
-                Choose an Active Ally to open your Direct Collaboration conversation.
+                {isAdminViewer
+                  ? "Choose a Participant from All Participants to open a Direct Conversation."
+                  : "Choose an Active Ally to open your Direct Collaboration conversation."}
               </p>
             </div>
           )}
@@ -246,7 +272,13 @@ export function DirectMessagesWorkspace({ activeConversationId }: DirectMessages
       headerBar={headerBar}
       workspaceNavigation={<WorkspaceNavigation />}
       assistant={
-        pageState === "unauthenticated" ? undefined : (
+        pageState === "unauthenticated" ? undefined : isAdminViewer && viewer ? (
+          <AdminAllParticipantsPanel
+            selfParticipantId={viewer.memberId}
+            activeParticipantId={activeParticipantId}
+            onPrepareInitiativeGroupChat={() => handleModeChange("initiative")}
+          />
+        ) : (
           <ActiveAlliesPanel
             state={alliesState}
             allies={allies}

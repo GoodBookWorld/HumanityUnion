@@ -35,6 +35,7 @@ import {
   restoreAdminParticipant,
   suspendAdminParticipant,
 } from "../admin-participant-suspension-api";
+import { useOpenDirectConversation } from "../../direct-messaging/use-open-direct-conversation";
 import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
@@ -96,6 +97,7 @@ function formatMembershipLabel(row: AdminParticipantDirectoryItem): string {
   const statusLabels: Record<string, string> = {
     not_started: "Not started",
     application_started: "Application started",
+    application_completed: "Application submitted",
     pending_payment: "Pending payment",
     active_member: "Active Member",
   };
@@ -132,6 +134,13 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
 
   const [restoreTarget, setRestoreTarget] = useState<AdminParticipantDirectoryItem | null>(null);
   const [restoring, setRestoring] = useState(false);
+
+  const {
+    isOpening: isOpeningMessage,
+    errorMessage: messageError,
+    openConversation,
+  } = useOpenDirectConversation();
+  const [messagingParticipantId, setMessagingParticipantId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -353,6 +362,7 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                 <option value="active_member">Active Member</option>
                 <option value="not_started">Not started</option>
                 <option value="application_started">Application started</option>
+                <option value="application_completed">Application submitted</option>
                 <option value="pending_payment">Pending payment</option>
               </select>
             </label>
@@ -387,6 +397,8 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
         {actionMessage ? (
           <StatusBanner title="Moderation update" message={actionMessage} />
         ) : null}
+
+        {messageError ? <StatusBanner title="Messaging" message={messageError} /> : null}
 
         {error ? (
           <StatusBanner
@@ -490,6 +502,23 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                                   Profile unavailable
                                 </span>
                               )}
+                              {row.status === "active" ? (
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  className="admin-participants-table__action"
+                                  disabled={isOpeningMessage}
+                                  aria-label={`Message ${participantPrimaryName(row)}`}
+                                  onClick={() => {
+                                    setMessagingParticipantId(row.memberId);
+                                    openConversation({ participantId: row.memberId });
+                                  }}
+                                >
+                                  {isOpeningMessage && messagingParticipantId === row.memberId
+                                    ? "Opening…"
+                                    : "Message"}
+                                </Button>
+                              ) : null}
                               {row.status === "active" && row.role !== "admin" ? (
                                 <Button
                                   type="button"

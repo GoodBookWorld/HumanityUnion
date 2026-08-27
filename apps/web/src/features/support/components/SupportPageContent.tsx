@@ -64,8 +64,8 @@ export function SupportPageContent() {
           <Image
             src={SUPPORT_ILLUSTRATIONS.hero}
             alt=""
-            width={320}
-            height={240}
+            width={480}
+            height={360}
             className="support-page__hero-image"
             priority
           />

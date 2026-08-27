@@ -70,6 +70,34 @@ describe("Direct Messaging eligibility (Profile UX Pack 03 Part 5/6)", () => {
       assert.equal(await isNewDirectConversationAllowed(VIEWER, OWNER, "nobody", deps), false);
     });
 
+    it("Pack 26B — Admin still cannot bypass nobody", async () => {
+      const deps = buildDeps({});
+      assert.equal(
+        await isNewDirectConversationAllowed(VIEWER, OWNER, "nobody", deps, { viewerIsAdmin: true }),
+        false,
+      );
+    });
+
+    it("Pack 26B — Admin bypasses active_allies without Ally relationship", async () => {
+      const deps = buildDeps({});
+      assert.equal(
+        await isNewDirectConversationAllowed(VIEWER, OWNER, "active_allies", deps, {
+          viewerIsAdmin: true,
+        }),
+        true,
+      );
+    });
+
+    it("Pack 26B — normal Participant does not bypass active_allies", async () => {
+      const deps = buildDeps({});
+      assert.equal(
+        await isNewDirectConversationAllowed(VIEWER, OWNER, "active_allies", deps, {
+          viewerIsAdmin: false,
+        }),
+        false,
+      );
+    });
+
     it("test 6 — Registered Participants allows any authenticated, non-owner viewer", async () => {
       const deps = buildDeps({});
       assert.equal(

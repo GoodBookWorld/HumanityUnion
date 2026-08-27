@@ -7,7 +7,7 @@ import type {
   PublicMemberProfile,
 } from "@hu/types";
 
-import { findAuthUserById } from "../auth/auth-user.repository.js";
+import { findAuthUserById, findAuthUserByMemberId } from "../auth/auth-user.repository.js";
 import { isNewDirectConversationAllowed } from "../direct-messaging/direct-messaging-eligibility.js";
 import { listPublicInitiativesBySteward } from "../initiatives/initiative.store.js";
 import { findMembershipByUserId } from "../membership/membership.repository.js";
@@ -209,11 +209,30 @@ async function enrichPublicMemberProfileProjection(
   // profile both resolve to `false` inside that function, which this maps
   // to "hidden"; every other `false` (an authenticated, blocked viewer)
   // maps to "unavailable" neutral text instead.
-  const canMessage = await isNewDirectConversationAllowed(
-    viewerParticipantId,
-    authUser.memberId,
-    profile.messagingPolicy,
-  );
+  //
+  // Pack 26B — Admin viewers may bypass Ally restriction (not `nobody`);
+  // disabled/suspended targets never expose a new-conversation CTA.
+  let canMessage = false;
+
+  if (authUser.status !== "disabled") {
+    let viewerIsAdmin = false;
+
+    if (viewerParticipantId) {
+      const viewerAuth = await findAuthUserByMemberId(viewerParticipantId);
+      viewerIsAdmin =
+        viewerAuth?.role === "admin" &&
+        viewerAuth.status === "active" &&
+        viewerAuth.emailVerificationStatus === "verified";
+    }
+
+    canMessage = await isNewDirectConversationAllowed(
+      viewerParticipantId,
+      authUser.memberId,
+      profile.messagingPolicy,
+      undefined,
+      { viewerIsAdmin },
+    );
+  }
 
   if (canMessage) {
     projection.messagingAvailability = "available";

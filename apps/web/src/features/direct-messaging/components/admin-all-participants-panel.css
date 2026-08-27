@@ -1,0 +1,82 @@
+/* Pack 26B — Admin All Participants Messages sidebar extensions. */
+
+.admin-all-participants-panel__panel {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - var(--hu-header-height, 4rem) - 2rem);
+}
+
+.admin-all-participants-panel__search-button {
+  margin-top: var(--hu-space-2);
+  width: 100%;
+}
+
+.admin-all-participants-panel__selected {
+  margin: 0 0 var(--hu-space-2);
+  font-size: var(--hu-font-size-sm);
+  color: var(--hu-color-text-muted);
+}
+
+.admin-all-participants-panel__toolbar {
+  margin-bottom: var(--hu-space-2);
+}
+
+.admin-all-participants-panel__select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hu-space-2);
+  font-size: var(--hu-font-size-sm);
+  cursor: pointer;
+}
+
+.admin-all-participants-panel__actions {
+  display: grid;
+  gap: var(--hu-space-2);
+  margin-bottom: var(--hu-space-3);
+}
+
+.admin-all-participants-panel__list {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 12rem;
+  overflow-y: auto;
+}
+
+.admin-all-participants-panel__row {
+  display: flex;
+  align-items: center;
+  gap: var(--hu-space-3);
+  min-width: 0;
+  flex: 1 1 auto;
+  cursor: pointer;
+}
+
+.admin-all-participants-panel__identity-text {
+  display: grid;
+  min-width: 0;
+}
+
+.admin-all-participants-panel__public-name {
+  font-size: 0.75rem;
+  color: var(--hu-color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-all-participants-panel__pagination {
+  display: flex;
+  gap: var(--hu-space-2);
+  margin-top: var(--hu-space-3);
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .admin-all-participants-panel__panel {
+    max-height: none;
+  }
+
+  .admin-all-participants-panel__list {
+    max-height: 18rem;
+  }
+}

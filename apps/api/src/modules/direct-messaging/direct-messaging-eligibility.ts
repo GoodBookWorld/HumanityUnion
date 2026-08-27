@@ -6,6 +6,15 @@ export interface DirectMessagingEligibilityDependencies {
   listWorkspaceAlliesForParticipant: typeof listWorkspaceAlliesForParticipant;
 }
 
+export interface DirectMessagingEligibilityOptions {
+  /**
+   * Pack 26B — narrowly scoped Admin override. When true, the viewer may
+   * bypass the Active Allies requirement. Never bypasses `nobody`.
+   * Server-derived only; never trust a client-supplied flag.
+   */
+  viewerIsAdmin?: boolean;
+}
+
 const defaultDirectMessagingEligibilityDependencies: DirectMessagingEligibilityDependencies = {
   listWorkspaceAlliesForParticipant,
 };
@@ -46,12 +55,15 @@ export async function areParticipantsActiveAllies(
  * (Part 7) and the authoritative open-conversation write path, so the
  * control a viewer sees and the server's authorization decision can never
  * disagree. Server-side only; never trusts a client-supplied decision.
+ *
+ * Pack 26B — Admin may bypass `active_allies` only. `nobody` remains absolute.
  */
 export async function isNewDirectConversationAllowed(
   viewerParticipantId: string | undefined,
   ownerParticipantId: string,
   ownerPolicy: DirectMessagingPolicy,
   deps: DirectMessagingEligibilityDependencies = defaultDirectMessagingEligibilityDependencies,
+  options: DirectMessagingEligibilityOptions = {},
 ): Promise<boolean> {
   if (!viewerParticipantId || viewerParticipantId === ownerParticipantId) {
     return false;
@@ -63,6 +75,9 @@ export async function isNewDirectConversationAllowed(
     case "registered_participants":
       return true;
     case "active_allies":
+      if (options.viewerIsAdmin === true) {
+        return true;
+      }
       return areParticipantsActiveAllies(viewerParticipantId, ownerParticipantId, deps);
     default:
       return false;

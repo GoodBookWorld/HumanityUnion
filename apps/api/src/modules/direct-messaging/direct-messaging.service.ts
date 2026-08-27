@@ -169,6 +169,28 @@ async function resolveDirectMessagingTargetIdentity(
   throw new DirectMessagingParticipantNotFoundError();
 }
 
+async function resolveViewerIsAdmin(viewerParticipantId: string): Promise<boolean> {
+  const viewer = await findAuthUserByMemberId(viewerParticipantId);
+
+  return (
+    viewer?.role === "admin" &&
+    viewer.status === "active" &&
+    viewer.emailVerificationStatus === "verified"
+  );
+}
+
+/**
+ * Pack 26B — new ordinary DM conversations are not opened with disabled/
+ * suspended accounts. Uses canonical AuthUserRecord.status.
+ */
+async function assertTargetAcceptsNewDirectConversation(targetParticipantId: string): Promise<void> {
+  const target = await findAuthUserByMemberId(targetParticipantId);
+
+  if (!target || target.status === "disabled") {
+    throw new DirectMessagingBlockedError();
+  }
+}
+
 /**
  * Part 6/7/21 #1/#6 — resolves the target Participant (Part 2/5 above),
  * enforces self-message and Privacy policy checks, then opens or creates
@@ -194,10 +216,15 @@ export async function openOrCreateDirectConversation(
     throw new DirectMessagingSelfMessageError();
   }
 
+  await assertTargetAcceptsNewDirectConversation(targetParticipantId);
+
+  const viewerIsAdmin = await resolveViewerIsAdmin(requesterParticipantId);
   const allowed = await isNewDirectConversationAllowed(
     requesterParticipantId,
     targetParticipantId,
     messagingPolicy,
+    undefined,
+    { viewerIsAdmin },
   );
 
   if (!allowed) {
