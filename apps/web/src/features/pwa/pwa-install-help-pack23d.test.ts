@@ -98,7 +98,7 @@ describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
     const css = read("features/pwa/pwa.css");
     assert.match(css, /\.hu-pwa-ios-help__dialog\s*\{[^}]*width:\s*min\(56rem/s);
     assert.match(css, /\.hu-pwa-ios-help__dialog\s*\{[^}]*max-height:\s*min\(calc\(100dvh/s);
-    assert.match(css, /\.hu-pwa-ios-help__dialog\s*\{[^}]*overflow-y:\s*auto/s);
+    assert.match(css, /\.hu-pwa-ios-help__body\s*\{[^}]*overflow-y:\s*auto/s);
   });
 
   it("12 — responsive stacking", () => {

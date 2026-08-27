@@ -84,7 +84,7 @@ describe("Pack 23D.1 — install guide visibility + modal usability", () => {
     assert.match(css, /width:\s*min\(56rem,\s*calc\(100vw - 2rem\)\)/);
     assert.match(css, /max-width:\s*calc\(100vw - 2rem\)/);
     assert.match(css, /max-height:\s*min\(calc\(100dvh - 2rem\)/);
-    assert.match(css, /overflow-y:\s*auto/);
+    assert.match(css, /\.hu-pwa-ios-help__body\s*\{[^}]*overflow-y:\s*auto/s);
     assert.doesNotMatch(css, /width:\s*min\(40rem/);
   });
 
