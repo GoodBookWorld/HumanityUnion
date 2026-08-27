@@ -43,6 +43,11 @@ export {
 export { default as adminInitiativeDirectoryRouter } from "./admin-initiative-directory.routes.js";
 export { default as adminPublicChoiceRouter } from "./admin-public-choice.routes.js";
 export {
+  listAdminAuditBrowser,
+  AdminAuditBrowserValidationError,
+} from "./admin-audit.service.js";
+export { default as adminAuditRouter } from "./admin-audit.routes.js";
+export {
   AuditService,
   deleteAdministrationAudit,
   getAdministrationAuditById,
@@ -79,6 +84,7 @@ export {
 export {
   deleteAdministrationAuditByActorIdsForTests,
   resetAdministrationAuditMemoryForTests,
+  setAdministrationAuditForceMemoryForTests,
 } from "./persistence/administration-audit.repository.js";
 export {
   deletePlatformCapabilityGrantsByParticipantIdsForTests,

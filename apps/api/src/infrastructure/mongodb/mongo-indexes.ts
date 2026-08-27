@@ -480,6 +480,8 @@ const MODULE_INDEXES: ReadonlyArray<{
       { key: { codeHash: 1 }, unique: true, name: "beta_invite_code_hash_unique" },
       { key: { status: 1 }, name: "beta_invite_status" },
       { key: { expiresAt: 1 }, name: "beta_invite_expires_at" },
+      { key: { createdBy: 1, createdAt: -1 }, name: "beta_invite_created_by_created_at" },
+      { key: { createdAt: -1 }, name: "beta_invite_created_at" },
     ],
   },
   {
@@ -1206,6 +1208,7 @@ const MODULE_INDEXES: ReadonlyArray<{
         name: "administration_audit_actor_created",
       },
       { key: { action: 1, createdAt: -1 }, name: "administration_audit_action_created" },
+      { key: { createdAt: -1 }, name: "administration_audit_created_at" },
     ],
   },
   {

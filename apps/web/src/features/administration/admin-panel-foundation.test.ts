@@ -145,17 +145,25 @@ describe("Admin Panel Pack 02 — navigation, overview & capability inventory", 
     assert.match(publishing, /\/workspace\/editorial/);
   });
 
-  it("Beta Access uses existing admin invite API; Audit/capabilities remain explicit gaps", () => {
+  it("Beta Access uses invite API with revoke; Platform readiness is read-only; Audit browser uses Admin API", () => {
     const beta = read("features/administration/components/AdminBetaAccessSection.tsx");
     assert.match(beta, /listBetaInvitesForAdmin|createBetaInviteForAdmin/);
+    assert.match(beta, /revokeBetaInviteForAdmin/);
     assert.match(read("features/administration/beta-invite-api.ts"), /\/api\/v1\/beta-invites/);
+    assert.match(read("features/administration/beta-invite-api.ts"), /revoke/);
 
     const audit = read("features/administration/components/AdminAuditSection.tsx");
-    assert.match(audit, /no Web-consumable HTTP route/i);
+    assert.match(audit, /listAdminAudit/);
+    assert.match(audit, /Search audit/);
+    assert.doesNotMatch(audit, /no Web-consumable HTTP route/i);
+    assert.doesNotMatch(audit, /BarChart|export CSV|download JSON|raw JSON/i);
+    assert.match(read("features/administration/admin-audit-api.ts"), /\/api\/v1\/admin\/audit/);
 
     const platform = read("features/administration/components/AdminPlatformSection.tsx");
-    assert.match(platform, /getPlatformConfig/);
-    assert.match(platform, /Capability grants \(gap\)/);
+    assert.match(platform, /fetchAdminPlatformReadiness|buildAdminPlatformReadinessView/);
+    assert.match(platform, /not editable/i);
+    assert.doesNotMatch(platform, /Capability grants \(gap\)/);
+    assert.doesNotMatch(platform, /<input|<select|onSubmit|setPlatformMode/i);
   });
 
   it("SEO section inventories existing indexing configuration without inventing a settings store", () => {

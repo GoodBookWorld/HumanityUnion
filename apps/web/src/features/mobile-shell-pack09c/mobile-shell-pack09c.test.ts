@@ -72,13 +72,13 @@ describe("Mobile Shell Pack 09C", () => {
     const register = readWeb("features/pwa/components/ServiceWorkerRegister.tsx");
     const manifest = readWeb("app/manifest.ts");
 
-    assert.match(promo, /Install App/);
+    assert.match(promo, /Install Humanity Union|Install App/);
     assert.match(promo, /Add to Home Screen/);
     assert.match(promo, /Installed/);
     assert.match(promo, /prompt\.prompt\(\)/);
     assert.doesNotMatch(register, /\.prompt\(\)/);
     assert.match(guidance, /Add to Home Screen/);
-    assert.match(guidance, /Open as Web App/);
+    assert.match(guidance, /Share button|Safari/);
     assert.match(manifest, /\/brand\/app-192\.png/);
     assert.match(manifest, /\/brand\/app-512\.png/);
     assert.ok(existsSync(path.join(webRoot, "public/brand/app-192.png")));

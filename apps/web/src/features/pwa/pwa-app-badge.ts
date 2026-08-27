@@ -1,6 +1,7 @@
 /**
  * Pack 22B.1 — OS/App icon badge from canonical unread notifications.
  * Pack 22H — diagnostic sync results + hardened standalone/support handling.
+ * Pack 23C — runtime capability diagnostic (standalone ≠ Badging API; permission-aware).
  *
  * Number-only Badging API wrapper. No Push, no Service Worker involvement.
  * Foreground/open PWA only; closed-app badge updates require Web Push (out of scope).
@@ -21,6 +22,50 @@ export type PwaAppBadgeSyncResult =
   | "api_error"
   | "preserved";
 
+export type PwaAppBadgeApiOutcome = "resolved" | "rejected" | "not_called" | "unsupported";
+
+/**
+ * Capability snapshot — feature detection only (no UA sniffing as primary gate).
+ * `standalone` is presentation mode; it does NOT imply Badging API support.
+ */
+export interface PwaAppBadgeCapabilitySnapshot {
+  standalone: boolean;
+  setAppBadgePresent: boolean;
+  clearAppBadgePresent: boolean;
+  badgeApiSupported: boolean;
+  /** Read-only; never prompts. `unavailable` when Notification API absent. */
+  notificationPermission: NotificationPermission | "unavailable";
+}
+
+/** Last sync attempt — internal/dev testability only (no PII). */
+export interface PwaAppBadgeDiagnosticRecord {
+  atMs: number;
+  result: PwaAppBadgeSyncResult;
+  unreadCount: number | null;
+  authenticated: boolean;
+  setAppBadgeReached: boolean;
+  clearAppBadgeReached: boolean;
+  apiOutcome: PwaAppBadgeApiOutcome;
+  /**
+   * iOS Home Screen: Badging API may resolve but OS hides the badge until
+   * notification permission is granted (WebKit). Android launchers may show
+   * a dot / ignore numeric badges even when the API call succeeds.
+   */
+  badgeMayBeHiddenByOsOrPermission: boolean;
+  capability: PwaAppBadgeCapabilitySnapshot;
+}
+
+let lastDiagnostic: PwaAppBadgeDiagnosticRecord | null = null;
+
+export function getLastPwaAppBadgeDiagnostic(): PwaAppBadgeDiagnosticRecord | null {
+  return lastDiagnostic;
+}
+
+/** Test seam — reset between cases. */
+export function resetLastPwaAppBadgeDiagnostic(): void {
+  lastDiagnostic = null;
+}
+
 export function getNavigatorWithAppBadge(
   nav: Navigator | undefined = typeof navigator !== "undefined" ? navigator : undefined,
 ): NavigatorWithAppBadge | null {
@@ -39,12 +84,62 @@ export function isAppBadgeSupported(
   );
 }
 
-function logBadgeDiagnostic(result: PwaAppBadgeSyncResult, unreadCount: number | null): void {
+export function readNotificationPermission(
+  notificationGlobal: typeof Notification | undefined =
+    typeof Notification !== "undefined" ? Notification : undefined,
+): NotificationPermission | "unavailable" {
+  if (!notificationGlobal || typeof notificationGlobal.permission !== "string") {
+    return "unavailable";
+  }
+  return notificationGlobal.permission;
+}
+
+export function inspectPwaAppBadgeCapability(input?: {
+  navigator?: Navigator;
+  isStandalone?: boolean;
+  notificationPermission?: NotificationPermission | "unavailable";
+}): PwaAppBadgeCapabilitySnapshot {
+  const nav =
+    input?.navigator ?? (typeof navigator !== "undefined" ? navigator : undefined);
+  const badgeNav = getNavigatorWithAppBadge(nav);
+  const setAppBadgePresent = typeof badgeNav?.setAppBadge === "function";
+  const clearAppBadgePresent = typeof badgeNav?.clearAppBadge === "function";
+  const standalone =
+    input?.isStandalone ??
+    (typeof window !== "undefined" ? isStandaloneDisplayMode({ navigator: nav }) : false);
+
+  return {
+    standalone,
+    setAppBadgePresent,
+    clearAppBadgePresent,
+    badgeApiSupported: setAppBadgePresent && clearAppBadgePresent,
+    notificationPermission:
+      input?.notificationPermission ?? readNotificationPermission(),
+  };
+}
+
+function recordDiagnostic( partial: Omit<PwaAppBadgeDiagnosticRecord, "atMs">): void {
+  lastDiagnostic = { ...partial, atMs: Date.now() };
   if (process.env.NODE_ENV !== "development") {
     return;
   }
-  // Number + result only — never notification content, sender, or message text.
-  console.debug("[pwa-app-badge]", { result, unreadCount });
+  // Capability + result only — never notification content, sender, identity, or tokens.
+  console.debug("[pwa-app-badge]", {
+    result: partial.result,
+    unreadCount: partial.unreadCount,
+    setAppBadgeReached: partial.setAppBadgeReached,
+    clearAppBadgeReached: partial.clearAppBadgeReached,
+    apiOutcome: partial.apiOutcome,
+    badgeMayBeHiddenByOsOrPermission: partial.badgeMayBeHiddenByOsOrPermission,
+    capability: partial.capability,
+  });
+}
+
+function permissionMayHideBadge(
+  permission: NotificationPermission | "unavailable",
+): boolean {
+  // WebKit: badge visible on Home Screen only after notification permission granted.
+  return permission === "default" || permission === "denied";
 }
 
 /** Clear OS app badge when supported. Never throws into UI. */
@@ -101,6 +196,8 @@ export interface SyncPwaAppBadgeInput {
   /** Test seam — override presentation detection. */
   isStandalone?: boolean;
   navigator?: Navigator;
+  /** Test seam — override Notification.permission read. */
+  notificationPermission?: NotificationPermission | "unavailable";
 }
 
 /**
@@ -110,45 +207,138 @@ export interface SyncPwaAppBadgeInput {
  * - hasError or unreadCount null → preserve (no update)
  * - unreadCount === 0 → clear (standalone, or always if not standaloneOnly)
  * - unreadCount > 0 → set (standalone when standaloneOnly)
+ *
+ * Pack 23C: `UNSUPPORTED BY CURRENT PLATFORM` when Badging API methods are absent
+ * even if the session is an installed/standalone PWA.
  */
 export async function syncPwaAppBadgeFromUnreadCount(
   input: SyncPwaAppBadgeInput,
 ): Promise<PwaAppBadgeSyncResult> {
   const nav = input.navigator;
+  const capability = inspectPwaAppBadgeCapability({
+    navigator: nav ?? (typeof navigator !== "undefined" ? navigator : undefined),
+    isStandalone: input.isStandalone,
+    notificationPermission: input.notificationPermission,
+  });
 
   if (!input.authenticated) {
+    const clearReached = capability.clearAppBadgePresent;
     const result = await clearPwaAppBadge(nav);
-    logBadgeDiagnostic(result, null);
+    recordDiagnostic({
+      result,
+      unreadCount: null,
+      authenticated: false,
+      setAppBadgeReached: false,
+      clearAppBadgeReached: clearReached,
+      apiOutcome:
+        result === "unsupported"
+          ? "unsupported"
+          : result === "api_error"
+            ? "rejected"
+            : clearReached
+              ? "resolved"
+              : "not_called",
+      badgeMayBeHiddenByOsOrPermission: false,
+      capability: { ...capability, standalone: capability.standalone },
+    });
     return result;
   }
 
   if (input.hasError || input.unreadCount === null) {
-    logBadgeDiagnostic("preserved", input.unreadCount);
+    recordDiagnostic({
+      result: "preserved",
+      unreadCount: input.unreadCount,
+      authenticated: true,
+      setAppBadgeReached: false,
+      clearAppBadgeReached: false,
+      apiOutcome: "not_called",
+      badgeMayBeHiddenByOsOrPermission: false,
+      capability,
+    });
     return "preserved";
   }
 
   const standaloneOnly = input.standaloneOnly !== false;
   const standalone =
-    input.isStandalone ?? (typeof window !== "undefined" ? isStandaloneDisplayMode() : false);
+    input.isStandalone ??
+    (typeof window !== "undefined"
+      ? isStandaloneDisplayMode({
+          navigator: nav ?? (typeof navigator !== "undefined" ? navigator : undefined),
+        })
+      : false);
+
+  const capabilityWithStandalone = { ...capability, standalone };
 
   if (standaloneOnly && !standalone) {
-    // Browser tab: keep website header/nav badges only; do not touch OS icon.
-    logBadgeDiagnostic("not_standalone", input.unreadCount);
+    recordDiagnostic({
+      result: "not_standalone",
+      unreadCount: input.unreadCount,
+      authenticated: true,
+      setAppBadgeReached: false,
+      clearAppBadgeReached: false,
+      apiOutcome: "not_called",
+      badgeMayBeHiddenByOsOrPermission: false,
+      capability: capabilityWithStandalone,
+    });
     return "not_standalone";
   }
 
   if (!isAppBadgeSupported(nav)) {
-    logBadgeDiagnostic("unsupported", input.unreadCount);
+    // Installed PWA ≠ Badging API. Explicit unsupported — not a successful sync.
+    recordDiagnostic({
+      result: "unsupported",
+      unreadCount: input.unreadCount,
+      authenticated: true,
+      setAppBadgeReached: false,
+      clearAppBadgeReached: false,
+      apiOutcome: "unsupported",
+      badgeMayBeHiddenByOsOrPermission: false,
+      capability: capabilityWithStandalone,
+    });
     return "unsupported";
   }
 
   if (input.unreadCount > 0) {
     const applied = await setPwaAppBadge(input.unreadCount, nav);
-    logBadgeDiagnostic(applied, input.unreadCount);
+    recordDiagnostic({
+      result: applied,
+      unreadCount: input.unreadCount,
+      authenticated: true,
+      setAppBadgeReached: applied !== "unsupported",
+      clearAppBadgeReached: false,
+      apiOutcome:
+        applied === "applied"
+          ? "resolved"
+          : applied === "api_error"
+            ? "rejected"
+            : applied === "unsupported"
+              ? "unsupported"
+              : "resolved",
+      badgeMayBeHiddenByOsOrPermission:
+        applied === "applied" &&
+        permissionMayHideBadge(capabilityWithStandalone.notificationPermission),
+      capability: capabilityWithStandalone,
+    });
     return applied;
   }
 
   const cleared = await clearPwaAppBadge(nav);
-  logBadgeDiagnostic(cleared, 0);
+  recordDiagnostic({
+    result: cleared,
+    unreadCount: 0,
+    authenticated: true,
+    setAppBadgeReached: false,
+    clearAppBadgeReached: cleared !== "unsupported",
+    apiOutcome:
+      cleared === "cleared"
+        ? "resolved"
+        : cleared === "api_error"
+          ? "rejected"
+          : cleared === "unsupported"
+            ? "unsupported"
+            : "resolved",
+    badgeMayBeHiddenByOsOrPermission: false,
+    capability: capabilityWithStandalone,
+  });
   return cleared;
 }

@@ -59,7 +59,7 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     assert.match(installState, /isIosLikeDevice/);
     const help = readWeb("features/pwa/components/PwaInstallGuidance.tsx");
     assert.match(help, /Add to Home Screen/);
-    assert.match(help, /Share menu/);
+    assert.match(help, /Share button|Share menu/);
     const promo = readWeb("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /Add to Home Screen/);
   });
@@ -71,7 +71,8 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     );
     const promo = readWeb("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /runningStandalone/);
-    assert.match(promo, /\{runningStandalone \? \([\s\S]*Installed/);
+    assert.match(promo, /already installed on this device|Installed/);
+    assert.match(promo, /Open Workspace/);
     assert.match(promo, /showInstallAction = uxState === "install_available" && !dismissed/);
     assert.match(promo, /How to install/);
     assert.match(promo, /handleDismiss[\s\S]*Later/);

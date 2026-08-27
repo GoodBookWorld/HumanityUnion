@@ -19,6 +19,11 @@
   /* Darker slogan-family tone for long principle lines on #f4f7fa. */
   --hu-color-brand-principle: #8f6666;
   --hu-color-danger: #b42318;
+  /* Semantic status — restrained Admin / table chips (Pack 23A). */
+  --hu-color-success: #1a6b3a;
+  --hu-color-warning: #9a6700;
+  /* Pack 23B — PWA footer Notification unread badge only (not header/Admin/OS). */
+  --hu-color-notification-badge: #b42318;
 
   /* Form aliases */
   --hu-control-border: #dadce0;

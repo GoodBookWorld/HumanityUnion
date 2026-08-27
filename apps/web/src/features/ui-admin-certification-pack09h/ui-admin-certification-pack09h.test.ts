@@ -123,7 +123,7 @@ describe("Pack 09H — series certification contracts", () => {
     assert.match(manifest, /\/brand\/app-192\.png/);
     assert.match(manifest, /\/brand\/app-512\.png/);
     const install = readWeb("features/pwa/components/PwaInstallPromotion.tsx");
-    assert.match(install, /Install App|Add to Home Screen/);
+    assert.match(install, /Install Humanity Union|Install App|Add to Home Screen/);
   });
 
   it("09G compact CSS does not target Public Choice Overview voting rows", () => {

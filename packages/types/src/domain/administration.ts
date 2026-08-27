@@ -155,7 +155,9 @@ export type AdministrationAuditAction =
   | "editor.update_permissions"
   | "editor.update_scope"
   | "editor.activate"
-  | "editor.deactivate";
+  | "editor.deactivate"
+  | "beta.invite.create"
+  | "beta.invite.revoke";
 
 export interface AdministrationAuditRecord {
   readonly auditId: string;
@@ -181,6 +183,47 @@ export interface AdministrationAuditAppendInput {
   readonly beforeSummary?: string;
   readonly afterSummary?: string;
   readonly correlationId?: string;
+}
+
+/** Pack 23E.3 — derived audit browser category (not persisted). */
+export type AdminAuditCategory =
+  | "participants"
+  | "initiatives"
+  | "publishing"
+  | "subscribers"
+  | "seo"
+  | "membership"
+  | "beta_access"
+  | "platform"
+  | "public_choice"
+  | "administration"
+  | "other";
+
+/** Pack 23E.3 — safe Admin Audit browser row (no secrets / raw payloads). */
+export interface AdminAuditBrowserItem {
+  readonly auditId: string;
+  readonly createdAt: string;
+  readonly action: AdministrationAuditAction;
+  readonly category: AdminAuditCategory;
+  readonly actorLabel: string;
+  readonly targetType: string;
+  readonly targetId: string;
+  readonly targetLabel: string;
+  readonly targetHref: string | null;
+  readonly safeSummary: string;
+}
+
+export interface AdminAuditBrowserResponse {
+  readonly items: readonly AdminAuditBrowserItem[];
+  readonly total: number;
+  readonly limit: number;
+  readonly offset: number;
+  readonly hasMore: boolean;
+  /**
+   * True when `q` forced a bounded newest-first scan (max 500) rather than a
+   * full-collection search. Retention policy remains governance-owned (no TTL).
+   */
+  readonly searchBounded?: boolean;
 }
 
 /** Admin Panel Pack 03 — safe Participant directory row (never includes secrets). */

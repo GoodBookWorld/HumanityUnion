@@ -77,12 +77,11 @@ describe("Mobile Runtime Polish Pack 10A — header + Knowledge overlay", () => 
     assert.doesNotMatch(layoutCss, /humanity-header__workspace-trigger/);
   });
 
-  it("iOS guidance lists Share → Add to Home Screen → Open as Web App → Add", () => {
+  it("iOS guidance lists Safari Share → Add to Home Screen → Add", () => {
     const guidance = readWeb("features/pwa/components/PwaInstallGuidance.tsx");
-    assert.match(guidance, /Share menu/);
+    assert.match(guidance, /Share button|Share menu/);
     assert.match(guidance, /Add to Home Screen/);
-    assert.match(guidance, /Open as Web App/);
-    assert.match(guidance, /Tap Add/);
+    assert.match(guidance, /Tap.*Add|Tap <strong>Add<\/strong>/);
     assert.doesNotMatch(guidance, /force an OS icon onto your Home Screen without your confirmation/);
   });
 

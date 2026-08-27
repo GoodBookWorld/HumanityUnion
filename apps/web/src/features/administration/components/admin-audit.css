@@ -1,0 +1,43 @@
+.admin-audit__filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.65rem 0.85rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+.admin-audit__filters .admin-panel__label {
+  margin: 0;
+}
+
+.admin-audit__table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-audit__action {
+  font-size: 0.78rem;
+  word-break: break-word;
+}
+
+.admin-audit__pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.admin-audit__pagination-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .admin-audit__filters {
+    grid-template-columns: 1fr;
+  }
+}

@@ -98,9 +98,14 @@ export function PwaInstallPromotion() {
       </p>
 
       {runningStandalone ? (
-        <p className="hu-pwa-install-status" role="status">
-          Installed
-        </p>
+        <div className="hu-pwa-install-actions">
+          <p className="hu-pwa-install-status" role="status">
+            Humanity Union is already installed on this device.
+          </p>
+          <Button type="button" variant="primary" href="/workspace">
+            Open Workspace
+          </Button>
+        </div>
       ) : null}
 
       {!runningStandalone && dismissed ? (
@@ -123,7 +128,13 @@ export function PwaInstallPromotion() {
               onClick={() => void handleInstall()}
               disabled={busy}
             >
-              {busy ? "Installing…" : "Install App"}
+              {busy ? "Installing…" : "Install Humanity Union"}
+            </Button>
+          ) : null}
+
+          {showInstallAction ? (
+            <Button type="button" variant="secondary" onClick={() => openGuidance("android")}>
+              Installation guide
             </Button>
           ) : null}
 
@@ -148,6 +159,7 @@ export function PwaInstallPromotion() {
       <PwaInstallGuidance
         open={guidanceOpen}
         kind={guidanceKind}
+        alreadyInstalled={runningStandalone}
         onClose={() => setGuidanceOpen(false)}
       />
     </div>

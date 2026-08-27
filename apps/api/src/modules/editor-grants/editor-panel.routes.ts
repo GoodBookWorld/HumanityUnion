@@ -28,6 +28,7 @@ import {
 import {
   createBetaInviteForAdmin,
   listBetaInvitesForAdmin,
+  revokeBetaInviteForAdmin,
 } from "../beta-invite/beta-invite.service.js";
 import {
   getInitiativeForEditor,
@@ -528,6 +529,23 @@ editorPanelRouter.post(
         email: body.email ?? "",
       });
       res.status(201).json(createSuccessResponse(result, "Beta invite created."));
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+editorPanelRouter.post(
+  "/beta-invites/:inviteId/revoke",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const invite = await revokeBetaInviteForAdmin({
+        inviteId: String(req.params.inviteId ?? ""),
+        actorUserId: req.auth!.id,
+      });
+      res.json(createSuccessResponse({ invite }, "Beta invite revoked."));
     } catch (error) {
       handleError(res, error);
     }

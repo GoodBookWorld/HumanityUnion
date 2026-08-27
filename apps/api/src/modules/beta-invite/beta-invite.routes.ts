@@ -5,8 +5,16 @@ import {
   authenticationMiddleware,
   requireAuthenticationMiddleware,
 } from "../auth/auth.middleware.js";
-import { BetaInviteAdminRequiredError, BetaInviteValidationError } from "./beta-invite.errors.js";
-import { createBetaInviteForAdmin, listBetaInvitesForAdmin } from "./beta-invite.service.js";
+import {
+  BetaInviteAdminRequiredError,
+  BetaInviteNotFoundError,
+  BetaInviteValidationError,
+} from "./beta-invite.errors.js";
+import {
+  createBetaInviteForAdmin,
+  listBetaInvitesForAdmin,
+  revokeBetaInviteForAdmin,
+} from "./beta-invite.service.js";
 
 const betaInviteRouter = Router();
 
@@ -23,6 +31,10 @@ function createFailureResponse(message: string) {
 function resolveBetaInviteErrorStatus(error: unknown): number {
   if (error instanceof BetaInviteAdminRequiredError) {
     return 403;
+  }
+
+  if (error instanceof BetaInviteNotFoundError) {
+    return 404;
   }
 
   if (error instanceof BetaInviteValidationError) {
@@ -73,6 +85,23 @@ betaInviteRouter.get(
     try {
       const invites = await listBetaInvitesForAdmin(req.auth!.id);
       res.json(createSuccessResponse({ invites }, "Beta invites loaded."));
+    } catch (error) {
+      handleBetaInviteError(res, error);
+    }
+  },
+);
+
+betaInviteRouter.post(
+  "/:inviteId/revoke",
+  authenticationMiddleware,
+  requireAuthenticationMiddleware,
+  async (req, res) => {
+    try {
+      const invite = await revokeBetaInviteForAdmin({
+        inviteId: String(req.params.inviteId ?? ""),
+        actorUserId: req.auth!.id,
+      });
+      res.json(createSuccessResponse({ invite }, "Beta invite revoked."));
     } catch (error) {
       handleBetaInviteError(res, error);
     }

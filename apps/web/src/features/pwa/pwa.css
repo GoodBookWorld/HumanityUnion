@@ -144,8 +144,9 @@
   min-width: 1.1rem;
   padding: 0 0.25rem;
   border-radius: 999px;
-  background: var(--hu-color-primary, #0174b0);
-  color: #fff;
+  /* Pack 23B — footer Notification unread only (not header / Admin / OS App Badge). */
+  background: var(--hu-color-notification-badge, var(--hu-color-danger, #b42318));
+  color: #ffffff;
   font-size: 0.65rem;
   font-weight: 700;
   line-height: 1.2;
@@ -270,18 +271,129 @@
   background: rgb(15 23 32 / 0.5);
 }
 
+.hu-pwa-ios-help__backdrop {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
 .hu-pwa-ios-help__dialog {
-  width: min(24rem, 100%);
-  padding: var(--hu-space-5);
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: min(40rem, 100%);
+  max-height: min(90vh, 44rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--hu-space-5) var(--hu-space-6);
   border-radius: var(--hu-radius-lg);
   background: var(--hu-color-bg);
+  display: grid;
+  gap: var(--hu-space-4);
+}
+
+.hu-pwa-ios-help__dialog h2 {
+  margin: 0;
+  font-size: clamp(1.15rem, 2.5vw, 1.35rem);
+  line-height: 1.25;
+}
+
+.hu-pwa-ios-help__subtitle {
+  margin: 0;
+  color: var(--hu-color-text-muted);
+  line-height: 1.45;
+}
+
+.hu-pwa-ios-help__platforms {
+  display: grid;
+  gap: var(--hu-space-4);
+  grid-template-columns: 1fr;
+}
+
+.hu-pwa-ios-help__card {
+  box-sizing: border-box;
+  padding: var(--hu-space-4);
+  border: 1px solid var(--hu-color-border, #d6dee8);
+  border-radius: var(--hu-radius-md, 8px);
+  background: var(--hu-color-bg-muted, #f4f7fa);
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.hu-pwa-ios-help__card--emphasized {
+  border-color: color-mix(in srgb, var(--hu-color-primary, #0174b0) 45%, var(--hu-color-border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hu-color-primary, #0174b0) 18%, transparent);
+}
+
+.hu-pwa-ios-help__card h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.3;
 }
 
 .hu-pwa-ios-help__dialog ol {
-  margin: 0 0 var(--hu-space-4);
+  margin: 0;
   padding-left: 1.25rem;
-  color: var(--hu-color-text-muted);
+  color: var(--hu-color-text, #1a2b3c);
   line-height: 1.5;
+}
+
+.hu-pwa-ios-help__dialog ol li + li {
+  margin-top: 0.35rem;
+}
+
+.hu-pwa-ios-help__hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--hu-color-text-muted);
+  line-height: 1.45;
+}
+
+.hu-pwa-ios-help__note {
+  margin: 0;
+}
+
+.hu-pwa-ios-help__installed {
+  display: grid;
+  gap: var(--hu-space-3);
+}
+
+.hu-pwa-ios-help__installed p {
+  margin: 0;
+  color: var(--hu-color-text);
+  line-height: 1.45;
+}
+
+.hu-pwa-ios-help__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  justify-content: flex-end;
+}
+
+@media (min-width: 720px) {
+  .hu-pwa-ios-help__platforms {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .hu-pwa-ios-help__dialog {
+    width: min(44rem, 100%);
+    padding: var(--hu-space-6);
+  }
+}
+
+@media (max-width: 719px) {
+  .hu-pwa-ios-help__dialog {
+    width: min(100%, 28rem);
+    max-height: min(92vh, 40rem);
+    padding: var(--hu-space-4) var(--hu-space-5);
+  }
 }
 
 .hu-pwa-install-column {

@@ -20,3 +20,11 @@ export async function createBetaInviteForAdmin(email: string): Promise<CreateBet
     body: JSON.stringify({ email }),
   });
 }
+
+export async function revokeBetaInviteForAdmin(inviteId: string): Promise<BetaInvitePublic> {
+  const data = await apiRequest<{ invite: BetaInvitePublic }>(
+    `/api/v1/beta-invites/${encodeURIComponent(inviteId)}/revoke`,
+    { method: "POST" },
+  );
+  return data.invite;
+}

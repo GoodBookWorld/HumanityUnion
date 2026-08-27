@@ -9,6 +9,7 @@ export interface BetaInviteRecord {
   createdAt: string;
   expiresAt: string;
   usedAt?: string;
+  revokedAt?: string;
   status: BetaInviteStatus;
 }
 

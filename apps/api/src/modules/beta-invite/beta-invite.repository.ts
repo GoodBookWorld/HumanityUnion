@@ -8,6 +8,13 @@ import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connectio
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import { AuthPersistenceUnavailableError } from "../auth/auth.errors.js";
 import { hashBetaInviteCode, normalizeBetaInviteCode } from "./beta-invite-code.js";
+import {
+  deleteBetaInvitesMemoryByEmailPrefix,
+  getBetaInviteByIdMemory,
+  insertBetaInviteMemory,
+  listBetaInvitesMemory,
+  updateBetaInviteMemoryIfStatus,
+} from "./beta-invite.memory.store.js";
 import type {
   BetaInviteRecord,
   CreateBetaInviteInput,
@@ -19,11 +26,24 @@ interface BetaInviteDocument extends BetaInviteRecord {
   _id?: string;
 }
 
+let forceMemoryForTests = false;
+
+export function setBetaInviteForceMemoryForTests(enabled: boolean): void {
+  forceMemoryForTests = enabled;
+}
+
+function shouldUseMemoryAdapter(): boolean {
+  return forceMemoryForTests || !isMongoConfigured();
+}
+
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
 async function ensureBetaInviteMongoReady(): Promise<void> {
+  if (shouldUseMemoryAdapter()) {
+    return;
+  }
   if (!isMongoConfigured()) {
     throw new AuthPersistenceUnavailableError();
   }
@@ -51,15 +71,38 @@ export async function insertBetaInvite(input: CreateBetaInviteInput): Promise<Is
     status: "pending",
   };
 
+  if (shouldUseMemoryAdapter()) {
+    insertBetaInviteMemory(record);
+    return { invite: record, code };
+  }
+
   const collection = getMongoCollection<BetaInviteDocument>(MONGO_COLLECTIONS.betaInvites);
-
   await collection.insertOne(record);
-
   return { invite: record, code };
+}
+
+export async function findBetaInviteById(inviteId: string): Promise<BetaInviteRecord | null> {
+  await ensureBetaInviteMongoReady();
+
+  if (shouldUseMemoryAdapter()) {
+    return getBetaInviteByIdMemory(inviteId);
+  }
+
+  const collection = getMongoCollection<BetaInviteDocument>(MONGO_COLLECTIONS.betaInvites);
+  const document = await collection.findOne({ inviteId });
+  return document ? toRecord(document) : null;
 }
 
 export async function findBetaInviteByEmail(email: string): Promise<BetaInviteRecord | null> {
   await ensureBetaInviteMongoReady();
+
+  if (shouldUseMemoryAdapter()) {
+    return (
+      listBetaInvitesMemory().find(
+        (invite) => invite.email === normalizeEmail(email) && invite.status === "pending",
+      ) ?? null
+    );
+  }
 
   const collection = getMongoCollection<BetaInviteDocument>(MONGO_COLLECTIONS.betaInvites);
   const document = await collection.findOne({
@@ -75,6 +118,14 @@ export async function findPendingBetaInviteByCodeHash(
 ): Promise<BetaInviteRecord | null> {
   await ensureBetaInviteMongoReady();
 
+  if (shouldUseMemoryAdapter()) {
+    return (
+      listBetaInvitesMemory().find(
+        (invite) => invite.codeHash === codeHash && invite.status === "pending",
+      ) ?? null
+    );
+  }
+
   const collection = getMongoCollection<BetaInviteDocument>(MONGO_COLLECTIONS.betaInvites);
   const document = await collection.findOne({
     codeHash,
@@ -87,6 +138,14 @@ export async function findPendingBetaInviteByCodeHash(
 export async function markBetaInviteUsed(inviteId: string, usedAt: string): Promise<void> {
   await ensureBetaInviteMongoReady();
 
+  if (shouldUseMemoryAdapter()) {
+    updateBetaInviteMemoryIfStatus(inviteId, "pending", {
+      status: "used",
+      usedAt,
+    });
+    return;
+  }
+
   const collection = getMongoCollection<BetaInviteDocument>(MONGO_COLLECTIONS.betaInvites);
 
   await collection.updateOne(
@@ -98,6 +157,35 @@ export async function markBetaInviteUsed(inviteId: string, usedAt: string): Prom
       },
     },
   );
+}
+
+export async function markBetaInviteRevoked(
+  inviteId: string,
+  revokedAt: string,
+): Promise<BetaInviteRecord | null> {
+  await ensureBetaInviteMongoReady();
+
+  if (shouldUseMemoryAdapter()) {
+    return updateBetaInviteMemoryIfStatus(inviteId, "pending", {
+      status: "revoked",
+      revokedAt,
+    });
+  }
+
+  const collection = getMongoCollection<BetaInviteDocument>(MONGO_COLLECTIONS.betaInvites);
+
+  const result = await collection.findOneAndUpdate(
+    { inviteId, status: "pending" },
+    {
+      $set: {
+        status: "revoked" satisfies BetaInviteStatus,
+        revokedAt,
+      },
+    },
+    { returnDocument: "after" },
+  );
+
+  return result ? toRecord(result) : null;
 }
 
 export async function expireBetaInviteIfNeeded(
@@ -113,6 +201,13 @@ export async function expireBetaInviteIfNeeded(
 
   await ensureBetaInviteMongoReady();
 
+  if (shouldUseMemoryAdapter()) {
+    const updated = updateBetaInviteMemoryIfStatus(invite.inviteId, "pending", {
+      status: "expired",
+    });
+    return updated ?? { ...invite, status: "expired" };
+  }
+
   const collection = getMongoCollection<BetaInviteDocument>(MONGO_COLLECTIONS.betaInvites);
 
   await collection.updateOne(
@@ -126,6 +221,13 @@ export async function expireBetaInviteIfNeeded(
 export async function listBetaInvitesByCreator(createdBy: string): Promise<BetaInviteRecord[]> {
   await ensureBetaInviteMongoReady();
 
+  if (shouldUseMemoryAdapter()) {
+    return listBetaInvitesMemory()
+      .filter((invite) => invite.createdBy === createdBy)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, 100);
+  }
+
   const collection = getMongoCollection<BetaInviteDocument>(MONGO_COLLECTIONS.betaInvites);
   const documents = await collection
     .find({ createdBy })
@@ -136,7 +238,34 @@ export async function listBetaInvitesByCreator(createdBy: string): Promise<BetaI
   return documents.map(toRecord);
 }
 
+/** Admin-wide inventory — not for Editor-scoped callers. */
+export async function listAllBetaInvites(limit = 200): Promise<BetaInviteRecord[]> {
+  await ensureBetaInviteMongoReady();
+
+  const capped = Math.min(Math.max(limit, 1), 500);
+
+  if (shouldUseMemoryAdapter()) {
+    return listBetaInvitesMemory()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, capped);
+  }
+
+  const collection = getMongoCollection<BetaInviteDocument>(MONGO_COLLECTIONS.betaInvites);
+  const documents = await collection
+    .find({})
+    .sort({ createdAt: -1 })
+    .limit(capped)
+    .toArray();
+
+  return documents.map(toRecord);
+}
+
 export async function deleteBetaInvitesByEmailPrefix(emailPrefix: string): Promise<void> {
+  if (shouldUseMemoryAdapter()) {
+    deleteBetaInvitesMemoryByEmailPrefix(emailPrefix);
+    return;
+  }
+
   if (!isMongoConfigured()) {
     return;
   }

@@ -1,13 +1,21 @@
-import type { BetaInvitePublic } from "@hu/types";
+import type {
+  AdministrationAuditAppendInput,
+  AdministrationAuditRecord,
+  BetaInvitePublic,
+} from "@hu/types";
 
 import { resolveBetaInviteExpiresDays } from "../../config/platform.config.js";
+import { AuditService } from "../administration/audit.service.js";
 import { findAuthUserById } from "../auth/auth-user.repository.js";
 import {
   expireBetaInviteIfNeeded,
   findBetaInviteByEmail,
+  findBetaInviteById,
   findPendingBetaInviteByCodeHash,
   insertBetaInvite,
+  listAllBetaInvites,
   listBetaInvitesByCreator,
+  markBetaInviteRevoked,
   markBetaInviteUsed,
   resolveInviteCodeHash,
 } from "./beta-invite.repository.js";
@@ -18,6 +26,34 @@ import {
   BetaInviteValidationError,
 } from "./beta-invite.errors.js";
 import type { BetaInviteRecord, IssuedBetaInvite } from "./beta-invite.types.js";
+
+type BetaInviteManager = {
+  userId: string;
+  memberId: string;
+  authority: "admin" | "editor";
+};
+
+type BetaInviteManagerResolver = (userId: string) => Promise<BetaInviteManager>;
+type BetaInviteAuditRecorder = (
+  input: AdministrationAuditAppendInput,
+) => Promise<AdministrationAuditRecord>;
+
+let managerAssertOverrideForTests: BetaInviteManagerResolver | null = null;
+let auditRecorderOverrideForTests: BetaInviteAuditRecorder | null = null;
+
+/** Pack 23E.1 — test seam for authorization without live auth users. */
+export function setBetaInviteManagerAssertOverrideForTests(
+  override: BetaInviteManagerResolver | null,
+): void {
+  managerAssertOverrideForTests = override;
+}
+
+/** Pack 23E.1 — test seam for audit assertions without live audit Mongo. */
+export function setBetaInviteAuditRecorderOverrideForTests(
+  override: BetaInviteAuditRecorder | null,
+): void {
+  auditRecorderOverrideForTests = override;
+}
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -30,11 +66,33 @@ function toPublicInvite(invite: BetaInviteRecord): BetaInvitePublic {
     status: invite.status,
     createdAt: invite.createdAt,
     expiresAt: invite.expiresAt,
+    createdBy: invite.createdBy,
     usedAt: invite.usedAt,
+    revokedAt: invite.revokedAt,
   };
 }
 
-async function assertAdminUser(userId: string): Promise<void> {
+function summarizeInviteTransition(
+  inviteId: string,
+  fromStatus: string,
+  toStatus: string,
+): string {
+  return `inviteId=${inviteId}; status=${fromStatus}→${toStatus}`;
+}
+
+async function recordBetaInviteAudit(input: AdministrationAuditAppendInput): Promise<void> {
+  if (auditRecorderOverrideForTests) {
+    await auditRecorderOverrideForTests(input);
+    return;
+  }
+  await AuditService.record(input);
+}
+
+async function assertBetaInviteManager(userId: string): Promise<BetaInviteManager> {
+  if (managerAssertOverrideForTests) {
+    return managerAssertOverrideForTests(userId);
+  }
+
   const user = await findAuthUserById(userId);
 
   if (!user || user.status !== "active") {
@@ -42,7 +100,7 @@ async function assertAdminUser(userId: string): Promise<void> {
   }
 
   if (user.role === "admin") {
-    return;
+    return { userId: user.userId, memberId: user.memberId, authority: "admin" };
   }
 
   // Pack 12B — World Editors with BETA_ACCESS_EDIT may manage their own invites.
@@ -62,13 +120,25 @@ async function assertAdminUser(userId: string): Promise<void> {
   if (!grant || !betaAccessCompatibleWithEditorScope(grant.geographicScope)) {
     throw new BetaInviteAdminRequiredError();
   }
+
+  return { userId: user.userId, memberId: user.memberId, authority: "editor" };
+}
+
+async function refreshInviteStatuses(
+  invites: readonly BetaInviteRecord[],
+): Promise<BetaInviteRecord[]> {
+  const refreshed: BetaInviteRecord[] = [];
+  for (const invite of invites) {
+    refreshed.push(await expireBetaInviteIfNeeded(invite));
+  }
+  return refreshed;
 }
 
 export async function createBetaInviteForAdmin(input: {
   email: string;
   createdBy: string;
 }): Promise<{ invite: BetaInvitePublic; code: string }> {
-  await assertAdminUser(input.createdBy);
+  const actor = await assertBetaInviteManager(input.createdBy);
 
   const email = normalizeEmail(input.email);
 
@@ -85,17 +155,102 @@ export async function createBetaInviteForAdmin(input: {
     expiresAt: expiresAt.toISOString(),
   });
 
+  await recordBetaInviteAudit({
+    actorParticipantId: actor.memberId,
+    action: "beta.invite.create",
+    targetType: "beta_invite",
+    targetId: issued.invite.inviteId,
+    afterSummary: summarizeInviteTransition(issued.invite.inviteId, "none", "pending"),
+  });
+
   return {
     invite: toPublicInvite(issued.invite),
     code: issued.code,
   };
 }
 
+/**
+ * Pack 23E.1 — Administrators see platform-wide inventory; WORLD Editors remain
+ * creator-scoped (safer current contract).
+ */
 export async function listBetaInvitesForAdmin(userId: string): Promise<BetaInvitePublic[]> {
-  await assertAdminUser(userId);
+  const actor = await assertBetaInviteManager(userId);
 
-  const invites = await listBetaInvitesByCreator(userId);
-  return invites.map(toPublicInvite);
+  const invites =
+    actor.authority === "admin"
+      ? await listAllBetaInvites(200)
+      : await listBetaInvitesByCreator(userId);
+
+  const refreshed = await refreshInviteStatuses(invites);
+  return refreshed.map(toPublicInvite);
+}
+
+/**
+ * Pack 23E.1 — Revoke a pending invite. Used/expired cannot be revoked.
+ * Already-revoked is idempotent. Editors may revoke only invites they created.
+ */
+export async function revokeBetaInviteForAdmin(input: {
+  inviteId: string;
+  actorUserId: string;
+}): Promise<BetaInvitePublic> {
+  const actor = await assertBetaInviteManager(input.actorUserId);
+  const inviteId = input.inviteId.trim();
+
+  if (!inviteId) {
+    throw new BetaInviteValidationError("Invite id is required.");
+  }
+
+  const existing = await findBetaInviteById(inviteId);
+  if (!existing) {
+    throw new BetaInviteNotFoundError("Invite not found.");
+  }
+
+  if (actor.authority === "editor" && existing.createdBy !== actor.userId) {
+    throw new BetaInviteAdminRequiredError(
+      "You may only revoke beta invites that you created.",
+    );
+  }
+
+  const current = await expireBetaInviteIfNeeded(existing);
+
+  if (current.status === "revoked") {
+    return toPublicInvite(current);
+  }
+
+  if (current.status === "used") {
+    throw new BetaInviteValidationError("Used invites cannot be revoked.");
+  }
+
+  if (current.status === "expired") {
+    throw new BetaInviteValidationError("Expired invites cannot be revoked.");
+  }
+
+  if (current.status !== "pending") {
+    throw new BetaInviteValidationError("Only pending invites can be revoked.");
+  }
+
+  const revokedAt = new Date().toISOString();
+  const revoked = await markBetaInviteRevoked(current.inviteId, revokedAt);
+
+  // Race: another actor consumed or expired between read and update.
+  if (!revoked) {
+    const latest = await findBetaInviteById(current.inviteId);
+    if (latest?.status === "revoked") {
+      return toPublicInvite(latest);
+    }
+    throw new BetaInviteValidationError("Only pending invites can be revoked.");
+  }
+
+  await recordBetaInviteAudit({
+    actorParticipantId: actor.memberId,
+    action: "beta.invite.revoke",
+    targetType: "beta_invite",
+    targetId: revoked.inviteId,
+    beforeSummary: "status=pending",
+    afterSummary: summarizeInviteTransition(revoked.inviteId, "pending", "revoked"),
+  });
+
+  return toPublicInvite(revoked);
 }
 
 export async function validateAndConsumeBetaInvite(input: {

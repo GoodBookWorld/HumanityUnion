@@ -182,6 +182,7 @@ import { proposalRouter } from "./modules/proposal/index.js";
 import { decisionRouter } from "./modules/decision/index.js";
 import betaInviteRouter from "./modules/beta-invite/beta-invite.routes.js";
 import adminParticipantDirectoryRouter from "./modules/administration/admin-participant-directory.routes.js";
+import adminAuditRouter from "./modules/administration/admin-audit.routes.js";
 import adminInitiativeDirectoryRouter from "./modules/administration/admin-initiative-directory.routes.js";
 import adminPublicChoiceRouter from "./modules/administration/admin-public-choice.routes.js";
 import { adminNotificationsRouter } from "./modules/admin-notifications/admin-notification.routes.js";
@@ -193,6 +194,7 @@ import {
   publicTrafficAnalyticsRouter,
 } from "./modules/traffic-analytics/index.js";
 import closedBetaRouter from "./modules/closed-beta/closed-beta.routes.js";
+import adminPlatformReadinessRouter from "./modules/closed-beta/admin-platform-readiness.routes.js";
 import {
   adminPlatformSocialAccountsRouter,
   publicPlatformSocialAccountsRouter,
@@ -250,11 +252,13 @@ app.use("/api/v1/media", mediaUploadRouter);
 app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/platform", closedBetaRouter);
 app.use("/api/v1/platform/social-accounts", publicPlatformSocialAccountsRouter);
+app.use("/api/v1/admin/platform/readiness", adminPlatformReadinessRouter);
 app.use("/api/v1/admin/platform/social-accounts", adminPlatformSocialAccountsRouter);
 app.use("/api/v1/admin/seo/page-overrides", adminSeoPageOverridesRouter);
 app.use("/api/v1/public/seo/page-overrides", publicSeoPageOverridesRouter);
 app.use("/api/v1/beta-invites", betaInviteRouter);
 app.use("/api/v1/admin/participants", adminParticipantDirectoryRouter);
+app.use("/api/v1/admin/audit", adminAuditRouter);
 app.use("/api/v1/admin/editors", adminEditorGrantsRouter);
 app.use("/api/v1/admin/publishing", adminPublishingRouter);
 app.use("/api/v1/admin/notifications", adminNotificationsRouter);

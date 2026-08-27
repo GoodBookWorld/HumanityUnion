@@ -1,16 +1,19 @@
 /** Platform deployment mode controlling access and safeguards. */
 export type PlatformMode = "development" | "beta" | "production";
 
-export type BetaInviteStatus = "pending" | "used" | "expired";
+export type BetaInviteStatus = "pending" | "used" | "expired" | "revoked";
 
-/** Safe beta invite projection — never includes raw invite codes. */
+/** Safe beta invite projection — never includes raw invite codes or hashes. */
 export interface BetaInvitePublic {
   inviteId: string;
   email: string;
   status: BetaInviteStatus;
   createdAt: string;
   expiresAt: string;
+  /** Auth user id of the actor who created the invite (Admin inventory). */
+  createdBy: string;
   usedAt?: string;
+  revokedAt?: string;
 }
 
 export interface BetaOnboardingItem {
@@ -30,6 +33,56 @@ export interface PlatformConfigPublic {
   registrationRequiresInvite: boolean;
   showBetaBanner: boolean;
   betaBannerMessage: string;
+}
+
+/**
+ * Pack 23E.2 — Admin Platform production-readiness projection.
+ * Booleans/enums only — never secrets, URIs with credentials, or raw env values.
+ */
+export type AdminPlatformServiceConfigState =
+  | "configured"
+  | "not_configured"
+  | "incomplete"
+  | "enabled"
+  | "disabled"
+  | "external";
+
+export type AdminPlatformReadinessLevel = "ready" | "attention" | "missing_configuration";
+
+export type AdminPlatformWarningCode =
+  | "production_site_origin_missing"
+  | "production_indexing_disabled"
+  | "indexing_policy_attention"
+  | "email_not_configured"
+  | "media_incomplete"
+  | "api_public_origin_missing"
+  | "cors_origin_missing";
+
+export interface AdminPlatformServiceConfigStatus {
+  readonly web: AdminPlatformServiceConfigState;
+  readonly api: AdminPlatformServiceConfigState;
+  readonly mongodb: AdminPlatformServiceConfigState;
+  readonly email: AdminPlatformServiceConfigState;
+  readonly media: AdminPlatformServiceConfigState;
+  readonly ai: AdminPlatformServiceConfigState;
+}
+
+/** Safe Admin-only readiness snapshot from the API process. */
+export interface AdminPlatformReadinessPublic {
+  readonly platformMode: PlatformMode;
+  readonly platformVersion: string;
+  readonly registrationRequiresInvite: boolean;
+  readonly showBetaBanner: boolean;
+  readonly betaBannerMessage: string;
+  /** Presence of a public Web/site origin in API-visible env (no URL value). */
+  readonly publicSiteOriginConfigured: boolean;
+  readonly apiPublicOriginConfigured: boolean;
+  readonly corsOriginConfigured: boolean;
+  /** Cookie domain/secure flags are deployment-owned; not inspectable as values. */
+  readonly cookieSecurityStatus: "external";
+  readonly emailPublicUrlConfigured: boolean;
+  readonly mediaPublicOriginConfigured: boolean;
+  readonly services: AdminPlatformServiceConfigStatus;
 }
 
 /**
