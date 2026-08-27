@@ -1,10 +1,9 @@
 import { Router, type Request, type Response } from "express";
 
-import type { MembershipApplicationInput } from "@hu/types";
-
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { requireJwtAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { getMemberById } from "../member/member-access.js";
+import { parseApplicationBody } from "./membership-application-body.js";
 import {
   MembershipAccessDeniedError,
   MembershipConflictError,
@@ -25,6 +24,8 @@ import {
   MembershipPaymentUnavailableError,
   MembershipPaymentValidationError,
 } from "../membership-payment/index.js";
+
+export { parseApplicationBody } from "./membership-application-body.js";
 
 const membershipRouter = Router();
 
@@ -93,19 +94,6 @@ function resolveAuthUserId(req: Request): string | null {
 async function resolveDisplayName(req: Request): Promise<string> {
   const member = req.auth?.memberId ? await getMemberById(req.auth.memberId) : null;
   return member?.profile.displayName ?? req.auth?.email.split("@")[0] ?? "Participant";
-}
-
-function parseApplicationBody(body: unknown): MembershipApplicationInput {
-  const payload = body as Partial<MembershipApplicationInput>;
-
-  return {
-    countryCode: String(payload.countryCode ?? ""),
-    displayNameConfirmed: String(payload.displayNameConfirmed ?? ""),
-    understandMembershipMeaning: payload.understandMembershipMeaning === true,
-    understandNoVoteWeightChange: payload.understandNoVoteWeightChange === true,
-    understandDataPolicy: payload.understandDataPolicy === true,
-    submit: payload.submit === true,
-  };
 }
 
 membershipRouter.get("/me", requireJwtAuthenticationMiddleware, async (req, res) => {

@@ -133,7 +133,7 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
         ) : applicationLocked ? (
           <StatusBanner
             title="Application submitted"
-            message="Your Membership application has been submitted. Membership Contribution will be available in a future platform update."
+            message="Your Membership application has been submitted. Complete the Membership Contribution below to become a Member."
           />
         ) : (
           <form
