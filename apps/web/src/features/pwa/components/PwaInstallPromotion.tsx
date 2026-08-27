@@ -19,11 +19,9 @@ import { PwaInstallGuidance, type PwaInstallGuidanceKind } from "./PwaInstallGui
 
 /**
  * Home App column install UX — promotion block stays discoverable.
- * Dismissal temporarily hides CTAs; it is not proof the OS still has the app.
- * Standalone (running as installed app) shows a compact Installed status only.
- *
- * Ordinary browser mode must never become an actionless dead end: always offer
- * Install / Add to Home Screen / How to install, plus Later, or Show install options.
+ * Pack 23D.1 — manual "Installation guide" is always available when not installed,
+ * even when `beforeinstallprompt` is absent (Incognito / unsupported auto-install).
+ * Automatic Install CTA only when a deferred prompt exists.
  */
 export function PwaInstallPromotion() {
   const [uxState, setUxState] = useState<PwaInstallUxState>("browser_mode");
@@ -83,11 +81,28 @@ export function PwaInstallPromotion() {
     setGuidanceOpen(true);
   }
 
+  function openDefaultGuide() {
+    if (uxState === "ios_add_to_home") {
+      openGuidance("ios");
+      return;
+    }
+    if (uxState === "install_available") {
+      openGuidance("android");
+      return;
+    }
+    openGuidance("browser");
+  }
+
   const runningStandalone = uxState === "already_installed";
+  /** Automatic install only when beforeinstallprompt deferred prompt exists. */
   const showInstallAction = uxState === "install_available" && !dismissed;
   const showIosAction = uxState === "ios_add_to_home" && !dismissed;
-  const showHowToInstall =
-    !dismissed && (uxState === "unsupported" || uxState === "browser_mode");
+  /**
+   * Pack 23D.1 — manual guide must not depend on beforeinstallprompt.
+   * Visible whenever not installed (and not temporarily dismissed).
+   */
+  const showInstallationGuide = !runningStandalone && !dismissed;
+  const automaticInstallAvailable = uxState === "install_available";
 
   return (
     <div className="hu-pwa-install-column">
@@ -132,21 +147,15 @@ export function PwaInstallPromotion() {
             </Button>
           ) : null}
 
-          {showInstallAction ? (
-            <Button type="button" variant="secondary" onClick={() => openGuidance("android")}>
-              Installation guide
-            </Button>
-          ) : null}
-
           {showIosAction ? (
             <Button type="button" variant="primary" onClick={() => openGuidance("ios")}>
               Add to Home Screen
             </Button>
           ) : null}
 
-          {showHowToInstall ? (
-            <Button type="button" variant="primary" onClick={() => openGuidance("browser")}>
-              How to install
+          {showInstallationGuide ? (
+            <Button type="button" variant="secondary" onClick={openDefaultGuide}>
+              Installation guide
             </Button>
           ) : null}
 
@@ -160,6 +169,7 @@ export function PwaInstallPromotion() {
         open={guidanceOpen}
         kind={guidanceKind}
         alreadyInstalled={runningStandalone}
+        automaticInstallAvailable={automaticInstallAvailable}
         onClose={() => setGuidanceOpen(false)}
       />
     </div>

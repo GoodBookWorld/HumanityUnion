@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, type MouseEvent } from "react";
 
 import { trapTabKey } from "../../../design-system/focus-trap";
 import { Button } from "../../../design-system";
@@ -16,17 +16,24 @@ interface PwaInstallGuidanceProps {
   kind: PwaInstallGuidanceKind;
   /** When true, show already-installed status instead of install steps. */
   alreadyInstalled?: boolean;
+  /**
+   * Pack 23D.1 — when false (no beforeinstallprompt), surface a truthful note that
+   * automatic install may require a normal browser session.
+   */
+  automaticInstallAvailable?: boolean;
   onClose: () => void;
 }
 
 /**
  * Pack 23D — Install help for Android + iPhone/iPad.
+ * Pack 23D.1 — wider viewport-fit dialog; backdrop click closes; × close control.
  * Truthful guidance — never claims the Web app can force an OS icon.
  */
 export function PwaInstallGuidance({
   open,
   kind,
   alreadyInstalled = false,
+  automaticInstallAvailable = false,
   onClose,
 }: PwaInstallGuidanceProps) {
   const titleId = useId();
@@ -72,12 +79,21 @@ export function PwaInstallGuidance({
   const emphasizeIos = kind === "ios";
   const emphasizeAndroid = kind === "android" || kind === "browser";
 
+  function handleOverlayClick(event: MouseEvent<HTMLDivElement>) {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  }
+
+  function stopDialogClickPropagation(event: MouseEvent<HTMLDivElement>) {
+    event.stopPropagation();
+  }
+
   return (
-    <div className="hu-pwa-ios-help" role="presentation">
-      <button
-        type="button"
+    <div className="hu-pwa-ios-help" role="presentation" onClick={handleOverlayClick}>
+      <div
         className="hu-pwa-ios-help__backdrop"
-        aria-label="Close install help"
+        aria-hidden="true"
         onClick={onClose}
       />
       <div
@@ -87,8 +103,19 @@ export function PwaInstallGuidance({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
+        onClick={stopDialogClickPropagation}
       >
-        <h2 id={titleId}>Install Humanity Union App</h2>
+        <div className="hu-pwa-ios-help__header">
+          <h2 id={titleId}>Install Humanity Union App</h2>
+          <button
+            type="button"
+            className="hu-pwa-ios-help__close"
+            aria-label="Close installation guide"
+            onClick={onClose}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
         <p className="hu-pwa-ios-help__subtitle">
           Add Humanity Union to your Home Screen for faster access and an app-like experience.
         </p>
@@ -102,6 +129,14 @@ export function PwaInstallGuidance({
           </div>
         ) : (
           <>
+            {!automaticInstallAvailable ? (
+              <p className="hu-pwa-ios-help__hint hu-pwa-ios-help__hint--banner" role="note">
+                Automatic install is not available in this browser session. Use the steps below, or
+                reopen Humanity Union in a normal (non-private) browser window if installation does
+                not appear.
+              </p>
+            ) : null}
+
             <div className="hu-pwa-ios-help__platforms">
               <section
                 className={

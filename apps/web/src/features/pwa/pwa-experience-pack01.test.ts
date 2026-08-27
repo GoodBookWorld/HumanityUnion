@@ -74,7 +74,7 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     assert.match(promo, /already installed on this device|Installed/);
     assert.match(promo, /Open Workspace/);
     assert.match(promo, /showInstallAction = uxState === "install_available" && !dismissed/);
-    assert.match(promo, /How to install/);
+    assert.match(promo, /Installation guide/);
     assert.match(promo, /handleDismiss[\s\S]*Later/);
   });
 

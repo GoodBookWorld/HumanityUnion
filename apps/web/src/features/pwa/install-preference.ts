@@ -40,23 +40,28 @@ export function wasInstallPromotionDismissedRecently(): boolean {
     return false;
   }
 
-  const raw = window.sessionStorage.getItem(DISMISS_KEY);
-  if (!raw) {
+  try {
+    const raw = window.sessionStorage.getItem(DISMISS_KEY);
+    if (!raw) {
+      return false;
+    }
+
+    const at = Number.parseInt(raw, 10);
+    if (!Number.isFinite(at)) {
+      window.sessionStorage.removeItem(DISMISS_KEY);
+      return false;
+    }
+
+    if (Date.now() - at >= DISMISS_TTL_MS) {
+      window.sessionStorage.removeItem(DISMISS_KEY);
+      return false;
+    }
+
+    return true;
+  } catch {
+    // Private / restricted storage — treat as not dismissed so the guide stays available.
     return false;
   }
-
-  const at = Number.parseInt(raw, 10);
-  if (!Number.isFinite(at)) {
-    window.sessionStorage.removeItem(DISMISS_KEY);
-    return false;
-  }
-
-  if (Date.now() - at >= DISMISS_TTL_MS) {
-    window.sessionStorage.removeItem(DISMISS_KEY);
-    return false;
-  }
-
-  return true;
 }
 
 export function dismissInstallPromotion(): void {
@@ -64,5 +69,9 @@ export function dismissInstallPromotion(): void {
     return;
   }
 
-  window.sessionStorage.setItem(DISMISS_KEY, String(Date.now()));
+  try {
+    window.sessionStorage.setItem(DISMISS_KEY, String(Date.now()));
+  } catch {
+    // Private / restricted storage — dismissal is best-effort only.
+  }
 }

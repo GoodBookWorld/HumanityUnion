@@ -167,7 +167,7 @@ describe("PWA UX Correction Pack 02", () => {
     assert.match(promo, /Show install options/);
     assert.match(promo, /Install Humanity Union|Install App/);
     assert.match(promo, /Add to Home Screen/);
-    assert.match(promo, /How to install/);
+    assert.match(promo, /Installation guide/);
     assert.match(promo, /handleDismiss[\s\S]*Later/);
     assert.match(promo, /clearObsoleteInstallPreferenceKeys/);
     assert.match(guidance, /Install Humanity Union App|How to install Humanity|Add to Home Screen/);

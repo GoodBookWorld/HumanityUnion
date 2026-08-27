@@ -96,8 +96,8 @@ describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
 
   it("11 — modal size/scroll contract", () => {
     const css = read("features/pwa/pwa.css");
-    assert.match(css, /\.hu-pwa-ios-help__dialog\s*\{[^}]*width:\s*min\(40rem/s);
-    assert.match(css, /\.hu-pwa-ios-help__dialog\s*\{[^}]*max-height:\s*min\(90vh/s);
+    assert.match(css, /\.hu-pwa-ios-help__dialog\s*\{[^}]*width:\s*min\(56rem/s);
+    assert.match(css, /\.hu-pwa-ios-help__dialog\s*\{[^}]*max-height:\s*min\(calc\(100dvh/s);
     assert.match(css, /\.hu-pwa-ios-help__dialog\s*\{[^}]*overflow-y:\s*auto/s);
   });
 
@@ -121,6 +121,7 @@ describe("Pack 23D — PWA install help modal (Android + iOS)", () => {
     assert.match(guidance, /Escape/);
     assert.match(guidance, /trapTabKey/);
     assert.match(guidance, /<ol>/);
+    assert.match(guidance, /Close installation guide/);
   });
 
   it("14 — no manifest/SW/Push changes", () => {
