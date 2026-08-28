@@ -3,6 +3,7 @@ import type { IndexDescription } from "mongodb";
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
 import { ensureCollectionIndexes } from "./mongo-snapshot-store.js";
+import { withMongoStartupIndexRetry } from "./mongo-startup-index-retry.js";
 
 const MODULE_INDEXES: ReadonlyArray<{
   collectionName: string;
@@ -1382,10 +1383,21 @@ async function dropLegacyDecisionParticipantUniqueIndex(): Promise<void> {
 }
 
 export async function ensureMongoIndexes(): Promise<void> {
-  await dropDeadInitiativeDecisionVoteStatusIndex();
-  await dropLegacyDecisionParticipantUniqueIndex();
+  // Pack 26A.1 — DDL writes can fail during Atlas primary elections; retry
+  // only transient replica-set errors at this startup boundary.
+  await withMongoStartupIndexRetry(
+    "dropDeadInitiativeDecisionVoteStatusIndex",
+    dropDeadInitiativeDecisionVoteStatusIndex,
+  );
+  await withMongoStartupIndexRetry(
+    "dropLegacyDecisionParticipantUniqueIndex",
+    dropLegacyDecisionParticipantUniqueIndex,
+  );
 
   for (const entry of MODULE_INDEXES) {
-    await ensureCollectionIndexes(entry.collectionName, entry.indexes);
+    await withMongoStartupIndexRetry(
+      `ensureCollectionIndexes:${entry.collectionName}`,
+      () => ensureCollectionIndexes(entry.collectionName, entry.indexes),
+    );
   }
 }
