@@ -124,7 +124,10 @@ export function toPublicParticipantStatistics(
 export function resolvePublicMembershipFields(
   profile: MemberProfile,
   membership: MembershipRecord | null,
-): Pick<PublicMemberProfile, "membershipStatus" | "memberNumber" | "memberBadgeVisible"> {
+): Pick<
+  PublicMemberProfile,
+  "membershipStatus" | "memberNumber" | "memberBadgeVisible" | "memberSince"
+> {
   const isActiveMember = membership?.status === "active_member";
   const memberNumber = membership?.memberNumber;
 
@@ -137,10 +140,11 @@ export function resolvePublicMembershipFields(
 
   const fields: Pick<
     PublicMemberProfile,
-    "membershipStatus" | "memberNumber" | "memberBadgeVisible"
+    "membershipStatus" | "memberNumber" | "memberBadgeVisible" | "memberSince"
   > = {
     membershipStatus: "member",
     memberBadgeVisible: true,
+    ...(membership.memberGrantedAt ? { memberSince: membership.memberGrantedAt } : {}),
   };
 
   if (profile.membershipPubliclyVisible === true) {

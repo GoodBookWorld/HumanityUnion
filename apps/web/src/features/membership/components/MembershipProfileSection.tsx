@@ -22,6 +22,7 @@ import { formatMemberSince, isActiveMembershipStatus } from "../membership-forma
 
 import { MemberBadgeIcon } from "./MemberBadgeIcon";
 import { MembershipCohortBadge } from "./MembershipCohortBadge";
+import { MembershipFactsTiles, type MembershipFactTile } from "./MembershipFactsTiles";
 import { MembershipPublicDisplayPreview } from "./MembershipPublicDisplayPreview";
 import { MembershipPublicVisibilityControl } from "./MembershipPublicVisibilityControl";
 import { MembershipTimeline } from "./MembershipTimeline";
@@ -81,6 +82,53 @@ export function MembershipProfileSection() {
 
   const { membership } = payload;
   const isActiveMember = isActiveMembershipStatus(membership.status);
+  const applicationStarted = membership.applicationStatus !== "not_started";
+  const contributionReached =
+    isActiveMember ||
+    membership.status === "application_completed" ||
+    membership.status === "pending_payment";
+
+  const membershipTiles: MembershipFactTile[] = [
+    {
+      id: "current-status",
+      label: "Current status",
+      value: membership.cohortLabel,
+      tone: "pale-blue",
+    },
+  ];
+
+  if (applicationStarted) {
+    membershipTiles.push({
+      id: "application-status",
+      label: "Application status",
+      value: formatMembershipApplicationStatus(membership.applicationStatus),
+      tone: "pale-amber",
+    });
+  }
+
+  if (isActiveMember) {
+    membershipTiles.push({
+      id: "member-number",
+      label: "Member Number",
+      value: membership.memberNumber ?? "—",
+      tone: "pale-green",
+    });
+    membershipTiles.push({
+      id: "member-since",
+      label: "Member Since",
+      value: formatMemberSince(membership.memberSince),
+      tone: "pale-violet",
+    });
+  }
+
+  if (contributionReached) {
+    membershipTiles.push({
+      id: "contribution",
+      label: "Contribution",
+      value: formatMembershipContributionStatus(membership.status),
+      tone: "pale-cyan",
+    });
+  }
 
   return (
     <ProfileSection title="Membership">
@@ -94,24 +142,10 @@ export function MembershipProfileSection() {
           <MembershipCohortBadge cohortLabel="Participant" />
         )}
       </div>
-      <ProfileField label="Current status" value={membership.cohortLabel} />
-      <ProfileField
-        label="Application status"
-        value={formatMembershipApplicationStatus(membership.applicationStatus)}
-      />
-      {isActiveMember ? (
-        <>
-          <ProfileField label="Member Number" value={membership.memberNumber ?? "—"} />
-          <ProfileField label="Member Since" value={formatMemberSince(membership.memberSince)} />
-        </>
-      ) : null}
+      <MembershipFactsTiles tiles={membershipTiles} ariaLabel="Membership status facts" />
       <ProfileField
         label="Journey progress"
         value={formatMembershipJourneySummary(payload.timeline)}
-      />
-      <ProfileField
-        label="Contribution"
-        value={formatMembershipContributionStatus(membership.status)}
       />
       <div className="membership-profile-section__timeline">
         <MembershipTimeline steps={payload.timeline} compact />
@@ -127,6 +161,9 @@ export function MembershipProfileSection() {
         avatarUrl={profile.avatarUrl}
         membershipPubliclyVisible={privacy.membershipPubliclyVisible}
         isActiveMember={isActiveMember}
+        memberNumber={
+          privacy.membershipPubliclyVisible ? membership.memberNumber ?? undefined : undefined
+        }
         previewMemberStatus={!isActiveMember}
       />
       <p className="membership-profile-section__note">

@@ -245,3 +245,48 @@ export async function findUserIdsByMembershipStatus(
 
   return documents.map((document) => document.userId);
 }
+
+/** Returns userIds whose membership status is in the given set. */
+export async function findUserIdsByMembershipStatuses(
+  statuses: readonly MembershipRecord["status"][],
+): Promise<string[]> {
+  const unique = [...new Set(statuses)];
+  if (unique.length === 0) {
+    return [];
+  }
+
+  await ensureMembershipMongoReady();
+  const collection = getMongoCollection<MembershipDocument>(MONGO_COLLECTIONS.memberships);
+  const documents = await collection
+    .find({ status: { $in: unique } }, { projection: { userId: 1 } })
+    .toArray();
+
+  return documents.map((document) => document.userId);
+}
+
+/**
+ * Pack 25D — cumulative count of memberships that have started an application
+ * (everything except `not_started`).
+ */
+export async function countApplicationStartedMemberships(): Promise<number> {
+  if (!isMongoConfigured()) {
+    return 0;
+  }
+
+  await ensureMembershipMongoReady();
+  const collection = getMongoCollection<MembershipDocument>(MONGO_COLLECTIONS.memberships);
+  return collection.countDocuments({
+    status: {
+      $in: [
+        "application_started",
+        "application_completed",
+        "pending_payment",
+        "manual_review",
+        "active_member",
+        "payment_refunded",
+        "payment_disputed",
+        "technical_error",
+      ],
+    },
+  });
+}

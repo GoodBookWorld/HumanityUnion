@@ -128,15 +128,32 @@
   margin: 0;
 }
 
+/* Pack 25D — desktop/tablet horizontal table-like field row */
+.member-badge-application-widget__fields--horizontal {
+  align-items: start;
+  gap: var(--hu-space-3, 0.75rem);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.member-badge-application-widget__field {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
 .member-badge-application-widget__fields dt {
   color: var(--hu-color-text-secondary, #4a5568);
   font-size: var(--hu-font-size-sm, 0.875rem);
-  margin: 0 0 0.2rem;
+  margin: 0;
 }
 
 .member-badge-application-widget__fields dd {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.member-badge-application-widget__address {
+  white-space: pre-line;
 }
 
 .member-badge-application-widget__muted {
@@ -148,6 +165,18 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--hu-space-3, 0.75rem);
+}
+
+@media (max-width: 900px) {
+  .member-badge-application-widget__fields--horizontal {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .member-badge-application-widget__fields--horizontal {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {

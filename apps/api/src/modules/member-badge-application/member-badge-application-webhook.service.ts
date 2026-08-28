@@ -52,7 +52,7 @@ async function emitPaidAdminNotification(input: {
     title: "Member badge order paid",
     actorLabel: input.displayName,
     targetLabel: `Application ${input.applicationId.slice(0, 8)}`,
-    targetHref: `/admin/participants`,
+    targetHref: `/admin/participants?view=member_badge_orders&badgeApplicationId=${input.applicationId}`,
     sourceEventId: `member_badge_order_paid:${input.applicationId}:${input.stripeEventId}`,
     dedupeKey: `member_badge_order_paid:${input.applicationId}`,
   });

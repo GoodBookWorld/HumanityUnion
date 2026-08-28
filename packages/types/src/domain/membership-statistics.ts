@@ -7,6 +7,11 @@ export interface MembershipStatisticsPayload {
   totalParticipation: number;
   members: number;
   participants: number;
+  /**
+   * Pack 25D — cumulative count of Participants who started a Membership
+   * application at least once (includes those who later became Members).
+   */
+  applicationStarted: number;
   updatedAt: string;
 }
 

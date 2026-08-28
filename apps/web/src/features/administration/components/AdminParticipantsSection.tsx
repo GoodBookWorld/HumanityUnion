@@ -36,11 +36,13 @@ import {
   suspendAdminParticipant,
 } from "../admin-participant-suspension-api";
 import { useOpenDirectConversation } from "../../direct-messaging/use-open-direct-conversation";
+import { AdminMemberBadgeOrderModal } from "./AdminMemberBadgeOrderModal";
 import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
 import "./admin-participants-table.css";
+import "./admin-member-badge-order.css";
 
 interface AdminParticipantsSectionProps {
   user: AuthUserPublic;
@@ -98,11 +100,42 @@ function formatMembershipLabel(row: AdminParticipantDirectoryItem): string {
     not_started: "Not started",
     application_started: "Application started",
     application_completed: "Application submitted",
+    application_submitted: "Application submitted",
     pending_payment: "Pending payment",
-    active_member: "Active Member",
+    active_member: "Active Members",
   };
 
   return statusLabels[row.membership.status] ?? row.membership.status.replace(/_/g, " ");
+}
+
+function formatBadgePaymentLabel(status: string | undefined): string {
+  if (status === "paid") {
+    return "Paid";
+  }
+  if (status === "refunded") {
+    return "Refunded";
+  }
+  return "Unpaid";
+}
+
+function formatBadgeFulfillmentLabel(row: AdminParticipantDirectoryItem): string {
+  const order = row.memberBadgeOrder;
+  if (!order) {
+    return "—";
+  }
+  if (order.delivered || order.fulfillmentStatus === "completed") {
+    return "Delivered";
+  }
+  if (order.shipped || order.fulfillmentStatus === "shipped") {
+    return "Shipped";
+  }
+  if (order.fulfillmentStatus === "preparing") {
+    return "Preparing";
+  }
+  if (order.fulfillmentStatus === "awaiting_fulfillment") {
+    return "Awaiting fulfillment";
+  }
+  return order.fulfillmentStatus.replace(/_/g, " ");
 }
 
 export function AdminParticipantsSection({ user: _user }: AdminParticipantsSectionProps) {
@@ -134,6 +167,7 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
 
   const [restoreTarget, setRestoreTarget] = useState<AdminParticipantDirectoryItem | null>(null);
   const [restoring, setRestoring] = useState(false);
+  const [badgeOrderApplicationId, setBadgeOrderApplicationId] = useState<string | null>(null);
 
   const {
     isOpening: isOpeningMessage,
@@ -141,6 +175,27 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
     openConversation,
   } = useOpenDirectConversation();
   const [messagingParticipantId, setMessagingParticipantId] = useState<string | null>(null);
+
+  const isBadgeOrdersView = membershipStatus === "member_badge_orders";
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get("view");
+    const badgeApplicationId = params.get("badgeApplicationId")?.trim();
+
+    if (view === "member_badge_orders") {
+      setMembershipStatus("member_badge_orders");
+      setOffset(0);
+    }
+
+    if (badgeApplicationId) {
+      setBadgeOrderApplicationId(badgeApplicationId);
+      if (view !== "member_badge_orders") {
+        setMembershipStatus("member_badge_orders");
+        setOffset(0);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -295,6 +350,13 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                 ? formatMembershipStatisticValue(membership.members)
                 : "Unavailable",
             },
+            {
+              label: "Application started",
+              value:
+                membership && typeof membership.applicationStarted === "number"
+                  ? formatMembershipStatisticValue(membership.applicationStarted)
+                  : "Unavailable",
+            },
           ]}
         />
       </ProfileSection>
@@ -359,11 +421,9 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                 }}
               >
                 <option value="">All</option>
-                <option value="active_member">Active Member</option>
-                <option value="not_started">Not started</option>
-                <option value="application_started">Application started</option>
-                <option value="application_completed">Application submitted</option>
-                <option value="pending_payment">Pending payment</option>
+                <option value="application_submitted">Application submitted</option>
+                <option value="active_member">Active Members</option>
+                <option value="member_badge_orders">Member Badge Orders</option>
               </select>
             </label>
 
@@ -412,23 +472,43 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
         {!tableLoading && !error ? (
           <>
             <div className="admin-participants-table-wrap">
-              <table className="admin-participants-table">
+              <table
+                className={[
+                  "admin-participants-table",
+                  isBadgeOrdersView ? "admin-participants-table--badge-orders" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
                 <thead>
                   <tr>
                     <th scope="col">Participant</th>
                     <th scope="col">Email</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Role</th>
-                    <th scope="col">Member status</th>
-                    <th scope="col">Joined</th>
-                    <th scope="col">Last active</th>
+                    {isBadgeOrdersView ? (
+                      <>
+                        <th scope="col">Member Number</th>
+                        <th scope="col">Payment</th>
+                        <th scope="col">Fulfillment</th>
+                        <th scope="col">Updated</th>
+                      </>
+                    ) : (
+                      <>
+                        <th scope="col">Status</th>
+                        <th scope="col">Role</th>
+                        <th scope="col">Member status</th>
+                        <th scope="col">Joined</th>
+                        <th scope="col">Last active</th>
+                      </>
+                    )}
                     <th scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={8}>No participants match these filters.</td>
+                      <td colSpan={isBadgeOrdersView ? 7 : 8}>
+                        No participants match these filters.
+                      </td>
                     </tr>
                   ) : (
                     rows.map((row) => {
@@ -439,6 +519,7 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                       const profileHref = canViewPublicProfile
                         ? adminParticipantPublicProfilePath(row.memberId)
                         : null;
+                      const badgeApplicationId = row.memberBadgeOrder?.applicationId;
 
                       return (
                         <tr key={row.userId}>
@@ -473,79 +554,125 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
                             </div>
                           </td>
                           <td>{row.email}</td>
-                          <td>
-                            <WorkspaceStatusBadge status={formatAccountStatus(row.status)} />
-                          </td>
-                          <td>
-                            <span className="admin-participants-table__role">
-                              {formatAccountRole(row.role)}
-                            </span>
-                          </td>
-                          <td>
-                            <WorkspaceStatusBadge status={formatMembershipLabel(row)} />
-                          </td>
-                          <td>{formatCompactDate(row.createdAt)}</td>
-                          <td>{formatCompactDate(row.lastLoginAt)}</td>
-                          <td>
-                            <div className="admin-participants-table__actions">
-                              {profileHref ? (
-                                <Button
-                                  href={profileHref}
-                                  variant="secondary"
-                                  className="admin-participants-table__action"
-                                  aria-label={`View profile for ${participantPrimaryName(row)}`}
-                                >
-                                  View profile
-                                </Button>
-                              ) : (
-                                <span className="hu-caption admin-participants-table__action--unavailable">
-                                  Profile unavailable
+                          {isBadgeOrdersView ? (
+                            <>
+                              <td>{row.membership?.memberNumber ?? "—"}</td>
+                              <td>
+                                <WorkspaceStatusBadge
+                                  status={formatBadgePaymentLabel(
+                                    row.memberBadgeOrder?.paymentStatus,
+                                  )}
+                                />
+                              </td>
+                              <td>
+                                <WorkspaceStatusBadge
+                                  status={formatBadgeFulfillmentLabel(row)}
+                                />
+                              </td>
+                              <td>
+                                {formatCompactDate(
+                                  row.memberBadgeOrder?.updatedAt ?? row.lastLoginAt,
+                                )}
+                              </td>
+                              <td>
+                                <div className="admin-participants-table__actions">
+                                  {badgeApplicationId ? (
+                                    <Button
+                                      type="button"
+                                      variant="primary"
+                                      className="admin-participants-table__action admin-participants-table__view-order"
+                                      aria-label={`View order for ${participantPrimaryName(row)}`}
+                                      onClick={() =>
+                                        setBadgeOrderApplicationId(badgeApplicationId)
+                                      }
+                                    >
+                                      View Order
+                                    </Button>
+                                  ) : (
+                                    <span className="hu-caption admin-participants-table__action--unavailable">
+                                      Order unavailable
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td>
+                                <WorkspaceStatusBadge status={formatAccountStatus(row.status)} />
+                              </td>
+                              <td>
+                                <span className="admin-participants-table__role">
+                                  {formatAccountRole(row.role)}
                                 </span>
-                              )}
-                              {row.status === "active" ? (
-                                <Button
-                                  type="button"
-                                  variant="secondary"
-                                  className="admin-participants-table__action"
-                                  disabled={isOpeningMessage}
-                                  aria-label={`Message ${participantPrimaryName(row)}`}
-                                  onClick={() => {
-                                    setMessagingParticipantId(row.memberId);
-                                    openConversation({ participantId: row.memberId });
-                                  }}
-                                >
-                                  {isOpeningMessage && messagingParticipantId === row.memberId
-                                    ? "Opening…"
-                                    : "Message"}
-                                </Button>
-                              ) : null}
-                              {row.status === "active" && row.role !== "admin" ? (
-                                <Button
-                                  type="button"
-                                  variant="danger"
-                                  className="admin-participants-table__action"
-                                  aria-label={`Suspend ${participantPrimaryName(row)}`}
-                                  onClick={() => {
-                                    setSuspendReason("community_standards_violation");
-                                    setSuspendTarget(row);
-                                  }}
-                                >
-                                  Suspend
-                                </Button>
-                              ) : null}
-                              {row.status === "disabled" ? (
-                                <Button
-                                  type="button"
-                                  variant="secondary"
-                                  className="admin-participants-table__action"
-                                  aria-label={`Review or restore ${participantPrimaryName(row)}`}
-                                  onClick={() => setRestoreTarget(row)}
-                                >
-                                  Review / Restore
-                                </Button>
-                              ) : null}
-                            </div>
-                          </td>
+                              </td>
+                              <td>
+                                <WorkspaceStatusBadge status={formatMembershipLabel(row)} />
+                              </td>
+                              <td>{formatCompactDate(row.createdAt)}</td>
+                              <td>{formatCompactDate(row.lastLoginAt)}</td>
+                              <td>
+                                <div className="admin-participants-table__actions">
+                                  {profileHref ? (
+                                    <Button
+                                      href={profileHref}
+                                      variant="secondary"
+                                      className="admin-participants-table__action"
+                                      aria-label={`View profile for ${participantPrimaryName(row)}`}
+                                    >
+                                      View profile
+                                    </Button>
+                                  ) : (
+                                    <span className="hu-caption admin-participants-table__action--unavailable">
+                                      Profile unavailable
+                                    </span>
+                                  )}
+                                  {row.status === "active" ? (
+                                    <Button
+                                      type="button"
+                                      variant="secondary"
+                                      className="admin-participants-table__action"
+                                      disabled={isOpeningMessage}
+                                      aria-label={`Message ${participantPrimaryName(row)}`}
+                                      onClick={() => {
+                                        setMessagingParticipantId(row.memberId);
+                                        openConversation({ participantId: row.memberId });
+                                      }}
+                                    >
+                                      {isOpeningMessage && messagingParticipantId === row.memberId
+                                        ? "Opening…"
+                                        : "Message"}
+                                    </Button>
+                                  ) : null}
+                                  {row.status === "active" && row.role !== "admin" ? (
+                                    <Button
+                                      type="button"
+                                      variant="danger"
+                                      className="admin-participants-table__action"
+                                      aria-label={`Suspend ${participantPrimaryName(row)}`}
+                                      onClick={() => {
+                                        setSuspendReason("community_standards_violation");
+                                        setSuspendTarget(row);
+                                      }}
+                                    >
+                                      Suspend
+                                    </Button>
+                                  ) : null}
+                                  {row.status === "disabled" ? (
+                                    <Button
+                                      type="button"
+                                      variant="secondary"
+                                      className="admin-participants-table__action"
+                                      aria-label={`Review or restore ${participantPrimaryName(row)}`}
+                                      onClick={() => setRestoreTarget(row)}
+                                    >
+                                      Review / Restore
+                                    </Button>
+                                  ) : null}
+                                </div>
+                              </td>
+                            </>
+                          )}
                         </tr>
                       );
                     })
@@ -585,6 +712,17 @@ export function AdminParticipantsSection({ user: _user }: AdminParticipantsSecti
           this directory. They require explicit admin command APIs.
         </p>
       </ProfileSection>
+
+      {badgeOrderApplicationId ? (
+        <AdminMemberBadgeOrderModal
+          applicationId={badgeOrderApplicationId}
+          isOpen={badgeOrderApplicationId !== null}
+          onClose={() => setBadgeOrderApplicationId(null)}
+          onUpdated={() => {
+            void loadDirectory();
+          }}
+        />
+      ) : null}
 
       <ConfirmDialog
         isOpen={suspendTarget !== null}

@@ -26,8 +26,13 @@ import {
   findMembershipByUserId,
   findMembershipsByUserIds,
   findUserIdsByMembershipStatus,
+  findUserIdsByMembershipStatuses,
 } from "../membership/membership.repository.js";
 import { toMembershipStatusPayload } from "../membership/membership.projection.js";
+import {
+  findLatestMemberBadgeApplicationByUserIds,
+  findUserIdsWithMemberBadgeApplications,
+} from "../member-badge-application/member-badge-application.repository.js";
 import {
   AdministrationForbiddenError,
   AdministrationUnauthorizedError,
@@ -57,12 +62,35 @@ export class AdminParticipantNotFoundError extends Error {
   }
 }
 
+/** Canonical MembershipStatus values plus Pack 25D operational aliases. */
+const MEMBERSHIP_STATUS_FILTERS: readonly MembershipStatus[] = [
+  "not_started",
+  "application_started",
+  "application_completed",
+  "pending_payment",
+  "manual_review",
+  "active_member",
+  "payment_refunded",
+  "payment_disputed",
+  "technical_error",
+];
+
+const OPERATIONAL_MEMBERSHIP_FILTERS = [
+  "application_submitted",
+  "member_badge_orders",
+] as const;
+
+export type AdminParticipantMembershipFilter =
+  | MembershipStatus
+  | (typeof OPERATIONAL_MEMBERSHIP_FILTERS)[number];
+
 export interface ListAdminParticipantsInput {
   actorUserId: string;
   search?: string;
   status?: AuthUserRecord["status"];
   role?: AuthUserRecord["role"];
-  membershipStatus?: MembershipStatus;
+  /** MembershipStatus or Pack 25D operational filter (application_submitted / member_badge_orders). */
+  membershipStatus?: string | MembershipStatus;
   sort?: AdminAuthUserListSort;
   order?: "asc" | "desc";
   limit?: number;
@@ -95,6 +123,13 @@ function clampOffset(offset: number | undefined): number {
   return Math.trunc(offset);
 }
 
+function isAllowedMembershipFilter(value: string): value is AdminParticipantMembershipFilter {
+  return (
+    (MEMBERSHIP_STATUS_FILTERS as readonly string[]).includes(value) ||
+    (OPERATIONAL_MEMBERSHIP_FILTERS as readonly string[]).includes(value)
+  );
+}
+
 function toDirectoryItem(
   authUser: AuthUserRecord,
   member: Awaited<ReturnType<typeof findMembersByIdentityIds>> extends Map<string, infer V>
@@ -103,6 +138,7 @@ function toDirectoryItem(
   profile: { publicName?: string; displayName?: string; avatarUrl?: string } | undefined,
   membership: MembershipRecord | undefined,
   suspension?: AdminParticipantDirectoryItem["suspension"],
+  memberBadgeOrder?: AdminParticipantDirectoryItem["memberBadgeOrder"],
 ): AdminParticipantDirectoryItem {
   const membershipPayload = membership ? toMembershipStatusPayload(membership) : undefined;
 
@@ -132,6 +168,7 @@ function toDirectoryItem(
           },
         }
       : {}),
+    ...(memberBadgeOrder ? { memberBadgeOrder } : {}),
     ...(authUser.status === "disabled" && suspension ? { suspension } : {}),
   };
 }
@@ -170,10 +207,25 @@ export async function listAdminParticipants(
     throw new AdminParticipantDirectoryValidationError("Invalid sort order.");
   }
 
-  let userIdAllowlist: string[] | undefined;
+  const membershipFilter = input.membershipStatus?.trim();
+  if (membershipFilter && !isAllowedMembershipFilter(membershipFilter)) {
+    throw new AdminParticipantDirectoryValidationError("Invalid membershipStatus filter.");
+  }
 
-  if (input.membershipStatus) {
-    userIdAllowlist = await findUserIdsByMembershipStatus(input.membershipStatus);
+  let userIdAllowlist: string[] | undefined;
+  const attachMemberBadgeOrders = membershipFilter === "member_badge_orders";
+
+  if (membershipFilter === "application_submitted") {
+    userIdAllowlist = await findUserIdsByMembershipStatuses([
+      "application_completed",
+      "pending_payment",
+    ]);
+  } else if (membershipFilter === "member_badge_orders") {
+    userIdAllowlist = await findUserIdsWithMemberBadgeApplications();
+  } else if (input.membershipStatus) {
+    userIdAllowlist = await findUserIdsByMembershipStatus(
+      input.membershipStatus as MembershipStatus,
+    );
   }
 
   const search = input.search?.trim();
@@ -198,16 +250,37 @@ export async function listAdminParticipants(
     .filter((item) => item.status === "disabled")
     .map((item) => item.memberId);
 
-  const [membersByIdentity, profilesByUserId, membershipsByUserId, suspensionsByParticipantId] =
-    await Promise.all([
-      findMembersByIdentityIds(userIds),
-      findMemberProfilesByUserIds(userIds),
-      findMembershipsByUserIds(userIds),
-      findActiveSuspensionSummariesByParticipantIds(disabledParticipantIds),
-    ]);
+  const [
+    membersByIdentity,
+    profilesByUserId,
+    membershipsByUserId,
+    suspensionsByParticipantId,
+    memberBadgeOrdersByUserId,
+  ] = await Promise.all([
+    findMembersByIdentityIds(userIds),
+    findMemberProfilesByUserIds(userIds),
+    findMembershipsByUserIds(userIds),
+    findActiveSuspensionSummariesByParticipantIds(disabledParticipantIds),
+    attachMemberBadgeOrders
+      ? findLatestMemberBadgeApplicationByUserIds(userIds)
+      : Promise.resolve(new Map()),
+  ]);
 
   const participants = listed.items.map((authUser) => {
     const profile = profilesByUserId.get(authUser.userId);
+    const badgeApplication = memberBadgeOrdersByUserId.get(authUser.userId);
+    const memberBadgeOrder = badgeApplication
+      ? {
+          applicationId: badgeApplication.applicationId,
+          paymentStatus: badgeApplication.paymentStatus,
+          fulfillmentStatus: badgeApplication.fulfillmentStatus,
+          shipped: badgeApplication.shipped,
+          delivered: badgeApplication.delivered,
+          paidAt: badgeApplication.paidAt,
+          updatedAt: badgeApplication.updatedAt,
+        }
+      : undefined;
+
     return toDirectoryItem(
       authUser,
       membersByIdentity.get(authUser.userId),
@@ -220,6 +293,7 @@ export async function listAdminParticipants(
         : undefined,
       membershipsByUserId.get(authUser.userId),
       suspensionsByParticipantId.get(authUser.memberId),
+      memberBadgeOrder,
     );
   });
 

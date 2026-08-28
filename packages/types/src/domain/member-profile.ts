@@ -149,6 +149,11 @@ export interface PublicMemberProfile {
   memberNumber?: string;
   memberBadgeVisible?: boolean;
   /**
+   * Pack 25D — public Member Since when Member badge is visible.
+   * ISO date string from Membership grant; never gated by Member Number privacy.
+   */
+  memberSince?: string;
+  /**
    * Profile UX Pack 02 Part 6/11 — present only when the profile owner's
    * Privacy statistics switches allow it (or the viewer is the owner).
    * Absent entirely (not zeros) when nothing is permitted to show.

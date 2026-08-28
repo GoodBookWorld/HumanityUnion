@@ -217,6 +217,14 @@ async function verifyAggregationAndApi(): Promise<void> {
     "Total participation must equal members + participants.",
   );
   assert(Boolean(payload.updatedAt), "Payload must include updatedAt.");
+  assert(
+    typeof payload.applicationStarted === "number",
+    "Payload must include applicationStarted count.",
+  );
+  assert(
+    payload.applicationStarted >= payload.members,
+    "applicationStarted must include active members (cumulative).",
+  );
 
   const cached = await getMembershipStatisticsPayload();
   assert(cached.members === payload.members, "Cache must return stable member count.");

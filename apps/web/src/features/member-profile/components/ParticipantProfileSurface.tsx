@@ -21,8 +21,14 @@ import {
   shouldShowOwnerHiddenSectionNotice,
 } from "../participant-profile-surface-presentation";
 import { MemberStatusIndicator } from "./MemberStatusIndicator";
+import {
+  MembershipFactsTiles,
+  type MembershipFactTile,
+} from "../../membership/components/MembershipFactsTiles";
+import { formatMemberSince } from "../../membership/membership-formatters";
 
 import "../../personal-statistics/personal-statistics.css";
+import "../../membership/components/membership-page.css";
 import "./participant-profile-surface.css";
 import "./member-status-indicator.css";
 /**
@@ -179,6 +185,32 @@ export function ParticipantProfileSurface({
   const hasRecentInitiatives = hasVisibleRecentInitiatives(profile);
   const showMemberBadge = shouldShowMemberBadge(profile);
 
+  const publicMembershipTiles: MembershipFactTile[] = [];
+  if (showMemberBadge) {
+    publicMembershipTiles.push({
+      id: "status",
+      label: "Current Status",
+      value: "Member",
+      tone: "pale-blue",
+    });
+    if (profile.memberNumber) {
+      publicMembershipTiles.push({
+        id: "member-number",
+        label: "Member Number",
+        value: profile.memberNumber,
+        tone: "pale-green",
+      });
+    }
+    if (profile.memberSince) {
+      publicMembershipTiles.push({
+        id: "member-since",
+        label: "Member Since",
+        value: formatMemberSince(profile.memberSince),
+        tone: "pale-amber",
+      });
+    }
+  }
+
   const showStatisticsNotice =
     isOwnerPreview && shouldShowOwnerHiddenSectionNotice(hasStatistics, hiddenSections?.statistics);
   const showBiographyNotice =
@@ -240,6 +272,15 @@ export function ParticipantProfileSurface({
             </div>
           ) : null}
         </header>
+
+        {publicMembershipTiles.length > 0 ? (
+          <div className="public-member-page__membership-facts">
+            <MembershipFactsTiles
+              tiles={publicMembershipTiles}
+              ariaLabel="Membership status"
+            />
+          </div>
+        ) : null}
 
         {showBodyRow ? (
           <div

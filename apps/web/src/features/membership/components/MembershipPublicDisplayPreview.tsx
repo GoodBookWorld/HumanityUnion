@@ -6,9 +6,11 @@ import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar
 import { Card } from "../../../design-system/components/Card";
 import { MemberStatusIndicator } from "../../member-profile/components/MemberStatusIndicator";
 import { PUBLIC_MEMBER_AVATAR_SIZE_PX } from "../../member-profile/participant-profile-surface-presentation";
+import { MembershipFactsTiles, type MembershipFactTile } from "./MembershipFactsTiles";
 
 import "../../member-profile/components/participant-profile-surface.css";
 import "../../member-profile/components/member-status-indicator.css";
+import "./membership-page.css";
 
 interface MembershipPublicDisplayPreviewProps {
   displayName: string;
@@ -18,6 +20,8 @@ interface MembershipPublicDisplayPreviewProps {
   membershipPubliclyVisible?: boolean;
   /** True when Membership is already active_member (real public behavior). */
   isActiveMember?: boolean;
+  /** Optional Member Number when privacy allows public display. */
+  memberNumber?: string;
   /**
    * Presentation-only: show the future Member indicator before activation.
    * Never mutates domain status. Ignored when `isActiveMember` is true.
@@ -44,6 +48,7 @@ export function MembershipPublicDisplayPreview({
   avatarUrl,
   membershipPubliclyVisible = false,
   isActiveMember = false,
+  memberNumber,
   previewMemberStatus = true,
 }: MembershipPublicDisplayPreviewProps) {
   const showMemberIndicator = isActiveMember || previewMemberStatus;
@@ -51,6 +56,24 @@ export function MembershipPublicDisplayPreview({
     isActiveMember,
     membershipPubliclyVisible,
   });
+
+  const previewTiles: MembershipFactTile[] = [];
+  if (showMemberIndicator) {
+    previewTiles.push({
+      id: "status",
+      label: "Status",
+      value: "Member",
+      tone: "pale-blue",
+    });
+    if (isActiveMember && membershipPubliclyVisible && memberNumber) {
+      previewTiles.push({
+        id: "member-number",
+        label: "Member Number",
+        value: memberNumber,
+        tone: "pale-green",
+      });
+    }
+  }
 
   return (
     <Card className="membership-public-preview">
@@ -85,6 +108,14 @@ export function MembershipPublicDisplayPreview({
             </div>
           </div>
         </header>
+        {previewTiles.length > 0 ? (
+          <div className="public-member-page__membership-facts">
+            <MembershipFactsTiles
+              tiles={previewTiles}
+              ariaLabel="Public Membership status preview"
+            />
+          </div>
+        ) : null}
       </div>
     </Card>
   );

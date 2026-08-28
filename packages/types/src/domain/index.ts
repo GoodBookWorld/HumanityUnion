@@ -1245,6 +1245,10 @@ export type {
   MemberBadgeShippingAddress,
 } from "./member-badge-contribution.js";
 export type {
+  AdminMemberBadgeFulfillmentUpdateInput,
+  AdminMemberBadgeLabelEmailResult,
+  AdminMemberBadgeOrderDetail,
+  AdminMemberBadgeOrderListItem,
   MemberBadgeApplicationAvailability,
   MemberBadgeApplicationDetail,
   MemberBadgeApplicationFulfillmentStatus,

@@ -1,4 +1,5 @@
 import type {
+  AdminMemberBadgeOrderDetail,
   MemberBadgeApplicationDetail,
   MemberBadgeApplicationRecord,
   MemberBadgeApplicationShippingAddress,
@@ -18,6 +19,8 @@ export function toMemberBadgeApplicationDetail(
     applicationStatus: record.applicationStatus,
     paymentStatus: record.paymentStatus,
     fulfillmentStatus: record.fulfillmentStatus,
+    shipped: record.shipped,
+    delivered: record.delivered,
     amountCents: record.amountCents,
     currency: record.currency,
     priceLabel: MEMBER_BADGE_APPLICATION_PRICE_LABEL,
@@ -29,6 +32,39 @@ export function toMemberBadgeApplicationDetail(
     updatedAt: record.updatedAt,
     paidAt: record.paidAt,
     paymentSetupMessage: options?.paymentSetupMessage ?? null,
+  };
+}
+
+export function toAdminMemberBadgeOrderDetail(input: {
+  record: MemberBadgeApplicationRecord;
+  displayName: string;
+  email: string;
+  lookupUrl: string;
+}): AdminMemberBadgeOrderDetail {
+  const { record } = input;
+  return {
+    applicationId: record.applicationId,
+    userId: record.userId,
+    participantId: record.participantId,
+    participantDisplayName: input.displayName,
+    email: input.email,
+    memberNumber: record.memberNumberSnapshot || null,
+    paymentStatus: record.paymentStatus,
+    fulfillmentStatus: record.fulfillmentStatus,
+    shipped: record.shipped,
+    shippedAt: record.shippedAt,
+    delivered: record.delivered,
+    deliveredAt: record.deliveredAt,
+    amountCents: record.amountCents,
+    currency: record.currency,
+    priceLabel: MEMBER_BADGE_APPLICATION_PRICE_LABEL,
+    deliveryLabel: MEMBER_BADGE_APPLICATION_DELIVERY_LABEL,
+    shippingAddress: record.shippingAddress,
+    paidAt: record.paidAt,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    lookupReference: `badgeApplicationId=${record.applicationId}`,
+    lookupUrl: input.lookupUrl,
   };
 }
 

@@ -159,6 +159,65 @@
   margin: 0;
 }
 
+/* Pack 25D — equal-width Membership fact tiles (public + private) */
+.membership-facts-tiles {
+  --membership-facts-count: 1;
+  display: grid;
+  gap: var(--hu-space-3, 0.75rem);
+  grid-template-columns: 1fr;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .membership-facts-tiles {
+    grid-template-columns: repeat(var(--membership-facts-count), minmax(0, 1fr));
+  }
+}
+
+.membership-facts-tiles__tile {
+  border-radius: var(--hu-radius-md, 8px);
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: var(--hu-space-3, 0.75rem) var(--hu-space-4, 1rem);
+}
+
+.membership-facts-tiles__tile dt {
+  color: var(--hu-color-text-muted, #5f6368);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  margin: 0;
+}
+
+.membership-facts-tiles__tile dd {
+  font-weight: 600;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.membership-facts-tiles__tile--pale-blue {
+  background: #edf4fb;
+}
+
+.membership-facts-tiles__tile--pale-amber {
+  background: #fbf4e8;
+}
+
+.membership-facts-tiles__tile--pale-green {
+  background: #edf6ef;
+}
+
+.membership-facts-tiles__tile--pale-violet {
+  background: #f1edf8;
+}
+
+.membership-facts-tiles__tile--pale-cyan {
+  background: #ebf7f7;
+}
+
+.public-member-page__membership-facts {
+  margin: 0 0 var(--hu-space-4, 1rem);
+}
+
 .membership-benefits-grid {
   display: grid;
   gap: var(--hu-space-4);

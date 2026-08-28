@@ -105,6 +105,11 @@ export type AdministrationAuditAction =
   | "blog.author_application.recovery_reset"
   | "member_badge.application.save"
   | "member_badge.payment.completed"
+  | "member_badge.fulfillment.shipped_marked"
+  | "member_badge.fulfillment.shipped_unmarked"
+  | "member_badge.fulfillment.delivered_marked"
+  | "member_badge.fulfillment.delivered_unmarked"
+  | "member_badge.fulfillment.label_emailed"
   | "blog.publication_review.reconcile"
   | "blog.publish"
   | "blog.publish_after_safety_review"
@@ -253,6 +258,16 @@ export interface AdminParticipantDirectoryItem {
     readonly status: string;
     readonly applicationStatus: string;
     readonly memberNumber: string | null;
+  };
+  /** Pack 25D — present when Membership filter is Member Badge Orders. */
+  readonly memberBadgeOrder?: {
+    readonly applicationId: string;
+    readonly paymentStatus: string;
+    readonly fulfillmentStatus: string;
+    readonly shipped: boolean;
+    readonly delivered: boolean;
+    readonly paidAt: string | null;
+    readonly updatedAt: string;
   };
   /** Pack 24B — present when account is suspended (auth status disabled). */
   readonly suspension?: AdminParticipantSuspensionSummary;

@@ -54,9 +54,19 @@ function formatFulfillmentLabel(
     return "Shipped";
   }
   if (status === "completed") {
-    return "Completed";
+    return "Delivered";
   }
   return "Not ready";
+}
+
+function formatDeliveryAddress(address: MemberBadgeApplicationDetail["shippingAddress"]): string {
+  const lines = [
+    address.addressLine1,
+    address.addressLine2,
+    `${address.city}, ${address.provinceStateRegion} ${address.postalCode}`,
+    address.country,
+  ].filter((line): line is string => Boolean(line && line.trim()));
+  return lines.join("\n");
 }
 
 interface MemberBadgeApplicationWidgetProps {
@@ -78,31 +88,19 @@ export function MemberBadgeApplicationWidget({
     >
       <SectionHeader title="My Member Badge Application" />
       <Card className="member-badge-application-widget__card">
-        <dl className="member-badge-application-widget__fields">
-          <div>
+        <dl className="member-badge-application-widget__fields member-badge-application-widget__fields--horizontal">
+          <div className="member-badge-application-widget__field">
             <dt>Recipient</dt>
             <dd>{address.recipientName}</dd>
           </div>
-          <div>
-            <dt>Delivery address</dt>
-            <dd>
-              <span>{address.addressLine1}</span>
-              {address.addressLine2 ? (
-                <>
-                  <br />
-                  <span>{address.addressLine2}</span>
-                </>
-              ) : null}
-              <br />
-              <span>
-                {address.city}, {address.provinceStateRegion} {address.postalCode}
-              </span>
-              <br />
-              <span>{address.country}</span>
+          <div className="member-badge-application-widget__field">
+            <dt>Delivery Address</dt>
+            <dd className="member-badge-application-widget__address">
+              {formatDeliveryAddress(address)}
             </dd>
           </div>
-          <div>
-            <dt>Badge contribution</dt>
+          <div className="member-badge-application-widget__field">
+            <dt>Contribution</dt>
             <dd>
               {MEMBER_BADGE_APPLICATION_PRICE_LABEL}
               <span className="member-badge-application-widget__muted">
@@ -111,18 +109,18 @@ export function MemberBadgeApplicationWidget({
               </span>
             </dd>
           </div>
-          <div>
+          <div className="member-badge-application-widget__field">
             <dt>Payment</dt>
             <dd>{formatPaymentLabel(application.paymentStatus)}</dd>
           </div>
-          <div>
+          <div className="member-badge-application-widget__field">
             <dt>Fulfillment</dt>
             <dd>
               {formatFulfillmentLabel(application.fulfillmentStatus, application.paymentStatus)}
             </dd>
           </div>
-          <div>
-            <dt>Last updated</dt>
+          <div className="member-badge-application-widget__field">
+            <dt>Updated</dt>
             <dd>{formatUpdatedAt(application.updatedAt)}</dd>
           </div>
         </dl>

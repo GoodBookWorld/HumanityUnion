@@ -1,7 +1,10 @@
 import type { MembershipStatisticsPayload } from "@hu/types";
 
 import { countVerifiedActiveAuthUsers } from "../auth/auth-user.repository.js";
-import { countActiveMembershipMembers } from "../membership/membership.repository.js";
+import {
+  countActiveMembershipMembers,
+  countApplicationStartedMemberships,
+} from "../membership/membership.repository.js";
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import {
   readCachedMembershipStatistics,
@@ -16,13 +19,15 @@ export async function buildMembershipStatisticsPayload(): Promise<MembershipStat
       totalParticipation: 0,
       members: 0,
       participants: 0,
+      applicationStarted: 0,
       updatedAt,
     };
   }
 
-  const [members, verifiedParticipants] = await Promise.all([
+  const [members, verifiedParticipants, applicationStarted] = await Promise.all([
     countActiveMembershipMembers(),
     countVerifiedActiveAuthUsers(),
+    countApplicationStartedMemberships(),
   ]);
 
   const participants = Math.max(0, verifiedParticipants - members);
@@ -32,6 +37,7 @@ export async function buildMembershipStatisticsPayload(): Promise<MembershipStat
     totalParticipation,
     members,
     participants,
+    applicationStarted,
     updatedAt,
   };
 }

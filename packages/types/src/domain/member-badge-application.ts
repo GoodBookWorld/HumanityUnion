@@ -1,5 +1,5 @@
 /**
- * Pack 25B/25C — Member Badge Application aggregate.
+ * Pack 25B/25C/25D — Member Badge Application aggregate.
  * Stripe Checkout attaches to this record (Pack 25C); Admin fulfillment is Pack 25D.
  */
 
@@ -47,6 +47,12 @@ export interface MemberBadgeApplicationRecord {
   applicationStatus: MemberBadgeApplicationStatus;
   paymentStatus: MemberBadgeApplicationPaymentStatus;
   fulfillmentStatus: MemberBadgeApplicationFulfillmentStatus;
+  /** Pack 25D — reversible Admin shipment marker. */
+  shipped: boolean;
+  shippedAt: string | null;
+  /** Pack 25D — reversible Admin delivery marker. */
+  delivered: boolean;
+  deliveredAt: string | null;
   amountCents: number;
   currency: string;
   deliveryIncluded: true;
@@ -54,6 +60,7 @@ export interface MemberBadgeApplicationRecord {
   stripePaymentIntentId: string | null;
   lastStripeEventId: string | null;
   paidAt: string | null;
+  lastLabelEmailedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,6 +71,8 @@ export interface MemberBadgeApplicationDetail {
   applicationStatus: MemberBadgeApplicationStatus;
   paymentStatus: MemberBadgeApplicationPaymentStatus;
   fulfillmentStatus: MemberBadgeApplicationFulfillmentStatus;
+  shipped: boolean;
+  delivered: boolean;
   amountCents: number;
   currency: string;
   priceLabel: string;
@@ -98,5 +107,60 @@ export interface MemberBadgeApplicationPaymentBoundary {
   checkoutReady: boolean;
   checkoutUrl: string | null;
   sessionId: string | null;
+  message: string;
+}
+
+/** Compact directory row for Member Badge Orders (no full address). */
+export interface AdminMemberBadgeOrderListItem {
+  applicationId: string;
+  userId: string;
+  participantId: string;
+  participantDisplayName: string;
+  email: string;
+  memberNumber: string | null;
+  paymentStatus: MemberBadgeApplicationPaymentStatus;
+  fulfillmentStatus: MemberBadgeApplicationFulfillmentStatus;
+  shipped: boolean;
+  delivered: boolean;
+  paidAt: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+
+/** Admin-only order detail including private shipping address. */
+export interface AdminMemberBadgeOrderDetail {
+  applicationId: string;
+  userId: string;
+  participantId: string;
+  participantDisplayName: string;
+  email: string;
+  memberNumber: string | null;
+  paymentStatus: MemberBadgeApplicationPaymentStatus;
+  fulfillmentStatus: MemberBadgeApplicationFulfillmentStatus;
+  shipped: boolean;
+  shippedAt: string | null;
+  delivered: boolean;
+  deliveredAt: string | null;
+  amountCents: number;
+  currency: string;
+  priceLabel: string;
+  deliveryLabel: string;
+  shippingAddress: MemberBadgeApplicationShippingAddress;
+  paidAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Safe Admin deep-link / QR reference (no secrets, no address). */
+  lookupReference: string;
+  /** Absolute Admin URL encoded into the label QR when available. */
+  lookupUrl: string;
+}
+
+export interface AdminMemberBadgeFulfillmentUpdateInput {
+  shipped?: boolean;
+  delivered?: boolean;
+}
+
+export interface AdminMemberBadgeLabelEmailResult {
+  queued: boolean;
   message: string;
 }

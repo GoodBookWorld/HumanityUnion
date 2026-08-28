@@ -72,6 +72,12 @@ const MEMBERSHIP_STATUSES: readonly MembershipStatus[] = [
   "technical_error",
 ];
 
+/** Pack 25D — operational aliases accepted on the directory query. */
+const OPERATIONAL_MEMBERSHIP_FILTERS = [
+  "application_submitted",
+  "member_badge_orders",
+] as const;
+
 adminParticipantDirectoryRouter.get(
   "/",
   authenticationMiddleware,
@@ -89,8 +95,9 @@ adminParticipantDirectoryRouter.get(
         typeof req.query.membershipStatus === "string" ? req.query.membershipStatus : undefined;
       const membershipStatus =
         membershipStatusRaw &&
-        MEMBERSHIP_STATUSES.includes(membershipStatusRaw as MembershipStatus)
-          ? (membershipStatusRaw as MembershipStatus)
+        (MEMBERSHIP_STATUSES.includes(membershipStatusRaw as MembershipStatus) ||
+          (OPERATIONAL_MEMBERSHIP_FILTERS as readonly string[]).includes(membershipStatusRaw))
+          ? membershipStatusRaw
           : undefined;
 
       const sortRaw = typeof req.query.sort === "string" ? req.query.sort : "createdAt";

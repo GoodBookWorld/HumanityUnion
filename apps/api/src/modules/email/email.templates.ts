@@ -345,6 +345,48 @@ export function renderMemberBadgeContributionConfirmedEmail(
   };
 }
 
+export interface MemberBadgeApplicationLabelTemplateInput {
+  applicationId: string;
+  participantDisplayName: string;
+  memberNumber: string;
+  recipientName: string;
+  shippingAddressBlock: string;
+  lookupUrl: string;
+  paymentStatus: string;
+  fulfillmentStatus: string;
+}
+
+/** Pack 25D — ops fulfillment label email (subject omits full address). */
+export function renderMemberBadgeApplicationLabelEmail(
+  input: MemberBadgeApplicationLabelTemplateInput,
+): EmailTemplateContent {
+  const addressHtml = input.shippingAddressBlock
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => `<div>${line}</div>`)
+    .join("");
+
+  const htmlBody = `
+    <h1 style="margin:0 0 16px;font-size:22px;color:${PRIMARY_COLOR};">Member Badge shipping label</h1>
+    <p style="margin:0 0 16px;line-height:1.6;">A Member Badge Application shipping label is ready for fulfillment.</p>
+    <p style="margin:0 0 8px;line-height:1.6;"><strong>Application:</strong> ${input.applicationId}</p>
+    <p style="margin:0 0 8px;line-height:1.6;"><strong>Participant:</strong> ${input.participantDisplayName}</p>
+    <p style="margin:0 0 8px;line-height:1.6;"><strong>Member number:</strong> ${input.memberNumber}</p>
+    <p style="margin:0 0 8px;line-height:1.6;"><strong>Payment:</strong> ${input.paymentStatus}</p>
+    <p style="margin:0 0 16px;line-height:1.6;"><strong>Fulfillment:</strong> ${input.fulfillmentStatus}</p>
+    <p style="margin:0 0 8px;line-height:1.6;"><strong>Ship to:</strong></p>
+    <div style="margin:0 0 16px;line-height:1.5;padding:12px;background:#f8fafc;border-radius:6px;">${addressHtml}</div>
+    ${primaryButton("Open Admin order", input.lookupUrl)}
+  `;
+
+  return {
+    subject: `Member Badge shipping label — ${input.recipientName}`,
+    html: wrapEmailLayout(htmlBody),
+    text: `Member Badge shipping label\n\nApplication: ${input.applicationId}\nParticipant: ${input.participantDisplayName}\nMember number: ${input.memberNumber}\nPayment: ${input.paymentStatus}\nFulfillment: ${input.fulfillmentStatus}\n\nShip to:\n${input.shippingAddressBlock}\n\nOpen Admin order:\n${input.lookupUrl}`,
+  };
+}
+
 export interface WorkspaceNotificationSummaryTemplateInput {
   displayName: string;
   unreadCount: number;
@@ -684,6 +726,17 @@ export function renderEmailTemplate(
       return renderMemberBadgeContributionConfirmedEmail(
         input as unknown as MemberBadgeContributionConfirmedTemplateInput,
       );
+    case "member_badge_application_label":
+      return renderMemberBadgeApplicationLabelEmail({
+        applicationId: String(input.applicationId ?? ""),
+        participantDisplayName: String(input.participantDisplayName ?? "Participant"),
+        memberNumber: String(input.memberNumber ?? "—"),
+        recipientName: String(input.recipientName ?? "Recipient"),
+        shippingAddressBlock: String(input.shippingAddressBlock ?? ""),
+        lookupUrl: String(input.lookupUrl ?? ""),
+        paymentStatus: String(input.paymentStatus ?? ""),
+        fulfillmentStatus: String(input.fulfillmentStatus ?? ""),
+      });
     case "workspace_notification_summary":
       return renderWorkspaceNotificationSummaryEmail({
         displayName: String(input.displayName ?? "Participant"),

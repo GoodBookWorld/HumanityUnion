@@ -169,7 +169,10 @@ import {
 import { membershipRouter } from "./modules/membership/index.js";
 import { membershipStripeWebhookRouter } from "./modules/membership-payment/index.js";
 import { memberBadgeContributionRouter } from "./modules/member-badge-contribution/index.js";
-import { memberBadgeApplicationRouter } from "./modules/member-badge-application/index.js";
+import {
+  adminMemberBadgeApplicationRouter,
+  memberBadgeApplicationRouter,
+} from "./modules/member-badge-application/index.js";
 import { LOCAL_MEDIA_UPLOAD_ROOT, mediaUploadRouter } from "./modules/media-upload/index.js";
 import { mediaStaticHeadersMiddleware } from "./modules/media-upload/media-static.middleware.js";
 import memberRouter from "./modules/member/member.routes.js";
@@ -264,6 +267,7 @@ app.use("/api/v1/public/seo/page-overrides", publicSeoPageOverridesRouter);
 app.use("/api/v1/beta-invites", betaInviteRouter);
 app.use("/api/v1/admin/participants", adminParticipantDirectoryRouter);
 app.use("/api/v1/admin/participants", adminParticipantSuspensionRouter);
+app.use("/api/v1/admin/member-badge-applications", adminMemberBadgeApplicationRouter);
 app.use("/api/v1/public/suspension-review", participantSuspensionReviewRouter);
 app.use("/api/v1/admin/audit", adminAuditRouter);
 app.use("/api/v1/admin/editors", adminEditorGrantsRouter);

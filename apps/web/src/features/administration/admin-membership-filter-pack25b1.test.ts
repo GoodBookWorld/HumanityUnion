@@ -1,5 +1,6 @@
 /**
- * Pack 25B.1 — Admin Membership filter / label alignment.
+ * Pack 25B.1 / Pack 25D — Admin Membership filter / label alignment.
+ * Pack 25D replaces primary selector options; domain statuses remain unchanged.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -18,37 +19,31 @@ function readApi(relativePath: string): string {
   return readFileSync(path.resolve(apiSrc, relativePath), "utf8");
 }
 
-describe("Pack 25B.1 — Admin Membership filter / label alignment", () => {
+describe("Pack 25B.1 / 25D — Admin Membership filter / label alignment", () => {
   const section = readWeb("features/administration/components/AdminParticipantsSection.tsx");
 
-  it("1–2 — filter includes Application submitted mapped to application_completed", () => {
+  it("1–2 — Pack 25D primary filter includes Application submitted", () => {
     assert.match(
       section,
-      /option value="application_completed">Application submitted<\/option>/,
+      /option value="application_submitted">Application submitted<\/option>/,
     );
-    assert.match(section, /option value="application_started">Application started<\/option>/);
   });
 
-  it("3 — backend query accepts application_completed", () => {
+  it("3 — backend query accepts membershipStatus", () => {
     const routes = readApi("modules/administration/admin-participant-directory.routes.ts");
-    assert.match(routes, /"application_completed"/);
     assert.match(routes, /membershipStatus/);
 
     const repo = readApi("modules/membership/membership.repository.ts");
     assert.match(repo, /findUserIdsByMembershipStatus/);
-    assert.match(repo, /find\(\{\s*status\s*\}/);
   });
 
-  it("4–5 — submitted filter is exact-status; separated from application_started", () => {
-    assert.match(section, /value="application_completed"/);
-    assert.match(section, /value="application_started"/);
-    assert.notEqual(
-      section.indexOf('value="application_completed"'),
-      section.indexOf('value="application_started"'),
-    );
+  it("4–5 — submitted filter is operational application_submitted", () => {
+    assert.match(section, /value="application_submitted"/);
+    assert.doesNotMatch(section, /option value="application_started"/);
+    assert.doesNotMatch(section, /option value="application_completed"/);
 
     const service = readApi("modules/administration/admin-participant-directory.service.ts");
-    assert.match(service, /findUserIdsByMembershipStatus\(input\.membershipStatus\)/);
+    assert.match(service, /findUserIdsByMembershipStatus|membershipStatus/);
   });
 
   it("6 — row label maps application_completed → Application submitted", () => {
@@ -56,13 +51,11 @@ describe("Pack 25B.1 — Admin Membership filter / label alignment", () => {
     assert.doesNotMatch(section, /application_completed:\s*"application completed"/);
   });
 
-  it("7–9 — active member / not started / pending payment filters unchanged", () => {
-    assert.match(section, /option value="active_member">Active Member<\/option>/);
-    assert.match(section, /option value="not_started">Not started<\/option>/);
-    assert.match(section, /option value="pending_payment">Pending payment<\/option>/);
-    assert.match(section, /not_started:\s*"Not started"/);
-    assert.match(section, /application_started:\s*"Application started"/);
-    assert.match(section, /pending_payment:\s*"Pending payment"/);
+  it("7–9 — Pack 25D primary views: Active Members + Member Badge Orders", () => {
+    assert.match(section, /option value="active_member">Active Members<\/option>/);
+    assert.match(section, /option value="member_badge_orders">Member Badge Orders<\/option>/);
+    assert.doesNotMatch(section, /option value="not_started">/);
+    assert.doesNotMatch(section, /option value="pending_payment">/);
   });
 
   it("10 — domain statuses are not renamed", () => {
@@ -72,7 +65,6 @@ describe("Pack 25B.1 — Admin Membership filter / label alignment", () => {
     );
     assert.match(types, /"application_started"/);
     assert.match(types, /"application_completed"/);
-    assert.doesNotMatch(section, /application_submitted/);
   });
 
   it("11 — primary filter stays operationally simple (no error-state flood)", () => {

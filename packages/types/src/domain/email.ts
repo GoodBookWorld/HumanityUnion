@@ -9,6 +9,7 @@ export type EmailTemplateId =
   | "email_change_verification"
   | "security_alert"
   | "member_badge_contribution_confirmed"
+  | "member_badge_application_label"
   /** Workspace notification digest / summary — never embeds private message bodies. */
   | "workspace_notification_summary"
   /** Blog Author Access Pack 04 status updates (approved / changes / declined). */

@@ -83,6 +83,40 @@ Paid transition:
 Legacy `member-badge-contribution` (CA$20 + Stripe shipping) remains disabled by
 `MEMBER_BADGE_CONTRIBUTIONS_ENABLED=false` and is not used for new orders.
 
+## Pack 25D — Admin fulfillment + Membership UI
+
+Admin Member Badge Order workflow (authorized Admin only):
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/admin/member-badge-applications/:applicationId` | Order detail (includes private address) |
+| PATCH | `/api/v1/admin/member-badge-applications/:applicationId/fulfillment` | Reversible `shipped` / `delivered` markers |
+| POST | `/api/v1/admin/member-badge-applications/:applicationId/email-label` | Email A5 label to fulfillment destination |
+| GET | `/api/v1/admin/member-badge-applications/:applicationId/label.pdf` | A5 shipping-label PDF |
+
+Participant Directory Membership primary views:
+
+1. All
+2. Application submitted (`application_submitted`)
+3. Active Members (`active_member`)
+4. Member Badge Orders (`member_badge_orders`)
+
+Deep link from Admin notification `member_badge_order_paid`:
+
+`/admin/participants?view=member_badge_orders&badgeApplicationId={applicationId}`
+
+Participant aggregates include cumulative **Application started**
+(`MembershipStatisticsPayload.applicationStarted`).
+
+UI surfaces:
+
+- Admin Order modal — ORDER / PAYMENT / DELIVERY / FULFILLMENT + Print / Email Label
+- Fulfillment Progress widget — red animated line until Delivered; green static when complete; `prefers-reduced-motion` disables animation
+- My Member Badge Application widget — horizontal field grid on desktop/tablet
+- Membership Status facts — equal-width pale tiles (private + public where facts appear)
+
+Shipping address remains Admin/owner-only. Stripe secrets are never shown in UI.
+
 ## Pack 25D — A5 shipping-label invariant
 
 Maximum printable shipping-label page size: **A5**.
