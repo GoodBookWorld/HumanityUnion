@@ -4,10 +4,49 @@ import type {
   AdminMemberBadgeOrderDetail,
 } from "@hu/types";
 
-import { API_BASE_URL, ApiRequestError, apiRequest } from "../../lib/api-client";
+import { API_BASE_URL, ApiRequestError, apiRequest, isApiUnavailableError } from "../../lib/api-client";
 
 function adminMemberBadgeOrderPath(applicationId: string, suffix = ""): string {
   return `/api/v1/admin/member-badge-applications/${encodeURIComponent(applicationId)}${suffix}`;
+}
+
+const FULFILLMENT_EMAIL_CONFIG_MESSAGE =
+  "MEMBER_BADGE_FULFILLMENT_EMAIL is not configured." as const;
+
+/**
+ * Pack 25D.1 — Email Label errors must not look like generic service outages
+ * when the API returned a reachable configuration failure.
+ */
+export function formatMemberBadgeLabelEmailError(error: unknown): {
+  title: string;
+  message: string;
+} {
+  if (isApiUnavailableError(error)) {
+    return {
+      title: "Email label unavailable",
+      message:
+        "The Humanity Union service is temporarily unavailable. Please check that the API is running and try again.",
+    };
+  }
+
+  const message =
+    error instanceof ApiRequestError
+      ? error.message
+      : error instanceof Error
+        ? error.message
+        : "Unable to email the shipping label.";
+
+  if (message.includes("MEMBER_BADGE_FULFILLMENT_EMAIL")) {
+    return {
+      title: "Email label unavailable",
+      message: FULFILLMENT_EMAIL_CONFIG_MESSAGE,
+    };
+  }
+
+  return {
+    title: "Email label unavailable",
+    message,
+  };
 }
 
 export async function fetchAdminMemberBadgeOrder(

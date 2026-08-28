@@ -12,6 +12,7 @@ import {
 } from "../admin-notification-api";
 import {
   formatAdminNotificationDate,
+  resolveAdminNotificationHref,
   resolveAdminNotificationTypeLabel,
 } from "../admin-notification-labels";
 
@@ -180,7 +181,7 @@ export function AdminWorkspaceHeader({ title, subtitle }: AdminWorkspaceHeaderPr
               {notifications.map((notification) => {
                 const typeLabel = resolveAdminNotificationTypeLabel(notification);
                 const dateLabel = formatAdminNotificationDate(notification.createdAt);
-                const href = notification.targetHref?.trim() || null;
+                const href = resolveAdminNotificationHref(notification);
                 const content = (
                   <>
                     {dateLabel ? (

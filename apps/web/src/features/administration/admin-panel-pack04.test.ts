@@ -99,13 +99,14 @@ describe("Admin Panel Pack 04 — Overview information design + Proposal aggrega
     assert.match(css, /admin-metric-details-grid__cell--alt/);
   });
 
-  it("Participant aggregates use 4-column layout with Active Window as measurement window", () => {
+  it("Participant aggregates include Active Window and Application started", () => {
     const participants = read("features/administration/components/AdminParticipantsSection.tsx");
 
     assert.match(participants, /AdminMetricDetailsGrid/);
     assert.match(participants, /Total Participants/);
     assert.match(participants, /Recently Active/);
     assert.match(participants, /Active Window/);
+    assert.match(participants, /Application started/);
     assert.match(participants, /activity measurement window/);
     assert.match(participants, /methodological:\s*true/);
     assert.match(participants, /listAdminParticipants/);

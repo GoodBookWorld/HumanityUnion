@@ -102,6 +102,23 @@
   overflow: hidden;
 }
 
+/* Pack 25D.1 — five Participant aggregate cards in one desktop/tablet row */
+.admin-metric-details-grid--cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.admin-metric-details-grid--cols-5 .admin-metric-details-grid__cell {
+  padding: 0.75rem 0.7rem;
+}
+
+.admin-metric-details-grid--cols-5 .admin-metric-details-grid__label {
+  font-size: 0.72rem;
+}
+
+.admin-metric-details-grid--cols-5 .admin-metric-details-grid__value {
+  font-size: 0.95rem;
+}
+
 .admin-metric-details-grid__cell {
   margin: 0;
   padding: 0.85rem 1rem;
@@ -141,13 +158,24 @@
 }
 
 @media (max-width: 900px) {
-  .admin-metric-details-grid {
+  .admin-metric-details-grid:not(.admin-metric-details-grid--cols-5) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-metric-details-grid--cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-metric-details-grid--cols-5 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 520px) {
-  .admin-metric-details-grid {
+  .admin-metric-details-grid,
+  .admin-metric-details-grid--cols-5 {
     grid-template-columns: 1fr;
   }
 }

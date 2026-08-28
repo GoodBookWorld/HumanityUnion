@@ -38,6 +38,23 @@ export async function generateLabelQrDataUrl(applicationId: string): Promise<str
   });
 }
 
+/** Pack 25D.1 — A5 label layout geometry (points). Exported for focused tests. */
+export const MEMBER_BADGE_LABEL_LAYOUT = {
+  margin: 36,
+  qrSize: 92,
+  /** Left column ends near page midpoint (FROM + secondary metadata). */
+  leftColumnMaxXRatio: 0.48,
+  /** Right column starts just past midpoint (QR + TO). */
+  rightColumnXRatio: 0.5,
+} as const;
+
+/**
+ * Pack 25D.1 A5 composition:
+ * - TOP LEFT: FROM (sender)
+ * - TOP RIGHT: QR (within safe margins)
+ * - RIGHT: TO / recipient (primary delivery destination)
+ * - LOWER LEFT: secondary Member # / Application metadata
+ */
 export async function generateLabelPdfBuffer(
   application: MemberBadgeApplicationRecord,
 ): Promise<Buffer> {
@@ -47,9 +64,19 @@ export async function generateLabelPdfBuffer(
   const recipientLines = formatMemberBadgeApplicationAddressLines(application.shippingAddress);
 
   return new Promise((resolve, reject) => {
+    const pageWidth = MEMBER_BADGE_APPLICATION_LABEL_PAGE_SIZE_PT[0];
+    const pageHeight = MEMBER_BADGE_APPLICATION_LABEL_PAGE_SIZE_PT[1];
+    const margin = MEMBER_BADGE_LABEL_LAYOUT.margin;
+    const qrSize = MEMBER_BADGE_LABEL_LAYOUT.qrSize;
+    const leftMaxWidth = pageWidth * MEMBER_BADGE_LABEL_LAYOUT.leftColumnMaxXRatio - margin;
+    const rightX = pageWidth * MEMBER_BADGE_LABEL_LAYOUT.rightColumnXRatio;
+    const rightWidth = pageWidth - margin - rightX;
+    const qrX = pageWidth - margin - qrSize;
+    const qrY = margin;
+
     const doc = new PDFDocument({
       size: [...MEMBER_BADGE_APPLICATION_LABEL_PAGE_SIZE_PT],
-      margin: 36,
+      margin: 0,
       compress: false,
       info: {
         Title: "Member Badge Shipping Label",
@@ -67,40 +94,63 @@ export async function generateLabelPdfBuffer(
     });
     doc.on("error", reject);
 
-    doc.font("Helvetica-Bold").fontSize(11).text("FROM");
-    doc.moveDown(0.2);
+    // TOP LEFT — FROM
+    let y = margin;
+    doc.fillColor("#111111");
+    doc.font("Helvetica-Bold").fontSize(10).text("FROM", margin, y, {
+      width: leftMaxWidth,
+      lineGap: 1,
+    });
+    y = doc.y + 4;
     doc.font("Helvetica").fontSize(10);
-    doc.text(MEMBER_BADGE_APPLICATION_SENDER.name);
-    doc.text(MEMBER_BADGE_APPLICATION_SENDER.addressLine1);
-    doc.text(MEMBER_BADGE_APPLICATION_SENDER.cityProvincePostal);
-    doc.text(MEMBER_BADGE_APPLICATION_SENDER.country);
+    doc.text(MEMBER_BADGE_APPLICATION_SENDER.name, margin, y, { width: leftMaxWidth });
+    doc.text(MEMBER_BADGE_APPLICATION_SENDER.addressLine1, margin, doc.y, {
+      width: leftMaxWidth,
+    });
+    doc.text(MEMBER_BADGE_APPLICATION_SENDER.cityProvincePostal, margin, doc.y, {
+      width: leftMaxWidth,
+    });
+    doc.text(MEMBER_BADGE_APPLICATION_SENDER.country, margin, doc.y, { width: leftMaxWidth });
 
-    doc.moveDown(1);
-    doc.font("Helvetica-Bold").fontSize(11).text("TO");
-    doc.moveDown(0.2);
-    doc.font("Helvetica").fontSize(11);
-    doc.text(application.shippingAddress.recipientName);
-    for (const line of recipientLines) {
-      doc.text(line);
-    }
-    if (application.shippingAddress.phone?.trim()) {
-      doc.moveDown(0.3);
-      doc.font("Helvetica").fontSize(9).text(`Phone: ${application.shippingAddress.phone.trim()}`);
-    }
-
-    doc.moveDown(0.8);
-    doc.font("Helvetica").fontSize(9);
-    if (application.memberNumberSnapshot) {
-      doc.text(`Member #: ${application.memberNumberSnapshot}`);
-    }
-    doc.text(`Application: ${application.applicationId}`);
-
-    const pageWidth = MEMBER_BADGE_APPLICATION_LABEL_PAGE_SIZE_PT[0];
-    const pageHeight = MEMBER_BADGE_APPLICATION_LABEL_PAGE_SIZE_PT[1];
-    const qrSize = 100;
-    doc.image(qrBuffer, pageWidth - 36 - qrSize, pageHeight - 36 - qrSize, {
+    // TOP RIGHT — QR (safe margin from edge)
+    doc.image(qrBuffer, qrX, qrY, {
       width: qrSize,
       height: qrSize,
+    });
+
+    // RIGHT — TO / recipient (primary delivery destination, under QR)
+    let toY = qrY + qrSize + 14;
+    doc.font("Helvetica-Bold").fontSize(11).text("TO", rightX, toY, {
+      width: rightWidth,
+      lineGap: 1,
+    });
+    toY = doc.y + 5;
+    doc.font("Helvetica-Bold").fontSize(11).text(application.shippingAddress.recipientName, rightX, toY, {
+      width: rightWidth,
+    });
+    doc.font("Helvetica").fontSize(10);
+    for (const line of recipientLines) {
+      doc.text(line, rightX, doc.y, { width: rightWidth });
+    }
+    if (application.shippingAddress.phone?.trim()) {
+      doc.moveDown(0.25);
+      doc.font("Helvetica").fontSize(9).fillColor("#333333");
+      doc.text(`Phone: ${application.shippingAddress.phone.trim()}`, rightX, doc.y, {
+        width: rightWidth,
+      });
+      doc.fillColor("#111111");
+    }
+
+    // LOWER LEFT — secondary metadata (does not compete with FROM/TO)
+    const metaY = pageHeight - margin - 42;
+    doc.font("Helvetica").fontSize(8).fillColor("#555555");
+    if (application.memberNumberSnapshot) {
+      doc.text(`Member #: ${application.memberNumberSnapshot}`, margin, metaY, {
+        width: leftMaxWidth,
+      });
+    }
+    doc.text(`Application: ${application.applicationId}`, margin, doc.y + 2, {
+      width: leftMaxWidth,
     });
 
     doc.end();

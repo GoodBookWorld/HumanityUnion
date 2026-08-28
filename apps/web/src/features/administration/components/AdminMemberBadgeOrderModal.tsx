@@ -10,6 +10,7 @@ import { formatAuthFormError, isForbiddenError } from "../../../lib/api-client";
 import {
   emailAdminMemberBadgeLabel,
   fetchAdminMemberBadgeOrder,
+  formatMemberBadgeLabelEmailError,
   patchAdminMemberBadgeFulfillment,
   printAdminMemberBadgeLabel,
 } from "../admin-member-badge-order-api";
@@ -84,6 +85,7 @@ export function AdminMemberBadgeOrderModal({
 
   const [order, setOrder] = useState<AdminMemberBadgeOrderDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorTitle, setErrorTitle] = useState<string>("Order unavailable");
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState<"shipped" | "delivered" | "print" | "email" | null>(null);
@@ -133,6 +135,7 @@ export function AdminMemberBadgeOrderModal({
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setErrorTitle("Order unavailable");
     setActionMessage(null);
 
     void fetchAdminMemberBadgeOrder(applicationId)
@@ -144,6 +147,7 @@ export function AdminMemberBadgeOrderModal({
       .catch((err: unknown) => {
         if (!cancelled) {
           setOrder(null);
+          setErrorTitle("Order unavailable");
           setError(
             isForbiddenError(err)
               ? "Administrator access is required to view Member Badge Orders."
@@ -178,6 +182,7 @@ export function AdminMemberBadgeOrderModal({
     }
     setBusy("shipped");
     setError(null);
+    setErrorTitle("Order unavailable");
     try {
       const next = await patchAdminMemberBadgeFulfillment(applicationId, {
         shipped: !order.shipped,
@@ -186,6 +191,7 @@ export function AdminMemberBadgeOrderModal({
       setActionMessage(next.shipped ? "Marked as Shipped." : "Shipped marker removed.");
       onUpdated?.();
     } catch (err: unknown) {
+      setErrorTitle("Fulfillment update failed");
       setError(formatAuthFormError(err));
     } finally {
       setBusy(null);
@@ -198,6 +204,7 @@ export function AdminMemberBadgeOrderModal({
     }
     setBusy("delivered");
     setError(null);
+    setErrorTitle("Order unavailable");
     try {
       const next = await patchAdminMemberBadgeFulfillment(applicationId, {
         delivered: !order.delivered,
@@ -206,6 +213,7 @@ export function AdminMemberBadgeOrderModal({
       setActionMessage(next.delivered ? "Marked as Delivered." : "Delivered marker removed.");
       onUpdated?.();
     } catch (err: unknown) {
+      setErrorTitle("Fulfillment update failed");
       setError(formatAuthFormError(err));
     } finally {
       setBusy(null);
@@ -215,10 +223,12 @@ export function AdminMemberBadgeOrderModal({
   async function handlePrintLabel() {
     setBusy("print");
     setError(null);
+    setErrorTitle("Order unavailable");
     try {
       await printAdminMemberBadgeLabel(applicationId);
       setActionMessage("Shipping label opened for printing.");
     } catch (err: unknown) {
+      setErrorTitle("Print label unavailable");
       setError(formatAuthFormError(err));
     } finally {
       setBusy(null);
@@ -233,7 +243,9 @@ export function AdminMemberBadgeOrderModal({
       setActionMessage(result.message || (result.queued ? "Label email queued." : "Label email sent."));
       await refreshOrder();
     } catch (err: unknown) {
-      setError(formatAuthFormError(err));
+      const formatted = formatMemberBadgeLabelEmailError(err);
+      setErrorTitle(formatted.title);
+      setError(formatted.message);
     } finally {
       setBusy(null);
     }
@@ -261,7 +273,7 @@ export function AdminMemberBadgeOrderModal({
         </p>
 
         {loading ? <p className="hu-body">Loading order…</p> : null}
-        {error ? <StatusBanner title="Order unavailable" message={error} /> : null}
+        {error ? <StatusBanner title={errorTitle} message={error} /> : null}
         {actionMessage ? (
           <StatusBanner title="Fulfillment update" message={actionMessage} />
         ) : null}

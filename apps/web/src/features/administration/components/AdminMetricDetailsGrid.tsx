@@ -15,15 +15,21 @@ interface AdminMetricDetailsGridProps {
 }
 
 /**
- * Four-column admin detail grid with alternating subtle backgrounds.
+ * Admin detail grid with alternating subtle backgrounds.
+ * Column count follows the number of cells (Pack 25D.1 — five Participant aggregates).
  * Stacks on small screens while preserving order.
  */
 export function AdminMetricDetailsGrid({
   cells,
   "aria-label": ariaLabel,
 }: AdminMetricDetailsGridProps) {
+  const columnClass =
+    cells.length === 5
+      ? "admin-metric-details-grid admin-metric-details-grid--cols-5"
+      : "admin-metric-details-grid";
+
   return (
-    <ul className="admin-metric-details-grid" aria-label={ariaLabel}>
+    <ul className={columnClass} aria-label={ariaLabel}>
       {cells.map((cell, index) => (
         <li
           key={cell.label}

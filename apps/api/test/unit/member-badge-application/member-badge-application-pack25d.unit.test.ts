@@ -17,7 +17,10 @@ import {
   MEMBER_BADGE_APPLICATION_LABEL_PAGE_SIZE_PT,
 } from "../../../src/modules/member-badge-application/member-badge-application.constants.js";
 import { deriveMemberBadgeFulfillmentStatus } from "../../../src/modules/member-badge-application/member-badge-application-fulfillment.service.js";
-import { resolveMemberBadgeApplicationLookupUrl } from "../../../src/modules/member-badge-application/member-badge-application-label.service.js";
+import {
+  MEMBER_BADGE_LABEL_LAYOUT,
+  resolveMemberBadgeApplicationLookupUrl,
+} from "../../../src/modules/member-badge-application/member-badge-application-label.service.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "../../../../..");
@@ -62,6 +65,35 @@ describe("Pack 25D — Member Badge Admin fulfillment API", () => {
     assert.match(url, /badgeApplicationId=app-abc-123/);
     assert.match(url, /member_badge_orders/);
     assert.doesNotMatch(url, /address|phone|stripe|secret/i);
+  });
+
+  it("Pack 25D.1 — A5 layout places QR upper-right and recipient on right", () => {
+    const label = readRepo(
+      "apps/api/src/modules/member-badge-application/member-badge-application-label.service.ts",
+    );
+    assert.match(label, /MEMBER_BADGE_LABEL_LAYOUT/);
+    assert.match(label, /qrX = pageWidth - margin - qrSize/);
+    assert.match(label, /qrY = margin/);
+    assert.match(label, /rightX = pageWidth \* MEMBER_BADGE_LABEL_LAYOUT\.rightColumnXRatio/);
+    assert.match(label, /text\("FROM"/);
+    assert.match(label, /text\("TO"/);
+    assert.match(label, /Member #:/);
+    assert.match(label, /fontSize\(8\)/);
+    assert.equal(MEMBER_BADGE_LABEL_LAYOUT.margin, 36);
+    assert.ok(MEMBER_BADGE_LABEL_LAYOUT.rightColumnXRatio >= 0.48);
+    assert.deepEqual([...MEMBER_BADGE_APPLICATION_LABEL_PAGE_SIZE_PT], [419.53, 595.28]);
+  });
+
+  it("Pack 25D.1 — missing fulfillment email is a validation error, not unavailable", () => {
+    const label = readRepo(
+      "apps/api/src/modules/member-badge-application/member-badge-application-label.service.ts",
+    );
+    const adminRoutes = readRepo(
+      "apps/api/src/modules/member-badge-application/member-badge-application-admin.routes.ts",
+    );
+    assert.match(label, /MEMBER_BADGE_FULFILLMENT_EMAIL is not configured/);
+    assert.match(label, /MemberBadgeApplicationValidationError/);
+    assert.match(adminRoutes, /MemberBadgeApplicationValidationError[\s\S]*return 400/);
   });
 
   it("45-46 — Badge CA$28 and currency remain canonical", () => {
