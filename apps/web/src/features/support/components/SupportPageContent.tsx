@@ -141,7 +141,7 @@ export function SupportPageContent() {
               participation rooted in local communities.
             </p>
             <div className="support-page__card-actions">
-              {/* TODO: Replace with internal Humanity Union Regional Program when available. */}
+              {/* Pack 26A — WordPress Regional Program kept until new-platform route exists. */}
               <ExternalButtonLink href={SUPPORT_REGIONAL_PROGRAM_URL} variant="secondary">
                 Regional Program
               </ExternalButtonLink>

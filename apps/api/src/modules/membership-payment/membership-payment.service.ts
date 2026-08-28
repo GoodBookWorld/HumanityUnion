@@ -36,6 +36,7 @@ import {
 import { getStripeClient } from "./stripe-client.js";
 import { MEMBERSHIP_CHECKOUT_METADATA_PLATFORM } from "./membership-payment.constants.js";
 import { MEMBERSHIP_PAYMENT_PURPOSE } from "../member-badge-contribution/member-badge-contribution.constants.js";
+import { assertMembershipCheckoutAmountAndCurrency } from "./membership-payment.verification.js";
 import { dispatchStripeMembershipWebhookEvent } from "./stripe-webhook-dispatcher.js";
 
 function assertCheckoutEligible(
@@ -247,6 +248,23 @@ export async function processMembershipStripeEvent(event: {
       if (metadata.paymentPurpose === "member_badge_contribution") {
         await markMembershipWebhookEventProcessed(event.id, { processingStatus: "ignored" });
         return { processed: false, ignored: true };
+      }
+
+      if (
+        metadata.paymentPurpose !== undefined &&
+        metadata.paymentPurpose !== MEMBERSHIP_PAYMENT_PURPOSE
+      ) {
+        throw new MembershipPaymentValidationError(
+          "Membership webhook received unexpected paymentPurpose.",
+        );
+      }
+
+      // Pack 26A — amount/currency integrity (do not trust Price ID alone).
+      assertMembershipCheckoutAmountAndCurrency(object);
+
+      const paymentStatus = object.payment_status;
+      if (paymentStatus !== undefined && paymentStatus !== "paid") {
+        throw new MembershipPaymentValidationError("Checkout Session is not paid.");
       }
 
       const userId = metadata.internalUserId;
@@ -472,6 +490,8 @@ export async function simulateMockMembershipCheckoutCompleted(input: {
 }): Promise<void> {
   const eventId = `mock_evt_${input.sessionId}`;
 
+  const config = resolveMembershipPaymentConfig();
+
   await processMembershipStripeEvent({
     id: eventId,
     type: "checkout.session.completed",
@@ -481,6 +501,9 @@ export async function simulateMockMembershipCheckoutCompleted(input: {
       object: {
         id: input.sessionId,
         created: Math.floor(Date.now() / 1000),
+        payment_status: "paid",
+        amount_total: config.amountCents,
+        currency: config.currency,
         payment_intent: `mock_pi_${input.contributionId}`,
         latest_charge: `mock_ch_${input.contributionId}`,
         metadata: {
@@ -488,7 +511,7 @@ export async function simulateMockMembershipCheckoutCompleted(input: {
           membershipId: input.membershipId,
           internalUserId: input.userId,
           applicationId: input.membershipId,
-          platformVersion: resolveMembershipPaymentConfig().platformVersion,
+          platformVersion: config.platformVersion,
         },
       },
     },

@@ -11,6 +11,12 @@ import { createSuccessResponse } from "../shared/http-response.js";
 const healthRouter = Router();
 const startedAt = Date.now();
 
+function isPublicMinimalHealthSurface(): boolean {
+  // Production public probes (Render / load balancers) get liveness/readiness only.
+  // Staging and development keep diagnostic detail for operators.
+  return environment.nodeEnv === "production" && resolvePlatformMode() === "production";
+}
+
 healthRouter.get("/", async (_req, res) => {
   const mongo = await checkMongoConnection();
   const email = await getEmailProviderHealth();
@@ -26,6 +32,20 @@ healthRouter.get("/", async (_req, res) => {
     : environment.nodeEnv === "production"
       ? "degraded"
       : "healthy";
+
+  if (isPublicMinimalHealthSurface()) {
+    res.json(
+      createSuccessResponse(
+        {
+          status,
+          liveness: "alive" as const,
+          ready: mongo.connected,
+        },
+        "Humanity Union API is running.",
+      ),
+    );
+    return;
+  }
 
   res.json(
     createSuccessResponse(
@@ -58,6 +78,17 @@ healthRouter.get("/", async (_req, res) => {
 healthRouter.get("/ready", async (_req, res) => {
   const mongo = await checkMongoConnection();
   if (!mongo.connected) {
+    if (isPublicMinimalHealthSurface()) {
+      res.status(503).json({
+        success: false,
+        data: { ready: false },
+        meta: {},
+        links: {},
+        message: "API not ready.",
+      });
+      return;
+    }
+
     res.status(503).json({
       success: false,
       data: { ready: false, mongodb: mongo },
@@ -65,6 +96,11 @@ healthRouter.get("/ready", async (_req, res) => {
       links: {},
       message: "API not ready: MongoDB unavailable.",
     });
+    return;
+  }
+
+  if (isPublicMinimalHealthSurface()) {
+    res.json(createSuccessResponse({ ready: true }, "API ready."));
     return;
   }
 

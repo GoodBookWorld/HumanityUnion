@@ -5,14 +5,13 @@ import type {
   PublicInitiativePublicImpactProjection,
 } from "@hu/types";
 
+import { API_BASE_URL } from "../../lib/api-base-url";
 import { apiRequest } from "../../lib/api-client";
 
 export interface PublicInitiativePublicImpactsResponse {
   impacts: PublicInitiativePublicImpactListItem[];
   metrics: InitiativePublicImpactMetrics;
 }
-
-const API_BASE_URL = "http://localhost:4000";
 
 export async function listMyInitiativePublicImpacts(): Promise<InitiativePublicImpact[]> {
   return apiRequest<InitiativePublicImpact[]>("/api/v1/initiative-public-impact/mine");

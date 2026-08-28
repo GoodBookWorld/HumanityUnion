@@ -56,13 +56,14 @@ describe("Support Page UX Pack 01", () => {
     assert.doesNotMatch(content, /VolunteerSubsystem|volunteer\.routes|createVolunteer/);
   });
 
-  it("Regional Program uses temporary external URL with TODO for internal replacement", () => {
+  it("Regional Program remains temporary WordPress URL until new-platform mapping exists", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
     const constants = read("features/support/support.constants.ts");
     assert.equal(SUPPORT_REGIONAL_PROGRAM_URL, "https://huws.org/regional-program/");
     assert.match(content, /SUPPORT_REGIONAL_PROGRAM_URL/);
-    assert.match(content, /TODO:\s*Replace with internal Humanity Union Regional Program/);
-    assert.match(constants, /TODO:\s*Replace with internal Humanity Union Regional Program/);
+    assert.match(constants, /WordPress/);
+    assert.match(constants, /WORDPRESS_REDIRECT_INVENTORY/);
+    assert.match(constants, /NEEDS_MAPPING|KEEP_TEMPORARILY/);
   });
 
   it("closing CTA scrolls to support cards; no payment or volunteer APIs", () => {

@@ -38,6 +38,9 @@ temp/
 packages/types/**/*.backup
 uploads/
 
+# TypeScript incremental build info (generated)
+*.tsbuildinfo
+
 # MongoDB local data
 data/
 

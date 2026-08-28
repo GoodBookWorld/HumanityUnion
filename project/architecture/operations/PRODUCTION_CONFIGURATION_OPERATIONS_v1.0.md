@@ -256,9 +256,22 @@ Provider-generated domains acceptable initially. Staging must send `noindex` (se
 | `INITIATIVE_*_PERSISTENCE` / lifecycle draft keys | CONFIG | `mongodb` (not `file`) |
 | Auto-mongo modules (news, archive, engagement, translations) | — | Follow URI + existing resolvers |
 
-### Media / Stripe / news (optional)
+### Media / Stripe / news
 
-`STRIPE_*`, `MEMBER_BADGE_*`, `NEWS_*`, `MEDIA_REGISTRY_*` — secrets/config as applicable; badge disabled until legal/ops review.
+| Variable | Class | Notes |
+|---|---|---|
+| `MEMBERSHIP_PAYMENT_PROVIDER` | CONFIG | `stripe` in production when Membership Checkout is live; `mock` only for non-prod |
+| `MEMBER_BADGE_PAYMENT_PROVIDER` | CONFIG | `stripe` when CA$28 Badge Application Checkout is live |
+| `STRIPE_SECRET_KEY` | SECRET | **Live** key in production; Test key on staging only |
+| `STRIPE_WEBHOOK_SECRET` | SECRET | Matching mode webhook signing secret |
+| `STRIPE_MEMBERSHIP_PRICE_ID` | CONFIG | Live Price for CA$1 Membership |
+| `STRIPE_MEMBER_BADGE_PRICE_ID` | CONFIG | Live Price for CA$28 Member Badge Application |
+| `MEMBER_BADGE_CONTRIBUTIONS_ENABLED` | CONFIG | **Must be `false` in production** (legacy CA$20 flow) |
+| `NEWS_*`, `MEDIA_REGISTRY_*` | CONFIG/SECRET | As applicable |
+
+**Pack 26A boot rule:** when a payment provider resolves to Stripe under `NODE_ENV=production`,
+missing Stripe secrets/Price IDs fail startup (values never echoed). Livemode on webhook
+events must match `PLATFORM_MODE` (production → Live; staging/dev → Test).
 
 ---
 

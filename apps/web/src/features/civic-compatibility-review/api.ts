@@ -6,6 +6,7 @@ import type {
   PublicCivicCompatibilityReviewSummary,
 } from "@hu/types";
 
+import { API_BASE_URL } from "../../lib/api-base-url";
 import { apiRequest } from "../../lib/api-client";
 
 export interface PublicCivicCompatibilityReviewsResponse {
@@ -13,8 +14,6 @@ export interface PublicCivicCompatibilityReviewsResponse {
   latest: PublicCivicCompatibilityReviewSummary | null;
   metrics: CivicCompatibilityReviewMetrics;
 }
-
-const API_BASE_URL = "http://localhost:4000";
 
 export async function listInitiativeCompatibilityReviews(
   initiativeId: string,

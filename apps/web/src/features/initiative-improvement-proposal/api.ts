@@ -5,6 +5,7 @@ import type {
   PublicInitiativeImprovementProposalProjection,
 } from "@hu/types";
 
+import { API_BASE_URL } from "../../lib/api-base-url";
 import { apiRequest } from "../../lib/api-client";
 
 export interface CreateInitiativeImprovementProposalDraftInput {
@@ -35,8 +36,6 @@ export interface PublicInitiativeImprovementProposalsResponse {
   proposals: PublicInitiativeImprovementProposalListItem[];
   metrics: InitiativeImprovementProposalMetrics;
 }
-
-const API_BASE_URL = "http://localhost:4000";
 
 export async function listMyImprovementProposals(): Promise<InitiativeImprovementProposal[]> {
   return apiRequest<InitiativeImprovementProposal[]>("/api/v1/improvement-proposals/mine");

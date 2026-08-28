@@ -167,9 +167,12 @@ function verifyHealthRoutes(): void {
   console.log("4. Health endpoints");
 
   const apiHealth = readRepoFile("apps/api/src/routes/health.routes.ts");
-  assert(apiHealth.includes("uptimeSeconds"), "API health must expose uptime");
-  assert(apiHealth.includes("environment"), "API health must expose environment");
   assert(apiHealth.includes("checkMongoConnection"), "API health must check MongoDB");
+  assert(apiHealth.includes("isPublicMinimalHealthSurface"), "API health must slim production public surface");
+  assert(apiHealth.includes("liveness"), "API health must expose liveness");
+  // Detailed fields remain in the non-production diagnostic branch.
+  assert(apiHealth.includes("uptimeSeconds"), "API health must expose uptime (diagnostic branch)");
+  assert(apiHealth.includes("environment"), "API health must expose environment (diagnostic branch)");
 
   assert(
     fs.existsSync(path.join(REPO_ROOT, "apps/web/src/app/health/route.ts")),

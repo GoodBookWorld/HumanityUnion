@@ -85,6 +85,75 @@ export function collectInvalidEmailConfig(): string[] {
   return [`EMAIL_PROVIDER=${provider} is unsupported (use smtp|resend)`];
 }
 
+function resolveStripeProvider(
+  explicitEnvName: string,
+  secretKey: string | undefined,
+): "stripe" | "mock" {
+  const explicit = readEnv(explicitEnvName)?.toLowerCase();
+  if (explicit === "stripe") {
+    return "stripe";
+  }
+  if (explicit === "mock") {
+    return "mock";
+  }
+  return secretKey ? "stripe" : "mock";
+}
+
+/**
+ * Pack 26A — when Membership or Member Badge payment provider resolves to Stripe,
+ * require the Stripe secrets/Price IDs at production boot (values never echoed).
+ * Legacy CA$20 contributions must stay disabled in production.
+ */
+export function collectInvalidStripePaymentConfig(): string[] {
+  const problems: string[] = [];
+  const secretKey = readEnv("STRIPE_SECRET_KEY");
+  const webhookSecret = readEnv("STRIPE_WEBHOOK_SECRET");
+
+  const membershipProvider = resolveStripeProvider("MEMBERSHIP_PAYMENT_PROVIDER", secretKey);
+  if (membershipProvider === "stripe") {
+    if (!secretKey) {
+      problems.push("STRIPE_SECRET_KEY is required when Membership Stripe payments are enabled");
+    }
+    if (!webhookSecret) {
+      problems.push(
+        "STRIPE_WEBHOOK_SECRET is required when Membership Stripe payments are enabled",
+      );
+    }
+    if (!readEnv("STRIPE_MEMBERSHIP_PRICE_ID")) {
+      problems.push(
+        "STRIPE_MEMBERSHIP_PRICE_ID is required when Membership Stripe payments are enabled",
+      );
+    }
+  }
+
+  const badgeProvider = resolveStripeProvider("MEMBER_BADGE_PAYMENT_PROVIDER", secretKey);
+  if (badgeProvider === "stripe") {
+    if (!secretKey) {
+      problems.push(
+        "STRIPE_SECRET_KEY is required when Member Badge Stripe payments are enabled",
+      );
+    }
+    if (!webhookSecret) {
+      problems.push(
+        "STRIPE_WEBHOOK_SECRET is required when Member Badge Stripe payments are enabled",
+      );
+    }
+    if (!readEnv("STRIPE_MEMBER_BADGE_PRICE_ID")) {
+      problems.push(
+        "STRIPE_MEMBER_BADGE_PRICE_ID is required when Member Badge Stripe payments are enabled",
+      );
+    }
+  }
+
+  if (readEnv("MEMBER_BADGE_CONTRIBUTIONS_ENABLED")?.toLowerCase() === "true") {
+    problems.push(
+      "MEMBER_BADGE_CONTRIBUTIONS_ENABLED must be false in production (legacy CA$20 flow stays disabled)",
+    );
+  }
+
+  return problems;
+}
+
 export function collectInvalidMediaStorageConfig(): string[] {
   const provider = (readEnv("MEDIA_STORAGE_PROVIDER") ?? "local").toLowerCase();
   const allowEphemeralLocal = readEnv("MEDIA_ALLOW_EPHEMERAL_LOCAL_STORAGE") === "true";
@@ -152,6 +221,7 @@ export function validateProductionEnvironment(): void {
   problems.push(...collectInvalidProductionPersistenceModes().map((item) => `Invalid persistence ${item}`));
   problems.push(...collectInvalidMediaStorageConfig());
   problems.push(...collectInvalidEmailConfig());
+  problems.push(...collectInvalidStripePaymentConfig());
 
   if (problems.length > 0) {
     throw new Error(

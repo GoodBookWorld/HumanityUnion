@@ -68,10 +68,13 @@ describe("Admin Panel Pack 03 — Views & Participant directory", () => {
     const subscribers = read(
       "features/administration/components/AdminViewsSubscribersSection.tsx",
     );
-    assert.match(subscribers, /AdminCapabilityGap/);
+    // Pack 21C — live Subscribers directory replaced CapabilityGap placeholders.
+    assert.doesNotMatch(subscribers, /AdminCapabilityGap/);
+    assert.match(subscribers, /listAdminBlogSubscribers/);
     assert.match(subscribers, /Subscriber is not Participant/i);
     assert.match(subscribers, /Subscriber is not Member/i);
 
+    // AdminCapabilityGap remains a legitimate shared component for other Admin gaps.
     assert.match(
       read("features/administration/components/AdminCapabilityGap.tsx"),
       /Not collected yet/,

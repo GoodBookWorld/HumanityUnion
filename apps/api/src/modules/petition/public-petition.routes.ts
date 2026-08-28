@@ -48,6 +48,8 @@ function resolveVisitorKey(req: Request): string {
   req.res?.cookie(VISITOR_COOKIE, generated, {
     httpOnly: true,
     sameSite: "lax",
+    // Pack 26A — Secure on production HTTPS; omit for local HTTP development.
+    secure: process.env.NODE_ENV === "production",
     maxAge: 1000 * 60 * 60 * 24 * 365,
     path: "/",
   });

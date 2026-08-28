@@ -6,6 +6,7 @@ import type {
   PublicDecisionSessionProjection,
 } from "@hu/types";
 
+import { API_BASE_URL } from "../../lib/api-base-url";
 import { apiRequest } from "../../lib/api-client";
 
 export interface CreateDecisionSessionDraftInput {
@@ -29,8 +30,6 @@ export interface PublicDecisionSessionsResponse {
   sessions: PublicDecisionSessionListItem[];
   metrics: DecisionSessionMetrics;
 }
-
-const API_BASE_URL = "http://localhost:4000";
 
 export async function listMyDecisionSessions(): Promise<DecisionSession[]> {
   return apiRequest<DecisionSession[]>("/api/v1/decision-sessions/mine");

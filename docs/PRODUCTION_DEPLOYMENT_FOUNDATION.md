@@ -84,10 +84,58 @@ When `NODE_ENV=production`, the API validates required variables at startup:
 - `JWT_ACCESS_SECRET`
 - `JWT_REFRESH_SECRET`
 - `CORS_ORIGIN` or `WEB_ORIGIN`
+- Media storage contract (prefer R2; local only with explicit ephemeral override)
+- Email provider must not be `mock`
+- **Stripe (Pack 26A):** when `MEMBERSHIP_PAYMENT_PROVIDER=stripe` or
+  `MEMBER_BADGE_PAYMENT_PROVIDER=stripe` (or Stripe is implied by `STRIPE_SECRET_KEY`),
+  require `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and the matching Price IDs
+  (`STRIPE_MEMBERSHIP_PRICE_ID` / `STRIPE_MEMBER_BADGE_PRICE_ID`). Secret **values
+  are never printed**.
+- **Legacy Badge:** `MEMBER_BADGE_CONTRIBUTIONS_ENABLED` must be `false` in production.
 
-Missing values cause a clear startup failure.
+Missing / invalid values cause a clear startup failure.
 
 Development remains permissive with local defaults.
+
+## Pack 26A — environment classes (read carefully)
+
+### API production env
+
+- `NODE_ENV=production`
+- `PLATFORM_MODE=production`
+- Dedicated production MongoDB (`humanity_union_production` or equivalent) — **never**
+  reuse staging MongoDB
+- Stripe **Live** keys + Live Price IDs only
+- `MEMBER_BADGE_CONTRIBUTIONS_ENABLED=false`
+- Real email provider (`smtp` / `resend`)
+
+### Web production env (build-time)
+
+- `NEXT_PUBLIC_PLATFORM_MODE=production` (rebuild before enabling indexing)
+- `NEXT_PUBLIC_API_BASE_URL=https://api.huws.org` (origin only — no `/api` path)
+- `NEXT_PUBLIC_SITE_URL=https://huws.org`
+- `NEXT_PUBLIC_ALLOW_BOOTSTRAP_UI=false`
+
+### Staging-only env (must not leak into production)
+
+- `PLATFORM_MODE=staging` (API treats as beta)
+- Staging MongoDB / R2 / SMTP / Stripe **Test** keys + Test Price IDs
+- Staging migration / provision flags (`migrate:staging-*`, `provision:staging-admin`, etc.)
+- `NEXT_PUBLIC_PLATFORM_MODE=staging` + noindex
+
+### Legacy-disabled env
+
+- `MEMBER_BADGE_CONTRIBUTIONS_ENABLED=false` — required production posture for the
+  legacy CA$20 Member Badge contribution flow. Canonical CA$28 Member Badge
+  Application Checkout does **not** require this flag to be true.
+
+### Hard warnings
+
+1. Never reuse staging MongoDB in production.
+2. Never use Stripe Test keys or Test Price IDs in production.
+3. Never enable staging migration/provision flags in production.
+4. Legacy CA$20 Badge contribution stays disabled.
+5. Production Web must be rebuilt with production platform mode before indexing.
 
 ## Docker Compose usage
 

@@ -7,9 +7,8 @@ import type {
   PublicOfficialResponseProjection,
 } from "@hu/types";
 
+import { API_BASE_URL } from "../../lib/api-base-url";
 import { apiRequest } from "../../lib/api-client";
-
-const API_BASE_URL = "http://localhost:4000";
 
 export async function listMyOfficialResponses(): Promise<OfficialResponse[]> {
   return apiRequest<OfficialResponse[]>("/api/v1/official-responses/mine");

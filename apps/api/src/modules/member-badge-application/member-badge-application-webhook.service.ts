@@ -109,13 +109,25 @@ async function confirmMemberBadgeApplicationPaid(input: {
   const amountTotal = resolveAmountTotalCents(input.sessionObject);
   const currency = resolveCurrency(input.sessionObject);
 
-  if (amountTotal !== null && amountTotal !== MEMBER_BADGE_APPLICATION_AMOUNT_CENTS) {
+  if (amountTotal === null) {
+    throw new MemberBadgeApplicationValidationError(
+      "Member Badge payment amount is missing from the Stripe object.",
+    );
+  }
+
+  if (amountTotal !== MEMBER_BADGE_APPLICATION_AMOUNT_CENTS) {
     throw new MemberBadgeApplicationValidationError(
       "Member Badge payment amount does not match CA$28.",
     );
   }
 
-  if (currency !== null && currency !== MEMBER_BADGE_APPLICATION_CURRENCY) {
+  if (currency === null) {
+    throw new MemberBadgeApplicationValidationError(
+      "Member Badge payment currency is missing from the Stripe object.",
+    );
+  }
+
+  if (currency !== MEMBER_BADGE_APPLICATION_CURRENCY) {
     throw new MemberBadgeApplicationValidationError(
       "Member Badge payment currency must be CAD.",
     );

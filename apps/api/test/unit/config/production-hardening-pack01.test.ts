@@ -113,6 +113,20 @@ describe("Production Hardening Pack 01 — production config guards", () => {
     process.env.R2_PRIVATE_BUCKET = "bucket-private";
     process.env.AUTH_BOOTSTRAP_FALLBACK = "false";
     process.env.PLATFORM_MODE = "production";
+    // Pack 26A — keep Stripe disabled unless a test enables it explicitly.
+    process.env.MEMBERSHIP_PAYMENT_PROVIDER = "mock";
+    process.env.MEMBER_BADGE_PAYMENT_PROVIDER = "mock";
+    process.env.MEMBER_BADGE_CONTRIBUTIONS_ENABLED = "false";
+    delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.STRIPE_MEMBERSHIP_PRICE_ID;
+    delete process.env.STRIPE_MEMBER_BADGE_PRICE_ID;
+    // Hermetic email config (do not depend on developer .env).
+    process.env.EMAIL_PROVIDER = "smtp";
+    process.env.SMTP_HOST = "smtp.example.org";
+    process.env.SMTP_USERNAME = "noreply@example.org";
+    process.env.SMTP_PASSWORD = "smtp-password-for-tests-only";
+    process.env.SMTP_FROM_EMAIL = "noreply@example.org";
     // Clear durable file/memory values that may be present from apps/api/.env.
     for (const key of DURABLE_PERSISTENCE_ENV_KEYS) {
       delete process.env[key];
@@ -142,6 +156,47 @@ describe("Production Hardening Pack 01 — production config guards", () => {
   it("accepts a fully configured production surface", () => {
     withMinimalProdEnv();
     assert.doesNotThrow(() => validateProductionEnvironment());
+  });
+
+  it("Pack 26A — rejects Stripe Membership provider without required secrets/Price IDs", () => {
+    withMinimalProdEnv({
+      MEMBERSHIP_PAYMENT_PROVIDER: "stripe",
+    });
+    assert.throws(() => validateProductionEnvironment(), /STRIPE_SECRET_KEY/);
+    assert.throws(() => validateProductionEnvironment(), /STRIPE_WEBHOOK_SECRET/);
+    assert.throws(() => validateProductionEnvironment(), /STRIPE_MEMBERSHIP_PRICE_ID/);
+  });
+
+  it("Pack 26A — rejects Stripe Member Badge provider without required Price ID", () => {
+    withMinimalProdEnv({
+      MEMBER_BADGE_PAYMENT_PROVIDER: "stripe",
+      STRIPE_SECRET_KEY: "sk_test_placeholder",
+      STRIPE_WEBHOOK_SECRET: "whsec_placeholder",
+    });
+    assert.throws(() => validateProductionEnvironment(), /STRIPE_MEMBER_BADGE_PRICE_ID/);
+  });
+
+  it("Pack 26A — accepts Stripe when Membership and Badge Price IDs are configured", () => {
+    withMinimalProdEnv({
+      MEMBERSHIP_PAYMENT_PROVIDER: "stripe",
+      MEMBER_BADGE_PAYMENT_PROVIDER: "stripe",
+      STRIPE_SECRET_KEY: "sk_live_placeholder",
+      STRIPE_WEBHOOK_SECRET: "whsec_placeholder",
+      STRIPE_MEMBERSHIP_PRICE_ID: "price_membership",
+      STRIPE_MEMBER_BADGE_PRICE_ID: "price_badge",
+      MEMBER_BADGE_CONTRIBUTIONS_ENABLED: "false",
+    });
+    assert.doesNotThrow(() => validateProductionEnvironment());
+  });
+
+  it("Pack 26A — rejects legacy Member Badge contributions enabled in production", () => {
+    withMinimalProdEnv({
+      MEMBER_BADGE_CONTRIBUTIONS_ENABLED: "true",
+    });
+    assert.throws(
+      () => validateProductionEnvironment(),
+      /MEMBER_BADGE_CONTRIBUTIONS_ENABLED must be false/,
+    );
   });
 });
 

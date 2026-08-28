@@ -6,9 +6,8 @@ import type {
   RecommendedCivicDeliveryRecipient,
 } from "@hu/types";
 
+import { API_BASE_URL } from "../../lib/api-base-url";
 import { apiRequest } from "../../lib/api-client";
-
-const API_BASE_URL = "http://localhost:4000";
 
 export interface CivicDeliveryDetail {
   delivery: CivicActionPackageDelivery;
