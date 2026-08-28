@@ -21,9 +21,12 @@ import { MembershipPlatformStatisticsSection } from "./MembershipPlatformStatist
 import { MembershipHero } from "./MembershipHero";
 import { MembershipJourneySection } from "./MembershipJourneySection";
 import { MembershipMeaningCards } from "./MembershipMeaningCards";
+import { MembershipMemberBadgeOffer } from "./MembershipMemberBadgeOffer";
 import { MembershipNotMeans } from "./MembershipNotMeans";
 import { MembershipStatusCard } from "./MembershipStatusCard";
+import { isActiveMembershipStatus } from "../membership-formatters";
 import "./membership-page.css";
+import "./membership-success-page.css";
 
 function MembershipPublicSections() {
   return (
@@ -40,17 +43,33 @@ function MembershipAuthenticatedSections({
   payload,
   onUpdated,
   contributionCancelled,
+  badgePaymentState,
 }: {
   payload: MembershipMePayload;
   onUpdated: (next: MembershipMePayload) => void;
   contributionCancelled?: boolean;
+  badgePaymentState?: "success" | "cancelled" | null;
 }) {
   return (
     <>
+      {badgePaymentState === "cancelled" ? (
+        <p className="membership-section" role="status">
+          Member Badge payment was cancelled. Your application was saved and remains unpaid.
+        </p>
+      ) : null}
+      {badgePaymentState === "success" ? (
+        <p className="membership-section" role="status">
+          If payment completed, your Member Badge Application will show as Paid once confirmation
+          is received.
+        </p>
+      ) : null}
       <MembershipStatusCard membership={payload.membership} />
       <MembershipJourneySection steps={payload.timeline} />
       <MembershipApplicationForm payload={payload} onUpdated={onUpdated} />
       <MembershipContributionCard payload={payload} contributionCancelled={contributionCancelled} />
+      {isActiveMembershipStatus(payload.membership.status) ? (
+        <MembershipMemberBadgeOffer />
+      ) : null}
       <section
         className="membership-section"
         aria-labelledby="membership-platform-statistics-title"
@@ -95,6 +114,11 @@ function MembershipSignInPrompt() {
 function MembershipPageBody({ authStatus }: { authStatus: "authenticated" | "unauthenticated" }) {
   const searchParams = useSearchParams();
   const contributionCancelled = searchParams.get("contribution") === "cancelled";
+  const badgePaymentParam = searchParams.get("badgePayment");
+  const badgePaymentState =
+    badgePaymentParam === "success" || badgePaymentParam === "cancelled"
+      ? badgePaymentParam
+      : null;
   const [payload, setPayload] = useState<MembershipMePayload | null>(null);
   const [loading, setLoading] = useState(authStatus === "authenticated");
   const [error, setError] = useState<string | null>(null);
@@ -166,6 +190,7 @@ function MembershipPageBody({ authStatus }: { authStatus: "authenticated" | "una
           payload={payload}
           onUpdated={setPayload}
           contributionCancelled={contributionCancelled}
+          badgePaymentState={badgePaymentState}
         />
       ) : (
         <MembershipSignInPrompt />

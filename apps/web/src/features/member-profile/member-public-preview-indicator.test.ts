@@ -114,8 +114,20 @@ describe("Member public profile preview + honorary Member indicator", () => {
     const section = read("features/membership/components/MembershipProfileSection.tsx");
     assert.match(preview, /previewMemberStatus/);
     assert.match(preview, /Presentation-only/);
-    assert.match(section, /previewMemberStatus/);
+    assert.match(preview, /isActiveMember/);
+    assert.match(section, /previewMemberStatus=\{!isActiveMember\}/);
+    assert.match(section, /isActiveMember=\{isActiveMember\}/);
     assert.doesNotMatch(section, /status:\s*"active_member"/);
+  });
+
+  it("10b — Pack 25A.1 preview copy: badge automatic; number privacy separate", () => {
+    const preview = read("features/membership/components/MembershipPublicDisplayPreview.tsx");
+    assert.match(preview, /Member status appears automatically/);
+    assert.match(preview, /Member Number stays private/);
+    assert.match(preview, /future Member status/);
+    const constants = read("features/membership/membership.constants.ts");
+    assert.match(constants, /Show my Member Number publicly/);
+    assert.doesNotMatch(constants, /Publicly display my Member status/);
   });
 
   it("11 — non-Member public profile does NOT render indicator", () => {
@@ -137,6 +149,25 @@ describe("Member public profile preview + honorary Member indicator", () => {
       shouldShowMemberBadge({ memberBadgeVisible: false, membershipStatus: "member" }),
       true,
     );
+  });
+
+  it("12b — Pack 25A.1 shared MemberStatusIndicator reused; no second flag", () => {
+    const surface = read("features/member-profile/components/ParticipantProfileSurface.tsx");
+    assert.match(surface, /MemberStatusIndicator/);
+    assert.doesNotMatch(surface, /enableBadge/);
+    assert.doesNotMatch(surface, /forceMemberBadge/);
+    assert.doesNotMatch(surface, /previewMemberStatus/);
+  });
+
+  it("12c — Pack 25A.1 success copy confirms automatic public Member badge", () => {
+    const constants = read("features/membership/membership.constants.ts");
+    const confirmation = read(
+      "features/membership/components/MembershipSuccessConfirmationCard.tsx",
+    );
+    assert.match(constants, /publicMemberNote/);
+    assert.match(constants, /Member badge appears automatically on your public profile/);
+    assert.match(confirmation, /MEMBERSHIP_SUCCESS_COPY\.publicMemberNote/);
+    assert.doesNotMatch(confirmation, /enable the Member badge/i);
   });
 
   it("13 — no blank layout gap for non-Member", () => {

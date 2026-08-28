@@ -169,6 +169,7 @@ import {
 import { membershipRouter } from "./modules/membership/index.js";
 import { membershipStripeWebhookRouter } from "./modules/membership-payment/index.js";
 import { memberBadgeContributionRouter } from "./modules/member-badge-contribution/index.js";
+import { memberBadgeApplicationRouter } from "./modules/member-badge-application/index.js";
 import { LOCAL_MEDIA_UPLOAD_ROOT, mediaUploadRouter } from "./modules/media-upload/index.js";
 import { mediaStaticHeadersMiddleware } from "./modules/media-upload/media-static.middleware.js";
 import memberRouter from "./modules/member/member.routes.js";
@@ -284,6 +285,7 @@ app.use("/api/v1/blog", blogRouter);
 app.use("/api/v1/public/blog", publicBlogRouter);
 app.use("/api/v1/membership", membershipRouter);
 app.use("/api/v1/member-badge-contributions", memberBadgeContributionRouter);
+app.use("/api/v1/member-badge-applications", memberBadgeApplicationRouter);
 app.use("/api/v1/participation-area", participationAreaRouter);
 app.use("/api/v1/workspace", workspaceRouter);
 app.use("/api/v1/activities", activityRouter);

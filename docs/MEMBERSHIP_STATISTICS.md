@@ -64,7 +64,7 @@ Per-decision Member/Participant voter breakdown is deferred until vote records s
 
 ## Public visibility policy
 
-Public profiles may show Member badge, number, and label when `membershipPubliclyVisible = true`. Aggregate statistics do not expose individual accounts.
+Public profiles show honorary Member status and badge when Membership is `active_member` with a Member Number. Member Number appears only when `membershipPubliclyVisible = true`. Aggregate statistics do not expose individual accounts.
 
 ## Voting transparency
 

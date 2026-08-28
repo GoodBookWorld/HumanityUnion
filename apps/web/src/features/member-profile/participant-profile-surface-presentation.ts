@@ -132,12 +132,13 @@ export function hasVisibleParticipationArea(
 }
 
 /**
- * Honorary Member indicator uses the privacy-filtered public projection
+ * Honorary Member indicator uses the public projection
  * (`memberBadgeVisible` / `membershipStatus === "member"`), never activity,
  * rank, points, role, preview state, or account age.
  *
- * Canonical domain status is `active_member`; public projection exposes only
- * the safe `"member" | "participant"` pair via `resolvePublicMembershipFields`.
+ * Canonical domain status is `active_member`. Pack 25A.1 — Member badge/status
+ * is automatic for active Members with a Member Number; `membershipPubliclyVisible`
+ * gates only Member Number exposure via `resolvePublicMembershipFields`.
  */
 export function shouldShowMemberBadge(
   profile: Pick<PublicMemberProfile, "memberBadgeVisible" | "membershipStatus">,

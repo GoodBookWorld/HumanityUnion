@@ -414,6 +414,34 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    collectionName: MONGO_COLLECTIONS.memberBadgeApplications,
+    indexes: [
+      {
+        key: { applicationId: 1 },
+        unique: true,
+        name: "member_badge_application_id_unique",
+      },
+      {
+        key: { userId: 1 },
+        unique: true,
+        partialFilterExpression: {
+          paymentStatus: "unpaid",
+          applicationStatus: { $in: ["draft", "submitted"] },
+        },
+        name: "member_badge_application_one_active_unpaid_per_user",
+      },
+      { key: { participantId: 1, updatedAt: -1 }, name: "member_badge_application_participant" },
+      { key: { membershipId: 1 }, name: "member_badge_application_membership" },
+      { key: { paymentStatus: 1, fulfillmentStatus: 1 }, name: "member_badge_application_payment_fulfillment" },
+      {
+        key: { stripeCheckoutSessionId: 1 },
+        unique: true,
+        partialFilterExpression: { stripeCheckoutSessionId: { $type: "string" } },
+        name: "member_badge_application_checkout_session_unique",
+      },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.memberProfiles,
     indexes: [
       { key: { userId: 1 }, unique: true, name: "member_profile_user_id_unique" },

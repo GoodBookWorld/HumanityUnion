@@ -3,11 +3,16 @@ import {
   MEMBERSHIP_PAYMENT_PURPOSE,
 } from "../member-badge-contribution/member-badge-contribution.constants.js";
 import { processMemberBadgeStripeEvent } from "../member-badge-contribution/member-badge-webhook.service.js";
+import { processMemberBadgeApplicationStripeEvent } from "../member-badge-application/member-badge-application-webhook.service.js";
 import { processMembershipStripeEvent } from "./membership-payment.service.js";
 
 function extractPaymentPurpose(object: Record<string, unknown>): string | null {
   const metadata = (object.metadata as Record<string, string> | undefined) ?? {};
   return metadata.paymentPurpose ?? null;
+}
+
+function extractMetadata(object: Record<string, unknown>): Record<string, string> {
+  return (object.metadata as Record<string, string> | undefined) ?? {};
 }
 
 export async function dispatchStripeMembershipWebhookEvent(event: {
@@ -22,6 +27,14 @@ export async function dispatchStripeMembershipWebhookEvent(event: {
   const purpose = extractPaymentPurpose(event.data.object);
 
   if (purpose === MEMBER_BADGE_PAYMENT_PURPOSE) {
+    const metadata = extractMetadata(event.data.object);
+
+    // Pack 25C — canonical application Checkout carries applicationId.
+    if (metadata.applicationId) {
+      return processMemberBadgeApplicationStripeEvent(event);
+    }
+
+    // Legacy TASK-094 contribution Checkout (disabled by default).
     return processMemberBadgeStripeEvent(event);
   }
 

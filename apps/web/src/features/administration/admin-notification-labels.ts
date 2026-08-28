@@ -11,6 +11,7 @@ const ADMIN_NOTIFICATION_TYPE_LABELS: Record<AdminNotificationType, string> = {
   blog_post_published: "New Blog publication",
   operational_alert: "Platform alert",
   participant_suspension_review_requested: "Suspension review request",
+  member_badge_order_paid: "Member badge order paid",
 };
 
 export function resolveAdminNotificationTypeLabel(

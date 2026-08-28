@@ -43,6 +43,11 @@ export interface MemberProfile {
   showOrganization: boolean;
   showLocation: boolean;
   showParticipationArea: boolean;
+  /**
+   * Pack 25A.1 — when true, public profile may expose the Member Number.
+   * Honorary Member status/badge is automatic for active Members and does not
+   * depend on this preference.
+   */
   membershipPubliclyVisible: boolean;
   skillsVisibility: MemberProfileVisibility;
   professionalLinksVisibility: MemberProfileVisibility;

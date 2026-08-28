@@ -70,7 +70,8 @@ export function MembershipPublicVisibilityControl({
       </p>
       {!isActiveMember ? (
         <p className="membership-public-visibility__description" role="note">
-          Public Member visibility becomes available after Membership activation.
+          Public Member Number visibility becomes available after Membership activation. Member
+          status appears automatically once you are a Member.
         </p>
       ) : null}
       {message ? (

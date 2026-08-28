@@ -14,13 +14,28 @@ interface MembershipPublicDisplayPreviewProps {
   displayName: string;
   publicName?: string;
   avatarUrl?: string;
-  /** Privacy caption only — does not control indicator visibility in preview. */
+  /** Controls Member Number privacy messaging only — not the Member indicator. */
   membershipPubliclyVisible?: boolean;
+  /** True when Membership is already active_member (real public behavior). */
+  isActiveMember?: boolean;
   /**
-   * Presentation-only: show the future Member indicator even when the
-   * Participant is not yet an active Member. Never mutates domain status.
+   * Presentation-only: show the future Member indicator before activation.
+   * Never mutates domain status. Ignored when `isActiveMember` is true.
    */
   previewMemberStatus?: boolean;
+}
+
+function resolvePreviewCaption(input: {
+  isActiveMember: boolean;
+  membershipPubliclyVisible: boolean;
+}): string {
+  if (input.isActiveMember) {
+    return input.membershipPubliclyVisible
+      ? "Public profile: Member status appears automatically, including your Member Number."
+      : "Public profile: Member status appears automatically. Your Member Number stays private until you enable it.";
+  }
+
+  return "Public profile preview (future Member status)";
 }
 
 export function MembershipPublicDisplayPreview({
@@ -28,11 +43,14 @@ export function MembershipPublicDisplayPreview({
   publicName,
   avatarUrl,
   membershipPubliclyVisible = false,
+  isActiveMember = false,
   previewMemberStatus = true,
 }: MembershipPublicDisplayPreviewProps) {
-  const caption = membershipPubliclyVisible
-    ? "Public profile preview (Member status)"
-    : "Public profile preview (Member status hidden until public visibility is enabled)";
+  const showMemberIndicator = isActiveMember || previewMemberStatus;
+  const caption = resolvePreviewCaption({
+    isActiveMember,
+    membershipPubliclyVisible,
+  });
 
   return (
     <Card className="membership-public-preview">
@@ -40,7 +58,8 @@ export function MembershipPublicDisplayPreview({
       <div
         className="public-member-page membership-public-preview__surface"
         data-membership-public-preview="true"
-        data-preview-member-status={previewMemberStatus ? "true" : "false"}
+        data-preview-member-status={showMemberIndicator ? "true" : "false"}
+        data-active-member={isActiveMember ? "true" : "false"}
       >
         <header className="public-member-page__hero public-member-page__identity membership-public-preview__hero">
           <div className="public-member-page__hero-backdrop" aria-hidden="true" />
@@ -60,7 +79,7 @@ export function MembershipPublicDisplayPreview({
                   <p className="public-member-page__subtitle">@{publicName}</p>
                 ) : null}
               </div>
-              {previewMemberStatus ? (
+              {showMemberIndicator ? (
                 <MemberStatusIndicator className="public-member-page__member-status" />
               ) : null}
             </div>

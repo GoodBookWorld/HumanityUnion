@@ -17,6 +17,9 @@ const scriptDir = path.dirname(SCRIPT_PATH);
 dotenv.config({ path: path.resolve(scriptDir, "../../.env") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
+process.env.EMAIL_PROVIDER = "mock";
+process.env.HU_VERIFICATION_MODE = "true";
+
 const REQUIRED_FILES = [
   "components/MembershipSuccessPageContent.tsx",
   "components/MembershipSuccessHero.tsx",
@@ -42,11 +45,11 @@ const REQUIRED_COPY = [
   "Membership is permanent.",
   "What Membership Means",
   "Wear Your Commitment",
-  "20 CAD",
-  "+ Shipping",
-  "Request Member Badge",
-  "Coming Soon",
-  "Publicly display my Member status",
+  "CA$28",
+  "Delivery included",
+  "Member Badge Application",
+  "Show my Member Number publicly",
+  "Your Member badge appears automatically on your public profile",
   "Membership status does not change vote weight",
 ] as const;
 
@@ -177,20 +180,23 @@ function verifyVisibilityAndProjection(): void {
 function verifyIntegrations(): void {
   console.log("4. Workspace and profile integration");
 
-  const workspaceHeader = readRepoFile(
-    "apps/web/src/features/workspace-home/components/WorkspacePersonalHeader.tsx",
-  );
   const profileSection = readRepoFile(
     "apps/web/src/features/membership/components/MembershipProfileSection.tsx",
   );
   const memberWorkspace = readRepoFile(
     "apps/web/src/features/member-profile/components/MemberProfileWorkspace.tsx",
   );
+  const publicSurface = readRepoFile(
+    "apps/web/src/features/member-profile/components/ParticipantProfileSurface.tsx",
+  );
 
-  assert(workspaceHeader.includes("MemberBadgeIcon"), "Workspace header must use MemberBadgeIcon");
   assert(
-    workspaceHeader.includes("isActiveMembershipStatus"),
-    "Workspace header must only show badge for active Members",
+    profileSection.includes("MemberBadgeIcon"),
+    "Membership profile section must use MemberBadgeIcon for active Members",
+  );
+  assert(
+    profileSection.includes("isActiveMembershipStatus"),
+    "Membership profile section must gate Member presentation on active Membership",
   );
   assert(
     profileSection.includes("MembershipPublicVisibilityControl"),
@@ -199,6 +205,14 @@ function verifyIntegrations(): void {
   assert(
     memberWorkspace.includes("MembershipProfileSection"),
     "Member workspace must include Membership section",
+  );
+  assert(
+    publicSurface.includes("MemberStatusIndicator"),
+    "Public profile must reuse shared MemberStatusIndicator",
+  );
+  assert(
+    publicSurface.includes("shouldShowMemberBadge"),
+    "Public profile must gate indicator on projection fields",
   );
 }
 
@@ -235,6 +249,10 @@ function verifyDocumentation(): void {
   assert(
     doc.includes("membershipPubliclyVisible"),
     "Documentation must describe visibility preference",
+  );
+  assert(
+    doc.includes("automatically") && doc.includes("Member Number"),
+    "Documentation must describe automatic Member badge and Member Number privacy",
   );
   assert(
     doc.includes("STRIPE_MEMBERSHIP_CONTRIBUTION") || doc.includes("webhook"),
@@ -335,11 +353,14 @@ async function verifyActiveMemberAccessWithMongo(): Promise<void> {
       viewerIsAuthenticated: false,
     });
     assert(
-      hiddenPublic.membershipStatus === "participant",
-      "Hidden membership must project participant publicly",
+      hiddenPublic.membershipStatus === "member",
+      "Active Member must project member status publicly without number opt-in",
     );
-    assert(hiddenPublic.memberBadgeVisible === false, "Badge must be hidden by default");
-    assert(!("memberNumber" in hiddenPublic), "Member number must not leak when hidden");
+    assert(
+      hiddenPublic.memberBadgeVisible === true,
+      "Member badge must be visible automatically for active Members",
+    );
+    assert(!("memberNumber" in hiddenPublic), "Member number must not leak when number privacy is off");
 
     await updateMemberProfilePrivacyForUser(authUser.userId, {
       membershipPubliclyVisible: true,

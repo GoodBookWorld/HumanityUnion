@@ -116,25 +116,38 @@ export function toPublicParticipantStatistics(
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
+/**
+ * Pack 25A.1 — honorary Member status/badge is automatically public once
+ * Membership is `active_member` with a Member Number. `membershipPubliclyVisible`
+ * gates only the Member Number, never the Member indicator itself.
+ */
 export function resolvePublicMembershipFields(
   profile: MemberProfile,
   membership: MembershipRecord | null,
 ): Pick<PublicMemberProfile, "membershipStatus" | "memberNumber" | "memberBadgeVisible"> {
   const isActiveMember = membership?.status === "active_member";
-  const wantsPublic = profile.membershipPubliclyVisible === true;
+  const memberNumber = membership?.memberNumber;
 
-  if (isActiveMember && wantsPublic && membership?.memberNumber) {
+  if (!isActiveMember || !memberNumber) {
     return {
-      membershipStatus: "member",
-      memberNumber: membership.memberNumber,
-      memberBadgeVisible: true,
+      membershipStatus: "participant",
+      memberBadgeVisible: false,
     };
   }
 
-  return {
-    membershipStatus: "participant",
-    memberBadgeVisible: false,
+  const fields: Pick<
+    PublicMemberProfile,
+    "membershipStatus" | "memberNumber" | "memberBadgeVisible"
+  > = {
+    membershipStatus: "member",
+    memberBadgeVisible: true,
   };
+
+  if (profile.membershipPubliclyVisible === true) {
+    fields.memberNumber = memberNumber;
+  }
+
+  return fields;
 }
 
 export function toPublicMemberProfile(

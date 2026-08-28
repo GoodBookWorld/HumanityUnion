@@ -1,6 +1,6 @@
 # Membership Success Experience
 
-TASK-091B implements the Membership success experience, Member badge presentation, and public-status visibility controls. Payment integration remains deferred to TASK-092.
+TASK-091B implements the Membership success experience, Member badge presentation, and Member Number visibility controls. Stripe Membership activation is documented in [STRIPE_MEMBERSHIP_CONTRIBUTION.md](./STRIPE_MEMBERSHIP_CONTRIBUTION.md).
 
 ## Success page structure
 
@@ -25,6 +25,8 @@ Official artwork (local only):
 
 Used by `MemberBadgeIcon` at sizes: small (24px), medium (40px), large (64px), feature (responsive).
 
+Public honorary Member indicator (shared): `MemberStatusIndicator`.
+
 ## Active-member access guard
 
 The success page renders only when:
@@ -34,7 +36,7 @@ The success page renders only when:
 
 If the participant is not an active Member and preview is disabled, the page shows **Membership activation has not been confirmed** or redirects to `/membership`.
 
-The route **never** activates Membership. Activation remains a backend responsibility after a verified Stripe webhook in TASK-092.
+The route **never** activates Membership. Activation remains a backend responsibility after a verified Stripe webhook.
 
 ## Preview policy
 
@@ -50,7 +52,25 @@ When `true` in development, the page layout may render without active Membership
 
 Do not enable preview in production.
 
-## Public visibility behavior
+## Public Member status (Pack 25A.1)
+
+Honorary Member status is a **public profile status**.
+
+When:
+
+- `membership.status === "active_member"`
+- and a Member Number exists
+
+the public profile **always** projects:
+
+- `membershipStatus: "member"`
+- `memberBadgeVisible: true`
+
+No Participant opt-in is required for the Member badge/status indicator.
+
+Existing active Members receive this automatically on the next public-profile fetch — no remigration, resave, or second payment.
+
+## Member Number visibility
 
 Field: `membershipPubliclyVisible` on `member_profiles` (default `false`)
 
@@ -61,27 +81,35 @@ Field: `membershipPubliclyVisible` on `member_profiles` (default `false`)
 
 Saved via `PATCH /api/v1/member-profile/me/privacy`.
 
-When enabled, public profile may show:
+This preference controls **Member Number** exposure only.
 
-- Member badge icon
-- Member label
-- Membership domain Member Number
+| Preference | Public projection |
+| ---------- | ----------------- |
+| `false`    | Member status + badge; Member Number omitted |
+| `true`     | Member status + badge + Member Number |
 
 Payment date, Stripe identifiers, contribution amount, and payment records are **never** exposed publicly.
 
 ## Public projection rules
 
-When `membership.status === "active_member"` and `membershipPubliclyVisible === true`:
+When `membership.status === "active_member"` and Member Number exists:
 
 ```json
 {
   "membershipStatus": "member",
-  "memberNumber": "HU-2026-XXXXXX",
   "memberBadgeVisible": true
 }
 ```
 
-Otherwise:
+When `membershipPubliclyVisible === true`, also:
+
+```json
+{
+  "memberNumber": "HU-2026-XXXXXX"
+}
+```
+
+When Membership is not `active_member` (or Member Number is missing):
 
 ```json
 {
@@ -90,27 +118,35 @@ Otherwise:
 }
 ```
 
-Hidden public status does not change internal voting category calculations.
+Internal voting category calculations continue to use canonical Membership status, not the public projection preference.
 
-## Physical Badge deferred scope
+## Physical Badge application (Pack 25B)
 
-The **Wear Your Commitment** card presents the optional physical Member Badge product:
+The **Wear Your Commitment** card opens the Member Badge Application modal:
 
-- 20 CAD + shipping
-- Disabled **Order Member Badge** button
-- Coming Soon supporting text
+- CA$28 contribution
+- Delivery included
+- Private shipping address
+- Save for Later / Continue to Payment (Stripe Checkout in Pack 25C)
 
-Not implemented in this task:
+See [MEMBER_BADGE_APPLICATION.md](./MEMBER_BADGE_APPLICATION.md).
 
-- Cart, order form, shipping address, inventory, taxes, checkout, Stripe product, payment link
+## Physical Badge deferred commerce scope
 
-## Future Stripe redirect integration point (TASK-092)
+Not implemented in Pack 25B:
+
+- Stripe Badge Checkout
+- Admin fulfillment
+- A5 shipping labels / QR
+
+## Stripe redirect integration
 
 After backend-confirmed Membership activation via Stripe webhook:
 
 1. Checkout success redirect → `/membership/success`
 2. Success page reads real `memberNumber` and `memberGrantedAt` from Membership domain
-3. Physical badge ordering remains a separate future commerce task
+3. Member badge appears automatically on the public profile
+4. Physical badge ordering remains a separate commerce task
 
 See also [MEMBERSHIP_UI_FOUNDATION.md](./MEMBERSHIP_UI_FOUNDATION.md).
 
@@ -136,6 +172,7 @@ npm run verify:member-profile
     └── MembershipVotingExplanation
 
 MemberBadgeIcon (shared)
+MemberStatusIndicator (shared public indicator)
 MembershipPublicVisibilityControl
 MembershipPublicDisplayPreview
 ```

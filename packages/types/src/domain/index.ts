@@ -1244,6 +1244,22 @@ export type {
   MemberBadgeFulfillmentStatus,
   MemberBadgeShippingAddress,
 } from "./member-badge-contribution.js";
+export type {
+  MemberBadgeApplicationAvailability,
+  MemberBadgeApplicationDetail,
+  MemberBadgeApplicationFulfillmentStatus,
+  MemberBadgeApplicationPaymentBoundary,
+  MemberBadgeApplicationPaymentStatus,
+  MemberBadgeApplicationRecord,
+  MemberBadgeApplicationShippingAddress,
+  MemberBadgeApplicationStatus,
+} from "./member-badge-application.js";
+export {
+  MEMBER_BADGE_APPLICATION_AMOUNT_CENTS,
+  MEMBER_BADGE_APPLICATION_CURRENCY,
+  MEMBER_BADGE_APPLICATION_DELIVERY_LABEL,
+  MEMBER_BADGE_APPLICATION_PRICE_LABEL,
+} from "./member-badge-application.js";
 export type { CountryStatisticsCounts, CountryStatisticsPayload } from "./country-statistics.js";
 export type {
   CivicSearchDisplayResult,

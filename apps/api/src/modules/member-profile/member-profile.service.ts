@@ -119,7 +119,7 @@ export async function updateMemberProfilePrivacyForUser(
 
     if (!membership || membership.status !== "active_member") {
       throw new MemberProfileValidationError(
-        "Only active Members can enable public Membership visibility.",
+        "Only active Members can enable public Member Number visibility.",
       );
     }
   }

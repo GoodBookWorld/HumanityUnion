@@ -1,0 +1,164 @@
+.member-badge-application-modal__backdrop {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  padding: var(--hu-space-4, 1rem);
+}
+
+.member-badge-application-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: min(92vh, 44rem);
+  max-width: 36rem;
+  padding: 0;
+  width: min(100%, 36rem);
+}
+
+.member-badge-application-modal__scroll {
+  display: grid;
+  gap: var(--hu-space-4, 1rem);
+  overflow-y: auto;
+  padding: var(--hu-space-5, 1.25rem);
+}
+
+.member-badge-application-modal__header {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--hu-space-3, 0.75rem);
+}
+
+.member-badge-application-modal__title {
+  font-size: var(--hu-font-size-lg, 1.125rem);
+  margin: 0 0 var(--hu-space-2, 0.5rem);
+}
+
+.member-badge-application-modal__intro {
+  color: var(--hu-color-text-secondary, #4a5568);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.member-badge-application-modal__price {
+  background: rgba(1, 116, 176, 0.06);
+  border-radius: var(--hu-radius-md, 8px);
+  display: grid;
+  gap: 0.15rem;
+  padding: var(--hu-space-3, 0.75rem) var(--hu-space-4, 1rem);
+}
+
+.member-badge-application-modal__product {
+  font-weight: 600;
+  margin: 0;
+}
+
+.member-badge-application-modal__amount {
+  font-size: var(--hu-font-size-xl, 1.25rem);
+  font-weight: 700;
+  margin: 0;
+}
+
+.member-badge-application-modal__delivery {
+  color: var(--hu-color-text-secondary, #4a5568);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  margin: 0;
+}
+
+.member-badge-application-modal__form {
+  display: grid;
+  gap: var(--hu-space-3, 0.75rem);
+}
+
+.member-badge-application-modal__row {
+  display: grid;
+  gap: var(--hu-space-3, 0.75rem);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .member-badge-application-modal__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.member-badge-application-modal__field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: var(--hu-font-size-sm, 0.875rem);
+}
+
+.member-badge-application-modal__field input {
+  border: 1px solid var(--hu-color-border, #d0d7de);
+  border-radius: var(--hu-radius-sm, 6px);
+  font: inherit;
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
+  width: 100%;
+}
+
+.member-badge-application-modal__error {
+  color: var(--hu-color-danger, #b42318);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  margin: 0;
+}
+
+.member-badge-application-modal__status {
+  color: var(--hu-color-primary, #0174b0);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  margin: 0;
+}
+
+.member-badge-application-modal__actions {
+  border-top: 1px solid var(--hu-color-border, #e5e7eb);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3, 0.75rem);
+  justify-content: flex-end;
+  padding: var(--hu-space-4, 1rem) var(--hu-space-5, 1.25rem);
+}
+
+.member-badge-application-widget__card {
+  display: grid;
+  gap: var(--hu-space-4, 1rem);
+}
+
+.member-badge-application-widget__fields {
+  display: grid;
+  gap: var(--hu-space-3, 0.75rem);
+  margin: 0;
+}
+
+.member-badge-application-widget__fields dt {
+  color: var(--hu-color-text-secondary, #4a5568);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  margin: 0 0 0.2rem;
+}
+
+.member-badge-application-widget__fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.member-badge-application-widget__muted {
+  color: var(--hu-color-text-secondary, #4a5568);
+  font-weight: 400;
+}
+
+.member-badge-application-widget__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-3, 0.75rem);
+}
+
+@media (max-width: 480px) {
+  .member-badge-application-modal__backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .member-badge-application-modal {
+    border-radius: var(--hu-radius-lg, 12px) var(--hu-radius-lg, 12px) 0 0;
+    max-height: 94vh;
+    width: 100%;
+  }
+}

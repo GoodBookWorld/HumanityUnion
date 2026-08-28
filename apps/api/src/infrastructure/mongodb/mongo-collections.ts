@@ -37,6 +37,7 @@ export const MONGO_COLLECTIONS = {
   membershipContributions: "membership_contributions",
   membershipWebhookEvents: "membership_webhook_events",
   memberBadgeContributions: "member_badge_contributions",
+  memberBadgeApplications: "member_badge_applications",
   memberPreferences: "member_preferences",
   memberNotifications: "member_notifications",
   /** Pack 22E.1 — Admin Notification Center inbox (per-Admin projection rows). */

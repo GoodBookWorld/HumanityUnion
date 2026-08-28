@@ -13,6 +13,8 @@ export const ADMIN_NOTIFICATION_TYPES = [
   "operational_alert",
   /** Pack 24B — Participant submitted suspension review request. */
   "participant_suspension_review_requested",
+  /** Pack 25C — Member Badge Application payment confirmed. */
+  "member_badge_order_paid",
 ] as const;
 
 export type AdminNotificationType = (typeof ADMIN_NOTIFICATION_TYPES)[number];

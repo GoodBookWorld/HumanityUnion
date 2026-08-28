@@ -1,5 +1,9 @@
 # Official Member Badge Contribution (TASK-094)
 
+> **Pack 25C:** New Badge orders use `member_badge_applications` (CA$28, delivery
+> included). Keep `MEMBER_BADGE_CONTRIBUTIONS_ENABLED=false` unless operating this
+> legacy contribution flow. See [MEMBER_BADGE_APPLICATION.md](./MEMBER_BADGE_APPLICATION.md).
+
 Optional **20 CAD** additional Membership Contribution plus configured shipping for **active Members** requesting the physical **Official Humanity Union Member Badge**.
 
 This flow is separate from the initial **1 CAD** Membership Contribution. It does not activate Membership, change Member Number, voting, or public visibility.

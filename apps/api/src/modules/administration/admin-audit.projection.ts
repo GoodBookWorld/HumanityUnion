@@ -12,6 +12,8 @@ export const ADMINISTRATION_AUDIT_ACTIONS: readonly AdministrationAuditAction[] 
   "blog.author_application.submit",
   "blog.author_application.reconcile",
   "blog.author_application.recovery_reset",
+  "member_badge.application.save",
+  "member_badge.payment.completed",
   "blog.publication_review.reconcile",
   "blog.publish",
   "blog.publish_after_safety_review",

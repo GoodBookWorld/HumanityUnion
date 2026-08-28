@@ -105,6 +105,13 @@
   margin: 0;
 }
 
+.membership-success-confirmation__public-note {
+  color: var(--hu-color-text-secondary, #4a5568);
+  font-size: var(--hu-font-size-sm, 0.875rem);
+  line-height: 1.5;
+  margin: var(--hu-space-4) 0 0;
+}
+
 .membership-success-confirmation__field--number dd {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   overflow-wrap: anywhere;

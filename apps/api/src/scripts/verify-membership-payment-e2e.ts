@@ -289,15 +289,37 @@ async function verifyProfileAndStatus(input: {
   assert(status.status === "active_member", "Status endpoint must show active_member.");
   assert(status.memberNumber === input.memberNumber, "Status endpoint must expose Member Number.");
 
-  await updateMemberProfilePrivacyForUser(input.userId, {
-    membershipPubliclyVisible: true,
-  });
-
   const profile = await findMemberProfileByUserId(input.userId);
   const membership = await findMembershipByUserId(input.userId);
   assert(profile !== null && membership !== null, "Profile and membership must exist.");
 
-  const publicProfile = toPublicMemberProfile(profile, {
+  const publicProfileDefaultPrivacy = toPublicMemberProfile(profile, {
+    viewerIsAuthenticated: true,
+    viewerIsOwner: true,
+    membership,
+  });
+  assert(publicProfileDefaultPrivacy !== null, "Public profile must be projectable.");
+  assert(
+    publicProfileDefaultPrivacy.membershipStatus === "member",
+    "Public profile must show member status without number opt-in.",
+  );
+  assert(
+    publicProfileDefaultPrivacy.memberBadgeVisible === true,
+    "Public profile must show Member badge automatically.",
+  );
+  assert(
+    publicProfileDefaultPrivacy.memberNumber === undefined,
+    "Member Number must stay private until opt-in.",
+  );
+
+  await updateMemberProfilePrivacyForUser(input.userId, {
+    membershipPubliclyVisible: true,
+  });
+
+  const profileAfterPrivacy = await findMemberProfileByUserId(input.userId);
+  assert(profileAfterPrivacy !== null, "Profile must exist after privacy update.");
+
+  const publicProfile = toPublicMemberProfile(profileAfterPrivacy, {
     viewerIsAuthenticated: true,
     viewerIsOwner: true,
     membership,

@@ -1,0 +1,82 @@
+/**
+ * Pack 25B — Member Badge Application UI contracts.
+ */
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
+
+import {
+  MEMBER_BADGE_APPLICATION_DELIVERY_LABEL,
+  MEMBER_BADGE_APPLICATION_PRICE_LABEL,
+} from "@hu/types";
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const webSrc = path.resolve(here, "../..");
+
+function read(relativeFromWebSrc: string): string {
+  return readFileSync(path.join(webSrc, relativeFromWebSrc), "utf8");
+}
+
+describe("Pack 25B — Member Badge Application web foundation", () => {
+  it("9-10 — Wear Your Commitment uses Member Badge Application CTA and CA$28", () => {
+    const offer = read("features/membership/components/MembershipMemberBadgeOffer.tsx");
+    const constants = read("features/membership/membership.constants.ts");
+    assert.match(offer, /MemberBadgeApplicationModal/);
+    assert.match(offer, /MemberBadgeApplicationWidget/);
+    assert.match(constants, /Member Badge Application/);
+    assert.match(constants, /CA\$28/);
+    assert.match(constants, /Delivery included/);
+    assert.doesNotMatch(constants, /\+ Shipping/);
+    assert.doesNotMatch(offer, /Coming Soon/);
+    assert.equal(MEMBER_BADGE_APPLICATION_PRICE_LABEL, "CA$28");
+    assert.equal(MEMBER_BADGE_APPLICATION_DELIVERY_LABEL, "Delivery included");
+  });
+
+  it("9 — widget appears below membership-success-section after application", () => {
+    const offer = read("features/membership/components/MembershipMemberBadgeOffer.tsx");
+    const widget = read("features/membership/components/MemberBadgeApplicationWidget.tsx");
+    assert.match(offer, /application \? \([\s\S]*MemberBadgeApplicationWidget/);
+    assert.match(widget, /My Member Badge Application/);
+    assert.match(widget, /Not paid|Awaiting payment/);
+    assert.doesNotMatch(widget, /applicationId/);
+  });
+
+  it("13-15 — modal uses accessible dialog architecture", () => {
+    const modal = read("features/membership/components/MemberBadgeApplicationModal.tsx");
+    assert.match(modal, /role="dialog"/);
+    assert.match(modal, /aria-modal="true"/);
+    assert.match(modal, /Escape/);
+    assert.match(modal, /trapTabKey/);
+    assert.match(modal, /onClick=\{onClose\}/);
+    assert.match(modal, /stopPropagation/);
+    assert.match(modal, /Save for Later/);
+    assert.match(modal, /Continue to Payment/);
+  });
+
+  it("16 — modal/widget CSS supports mobile viewport scrolling", () => {
+    const css = read("features/membership/components/member-badge-application.css");
+    assert.match(css, /max-height:\s*min\(92vh/);
+    assert.match(css, /overflow-y:\s*auto/);
+    assert.match(css, /@media \(max-width:\s*480px\)/);
+  });
+
+  it("membership page hosts Wear Your Commitment for active Members", () => {
+    const page = read("features/membership/components/MembershipPageContent.tsx");
+    assert.match(page, /MembershipMemberBadgeOffer/);
+    assert.match(page, /isActiveMembershipStatus/);
+  });
+
+  it("18 — Pack 25A.1 automatic Member indicator contracts remain", () => {
+    const projection = readFileSync(
+      path.resolve(webSrc, "../../api/src/modules/member-profile/member-profile.projection.ts"),
+      "utf8",
+    );
+    assert.match(projection, /memberBadgeVisible:\s*true/);
+    assert.match(projection, /membershipPubliclyVisible === true/);
+    const surface = read("features/member-profile/components/ParticipantProfileSurface.tsx");
+    assert.match(surface, /shouldShowMemberBadge\(profile\)/);
+    assert.match(surface, /MemberStatusIndicator/);
+  });
+});

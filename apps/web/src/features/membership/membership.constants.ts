@@ -25,7 +25,7 @@ export const MEMBERSHIP_MEANING_CARDS = [
   {
     id: "transparency",
     title: "Transparency",
-    body: "Membership status is public only if the participant chooses to display it.",
+    body: "Member status appears on your public profile. You choose whether to display your Member Number.",
   },
 ] as const;
 
@@ -42,7 +42,7 @@ export const MEMBERSHIP_BENEFITS = [
   {
     id: "member-badge",
     title: "Member Badge",
-    body: "Display your Membership status on your public profile when you choose to.",
+    body: "Your Member status appears automatically on your public profile after Membership activation.",
   },
   {
     id: "member-number",
@@ -114,16 +114,15 @@ export const MEMBERSHIP_CONTRIBUTION_AMOUNT = "1 CAD";
 
 export const MEMBER_BADGE_PRODUCT = {
   title: "Wear Your Commitment",
-  body: "Show your support with the official Humanity Union Member Badge.",
+  body: "Apply for your official Humanity Union Member Badge. The CA$28 contribution includes delivery.",
   subtitle: "A symbol of solidarity, responsibility, and global unity.",
   productName: "Official Humanity Union Member Badge",
-  features: [
-    "Secure pin backing",
-    "Configured regional shipping",
-    "Optional contribution",
-  ] as const,
-  price: "20 CAD",
-  shippingNote: "+ Shipping",
+  features: ["Secure pin backing", "Delivery included", "Optional Member contribution"] as const,
+  price: "CA$28",
+  shippingNote: "Delivery included",
+  ctaLabel: "Member Badge Application",
+  applicationIntro:
+    "Confirm where your official Humanity Union Member Badge should be delivered.",
 } as const;
 
 export const MEMBER_BADGE_IMAGE_PATH = "/illustrations/membership/member-badge.webp";
@@ -134,6 +133,8 @@ export const MEMBERSHIP_SUCCESS_COPY = {
   body: "Your symbolic contribution helps Humanity Union continue building a transparent and responsible global civic platform.",
   confirmationTitle: "You are now a Member!",
   confirmationContributionLabel: "Membership Contribution",
+  publicMemberNote:
+    "Your Member badge appears automatically on your public profile. You can choose whether to show your Member Number publicly from Membership settings.",
   permanentTitle: "Membership is permanent.",
   permanentBody: "Thank you for being part of a better future for all.",
 } as const;
@@ -142,6 +143,7 @@ export const MEMBERSHIP_SUCCESS_MEANING = [
   "You support Humanity Union and its mission.",
   "You participate equally with all other participants.",
   "Membership does not increase voting power.",
+  "Your Member status appears automatically on your public profile.",
   "You help build a global community of responsibility and solidarity.",
 ] as const;
 
@@ -153,9 +155,9 @@ export const MEMBERSHIP_VOTING_EXAMPLE = {
   participants: 234,
 } as const;
 
-export const MEMBERSHIP_VISIBILITY_LABEL = "Publicly display my Member status";
+export const MEMBERSHIP_VISIBILITY_LABEL = "Show my Member Number publicly";
 
 export const MEMBERSHIP_VISIBILITY_DESCRIPTION =
-  "When enabled, your public profile may show your Member badge, Member label, and Member Number. Payment details are never shown publicly.";
+  "Member status and badge appear automatically on your public profile. Enable this to also show your Member Number. Payment details are never shown publicly.";
 
 export const MEMBERSHIP_ACTIVATION_UNAVAILABLE = "Membership activation has not been confirmed.";

@@ -42,11 +42,15 @@ export function MembershipSuccessConfirmationCard({
             <dd>{hasMemberNumber ? memberNumber : "Unavailable"}</dd>
           </div>
         </dl>
-        {!hasMemberNumber || !hasMemberSince ? (
+        {hasMemberNumber && hasMemberSince ? (
+          <p className="membership-success-confirmation__public-note" role="status">
+            {MEMBERSHIP_SUCCESS_COPY.publicMemberNote}
+          </p>
+        ) : (
           <p className="membership-success-unavailable" role="status">
             Membership confirmation details are temporarily unavailable.
           </p>
-        ) : null}
+        )}
       </Card>
     </section>
   );

@@ -153,20 +153,37 @@ describe("Launch Readiness UX Fix Pack 01 — public profile visibility projecti
     assert.equal(projection!.organization, undefined);
   });
 
-  it("marks Member badge visible only for public active Members", () => {
-    const visible = resolvePublicMembershipFields(
+  it("Pack 25A.1 — Member badge is automatic; Member Number stays privacy-gated", () => {
+    const withNumber = resolvePublicMembershipFields(
       buildProfile({ membershipPubliclyVisible: true }),
       activeMembership,
     );
-    assert.equal(visible.membershipStatus, "member");
-    assert.equal(visible.memberBadgeVisible, true);
+    assert.equal(withNumber.membershipStatus, "member");
+    assert.equal(withNumber.memberBadgeVisible, true);
+    assert.equal(withNumber.memberNumber, "HU-00000001");
 
-    const hidden = resolvePublicMembershipFields(
+    const badgeOnly = resolvePublicMembershipFields(
       buildProfile({ membershipPubliclyVisible: false }),
       activeMembership,
     );
-    assert.equal(hidden.membershipStatus, "participant");
-    assert.equal(hidden.memberBadgeVisible, false);
+    assert.equal(badgeOnly.membershipStatus, "member");
+    assert.equal(badgeOnly.memberBadgeVisible, true);
+    assert.equal(badgeOnly.memberNumber, undefined);
+
+    const nonMember = resolvePublicMembershipFields(
+      buildProfile({ membershipPubliclyVisible: true }),
+      null,
+    );
+    assert.equal(nonMember.membershipStatus, "participant");
+    assert.equal(nonMember.memberBadgeVisible, false);
+    assert.equal(nonMember.memberNumber, undefined);
+
+    const activeWithoutNumber = resolvePublicMembershipFields(
+      buildProfile({ membershipPubliclyVisible: true }),
+      { ...activeMembership, memberNumber: null },
+    );
+    assert.equal(activeWithoutNumber.membershipStatus, "participant");
+    assert.equal(activeWithoutNumber.memberBadgeVisible, false);
   });
 
   it("never leaks auth internals through the public projection", () => {
