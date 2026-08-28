@@ -175,12 +175,12 @@ export function SupportPageContent() {
               transparent and durable.
             </p>
           </div>
-          <div className="support-page__why-media">
+          <div className="support-page__why-illustration">
             <Image
-              src={SUPPORT_ILLUSTRATIONS.cooperation}
-              alt=""
-              width={240}
-              height={180}
+              src={SUPPORT_ILLUSTRATIONS.why}
+              alt="A fruit tree illustrating how support helps Humanity Union grow stronger participation and lasting results"
+              width={650}
+              height={350}
               className="support-page__why-image"
             />
           </div>

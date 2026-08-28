@@ -129,25 +129,30 @@
 
 .support-page__why {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(8rem, 14rem);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: var(--hu-space-5);
-  align-items: start;
+  align-items: center;
   padding: var(--hu-space-5);
+  overflow: hidden;
 }
 
 .support-page__why-copy {
   display: grid;
   gap: var(--hu-space-3);
+  min-width: 0;
 }
 
-.support-page__why-media {
+.support-page__why-illustration {
   display: flex;
   justify-content: center;
+  align-items: center;
+  min-width: 0;
 }
 
 .support-page__why-image {
+  display: block;
   width: 100%;
-  max-width: 14rem;
+  max-width: 100%;
   height: auto;
   object-fit: contain;
 }

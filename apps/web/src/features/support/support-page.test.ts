@@ -77,6 +77,21 @@ describe("Support Page UX Pack 01", () => {
       const absolute = path.join(webRoot, "public", assetPath.replace(/^\//, ""));
       assert.ok(existsSync(absolute), `missing ${assetPath}`);
     }
+    assert.equal(SUPPORT_ILLUSTRATIONS.why, "/illustrations/fruit-tree.webp");
+  });
+
+  it("Why Support Matters uses fruit-tree illustration in a 60/40 layout", () => {
+    const content = read("features/support/components/SupportPageContent.tsx");
+    const css = read("features/support/support-page.css");
+    assert.match(content, /SUPPORT_ILLUSTRATIONS\.why/);
+    assert.match(content, /className="support-page__why-illustration"/);
+    assert.doesNotMatch(content, /support-page__why-media|SUPPORT_ILLUSTRATIONS\.cooperation/);
+    assert.match(content, /alt="A fruit tree illustrating how support helps Humanity Union/);
+    assert.match(css, /\.support-page__why[\s\S]*grid-template-columns:\s*minmax\(0,\s*3fr\)\s+minmax\(0,\s*2fr\)/);
+    assert.match(
+      css,
+      /@media \(max-width:\s*767px\)[\s\S]*\.support-page__why[\s\S]*grid-template-columns:\s*1fr/,
+    );
   });
 
   it("responsive CSS uses three columns on desktop and one column on mobile", () => {

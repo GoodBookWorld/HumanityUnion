@@ -14,5 +14,6 @@ export const SUPPORT_ILLUSTRATIONS = {
   resources: "/illustrations/support/resources.svg",
   participation: "/illustrations/support/participation.svg",
   regional: "/illustrations/support/regional.svg",
-  cooperation: "/illustrations/support/cooperation.webp",
+  /** Why Support Matters — fruit-tree illustration. */
+  why: "/illustrations/fruit-tree.webp",
 } as const;

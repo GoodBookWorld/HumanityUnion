@@ -24,6 +24,9 @@ export async function saveMyMemberBadgeApplication(
     "/api/v1/member-badge-applications/me",
     {
       method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ shippingAddress }),
     },
   );
@@ -36,6 +39,9 @@ export async function continueMyMemberBadgeApplicationPayment(
     "/api/v1/member-badge-applications/me/continue-to-payment",
     {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ shippingAddress }),
     },
   );
