@@ -58,6 +58,10 @@ import {
   type MediaRecoveryJournal,
 } from "./media-recovery-journal.js";
 import {
+  MongoDurableMediaRecoveryStore,
+  type DurableMediaRecoveryStore,
+} from "./media-recovery-store.js";
+import {
   sanitizeBadgeApplicationForMigration,
   sanitizeInitiativeDocumentForMigration,
   sanitizeMediaUploadRecordForMigration,
@@ -102,7 +106,9 @@ export interface RunProductionInitiativeMigrationInput {
   performMediaCopies?: boolean;
   /** Optional override for media-copy env (tests). */
   mediaCopyEnvValue?: string;
-  /** Durable journal for post-crash R2 ownership recovery (required for execute+media). */
+  /** Destination-Mongo durable recovery store (required for execute+media). */
+  durableMediaRecoveryStore?: DurableMediaRecoveryStore;
+  /** Optional local JSONL diagnostic mirror (not required for production durability). */
   mediaRecoveryJournal?: MediaRecoveryJournal;
 }
 
@@ -947,6 +953,8 @@ export async function runProductionInitiativeMigration(
     }
 
     let recoveryJournal: MediaRecoveryJournal | null = input.mediaRecoveryJournal ?? null;
+    let durableRecoveryStore: DurableMediaRecoveryStore | null =
+      input.durableMediaRecoveryStore ?? null;
     if (shouldPerformMediaCopies) {
       assertMediaCopyAuthorized({
         mode,
@@ -954,20 +962,24 @@ export async function runProductionInitiativeMigration(
         performMediaCopies: input.performMediaCopies,
         mediaCopyEnvValue: input.mediaCopyEnvValue,
       });
+      if (!durableRecoveryStore) {
+        durableRecoveryStore = new MongoDurableMediaRecoveryStore(input.handles.destinationDb);
+      }
       if (!recoveryJournal) {
-        recoveryJournal = JsonlMediaRecoveryJournal.fromEnv();
+        recoveryJournal = JsonlMediaRecoveryJournal.tryFromEnv();
       }
       if (!input.mediaExecutor) {
         mediaExecutor = new DualBucketR2MediaCopyExecutor(resolveDualR2MediaCopyConfig());
       }
     }
 
-    // E1 — copy + verify physical R2 BEFORE any Mongo docs with production media URLs.
+    // E1 — durable PLANNED + R2 copy/verify BEFORE any Mongo docs with production media URLs.
     const e1Result = await executeMediaCopyPhase({
       planned: plannedPublic,
       ledger,
       executor: mediaExecutor,
       performCopies: shouldPerformMediaCopies,
+      durableRecoveryStore,
       recoveryJournal,
     });
     mediaResult = e1Result;
@@ -1034,7 +1046,8 @@ export async function runProductionInitiativeMigration(
         `mediaPlan.status=${mediaStatus}`,
         `rewritePublicMediaUrls=${rewritePublicMediaUrls}`,
         `publicBaseUrl=${PRODUCTION_MEDIA_PUBLIC_BASE_URL}`,
-        "durableRecoveryJournal=required-for-execute-media; orphans after E1 crash are recoverable by migrationExecutionId",
+        "durableRecovery=destinationMongo:production_initiative_migration_media_recovery",
+        "jsonlJournal=optional-diagnostic-only",
       ],
     });
 
@@ -1203,7 +1216,7 @@ export async function runProductionInitiativeMigration(
     },
     rollback: {
       strategy:
-        "Compensating deleteOne by exact insertedId owned by this migrationExecutionId only; never by initiativeId alone; R2 delete only for createdByThisExecution=true keys owned by this executionId; durable JSONL journal survives process death for created objects",
+        "Compensating deleteOne by exact insertedId owned by this migrationExecutionId only; never by initiativeId alone; R2 delete only when ownership metadata proves this migrationExecutionId; destination Mongo durable recovery + R2 ownership metadata survive process death",
       ownedMongoInserts: ledger.rollbackEligibleMongoInserts().length,
       ownedMediaCopied: ledger.rollbackEligibleMediaKeys().length,
     },

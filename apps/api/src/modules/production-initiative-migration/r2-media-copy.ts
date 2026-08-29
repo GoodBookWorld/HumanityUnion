@@ -19,8 +19,28 @@ import {
   SOURCE_R2_SECRET_ACCESS_KEY_ENV,
 } from "./constants.js";
 import { ProductionInitiativeMigrationError } from "./errors.js";
+import {
+  buildMigrationOwnershipMetadata,
+  isProvenOwnedByMigration,
+  ownershipProofFromMetadata,
+  parseMigrationOwnershipMetadata,
+  type DestinationObjectInspection,
+  type MigrationObjectOwnershipProof,
+} from "./media-ownership.js";
 import { sha256Hex } from "./media-recovery-journal.js";
 import type { ObjectIntegrityFingerprint } from "./types.js";
+
+export type {
+  DestinationObjectInspection,
+  MigrationObjectOwnershipProof,
+} from "./media-ownership.js";
+export {
+  R2_MIGRATION_OWNERSHIP_MARKER,
+  R2_MIGRATION_OWNERSHIP_METADATA_KEYS,
+  buildMigrationOwnershipMetadata,
+  isProvenOwnedByMigration,
+  parseMigrationOwnershipMetadata,
+} from "./media-ownership.js";
 
 export interface DualR2BucketConfig {
   accountId: string;
@@ -152,11 +172,24 @@ export type MediaCopyOutcome =
       createdByThisExecution: false;
     };
 
+export interface PreparedSourceObject {
+  storageKey: string;
+  body: Buffer;
+  contentLength: number;
+  contentType: string | null;
+  checksumSHA256: string;
+}
+
 async function headExists(
   client: S3Client,
   bucket: string,
   key: string,
-): Promise<{ contentLength: number; contentType: string | null; etag: string | null } | null> {
+): Promise<{
+  contentLength: number;
+  contentType: string | null;
+  etag: string | null;
+  metadata: Record<string, string>;
+} | null> {
   try {
     const head = await client.send(
       new HeadObjectCommand({
@@ -170,10 +203,17 @@ async function headExists(
         "MEDIA_INTEGRITY_INCOMPLETE",
       );
     }
+    const metadata: Record<string, string> = {};
+    if (head.Metadata) {
+      for (const [k, v] of Object.entries(head.Metadata)) {
+        if (typeof v === "string") metadata[k.toLowerCase()] = v;
+      }
+    }
     return {
       contentLength: head.ContentLength,
       contentType: head.ContentType?.trim() || null,
       etag: normalizeEtag(head.ETag),
+      metadata,
     };
   } catch (error) {
     const name =
@@ -253,9 +293,71 @@ export class DualBucketR2MediaCopyExecutor {
     return this.writeCount;
   }
 
+  async prepareSourceObject(storageKey: string): Promise<PreparedSourceObject> {
+    const key = storageKey.replace(/^\/+/, "");
+    if (!key || key.includes("..")) {
+      throw new ProductionInitiativeMigrationError(
+        "Invalid media storage key.",
+        "MEDIA_INVALID_STORAGE_KEY",
+      );
+    }
+    const sourceHead = await headExists(this.sourceClient, this.sourceBucket, key);
+    if (!sourceHead) {
+      throw new ProductionInitiativeMigrationError(
+        `Source R2 object missing for storageKey=${key}`,
+        "MEDIA_SOURCE_MISSING",
+      );
+    }
+    const sourceObj = await getObjectBytes(this.sourceClient, this.sourceBucket, key);
+    if (sourceObj.body.byteLength !== sourceHead.contentLength) {
+      throw new ProductionInitiativeMigrationError(
+        `Source body length mismatch for storageKey=${key}`,
+        "MEDIA_INTEGRITY_FAILED",
+      );
+    }
+    return {
+      storageKey: key,
+      body: sourceObj.body,
+      contentLength: sourceObj.body.byteLength,
+      contentType: sourceObj.contentType ?? sourceHead.contentType,
+      checksumSHA256: sha256Hex(sourceObj.body),
+    };
+  }
+
+  async inspectDestinationObject(
+    storageKey: string,
+    expectedMigrationExecutionId?: string,
+  ): Promise<DestinationObjectInspection | null> {
+    const key = storageKey.replace(/^\/+/, "");
+    const destHead = await headExists(this.destinationClient, this.destinationBucket, key);
+    if (!destHead) return null;
+    const destObj = await getObjectBytes(this.destinationClient, this.destinationBucket, key);
+    const raw = ownershipProofFromMetadata(destHead.metadata);
+    const ownership = expectedMigrationExecutionId
+      ? parseMigrationOwnershipMetadata(destHead.metadata, expectedMigrationExecutionId)
+      : raw.rawOwnershipExecutionId
+        ? ({
+            kind: "foreign" as const,
+            migrationExecutionId: raw.rawOwnershipExecutionId,
+            marker: raw.rawOwnershipMarker,
+          } satisfies MigrationObjectOwnershipProof)
+        : ({ kind: "unproven" as const } satisfies MigrationObjectOwnershipProof);
+    return {
+      contentLength: destObj.body.byteLength,
+      contentType: destObj.contentType ?? destHead.contentType,
+      checksumSHA256: sha256Hex(destObj.body),
+      ownership,
+      rawOwnershipExecutionId: raw.rawOwnershipExecutionId,
+      rawOwnershipMarker: raw.rawOwnershipMarker,
+    };
+  }
+
   async copyPublicObject(input: {
     storageKey: string;
     destinationUrl: string;
+    preparedSource?: PreparedSourceObject;
+    /** Required when creating; stamped into R2 Metadata for ownership proof. */
+    migrationExecutionId: string;
   }): Promise<MediaCopyOutcome> {
     const key = input.storageKey.replace(/^\/+/, "");
     if (!key || key.includes("..")) {
@@ -264,32 +366,25 @@ export class DualBucketR2MediaCopyExecutor {
         "MEDIA_INVALID_STORAGE_KEY",
       );
     }
-
-    const sourceHead = await headExists(this.sourceClient, this.sourceBucket, key);
-    if (!sourceHead) {
+    if (!input.migrationExecutionId.startsWith("mig_")) {
       throw new ProductionInitiativeMigrationError(
-        `Source R2 object missing for storageKey=${key}`,
-        "MEDIA_SOURCE_MISSING",
+        "migrationExecutionId required for media copy ownership.",
+        "MEDIA_OWNERSHIP_METADATA_INVALID",
       );
     }
 
-    const sourceObj = await getObjectBytes(this.sourceClient, this.sourceBucket, key);
-    if (sourceObj.body.byteLength !== sourceHead.contentLength) {
-      throw new ProductionInitiativeMigrationError(
-        `Source body length mismatch for storageKey=${key}`,
-        "MEDIA_INTEGRITY_FAILED",
-      );
-    }
-    const sourceSha = sha256Hex(sourceObj.body);
+    const prepared =
+      input.preparedSource ?? (await this.prepareSourceObject(key));
     const sourceFp: ObjectIntegrityFingerprint = {
-      contentLength: sourceObj.body.byteLength,
-      etag: sourceHead.etag,
-      contentType: sourceObj.contentType ?? sourceHead.contentType,
-      checksumSHA256: sourceSha,
+      contentLength: prepared.contentLength,
+      etag: null,
+      contentType: prepared.contentType,
+      checksumSHA256: prepared.checksumSHA256,
     };
 
     const destHead = await headExists(this.destinationClient, this.destinationBucket, key);
     if (destHead) {
+      // Pre-existing: never overwrite, never add/modify ownership metadata.
       const destObj = await getObjectBytes(this.destinationClient, this.destinationBucket, key);
       const destSha = sha256Hex(destObj.body);
       const destFp: ObjectIntegrityFingerprint = {
@@ -298,7 +393,6 @@ export class DualBucketR2MediaCopyExecutor {
         contentType: destObj.contentType ?? destHead.contentType,
         checksumSHA256: destSha,
       };
-      // ETag match without SHA-256 is intentionally insufficient.
       if (isObjectIntegrityEquivalent(sourceFp, destFp)) {
         return {
           status: "already_equivalent",
@@ -313,34 +407,39 @@ export class DualBucketR2MediaCopyExecutor {
       );
     }
 
-    const contentType =
-      sourceFp.contentType ?? "application/octet-stream";
+    const contentType = sourceFp.contentType ?? "application/octet-stream";
+    const ownershipMetadata = buildMigrationOwnershipMetadata(input.migrationExecutionId);
     await this.destinationClient.send(
       new PutObjectCommand({
         Bucket: this.destinationBucket,
         Key: key,
-        Body: sourceObj.body,
+        Body: prepared.body,
         ContentType: contentType,
+        Metadata: ownershipMetadata,
       }),
     );
     this.writeCount += 1;
 
+    const verifiedHead = await headExists(this.destinationClient, this.destinationBucket, key);
     const verifiedObj = await getObjectBytes(this.destinationClient, this.destinationBucket, key);
     const verifiedSha = sha256Hex(verifiedObj.body);
-    if (verifiedObj.body.byteLength !== sourceFp.contentLength || verifiedSha !== sourceSha) {
+    if (
+      verifiedObj.body.byteLength !== sourceFp.contentLength ||
+      verifiedSha !== prepared.checksumSHA256
+    ) {
       throw new ProductionInitiativeMigrationError(
         `Post-copy SHA-256/size mismatch for storageKey=${key}`,
         "MEDIA_INTEGRITY_FAILED",
       );
     }
-    if (
-      sourceFp.contentType &&
-      verifiedObj.contentType &&
-      sourceFp.contentType !== verifiedObj.contentType
-    ) {
+    const ownership = parseMigrationOwnershipMetadata(
+      verifiedHead?.metadata,
+      input.migrationExecutionId,
+    );
+    if (!isProvenOwnedByMigration(ownership)) {
       throw new ProductionInitiativeMigrationError(
-        `Post-copy contentType mismatch for storageKey=${key}`,
-        "MEDIA_INTEGRITY_FAILED",
+        `Post-copy ownership metadata missing for storageKey=${key}`,
+        "MEDIA_OWNERSHIP_METADATA_MISSING",
       );
     }
 
@@ -357,12 +456,33 @@ export class DualBucketR2MediaCopyExecutor {
     };
   }
 
-  async deleteOwnedObject(storageKey: string): Promise<void> {
+  /**
+   * Fail-closed delete: re-read R2 ownership metadata immediately before DeleteObject.
+   * Deletes only when this exact migrationExecutionId is proven.
+   */
+  async deleteOwnedObject(
+    storageKey: string,
+    migrationExecutionId: string,
+  ): Promise<void> {
     const key = storageKey.replace(/^\/+/, "");
     if (!key || key.includes("..")) {
       throw new ProductionInitiativeMigrationError(
         "Invalid media storage key for delete.",
         "MEDIA_INVALID_STORAGE_KEY",
+      );
+    }
+    const destHead = await headExists(this.destinationClient, this.destinationBucket, key);
+    if (!destHead) {
+      return;
+    }
+    const ownership = parseMigrationOwnershipMetadata(
+      destHead.metadata,
+      migrationExecutionId,
+    );
+    if (!isProvenOwnedByMigration(ownership)) {
+      throw new ProductionInitiativeMigrationError(
+        `Refusing delete: ownership not proven for storageKey=${key}`,
+        "MEDIA_OWNERSHIP_UNPROVEN",
       );
     }
     await this.destinationClient.send(
@@ -379,12 +499,19 @@ export class InMemoryMediaCopyExecutor {
   readonly source = new Map<string, { body: Buffer; contentType: string; etag: string }>();
   readonly destination = new Map<
     string,
-    { body: Buffer; contentType: string; etag: string }
+    {
+      body: Buffer;
+      contentType: string;
+      etag: string;
+      metadata: Record<string, string>;
+    }
   >();
   writeCount = 0;
   deleteCount = 0;
   /** Test hook: force SHA mismatch after put. */
   corruptAfterCopy = false;
+  /** Test hook: strip ownership metadata after put (simulates metadata loss). */
+  stripOwnershipAfterCopy = false;
 
   seedSource(storageKey: string, body: Buffer, contentType = "image/png"): void {
     this.source.set(storageKey, {
@@ -394,34 +521,86 @@ export class InMemoryMediaCopyExecutor {
     });
   }
 
-  seedDestination(storageKey: string, body: Buffer, contentType = "image/png"): void {
+  seedDestination(
+    storageKey: string,
+    body: Buffer,
+    contentType = "image/png",
+    metadata: Record<string, string> = {},
+  ): void {
     this.destination.set(storageKey, {
       body,
       contentType,
       etag: `etag-${storageKey}-${body.byteLength}`,
+      metadata: { ...metadata },
     });
+  }
+
+  async prepareSourceObject(storageKey: string): Promise<PreparedSourceObject> {
+    const src = this.source.get(storageKey);
+    if (!src) {
+      throw new ProductionInitiativeMigrationError(
+        `Source R2 object missing for storageKey=${storageKey}`,
+        "MEDIA_SOURCE_MISSING",
+      );
+    }
+    return {
+      storageKey,
+      body: src.body,
+      contentLength: src.body.byteLength,
+      contentType: src.contentType,
+      checksumSHA256: sha256Hex(src.body),
+    };
+  }
+
+  async inspectDestinationObject(
+    storageKey: string,
+    expectedMigrationExecutionId?: string,
+  ): Promise<DestinationObjectInspection | null> {
+    const dest = this.destination.get(storageKey);
+    if (!dest) return null;
+    const raw = ownershipProofFromMetadata(dest.metadata);
+    const ownership = expectedMigrationExecutionId
+      ? parseMigrationOwnershipMetadata(dest.metadata, expectedMigrationExecutionId)
+      : raw.rawOwnershipExecutionId
+        ? ({
+            kind: "foreign" as const,
+            migrationExecutionId: raw.rawOwnershipExecutionId,
+            marker: raw.rawOwnershipMarker,
+          } satisfies MigrationObjectOwnershipProof)
+        : ({ kind: "unproven" as const } satisfies MigrationObjectOwnershipProof);
+    return {
+      contentLength: dest.body.byteLength,
+      contentType: dest.contentType,
+      checksumSHA256: sha256Hex(dest.body),
+      ownership,
+      rawOwnershipExecutionId: raw.rawOwnershipExecutionId,
+      rawOwnershipMarker: raw.rawOwnershipMarker,
+    };
   }
 
   async copyPublicObject(input: {
     storageKey: string;
     destinationUrl: string;
+    preparedSource?: PreparedSourceObject;
+    migrationExecutionId: string;
   }): Promise<MediaCopyOutcome> {
-    const src = this.source.get(input.storageKey);
-    if (!src) {
+    if (!input.migrationExecutionId.startsWith("mig_")) {
       throw new ProductionInitiativeMigrationError(
-        `Source R2 object missing for storageKey=${input.storageKey}`,
-        "MEDIA_SOURCE_MISSING",
+        "migrationExecutionId required for media copy ownership.",
+        "MEDIA_OWNERSHIP_METADATA_INVALID",
       );
     }
-    const sourceSha = sha256Hex(src.body);
+    const prepared =
+      input.preparedSource ?? (await this.prepareSourceObject(input.storageKey));
     const sourceFp: ObjectIntegrityFingerprint = {
-      contentLength: src.body.byteLength,
-      etag: normalizeEtag(src.etag),
-      contentType: src.contentType,
-      checksumSHA256: sourceSha,
+      contentLength: prepared.contentLength,
+      etag: null,
+      contentType: prepared.contentType,
+      checksumSHA256: prepared.checksumSHA256,
     };
     const dest = this.destination.get(input.storageKey);
     if (dest) {
+      // Pre-existing: never overwrite / never stamp ownership metadata.
       const destSha = sha256Hex(dest.body);
       const destFp: ObjectIntegrityFingerprint = {
         contentLength: dest.body.byteLength,
@@ -442,18 +621,31 @@ export class InMemoryMediaCopyExecutor {
         "MEDIA_DESTINATION_COLLISION",
       );
     }
-    this.destination.set(input.storageKey, { ...src });
+    const ownershipMetadata = buildMigrationOwnershipMetadata(input.migrationExecutionId);
+    this.destination.set(input.storageKey, {
+      body: prepared.body,
+      contentType: prepared.contentType ?? "application/octet-stream",
+      etag: `etag-${input.storageKey}-${prepared.contentLength}`,
+      metadata: this.stripOwnershipAfterCopy ? {} : ownershipMetadata,
+    });
     this.writeCount += 1;
     if (this.corruptAfterCopy) {
-      const corrupt = Buffer.from(`${src.body.toString("hex")}-corrupt`);
+      const corrupt = Buffer.from(`${prepared.body.toString("hex")}-corrupt`);
       this.destination.set(input.storageKey, {
         body: corrupt,
-        contentType: src.contentType,
+        contentType: prepared.contentType ?? "application/octet-stream",
         etag: "corrupt",
+        metadata: ownershipMetadata,
       });
       throw new ProductionInitiativeMigrationError(
         `Post-copy SHA-256/size mismatch for storageKey=${input.storageKey}`,
         "MEDIA_INTEGRITY_FAILED",
+      );
+    }
+    if (this.stripOwnershipAfterCopy) {
+      throw new ProductionInitiativeMigrationError(
+        `Post-copy ownership metadata missing for storageKey=${input.storageKey}`,
+        "MEDIA_OWNERSHIP_METADATA_MISSING",
       );
     }
     return {
@@ -464,7 +656,19 @@ export class InMemoryMediaCopyExecutor {
     };
   }
 
-  async deleteOwnedObject(storageKey: string): Promise<void> {
+  async deleteOwnedObject(
+    storageKey: string,
+    migrationExecutionId: string,
+  ): Promise<void> {
+    const dest = this.destination.get(storageKey);
+    if (!dest) return;
+    const ownership = parseMigrationOwnershipMetadata(dest.metadata, migrationExecutionId);
+    if (!isProvenOwnedByMigration(ownership)) {
+      throw new ProductionInitiativeMigrationError(
+        `Refusing delete: ownership not proven for storageKey=${storageKey}`,
+        "MEDIA_OWNERSHIP_UNPROVEN",
+      );
+    }
     this.destination.delete(storageKey);
     this.deleteCount += 1;
   }

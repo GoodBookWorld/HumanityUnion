@@ -8,15 +8,16 @@ import {
 import { ProductionInitiativeMigrationError } from "./errors.js";
 import { reconcileMediaPlanReferences } from "./media-reconcile.js";
 import type { MediaRecoveryJournal } from "./media-recovery-journal.js";
+import type { DurableMediaRecoveryStore } from "./media-recovery-store.js";
+import type { DestinationObjectInspection } from "./media-ownership.js";
 import type { MigrationOwnershipLedger } from "./ownership-ledger.js";
-import type { MediaCopyOutcome } from "./r2-media-copy.js";
+import type { MediaCopyOutcome, PreparedSourceObject } from "./r2-media-copy.js";
 import type { MediaPlanItem, PlannedMediaCopy } from "./types.js";
 
 export type { PlannedMediaCopy } from "./types.js";
 
 /**
  * @deprecated Prefer reconcileMediaPlanReferences — retained as thin wrapper.
- * Deduplicate compatible COPY_* items by storageKey; hard-fails on incompatible collapse.
  */
 export function deduplicateMediaPlanItems(items: MediaPlanItem[]): PlannedMediaCopy[] {
   const reconciled = reconcileMediaPlanReferences(items);
@@ -38,8 +39,18 @@ export interface MediaCopyExecutor {
   copyPublicObject(input: {
     storageKey: string;
     destinationUrl: string;
+    preparedSource?: PreparedSourceObject;
+    migrationExecutionId: string;
   }): Promise<MediaCopyOutcome>;
-  deleteOwnedObject?(storageKey: string): Promise<void>;
+  prepareSourceObject?(storageKey: string): Promise<PreparedSourceObject>;
+  inspectDestinationObject?(
+    storageKey: string,
+    expectedMigrationExecutionId?: string,
+  ): Promise<DestinationObjectInspection | null>;
+  deleteOwnedObject?(
+    storageKey: string,
+    migrationExecutionId: string,
+  ): Promise<void>;
 }
 
 /** Default: plan-only. Never performs R2 I/O. */
@@ -47,7 +58,9 @@ export class DeferredMediaCopyExecutor implements MediaCopyExecutor {
   async copyPublicObject(input: {
     storageKey: string;
     destinationUrl: string;
+    migrationExecutionId: string;
   }): Promise<MediaCopyOutcome> {
+    void input.migrationExecutionId;
     return {
       status: "deferred",
       destinationUrl: input.destinationUrl,
@@ -74,6 +87,8 @@ export class GatedMediaCopyExecutor implements MediaCopyExecutor {
   async copyPublicObject(input: {
     storageKey: string;
     destinationUrl: string;
+    preparedSource?: PreparedSourceObject;
+    migrationExecutionId: string;
   }): Promise<MediaCopyOutcome> {
     if (!this.mediaCopyEnabled) {
       return {
@@ -91,9 +106,30 @@ export class GatedMediaCopyExecutor implements MediaCopyExecutor {
     return this.inner.copyPublicObject(input);
   }
 
-  async deleteOwnedObject(storageKey: string): Promise<void> {
+  async prepareSourceObject(storageKey: string): Promise<PreparedSourceObject> {
+    if (!this.inner?.prepareSourceObject) {
+      throw new ProductionInitiativeMigrationError(
+        "Inner executor missing prepareSourceObject.",
+        "MEDIA_COPY_EXECUTOR_MISSING",
+      );
+    }
+    return this.inner.prepareSourceObject(storageKey);
+  }
+
+  async inspectDestinationObject(
+    storageKey: string,
+    expectedMigrationExecutionId?: string,
+  ): Promise<DestinationObjectInspection | null> {
+    if (!this.inner?.inspectDestinationObject) return null;
+    return this.inner.inspectDestinationObject(storageKey, expectedMigrationExecutionId);
+  }
+
+  async deleteOwnedObject(
+    storageKey: string,
+    migrationExecutionId: string,
+  ): Promise<void> {
     if (!this.mediaCopyEnabled || !this.inner?.deleteOwnedObject) return;
-    await this.inner.deleteOwnedObject(storageKey);
+    await this.inner.deleteOwnedObject(storageKey, migrationExecutionId);
   }
 }
 
@@ -146,15 +182,17 @@ export function assertMediaCopyAuthorized(input: {
 }
 
 /**
- * Phase E1: copy + verify physical R2 objects (or defer).
- * Only status=created objects are ownership/rollback eligible.
- * Durable journal (when provided) records created objects for post-crash recovery.
+ * Phase E1: durable PLANNED → COPYING → copy/verify → CREATED_VERIFIED | PREEXISTING_EQUIVALENT.
+ * Only created_verified objects are migration-owned for rollback.
  */
 export async function executeMediaCopyPhase(input: {
   planned: PlannedMediaCopy[];
   ledger: MigrationOwnershipLedger;
   executor: MediaCopyExecutor;
   performCopies: boolean;
+  /** Required for execute copies — destination Mongo durable recovery. */
+  durableRecoveryStore?: DurableMediaRecoveryStore | null;
+  /** Optional local JSONL diagnostic mirror (not required for durability). */
   recoveryJournal?: MediaRecoveryJournal | null;
 }): Promise<{
   plannedCount: number;
@@ -186,10 +224,51 @@ export async function executeMediaCopyPhase(input: {
 
     let outcome: MediaCopyOutcome;
     if (input.performCopies && item.destinationAction === "COPY_PUBLIC") {
+      if (!input.durableRecoveryStore) {
+        throw new ProductionInitiativeMigrationError(
+          "Durable Mongo media recovery store required for execute media copy.",
+          "DURABLE_RECOVERY_REQUIRED",
+        );
+      }
+      if (!input.executor.prepareSourceObject) {
+        throw new ProductionInitiativeMigrationError(
+          "Executor must implement prepareSourceObject for crash-safe PLANNED records.",
+          "MEDIA_COPY_EXECUTOR_MISSING",
+        );
+      }
+
+      const prepared = await input.executor.prepareSourceObject(item.storageKey);
+      await input.durableRecoveryStore.upsertPlanned({
+        migrationExecutionId: input.ledger.migrationExecutionId,
+        storageKey: item.storageKey,
+        destinationUrl: item.destinationUrl,
+        expectedContentSha256: prepared.checksumSHA256,
+        expectedContentLength: prepared.contentLength,
+        expectedContentType: prepared.contentType,
+      });
+      await input.durableRecoveryStore.markCopying(
+        input.ledger.migrationExecutionId,
+        item.storageKey,
+      );
+
       outcome = await input.executor.copyPublicObject({
         storageKey: item.storageKey,
         destinationUrl: item.destinationUrl,
+        preparedSource: prepared,
+        migrationExecutionId: input.ledger.migrationExecutionId,
       });
+
+      if (outcome.status === "created") {
+        await input.durableRecoveryStore.markCreatedVerified(
+          input.ledger.migrationExecutionId,
+          item.storageKey,
+        );
+      } else if (outcome.status === "already_equivalent") {
+        await input.durableRecoveryStore.markPreexistingEquivalent(
+          input.ledger.migrationExecutionId,
+          item.storageKey,
+        );
+      }
     } else {
       outcome = {
         status: "deferred",
@@ -278,7 +357,7 @@ export async function rollbackOwnedMediaObjects(
   }
   let deleted = 0;
   for (const key of [...keys].reverse()) {
-    await executor.deleteOwnedObject(key);
+    await executor.deleteOwnedObject(key, ledger.migrationExecutionId);
     deleted += 1;
   }
   return deleted;

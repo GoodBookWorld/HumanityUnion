@@ -283,6 +283,7 @@ export const ALLOWED_WRITE_COLLECTIONS = [
   "membership_contributions",
   "member_badge_applications",
   "member_badge_contributions",
+  "production_initiative_migration_media_recovery",
 ] as const;
 
 export const VLAD_SHAPRAN_MEMBER_ID = "a5e65d2f-3be7-4f8f-acd9-87c68027d662" as const;

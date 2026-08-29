@@ -131,6 +131,11 @@ export {
   isObjectIntegrityEquivalent,
   normalizeEtag,
   resolveDualR2MediaCopyConfig,
+  R2_MIGRATION_OWNERSHIP_MARKER,
+  R2_MIGRATION_OWNERSHIP_METADATA_KEYS,
+  buildMigrationOwnershipMetadata,
+  isProvenOwnedByMigration,
+  parseMigrationOwnershipMetadata,
 } from "./r2-media-copy.js";
 
 export {
@@ -140,6 +145,19 @@ export {
   MEDIA_RECOVERY_JOURNAL_PATH_ENV,
   sha256Hex,
 } from "./media-recovery-journal.js";
+
+export {
+  MEDIA_RECOVERY_COLLECTION,
+  InMemoryDurableMediaRecoveryStore,
+  MongoDurableMediaRecoveryStore,
+  inspectMediaRecoveryState,
+  rollbackMigrationOwnedMedia,
+} from "./media-recovery-store.js";
+
+export type {
+  DestinationObjectInspection,
+  MigrationObjectOwnershipProof,
+} from "./media-ownership.js";
 
 export { MigrationOwnershipLedger } from "./ownership-ledger.js";
 

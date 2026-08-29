@@ -369,8 +369,8 @@ describe("Production Initiative migration execute path — Task 07.2 / 07.2.1", 
     assert.match(mod, /insertedId/);
     assert.match(mod, /MEDIA_COPY_REQUIRED/);
     assert.match(mod, /reconcileMediaPlanReferences/);
-    assert.match(mod, /CRASH_SAFE_EXECUTION_ORDER|crashSafeOrder/);
-    assert.match(mod, /rewritePublicMediaUrls/);
+    assert.match(mod, /durableRecovery|MongoDurableMediaRecoveryStore|production_initiative_migration_media_recovery/);
+    assert.match(mod, /jsonlJournal=optional|tryFromEnv/);
     assert.match(mod, /withRequiredTransaction/);
   });
 

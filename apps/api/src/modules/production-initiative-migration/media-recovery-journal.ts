@@ -80,27 +80,23 @@ export class InMemoryMediaRecoveryJournal implements MediaRecoveryJournal {
 }
 
 /**
- * Append-only JSONL journal on local disk for post-crash recovery by migrationExecutionId.
+ * Optional append-only JSONL diagnostic mirror on local disk.
+ * NOT the durability mechanism for production execute (use destination Mongo recovery store).
  */
 export class JsonlMediaRecoveryJournal implements MediaRecoveryJournal {
   constructor(private readonly filePath: string) {
     if (!filePath.trim()) {
       throw new ProductionInitiativeMigrationError(
-        "Media recovery journal path is required for durable R2 ownership.",
-        "DURABLE_RECOVERY_REQUIRED",
+        "JSONL recovery journal path empty.",
+        "RECOVERY_JOURNAL_PATH_INVALID",
       );
     }
   }
 
-  static fromEnv(env: NodeJS.ProcessEnv = process.env): JsonlMediaRecoveryJournal {
+  /** Optional: returns null when env path unset (production uses Mongo durability). */
+  static tryFromEnv(env: NodeJS.ProcessEnv = process.env): JsonlMediaRecoveryJournal | null {
     const filePath = env[MEDIA_RECOVERY_JOURNAL_PATH_ENV]?.trim() ?? "";
-    if (!filePath) {
-      throw new ProductionInitiativeMigrationError(
-        `Set ${MEDIA_RECOVERY_JOURNAL_PATH_ENV} to a writable JSONL path before --execute with media copy. ` +
-          "In-memory ledger alone does not survive process death.",
-        "DURABLE_RECOVERY_REQUIRED",
-      );
-    }
+    if (!filePath) return null;
     return new JsonlMediaRecoveryJournal(filePath);
   }
 

@@ -13,7 +13,12 @@
  *   PRODUCTION_INITIATIVE_MIGRATION_MEDIA_COPY=YES
  *   explicit dual source/destination R2 credentials + buckets
  *   destination public base https://media.huws.org
- *   PRODUCTION_INITIATIVE_MIGRATION_MEDIA_RECOVERY_JOURNAL_PATH (durable JSONL)
+ *   durable recovery in destination Mongo
+ *     (collection: production_initiative_migration_media_recovery)
+ *
+ * Optional local JSONL diagnostic mirror:
+ *   PRODUCTION_INITIATIVE_MIGRATION_MEDIA_RECOVERY_JOURNAL_PATH
+ *   (NOT required for production durability)
  *
  * Crash-safe order: A → B → E1(R2) → C → D → E2 → F
  * (Mongo never commits rewritten public media URLs before verified R2 objects.)
