@@ -200,6 +200,11 @@ export const EXPECTED_UNIQUE_PUBLIC_MEDIA_OBJECTS = 13 as const;
 /**
  * Live MUST_MIGRATE civic child count for the nine-initiative graph
  * (excludes initiative roots and media_upload_records).
+ *
+ * Task 07.7.1: keep 113 until a live dual-Mongo source inventory with composite
+ * Ally identity re-proves a different baseline. The post-failure verifier
+ * reported 112 with broken Ally labeling (`::unknown`); that is not sufficient
+ * proof to lower this constant.
  */
 export const EXPECTED_MUST_MIGRATE_CIVIC_CHILDREN = 113 as const;
 

@@ -4,7 +4,8 @@ import type { ClientSession, Db, Document, MongoClient } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { resolveDocumentAncestry } from "./ancestry.js";
-import { CIVIC_COLLECTION_CATALOG, listCollectionsByClassification } from "./collection-plan.js";
+import { listCollectionsByClassification } from "./collection-plan.js";
+import { assertSourceIntraBatchPrimaryIdentitiesUnique } from "./civic-inventory.js";
 import {
   ALLOWED_WRITE_COLLECTIONS,
   APPROVED_PRODUCTION_PARTICIPANTS,
@@ -47,6 +48,7 @@ import {
   type MediaReconciliationResult,
 } from "./media-reconcile.js";
 import { MigrationOwnershipLedger } from "./ownership-ledger.js";
+import { resolveMigrationPrimaryIdentity } from "./primary-identity.js";
 import { assertNoSecretLeak } from "./redact.js";
 import {
   DualBucketR2MediaCopyExecutor,
@@ -186,22 +188,7 @@ function assertForceNonTransactionalAllowed(input: {
 }
 
 function primaryFilter(collection: string, doc: Document): Record<string, unknown> {
-  const entry = CIVIC_COLLECTION_CATALOG.find((row) => row.collection === collection);
-  const field = entry?.primaryIdFields?.[0];
-  if (field && doc[field] != null) {
-    return { [field]: doc[field] };
-  }
-  if (doc._id != null) return { _id: doc._id };
-  if (asString(doc.initiativeId)) return { initiativeId: asString(doc.initiativeId) };
-  if (asString(doc.userId) && collection === "memberships") {
-    return { userId: asString(doc.userId) };
-  }
-  if (asString(doc.applicationId)) return { applicationId: asString(doc.applicationId) };
-  if (asString(doc.contributionId)) return { contributionId: asString(doc.contributionId) };
-  throw new ProductionInitiativeMigrationError(
-    `Cannot build primary filter for ${collection}`,
-    "MISSING_PRIMARY_KEY",
-  );
+  return resolveMigrationPrimaryIdentity({ collection, doc }).filter;
 }
 
 async function assertAbsent(
@@ -306,6 +293,41 @@ export async function rollbackOwnedMongoInserts(
     deleted += result.deletedCount;
   }
   return deleted;
+}
+
+/**
+ * Restore Phase B membershipPubliclyVisible only when the live value still equals
+ * the value this migration applied (never overwrite concurrent profile edits).
+ */
+export async function rollbackOwnedProfileVisibilityPatches(
+  destinationDb: Db,
+  ledger: MigrationOwnershipLedger,
+): Promise<number> {
+  let restored = 0;
+  const patches = [...ledger.rollbackEligibleProfileVisibilityPatches()].reverse();
+  for (const patch of patches) {
+    const current = await destinationDb
+      .collection(MONGO_COLLECTIONS.memberProfiles)
+      .findOne({ profileId: patch.profileId }, { projection: { membershipPubliclyVisible: 1 } });
+    if (!current) continue;
+    if (current.membershipPubliclyVisible !== patch.appliedValue) {
+      // Concurrent change — leave untouched.
+      continue;
+    }
+    if (patch.previousValue === undefined) {
+      await destinationDb.collection(MONGO_COLLECTIONS.memberProfiles).updateOne(
+        { profileId: patch.profileId },
+        { $unset: { membershipPubliclyVisible: "" } },
+      );
+    } else {
+      await destinationDb.collection(MONGO_COLLECTIONS.memberProfiles).updateOne(
+        { profileId: patch.profileId },
+        { $set: { membershipPubliclyVisible: patch.previousValue } },
+      );
+    }
+    restored += 1;
+  }
+  return restored;
 }
 
 /**
@@ -491,19 +513,39 @@ async function phaseBMembership(input: {
       );
 
       if (profile && typeof profile.membershipPubliclyVisible === "boolean") {
+        const destProfile = await input.destinationDb
+          .collection(MONGO_COLLECTIONS.memberProfiles)
+          .findOne(
+            { profileId: participant.profileId },
+            {
+              projection: { membershipPubliclyVisible: 1 },
+              ...(session ? { session } : {}),
+            },
+          );
+        const previousValue =
+          typeof destProfile?.membershipPubliclyVisible === "boolean"
+            ? destProfile.membershipPubliclyVisible
+            : undefined;
+        const appliedValue = profile.membershipPubliclyVisible;
+        input.ledger.recordProfileVisibilityPatch({
+          profileId: participant.profileId,
+          previousValue,
+          appliedValue,
+          phase: "B_membership",
+        });
         if (input.mode === "execute") {
           const updateOpts = session ? { session } : undefined;
           await input.destinationDb
             .collection(MONGO_COLLECTIONS.memberProfiles)
             .updateOne(
               { profileId: participant.profileId },
-              { $set: { membershipPubliclyVisible: profile.membershipPubliclyVisible } },
+              { $set: { membershipPubliclyVisible: appliedValue } },
               updateOpts,
             );
         }
         counts.profileVisibilityPatches += 1;
         notes.push(
-          `Vlad: membershipPubliclyVisible=${profile.membershipPubliclyVisible} (preserve on existing profile)`,
+          `Vlad: membershipPubliclyVisible=${appliedValue} (preserve on existing profile)`,
         );
       }
 
@@ -872,6 +914,10 @@ export async function runProductionInitiativeMigration(
       assertInlineExecutionPreflightPass(inlinePreflight);
     }
 
+    // Generic intra-batch primary identity uniqueness (protects Allies composites + all MUST children).
+    // Runs for dry-run and execute before any destination mutation.
+    await assertSourceIntraBatchPrimaryIdentitiesUnique(input.handles.sourceDb);
+
     phases.push(await phaseAIdentity(input.handles.destinationDb));
 
     phases.push(
@@ -1170,6 +1216,23 @@ export async function runProductionInitiativeMigration(
         } catch (rollbackError) {
           blockers.push(
             `Rollback failed: ${
+              rollbackError instanceof Error ? rollbackError.message : String(rollbackError)
+            }`,
+          );
+        }
+      }
+      if (ledger.rollbackEligibleProfileVisibilityPatches().length > 0) {
+        try {
+          const restored = await rollbackOwnedProfileVisibilityPatches(
+            input.handles.destinationDb,
+            ledger,
+          );
+          blockers.push(
+            `Compensating rollback of membershipPubliclyVisible patches restored=${restored}`,
+          );
+        } catch (rollbackError) {
+          blockers.push(
+            `Profile visibility rollback failed: ${
               rollbackError instanceof Error ? rollbackError.message : String(rollbackError)
             }`,
           );

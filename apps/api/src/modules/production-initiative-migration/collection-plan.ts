@@ -5,8 +5,17 @@ export interface CollectionCatalogEntry {
   classification: MigrationClassification;
   ancestryMethod: AncestryMethod;
   notes?: string;
-  /** Primary key field(s) for collision checks. */
+  /**
+   * Single-field destination primary identity.
+   * Only `primaryIdFields[0]` is used as the collision key (legacy contract).
+   */
   primaryIdFields?: string[];
+  /**
+   * Composite destination primary identity — every listed field is required.
+   * Takes precedence over `primaryIdFields`. Filter is AND of all fields.
+   * Mongo ObjectId `_id` is never a domain identity here.
+   */
+  compositePrimaryIdFields?: readonly string[];
 }
 
 /**
@@ -108,7 +117,8 @@ export const CIVIC_COLLECTION_CATALOG: readonly CollectionCatalogEntry[] = [
     collection: "initiative_allies",
     classification: "MUST_MIGRATE",
     ancestryMethod: "direct:initiativeId",
-    primaryIdFields: ["allyId"],
+    // Domain uniqueness is (initiativeId, participantId) — never allyId / initiativeId alone.
+    compositePrimaryIdFields: ["initiativeId", "participantId"],
   },
   {
     collection: "initiative_collaboration_channel_messages",

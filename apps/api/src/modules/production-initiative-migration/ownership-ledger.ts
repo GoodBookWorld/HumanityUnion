@@ -25,6 +25,21 @@ export interface OwnedMongoInsert {
   migrationExecutionId: string;
 }
 
+/**
+ * Phase B profile visibility patch — restored on compensating rollback only when
+ * the live destination value still equals the value this migration applied
+ * (never blind-overwrite concurrent operator changes).
+ */
+export interface OwnedProfileVisibilityPatch {
+  profileId: string;
+  /** Value observed on destination before this migration's patch (undefined = field absent). */
+  previousValue: boolean | undefined;
+  /** Value this migration wrote. */
+  appliedValue: boolean;
+  phase: string;
+  migrationExecutionId: string;
+}
+
 export interface OwnedMediaObject {
   storageKey: string;
   destinationUrl: string;
@@ -41,6 +56,7 @@ export class MigrationOwnershipLedger {
   readonly migrationExecutionId: string;
   private readonly mongoInserts: OwnedMongoInsert[] = [];
   private readonly mediaObjects: OwnedMediaObject[] = [];
+  private readonly profileVisibilityPatches: OwnedProfileVisibilityPatch[] = [];
 
   constructor(migrationExecutionId: string) {
     this.migrationExecutionId = migrationExecutionId;
@@ -53,6 +69,15 @@ export class MigrationOwnershipLedger {
       }
     }
     this.mongoInserts.push({
+      ...entry,
+      migrationExecutionId: this.migrationExecutionId,
+    });
+  }
+
+  recordProfileVisibilityPatch(
+    entry: Omit<OwnedProfileVisibilityPatch, "migrationExecutionId">,
+  ): void {
+    this.profileVisibilityPatches.push({
       ...entry,
       migrationExecutionId: this.migrationExecutionId,
     });
@@ -77,6 +102,10 @@ export class MigrationOwnershipLedger {
 
   listMediaObjects(): readonly OwnedMediaObject[] {
     return this.mediaObjects;
+  }
+
+  listProfileVisibilityPatches(): readonly OwnedProfileVisibilityPatch[] {
+    return this.profileVisibilityPatches;
   }
 
   /**
@@ -105,6 +134,12 @@ export class MigrationOwnershipLedger {
     );
   }
 
+  rollbackEligibleProfileVisibilityPatches(): OwnedProfileVisibilityPatch[] {
+    return this.profileVisibilityPatches.filter(
+      (row) => row.migrationExecutionId === this.migrationExecutionId,
+    );
+  }
+
   toSafeReport(): {
     migrationExecutionId: string;
     mongoInsertCount: number;
@@ -112,6 +147,7 @@ export class MigrationOwnershipLedger {
     mediaObjectCount: number;
     mediaCopiedCount: number;
     mediaOwnedForRollbackCount: number;
+    profileVisibilityPatchCount: number;
     collections: string[];
   } {
     return {
@@ -121,6 +157,7 @@ export class MigrationOwnershipLedger {
       mediaObjectCount: this.mediaObjects.length,
       mediaCopiedCount: this.mediaObjects.filter((row) => row.copied).length,
       mediaOwnedForRollbackCount: this.rollbackEligibleMediaKeys().length,
+      profileVisibilityPatchCount: this.profileVisibilityPatches.length,
       collections: [...new Set(this.mongoInserts.map((row) => row.collection))].sort(),
     };
   }

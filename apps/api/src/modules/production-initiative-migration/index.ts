@@ -71,6 +71,24 @@ export {
 } from "./collection-plan.js";
 
 export {
+  assertSourceIntraBatchPrimaryIdentitiesUnique,
+  inventoryMustMigrateCivicChildren,
+} from "./civic-inventory.js";
+export type { CivicChildRef, PlannedCivicChildDocument } from "./civic-inventory.js";
+
+export {
+  assertNoIntraBatchPrimaryCollisions,
+  findIntraBatchPrimaryCollisions,
+  getDeclaredPrimaryIdentityFields,
+  primaryIdentityCollisionKey,
+  resolveMigrationPrimaryIdentity,
+} from "./primary-identity.js";
+export type {
+  IntraBatchPrimaryCollision,
+  ResolvedMigrationPrimaryIdentity,
+} from "./primary-identity.js";
+
+export {
   buildParticipantsReport,
   classifyActorId,
   collectActorOccurrencesFromDocument,
@@ -144,7 +162,6 @@ export type {
 } from "./media-r2-preflight.js";
 
 export {
-  inventoryMustMigrateCivicChildren,
   runPostExecuteProductionInitiativeVerification,
 } from "./post-execute-verify.js";
 export type {
@@ -200,6 +217,7 @@ export {
   assertMigrationWritableCollectionForTest,
   buildSafeMigrationExecutionLog,
   rollbackOwnedMongoInserts,
+  rollbackOwnedProfileVisibilityPatches,
   runProductionInitiativeMigration,
 } from "./execute.js";
 export type {

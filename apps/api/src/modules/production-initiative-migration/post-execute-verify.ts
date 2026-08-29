@@ -1,8 +1,10 @@
 import type { Db, Document } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
-import { listCollectionsByClassification } from "./collection-plan.js";
-import { resolveDocumentAncestry } from "./ancestry.js";
+import {
+  inventoryMustMigrateCivicChildren,
+  type CivicChildRef,
+} from "./civic-inventory.js";
 import {
   APPROVED_PRODUCTION_PARTICIPANTS,
   CANONICAL_INITIATIVE_EXPECTATIONS,
@@ -83,129 +85,7 @@ export interface PostExecuteVerifyReport {
   verdict: PostExecuteVerifyVerdict;
 }
 
-async function loadParentMaps(db: Db, initiativeIds: string[]) {
-  const decisions = await db
-    .collection(MONGO_COLLECTIONS.initiativeCollectiveDecisions)
-    .find({ initiativeId: { $in: initiativeIds } })
-    .project({ decisionId: 1, initiativeId: 1 })
-    .toArray();
-  const decisionMap = new Map<string, string | null>();
-  for (const d of decisions) {
-    const id = asString(d.decisionId);
-    if (id) decisionMap.set(id, asString(d.initiativeId));
-  }
-  const trackings = await db
-    .collection(MONGO_COLLECTIONS.initiativeImplementationTrackings)
-    .find({ initiativeId: { $in: initiativeIds } })
-    .project({ trackingId: 1, initiativeId: 1 })
-    .toArray();
-  const trackingMap = new Map<string, string | null>();
-  for (const t of trackings) {
-    const id = asString(t.trackingId);
-    if (id) trackingMap.set(id, asString(t.initiativeId));
-  }
-  const petitions = await db
-    .collection(MONGO_COLLECTIONS.petitions)
-    .find({ initiativeId: { $in: initiativeIds } })
-    .project({ petitionId: 1, initiativeId: 1 })
-    .toArray();
-  const petitionMap = new Map<string, string | null>();
-  for (const p of petitions) {
-    const id = asString(p.petitionId);
-    if (id) petitionMap.set(id, asString(p.initiativeId));
-  }
-  return { decisionMap, trackingMap, petitionMap };
-}
-
-export interface CivicChildRef {
-  collection: string;
-  recordId: string;
-  initiativeId: string;
-}
-
-/** Inventory MUST_MIGRATE civic children for the nine allow-listed Initiatives (execute-compatible). */
-export async function inventoryMustMigrateCivicChildren(db: Db): Promise<{
-  children: CivicChildRef[];
-  byCollection: Record<string, number>;
-}> {
-  const allowList = new Set<string>([...CANONICAL_PRODUCTION_INITIATIVE_IDS]);
-  const initiativeIds = [...CANONICAL_PRODUCTION_INITIATIVE_IDS];
-  const parentMaps = await loadParentMaps(db, initiativeIds);
-  const mustCollections = listCollectionsByClassification("MUST_MIGRATE").filter(
-    (entry) =>
-      entry.collection !== "initiatives" &&
-      entry.ancestryMethod !== "participant-scoped" &&
-      !entry.collection.includes(".") &&
-      entry.collection !== "media_upload_records",
-  );
-
-  const children: CivicChildRef[] = [];
-  const byCollection: Record<string, number> = {};
-
-  for (const initiativeId of initiativeIds) {
-    for (const entry of mustCollections) {
-      let filter: Document = { initiativeId };
-      if (entry.ancestryMethod === "direct:subject.initiativeId") {
-        filter = {
-          $or: [{ initiativeId }, { "subject.initiativeId": initiativeId }],
-        };
-      } else if (entry.ancestryMethod === "pk:initiativeId") {
-        filter = { $or: [{ initiativeId }, { _id: initiativeId }] };
-      } else if (entry.ancestryMethod === "parent:decisionId") {
-        const ids = [...parentMaps.decisionMap.entries()]
-          .filter(([, iid]) => iid === initiativeId)
-          .map(([id]) => id);
-        filter = ids.length ? { decisionId: { $in: ids } } : { _id: "__none__" };
-      } else if (entry.ancestryMethod === "parent:trackingId") {
-        const ids = [...parentMaps.trackingMap.entries()]
-          .filter(([, iid]) => iid === initiativeId)
-          .map(([id]) => id);
-        filter = ids.length ? { trackingId: { $in: ids } } : { _id: "__none__" };
-      } else if (entry.ancestryMethod === "parent:petitionId") {
-        const ids = [...parentMaps.petitionMap.entries()]
-          .filter(([, iid]) => iid === initiativeId)
-          .map(([id]) => id);
-        filter = ids.length ? { petitionId: { $in: ids } } : { _id: "__none__" };
-      } else if (entry.ancestryMethod === "optional:initiativeId") {
-        filter = { initiativeId };
-      } else if (entry.ancestryMethod.startsWith("parent:")) {
-        continue;
-      }
-
-      const docs = await db.collection(entry.collection).find(filter).toArray();
-      for (const doc of docs) {
-        const parentMap =
-          entry.ancestryMethod === "parent:decisionId"
-            ? parentMaps.decisionMap
-            : entry.ancestryMethod === "parent:trackingId"
-              ? parentMaps.trackingMap
-              : entry.ancestryMethod === "parent:petitionId"
-                ? parentMaps.petitionMap
-                : undefined;
-        const ancestry = resolveDocumentAncestry({
-          doc,
-          method: entry.ancestryMethod,
-          allowList,
-          parentInitiativeById: parentMap,
-        });
-        if (ancestry.ambiguous || ancestry.initiativeId !== initiativeId) {
-          throw new Error(
-            `Ambiguous/unresolved MUST ancestry in ${entry.collection} for ${initiativeId}`,
-          );
-        }
-        const primaryField = entry.primaryIdFields?.[0];
-        const recordId =
-          (primaryField ? asString(doc[primaryField]) : null) ??
-          asString(doc._id) ??
-          "unknown";
-        children.push({ collection: entry.collection, recordId, initiativeId });
-        byCollection[entry.collection] = (byCollection[entry.collection] ?? 0) + 1;
-      }
-    }
-  }
-
-  return { children, byCollection };
-}
+export type { CivicChildRef };
 
 function childKey(row: CivicChildRef): string {
   return `${row.collection}::${row.recordId}`;

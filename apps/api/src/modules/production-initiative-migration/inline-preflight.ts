@@ -1,6 +1,7 @@
 import type { Db, Document } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
+import { assertSourceIntraBatchPrimaryIdentitiesUnique } from "./civic-inventory.js";
 import {
   APPROVED_PRODUCTION_PARTICIPANTS,
   CANONICAL_PRODUCTION_INITIATIVE_IDS,
@@ -15,6 +16,8 @@ export interface InlineExecutionPreflightResult {
   destinationRootsAbsent: number;
   identityGraphsOk: number;
   destinationMembershipCollisions: number;
+  plannedCivicChildren: number;
+  intraBatchPrimaryCollisionCheck: "PASS" | "FAIL";
   verdict: "PASS" | "FAIL";
   blockers: string[];
   checkedAt: string;
@@ -114,11 +117,25 @@ export async function runInlineExecutionPreflight(input: {
     }
   }
 
+  let plannedCivicChildren = 0;
+  let intraBatchPrimaryCollisionCheck: "PASS" | "FAIL" = "FAIL";
+  try {
+    const intra = await assertSourceIntraBatchPrimaryIdentitiesUnique(input.sourceDb);
+    plannedCivicChildren = intra.plannedCount;
+    intraBatchPrimaryCollisionCheck = "PASS";
+  } catch (error) {
+    intraBatchPrimaryCollisionCheck = "FAIL";
+    blockers.push(
+      error instanceof Error ? error.message : `Intra-batch primary collision: ${String(error)}`,
+    );
+  }
+
   const verdict =
     blockers.length === 0 &&
     sourceRootsPresent === 9 &&
     destinationRootsAbsent === 9 &&
-    identityGraphsOk === 5
+    identityGraphsOk === 5 &&
+    intraBatchPrimaryCollisionCheck === "PASS"
       ? "PASS"
       : "FAIL";
 
@@ -134,6 +151,8 @@ export async function runInlineExecutionPreflight(input: {
     destinationRootsAbsent,
     identityGraphsOk,
     destinationMembershipCollisions,
+    plannedCivicChildren,
+    intraBatchPrimaryCollisionCheck,
     verdict,
     blockers,
     checkedAt,
