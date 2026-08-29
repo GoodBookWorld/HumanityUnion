@@ -177,6 +177,20 @@ export type {
 } from "./post-execute-verify.js";
 
 export {
+  FAILED_PRODUCTION_INITIATIVE_MIGRATION_EXECUTION_ID,
+  classifyDestinationR2Residual,
+  classifyRecoveryRowResidualKind,
+  classifyVladProfileVisibilityResidual,
+  runFailedExecutionResidualAudit,
+} from "./failed-execution-residual-audit.js";
+export type {
+  ProfileVisibilityResidualClass,
+  R2ResidualClassification,
+  ResidualAuditReport,
+  ResidualAuditVerdict,
+} from "./failed-execution-residual-audit.js";
+
+export {
   DualBucketR2MediaCopyExecutor,
   InMemoryMediaCopyExecutor,
   isObjectIntegrityEquivalent,
