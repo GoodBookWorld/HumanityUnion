@@ -1,12 +1,24 @@
 export {
+  ALLOWED_WRITE_COLLECTIONS,
   APPROVED_PRODUCTION_PARTICIPANTS,
   CANONICAL_INITIATIVE_EXPECTATIONS,
   CANONICAL_PRODUCTION_INITIATIVE_IDS,
+  DESTINATION_MONGODB_DATABASE_ENV,
+  DESTINATION_MONGODB_URI_ENV,
   EXCLUDED_PRODUCTION_INITIATIVE_IDS,
+  FORBIDDEN_MIGRATE_COLLECTIONS,
   FORBIDDEN_TYPO_AI_COMMON_GOOD_ID,
+  MEDIA_COPY_ENABLED_ENV,
+  PRODUCTION_INITIATIVE_MIGRATION_CONFIRM_FLAG,
+  PRODUCTION_INITIATIVE_MIGRATION_CONFIRM_VALUE,
   PRODUCTION_INITIATIVE_MIGRATION_SOURCE_DATABASE,
   PRODUCTION_INITIATIVE_MIGRATION_TARGET_DATABASE,
+  PRODUCTION_MEDIA_PUBLIC_BASE_URL,
+  SOURCE_MONGODB_DATABASE_ENV,
+  SOURCE_MONGODB_URI_ENV,
   SYSTEM_MEDIA_RECOVERY_OWNER,
+  VLAD_SHAPRAN_MEMBER_ID,
+  VLAD_SHAPRAN_USER_ID,
   isCanonicalInitiativeId,
   isExcludedInitiativeId,
   isForbiddenTypoAiCommonGoodId,
@@ -15,9 +27,15 @@ export {
 export { ProductionInitiativeMigrationError } from "./errors.js";
 
 export {
+  assertMigrationDestinationDatabase,
+  assertMigrationExecuteWriteGuards,
+  assertMigrationSourceDatabase,
   assertNoWritePathRequested,
   assertProductionCollisionDatabase,
   assertStagingSourceDatabase,
+  isExecuteModeRequested,
+  resolveDualMongoEnv,
+  resolveMigrationMode,
 } from "./guards.js";
 
 export {
@@ -81,6 +99,41 @@ export {
   runStagingInitiativeMigrationPreflight,
   task071HasWritePath,
 } from "./preflight.js";
+
+export {
+  DeferredMediaCopyExecutor,
+  GatedMediaCopyExecutor,
+  deduplicateMediaPlanItems,
+  executeMediaCopyPhase,
+} from "./media-copy.js";
+
+export { MigrationOwnershipLedger } from "./ownership-ledger.js";
+
+export {
+  sanitizeBadgeApplicationForMigration,
+  sanitizeInitiativeDocumentForMigration,
+  sanitizeStripeOperationalFields,
+  stripPrivateFieldsForReport,
+  rewritePublicMediaUrl,
+} from "./sanitize-documents.js";
+
+export {
+  assertMigrationWritableCollectionForTest,
+  buildSafeMigrationExecutionLog,
+  rollbackOwnedMongoInserts,
+  runProductionInitiativeMigration,
+} from "./execute.js";
+export type {
+  DualMongoHandles,
+  MigrationExecutionReport,
+  RunProductionInitiativeMigrationInput,
+} from "./execute.js";
+
+export {
+  assertInlineExecutionPreflightPass,
+  runInlineExecutionPreflight,
+} from "./inline-preflight.js";
+export type { InlineExecutionPreflightResult } from "./inline-preflight.js";
 
 export type {
   CandidateInitiativeRow,

@@ -175,6 +175,97 @@ export const STRIPE_OPERATIONAL_FIELDS = [
   "stripeShippingRateId",
 ] as const;
 
+export const PRODUCTION_INITIATIVE_MIGRATION_CONFIRM_FLAG =
+  "PRODUCTION_INITIATIVE_MIGRATION_CONFIRM" as const;
+export const PRODUCTION_INITIATIVE_MIGRATION_CONFIRM_VALUE = "YES" as const;
+
+/** Explicit dual-connection env vars — never reuse a single Render service DB as both sides. */
+export const SOURCE_MONGODB_URI_ENV = "PRODUCTION_INITIATIVE_MIGRATION_SOURCE_URI" as const;
+export const SOURCE_MONGODB_DATABASE_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_SOURCE_DATABASE" as const;
+export const DESTINATION_MONGODB_URI_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_DESTINATION_URI" as const;
+export const DESTINATION_MONGODB_DATABASE_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_DESTINATION_DATABASE" as const;
+
+/** Canonical production public media base (Task 07.2). */
+export const PRODUCTION_MEDIA_PUBLIC_BASE_URL = "https://media.huws.org" as const;
+
+/**
+ * Media object copy is implemented as an abstraction but remains deferred by default.
+ * Task 07.2 must not perform R2 copies even when Mongo --execute is gated on.
+ */
+export const MEDIA_COPY_ENABLED_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_MEDIA_COPY" as const;
+
+export const FORBIDDEN_MIGRATE_COLLECTIONS = [
+  "outbox",
+  "processed_events",
+  "auth_sessions",
+  "email_verification_tokens",
+  "email_confirmation_codes",
+  "member_notifications",
+  "admin_notifications",
+  "membership_webhook_events",
+  "activities",
+  "discussions",
+  "proposals",
+  "decisions",
+] as const;
+
+/**
+ * Explicit destination write allow-list for the executor.
+ * Any collection not listed here is structurally refused by insertOwned.
+ */
+export const ALLOWED_WRITE_COLLECTIONS = [
+  "initiatives",
+  "initiative_analyses",
+  "initiative_improvement_proposals_collections",
+  "initiative_version_revisions",
+  "initiative_revision_drafts",
+  "initiative_discussion_completions",
+  "initiative_petition_drafts",
+  "initiative_decision_session_drafts",
+  "initiative_collective_decision_lifecycle_drafts",
+  "initiative_implementation_commitment_lifecycle_drafts",
+  "initiative_implementation_tracking_lifecycle_drafts",
+  "initiative_official_response_lifecycle_drafts",
+  "initiative_public_impact_lifecycle_drafts",
+  "initiative_civic_archive_lifecycle_drafts",
+  "initiative_comments",
+  "initiative_allies",
+  "initiative_collaboration_channel_messages",
+  "initiative_collaboration_sessions",
+  "initiative_collaboration_session_attendances",
+  "shared_documents",
+  "decision_sessions",
+  "initiative_collective_decisions",
+  "initiative_decision_votes",
+  "initiative_decision_vote_history",
+  "public_choice_candidates",
+  "petitions",
+  "petition_signatures",
+  "initiative_implementation_commitment_packages",
+  "initiative_implementation_commitments",
+  "initiative_implementation_tracking_packages",
+  "initiative_implementation_trackings",
+  "implementation_tracking_updates",
+  "initiative_official_response_packages",
+  "initiative_official_response_package_records",
+  "initiative_public_impact_reports",
+  "initiative_public_impacts",
+  "public_impact_evidence",
+  "initiative_civic_archive_versions",
+  "media_upload_records",
+  "memberships",
+  "membership_contributions",
+  "member_badge_applications",
+  "member_badge_contributions",
+] as const;
+
+export const VLAD_SHAPRAN_MEMBER_ID = "a5e65d2f-3be7-4f8f-acd9-87c68027d662" as const;
+export const VLAD_SHAPRAN_USER_ID = "5a56a3fd-58d1-41b3-be64-c15ca3e93a28" as const;
+
 const TEST_DATABASE_NAME_PATTERN = /^hu_test_[a-zA-Z0-9_]+$/;
 
 export function isCanonicalInitiativeId(id: string): boolean {
