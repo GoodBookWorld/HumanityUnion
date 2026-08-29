@@ -830,6 +830,7 @@ export async function runProductionInitiativeMigration(
     storageKeys: string[];
   } | null = null;
   let activeMediaExecutor: MediaCopyExecutor | null = null;
+  let activeDurableRecoveryStore: DurableMediaRecoveryStore | null = null;
 
   try {
     // Immediate read-only authorization bound to these exact DB handles + 9-ID set.
@@ -961,6 +962,7 @@ export async function runProductionInitiativeMigration(
     });
     mediaResult = e1Result;
     activeMediaExecutor = mediaExecutor;
+    activeDurableRecoveryStore = durableRecoveryStore;
 
     if (
       shouldPerformMediaCopies &&
@@ -1126,7 +1128,11 @@ export async function runProductionInitiativeMigration(
     if (mode === "execute") {
       if (activeMediaExecutor && ledger.rollbackEligibleMediaKeys().length > 0) {
         try {
-          const deletedMedia = await rollbackOwnedMediaObjects(activeMediaExecutor, ledger);
+          const deletedMedia = await rollbackOwnedMediaObjects(
+            activeMediaExecutor,
+            ledger,
+            activeDurableRecoveryStore,
+          );
           blockers.push(
             `Compensating rollback of owned R2 objects completed deleted=${deletedMedia}`,
           );

@@ -25,6 +25,7 @@
     "execute:production-initiative-migration": "tsx src/scripts/execute-production-initiative-migration.ts",
     "verify:production-initiative-migration": "tsx src/scripts/verify-production-initiative-migration.ts",
     "audit:production-initiative-migration-residuals": "tsx src/scripts/audit-production-initiative-migration-residuals.ts",
+    "reconcile:production-initiative-migration-recovery-rollback-state": "tsx src/scripts/reconcile-production-initiative-migration-recovery-rollback-state.ts",
     "reconcile:staging-historical-data": "tsx src/scripts/reconcile-staging-historical-data.ts",
     "verify:staging": "tsx src/scripts/verify-staging.ts",
     "verify:initiative-lifecycle": "tsx src/scripts/verify-initiative-lifecycle.ts",

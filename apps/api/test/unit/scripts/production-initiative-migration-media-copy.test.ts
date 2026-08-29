@@ -28,6 +28,7 @@ import {
   reconcileMediaPlanReferences,
   resolveMediaCopyAuthorization,
   rollbackMigrationOwnedMedia,
+  rollbackOwnedMediaObjects,
   rewritePublicMediaUrl,
   sanitizeInitiativeDocumentForMigration,
   sha256Hex,
@@ -718,6 +719,121 @@ describe("Production Initiative migration media copy — Task 07.3 / 07.3.1 / 07
     );
     assert.equal((await store.get("mig_partial", "initiatives/one.png"))?.status, "created_verified");
     assert.equal(await store.get("mig_partial", "initiatives/two.png"), null);
+  });
+
+  it("compensating failure after E1: R2 deleted and durable row → rollback_deleted", async () => {
+    const executor = new InMemoryMediaCopyExecutor();
+    const body = Buffer.from("owned-compensate");
+    executor.seedSource("initiatives/comp.png", body);
+    const ledger = new MigrationOwnershipLedger("mig_comp");
+    const store = new InMemoryDurableMediaRecoveryStore();
+    await executeMediaCopyPhase({
+      planned: [plannedCopy("initiatives/comp.png")],
+      ledger,
+      executor,
+      performCopies: true,
+      durableRecoveryStore: store,
+    });
+    assert.equal((await store.get("mig_comp", "initiatives/comp.png"))?.status, "created_verified");
+    assert.ok(executor.destination.has("initiatives/comp.png"));
+
+    const deleted = await rollbackOwnedMediaObjects(executor, ledger, store);
+    assert.equal(deleted, 1);
+    assert.equal(executor.destination.has("initiatives/comp.png"), false);
+    assert.equal((await store.get("mig_comp", "initiatives/comp.png"))?.status, "rollback_deleted");
+  });
+
+  it("compensating failed delete → rollback_failed", async () => {
+    const executor = new InMemoryMediaCopyExecutor();
+    executor.seedSource("initiatives/fail.png", Buffer.from("fail"));
+    const ledger = new MigrationOwnershipLedger("mig_fail");
+    const store = new InMemoryDurableMediaRecoveryStore();
+    await executeMediaCopyPhase({
+      planned: [plannedCopy("initiatives/fail.png")],
+      ledger,
+      executor,
+      performCopies: true,
+      durableRecoveryStore: store,
+    });
+    // Strip ownership so deleteOwnedObject fails closed.
+    const dest = executor.destination.get("initiatives/fail.png");
+    assert.ok(dest);
+    dest.metadata = {};
+
+    await assert.rejects(
+      () => rollbackOwnedMediaObjects(executor, ledger, store),
+      (error: unknown) =>
+        error instanceof ProductionInitiativeMigrationError &&
+        error.code === "MEDIA_OWNERSHIP_UNPROVEN",
+    );
+    assert.equal((await store.get("mig_fail", "initiatives/fail.png"))?.status, "rollback_failed");
+    assert.ok(executor.destination.has("initiatives/fail.png"));
+  });
+
+  it("compensating rollback never touches preexisting_equivalent", async () => {
+    const executor = new InMemoryMediaCopyExecutor();
+    const body = Buffer.from("preexist");
+    executor.seedSource("initiatives/pe.png", body);
+    executor.seedDestination("initiatives/pe.png", Buffer.from("preexist"));
+    const ledger = new MigrationOwnershipLedger("mig_pe");
+    const store = new InMemoryDurableMediaRecoveryStore();
+    await executeMediaCopyPhase({
+      planned: [plannedCopy("initiatives/pe.png")],
+      ledger,
+      executor,
+      performCopies: true,
+      durableRecoveryStore: store,
+    });
+    assert.equal(
+      (await store.get("mig_pe", "initiatives/pe.png"))?.status,
+      "preexisting_equivalent",
+    );
+    assert.deepEqual(ledger.rollbackEligibleMediaKeys(), []);
+    const deleted = await rollbackOwnedMediaObjects(executor, ledger, store);
+    assert.equal(deleted, 0);
+    assert.equal(
+      (await store.get("mig_pe", "initiatives/pe.png"))?.status,
+      "preexisting_equivalent",
+    );
+    assert.ok(executor.destination.has("initiatives/pe.png"));
+  });
+
+  it("compensating rollback requires durable store when owned keys exist", async () => {
+    const executor = new InMemoryMediaCopyExecutor();
+    executor.seedSource("initiatives/need.png", Buffer.from("need"));
+    const ledger = new MigrationOwnershipLedger("mig_need");
+    await executeMediaCopyPhase({
+      planned: [plannedCopy("initiatives/need.png")],
+      ledger,
+      executor,
+      performCopies: true,
+      durableRecoveryStore: new InMemoryDurableMediaRecoveryStore(),
+    });
+    await assert.rejects(
+      () => rollbackOwnedMediaObjects(executor, ledger, null),
+      (error: unknown) =>
+        error instanceof ProductionInitiativeMigrationError &&
+        error.code === "DURABLE_RECOVERY_REQUIRED",
+    );
+  });
+
+  it("compensating rollback is idempotent when object already absent", async () => {
+    const executor = new InMemoryMediaCopyExecutor();
+    executor.seedSource("initiatives/idem.png", Buffer.from("idem"));
+    const ledger = new MigrationOwnershipLedger("mig_idem");
+    const store = new InMemoryDurableMediaRecoveryStore();
+    await executeMediaCopyPhase({
+      planned: [plannedCopy("initiatives/idem.png")],
+      ledger,
+      executor,
+      performCopies: true,
+      durableRecoveryStore: store,
+    });
+    await rollbackOwnedMediaObjects(executor, ledger, store);
+    assert.equal((await store.get("mig_idem", "initiatives/idem.png"))?.status, "rollback_deleted");
+    const deletedAgain = await rollbackOwnedMediaObjects(executor, ledger, store);
+    assert.equal(deletedAgain, 1);
+    assert.equal((await store.get("mig_idem", "initiatives/idem.png"))?.status, "rollback_deleted");
   });
 
   it("rollback requires explicit confirm and never auto-deletes on inspection", async () => {

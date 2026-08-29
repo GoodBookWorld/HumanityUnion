@@ -341,9 +341,16 @@ export async function executeMediaCopyPhase(input: {
   };
 }
 
+/**
+ * Compensating rollback for migration-created R2 objects.
+ * Ledger eligibility already excludes preexisting_equivalent destinations.
+ * After each successful owned delete (or no-op when already absent), durable
+ * recovery transitions created_verified → rollback_deleted.
+ */
 export async function rollbackOwnedMediaObjects(
   executor: MediaCopyExecutor,
   ledger: MigrationOwnershipLedger,
+  durableRecoveryStore?: DurableMediaRecoveryStore | null,
 ): Promise<number> {
   const keys = ledger.rollbackEligibleMediaKeys();
   if (!executor.deleteOwnedObject) {
@@ -355,10 +362,35 @@ export async function rollbackOwnedMediaObjects(
     }
     return 0;
   }
+  if (keys.length > 0 && !durableRecoveryStore) {
+    throw new ProductionInitiativeMigrationError(
+      "Durable Mongo media recovery store required for compensating media rollback state transitions.",
+      "DURABLE_RECOVERY_REQUIRED",
+    );
+  }
+
   let deleted = 0;
   for (const key of [...keys].reverse()) {
-    await executor.deleteOwnedObject(key, ledger.migrationExecutionId);
-    deleted += 1;
+    try {
+      // Ownership re-verified inside deleteOwnedObject immediately before DeleteObject.
+      // Absent object is a successful no-op (crash window after prior delete).
+      await executor.deleteOwnedObject(key, ledger.migrationExecutionId);
+      await durableRecoveryStore!.markRollbackDeleted(
+        ledger.migrationExecutionId,
+        key,
+      );
+      deleted += 1;
+    } catch (error) {
+      try {
+        await durableRecoveryStore!.markRollbackFailed(
+          ledger.migrationExecutionId,
+          key,
+        );
+      } catch {
+        // Prefer surfacing the original delete/ownership failure.
+      }
+      throw error;
+    }
   }
   return deleted;
 }

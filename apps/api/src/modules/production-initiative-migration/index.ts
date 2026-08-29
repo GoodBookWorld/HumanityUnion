@@ -191,6 +191,16 @@ export type {
 } from "./failed-execution-residual-audit.js";
 
 export {
+  assertRecoveryRollbackReconcileWriteCollection,
+  assertValidMigrationExecutionId,
+  reconcileProductionInitiativeMigrationRecoveryRollbackState,
+} from "./recovery-rollback-reconcile.js";
+export type {
+  RecoveryRollbackReconcileReport,
+  RecoveryRollbackReconcileVerdict,
+} from "./recovery-rollback-reconcile.js";
+
+export {
   DualBucketR2MediaCopyExecutor,
   InMemoryMediaCopyExecutor,
   isObjectIntegrityEquivalent,
