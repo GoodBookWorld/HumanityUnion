@@ -31,18 +31,32 @@ import {
 } from "./inline-preflight.js";
 import {
   DeferredMediaCopyExecutor,
-  deduplicateMediaPlanItems,
+  assertMediaCopyAuthorized,
   executeMediaCopyPhase,
+  resolveMediaCopyAuthorization,
+  rollbackOwnedMediaObjects,
   type MediaCopyExecutor,
-  type PlannedMediaCopy,
 } from "./media-copy.js";
 import {
   planMediaFromInitiativeDocument,
   planMediaFromSharedDocument,
   planMediaFromUploadRecord,
 } from "./media-plan.js";
+import {
+  reconcileMediaPlanReferences,
+  type MediaReconciliationResult,
+} from "./media-reconcile.js";
 import { MigrationOwnershipLedger } from "./ownership-ledger.js";
 import { assertNoSecretLeak } from "./redact.js";
+import {
+  DualBucketR2MediaCopyExecutor,
+  resolveDualR2MediaCopyConfig,
+} from "./r2-media-copy.js";
+import {
+  CRASH_SAFE_EXECUTION_ORDER,
+  JsonlMediaRecoveryJournal,
+  type MediaRecoveryJournal,
+} from "./media-recovery-journal.js";
 import {
   sanitizeBadgeApplicationForMigration,
   sanitizeInitiativeDocumentForMigration,
@@ -80,8 +94,16 @@ export interface RunProductionInitiativeMigrationInput {
    */
   forceNonTransactional?: boolean;
   mediaExecutor?: MediaCopyExecutor;
-  /** Task 07.2 default false — never copy R2 in this task. */
+  /**
+   * Request physical R2 copies. Insufficient alone — also requires execute mode,
+   * PRODUCTION_INITIATIVE_MIGRATION_CONFIRM=YES, and
+   * PRODUCTION_INITIATIVE_MIGRATION_MEDIA_COPY=YES.
+   */
   performMediaCopies?: boolean;
+  /** Optional override for media-copy env (tests). */
+  mediaCopyEnvValue?: string;
+  /** Durable journal for post-crash R2 ownership recovery (required for execute+media). */
+  mediaRecoveryJournal?: MediaRecoveryJournal;
 }
 
 export interface PhaseResult {
@@ -106,8 +128,10 @@ export interface MigrationExecutionReport {
     status: "PLANNED" | "DEFERRED" | "COPIED";
     plannedCopies: number;
     copied: number;
+    alreadyEquivalent: number;
     deferred: boolean;
     storageKeys: string[];
+    reconciliation: MediaReconciliationResult | null;
   };
   rollback: {
     strategy: string;
@@ -600,6 +624,8 @@ async function migrateInitiativeGraph(input: {
   initiativeId: string;
   forceNonTransactional?: boolean;
   allowTestIsolation?: boolean;
+  /** Only true after E1 verified R2 objects (crash-safe). */
+  rewritePublicMediaUrls: boolean;
 }): Promise<{ roots: number; children: number }> {
   if (
     isExcludedInitiativeId(input.initiativeId) ||
@@ -625,7 +651,11 @@ async function migrateInitiativeGraph(input: {
     );
   }
 
-  const sanitizedRoot = sanitizeInitiativeDocumentForMigration(root);
+  const sanitizedRoot = sanitizeInitiativeDocumentForMigration(
+    root,
+    PRODUCTION_MEDIA_PUBLIC_BASE_URL,
+    { rewritePublicMediaUrls: input.rewritePublicMediaUrls },
+  );
 
   let roots = 0;
   let children = 0;
@@ -811,6 +841,16 @@ export async function runProductionInitiativeMigration(
   const phases: PhaseResult[] = [];
   const blockers: string[] = [];
   let inlinePreflight: InlineExecutionPreflightResult | null = null;
+  let reconciliation: MediaReconciliationResult | null = null;
+  let mediaResult: {
+    plannedCount: number;
+    copiedCount: number;
+    alreadyEquivalentCount: number;
+    deferredCount: number;
+    deferred: boolean;
+    storageKeys: string[];
+  } | null = null;
+  let activeMediaExecutor: MediaCopyExecutor | null = null;
 
   try {
     // Immediate read-only authorization bound to these exact DB handles + 9-ID set.
@@ -841,37 +881,9 @@ export async function runProductionInitiativeMigration(
       }),
     );
 
-    let totalRoots = 0;
-    let totalChildren = 0;
-    const initiativeNotes: string[] = [];
-    for (const initiativeId of CANONICAL_PRODUCTION_INITIATIVE_IDS) {
-      const result = await migrateInitiativeGraph({
-        mode,
-        sourceDb: input.handles.sourceDb,
-        destinationDb: input.handles.destinationDb,
-        destinationClient: input.handles.destinationClient,
-        destinationDatabase,
-        ledger,
-        initiativeId,
-        forceNonTransactional: input.forceNonTransactional,
-        allowTestIsolation: input.allowTestIsolation,
-      });
-      totalRoots += result.roots;
-      totalChildren += result.children;
-      initiativeNotes.push(`${initiativeId}: roots=${result.roots} children=${result.children}`);
-    }
-    phases.push({
-      phase: "C_initiative_roots",
-      status: mode === "dry-run" ? "planned" : "completed",
-      counts: { roots: totalRoots },
-      notes: initiativeNotes,
-    });
-    phases.push({
-      phase: "D_civic_artifacts",
-      status: mode === "dry-run" ? "planned" : "completed",
-      counts: { children: totalChildren },
-      notes: ["MUST_MIGRATE children with validated ancestry only"],
-    });
+    // Crash-safe order: A, B, E1, C, D, E2, F.
+    // B (membership) has no public media URL dependency.
+    // Mongo must not commit rewritten public media URLs before E1 verifies R2.
 
     const mediaItems = [];
     for (const initiativeId of CANONICAL_PRODUCTION_INITIATIVE_IDS) {
@@ -903,14 +915,163 @@ export async function runProductionInitiativeMigration(
       mediaItems.push(planMediaFromSharedDocument(doc));
     }
 
-    const planned: PlannedMediaCopy[] = deduplicateMediaPlanItems(mediaItems);
-    const mediaResult = await executeMediaCopyPhase({
-      planned,
-      ledger,
-      executor: input.mediaExecutor ?? new DeferredMediaCopyExecutor(),
-      performCopies: input.performMediaCopies === true,
+    reconciliation = reconcileMediaPlanReferences(mediaItems);
+    const reconciled = reconciliation;
+    const plannedPublic = reconciled.uniquePublicCopies;
+
+    if (reconciled.uniquePrivateObjectCount > 0 && mode === "execute") {
+      throw new ProductionInitiativeMigrationError(
+        `Refusing execute: ${reconciled.uniquePrivateObjectCount} COPY_PRIVATE object(s) require a private-bucket path not enabled here.`,
+        "MEDIA_PRIVATE_COPY_UNSUPPORTED",
+      );
+    }
+
+    const mediaAuth = resolveMediaCopyAuthorization({
+      mode,
+      confirm: input.confirm,
+      performMediaCopies: input.performMediaCopies,
+      mediaCopyEnvValue: input.mediaCopyEnvValue,
     });
 
+    let mediaExecutor: MediaCopyExecutor =
+      input.mediaExecutor ?? new DeferredMediaCopyExecutor();
+    const shouldPerformMediaCopies =
+      mode === "execute" && plannedPublic.length > 0 && mediaAuth.authorized;
+
+    if (mode === "execute" && plannedPublic.length > 0 && !mediaAuth.authorized) {
+      throw new ProductionInitiativeMigrationError(
+        `Refusing execute with ${plannedPublic.length} planned public media object(s): ${mediaAuth.reasons.join("; ")}. ` +
+          "Mongo media URL commits require successful R2 copy first (crash-safe E1 before C/D/E2).",
+        "MEDIA_COPY_REQUIRED",
+      );
+    }
+
+    let recoveryJournal: MediaRecoveryJournal | null = input.mediaRecoveryJournal ?? null;
+    if (shouldPerformMediaCopies) {
+      assertMediaCopyAuthorized({
+        mode,
+        confirm: input.confirm,
+        performMediaCopies: input.performMediaCopies,
+        mediaCopyEnvValue: input.mediaCopyEnvValue,
+      });
+      if (!recoveryJournal) {
+        recoveryJournal = JsonlMediaRecoveryJournal.fromEnv();
+      }
+      if (!input.mediaExecutor) {
+        mediaExecutor = new DualBucketR2MediaCopyExecutor(resolveDualR2MediaCopyConfig());
+      }
+    }
+
+    // E1 — copy + verify physical R2 BEFORE any Mongo docs with production media URLs.
+    const e1Result = await executeMediaCopyPhase({
+      planned: plannedPublic,
+      ledger,
+      executor: mediaExecutor,
+      performCopies: shouldPerformMediaCopies,
+      recoveryJournal,
+    });
+    mediaResult = e1Result;
+    activeMediaExecutor = mediaExecutor;
+
+    if (
+      shouldPerformMediaCopies &&
+      e1Result.copiedCount + e1Result.alreadyEquivalentCount !== plannedPublic.length
+    ) {
+      throw new ProductionInitiativeMigrationError(
+        "Media E1 incomplete: not all planned public objects were created or verified equivalent.",
+        "MEDIA_COPY_INCOMPLETE",
+      );
+    }
+
+    const mediaSatisfied =
+      e1Result.copiedCount + e1Result.alreadyEquivalentCount === e1Result.plannedCount &&
+      e1Result.plannedCount > 0 &&
+      !e1Result.deferred;
+    const mediaStatus: "PLANNED" | "DEFERRED" | "COPIED" =
+      e1Result.plannedCount === 0
+        ? "PLANNED"
+        : mediaSatisfied ||
+            (e1Result.copiedCount + e1Result.alreadyEquivalentCount > 0 &&
+              e1Result.deferredCount === 0)
+          ? "COPIED"
+          : "DEFERRED";
+
+    // Only rewrite production media URLs into Mongo after E1 success (or when no public media).
+    const rewritePublicMediaUrls =
+      mode === "dry-run"
+        ? true // dry-run models rewrite without committing
+        : plannedPublic.length === 0 || mediaStatus === "COPIED";
+
+    if (mode === "execute" && plannedPublic.length > 0 && !rewritePublicMediaUrls) {
+      throw new ProductionInitiativeMigrationError(
+        "Refusing Mongo media URL commit: E1 R2 verification incomplete.",
+        "MEDIA_URL_COMMIT_BEFORE_E1",
+      );
+    }
+
+    phases.push({
+      phase: "E_media",
+      status:
+        mediaStatus === "COPIED"
+          ? "completed"
+          : mediaStatus === "DEFERRED"
+            ? "deferred"
+            : "planned",
+      counts: {
+        copyPublicReferences: reconciled.copyPublicReferenceCount,
+        uniquePublicObjects: reconciled.uniquePublicObjectCount,
+        plannedCopies: e1Result.plannedCount,
+        copied: e1Result.copiedCount,
+        alreadyEquivalent: e1Result.alreadyEquivalentCount,
+        mediaUploadRecords: 0,
+      },
+      notes: [
+        `crashSafeOrder=${CRASH_SAFE_EXECUTION_ORDER.join(">")}`,
+        reconciled.explanation,
+        e1Result.deferred
+          ? "E1 R2 DEFERRED (dry-run default; no R2 writes; no Mongo media URL commit on execute)"
+          : "E1 R2 copy+verify completed BEFORE C/D/E2 Mongo writes with production media URLs",
+        `mediaPlan.status=${mediaStatus}`,
+        `rewritePublicMediaUrls=${rewritePublicMediaUrls}`,
+        `publicBaseUrl=${PRODUCTION_MEDIA_PUBLIC_BASE_URL}`,
+        "durableRecoveryJournal=required-for-execute-media; orphans after E1 crash are recoverable by migrationExecutionId",
+      ],
+    });
+
+    let totalRoots = 0;
+    let totalChildren = 0;
+    const initiativeNotes: string[] = [];
+    for (const initiativeId of CANONICAL_PRODUCTION_INITIATIVE_IDS) {
+      const result = await migrateInitiativeGraph({
+        mode,
+        sourceDb: input.handles.sourceDb,
+        destinationDb: input.handles.destinationDb,
+        destinationClient: input.handles.destinationClient,
+        destinationDatabase,
+        ledger,
+        initiativeId,
+        forceNonTransactional: input.forceNonTransactional,
+        allowTestIsolation: input.allowTestIsolation,
+        rewritePublicMediaUrls,
+      });
+      totalRoots += result.roots;
+      totalChildren += result.children;
+      initiativeNotes.push(`${initiativeId}: roots=${result.roots} children=${result.children}`);
+    }
+    phases.push({
+      phase: "C_initiative_roots",
+      status: mode === "dry-run" ? "planned" : "completed",
+      counts: { roots: totalRoots },
+      notes: initiativeNotes,
+    });
+    phases.push({
+      phase: "D_civic_artifacts",
+      status: mode === "dry-run" ? "planned" : "completed",
+      counts: { children: totalChildren },
+      notes: ["MUST_MIGRATE children with validated ancestry only"],
+    });
+
+    // E2 — media_upload_records with rewritten production URLs only after E1.
     const writeMediaRecords = async (
       session: ClientSession | undefined,
       allowWithoutSession: boolean,
@@ -936,6 +1097,12 @@ export async function runProductionInitiativeMigration(
     if (mode === "dry-run") {
       await writeMediaRecords(undefined, false);
     } else if (uploads.length > 0) {
+      if (!rewritePublicMediaUrls) {
+        throw new ProductionInitiativeMigrationError(
+          "Refusing E2 media_upload_records: production URLs require verified E1 objects.",
+          "MEDIA_URL_COMMIT_BEFORE_E1",
+        );
+      }
       await withRequiredTransaction({
         client: input.handles.destinationClient,
         allowTestIsolation: input.allowTestIsolation,
@@ -946,30 +1113,12 @@ export async function runProductionInitiativeMigration(
       });
     }
 
-    const mediaStatus: "PLANNED" | "DEFERRED" | "COPIED" =
-      mediaResult.copiedCount > 0
-        ? "COPIED"
-        : mediaResult.plannedCount > 0
-          ? "DEFERRED"
-          : "PLANNED";
-
-    phases.push({
-      phase: "E_media",
-      status: mediaResult.copiedCount > 0 ? "completed" : "deferred",
-      counts: {
-        plannedCopies: mediaResult.plannedCount,
-        copied: mediaResult.copiedCount,
-        mediaUploadRecords: uploads.length,
-      },
-      notes: [
-        mediaResult.deferred || mediaResult.copiedCount === 0
-          ? "R2 object copy DEFERRED (Task 07.2 plan-only; Mongo must not claim media COMPLETE)"
-          : "R2 object copy executed",
-        `mediaPlan.status=${mediaStatus}`,
-        `publicBaseUrl=${PRODUCTION_MEDIA_PUBLIC_BASE_URL}`,
-        "system-media-recovery remains NON_IDENTITY",
-      ],
-    });
+    // Update E_media counts with E2 record count
+    const ePhase = phases.find((p) => p.phase === "E_media");
+    if (ePhase) {
+      ePhase.counts.mediaUploadRecords = uploads.length;
+      ePhase.notes.push("E2 media_upload_records after E1");
+    }
 
     phases.push({
       phase: "F_projections",
@@ -980,29 +1129,57 @@ export async function runProductionInitiativeMigration(
         "DO_NOT_COPY: workspace_projections, outbox, processed_events, notifications",
       ],
     });
+
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     blockers.push(message);
-    if (mode === "execute" && ledger.rollbackEligibleMongoInserts().length > 0) {
-      try {
-        const deleted = await rollbackOwnedMongoInserts(input.handles.destinationDb, ledger);
-        blockers.push(
-          `Compensating rollback of owned Mongo inserts completed deleted=${deleted}`,
-        );
-      } catch (rollbackError) {
-        blockers.push(
-          `Rollback failed: ${
-            rollbackError instanceof Error ? rollbackError.message : String(rollbackError)
-          }`,
-        );
+    if (mode === "execute") {
+      if (activeMediaExecutor && ledger.rollbackEligibleMediaKeys().length > 0) {
+        try {
+          const deletedMedia = await rollbackOwnedMediaObjects(activeMediaExecutor, ledger);
+          blockers.push(
+            `Compensating rollback of owned R2 objects completed deleted=${deletedMedia}`,
+          );
+        } catch (rollbackError) {
+          blockers.push(
+            `Media rollback failed: ${
+              rollbackError instanceof Error ? rollbackError.message : String(rollbackError)
+            }`,
+          );
+        }
+      }
+      if (ledger.rollbackEligibleMongoInserts().length > 0) {
+        try {
+          const deleted = await rollbackOwnedMongoInserts(input.handles.destinationDb, ledger);
+          blockers.push(
+            `Compensating rollback of owned Mongo inserts completed deleted=${deleted}`,
+          );
+        } catch (rollbackError) {
+          blockers.push(
+            `Rollback failed: ${
+              rollbackError instanceof Error ? rollbackError.message : String(rollbackError)
+            }`,
+          );
+        }
       }
     }
   }
 
   const mediaObjects = ledger.listMediaObjects();
   const mediaCopied = mediaObjects.filter((row) => row.copied).length;
-  const mediaPlanStatus: "PLANNED" | "DEFERRED" | "COPIED" =
-    mediaCopied > 0 ? "COPIED" : mediaObjects.length > 0 ? "DEFERRED" : "PLANNED";
+  const alreadyEquivalent = mediaResult?.alreadyEquivalentCount ?? 0;
+  const resolvedMediaStatus: "PLANNED" | "DEFERRED" | "COPIED" = (() => {
+    if (!mediaResult || mediaResult.plannedCount === 0) {
+      return mediaObjects.length === 0 ? "PLANNED" : "DEFERRED";
+    }
+    if (
+      mediaResult.copiedCount + mediaResult.alreadyEquivalentCount >= mediaResult.plannedCount &&
+      mediaResult.deferredCount === 0
+    ) {
+      return "COPIED";
+    }
+    return "DEFERRED";
+  })();
 
   const report: MigrationExecutionReport = {
     tool: "execute-production-initiative-migration",
@@ -1016,15 +1193,17 @@ export async function runProductionInitiativeMigration(
     phases,
     ownership: ledger.toSafeReport(),
     mediaPlan: {
-      status: mediaPlanStatus,
-      plannedCopies: mediaObjects.length,
+      status: resolvedMediaStatus,
+      plannedCopies: mediaResult?.plannedCount ?? mediaObjects.length,
       copied: mediaCopied,
-      deferred: mediaCopied === 0,
+      alreadyEquivalent,
+      deferred: resolvedMediaStatus === "DEFERRED",
       storageKeys: mediaObjects.map((row) => row.storageKey),
+      reconciliation,
     },
     rollback: {
       strategy:
-        "Compensating deleteOne by exact insertedId owned by this migrationExecutionId only; never by initiativeId alone; R2 delete only for copied=true keys owned by this executionId",
+        "Compensating deleteOne by exact insertedId owned by this migrationExecutionId only; never by initiativeId alone; R2 delete only for createdByThisExecution=true keys owned by this executionId; durable JSONL journal survives process death for created objects",
       ownedMongoInserts: ledger.rollbackEligibleMongoInserts().length,
       ownedMediaCopied: ledger.rollbackEligibleMediaKeys().length,
     },

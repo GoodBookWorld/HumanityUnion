@@ -251,12 +251,14 @@ describe("Production Initiative migration execute path — Task 07.2 / 07.2.1", 
       storageKey: "initiatives/a.png",
       destinationUrl: `${PRODUCTION_MEDIA_PUBLIC_BASE_URL}/initiatives/a.png`,
       copied: false,
+      createdByThisExecution: false,
       migrationExecutionId: "mig_own",
     });
     ledger.recordMediaObject({
       storageKey: "initiatives/b.png",
       destinationUrl: `${PRODUCTION_MEDIA_PUBLIC_BASE_URL}/initiatives/b.png`,
       copied: true,
+      createdByThisExecution: true,
       migrationExecutionId: "mig_own",
     });
     assert.deepEqual(ledger.rollbackEligibleMediaKeys(), ["initiatives/b.png"]);
@@ -349,21 +351,26 @@ describe("Production Initiative migration execute path — Task 07.2 / 07.2.1", 
     );
   });
 
-  it("execute script uses inline preflight; no env-only fresh-preflight gate; defers media", () => {
+  it("execute script uses inline preflight; gates media copy; defers by default", () => {
     const src = fs.readFileSync(executeScript, "utf8");
     const mod = fs.readFileSync(executeModule, "utf8");
     assert.match(src, /DRY-RUN|dry-run/);
-    assert.match(src, /performMediaCopies: false/);
     assert.match(src, /PRODUCTION_INITIATIVE_MIGRATION_CONFIRM/);
     assert.match(src, /resolveDualMongoEnv/);
-    assert.match(src, /inlineExecutionPreflight/);
+    assert.match(src, /inlineExecutionPreflight|writeAuthorization/);
+    assert.match(src, /MEDIA_COPY/);
+    assert.match(src, /resolveMediaCopyAuthorization/);
     assert.doesNotMatch(src, /FRESH_PREFLIGHT_PASS/);
     assert.match(mod, /runInlineExecutionPreflight/);
     assert.match(mod, /TRANSACTION_REQUIRED/);
     assert.match(mod, /No sequential fallback/);
     assert.match(mod, /rollbackOwnedMongoInserts/);
+    assert.match(mod, /rollbackOwnedMediaObjects/);
     assert.match(mod, /insertedId/);
-    assert.match(mod, /mediaPlan\.status=|status: mediaPlanStatus|DEFERRED/);
+    assert.match(mod, /MEDIA_COPY_REQUIRED/);
+    assert.match(mod, /reconcileMediaPlanReferences/);
+    assert.match(mod, /CRASH_SAFE_EXECUTION_ORDER|crashSafeOrder/);
+    assert.match(mod, /rewritePublicMediaUrls/);
     assert.match(mod, /withRequiredTransaction/);
   });
 

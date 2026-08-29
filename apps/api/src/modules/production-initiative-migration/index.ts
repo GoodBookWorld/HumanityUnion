@@ -5,10 +5,16 @@ export {
   CANONICAL_PRODUCTION_INITIATIVE_IDS,
   DESTINATION_MONGODB_DATABASE_ENV,
   DESTINATION_MONGODB_URI_ENV,
+  DESTINATION_R2_ACCESS_KEY_ID_ENV,
+  DESTINATION_R2_ACCOUNT_ID_ENV,
+  DESTINATION_R2_BUCKET_ENV,
+  DESTINATION_R2_PUBLIC_BASE_URL_ENV,
+  DESTINATION_R2_SECRET_ACCESS_KEY_ENV,
   EXCLUDED_PRODUCTION_INITIATIVE_IDS,
   FORBIDDEN_MIGRATE_COLLECTIONS,
   FORBIDDEN_TYPO_AI_COMMON_GOOD_ID,
   MEDIA_COPY_ENABLED_ENV,
+  MEDIA_COPY_ENABLED_VALUE,
   PRODUCTION_INITIATIVE_MIGRATION_CONFIRM_FLAG,
   PRODUCTION_INITIATIVE_MIGRATION_CONFIRM_VALUE,
   PRODUCTION_INITIATIVE_MIGRATION_SOURCE_DATABASE,
@@ -16,6 +22,10 @@ export {
   PRODUCTION_MEDIA_PUBLIC_BASE_URL,
   SOURCE_MONGODB_DATABASE_ENV,
   SOURCE_MONGODB_URI_ENV,
+  SOURCE_R2_ACCESS_KEY_ID_ENV,
+  SOURCE_R2_ACCOUNT_ID_ENV,
+  SOURCE_R2_BUCKET_ENV,
+  SOURCE_R2_SECRET_ACCESS_KEY_ENV,
   SYSTEM_MEDIA_RECOVERY_OWNER,
   VLAD_SHAPRAN_MEMBER_ID,
   VLAD_SHAPRAN_USER_ID,
@@ -103,9 +113,33 @@ export {
 export {
   DeferredMediaCopyExecutor,
   GatedMediaCopyExecutor,
+  assertMediaCopyAuthorized,
   deduplicateMediaPlanItems,
   executeMediaCopyPhase,
+  resolveMediaCopyAuthorization,
+  rollbackOwnedMediaObjects,
 } from "./media-copy.js";
+
+export {
+  buildThirtyOneToThirteenMediaFixture,
+  reconcileMediaPlanReferences,
+} from "./media-reconcile.js";
+
+export {
+  DualBucketR2MediaCopyExecutor,
+  InMemoryMediaCopyExecutor,
+  isObjectIntegrityEquivalent,
+  normalizeEtag,
+  resolveDualR2MediaCopyConfig,
+} from "./r2-media-copy.js";
+
+export {
+  CRASH_SAFE_EXECUTION_ORDER,
+  InMemoryMediaRecoveryJournal,
+  JsonlMediaRecoveryJournal,
+  MEDIA_RECOVERY_JOURNAL_PATH_ENV,
+  sha256Hex,
+} from "./media-recovery-journal.js";
 
 export { MigrationOwnershipLedger } from "./ownership-ledger.js";
 

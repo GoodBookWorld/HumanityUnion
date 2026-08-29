@@ -132,6 +132,22 @@ export interface MediaPlanItem {
   ownerIsSystemMediaRecovery: boolean;
 }
 
+export interface PlannedMediaCopy {
+  storageKey: string;
+  destinationUrl: string;
+  publicPrivate: "public" | "private" | "unknown";
+  owningInitiativeId: string | null;
+  sourceCollections: string[];
+  destinationAction: MediaDestinationAction;
+}
+
+export interface ObjectIntegrityFingerprint {
+  contentLength: number;
+  etag: string | null;
+  contentType: string | null;
+  checksumSHA256: string | null;
+}
+
 export interface ProjectionPlanRow {
   artifact: string;
   classification: MigrationClassification;

@@ -1,17 +1,25 @@
 /**
- * Task 07.2 — Controlled staging → production Initiative migration executor.
+ * Task 07.2 / 07.3 — Controlled staging → production Initiative migration executor.
  *
- * Default: DRY-RUN (no writes, no R2 copy).
+ * Default: DRY-RUN (no Mongo writes, no R2 copy).
  *
- * Execute requires ALL of:
+ * Mongo execute requires ALL of:
  *   --execute
  *   PRODUCTION_INITIATIVE_MIGRATION_CONFIRM=YES
  *   explicit dual source/destination Mongo URIs + database names
  *   immediate inline execution preflight PASS on those exact handles + 9-ID set
  *
- * Media R2 copy remains deferred. Task 07.2 does not perform R2 copies.
- * Stale manually-set fresh-preflight env flags are intentionally insufficient;
- * write authorization is the executor's immediate inline preflight only.
+ * Physical R2 copy additionally requires:
+ *   PRODUCTION_INITIATIVE_MIGRATION_MEDIA_COPY=YES
+ *   explicit dual source/destination R2 credentials + buckets
+ *   destination public base https://media.huws.org
+ *   PRODUCTION_INITIATIVE_MIGRATION_MEDIA_RECOVERY_JOURNAL_PATH (durable JSONL)
+ *
+ * Crash-safe order: A → B → E1(R2) → C → D → E2 → F
+ * (Mongo never commits rewritten public media URLs before verified R2 objects.)
+ *
+ * performMediaCopies alone is never sufficient.
+ * Dry-run never performs R2 writes.
  *
  * DO NOT RUN --execute against production until operator GO.
  */
@@ -22,6 +30,8 @@ import { loadApiEnvironment } from "../config/load-api-environment.js";
 import {
   DESTINATION_MONGODB_DATABASE_ENV,
   DESTINATION_MONGODB_URI_ENV,
+  MEDIA_COPY_ENABLED_ENV,
+  MEDIA_COPY_ENABLED_VALUE,
   PRODUCTION_INITIATIVE_MIGRATION_CONFIRM_FLAG,
   PRODUCTION_INITIATIVE_MIGRATION_CONFIRM_VALUE,
   SOURCE_MONGODB_DATABASE_ENV,
@@ -31,6 +41,7 @@ import {
   buildSafeMigrationExecutionLog,
   isExecuteModeRequested,
   resolveDualMongoEnv,
+  resolveMediaCopyAuthorization,
   resolveMigrationMode,
   runProductionInitiativeMigration,
 } from "../modules/production-initiative-migration/index.js";
@@ -54,6 +65,16 @@ async function main(): Promise<void> {
     );
   }
 
+  const mediaCopyEnvValue = process.env[MEDIA_COPY_ENABLED_ENV];
+  const mediaAuth = resolveMediaCopyAuthorization({
+    mode,
+    confirm,
+    // CLI only requests copies when media-copy env is YES under execute mode.
+    performMediaCopies:
+      mode === "execute" && mediaCopyEnvValue?.trim() === MEDIA_COPY_ENABLED_VALUE,
+    mediaCopyEnvValue,
+  });
+
   const sourceClient = new MongoClient(dual.sourceUri);
   const destinationClient = new MongoClient(dual.destinationUri);
 
@@ -71,8 +92,8 @@ async function main(): Promise<void> {
       },
       execute: executeRequested,
       confirm,
-      // Task 07.2: never copy R2 from this script.
-      performMediaCopies: false,
+      performMediaCopies: mediaAuth.authorized,
+      mediaCopyEnvValue,
     });
 
     const payload = {
@@ -84,8 +105,10 @@ async function main(): Promise<void> {
         destinationDatabaseEnv: DESTINATION_MONGODB_DATABASE_ENV,
       },
       confirmRequired: `${PRODUCTION_INITIATIVE_MIGRATION_CONFIRM_FLAG}=${PRODUCTION_INITIATIVE_MIGRATION_CONFIRM_VALUE}`,
+      mediaCopyRequired: `${MEDIA_COPY_ENABLED_ENV}=${MEDIA_COPY_ENABLED_VALUE}`,
       writeAuthorization: "inlineExecutionPreflight",
-      mediaCopy: "deferred",
+      mediaCopyAuthorized: mediaAuth.authorized,
+      mediaCopy: mediaAuth.authorized ? "authorized-if-planned" : "deferred",
     };
     const text = JSON.stringify(payload, null, 2);
     assertNoSecretLeak(text);

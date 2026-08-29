@@ -192,11 +192,33 @@ export const DESTINATION_MONGODB_DATABASE_ENV =
 export const PRODUCTION_MEDIA_PUBLIC_BASE_URL = "https://media.huws.org" as const;
 
 /**
- * Media object copy is implemented as an abstraction but remains deferred by default.
- * Task 07.2 must not perform R2 copies even when Mongo --execute is gated on.
+ * Explicit media-copy authorization — required in addition to Mongo --execute confirm.
+ * performMediaCopies=true alone is never sufficient.
  */
 export const MEDIA_COPY_ENABLED_ENV =
   "PRODUCTION_INITIATIVE_MIGRATION_MEDIA_COPY" as const;
+export const MEDIA_COPY_ENABLED_VALUE = "YES" as const;
+
+/** Dual R2 (staging public → production public). Never infer both sides from one R2_* set. */
+export const SOURCE_R2_ACCOUNT_ID_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_SOURCE_R2_ACCOUNT_ID" as const;
+export const SOURCE_R2_ACCESS_KEY_ID_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_SOURCE_R2_ACCESS_KEY_ID" as const;
+export const SOURCE_R2_SECRET_ACCESS_KEY_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_SOURCE_R2_SECRET_ACCESS_KEY" as const;
+export const SOURCE_R2_BUCKET_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_SOURCE_R2_BUCKET" as const;
+
+export const DESTINATION_R2_ACCOUNT_ID_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_DESTINATION_R2_ACCOUNT_ID" as const;
+export const DESTINATION_R2_ACCESS_KEY_ID_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_DESTINATION_R2_ACCESS_KEY_ID" as const;
+export const DESTINATION_R2_SECRET_ACCESS_KEY_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_DESTINATION_R2_SECRET_ACCESS_KEY" as const;
+export const DESTINATION_R2_BUCKET_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_DESTINATION_R2_BUCKET" as const;
+export const DESTINATION_R2_PUBLIC_BASE_URL_ENV =
+  "PRODUCTION_INITIATIVE_MIGRATION_DESTINATION_R2_PUBLIC_BASE_URL" as const;
 
 export const FORBIDDEN_MIGRATE_COLLECTIONS = [
   "outbox",

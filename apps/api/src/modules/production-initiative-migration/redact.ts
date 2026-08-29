@@ -39,4 +39,10 @@ export function assertNoSecretLeak(text: string): void {
   if (/"shippingAddress"\s*:/i.test(text) || /"addressLine1"\s*:/i.test(text)) {
     throw new Error("Refusing to emit shipping address material.");
   }
+  if (
+    /R2_SECRET_ACCESS_KEY\s*[:=]\s*["']?[^"'\s]+/i.test(text) ||
+    /SECRET_ACCESS_KEY"\s*:\s*"[^"]+"/i.test(text)
+  ) {
+    throw new Error("Refusing to emit R2 credential material.");
+  }
 }

@@ -2,6 +2,7 @@
  * Tracks only documents/objects created by this migration execution.
  * Rollback deletes solely by insertedId returned from this run's insertOne.
  * Never deletes by initiativeId alone.
+ * Media rollback deletes solely keys with createdByThisExecution=true.
  */
 
 const FORBIDDEN_LEDGER_FILTER_KEYS = new Set([
@@ -27,7 +28,12 @@ export interface OwnedMongoInsert {
 export interface OwnedMediaObject {
   storageKey: string;
   destinationUrl: string;
+  /** True only when this execution physically created the destination object. */
   copied: boolean;
+  /** Pre-existing equivalent destinations are false — never rollback-deleted. */
+  createdByThisExecution: boolean;
+  /** Content SHA-256 when known (durable recovery / integrity). */
+  contentSha256?: string | null;
   migrationExecutionId: string;
 }
 
@@ -56,6 +62,12 @@ export class MigrationOwnershipLedger {
     if (entry.migrationExecutionId !== this.migrationExecutionId) {
       throw new Error("Media object executionId mismatch");
     }
+    if (entry.copied && !entry.createdByThisExecution) {
+      throw new Error("copied=true requires createdByThisExecution=true");
+    }
+    if (entry.createdByThisExecution && !entry.copied) {
+      throw new Error("createdByThisExecution=true requires copied=true");
+    }
     this.mediaObjects.push(entry);
   }
 
@@ -67,11 +79,17 @@ export class MigrationOwnershipLedger {
     return this.mediaObjects;
   }
 
-  /** Only keys this execution marked as copied=true are rollback-eligible for R2 delete. */
+  /**
+   * Rollback candidates: only objects physically created by this execution.
+   * Pre-existing equivalent destinations are never eligible.
+   */
   rollbackEligibleMediaKeys(): string[] {
     return this.mediaObjects
       .filter(
-        (row) => row.copied && row.migrationExecutionId === this.migrationExecutionId,
+        (row) =>
+          row.copied &&
+          row.createdByThisExecution &&
+          row.migrationExecutionId === this.migrationExecutionId,
       )
       .map((row) => row.storageKey);
   }
@@ -93,6 +111,7 @@ export class MigrationOwnershipLedger {
     rollbackEligibleMongoInsertCount: number;
     mediaObjectCount: number;
     mediaCopiedCount: number;
+    mediaOwnedForRollbackCount: number;
     collections: string[];
   } {
     return {
@@ -101,6 +120,7 @@ export class MigrationOwnershipLedger {
       rollbackEligibleMongoInsertCount: this.rollbackEligibleMongoInserts().length,
       mediaObjectCount: this.mediaObjects.length,
       mediaCopiedCount: this.mediaObjects.filter((row) => row.copied).length,
+      mediaOwnedForRollbackCount: this.rollbackEligibleMediaKeys().length,
       collections: [...new Set(this.mongoInserts.map((row) => row.collection))].sort(),
     };
   }

@@ -41,11 +41,15 @@ export function rewritePublicMediaUrl(
 /**
  * Rewrite Initiative metadata public media URLs to production public base.
  * Preserves lifecycleProfile exactly (including null/absent) — never invents STANDARD.
+ * When rewritePublicMediaUrls is false, metadata URLs are left unchanged (crash-safe
+ * ordering: do not commit production URLs before E1 verifies R2 objects).
  */
 export function sanitizeInitiativeDocumentForMigration(
   doc: Document,
   publicBaseUrl: string = PRODUCTION_MEDIA_PUBLIC_BASE_URL,
+  options: { rewritePublicMediaUrls?: boolean } = {},
 ): Document {
+  const rewrite = options.rewritePublicMediaUrls !== false;
   const out: Document = { ...doc };
   // Ensure _id === initiativeId when both string ids
   const initiativeId =
@@ -59,7 +63,7 @@ export function sanitizeInitiativeDocumentForMigration(
     out._id = initiativeId;
   }
 
-  if (out.metadata && typeof out.metadata === "object") {
+  if (rewrite && out.metadata && typeof out.metadata === "object") {
     const metadata = { ...(out.metadata as Record<string, unknown>) };
     if (typeof metadata.imageUrl === "string") {
       metadata.imageUrl = rewritePublicMediaUrl(metadata.imageUrl, publicBaseUrl) ?? metadata.imageUrl;
