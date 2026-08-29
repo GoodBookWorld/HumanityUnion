@@ -19,6 +19,8 @@
     "export:staging-admin-bootstrap-manifest": "tsx src/scripts/export-staging-admin-bootstrap-manifest.ts",
     "bootstrap:production-admin-identity": "tsx src/scripts/bootstrap-production-admin-identity.ts",
     "verify:production-admin-identity": "tsx src/scripts/verify-production-admin-identity.ts",
+    "preflight:staging-production-initiative-migration": "tsx src/scripts/preflight-staging-production-initiative-migration.ts",
+    "preflight:production-initiative-migration-collisions": "tsx src/scripts/preflight-production-initiative-migration-collisions.ts",
     "reconcile:staging-historical-data": "tsx src/scripts/reconcile-staging-historical-data.ts",
     "verify:staging": "tsx src/scripts/verify-staging.ts",
     "verify:initiative-lifecycle": "tsx src/scripts/verify-initiative-lifecycle.ts",
