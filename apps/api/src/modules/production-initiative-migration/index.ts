@@ -73,8 +73,15 @@ export {
 export {
   assertSourceIntraBatchPrimaryIdentitiesUnique,
   inventoryMustMigrateCivicChildren,
+  loadMustMigrateParentMaps,
+  mustMigrateChildFilterForInitiative,
+  parentMapForAncestryMethod,
 } from "./civic-inventory.js";
-export type { CivicChildRef, PlannedCivicChildDocument } from "./civic-inventory.js";
+export type {
+  CivicChildRef,
+  MustMigrateParentMaps,
+  PlannedCivicChildDocument,
+} from "./civic-inventory.js";
 
 export {
   assertNoIntraBatchPrimaryCollisions,

@@ -39,7 +39,8 @@ export const CIVIC_COLLECTION_CATALOG: readonly CollectionCatalogEntry[] = [
     collection: "initiative_improvement_proposals_collections",
     classification: "MUST_MIGRATE",
     ancestryMethod: "direct:initiativeId",
-    primaryIdFields: ["proposalId"],
+    // Root identity is collectionId; proposalId exists only on nested proposals[].
+    primaryIdFields: ["collectionId"],
   },
   {
     collection: "initiative_version_revisions",
@@ -136,7 +137,8 @@ export const CIVIC_COLLECTION_CATALOG: readonly CollectionCatalogEntry[] = [
     collection: "initiative_collaboration_session_attendances",
     classification: "MUST_MIGRATE",
     ancestryMethod: "parent:sessionId",
-    primaryIdFields: ["attendanceId"],
+    // Domain uniqueness is (sessionId, participantId) — never attendanceId.
+    compositePrimaryIdFields: ["sessionId", "participantId"],
   },
   {
     collection: "shared_documents",
@@ -227,7 +229,7 @@ export const CIVIC_COLLECTION_CATALOG: readonly CollectionCatalogEntry[] = [
     collection: "initiative_official_response_package_records",
     classification: "MUST_MIGRATE",
     ancestryMethod: "direct:initiativeId",
-    primaryIdFields: ["recordId"],
+    primaryIdFields: ["responseId"],
   },
   {
     collection: "initiative_public_impact_reports",
@@ -251,7 +253,7 @@ export const CIVIC_COLLECTION_CATALOG: readonly CollectionCatalogEntry[] = [
     collection: "initiative_civic_archive_versions",
     classification: "MUST_MIGRATE",
     ancestryMethod: "direct:initiativeId",
-    primaryIdFields: ["versionId"],
+    primaryIdFields: ["archiveVersionId"],
   },
   {
     collection: "media_upload_records",

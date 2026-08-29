@@ -9,12 +9,25 @@ import {
   assertNoIntraBatchPrimaryCollisions,
   resolveMigrationPrimaryIdentity,
 } from "./primary-identity.js";
+import type { AncestryMethod } from "./types.js";
 
 function asString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-async function loadParentMaps(db: Db, initiativeIds: string[]) {
+export interface MustMigrateParentMaps {
+  decisionMap: Map<string, string | null>;
+  trackingMap: Map<string, string | null>;
+  petitionMap: Map<string, string | null>;
+  /** collaboration sessionId → initiativeId (for attendance ancestry). */
+  sessionMap: Map<string, string | null>;
+}
+
+/** Load parent Initiative maps used by MUST_MIGRATE transitive ancestry. */
+export async function loadMustMigrateParentMaps(
+  db: Db,
+  initiativeIds: string[],
+): Promise<MustMigrateParentMaps> {
   const decisions = await db
     .collection(MONGO_COLLECTIONS.initiativeCollectiveDecisions)
     .find({ initiativeId: { $in: initiativeIds } })
@@ -25,6 +38,7 @@ async function loadParentMaps(db: Db, initiativeIds: string[]) {
     const id = asString(d.decisionId);
     if (id) decisionMap.set(id, asString(d.initiativeId));
   }
+
   const trackings = await db
     .collection(MONGO_COLLECTIONS.initiativeImplementationTrackings)
     .find({ initiativeId: { $in: initiativeIds } })
@@ -35,17 +49,110 @@ async function loadParentMaps(db: Db, initiativeIds: string[]) {
     const id = asString(t.trackingId);
     if (id) trackingMap.set(id, asString(t.initiativeId));
   }
+
   const petitions = await db
     .collection(MONGO_COLLECTIONS.petitions)
-    .find({ initiativeId: { $in: initiativeIds } })
-    .project({ petitionId: 1, initiativeId: 1 })
+    .find({
+      $or: [
+        { initiativeId: { $in: initiativeIds } },
+        { "subject.initiativeId": { $in: initiativeIds } },
+      ],
+    })
+    .project({ petitionId: 1, initiativeId: 1, subject: 1 })
     .toArray();
   const petitionMap = new Map<string, string | null>();
   for (const p of petitions) {
     const id = asString(p.petitionId);
-    if (id) petitionMap.set(id, asString(p.initiativeId));
+    const subject =
+      p.subject && typeof p.subject === "object"
+        ? (p.subject as Record<string, unknown>)
+        : null;
+    if (id) {
+      petitionMap.set(id, asString(subject?.initiativeId) ?? asString(p.initiativeId));
+    }
   }
-  return { decisionMap, trackingMap, petitionMap };
+
+  const sessions = await db
+    .collection(MONGO_COLLECTIONS.initiativeCollaborationSessions)
+    .find({ initiativeId: { $in: initiativeIds } })
+    .project({ sessionId: 1, initiativeId: 1 })
+    .toArray();
+  const sessionMap = new Map<string, string | null>();
+  for (const s of sessions) {
+    const id = asString(s.sessionId);
+    if (id) sessionMap.set(id, asString(s.initiativeId));
+  }
+
+  return { decisionMap, trackingMap, petitionMap, sessionMap };
+}
+
+export function parentMapForAncestryMethod(
+  maps: MustMigrateParentMaps,
+  method: AncestryMethod,
+): Map<string, string | null> | undefined {
+  switch (method) {
+    case "parent:decisionId":
+      return maps.decisionMap;
+    case "parent:trackingId":
+      return maps.trackingMap;
+    case "parent:petitionId":
+      return maps.petitionMap;
+    case "parent:sessionId":
+      return maps.sessionMap;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Build the Mongo find filter for one MUST child collection scoped to one Initiative.
+ * Returns null when the ancestry method is an unwired parent:* (caller should skip).
+ */
+export function mustMigrateChildFilterForInitiative(input: {
+  ancestryMethod: AncestryMethod;
+  initiativeId: string;
+  parentMaps: MustMigrateParentMaps;
+}): Document | null {
+  const { ancestryMethod, initiativeId, parentMaps } = input;
+  if (ancestryMethod === "direct:subject.initiativeId") {
+    return {
+      $or: [{ initiativeId }, { "subject.initiativeId": initiativeId }],
+    };
+  }
+  if (ancestryMethod === "pk:initiativeId") {
+    return { $or: [{ initiativeId }, { _id: initiativeId }] };
+  }
+  if (ancestryMethod === "parent:decisionId") {
+    const ids = [...parentMaps.decisionMap.entries()]
+      .filter(([, iid]) => iid === initiativeId)
+      .map(([id]) => id);
+    return ids.length ? { decisionId: { $in: ids } } : { _id: "__none__" };
+  }
+  if (ancestryMethod === "parent:trackingId") {
+    const ids = [...parentMaps.trackingMap.entries()]
+      .filter(([, iid]) => iid === initiativeId)
+      .map(([id]) => id);
+    return ids.length ? { trackingId: { $in: ids } } : { _id: "__none__" };
+  }
+  if (ancestryMethod === "parent:petitionId") {
+    const ids = [...parentMaps.petitionMap.entries()]
+      .filter(([, iid]) => iid === initiativeId)
+      .map(([id]) => id);
+    return ids.length ? { petitionId: { $in: ids } } : { _id: "__none__" };
+  }
+  if (ancestryMethod === "parent:sessionId") {
+    const ids = [...parentMaps.sessionMap.entries()]
+      .filter(([, iid]) => iid === initiativeId)
+      .map(([id]) => id);
+    return ids.length ? { sessionId: { $in: ids } } : { _id: "__none__" };
+  }
+  if (ancestryMethod === "optional:initiativeId") {
+    return { initiativeId };
+  }
+  if (ancestryMethod.startsWith("parent:")) {
+    return null;
+  }
+  return { initiativeId };
 }
 
 export interface CivicChildRef {
@@ -82,7 +189,7 @@ export async function inventoryMustMigrateCivicChildren(db: Db): Promise<{
 }> {
   const allowList = new Set<string>([...CANONICAL_PRODUCTION_INITIATIVE_IDS]);
   const initiativeIds = [...CANONICAL_PRODUCTION_INITIATIVE_IDS];
-  const parentMaps = await loadParentMaps(db, initiativeIds);
+  const parentMaps = await loadMustMigrateParentMaps(db, initiativeIds);
   const mustCollections = mustMigrateChildCollections();
 
   const children: CivicChildRef[] = [];
@@ -91,44 +198,16 @@ export async function inventoryMustMigrateCivicChildren(db: Db): Promise<{
 
   for (const initiativeId of initiativeIds) {
     for (const entry of mustCollections) {
-      let filter: Document = { initiativeId };
-      if (entry.ancestryMethod === "direct:subject.initiativeId") {
-        filter = {
-          $or: [{ initiativeId }, { "subject.initiativeId": initiativeId }],
-        };
-      } else if (entry.ancestryMethod === "pk:initiativeId") {
-        filter = { $or: [{ initiativeId }, { _id: initiativeId }] };
-      } else if (entry.ancestryMethod === "parent:decisionId") {
-        const ids = [...parentMaps.decisionMap.entries()]
-          .filter(([, iid]) => iid === initiativeId)
-          .map(([id]) => id);
-        filter = ids.length ? { decisionId: { $in: ids } } : { _id: "__none__" };
-      } else if (entry.ancestryMethod === "parent:trackingId") {
-        const ids = [...parentMaps.trackingMap.entries()]
-          .filter(([, iid]) => iid === initiativeId)
-          .map(([id]) => id);
-        filter = ids.length ? { trackingId: { $in: ids } } : { _id: "__none__" };
-      } else if (entry.ancestryMethod === "parent:petitionId") {
-        const ids = [...parentMaps.petitionMap.entries()]
-          .filter(([, iid]) => iid === initiativeId)
-          .map(([id]) => id);
-        filter = ids.length ? { petitionId: { $in: ids } } : { _id: "__none__" };
-      } else if (entry.ancestryMethod === "optional:initiativeId") {
-        filter = { initiativeId };
-      } else if (entry.ancestryMethod.startsWith("parent:")) {
-        continue;
-      }
+      const filter = mustMigrateChildFilterForInitiative({
+        ancestryMethod: entry.ancestryMethod,
+        initiativeId,
+        parentMaps,
+      });
+      if (filter == null) continue;
 
       const docs = await db.collection(entry.collection).find(filter).toArray();
       for (const doc of docs) {
-        const parentMap =
-          entry.ancestryMethod === "parent:decisionId"
-            ? parentMaps.decisionMap
-            : entry.ancestryMethod === "parent:trackingId"
-              ? parentMaps.trackingMap
-              : entry.ancestryMethod === "parent:petitionId"
-                ? parentMaps.petitionMap
-                : undefined;
+        const parentMap = parentMapForAncestryMethod(parentMaps, entry.ancestryMethod);
         const ancestry = resolveDocumentAncestry({
           doc,
           method: entry.ancestryMethod,
