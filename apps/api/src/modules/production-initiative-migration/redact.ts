@@ -41,7 +41,10 @@ export function assertNoSecretLeak(text: string): void {
   }
   if (
     /R2_SECRET_ACCESS_KEY\s*[:=]\s*["']?[^"'\s]+/i.test(text) ||
-    /SECRET_ACCESS_KEY"\s*:\s*"[^"]+"/i.test(text)
+    /SECRET_ACCESS_KEY"\s*:\s*"[^"]+"/i.test(text) ||
+    /"secretAccessKey"\s*:\s*"[^"]+"/i.test(text) ||
+    /"accessKeyId"\s*:\s*"[^"]+"/i.test(text) ||
+    /"accountId"\s*:\s*"[^"]+"/i.test(text)
   ) {
     throw new Error("Refusing to emit R2 credential material.");
   }

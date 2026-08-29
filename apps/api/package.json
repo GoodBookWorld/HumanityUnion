@@ -21,6 +21,7 @@
     "verify:production-admin-identity": "tsx src/scripts/verify-production-admin-identity.ts",
     "preflight:staging-production-initiative-migration": "tsx src/scripts/preflight-staging-production-initiative-migration.ts",
     "preflight:production-initiative-migration-collisions": "tsx src/scripts/preflight-production-initiative-migration-collisions.ts",
+    "preflight:production-initiative-migration-media-r2": "tsx src/scripts/preflight-production-initiative-migration-media-r2.ts",
     "execute:production-initiative-migration": "tsx src/scripts/execute-production-initiative-migration.ts",
     "reconcile:staging-historical-data": "tsx src/scripts/reconcile-staging-historical-data.ts",
     "verify:staging": "tsx src/scripts/verify-staging.ts",

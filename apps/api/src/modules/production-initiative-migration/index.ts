@@ -46,6 +46,7 @@ export {
   isExecuteModeRequested,
   resolveDualMongoEnv,
   resolveMigrationMode,
+  resolveSourceMongoEnvForMediaR2Preflight,
 } from "./guards.js";
 
 export {
@@ -129,6 +130,16 @@ export {
   reconcileMediaPlanReferences,
   resolveCollapsedMediaVisibility,
 } from "./media-reconcile.js";
+
+export {
+  formatMediaR2PreflightReport,
+  loadReconciledPublicMediaPlanFromSource,
+  runMediaR2Preflight,
+} from "./media-r2-preflight.js";
+export type {
+  MediaR2PreflightReport,
+  MediaR2PreflightReader,
+} from "./media-r2-preflight.js";
 
 export {
   DualBucketR2MediaCopyExecutor,

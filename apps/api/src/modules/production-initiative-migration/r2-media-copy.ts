@@ -293,6 +293,10 @@ export class DualBucketR2MediaCopyExecutor {
     return this.writeCount;
   }
 
+  getDeleteCount(): number {
+    return 0;
+  }
+
   async prepareSourceObject(storageKey: string): Promise<PreparedSourceObject> {
     const key = storageKey.replace(/^\/+/, "");
     if (!key || key.includes("..")) {
@@ -512,6 +516,8 @@ export class InMemoryMediaCopyExecutor {
   corruptAfterCopy = false;
   /** Test hook: strip ownership metadata after put (simulates metadata loss). */
   stripOwnershipAfterCopy = false;
+  /** Test hook: source exists but read fails. */
+  unreadableSources = new Set<string>();
 
   seedSource(storageKey: string, body: Buffer, contentType = "image/png"): void {
     this.source.set(storageKey, {
@@ -535,7 +541,21 @@ export class InMemoryMediaCopyExecutor {
     });
   }
 
+  getWriteCount(): number {
+    return this.writeCount;
+  }
+
+  getDeleteCount(): number {
+    return this.deleteCount;
+  }
+
   async prepareSourceObject(storageKey: string): Promise<PreparedSourceObject> {
+    if (this.unreadableSources.has(storageKey)) {
+      throw new ProductionInitiativeMigrationError(
+        `Source R2 object unreadable for storageKey=${storageKey}`,
+        "MEDIA_SOURCE_UNREADABLE",
+      );
+    }
     const src = this.source.get(storageKey);
     if (!src) {
       throw new ProductionInitiativeMigrationError(

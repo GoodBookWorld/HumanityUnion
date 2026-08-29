@@ -195,3 +195,25 @@ export function resolveDualMongoEnv(env: NodeJS.ProcessEnv = process.env): {
 
   return { sourceUri, sourceDatabase, destinationUri, destinationDatabase };
 }
+
+/**
+ * Source-only Mongo env for read-only media R2 preflight.
+ * Does not require or open destination Mongo.
+ */
+export function resolveSourceMongoEnvForMediaR2Preflight(
+  env: NodeJS.ProcessEnv = process.env,
+): {
+  sourceUri: string;
+  sourceDatabase: string;
+} {
+  const sourceUri = env[SOURCE_MONGODB_URI_ENV]?.trim() ?? "";
+  const sourceDatabase = env[SOURCE_MONGODB_DATABASE_ENV]?.trim() ?? "";
+  if (!sourceUri) {
+    throw new ProductionInitiativeMigrationError(
+      `Set ${SOURCE_MONGODB_URI_ENV} for media R2 preflight inventory.`,
+      "MISSING_SOURCE_URI",
+    );
+  }
+  assertMigrationSourceDatabase(sourceDatabase);
+  return { sourceUri, sourceDatabase };
+}
