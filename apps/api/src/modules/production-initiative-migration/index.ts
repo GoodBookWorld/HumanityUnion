@@ -29,6 +29,8 @@ export {
   SYSTEM_MEDIA_RECOVERY_OWNER,
   VLAD_SHAPRAN_MEMBER_ID,
   VLAD_SHAPRAN_USER_ID,
+  EXPECTED_MUST_MIGRATE_CIVIC_CHILDREN,
+  EXPECTED_UNIQUE_PUBLIC_MEDIA_OBJECTS,
   isCanonicalInitiativeId,
   isExcludedInitiativeId,
   isForbiddenTypoAiCommonGoodId,
@@ -140,6 +142,15 @@ export type {
   MediaR2PreflightReport,
   MediaR2PreflightReader,
 } from "./media-r2-preflight.js";
+
+export {
+  inventoryMustMigrateCivicChildren,
+  runPostExecuteProductionInitiativeVerification,
+} from "./post-execute-verify.js";
+export type {
+  PostExecuteVerifyReport,
+  PostExecuteVerifyVerdict,
+} from "./post-execute-verify.js";
 
 export {
   DualBucketR2MediaCopyExecutor,

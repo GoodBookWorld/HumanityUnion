@@ -192,6 +192,18 @@ export const DESTINATION_MONGODB_DATABASE_ENV =
 export const PRODUCTION_MEDIA_PUBLIC_BASE_URL = "https://media.huws.org" as const;
 
 /**
+ * Live reconciled unique public media objects for the nine-initiative migration.
+ * Matches Task 07.3 reconcile arithmetic (31 refs → 13 objects).
+ */
+export const EXPECTED_UNIQUE_PUBLIC_MEDIA_OBJECTS = 13 as const;
+
+/**
+ * Live MUST_MIGRATE civic child count for the nine-initiative graph
+ * (excludes initiative roots and media_upload_records).
+ */
+export const EXPECTED_MUST_MIGRATE_CIVIC_CHILDREN = 113 as const;
+
+/**
  * Explicit media-copy authorization — required in addition to Mongo --execute confirm.
  * performMediaCopies=true alone is never sufficient.
  */

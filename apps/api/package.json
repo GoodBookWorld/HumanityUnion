@@ -23,6 +23,7 @@
     "preflight:production-initiative-migration-collisions": "tsx src/scripts/preflight-production-initiative-migration-collisions.ts",
     "preflight:production-initiative-migration-media-r2": "tsx src/scripts/preflight-production-initiative-migration-media-r2.ts",
     "execute:production-initiative-migration": "tsx src/scripts/execute-production-initiative-migration.ts",
+    "verify:production-initiative-migration": "tsx src/scripts/verify-production-initiative-migration.ts",
     "reconcile:staging-historical-data": "tsx src/scripts/reconcile-staging-historical-data.ts",
     "verify:staging": "tsx src/scripts/verify-staging.ts",
     "verify:initiative-lifecycle": "tsx src/scripts/verify-initiative-lifecycle.ts",
