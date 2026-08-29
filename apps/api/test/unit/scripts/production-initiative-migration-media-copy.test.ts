@@ -19,10 +19,12 @@ import {
   assertMediaCopyAuthorized,
   buildMigrationOwnershipMetadata,
   buildThirtyOneToThirteenMediaFixture,
+  classifyCanonicalMediaUploadVisibility,
   deduplicateMediaPlanItems,
   executeMediaCopyPhase,
   inspectMediaRecoveryState,
   isObjectIntegrityEquivalent,
+  planMediaFromUploadRecord,
   reconcileMediaPlanReferences,
   resolveMediaCopyAuthorization,
   rollbackMigrationOwnedMedia,
@@ -37,6 +39,7 @@ function publicRef(storageKey: string, extras: Partial<MediaPlanItem> = {}): Med
   return {
     sourceStorageKey: storageKey,
     publicPrivate: "public",
+    visibilityAuthority: "none",
     owningInitiativeId: "initiative-1783748417899",
     mediaUploadRecordPresent: true,
     sourceUrlHost: "media-staging.huws.org",
@@ -46,6 +49,7 @@ function publicRef(storageKey: string, extras: Partial<MediaPlanItem> = {}): Med
     sourceCollection: "media_upload_records",
     recordId: `r-${storageKey}`,
     ownerIsSystemMediaRecovery: false,
+    mediaPurpose: null,
     ...extras,
   };
 }
@@ -61,7 +65,7 @@ function plannedCopy(storageKey: string) {
   };
 }
 
-describe("Production Initiative migration media copy — Task 07.3 / 07.3.1 / 07.3.3 / 07.3.4", () => {
+describe("Production Initiative migration media copy — Task 07.3 / 07.3.1 / 07.3.3 / 07.3.4 / 07.3.6", () => {
   it("documents crash-safe execution order A>B>E1>C>D>E2>F", () => {
     assert.deepEqual([...CRASH_SAFE_EXECUTION_ORDER], [
       "A_identity",
@@ -102,6 +106,190 @@ describe("Production Initiative migration media copy — Task 07.3 / 07.3.1 / 07
         destinationAction: "COPY_PRIVATE",
         sourceCollection: "shared_documents",
       },
+    ];
+    assert.throws(
+      () => reconcileMediaPlanReferences(items),
+      (error: unknown) =>
+        error instanceof ProductionInitiativeMigrationError &&
+        error.code === "MEDIA_KEY_COLLISION_INCOMPATIBLE",
+    );
+  });
+
+  it("public + unknown with canonical PUBLIC media record → compatible", () => {
+    const key =
+      "initiatives/historical-recovery/c3697e86e872594d55d9e1eda6885b00557786601989f20a3965b3cbca490fa4.webp";
+    const items: MediaPlanItem[] = [
+      publicRef(key, {
+        sourceCollection: "initiatives",
+        visibilityAuthority: "none",
+        publicPrivate: "public",
+        owningInitiativeId: "initiative-1783748417899",
+      }),
+      publicRef(key, {
+        sourceCollection: "media_upload_records",
+        visibilityAuthority: "none",
+        publicPrivate: "unknown",
+        ownerIsSystemMediaRecovery: true,
+        mediaPurpose: null,
+      }),
+      publicRef(key, {
+        sourceCollection: "media_upload_records",
+        visibilityAuthority: "canonical_media_record",
+        publicPrivate: "public",
+        mediaPurpose: "initiative-image",
+        ownerIsSystemMediaRecovery: true,
+        recordId: "canonical-upload",
+      }),
+    ];
+    const reconciled = reconcileMediaPlanReferences(items);
+    assert.equal(reconciled.uniquePublicObjectCount, 1);
+    assert.equal(reconciled.mapping[0]?.publicPrivate, "public");
+    assert.equal(reconciled.mapping[0]?.destinationAction, "COPY_PUBLIC");
+  });
+
+  it("live c369 historical-recovery: initiative public + upload purpose=initiative-image collapses", () => {
+    const key =
+      "initiatives/historical-recovery/c3697e86e872594d55d9e1eda6885b00557786601989f20a3965b3cbca490fa4.webp";
+    const upload = planMediaFromUploadRecord({
+      storageKey: key,
+      mediaUrl: `https://media-staging.huws.org/${key}`,
+      purpose: "initiative-image",
+      initiativeId: "initiative-1783748417899",
+      ownerParticipantId: "system-media-recovery",
+      mediaId: "media-c369",
+    });
+    assert.equal(upload.publicPrivate, "public");
+    assert.equal(upload.visibilityAuthority, "canonical_media_record");
+    assert.equal(upload.ownerIsSystemMediaRecovery, true);
+
+    const initiative = publicRef(key, {
+      sourceCollection: "initiatives",
+      visibilityAuthority: "none",
+      publicPrivate: "public",
+      owningInitiativeId: "initiative-1783748417899",
+      mediaPurpose: null,
+    });
+    const reconciled = reconcileMediaPlanReferences([initiative, upload]);
+    assert.equal(reconciled.uniquePublicObjectCount, 1);
+    assert.equal(reconciled.mapping[0]?.publicPrivate, "public");
+  });
+
+  it("private + unknown with canonical PRIVATE record → compatible only as private", () => {
+    const key = "docs/private-file.pdf";
+    const privateUnknown: MediaPlanItem[] = [
+      {
+        ...publicRef(key),
+        publicPrivate: "private",
+        visibilityAuthority: "canonical_media_record",
+        destinationAction: "COPY_PRIVATE",
+        sourceCollection: "media_upload_records",
+      },
+      {
+        ...publicRef(key),
+        publicPrivate: "unknown",
+        visibilityAuthority: "none",
+        destinationAction: "COPY_PUBLIC",
+        sourceCollection: "shared_documents",
+      },
+    ];
+    const reconciled = reconcileMediaPlanReferences(privateUnknown);
+    assert.equal(reconciled.uniquePrivateObjectCount, 1);
+    assert.equal(reconciled.uniquePublicObjectCount, 0);
+    assert.equal(reconciled.mapping[0]?.publicPrivate, "private");
+    assert.equal(reconciled.mapping[0]?.destinationAction, "COPY_PRIVATE");
+  });
+
+  it("public + private → hard fail", () => {
+    const items: MediaPlanItem[] = [
+      publicRef("initiatives/x.png", { publicPrivate: "public", visibilityAuthority: "none" }),
+      {
+        ...publicRef("initiatives/x.png"),
+        publicPrivate: "private",
+        visibilityAuthority: "canonical_media_record",
+        destinationAction: "COPY_PRIVATE",
+      },
+    ];
+    assert.throws(
+      () => reconcileMediaPlanReferences(items),
+      (error: unknown) =>
+        error instanceof ProductionInitiativeMigrationError &&
+        error.code === "MEDIA_KEY_COLLISION_INCOMPATIBLE" &&
+        /public vs private/.test(error.message),
+    );
+  });
+
+  it("public + unknown without authoritative record → hard fail", () => {
+    const items: MediaPlanItem[] = [
+      publicRef("initiatives/no-auth.png", {
+        publicPrivate: "public",
+        visibilityAuthority: "none",
+        sourceCollection: "initiatives",
+      }),
+      publicRef("initiatives/no-auth.png", {
+        publicPrivate: "unknown",
+        visibilityAuthority: "none",
+        sourceCollection: "media_upload_records",
+        mediaPurpose: null,
+      }),
+    ];
+    assert.throws(
+      () => reconcileMediaPlanReferences(items),
+      (error: unknown) =>
+        error instanceof ProductionInitiativeMigrationError &&
+        error.code === "MEDIA_KEY_COLLISION_INCOMPATIBLE" &&
+        /no authoritative/.test(error.message),
+    );
+  });
+
+  it("conflicting canonical records → hard fail", () => {
+    const items: MediaPlanItem[] = [
+      publicRef("initiatives/conflict.png", {
+        publicPrivate: "public",
+        visibilityAuthority: "canonical_media_record",
+        mediaPurpose: "initiative-image",
+        recordId: "a",
+      }),
+      publicRef("initiatives/conflict.png", {
+        publicPrivate: "private",
+        visibilityAuthority: "canonical_media_record",
+        destinationAction: "COPY_PRIVATE",
+        mediaPurpose: null,
+        recordId: "b",
+      }),
+    ];
+    assert.throws(
+      () => reconcileMediaPlanReferences(items),
+      (error: unknown) =>
+        error instanceof ProductionInitiativeMigrationError &&
+        error.code === "MEDIA_KEY_COLLISION_INCOMPATIBLE" &&
+        /conflicting canonical/.test(error.message),
+    );
+  });
+
+  it("historical-recovery path does not auto-imply public", () => {
+    const key =
+      "initiatives/historical-recovery/c3697e86e872594d55d9e1eda6885b00557786601989f20a3965b3cbca490fa4.webp";
+    const classified = classifyCanonicalMediaUploadVisibility({
+      storageKey: key,
+      ownerParticipantId: "system-media-recovery",
+      // no purpose, no visibility
+    });
+    assert.equal(classified.publicPrivate, "unknown");
+    assert.equal(classified.visibilityAuthority, "none");
+
+    const items: MediaPlanItem[] = [
+      publicRef(key, {
+        publicPrivate: "public",
+        visibilityAuthority: "none",
+        sourceCollection: "initiatives",
+      }),
+      publicRef(key, {
+        publicPrivate: "unknown",
+        visibilityAuthority: "none",
+        sourceCollection: "media_upload_records",
+        ownerIsSystemMediaRecovery: true,
+        mediaPurpose: null,
+      }),
     ];
     assert.throws(
       () => reconcileMediaPlanReferences(items),

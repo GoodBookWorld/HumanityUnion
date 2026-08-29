@@ -3,6 +3,14 @@ import type { Document } from "mongodb";
 import { SYSTEM_MEDIA_RECOVERY_OWNER } from "./constants.js";
 import type { MediaDestinationAction, MediaPlanItem } from "./types.js";
 
+/** Public-CDN purposes written to media_upload_records (see media-object-storage-policy). */
+export const CANONICAL_PUBLIC_MEDIA_PURPOSES = new Set([
+  "avatar",
+  "initiative-image",
+  "blog-image",
+  "media-resource-logo",
+]);
+
 function asString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -64,6 +72,55 @@ export function decideMediaDestinationAction(input: {
   return { action: "COPY_PUBLIC", urlRewriteRequired: true };
 }
 
+/**
+ * Authoritative visibility from a canonical media_upload_records document.
+ * system-media-recovery ownership and historical-recovery path alone never prove visibility.
+ */
+export function classifyCanonicalMediaUploadVisibility(doc: Document): {
+  publicPrivate: MediaPlanItem["publicPrivate"];
+  visibilityAuthority: MediaPlanItem["visibilityAuthority"];
+  mediaPurpose: string | null;
+  evidence: string;
+} {
+  const purpose = asString(doc.purpose);
+  const visibilityField = asString(doc.visibility) ?? asString(doc.access);
+  const bucketRole =
+    asString(doc.bucketRole) ??
+    asString(doc.storageBucketRole) ??
+    asString(doc.objectVisibility);
+
+  if (visibilityField === "private" || bucketRole === "private") {
+    return {
+      publicPrivate: "private",
+      visibilityAuthority: "canonical_media_record",
+      mediaPurpose: purpose,
+      evidence: visibilityField === "private" ? "visibility/access=private" : "bucketRole=private",
+    };
+  }
+  if (visibilityField === "public" || bucketRole === "public") {
+    return {
+      publicPrivate: "public",
+      visibilityAuthority: "canonical_media_record",
+      mediaPurpose: purpose,
+      evidence: visibilityField === "public" ? "visibility/access=public" : "bucketRole=public",
+    };
+  }
+  if (purpose && CANONICAL_PUBLIC_MEDIA_PURPOSES.has(purpose)) {
+    return {
+      publicPrivate: "public",
+      visibilityAuthority: "canonical_media_record",
+      mediaPurpose: purpose,
+      evidence: `purpose=${purpose} (public CDN bucket)`,
+    };
+  }
+  return {
+    publicPrivate: "unknown",
+    visibilityAuthority: "none",
+    mediaPurpose: purpose,
+    evidence: "no authoritative visibility/access/purpose/bucketRole",
+  };
+}
+
 export function planMediaFromInitiativeDocument(input: {
   initiativeId: string;
   doc: Document;
@@ -92,6 +149,8 @@ export function planMediaFromInitiativeDocument(input: {
     items.push({
       sourceStorageKey: storageKey,
       publicPrivate: "public",
+      // Initiative URL refs are not canonical media-record authority.
+      visibilityAuthority: "none",
       owningInitiativeId: input.initiativeId,
       mediaUploadRecordPresent,
       sourceUrlHost: host,
@@ -101,6 +160,7 @@ export function planMediaFromInitiativeDocument(input: {
       sourceCollection: "initiatives",
       recordId: input.initiativeId,
       ownerIsSystemMediaRecovery: false,
+      mediaPurpose: null,
     });
   }
 
@@ -125,6 +185,7 @@ export function planMediaFromInitiativeDocument(input: {
     items.push({
       sourceStorageKey: storageKey,
       publicPrivate: "public",
+      visibilityAuthority: "none",
       owningInitiativeId: input.initiativeId,
       mediaUploadRecordPresent,
       sourceUrlHost: host,
@@ -134,6 +195,7 @@ export function planMediaFromInitiativeDocument(input: {
       sourceCollection: "initiatives",
       recordId: input.initiativeId,
       ownerIsSystemMediaRecovery: false,
+      mediaPurpose: null,
     });
   }
 
@@ -150,18 +212,18 @@ export function planMediaFromUploadRecord(doc: Document): MediaPlanItem {
     asString(doc.ownerParticipantId) ??
     asString(doc.ownerId);
   const ownerIsSystemMediaRecovery = owner === SYSTEM_MEDIA_RECOVERY_OWNER;
-  const visibility = asString(doc.visibility) ?? asString(doc.access);
-  const publicPrivate: MediaPlanItem["publicPrivate"] =
-    visibility === "private" ? "private" : visibility === "public" ? "public" : "unknown";
+  const classified = classifyCanonicalMediaUploadVisibility(doc);
   const decision = decideMediaDestinationAction({
     storageKey,
-    publicPrivate: publicPrivate === "unknown" ? "public" : publicPrivate,
+    publicPrivate:
+      classified.publicPrivate === "unknown" ? "public" : classified.publicPrivate,
     hostClassification,
     mediaUploadRecordPresent: true,
   });
   return {
     sourceStorageKey: storageKey,
-    publicPrivate,
+    publicPrivate: classified.publicPrivate,
+    visibilityAuthority: classified.visibilityAuthority,
     owningInitiativeId: asString(doc.initiativeId),
     mediaUploadRecordPresent: true,
     sourceUrlHost: host,
@@ -171,6 +233,7 @@ export function planMediaFromUploadRecord(doc: Document): MediaPlanItem {
     sourceCollection: "media_upload_records",
     recordId: asString(doc.mediaId) ?? asString(doc._id),
     ownerIsSystemMediaRecovery,
+    mediaPurpose: classified.mediaPurpose,
   };
 }
 
@@ -185,6 +248,7 @@ export function planMediaFromSharedDocument(doc: Document): MediaPlanItem {
   return {
     sourceStorageKey: storageKey,
     publicPrivate: "private",
+    visibilityAuthority: "none",
     owningInitiativeId: asString(doc.initiativeId),
     mediaUploadRecordPresent: Boolean(storageKey),
     sourceUrlHost: null,
@@ -194,6 +258,7 @@ export function planMediaFromSharedDocument(doc: Document): MediaPlanItem {
     sourceCollection: "shared_documents",
     recordId: asString(doc.documentId) ?? asString(doc._id),
     ownerIsSystemMediaRecovery: false,
+    mediaPurpose: null,
   };
 }
 

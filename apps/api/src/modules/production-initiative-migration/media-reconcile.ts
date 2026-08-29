@@ -46,25 +46,108 @@ function storageKeyForItem(item: MediaPlanItem): string | null {
   return null;
 }
 
-function assertCompatibleMerge(
-  existing: MediaPlanItem,
-  incoming: MediaPlanItem,
+function expectedActionForVisibility(
+  publicPrivate: "public" | "private",
+): MediaPlanItem["destinationAction"] {
+  return publicPrivate === "private" ? "COPY_PRIVATE" : "COPY_PUBLIC";
+}
+
+/**
+ * Resolve collapsed visibility for one storageKey group.
+ *
+ * Fail-closed rules:
+ * - canonical media_upload_records proving PUBLIC → unknown may inherit PUBLIC
+ * - canonical proving PRIVATE → unknown may inherit PRIVATE; non-private public refs block
+ * - public + private → hard fail
+ * - public/private + unknown without canonical authority → hard fail
+ * - conflicting canonical proofs → hard fail
+ * - historical-recovery path / system-media-recovery owner alone never authorize
+ */
+export function resolveCollapsedMediaVisibility(
+  refs: readonly MediaPlanItem[],
+  storageKey: string,
+): {
+  publicPrivate: "public" | "private";
+  destinationAction: MediaPlanItem["destinationAction"];
+} {
+  const canonicalProofs = refs.filter(
+    (r) =>
+      r.visibilityAuthority === "canonical_media_record" &&
+      (r.publicPrivate === "public" || r.publicPrivate === "private"),
+  );
+  const canonicalValues = [
+    ...new Set(canonicalProofs.map((r) => r.publicPrivate as "public" | "private")),
+  ];
+  if (canonicalValues.length > 1) {
+    throw new ProductionInitiativeMigrationError(
+      `Incompatible media collapse for storageKey=${storageKey}: conflicting canonical visibility ${canonicalValues.join(" vs ")}`,
+      "MEDIA_KEY_COLLISION_INCOMPATIBLE",
+    );
+  }
+  const authoritative = canonicalValues[0] ?? null;
+
+  const distinctVisibility = [...new Set(refs.map((r) => r.publicPrivate))];
+  if (distinctVisibility.includes("public") && distinctVisibility.includes("private")) {
+    throw new ProductionInitiativeMigrationError(
+      `Incompatible media collapse for storageKey=${storageKey}: publicPrivate public vs private`,
+      "MEDIA_KEY_COLLISION_INCOMPATIBLE",
+    );
+  }
+
+  let resolved: "public" | "private";
+  if (authoritative) {
+    for (const ref of refs) {
+      if (ref.publicPrivate !== "unknown" && ref.publicPrivate !== authoritative) {
+        throw new ProductionInitiativeMigrationError(
+          `Incompatible media collapse for storageKey=${storageKey}: publicPrivate ${ref.publicPrivate} vs canonical ${authoritative}`,
+          "MEDIA_KEY_COLLISION_INCOMPATIBLE",
+        );
+      }
+    }
+    resolved = authoritative;
+  } else if (distinctVisibility.length === 1 && distinctVisibility[0] !== "unknown") {
+    resolved = distinctVisibility[0] as "public" | "private";
+  } else if (distinctVisibility.includes("unknown")) {
+    throw new ProductionInitiativeMigrationError(
+      `Incompatible media collapse for storageKey=${storageKey}: publicPrivate ${distinctVisibility.filter((v) => v !== "unknown")[0] ?? "unknown"} vs unknown (no authoritative media_upload_records proof)`,
+      "MEDIA_KEY_COLLISION_INCOMPATIBLE",
+    );
+  } else {
+    throw new ProductionInitiativeMigrationError(
+      `Incompatible media collapse for storageKey=${storageKey}: unresolved publicPrivate`,
+      "MEDIA_KEY_COLLISION_INCOMPATIBLE",
+    );
+  }
+
+  const expectedAction = expectedActionForVisibility(resolved);
+  for (const ref of refs) {
+    if (ref.destinationAction === "ERROR" || ref.destinationAction === "NO_COPY") {
+      throw new ProductionInitiativeMigrationError(
+        `Incompatible media collapse for storageKey=${storageKey}: destinationAction ${ref.destinationAction}`,
+        "MEDIA_KEY_COLLISION_INCOMPATIBLE",
+      );
+    }
+    // Unknown-visibility refs may have been planned with the public-action heuristic;
+    // after authoritative PRIVATE resolution they must collapse to COPY_PRIVATE.
+    if (ref.publicPrivate === "unknown" && authoritative) {
+      continue;
+    }
+    if (ref.destinationAction !== expectedAction) {
+      throw new ProductionInitiativeMigrationError(
+        `Incompatible media collapse for storageKey=${storageKey}: destinationAction ${ref.destinationAction} vs ${expectedAction}`,
+        "MEDIA_KEY_COLLISION_INCOMPATIBLE",
+      );
+    }
+  }
+
+  return { publicPrivate: resolved, destinationAction: expectedAction };
+}
+
+function assertCompatibleDestinationUrl(
   storageKey: string,
   existingDestinationUrl: string,
   incomingDestinationUrl: string,
 ): void {
-  if (existing.destinationAction !== incoming.destinationAction) {
-    throw new ProductionInitiativeMigrationError(
-      `Incompatible media collapse for storageKey=${storageKey}: destinationAction ${existing.destinationAction} vs ${incoming.destinationAction}`,
-      "MEDIA_KEY_COLLISION_INCOMPATIBLE",
-    );
-  }
-  if (existing.publicPrivate !== incoming.publicPrivate) {
-    throw new ProductionInitiativeMigrationError(
-      `Incompatible media collapse for storageKey=${storageKey}: publicPrivate ${existing.publicPrivate} vs ${incoming.publicPrivate}`,
-      "MEDIA_KEY_COLLISION_INCOMPATIBLE",
-    );
-  }
   if (existingDestinationUrl !== incomingDestinationUrl) {
     throw new ProductionInitiativeMigrationError(
       `Incompatible media collapse for storageKey=${storageKey}: destinationUrl mismatch`,
@@ -105,9 +188,7 @@ export function reconcileMediaPlanReferences(
     const destinationUrl = `${base}/${storageKey.replace(/^\/+/, "")}`;
     const list = groups.get(storageKey) ?? [];
     if (list.length > 0) {
-      assertCompatibleMerge(
-        list[0]!,
-        item,
+      assertCompatibleDestinationUrl(
         storageKey,
         destinationUrlByKey.get(storageKey)!,
         destinationUrl,
@@ -120,13 +201,14 @@ export function reconcileMediaPlanReferences(
 
   const mapping: MediaReferenceMappingRow[] = [...groups.entries()]
     .map(([storageKey, refs]) => {
-      const lead = refs[0]!;
+      const resolved = resolveCollapsedMediaVisibility(refs, storageKey);
       const destinationUrl = destinationUrlByKey.get(storageKey)!;
+      const lead = refs[0]!;
       return {
         storageKey,
         referenceCount: refs.length,
-        destinationAction: lead.destinationAction,
-        publicPrivate: lead.publicPrivate,
+        destinationAction: resolved.destinationAction,
+        publicPrivate: resolved.publicPrivate,
         owningInitiativeId: lead.owningInitiativeId,
         destinationUrl,
         sources: refs.map((r) => ({
@@ -181,11 +263,12 @@ export function buildThirtyOneToThirteenMediaFixture(): MediaPlanItem[] {
   const uniqueKeys = Array.from({ length: 13 }, (_, i) => `initiatives/fixture-unique-${i + 1}.png`);
   const items: MediaPlanItem[] = [];
 
-  // 13 unique upload-record references
+  // 13 unique upload-record references (canonical PUBLIC authority)
   for (let i = 0; i < 13; i += 1) {
     items.push({
       sourceStorageKey: uniqueKeys[i]!,
       publicPrivate: "public",
+      visibilityAuthority: "canonical_media_record",
       owningInitiativeId: `initiative-fixture-${(i % 9) + 1}`,
       mediaUploadRecordPresent: true,
       sourceUrlHost: "media-staging.huws.org",
@@ -195,6 +278,7 @@ export function buildThirtyOneToThirteenMediaFixture(): MediaPlanItem[] {
       sourceCollection: "media_upload_records",
       recordId: `media-${i + 1}`,
       ownerIsSystemMediaRecovery: false,
+      mediaPurpose: "initiative-image",
     });
   }
 
@@ -203,6 +287,7 @@ export function buildThirtyOneToThirteenMediaFixture(): MediaPlanItem[] {
     items.push({
       sourceStorageKey: uniqueKeys[i]!,
       publicPrivate: "public",
+      visibilityAuthority: "none",
       owningInitiativeId: `initiative-fixture-${i + 1}`,
       mediaUploadRecordPresent: true,
       sourceUrlHost: "media-staging.huws.org",
@@ -212,6 +297,7 @@ export function buildThirtyOneToThirteenMediaFixture(): MediaPlanItem[] {
       sourceCollection: "initiatives",
       recordId: `initiative-fixture-${i + 1}`,
       ownerIsSystemMediaRecovery: false,
+      mediaPurpose: null,
     });
   }
 
@@ -220,6 +306,7 @@ export function buildThirtyOneToThirteenMediaFixture(): MediaPlanItem[] {
     items.push({
       sourceStorageKey: uniqueKeys[i]!,
       publicPrivate: "public",
+      visibilityAuthority: "none",
       owningInitiativeId: `initiative-fixture-${i + 1}`,
       mediaUploadRecordPresent: true,
       sourceUrlHost: "media-staging.huws.org",
@@ -229,6 +316,7 @@ export function buildThirtyOneToThirteenMediaFixture(): MediaPlanItem[] {
       sourceCollection: "initiatives",
       recordId: `initiative-fixture-${i + 1}-cover`,
       ownerIsSystemMediaRecovery: false,
+      mediaPurpose: null,
     });
   }
 

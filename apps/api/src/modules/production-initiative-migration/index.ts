@@ -84,10 +84,14 @@ export {
 } from "./membership-plan.js";
 
 export {
+  CANONICAL_PUBLIC_MEDIA_PURPOSES,
+  classifyCanonicalMediaUploadVisibility,
   classifyMediaHost,
   decideMediaDestinationAction,
   hostnameOf,
   planMediaFromInitiativeDocument,
+  planMediaFromSharedDocument,
+  planMediaFromUploadRecord,
   summarizeMediaPlan,
 } from "./media-plan.js";
 
@@ -123,6 +127,7 @@ export {
 export {
   buildThirtyOneToThirteenMediaFixture,
   reconcileMediaPlanReferences,
+  resolveCollapsedMediaVisibility,
 } from "./media-reconcile.js";
 
 export {
