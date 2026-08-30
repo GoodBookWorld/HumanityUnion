@@ -30,6 +30,12 @@ import {
   type MediaHostClassification,
 } from "./media-inventory.js";
 import { assertNoSecretLeak, stripForbiddenReportFields } from "./redact.js";
+import {
+  DualBucketBlogR2Inspector,
+  resolveDualBlogR2Config,
+  verifyCanonicalBlogR2Objects,
+  type BlogR2ObjectInspector,
+} from "./r2-preflight.js";
 
 export type BlogPreflightVerdict = "PASS" | "BLOCKED";
 
@@ -102,8 +108,14 @@ export interface BlogMigrationPreflightReport {
     missingMediaRecords: string[];
     unresolvedReferences: number;
     destinationMediaIdCollisions: string[];
-    r2ObjectVerification: "DEFERRED" | "CONFIGURED_NOT_RUN";
-    mediaCopyReady: false;
+    expectedCanonicalObjects: number;
+    sourceObjectsPresent: number;
+    sourceObjectsMissing: string[];
+    destinationAbsent: number;
+    destinationEquivalent: number;
+    destinationCollisions: string[];
+    r2ObjectVerification: "DEFERRED" | "PASS" | "FAIL";
+    mediaCopyReady: boolean;
   };
   tokenPolicy: {
     preserveConfirmAndUnsubscribeHashes: true;
@@ -155,6 +167,8 @@ export async function runProductionBlogMigrationPreflight(input: {
   allowTestIsolation?: boolean;
   /** Test hook — force R2 configured flag. */
   r2Configured?: boolean;
+  /** Injected R2 HEAD inspector (tests / CLI). */
+  r2Inspector?: BlogR2ObjectInspector | null;
   mutationCounters?: Partial<BlogPreflightMutationProof>;
 }): Promise<BlogMigrationPreflightReport> {
   const blockers: string[] = [];
@@ -661,18 +675,63 @@ export async function runProductionBlogMigrationPreflight(input: {
 
   const r2Configured =
     input.r2Configured ?? isBlogMigrationR2Configured(process.env);
-  const r2ObjectVerification = r2Configured ? "CONFIGURED_NOT_RUN" : "DEFERRED";
-  // Preflight never claims media copy readiness.
-  const mediaCopyReady = false as const;
-  if (r2ObjectVerification === "DEFERRED") {
-    // Informational — not a blocker for Mongo-safe PASS when media records resolve.
+
+  let expectedCanonicalObjects = 0;
+  let sourceObjectsPresent = 0;
+  let sourceObjectsMissing: string[] = [];
+  let destinationAbsent = 0;
+  let destinationEquivalent = 0;
+  let destinationCollisions: string[] = [];
+  let r2ObjectVerification: "DEFERRED" | "PASS" | "FAIL" = "DEFERRED";
+  let mediaCopyReady = false;
+  let r2PutCalls = 0;
+  let r2DeleteCalls = 0;
+
+  const canonicalKeys = [...uniqueStorageKeys].sort();
+  expectedCanonicalObjects = canonicalKeys.length;
+
+  if (!r2Configured && !input.r2Inspector) {
+    r2ObjectVerification = "DEFERRED";
+    mediaCopyReady = false;
+  } else {
+    let inspector = input.r2Inspector ?? null;
+    if (!inspector) {
+      try {
+        inspector = new DualBucketBlogR2Inspector(resolveDualBlogR2Config());
+      } catch (error) {
+        blockers.push(
+          `Blog R2 configuration/integrity failure: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        r2ObjectVerification = "FAIL";
+        mediaCopyReady = false;
+      }
+    }
+    if (inspector) {
+      const r2Report = await verifyCanonicalBlogR2Objects({
+        storageKeys: canonicalKeys,
+        inspector,
+      });
+      expectedCanonicalObjects = r2Report.expectedCanonicalObjects;
+      sourceObjectsPresent = r2Report.sourceObjectsPresent;
+      sourceObjectsMissing = r2Report.sourceObjectsMissing;
+      destinationAbsent = r2Report.destinationAbsent;
+      destinationEquivalent = r2Report.destinationEquivalent;
+      destinationCollisions = r2Report.destinationCollisions;
+      r2ObjectVerification = r2Report.r2ObjectVerification;
+      mediaCopyReady = r2Report.mediaCopyReady;
+      r2PutCalls = r2Report.putObjectCalls;
+      r2DeleteCalls = r2Report.deleteObjectCalls;
+      blockers.push(...r2Report.blockers);
+    }
   }
 
   // --- Mutation proof ---
   const mutationProof: BlogPreflightMutationProof = {
     mongoWrites: input.mutationCounters?.mongoWrites ?? 0,
-    putObjectCalls: input.mutationCounters?.putObjectCalls ?? 0,
-    deleteObjectCalls: input.mutationCounters?.deleteObjectCalls ?? 0,
+    putObjectCalls: (input.mutationCounters?.putObjectCalls ?? 0) + r2PutCalls,
+    deleteObjectCalls: (input.mutationCounters?.deleteObjectCalls ?? 0) + r2DeleteCalls,
     emailSends: input.mutationCounters?.emailSends ?? 0,
     outboxWrites: input.mutationCounters?.outboxWrites ?? 0,
   };
@@ -744,6 +803,12 @@ export async function runProductionBlogMigrationPreflight(input: {
       missingMediaRecords: uniqueMissing,
       unresolvedReferences,
       destinationMediaIdCollisions,
+      expectedCanonicalObjects,
+      sourceObjectsPresent,
+      sourceObjectsMissing,
+      destinationAbsent,
+      destinationEquivalent,
+      destinationCollisions,
       r2ObjectVerification,
       mediaCopyReady,
     },

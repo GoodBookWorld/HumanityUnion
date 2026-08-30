@@ -6,7 +6,9 @@ import {
   EXPECTED_BLOG_COLLECTION_COUNTS,
   EXPECTED_INSERT_CATEGORY_ID,
   EXPECTED_SEED_CATEGORY_IDS,
+  InMemoryBlogR2Inspector,
   assertNoSecretLeak,
+  classifyBlogDestinationR2Object,
   classifyHumanPotentialCategory,
   classifyMediaUrlHost,
   classifySeedCategoryPair,
@@ -14,6 +16,7 @@ import {
   runProductionBlogMigrationPreflight,
   storageKeyFromMediaUrl,
   stripForbiddenReportFields,
+  verifyCanonicalBlogR2Objects,
 } from "../../../src/modules/production-blog-migration/index.js";
 
 type MemDoc = Document & { _id?: string };
@@ -489,6 +492,7 @@ describe("Production Blog migration preflight — Task 02", () => {
     assert.equal(report.media.uniqueStorageKeys.length, 14);
     assert.equal(report.media.canonicalStructuredMediaCount, 28); // cover + social per post
     assert.equal(report.media.r2ObjectVerification, "DEFERRED");
+    assert.equal(report.media.expectedCanonicalObjects, 14);
     assert.equal(report.media.mediaCopyReady, false);
     assert.equal(report.mutationProof.mongoWrites, 0);
     assert.equal(report.tokenPolicy.rotateTokens, false);
@@ -747,6 +751,233 @@ describe("Production Blog migration preflight — Task 02", () => {
       r2Configured: false,
     });
     assert.equal(report.media.r2ObjectVerification, "DEFERRED");
+    assert.equal(report.media.expectedCanonicalObjects, 14);
+    assert.equal(report.media.mediaCopyReady, false);
+  });
+});
+
+describe("Production Blog migration preflight — Task 03 R2", () => {
+  const ZERO_MUTATIONS = {
+    mongoWrites: 0,
+    putObjectCalls: 0,
+    deleteObjectCalls: 0,
+    emailSends: 0,
+    outboxWrites: 0,
+  } as const;
+
+  function seedAllSourcePresent(inspector: InMemoryBlogR2Inspector): string[] {
+    const keys: string[] = [];
+    for (let i = 0; i < EXPECTED_BLOG_COLLECTION_COUNTS.blog_posts; i += 1) {
+      const key = `blog/media-${i}.png`;
+      keys.push(key);
+      inspector.seedSource(key, {
+        body: Buffer.from(`blog-media-body-${i}`),
+        contentType: "image/png",
+      });
+    }
+    return keys;
+  }
+
+  it("all source present + destination absent → PASS + mediaCopyReady", async () => {
+    const { source, dest } = seedPerfectSource();
+    const inspector = new InMemoryBlogR2Inspector();
+    seedAllSourcePresent(inspector);
+
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: true,
+      r2Inspector: inspector,
+      mutationCounters: ZERO_MUTATIONS,
+    });
+
+    assert.equal(report.overallVerdict, "PASS");
+    assert.equal(report.media.r2ObjectVerification, "PASS");
+    assert.equal(report.media.expectedCanonicalObjects, 14);
+    assert.equal(report.media.sourceObjectsPresent, 14);
+    assert.deepEqual(report.media.sourceObjectsMissing, []);
+    assert.equal(report.media.destinationAbsent, 14);
+    assert.equal(report.media.destinationEquivalent, 0);
+    assert.deepEqual(report.media.destinationCollisions, []);
+    assert.equal(report.media.mediaCopyReady, true);
+    assert.equal(report.mutationProof.putObjectCalls, 0);
+    assert.equal(report.mutationProof.deleteObjectCalls, 0);
+  });
+
+  it("safely equivalent destination → PASS + mediaCopyReady", async () => {
+    const { source, dest } = seedPerfectSource();
+    const inspector = new InMemoryBlogR2Inspector();
+    const keys = seedAllSourcePresent(inspector);
+    for (const key of keys) {
+      const head = await inspector.headSourceObject(key);
+      assert.ok(head);
+      inspector.seedDestination(key, { ...head });
+    }
+
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: true,
+      r2Inspector: inspector,
+      mutationCounters: ZERO_MUTATIONS,
+    });
+
+    assert.equal(report.overallVerdict, "PASS");
+    assert.equal(report.media.r2ObjectVerification, "PASS");
+    assert.equal(report.media.destinationAbsent, 0);
+    assert.equal(report.media.destinationEquivalent, 14);
+    assert.deepEqual(report.media.destinationCollisions, []);
+    assert.equal(report.media.mediaCopyReady, true);
+  });
+
+  it("missing source object → BLOCKED", async () => {
+    const { source, dest } = seedPerfectSource();
+    const inspector = new InMemoryBlogR2Inspector();
+    seedAllSourcePresent(inspector);
+    inspector.source.delete("blog/media-3.png");
+
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: true,
+      r2Inspector: inspector,
+      mutationCounters: ZERO_MUTATIONS,
+    });
+
+    assert.equal(report.overallVerdict, "BLOCKED");
+    assert.equal(report.media.r2ObjectVerification, "FAIL");
+    assert.equal(report.media.sourceObjectsPresent, 13);
+    assert.deepEqual(report.media.sourceObjectsMissing, ["blog/media-3.png"]);
+    assert.equal(report.media.mediaCopyReady, false);
+    assert.ok(report.blockers.some((b) => /Source R2 object missing/i.test(b)));
+  });
+
+  it("destination collision (length-only, no hash) → BLOCKED", async () => {
+    const { source, dest } = seedPerfectSource();
+    const inspector = new InMemoryBlogR2Inspector();
+    seedAllSourcePresent(inspector);
+    inspector.seedDestination("blog/media-0.png", {
+      contentLength: Buffer.from("blog-media-body-0").byteLength,
+      contentType: "image/png",
+      checksumSHA256: null,
+    });
+
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: true,
+      r2Inspector: inspector,
+      mutationCounters: ZERO_MUTATIONS,
+    });
+
+    assert.equal(report.overallVerdict, "BLOCKED");
+    assert.equal(report.media.r2ObjectVerification, "FAIL");
+    assert.deepEqual(report.media.destinationCollisions, ["blog/media-0.png"]);
+    assert.equal(report.media.mediaCopyReady, false);
+    assert.ok(report.blockers.some((b) => /Destination R2 collision/i.test(b)));
+  });
+
+  it("external HTTPS image excluded from R2 verification keys", async () => {
+    const { source, dest } = seedPerfectSource();
+    const first = source.store.get("blog_posts")![0]!;
+    first.content = `<p>x</p><img src="https://i0.wp.com/huws.org/wp-content/uploads/2024/01/world-protection.jpg" />`;
+    first.optimization = undefined;
+
+    const inspector = new InMemoryBlogR2Inspector();
+    seedAllSourcePresent(inspector);
+
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: true,
+      r2Inspector: inspector,
+      mutationCounters: ZERO_MUTATIONS,
+    });
+
+    assert.equal(report.overallVerdict, "PASS");
+    assert.equal(report.media.externalHttpsPreserveCount, 1);
+    assert.deepEqual(report.media.externalHttpsHosts, ["i0.wp.com"]);
+    assert.equal(report.media.expectedCanonicalObjects, 14);
+    assert.equal(report.media.uniqueStorageKeys.length, 14);
+    assert.equal(
+      report.media.uniqueStorageKeys.some((k) => /i0\.wp\.com|wp-content/i.test(k)),
+      false,
+    );
+    assert.equal(report.media.r2ObjectVerification, "PASS");
+    assert.equal(report.media.mediaCopyReady, true);
+    const text = JSON.stringify(report);
+    assert.equal(text.includes("world-protection.jpg"), false);
+  });
+
+  it("zero PUT/DELETE during R2 preflight", async () => {
+    const inspector = new InMemoryBlogR2Inspector();
+    const keys = seedAllSourcePresent(inspector);
+    const r2 = await verifyCanonicalBlogR2Objects({ storageKeys: keys, inspector });
+    assert.equal(r2.putObjectCalls, 0);
+    assert.equal(r2.deleteObjectCalls, 0);
+    assert.equal(inspector.getWriteCount(), 0);
+    assert.equal(inspector.getDeleteCount(), 0);
+    assert.equal(r2.r2ObjectVerification, "PASS");
+  });
+
+  it("PutObject detection refuses R2 PASS", async () => {
+    const inspector = new InMemoryBlogR2Inspector();
+    seedAllSourcePresent(inspector);
+    inspector.writeCount = 1;
+    const r2 = await verifyCanonicalBlogR2Objects({
+      storageKeys: ["blog/media-0.png"],
+      inspector,
+    });
+    assert.equal(r2.r2ObjectVerification, "FAIL");
+    assert.equal(r2.mediaCopyReady, false);
+    assert.ok(r2.blockers.some((b) => /PutObject\/DeleteObject/i.test(b)));
+  });
+
+  it("classify: ABSENT / EQUIVALENT / COLLISION", () => {
+    const source = {
+      contentLength: 10,
+      contentType: "image/png",
+      checksumSHA256: "a".repeat(64),
+    };
+    assert.equal(
+      classifyBlogDestinationR2Object({ source, destination: null }),
+      "ABSENT",
+    );
+    assert.equal(
+      classifyBlogDestinationR2Object({
+        source,
+        destination: { ...source },
+      }),
+      "EQUIVALENT",
+    );
+    assert.equal(
+      classifyBlogDestinationR2Object({
+        source,
+        destination: { ...source, checksumSHA256: null },
+      }),
+      "COLLISION",
+    );
+    assert.equal(
+      classifyBlogDestinationR2Object({
+        source,
+        destination: { ...source, contentLength: 11 },
+      }),
+      "COLLISION",
+    );
+  });
+
+  it("Mongo preflight still PASS with R2 deferred (no regression)", async () => {
+    const { source, dest } = seedPerfectSource();
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+      mutationCounters: ZERO_MUTATIONS,
+    });
+    assert.equal(report.overallVerdict, "PASS");
+    assert.equal(report.media.r2ObjectVerification, "DEFERRED");
+    assert.equal(report.media.expectedCanonicalObjects, 14);
+    assert.equal(report.media.uniqueMediaIds.length, 14);
     assert.equal(report.media.mediaCopyReady, false);
   });
 });

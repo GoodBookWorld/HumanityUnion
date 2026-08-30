@@ -56,3 +56,18 @@ export type {
   BlogPreflightMutationProof,
   BlogPreflightVerdict,
 } from "./preflight.js";
+
+export {
+  DualBucketBlogR2Inspector,
+  InMemoryBlogR2Inspector,
+  classifyBlogDestinationR2Object,
+  resolveDualBlogR2Config,
+  verifyCanonicalBlogR2Objects,
+} from "./r2-preflight.js";
+export type {
+  BlogCanonicalR2VerificationReport,
+  BlogDestinationR2Classification,
+  BlogR2ObjectHead,
+  BlogR2ObjectInspector,
+  BlogR2ObjectVerificationStatus,
+} from "./r2-preflight.js";

@@ -13,13 +13,16 @@ import { MongoClient } from "mongodb";
 
 import { loadApiEnvironment } from "../config/load-api-environment.js";
 import {
+  DualBucketBlogR2Inspector,
   PRODUCTION_BLOG_MIGRATION_SOURCE_DATABASE,
   PRODUCTION_BLOG_MIGRATION_TARGET_DATABASE,
   assertBlogMigrationDestinationDatabase,
   assertBlogMigrationSourceDatabase,
   assertNoSecretLeak,
   assertNoWritePathRequested,
+  isBlogMigrationR2Configured,
   resolveDualBlogMongoEnv,
+  resolveDualBlogR2Config,
   runProductionBlogMigrationPreflight,
 } from "../modules/production-blog-migration/index.js";
 
@@ -43,6 +46,11 @@ async function main(): Promise<void> {
     );
   }
 
+  const r2Configured = isBlogMigrationR2Configured();
+  const r2Inspector = r2Configured
+    ? new DualBucketBlogR2Inspector(resolveDualBlogR2Config())
+    : null;
+
   const sourceClient = new MongoClient(dual.sourceUri);
   const destinationClient = new MongoClient(dual.destinationUri);
   await sourceClient.connect();
@@ -53,6 +61,8 @@ async function main(): Promise<void> {
       destinationDb: destinationClient.db(dual.destinationDatabase),
       sourceDatabase: dual.sourceDatabase,
       destinationDatabase: dual.destinationDatabase,
+      r2Configured,
+      r2Inspector,
       mutationCounters: {
         mongoWrites: 0,
         putObjectCalls: 0,
@@ -65,7 +75,9 @@ async function main(): Promise<void> {
     const payload = {
       ...report,
       note:
-        "Read-only Blog migration preflight. R2 object verification may be DEFERRED. Never copies media or sends email.",
+        report.media.r2ObjectVerification === "DEFERRED"
+          ? "Read-only Blog migration preflight. R2 verification DEFERRED (credentials unset). Never copies media or sends email."
+          : "Read-only Blog migration preflight with dual-R2 HEAD verification. Never copies media or sends email.",
     };
     assertNoSecretLeak(JSON.stringify(payload));
     console.log(JSON.stringify(payload, null, 2));
