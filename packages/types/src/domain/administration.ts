@@ -150,6 +150,8 @@ export type AdministrationAuditAction =
   | "blog.author.trusted_publishing.disable"
   | "platform.social_account.update"
   | "platform.social_account.clear"
+  | "platform.support_link.update"
+  | "platform.support_link.clear"
   | "seo.page_override.create"
   | "seo.page_override.update"
   | "seo.page_override.clear"

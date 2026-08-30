@@ -1,13 +1,19 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
 import { CONTACT_EMAIL, mailtoContactLink } from "../../public-experience/footer-links";
 import {
-  SUPPORT_DONATE_URL,
   SUPPORT_ILLUSTRATIONS,
-  SUPPORT_REGIONAL_PROGRAM_URL,
+  SUPPORT_LINK_FALLBACKS,
 } from "../support.constants";
+import {
+  fetchPublicSupportOperationalLinks,
+  type ResolvedSupportOperationalLinks,
+} from "../support-operational-links-api";
 
 import "../support-page.css";
 
@@ -35,7 +41,57 @@ function ExternalButtonLink({
   );
 }
 
+function SupportAction({
+  href,
+  variant = "primary",
+  children,
+  disabledLabel,
+}: {
+  href: string | null;
+  variant?: "primary" | "secondary";
+  children: string;
+  disabledLabel: string;
+}) {
+  if (!href) {
+    return (
+      <Button disabled aria-label={disabledLabel}>
+        {children}
+      </Button>
+    );
+  }
+  if (href.startsWith("/")) {
+    return (
+      <Button href={href} variant={variant}>
+        {children}
+      </Button>
+    );
+  }
+  return (
+    <ExternalButtonLink href={href} variant={variant}>
+      {children}
+    </ExternalButtonLink>
+  );
+}
+
 export function SupportPageContent() {
+  const [links, setLinks] = useState<ResolvedSupportOperationalLinks>({
+    donationUrl: SUPPORT_LINK_FALLBACKS.donation,
+    volunteerUrl: SUPPORT_LINK_FALLBACKS.volunteer,
+    regionalProgramUrl: SUPPORT_LINK_FALLBACKS.regional_program,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchPublicSupportOperationalLinks().then((resolved) => {
+      if (!cancelled) {
+        setLinks(resolved);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="support-page">
       <header className="support-page__hero">
@@ -96,7 +152,9 @@ export function SupportPageContent() {
               and public-interest projects.
             </p>
             <div className="support-page__card-actions">
-              <ExternalButtonLink href={SUPPORT_DONATE_URL}>Donate</ExternalButtonLink>
+              <SupportAction href={links.donationUrl} disabledLabel="Donate (link not configured)">
+                Donate
+              </SupportAction>
             </div>
             <p className="support-page__note">
               Donations support the development and operation of Humanity Union.
@@ -118,11 +176,18 @@ export function SupportPageContent() {
               communication, organization, or community experience.
             </p>
             <div className="support-page__card-actions">
-              <Button disabled aria-label="Volunteer with Humanity Union (coming soon)">
+              <SupportAction
+                href={links.volunteerUrl}
+                disabledLabel="Volunteer with Humanity Union (coming soon)"
+              >
                 Volunteer with Humanity Union
-              </Button>
+              </SupportAction>
             </div>
-            <p className="support-page__note">Volunteer applications will open here soon.</p>
+            <p className="support-page__note">
+              {links.volunteerUrl
+                ? "Volunteer opportunities are available through the link above."
+                : "Volunteer applications will open here soon."}
+            </p>
           </Card>
 
           <Card className="support-page__card">
@@ -141,10 +206,13 @@ export function SupportPageContent() {
               participation rooted in local communities.
             </p>
             <div className="support-page__card-actions">
-              {/* Pack 26A — WordPress Regional Program kept until new-platform route exists. */}
-              <ExternalButtonLink href={SUPPORT_REGIONAL_PROGRAM_URL} variant="secondary">
+              <SupportAction
+                href={links.regionalProgramUrl}
+                variant="secondary"
+                disabledLabel="Regional Program (link not configured)"
+              >
                 Regional Program
-              </ExternalButtonLink>
+              </SupportAction>
             </div>
           </Card>
         </div>
@@ -187,10 +255,7 @@ export function SupportPageContent() {
         </Card>
       </section>
 
-      <section
-        className="support-page__section"
-        aria-labelledby="support-forms-heading"
-      >
+      <section className="support-page__section" aria-labelledby="support-forms-heading">
         <h2 id="support-forms-heading" className="support-page__section-heading">
           Every form of support matters differently
         </h2>

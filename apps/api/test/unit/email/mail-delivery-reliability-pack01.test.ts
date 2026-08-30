@@ -179,8 +179,8 @@ describe("Mail Delivery Reliability Pack 01", () => {
 
     assert.match(rendered.html, /src="https:\/\/huws\.org\/brand\/humanity-union-logo-white-email\.png"/);
     assert.match(rendered.html, /alt="Humanity Union"/);
-    assert.match(rendered.html, /width="160"/);
-    assert.match(rendered.html, /height="40"/);
+    assert.match(rendered.html, /width="48"/);
+    assert.match(rendered.html, /height="12"/);
     assert.equal(rendered.html.includes("localhost"), false);
     assert.equal(/src="\//.test(rendered.html), false);
     assert.ok(rendered.text.length > 0);

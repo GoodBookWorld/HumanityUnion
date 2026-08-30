@@ -34,6 +34,7 @@ import { AdminEditorsOverviewSummary } from "./AdminEditorsOverviewSummary";
 import { AdminMetricDetailsGrid } from "./AdminMetricDetailsGrid";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 import { AdminPlatformSocialAccountsPanel } from "./AdminPlatformSocialAccountsPanel";
+import { AdminPlatformSupportLinksPanel } from "./AdminPlatformSupportLinksPanel";
 
 import "../../platform-statistics/platform-statistics.css";
 import "./admin-panel.css";
@@ -307,6 +308,10 @@ export function AdminOverviewSection({ user }: AdminOverviewSectionProps) {
 
       <ProfileSection title="Platform social accounts">
         <AdminPlatformSocialAccountsPanel />
+      </ProfileSection>
+
+      <ProfileSection title="Support operational links">
+        <AdminPlatformSupportLinksPanel />
       </ProfileSection>
     </div>
   );

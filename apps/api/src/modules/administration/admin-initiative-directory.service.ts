@@ -154,12 +154,8 @@ function integrityStatusFor(
     return "warning";
   }
 
-  if (
-    initiative.lifecyclePhase === "archived" &&
-    isInitiativeEligibleForPublicProjection(initiative)
-  ) {
-    return "warning";
-  }
+  // Dead rule removed: archived + public-eligible is unreachable because
+  // isInitiativeEligibleForPublicProjection requires lifecyclePhase === "projected".
 
   if (initiative.lifecyclePhase === "draft" && initiative.status === "archived") {
     return "warning";
@@ -526,17 +522,6 @@ function buildIntegrityFindings(input: {
       code: "missing_steward_reference",
       severity: "warning",
       message: "Steward Participant identity could not be resolved from auth records.",
-    });
-  }
-
-  if (
-    input.initiative.lifecyclePhase === "archived" &&
-    isInitiativeEligibleForPublicProjection(input.initiative)
-  ) {
-    findings.push({
-      code: "impossible_public_archived",
-      severity: "warning",
-      message: "Archived Initiative still satisfies public projection eligibility.",
     });
   }
 

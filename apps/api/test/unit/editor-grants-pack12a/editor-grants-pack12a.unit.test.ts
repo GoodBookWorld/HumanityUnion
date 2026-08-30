@@ -71,10 +71,7 @@ describe("Pack 12A — capability IDs", () => {
       AdministrationValidationError,
     );
 
-    assert.throws(
-      () => normalizeEditorCapabilities(["PUBLISHING_EDIT"]),
-      AdministrationValidationError,
-    );
+    assert.deepEqual(normalizeEditorCapabilities(["PUBLISHING_EDIT"]), ["PUBLISHING_EDIT"]);
   });
 });
 

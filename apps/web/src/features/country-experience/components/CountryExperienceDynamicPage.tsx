@@ -171,6 +171,17 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
       </nav>
 
       <header className="country-experience-dynamic__hero">
+        <div className="country-experience-dynamic__hero-copy">
+          <h1>{country.name}</h1>
+          <p className="country-experience-dynamic__region">
+            {country.region} · {country.subregion}
+          </p>
+          <p className="country-experience-dynamic__intro">
+            Explore public civic activity, initiatives, and trusted media connected to{" "}
+            {country.name}. Aggregate statistics summarize participation without exposing private
+            participant records.
+          </p>
+        </div>
         <div className="country-experience-dynamic__flag-wrap">
           <img
             src={countryFlagSrc(countryCode)}
@@ -182,17 +193,6 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
               event.currentTarget.src = "/images/flags/placeholder-country.svg";
             }}
           />
-        </div>
-        <div className="country-experience-dynamic__hero-copy">
-          <h1>{country.name}</h1>
-          <p className="country-experience-dynamic__region">
-            {country.region} · {country.subregion}
-          </p>
-          <p className="country-experience-dynamic__intro">
-            Explore public civic activity, initiatives, and trusted media connected to{" "}
-            {country.name}. Aggregate statistics summarize participation without exposing private
-            participant records.
-          </p>
         </div>
       </header>
 

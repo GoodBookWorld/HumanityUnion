@@ -60,6 +60,9 @@ const RESOURCE_TYPE_LABELS: Record<MediaResourceType, string> = {
   PROPAGANDA_ANALYSIS: "Propaganda Analysis",
 };
 
+/** Production Completion Pack 01 — matches API COUNTRY_TRUSTED_MEDIA_MAX. */
+const COUNTRY_TRUSTED_MEDIA_MAX = 6;
+
 function emptyForm(resourceType: MediaResourceType = "TRUSTED_MEDIA"): AdminMediaResourceWriteInput {
   return {
     resourceType,
@@ -117,6 +120,22 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
     () => [...toGeographyCountryOptions()].sort((a, b) => a.label.localeCompare(b.label)),
     [],
   );
+
+  const countryTrustedMediaCount = useMemo(() => {
+    if (form.scopeType !== "COUNTRY" || form.resourceType !== "TRUSTED_MEDIA" || !form.countryCode) {
+      return null;
+    }
+    return items.filter(
+      (row) =>
+        row.resourceType === "TRUSTED_MEDIA" &&
+        row.scopeType === "COUNTRY" &&
+        row.countryCode === form.countryCode &&
+        row.id !== editingId,
+    ).length;
+  }, [editingId, form.countryCode, form.resourceType, form.scopeType, items]);
+
+  const countryTrustedMediaOverLimit =
+    countryTrustedMediaCount !== null && countryTrustedMediaCount >= COUNTRY_TRUSTED_MEDIA_MAX;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -241,8 +260,10 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
       <ProfileSection title="Media Resources">
         <p className="admin-panel__note">
           Manage Recommended Trusted Media, RSS news sources, Fact-Checking, and Propaganda
-          Analysis. WORLD resources feed global Media experiences; COUNTRY resources feed the
-          matching Country page.
+          Analysis. WORLD resources feed global Media experiences; COUNTRY trusted media are
+          limited to {COUNTRY_TRUSTED_MEDIA_MAX} per country (public pages show at most{" "}
+          {COUNTRY_TRUSTED_MEDIA_MAX}). Legacy over-limit rows are retained but new creates are
+          blocked until count is under the limit.
         </p>
 
         {error ? <StatusBanner title="Media Resources error" message={error} /> : null}
@@ -378,6 +399,24 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
                   </select>
                 </label>
               ) : null}
+              {form.resourceType === "TRUSTED_MEDIA" &&
+              form.scopeType === "COUNTRY" &&
+              form.countryCode ? (
+                <p
+                  className={
+                    countryTrustedMediaOverLimit
+                      ? "hu-caption admin-media-resources__limit admin-media-resources__limit--warn"
+                      : "hu-caption admin-media-resources__limit"
+                  }
+                  role="status"
+                >
+                  Country trusted media: {countryTrustedMediaCount}/
+                  {COUNTRY_TRUSTED_MEDIA_MAX}
+                  {countryTrustedMediaOverLimit
+                    ? " — at or over limit; remove an entry before adding another."
+                    : ""}
+                </p>
+              ) : null}
               <label>
                 Name
                 <input
@@ -491,7 +530,18 @@ export function AdminMediaResourcesSection({ user: _user }: AdminMediaResourcesS
             />
 
             <div className="admin-media-resources__form-actions">
-              <Button type="button" variant="primary" disabled={saving} onClick={() => void handleSave()}>
+              <Button
+                type="button"
+                variant="primary"
+                disabled={
+                  saving ||
+                  (!editingId &&
+                    form.resourceType === "TRUSTED_MEDIA" &&
+                    form.scopeType === "COUNTRY" &&
+                    countryTrustedMediaOverLimit)
+                }
+                onClick={() => void handleSave()}
+              >
                 {saving ? "Saving…" : editingId ? "Save changes" : "Create resource"}
               </Button>
               <Button

@@ -28,15 +28,16 @@
 
 .country-experience-dynamic__hero {
   display: grid;
-  gap: 1.25rem;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.25rem 1.75rem;
+  align-items: center;
   margin-bottom: 2rem;
 }
 
 .country-experience-dynamic__flag-wrap {
   display: flex;
-  justify-content: center;
-  width: 100%;
+  justify-content: flex-end;
+  width: auto;
 }
 
 .country-experience-dynamic__flag {
@@ -50,6 +51,17 @@
 
 .country-experience-dynamic__hero-copy {
   min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .country-experience-dynamic__hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .country-experience-dynamic__flag-wrap {
+    justify-content: flex-start;
+  }
 }
 
 .country-experience-dynamic__region {

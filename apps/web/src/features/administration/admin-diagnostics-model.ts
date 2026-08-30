@@ -319,6 +319,7 @@ export function deriveOutboxStatus(health: ApiHealthPayload | null): DiagnosticC
 export function deriveInitiativeIntegrityStatus(input: {
   warningCount: number | null;
   error: string | null;
+  samples?: readonly { initiativeId: string; title: string }[] | null;
 }): DiagnosticCheck {
   if (input.error || input.warningCount === null) {
     return {
@@ -331,12 +332,18 @@ export function deriveInitiativeIntegrityStatus(input: {
   }
 
   if (input.warningCount > 0) {
+    const sampleText =
+      input.samples && input.samples.length > 0
+        ? ` Examples: ${input.samples
+            .map((sample) => `${sample.title} (${sample.initiativeId})`)
+            .join("; ")}.`
+        : "";
     return {
       id: "initiative-integrity",
       label: "Initiative integrity",
       status: "warning",
       summary: `${input.warningCount} finding${input.warningCount === 1 ? "" : "s"}`,
-      detail: "Review Initiative directory for integrity warnings.",
+      detail: `Review Initiative directory for integrity warnings.${sampleText}`,
     };
   }
 
@@ -385,6 +392,7 @@ export function buildTechnicalHealthSnapshot(input: {
   readyError: string | null;
   initiativeWarningCount: number | null;
   initiativeError: string | null;
+  initiativeSamples?: readonly { initiativeId: string; title: string }[] | null;
 }): {
   overall: DiagnosticSeverity;
   services: DiagnosticCheck[];
@@ -404,6 +412,7 @@ export function buildTechnicalHealthSnapshot(input: {
   const initiativeIntegrity = deriveInitiativeIntegrityStatus({
     warningCount: input.initiativeWarningCount,
     error: input.initiativeError,
+    samples: input.initiativeSamples,
   });
   const lifecycle = lifecycleReconciliationDeferredCheck();
 

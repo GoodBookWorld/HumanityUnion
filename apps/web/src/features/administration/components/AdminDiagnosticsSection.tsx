@@ -58,7 +58,9 @@ export function AdminDiagnosticsSection({ user: _user }: AdminDiagnosticsSection
     const readyError =
       readyResult.status === "rejected" ? formatAuthFormError(readyResult.reason) : null;
     const initiativeWarningCount =
-      integrityResult.status === "fulfilled" ? integrityResult.value : null;
+      integrityResult.status === "fulfilled" ? integrityResult.value.warningCount : null;
+    const initiativeSamples =
+      integrityResult.status === "fulfilled" ? integrityResult.value.samples : null;
     const initiativeError =
       integrityResult.status === "rejected"
         ? formatAuthFormError(integrityResult.reason)
@@ -71,6 +73,7 @@ export function AdminDiagnosticsSection({ user: _user }: AdminDiagnosticsSection
       readyError,
       initiativeWarningCount,
       initiativeError,
+      initiativeSamples,
     });
 
     setView({

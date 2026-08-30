@@ -23,22 +23,24 @@ export function PublicHomeActucSection() {
       <div className="actuc-home">
         <div className="actuc-home__row">
           <div className="actuc-home__identity">
-            <img
-              className="actuc-home__logo"
-              src="/illustrations/logo-actuc.webp"
-              alt=""
-              width={48}
-              height={48}
-              decoding="async"
-            />
-            <img
-              className="actuc-home__name"
-              src="/illustrations/actuc.webp"
-              alt=""
-              width={160}
-              height={40}
-              decoding="async"
-            />
+            <div className="actuc-home__brand">
+              <img
+                className="actuc-home__logo"
+                src="/illustrations/logo-actuc.webp"
+                alt=""
+                width={48}
+                height={48}
+                decoding="async"
+              />
+              <img
+                className="actuc-home__name"
+                src="/illustrations/actuc.webp"
+                alt=""
+                width={160}
+                height={40}
+                decoding="async"
+              />
+            </div>
             <p id={titleId} className={`actuc-home__slogan ${actucAudiowide.className}`}>
               Action Unity Center
             </p>

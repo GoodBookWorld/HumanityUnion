@@ -27,8 +27,12 @@ interface AdminPlatformSectionProps {
   user: AuthUserPublic;
 }
 
-function serviceChipClass(state: string): string {
+function serviceChipClass(state: string, serviceLabel?: string): string {
   if (state === "configured" || state === "enabled") {
+    return "admin-publishing-table__status admin-publishing-table__status--active";
+  }
+  // AI Disabled is an intentional optional capability, not a readiness gap.
+  if (serviceLabel === "AI" && state === "disabled") {
     return "admin-publishing-table__status admin-publishing-table__status--active";
   }
   if (state === "incomplete" || state === "disabled") {
@@ -176,8 +180,11 @@ export function AdminPlatformSection({ user: _user }: AdminPlatformSectionProps)
               ).map(([label, state]) => (
                 <li key={label} className="admin-platform__service">
                   <span className="admin-platform__service-label">{label}</span>
-                  <span className={serviceChipClass(state)}>
-                    {formatAdminPlatformServiceState(state)}
+                  <span className={serviceChipClass(state, label)}>
+                    {formatAdminPlatformServiceState(
+                      state,
+                      label === "AI" ? { service: "ai" } : undefined,
+                    )}
                   </span>
                 </li>
               ))}

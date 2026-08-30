@@ -255,8 +255,37 @@ async function assertNoDuplicate(input: {
   }
 }
 
+/**
+ * Production Completion Pack 01 — max COUNTRY TRUSTED_MEDIA resources per country.
+ * Public projection and create/update enforcement share this constant.
+ * Legacy rows above the limit are retained; public lists cap deterministically.
+ */
+export const COUNTRY_TRUSTED_MEDIA_MAX = 6;
+
 function summarizeResource(resource: MediaResource): string {
   return `${resource.resourceType}:${resource.scopeType}:${resource.name}:${resource.active ? "active" : "inactive"}`;
+}
+
+async function assertCountryTrustedMediaCapacity(input: {
+  countryCode: string;
+  excludeId?: string;
+  /** True when this mutation adds a new COUNTRY TRUSTED_MEDIA occupancy. */
+  isNewOccupancy: boolean;
+}): Promise<void> {
+  if (!input.isNewOccupancy) {
+    return;
+  }
+  const existing = await listMediaResources({
+    resourceType: "TRUSTED_MEDIA",
+    scopeType: "COUNTRY",
+    countryCode: input.countryCode,
+  });
+  const others = existing.filter((row) => row.id !== input.excludeId);
+  if (others.length >= COUNTRY_TRUSTED_MEDIA_MAX) {
+    throw new MediaResourceValidationError(
+      `A country may have at most ${COUNTRY_TRUSTED_MEDIA_MAX} trusted media resources. Remove an existing entry before adding another. Legacy over-limit entries are retained but new creates are blocked.`,
+    );
+  }
 }
 
 export interface AdminMediaResourceCreateInput {
@@ -397,6 +426,13 @@ export async function createAdminMediaResource(
     rssUrl,
   });
 
+  if (resourceType === "TRUSTED_MEDIA" && input.scopeType === "COUNTRY" && countryCode) {
+    await assertCountryTrustedMediaCapacity({
+      countryCode,
+      isNewOccupancy: true,
+    });
+  }
+
   const now = new Date().toISOString();
   const id = input.id?.trim() || `media-resource-${randomUUID()}`;
   if (await getMediaResourceById(id)) {
@@ -513,6 +549,18 @@ export async function updateAdminMediaResource(
     websiteUrl,
     rssUrl,
   });
+
+  if (existing.resourceType === "TRUSTED_MEDIA" && scopeType === "COUNTRY" && countryCode) {
+    const alreadyOccupying =
+      existing.resourceType === "TRUSTED_MEDIA" &&
+      existing.scopeType === "COUNTRY" &&
+      existing.countryCode === countryCode;
+    await assertCountryTrustedMediaCapacity({
+      countryCode,
+      excludeId: existing.id,
+      isNewOccupancy: !alreadyOccupying,
+    });
+  }
 
   const resource: MediaResource = {
     ...existing,

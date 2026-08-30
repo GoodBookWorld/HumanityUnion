@@ -135,3 +135,51 @@ export interface PlatformSocialAccountUpsertInput {
   readonly url: string | null;
   readonly enabled?: boolean;
 }
+
+/** Production Completion Pack 01 — Support page operational link ids. */
+export type PlatformSupportLinkId = "donation" | "volunteer" | "regional_program";
+
+export interface PlatformSupportLinkDefinition {
+  readonly linkId: PlatformSupportLinkId;
+  readonly label: string;
+}
+
+export const PLATFORM_SUPPORT_LINKS: readonly PlatformSupportLinkDefinition[] = [
+  { linkId: "donation", label: "Donation" },
+  { linkId: "volunteer", label: "Volunteer" },
+  { linkId: "regional_program", label: "Regional Program" },
+] as const;
+
+export const PLATFORM_SUPPORT_LINK_IDS: readonly PlatformSupportLinkId[] =
+  PLATFORM_SUPPORT_LINKS.map((link) => link.linkId);
+
+/** Admin-managed Support operational link row (public URLs only; no secrets). */
+export interface PlatformSupportLink {
+  readonly linkId: PlatformSupportLinkId;
+  readonly label: string;
+  /** HTTPS external URL or safe same-site relative path; null when cleared. */
+  readonly url: string | null;
+  readonly enabled: boolean;
+  readonly updatedAt: string;
+  readonly updatedByParticipantId?: string;
+}
+
+/** Public Support projection — only enabled links with a configured URL. */
+export interface PlatformSupportLinkPublic {
+  readonly linkId: PlatformSupportLinkId;
+  readonly label: string;
+  readonly url: string;
+}
+
+export interface PlatformSupportLinkListResponse {
+  readonly links: readonly PlatformSupportLink[];
+}
+
+export interface PlatformSupportLinkPublicListResponse {
+  readonly links: readonly PlatformSupportLinkPublic[];
+}
+
+export interface PlatformSupportLinkUpsertInput {
+  readonly url: string | null;
+  readonly enabled?: boolean;
+}

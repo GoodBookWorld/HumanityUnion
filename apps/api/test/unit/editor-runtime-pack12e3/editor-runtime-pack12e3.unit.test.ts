@@ -58,7 +58,8 @@ describe("Pack 12E3 — collection + assignment pipeline", () => {
     const world = formatEditorGeographicScope({ level: "WORLD" });
     assert.equal(world.summary, "World");
     assert.ok(EDITOR_CAPABILITY_LABELS.INITIATIVE_EDIT);
-    assert.ok(!EDITOR_ASSIGNABLE_CAPABILITY_IDS.includes("PUBLISHING_EDIT"));
+    assert.ok(EDITOR_ASSIGNABLE_CAPABILITY_IDS.includes("PUBLISHING_EDIT"));
+    assert.equal(EDITOR_CAPABILITY_LABELS.PUBLISHING_EDIT, "Edit publications");
   });
 });
 
