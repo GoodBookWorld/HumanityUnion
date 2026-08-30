@@ -369,9 +369,58 @@ describe("Blog migration media extraction", () => {
     assert.ok(refs.some((r) => r.source === "socialImage" && r.mediaId === "m2"));
     assert.equal(refs.filter((r) => r.source === "content_img").length, 2);
     assert.equal(
+      refs.find((r) => r.mediaId === "m1")?.hostClassification,
+      "canonical_media_id",
+    );
+    assert.equal(
       refs.find((r) => r.mediaUrl?.includes("cdn.example"))?.hostClassification,
       "external_https_preserve",
     );
+  });
+
+  it("structured coverMedia with mediaId + r2.dev URL stays canonical", () => {
+    const refs = extractMediaReferencesFromPost({
+      postId: "blog-r2",
+      coverMedia: {
+        mediaId: "media-cover-1",
+        mediaUrl:
+          "https://pub-abc123.r2.dev/blog/media-cover-1.png",
+      },
+    });
+    assert.equal(refs.length, 1);
+    assert.equal(refs[0]!.hostClassification, "canonical_media_id");
+    assert.equal(refs[0]!.mediaId, "media-cover-1");
+    assert.equal(refs[0]!.externalHost, null);
+  });
+
+  it("socialImage with mediaId stays canonical even on arbitrary HTTPS host", () => {
+    const refs = extractMediaReferencesFromPost({
+      postId: "blog-social",
+      optimization: {
+        socialImage: {
+          mediaId: "media-social-1",
+          mediaUrl: "https://cdn.cloudflare.com/random/path.png",
+        },
+      },
+    });
+    assert.equal(refs[0]!.hostClassification, "canonical_media_id");
+    assert.equal(refs[0]!.source, "socialImage");
+  });
+
+  it("host classification cannot demote canonical mediaId to external", () => {
+    assert.equal(
+      classifyMediaUrlHost("https://pub-xyz.r2.dev/blog/x.png"),
+      "external_https_preserve",
+    );
+    const refs = extractMediaReferencesFromPost({
+      postId: "blog-demote",
+      coverMedia: {
+        mediaId: "owned-1",
+        mediaUrl: "https://pub-xyz.r2.dev/blog/x.png",
+      },
+    });
+    assert.equal(refs[0]!.hostClassification, "canonical_media_id");
+    assert.notEqual(refs[0]!.hostClassification, "external_https_preserve");
   });
 
   it("classifies external HTTPS HTML image as EXTERNAL_HTTPS_PRESERVE", () => {
@@ -385,14 +434,17 @@ describe("Blog migration media extraction", () => {
       postId: "blog-81dfe8bf-08b4-488e-8c90-ccc5a240422a",
       coverMedia: {
         mediaId: "cover-1",
-        mediaUrl: "https://media-staging.huws.org/blog/cover-1.png",
+        mediaUrl: "https://pub-abc.r2.dev/blog/cover-1.png",
       },
       content: `<p>Hello</p><img src="https://i0.wp.com/huws.org/wp-content/uploads/2024/01/world-protection.jpg" alt="WPC" />`,
     });
+    const cover = refs.find((r) => r.source === "coverMedia");
+    assert.equal(cover?.hostClassification, "canonical_media_id");
     const external = refs.find((r) => r.hostClassification === "external_https_preserve");
     assert.ok(external);
     assert.equal(external!.externalHost, "i0.wp.com");
     assert.equal(external!.source, "content_img");
+    assert.equal(external!.mediaId, null);
   });
 
   it("external URL is not converted to storageKey", () => {
@@ -433,11 +485,54 @@ describe("Production Blog migration preflight — Task 02", () => {
     assert.equal(report.overallVerdict, "PASS");
     assert.equal(report.sourceInventory.counts.blog_posts, 14);
     assert.equal(report.categories.humanPotential.classification, "INSERT");
+    assert.equal(report.media.uniqueMediaIds.length, 14);
+    assert.equal(report.media.uniqueStorageKeys.length, 14);
+    assert.equal(report.media.canonicalStructuredMediaCount, 28); // cover + social per post
     assert.equal(report.media.r2ObjectVerification, "DEFERRED");
     assert.equal(report.media.mediaCopyReady, false);
     assert.equal(report.mutationProof.mongoWrites, 0);
     assert.equal(report.tokenPolicy.rotateTokens, false);
     assertNoSecretLeak(JSON.stringify(report));
+  });
+
+  it("r2.dev cover mediaUrl with mediaId resolves storageKeys (not external preserve)", async () => {
+    const { source, dest } = seedPerfectSource();
+    for (const post of source.store.get("blog_posts")!) {
+      const mediaId = (post.coverMedia as { mediaId: string }).mediaId;
+      post.coverMedia = {
+        mediaId,
+        mediaUrl: `https://pub-staging.r2.dev/blog/${mediaId}.png`,
+      };
+      post.optimization = undefined;
+      post.content = "<p>no images</p>";
+    }
+    // One post keeps legacy external HTML image
+    const first = source.store.get("blog_posts")![0]!;
+    first.content = `<img src="https://i0.wp.com/huws.org/wp-content/uploads/x.jpg" />`;
+
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+      mutationCounters: {
+        mongoWrites: 0,
+        putObjectCalls: 0,
+        deleteObjectCalls: 0,
+        emailSends: 0,
+        outboxWrites: 0,
+      },
+    });
+    assert.equal(report.overallVerdict, "PASS");
+    assert.equal(report.media.bySource.coverMedia, 14);
+    assert.equal(report.media.bySource.content_img, 1);
+    assert.equal(report.media.canonicalStructuredMediaCount, 14);
+    assert.equal(report.media.externalHttpsPreserveCount, 1);
+    assert.deepEqual(report.media.externalHttpsHosts, ["i0.wp.com"]);
+    assert.equal(report.media.uniqueMediaIds.length, 14);
+    assert.equal(report.media.uniqueStorageKeys.length, 14);
+    assert.equal(report.media.missingMediaRecords.length, 0);
+    assert.equal(report.media.unresolvedReferences, 0);
+    assert.equal(report.media.mediaCopyReady, false);
   });
 
   it("category divergence → BLOCKED", async () => {

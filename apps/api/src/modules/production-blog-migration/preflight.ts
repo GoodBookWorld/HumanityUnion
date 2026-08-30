@@ -23,6 +23,7 @@ import {
 import { isBlogMigrationR2Configured } from "./guards.js";
 import {
   extractMediaReferencesFromPost,
+  isExternalHttpsPreserveReference,
   storageKeyFromMediaUrl,
   summarizeMediaReferences,
   type ExtractedMediaReference,
@@ -97,6 +98,7 @@ export interface BlogMigrationPreflightReport {
     byHostClassification: Record<MediaHostClassification, number>;
     externalHttpsPreserveCount: number;
     externalHttpsHosts: string[];
+    canonicalStructuredMediaCount: number;
     missingMediaRecords: string[];
     unresolvedReferences: number;
     destinationMediaIdCollisions: string[];
@@ -593,9 +595,10 @@ export async function runProductionBlogMigrationPreflight(input: {
   let unresolvedReferences = 0;
 
   for (const ref of mediaRefs) {
-    // Legacy external HTTPS (e.g. i0.wp.com WordPress) — preserve HTML as-is.
+    // Legacy external HTTPS without mediaId (e.g. i0.wp.com WordPress in HTML).
     // Never invent storageKey, never require media_upload_records, never R2-copy.
-    if (ref.hostClassification === "external_https_preserve") {
+    // Structured cover/social with mediaId are never skipped here — even on *.r2.dev URLs.
+    if (isExternalHttpsPreserveReference(ref)) {
       continue;
     }
 
@@ -737,6 +740,7 @@ export async function runProductionBlogMigrationPreflight(input: {
       byHostClassification: mediaSummary.byHostClassification,
       externalHttpsPreserveCount: mediaSummary.externalHttpsPreserveCount,
       externalHttpsHosts: mediaSummary.externalHttpsHosts,
+      canonicalStructuredMediaCount: mediaSummary.canonicalStructuredMediaCount,
       missingMediaRecords: uniqueMissing,
       unresolvedReferences,
       destinationMediaIdCollisions,

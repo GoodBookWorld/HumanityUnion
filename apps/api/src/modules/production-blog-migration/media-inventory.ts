@@ -1,13 +1,18 @@
 import { PRODUCTION_MEDIA_PUBLIC_BASE_URL } from "./constants.js";
 
 /**
- * Host / ownership classification for Blog media URLs.
+ * Ownership / host classification for Blog media references.
  *
- * - production_public / staging_public / relative_api → canonical HU media (R2 inventory)
- * - external_https_preserve → legacy external HTTPS; leave HTML unchanged; never R2-copy
- * - unknown → malformed / unclassifiable (blocker when used as canonical-looking ref)
+ * Structured coverMedia / socialImage with a canonical mediaId always win over
+ * URL host (including *.r2.dev staging public URLs).
+ *
+ * - canonical_media_id — structured field with mediaId (R2 inventory via media_upload_records)
+ * - production_public / staging_public / relative_api — URL-only canonical HU media
+ * - external_https_preserve — HTML (or URL-only) external HTTPS; leave unchanged; never R2-copy
+ * - unknown — malformed / unclassifiable
  */
 export type MediaHostClassification =
+  | "canonical_media_id"
   | "production_public"
   | "staging_public"
   | "relative_api"
@@ -39,6 +44,7 @@ export function isCanonicalHuMediaUrl(url: string | null | undefined): boolean {
   return false;
 }
 
+/** URL-host classification only — never used to demote a structured mediaId. */
 export function classifyMediaUrlHost(url: string | null | undefined): MediaHostClassification {
   if (!url?.trim()) return "unknown";
   const trimmed = url.trim();
@@ -50,7 +56,6 @@ export function classifyMediaUrlHost(url: string | null | undefined): MediaHostC
   if (/^https?:\/\/media-staging\.huws\.org\//i.test(trimmed)) return "staging_public";
   if (/^https?:\/\/[^/]+\/api\/v1\/media\/files\//i.test(trimmed)) return "relative_api";
   if (lower.startsWith("https://") || lower.startsWith("http://")) {
-    // Absolute non-HU URL — preserve in HTML; never treat as R2 storageKey.
     return "external_https_preserve";
   }
   return "unknown";
@@ -64,6 +69,14 @@ export function extractSafeExternalHost(url: string | null | undefined): string 
   } catch {
     return null;
   }
+}
+
+/**
+ * True when this reference is legacy external HTTPS with no canonical mediaId.
+ * Structured cover/social with mediaId are never external preserves.
+ */
+export function isExternalHttpsPreserveReference(ref: ExtractedMediaReference): boolean {
+  return ref.hostClassification === "external_https_preserve" && !ref.mediaId;
 }
 
 /**
@@ -87,6 +100,10 @@ export function storageKeyFromMediaUrl(url: string | null | undefined): string |
   }
 }
 
+/**
+ * Structured coverMedia / socialImage: mediaId evidence always classifies as
+ * canonical_media_id — host (*.r2.dev, etc.) must never demote ownership.
+ */
 function extractCoverLike(
   postId: string,
   source: "coverMedia" | "socialImage",
@@ -97,11 +114,24 @@ function extractCoverLike(
   const mediaId = asString(record.mediaId);
   const mediaUrl = asString(record.mediaUrl);
   if (!mediaId && !mediaUrl) return null;
+
+  if (mediaId) {
+    return {
+      postId,
+      source,
+      mediaId,
+      mediaUrl,
+      hostClassification: "canonical_media_id",
+      externalHost: null,
+    };
+  }
+
+  // URL-only structured field (no mediaId) — classify by host.
   const hostClassification = classifyMediaUrlHost(mediaUrl);
   return {
     postId,
     source,
-    mediaId,
+    mediaId: null,
     mediaUrl,
     hostClassification,
     externalHost:
@@ -159,9 +189,11 @@ export function summarizeMediaReferences(refs: readonly ExtractedMediaReference[
   byHostClassification: Record<MediaHostClassification, number>;
   externalHttpsPreserveCount: number;
   externalHttpsHosts: string[];
+  canonicalStructuredMediaCount: number;
 } {
   const bySource: Record<string, number> = {};
   const byHostClassification: Record<MediaHostClassification, number> = {
+    canonical_media_id: 0,
     production_public: 0,
     staging_public: 0,
     relative_api: 0,
@@ -172,7 +204,7 @@ export function summarizeMediaReferences(refs: readonly ExtractedMediaReference[
   for (const ref of refs) {
     bySource[ref.source] = (bySource[ref.source] ?? 0) + 1;
     byHostClassification[ref.hostClassification] += 1;
-    if (ref.hostClassification === "external_https_preserve" && ref.externalHost) {
+    if (isExternalHttpsPreserveReference(ref) && ref.externalHost) {
       hostSet.add(ref.externalHost);
     }
   }
@@ -180,7 +212,8 @@ export function summarizeMediaReferences(refs: readonly ExtractedMediaReference[
     totalReferences: refs.length,
     bySource,
     byHostClassification,
-    externalHttpsPreserveCount: byHostClassification.external_https_preserve,
+    externalHttpsPreserveCount: [...refs].filter(isExternalHttpsPreserveReference).length,
     externalHttpsHosts: [...hostSet].sort(),
+    canonicalStructuredMediaCount: byHostClassification.canonical_media_id,
   };
 }

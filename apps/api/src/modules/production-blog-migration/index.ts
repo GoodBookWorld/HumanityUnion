@@ -41,6 +41,7 @@ export {
   extractMediaReferencesFromPost,
   extractSafeExternalHost,
   isCanonicalHuMediaUrl,
+  isExternalHttpsPreserveReference,
   storageKeyFromMediaUrl,
   summarizeMediaReferences,
 } from "./media-inventory.js";
