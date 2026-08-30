@@ -35,6 +35,7 @@
     "verify:staging": "tsx src/scripts/verify-staging.ts",
     "verify:initiative-lifecycle": "tsx src/scripts/verify-initiative-lifecycle.ts",
     "inspect:mongo-topology": "tsx src/scripts/inspect-mongo-topology.ts",
+    "retry:failed-outbox": "tsx src/scripts/retry-failed-outbox-record.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"
   },
