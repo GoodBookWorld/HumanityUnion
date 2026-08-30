@@ -20,6 +20,8 @@
     "bootstrap:production-admin-identity": "tsx src/scripts/bootstrap-production-admin-identity.ts",
     "verify:production-admin-identity": "tsx src/scripts/verify-production-admin-identity.ts",
     "preflight:production-blog-migration": "tsx src/scripts/preflight-production-blog-migration.ts",
+    "execute:production-blog-migration": "tsx src/scripts/execute-production-blog-migration.ts",
+    "verify:production-blog-migration": "tsx src/scripts/verify-production-blog-migration.ts",
     "preflight:staging-production-initiative-migration": "tsx src/scripts/preflight-staging-production-initiative-migration.ts",
     "preflight:production-initiative-migration-collisions": "tsx src/scripts/preflight-production-initiative-migration-collisions.ts",
     "preflight:production-initiative-migration-media-r2": "tsx src/scripts/preflight-production-initiative-migration-media-r2.ts",

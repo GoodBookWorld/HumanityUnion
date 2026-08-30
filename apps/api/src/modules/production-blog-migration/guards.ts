@@ -1,8 +1,12 @@
 import {
+  BLOG_ALLOWED_WRITE_COLLECTIONS,
   BLOG_DESTINATION_MONGODB_DATABASE_ENV,
   BLOG_DESTINATION_MONGODB_URI_ENV,
+  BLOG_FORBIDDEN_MIGRATE_COLLECTIONS,
   BLOG_SOURCE_MONGODB_DATABASE_ENV,
   BLOG_SOURCE_MONGODB_URI_ENV,
+  PRODUCTION_BLOG_MIGRATION_CONFIRM_FLAG,
+  PRODUCTION_BLOG_MIGRATION_CONFIRM_VALUE,
   PRODUCTION_BLOG_MIGRATION_SOURCE_DATABASE,
   PRODUCTION_BLOG_MIGRATION_TARGET_DATABASE,
   isTestIsolationDatabase,
@@ -12,8 +16,70 @@ import { ProductionBlogMigrationError } from "./errors.js";
 export function assertNoWritePathRequested(argv: readonly string[] = process.argv): void {
   if (argv.includes("--execute") || argv.includes("--write") || argv.includes("--apply")) {
     throw new ProductionBlogMigrationError(
-      "This Blog migration preflight is read-only. Write executor is not implemented yet.",
+      "This Blog migration preflight is read-only. Use execute:production-blog-migration for writes.",
       "WRITE_PATH_FORBIDDEN",
+    );
+  }
+}
+
+export function isBlogExecuteModeRequested(argv: readonly string[] = process.argv): boolean {
+  return argv.includes("--execute");
+}
+
+export function resolveBlogMigrationMode(input: {
+  execute: boolean;
+  confirm?: string;
+}): "dry-run" | "execute" {
+  if (input.execute && input.confirm === PRODUCTION_BLOG_MIGRATION_CONFIRM_VALUE) {
+    return "execute";
+  }
+  return "dry-run";
+}
+
+export function assertBlogMigrationExecuteWriteGuards(input: {
+  sourceDatabase: string;
+  destinationDatabase: string;
+  execute: boolean;
+  confirm?: string;
+  allowTestIsolation?: boolean;
+}): void {
+  if (!input.execute) {
+    throw new ProductionBlogMigrationError(
+      "Refusing write: dry-run is default. Pass --execute to write.",
+      "DRY_RUN_REQUIRED_EXECUTE_FLAG",
+    );
+  }
+  if (input.confirm !== PRODUCTION_BLOG_MIGRATION_CONFIRM_VALUE) {
+    throw new ProductionBlogMigrationError(
+      `Refusing write: set ${PRODUCTION_BLOG_MIGRATION_CONFIRM_FLAG}=${PRODUCTION_BLOG_MIGRATION_CONFIRM_VALUE}.`,
+      "MISSING_CONFIRMATION",
+    );
+  }
+  assertBlogMigrationSourceDatabase(input.sourceDatabase, {
+    allowTestIsolation: input.allowTestIsolation,
+  });
+  assertBlogMigrationDestinationDatabase(input.destinationDatabase, {
+    allowTestIsolation: input.allowTestIsolation,
+  });
+  if (input.sourceDatabase === input.destinationDatabase) {
+    throw new ProductionBlogMigrationError(
+      "Source and destination databases must differ.",
+      "SAME_SOURCE_DESTINATION",
+    );
+  }
+}
+
+export function assertBlogMigrationWritableCollection(collection: string): void {
+  if ((BLOG_FORBIDDEN_MIGRATE_COLLECTIONS as readonly string[]).includes(collection)) {
+    throw new ProductionBlogMigrationError(
+      `Forbidden Blog migration collection: ${collection}`,
+      "FORBIDDEN_COLLECTION",
+    );
+  }
+  if (!(BLOG_ALLOWED_WRITE_COLLECTIONS as readonly string[]).includes(collection)) {
+    throw new ProductionBlogMigrationError(
+      `Collection not on Blog migration allow-list: ${collection}`,
+      "COLLECTION_NOT_ALLOWLISTED",
     );
   }
 }
