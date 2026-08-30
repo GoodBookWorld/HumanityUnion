@@ -12,6 +12,7 @@ import type {
   TimelineEvent,
 } from "@hu/types";
 
+import { resolvePlatformMode } from "../../config/platform.config.js";
 import { isInitiativeEligibleForPublicProjection } from "./initiative-public-projection.access.js";
 import { rebuildProjectedInitiativeCards } from "./initiative-projection.store.js";
 import { resolveInitiativePersistenceAdapter } from "./persistence/resolve-initiative-persistence.js";
@@ -38,8 +39,40 @@ export interface InitiativeUpdate {
 
 const persistence = resolveInitiativePersistenceAdapter();
 
+/**
+ * Bootstrap sample Initiative is for local/dev fixtures only.
+ * Staging/production must not re-seed after operator cleanup.
+ * Opt-in: INITIATIVE_BOOTSTRAP_SEED=true; opt-out: =false.
+ */
+export function shouldSeedBootstrapInitiative(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  const explicit = env.INITIATIVE_BOOTSTRAP_SEED?.trim();
+  if (explicit === "true" || explicit === "1") {
+    return true;
+  }
+  if (explicit === "false" || explicit === "0") {
+    return false;
+  }
+
+  const platformMode = env.PLATFORM_MODE?.trim();
+  if (platformMode === "staging" || platformMode === "production") {
+    return false;
+  }
+
+  if (resolvePlatformMode() === "production") {
+    return false;
+  }
+
+  return true;
+}
+
 function ensureBootstrapSeed(target: Map<string, Initiative>): boolean {
   if (target.has(sampleInitiative.initiativeId)) {
+    return false;
+  }
+
+  if (!shouldSeedBootstrapInitiative()) {
     return false;
   }
 

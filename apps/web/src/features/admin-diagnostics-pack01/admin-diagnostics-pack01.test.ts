@@ -12,8 +12,10 @@ import {
   aggregateOverallStatus,
   buildTechnicalHealthSnapshot,
   deriveEmailStatus,
+  deriveLifecycleReconciliationStatus,
   deriveMongoStatus,
   deriveOutboxStatus,
+  formatDiagnosticSeverityLabel,
   sanitizeOperatorMessage,
 } from "../administration/admin-diagnostics-model";
 import {
@@ -154,9 +156,9 @@ describe("Diagnostics Pack 01 — status aggregation", () => {
       snapshot.integrity.find((row) => row.id === "initiative-integrity")?.status,
       "unknown",
     );
-    assert.notEqual(
+    assert.equal(
       snapshot.integrity.find((row) => row.id === "lifecycle-reconciliation")?.status,
-      "healthy",
+      "not_available",
     );
   });
 });
@@ -253,8 +255,29 @@ describe("Diagnostics Pack 01 — Mongo / Email / Outbox / Integrity rendering h
     assert.match(integrity?.summary ?? "", /3 findings/);
 
     const lifecycle = snapshot.integrity.find((row) => row.id === "lifecycle-reconciliation");
-    assert.equal(lifecycle?.status, "unknown");
-    assert.match(lifecycle?.summary ?? "", /Not available/);
+    assert.equal(lifecycle?.status, "not_available");
+    assert.match(lifecycle?.summary ?? "", /CLI-only/);
+    assert.equal(
+      formatDiagnosticSeverityLabel("not_available"),
+      "Not available",
+    );
+  });
+
+  it("treats lifecycle not_available as neutral (excluded from overall health)", () => {
+    assert.equal(aggregateOverallStatus(["healthy", "not_available"]), "healthy");
+    assert.equal(aggregateOverallStatus(["not_available"]), "unknown");
+    assert.equal(aggregateOverallStatus(["healthy", "unknown"]), "warning");
+
+    const withConflicts = deriveLifecycleReconciliationStatus({
+      available: true,
+      conflictCount: 2,
+    });
+    assert.equal(withConflicts.status, "warning");
+
+    const deferred = deriveLifecycleReconciliationStatus();
+    assert.equal(deferred.status, "not_available");
+    assert.notEqual(deferred.status, "healthy");
+    assert.notEqual(deferred.status, "unknown");
   });
 
   it("sanitizes secrets from operator messages", () => {
