@@ -1,0 +1,556 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import type { Db, Document } from "mongodb";
+
+import {
+  EXPECTED_BLOG_COLLECTION_COUNTS,
+  EXPECTED_INSERT_CATEGORY_ID,
+  EXPECTED_SEED_CATEGORY_IDS,
+  assertNoSecretLeak,
+  classifyHumanPotentialCategory,
+  classifySeedCategoryPair,
+  extractMediaReferencesFromPost,
+  runProductionBlogMigrationPreflight,
+  stripForbiddenReportFields,
+} from "../../../src/modules/production-blog-migration/index.js";
+
+type MemDoc = Document & { _id?: string };
+
+function getPath(doc: MemDoc, path: string): unknown {
+  if (!path.includes(".")) return doc[path];
+  return path.split(".").reduce<unknown>((acc, part) => {
+    if (acc == null || typeof acc !== "object") return undefined;
+    return (acc as Record<string, unknown>)[part];
+  }, doc);
+}
+
+function matchesFilter(doc: MemDoc, filter: Document): boolean {
+  if (!filter || Object.keys(filter).length === 0) return true;
+  for (const [key, value] of Object.entries(filter)) {
+    const actual = getPath(doc, key);
+    if (String(actual) !== String(value)) return false;
+  }
+  return true;
+}
+
+class MemoryCursor {
+  constructor(private readonly docs: MemDoc[]) {}
+  project(_p: Document) {
+    return this;
+  }
+  async toArray() {
+    return this.docs.map((d) => ({ ...d }));
+  }
+}
+
+class MemoryCollection {
+  constructor(
+    private readonly store: Map<string, MemDoc[]>,
+    private readonly name: string,
+  ) {}
+  private rows(): MemDoc[] {
+    return this.store.get(this.name) ?? [];
+  }
+  async findOne(filter: Document) {
+    return this.rows().find((doc) => matchesFilter(doc, filter)) ?? null;
+  }
+  find(filter: Document = {}) {
+    return new MemoryCursor(this.rows().filter((doc) => matchesFilter(doc, filter)));
+  }
+  async countDocuments(filter: Document = {}) {
+    return this.rows().filter((doc) => matchesFilter(doc, filter)).length;
+  }
+}
+
+class MemoryDb {
+  readonly store = new Map<string, MemDoc[]>();
+  collection(name: string) {
+    if (!this.store.has(name)) this.store.set(name, []);
+    return new MemoryCollection(this.store, name);
+  }
+  seed(name: string, docs: MemDoc[]) {
+    this.store.set(
+      name,
+      docs.map((d) => ({ ...d })),
+    );
+  }
+  asDb(): Db {
+    return this as unknown as Db;
+  }
+}
+
+const AUTHOR = "participant-author-1";
+const ACTOR = "participant-actor-1";
+const GRANTER = "participant-granter-1";
+const DECIDER = "participant-decider-1";
+const LINKED = "participant-linked-1";
+
+function seedCategory(
+  categoryId: string,
+  extras: Partial<MemDoc> = {},
+): MemDoc {
+  const slug =
+    categoryId === "conscious_existence"
+      ? "conscious-existence"
+      : categoryId === "human_security"
+        ? "human-security"
+        : categoryId === "our_life"
+          ? "our-life"
+          : "human-potential";
+  const name =
+    categoryId === "conscious_existence"
+      ? "Conscious Existence"
+      : categoryId === "human_security"
+        ? "Human Security"
+        : categoryId === "our_life"
+          ? "Our Life"
+          : "Human Potential";
+  return {
+    _id: categoryId,
+    categoryId,
+    slug,
+    name,
+    status: "active",
+    sortOrder: 1,
+    ...extras,
+  };
+}
+
+function seedPerfectSource(): {
+  source: MemoryDb;
+  dest: MemoryDb;
+} {
+  const source = new MemoryDb();
+  const dest = new MemoryDb();
+
+  const categories = [
+    ...EXPECTED_SEED_CATEGORY_IDS.map((id, i) => seedCategory(id, { sortOrder: i + 1 })),
+    seedCategory(EXPECTED_INSERT_CATEGORY_ID, { sortOrder: 4 }),
+  ];
+  source.seed("blog_categories", categories);
+  dest.seed(
+    "blog_categories",
+    EXPECTED_SEED_CATEGORY_IDS.map((id, i) => seedCategory(id, { sortOrder: i + 1 })),
+  );
+
+  const posts: MemDoc[] = [];
+  for (let i = 0; i < EXPECTED_BLOG_COLLECTION_COUNTS.blog_posts; i += 1) {
+    const postId = `blog-post-${i}`;
+    const mediaId = `media-${i}`;
+    posts.push({
+      _id: postId,
+      postId,
+      slug: `slug-${i}`,
+      authorParticipantId: AUTHOR,
+      categoryId: categories[i % categories.length]!.categoryId,
+      status: "published",
+      coverMedia: {
+        mediaId,
+        mediaUrl: `https://media-staging.huws.org/blog/${mediaId}.png`,
+      },
+      optimization: {
+        socialImage: {
+          mediaId,
+          mediaUrl: `https://media-staging.huws.org/blog/${mediaId}.png`,
+        },
+      },
+      content: `<p>Hello</p><img src="/api/v1/media/files/blog/${mediaId}.png" alt="x" />`,
+    });
+  }
+  source.seed("blog_posts", posts);
+
+  const mediaDocs = posts.map((p, i) => ({
+    _id: `media-${i}`,
+    mediaId: `media-${i}`,
+    storageKey: `blog/media-${i}.png`,
+    mediaUrl: `https://media-staging.huws.org/blog/media-${i}.png`,
+    purpose: "blog-image",
+    ownerParticipantId: AUTHOR,
+  }));
+  source.seed("media_upload_records", mediaDocs);
+  dest.seed("media_upload_records", []);
+
+  const subscribers: MemDoc[] = [];
+  for (let i = 0; i < EXPECTED_BLOG_COLLECTION_COUNTS.blog_subscribers; i += 1) {
+    subscribers.push({
+      _id: `sub-${i}`,
+      subscriberId: `sub-${i}`,
+      emailNormalized: `user${i}@example.com`,
+      emailDisplay: `user${i}@example.com`,
+      subscriptionType: "blog_publications",
+      status: i < 6 ? "not_confirmed" : "subscribed",
+      confirmTokenHash: `hash-confirm-${i}`,
+      unsubscribeTokenHash: `hash-unsub-${i}`,
+      ...(i >= 15 ? { participantId: LINKED } : {}),
+    });
+  }
+  source.seed("blog_subscribers", subscribers);
+
+  const deliveries: MemDoc[] = [];
+  for (let i = 0; i < EXPECTED_BLOG_COLLECTION_COUNTS.blog_publication_deliveries; i += 1) {
+    deliveries.push({
+      _id: `del-${i}`,
+      deliveryId: `del-${i}`,
+      postId: posts[i % posts.length]!.postId,
+      subscriberId: subscribers[i % subscribers.length]!.subscriberId,
+      status: "sent",
+    });
+  }
+  source.seed("blog_publication_deliveries", deliveries);
+
+  source.seed("blog_reactions", [
+    {
+      _id: "rxn-0",
+      reactionId: "rxn-0",
+      postId: posts[0]!.postId,
+      actorParticipantId: ACTOR,
+      reaction: "helpful",
+    },
+    {
+      _id: "rxn-1",
+      reactionId: "rxn-1",
+      postId: posts[1]!.postId,
+      actorParticipantId: ACTOR,
+      reaction: "helpful",
+    },
+    {
+      _id: "rxn-2",
+      reactionId: "rxn-2",
+      postId: posts[2]!.postId,
+      actorParticipantId: ACTOR,
+      reaction: "not_helpful",
+    },
+  ]);
+
+  source.seed("blog_capability_grants", [
+    { _id: "g1", participantId: AUTHOR, grantedByParticipantId: GRANTER },
+    { _id: "g2", participantId: ACTOR, grantedByParticipantId: GRANTER },
+    { _id: "g3", participantId: LINKED, grantedByParticipantId: GRANTER },
+  ]);
+
+  source.seed("blog_author_applications", [
+    {
+      _id: "app-1",
+      applicationId: "app-1",
+      participantId: AUTHOR,
+      decidedByParticipantId: DECIDER,
+      preferredCategoryIds: ["conscious_existence"],
+    },
+    {
+      _id: "app-2",
+      applicationId: "app-2",
+      participantId: ACTOR,
+      decidedByParticipantId: DECIDER,
+      preferredCategoryIds: ["human_potential"],
+    },
+    {
+      _id: "app-3",
+      applicationId: "app-3",
+      participantId: LINKED,
+      decidedByParticipantId: DECIDER,
+      preferredCategoryIds: ["our_life"],
+    },
+  ]);
+
+  for (const name of [
+    "blog_subscription_settings",
+    "blog_admin_subscriber_messages",
+    "blog_admin_subscriber_message_deliveries",
+    "blog_comments",
+  ] as const) {
+    source.seed(name, []);
+    dest.seed(name, []);
+  }
+  dest.seed("blog_posts", []);
+  dest.seed("blog_subscribers", []);
+  dest.seed("blog_publication_deliveries", []);
+  dest.seed("blog_reactions", []);
+  dest.seed("blog_capability_grants", []);
+  dest.seed("blog_author_applications", []);
+
+  for (const memberId of [AUTHOR, ACTOR, GRANTER, DECIDER, LINKED]) {
+    const members = dest.store.get("members") ?? [];
+    members.push({ _id: memberId, memberId });
+    dest.store.set("members", members);
+  }
+
+  return { source, dest };
+}
+
+describe("Blog migration category classifiers", () => {
+  it("classifies seed equivalence and divergence", () => {
+    const base = {
+      categoryId: "conscious_existence",
+      slug: "conscious-existence",
+      name: "Conscious Existence",
+      status: "active",
+      sortOrder: 1,
+    };
+    assert.equal(
+      classifySeedCategoryPair({ source: base, destination: base }).classification,
+      "EQUIVALENT",
+    );
+    assert.equal(
+      classifySeedCategoryPair({
+        source: base,
+        destination: { ...base, sortOrder: 9 },
+      }).classification,
+      "EQUIVALENT_SORT_ORDER_DIFFERS",
+    );
+    assert.equal(
+      classifySeedCategoryPair({
+        source: base,
+        destination: { ...base, name: "Other" },
+      }).classification,
+      "DIVERGENT",
+    );
+  });
+
+  it("classifies human_potential insert and collisions", () => {
+    const source = {
+      categoryId: EXPECTED_INSERT_CATEGORY_ID,
+      slug: "human-potential",
+      name: "Human Potential",
+      status: "active",
+      sortOrder: 4,
+    };
+    assert.equal(
+      classifyHumanPotentialCategory({
+        source,
+        destinationById: null,
+        destinationBySlug: null,
+      }).classification,
+      "INSERT",
+    );
+    assert.equal(
+      classifyHumanPotentialCategory({
+        source,
+        destinationById: source,
+        destinationBySlug: null,
+      }).classification,
+      "DESTINATION_ID_COLLISION",
+    );
+    assert.equal(
+      classifyHumanPotentialCategory({
+        source,
+        destinationById: null,
+        destinationBySlug: {
+          categoryId: "other",
+          slug: "human-potential",
+          name: "X",
+          status: "active",
+        },
+      }).classification,
+      "DESTINATION_SLUG_COLLISION",
+    );
+  });
+});
+
+describe("Blog migration media extraction", () => {
+  it("extracts cover, social, and HTML img references", () => {
+    const refs = extractMediaReferencesFromPost({
+      postId: "blog-1",
+      coverMedia: {
+        mediaId: "m1",
+        mediaUrl: "https://media-staging.huws.org/blog/m1.png",
+      },
+      optimization: {
+        socialImage: {
+          mediaId: "m2",
+          mediaUrl: "https://media.huws.org/blog/m2.png",
+        },
+      },
+      content: `<img src="/api/v1/media/files/blog/m3.png" /><img src='https://cdn.example/x.png' />`,
+    });
+    assert.equal(refs.length, 4);
+    assert.ok(refs.some((r) => r.source === "coverMedia" && r.mediaId === "m1"));
+    assert.ok(refs.some((r) => r.source === "socialImage" && r.mediaId === "m2"));
+    assert.equal(refs.filter((r) => r.source === "content_img").length, 2);
+  });
+});
+
+describe("Production Blog migration preflight — Task 02", () => {
+  it("exact expected inventory → PASS (R2 deferred)", async () => {
+    const { source, dest } = seedPerfectSource();
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      sourceDatabase: "humanity_union_staging",
+      destinationDatabase: "humanity_union_production",
+      r2Configured: false,
+      mutationCounters: {
+        mongoWrites: 0,
+        putObjectCalls: 0,
+        deleteObjectCalls: 0,
+        emailSends: 0,
+        outboxWrites: 0,
+      },
+    });
+    assert.equal(report.overallVerdict, "PASS");
+    assert.equal(report.sourceInventory.counts.blog_posts, 14);
+    assert.equal(report.categories.humanPotential.classification, "INSERT");
+    assert.equal(report.media.r2ObjectVerification, "DEFERRED");
+    assert.equal(report.media.mediaCopyReady, false);
+    assert.equal(report.mutationProof.mongoWrites, 0);
+    assert.equal(report.tokenPolicy.rotateTokens, false);
+    assertNoSecretLeak(JSON.stringify(report));
+  });
+
+  it("category divergence → BLOCKED", async () => {
+    const { source, dest } = seedPerfectSource();
+    dest.store.get("blog_categories")![0]!.name = "Renamed";
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+    });
+    assert.equal(report.overallVerdict, "BLOCKED");
+    assert.ok(report.blockers.some((b) => /divergent/i.test(b)));
+  });
+
+  it("human_potential destination id collision → BLOCKED", async () => {
+    const { source, dest } = seedPerfectSource();
+    dest.seed("blog_categories", [
+      ...dest.store.get("blog_categories")!,
+      seedCategory(EXPECTED_INSERT_CATEGORY_ID),
+    ]);
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+    });
+    assert.equal(report.overallVerdict, "BLOCKED");
+    assert.equal(
+      report.categories.humanPotential.classification,
+      "DESTINATION_ID_COLLISION",
+    );
+  });
+
+  it("subscriber email-type collision reports opaque subscriberId only", async () => {
+    const { source, dest } = seedPerfectSource();
+    dest.seed("blog_subscribers", [
+      {
+        _id: "prod-sub",
+        subscriberId: "prod-sub",
+        emailNormalized: "user0@example.com",
+        subscriptionType: "blog_publications",
+      },
+    ]);
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+    });
+    assert.equal(report.overallVerdict, "BLOCKED");
+    assert.deepEqual(report.destinationCollisions.subscriberEmailTypeOpaqueIds, ["sub-0"]);
+    const text = JSON.stringify(report);
+    assert.equal(text.includes("user0@example.com"), false);
+    assert.equal(text.includes("emailNormalized"), false);
+    assertNoSecretLeak(text);
+  });
+
+  it("composite business-key collisions (delivery + reaction)", async () => {
+    const { source, dest } = seedPerfectSource();
+    dest.seed("blog_publication_deliveries", [
+      {
+        _id: "d",
+        deliveryId: "other-del",
+        postId: "blog-post-0",
+        subscriberId: "sub-0",
+      },
+    ]);
+    dest.seed("blog_reactions", [
+      {
+        _id: "r",
+        reactionId: "other-rxn",
+        postId: "blog-post-0",
+        actorParticipantId: ACTOR,
+      },
+    ]);
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+    });
+    assert.equal(report.overallVerdict, "BLOCKED");
+    assert.ok(report.destinationCollisions.deliveryPostSubscriber.includes("blog-post-0::sub-0"));
+    assert.ok(
+      report.destinationCollisions.reactionPostActor.includes(`blog-post-0::${ACTOR}`),
+    );
+  });
+
+  it("Participant FK failure → BLOCKED", async () => {
+    const { source, dest } = seedPerfectSource();
+    dest.seed("members", []);
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+    });
+    assert.equal(report.overallVerdict, "BLOCKED");
+    assert.ok(report.participantForeignKeys.missing.length > 0);
+  });
+
+  it("missing media record → BLOCKED", async () => {
+    const { source, dest } = seedPerfectSource();
+    source.seed("media_upload_records", []);
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+    });
+    assert.equal(report.overallVerdict, "BLOCKED");
+    assert.ok(report.media.missingMediaRecords.length > 0);
+  });
+
+  it("no sensitive values in serialized reports", async () => {
+    const { source, dest } = seedPerfectSource();
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+    });
+    const stripped = stripForbiddenReportFields({
+      ...report,
+      leak: {
+        emailNormalized: "secret@example.com",
+        confirmTokenHash: "abc",
+        content: "<p>private</p>",
+      },
+    });
+    const text = JSON.stringify(stripped);
+    assert.equal(text.includes("secret@example.com"), false);
+    assert.equal(text.includes("confirmTokenHash"), false);
+    assert.equal(text.includes("<p>private</p>"), false);
+    assertNoSecretLeak(JSON.stringify(report));
+  });
+
+  it("zero-write proof refuses PASS when counters nonzero", async () => {
+    const { source, dest } = seedPerfectSource();
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+      mutationCounters: {
+        mongoWrites: 1,
+        putObjectCalls: 0,
+        deleteObjectCalls: 0,
+        emailSends: 0,
+        outboxWrites: 0,
+      },
+    });
+    assert.equal(report.overallVerdict, "BLOCKED");
+    assert.ok(report.blockers.some((b) => /mutation detected/i.test(b)));
+  });
+
+  it("R2 deferred when credentials unset", async () => {
+    const { source, dest } = seedPerfectSource();
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+    });
+    assert.equal(report.media.r2ObjectVerification, "DEFERRED");
+    assert.equal(report.media.mediaCopyReady, false);
+  });
+});
