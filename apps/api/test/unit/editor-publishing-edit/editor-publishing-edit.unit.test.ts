@@ -32,8 +32,15 @@ describe("Production Completion Pack 01 — Edit publications authorization", ()
     const permissions = readRepo("apps/api/src/modules/blog/blog-permissions.ts");
     assert.match(permissions, /findEditorGrantByParticipantId/);
     assert.match(permissions, /PUBLISHING_EDIT/);
+    assert.match(permissions, /editorGrant\?\.status === "ACTIVE"/);
     assert.match(permissions, /capabilities\.add\("editor"\)/);
     assert.match(permissions, /Compatibility bridge|Dual-auth bridge/);
+  });
+
+  it("Admin role retains Blog editor/administrator via role mapping without Editor grant", () => {
+    const permissions = readRepo("apps/api/src/modules/blog/blog-permissions.ts");
+    assert.match(permissions, /input\.role === "admin"/);
+    assert.match(permissions, /capabilities\.add\("administrator"\)/);
   });
 
   it("Admin Editor form exposes Edit publications checkbox from assignable IDs", () => {

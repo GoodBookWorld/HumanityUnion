@@ -9,7 +9,9 @@
 
 .support-page__hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(10rem, 27rem);
+  /* Media column max = 60% of prior 27rem (Pack 01 display-size reduction). */
+  --support-hero-media-max: 16.2rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(6rem, var(--support-hero-media-max));
   gap: var(--hu-space-6);
   align-items: center;
   padding: var(--hu-space-6) var(--hu-space-5);
@@ -71,7 +73,7 @@
 
 .support-page__hero-image {
   width: 100%;
-  max-width: 27rem;
+  max-width: var(--support-hero-media-max, 16.2rem);
   height: auto;
   object-fit: contain;
 }

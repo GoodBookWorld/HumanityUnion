@@ -42,10 +42,11 @@ describe("Production Completion Pack 01 — Support globe-hand hero", () => {
 
   it("responsive hero sizing remains overflow-safe", () => {
     const css = read("features/support/support-page.css");
-    assert.match(css, /\.support-page__hero-image[\s\S]*max-width:\s*27rem/);
+    assert.match(css, /\.support-page__hero-image[\s\S]*max-width:\s*var\(--support-hero-media-max/);
+    assert.match(css, /--support-hero-media-max:\s*16\.2rem/);
     assert.match(css, /\.support-page__hero-image[\s\S]*width:\s*100%/);
     assert.match(css, /\.support-page__hero-image[\s\S]*height:\s*auto/);
-    assert.match(css, /minmax\(10rem,\s*27rem\)/);
+    assert.match(css, /minmax\(6rem,\s*var\(--support-hero-media-max\)\)/);
     assert.match(
       css,
       /@media \(max-width:\s*767px\)[\s\S]*\.support-page__hero[\s\S]*grid-template-columns:\s*1fr/,
