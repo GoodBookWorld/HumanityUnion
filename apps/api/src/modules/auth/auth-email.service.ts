@@ -90,6 +90,23 @@ export async function resendRegistrationVerification(userId: string) {
   return toAuthUserPublic(user);
 }
 
+async function issuePasswordResetForUser(user: {
+  userId: string;
+  email: string;
+  displayName: string;
+}): Promise<void> {
+  const issued = await createEmailVerificationToken({
+    userId: user.userId,
+    purpose: "password_reset",
+  });
+
+  await sendPasswordResetEmail({
+    to: user.email,
+    displayName: user.displayName,
+    resetToken: issued.token,
+  });
+}
+
 export async function requestPasswordReset(
   email: string,
 ): Promise<{ requested: true; message: string }> {
@@ -105,18 +122,26 @@ export async function requestPasswordReset(
     return { requested: true, message: PASSWORD_RESET_GENERIC_MESSAGE };
   }
 
-  const issued = await createEmailVerificationToken({
-    userId: user.userId,
-    purpose: "password_reset",
-  });
-
-  await sendPasswordResetEmail({
-    to: user.email,
-    displayName: user.displayName,
-    resetToken: issued.token,
-  });
+  await issuePasswordResetForUser(user);
 
   return { requested: true, message: PASSWORD_RESET_GENERIC_MESSAGE };
+}
+
+/**
+ * Operator / activation path — send canonical password-reset email by userId.
+ * Never returns email, tokens, or password material.
+ */
+export async function requestPasswordResetForUserId(
+  userId: string,
+): Promise<{ sent: true } | { sent: false; reason: "not_found" }> {
+  const user = await findAuthUserById(userId);
+
+  if (!user) {
+    return { sent: false, reason: "not_found" };
+  }
+
+  await issuePasswordResetForUser(user);
+  return { sent: true };
 }
 
 export async function validatePasswordResetToken(token: string): Promise<{ valid: boolean }> {

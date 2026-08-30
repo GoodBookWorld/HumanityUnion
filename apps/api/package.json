@@ -26,7 +26,8 @@
     "verify:initiative-lifecycle": "tsx src/scripts/verify-initiative-lifecycle.ts",
     "inspect:mongo-topology": "tsx src/scripts/inspect-mongo-topology.ts",
     "typecheck": "tsc --noEmit",
-    "build": "tsc"
+    "build": "tsc",
+    "activate:production-auth": "tsx src/scripts/activate-production-auth.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1108.0",

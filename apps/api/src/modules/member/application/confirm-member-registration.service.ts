@@ -63,6 +63,40 @@ async function loadRegistrationMemberInput(
   };
 }
 
+/**
+ * Bootstrap / migration identities pre-create `members` while leaving
+ * `emailVerificationStatus: "pending"`. Idempotent replay must still verify
+ * the auth user so password-reset + email confirmation can complete.
+ */
+async function completeIdempotentReplay(input: {
+  authUser: AuthUserRecord;
+  existingMember: PersistedMemberRecord;
+  correlationId: string;
+  transactionResult: string;
+}): Promise<ConfirmMemberRegistrationResult> {
+  if (input.authUser.emailVerificationStatus !== "verified") {
+    const verifiedUser = await markAuthUserEmailVerified(input.authUser.userId);
+    if (!verifiedUser || verifiedUser.emailVerificationStatus !== "verified") {
+      throw new MemberRegistrationConflictError(
+        "Auth user could not be verified for existing Member.",
+      );
+    }
+  }
+
+  logger.info("member.registration.idempotent_replay", {
+    component: "member-registration",
+    correlationId: input.correlationId,
+    memberId: input.existingMember.memberId,
+    identityId: input.existingMember.identityId,
+    transactionResult: input.transactionResult,
+  });
+
+  return {
+    outcome: "idempotent_replay",
+    member: input.existingMember,
+  };
+}
+
 export async function confirmMemberRegistration(
   authUser: AuthUserRecord,
   options: { correlationId?: string } = {},
@@ -80,18 +114,12 @@ export async function confirmMemberRegistration(
   const existingMember = await findMemberByIdentityId(authUser.userId);
 
   if (existingMember) {
-    logger.info("member.registration.idempotent_replay", {
-      component: "member-registration",
+    return completeIdempotentReplay({
+      authUser,
+      existingMember,
       correlationId,
-      memberId: existingMember.memberId,
-      identityId: existingMember.identityId,
       transactionResult: "skipped_existing_member",
     });
-
-    return {
-      outcome: "idempotent_replay",
-      member: existingMember,
-    };
   }
 
   const memberInput = await loadRegistrationMemberInput(authUser);
@@ -150,18 +178,12 @@ export async function confirmMemberRegistration(
       const replayMember = await findMemberByIdentityId(authUser.userId);
 
       if (replayMember) {
-        logger.info("member.registration.idempotent_replay", {
-          component: "member-registration",
+        return completeIdempotentReplay({
+          authUser,
+          existingMember: replayMember,
           correlationId,
-          memberId: replayMember.memberId,
-          identityId: replayMember.identityId,
           transactionResult: "duplicate_key_replay",
         });
-
-        return {
-          outcome: "idempotent_replay",
-          member: replayMember,
-        };
       }
     }
 
@@ -169,18 +191,12 @@ export async function confirmMemberRegistration(
       const replayMember = await findMemberByIdentityId(authUser.userId);
 
       if (replayMember) {
-        logger.info("member.registration.idempotent_replay", {
-          component: "member-registration",
+        return completeIdempotentReplay({
+          authUser,
+          existingMember: replayMember,
           correlationId,
-          memberId: replayMember.memberId,
-          identityId: replayMember.identityId,
           transactionResult: "duplicate_key_replay",
         });
-
-        return {
-          outcome: "idempotent_replay",
-          member: replayMember,
-        };
       }
 
       logger.warn("member.registration.conflict", {
