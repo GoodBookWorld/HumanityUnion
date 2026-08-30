@@ -29,19 +29,19 @@ export const EDITOR_CAPABILITY_IDS: readonly EditorCapabilityId[] = [
 ] as const;
 
 /**
- * Pack 12D — capabilities Admin may assign today.
- * PUBLISHING_EDIT remains a reserved ID but is not Editor-operational
- * (BlogCapability is separate); omit from assignable grants until wired.
+ * Production Completion Pack 01 — PUBLISHING_EDIT is assignable.
+ * Compatibility bridge: ACTIVE Editor grants with PUBLISHING_EDIT grant BlogCapability
+ * "editor" via resolveBlogCapabilities (legacy Blog editor/administrator grants remain valid).
  */
 export const EDITOR_ASSIGNABLE_CAPABILITY_IDS: readonly EditorCapabilityId[] =
-  EDITOR_CAPABILITY_IDS.filter((id) => id !== "PUBLISHING_EDIT");
+  EDITOR_CAPABILITY_IDS;
 
 export const EDITOR_CAPABILITY_LABELS: Record<EditorCapabilityId, string> = {
   INITIATIVE_EDIT: "Initiatives",
   INITIATIVE_MODERATE: "Moderate Initiatives",
   PUBLIC_CHOICE_EDIT: "Public Choice",
   PUBLIC_CHOICE_MODERATE: "Moderate Public Choice",
-  PUBLISHING_EDIT: "Publishing",
+  PUBLISHING_EDIT: "Edit publications",
   MEDIA_RESOURCE_EDIT: "Media Resources",
   COUNTRY_PEOPLE_EDIT: "Country Team & Partners",
   BETA_ACCESS_EDIT: "Beta Access",

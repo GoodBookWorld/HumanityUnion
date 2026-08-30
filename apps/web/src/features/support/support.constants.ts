@@ -10,11 +10,18 @@ export const SUPPORT_DONATE_URL = "https://buy.stripe.com/6oE03n4bc9Vm9A45kl";
 export const SUPPORT_REGIONAL_PROGRAM_URL = "https://huws.org/regional-program/";
 
 export const SUPPORT_ILLUSTRATIONS = {
-  /** Pack 26D — Support Humanity Union hero uses the shared unity illustration. */
-  hero: "/illustrations/unity.webp",
+  /** Production Completion Pack 01 — Support hero uses globe-hand illustration. */
+  hero: "/illustrations/support/globe-hand.webp",
   resources: "/illustrations/support/resources.svg",
   participation: "/illustrations/support/participation.svg",
   regional: "/illustrations/support/regional.svg",
   /** Why Support Matters — fruit-tree illustration. */
   why: "/illustrations/fruit-tree.webp",
+} as const;
+
+/** Fallback defaults when Admin-configured Support links are empty / unavailable. */
+export const SUPPORT_LINK_FALLBACKS = {
+  donation: SUPPORT_DONATE_URL,
+  volunteer: null as string | null,
+  regional_program: SUPPORT_REGIONAL_PROGRAM_URL,
 } as const;

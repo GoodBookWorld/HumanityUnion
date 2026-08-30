@@ -50,7 +50,11 @@ type ViewEnv = {
 
 export function formatAdminPlatformServiceState(
   state: AdminPlatformServiceConfigState,
+  options?: { service?: "ai" | "default" },
 ): string {
+  if (options?.service === "ai" && state === "disabled") {
+    return "Disabled (optional)";
+  }
   switch (state) {
     case "configured":
       return "Configured";

@@ -73,7 +73,8 @@ describe("Pack 12A — Admin Editors surface", () => {
     for (const id of EDITOR_CAPABILITY_IDS) {
       assert.ok(EDITOR_CAPABILITY_LABELS[id]);
     }
-    assert.ok(!EDITOR_ASSIGNABLE_CAPABILITY_IDS.includes("PUBLISHING_EDIT" as never));
+    assert.ok(EDITOR_ASSIGNABLE_CAPABILITY_IDS.includes("PUBLISHING_EDIT" as never));
+    assert.equal(EDITOR_CAPABILITY_LABELS.PUBLISHING_EDIT, "Edit publications");
   });
 
   it("Admin Panel remains Admin-only; Editor is not an account role", () => {

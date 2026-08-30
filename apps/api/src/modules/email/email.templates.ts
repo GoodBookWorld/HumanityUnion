@@ -16,7 +16,7 @@ function resolveBrandedLogoMarkup(): string {
   // Prefer absolute HTTPS EMAIL_LOGO_URL. When unavailable (e.g. localhost),
   // omit the <img> so Gmail does not show a broken-image icon — text brand remains.
   const logoImage = logoUrl
-    ? `<img src="${logoUrl}" alt="Humanity Union" width="160" height="40" style="display:block;margin:0 auto;width:160px;height:auto;max-width:160px;border:0;outline:none;text-decoration:none;" />`
+    ? `<img src="${logoUrl}" alt="Humanity Union" width="48" height="12" style="display:block;margin:0 auto;width:48px;height:auto;max-width:48px;border:0;outline:none;text-decoration:none;" />`
     : "";
 
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0">

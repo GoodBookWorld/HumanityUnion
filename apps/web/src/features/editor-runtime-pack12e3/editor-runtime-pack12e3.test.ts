@@ -81,7 +81,7 @@ describe("Pack 12E3 — Assign → table → notify → Workspace activation", (
     assert.match(center, /editor_access_/);
   });
 
-  it("ACTIVE Editor sees Panel; Admin Panel separate; Publishing not assignable", () => {
+  it("ACTIVE Editor sees Panel; Admin Panel separate; Edit publications assignable", () => {
     const groups = buildWorkspaceNavGroups(authoring, null, {
       showEditorPanel: true,
       showAdminPanel: false,
@@ -109,6 +109,6 @@ describe("Pack 12E3 — Assign → table → notify → Workspace activation", (
       }),
       false,
     );
-    assert.ok(!EDITOR_ASSIGNABLE_CAPABILITY_IDS.includes("PUBLISHING_EDIT"));
+    assert.ok(EDITOR_ASSIGNABLE_CAPABILITY_IDS.includes("PUBLISHING_EDIT"));
   });
 });

@@ -55,9 +55,6 @@
   font-size: var(--hu-font-size-sm);
 }
 
-.account-panel__help {
-  margin: var(--hu-space-2) 0;
-  color: var(--hu-color-text-muted, inherit);
-  font-size: var(--hu-font-size-sm);
-  line-height: 1.5;
+.account-panel__pending-email {
+  margin: 0.75rem 0 0;
 }

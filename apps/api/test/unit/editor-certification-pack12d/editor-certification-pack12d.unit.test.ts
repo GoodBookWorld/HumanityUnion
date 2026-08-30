@@ -36,10 +36,10 @@ describe("Pack 12D — working-tree / collection contracts", () => {
     assert.doesNotMatch(collections, /editor_moderation|moderation_blocks/);
   });
 
-  it("rejects non-operational PUBLISHING_EDIT from assignable grants", () => {
+  it("allows PUBLISHING_EDIT as assignable Edit publications capability", () => {
     assert.ok(EDITOR_CAPABILITY_IDS.includes("PUBLISHING_EDIT"));
-    assert.ok(!EDITOR_ASSIGNABLE_CAPABILITY_IDS.includes("PUBLISHING_EDIT"));
-    assert.throws(() => normalizeEditorCapabilities(["PUBLISHING_EDIT"]));
+    assert.ok(EDITOR_ASSIGNABLE_CAPABILITY_IDS.includes("PUBLISHING_EDIT"));
+    assert.deepEqual(normalizeEditorCapabilities(["PUBLISHING_EDIT"]), ["PUBLISHING_EDIT"]);
     const form = readRepo(
       "apps/web/src/features/administration/components/AdminEditorFormSection.tsx",
     );
@@ -142,20 +142,20 @@ describe("Pack 12D — capability independence + panel honesty", () => {
     assert.match(panel, /moderationSupported: caps\.has\("PUBLIC_CHOICE_MODERATE"\)/);
   });
 
-  it("Editor Panel omits Publishing tool; Beta is WORLD-only", () => {
+  it("Editor Panel includes Publishing tool when PUBLISHING_EDIT granted; Beta is WORLD-only", () => {
     const panel = readRepo("apps/api/src/modules/editor-grants/editor-panel.service.ts");
-    assert.match(panel, /omit PUBLISHING_EDIT|Pack 12B2: omit PUBLISHING_EDIT/);
+    assert.match(panel, /toolId: "publishing"/);
+    assert.match(panel, /caps\.has\("PUBLISHING_EDIT"\)/);
     assert.match(panel, /betaAccessCompatibleWithEditorScope/);
     const section = readRepo(
       "apps/web/src/features/administration/components/EditorPanelSection.tsx",
     );
-    assert.doesNotMatch(section, /hasTool\("publishing"\)/);
     assert.match(section, /hasTool\("beta-access"\)/);
   });
 });
 
 describe("Pack 12D — Admin separation + Overview order", () => {
-  it("Editors is last Overview widget after Quick links", () => {
+  it("Editors Overview widget remains after Quick links", () => {
     const overview = readRepo(
       "apps/web/src/features/administration/components/AdminOverviewSection.tsx",
     );
@@ -165,6 +165,8 @@ describe("Pack 12D — Admin separation + Overview order", () => {
       "Operational overview",
       'title="Quick links"',
       'title="Editors"',
+      'title="Platform social accounts"',
+      'title="Support operational links"',
     ];
     let cursor = -1;
     for (const marker of orderMarkers) {

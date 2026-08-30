@@ -1189,10 +1189,19 @@ export type {
   PlatformSocialAccountListResponse,
   PlatformSocialAccountPublicListResponse,
   PlatformSocialAccountUpsertInput,
+  PlatformSupportLinkId,
+  PlatformSupportLinkDefinition,
+  PlatformSupportLink,
+  PlatformSupportLinkPublic,
+  PlatformSupportLinkListResponse,
+  PlatformSupportLinkPublicListResponse,
+  PlatformSupportLinkUpsertInput,
 } from "./platform.js";
 export {
   PLATFORM_SOCIAL_NETWORKS,
   PLATFORM_SOCIAL_NETWORK_IDS,
+  PLATFORM_SUPPORT_LINKS,
+  PLATFORM_SUPPORT_LINK_IDS,
 } from "./platform.js";
 export type {
   MembershipApplicationInput,

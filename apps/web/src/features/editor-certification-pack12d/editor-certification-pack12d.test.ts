@@ -96,12 +96,11 @@ describe("Pack 12D — Workspace nav + Admin separation", () => {
 });
 
 describe("Pack 12D — operational capability honesty", () => {
-  it("PUBLISHING_EDIT is not assignable; Beta remains WORLD-scoped in panel", () => {
-    assert.ok(!EDITOR_ASSIGNABLE_CAPABILITY_IDS.includes("PUBLISHING_EDIT"));
+  it("PUBLISHING_EDIT is assignable as Edit publications; Beta remains WORLD-scoped in panel", () => {
+    assert.ok(EDITOR_ASSIGNABLE_CAPABILITY_IDS.includes("PUBLISHING_EDIT"));
     const form = readWeb("features/administration/components/AdminEditorFormSection.tsx");
     assert.match(form, /EDITOR_ASSIGNABLE_CAPABILITY_IDS/);
     const section = readWeb("features/administration/components/EditorPanelSection.tsx");
-    assert.doesNotMatch(section, /hasTool\("publishing"\)/);
     assert.match(section, /blockEditorInitiative|moderationSupported/);
     assert.match(section, /Blocked by administrator/);
   });

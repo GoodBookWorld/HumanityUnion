@@ -1176,6 +1176,17 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // Production Completion Pack 01 — one document per Support operational link.
+    collectionName: MONGO_COLLECTIONS.platformSupportLinks,
+    indexes: [
+      {
+        key: { linkId: 1 },
+        unique: true,
+        name: "platform_support_links_link_id_unique",
+      },
+    ],
+  },
+  {
     collectionName: MONGO_COLLECTIONS.blogCapabilityGrants,
     indexes: [
       {

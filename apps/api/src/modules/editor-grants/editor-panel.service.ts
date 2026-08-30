@@ -138,8 +138,16 @@ function toolsForGrant(input: {
       moderationSupported: caps.has("PUBLIC_CHOICE_MODERATE"),
     });
   }
-  // Pack 12B2: omit PUBLISHING_EDIT until Blog/editorial mutations are dual-authorized
-  // via this capability. Link-only Workspace Editorial access is not Editor authority.
+  // Production Completion Pack 01 — PUBLISHING_EDIT dual-authorized via BlogCapability bridge.
+  if (caps.has("PUBLISHING_EDIT")) {
+    tools.push({
+      toolId: "publishing",
+      capability: "PUBLISHING_EDIT",
+      label: EDITOR_CAPABILITY_LABELS.PUBLISHING_EDIT,
+      mutationSupported: true,
+      moderationSupported: true,
+    });
+  }
   if (caps.has("MEDIA_RESOURCE_EDIT")) {
     const regionCity = input.scope.level === "REGION" || input.scope.level === "CITY";
     tools.push({

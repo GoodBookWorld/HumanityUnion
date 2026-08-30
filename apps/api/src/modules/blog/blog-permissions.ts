@@ -1,5 +1,6 @@
 import type { AuthRole, BlogCapability } from "@hu/types";
 
+import { findEditorGrantByParticipantId } from "../editor-grants/editor-grant.repository.js";
 import { findBlogCapabilityGrant } from "./persistence/blog.repository.js";
 
 /**
@@ -10,6 +11,11 @@ import { findBlogCapabilityGrant } from "./persistence/blog.repository.js";
  * - admin → administrator (+ editor, trusted_author, author)
  * - moderator → editor (+ author)
  * Explicit grants in `blog_capability_grants` remain authoritative for Authors.
+ *
+ * Production Completion Pack 01 — compatibility bridge:
+ * ACTIVE Editor grant with PUBLISHING_EDIT also grants BlogCapability "editor"
+ * so publication mutations reuse existing Blog enforcement. Legacy Blog
+ * editor/administrator grants remain valid without Editor grant.
  */
 export async function resolveBlogCapabilities(input: {
   participantId: string;
@@ -40,6 +46,15 @@ export async function resolveBlogCapabilities(input: {
   if (input.role === "moderator") {
     capabilities.add("editor");
     capabilities.add("author");
+  }
+
+  // Dual-auth bridge: Editor PUBLISHING_EDIT → Blog editor capability.
+  const editorGrant = await findEditorGrantByParticipantId(input.participantId);
+  if (
+    editorGrant?.status === "ACTIVE" &&
+    editorGrant.capabilities.includes("PUBLISHING_EDIT")
+  ) {
+    capabilities.add("editor");
   }
 
   // Higher tiers imply Author for own drafts.

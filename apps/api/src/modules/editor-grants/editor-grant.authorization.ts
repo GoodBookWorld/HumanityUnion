@@ -34,11 +34,6 @@ export function normalizeEditorCapabilities(
     if (!isEditorCapabilityId(raw)) {
       throw new AdministrationValidationError(`Unknown Editor capability: ${raw}.`);
     }
-    if (raw === "PUBLISHING_EDIT") {
-      throw new AdministrationValidationError(
-        "Publishing is not yet available for Editor grants. Blog editorial authority remains separate.",
-      );
-    }
     unique.add(raw);
   }
   if (unique.size === 0) {

@@ -272,16 +272,17 @@ describe("Diagnostics Pack 01 — Mongo / Email / Outbox / Integrity rendering h
 describe("Diagnostics Pack 01 — refresh and read-only safety", () => {
   it("refresh only uses read-only health endpoints", () => {
     assert.deepEqual([...DIAGNOSTICS_READ_ONLY_PATHS], [
-      "/api/v1/health",
+      "/api/v1/admin/diagnostics/health",
       "/api/v1/health/ready",
       "/api/v1/admin/initiatives",
     ]);
 
     const api = readWeb("features/administration/admin-diagnostics-api.ts");
     const section = readWeb("features/administration/components/AdminDiagnosticsSection.tsx");
-    assert.match(api, /\/api\/v1\/health/);
+    assert.match(api, /\/api\/v1\/admin\/diagnostics\/health/);
     assert.match(api, /\/api\/v1\/health\/ready/);
     assert.match(api, /listAdminInitiatives/);
+    assert.doesNotMatch(api, /fetchApiHealth[\s\S]*\/api\/v1\/health"/);
     assert.match(section, /Refresh/);
     assert.match(section, /refreshing/);
     assert.doesNotMatch(section, /method:\s*"POST"|method:\s*"DELETE"|method:\s*"PATCH"/);

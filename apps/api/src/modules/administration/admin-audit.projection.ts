@@ -59,6 +59,8 @@ export const ADMINISTRATION_AUDIT_ACTIONS: readonly AdministrationAuditAction[] 
   "blog.author.trusted_publishing.disable",
   "platform.social_account.update",
   "platform.social_account.clear",
+  "platform.support_link.update",
+  "platform.support_link.clear",
   "seo.page_override.create",
   "seo.page_override.update",
   "seo.page_override.clear",
@@ -210,6 +212,8 @@ export function formatAdminAuditTargetLabel(targetType: string, targetId: string
       return `Public Choice candidate ${shortId}`;
     case "platform_social_account":
       return `Social account ${shortId}`;
+    case "platform_support_link":
+      return `Support link ${shortId}`;
     case "country_affiliation":
       return `Country affiliation ${shortId}`;
     default:

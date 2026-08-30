@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import type { AuthUserPublic } from "@hu/types";
 
-import { ProfileField } from "../../../components/member/ProfileField";
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { Button } from "../../../design-system/components/Button";
 import { PasswordInput } from "../../../design-system/components/PasswordInput";
@@ -16,10 +15,12 @@ import {
   requestEmailChange,
   revokeAllOtherSessions,
 } from "../auth-api";
+import { AdminMetricDetailsGrid } from "../../administration/components/AdminMetricDetailsGrid";
 
 import { AccountSecuritySection } from "./AccountSecuritySection";
 import { AuthFeedbackMessage } from "./AuthFeedbackMessage";
 import "./account-panel.css";
+import "../../administration/components/admin-panel.css";
 
 export function AccountPanel() {
   const router = useRouter();
@@ -161,6 +162,14 @@ export function AccountPanel() {
   const verificationLabel =
     user.emailVerificationStatus === "verified" ? "Email Confirmed" : "Email Confirmation Pending";
 
+  const accountTiles = [
+    { label: "Display Name", value: user.displayName },
+    { label: "Email", value: user.email },
+    { label: "Email Verification", value: verificationLabel },
+    { label: "Role", value: user.role },
+    { label: "Status", value: user.status },
+  ];
+
   return (
     <div className="account-panel">
       <ProfileSection title="Account">
@@ -174,14 +183,12 @@ export function AccountPanel() {
             </Button>
           </div>
         ) : null}
-        <ProfileField label="Display Name" value={user.displayName} />
-        <ProfileField label="Email" value={user.email} />
-        <ProfileField label="Email Verification" value={verificationLabel} />
+        <AdminMetricDetailsGrid cells={accountTiles} aria-label="Account profile summary" />
         {user.pendingEmail ? (
-          <ProfileField label="Pending Email Change" value={user.pendingEmail} />
+          <p className="hu-caption account-panel__pending-email">
+            Pending Email Change: {user.pendingEmail}
+          </p>
         ) : null}
-        <ProfileField label="Role" value={user.role} />
-        <ProfileField label="Status" value={user.status} />
         {message ? (
           <AuthFeedbackMessage variant="success" title="Account update">
             <p>{message}</p>

@@ -47,15 +47,12 @@ describe("Pack 12B2 — Initiative Editor authority", () => {
 });
 
 describe("Pack 12B2 — grant-driven panel honesty", () => {
-  it("marks INITIATIVE_EDIT mutationSupported and omits non-operational PUBLISHING_EDIT tool", () => {
+  it("marks INITIATIVE_EDIT mutationSupported and includes PUBLISHING_EDIT publishing tool", () => {
     const panel = readRepo("apps/api/src/modules/editor-grants/editor-panel.service.ts");
     assert.match(panel, /toolId: "initiatives"/);
     assert.match(panel, /mutationSupported: true/);
-    assert.doesNotMatch(
-      panel,
-      /caps\.has\("PUBLISHING_EDIT"\)[\s\S]*?tools\.push\(\{[\s\S]*?toolId: "publishing"/,
-    );
-    assert.match(panel, /omit PUBLISHING_EDIT|Pack 12B2: omit PUBLISHING_EDIT/);
+    assert.match(panel, /caps\.has\("PUBLISHING_EDIT"\)/);
+    assert.match(panel, /toolId: "publishing"/);
   });
 
   it("lists Public Choice candidates for Editor and blocks Editor on Admin-blocked candidates", () => {

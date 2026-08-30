@@ -85,13 +85,20 @@ describe("Country People Presentation Pack 10C — page + slots", () => {
     assert.doesNotMatch(css, /\.country-affiliation-card__fallback\s*\{/);
   });
 
-  it("centers Country flag and keeps hero copy left-aligned", () => {
+  it("places Country flag on the right of hero copy (desktop) with readable stack", () => {
     const page = readWeb(
       "features/country-experience/components/CountryExperienceDynamicPage.tsx",
     );
     const css = readWeb("features/country-experience/country-experience-dynamic.css");
     assert.match(page, /country-experience-dynamic__flag-wrap/);
-    assert.match(css, /\.country-experience-dynamic__flag-wrap\s*\{[^}]*justify-content:\s*center/s);
+    assert.match(
+      css,
+      /\.country-experience-dynamic__flag-wrap\s*\{[^}]*justify-content:\s*flex-(end|start)/s,
+    );
+    assert.match(
+      css,
+      /\.country-experience-dynamic__hero\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+auto/s,
+    );
     assert.match(css, /country-experience-dynamic__hero-copy/);
   });
 });

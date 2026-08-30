@@ -40,37 +40,38 @@ describe("Support Page UX Pack 01", () => {
     assert.match(content, /id="support-ways"/);
   });
 
-  it("Donate uses existing Stripe link with safe external attributes", () => {
+  it("Donate uses Admin-configured Support link with historical Stripe fallback", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
     assert.equal(SUPPORT_DONATE_URL, "https://buy.stripe.com/6oE03n4bc9Vm9A45kl");
-    assert.match(content, /SUPPORT_DONATE_URL/);
+    assert.match(content, /donationUrl|SUPPORT_LINK_FALLBACKS/);
     assert.match(content, /target="_blank"/);
     assert.match(content, /rel="noopener noreferrer"/);
-    assert.match(content, />Donate</);
+    assert.match(content, /Donate/);
   });
 
-  it("Volunteer is a disabled Design System placeholder without a subsystem", () => {
+  it("Volunteer gracefully handles empty optional link without a volunteer subsystem", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
     assert.match(content, /Volunteer with Humanity Union/);
-    assert.match(content, /disabled/);
+    assert.match(content, /disabledLabel|disabled/);
     assert.doesNotMatch(content, /VolunteerSubsystem|volunteer\.routes|createVolunteer/);
   });
 
-  it("Regional Program remains temporary WordPress URL until new-platform mapping exists", () => {
+  it("Regional Program defaults to temporary WordPress URL until Admin overrides", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
     const constants = read("features/support/support.constants.ts");
     assert.equal(SUPPORT_REGIONAL_PROGRAM_URL, "https://huws.org/regional-program/");
-    assert.match(content, /SUPPORT_REGIONAL_PROGRAM_URL/);
+    assert.match(content, /regionalProgramUrl|SUPPORT_LINK_FALLBACKS/);
     assert.match(constants, /WordPress/);
     assert.match(constants, /WORDPRESS_REDIRECT_INVENTORY/);
     assert.match(constants, /NEEDS_MAPPING|KEEP_TEMPORARILY/);
   });
 
-  it("closing CTA scrolls to support cards; no payment or volunteer APIs", () => {
+  it("closing CTA scrolls to support cards; Support links use public platform API", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
     assert.match(content, /href="#support-ways"/);
     assert.match(content, /Choose how you want to contribute/);
-    assert.doesNotMatch(content, /apiRequest|fetch\(|\/api\/v1\//);
+    assert.match(content, /fetchPublicSupportOperationalLinks/);
+    assert.doesNotMatch(content, /VolunteerSubsystem|createVolunteer|paymentIntent/);
   });
 
   it("illustration assets exist at replaceable project paths", () => {
