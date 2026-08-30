@@ -19,6 +19,7 @@
     "export:staging-admin-bootstrap-manifest": "tsx src/scripts/export-staging-admin-bootstrap-manifest.ts",
     "bootstrap:production-admin-identity": "tsx src/scripts/bootstrap-production-admin-identity.ts",
     "verify:production-admin-identity": "tsx src/scripts/verify-production-admin-identity.ts",
+    "activate:production-auth": "tsx src/scripts/activate-production-auth.ts",
     "preflight:production-blog-migration": "tsx src/scripts/preflight-production-blog-migration.ts",
     "execute:production-blog-migration": "tsx src/scripts/execute-production-blog-migration.ts",
     "verify:production-blog-migration": "tsx src/scripts/verify-production-blog-migration.ts",
