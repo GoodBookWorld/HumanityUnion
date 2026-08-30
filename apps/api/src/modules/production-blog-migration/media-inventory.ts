@@ -1,10 +1,17 @@
 import { PRODUCTION_MEDIA_PUBLIC_BASE_URL } from "./constants.js";
 
+/**
+ * Host / ownership classification for Blog media URLs.
+ *
+ * - production_public / staging_public / relative_api → canonical HU media (R2 inventory)
+ * - external_https_preserve → legacy external HTTPS; leave HTML unchanged; never R2-copy
+ * - unknown → malformed / unclassifiable (blocker when used as canonical-looking ref)
+ */
 export type MediaHostClassification =
   | "production_public"
   | "staging_public"
   | "relative_api"
-  | "other_https"
+  | "external_https_preserve"
   | "unknown";
 
 export type ExtractedMediaReference = {
@@ -13,10 +20,23 @@ export type ExtractedMediaReference = {
   mediaId: string | null;
   mediaUrl: string | null;
   hostClassification: MediaHostClassification;
+  /** Safe hostname only for external preserves (never full URL in reports). */
+  externalHost: string | null;
 };
 
 function asString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+export function isCanonicalHuMediaUrl(url: string | null | undefined): boolean {
+  if (!url?.trim()) return false;
+  const trimmed = url.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith("/api/v1/media/files/")) return true;
+  if (lower.startsWith(PRODUCTION_MEDIA_PUBLIC_BASE_URL.toLowerCase())) return true;
+  if (/^https?:\/\/media-staging\.huws\.org\//i.test(trimmed)) return true;
+  if (/^https?:\/\/[^/]+\/api\/v1\/media\/files\//i.test(trimmed)) return true;
+  return false;
 }
 
 export function classifyMediaUrlHost(url: string | null | undefined): MediaHostClassification {
@@ -24,15 +44,35 @@ export function classifyMediaUrlHost(url: string | null | undefined): MediaHostC
   const trimmed = url.trim();
   const lower = trimmed.toLowerCase();
   if (lower.startsWith("/api/v1/media/files/")) return "relative_api";
-  if (lower.startsWith(PRODUCTION_MEDIA_PUBLIC_BASE_URL)) return "production_public";
-  if (/media-staging\.huws\.org/i.test(lower)) return "staging_public";
-  if (lower.startsWith("https://") || lower.startsWith("http://")) return "other_https";
+  if (lower.startsWith(PRODUCTION_MEDIA_PUBLIC_BASE_URL.toLowerCase())) {
+    return "production_public";
+  }
+  if (/^https?:\/\/media-staging\.huws\.org\//i.test(trimmed)) return "staging_public";
+  if (/^https?:\/\/[^/]+\/api\/v1\/media\/files\//i.test(trimmed)) return "relative_api";
+  if (lower.startsWith("https://") || lower.startsWith("http://")) {
+    // Absolute non-HU URL — preserve in HTML; never treat as R2 storageKey.
+    return "external_https_preserve";
+  }
   return "unknown";
 }
 
-/** Extract storageKey from /api/v1/media/files/{key} or trailing path of public URL. */
+export function extractSafeExternalHost(url: string | null | undefined): string | null {
+  if (!url?.trim()) return null;
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.hostname || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract storageKey only from canonical HU media URLs.
+ * External HTTPS URLs must return null (never invent a storageKey from i0.wp.com paths).
+ */
 export function storageKeyFromMediaUrl(url: string | null | undefined): string | null {
   if (!url?.trim()) return null;
+  if (!isCanonicalHuMediaUrl(url)) return null;
   const trimmed = url.trim();
   const apiMatch = trimmed.match(/\/api\/v1\/media\/files\/(.+)$/i);
   if (apiMatch?.[1]) {
@@ -57,12 +97,17 @@ function extractCoverLike(
   const mediaId = asString(record.mediaId);
   const mediaUrl = asString(record.mediaUrl);
   if (!mediaId && !mediaUrl) return null;
+  const hostClassification = classifyMediaUrlHost(mediaUrl);
   return {
     postId,
     source,
     mediaId,
     mediaUrl,
-    hostClassification: classifyMediaUrlHost(mediaUrl),
+    hostClassification,
+    externalHost:
+      hostClassification === "external_https_preserve"
+        ? extractSafeExternalHost(mediaUrl)
+        : null,
   };
 }
 
@@ -92,12 +137,17 @@ export function extractMediaReferencesFromPost(post: {
   while ((match = IMG_SRC_RE.exec(content)) !== null) {
     const mediaUrl = (match[1] ?? match[2] ?? match[3] ?? "").trim();
     if (!mediaUrl) continue;
+    const hostClassification = classifyMediaUrlHost(mediaUrl);
     refs.push({
       postId: post.postId,
       source: "content_img",
       mediaId: null,
       mediaUrl,
-      hostClassification: classifyMediaUrlHost(mediaUrl),
+      hostClassification,
+      externalHost:
+        hostClassification === "external_https_preserve"
+          ? extractSafeExternalHost(mediaUrl)
+          : null,
     });
   }
   return refs;
@@ -107,22 +157,30 @@ export function summarizeMediaReferences(refs: readonly ExtractedMediaReference[
   totalReferences: number;
   bySource: Record<string, number>;
   byHostClassification: Record<MediaHostClassification, number>;
+  externalHttpsPreserveCount: number;
+  externalHttpsHosts: string[];
 } {
   const bySource: Record<string, number> = {};
   const byHostClassification: Record<MediaHostClassification, number> = {
     production_public: 0,
     staging_public: 0,
     relative_api: 0,
-    other_https: 0,
+    external_https_preserve: 0,
     unknown: 0,
   };
+  const hostSet = new Set<string>();
   for (const ref of refs) {
     bySource[ref.source] = (bySource[ref.source] ?? 0) + 1;
     byHostClassification[ref.hostClassification] += 1;
+    if (ref.hostClassification === "external_https_preserve" && ref.externalHost) {
+      hostSet.add(ref.externalHost);
+    }
   }
   return {
     totalReferences: refs.length,
     bySource,
     byHostClassification,
+    externalHttpsPreserveCount: byHostClassification.external_https_preserve,
+    externalHttpsHosts: [...hostSet].sort(),
   };
 }

@@ -95,6 +95,8 @@ export interface BlogMigrationPreflightReport {
     uniqueStorageKeys: string[];
     bySource: Record<string, number>;
     byHostClassification: Record<MediaHostClassification, number>;
+    externalHttpsPreserveCount: number;
+    externalHttpsHosts: string[];
     missingMediaRecords: string[];
     unresolvedReferences: number;
     destinationMediaIdCollisions: string[];
@@ -591,11 +593,20 @@ export async function runProductionBlogMigrationPreflight(input: {
   let unresolvedReferences = 0;
 
   for (const ref of mediaRefs) {
+    // Legacy external HTTPS (e.g. i0.wp.com WordPress) — preserve HTML as-is.
+    // Never invent storageKey, never require media_upload_records, never R2-copy.
+    if (ref.hostClassification === "external_https_preserve") {
+      continue;
+    }
+
     let resolvedStorageKey: string | null = null;
     if (ref.mediaId) {
       const record = await input.sourceDb
         .collection(MONGO_COLLECTIONS.mediaUploadRecords)
-        .findOne({ mediaId: ref.mediaId }, { projection: { mediaId: 1, storageKey: 1, mediaUrl: 1 } });
+        .findOne(
+          { mediaId: ref.mediaId },
+          { projection: { mediaId: 1, storageKey: 1, mediaUrl: 1 } },
+        );
       if (!record) {
         missingMediaRecords.push(ref.mediaId);
         unresolvedReferences += 1;
@@ -603,6 +614,7 @@ export async function runProductionBlogMigrationPreflight(input: {
         resolvedStorageKey = asString(record.storageKey);
       }
     } else if (ref.mediaUrl) {
+      // Canonical HU URLs only — storageKeyFromMediaUrl returns null for externals.
       resolvedStorageKey = storageKeyFromMediaUrl(ref.mediaUrl);
       if (!resolvedStorageKey) {
         unresolvedReferences += 1;
@@ -614,7 +626,6 @@ export async function runProductionBlogMigrationPreflight(input: {
             { projection: { mediaId: 1, storageKey: 1 } },
           );
         if (!byKey) {
-          // URL-derived key without a matching record — unresolved for copy planning.
           unresolvedReferences += 1;
         }
       }
@@ -724,6 +735,8 @@ export async function runProductionBlogMigrationPreflight(input: {
       uniqueStorageKeys: [...uniqueStorageKeys].sort(),
       bySource: mediaSummary.bySource,
       byHostClassification: mediaSummary.byHostClassification,
+      externalHttpsPreserveCount: mediaSummary.externalHttpsPreserveCount,
+      externalHttpsHosts: mediaSummary.externalHttpsHosts,
       missingMediaRecords: uniqueMissing,
       unresolvedReferences,
       destinationMediaIdCollisions,

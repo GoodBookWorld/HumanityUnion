@@ -8,9 +8,11 @@ import {
   EXPECTED_SEED_CATEGORY_IDS,
   assertNoSecretLeak,
   classifyHumanPotentialCategory,
+  classifyMediaUrlHost,
   classifySeedCategoryPair,
   extractMediaReferencesFromPost,
   runProductionBlogMigrationPreflight,
+  storageKeyFromMediaUrl,
   stripForbiddenReportFields,
 } from "../../../src/modules/production-blog-migration/index.js";
 
@@ -366,6 +368,48 @@ describe("Blog migration media extraction", () => {
     assert.ok(refs.some((r) => r.source === "coverMedia" && r.mediaId === "m1"));
     assert.ok(refs.some((r) => r.source === "socialImage" && r.mediaId === "m2"));
     assert.equal(refs.filter((r) => r.source === "content_img").length, 2);
+    assert.equal(
+      refs.find((r) => r.mediaUrl?.includes("cdn.example"))?.hostClassification,
+      "external_https_preserve",
+    );
+  });
+
+  it("classifies external HTTPS HTML image as EXTERNAL_HTTPS_PRESERVE", () => {
+    assert.equal(
+      classifyMediaUrlHost(
+        "https://i0.wp.com/huws.org/wp-content/uploads/2024/01/world-protection.jpg",
+      ),
+      "external_https_preserve",
+    );
+    const refs = extractMediaReferencesFromPost({
+      postId: "blog-81dfe8bf-08b4-488e-8c90-ccc5a240422a",
+      coverMedia: {
+        mediaId: "cover-1",
+        mediaUrl: "https://media-staging.huws.org/blog/cover-1.png",
+      },
+      content: `<p>Hello</p><img src="https://i0.wp.com/huws.org/wp-content/uploads/2024/01/world-protection.jpg" alt="WPC" />`,
+    });
+    const external = refs.find((r) => r.hostClassification === "external_https_preserve");
+    assert.ok(external);
+    assert.equal(external!.externalHost, "i0.wp.com");
+    assert.equal(external!.source, "content_img");
+  });
+
+  it("external URL is not converted to storageKey", () => {
+    assert.equal(
+      storageKeyFromMediaUrl(
+        "https://i0.wp.com/huws.org/wp-content/uploads/2024/01/world-protection.jpg",
+      ),
+      null,
+    );
+    assert.equal(
+      storageKeyFromMediaUrl("/api/v1/media/files/blog/cover-1.png"),
+      "blog/cover-1.png",
+    );
+    assert.equal(
+      storageKeyFromMediaUrl("https://media.huws.org/blog/cover-1.png"),
+      "blog/cover-1.png",
+    );
   });
 });
 
@@ -501,6 +545,63 @@ describe("Production Blog migration preflight — Task 02", () => {
     });
     assert.equal(report.overallVerdict, "BLOCKED");
     assert.ok(report.media.missingMediaRecords.length > 0);
+  });
+
+  it("external HTTPS HTML image preserved — does not block or invent storageKey", async () => {
+    const { source, dest } = seedPerfectSource();
+    const posts = source.store.get("blog_posts")!;
+    const target = posts.find((p) => p.postId === "blog-post-0")!;
+    target.postId = "blog-81dfe8bf-08b4-488e-8c90-ccc5a240422a";
+    target._id = "blog-81dfe8bf-08b4-488e-8c90-ccc5a240422a";
+    target.title = "World Protection Corps";
+    target.content = `<p>Legacy</p><img src="https://i0.wp.com/huws.org/wp-content/uploads/2024/01/world-protection.jpg" alt="WPC" />`;
+    // Keep cover mediaId media-0 with existing upload record.
+    target.coverMedia = {
+      mediaId: "media-0",
+      mediaUrl: "https://media-staging.huws.org/blog/media-0.png",
+    };
+    target.optimization = {
+      socialImage: {
+        mediaId: "media-0",
+        mediaUrl: "https://media-staging.huws.org/blog/media-0.png",
+      },
+    };
+    // Fix delivery/reaction FKs that pointed at blog-post-0
+    for (const d of source.store.get("blog_publication_deliveries") ?? []) {
+      if (d.postId === "blog-post-0") {
+        d.postId = "blog-81dfe8bf-08b4-488e-8c90-ccc5a240422a";
+      }
+    }
+    for (const r of source.store.get("blog_reactions") ?? []) {
+      if (r.postId === "blog-post-0") {
+        r.postId = "blog-81dfe8bf-08b4-488e-8c90-ccc5a240422a";
+      }
+    }
+
+    const report = await runProductionBlogMigrationPreflight({
+      sourceDb: source.asDb(),
+      destinationDb: dest.asDb(),
+      r2Configured: false,
+      mutationCounters: {
+        mongoWrites: 0,
+        putObjectCalls: 0,
+        deleteObjectCalls: 0,
+        emailSends: 0,
+        outboxWrites: 0,
+      },
+    });
+    assert.equal(report.overallVerdict, "PASS");
+    assert.ok(report.media.externalHttpsPreserveCount >= 1);
+    assert.ok(report.media.externalHttpsHosts.includes("i0.wp.com"));
+    assert.equal(report.media.unresolvedReferences, 0);
+    assert.equal(report.media.missingMediaRecords.length, 0);
+    assert.equal(
+      report.media.uniqueStorageKeys.some((k) => /i0\.wp\.com|wp-content/i.test(k)),
+      false,
+    );
+    const text = JSON.stringify(report);
+    assert.equal(text.includes("world-protection.jpg"), false);
+    assertNoSecretLeak(text);
   });
 
   it("no sensitive values in serialized reports", async () => {

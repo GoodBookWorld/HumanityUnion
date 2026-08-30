@@ -39,6 +39,8 @@ export type {
 export {
   classifyMediaUrlHost,
   extractMediaReferencesFromPost,
+  extractSafeExternalHost,
+  isCanonicalHuMediaUrl,
   storageKeyFromMediaUrl,
   summarizeMediaReferences,
 } from "./media-inventory.js";
