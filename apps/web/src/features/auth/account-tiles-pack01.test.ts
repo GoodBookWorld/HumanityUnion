@@ -18,12 +18,19 @@ describe("Production Completion Pack 01 — Account tiles", () => {
   it("uses five standard information tiles for stable account fields", () => {
     const panel = read("features/auth/components/AccountPanel.tsx");
     assert.match(panel, /AdminMetricDetailsGrid/);
-    assert.match(panel, /Display Name/);
-    assert.match(panel, /Email Verification/);
-    assert.match(panel, /Pending Email Change/);
-    assert.match(panel, /pendingEmail/);
+    assert.match(panel, /label: "Display Name"/);
+    assert.match(panel, /label: "Email"/);
+    assert.match(panel, /label: "Email Verification"/);
     assert.match(panel, /label: "Role"/);
     assert.match(panel, /label: "Status"/);
+    assert.match(panel, /Pending Email Change/);
+    assert.match(panel, /pendingEmail/);
     assert.doesNotMatch(panel, /ProfileField label="Display Name"/);
+
+    const tileBlock = panel.slice(
+      panel.indexOf("const accountTiles"),
+      panel.indexOf("];", panel.indexOf("const accountTiles")) + 2,
+    );
+    assert.equal([...tileBlock.matchAll(/label:/g)].length, 5);
   });
 });

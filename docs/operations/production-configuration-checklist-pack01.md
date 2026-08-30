@@ -20,11 +20,14 @@ Expected effects:
 Set:
 
 - `NEXT_PUBLIC_PLATFORM_MODE=production`
+- `NEXT_PUBLIC_SITE_URL=<canonical public origin>` (required for sitemap, canonicals, and clearing “public site origin missing”)
 
 Then rebuild/redeploy Web so the public env is baked into the client bundle.
 
 Expected effects:
 
+- Indexing is allowed (`shouldDisallowSearchIndexing` → false).
+- “Indexing unexpectedly disabled” / “Indexing mode inconsistent” clear when API `PLATFORM_MODE=production` and Web mode match.
 - Indexing warnings clear after Web rebuild when site origin is also configured.
 - Production robots / indexing become consistent with API `PLATFORM_MODE=production`.
 
