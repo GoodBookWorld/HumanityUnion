@@ -96,6 +96,11 @@
   border-color: rgba(70, 70, 70, 0.25);
 }
 
+.admin-diagnostics__card--not_available {
+  border-color: rgba(26, 77, 109, 0.22);
+  background: rgba(26, 77, 109, 0.03);
+}
+
 .admin-diagnostics__card-header {
   display: flex;
   flex-wrap: wrap;
@@ -148,6 +153,14 @@
 .admin-diagnostics__badge--unknown {
   color: #444;
   background: rgba(70, 70, 70, 0.12);
+}
+
+.admin-diagnostics__badge--not_available {
+  color: #1a4d6d;
+  background: rgba(26, 77, 109, 0.1);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
 }
 
 @media (max-width: 720px) {

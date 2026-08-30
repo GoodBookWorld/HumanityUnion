@@ -36,6 +36,7 @@
     "verify:initiative-lifecycle": "tsx src/scripts/verify-initiative-lifecycle.ts",
     "inspect:mongo-topology": "tsx src/scripts/inspect-mongo-topology.ts",
     "retry:failed-outbox": "tsx src/scripts/retry-failed-outbox-record.ts",
+    "cleanup:bootstrap-initiative": "tsx src/scripts/cleanup-bootstrap-initiative.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc"
   },

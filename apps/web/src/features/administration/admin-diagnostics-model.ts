@@ -3,7 +3,12 @@
  * Does not invent health scores; maps authoritative API fields to Admin statuses.
  */
 
-export type DiagnosticSeverity = "healthy" | "warning" | "critical" | "unknown";
+export type DiagnosticSeverity =
+  | "healthy"
+  | "warning"
+  | "critical"
+  | "unknown"
+  | "not_available";
 
 export interface DiagnosticCheck {
   readonly id: string;
@@ -67,23 +72,25 @@ export interface ApiReadyPayload {
  * - Warning if any Warning (and no Critical)
  * - Healthy only when every included check is Healthy
  * - Unknown never becomes Healthy; Unknown alone → Unknown; Unknown + Healthy → Warning
+ * - not_available is capability metadata and is excluded from overall health
  */
 export function aggregateOverallStatus(
   checks: readonly DiagnosticSeverity[],
 ): DiagnosticSeverity {
-  if (checks.length === 0) {
+  const relevant = checks.filter((status) => status !== "not_available");
+  if (relevant.length === 0) {
     return "unknown";
   }
-  if (checks.some((status) => status === "critical")) {
+  if (relevant.some((status) => status === "critical")) {
     return "critical";
   }
-  if (checks.some((status) => status === "warning")) {
+  if (relevant.some((status) => status === "warning")) {
     return "warning";
   }
-  if (checks.some((status) => status === "unknown")) {
-    return checks.every((status) => status === "unknown") ? "unknown" : "warning";
+  if (relevant.some((status) => status === "unknown")) {
+    return relevant.every((status) => status === "unknown") ? "unknown" : "warning";
   }
-  if (checks.every((status) => status === "healthy")) {
+  if (relevant.every((status) => status === "healthy")) {
     return "healthy";
   }
   return "unknown";
@@ -356,14 +363,46 @@ export function deriveInitiativeIntegrityStatus(input: {
   };
 }
 
+/**
+ * Lifecycle reconciliation is CLI/staging tooling only at runtime.
+ * When a future safe Admin API contract supplies conflict counts, pass them here
+ * so real conflicts still surface as warning/critical — never invent Healthy.
+ */
+export function deriveLifecycleReconciliationStatus(input?: {
+  readonly available?: boolean;
+  readonly conflictCount?: number | null;
+}): DiagnosticCheck {
+  if (input?.available === true && typeof input.conflictCount === "number") {
+    if (input.conflictCount > 0) {
+      return {
+        id: "lifecycle-reconciliation",
+        label: "Lifecycle reconciliation",
+        status: input.conflictCount >= 10 ? "critical" : "warning",
+        summary: `${input.conflictCount} reconciliation conflict${input.conflictCount === 1 ? "" : "s"}`,
+        detail: "Reported by the runtime reconciliation contract.",
+      };
+    }
+
+    return {
+      id: "lifecycle-reconciliation",
+      label: "Lifecycle reconciliation",
+      status: "healthy",
+      summary: "No reconciliation conflicts",
+      detail: "Reported by the runtime reconciliation contract.",
+    };
+  }
+
+  return lifecycleReconciliationDeferredCheck();
+}
+
 export function lifecycleReconciliationDeferredCheck(): DiagnosticCheck {
   return {
     id: "lifecycle-reconciliation",
     label: "Lifecycle reconciliation",
-    status: "unknown",
-    summary: "Not available via Admin API",
+    status: "not_available",
+    summary: "CLI-only / staging reconciliation tooling",
     detail:
-      "Conflict counts exist only in CLI/staging tooling and are not safely exposed at runtime.",
+      "Not available via Admin API. Conflict counts are not safely exposed at runtime.",
   };
 }
 
@@ -414,13 +453,13 @@ export function buildTechnicalHealthSnapshot(input: {
     error: input.initiativeError,
     samples: input.initiativeSamples,
   });
-  const lifecycle = lifecycleReconciliationDeferredCheck();
+  const lifecycle = deriveLifecycleReconciliationStatus();
 
   const services = [web, api, mongo, email];
   const integrity = [initiativeIntegrity, lifecycle];
 
-  // Overall uses platform-required services + outbox failures; deferred Unknown
-  // lifecycle check does not force Warning by itself.
+  // Overall uses platform-required services + outbox + initiative integrity.
+  // Lifecycle not_available is capability metadata and is excluded from overall.
   const overall = aggregateOverallStatus([
     web.status,
     api.status,
@@ -428,6 +467,7 @@ export function buildTechnicalHealthSnapshot(input: {
     email.status,
     outbox.status,
     initiativeIntegrity.status,
+    lifecycle.status,
   ]);
 
   return { overall, services, outbox, integrity };
@@ -443,5 +483,7 @@ export function formatDiagnosticSeverityLabel(status: DiagnosticSeverity): strin
       return "Critical";
     case "unknown":
       return "Unknown";
+    case "not_available":
+      return "Not available";
   }
 }
