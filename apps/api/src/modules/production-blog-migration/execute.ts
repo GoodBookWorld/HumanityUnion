@@ -698,6 +698,7 @@ export async function runProductionBlogMigration(
 
         // P2b — media_upload_records for canonical keys only
         const mediaIds = preflight.media.uniqueMediaIds;
+        const mediaIdToStorageKey = new Map<string, string>();
         let mediaRecordCount = 0;
         for (const mediaId of mediaIds) {
           const record = await sourceDb
@@ -711,7 +712,12 @@ export async function runProductionBlogMigration(
           }
           const storageKey = asString(record.storageKey);
           if (!storageKey || !storageKeys.includes(storageKey)) continue;
-          const sanitized = sanitizeMediaUploadRecordForBlogMigration(record);
+          mediaIdToStorageKey.set(mediaId, storageKey);
+          const sanitized = sanitizeMediaUploadRecordForBlogMigration(
+            record,
+            PRODUCTION_MEDIA_PUBLIC_BASE_URL,
+            mediaIdToStorageKey,
+          );
           await insertOwned({
             db: destDb,
             collection: MONGO_COLLECTIONS.mediaUploadRecords,
@@ -782,7 +788,11 @@ export async function runProductionBlogMigration(
           .find({})
           .toArray();
         for (const post of posts) {
-          const sanitized = sanitizeBlogPostForMigration(post);
+          const sanitized = sanitizeBlogPostForMigration(
+            post,
+            PRODUCTION_MEDIA_PUBLIC_BASE_URL,
+            mediaIdToStorageKey,
+          );
           const postId = asString(sanitized.postId);
           if (!postId) continue;
           await insertOwned({

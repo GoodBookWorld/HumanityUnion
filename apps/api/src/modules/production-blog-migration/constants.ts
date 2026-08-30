@@ -44,6 +44,21 @@ export const PRODUCTION_BLOG_MIGRATION_CONFIRM_FLAG =
 export const PRODUCTION_BLOG_MIGRATION_CONFIRM_VALUE = "YES" as const;
 
 /**
+ * Dedicated confirmation for post-commit media URL recovery only.
+ * Must not reuse PRODUCTION_BLOG_MIGRATION_CONFIRM.
+ */
+export const PRODUCTION_BLOG_MEDIA_URL_RECOVERY_CONFIRM_FLAG =
+  "PRODUCTION_BLOG_MEDIA_URL_RECOVERY_CONFIRM" as const;
+export const PRODUCTION_BLOG_MEDIA_URL_RECOVERY_CONFIRM_VALUE = "YES" as const;
+
+/** Exact production run that needs media URL recovery (Task 04.4). */
+export const SUPPORTED_BLOG_MEDIA_URL_RECOVERY_MIGRATION_ID =
+  "mig_518080f9-b1ee-4ecc-bbe7-40421ca9d2c8" as const;
+
+/** Exact migration-owned media object count for controlled Blog migration. */
+export const EXPECTED_BLOG_MIGRATION_MEDIA_OBJECT_COUNT = 14 as const;
+
+/**
  * Crash-safe Blog execute order.
  * R2 object copy (P2a) runs before the Mongo transaction that commits rewritten
  * production media URLs. Categories (P1) are applied inside that same Mongo

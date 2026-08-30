@@ -817,6 +817,40 @@ describe("Production Blog migration execute — Task 04", () => {
     );
   });
 
+  it("future migration rewrites structured *.r2.dev media via storageKey map (recurrence fix)", () => {
+    const mediaIdToStorageKey = new Map([["m1", "blog/m1.png"]]);
+    const r2Dev =
+      "https://pub-abc123.r2.dev/blog/m1.png";
+    const post = sanitizeBlogPostForMigration(
+      {
+        postId: "p1",
+        content: `<img src="${r2Dev}" /><img src="https://i0.wp.com/huws.org/x.jpg" />`,
+        coverMedia: { mediaId: "m1", mediaUrl: r2Dev },
+        optimization: {
+          socialImage: { mediaId: "m1", mediaUrl: r2Dev },
+        },
+      },
+      PRODUCTION_MEDIA_PUBLIC_BASE_URL,
+      mediaIdToStorageKey,
+    );
+    assert.equal(
+      (post.coverMedia as { mediaUrl: string }).mediaUrl,
+      `${PRODUCTION_MEDIA_PUBLIC_BASE_URL}/blog/m1.png`,
+    );
+    assert.equal(
+      (post.optimization as { socialImage: { mediaUrl: string } }).socialImage.mediaUrl,
+      `${PRODUCTION_MEDIA_PUBLIC_BASE_URL}/blog/m1.png`,
+    );
+    assert.match(String(post.content), new RegExp(PRODUCTION_MEDIA_PUBLIC_BASE_URL));
+    assert.match(String(post.content), /i0\.wp\.com/);
+    assert.equal(
+      rewriteCanonicalBlogMediaUrl(r2Dev, PRODUCTION_MEDIA_PUBLIC_BASE_URL, new Set(["blog/m1.png"])),
+      `${PRODUCTION_MEDIA_PUBLIC_BASE_URL}/blog/m1.png`,
+    );
+    // Without ownership map, hostname alone must not decide rewrite of r2.dev:
+    assert.equal(rewriteCanonicalBlogMediaUrl(r2Dev), r2Dev);
+  });
+
   it("post-execute verification PASS after successful migrate", async () => {
     const { source, dest } = seedPerfectSource();
     const inspector = new InMemoryBlogR2Inspector();

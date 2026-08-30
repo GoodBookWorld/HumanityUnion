@@ -15,9 +15,13 @@ export {
   EXPECTED_SEED_CATEGORY_IDS,
   PRODUCTION_BLOG_MIGRATION_CONFIRM_FLAG,
   PRODUCTION_BLOG_MIGRATION_CONFIRM_VALUE,
+  PRODUCTION_BLOG_MEDIA_URL_RECOVERY_CONFIRM_FLAG,
+  PRODUCTION_BLOG_MEDIA_URL_RECOVERY_CONFIRM_VALUE,
   PRODUCTION_BLOG_MIGRATION_SOURCE_DATABASE,
   PRODUCTION_BLOG_MIGRATION_TARGET_DATABASE,
   PRODUCTION_MEDIA_PUBLIC_BASE_URL,
+  SUPPORTED_BLOG_MEDIA_URL_RECOVERY_MIGRATION_ID,
+  EXPECTED_BLOG_MIGRATION_MEDIA_OBJECT_COUNT,
   isTestIsolationDatabase,
 } from "./constants.js";
 
@@ -130,11 +134,28 @@ export { BlogMigrationOwnershipLedger } from "./ownership-ledger.js";
 export {
   prepareBlogDeliveryForMigration,
   prepareBlogSubscriberForMigration,
+  productionMediaUrlForStorageKey,
   rewriteCanonicalBlogMediaUrl,
   rewriteCanonicalMediaUrlsInHtml,
   sanitizeBlogPostForMigration,
   sanitizeMediaUploadRecordForBlogMigration,
+  storageKeyFromLooseMediaUrl,
+  tryResolveOwnedStorageKey,
 } from "./documents.js";
+
+export {
+  assessOwnedMediaUrlRepair,
+  isBlogMediaUrlRecoveryExecuteRequested,
+  planBlogMediaUrlRepairs,
+  resolveBlogMediaUrlRecoveryMode,
+  resolveMigrationOwnedMediaSet,
+  runBlogMediaUrlRecovery,
+} from "./media-url-recovery.js";
+export type {
+  BlogMediaUrlRecoveryReport,
+  BlogMediaUrlRepairPlanItem,
+  RunBlogMediaUrlRecoveryInput,
+} from "./media-url-recovery.js";
 
 export {
   blogFailureAllowsOwnedR2Rollback,
