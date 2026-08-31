@@ -12,7 +12,7 @@ Version 2.0
 2. It describes the platform as of **Production Completion Pack 02E COMPLETE locally** (UI Key Extraction; **staging smoke PENDING**). Pack **02D COMPLETE + STAGING PASS**. Primary engineering branch: follow `git branch --show-current`; **repository evidence wins**.
 3. **Do not reinterpret:** Initiative = sole canonical civic root; Participant-first identity; English = translation fallback; translations never overwrite canonical civic source; staging cleanup tools must not be weakened for production.
 4. **Current Pack track:** Production Completion **Pack 02 — Multilingual Platform Architecture**.
-5. **Exact next task:** **Pack 02E staging smoke** (minimal checklist below). After staging acceptance: **Production Completion Pack 02F — Canonical Terminology Glossary**.
+5. **Exact next task:** **Pack 02E residual deploy + staging re-smoke** (Edit Profile header utility), then full Pack 02E staging acceptance. After staging PASS: **Production Completion Pack 02F — Canonical Terminology Glossary**.
 6. **Deeper architecture:** ADR registry `architecture/ARCHITECTURE_DECISION_RECORDS.md`; Initiative-root ADR; Development Baseline; Language Architecture `project/architecture/core/LANGUAGE_TRANSLATION_ARCHITECTURE_v1.0.md`; Pack 02A summary `architecture/recovery/PRODUCTION_COMPLETION_PACK_02A_MULTILINGUAL_AUDIT_v1.0.md`; AI recovery kit `architecture/recovery/chat-agent/README.md`.
 7. When docs conflict with code/git/operator-verified facts, **repository evidence wins** — then synchronize documentation.
 8. **Never commit** secrets, credentials, connection strings, or private migration manifests (including `production-admin-source.json`).
@@ -46,6 +46,8 @@ Tasks **01–06 COMPLETE** locally. Presentation-only extraction on Pack 02D `ne
 | 05 Workspace/Account shell | COMPLETE (`workspace.*`) |
 | 06 Acceptance + regression close-out | COMPLETE locally |
 
+**Staging smoke residual (local fix; redeploy + re-smoke required):** workspace member-identity header utility “Edit Profile” was hardcoded English under uk/zh-Hant/ar; now uses existing `workspace.editProfile`. Account in-page link was already correct. **Do NOT claim staging PASS** until residual is deployed and re-smoked.
+
 **Deferred boundaries (not Pack 02E):** Pack 02F glossary; lifecycle-stage translation; civic/content body; Notification Center empty-state body; Blog `navLabel` API union change; role/status enum presentation maps; provider translation; multilingual search; SEO/hreflang; locale-prefixed routes.
 
 **Do NOT claim staging PASS yet.**
@@ -62,9 +64,9 @@ Unchanged — Pack 02C locale authority; `next-intl` foundation; staging PASS re
 
 ## Immediate Objective
 
-**Pack 02E staging smoke (PENDING), then Pack 02F.**
+**Pack 02E residual deploy + staging re-smoke (PENDING), then Pack 02F.**
 
-Run the minimal staging smoke checklist below against deployed staging after the Pack 02E changes are deployed. On PASS, Documentation Gate for staging acceptance, then start **Pack 02F — Canonical Terminology Glossary**.
+Staging smoke Steps 1–5 already executed against prior deploy; residual header “Edit Profile” i18n must be deployed and re-checked under uk/zh-Hant/ar before claiming Pack 02E staging PASS. Then Documentation Gate for staging acceptance, then start **Pack 02F — Canonical Terminology Glossary**.
 
 Do not invent a second locale-resolution path. Reuse Pack 02C + Pack 02D runtime.
 
@@ -75,7 +77,7 @@ Do not invent a second locale-resolution path. Reuse Pack 02C + Pack 02D runtime
 3. Switch to **zh-Hant** (or zh-TW alias) → same chrome localized; LTR; canonical tag `zh-Hant`.
 4. Switch to **ar** → same chrome localized; `dir=rtl`; RTL chevron/layout OK.
 5. Auth guest: Log in / Create account / forgot-password / register form labels follow locale; submit still hits same routes (`/login`, `/register`, `/password-reset`).
-6. Authenticated: Workspace sidebar Profile / Messages / Notifications localized; hrefs `/member`, `/workspace/messages`, `/notifications` unchanged; header Workspace/Notifications icons keep accessible names.
+6. Authenticated: Workspace sidebar Profile / Messages / Notifications localized; hrefs `/member`, `/workspace/messages`, `/notifications` unchanged; header Workspace/Notifications icons keep accessible names; **workspace member-identity “Edit Profile” localized** (`workspace.editProfile`; href `/member`).
 7. Account shell: Account tile labels localized; **Role/Status values remain API enum tokens** (not translated).
 8. Blog authoring nav: API `navLabel` still English `"Become an Author" | "Publishing"` in network/state; UI may show translated presentation.
 9. Language Selector still Registry-driven; disabled locale write still 400; restore Registry to en-only when done.

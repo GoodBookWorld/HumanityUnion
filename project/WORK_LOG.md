@@ -56,6 +56,25 @@ Next Objective:
 
 # Entries
 
+## 2026-08-31 (Pack 02E residual — header Edit Profile i18n)
+
+Completed:
+
+- Staging smoke residual: workspace member-identity “Edit Profile” stayed English under uk/zh-Hant/ar.
+- Presentation-only fix: reuse existing `workspace.editProfile` in `WorkspaceMemberIdentity` (href `/member` unchanged).
+- Pack 02E Task 05/06 tests cover catalog values + component wiring.
+- Staging smoke remains **PENDING** until this residual is deployed and re-smoked (do not claim staging PASS).
+
+Architecture:
+
+- No new catalog key; no route/permission/contract change; Pack 02E scope not broadened.
+
+Next Objective:
+
+- Deploy residual + Pack 02E re-smoke (Edit Profile under uk/zh-Hant/ar); on full PASS start Pack 02F.
+
+---
+
 ## 2026-08-31 (Pack 02E Task 06 — acceptance + regression close-out)
 
 Completed:

@@ -86,6 +86,7 @@ describe("Production Completion Pack 02E Task 06 — acceptance close-out", () =
       assert.ok(resolveMergedMessage(pack.messages, "workspace", "profile"));
       assert.ok(resolveMergedMessage(pack.messages, "workspace", "messages"));
       assert.ok(resolveMergedMessage(pack.messages, "workspace", "account"));
+      assert.ok(resolveMergedMessage(pack.messages, "workspace", "editProfile"));
     }
 
     const en = await loadUiMessagesForLocale("en");
@@ -121,6 +122,10 @@ describe("Production Completion Pack 02E Task 06 — acceptance close-out", () =
     assert.match(login, /href="\/register"/);
     assert.match(login, /href="\/password-reset"/);
     assert.match(login, /returnTo/);
+
+    const identity = readWeb("features/member-profile/components/WorkspaceMemberIdentity.tsx");
+    assert.match(identity, /tWorkspace\("editProfile"\)/);
+    assert.match(identity, /href="\/member"/);
   });
 
   it("scope exclusions: no Pack 02F glossary / lifecycle / Notification Center body extraction", () => {

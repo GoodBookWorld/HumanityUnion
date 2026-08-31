@@ -88,6 +88,29 @@ describe("Production Completion Pack 02E Task 05 — workspace/account shell ext
     assert.match(mobile, /tWorkspace\("profile"\)/);
   });
 
+  it("workspace member identity Edit Profile uses workspace.editProfile presentation", async () => {
+    const expected = {
+      en: "Edit Profile",
+      uk: "Редагувати профіль",
+      "zh-Hant": "編輯個人檔案",
+      ar: "تعديل الملف الشخصي",
+    } as const;
+
+    for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
+      const pack = await loadUiMessagesForLocale(locale);
+      assert.equal(
+        resolveMergedMessage(pack.messages, "workspace", "editProfile"),
+        expected[locale],
+      );
+    }
+
+    const identity = readWeb("features/member-profile/components/WorkspaceMemberIdentity.tsx");
+    assert.match(identity, /useTranslations\("workspace"\)/);
+    assert.match(identity, /tWorkspace\("editProfile"\)/);
+    assert.match(identity, /href="\/member"/);
+    assert.doesNotMatch(identity, />\s*Edit Profile\s*</);
+  });
+
   it("Account shell labels resolve", async () => {
     const locales = ["en", "uk", "zh-Hant", "ar"] as const;
     for (const locale of locales) {
