@@ -17,22 +17,23 @@ import { getAnalysisById } from "../initiative-collaborative-analysis/initiative
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getPetition } from "../petition/petition.store.js";
 import { blogHtmlToPlainText } from "../blog/blog-content-sanitize.js";
-import { HUMANITY_UNION_TRANSLATION_TERMINOLOGY } from "./hu-terminology-glossary.js";
+import {
+  assertEnabledSelectableLocale,
+  resolveLocaleWithEnglishFallback,
+} from "./language-registry-runtime.js";
+import { resolveParticipantLanguageContext } from "./participant-language-context.js";
 import {
   findContentTranslation,
   listContentTranslationsForSource,
   markStaleTranslationsForSource,
   upsertContentTranslation,
 } from "./persistence/content-translation.repository.js";
-import { resolveParticipantLanguageContext } from "./participant-language-context.js";
-import {
-  assertEnabledSelectableLocale,
-  resolveLocaleWithEnglishFallback,
-} from "./language-registry-runtime.js";
 import {
   resolveStructuredTranslatedDisplay,
 } from "./resolve-translated-display.js";
 import { resolveTranslationProvider } from "./resolve-translation-provider.js";
+import { TerminologyGlossaryValidationError } from "./terminology-glossary/terminology-glossary.errors.js";
+import { resolveProviderTerminologyContext } from "./terminology-glossary/terminology-glossary.provider-context.js";
 import { TranslationProviderError } from "./translation.config.js";
 
 export interface LoadedTranslatableSource {
@@ -223,6 +224,16 @@ export async function getOrCreateContentTranslation(input: {
   }
 
   const provider = resolveTranslationProvider();
+  let terminologyContext: string;
+  try {
+    terminologyContext = await resolveProviderTerminologyContext(targetLanguage);
+  } catch (error) {
+    if (error instanceof TerminologyGlossaryValidationError) {
+      throw new TranslationProviderError("unsupported_language", error.message);
+    }
+    throw error;
+  }
+
   const result = await provider.translate({
     sourceLanguage: source.sourceLanguage,
     targetLanguage,
@@ -230,7 +241,7 @@ export async function getOrCreateContentTranslation(input: {
     contentType: "structured_json",
     sourceRecordId: source.sourceRecordId,
     sourceVersion: source.sourceVersion,
-    terminologyContext: HUMANITY_UNION_TRANSLATION_TERMINOLOGY,
+    terminologyContext,
     safetyCleared: true,
   });
 

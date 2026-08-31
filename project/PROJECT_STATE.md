@@ -48,11 +48,12 @@ Primary engineering branch: follow `git branch --show-current` (repository evide
 | **02C** Locale Preference & Runtime | **COMPLETED** + staging **PASS** |
 | **02D** UI i18n Foundation | **COMPLETED** + staging **PASS** |
 | **02E** UI Key Extraction | **COMPLETED** + staging **PASS** |
-| 02F–02J | Sequenced after 02E (02F NEXT) |
+| **02F** Canonical Terminology Glossary | **COMPLETE locally** (Tasks 01–06); staging smoke **PENDING** |
+| 02G–02J | Sequenced after 02F staging PASS (02H = search) |
 
 See `project/NEXT_SESSION.md` for the exact next implementation objective.
 
-Last completed product track milestone: **Pack 02E** (UI key extraction COMPLETE + STAGING PASS; verification locales en / uk / zh-Hant / ar; Edit Profile residual fixed in `2e27b27`; Registry restored en only).
+Last completed product track milestone: **Pack 02F COMPLETE locally** (glossary seed + Admin API/UI + provider preferred-term injection + acceptance). Staging smoke **PENDING** — do not claim staging PASS. After staging PASS → Pack 02G.
 
 ---
 
@@ -121,6 +122,7 @@ Capability 02
 | Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** + staging acceptance **PASS** |
 | Production Completion Pack 02D UI i18n Foundation | **COMPLETED** + staging acceptance **PASS** |
 | Production Completion Pack 02E UI Key Extraction | **COMPLETED** + staging acceptance **PASS** |
+| Production Completion Pack 02F Canonical Terminology Glossary | **COMPLETE locally**; staging smoke **PENDING** |
 
 ---
 
@@ -155,7 +157,7 @@ Still excluded unless a future architecture decision says otherwise:
 
 - Broad UI chrome key migration (Pack 02E) — **COMPLETED** + staging **PASS** (public nav/footer + shared common/a11y + auth + workspace/account shell; Edit Profile residual `2e27b27`; Registry restored en only)
 - Lifecycle-stage / civic body / Notification Center empty-state / Blog navLabel API redesign / role·status enum maps — deferred beyond 02E
-- Pack 02F Canonical Terminology Glossary — **NEXT**
+- Pack 02F Canonical Terminology Glossary — **COMPLETE locally**; staging smoke **PENDING**; search = Pack 02H
 - Admin-managed remote UI message packs / R2 persistence
 - Admin platform-default-language setting (currently `DEFAULT_PLATFORM_LANGUAGE` = `en`)
 - Multilingual search
@@ -168,8 +170,8 @@ Still excluded unless a future architecture decision says otherwise:
 | Item | Notes |
 |------|--------|
 | Pack 02E UI Key Extraction | **COMPLETED** + staging **PASS** |
-| Pack 02F Canonical Terminology Glossary | **NEXT** |
-| Pack 02G–02J | Multilingual sequence after 02F |
+| Pack 02F Canonical Terminology Glossary | **COMPLETE locally**; staging smoke **PENDING** |
+| Pack 02G–02J | After 02F staging PASS (02H = search seam) |
 | Pack 02B / 02C / 02D / 02E staging acceptance | **PASS** |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
 | Mobile PWA regression | Diagnosis only — not a redesign |

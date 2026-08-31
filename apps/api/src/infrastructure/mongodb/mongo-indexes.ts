@@ -1126,6 +1126,17 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // Production Completion Pack 02F — Canonical Terminology Glossary.
+    collectionName: MONGO_COLLECTIONS.terminologyGlossary,
+    indexes: [
+      {
+        key: { conceptId: 1 },
+        unique: true,
+        name: "terminology_glossary_concept_id_unique",
+      },
+    ],
+  },
+  {
     // Blog Implementation Pack 02 — publishing domain.
     collectionName: MONGO_COLLECTIONS.blogPosts,
     indexes: [

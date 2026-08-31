@@ -31,6 +31,7 @@ import { hydrateInitiativePublicImpactReportMongoPersistence } from "../../modul
 import { hydrateInitiativeVersionRevisionMongoPersistence } from "../../modules/initiative-version-revision/persistence/initiative-version-revision-mongo.persistence.js";
 import { hydrateInitiativeMongoPersistence, flushInitiativeMongoPersistence } from "../../modules/initiatives/persistence/initiative-mongo.persistence.js";
 import { ensureLanguageRegistrySeeded } from "../../modules/language/language-registry/index.js";
+import { ensureTerminologyGlossarySeeded } from "../../modules/language/terminology-glossary/index.js";
 import { hydrateOfficialResponseMongoPersistence } from "../../modules/official-response/persistence/official-response-mongo.persistence.js";
 import { hydrateParticipationAreaMongoPersistence } from "../../modules/participation-area/persistence/participation-area-mongo.persistence.js";
 import { hydratePublicCivicArchiveMongoPersistence } from "../../modules/public-civic-archive/persistence/public-civic-archive-mongo.persistence.js";
@@ -61,6 +62,8 @@ export async function bootstrapMongoPersistence(): Promise<void> {
 
   // Pack 02B — idempotent Language Registry seed (never overwrites Admin-modified rows).
   await ensureLanguageRegistrySeeded();
+  // Pack 02F — idempotent Terminology Glossary seed (preserves Admin translations/status).
+  await ensureTerminologyGlossarySeeded();
 
   await Promise.all([
     hydrateInitiativeMongoPersistence(),

@@ -7,12 +7,14 @@ import type {
 } from "@hu/types";
 import { normalizeLanguageCode } from "@hu/types";
 
-import { HUMANITY_UNION_TRANSLATION_TERMINOLOGY } from "./hu-terminology-glossary.js";
 import {
   assertEnabledSelectableLocale,
   resolveEnabledCanonicalLocale,
 } from "./language-registry-runtime.js";
 import { resolveTranslationProvider } from "./resolve-translation-provider.js";
+import { TerminologyGlossaryValidationError } from "./terminology-glossary/terminology-glossary.errors.js";
+import { resolveProviderTerminologyContext } from "./terminology-glossary/terminology-glossary.provider-context.js";
+import { TranslationProviderError } from "./translation.config.js";
 
 export interface TranslateDraftServiceRequest extends TranslateDraftRequest {
   readonly sourceKind?: ContentTranslationSourceKind;
@@ -39,6 +41,16 @@ export async function translateDraft(
     ? JSON.stringify(request.draftContent)
     : request.draftContent;
 
+  let terminologyContext: string;
+  try {
+    terminologyContext = await resolveProviderTerminologyContext(targetLanguage);
+  } catch (error) {
+    if (error instanceof TerminologyGlossaryValidationError) {
+      throw new TranslationProviderError("unsupported_language", error.message);
+    }
+    throw error;
+  }
+
   const result = await provider.translate({
     sourceLanguage,
     targetLanguage,
@@ -46,7 +58,7 @@ export async function translateDraft(
     contentType: isStructured ? "structured_json" : "plain",
     sourceRecordId: request.sourceRecordId,
     sourceVersion: request.sourceVersion,
-    terminologyContext: HUMANITY_UNION_TRANSLATION_TERMINOLOGY,
+    terminologyContext,
     safetyCleared: true,
   });
 

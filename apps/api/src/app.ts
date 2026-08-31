@@ -214,6 +214,7 @@ import {
 } from "./modules/platform-social-accounts/index.js";
 import {
   adminLanguagesRouter,
+  adminTerminologyGlossaryRouter,
   publicLanguagesRouter,
   runtimeLocaleRouter,
 } from "./modules/language/index.js";
@@ -274,6 +275,7 @@ app.use("/api/v1/platform/support-links", publicPlatformSupportLinksRouter);
 app.use("/api/v1/languages", publicLanguagesRouter);
 app.use("/api/v1/runtime-locale", runtimeLocaleRouter);
 app.use("/api/v1/admin/languages", adminLanguagesRouter);
+app.use("/api/v1/admin/terminology-glossary", adminTerminologyGlossaryRouter);
 app.use("/api/v1/admin/platform/readiness", adminPlatformReadinessRouter);
 app.use("/api/v1/admin/platform/social-accounts", adminPlatformSocialAccountsRouter);
 app.use("/api/v1/admin/platform/support-links", adminPlatformSupportLinksRouter);

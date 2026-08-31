@@ -154,6 +154,7 @@ export type AdministrationAuditAction =
   | "language_registry.update"
   | "language_registry.enable"
   | "language_registry.disable"
+  | "terminology_glossary.update"
   | "platform.support_link.update"
   | "platform.support_link.clear"
   | "seo.page_override.create"

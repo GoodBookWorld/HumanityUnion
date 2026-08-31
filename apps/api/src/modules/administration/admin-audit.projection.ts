@@ -61,6 +61,11 @@ export const ADMINISTRATION_AUDIT_ACTIONS: readonly AdministrationAuditAction[] 
   "platform.social_account.clear",
   "platform.support_link.update",
   "platform.support_link.clear",
+  "language_registry.create",
+  "language_registry.update",
+  "language_registry.enable",
+  "language_registry.disable",
+  "terminology_glossary.update",
   "seo.page_override.create",
   "seo.page_override.update",
   "seo.page_override.clear",
@@ -128,6 +133,12 @@ export function deriveAdminAuditCategory(action: AdministrationAuditAction): Adm
     return "public_choice";
   }
   if (action.startsWith("platform.") || action.startsWith("media_resource.")) {
+    return "platform";
+  }
+  if (
+    action.startsWith("language_registry.") ||
+    action.startsWith("terminology_glossary.")
+  ) {
     return "platform";
   }
   if (
@@ -216,6 +227,10 @@ export function formatAdminAuditTargetLabel(targetType: string, targetId: string
       return `Support link ${shortId}`;
     case "country_affiliation":
       return `Country affiliation ${shortId}`;
+    case "language_registry":
+      return `Language ${shortId}`;
+    case "terminology_glossary":
+      return `Glossary ${shortId}`;
     default:
       return `${targetType} ${shortId}`;
   }

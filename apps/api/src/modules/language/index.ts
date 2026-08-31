@@ -52,7 +52,10 @@ export type {
   TranslationProviderResult,
 } from "./translation-provider.js";
 export { DeterministicTranslationProvider } from "./providers/deterministic-translation-provider.js";
-export { GeminiTranslationProvider } from "./providers/gemini-translation-provider.js";
+export {
+  GeminiTranslationProvider,
+  buildGeminiTranslationSystemInstructionForTests,
+} from "./providers/gemini-translation-provider.js";
 export {
   resolveTranslationProvider,
   setTranslationProviderForTests,
@@ -117,3 +120,36 @@ export {
   publicLanguagesRouter,
   adminLanguagesRouter,
 } from "./language-registry/index.js";
+export {
+  TERMINOLOGY_GLOSSARY_SEED_DEFINITIONS,
+  buildEnglishProviderTerminologyContext,
+  buildProviderTerminologyContext,
+  canonicalizeGlossaryTranslationLocales,
+  ensureTerminologyGlossarySeeded,
+  formatProviderTerminologyContext,
+  getAdminTerminologyConcept,
+  getTerminologyConceptById,
+  isSeededTerminologyConceptId,
+  listAdminTerminologyConcepts,
+  listPublishedProviderTerminologyLines,
+  listSeededTerminologyConceptIds,
+  listTerminologyConcepts,
+  normalizeGlossaryAliasList,
+  resetTerminologyGlossaryStoreForTests,
+  resolveProviderTerminologyContext,
+  setTerminologyGlossaryAdminAssertOverrideForTests,
+  setTerminologyGlossaryForceMemoryForTests,
+  updateAdminTerminologyConcept,
+  updateTerminologyConcept,
+  TerminologyGlossaryConflictError,
+  TerminologyGlossaryError,
+  TerminologyGlossaryNotFoundError,
+  TerminologyGlossaryPersistenceError,
+  TerminologyGlossaryValidationError,
+  adminTerminologyGlossaryRouter,
+} from "./terminology-glossary/index.js";
+export type {
+  ProviderTerminologyConceptLine,
+  TerminologyGlossarySeedResult,
+} from "./terminology-glossary/index.js";
+export { HUMANITY_UNION_TRANSLATION_TERMINOLOGY } from "./hu-terminology-glossary.js";

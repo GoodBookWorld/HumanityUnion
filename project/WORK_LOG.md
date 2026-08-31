@@ -56,6 +56,134 @@ Next Objective:
 
 # Entries
 
+## 2026-08-31 (Pack 02F Task 06 — acceptance + regression close-out)
+
+Completed:
+
+- Pack **02F COMPLETE locally**; Tasks **01–06 COMPLETE**.
+- Architecture / persistence / Admin API / Admin UI / provider injection / privacy gates accepted.
+- Regression: Pack 02F Tasks 02–05 + Language Registry + content translation/provider suites green; `@hu/types` typecheck+build, `@hu/api` typecheck, `@hu/web` typecheck+build green; `git diff --check` clean.
+- Staging smoke **PENDING** (minimal 10-point checklist in NEXT_SESSION). No staging PASS claimed.
+- Search seam remains Pack 02H.
+
+Architecture:
+
+- Glossary is presentation vocabulary only; does not replace Language Registry, UI catalogs, lifecycle registry, content_translations, TranslationProvider, or search.
+- No new ADR.
+
+Next Objective:
+
+- Pack 02F staging smoke; on PASS → **Pack 02G**.
+
+---
+
+## 2026-08-31 (Pack 02F Task 05 — provider terminology injection)
+
+Completed:
+
+- Pack **02F IN PROGRESS**; **Task 05 COMPLETE**.
+- Locale-aware published-glossary `terminologyContext` via canonical `resolveProviderTerminologyContext`.
+- Gemini prompt uses preferred target terms; protects machine identifiers; English seed list is persistence/empty-set fallback only.
+- Wired into `content-translation.service` + `translate-draft`; deterministic provider records context; privacy/`safetyCleared` unchanged.
+- Focused Task 05 + Tasks 02–03 + affected translation/Language Registry tests green; `@hu/api` typecheck green.
+- Exact next: **Task 06 — acceptance + docs**. Search remains Pack 02H. No staging PASS.
+
+Architecture:
+
+- No new ADR; existing TranslationProvider + terminologyContext seam retained.
+- Locale resolution reuses Language Registry (aliases canonicalized; unknown rejected; disabled not silently enabled).
+
+Next Objective:
+
+- Pack 02F Task 06 — acceptance + documentation close-out (Pack still IN PROGRESS until Task 06).
+
+---
+
+## 2026-08-31 (Pack 02F Task 04 — terminology glossary Admin UI)
+
+Completed:
+
+- Pack **02F IN PROGRESS**; **Task 04 COMPLETE**.
+- Admin UI `/admin/terminology-glossary` + nav entry (separate from Languages).
+- List/filter seeded concepts; editor for status + Registry-locale preferredTerm/aliases/guidance; identity/linkedRefs read-only.
+- Disabled Registry languages editable/visible; PATCH merges one locale; no create/delete; no provider/search side effects.
+- Exact next: **Task 05 — provider terminology injection**.
+
+Architecture:
+
+- Language Registry remains locale authority; glossary remains presentation vocabulary only.
+
+Next Objective:
+
+- Pack 02F Task 05 — locale-aware TranslationProvider terminology injection.
+
+---
+
+## 2026-08-31 (Pack 02F Task 03 — terminology glossary Admin API)
+
+Completed:
+
+- Pack **02F IN PROGRESS**; **Task 03 COMPLETE**.
+- Admin endpoints: `GET/PATCH /api/v1/admin/terminology-glossary` (+ get by conceptId); Admin-only; no create/delete.
+- Locale merge PATCH; zh-TW→zh-Hant; disabled locales storable; Task 02 validation reused; audit `terminology_glossary.update`.
+- Provider/search/Language Registry untouched by mutations.
+- Exact next: **Task 04 — Admin UI**.
+
+Architecture:
+
+- Presentation vocabulary only; immutable concept identity; Admin cannot invent concepts.
+
+Next Objective:
+
+- Pack 02F Task 04 — Terminology Glossary Admin UI.
+
+---
+
+## 2026-08-31 (Pack 02F Task 02 — glossary contract + seed + repository)
+
+Completed:
+
+- Pack **02F IN PROGRESS**; **Task 02 COMPLETE**.
+- Added `@hu/types` TerminologyConcept contract; code-seeded catalog (22 concepts); Mongo `terminology_glossary` + memory repository; Language Registry locale canonicalization; alias integrity.
+- `HUMANITY_UNION_TRANSLATION_TERMINOLOGY` now derived from seed catalog; Gemini still preserves English terms (Task 05 deferred).
+- Focused Pack 02F tests + language Pack 01/02 suites green; types/API typecheck green.
+- Exact next: **Task 03 — Admin API**.
+
+Architecture:
+
+- Glossary is presentation vocabulary only — no domain/lifecycle fork; Admin cannot invent conceptIds.
+- Disabled Registry locales may store translations; runtime authority unchanged.
+- Revision links via `civicEntityType` only (not public stage registry route).
+
+Next Objective:
+
+- Pack 02F Task 03 — Terminology Glossary Admin API.
+
+---
+
+## 2026-08-31 (Pack 02F Task 01 — Canonical Terminology Glossary read-only audit)
+
+Completed:
+
+- Pack **02F IN PROGRESS**; **Task 01 COMPLETE** (audit/design only — no application code).
+- Mapped existing terminology surface: flat `HUMANITY_UNION_TRANSLATION_TERMINOLOGY` provider preserve-list; Pack 02B Language Registry (locale aliases ≠ term aliases); Pack 02D/02E UI catalogs; `content_translations` + `TranslationProvider.terminologyContext`; global search entity labels; Assistant platform-knowledge keywords; `engineering/00_UBIQUITOUS_LANGUAGE.md` + lifecycle stage registry.
+- Classified audit concepts (domain / UI / workflow-stage / brand / auth); recommended code-seeded glossary records + Admin edit of preferred translations/aliases/guidance only.
+- Provider seam: replace English preserve-list with locale-aware preferred-term injection at existing Gemini/draft/content-translation call sites.
+- Search seam: Pack 02H must extend the same `global-search` matcher/index — not a second vocabulary index.
+- Exact next: **Task 02 — Glossary contract / seed / repository**.
+
+Architecture:
+
+- Glossary is presentation/search/provider vocabulary only — must not rename domain IDs, enums, routes, payloads, or events.
+- Language Registry remains language authority; UI catalogs remain chrome authority; content translation seam extended, not replaced.
+- Current Gemini prompt preserves English terms — Pack 02F must evolve injection to preferred target-locale terms without sending private content.
+
+Next Objective:
+
+- Pack 02F Task 02 — glossary record contract, code-seeded concepts, repository replacing the flat string list.
+
+---
+
 ## 2026-08-31 (Pack 02E — staging acceptance + documentation close-out)
 
 Completed:

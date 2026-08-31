@@ -108,6 +108,22 @@ export {
   normalizeLanguageRegistryLocaleKey,
 } from "./language-registry.js";
 export type {
+  TerminologyConcept,
+  TerminologyConceptCategory,
+  TerminologyConceptId,
+  TerminologyConceptLinkedRefs,
+  TerminologyConceptStatus,
+  TerminologyConceptUpdateInput,
+  TerminologyGlossaryAdminListResponse,
+  TerminologyLocaleTranslation,
+} from "./terminology-glossary.js";
+export {
+  TERMINOLOGY_CONCEPT_CATEGORIES,
+  TERMINOLOGY_CONCEPT_STATUSES,
+  isTerminologyConceptCategory,
+  isTerminologyConceptStatus,
+} from "./terminology-glossary.js";
+export type {
   ResolvedRuntimeLocale,
   ResolveRuntimeLocaleInput,
   RuntimeLocaleCatalogEntry,

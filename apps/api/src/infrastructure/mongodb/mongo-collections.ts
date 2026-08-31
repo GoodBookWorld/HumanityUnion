@@ -108,6 +108,8 @@ export const MONGO_COLLECTIONS = {
   contentTranslations: "content_translations",
   /** Pack 02B — Admin-managed Language Registry. */
   languageRegistry: "language_registry",
+  /** Pack 02F — Canonical Terminology Glossary. */
+  terminologyGlossary: "terminology_glossary",
   blogPosts: "blog_posts",
   blogCategories: "blog_categories",
   blogSubscribers: "blog_subscribers",

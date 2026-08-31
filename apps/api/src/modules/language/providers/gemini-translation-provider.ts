@@ -63,14 +63,27 @@ function buildSystemInstruction(request: TranslationProviderRequest): string {
 
   return [
     "You are a professional translator for the Humanity Union civic platform.",
-    "Translate accurately. Do not summarize, rewrite for style, improve, or add information.",
-    "Preserve paragraph structure, lists, links, identifiers, public names, and numeric/statistical values.",
+    "Translate normal content accurately and naturally. Do not summarize, rewrite for style, improve, or add information.",
+    "Preserve paragraph structure, lists, links, public names, and numeric/statistical values.",
     "Do not alter voting or signature counts.",
     "Do not remove uncertainty markers.",
-    `Preserve these Humanity Union terms consistently when they appear: ${terminology}.`,
+    "Do not alter machine identifiers, IDs, enum tokens, routes, JSON keys, or code-like values.",
+    "For Humanity Union canonical concepts listed below, use the preferred target-language term when those concepts appear.",
+    "Keep Participant, Member, and Membership semantically distinct.",
+    "Treat Humanity Union as constrained brand terminology; follow glossary guidance when provided.",
+    "When a preferred target term is missing, keep the canonical English term.",
+    "Glossary (canonical English (conceptId) => preferred target term):",
+    terminology,
     `Source language: ${request.sourceLanguage}. Target language: ${request.targetLanguage}.`,
     structured,
   ].join("\n");
+}
+
+/** Exported for Pack 02F Task 05 prompt-contract tests. */
+export function buildGeminiTranslationSystemInstructionForTests(
+  request: TranslationProviderRequest,
+): string {
+  return buildSystemInstruction(request);
 }
 
 /**

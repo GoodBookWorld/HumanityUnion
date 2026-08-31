@@ -8,11 +8,24 @@ import { TranslationProviderError } from "../translation.config.js";
 /**
  * Offline / test provider. Does not call external networks.
  * Marks output clearly so tests can assert originals were not overwritten.
+ * Pack 02F Task 05: records last terminologyContext for assertions.
  */
 export class DeterministicTranslationProvider implements TranslationProvider {
   readonly providerId = "deterministic" as const;
 
+  private lastRequest: TranslationProviderRequest | null = null;
+
+  getLastRequestForTests(): TranslationProviderRequest | null {
+    return this.lastRequest;
+  }
+
+  clearLastRequestForTests(): void {
+    this.lastRequest = null;
+  }
+
   async translate(request: TranslationProviderRequest): Promise<TranslationProviderResult> {
+    this.lastRequest = request;
+
     if (!request.safetyCleared) {
       throw new TranslationProviderError(
         "safety_rejected",

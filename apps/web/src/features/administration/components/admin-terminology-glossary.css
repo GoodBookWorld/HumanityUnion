@@ -1,0 +1,184 @@
+.admin-glossary__lede {
+  margin: 0 0 1rem;
+  max-width: 48rem;
+}
+
+.admin-glossary__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.admin-glossary__toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+}
+
+.admin-glossary__table-wrap {
+  overflow-x: auto;
+}
+
+.admin-glossary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.admin-glossary-table th,
+.admin-glossary-table td {
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--hu-border, #d6d6d6);
+}
+
+.admin-glossary-table th {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-glossary-table__row {
+  cursor: pointer;
+}
+
+.admin-glossary-table__row:hover,
+.admin-glossary-table__row--selected {
+  background: color-mix(in srgb, var(--hu-surface, #f7f7f7) 85%, var(--hu-border, #d6d6d6));
+}
+
+.admin-glossary__editor {
+  margin: 1rem 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--hu-border, #d6d6d6);
+  border-radius: 0.35rem;
+}
+
+.admin-glossary__readonly-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-glossary__readonly-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.admin-glossary__readonly-value {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--hu-border, #d6d6d6);
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--hu-surface, #f7f7f7) 92%, var(--hu-border, #d6d6d6));
+  word-break: break-word;
+}
+
+.admin-glossary__help {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid var(--hu-border, #d6d6d6);
+  background: color-mix(in srgb, var(--hu-surface, #f7f7f7) 90%, var(--hu-border, #d6d6d6));
+  font-size: 0.875rem;
+}
+
+.admin-glossary__help strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.admin-glossary__status-row {
+  margin-bottom: 1rem;
+  max-width: 16rem;
+}
+
+.admin-glossary__status-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+}
+
+.admin-glossary__locales {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-glossary__locale-card {
+  padding: 0.85rem;
+  border: 1px solid var(--hu-border, #d6d6d6);
+  border-radius: 0.35rem;
+}
+
+.admin-glossary__locale-card--disabled {
+  border-style: dashed;
+  opacity: 0.95;
+}
+
+.admin-glossary__locale-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
+}
+
+.admin-glossary__locale-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.admin-glossary__locale-meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--hu-muted, #5c5c5c);
+}
+
+.admin-glossary__locale-badge {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--hu-border, #d6d6d6);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-glossary__locale-badge--disabled {
+  background: color-mix(in srgb, var(--hu-surface, #f7f7f7) 80%, #c9a227);
+}
+
+.admin-glossary__locale-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.admin-glossary__locale-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+}
+
+.admin-glossary__locale-grid textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.admin-glossary__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.admin-glossary__note {
+  margin: 0.5rem 0 0;
+}
