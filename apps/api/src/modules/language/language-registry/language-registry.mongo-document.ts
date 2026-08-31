@@ -24,8 +24,13 @@ export interface LanguageRegistryMongoDocument {
   searchEnabled: boolean;
   seoIndexingEnabled: boolean;
   aliases: string[];
-  /** Lowercase uniqueness keys for aliases (multikey unique index). */
-  aliasKeys: string[];
+  /**
+   * Lowercase uniqueness keys for aliases (multikey unique index).
+   * Omitted when empty so multiple no-alias languages do not collide under
+   * unique multikey indexing (Mongo indexes missing/null array fields as
+   * undefined without a partial filter).
+   */
+  aliasKeys?: string[];
   providerMappings: LanguageProviderMappings;
   createdAt: string;
   updatedAt: string;
@@ -36,6 +41,7 @@ export function toLanguageRegistryMongoDocument(
 ): LanguageRegistryMongoDocument {
   const locale = record.locale.trim();
   const aliases = normalizeAliasList(record.aliases);
+  const aliasKeys = aliases.map((alias) => normalizeLanguageRegistryLocaleKey(alias));
   return {
     languageId: record.languageId.trim(),
     locale,
@@ -51,7 +57,7 @@ export function toLanguageRegistryMongoDocument(
     searchEnabled: record.searchEnabled === true,
     seoIndexingEnabled: record.seoIndexingEnabled === true,
     aliases,
-    aliasKeys: aliases.map((alias) => normalizeLanguageRegistryLocaleKey(alias)),
+    ...(aliasKeys.length > 0 ? { aliasKeys } : {}),
     providerMappings: { ...record.providerMappings },
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,

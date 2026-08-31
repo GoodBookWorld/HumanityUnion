@@ -1,9 +1,47 @@
-import type { IndexDescription } from "mongodb";
+import type { Document, IndexDescription } from "mongodb";
 
 import { MONGO_COLLECTIONS } from "./mongo-collections.js";
 import { getMongoCollection } from "./mongo-database.js";
 import { ensureCollectionIndexes } from "./mongo-snapshot-store.js";
 import { withMongoStartupIndexRetry } from "./mongo-startup-index-retry.js";
+
+/** Pack 02B Hotfix 01 — Language Registry alias uniqueness index name. */
+export const LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_INDEX_NAME =
+  "language_registry_alias_keys_unique";
+
+/**
+ * Only index documents that have at least one alias key element.
+ * Empty arrays and omitted/null aliasKeys are excluded (avoids E11000 on
+ * `{ aliasKeys: undefined }` when multiple languages have no aliases).
+ */
+export const LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_PARTIAL_FILTER = {
+  "aliasKeys.0": { $exists: true },
+} as const;
+
+/**
+ * True when the named Language Registry alias index already matches the
+ * current partial-unique contract (safe to leave in place).
+ */
+export function isLanguageRegistryAliasKeysUniqueIndexCurrent(
+  index: Document | IndexDescription,
+): boolean {
+  if (index.name !== LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_INDEX_NAME) {
+    return false;
+  }
+  if (index.unique !== true) {
+    return false;
+  }
+  const key = index.key as Document | undefined;
+  if (!key || key.aliasKeys !== 1) {
+    return false;
+  }
+  const partial = index.partialFilterExpression as Document | undefined;
+  if (!partial || typeof partial !== "object") {
+    return false;
+  }
+  const elementExists = partial["aliasKeys.0"] as Document | undefined;
+  return elementExists != null && elementExists.$exists === true;
+}
 
 const MODULE_INDEXES: ReadonlyArray<{
   collectionName: string;
@@ -1078,10 +1116,12 @@ const MODULE_INDEXES: ReadonlyArray<{
         name: "language_registry_locale_key_unique",
       },
       {
-        // Multikey unique on normalized alias keys (case-insensitive).
+        // Multikey unique on normalized alias keys. Partial so documents with
+        // no aliases (missing/empty aliasKeys) do not collide on undefined.
         key: { aliasKeys: 1 },
         unique: true,
-        name: "language_registry_alias_keys_unique",
+        name: LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_INDEX_NAME,
+        partialFilterExpression: LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_PARTIAL_FILTER,
       },
     ],
   },
@@ -1391,6 +1431,42 @@ async function dropDeadInitiativeDecisionVoteStatusIndex(): Promise<void> {
 }
 
 /**
+ * Pack 02B Hotfix 01 — drop obsolete non-partial
+ * `language_registry_alias_keys_unique` so ensureCollectionIndexes can recreate
+ * it with the partial filter. Does nothing when the index is already current
+ * or missing. Does not touch unrelated indexes.
+ */
+export async function reconcileLanguageRegistryAliasKeysUniqueIndex(): Promise<void> {
+  try {
+    const collection = getMongoCollection(MONGO_COLLECTIONS.languageRegistry);
+    const indexes = await collection.indexes();
+    const existing = indexes.find(
+      (idx) => idx.name === LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_INDEX_NAME,
+    );
+    if (!existing) {
+      return;
+    }
+    if (isLanguageRegistryAliasKeysUniqueIndexCurrent(existing)) {
+      return;
+    }
+    await collection.dropIndex(LANGUAGE_REGISTRY_ALIAS_KEYS_UNIQUE_INDEX_NAME);
+  } catch (error) {
+    const mongoError = error as { code?: number; codeName?: string };
+
+    if (
+      mongoError.code === 27 ||
+      mongoError.codeName === "IndexNotFound" ||
+      mongoError.code === 26 ||
+      mongoError.codeName === "NamespaceNotFound"
+    ) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+/**
  * Pack 02B — replace non-partial unique(decisionId, participantId) so visitor
  * rows without participantId do not collide on null. Safe if already dropped.
  */
@@ -1425,6 +1501,10 @@ export async function ensureMongoIndexes(): Promise<void> {
   await withMongoStartupIndexRetry(
     "dropLegacyDecisionParticipantUniqueIndex",
     dropLegacyDecisionParticipantUniqueIndex,
+  );
+  await withMongoStartupIndexRetry(
+    "reconcileLanguageRegistryAliasKeysUniqueIndex",
+    reconcileLanguageRegistryAliasKeysUniqueIndex,
   );
 
   for (const entry of MODULE_INDEXES) {
