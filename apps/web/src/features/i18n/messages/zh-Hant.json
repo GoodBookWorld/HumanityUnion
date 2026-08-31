@@ -1,0 +1,17 @@
+{
+  "common": {
+    "language": "語言",
+    "save": "儲存",
+    "cancel": "取消",
+    "loading": "載入中…",
+    "error": "發生錯誤。"
+  },
+  "navigation": {
+    "home": "首頁",
+    "initiatives": "倡議",
+    "institutions": "機構",
+    "activism": "行動",
+    "support": "支持",
+    "workspace": "工作區"
+  }
+}

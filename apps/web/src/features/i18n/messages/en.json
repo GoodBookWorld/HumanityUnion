@@ -1,0 +1,17 @@
+{
+  "common": {
+    "language": "Language",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "error": "Something went wrong."
+  },
+  "navigation": {
+    "home": "Home",
+    "initiatives": "Initiatives",
+    "institutions": "Institutions",
+    "activism": "Activism",
+    "support": "Support",
+    "workspace": "Workspace"
+  }
+}

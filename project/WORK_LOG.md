@@ -56,6 +56,91 @@ Next Objective:
 
 # Entries
 
+## 2026-08-30 (Pack 02D Task 04 — local acceptance close-out)
+
+Completed:
+
+- Pack **02D COMPLETE locally** (Tasks 01–04 accepted as one coherent UI i18n foundation).
+- Architecture / foundation surfaces / catalog parity / scope audit verified.
+- Staging smoke **still required** — do **not** claim Pack 02D staging PASS.
+- Pack **02B/02C** staging **PASS** preserved.
+- Exact next Pack after 02D staging acceptance: **Pack 02E — UI Key Extraction**.
+- Changes remain local / uncommitted / not pushed.
+
+Architecture:
+
+- Pack 02C remains sole locale authority; next-intl consumes that locale only.
+- Foundation chrome only; Civic Media / Knowledge / Membership / Search / auth-workspace deferred to 02E+.
+
+Next Objective:
+
+- Pack 02D staging smoke checklist, then Pack 02E.
+
+---
+
+## 2026-08-30 (Pack 02D Task 03 — foundation chrome + catalog parity)
+
+Completed:
+
+- Pack **02D IN PROGRESS**; **Task 03 complete** (local, uncommitted).
+- Footer Support → `navigation.support`; Language Selector loading/error → `common.loading` / `common.error`.
+- Bundled verification catalog parity guard derived from English foundation keys (`uk` / `zh-Hant` / `ar`).
+- English deep-merge fallback preserved for partial fixtures.
+
+Architecture:
+
+- Foundation chrome consumption complete for existing Pack 02D keys on live global surfaces.
+- Remote/Admin packs remain out of parity scope.
+
+Next Objective:
+
+- Pack 02D **Task 04** — acceptance + close-out (do not mark Pack 02D COMPLETE until Task 04).
+
+---
+
+## 2026-08-30 (Pack 02D Task 02 — first real UI translation surface)
+
+Completed:
+
+- Pack **02D IN PROGRESS**; **Task 02 complete** (local, uncommitted).
+- Language Selector label via `common.language`; Registry option names unchanged.
+- Desktop + mobile primary nav translate Home / Institutions / Initiatives; English-stable identities preserve hrefs and active matching.
+- Verification catalogs completed for foundation keys; English fallback proven with partial loader fixture.
+- Arabic selector chevron/padding logical fix under existing `dir=rtl` only.
+
+Architecture:
+
+- Presentation-boundary translation; no second locale authority; no locale-prefixed routes.
+- Unmapped destinations (Civic Media, Knowledge, Membership, Search) remain English until Pack 02E.
+
+Next Objective:
+
+- Pack 02D **Task 03** — remaining foundation-key chrome + catalog parity (do not close Pack 02D yet).
+
+---
+
+## 2026-08-30 (Pack 02D Task 01 — UI i18n Runtime Foundation)
+
+Completed:
+
+- Pack **02D IN PROGRESS**; **Task 01 complete** (local, uncommitted).
+- `next-intl` on `@hu/web` only; Pack 02C `resolveDocumentHtmlLocale` remains sole locale authority for `<html lang/dir>` + provider.
+- Bundled catalogs `en` / `uk` / `zh-Hant` / `ar` with English deep-merge fallback; foundation `common` + `navigation` namespaces only.
+- Remote-pack seam designed; no Admin upload UI / no R2.
+- Focused i18n tests, typecheck, and `@hu/web` build green.
+- Pack **02B/02C staging PASS** recorded; `main` still local / not pushed.
+
+Architecture:
+
+- No locale-prefixed routing; no next-intl middleware locale detection.
+- English bundled fallback always exists; adding Registry languages must not force redesign.
+
+Next Objective:
+
+- Pack 02D **Task 02** — minimal UI chrome consumption of the foundation (not whole-UI migration).
+
+---
+
 ## 2026-08-30 (Pack 02C Hotfix 02 — language catalog freshness)
 
 Completed:

@@ -132,6 +132,9 @@ describe("Production Completion Pack 02C Task 02 — document html locale", () =
     assert.match(layoutSrc, /lang=\{documentLocale\.locale\}/);
     assert.match(layoutSrc, /dir=\{documentLocale\.textDirection\}/);
     assert.match(layoutSrc, /from \"\.\.\/features\/language\/resolve-document-locale\"/);
+    // Pack 02D — same Pack 02C locale feeds next-intl (no second resolver).
+    assert.match(layoutSrc, /NextIntlClientProvider/);
+    assert.match(layoutSrc, /locale=\{documentLocale\.locale\}/);
     assert.doesNotMatch(barrelSrc, /export \{[^}]*resolveDocumentHtmlLocale/);
     assert.doesNotMatch(barrelSrc, /from \"\.\/resolve-document-locale\"/);
   });

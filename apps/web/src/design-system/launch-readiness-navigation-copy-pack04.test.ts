@@ -16,7 +16,7 @@ import { REGISTRATION_GATEWAY_CONTENT } from "../features/public-experience/cont
 import { WORKSPACE_ROUTE } from "../features/community-experience/constants.js";
 import { ENTITY_TYPE_OPTIONS } from "../features/global-search/api.js";
 import { resolveSaveButtonLabel } from "../features/member-profile/use-save-button-phase.js";
-import { resolveCurrentDestination } from "./components/HumanityHeader.js";
+import { resolveCurrentDestination } from "./components/resolve-current-destination.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const webSrc = path.resolve(here, "..");

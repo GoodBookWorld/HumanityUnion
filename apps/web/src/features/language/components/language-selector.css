@@ -27,7 +27,10 @@
   background-color: color-mix(in srgb, var(--hu-color-primary) 6%, #ffffff);
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-pill);
-  padding: 0.35rem 1.75rem 0.35rem 0.75rem;
+  /* Logical padding so chevron gutter flips under Pack 02C dir=rtl (Task 02). */
+  padding-block: 0.35rem;
+  padding-inline-start: 0.75rem;
+  padding-inline-end: 1.75rem;
   max-width: 100%;
   cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
@@ -39,6 +42,12 @@
     0.3rem 0.3rem,
     0.3rem 0.3rem;
   background-repeat: no-repeat;
+}
+
+[dir="rtl"] .hu-language-selector__select {
+  background-position:
+    0.55rem 55%,
+    0.85rem 55%;
 }
 
 .hu-language-selector__select:hover,
@@ -81,6 +90,7 @@
 
   .hu-language-selector:not(.hu-language-selector--mobile) .hu-language-selector__select {
     font-size: 0.75rem;
-    padding-inline: 0.55rem 1.5rem;
+    padding-inline-start: 0.55rem;
+    padding-inline-end: 1.5rem;
   }
 }

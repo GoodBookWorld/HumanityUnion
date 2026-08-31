@@ -1,0 +1,17 @@
+{
+  "common": {
+    "language": "اللغة",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "loading": "جارٍ التحميل…",
+    "error": "حدث خطأ ما."
+  },
+  "navigation": {
+    "home": "الرئيسية",
+    "initiatives": "المبادرات",
+    "institutions": "المؤسسات",
+    "activism": "النشاط",
+    "support": "الدعم",
+    "workspace": "مساحة العمل"
+  }
+}

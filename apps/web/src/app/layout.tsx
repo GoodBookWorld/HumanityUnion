@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { NextIntlClientProvider } from "next-intl";
 
 import { HumanityLayout } from "../design-system/components/HumanityLayout";
+import { loadUiMessagesForLocale } from "../features/i18n/load-ui-messages";
 import { resolveDocumentHtmlLocale } from "../features/language/resolve-document-locale";
 import { PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP } from "../features/pwa/pwa-launch-first-paint-bootstrap";
 import { JsonLdScript, buildRootStructuredData } from "../lib/seo/structured-data";
@@ -45,7 +47,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const rootStructuredData = buildRootStructuredData();
+  // Pack 02C — single authoritative interface locale for html lang/dir + i18n.
   const documentLocale = await resolveDocumentHtmlLocale();
+  const uiMessages = await loadUiMessagesForLocale(documentLocale.locale);
 
   return (
     <html
@@ -60,7 +64,9 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP }}
         />
         <JsonLdScript data={rootStructuredData} />
-        <HumanityLayout>{children}</HumanityLayout>
+        <NextIntlClientProvider locale={documentLocale.locale} messages={uiMessages.messages}>
+          <HumanityLayout>{children}</HumanityLayout>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

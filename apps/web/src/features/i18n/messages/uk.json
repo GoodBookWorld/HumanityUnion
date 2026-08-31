@@ -1,0 +1,17 @@
+{
+  "common": {
+    "language": "Мова",
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "loading": "Завантаження…",
+    "error": "Щось пішло не так."
+  },
+  "navigation": {
+    "home": "Головна",
+    "initiatives": "Ініціативи",
+    "institutions": "Інституції",
+    "activism": "Активізм",
+    "support": "Підтримка",
+    "workspace": "Робочий простір"
+  }
+}

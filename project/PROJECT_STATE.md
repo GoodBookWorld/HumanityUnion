@@ -44,14 +44,14 @@ Primary engineering branch: follow `git branch --show-current` (repository evide
 | Sub-pack | Status |
 |----------|--------|
 | **02A** Architecture Audit | **COMPLETED** |
-| **02B** Language Registry | **COMPLETED** |
-| **02C** Locale Preference & Runtime | **COMPLETED** locally; staging Hotfix 02 local; **staging re-smoke pending** |
-| **02D** UI i18n Foundation | **NEXT** (after 02C staging re-smoke) |
-| 02E–02J | Sequenced; not started |
+| **02B** Language Registry | **COMPLETED** + staging **PASS** |
+| **02C** Locale Preference & Runtime | **COMPLETED** + staging **PASS** |
+| **02D** UI i18n Foundation | **COMPLETED locally**; staging smoke **PENDING** (do not claim staging PASS) |
+| 02E–02J | Sequenced; **02E NEXT** after 02D staging acceptance |
 
 See `project/NEXT_SESSION.md` for the exact next implementation objective.
 
-Last completed product track: **Production Completion Pack 02C** (Locale Preference & Runtime).
+Last completed product track: **Production Completion Pack 02D** (UI i18n Foundation — local acceptance).
 
 ---
 
@@ -117,8 +117,9 @@ Capability 02
 | Staging historical Outbox recovery operator | **COMPLETED** |
 | Production Completion Pack 02A Multilingual Audit | **COMPLETED** |
 | Production Completion Pack 02B Language Registry | **COMPLETED** + staging acceptance **PASS** |
-| Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** locally; Hotfix 02 local; staging re-smoke pending (do not claim staging PASS yet) |
-| Production Completion Pack 02D UI i18n Foundation | **NEXT** |
+| Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** + staging acceptance **PASS** |
+| Production Completion Pack 02D UI i18n Foundation | **COMPLETED locally**; staging smoke **PENDING**; local / not pushed |
+| Production Completion Pack 02E UI Key Extraction | **NEXT** after Pack 02D staging acceptance |
 
 ---
 
@@ -142,16 +143,19 @@ Still excluded unless a future architecture decision says otherwise:
 - `TranslationProvider` seam (`deterministic` / `gemini`)
 - Participant prefs: interface / reading / writing / translation display preference
 - Pack 02C: canonical runtime locale resolution; SSR `lang`/`dir`; `hu_lang`; global Language Selector; auth preference ↔ cookie sync
-- RTL helpers (`ar`, `he`); logical CSS migration incomplete
+- Pack 02D Task 01: `next-intl` provider wired to Pack 02C locale; bundled `en`/`uk`/`zh-Hant`/`ar` catalogs; English deep-merge fallback; remote-pack seam (no Admin/R2 yet)
+- Pack 02D Task 01–04: `next-intl` foundation; Pack 02C sole locale authority; Language Selector + primary nav + footer Support; catalog parity; local acceptance COMPLETE
+- RTL helpers (`ar`, `he`); logical CSS migration incomplete (Pack 02J); Task 02 fixed selector chevron padding under `dir=rtl` only
 - Hardcoded priority language catalog retained as legacy compatibility only (runtime uses Language Registry)
 
 **Not present yet:**
 
-- UI chrome i18n catalogs / library (Pack 02D+)
+- Pack 02D staging smoke / staging PASS claim
+- Broad UI chrome key migration (Pack 02E)
+- Admin-managed remote UI message packs / R2 persistence
 - Admin platform-default-language setting (currently `DEFAULT_PLATFORM_LANGUAGE` = `en`)
 - Multilingual search
 - Locale SEO / hreflang
-- Pack 02C staging re-smoke after Hotfix 02 promote (do not claim 02C staging PASS yet)
 
 ---
 
@@ -159,9 +163,10 @@ Still excluded unless a future architecture decision says otherwise:
 
 | Item | Notes |
 |------|--------|
-| Pack 02D–02J | Multilingual sequence; 02D after Pack 02C staging re-smoke |
-| Pack 02C staging re-smoke | Hotfix 02: Admin enable/disable → `POST /api/hu-lang` without Web restart |
-| Pack 02B staging acceptance | **PASS** |
+| Pack 02D staging smoke | Local COMPLETE; staging PASS not claimed |
+| Pack 02E–02J | Multilingual sequence after 02D staging acceptance |
+| Pack 02B / 02C staging acceptance | **PASS** |
+| Pack 02D on `main` | Local only — not committed / not pushed |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
 | Mobile PWA regression | Diagnosis only — not a redesign |
 | Search-engine favicon | Read-only audit first |

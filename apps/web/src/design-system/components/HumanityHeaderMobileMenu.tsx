@@ -2,11 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { forwardRef, useCallback } from "react";
 
 import { useClientAuthStatus } from "../../features/auth/use-client-auth-status";
 import { LanguageSelector } from "../../features/language/components/LanguageSelector";
 import { PRIMARY_NAVIGATION } from "../../features/public-experience/constants";
+import { resolvePrimaryNavDisplayLabel } from "../../features/public-experience/primary-nav-i18n";
 
 const WORKSPACE_ICON = "/icons/workspace/work.svg";
 const NOTIFICATIONS_ICON = "/icons/workspace/icons8-notification.svg";
@@ -25,6 +27,7 @@ export function HumanityHeaderMobileMenu({
   onClose,
 }: HumanityHeaderMobileMenuProps) {
   const authStatus = useClientAuthStatus();
+  const tNav = useTranslations("navigation");
 
   const handleLinkClick = useCallback(() => {
     onClose();
@@ -66,7 +69,7 @@ export function HumanityHeaderMobileMenu({
                     aria-current={isCurrent ? "page" : undefined}
                     onClick={handleLinkClick}
                   >
-                    {item.label}
+                    {resolvePrimaryNavDisplayLabel(item.label, tNav)}
                   </Link>
                 </li>
               );

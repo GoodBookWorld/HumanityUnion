@@ -37,7 +37,7 @@ Architecture Status: Stable (Initiative-root ADR accepted)
 
 Engineering Status: **Production operational** + staging verification environment
 
-Project Health: **Healthy** (Pack 02B staging PASS; Pack 02C Hotfix 02 local — staging re-smoke pending; Pack 02D next after re-smoke)
+Project Health: **Healthy** (Pack 02B/02C staging PASS; Pack 02D COMPLETE locally — staging smoke pending; not committed/pushed)
 
 ---
 
@@ -48,14 +48,15 @@ Project Health: **Healthy** (Pack 02B staging PASS; Pack 02C Hotfix 02 local —
 | Step | Status |
 |------|--------|
 | 02A Architecture Audit | COMPLETED |
-| **02B Language Registry** | **COMPLETED** |
-| **02C Locale Preference & Runtime** | **COMPLETED** locally; Hotfix 02 local; **staging re-smoke pending** |
-| **02D UI i18n Foundation** | **NEXT** (after 02C staging re-smoke) |
-| 02E–02J | Queued |
+| **02B Language Registry** | **COMPLETED** + staging **PASS** |
+| **02C Locale Preference & Runtime** | **COMPLETED** + staging **PASS** |
+| **02D UI i18n Foundation** | **COMPLETED locally**; staging smoke **PENDING** |
+| **02E UI Key Extraction** | **NEXT** after 02D staging acceptance |
+| 02F–02J | Queued |
 
-Live next task: **Pack 02D — UI i18n Foundation** — see `project/NEXT_SESSION.md`.
+Live next task: **Pack 02D staging smoke**, then **Pack 02E** — see `project/NEXT_SESSION.md`.
 
-Last closed product Pack track: Production Completion **Pack 02C** (local acceptance).
+Last closed product Pack track (local): Production Completion **Pack 02D**. Last staging-closed multilingual packs: **02B / 02C**.
 
 ---
 
@@ -84,9 +85,9 @@ Do not present superseded Activity-root ADR-002 as current architecture.
 
 # Open Issues (summary)
 
-- Pack 02D UI i18n foundation (after Pack 02C staging re-smoke)
-- Pack 02C staging re-smoke after Hotfix 02 promote (do not claim 02C staging PASS yet)
-- Pack 02B staging acceptance PASS
+- Pack 02D staging smoke (then Pack 02E UI key extraction)
+- Pack 02B/02C staging acceptance PASS
+- Pack 02D local COMPLETE — not committed / not pushed; staging PASS not claimed
 - Production bootstrap Initiative deletion (separate production-safe procedure; staging cleanup refuses production)
 - Mobile PWA regression diagnosis (not redesign)
 - Favicon / crawler metadata read-only audit

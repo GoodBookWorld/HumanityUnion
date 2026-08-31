@@ -8,7 +8,7 @@ import {
   DESKTOP_CAPSULE_NAVIGATION,
   PRIMARY_NAVIGATION,
 } from "../features/public-experience/constants.js";
-import { resolveCurrentDestination } from "./components/HumanityHeader.js";
+import { resolveCurrentDestination } from "./components/resolve-current-destination.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 

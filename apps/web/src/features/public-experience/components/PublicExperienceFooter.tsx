@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { FOOTER_COPYRIGHT, FOOTER_MISSION } from "../constants";
 import { FOOTER_CONTENT } from "../content";
@@ -8,13 +9,20 @@ import {
   FOOTER_PLATFORM_COLUMN_TWO,
   type FooterLink,
 } from "../footer-links";
+import { resolveFooterNavDisplayLabel } from "../footer-nav-i18n";
 import { FooterSocialLinks } from "./FooterSocialLinks";
 
-function FooterNavItem({ link }: { link: FooterLink }) {
+function FooterNavItem({
+  link,
+  displayLabel,
+}: {
+  link: FooterLink;
+  displayLabel: string;
+}) {
   if (link.status === "active" && link.href) {
     return (
       <li>
-        <Link href={link.href}>{link.label}</Link>
+        <Link href={link.href}>{displayLabel}</Link>
       </li>
     );
   }
@@ -22,7 +30,9 @@ function FooterNavItem({ link }: { link: FooterLink }) {
   return null;
 }
 
-export function PublicExperienceFooter() {
+export async function PublicExperienceFooter() {
+  const tNav = await getTranslations("navigation");
+
   return (
     <footer
       id="footer"
@@ -61,7 +71,11 @@ export function PublicExperienceFooter() {
             <nav aria-label="Platform navigation column one">
               <ul className="public-experience-footer__nav-list">
                 {FOOTER_PLATFORM_COLUMN_ONE.map((link) => (
-                  <FooterNavItem key={`platform-one:${link.href ?? link.label}`} link={link} />
+                  <FooterNavItem
+                    key={`platform-one:${link.href ?? link.label}`}
+                    link={link}
+                    displayLabel={resolveFooterNavDisplayLabel(link.label, tNav)}
+                  />
                 ))}
               </ul>
             </nav>
@@ -74,7 +88,11 @@ export function PublicExperienceFooter() {
             <nav aria-label="Platform navigation column two">
               <ul className="public-experience-footer__nav-list">
                 {FOOTER_PLATFORM_COLUMN_TWO.map((link) => (
-                  <FooterNavItem key={`platform-two:${link.href ?? link.label}`} link={link} />
+                  <FooterNavItem
+                    key={`platform-two:${link.href ?? link.label}`}
+                    link={link}
+                    displayLabel={resolveFooterNavDisplayLabel(link.label, tNav)}
+                  />
                 ))}
               </ul>
             </nav>
@@ -85,7 +103,11 @@ export function PublicExperienceFooter() {
             <nav aria-label="Legal and transparency navigation">
               <ul className="public-experience-footer__nav-list">
                 {FOOTER_LEGAL_LINKS.map((link) => (
-                  <FooterNavItem key={`legal:${link.href ?? link.label}`} link={link} />
+                  <FooterNavItem
+                    key={`legal:${link.href ?? link.label}`}
+                    link={link}
+                    displayLabel={resolveFooterNavDisplayLabel(link.label, tNav)}
+                  />
                 ))}
               </ul>
             </nav>

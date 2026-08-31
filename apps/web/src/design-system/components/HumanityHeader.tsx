@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import {
@@ -9,77 +10,17 @@ import {
   DESKTOP_CAPSULE_NAVIGATION,
   type PrimaryNavLabel,
 } from "../../features/public-experience/constants";
+import { resolvePrimaryNavDisplayLabel } from "../../features/public-experience/primary-nav-i18n";
+import { LanguageSelector } from "../../features/language/components/LanguageSelector";
 import { getFocusableElements, trapTabKey } from "../focus-trap";
 import { BrowserWorkspaceHeaderControls } from "./BrowserWorkspaceHeaderControls";
 import { HeaderAuthUtility } from "./HeaderAuthUtility";
 import { HumanityHeaderMenuButton, HumanityHeaderMobileMenu } from "./HumanityHeaderMobileMenu";
-import { LanguageSelector } from "../../features/language/components/LanguageSelector";
+import { resolveCurrentDestination } from "./resolve-current-destination";
+
+export { resolveCurrentDestination } from "./resolve-current-destination";
 
 type PrimaryDestination = PrimaryNavLabel;
-
-/**
- * Public Initiative lifecycle records that live outside `/initiatives/*`
- * but still belong to the Initiatives navigation destination.
- */
-const NESTED_PUBLIC_INITIATIVE_PREFIXES = [
-  "/collaborative-analysis/public/",
-  "/improvement-proposals/public/",
-  "/petitions/public/",
-  "/decision-sessions/public/",
-  "/collective-decisions/public/",
-  "/implementation-commitments/public/",
-  "/initiative-implementation-commitments/public/",
-  "/implementation-tracking/public/",
-  "/implementations/public/",
-  "/public-impact/",
-  "/civic-archive/",
-] as const;
-
-function isNestedPublicInitiativeRoute(pathname: string): boolean {
-  if (pathname === "/civic-archive" || pathname === "/civic-archive/") {
-    return false;
-  }
-
-  return NESTED_PUBLIC_INITIATIVE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-}
-
-/**
- * Launch Readiness Pack 02 / Pack 04 — only mark a primary nav item current
- * when the pathname actually belongs to that destination. Unmatched routes
- * (Blog, Workspace, Profile, auth, …) must not fall through to "Home".
- * Nested public Initiative lifecycle records mark Initiatives.
- */
-export function resolveCurrentDestination(pathname: string): PrimaryDestination | null {
-  if (pathname === "/" || pathname === "") {
-    return "Home";
-  }
-
-  if (pathname.startsWith("/institutions")) {
-    return "Institutions";
-  }
-
-  if (pathname.startsWith("/initiatives") || isNestedPublicInitiativeRoute(pathname)) {
-    return "Initiatives";
-  }
-
-  if (pathname.startsWith("/media") || pathname.startsWith("/knowledge/media")) {
-    return "Civic Media";
-  }
-
-  if (pathname.startsWith("/knowledge")) {
-    return "Knowledge";
-  }
-
-  if (pathname.startsWith("/membership")) {
-    return "Membership";
-  }
-
-  if (pathname.startsWith("/search")) {
-    return "Search";
-  }
-
-  return null;
-}
 
 interface HumanityHeaderProps {
   currentDestination?: PrimaryDestination | null;
@@ -87,6 +28,7 @@ interface HumanityHeaderProps {
 
 export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
   const pathname = usePathname();
+  const tNav = useTranslations("navigation");
   const activeDestination =
     currentDestination !== undefined ? currentDestination : resolveCurrentDestination(pathname);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -180,7 +122,7 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
                       className="humanity-header__nav-link"
                       aria-current={isCurrent ? "page" : undefined}
                     >
-                      {item.label}
+                      {resolvePrimaryNavDisplayLabel(item.label, tNav)}
                     </Link>
                   </li>
                 );

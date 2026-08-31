@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useState, useTransition } from "react";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
@@ -18,7 +19,10 @@ import "./language-selector.css";
 
 interface LanguageSelectorProps {
   readonly className?: string;
-  /** Compact label for header; default "Language". */
+  /**
+   * Optional override for the accessible label.
+   * Default follows Pack 02D `common.language` for the active Pack 02C locale.
+   */
   readonly label?: string;
 }
 
@@ -26,12 +30,17 @@ interface LanguageSelectorProps {
  * Pack 02C Task 03 — reusable language selector (enabled Registry languages only).
  * Guest: writes Web-origin `hu_lang` then refreshes for SSR lang/dir.
  * Authenticated: persists Participant `interfaceLanguage`, then syncs `hu_lang`.
+ * Pack 02D — chrome label/status via next-intl; option names stay Registry-driven.
  */
 export function LanguageSelector({
   className,
-  label = "Language",
+  label,
 }: LanguageSelectorProps) {
   const router = useRouter();
+  const tCommon = useTranslations("common");
+  const resolvedLabel = label ?? tCommon("language");
+  const loadingLabel = tCommon("loading");
+  const errorLabel = tCommon("error");
   const authStatus = useClientAuthStatus();
   const selectId = useId();
   const [options, setOptions] = useState<readonly SelectablePublicLanguage[]>([]);
@@ -53,7 +62,7 @@ export function LanguageSelector({
         setError(null);
       } catch {
         if (!cancelled) {
-          setError("Languages unavailable.");
+          setError(errorLabel);
         }
       } finally {
         if (!cancelled) {
@@ -65,7 +74,7 @@ export function LanguageSelector({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [errorLabel]);
 
   useEffect(() => {
     if (options.length === 0 || authStatus === "pending") {
@@ -143,15 +152,13 @@ export function LanguageSelector({
 
     try {
       await applyLocale(next);
-    } catch (applyError) {
+    } catch {
       // If prefs already persisted, keep `next`; only roll back when guest cookie write fails
       // or prefs write failed before cookie.
       if (authStatus !== "authenticated") {
         setValue(previous);
       }
-      setError(
-        applyError instanceof Error ? applyError.message : "Unable to change language.",
-      );
+      setError(errorLabel);
     }
   }
 
@@ -161,8 +168,11 @@ export function LanguageSelector({
         className={["hu-language-selector", "hu-language-selector--pending", className]
           .filter(Boolean)
           .join(" ")}
-        aria-hidden="true"
-      />
+        role="status"
+        aria-label={loadingLabel}
+      >
+        <span className="hu-visually-hidden">{loadingLabel}</span>
+      </div>
     );
   }
 
@@ -176,7 +186,7 @@ export function LanguageSelector({
       data-pending={pending ? "true" : undefined}
     >
       <label className="hu-language-selector__label" htmlFor={selectId}>
-        <span className="hu-visually-hidden">{label}</span>
+        <span className="hu-visually-hidden">{resolvedLabel}</span>
         <select
           id={selectId}
           className="hu-language-selector__select"
@@ -185,8 +195,8 @@ export function LanguageSelector({
           }
           onChange={(event) => void handleChange(event)}
           disabled={pending || authStatus === "pending"}
-          aria-label={label}
-          title={label}
+          aria-label={resolvedLabel}
+          title={resolvedLabel}
         >
           {options.map((option) => (
             <option key={option.languageId} value={option.locale} lang={option.locale}>

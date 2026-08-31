@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { DESKTOP_CAPSULE_NAVIGATION } from "../features/public-experience/constants.js";
-import { resolveCurrentDestination } from "./components/HumanityHeader.js";
+import { resolveCurrentDestination } from "./components/resolve-current-destination.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const webSrc = path.resolve(here, "..");
