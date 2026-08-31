@@ -13,6 +13,7 @@ import { getFocusableElements, trapTabKey } from "../focus-trap";
 import { BrowserWorkspaceHeaderControls } from "./BrowserWorkspaceHeaderControls";
 import { HeaderAuthUtility } from "./HeaderAuthUtility";
 import { HumanityHeaderMenuButton, HumanityHeaderMobileMenu } from "./HumanityHeaderMobileMenu";
+import { LanguageSelector } from "../../features/language/components/LanguageSelector";
 
 type PrimaryDestination = PrimaryNavLabel;
 
@@ -187,6 +188,7 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
             </ul>
           </nav>
           <div className="humanity-header__end">
+            <LanguageSelector className="humanity-header__language" />
             <BrowserWorkspaceHeaderControls />
             <div className="humanity-header__utility humanity-header__utility--desktop">
               <HeaderAuthUtility />

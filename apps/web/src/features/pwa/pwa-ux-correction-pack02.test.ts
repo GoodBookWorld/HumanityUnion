@@ -29,15 +29,17 @@ function readPublic(relativeFromPublic: string): string {
 describe("PWA UX Correction Pack 02", () => {
   it("1–4 — guest language does not call preferences/me or refresh", () => {
     const lang = readWeb("features/language/components/DocumentLanguageAttributes.tsx");
-    assert.match(lang, /useClientAuthStatus/);
-    assert.match(lang, /authStatus !== "authenticated"/);
-    assert.match(lang, /DEFAULT_PLATFORM_LANGUAGE/);
-    assert.match(lang, /applyDocumentLanguage\(DEFAULT_PLATFORM_LANGUAGE\)/);
-    const effectBody = lang.slice(lang.indexOf("useEffect"));
-    const guestGuard = effectBody.indexOf('authStatus !== "authenticated"');
-    const prefsCall = effectBody.indexOf("void getMyPreferences");
-    assert.ok(guestGuard >= 0, "guest auth guard present in effect");
-    assert.ok(prefsCall > guestGuard, "getMyPreferences only after guest guard");
+    const layout = readWeb("app/layout.tsx");
+    const resolve = readWeb("features/language/resolve-document-locale.ts");
+    // Pack 02C Task 02 — lang/dir resolved server-side; client component is a no-op.
+    assert.doesNotMatch(lang, /getMyPreferences/);
+    assert.doesNotMatch(lang, /from \"react\"/);
+    assert.doesNotMatch(lang, /normalizeLanguageCode/);
+    assert.match(layout, /resolveDocumentHtmlLocale/);
+    assert.match(layout, /lang=\{documentLocale\.locale\}/);
+    assert.match(layout, /dir=\{documentLocale\.textDirection\}/);
+    assert.match(resolve, /resolveRuntimeLocaleFromCatalog/);
+    assert.doesNotMatch(resolve, /normalizeLanguageCode/);
   });
 
   it("guest/pending do not fetch workspace/home or unread-count; authenticated may", () => {

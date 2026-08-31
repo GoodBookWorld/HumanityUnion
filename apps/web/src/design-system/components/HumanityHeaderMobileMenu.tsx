@@ -5,6 +5,7 @@ import Link from "next/link";
 import { forwardRef, useCallback } from "react";
 
 import { useClientAuthStatus } from "../../features/auth/use-client-auth-status";
+import { LanguageSelector } from "../../features/language/components/LanguageSelector";
 import { PRIMARY_NAVIGATION } from "../../features/public-experience/constants";
 
 const WORKSPACE_ICON = "/icons/workspace/work.svg";
@@ -72,6 +73,8 @@ export function HumanityHeaderMobileMenu({
             })}
           </ul>
         </nav>
+
+        <LanguageSelector className="hu-language-selector--mobile" />
 
         {authStatus !== "pending" ? (
           <div className="humanity-header__mobile-auth">

@@ -56,6 +56,83 @@ Next Objective:
 
 # Entries
 
+## 2026-08-30 (Production Completion Pack 02C — COMPLETE locally)
+
+Completed:
+
+- Task 04 local acceptance: flows A–F verified; one shared `resolveRuntimeLocaleFromCatalog` path.
+- Hardening: language-list client cache; login sync latch (no refresh loop); auth select no longer rolls back UI after prefs save.
+- Pack 02C marked **COMPLETE** locally. Staging smoke still required after commit/promotion.
+
+Architecture:
+
+- Interface locale: Registry → resolver → API request / Web SSR / `hu_lang` / selector / Participant `interfaceLanguage` sync.
+- No next-intl yet (Pack 02D).
+
+Next Objective:
+
+- Production Completion Pack 02D — UI i18n Foundation.
+- Staging smoke checklist for 02C after promotion.
+
+---
+
+## 2026-08-30 (Production Completion Pack 02C Task 03 — language selector + hu_lang sync)
+
+Completed:
+
+- Header/mobile language selector from enabled public Registry languages.
+- Web-origin `POST /api/hu-lang` with Registry validate/canonicalize before cookie write.
+- Guest cookie → SSR refresh; authenticated Preferences `interfaceLanguage` + cookie sync; login-time preference → cookie sync via client Preferences handoff.
+- Pack 02C **IN PROGRESS**.
+
+Architecture:
+
+- Participant `interfaceLanguage` remains authoritative when authenticated; `hu_lang` mirrors for Web SSR without sharing API auth cookies.
+
+Next Objective:
+
+- Pack 02C Task 04 — acceptance verification & pack close-out → then Pack 02D.
+
+---
+
+## 2026-08-30 (Production Completion Pack 02C Task 02 — request locale + HTML lang/dir)
+
+Completed:
+
+- API request-scoped runtime locale (`resolveRuntimeLocaleForRequest`, middleware, `GET /api/v1/runtime-locale`).
+- Shared `@hu/types` catalog resolver; Web root layout sets `<html lang>` / `dir` server-side before paint.
+- Removed client useEffect language flicker path. Pack 02C **IN PROGRESS**.
+
+Architecture:
+
+- Web SSR cannot read API host-only auth cookies; Participant preference applies on API requests; HTML uses cookie + Accept-Language until Task 03 cookie write/sync.
+
+Next Objective:
+
+- Pack 02C Task 03 — language selector + `hu_lang` write/sync (no next-intl yet).
+
+---
+
+## 2026-08-30 (Production Completion Pack 02C Task 01 — Locale resolution foundation)
+
+Completed:
+
+- Canonical `resolveRuntimeLocale` (anonymous + authenticated precedence; enabled Registry only).
+- Deterministic Accept-Language parser; guest `hu_lang` cookie helpers; `ResolvedRuntimeLocale` contract.
+- Platform default remains `DEFAULT_PLATFORM_LANGUAGE` (`en`) — no competing Admin settings subsystem.
+- Focused unit tests + typechecks. Pack 02C **IN PROGRESS** (not complete).
+
+Architecture:
+
+- Interface language resolution stays separate from reading/writing languages.
+- `zh-Hant` never collapsed to `zh`; `*` cannot bypass Registry.
+
+Next Objective:
+
+- Pack 02C Task 02 — apply resolved runtime locale to `html lang`/`dir` / request wiring (no next-intl / selector UI yet).
+
+---
+
 ## 2026-08-30 (Production Completion Pack 02B — Language Registry COMPLETE)
 
 Completed:

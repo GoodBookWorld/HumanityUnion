@@ -250,6 +250,9 @@
   }
 
   .humanity-header__end {
+    display: flex;
+    align-items: center;
+    gap: var(--hu-space-3);
     grid-column: 3;
     justify-self: end;
   }

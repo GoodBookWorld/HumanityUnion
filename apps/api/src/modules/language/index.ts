@@ -17,6 +17,35 @@ export {
   resolveLocaleWithEnglishFallback,
 } from "./language-registry-runtime.js";
 export type { SelectableLanguageDescriptor } from "./language-registry-runtime.js";
+export {
+  expandLocaleLookupCandidates,
+  listAcceptLanguageLookupTags,
+  parseAcceptLanguageHeader,
+} from "./accept-language.js";
+export type { AcceptLanguagePreference } from "./accept-language.js";
+export {
+  HU_LANG_COOKIE_MAX_AGE_SECONDS,
+  HU_LANG_COOKIE_NAME,
+  buildHuLangCookieOptions,
+  clearHuLangCookie,
+  getHuLangCookieSecuritySnapshot,
+  readHuLangCookie,
+  serializeHuLangSetCookieHeader,
+  writeHuLangCookie,
+} from "./hu-lang-cookie.js";
+export {
+  loadEnabledRuntimeLocaleCatalog,
+  resolveEnabledRegistryRecordForCandidate,
+  resolveRuntimeLocale,
+} from "./resolve-runtime-locale.js";
+export type { ResolveRuntimeLocaleInput } from "./resolve-runtime-locale.js";
+export {
+  attachRuntimeLocale,
+  resolveRuntimeLocaleForRequest,
+  runtimeLocaleMiddleware,
+  setRuntimeLocalePreferenceLoaderForTests,
+} from "./runtime-locale.middleware.js";
+export { default as runtimeLocaleRouter } from "./runtime-locale.routes.js";
 export type {
   TranslationProvider,
   TranslationProviderRequest,

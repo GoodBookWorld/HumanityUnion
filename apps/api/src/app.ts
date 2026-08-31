@@ -215,7 +215,8 @@ import {
 import {
   adminLanguagesRouter,
   publicLanguagesRouter,
-} from "./modules/language/language-registry/index.js";
+  runtimeLocaleRouter,
+} from "./modules/language/index.js";
 import {
   adminSeoPageOverridesRouter,
   publicSeoPageOverridesRouter,
@@ -271,6 +272,7 @@ app.use("/api/v1/platform", closedBetaRouter);
 app.use("/api/v1/platform/social-accounts", publicPlatformSocialAccountsRouter);
 app.use("/api/v1/platform/support-links", publicPlatformSupportLinksRouter);
 app.use("/api/v1/languages", publicLanguagesRouter);
+app.use("/api/v1/runtime-locale", runtimeLocaleRouter);
 app.use("/api/v1/admin/languages", adminLanguagesRouter);
 app.use("/api/v1/admin/platform/readiness", adminPlatformReadinessRouter);
 app.use("/api/v1/admin/platform/social-accounts", adminPlatformSocialAccountsRouter);

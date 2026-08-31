@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { BetaBanner } from "../../features/closed-beta/components/BetaBanner";
 import { HumanityUnionAssistantShell } from "../../features/humanity-union-assistant";
 import { DocumentLanguageAttributes } from "../../features/language";
+import { InterfaceLanguageCookieSync } from "../../features/language/components/InterfaceLanguageCookieSync";
 import { PwaShell } from "../../features/pwa/components/PwaShell";
 import { TrafficPageviewCollector } from "../../features/traffic-analytics/TrafficPageviewCollector";
 import { HumanityFooter } from "./HumanityFooter";
@@ -19,6 +20,7 @@ export function HumanityLayout({ children }: HumanityLayoutProps) {
   return (
     <HumanityUnionAssistantShell>
       <DocumentLanguageAttributes />
+      <InterfaceLanguageCookieSync />
       <TrafficPageviewCollector />
       <PwaShell>
         <div className="humanity-layout">

@@ -18,6 +18,8 @@ import {
   listPriorityLanguages,
   type PriorityLanguageOption,
 } from "../../language/translation-api";
+import { writeHuLangCookieViaWebRoute } from "../../language/write-hu-lang-cookie";
+import { markInterfaceLanguageCookieSynced } from "../../language/components/InterfaceLanguageCookieSync";
 import { getMyPreferences, updateMyPreferences } from "../preferences-api";
 
 import { SurfaceAssistantEntry } from "../../humanity-union-assistant";
@@ -137,6 +139,11 @@ export function PreferencesWorkspace() {
           visibilityPreferences: preferences.visibilityPreferences,
         });
         setPreferences(updated);
+        // Pack 02C Task 03 — keep Web-origin hu_lang aligned with interfaceLanguage.
+        await writeHuLangCookieViaWebRoute(
+          updated.experiencePreferences.interfaceLanguage,
+        );
+        markInterfaceLanguageCookieSynced(updated.experiencePreferences.interfaceLanguage);
       });
     } catch (saveError) {
       if (isAuthenticationRequiredError(saveError)) {

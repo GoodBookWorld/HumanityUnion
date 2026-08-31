@@ -45,12 +45,13 @@ Primary engineering branch: follow `git branch --show-current` (repository evide
 |----------|--------|
 | **02A** Architecture Audit | **COMPLETED** |
 | **02B** Language Registry | **COMPLETED** |
-| **02C** Locale Preference & Runtime | **NEXT** |
-| 02D–02J | Sequenced; not started |
+| **02C** Locale Preference & Runtime | **COMPLETED** (local; staging smoke pending) |
+| **02D** UI i18n Foundation | **NEXT** |
+| 02E–02J | Sequenced; not started |
 
 See `project/NEXT_SESSION.md` for the exact next implementation objective.
 
-Last completed product track: **Production Completion Pack 02B** (Language Registry).
+Last completed product track: **Production Completion Pack 02C** (Locale Preference & Runtime).
 
 ---
 
@@ -116,7 +117,8 @@ Capability 02
 | Staging historical Outbox recovery operator | **COMPLETED** |
 | Production Completion Pack 02A Multilingual Audit | **COMPLETED** |
 | Production Completion Pack 02B Language Registry | **COMPLETED** |
-| Production Completion Pack 02C Locale Preference & Runtime | **NEXT** |
+| Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** (local; staging smoke pending) |
+| Production Completion Pack 02D UI i18n Foundation | **NEXT** |
 
 ---
 
@@ -135,20 +137,21 @@ Still excluded unless a future architecture decision says otherwise:
 
 **Present (reusable):**
 
+- Admin-managed Language Registry (Mongo + Admin UI `/admin/languages`)
 - `content_translations` side-store (canonical source never overwritten)
 - `TranslationProvider` seam (`deterministic` / `gemini`)
 - Participant prefs: interface / reading / writing / translation display preference
+- Pack 02C: canonical runtime locale resolution; SSR `lang`/`dir`; `hu_lang`; global Language Selector; auth preference ↔ cookie sync
 - RTL helpers (`ar`, `he`); logical CSS migration incomplete
 - Hardcoded priority language catalog retained as legacy compatibility only (runtime uses Language Registry)
 
 **Not present yet:**
 
-- Admin-managed Language Registry
-- UI chrome i18n catalogs / library
-- Guest language cookie + full preference precedence runtime
+- UI chrome i18n catalogs / library (Pack 02D+)
+- Admin platform-default-language setting (currently `DEFAULT_PLATFORM_LANGUAGE` = `en`)
 - Multilingual search
 - Locale SEO / hreflang
-- Admin → Languages control plane UI
+- Pack 02C staging smoke after promotion
 
 ---
 
@@ -156,7 +159,8 @@ Still excluded unless a future architecture decision says otherwise:
 
 | Item | Notes |
 |------|--------|
-| Pack 02C–02J | Multilingual implementation sequence; next = 02C Locale Preference & Runtime |
+| Pack 02D–02J | Multilingual implementation sequence; next = 02D UI i18n Foundation |
+| Pack 02C staging smoke | After commit/promotion — Admin-enable verification locales; guest/auth selector SSR checks |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
 | Mobile PWA regression | Diagnosis only — not a redesign |
 | Search-engine favicon | Read-only audit first |

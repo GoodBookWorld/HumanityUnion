@@ -37,7 +37,7 @@ Architecture Status: Stable (Initiative-root ADR accepted)
 
 Engineering Status: **Production operational** + staging verification environment
 
-Project Health: **Healthy** (Pack 01 diagnostics verified on staging; Pack 02B Language Registry complete; Pack 02C next)
+Project Health: **Healthy** (Pack 01 diagnostics verified on staging; Pack 02B–02C complete locally; Pack 02D next; 02C staging smoke pending after promotion)
 
 ---
 
@@ -49,12 +49,13 @@ Project Health: **Healthy** (Pack 01 diagnostics verified on staging; Pack 02B L
 |------|--------|
 | 02A Architecture Audit | COMPLETED |
 | **02B Language Registry** | **COMPLETED** |
-| **02C Locale Preference & Runtime** | **NEXT** |
-| 02D–02J | Queued |
+| **02C Locale Preference & Runtime** | **COMPLETED** (local; staging smoke pending) |
+| **02D UI i18n Foundation** | **NEXT** |
+| 02E–02J | Queued |
 
-Live next task: Pack 02C — see `project/NEXT_SESSION.md`.
+Live next task: **Pack 02D — UI i18n Foundation** — see `project/NEXT_SESSION.md`.
 
-Last closed product Pack track: Production Completion **Pack 02B**.
+Last closed product Pack track: Production Completion **Pack 02C** (local acceptance).
 
 ---
 
@@ -83,7 +84,8 @@ Do not present superseded Activity-root ADR-002 as current architecture.
 
 # Open Issues (summary)
 
-- Pack 02C–02J multilingual implementation
+- Pack 02D UI i18n foundation, then 02E–02J
+- Pack 02C staging smoke after commit/promotion
 - Production bootstrap Initiative deletion (separate production-safe procedure; staging cleanup refuses production)
 - Mobile PWA regression diagnosis (not redesign)
 - Favicon / crawler metadata read-only audit

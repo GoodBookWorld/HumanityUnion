@@ -108,6 +108,26 @@ export {
   normalizeLanguageRegistryLocaleKey,
 } from "./language-registry.js";
 export type {
+  ResolvedRuntimeLocale,
+  ResolveRuntimeLocaleInput,
+  RuntimeLocaleCatalogEntry,
+  RuntimeLocaleResolutionSource,
+} from "./runtime-locale.js";
+export {
+  ENGLISH_RUNTIME_LOCALE_FALLBACK,
+  HU_LANG_COOKIE_MAX_AGE_SECONDS,
+  HU_LANG_COOKIE_NAME,
+  buildRuntimeLocaleCatalogIndex,
+  resolveEnabledCatalogEntryForCandidate,
+  resolveRuntimeLocaleFromCatalog,
+} from "./runtime-locale.js";
+export type { AcceptLanguagePreference } from "./accept-language.js";
+export {
+  expandLocaleLookupCandidates,
+  listAcceptLanguageLookupTags,
+  parseAcceptLanguageHeader,
+} from "./accept-language.js";
+export type {
   ContentTranslationSourceKind,
   ResolvedContentPresentationMode,
   ResolvedTranslatedDisplay,

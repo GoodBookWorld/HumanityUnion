@@ -1,0 +1,86 @@
+/* Production Completion Pack 02C Task 03 — compact header language selector */
+
+.hu-language-selector {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.15rem;
+  max-width: 11rem;
+}
+
+.hu-language-selector--pending {
+  min-width: 5.5rem;
+  min-height: 1.75rem;
+}
+
+.hu-language-selector__label {
+  display: block;
+  margin: 0;
+}
+
+.hu-language-selector__select {
+  appearance: none;
+  font: inherit;
+  font-size: var(--hu-font-size-sm);
+  font-weight: 600;
+  color: var(--hu-color-text);
+  background-color: color-mix(in srgb, var(--hu-color-primary) 6%, #ffffff);
+  border: 1px solid var(--hu-color-border);
+  border-radius: var(--hu-radius-pill);
+  padding: 0.35rem 1.75rem 0.35rem 0.75rem;
+  max-width: 100%;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 0.85rem) 55%,
+    calc(100% - 0.55rem) 55%;
+  background-size:
+    0.3rem 0.3rem,
+    0.3rem 0.3rem;
+  background-repeat: no-repeat;
+}
+
+.hu-language-selector__select:hover,
+.hu-language-selector__select:focus-visible {
+  border-color: color-mix(in srgb, var(--hu-color-primary) 45%, var(--hu-color-border));
+  background-color: color-mix(in srgb, var(--hu-color-primary) 10%, #ffffff);
+}
+
+.hu-language-selector__select:focus-visible {
+  outline: var(--hu-focus-ring);
+  outline-offset: var(--hu-focus-offset);
+}
+
+.hu-language-selector__select:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.hu-language-selector__error {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--hu-color-danger, #b42318);
+  max-width: 11rem;
+}
+
+.hu-language-selector--mobile {
+  max-width: none;
+  width: 100%;
+  margin-block: var(--hu-space-3);
+}
+
+.hu-language-selector--mobile .hu-language-selector__select {
+  width: 100%;
+}
+
+@media (max-width: 430px) {
+  .hu-language-selector:not(.hu-language-selector--mobile) {
+    max-width: 7.5rem;
+  }
+
+  .hu-language-selector:not(.hu-language-selector--mobile) .hu-language-selector__select {
+    font-size: 0.75rem;
+    padding-inline: 0.55rem 1.5rem;
+  }
+}
