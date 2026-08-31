@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import { getMe } from "../../auth/auth-api";
@@ -19,6 +20,7 @@ import {
   buildWorkspaceNavGroups,
   type WorkspaceNavRoute,
 } from "./build-workspace-nav-groups";
+import { resolveWorkspaceNavDisplayLabel } from "./workspace-nav-i18n";
 
 import "./workspace-navigation.css";
 
@@ -49,6 +51,9 @@ interface WorkspaceNavigationProps {
 
 export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
   const pathname = usePathname();
+  const tWorkspace = useTranslations("workspace");
+  const tNav = useTranslations("navigation");
+  const tAuth = useTranslations("auth");
   /**
    * Launch Readiness Pack 05 — read collapsed groups during the initial client
    * render so `aria-expanded` does not flip after hydration. SSR stays expanded
@@ -67,6 +72,14 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
   const [editorialRoute, setEditorialRoute] = useState<WorkspaceNavRoute | null>(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showEditorPanel, setShowEditorPanel] = useState(false);
+
+  function displayLabel(stableLabel: string): string {
+    return resolveWorkspaceNavDisplayLabel(stableLabel, {
+      workspace: tWorkspace,
+      navigation: tNav,
+      auth: tAuth,
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -157,7 +170,7 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
   });
 
   return (
-    <nav className="workspace-navigation" aria-label="Main workspace navigation">
+    <nav className="workspace-navigation" aria-label={tWorkspace("mainNavigation")}>
       <WorkspaceMemberIdentity />
       <div className="workspace-navigation__groups">
         {groups.map((group, index) => {
@@ -174,7 +187,7 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
                   aria-controls={`workspace-nav-group-${group.id}`}
                   onClick={() => toggleGroup(group.id)}
                 >
-                  <span>{group.label}</span>
+                  <span>{displayLabel(group.label)}</span>
                   <span
                     className={`workspace-navigation__group-chevron${collapsed ? " workspace-navigation__group-chevron--collapsed" : ""}`}
                     aria-hidden="true"
@@ -183,7 +196,7 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
                   </span>
                 </button>
               ) : (
-                <p className="workspace-navigation__label">{group.label}</p>
+                <p className="workspace-navigation__label">{displayLabel(group.label)}</p>
               )}
               <div
                 id={`workspace-nav-group-${group.id}`}
@@ -202,7 +215,7 @@ export function WorkspaceNavigation({ onNavigate }: WorkspaceNavigationProps) {
                       tabIndex={collapsed ? -1 : undefined}
                       onClick={onNavigate}
                     >
-                      {route.label}
+                      {displayLabel(route.label)}
                     </Link>
                   );
                 })}

@@ -90,7 +90,7 @@ describe("Pack 10E — series contract anchors", () => {
     const controls = readWeb("design-system/components/BrowserWorkspaceHeaderControls.tsx");
     assert.match(header, /HumanityHeaderMenuButton/);
     assert.match(header, /humanity-header__end/);
-    assert.match(controls, /Open Workspace menu/);
+    assert.match(controls, /tWorkspace\("openMenu"\)/);
     assert.match(controls, /PwaWorkspaceDrawer/);
     assert.doesNotMatch(controls, /href="\/workspace"/);
     assert.doesNotMatch(controls, /workspace-trigger/);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
 import "./password-input.css";
@@ -15,6 +16,10 @@ interface PasswordInputProps {
   className?: string;
 }
 
+/**
+ * Pack 02E Task 03 — Show/Hide chrome from `common.show` / `common.hide` and
+ * accessible names from `common.showPassword` / `common.hidePassword`.
+ */
 export function PasswordInput({
   id,
   value,
@@ -25,6 +30,7 @@ export function PasswordInput({
   disabled,
   className,
 }: PasswordInputProps) {
+  const tCommon = useTranslations("common");
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const [visible, setVisible] = useState(false);
@@ -45,12 +51,12 @@ export function PasswordInput({
       <button
         type="button"
         className="password-input__toggle"
-        aria-label={visible ? "Hide password" : "Show password"}
+        aria-label={visible ? tCommon("hidePassword") : tCommon("showPassword")}
         aria-pressed={visible}
         disabled={disabled}
         onClick={() => setVisible((current) => !current)}
       >
-        {visible ? "Hide" : "Show"}
+        {visible ? tCommon("hide") : tCommon("show")}
       </button>
     </div>
   );

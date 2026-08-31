@@ -116,9 +116,13 @@ describe("Production Completion Pack 02D Task 04 — local acceptance", () => {
     assert.match(footer, /resolveFooterNavDisplayLabel/);
 
     assert.deepEqual(Object.keys(PRIMARY_NAV_FOUNDATION_MESSAGE_KEYS).sort(), [
+      "Civic Media",
       "Home",
       "Initiatives",
       "Institutions",
+      "Knowledge",
+      "Membership",
+      "Search",
     ]);
 
     const support = FOOTER_PLATFORM_COLUMN_TWO.find((link) => link.label === "Support");
@@ -169,14 +173,17 @@ describe("Production Completion Pack 02D Task 04 — local acceptance", () => {
       ),
       "Підтримка",
     );
-    // Out-of-scope destinations stay English.
+    // Pack 02E Task 02: remaining public destinations translate via navigation.*.
     assert.equal(
       resolvePrimaryNavDisplayLabelFromMessages("Knowledge", uk.messages),
-      "Knowledge",
+      "Знання",
     );
     assert.equal(
-      resolveFooterNavDisplayLabel("Search", () => "should-not-run"),
-      "Search",
+      resolveFooterNavDisplayLabel(
+        "Search",
+        (key) => resolveMergedMessage(uk.messages, "navigation", key) ?? key,
+      ),
+      "Пошук",
     );
   });
 
@@ -218,32 +225,38 @@ describe("Production Completion Pack 02D Task 04 — local acceptance", () => {
     assert.match(loader, /sources: readonly UiMessagePackSource\[\] = \[bundledUiMessagePackSource\]/);
   });
 
-  it("D — scope audit: no Pack 02E chrome migration", () => {
+  it("D — scope audit: workspace/auth presentation extracted; public nav uses display helpers", () => {
     const header = readWeb("design-system/components/HumanityHeader.tsx");
     const mobile = readWeb("design-system/components/HumanityHeaderMobileMenu.tsx");
     const footer = readWeb("features/public-experience/components/PublicExperienceFooter.tsx");
 
-    // Auth/account/workspace chrome remains hardcoded English in mobile menu.
-    assert.match(mobile, />\s*Log in\s*</);
-    assert.match(mobile, />\s*Workspace\s*</);
-    assert.match(mobile, />\s*Profile\s*</);
+    // Pack 02E Tasks 04–05 — auth + workspace shell presentation via catalogs.
+    assert.match(mobile, /useTranslations\("auth"\)/);
+    assert.match(mobile, /tAuth\("logIn"\)/);
+    assert.match(mobile, /tAuth\("createAccount"\)/);
+    assert.match(mobile, /tNav\("workspace"\)/);
+    assert.match(mobile, /tWorkspace\("notifications"\)/);
+    assert.match(mobile, /tWorkspace\("profile"\)/);
 
-    // Unmapped destinations are not wired to foundation keys.
-    assert.doesNotMatch(header, /tNav\("(civic|knowledge|membership|search)"\)/i);
-    assert.doesNotMatch(mobile, /tNav\("(civic|knowledge|membership|search)"\)/i);
+    // Presentation still goes through helpers (not direct tNav key literals in JSX).
+    assert.match(header, /resolvePrimaryNavDisplayLabel/);
+    assert.match(mobile, /resolvePrimaryNavDisplayLabel/);
+    assert.doesNotMatch(header, /tNav\("(civicMedia|knowledge|membership|search)"\)/);
+    assert.doesNotMatch(mobile, /tNav\("(civicMedia|knowledge|membership|search)"\)/);
+
+    // Missing catalog key falls back to stable English identity.
     assert.equal(
       resolvePrimaryNavDisplayLabelFromMessages("Civic Media", {
         navigation: { home: "X" },
       }),
       "Civic Media",
     );
-    assert.equal(resolveFooterNavDisplayLabel("Civic Media", () => "X"), "Civic Media");
-    assert.equal(resolveFooterNavDisplayLabel("Membership", () => "X"), "Membership");
 
-    // Footer only translates Support via foundation helper (not other platform links).
     assert.match(footer, /resolveFooterNavDisplayLabel/);
     const footerI18n = readWeb("features/public-experience/footer-nav-i18n.ts");
     assert.match(footerI18n, /Support: "support"/);
-    assert.doesNotMatch(footerI18n, /Civic Media|Knowledge|Membership|Search/);
+    assert.match(footerI18n, /"Civic Media": "civicMedia"/);
+    assert.match(footerI18n, /Membership: "membership"/);
+    assert.match(footerI18n, /Search: "search"/);
   });
 });

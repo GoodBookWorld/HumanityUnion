@@ -127,7 +127,7 @@ describe("Country People Presentation Pack 10C — PWA footer icons", () => {
     const drawer = readWeb("features/pwa/components/PwaWorkspaceDrawer.tsx");
     const css = readWeb("features/pwa/pwa.css");
 
-    assert.match(controls, /Open Workspace menu/);
+    assert.match(controls, /tWorkspace\("openMenu"\)/);
     assert.match(drawer, /PwaWorkspaceDrawer|WorkspaceNavigation/);
     assert.match(layout, /humanity-header__menu-button/);
     assert.doesNotMatch(layout, /hu-pwa-bottom-nav__icon/);

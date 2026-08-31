@@ -159,7 +159,9 @@ describe("Production Completion Pack 02D Task 02 — first UI translation surfac
     // Same stable labels / hrefs — translation is presentation-only.
     for (const label of FOUNDATION_NAV_STABLE_LABELS) {
       assert.ok(PRIMARY_NAVIGATION.some((item) => item.label === label));
-      assert.ok(DESKTOP_CAPSULE_NAVIGATION.some((item) => item.label === label));
+    }
+    for (const item of DESKTOP_CAPSULE_NAVIGATION) {
+      assert.ok(FOUNDATION_NAV_STABLE_LABELS.includes(item.label));
     }
 
     const desktopHrefs = DESKTOP_CAPSULE_NAVIGATION.map((item) => item.href);
@@ -193,10 +195,10 @@ describe("Production Completion Pack 02D Task 02 — first UI translation surfac
       ],
     );
 
-    // Unmapped destinations keep English presentation until Pack 02E.
+    // Pack 02E Task 02 maps remaining destinations; presentation uses navigation.* keys.
     assert.equal(
       resolvePrimaryNavDisplayLabel("Knowledge", (key) => `translated:${key}`),
-      "Knowledge",
+      "translated:knowledge",
     );
   });
 

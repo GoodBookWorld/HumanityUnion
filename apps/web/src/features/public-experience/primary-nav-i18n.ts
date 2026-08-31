@@ -1,5 +1,5 @@
 /**
- * Production Completion Pack 02D Task 02 — primary nav display labels.
+ * Production Completion Pack 02D Task 02 / Pack 02E Task 02 — primary nav display labels.
  *
  * Stable English `PRIMARY_NAVIGATION` / `DESKTOP_CAPSULE_NAVIGATION` labels remain
  * the identity for href matching, active-route resolution, and list keys.
@@ -13,6 +13,10 @@ export const PRIMARY_NAV_FOUNDATION_MESSAGE_KEYS = {
   Home: "home",
   Institutions: "institutions",
   Initiatives: "initiatives",
+  "Civic Media": "civicMedia",
+  Knowledge: "knowledge",
+  Membership: "membership",
+  Search: "search",
 } as const;
 
 export type PrimaryNavFoundationStableLabel =
@@ -34,7 +38,7 @@ export function primaryNavFoundationMessageKey(
 
 /**
  * Resolve display text for a stable primary-nav label.
- * Unmapped destinations (Civic Media, Knowledge, …) keep their English label.
+ * Unmapped destinations keep their English label.
  */
 export function resolvePrimaryNavDisplayLabel(
   stableLabel: string,

@@ -56,6 +56,127 @@ Next Objective:
 
 # Entries
 
+## 2026-08-31 (Pack 02E Task 06 — acceptance + regression close-out)
+
+Completed:
+
+- Pack **02E COMPLETE locally**; Tasks **01–06 COMPLETE**; staging smoke **PENDING** (do not claim staging PASS).
+- Verified Pack 02C locale authority + Pack 02D foundation; presentation extraction only across public/shared/auth/workspace chrome.
+- Catalog parity + fallback fixtures green; Pack 02D/02E i18n suites green; Pack 02E-caused Pack 05 icon aria regression fixed.
+- Deferred: Pack 02F glossary; lifecycle stages; civic body; Notification Center empty states; Blog navLabel API redesign; role/status enum maps.
+- Exact next: **Pack 02E staging smoke**, then **Pack 02F — Canonical Terminology Glossary**.
+
+Architecture:
+
+- No locale middleware / `[locale]` routes; English fallback intact; stable English identities preserved.
+
+Next Objective:
+
+- Pack 02E staging smoke checklist; on PASS start Pack 02F.
+
+---
+
+## 2026-08-31 (Pack 02E Task 05 — workspace/account shell extraction)
+
+Completed:
+
+- Pack **02E IN PROGRESS**; **Task 05 COMPLETE**.
+- Added `workspace.*` catalogs; Workspace nav presentation via stable-English identity + display helper; authenticated header/mobile/PWA drawer chrome; Account shell tiles/forms; Workspace home title/subtitle.
+- Blog `navLabel` contract unchanged; lifecycle registry untouched; role/status API values unchanged.
+- Exact next: **Task 06 — Pack 02E acceptance + catalog parity + regression close-out**.
+
+Architecture:
+
+- Presentation-only next-intl for workspace/account shell; no Pack 02F glossary; no lifecycle/domain translation.
+
+Next Objective:
+
+- Pack 02E Task 06 — acceptance + catalog parity + regression close-out.
+
+---
+
+## 2026-08-31 (Pack 02E Task 04 — auth chrome extraction)
+
+Completed:
+
+- Pack **02E IN PROGRESS**; **Task 04 COMPLETE**.
+- Added `auth.*` catalogs (en/uk/zh-Hant/ar); wired login/register/reset/verify/2FA Account Security + header/mobile Log in / Create account.
+- Reused `common.cancel` and PasswordInput `common.*`; backend error passthrough preserved; incorrect-code mapped presentation via `auth.incorrectCode`.
+- Exact next: **Task 05 — Workspace / Account shell extraction (`workspace.*`)**.
+
+Architecture:
+
+- Presentation-only next-intl for auth surfaces; no Pack 02F glossary; workspace shell deferred.
+
+Next Objective:
+
+- Pack 02E Task 05 — workspace/account shell (`workspace.*`).
+
+---
+
+## 2026-08-31 (Pack 02E Task 03 — shared common.* + reusable a11y chrome)
+
+Completed:
+
+- Pack **02E IN PROGRESS**; **Task 03 COMPLETE**.
+- ConfirmDialog default cancel → `common.cancel`; ApiUnavailableState defaults → `common.retry` / `common.backToHome`; PasswordInput Show/Hide → `common.show|hide|showPassword|hidePassword`.
+- Global skip-link → `a11y.skipToMainContent`.
+- Caller overrides preserved; HuFeedbackMessage variant titles deferred (`common.error` ≠ short “Error” label).
+- Exact next: **Task 04 — Auth chrome extraction (`auth.*`)**.
+
+Architecture:
+
+- Presentation-only next-intl at shared component boundaries; no auth/workspace shell migration in this slice.
+
+Next Objective:
+
+- Pack 02E Task 04 — auth chrome (`auth.*`).
+
+---
+
+## 2026-08-31 (Pack 02E Task 02 — remaining public chrome navigation)
+
+Completed:
+
+- Pack **02E IN PROGRESS**; **Task 02 COMPLETE**.
+- Primary nav presentation keys: Civic Media / Knowledge / Membership / Search.
+- Footer presentation keys: Blog / Civic Archive / Membership / Search / Privacy / Terms / Contact (+ Institutions / Initiatives reuse).
+- Stable English labels/hrefs/active-route matching preserved; en/uk/zh-Hant/ar catalogs + English-derived parity updated.
+- Exact next: **Task 03 — Shared common.* + reusable UI/a11y chrome extraction**.
+
+Architecture:
+
+- Continued Pack 02D display-helper pattern; no second translation mechanism; no locale-prefixed routes.
+
+Next Objective:
+
+- Pack 02E Task 03 — shared common.* + reusable UI/a11y chrome.
+
+---
+
+## 2026-08-31 (Pack 02E Task 01 — UI Key Extraction Scope Audit)
+
+Completed:
+
+- Pack **02E IN PROGRESS**; **Task 01 COMPLETE** (read-only scope audit).
+- Inventoried remaining hard-coded Web UI chrome: public header/footer destinations, auth flows, account/workspace shell, shared design-system chrome.
+- Confirmed Pack 02D pattern: stable English labels remain identity; presentation via `navigation.*` / `common.*`.
+- Proposed minimal namespaces: reuse `common.*` / `navigation.*`; add `auth.*`, `workspace.*`, `a11y.*` only when justified.
+- Flagged terminology for Pack 02F glossary alignment (Workspace, Participant, Member/Membership, Initiative, Civic Media, Two-Step Login, etc.).
+- Exact next: **Task 02 — Remaining public chrome navigation keys**.
+
+Architecture:
+
+- Do not replace route/active-match/test identity strings with translations.
+- Blog authoring API `navLabel` English union is a high-risk label-as-identifier — remap via stable keys before translating display.
+- No provider/search/SEO work in Pack 02E.
+
+Next Objective:
+
+- Pack 02E Task 02 — remaining public chrome navigation keys.
+
+---
+
 ## 2026-08-31 (Pack 02D — staging acceptance + documentation close-out)
 
 Completed:

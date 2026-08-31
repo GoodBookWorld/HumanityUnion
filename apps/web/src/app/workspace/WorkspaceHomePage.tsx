@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { MemberWorkspace } from "../../components/member/MemberWorkspace";
 import { WorkspaceNavigation } from "../../features/initiatives/components/WorkspaceNavigation";
@@ -25,14 +26,16 @@ import "./workspace-page.css";
  * collective decisions, etc.).
  */
 export function WorkspaceHomePage() {
+  const tNav = useTranslations("navigation");
+  const tWorkspace = useTranslations("workspace");
   const [assistantContext, setAssistantContext] = useState<
     WorkspaceHomeState["assistantContext"] | null
   >(null);
 
   return (
     <MemberWorkspace
-      title="Workspace"
-      subtitle="Your personal civic dashboard"
+      title={tNav("workspace")}
+      subtitle={tWorkspace("homeSubtitle")}
       workspaceNavigation={<WorkspaceNavigation />}
       headerBar={<WorkspacePersonalHeader />}
       assistant={<WorkspaceHomeAssistant context={assistantContext} />}

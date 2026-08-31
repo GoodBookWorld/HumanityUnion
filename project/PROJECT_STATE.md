@@ -47,11 +47,12 @@ Primary engineering branch: follow `git branch --show-current` (repository evide
 | **02B** Language Registry | **COMPLETED** + staging **PASS** |
 | **02C** Locale Preference & Runtime | **COMPLETED** + staging **PASS** |
 | **02D** UI i18n Foundation | **COMPLETED** + staging **PASS** |
-| 02E–02J | Sequenced; **02E NEXT** |
+| **02E** UI Key Extraction | **COMPLETE locally** (Tasks 01–06); staging smoke **PENDING** |
+| 02F–02J | Sequenced after 02E staging PASS (02F NEXT) |
 
 See `project/NEXT_SESSION.md` for the exact next implementation objective.
 
-Last completed product track: **Production Completion Pack 02D** (UI i18n Foundation — COMPLETE + STAGING PASS).
+Last completed product track milestone: **Pack 02E** (UI key extraction COMPLETE locally; staging PENDING). Last closed Pack with staging PASS: **02D**.
 
 ---
 
@@ -119,7 +120,7 @@ Capability 02
 | Production Completion Pack 02B Language Registry | **COMPLETED** + staging acceptance **PASS** |
 | Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** + staging acceptance **PASS** |
 | Production Completion Pack 02D UI i18n Foundation | **COMPLETED** + staging acceptance **PASS** |
-| Production Completion Pack 02E UI Key Extraction | **NEXT** |
+| Production Completion Pack 02E UI Key Extraction | **COMPLETE locally** — Tasks 01–06; staging smoke **PENDING** |
 
 ---
 
@@ -152,7 +153,8 @@ Still excluded unless a future architecture decision says otherwise:
 
 **Not present yet:**
 
-- Broad UI chrome key migration (Pack 02E) — Civic Media / Knowledge / Membership / Search / broader auth-account-workspace copy
+- Broad UI chrome key migration (Pack 02E) — **COMPLETE locally** (public nav/footer + shared common/a11y + auth + workspace/account shell); staging smoke PENDING; Pack 02F glossary next after staging PASS
+- Lifecycle-stage / civic body / Notification Center empty-state / Blog navLabel API redesign / role·status enum maps — deferred beyond 02E
 - Admin-managed remote UI message packs / R2 persistence
 - Admin platform-default-language setting (currently `DEFAULT_PLATFORM_LANGUAGE` = `en`)
 - Multilingual search
@@ -164,7 +166,9 @@ Still excluded unless a future architecture decision says otherwise:
 
 | Item | Notes |
 |------|--------|
-| Pack 02E–02J | Multilingual sequence; **02E NEXT** |
+| Pack 02E UI Key Extraction | **COMPLETE locally**; staging smoke **PENDING** |
+| Pack 02F Canonical Terminology Glossary | **NEXT after 02E staging PASS** |
+| Pack 02G–02J | Multilingual sequence after 02F |
 | Pack 02B / 02C / 02D staging acceptance | **PASS** |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
 | Mobile PWA regression | Diagnosis only — not a redesign |

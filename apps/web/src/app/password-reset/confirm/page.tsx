@@ -1,17 +1,20 @@
 import { Suspense } from "react";
+import { getTranslations } from "next-intl/server";
 
 import { PasswordResetConfirmForm } from "../../../features/auth/components/PasswordResetConfirmForm";
 
 import "../../../features/auth/components/auth-form.css";
 
-export default function PasswordResetConfirmPage() {
+export default async function PasswordResetConfirmPage() {
+  const t = await getTranslations("auth");
+
   return (
     <main className="auth-page">
       <header className="auth-page__header">
-        <h1 className="auth-page__title">Choose a new password</h1>
-        <p className="auth-page__subtitle">Set a new password for your Humanity Union account.</p>
+        <h1 className="auth-page__title">{t("chooseNewPasswordTitle")}</h1>
+        <p className="auth-page__subtitle">{t("chooseNewPasswordSubtitle")}</p>
       </header>
-      <Suspense fallback={<p>Loading reset form...</p>}>
+      <Suspense fallback={<p>{t("loadingResetForm")}</p>}>
         <PasswordResetConfirmForm />
       </Suspense>
     </main>

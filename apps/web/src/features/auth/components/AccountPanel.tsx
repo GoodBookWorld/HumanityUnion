@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import type { AuthUserPublic } from "@hu/types";
 
@@ -23,6 +24,8 @@ import "./account-panel.css";
 import "../../administration/components/admin-panel.css";
 
 export function AccountPanel() {
+  const t = useTranslations("workspace");
+  const tAuth = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
   const showCompleteProfileCta = searchParams.get("confirmed") === "1";
@@ -51,7 +54,7 @@ export function AccountPanel() {
       .catch((loadError) => {
         if (!cancelled) {
           setUser(null);
-          setLoadError(loadError instanceof Error ? loadError.message : "Unable to load account.");
+          setLoadError(loadError instanceof Error ? loadError.message : t("unableToLoadAccount"));
         }
       })
       .finally(() => {
@@ -63,6 +66,8 @@ export function AccountPanel() {
     return () => {
       cancelled = true;
     };
+    // Intentionally load once on mount; avoid re-fetch when translator identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleLogout() {
@@ -82,10 +87,10 @@ export function AccountPanel() {
       const updated = await requestEmailChange(newEmail);
       setUser(updated);
       setNewEmail("");
-      setMessage("Check your new email inbox to confirm the change.");
+      setMessage(t("checkNewEmailInbox"));
     } catch (changeError) {
       setActionError(
-        changeError instanceof Error ? changeError.message : "Unable to request email change.",
+        changeError instanceof Error ? changeError.message : t("unableToRequestEmailChange"),
       );
     } finally {
       setSubmitting(false);
@@ -100,7 +105,7 @@ export function AccountPanel() {
     setPasswordSuccess(null);
 
     if (newPassword !== confirmNewPassword) {
-      setActionError("New password and confirmation must match.");
+      setActionError(t("passwordMismatch"));
       setSubmitting(false);
       return;
     }
@@ -114,12 +119,10 @@ export function AccountPanel() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
-      setPasswordSuccess(
-        "Password changed successfully. Other active sessions were signed out for security.",
-      );
+      setPasswordSuccess(t("passwordChangedSuccess"));
     } catch (changeError) {
       setActionError(
-        changeError instanceof Error ? changeError.message : "Unable to change password.",
+        changeError instanceof Error ? changeError.message : t("unableToChangePassword"),
       );
     } finally {
       setSubmitting(false);
@@ -134,10 +137,10 @@ export function AccountPanel() {
 
     try {
       const result = await revokeAllOtherSessions();
-      setMessage(`Signed out ${result.revokedCount} other session(s).`);
+      setMessage(t("signedOutOtherSessions", { count: result.revokedCount }));
     } catch (revokeError) {
       setActionError(
-        revokeError instanceof Error ? revokeError.message : "Unable to revoke other sessions.",
+        revokeError instanceof Error ? revokeError.message : t("unableToRevokeSessions"),
       );
     } finally {
       setSubmitting(false);
@@ -145,69 +148,71 @@ export function AccountPanel() {
   }
 
   if (loading) {
-    return <p>Loading account...</p>;
+    return <p>{t("loadingAccount")}</p>;
   }
 
   if (loadError || !user) {
     return (
-      <ProfileSection title="Account">
-        <p>{loadError ?? "Sign in to view your account."}</p>
+      <ProfileSection title={t("account")}>
+        <p>{loadError ?? t("signInToViewAccount")}</p>
         <Button href="/login" variant="primary">
-          Log in
+          {tAuth("logIn")}
         </Button>
       </ProfileSection>
     );
   }
 
   const verificationLabel =
-    user.emailVerificationStatus === "verified" ? "Email Confirmed" : "Email Confirmation Pending";
+    user.emailVerificationStatus === "verified"
+      ? t("emailConfirmedStatus")
+      : t("emailConfirmationPending");
 
   const accountTiles = [
-    { label: "Display Name", value: user.displayName },
-    { label: "Email", value: user.email },
-    { label: "Email Verification", value: verificationLabel },
-    { label: "Role", value: user.role },
-    { label: "Status", value: user.status },
+    { label: t("displayName"), value: user.displayName },
+    { label: tAuth("email"), value: user.email },
+    { label: t("emailVerification"), value: verificationLabel },
+    { label: t("role"), value: user.role },
+    { label: t("status"), value: user.status },
   ];
 
   return (
     <div className="account-panel">
-      <ProfileSection title="Account">
+      <ProfileSection title={t("account")}>
         {showCompleteProfileCta ? (
           <div className="account-panel__actions">
-            <AuthFeedbackMessage variant="success" title="Email confirmed">
-              <p>Your email is confirmed. Complete your public profile when you are ready.</p>
+            <AuthFeedbackMessage variant="success" title={t("emailConfirmedTitle")}>
+              <p>{t("emailConfirmedBody")}</p>
             </AuthFeedbackMessage>
             <Button href="/profile" variant="primary">
-              Complete Your Profile
+              {t("completeYourProfile")}
             </Button>
           </div>
         ) : null}
-        <AdminMetricDetailsGrid cells={accountTiles} aria-label="Account profile summary" />
+        <AdminMetricDetailsGrid cells={accountTiles} aria-label={t("accountProfileSummary")} />
         {user.pendingEmail ? (
           <p className="hu-caption account-panel__pending-email">
-            Pending Email Change: {user.pendingEmail}
+            {t("pendingEmailChange", { email: user.pendingEmail })}
           </p>
         ) : null}
         {message ? (
-          <AuthFeedbackMessage variant="success" title="Account update">
+          <AuthFeedbackMessage variant="success" title={t("accountUpdate")}>
             <p>{message}</p>
           </AuthFeedbackMessage>
         ) : null}
         {actionError ? (
-          <AuthFeedbackMessage variant="error" title="Account action failed">
+          <AuthFeedbackMessage variant="error" title={t("accountActionFailed")}>
             <p>{actionError}</p>
           </AuthFeedbackMessage>
         ) : null}
         {user.emailVerificationStatus !== "verified" ? (
           <div className="account-panel__actions">
             <Button href="/confirm-email" variant="secondary">
-              Confirm Email
+              {tAuth("confirmEmail")}
             </Button>
           </div>
         ) : null}
         <p className="account-panel__note">
-          Public profile details live on <a href="/profile">Edit Profile</a>.
+          {t("publicProfileNotePrefix")} <a href="/profile">{t("editProfile")}</a>.
         </p>
       </ProfileSection>
 
@@ -218,10 +223,10 @@ export function AccountPanel() {
         onError={setActionError}
       />
 
-      <ProfileSection title="Change Email">
+      <ProfileSection title={t("changeEmail")}>
         <form className="account-panel__form" onSubmit={(event) => void handleEmailChange(event)}>
           <label className="account-panel__field" htmlFor="new-email">
-            <span>New email address</span>
+            <span>{t("newEmailAddress")}</span>
             <input
               id="new-email"
               type="email"
@@ -232,19 +237,19 @@ export function AccountPanel() {
           </label>
           <div className="account-panel__actions">
             <Button type="submit" variant="secondary" disabled={submitting}>
-              Request email change
+              {t("requestEmailChange")}
             </Button>
           </div>
         </form>
       </ProfileSection>
 
-      <ProfileSection title="Change Password">
+      <ProfileSection title={t("changePassword")}>
         <form
           className="account-panel__form"
           onSubmit={(event) => void handlePasswordChange(event)}
         >
           <label className="account-panel__field" htmlFor="current-password">
-            <span>Current password</span>
+            <span>{tAuth("currentPassword")}</span>
             <PasswordInput
               id="current-password"
               autoComplete="current-password"
@@ -254,7 +259,7 @@ export function AccountPanel() {
             />
           </label>
           <label className="account-panel__field" htmlFor="new-password">
-            <span>New password</span>
+            <span>{tAuth("newPassword")}</span>
             <PasswordInput
               id="new-password"
               autoComplete="new-password"
@@ -265,7 +270,7 @@ export function AccountPanel() {
             />
           </label>
           <label className="account-panel__field" htmlFor="confirm-new-password">
-            <span>Confirm new password</span>
+            <span>{t("confirmNewPassword")}</span>
             <PasswordInput
               id="confirm-new-password"
               autoComplete="new-password"
@@ -276,38 +281,38 @@ export function AccountPanel() {
             />
           </label>
           {passwordSuccess ? (
-            <AuthFeedbackMessage variant="success" title="Password updated">
+            <AuthFeedbackMessage variant="success" title={t("passwordUpdated")}>
               <p>{passwordSuccess}</p>
             </AuthFeedbackMessage>
           ) : null}
           <div className="account-panel__actions">
             <Button type="submit" variant="secondary" disabled={submitting}>
-              Update password
+              {t("updatePassword")}
             </Button>
           </div>
         </form>
         <p className="account-panel__actions">
           <Button href="/password-reset" variant="secondary">
-            Forgot password?
+            {tAuth("forgotPassword")}
           </Button>
         </p>
       </ProfileSection>
 
-      <ProfileSection title="Sessions">
+      <ProfileSection title={t("sessions")}>
         <div className="account-panel__actions">
           <Button
             variant="secondary"
             disabled={submitting}
             onClick={() => void handleRevokeOtherSessions()}
           >
-            Log out other sessions
+            {t("logOutOtherSessions")}
           </Button>
         </div>
       </ProfileSection>
 
       <div className="account-panel__actions">
         <Button variant="primary" onClick={() => void handleLogout()}>
-          Log out
+          {t("logOut")}
         </Button>
       </div>
     </div>

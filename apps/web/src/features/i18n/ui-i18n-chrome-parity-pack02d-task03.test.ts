@@ -72,10 +72,12 @@ describe("Production Completion Pack 02D Task 03 — foundation chrome + parity"
       "الدعم",
     );
 
-    // Unrelated footer destinations remain English presentation.
+    // Pack 02E Task 02 maps Search; presentation resolves via navigation.search.
     assert.equal(
-      resolveFooterNavDisplayLabel("Search", () => "should-not-run"),
-      "Search",
+      resolveFooterNavDisplayLabel("Search", (key) =>
+        resolveMergedMessage(uk.messages, "navigation", key) ?? key,
+      ),
+      "Пошук",
     );
   });
 

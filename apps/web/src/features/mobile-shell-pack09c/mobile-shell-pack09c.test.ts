@@ -24,7 +24,7 @@ describe("Mobile Shell Pack 09C", () => {
 
     assert.match(header, /BrowserWorkspaceHeaderControls/);
     assert.match(header, /HumanityHeaderMenuButton/);
-    assert.match(controls, /Open Workspace menu/);
+    assert.match(controls, /tWorkspace\("openMenu"\)/);
     assert.match(controls, /PwaWorkspaceDrawer/);
     assert.doesNotMatch(controls, /href="\/workspace"/);
     assert.doesNotMatch(controls, /humanity-header__workspace-trigger/);
@@ -48,7 +48,7 @@ describe("Mobile Shell Pack 09C", () => {
     assert.match(drawer, /document\.body\.style\.overflow = "hidden"/);
     assert.match(drawer, /Escape/);
     assert.match(drawer, /hu-pwa-drawer__backdrop/);
-    assert.match(drawer, /Close Workspace menu/);
+    assert.match(drawer, /tWorkspace\("closeMenu"\)/);
     assert.match(nav, /workspace-navigation__groups/);
     assert.match(nav, /buildWorkspaceNavGroups/);
     assert.match(nav, /isAdminAccountRole/);

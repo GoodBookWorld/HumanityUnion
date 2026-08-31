@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, type RefObject } from "react";
 
 import { trapTabKey } from "../../../design-system/focus-trap";
@@ -20,6 +21,8 @@ export function PwaWorkspaceDrawer({ open, onClose, returnFocusRef }: PwaWorkspa
   const previouslyFocused = useRef<HTMLElement | null>(null);
   /** Set when closing via nav selection — skip restoring focus to the Avatar launcher. */
   const skipFocusRestoreRef = useRef(false);
+  const tWorkspace = useTranslations("workspace");
+  const tNav = useTranslations("navigation");
 
   useEffect(() => {
     if (!open) {
@@ -71,7 +74,7 @@ export function PwaWorkspaceDrawer({ open, onClose, returnFocusRef }: PwaWorkspa
       <button
         type="button"
         className="hu-pwa-drawer__backdrop"
-        aria-label="Close Workspace menu"
+        aria-label={tWorkspace("closeMenu")}
         onClick={onClose}
       />
       <div
@@ -84,12 +87,12 @@ export function PwaWorkspaceDrawer({ open, onClose, returnFocusRef }: PwaWorkspa
       >
         <div className="hu-pwa-drawer__header">
           <h2 id={titleId} className="hu-pwa-drawer__title">
-            Workspace
+            {tNav("workspace")}
           </h2>
           <button
             type="button"
             className="hu-pwa-drawer__close"
-            aria-label="Close Workspace menu"
+            aria-label={tWorkspace("closeMenu")}
             onClick={onClose}
           >
             <Image

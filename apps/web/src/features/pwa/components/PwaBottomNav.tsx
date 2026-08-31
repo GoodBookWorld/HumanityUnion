@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useRef } from "react";
 
 import { useOptionalHumanityUnionAssistant } from "../../humanity-union-assistant/assistant-context";
@@ -17,6 +18,8 @@ function formatBadge(count: number): string {
 
 export function PwaBottomNav() {
   const pathname = usePathname() ?? "/";
+  const tNav = useTranslations("navigation");
+  const tWorkspace = useTranslations("workspace");
   const assistant = useOptionalHumanityUnionAssistant();
   const assistantButtonRef = useRef<HTMLButtonElement>(null);
   const { unreadCount: unreadCountRaw } = useUnreadNotificationCount();
@@ -43,7 +46,7 @@ export function PwaBottomNav() {
           height={36}
           aria-hidden="true"
         />
-        Workspace
+        {tNav("workspace")}
       </Link>
 
       <Link
@@ -59,7 +62,7 @@ export function PwaBottomNav() {
           height={36}
           aria-hidden="true"
         />
-        Initiatives
+        {tNav("initiatives")}
       </Link>
 
       <Link
@@ -84,8 +87,8 @@ export function PwaBottomNav() {
         aria-current={notificationsCurrent ? "page" : undefined}
         aria-label={
           unreadCount > 0
-            ? `Notifications, ${unreadCount} unread`
-            : "Notifications"
+            ? tWorkspace("notificationsUnreadAria", { count: formatBadge(unreadCount) })
+            : tWorkspace("notificationsAria")
         }
       >
         <img
@@ -101,7 +104,7 @@ export function PwaBottomNav() {
             {formatBadge(unreadCount)}
           </span>
         ) : null}
-        Notifications
+        {tWorkspace("notifications")}
       </Link>
 
       <button

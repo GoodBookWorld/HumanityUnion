@@ -1,12 +1,22 @@
 /**
- * Production Completion Pack 02D Task 03 — footer foundation chrome labels.
+ * Production Completion Pack 02D Task 03 / Pack 02E Task 02 — footer chrome labels.
  *
  * Stable English footer `label` values remain list/route identity.
- * Only destinations with Pack 02D foundation keys are translated at presentation.
+ * Destinations with `navigation.*` keys are translated at presentation only.
  */
 
 export const FOOTER_FOUNDATION_MESSAGE_KEYS = {
+  Institutions: "institutions",
+  Initiatives: "initiatives",
+  Blog: "blog",
+  Membership: "membership",
+  "Civic Media": "civicMedia",
+  "Civic Archive": "civicArchive",
   Support: "support",
+  Search: "search",
+  Privacy: "privacy",
+  Terms: "terms",
+  Contact: "contact",
 } as const;
 
 export type FooterFoundationStableLabel = keyof typeof FOOTER_FOUNDATION_MESSAGE_KEYS;

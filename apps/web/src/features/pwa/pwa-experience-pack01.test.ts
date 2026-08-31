@@ -94,7 +94,7 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     assert.match(shell, /PwaAppHeader/);
     assert.match(shell, /standalone/);
     assert.match(layout, /HumanityHeader/);
-    assert.match(header, /Open Workspace menu/);
+    assert.match(header, /tWorkspace\("openMenu"\)/);
     assert.match(header, /PwaWorkspaceDrawer/);
   });
 

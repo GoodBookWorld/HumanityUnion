@@ -85,7 +85,8 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     assert.doesNotMatch(communityContent, /remain future capabilities/i);
 
     const registerPage = read("app/register/page.tsx");
-    assert.match(registerPage, /Create account/);
+    assert.match(registerPage, /t\("registerTitle"\)/);
+    assert.match(registerPage, /getTranslations\("auth"\)/);
     assert.doesNotMatch(registerPage, /coming soon/i);
   });
 
@@ -132,13 +133,18 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     assert.match(nav, /Become an Author/);
     assert.match(nav, /state\.navLabel/);
     assert.match(nav, /publishingWorkspaceHref/);
-    assert.match(nav, /label: "Profile"/);
+    assert.match(nav, /resolveWorkspaceNavDisplayLabel/);
+
+    const groups = read("features/initiatives/components/build-workspace-nav-groups.ts");
+    assert.match(groups, /label: "Profile"/);
+    assert.match(groups, /href: "\/member"/);
   });
 
   it("9 — Editor navigation label remains Editorial Review", () => {
     const nav = read("features/initiatives/components/WorkspaceNavigation.tsx");
     assert.match(nav, /label: "Editorial Review"/);
     assert.match(nav, /editorialReviewHref/);
+    assert.match(nav, /resolveWorkspaceNavDisplayLabel/);
 
     const authoring = read("features/blog/components/AuthoringPageContent.tsx");
     assert.match(authoring, /Editorial Review/);
@@ -178,10 +184,14 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     assert.match(notifications, /No unread messages/);
     assert.match(notifications, /No reminders yet/);
 
-    const messagesNav = read("features/initiatives/components/WorkspaceNavigation.tsx");
-    assert.match(messagesNav, /label: "Messages"/);
-    assert.match(messagesNav, /href: "\/notifications"/);
-    assert.match(messagesNav, /label: "Notifications"/);
+    const groups = read("features/initiatives/components/build-workspace-nav-groups.ts");
+    assert.match(groups, /label: "Messages"/);
+    assert.match(groups, /href: "\/workspace\/messages"/);
+    assert.match(groups, /label: "Notifications"/);
+    assert.match(groups, /href: "\/notifications"/);
+
+    const nav = read("features/initiatives/components/WorkspaceNavigation.tsx");
+    assert.match(nav, /resolveWorkspaceNavDisplayLabel/);
   });
 
   it("12 — destructive labels map to distinct conceptual actions in presentation helpers", () => {
@@ -228,10 +238,13 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     const mobile = read("design-system/components/HumanityHeaderMobileMenu.tsx");
     assert.match(mobile, /PRIMARY_NAVIGATION\.map/);
     assert.match(mobile, /href="\/register"/);
-    assert.match(mobile, /Create account/);
+    assert.match(mobile, /tAuth\("createAccount"\)/);
     assert.match(mobile, /href="\/workspace"/);
-    assert.match(mobile, /Notifications/);
-    assert.match(mobile, />\s*Profile\s*</);
+    assert.match(mobile, /tNav\("workspace"\)/);
+    assert.match(mobile, /tWorkspace\("notifications"\)/);
+    assert.match(mobile, /tWorkspace\("profile"\)/);
+    assert.match(mobile, /href="\/notifications"/);
+    assert.match(mobile, /href="\/member"/);
     assert.doesNotMatch(mobile, /Member profile/);
 
     // Blog remains intentionally outside the mobile primary list; reachable via Footer + Knowledge.

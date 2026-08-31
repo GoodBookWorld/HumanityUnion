@@ -37,7 +37,7 @@ Architecture Status: Stable (Initiative-root ADR accepted)
 
 Engineering Status: **Production operational** + staging verification environment
 
-Project Health: **Healthy** (Pack 02B/02C/02D staging PASS)
+Project Health: **Healthy** (Pack 02B/02C/02D staging PASS; Pack 02E COMPLETE locally — staging smoke PENDING)
 
 ---
 
@@ -51,12 +51,12 @@ Project Health: **Healthy** (Pack 02B/02C/02D staging PASS)
 | **02B Language Registry** | **COMPLETED** + staging **PASS** |
 | **02C Locale Preference & Runtime** | **COMPLETED** + staging **PASS** |
 | **02D UI i18n Foundation** | **COMPLETED** + staging **PASS** |
-| **02E UI Key Extraction** | **NEXT** |
-| 02F–02J | Queued |
+| **02E UI Key Extraction** | **COMPLETE locally** (Tasks 01–06); staging smoke **PENDING** |
+| 02F–02J | Queued (02F NEXT after 02E staging PASS) |
 
-Live next task: **Pack 02E — UI Key Extraction** — see `project/NEXT_SESSION.md`.
+Live next task: **Pack 02E staging smoke**, then **Pack 02F — Canonical Terminology Glossary** — see `project/NEXT_SESSION.md`.
 
-Last closed product Pack track: Production Completion **Pack 02D** (COMPLETE + STAGING PASS).
+Last closed product Pack with staging PASS: **02D**. Pack **02E** COMPLETE locally.
 
 ---
 
@@ -87,7 +87,8 @@ Do not present superseded Activity-root ADR-002 as current architecture.
 
 # Open Issues (summary)
 
-- Pack 02E UI key extraction (NEXT) — Civic Media / Knowledge / Membership / Search / broader UI copy
+- Pack 02E staging smoke PENDING (NEXT)
+- Pack 02F — Canonical Terminology Glossary (after 02E staging PASS)
 - Pack 02B/02C/02D staging acceptance PASS
 - Production bootstrap Initiative deletion (separate production-safe procedure; staging cleanup refuses production)
 - Mobile PWA regression diagnosis (not redesign)

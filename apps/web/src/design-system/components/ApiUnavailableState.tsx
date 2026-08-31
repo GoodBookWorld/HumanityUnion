@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { Button } from "./Button";
 
 interface ApiUnavailableStateProps {
@@ -9,14 +13,23 @@ interface ApiUnavailableStateProps {
   homeLabel?: string;
 }
 
+/**
+ * Shared API-unavailable chrome.
+ * Pack 02E Task 03 — default action labels from `common.retry` / `common.backToHome`;
+ * caller overrides (e.g. Workspace "Retry" / "Return Home") remain presentation-only overrides.
+ */
 export function ApiUnavailableState({
   title,
   explanation,
   possibleReason,
   retryHref,
-  retryLabel = "Try again",
-  homeLabel = "Back to Home",
+  retryLabel,
+  homeLabel,
 }: ApiUnavailableStateProps) {
+  const tCommon = useTranslations("common");
+  const resolvedRetryLabel = retryLabel ?? tCommon("retry");
+  const resolvedHomeLabel = homeLabel ?? tCommon("backToHome");
+
   return (
     <section className="hu-unavailable" role="alert" aria-live="polite">
       <h1 className="hu-unavailable__title">{title}</h1>
@@ -28,10 +41,10 @@ export function ApiUnavailableState({
       ) : null}
       <div className="hu-unavailable__actions">
         <Button href={retryHref} variant="primary">
-          {retryLabel}
+          {resolvedRetryLabel}
         </Button>
         <Button href="/" variant="secondary">
-          {homeLabel}
+          {resolvedHomeLabel}
         </Button>
       </div>
     </section>

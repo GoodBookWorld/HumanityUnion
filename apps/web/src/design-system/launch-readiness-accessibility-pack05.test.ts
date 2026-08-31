@@ -18,7 +18,10 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
   it("1 — Skip link targets main content and accepts focus", () => {
     const layout = read("design-system/components/HumanityLayout.tsx");
     assert.match(layout, /href="#main-content"/);
-    assert.match(layout, /Skip to main content/);
+    assert.match(layout, /getTranslations\("a11y"\)/);
+    assert.match(layout, /tA11y\("skipToMainContent"\)/);
+    assert.match(layout, /hu-skip-link/);
+    assert.match(layout, /#main-content/);
     assert.match(layout, /id="main-content"/);
     assert.match(layout, /tabIndex=\{-1\}/);
 
@@ -38,8 +41,12 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
 
   it("3 — Icon-only buttons have accessible names", () => {
     const authTools = read("design-system/components/AuthenticatedHeaderTools.tsx");
-    assert.match(authTools, /aria-label="Workspace"/);
+    assert.match(authTools, /useTranslations\("navigation"\)/);
+    assert.match(authTools, /aria-label=\{workspaceLabel\}/);
+    assert.match(authTools, /tNav\("workspace"\)/);
+    assert.match(authTools, /useTranslations\("workspace"\)/);
     assert.match(authTools, /aria-label=\{resolveNotificationsAriaLabel/);
+    assert.match(authTools, /tWorkspace\("notificationsAria"\)/);
 
     const fab = read(
       "features/humanity-union-assistant/components/HumanityUnionAssistantFloatingButton.tsx",
@@ -80,15 +87,15 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
 
   it("7 — Login/Register fields labelled and required communicated", () => {
     const login = read("features/auth/components/LoginForm.tsx");
-    assert.match(login, /<span>\s*Email/);
-    assert.match(login, /hu-visually-hidden">\(required\)/);
+    assert.match(login, /t\("email"\)/);
+    assert.match(login, /t\("required"\)/);
     assert.match(login, /required/);
     assert.match(login, /aria-required="true"/);
 
     const register = read("features/auth/components/RegisterForm.tsx");
-    assert.match(register, /Display name/);
-    assert.match(register, /hu-visually-hidden">\(required\)/);
-    assert.match(register, /Create account/);
+    assert.match(register, /t\("displayName"\)/);
+    assert.match(register, /t\("required"\)/);
+    assert.match(register, /t\("createAccount"\)/);
   });
 
   it("8 — Preferences controls labelled", () => {

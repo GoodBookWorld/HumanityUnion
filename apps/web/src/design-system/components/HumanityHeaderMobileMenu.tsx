@@ -28,6 +28,8 @@ export function HumanityHeaderMobileMenu({
 }: HumanityHeaderMobileMenuProps) {
   const authStatus = useClientAuthStatus();
   const tNav = useTranslations("navigation");
+  const tAuth = useTranslations("auth");
+  const tWorkspace = useTranslations("workspace");
 
   const handleLinkClick = useCallback(() => {
     onClose();
@@ -88,14 +90,14 @@ export function HumanityHeaderMobileMenu({
                   className="humanity-header__mobile-nav-link"
                   onClick={handleLinkClick}
                 >
-                  Log in
+                  {tAuth("logIn")}
                 </Link>
                 <Link
                   href="/register"
                   className="humanity-header__mobile-nav-link"
                   onClick={handleLinkClick}
                 >
-                  Create account
+                  {tAuth("createAccount")}
                 </Link>
               </>
             ) : (
@@ -113,7 +115,7 @@ export function HumanityHeaderMobileMenu({
                     className="humanity-header__mobile-nav-icon"
                     aria-hidden="true"
                   />
-                  Workspace
+                  {tNav("workspace")}
                 </Link>
                 <Link
                   href="/notifications"
@@ -128,14 +130,14 @@ export function HumanityHeaderMobileMenu({
                     className="humanity-header__mobile-nav-icon"
                     aria-hidden="true"
                   />
-                  Notifications
+                  {tWorkspace("notifications")}
                 </Link>
                 <Link
                   href="/member"
                   className="humanity-header__mobile-nav-link"
                   onClick={handleLinkClick}
                 >
-                  Profile
+                  {tWorkspace("profile")}
                 </Link>
               </>
             )}

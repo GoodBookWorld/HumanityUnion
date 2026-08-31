@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { useClientAuthStatus } from "../../features/auth/use-client-auth-status";
@@ -19,6 +20,8 @@ import { HumanityAvatar } from "./HumanityAvatar";
 export function BrowserWorkspaceHeaderControls() {
   const authStatus = useClientAuthStatus();
   const pathname = usePathname();
+  const tWorkspace = useTranslations("workspace");
+  const tNav = useTranslations("navigation");
   const avatarRef = useRef<HTMLButtonElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [identity, setIdentity] = useState<WorkspaceMemberIdentity | null>(null);
@@ -72,9 +75,9 @@ export function BrowserWorkspaceHeaderControls() {
           ref={avatarRef}
           type="button"
           className="humanity-header__participant-avatar"
-          aria-label={drawerOpen ? "Close Workspace menu" : "Open Workspace menu"}
+          aria-label={drawerOpen ? tWorkspace("closeMenu") : tWorkspace("openMenu")}
           aria-expanded={drawerOpen}
-          title="Workspace"
+          title={tNav("workspace")}
           onClick={() => setDrawerOpen((open) => !open)}
         >
           <HumanityAvatar avatarUrl={identity?.avatarUrl} size={36} alt="" />

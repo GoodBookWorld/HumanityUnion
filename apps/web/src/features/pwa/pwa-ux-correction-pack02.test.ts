@@ -119,7 +119,7 @@ describe("PWA UX Correction Pack 02", () => {
   it("11–12 — Workspace Drawer explicit close restores focus", () => {
     const drawer = readWeb("features/pwa/components/PwaWorkspaceDrawer.tsx");
     assert.match(drawer, /\/icons\/workspace\/cross\.svg/);
-    assert.match(drawer, /Close Workspace menu/);
+    assert.match(drawer, /tWorkspace\("closeMenu"\)/);
     assert.match(drawer, /returnFocusRef/);
     assert.match(drawer, /Escape/);
     assert.ok(existsSync(path.join(webRoot, "public/icons/workspace/cross.svg")));
