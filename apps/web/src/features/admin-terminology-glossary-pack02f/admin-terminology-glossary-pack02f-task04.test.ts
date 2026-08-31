@@ -11,6 +11,7 @@ import {
   ADMIN_PANEL_SECTIONS,
   resolveAdminPanelSectionId,
 } from "../administration/admin-panel-sections";
+import { resolveGlossaryEditorScrollBehavior } from "../administration/admin-terminology-glossary-scroll";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -128,6 +129,39 @@ describe("Production Completion Pack 02F Task 04 — Admin Terminology Glossary 
     assert.match(section, /openConcept\(updated\)/);
     assert.match(section, /Terminology concept saved/);
     assert.doesNotMatch(section, /resolveTranslationProvider|Gemini|global-search|searchPublic/);
+  });
+
+  it("concept selection scrolls editor into view; save/filter/refresh do not re-request it", () => {
+    const section = read(
+      "features/administration/components/AdminTerminologyGlossarySection.tsx",
+    );
+    const scrollHelper = read(
+      "features/administration/admin-terminology-glossary-scroll.ts",
+    );
+    assert.match(section, /resolveGlossaryEditorScrollBehavior/);
+    assert.match(section, /admin-terminology-glossary-scroll/);
+    assert.match(section, /editorScrollRequestId/);
+    assert.match(section, /editorRef/);
+    assert.match(section, /data-glossary-editor/);
+    assert.match(section, /openConcept\(concept,\s*\{\s*scrollIntoView:\s*true\s*\}\)/);
+    assert.match(section, /prefers-reduced-motion:\s*reduce/);
+    assert.match(
+      section,
+      /resolveGlossaryEditorScrollBehavior\(prefersReducedMotion\)/,
+    );
+    // Save path reopens without requesting scroll.
+    assert.match(section, /openConcept\(updated\);/);
+    assert.doesNotMatch(section, /openConcept\(updated,\s*\{\s*scrollIntoView/);
+    // Scroll request is only declared + bumped inside openConcept({ scrollIntoView: true }).
+    assert.equal((section.match(/setEditorScrollRequestId/g) ?? []).length, 2);
+    assert.match(
+      section,
+      /if \(options\?\.scrollIntoView === true\) \{\s*setEditorScrollRequestId\(\(current\) => current \+ 1\);/,
+    );
+
+    assert.match(scrollHelper, /prefersReducedMotion \? "auto" : "smooth"/);
+    assert.equal(resolveGlossaryEditorScrollBehavior(true), "auto");
+    assert.equal(resolveGlossaryEditorScrollBehavior(false), "smooth");
   });
 
   it("existing Admin Languages UI remains unchanged in contract", () => {

@@ -63,6 +63,8 @@ Chronology: `project/WORK_LOG.md`
 9. Admin Languages list/enablement unchanged by glossary edits.
 10. Restore any temporary glossary edits used in smoke.
 
+**Staging-smoke UX hotfix (local, uncommitted):** selecting a glossary table row scrolls the concept editor into view (`prefers-reduced-motion` → non-animated). Does not change API/persistence/provider.
+
 ### Production Completion Pack 02E — UI Key Extraction (COMPLETE + STAGING PASS)
 
 Tasks **01–06 COMPLETE**. Presentation-only extraction on Pack 02D `next-intl`; Pack 02C sole locale authority.

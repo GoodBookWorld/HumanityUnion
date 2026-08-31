@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   AuthUserPublic,
@@ -21,6 +21,7 @@ import {
   fetchAdminTerminologyGlossary,
   updateAdminTerminologyConcept,
 } from "../admin-terminology-glossary-api";
+import { resolveGlossaryEditorScrollBehavior } from "../admin-terminology-glossary-scroll";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
 import "./admin-panel.css";
@@ -137,6 +138,9 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"" | TerminologyConceptCategory>("");
   const [statusFilter, setStatusFilter] = useState<"" | TerminologyConceptStatus>("");
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  /** Incremented only for table/keyboard selection — not save, filter, or refresh. */
+  const [editorScrollRequestId, setEditorScrollRequestId] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -185,7 +189,10 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
     });
   }, [concepts, search, categoryFilter, statusFilter]);
 
-  function openConcept(concept: TerminologyConcept) {
+  function openConcept(
+    concept: TerminologyConcept,
+    options?: { readonly scrollIntoView?: boolean },
+  ) {
     const drafts: Record<string, LocaleDraft> = {};
     for (const language of languages) {
       drafts[language.locale] = toLocaleDraft(concept.translations[language.locale]);
@@ -197,7 +204,27 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
     setBaselineLocales(structuredClone(drafts));
     setStatusMessage(null);
     setError(null);
+    if (options?.scrollIntoView === true) {
+      setEditorScrollRequestId((current) => current + 1);
+    }
   }
+
+  useEffect(() => {
+    if (editorScrollRequestId === 0) {
+      return;
+    }
+    const node = editorRef.current;
+    if (!node) {
+      return;
+    }
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    node.scrollIntoView({
+      behavior: resolveGlossaryEditorScrollBehavior(prefersReducedMotion),
+      block: "start",
+    });
+  }, [editorScrollRequestId]);
 
   function closeEditor() {
     setSelectedId(null);
@@ -341,7 +368,9 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
 
         {selected ? (
           <div
+            ref={editorRef}
             className="admin-glossary__editor"
+            data-glossary-editor=""
             role="region"
             aria-label={`Edit terminology concept ${selected.canonicalEnglishTerm}`}
           >
@@ -553,11 +582,11 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
                         ? " admin-glossary-table__row--selected"
                         : ""
                     }`}
-                    onClick={() => openConcept(concept)}
+                    onClick={() => openConcept(concept, { scrollIntoView: true })}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        openConcept(concept);
+                        openConcept(concept, { scrollIntoView: true });
                       }
                     }}
                     tabIndex={0}

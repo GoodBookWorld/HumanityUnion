@@ -56,6 +56,20 @@ Next Objective:
 
 # Entries
 
+## 2026-08-31 (Pack 02F staging-smoke UX — glossary editor scroll)
+
+Completed:
+
+- Admin Terminology Glossary: selecting a table row scrolls the opened editor into view.
+- Honors `prefers-reduced-motion` (auto vs smooth). Save / filter / refresh do not re-trigger scroll.
+- UI-only; no API / persistence / provider change. Staging smoke still PENDING.
+
+Next Objective:
+
+- Pack 02F staging smoke; on PASS → **Pack 02G**.
+
+---
+
 ## 2026-08-31 (Pack 02F Task 06 — acceptance + regression close-out)
 
 Completed:
