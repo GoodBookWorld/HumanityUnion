@@ -1,8 +1,11 @@
 # LANGUAGE & TRANSLATION ARCHITECTURE
 
-Version: 1.0  
-Status: Active (Provider-backed vertical slice)  
-Pack: Language Architecture Pack 01–02
+Version: 1.0
+Status: Active (Provider-backed vertical slice; Pack 02 multilingual expansion in progress)
+Pack: Language Architecture Pack 01–02 / Production Completion Pack 02
+
+**Live handoff / next Pack:** `project/NEXT_SESSION.md` (Pack **02B** Language Registry).
+**Pack 02A audit summary:** `architecture/recovery/PRODUCTION_COMPLETION_PACK_02A_MULTILINGUAL_AUDIT_v1.0.md`
 
 ---
 

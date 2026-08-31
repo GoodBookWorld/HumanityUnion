@@ -44,3 +44,24 @@ Any new feature that introduces a new civic participation action MUST be designe
 5. **Define tests** covering: ancestry validation, mapper purity/determinism, consumer idempotency and append-only behavior, and — if the feature is a new Participant Action producer — a verification script mirroring `verify-initiative-decision-vote-participant-actions.ts`'s checkpoint structure.
 
 No step may be skipped or reordered; a route MUST NOT be shipped ahead of its persistence/event/projection decisions, even provisionally.
+
+---
+
+## 4. Documentation Gate
+
+Every completed implementation Pack or Epic MUST evaluate the Documentation Gate before it may be reported **CLOSED**.
+
+At minimum, evaluate whether updates are required for:
+
+1. `project/NEXT_SESSION.md` — canonical live handoff / next task (update whenever the live objective changed)
+2. `project/PROJECT_STATE.md` — durable current-focus / last-completed state
+3. `project/PROJECT_DASHBOARD.md` — when capability or Pack status actually changed
+4. `project/WORK_LOG.md` — chronological entry when useful for historical traceability
+5. ADR index / decision records under `architecture/` — when architectural decisions changed
+
+Do **not** require meaningless edits when a document is unaffected. The Pack completion report MUST explicitly state which canonical documents were updated, or why no update was required.
+
+Live handoff authority: `project/NEXT_SESSION.md`.
+AI recovery entry: `architecture/recovery/chat-agent/README.md`.
+
+Repository evidence wins over stale narrative documentation. Secrets and private migration manifests MUST never be committed.

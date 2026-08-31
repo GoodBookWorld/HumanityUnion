@@ -35,7 +35,11 @@ The project itself must contain all critical engineering knowledge.
 
 # Entry Point (AI / human)
 
-**Start here first:**
+**Start here first (canonical live handoff):**
+
+`project/NEXT_SESSION.md`
+
+**Then recovery kit:**
 
 `architecture/recovery/chat-agent/README.md`
 
