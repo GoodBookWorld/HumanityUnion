@@ -7,6 +7,10 @@
  * Authenticated Participant interfaceLanguage is applied on API requests via
  * `runtimeLocaleMiddleware`. Web SSR cannot read API host-only auth cookies,
  * so HTML uses cookie + Accept-Language against the enabled public catalog.
+ *
+ * Pack 02C Hotfix 01 — server-only (imports next/headers). Import only from
+ * server entrypoints such as `app/layout.tsx`. Never re-export from client/shared
+ * barrels (e.g. `features/language/index.ts`).
  */
 
 import {

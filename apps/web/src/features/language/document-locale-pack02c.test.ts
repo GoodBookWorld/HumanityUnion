@@ -120,6 +120,7 @@ describe("Production Completion Pack 02C Task 02 — document html locale", () =
   it("no base-tag collapse in document language path", () => {
     const resolveSrc = readFileSync(path.join(here, "resolve-document-locale.ts"), "utf8");
     const layoutSrc = readFileSync(path.join(here, "../../app/layout.tsx"), "utf8");
+    const barrelSrc = readFileSync(path.join(here, "index.ts"), "utf8");
     const docAttrsSrc = readFileSync(
       path.join(here, "components/DocumentLanguageAttributes.tsx"),
       "utf8",
@@ -130,5 +131,8 @@ describe("Production Completion Pack 02C Task 02 — document html locale", () =
     assert.doesNotMatch(docAttrsSrc, /useEffect/);
     assert.match(layoutSrc, /lang=\{documentLocale\.locale\}/);
     assert.match(layoutSrc, /dir=\{documentLocale\.textDirection\}/);
+    assert.match(layoutSrc, /from \"\.\.\/features\/language\/resolve-document-locale\"/);
+    assert.doesNotMatch(barrelSrc, /export \{[^}]*resolveDocumentHtmlLocale/);
+    assert.doesNotMatch(barrelSrc, /from \"\.\/resolve-document-locale\"/);
   });
 });

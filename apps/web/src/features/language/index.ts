@@ -8,10 +8,6 @@ export {
   normalizeLanguageCode,
 } from "./language";
 export type { LanguageCode, PriorityLanguageCode } from "./language";
-export {
-  englishDocumentLocaleFallback,
-  resolveDocumentHtmlLocale,
-} from "./resolve-document-locale";
 export { TranslatedContentView } from "./components/TranslatedContentView";
 export type { TranslatedContentViewProps } from "./components/TranslatedContentView";
 export { PublicTranslatedFields } from "./components/PublicTranslatedFields";
@@ -40,3 +36,7 @@ export {
   buildWebHuLangCookieAttributes,
   readHuLangCookieFromDocument,
 } from "./hu-lang-cookie.web";
+
+// Pack 02C Hotfix 01 — do NOT re-export resolve-document-locale from this barrel.
+// It imports next/headers (server-only) and must be imported only from server entrypoints
+// such as app/layout.tsx.
