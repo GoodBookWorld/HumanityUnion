@@ -47,12 +47,12 @@ Primary engineering branch: follow `git branch --show-current` (repository evide
 | **02B** Language Registry | **COMPLETED** + staging **PASS** |
 | **02C** Locale Preference & Runtime | **COMPLETED** + staging **PASS** |
 | **02D** UI i18n Foundation | **COMPLETED** + staging **PASS** |
-| **02E** UI Key Extraction | **COMPLETE locally** (Tasks 01–06); staging smoke **PENDING** (header Edit Profile residual fixed locally — redeploy/re-smoke) |
-| 02F–02J | Sequenced after 02E staging PASS (02F NEXT) |
+| **02E** UI Key Extraction | **COMPLETED** + staging **PASS** |
+| 02F–02J | Sequenced after 02E (02F NEXT) |
 
 See `project/NEXT_SESSION.md` for the exact next implementation objective.
 
-Last completed product track milestone: **Pack 02E** (UI key extraction COMPLETE locally; staging PENDING). Staging smoke residual: `WorkspaceMemberIdentity` now uses `workspace.editProfile`. Last closed Pack with staging PASS: **02D**.
+Last completed product track milestone: **Pack 02E** (UI key extraction COMPLETE + STAGING PASS; verification locales en / uk / zh-Hant / ar; Edit Profile residual fixed in `2e27b27`; Registry restored en only).
 
 ---
 
@@ -120,7 +120,7 @@ Capability 02
 | Production Completion Pack 02B Language Registry | **COMPLETED** + staging acceptance **PASS** |
 | Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** + staging acceptance **PASS** |
 | Production Completion Pack 02D UI i18n Foundation | **COMPLETED** + staging acceptance **PASS** |
-| Production Completion Pack 02E UI Key Extraction | **COMPLETE locally** — Tasks 01–06; staging smoke **PENDING** (Edit Profile residual local fix — redeploy/re-smoke) |
+| Production Completion Pack 02E UI Key Extraction | **COMPLETED** + staging acceptance **PASS** |
 
 ---
 
@@ -153,8 +153,9 @@ Still excluded unless a future architecture decision says otherwise:
 
 **Not present yet:**
 
-- Broad UI chrome key migration (Pack 02E) — **COMPLETE locally** (public nav/footer + shared common/a11y + auth + workspace/account shell); staging smoke PENDING after Edit Profile residual redeploy/re-smoke; Pack 02F glossary next after staging PASS
+- Broad UI chrome key migration (Pack 02E) — **COMPLETED** + staging **PASS** (public nav/footer + shared common/a11y + auth + workspace/account shell; Edit Profile residual `2e27b27`; Registry restored en only)
 - Lifecycle-stage / civic body / Notification Center empty-state / Blog navLabel API redesign / role·status enum maps — deferred beyond 02E
+- Pack 02F Canonical Terminology Glossary — **NEXT**
 - Admin-managed remote UI message packs / R2 persistence
 - Admin platform-default-language setting (currently `DEFAULT_PLATFORM_LANGUAGE` = `en`)
 - Multilingual search
@@ -166,10 +167,10 @@ Still excluded unless a future architecture decision says otherwise:
 
 | Item | Notes |
 |------|--------|
-| Pack 02E UI Key Extraction | **COMPLETE locally**; staging smoke **PENDING** (Edit Profile residual) |
-| Pack 02F Canonical Terminology Glossary | **NEXT after 02E staging PASS** |
+| Pack 02E UI Key Extraction | **COMPLETED** + staging **PASS** |
+| Pack 02F Canonical Terminology Glossary | **NEXT** |
 | Pack 02G–02J | Multilingual sequence after 02F |
-| Pack 02B / 02C / 02D staging acceptance | **PASS** |
+| Pack 02B / 02C / 02D / 02E staging acceptance | **PASS** |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
 | Mobile PWA regression | Diagnosis only — not a redesign |
 | Search-engine favicon | Read-only audit first |

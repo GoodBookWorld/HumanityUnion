@@ -37,7 +37,7 @@ Architecture Status: Stable (Initiative-root ADR accepted)
 
 Engineering Status: **Production operational** + staging verification environment
 
-Project Health: **Healthy** (Pack 02B/02C/02D staging PASS; Pack 02E COMPLETE locally — staging smoke PENDING)
+Project Health: **Healthy** (Pack 02B/02C/02D/02E staging PASS)
 
 ---
 
@@ -51,12 +51,12 @@ Project Health: **Healthy** (Pack 02B/02C/02D staging PASS; Pack 02E COMPLETE lo
 | **02B Language Registry** | **COMPLETED** + staging **PASS** |
 | **02C Locale Preference & Runtime** | **COMPLETED** + staging **PASS** |
 | **02D UI i18n Foundation** | **COMPLETED** + staging **PASS** |
-| **02E UI Key Extraction** | **COMPLETE locally** (Tasks 01–06); staging smoke **PENDING** (Edit Profile residual local fix — redeploy/re-smoke) |
-| 02F–02J | Queued (02F NEXT after 02E staging PASS) |
+| **02E UI Key Extraction** | **COMPLETED** + staging **PASS** |
+| 02F–02J | Queued (02F NEXT) |
 
-Live next task: **Pack 02E residual deploy + staging re-smoke**, then **Pack 02F — Canonical Terminology Glossary** — see `project/NEXT_SESSION.md`.
+Live next task: **Pack 02F — Canonical Terminology Glossary** — see `project/NEXT_SESSION.md`.
 
-Last closed product Pack with staging PASS: **02D**. Pack **02E** COMPLETE locally; staging PASS not claimed.
+Last closed product Pack with staging PASS: **02E**.
 
 ---
 
@@ -71,6 +71,7 @@ Last closed product Pack with staging PASS: **02D**. Pack **02E** COMPLETE local
 - Production Completion Pack 02B — COMPLETED + staging PASS
 - Production Completion Pack 02C — COMPLETED + staging PASS
 - Production Completion Pack 02D — COMPLETED + staging PASS
+- Production Completion Pack 02E — COMPLETED + staging PASS
 
 ---
 
@@ -87,9 +88,8 @@ Do not present superseded Activity-root ADR-002 as current architecture.
 
 # Open Issues (summary)
 
-- Pack 02E staging smoke PENDING (NEXT: residual Edit Profile deploy + re-smoke)
-- Pack 02F — Canonical Terminology Glossary (after 02E staging PASS)
-- Pack 02B/02C/02D staging acceptance PASS
+- Pack 02F — Canonical Terminology Glossary (NEXT)
+- Pack 02B/02C/02D/02E staging acceptance PASS
 - Production bootstrap Initiative deletion (separate production-safe procedure; staging cleanup refuses production)
 - Mobile PWA regression diagnosis (not redesign)
 - Favicon / crawler metadata read-only audit
