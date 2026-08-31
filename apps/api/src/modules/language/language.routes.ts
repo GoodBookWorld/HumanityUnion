@@ -1,7 +1,7 @@
 import { Router, type Response } from "express";
 
 import type { ContentTranslationSourceKind } from "@hu/types";
-import { isPriorityLanguageCode, normalizeLanguageCode } from "@hu/types";
+import { normalizeLanguageCode } from "@hu/types";
 
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { authenticatedWorkspaceWriteMiddleware } from "../auth/auth-workspace-gate.js";
@@ -11,7 +11,10 @@ import {
   loadTranslatableSource,
   resolvePublicTranslatedContent,
 } from "./content-translation.service.js";
-import { PRIORITY_LANGUAGE_CATALOG } from "./language-catalog.js";
+import {
+  assertEnabledSelectableLocale,
+  listEnabledSelectableLanguages,
+} from "./language-registry-runtime.js";
 import { translationProviderPublicErrorMessage } from "./resolve-translation-provider.js";
 import { TranslationProviderError } from "./translation.config.js";
 import { translateDraft } from "./translate-draft.js";
@@ -62,8 +65,13 @@ function parseSourceKind(value: unknown): ContentTranslationSourceKind | null {
     : null;
 }
 
-languageRouter.get("/languages", (_req, res) => {
-  res.json(createSuccessResponse(PRIORITY_LANGUAGE_CATALOG, "Priority languages loaded."));
+languageRouter.get("/languages", async (_req, res) => {
+  try {
+    const languages = await listEnabledSelectableLanguages();
+    res.json(createSuccessResponse(languages, "Priority languages loaded."));
+  } catch (error) {
+    handleTranslationError(res, error);
+  }
 });
 
 /**
@@ -110,15 +118,16 @@ languageRouter.post(
     const sourceKind = parseSourceKind(req.body?.sourceKind);
     const sourceRecordId =
       typeof req.body?.sourceRecordId === "string" ? req.body.sourceRecordId.trim() : "";
-    const targetLanguage = normalizeLanguageCode(req.body?.targetLanguage);
-
-    if (!sourceKind || sourceKind === "lifecycle_stage" || !sourceRecordId) {
-      res.status(400).json(failure("sourceKind and sourceRecordId are required."));
+    let targetLanguage: string;
+    try {
+      targetLanguage = await assertEnabledSelectableLocale(req.body?.targetLanguage);
+    } catch (error) {
+      handleTranslationError(res, error);
       return;
     }
 
-    if (!isPriorityLanguageCode(targetLanguage)) {
-      res.status(400).json(failure("Unsupported target language."));
+    if (!sourceKind || sourceKind === "lifecycle_stage" || !sourceRecordId) {
+      res.status(400).json(failure("sourceKind and sourceRecordId are required."));
       return;
     }
 
@@ -171,7 +180,6 @@ languageRouter.post(
     const sourceVersion =
       typeof req.body?.sourceVersion === "string" ? req.body.sourceVersion.trim() : "draft";
     const sourceLanguage = normalizeLanguageCode(req.body?.sourceLanguage);
-    const targetLanguage = normalizeLanguageCode(req.body?.targetLanguage);
     const draftContent = req.body?.draftContent;
     const initiativeId =
       typeof req.body?.initiativeId === "string" ? req.body.initiativeId.trim() : undefined;
@@ -181,8 +189,11 @@ languageRouter.post(
       return;
     }
 
-    if (!isPriorityLanguageCode(targetLanguage)) {
-      res.status(400).json(failure("Unsupported target language."));
+    let targetLanguage: string;
+    try {
+      targetLanguage = await assertEnabledSelectableLocale(req.body?.targetLanguage);
+    } catch (error) {
+      handleTranslationError(res, error);
       return;
     }
 

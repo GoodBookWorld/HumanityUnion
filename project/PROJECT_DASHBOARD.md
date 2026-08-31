@@ -4,7 +4,7 @@ Humanity Union
 
 Engineering Command Center
 
-Version 1.2
+Version 2.0
 
 ---
 
@@ -20,138 +20,109 @@ Recover in minutes.
 
 # AI Recovery Entry
 
-New ChatGPT / AI architect sessions start here:
+New AI / engineering sessions:
 
-`architecture/recovery/chat-agent/README.md`
-
-Paste prompt: `architecture/recovery/chat-agent/NEW_CHAT_RECOVERY_PROMPT.md`
-
-Live handoff (canonical next task): `project/NEXT_SESSION.md`
+1. **Primary handoff:** `project/NEXT_SESSION.md` ← start here
+2. Recovery kit: `architecture/recovery/chat-agent/README.md`
+3. Paste prompt: `architecture/recovery/chat-agent/NEW_CHAT_RECOVERY_PROMPT.md`
+4. Durable state: `project/PROJECT_STATE.md`
 
 ---
 
 # Current Development Status
 
-Platform Version:
+Platform Version: **4.0**
 
-4.0+
+Architecture Status: Stable (Initiative-root ADR accepted)
 
-Architecture Status:
+Engineering Status: **Production operational** + staging verification environment
 
-Stable (Initiative-root ADR accepted; see `architecture/recovery/RECOVERY_STATUS.md`)
-
-Engineering Status:
-
-Operational on **staging**
-
-Project Health:
-
-**Healthy** — Mongo incident remediated; Pack 01 hardening complete. Phase 05 local (ready to land).
-
-Primary engineering branch:
-
-`staging`
+Project Health: **Healthy** (Pack 01 diagnostics verified on staging; Pack 02B Language Registry complete; Pack 02C next)
 
 ---
 
 # Current Focus
 
-**Next product action:** finalize/commit/deploy Lifecycle Finalization Phase 05
+**Production Completion Pack 02 — Multilingual Platform Architecture**
 
-Last product milestone completed in code (not deployed):
+| Step | Status |
+|------|--------|
+| 02A Architecture Audit | COMPLETED |
+| **02B Language Registry** | **COMPLETED** |
+| **02C Locale Preference & Runtime** | **NEXT** |
+| 02D–02J | Queued |
 
-INITIATIVE LIFECYCLE FINALIZATION — PHASE 05
+Live next task: Pack 02C — see `project/NEXT_SESSION.md`.
 
-`architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_PHASE_05_REPORT_v1.0.md`
-
-Infra (complete): Mongo Pack 01 — `architecture/recovery/MONGODB_TEST_ISOLATION_HARDENING_PACK_01_REPORT_v1.0.md`
-
-Live next task: Phase 05 land → Phase 06 — see `NEXT_SESSION.md`.
+Last closed product Pack track: Production Completion **Pack 02B**.
 
 ---
 
-# Completed Milestones (Capability foundation)
+# Completed Milestones (high level)
 
-Capability 01
-
-✓ Epic 01 — Authentication
-
-✓ Epic 02 — Member Profile
-
-✓ Epic 03 — Member Preferences
-
-Capability 02
-
-✓ Epic 01 — Initiative Foundation
-
-✓ Epic 02 — Collaborative Analysis
-
-✓ Epic 03 — Community Poll (Collective Decision Framework)
+- Capability 01 — Authentication, Member Profile, Member Preferences
+- Capability 02 — Initiative foundation + collaborative decision stack (and subsequent lifecycle stages in repo)
+- Historical staging recovery Packs 01–05 — CLOSED
+- Production identity / blog / initiative migration tracks — COMPLETED
+- Production Completion Pack 01 / 01.1 — COMPLETED
+- Production Completion Pack 02A — COMPLETED
+- Production Completion Pack 02B — COMPLETED
 
 ---
 
 # Architecture protections (pointers)
 
-Normative:
-
 - `architecture/decisions/ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0.md`
-- `architecture/DEVELOPMENT_BASELINE.md`
+- `architecture/DEVELOPMENT_BASELINE.md` (includes **Documentation Gate**)
 - `architecture/lifecycle/LIFECYCLE_STAGE_INTELLIGENCE_MODEL_v1.0.md`
+- `project/architecture/core/LANGUAGE_TRANSLATION_ARCHITECTURE_v1.0.md`
 
 Do not present superseded Activity-root ADR-002 as current architecture.
 
 ---
 
+# Open Issues (summary)
+
+- Pack 02C–02J multilingual implementation
+- Production bootstrap Initiative deletion (separate production-safe procedure; staging cleanup refuses production)
+- Mobile PWA regression diagnosis (not redesign)
+- Favicon / crawler metadata read-only audit
+
+---
+
 # Repository
 
-Branch:
-
-`staging` (tracks `origin/staging`)
-
-Command center rule:
-
 Live state must match git/operator-verified facts. Prefer `NEXT_SESSION.md` for the immediate objective.
+
+Never commit `production-admin-source.json` or other secret/private manifests.
 
 ---
 
 # Engineering Standards
 
-Development follows:
-
-- Blueprint
-- Architectural Principles
-- Engineering Methodology
-- Domain First
-- Stable Domains
-- Progressive Bootstrap
-- Documentation Synchronization
-- One Guide / one Pack = one engineering cycle
-- Chat Agent Continuity maintenance rule (see `architecture/recovery/chat-agent/README.md` and `.cursor/rules.md`)
+- Blueprint / ADRs / Engineering Methodology
+- Domain First; Stable Domains; Progressive Bootstrap
+- **Documentation Gate** before Pack CLOSED
+- Chat Agent Continuity (`.cursor/rules.md`, chat-agent README)
 
 ---
 
 # Recovery
 
 Entry: `architecture/recovery/chat-agent/README.md`
-
 Protocol: `project/PROJECT_RECOVERY_PROTOCOL.md`
-
-Historical staging recovery (approved Packs 01–05): **CLOSED** — see `PROJECT_STATE.md`.
+Historical staging recovery (Packs 01–05): **CLOSED** — see `PROJECT_STATE.md`.
 
 ---
 
 # Next Session
 
-Open:
-
-`project/NEXT_SESSION.md`
+Open: `project/NEXT_SESSION.md`
 
 ---
 
 # Dashboard Rule
 
-This document must always answer one question:
-
-"Where is the project right now?"
+This document must always answer: **"Where is the project right now?"**
 
 Update after Packs when capability/Pack status actually changed. Always keep `NEXT_SESSION.md` current before reporting COMPLETE.

@@ -3,13 +3,10 @@ import type {
   ParticipantLanguageContext,
   TranslationDisplayPreference,
 } from "@hu/types";
-import {
-  DEFAULT_PLATFORM_LANGUAGE,
-  isTranslationDisplayPreference,
-  normalizeLanguageCode,
-} from "@hu/types";
+import { DEFAULT_PLATFORM_LANGUAGE, isTranslationDisplayPreference } from "@hu/types";
 
 import { getPreferencesByMemberId } from "../preferences/preferences.store.js";
+import { resolveLocaleWithEnglishFallback } from "./language-registry-runtime.js";
 
 function resolveDisplayPreference(value: string | undefined): TranslationDisplayPreference {
   if (isTranslationDisplayPreference(value)) {
@@ -18,20 +15,22 @@ function resolveDisplayPreference(value: string | undefined): TranslationDisplay
   return "none";
 }
 
-export function buildParticipantLanguageContextFromExperience(
+/**
+ * Build language roles from experience preferences.
+ * Disabled or unknown stored codes fall back to English — they are not treated as selectable.
+ * Interface / reading / writing remain distinct fields.
+ */
+export async function buildParticipantLanguageContextFromExperience(
   experience: ExperiencePreferences | null | undefined,
-): ParticipantLanguageContext {
-  const interfaceLanguage = normalizeLanguageCode(
-    experience?.interfaceLanguage,
-    DEFAULT_PLATFORM_LANGUAGE,
+): Promise<ParticipantLanguageContext> {
+  const interfaceLanguage = await resolveLocaleWithEnglishFallback(
+    experience?.interfaceLanguage ?? DEFAULT_PLATFORM_LANGUAGE,
   );
-  const preferredReadingLanguage = normalizeLanguageCode(
-    experience?.readingLanguages?.[0],
-    interfaceLanguage,
+  const preferredReadingLanguage = await resolveLocaleWithEnglishFallback(
+    experience?.readingLanguages?.[0] ?? interfaceLanguage,
   );
-  const writingLanguage = normalizeLanguageCode(
-    experience?.writingLanguages?.[0],
-    interfaceLanguage,
+  const writingLanguage = await resolveLocaleWithEnglishFallback(
+    experience?.writingLanguages?.[0] ?? interfaceLanguage,
   );
 
   return {
@@ -43,9 +42,9 @@ export function buildParticipantLanguageContextFromExperience(
   };
 }
 
-export function resolveParticipantLanguageContext(
+export async function resolveParticipantLanguageContext(
   participantId: string | undefined,
-): ParticipantLanguageContext {
+): Promise<ParticipantLanguageContext> {
   if (!participantId) {
     return buildParticipantLanguageContextFromExperience(null);
   }

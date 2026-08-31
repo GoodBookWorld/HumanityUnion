@@ -6,7 +6,6 @@ import type {
   MemberProfileVisibility,
   NotificationFrequency,
 } from "@hu/types";
-import { PRIORITY_LANGUAGE_CODES } from "@hu/types";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { useEffect, useState } from "react";
 
@@ -15,6 +14,10 @@ import { Button } from "../../../design-system/components/Button";
 import { ApiUnavailableState } from "../../../design-system/components/ApiUnavailableState";
 import { isAuthenticationRequiredError, isApiUnavailableError } from "../../../lib/api-client";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import {
+  listPriorityLanguages,
+  type PriorityLanguageOption,
+} from "../../language/translation-api";
 import { getMyPreferences, updateMyPreferences } from "../preferences-api";
 
 import { SurfaceAssistantEntry } from "../../humanity-union-assistant";
@@ -70,6 +73,7 @@ function toggleValue<T extends string>(values: T[], value: T, checked: boolean):
 
 export function PreferencesWorkspace() {
   const [preferences, setPreferences] = useState<MemberPreferences | null>(null);
+  const [languageOptions, setLanguageOptions] = useState<readonly PriorityLanguageOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
@@ -81,10 +85,11 @@ export function PreferencesWorkspace() {
   useEffect(() => {
     let cancelled = false;
 
-    void getMyPreferences()
-      .then((loaded) => {
+    void Promise.all([getMyPreferences(), listPriorityLanguages()])
+      .then(([loaded, languages]) => {
         if (!cancelled) {
           setPreferences(loaded);
+          setLanguageOptions(languages);
           setError(null);
         }
       })
@@ -195,7 +200,13 @@ export function PreferencesWorkspace() {
         <label className="preferences-workspace__field">
           <span>Interface Language</span>
           <select
-            value={preferences.experiencePreferences.interfaceLanguage}
+            value={
+              languageOptions.some(
+                (option) => option.code === preferences.experiencePreferences.interfaceLanguage,
+              )
+                ? preferences.experiencePreferences.interfaceLanguage
+                : (languageOptions[0]?.code ?? "en")
+            }
             onChange={(event) =>
               setPreferences({
                 ...preferences,
@@ -206,9 +217,9 @@ export function PreferencesWorkspace() {
               })
             }
           >
-            {PRIORITY_LANGUAGE_CODES.map((code) => (
-              <option key={code} value={code}>
-                {code}
+            {languageOptions.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.nativeName} ({option.code})
               </option>
             ))}
           </select>
@@ -216,7 +227,14 @@ export function PreferencesWorkspace() {
         <label className="preferences-workspace__field">
           <span>Preferred Reading Language</span>
           <select
-            value={preferences.experiencePreferences.readingLanguages[0] ?? "en"}
+            value={
+              languageOptions.some(
+                (option) =>
+                  option.code === (preferences.experiencePreferences.readingLanguages[0] ?? "en"),
+              )
+                ? (preferences.experiencePreferences.readingLanguages[0] ?? "en")
+                : (languageOptions[0]?.code ?? "en")
+            }
             onChange={(event) =>
               setPreferences({
                 ...preferences,
@@ -227,9 +245,9 @@ export function PreferencesWorkspace() {
               })
             }
           >
-            {PRIORITY_LANGUAGE_CODES.map((code) => (
-              <option key={code} value={code}>
-                {code}
+            {languageOptions.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.nativeName} ({option.code})
               </option>
             ))}
           </select>

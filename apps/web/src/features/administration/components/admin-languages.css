@@ -1,0 +1,82 @@
+.admin-languages__lede {
+  margin: 0 0 1rem;
+  max-width: 48rem;
+}
+
+.admin-languages__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.admin-languages__table-wrap {
+  overflow-x: auto;
+}
+
+.admin-languages-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.admin-languages-table th,
+.admin-languages-table td {
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--hu-border, #d6d6d6);
+  white-space: nowrap;
+}
+
+.admin-languages-table th {
+  font-weight: 600;
+}
+
+.admin-languages__row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.admin-languages__form {
+  margin: 1rem 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--hu-border, #d6d6d6);
+  border-radius: 0.35rem;
+}
+
+.admin-languages__form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.admin-languages__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+}
+
+.admin-languages__form-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-languages__form-note {
+  margin: 0.75rem 0 0;
+}
+
+.admin-languages__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.admin-languages__readonly {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}

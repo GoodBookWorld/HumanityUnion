@@ -171,7 +171,7 @@ export async function getHumanityUnionAssistantSessionContext(
   const providerReady =
     config.provider === "deterministic" || Boolean(config.geminiApiKey);
   const displayName = identity.displayName?.trim() || "Participant";
-  const languageContext = resolveParticipantLanguageContext(identity.participantId);
+  const languageContext = await resolveParticipantLanguageContext(identity.participantId);
 
   const initiativeId: string | null = query.initiativeId?.trim() || null;
   let initiativeTitle: string | null = null;
@@ -572,7 +572,7 @@ export async function requestHumanityUnionAssistantAssist(
       );
     }
 
-    const languageContext = resolveParticipantLanguageContext(identity.participantId);
+    const languageContext = await resolveParticipantLanguageContext(identity.participantId);
     const sourceContentLanguage = initiativeId
       ? normalizeLanguageCode(
           getInitiativeById(initiativeId)?.metadata?.language,

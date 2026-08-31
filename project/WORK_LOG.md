@@ -56,6 +56,129 @@ Next Objective:
 
 # Entries
 
+## 2026-08-30 (Production Completion Pack 02B — Language Registry COMPLETE)
+
+Completed:
+
+- Admin → Languages UI (`/admin/languages`) for create/edit/enable/disable via Task 04 APIs.
+- Integration path verified: enable `uk` → public + `/translations/languages` → prefs + Translate Draft.
+- Removed obsolete web re-export of `PRIORITY_LANGUAGE_CODES` from picker barrels.
+- Pack 02B acceptance criteria met; next Pack = **02C Locale Preference & Runtime**.
+
+---
+
+## 2026-08-30 (Production Completion Pack 02B Task 04 — Admin write control plane)
+
+Completed:
+
+- Admin `POST /api/v1/admin/languages` and `PATCH /api/v1/admin/languages/:languageId` (no DELETE; no providerMappings).
+- Safety invariants: English cannot be disabled; fallback must be enabled existing locale; self-fallback only for `en`; disable blocked when enabled dependents use locale as fallback; feature flags require `enabled=true`; canonical locale immutable.
+- Admin audit events for create / update / enable / disable (no secrets).
+- Focused unit tests. No Admin Languages UI.
+
+Next Objective:
+
+Pack 02B Task 05 — Admin Languages UI / final 02B integration (still do not mark Pack 02B CLOSED).
+
+---
+
+## 2026-08-30 (Production Completion Pack 02B Task 03 — Registry consumer cutover)
+
+Completed:
+
+- Canonical `language-registry-runtime` resolver (enabled-only selectable languages; alias→canonical; English fallback for runtime context).
+- Migrated `/translations/languages`, preference language validation (interface/reading/writing), Translate Draft + content-translation generate targets.
+- Web Preferences + Translate Draft pickers load via registry-backed `listPriorityLanguages()`.
+- `PRIORITY_LANGUAGE_CATALOG` retained as legacy reference only; not used by migrated runtime consumers.
+- Disabled seed locales (`uk`, `zh-Hant`, `ar`) remain non-selectable until Admin enablement (Task 04).
+
+Next Objective:
+
+Pack 02B Task 04 — Admin Language Registry write/control-plane (still do not mark Pack 02B CLOSED).
+
+---
+
+## 2026-08-30 (Production Completion Pack 02B Task 02 — Bootstrap + read APIs)
+
+Completed:
+
+- Wired `ensureLanguageRegistrySeeded` into `bootstrapMongoPersistence` (after indexes; idempotent; no overwrite).
+- Strengthened locale↔alias integrity across create/update (cross-collisions, own-locale alias, unique normalized aliases).
+- Public `GET /api/v1/languages` — enabled only; public-safe fields; deterministic order.
+- Admin `GET /api/v1/admin/languages` — all records; canonical Admin auth; no `providerMappings`; deterministic order.
+- Focused unit tests. No consumer migration; no POST/PATCH.
+
+Next Objective:
+
+Pack 02B Task 03 — controlled migration off `PRIORITY_LANGUAGE_CATALOG` / `/translations/languages` (still do not mark Pack 02B CLOSED).
+
+---
+
+## 2026-08-30 (Production Completion Pack 02B Task 01 — Language Registry foundation)
+
+Completed:
+
+- Canonical `LanguageRegistryRecord` types in `@hu/types`.
+- Mongo collection `language_registry` + unique indexes; repository list/get/resolve/create/update; memory adapter for tests.
+- Idempotent seeds for `en`, `uk`, `zh-Hant` (aliases `zh-TW`/`zh-HK`), `ar` (RTL). Does not overwrite existing rows.
+- Focused unit tests passing. No Admin/public routes; runtime catalog unchanged.
+
+Next Objective:
+
+Pack 02B Task 02 — Admin/public Language Registry APIs (still do not mark Pack 02B CLOSED).
+
+---
+
+## 2026-08-30 (Documentation Recovery & Canonical Handoff Update)
+
+Completed:
+
+- Aligned NEXT_SESSION, PROJECT_STATE, PROJECT_DASHBOARD, WORK_LOG, chat-agent recovery kit, and Development Baseline with verified production + Pack 01/01.1 + Pack 02A state.
+- Established Documentation Gate as a permanent Pack-closure rule.
+- Recorded Pack 02B as the exact next implementation task.
+
+Architecture:
+
+- Confirmed document hierarchy: NEXT_SESSION (primary handoff) → PROJECT_STATE → PROJECT_DASHBOARD → WORK_LOG; ADRs/Blueprint normative.
+
+Next Objective:
+
+Production Completion Pack 02B — Language Registry API / canonical registry foundation.
+
+---
+
+## 2026-08-30 (Production Completion Pack 02A — Multilingual Architecture Audit)
+
+Completed:
+
+- READ-ONLY audit of language/translation/search/SEO/Admin/outbox foundations.
+- Approved Pack 02B–02J sequence; verification locales `en`, `uk`, `zh-Hant`, `ar`.
+- Summary: `architecture/recovery/PRODUCTION_COMPLETION_PACK_02A_MULTILINGUAL_AUDIT_v1.0.md`.
+
+Architecture:
+
+- Admin-managed Language Registry direction; English fallback; translations never overwrite canonical source; SEO readiness independent of language enablement.
+
+Next Objective:
+
+Pack 02B Language Registry API (then documentation gate).
+
+---
+
+## 2026-08-30 (Production Completion Pack 01 / 01.1)
+
+Completed:
+
+- Pack 01 production completion surfaces (Admin diagnostics health, Support/ACTUC/country/account/editor refinements, config checklist).
+- Pack 01.1: staging bootstrap Initiative cleanup + seed gate; lifecycle reconciliation diagnostic → Not available (neutral); staging Outbox failed-record recovery operator.
+- Staging Admin Diagnostics verified Healthy after cleanup/API restart.
+
+Next Objective:
+
+Pack 02 multilingual architecture (02A audit → 02B registry).
+
+---
+
 ## 2026-08-17 (Lifecycle Finalization Phase 05A)
 
 Completed:

@@ -113,6 +113,17 @@ describe("Language Architecture Pack 01", () => {
   });
 
   it("translateDraft creates a working translation without mutating the original draft", async () => {
+    const {
+      ensureLanguageRegistrySeeded,
+      resetLanguageRegistryStoreForTests,
+      setLanguageRegistryForceMemoryForTests,
+      updateLanguageRegistryRecord,
+    } = await import("../../../src/modules/language/index.js");
+    setLanguageRegistryForceMemoryForTests(true);
+    resetLanguageRegistryStoreForTests();
+    await ensureLanguageRegistrySeeded();
+    await updateLanguageRegistryRecord("lang-uk", { enabled: true });
+
     const draft = { title: "Draft title", summary: "Draft summary" };
     const result = await translateDraft({
       sourceRecordId: "draft-1",
@@ -129,6 +140,9 @@ describe("Language Architecture Pack 01", () => {
     assert.ok(translated && typeof translated === "object");
     assert.match(String((translated as { title?: string }).title), /\[uk\]/);
     assert.equal(draft.title, "Draft title");
+
+    resetLanguageRegistryStoreForTests();
+    setLanguageRegistryForceMemoryForTests(false);
   });
 
   it("builds version-aware translation cache keys", () => {

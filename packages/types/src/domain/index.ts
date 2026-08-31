@@ -86,6 +86,28 @@ export {
   normalizeLanguageCode,
 } from "./language.js";
 export type {
+  LanguageProviderMappings,
+  LanguageRegistryAdmin,
+  LanguageRegistryAdminListResponse,
+  LanguageRegistryCreateInput,
+  LanguageRegistryId,
+  LanguageRegistryLocale,
+  LanguageRegistryPublic,
+  LanguageRegistryPublicListResponse,
+  LanguageRegistryRecord,
+  LanguageRegistryUpdateInput,
+  LanguageTextDirection,
+  LanguageUiTranslationStatus,
+} from "./language-registry.js";
+export {
+  LANGUAGE_REGISTRY_DEFAULT_FALLBACK_LOCALE,
+  LANGUAGE_UI_TRANSLATION_STATUSES,
+  deriveLanguageCodeFromLocale,
+  isLanguageTextDirection,
+  isLanguageUiTranslationStatus,
+  normalizeLanguageRegistryLocaleKey,
+} from "./language-registry.js";
+export type {
   ContentTranslationSourceKind,
   ResolvedContentPresentationMode,
   ResolvedTranslatedDisplay,

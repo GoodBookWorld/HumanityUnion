@@ -26,6 +26,10 @@ import {
 } from "./persistence/content-translation.repository.js";
 import { resolveParticipantLanguageContext } from "./participant-language-context.js";
 import {
+  assertEnabledSelectableLocale,
+  resolveLocaleWithEnglishFallback,
+} from "./language-registry-runtime.js";
+import {
   resolveStructuredTranslatedDisplay,
 } from "./resolve-translated-display.js";
 import { resolveTranslationProvider } from "./resolve-translation-provider.js";
@@ -187,7 +191,7 @@ export async function getOrCreateContentTranslation(input: {
     liveSourceVersion: source.sourceVersion,
   });
 
-  const targetLanguage = normalizeLanguageCode(input.targetLanguage);
+  const targetLanguage = await assertEnabledSelectableLocale(input.targetLanguage);
   if (targetLanguage === source.sourceLanguage) {
     return { source, translation: null, generated: false };
   }
@@ -268,8 +272,8 @@ export async function resolvePublicTranslatedContent(input: {
   translationPreference?: TranslationDisplayPreference;
   generateIfMissing?: boolean;
 }): Promise<ResolvedTranslatedDisplay<Record<string, string>>> {
-  const language = resolveParticipantLanguageContext(input.participantId);
-  const preferredReadingLanguage = normalizeLanguageCode(
+  const language = await resolveParticipantLanguageContext(input.participantId);
+  const preferredReadingLanguage = await resolveLocaleWithEnglishFallback(
     input.preferredReadingLanguage ?? language.preferredReadingLanguage,
   );
   const translationPreference =

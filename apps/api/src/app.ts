@@ -213,6 +213,10 @@ import {
   publicPlatformSocialAccountsRouter,
 } from "./modules/platform-social-accounts/index.js";
 import {
+  adminLanguagesRouter,
+  publicLanguagesRouter,
+} from "./modules/language/language-registry/index.js";
+import {
   adminSeoPageOverridesRouter,
   publicSeoPageOverridesRouter,
 } from "./modules/seo-page-overrides/index.js";
@@ -266,6 +270,8 @@ app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/platform", closedBetaRouter);
 app.use("/api/v1/platform/social-accounts", publicPlatformSocialAccountsRouter);
 app.use("/api/v1/platform/support-links", publicPlatformSupportLinksRouter);
+app.use("/api/v1/languages", publicLanguagesRouter);
+app.use("/api/v1/admin/languages", adminLanguagesRouter);
 app.use("/api/v1/admin/platform/readiness", adminPlatformReadinessRouter);
 app.use("/api/v1/admin/platform/social-accounts", adminPlatformSocialAccountsRouter);
 app.use("/api/v1/admin/platform/support-links", adminPlatformSupportLinksRouter);

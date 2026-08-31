@@ -1,11 +1,14 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
-import { PRIORITY_LANGUAGE_CODES } from "@hu/types";
 
-import { requestTranslateDraft } from "../translation-api";
+import {
+  listPriorityLanguages,
+  requestTranslateDraft,
+  type PriorityLanguageOption,
+} from "../translation-api";
 
 import "./translate-draft-control.css";
 
@@ -22,6 +25,7 @@ export interface TranslateDraftControlProps {
 
 /**
  * Explicit Translate Draft control — never silently mutates the canonical draft.
+ * Target options come from registry-backed GET /translations/languages (enabled only).
  */
 export function TranslateDraftControl({
   sourceKind,
@@ -33,13 +37,39 @@ export function TranslateDraftControl({
   onApplyWorkingTranslation,
 }: TranslateDraftControlProps) {
   const statusId = useId();
-  const [targetLanguage, setTargetLanguage] = useState<LanguageCode>("uk");
+  const [languageOptions, setLanguageOptions] = useState<readonly PriorityLanguageOption[]>([]);
+  const [targetLanguage, setTargetLanguage] = useState<LanguageCode>("en");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("");
   const [showOriginal, setShowOriginal] = useState(false);
   const [workingText, setWorkingText] = useState<string | null>(null);
   const [workingFields, setWorkingFields] = useState<Record<string, string> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void listPriorityLanguages()
+      .then((languages) => {
+        if (cancelled) {
+          return;
+        }
+        setLanguageOptions(languages);
+        const first = languages[0]?.code;
+        if (first) {
+          setTargetLanguage((current) =>
+            languages.some((row) => row.code === current) ? current : first,
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLanguageOptions([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleTranslate() {
     setBusy(true);
@@ -101,17 +131,21 @@ export function TranslateDraftControl({
           <span>Target language</span>
           <select
             value={targetLanguage}
-            disabled={busy}
+            disabled={busy || languageOptions.length === 0}
             onChange={(event) => setTargetLanguage(event.target.value as LanguageCode)}
           >
-            {PRIORITY_LANGUAGE_CODES.map((code) => (
-              <option key={code} value={code}>
-                {code}
+            {languageOptions.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.nativeName} ({option.code})
               </option>
             ))}
           </select>
         </label>
-        <button type="button" disabled={busy} onClick={() => void handleTranslate()}>
+        <button
+          type="button"
+          disabled={busy || languageOptions.length === 0}
+          onClick={() => void handleTranslate()}
+        >
           {busy ? "Translating…" : "Translate Draft"}
         </button>
       </div>
@@ -129,33 +163,20 @@ export function TranslateDraftControl({
         <div className="hu-translate-draft__result">
           <div className="hu-translate-draft__result-actions">
             <button type="button" onClick={() => setShowOriginal((value) => !value)}>
-              {showOriginal ? "View Translation" : "View Original"}
+              {showOriginal ? "Show translation" : "Show original"}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                void navigator.clipboard?.writeText(workingText);
-                setStatus("Translation copied.");
-              }}
-            >
-              Copy Translation
-            </button>
-            {onApplyWorkingTranslation && workingFields ? (
+            {workingFields && onApplyWorkingTranslation ? (
               <button
                 type="button"
-                onClick={() => {
-                  onApplyWorkingTranslation(workingFields);
-                  setStatus("Working translation applied locally. Save when ready.");
-                }}
+                onClick={() => onApplyWorkingTranslation(workingFields)}
               >
-                Use as Working Translation
+                Apply to draft fields
               </button>
             ) : null}
           </div>
-          <pre className="hu-translate-draft__preview" lang={showOriginal ? sourceLanguage : targetLanguage}>
+          <pre className="hu-translate-draft__preview">
             {showOriginal ? originalPreview : workingText}
           </pre>
-          <p className="hu-translate-draft__machine">Machine translated</p>
         </div>
       ) : null}
     </section>

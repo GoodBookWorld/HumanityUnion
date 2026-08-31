@@ -106,6 +106,8 @@ export const MONGO_COLLECTIONS = {
   initiativeCivicArchiveVersions: "initiative_civic_archive_versions",
   petitionVisitorSignals: "petition_visitor_signals",
   contentTranslations: "content_translations",
+  /** Pack 02B — Admin-managed Language Registry. */
+  languageRegistry: "language_registry",
   blogPosts: "blog_posts",
   blogCategories: "blog_categories",
   blogSubscribers: "blog_subscribers",

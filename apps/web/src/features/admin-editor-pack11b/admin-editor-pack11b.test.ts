@@ -180,8 +180,10 @@ describe("Pack 11B — regression anchors", () => {
         "media-resources",
         "country-people",
         "seo",
+        "diagnostics",
         "beta-access",
         "platform",
+        "languages",
         "audit",
       ],
     );

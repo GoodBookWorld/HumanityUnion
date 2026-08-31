@@ -30,6 +30,7 @@ import { hydrateInitiativePublicImpactLifecycleDraftMongoPersistence } from "../
 import { hydrateInitiativePublicImpactReportMongoPersistence } from "../../modules/initiative-public-impact-lifecycle/initiative-public-impact-report.store.js";
 import { hydrateInitiativeVersionRevisionMongoPersistence } from "../../modules/initiative-version-revision/persistence/initiative-version-revision-mongo.persistence.js";
 import { hydrateInitiativeMongoPersistence, flushInitiativeMongoPersistence } from "../../modules/initiatives/persistence/initiative-mongo.persistence.js";
+import { ensureLanguageRegistrySeeded } from "../../modules/language/language-registry/index.js";
 import { hydrateOfficialResponseMongoPersistence } from "../../modules/official-response/persistence/official-response-mongo.persistence.js";
 import { hydrateParticipationAreaMongoPersistence } from "../../modules/participation-area/persistence/participation-area-mongo.persistence.js";
 import { hydratePublicCivicArchiveMongoPersistence } from "../../modules/public-civic-archive/persistence/public-civic-archive-mongo.persistence.js";
@@ -57,6 +58,9 @@ export async function bootstrapMongoPersistence(): Promise<void> {
   assertMongoConfigured();
   await connectMongoClient();
   await ensureMongoIndexes();
+
+  // Pack 02B — idempotent Language Registry seed (never overwrites Admin-modified rows).
+  await ensureLanguageRegistrySeeded();
 
   await Promise.all([
     hydrateInitiativeMongoPersistence(),

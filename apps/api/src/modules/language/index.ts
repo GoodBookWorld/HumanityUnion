@@ -6,8 +6,17 @@
  * Browser Google Translate is convenience only — not the source of truth.
  */
 
+/** Legacy catalog — seed/migration compatibility only; not for runtime pickers. */
 export { PRIORITY_LANGUAGE_CATALOG, listPriorityLanguageCodes, resolveSafeDefaultLanguage } from "./language-catalog.js";
 export type { PriorityLanguageDescriptor } from "./language-catalog.js";
+export {
+  listEnabledSelectableLanguages,
+  resolveEnabledCanonicalLocale,
+  assertEnabledSelectableLocale,
+  assertEnabledPreferenceLocale,
+  resolveLocaleWithEnglishFallback,
+} from "./language-registry-runtime.js";
+export type { SelectableLanguageDescriptor } from "./language-registry-runtime.js";
 export type {
   TranslationProvider,
   TranslationProviderRequest,
@@ -50,3 +59,32 @@ export {
 export { resetContentTranslationMemoryStoreForTests } from "./persistence/content-translation.memory.store.js";
 export { clearTranslationRateLimitBucketsForTests } from "./translation-rate-limit.js";
 export { default as languageRouter } from "./language.routes.js";
+export {
+  LANGUAGE_REGISTRY_SEED_DEFINITIONS,
+  buildLanguageRegistrySeedRecord,
+  createLanguageRegistryRecord,
+  ensureLanguageRegistrySeeded,
+  getLanguageRegistryByLocale,
+  listLanguageRegistry,
+  listAdminLanguages,
+  listPublicLanguages,
+  createAdminLanguage,
+  updateAdminLanguage,
+  setLanguageRegistryAdminAssertOverrideForTests,
+  resetLanguageRegistryStoreForTests,
+  resolveLanguageRegistryLocale,
+  setLanguageRegistryForceMemoryForTests,
+  updateLanguageRegistryRecord,
+  assertLanguageRegistryLocaleIntegrity,
+  sortLanguageRegistryRecords,
+  LanguageRegistryConflictError,
+  LanguageRegistryError,
+  LanguageRegistryNotFoundError,
+  LanguageRegistryPersistenceError,
+  LanguageRegistryValidationError,
+} from "./language-registry/index.js";
+export type { LanguageRegistrySeedResult } from "./language-registry/index.js";
+export {
+  publicLanguagesRouter,
+  adminLanguagesRouter,
+} from "./language-registry/index.js";

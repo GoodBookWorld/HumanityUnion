@@ -1,6 +1,9 @@
+/**
+ * Web language helpers.
+ * Selectable language lists must come from registry-backed `listPriorityLanguages()`.
+ */
 import {
   DEFAULT_PLATFORM_LANGUAGE,
-  PRIORITY_LANGUAGE_CODES,
   RTL_LANGUAGE_CODES,
   isRtlLanguageCode,
   normalizeLanguageCode,
@@ -10,7 +13,6 @@ import {
 
 export {
   DEFAULT_PLATFORM_LANGUAGE,
-  PRIORITY_LANGUAGE_CODES,
   RTL_LANGUAGE_CODES,
   isRtlLanguageCode,
   normalizeLanguageCode,

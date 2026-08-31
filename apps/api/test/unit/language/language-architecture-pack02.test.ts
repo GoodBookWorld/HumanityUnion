@@ -11,18 +11,23 @@ import {
   DeterministicTranslationProvider,
   GeminiTranslationProvider,
   clearTranslationRateLimitBucketsForTests,
+  createLanguageRegistryRecord,
+  ensureLanguageRegistrySeeded,
   getOrCreateContentTranslation,
   markTranslationStaleIfSourceChanged,
   resetContentTranslationMemoryStoreForTests,
+  resetLanguageRegistryStoreForTests,
   resetTranslationProviderForTests,
   resolveNotificationTemplate,
   resolvePublicTranslatedContent,
   resolveTranslatedDisplay,
   resolveTranslationConfig,
   resolveTranslationProvider,
+  setLanguageRegistryForceMemoryForTests,
   setTranslationProviderForTests,
   translateDraft,
   TranslationProviderError,
+  updateLanguageRegistryRecord,
 } from "../../../src/modules/language/index.js";
 import { translationRateLimiter } from "../../../src/modules/language/translation-rate-limit.js";
 import {
@@ -60,11 +65,29 @@ function sampleInitiative(): Initiative {
 describe("Language Architecture Pack 02", () => {
   let initiative: Initiative;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetTranslationProviderForTests();
     resetContentTranslationMemoryStoreForTests();
     clearTranslationRateLimitBucketsForTests();
     setTranslationProviderForTests(new DeterministicTranslationProvider());
+    setLanguageRegistryForceMemoryForTests(true);
+    resetLanguageRegistryStoreForTests();
+    await ensureLanguageRegistrySeeded();
+    await updateLanguageRegistryRecord("lang-uk", { enabled: true });
+    await createLanguageRegistryRecord({
+      locale: "fr",
+      englishName: "French",
+      nativeName: "Français",
+      textDirection: "ltr",
+      enabled: true,
+    });
+    await createLanguageRegistryRecord({
+      locale: "es",
+      englishName: "Spanish",
+      nativeName: "Español",
+      textDirection: "ltr",
+      enabled: true,
+    });
     initiative = sampleInitiative();
     createInitiative(initiative);
   });
@@ -74,6 +97,8 @@ describe("Language Architecture Pack 02", () => {
     resetTranslationProviderForTests();
     resetContentTranslationMemoryStoreForTests();
     clearTranslationRateLimitBucketsForTests();
+    resetLanguageRegistryStoreForTests();
+    setLanguageRegistryForceMemoryForTests(false);
   });
 
   it("1–3. GeminiTranslationProvider implements TranslationProvider and stays isolated", () => {

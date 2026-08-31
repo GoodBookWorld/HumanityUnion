@@ -1064,6 +1064,28 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // Production Completion Pack 02B — Language Registry.
+    collectionName: MONGO_COLLECTIONS.languageRegistry,
+    indexes: [
+      {
+        key: { languageId: 1 },
+        unique: true,
+        name: "language_registry_language_id_unique",
+      },
+      {
+        key: { localeKey: 1 },
+        unique: true,
+        name: "language_registry_locale_key_unique",
+      },
+      {
+        // Multikey unique on normalized alias keys (case-insensitive).
+        key: { aliasKeys: 1 },
+        unique: true,
+        name: "language_registry_alias_keys_unique",
+      },
+    ],
+  },
+  {
     // Blog Implementation Pack 02 — publishing domain.
     collectionName: MONGO_COLLECTIONS.blogPosts,
     indexes: [

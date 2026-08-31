@@ -4,62 +4,53 @@ Humanity Union
 
 Project State
 
-Version 1.2
+Version 2.0
 
 ---
 
 # Purpose
 
-This document represents the current engineering state of the Humanity Union platform.
+This document represents the **durable detailed engineering state** of the Humanity Union platform.
 
-It is the authoritative **summary** of platform progress for live work.
-
-It must be updated after every completed Guide or Pack (current-focus / last-completed at minimum).
+It is authoritative for **where the platform is**, not for day-to-day task micro-steps.
 
 Canonical next-task handoff: `project/NEXT_SESSION.md`
+Concise status view: `project/PROJECT_DASHBOARD.md`
+Chronology: `project/WORK_LOG.md`
 AI recovery entry: `architecture/recovery/chat-agent/README.md`
 
 ---
 
 # Platform
 
-Name:
+Name: Humanity Union
 
-Humanity Union
+Development Stage: **Production operational** + staging environment for pre-production verification
 
-Development Stage:
+Architecture Status: Stable — Initiative is the sole canonical civic root (Accepted ADR)
 
-Staging environment active; production cutover not the current focus
+Engineering Status: Operational
 
-Architecture Status:
+Platform Version: **4.0** (Initiative-centric civic architecture)
 
-Stable — Initiative is the sole canonical civic root (Accepted ADR)
-
-Engineering Status:
-
-Operational
-
-Primary branch:
-
-`staging`
-
----
-
-# Current Version
-
-Platform Version:
-
-4.0+ (staging launch-ready baseline + Admin + closed historical recovery scope Packs 01–05)
+Primary engineering branch: follow `git branch --show-current` (repository evidence). Live handoff always in `NEXT_SESSION.md`.
 
 ---
 
 # Current Focus
 
-**Phase 05A lifecycle certification complete** (local). Next: owner staging acceptance, then commit/deploy Phase 05+05A; Phase 06 after that.
+**Production Completion Pack 02 — Multilingual Platform Architecture**
 
-**Last product work:** Phase 05 Participation Journey + Phase 05A certification (local; not committed/deployed)
+| Sub-pack | Status |
+|----------|--------|
+| **02A** Architecture Audit | **COMPLETED** |
+| **02B** Language Registry | **COMPLETED** |
+| **02C** Locale Preference & Runtime | **NEXT** |
+| 02D–02J | Sequenced; not started |
 
-See `project/NEXT_SESSION.md`.
+See `project/NEXT_SESSION.md` for the exact next implementation objective.
+
+Last completed product track: **Production Completion Pack 02B** (Language Registry).
 
 ---
 
@@ -67,11 +58,30 @@ See `project/NEXT_SESSION.md`.
 
 - Initiative sole civic root: `architecture/decisions/ADR-INITIATIVE-CANONICAL-CIVIC-ROOT-v1.0.md`
 - Recovered baseline: `architecture/recovery/RECOVERY_STATUS.md`
-- Development rules: `architecture/DEVELOPMENT_BASELINE.md`
+- Development rules + **Documentation Gate**: `architecture/DEVELOPMENT_BASELINE.md`
 - Lifecycle / Author Mode: `architecture/lifecycle/LIFECYCLE_STAGE_INTELLIGENCE_MODEL_v1.0.md`
+- Language & translation (content vertical slice + Pack 02 direction): `project/architecture/core/LANGUAGE_TRANSLATION_ARCHITECTURE_v1.0.md`
+- Pack 02A audit summary: `architecture/recovery/PRODUCTION_COMPLETION_PACK_02A_MULTILINGUAL_AUDIT_v1.0.md`
 - Forward plan: `architecture/ARCHITECTURE_EVOLUTION_ROADMAP_v2.0.md`
+- ADR index: `architecture/ARCHITECTURE_DECISION_RECORDS.md`
 
 Superseded: ADR-002 (Activity as universal starting object) — historical only.
+
+---
+
+# Production / staging topology (NON-SECRET)
+
+| Concern | State |
+|---------|--------|
+| Production platform | Operational (auth activated; MongoDB; Cloudflare R2 media; email; Stripe membership/badge flows) |
+| Staging | Separate DB / services for verification; do not treat as production |
+| Public registration (production) | Enabled via API `PLATFORM_MODE=production` + `ALLOW_PUBLIC_REGISTRATION=true`; Web `NEXT_PUBLIC_PLATFORM_MODE=production` (rebuild required for Web env) |
+| Indexing | Controlled by Web `NEXT_PUBLIC_PLATFORM_MODE` + site origin; see `docs/operations/production-configuration-checklist-pack01.md` |
+| Secrets | Never document connection strings, API keys, passwords, or private manifests here |
+
+Identity model: **Participant-first**; Member is earned/honorary eligibility (Member Number / Membership / Member Badge present in architecture).
+
+Civic model: **Initiative** is the sole canonical civic root; lifecycle profiles (STANDARD / PUBLIC_CHOICE) select routes through one Lifecycle Engine.
 
 ---
 
@@ -89,83 +99,68 @@ Capability 02
 ✓ Epic 02 Collaborative Analysis
 ✓ Epic 03 Collective Decision Framework
 
+(Further Cap-02 lifecycle stages and public experience packs exist in repository history; see WORK_LOG and capability docs.)
+
 ---
 
 # Recent Pack tracks (repository-verifiable)
 
-**Repository-verifiable** means present in git (modules, tests, docs, commits). Does not by itself prove live staging outcomes.
-
-| Track | Repo evidence (examples) |
-|-------|---------------------------|
-| Admin Foundation Pack 02 | `project/architecture/administration/CANONICAL_CAPABILITY_RESOLVER.md`, admin foundation tests |
-| Admin Console Packs 03–05 | Admin Panel features + `admin-panel-pack05` / initiative visibility tests |
-| Staging Data Migration Packs 01–02 / 02A | `architecture/recovery/STAGING_DATA_MIGRATION_*`, `staging-data-source-v1/`, `apps/api/src/modules/staging-data-migration/` |
-| Staging Media Pack 03 | `architecture/recovery/STAGING_MEDIA_*`, `staging-media-source-v1/`, `apps/api/src/modules/staging-historical-media/` |
-| Staging Reconciliation Packs 04–05 | `staging-reconciliation-source-v1/`, `apps/api/src/modules/staging-reconciliation/`, Pack 05 assessment |
-| Staging baseline | ops doc `project/architecture/operations/STAGING_DEPLOYMENT_VERIFICATION_v1.0.md` |
+| Track | Status |
+|-------|--------|
+| Historical staging recovery Packs 01–05 | **CLOSED** (approved scope) |
+| Production identity / steward / admin bootstrap | Completed in repo history |
+| Production blog migration | Completed in repo history |
+| Production initiative migration | Completed in repo history |
+| Production Completion Pack 01 | **COMPLETED** |
+| Pack 01.1 Diagnostics Cleanup (staging bootstrap + diagnostics semantics) | **COMPLETED** |
+| Staging historical Outbox recovery operator | **COMPLETED** |
+| Production Completion Pack 02A Multilingual Audit | **COMPLETED** |
+| Production Completion Pack 02B Language Registry | **COMPLETED** |
+| Production Completion Pack 02C Locale Preference & Runtime | **NEXT** |
 
 ---
 
 # Historical staging recovery — CLOSED (approved scope)
 
-**Status:** **CLOSED** for the currently approved canonical recovery scope completed through Packs **01–05**.
+**Status:** **CLOSED** for the approved canonical recovery scope through Packs **01–05**.
 
-This does **not** claim every possible legacy record in `humanity_union_dev` was migrated.
-
-**Still excluded** (unless a future architecture decision says otherwise):
+Still excluded unless a future architecture decision says otherwise:
 
 - Activity / Discussion / Proposal / Decision as parallel civic roots
 - Bulk migration as the default strategy
 
-Identity / civic sources (repo design): historical identity Mongo `humanity_union_dev`; civic portable bundle `architecture/recovery/staging-data-source-v1/`; media bundle `architecture/recovery/staging-media-source-v1/`; reconciliation bundle `architecture/recovery/staging-reconciliation-source-v1/`; target DB `humanity_union_staging`.
+---
+
+# Multilingual — current capability (honest)
+
+**Present (reusable):**
+
+- `content_translations` side-store (canonical source never overwritten)
+- `TranslationProvider` seam (`deterministic` / `gemini`)
+- Participant prefs: interface / reading / writing / translation display preference
+- RTL helpers (`ar`, `he`); logical CSS migration incomplete
+- Hardcoded priority language catalog retained as legacy compatibility only (runtime uses Language Registry)
+
+**Not present yet:**
+
+- Admin-managed Language Registry
+- UI chrome i18n catalogs / library
+- Guest language cookie + full preference precedence runtime
+- Multilingual search
+- Locale SEO / hreflang
+- Admin → Languages control plane UI
 
 ---
 
-# Staging — OPERATOR-VERIFIED facts (final recovery verification)
+# Open items
 
-Final command: `pnpm verify:staging -- --check-media-http` → **result: PASS**
-
-Operator also manually confirmed deployed functionality is installed and working.
-
-| Area | Verified |
-|------|----------|
-| Pack 05 deployed + reconcile `--execute` | yes |
-| participants / loginReady | 5 / 5 (historical Participants login-ready) |
-| initiativesPublic / initiativesTotal | 5 / 6 |
-| engagement (snapshot) | comments 10; commentReactions 13; supportSignals 13; bookmarks 1; views 211 |
-| proposals / proposalsPublicCounted | 3 / 0 (drafts correctly excluded from public count) |
-| integrity | brokenStewards 0; brokenInitiativeAncestry 0; brokenMediaUrls 0; unreachableMedia 0; authIntegrityIssues 0; reconciliationConflicts 0 |
-| Web media / cards | webInitiativeImages PASS; participantAvatars PASS; initiativeMediaRendering PASS; initiativeCardNavigation PASS |
-| Allies | allies 6; activeAllies 5; brokenAllyParticipants 0; brokenAllyInitiatives 0 |
-| Collaboration | collaborationMessages 4; collaborationSessions 0 |
-| RSS | rssSources 16; publicNewsArticles **54** (snapshot only); rssFeedAvailable PASS |
-| Staging API | `NEWS_PROVIDER_ENABLED=true`; RSS ingestion operational |
-| Historical login keys | historical_vlad / michael / derek / isabella — all login-ready |
-
-Also retained from earlier operator-verified migration:
-
-- Staging admin remained protected; historical Vlad Gmail ≠ staging-admin Vlad HUWS
-- Five historical Initiatives; Isabella’s Initiative is intentional working/test data
-- CSS is regional (British Columbia / Canada), not World scope
-- Historical Initiative media and Participant avatars on Cloudflare R2
-
----
-
-# Active Epic / Guide
-
-None as Cap-02 Guide cycle.
-
-Current engineering cycle type: **Initiative Lifecycle Finalization** (Phase 01 audit complete; Phase 02 next).
-
-Lifecycle system status (Phase 01): capabilities present; staging convergence **not** certified. Experience projection fragile; local≠staging persistence behavior.
-
----
-
-# Immediate Objective
-
-See `project/NEXT_SESSION.md` — **INITIATIVE LIFECYCLE FINALIZATION — PHASE 02**.
-
-Finalization audit: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_AUDIT_v1.0.md`.
+| Item | Notes |
+|------|--------|
+| Pack 02C–02J | Multilingual implementation sequence; next = 02C Locale Preference & Runtime |
+| Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
+| Mobile PWA regression | Diagnosis only — not a redesign |
+| Search-engine favicon | Read-only audit first |
+| AI provider configuration | Optional |
 
 ---
 
@@ -173,9 +168,15 @@ Finalization audit: `architecture/recovery/INITIATIVE_LIFECYCLE_FINALIZATION_AUD
 
 Preserve Initiative-centric Participation architecture.
 
-Evolve via `architecture/ARCHITECTURE_EVOLUTION_ROADMAP_v2.0.md`.
+Deliver multilingual platform capability so **Administrators can add languages without code changes**, while English remains the durable fallback and canonical civic content remains immutable under translation.
 
-Production cutover remains a later ops track — not the current Lifecycle UX audit focus.
+Evolve via `architecture/ARCHITECTURE_EVOLUTION_ROADMAP_v2.0.md` and Pack 02 sequence in `NEXT_SESSION.md`.
+
+---
+
+# Documentation Gate
+
+Every completed Pack/Epic must evaluate updates to NEXT_SESSION, PROJECT_STATE, PROJECT_DASHBOARD, WORK_LOG, and ADRs when decisions change. See `architecture/DEVELOPMENT_BASELINE.md` § Documentation Gate.
 
 ---
 
@@ -186,3 +187,5 @@ Production cutover remains a later ops track — not the current Lifecycle UX au
 A stale live-state document must not override a normative ADR.
 
 If this document becomes outdated, update it before new implementation begins.
+
+Repository evidence wins over stale narrative documentation.
