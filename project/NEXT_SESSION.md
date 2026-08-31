@@ -9,7 +9,7 @@ Version 2.0
 ## START HERE — NEW ENGINEERING AGENT
 
 1. **This file** (`project/NEXT_SESSION.md`) is the **authoritative live handoff** for what to do next.
-2. It describes the platform as of **Production Completion Pack 02C COMPLETE** (Locale Preference & Runtime). Primary engineering branch for ongoing work: follow `git branch --show-current` (often `main` or `staging`); **repository evidence wins** over stale narrative docs.
+2. It describes the platform as of **Production Completion Pack 02C** (Locale Preference & Runtime) with **staging Hotfix 02** (enabled-language catalog freshness for `hu_lang`). Primary engineering branch for ongoing work: follow `git branch --show-current` (often `main` or `staging`); **repository evidence wins** over stale narrative docs.
 3. **Do not reinterpret:** Initiative = sole canonical civic root; Participant-first identity; English = translation fallback; translations never overwrite canonical civic source; staging cleanup tools must not be weakened for production.
 4. **Current Pack track:** Production Completion **Pack 02 — Multilingual Platform Architecture**.
 5. **Exact next task:** **Production Completion Pack 02D — UI i18n Foundation** (message catalogs / next-intl or approved equivalent; do not invent a second locale-resolution path — reuse Pack 02C runtime locale).
@@ -42,11 +42,18 @@ Tasks 01–04 delivered as one coherent system:
 - Web SSR `<html lang>` / `dir` before paint; no client `documentElement` lang/dir mutation.
 - Web-origin `hu_lang` cookie + `POST /api/hu-lang` (Registry validate/canonicalize).
 - Global Language Selector; authenticated `interfaceLanguage` authority + cookie sync; login sync latch.
-- Local acceptance tests A–F pass. **Staging smoke still required after commit/promotion.**
+- Local acceptance tests A–F pass.
+- **Staging smoke (2026-08-30):** Pack **02B PASS**. Pack **02C** found stale Web `publicLanguagesCache` blocking `POST /api/hu-lang` after Admin enable — **Hotfix 02** fixes authoritative write validation (do **not** claim Pack 02C staging PASS until re-smoke).
+
+### Production Completion Pack 02C Hotfix 02 — language catalog freshness (local)
+
+- `POST /api/hu-lang` / `loadEnabledPublicLocaleCatalog` always fetches Registry (no process-lifetime cache).
+- Client selectors retain short TTL + in-flight dedup only.
 
 ### Production Completion Pack 02B — Language Registry (COMPLETED)
 
 - Admin-managed Language Registry + Admin Languages UI.
+- **Staging acceptance PASS** (Admin Languages + public/compat catalogs; seeds restored).
 
 ### Production Completion Pack 02A — Multilingual Architecture Audit (COMPLETED)
 
@@ -56,7 +63,7 @@ Tasks 01–04 delivered as one coherent system:
 
 ## Immediate Objective
 
-**Implement Production Completion Pack 02D** — UI i18n Foundation.
+**Promote Pack 02C Hotfix 02 and re-smoke staging `hu_lang` enable/disable** (without Web restart), then **Implement Production Completion Pack 02D** — UI i18n Foundation.
 
 Reuse Pack 02C resolved locale (`lang`/`dir` / `hu_lang` / Participant `interfaceLanguage`). Do not add locale-prefixed URLs, SEO routing, or auto-enable seed languages in 02D unless separately specified.
 
@@ -66,8 +73,8 @@ Deeper Pack 02 sequence (approved):
 |------|--------|
 | 02A | Architecture Audit — **COMPLETED** |
 | 02B | Language Registry — **COMPLETED** |
-| 02C | Locale preference / runtime — **COMPLETED** (local; staging smoke pending) |
-| 02D | UI i18n foundation ← **NEXT** |
+| 02C | Locale preference / runtime — **COMPLETED** locally; staging re-smoke **pending** after Hotfix 02 |
+| 02D | UI i18n foundation ← **NEXT** (after 02C staging re-smoke) |
 | 02E | UI key extraction |
 | 02F | Canonical terminology glossary |
 | 02G | Civic/public translation expansion + async warming |
@@ -87,7 +94,7 @@ Long-term invariant: **adding a supported language is an Admin operation**, not 
 | O2 | Mobile PWA regression diagnosis | OPEN — architecture previously worked on staging; diagnose regression. **Not** a PWA redesign. |
 | O3 | Search-engine favicon | OPEN — read-only production favicon/crawler/metadata audit first. Do not generate a replacement image without evidence. |
 | O4 | Multilingual Packs 02E–02J | OPEN — sequenced after 02D. |
-| O5 | Pack 02C staging smoke | OPEN — after commit/promotion; see WORK_LOG / Task 04 checklist. |
+| O5 | Pack 02C staging acceptance | OPEN — Pack 02B staging PASS; 02C Hotfix 02 local — **re-smoke** `hu_lang` enable/disable without Web restart before claiming 02C staging PASS. |
 
 ---
 

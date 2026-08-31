@@ -45,8 +45,8 @@ Primary engineering branch: follow `git branch --show-current` (repository evide
 |----------|--------|
 | **02A** Architecture Audit | **COMPLETED** |
 | **02B** Language Registry | **COMPLETED** |
-| **02C** Locale Preference & Runtime | **COMPLETED** (local; staging smoke pending) |
-| **02D** UI i18n Foundation | **NEXT** |
+| **02C** Locale Preference & Runtime | **COMPLETED** locally; staging Hotfix 02 local; **staging re-smoke pending** |
+| **02D** UI i18n Foundation | **NEXT** (after 02C staging re-smoke) |
 | 02E–02J | Sequenced; not started |
 
 See `project/NEXT_SESSION.md` for the exact next implementation objective.
@@ -116,8 +116,8 @@ Capability 02
 | Pack 01.1 Diagnostics Cleanup (staging bootstrap + diagnostics semantics) | **COMPLETED** |
 | Staging historical Outbox recovery operator | **COMPLETED** |
 | Production Completion Pack 02A Multilingual Audit | **COMPLETED** |
-| Production Completion Pack 02B Language Registry | **COMPLETED** |
-| Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** (local; staging smoke pending) |
+| Production Completion Pack 02B Language Registry | **COMPLETED** + staging acceptance **PASS** |
+| Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** locally; Hotfix 02 local; staging re-smoke pending (do not claim staging PASS yet) |
 | Production Completion Pack 02D UI i18n Foundation | **NEXT** |
 
 ---
@@ -151,7 +151,7 @@ Still excluded unless a future architecture decision says otherwise:
 - Admin platform-default-language setting (currently `DEFAULT_PLATFORM_LANGUAGE` = `en`)
 - Multilingual search
 - Locale SEO / hreflang
-- Pack 02C staging smoke after promotion
+- Pack 02C staging re-smoke after Hotfix 02 promote (do not claim 02C staging PASS yet)
 
 ---
 
@@ -159,8 +159,9 @@ Still excluded unless a future architecture decision says otherwise:
 
 | Item | Notes |
 |------|--------|
-| Pack 02D–02J | Multilingual implementation sequence; next = 02D UI i18n Foundation |
-| Pack 02C staging smoke | After commit/promotion — Admin-enable verification locales; guest/auth selector SSR checks |
+| Pack 02D–02J | Multilingual sequence; 02D after Pack 02C staging re-smoke |
+| Pack 02C staging re-smoke | Hotfix 02: Admin enable/disable → `POST /api/hu-lang` without Web restart |
+| Pack 02B staging acceptance | **PASS** |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
 | Mobile PWA regression | Diagnosis only — not a redesign |
 | Search-engine favicon | Read-only audit first |

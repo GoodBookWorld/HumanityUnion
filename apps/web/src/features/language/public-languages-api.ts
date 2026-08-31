@@ -1,8 +1,13 @@
 /**
  * Production Completion Pack 02C Task 03 — public Language Registry client.
  *
- * Task 04: shared in-flight cache avoids duplicate client fetches when multiple
- * selectors / sync helpers resolve in the same session window.
+ * Pack 02C Hotfix 02 — Admin enable/disable must propagate without Web restart:
+ * - Write validation (`loadEnabledPublicLocaleCatalog` / POST /api/hu-lang) always
+ *   fetches authoritative Registry state (no process-lifetime cache).
+ * - Client selectors keep a short TTL + in-flight dedup (Task 04) only.
+ *
+ * SSR document locale uses its own no-store fetch in resolve-document-locale.ts
+ * (does not share this module cache).
  */
 
 import type {
@@ -20,6 +25,9 @@ export interface SelectablePublicLanguage {
   readonly nativeName: string;
   readonly textDirection: "ltr" | "rtl";
 }
+
+/** Client selector session window — Task 04 duplicate-fetch reduction. */
+export const PUBLIC_LANGUAGES_CLIENT_CACHE_TTL_MS = 15_000;
 
 function toSelectable(row: LanguageRegistryPublic): SelectablePublicLanguage {
   return {
@@ -40,72 +48,104 @@ function toCatalogEntry(row: LanguageRegistryPublic): RuntimeLocaleCatalogEntry 
   };
 }
 
-let publicLanguagesInFlight: Promise<LanguageRegistryPublicListResponse> | null = null;
-let publicLanguagesCache: LanguageRegistryPublicListResponse | null = null;
-
-/** Test-only — clear client language list cache. */
-export function resetPublicLanguagesCacheForTests(): void {
-  publicLanguagesInFlight = null;
-  publicLanguagesCache = null;
+interface ClientCacheEntry {
+  readonly data: LanguageRegistryPublicListResponse;
+  fetchedAtMs: number;
 }
 
-async function fetchPublicLanguagesEnvelope(): Promise<LanguageRegistryPublicListResponse> {
-  if (publicLanguagesCache) {
-    return publicLanguagesCache;
+let clientLanguagesCache: ClientCacheEntry | null = null;
+let clientLanguagesInFlight: Promise<LanguageRegistryPublicListResponse> | null = null;
+
+/** Test-only — clear client language list cache / in-flight. */
+export function resetPublicLanguagesCacheForTests(): void {
+  clientLanguagesCache = null;
+  clientLanguagesInFlight = null;
+}
+
+/** Test-only — force client TTL expiry without waiting. */
+export function expirePublicLanguagesClientCacheForTests(): void {
+  if (clientLanguagesCache) {
+    clientLanguagesCache.fetchedAtMs = 0;
+  }
+}
+
+function parseLanguagesEnvelope(payload: unknown): LanguageRegistryPublicListResponse {
+  const envelope = payload as {
+    success?: boolean;
+    data?: LanguageRegistryPublicListResponse;
+  };
+
+  if (!envelope.data?.languages || !Array.isArray(envelope.data.languages)) {
+    throw new Error("Languages response was invalid.");
   }
 
-  if (publicLanguagesInFlight) {
-    return publicLanguagesInFlight;
+  return envelope.data;
+}
+
+/**
+ * Authoritative Registry fetch — always hits the API (cache: no-store).
+ * Used by POST /api/hu-lang write validation. Never process-lifetime cached.
+ */
+export async function fetchPublicLanguagesAuthoritative(): Promise<LanguageRegistryPublicListResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/languages`, {
+    method: "GET",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+    credentials: "omit",
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load languages.");
   }
 
-  publicLanguagesInFlight = (async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v1/languages`, {
-      method: "GET",
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-      credentials: "omit",
-    });
+  return parseLanguagesEnvelope(await response.json());
+}
 
-    if (!response.ok) {
-      throw new Error("Unable to load languages.");
-    }
+async function fetchPublicLanguagesForClient(): Promise<LanguageRegistryPublicListResponse> {
+  const now = Date.now();
+  if (
+    clientLanguagesCache &&
+    now - clientLanguagesCache.fetchedAtMs < PUBLIC_LANGUAGES_CLIENT_CACHE_TTL_MS
+  ) {
+    return clientLanguagesCache.data;
+  }
 
-    const envelope = (await response.json()) as {
-      success?: boolean;
-      data?: LanguageRegistryPublicListResponse;
-    };
+  if (clientLanguagesInFlight) {
+    return clientLanguagesInFlight;
+  }
 
-    if (!envelope.data?.languages || !Array.isArray(envelope.data.languages)) {
-      throw new Error("Languages response was invalid.");
-    }
-
-    publicLanguagesCache = envelope.data;
-    return envelope.data;
+  clientLanguagesInFlight = (async () => {
+    const data = await fetchPublicLanguagesAuthoritative();
+    clientLanguagesCache = { data, fetchedAtMs: Date.now() };
+    return data;
   })();
 
   try {
-    return await publicLanguagesInFlight;
+    return await clientLanguagesInFlight;
   } catch (error) {
-    publicLanguagesInFlight = null;
+    clientLanguagesInFlight = null;
     throw error;
   } finally {
-    publicLanguagesInFlight = null;
+    clientLanguagesInFlight = null;
   }
 }
 
-/** Enabled languages only — for selector UI. */
+/** Enabled languages only — for selector UI (short-lived client cache). */
 export async function listSelectablePublicLanguages(): Promise<
   readonly SelectablePublicLanguage[]
 > {
-  const data = await fetchPublicLanguagesEnvelope();
+  const data = await fetchPublicLanguagesForClient();
   return data.languages.map(toSelectable);
 }
 
-/** Enabled catalog with aliases — for cookie canonicalize / SSR helpers. */
+/**
+ * Enabled catalog with aliases — for cookie canonicalize / write validation.
+ * Always authoritative (Admin enable/disable must apply without Web restart).
+ */
 export async function loadEnabledPublicLocaleCatalog(): Promise<
   readonly RuntimeLocaleCatalogEntry[]
 > {
-  const data = await fetchPublicLanguagesEnvelope();
+  const data = await fetchPublicLanguagesAuthoritative();
   return data.languages.map(toCatalogEntry);
 }
 

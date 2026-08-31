@@ -56,6 +56,26 @@ Next Objective:
 
 # Entries
 
+## 2026-08-30 (Pack 02C Hotfix 02 — language catalog freshness)
+
+Completed:
+
+- Staging smoke found process-lifetime Web `publicLanguagesCache` blocking `POST /api/hu-lang` after Admin enable.
+- Hotfix 02: write validation always fetches Registry; client selector keeps short TTL + in-flight only.
+- Pack **02B** staging acceptance **PASS**. Pack **02C** staging acceptance **not PASS** until re-smoke.
+
+Architecture:
+
+- Registry/API remains authority; no second locale catalog.
+- SSR already used no-store fetch; hu-lang write path aligned.
+
+Next Objective:
+
+- Promote Hotfix 02; minimal staging re-smoke of enable/disable → `hu_lang` without Web restart.
+- Then Pack 02D.
+
+---
+
 ## 2026-08-30 (Production Completion Pack 02C — COMPLETE locally)
 
 Completed:

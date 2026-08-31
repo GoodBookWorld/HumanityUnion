@@ -34,6 +34,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  // Pack 02C Hotfix 02 — authoritative Registry fetch (no process-lifetime cache).
   let catalog;
   try {
     catalog = await loadEnabledPublicLocaleCatalog();
