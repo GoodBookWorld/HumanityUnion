@@ -46,12 +46,12 @@ Primary engineering branch: follow `git branch --show-current` (repository evide
 | **02A** Architecture Audit | **COMPLETED** |
 | **02B** Language Registry | **COMPLETED** + staging **PASS** |
 | **02C** Locale Preference & Runtime | **COMPLETED** + staging **PASS** |
-| **02D** UI i18n Foundation | **COMPLETED locally**; staging smoke **PENDING** (do not claim staging PASS) |
-| 02E–02J | Sequenced; **02E NEXT** after 02D staging acceptance |
+| **02D** UI i18n Foundation | **COMPLETED** + staging **PASS** |
+| 02E–02J | Sequenced; **02E NEXT** |
 
 See `project/NEXT_SESSION.md` for the exact next implementation objective.
 
-Last completed product track: **Production Completion Pack 02D** (UI i18n Foundation — local acceptance).
+Last completed product track: **Production Completion Pack 02D** (UI i18n Foundation — COMPLETE + STAGING PASS).
 
 ---
 
@@ -118,8 +118,8 @@ Capability 02
 | Production Completion Pack 02A Multilingual Audit | **COMPLETED** |
 | Production Completion Pack 02B Language Registry | **COMPLETED** + staging acceptance **PASS** |
 | Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** + staging acceptance **PASS** |
-| Production Completion Pack 02D UI i18n Foundation | **COMPLETED locally**; staging smoke **PENDING**; local / not pushed |
-| Production Completion Pack 02E UI Key Extraction | **NEXT** after Pack 02D staging acceptance |
+| Production Completion Pack 02D UI i18n Foundation | **COMPLETED** + staging acceptance **PASS** |
+| Production Completion Pack 02E UI Key Extraction | **NEXT** |
 
 ---
 
@@ -143,15 +143,16 @@ Still excluded unless a future architecture decision says otherwise:
 - `TranslationProvider` seam (`deterministic` / `gemini`)
 - Participant prefs: interface / reading / writing / translation display preference
 - Pack 02C: canonical runtime locale resolution; SSR `lang`/`dir`; `hu_lang`; global Language Selector; auth preference ↔ cookie sync
-- Pack 02D Task 01: `next-intl` provider wired to Pack 02C locale; bundled `en`/`uk`/`zh-Hant`/`ar` catalogs; English deep-merge fallback; remote-pack seam (no Admin/R2 yet)
-- Pack 02D Task 01–04: `next-intl` foundation; Pack 02C sole locale authority; Language Selector + primary nav + footer Support; catalog parity; local acceptance COMPLETE
-- RTL helpers (`ar`, `he`); logical CSS migration incomplete (Pack 02J); Task 02 fixed selector chevron padding under `dir=rtl` only
+- Pack 02D COMPLETE + STAGING PASS: `next-intl` UI i18n foundation; Pack 02C sole locale authority; server-resolved `html` `lang`/`dir`; English canonical bundled catalog; verification catalogs `en`/`uk`/`zh-Hant`/`ar`; English deep-merge fallback; inactive remote message-pack seam; catalog parity guard
+- Pack 02D foundation chrome: Language Selector label/loading/error; primary desktop/mobile Home / Institutions / Initiatives; Footer Support
+- Pack 02D staging: en/uk/zh-Hant/ar smoke PASS; zh-TW→zh-Hant canonicalize; RTL ar; non-locale-prefixed URLs; Registry-driven option names; disabled write 400; Registry restored en-only
+- Pack 02D build hotfix: `@parcel/watcher` + `@swc/core` explicitly approved in `pnpm-workspace.yaml` `allowBuilds` (strict policy preserved)
+- RTL helpers (`ar`, `he`); logical CSS migration incomplete (Pack 02J); selector chevron padding under `dir=rtl` only
 - Hardcoded priority language catalog retained as legacy compatibility only (runtime uses Language Registry)
 
 **Not present yet:**
 
-- Pack 02D staging smoke / staging PASS claim
-- Broad UI chrome key migration (Pack 02E)
+- Broad UI chrome key migration (Pack 02E) — Civic Media / Knowledge / Membership / Search / broader auth-account-workspace copy
 - Admin-managed remote UI message packs / R2 persistence
 - Admin platform-default-language setting (currently `DEFAULT_PLATFORM_LANGUAGE` = `en`)
 - Multilingual search
@@ -163,10 +164,8 @@ Still excluded unless a future architecture decision says otherwise:
 
 | Item | Notes |
 |------|--------|
-| Pack 02D staging smoke | Local COMPLETE; staging PASS not claimed |
-| Pack 02E–02J | Multilingual sequence after 02D staging acceptance |
-| Pack 02B / 02C staging acceptance | **PASS** |
-| Pack 02D on `main` | Local only — not committed / not pushed |
+| Pack 02E–02J | Multilingual sequence; **02E NEXT** |
+| Pack 02B / 02C / 02D staging acceptance | **PASS** |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
 | Mobile PWA regression | Diagnosis only — not a redesign |
 | Search-engine favicon | Read-only audit first |

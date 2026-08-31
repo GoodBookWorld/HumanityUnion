@@ -37,7 +37,7 @@ Architecture Status: Stable (Initiative-root ADR accepted)
 
 Engineering Status: **Production operational** + staging verification environment
 
-Project Health: **Healthy** (Pack 02B/02C staging PASS; Pack 02D COMPLETE locally — staging smoke pending; not committed/pushed)
+Project Health: **Healthy** (Pack 02B/02C/02D staging PASS)
 
 ---
 
@@ -50,13 +50,13 @@ Project Health: **Healthy** (Pack 02B/02C staging PASS; Pack 02D COMPLETE locall
 | 02A Architecture Audit | COMPLETED |
 | **02B Language Registry** | **COMPLETED** + staging **PASS** |
 | **02C Locale Preference & Runtime** | **COMPLETED** + staging **PASS** |
-| **02D UI i18n Foundation** | **COMPLETED locally**; staging smoke **PENDING** |
-| **02E UI Key Extraction** | **NEXT** after 02D staging acceptance |
+| **02D UI i18n Foundation** | **COMPLETED** + staging **PASS** |
+| **02E UI Key Extraction** | **NEXT** |
 | 02F–02J | Queued |
 
-Live next task: **Pack 02D staging smoke**, then **Pack 02E** — see `project/NEXT_SESSION.md`.
+Live next task: **Pack 02E — UI Key Extraction** — see `project/NEXT_SESSION.md`.
 
-Last closed product Pack track (local): Production Completion **Pack 02D**. Last staging-closed multilingual packs: **02B / 02C**.
+Last closed product Pack track: Production Completion **Pack 02D** (COMPLETE + STAGING PASS).
 
 ---
 
@@ -68,7 +68,9 @@ Last closed product Pack track (local): Production Completion **Pack 02D**. Last
 - Production identity / blog / initiative migration tracks — COMPLETED
 - Production Completion Pack 01 / 01.1 — COMPLETED
 - Production Completion Pack 02A — COMPLETED
-- Production Completion Pack 02B — COMPLETED
+- Production Completion Pack 02B — COMPLETED + staging PASS
+- Production Completion Pack 02C — COMPLETED + staging PASS
+- Production Completion Pack 02D — COMPLETED + staging PASS
 
 ---
 
@@ -85,9 +87,8 @@ Do not present superseded Activity-root ADR-002 as current architecture.
 
 # Open Issues (summary)
 
-- Pack 02D staging smoke (then Pack 02E UI key extraction)
-- Pack 02B/02C staging acceptance PASS
-- Pack 02D local COMPLETE — not committed / not pushed; staging PASS not claimed
+- Pack 02E UI key extraction (NEXT) — Civic Media / Knowledge / Membership / Search / broader UI copy
+- Pack 02B/02C/02D staging acceptance PASS
 - Production bootstrap Initiative deletion (separate production-safe procedure; staging cleanup refuses production)
 - Mobile PWA regression diagnosis (not redesign)
 - Favicon / crawler metadata read-only audit

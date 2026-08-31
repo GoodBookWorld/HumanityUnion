@@ -56,6 +56,28 @@ Next Objective:
 
 # Entries
 
+## 2026-08-31 (Pack 02D — staging acceptance + documentation close-out)
+
+Completed:
+
+- Pack **02D COMPLETE + STAGING PASS** (UI i18n Foundation).
+- Staging smoke: en PASS (LTR); uk PASS (LTR); zh-TW→zh-Hant PASS (LTR); ar PASS (RTL).
+- Canonical URLs remained non-locale-prefixed; Registry option names Registry-driven; disabled locale write rejected with 400.
+- Registry restored to en-only; final guest `hu_lang=en`, `html lang=en dir=ltr`; no residual Pack 02D issue.
+- Staging build hotfix: `@parcel/watcher` + `@swc/core` explicitly approved in `pnpm-workspace.yaml` `allowBuilds` (strict lifecycle policy preserved, not weakened).
+
+Architecture:
+
+- Pack 02C remains sole locale authority; `next-intl` consumes that locale only.
+- Foundation chrome only (Language Selector label/loading/error; primary Home / Institutions / Initiatives; Footer Support).
+- Civic Media / Knowledge / Membership / Search / broader auth-account-workspace UI deferred to Pack 02E.
+
+Next Objective:
+
+- **Production Completion Pack 02E — UI Key Extraction.**
+
+---
+
 ## 2026-08-30 (Pack 02D Task 04 — local acceptance close-out)
 
 Completed:
