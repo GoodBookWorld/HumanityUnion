@@ -21,6 +21,11 @@ import {
   fetchAdminTerminologyGlossary,
   updateAdminTerminologyConcept,
 } from "../admin-terminology-glossary-api";
+import {
+  buildTerminologyRemoveLocalePatch,
+  buildTerminologySavePatch,
+  type GlossaryLocaleDraft,
+} from "../admin-terminology-glossary-patch";
 import { resolveGlossaryEditorScrollBehavior } from "../admin-terminology-glossary-scroll";
 import { AdminPanelNavigation } from "./AdminPanelNavigation";
 
@@ -32,11 +37,7 @@ interface AdminTerminologyGlossarySectionProps {
   user: AuthUserPublic;
 }
 
-interface LocaleDraft {
-  preferredTerm: string;
-  aliasesText: string;
-  guidance: string;
-}
+type LocaleDraft = GlossaryLocaleDraft;
 
 const IDENTITY_CONCEPT_IDS = new Set(["participant", "member", "membership"]);
 
@@ -70,22 +71,6 @@ function toLocaleDraft(
     aliasesText: (translation?.aliases ?? []).join("\n"),
     guidance: translation?.guidance ?? "",
   };
-}
-
-function parseAliasesText(value: string): string[] {
-  return value
-    .split(/[\n,]/)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-}
-
-function draftsEqual(a: LocaleDraft, b: LocaleDraft): boolean {
-  return (
-    a.preferredTerm.trim() === b.preferredTerm.trim() &&
-    a.guidance.trim() === b.guidance.trim() &&
-    JSON.stringify(parseAliasesText(a.aliasesText)) ===
-      JSON.stringify(parseAliasesText(b.aliasesText))
-  );
 }
 
 function identityHelp(conceptId: string): string | null {
@@ -249,33 +234,20 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
       return;
     }
 
-    const translationsPatch: Record<string, TerminologyLocaleTranslation> = {};
-    for (const language of languages) {
-      const draft = localeDrafts[language.locale];
-      const baseline = baselineLocales[language.locale];
-      if (!draft || !baseline || draftsEqual(draft, baseline)) {
-        continue;
-      }
-      const preferredTerm = draft.preferredTerm.trim();
-      if (!preferredTerm) {
-        // Canonical contract: preferredTerm is required per stored locale translation.
-        // Clearing is not a supported delete path — English remains provider fallback
-        // when no target translation exists at all.
-        setStatusMessage(null);
-        setError(
-          `Preferred term for ${language.locale} cannot be cleared. Each stored locale translation requires a preferredTerm; leave or restore a term before saving. English remains the runtime fallback when no target translation exists.`,
-        );
-        return;
-      }
-      translationsPatch[language.locale] = {
-        preferredTerm,
-        aliases: parseAliasesText(draft.aliasesText),
-        ...(draft.guidance.trim() ? { guidance: draft.guidance.trim() } : {}),
-      };
+    // Save never reuses Remove — blank preferredTerm is rejected, not deleted.
+    const built = buildTerminologySavePatch({
+      languages,
+      localeDrafts,
+      baselineLocales,
+      statusDraft,
+      baselineStatus,
+    });
+    if (!built.ok) {
+      setStatusMessage(null);
+      setError(built.error);
+      return;
     }
-
-    const statusChanged = statusDraft !== baselineStatus;
-    if (!statusChanged && Object.keys(translationsPatch).length === 0) {
+    if (built.patch === null) {
       setError(null);
       setStatusMessage("No changes to save.");
       return;
@@ -285,12 +257,7 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
     setError(null);
     setStatusMessage(null);
     try {
-      const updated = await updateAdminTerminologyConcept(selected.conceptId, {
-        ...(statusChanged ? { status: statusDraft } : {}),
-        ...(Object.keys(translationsPatch).length > 0
-          ? { translations: translationsPatch }
-          : {}),
-      });
+      const updated = await updateAdminTerminologyConcept(selected.conceptId, built.patch);
       setConcepts((current) =>
         current.map((concept) =>
           concept.conceptId === updated.conceptId ? updated : concept,
@@ -320,13 +287,14 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
       return;
     }
 
+    // Minimal Remove PATCH — ignores local draft blanks; never sends translations.
+    const removePatch = buildTerminologyRemoveLocalePatch(locale);
+
     setRemovingLocale(locale);
     setError(null);
     setStatusMessage(null);
     try {
-      const updated = await updateAdminTerminologyConcept(selected.conceptId, {
-        removeTranslationLocales: [locale],
-      });
+      const updated = await updateAdminTerminologyConcept(selected.conceptId, removePatch);
       setConcepts((current) =>
         current.map((concept) =>
           concept.conceptId === updated.conceptId ? updated : concept,

@@ -11,6 +11,10 @@ import {
   ADMIN_PANEL_SECTIONS,
   resolveAdminPanelSectionId,
 } from "../administration/admin-panel-sections";
+import {
+  buildTerminologyRemoveLocalePatch,
+  buildTerminologySavePatch,
+} from "../administration/admin-terminology-glossary-patch";
 import { resolveGlossaryEditorScrollBehavior } from "../administration/admin-terminology-glossary-scroll";
 
 const webSrc = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -81,8 +85,10 @@ describe("Production Completion Pack 02F Task 04 — Admin Terminology Glossary 
     const section = read(
       "features/administration/components/AdminTerminologyGlossarySection.tsx",
     );
-    assert.match(section, /translationsPatch\[language\.locale\]/);
+    const patch = read("features/administration/admin-terminology-glossary-patch.ts");
+    assert.match(section, /buildTerminologySavePatch/);
     assert.match(section, /updateAdminTerminologyConcept/);
+    assert.match(patch, /translationsPatch\[language\.locale\]/);
     assert.match(section, /Canonical locale/);
     assert.doesNotMatch(section, /zh-TW/);
     assert.match(section, /Not Language Registry locale aliases/);
@@ -168,9 +174,11 @@ describe("Production Completion Pack 02F Task 04 — Admin Terminology Glossary 
     const section = read(
       "features/administration/components/AdminTerminologyGlossarySection.tsx",
     );
-    assert.match(section, /Preferred term for \$\{language\.locale\} cannot be cleared/);
-    assert.match(section, /glossary contract requires a preferredTerm|requires a preferredTerm/);
-    assert.match(section, /English remains the runtime fallback/);
+    const patch = read("features/administration/admin-terminology-glossary-patch.ts");
+    assert.match(patch, /Preferred term for \$\{language\.locale\} cannot be cleared/);
+    assert.match(patch, /requires a preferredTerm/);
+    assert.match(patch, /English remains the runtime fallback/);
+    assert.match(section, /buildTerminologySavePatch/);
     assert.match(section, /if \(!selected \|\| saving \|\| removingLocale\)/);
     assert.match(section, /setSaving\(true\)/);
     assert.match(section, /Saving…/);
@@ -180,6 +188,11 @@ describe("Production Completion Pack 02F Task 04 — Admin Terminology Glossary 
     assert.match(section, /formatAuthFormError\(saveError\)/);
     // No silent locale-key deletion via blank preferredTerm.
     assert.doesNotMatch(section, /delete translations\[|translationsPatch\[.+\].*=\s*null/);
+    const saveFn = patch.slice(
+      patch.indexOf("export function buildTerminologySavePatch"),
+      patch.length,
+    );
+    assert.doesNotMatch(saveFn, /removeTranslationLocales/);
     // Scroll request still only on table select.
     assert.doesNotMatch(section, /openConcept\(updated,\s*\{\s*scrollIntoView/);
   });
@@ -189,17 +202,69 @@ describe("Production Completion Pack 02F Task 04 — Admin Terminology Glossary 
       "features/administration/components/AdminTerminologyGlossarySection.tsx",
     );
     const api = read("features/administration/admin-terminology-glossary-api.ts");
+    const patch = read("features/administration/admin-terminology-glossary-patch.ts");
     assert.match(section, /Remove translation/);
     assert.match(section, /Removing…/);
     assert.match(section, /handleRemoveLocaleTranslation/);
-    assert.match(section, /removeTranslationLocales:\s*\[locale\]/);
+    assert.match(section, /buildTerminologyRemoveLocalePatch\(locale\)/);
+    assert.match(section, /buildTerminologySavePatch/);
     assert.match(section, /data-glossary-remove-locale/);
     assert.match(section, /data-has-stored-translation/);
     assert.match(section, /window\.confirm/);
     assert.match(section, /hasStoredTranslation \?/);
     assert.match(api, /TerminologyConceptUpdateInput/);
+    assert.match(patch, /removeTranslationLocales:\s*\[locale\]/);
+    // Remove builder must not emit translations.
+    const removeFn = patch.slice(
+      patch.indexOf("export function buildTerminologyRemoveLocalePatch"),
+      patch.indexOf("export type GlossarySavePatchBuildResult"),
+    );
+    assert.doesNotMatch(removeFn, /translations/);
     // Empty preferredTerm path remains validation-only (not removal).
-    assert.match(section, /cannot be cleared/);
+    assert.match(patch, /cannot be cleared/);
+    assert.match(patch, /Remove translation/);
+  });
+
+  it("Remove wire payload is removeTranslationLocales only; Save blank preferredTerm rejected", () => {
+    const removePayload = buildTerminologyRemoveLocalePatch("uk");
+    assert.deepEqual(removePayload, { removeTranslationLocales: ["uk"] });
+    assert.equal("translations" in removePayload, false);
+    assert.equal(JSON.stringify(removePayload).includes("preferredTerm"), false);
+
+    const blankSave = buildTerminologySavePatch({
+      languages: [{ locale: "uk" }],
+      localeDrafts: {
+        uk: { preferredTerm: "", aliasesText: "", guidance: "" },
+      },
+      baselineLocales: {
+        uk: { preferredTerm: "Учасник", aliasesText: "", guidance: "" },
+      },
+      statusDraft: "published",
+      baselineStatus: "published",
+    });
+    assert.equal(blankSave.ok, false);
+    if (!blankSave.ok) {
+      assert.match(blankSave.error, /cannot be cleared/);
+      assert.match(blankSave.error, /Remove translation/);
+    }
+
+    // Save builder must never emit removeTranslationLocales.
+    const validSave = buildTerminologySavePatch({
+      languages: [{ locale: "uk" }],
+      localeDrafts: {
+        uk: { preferredTerm: "Учасник", aliasesText: "учасниця", guidance: "" },
+      },
+      baselineLocales: {
+        uk: { preferredTerm: "Учасник", aliasesText: "", guidance: "" },
+      },
+      statusDraft: "published",
+      baselineStatus: "published",
+    });
+    assert.equal(validSave.ok, true);
+    if (validSave.ok && validSave.patch) {
+      assert.equal("removeTranslationLocales" in validSave.patch, false);
+      assert.equal(validSave.patch.translations?.uk?.preferredTerm, "Учасник");
+    }
   });
 
   it("existing Admin Languages UI remains unchanged in contract", () => {

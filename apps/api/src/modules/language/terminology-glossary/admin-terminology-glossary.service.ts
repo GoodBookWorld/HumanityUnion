@@ -18,7 +18,10 @@ import {
 } from "../../administration/administration.errors.js";
 import { record as recordAdministrationAudit } from "../../administration/audit.service.js";
 import { findAuthUserById } from "../../auth/auth-user.repository.js";
-import { TerminologyGlossaryNotFoundError } from "./terminology-glossary.errors.js";
+import {
+  TerminologyGlossaryNotFoundError,
+  TerminologyGlossaryValidationError,
+} from "./terminology-glossary.errors.js";
 import {
   canonicalizeGlossaryLocaleKeys,
   canonicalizeGlossaryTranslationLocales,
@@ -243,19 +246,31 @@ export async function updateAdminTerminologyConcept(input: {
   const parsed = parsePatchBody(input.body);
   const { rawTranslationLocales, rawRemoveLocales, ...patch } = parsed;
 
-  let canonicalPatchedLocales: string[] = [];
-  if (patch.translations) {
-    const canonical = await canonicalizeGlossaryTranslationLocales(patch.translations);
-    canonicalPatchedLocales = Object.keys(canonical).sort();
-    patch.translations = canonical;
-  }
-
+  // Resolve remove locales first so overlap with translations is rejected
+  // before preferredTerm normalization can block an explicit removal body.
   let canonicalRemovedLocales: string[] = [];
   if (patch.removeTranslationLocales) {
     canonicalRemovedLocales = [
       ...(await canonicalizeGlossaryLocaleKeys(patch.removeTranslationLocales)),
     ];
     patch.removeTranslationLocales = canonicalRemovedLocales;
+  }
+
+  let canonicalPatchedLocales: string[] = [];
+  if (patch.translations) {
+    const translationLocaleKeys = await canonicalizeGlossaryLocaleKeys(
+      Object.keys(patch.translations),
+    );
+    for (const locale of translationLocaleKeys) {
+      if (canonicalRemovedLocales.includes(locale)) {
+        throw new TerminologyGlossaryValidationError(
+          `Locale "${locale}" cannot appear in both translations and removeTranslationLocales.`,
+        );
+      }
+    }
+    const canonical = await canonicalizeGlossaryTranslationLocales(patch.translations);
+    canonicalPatchedLocales = Object.keys(canonical).sort();
+    patch.translations = canonical;
   }
 
   const updated = await updateTerminologyConcept(conceptId, {

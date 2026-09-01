@@ -179,6 +179,21 @@ export async function updateTerminologyConcept(
 
   let nextTranslations = { ...current.translations };
   let patchLocales = new Set<string>();
+
+  // Reject merge+remove overlap before preferredTerm normalization so a blank
+  // translations stub cannot mask the conflict / block remove-only intent.
+  if (input.translations !== undefined && input.removeTranslationLocales !== undefined) {
+    const translationKeys = await canonicalizeGlossaryLocaleKeys(Object.keys(input.translations));
+    const removeLocales = await canonicalizeGlossaryLocaleKeys(input.removeTranslationLocales);
+    for (const locale of removeLocales) {
+      if (translationKeys.includes(locale)) {
+        throw new TerminologyGlossaryValidationError(
+          `Locale "${locale}" cannot appear in both translations and removeTranslationLocales.`,
+        );
+      }
+    }
+  }
+
   if (input.translations !== undefined) {
     // Merge by locale — PATCHing one locale must not erase others.
     const patchTranslations = await canonicalizeGlossaryTranslationLocales(input.translations);

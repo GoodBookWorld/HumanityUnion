@@ -544,4 +544,77 @@ describe("Production Completion Pack 02F Task 03 — Terminology Glossary Admin 
     const stillThere = await getTerminologyConceptById("assistant");
     assert.equal(stillThere?.translations.uk?.preferredTerm, "Асистент");
   });
+
+  it("UI Remove contract: removeTranslationLocales only deletes uk; blank Save body stays rejected", async () => {
+    // Mirrors Admin Remove translation wire payload (no translations.uk).
+    await updateAdminTerminologyConcept({
+      actorUserId: "admin-1",
+      conceptId: "participant",
+      body: {
+        translations: {
+          uk: { preferredTerm: "Учасник", aliases: [] },
+          ar: { preferredTerm: "مشارك", aliases: [] },
+        },
+      },
+    });
+
+    const removeWireBody = {
+      removeTranslationLocales: ["uk"],
+    };
+    assert.equal("translations" in removeWireBody, false);
+
+    const afterRemove = await updateAdminTerminologyConcept({
+      actorUserId: "admin-1",
+      conceptId: "participant",
+      body: removeWireBody,
+    });
+    assert.equal(afterRemove.translations.uk, undefined);
+    assert.equal(afterRemove.translations.ar?.preferredTerm, "مشارك");
+
+    // Ordinary Save with preferredTerm="" remains rejected (not a delete path).
+    await updateAdminTerminologyConcept({
+      actorUserId: "admin-1",
+      conceptId: "participant",
+      body: {
+        translations: {
+          uk: { preferredTerm: "Учасник", aliases: [] },
+        },
+      },
+    });
+    await assert.rejects(
+      () =>
+        updateAdminTerminologyConcept({
+          actorUserId: "admin-1",
+          conceptId: "participant",
+          body: {
+            translations: {
+              uk: { preferredTerm: "", aliases: [] },
+            },
+          },
+        }),
+      TerminologyGlossaryValidationError,
+    );
+    const stillUk = await getTerminologyConceptById("participant");
+    assert.equal(stillUk?.translations.uk?.preferredTerm, "Учасник");
+
+    // Same locale in translations + remove is rejected before blank preferredTerm wins.
+    await assert.rejects(
+      () =>
+        updateAdminTerminologyConcept({
+          actorUserId: "admin-1",
+          conceptId: "participant",
+          body: {
+            translations: {
+              uk: { preferredTerm: "", aliases: [] },
+            },
+            removeTranslationLocales: ["uk"],
+          },
+        }),
+      (error: unknown) =>
+        error instanceof TerminologyGlossaryValidationError &&
+        /cannot appear in both translations and removeTranslationLocales/.test(error.message),
+    );
+    const unchanged = await getTerminologyConceptById("participant");
+    assert.equal(unchanged?.translations.uk?.preferredTerm, "Учасник");
+  });
 });
