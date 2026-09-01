@@ -35,6 +35,10 @@ import {
   isRedundantTargetLanguage,
   type CanonicalTranslatableSourceEligibility,
 } from "./content-translation-eligibility.js";
+import {
+  assertTranslatedProseChangedFromSource,
+  filterTranslatedFieldsToSourceAllowlist,
+} from "./content-translation-output-validation.js";
 import { buildContentTranslationSourceVersion } from "./content-translation-version.js";
 import { assertAutomaticContentTranslationTargetLocale } from "./content-translation-warm-targets.js";
 import {
@@ -334,6 +338,20 @@ export async function getOrCreateContentTranslation(input: {
       "Translation provider returned malformed structured content.",
     );
   }
+
+  // Pack 02G Task 07C — drop invented keys; reject all-prose-unchanged when languages differ.
+  translatedFields = filterTranslatedFieldsToSourceAllowlist({
+    sourceKind: source.sourceKind,
+    sourceFields: source.fields,
+    translatedFields,
+  });
+  assertTranslatedProseChangedFromSource({
+    sourceKind: source.sourceKind,
+    sourceLanguage: source.sourceLanguage,
+    targetLanguage,
+    sourceFields: source.fields,
+    translatedFields,
+  });
 
   const record: TranslatedContentRecord = {
     translationId: existing?.translationId ?? `translation-${randomUUID()}`,

@@ -194,9 +194,13 @@ describe("Production Completion Pack 02F Task 05 — provider terminology inject
     });
     assert.doesNotMatch(prompt, /Preserve these Humanity Union terms consistently/);
     assert.match(prompt, /preferred target-language term/);
-    assert.match(prompt, /machine identifiers, IDs, enum tokens, routes/);
+    assert.match(prompt, /URLs, numeric\/statistical values, IDs, enum tokens, routes/);
     assert.match(prompt, /Keep Participant, Member, and Membership semantically distinct/);
     assert.match(prompt, /Participant \(participant\) => Учасник/);
+    assert.match(
+      prompt,
+      /Glossary fallback-to-English applies only to the specific canonical terminology/,
+    );
 
     const geminiSource = readFileSync(
       path.join(
@@ -206,7 +210,7 @@ describe("Production Completion Pack 02F Task 05 — provider terminology inject
       "utf8",
     );
     assert.doesNotMatch(geminiSource, /Preserve these Humanity Union terms consistently/);
-    assert.match(geminiSource, /Do not alter machine identifiers/);
+    assert.match(geminiSource, /IDs, enum tokens, routes/);
   });
 
   it("13–14. content-translation.service and translate-draft use the canonical builder", async () => {

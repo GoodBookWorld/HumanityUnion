@@ -54,8 +54,14 @@ export type {
 export { DeterministicTranslationProvider } from "./providers/deterministic-translation-provider.js";
 export {
   GeminiTranslationProvider,
+  buildGeminiTranslationSystemInstruction,
   buildGeminiTranslationSystemInstructionForTests,
+  resolveTranslationLanguageEnglishName,
 } from "./providers/gemini-translation-provider.js";
+export {
+  assertTranslatedProseChangedFromSource,
+  filterTranslatedFieldsToSourceAllowlist,
+} from "./content-translation-output-validation.js";
 export {
   resolveTranslationProvider,
   setTranslationProviderForTests,
