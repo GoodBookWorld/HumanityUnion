@@ -177,6 +177,13 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 1rem;
+  align-items: center;
+}
+
+.admin-glossary__save-error {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--hu-danger, #a11);
 }
 
 .admin-glossary__note {

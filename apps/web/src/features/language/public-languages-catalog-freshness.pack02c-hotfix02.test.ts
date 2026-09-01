@@ -238,18 +238,71 @@ describe("Pack 02C Hotfix 02 — public language catalog freshness", () => {
     assert.equal(fetchCalls, 2);
   });
 
+  it("Admin mutation invalidation drops TTL cache so disable/enable is visible without hard refresh", async () => {
+    const {
+      invalidatePublicLanguagesClientCache,
+      PUBLIC_LANGUAGES_CHANGED_EVENT,
+    } = await import("./public-languages-api.js");
+
+    installCatalogFetch([EN_AR, EN_ONLY, EN_AR]);
+
+    const enabled = await listSelectablePublicLanguages();
+    assert.deepEqual(
+      enabled.map((row) => row.locale),
+      ["en", "ar"],
+    );
+    assert.equal(fetchCalls, 1);
+
+    let eventCount = 0;
+    const onChanged = () => {
+      eventCount += 1;
+    };
+    globalThis.window?.addEventListener?.(PUBLIC_LANGUAGES_CHANGED_EVENT, onChanged);
+    // Node test env may lack window — still prove cache drop + refetch.
+    invalidatePublicLanguagesClientCache();
+    if (typeof globalThis.window !== "undefined") {
+      globalThis.window.removeEventListener(PUBLIC_LANGUAGES_CHANGED_EVENT, onChanged);
+      assert.equal(eventCount, 1);
+    }
+
+    const afterDisable = await listSelectablePublicLanguages();
+    assert.deepEqual(
+      afterDisable.map((row) => row.locale),
+      ["en"],
+    );
+    assert.equal(afterDisable.some((row) => row.locale === "ar"), false);
+    assert.equal(fetchCalls, 2);
+
+    invalidatePublicLanguagesClientCache();
+    const afterEnable = await listSelectablePublicLanguages();
+    assert.deepEqual(
+      afterEnable.map((row) => row.locale),
+      ["en", "ar"],
+    );
+    assert.equal(fetchCalls, 3);
+  });
+
   it("hu-lang route and public API wire Hotfix 02 freshness contract", () => {
     const route = readWeb("app/api/hu-lang/route.ts");
     const publicApi = readWeb("features/language/public-languages-api.ts");
+    const adminApi = readWeb("features/administration/admin-languages-api.ts");
+    const selector = readWeb("features/language/components/LanguageSelector.tsx");
 
     assert.match(route, /loadEnabledPublicLocaleCatalog/);
     assert.match(route, /Hotfix 02/);
     assert.match(publicApi, /fetchPublicLanguagesAuthoritative/);
     assert.match(publicApi, /PUBLIC_LANGUAGES_CLIENT_CACHE_TTL_MS/);
+    assert.match(publicApi, /invalidatePublicLanguagesClientCache/);
+    assert.match(publicApi, /PUBLIC_LANGUAGES_CHANGED_EVENT/);
     assert.doesNotMatch(publicApi, /let publicLanguagesCache/);
     assert.match(
       publicApi,
       /loadEnabledPublicLocaleCatalog[\s\S]*fetchPublicLanguagesAuthoritative/,
     );
+    assert.match(adminApi, /invalidatePublicLanguagesClientCache/);
+    assert.match(selector, /PUBLIC_LANGUAGES_CHANGED_EVENT/);
+    assert.match(selector, /catalogEpoch/);
+    // Arabic RTL remains Registry textDirection → document attributes (unchanged).
+    assert.match(readWeb("features/language/language.ts"), /RTL_LANGUAGE_CODES|isRtlLanguageCode/);
   });
 });

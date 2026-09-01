@@ -8,6 +8,7 @@ import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { getMyPreferences, updateMyPreferences } from "../../preferences/preferences-api";
 import { readHuLangCookieFromDocument } from "../hu-lang-cookie.web";
 import {
+  PUBLIC_LANGUAGES_CHANGED_EVENT,
   formatLanguageOptionLabel,
   listSelectablePublicLanguages,
   type SelectablePublicLanguage,
@@ -31,6 +32,7 @@ interface LanguageSelectorProps {
  * Guest: writes Web-origin `hu_lang` then refreshes for SSR lang/dir.
  * Authenticated: persists Participant `interfaceLanguage`, then syncs `hu_lang`.
  * Pack 02D — chrome label/status via next-intl; option names stay Registry-driven.
+ * Pack 02F staging-smoke — refetch when Admin invalidates the public languages cache.
  */
 export function LanguageSelector({
   className,
@@ -48,6 +50,17 @@ export function LanguageSelector({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pending, startTransition] = useTransition();
+  const [catalogEpoch, setCatalogEpoch] = useState(0);
+
+  useEffect(() => {
+    const onLanguagesChanged = () => {
+      setCatalogEpoch((current) => current + 1);
+    };
+    window.addEventListener(PUBLIC_LANGUAGES_CHANGED_EVENT, onLanguagesChanged);
+    return () => {
+      window.removeEventListener(PUBLIC_LANGUAGES_CHANGED_EVENT, onLanguagesChanged);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,7 +87,7 @@ export function LanguageSelector({
     return () => {
       cancelled = true;
     };
-  }, [errorLabel]);
+  }, [errorLabel, catalogEpoch]);
 
   useEffect(() => {
     if (options.length === 0 || authStatus === "pending") {

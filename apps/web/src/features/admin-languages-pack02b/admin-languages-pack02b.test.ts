@@ -31,6 +31,7 @@ describe("Production Completion Pack 02B Task 05 — Admin Languages UI", () => 
     assert.match(api, /\/api\/v1\/admin\/languages/);
     assert.match(api, /method: "POST"/);
     assert.match(api, /method: "PATCH"/);
+    assert.match(api, /invalidatePublicLanguagesClientCache/);
     assert.doesNotMatch(api, /providerMappings/);
 
     const section = read("features/administration/components/AdminLanguagesSection.tsx");

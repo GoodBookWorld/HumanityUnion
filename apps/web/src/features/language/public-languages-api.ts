@@ -6,6 +6,9 @@
  *   fetches authoritative Registry state (no process-lifetime cache).
  * - Client selectors keep a short TTL + in-flight dedup (Task 04) only.
  *
+ * Pack 02F staging-smoke runtime fix — Admin language mutations must invalidate
+ * the short-lived client cache and notify mounted selectors in-session.
+ *
  * SSR document locale uses its own no-store fetch in resolve-document-locale.ts
  * (does not share this module cache).
  */
@@ -28,6 +31,9 @@ export interface SelectablePublicLanguage {
 
 /** Client selector session window — Task 04 duplicate-fetch reduction. */
 export const PUBLIC_LANGUAGES_CLIENT_CACHE_TTL_MS = 15_000;
+
+/** Dispatched after Admin Registry mutations invalidate the client selector cache. */
+export const PUBLIC_LANGUAGES_CHANGED_EVENT = "hu:public-languages-changed";
 
 function toSelectable(row: LanguageRegistryPublic): SelectablePublicLanguage {
   return {
@@ -55,6 +61,18 @@ interface ClientCacheEntry {
 
 let clientLanguagesCache: ClientCacheEntry | null = null;
 let clientLanguagesInFlight: Promise<LanguageRegistryPublicListResponse> | null = null;
+
+/**
+ * Drop short-lived client cache and notify mounted LanguageSelectors.
+ * Call after authoritative Admin create/enable/disable/update succeeds.
+ */
+export function invalidatePublicLanguagesClientCache(): void {
+  clientLanguagesCache = null;
+  clientLanguagesInFlight = null;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(PUBLIC_LANGUAGES_CHANGED_EVENT));
+  }
+}
 
 /** Test-only — clear client language list cache / in-flight. */
 export function resetPublicLanguagesCacheForTests(): void {

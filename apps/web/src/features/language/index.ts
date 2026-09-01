@@ -25,7 +25,10 @@ export {
 } from "./translation-api";
 export {
   formatLanguageOptionLabel,
+  invalidatePublicLanguagesClientCache,
   listSelectablePublicLanguages,
+  PUBLIC_LANGUAGES_CHANGED_EVENT,
+  PUBLIC_LANGUAGES_CLIENT_CACHE_TTL_MS,
 } from "./public-languages-api";
 export type { SelectablePublicLanguage } from "./public-languages-api";
 export { canonicalizeEnabledLocale } from "./canonicalize-locale";

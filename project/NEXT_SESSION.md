@@ -63,7 +63,9 @@ Chronology: `project/WORK_LOG.md`
 9. Admin Languages list/enablement unchanged by glossary edits.
 10. Restore any temporary glossary edits used in smoke.
 
-**Staging-smoke UX hotfix (local, uncommitted):** selecting a glossary table row scrolls the concept editor into view (`prefers-reduced-motion` → non-animated). Does not change API/persistence/provider.
+**Staging-smoke UX hotfix (committed `befe162`):** selecting a glossary table row scrolls the concept editor into view (`prefers-reduced-motion` → non-animated).
+
+**Staging-smoke runtime-state fix (local, uncommitted):** Admin Language enable/disable invalidates public selector client cache + notifies mounted LanguageSelector (no hard refresh). Glossary clearing preferredTerm is rejected by contract with visible editor error (no invented delete); Save shows pending state on valid PATCH.
 
 ### Production Completion Pack 02E — UI Key Extraction (COMPLETE + STAGING PASS)
 

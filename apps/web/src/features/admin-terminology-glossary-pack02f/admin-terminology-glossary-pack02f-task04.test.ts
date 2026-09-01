@@ -164,6 +164,26 @@ describe("Production Completion Pack 02F Task 04 — Admin Terminology Glossary 
     assert.equal(resolveGlossaryEditorScrollBehavior(false), "smooth");
   });
 
+  it("clearing preferredTerm is rejected without inventing delete semantics; save pending reconciles", () => {
+    const section = read(
+      "features/administration/components/AdminTerminologyGlossarySection.tsx",
+    );
+    assert.match(section, /Preferred term for \$\{language\.locale\} cannot be cleared/);
+    assert.match(section, /glossary contract requires a preferredTerm|requires a preferredTerm/);
+    assert.match(section, /English remains the runtime fallback/);
+    assert.match(section, /if \(!selected \|\| saving\)/);
+    assert.match(section, /setSaving\(true\)/);
+    assert.match(section, /Saving…/);
+    assert.match(section, /data-glossary-save/);
+    assert.match(section, /data-glossary-save-error/);
+    assert.match(section, /openConcept\(updated\)/);
+    assert.match(section, /formatAuthFormError\(saveError\)/);
+    // No silent locale-key deletion path.
+    assert.doesNotMatch(section, /delete translations\[|translationsPatch\[.+\].*=\s*null/);
+    // Scroll request still only on table select.
+    assert.doesNotMatch(section, /openConcept\(updated,\s*\{\s*scrollIntoView/);
+  });
+
   it("existing Admin Languages UI remains unchanged in contract", () => {
     const languagesPage = read("app/admin/languages/page.tsx");
     assert.match(languagesPage, /AdminLanguagesSection/);

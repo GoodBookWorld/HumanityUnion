@@ -244,7 +244,7 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
   }
 
   async function handleSave() {
-    if (!selected) {
+    if (!selected || saving) {
       return;
     }
 
@@ -257,7 +257,13 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
       }
       const preferredTerm = draft.preferredTerm.trim();
       if (!preferredTerm) {
-        setError(`Preferred term is required for locale ${language.locale} when editing that locale.`);
+        // Canonical contract: preferredTerm is required per stored locale translation.
+        // Clearing is not a supported delete path — English remains provider fallback
+        // when no target translation exists at all.
+        setStatusMessage(null);
+        setError(
+          `Preferred term for ${language.locale} cannot be cleared. Each stored locale translation requires a preferredTerm; leave or restore a term before saving. English remains the runtime fallback when no target translation exists.`,
+        );
         return;
       }
       translationsPatch[language.locale] = {
@@ -269,6 +275,7 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
 
     const statusChanged = statusDraft !== baselineStatus;
     if (!statusChanged && Object.keys(translationsPatch).length === 0) {
+      setError(null);
       setStatusMessage("No changes to save.");
       return;
     }
@@ -548,7 +555,12 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
             </div>
 
             <div className="admin-glossary__form-actions">
-              <Button type="button" onClick={() => void handleSave()} disabled={saving}>
+              {error ? (
+                <p className="admin-glossary__save-error hu-caption" role="alert" data-glossary-save-error="">
+                  {error}
+                </p>
+              ) : null}
+              <Button type="button" onClick={() => void handleSave()} disabled={saving} data-glossary-save="">
                 {saving ? "Saving…" : "Save concept"}
               </Button>
               <Button type="button" variant="secondary" onClick={closeEditor} disabled={saving}>

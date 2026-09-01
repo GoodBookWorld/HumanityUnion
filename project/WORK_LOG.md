@@ -56,6 +56,22 @@ Next Objective:
 
 # Entries
 
+## 2026-08-31 (Pack 02F staging-smoke — Languages cache + glossary clear UX)
+
+Completed:
+
+- Root cause (Languages): short-lived public languages client TTL cache + LanguageSelector mount-only fetch — Admin disable left stale options until hard refresh; selecting disabled locale failed hu_lang write.
+- Fix: `invalidatePublicLanguagesClientCache()` after Admin create/update; selector listens for `hu:public-languages-changed` and refetches.
+- Root cause (Glossary): clearing preferredTerm is not a valid contract delete; UI early-returned before Saving state with weak feedback.
+- Fix: explicit reject message + inline editor alert; `saving` guard; no invented locale deletion. English fallback unchanged.
+- Staging smoke still PENDING — do not claim PASS.
+
+Next Objective:
+
+- Pack 02F staging re-smoke (Languages enable/disable without hard refresh; glossary clear reject + valid save); on PASS → **Pack 02G**.
+
+---
+
 ## 2026-08-31 (Pack 02F staging-smoke UX — glossary editor scroll)
 
 Completed:
