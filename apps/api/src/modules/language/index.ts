@@ -111,7 +111,16 @@ export {
 export {
   assertAutomaticContentTranslationTargetLocale,
   listAutomaticContentTranslationTargetLocales,
+  resolveAutomaticContentTranslationWarmTargets,
 } from "./content-translation-warm-targets.js";
+export {
+  buildContentTranslationWarmTargetDiagnostic,
+  contentTranslationWarmRegistryCandidateDiagnosticKeys,
+} from "./content-translation-warm-diagnostic.js";
+export type {
+  ContentTranslationWarmRegistryCandidateDiagnostic,
+  ContentTranslationWarmTargetDiagnostic,
+} from "./content-translation-warm-diagnostic.js";
 export {
   CONTENT_TRANSLATION_RESULT_EVENT_NAMES,
   buildContentTranslationWarmRequestedCommand,

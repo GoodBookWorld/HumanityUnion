@@ -31,7 +31,8 @@ import {
   listContentTranslationWarmMemoryPendingForTests,
   markContentTranslationWarmMemoryPublishedForTests,
 } from "./content-translation-warm-enqueue.js";
-import { listAutomaticContentTranslationTargetLocales } from "./content-translation-warm-targets.js";
+import { buildContentTranslationWarmTargetDiagnostic } from "./content-translation-warm-diagnostic.js";
+import { resolveAutomaticContentTranslationWarmTargets } from "./content-translation-warm-targets.js";
 import {
   buildContentTranslationWorkIdentity,
   buildContentTranslationWorkIdentityKey,
@@ -193,8 +194,20 @@ export async function processContentTranslationWarmRequested(
     };
   }
 
-  const targets = await listAutomaticContentTranslationTargetLocales({
-    excludeSourceLanguage: source.sourceLanguage,
+  const { registryCandidates, warmTargetLocales: targets } =
+    await resolveAutomaticContentTranslationWarmTargets({
+      excludeSourceLanguage: source.sourceLanguage,
+    });
+
+  logger.info("content_translation.warm.target_resolution", {
+    ...buildContentTranslationWarmTargetDiagnostic({
+      sourceKind: source.sourceKind,
+      sourceRecordId: source.sourceRecordId,
+      sourceVersion: source.sourceVersion,
+      sourceLanguage: source.sourceLanguage,
+      registryCandidates,
+      warmTargetLocales: targets,
+    }),
   });
 
   const concurrency = resolveContentTranslationWarmLocaleConcurrency();
@@ -310,6 +323,8 @@ export async function processContentTranslationWarmRequested(
     sourceKind: source.sourceKind,
     sourceRecordId: source.sourceRecordId,
     sourceVersion: source.sourceVersion,
+    sourceLanguage: source.sourceLanguage,
+    warmTargetLocales: targets,
     localeCount: locales.length,
   });
 

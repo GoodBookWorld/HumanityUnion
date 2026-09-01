@@ -12,11 +12,56 @@
 
 import type { LanguageCode } from "@hu/types";
 
+import type { ContentTranslationWarmRegistryCandidateDiagnostic } from "./content-translation-warm-diagnostic.js";
 import {
   listLanguageRegistry,
   resolveLanguageRegistryLocale,
 } from "./language-registry/index.js";
 import { TranslationProviderError } from "./translation.config.js";
+
+export interface AutomaticContentTranslationWarmTargetResolution {
+  readonly registryCandidates: readonly ContentTranslationWarmRegistryCandidateDiagnostic[];
+  readonly warmTargetLocales: readonly LanguageCode[];
+}
+
+/**
+ * One Registry list: non-sensitive candidate snapshot + eligibility-filtered targets.
+ * Eligibility rules unchanged from Task 02.
+ */
+export async function resolveAutomaticContentTranslationWarmTargets(input?: {
+  readonly excludeSourceLanguage?: LanguageCode | null;
+}): Promise<AutomaticContentTranslationWarmTargetResolution> {
+  const records = await listLanguageRegistry();
+  const exclude = input?.excludeSourceLanguage?.trim().toLowerCase() ?? null;
+
+  const registryCandidates: ContentTranslationWarmRegistryCandidateDiagnostic[] = records
+    .map((record) => ({
+      locale: record.locale.trim(),
+      enabled: record.enabled === true,
+      contentTranslationEnabled: record.contentTranslationEnabled === true,
+    }))
+    .filter((row) => row.locale.length > 0)
+    .sort((a, b) => a.locale.localeCompare(b.locale));
+
+  const locales = new Set<string>();
+  for (const candidate of registryCandidates) {
+    if (candidate.enabled !== true) {
+      continue;
+    }
+    if (candidate.contentTranslationEnabled !== true) {
+      continue;
+    }
+    if (exclude && candidate.locale.toLowerCase() === exclude) {
+      continue;
+    }
+    locales.add(candidate.locale);
+  }
+
+  return {
+    registryCandidates,
+    warmTargetLocales: [...locales].sort((a, b) => a.localeCompare(b)) as LanguageCode[],
+  };
+}
 
 /**
  * Enabled + contentTranslationEnabled locales, deterministic locale order.
@@ -25,28 +70,8 @@ import { TranslationProviderError } from "./translation.config.js";
 export async function listAutomaticContentTranslationTargetLocales(input?: {
   readonly excludeSourceLanguage?: LanguageCode | null;
 }): Promise<readonly LanguageCode[]> {
-  const records = await listLanguageRegistry();
-  const exclude = input?.excludeSourceLanguage?.trim().toLowerCase() ?? null;
-  const locales = new Set<string>();
-
-  for (const record of records) {
-    if (record.enabled !== true) {
-      continue;
-    }
-    if (record.contentTranslationEnabled !== true) {
-      continue;
-    }
-    const locale = record.locale.trim();
-    if (!locale) {
-      continue;
-    }
-    if (exclude && locale.toLowerCase() === exclude) {
-      continue;
-    }
-    locales.add(locale);
-  }
-
-  return [...locales].sort((a, b) => a.localeCompare(b)) as LanguageCode[];
+  const resolved = await resolveAutomaticContentTranslationWarmTargets(input);
+  return resolved.warmTargetLocales;
 }
 
 /**
