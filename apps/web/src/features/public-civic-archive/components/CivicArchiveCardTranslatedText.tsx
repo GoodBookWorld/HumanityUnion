@@ -2,12 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import type { LanguageCode } from "@hu/types";
-import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
-
-import { isAuthenticationRequiredError } from "../../../lib/api-client";
-import { getMyPreferences } from "../../preferences/preferences-api";
 import { resolveTranslatedContent } from "../../language/translation-api";
+import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 
 interface CivicArchiveCardTranslatedTextProps {
   readonly archiveRecordId: string;
@@ -28,32 +24,26 @@ export function CivicArchiveCardTranslatedText({
   titleClassName,
   summaryClassName,
 }: CivicArchiveCardTranslatedTextProps) {
+  const readingContext = usePublicContentReadingContext();
   const [displayTitle, setDisplayTitle] = useState(title);
   const [displaySummary, setDisplaySummary] = useState(summary);
 
   useEffect(() => {
-    let cancelled = false;
     setDisplayTitle(title);
     setDisplaySummary(summary);
 
-    void (async () => {
-      let readingLanguage: LanguageCode = DEFAULT_PLATFORM_LANGUAGE;
-      try {
-        const prefs = await getMyPreferences();
-        readingLanguage =
-          (prefs.experiencePreferences.readingLanguages[0] as LanguageCode) ||
-          (prefs.experiencePreferences.interfaceLanguage as LanguageCode) ||
-          DEFAULT_PLATFORM_LANGUAGE;
-        const preference = prefs.experiencePreferences.translationPreference || "preferred";
-        if (preference === "none") {
-          return;
-        }
-      } catch (error) {
-        if (!isAuthenticationRequiredError(error)) {
-          // keep defaults
-        }
-      }
+    if (!readingContext.ready) {
+      return;
+    }
 
+    if (readingContext.translationPreference === "none") {
+      return;
+    }
+
+    let cancelled = false;
+    const readingLanguage = readingContext.readingLanguage;
+
+    void (async () => {
       try {
         const resolved = await resolveTranslatedContent({
           sourceKind: "civic_archive",
@@ -76,7 +66,14 @@ export function CivicArchiveCardTranslatedText({
     return () => {
       cancelled = true;
     };
-  }, [archiveRecordId, title, summary]);
+  }, [
+    archiveRecordId,
+    title,
+    summary,
+    readingContext.ready,
+    readingContext.readingLanguage,
+    readingContext.translationPreference,
+  ]);
 
   return (
     <div className="civic-archive-card-translated-text">

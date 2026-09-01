@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
-import { isAuthenticationRequiredError } from "../../../lib/api-client";
-import { getMyPreferences } from "../../preferences/preferences-api";
 import { resolveTranslatedContent, generateContentTranslation } from "../translation-api";
+import { usePublicContentReadingContext } from "../use-public-content-reading-context";
 import { TranslatedContentView } from "./TranslatedContentView";
 
 import "./public-translated-fields.css";
@@ -41,6 +40,7 @@ export function PublicTranslatedFields({
   className,
   enableOnDemandGenerate = true,
 }: PublicTranslatedFieldsProps) {
+  const readingContext = usePublicContentReadingContext();
   const [fields, setFields] = useState(fallbackFields);
   const [originalFields, setOriginalFields] = useState(fallbackFields);
   const [activeLanguage, setActiveLanguage] = useState<LanguageCode>(DEFAULT_PLATFORM_LANGUAGE);
@@ -55,32 +55,20 @@ export function PublicTranslatedFields({
   const fallbackSignature = JSON.stringify(fallbackFields);
 
   useEffect(() => {
-    let cancelled = false;
     const fallback = JSON.parse(fallbackSignature) as Record<string, string>;
     setFields(fallback);
     setOriginalFields(fallback);
 
+    if (!readingContext.ready) {
+      return;
+    }
+
+    let cancelled = false;
+    const readingLanguage = readingContext.readingLanguage;
+    const preference = readingContext.translationPreference;
+    setPreferredLanguage(readingLanguage);
+
     void (async () => {
-      let readingLanguage: LanguageCode = DEFAULT_PLATFORM_LANGUAGE;
-      let preference: string = "preferred";
-      try {
-        const prefs = await getMyPreferences();
-        readingLanguage =
-          (prefs.experiencePreferences.readingLanguages[0] as LanguageCode) ||
-          (prefs.experiencePreferences.interfaceLanguage as LanguageCode) ||
-          DEFAULT_PLATFORM_LANGUAGE;
-        preference = prefs.experiencePreferences.translationPreference || "preferred";
-      } catch (error) {
-        if (!isAuthenticationRequiredError(error)) {
-          // keep defaults
-        }
-      }
-
-      if (cancelled) {
-        return;
-      }
-      setPreferredLanguage(readingLanguage);
-
       try {
         let resolved = await resolveTranslatedContent({
           sourceKind,
@@ -132,7 +120,15 @@ export function PublicTranslatedFields({
     return () => {
       cancelled = true;
     };
-  }, [sourceKind, sourceRecordId, fallbackSignature, enableOnDemandGenerate]);
+  }, [
+    sourceKind,
+    sourceRecordId,
+    fallbackSignature,
+    enableOnDemandGenerate,
+    readingContext.ready,
+    readingContext.readingLanguage,
+    readingContext.translationPreference,
+  ]);
 
   return (
     <div

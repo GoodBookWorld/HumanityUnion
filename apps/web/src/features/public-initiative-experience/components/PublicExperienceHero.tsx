@@ -7,8 +7,7 @@ import type { InitiativeCoverMedia, PublicInitiativeExperienceHero } from "@hu/t
 
 import { TranslatedContentView } from "../../language";
 import { resolveTranslatedContent, generateContentTranslation } from "../../language/translation-api";
-import { getMyPreferences } from "../../preferences/preferences-api";
-import { isAuthenticationRequiredError } from "../../../lib/api-client";
+import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
 
 function formatDate(value: string): string {
@@ -46,6 +45,7 @@ export function PublicExperienceHero({
   parentLink,
   initiativeId,
 }: PublicExperienceHeroProps) {
+  const readingContext = usePublicContentReadingContext();
   const [displayTitle, setDisplayTitle] = useState(title);
   const [displaySummary, setDisplaySummary] = useState(summary ?? "");
   const [originalTitle, setOriginalTitle] = useState(title);
@@ -57,27 +57,15 @@ export function PublicExperienceHero({
   const [isStale, setIsStale] = useState(false);
 
   useEffect(() => {
-    if (!initiativeId) {
+    if (!initiativeId || !readingContext.ready) {
       return;
     }
 
     let cancelled = false;
-    void (async () => {
-      let readingLanguage = "en";
-      let preference = "preferred";
-      try {
-        const prefs = await getMyPreferences();
-        readingLanguage =
-          prefs.experiencePreferences.readingLanguages[0] ||
-          prefs.experiencePreferences.interfaceLanguage ||
-          "en";
-        preference = prefs.experiencePreferences.translationPreference || "preferred";
-      } catch (error) {
-        if (!isAuthenticationRequiredError(error)) {
-          // keep defaults
-        }
-      }
+    const readingLanguage = readingContext.readingLanguage;
+    const preference = readingContext.translationPreference;
 
+    void (async () => {
       try {
         let resolved = await resolveTranslatedContent({
           sourceKind: "initiative",
@@ -124,7 +112,14 @@ export function PublicExperienceHero({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId, summary, title]);
+  }, [
+    initiativeId,
+    summary,
+    title,
+    readingContext.ready,
+    readingContext.readingLanguage,
+    readingContext.translationPreference,
+  ]);
 
   const columnA = useMemo(() => meta.filter((item) => item.column === "a"), [meta]);
   const columnB = useMemo(() => meta.filter((item) => item.column === "b"), [meta]);
