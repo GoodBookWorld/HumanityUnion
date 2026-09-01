@@ -5,7 +5,7 @@ import type {
 } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE, isTranslationDisplayPreference } from "@hu/types";
 
-import { getPreferencesByMemberId } from "../preferences/preferences.store.js";
+import { findPreferencesByMemberId } from "../preferences/preferences.repository.js";
 import { resolveLocaleWithEnglishFallback } from "./language-registry-runtime.js";
 
 function resolveDisplayPreference(value: string | undefined): TranslationDisplayPreference {
@@ -42,6 +42,11 @@ export async function buildParticipantLanguageContextFromExperience(
   };
 }
 
+/**
+ * Load language roles for a participant from the canonical Preferences repository
+ * (same Mongo/memory path as Preferences Save / getMyPreferences).
+ * Missing prefs → safe defaults (English + translationDisplayPreference "none").
+ */
 export async function resolveParticipantLanguageContext(
   participantId: string | undefined,
 ): Promise<ParticipantLanguageContext> {
@@ -49,6 +54,6 @@ export async function resolveParticipantLanguageContext(
     return buildParticipantLanguageContextFromExperience(null);
   }
 
-  const preferences = getPreferencesByMemberId(participantId);
+  const preferences = await findPreferencesByMemberId(participantId);
   return buildParticipantLanguageContextFromExperience(preferences?.experiencePreferences);
 }
