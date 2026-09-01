@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 
 import type { CivicArchiveLifecycleRecord } from "@hu/types";
 
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
+import { CivicArchiveCardTranslatedText } from "./CivicArchiveCardTranslatedText";
 
 function formatDate(value: string | undefined): string {
   if (!value) {
@@ -35,8 +38,13 @@ export function PublicArchiveInitiativeCard({ record }: PublicArchiveInitiativeC
         </div>
         <div className="civic-archive-record-card__body">
           <span className="civic-archive-record-card__badge">{record.outcomeStatusLabel}</span>
-          <h3 className="civic-archive-record-card__title">{record.title}</h3>
-          <p className="civic-archive-record-card__summary">{record.finalOutcomeSummary}</p>
+          <CivicArchiveCardTranslatedText
+            archiveRecordId={record.archiveRecordId}
+            title={record.title}
+            summary={record.summary || record.finalOutcomeSummary}
+            titleClassName="civic-archive-record-card__title"
+            summaryClassName="civic-archive-record-card__summary"
+          />
           <p className="civic-archive-record-card__meta">
             {record.activityArea} · {formatLocation(record)}
           </p>

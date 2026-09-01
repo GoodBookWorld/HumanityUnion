@@ -3,6 +3,10 @@ import Link from "next/link";
 import { ProfileField } from "../../../../../../components/member/ProfileField";
 import { ProfileSection } from "../../../../../../components/member/ProfileSection";
 import { getPublicInitiativeVersionRevision } from "../../../../../../features/initiative-version-revision/api";
+import {
+  CivicPublicTranslatedSection,
+  stableJsonForDisplay,
+} from "../../../../../../features/language";
 
 import "./public-initiative-revision-page.css";
 
@@ -61,9 +65,24 @@ export default async function PublicInitiativeRevisionPage({
       </header>
 
       <ProfileSection title="Revision">
-        <ProfileField label="Summary" value={revision.revisionSummary} />
-        <ProfileField label="Title" value={revision.title} />
-        <ProfileField label="Description" value={revision.description} />
+        <CivicPublicTranslatedSection
+          sourceKind="initiative_revision"
+          sourceRecordId={revision.revisionId}
+          fallbackFields={{
+            revisionSummary: revision.revisionSummary,
+            title: revision.title,
+            description: revision.description,
+            changes: stableJsonForDisplay(
+              revision.changes.map((change) => ({
+                sectionLabel: change.sectionLabel,
+                before: change.before,
+                after: change.after,
+                authorOriginatedReason: change.authorOriginatedReason ?? "",
+                explanation: change.explanation,
+              })),
+            ),
+          }}
+        />
         <ProfileField label="Author" value={revision.authorDisplayName} />
         <ProfileField label="Published" value={formatDate(revision.publishedAt)} />
         <ProfileField

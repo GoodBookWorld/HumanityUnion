@@ -74,6 +74,78 @@ export {
   resolveParticipantLanguageContext,
 } from "./participant-language-context.js";
 export { buildTranslationCacheKey } from "./translation-cache-key.js";
+export { buildContentTranslationSourceVersion } from "./content-translation-version.js";
+export {
+  buildContentTranslationWorkIdentity,
+  buildContentTranslationWorkIdentityKey,
+} from "./content-translation-work-identity.js";
+export {
+  CONTENT_TRANSLATION_FIELD_ALLOWLIST,
+  CONTENT_TRANSLATION_PRIVACY_EXCLUSIONS,
+  PUBLIC_CONTENT_TRANSLATION_SOURCE_KINDS,
+  assertCanonicalSourceEligibleForTranslation,
+  assertPublicFieldsAllowlisted,
+  isPrivacyExcludedTranslationSurface,
+  isPublicContentTranslationSourceKind,
+  isRedundantTargetLanguage,
+  isSupportedContentTranslationSourceKind,
+} from "./content-translation-eligibility.js";
+export type { CanonicalTranslatableSourceEligibility } from "./content-translation-eligibility.js";
+export {
+  isCivicMediaTranslationRecordId,
+  loadCivicArchiveTranslationSource,
+  loadCivicMediaTranslationSource,
+  loadCollectiveDecisionTranslationSource,
+  loadDecisionSessionTranslationSource,
+  loadImplementationCommitmentTranslationSource,
+  loadImplementationTrackingTranslationSource,
+  loadImprovementProposalTranslationSource,
+  loadInitiativeRevisionTranslationSource,
+  loadOfficialResponseTranslationSource,
+  loadPublicImpactTranslationSource,
+} from "./content-translation-civic-loaders.js";
+export {
+  joinTranslationLines,
+  stableJsonForTranslation,
+} from "./content-translation-field-serialize.js";
+export {
+  assertAutomaticContentTranslationTargetLocale,
+  listAutomaticContentTranslationTargetLocales,
+} from "./content-translation-warm-targets.js";
+export {
+  CONTENT_TRANSLATION_RESULT_EVENT_NAMES,
+  buildContentTranslationWarmRequestedCommand,
+  isContentTranslationResultEventName,
+  isContentTranslationWarmRequestCommandName,
+} from "./content-translation-warm-request.js";
+export {
+  CONTENT_TRANSLATION_WARM_AGGREGATE_TYPE,
+  buildContentTranslationWarmAggregateId,
+  buildContentTranslationWarmEventId,
+  enqueueContentTranslationWarmRequested,
+  listContentTranslationWarmMemoryPendingForTests,
+  markContentTranslationWarmMemoryPublishedForTests,
+  resetContentTranslationWarmMemoryForTests,
+  scheduleContentTranslationWarmAfterMutation,
+  setContentTranslationWarmForceMemoryForTests,
+} from "./content-translation-warm-enqueue.js";
+export type { ContentTranslationWarmEnqueueResult } from "./content-translation-warm-enqueue.js";
+export {
+  CONTENT_TRANSLATION_WARM_CONSUMER_ID,
+  handleContentTranslationWarmRequestedEvent,
+  processContentTranslationWarmMemoryQueueForTests,
+  processContentTranslationWarmRequested,
+  registerContentTranslationWarmHandlers,
+} from "./content-translation-warm-consumer.js";
+export type {
+  ContentTranslationWarmLocaleOutcome,
+  ContentTranslationWarmProcessResult,
+} from "./content-translation-warm-consumer.js";
+export { classifyContentTranslationWarmFailure } from "./content-translation-warm-failure.js";
+export {
+  mapWithConcurrency,
+  resolveContentTranslationWarmLocaleConcurrency,
+} from "./content-translation-warm-concurrency.js";
 export { resolveNotificationTemplate } from "./notification-localization.js";
 export type {
   LocalizedNotificationTemplate,

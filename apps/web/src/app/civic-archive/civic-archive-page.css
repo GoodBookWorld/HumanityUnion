@@ -134,6 +134,51 @@
   min-height: 12rem;
 }
 
+/* Pack 02G Task 06 — archive detail narrative / header resilience */
+.civic-archive-page--detail {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.civic-archive-detail__header,
+.civic-archive-detail__section {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.civic-archive-detail__header h1,
+.civic-archive-detail__summary,
+.civic-archive-detail__section p,
+.civic-archive-detail__section li {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: start;
+}
+
+.civic-archive-detail__meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--hu-space-3);
+  min-width: 0;
+}
+
+.civic-archive-detail__meta-grid dt,
+.civic-archive-detail__meta-grid dd {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: start;
+}
+
+.civic-archive-detail__section .hu-civic-public-translated-section,
+.civic-archive-detail__section .hu-public-translated-fields,
+.civic-archive-detail__section .hu-translated-content {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .civic-archive-page__results-state {
   display: grid;
   gap: var(--hu-space-3);

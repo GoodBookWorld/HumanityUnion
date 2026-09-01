@@ -398,10 +398,112 @@ Out of scope unless separately approved: automatic DM translation, multilingual 
 | Pack | Focus |
 |------|--------|
 | 02A–02E | Audit → Registry → runtime locale → UI i18n → chrome extraction (**COMPLETE** + staging PASS where recorded) |
-| 02F | Canonical Terminology Glossary (**COMPLETE locally**; staging smoke pending hotfix re-smoke) |
-| 02G | Civic/public translation expansion + async warming — **starts after 02F staging PASS** |
+| 02F | Canonical Terminology Glossary (**COMPLETE + STAGING PASS**, `98c2817`) |
+| 02G | Civic/public translation expansion + async warming — **IN PROGRESS** (Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS) |
 | 02H | Multilingual search seam |
-| 02I–02J | Remaining multilingual hardening (including formal layout gate in 02J) |
+| 02I | Multilingual SEO |
+| 02J | Remaining multilingual hardening; **formal Multilingual Layout Resilience Gate** |
+
+### Pack 02G design (Task 01 audit — extend, do not replace)
+
+**Current pipeline (on-demand only):**
+
+```
+published civic source fields
+  → loadTranslatableSource (allowlisted kinds/fields)
+  → sourceVersion (content hash + updatedAt; blog includes publishedVersion)
+  → mark stale rows for older versions
+  → content_translations identity: sourceKind + sourceRecordId + sourceVersion + targetLanguage
+  → TranslationProvider (+ terminologyContext from Pack 02F glossary)
+  → resolveStructuredTranslatedDisplay (preferred → approved → original)
+  → Web PublicTranslatedFields / PublicExperienceHero (may POST generate when preference=preferred)
+```
+
+**Already eligible + public-wired:** `initiative`, `collaborative_analysis`, `petition`.
+**Loader exists, UI deferred:** `blog_post` (plain-text of HTML).
+**Enum only / empty allowlist / not warm-eligible:** `lifecycle_stage` (draft assist; not generic civic path).
+
+**Task 03 civic sourceKinds (loaders + allowlists shipped; Web resolve UI deferred to Task 05/06):**
+
+| sourceKind | Public eligibility | Version stamp | Privacy notes |
+|------------|-------------------|---------------|---------------|
+| `improvement_proposal` | public projection non-null | `updatedAt` | public narrative fields only |
+| `initiative_revision` | published revision projection | `publishedAt` + version | structured `changes` JSON |
+| `decision_session` | public projection non-null | `publishedAt` | structured content JSON |
+| `collective_decision` | public projection non-null | closed/opened/closes stamp | structured content JSON |
+| `implementation_commitment` | public projection non-null | published/completed/withdrawn | public commitment text |
+| `implementation_tracking` | public projection non-null | `updatedAt` | executionHistory titles/summaries |
+| `official_response` | `getPublicOfficialResponse` | publishedAt/receivedAt | **never** rawSource/headers/providerMetadata |
+| `public_impact` | public projection non-null | verified/published/archived | evidence title/description only |
+| `civic_archive` | public archive projection | archivedAt + archivedVersion | **never** verification metadata |
+| `civic_media` | singleton `civic-media-center` | center `updatedAt` | editorial overview/FAQ/principles/flow only; no media resource rows/URLs/SVG |
+
+**Deferred (explicit):** Discussion comments; Blog UI expansion; Cap02 legacy collective/commitment paths as alternate kinds; Part D structured improvement-proposal collections; `lifecycle_stage` as generic discriminator.
+
+**Pack 02G automatic warming (Task 04 shipped):**
+
+```
+eligible public mutation (after persistence)
+  → enqueue ContentTranslationWarmRequested (sourceKind + sourceRecordId + reason; pending dedupe)
+  → existing Mongo outbox dispatcher
+  → warm consumer reloads public source + Registry targets (enabled && contentTranslationEnabled)
+  → getOrCreateContentTranslation(intent=automatic_warm) per locale (bounded concurrency)
+  → content_translations cache (identity: sourceKind+sourceRecordId+sourceVersion+targetLanguage)
+  → public read uses cached translation (Task 05 wires new kinds)
+  → canonical original fallback if missing/stale/provider failure
+```
+
+**Task 02 contract (shipped):**
+
+- Intent: `on_demand` | `automatic_warm` (same engine; different locale gates)
+- Warm targets: `listAutomaticContentTranslationTargetLocales` / `assertAutomaticContentTranslationTargetLocale`
+- Source eligibility: published + field allowlist + `safetyCleared` (warm cannot bypass)
+- Version: `buildContentTranslationSourceVersion`
+- Work identity: `buildContentTranslationWorkIdentity` / `…Key`
+
+**Task 04 durable contract (shipped):**
+
+- Event/command: `ContentTranslationWarmRequested` (catalogue + types); payload is source identity only (no body/locale snapshot/secrets)
+- Outbox: reuse existing `outbox` + `processed_events`; aggregateId = `sourceKind::sourceRecordId`
+- Pending dedupe: skip enqueue if pending row exists for same aggregate; later updates enqueue after prior published/failed
+- Consumer: `content-translation-warm-v1`; reloads source; skips missing/ineligible without hot-loop; retryable locale failures rethrow for outbox retry
+- Concurrency: `CONTENT_TRANSLATION_WARM_LOCALE_CONCURRENCY` (default 2, max 8) + content_translations unique identity
+- Language enable policy: enabling `contentTranslationEnabled` does **not** auto-scan DB; operator uses `enqueueContentTranslationWarmRequested` / memory/manual per source (staging procedure in NEXT_SESSION/WORK_LOG)
+- Deferred hooks: `civic_media` (static content), `blog_post` auto-warm, Discussion comments
+
+**Task 04 seams (wired):** Domain publish/update methods for Initiative, Collaborative Analysis, Petition, and Task 03 civic kinds (incl. lifecycle createCommitment/createTracking). Most civic modules remain post-persistence best-effort enqueue (no shared Mongo session with file-backed stores).
+
+**Task 05 public read (shipped):**
+
+- Shared display: `PublicTranslatedFields` + `CivicPublicTranslatedSection` (civic kinds disable on-demand generate).
+- Cached-first: GET `/api/v1/translations/resolve` with `generateIfMissing=false`; missing/stale → canonical.
+- Preference: none → original; ask → original default + canViewTranslation; preferred → current cached translation.
+- Initiative/Analysis/Petition retain optional POST `/generate` when preferred + cache miss.
+- SourceVersion identity enforced by resolve path; never serve stale as current.
+- Wired Web: improvement-proposal, revision, decision-session, collective-decision, commitment, tracking, official-response, public-impact, civic-archive (detail narrative + list cards), `/media` editorial (`civic-media-center`).
+- Deferred: Blog UI; Discussion; SSR pre-resolve of translations (client hydrate after canonical SSR — flicker remains a known residual; not a Task 06 blocker).
+
+**Task 06 layout resilience (shipped — Pack 02G scope):**
+
+- Shared: `translated-content-view.css`, `public-translated-fields.css` — vertical growth, `min-width:0`, `overflow-wrap:anywhere` / `word-break:break-word`, wrapable toggles, no content-destructive overflow on narrative body.
+- Archive: mini/record cards grow with title/summary (line-clamp removed); detail narrative containers; logical carousel fades.
+- Media: `.civic-media-translated-editorial` wrap contract; resource headings wrap; FAQ list wrap (resources/SVG translation scope unchanged).
+- Public shells touched for Pack 02G + Initiative/Analysis/Petition regression: `text-align:start`, `padding-inline-start`.
+- Stress fixtures: `layout-stress-fixtures-pack02g-task06.ts` (en/uk/zh-Hant/ar + pathological + long URL).
+- Tests: `content-translation-pack02g-task06.web.test.ts` (CSS/source contracts). Viewport `scrollWidth` gate deferred to Task 07 / Pack 02J.
+- Remaining Pack 02J: app-wide RTL, admin/workspace/PWA, formal WCAG, screenshot baselines, trusted-media card line-clamps outside editorial.
+
+**Registry flags (do not conflate):**
+
+| Flag | Pack 02G role |
+|------|----------------|
+| `enabled` | Selectable locale / UI runtime; on-demand generate gate |
+| `contentTranslationEnabled` | **Required gate for automatic content warming** |
+| `uiTranslationStatus` | UI catalog completeness — not content warm |
+| `searchEnabled` | Pack 02H |
+| `seoIndexingEnabled` | Pack 02I |
+
+**Explicitly out of Pack 02G:** Discussion comment UX; DMs; private Participant/admin/moderation/shipping/auth data; multilingual search (02H); SEO (02I); formal layout gate (02J).
 
 ### Multilingual Layout Resilience Gate
 
@@ -416,7 +518,7 @@ Out of scope unless separately approved: automatic DM translation, multilingual 
 
 **Progressive application:**
 
-- Applies **progressively from Pack 02G** as civic/public translation surfaces expand.
+- Applies **progressively from Pack 02G** as civic/public translation surfaces expand (**Task 06 progressive hardening COMPLETE** for Pack 02G civic surfaces).
 - Becomes a **formal acceptance gate in Pack 02J**.
 
 **Future gate coverage (do not implement the full system in Pack 02F):**

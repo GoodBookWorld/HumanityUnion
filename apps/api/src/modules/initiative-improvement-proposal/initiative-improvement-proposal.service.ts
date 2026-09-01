@@ -26,6 +26,7 @@ import {
   validateInitiativeImprovementProposalForSubmission,
 } from "./initiative-improvement-proposal.validators.js";
 import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import { validateDirectInitiativeAncestry } from "../../shared/initiative-ancestry/index.js";
 
 /**
@@ -286,6 +287,12 @@ export function submitInitiativeImprovementProposal(
     actorMemberId: identity.participantId,
   });
 
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "improvement_proposal",
+    sourceRecordId: proposalId,
+    reason: "public_mutation",
+  });
+
   return updated;
 }
 
@@ -339,6 +346,13 @@ export function decideInitiativeImprovementProposal(
     entityId: proposalId,
     initiativeId: updated.initiativeId,
     actorMemberId: identity.participantId,
+  });
+
+  // decisionNote is part of the public translation allowlist.
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "improvement_proposal",
+    sourceRecordId: proposalId,
+    reason: "public_update",
   });
 
   return updated;

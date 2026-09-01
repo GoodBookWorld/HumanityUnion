@@ -1,3 +1,5 @@
+import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import { getCountryLabel, normalizeCountryInput } from "@hu/geography";
 import type {
   Initiative,
@@ -42,7 +44,6 @@ import {
   listArchiveRecordsByAuthor,
   updateArchiveRecord,
 } from "./public-civic-archive.store.js";
-import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
 
 export interface CreatePublicCivicArchiveDraftInput {
   impactId: string;
@@ -449,6 +450,12 @@ export function publishPublicCivicArchive(
     entityId: archiveRecordId,
     initiativeId: updated.initiativeId,
     actorMemberId: identity.participantId,
+  });
+
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "civic_archive",
+    sourceRecordId: archiveRecordId,
+    reason: "public_mutation",
   });
 
   return updated;

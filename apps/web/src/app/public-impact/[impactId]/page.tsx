@@ -5,6 +5,10 @@ import { ProfileSection } from "../../../components/member/ProfileSection";
 import { CivicIntegrationPanel } from "../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getPublicInitiativePublicImpact } from "../../../features/initiative-public-impact/api";
 import { getPublicCivicArchiveForImpact } from "../../../features/public-civic-archive/api";
+import {
+  CivicPublicTranslatedSection,
+  stableJsonForDisplay,
+} from "../../../features/language";
 
 interface PublicImpactPageProps {
   params: Promise<{
@@ -50,10 +54,23 @@ export default async function PublicImpactPage({ params }: PublicImpactPageProps
       </header>
 
       <ProfileSection title="Impact">
-        <ProfileField label="Summary" value={impact.summary} />
-        <ProfileField label="Observed impact" value={impact.observedImpact} />
-        <ProfileField label="Affected community" value={impact.affectedCommunity} />
-        <ProfileField label="Evidence summary" value={impact.evidenceSummary} />
+        <CivicPublicTranslatedSection
+          sourceKind="public_impact"
+          sourceRecordId={impact.impactId}
+          fallbackFields={{
+            title: impact.title,
+            summary: impact.summary,
+            observedImpact: impact.observedImpact,
+            affectedCommunity: impact.affectedCommunity,
+            evidenceSummary: impact.evidenceSummary,
+            evidence: stableJsonForDisplay(
+              impact.evidence.map((item) => ({
+                title: item.title,
+                description: item.description,
+              })),
+            ),
+          }}
+        />
         <ProfileField label="Status" value={impact.status} />
         <ProfileField label="Author" value={impact.authorDisplayName} />
         {impact.publishedAt ? (

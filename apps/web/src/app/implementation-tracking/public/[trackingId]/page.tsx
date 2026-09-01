@@ -9,6 +9,11 @@ import { listPublicCivicAccountabilitiesForInitiative } from "../../../../featur
 import { OfficialResponsesPublicSection } from "../../../../features/official-response/components/OfficialResponsesPublicSection";
 import { CivicAccountabilityPublicSection } from "../../../../features/civic-accountability/components/CivicAccountabilityPublicSection";
 import { listPublicInitiativePublicImpactsForTracking } from "../../../../features/initiative-public-impact/api";
+import {
+  CivicPublicTranslatedSection,
+  joinLinesForDisplay,
+  stableJsonForDisplay,
+} from "../../../../features/language";
 
 interface PublicImplementationTrackingPageProps {
   params: Promise<{
@@ -80,9 +85,28 @@ export default async function PublicImplementationTrackingPage({
       </header>
 
       <ProfileSection title="Tracking">
-        <ProfileField label="Summary" value={tracking.summary} />
+        <CivicPublicTranslatedSection
+          sourceKind="implementation_tracking"
+          sourceRecordId={tracking.trackingId}
+          fallbackFields={{
+            currentStage: tracking.currentStage,
+            summary: tracking.summary,
+            notes: tracking.notes ?? "",
+            approvedAction: tracking.approvedAction ?? "",
+            dependencies: joinLinesForDisplay(tracking.dependencies),
+            obstacles: joinLinesForDisplay(tracking.obstacles),
+            evidenceReferences: joinLinesForDisplay(tracking.evidenceReferences),
+            executionHistory: stableJsonForDisplay(
+              tracking.executionHistory.map((entry) => ({
+                title: entry.title,
+                summary: entry.summary,
+                evidence: entry.evidence,
+                references: entry.references,
+              })),
+            ),
+          }}
+        />
         <ProfileField label="Status" value={tracking.status} />
-        <ProfileField label="Current stage" value={tracking.currentStage} />
         <ProfileField label="Author" value={tracking.authorDisplayName} />
         {tracking.activatedAt ? (
           <ProfileField label="Activated" value={formatDate(tracking.activatedAt)} />
@@ -96,18 +120,18 @@ export default async function PublicImplementationTrackingPage({
       </ProfileSection>
 
       {tracking.executionHistory.length > 0 ? (
-        <ProfileSection title="Execution History">
+        <ProfileSection title="Execution History (canonical records)">
           <ul>
-            {tracking.executionHistory.map((update) => (
-              <li key={update.updateId}>
-                <h2>{update.title}</h2>
-                <p>{update.summary}</p>
-                <ProfileField label="Evidence" value={update.evidence} />
-                {update.references.length > 0 ? (
-                  <ProfileField label="References" value={update.references.join(", ")} />
+            {tracking.executionHistory.map((entry) => (
+              <li key={entry.updateId}>
+                <h2>{entry.title}</h2>
+                <p>{entry.summary}</p>
+                <ProfileField label="Evidence" value={entry.evidence} />
+                {entry.references.length > 0 ? (
+                  <ProfileField label="References" value={entry.references.join(", ")} />
                 ) : null}
                 <p>
-                  {update.authorDisplayName} · {formatDate(update.createdAt)}
+                  {entry.authorDisplayName} · {formatDate(entry.createdAt)}
                 </p>
               </li>
             ))}

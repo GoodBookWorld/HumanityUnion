@@ -34,6 +34,10 @@
 .civic-media-page__hero h1 {
   margin: 0 0 var(--hu-space-3);
   color: var(--hu-color-primary, #0174b0);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: start;
 }
 
 .civic-media-page__lead {
@@ -42,6 +46,27 @@
   font-size: 1.125rem;
   line-height: 1.6;
   color: var(--hu-color-text, #1f2933);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Pack 02G Task 06 — translated editorial block (overview / principles / FAQ / flow). */
+.civic-media-translated-editorial {
+  display: grid;
+  gap: var(--hu-space-4);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.civic-media-translated-editorial .hu-public-translated-fields,
+.civic-media-translated-editorial .hu-translated-content,
+.civic-media-translated-editorial .hu-translated-content__body {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .civic-media-page__hero-grid {
@@ -66,6 +91,15 @@
 .civic-media-page__faq-list {
   display: grid;
   gap: var(--hu-space-3);
+  min-width: 0;
+}
+
+.civic-media-page__faq-list details,
+.civic-media-page__faq-list summary,
+.civic-media-page__faq-list p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .civic-media-page__knowledge-link {

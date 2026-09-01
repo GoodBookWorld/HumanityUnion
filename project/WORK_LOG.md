@@ -56,6 +56,156 @@ Next Objective:
 
 # Entries
 
+## 2026-08-31 (Pack 02G Task 07A — pre-deploy local acceptance + staging push)
+
+Completed:
+
+- Pack **02G** Tasks **01–06 COMPLETE locally**; Task **07** staging acceptance **IN PROGRESS / pending**.
+- Final local gates + single Pack 02G implementation commit + `git push origin staging`.
+- Pack **02G is NOT yet STAGING PASS** (awaits Render revision verification + staging matrix).
+
+Architecture:
+
+- No architecture change in 07A; records durable warming, civic translated-read, progressive layout resilience already shipped in Tasks 02–06.
+- Deferred unchanged: Blog UI; Discussion; Pack 02H search; Pack 02I SEO; Pack 02J formal layout gate; SSR canonical→client resolve residual.
+
+Next Objective:
+
+- User verifies Render services on Pack 02G revision, then Task 07 staging smoke (no production).
+
+---
+
+## 2026-08-31 (Pack 02G Task 06 — multilingual layout resilience)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 06 COMPLETE**.
+- Hardened shared `TranslatedContentView` / `PublicTranslatedFields` / `CivicPublicTranslatedSection` (min-width:0, overflow-wrap, wrapable toggles, no narrative max-height clip).
+- Civic Archive cards/detail + Civic Media editorial + Pack 02G public shells; logical CSS (`text-align:start`, `padding-inline-*`, fade `inset-inline-*`).
+- Deterministic en/uk/zh-Hant/ar + pathological/URL stress fixtures; Web CSS/source contracts (no provider; no DOM scrollWidth harness).
+- Task 07 staging matrix prepared in NEXT_SESSION. No Blog/Discussion/search/SEO; no commit/push/deploy.
+
+Architecture:
+
+- No translation architecture / provider / outbox changes.
+- Progressive Pack 02G layout resilience only; formal gate remains Pack **02J**.
+- `scrollWidth <= clientWidth` recorded for Task 07 staging / Pack 02J (Web unit stack lacks viewport DOM).
+
+Next Objective:
+
+- **Pack 02G Task 07** — acceptance / staging.
+
+---
+
+## 2026-08-31 (Pack 02G Task 05 — civic/public translated read + runtime)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 05 COMPLETE**.
+- Cache-first civic display via `CivicPublicTranslatedSection` (`enableOnDemandGenerate=false`); shared `PublicTranslatedFields` extended with generate opt-out.
+- Wired public routes for Task 03 kinds; civic-archive narrative + list cards; `/media` editorial only.
+- Initiative/Analysis/Petition keep optional POST `/generate` compatibility.
+- No Blog/Discussion/search/SEO; no broad layout remediation; no commit/push/deploy.
+
+Architecture:
+
+- Page read uses GET `/translations/resolve` only for new civic kinds; Task 04 warm remains generation path.
+- Client hydrate after SSR canonical fallback (existing pattern; full SSR resolve deferred as larger refactor).
+
+Next Objective:
+
+- **Pack 02G Task 06** — Multilingual Layout Resilience hardening.
+
+---
+
+## 2026-08-31 (Pack 02G Task 04 — durable content translation warming + outbox)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 04 COMPLETE**.
+- Durable `ContentTranslationWarmRequested` through existing Mongo outbox (source-level payload; pending dedupe; consumer reloads source + Registry).
+- Bounded locale concurrency; retryable/non-retryable failure classification; partial locale success survives retry via content_translations identity.
+- Wired mutation hooks: Initiative, Collaborative Analysis, Petition, and Task 03 civic publish/update paths including dual commitment/tracking lifecycle creates.
+- Deferred: civic_media (static), blog_post auto-warm, Discussion comments, Registry enable auto-backfill, transactional shared session on most civic file stores.
+- No Web/search/SEO/layout; no startup bulk scan; no commit/push/deploy.
+
+Architecture:
+
+- Warming is derived-content work — not civic notification durability; not TranslationPublished/Corrected.
+- Preferred future: shared Mongo transaction where domain write already uses sessions; today = post-persistence best-effort enqueue with pending dedupe.
+
+Next Objective:
+
+- **Pack 02G Task 05** — public read/runtime integration.
+
+---
+
+## 2026-08-31 (Pack 02G Task 03 — civic/public translation source expansion)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 03 COMPLETE**.
+- Added explicit civic `sourceKind`s + public-projection loaders + field allowlists for: improvement_proposal, initiative_revision, decision_session, collective_decision, implementation_commitment, implementation_tracking, official_response, public_impact, civic_archive, civic_media.
+- Official Response / Civic Archive / Civic Media privacy boundaries enforced (no raw headers/provider metadata; no verification metadata; editorial copy only for civic_media).
+- Deferred: Discussion comments; Blog UI expansion; lifecycle_stage as generic civic discriminator.
+- Task 04 mutation/event seams inventoried; Task 06 Web surfaces inventoried. No warm/outbox wiring; no Web/search/SEO; no commit/push/deploy.
+
+Architecture:
+
+- Extend existing `loadTranslatableSource` + Task 02 sourceVersion/eligibility contract; do not use lifecycle_stage as translation discriminator.
+- Public eligibility = non-null public projection (or civic-media singleton); unpublished never eligible for on_demand or automatic_warm.
+
+Next Objective:
+
+- **Pack 02G Task 04** — durable translation warming / outbox.
+
+---
+
+## 2026-08-31 (Pack 02G Task 02 — eligibility + sourceVersion contract)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 02 COMPLETE**.
+- Introduced `ContentTranslationIntent`: `on_demand` (enabled locale) vs `automatic_warm` (`enabled` + `contentTranslationEnabled`).
+- Shared helpers: sourceVersion, work identity, warm-target list/assert, canonical source eligibility + field allowlists, privacy exclusion sentinels.
+- Typed `ContentTranslationWarmRequested` seam for Task 04 (no outbox publish; distinct from TranslationPublished/Corrected).
+- Existing Initiative / Analysis / Petition on-demand generate preserved when contentTranslationEnabled=false.
+- Blog deferred; no new sourceKinds; no Web/CSS; no search/SEO.
+
+Architecture:
+
+- Automatic warming gates on Registry `contentTranslationEnabled`; on-demand remains enabled-only.
+- Canonical source never overwritten; stale never served as current.
+
+Next Objective:
+
+- **Pack 02G Task 03** — civic/public entity expansion (explicit sourceKinds).
+
+---
+
+## 2026-08-31 (Pack 02G Task 01 — civic/public translation expansion audit)
+
+Completed:
+
+- Pack **02G IN PROGRESS**; **Task 01 COMPLETE** (read-only audit + documentation only).
+- Traced existing pipeline: published source → `loadTranslatableSource` → version-keyed `content_translations` → TranslationProvider + terminologyContext → resolve display → Web.
+- Coverage: Initiative / Collaborative Analysis / Petition already eligible+wired; Blog half-wired; remaining lifecycle public entities are safe Pack 02G candidates; Discussion comments stay deferred.
+- Confirmed gaps: no async warm/outbox consumer; `contentTranslationEnabled` unused on generate; request-facing rate limit only; no provider retries.
+- Multilingual Layout Resilience Gate remains progressive from 02G / formal in 02J.
+- Pack **02F** remains COMPLETE + STAGING PASS (`98c2817`). No application code.
+
+Architecture:
+
+- Extend `content_translations` / TranslationProvider / Registry / outbox — do not replace.
+- Automatic warming must gate on `contentTranslationEnabled` (not merely `enabled`).
+- Canonical source never overwritten; stale = version mismatch → original fallback.
+
+Next Objective:
+
+- **Pack 02G Task 02** — eligibility / source-version / Registry content-translation gate contract.
+
+---
+
 ## 2026-08-31 (Pack 02F — COMPLETE + STAGING PASS)
 
 Completed:

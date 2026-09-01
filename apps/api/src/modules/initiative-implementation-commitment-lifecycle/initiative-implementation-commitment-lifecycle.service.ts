@@ -31,6 +31,7 @@ import {
   buildTakeImplementationCommitmentAcceptanceUpdate,
 } from "../initiative-implementation-commitment/initiative-implementation-commitment-responsibility.js";
 import { publishInitiativeLifecycleStage } from "../../shared/initiative-lifecycle-stage/index.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import { findAuthUserByMemberId, findAuthUsersByMemberIds } from "../auth/auth-user.repository.js";
 import { createReminderIfNotExists } from "../reminders/reminder.service.js";
 import { createNotification } from "../notifications/notification.service.js";
@@ -435,6 +436,14 @@ export async function publishInitiativeImplementationCommitmentStage(
 
   upsertPackage(pkg);
   deleteInitiativeImplementationCommitmentLifecycleDraft(initiativeId);
+
+  for (const commitmentId of commitmentIds) {
+    scheduleContentTranslationWarmAfterMutation({
+      sourceKind: "implementation_commitment",
+      sourceRecordId: commitmentId,
+      reason: "public_mutation",
+    });
+  }
 
   try {
     await publishInitiativeLifecycleStage({

@@ -1,35 +1,62 @@
+/* Pack 02G Task 06 — multilingual layout resilience for translated civic/public content. */
 .hu-translated-content {
   display: grid;
   gap: 0.55rem;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .hu-translated-content__meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem 0.85rem;
+  min-width: 0;
+  max-width: 100%;
   font-size: 0.85rem;
   color: #445163;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .hu-translated-content__machine,
 .hu-translated-content__stale {
   font-style: italic;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .hu-translated-content__body {
   margin: 0;
+  min-width: 0;
+  max-width: 100%;
   line-height: 1.5;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  /* Allow vertical growth; never clip translated narrative. */
+  overflow: visible;
+  height: auto;
+  max-height: none;
+  text-align: start;
 }
 
 .hu-translated-content__toggle {
   justify-self: start;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid rgba(28, 36, 48, 0.2);
   background: transparent;
   color: #1c2430;
-  padding: 0.35rem 0.7rem;
+  padding-block: 0.35rem;
+  padding-inline: 0.7rem;
   cursor: pointer;
   font: inherit;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: start;
+  line-height: 1.35;
 }
 
 .hu-translated-content__toggle:focus-visible {

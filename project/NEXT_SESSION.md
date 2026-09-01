@@ -9,10 +9,10 @@ Version 2.0
 ## START HERE — NEW ENGINEERING AGENT
 
 1. **This file** (`project/NEXT_SESSION.md`) is the **authoritative live handoff** for what to do next.
-2. It describes the platform as of **Production Completion Pack 02F COMPLETE + STAGING PASS** (Canonical Terminology Glossary; final staging revision `98c2817`). Packs **02B–02F COMPLETE + STAGING PASS**. Primary engineering branch: follow `git branch --show-current`; **repository evidence wins**.
+2. It describes the platform as of **Production Completion Pack 02G IN PROGRESS** (civic/public translation expansion). Pack **02F COMPLETE + STAGING PASS** (`98c2817`). Packs **02B–02F COMPLETE + STAGING PASS**. Primary engineering branch: follow `git branch --show-current`; **repository evidence wins**.
 3. **Do not reinterpret:** Initiative = sole canonical civic root; Participant-first identity; English = translation fallback; translations never overwrite canonical civic source; staging cleanup tools must not be weakened for production.
 4. **Current Pack track:** Production Completion **Pack 02 — Multilingual Platform Architecture**.
-5. **Exact next task:** **Pack 02G** (civic/public translation expansion + async warming; Layout Resilience Gate applies progressively). Search seam remains **Pack 02H**. Pack **02J** owns formal Multilingual Layout Resilience acceptance. No production promotion yet.
+5. **Exact next task:** **Pack 02G Task 07** — staging acceptance after Render reaches the Pack 02G revision (**IN PROGRESS / pending**; Pack 02G **not** yet STAGING PASS). Blog UI deferred. Discussion comments deferred. Search = **Pack 02H**. SEO = **Pack 02I**. Formal Layout Resilience acceptance = **Pack 02J**. No production promotion yet.
 6. **Deeper architecture:** ADR registry `architecture/ARCHITECTURE_DECISION_RECORDS.md`; Initiative-root ADR; Development Baseline; Language Architecture `project/architecture/core/LANGUAGE_TRANSLATION_ARCHITECTURE_v1.0.md`; Pack 02A summary `architecture/recovery/PRODUCTION_COMPLETION_PACK_02A_MULTILINGUAL_AUDIT_v1.0.md`; AI recovery kit `architecture/recovery/chat-agent/README.md`.
 7. When docs conflict with code/git/operator-verified facts, **repository evidence wins** — then synchronize documentation.
 8. **Never commit** secrets, credentials, connection strings, or private migration manifests (including `production-admin-source.json`).
@@ -32,6 +32,52 @@ Chronology: `project/WORK_LOG.md`
 ---
 
 ## Last Completed
+
+### Production Completion Pack 02G — Civic/Public Content Translation Expansion (IN PROGRESS)
+
+| Task | Result |
+|------|--------|
+| 01 Read-only architecture audit | **COMPLETE** |
+| 02 Eligibility / source-version / Registry gate | **COMPLETE** |
+| 03 Civic/public entity expansion | **COMPLETE** |
+| 04 Durable translation warming / outbox | **COMPLETE** |
+| 05 Public read / runtime integration | **COMPLETE** |
+| 06 Progressive layout-resilience hardening | **COMPLETE** |
+| 07 Acceptance / staging | **IN PROGRESS** (local gates + staging push; **not** STAGING PASS yet) |
+
+**Local status:** Tasks **01–06 COMPLETE locally**. Pack **02G is NOT yet STAGING PASS**. Task 07 staging smoke waits for Render revision verification after this push.
+
+**Task 06 delivered:** Pack 02G-scoped multilingual layout resilience on shared translated components + civic/archive/media surfaces. Deterministic en/uk/zh-Hant/ar stress fixtures (no provider). Logical CSS on touched public shells. Formal scrollWidth DOM gate deferred (Web unit stack is CSS/source contracts) → Task 07 staging / Pack 02J. No Blog/Discussion/search/SEO.
+
+**Task 05 delivered:** Cache-first civic translated display via shared `PublicTranslatedFields` / `CivicPublicTranslatedSection` (`enableOnDemandGenerate=false` for new kinds). Wired public routes for Task 03 kinds + civic-archive cards/detail + `/media` editorial. Initiative/Analysis/Petition keep optional POST `/generate` compatibility. Resolve remains generateIfMissing=false. No Blog/Discussion/search/SEO; no broad CSS remediation.
+
+**Task 04 delivered:** Durable `ContentTranslationWarmRequested` via existing Mongo outbox; consumer + mutation hooks.
+
+**Task 03 delivered:** Explicit civic `sourceKind`s + loaders + allowlists.
+
+**Task 02 delivered:** `ContentTranslationIntent`; warm targets; sourceVersion/work identity; eligibility.
+
+**Staging warm procedure (Task 04):** Enable locale with `contentTranslationEnabled` → publish/update public record or enqueue known id → confirm outbox + `content_translations`.
+
+### Task 07 staging acceptance matrix (prepared — do not execute/deploy yet)
+
+**Languages:** en · uk · zh-Hant · ar (RTL)
+
+**Viewports:** mobile (~375) · tablet/intermediate (~900) · desktop (~1280)
+
+**Surfaces (representative, minimize provider activity; prefer cached translations):**
+
+| Surface | Why |
+|---------|-----|
+| One standard civic detail (e.g. improvement-proposal or decision-session public) | Typical title + translated fields |
+| One structured/high-density (collective-decision or official-response w/ reference URL) | Dense meta + long reference |
+| Civic Archive list + detail | Cards + long narrative |
+| Civic Media `/media` | Editorial expansion vs diagrams/resources |
+| Initiative / Analysis / Petition sample | Regression |
+
+**Verify:** no overlap · no clipping · no unintended horizontal page scroll · actions readable/reachable · CJK wrap · RTL geometry · canonical fallback · machine/source indicators usable.
+
+**Deferred to Pack 02J:** app-wide RTL, admin/workspace/PWA, formal WCAG, screenshot baselines.
 
 ### Production Completion Pack 02F — Canonical Terminology Glossary (COMPLETE + STAGING PASS)
 
@@ -101,11 +147,9 @@ Unchanged — Pack 02C locale authority; `next-intl` foundation; staging PASS re
 
 ## Immediate Objective
 
-**Pack 02G** — civic/public translation expansion + async warming. Layout Resilience Gate applies progressively from 02G.
+**Pack 02G Task 07** — staging acceptance after Render revision verification (matrix below). Pack 02G remains **IN PROGRESS** until staging PASS is recorded. Do not start Pack 02H/02I. Pack **02J** owns formal Layout Resilience acceptance. No production promotion yet.
 
-Do not start Pack 02H multilingual search in 02G. Pack **02J** owns formal Multilingual Layout Resilience acceptance. No production promotion yet.
-
-Do not invent a second locale-resolution path. Reuse Pack 02C + Pack 02D runtime. Pack 02E chrome keys stay as shipped. Pack 02F glossary remains as shipped (`98c2817`).
+Known residual: SSR still renders canonical; client hydrates after GET resolve (same as Petition). Formal app-wide Layout Resilience = Pack **02J**. Blog UI / Discussion / search (02H) / SEO (02I) deferred.
 
 Deeper Pack 02 sequence (approved):
 
@@ -117,9 +161,10 @@ Deeper Pack 02 sequence (approved):
 | 02D | UI i18n foundation — **COMPLETED** + staging **PASS** |
 | 02E | UI key extraction — **COMPLETED** + staging **PASS** |
 | 02F | Canonical terminology glossary — **COMPLETE + STAGING PASS** (`98c2817`) |
-| 02G | Civic/public translation expansion + async warming — **NEXT**; Layout Resilience Gate applies progressively |
+| 02G | Civic/public translation expansion + async warming — **IN PROGRESS** (Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS); Layout Resilience progressive |
 | 02H | Multilingual search seam — **deferred** |
-| 02I–02J | Hardening; **Multilingual Layout Resilience Gate** formal acceptance in **02J** |
+| 02I | Multilingual SEO — **deferred** |
+| 02J | Hardening; **Multilingual Layout Resilience Gate** formal acceptance |
 
 ---
 

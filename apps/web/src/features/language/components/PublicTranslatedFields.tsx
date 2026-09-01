@@ -10,6 +10,8 @@ import { getMyPreferences } from "../../preferences/preferences-api";
 import { resolveTranslatedContent, generateContentTranslation } from "../translation-api";
 import { TranslatedContentView } from "./TranslatedContentView";
 
+import "./public-translated-fields.css";
+
 export interface PublicTranslatedFieldsProps {
   readonly sourceKind: ContentTranslationSourceKind;
   readonly sourceRecordId: string;
@@ -18,6 +20,12 @@ export interface PublicTranslatedFieldsProps {
   /** Fallback fields from the already-loaded public projection. */
   readonly fallbackFields: Record<string, string>;
   readonly className?: string;
+  /**
+   * When true (default), preferred preference may POST /generate on cache miss
+   * (Initiative / Analysis / Petition compatibility).
+   * Task 05 civic kinds set false — Task 04 warm is the generation path.
+   */
+  readonly enableOnDemandGenerate?: boolean;
 }
 
 /**
@@ -31,6 +39,7 @@ export function PublicTranslatedFields({
   fieldLabels,
   fallbackFields,
   className,
+  enableOnDemandGenerate = true,
 }: PublicTranslatedFieldsProps) {
   const [fields, setFields] = useState(fallbackFields);
   const [originalFields, setOriginalFields] = useState(fallbackFields);
@@ -79,8 +88,10 @@ export function PublicTranslatedFields({
           language: readingLanguage,
         });
 
-        // When preferred and no translation yet, request generation once (rate limited server-side).
+        // Initiative/Analysis/Petition compatibility: optional on-demand generate.
+        // Civic Pack 02G kinds keep enableOnDemandGenerate=false (warm-only).
         if (
+          enableOnDemandGenerate &&
           preference === "preferred" &&
           resolved.presentationMode === "original" &&
           readingLanguage !== resolved.originalLanguage &&
@@ -121,10 +132,12 @@ export function PublicTranslatedFields({
     return () => {
       cancelled = true;
     };
-  }, [sourceKind, sourceRecordId, fallbackSignature]);
+  }, [sourceKind, sourceRecordId, fallbackSignature, enableOnDemandGenerate]);
 
   return (
-    <div className={className}>
+    <div
+      className={["hu-public-translated-fields", className].filter(Boolean).join(" ")}
+    >
       {fieldOrder.map((fieldKey) => {
         const value = fields[fieldKey]?.trim();
         const original = originalFields[fieldKey] ?? "";

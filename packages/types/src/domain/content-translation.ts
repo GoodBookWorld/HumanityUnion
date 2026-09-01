@@ -20,15 +20,25 @@ export type TranslationProviderId =
   | (string & {});
 
 /**
- * Vertical-slice source kinds (Pack 02).
- * Later Lifecycle stages reuse the same adapter with additional kinds.
+ * Vertical-slice + Pack 02G civic/public source kinds.
+ * Task 03 adds explicit lifecycle kinds — do not overload lifecycle_stage.
  */
 export type ContentTranslationSourceKind =
   | "initiative"
   | "collaborative_analysis"
   | "petition"
   | "lifecycle_stage"
-  | "blog_post";
+  | "blog_post"
+  | "improvement_proposal"
+  | "initiative_revision"
+  | "decision_session"
+  | "collective_decision"
+  | "implementation_commitment"
+  | "implementation_tracking"
+  | "official_response"
+  | "public_impact"
+  | "civic_archive"
+  | "civic_media";
 
 /**
  * Reusable translated-content record.
@@ -99,4 +109,51 @@ export interface TranslateDraftResult {
   /** Original draft payload unchanged. */
   readonly originalDraftContent: Record<string, unknown> | string;
   readonly originalLanguage: LanguageCode;
+}
+
+/**
+ * Pack 02G — how translation generation was requested.
+ * Same engine/loader/provider/persistence; different locale eligibility gates.
+ *
+ * - `on_demand`: explicit/manual/user-triggered (enabled locale sufficient)
+ * - `automatic_warm`: background warming (requires contentTranslationEnabled)
+ */
+export type ContentTranslationIntent = "on_demand" | "automatic_warm";
+
+/**
+ * Canonical work identity for persistence uniqueness + future warm-job dedupe.
+ * Matches Mongo unique index: sourceKind + sourceRecordId + sourceVersion + targetLanguage.
+ */
+export interface ContentTranslationWorkIdentity {
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly sourceRecordId: string;
+  readonly sourceVersion: string;
+  readonly targetLanguage: LanguageCode;
+}
+
+/**
+ * Durable warm-request command (source-level).
+ * Distinct from catalogue result events TranslationPublished / TranslationCorrected.
+ *
+ * Consumer reloads authoritative source + Registry targets at execution.
+ * Do not embed translated text, provider prompts, private fields, or locale snapshots.
+ */
+export const CONTENT_TRANSLATION_WARM_REQUESTED = "ContentTranslationWarmRequested" as const;
+
+export type ContentTranslationWarmRequestedCommandName =
+  typeof CONTENT_TRANSLATION_WARM_REQUESTED;
+
+/** Why a source-level warm was requested (observability only). */
+export type ContentTranslationWarmReason =
+  | "public_mutation"
+  | "public_update"
+  | "operator_manual"
+  | "operator_backfill";
+
+export interface ContentTranslationWarmRequestedCommand {
+  readonly commandName: ContentTranslationWarmRequestedCommandName;
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly sourceRecordId: string;
+  readonly requestedAt: string;
+  readonly reason: ContentTranslationWarmReason;
 }

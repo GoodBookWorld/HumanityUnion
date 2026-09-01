@@ -12,6 +12,10 @@ import { OfficialResponsesPublicSection } from "../../../../features/official-re
 import { MembershipPlatformStatisticsSection } from "../../../../features/membership/components/MembershipPlatformStatisticsSection";
 import { listPublicInitiativeImplementationCommitmentsForDecision } from "../../../../features/initiative-implementation-commitment/api";
 import { getPetitionByCollectiveDecisionId } from "../../../../features/petition/api";
+import {
+  CivicPublicTranslatedSection,
+  stableJsonForDisplay,
+} from "../../../../features/language";
 
 import "../public-collective-decision-page.css";
 
@@ -78,6 +82,35 @@ export default async function PublicCollectiveDecisionPage({
         </header>
 
         <ProfileSection title="Decision">
+          <CivicPublicTranslatedSection
+            sourceKind="collective_decision"
+            sourceRecordId={initiativeDecision.decisionId}
+            fallbackFields={{
+              question: initiativeDecision.question,
+              outcomeSummary: initiativeDecision.outcomeSummary,
+              transparencyNote: initiativeDecision.transparencyNote,
+              structuredContent: initiativeDecision.structuredContent
+                ? stableJsonForDisplay({
+                    title: initiativeDecision.structuredContent.title,
+                    decisionSummary: initiativeDecision.structuredContent.decisionSummary,
+                    approvedActions: initiativeDecision.structuredContent.approvedActions,
+                    rejectedAlternatives: initiativeDecision.structuredContent.rejectedAlternatives,
+                    responsibleRoles: initiativeDecision.structuredContent.responsibleRoles,
+                    implementationPriorities:
+                      initiativeDecision.structuredContent.implementationPriorities,
+                    implementationTimeline:
+                      initiativeDecision.structuredContent.implementationTimeline,
+                    decisionRationale: initiativeDecision.structuredContent.decisionRationale,
+                    decisionRisks: initiativeDecision.structuredContent.decisionRisks,
+                    successCriteria: initiativeDecision.structuredContent.successCriteria,
+                    requiredResources: initiativeDecision.structuredContent.requiredResources,
+                    supportingReferences: initiativeDecision.structuredContent.supportingReferences,
+                    votingOutcomeSummary:
+                      initiativeDecision.structuredContent.votingOutcomeSummary ?? "",
+                  })
+                : "",
+            }}
+          />
           <ProfileField label="Status" value={initiativeDecision.status} />
           <ProfileField label="Participation scope" value={initiativeDecision.participationScope} />
           <ProfileField label="Steward" value={initiativeDecision.stewardDisplayName} />
@@ -140,10 +173,6 @@ export default async function PublicCollectiveDecisionPage({
                 label="Participation confidence"
                 value={initiativeDecision.participationConfidenceLevel}
               />
-              <ProfileField label="Summary" value={initiativeDecision.outcomeSummary} />
-              <p className="public-collective-decision-page__transparency-note">
-                {initiativeDecision.transparencyNote}
-              </p>
             </ProfileSection>
           </>
         ) : (

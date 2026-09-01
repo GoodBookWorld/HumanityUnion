@@ -13,6 +13,7 @@ import { getDecision } from "../collective-decision/collective-decision.store.js
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { PetitionConcurrencyConflictError, PetitionTransactionError } from "./petition.errors.js";
 import { createPetitionSignedEvent } from "./petition-signed.event.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import {
   assertMutablePetition,
   assertPreparatoryPetition,
@@ -351,6 +352,12 @@ export async function publishPetition(petitionId: string): Promise<Petition | nu
   }
 
   const signatures = await listSignaturesByPetitionId(petitionId);
+
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "petition",
+    sourceRecordId: petitionId,
+    reason: "public_mutation",
+  });
 
   return assemblePetitionResponse(updated, signatures);
 }

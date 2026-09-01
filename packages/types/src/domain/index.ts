@@ -144,7 +144,12 @@ export {
   parseAcceptLanguageHeader,
 } from "./accept-language.js";
 export type {
+  ContentTranslationIntent,
   ContentTranslationSourceKind,
+  ContentTranslationWarmReason,
+  ContentTranslationWarmRequestedCommand,
+  ContentTranslationWarmRequestedCommandName,
+  ContentTranslationWorkIdentity,
   ResolvedContentPresentationMode,
   ResolvedTranslatedDisplay,
   TranslateDraftRequest,
@@ -154,6 +159,7 @@ export type {
   TranslationKind,
   TranslationProviderId,
 } from "./content-translation.js";
+export { CONTENT_TRANSLATION_WARM_REQUESTED } from "./content-translation.js";
 export type { ApproximateIpGeography, ApproximateIpGeographySource } from "./ip-geography.js";
 export type {
   AnalysisId,

@@ -53,12 +53,12 @@ Project Health: **Healthy** (Pack 02B/02C/02D/02E/02F staging PASS)
 | **02D UI i18n Foundation** | **COMPLETED** + staging **PASS** |
 | **02E UI Key Extraction** | **COMPLETED** + staging **PASS** |
 | **02F Canonical Terminology Glossary** | **COMPLETE + STAGING PASS** (`98c2817`) |
-| **02G** Civic/public translation expansion + async warming | **NEXT** (Layout Resilience Gate progressive) |
-| 02H–02J | Queued (02H search deferred; 02J formal Layout Resilience acceptance) |
+| **02G** Civic/public translation expansion + async warming | **IN PROGRESS** (Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS) |
+| 02H–02J | Queued (02H search deferred; 02I SEO; 02J formal Layout Resilience acceptance) |
 
-Live next task: **Pack 02G** — see `project/NEXT_SESSION.md`.
+Live next task: **Pack 02G Task 07** — staging acceptance after Render revision (**pending**; not STAGING PASS) — see `project/NEXT_SESSION.md`.
 
-Last closed product Pack with staging PASS: **02F** (revision `98c2817`). No production promotion yet.
+Last closed product Pack with staging PASS: **02F** (revision `98c2817`). Pack 02G Tasks 01–06 COMPLETE locally. No production promotion yet.
 
 ---
 
@@ -91,8 +91,9 @@ Do not present superseded Activity-root ADR-002 as current architecture.
 
 # Open Issues (summary)
 
-- Pack 02G — Civic/public translation expansion + async warming (**NEXT**)
+- Pack 02G — Civic/public translation expansion (**IN PROGRESS**; Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS)
 - Pack 02H multilingual search — deferred
+- Pack 02I multilingual SEO — deferred
 - Pack 02J — formal Multilingual Layout Resilience acceptance
 - Pack 02B/02C/02D/02E/02F staging acceptance PASS
 - Production bootstrap Initiative deletion (separate production-safe procedure; staging cleanup refuses production)

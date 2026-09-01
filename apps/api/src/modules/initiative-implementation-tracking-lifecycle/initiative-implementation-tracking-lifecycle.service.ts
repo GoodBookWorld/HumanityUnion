@@ -17,6 +17,7 @@ import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { listActiveAlliesByInitiative } from "../initiative-discussion-collaboration/initiative-ally.store.js";
 import { getCommitmentById } from "../initiative-implementation-commitment/initiative-implementation-commitment.store.js";
 import { publishInitiativeLifecycleStage } from "../../shared/initiative-lifecycle-stage/index.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import { createReminderIfNotExists } from "../reminders/reminder.service.js";
 import { findAuthUsersByMemberIds } from "../auth/auth-user.repository.js";
 import {
@@ -420,6 +421,14 @@ export async function publishInitiativeImplementationTrackingStage(
 
   upsertPackage(pkg);
   deleteInitiativeImplementationTrackingLifecycleDraft(initiativeId);
+
+  for (const trackingId of trackingIds) {
+    scheduleContentTranslationWarmAfterMutation({
+      sourceKind: "implementation_tracking",
+      sourceRecordId: trackingId,
+      reason: "public_mutation",
+    });
+  }
 
   try {
     await publishInitiativeLifecycleStage({

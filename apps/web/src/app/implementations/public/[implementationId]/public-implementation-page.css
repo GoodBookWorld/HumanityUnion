@@ -6,7 +6,7 @@
   padding-block: var(--hu-section-gap);
   padding-inline: var(--hu-page-padding-inline);
   box-sizing: border-box;
-  text-align: left;
+  text-align: start;
 }
 
 .public-implementation-page__header {
@@ -39,7 +39,7 @@
 
 .public-implementation-page__list {
   margin: 0.5rem 0 0;
-  padding-left: 1.25rem;
+  padding-inline-start: 1.25rem;
 }
 
 .public-implementation-page__group {

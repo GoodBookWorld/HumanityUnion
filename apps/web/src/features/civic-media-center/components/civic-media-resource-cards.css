@@ -23,11 +23,18 @@
   margin: 0;
   color: var(--hu-color-primary, #0174b0);
   font-size: 1.05rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .civic-media-resource-card p {
   margin: 0;
   color: var(--hu-color-text, #1f2933);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .civic-media-resource-card__label {

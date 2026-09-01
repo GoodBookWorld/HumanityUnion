@@ -24,6 +24,7 @@ import {
 } from "../../horizontal-experience";
 import { PublicNewsSection } from "../../public-news/components/PublicNewsSection";
 import { fetchCivicMediaCenter } from "../api";
+import { CivicMediaTranslatedEditorial } from "./CivicMediaTranslatedEditorial";
 import { CivicPipelineWorkflow } from "./CivicPipelineWorkflow";
 import { MediaLogo } from "./MediaLogo";
 import { TrustedMediaCategoryTabs } from "./TrustedMediaCategoryTabs";
@@ -190,15 +191,7 @@ export function CivicMediaCenterPageContent() {
           <div className="civic-media-section-shell__inner">
             <p className="civic-media-page__eyebrow">Civic Media</p>
             <h1>Civic Media Center</h1>
-            <p className="civic-media-page__lead">{media.overview.summary}</p>
-            <div className="civic-media-page__hero-grid">
-              {media.overview.points.map((point) => (
-                <Card key={point.id} className="civic-media-resource-card civic-media-resource-card--hero">
-                  <h2>{point.heading}</h2>
-                  <p>{point.body}</p>
-                </Card>
-              ))}
-            </div>
+            <CivicMediaTranslatedEditorial media={media} />
           </div>
         </section>
 

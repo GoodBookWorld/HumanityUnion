@@ -17,6 +17,7 @@ import { getCommitmentById } from "../initiative-implementation-commitment/initi
 import { hasAcceptedImplementationResponsibility } from "../initiative-implementation-commitment/initiative-implementation-commitment-responsibility.js";
 import { assessInitiativeImplementationTrackingEligibilityForResolved } from "./initiative-implementation-tracking-eligibility.js";
 import { emitCivicNotificationEvent } from "../notifications/notification.service.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import {
   InitiativeAncestryMissingError,
   ParentArtifactNotFoundError,
@@ -388,6 +389,12 @@ export function activateInitiativeImplementationTracking(
     throw new Error("Implementation tracking not found.");
   }
 
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "implementation_tracking",
+    sourceRecordId: trackingId,
+    reason: "public_mutation",
+  });
+
   return updated;
 }
 
@@ -429,6 +436,12 @@ export function addImplementationTrackingUpdate(
     entityId: trackingId,
     initiativeId: tracking.initiativeId,
     actorMemberId: identity.participantId,
+  });
+
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "implementation_tracking",
+    sourceRecordId: trackingId,
+    reason: "public_update",
   });
 
   return update;

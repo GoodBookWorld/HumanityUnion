@@ -2,7 +2,7 @@
   width: min(100% - 2rem, 960px);
   margin-inline: auto;
   padding: 2rem 0;
-  text-align: left;
+  text-align: start;
 }
 
 .public-initiative-page__header {
@@ -13,11 +13,16 @@
   font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: 0.25rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .public-initiative-page__subtitle {
   color: #525252;
   font-size: 0.95rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .public-initiative-page__illustration {
@@ -64,5 +69,5 @@
 
 .public-initiative-page__compatibility-details ul {
   margin: 0.5rem 0 0;
-  padding-left: 1.25rem;
+  padding-inline-start: 1.25rem;
 }

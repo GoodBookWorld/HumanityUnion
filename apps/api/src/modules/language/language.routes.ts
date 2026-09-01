@@ -28,6 +28,16 @@ const SOURCE_KINDS: readonly ContentTranslationSourceKind[] = [
   "petition",
   "lifecycle_stage",
   "blog_post",
+  "improvement_proposal",
+  "initiative_revision",
+  "decision_session",
+  "collective_decision",
+  "implementation_commitment",
+  "implementation_tracking",
+  "official_response",
+  "public_impact",
+  "civic_archive",
+  "civic_media",
 ];
 
 function failure(message: string) {

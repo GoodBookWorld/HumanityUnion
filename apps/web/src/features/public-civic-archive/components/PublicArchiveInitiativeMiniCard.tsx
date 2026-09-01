@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { CivicArchiveLifecycleRecord } from "@hu/types";
 
 import { resolveMediaUrl } from "../../media-upload/media-url";
+import { CivicArchiveCardTranslatedText } from "./CivicArchiveCardTranslatedText";
 
 export const PUBLIC_ARCHIVE_INITIATIVE_MINI_CARD_FALLBACK_IMAGE =
   "/images/initiatives/initiative-default.webp";
@@ -66,8 +67,13 @@ export function PublicArchiveInitiativeMiniCard({ record }: PublicArchiveInitiat
       </div>
       <div className="civic-archive-mini-card__body">
         <span className="civic-archive-mini-card__badge">{record.outcomeStatusLabel}</span>
-        <h3 className="civic-archive-mini-card__title">{record.title}</h3>
-        <p className="civic-archive-mini-card__summary">{record.finalOutcomeSummary}</p>
+        <CivicArchiveCardTranslatedText
+          archiveRecordId={record.archiveRecordId}
+          title={record.title}
+          summary={record.summary || record.finalOutcomeSummary}
+          titleClassName="civic-archive-mini-card__title"
+          summaryClassName="civic-archive-mini-card__summary"
+        />
         <p className="civic-archive-mini-card__meta">
           {record.activityArea} · {formatLocation(record)}
         </p>

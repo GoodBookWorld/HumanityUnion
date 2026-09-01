@@ -49,12 +49,12 @@ Primary engineering branch: follow `git branch --show-current` (repository evide
 | **02D** UI i18n Foundation | **COMPLETED** + staging **PASS** |
 | **02E** UI Key Extraction | **COMPLETED** + staging **PASS** |
 | **02F** Canonical Terminology Glossary | **COMPLETE + STAGING PASS** (revision `98c2817`) |
-| **02G** Civic/public translation expansion + async warming | **NEXT** (Layout Resilience Gate progressive) |
-| 02H–02J | Sequenced after 02G (02H = search deferred; 02J = formal Layout Resilience acceptance) |
+| **02G** Civic/public translation expansion + async warming | **IN PROGRESS** (Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS) |
+| 02H–02J | Sequenced after 02G (02H = search deferred; 02I = SEO; 02J = formal Layout Resilience acceptance) |
 
 See `project/NEXT_SESSION.md` for the exact next implementation objective.
 
-Last completed product track milestone: **Pack 02F COMPLETE + STAGING PASS** (glossary seed + Admin API/UI + provider preferred-term injection + Remove translation contract + staging acceptance `98c2817`). Next → Pack 02G. No production promotion yet.
+Last completed product track milestone: **Pack 02F COMPLETE + STAGING PASS** (`98c2817`). Pack **02G Tasks 01–06 COMPLETE locally**. Task 07 staging acceptance **pending** (Pack 02G **not** yet STAGING PASS). No production promotion yet.
 
 ---
 
@@ -159,7 +159,7 @@ Still excluded unless a future architecture decision says otherwise:
 **Not present yet:**
 
 - Lifecycle-stage / civic body / Notification Center empty-state / Blog navLabel API redesign / role·status enum maps — deferred beyond 02E
-- Broad civic/public translation expansion + async warming (Pack **02G** — next)
+- Broad civic/public translation expansion + async warming (Pack **02G** — IN PROGRESS; Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS)
 - Admin-managed remote UI message packs / R2 persistence
 - Admin platform-default-language setting (currently `DEFAULT_PLATFORM_LANGUAGE` = `en`)
 - Multilingual search (Pack **02H** — deferred)
@@ -174,8 +174,9 @@ Still excluded unless a future architecture decision says otherwise:
 |------|--------|
 | Pack 02E UI Key Extraction | **COMPLETED** + staging **PASS** |
 | Pack 02F Canonical Terminology Glossary | **COMPLETE + STAGING PASS** (`98c2817`) |
-| Pack 02G Civic/public translation expansion | **NEXT** (Layout Resilience Gate progressive from 02G) |
+| Pack 02G Civic/public translation expansion | **IN PROGRESS** (Tasks 01–06 COMPLETE locally; Task 07 staging pending — **not** STAGING PASS; Layout Resilience progressive from 02G) |
 | Pack 02H Multilingual search | **Deferred** |
+| Pack 02I Multilingual SEO | **Deferred** |
 | Pack 02J Multilingual Layout Resilience | Formal acceptance gate (progressive from 02G) |
 | Pack 02B / 02C / 02D / 02E / 02F staging acceptance | **PASS** |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |

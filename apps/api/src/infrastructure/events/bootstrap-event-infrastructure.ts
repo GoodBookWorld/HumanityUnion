@@ -7,6 +7,7 @@ import { registerInitiativeLifecycleStageHandlers } from "../../shared/initiativ
 import { registerBlogPublicationDeliveryHandlers } from "../../modules/blog/blog-publication-delivery.index.js";
 import { registerBlogAdminSubscriberMessageHandlers } from "../../modules/blog/blog-subscription-admin-message.index.js";
 import { registerAdminNotificationHandlers } from "../../modules/admin-notifications/index.js";
+import { registerContentTranslationWarmHandlers } from "../../modules/language/content-translation-warm-consumer.js";
 import { startOutboxDispatcher } from "../outbox/outbox.dispatcher.js";
 import { logger } from "../../shared/observability/logger.js";
 
@@ -31,6 +32,7 @@ export async function bootstrapEventInfrastructure(): Promise<void> {
   registerBlogPublicationDeliveryHandlers();
   registerBlogAdminSubscriberMessageHandlers();
   registerAdminNotificationHandlers();
+  registerContentTranslationWarmHandlers();
   startOutboxDispatcher();
 
   logger.info("event_infrastructure.ready", { component: "event-infrastructure" });

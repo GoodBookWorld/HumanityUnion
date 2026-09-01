@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { CivicIntegrationPanel } from "../../../features/capability02-integration/components/CivicIntegrationPanel";
 import { getCivicArchiveLifecycleRecord } from "../../../features/public-civic-archive/api";
 import { CivicArchiveLifecycleTimeline } from "../../../features/public-civic-archive/components/CivicArchiveLifecycleTimeline";
+import { CivicArchiveTranslatedNarrative } from "../../../features/public-civic-archive/components/CivicArchiveTranslatedNarrative";
 import { applyPageSeoOverrideToMetadataInput } from "../../../lib/seo/apply-page-seo-override";
 import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
 import { fetchPublicSeoPageOverride } from "../../../lib/seo/fetch-public-seo-page-override";
@@ -136,6 +137,15 @@ export default async function CivicArchiveDetailPage({ params }: CivicArchiveDet
           </div>
         </dl>
       </header>
+
+      <section className="civic-archive-detail__section">
+        <h2>Archive narrative</h2>
+        <CivicArchiveTranslatedNarrative
+          archiveRecordId={record.archiveRecordId}
+          titleFallback={record.title}
+          summaryFallback={record.summary}
+        />
+      </section>
 
       <section className="civic-archive-detail__section">
         <h2>Final outcome</h2>

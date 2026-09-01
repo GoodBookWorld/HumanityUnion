@@ -12,6 +12,13 @@ export { TranslatedContentView } from "./components/TranslatedContentView";
 export type { TranslatedContentViewProps } from "./components/TranslatedContentView";
 export { PublicTranslatedFields } from "./components/PublicTranslatedFields";
 export type { PublicTranslatedFieldsProps } from "./components/PublicTranslatedFields";
+export { CivicPublicTranslatedSection } from "./components/CivicPublicTranslatedSection";
+export type { CivicPublicTranslatedSectionProps } from "./components/CivicPublicTranslatedSection";
+export {
+  CIVIC_TRANSLATION_FIELD_META,
+  joinLinesForDisplay,
+  stableJsonForDisplay,
+} from "./civic-translation-field-meta";
 export { TranslateDraftControl } from "./components/TranslateDraftControl";
 export type { TranslateDraftControlProps } from "./components/TranslateDraftControl";
 export { DocumentLanguageAttributes } from "./components/DocumentLanguageAttributes";

@@ -59,6 +59,8 @@ export const CATALOGUE_EVENTS = {
   initiativePublished: "InitiativePublished",
   // Admin Foundation Pack 02 — immutable audit outbox signal.
   administrationAuditRecorded: "AdministrationAuditRecorded",
+  /** Pack 02G Task 04 — durable content-translation warm work (not TranslationPublished/Corrected). */
+  contentTranslationWarmRequested: "ContentTranslationWarmRequested",
 } as const;
 
 export type CatalogueEventName = (typeof CATALOGUE_EVENTS)[keyof typeof CATALOGUE_EVENTS];
