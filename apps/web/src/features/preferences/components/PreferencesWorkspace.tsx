@@ -233,31 +233,52 @@ export function PreferencesWorkspace() {
         </label>
         <label className="preferences-workspace__field">
           <span>Preferred Reading Language</span>
-          <select
-            value={
-              languageOptions.some(
-                (option) =>
-                  option.code === (preferences.experiencePreferences.readingLanguages[0] ?? "en"),
-              )
-                ? (preferences.experiencePreferences.readingLanguages[0] ?? "en")
-                : (languageOptions[0]?.code ?? "en")
-            }
-            onChange={(event) =>
-              setPreferences({
-                ...preferences,
-                experiencePreferences: {
-                  ...preferences.experiencePreferences,
-                  readingLanguages: [event.target.value],
-                },
-              })
-            }
-          >
-            {languageOptions.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.nativeName} ({option.code})
-              </option>
-            ))}
-          </select>
+          {(() => {
+            const persistedReading =
+              preferences.experiencePreferences.readingLanguages[0]?.trim() || "";
+            const readingInOptions =
+              persistedReading.length > 0 &&
+              languageOptions.some((option) => option.code === persistedReading);
+            return (
+              <>
+                <select
+                  value={readingInOptions ? persistedReading : persistedReading || ""}
+                  onChange={(event) =>
+                    setPreferences({
+                      ...preferences,
+                      experiencePreferences: {
+                        ...preferences.experiencePreferences,
+                        readingLanguages: [event.target.value],
+                      },
+                    })
+                  }
+                >
+                  {!readingInOptions && persistedReading ? (
+                    <option value={persistedReading}>
+                      {persistedReading} (saved — temporarily unavailable in catalog)
+                    </option>
+                  ) : null}
+                  {!persistedReading ? (
+                    <option value="" disabled>
+                      No reading language saved
+                    </option>
+                  ) : null}
+                  {languageOptions.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.nativeName} ({option.code})
+                    </option>
+                  ))}
+                </select>
+                {!readingInOptions && persistedReading ? (
+                  <p className="preferences-workspace__help">
+                    Saved reading language <code>{persistedReading}</code> is not in the current
+                    enabled language catalog. It remains persisted until you choose an available
+                    language.
+                  </p>
+                ) : null}
+              </>
+            );
+          })()}
         </label>
         <label className="preferences-workspace__field">
           <span>Writing Languages (comma-separated codes)</span>

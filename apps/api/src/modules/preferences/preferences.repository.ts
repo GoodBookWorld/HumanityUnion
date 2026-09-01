@@ -1,16 +1,21 @@
 import type { MemberPreferences } from "@hu/types";
 
+import { sanitizeParticipationGeography, normalizeParticipationGeographyLegacy } from "@hu/geography";
+
 import { MONGO_COLLECTIONS } from "../../infrastructure/mongodb/mongo-collections.js";
 import { isMongoConfigured } from "../../infrastructure/mongodb/mongo-config.js";
 import { connectMongoClient } from "../../infrastructure/mongodb/mongo-connection.js";
 import { getMongoCollection } from "../../infrastructure/mongodb/mongo-database.js";
 import { buildDefaultMemberPreferences } from "./preferences.defaults.js";
-import { normalizeParticipationGeographyLegacy } from "@hu/geography";
 import {
   PreferencesNotFoundError,
   PreferencesPersistenceUnavailableError,
 } from "./preferences.errors.js";
 import { samplePreferences } from "./preferences.sample.js";
+import {
+  buildPreferencesFieldSetFromPatch,
+  type ValidatedPreferencesPatch,
+} from "./preferences.validators.js";
 
 interface MemberPreferencesDocument extends MemberPreferences {
   _id?: string;
@@ -64,6 +69,24 @@ function migrateLegacyPreferences(preferences: MemberPreferences): MemberPrefere
       ...(preferences.visibilityPreferences ?? {}),
     },
   };
+}
+
+function assignDottedPath(
+  target: Record<string, unknown>,
+  dottedPath: string,
+  value: unknown,
+): void {
+  const parts = dottedPath.split(".");
+  let cursor: Record<string, unknown> = target;
+  for (let index = 0; index < parts.length - 1; index += 1) {
+    const key = parts[index]!;
+    const next = cursor[key];
+    if (!next || typeof next !== "object" || Array.isArray(next)) {
+      cursor[key] = {};
+    }
+    cursor = cursor[key] as Record<string, unknown>;
+  }
+  cursor[parts[parts.length - 1]!] = value;
 }
 
 export async function findPreferencesByMemberId(
@@ -128,6 +151,63 @@ export async function updatePreferencesRecord(
   return record;
 }
 
+/**
+ * Pack 02G Task 07B — atomically apply only fields present in the validated patch.
+ * Does not rewrite sibling preference fields from a stale full-document snapshot.
+ */
+export async function applyPreferencesPatchAtomically(
+  memberId: string,
+  patch: ValidatedPreferencesPatch,
+): Promise<MemberPreferences | null> {
+  const setFields = buildPreferencesFieldSetFromPatch(patch);
+  const updatedAt = new Date().toISOString();
+
+  if (patch.participationPreferences) {
+    const current = await findPreferencesByMemberId(memberId);
+    if (!current) {
+      return null;
+    }
+    const mergedParticipation = {
+      ...current.participationPreferences,
+      ...patch.participationPreferences,
+    };
+    setFields.participationPreferences = sanitizeParticipationGeography(
+      mergedParticipation,
+    ).participationPreferences;
+  }
+
+  setFields.updatedAt = updatedAt;
+
+  if (isMongoConfigured()) {
+    await ensureMongoReady();
+    const collection = getMongoCollection<MemberPreferencesDocument>(
+      MONGO_COLLECTIONS.memberPreferences,
+    );
+    const result = await collection.findOneAndUpdate(
+      { memberId },
+      { $set: setFields },
+      { returnDocument: "after" },
+    );
+    return result ? migrateLegacyPreferences(stripDocument(result)) : null;
+  }
+
+  const stored = memoryStore.get(memberId);
+  if (!stored) {
+    return null;
+  }
+
+  const next = structuredClone(migrateLegacyPreferences(stored)) as unknown as Record<
+    string,
+    unknown
+  >;
+  for (const [path, value] of Object.entries(setFields)) {
+    assignDottedPath(next, path, value);
+  }
+  const record = migrateLegacyPreferences(next as unknown as MemberPreferences);
+  memoryStore.set(memberId, structuredClone(record));
+  return record;
+}
+
 export async function listAllPreferencesRecords(): Promise<MemberPreferences[]> {
   if (isMongoConfigured()) {
     await ensureMongoReady();
@@ -169,4 +249,10 @@ export async function requirePreferencesByMemberId(memberId: string): Promise<Me
   }
 
   return preferences;
+}
+
+/** Test helper — clear non-sample memory rows between unit tests. */
+export function resetPreferencesMemoryStoreForTests(): void {
+  memoryStore.clear();
+  memoryStore.set(samplePreferences.memberId, structuredClone(samplePreferences));
 }

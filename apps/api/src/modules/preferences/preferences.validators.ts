@@ -482,3 +482,53 @@ export function mergePreferencesPatch(
     updatedAt: new Date().toISOString(),
   };
 }
+
+/**
+ * Pack 02G Task 07B — build dotted `$set` paths for fields explicitly present in a
+ * validated patch. Used for atomic partial preference updates (no full-document rewrite).
+ *
+ * `participationPreferences` is omitted here — callers apply a sanitized group write
+ * after a fresh read so geography invariants stay correct without touching other groups.
+ */
+export function buildPreferencesFieldSetFromPatch(
+  patch: ValidatedPreferencesPatch,
+): Record<string, unknown> {
+  const setFields: Record<string, unknown> = {};
+
+  const assignGroup = (
+    groupName: keyof ValidatedPreferencesPatch,
+    group: Record<string, unknown> | undefined,
+  ): void => {
+    if (!group) {
+      return;
+    }
+    for (const [field, value] of Object.entries(group)) {
+      if (value !== undefined) {
+        setFields[`${groupName}.${field}`] = value;
+      }
+    }
+  };
+
+  assignGroup(
+    "experiencePreferences",
+    patch.experiencePreferences as Record<string, unknown> | undefined,
+  );
+  assignGroup(
+    "communicationPreferences",
+    patch.communicationPreferences as Record<string, unknown> | undefined,
+  );
+  assignGroup(
+    "accessibilityPreferences",
+    patch.accessibilityPreferences as Record<string, unknown> | undefined,
+  );
+  assignGroup(
+    "workspacePreferences",
+    patch.workspacePreferences as Record<string, unknown> | undefined,
+  );
+  assignGroup(
+    "visibilityPreferences",
+    patch.visibilityPreferences as Record<string, unknown> | undefined,
+  );
+
+  return setFields;
+}

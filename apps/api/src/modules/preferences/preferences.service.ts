@@ -3,9 +3,12 @@ import type { MemberPreferences } from "@hu/types";
 import {
   assertEnabledPreferenceLocale,
 } from "../language/language-registry-runtime.js";
+import { buildDefaultMemberPreferences } from "./preferences.defaults.js";
 import {
+  applyPreferencesPatchAtomically,
+  findPreferencesByMemberId,
   getOrCreatePreferencesForMember,
-  updatePreferencesRecord,
+  insertPreferences,
 } from "./preferences.repository.js";
 import {
   mergePreferencesPatch,
@@ -56,6 +59,11 @@ async function canonicalizeExperienceLanguageFields(
   };
 }
 
+function isDuplicateKeyError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /duplicate key|E11000/i.test(message);
+}
+
 export async function getMemberPreferencesForAuthUser(input: {
   memberId: string;
   userId?: string;
@@ -63,16 +71,35 @@ export async function getMemberPreferencesForAuthUser(input: {
   return getOrCreatePreferencesForMember(input);
 }
 
+/**
+ * Pack 02G Task 07B — partial preference updates apply only validated patch fields
+ * atomically. Sibling fields (e.g. readingLanguages vs interfaceLanguage) cannot be
+ * clobbered by a stale full-document read-modify-write.
+ */
 export async function updateMemberPreferencesForAuthUser(
   memberId: string,
   body: unknown,
 ): Promise<MemberPreferences> {
   const rawPatch: ValidatedPreferencesPatch = validatePreferencesPatch(body);
   const patch = await canonicalizeExperienceLanguageFields(rawPatch);
-  const current = await getOrCreatePreferencesForMember({ memberId });
-  const next = mergePreferencesPatch(current, patch);
-  const updated = await updatePreferencesRecord(memberId, next);
 
+  const existing = await findPreferencesByMemberId(memberId);
+  if (!existing) {
+    const initial = mergePreferencesPatch(
+      buildDefaultMemberPreferences({ memberId }),
+      patch,
+    );
+    try {
+      return await insertPreferences(initial);
+    } catch (error) {
+      if (!isDuplicateKeyError(error)) {
+        throw error;
+      }
+      // Concurrent first create — apply patch atomically onto the winner.
+    }
+  }
+
+  const updated = await applyPreferencesPatchAtomically(memberId, patch);
   if (!updated) {
     throw new Error("Member preferences could not be updated.");
   }
