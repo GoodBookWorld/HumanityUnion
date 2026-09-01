@@ -48,12 +48,13 @@ Primary engineering branch: follow `git branch --show-current` (repository evide
 | **02C** Locale Preference & Runtime | **COMPLETED** + staging **PASS** |
 | **02D** UI i18n Foundation | **COMPLETED** + staging **PASS** |
 | **02E** UI Key Extraction | **COMPLETED** + staging **PASS** |
-| **02F** Canonical Terminology Glossary | **COMPLETE locally** (Tasks 01–06); staging smoke **PENDING** |
-| 02G–02J | Sequenced after 02F staging PASS (02H = search) |
+| **02F** Canonical Terminology Glossary | **COMPLETE + STAGING PASS** (revision `98c2817`) |
+| **02G** Civic/public translation expansion + async warming | **NEXT** (Layout Resilience Gate progressive) |
+| 02H–02J | Sequenced after 02G (02H = search deferred; 02J = formal Layout Resilience acceptance) |
 
 See `project/NEXT_SESSION.md` for the exact next implementation objective.
 
-Last completed product track milestone: **Pack 02F COMPLETE locally** (glossary seed + Admin API/UI + provider preferred-term injection + acceptance). Staging smoke **PENDING** — do not claim staging PASS. After staging PASS → Pack 02G.
+Last completed product track milestone: **Pack 02F COMPLETE + STAGING PASS** (glossary seed + Admin API/UI + provider preferred-term injection + Remove translation contract + staging acceptance `98c2817`). Next → Pack 02G. No production promotion yet.
 
 ---
 
@@ -122,7 +123,7 @@ Capability 02
 | Production Completion Pack 02C Locale Preference & Runtime | **COMPLETED** + staging acceptance **PASS** |
 | Production Completion Pack 02D UI i18n Foundation | **COMPLETED** + staging acceptance **PASS** |
 | Production Completion Pack 02E UI Key Extraction | **COMPLETED** + staging acceptance **PASS** |
-| Production Completion Pack 02F Canonical Terminology Glossary | **COMPLETE locally**; staging smoke **PENDING** |
+| Production Completion Pack 02F Canonical Terminology Glossary | **COMPLETE + STAGING PASS** (`98c2817`) |
 
 ---
 
@@ -151,17 +152,19 @@ Still excluded unless a future architecture decision says otherwise:
 - Pack 02D staging: en/uk/zh-Hant/ar smoke PASS; zh-TW→zh-Hant canonicalize; RTL ar; non-locale-prefixed URLs; Registry-driven option names; disabled write 400; Registry restored en-only
 - Pack 02D build hotfix: `@parcel/watcher` + `@swc/core` explicitly approved in `pnpm-workspace.yaml` `allowBuilds` (strict policy preserved)
 - RTL helpers (`ar`, `he`); logical CSS migration incomplete (Pack 02J); selector chevron padding under `dir=rtl` only
+- Pack 02E COMPLETE + STAGING PASS: public nav/footer + shared common/a11y + auth + workspace/account shell chrome keys
+- Pack 02F COMPLETE + STAGING PASS (`98c2817`): Canonical Terminology Glossary (seeded catalog; Admin API/UI; Remove translation; provider preferred-term injection; footer © 2024; Layout Resilience Gate documented)
 - Hardcoded priority language catalog retained as legacy compatibility only (runtime uses Language Registry)
 
 **Not present yet:**
 
-- Broad UI chrome key migration (Pack 02E) — **COMPLETED** + staging **PASS** (public nav/footer + shared common/a11y + auth + workspace/account shell; Edit Profile residual `2e27b27`; Registry restored en only)
 - Lifecycle-stage / civic body / Notification Center empty-state / Blog navLabel API redesign / role·status enum maps — deferred beyond 02E
-- Pack 02F Canonical Terminology Glossary — **COMPLETE locally**; staging smoke **PENDING**; search = Pack 02H
+- Broad civic/public translation expansion + async warming (Pack **02G** — next)
 - Admin-managed remote UI message packs / R2 persistence
 - Admin platform-default-language setting (currently `DEFAULT_PLATFORM_LANGUAGE` = `en`)
-- Multilingual search
+- Multilingual search (Pack **02H** — deferred)
 - Locale SEO / hreflang
+- Formal Multilingual Layout Resilience acceptance (Pack **02J**; progressive from 02G)
 
 ---
 
@@ -170,9 +173,11 @@ Still excluded unless a future architecture decision says otherwise:
 | Item | Notes |
 |------|--------|
 | Pack 02E UI Key Extraction | **COMPLETED** + staging **PASS** |
-| Pack 02F Canonical Terminology Glossary | **COMPLETE locally**; staging smoke **PENDING** |
-| Pack 02G–02J | After 02F staging PASS (02H = search; **Multilingual Layout Resilience Gate** progressive from 02G, formal in 02J) |
-| Pack 02B / 02C / 02D / 02E staging acceptance | **PASS** |
+| Pack 02F Canonical Terminology Glossary | **COMPLETE + STAGING PASS** (`98c2817`) |
+| Pack 02G Civic/public translation expansion | **NEXT** (Layout Resilience Gate progressive from 02G) |
+| Pack 02H Multilingual search | **Deferred** |
+| Pack 02J Multilingual Layout Resilience | Formal acceptance gate (progressive from 02G) |
+| Pack 02B / 02C / 02D / 02E / 02F staging acceptance | **PASS** |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
 | Mobile PWA regression | Diagnosis only — not a redesign |
 | Search-engine favicon | Read-only audit first |

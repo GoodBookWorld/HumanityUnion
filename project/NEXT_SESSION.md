@@ -9,10 +9,10 @@ Version 2.0
 ## START HERE — NEW ENGINEERING AGENT
 
 1. **This file** (`project/NEXT_SESSION.md`) is the **authoritative live handoff** for what to do next.
-2. It describes the platform as of **Production Completion Pack 02F COMPLETE locally** (Canonical Terminology Glossary). Packs **02B–02E COMPLETE + STAGING PASS**. Primary engineering branch: follow `git branch --show-current`; **repository evidence wins**.
+2. It describes the platform as of **Production Completion Pack 02F COMPLETE + STAGING PASS** (Canonical Terminology Glossary; final staging revision `98c2817`). Packs **02B–02F COMPLETE + STAGING PASS**. Primary engineering branch: follow `git branch --show-current`; **repository evidence wins**.
 3. **Do not reinterpret:** Initiative = sole canonical civic root; Participant-first identity; English = translation fallback; translations never overwrite canonical civic source; staging cleanup tools must not be weakened for production.
 4. **Current Pack track:** Production Completion **Pack 02 — Multilingual Platform Architecture**.
-5. **Exact next task:** **Pack 02F staging smoke** (checklist below / WORK_LOG). On staging **PASS**, start **Pack 02G**. Search seam remains **Pack 02H**. Do not claim Pack 02F staging PASS yet.
+5. **Exact next task:** **Pack 02G** (civic/public translation expansion + async warming; Layout Resilience Gate applies progressively). Search seam remains **Pack 02H**. Pack **02J** owns formal Multilingual Layout Resilience acceptance. No production promotion yet.
 6. **Deeper architecture:** ADR registry `architecture/ARCHITECTURE_DECISION_RECORDS.md`; Initiative-root ADR; Development Baseline; Language Architecture `project/architecture/core/LANGUAGE_TRANSLATION_ARCHITECTURE_v1.0.md`; Pack 02A summary `architecture/recovery/PRODUCTION_COMPLETION_PACK_02A_MULTILINGUAL_AUDIT_v1.0.md`; AI recovery kit `architecture/recovery/chat-agent/README.md`.
 7. When docs conflict with code/git/operator-verified facts, **repository evidence wins** — then synchronize documentation.
 8. **Never commit** secrets, credentials, connection strings, or private migration manifests (including `production-admin-source.json`).
@@ -33,7 +33,7 @@ Chronology: `project/WORK_LOG.md`
 
 ## Last Completed
 
-### Production Completion Pack 02F — Canonical Terminology Glossary (COMPLETE locally; staging smoke PENDING)
+### Production Completion Pack 02F — Canonical Terminology Glossary (COMPLETE + STAGING PASS)
 
 | Task | Result |
 |------|--------|
@@ -43,35 +43,32 @@ Chronology: `project/WORK_LOG.md`
 | 04 Admin UI | COMPLETE |
 | 05 Provider preferred-term injection | COMPLETE |
 | 06 Acceptance + regression close-out | COMPLETE |
+| Staging smoke | **PASS** (final revision `98c2817`) |
 
-**Delivered:** code-seeded immutable `conceptId` catalog; Mongo `terminology_glossary` + Admin GET/PATCH; Admin UI `/admin/terminology-glossary`; locale-aware provider `terminologyContext` from published concepts; Gemini preferred-term semantics; English seed list as persistence/empty-set fallback; privacy/`safetyCleared` unchanged.
+**Delivered:** code-seeded immutable `conceptId` catalog; Mongo `terminology_glossary` + Admin GET/PATCH; Admin UI `/admin/terminology-glossary`; locale-aware provider `terminologyContext` from published concepts; Gemini preferred-term semantics; English seed list as persistence/empty-set fallback; privacy/`safetyCleared` unchanged; explicit `removeTranslationLocales` + Admin **Remove translation**.
 
 **Does not replace:** Language Registry, UI catalogs, lifecycle registry, `content_translations`, TranslationProvider abstraction, or global search.
 
-**Deferred:** multilingual search integration → **Pack 02H**.
+**Deferred:** multilingual search integration → **Pack 02H**. Formal Multilingual Layout Resilience acceptance → **Pack 02J**. No production promotion yet.
 
-### Pack 02F — Minimal staging smoke (one deployment)
+### Pack 02F — Staging acceptance PASS (revision `98c2817`)
 
-1. Admin Glossary page loads seeded concepts.
-2. Edit one disabled-locale translation; save succeeds.
-3. Alias input (e.g. zh-TW) stores under zh-Hant.
-4. Reload page — edit persists.
-5. Participant / Member / Membership remain three separate concepts.
-6. Set one concept to draft then back to published; only published participate in provider context.
-7. With a published target preferred term, provider terminology context uses that term.
-8. With target term missing, context falls back to canonical English.
-9. Admin Languages list/enablement unchanged by glossary edits.
-10. Restore any temporary glossary edits used in smoke.
+Verified on staging:
 
-**Staging-smoke UX hotfix (committed `befe162`):** selecting a glossary table row scrolls the concept editor into view (`prefers-reduced-motion` → non-animated).
+- Admin Terminology Glossary loads canonical seeded concepts.
+- Participant / Member / Membership remain distinct.
+- Locale translations persist.
+- Explicit **Remove translation** works and survives reload.
+- Blank preferredTerm remains invalid for an existing locale translation.
+- Draft / Published persistence verified.
+- Language Registry enable/disable updates public selector immediately without reload (stale disabled-locale selector bug fixed).
+- Arabic RTL verified.
+- Footer verified: **© 2024 Humanity Union. All rights reserved.**
+- Multilingual Layout Resilience Gate permanently recorded (progressive from Pack 02G; formal acceptance in Pack 02J).
+- Provider terminology behavior remains covered by Task 05 automated acceptance; no unnecessary staging data was created.
+- Temporary Ukrainian Participant translation removed; Ukrainian Registry restored disabled; staging returned to clean baseline.
 
-**Staging-smoke runtime-state fix (committed `ab10982`):** Admin Language enable/disable invalidates public selector client cache + notifies mounted LanguageSelector (no hard refresh). Glossary clearing preferredTerm is rejected by contract with visible editor error (no invented delete); Save shows pending state on valid PATCH.
-
-**Staging-smoke final hotfix (local, uncommitted):**
-
-- Explicit `removeTranslationLocales` on glossary PATCH + Admin **Remove translation** (delete entire locale entry; preferredTerm="" still rejected).
-- Public footer founding year corrected to **© 2024** (not current year).
-- **Multilingual Layout Resilience Gate** permanently documented (progressive from 02G; formal in 02J). No Pack 02G implementation started.
+Hotfixes included in the passed revision lineage: editor scroll (`befe162`), Languages selector freshness + glossary clear reject (`ab10982`), locale remove + footer © 2024 + layout gate docs (`22261a0`), removal-contract clarification (`98c2817`).
 
 ### Production Completion Pack 02E — UI Key Extraction (COMPLETE + STAGING PASS)
 
@@ -104,11 +101,11 @@ Unchanged — Pack 02C locale authority; `next-intl` foundation; staging PASS re
 
 ## Immediate Objective
 
-**Pack 02F staging smoke PENDING** (local COMPLETE).
+**Pack 02G** — civic/public translation expansion + async warming. Layout Resilience Gate applies progressively from 02G.
 
-After staging **PASS**: start **Pack 02G** (civic/public translation expansion + async warming). Do not start Pack 02H search in 02G.
+Do not start Pack 02H multilingual search in 02G. Pack **02J** owns formal Multilingual Layout Resilience acceptance. No production promotion yet.
 
-Do not invent a second locale-resolution path. Reuse Pack 02C + Pack 02D runtime. Pack 02E chrome keys stay as shipped.
+Do not invent a second locale-resolution path. Reuse Pack 02C + Pack 02D runtime. Pack 02E chrome keys stay as shipped. Pack 02F glossary remains as shipped (`98c2817`).
 
 Deeper Pack 02 sequence (approved):
 
@@ -119,10 +116,10 @@ Deeper Pack 02 sequence (approved):
 | 02C | Locale preference / runtime — **COMPLETED** + staging **PASS** |
 | 02D | UI i18n foundation — **COMPLETED** + staging **PASS** |
 | 02E | UI key extraction — **COMPLETED** + staging **PASS** |
-| 02F | Canonical terminology glossary — **COMPLETE locally**; staging smoke **PENDING** (final hotfix re-smoke) |
-| 02G | Civic/public translation expansion + async warming — **NEXT after 02F staging PASS**; Layout Resilience Gate applies progressively |
-| 02H | Multilingual search seam |
-| 02I–02J | Hardening; **Multilingual Layout Resilience Gate** becomes formal acceptance in **02J** |
+| 02F | Canonical terminology glossary — **COMPLETE + STAGING PASS** (`98c2817`) |
+| 02G | Civic/public translation expansion + async warming — **NEXT**; Layout Resilience Gate applies progressively |
+| 02H | Multilingual search seam — **deferred** |
+| 02I–02J | Hardening; **Multilingual Layout Resilience Gate** formal acceptance in **02J** |
 
 ---
 

@@ -37,7 +37,7 @@ Architecture Status: Stable (Initiative-root ADR accepted)
 
 Engineering Status: **Production operational** + staging verification environment
 
-Project Health: **Healthy** (Pack 02B/02C/02D/02E staging PASS)
+Project Health: **Healthy** (Pack 02B/02C/02D/02E/02F staging PASS)
 
 ---
 
@@ -52,12 +52,13 @@ Project Health: **Healthy** (Pack 02B/02C/02D/02E staging PASS)
 | **02C Locale Preference & Runtime** | **COMPLETED** + staging **PASS** |
 | **02D UI i18n Foundation** | **COMPLETED** + staging **PASS** |
 | **02E UI Key Extraction** | **COMPLETED** + staging **PASS** |
-| **02F Canonical Terminology Glossary** | **COMPLETE locally**; staging smoke **PENDING** |
-| 02G–02J | Queued after 02F staging PASS (Layout Resilience Gate → formal in 02J) |
+| **02F Canonical Terminology Glossary** | **COMPLETE + STAGING PASS** (`98c2817`) |
+| **02G** Civic/public translation expansion + async warming | **NEXT** (Layout Resilience Gate progressive) |
+| 02H–02J | Queued (02H search deferred; 02J formal Layout Resilience acceptance) |
 
-Live next task: **Pack 02F staging smoke** → on PASS start **Pack 02G** — see `project/NEXT_SESSION.md`.
+Live next task: **Pack 02G** — see `project/NEXT_SESSION.md`.
 
-Last closed product Pack with staging PASS: **02E**. Pack **02F** local COMPLETE; staging not claimed.
+Last closed product Pack with staging PASS: **02F** (revision `98c2817`). No production promotion yet.
 
 ---
 
@@ -73,7 +74,7 @@ Last closed product Pack with staging PASS: **02E**. Pack **02F** local COMPLETE
 - Production Completion Pack 02C — COMPLETED + staging PASS
 - Production Completion Pack 02D — COMPLETED + staging PASS
 - Production Completion Pack 02E — COMPLETED + staging PASS
-- Production Completion Pack 02F — COMPLETE locally; staging smoke PENDING
+- Production Completion Pack 02F — COMPLETE + STAGING PASS (`98c2817`)
 
 ---
 
@@ -90,8 +91,10 @@ Do not present superseded Activity-root ADR-002 as current architecture.
 
 # Open Issues (summary)
 
-- Pack 02F — Canonical Terminology Glossary (COMPLETE locally; staging smoke PENDING)
-- Pack 02B/02C/02D/02E staging acceptance PASS
+- Pack 02G — Civic/public translation expansion + async warming (**NEXT**)
+- Pack 02H multilingual search — deferred
+- Pack 02J — formal Multilingual Layout Resilience acceptance
+- Pack 02B/02C/02D/02E/02F staging acceptance PASS
 - Production bootstrap Initiative deletion (separate production-safe procedure; staging cleanup refuses production)
 - Mobile PWA regression diagnosis (not redesign)
 - Favicon / crawler metadata read-only audit

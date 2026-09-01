@@ -56,6 +56,29 @@ Next Objective:
 
 # Entries
 
+## 2026-08-31 (Pack 02F — COMPLETE + STAGING PASS)
+
+Completed:
+
+- Pack **02F COMPLETE + STAGING PASS** at revision **`98c2817`**.
+- Staging verified: Admin Glossary loads seeded concepts; Participant / Member / Membership distinct; locale translations persist; explicit Remove translation works and survives reload; blank preferredTerm remains invalid; Draft / Published persistence OK.
+- Language Registry enable/disable updates public selector immediately (stale disabled-locale bug fixed); Arabic RTL OK; footer **© 2024 Humanity Union. All rights reserved.**
+- Multilingual Layout Resilience Gate permanently recorded (progressive from Pack 02G; formal acceptance in Pack 02J).
+- Provider terminology covered by Task 05 automated acceptance; no unnecessary staging data created.
+- Temporary Ukrainian Participant translation removed; Ukrainian Registry restored disabled; staging returned to clean baseline.
+- No production promotion.
+
+Architecture:
+
+- Glossary removal = explicit `removeTranslationLocales` only; preferredTerm invariant unchanged.
+- Pack 02H multilingual search remains deferred; Pack 02J owns formal Layout Resilience acceptance.
+
+Next Objective:
+
+- **Pack 02G** — civic/public translation expansion + async warming.
+
+---
+
 ## 2026-08-31 (Pack 02F staging-smoke final hotfix — locale remove + footer + layout gate)
 
 Completed:
