@@ -144,14 +144,19 @@ describe("Production Completion Pack 02G Task 07C — target-language enforcemen
       assert.match(prompt, /Translate from English \(en\) into Ukrainian \(uk\)\./);
       assert.match(
         prompt,
-        /Glossary fallback-to-English applies only to the specific canonical terminology concept or preferred term/,
+        /Glossary fallback-to-English applies only to the specific canonical terminology concept or preferred term\/token/,
       );
       assert.match(
         prompt,
-        /A missing target glossary term must never be interpreted as permission to leave the whole sentence or field in the source language/,
+        /A missing target glossary term must never be interpreted as permission to leave the whole title, heading, sentence, or field in the source language/,
       );
       assert.match(prompt, /Translate every human-readable translatable string value into the target language/);
       assert.match(prompt, /Keep Participant, Member, and Membership semantically distinct/);
+      assert.match(prompt, /Civic content titles and human-readable headings/);
+      assert.match(
+        prompt,
+        /Do not preserve a civic artifact title merely because it resembles a proper name, campaign name, alliance name/,
+      );
     });
 
     it("falls back to locale code when Registry metadata is missing", async () => {

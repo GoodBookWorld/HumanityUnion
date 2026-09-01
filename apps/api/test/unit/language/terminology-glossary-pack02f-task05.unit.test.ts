@@ -199,8 +199,9 @@ describe("Production Completion Pack 02F Task 05 — provider terminology inject
     assert.match(prompt, /Participant \(participant\) => Учасник/);
     assert.match(
       prompt,
-      /Glossary fallback-to-English applies only to the specific canonical terminology/,
+      /Glossary fallback-to-English applies only to the specific canonical terminology concept or preferred term\/token/,
     );
+    assert.match(prompt, /Civic content titles and human-readable headings/);
 
     const geminiSource = readFileSync(
       path.join(
