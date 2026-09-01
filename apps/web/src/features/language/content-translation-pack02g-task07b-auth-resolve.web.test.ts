@@ -40,14 +40,15 @@ describe("Production Completion Pack 02G Task 07B — auth-aware content resolve
     assert.match(hook, /useClientAuthStatus/);
     assert.match(hook, /getMyPreferences/);
     assert.match(hook, /deriveAuthenticatedReadingLanguage/);
+    assert.match(hook, /resolvePublicContentReadingFromProbe/);
+    assert.match(hook, /isAuthenticationRequiredError/);
     assert.match(derive, /readingLanguages/);
     assert.doesNotMatch(derive, /interfaceLanguage\s*[:=]|experiencePreferences\.interfaceLanguage/);
     assert.doesNotMatch(hook, /experiencePreferences\.interfaceLanguage|interfaceLanguage\s*[:=]/);
     assert.match(hook, /ready:\s*false/);
     assert.match(hook, /authStatus === "pending"/);
-    assert.match(hook, /authStatus === "unauthenticated"/);
-    // Settle once on prefs failure — no retry loop.
-    assert.match(hook, /Authenticated but prefs unavailable/);
+    // Prefs probe runs even when auth snapshot is unauthenticated; 401 settles guest.
+    assert.match(hook, /unauthorized/);
     assert.doesNotMatch(hook, /setInterval|while\s*\(/);
   });
 
@@ -77,10 +78,13 @@ describe("Production Completion Pack 02G Task 07B — auth-aware content resolve
 
   it("D. guest path settles once with platform default / no auth retry loop", () => {
     const hook = readWeb("src/features/language/use-public-content-reading-context.ts");
-    assert.match(hook, /GUEST_CONTEXT/);
-    assert.match(hook, /translationPreference:\s*"none"/);
-    assert.match(hook, /readingLanguage:\s*DEFAULT_PLATFORM_LANGUAGE/);
-    assert.match(hook, /isAuthenticated:\s*false/);
+    const probe = readWeb("src/features/language/public-content-reading-probe.ts");
+    assert.match(probe, /GUEST_FIELDS|unauthorized/);
+    assert.match(probe, /translationPreference:\s*"none"/);
+    assert.match(probe, /readingLanguage:\s*DEFAULT_PLATFORM_LANGUAGE/);
+    assert.match(probe, /isAuthenticated:\s*false/);
+    assert.match(hook, /isAuthenticationRequiredError/);
+    assert.doesNotMatch(hook, /setInterval|while\s*\(/);
   });
 
   it("E. async translation display still auto-selects translation", () => {
