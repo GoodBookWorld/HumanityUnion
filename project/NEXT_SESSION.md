@@ -65,7 +65,13 @@ Chronology: `project/WORK_LOG.md`
 
 **Staging-smoke UX hotfix (committed `befe162`):** selecting a glossary table row scrolls the concept editor into view (`prefers-reduced-motion` → non-animated).
 
-**Staging-smoke runtime-state fix (local, uncommitted):** Admin Language enable/disable invalidates public selector client cache + notifies mounted LanguageSelector (no hard refresh). Glossary clearing preferredTerm is rejected by contract with visible editor error (no invented delete); Save shows pending state on valid PATCH.
+**Staging-smoke runtime-state fix (committed `ab10982`):** Admin Language enable/disable invalidates public selector client cache + notifies mounted LanguageSelector (no hard refresh). Glossary clearing preferredTerm is rejected by contract with visible editor error (no invented delete); Save shows pending state on valid PATCH.
+
+**Staging-smoke final hotfix (local, uncommitted):**
+
+- Explicit `removeTranslationLocales` on glossary PATCH + Admin **Remove translation** (delete entire locale entry; preferredTerm="" still rejected).
+- Public footer founding year corrected to **© 2024** (not current year).
+- **Multilingual Layout Resilience Gate** permanently documented (progressive from 02G; formal in 02J). No Pack 02G implementation started.
 
 ### Production Completion Pack 02E — UI Key Extraction (COMPLETE + STAGING PASS)
 
@@ -113,9 +119,10 @@ Deeper Pack 02 sequence (approved):
 | 02C | Locale preference / runtime — **COMPLETED** + staging **PASS** |
 | 02D | UI i18n foundation — **COMPLETED** + staging **PASS** |
 | 02E | UI key extraction — **COMPLETED** + staging **PASS** |
-| 02F | Canonical terminology glossary — **COMPLETE locally**; staging smoke **PENDING** |
-| 02G | Civic/public translation expansion + async warming — **NEXT after 02F staging PASS** |
-| 02H–02J | As sequenced in architecture roadmap (02H = search seam) |
+| 02F | Canonical terminology glossary — **COMPLETE locally**; staging smoke **PENDING** (final hotfix re-smoke) |
+| 02G | Civic/public translation expansion + async warming — **NEXT after 02F staging PASS**; Layout Resilience Gate applies progressively |
+| 02H | Multilingual search seam |
+| 02I–02J | Hardening; **Multilingual Layout Resilience Gate** becomes formal acceptance in **02J** |
 
 ---
 

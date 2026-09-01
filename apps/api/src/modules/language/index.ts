@@ -124,6 +124,7 @@ export {
   TERMINOLOGY_GLOSSARY_SEED_DEFINITIONS,
   buildEnglishProviderTerminologyContext,
   buildProviderTerminologyContext,
+  canonicalizeGlossaryLocaleKeys,
   canonicalizeGlossaryTranslationLocales,
   ensureTerminologyGlossarySeeded,
   formatProviderTerminologyContext,

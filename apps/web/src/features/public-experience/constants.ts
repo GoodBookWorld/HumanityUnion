@@ -33,4 +33,4 @@ export const BRAND_TAGLINE = "WORLD SOLIDARITY";
 export const FOOTER_MISSION =
   "A global movement of citizens working together for a more just, peaceful and sustainable world.";
 
-export const FOOTER_COPYRIGHT = "© 2026 Humanity Union. All rights reserved.";
+export const FOOTER_COPYRIGHT = "© 2024 Humanity Union. All rights reserved.";

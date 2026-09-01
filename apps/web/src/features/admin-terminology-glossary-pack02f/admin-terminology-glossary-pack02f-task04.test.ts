@@ -171,17 +171,35 @@ describe("Production Completion Pack 02F Task 04 — Admin Terminology Glossary 
     assert.match(section, /Preferred term for \$\{language\.locale\} cannot be cleared/);
     assert.match(section, /glossary contract requires a preferredTerm|requires a preferredTerm/);
     assert.match(section, /English remains the runtime fallback/);
-    assert.match(section, /if \(!selected \|\| saving\)/);
+    assert.match(section, /if \(!selected \|\| saving \|\| removingLocale\)/);
     assert.match(section, /setSaving\(true\)/);
     assert.match(section, /Saving…/);
     assert.match(section, /data-glossary-save/);
     assert.match(section, /data-glossary-save-error/);
     assert.match(section, /openConcept\(updated\)/);
     assert.match(section, /formatAuthFormError\(saveError\)/);
-    // No silent locale-key deletion path.
+    // No silent locale-key deletion via blank preferredTerm.
     assert.doesNotMatch(section, /delete translations\[|translationsPatch\[.+\].*=\s*null/);
     // Scroll request still only on table select.
     assert.doesNotMatch(section, /openConcept\(updated,\s*\{\s*scrollIntoView/);
+  });
+
+  it("explicit Remove translation deletes stored locale via removeTranslationLocales", () => {
+    const section = read(
+      "features/administration/components/AdminTerminologyGlossarySection.tsx",
+    );
+    const api = read("features/administration/admin-terminology-glossary-api.ts");
+    assert.match(section, /Remove translation/);
+    assert.match(section, /Removing…/);
+    assert.match(section, /handleRemoveLocaleTranslation/);
+    assert.match(section, /removeTranslationLocales:\s*\[locale\]/);
+    assert.match(section, /data-glossary-remove-locale/);
+    assert.match(section, /data-has-stored-translation/);
+    assert.match(section, /window\.confirm/);
+    assert.match(section, /hasStoredTranslation \?/);
+    assert.match(api, /TerminologyConceptUpdateInput/);
+    // Empty preferredTerm path remains validation-only (not removal).
+    assert.match(section, /cannot be cleared/);
   });
 
   it("existing Admin Languages UI remains unchanged in contract", () => {

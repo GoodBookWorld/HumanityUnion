@@ -84,6 +84,12 @@ export interface TerminologyConceptUpdateInput {
    * Does not erase locales omitted from the patch.
    */
   readonly translations?: Readonly<Record<string, TerminologyLocaleTranslation>>;
+  /**
+   * Explicit locale translation removals (canonical Registry locales / aliases).
+   * Deletes the entire locale entry. Must not be represented by preferredTerm="".
+   * Aliases (e.g. zh-TW) canonicalize via Language Registry before delete.
+   */
+  readonly removeTranslationLocales?: readonly string[];
   readonly status?: TerminologyConceptStatus;
   readonly updatedByParticipantId?: string | null;
 }

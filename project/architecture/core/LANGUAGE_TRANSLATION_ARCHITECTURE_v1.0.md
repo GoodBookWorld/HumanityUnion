@@ -390,3 +390,49 @@ Bounded scope:
 4. Optional Discussion comment translation UX (still original-preserving).
 
 Out of scope unless separately approved: automatic DM translation, multilingual search rewrite, whole-platform CSS redesign.
+
+---
+
+## Production Completion Pack 02 sequence (handoff)
+
+| Pack | Focus |
+|------|--------|
+| 02A–02E | Audit → Registry → runtime locale → UI i18n → chrome extraction (**COMPLETE** + staging PASS where recorded) |
+| 02F | Canonical Terminology Glossary (**COMPLETE locally**; staging smoke pending hotfix re-smoke) |
+| 02G | Civic/public translation expansion + async warming — **starts after 02F staging PASS** |
+| 02H | Multilingual search seam |
+| 02I–02J | Remaining multilingual hardening (including formal layout gate in 02J) |
+
+### Multilingual Layout Resilience Gate
+
+**Name (exact):** Multilingual Layout Resilience Gate
+
+**Acceptance principle:** Translated text may change component dimensions, but must never:
+
+- overlap adjacent content
+- escape its semantic container
+- cause unintended horizontal page scrolling
+- make essential actions unreadable or inaccessible
+
+**Progressive application:**
+
+- Applies **progressively from Pack 02G** as civic/public translation surfaces expand.
+- Becomes a **formal acceptance gate in Pack 02J**.
+
+**Future gate coverage (do not implement the full system in Pack 02F):**
+
+- long-text expansion
+- Ukrainian / longer Latin-Cyrillic strings
+- zh-Hant / CJK wrapping
+- Arabic RTL
+- buttons without English-fixed widths
+- auto-height cards/widgets
+- flex/grid `min-width: 0`
+- safe wrapping / long words / URLs
+- responsive navigation
+- forms/modals/errors
+- logical RTL CSS
+- no masking layout defects with inappropriate `overflow: hidden`
+- ellipsis only where information loss is acceptable
+
+**Engineering support (future):** synthetic long-string / pseudo-localization stress mode for CI and staging acceptance.

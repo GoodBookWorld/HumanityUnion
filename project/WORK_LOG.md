@@ -56,6 +56,22 @@ Next Objective:
 
 # Entries
 
+## 2026-08-31 (Pack 02F staging-smoke final hotfix — locale remove + footer + layout gate)
+
+Completed:
+
+- Glossary PATCH `removeTranslationLocales` deletes an entire locale translation; preferredTerm still required when a locale entry exists; blank preferredTerm remains rejected.
+- Admin UI **Remove translation** with confirm + pending/success/error; enables removing staging Participant/uk “Учасник”.
+- Public footer copyright founding year set to **© 2024** (not dynamic current year).
+- Documented permanent **Multilingual Layout Resilience Gate** (progressive from Pack 02G; formal acceptance in Pack 02J). No Pack 02G implementation.
+- Pack 02F staging smoke still PENDING until hotfix re-smoke.
+
+Next Objective:
+
+- Pack 02F staging re-smoke (locale remove + Languages freshness + footer year); on PASS → **Pack 02G**.
+
+---
+
 ## 2026-08-31 (Pack 02F staging-smoke — Languages cache + glossary clear UX)
 
 Completed:

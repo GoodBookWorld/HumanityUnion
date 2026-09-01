@@ -172,6 +172,10 @@
   resize: vertical;
 }
 
+.admin-glossary__locale-actions {
+  margin-top: 0.75rem;
+}
+
 .admin-glossary__form-actions {
   display: flex;
   flex-wrap: wrap;

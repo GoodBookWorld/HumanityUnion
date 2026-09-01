@@ -53,7 +53,7 @@ Project Health: **Healthy** (Pack 02B/02C/02D/02E staging PASS)
 | **02D UI i18n Foundation** | **COMPLETED** + staging **PASS** |
 | **02E UI Key Extraction** | **COMPLETED** + staging **PASS** |
 | **02F Canonical Terminology Glossary** | **COMPLETE locally**; staging smoke **PENDING** |
-| 02G–02J | Queued (after 02F staging PASS) |
+| 02G–02J | Queued after 02F staging PASS (Layout Resilience Gate → formal in 02J) |
 
 Live next task: **Pack 02F staging smoke** → on PASS start **Pack 02G** — see `project/NEXT_SESSION.md`.
 

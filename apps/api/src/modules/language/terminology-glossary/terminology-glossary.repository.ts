@@ -24,7 +24,10 @@ import {
   assertTerminologyStatus,
   sortTerminologyConcepts,
 } from "./terminology-glossary.integrity.js";
-import { canonicalizeGlossaryTranslationLocales } from "./terminology-glossary.locale.js";
+import {
+  canonicalizeGlossaryLocaleKeys,
+  canonicalizeGlossaryTranslationLocales,
+} from "./terminology-glossary.locale.js";
 import {
   getTerminologyGlossaryByIdMemory,
   listTerminologyGlossaryMemory,
@@ -175,13 +178,27 @@ export async function updateTerminologyConcept(
     input.status !== undefined ? assertTerminologyStatus(input.status) : current.status;
 
   let nextTranslations = { ...current.translations };
+  let patchLocales = new Set<string>();
   if (input.translations !== undefined) {
     // Merge by locale — PATCHing one locale must not erase others.
     const patchTranslations = await canonicalizeGlossaryTranslationLocales(input.translations);
+    patchLocales = new Set(Object.keys(patchTranslations));
     nextTranslations = {
       ...current.translations,
       ...patchTranslations,
     };
+  }
+
+  if (input.removeTranslationLocales !== undefined) {
+    const removeLocales = await canonicalizeGlossaryLocaleKeys(input.removeTranslationLocales);
+    for (const locale of removeLocales) {
+      if (patchLocales.has(locale)) {
+        throw new TerminologyGlossaryValidationError(
+          `Locale "${locale}" cannot appear in both translations and removeTranslationLocales.`,
+        );
+      }
+      delete nextTranslations[locale];
+    }
   }
 
   const others = (await listAllRecordsInternal()).filter((row) => row.conceptId !== id);

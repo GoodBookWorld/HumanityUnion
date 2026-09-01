@@ -46,3 +46,29 @@ export async function canonicalizeGlossaryTranslationLocales(
 
   return result;
 }
+
+/**
+ * Resolve locale/alias tags for removal through the Language Registry.
+ * Unknown locales rejected; disabled locales allowed; duplicates collapse.
+ */
+export async function canonicalizeGlossaryLocaleKeys(
+  localesOrAliases: readonly string[],
+): Promise<readonly string[]> {
+  const canonical = new Set<string>();
+
+  for (const localeOrAlias of localesOrAliases) {
+    const trimmed = localeOrAlias.trim();
+    if (!trimmed) {
+      throw new TerminologyGlossaryValidationError("Translation locale is required.");
+    }
+    const record = await resolveLanguageRegistryLocale(trimmed);
+    if (!record) {
+      throw new TerminologyGlossaryValidationError(
+        `Unknown glossary translation locale: ${trimmed}`,
+      );
+    }
+    canonical.add(record.locale);
+  }
+
+  return [...canonical].sort();
+}

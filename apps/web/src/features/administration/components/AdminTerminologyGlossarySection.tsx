@@ -135,6 +135,7 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
   const [baselineStatus, setBaselineStatus] = useState<TerminologyConceptStatus>("published");
   const [baselineLocales, setBaselineLocales] = useState<Record<string, LocaleDraft>>({});
   const [saving, setSaving] = useState(false);
+  const [removingLocale, setRemovingLocale] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"" | TerminologyConceptCategory>("");
   const [statusFilter, setStatusFilter] = useState<"" | TerminologyConceptStatus>("");
@@ -244,7 +245,7 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
   }
 
   async function handleSave() {
-    if (!selected || saving) {
+    if (!selected || saving || removingLocale) {
       return;
     }
 
@@ -301,6 +302,42 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
       setError(formatAuthFormError(saveError));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleRemoveLocaleTranslation(locale: string) {
+    if (!selected || saving || removingLocale) {
+      return;
+    }
+    const baseline = baselineLocales[locale];
+    if (!baseline?.preferredTerm.trim()) {
+      return;
+    }
+    const confirmed = window.confirm(
+      `Remove the entire ${locale} translation for “${selected.canonicalEnglishTerm}”? This deletes the stored preferred term, aliases, and guidance for that locale only. English remains the runtime fallback.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setRemovingLocale(locale);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const updated = await updateAdminTerminologyConcept(selected.conceptId, {
+        removeTranslationLocales: [locale],
+      });
+      setConcepts((current) =>
+        current.map((concept) =>
+          concept.conceptId === updated.conceptId ? updated : concept,
+        ),
+      );
+      openConcept(updated);
+      setStatusMessage(`Removed ${locale} translation.`);
+    } catch (removeError) {
+      setError(formatAuthFormError(removeError));
+    } finally {
+      setRemovingLocale(null);
     }
   }
 
@@ -475,6 +512,10 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
                   aliasesText: "",
                   guidance: "",
                 };
+                const hasStoredTranslation = Boolean(
+                  baselineLocales[language.locale]?.preferredTerm.trim(),
+                );
+                const isRemoving = removingLocale === language.locale;
                 return (
                   <section
                     key={language.locale}
@@ -484,6 +525,7 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
                     aria-label={`Locale ${language.locale}`}
                     data-locale={language.locale}
                     data-registry-enabled={language.enabled ? "true" : "false"}
+                    data-has-stored-translation={hasStoredTranslation ? "true" : "false"}
                   >
                     <div className="admin-glossary__locale-header">
                       <h4 className="admin-glossary__locale-title">
@@ -518,6 +560,7 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
                               preferredTerm: event.target.value,
                             })
                           }
+                          disabled={saving || Boolean(removingLocale)}
                           data-editable="preferredTerm"
                         />
                       </label>
@@ -531,6 +574,7 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
                               aliasesText: event.target.value,
                             })
                           }
+                          disabled={saving || Boolean(removingLocale)}
                           data-editable="aliases"
                           placeholder={"Synonyms for this concept\nNot Language Registry locale aliases"}
                         />
@@ -545,10 +589,24 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
                               guidance: event.target.value,
                             })
                           }
+                          disabled={saving || Boolean(removingLocale)}
                           data-editable="guidance"
                         />
                       </label>
                     </div>
+                    {hasStoredTranslation ? (
+                      <div className="admin-glossary__locale-actions">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={saving || Boolean(removingLocale)}
+                          onClick={() => void handleRemoveLocaleTranslation(language.locale)}
+                          data-glossary-remove-locale={language.locale}
+                        >
+                          {isRemoving ? "Removing…" : "Remove translation"}
+                        </Button>
+                      </div>
+                    ) : null}
                   </section>
                 );
               })}
@@ -560,10 +618,20 @@ export function AdminTerminologyGlossarySection({ user: _user }: AdminTerminolog
                   {error}
                 </p>
               ) : null}
-              <Button type="button" onClick={() => void handleSave()} disabled={saving} data-glossary-save="">
+              <Button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={saving || Boolean(removingLocale)}
+                data-glossary-save=""
+              >
                 {saving ? "Saving…" : "Save concept"}
               </Button>
-              <Button type="button" variant="secondary" onClick={closeEditor} disabled={saving}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={closeEditor}
+                disabled={saving || Boolean(removingLocale)}
+              >
                 Close
               </Button>
             </div>

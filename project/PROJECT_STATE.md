@@ -171,7 +171,7 @@ Still excluded unless a future architecture decision says otherwise:
 |------|--------|
 | Pack 02E UI Key Extraction | **COMPLETED** + staging **PASS** |
 | Pack 02F Canonical Terminology Glossary | **COMPLETE locally**; staging smoke **PENDING** |
-| Pack 02G–02J | After 02F staging PASS (02H = search seam) |
+| Pack 02G–02J | After 02F staging PASS (02H = search; **Multilingual Layout Resilience Gate** progressive from 02G, formal in 02J) |
 | Pack 02B / 02C / 02D / 02E staging acceptance | **PASS** |
 | Production `initiative-bootstrap-001` | Pending **production-authorized** cleanup; staging tool refuses production by design |
 | Mobile PWA regression | Diagnosis only — not a redesign |

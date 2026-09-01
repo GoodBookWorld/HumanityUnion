@@ -424,4 +424,124 @@ describe("Production Completion Pack 02F Task 03 — Terminology Glossary Admin 
     assert.doesNotMatch(serviceSource, /getGlobalSearchIndex/);
     assert.doesNotMatch(serviceSource, /HUMANITY_UNION_TRANSLATION_TERMINOLOGY/);
   });
+
+  it("removeTranslationLocales deletes one locale and preserves others", async () => {
+    await updateAdminTerminologyConcept({
+      actorUserId: "admin-1",
+      conceptId: "participant",
+      body: {
+        translations: {
+          uk: { preferredTerm: "Учасник", aliases: ["учасниця"] },
+          ar: { preferredTerm: "مشارك", aliases: [] },
+        },
+      },
+    });
+
+    const updated = await updateAdminTerminologyConcept({
+      actorUserId: "admin-1",
+      conceptId: "participant",
+      body: {
+        removeTranslationLocales: ["uk"],
+      },
+    });
+
+    assert.equal(updated.translations.uk, undefined);
+    assert.equal(updated.translations.ar?.preferredTerm, "مشارك");
+    assert.equal(updated.status, "published");
+    assert.equal(updated.canonicalEnglishTerm, "Participant");
+    assert.equal(updated.conceptId, "participant");
+
+    const audits = await listAdministrationAuditsForTarget({
+      targetType: "terminology_glossary",
+      targetId: "participant",
+    });
+    assert.ok(audits.some((audit) => /removedLocales=uk/.test(audit.afterSummary)));
+    assert.ok(
+      audits.some(
+        (audit) =>
+          audit.action === "terminology_glossary.update" &&
+          /removedLocales=uk/.test(audit.afterSummary),
+      ),
+    );
+  });
+
+  it("zh-TW removal canonicalizes to zh-Hant; unknown locale rejected; disabled locale removable", async () => {
+    await updateAdminTerminologyConcept({
+      actorUserId: "admin-1",
+      conceptId: "workspace",
+      body: {
+        translations: {
+          "zh-TW": { preferredTerm: "工作區", aliases: [] },
+          uk: { preferredTerm: "Робочий простір", aliases: [] },
+        },
+      },
+    });
+    const before = await getTerminologyConceptById("workspace");
+    assert.ok(before?.translations["zh-Hant"]);
+    assert.equal(before?.translations["zh-TW"], undefined);
+
+    const removed = await updateAdminTerminologyConcept({
+      actorUserId: "admin-1",
+      conceptId: "workspace",
+      body: {
+        removeTranslationLocales: ["zh-TW"],
+      },
+    });
+    assert.equal(removed.translations["zh-Hant"], undefined);
+    assert.equal(removed.translations.uk?.preferredTerm, "Робочий простір");
+
+    await assert.rejects(
+      () =>
+        updateAdminTerminologyConcept({
+          actorUserId: "admin-1",
+          conceptId: "workspace",
+          body: {
+            removeTranslationLocales: ["xx-NOT-A-LOCALE"],
+          },
+        }),
+      (error: unknown) =>
+        error instanceof TerminologyGlossaryValidationError ||
+        error instanceof AdministrationValidationError,
+    );
+
+    // uk is disabled by default seed — still removable.
+    const ukDisabled = await getLanguageRegistryByLocale("uk");
+    assert.ok(ukDisabled);
+    assert.equal(ukDisabled.enabled, false);
+    const afterUkRemove = await updateAdminTerminologyConcept({
+      actorUserId: "admin-1",
+      conceptId: "workspace",
+      body: {
+        removeTranslationLocales: ["uk"],
+      },
+    });
+    assert.equal(afterUkRemove.translations.uk, undefined);
+  });
+
+  it("empty preferredTerm remains invalid; removal is not preferredTerm blanking", async () => {
+    await updateAdminTerminologyConcept({
+      actorUserId: "admin-1",
+      conceptId: "assistant",
+      body: {
+        translations: {
+          uk: { preferredTerm: "Асистент", aliases: [] },
+        },
+      },
+    });
+    await assert.rejects(
+      () =>
+        updateAdminTerminologyConcept({
+          actorUserId: "admin-1",
+          conceptId: "assistant",
+          body: {
+            translations: {
+              uk: { preferredTerm: "", aliases: [] },
+            },
+          },
+        }),
+      TerminologyGlossaryValidationError,
+    );
+    const stillThere = await getTerminologyConceptById("assistant");
+    assert.equal(stillThere?.translations.uk?.preferredTerm, "Асистент");
+  });
 });

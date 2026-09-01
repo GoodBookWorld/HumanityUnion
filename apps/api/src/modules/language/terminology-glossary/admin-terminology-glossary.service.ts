@@ -19,7 +19,10 @@ import {
 import { record as recordAdministrationAudit } from "../../administration/audit.service.js";
 import { findAuthUserById } from "../../auth/auth-user.repository.js";
 import { TerminologyGlossaryNotFoundError } from "./terminology-glossary.errors.js";
-import { canonicalizeGlossaryTranslationLocales } from "./terminology-glossary.locale.js";
+import {
+  canonicalizeGlossaryLocaleKeys,
+  canonicalizeGlossaryTranslationLocales,
+} from "./terminology-glossary.locale.js";
 import {
   ensureTerminologyGlossarySeeded,
   getTerminologyConceptById,
@@ -109,6 +112,7 @@ function parseLocaleTranslation(value: unknown, locale: string): TerminologyLoca
 
 function parsePatchBody(body: unknown): TerminologyConceptUpdateInput & {
   readonly rawTranslationLocales: readonly string[];
+  readonly rawRemoveLocales: readonly string[];
 } {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     throw new AdministrationValidationError("Glossary patch body is required.");
@@ -123,9 +127,11 @@ function parsePatchBody(body: unknown): TerminologyConceptUpdateInput & {
 
   const patch: {
     translations?: Record<string, TerminologyLocaleTranslation>;
+    removeTranslationLocales?: string[];
     status?: TerminologyConceptStatus;
   } = {};
   const rawTranslationLocales: string[] = [];
+  const rawRemoveLocales: string[] = [];
 
   if ("status" in record) {
     if (!isTerminologyConceptStatus(record.status)) {
@@ -157,13 +163,39 @@ function parsePatchBody(body: unknown): TerminologyConceptUpdateInput & {
     patch.translations = translations;
   }
 
-  if (patch.translations === undefined && patch.status === undefined) {
+  if ("removeTranslationLocales" in record) {
+    const removeRaw = record.removeTranslationLocales;
+    if (!Array.isArray(removeRaw) || removeRaw.some((entry) => typeof entry !== "string")) {
+      throw new AdministrationValidationError(
+        "removeTranslationLocales must be an array of locale strings.",
+      );
+    }
+    if (removeRaw.length === 0) {
+      throw new AdministrationValidationError(
+        "removeTranslationLocales must include at least one locale.",
+      );
+    }
+    for (const locale of removeRaw) {
+      const trimmed = locale.trim();
+      if (!trimmed) {
+        throw new AdministrationValidationError("removeTranslationLocales entries must be non-empty.");
+      }
+      rawRemoveLocales.push(trimmed);
+    }
+    patch.removeTranslationLocales = [...rawRemoveLocales];
+  }
+
+  if (
+    patch.translations === undefined &&
+    patch.status === undefined &&
+    patch.removeTranslationLocales === undefined
+  ) {
     throw new AdministrationValidationError(
-      "No valid glossary fields were provided (translations and/or status).",
+      "No valid glossary fields were provided (translations, removeTranslationLocales, and/or status).",
     );
   }
 
-  return { ...patch, rawTranslationLocales };
+  return { ...patch, rawTranslationLocales, rawRemoveLocales };
 }
 
 export async function listAdminTerminologyConcepts(input: {
@@ -209,14 +241,21 @@ export async function updateAdminTerminologyConcept(input: {
   }
 
   const parsed = parsePatchBody(input.body);
-  const { rawTranslationLocales, ...patch } = parsed;
+  const { rawTranslationLocales, rawRemoveLocales, ...patch } = parsed;
 
-  // Canonicalize early for audit locale list (same seam as repository).
   let canonicalPatchedLocales: string[] = [];
   if (patch.translations) {
     const canonical = await canonicalizeGlossaryTranslationLocales(patch.translations);
     canonicalPatchedLocales = Object.keys(canonical).sort();
     patch.translations = canonical;
+  }
+
+  let canonicalRemovedLocales: string[] = [];
+  if (patch.removeTranslationLocales) {
+    canonicalRemovedLocales = [
+      ...(await canonicalizeGlossaryLocaleKeys(patch.removeTranslationLocales)),
+    ];
+    patch.removeTranslationLocales = canonicalRemovedLocales;
   }
 
   const updated = await updateTerminologyConcept(conceptId, {
@@ -235,6 +274,11 @@ export async function updateAdminTerminologyConcept(input: {
     afterParts.push(`locales=${canonicalPatchedLocales.join(",")}`);
   } else if (rawTranslationLocales.length > 0) {
     afterParts.push(`locales=${[...rawTranslationLocales].sort().join(",")}`);
+  }
+  if (canonicalRemovedLocales.length > 0) {
+    afterParts.push(`removedLocales=${canonicalRemovedLocales.join(",")}`);
+  } else if (rawRemoveLocales.length > 0) {
+    afterParts.push(`removedLocales=${[...rawRemoveLocales].sort().join(",")}`);
   }
 
   await recordAdministrationAudit({

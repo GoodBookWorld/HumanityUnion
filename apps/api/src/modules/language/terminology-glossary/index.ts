@@ -29,7 +29,7 @@ export {
   normalizeLocaleTranslation,
   sortTerminologyConcepts,
 } from "./terminology-glossary.integrity.js";
-export { canonicalizeGlossaryTranslationLocales } from "./terminology-glossary.locale.js";
+export { canonicalizeGlossaryTranslationLocales, canonicalizeGlossaryLocaleKeys } from "./terminology-glossary.locale.js";
 export {
   buildProviderTerminologyContext,
   formatProviderTerminologyContext,
