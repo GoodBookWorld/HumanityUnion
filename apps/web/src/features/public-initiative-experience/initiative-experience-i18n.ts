@@ -450,6 +450,115 @@ export function resolveCivicArchiveTimelineStatusDisplayLabel(
   return resolveLabel(messagesOrT, `author.archive.timelineStatuses.${status}`, status);
 }
 
+/**
+ * Pack 02G 08E.4 — display-only mapping from stable AI-apply form field IDs
+ * to existing author.*.fields.* catalog keys. Canonical IDs are never mutated.
+ */
+export type LifecycleAiApplyNoticeStageId =
+  | "petition"
+  | "decision_session"
+  | "collective_decision";
+
+const DECISION_SESSION_AI_APPLY_FIELD_CATALOG_KEY: Readonly<Record<string, string>> = {
+  title: "title",
+  decisionQuestion: "question",
+  decisionContext: "context",
+  objectives: "objectives",
+  options: "options",
+  supportingArguments: "arguments",
+  risks: "risks",
+  dependencies: "dependencies",
+  requiredResources: "requiredResources",
+  suggestedTimeline: "timeline",
+  suggestedParticipants: "participants",
+  suggestedResponsibleRoles: "roles",
+  unresolvedQuestions: "unresolvedQuestions",
+};
+
+const COLLECTIVE_DECISION_AI_APPLY_FIELD_CATALOG_KEY: Readonly<Record<string, string>> = {
+  title: "title",
+  decisionSummary: "summary",
+  approvedActions: "approvedActions",
+  rejectedAlternatives: "rejectedAlternatives",
+  responsibleRoles: "roles",
+  implementationPriorities: "priorities",
+  implementationTimeline: "timeline",
+  decisionRationale: "rationale",
+  decisionRisks: "risks",
+  successCriteria: "criteria",
+  requiredResources: "requiredResources",
+  supportingReferences: "supportingReferences",
+};
+
+/** Resolve a localized field label for an AI-apply changed field ID. Unknown → raw id. */
+export function resolveLifecycleAiApplyFieldDisplayLabel(
+  stageId: LifecycleAiApplyNoticeStageId,
+  fieldId: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (stageId === "petition") {
+    return resolveLabel(messagesOrT, `author.petition.fields.${fieldId}`, fieldId);
+  }
+  if (stageId === "decision_session") {
+    const catalogKey = DECISION_SESSION_AI_APPLY_FIELD_CATALOG_KEY[fieldId];
+    if (!catalogKey) {
+      return fieldId;
+    }
+    return resolveLabel(
+      messagesOrT,
+      `author.decisionSession.fields.${catalogKey}`,
+      fieldId,
+    );
+  }
+  const catalogKey = COLLECTIVE_DECISION_AI_APPLY_FIELD_CATALOG_KEY[fieldId];
+  if (!catalogKey) {
+    return fieldId;
+  }
+  return resolveLabel(
+    messagesOrT,
+    `author.collectiveDecision.fields.${catalogKey}`,
+    fieldId,
+  );
+}
+
+/** Locale-aware conjunction list for AI-apply field labels. */
+export function formatLifecycleAiApplyFieldsList(
+  locale: string,
+  labels: readonly string[],
+): string {
+  if (labels.length === 0) {
+    return "";
+  }
+  try {
+    return new Intl.ListFormat(locale, { style: "long", type: "conjunction" }).format([
+      ...labels,
+    ]);
+  } catch {
+    return labels.join(", ");
+  }
+}
+
+/** Build the structured AI-apply notice from catalog + localized field labels. */
+export function formatLifecycleAiApplyNotice(input: {
+  readonly locale: string;
+  readonly stageId: LifecycleAiApplyNoticeStageId;
+  readonly changedKeys: readonly string[];
+  readonly t: InitiativeExperienceTranslator;
+  readonly saveDraft: string;
+  readonly preview: string;
+  readonly publish: string;
+}): string {
+  const labels = input.changedKeys.map((fieldId) =>
+    resolveLifecycleAiApplyFieldDisplayLabel(input.stageId, fieldId, input.t),
+  );
+  return input.t("author.actions.aiApplied", {
+    fields: formatLifecycleAiApplyFieldsList(input.locale, labels),
+    saveDraft: input.saveDraft,
+    preview: input.preview,
+    publish: input.publish,
+  });
+}
+
 /** Contract: every public stageId has a catalog key path stages.{id}. */
 export function listPublicLifecycleStageIdsForI18n(): readonly string[] {
   return PUBLIC_INITIATIVE_EXPERIENCE_STAGES.map((stage) => stage.stageId);

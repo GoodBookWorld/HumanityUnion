@@ -1,6 +1,8 @@
 /**
  * Shared hook: listen for Use suggestions + publish draft excerpts for flat stage forms.
  * Looks up the Fix 03B stage Apply contract from stageId.
+ *
+ * Presentation: exposes structured changed field IDs only — editors own localized notices.
  */
 
 import { useEffect, useRef } from "react";
@@ -16,12 +18,17 @@ import {
   type LifecycleAiApplySuggestionsDetail,
 } from "./lifecycle-ai-suggestion-events";
 
+/** Structured apply result for presentation-layer notices (no English prose). */
+export type LifecycleAiFormApplyNotice = {
+  readonly changedKeys: readonly string[];
+};
+
 export function useLifecycleAiFormApply<TForm extends { [K in keyof TForm]: string }>(options: {
   initiativeId: string;
   stageId: string;
   form: TForm;
   onFormApplied: (next: TForm) => void;
-  onAppliedNotice?: (message: string) => void;
+  onAppliedNotice?: (result: LifecycleAiFormApplyNotice) => void;
 }): void {
   const { initiativeId, stageId, form, onFormApplied, onAppliedNotice } = options;
 
@@ -91,9 +98,7 @@ export function useLifecycleAiFormApply<TForm extends { [K in keyof TForm]: stri
         return;
       }
       onFormAppliedRef.current(result.next);
-      onAppliedNoticeRef.current?.(
-        `Applied AI suggestions to: ${result.changedKeys.join(", ")}. Review before Save Draft / Preview / Publish.`,
-      );
+      onAppliedNoticeRef.current?.({ changedKeys: result.changedKeys });
     };
     window.addEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, onApply as EventListener);
     return () => window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, onApply as EventListener);

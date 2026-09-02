@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 
 import type { DecisionSession, InitiativeDecisionSessionDraft } from "@hu/types";
 
 import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { formatLifecycleAiApplyNotice } from "../../public-initiative-experience/initiative-experience-i18n";
 import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -62,6 +64,7 @@ export function InitiativeDecisionSessionEditor({
 }: InitiativeDecisionSessionEditorProps) {
   const actions = useAuthorActionLabels();
   const { t } = actions;
+  const locale = useLocale();
   const [title, setTitle] = useState(draft.title);
   const [decisionQuestion, setDecisionQuestion] = useState(draft.decisionQuestion);
   const [decisionContext, setDecisionContext] = useState(draft.decisionContext);
@@ -142,8 +145,18 @@ export function InitiativeDecisionSessionEditor({
       setSuggestedResponsibleRoles(next.suggestedResponsibleRoles);
       setUnresolvedQuestions(next.unresolvedQuestions);
     },
-    onAppliedNotice: (text) => {
-      setApplyNotice(text);
+    onAppliedNotice: ({ changedKeys }) => {
+      setApplyNotice(
+        formatLifecycleAiApplyNotice({
+          locale,
+          stageId: "decision_session",
+          changedKeys,
+          t,
+          saveDraft: actions.saveDraft,
+          preview: actions.preview,
+          publish: actions.publish,
+        }),
+      );
       setError(null);
     },
   });
@@ -354,7 +367,11 @@ export function InitiativeDecisionSessionEditor({
       </div>
 
       {error ? <p className="ids-source-panel__empty">{error}</p> : null}
-      {applyNotice ? <p className="ids-source-panel__empty">{applyNotice}</p> : null}
+      {applyNotice ? (
+        <p className="ids-source-panel__empty" role="status">
+          {applyNotice}
+        </p>
+      ) : null}
 
       <div className="ids-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>

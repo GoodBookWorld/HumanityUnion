@@ -947,7 +947,8 @@
         "publishAndContinue": "نشر ومتابعة",
         "retry": "إعادة المحاولة",
         "edit": "تحرير",
-        "autosaveHint": "الحفظ التلقائي غير مفعّل — استخدم «{action}» للاحتفاظ بالتغييرات."
+        "autosaveHint": "الحفظ التلقائي غير مفعّل — استخدم «{action}» للاحتفاظ بالتغييرات.",
+        "aiApplied": "طُبّقت اقتراحات الذكاء الاصطناعي على: {fields}. راجع قبل «{saveDraft}» / «{preview}» / «{publish}»."
       },
       "translation": {
         "title": "ترجمة المسودة",

@@ -1,12 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLocale } from "next-intl";
 
 import type { InitiativeCollectiveDecision, InitiativeCollectiveDecisionLifecycleDraft, ParticipationScope } from "@hu/types";
 
 import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
-import { resolveParticipationScopeDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
+import {
+  formatLifecycleAiApplyNotice,
+  resolveParticipationScopeDisplayLabel,
+} from "../../public-initiative-experience/initiative-experience-i18n";
 import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -93,6 +97,7 @@ export function InitiativeCollectiveDecisionEditor({
 }: InitiativeCollectiveDecisionEditorProps) {
   const actions = useAuthorActionLabels();
   const { t } = actions;
+  const locale = useLocale();
   const [title, setTitle] = useState(draft.title);
   const [decisionSummary, setDecisionSummary] = useState(draft.decisionSummary);
   const [approvedActions, setApprovedActions] = useState(listToLines(draft.approvedActions));
@@ -166,8 +171,18 @@ export function InitiativeCollectiveDecisionEditor({
       setRequiredResources(next.requiredResources);
       setSupportingReferences(next.supportingReferences);
     },
-    onAppliedNotice: (text) => {
-      setApplyNotice(text);
+    onAppliedNotice: ({ changedKeys }) => {
+      setApplyNotice(
+        formatLifecycleAiApplyNotice({
+          locale,
+          stageId: "collective_decision",
+          changedKeys,
+          t,
+          saveDraft: actions.saveDraft,
+          preview: actions.preview,
+          publish: actions.publish,
+        }),
+      );
       setError(null);
     },
   });
@@ -383,7 +398,11 @@ export function InitiativeCollectiveDecisionEditor({
       </div>
 
       {error ? <p className="icd-source-panel__empty">{error}</p> : null}
-      {applyNotice ? <p className="icd-source-panel__empty">{applyNotice}</p> : null}
+      {applyNotice ? (
+        <p className="icd-source-panel__empty" role="status">
+          {applyNotice}
+        </p>
+      ) : null}
 
       <div className="icd-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>

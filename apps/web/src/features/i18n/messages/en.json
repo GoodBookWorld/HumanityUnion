@@ -947,7 +947,8 @@
         "publishAndContinue": "Publish & Continue",
         "retry": "Retry",
         "edit": "Edit",
-        "autosaveHint": "Autosave is not enabled — use {action} to keep your changes."
+        "autosaveHint": "Autosave is not enabled — use {action} to keep your changes.",
+        "aiApplied": "Applied AI suggestions to: {fields}. Review before {saveDraft} / {preview} / {publish}."
       },
       "translation": {
         "title": "Translate Draft",

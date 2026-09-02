@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { InitiativePetitionDraft } from "@hu/types";
 
 import { TranslateDraftControl } from "../../language";
 import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { formatLifecycleAiApplyNotice } from "../../public-initiative-experience/initiative-experience-i18n";
 import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -58,6 +59,7 @@ export function InitiativePetitionEditor({
   onTogglePreview,
 }: InitiativePetitionEditorProps) {
   const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const actions = useAuthorActionLabels();
   const [title, setTitle] = useState(draft.title);
   const [publicSummary, setPublicSummary] = useState(draft.publicSummary);
@@ -101,7 +103,19 @@ export function InitiativePetitionEditor({
           .filter(Boolean),
       );
     },
-    onAppliedNotice: (text) => setMessage({ tone: "success", text }),
+    onAppliedNotice: ({ changedKeys }) =>
+      setMessage({
+        tone: "success",
+        text: formatLifecycleAiApplyNotice({
+          locale,
+          stageId: "petition",
+          changedKeys,
+          t,
+          saveDraft: actions.saveDraft,
+          preview: actions.preview,
+          publish: actions.publish,
+        }),
+      }),
   });
 
   function applyDraftToFields(updated: InitiativePetitionDraft) {

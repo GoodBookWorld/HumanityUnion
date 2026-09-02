@@ -947,7 +947,8 @@
         "publishAndContinue": "發布並繼續",
         "retry": "重試",
         "edit": "編輯",
-        "autosaveHint": "未啟用自動儲存 — 請使用「{action}」以保留變更。"
+        "autosaveHint": "未啟用自動儲存 — 請使用「{action}」以保留變更。",
+        "aiApplied": "已將 AI 建議套用至：{fields}。請在「{saveDraft}」/「{preview}」/「{publish}」前檢閱。"
       },
       "translation": {
         "title": "翻譯草稿",
