@@ -6,11 +6,11 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import {
-  BRAND_TAGLINE,
   DESKTOP_CAPSULE_NAVIGATION,
   type PrimaryNavLabel,
 } from "../../features/public-experience/constants";
 import { resolvePrimaryNavDisplayLabel } from "../../features/public-experience/primary-nav-i18n";
+import { useLocalizedBrand } from "../../features/brand-localization/useLocalizedBrand";
 import { LanguageSelector } from "../../features/language/components/LanguageSelector";
 import { getFocusableElements, trapTabKey } from "../focus-trap";
 import { BrowserWorkspaceHeaderControls } from "./BrowserWorkspaceHeaderControls";
@@ -29,6 +29,7 @@ interface HumanityHeaderProps {
 export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
   const pathname = usePathname();
   const tNav = useTranslations("navigation");
+  const brand = useLocalizedBrand();
   const activeDestination =
     currentDestination !== undefined ? currentDestination : resolveCurrentDestination(pathname);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -87,7 +88,11 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
               menuId={mobileMenuId}
               onToggle={toggleMobileMenu}
             />
-            <Link href="/" className="humanity-header__logo-link" aria-label="Humanity Union home">
+            <Link
+              href="/"
+              className="humanity-header__logo-link"
+              aria-label={`${brand.siteName} home`}
+            >
               <img
                 src="/brand/humanity-union-logo.svg"
                 alt=""
@@ -98,9 +103,9 @@ export function HumanityHeader({ currentDestination }: HumanityHeaderProps) {
             </Link>
             <div className="humanity-header__brand-text">
               <Link href="/" className="humanity-header__brand-name">
-                Humanity Union
+                {brand.siteName}
               </Link>
-              <span className="humanity-header__tagline">{BRAND_TAGLINE}</span>
+              <span className="humanity-header__tagline">{brand.slogan}</span>
             </div>
           </div>
           <nav

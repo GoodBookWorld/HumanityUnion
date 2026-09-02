@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import type { CivicSearchResult, InitiativeLifecycleSearchGroup } from "@hu/types";
@@ -16,6 +17,8 @@ import "./initiative-timeline-group.css";
 
 type StageVisualState = "completed" | "active" | "upcoming" | "unavailable";
 
+type SearchTranslate = ReturnType<typeof useTranslations<"search">>;
+
 function formatDate(value: string): string {
   return new Date(value).toLocaleDateString(undefined, {
     year: "numeric",
@@ -24,20 +27,31 @@ function formatDate(value: string): string {
   });
 }
 
-function resultLinkLabel(entityType: CivicSearchResult["entityType"]): string {
-  return entityType === "initiative" ? "View Initiative" : "View Public Page";
+function resultLinkLabel(entityType: CivicSearchResult["entityType"], t: SearchTranslate): string {
+  return entityType === "initiative" ? t("viewInitiative") : t("viewPublicPage");
 }
 
-function stageStateLabel(state: StageVisualState): string {
+function stageStateLabel(state: StageVisualState, t: SearchTranslate): string {
   switch (state) {
     case "completed":
-      return "Completed";
+      return t("stageCompleted");
     case "active":
-      return "In Progress";
+      return t("stageInProgress");
     case "upcoming":
-      return "Not Started";
+      return t("stageNotStarted");
     default:
-      return "Not applicable";
+      return t("stageNotApplicable");
+  }
+}
+
+function resolveEntityTypeDisplay(
+  entityType: CivicSearchResult["entityType"],
+  t: SearchTranslate,
+): string {
+  try {
+    return t(`entityTypes.${entityType}` as "entityTypes.initiative");
+  } catch {
+    return entityTypeLabel(entityType);
   }
 }
 
@@ -67,23 +81,31 @@ function resolveStageStates(
   return states;
 }
 
-function StageRecordPreview({ result, matched }: { result: CivicSearchResult; matched: boolean }) {
+function StageRecordPreview({
+  result,
+  matched,
+  t,
+}: {
+  result: CivicSearchResult;
+  matched: boolean;
+  t: SearchTranslate;
+}) {
   return (
     <article className="initiative-timeline-group__record">
       <h5 className="initiative-timeline-group__record-title">{result.title}</h5>
       {matched ? (
         <p className="initiative-timeline-group__record-match">
-          Matched in {entityTypeLabel(result.entityType)}
+          {t("matchedIn", { type: resolveEntityTypeDisplay(result.entityType, t) })}
         </p>
       ) : null}
       <p className="initiative-timeline-group__record-meta">
-        {result.status} · Updated {formatDate(result.updatedAt)}
+        {result.status} · {t("updated", { date: formatDate(result.updatedAt) })}
       </p>
       {result.summary ? (
         <p className="initiative-timeline-group__record-summary">{result.summary}</p>
       ) : null}
       <Link className="initiative-timeline-group__record-link" href={result.publicUrl}>
-        {resultLinkLabel(result.entityType)} →
+        {resultLinkLabel(result.entityType, t)}
       </Link>
     </article>
   );
@@ -95,6 +117,7 @@ interface InitiativeTimelineGroupProps {
 }
 
 export function InitiativeTimelineGroup({ group, locationLabel }: InitiativeTimelineGroupProps) {
+  const t = useTranslations("search");
   const stageIds = useMemo(() => group.stages.map((stage) => stage.stageId), [group.stages]);
   const stageStates = useMemo(() => resolveStageStates(group.stages), [group.stages]);
   const [expandedStageIds, setExpandedStageIds] = useState<Set<string>>(() =>
@@ -149,14 +172,15 @@ export function InitiativeTimelineGroup({ group, locationLabel }: InitiativeTime
             <p className="initiative-timeline-group__activity-area">{group.activityArea}</p>
           ) : null}
           <p className="initiative-timeline-group__meta">
-            {locationLabel} · {group.status} · Updated {formatDate(group.latestActivityAt)}
+            {locationLabel} · {group.status} ·{" "}
+            {t("updated", { date: formatDate(group.latestActivityAt) })}
           </p>
           {initiativeRecord ? (
             <Link
               className="initiative-timeline-group__primary-action"
               href={initiativeRecord.publicUrl}
             >
-              View Initiative →
+              {t("viewInitiative")}
             </Link>
           ) : null}
         </div>
@@ -169,7 +193,7 @@ export function InitiativeTimelineGroup({ group, locationLabel }: InitiativeTime
             className="initiative-timeline-group__collapse-all"
             onClick={collapseAllStages}
           >
-            Collapse all
+            {t("collapseAll")}
           </button>
         </div>
       ) : null}
@@ -177,7 +201,7 @@ export function InitiativeTimelineGroup({ group, locationLabel }: InitiativeTime
       <div
         className="initiative-timeline-group__timeline"
         role="list"
-        aria-label="Initiative lifecycle stages"
+        aria-label={t("lifecycleStagesAria")}
       >
         {group.stages.map((stage, index) => {
           const visualState = stageStates.get(stage.stageId) ?? "upcoming";
@@ -219,11 +243,11 @@ export function InitiativeTimelineGroup({ group, locationLabel }: InitiativeTime
                     <span className="initiative-timeline-group__stage-count">({recordCount})</span>
                   ) : null}
                   <span className="initiative-timeline-group__stage-state">
-                    {stageStateLabel(visualState)}
+                    {stageStateLabel(visualState, t)}
                   </span>
                   {stage.matched ? (
                     <span className="initiative-timeline-group__stage-match-label">
-                      Match found in {stage.label}
+                      {t("matchFoundIn", { stage: stage.label })}
                     </span>
                   ) : null}
                 </button>
@@ -240,6 +264,7 @@ export function InitiativeTimelineGroup({ group, locationLabel }: InitiativeTime
                         key={`${result.entityType}-${result.entityId}`}
                         result={result}
                         matched={result.matchedFields.length > 0}
+                        t={t}
                       />
                     ))}
                   </div>

@@ -87,10 +87,12 @@ describe("Production Completion Pack 02G Task 06 — layout resilience", () => {
     const editorial = readWeb(
       "src/features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
     );
-    assert.match(mediaCss, /\.civic-media-translated-editorial\s*\{[^}]*min-width:\s*0/s);
-    assert.match(mediaCss, /\.civic-media-translated-editorial\s*\{[^}]*overflow-wrap:\s*anywhere/s);
-    assert.match(editorial, /civic-media-translated-editorial/);
-    assert.match(editorial, /CivicPublicTranslatedSection/);
+    assert.match(mediaCss, /\.civic-media-page\s*\{[^}]*min-width:\s*0/s);
+    assert.match(mediaCss, /\.civic-media-page\s*\{[^}]*overflow-wrap:\s*anywhere/s);
+    assert.match(mediaCss, /\.civic-media-page__points\s*\{[^}]*min-width:\s*0/s);
+    assert.match(mediaCss, /\.civic-media-page__points\s*\{[^}]*overflow-wrap:\s*anywhere/s);
+    assert.match(editorial, /useCivicMediaResolvedEditorial/);
+    assert.match(editorial, /resolveTranslatedContent/);
     assert.doesNotMatch(editorial, /diagramSvg|websiteUrl|trustedMedia/);
   });
 
@@ -197,7 +199,7 @@ describe("Production Completion Pack 02G Task 06 — layout resilience", () => {
     );
     assert.match(
       readWeb("src/features/civic-media-center/components/CivicMediaCenterPageContent.tsx"),
-      /CivicMediaTranslatedEditorial/,
+      /useCivicMediaResolvedEditorial/,
     );
   });
 

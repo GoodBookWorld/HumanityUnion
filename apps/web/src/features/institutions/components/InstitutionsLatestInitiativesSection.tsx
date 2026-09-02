@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
@@ -40,6 +41,7 @@ function mapSearchResultToMiniCard(
 }
 
 export function InstitutionsLatestInitiativesSection() {
+  const t = useTranslations("institutionsPublic");
   const [items, setItems] = useState<WorldInitiativeCardProjection[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -66,9 +68,9 @@ export function InstitutionsLatestInitiativesSection() {
 
   const emptyState = (
     <div className="institutions-related-initiatives__empty">
-      <p>No public initiatives are available yet.</p>
-      <p>When participants publish initiatives, up to three will appear here.</p>
-      <PublicHomeCreateInitiativeCta label="Create Initiative" />
+      <p>{t("relatedEmptyPrimary")}</p>
+      <p>{t("relatedEmptySecondary")}</p>
+      <PublicHomeCreateInitiativeCta label={t("primaryCta")} />
     </div>
   );
 
@@ -81,7 +83,7 @@ export function InstitutionsLatestInitiativesSection() {
       >
         <div className="institutions-section__inner">
           <p className="institutions-related-initiatives__loading" role="status">
-            Loading initiatives…
+            {t("relatedLoading")}
           </p>
         </div>
       </section>
@@ -97,15 +99,15 @@ export function InstitutionsLatestInitiativesSection() {
       <div className="institutions-section__inner">
         <HuxDiscoverySection
           sectionId="institutions-related-initiatives"
-          eyebrow="CIVIC ACTIVITY"
-          title="Related Initiatives"
-          description="Latest Initiatives"
-          label="Related civic initiatives"
+          eyebrow={t("relatedEyebrow")}
+          title={t("relatedTitle")}
+          description={t("relatedDescription")}
+          label={t("relatedAriaLabel")}
           items={collectionItems}
           emptyState={emptyState}
           headerAction={
             <Button href="/initiatives" variant="secondary">
-              View All Initiatives
+              {t("relatedViewAll")}
             </Button>
           }
           getItemKey={(item, index) =>

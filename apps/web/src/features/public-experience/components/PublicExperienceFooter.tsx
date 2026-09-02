@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
-import { FOOTER_COPYRIGHT, FOOTER_MISSION } from "../constants";
-import { FOOTER_CONTENT } from "../content";
+import { resolveBrandForMetadata } from "../../brand-localization/resolve-brand-for-metadata";
+import { FOOTER_COPYRIGHT } from "../constants";
 import {
   FOOTER_LEGAL_LINKS,
   FOOTER_PLATFORM_COLUMN_ONE,
@@ -32,6 +32,9 @@ function FooterNavItem({
 
 export async function PublicExperienceFooter() {
   const tNav = await getTranslations("navigation");
+  const locale = await getLocale();
+  const brand = await resolveBrandForMetadata(locale);
+  const copyright = FOOTER_COPYRIGHT.replace("Humanity Union", brand.siteName);
 
   return (
     <footer
@@ -47,7 +50,7 @@ export async function PublicExperienceFooter() {
               <Link
                 href="/"
                 className="public-experience-footer__logo-link"
-                aria-label="Humanity Union home"
+                aria-label={`${brand.siteName} home`}
               >
                 <img
                   src="/brand/humanity-union-logo.svg"
@@ -58,16 +61,18 @@ export async function PublicExperienceFooter() {
                 />
               </Link>
               <div className="public-experience-footer__brand-text">
-                <p className="public-experience-footer__identity">{FOOTER_CONTENT.identity}</p>
-                <p className="public-experience-footer__tagline">{FOOTER_CONTENT.tagline}</p>
+                <p className="public-experience-footer__identity">{brand.siteName}</p>
+                <p className="public-experience-footer__tagline">{brand.slogan}</p>
               </div>
             </div>
-            <p className="public-experience-footer__mission">{FOOTER_MISSION}</p>
+            <p className="public-experience-footer__mission">{tNav("footerMission")}</p>
             <FooterSocialLinks />
           </section>
 
           <section className="public-experience-footer__block">
-            <h2 className="public-experience-footer__heading">{FOOTER_CONTENT.platformHeading}</h2>
+            <h2 className="public-experience-footer__heading">
+              {tNav("footerPlatformHeading")}
+            </h2>
             <nav aria-label="Platform navigation column one">
               <ul className="public-experience-footer__nav-list">
                 {FOOTER_PLATFORM_COLUMN_ONE.map((link) => (
@@ -83,7 +88,7 @@ export async function PublicExperienceFooter() {
 
           <section className="public-experience-footer__block public-experience-footer__platform-secondary">
             <h2 className="public-experience-footer__heading public-experience-footer__heading--visually-hidden">
-              {FOOTER_CONTENT.platformHeading}
+              {tNav("footerPlatformHeading")}
             </h2>
             <nav aria-label="Platform navigation column two">
               <ul className="public-experience-footer__nav-list">
@@ -99,7 +104,9 @@ export async function PublicExperienceFooter() {
           </section>
 
           <section className="public-experience-footer__block">
-            <h2 className="public-experience-footer__heading">{FOOTER_CONTENT.legalHeading}</h2>
+            <h2 className="public-experience-footer__heading">
+              {tNav("footerLegalHeading")}
+            </h2>
             <nav aria-label="Legal and transparency navigation">
               <ul className="public-experience-footer__nav-list">
                 {FOOTER_LEGAL_LINKS.map((link) => (
@@ -114,7 +121,7 @@ export async function PublicExperienceFooter() {
           </section>
         </div>
 
-        <p className="public-experience-footer__copyright">{FOOTER_COPYRIGHT}</p>
+        <p className="public-experience-footer__copyright">{copyright}</p>
       </div>
     </footer>
   );

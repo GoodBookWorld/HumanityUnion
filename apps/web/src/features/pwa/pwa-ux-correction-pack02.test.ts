@@ -4,6 +4,8 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { CANONICAL_ENGLISH_BRAND_FALLBACK } from "@hu/types";
+
 import {
   clearObsoleteInstallPreferenceKeys,
   dismissInstallPromotion,
@@ -150,10 +152,14 @@ describe("PWA UX Correction Pack 02", () => {
     assert.match(media, /isSameOriginStaticAssetPath|same-origin/);
   });
 
-  it("18–19 — manifest name Humanity Union; short_name Humanity", () => {
+  it("18–19 — manifest uses static PWA_BRAND (canonical English fallback)", () => {
     const manifest = readWeb("app/manifest.ts");
-    assert.match(manifest, /name:\s*"Humanity Union"/);
-    assert.match(manifest, /short_name:\s*"Humanity"/);
+    assert.match(manifest, /PWA_BRAND/);
+    assert.match(manifest, /CANONICAL_ENGLISH_BRAND_FALLBACK/);
+    assert.match(manifest, /name:\s*PWA_BRAND\.siteName/);
+    assert.match(manifest, /short_name:\s*PWA_BRAND\.shortName/);
+    assert.equal(CANONICAL_ENGLISH_BRAND_FALLBACK.siteName, "Humanity Union");
+    assert.equal(CANONICAL_ENGLISH_BRAND_FALLBACK.shortName, "Humanity");
   });
 
   it("install promotion never actionless; Later ≠ installed; SW ≠ installed", () => {

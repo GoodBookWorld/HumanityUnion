@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   CivicMediaCenterPublic,
@@ -24,7 +25,7 @@ import {
 } from "../../horizontal-experience";
 import { PublicNewsSection } from "../../public-news/components/PublicNewsSection";
 import { fetchCivicMediaCenter } from "../api";
-import { CivicMediaTranslatedEditorial } from "./CivicMediaTranslatedEditorial";
+import { useCivicMediaResolvedEditorial } from "./CivicMediaTranslatedEditorial";
 import { CivicPipelineWorkflow } from "./CivicPipelineWorkflow";
 import { MediaLogo } from "./MediaLogo";
 import { TrustedMediaCategoryTabs } from "./TrustedMediaCategoryTabs";
@@ -63,6 +64,7 @@ function ExternalResourceLink({ href, children }: { href: string; children: stri
 }
 
 function PrincipleCard({ principle }: { principle: CivicMediaSelectionPrinciple }) {
+  const t = useTranslations("civicMediaPublic");
   const icon = PRINCIPLE_ICONS[principle.id] ?? principle.title.slice(0, 1);
   const whyItMatters = PRINCIPLE_WHY_IT_MATTERS[principle.id];
 
@@ -75,7 +77,7 @@ function PrincipleCard({ principle }: { principle: CivicMediaSelectionPrinciple 
       <p className="civic-media-resource-card__body">{principle.description}</p>
       {whyItMatters ? (
         <p className="civic-media-resource-card__why">
-          <strong>Why it matters</strong>
+          <strong>{t("whyItMatters")}</strong>
           {whyItMatters}
         </p>
       ) : null}
@@ -84,6 +86,7 @@ function PrincipleCard({ principle }: { principle: CivicMediaSelectionPrinciple 
 }
 
 function FactCheckCard({ resource }: { resource: FactCheckResource }) {
+  const t = useTranslations("civicMediaPublic");
   const chips = coverageToChips(resource.coverage);
 
   return (
@@ -102,21 +105,23 @@ function FactCheckCard({ resource }: { resource: FactCheckResource }) {
           height={40}
         />
       </div>
-      <p className="civic-media-resource-card__label">Mission</p>
+      <p className="civic-media-resource-card__label">{t("mission")}</p>
       <p className="civic-media-resource-card__body">{resource.mission}</p>
-      <div className="civic-media-resource-card__chips" aria-label="Coverage areas">
+      <div className="civic-media-resource-card__chips" aria-label={t("coverageAria")}>
         {chips.map((chip) => (
           <span key={chip} className="civic-media-chip">
             {chip}
           </span>
         ))}
       </div>
-      <ExternalResourceLink href={resource.websiteUrl}>Official website</ExternalResourceLink>
+      <ExternalResourceLink href={resource.websiteUrl}>{t("officialWebsite")}</ExternalResourceLink>
     </Card>
   );
 }
 
 function PropagandaCard({ resource }: { resource: PropagandaAnalysisResource }) {
+  const t = useTranslations("civicMediaPublic");
+
   return (
     <Card className="civic-media-resource-card civic-media-resource-card--analysis">
       <div className="civic-media-resource-card__header civic-media-resource-card__header--logo-end">
@@ -135,7 +140,7 @@ function PropagandaCard({ resource }: { resource: PropagandaAnalysisResource }) 
       </div>
       <Badge status={resource.focus} />
       <p className="civic-media-resource-card__body">{resource.explanation}</p>
-      <ExternalResourceLink href={resource.websiteUrl}>Learn more</ExternalResourceLink>
+      <ExternalResourceLink href={resource.websiteUrl}>{t("learnMore")}</ExternalResourceLink>
     </Card>
   );
 }
@@ -150,76 +155,61 @@ function TrustedMediaCard({
   return <TrustedMediaRailCard resource={resource} categoryTitle={categoryTitle} />;
 }
 
-export function CivicMediaCenterPageContent() {
-  const [media, setMedia] = useState<CivicMediaCenterPublic | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    void fetchCivicMediaCenter()
-      .then(setMedia)
-      .catch((fetchError: unknown) => {
-        setError(
-          fetchError instanceof Error ? fetchError.message : "Civic Media Center unavailable.",
-        );
-      });
-  }, []);
-
-  if (error) {
-    return (
-      <main className="civic-media-page">
-        <div className="civic-media-page__container">
-          <p role="alert">{error}</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (!media) {
-    return (
-      <main className="civic-media-page">
-        <div className="civic-media-page__container">
-          <p role="status">Loading Civic Media…</p>
-        </div>
-      </main>
-    );
-  }
+function CivicMediaCenterLoaded({ media }: { media: CivicMediaCenterPublic }) {
+  const t = useTranslations("civicMediaPublic");
+  const editorial = useCivicMediaResolvedEditorial(media);
 
   return (
     <main className="civic-media-page">
       <div className="civic-media-page__container">
         <section id="overview" className="civic-media-page__hero civic-media-section-shell">
           <div className="civic-media-section-shell__inner">
-            <p className="civic-media-page__eyebrow">Civic Media</p>
-            <h1>Civic Media Center</h1>
-            <CivicMediaTranslatedEditorial media={media} />
+            <p className="civic-media-page__eyebrow">{t("eyebrow")}</p>
+            <h1>{t("pageTitle")}</h1>
+            <div className="civic-media-page__editorial">
+              <h2 className="civic-media-page__overview-title">{editorial.overview.title}</h2>
+              <p className="civic-media-page__lead">{editorial.overview.summary}</p>
+              <ul className="civic-media-page__points">
+                {editorial.overview.points.map((point) => (
+                  <li key={point.id} className="civic-media-page__point">
+                    <h3>{point.heading}</h3>
+                    <p>{point.body}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </section>
 
-        <CivicPipelineWorkflow />
+        <CivicPipelineWorkflow
+          title={editorial.initiativeFlow.title}
+          description={editorial.initiativeFlow.summary}
+          stageTitles={editorial.initiativeFlow.stages}
+        />
 
         <PublicNewsSection sectionId="news-widgets" variant="discovery" />
 
         <HuxEducationSection
           sectionId="selection-principles"
           surfaceStyle="grouped"
-          eyebrow="TRUSTED SOURCES"
-          title="Why We Recommend These Sources"
-          description="Selection follows published principles — not popularity, stars, or rankings."
+          eyebrow={t("selectionPrinciples.eyebrow")}
+          title={t("selectionPrinciples.title")}
+          description={t("selectionPrinciples.description")}
           label="source selection principles"
-          items={media.selectionPrinciples}
+          items={[...editorial.selectionPrinciples]}
           layout="four-two-one"
           getItemKey={(principle) => principle.id}
           renderItem={(principle) => <PrincipleCard principle={principle} />}
           footerAction={
-            <Link href={`${CIVIC_MEDIA_ROUTE}#faq`}>Read selection FAQ</Link>
+            <Link href={`${CIVIC_MEDIA_ROUTE}#faq`}>{t("selectionPrinciples.readFaq")}</Link>
           }
         />
 
         <HuxDirectoryShell
           sectionId="trusted-media"
-          eyebrow="TRUSTED SOURCES"
-          title="Recommended Trusted Media"
-          description="Curated sources selected by editorial standards. No rankings, scores, or votes."
+          eyebrow={t("trustedMedia.eyebrow")}
+          title={t("trustedMedia.title")}
+          description={t("trustedMedia.description")}
         >
           <TrustedMediaCategoryTabs
             sectionId="trusted-media"
@@ -233,9 +223,9 @@ export function CivicMediaCenterPageContent() {
 
         <HuxDirectorySection
           sectionId="fact-checking"
-          eyebrow="VERIFY INFORMATION"
-          title="Fact-Checking Resources"
-          description="Independent organizations and tools for checking public claims, images, and media narratives."
+          eyebrow={t("factChecking.eyebrow")}
+          title={t("factChecking.title")}
+          description={t("factChecking.description")}
           label="fact-checking resources"
           items={media.factChecking}
           layout="three-two-one"
@@ -245,9 +235,9 @@ export function CivicMediaCenterPageContent() {
 
         <HuxDirectorySection
           sectionId="propaganda-analysis"
-          eyebrow="ANALYZE NARRATIVES"
-          title="Propaganda Analysis"
-          description="Resources for identifying manipulation techniques, coordinated narratives, and information operations."
+          eyebrow={t("propaganda.eyebrow")}
+          title={t("propaganda.title")}
+          description={t("propaganda.description")}
           label="propaganda analysis resources"
           items={media.propagandaAnalysis}
           layout="three-two-one"
@@ -257,9 +247,9 @@ export function CivicMediaCenterPageContent() {
 
         <section id="faq" className="civic-media-page__faq civic-media-section-shell">
           <div className="civic-media-section-shell__inner">
-            <h2>Frequently Asked Questions</h2>
+            <h2>{t("faq.heading")}</h2>
             <div className="civic-media-page__faq-list">
-              {media.faq.map((item) => (
+              {editorial.faq.map((item) => (
                 <Card key={item.id} className="civic-media-resource-card">
                   <h3>{item.question}</h3>
                   <p>{item.answer}</p>
@@ -270,10 +260,46 @@ export function CivicMediaCenterPageContent() {
         </section>
 
         <p className="civic-media-page__knowledge-link">
-          Looking for broader educational articles?{" "}
-          <Link href="/knowledge">Visit the Knowledge Center</Link>.
+          {t("knowledgeLink")}{" "}
+          <Link href="/knowledge">{t("visitKnowledge")}</Link>.
         </p>
       </div>
     </main>
   );
+}
+
+export function CivicMediaCenterPageContent() {
+  const t = useTranslations("civicMediaPublic");
+  const [media, setMedia] = useState<CivicMediaCenterPublic | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    void fetchCivicMediaCenter()
+      .then(setMedia)
+      .catch(() => {
+        setError(true);
+      });
+  }, []);
+
+  if (error) {
+    return (
+      <main className="civic-media-page">
+        <div className="civic-media-page__container">
+          <p role="alert">{t("unavailable")}</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!media) {
+    return (
+      <main className="civic-media-page">
+        <div className="civic-media-page__container">
+          <p role="status">{t("loading")}</p>
+        </div>
+      </main>
+    );
+  }
+
+  return <CivicMediaCenterLoaded media={media} />;
 }

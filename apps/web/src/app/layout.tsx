@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
+import { CANONICAL_ENGLISH_BRAND_FALLBACK } from "@hu/types";
 
 import { HumanityLayout } from "../design-system/components/HumanityLayout";
+import { resolveBrandForMetadata } from "../features/brand-localization/resolve-brand-for-metadata";
 import { loadUiMessagesForLocale } from "../features/i18n/load-ui-messages";
 import { resolveDocumentHtmlLocale } from "../features/language/resolve-document-locale";
 import { PWA_LAUNCH_FIRST_PAINT_BOOTSTRAP } from "../features/pwa/pwa-launch-first-paint-bootstrap";
@@ -9,11 +11,17 @@ import { JsonLdScript, buildRootStructuredData } from "../lib/seo/structured-dat
 
 import "./globals.css";
 
+/**
+ * Pack 08I.2 — applicationName / appleWebApp.title stay static PWA_BRAND
+ * (canonical English fallback). Runtime-localized brand is for HTML chrome / SEO only.
+ */
+const PWA_BRAND = CANONICAL_ENGLISH_BRAND_FALLBACK;
+
 export const metadata: Metadata = {
-  applicationName: "Humanity Union",
+  applicationName: PWA_BRAND.siteName,
   appleWebApp: {
     capable: true,
-    title: "Humanity Union",
+    title: PWA_BRAND.siteName,
     // default keeps status-bar text readable against light app chrome
     statusBarStyle: "default",
   },
@@ -46,9 +54,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const rootStructuredData = buildRootStructuredData();
   // Pack 02C — single authoritative interface locale for html lang/dir + i18n.
   const documentLocale = await resolveDocumentHtmlLocale();
+  // Pack 08I.2 — async brand resolve for Organization/WebSite JSON-LD name.
+  const brand = await resolveBrandForMetadata(documentLocale.locale);
+  const rootStructuredData = buildRootStructuredData(undefined, brand.openGraphBrandName);
   const uiMessages = await loadUiMessagesForLocale(documentLocale.locale);
 
   return (

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { CanonicalInitiativeExperienceLoader } from "../../../../features/public-initiative-experience/components/CanonicalInitiativeExperienceLoader";
+import { resolveBrandForMetadata } from "../../../../features/brand-localization/resolve-brand-for-metadata";
 import { getPublicInitiative } from "../../../../features/initiatives/api";
 import { resolveDocumentHtmlLocale } from "../../../../features/language/resolve-document-locale";
 import { resolveMediaUrl } from "../../../../features/media-upload/media-url";
@@ -26,12 +28,15 @@ interface PublicInitiativePageProps {
  * Pack 02I — when a current cached civic translation exists for the document
  * locale, title/description may use that copy. Canonical path stays locale-free.
  * Never calls Gemini / translation generate from metadata.
+ * Pack 08I.2 — brand title suffix from Admin Brand Localization.
  */
 export async function generateMetadata({
   params,
 }: PublicInitiativePageProps): Promise<Metadata> {
   const { initiativeId } = await params;
   const canonicalPath = `/initiatives/public/${encodeURIComponent(initiativeId)}`;
+  const requestLocale = await getLocale();
+  const brand = await resolveBrandForMetadata(requestLocale);
 
   try {
     const initiative = await getPublicInitiative(initiativeId);
@@ -42,7 +47,7 @@ export async function generateMetadata({
       undefined;
     const resolvedImage = resolveMediaUrl(rawImage);
     const description =
-      initiative.description.trim() || `${initiative.title} on Humanity Union`;
+      initiative.description.trim() || `${initiative.title} on ${brand.seoSiteName}`;
 
     const documentLocale = await resolveDocumentHtmlLocale();
     const translationFields = await loadInitiativeMetadataTranslationFields({
@@ -74,6 +79,8 @@ export async function generateMetadata({
           imageAlt: initiative.metadata.imageAltText || localized.title,
           openGraphType: "website",
           descriptionMaxLength: 200,
+          titleBrandSuffix: brand.seoTitleSuffix,
+          openGraphSiteName: brand.openGraphBrandName || brand.seoSiteName,
         },
         override?.fields,
       ),
@@ -81,10 +88,12 @@ export async function generateMetadata({
   } catch {
     return buildPublicPageMetadata({
       title: "Initiative",
-      description: "Public Initiative on Humanity Union",
+      description: `Public Initiative on ${brand.seoSiteName}`,
       canonicalPath,
       openGraphType: "website",
       indexable: false,
+      titleBrandSuffix: brand.seoTitleSuffix,
+      openGraphSiteName: brand.openGraphBrandName || brand.seoSiteName,
     });
   }
 }
@@ -97,6 +106,9 @@ export async function generateMetadata({
 export default async function PublicInitiativePage({ params }: PublicInitiativePageProps) {
   const { initiativeId } = await params;
   const canonicalPath = `/initiatives/public/${encodeURIComponent(initiativeId)}`;
+  const locale = await getLocale();
+  const brand = await resolveBrandForMetadata(locale);
+  const tNav = await getTranslations("navigation");
 
   let structuredData = null;
   try {
@@ -107,7 +119,7 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       initiative.metadata.coverMedia?.url ??
       undefined;
     const description =
-      initiative.description.trim() || `${initiative.title} on Humanity Union`;
+      initiative.description.trim() || `${initiative.title} on ${brand.seoSiteName}`;
 
     structuredData = buildWebPageJsonLd({
       name: initiative.title,
@@ -115,8 +127,8 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
       canonicalPath,
       imageUrl: resolveMediaUrl(rawImage),
       breadcrumbs: [
-        { name: "Home", path: "/" },
-        { name: "Initiatives", path: "/initiatives" },
+        { name: tNav("home"), path: "/" },
+        { name: tNav("initiatives"), path: "/initiatives" },
         { name: initiative.title, path: canonicalPath },
       ],
     });

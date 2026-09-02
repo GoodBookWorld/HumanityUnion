@@ -1137,6 +1137,22 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // Pack 08I.2 — Admin-managed Brand Localization (one record per canonical locale).
+    collectionName: MONGO_COLLECTIONS.brandLocalization,
+    indexes: [
+      {
+        key: { locale: 1 },
+        unique: true,
+        name: "brand_localization_locale_unique",
+      },
+      {
+        key: { brandId: 1 },
+        unique: true,
+        name: "brand_localization_brand_id_unique",
+      },
+    ],
+  },
+  {
     // Blog Implementation Pack 02 — publishing domain.
     collectionName: MONGO_COLLECTIONS.blogPosts,
     indexes: [

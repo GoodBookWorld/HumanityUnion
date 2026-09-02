@@ -69,13 +69,15 @@ describe("Production Completion Pack 02G Task 05 — Web civic translated surfac
     const media = readWeb(
       "src/features/civic-media-center/components/CivicMediaCenterPageContent.tsx",
     );
-    assert.match(media, /CivicMediaTranslatedEditorial/);
+    assert.match(media, /useCivicMediaResolvedEditorial/);
     assert.doesNotMatch(media, /generateContentTranslation/);
 
     const mediaEditorial = readWeb(
       "src/features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
     );
     assert.match(mediaEditorial, /civic-media-center/);
+    assert.match(mediaEditorial, /sourceKind:\s*"civic_media"/);
+    assert.doesNotMatch(mediaEditorial, /generateContentTranslation/);
     assert.doesNotMatch(mediaEditorial, /diagramSvg|websiteUrl|trustedMedia/);
   });
 
@@ -106,5 +108,6 @@ describe("Production Completion Pack 02G Task 05 — Web civic translated surfac
       "src/features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
     );
     assert.doesNotMatch(mediaEditorial, /blog_post|discussion_comment/);
+    assert.doesNotMatch(mediaEditorial, /stableJsonForDisplay|CivicPublicTranslatedSection/);
   });
 });

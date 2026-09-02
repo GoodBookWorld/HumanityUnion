@@ -102,9 +102,10 @@
   font-weight: 700;
   line-height: 1.2;
   text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Pack 08I.2 — allow wrap for long localized brand names (no ellipsis concealment). */
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .humanity-header__brand-name:hover,
@@ -120,9 +121,10 @@
   letter-spacing: 0.10em;
   line-height: 1.2;
   text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Pack 08I.2 — wrap long slogans within brand column. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .humanity-header__logo-link {

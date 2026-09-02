@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { ApiUnavailableState } from "../../design-system";
 import { WorldInitiativesPageContent } from "../../features/initiatives/components/WorldInitiativesPageContent";
 import { fetchWorldInitiativesProjection } from "../../features/initiatives/world-initiatives-api";
@@ -5,6 +7,7 @@ import { fetchWorldInitiativesProjection } from "../../features/initiatives/worl
 import "./initiatives-page.css";
 
 export default async function InitiativesPage() {
+  const t = await getTranslations("worldInitiativesPublic");
   let projection = null;
   let unavailable = false;
 
@@ -18,11 +21,9 @@ export default async function InitiativesPage() {
     return (
       <main className="initiatives-page humanity-workspace-page">
         <ApiUnavailableState
-          title="World initiatives temporarily unavailable"
-          explanation="We couldn't load published world initiatives. Please try again shortly."
+          title={t("unavailableTitle")}
+          explanation={t("unavailableBody")}
           retryHref="/initiatives"
-          retryLabel="Retry"
-          homeLabel="Return Home"
         />
       </main>
     );

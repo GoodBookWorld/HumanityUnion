@@ -53,6 +53,10 @@
   gap: 0.75rem 1rem;
 }
 
+.admin-languages__form-span {
+  grid-column: 1 / -1;
+}
+
 .admin-languages__form label {
   display: flex;
   flex-direction: column;

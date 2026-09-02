@@ -39,7 +39,9 @@ describe("Home Humanity AI principle line", () => {
       "We put technology and AI in service of humanity—to improve life, deepen cooperation, advance progress, and overcome ignorance.",
     );
     const component = readFeature("components/PublicHomeHumanityAiPrinciple.tsx");
-    assert.match(component, /PUBLIC_HOME_HUMANITY_AI_PRINCIPLE/);
+    assert.match(component, /useTranslations\("publicHome"\)/);
+    assert.match(component, /t\("humanityAiPrinciple"\)/);
+    assert.doesNotMatch(component, /PUBLIC_HOME_HUMANITY_AI_PRINCIPLE/);
     assert.doesNotMatch(component, /canvas|img|background-image/i);
   });
 

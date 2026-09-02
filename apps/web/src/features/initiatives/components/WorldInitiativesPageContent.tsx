@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
@@ -80,24 +83,22 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
 }
 
 export function WorldInitiativesPageContent({ projection }: WorldInitiativesPageContentProps) {
+  const t = useTranslations("worldInitiativesPublic");
+
   return (
     <section className="world-initiatives-page">
       <header className="world-initiatives-page__header">
-        <h1 className="world-initiatives-page__title">World Initiatives</h1>
-        <p className="world-initiatives-page__intro">
-          Explore the latest world-scope initiatives published through the platform.
-        </p>
-        <p className="world-initiatives-page__secondary">
-          More initiatives and country, regional, or community results can be found through Search.
-        </p>
+        <h1 className="world-initiatives-page__title">{t("pageTitle")}</h1>
+        <p className="world-initiatives-page__intro">{t("pageIntro")}</p>
+        <p className="world-initiatives-page__secondary">{t("pageSecondary")}</p>
         <Button href="/search" variant="secondary">
-          Search All Initiatives →
+          {t("searchCta")}
         </Button>
       </header>
 
       {projection.length === 0 ? (
         <p className="world-initiatives-page__empty" role="status">
-          No world initiatives have been published yet.
+          {t("empty")}
         </p>
       ) : (
         <ul className="world-initiatives-page__grid">

@@ -1,6 +1,9 @@
 .civic-media-page {
   width: 100%;
+  min-width: 0;
   overflow-x: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   --civic-media-section-gap: 3rem;
 }
 
@@ -51,8 +54,8 @@
   word-break: break-word;
 }
 
-/* Pack 02G Task 06 — translated editorial block (overview / principles / FAQ / flow). */
-.civic-media-translated-editorial {
+/* Pack 08I — structured editorial overview (no JSON dump). */
+.civic-media-page__editorial {
   display: grid;
   gap: var(--hu-space-4);
   min-width: 0;
@@ -62,11 +65,52 @@
   word-break: break-word;
 }
 
-.civic-media-translated-editorial .hu-public-translated-fields,
-.civic-media-translated-editorial .hu-translated-content,
-.civic-media-translated-editorial .hu-translated-content__body {
+.civic-media-page__overview-title {
+  margin: 0;
+  color: var(--hu-color-text, #1f2933);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
   min-width: 0;
   max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.civic-media-page__points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--hu-space-3);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.civic-media-page__point {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.civic-media-page__point h3 {
+  margin: 0 0 var(--hu-space-1);
+  font-size: 1.0625rem;
+  color: var(--hu-color-primary, #0174b0);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.civic-media-page__point p {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--hu-color-text, #1f2933);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .civic-media-page__hero-grid {

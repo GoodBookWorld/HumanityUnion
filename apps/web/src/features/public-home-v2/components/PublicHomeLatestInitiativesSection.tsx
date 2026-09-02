@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
@@ -11,7 +12,7 @@ import {
   PublicInitiativeMiniCard,
   PublicInitiativeMiniCardPlaceholder,
 } from "../../public-initiative-mini-card";
-import { HOME_INITIATIVE_PLACEHOLDER_MAX, PUBLIC_HOME_LATEST_INITIATIVES } from "../constants";
+import { HOME_INITIATIVE_PLACEHOLDER_MAX } from "../constants";
 import { fetchHomeLatestInitiatives, HOME_LATEST_INITIATIVES_SLOT_COUNT } from "../api";
 
 type InitiativeCollectionItem =
@@ -19,6 +20,7 @@ type InitiativeCollectionItem =
   | { kind: "placeholder"; slotNumber: number };
 
 export function PublicHomeLatestInitiativesSection() {
+  const t = useTranslations("publicHome");
   const [items, setItems] = useState<WorldInitiativeCardProjection[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +51,7 @@ export function PublicHomeLatestInitiativesSection() {
     return (
       <section className="public-home-v2__section" aria-labelledby="public-home-initiatives-heading">
         <p className="public-home-v2__loading" role="status">
-          Loading public initiatives…
+          {t("latestInitiatives.loading")}
         </p>
       </section>
     );
@@ -58,13 +60,13 @@ export function PublicHomeLatestInitiativesSection() {
   return (
     <HuxDiscoverySection
       sectionId="public-home-initiatives"
-      eyebrow="CIVIC ACTIVITY"
-      title={PUBLIC_HOME_LATEST_INITIATIVES.title}
-      description={PUBLIC_HOME_LATEST_INITIATIVES.intro}
-      label="initiatives"
+      eyebrow={t("latestInitiatives.eyebrow")}
+      title={t("latestInitiatives.title")}
+      description={t("latestInitiatives.intro")}
+      label={t("latestInitiatives.ariaLabel")}
       items={collectionItems}
       showScrollHint
-      headerAction={<Link href="/initiatives">View all</Link>}
+      headerAction={<Link href="/initiatives">{t("latestInitiatives.viewAll")}</Link>}
       getItemKey={(item, index) =>
         item.kind === "initiative"
           ? item.initiative.initiativeId

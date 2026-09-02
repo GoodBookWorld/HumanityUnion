@@ -126,6 +126,25 @@ export {
   isTerminologyConceptStatus,
 } from "./terminology-glossary.js";
 export type {
+  BrandLocalizationAdminListResponse,
+  BrandLocalizationPublicSummary,
+  BrandLocalizationRecord,
+  BrandLocalizationStatus,
+  BrandLocalizationUpdateInput,
+  BrandLocalizationUpsertInput,
+  ResolvedLocalizedBrand,
+} from "./brand-localization.js";
+export {
+  BRAND_LOCALIZATION_STATUSES,
+  CANONICAL_ENGLISH_BRAND_FALLBACK,
+  CANONICAL_ENGLISH_HERO_UNITY_QUOTE,
+  CANONICAL_ENGLISH_HERO_UNITY_QUOTE_LINES,
+  CANONICAL_ENGLISH_HERO_UNITY_QUOTE_MULTILINE,
+  accessibleHeroUnityQuote,
+  isBrandLocalizationStatus,
+  visualHeroUnityQuoteLines,
+} from "./brand-localization.js";
+export type {
   ResolvedRuntimeLocale,
   ResolveRuntimeLocaleInput,
   RuntimeLocaleCatalogEntry,

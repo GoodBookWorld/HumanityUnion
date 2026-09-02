@@ -226,6 +226,10 @@ export function AdminPlatformSection({ user: _user }: AdminPlatformSectionProps)
                 Languages
               </Link>
               {" · "}
+              <Link className="admin-panel__link" href="/admin/brand-localization">
+                Brand Localization
+              </Link>
+              {" · "}
               <Link className="admin-panel__link" href="/admin/terminology-glossary">
                 Terminology Glossary
               </Link>

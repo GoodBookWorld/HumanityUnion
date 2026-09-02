@@ -154,7 +154,7 @@ describe("Home Hero quote reveal owned by honeycomb mask", () => {
   it("13 — accessibility preserved", () => {
     const quote = readFeature("components/HumanityTypewriterQuote.tsx");
     assert.match(quote, /hero-unity-quote__sr-only/);
-    assert.match(quote, /HUMANITY_UNITY_QUOTE/);
+    assert.match(quote, /accessibleHeroUnityQuote|useLocalizedBrand/);
     assert.doesNotMatch(quote, /aria-hidden="true"[^>]*>[\s\S]*HUMANITY_UNITY_QUOTE</);
     assert.equal(
       HUMANITY_UNITY_QUOTE,

@@ -30,6 +30,7 @@ import { hydrateInitiativePublicImpactLifecycleDraftMongoPersistence } from "../
 import { hydrateInitiativePublicImpactReportMongoPersistence } from "../../modules/initiative-public-impact-lifecycle/initiative-public-impact-report.store.js";
 import { hydrateInitiativeVersionRevisionMongoPersistence } from "../../modules/initiative-version-revision/persistence/initiative-version-revision-mongo.persistence.js";
 import { hydrateInitiativeMongoPersistence, flushInitiativeMongoPersistence } from "../../modules/initiatives/persistence/initiative-mongo.persistence.js";
+import { ensureBrandLocalizationSeeded } from "../../modules/brand-localization/index.js";
 import { ensureLanguageRegistrySeeded } from "../../modules/language/language-registry/index.js";
 import { ensureTerminologyGlossarySeeded } from "../../modules/language/terminology-glossary/index.js";
 import { hydrateOfficialResponseMongoPersistence } from "../../modules/official-response/persistence/official-response-mongo.persistence.js";
@@ -64,6 +65,8 @@ export async function bootstrapMongoPersistence(): Promise<void> {
   await ensureLanguageRegistrySeeded();
   // Pack 02F — idempotent Terminology Glossary seed (preserves Admin translations/status).
   await ensureTerminologyGlossarySeeded();
+  // Pack 08I.2 — English published brand seed (never overwrites Admin-managed rows).
+  await ensureBrandLocalizationSeeded();
 
   await Promise.all([
     hydrateInitiativeMongoPersistence(),

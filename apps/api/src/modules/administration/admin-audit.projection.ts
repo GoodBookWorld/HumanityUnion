@@ -66,6 +66,9 @@ export const ADMINISTRATION_AUDIT_ACTIONS: readonly AdministrationAuditAction[] 
   "language_registry.enable",
   "language_registry.disable",
   "terminology_glossary.update",
+  "brand_localization.create",
+  "brand_localization.update",
+  "brand_localization.publish",
   "seo.page_override.create",
   "seo.page_override.update",
   "seo.page_override.clear",
@@ -137,7 +140,8 @@ export function deriveAdminAuditCategory(action: AdministrationAuditAction): Adm
   }
   if (
     action.startsWith("language_registry.") ||
-    action.startsWith("terminology_glossary.")
+    action.startsWith("terminology_glossary.") ||
+    action.startsWith("brand_localization.")
   ) {
     return "platform";
   }
@@ -231,6 +235,8 @@ export function formatAdminAuditTargetLabel(targetType: string, targetId: string
       return `Language ${shortId}`;
     case "terminology_glossary":
       return `Glossary ${shortId}`;
+    case "brand_localization":
+      return `Brand localization ${shortId}`;
     default:
       return `${targetType} ${shortId}`;
   }

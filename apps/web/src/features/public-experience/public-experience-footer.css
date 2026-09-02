@@ -57,6 +57,9 @@
   font-weight: 700;
   color: #0174b0;
   line-height: 1.2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .public-experience-footer__brand-row .public-experience-footer__tagline {
@@ -66,6 +69,9 @@
   text-transform: uppercase;
   color: #a57979;
   line-height: 1.2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .public-experience-footer__logo-slot {

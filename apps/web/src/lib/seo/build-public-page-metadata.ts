@@ -28,6 +28,11 @@ export interface BuildPublicPageMetadataInput {
    */
   titleBrandSuffix?: string;
   /**
+   * Pack 08I.2 — Open Graph `siteName` (Admin Brand Localization openGraphBrandName /
+   * seoSiteName). Omitted when unset so callers without brand stay unchanged.
+   */
+  openGraphSiteName?: string | null;
+  /**
    * Optional further restriction only. Cannot enable indexing when the
    * platform helper already disallows it (staging/dev/other).
    */
@@ -71,6 +76,7 @@ export function buildPublicPageMetadata(input: BuildPublicPageMetadataInput): Me
 
   const openGraphType = input.openGraphType ?? "website";
   const canonicalForMetadata = origin ? canonicalUrl : canonicalPath;
+  const openGraphSiteName = input.openGraphSiteName?.trim() || undefined;
 
   return {
     title: documentTitle,
@@ -86,6 +92,7 @@ export function buildPublicPageMetadata(input: BuildPublicPageMetadataInput): Me
       ...(socialDescription ? { description: socialDescription } : {}),
       url: canonicalForMetadata,
       type: openGraphType,
+      ...(openGraphSiteName ? { siteName: openGraphSiteName } : {}),
       ...(absoluteImage
         ? {
             images: [

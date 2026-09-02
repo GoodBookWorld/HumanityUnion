@@ -217,6 +217,20 @@
   text-align: end;
 }
 
+/* Pack 08I.3 — localized / single-block quotes wrap naturally (no English-only height). */
+.hero-unity-quote__line--wrap {
+  text-align: start;
+}
+
+[dir="rtl"] .hero-unity-quote__line--wrap {
+  text-align: start;
+}
+
+[dir="rtl"] .hero-unity-quote__visual {
+  padding-inline-end: 0;
+  padding-inline-start: 0.15em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-unity-quote__line {
     opacity: 1;

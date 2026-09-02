@@ -30,7 +30,10 @@
     "civicArchive": "Civic Archive",
     "privacy": "Privacy",
     "terms": "Terms",
-    "contact": "Contact"
+    "contact": "Contact",
+    "footerMission": "A global movement of citizens working together for a more just, peaceful and sustainable world.",
+    "footerPlatformHeading": "Platform",
+    "footerLegalHeading": "Legal and transparency"
   },
   "auth": {
     "logIn": "Log in",
@@ -3023,6 +3026,21 @@
       }
     },
     "civicArchivePublic": {
+      "pageTitle": "Humanity Union Public Civic Archive",
+      "pageIntro": "Permanent institutional memory of completed civic initiatives and their verified public outcomes. Each archive record documents one initiative lifecycle — not isolated stage records.",
+      "filtersLoading": "Loading archive filters…",
+      "resultsTitle": "Civic Archive Results",
+      "resultsCount": "{count} results",
+      "resultsCountOne": "{count} result",
+      "idleInstruction": "Enter a keyword or select one or more filters, then select Search to view archived civic initiatives.",
+      "noMatch": "No archived civic initiatives match the selected search criteria.",
+      "unavailableTitle": "The Civic Archive is temporarily unavailable.",
+      "unavailableBody": "Please check that the API is running and try again.",
+      "tryAgain": "Try Again",
+      "adjustSearch": "Adjust Search",
+      "activeFiltersAria": "Active archive filters",
+      "loadingResultsAria": "Loading civic archive results",
+      "emptySearchFeedback": "Enter a keyword or select at least one filter before searching.",
       "outcomes": {
         "completed": "Completed",
         "partially_implemented": "Partially implemented",
@@ -3047,8 +3065,81 @@
         "completed": "Completed {date}",
         "viewRecord": "View Archive Record →",
         "viewRecordAria": "View archive record: {title}"
+      },
+      "detail": {
+        "eyebrow": "{siteName} Public Civic Archive",
+        "emptyTitle": "Public Civic Archive",
+        "emptyBody": "Archive record is not available.",
+        "backToArchive": "Back to Civic Archive",
+        "viewPublicInitiative": "View Public Initiative",
+        "relatedNavAria": "Related civic records",
+        "metaOutcome": "Outcome",
+        "metaGeography": "Geography",
+        "metaActivityArea": "Activity area",
+        "metaStarted": "Started",
+        "metaCompleted": "Completed",
+        "metaArchived": "Archived",
+        "sectionArchiveNarrative": "Archive narrative",
+        "sectionFinalOutcome": "Final outcome",
+        "sectionDecisionSummary": "Decision summary",
+        "sectionImplementationSummary": "Implementation summary",
+        "sectionPublicImpactSummary": "Public impact summary",
+        "sectionOfficialResponses": "Official responses",
+        "sectionArchiveEvidence": "Archive evidence",
+        "seoNotFoundTitle": "Civic Archive record not found",
+        "seoDescriptionFallback": "{title} — Civic Archive on {siteName}"
+      },
+      "lifecycle": {
+        "title": "Documented lifecycle",
+        "viewRecord": "View record →"
+      },
+      "horizontal": {
+        "loadingAria": "Loading archive results",
+        "instructions": "Civic Archive results. Use Previous and Next archive record buttons or horizontal scrolling to browse additional cards.",
+        "previousAria": "Previous archive records",
+        "nextAria": "Next archive records",
+        "previous": "Previous",
+        "next": "Next",
+        "showingStatus": "Showing {start}–{end} of {total}"
       }
     }
+  },
+  "civicMediaPublic": {
+    "eyebrow": "Civic Media",
+    "pageTitle": "Civic Media Center",
+    "loading": "Loading Civic Media…",
+    "unavailable": "Civic Media Center unavailable.",
+    "selectionPrinciples": {
+      "eyebrow": "TRUSTED SOURCES",
+      "title": "Why We Recommend These Sources",
+      "description": "Selection follows published principles — not popularity, stars, or rankings.",
+      "readFaq": "Read selection FAQ"
+    },
+    "trustedMedia": {
+      "eyebrow": "TRUSTED SOURCES",
+      "title": "Recommended Trusted Media",
+      "description": "Curated sources selected by editorial standards. No rankings, scores, or votes."
+    },
+    "factChecking": {
+      "eyebrow": "VERIFY INFORMATION",
+      "title": "Fact-Checking Resources",
+      "description": "Independent organizations and tools for checking public claims, images, and media narratives."
+    },
+    "propaganda": {
+      "eyebrow": "ANALYZE NARRATIVES",
+      "title": "Propaganda Analysis",
+      "description": "Resources for identifying manipulation techniques, coordinated narratives, and information operations."
+    },
+    "faq": {
+      "heading": "Frequently Asked Questions"
+    },
+    "knowledgeLink": "Looking for broader educational articles?",
+    "visitKnowledge": "Visit the Knowledge Center",
+    "whyItMatters": "Why it matters",
+    "mission": "Mission",
+    "officialWebsite": "Official website",
+    "learnMore": "Learn more",
+    "coverageAria": "Coverage areas"
   },
   "search": {
     "title": "Search civic records",
@@ -3080,6 +3171,14 @@
     "viewInitiative": "View Initiative →",
     "viewPublicPage": "View Public Page →",
     "updated": "Updated {date}",
+    "matchedIn": "Matched in {type}",
+    "matchFoundIn": "Match found in {stage}",
+    "collapseAll": "Collapse all",
+    "lifecycleStagesAria": "Initiative lifecycle stages",
+    "stageCompleted": "Completed",
+    "stageInProgress": "In Progress",
+    "stageNotStarted": "Not Started",
+    "stageNotApplicable": "Not applicable",
     "resultsCount": "{count} results",
     "resultsCountOne": "{count} result",
     "showingRange": "showing {from}–{to}",
@@ -3095,7 +3194,7 @@
     "filterDates": "Dates: {from} – {to}",
     "meta": {
       "title": "Search",
-      "description": "Search public civic records on Humanity Union."
+      "description": "Search public civic records on {siteName}."
     },
     "entityTypes": {
       "all": "All record types",
@@ -3122,6 +3221,245 @@
     "home": {
       "title": "Humanity Union",
       "description": "World Solidarity civic technology platform"
+    }
+  },
+  "knowledgePublic": {
+    "pageTitle": "Knowledge Center",
+    "pageIntro": "The official educational and reference library for Humanity Union. Knowledge explains civic processes and platform concepts — it never persuades.",
+    "pageSecondary": "Every article answers one question. Use diagrams and concise sections before reading long text elsewhere.",
+    "loading": "Loading Knowledge Center…",
+    "unavailable": "Knowledge Center unavailable.",
+    "blogTitle": "Blog",
+    "blogIntro": "Read publications and reflections from Humanity Union authors.",
+    "blogMeta": "Blog is an authored Publishing surface. Knowledge remains the structured educational library — the two domains stay separate.",
+    "openBlog": "Open Blog",
+    "articlesCount": "{count} articles",
+    "articlesCountOne": "{count} article"
+  },
+  "institutionsPublic": {
+    "headline": "Building the Institutions of Responsible Global Cooperation",
+    "subheadline": "A proposed institutional framework designed to strengthen civic participation, expert analysis, transparent decision-making, and responsible implementation across communities and nations.",
+    "banner": "This page presents the proposed constitutional institutions of Humanity Union. These institutions represent the platform's long-term governance vision and are being developed transparently through public civic participation.",
+    "primaryCta": "Create Initiative",
+    "gridTitle": "Proposed Institutions",
+    "gridIntro": "Each institution is presented as part of Humanity Union's proposed constitutional model. Status badges indicate whether a body remains conceptual, under development, or planned as a future institution.",
+    "regionalTitle": "Regional Offices",
+    "footerClosingAria": "Closing statement",
+    "footerStatementLine1": "Institutions are not built by declarations.",
+    "footerStatementLine2": "They are built by responsible people working together.",
+    "footerPrimaryCta": "Create Initiative",
+    "footerSecondaryCta": "Explore Knowledge",
+    "relatedEyebrow": "CIVIC ACTIVITY",
+    "relatedTitle": "Related Initiatives",
+    "relatedDescription": "Latest Initiatives",
+    "relatedAriaLabel": "Related civic initiatives",
+    "relatedLoading": "Loading initiatives…",
+    "relatedEmptyPrimary": "No public initiatives are available yet.",
+    "relatedEmptySecondary": "When participants publish initiatives, up to three will appear here.",
+    "relatedViewAll": "View All Initiatives"
+  },
+  "worldInitiativesPublic": {
+    "pageTitle": "World Initiatives",
+    "pageIntro": "Explore the latest world-scope initiatives published through the platform.",
+    "pageSecondary": "More initiatives and country, regional, or community results can be found through Search.",
+    "searchCta": "Search All Initiatives →",
+    "empty": "No world initiatives have been published yet.",
+    "unavailableTitle": "World initiatives temporarily unavailable",
+    "unavailableBody": "We couldn't load published world initiatives. Please try again shortly."
+  },
+  "publicHome": {
+    "headline": "Bringing people together to create positive change.",
+    "subheadline": "A civic platform that empowers people with practical tools for social growth, justice, security, and progress.",
+    "primaryCta": "Create Initiative",
+    "secondaryCta": "Explore Knowledge",
+    "humanityAiPrinciple": "We put technology and AI in service of humanity—to improve life, deepen cooperation, advance progress, and overcome ignorance.",
+    "coreValues": {
+      "sectionTitle": "Core values",
+      "responsibility": {
+        "word": "Responsibility",
+        "hint": "Act with care for community outcomes."
+      },
+      "justice": {
+        "word": "Justice",
+        "hint": "Pursue fair processes and accountable results."
+      },
+      "security": {
+        "word": "Security",
+        "hint": "Protect people, data, and civic integrity."
+      },
+      "progress": {
+        "word": "Progress",
+        "hint": "Turn responsible ideas into public results."
+      }
+    },
+    "opportunities": {
+      "sectionTitle": "What can you do here?",
+      "community": {
+        "title": "Improve your community",
+        "description": "Identify local needs and propose constructive changes with neighbors."
+      },
+      "solutions": {
+        "title": "Build solutions together",
+        "description": "Combine perspectives, evidence, and deliberation before acting."
+      },
+      "action": {
+        "title": "Turn public concerns into action",
+        "description": "Move from shared problems to initiatives, decisions, and implementation."
+      },
+      "preserve": {
+        "title": "Preserve experience for future generations",
+        "description": "Archive lessons and outcomes so later communities can learn responsibly."
+      }
+    },
+    "pipeline": {
+      "eyebrow": "CIVIC WORKFLOW",
+      "title": "How civic action works",
+      "description": "A structured path from shared problems to documented public results.",
+      "ariaLabel": "civic workflow stages",
+      "problem": {
+        "label": "Problem",
+        "explanation": "A shared public challenge worth addressing together."
+      },
+      "initiative": {
+        "label": "Initiative",
+        "explanation": "A structured proposal to respond constructively."
+      },
+      "analysis": {
+        "label": "Analysis",
+        "explanation": "Evidence and perspectives examined collaboratively."
+      },
+      "proposal": {
+        "label": "Proposal",
+        "explanation": "A refined plan ready for collective review."
+      },
+      "decision": {
+        "label": "Decision",
+        "explanation": "Eligible participants decide through civic process."
+      },
+      "implementation": {
+        "label": "Implementation",
+        "explanation": "Approved outcomes move into accountable delivery."
+      },
+      "impact": {
+        "label": "Impact",
+        "explanation": "Observed results documented for public review."
+      },
+      "archive": {
+        "label": "Archive",
+        "explanation": "Verified knowledge preserved for future reference."
+      }
+    },
+    "latestInitiatives": {
+      "eyebrow": "CIVIC ACTIVITY",
+      "title": "Latest Civic Initiatives",
+      "intro": "Explore initiatives addressing challenges of global significance. Use the map or Search to discover civic activity in your country, region, or city.",
+      "ariaLabel": "initiatives",
+      "loading": "Loading public initiatives…",
+      "viewAll": "View all"
+    },
+    "latestPublicImpact": {
+      "eyebrow": "PUBLIC RESULTS",
+      "title": "Latest Public Impact",
+      "intro": "Documented outcomes, implementation progress, and measurable civic results.",
+      "ariaLabel": "public impact records",
+      "loading": "Loading public impact records…",
+      "explore": "Explore →",
+      "geographyUnspecified": "Geography not specified",
+      "placeholderTitle": "Public impact record awaiting publication",
+      "placeholderBody": "Documented outcomes will appear here after implementation results are reviewed and published.",
+      "placeholderAria": "Public impact record awaiting publication {slotNumber}"
+    },
+    "knowledge": {
+      "eyebrow": "LEARN AND PARTICIPATE",
+      "title": "Knowledge",
+      "description": "Learn how civic processes work before you participate.",
+      "ariaLabel": "knowledge resources",
+      "explore": "Explore Knowledge",
+      "entries": {
+        "explanations": {
+          "title": "Explanations",
+          "description": "Short reads on civic concepts and platform processes.",
+          "actionLabel": "Open explanations"
+        },
+        "guides": {
+          "title": "Guides",
+          "description": "Step-by-step guidance for common participant tasks.",
+          "actionLabel": "Open guides"
+        },
+        "constitution": {
+          "title": "Constitution",
+          "description": "Constitutional and governance principles for civic work.",
+          "actionLabel": "Read constitution"
+        },
+        "civic-media": {
+          "title": "Civic Media",
+          "description": "Navigate verified information and public concern reporting.",
+          "actionLabel": "Explore Civic Media"
+        },
+        "glossary": {
+          "title": "Glossary",
+          "description": "Definitions for platform terminology and civic records.",
+          "actionLabel": "Browse glossary"
+        },
+        "institutions": {
+          "title": "Institutions",
+          "description": "How civic outcomes connect with institutional context.",
+          "actionLabel": "Visit Institutions"
+        },
+        "initiative-process": {
+          "title": "Initiative Process",
+          "description": "How initiatives move through the civic pipeline.",
+          "actionLabel": "Learn the process"
+        },
+        "collective-decisions": {
+          "title": "Collective Decisions",
+          "description": "How governed decisions are prepared, cast, and published.",
+          "actionLabel": "Understand decisions"
+        },
+        "implementation": {
+          "title": "Implementation",
+          "description": "How commitments and tracking document civic delivery.",
+          "actionLabel": "Explore implementation"
+        },
+        "public-impact": {
+          "title": "Public Impact",
+          "description": "How observed outcomes are documented for public review.",
+          "actionLabel": "Learn about impact"
+        },
+        "civic-archive": {
+          "title": "Civic Archive",
+          "description": "Preserved civic memory, lessons, and completed work.",
+          "actionLabel": "Explore Civic Archive"
+        }
+      }
+    },
+    "ecosystem": {
+      "sectionTitle": "Civic ecosystem and Humanity Union App",
+      "primary": "You have entered a civic space where people who share your commitment work together to understand public challenges, unite around solutions, and turn responsible ideas into real public results.",
+      "supporting": "Every meaningful change begins with people who choose to act responsibly.",
+      "createInitiative": "Create Initiative",
+      "exploreWorld": "Explore the World"
+    },
+    "worldMap": {
+      "title": "Interactive World Map",
+      "description": "Coming soon: explore countries, regions, and communities through civic activity."
+    },
+    "geographic": {
+      "title": "Explore civic activity by place",
+      "intro": "Navigate from world scope to countries, regions, and communities. Country pages open civic activity for the selected place; deeper filters open in Search."
+    },
+    "civicMedia": {
+      "title": "Civic Media",
+      "intro": "Navigate trustworthy information and turn verified concerns into civic action.",
+      "copy": "Understand the news. Verify the facts. Turn public issues into civic action.",
+      "explore": "Explore Civic Media",
+      "createFromConcern": "Create Initiative from a public concern"
+    },
+    "civicArchive": {
+      "title": "Civic Archive",
+      "intro": "Preserve civic knowledge, achievements, and lessons for future generations.",
+      "copy": "Preserving civic knowledge, achievements, and lessons for future generations.",
+      "explore": "Explore Civic Archive"
     }
   }
 }

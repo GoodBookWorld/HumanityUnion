@@ -30,7 +30,10 @@
     "civicArchive": "公民典藏",
     "privacy": "隱私權",
     "terms": "條款",
-    "contact": "聯絡"
+    "contact": "聯絡",
+    "footerMission": "一場公民全球運動，共同為更公正、和平且永續的世界努力。",
+    "footerPlatformHeading": "平台",
+    "footerLegalHeading": "法律與透明"
   },
   "auth": {
     "logIn": "登入",
@@ -3023,6 +3026,21 @@
       }
     },
     "civicArchivePublic": {
+      "pageTitle": "Humanity Union 公共公民檔案",
+      "pageIntro": "已完成公民倡議及其經核實公開成果的永久機構記憶。每筆檔案紀錄記載一項倡議的完整生命週期——而非孤立階段紀錄。",
+      "filtersLoading": "正在載入檔案篩選條件…",
+      "resultsTitle": "公民檔案結果",
+      "resultsCount": "{count} 筆結果",
+      "resultsCountOne": "{count} 筆結果",
+      "idleInstruction": "輸入關鍵字或選擇一或多個篩選條件，然後按「搜尋」以檢視已歸檔的公民倡議。",
+      "noMatch": "沒有符合所選搜尋條件的已歸檔公民倡議。",
+      "unavailableTitle": "公民檔案暫時無法使用。",
+      "unavailableBody": "請確認 API 正在運作，然後再試一次。",
+      "tryAgain": "再試一次",
+      "adjustSearch": "調整搜尋",
+      "activeFiltersAria": "使用中的檔案篩選條件",
+      "loadingResultsAria": "正在載入公民檔案結果",
+      "emptySearchFeedback": "搜尋前請輸入關鍵字或至少選擇一個篩選條件。",
       "outcomes": {
         "completed": "已完成",
         "partially_implemented": "部分實施",
@@ -3047,8 +3065,81 @@
         "completed": "已完成 {date}",
         "viewRecord": "查看歸檔紀錄 →",
         "viewRecordAria": "查看歸檔紀錄：{title}"
+      },
+      "detail": {
+        "eyebrow": "{siteName} 公共公民檔案",
+        "emptyTitle": "公共公民檔案",
+        "emptyBody": "檔案紀錄無法使用。",
+        "backToArchive": "返回公民檔案",
+        "viewPublicInitiative": "查看公開倡議",
+        "relatedNavAria": "相關公民紀錄",
+        "metaOutcome": "結果",
+        "metaGeography": "地理範圍",
+        "metaActivityArea": "活動領域",
+        "metaStarted": "開始",
+        "metaCompleted": "完成",
+        "metaArchived": "已歸檔",
+        "sectionArchiveNarrative": "檔案敘述",
+        "sectionFinalOutcome": "最終結果",
+        "sectionDecisionSummary": "決策摘要",
+        "sectionImplementationSummary": "實施摘要",
+        "sectionPublicImpactSummary": "公共影響摘要",
+        "sectionOfficialResponses": "官方回應",
+        "sectionArchiveEvidence": "檔案證據",
+        "seoNotFoundTitle": "找不到公民檔案紀錄",
+        "seoDescriptionFallback": "{title} — {siteName} 上的公民檔案"
+      },
+      "lifecycle": {
+        "title": "已記錄的生命週期",
+        "viewRecord": "查看紀錄 →"
+      },
+      "horizontal": {
+        "loadingAria": "正在載入檔案結果",
+        "instructions": "公民檔案結果。使用「上一頁」與「下一頁」按鈕或水平捲動瀏覽更多卡片。",
+        "previousAria": "上一組檔案紀錄",
+        "nextAria": "下一組檔案紀錄",
+        "previous": "上一頁",
+        "next": "下一頁",
+        "showingStatus": "顯示 {start}–{end}／共 {total}"
       }
     }
+  },
+  "civicMediaPublic": {
+    "eyebrow": "公民媒體",
+    "pageTitle": "公民媒體中心",
+    "loading": "正在載入公民媒體…",
+    "unavailable": "公民媒體中心暫時無法使用。",
+    "selectionPrinciples": {
+      "eyebrow": "可信來源",
+      "title": "我們為何推薦這些來源",
+      "description": "選錄依循已公開的原則——而非人氣、星等或排名。",
+      "readFaq": "閱讀選錄常見問題"
+    },
+    "trustedMedia": {
+      "eyebrow": "可信來源",
+      "title": "推薦的可信媒體",
+      "description": "依編輯標準精選的來源。沒有排名、分數或投票。"
+    },
+    "factChecking": {
+      "eyebrow": "查核資訊",
+      "title": "事實查核資源",
+      "description": "用於查核公開主張、圖像與媒體敘事的獨立組織與工具。"
+    },
+    "propaganda": {
+      "eyebrow": "分析敘事",
+      "title": "宣傳手法分析",
+      "description": "協助辨識操弄手法、協調敘事與資訊作戰的資源。"
+    },
+    "faq": {
+      "heading": "常見問題"
+    },
+    "knowledgeLink": "想找更廣泛的教育文章？",
+    "visitKnowledge": "造訪知識中心",
+    "whyItMatters": "為何重要",
+    "mission": "使命",
+    "officialWebsite": "官方網站",
+    "learnMore": "了解更多",
+    "coverageAria": "涵蓋範圍"
   },
   "search": {
     "title": "搜尋公民紀錄",
@@ -3080,6 +3171,14 @@
     "viewInitiative": "查看倡議 →",
     "viewPublicPage": "查看公開頁面 →",
     "updated": "更新於 {date}",
+    "matchedIn": "相符於 {type}",
+    "matchFoundIn": "在 {stage} 找到相符內容",
+    "collapseAll": "全部收合",
+    "lifecycleStagesAria": "倡議生命週期階段",
+    "stageCompleted": "已完成",
+    "stageInProgress": "進行中",
+    "stageNotStarted": "尚未開始",
+    "stageNotApplicable": "不適用",
     "resultsCount": "{count} 筆結果",
     "resultsCountOne": "{count} 筆結果",
     "showingRange": "顯示 {from}–{to}",
@@ -3095,7 +3194,7 @@
     "filterDates": "日期：{from} – {to}",
     "meta": {
       "title": "搜尋",
-      "description": "在 Humanity Union 搜尋公開公民紀錄。"
+      "description": "在 {siteName} 搜尋公開公民紀錄。"
     },
     "entityTypes": {
       "all": "全部紀錄類型",
@@ -3122,6 +3221,245 @@
     "home": {
       "title": "Humanity Union",
       "description": "World Solidarity 公民科技平台"
+    }
+  },
+  "knowledgePublic": {
+    "pageTitle": "知識中心",
+    "pageIntro": "Humanity Union 的官方教育與參考圖書館。知識說明公民流程與平台概念——從不進行說服。",
+    "pageSecondary": "每篇文章回答一個問題。閱讀其他長文之前，請先使用圖表與精簡章節。",
+    "loading": "正在載入知識中心…",
+    "unavailable": "知識中心無法使用。",
+    "blogTitle": "部落格",
+    "blogIntro": "閱讀 Humanity Union 作者的出版內容與反思。",
+    "blogMeta": "部落格是作者出版表面。知識仍是結構化教育圖書館——兩個領域保持分離。",
+    "openBlog": "開啟部落格",
+    "articlesCount": "{count} 篇文章",
+    "articlesCountOne": "{count} 篇文章"
+  },
+  "institutionsPublic": {
+    "headline": "建構負責任全球合作的機構",
+    "subheadline": "一套擬議的機構框架，旨在強化公民參與、專家分析、透明決策，以及跨社區與國家的負責任執行。",
+    "banner": "本頁呈現 Humanity Union 擬議的憲政機構。這些機構代表平台的長期治理願景，並正透過公開公民參與透明發展。",
+    "primaryCta": "建立倡議",
+    "gridTitle": "擬議機構",
+    "gridIntro": "每個機構皆作為 Humanity Union 擬議憲政模型的一部分呈現。狀態徽章標示該機構仍為概念、開發中，或規劃為未來機構。",
+    "regionalTitle": "區域辦公室",
+    "footerClosingAria": "結語",
+    "footerStatementLine1": "機構不是靠宣言建成的。",
+    "footerStatementLine2": "它們由負責任的人共同建立。",
+    "footerPrimaryCta": "建立倡議",
+    "footerSecondaryCta": "探索知識",
+    "relatedEyebrow": "公民活動",
+    "relatedTitle": "相關倡議",
+    "relatedDescription": "最新倡議",
+    "relatedAriaLabel": "相關公民倡議",
+    "relatedLoading": "正在載入倡議…",
+    "relatedEmptyPrimary": "尚無公開倡議。",
+    "relatedEmptySecondary": "當參與者發布倡議後，這裡最多會顯示三項。",
+    "relatedViewAll": "查看全部倡議"
+  },
+  "worldInitiativesPublic": {
+    "pageTitle": "世界倡議",
+    "pageIntro": "探索平台發布的最新世界級倡議。",
+    "pageSecondary": "更多倡議以及國家、區域或社區結果可透過搜尋找到。",
+    "searchCta": "搜尋所有倡議 →",
+    "empty": "尚未發布任何世界倡議。",
+    "unavailableTitle": "世界倡議暫時無法使用",
+    "unavailableBody": "無法載入已發布的世界倡議。請稍後再試。"
+  },
+  "publicHome": {
+    "headline": "凝聚人心，創造正向改變。",
+    "subheadline": "一個賦予人們實用工具的公民平台，促進社會成長、正義、安全與進步。",
+    "primaryCta": "建立倡議",
+    "secondaryCta": "探索知識",
+    "humanityAiPrinciple": "我們讓科技與人工智慧服務人類——改善生活、深化合作、推進進步，並克服無知。",
+    "coreValues": {
+      "sectionTitle": "核心價值",
+      "responsibility": {
+        "word": "責任",
+        "hint": "以關懷社群成果的態度行動。"
+      },
+      "justice": {
+        "word": "正義",
+        "hint": "追求公平流程與可究責的結果。"
+      },
+      "security": {
+        "word": "安全",
+        "hint": "保護人民、資料與公民誠信。"
+      },
+      "progress": {
+        "word": "進步",
+        "hint": "將負責任的構想轉為公共成果。"
+      }
+    },
+    "opportunities": {
+      "sectionTitle": "你在這裡可以做什麼？",
+      "community": {
+        "title": "改善你的社群",
+        "description": "找出地方需求，並與鄰居提出建設性改變。"
+      },
+      "solutions": {
+        "title": "共同打造解決方案",
+        "description": "在行動前結合觀點、證據與審議。"
+      },
+      "action": {
+        "title": "把公共關切化為行動",
+        "description": "從共同問題走向倡議、決策與執行。"
+      },
+      "preserve": {
+        "title": "為後代保存經驗",
+        "description": "封存教訓與成果，讓後來的社群能負責任地學習。"
+      }
+    },
+    "pipeline": {
+      "eyebrow": "公民工作流",
+      "title": "公民行動如何運作",
+      "description": "從共同問題到有紀錄公共成果的結構化路徑。",
+      "ariaLabel": "公民工作流階段",
+      "problem": {
+        "label": "問題",
+        "explanation": "值得共同面對的公共挑戰。"
+      },
+      "initiative": {
+        "label": "倡議",
+        "explanation": "建設性回應的結構化提案。"
+      },
+      "analysis": {
+        "label": "分析",
+        "explanation": "協作檢視證據與觀點。"
+      },
+      "proposal": {
+        "label": "提案",
+        "explanation": "可供集體審查的精煉計畫。"
+      },
+      "decision": {
+        "label": "決策",
+        "explanation": "合格參與者透過公民程序決定。"
+      },
+      "implementation": {
+        "label": "執行",
+        "explanation": "核准結果進入可究責交付。"
+      },
+      "impact": {
+        "label": "影響",
+        "explanation": "觀察結果記錄供公眾檢視。"
+      },
+      "archive": {
+        "label": "典藏",
+        "explanation": "經驗證知識保存供未來參考。"
+      }
+    },
+    "latestInitiatives": {
+      "eyebrow": "公民活動",
+      "title": "最新公民倡議",
+      "intro": "探索回應全球重大挑戰的倡議。使用地圖或搜尋，發現你所在國家、區域或城市的公民活動。",
+      "ariaLabel": "倡議",
+      "loading": "正在載入公開倡議…",
+      "viewAll": "查看全部"
+    },
+    "latestPublicImpact": {
+      "eyebrow": "公共成果",
+      "title": "最新公共影響",
+      "intro": "有紀錄的成果、執行進度與可衡量的公民結果。",
+      "ariaLabel": "公共影響紀錄",
+      "loading": "正在載入公共影響紀錄…",
+      "explore": "探索 →",
+      "geographyUnspecified": "未指定地理範圍",
+      "placeholderTitle": "公共影響紀錄待發布",
+      "placeholderBody": "執行結果經審查並發布後，有紀錄的成果將顯示於此。",
+      "placeholderAria": "公共影響紀錄待發布 {slotNumber}"
+    },
+    "knowledge": {
+      "eyebrow": "學習並參與",
+      "title": "知識",
+      "description": "在參與之前，先了解公民流程如何運作。",
+      "ariaLabel": "知識資源",
+      "explore": "探索知識",
+      "entries": {
+        "explanations": {
+          "title": "解說",
+          "description": "關於公民概念與平台流程的短篇閱讀。",
+          "actionLabel": "開啟解說"
+        },
+        "guides": {
+          "title": "指南",
+          "description": "常見參與者任務的逐步指引。",
+          "actionLabel": "開啟指南"
+        },
+        "constitution": {
+          "title": "憲章",
+          "description": "公民工作的憲政與治理原則。",
+          "actionLabel": "閱讀憲章"
+        },
+        "civic-media": {
+          "title": "公民媒體",
+          "description": "導覽已驗證資訊與公共關切通報。",
+          "actionLabel": "探索公民媒體"
+        },
+        "glossary": {
+          "title": "詞彙",
+          "description": "平台術語與公民紀錄的定義。",
+          "actionLabel": "瀏覽詞彙"
+        },
+        "institutions": {
+          "title": "機構",
+          "description": "公民成果如何連結機構脈絡。",
+          "actionLabel": "造訪機構"
+        },
+        "initiative-process": {
+          "title": "倡議流程",
+          "description": "倡議如何在公民管線中推進。",
+          "actionLabel": "了解流程"
+        },
+        "collective-decisions": {
+          "title": "集體決策",
+          "description": "治理決策如何準備、投票與發布。",
+          "actionLabel": "理解決策"
+        },
+        "implementation": {
+          "title": "執行",
+          "description": "承諾與追蹤如何記錄公民交付。",
+          "actionLabel": "探索執行"
+        },
+        "public-impact": {
+          "title": "公共影響",
+          "description": "觀察成果如何記錄供公眾檢視。",
+          "actionLabel": "了解影響"
+        },
+        "civic-archive": {
+          "title": "公民典藏",
+          "description": "保存的公民記憶、教訓與已完成工作。",
+          "actionLabel": "探索公民典藏"
+        }
+      }
+    },
+    "ecosystem": {
+      "sectionTitle": "公民生態系與 Humanity Union App",
+      "primary": "你已進入一個公民空間：志同道合的人共同理解公共挑戰、凝聚解決方案，並把負責任的構想化為真實公共成果。",
+      "supporting": "每一項有意義的改變，都始於選擇負責任行動的人。",
+      "createInitiative": "建立倡議",
+      "exploreWorld": "探索世界"
+    },
+    "worldMap": {
+      "title": "互動世界地圖",
+      "description": "即將推出：透過公民活動探索國家、區域與社群。"
+    },
+    "geographic": {
+      "title": "依地點探索公民活動",
+      "intro": "從世界範圍導覽至國家、區域與社群。國家頁面開啟所選地點的公民活動；更細篩選在搜尋中進行。"
+    },
+    "civicMedia": {
+      "title": "公民媒體",
+      "intro": "導覽可信資訊，並把已驗證關切化為公民行動。",
+      "copy": "理解新聞。核實事實。把公共議題化為公民行動。",
+      "explore": "探索公民媒體",
+      "createFromConcern": "從公共關切建立倡議"
+    },
+    "civicArchive": {
+      "title": "公民典藏",
+      "intro": "為後代保存公民知識、成就與教訓。",
+      "copy": "為後代保存公民知識、成就與教訓。",
+      "explore": "探索公民典藏"
     }
   }
 }
