@@ -179,12 +179,15 @@ describe("Pack 02G Task 08D.2 — Author shared shell / Working Sidebar i18n", (
     assert.match(css, /white-space:\s*normal/);
   });
 
-  it("derive* AI insight template banks remain English (deferred)", () => {
+  it("Working Sidebar AI insight chrome uses catalogs; derive banks remain English content", () => {
     const sidebar = readWeb(
       "features/initiative-lifecycle-stage-workspace/components/InitiativeLifecycleWorkingSidebar.tsx",
     );
-    assert.match(sidebar, /<h4>Sources Used<\/h4>|<h4>Missing Evidence<\/h4>/);
+    assert.match(sidebar, /author\.sidebar\.insights\.missingEvidence/);
+    assert.match(sidebar, /author\.sidebar\.sourcesUsed/);
+    assert.doesNotMatch(sidebar, /<h4>Sources Used<\/h4>|<h4>Missing Evidence<\/h4>/);
     assert.match(sidebar, /author\.sidebar\.askAssistant/);
+    assert.match(sidebar, /insights\.sourcesUsedSummary/);
   });
 
   it("missing author key fails raw catalog parity", async () => {

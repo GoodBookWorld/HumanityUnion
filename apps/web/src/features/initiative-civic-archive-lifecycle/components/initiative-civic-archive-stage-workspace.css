@@ -151,16 +151,19 @@
 }
 
 .ica-assistant-block {
+  min-width: 0;
   display: grid;
   gap: 0.7rem;
 }
 
 .ica-assistant-block h4 {
+  overflow-wrap: anywhere;
   margin: 0 0 0.25rem;
   font-size: 0.85rem;
 }
 
 .ica-assistant-block ul {
+  overflow-wrap: anywhere;
   margin: 0;
   padding-inline-start: 1.1rem;
 }

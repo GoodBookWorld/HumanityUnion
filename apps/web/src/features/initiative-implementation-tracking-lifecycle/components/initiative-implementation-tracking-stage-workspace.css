@@ -158,12 +158,14 @@
 }
 
 .iit-assistant-block {
+  min-width: 0;
   display: grid;
   gap: 0.45rem;
   margin-bottom: 0.85rem;
 }
 
 .iit-assistant-block h4 {
+  overflow-wrap: anywhere;
   margin: 0;
   font-size: 0.82rem;
   text-transform: uppercase;
@@ -172,6 +174,7 @@
 }
 
 .iit-assistant-block ul {
+  overflow-wrap: anywhere;
   margin: 0;
   padding-inline-start: 1rem;
 }

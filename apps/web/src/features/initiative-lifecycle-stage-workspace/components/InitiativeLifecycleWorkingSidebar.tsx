@@ -263,17 +263,18 @@ function AnalysisAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
 }
 
 function AnalysisAiAssistantContent({ snapshot }: { snapshot: InitiativeAnalysisSourceSnapshot }) {
+  const t = useTranslations("initiativeExperience");
   const insights = deriveAiAssistantInsights(snapshot);
 
   return (
     <div className="ica-ai-assistant">
       <div className="ica-ai-assistant__group">
-        <h4>Sources Used</h4>
+        <h4>{t("author.sidebar.sourcesUsed")}</h4>
         <p>{insights.sourcesUsedSummary}</p>
       </div>
 
       <div className="ica-ai-assistant__group">
-        <h4>Missing Evidence</h4>
+        <h4>{t("author.sidebar.insights.missingEvidence")}</h4>
         {insights.missingEvidence.length > 0 ? (
           <ul>
             {insights.missingEvidence.map((item) => (
@@ -281,40 +282,40 @@ function AnalysisAiAssistantContent({ snapshot }: { snapshot: InitiativeAnalysis
             ))}
           </ul>
         ) : (
-          <p className="ica-ai-assistant__empty">No evidence gaps identified.</p>
+          <p className="ica-ai-assistant__empty">{t("author.sidebar.insights.emptyNoEvidenceGaps")}</p>
         )}
       </div>
 
       <div className="ica-ai-assistant__group">
-        <h4>Repeated Arguments</h4>
+        <h4>{t("author.sidebar.insights.repeatedArguments")}</h4>
         {insights.repeatedArguments.length > 0 ? (
           <ul>
             {insights.repeatedArguments.map((item) => (
               <li key={item.commentId}>
-                &ldquo;{item.excerpt}&rdquo; ({item.helpfulCount} Helpful)
+                &ldquo;{item.excerpt}&rdquo; {t("author.sidebar.insights.helpfulCount", { count: item.helpfulCount })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="ica-ai-assistant__empty">None identified yet.</p>
+          <p className="ica-ai-assistant__empty">{t("author.sidebar.noneIdentified")}</p>
         )}
       </div>
 
       <div className="ica-ai-assistant__group">
-        <h4>Possible Contradictions</h4>
+        <h4>{t("author.sidebar.insights.possibleContradictions")}</h4>
         {insights.possibleContradictions.length > 0 ? (
           <ul>
             {insights.possibleContradictions.map((item) => (
-              <li key={item.topic}>&ldquo;{item.topic}&rdquo; — supported and disputed in different comments</li>
+              <li key={item.topic}>&ldquo;{item.topic}&rdquo; {t("author.sidebar.insights.contradictionNote")}</li>
             ))}
           </ul>
         ) : (
-          <p className="ica-ai-assistant__empty">None identified yet.</p>
+          <p className="ica-ai-assistant__empty">{t("author.sidebar.noneIdentified")}</p>
         )}
       </div>
 
       <div className="ica-ai-assistant__group">
-        <h4>Unanswered Questions</h4>
+        <h4>{t("author.sidebar.insights.unansweredQuestions")}</h4>
         {insights.unansweredQuestions.length > 0 ? (
           <ul>
             {insights.unansweredQuestions.map((item) => (
@@ -322,15 +323,18 @@ function AnalysisAiAssistantContent({ snapshot }: { snapshot: InitiativeAnalysis
             ))}
           </ul>
         ) : (
-          <p className="ica-ai-assistant__empty">None identified yet.</p>
+          <p className="ica-ai-assistant__empty">{t("author.sidebar.noneIdentified")}</p>
         )}
       </div>
 
       <div className="ica-ai-assistant__group">
-        <h4>Proposal Coverage</h4>
+        <h4>{t("author.sidebar.insights.proposalCoverage")}</h4>
         <p>
-          {insights.proposalCoverage.proposalCount} of {insights.proposalCoverage.commentCount} comments (
-          {insights.proposalCoverage.percentage}%) are proposal-marked.
+          {t("author.sidebar.insights.proposalCoverageSummary", {
+            proposalCount: insights.proposalCoverage.proposalCount,
+            commentCount: insights.proposalCoverage.commentCount,
+            percentage: insights.proposalCoverage.percentage,
+          })}
         </p>
       </div>
     </div>
@@ -407,80 +411,80 @@ function ProposalAiAssistantContent({
   snapshot: InitiativeProposalIntelligenceSnapshot;
   draftProposals: readonly InitiativeStructuredProposal[];
 }) {
+  const t = useTranslations("initiativeExperience");
   const insights = deriveProposalAiAssistantInsights(snapshot, draftProposals);
 
   return (
     <div className="iip-ai-assistant">
       <div className="iip-ai-assistant__group">
-        <h4>Sources Used</h4>
+        <h4>{t("author.sidebar.sourcesUsed")}</h4>
         <p>{insights.sourcesUsedSummary}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Possible Duplicates to Merge</h4>
+        <h4>{t("author.sidebar.insights.possibleDuplicates")}</h4>
         {insights.duplicateGroups.length > 0 ? (
           <ul>
             {insights.duplicateGroups.map((group) => (
               <li key={group.groupId}>
-                &ldquo;{group.representativeExcerpt}&rdquo; ({group.memberCount} similar mentions)
+                &ldquo;{group.representativeExcerpt}&rdquo; {t("author.sidebar.insights.similarMentions", { count: group.memberCount })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No likely duplicates identified.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoDuplicates")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Ungrouped Candidates</h4>
+        <h4>{t("author.sidebar.insights.ungroupedCandidates")}</h4>
         {insights.ungroupedCandidateGroups.length > 0 ? (
           <ul>
             {insights.ungroupedCandidateGroups.map((group) => (
-              <li key={group.groupId}>&ldquo;{group.representativeExcerpt}&rdquo; — not yet drafted</li>
+              <li key={group.groupId}>&ldquo;{group.representativeExcerpt}&rdquo; {t("author.sidebar.insights.notYetDrafted")}</li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">Every detected group has a draft proposal.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyEveryGroupDrafted")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Incomplete Proposals</h4>
+        <h4>{t("author.sidebar.insights.incompleteProposals")}</h4>
         {insights.incompleteProposals.length > 0 ? (
           <ul>
             {insights.incompleteProposals.map(({ proposal, missingFields }) => (
               <li key={proposal.proposalId}>
-                &ldquo;{proposal.title || "Untitled Proposal"}&rdquo; — missing {missingFields.join(", ")}
+                &ldquo;{proposal.title || t("author.sidebar.insights.untitledProposal")}&rdquo; {t("author.sidebar.insights.missingFieldsSuffix", { fields: missingFields.join(", ") })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No incomplete proposals identified.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoIncompleteProposals")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Open Proposal Questions</h4>
-        <p>{insights.openProposalQuestionCount} unresolved question(s) in Discussion.</p>
+        <h4>{t("author.sidebar.insights.openProposalQuestions")}</h4>
+        <p>{t("author.sidebar.insights.openProposalQuestionsCount", { count: insights.openProposalQuestionCount })}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Suggested Treatment (advisory)</h4>
+        <h4>{t("author.sidebar.insights.suggestedTreatment")}</h4>
         {insights.suggestedTreatments.length > 0 ? (
           <ul>
             {insights.suggestedTreatments.map((entry) => (
               <li key={entry.proposalId}>
-                &ldquo;{entry.title || "Untitled"}&rdquo; — {entry.suggestion.replace(/_/g, " ")}:{" "}
+                &ldquo;{entry.title || t("author.sidebar.insights.untitled")}&rdquo; — {entry.suggestion.replace(/_/g, " ")}:{" "}
                 {entry.rationale}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No undecided proposals to review.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoUndecidedProposals")}</p>
         )}
         <p className="iip-ai-assistant__empty">
-          Assistant never publishes automatically. Author confirms Accept / Partial / Decline and
-          commits the Initiative version.
+          {t("author.sidebar.insights.neverPublishesAutomatically")}
         </p>
       </div>
     </div>
@@ -555,42 +559,43 @@ function RevisionAiAssistantContent({
   snapshot: InitiativeRevisionIntelligenceSnapshot;
   draftChanges: InitiativeRevisionDraft["changes"];
 }) {
+  const t = useTranslations("initiativeExperience");
   const insights = deriveRevisionAiAssistantInsights(snapshot, draftChanges);
 
   return (
     <div className="iip-ai-assistant">
       <div className="iip-ai-assistant__group">
-        <h4>Sources Used</h4>
+        <h4>{t("author.sidebar.sourcesUsed")}</h4>
         <p>{insights.sourcesUsedSummary}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Alignment with Analysis</h4>
+        <h4>{t("author.sidebar.insights.alignmentWithAnalysis")}</h4>
         <p>{insights.analysisAlignmentSummary}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Unresolved Proposals</h4>
-        <p>{insights.unresolvedProposalCount} proposal(s) not yet included or explicitly skipped.</p>
+        <h4>{t("author.sidebar.insights.unresolvedProposals")}</h4>
+        <p>{t("author.sidebar.insights.unresolvedProposalsCount", { count: insights.unresolvedProposalCount })}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Missing References</h4>
+        <h4>{t("author.sidebar.insights.missingReferences")}</h4>
         {insights.missingReferenceProposalIds.length > 0 ? (
           <ul>
             {insights.missingReferenceProposalIds.map((proposalId) => (
               <li key={proposalId}>
-                Proposal {proposalId} marked &ldquo;Included in Revision&rdquo; has no change yet.
+                {t("author.sidebar.insights.missingReferenceProposal", { proposalId })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">Every included Proposal has a backing change.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyEveryIncludedHasChange")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Conflict Warnings</h4>
+        <h4>{t("author.sidebar.insights.conflictWarnings")}</h4>
         {insights.conflictWarnings.length > 0 ? (
           <ul>
             {insights.conflictWarnings.map((warning) => (
@@ -598,23 +603,22 @@ function RevisionAiAssistantContent({
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No conflicting changes detected.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoConflicts")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Untraced Changes</h4>
+        <h4>{t("author.sidebar.insights.untracedChanges")}</h4>
         {insights.untracedChanges.length > 0 ? (
           <ul>
             {insights.untracedChanges.map((change) => (
               <li key={change.changeId}>
-                &ldquo;{change.sectionLabel}&rdquo; is missing a Proposal reference or Author-originated
-                reason.
+                {t("author.sidebar.insights.untracedChangeNote", { sectionLabel: change.sectionLabel })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">Every drafted change is fully traceable.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyEveryChangeTraceable")}</p>
         )}
       </div>
     </div>
@@ -692,22 +696,23 @@ function PetitionAiAssistantContent({
   snapshot: InitiativePetitionIntelligenceSnapshot;
   draft: InitiativeLifecycleWorkingSidebarPetitionDraft;
 }) {
+  const t = useTranslations("initiativeExperience");
   const insights = derivePetitionAiAssistantInsights(snapshot, draft);
 
   return (
     <div className="iip-ai-assistant">
       <div className="iip-ai-assistant__group">
-        <h4>Sources Used</h4>
+        <h4>{t("author.sidebar.sourcesUsed")}</h4>
         <p>{insights.sourcesUsedSummary}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Alignment with Analysis</h4>
+        <h4>{t("author.sidebar.insights.alignmentWithAnalysis")}</h4>
         <p>{insights.analysisAlignmentSummary}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Clarity</h4>
+        <h4>{t("author.sidebar.insights.clarity")}</h4>
         {insights.clarityWarnings.length > 0 ? (
           <ul>
             {insights.clarityWarnings.map((warning) => (
@@ -715,12 +720,12 @@ function PetitionAiAssistantContent({
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No clarity issues identified.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoClarity")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Missing Context</h4>
+        <h4>{t("author.sidebar.insights.missingContext")}</h4>
         {insights.missingContextWarnings.length > 0 ? (
           <ul>
             {insights.missingContextWarnings.map((warning) => (
@@ -728,12 +733,12 @@ function PetitionAiAssistantContent({
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No missing context identified.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoMissingContext")}</p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
-        <h4>Consistency Checks</h4>
+        <h4>{t("author.sidebar.insights.consistencyChecks")}</h4>
         {insights.consistencyWarnings.length > 0 ? (
           <ul>
             {insights.consistencyWarnings.map((check) => (
@@ -741,7 +746,7 @@ function PetitionAiAssistantContent({
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">No consistency warnings identified.</p>
+          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoConsistency")}</p>
         )}
       </div>
     </div>
@@ -805,11 +810,11 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
       ) : (
         <div className="iip-ai-assistant">
           <div className="iip-ai-assistant__group">
-            <h4>Sources Used</h4>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
             <p>{insights.sourcesUsedSummary}</p>
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Missing / Duplicated Options</h4>
+            <h4>{t("author.sidebar.insights.missingDuplicatedOptions")}</h4>
             {[...insights.missingOptionsWarnings, ...insights.duplicatedOptionsWarnings].length >
             0 ? (
               <ul>
@@ -820,11 +825,11 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
                 )}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No option issues identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoOptionIssues")}</p>
             )}
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Risks & Feasibility</h4>
+            <h4>{t("author.sidebar.insights.risksFeasibility")}</h4>
             {[...insights.riskVisibilityWarnings, ...insights.feasibilityWarnings].length > 0 ? (
               <ul>
                 {[...insights.riskVisibilityWarnings, ...insights.feasibilityWarnings].map(
@@ -834,11 +839,11 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
                 )}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No risk or feasibility gaps identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoRiskFeasibility")}</p>
             )}
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Clarity & Evidence</h4>
+            <h4>{t("author.sidebar.insights.clarityEvidence")}</h4>
             {[...insights.clarityWarnings, ...insights.unsupportedArgumentWarnings].length > 0 ? (
               <ul>
                 {[...insights.clarityWarnings, ...insights.unsupportedArgumentWarnings].map(
@@ -848,7 +853,7 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
                 )}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No clarity or evidence issues identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoClarityEvidence")}</p>
             )}
           </div>
         </div>
@@ -922,11 +927,11 @@ function CollectiveDecisionAiAssistantSlot({
       ) : (
         <div className="iip-ai-assistant">
           <div className="iip-ai-assistant__group">
-            <h4>Sources Used</h4>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
             <p>{insights.sourcesUsedSummary}</p>
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Missing / Duplicated Actions</h4>
+            <h4>{t("author.sidebar.insights.missingDuplicatedActions")}</h4>
             {[...insights.missingActionsWarnings, ...insights.duplicatedActionsWarnings].length >
             0 ? (
               <ul>
@@ -937,11 +942,11 @@ function CollectiveDecisionAiAssistantSlot({
                 )}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No action issues identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoActionIssues")}</p>
             )}
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Roles & Timeline</h4>
+            <h4>{t("author.sidebar.insights.rolesTimeline")}</h4>
             {[...insights.missingRolesWarnings, ...insights.unrealisticTimelineWarnings].length >
             0 ? (
               <ul>
@@ -952,11 +957,11 @@ function CollectiveDecisionAiAssistantSlot({
                 )}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No role or timeline gaps identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoRoleTimeline")}</p>
             )}
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Risks & Success Criteria</h4>
+            <h4>{t("author.sidebar.insights.risksSuccessCriteria")}</h4>
             {[...insights.unresolvedRisksWarnings, ...insights.missingSuccessCriteriaWarnings]
               .length > 0 ? (
               <ul>
@@ -968,11 +973,11 @@ function CollectiveDecisionAiAssistantSlot({
                 ))}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No risk or success-criteria gaps identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoRiskSuccess")}</p>
             )}
           </div>
           <div className="iip-ai-assistant__group">
-            <h4>Clarity & Support</h4>
+            <h4>{t("author.sidebar.insights.claritySupport")}</h4>
             {[...insights.clarityWarnings, ...insights.unsupportedConclusionsWarnings].length >
             0 ? (
               <ul>
@@ -983,7 +988,7 @@ function CollectiveDecisionAiAssistantSlot({
                 )}
               </ul>
             ) : (
-              <p className="iip-ai-assistant__empty">No clarity or support issues identified.</p>
+              <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoClaritySupport")}</p>
             )}
           </div>
         </div>
@@ -1050,11 +1055,11 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
       ) : (
         <div className="iic-assistant-block">
           <div className="iic-assistant-block">
-            <h4>Sources Used</h4>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
             <p>{insights.sourcesUsedSummary}</p>
           </div>
           <div className="iic-assistant-block">
-            <h4>Unassigned Actions</h4>
+            <h4>{t("author.sidebar.insights.unassignedActions")}</h4>
             {insights.unassignedActionsWarnings.length > 0 ? (
               <ul>
                 {insights.unassignedActionsWarnings.map((warning) => (
@@ -1062,11 +1067,11 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
                 ))}
               </ul>
             ) : (
-              <p>Every Candidate has a proposed Participant.</p>
+              <p>{t("author.sidebar.insights.emptyEveryCandidateAssigned")}</p>
             )}
           </div>
           <div className="iic-assistant-block">
-            <h4>Role Balance & Resources</h4>
+            <h4>{t("author.sidebar.insights.roleBalanceResources")}</h4>
             {[...insights.overloadedRoleWarnings, ...insights.missingResourcesWarnings].length > 0 ? (
               <ul>
                 {[...insights.overloadedRoleWarnings, ...insights.missingResourcesWarnings].map(
@@ -1076,11 +1081,11 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
                 )}
               </ul>
             ) : (
-              <p>No role or resource gaps identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoRoleResource")}</p>
             )}
           </div>
           <div className="iic-assistant-block">
-            <h4>Timeline & Risks</h4>
+            <h4>{t("author.sidebar.insights.timelineRisks")}</h4>
             {[...insights.emptyTimelineWarnings, ...insights.unresolvedRisksWarnings].length > 0 ? (
               <ul>
                 {[...insights.emptyTimelineWarnings, ...insights.unresolvedRisksWarnings].map(
@@ -1090,11 +1095,11 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
                 )}
               </ul>
             ) : (
-              <p>No timeline or risk gaps identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoTimelineRisk")}</p>
             )}
           </div>
           <div className="iic-assistant-block">
-            <h4>Clarity</h4>
+            <h4>{t("author.sidebar.insights.clarity")}</h4>
             {insights.clarityWarnings.length > 0 ? (
               <ul>
                 {insights.clarityWarnings.map((warning) => (
@@ -1102,7 +1107,7 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
                 ))}
               </ul>
             ) : (
-              <p>No clarity issues identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoClarity")}</p>
             )}
           </div>
         </div>
@@ -1169,11 +1174,11 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
       ) : (
         <div className="iit-assistant-block">
           <div className="iit-assistant-block">
-            <h4>Sources Used</h4>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
             <p>{insights.sourcesUsedSummary}</p>
           </div>
           <div className="iit-assistant-block">
-            <h4>Overdue & Blocked</h4>
+            <h4>{t("author.sidebar.insights.overdueBlocked")}</h4>
             {[...insights.overdueWarnings, ...insights.blockedWarnings].length > 0 ? (
               <ul>
                 {[...insights.overdueWarnings, ...insights.blockedWarnings].map((warning) => (
@@ -1181,11 +1186,11 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
                 ))}
               </ul>
             ) : (
-              <p>No overdue or blocked Candidates identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoOverdueBlocked")}</p>
             )}
           </div>
           <div className="iit-assistant-block">
-            <h4>Missing Evidence & Stalled</h4>
+            <h4>{t("author.sidebar.insights.missingEvidenceStalled")}</h4>
             {[...insights.missingEvidenceWarnings, ...insights.stalledWarnings].length > 0 ? (
               <ul>
                 {[...insights.missingEvidenceWarnings, ...insights.stalledWarnings].map((warning) => (
@@ -1193,11 +1198,11 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
                 ))}
               </ul>
             ) : (
-              <p>No missing evidence or stalled Candidates identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoMissingEvidenceStalled")}</p>
             )}
           </div>
           <div className="iit-assistant-block">
-            <h4>Timeline Conflicts</h4>
+            <h4>{t("author.sidebar.insights.timelineConflicts")}</h4>
             {insights.timelineConflictWarnings.length > 0 ? (
               <ul>
                 {insights.timelineConflictWarnings.map((warning) => (
@@ -1205,11 +1210,11 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
                 ))}
               </ul>
             ) : (
-              <p>No timeline conflicts identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoTimelineConflicts")}</p>
             )}
           </div>
           <div className="iit-assistant-block">
-            <h4>Clarity</h4>
+            <h4>{t("author.sidebar.insights.clarity")}</h4>
             {insights.clarityWarnings.length > 0 ? (
               <ul>
                 {insights.clarityWarnings.map((warning) => (
@@ -1217,7 +1222,7 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
                 ))}
               </ul>
             ) : (
-              <p>No clarity issues identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoClarity")}</p>
             )}
           </div>
         </div>
@@ -1282,11 +1287,11 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
       ) : (
         <div className="ior-assistant-block">
           <div className="ior-assistant-block">
-            <h4>Sources Used</h4>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
             <p>{insights.sourcesUsedSummary}</p>
           </div>
           <div className="ior-assistant-block">
-            <h4>Incomplete & Duplicate Candidates</h4>
+            <h4>{t("author.sidebar.insights.incompleteDuplicateCandidates")}</h4>
             {[...insights.incompleteCandidateWarnings, ...insights.duplicateCandidateWarnings].length >
             0 ? (
               <ul>
@@ -1297,11 +1302,11 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
                 )}
               </ul>
             ) : (
-              <p>No incomplete or duplicate Candidates identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoIncompleteDuplicateCandidates")}</p>
             )}
           </div>
           <div className="ior-assistant-block">
-            <h4>Missing Institutions & References</h4>
+            <h4>{t("author.sidebar.insights.missingInstitutionsReferences")}</h4>
             {[...insights.missingInstitutionWarnings, ...insights.missingReferenceWarnings].length > 0 ? (
               <ul>
                 {[...insights.missingInstitutionWarnings, ...insights.missingReferenceWarnings].map(
@@ -1311,11 +1316,11 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
                 )}
               </ul>
             ) : (
-              <p>Every Candidate names an institution or organization and cites a source.</p>
+              <p>{t("author.sidebar.insights.emptyEveryCandidateCitesSource")}</p>
             )}
           </div>
           <div className="ior-assistant-block">
-            <h4>Unsupported Summaries & Dates</h4>
+            <h4>{t("author.sidebar.insights.unsupportedSummariesDates")}</h4>
             {[...insights.unsupportedSummaryWarnings, ...insights.inconsistentDateWarnings].length > 0 ? (
               <ul>
                 {[...insights.unsupportedSummaryWarnings, ...insights.inconsistentDateWarnings].map(
@@ -1325,11 +1330,11 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
                 )}
               </ul>
             ) : (
-              <p>No unsupported summaries or inconsistent dates identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoUnsupportedSummariesDates")}</p>
             )}
           </div>
           <div className="ior-assistant-block">
-            <h4>Clarity</h4>
+            <h4>{t("author.sidebar.insights.clarity")}</h4>
             {insights.clarityWarnings.length > 0 ? (
               <ul>
                 {insights.clarityWarnings.map((warning) => (
@@ -1337,11 +1342,11 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
                 ))}
               </ul>
             ) : (
-              <p>No clarity issues identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoClarity")}</p>
             )}
           </div>
           <div className="ior-assistant-block">
-            <h4>Advisory (AI cannot publish)</h4>
+            <h4>{t("author.sidebar.insights.advisoryCannotPublish")}</h4>
             <ul>
               {insights.advisoryNotes.map((note) => (
                 <li key={note}>{note}</li>
@@ -1409,11 +1414,11 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
       ) : (
         <div className="ipi-assistant-block">
           <div className="ipi-assistant-block">
-            <h4>Sources Used</h4>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
             <p>{insights.sourcesUsedSummary}</p>
           </div>
           <div className="ipi-assistant-block">
-            <h4>Missing Evidence & Unsupported Conclusions</h4>
+            <h4>{t("author.sidebar.insights.missingEvidenceUnsupportedConclusions")}</h4>
             {[...insights.missingEvidenceWarnings, ...insights.unsupportedConclusionWarnings].length >
             0 ? (
               <ul>
@@ -1424,11 +1429,11 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
                 )}
               </ul>
             ) : (
-              <p>No missing evidence or unsupported conclusions identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoMissingEvidenceConclusions")}</p>
             )}
           </div>
           <div className="ipi-assistant-block">
-            <h4>Inconsistent Stats & Duplicated Claims</h4>
+            <h4>{t("author.sidebar.insights.inconsistentStatsDuplicatedClaims")}</h4>
             {[...insights.inconsistentStatsWarnings, ...insights.duplicatedClaimWarnings].length > 0 ? (
               <ul>
                 {[...insights.inconsistentStatsWarnings, ...insights.duplicatedClaimWarnings].map(
@@ -1438,11 +1443,11 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
                 )}
               </ul>
             ) : (
-              <p>No inconsistent statistics or duplicated claims identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoInconsistentStats")}</p>
             )}
           </div>
           <div className="ipi-assistant-block">
-            <h4>Missing Institutions & Outcomes</h4>
+            <h4>{t("author.sidebar.insights.missingInstitutionsOutcomes")}</h4>
             {insights.missingInstitutionOutcomeWarnings.length > 0 ? (
               <ul>
                 {insights.missingInstitutionOutcomeWarnings.map((warning) => (
@@ -1450,11 +1455,11 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
                 ))}
               </ul>
             ) : (
-              <p>Official Response institutions and outcome summaries look complete.</p>
+              <p>{t("author.sidebar.insights.emptyInstitutionsOutcomesReady")}</p>
             )}
           </div>
           <div className="ipi-assistant-block">
-            <h4>Clarity & Neutrality</h4>
+            <h4>{t("author.sidebar.insights.clarityNeutrality")}</h4>
             {insights.clarityWarnings.length > 0 ? (
               <ul>
                 {insights.clarityWarnings.map((warning) => (
@@ -1462,11 +1467,11 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
                 ))}
               </ul>
             ) : (
-              <p>No clarity or neutrality issues identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoClarityNeutrality")}</p>
             )}
           </div>
           <div className="ipi-assistant-block">
-            <h4>Advisory (AI cannot publish)</h4>
+            <h4>{t("author.sidebar.insights.advisoryCannotPublish")}</h4>
             <ul>
               {insights.advisoryNotes.map((note) => (
                 <li key={note}>{note}</li>
@@ -1542,11 +1547,11 @@ function CivicArchiveAiAssistantSlot({
       ) : (
         <div className="ica-assistant-block">
           <div className="ica-assistant-block">
-            <h4>Sources Used</h4>
+            <h4>{t("author.sidebar.sourcesUsed")}</h4>
             <p>{insights.sourcesUsedSummary}</p>
           </div>
           <div className="ica-assistant-block">
-            <h4>Completeness & Final Fields</h4>
+            <h4>{t("author.sidebar.insights.completenessFinalFields")}</h4>
             {[...insights.completenessWarnings, ...insights.missingFinalFieldWarnings].length > 0 ? (
               <ul>
                 {[...insights.completenessWarnings, ...insights.missingFinalFieldWarnings].map(
@@ -1556,11 +1561,11 @@ function CivicArchiveAiAssistantSlot({
                 )}
               </ul>
             ) : (
-              <p>Sources and final contribution fields look ready.</p>
+              <p>{t("author.sidebar.insights.emptyFieldsLookReady")}</p>
             )}
           </div>
           <div className="ica-assistant-block">
-            <h4>Outstanding Work</h4>
+            <h4>{t("author.sidebar.insights.outstandingWork")}</h4>
             {insights.outstandingWorkWarnings.length > 0 ? (
               <ul>
                 {insights.outstandingWorkWarnings.map((warning) => (
@@ -1568,11 +1573,11 @@ function CivicArchiveAiAssistantSlot({
                 ))}
               </ul>
             ) : (
-              <p>No outstanding Tracking or Commitment gaps identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoOutstandingWork")}</p>
             )}
           </div>
           <div className="ica-assistant-block">
-            <h4>Neutrality & Clarity</h4>
+            <h4>{t("author.sidebar.insights.neutralityClarity")}</h4>
             {[...insights.neutralityWarnings, ...insights.clarityWarnings].length > 0 ? (
               <ul>
                 {[...insights.neutralityWarnings, ...insights.clarityWarnings].map((warning) => (
@@ -1580,7 +1585,7 @@ function CivicArchiveAiAssistantSlot({
                 ))}
               </ul>
             ) : (
-              <p>No neutrality or clarity issues identified.</p>
+              <p>{t("author.sidebar.insights.emptyNoNeutralityClarity")}</p>
             )}
           </div>
         </div>
