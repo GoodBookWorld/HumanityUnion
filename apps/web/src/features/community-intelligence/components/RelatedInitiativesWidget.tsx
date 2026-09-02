@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { CommunityInitiativeRelationshipProjection } from "@hu/types";
 
@@ -17,37 +18,51 @@ import "./related-initiatives-widget.css";
 
 export function RelatedInitiativesWidget({
   items,
-  emptyMessage = "No closely related Initiatives were found.",
+  emptyMessage,
   headingId = "related-initiatives-title",
-  title = "Related Initiatives",
+  title,
 }: {
   items: readonly CommunityInitiativeRelationshipProjection[];
   emptyMessage?: string;
   headingId?: string;
   title?: string;
 }) {
+  const t = useTranslations("initiativeExperience");
+  const resolvedTitle = title ?? t("sidebar.related.title");
+  const resolvedEmpty = emptyMessage ?? t("sidebar.related.empty");
+
   // Deterministic initial contract: empty and result shells share the same
   // section/heading structure. No browser-only APIs, dates, or random IDs.
   if (items.length === 0) {
     return (
       <section className="ci-related" aria-labelledby={headingId}>
-        <h2 id={headingId}>{title}</h2>
-        <p className="ci-related__empty">{emptyMessage}</p>
+        <h2 id={headingId}>{resolvedTitle}</h2>
+        <p className="ci-related__empty">{resolvedEmpty}</p>
       </section>
     );
   }
 
   return (
     <section className="ci-related" aria-labelledby={headingId}>
-      <h2 id={headingId}>{title}</h2>
+      <h2 id={headingId}>{resolvedTitle}</h2>
       <ul className="ci-related__list">
         {items.map((raw) => {
           const item = normalizeRelatedItem(raw);
-          const typeLabel = relatedRelationshipLabel(item.relationshipType);
-          const topic = sharedTopicLabel(item);
-          const themes = overlappingThemesLabel(item.sharedTopics);
-          const why = whyRelevantLabel(item.reasons[0]?.message);
-          const differences = keyDifferencesLabel(item);
+          const typeLabel = relatedRelationshipLabel(item.relationshipType, (key) =>
+            t(`sidebar.related.${key}`),
+          );
+          const topic = sharedTopicLabel(item, (topicValue) =>
+            t("sidebar.related.sharedTopic", { topic: topicValue }),
+          );
+          const themes = overlappingThemesLabel(item.sharedTopics, (count) =>
+            t("sidebar.related.overlappingThemes", { count }),
+          );
+          const why = whyRelevantLabel(item.reasons[0]?.message, (reason) =>
+            t("sidebar.related.whyRelevant", { reason }),
+          );
+          const differences = keyDifferencesLabel(item, (text) =>
+            t("sidebar.related.keyDifferences", { differences: text }),
+          );
 
           return (
             <li key={item.initiativeId} className="ci-related__item">
@@ -63,7 +78,7 @@ export function RelatedInitiativesWidget({
               {differences ? <p className="ci-related__diff">{differences}</p> : null}
               <p className="ci-related__actions">
                 <Link href={item.publicUrl} className="ci-related__link">
-                  View Initiative
+                  {t("sidebar.related.viewInitiative")}
                 </Link>
               </p>
             </li>

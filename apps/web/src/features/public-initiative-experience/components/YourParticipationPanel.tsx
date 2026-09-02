@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { CollectiveParticipationJourney } from "@hu/types";
+
+import { resolveLifecycleStageDisplayLabel } from "../initiative-experience-i18n";
 
 interface YourParticipationPanelProps {
   readonly journey: CollectiveParticipationJourney;
@@ -16,38 +19,42 @@ export function YourParticipationPanel({
   journey,
   isAuthorPrimary,
 }: YourParticipationPanelProps) {
+  const t = useTranslations("initiativeExperience");
   const signedOut = journey.participantId === null;
+  const stageLabel = resolveLifecycleStageDisplayLabel(
+    journey.currentStageId,
+    t,
+    journey.currentStageLabel,
+  );
 
   return (
     <section className="pie-participation" aria-labelledby="pie-participation-title">
       <h2 id="pie-participation-title" className="pie-participation__title">
-        Your Participation
+        {t("sidebar.participation.title")}
       </h2>
 
       {isAuthorPrimary ? (
-        <p className="pie-participation__note">
-          You are the Initiative Author. Author Mode remains primary for lifecycle editing.
-          Participant actions below are optional civic participation.
-        </p>
+        <p className="pie-participation__note">{t("sidebar.participation.authorNote")}</p>
       ) : null}
 
       <p className="pie-participation__stage">
-        Current stage: <strong>{journey.currentStageLabel}</strong>
-        {journey.activeAlly ? " · Active Ally" : null}
+        {t("sidebar.participation.currentStage", { stage: stageLabel })}
+        {journey.activeAlly ? t("sidebar.participation.activeAllySuffix") : null}
       </p>
 
       {signedOut ? (
-        <p className="pie-participation__empty">
-          Sign in to track your contributions and take the next civic action.
-        </p>
+        <p className="pie-participation__empty">{t("sidebar.participation.signIn")}</p>
       ) : journey.pastActions.length === 0 ? (
-        <p className="pie-participation__empty">You have not contributed to this Initiative yet.</p>
+        <p className="pie-participation__empty">{t("sidebar.participation.noContributions")}</p>
       ) : (
         <ul className="pie-participation__past">
           {journey.pastActions.slice(0, 5).map((action) => (
             <li key={`${action.actionType}-${action.occurredAt}`}>
               <Link href={action.deepLink}>{action.statusLabel}</Link>
-              <span className="pie-participation__meta"> · {action.stageId.replaceAll("_", " ")}</span>
+              <span className="pie-participation__meta">
+                {" "}
+                · {resolveLifecycleStageDisplayLabel(action.stageId, t)}
+              </span>
             </li>
           ))}
         </ul>
@@ -55,14 +62,16 @@ export function YourParticipationPanel({
 
       {journey.nextAction ? (
         <div className="pie-participation__next">
-          <p className="pie-participation__next-label">Next meaningful action</p>
+          <p className="pie-participation__next-label">
+            {t("sidebar.participation.nextMeaningfulAction")}
+          </p>
           <Link className="pie-participation__next-link" href={journey.nextAction.deepLink}>
             {journey.nextAction.label}
           </Link>
           <p className="pie-participation__reason">{journey.nextAction.reason}</p>
         </div>
       ) : (
-        <p className="pie-participation__empty">No participant action is available right now.</p>
+        <p className="pie-participation__empty">{t("sidebar.participation.noActionAvailable")}</p>
       )}
     </section>
   );

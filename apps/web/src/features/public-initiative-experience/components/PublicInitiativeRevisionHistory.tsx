@@ -1,14 +1,9 @@
 "use client";
 
 import type { PublicInitiativeWithVersionHistory } from "@hu/types";
+import { useLocale, useTranslations } from "next-intl";
 
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+import { formatInitiativeExperienceDate } from "../initiative-experience-i18n";
 
 interface PublicInitiativeRevisionHistoryProps {
   initiativeId: string;
@@ -21,25 +16,27 @@ export function PublicInitiativeRevisionHistory({
   history,
   onRevisionSelect,
 }: PublicInitiativeRevisionHistoryProps) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const originalVersion = history.revisions.at(-1)?.version;
 
   return (
     <section className="pie-revisions" aria-labelledby="pie-revisions-title">
       <div className="pie-revisions__header">
-        <h2 id="pie-revisions-title">Revision History</h2>
+        <h2 id="pie-revisions-title">{t("sidebar.revisions.title")}</h2>
         {history.revisions.length > 0 ? (
           <button
             type="button"
             className="pie-revisions__view-all"
             onClick={() => onRevisionSelect(history.revisions[0]!.version)}
           >
-            View all revisions
+            {t("sidebar.revisions.viewAll")}
           </button>
         ) : null}
       </div>
 
       {history.revisions.length === 0 ? (
-        <p className="pie-empty">No revisions have been published.</p>
+        <p className="pie-empty">{t("sidebar.revisions.empty")}</p>
       ) : (
         <ol className="pie-revisions__list">
           {history.revisions.map((revision) => (
@@ -50,11 +47,17 @@ export function PublicInitiativeRevisionHistory({
                 onClick={() => onRevisionSelect(revision.version)}
               >
                 <span className="pie-revisions__version">
-                  Version {revision.version}
-                  {revision.isCurrent ? " · Current" : ""}
-                  {revision.version === originalVersion ? " · Original" : ""}
+                  {t("common.versionN", { version: revision.version })}
+                  {revision.isCurrent ? t("common.currentSuffix") : ""}
+                  {revision.version === originalVersion
+                    ? t("sidebar.revisions.originalSuffix")
+                    : ""}
                 </span>
-                <span className="pie-revisions__date">{formatDate(revision.publishedAt)}</span>
+                <span className="pie-revisions__date">
+                  {formatInitiativeExperienceDate(locale, revision.publishedAt, {
+                    month: "short",
+                  })}
+                </span>
                 <span className="pie-revisions__summary">{revision.revisionSummary}</span>
               </button>
             </li>
@@ -63,8 +66,10 @@ export function PublicInitiativeRevisionHistory({
       )}
 
       <p className="pie-revisions__route-note">
-        Revisions open in the central Revision stage for{" "}
-        <span className="pie-revisions__initiative-id">{initiativeId}</span>.
+        {t.rich("sidebar.revisions.routeNote", {
+          initiativeId,
+          id: (chunks) => <span className="pie-revisions__initiative-id">{chunks}</span>,
+        })}
       </p>
     </section>
   );

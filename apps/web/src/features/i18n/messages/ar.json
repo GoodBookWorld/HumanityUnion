@@ -526,6 +526,81 @@
         "allCommunities": "كل المجتمعات",
         "filterAria": "تصفية {label}"
       }
+    },
+    "sidebar": {
+      "support": {
+        "title": "دعم المبادرة",
+        "subtitle": "عبّر عن موقفك العام من هذه المبادرة.",
+        "support": "دعم",
+        "doNotSupport": "عدم الدعم",
+        "supportAria": "ادعم هذه المبادرة",
+        "doNotSupportAria": "لا تدعم هذه المبادرة",
+        "total": "الإجمالي",
+        "participants": "المشاركون",
+        "members": "الأعضاء",
+        "visitors": "الزوار",
+        "bookmarks": "الإشارات المرجعية",
+        "views": "المشاهدات",
+        "unavailable": "غير متاح",
+        "transparencyNote": "إشارات الدعم مؤشرات إحصائية ولا تغيّر وزن التصويت ولا تنشئ سلطة."
+      },
+      "participation": {
+        "title": "مشاركتك",
+        "authorNote": "أنت مؤلف المبادرة. يبقى وضع المؤلف أساسيًا لتحرير دورة الحياة. إجراءات المشارك أدناه مشاركة مدنية اختيارية.",
+        "currentStage": "المرحلة الحالية: {stage}",
+        "activeAllySuffix": " · حليف نشط",
+        "signIn": "سجّل الدخول لتتبع مساهماتك واتخاذ الإجراء المدني التالي.",
+        "noContributions": "لم تساهم في هذه المبادرة بعد.",
+        "nextMeaningfulAction": "الإجراء التالي ذو المعنى",
+        "noActionAvailable": "لا يتوفر إجراء للمشارك الآن."
+      },
+      "revisions": {
+        "title": "سجل المراجعات",
+        "viewAll": "عرض كل المراجعات",
+        "empty": "لم تُنشَر أي مراجعات.",
+        "originalSuffix": " · الأصل",
+        "routeNote": "تُفتح المراجعات في مرحلة المراجعة المركزية لـ <id>{initiativeId}</id>."
+      },
+      "allies": {
+        "title": "الحلفاء النشطون",
+        "listAria": "الحلفاء النشطون",
+        "count": "{count, plural, zero {لا حلفاء نشطين} one {حليف نشط واحد} two {حليفان نشطان} few {# حلفاء نشطين} many {# حليفًا نشطًا} other {# حليف نشط}}",
+        "empty": "لا يوجد حلفاء نشطون بعد.",
+        "emptySupport": "سيظهر هنا المشاركون المقبولون للتعاون.",
+        "reviewRequests": "مراجعة طلبات التعاون",
+        "message": "رسالة",
+        "opening": "جارٍ الفتح…",
+        "messageAria": "مراسلة {name}",
+        "unreadAria": "رسائل غير مقروءة من {name}"
+      },
+      "related": {
+        "title": "مبادرات ذات صلة",
+        "empty": "لم يُعثر على مبادرات وثيقة الصلة.",
+        "viewInitiative": "عرض المبادرة",
+        "possibleOverlap": "تداخل محتمل",
+        "complementary": "مكملة",
+        "relatedType": "ذات صلة",
+        "overlappingThemes": "{count, plural, zero {لا مواضيع متداخلة} one {موضوع متداخل واحد} two {موضوعان متداخلان} few {# مواضيع متداخلة} many {# موضوعًا متداخلاً} other {# موضوع متداخل}}",
+        "sharedTopic": "موضوع مشترك: {topic}",
+        "whyRelevant": "لماذا هذا مهم: {reason}",
+        "keyDifferences": "الفروق الرئيسية: {differences}"
+      },
+      "latest": {
+        "title": "أحدث المبادرات"
+      },
+      "election": {
+        "candidates": "المرشحون",
+        "election": "الانتخابات",
+        "viewElection": "عرض الانتخابات",
+        "currentResults": "النتائج الحالية",
+        "finalResults": "النتائج النهائية",
+        "noCandidates": "لا مرشحين مدرجين بعد.",
+        "blockedSuffix": " (محظور)",
+        "support": "دعم",
+        "doNotSupport": "عدم الدعم",
+        "abstain": "امتناع",
+        "resultsAria": "نتائج الدعم / المعارضة"
+      }
     }
   }
 }

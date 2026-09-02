@@ -1,31 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
-
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+import {
+  formatInitiativeExperienceDate,
+  resolveActivityAreaDisplayLabel,
+} from "../initiative-experience-i18n";
 
 export function PublicInitiativeLatestInitiatives({
   initiatives,
 }: {
   initiatives: WorldInitiativeCardProjection[];
 }) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
+
   if (initiatives.length === 0) {
     return null;
   }
 
   return (
     <section className="pie-latest" aria-labelledby="pie-latest-title">
-      <h2 id="pie-latest-title">Latest Initiatives</h2>
+      <h2 id="pie-latest-title">{t("sidebar.latest.title")}</h2>
       <ul className="pie-latest__list">
         {initiatives.map((initiative) => (
           <li key={initiative.initiativeId}>
@@ -35,8 +35,16 @@ export function PublicInitiativeLatestInitiatives({
               </div>
               <div className="pie-latest__body">
                 <h3>{initiative.title}</h3>
-                <p>{initiative.activityArea}</p>
-                <p className="pie-latest__date">{formatDate(initiative.publishedAt)}</p>
+                <p>
+                  {initiative.activityArea
+                    ? resolveActivityAreaDisplayLabel(initiative.activityArea, t)
+                    : null}
+                </p>
+                <p className="pie-latest__date">
+                  {formatInitiativeExperienceDate(locale, initiative.publishedAt, {
+                    month: "short",
+                  })}
+                </p>
               </div>
             </Link>
           </li>

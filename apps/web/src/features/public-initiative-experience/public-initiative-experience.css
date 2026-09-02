@@ -208,6 +208,7 @@
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .pie-participation__past {
@@ -597,6 +598,8 @@
   cursor: pointer;
   font-size: 0.95rem;
   min-height: 2.75rem;
+  white-space: normal;
+  max-inline-size: 100%;
 }
 
 .pie-support__signal img {
@@ -646,9 +649,16 @@
 
 .pie-revisions__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  max-inline-size: 100%;
+}
+
+.pie-revisions__header h2 {
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
 }
 
 .pie-revisions__view-all {
@@ -657,6 +667,8 @@
   color: var(--hu-color-primary);
   cursor: pointer;
   font-size: 0.85rem;
+  white-space: normal;
+  max-inline-size: 100%;
 }
 
 .pie-revisions__list {

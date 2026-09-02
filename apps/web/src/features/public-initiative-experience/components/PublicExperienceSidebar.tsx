@@ -1,6 +1,7 @@
 "use client";
 
 import type { ComponentProps, ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   CollectiveParticipationJourney,
@@ -48,7 +49,7 @@ interface PublicExperienceSidebarProps {
 
 export function PublicExperienceSidebar({
   initiativeId,
-  supportLabel = "Initiative Support",
+  supportLabel,
   statistics,
   revisionHistory,
   latestInitiatives,
@@ -63,10 +64,12 @@ export function PublicExperienceSidebar({
   lifecycleProfile = null,
   ballotMode: _ballotMode = null,
 }: PublicExperienceSidebarProps) {
+  const t = useTranslations("initiativeExperience");
   const authStatus = useClientAuthStatus();
   const authenticated = authStatus === "authenticated";
   const isPublicChoice =
     resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE";
+  const resolvedSupportLabel = supportLabel ?? t("sidebar.support.title");
 
   if (isPublicChoice) {
     const allowlist = resolvePublicChoiceSidebarAllowlist({ authenticated });
@@ -99,7 +102,7 @@ export function PublicExperienceSidebar({
         onSignalChange={onSignalChange}
         onBookmarkToggle={onBookmarkToggle}
         busy={supportBusy}
-        title={supportLabel}
+        title={resolvedSupportLabel}
       />
       <PublicChoiceElectionSidebarWidget
         initiativeId={initiativeId}

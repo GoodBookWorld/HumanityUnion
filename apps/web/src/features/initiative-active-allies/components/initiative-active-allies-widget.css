@@ -5,15 +5,19 @@
 
 .iaa-widget__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--hu-space-2);
+  max-inline-size: 100%;
 }
 
 .iaa-widget__count {
   font-size: 0.75rem;
   color: var(--hu-color-text-muted);
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
 }
 
 /*

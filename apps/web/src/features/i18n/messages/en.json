@@ -526,6 +526,81 @@
         "allCommunities": "All communities",
         "filterAria": "Filter {label}"
       }
+    },
+    "sidebar": {
+      "support": {
+        "title": "Initiative Support",
+        "subtitle": "Express your overall position on this initiative.",
+        "support": "Support",
+        "doNotSupport": "Do Not Support",
+        "supportAria": "Support this initiative",
+        "doNotSupportAria": "Do not support this initiative",
+        "total": "Total",
+        "participants": "Participants",
+        "members": "Members",
+        "visitors": "Visitors",
+        "bookmarks": "Bookmarks",
+        "views": "Views",
+        "unavailable": "Unavailable",
+        "transparencyNote": "Support signals are statistical indicators and do not change vote weight or create authority."
+      },
+      "participation": {
+        "title": "Your Participation",
+        "authorNote": "You are the Initiative Author. Author Mode remains primary for lifecycle editing. Participant actions below are optional civic participation.",
+        "currentStage": "Current stage: {stage}",
+        "activeAllySuffix": " · Active Ally",
+        "signIn": "Sign in to track your contributions and take the next civic action.",
+        "noContributions": "You have not contributed to this Initiative yet.",
+        "nextMeaningfulAction": "Next meaningful action",
+        "noActionAvailable": "No participant action is available right now."
+      },
+      "revisions": {
+        "title": "Revision History",
+        "viewAll": "View all revisions",
+        "empty": "No revisions have been published.",
+        "originalSuffix": " · Original",
+        "routeNote": "Revisions open in the central Revision stage for <id>{initiativeId}</id>."
+      },
+      "allies": {
+        "title": "Active Allies",
+        "listAria": "Active Allies",
+        "count": "{count, plural, one {# active Ally} other {# active Allies}}",
+        "empty": "No active Allies yet.",
+        "emptySupport": "Participants accepted for collaboration will appear here.",
+        "reviewRequests": "Review collaboration requests",
+        "message": "Message",
+        "opening": "Opening…",
+        "messageAria": "Message {name}",
+        "unreadAria": "Unread messages from {name}"
+      },
+      "related": {
+        "title": "Related Initiatives",
+        "empty": "No closely related Initiatives were found.",
+        "viewInitiative": "View Initiative",
+        "possibleOverlap": "Possible overlap",
+        "complementary": "Complementary",
+        "relatedType": "Related",
+        "overlappingThemes": "{count, plural, one {# overlapping theme} other {# overlapping themes}}",
+        "sharedTopic": "Shared topic: {topic}",
+        "whyRelevant": "Why this is relevant: {reason}",
+        "keyDifferences": "Key differences: {differences}"
+      },
+      "latest": {
+        "title": "Latest Initiatives"
+      },
+      "election": {
+        "candidates": "Candidates",
+        "election": "Election",
+        "viewElection": "View election",
+        "currentResults": "CURRENT RESULTS",
+        "finalResults": "FINAL RESULTS",
+        "noCandidates": "No candidates listed yet.",
+        "blockedSuffix": " (Blocked)",
+        "support": "Support",
+        "doNotSupport": "Do not support",
+        "abstain": "Abstain",
+        "resultsAria": "Support / Oppose results"
+      }
     }
   }
 }

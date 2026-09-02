@@ -90,10 +90,11 @@ function resolveLabel(
   return resolveInitiativeExperienceMessage(messagesOrT, key) || fallback;
 }
 
-/** Locale-aware calendar date for hero/overview (interface locale). */
+/** Locale-aware calendar date for hero/overview/sidebar (interface locale). */
 export function formatInitiativeExperienceDate(
   locale: string,
   iso: string | null | undefined,
+  options?: { month?: "long" | "short" },
 ): string {
   if (!iso) {
     return "";
@@ -104,7 +105,7 @@ export function formatInitiativeExperienceDate(
   }
   return date.toLocaleDateString(locale, {
     year: "numeric",
-    month: "long",
+    month: options?.month ?? "long",
     day: "numeric",
   });
 }

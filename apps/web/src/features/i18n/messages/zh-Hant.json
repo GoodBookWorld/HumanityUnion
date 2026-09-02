@@ -526,6 +526,81 @@
         "allCommunities": "所有社區",
         "filterAria": "篩選 {label}"
       }
+    },
+    "sidebar": {
+      "support": {
+        "title": "倡議支持",
+        "subtitle": "表達您對此倡議的整體立場。",
+        "support": "支持",
+        "doNotSupport": "不支持",
+        "supportAria": "支持此倡議",
+        "doNotSupportAria": "不支持此倡議",
+        "total": "總計",
+        "participants": "參與者",
+        "members": "成員",
+        "visitors": "訪客",
+        "bookmarks": "書籤",
+        "views": "瀏覽次數",
+        "unavailable": "無法取得",
+        "transparencyNote": "支持訊號為統計指標，不會改變投票權重，也不會創造權威。"
+      },
+      "participation": {
+        "title": "您的參與",
+        "authorNote": "您是倡議作者。作者模式仍是生命週期編輯的主要方式。下方的參與者行動屬於選擇性公民參與。",
+        "currentStage": "目前階段：{stage}",
+        "activeAllySuffix": " · 活躍盟友",
+        "signIn": "請登入以追蹤您的貢獻並採取下一步公民行動。",
+        "noContributions": "您尚未對此倡議做出貢獻。",
+        "nextMeaningfulAction": "下一個有意義的行動",
+        "noActionAvailable": "目前沒有可用的參與者行動。"
+      },
+      "revisions": {
+        "title": "修訂歷史",
+        "viewAll": "檢視所有修訂",
+        "empty": "尚未發佈任何修訂。",
+        "originalSuffix": " · 原始",
+        "routeNote": "修訂會在中央「修訂」階段開啟：<id>{initiativeId}</id>。"
+      },
+      "allies": {
+        "title": "活躍盟友",
+        "listAria": "活躍盟友",
+        "count": "{count, plural, other {# 位活躍盟友}}",
+        "empty": "尚無活躍盟友。",
+        "emptySupport": "獲准協作的參與者會顯示在此。",
+        "reviewRequests": "檢視協作請求",
+        "message": "訊息",
+        "opening": "開啟中…",
+        "messageAria": "傳訊給 {name}",
+        "unreadAria": "來自 {name} 的未讀訊息"
+      },
+      "related": {
+        "title": "相關倡議",
+        "empty": "找不到密切相關的倡議。",
+        "viewInitiative": "檢視倡議",
+        "possibleOverlap": "可能重疊",
+        "complementary": "互補",
+        "relatedType": "相關",
+        "overlappingThemes": "{count, plural, other {# 個重疊主題}}",
+        "sharedTopic": "共同主題：{topic}",
+        "whyRelevant": "為何相關：{reason}",
+        "keyDifferences": "主要差異：{differences}"
+      },
+      "latest": {
+        "title": "最新倡議"
+      },
+      "election": {
+        "candidates": "候選人",
+        "election": "選舉",
+        "viewElection": "檢視選舉",
+        "currentResults": "目前結果",
+        "finalResults": "最終結果",
+        "noCandidates": "尚未列出候選人。",
+        "blockedSuffix": "（已封鎖）",
+        "support": "支持",
+        "doNotSupport": "不支持",
+        "abstain": "棄權",
+        "resultsAria": "支持／反對結果"
+      }
     }
   }
 }

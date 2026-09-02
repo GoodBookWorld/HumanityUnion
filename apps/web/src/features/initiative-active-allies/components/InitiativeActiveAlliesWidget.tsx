@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeActiveAllyEntry } from "@hu/types";
 
@@ -22,6 +23,7 @@ const MESSAGE_ICON = "/icons/workspace/message.svg";
  * eligibility merely from both Participants appearing in the widget.
  */
 function ActiveAllyMessageButton({ entry }: { entry: InitiativeActiveAllyEntry }) {
+  const t = useTranslations("initiativeExperience");
   const { isOpening, errorMessage, openConversation } = useOpenDirectConversation();
 
   if (!entry.participantId) {
@@ -39,15 +41,19 @@ function ActiveAllyMessageButton({ entry }: { entry: InitiativeActiveAllyEntry }
           openConversation({ participantId: entry.participantId });
         }}
         disabled={isOpening}
-        aria-label={`Message ${entry.displayName}`}
+        aria-label={t("sidebar.allies.messageAria", { name: entry.displayName })}
         aria-live="polite"
       >
         <Image src={MESSAGE_ICON} alt="" width={18} height={18} aria-hidden="true" />
-        <span className="iaa-widget__message-label">{isOpening ? "Opening…" : "Message"}</span>
+        <span className="iaa-widget__message-label">
+          {isOpening ? t("sidebar.allies.opening") : t("sidebar.allies.message")}
+        </span>
         {entry.hasUnreadMessages ? (
           <>
             <span className="iaa-widget__unread-dot" aria-hidden="true" />
-            <span className="iaa-widget__visually-hidden">Unread messages from {entry.displayName}</span>
+            <span className="iaa-widget__visually-hidden">
+              {t("sidebar.allies.unreadAria", { name: entry.displayName })}
+            </span>
           </>
         ) : null}
       </button>
@@ -103,6 +109,7 @@ export function InitiativeActiveAlliesWidget({
   initiativeId,
   reviewCollaborationRequestsHref,
 }: InitiativeActiveAlliesWidgetProps) {
+  const t = useTranslations("initiativeExperience");
   const [team, setTeam] = useState<Awaited<ReturnType<typeof getInitiativeActiveAlliesTeam>> | null>(
     null,
   );
@@ -140,15 +147,15 @@ export function InitiativeActiveAlliesWidget({
   return (
     <section className="iaa-widget" aria-labelledby="iaa-widget-title">
       <div className="iaa-widget__header">
-        <h2 id="iaa-widget-title">Active Allies</h2>
+        <h2 id="iaa-widget-title">{t("sidebar.allies.title")}</h2>
         {team.activeAlliesCount > 0 ? (
           <span className="iaa-widget__count">
-            {team.activeAlliesCount} active {team.activeAlliesCount === 1 ? "Ally" : "Allies"}
+            {t("sidebar.allies.count", { count: team.activeAlliesCount })}
           </span>
         ) : null}
       </div>
 
-      <ul className="iaa-widget__list" aria-label="Active Allies">
+      <ul className="iaa-widget__list" aria-label={t("sidebar.allies.listAria")}>
         <ActiveAllyRow entry={team.author} />
         {team.allies.map((entry, index) => (
           <ActiveAllyRow key={entry.participantId ?? `${entry.displayName}-${index}`} entry={entry} />
@@ -157,13 +164,11 @@ export function InitiativeActiveAlliesWidget({
 
       {team.allies.length === 0 ? (
         <div className="iaa-widget__empty">
-          <p>No active Allies yet.</p>
-          <p className="iaa-widget__empty-support">
-            Participants accepted for collaboration will appear here.
-          </p>
+          <p>{t("sidebar.allies.empty")}</p>
+          <p className="iaa-widget__empty-support">{t("sidebar.allies.emptySupport")}</p>
           {showReviewAction ? (
             <Link className="iaa-widget__empty-action" href={reviewCollaborationRequestsHref!}>
-              Review collaboration requests
+              {t("sidebar.allies.reviewRequests")}
             </Link>
           ) : null}
         </div>
