@@ -20,6 +20,10 @@ import {
   type LifecycleAiApplySuggestionsDetail,
 } from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
+import {
+  resolveOfficialResponseTypeDisplayLabel,
+  resolveOfficialResponseVerificationDisplayLabel,
+} from "../../public-initiative-experience/initiative-experience-i18n";
 import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -54,6 +58,10 @@ function linesToList(value: string): string[] {
 
 function listToLines(values: readonly string[]): string {
   return values.join("\n");
+}
+
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
 }
 
 function emptyNoResponseDetail(): InitiativeOfficialResponseNoResponseDetail {
@@ -165,6 +173,7 @@ export function InitiativeOfficialResponseEditor({
   onNavigate,
 }: InitiativeOfficialResponseEditorProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [title, setTitle] = useState(draft.title);
   const [summary, setSummary] = useState(draft.summary);
   const [outcomeKind, setOutcomeKind] = useState<InitiativeOfficialResponseOutcomeKind>(
@@ -245,9 +254,7 @@ export function InitiativeOfficialResponseEditor({
         }));
       }
       setCandidates(result.candidates);
-      setApplyNotice(
-        "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
-      );
+      setApplyNotice(t("author.officialResponse.messages.aiApplied"));
       setError(null);
     }
 
@@ -255,7 +262,7 @@ export function InitiativeOfficialResponseEditor({
     return () => {
       window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
     };
-  }, [initiativeId, title, summary, noResponseDetail.note, candidates]);
+  }, [initiativeId, title, summary, noResponseDetail.note, candidates, t]);
 
   function updateCandidate(candidateId: string, patch: Partial<CandidateFormState>) {
     setCandidates((current) =>
@@ -312,7 +319,11 @@ export function InitiativeOfficialResponseEditor({
       setCandidates(generated.candidates.map((candidate) => toFormState(candidate)));
       onDraftUpdated(generated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generate failed.");
+      setError(
+        t("author.officialResponse.messages.generateFailed", {
+          detail: detailFromError(err, t("author.officialResponse.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -324,7 +335,11 @@ export function InitiativeOfficialResponseEditor({
       );
       onDraftUpdated(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(
+        t("author.officialResponse.messages.saveFailed", {
+          detail: detailFromError(err, t("author.officialResponse.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -336,7 +351,11 @@ export function InitiativeOfficialResponseEditor({
       setPublished(true);
       onPublished(pkg);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Publish failed.");
+      setError(
+        t("author.officialResponse.messages.publishFailed", {
+          detail: detailFromError(err, t("author.officialResponse.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -345,11 +364,11 @@ export function InitiativeOfficialResponseEditor({
   return (
     <div className="ior-editor">
       <div className="ior-editor__field">
-        <label htmlFor="ior-title">Title</label>
+        <label htmlFor="ior-title">{t("author.officialResponse.fields.title")}</label>
         <input id="ior-title" value={title} onChange={(event) => setTitle(event.target.value)} />
       </div>
       <div className="ior-editor__field">
-        <label htmlFor="ior-summary">Summary</label>
+        <label htmlFor="ior-summary">{t("author.officialResponse.fields.summary")}</label>
         <textarea
           id="ior-summary"
           rows={3}
@@ -363,25 +382,29 @@ export function InitiativeOfficialResponseEditor({
           variant={isNoResponse ? "secondary" : "primary"}
           onClick={handleMarkResponsesReceived}
         >
-          Received responses
+          {t("author.officialResponse.outcomeResponsesReceived")}
         </WorkspaceButton>
         <WorkspaceButton variant={isNoResponse ? "primary" : "secondary"} onClick={handleMarkNoResponse}>
-          No official response received
+          {t("author.officialResponse.outcomeNoResponse")}
         </WorkspaceButton>
       </div>
 
       {isNoResponse ? (
-        <section className="ior-candidate" aria-label="No official response received">
+        <section
+          className="ior-candidate"
+          aria-label={t("author.officialResponse.sections.noOfficialResponse")}
+        >
           <div className="ior-candidate__header">
-            <h4 className="ior-candidate__title">No official response received</h4>
-            <span className="ior-candidate__status">legitimate outcome</span>
+            <h4 className="ior-candidate__title">
+              {t("author.officialResponse.sections.noOfficialResponse")}
+            </h4>
+            <span className="ior-candidate__status">{t("author.officialResponse.legitimateOutcome")}</span>
           </div>
-          <p className="ior-source-panel__empty">
-            Document that no institution replied. This completes Official Responses without inventing
-            response records, and unlocks Public Impact on Publish.
-          </p>
+          <p className="ior-source-panel__empty">{t("author.officialResponse.noResponseHelper")}</p>
           <div className="ior-editor__field">
-            <label htmlFor="ior-contacted-orgs">Organizations / recipients contacted (optional, one per line)</label>
+            <label htmlFor="ior-contacted-orgs">
+              {t("author.officialResponse.fields.contactedOrganizations")}
+            </label>
             <textarea
               id="ior-contacted-orgs"
               rows={2}
@@ -395,7 +418,9 @@ export function InitiativeOfficialResponseEditor({
             />
           </div>
           <div className="ior-editor__field">
-            <label htmlFor="ior-contacted-dates">Contact / follow-up dates (optional, one per line)</label>
+            <label htmlFor="ior-contacted-dates">
+              {t("author.officialResponse.fields.contactedDates")}
+            </label>
             <textarea
               id="ior-contacted-dates"
               rows={2}
@@ -409,7 +434,9 @@ export function InitiativeOfficialResponseEditor({
             />
           </div>
           <div className="ior-editor__field">
-            <label htmlFor="ior-no-response-note">Explanatory note (optional)</label>
+            <label htmlFor="ior-no-response-note">
+              {t("author.officialResponse.fields.explanatoryNote")}
+            </label>
             <textarea
               id="ior-no-response-note"
               rows={3}
@@ -425,12 +452,9 @@ export function InitiativeOfficialResponseEditor({
         </section>
       ) : candidates.length === 0 ? (
         <div>
-          <p className="ior-source-panel__empty">
-            No received responses yet. Add a response with evidence, or record No official response
-            received.
-          </p>
+          <p className="ior-source-panel__empty">{t("author.officialResponse.noCandidatesYet")}</p>
           <WorkspaceButton variant="secondary" onClick={handleAddResponse}>
-            Add received response
+            {t("author.officialResponse.addResponse")}
           </WorkspaceButton>
         </div>
       ) : (
@@ -438,12 +462,19 @@ export function InitiativeOfficialResponseEditor({
           <div className="ior-candidate" key={candidate.candidateId}>
             <div className="ior-candidate__header">
               <h4 className="ior-candidate__title">
-                Response {index + 1}: {candidate.subject || "Untitled"}
+                {t("author.officialResponse.responseHeading", {
+                  number: index + 1,
+                  subject: candidate.subject || t("author.officialResponse.untitledResponse"),
+                })}
               </h4>
-              <span className="ior-candidate__status">{candidate.verificationStatus}</span>
+              <span className="ior-candidate__status">
+                {resolveOfficialResponseVerificationDisplayLabel(candidate.verificationStatus, t)}
+              </span>
             </div>
             <div className="ior-editor__field">
-              <label htmlFor={`ior-institution-${candidate.candidateId}`}>Institution</label>
+              <label htmlFor={`ior-institution-${candidate.candidateId}`}>
+                {t("author.officialResponse.fields.institution")}
+              </label>
               <input
                 id={`ior-institution-${candidate.candidateId}`}
                 value={candidate.institution}
@@ -453,7 +484,9 @@ export function InitiativeOfficialResponseEditor({
               />
             </div>
             <div className="ior-editor__field">
-              <label htmlFor={`ior-organization-${candidate.candidateId}`}>Organization</label>
+              <label htmlFor={`ior-organization-${candidate.candidateId}`}>
+                {t("author.officialResponse.fields.organization")}
+              </label>
               <input
                 id={`ior-organization-${candidate.candidateId}`}
                 value={candidate.organization}
@@ -463,7 +496,9 @@ export function InitiativeOfficialResponseEditor({
               />
             </div>
             <div className="ior-editor__field">
-              <label htmlFor={`ior-response-type-${candidate.candidateId}`}>Response Type</label>
+              <label htmlFor={`ior-response-type-${candidate.candidateId}`}>
+                {t("author.officialResponse.fields.responseType")}
+              </label>
               <select
                 id={`ior-response-type-${candidate.candidateId}`}
                 value={candidate.responseType}
@@ -475,13 +510,15 @@ export function InitiativeOfficialResponseEditor({
               >
                 {RESPONSE_TYPE_OPTIONS.map((option) => (
                   <option key={option} value={option}>
-                    {option}
+                    {resolveOfficialResponseTypeDisplayLabel(option, t)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="ior-editor__field">
-              <label htmlFor={`ior-subject-${candidate.candidateId}`}>Subject</label>
+              <label htmlFor={`ior-subject-${candidate.candidateId}`}>
+                {t("author.officialResponse.fields.subject")}
+              </label>
               <input
                 id={`ior-subject-${candidate.candidateId}`}
                 value={candidate.subject}
@@ -489,7 +526,9 @@ export function InitiativeOfficialResponseEditor({
               />
             </div>
             <div className="ior-editor__field">
-              <label htmlFor={`ior-received-${candidate.candidateId}`}>Received Date</label>
+              <label htmlFor={`ior-received-${candidate.candidateId}`}>
+                {t("author.officialResponse.fields.receivedDate")}
+              </label>
               <input
                 id={`ior-received-${candidate.candidateId}`}
                 type="date"
@@ -500,7 +539,9 @@ export function InitiativeOfficialResponseEditor({
               />
             </div>
             <div className="ior-editor__field">
-              <label htmlFor={`ior-summary-${candidate.candidateId}`}>Author description / summary</label>
+              <label htmlFor={`ior-summary-${candidate.candidateId}`}>
+                {t("author.officialResponse.fields.authorSummary")}
+              </label>
               <textarea
                 id={`ior-summary-${candidate.candidateId}`}
                 rows={2}
@@ -509,7 +550,9 @@ export function InitiativeOfficialResponseEditor({
               />
             </div>
             <div className="ior-editor__field">
-              <label htmlFor={`ior-reference-number-${candidate.candidateId}`}>Reference Number</label>
+              <label htmlFor={`ior-reference-number-${candidate.candidateId}`}>
+                {t("author.officialResponse.fields.referenceNumber")}
+              </label>
               <input
                 id={`ior-reference-number-${candidate.candidateId}`}
                 value={candidate.referenceNumber}
@@ -520,7 +563,7 @@ export function InitiativeOfficialResponseEditor({
             </div>
             <div className="ior-editor__field">
               <label htmlFor={`ior-document-ids-${candidate.candidateId}`}>
-                Document IDs (one per line — existing Secure Attachments)
+                {t("author.officialResponse.fields.documentIds")}
               </label>
               <textarea
                 id={`ior-document-ids-${candidate.candidateId}`}
@@ -532,7 +575,9 @@ export function InitiativeOfficialResponseEditor({
               />
             </div>
             <div className="ior-editor__field">
-              <label htmlFor={`ior-links-${candidate.candidateId}`}>External URLs (one per line)</label>
+              <label htmlFor={`ior-links-${candidate.candidateId}`}>
+                {t("author.officialResponse.fields.externalUrls")}
+              </label>
               <textarea
                 id={`ior-links-${candidate.candidateId}`}
                 rows={2}
@@ -541,7 +586,9 @@ export function InitiativeOfficialResponseEditor({
               />
             </div>
             <div className="ior-editor__field">
-              <label htmlFor={`ior-verification-${candidate.candidateId}`}>Verification / evidence status</label>
+              <label htmlFor={`ior-verification-${candidate.candidateId}`}>
+                {t("author.officialResponse.fields.verificationStatus")}
+              </label>
               <select
                 id={`ior-verification-${candidate.candidateId}`}
                 value={candidate.verificationStatus}
@@ -553,13 +600,15 @@ export function InitiativeOfficialResponseEditor({
               >
                 {VERIFICATION_STATUS_OPTIONS.map((option) => (
                   <option key={option} value={option}>
-                    {option}
+                    {resolveOfficialResponseVerificationDisplayLabel(option, t)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="ior-editor__field">
-              <label htmlFor={`ior-notes-${candidate.candidateId}`}>Notes</label>
+              <label htmlFor={`ior-notes-${candidate.candidateId}`}>
+                {t("author.officialResponse.fields.notes")}
+              </label>
               <textarea
                 id={`ior-notes-${candidate.candidateId}`}
                 rows={2}
@@ -569,7 +618,7 @@ export function InitiativeOfficialResponseEditor({
             </div>
             <div className="ior-editor__actions">
               <WorkspaceButton variant="secondary" onClick={() => handleRemoveResponse(candidate.candidateId)}>
-                Remove response
+                {t("author.officialResponse.removeResponse")}
               </WorkspaceButton>
             </div>
           </div>
@@ -579,7 +628,7 @@ export function InitiativeOfficialResponseEditor({
       {!isNoResponse ? (
         <div className="ior-editor__actions" style={{ marginBottom: "1rem" }}>
           <WorkspaceButton variant="secondary" onClick={handleAddResponse}>
-            Add received response
+            {t("author.officialResponse.addResponse")}
           </WorkspaceButton>
         </div>
       ) : null}
@@ -589,21 +638,29 @@ export function InitiativeOfficialResponseEditor({
 
       <div className="ior-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate / Open Draft", actions.phaseLabels)}
+          {resolveSaveButtonLabel(
+            generatePhase.phase,
+            t("author.officialResponse.generateOpenDraft"),
+            actions.phaseLabels,
+          )}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
           {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Public Impact", actions.phaseLabels)}
+          {resolveSaveButtonLabel(
+            publishPhase.phase,
+            t("author.officialResponse.publishAndContinue"),
+            actions.phaseLabels,
+          )}
         </WorkspaceButton>
         {published && onNavigate ? (
           <WorkspaceButton
             variant="secondary"
             onClick={() => onNavigate("public_impact", "public-impact")}
           >
-            Open Public Impact
+            {t("author.officialResponse.openPublicImpact")}
           </WorkspaceButton>
         ) : null}
       </div>

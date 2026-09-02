@@ -1,9 +1,13 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type {
   InitiativePublicImpactParticipationStatistics,
   InitiativePublicImpactReportSection,
 } from "@hu/types";
+
+import { resolvePublicImpactSectionDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 
 /**
  * Initiative Lifecycle — Part L, Section 12. Shared Public Impact Report
@@ -21,28 +25,38 @@ export function InitiativePublicImpactReportRenderer({
   readonly participationStatistics: InitiativePublicImpactParticipationStatistics;
   readonly metaLabel?: string;
 }) {
+  const t = useTranslations("initiativeExperience");
+
   return (
-    <article className="ipi-public" aria-label="Public Impact Report">
+    <article className="ipi-public" aria-label={t("author.publicImpact.report.aria")}>
       {metaLabel ? <p className="ipi-public__meta">{metaLabel}</p> : null}
       <section className="ipi-public__section">
-        <h3>{title || "Untitled Public Impact Report"}</h3>
+        <h3>{title || t("author.publicImpact.report.untitled")}</h3>
         <p className="ipi-public__meta">
-          Signatures {participationStatistics.signatureCount} · Support{" "}
-          {participationStatistics.supportCount} · Reactions {participationStatistics.reactionCount} ·
-          Allies {participationStatistics.activeAllyCount}
+          {t("author.publicImpact.report.participationStats", {
+            signatures: participationStatistics.signatureCount,
+            support: participationStatistics.supportCount,
+            reactions: participationStatistics.reactionCount,
+            allies: participationStatistics.activeAllyCount,
+          })}
         </p>
       </section>
       {sections.map((section) => (
         <section className="ipi-public__section" key={section.sectionId}>
-          <h3>{section.title || section.sectionId}</h3>
+          <h3>
+            {section.title ||
+              resolvePublicImpactSectionDisplayLabel(section.sectionId, t)}
+          </h3>
           {section.body.trim() ? (
             <p style={{ whiteSpace: "pre-wrap" }}>{section.body}</p>
           ) : (
-            <p className="ipi-public__meta">No content yet.</p>
+            <p className="ipi-public__meta">{t("author.publicImpact.report.emptySection")}</p>
           )}
           {section.evidenceReferences.length > 0 ? (
             <p className="ipi-public__meta">
-              Evidence: {section.evidenceReferences.join(" · ")}
+              {t("author.publicImpact.report.evidence", {
+                refs: section.evidenceReferences.join(" · "),
+              })}
             </p>
           ) : null}
         </section>

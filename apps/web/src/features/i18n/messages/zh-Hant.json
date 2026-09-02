@@ -1726,6 +1726,307 @@
           "evidence": "證據參考（每行一項）",
           "saveProgress": "儲存進度"
         }
+      },
+      "officialResponse": {
+        "loading": "正在載入官方回應工作區…",
+        "loadFailed": "無法載入官方回應工作區。",
+        "alreadyPublished": "此倡議的官方回應已發布。請使用公開預覽檢視，或繼續前往公共影響。",
+        "noDraftExplanation": "根據追蹤／倡議脈絡產生可編輯的官方回應草稿，或開啟編輯器記錄已收到的回應——或明確記錄未收到官方回應。助理僅供諮詢，絕不會捏造官方聲明或發布。",
+        "generateOpenDraft": "產生／開啟草稿",
+        "publishAndContinue": "發布並繼續前往公共影響",
+        "openPublicImpact": "開啟公共影響",
+        "outcomeResponsesReceived": "已收到回應",
+        "outcomeNoResponse": "未收到官方回應",
+        "noCandidatesYet": "尚無已收到的回應。請新增附證據的回應，或記錄未收到官方回應。",
+        "addResponse": "新增已收到回應",
+        "removeResponse": "移除回應",
+        "responseHeading": "回應 {number}：{subject}",
+        "untitledResponse": "未命名",
+        "legitimateOutcome": "合法結果",
+        "noResponseHelper": "記錄未收到官方回應。這是合法結果，不會捏造回應紀錄。",
+        "fields": {
+          "title": "標題",
+          "summary": "摘要",
+          "contactedOrganizations": "已聯絡組織／收件人（選填，每行一項）",
+          "contactedDates": "聯絡／後續日期（選填，每行一項）",
+          "explanatoryNote": "說明備註（選填）",
+          "institution": "機構",
+          "organization": "組織",
+          "responseType": "回應類型",
+          "subject": "主旨",
+          "receivedDate": "收到日期",
+          "authorSummary": "作者說明／摘要",
+          "referenceNumber": "參考編號",
+          "documentIds": "文件 ID（每行一項 — 既有安全附件）",
+          "externalUrls": "外部網址（每行一項）",
+          "verificationStatus": "驗證／證據狀態",
+          "notes": "備註"
+        },
+        "sections": {
+          "noOfficialResponse": "未收到官方回應",
+          "receivedResponses": "已收到的官方回應",
+          "organizationsContacted": "已聯絡組織／收件人",
+          "dates": "日期",
+          "relatedActions": "相關行動",
+          "documents": "文件",
+          "links": "連結"
+        },
+        "messages": {
+          "unknownError": "未知錯誤",
+          "generateFailed": "產生失敗：{detail}",
+          "saveFailed": "儲存失敗：{detail}",
+          "publishFailed": "發布失敗：{detail}",
+          "aiApplied": "AI 建議已在本機套用。請視需要編輯，然後儲存草稿。尚未發布任何內容。"
+        },
+        "preview": {
+          "loading": "正在載入官方回應草稿預覽…",
+          "loadFailed": "無法載入草稿預覽。",
+          "aria": "官方回應草稿預覽",
+          "meta": "預覽 — 未發布草稿（不會推進生命週期）",
+          "untitled": "未命名官方回應",
+          "candidatesCount": "{count} 個候選人",
+          "responseMeta": "{org} · 收到 {date} · {verification}",
+          "institutionFallback": "尚未命名機構",
+          "notSet": "尚未設定"
+        },
+        "public": {
+          "loading": "正在載入已發布的官方回應…",
+          "loadFailed": "無法載入已發布的官方回應。",
+          "empty": "尚無已發布的官方回應。",
+          "aria": "已發布的官方回應",
+          "previewMeta": "已發布官方回應的作者預覽",
+          "publishedOutcome": "已發布結果",
+          "publishedCount": "已發布 {count} 則回應",
+          "untitled": "官方回應",
+          "responseMeta": "{org} · 收到 {date}",
+          "institutionFallback": "未命名機構",
+          "docsLinks": "{documents} 份文件 · {links} 個連結",
+          "contacted": "已聯絡：{list}",
+          "dates": "日期：{list}"
+        },
+        "sourceSnapshot": {
+          "empty": "在實施追蹤套件發布之前，官方回應來源為空。",
+          "aria": "官方回應來源",
+          "publishedTracking": "已發布實施追蹤套件",
+          "completedCommitments": "已完成承諾",
+          "activeAllies": "活躍盟友",
+          "consistencyChecks": "一致性檢查",
+          "noTracking": "尚無已發布實施追蹤套件",
+          "trackingSummary": "{title} — {count} 筆追蹤紀錄",
+          "completedCount": "{count} 已完成",
+          "alliesActive": "{count} 位活躍",
+          "consistencySummary": "{total} 項中有 {warnings} 項警告"
+        },
+        "responseTypes": {
+          "official_letter": "正式函件",
+          "email": "電子郵件",
+          "public_statement": "公開聲明",
+          "meeting_minutes": "會議紀錄",
+          "policy_update": "政策更新",
+          "decision_notice": "決策通知",
+          "media_response": "媒體回應",
+          "other": "其他"
+        },
+        "verificationStatuses": {
+          "pending": "待處理",
+          "verified": "已驗證",
+          "unable_to_verify": "無法驗證"
+        }
+      },
+      "publicImpact": {
+        "loading": "正在載入公共影響工作區…",
+        "loadFailed": "無法載入公共影響工作區。",
+        "alreadyPublished": "此倡議的公共影響已發布。請使用公開預覽檢視報告，或繼續前往公民典藏。",
+        "noDraftExplanation": "根據倡議、集體決策、追蹤、官方回應（包含未收到官方回應）與相關證據產生公共影響報告。助理僅供諮詢——無法捏造結果、發布或推進生命週期。零可衡量影響是有效且可發布的結論。",
+        "generateImpactDraft": "產生公共影響草稿",
+        "publishAndContinue": "發布並繼續前往公民典藏",
+        "openCivicArchive": "開啟公民典藏",
+        "noSectionsYet": "尚無報告章節。請根據可用的倡議生命週期來源產生草稿。",
+        "fields": {
+          "title": "標題",
+          "body": "內文",
+          "evidenceReferences": "證據參考（每行一項）"
+        },
+        "messages": {
+          "unknownError": "未知錯誤",
+          "generateFailed": "產生失敗：{detail}",
+          "saveFailed": "儲存失敗：{detail}",
+          "publishFailed": "發布失敗：{detail}",
+          "aiApplied": "AI 建議已在本機套用。請視需要編輯，然後儲存草稿。尚未發布任何內容。"
+        },
+        "preview": {
+          "loading": "正在載入公共影響草稿預覽…",
+          "loadFailed": "無法載入草稿預覽。",
+          "meta": "預覽 — 未發布草稿（與公開檢視相同的呈現）"
+        },
+        "public": {
+          "loading": "正在載入已發布的公共影響報告…",
+          "loadFailed": "無法載入已發布的公共影響報告。",
+          "empty": "尚無已發布的公共影響報告。",
+          "previewMeta": "已發布公共影響報告的作者預覽"
+        },
+        "report": {
+          "aria": "公共影響報告",
+          "untitled": "未命名公共影響報告",
+          "emptySection": "尚無內容。",
+          "evidence": "證據：{refs}",
+          "participationStats": "簽名 {signatures} · 支持 {support} · 反應 {reactions} · 盟友 {allies}"
+        },
+        "sourceSnapshot": {
+          "empty": "在官方回應套件發布之前，公共影響來源為空。",
+          "aria": "公共影響來源",
+          "publishedOfficialResponses": "已發布官方回應套件",
+          "implementationTracking": "實施追蹤",
+          "completedCommitments": "已完成承諾",
+          "communityParticipation": "社群參與",
+          "evidenceReferences": "證據參考",
+          "consistencyChecks": "一致性檢查",
+          "noOfficialResponses": "尚無已發布官方回應套件",
+          "noTracking": "尚無已發布實施追蹤套件",
+          "noResponseOutcome": "{title} — 未收到官方回應",
+          "responsesOutcome": "{title} — {count} 則回應",
+          "trackingCount": "{count} 筆追蹤紀錄",
+          "commitmentsCount": "{count} 已完成",
+          "participationSummary": "簽名 {signatures} · 支持 {support} · 反應 {reactions} · 盟友 {allies}",
+          "evidenceCount": "{count} 項證據參考",
+          "consistencySummary": "{total} 項中有 {warnings} 項警告"
+        },
+        "sections": {
+          "executive_summary": "執行摘要",
+          "objectives": "目標",
+          "implemented_actions": "已實施行動",
+          "completed_commitments": "已完成承諾",
+          "implementation_progress": "實施進度",
+          "official_responses": "官方回應",
+          "community_participation": "社群參與",
+          "outstanding_issues": "未決問題",
+          "lessons_learned": "經驗教訓",
+          "evidence": "證據",
+          "impact_references": "影響參考"
+        }
+      },
+      "archive": {
+        "loading": "正在載入公民典藏工作區…",
+        "loadFailed": "無法載入公民典藏工作區。",
+        "latestPublished": "最新已發布典藏版本：v{version}。在「發布並完成倡議生命週期」後生命週期即完成。僅在準備下一個不可變典藏版本時再次產生——先前版本永不變更。",
+        "noDraftExplanation": "根據此倡議既有的權威生命週期歷史產生公民典藏。缺少的選用上游階段會成為不完整備註——而非阻礙。典藏助理僅供諮詢——不會自動發布，也絕不會捏造或刪除歷史紀錄。",
+        "generateArchiveDraft": "產生公民典藏草稿",
+        "publishAndComplete": "發布並完成倡議生命週期",
+        "sectionsReadOnly": "組裝的典藏章節為唯讀歷史紀錄。請僅編輯下方最終作者欄位。",
+        "noSectionsYet": "尚無典藏章節。請根據可用生命週期歷史產生草稿。",
+        "publishedNotice": "典藏已發布。請使用公開預覽檢視不可變紀錄。",
+        "fields": {
+          "finalArchiveTitle": "最終典藏標題",
+          "finalSummary": "最終摘要",
+          "lessonsLearned": "經驗教訓",
+          "knowledgeContribution": "知識貢獻"
+        },
+        "messages": {
+          "unknownError": "未知錯誤",
+          "generateFailed": "產生失敗：{detail}",
+          "saveFailed": "儲存失敗：{detail}",
+          "publishFailed": "發布失敗：{detail}",
+          "aiApplied": "AI 建議已在本機套用。請視需要編輯，然後儲存草稿。尚未發布任何內容。"
+        },
+        "preview": {
+          "loading": "正在載入公民典藏草稿預覽…",
+          "loadFailed": "無法載入草稿預覽。",
+          "empty": "沒有可預覽的公民典藏草稿。",
+          "meta": "預覽 — 未發布草稿（與公開檢視相同的呈現）"
+        },
+        "public": {
+          "loading": "正在載入已發布的公民典藏…",
+          "loadFailed": "無法載入已發布的公民典藏。",
+          "empty": "尚無已發布的公民典藏。",
+          "previewMeta": "已發布公民典藏的作者預覽"
+        },
+        "document": {
+          "aria": "公民典藏",
+          "untitled": "未命名公民典藏",
+          "version": "版本 {version}",
+          "draftPreview": "草稿預覽",
+          "publishedAt": " · 發布於 {date}",
+          "lifecycleTimeline": "生命週期時間軸",
+          "completeness": "完整度",
+          "emptySection": "未記錄內容。",
+          "sources": "來源：{list}",
+          "participationStats": "簽名 {signatures} · 支持 {support} · 反應 {reactions} · 盟友 {allies}"
+        },
+        "completeness": {
+          "summary": "摘要",
+          "stagesPublished": "已發布階段",
+          "missingOptional": "缺少的選用階段",
+          "outstandingWork": "未完成工作",
+          "publicImpactOptional": "公共影響（選用）",
+          "noneYet": "尚無",
+          "none": "無",
+          "outstandingCounts": "{unresolvedTracking} 項未解追蹤 · {unfinishedCommitments} 項未完成承諾 · {missingEvidence} 項缺少證據",
+          "available": "可用",
+          "notAvailable": "不可用",
+          "traceabilityComplete": "可追溯性完整",
+          "traceabilityIncomplete": "可追溯性不完整"
+        },
+        "share": {
+          "shareArchive": "分享典藏",
+          "share": "分享",
+          "downloadLifecycle": "下載生命週期",
+          "downloadDraftPreview": "下載草稿預覽",
+          "shareAfterPublish": "發布後才可分享。",
+          "shared": "已分享。",
+          "linkCopied": "已複製典藏連結。",
+          "shareFailed": "無法分享或複製典藏連結。",
+          "shareTitle": "公民典藏"
+        },
+        "sourceSnapshot": {
+          "empty": "在倡議可用之前，公民典藏來源為空。",
+          "aria": "公民典藏來源",
+          "upstreamPackages": "上游套件",
+          "communityParticipation": "社群參與",
+          "consistencyChecks": "一致性檢查",
+          "noUpstream": "尚無已發布上游套件 — 缺少的選用來會被如實記錄",
+          "analysis": "分析",
+          "proposals": "{count} 項提案",
+          "revision": "修訂",
+          "petition": "請願",
+          "decisionSession": "決策會議",
+          "collectiveDecision": "集體決策",
+          "commitments": "承諾",
+          "tracking": "追蹤",
+          "officialResponses": "官方回應",
+          "publicImpactOptional": "公共影響（選用）",
+          "participationSummary": "簽名 {signatures} · 支持 {support} · 反應 {reactions} · 盟友 {allies}",
+          "consistencySummary": "{total} 項中有 {warnings} 項警告"
+        },
+        "sections": {
+          "archive_overview": "典藏總覽",
+          "original_initiative": "原始倡議",
+          "discussion_and_participation": "討論與參與",
+          "collaborative_analysis": "協作分析",
+          "improvement_proposals": "改進提案",
+          "revision_and_change_history": "修訂與變更歷史",
+          "petition_and_public_participation": "請願與公眾參與",
+          "decision_session": "決策會議",
+          "collective_decision": "集體決策",
+          "approved_actions": "核准行動",
+          "implementation_commitments": "實施承諾",
+          "implementation_tracking": "實施追蹤",
+          "official_responses": "官方回應",
+          "public_impact": "公共影響",
+          "final_results": "最終結果",
+          "outstanding_work": "未完成工作",
+          "lessons_learned": "經驗教訓",
+          "knowledge_contribution": "知識貢獻",
+          "lifecycle_timeline": "生命週期時間軸",
+          "sources_and_traceability": "來源與可追溯性"
+        },
+        "timelineStatuses": {
+          "published": "已發布",
+          "finalized": "已定稿",
+          "completed": "已完成",
+          "partial": "部分",
+          "missing": "缺失",
+          "archived": "已封存"
+        }
       }
     }
   }

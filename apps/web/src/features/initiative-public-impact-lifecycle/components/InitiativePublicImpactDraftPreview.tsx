@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativePublicImpactLifecycleDraft } from "@hu/types";
 
@@ -14,6 +15,7 @@ export function InitiativePublicImpactDraftPreview({
 }: {
   readonly initiativeId: string;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [draft, setDraft] = useState<InitiativePublicImpactLifecycleDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +30,7 @@ export function InitiativePublicImpactDraftPreview({
         }
       } catch {
         if (!cancelled) {
-          setError("Draft preview could not be loaded.");
+          setError(t("author.publicImpact.preview.loadFailed"));
         }
       }
     })();
@@ -36,14 +38,14 @@ export function InitiativePublicImpactDraftPreview({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (error) {
     return <p className="ipi-source-panel__empty">{error}</p>;
   }
 
   if (!draft) {
-    return <p className="ipi-source-panel__empty">Loading Public Impact draft preview…</p>;
+    return <p className="ipi-source-panel__empty">{t("author.publicImpact.preview.loading")}</p>;
   }
 
   return (
@@ -51,7 +53,7 @@ export function InitiativePublicImpactDraftPreview({
       title={draft.title}
       sections={draft.sections}
       participationStatistics={draft.participationStatistics}
-      metaLabel="Preview — unpublished draft (same renderer as Public)"
+      metaLabel={t("author.publicImpact.preview.meta")}
     />
   );
 }

@@ -322,6 +322,134 @@ export function resolveCommitmentViewStateDisplayLabel(
   return resolveLabel(messagesOrT, `author.commitment.viewStates.${state}`, state);
 }
 
+const OFFICIAL_RESPONSE_TYPE_CODES = new Set<string>([
+  "official_letter",
+  "email",
+  "public_statement",
+  "meeting_minutes",
+  "policy_update",
+  "decision_notice",
+  "media_response",
+  "other",
+]);
+
+/** Display-only OfficialResponseType labels. Select values stay canonical. */
+export function resolveOfficialResponseTypeDisplayLabel(
+  type: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!OFFICIAL_RESPONSE_TYPE_CODES.has(type)) {
+    return type;
+  }
+  return resolveLabel(messagesOrT, `author.officialResponse.responseTypes.${type}`, type);
+}
+
+const OFFICIAL_RESPONSE_VERIFICATION_CODES = new Set<string>([
+  "pending",
+  "verified",
+  "unable_to_verify",
+]);
+
+/** Display-only OfficialResponseVerificationState labels. */
+export function resolveOfficialResponseVerificationDisplayLabel(
+  status: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!OFFICIAL_RESPONSE_VERIFICATION_CODES.has(status)) {
+    return status;
+  }
+  return resolveLabel(
+    messagesOrT,
+    `author.officialResponse.verificationStatuses.${status}`,
+    status,
+  );
+}
+
+const PUBLIC_IMPACT_SECTION_CODES = new Set<string>([
+  "executive_summary",
+  "objectives",
+  "implemented_actions",
+  "completed_commitments",
+  "implementation_progress",
+  "official_responses",
+  "community_participation",
+  "outstanding_issues",
+  "lessons_learned",
+  "evidence",
+  "impact_references",
+]);
+
+/**
+ * Display-only Public Impact section-id labels (chips / title fallback).
+ * Author-entered section.title remains canonical civic content.
+ */
+export function resolvePublicImpactSectionDisplayLabel(
+  sectionId: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!PUBLIC_IMPACT_SECTION_CODES.has(sectionId)) {
+    return sectionId;
+  }
+  return resolveLabel(messagesOrT, `author.publicImpact.sections.${sectionId}`, sectionId);
+}
+
+const CIVIC_ARCHIVE_SECTION_CODES = new Set<string>([
+  "archive_overview",
+  "original_initiative",
+  "discussion_and_participation",
+  "collaborative_analysis",
+  "improvement_proposals",
+  "revision_and_change_history",
+  "petition_and_public_participation",
+  "decision_session",
+  "collective_decision",
+  "approved_actions",
+  "implementation_commitments",
+  "implementation_tracking",
+  "official_responses",
+  "public_impact",
+  "final_results",
+  "outstanding_work",
+  "lessons_learned",
+  "knowledge_contribution",
+  "lifecycle_timeline",
+  "sources_and_traceability",
+]);
+
+/**
+ * Display-only Civic Archive section-id labels (chips / title fallback).
+ * Historical section.title/body remain canonical archive content.
+ */
+export function resolveCivicArchiveSectionDisplayLabel(
+  sectionId: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!CIVIC_ARCHIVE_SECTION_CODES.has(sectionId)) {
+    return sectionId;
+  }
+  return resolveLabel(messagesOrT, `author.archive.sections.${sectionId}`, sectionId);
+}
+
+const CIVIC_ARCHIVE_TIMELINE_STATUS_CODES = new Set<string>([
+  "published",
+  "finalized",
+  "completed",
+  "partial",
+  "missing",
+  "archived",
+]);
+
+/** Display-only InitiativeCivicArchiveTimelineStatus labels. */
+export function resolveCivicArchiveTimelineStatusDisplayLabel(
+  status: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!CIVIC_ARCHIVE_TIMELINE_STATUS_CODES.has(status)) {
+    return status;
+  }
+  return resolveLabel(messagesOrT, `author.archive.timelineStatuses.${status}`, status);
+}
+
 /** Contract: every public stageId has a catalog key path stages.{id}. */
 export function listPublicLifecycleStageIdsForI18n(): readonly string[] {
   return PUBLIC_INITIATIVE_EXPERIENCE_STAGES.map((stage) => stage.stageId);

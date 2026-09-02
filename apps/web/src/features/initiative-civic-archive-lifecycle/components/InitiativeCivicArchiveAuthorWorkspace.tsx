@@ -32,6 +32,7 @@ export function InitiativeCivicArchiveAuthorWorkspace({
   lifecycleProfile,
 }: InitiativeCivicArchiveAuthorWorkspaceProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
   const [context, setContext] = useState<InitiativeCivicArchiveLifecycleDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,7 +78,7 @@ export function InitiativeCivicArchiveAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="The Civic Archive workspace could not be loaded." />
+        <WorkspaceErrorState message={t("author.archive.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
           {actions.retry}
         </WorkspaceButton>
@@ -86,7 +87,7 @@ export function InitiativeCivicArchiveAuthorWorkspace({
   }
 
   if (loading || !context) {
-    return <p className="ica-source-panel__empty">Loading Civic Archive workspace…</p>;
+    return <p className="ica-source-panel__empty">{t("author.archive.loading")}</p>;
   }
 
   const hasContent = Boolean(
@@ -99,9 +100,7 @@ export function InitiativeCivicArchiveAuthorWorkspace({
     <div className="lsw-main">
       {context.latestPublishedVersion != null ? (
         <p className="ica-source-panel__empty">
-          Latest published Archive version: v{context.latestPublishedVersion}. Lifecycle is complete
-          after Publish & Complete Initiative Lifecycle. Generate again only to prepare the next
-          immutable Archive version — prior versions are never mutated.
+          {t("author.archive.latestPublished", { version: context.latestPublishedVersion })}
         </p>
       ) : null}
 
@@ -120,14 +119,13 @@ export function InitiativeCivicArchiveAuthorWorkspace({
 
       {!hasContent || !context.draft ? (
         <div className="ica-editor">
-          <p className="ica-source-panel__empty">
-            Generate a Civic Archive from whatever canonical Lifecycle history exists for this
-            Initiative. Missing optional upstream stages become incompleteness notes — not blockers.
-            The Archive Assistant remains advisory — nothing publishes automatically, and historical
-            records are never invented or deleted.
-          </p>
+          <p className="ica-source-panel__empty">{t("author.archive.noDraftExplanation")}</p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate Civic Archive Draft", actions.phaseLabels)}
+            {resolveSaveButtonLabel(
+              generatePhase.phase,
+              t("author.archive.generateArchiveDraft"),
+              actions.phaseLabels,
+            )}
           </WorkspaceButton>
         </div>
       ) : (

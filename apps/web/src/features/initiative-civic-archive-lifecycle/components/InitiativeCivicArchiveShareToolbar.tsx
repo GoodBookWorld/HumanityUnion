@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -23,13 +24,14 @@ export function InitiativeCivicArchiveShareToolbar({
   initiativeId,
   mode,
 }: InitiativeCivicArchiveShareToolbarProps) {
+  const t = useTranslations("initiativeExperience");
   const [status, setStatus] = useState<string | null>(null);
   const sharePath = getCivicArchivePublicSharePath(initiativeId);
   const published = mode === "published";
 
   async function handleShare() {
     if (!published) {
-      setStatus("Share is available after publication.");
+      setStatus(t("author.archive.share.shareAfterPublish"));
       return;
     }
 
@@ -39,17 +41,17 @@ export function InitiativeCivicArchiveShareToolbar({
     try {
       if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         await navigator.share({
-          title: "Civic Archive",
+          title: t("author.archive.share.shareTitle"),
           url: absoluteUrl,
         });
-        setStatus("Shared.");
+        setStatus(t("author.archive.share.shared"));
         return;
       }
 
       await navigator.clipboard.writeText(absoluteUrl);
-      setStatus("Archive link copied.");
+      setStatus(t("author.archive.share.linkCopied"));
     } catch {
-      setStatus("Could not share or copy the Archive link.");
+      setStatus(t("author.archive.share.shareFailed"));
     }
   }
 
@@ -63,12 +65,17 @@ export function InitiativeCivicArchiveShareToolbar({
   }
 
   return (
-    <div className="ica-toolbar" aria-label="Civic Archive share and download">
+    <div
+      className="ica-toolbar"
+      aria-label={`${t("author.archive.share.share")} / ${t("author.archive.share.downloadLifecycle")}`}
+    >
       <WorkspaceButton variant="secondary" onClick={() => void handleShare()} disabled={!published}>
-        {published ? "Share Archive" : "Share (after publication)"}
+        {published ? t("author.archive.share.shareArchive") : t("author.archive.share.share")}
       </WorkspaceButton>
       <WorkspaceButton variant="secondary" onClick={handleDownload}>
-        {published ? "Download Lifecycle" : "Download Draft Preview"}
+        {published
+          ? t("author.archive.share.downloadLifecycle")
+          : t("author.archive.share.downloadDraftPreview")}
       </WorkspaceButton>
       {status ? <p className="ica-source-panel__empty">{status}</p> : null}
     </div>

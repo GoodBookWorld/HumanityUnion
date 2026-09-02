@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeOfficialResponseLifecycleDraft } from "@hu/types";
 
+import { resolveOfficialResponseVerificationDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { getInitiativeOfficialResponseWorkspace } from "../api";
 
 import "./initiative-official-response-stage-workspace.css";
@@ -30,6 +32,7 @@ export function InitiativeOfficialResponseDraftPreview({
 }: {
   readonly initiativeId: string;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [draft, setDraft] = useState<InitiativeOfficialResponseLifecycleDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +47,7 @@ export function InitiativeOfficialResponseDraftPreview({
         }
       } catch {
         if (!cancelled) {
-          setError("Draft preview could not be loaded.");
+          setError(t("author.officialResponse.preview.loadFailed"));
         }
       }
     })();
@@ -52,57 +55,79 @@ export function InitiativeOfficialResponseDraftPreview({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (error) {
     return <p className="ior-source-panel__empty">{error}</p>;
   }
 
   if (!draft) {
-    return <p className="ior-source-panel__empty">Loading Official Responses draft preview…</p>;
+    return <p className="ior-source-panel__empty">{t("author.officialResponse.preview.loading")}</p>;
   }
 
   const isNoResponse = draft.outcomeKind === "no_official_response_received";
 
   return (
-    <article className="ior-public" aria-label="Official Responses draft preview">
-      <p className="ior-public__meta">Preview — unpublished draft (does not advance Lifecycle)</p>
+    <article className="ior-public" aria-label={t("author.officialResponse.preview.aria")}>
+      <p className="ior-public__meta">{t("author.officialResponse.preview.meta")}</p>
       <section className="ior-public__section">
-        <h3>{draft.title || "Untitled Official Responses"}</h3>
+        <h3>{draft.title || t("author.officialResponse.preview.untitled")}</h3>
         <p>{draft.summary}</p>
       </section>
       {isNoResponse ? (
         <section className="ior-public__section">
-          <h3>No official response received</h3>
-          <p>
-            {draft.noResponseDetail?.note?.trim() ||
-              "The Author is documenting that no official response was received."}
-          </p>
+          <h3>{t("author.officialResponse.sections.noOfficialResponse")}</h3>
+          {draft.noResponseDetail?.note?.trim() ? <p>{draft.noResponseDetail.note}</p> : null}
           <ListSection
-            title="Organizations / recipients contacted"
+            title={t("author.officialResponse.sections.organizationsContacted")}
             items={draft.noResponseDetail?.contactedOrganizations ?? []}
           />
-          <ListSection title="Dates" items={draft.noResponseDetail?.contactedDates ?? []} />
+          <ListSection
+            title={t("author.officialResponse.sections.dates")}
+            items={draft.noResponseDetail?.contactedDates ?? []}
+          />
         </section>
       ) : (
         <>
           <section className="ior-public__section">
-            <h3>Received official responses</h3>
-            <p className="ior-public__meta">{draft.candidates.length} candidate(s)</p>
+            <h3>{t("author.officialResponse.sections.receivedResponses")}</h3>
+            <p className="ior-public__meta">
+              {t("author.officialResponse.preview.candidatesCount", {
+                count: draft.candidates.length,
+              })}
+            </p>
           </section>
           {draft.candidates.map((candidate, index) => (
             <section className="ior-public__section" key={candidate.candidateId}>
               <h3>
-                Response {index + 1}: {candidate.subject || "Untitled"}
+                {t("author.officialResponse.responseHeading", {
+                  number: index + 1,
+                  subject: candidate.subject || t("author.officialResponse.untitledResponse"),
+                })}
               </h3>
               <p className="ior-public__meta">
-                {candidate.institution || candidate.organization || "Institution not yet named"} · Received{" "}
-                {candidate.receivedAt || "Not set"} · {candidate.verificationStatus}
+                {t("author.officialResponse.preview.responseMeta", {
+                  org:
+                    candidate.institution ||
+                    candidate.organization ||
+                    t("author.officialResponse.preview.institutionFallback"),
+                  date: candidate.receivedAt || t("author.officialResponse.preview.notSet"),
+                  verification: resolveOfficialResponseVerificationDisplayLabel(
+                    candidate.verificationStatus,
+                    t,
+                  ),
+                })}
               </p>
               <p>{candidate.summary}</p>
-              <ListSection title="Related Actions" items={candidate.relatedActions} />
-              <ListSection title="Documents" items={candidate.documentIds} />
-              <ListSection title="Links" items={candidate.links} />
+              <ListSection
+                title={t("author.officialResponse.sections.relatedActions")}
+                items={candidate.relatedActions}
+              />
+              <ListSection
+                title={t("author.officialResponse.sections.documents")}
+                items={candidate.documentIds}
+              />
+              <ListSection title={t("author.officialResponse.sections.links")} items={candidate.links} />
             </section>
           ))}
         </>

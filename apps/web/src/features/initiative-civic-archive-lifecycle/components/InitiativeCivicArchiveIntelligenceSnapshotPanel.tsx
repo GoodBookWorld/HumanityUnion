@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { InitiativeCivicArchiveIntelligenceSnapshot } from "@hu/types";
 
 import { InitiativeCivicArchiveCompletenessPanel } from "./InitiativeCivicArchiveCompletenessPanel";
@@ -11,53 +13,69 @@ export function InitiativeCivicArchiveIntelligenceSnapshotPanel({
   /** @deprecated Unused after Step 04 — Public Impact is SOURCE_OPTIONAL. */
   lifecycleProfile?: string | null;
 }) {
+  const t = useTranslations("initiativeExperience");
+
   if (snapshot.isEmpty) {
-    return (
-      <p className="ica-source-panel__empty">
-        Civic Archive Sources are empty until the Initiative is available.
-      </p>
-    );
+    return <p className="ica-source-panel__empty">{t("author.archive.sourceSnapshot.empty")}</p>;
   }
+
+  const upstreamSummary =
+    [
+      snapshot.analysisReference ? t("author.archive.sourceSnapshot.analysis") : null,
+      snapshot.proposalReferences.length > 0
+        ? t("author.archive.sourceSnapshot.proposals", {
+            count: snapshot.proposalReferences.length,
+          })
+        : null,
+      snapshot.revisionReference ? t("author.archive.sourceSnapshot.revision") : null,
+      snapshot.petitionReference ? t("author.archive.sourceSnapshot.petition") : null,
+      snapshot.decisionSessionReference ? t("author.archive.sourceSnapshot.decisionSession") : null,
+      snapshot.decisionReference ? t("author.archive.sourceSnapshot.collectiveDecision") : null,
+      snapshot.commitmentPackageReference ? t("author.archive.sourceSnapshot.commitments") : null,
+      snapshot.trackingPackageReference ? t("author.archive.sourceSnapshot.tracking") : null,
+      snapshot.officialResponsePackageReference
+        ? t("author.archive.sourceSnapshot.officialResponses")
+        : null,
+      snapshot.publicImpactReportReference
+        ? t("author.archive.sourceSnapshot.publicImpactOptional")
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || t("author.archive.sourceSnapshot.noUpstream");
 
   return (
     <div className="ica-source-panel">
-      <section aria-label="Civic Archive Sources">
+      <section aria-label={t("author.archive.sourceSnapshot.aria")}>
         <ul className="ica-source-panel__list">
           <li className="ica-source-panel__item">
-            <span className="ica-source-panel__label">Upstream Packages</span>
+            <span className="ica-source-panel__label">
+              {t("author.archive.sourceSnapshot.upstreamPackages")}
+            </span>
+            <p className="ica-source-panel__summary">{upstreamSummary}</p>
+          </li>
+          <li className="ica-source-panel__item">
+            <span className="ica-source-panel__label">
+              {t("author.archive.sourceSnapshot.communityParticipation")}
+            </span>
             <p className="ica-source-panel__summary">
-              {[
-                snapshot.analysisReference ? "Analysis" : null,
-                snapshot.proposalReferences.length > 0
-                  ? `${snapshot.proposalReferences.length} Proposal(s)`
-                  : null,
-                snapshot.revisionReference ? "Revision" : null,
-                snapshot.petitionReference ? "Petition" : null,
-                snapshot.decisionSessionReference ? "Decision Session" : null,
-                snapshot.decisionReference ? "Collective Decision" : null,
-                snapshot.commitmentPackageReference ? "Commitments" : null,
-                snapshot.trackingPackageReference ? "Tracking" : null,
-                snapshot.officialResponsePackageReference ? "Official Responses" : null,
-                snapshot.publicImpactReportReference ? "Public Impact (optional)" : null,
-              ]
-                .filter(Boolean)
-                .join(" · ") ||
-                "No upstream published packages yet — missing optional sources are recorded honestly"}
+              {t("author.archive.sourceSnapshot.participationSummary", {
+                signatures: snapshot.participationStatistics.signatureCount,
+                support: snapshot.participationStatistics.supportCount,
+                reactions: snapshot.participationStatistics.reactionCount,
+                allies: snapshot.participationStatistics.activeAllyCount,
+              })}
             </p>
           </li>
           <li className="ica-source-panel__item">
-            <span className="ica-source-panel__label">Community Participation</span>
+            <span className="ica-source-panel__label">
+              {t("author.archive.sourceSnapshot.consistencyChecks")}
+            </span>
             <p className="ica-source-panel__summary">
-              {snapshot.participationStatistics.signatureCount} signature(s) ·{" "}
-              {snapshot.participationStatistics.supportCount} support ·{" "}
-              {snapshot.participationStatistics.activeAllyCount} ally(ies)
-            </p>
-          </li>
-          <li className="ica-source-panel__item">
-            <span className="ica-source-panel__label">Consistency Checks</span>
-            <p className="ica-source-panel__summary">
-              {snapshot.consistencyChecks.filter((check) => check.status === "warning").length}{" "}
-              warning(s) of {snapshot.consistencyChecks.length}
+              {t("author.archive.sourceSnapshot.consistencySummary", {
+                warnings: snapshot.consistencyChecks.filter((check) => check.status === "warning")
+                  .length,
+                total: snapshot.consistencyChecks.length,
+              })}
             </p>
           </li>
         </ul>

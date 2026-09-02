@@ -1726,6 +1726,307 @@
           "evidence": "مراجع الأدلة (واحدة في كل سطر)",
           "saveProgress": "حفظ التقدم"
         }
+      },
+      "officialResponse": {
+        "loading": "جاري تحميل مساحة عمل الردود الرسمية…",
+        "loadFailed": "تعذّر تحميل مساحة عمل الردود الرسمية.",
+        "alreadyPublished": "نُشرت الردود الرسمية لهذه المبادرة بالفعل. استخدم المعاينة العامة لمراجعتها، أو تابع إلى الأثر العام.",
+        "noDraftExplanation": "أنشئ مسودة ردود رسمية قابلة للتحرير من سياق التتبع / المبادرة، أو افتح المحرر لتسجيل الردود المستلمة — أو وثّق صراحة أنه لم يُستلم رد رسمي. المساعد استشاري فقط ولا يخترع بيانات رسمية ولا ينشر.",
+        "generateOpenDraft": "إنشاء / فتح المسودة",
+        "publishAndContinue": "النشر والمتابعة إلى الأثر العام",
+        "openPublicImpact": "فتح الأثر العام",
+        "outcomeResponsesReceived": "ردود مستلمة",
+        "outcomeNoResponse": "لم يُستلم رد رسمي",
+        "noCandidatesYet": "لا توجد ردود مستلمة بعد. أضف ردًا مع أدلة، أو سجّل أنه لم يُستلم رد رسمي.",
+        "addResponse": "إضافة رد مستلم",
+        "removeResponse": "إزالة الرد",
+        "responseHeading": "الرد {number}: {subject}",
+        "untitledResponse": "بلا عنوان",
+        "legitimateOutcome": "نتيجة مشروعة",
+        "noResponseHelper": "وثّق أنه لم يُستلم رد رسمي. هذه نتيجة مشروعة ولا تخترع سجلات ردود.",
+        "fields": {
+          "title": "العنوان",
+          "summary": "الملخص",
+          "contactedOrganizations": "المنظمات / المستلمون الذين تُواصل معهم (اختياري، واحد في كل سطر)",
+          "contactedDates": "تواريخ الاتصال / المتابعة (اختياري، واحد في كل سطر)",
+          "explanatoryNote": "ملاحظة توضيحية (اختياري)",
+          "institution": "المؤسسة",
+          "organization": "المنظمة",
+          "responseType": "نوع الرد",
+          "subject": "الموضوع",
+          "receivedDate": "تاريخ الاستلام",
+          "authorSummary": "وصف / ملخص المؤلف",
+          "referenceNumber": "رقم المرجع",
+          "documentIds": "معرّفات المستندات (واحد في كل سطر — مرفقات آمنة موجودة)",
+          "externalUrls": "عناوين URL خارجية (واحد في كل سطر)",
+          "verificationStatus": "حالة التحقق / الأدلة",
+          "notes": "ملاحظات"
+        },
+        "sections": {
+          "noOfficialResponse": "لم يُستلم رد رسمي",
+          "receivedResponses": "الردود الرسمية المستلمة",
+          "organizationsContacted": "المنظمات / المستلمون الذين تُواصل معهم",
+          "dates": "التواريخ",
+          "relatedActions": "الإجراءات ذات الصلة",
+          "documents": "المستندات",
+          "links": "الروابط"
+        },
+        "messages": {
+          "unknownError": "خطأ غير معروف",
+          "generateFailed": "فشل الإنشاء: {detail}",
+          "saveFailed": "فشل الحفظ: {detail}",
+          "publishFailed": "فشل النشر: {detail}",
+          "aiApplied": "طُبّقت اقتراحات الذكاء الاصطناعي محليًا. عدّل حسب الحاجة ثم احفظ المسودة. لم يُنشر شيء."
+        },
+        "preview": {
+          "loading": "جاري تحميل معاينة مسودة الردود الرسمية…",
+          "loadFailed": "تعذّر تحميل معاينة المسودة.",
+          "aria": "معاينة مسودة الردود الرسمية",
+          "meta": "معاينة — مسودة غير منشورة (لا تُقدّم دورة الحياة)",
+          "untitled": "ردود رسمية بلا عنوان",
+          "candidatesCount": "{count} مرشح(ين)",
+          "responseMeta": "{org} · اُستلم {date} · {verification}",
+          "institutionFallback": "لم تُسمَّ المؤسسة بعد",
+          "notSet": "غير محدد"
+        },
+        "public": {
+          "loading": "جاري تحميل الردود الرسمية المنشورة…",
+          "loadFailed": "تعذّر تحميل الردود الرسمية المنشورة.",
+          "empty": "لا توجد ردود رسمية منشورة بعد.",
+          "aria": "الردود الرسمية المنشورة",
+          "previewMeta": "معاينة المؤلف للردود الرسمية المنشورة",
+          "publishedOutcome": "النتيجة المنشورة",
+          "publishedCount": "{count} رد(ود) منشورة",
+          "untitled": "الردود الرسمية",
+          "responseMeta": "{org} · اُستلم {date}",
+          "institutionFallback": "لم تُسمَّ المؤسسة",
+          "docsLinks": "{documents} مستند(ات) · {links} رابط(ات)",
+          "contacted": "تم الاتصال: {list}",
+          "dates": "التواريخ: {list}"
+        },
+        "sourceSnapshot": {
+          "empty": "مصادر الرد الرسمي فارغة حتى تُنشر حزمة تتبع التنفيذ.",
+          "aria": "مصادر الرد الرسمي",
+          "publishedTracking": "حزمة تتبع التنفيذ المنشورة",
+          "completedCommitments": "الالتزامات المكتملة",
+          "activeAllies": "الحلفاء النشطون",
+          "consistencyChecks": "فحوصات الاتساق",
+          "noTracking": "لا توجد حزمة تتبع تنفيذ منشورة بعد",
+          "trackingSummary": "{title} — {count} سجل(ات) تتبع",
+          "completedCount": "{count} مكتمل",
+          "alliesActive": "{count} نشط(ون)",
+          "consistencySummary": "{warnings} تحذير(ات) من أصل {total}"
+        },
+        "responseTypes": {
+          "official_letter": "خطاب رسمي",
+          "email": "بريد إلكتروني",
+          "public_statement": "بيان عام",
+          "meeting_minutes": "محضر اجتماع",
+          "policy_update": "تحديث سياسة",
+          "decision_notice": "إشعار قرار",
+          "media_response": "رد إعلامي",
+          "other": "أخرى"
+        },
+        "verificationStatuses": {
+          "pending": "قيد الانتظار",
+          "verified": "مُتحقق",
+          "unable_to_verify": "تعذّر التحقق"
+        }
+      },
+      "publicImpact": {
+        "loading": "جاري تحميل مساحة عمل الأثر العام…",
+        "loadFailed": "تعذّر تحميل مساحة عمل الأثر العام.",
+        "alreadyPublished": "نُشر الأثر العام لهذه المبادرة بالفعل. استخدم المعاينة العامة لمراجعة التقرير، أو تابع إلى الأرشيف المدني.",
+        "noDraftExplanation": "أنشئ تقرير أثر عام من المبادرة والقرار الجماعي والتتبع والردود الرسمية (بما في ذلك لم يُستلم رد رسمي) والأدلة المرتبطة. المساعد استشاري فقط — لا يمكنه اختراع نتائج أو النشر أو تقديم دورة الحياة. الأثر الصفري القابل للقياس استنتاج صالح قابل للنشر.",
+        "generateImpactDraft": "إنشاء مسودة الأثر العام",
+        "publishAndContinue": "النشر والمتابعة إلى الأرشيف المدني",
+        "openCivicArchive": "فتح الأرشيف المدني",
+        "noSectionsYet": "لا توجد أقسام تقرير بعد. أنشئ مسودة من مصادر دورة حياة المبادرة المتاحة.",
+        "fields": {
+          "title": "العنوان",
+          "body": "النص",
+          "evidenceReferences": "مراجع الأدلة (واحدة في كل سطر)"
+        },
+        "messages": {
+          "unknownError": "خطأ غير معروف",
+          "generateFailed": "فشل الإنشاء: {detail}",
+          "saveFailed": "فشل الحفظ: {detail}",
+          "publishFailed": "فشل النشر: {detail}",
+          "aiApplied": "طُبّقت اقتراحات الذكاء الاصطناعي محليًا. عدّل حسب الحاجة ثم احفظ المسودة. لم يُنشر شيء."
+        },
+        "preview": {
+          "loading": "جاري تحميل معاينة مسودة الأثر العام…",
+          "loadFailed": "تعذّر تحميل معاينة المسودة.",
+          "meta": "معاينة — مسودة غير منشورة (نفس عارض العرض العام)"
+        },
+        "public": {
+          "loading": "جاري تحميل تقرير الأثر العام المنشور…",
+          "loadFailed": "تعذّر تحميل تقرير الأثر العام المنشور.",
+          "empty": "لا يوجد تقرير أثر عام منشور بعد.",
+          "previewMeta": "معاينة المؤلف لتقرير الأثر العام المنشور"
+        },
+        "report": {
+          "aria": "تقرير الأثر العام",
+          "untitled": "تقرير أثر عام بلا عنوان",
+          "emptySection": "لا يوجد محتوى بعد.",
+          "evidence": "الأدلة: {refs}",
+          "participationStats": "التوقيعات {signatures} · الدعم {support} · التفاعلات {reactions} · الحلفاء {allies}"
+        },
+        "sourceSnapshot": {
+          "empty": "مصادر الأثر العام فارغة حتى تُنشر حزمة الردود الرسمية.",
+          "aria": "مصادر الأثر العام",
+          "publishedOfficialResponses": "حزمة الردود الرسمية المنشورة",
+          "implementationTracking": "تتبع التنفيذ",
+          "completedCommitments": "الالتزامات المكتملة",
+          "communityParticipation": "مشاركة المجتمع",
+          "evidenceReferences": "مراجع الأدلة",
+          "consistencyChecks": "فحوصات الاتساق",
+          "noOfficialResponses": "لا توجد حزمة ردود رسمية منشورة بعد",
+          "noTracking": "لا توجد حزمة تتبع تنفيذ منشورة بعد",
+          "noResponseOutcome": "{title} — لم يُستلم رد رسمي",
+          "responsesOutcome": "{title} — {count} رد(ود)",
+          "trackingCount": "{count} سجل(ات) تتبع",
+          "commitmentsCount": "{count} مكتمل",
+          "participationSummary": "التوقيعات {signatures} · الدعم {support} · التفاعلات {reactions} · الحلفاء {allies}",
+          "evidenceCount": "{count} مرجع(مراجع) أدلة",
+          "consistencySummary": "{warnings} تحذير(ات) من أصل {total}"
+        },
+        "sections": {
+          "executive_summary": "ملخص تنفيذي",
+          "objectives": "الأهداف",
+          "implemented_actions": "الإجراءات المنفذة",
+          "completed_commitments": "الالتزامات المكتملة",
+          "implementation_progress": "تقدم التنفيذ",
+          "official_responses": "الردود الرسمية",
+          "community_participation": "مشاركة المجتمع",
+          "outstanding_issues": "القضايا العالقة",
+          "lessons_learned": "الدروس المستفادة",
+          "evidence": "الأدلة",
+          "impact_references": "مراجع الأثر"
+        }
+      },
+      "archive": {
+        "loading": "جاري تحميل مساحة عمل الأرشيف المدني…",
+        "loadFailed": "تعذّر تحميل مساحة عمل الأرشيف المدني.",
+        "latestPublished": "أحدث إصدار أرشيف منشور: v{version}. تكتمل دورة الحياة بعد «النشر وإكمال دورة حياة المبادرة». أنشئ مجددًا فقط لإعداد إصدار الأرشيف التالي غير القابل للتغيير — لا تُغيَّر الإصدارات السابقة أبدًا.",
+        "noDraftExplanation": "أنشئ أرشيفًا مدنيًا من أي تاريخ دورة حياة قانوني لهذه المبادرة. تصبح المراحل الاختيارية الناقصة ملاحظات عدم اكتمال — لا عوائق. مساعد الأرشيف استشاري فقط — لا يُنشر شيء تلقائيًا، ولا تُختلق أو تُحذف السجلات التاريخية.",
+        "generateArchiveDraft": "إنشاء مسودة الأرشيف المدني",
+        "publishAndComplete": "النشر وإكمال دورة حياة المبادرة",
+        "sectionsReadOnly": "أقسام الأرشيف المُجمَّعة سجلات تاريخية للقراءة فقط. عدّل فقط حقول المؤلف النهائية أدناه.",
+        "noSectionsYet": "لا توجد أقسام أرشيف بعد. أنشئ مسودة من تاريخ دورة الحياة المتاح.",
+        "publishedNotice": "نُشر الأرشيف. استخدم المعاينة العامة لمراجعة السجل غير القابل للتغيير.",
+        "fields": {
+          "finalArchiveTitle": "عنوان الأرشيف النهائي",
+          "finalSummary": "الملخص النهائي",
+          "lessonsLearned": "الدروس المستفادة",
+          "knowledgeContribution": "المساهمة المعرفية"
+        },
+        "messages": {
+          "unknownError": "خطأ غير معروف",
+          "generateFailed": "فشل الإنشاء: {detail}",
+          "saveFailed": "فشل الحفظ: {detail}",
+          "publishFailed": "فشل النشر: {detail}",
+          "aiApplied": "طُبّقت اقتراحات الذكاء الاصطناعي محليًا. عدّل حسب الحاجة ثم احفظ المسودة. لم يُنشر شيء."
+        },
+        "preview": {
+          "loading": "جاري تحميل معاينة مسودة الأرشيف المدني…",
+          "loadFailed": "تعذّر تحميل معاينة المسودة.",
+          "empty": "لا توجد مسودة أرشيف مدني للمعاينة.",
+          "meta": "معاينة — مسودة غير منشورة (نفس عارض العرض العام)"
+        },
+        "public": {
+          "loading": "جاري تحميل الأرشيف المدني المنشور…",
+          "loadFailed": "تعذّر تحميل الأرشيف المدني المنشور.",
+          "empty": "لا يوجد أرشيف مدني منشور بعد.",
+          "previewMeta": "معاينة المؤلف للأرشيف المدني المنشور"
+        },
+        "document": {
+          "aria": "الأرشيف المدني",
+          "untitled": "أرشيف مدني بلا عنوان",
+          "version": "الإصدار {version}",
+          "draftPreview": "معاينة المسودة",
+          "publishedAt": " · نُشر في {date}",
+          "lifecycleTimeline": "الجدول الزمني لدورة الحياة",
+          "completeness": "الاكتمال",
+          "emptySection": "لم يُسجَّل محتوى.",
+          "sources": "المصادر: {list}",
+          "participationStats": "التوقيعات {signatures} · الدعم {support} · التفاعلات {reactions} · الحلفاء {allies}"
+        },
+        "completeness": {
+          "summary": "الملخص",
+          "stagesPublished": "المراحل المنشورة",
+          "missingOptional": "المراحل الاختيارية الناقصة",
+          "outstandingWork": "العمل المتبقي",
+          "publicImpactOptional": "الأثر العام (اختياري)",
+          "noneYet": "لا شيء بعد",
+          "none": "لا شيء",
+          "outstandingCounts": "{unresolvedTracking} تتبع غير محلول · {unfinishedCommitments} التزام(ات) غير مكتملة · {missingEvidence} أدلة ناقصة",
+          "available": "متاح",
+          "notAvailable": "غير متاح",
+          "traceabilityComplete": "قابلية التتبع مكتملة",
+          "traceabilityIncomplete": "قابلية التتبع غير مكتملة"
+        },
+        "share": {
+          "shareArchive": "مشاركة الأرشيف",
+          "share": "مشاركة",
+          "downloadLifecycle": "تنزيل دورة الحياة",
+          "downloadDraftPreview": "تنزيل معاينة المسودة",
+          "shareAfterPublish": "المشاركة متاحة بعد النشر.",
+          "shared": "تمت المشاركة.",
+          "linkCopied": "تم نسخ رابط الأرشيف.",
+          "shareFailed": "تعذّر مشاركة أو نسخ رابط الأرشيف.",
+          "shareTitle": "الأرشيف المدني"
+        },
+        "sourceSnapshot": {
+          "empty": "مصادر الأرشيف المدني فارغة حتى تصبح المبادرة متاحة.",
+          "aria": "مصادر الأرشيف المدني",
+          "upstreamPackages": "الحزم السابقة",
+          "communityParticipation": "مشاركة المجتمع",
+          "consistencyChecks": "فحوصات الاتساق",
+          "noUpstream": "لا توجد حزم سابقة منشورة بعد — تُسجَّل المصادر الاختيارية الناقصة بأمانة",
+          "analysis": "التحليل",
+          "proposals": "{count} مقترح(ات)",
+          "revision": "المراجعة",
+          "petition": "العريضة",
+          "decisionSession": "جلسة القرار",
+          "collectiveDecision": "القرار الجماعي",
+          "commitments": "الالتزامات",
+          "tracking": "التتبع",
+          "officialResponses": "الردود الرسمية",
+          "publicImpactOptional": "الأثر العام (اختياري)",
+          "participationSummary": "التوقيعات {signatures} · الدعم {support} · التفاعلات {reactions} · الحلفاء {allies}",
+          "consistencySummary": "{warnings} تحذير(ات) من أصل {total}"
+        },
+        "sections": {
+          "archive_overview": "نظرة عامة على الأرشيف",
+          "original_initiative": "المبادرة الأصلية",
+          "discussion_and_participation": "النقاش والمشاركة",
+          "collaborative_analysis": "التحليل التعاوني",
+          "improvement_proposals": "مقترحات التحسين",
+          "revision_and_change_history": "المراجعة وتاريخ التغيير",
+          "petition_and_public_participation": "العريضة والمشاركة العامة",
+          "decision_session": "جلسة القرار",
+          "collective_decision": "القرار الجماعي",
+          "approved_actions": "الإجراءات المعتمدة",
+          "implementation_commitments": "التزامات التنفيذ",
+          "implementation_tracking": "تتبع التنفيذ",
+          "official_responses": "الردود الرسمية",
+          "public_impact": "الأثر العام",
+          "final_results": "النتائج النهائية",
+          "outstanding_work": "العمل المتبقي",
+          "lessons_learned": "الدروس المستفادة",
+          "knowledge_contribution": "المساهمة المعرفية",
+          "lifecycle_timeline": "الجدول الزمني لدورة الحياة",
+          "sources_and_traceability": "المصادر وقابلية التتبع"
+        },
+        "timelineStatuses": {
+          "published": "منشور",
+          "finalized": "نهائي",
+          "completed": "مكتمل",
+          "partial": "جزئي",
+          "missing": "مفقود",
+          "archived": "مؤرشف"
+        }
       }
     }
   }

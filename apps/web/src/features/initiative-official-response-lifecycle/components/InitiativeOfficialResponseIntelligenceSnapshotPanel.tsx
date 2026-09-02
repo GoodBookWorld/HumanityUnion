@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { InitiativeOfficialResponseIntelligenceSnapshot } from "@hu/types";
 
 export function InitiativeOfficialResponseIntelligenceSnapshotPanel({
@@ -7,38 +9,63 @@ export function InitiativeOfficialResponseIntelligenceSnapshotPanel({
 }: {
   snapshot: InitiativeOfficialResponseIntelligenceSnapshot;
 }) {
+  const t = useTranslations("initiativeExperience");
+
   if (snapshot.isEmpty) {
     return (
-      <p className="ior-source-panel__empty">
-        Official Response Sources are empty until an Implementation Tracking Package has been published.
-      </p>
+      <p className="ior-source-panel__empty">{t("author.officialResponse.sourceSnapshot.empty")}</p>
     );
   }
 
   return (
-    <section className="ior-source-panel" aria-label="Official Response Sources">
+    <section
+      className="ior-source-panel"
+      aria-label={t("author.officialResponse.sourceSnapshot.aria")}
+    >
       <ul className="ior-source-panel__list">
         <li className="ior-source-panel__item">
-          <span className="ior-source-panel__label">Published Implementation Tracking Package</span>
+          <span className="ior-source-panel__label">
+            {t("author.officialResponse.sourceSnapshot.publishedTracking")}
+          </span>
           <p className="ior-source-panel__summary">
             {snapshot.trackingPackageReference
-              ? `${snapshot.trackingPackageReference.title} — ${snapshot.trackingRecords.length} Tracking Record(s)`
-              : "No published Implementation Tracking Package yet"}
+              ? t("author.officialResponse.sourceSnapshot.trackingSummary", {
+                  title: snapshot.trackingPackageReference.title,
+                  count: snapshot.trackingRecords.length,
+                })
+              : t("author.officialResponse.sourceSnapshot.noTracking")}
           </p>
         </li>
         <li className="ior-source-panel__item">
-          <span className="ior-source-panel__label">Completed Commitments</span>
-          <p className="ior-source-panel__summary">{snapshot.completedCommitmentCount} completed</p>
-        </li>
-        <li className="ior-source-panel__item">
-          <span className="ior-source-panel__label">Active Allies</span>
-          <p className="ior-source-panel__summary">{snapshot.activeAllyCount} active</p>
-        </li>
-        <li className="ior-source-panel__item">
-          <span className="ior-source-panel__label">Consistency Checks</span>
+          <span className="ior-source-panel__label">
+            {t("author.officialResponse.sourceSnapshot.completedCommitments")}
+          </span>
           <p className="ior-source-panel__summary">
-            {snapshot.consistencyChecks.filter((check) => check.status === "warning").length} warning(s)
-            of {snapshot.consistencyChecks.length}
+            {t("author.officialResponse.sourceSnapshot.completedCount", {
+              count: snapshot.completedCommitmentCount,
+            })}
+          </p>
+        </li>
+        <li className="ior-source-panel__item">
+          <span className="ior-source-panel__label">
+            {t("author.officialResponse.sourceSnapshot.activeAllies")}
+          </span>
+          <p className="ior-source-panel__summary">
+            {t("author.officialResponse.sourceSnapshot.alliesActive", {
+              count: snapshot.activeAllyCount,
+            })}
+          </p>
+        </li>
+        <li className="ior-source-panel__item">
+          <span className="ior-source-panel__label">
+            {t("author.officialResponse.sourceSnapshot.consistencyChecks")}
+          </span>
+          <p className="ior-source-panel__summary">
+            {t("author.officialResponse.sourceSnapshot.consistencySummary", {
+              warnings: snapshot.consistencyChecks.filter((check) => check.status === "warning")
+                .length,
+              total: snapshot.consistencyChecks.length,
+            })}
           </p>
         </li>
       </ul>

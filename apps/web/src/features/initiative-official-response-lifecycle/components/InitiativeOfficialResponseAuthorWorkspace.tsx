@@ -30,6 +30,7 @@ export function InitiativeOfficialResponseAuthorWorkspace({
   onNavigate,
 }: InitiativeOfficialResponseAuthorWorkspaceProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [context, setContext] = useState<InitiativeOfficialResponseLifecycleDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -74,7 +75,7 @@ export function InitiativeOfficialResponseAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="The Official Responses workspace could not be loaded." />
+        <WorkspaceErrorState message={t("author.officialResponse.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
           {actions.retry}
         </WorkspaceButton>
@@ -83,15 +84,12 @@ export function InitiativeOfficialResponseAuthorWorkspace({
   }
 
   if (loading || !context) {
-    return <p className="ior-source-panel__empty">Loading Official Responses workspace…</p>;
+    return <p className="ior-source-panel__empty">{t("author.officialResponse.loading")}</p>;
   }
 
   if (context.publishedPackageId) {
     return (
-      <p className="ior-source-panel__empty">
-        Official Responses have already been published for this Initiative. Use Public Preview to review
-        them, or continue to Public Impact.
-      </p>
+      <p className="ior-source-panel__empty">{t("author.officialResponse.alreadyPublished")}</p>
     );
   }
 
@@ -117,13 +115,13 @@ export function InitiativeOfficialResponseAuthorWorkspace({
 
       {!hasContent || !context.draft ? (
         <div className="ior-editor">
-          <p className="ior-source-panel__empty">
-            Generate an editable Official Responses draft from Tracking / Initiative context, or open
-            the editor to record received responses — or explicitly document No official response
-            received. The Assistant is advisory only and never invents official statements or publishes.
-          </p>
+          <p className="ior-source-panel__empty">{t("author.officialResponse.noDraftExplanation")}</p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate / Open Draft", actions.phaseLabels)}
+            {resolveSaveButtonLabel(
+              generatePhase.phase,
+              t("author.officialResponse.generateOpenDraft"),
+              actions.phaseLabels,
+            )}
           </WorkspaceButton>
         </div>
       ) : (

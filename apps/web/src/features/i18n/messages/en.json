@@ -1726,6 +1726,307 @@
           "evidence": "Evidence References (one per line)",
           "saveProgress": "Save Progress"
         }
+      },
+      "officialResponse": {
+        "loading": "Loading Official Responses workspace…",
+        "loadFailed": "The Official Responses workspace could not be loaded.",
+        "alreadyPublished": "Official Responses have already been published for this Initiative. Use Public Preview to review them, or continue to Public Impact.",
+        "noDraftExplanation": "Generate an editable Official Responses draft from Tracking / Initiative context, or open the editor to record received responses — or explicitly document No official response received. The Assistant is advisory only and never invents official statements or publishes.",
+        "generateOpenDraft": "Generate / Open Draft",
+        "publishAndContinue": "Publish & Continue to Public Impact",
+        "openPublicImpact": "Open Public Impact",
+        "outcomeResponsesReceived": "Received responses",
+        "outcomeNoResponse": "No official response received",
+        "noCandidatesYet": "No received responses yet. Add a response with evidence, or record No official response received.",
+        "addResponse": "Add received response",
+        "removeResponse": "Remove response",
+        "responseHeading": "Response {number}: {subject}",
+        "untitledResponse": "Untitled",
+        "legitimateOutcome": "legitimate outcome",
+        "noResponseHelper": "Document that no official response was received. This is a legitimate outcome and does not invent response records.",
+        "fields": {
+          "title": "Title",
+          "summary": "Summary",
+          "contactedOrganizations": "Organizations / recipients contacted (optional, one per line)",
+          "contactedDates": "Contact / follow-up dates (optional, one per line)",
+          "explanatoryNote": "Explanatory note (optional)",
+          "institution": "Institution",
+          "organization": "Organization",
+          "responseType": "Response Type",
+          "subject": "Subject",
+          "receivedDate": "Received Date",
+          "authorSummary": "Author description / summary",
+          "referenceNumber": "Reference Number",
+          "documentIds": "Document IDs (one per line — existing Secure Attachments)",
+          "externalUrls": "External URLs (one per line)",
+          "verificationStatus": "Verification / evidence status",
+          "notes": "Notes"
+        },
+        "sections": {
+          "noOfficialResponse": "No official response received",
+          "receivedResponses": "Received official responses",
+          "organizationsContacted": "Organizations / recipients contacted",
+          "dates": "Dates",
+          "relatedActions": "Related Actions",
+          "documents": "Documents",
+          "links": "Links"
+        },
+        "messages": {
+          "unknownError": "Unknown error",
+          "generateFailed": "Generate failed: {detail}",
+          "saveFailed": "Save failed: {detail}",
+          "publishFailed": "Publish failed: {detail}",
+          "aiApplied": "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published."
+        },
+        "preview": {
+          "loading": "Loading Official Responses draft preview…",
+          "loadFailed": "Draft preview could not be loaded.",
+          "aria": "Official Responses draft preview",
+          "meta": "Preview — unpublished draft (does not advance Lifecycle)",
+          "untitled": "Untitled Official Responses",
+          "candidatesCount": "{count} candidate(s)",
+          "responseMeta": "{org} · Received {date} · {verification}",
+          "institutionFallback": "Institution not yet named",
+          "notSet": "Not set"
+        },
+        "public": {
+          "loading": "Loading published Official Responses…",
+          "loadFailed": "Published Official Responses could not be loaded.",
+          "empty": "No Official Responses published yet.",
+          "aria": "Published Official Responses",
+          "previewMeta": "Author Preview of published Official Responses",
+          "publishedOutcome": "Published outcome",
+          "publishedCount": "{count} Response(s) published",
+          "untitled": "Official Responses",
+          "responseMeta": "{org} · Received {date}",
+          "institutionFallback": "Institution not named",
+          "docsLinks": "{documents} document(s) · {links} link(s)",
+          "contacted": "Contacted: {list}",
+          "dates": "Dates: {list}"
+        },
+        "sourceSnapshot": {
+          "empty": "Official Response Sources are empty until an Implementation Tracking Package has been published.",
+          "aria": "Official Response Sources",
+          "publishedTracking": "Published Implementation Tracking Package",
+          "completedCommitments": "Completed Commitments",
+          "activeAllies": "Active Allies",
+          "consistencyChecks": "Consistency Checks",
+          "noTracking": "No published Implementation Tracking Package yet",
+          "trackingSummary": "{title} — {count} Tracking Record(s)",
+          "completedCount": "{count} completed",
+          "alliesActive": "{count} active",
+          "consistencySummary": "{warnings} warning(s) of {total}"
+        },
+        "responseTypes": {
+          "official_letter": "Official letter",
+          "email": "Email",
+          "public_statement": "Public statement",
+          "meeting_minutes": "Meeting minutes",
+          "policy_update": "Policy update",
+          "decision_notice": "Decision notice",
+          "media_response": "Media response",
+          "other": "Other"
+        },
+        "verificationStatuses": {
+          "pending": "Pending",
+          "verified": "Verified",
+          "unable_to_verify": "Unable to verify"
+        }
+      },
+      "publicImpact": {
+        "loading": "Loading Public Impact workspace…",
+        "loadFailed": "The Public Impact workspace could not be loaded.",
+        "alreadyPublished": "Public Impact has already been published for this Initiative. Use Public Preview to review the Report, or continue to Civic Archive.",
+        "noDraftExplanation": "Generate a Public Impact Report from Initiative, Collective Decision, Tracking, Official Responses (including No official response received), and linked evidence. The Assistant is advisory only — it cannot invent results, publish, or advance Lifecycle. Zero measurable impact is a valid publishable conclusion.",
+        "generateImpactDraft": "Generate Public Impact Draft",
+        "publishAndContinue": "Publish & Continue to Civic Archive",
+        "openCivicArchive": "Open Civic Archive",
+        "noSectionsYet": "No Report sections yet. Generate a draft from available Initiative Lifecycle sources.",
+        "fields": {
+          "title": "Title",
+          "body": "Body",
+          "evidenceReferences": "Evidence References (one per line)"
+        },
+        "messages": {
+          "unknownError": "Unknown error",
+          "generateFailed": "Generate failed: {detail}",
+          "saveFailed": "Save failed: {detail}",
+          "publishFailed": "Publish failed: {detail}",
+          "aiApplied": "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published."
+        },
+        "preview": {
+          "loading": "Loading Public Impact draft preview…",
+          "loadFailed": "Draft preview could not be loaded.",
+          "meta": "Preview — unpublished draft (same renderer as Public)"
+        },
+        "public": {
+          "loading": "Loading published Public Impact Report…",
+          "loadFailed": "Published Public Impact Report could not be loaded.",
+          "empty": "No Public Impact Report published yet.",
+          "previewMeta": "Author Preview of published Public Impact Report"
+        },
+        "report": {
+          "aria": "Public Impact Report",
+          "untitled": "Untitled Public Impact Report",
+          "emptySection": "No content yet.",
+          "evidence": "Evidence: {refs}",
+          "participationStats": "Signatures {signatures} · Support {support} · Reactions {reactions} · Allies {allies}"
+        },
+        "sourceSnapshot": {
+          "empty": "Public Impact Sources are empty until an Official Response Package has been published.",
+          "aria": "Public Impact Sources",
+          "publishedOfficialResponses": "Published Official Response Package",
+          "implementationTracking": "Implementation Tracking",
+          "completedCommitments": "Completed Commitments",
+          "communityParticipation": "Community Participation",
+          "evidenceReferences": "Evidence References",
+          "consistencyChecks": "Consistency Checks",
+          "noOfficialResponses": "No published Official Response Package yet",
+          "noTracking": "No published Implementation Tracking Package yet",
+          "noResponseOutcome": "{title} — No official response received",
+          "responsesOutcome": "{title} — {count} Response(s)",
+          "trackingCount": "{count} tracking record(s)",
+          "commitmentsCount": "{count} completed",
+          "participationSummary": "Signatures {signatures} · Support {support} · Reactions {reactions} · Allies {allies}",
+          "evidenceCount": "{count} evidence reference(s)",
+          "consistencySummary": "{warnings} warning(s) of {total}"
+        },
+        "sections": {
+          "executive_summary": "Executive summary",
+          "objectives": "Objectives",
+          "implemented_actions": "Implemented actions",
+          "completed_commitments": "Completed commitments",
+          "implementation_progress": "Implementation progress",
+          "official_responses": "Official responses",
+          "community_participation": "Community participation",
+          "outstanding_issues": "Outstanding issues",
+          "lessons_learned": "Lessons learned",
+          "evidence": "Evidence",
+          "impact_references": "Impact references"
+        }
+      },
+      "archive": {
+        "loading": "Loading Civic Archive workspace…",
+        "loadFailed": "The Civic Archive workspace could not be loaded.",
+        "latestPublished": "Latest published Archive version: v{version}. Lifecycle is complete after Publish & Complete Initiative Lifecycle. Generate again only to prepare the next immutable Archive version — prior versions are never mutated.",
+        "noDraftExplanation": "Generate a Civic Archive from whatever canonical Lifecycle history exists for this Initiative. Missing optional upstream stages become incompleteness notes — not blockers. The Archive Assistant remains advisory — nothing publishes automatically, and historical records are never invented or deleted.",
+        "generateArchiveDraft": "Generate Civic Archive Draft",
+        "publishAndComplete": "Publish & Complete Initiative Lifecycle",
+        "sectionsReadOnly": "Assembled Archive sections are read-only historical records. Edit only the final Author fields below.",
+        "noSectionsYet": "No Archive sections yet. Generate a draft from available Lifecycle history.",
+        "publishedNotice": "Archive published. Use Public Preview to review the immutable record.",
+        "fields": {
+          "finalArchiveTitle": "Final Archive Title",
+          "finalSummary": "Final Summary",
+          "lessonsLearned": "Lessons Learned",
+          "knowledgeContribution": "Knowledge Contribution"
+        },
+        "messages": {
+          "unknownError": "Unknown error",
+          "generateFailed": "Generate failed: {detail}",
+          "saveFailed": "Save failed: {detail}",
+          "publishFailed": "Publish failed: {detail}",
+          "aiApplied": "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published."
+        },
+        "preview": {
+          "loading": "Loading Civic Archive draft preview…",
+          "loadFailed": "Draft preview could not be loaded.",
+          "empty": "No Civic Archive draft available to preview.",
+          "meta": "Preview — unpublished draft (same renderer as Public)"
+        },
+        "public": {
+          "loading": "Loading published Civic Archive…",
+          "loadFailed": "Published Civic Archive could not be loaded.",
+          "empty": "No Civic Archive published yet.",
+          "previewMeta": "Author Preview of published Civic Archive"
+        },
+        "document": {
+          "aria": "Civic Archive",
+          "untitled": "Untitled Civic Archive",
+          "version": "Version {version}",
+          "draftPreview": "Draft preview",
+          "publishedAt": " · Published {date}",
+          "lifecycleTimeline": "Lifecycle Timeline",
+          "completeness": "Completeness",
+          "emptySection": "No content recorded.",
+          "sources": "Sources: {list}",
+          "participationStats": "Signatures {signatures} · Support {support} · Reactions {reactions} · Allies {allies}"
+        },
+        "completeness": {
+          "summary": "Summary",
+          "stagesPublished": "Stages Published",
+          "missingOptional": "Missing Optional Stages",
+          "outstandingWork": "Outstanding Work",
+          "publicImpactOptional": "Public Impact (optional)",
+          "noneYet": "None yet",
+          "none": "None",
+          "outstandingCounts": "{unresolvedTracking} unresolved tracking · {unfinishedCommitments} unfinished commitment(s) · {missingEvidence} missing evidence",
+          "available": "Available",
+          "notAvailable": "Not available",
+          "traceabilityComplete": "Traceability complete",
+          "traceabilityIncomplete": "Traceability incomplete"
+        },
+        "share": {
+          "shareArchive": "Share Archive",
+          "share": "Share",
+          "downloadLifecycle": "Download Lifecycle",
+          "downloadDraftPreview": "Download Draft Preview",
+          "shareAfterPublish": "Share is available after publication.",
+          "shared": "Shared.",
+          "linkCopied": "Archive link copied.",
+          "shareFailed": "Could not share or copy the Archive link.",
+          "shareTitle": "Civic Archive"
+        },
+        "sourceSnapshot": {
+          "empty": "Civic Archive Sources are empty until the Initiative is available.",
+          "aria": "Civic Archive Sources",
+          "upstreamPackages": "Upstream Packages",
+          "communityParticipation": "Community Participation",
+          "consistencyChecks": "Consistency Checks",
+          "noUpstream": "No upstream published packages yet — missing optional sources are recorded honestly",
+          "analysis": "Analysis",
+          "proposals": "{count} Proposal(s)",
+          "revision": "Revision",
+          "petition": "Petition",
+          "decisionSession": "Decision Session",
+          "collectiveDecision": "Collective Decision",
+          "commitments": "Commitments",
+          "tracking": "Tracking",
+          "officialResponses": "Official Responses",
+          "publicImpactOptional": "Public Impact (optional)",
+          "participationSummary": "Signatures {signatures} · Support {support} · Reactions {reactions} · Allies {allies}",
+          "consistencySummary": "{warnings} warning(s) of {total}"
+        },
+        "sections": {
+          "archive_overview": "Archive overview",
+          "original_initiative": "Original initiative",
+          "discussion_and_participation": "Discussion and participation",
+          "collaborative_analysis": "Collaborative analysis",
+          "improvement_proposals": "Improvement proposals",
+          "revision_and_change_history": "Revision and change history",
+          "petition_and_public_participation": "Petition and public participation",
+          "decision_session": "Decision session",
+          "collective_decision": "Collective decision",
+          "approved_actions": "Approved actions",
+          "implementation_commitments": "Implementation commitments",
+          "implementation_tracking": "Implementation tracking",
+          "official_responses": "Official responses",
+          "public_impact": "Public impact",
+          "final_results": "Final results",
+          "outstanding_work": "Outstanding work",
+          "lessons_learned": "Lessons learned",
+          "knowledge_contribution": "Knowledge contribution",
+          "lifecycle_timeline": "Lifecycle timeline",
+          "sources_and_traceability": "Sources and traceability"
+        },
+        "timelineStatuses": {
+          "published": "Published",
+          "finalized": "Finalized",
+          "completed": "Completed",
+          "partial": "Partial",
+          "missing": "Missing",
+          "archived": "Archived"
+        }
       }
     }
   }

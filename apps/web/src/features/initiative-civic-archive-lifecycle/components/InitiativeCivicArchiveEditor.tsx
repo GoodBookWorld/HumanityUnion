@@ -11,6 +11,7 @@ import type {
 import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
 import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
+import { resolveCivicArchiveSectionDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
   generateInitiativeCivicArchiveDraft,
@@ -25,6 +26,10 @@ interface ArchiveApplyForm {
   finalSummary: string;
   lessonsLearned: string;
   knowledgeContribution: string;
+}
+
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
 }
 
 interface InitiativeCivicArchiveEditorProps {
@@ -44,6 +49,7 @@ export function InitiativeCivicArchiveEditor({
   onTogglePreview,
 }: InitiativeCivicArchiveEditorProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [finalArchiveTitle, setFinalArchiveTitle] = useState(draft.finalArchiveTitle);
   const [finalSummary, setFinalSummary] = useState(draft.finalSummary);
   const [lessonsLearned, setLessonsLearned] = useState(draft.lessonsLearned);
@@ -76,8 +82,8 @@ export function InitiativeCivicArchiveEditor({
       setLessonsLearned(next.lessonsLearned);
       setKnowledgeContribution(next.knowledgeContribution);
     },
-    onAppliedNotice: (text) => {
-      setApplyNotice(text);
+    onAppliedNotice: () => {
+      setApplyNotice(t("author.archive.messages.aiApplied"));
       setError(null);
     },
   });
@@ -103,7 +109,11 @@ export function InitiativeCivicArchiveEditor({
       setKnowledgeContribution(generated.knowledgeContribution);
       onDraftUpdated(generated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generate failed.");
+      setError(
+        t("author.archive.messages.generateFailed", {
+          detail: detailFromError(err, t("author.archive.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -115,7 +125,11 @@ export function InitiativeCivicArchiveEditor({
       );
       onDraftUpdated(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(
+        t("author.archive.messages.saveFailed", {
+          detail: detailFromError(err, t("author.archive.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -129,7 +143,11 @@ export function InitiativeCivicArchiveEditor({
       setPublished(true);
       onPublished(version);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Publish failed.");
+      setError(
+        t("author.archive.messages.publishFailed", {
+          detail: detailFromError(err, t("author.archive.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -140,7 +158,7 @@ export function InitiativeCivicArchiveEditor({
       <InitiativeCivicArchiveCompletenessPanel completeness={draft.completeness} />
 
       <div className="ica-editor__field">
-        <label htmlFor="ica-title">Final Archive Title</label>
+        <label htmlFor="ica-title">{t("author.archive.fields.finalArchiveTitle")}</label>
         <input
           id="ica-title"
           value={finalArchiveTitle}
@@ -148,7 +166,7 @@ export function InitiativeCivicArchiveEditor({
         />
       </div>
       <div className="ica-editor__field">
-        <label htmlFor="ica-summary">Final Summary</label>
+        <label htmlFor="ica-summary">{t("author.archive.fields.finalSummary")}</label>
         <textarea
           id="ica-summary"
           rows={3}
@@ -157,7 +175,7 @@ export function InitiativeCivicArchiveEditor({
         />
       </div>
       <div className="ica-editor__field">
-        <label htmlFor="ica-lessons">Lessons Learned</label>
+        <label htmlFor="ica-lessons">{t("author.archive.fields.lessonsLearned")}</label>
         <textarea
           id="ica-lessons"
           rows={4}
@@ -166,7 +184,7 @@ export function InitiativeCivicArchiveEditor({
         />
       </div>
       <div className="ica-editor__field">
-        <label htmlFor="ica-knowledge">Knowledge Contribution</label>
+        <label htmlFor="ica-knowledge">{t("author.archive.fields.knowledgeContribution")}</label>
         <textarea
           id="ica-knowledge"
           rows={4}
@@ -175,25 +193,24 @@ export function InitiativeCivicArchiveEditor({
         />
       </div>
 
-      <p className="ica-source-panel__empty">
-        Assembled Archive sections are read-only historical structure. Regenerate to refresh them
-        from published Lifecycle sources.
-      </p>
+      <p className="ica-source-panel__empty">{t("author.archive.sectionsReadOnly")}</p>
 
       {draft.sections.length === 0 ? (
-        <p className="ica-source-panel__empty">
-          No Archive sections yet. Generate from available Lifecycle sources — missing optional
-          upstream artifacts are recorded honestly.
-        </p>
+        <p className="ica-source-panel__empty">{t("author.archive.noSectionsYet")}</p>
       ) : (
         draft.sections.map((section) => (
           <div className="ica-section" key={section.sectionId}>
             <div className="ica-section__header">
-              <h4 className="ica-section__title">{section.title || section.sectionId}</h4>
-              <span className="ica-section__status">{section.sectionId}</span>
+              <h4 className="ica-section__title">
+                {section.title ||
+                  resolveCivicArchiveSectionDisplayLabel(section.sectionId, t)}
+              </h4>
+              <span className="ica-section__status">
+                {resolveCivicArchiveSectionDisplayLabel(section.sectionId, t)}
+              </span>
             </div>
             <p className="ica-section__body">
-              {section.body.trim() || "No content recorded for this section."}
+              {section.body.trim() || t("author.archive.document.emptySection")}
             </p>
           </div>
         ))
@@ -202,10 +219,7 @@ export function InitiativeCivicArchiveEditor({
       {error ? <p className="ica-source-panel__empty">{error}</p> : null}
       {applyNotice ? <p className="ica-source-panel__empty">{applyNotice}</p> : null}
       {published ? (
-        <p className="ica-source-panel__empty">
-          Archive published. Use Public Preview to review the versioned document, or generate again
-          to prepare the next Archive version.
-        </p>
+        <p className="ica-source-panel__empty">{t("author.archive.publishedNotice")}</p>
       ) : null}
 
       <div className="ica-editor__actions">
@@ -217,7 +231,11 @@ export function InitiativeCivicArchiveEditor({
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Complete Initiative Lifecycle", actions.phaseLabels)}
+          {resolveSaveButtonLabel(
+            publishPhase.phase,
+            t("author.archive.publishAndComplete"),
+            actions.phaseLabels,
+          )}
         </WorkspaceButton>
       </div>
     </div>
