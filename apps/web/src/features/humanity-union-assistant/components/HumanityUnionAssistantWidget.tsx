@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   HumanityUnionAssistantSurfaceId,
@@ -8,7 +9,7 @@ import type {
 } from "@hu/types";
 
 import { useOptionalHumanityUnionAssistant } from "../assistant-context";
-import { assistantWidgetCopy } from "../resolve-assistant-surface";
+import { assistantWidgetCopyKey } from "../resolve-assistant-surface";
 
 import "../humanity-union-assistant.css";
 
@@ -31,6 +32,7 @@ export function HumanityUnionAssistantWidget({
   description,
   className,
 }: HumanityUnionAssistantWidgetProps) {
+  const t = useTranslations("initiativeExperience");
   const assistant = useOptionalHumanityUnionAssistant();
   const launchRef = useRef<HTMLButtonElement>(null);
 
@@ -47,12 +49,14 @@ export function HumanityUnionAssistantWidget({
     return null;
   }
 
-  const copy = description ?? assistantWidgetCopy(surfaceId);
+  const copy = description ?? t(assistantWidgetCopyKey(surfaceId));
+  const title = t("assistant.entry.title");
+  const askLabel = t("assistant.entry.askAssistant");
 
   return (
     <aside
       className={["hu-assistant-widget", className].filter(Boolean).join(" ")}
-      aria-label="Humanity Union Assistant"
+      aria-label={title}
     >
       <div className="hu-assistant-widget__card">
         <div className="hu-assistant-widget__header">
@@ -64,7 +68,7 @@ export function HumanityUnionAssistantWidget({
             className="hu-assistant-widget__icon"
             decoding="async"
           />
-          <h2 className="hu-assistant-widget__title hu-widget-title">Humanity Union Assistant</h2>
+          <h2 className="hu-assistant-widget__title hu-widget-title">{title}</h2>
         </div>
         <p className="hu-assistant-widget__copy">{copy}</p>
         <button
@@ -80,7 +84,7 @@ export function HumanityUnionAssistantWidget({
             })
           }
         >
-          Ask Assistant
+          {askLabel}
         </button>
       </div>
     </aside>

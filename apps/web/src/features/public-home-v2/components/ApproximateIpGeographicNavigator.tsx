@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { ApproximateIpGeography } from "@hu/types";
 
@@ -16,8 +17,11 @@ interface NavigatorLevel {
   href?: string;
 }
 
-function buildNavigatorLevels(geography: ApproximateIpGeography): NavigatorLevel[] {
-  const levels: NavigatorLevel[] = [{ key: "world", label: "World", href: "/initiatives" }];
+function buildNavigatorLevels(
+  geography: ApproximateIpGeography,
+  worldLabel: string,
+): NavigatorLevel[] {
+  const levels: NavigatorLevel[] = [{ key: "world", label: worldLabel, href: "/initiatives" }];
 
   if (geography.countryCode && geography.countryName) {
     levels.push({
@@ -46,6 +50,7 @@ function buildNavigatorLevels(geography: ApproximateIpGeography): NavigatorLevel
 }
 
 export function ApproximateIpGeographicNavigator() {
+  const t = useTranslations("initiativeExperience");
   const [geography, setGeography] = useState<ApproximateIpGeography>({ source: "unavailable" });
   const [loading, setLoading] = useState(true);
 
@@ -56,22 +61,28 @@ export function ApproximateIpGeographicNavigator() {
       .finally(() => setLoading(false));
   }, []);
 
-  const levels = useMemo(() => buildNavigatorLevels(geography), [geography]);
+  const worldLabel = t("geography.world");
+  const levels = useMemo(
+    () => buildNavigatorLevels(geography, worldLabel),
+    [geography, worldLabel],
+  );
   const screenReaderSummary = levels.map((level) => level.label).join(", ");
 
   return (
     <nav
       className="geographic-navigator approximate-ip-geographic-navigator"
-      aria-label="Approximate location demonstration"
+      aria-label={t("geography.approximateLocationAria")}
     >
       <div className="geographic-navigator__inner">
-        <p className="approximate-ip-geographic-navigator__label">Approximate location</p>
+        <p className="approximate-ip-geographic-navigator__label">
+          {t("geography.approximateLocation")}
+        </p>
         <p className="public-home-v2__visually-hidden" id="approximate-location-summary">
-          Approximate location: {screenReaderSummary}.
+          {t("geography.approximateLocationSummary", { summary: screenReaderSummary })}
         </p>
         {loading ? (
           <p className="approximate-ip-geographic-navigator__loading" role="status">
-            Resolving approximate location…
+            {t("geography.resolvingApproximateLocation")}
           </p>
         ) : (
           <ol className="geographic-navigator__list" aria-labelledby="approximate-location-summary">

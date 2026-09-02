@@ -22,6 +22,8 @@ import { writeHuLangCookieViaWebRoute } from "../../language/write-hu-lang-cooki
 import { markInterfaceLanguageCookieSynced } from "../../language/components/InterfaceLanguageCookieSync";
 import { getMyPreferences, updateMyPreferences } from "../preferences-api";
 
+import { useTranslations } from "next-intl";
+
 import { SurfaceAssistantEntry } from "../../humanity-union-assistant";
 import { PreferenceOption, PreferenceOptionGrid } from "./PreferenceOption";
 import { PreferredGeographyFields } from "./PreferredGeographyFields";
@@ -74,6 +76,7 @@ function toggleValue<T extends string>(values: T[], value: T, checked: boolean):
 }
 
 export function PreferencesWorkspace() {
+  const tAssistant = useTranslations("initiativeExperience");
   const [preferences, setPreferences] = useState<MemberPreferences | null>(null);
   const [languageOptions, setLanguageOptions] = useState<readonly PriorityLanguageOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -195,7 +198,7 @@ export function PreferencesWorkspace() {
 
       <SurfaceAssistantEntry
         surfaceId="preferences"
-        label="Ask Humanity Union Assistant about Preferences"
+        label={tAssistant("assistant.entry.preferencesLauncher")}
       />
 
       <ProfileSection title="Language & Translation" id="language">

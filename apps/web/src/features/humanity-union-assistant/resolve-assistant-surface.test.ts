@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   assistantWidgetCopy,
+  assistantWidgetCopyKey,
   resolveAssistantLaunchContext,
 } from "./resolve-assistant-surface.js";
 
@@ -49,5 +50,11 @@ describe("resolveAssistantLaunchContext (Pack 04 / Hardening Pack 02)", () => {
     assert.match(assistantWidgetCopy("workspace"), /Workspace/);
     assert.match(assistantWidgetCopy("initiatives"), /Initiatives/);
     assert.match(assistantWidgetCopy("messages"), /without reading private message history/);
+  });
+
+  it("maps widget copy to initiativeExperience catalog keys", () => {
+    assert.equal(assistantWidgetCopyKey("workspace"), "assistant.entry.widgetCopy.workspace");
+    assert.equal(assistantWidgetCopyKey("blog"), "assistant.entry.widgetCopy.blog");
+    assert.equal(assistantWidgetCopyKey("archive"), "assistant.entry.widgetCopy.default");
   });
 });

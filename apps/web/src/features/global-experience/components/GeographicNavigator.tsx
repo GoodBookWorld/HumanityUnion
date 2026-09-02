@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { GEOGRAPHY_COUNTRIES, getRegionsForCountry } from "@hu/geography";
 import { buildSearchUrlForGeographyScope } from "../../../data/geography/helpers";
@@ -24,6 +27,7 @@ export function GeographicNavigator({
   regionSlug = FEATURED_REGION_CODE,
   communitySlug = FEATURED_COMMUNITY_SLUG,
 }: GeographicNavigatorProps) {
+  const t = useTranslations("initiativeExperience");
   const country =
     GEOGRAPHY_COUNTRIES.find((entry) => entry.slug === countrySlug) ??
     GEOGRAPHY_COUNTRIES.find((entry) => entry.slug === FEATURED_COUNTRY_CODE);
@@ -33,12 +37,15 @@ export function GeographicNavigator({
   );
 
   const communityLabel = communitySlug.replace(/-/g, " ");
+  const worldLabel = t("geography.world");
+  const countryFallback = t("geography.country");
+  const regionFallback = t("geography.region");
 
   return (
-    <nav className="geographic-navigator" aria-label="Geographic scope">
+    <nav className="geographic-navigator" aria-label={t("geography.navigatorAria")}>
       <div className="geographic-navigator__inner">
         <p className="geographic-navigator__label" id="geographic-scope-label">
-          Explore by place
+          {t("geography.exploreByPlace")}
         </p>
         <ol className="geographic-navigator__list" aria-labelledby="geographic-scope-label">
           <li>
@@ -47,14 +54,14 @@ export function GeographicNavigator({
                 className="geographic-navigator__scope geographic-navigator__scope--active"
                 aria-current="location"
               >
-                World
+                {worldLabel}
               </span>
             ) : (
               <Link
                 className="geographic-navigator__scope geographic-navigator__scope--link"
                 href="/initiatives"
               >
-                World
+                {worldLabel}
               </Link>
             )}
           </li>
@@ -64,14 +71,14 @@ export function GeographicNavigator({
                 className="geographic-navigator__scope geographic-navigator__scope--active"
                 aria-current="location"
               >
-                {country?.label ?? "Country"}
+                {country?.label ?? countryFallback}
               </span>
             ) : (
               <Link
                 className="geographic-navigator__scope geographic-navigator__scope--link"
                 href={`/countries/${country?.slug ?? FEATURED_COUNTRY_CODE}`}
               >
-                {country?.label ?? "Country"}
+                {country?.label ?? countryFallback}
               </Link>
             )}
           </li>
@@ -81,7 +88,7 @@ export function GeographicNavigator({
                 className="geographic-navigator__scope geographic-navigator__scope--active"
                 aria-current="location"
               >
-                {region?.label ?? "Region"}
+                {region?.label ?? regionFallback}
               </span>
             ) : (
               <Link
@@ -91,7 +98,7 @@ export function GeographicNavigator({
                   regionSlug: region?.slug ?? regionSlug,
                 })}
               >
-                {region?.label ?? "Region"}
+                {region?.label ?? regionFallback}
               </Link>
             )}
           </li>

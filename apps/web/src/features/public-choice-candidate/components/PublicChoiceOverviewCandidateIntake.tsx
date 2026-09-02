@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   CastInitiativeDecisionVotePayload,
@@ -11,7 +12,6 @@ import type {
 import {
   isPublicChoiceCandidateElectionBallot,
   PUBLIC_CHOICE_MAX_CANDIDATES,
-  publicChoiceElectionVotingStatusLabel,
   resolvePublicChoiceBallotMode,
   resolvePublicChoiceElectionVotingStatus,
 } from "@hu/types";
@@ -23,8 +23,8 @@ import {
   getPublicInitiativeCollectiveDecision,
   recallInitiativeDecisionVote,
 } from "../../initiative-collective-decision/api";
-import { describeCollectiveDecisionVotingUnavailable } from "../../initiative-collective-decision-lifecycle/collective-decision-voting";
 import { resolveMediaUrl } from "../../media-upload/media-url";
+import { resolvePublicChoiceElectionVotingStatusDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { loadPublicChoiceElectionResultSurface } from "../public-choice-election-result-surface";
 import {
   notifyPublicChoiceElectionRefresh,
@@ -41,6 +41,22 @@ interface PublicChoiceOverviewCandidateIntakeProps {
   onOpenSubmitConsumed?: () => void;
 }
 
+function resolveIntakeUnavailableSuffix(
+  electionStatus: string,
+  t: (key: string) => string,
+): string {
+  switch (electionStatus) {
+    case "NOT_STARTED":
+      return t("publicChoice.candidateIntake.votingOpensWhenPublished");
+    case "CLOSED":
+      return t("publicChoice.candidateIntake.unavailableClosed");
+    case "EXPIRED":
+      return t("publicChoice.candidateIntake.unavailableExpired");
+    default:
+      return t("publicChoice.candidateIntake.unavailableNotOpen");
+  }
+}
+
 /**
  * Pack 04 / Fix 05 — PUBLIC_CHOICE candidate-election Overview surface.
  * Roster + Select / Selected / Recall (Decision Vote authority) for all voters.
@@ -52,6 +68,7 @@ export function PublicChoiceOverviewCandidateIntake({
   openSubmitInitially = false,
   onOpenSubmitConsumed,
 }: PublicChoiceOverviewCandidateIntakeProps) {
+  const t = useTranslations("initiativeExperience");
   const authStatus = useClientAuthStatus();
   const authenticated = authStatus === "authenticated";
   const [candidates, setCandidates] = useState<PublicChoiceCandidatePublicProjection[]>([]);
@@ -170,10 +187,13 @@ export function PublicChoiceOverviewCandidateIntake({
     resultsRetentionStatus: projection?.resultsRetention?.status,
   });
   const votingOpen = electionStatus === "OPEN" && !electionBlocked;
-  const unavailableReason = projection
-    ? describeCollectiveDecisionVotingUnavailable(projection)
-    : "Voting opens when the election ballot is published.";
-  const electionStatusLabel = publicChoiceElectionVotingStatusLabel(electionStatus);
+  const electionStatusLabel = resolvePublicChoiceElectionVotingStatusDisplayLabel(
+    electionStatus,
+    t,
+  );
+  const unavailableSuffix = projection
+    ? resolveIntakeUnavailableSuffix(electionStatus, t)
+    : t("publicChoice.candidateIntake.votingOpensWhenPublished");
 
   const selectedCandidateId =
     currentVote?.choice === "candidate" ? (currentVote.candidateId ?? null) : null;
@@ -221,7 +241,7 @@ export function PublicChoiceOverviewCandidateIntake({
     try {
       const vote = await castOrUpdateInitiativeDecisionVote(decisionId, payload);
       setCurrentVote(vote);
-      setStatusMessage("Selection recorded.");
+      setStatusMessage(t("publicChoice.candidateIntake.selectionRecorded"));
       const refreshed = await getPublicInitiativeCollectiveDecision(decisionId);
       if (refreshed) {
         setProjection(refreshed);
@@ -229,7 +249,9 @@ export function PublicChoiceOverviewCandidateIntake({
       notifyPublicChoiceElectionRefresh(initiativeId);
     } catch (submissionError) {
       setError(
-        submissionError instanceof Error ? submissionError.message : "Could not record selection.",
+        submissionError instanceof Error
+          ? submissionError.message
+          : t("publicChoice.candidateIntake.couldNotRecord"),
       );
     } finally {
       setBusy(false);
@@ -250,7 +272,7 @@ export function PublicChoiceOverviewCandidateIntake({
     try {
       await recallInitiativeDecisionVote(decisionId);
       setCurrentVote(null);
-      setStatusMessage("Selection recalled.");
+      setStatusMessage(t("publicChoice.candidateIntake.selectionRecalled"));
       const refreshed = await getPublicInitiativeCollectiveDecision(decisionId);
       if (refreshed) {
         setProjection(refreshed);
@@ -258,7 +280,9 @@ export function PublicChoiceOverviewCandidateIntake({
       notifyPublicChoiceElectionRefresh(initiativeId);
     } catch (submissionError) {
       setError(
-        submissionError instanceof Error ? submissionError.message : "Could not recall selection.",
+        submissionError instanceof Error
+          ? submissionError.message
+          : t("publicChoice.candidateIntake.couldNotRecall"),
       );
     } finally {
       setBusy(false);
@@ -271,13 +295,17 @@ export function PublicChoiceOverviewCandidateIntake({
   }
 
   if (loadState === "loading") {
-    return <p className="pie-overview-candidates__status">Loading candidates…</p>;
+    return (
+      <p className="pie-overview-candidates__status">
+        {t("publicChoice.candidateIntake.loading")}
+      </p>
+    );
   }
 
   if (loadState === "error") {
     return (
       <p className="pie-overview-candidates__status" role="alert">
-        Candidates could not be loaded.
+        {t("publicChoice.candidateIntake.loadFailed")}
       </p>
     );
   }
@@ -289,20 +317,22 @@ export function PublicChoiceOverviewCandidateIntake({
       className="pie-overview-candidates"
       aria-labelledby="pie-overview-candidates-title"
     >
-      <h2 id="pie-overview-candidates-title">Candidates</h2>
+      <h2 id="pie-overview-candidates-title">{t("publicChoice.candidateIntake.title")}</h2>
       <p className="pie-overview-candidates__lead">
-        Select one candidate. Use Recall to clear your selection and choose again.
-        {authStatus === "unauthenticated" ? " Visitors may vote without registering." : null}
+        {t("publicChoice.candidateIntake.lead")}
+        {authStatus === "unauthenticated"
+          ? t("publicChoice.candidateIntake.visitorsMayVote")
+          : null}
       </p>
       {electionBlocked ? (
         <p className="pie-overview-candidates__status" role="status">
-          This election has been blocked by an administrator.
+          {t("publicChoice.candidateIntake.electionBlocked")}
         </p>
       ) : null}
       <p className="pie-overview-candidates__status" role="status">
-        Election status: {electionStatusLabel}
-        {!votingOpen && projection ? ` — ${unavailableReason}` : null}
-        {!projection ? " — Voting has not started yet." : null}
+        {t("publicChoice.candidateIntake.electionStatus", { status: electionStatusLabel })}
+        {!votingOpen && projection ? ` — ${unavailableSuffix}` : null}
+        {!projection ? ` — ${t("publicChoice.candidateIntake.votingNotStartedYet")}` : null}
       </p>
 
       <ul className="pie-overview-candidates__list">
@@ -351,7 +381,7 @@ export function PublicChoiceOverviewCandidateIntake({
               <div className="pc-overview-vote-row__actions">
                 {candidate.isBlocked ? (
                   <span className="pc-overview-vote-row__blocked" role="status">
-                    Blocked
+                    {t("publicChoice.candidateIntake.blocked")}
                   </span>
                 ) : null}
                 {candidate.viewerCanManage && !resultsExpired ? (
@@ -361,14 +391,14 @@ export function PublicChoiceOverviewCandidateIntake({
                     disabled={busy}
                     onClick={() => openEditForm(candidate)}
                   >
-                    Edit
+                    {t("publicChoice.candidateIntake.edit")}
                   </button>
                 ) : null}
                 {votingOpen ? (
                   selected ? (
                     <>
                       <span className="pc-overview-vote-row__badge" role="status">
-                        Selected
+                        {t("publicChoice.candidateIntake.selected")}
                       </span>
                       <button
                         type="button"
@@ -378,7 +408,9 @@ export function PublicChoiceOverviewCandidateIntake({
                         aria-pressed="true"
                         onClick={() => void recall()}
                       >
-                        {pendingId === "recall" ? "Recalling…" : "Recall"}
+                        {pendingId === "recall"
+                          ? t("publicChoice.candidateIntake.recalling")
+                          : t("publicChoice.candidateIntake.recall")}
                       </button>
                     </>
                   ) : (
@@ -395,7 +427,9 @@ export function PublicChoiceOverviewCandidateIntake({
                         )
                       }
                     >
-                      {pendingId === candidate.candidateId ? "Saving…" : "Select"}
+                      {pendingId === candidate.candidateId
+                        ? t("publicChoice.candidateIntake.saving")
+                        : t("publicChoice.candidateIntake.select")}
                     </button>
                   )
                 ) : null}
@@ -414,7 +448,7 @@ export function PublicChoiceOverviewCandidateIntake({
               className="pie-overview-candidates__add hu-button hu-button--secondary"
               onClick={openSubmitForm}
             >
-              + Add candidate
+              {t("publicChoice.candidateIntake.addCandidateCta")}
             </button>
           </li>
         ) : null}
@@ -425,7 +459,9 @@ export function PublicChoiceOverviewCandidateIntake({
         candidates.length >= PUBLIC_CHOICE_MAX_CANDIDATES ? (
           <li className="pie-overview-candidates__add-row">
             <p className="pie-overview-candidates__status" role="status">
-              This election has reached the maximum of {PUBLIC_CHOICE_MAX_CANDIDATES} candidates.
+              {t("publicChoice.candidateIntake.atMaxCandidates", {
+                max: PUBLIC_CHOICE_MAX_CANDIDATES,
+              })}
             </p>
           </li>
         ) : null}
@@ -438,7 +474,7 @@ export function PublicChoiceOverviewCandidateIntake({
                 `/initiatives/public/${encodeURIComponent(initiativeId)}#add-candidate`,
               )}`}
             >
-              + Add candidate
+              {t("publicChoice.candidateIntake.addCandidateCta")}
             </a>
           </li>
         ) : null}
@@ -447,7 +483,7 @@ export function PublicChoiceOverviewCandidateIntake({
       {!votingOpen ? (
         <p className="pie-overview-candidates__status">
           <a className="hu-button hu-button--secondary" href={electionHref}>
-            View election
+            {t("publicChoice.candidateIntake.viewElection")}
           </a>
         </p>
       ) : null}

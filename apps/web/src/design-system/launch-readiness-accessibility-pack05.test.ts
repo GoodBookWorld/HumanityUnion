@@ -51,8 +51,10 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
     const fab = read(
       "features/humanity-union-assistant/components/HumanityUnionAssistantFloatingButton.tsx",
     );
-    assert.match(fab, /aria-label="Open Humanity Union Assistant"/);
+    assert.match(fab, /aria-label=\{openAria\}/);
+    assert.match(fab, /assistant\.entry\.openAria/);
     assert.doesNotMatch(fab, /hu-assistant-fab__sr/);
+    assert.doesNotMatch(fab, /aria-label="Open Humanity Union Assistant"/);
 
     const menu = read("design-system/components/HumanityHeaderMobileMenu.tsx");
     assert.match(menu, /aria-label=\{isOpen \? "Close navigation menu" : "Open navigation menu"\}/);

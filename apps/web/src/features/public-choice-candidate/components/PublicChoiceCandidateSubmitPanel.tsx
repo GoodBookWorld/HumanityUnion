@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicChoiceCandidatePublicProjection } from "@hu/types";
 import { PUBLIC_CHOICE_MAX_CANDIDATES } from "@hu/types";
@@ -37,6 +38,7 @@ export function PublicChoiceCandidateSubmitPanel({
   onCancel,
   onDeleted,
 }: PublicChoiceCandidateSubmitPanelProps) {
+  const t = useTranslations("initiativeExperience");
   const isEdit = Boolean(editingCandidate);
   const [name, setName] = useState(editingCandidate?.name ?? "");
   const [campaignPageUrl, setCampaignPageUrl] = useState(
@@ -90,7 +92,7 @@ export function PublicChoiceCandidateSubmitPanel({
               ? { photoUrl }
               : {}),
         });
-        setMessage("Candidate updated.");
+        setMessage(t("publicChoice.candidateSubmit.updated"));
       } else {
         await createPublicChoiceCandidate(initiativeId, {
           name: name.trim(),
@@ -101,11 +103,13 @@ export function PublicChoiceCandidateSubmitPanel({
         setCampaignPageUrl("");
         setPhotoUrl(null);
         setPhotoCleared(false);
-        setMessage("Candidate submitted.");
+        setMessage(t("publicChoice.candidateSubmit.submitted"));
       }
       onSubmitted?.();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not save candidate.");
+      setMessage(
+        error instanceof Error ? error.message : t("publicChoice.candidateSubmit.saveFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -122,7 +126,9 @@ export function PublicChoiceCandidateSubmitPanel({
       setConfirmDelete(false);
       onDeleted?.();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not delete candidate.");
+      setMessage(
+        error instanceof Error ? error.message : t("publicChoice.candidateSubmit.deleteFailed"),
+      );
       setConfirmDelete(false);
     } finally {
       setBusy(false);
@@ -135,23 +141,30 @@ export function PublicChoiceCandidateSubmitPanel({
       className="pie-election-candidate-submit"
       aria-labelledby="pie-add-candidate-title"
     >
-      <h2 id="pie-add-candidate-title">{isEdit ? "Edit candidate" : "Add a candidate"}</h2>
+      <h2 id="pie-add-candidate-title">
+        {isEdit
+          ? t("publicChoice.candidateSubmit.editTitle")
+          : t("publicChoice.candidateSubmit.addTitle")}
+      </h2>
       <p className="pie-election-candidate-submit__helper">
-        Up to {PUBLIC_CHOICE_MAX_CANDIDATES} candidates can be added to one election.
+        {t("publicChoice.candidateSubmit.helper", { max: PUBLIC_CHOICE_MAX_CANDIDATES })}
         {candidateCount > 0 ? (
           <>
             {" "}
             <strong>
-              {candidateCount} of {PUBLIC_CHOICE_MAX_CANDIDATES} candidates
+              {t("publicChoice.candidateSubmit.helperCount", {
+                count: candidateCount,
+                max: PUBLIC_CHOICE_MAX_CANDIDATES,
+              })}
             </strong>
           </>
         ) : null}
       </p>
       {atLimit ? (
-        <p role="status">This election has reached the maximum of 20 candidates.</p>
+        <p role="status">{t("publicChoice.candidateSubmit.atLimit")}</p>
       ) : null}
       <label>
-        Candidate name
+        {t("publicChoice.candidateSubmit.nameLabel")}
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -162,7 +175,7 @@ export function PublicChoiceCandidateSubmitPanel({
       </label>
       <div className="pie-election-candidate-submit__photo">
         <PersonImageUploadField
-          label="Candidate photo (optional)"
+          label={t("publicChoice.candidateSubmit.photoLabel")}
           imageUrl={photoPreview}
           disabled={busy || atLimit}
           variant="person"
@@ -171,7 +184,7 @@ export function PublicChoiceCandidateSubmitPanel({
         />
       </div>
       <label>
-        Campaign page URL (optional)
+        {t("publicChoice.candidateSubmit.campaignUrlLabel")}
         <input
           value={campaignPageUrl}
           onChange={(event) => setCampaignPageUrl(event.target.value)}
@@ -187,7 +200,11 @@ export function PublicChoiceCandidateSubmitPanel({
           onClick={() => void handleSubmit()}
           disabled={busy || !name.trim() || atLimit}
         >
-          {busy ? "Saving…" : isEdit ? "Save changes" : "Submit candidate"}
+          {busy
+            ? t("publicChoice.candidateSubmit.saving")
+            : isEdit
+              ? t("publicChoice.candidateSubmit.saveChanges")
+              : t("publicChoice.candidateSubmit.submit")}
         </button>
         {onCancel ? (
           <button
@@ -196,7 +213,7 @@ export function PublicChoiceCandidateSubmitPanel({
             onClick={onCancel}
             disabled={busy}
           >
-            Cancel
+            {t("publicChoice.candidateSubmit.cancel")}
           </button>
         ) : null}
         {isEdit ? (
@@ -206,7 +223,7 @@ export function PublicChoiceCandidateSubmitPanel({
             onClick={() => setConfirmDelete(true)}
             disabled={busy}
           >
-            Delete candidate
+            {t("publicChoice.candidateSubmit.deleteCandidate")}
           </button>
         ) : null}
       </div>
@@ -217,9 +234,9 @@ export function PublicChoiceCandidateSubmitPanel({
           aria-labelledby="pc-delete-title"
         >
           <p id="pc-delete-title">
-            <strong>Delete candidate?</strong>
+            <strong>{t("publicChoice.candidateSubmit.deleteConfirmTitle")}</strong>
           </p>
-          <p>This candidate will be removed from the election.</p>
+          <p>{t("publicChoice.candidateSubmit.deleteConfirmBody")}</p>
           <div className="pie-election-candidate-submit__actions">
             <button
               type="button"
@@ -227,7 +244,7 @@ export function PublicChoiceCandidateSubmitPanel({
               disabled={busy}
               onClick={() => setConfirmDelete(false)}
             >
-              Cancel
+              {t("publicChoice.candidateSubmit.cancel")}
             </button>
             <button
               type="button"
@@ -235,7 +252,9 @@ export function PublicChoiceCandidateSubmitPanel({
               disabled={busy}
               onClick={() => void handleDelete()}
             >
-              {busy ? "Deleting…" : "Delete candidate"}
+              {busy
+                ? t("publicChoice.candidateSubmit.deleting")
+                : t("publicChoice.candidateSubmit.deleteCandidate")}
             </button>
           </div>
         </div>

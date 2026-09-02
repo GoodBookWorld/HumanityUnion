@@ -122,7 +122,8 @@ describe("Pack 02G Task 08E.7 — Working Sidebar AI insight chrome", () => {
     assert.match(sidebar, /resolveSidebarAdvisoryDisplay/);
     assert.match(sidebar, /insights\.sourcesSummary/);
     assert.match(sidebar, /item\.excerpt/);
-    assert.match(sidebar, /warning\.message/);
+    assert.match(sidebar, /resolveApiConflictWarningDisplay/);
+    assert.doesNotMatch(sidebar, /warning\.message/);
     assert.match(sidebar, /entry\.rationale/);
     assert.match(sidebar, /insights\.clarityWarnings\.map/);
     assert.doesNotMatch(sidebar, /t\(".*sourcesUsedSummary/);

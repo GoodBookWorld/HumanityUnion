@@ -32,6 +32,8 @@
 
 .hu-assistant-widget__title {
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-lg);
   font-weight: var(--hu-font-weight-semibold);
@@ -42,6 +44,8 @@
 
 .hu-assistant-widget__copy {
   margin: 0 0 var(--hu-space-4);
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: var(--hu-font-family);
   font-size: var(--hu-font-size-sm);
   line-height: var(--hu-line-height);

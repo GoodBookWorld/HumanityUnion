@@ -20,6 +20,7 @@ export function PwaBottomNav() {
   const pathname = usePathname() ?? "/";
   const tNav = useTranslations("navigation");
   const tWorkspace = useTranslations("workspace");
+  const tAssistant = useTranslations("initiativeExperience");
   const assistant = useOptionalHumanityUnionAssistant();
   const assistantButtonRef = useRef<HTMLButtonElement>(null);
   const { unreadCount: unreadCountRaw } = useUnreadNotificationCount();
@@ -111,7 +112,7 @@ export function PwaBottomNav() {
         ref={assistantButtonRef}
         type="button"
         className="hu-pwa-bottom-nav__item"
-        aria-label="Open Humanity Union Assistant"
+        aria-label={tAssistant("assistant.entry.openAria")}
         aria-haspopup="dialog"
         aria-expanded={assistant?.isOpen ?? false}
         onClick={() => {
@@ -133,7 +134,7 @@ export function PwaBottomNav() {
           height={36}
           aria-hidden="true"
         />
-        Assistant
+        {tAssistant("assistant.entry.shortLabel")}
       </button>
     </nav>
   );

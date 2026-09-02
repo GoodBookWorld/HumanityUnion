@@ -112,8 +112,10 @@ describe("Pack 02G Task 08D.6 — Petition author workspace i18n", () => {
     );
     assert.match(panel, /proposal\.title/);
     assert.match(panel, /proposal\.summary/);
-    assert.match(panel, /check\.label/);
-    assert.match(panel, /check\.detail/);
+    assert.match(panel, /resolveApiConsistencyLabelDisplay/);
+    assert.match(panel, /resolveApiConsistencyCheckDisplay/);
+    assert.doesNotMatch(panel, /\{check\.label\}/);
+    assert.doesNotMatch(panel, /\{check\.detail\}/);
     assert.match(panel, /revisionReference\.revisionSummary/);
     assert.match(publicResult, /traceability\.revisionId/);
     assert.match(publicResult, /participationTransparencyNote/);

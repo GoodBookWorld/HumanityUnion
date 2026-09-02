@@ -162,9 +162,12 @@ describe("Pack 02G Task 08D.5 — Proposal + Revision author workspace i18n", ()
     assert.match(panel, /href=\{group\.discussionUrl\}/);
     assert.match(panel, /group\.authorDisplayNames/);
     assert.match(revisionPanel, /key=\{proposal\.proposalId\}/);
-    assert.match(revisionPanel, /warning\.message/);
-    assert.match(revisionPanel, /check\.label/);
-    assert.match(revisionPanel, /check\.detail/);
+    assert.match(revisionPanel, /resolveApiConflictWarningDisplay/);
+    assert.match(revisionPanel, /resolveApiConsistencyLabelDisplay/);
+    assert.match(revisionPanel, /resolveApiConsistencyCheckDisplay/);
+    assert.doesNotMatch(revisionPanel, /warning\.message/);
+    assert.doesNotMatch(revisionPanel, /\{check\.label\}/);
+    assert.doesNotMatch(revisionPanel, /\{check\.detail\}/);
     assert.match(editor, /key=\{proposal\.proposalId\}/);
   });
 

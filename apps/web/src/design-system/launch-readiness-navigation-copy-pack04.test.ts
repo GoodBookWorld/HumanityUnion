@@ -115,13 +115,18 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     const widget = read(
       "features/humanity-union-assistant/components/HumanityUnionAssistantWidget.tsx",
     );
-    assert.match(widget, /Humanity Union Assistant/);
+    assert.match(widget, /assistant\.entry\.title/);
+    assert.match(widget, /assistant\.entry\.askAssistant/);
+    assert.doesNotMatch(widget, />\s*Humanity Union Assistant\s*</);
+    assert.doesNotMatch(widget, />\s*Ask Assistant\s*</);
 
     const fab = read(
       "features/humanity-union-assistant/components/HumanityUnionAssistantFloatingButton.tsx",
     );
-    assert.match(fab, /Open Humanity Union Assistant/);
-    assert.match(fab, /title="Humanity Union Assistant"/);
+    assert.match(fab, /assistant\.entry\.openAria/);
+    assert.match(fab, /assistant\.entry\.title/);
+    assert.doesNotMatch(fab, /aria-label="Open Humanity Union Assistant"/);
+    assert.doesNotMatch(fab, /title="Humanity Union Assistant"/);
 
     const implementation = read("features/implementation/components/ImplementationWorkspace.tsx");
     assert.match(implementation, /Humanity Union Assistant/);

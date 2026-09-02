@@ -88,7 +88,7 @@ describe("Pack 02G Task 08D.9 — Official Response + Public Impact + Archive au
     assert.equal(authorKey(uk.messages, "publicImpact.fields.body"), "Текст");
     assert.equal(
       authorKey(uk.messages, "publicImpact.generateImpactDraft"),
-      "Згенерувати чернетку публічного впливу",
+      "Згенерувати чернетку громадського впливу",
     );
     assert.equal(
       authorKey(uk.messages, "publicImpact.sections.executive_summary"),
