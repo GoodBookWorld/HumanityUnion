@@ -211,19 +211,12 @@ describe("Pack 02G Task 08E.8a — Analysis structured advisories", () => {
     );
   });
 
-  it("Proposal derive/render remains legacy English advisory encoding", () => {
+  it("Proposal migration is owned by 08E.8b (not asserted as Analysis-only legacy here)", () => {
     const proposal = readWeb(
       "features/initiative-improvement-proposals-stage/derive-proposal-ai-assistant-insights.ts",
     );
-    const sidebar = readWeb(
-      "features/initiative-lifecycle-stage-workspace/components/InitiativeLifecycleWorkingSidebar.tsx",
-    );
-    assert.match(proposal, /No proposal-marked comments collected yet/);
-    assert.match(proposal, /Complete missing fields before deciding/);
-    assert.match(sidebar, /deriveProposalAiAssistantInsights/);
-    assert.match(sidebar, /insights\.sourcesUsedSummary/);
     assert.doesNotMatch(proposal, /AnalysisSidebarAdvisory/);
-    assert.doesNotMatch(proposal, /author\.sidebar\.advisories/);
+    assert.match(proposal, /ProposalSidebarAdvisory/);
   });
 
   it("later-stage derive modules remain untouched English banks", () => {

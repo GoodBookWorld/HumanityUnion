@@ -1005,6 +1005,17 @@
             "missingProposalCandidates": "No comments have been marked as proposal candidates yet.",
             "missingOpenQuestions": "No open questions have been raised in Discussion yet.",
             "textOverlapContradiction": "“{topic}” — supported and disputed in different comments."
+          },
+          "proposal": {
+            "sourcesEmpty": "No proposal-marked comments collected yet. You can still confirm the Initiative version with zero proposals.",
+            "sourcesSummary": "{candidateCount, plural, one {# proposal-marked comment} other {# proposal-marked comments}} across {groupCount, plural, one {# group} other {# groups}}, {duplicateGroupCount, plural, one {# likely duplicate} other {# likely duplicates}}.",
+            "rationaleReviewIncomplete": "Complete missing fields before deciding: {fields}.",
+            "rationaleAcceptClear": "Clear reason and expected improvement — consider Accept and generate revised Initiative text.",
+            "rationalePartiallyAcceptLimited": "Useful direction with limited detail — consider Partially accept and edit Initiative text manually.",
+            "rationaleDeclineLimited": "Limited actionable detail — consider Decline unless Discussion context supports it.",
+            "treatments": {
+              "review": "Review"
+            }
           }
         },
         "completeness": {

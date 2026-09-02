@@ -153,8 +153,9 @@ describe("Pack 02G Task 08E.7 — Working Sidebar AI insight chrome", () => {
     const sidebar = readWeb(
       "features/initiative-lifecycle-stage-workspace/components/InitiativeLifecycleWorkingSidebar.tsx",
     );
-    // Existing suggestion underscore display remains local to derived suggestion codes — not a new localization table.
-    assert.match(sidebar, /entry\.suggestion\.replace\(\/_\/g,\s*" "\)/);
+    // 08E.8b removed Proposal suggestion underscore prettification in favor of an explicit display resolver.
+    assert.doesNotMatch(sidebar, /suggestion\.replace\(\/_\/g/);
+    assert.match(sidebar, /resolveProposalTreatmentSuggestionDisplayLabel/);
     assert.doesNotMatch(sidebar, /messageMap/);
     assert.doesNotMatch(sidebar, /if \(raw === "/);
     assert.doesNotMatch(sidebar, /Error\.message\.includes/);

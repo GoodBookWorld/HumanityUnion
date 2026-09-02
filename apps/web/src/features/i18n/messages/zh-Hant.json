@@ -1005,6 +1005,17 @@
             "missingProposalCandidates": "尚未有評論被標示為提案候選。",
             "missingOpenQuestions": "討論中尚未提出未決問題。",
             "textOverlapContradiction": "「{topic}」— 在不同評論中被支持與質疑。"
+          },
+          "proposal": {
+            "sourcesEmpty": "尚未收集標示為提案的評論。你仍可在零提案的情況下確認倡議版本。",
+            "sourcesSummary": "{candidateCount} 則已標為提案的評論，分屬 {groupCount} 個群組，其中 {duplicateGroupCount} 個可能重複。",
+            "rationaleReviewIncomplete": "決定前請先補齊缺少欄位：{fields}。",
+            "rationaleAcceptClear": "理由與預期改善清楚——可考慮接受並產生修訂後的倡議文本。",
+            "rationalePartiallyAcceptLimited": "方向有用但細節有限——可考慮部分接受並手動編輯倡議文本。",
+            "rationaleDeclineLimited": "可執行細節有限——除非討論脈絡支持，否則可考慮拒絕。",
+            "treatments": {
+              "review": "審核"
+            }
           }
         },
         "completeness": {

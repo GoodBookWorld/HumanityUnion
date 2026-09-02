@@ -79,7 +79,11 @@ import { deriveCivicArchiveAiAssistantInsights } from "../../initiative-civic-ar
 import { WorkspaceButton, WorkspaceDeferredActions, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import { HumanityUnionAssistantOpenButton } from "../../humanity-union-assistant";
 import { getInitiativeLifecycleStageProjection } from "../api";
-import { resolveSidebarAdvisoryDisplay } from "../resolve-sidebar-advisory-display";
+import {
+  formatProposalSidebarFieldLabels,
+  resolveProposalTreatmentSuggestionDisplayLabel,
+  resolveSidebarAdvisoryDisplay,
+} from "../resolve-sidebar-advisory-display";
 
 import "../initiative-lifecycle-stage-workspace.css";
 
@@ -421,7 +425,7 @@ function ProposalAiAssistantContent({
     <div className="iip-ai-assistant">
       <div className="iip-ai-assistant__group">
         <h4>{t("author.sidebar.sourcesUsed")}</h4>
-        <p>{insights.sourcesUsedSummary}</p>
+        <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
@@ -430,7 +434,8 @@ function ProposalAiAssistantContent({
           <ul>
             {insights.duplicateGroups.map((group) => (
               <li key={group.groupId}>
-                &ldquo;{group.representativeExcerpt}&rdquo; {t("author.sidebar.insights.similarMentions", { count: group.memberCount })}
+                &ldquo;{group.representativeExcerpt}&rdquo;{" "}
+                {t("author.sidebar.insights.similarMentions", { count: group.memberCount })}
               </li>
             ))}
           </ul>
@@ -444,7 +449,9 @@ function ProposalAiAssistantContent({
         {insights.ungroupedCandidateGroups.length > 0 ? (
           <ul>
             {insights.ungroupedCandidateGroups.map((group) => (
-              <li key={group.groupId}>&ldquo;{group.representativeExcerpt}&rdquo; {t("author.sidebar.insights.notYetDrafted")}</li>
+              <li key={group.groupId}>
+                &ldquo;{group.representativeExcerpt}&rdquo; {t("author.sidebar.insights.notYetDrafted")}
+              </li>
             ))}
           </ul>
         ) : (
@@ -458,18 +465,27 @@ function ProposalAiAssistantContent({
           <ul>
             {insights.incompleteProposals.map(({ proposal, missingFields }) => (
               <li key={proposal.proposalId}>
-                &ldquo;{proposal.title || t("author.sidebar.insights.untitledProposal")}&rdquo; {t("author.sidebar.insights.missingFieldsSuffix", { fields: missingFields.join(", ") })}
+                &ldquo;{proposal.title || t("author.sidebar.insights.untitledProposal")}&rdquo;{" "}
+                {t("author.sidebar.insights.missingFieldsSuffix", {
+                  fields: formatProposalSidebarFieldLabels(missingFields, t),
+                })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoIncompleteProposals")}</p>
+          <p className="iip-ai-assistant__empty">
+            {t("author.sidebar.insights.emptyNoIncompleteProposals")}
+          </p>
         )}
       </div>
 
       <div className="iip-ai-assistant__group">
         <h4>{t("author.sidebar.insights.openProposalQuestions")}</h4>
-        <p>{t("author.sidebar.insights.openProposalQuestionsCount", { count: insights.openProposalQuestionCount })}</p>
+        <p>
+          {t("author.sidebar.insights.openProposalQuestionsCount", {
+            count: insights.openProposalQuestionCount,
+          })}
+        </p>
       </div>
 
       <div className="iip-ai-assistant__group">
@@ -478,13 +494,16 @@ function ProposalAiAssistantContent({
           <ul>
             {insights.suggestedTreatments.map((entry) => (
               <li key={entry.proposalId}>
-                &ldquo;{entry.title || t("author.sidebar.insights.untitled")}&rdquo; — {entry.suggestion.replace(/_/g, " ")}:{" "}
-                {entry.rationale}
+                &ldquo;{entry.title || t("author.sidebar.insights.untitled")}&rdquo; —{" "}
+                {resolveProposalTreatmentSuggestionDisplayLabel(entry.suggestion, t)}:{" "}
+                {resolveSidebarAdvisoryDisplay(entry.rationale, t).text}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoUndecidedProposals")}</p>
+          <p className="iip-ai-assistant__empty">
+            {t("author.sidebar.insights.emptyNoUndecidedProposals")}
+          </p>
         )}
         <p className="iip-ai-assistant__empty">
           {t("author.sidebar.insights.neverPublishesAutomatically")}

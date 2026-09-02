@@ -1005,6 +1005,17 @@
             "missingProposalCandidates": "لم تُعلَّم أي تعليقات بعد كمرشحين لمقترحات.",
             "missingOpenQuestions": "لم تُطرح بعد أسئلة مفتوحة في النقاش.",
             "textOverlapContradiction": "«{topic}» — مدعوم ومنازع عليه في تعليقات مختلفة."
+          },
+          "proposal": {
+            "sourcesEmpty": "لم تُجمع بعد تعليقات مُعلَّمة كمقترحات. يمكنك مع ذلك تأكيد إصدار المبادرة بصفر مقترحات.",
+            "sourcesSummary": "{candidateCount, plural, one {تعليق واحد مُعلَّم كمقترح} other {# تعليقات مُعلَّمة كمقترحات}} عبر {groupCount, plural, one {مجموعة واحدة} other {# مجموعات}}، {duplicateGroupCount, plural, one {تكرار محتمل واحد} other {# تكرارات محتملة}}.",
+            "rationaleReviewIncomplete": "أكمل الحقول الناقصة قبل اتخاذ القرار: {fields}.",
+            "rationaleAcceptClear": "سبب واضح وتحسين متوقع — فكّر في القبول وإنشاء نص مبادرة منقّح.",
+            "rationalePartiallyAcceptLimited": "اتجاه مفيد بتفاصيل محدودة — فكّر في القبول الجزئي وتحرير نص المبادرة يدويًا.",
+            "rationaleDeclineLimited": "تفاصيل قابلة للتنفيذ محدودة — فكّر في الرفض ما لم يدعم سياق النقاش ذلك.",
+            "treatments": {
+              "review": "مراجعة"
+            }
           }
         },
         "completeness": {
