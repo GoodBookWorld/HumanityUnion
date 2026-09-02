@@ -1,36 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { InitiativeLifecycleStageMetadata } from "@hu/types";
 
 import { getInitiativeLifecycleStageProjection } from "../../initiative-lifecycle-stage-workspace";
-import { formatInitiativeDate } from "../../initiatives/initiative-lifecycle-labels";
+import {
+  formatInitiativeExperienceDate,
+  resolvePresentationStatusDisplayLabel,
+} from "../initiative-experience-i18n";
 
 import "./current-lifecycle-stage-banner.css";
 
-const STATUS_LABELS: Record<InitiativeLifecycleStageMetadata["presentationStatus"], string> = {
-  not_started: "Not Started",
-  draft: "Draft Saved",
-  ready_for_review: "Preview",
-  published: "Published",
-  superseded: "Completed",
-  unavailable: "Temporarily Unavailable",
-};
-
 /**
- * Lifecycle UX Correction Pack 01 Part 2 — a dedicated "Current Lifecycle
- * Stage" UI element, deliberately separate from `Initiative.status` (see
- * `OverviewMetadataItem label="Status"` in the same Overview tab):
- * `Initiative.status` and the Lifecycle are independent concepts and
- * neither one replaces the other.
- *
- * Self-fetches the one selected stage's own projection — the exact same
- * generic per-stage endpoint `InitiativeLifecycleStageWorkspace` already
- * uses — purely for its `metadata` (presentation status / version /
- * publication date). Never blocks or replaces the rest of the Overview
- * tab: on any fetch failure this silently falls back to the plain stage
- * label with no publication metadata.
+ * Lifecycle UX Correction Pack 01 Part 2 — "Current Lifecycle Stage" UI element.
+ * Pack 02G Task 08B.1 — localized chrome + presentation status labels.
  */
 export function CurrentLifecycleStageBanner({
   initiativeId,
@@ -41,6 +26,8 @@ export function CurrentLifecycleStageBanner({
   stageId: string;
   stageLabel: string;
 }) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const [metadata, setMetadata] = useState<InitiativeLifecycleStageMetadata | null>(null);
 
   useEffect(() => {
@@ -62,16 +49,25 @@ export function CurrentLifecycleStageBanner({
     };
   }, [initiativeId, stageId]);
 
-  const publicationLine =
-    metadata?.publishedAt
-      ? `Published${metadata.version !== null ? ` · Version ${metadata.version}` : ""} · ${formatInitiativeDate(metadata.publishedAt)}`
-      : metadata
-        ? STATUS_LABELS[metadata.presentationStatus]
-        : null;
+  const publicationLine = metadata?.publishedAt
+    ? metadata.version !== null
+      ? t("common.publishedVersionDate", {
+          version: metadata.version,
+          date: formatInitiativeExperienceDate(locale, metadata.publishedAt),
+        })
+      : t("common.publishedDateOnly", {
+          date: formatInitiativeExperienceDate(locale, metadata.publishedAt),
+        })
+    : metadata
+      ? resolvePresentationStatusDisplayLabel(metadata.presentationStatus, t)
+      : null;
 
   return (
-    <section className="pie-current-stage" aria-label="Current Lifecycle Stage">
-      <h3 className="pie-current-stage__label">Current Lifecycle Stage</h3>
+    <section
+      className="pie-current-stage"
+      aria-label={t("overview.currentLifecycleStageAria")}
+    >
+      <h3 className="pie-current-stage__label">{t("overview.currentLifecycleStage")}</h3>
       <p className="pie-current-stage__value">{stageLabel}</p>
       {publicationLine ? <p className="pie-current-stage__meta">{publicationLine}</p> : null}
     </section>

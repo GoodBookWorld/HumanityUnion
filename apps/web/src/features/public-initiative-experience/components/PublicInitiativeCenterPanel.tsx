@@ -3,6 +3,7 @@
 import type { RefObject, ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import type {
   InitiativeLifecycleProfile,
   PublicInitiativeExperienceProjection,
@@ -18,6 +19,11 @@ import {
 } from "@hu/types";
 
 import { formatPublicGeography } from "@hu/geography";
+import {
+  formatInitiativeExperienceDate,
+  resolveActivityAreaDisplayLabel,
+  resolveLifecycleStageDisplayLabel,
+} from "../initiative-experience-i18n";
 import { InitiativeLifecycleStageWorkspace } from "../../initiative-lifecycle-stage-workspace";
 import { InitiativeCollaborativeAnalysisAuthorWorkspace } from "../../initiative-collaborative-analysis/components/InitiativeCollaborativeAnalysisAuthorWorkspace";
 import { InitiativeCollaborativeAnalysisDraftPreview } from "../../initiative-collaborative-analysis/components/InitiativeCollaborativeAnalysisDraftPreview";
@@ -74,14 +80,6 @@ function formatList(values: string[]): string | null {
   return values.length > 0 ? values.join(", ") : null;
 }
 
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 function OverviewSection({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) {
     return null;
@@ -118,13 +116,15 @@ function OverviewMetadataItem({ label, value }: { label: string; value: string |
 function OverviewAuthorItem({
   displayName,
   profileUrl,
+  authorLabel,
 }: {
   displayName: string;
   profileUrl?: string;
+  authorLabel: string;
 }) {
   return (
     <div className="pie-overview__item">
-      <h3>Author</h3>
+      <h3>{authorLabel}</h3>
       {profileUrl ? (
         <p>
           <Link href={profileUrl} className="pie-overview__author-link">
@@ -153,14 +153,23 @@ function PublicInitiativeOverview({
   openCandidateSubmit?: boolean;
   onOpenCandidateSubmitConsumed?: () => void;
 }) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const metadata = initiative.metadata;
-  const activityArea =
+  const activityAreaRaw =
     metadata.activityArea === "Other" && metadata.activityAreaOther
       ? metadata.activityAreaOther
       : metadata.activityArea;
+  const activityArea =
+    metadata.activityArea === "Other" && metadata.activityAreaOther
+      ? activityAreaRaw
+      : resolveActivityAreaDisplayLabel(activityAreaRaw, t);
   const presentation = getInitiativeLifecycleProfilePresentation(lifecycleProfile);
   const showCandidateIntake =
     presentation.isPublicChoice && isPublicChoiceCandidateElectionBallot(metadata.ballotMode);
+  const communityAssociationLabel = presentation.isPublicChoice
+    ? t("overview.electionName")
+    : t("overview.communityAssociation");
 
   return (
     <div className="pie-overview">
@@ -178,29 +187,34 @@ function PublicInitiativeOverview({
       ) : null}
       {!presentation.isPublicChoice ? (
         <>
-          <OverviewSection label="Full Description" value={initiative.description} />
+          <OverviewSection label={t("overview.fullDescription")} value={initiative.description} />
           <div className="pie-overview__grid">
             <div className="pie-overview__column">
               {presentation.showActivityArea ? (
-                <OverviewMetadataItem label="Activity Area" value={activityArea} />
+                <OverviewMetadataItem label={t("overview.activityArea")} value={activityArea} />
               ) : null}
-              <OverviewMetadataItem label="Category" value={metadata.category} />
+              <OverviewMetadataItem label={t("overview.category")} value={metadata.category} />
               <OverviewMetadataItem
-                label="Start Date"
-                value={metadata.startDate ? formatDate(metadata.startDate) : undefined}
+                label={t("overview.startDate")}
+                value={
+                  metadata.startDate
+                    ? formatInitiativeExperienceDate(locale, metadata.startDate)
+                    : undefined
+                }
               />
               <OverviewAuthorItem
                 displayName={initiative.stewardDisplayName}
                 profileUrl={initiative.stewardProfileUrl}
+                authorLabel={t("overview.author")}
               />
               <OverviewMetadataItem
-                label="Current Version"
-                value={`Version ${initiative.currentVersion}`}
+                label={t("common.currentVersion")}
+                value={t("common.versionN", { version: initiative.currentVersion })}
               />
             </div>
             <div className="pie-overview__column">
               <OverviewMetadataItem
-                label="Geographic Scope"
+                label={t("overview.geographicScope")}
                 value={formatPublicGeography({
                   countryCode: metadata.countrySlug,
                   regionCode: metadata.regionSlug,
@@ -210,16 +224,23 @@ function PublicInitiativeOverview({
                 })}
               />
               <OverviewMetadataItem
-                label={presentation.communityAssociationLabel}
+                label={communityAssociationLabel}
                 value={metadata.communityAssociation ?? metadata.communitySlug}
               />
-              <OverviewMetadataItem label="Language" value={metadata.language} />
+              <OverviewMetadataItem label={t("overview.language")} value={metadata.language} />
               <OverviewMetadataItem
-                label="Completion Date"
-                value={metadata.completionDate ? formatDate(metadata.completionDate) : undefined}
+                label={t("overview.completionDate")}
+                value={
+                  metadata.completionDate
+                    ? formatInitiativeExperienceDate(locale, metadata.completionDate)
+                    : undefined
+                }
               />
-              <OverviewMetadataItem label="Status" value={currentStageLabel} />
-              <OverviewMetadataItem label="Tags" value={formatList(metadata.tags) ?? undefined} />
+              <OverviewMetadataItem label={t("overview.status")} value={currentStageLabel} />
+              <OverviewMetadataItem
+                label={t("overview.tags")}
+                value={formatList(metadata.tags) ?? undefined}
+              />
             </div>
           </div>
           {initiative.sourceReferences?.map((reference) => (
@@ -227,14 +248,18 @@ function PublicInitiativeOverview({
               key={`${reference.type}-${reference.sourceRecordId}`}
               className="pie-overview__section"
             >
-              <h3>Source article</h3>
+              <h3>{t("common.sourceArticle")}</h3>
               <p className="pie-overview__meta">{reference.sourceName}</p>
               <p>{reference.title}</p>
               {reference.summary ? <p>{reference.summary}</p> : null}
-              <p className="pie-overview__meta">Published {formatDate(reference.publishedAt)}</p>
+              <p className="pie-overview__meta">
+                {t("common.publishedPrefix", {
+                  date: formatInitiativeExperienceDate(locale, reference.publishedAt),
+                })}
+              </p>
               <p>
                 <a href={reference.articleUrl} target="_blank" rel="noopener noreferrer">
-                  View original source
+                  {t("common.viewOriginalSource")}
                 </a>
               </p>
             </section>
@@ -246,13 +271,16 @@ function PublicInitiativeOverview({
 }
 
 function LifecycleRecordCard({ record }: { record: PublicInitiativeLifecycleRecordItem }) {
+  const locale = useLocale();
   const content = (
     <>
       <h3>{record.title}</h3>
       {record.summary ? <p>{record.summary}</p> : null}
       <p className="pie-record__meta">
         {[record.status, record.authorDisplayName, record.detail].filter(Boolean).join(" · ")}
-        {record.updatedAt ? ` · ${formatDate(record.updatedAt)}` : ""}
+        {record.updatedAt
+          ? ` · ${formatInitiativeExperienceDate(locale, record.updatedAt)}`
+          : ""}
       </p>
     </>
   );
@@ -390,6 +418,7 @@ export function PublicInitiativeCenterPanel({
   openCandidateSubmit = false,
   onOpenCandidateSubmitConsumed,
 }: PublicInitiativeCenterPanelProps) {
+  const t = useTranslations("initiativeExperience");
   const experienceRefresh = useInitiativeExperienceRefresh();
   const [discussionCompletedOverride, setDiscussionCompletedOverride] = useState(false);
   const activeStage = experience.stageContent.find((stage) => stage.stageId === activeStageId);
@@ -428,19 +457,19 @@ export function PublicInitiativeCenterPanel({
       (isOwnerRoute && isInitiativeLifecycleAuthorWorkspaceStage(activeStageId)));
   const tabs: Array<[CenterTab, string]> = showManageTab
     ? [
-        ["manage", "Manage"],
-        ["overview", "Overview"],
-        ["discussion", "Discussion"],
+        ["manage", t("tabs.manage")],
+        ["overview", t("tabs.overview")],
+        ["discussion", t("tabs.discussion")],
       ]
     : [
-        ["overview", "Overview"],
-        ["discussion", "Discussion"],
+        ["overview", t("tabs.overview")],
+        ["discussion", t("tabs.discussion")],
       ];
 
   return (
     <div className="pie-center">
       <div className="pie-center__nav">
-        <div className="pie-center__tabs" role="tablist" aria-label="Initiative content">
+        <div className="pie-center__tabs" role="tablist" aria-label={t("common.initiativeContentAria")}>
           {tabs.map(([tabId, label]) => (
             <button
               key={tabId}
@@ -456,7 +485,7 @@ export function PublicInitiativeCenterPanel({
             </button>
           ))}
         </div>
-        <div className="pie-center__nav-aside" aria-label="Initiative author and share">
+        <div className="pie-center__nav-aside" aria-label={t("common.authorAndShareAria")}>
           <CivicShareButton
             payload={buildPublicInitiativeSharePayload({
               initiativeId: experience.initiativeId,
@@ -468,14 +497,14 @@ export function PublicInitiativeCenterPanel({
                 experience.initiative.metadata.coverMedia?.url,
               optionalText: experience.hero.summary || experience.initiative.description,
             })}
-            ariaLabel={`Share initiative: ${experience.initiative.title}`}
+            ariaLabel={t("common.shareInitiative", { title: experience.initiative.title })}
           />
           <InitiativeAuthorIdentity
             className="pie-center__author-identity"
             displayName={experience.initiative.stewardDisplayName}
             avatarUrl={experience.initiative.stewardAvatarUrl}
             profileUrl={experience.initiative.stewardProfileUrl}
-            roleLabel="Author"
+            roleLabel={t("common.author")}
             avatarSize={32}
           />
         </div>
@@ -485,15 +514,19 @@ export function PublicInitiativeCenterPanel({
         {showPublicChoiceCollectiveDecision ? (
           <section
             className="pie-center__panel"
-            aria-label="Collective Decision election results"
+            aria-label={t("common.electionResultsAria")}
           >
             <PublicChoiceCollectiveDecisionStage initiativeId={experience.initiativeId} />
           </section>
         ) : null}
 
         {showLifecyclePanel && activeStage && showLifecycleWorkspaceShell && onNavigateStage && returnToInitiativeHref ? (
-          <section className="pie-center__panel" aria-label={`${activeStage.stageId} lifecycle stage`}>
-            <InitiativeLifecycleStageWorkspace
+          <section
+            className="pie-center__panel"
+            aria-label={t("common.lifecycleStageAria", {
+              stage: resolveLifecycleStageDisplayLabel(activeStage.stageId, t, activeStage.stageId),
+            })}
+          >            <InitiativeLifecycleStageWorkspace
               initiativeId={experience.initiativeId}
               stageId={activeStage.stageId}
               lifecycleProfile={experience.lifecycleProfile}

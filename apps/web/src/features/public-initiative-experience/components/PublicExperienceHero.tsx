@@ -2,21 +2,25 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeCoverMedia, PublicInitiativeExperienceHero } from "@hu/types";
 
-import { TranslatedContentView } from "../../language";
+import {
+  TranslatedContentSharedChrome,
+  TranslatedContentView,
+} from "../../language";
+import type { TranslatedContentViewMode } from "../../language/translated-content-view-mode";
+import { translatedContentHasDistinctTranslation } from "../../language/translated-content-view-mode";
 import { resolveTranslatedContent, generateContentTranslation } from "../../language/translation-api";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
-
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
+import {
+  formatInitiativeExperienceDate,
+  resolveActivityAreaDisplayLabel,
+  resolveInitiativeStatusDisplayLabel,
+  resolveLifecycleStageDisplayLabel,
+} from "../initiative-experience-i18n";
 
 export interface PublicExperienceHeroMetaItem {
   label: string;
@@ -45,6 +49,7 @@ export function PublicExperienceHero({
   parentLink,
   initiativeId,
 }: PublicExperienceHeroProps) {
+  const t = useTranslations("initiativeExperience");
   const readingContext = usePublicContentReadingContext();
   const [displayTitle, setDisplayTitle] = useState(title);
   const [displaySummary, setDisplaySummary] = useState(summary ?? "");
@@ -55,6 +60,7 @@ export function PublicExperienceHero({
   const [canViewOriginal, setCanViewOriginal] = useState(false);
   const [isMachineTranslated, setIsMachineTranslated] = useState(false);
   const [isStale, setIsStale] = useState(false);
+  const [viewMode, setViewMode] = useState<TranslatedContentViewMode>("original");
 
   useEffect(() => {
     if (!initiativeId || !readingContext.ready) {
@@ -95,15 +101,29 @@ export function PublicExperienceHero({
           return;
         }
 
-        setDisplayTitle(resolved.content.title || title);
-        setDisplaySummary(resolved.content.description || summary || "");
-        setOriginalTitle(resolved.originalContent.title || title);
-        setOriginalSummary(resolved.originalContent.description || summary || "");
+        const nextTitle = resolved.content.title || title;
+        const nextOriginalTitle = resolved.originalContent.title || title;
+        const nextSummary = resolved.content.description || summary || "";
+        const nextOriginalSummary = resolved.originalContent.description || summary || "";
+        const nextCanView = resolved.canViewOriginal || resolved.canViewTranslation;
+        setDisplayTitle(nextTitle);
+        setDisplaySummary(nextSummary);
+        setOriginalTitle(nextOriginalTitle);
+        setOriginalSummary(nextOriginalSummary);
         setActiveLanguage(resolved.activeLanguage);
         setOriginalLanguage(resolved.originalLanguage);
-        setCanViewOriginal(resolved.canViewOriginal || resolved.canViewTranslation);
+        setCanViewOriginal(nextCanView);
         setIsMachineTranslated(resolved.isMachineTranslated);
         setIsStale(resolved.isStale);
+        setViewMode(
+          translatedContentHasDistinctTranslation({
+            content: `${nextTitle}\n${nextSummary}`,
+            originalContent: `${nextOriginalTitle}\n${nextOriginalSummary}`,
+            canViewOriginal: nextCanView,
+          })
+            ? "translation"
+            : "original",
+        );
       } catch {
         // keep props
       }
@@ -124,6 +144,7 @@ export function PublicExperienceHero({
   const columnA = useMemo(() => meta.filter((item) => item.column === "a"), [meta]);
   const columnB = useMemo(() => meta.filter((item) => item.column === "b"), [meta]);
   const descriptionText = displaySummary || originalSummary || summary || "";
+  const showSharedChrome = Boolean(initiativeId);
 
   return (
     <section className="pie-hero" aria-labelledby="pie-hero-title">
@@ -144,9 +165,25 @@ export function PublicExperienceHero({
               <Link href={parentLink.href}>{parentLink.label}</Link>
             </p>
           ) : null}
+          {showSharedChrome ? (
+            <TranslatedContentSharedChrome
+              mode={viewMode}
+              onModeChange={setViewMode}
+              activeLanguage={activeLanguage}
+              originalLanguage={originalLanguage}
+              canViewOriginal={canViewOriginal}
+              content={`${displayTitle}\n${displaySummary || summary || ""}`}
+              originalContent={`${originalTitle}\n${originalSummary || summary || ""}`}
+              isMachineTranslated={isMachineTranslated}
+              isStale={isStale}
+            />
+          ) : null}
           {initiativeId ? (
             <h1 id="pie-hero-title" className="pie-hero__title">
               <TranslatedContentView
+                chrome="body"
+                mode={viewMode}
+                onModeChange={setViewMode}
                 content={displayTitle}
                 originalContent={originalTitle}
                 activeLanguage={activeLanguage}
@@ -161,7 +198,7 @@ export function PublicExperienceHero({
               {title}
             </h1>
           )}
-          <div className="pie-hero__meta-grid" role="group" aria-label="Initiative details">
+          <div className="pie-hero__meta-grid" role="group" aria-label={t("hero.detailsAria")}>
             <dl className="pie-hero__meta pie-hero__meta--column-a">
               {columnA.map((item) => (
                 <div key={item.label}>
@@ -185,6 +222,9 @@ export function PublicExperienceHero({
         <div className="pie-hero__description">
           {initiativeId ? (
             <TranslatedContentView
+              chrome="body"
+              mode={viewMode}
+              onModeChange={setViewMode}
               content={displaySummary || summary || ""}
               originalContent={originalSummary || summary || ""}
               activeLanguage={activeLanguage}
@@ -202,9 +242,22 @@ export function PublicExperienceHero({
   );
 }
 
+/**
+ * Build hero props with localized labels/values for the active interface locale.
+ * Call from a client component that has next-intl context.
+ */
 export function buildInitiativeHeroProps(
   hero: PublicInitiativeExperienceHero,
+  options: {
+    readonly t: (key: string, values?: Record<string, string | number | Date>) => string;
+    readonly locale: string;
+    readonly currentStageId?: string;
+  },
 ): PublicExperienceHeroProps {
+  const { t, locale, currentStageId } = options;
+  const stageId =
+    currentStageId || inferStageIdFromEnglishLabel(hero.currentStageLabel) || hero.currentStageLabel;
+
   return {
     title: hero.title,
     summary: hero.summary,
@@ -212,12 +265,56 @@ export function buildInitiativeHeroProps(
     imageAltText: hero.imageAltText,
     coverMedia: hero.coverMedia,
     meta: [
-      { label: "Activity Area", value: hero.activityArea, column: "a" },
-      { label: "Status", value: hero.status.replaceAll("_", " "), column: "a" },
-      { label: "First Published", value: formatDate(hero.firstPublishedAt), column: "a" },
-      { label: "Geography", value: hero.geography.label, column: "b" },
-      { label: "Current Stage", value: hero.currentStageLabel, column: "b" },
-      { label: "Last Updated", value: formatDate(hero.lastUpdatedAt), column: "b" },
+      {
+        label: t("hero.activityArea"),
+        value: resolveActivityAreaDisplayLabel(hero.activityArea, t),
+        column: "a",
+      },
+      {
+        label: t("hero.status"),
+        value: resolveInitiativeStatusDisplayLabel(hero.status, t),
+        column: "a",
+      },
+      {
+        label: t("hero.firstPublished"),
+        value: formatInitiativeExperienceDate(locale, hero.firstPublishedAt),
+        column: "a",
+      },
+      { label: t("hero.geography"), value: hero.geography.label, column: "b" },
+      {
+        label: t("hero.currentStage"),
+        value: resolveLifecycleStageDisplayLabel(stageId, t, hero.currentStageLabel),
+        column: "b",
+      },
+      {
+        label: t("hero.lastUpdated"),
+        value: formatInitiativeExperienceDate(locale, hero.lastUpdatedAt),
+        column: "b",
+      },
     ],
   };
+}
+
+function inferStageIdFromEnglishLabel(label: string): string | null {
+  const normalized = label.trim();
+  const entries: Array<[string, string]> = [
+    ["Initiative", "initiative"],
+    ["Discussion", "discussion"],
+    ["Collaborative Analysis", "analysis"],
+    ["Improvement Proposals", "proposal"],
+    ["Petition", "petition"],
+    ["Decision Session", "decision_session"],
+    ["Collective Decision", "collective_decision"],
+    ["Implementation Commitments", "commitment"],
+    ["Implementation Tracking", "tracking"],
+    ["Official Responses", "official_response"],
+    ["Public Impact", "public_impact"],
+    ["Civic Archive", "archive"],
+  ];
+  for (const [english, id] of entries) {
+    if (english === normalized) {
+      return id;
+    }
+  }
+  return null;
 }

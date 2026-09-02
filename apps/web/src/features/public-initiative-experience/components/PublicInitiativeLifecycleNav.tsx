@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeLifecycleProfile, PublicInitiativeLifecycleStageNavItem } from "@hu/types";
 import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import { isLifecycleStageSelectable } from "../lifecycle-stage-navigation";
+import {
+  resolveLifecycleStageDisplayLabel,
+  resolveLifecycleStateDisplayLabel,
+} from "../initiative-experience-i18n";
 
 interface PublicInitiativeLifecycleNavProps {
   stages: PublicInitiativeLifecycleStageNavItem[];
@@ -31,14 +36,17 @@ export function PublicInitiativeLifecycleNav({
   resolveStageHref,
   activeRecordId,
 }: PublicInitiativeLifecycleNavProps) {
+  const t = useTranslations("initiativeExperience");
   const isPublicChoice = resolveInitiativeLifecycleProfile(lifecycleProfile) === "PUBLIC_CHOICE";
   return (
-    <nav className="pie-lifecycle" aria-label="Initiative lifecycle">
-      <h2 className="pie-lifecycle__title">Lifecycle</h2>
+    <nav className="pie-lifecycle" aria-label={t("lifecycle.navAria")}>
+      <h2 className="pie-lifecycle__title">{t("lifecycle.title")}</h2>
       <ul className="pie-lifecycle__list">
         {stages.map((stage) => {
+          const stageLabel = resolveLifecycleStageDisplayLabel(stage.stageId, t, stage.label);
+          const stateLabel = resolveLifecycleStateDisplayLabel(stage.state, t, stage.stateLabel);
           const label =
-            stage.recordCount > 0 ? `${stage.label} (${stage.recordCount})` : stage.label;
+            stage.recordCount > 0 ? `${stageLabel} (${stage.recordCount})` : stageLabel;
           const isSelected = stage.stageId === selectedStageId;
           const isCurrent = stage.stageId === currentStageId;
           const selectable = isLifecycleStageSelectable(stages, stage.stageId, {
@@ -59,6 +67,10 @@ export function PublicInitiativeLifecycleNav({
             .filter(Boolean)
             .join(" ");
 
+          const ariaLabel = `${stageLabel}${isCurrent ? t("lifecycle.currentStageSuffix") : ""}${
+            isSelected ? t("lifecycle.selectedSuffix") : ""
+          }${!selectable && !href ? t("lifecycle.lockedSuffix") : ""}`;
+
           const content = (
             <>
               <span
@@ -68,11 +80,11 @@ export function PublicInitiativeLifecycleNav({
               />
               <span className="pie-lifecycle__label">{label}</span>
               {showElectionResultsSubtitle ? (
-                <span className="pie-lifecycle__subtitle">Election Results</span>
+                <span className="pie-lifecycle__subtitle">{t("common.electionResults")}</span>
               ) : null}
               <span className="pie-lifecycle__state">
-                {stage.stateLabel}
-                {isCurrent ? " · Current" : ""}
+                {stateLabel}
+                {isCurrent ? t("common.currentSuffix") : ""}
               </span>
             </>
           );
@@ -84,7 +96,7 @@ export function PublicInitiativeLifecycleNav({
                   href={href}
                   className={className}
                   aria-current={isSelected ? "step" : undefined}
-                  aria-label={`${stage.label}${isCurrent ? ", current stage" : ""}${isSelected ? ", selected" : ""}`}
+                  aria-label={ariaLabel}
                 >
                   {content}
                 </Link>
@@ -95,9 +107,11 @@ export function PublicInitiativeLifecycleNav({
                   aria-current={isSelected ? "step" : undefined}
                   aria-disabled={!selectable}
                   disabled={!selectable}
-                  aria-label={`${stage.label}${isCurrent ? ", current stage" : ""}${
-                    selectable ? "" : ", locked"
-                  }`}
+                  aria-label={
+                    selectable
+                      ? ariaLabel
+                      : `${stageLabel}${isCurrent ? t("lifecycle.currentStageSuffix") : ""}${t("lifecycle.lockedSuffix")}`
+                  }
                   onClick={() => {
                     if (!selectable) {
                       return;
@@ -111,7 +125,7 @@ export function PublicInitiativeLifecycleNav({
               )}
               {isSelected && activeRecordId ? (
                 <p className="pie-lifecycle__active-record" aria-live="polite">
-                  Viewing active record
+                  {t("common.viewingActiveRecord")}
                 </p>
               ) : null}
             </li>

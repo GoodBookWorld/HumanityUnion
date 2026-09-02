@@ -8,7 +8,7 @@ export {
   normalizeLanguageCode,
 } from "./language";
 export type { LanguageCode, PriorityLanguageCode } from "./language";
-export { TranslatedContentView } from "./components/TranslatedContentView";
+export { TranslatedContentView, TranslatedContentSharedChrome } from "./components/TranslatedContentView";
 export type { TranslatedContentViewProps } from "./components/TranslatedContentView";
 export { PublicTranslatedFields } from "./components/PublicTranslatedFields";
 export type { PublicTranslatedFieldsProps } from "./components/PublicTranslatedFields";

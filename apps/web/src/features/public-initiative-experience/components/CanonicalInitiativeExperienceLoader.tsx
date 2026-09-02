@@ -3,6 +3,7 @@
 import type { Initiative, PublicInitiativeExperienceProjection } from "@hu/types";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { getInitiativeOwnerAccess } from "../../initiative-owner-studio/api";
 import { InitiativeOwnerDraftShell } from "../../initiative-owner-studio/components/InitiativeOwnerDraftShell";
@@ -17,13 +18,11 @@ interface CanonicalInitiativeExperienceLoaderProps {
 
 /**
  * ONE canonical Initiative experience mount for `/initiatives/public/{id}`.
- * Client-loads with credentials so viewerIsSteward matches the authenticated
- * session regardless of Workspace vs Header entry. Draft Initiatives that are
- * not yet publicly projectable still open the steward draft shell here.
  */
 export function CanonicalInitiativeExperienceLoader({
   initiativeId,
 }: CanonicalInitiativeExperienceLoaderProps) {
+  const t = useTranslations("initiativeExperience");
   const [experience, setExperience] = useState<PublicInitiativeExperienceProjection | null>(null);
   const [manageInitiative, setManageInitiative] = useState<Initiative | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +55,7 @@ export function CanonicalInitiativeExperienceLoader({
   if (loading) {
     return (
       <main className="pie-page">
-        <p role="status">Loading initiative experience…</p>
+        <p role="status">{t("common.loadingExperience")}</p>
       </main>
     );
   }
@@ -64,10 +63,10 @@ export function CanonicalInitiativeExperienceLoader({
   if (unavailable) {
     return (
       <main className="pie-page">
-        <h1>Initiative unavailable</h1>
-        <p>This initiative is not publicly available.</p>
+        <h1>{t("common.unavailableTitle")}</h1>
+        <p>{t("common.unavailableBody")}</p>
         <p>
-          <Link href="/">Back to Home</Link>
+          <Link href="/">{t("common.backToHome")}</Link>
         </p>
       </main>
     );

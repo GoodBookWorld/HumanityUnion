@@ -6,6 +6,7 @@ import {
   resolveParticipantFacingCurrentStageId,
 } from "@hu/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { toggleInitiativeBookmark, updateInitiativeSupportSignal } from "../api";
 import { InitiativeExperienceRefreshProvider } from "../initiative-experience-refresh-context";
@@ -15,6 +16,7 @@ import {
   resolveLifecycleShellHash,
   selectLifecycleNavStagesForDisplay,
 } from "../initiative-lifecycle-shell";
+import { resolveLifecycleStageDisplayLabel } from "../initiative-experience-i18n";
 import { parseCollaborationParticipantIdFromSearch } from "../discussion-comment-deep-link";
 import { PublicCivicRecordExperienceLayout } from "./PublicCivicRecordExperienceLayout";
 import { PublicExperienceHero, buildInitiativeHeroProps } from "./PublicExperienceHero";
@@ -42,6 +44,8 @@ export function PublicInitiativeExperiencePage({
   onManageInitiativeUpdated,
   onExperienceRefetch,
 }: PublicInitiativeExperiencePageProps) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const [experience, setExperience] = useState(initialExperience);
   const [showManageTab, setShowManageTab] = useState(false);
   const [activeTab, setActiveTab] = useState<CenterTab>("overview");
@@ -79,15 +83,16 @@ export function PublicInitiativeExperiencePage({
     [experience.currentStageId, experience.lifecycleProfile],
   );
   const presentationCurrentStageLabel = useMemo(() => {
-    const fromNav = navStages.find((stage) => stage.stageId === presentationCurrentStageId)?.label;
-    if (fromNav) {
-      return fromNav;
-    }
-    return (
-      experience.lifecycleStages.find((stage) => stage.stageId === presentationCurrentStageId)
-        ?.label ?? experience.hero.currentStageLabel
+    return resolveLifecycleStageDisplayLabel(
+      presentationCurrentStageId,
+      t,
+      navStages.find((stage) => stage.stageId === presentationCurrentStageId)?.label ??
+        experience.lifecycleStages.find((stage) => stage.stageId === presentationCurrentStageId)
+          ?.label ??
+        experience.hero.currentStageLabel,
     );
   }, [
+    t,
     navStages,
     presentationCurrentStageId,
     experience.lifecycleStages,
@@ -326,10 +331,17 @@ export function PublicInitiativeExperiencePage({
       <PublicCivicRecordExperienceLayout
         hero={
           <PublicExperienceHero
-            {...buildInitiativeHeroProps({
-              ...experience.hero,
-              currentStageLabel: presentationCurrentStageLabel,
-            })}
+            {...buildInitiativeHeroProps(
+              {
+                ...experience.hero,
+                currentStageLabel: presentationCurrentStageLabel,
+              },
+              {
+                t,
+                locale,
+                currentStageId: presentationCurrentStageId,
+              },
+            )}
             initiativeId={experience.initiativeId}
           />
         }

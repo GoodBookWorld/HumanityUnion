@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
+import { formatLanguageDisplayName } from "../format-language-display-name";
 import { resolveTranslatedContent, generateContentTranslation } from "../translation-api";
 import { usePublicContentReadingContext } from "../use-public-content-reading-context";
 import { TranslatedContentView } from "./TranslatedContentView";
@@ -40,6 +42,8 @@ export function PublicTranslatedFields({
   className,
   enableOnDemandGenerate = true,
 }: PublicTranslatedFieldsProps) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
   const [fields, setFields] = useState(fallbackFields);
   const [originalFields, setOriginalFields] = useState(fallbackFields);
@@ -157,7 +161,9 @@ export function PublicTranslatedFields({
       })}
       {preferredLanguage ? (
         <span className="hu-public-translated-field__sr">
-          Preferred reading language {preferredLanguage}
+          {t("translation.preferredReadingLanguageSr", {
+            language: formatLanguageDisplayName(locale, preferredLanguage),
+          })}
         </span>
       ) : null}
     </div>
