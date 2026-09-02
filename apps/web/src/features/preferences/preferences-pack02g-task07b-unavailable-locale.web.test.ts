@@ -20,8 +20,8 @@ describe("Production Completion Pack 02G Task 07B — Preferences unavailable re
       "src/features/preferences/components/PreferencesWorkspace.tsx",
     );
 
-    assert.match(src, /temporarily unavailable in catalog/);
-    assert.match(src, /Saved reading language/);
+    assert.match(src, /language\.savedUnavailable|savedUnavailable/);
+    assert.match(src, /language\.savedReadingHelp|savedReadingHelp/);
     assert.doesNotMatch(
       src,
       /readingLanguages\[0\] \?\? "en"[\s\S]{0,120}languageOptions\[0\]\?\.code \?\? "en"/,

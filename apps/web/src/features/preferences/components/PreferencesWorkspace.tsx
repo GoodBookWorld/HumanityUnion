@@ -25,16 +25,13 @@ import { getMyPreferences, updateMyPreferences } from "../preferences-api";
 import { useTranslations } from "next-intl";
 
 import { SurfaceAssistantEntry } from "../../humanity-union-assistant";
+import { resolveActivityAreaDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { PreferenceOption, PreferenceOptionGrid } from "./PreferenceOption";
 import { PreferredGeographyFields } from "./PreferredGeographyFields";
 
 import "./preferences-workspace.css";
 
-const TRANSLATION_PREFERENCE_OPTIONS = [
-  { value: "none", label: "Always show original" },
-  { value: "preferred", label: "Prefer translation when available" },
-  { value: "ask", label: "Offer translation; keep original by default" },
-] as const;
+const TRANSLATION_PREFERENCE_CODES = ["none", "preferred", "ask"] as const;
 
 const CONTRIBUTION_OPTIONS: ContributionWillingness[] = [
   "analysis",
@@ -54,7 +51,16 @@ const NOTIFICATION_FREQUENCIES: NotificationFrequency[] = [
 
 const VISIBILITY_OPTIONS: MemberProfileVisibility[] = ["public", "members_only", "private"];
 
-const GEOGRAPHIC_SCOPES = ["world", "country", "region", "community"];
+const GEOGRAPHIC_SCOPES = ["world", "country", "region", "community"] as const;
+
+const CONTENT_DENSITY_OPTIONS = ["compact", "comfortable", "spacious"] as const;
+
+const VISIBILITY_FIELDS = [
+  "profileVisibility",
+  "skillsVisibility",
+  "interestsVisibility",
+  "participationVisibility",
+] as const;
 
 function parseCommaList(value: string): string[] {
   return value
@@ -76,7 +82,9 @@ function toggleValue<T extends string>(values: T[], value: T, checked: boolean):
 }
 
 export function PreferencesWorkspace() {
-  const tAssistant = useTranslations("initiativeExperience");
+  const t = useTranslations("preferences");
+  const tAuth = useTranslations("auth");
+  const tExperience = useTranslations("initiativeExperience");
   const [preferences, setPreferences] = useState<MemberPreferences | null>(null);
   const [languageOptions, setLanguageOptions] = useState<readonly PriorityLanguageOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +114,7 @@ export function PreferencesWorkspace() {
             setApiUnavailable(true);
           } else {
             setError(
-              loadError instanceof Error ? loadError.message : "Unable to load preferences.",
+              loadError instanceof Error ? loadError.message : t("loadError"),
             );
           }
         }
@@ -120,6 +128,8 @@ export function PreferencesWorkspace() {
     return () => {
       cancelled = true;
     };
+    // Load once on mount; localized fallbacks use the active catalog at catch time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-shot fetch
   }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -152,20 +162,20 @@ export function PreferencesWorkspace() {
       if (isAuthenticationRequiredError(saveError)) {
         setAuthRequired(true);
       } else {
-        setError(saveError instanceof Error ? saveError.message : "Unable to save preferences.");
+        setError(saveError instanceof Error ? saveError.message : t("saveError"));
       }
     }
   }
 
   if (loading) {
-    return <p>Loading preferences...</p>;
+    return <p>{t("loading")}</p>;
   }
 
   if (apiUnavailable) {
     return (
       <ApiUnavailableState
-        title="Preferences temporarily unavailable"
-        explanation="We couldn't connect to the Humanity Union service. Please try again shortly."
+        title={t("unavailableTitle")}
+        explanation={t("unavailableExplanation")}
         retryHref="/preferences"
       />
     );
@@ -173,17 +183,17 @@ export function PreferencesWorkspace() {
 
   if (authRequired) {
     return (
-      <ProfileSection title="Preferences">
-        <p>Sign in to manage your preferences.</p>
-        <Button href="/login?returnTo=/preferences">Log in</Button>
+      <ProfileSection title={t("title")}>
+        <p>{t("signInPrompt")}</p>
+        <Button href="/login?returnTo=/preferences">{tAuth("logIn")}</Button>
       </ProfileSection>
     );
   }
 
   if (!preferences) {
     return (
-      <ProfileSection title="Preferences">
-        <p>{error ?? "Preferences are unavailable."}</p>
+      <ProfileSection title={t("title")}>
+        <p>{error ?? t("unavailable")}</p>
       </ProfileSection>
     );
   }
@@ -198,17 +208,13 @@ export function PreferencesWorkspace() {
 
       <SurfaceAssistantEntry
         surfaceId="preferences"
-        label={tAssistant("assistant.entry.preferencesLauncher")}
+        label={tExperience("assistant.entry.preferencesLauncher")}
       />
 
-      <ProfileSection title="Language & Translation" id="language">
-        <p className="preferences-workspace__help">
-          Interface Language controls platform navigation. Preferred Reading Language is used for
-          translated public content. Writing Languages are languages you commonly write in.
-          Translation Preference controls whether translations are shown automatically.
-        </p>
+      <ProfileSection title={t("sections.language")} id="language">
+        <p className="preferences-workspace__help">{t("language.help")}</p>
         <label className="preferences-workspace__field">
-          <span>Interface Language</span>
+          <span>{t("language.interfaceLanguage")}</span>
           <select
             value={
               languageOptions.some(
@@ -235,7 +241,7 @@ export function PreferencesWorkspace() {
           </select>
         </label>
         <label className="preferences-workspace__field">
-          <span>Preferred Reading Language</span>
+          <span>{t("language.preferredReadingLanguage")}</span>
           {(() => {
             const persistedReading =
               preferences.experiencePreferences.readingLanguages[0]?.trim() || "";
@@ -258,12 +264,12 @@ export function PreferencesWorkspace() {
                 >
                   {!readingInOptions && persistedReading ? (
                     <option value={persistedReading}>
-                      {persistedReading} (saved — temporarily unavailable in catalog)
+                      {t("language.savedUnavailable", { code: persistedReading })}
                     </option>
                   ) : null}
                   {!persistedReading ? (
                     <option value="" disabled>
-                      No reading language saved
+                      {t("language.noReadingLanguage")}
                     </option>
                   ) : null}
                   {languageOptions.map((option) => (
@@ -274,9 +280,7 @@ export function PreferencesWorkspace() {
                 </select>
                 {!readingInOptions && persistedReading ? (
                   <p className="preferences-workspace__help">
-                    Saved reading language <code>{persistedReading}</code> is not in the current
-                    enabled language catalog. It remains persisted until you choose an available
-                    language.
+                    {t("language.savedReadingHelp", { code: persistedReading })}
                   </p>
                 ) : null}
               </>
@@ -284,7 +288,7 @@ export function PreferencesWorkspace() {
           })()}
         </label>
         <label className="preferences-workspace__field">
-          <span>Writing Languages (comma-separated codes)</span>
+          <span>{t("language.writingLanguages")}</span>
           <input
             value={formatCommaList(preferences.experiencePreferences.writingLanguages)}
             onChange={(event) =>
@@ -296,11 +300,11 @@ export function PreferencesWorkspace() {
                 },
               })
             }
-            placeholder="en, uk"
+            placeholder={t("language.writingLanguagesPlaceholder")}
           />
         </label>
         <label className="preferences-workspace__field">
-          <span>Translation Preference</span>
+          <span>{t("language.translationPreference")}</span>
           <select
             value={preferences.experiencePreferences.translationPreference || "none"}
             onChange={(event) =>
@@ -313,23 +317,25 @@ export function PreferencesWorkspace() {
               })
             }
           >
-            {TRANSLATION_PREFERENCE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            {TRANSLATION_PREFERENCE_CODES.map((code) => (
+              <option key={code} value={code}>
+                {t(`translationPreferences.${code}`)}
               </option>
             ))}
           </select>
         </label>
       </ProfileSection>
 
-      <ProfileSection title="Experience" id="experience">
+      <ProfileSection title={t("sections.experience")} id="experience">
         <div className="preferences-workspace__field">
-          <span className="preferences-workspace__field-label">Expertise / activity areas</span>
+          <span className="preferences-workspace__field-label">
+            {t("experience.expertiseAreas")}
+          </span>
           <PreferenceOptionGrid columns={2}>
             {INITIATIVE_ACTIVITY_AREA_OPTIONS.map((area) => (
               <PreferenceOption
                 key={area}
-                label={area}
+                label={resolveActivityAreaDisplayLabel(area, tExperience)}
                 checked={preferences.experiencePreferences.expertiseAreas.includes(area)}
                 onChange={(checked) =>
                   setPreferences({
@@ -349,7 +355,7 @@ export function PreferencesWorkspace() {
           </PreferenceOptionGrid>
         </div>
         <label className="preferences-workspace__field">
-          <span>Skills (comma-separated)</span>
+          <span>{t("experience.skills")}</span>
           <input
             value={formatCommaList(preferences.experiencePreferences.skills)}
             onChange={(event) =>
@@ -364,7 +370,7 @@ export function PreferencesWorkspace() {
           />
         </label>
         <label className="preferences-workspace__field">
-          <span>Experience level (optional)</span>
+          <span>{t("experience.experienceLevel")}</span>
           <input
             value={preferences.experiencePreferences.experienceLevel ?? ""}
             onChange={(event) =>
@@ -380,14 +386,16 @@ export function PreferencesWorkspace() {
         </label>
       </ProfileSection>
 
-      <ProfileSection title="Participation" id="participation">
+      <ProfileSection title={t("sections.participation")} id="participation">
         <div className="preferences-workspace__field">
-          <span className="preferences-workspace__field-label">Preferred civic activity areas</span>
+          <span className="preferences-workspace__field-label">
+            {t("participation.preferredActivityAreas")}
+          </span>
           <PreferenceOptionGrid columns={2}>
             {INITIATIVE_ACTIVITY_AREA_OPTIONS.map((area) => (
               <PreferenceOption
                 key={`participation-${area}`}
-                label={area}
+                label={resolveActivityAreaDisplayLabel(area, tExperience)}
                 checked={preferences.participationPreferences.preferredActivityAreas.includes(area)}
                 onChange={(checked) =>
                   setPreferences({
@@ -407,12 +415,14 @@ export function PreferencesWorkspace() {
           </PreferenceOptionGrid>
         </div>
         <div className="preferences-workspace__field">
-          <span className="preferences-workspace__field-label">Preferred geographic scopes</span>
+          <span className="preferences-workspace__field-label">
+            {t("participation.preferredGeographicScopes")}
+          </span>
           <PreferenceOptionGrid>
             {GEOGRAPHIC_SCOPES.map((scope) => (
               <PreferenceOption
                 key={scope}
-                label={scope}
+                label={tExperience(`geography.${scope}`)}
                 checked={preferences.participationPreferences.preferredGeographicScopes.includes(
                   scope,
                 )}
@@ -443,7 +453,7 @@ export function PreferencesWorkspace() {
           }
         />
         <label className="preferences-workspace__field">
-          <span>Initiative participation interests (comma-separated)</span>
+          <span>{t("participation.initiativeInterests")}</span>
           <input
             value={formatCommaList(
               preferences.participationPreferences.initiativeParticipationInterests,
@@ -460,12 +470,12 @@ export function PreferencesWorkspace() {
           />
         </label>
         <fieldset className="preferences-workspace__fieldset">
-          <legend>Willingness to contribute</legend>
+          <legend>{t("participation.contributionWillingness")}</legend>
           <PreferenceOptionGrid>
             {CONTRIBUTION_OPTIONS.map((option) => (
               <PreferenceOption
                 key={option}
-                label={option}
+                label={t(`contribution.${option}`)}
                 checked={preferences.participationPreferences.contributionWillingness.includes(
                   option,
                 )}
@@ -488,9 +498,9 @@ export function PreferencesWorkspace() {
         </fieldset>
       </ProfileSection>
 
-      <ProfileSection title="Communication" id="communication">
+      <ProfileSection title={t("sections.communication")} id="communication">
         <label className="preferences-workspace__field">
-          <span>Notification frequency</span>
+          <span>{t("communication.notificationFrequency")}</span>
           <select
             value={preferences.communicationPreferences.notificationFrequency}
             onChange={(event) =>
@@ -505,13 +515,13 @@ export function PreferencesWorkspace() {
           >
             {NOTIFICATION_FREQUENCIES.map((frequency) => (
               <option key={frequency} value={frequency}>
-                {frequency.replace("_", " ")}
+                {t(`notificationFrequencies.${frequency}`)}
               </option>
             ))}
           </select>
         </label>
         <PreferenceOption
-          label="Notify me when a new initiative matches my saved interests"
+          label={t("communication.interestMatch")}
           checked={preferences.communicationPreferences.interestMatchNotificationsEnabled}
           onChange={(checked) =>
             setPreferences({
@@ -535,9 +545,9 @@ export function PreferencesWorkspace() {
        * required by Part 8, and the actual content is always read inside
        * Humanity Union, never in the email itself.
        */}
-      <ProfileSection title="Notification Preferences" id="notification-preferences">
+      <ProfileSection title={t("sections.notification")} id="notification-preferences">
         <PreferenceOption
-          label="Receive email notifications"
+          label={t("notification.emailEnabled")}
           checked={preferences.communicationPreferences.emailNotificationsEnabled}
           onChange={(checked) =>
             setPreferences({
@@ -549,17 +559,13 @@ export function PreferencesWorkspace() {
             })
           }
         />
-        <p className="preferences-workspace__helper">
-          When enabled, Humanity Union will send simple email notifications when new activity requires
-          your attention. Example: &ldquo;You have 3 new notifications in your Workspace.&rdquo; Emails
-          never contain private conversation content or confidential Initiative information.
-        </p>
+        <p className="preferences-workspace__helper">{t("notification.emailHelp")}</p>
       </ProfileSection>
 
-      <ProfileSection title="Accessibility" id="accessibility">
+      <ProfileSection title={t("sections.accessibility")} id="accessibility">
         <PreferenceOptionGrid>
           <PreferenceOption
-            label="Reduced motion"
+            label={t("accessibility.reducedMotion")}
             checked={preferences.accessibilityPreferences.reducedMotion}
             onChange={(checked) =>
               setPreferences({
@@ -572,7 +578,7 @@ export function PreferencesWorkspace() {
             }
           />
           <PreferenceOption
-            label="Higher contrast preference"
+            label={t("accessibility.highContrast")}
             checked={preferences.accessibilityPreferences.highContrast}
             onChange={(checked) =>
               setPreferences({
@@ -585,7 +591,7 @@ export function PreferencesWorkspace() {
             }
           />
           <PreferenceOption
-            label="Simplified explanations"
+            label={t("accessibility.simplifiedExplanations")}
             checked={preferences.accessibilityPreferences.simplifiedExplanations}
             onChange={(checked) =>
               setPreferences({
@@ -599,7 +605,7 @@ export function PreferencesWorkspace() {
           />
         </PreferenceOptionGrid>
         <label className="preferences-workspace__field">
-          <span>Preferred content density</span>
+          <span>{t("accessibility.contentDensity")}</span>
           <select
             value={preferences.accessibilityPreferences.contentDensity}
             onChange={(event) =>
@@ -612,24 +618,19 @@ export function PreferencesWorkspace() {
               })
             }
           >
-            <option value="compact">Compact</option>
-            <option value="comfortable">Comfortable</option>
-            <option value="spacious">Spacious</option>
+            {CONTENT_DENSITY_OPTIONS.map((density) => (
+              <option key={density} value={density}>
+                {t(`contentDensity.${density}`)}
+              </option>
+            ))}
           </select>
         </label>
       </ProfileSection>
 
-      <ProfileSection title="Visibility" id="visibility">
-        {(
-          [
-            ["profileVisibility", "Who can see my public profile"],
-            ["skillsVisibility", "Who can see my Skills"],
-            ["interestsVisibility", "Who can see my Interests"],
-            ["participationVisibility", "Who can see my Participation Areas"],
-          ] as const
-        ).map(([field, label]) => (
+      <ProfileSection title={t("sections.visibility")} id="visibility">
+        {VISIBILITY_FIELDS.map((field) => (
           <label key={field} className="preferences-workspace__field">
-            <span>{label}</span>
+            <span>{t(`visibility.${field}`)}</span>
             <select
               value={preferences.visibilityPreferences[field]}
               onChange={(event) =>
@@ -644,7 +645,7 @@ export function PreferencesWorkspace() {
             >
               {VISIBILITY_OPTIONS.map((option) => (
                 <option key={option} value={option}>
-                  {option.replace("_", " ")}
+                  {t(`visibilityOptions.${option}`)}
                 </option>
               ))}
             </select>
@@ -654,7 +655,10 @@ export function PreferencesWorkspace() {
 
       <div className="preferences-workspace__actions">
         <Button type="submit" variant="primary" disabled={savePhase.isBusy} ariaLive="polite">
-          {resolveSaveButtonLabel(savePhase.phase, "Save Preferences")}
+          {resolveSaveButtonLabel(savePhase.phase, t("save"), {
+            saving: t("saving"),
+            success: t("saved"),
+          })}
         </Button>
       </div>
     </form>

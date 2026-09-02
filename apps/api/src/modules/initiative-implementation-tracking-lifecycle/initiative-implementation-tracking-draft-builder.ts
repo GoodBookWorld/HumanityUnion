@@ -2,6 +2,7 @@ import type {
   InitiativeImplementationTrackingCandidate,
   InitiativeImplementationTrackingIntelligenceSnapshot,
 } from "@hu/types";
+import { IMPLEMENTATION_TRACKING_CANDIDATE_STAGE } from "@hu/types";
 
 /**
  * Initiative Lifecycle — Part J, Section 3 (Tracking Candidate Builder).
@@ -28,7 +29,7 @@ export interface ImplementationTrackingDraftProvider {
 }
 
 export const UNASSIGNED_RESPONSIBLE_LABEL = "Unassigned";
-const DEFAULT_CURRENT_STATUS = "Preparation";
+const DEFAULT_CURRENT_STATUS = IMPLEMENTATION_TRACKING_CANDIDATE_STAGE.PREPARATION;
 
 function buildCandidate(input: {
   index: number;

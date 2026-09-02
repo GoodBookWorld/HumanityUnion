@@ -455,7 +455,10 @@ export type {
 } from "./initiative-implementation-tracking.js";
 export {
   canTransitionInitiativeImplementationTracking,
+  IMPLEMENTATION_TRACKING_CANDIDATE_STAGE,
   INITIATIVE_IMPLEMENTATION_TRACKING_TRANSITIONS,
+  isImplementationTrackingCandidateCompleted,
+  isImplementationTrackingCandidatePreparation,
   isInitiativeImplementationTrackingTerminal,
   SUGGESTED_IMPLEMENTATION_TRACKING_STAGES,
 } from "./initiative-implementation-tracking.js";
@@ -512,6 +515,8 @@ export { INITIATIVE_PUBLIC_IMPACT_REPORT_SECTION_IDS } from "./initiative-public
 export type {
   CivicArchiveTraceability,
   InitiativeCivicArchiveCompleteness,
+  InitiativeCivicArchiveCompletenessSummaryCode,
+  InitiativeCivicArchiveCompletenessSummaryDescriptor,
   InitiativeCivicArchiveConsistencyCheck,
   InitiativeCivicArchiveConsistencyCheckId,
   InitiativeCivicArchiveIntelligenceSnapshot,
@@ -761,7 +766,12 @@ export type {
   InitiativeAuthorWorkflowStageContract,
   InitiativeAuthorWorkflowStep,
 } from "./initiative-author-workflow.js";
-export { COLLECTIVE_PARTICIPATION_ACTION_TYPES } from "./collective-participation-journey.js";
+export {
+  COLLECTIVE_PARTICIPATION_ACTION_TYPES,
+  COLLECTIVE_PARTICIPATION_LABEL_CODES,
+  COLLECTIVE_PARTICIPATION_REASON_CODES,
+  COLLECTIVE_PARTICIPATION_STATUS_CODES,
+} from "./collective-participation-journey.js";
 export type {
   CollectiveParticipationActionSource,
   CollectiveParticipationActionType,
@@ -769,8 +779,12 @@ export type {
   CollectiveParticipationEligibility,
   CollectiveParticipationJourney,
   CollectiveParticipationJourneySummary,
+  CollectiveParticipationLabelCode,
+  CollectiveParticipationMessageParams,
   CollectiveParticipationNextAction,
   CollectiveParticipationPastAction,
+  CollectiveParticipationReasonCode,
+  CollectiveParticipationStatusCode,
 } from "./collective-participation-journey.js";
 export type {
   InitiativeLifecyclePresentationMode,

@@ -45,6 +45,12 @@
   padding: var(--hu-space-3);
   display: grid;
   gap: var(--hu-space-2);
+  min-width: 0;
+}
+
+.preferences-workspace__fieldset legend {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .preferences-workspace__actions {
@@ -56,11 +62,14 @@
   color: var(--hu-color-danger);
 }
 
+.preferences-workspace__help,
 .preferences-workspace__helper {
   margin: 0;
   color: var(--hu-color-text-muted);
   font-size: var(--hu-font-size-xs, 0.75rem);
   font-weight: 400;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .preferences-workspace__region-list {

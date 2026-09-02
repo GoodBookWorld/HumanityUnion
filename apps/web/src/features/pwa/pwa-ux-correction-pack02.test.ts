@@ -110,7 +110,7 @@ describe("PWA UX Correction Pack 02", () => {
   it("9–10 — App Header Back uses arrow asset with safe fallback", () => {
     const header = readWeb("features/pwa/components/PwaAppHeader.tsx");
     assert.match(header, /\/icons\/workspace\/arrow\.png/);
-    assert.match(header, /Go back/);
+    assert.match(header, /goBack/);
     assert.match(header, /router\.back/);
     assert.match(header, /\/workspace/);
     assert.ok(existsSync(path.join(webRoot, "public/icons/workspace/arrow.png")));
@@ -163,17 +163,17 @@ describe("PWA UX Correction Pack 02", () => {
     const installState = readWeb("features/pwa/install-state.ts");
     const sw = readPublic("sw.js");
 
-    assert.match(promo, /Humanity Union App/);
+    assert.match(promo, /install\.appTitle/);
     assert.doesNotMatch(promo, /if \(uxState === "already_installed"\) \{\s*return null/);
-    assert.match(promo, /Installed/);
-    assert.match(promo, /Show install options/);
-    assert.match(promo, /Install Humanity Union|Install App/);
-    assert.match(promo, /Add to Home Screen/);
-    assert.match(promo, /Installation guide/);
-    assert.match(promo, /handleDismiss[\s\S]*Later/);
+    assert.match(promo, /install\.alreadyInstalled/);
+    assert.match(promo, /install\.showOptions/);
+    assert.match(promo, /install\.installCta|install\.installing/);
+    assert.match(promo, /install\.addToHomeScreen/);
+    assert.match(promo, /install\.installationGuide/);
+    assert.match(promo, /handleDismiss[\s\S]*install\.later/);
     assert.match(promo, /clearObsoleteInstallPreferenceKeys/);
-    assert.match(guidance, /Install Humanity Union App|How to install Humanity|Add to Home Screen/);
-    assert.match(guidance, /Share button|Share menu/);
+    assert.match(guidance, /install\.guideTitle|install\.addToHomeScreen/);
+    assert.match(guidance, /install\.iosStep2/);
     assert.match(preference, /dismissal ≠ installed|not OS install proof/i);
     assert.match(preference, /OBSOLETE_KEYS|pwaInstalled/);
     assert.doesNotMatch(preference, /localStorage\.setItem/);

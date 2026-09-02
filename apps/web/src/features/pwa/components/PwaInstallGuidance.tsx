@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 
 import { trapTabKey } from "../../../design-system/focus-trap";
 import { Button } from "../../../design-system";
@@ -38,6 +39,7 @@ export function PwaInstallGuidance({
   automaticInstallAvailable = false,
   onClose,
 }: PwaInstallGuidanceProps) {
+  const t = useTranslations("pwa");
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -113,11 +115,11 @@ export function PwaInstallGuidance({
         onClick={stopDialogClickPropagation}
       >
         <div className="hu-pwa-ios-help__header">
-          <h2 id={titleId}>Install Humanity Union App</h2>
+          <h2 id={titleId}>{t("install.guideTitle")}</h2>
           <button
             type="button"
             className="hu-pwa-ios-help__close"
-            aria-label="Close installation guide"
+            aria-label={t("install.closeGuideAria")}
             onClick={onClose}
           >
             <span aria-hidden="true">×</span>
@@ -125,24 +127,20 @@ export function PwaInstallGuidance({
         </div>
 
         <div className="hu-pwa-ios-help__body">
-          <p className="hu-pwa-ios-help__subtitle">
-            Add Humanity Union to your Home Screen for faster access and an app-like experience.
-          </p>
+          <p className="hu-pwa-ios-help__subtitle">{t("install.guideSubtitle")}</p>
 
           {alreadyInstalled ? (
             <div className="hu-pwa-ios-help__installed" role="status">
-              <p>Humanity Union is already installed on this device.</p>
+              <p>{t("install.alreadyInstalled")}</p>
               <Button type="button" variant="primary" href="/workspace">
-                Open Workspace
+                {t("install.openWorkspace")}
               </Button>
             </div>
           ) : (
             <>
               {!automaticInstallAvailable ? (
                 <p className="hu-pwa-ios-help__hint hu-pwa-ios-help__hint--banner" role="note">
-                  Automatic install is not available in this browser session. Use the steps below, or
-                  reopen Humanity Union in a normal (non-private) browser window if installation does
-                  not appear.
+                  {t("install.automaticUnavailable")}
                 </p>
               ) : null}
 
@@ -155,26 +153,16 @@ export function PwaInstallGuidance({
                   }
                   aria-labelledby={`${titleId}-android`}
                 >
-                  <h3 id={`${titleId}-android`}>Android — Chrome</h3>
-                  <p className="hu-pwa-ios-help__hint">
-                    If an <strong>Install Humanity Union</strong> button is available on this page,
-                    use it first.
-                  </p>
+                  <h3 id={`${titleId}-android`}>{t("install.androidTitle")}</h3>
+                  <p className="hu-pwa-ios-help__hint">{t("install.androidHintPrimary")}</p>
                   <ol>
-                    <li>Open Humanity Union in Chrome.</li>
-                    <li>Tap the browser menu (⋮).</li>
-                    <li>
-                      Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.
-                    </li>
-                    <li>Confirm installation.</li>
-                    <li>
-                      The Humanity Union icon will appear on your Home Screen / app launcher.
-                    </li>
+                    <li>{t("install.androidStep1")}</li>
+                    <li>{t("install.androidStep2")}</li>
+                    <li>{t("install.androidStep3")}</li>
+                    <li>{t("install.androidStep4")}</li>
+                    <li>{t("install.androidStep5")}</li>
                   </ol>
-                  <p className="hu-pwa-ios-help__hint">
-                    If Chrome does not show the install option: refresh the page, make sure the site
-                    is opened in Chrome, and check that the app is not already installed.
-                  </p>
+                  <p className="hu-pwa-ios-help__hint">{t("install.androidHintSecondary")}</p>
                 </section>
 
                 <section
@@ -185,33 +173,22 @@ export function PwaInstallGuidance({
                   }
                   aria-labelledby={`${titleId}-ios`}
                 >
-                  <h3 id={`${titleId}-ios`}>iPhone / iPad — Safari</h3>
+                  <h3 id={`${titleId}-ios`}>{t("install.iosTitle")}</h3>
                   <ol>
-                    <li>Open Humanity Union in Safari.</li>
-                    <li>Tap the Share button.</li>
-                    <li>
-                      Scroll and choose <strong>Add to Home Screen</strong>.
-                    </li>
-                    <li>Review the app name.</li>
-                    <li>
-                      Tap <strong>Add</strong>.
-                    </li>
-                    <li>Launch Humanity Union from the new Home Screen icon.</li>
+                    <li>{t("install.iosStep1")}</li>
+                    <li>{t("install.iosStep2")}</li>
+                    <li>{t("install.iosStep3")}</li>
+                    <li>{t("install.iosStep4")}</li>
+                    <li>{t("install.iosStep5")}</li>
+                    <li>{t("install.iosStep6")}</li>
                   </ol>
-                  <p className="hu-pwa-ios-help__hint">
-                    <strong>Add to Home Screen</strong> must be done from Safari. If this page is open
-                    inside another app&apos;s browser, open it in Safari first.
-                  </p>
-                  <p className="hu-pwa-ios-help__hint">
-                    Allow notifications when prompted if you want supported badge and notification
-                    features.
-                  </p>
+                  <p className="hu-pwa-ios-help__hint">{t("install.iosHintSafari")}</p>
+                  <p className="hu-pwa-ios-help__hint">{t("install.iosHintNotifications")}</p>
                 </section>
               </div>
 
               <p className="hu-pwa-install-status hu-pwa-ios-help__note" role="note">
-                Notification and app-icon badge behavior depends on your device, operating system,
-                browser, and notification permissions.
+                {t("install.badgeNote")}
               </p>
             </>
           )}
@@ -219,7 +196,7 @@ export function PwaInstallGuidance({
 
         <div className="hu-pwa-ios-help__actions">
           <Button type="button" variant="primary" onClick={onClose}>
-            Close
+            {t("install.close")}
           </Button>
         </div>
       </div>

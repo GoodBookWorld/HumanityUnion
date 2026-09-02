@@ -23,6 +23,7 @@ import {
   sendInitiativeCollaborationChannelMessage,
 } from "../api";
 import { formatCollaborationChannelTimestamp } from "../collaboration-channel-format";
+import { resolveCollaborationChannelSystemEventDisplay } from "../../public-initiative-experience/initiative-experience-i18n";
 
 import "./initiative-collaboration-channel.css";
 
@@ -46,9 +47,10 @@ function ChannelMessageRow({ message }: { message: InitiativeCollaborationChanne
   const locale = useLocale();
 
   if (message.type === "system_event") {
+    const systemEventText = resolveCollaborationChannelSystemEventDisplay(message, t);
     return (
       <li className="icc-channel__system-event" role="note">
-        <span className="icc-channel__system-event-text">{message.text}</span>
+        <span className="icc-channel__system-event-text">{systemEventText}</span>
         <span className="icc-channel__system-event-time">
           {formatCollaborationChannelTimestamp(message.createdAt, locale)}
         </span>

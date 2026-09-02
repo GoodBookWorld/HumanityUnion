@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 
 import type { InitiativeCivicArchiveCompleteness } from "@hu/types";
 
+import { resolveCivicArchiveCompletenessSummaryDisplay } from "../../public-initiative-experience/initiative-experience-i18n";
+
 export function InitiativeCivicArchiveCompletenessPanel({
   completeness,
 }: {
@@ -20,12 +22,14 @@ export function InitiativeCivicArchiveCompletenessPanel({
     ? t("author.archive.completeness.traceabilityComplete")
     : t("author.archive.completeness.traceabilityIncomplete");
 
+  const summaryText = resolveCivicArchiveCompletenessSummaryDisplay(completeness, t);
+
   return (
     <section className="ica-source-panel" aria-label={t("author.archive.document.completeness")}>
       <ul className="ica-source-panel__list">
         <li className="ica-source-panel__item">
           <span className="ica-source-panel__label">{t("author.archive.completeness.summary")}</span>
-          <p className="ica-source-panel__summary">{completeness.summary}</p>
+          <p className="ica-source-panel__summary">{summaryText}</p>
         </li>
         <li className="ica-source-panel__item">
           <span className="ica-source-panel__label">

@@ -5,6 +5,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { HuMatrixReveal } from "../hu-matrix-reveal";
@@ -25,6 +26,7 @@ export interface PwaLaunchSequenceProps {
 }
 
 export function PwaLaunchSequence(props: PwaLaunchSequenceProps = {}) {
+  const tPwa = useTranslations("pwa");
   const authStatus = useClientAuthStatus();
   const launch = usePwaLaunchSequence({
     authStatus,
@@ -98,7 +100,7 @@ export function PwaLaunchSequence(props: PwaLaunchSequenceProps = {}) {
           <button
             type="button"
             className="hu-pwa-launch__logo-sound"
-            aria-label="Play intro sound"
+            aria-label={tPwa("playIntroSound")}
             onClick={onPlaySound}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
@@ -110,7 +112,7 @@ export function PwaLaunchSequence(props: PwaLaunchSequenceProps = {}) {
             {logoImage}
             <span className="hu-pwa-launch__sound-badge" aria-hidden="true">
               <span className="hu-pwa-launch__sound-icon">♪</span>
-              <span className="hu-pwa-launch__sound-label">Sound</span>
+              <span className="hu-pwa-launch__sound-label">{tPwa("sound")}</span>
             </span>
           </button>
         ) : (

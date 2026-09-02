@@ -22,8 +22,8 @@ import {
 
 import {
   INITIATIVE_DECISION_VOTE_CHOICES,
-  describeCollectiveDecisionVotingUnavailable,
   isCollectiveDecisionVotingWindowOpen,
+  resolveCollectiveDecisionVotingUnavailableCode,
 } from "../collective-decision-voting";
 
 interface InitiativeCollectiveDecisionBallotWidgetProps {
@@ -56,8 +56,10 @@ export function InitiativeCollectiveDecisionBallotWidget({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const votingOpen = isCollectiveDecisionVotingWindowOpen(projection);
-  // Contract debt: English prose without stable reason codes — do not sentence-match.
-  const unavailableReason = describeCollectiveDecisionVotingUnavailable(projection);
+  const unavailableCode = resolveCollectiveDecisionVotingUnavailableCode(projection);
+  const unavailableReason = unavailableCode
+    ? t(`collaboration.vote.unavailableReasons.${unavailableCode}`)
+    : t("collaboration.vote.unavailable");
 
   function choiceLabel(choice: string): string {
     return resolveInitiativeDecisionVoteChoiceDisplayLabel(choice, t);
@@ -156,7 +158,7 @@ export function InitiativeCollectiveDecisionBallotWidget({
       <section className="icd-ballot" aria-label={t("author.collectiveDecision.ballot.aria")}>
         <h3 className="icd-ballot__title">{t("author.collectiveDecision.ballot.title")}</h3>
         <p className="icd-ballot__note" role="status">
-          {unavailableReason ?? t("collaboration.vote.unavailable")}
+          {unavailableReason}
         </p>
       </section>
     );

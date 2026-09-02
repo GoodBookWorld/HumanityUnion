@@ -169,17 +169,19 @@ describe("Pack 02G Task 08D.7 — Decision Session + Collective Decision author 
     assert.doesNotMatch(ballot, /labelInitiativeDecisionVoteChoice/);
   });
 
-  it("voting-unavailable prose is not sentence-matched", () => {
+  it("voting-unavailable uses semantic codes + catalog (not sentence-matched)", () => {
     const ballot = readWeb(
       "features/initiative-collective-decision-lifecycle/components/InitiativeCollectiveDecisionBallotWidget.tsx",
     );
     const voting = readWeb(
       "features/initiative-collective-decision-lifecycle/collective-decision-voting.ts",
     );
-    assert.match(ballot, /describeCollectiveDecisionVotingUnavailable\(projection\)/);
-    assert.match(ballot, /unavailableReason \?\? t\("collaboration\.vote\.unavailable"\)/);
+    assert.match(ballot, /resolveCollectiveDecisionVotingUnavailableCode\(projection\)/);
+    assert.match(ballot, /collaboration\.vote\.unavailableReasons\.\$\{unavailableCode\}/);
+    assert.doesNotMatch(ballot, /describeCollectiveDecisionVotingUnavailable/);
     assert.doesNotMatch(ballot, /unavailableReason\s*===/);
     assert.doesNotMatch(ballot, /includes\("This Collective Decision/);
+    assert.match(voting, /resolveCollectiveDecisionVotingUnavailableCode/);
     assert.match(voting, /This Collective Decision was cancelled/);
     assert.doesNotMatch(voting, /useTranslations/);
   });

@@ -100,6 +100,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.2rem;
+  min-width: 0;
   min-height: var(--hu-pwa-bottom-nav-content-height);
   padding: 0.4rem 0.15rem 0.35rem;
   border: 0;
@@ -109,6 +110,13 @@
   font-size: 0.65rem;
   line-height: 1.1;
   cursor: pointer;
+}
+
+.hu-pwa-bottom-nav__label {
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .hu-pwa-bottom-nav__item[aria-current="page"],

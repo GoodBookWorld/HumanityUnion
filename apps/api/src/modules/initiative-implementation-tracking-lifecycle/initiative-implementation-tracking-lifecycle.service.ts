@@ -10,6 +10,7 @@ import type {
   InitiativeImplementationTrackingLifecycleDraftContext,
   InitiativeImplementationTrackingPackage,
 } from "@hu/types";
+import { IMPLEMENTATION_TRACKING_CANDIDATE_STAGE, isImplementationTrackingCandidateCompleted } from "@hu/types";
 
 import type { RequestIdentity } from "../initiatives/identity/request-identity.types.js";
 import { assertInitiativeOwnership } from "../initiatives/initiative-ownership.js";
@@ -560,7 +561,10 @@ export async function updateInitiativeImplementationTrackingProgress(
   const nextProgress = input.progress !== undefined ? input.progress : tracking.progress ?? 0;
   const nextEvidence =
     input.evidenceReferences !== undefined ? input.evidenceReferences : tracking.evidenceReferences ?? [];
-  const wantsCompletion = nextProgress >= 100 || input.currentStatus === "Completed";
+  const wantsCompletion =
+    nextProgress >= 100 ||
+    (input.currentStatus !== undefined &&
+      isImplementationTrackingCandidateCompleted(input.currentStatus));
 
   if (wantsCompletion && nextEvidence.length === 0) {
     throw new Error(
@@ -599,7 +603,7 @@ export async function updateInitiativeImplementationTrackingProgress(
   if (wantsCompletion) {
     update.status = "completed";
     update.completedAt = now;
-    update.currentStage = input.currentStatus ?? "Completed";
+    update.currentStage = input.currentStatus ?? IMPLEMENTATION_TRACKING_CANDIDATE_STAGE.COMPLETED;
     if (input.actualCompletedDate === undefined) {
       update.actualCompletedDate = now;
     }

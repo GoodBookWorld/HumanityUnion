@@ -206,6 +206,174 @@
     "homeSubtitle": "Your personal civic dashboard",
     "passwordChangedSuccess": "Password changed successfully. Other active sessions were signed out for security."
   },
+  "preferences": {
+    "title": "Preferences",
+    "subtitle": "Your Humanity Union experience and participation settings",
+    "loading": "Loading preferences...",
+    "unavailableTitle": "Preferences temporarily unavailable",
+    "unavailableExplanation": "We couldn't connect to the Humanity Union service. Please try again shortly.",
+    "signInPrompt": "Sign in to manage your preferences.",
+    "unavailable": "Preferences are unavailable.",
+    "loadError": "Unable to load preferences.",
+    "saveError": "Unable to save preferences.",
+    "save": "Save Preferences",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "sections": {
+      "language": "Language & Translation",
+      "experience": "Experience",
+      "participation": "Participation",
+      "communication": "Communication",
+      "notification": "Notification Preferences",
+      "accessibility": "Accessibility",
+      "visibility": "Visibility"
+    },
+    "language": {
+      "help": "Interface Language controls platform navigation. Preferred Reading Language is used for translated public content. Writing Languages are languages you commonly write in. Translation Preference controls whether translations are shown automatically.",
+      "interfaceLanguage": "Interface Language",
+      "preferredReadingLanguage": "Preferred Reading Language",
+      "writingLanguages": "Writing Languages (comma-separated codes)",
+      "writingLanguagesPlaceholder": "en, uk",
+      "translationPreference": "Translation Preference",
+      "savedUnavailable": "{code} (saved — temporarily unavailable in catalog)",
+      "noReadingLanguage": "No reading language saved",
+      "savedReadingHelp": "Saved reading language {code} is not in the current enabled language catalog. It remains persisted until you choose an available language."
+    },
+    "translationPreferences": {
+      "none": "Always show original",
+      "preferred": "Prefer translation when available",
+      "ask": "Offer translation; keep original by default"
+    },
+    "experience": {
+      "expertiseAreas": "Expertise / activity areas",
+      "skills": "Skills (comma-separated)",
+      "experienceLevel": "Experience level (optional)"
+    },
+    "participation": {
+      "preferredActivityAreas": "Preferred civic activity areas",
+      "preferredGeographicScopes": "Preferred geographic scopes",
+      "initiativeInterests": "Initiative participation interests (comma-separated)",
+      "contributionWillingness": "Willingness to contribute"
+    },
+    "contribution": {
+      "analysis": "Analysis",
+      "proposals": "Proposals",
+      "implementation": "Implementation",
+      "evidence": "Evidence",
+      "translation": "Translation",
+      "coordination": "Coordination"
+    },
+    "communication": {
+      "notificationFrequency": "Notification frequency",
+      "interestMatch": "Notify me when a new initiative matches my saved interests"
+    },
+    "notificationFrequencies": {
+      "immediate": "Immediate",
+      "daily_digest": "Daily digest",
+      "weekly_digest": "Weekly digest",
+      "platform_only": "Platform only"
+    },
+    "notification": {
+      "emailEnabled": "Receive email notifications",
+      "emailHelp": "When enabled, Humanity Union will send simple email notifications when new activity requires your attention. Example: \"You have 3 new notifications in your Workspace.\" Emails never contain private conversation content or confidential Initiative information."
+    },
+    "accessibility": {
+      "reducedMotion": "Reduced motion",
+      "highContrast": "Higher contrast preference",
+      "simplifiedExplanations": "Simplified explanations",
+      "contentDensity": "Preferred content density"
+    },
+    "contentDensity": {
+      "compact": "Compact",
+      "comfortable": "Comfortable",
+      "spacious": "Spacious"
+    },
+    "visibility": {
+      "profileVisibility": "Who can see my public profile",
+      "skillsVisibility": "Who can see my Skills",
+      "interestsVisibility": "Who can see my Interests",
+      "participationVisibility": "Who can see my Participation Areas"
+    },
+    "visibilityOptions": {
+      "public": "Public",
+      "members_only": "Members only",
+      "private": "Private"
+    },
+    "geography": {
+      "preferredCountries": "Preferred Countries",
+      "preferredCountriesHelp": "Select countries where you want civic activity recommendations and notifications.",
+      "searchCountries": "Search countries…",
+      "preferredRegions": "Preferred regions",
+      "country": "Country",
+      "administrativeRegion": "Administrative region",
+      "addPreferredRegion": "Add preferred cities",
+      "remove": "Remove",
+      "noRegionsSelected": "No preferred regions selected yet.",
+      "preferredCities": "Preferred Cities / Communities",
+      "selectRegionFirst": "Select at least one preferred region to choose Cities / Communities.",
+      "citiesMultiRegionHelp": "{count} cities and communities available. Scroll the list or search to filter. You can add preferred cities or communities from multiple regions.",
+      "cleanupTitle": "Geography preferences updated",
+      "cleanupMessage": "Some cities were removed because their country or region is no longer selected."
+    }
+  },
+  "pwa": {
+    "appNavAria": "App",
+    "create": "Create",
+    "createInitiativeAria": "Create Initiative",
+    "searchLabel": "Search Humanity Union",
+    "searchPlaceholder": "Search Humanity Union",
+    "goBack": "Go back",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "menuTitle": "Menu",
+    "playIntroSound": "Play intro sound",
+    "sound": "Sound",
+    "install": {
+      "appTitle": "Humanity Union App",
+      "lead": "Take Humanity with you. Install the app for direct access to your Workspace, Initiatives, Notifications and Humanity Union Assistant.",
+      "alreadyInstalled": "Humanity Union is already installed on this device.",
+      "openWorkspace": "Open Workspace",
+      "hiddenStatus": "Install guidance is hidden for this session.",
+      "showOptions": "Show install options",
+      "installing": "Installing…",
+      "installCta": "Install Humanity Union",
+      "addToHomeScreen": "Add to Home Screen",
+      "installationGuide": "Installation guide",
+      "later": "Later",
+      "guideTitle": "Install Humanity Union App",
+      "closeGuideAria": "Close installation guide",
+      "guideSubtitle": "Add Humanity Union to your Home Screen for faster access and an app-like experience.",
+      "automaticUnavailable": "Automatic install is not available in this browser session. Use the steps below, or reopen Humanity Union in a normal (non-private) browser window if installation does not appear.",
+      "androidTitle": "Android — Chrome",
+      "androidHintPrimary": "If an Install Humanity Union button is available on this page, use it first.",
+      "androidStep1": "Open Humanity Union in Chrome.",
+      "androidStep2": "Tap the browser menu (⋮).",
+      "androidStep3": "Choose Install app or Add to Home screen.",
+      "androidStep4": "Confirm installation.",
+      "androidStep5": "The Humanity Union icon will appear on your Home Screen / app launcher.",
+      "androidHintSecondary": "If Chrome does not show the install option: refresh the page, make sure the site is opened in Chrome, and check that the app is not already installed.",
+      "iosTitle": "iPhone / iPad — Safari",
+      "iosStep1": "Open Humanity Union in Safari.",
+      "iosStep2": "Tap the Share button.",
+      "iosStep3": "Scroll and choose Add to Home Screen.",
+      "iosStep4": "Review the app name.",
+      "iosStep5": "Tap Add.",
+      "iosStep6": "Launch Humanity Union from the new Home Screen icon.",
+      "iosHintSafari": "Add to Home Screen must be done from Safari. If this page is open inside another app's browser, open it in Safari first.",
+      "iosHintNotifications": "Allow notifications when prompted if you want supported badge and notification features.",
+      "badgeNote": "Notification and app-icon badge behavior depends on your device, operating system, browser, and notification permissions.",
+      "close": "Close"
+    },
+    "feed": {
+      "title": "Initiatives",
+      "loading": "Loading Initiatives…",
+      "error": "Could not load Initiatives. Check your connection and try again.",
+      "matchedPriorities": "Matched to your priorities",
+      "newestPublic": "Newest public Initiatives",
+      "carouselAria": "Initiative carousel",
+      "viewAll": "View all Initiatives"
+    }
+  },
   "initiativeExperience": {
     "common": {
       "author": "Author",
@@ -606,6 +774,47 @@
         "resultsAria": "Support / Oppose results"
       }
     },
+    "journey": {
+      "status": {
+        "signed_petition": "Signed petition",
+        "commented": "Commented",
+        "commented_count": "Commented ({count})",
+        "supported": "Supported",
+        "opposed": "Opposed",
+        "voted": "Voted ({choice})",
+        "voted_updated": "Voted ({choice}; updated)"
+      },
+      "labels": {
+        "join_discussion": "Join the Discussion",
+        "continue_discussion": "Continue in Discussion",
+        "sign_petition": "Sign the Petition",
+        "petition_signed": "Petition signed",
+        "cast_vote": "Cast your vote",
+        "review_or_update_vote": "Review or update your vote",
+        "view_decision_result": "View decision result",
+        "support_initiative": "Support this Initiative"
+      },
+      "reasons": {
+        "sign_in_to_comment": "Sign in to comment.",
+        "sign_in_to_sign": "Sign in to sign.",
+        "sign_in_to_vote": "Sign in to vote.",
+        "sign_in_to_support": "Sign in to support.",
+        "sign_in_to_take_action": "Sign in to take this action.",
+        "support_unavailable": "Support is temporarily unavailable.",
+        "petition_info_unavailable": "Petition information is temporarily unavailable.",
+        "petition_not_open": "Petition is not open for signatures yet.",
+        "voting_closed": "Voting is closed.",
+        "decision_not_open": "Collective Decision is not open yet.",
+        "voting_info_unavailable": "Voting information is temporarily unavailable.",
+        "petition_open_unsigned": "Petition is open and you have not signed yet.",
+        "vote_open_may_update": "You already voted. You may review or update your vote while voting is open.",
+        "vote_open": "Collective Decision voting is open.",
+        "join_discussion": "Join the Discussion for this Initiative.",
+        "show_support": "Show support for this Initiative.",
+        "commitment_needs_response": "A commitment needs your response.",
+        "still_contribute_discussion": "You can still contribute in Discussion."
+      }
+    },
     "collaboration": {
       "workspace": {
         "aria": "Collaboration",
@@ -704,7 +913,18 @@
         "unreadAria": "Unread messages from {name}",
         "fallbackTitle": "Collaboration Channel",
         "participantFallback": "Participant",
-        "participantsTitle": "Active Allies"
+        "participantsTitle": "Active Allies",
+        "systemEvents": {
+          "ally_joined": "{name} joined the Collaboration Channel.",
+          "collaboration_accepted": "{name} was accepted.",
+          "session_scheduled": "A collaboration session was scheduled.",
+          "petition_published": "The petition was published.",
+          "collective_decision_updated": "The Collective Decision was updated.",
+          "defaultNames": {
+            "ally_joined": "A new Ally",
+            "collaboration_accepted": "A collaboration request"
+          }
+        }
       },
       "sessions": {
         "aria": "Collaboration Sessions",
@@ -794,7 +1014,14 @@
         "recordingChoice": "Recording {choice}…",
         "select": "Select",
         "selected": "Selected",
-        "submitting": "Submitting your vote…"
+        "submitting": "Submitting your vote…",
+        "unavailableReasons": {
+          "cancelled": "This Collective Decision was cancelled. Voting is not available.",
+          "closed": "This Collective Decision is closed. Voting is no longer available.",
+          "not_opened": "Voting is not available for this Collective Decision.",
+          "window_not_open": "The voting window is not open yet.",
+          "window_closed": "The voting window has closed."
+        }
       },
       "reaction": {
         "aria": "{target} reaction",
@@ -2495,7 +2722,8 @@
           "completeness": "Completeness",
           "emptySection": "No content recorded.",
           "sources": "Sources: {list}",
-          "participationStats": "Signatures {signatures} · Support {support} · Reactions {reactions} · Allies {allies}"
+          "participationStats": "Signatures {signatures} · Support {support} · Reactions {reactions} · Allies {allies}",
+          "disclaimer": "This document records civic participation and Initiative activity on the Humanity Union platform. It is not an official governmental or legally binding record unless independently recognized by the relevant institution."
         },
         "completeness": {
           "summary": "Summary",
@@ -2509,7 +2737,18 @@
           "available": "Available",
           "notAvailable": "Not available",
           "traceabilityComplete": "Traceability complete",
-          "traceabilityIncomplete": "Traceability incomplete"
+          "traceabilityIncomplete": "Traceability incomplete",
+          "summaryParts": {
+            "stages_published": "{count} Lifecycle stage(s) have published records.",
+            "public_impact_available": "A published Public Impact Report is available.",
+            "public_impact_missing": "No published Public Impact Report yet.",
+            "public_impact_available_optional": "A published Public Impact Report is available (optional on Public Choice).",
+            "public_impact_not_required_public_choice": "Public Impact is not required on Public Choice — Collective Decision completion is sufficient.",
+            "tracking_unresolved": "{count} Tracking Record(s) remain unresolved.",
+            "tracking_resolved": "No unresolved Tracking Records.",
+            "commitments_unfinished": "{count} Commitment(s) are unfinished.",
+            "commitments_finished": "No unfinished Commitments recorded."
+          }
         },
         "share": {
           "shareArchive": "Share Archive",
@@ -2781,6 +3020,26 @@
         "autoApplyForbidden": "AI attempted an automatic edit or publication, which is forbidden.",
         "appliedToDraft": "Suggestion copied into your draft editor locally. Edit it, then {saveDraft} → {preview} → {publish}. Nothing was published automatically.",
         "appliedToBlog": "Suggestion queued for the publication editor. Review Apply / Replace / Dismiss there. Nothing was published automatically."
+      }
+    },
+    "civicArchivePublic": {
+      "outcomes": {
+        "completed": "Completed",
+        "partially_implemented": "Partially implemented",
+        "concluded_without_implementation": "Concluded without implementation",
+        "cancelled": "Cancelled",
+        "superseded": "Superseded"
+      },
+      "filters": {
+        "outcomeStatus": "Outcome status",
+        "allOutcomes": "All outcomes",
+        "yearPlaceholder": "YYYY"
+      },
+      "card": {
+        "archived": "Archived {date}",
+        "completed": "Completed {date}",
+        "viewRecord": "View Archive Record →",
+        "viewRecordAria": "View archive record: {title}"
       }
     }
   }

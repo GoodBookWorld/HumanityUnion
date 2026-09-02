@@ -47,7 +47,7 @@ describe("Pack 23D.2 — install modal portal / viewport fix", () => {
   it("9–10 — top-right close always present without scrolling content", () => {
     const guidance = read("features/pwa/components/PwaInstallGuidance.tsx");
     assert.match(guidance, /hu-pwa-ios-help__header/);
-    assert.match(guidance, /Close installation guide/);
+    assert.match(guidance, /install\.closeGuideAria/);
     assert.match(guidance, /hu-pwa-ios-help__close/);
     const css = read("features/pwa/pwa.css");
     assert.match(css, /\.hu-pwa-ios-help__header\s*\{[^}]*flex-shrink:\s*0/s);
@@ -59,8 +59,8 @@ describe("Pack 23D.2 — install modal portal / viewport fix", () => {
     assert.match(guidance, /hu-pwa-ios-help__backdrop[\s\S]*onClick=\{onClose\}/);
     assert.match(guidance, /stopDialogClickPropagation|stopPropagation/);
     assert.match(guidance, /hu-pwa-ios-help__card/);
-    assert.match(guidance, /Android — Chrome/);
-    assert.match(guidance, /iPhone \/ iPad — Safari/);
+    assert.match(guidance, /install\.androidTitle/);
+    assert.match(guidance, /install\.iosTitle/);
   });
 
   it("18–21 — Escape, focus trap, focus return, body scroll lock cleanup", () => {
@@ -85,13 +85,13 @@ describe("Pack 23D.2 — install modal portal / viewport fix", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /showInstallationGuide = !runningStandalone && !dismissed/);
     assert.match(promo, /showInstallAction = uxState === "install_available"/);
-    assert.match(promo, /Installation guide/);
+    assert.match(promo, /install\.installationGuide/);
   });
 
   it("25 — install/launch wiring retained", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /getDeferredInstallPrompt/);
-    assert.match(promo, /Install Humanity Union/);
+    assert.match(promo, /install\.installCta/);
     const register = read("features/pwa/components/ServiceWorkerRegister.tsx");
     assert.match(register, /beforeinstallprompt/);
   });

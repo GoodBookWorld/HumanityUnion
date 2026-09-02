@@ -206,6 +206,174 @@
     "homeSubtitle": "您的個人公民儀表板",
     "passwordChangedSuccess": "密碼已變更。為安全起見，其他作用中工作階段已登出。"
   },
+  "preferences": {
+    "title": "偏好設定",
+    "subtitle": "您的 Humanity Union 體驗與參與設定",
+    "loading": "正在載入偏好設定...",
+    "unavailableTitle": "偏好設定暫時無法使用",
+    "unavailableExplanation": "無法連線至 Humanity Union 服務。請稍後再試。",
+    "signInPrompt": "請登入以管理您的偏好設定。",
+    "unavailable": "偏好設定無法使用。",
+    "loadError": "無法載入偏好設定。",
+    "saveError": "無法儲存偏好設定。",
+    "save": "儲存偏好設定",
+    "saving": "儲存中…",
+    "saved": "已儲存",
+    "sections": {
+      "language": "語言與翻譯",
+      "experience": "經驗",
+      "participation": "參與",
+      "communication": "通訊",
+      "notification": "通知偏好",
+      "accessibility": "無障礙",
+      "visibility": "可見性"
+    },
+    "language": {
+      "help": "介面語言控制平台導覽。偏好閱讀語言用於已翻譯的公開內容。書寫語言是您常用的書寫語言。翻譯偏好控制是否自動顯示翻譯。",
+      "interfaceLanguage": "介面語言",
+      "preferredReadingLanguage": "偏好閱讀語言",
+      "writingLanguages": "書寫語言（以逗號分隔的代碼）",
+      "writingLanguagesPlaceholder": "en, uk",
+      "translationPreference": "翻譯偏好",
+      "savedUnavailable": "{code}（已儲存 — 暫時不在目錄中）",
+      "noReadingLanguage": "尚未儲存閱讀語言",
+      "savedReadingHelp": "已儲存的閱讀語言 {code} 不在目前啟用的語言目錄中。在您選擇可用語言之前，它會繼續保留。"
+    },
+    "translationPreferences": {
+      "none": "一律顯示原文",
+      "preferred": "有翻譯時優先顯示翻譯",
+      "ask": "提供翻譯；預設保留原文"
+    },
+    "experience": {
+      "expertiseAreas": "專長／活動領域",
+      "skills": "技能（以逗號分隔）",
+      "experienceLevel": "經驗程度（選填）"
+    },
+    "participation": {
+      "preferredActivityAreas": "偏好公民活動領域",
+      "preferredGeographicScopes": "偏好地理範圍",
+      "initiativeInterests": "倡議參與興趣（以逗號分隔）",
+      "contributionWillingness": "貢獻意願"
+    },
+    "contribution": {
+      "analysis": "分析",
+      "proposals": "提案",
+      "implementation": "執行",
+      "evidence": "證據",
+      "translation": "翻譯",
+      "coordination": "協調"
+    },
+    "communication": {
+      "notificationFrequency": "通知頻率",
+      "interestMatch": "當新倡議符合我儲存的興趣時通知我"
+    },
+    "notificationFrequencies": {
+      "immediate": "立即",
+      "daily_digest": "每日摘要",
+      "weekly_digest": "每週摘要",
+      "platform_only": "僅限平台"
+    },
+    "notification": {
+      "emailEnabled": "接收電子郵件通知",
+      "emailHelp": "啟用後，當有新活動需要您注意時，Humanity Union 會傳送簡易電子郵件通知。例如：「您的工作區有 3 則新通知。」電子郵件絕不會包含私人對話內容或機密倡議資訊。"
+    },
+    "accessibility": {
+      "reducedMotion": "減少動態效果",
+      "highContrast": "高對比偏好",
+      "simplifiedExplanations": "簡化說明",
+      "contentDensity": "偏好內容密度"
+    },
+    "contentDensity": {
+      "compact": "緊湊",
+      "comfortable": "舒適",
+      "spacious": "寬敞"
+    },
+    "visibility": {
+      "profileVisibility": "誰可以看見我的公開個人檔案",
+      "skillsVisibility": "誰可以看見我的技能",
+      "interestsVisibility": "誰可以看見我的興趣",
+      "participationVisibility": "誰可以看見我的參與領域"
+    },
+    "visibilityOptions": {
+      "public": "公開",
+      "members_only": "僅限成員",
+      "private": "私人"
+    },
+    "geography": {
+      "preferredCountries": "偏好國家",
+      "preferredCountriesHelp": "選擇您希望收到公民活動建議與通知的國家。",
+      "searchCountries": "搜尋國家…",
+      "preferredRegions": "偏好地區",
+      "country": "國家",
+      "administrativeRegion": "行政區",
+      "addPreferredRegion": "新增偏好城市",
+      "remove": "移除",
+      "noRegionsSelected": "尚未選擇偏好地區。",
+      "preferredCities": "偏好城市／社區",
+      "selectRegionFirst": "請至少選擇一個偏好地區，才能選擇城市／社區。",
+      "citiesMultiRegionHelp": "共有 {count} 個城市與社區。請捲動清單或搜尋以篩選。您可從多個地區新增偏好城市或社區。",
+      "cleanupTitle": "地理偏好已更新",
+      "cleanupMessage": "部分城市已移除，因為其國家或地區不再被選取。"
+    }
+  },
+  "pwa": {
+    "appNavAria": "應用程式",
+    "create": "建立",
+    "createInitiativeAria": "建立倡議",
+    "searchLabel": "搜尋 Humanity Union",
+    "searchPlaceholder": "搜尋 Humanity Union",
+    "goBack": "返回",
+    "openMenu": "開啟選單",
+    "closeMenu": "關閉選單",
+    "menuTitle": "選單",
+    "playIntroSound": "播放開場音效",
+    "sound": "音效",
+    "install": {
+      "appTitle": "Humanity Union 應用程式",
+      "lead": "隨身帶著 Humanity。安裝應用程式，即可直接存取工作區、倡議、通知與 Humanity Union 助理。",
+      "alreadyInstalled": "此裝置已安裝 Humanity Union。",
+      "openWorkspace": "開啟工作區",
+      "hiddenStatus": "此工作階段已隱藏安裝指引。",
+      "showOptions": "顯示安裝選項",
+      "installing": "安裝中…",
+      "installCta": "安裝 Humanity Union",
+      "addToHomeScreen": "加入主畫面",
+      "installationGuide": "安裝指南",
+      "later": "稍後",
+      "guideTitle": "安裝 Humanity Union 應用程式",
+      "closeGuideAria": "關閉安裝指南",
+      "guideSubtitle": "將 Humanity Union 加入主畫面，以獲得更快存取與類似應用程式的體驗。",
+      "automaticUnavailable": "此瀏覽器工作階段無法使用自動安裝。請依照下方步驟操作，或在一般（非私密）瀏覽器視窗重新開啟 Humanity Union（若未出現安裝選項）。",
+      "androidTitle": "Android — Chrome",
+      "androidHintPrimary": "若此頁面有「安裝 Humanity Union」按鈕，請先使用該按鈕。",
+      "androidStep1": "在 Chrome 開啟 Humanity Union。",
+      "androidStep2": "點選瀏覽器選單（⋮）。",
+      "androidStep3": "選擇「Install app」或「Add to Home screen」。",
+      "androidStep4": "確認安裝。",
+      "androidStep5": "Humanity Union 圖示會出現在主畫面／應用程式啟動器。",
+      "androidHintSecondary": "若 Chrome 未顯示安裝選項：請重新整理頁面、確認以 Chrome 開啟網站，並檢查應用程式是否已安裝。",
+      "iosTitle": "iPhone / iPad — Safari",
+      "iosStep1": "在 Safari 開啟 Humanity Union。",
+      "iosStep2": "點選分享按鈕。",
+      "iosStep3": "捲動並選擇「Add to Home Screen」。",
+      "iosStep4": "確認應用程式名稱。",
+      "iosStep5": "點選「Add」。",
+      "iosStep6": "從新的主畫面圖示啟動 Humanity Union。",
+      "iosHintSafari": "「Add to Home Screen」必須在 Safari 完成。若此頁面開在其他應用程式的瀏覽器中，請先改以 Safari 開啟。",
+      "iosHintNotifications": "若需要支援的標記與通知功能，請在系統提示時允許通知。",
+      "badgeNote": "通知與應用程式圖示標記行為取決於您的裝置、作業系統、瀏覽器與通知權限。",
+      "close": "關閉"
+    },
+    "feed": {
+      "title": "倡議",
+      "loading": "正在載入倡議…",
+      "error": "無法載入倡議。請檢查連線後再試一次。",
+      "matchedPriorities": "符合您的優先事項",
+      "newestPublic": "最新公開倡議",
+      "carouselAria": "倡議輪播",
+      "viewAll": "查看所有倡議"
+    }
+  },
   "initiativeExperience": {
     "common": {
       "author": "作者",
@@ -606,6 +774,47 @@
         "resultsAria": "支持／反對結果"
       }
     },
+    "journey": {
+      "status": {
+        "signed_petition": "已連署請願",
+        "commented": "已留言",
+        "commented_count": "已留言（{count}）",
+        "supported": "已支持",
+        "opposed": "已反對",
+        "voted": "已投票（{choice}）",
+        "voted_updated": "已投票（{choice}；已更新）"
+      },
+      "labels": {
+        "join_discussion": "加入討論",
+        "continue_discussion": "繼續討論",
+        "sign_petition": "連署請願",
+        "petition_signed": "已完成連署",
+        "cast_vote": "投下你的票",
+        "review_or_update_vote": "檢視或更新投票",
+        "view_decision_result": "查看決策結果",
+        "support_initiative": "支持此倡議"
+      },
+      "reasons": {
+        "sign_in_to_comment": "請登入後留言。",
+        "sign_in_to_sign": "請登入後連署。",
+        "sign_in_to_vote": "請登入後投票。",
+        "sign_in_to_support": "請登入後支持。",
+        "sign_in_to_take_action": "請登入後採取此行動。",
+        "support_unavailable": "支持功能暫時無法使用。",
+        "petition_info_unavailable": "請願資訊暫時無法使用。",
+        "petition_not_open": "請願尚未開放連署。",
+        "voting_closed": "投票已結束。",
+        "decision_not_open": "集體決策尚未開放。",
+        "voting_info_unavailable": "投票資訊暫時無法使用。",
+        "petition_open_unsigned": "請願已開放，且你尚未連署。",
+        "vote_open_may_update": "你已投票。投票開放期間可檢視或更新你的票。",
+        "vote_open": "集體決策投票已開放。",
+        "join_discussion": "加入此倡議的討論。",
+        "show_support": "表達對此倡議的支持。",
+        "commitment_needs_response": "有一項承諾需要你的回應。",
+        "still_contribute_discussion": "你仍可在討論中貢獻。"
+      }
+    },
     "collaboration": {
       "workspace": {
         "aria": "協作",
@@ -704,7 +913,18 @@
         "unreadAria": "來自 {name} 的未讀訊息",
         "fallbackTitle": "協作頻道",
         "participantFallback": "參與者",
-        "participantsTitle": "活躍盟友"
+        "participantsTitle": "活躍盟友",
+        "systemEvents": {
+          "ally_joined": "{name} 已加入協作頻道。",
+          "collaboration_accepted": "{name} 已獲接受。",
+          "session_scheduled": "已排程協作會議。",
+          "petition_published": "請願已發佈。",
+          "collective_decision_updated": "集體決策已更新。",
+          "defaultNames": {
+            "ally_joined": "新盟友",
+            "collaboration_accepted": "協作請求"
+          }
+        }
       },
       "sessions": {
         "aria": "協作會議",
@@ -794,7 +1014,14 @@
         "recordingChoice": "正在記錄 {choice}…",
         "select": "選擇",
         "selected": "已選擇",
-        "submitting": "正在提交您的投票…"
+        "submitting": "正在提交您的投票…",
+        "unavailableReasons": {
+          "cancelled": "此集體決策已取消。無法投票。",
+          "closed": "此集體決策已關閉。無法再投票。",
+          "not_opened": "此集體決策目前無法投票。",
+          "window_not_open": "投票時段尚未開始。",
+          "window_closed": "投票時段已結束。"
+        }
       },
       "reaction": {
         "aria": "{target}反應",
@@ -2495,7 +2722,8 @@
           "completeness": "完整度",
           "emptySection": "未記錄內容。",
           "sources": "來源：{list}",
-          "participationStats": "簽名 {signatures} · 支持 {support} · 反應 {reactions} · 盟友 {allies}"
+          "participationStats": "簽名 {signatures} · 支持 {support} · 反應 {reactions} · 盟友 {allies}",
+          "disclaimer": "本文件記錄 Humanity Union 平台上的公民參與與倡議活動。除非經相關機構獨立認可，否則它不是官方政府文件或具法律約束力的紀錄。"
         },
         "completeness": {
           "summary": "摘要",
@@ -2509,7 +2737,18 @@
           "available": "可用",
           "notAvailable": "不可用",
           "traceabilityComplete": "可追溯性完整",
-          "traceabilityIncomplete": "可追溯性不完整"
+          "traceabilityIncomplete": "可追溯性不完整",
+          "summaryParts": {
+            "stages_published": "已有 {count} 個生命週期階段發布紀錄。",
+            "public_impact_available": "已有已發布的公共影響報告。",
+            "public_impact_missing": "尚無已發布的公共影響報告。",
+            "public_impact_available_optional": "已有已發布的公共影響報告（Public Choice 為選用）。",
+            "public_impact_not_required_public_choice": "Public Choice 不需要公共影響 — 完成集體決策即可。",
+            "tracking_unresolved": "尚有 {count} 筆追蹤紀錄未解決。",
+            "tracking_resolved": "沒有未解決的追蹤紀錄。",
+            "commitments_unfinished": "尚有 {count} 項承諾未完成。",
+            "commitments_finished": "沒有未完成的承諾紀錄。"
+          }
         },
         "share": {
           "shareArchive": "分享典藏",
@@ -2781,6 +3020,26 @@
         "autoApplyForbidden": "AI 試圖自動編輯或發布，這是禁止的。",
         "appliedToDraft": "建議已在本機複製到草稿編輯器。請編輯後再 {saveDraft} → {preview} → {publish}。尚未自動發布任何內容。",
         "appliedToBlog": "建議已排入出版編輯器。請在該處檢閱套用／取代／關閉。尚未自動發布任何內容。"
+      }
+    },
+    "civicArchivePublic": {
+      "outcomes": {
+        "completed": "已完成",
+        "partially_implemented": "部分實施",
+        "concluded_without_implementation": "未實施即結束",
+        "cancelled": "已取消",
+        "superseded": "已取代"
+      },
+      "filters": {
+        "outcomeStatus": "結果狀態",
+        "allOutcomes": "全部結果",
+        "yearPlaceholder": "YYYY"
+      },
+      "card": {
+        "archived": "已歸檔 {date}",
+        "completed": "已完成 {date}",
+        "viewRecord": "查看歸檔紀錄 →",
+        "viewRecordAria": "查看歸檔紀錄：{title}"
       }
     }
   }

@@ -40,6 +40,7 @@ function buildDraft(
       officialResponseCount: 0,
       publicImpactAvailable: true,
       traceabilityComplete: true,
+      summaryDescriptors: [],
       summary: "",
     },
     participationStatistics: {

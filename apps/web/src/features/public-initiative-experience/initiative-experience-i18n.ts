@@ -7,6 +7,7 @@ import {
   INITIATIVE_ACTIVITY_AREA_OPTIONS,
   PUBLIC_INITIATIVE_EXPERIENCE_STAGES,
   type InitiativeActivityAreaOption,
+  type InitiativeCollaborationSystemEventKind,
   type InitiativeExperienceLifecycleStageState,
   type InitiativeLifecyclePhase,
   type InitiativeStatus,
@@ -79,16 +80,37 @@ function resolveLabel(
   messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
   key: string,
   fallback: string,
+  values?: Record<string, string | number | boolean>,
 ): string {
+  const translatorValues = values
+    ? (Object.fromEntries(
+        Object.entries(values).map(([name, value]) => [
+          name,
+          typeof value === "boolean" ? String(value) : value,
+        ]),
+      ) as Record<string, string | number | Date>)
+    : undefined;
+
   if (typeof messagesOrT === "function") {
     try {
-      const value = messagesOrT(key);
+      const value = messagesOrT(key, translatorValues);
       return value.trim() ? value : fallback;
     } catch {
       return fallback;
     }
   }
-  return resolveInitiativeExperienceMessage(messagesOrT, key) || fallback;
+  const template = resolveInitiativeExperienceMessage(messagesOrT, key);
+  if (!template) {
+    return fallback;
+  }
+  if (!translatorValues) {
+    return template;
+  }
+  let result = template;
+  for (const [name, value] of Object.entries(translatorValues)) {
+    result = result.replaceAll(`{${name}}`, String(value));
+  }
+  return result.trim() ? result : fallback;
 }
 
 /** Locale-aware calendar date for hero/overview/sidebar (interface locale). */
@@ -450,6 +472,63 @@ export function resolveCivicArchiveTimelineStatusDisplayLabel(
   return resolveLabel(messagesOrT, `author.archive.timelineStatuses.${status}`, status);
 }
 
+const CIVIC_ARCHIVE_COMPLETENESS_SUMMARY_CODES = new Set<string>([
+  "stages_published",
+  "public_impact_available",
+  "public_impact_missing",
+  "public_impact_available_optional",
+  "public_impact_not_required_public_choice",
+  "tracking_unresolved",
+  "tracking_resolved",
+  "commitments_unfinished",
+  "commitments_finished",
+]);
+
+/**
+ * Pack 02G 08G — localize finite completeness summaryDescriptors.
+ * Falls back to English `summary` when descriptors are missing (skew).
+ */
+export function resolveCivicArchiveCompletenessSummaryDisplay(
+  completeness: {
+    readonly summary: string;
+    readonly summaryDescriptors?: readonly {
+      readonly code: string;
+      readonly params?: Readonly<Record<string, string | number | boolean>>;
+    }[];
+  },
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  const descriptors = completeness.summaryDescriptors;
+  if (!descriptors || descriptors.length === 0) {
+    return completeness.summary;
+  }
+
+  const parts: string[] = [];
+  for (const descriptor of descriptors) {
+    if (!CIVIC_ARCHIVE_COMPLETENESS_SUMMARY_CODES.has(descriptor.code)) {
+      continue;
+    }
+    const values = descriptor.params
+      ? Object.fromEntries(
+          Object.entries(descriptor.params).map(([key, value]) => [
+            key,
+            typeof value === "boolean" ? String(value) : value,
+          ]),
+        )
+      : undefined;
+    parts.push(
+      resolveLabel(
+        messagesOrT,
+        `author.archive.completeness.summaryParts.${descriptor.code}`,
+        descriptor.code,
+        values,
+      ),
+    );
+  }
+
+  return parts.length > 0 ? parts.join(" ") : completeness.summary;
+}
+
 const PUBLIC_CHOICE_ELECTION_VOTING_STATUS_CODES = new Set<string>([
   "NOT_STARTED",
   "OPEN",
@@ -588,4 +667,196 @@ export function listPublicLifecycleStageIdsForI18n(): readonly string[] {
 /** Contract: every activity-area option has a message key mapping. */
 export function listActivityAreaValuesForI18n(): readonly InitiativeActivityAreaOption[] {
   return INITIATIVE_ACTIVITY_AREA_OPTIONS;
+}
+
+const JOURNEY_STATUS_CODES = new Set<string>([
+  "signed_petition",
+  "commented",
+  "commented_count",
+  "supported",
+  "opposed",
+  "voted",
+  "voted_updated",
+]);
+
+const JOURNEY_LABEL_CODES = new Set<string>([
+  "join_discussion",
+  "continue_discussion",
+  "sign_petition",
+  "petition_signed",
+  "cast_vote",
+  "review_or_update_vote",
+  "view_decision_result",
+  "support_initiative",
+]);
+
+const JOURNEY_REASON_CODES = new Set<string>([
+  "sign_in_to_comment",
+  "sign_in_to_sign",
+  "sign_in_to_vote",
+  "sign_in_to_support",
+  "sign_in_to_take_action",
+  "support_unavailable",
+  "petition_info_unavailable",
+  "petition_not_open",
+  "voting_closed",
+  "decision_not_open",
+  "voting_info_unavailable",
+  "petition_open_unsigned",
+  "vote_open_may_update",
+  "vote_open",
+  "join_discussion",
+  "show_support",
+  "commitment_needs_response",
+  "still_contribute_discussion",
+]);
+
+/**
+ * Pack 02G Task 08G — display-only past-action status.
+ * Prefer statusCode → catalog; fallback to legacy English; unknown → raw or legacy.
+ */
+export function resolveCollectiveParticipationStatusDisplay(
+  statusCode: string | undefined,
+  statusParams: Readonly<Record<string, string | number | boolean>> | undefined,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+  legacyStatusLabel?: string,
+): string {
+  if (statusCode && JOURNEY_STATUS_CODES.has(statusCode)) {
+    return resolveLabel(
+      messagesOrT,
+      `journey.status.${statusCode}`,
+      legacyStatusLabel || statusCode,
+      statusParams ? { ...statusParams } : undefined,
+    );
+  }
+  if (legacyStatusLabel) {
+    return legacyStatusLabel;
+  }
+  return statusCode ?? "";
+}
+
+/**
+ * Pack 02G Task 08G — display-only available/next action label.
+ * Prefer labelCode → catalog; fallback to legacy English; unknown → raw or legacy.
+ */
+export function resolveCollectiveParticipationActionLabelDisplay(
+  labelCode: string | undefined,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+  legacyLabel?: string,
+): string {
+  if (labelCode && JOURNEY_LABEL_CODES.has(labelCode)) {
+    return resolveLabel(
+      messagesOrT,
+      `journey.labels.${labelCode}`,
+      legacyLabel || labelCode,
+    );
+  }
+  if (legacyLabel) {
+    return legacyLabel;
+  }
+  return labelCode ?? "";
+}
+
+/**
+ * Pack 02G Task 08G — display-only available/next action reason.
+ * Prefer reasonCode → catalog; fallback to legacy English; unknown → raw or legacy.
+ */
+export function resolveCollectiveParticipationReasonDisplay(
+  reasonCode: string | undefined,
+  reasonParams: Readonly<Record<string, string | number | boolean>> | undefined,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+  legacyReason?: string,
+): string {
+  if (reasonCode && JOURNEY_REASON_CODES.has(reasonCode)) {
+    return resolveLabel(
+      messagesOrT,
+      `journey.reasons.${reasonCode}`,
+      legacyReason || reasonCode,
+      reasonParams ? { ...reasonParams } : undefined,
+    );
+  }
+  if (legacyReason) {
+    return legacyReason;
+  }
+  return reasonCode ?? "";
+}
+
+const COLLABORATION_CHANNEL_SYSTEM_EVENT_KINDS = new Set<InitiativeCollaborationSystemEventKind>([
+  "ally_joined",
+  "collaboration_accepted",
+  "session_scheduled",
+  "petition_published",
+  "collective_decision_updated",
+]);
+
+const COLLABORATION_CHANNEL_SYSTEM_EVENT_NAME_KINDS = new Set<InitiativeCollaborationSystemEventKind>([
+  "ally_joined",
+  "collaboration_accepted",
+]);
+
+/**
+ * Pack 02G Task 08G — localize Collaboration Channel system_event presentation.
+ * Prefer kind + optional subject name → catalog; unknown kind → English `text` skew fallback.
+ */
+export function resolveCollaborationChannelSystemEventDisplay(
+  input: {
+    readonly systemEventKind?: InitiativeCollaborationSystemEventKind;
+    readonly systemEventSubjectDisplayName?: string;
+    readonly text: string;
+  },
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  const kind = input.systemEventKind;
+  if (!kind || !COLLABORATION_CHANNEL_SYSTEM_EVENT_KINDS.has(kind)) {
+    return input.text;
+  }
+
+  if (COLLABORATION_CHANNEL_SYSTEM_EVENT_NAME_KINDS.has(kind)) {
+    const name =
+      input.systemEventSubjectDisplayName?.trim() ||
+      resolveLabel(
+        messagesOrT,
+        `collaboration.channel.systemEvents.defaultNames.${kind}`,
+        kind === "ally_joined" ? "A new Ally" : "A collaboration request",
+      );
+    return resolveLabel(
+      messagesOrT,
+      `collaboration.channel.systemEvents.${kind}`,
+      input.text,
+      { name },
+    );
+  }
+
+  return resolveLabel(
+    messagesOrT,
+    `collaboration.channel.systemEvents.${kind}`,
+    input.text,
+  );
+}
+
+const CIVIC_ARCHIVE_OUTCOME_STATUS_CODES = new Set<string>([
+  "completed",
+  "partially_implemented",
+  "concluded_without_implementation",
+  "cancelled",
+  "superseded",
+]);
+
+/**
+ * Pack 02G 08G — display-only Civic Archive outcome status labels.
+ * Canonical outcomeStatus codes unchanged. Unknown → legacy English label/raw.
+ */
+export function resolveCivicArchiveOutcomeStatusDisplayLabel(
+  status: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+  legacyLabel?: string,
+): string {
+  if (!CIVIC_ARCHIVE_OUTCOME_STATUS_CODES.has(status)) {
+    return legacyLabel ?? status;
+  }
+  return resolveLabel(
+    messagesOrT,
+    `civicArchivePublic.outcomes.${status}`,
+    legacyLabel ?? status,
+  );
 }

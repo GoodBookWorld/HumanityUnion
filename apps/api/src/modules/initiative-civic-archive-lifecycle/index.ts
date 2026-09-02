@@ -13,7 +13,7 @@ export {
   publishInitiativeCivicArchiveStage,
   saveInitiativeCivicArchiveDraft,
 } from "./initiative-civic-archive-lifecycle.service.js";
-export { buildInitiativeCivicArchiveIntelligenceSnapshot } from "./initiative-civic-archive-intelligence.service.js";
+export { buildInitiativeCivicArchiveIntelligenceSnapshot, buildInitiativeCivicArchiveCompleteness } from "./initiative-civic-archive-intelligence.service.js";
 export { generateCivicArchiveDraftContent } from "./initiative-civic-archive-builder.js";
 export {
   buildArchiveDocumentFromDraft,

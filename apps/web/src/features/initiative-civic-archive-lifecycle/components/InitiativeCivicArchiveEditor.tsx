@@ -202,8 +202,7 @@ export function InitiativeCivicArchiveEditor({
           <div className="ica-section" key={section.sectionId}>
             <div className="ica-section__header">
               <h4 className="ica-section__title">
-                {section.title ||
-                  resolveCivicArchiveSectionDisplayLabel(section.sectionId, t)}
+                {resolveCivicArchiveSectionDisplayLabel(section.sectionId, t)}
               </h4>
               <span className="ica-section__status">
                 {resolveCivicArchiveSectionDisplayLabel(section.sectionId, t)}

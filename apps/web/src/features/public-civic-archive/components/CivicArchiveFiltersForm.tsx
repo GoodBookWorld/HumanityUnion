@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type RefObject } from "react";
+import { useTranslations } from "next-intl";
 
 import { CitySelect, CountrySelect, RegionSelect } from "../../geography-integrity";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
@@ -23,6 +24,7 @@ export function CivicArchiveFiltersForm({
   emptySearchFeedback = null,
   searchFieldRef,
 }: CivicArchiveFiltersFormProps) {
+  const t = useTranslations("initiativeExperience");
   const [archiveYearError, setArchiveYearError] = useState<string | null>(null);
 
   function updateDraft(patch: Partial<CivicArchiveDraftFilters>): void {
@@ -139,7 +141,7 @@ export function CivicArchiveFiltersForm({
               updateDraft({ archiveYear: event.target.value });
               setArchiveYearError(null);
             }}
-            placeholder="YYYY"
+            placeholder={t("civicArchivePublic.filters.yearPlaceholder")}
             inputMode="numeric"
             aria-invalid={archiveYearError ? true : undefined}
           />
@@ -148,20 +150,22 @@ export function CivicArchiveFiltersForm({
           ) : null}
         </label>
         <label>
-          <span>Outcome status</span>
+          <span>{t("civicArchivePublic.filters.outcomeStatus")}</span>
           <select
             className="hu-form-control"
             value={draftFilters.outcomeStatus}
             onChange={(event) => updateDraft({ outcomeStatus: event.target.value })}
           >
-            <option value="">All outcomes</option>
-            <option value="completed">Completed</option>
-            <option value="partially_implemented">Partially implemented</option>
-            <option value="concluded_without_implementation">
-              Concluded without implementation
+            <option value="">{t("civicArchivePublic.filters.allOutcomes")}</option>
+            <option value="completed">{t("civicArchivePublic.outcomes.completed")}</option>
+            <option value="partially_implemented">
+              {t("civicArchivePublic.outcomes.partially_implemented")}
             </option>
-            <option value="cancelled">Cancelled</option>
-            <option value="superseded">Superseded</option>
+            <option value="concluded_without_implementation">
+              {t("civicArchivePublic.outcomes.concluded_without_implementation")}
+            </option>
+            <option value="cancelled">{t("civicArchivePublic.outcomes.cancelled")}</option>
+            <option value="superseded">{t("civicArchivePublic.outcomes.superseded")}</option>
           </select>
         </label>
       </div>

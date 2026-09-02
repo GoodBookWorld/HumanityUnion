@@ -132,7 +132,7 @@ describe("Pack 10F — geography runtime delivery recovery", () => {
     const preferred = readWeb("features/preferences/components/PreferredGeographyFields.tsx");
     assert.match(preferred, /fetchCommunitiesByRegion/);
     assert.match(preferred, /communitiesDeliveryFailed/);
-    assert.match(preferred, /GEOGRAPHY_EMPTY_COPY\.cityDeliveryFailure/);
+    assert.match(preferred, /manage\.geography\.cityDeliveryFailure/);
   });
 
   it("verify:staging reports webGeographyAssets", () => {

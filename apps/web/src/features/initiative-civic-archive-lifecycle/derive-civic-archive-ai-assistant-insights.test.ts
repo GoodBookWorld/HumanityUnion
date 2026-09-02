@@ -38,6 +38,7 @@ function emptySnapshot(
     consistencyChecks: [],
     completeness: {
       summary: "ok",
+      summaryDescriptors: [],
       stagesFound: ["initiative", "discussion", "collective_decision"],
       stagesPublished: ["initiative", "discussion", "collective_decision"],
       missingOptionalStages: [],

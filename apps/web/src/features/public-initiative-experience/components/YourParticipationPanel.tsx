@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { CollectiveParticipationJourney } from "@hu/types";
 
-import { resolveLifecycleStageDisplayLabel } from "../initiative-experience-i18n";
+import {
+  resolveCollectiveParticipationActionLabelDisplay,
+  resolveCollectiveParticipationReasonDisplay,
+  resolveCollectiveParticipationStatusDisplay,
+  resolveLifecycleStageDisplayLabel,
+} from "../initiative-experience-i18n";
 
 interface YourParticipationPanelProps {
   readonly journey: CollectiveParticipationJourney;
@@ -14,6 +19,7 @@ interface YourParticipationPanelProps {
 /**
  * Phase 05 — compact "Your Participation" panel inside the Initiative shell.
  * Does not replace Author Mode for stewards.
+ * Pack 02G Task 08G — localizes journey status/label/reason via semantic codes.
  */
 export function YourParticipationPanel({
   journey,
@@ -50,7 +56,14 @@ export function YourParticipationPanel({
         <ul className="pie-participation__past">
           {journey.pastActions.slice(0, 5).map((action) => (
             <li key={`${action.actionType}-${action.occurredAt}`}>
-              <Link href={action.deepLink}>{action.statusLabel}</Link>
+              <Link href={action.deepLink}>
+                {resolveCollectiveParticipationStatusDisplay(
+                  action.statusCode,
+                  action.statusParams,
+                  t,
+                  action.statusLabel,
+                )}
+              </Link>
               <span className="pie-participation__meta">
                 {" "}
                 · {resolveLifecycleStageDisplayLabel(action.stageId, t)}
@@ -66,9 +79,20 @@ export function YourParticipationPanel({
             {t("sidebar.participation.nextMeaningfulAction")}
           </p>
           <Link className="pie-participation__next-link" href={journey.nextAction.deepLink}>
-            {journey.nextAction.label}
+            {resolveCollectiveParticipationActionLabelDisplay(
+              journey.nextAction.labelCode,
+              t,
+              journey.nextAction.label,
+            )}
           </Link>
-          <p className="pie-participation__reason">{journey.nextAction.reason}</p>
+          <p className="pie-participation__reason">
+            {resolveCollectiveParticipationReasonDisplay(
+              journey.nextAction.reasonCode,
+              journey.nextAction.reasonParams,
+              t,
+              journey.nextAction.reason,
+            )}
+          </p>
         </div>
       ) : (
         <p className="pie-participation__empty">{t("sidebar.participation.noActionAvailable")}</p>

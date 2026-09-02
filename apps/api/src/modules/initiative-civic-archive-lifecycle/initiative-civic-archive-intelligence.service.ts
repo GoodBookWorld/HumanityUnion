@@ -411,6 +411,33 @@ function buildCompleteness(input: {
     (stageId) => !stagesFound.includes(stageId),
   );
 
+  const summaryDescriptors: InitiativeCivicArchiveCompleteness["summaryDescriptors"] = [
+    {
+      code: "stages_published",
+      params: { count: stagesPublished.length },
+    },
+    input.requirePublicImpact
+      ? input.publicImpactAvailable
+        ? { code: "public_impact_available" }
+        : { code: "public_impact_missing" }
+      : input.publicImpactAvailable
+        ? { code: "public_impact_available_optional" }
+        : { code: "public_impact_not_required_public_choice" },
+    input.unresolvedTrackingCount > 0
+      ? {
+          code: "tracking_unresolved",
+          params: { count: input.unresolvedTrackingCount },
+        }
+      : { code: "tracking_resolved" },
+    input.unfinishedCommitmentCount > 0
+      ? {
+          code: "commitments_unfinished",
+          params: { count: input.unfinishedCommitmentCount },
+        }
+      : { code: "commitments_finished" },
+  ];
+
+  // English join kept identical for skew + Archive overview DOCUMENT_CONTENT.
   const summaryParts = [
     `${stagesPublished.length} Lifecycle stage(s) have published records.`,
     input.requirePublicImpact
@@ -440,9 +467,13 @@ function buildCompleteness(input: {
     traceabilityComplete: input.requirePublicImpact
       ? input.hasTraceabilityAnchors && input.publicImpactAvailable
       : input.hasTraceabilityAnchors,
+    summaryDescriptors,
     summary: summaryParts.join(" "),
   };
 }
+
+/** Pack 02G 08G — exported for unit smoke of descriptor emission. */
+export { buildCompleteness as buildInitiativeCivicArchiveCompleteness };
 
 function buildConsistencyChecks(input: {
   publicImpactAvailable: boolean;

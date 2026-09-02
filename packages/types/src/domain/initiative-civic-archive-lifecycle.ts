@@ -12,7 +12,7 @@ import type {
   InitiativeOfficialResponseOutcomeKind,
 } from "./initiative-official-response-lifecycle.js";
 
-/** Finite Civic Archive consistency check IDs (08E.9b). Completeness.summary is out of scope. */
+/** Finite Civic Archive consistency check IDs (08E.9b). */
 export type InitiativeCivicArchiveConsistencyCheckId =
   | "public-impact-available"
   | "tracking-resolved"
@@ -22,9 +22,30 @@ export type InitiativeCivicArchiveConsistencyCheckId =
 /**
  * Initiative Lifecycle — Part M. Canonical Archive Document disclaimer
  * (Part 12). Not an official governmental record.
+ *
+ * @deprecated 08G — English DOMAIN skew fallback for PDF/API transport.
+ * Prefer Web catalog `author.archive.document.disclaimer` and API
+ * `archive-document-copy` locale maps for presentation.
  */
 export const INITIATIVE_LIFECYCLE_ARCHIVE_DISCLAIMER =
   "This document records civic participation and Initiative activity on the Humanity Union platform. It is not an official governmental or legally binding record unless independently recognized by the relevant institution.";
+
+/** Finite completeness summary descriptor codes (08G type A). */
+export type InitiativeCivicArchiveCompletenessSummaryCode =
+  | "stages_published"
+  | "public_impact_available"
+  | "public_impact_missing"
+  | "public_impact_available_optional"
+  | "public_impact_not_required_public_choice"
+  | "tracking_unresolved"
+  | "tracking_resolved"
+  | "commitments_unfinished"
+  | "commitments_finished";
+
+export interface InitiativeCivicArchiveCompletenessSummaryDescriptor {
+  readonly code: string;
+  readonly params?: Readonly<Record<string, string | number | boolean>>;
+}
 
 /**
  * Initiative Lifecycle — Part M, Section 3. Assembled Archive section ids
@@ -123,7 +144,13 @@ export interface InitiativeCivicArchiveCompleteness {
   officialResponseCount: number;
   publicImpactAvailable: boolean;
   traceabilityComplete: boolean;
-  summary: string;
+  /** Finite semantic descriptors — Web localizes via catalog keys. */
+  readonly summaryDescriptors: readonly InitiativeCivicArchiveCompletenessSummaryDescriptor[];
+  /**
+   * @deprecated 08G — English join for skew; prefer `summaryDescriptors`.
+   * Still seeded into Archive overview DOCUMENT_CONTENT bodies.
+   */
+  readonly summary: string;
 }
 
 export interface InitiativeCivicArchiveParticipationStatistics {

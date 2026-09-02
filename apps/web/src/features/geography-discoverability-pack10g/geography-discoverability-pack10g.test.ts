@@ -60,9 +60,9 @@ describe("Pack 10G — city select large-list discoverability", () => {
     const preferred = readWeb("features/preferences/components/PreferredGeographyFields.tsx");
     const multi = readWeb("design-system/components/GeographyMultiSelect.tsx");
     assert.match(preferred, /GeographyMultiSelect/);
-    assert.match(preferred, /formatCityListHelper/);
+    assert.match(preferred, /citiesMultiRegionHelp|manage\.geography\.citiesAvailable/);
     assert.doesNotMatch(preferred, /requireSearch=\{/);
-    assert.match(preferred, /Add preferred cities/);
+    assert.match(preferred, /geography\.addPreferredRegion|addPreferredRegion/);
     assert.doesNotMatch(multi, /requireSearch/);
     assert.doesNotMatch(multi, /awaitingSearch/);
   });

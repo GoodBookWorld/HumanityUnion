@@ -206,6 +206,174 @@
     "homeSubtitle": "Ваша особиста громадянська панель",
     "passwordChangedSuccess": "Пароль змінено. Інші активні сеанси завершено з міркувань безпеки."
   },
+  "preferences": {
+    "title": "Параметри",
+    "subtitle": "Ваші налаштування досвіду та участі в Humanity Union",
+    "loading": "Завантаження параметрів...",
+    "unavailableTitle": "Параметри тимчасово недоступні",
+    "unavailableExplanation": "Не вдалося підключитися до служби Humanity Union. Спробуйте знову трохи пізніше.",
+    "signInPrompt": "Увійдіть, щоб керувати своїми параметрами.",
+    "unavailable": "Параметри недоступні.",
+    "loadError": "Не вдалося завантажити параметри.",
+    "saveError": "Не вдалося зберегти параметри.",
+    "save": "Зберегти параметри",
+    "saving": "Збереження…",
+    "saved": "Збережено",
+    "sections": {
+      "language": "Мова та переклад",
+      "experience": "Досвід",
+      "participation": "Участь",
+      "communication": "Комунікація",
+      "notification": "Параметри сповіщень",
+      "accessibility": "Доступність",
+      "visibility": "Видимість"
+    },
+    "language": {
+      "help": "Мова інтерфейсу керує навігацією платформи. Бажана мова читання використовується для перекладеного публічного вмісту. Мови написання — мови, якими ви зазвичай пишете. Параметр перекладу визначає, чи показуються переклади автоматично.",
+      "interfaceLanguage": "Мова інтерфейсу",
+      "preferredReadingLanguage": "Бажана мова читання",
+      "writingLanguages": "Мови написання (коди через кому)",
+      "writingLanguagesPlaceholder": "en, uk",
+      "translationPreference": "Параметр перекладу",
+      "savedUnavailable": "{code} (збережено — тимчасово відсутнє в каталозі)",
+      "noReadingLanguage": "Мову читання не збережено",
+      "savedReadingHelp": "Збережена мова читання {code} відсутня в поточному каталозі увімкнених мов. Вона залишається збереженою, доки ви не оберете доступну мову."
+    },
+    "translationPreferences": {
+      "none": "Завжди показувати оригінал",
+      "preferred": "Віддавати перевагу перекладу, коли доступний",
+      "ask": "Пропонувати переклад; за замовчуванням залишати оригінал"
+    },
+    "experience": {
+      "expertiseAreas": "Експертиза / сфери діяльності",
+      "skills": "Навички (через кому)",
+      "experienceLevel": "Рівень досвіду (необовʼязково)"
+    },
+    "participation": {
+      "preferredActivityAreas": "Бажані сфери громадянської діяльності",
+      "preferredGeographicScopes": "Бажані географічні охоплення",
+      "initiativeInterests": "Інтереси участі в ініціативах (через кому)",
+      "contributionWillingness": "Готовність робити внесок"
+    },
+    "contribution": {
+      "analysis": "Аналіз",
+      "proposals": "Пропозиції",
+      "implementation": "Впровадження",
+      "evidence": "Докази",
+      "translation": "Переклад",
+      "coordination": "Координація"
+    },
+    "communication": {
+      "notificationFrequency": "Частота сповіщень",
+      "interestMatch": "Сповіщати мене, коли нова ініціатива відповідає моїм збереженим інтересам"
+    },
+    "notificationFrequencies": {
+      "immediate": "Негайно",
+      "daily_digest": "Щоденний дайджест",
+      "weekly_digest": "Тижневий дайджест",
+      "platform_only": "Лише на платформі"
+    },
+    "notification": {
+      "emailEnabled": "Отримувати сповіщення електронною поштою",
+      "emailHelp": "Якщо ввімкнено, Humanity Union надсилатиме прості сповіщення електронною поштою, коли нова активність потребує вашої уваги. Приклад: «У вашому Робочому просторі 3 нові сповіщення». Листи ніколи не містять приватного вмісту розмов чи конфіденційної інформації про Ініціативу."
+    },
+    "accessibility": {
+      "reducedMotion": "Зменшена анімація",
+      "highContrast": "Вищий контраст",
+      "simplifiedExplanations": "Спрощені пояснення",
+      "contentDensity": "Бажана щільність вмісту"
+    },
+    "contentDensity": {
+      "compact": "Компактна",
+      "comfortable": "Комфортна",
+      "spacious": "Простора"
+    },
+    "visibility": {
+      "profileVisibility": "Хто може бачити мій публічний профіль",
+      "skillsVisibility": "Хто може бачити мої навички",
+      "interestsVisibility": "Хто може бачити мої інтереси",
+      "participationVisibility": "Хто може бачити мої сфери участі"
+    },
+    "visibilityOptions": {
+      "public": "Публічно",
+      "members_only": "Лише учасники",
+      "private": "Приватно"
+    },
+    "geography": {
+      "preferredCountries": "Бажані країни",
+      "preferredCountriesHelp": "Оберіть країни, де ви хочете отримувати рекомендації та сповіщення про громадянську активність.",
+      "searchCountries": "Пошук країн…",
+      "preferredRegions": "Бажані регіони",
+      "country": "Країна",
+      "administrativeRegion": "Адміністративний регіон",
+      "addPreferredRegion": "Додати бажані міста",
+      "remove": "Видалити",
+      "noRegionsSelected": "Бажані регіони ще не вибрано.",
+      "preferredCities": "Бажані міста / спільноти",
+      "selectRegionFirst": "Виберіть принаймні один бажаний регіон, щоб обрати міста / спільноти.",
+      "citiesMultiRegionHelp": "Доступно {count} міст і спільнот. Прокрутіть список або шукайте, щоб відфільтрувати. Ви можете додавати бажані міста чи спільноти з кількох регіонів.",
+      "cleanupTitle": "Географічні параметри оновлено",
+      "cleanupMessage": "Деякі міста видалено, бо їхню країну або регіон більше не вибрано."
+    }
+  },
+  "pwa": {
+    "appNavAria": "Додаток",
+    "create": "Створити",
+    "createInitiativeAria": "Створити ініціативу",
+    "searchLabel": "Пошук у Humanity Union",
+    "searchPlaceholder": "Пошук у Humanity Union",
+    "goBack": "Назад",
+    "openMenu": "Відкрити меню",
+    "closeMenu": "Закрити меню",
+    "menuTitle": "Меню",
+    "playIntroSound": "Відтворити звук вступу",
+    "sound": "Звук",
+    "install": {
+      "appTitle": "Додаток Humanity Union",
+      "lead": "Візьміть Humanity з собою. Встановіть додаток для прямого доступу до Робочого простору, Ініціатив, Сповіщень і Помічника Humanity Union.",
+      "alreadyInstalled": "Humanity Union уже встановлено на цьому пристрої.",
+      "openWorkspace": "Відкрити Робочий простір",
+      "hiddenStatus": "Підказки щодо встановлення приховано для цієї сесії.",
+      "showOptions": "Показати варіанти встановлення",
+      "installing": "Встановлення…",
+      "installCta": "Встановити Humanity Union",
+      "addToHomeScreen": "Додати на початковий екран",
+      "installationGuide": "Посібник зі встановлення",
+      "later": "Пізніше",
+      "guideTitle": "Встановити додаток Humanity Union",
+      "closeGuideAria": "Закрити посібник зі встановлення",
+      "guideSubtitle": "Додайте Humanity Union на початковий екран для швидшого доступу та досвіду, схожого на додаток.",
+      "automaticUnavailable": "Автоматичне встановлення недоступне в цій сесії браузера. Скористайтеся кроками нижче або знову відкрийте Humanity Union у звичайному (неприватному) вікні браузера, якщо встановлення не з’являється.",
+      "androidTitle": "Android — Chrome",
+      "androidHintPrimary": "Якщо на цій сторінці доступна кнопка «Встановити Humanity Union», спочатку скористайтеся нею.",
+      "androidStep1": "Відкрийте Humanity Union у Chrome.",
+      "androidStep2": "Натисніть меню браузера (⋮).",
+      "androidStep3": "Оберіть «Install app» або «Add to Home screen».",
+      "androidStep4": "Підтвердіть встановлення.",
+      "androidStep5": "Піктограма Humanity Union з’явиться на початковому екрані / у панелі запуску додатків.",
+      "androidHintSecondary": "Якщо Chrome не показує параметр встановлення: оновіть сторінку, переконайтеся, що сайт відкрито в Chrome, і перевірте, що додаток ще не встановлено.",
+      "iosTitle": "iPhone / iPad — Safari",
+      "iosStep1": "Відкрийте Humanity Union у Safari.",
+      "iosStep2": "Натисніть кнопку «Поділитися».",
+      "iosStep3": "Прокрутіть і оберіть «Add to Home Screen».",
+      "iosStep4": "Перевірте назву додатка.",
+      "iosStep5": "Натисніть «Add».",
+      "iosStep6": "Запустіть Humanity Union з нової піктограми на початковому екрані.",
+      "iosHintSafari": "«Add to Home Screen» потрібно виконувати з Safari. Якщо ця сторінка відкрита у браузері іншого додатка, спочатку відкрийте її в Safari.",
+      "iosHintNotifications": "Дозвольте сповіщення, коли система запропонує, якщо потрібні підтримувані значки та сповіщення.",
+      "badgeNote": "Поведінка сповіщень і значка на піктограмі додатка залежить від вашого пристрою, операційної системи, браузера та дозволів на сповіщення.",
+      "close": "Закрити"
+    },
+    "feed": {
+      "title": "Ініціативи",
+      "loading": "Завантаження ініціатив…",
+      "error": "Не вдалося завантажити ініціативи. Перевірте з’єднання та спробуйте ще раз.",
+      "matchedPriorities": "Відповідно до ваших пріоритетів",
+      "newestPublic": "Найновіші публічні ініціативи",
+      "carouselAria": "Карусель ініціатив",
+      "viewAll": "Переглянути всі ініціативи"
+    }
+  },
   "initiativeExperience": {
     "common": {
       "author": "Автор",
@@ -606,6 +774,47 @@
         "resultsAria": "Результати підтримки / протидії"
       }
     },
+    "journey": {
+      "status": {
+        "signed_petition": "Підписано петицію",
+        "commented": "Прокоментовано",
+        "commented_count": "Прокоментовано ({count})",
+        "supported": "Підтримано",
+        "opposed": "Проти",
+        "voted": "Проголосовано ({choice})",
+        "voted_updated": "Проголосовано ({choice}; оновлено)"
+      },
+      "labels": {
+        "join_discussion": "Приєднатися до обговорення",
+        "continue_discussion": "Продовжити в обговоренні",
+        "sign_petition": "Підписати петицію",
+        "petition_signed": "Петицію підписано",
+        "cast_vote": "Віддати голос",
+        "review_or_update_vote": "Переглянути або оновити голос",
+        "view_decision_result": "Переглянути результат рішення",
+        "support_initiative": "Підтримати цю ініціативу"
+      },
+      "reasons": {
+        "sign_in_to_comment": "Увійдіть, щоб коментувати.",
+        "sign_in_to_sign": "Увійдіть, щоб підписати.",
+        "sign_in_to_vote": "Увійдіть, щоб голосувати.",
+        "sign_in_to_support": "Увійдіть, щоб підтримати.",
+        "sign_in_to_take_action": "Увійдіть, щоб виконати цю дію.",
+        "support_unavailable": "Підтримка тимчасово недоступна.",
+        "petition_info_unavailable": "Інформація про петицію тимчасово недоступна.",
+        "petition_not_open": "Петиція ще не відкрита для підписів.",
+        "voting_closed": "Голосування закрито.",
+        "decision_not_open": "Колективне рішення ще не відкрито.",
+        "voting_info_unavailable": "Інформація про голосування тимчасово недоступна.",
+        "petition_open_unsigned": "Петиція відкрита, і ви ще не підписали.",
+        "vote_open_may_update": "Ви вже проголосували. Можете переглянути або оновити голос, поки голосування відкрите.",
+        "vote_open": "Голосування за колективне рішення відкрите.",
+        "join_discussion": "Приєднайтеся до обговорення цієї ініціативи.",
+        "show_support": "Покажіть підтримку цієї ініціативи.",
+        "commitment_needs_response": "Зобов’язання потребує вашої відповіді.",
+        "still_contribute_discussion": "Ви все ще можете долучитися до обговорення."
+      }
+    },
     "collaboration": {
       "workspace": {
         "aria": "Співпраця",
@@ -704,7 +913,18 @@
         "unreadAria": "Непрочитані повідомлення від {name}",
         "fallbackTitle": "Канал співпраці",
         "participantFallback": "Учасник",
-        "participantsTitle": "Активні союзники"
+        "participantsTitle": "Активні союзники",
+        "systemEvents": {
+          "ally_joined": "{name} приєднався до каналу співпраці.",
+          "collaboration_accepted": "{name} прийнято.",
+          "session_scheduled": "Заплановано сесію співпраці.",
+          "petition_published": "Петицію опубліковано.",
+          "collective_decision_updated": "Колективне рішення оновлено.",
+          "defaultNames": {
+            "ally_joined": "Новий союзник",
+            "collaboration_accepted": "Запит на співпрацю"
+          }
+        }
       },
       "sessions": {
         "aria": "Сесії співпраці",
@@ -794,7 +1014,14 @@
         "recordingChoice": "Запис {choice}…",
         "select": "Вибрати",
         "selected": "Вибрано",
-        "submitting": "Надсилання вашого голосу…"
+        "submitting": "Надсилання вашого голосу…",
+        "unavailableReasons": {
+          "cancelled": "Це колективне рішення скасовано. Голосування недоступне.",
+          "closed": "Це колективне рішення закрито. Голосування більше недоступне.",
+          "not_opened": "Голосування недоступне для цього колективного рішення.",
+          "window_not_open": "Вікно голосування ще не відкрито.",
+          "window_closed": "Вікно голосування закрито."
+        }
       },
       "reaction": {
         "aria": "Реакція: {target}",
@@ -2495,7 +2722,8 @@
           "completeness": "Повнота",
           "emptySection": "Вмісту не записано.",
           "sources": "Джерела: {list}",
-          "participationStats": "Підписи {signatures} · Підтримка {support} · Реакції {reactions} · Союзники {allies}"
+          "participationStats": "Підписи {signatures} · Підтримка {support} · Реакції {reactions} · Союзники {allies}",
+          "disclaimer": "Цей документ фіксує громадянську участь і діяльність Ініціативи на платформі Humanity Union. Він не є офіційним урядовим чи юридично зобов’язувальним записом, якщо його окремо не визнала відповідна установа."
         },
         "completeness": {
           "summary": "Підсумок",
@@ -2509,7 +2737,18 @@
           "available": "Доступно",
           "notAvailable": "Недоступно",
           "traceabilityComplete": "Простежуваність повна",
-          "traceabilityIncomplete": "Простежуваність неповна"
+          "traceabilityIncomplete": "Простежуваність неповна",
+          "summaryParts": {
+            "stages_published": "{count} етап(ів) життєвого циклу мають опубліковані записи.",
+            "public_impact_available": "Опублікований звіт про громадський вплив доступний.",
+            "public_impact_missing": "Опублікованого звіту про громадський вплив ще немає.",
+            "public_impact_available_optional": "Опублікований звіт про громадський вплив доступний (необов’язково для Public Choice).",
+            "public_impact_not_required_public_choice": "Громадський вплив не потрібен для Public Choice — достатньо завершення колективного рішення.",
+            "tracking_unresolved": "{count} запис(ів) відстеження залишаються нерозв’язаними.",
+            "tracking_resolved": "Нерозв’язаних записів відстеження немає.",
+            "commitments_unfinished": "{count} зобов’язань незавершені.",
+            "commitments_finished": "Незавершених зобов’язань не записано."
+          }
         },
         "share": {
           "shareArchive": "Поділитися архівом",
@@ -2781,6 +3020,26 @@
         "autoApplyForbidden": "ШІ спробував автоматичне редагування або публікацію, що заборонено.",
         "appliedToDraft": "Пропозицію скопійовано в редактор чернетки локально. Відредагуйте, потім {saveDraft} → {preview} → {publish}. Нічого не опубліковано автоматично.",
         "appliedToBlog": "Пропозицію поставлено в чергу для редактора публікації. Перегляньте Застосувати / Замінити / Відхилити там. Нічого не опубліковано автоматично."
+      }
+    },
+    "civicArchivePublic": {
+      "outcomes": {
+        "completed": "Завершено",
+        "partially_implemented": "Частково реалізовано",
+        "concluded_without_implementation": "Завершено без реалізації",
+        "cancelled": "Скасовано",
+        "superseded": "Замінено"
+      },
+      "filters": {
+        "outcomeStatus": "Статус результату",
+        "allOutcomes": "Усі результати",
+        "yearPlaceholder": "РРРР"
+      },
+      "card": {
+        "archived": "Архівовано {date}",
+        "completed": "Завершено {date}",
+        "viewRecord": "Переглянути запис архіву →",
+        "viewRecordAria": "Переглянути запис архіву: {title}"
       }
     }
   }

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { InitiativeLifecycleArchiveDocument } from "@hu/types";
 
 import {
+  resolveCivicArchiveCompletenessSummaryDisplay,
   resolveCivicArchiveSectionDisplayLabel,
   resolveCivicArchiveTimelineStatusDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
@@ -66,9 +67,7 @@ export function InitiativeCivicArchiveDocumentRenderer({
 
       {document.sections.map((section) => (
         <section className="ica-public__section" key={section.sectionId} id={section.sectionId}>
-          <h3>
-            {section.title || resolveCivicArchiveSectionDisplayLabel(section.sectionId, t)}
-          </h3>
+          <h3>{resolveCivicArchiveSectionDisplayLabel(section.sectionId, t)}</h3>
           {section.body.trim() ? (
             <p style={{ whiteSpace: "pre-wrap" }}>{section.body}</p>
           ) : (
@@ -86,10 +85,12 @@ export function InitiativeCivicArchiveDocumentRenderer({
 
       <section className="ica-public__section">
         <h3>{t("author.archive.document.completeness")}</h3>
-        <p style={{ whiteSpace: "pre-wrap" }}>{document.completeness.summary}</p>
+        <p style={{ whiteSpace: "pre-wrap" }}>
+          {resolveCivicArchiveCompletenessSummaryDisplay(document.completeness, t)}
+        </p>
       </section>
 
-      <p className="ica-public__meta">{document.disclaimer}</p>
+      <p className="ica-public__meta">{t("author.archive.document.disclaimer")}</p>
     </article>
   );
 }

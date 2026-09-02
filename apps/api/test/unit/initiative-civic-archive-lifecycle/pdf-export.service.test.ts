@@ -61,6 +61,7 @@ function buildDocument(): InitiativeLifecycleArchiveDocument {
       officialResponseCount: 1,
       publicImpactAvailable: true,
       traceabilityComplete: true,
+      summaryDescriptors: [],
       summary: "Ready.",
     },
     traceability: null,

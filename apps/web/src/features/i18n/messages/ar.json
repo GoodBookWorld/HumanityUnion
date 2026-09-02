@@ -206,6 +206,174 @@
     "homeSubtitle": "لوحتك المدنية الشخصية",
     "passwordChangedSuccess": "تم تغيير كلمة المرور. تم إنهاء الجلسات النشطة الأخرى لأسباب أمنية."
   },
+  "preferences": {
+    "title": "التفضيلات",
+    "subtitle": "إعدادات تجربتك ومشاركتك في Humanity Union",
+    "loading": "جارٍ تحميل التفضيلات...",
+    "unavailableTitle": "التفضيلات غير متاحة مؤقتًا",
+    "unavailableExplanation": "تعذّر الاتصال بخدمة Humanity Union. يُرجى المحاولة مجددًا بعد قليل.",
+    "signInPrompt": "سجّل الدخول لإدارة تفضيلاتك.",
+    "unavailable": "التفضيلات غير متاحة.",
+    "loadError": "تعذّر تحميل التفضيلات.",
+    "saveError": "تعذّر حفظ التفضيلات.",
+    "save": "حفظ التفضيلات",
+    "saving": "جارٍ الحفظ…",
+    "saved": "تم الحفظ",
+    "sections": {
+      "language": "اللغة والترجمة",
+      "experience": "الخبرة",
+      "participation": "المشاركة",
+      "communication": "التواصل",
+      "notification": "تفضيلات الإشعارات",
+      "accessibility": "إمكانية الوصول",
+      "visibility": "الظهور"
+    },
+    "language": {
+      "help": "لغة الواجهة تتحكم في تنقّل المنصة. لغة القراءة المفضّلة تُستخدم للمحتوى العام المترجَم. لغات الكتابة هي اللغات التي تكتب بها عادةً. تفضيل الترجمة يتحكم في ما إذا كانت الترجمات تُعرض تلقائيًا.",
+      "interfaceLanguage": "لغة الواجهة",
+      "preferredReadingLanguage": "لغة القراءة المفضّلة",
+      "writingLanguages": "لغات الكتابة (رموز مفصولة بفواصل)",
+      "writingLanguagesPlaceholder": "en, uk",
+      "translationPreference": "تفضيل الترجمة",
+      "savedUnavailable": "{code} (محفوظ — غير متاح مؤقتًا في الكتالوج)",
+      "noReadingLanguage": "لم تُحفظ لغة قراءة",
+      "savedReadingHelp": "لغة القراءة المحفوظة {code} ليست في كتالوج اللغات المفعّلة الحالي. تبقى محفوظة حتى تختار لغة متاحة."
+    },
+    "translationPreferences": {
+      "none": "إظهار الأصل دائمًا",
+      "preferred": "تفضيل الترجمة عند التوفّر",
+      "ask": "عرض الترجمة؛ الإبقاء على الأصل افتراضيًا"
+    },
+    "experience": {
+      "expertiseAreas": "مجالات الخبرة / النشاط",
+      "skills": "المهارات (مفصولة بفواصل)",
+      "experienceLevel": "مستوى الخبرة (اختياري)"
+    },
+    "participation": {
+      "preferredActivityAreas": "مجالات النشاط المدني المفضّلة",
+      "preferredGeographicScopes": "النطاقات الجغرافية المفضّلة",
+      "initiativeInterests": "اهتمامات المشاركة في المبادرات (مفصولة بفواصل)",
+      "contributionWillingness": "الاستعداد للمساهمة"
+    },
+    "contribution": {
+      "analysis": "تحليل",
+      "proposals": "مقترحات",
+      "implementation": "تنفيذ",
+      "evidence": "أدلة",
+      "translation": "ترجمة",
+      "coordination": "تنسيق"
+    },
+    "communication": {
+      "notificationFrequency": "تكرار الإشعارات",
+      "interestMatch": "أبلغني عندما تطابق مبادرة جديدة اهتماماتي المحفوظة"
+    },
+    "notificationFrequencies": {
+      "immediate": "فوري",
+      "daily_digest": "ملخص يومي",
+      "weekly_digest": "ملخص أسبوعي",
+      "platform_only": "على المنصة فقط"
+    },
+    "notification": {
+      "emailEnabled": "استلام إشعارات البريد الإلكتروني",
+      "emailHelp": "عند التفعيل، ترسل Humanity Union إشعارات بريد إلكتروني بسيطة عندما يتطلب نشاط جديد انتباهك. مثال: «لديك 3 إشعارات جديدة في مساحة عملك.» لا تحتوي الرسائل أبدًا على محتوى محادثات خاصة أو معلومات سرية عن المبادرة."
+    },
+    "accessibility": {
+      "reducedMotion": "تقليل الحركة",
+      "highContrast": "تفضيل تباين أعلى",
+      "simplifiedExplanations": "شروحات مبسّطة",
+      "contentDensity": "كثافة المحتوى المفضّلة"
+    },
+    "contentDensity": {
+      "compact": "مدمجة",
+      "comfortable": "مريحة",
+      "spacious": "واسعة"
+    },
+    "visibility": {
+      "profileVisibility": "من يمكنه رؤية ملفي العام",
+      "skillsVisibility": "من يمكنه رؤية مهاراتي",
+      "interestsVisibility": "من يمكنه رؤية اهتماماتي",
+      "participationVisibility": "من يمكنه رؤية مجالات مشاركتي"
+    },
+    "visibilityOptions": {
+      "public": "عام",
+      "members_only": "الأعضاء فقط",
+      "private": "خاص"
+    },
+    "geography": {
+      "preferredCountries": "الدول المفضّلة",
+      "preferredCountriesHelp": "اختر الدول التي تريد فيها توصيات وإشعارات عن النشاط المدني.",
+      "searchCountries": "البحث عن دول…",
+      "preferredRegions": "المناطق المفضّلة",
+      "country": "الدولة",
+      "administrativeRegion": "المنطقة الإدارية",
+      "addPreferredRegion": "إضافة مدن مفضّلة",
+      "remove": "إزالة",
+      "noRegionsSelected": "لم تُحدَّد مناطق مفضّلة بعد.",
+      "preferredCities": "المدن / المجتمعات المفضّلة",
+      "selectRegionFirst": "حدّد منطقة مفضّلة واحدة على الأقل لاختيار المدن / المجتمعات.",
+      "citiesMultiRegionHelp": "يتوفر {count} من المدن والمجتمعات. مرّر القائمة أو ابحث للتصفية. يمكنك إضافة مدن أو مجتمعات مفضّلة من مناطق متعددة.",
+      "cleanupTitle": "تم تحديث التفضيلات الجغرافية",
+      "cleanupMessage": "أُزيلت بعض المدن لأن دولتها أو منطقتها لم تعد محدّدة."
+    }
+  },
+  "pwa": {
+    "appNavAria": "التطبيق",
+    "create": "إنشاء",
+    "createInitiativeAria": "إنشاء مبادرة",
+    "searchLabel": "البحث في Humanity Union",
+    "searchPlaceholder": "البحث في Humanity Union",
+    "goBack": "رجوع",
+    "openMenu": "فتح القائمة",
+    "closeMenu": "إغلاق القائمة",
+    "menuTitle": "القائمة",
+    "playIntroSound": "تشغيل صوت المقدمة",
+    "sound": "صوت",
+    "install": {
+      "appTitle": "تطبيق Humanity Union",
+      "lead": "خذ Humanity معك. ثبّت التطبيق للوصول المباشر إلى مساحة العمل والمبادرات والإشعارات ومساعد Humanity Union.",
+      "alreadyInstalled": "Humanity Union مثبت بالفعل على هذا الجهاز.",
+      "openWorkspace": "فتح مساحة العمل",
+      "hiddenStatus": "إخفاء إرشادات التثبيت لهذه الجلسة.",
+      "showOptions": "إظهار خيارات التثبيت",
+      "installing": "جارٍ التثبيت…",
+      "installCta": "تثبيت Humanity Union",
+      "addToHomeScreen": "إضافة إلى الشاشة الرئيسية",
+      "installationGuide": "دليل التثبيت",
+      "later": "لاحقًا",
+      "guideTitle": "تثبيت تطبيق Humanity Union",
+      "closeGuideAria": "إغلاق دليل التثبيت",
+      "guideSubtitle": "أضف Humanity Union إلى الشاشة الرئيسية للوصول الأسرع وتجربة شبيهة بالتطبيق.",
+      "automaticUnavailable": "التثبيت التلقائي غير متاح في جلسة المتصفح هذه. استخدم الخطوات أدناه، أو أعد فتح Humanity Union في نافذة متصفح عادية (غير خاصة) إذا لم يظهر التثبيت.",
+      "androidTitle": "Android — Chrome",
+      "androidHintPrimary": "إذا كان زر «تثبيت Humanity Union» متاحًا في هذه الصفحة، فاستخدمه أولًا.",
+      "androidStep1": "افتح Humanity Union في Chrome.",
+      "androidStep2": "اضغط قائمة المتصفح (⋮).",
+      "androidStep3": "اختر Install app أو Add to Home screen.",
+      "androidStep4": "أكّد التثبيت.",
+      "androidStep5": "سيظهر رمز Humanity Union على الشاشة الرئيسية / مشغّل التطبيقات.",
+      "androidHintSecondary": "إذا لم يعرض Chrome خيار التثبيت: حدّث الصفحة، وتأكد من فتح الموقع في Chrome، وتحقق من أن التطبيق غير مثبت بالفعل.",
+      "iosTitle": "iPhone / iPad — Safari",
+      "iosStep1": "افتح Humanity Union في Safari.",
+      "iosStep2": "اضغط زر المشاركة.",
+      "iosStep3": "مرّر واختر Add to Home Screen.",
+      "iosStep4": "راجع اسم التطبيق.",
+      "iosStep5": "اضغط Add.",
+      "iosStep6": "شغّل Humanity Union من رمز الشاشة الرئيسية الجديد.",
+      "iosHintSafari": "يجب تنفيذ Add to Home Screen من Safari. إذا كانت هذه الصفحة مفتوحة داخل متصفح تطبيق آخر، فافتحها في Safari أولًا.",
+      "iosHintNotifications": "اسمح بالإشعارات عند المطالبة إذا أردت ميزات الشارات والإشعارات المدعومة.",
+      "badgeNote": "سلوك الإشعارات وشارة أيقونة التطبيق يعتمد على جهازك ونظام التشغيل والمتصفح وأذونات الإشعارات.",
+      "close": "إغلاق"
+    },
+    "feed": {
+      "title": "المبادرات",
+      "loading": "جارٍ تحميل المبادرات…",
+      "error": "تعذّر تحميل المبادرات. تحقق من اتصالك وحاول مرة أخرى.",
+      "matchedPriorities": "مطابقة لأولوياتك",
+      "newestPublic": "أحدث المبادرات العامة",
+      "carouselAria": "عرض المبادرات",
+      "viewAll": "عرض كل المبادرات"
+    }
+  },
   "initiativeExperience": {
     "common": {
       "author": "المؤلف",
@@ -606,6 +774,47 @@
         "resultsAria": "نتائج الدعم / المعارضة"
       }
     },
+    "journey": {
+      "status": {
+        "signed_petition": "تم توقيع العريضة",
+        "commented": "تم التعليق",
+        "commented_count": "تم التعليق ({count})",
+        "supported": "تم الدعم",
+        "opposed": "تم المعارضة",
+        "voted": "تم التصويت ({choice})",
+        "voted_updated": "تم التصويت ({choice}؛ محدّث)"
+      },
+      "labels": {
+        "join_discussion": "انضم إلى النقاش",
+        "continue_discussion": "تابع في النقاش",
+        "sign_petition": "وقّع العريضة",
+        "petition_signed": "تم توقيع العريضة",
+        "cast_vote": "أدلِ بصوتك",
+        "review_or_update_vote": "راجع أو حدّث تصويتك",
+        "view_decision_result": "عرض نتيجة القرار",
+        "support_initiative": "ادعم هذه المبادرة"
+      },
+      "reasons": {
+        "sign_in_to_comment": "سجّل الدخول للتعليق.",
+        "sign_in_to_sign": "سجّل الدخول للتوقيع.",
+        "sign_in_to_vote": "سجّل الدخول للتصويت.",
+        "sign_in_to_support": "سجّل الدخول للدعم.",
+        "sign_in_to_take_action": "سجّل الدخول لاتخاذ هذا الإجراء.",
+        "support_unavailable": "الدعم غير متاح مؤقتًا.",
+        "petition_info_unavailable": "معلومات العريضة غير متاحة مؤقتًا.",
+        "petition_not_open": "العريضة غير مفتوحة للتوقيع بعد.",
+        "voting_closed": "التصويت مغلق.",
+        "decision_not_open": "القرار الجماعي غير مفتوح بعد.",
+        "voting_info_unavailable": "معلومات التصويت غير متاحة مؤقتًا.",
+        "petition_open_unsigned": "العريضة مفتوحة ولم توقّع بعد.",
+        "vote_open_may_update": "لقد صوّتَّ بالفعل. يمكنك مراجعة تصويتك أو تحديثه بينما التصويت مفتوح.",
+        "vote_open": "تصويت القرار الجماعي مفتوح.",
+        "join_discussion": "انضم إلى نقاش هذه المبادرة.",
+        "show_support": "أظهر دعمك لهذه المبادرة.",
+        "commitment_needs_response": "هناك التزام يحتاج إلى ردك.",
+        "still_contribute_discussion": "ما زال بإمكانك المساهمة في النقاش."
+      }
+    },
     "collaboration": {
       "workspace": {
         "aria": "التعاون",
@@ -704,7 +913,18 @@
         "unreadAria": "رسائل غير مقروءة من {name}",
         "fallbackTitle": "قناة التعاون",
         "participantFallback": "مشارك",
-        "participantsTitle": "الحلفاء النشطون"
+        "participantsTitle": "الحلفاء النشطون",
+        "systemEvents": {
+          "ally_joined": "انضم {name} إلى قناة التعاون.",
+          "collaboration_accepted": "تم قبول {name}.",
+          "session_scheduled": "تم جدولة جلسة تعاون.",
+          "petition_published": "نُشرت العريضة.",
+          "collective_decision_updated": "تم تحديث القرار الجماعي.",
+          "defaultNames": {
+            "ally_joined": "حليف جديد",
+            "collaboration_accepted": "طلب تعاون"
+          }
+        }
       },
       "sessions": {
         "aria": "جلسات التعاون",
@@ -794,7 +1014,14 @@
         "recordingChoice": "جارٍ تسجيل {choice}…",
         "select": "اختيار",
         "selected": "مختار",
-        "submitting": "جارٍ إرسال تصويتك…"
+        "submitting": "جارٍ إرسال تصويتك…",
+        "unavailableReasons": {
+          "cancelled": "تم إلغاء هذا القرار الجماعي. التصويت غير متاح.",
+          "closed": "هذا القرار الجماعي مغلق. التصويت لم يعد متاحًا.",
+          "not_opened": "التصويت غير متاح لهذا القرار الجماعي.",
+          "window_not_open": "نافذة التصويت لم تُفتح بعد.",
+          "window_closed": "أُغلقت نافذة التصويت."
+        }
       },
       "reaction": {
         "aria": "تفاعل {target}",
@@ -2495,7 +2722,8 @@
           "completeness": "الاكتمال",
           "emptySection": "لم يُسجَّل محتوى.",
           "sources": "المصادر: {list}",
-          "participationStats": "التوقيعات {signatures} · الدعم {support} · التفاعلات {reactions} · الحلفاء {allies}"
+          "participationStats": "التوقيعات {signatures} · الدعم {support} · التفاعلات {reactions} · الحلفاء {allies}",
+          "disclaimer": "تسجّل هذه الوثيقة المشاركة المدنية ونشاط المبادرة على منصة Humanity Union. وهي ليست سجلاً حكومياً رسمياً أو ملزماً قانونياً ما لم تعترف بها المؤسسة المعنية بشكل مستقل."
         },
         "completeness": {
           "summary": "الملخص",
@@ -2509,7 +2737,18 @@
           "available": "متاح",
           "notAvailable": "غير متاح",
           "traceabilityComplete": "قابلية التتبع مكتملة",
-          "traceabilityIncomplete": "قابلية التتبع غير مكتملة"
+          "traceabilityIncomplete": "قابلية التتبع غير مكتملة",
+          "summaryParts": {
+            "stages_published": "لدى {count} مرحلة/مراحل من دورة الحياة سجلات منشورة.",
+            "public_impact_available": "يتوفر تقرير أثر عام منشور.",
+            "public_impact_missing": "لا يوجد تقرير أثر عام منشور بعد.",
+            "public_impact_available_optional": "يتوفر تقرير أثر عام منشور (اختياري في Public Choice).",
+            "public_impact_not_required_public_choice": "الأثر العام غير مطلوب في Public Choice — يكفي إتمام القرار الجماعي.",
+            "tracking_unresolved": "يبقى {count} سجل/سجلات تتبع دون حل.",
+            "tracking_resolved": "لا توجد سجلات تتبع غير محلولة.",
+            "commitments_unfinished": "{count} التزام/التزامات غير مكتملة.",
+            "commitments_finished": "لا توجد التزامات غير مكتملة مسجّلة."
+          }
         },
         "share": {
           "shareArchive": "مشاركة الأرشيف",
@@ -2781,6 +3020,26 @@
         "autoApplyForbidden": "حاول الذكاء الاصطناعي تعديلًا أو نشرًا تلقائيًا، وهذا محظور.",
         "appliedToDraft": "نُسخ الاقتراح إلى محرر المسودة محليًا. عدّل ثم {saveDraft} → {preview} → {publish}. لم يُنشر شيء تلقائيًا.",
         "appliedToBlog": "وُضع الاقتراح في قائمة محرر النشر. راجع تطبيق / استبدال / رفض هناك. لم يُنشر شيء تلقائيًا."
+      }
+    },
+    "civicArchivePublic": {
+      "outcomes": {
+        "completed": "مكتمل",
+        "partially_implemented": "منفَّذ جزئيًا",
+        "concluded_without_implementation": "انتهى دون تنفيذ",
+        "cancelled": "ملغى",
+        "superseded": "مستبدل"
+      },
+      "filters": {
+        "outcomeStatus": "حالة النتيجة",
+        "allOutcomes": "كل النتائج",
+        "yearPlaceholder": "YYYY"
+      },
+      "card": {
+        "archived": "أُرشِف {date}",
+        "completed": "اكتمل {date}",
+        "viewRecord": "عرض سجل الأرشيف ←",
+        "viewRecordAria": "عرض سجل الأرشيف: {title}"
       }
     }
   }

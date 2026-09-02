@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef } from "react";
 
 import { trapTabKey } from "../../../design-system/focus-trap";
 
 const GLOBAL_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/institutions", label: "Institutions" },
-  { href: "/knowledge", label: "Knowledge" },
-  { href: "/blog", label: "Blog" },
-  { href: "/media", label: "Civic Media" },
-  { href: "/support", label: "Support" },
-  { href: "/search", label: "Search" },
+  { href: "/", labelKey: "home" },
+  { href: "/institutions", labelKey: "institutions" },
+  { href: "/knowledge", labelKey: "knowledge" },
+  { href: "/blog", labelKey: "blog" },
+  { href: "/media", labelKey: "civicMedia" },
+  { href: "/support", labelKey: "support" },
+  { href: "/search", labelKey: "search" },
 ] as const;
 
 interface PwaGlobalMenuProps {
@@ -26,6 +27,8 @@ export function PwaGlobalMenu({ open, onClose }: PwaGlobalMenuProps) {
   const pathname = usePathname() ?? "/";
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const tNav = useTranslations("navigation");
+  const tPwa = useTranslations("pwa");
 
   useEffect(() => {
     if (!open) {
@@ -63,7 +66,7 @@ export function PwaGlobalMenu({ open, onClose }: PwaGlobalMenuProps) {
       <button
         type="button"
         className="hu-pwa-global-menu__backdrop"
-        aria-label="Close menu"
+        aria-label={tPwa("closeMenu")}
         onClick={onClose}
       />
       <div
@@ -75,7 +78,7 @@ export function PwaGlobalMenu({ open, onClose }: PwaGlobalMenuProps) {
         tabIndex={-1}
       >
         <h2 id={titleId} className="hu-pwa-global-menu__title">
-          Menu
+          {tPwa("menuTitle")}
         </h2>
         <ul className="hu-pwa-global-menu__list">
           {GLOBAL_LINKS.map((link) => {
@@ -91,7 +94,7 @@ export function PwaGlobalMenu({ open, onClose }: PwaGlobalMenuProps) {
                   aria-current={current ? "page" : undefined}
                   onClick={onClose}
                 >
-                  {link.label}
+                  {tNav(link.labelKey)}
                 </Link>
               </li>
             );

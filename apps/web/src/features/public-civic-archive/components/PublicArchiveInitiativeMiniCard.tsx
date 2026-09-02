@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { CivicArchiveLifecycleRecord } from "@hu/types";
 
 import { resolveMediaUrl } from "../../media-upload/media-url";
+import { resolveCivicArchiveOutcomeStatusDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { CivicArchiveCardTranslatedText } from "./CivicArchiveCardTranslatedText";
 
 export const PUBLIC_ARCHIVE_INITIATIVE_MINI_CARD_FALLBACK_IMAGE =
@@ -54,19 +56,25 @@ interface PublicArchiveInitiativeMiniCardProps {
 }
 
 export function PublicArchiveInitiativeMiniCard({ record }: PublicArchiveInitiativeMiniCardProps) {
+  const t = useTranslations("initiativeExperience");
   const archiveHref = `/civic-archive/${encodeURIComponent(record.initiativeId)}`;
+  const outcomeLabel = resolveCivicArchiveOutcomeStatusDisplayLabel(
+    record.outcomeStatus,
+    t,
+    record.outcomeStatusLabel,
+  );
 
   return (
     <Link
       href={archiveHref}
       className="civic-archive-mini-card"
-      aria-label={`View archive record: ${record.title}`}
+      aria-label={t("civicArchivePublic.card.viewRecordAria", { title: record.title })}
     >
       <div className="civic-archive-mini-card__media">
         <MiniCardImage title={record.title} imageUrl={record.imageUrl} />
       </div>
       <div className="civic-archive-mini-card__body">
-        <span className="civic-archive-mini-card__badge">{record.outcomeStatusLabel}</span>
+        <span className="civic-archive-mini-card__badge">{outcomeLabel}</span>
         <CivicArchiveCardTranslatedText
           archiveRecordId={record.archiveRecordId}
           title={record.title}
@@ -78,10 +86,14 @@ export function PublicArchiveInitiativeMiniCard({ record }: PublicArchiveInitiat
           {record.activityArea} · {formatLocation(record)}
         </p>
         <p className="civic-archive-mini-card__meta">
-          Archived {formatDate(record.archivedAt)}
-          {record.completedAt ? ` · Completed ${formatDate(record.completedAt)}` : null}
+          {t("civicArchivePublic.card.archived", { date: formatDate(record.archivedAt) })}
+          {record.completedAt
+            ? ` · ${t("civicArchivePublic.card.completed", { date: formatDate(record.completedAt) })}`
+            : null}
         </p>
-        <span className="civic-archive-mini-card__action">View Archive Record →</span>
+        <span className="civic-archive-mini-card__action">
+          {t("civicArchivePublic.card.viewRecord")}
+        </span>
       </div>
     </Link>
   );
@@ -97,7 +109,6 @@ export function PublicArchiveInitiativeMiniCardSkeleton() {
       <div className="civic-archive-mini-card__body">
         <span className="civic-archive-mini-card__title-skeleton" />
         <span className="civic-archive-mini-card__summary-skeleton" />
-        <span className="civic-archive-mini-card__meta-skeleton" />
       </div>
     </article>
   );

@@ -1,6 +1,8 @@
 /**
  * Phase 05 — deterministic next meaningful Participant action resolver.
  * Pure function: does not mutate lifecycle state.
+ *
+ * Pack 02G Task 08G — emits reasonCode alongside English reason (skew fallback).
  */
 
 import type {
@@ -34,13 +36,16 @@ function pickAvailable(
 function toNext(
   action: CollectiveParticipationAvailableAction,
   reason: string,
+  reasonCode: string,
 ): CollectiveParticipationNextAction {
   return {
     actionType: action.actionType,
     stageId: action.stageId,
     label: action.label,
+    labelCode: action.labelCode,
     deepLink: action.deepLink,
     reason,
+    reasonCode,
   };
 }
 
@@ -67,7 +72,11 @@ export function resolveNextMeaningfulParticipationAction(input: {
     if (stageId === "petition") {
       const sign = pickAvailable(availableActions, "petition_signature");
       if (sign && !hasPast(pastActions, "petition_signature")) {
-        return toNext(sign, "Petition is open and you have not signed yet.");
+        return toNext(
+          sign,
+          "Petition is open and you have not signed yet.",
+          "petition_open_unsigned",
+        );
       }
       return null;
     }
@@ -78,11 +87,15 @@ export function resolveNextMeaningfulParticipationAction(input: {
         if (hasPast(pastActions, "decision_vote")) {
           const past = pastActions.find((action) => action.actionType === "decision_vote");
           if (past?.updateable) {
-            return toNext(update, "You already voted. You may review or update your vote while voting is open.");
+            return toNext(
+              update,
+              "You already voted. You may review or update your vote while voting is open.",
+              "vote_open_may_update",
+            );
           }
           return null;
         }
-        return toNext(update, "Collective Decision voting is open.");
+        return toNext(update, "Collective Decision voting is open.", "vote_open");
       }
       return null;
     }
@@ -94,14 +107,14 @@ export function resolveNextMeaningfulParticipationAction(input: {
             action.actionType === "discussion_comment" && action.eligibility === "eligible",
         );
         if (comment) {
-          return toNext(comment, "Join the Discussion for this Initiative.");
+          return toNext(comment, "Join the Discussion for this Initiative.", "join_discussion");
         }
       }
 
       if (!hasPast(pastActions, "support_initiative")) {
         const support = pickAvailable(availableActions, "support_initiative");
         if (support) {
-          return toNext(support, "Show support for this Initiative.");
+          return toNext(support, "Show support for this Initiative.", "show_support");
         }
       }
     }
@@ -109,7 +122,7 @@ export function resolveNextMeaningfulParticipationAction(input: {
     if (stageId === "commitment") {
       const commitment = pickAvailable(availableActions, "commitment_response");
       if (commitment) {
-        return toNext(commitment, "A commitment needs your response.");
+        return toNext(commitment, "A commitment needs your response.", "commitment_needs_response");
       }
     }
 
@@ -141,7 +154,7 @@ export function resolveNextMeaningfulParticipationAction(input: {
   ) {
     const comment = pickAvailable(availableActions, "discussion_comment");
     if (comment) {
-      return toNext(comment, "You can still contribute in Discussion.");
+      return toNext(comment, "You can still contribute in Discussion.", "still_contribute_discussion");
     }
   }
 

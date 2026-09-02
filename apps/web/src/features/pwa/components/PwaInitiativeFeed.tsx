@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { CommunityCollaborationOpportunityProjection } from "@hu/types";
 
@@ -55,8 +56,11 @@ async function loadNewestPublicInitiatives(): Promise<FeedItem[]> {
  *
  * Private `/workspace/home` is fetched only after canonical auth is authenticated.
  * Guests/pending never trigger that private projection (or Preferences-style refresh noise).
+ *
+ * Pack 02G Task 08G — chrome via `pwa.feed.*`; item.title / explanation stay CIVIC_DATA/API_OPAQUE.
  */
 export function PwaInitiativeFeed() {
+  const t = useTranslations("pwa");
   const authStatus = useClientAuthStatus();
   const [items, setItems] = useState<FeedItem[]>([]);
   const [mode, setMode] = useState<"preference" | "newest" | "loading" | "error">("loading");
@@ -109,20 +113,18 @@ export function PwaInitiativeFeed() {
 
   return (
     <section className="hu-pwa-initiative-feed" aria-labelledby="hu-pwa-initiative-feed-title">
-      <h2 id="hu-pwa-initiative-feed-title">Initiatives</h2>
-      {mode === "loading" ? <p>Loading Initiatives…</p> : null}
-      {mode === "error" ? (
-        <p role="status">Could not load Initiatives. Check your connection and try again.</p>
-      ) : null}
+      <h2 id="hu-pwa-initiative-feed-title">{t("feed.title")}</h2>
+      {mode === "loading" ? <p>{t("feed.loading")}</p> : null}
+      {mode === "error" ? <p role="status">{t("feed.error")}</p> : null}
       {mode === "preference" ? (
-        <p className="hu-pwa-initiative-feed__mode">Matched to your priorities</p>
+        <p className="hu-pwa-initiative-feed__mode">{t("feed.matchedPriorities")}</p>
       ) : null}
       {mode === "newest" ? (
-        <p className="hu-pwa-initiative-feed__mode">Newest public Initiatives</p>
+        <p className="hu-pwa-initiative-feed__mode">{t("feed.newestPublic")}</p>
       ) : null}
 
       {items.length > 0 ? (
-        <ul className="hu-pwa-initiative-feed__list" aria-label="Initiative carousel">
+        <ul className="hu-pwa-initiative-feed__list" aria-label={t("feed.carouselAria")}>
           {items.map((item) => (
             <li key={item.initiativeId} className="hu-pwa-initiative-feed__item">
               <Link className="hu-pwa-initiative-feed__card" href={item.href}>
@@ -141,7 +143,7 @@ export function PwaInitiativeFeed() {
 
       {mode === "newest" || mode === "preference" ? (
         <p>
-          <Link href="/initiatives">View all Initiatives</Link>
+          <Link href="/initiatives">{t("feed.viewAll")}</Link>
         </p>
       ) : null}
     </section>

@@ -2,6 +2,7 @@ import type {
   InitiativeImplementationTrackingIntelligenceSnapshot,
   InitiativeImplementationTrackingLifecycleDraft,
 } from "@hu/types";
+import { isImplementationTrackingCandidateCompleted, isImplementationTrackingCandidatePreparation } from "@hu/types";
 
 import type { ImplementationTrackingSidebarAdvisory } from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
 
@@ -73,7 +74,7 @@ export function deriveImplementationTrackingAiAssistantInsights(
       (candidate) =>
         candidate.targetDate &&
         candidate.targetDate < today &&
-        candidate.currentStatus !== "Completed" &&
+        !isImplementationTrackingCandidateCompleted(candidate.currentStatus) &&
         candidate.progress < 100,
     );
     if (overdue.length > 0) {
@@ -105,7 +106,9 @@ export function deriveImplementationTrackingAiAssistantInsights(
     }
 
     const stalled = draft.candidates.filter(
-      (candidate) => candidate.progress === 0 && candidate.currentStatus === "Preparation",
+      (candidate) =>
+        candidate.progress === 0 &&
+        isImplementationTrackingCandidatePreparation(candidate.currentStatus),
     );
     if (stalled.length > 0) {
       stalledWarnings.push({

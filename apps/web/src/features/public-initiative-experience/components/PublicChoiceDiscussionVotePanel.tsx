@@ -24,8 +24,8 @@ import {
   listPublicInitiativeCollectiveDecisions,
 } from "../../initiative-collective-decision/api";
 import {
-  describeCollectiveDecisionVotingUnavailable,
   isCollectiveDecisionVotingWindowOpen,
+  resolveCollectiveDecisionVotingUnavailableCode,
 } from "../../initiative-collective-decision-lifecycle/collective-decision-voting";
 import { getPublicInitiative } from "../../initiatives/api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
@@ -119,9 +119,12 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
   }, [reload]);
 
   const votingOpen = projection ? isCollectiveDecisionVotingWindowOpen(projection) : false;
-  const unavailableReason = projection
-    ? describeCollectiveDecisionVotingUnavailable(projection)
+  const unavailableCode = projection
+    ? resolveCollectiveDecisionVotingUnavailableCode(projection)
     : null;
+  const unavailableReason = unavailableCode
+    ? t(`collaboration.vote.unavailableReasons.${unavailableCode}`)
+    : t("collaboration.vote.unavailable");
 
   function voteChoiceLabel(choice: InitiativeDecisionVoteChoice): string {
     switch (choice) {
@@ -230,7 +233,7 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
 
       {loadState === "ready" && projection && decisionId ? (
         !votingOpen ? (
-          <p role="status">{unavailableReason ?? t("collaboration.vote.unavailable")}</p>
+          <p role="status">{unavailableReason}</p>
         ) : (
           <div className="pie-public-choice-vote__ballot">
             <p className="pie-public-choice-vote__current" role="status">

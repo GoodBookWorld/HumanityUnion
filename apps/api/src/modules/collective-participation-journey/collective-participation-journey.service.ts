@@ -95,11 +95,14 @@ function projectLedgerPastActions(
           ? latest.metadata.newChoice
           : "vote";
     const changed = voteRecords.some((record) => record.actionType === "initiative_decision_vote_changed");
+    const choiceText = String(choice);
     past.push({
       actionType: "decision_vote",
       stageId: "collective_decision",
       occurredAt: latest.occurredAt,
-      statusLabel: changed ? `Voted (${String(choice)}; updated)` : `Voted (${String(choice)})`,
+      statusLabel: changed ? `Voted (${choiceText}; updated)` : `Voted (${choiceText})`,
+      statusCode: changed ? "voted_updated" : "voted",
+      statusParams: { choice: choiceText },
       deepLink: buildInitiativeShellDeepLink(initiativeId, "collective_decision"),
       source: "participant_action_ledger",
       updateable: true,
@@ -113,6 +116,7 @@ function projectLedgerPastActions(
         stageId: "petition",
         occurredAt: record.occurredAt,
         statusLabel: "Signed petition",
+        statusCode: "signed_petition",
         deepLink: buildInitiativeShellDeepLink(initiativeId, "petition"),
         source: "participant_action_ledger",
       });
@@ -244,8 +248,10 @@ export async function buildCollectiveParticipationJourney(input: {
         actionType: "discussion_comment",
         stageId: "discussion",
         label: "Join the Discussion",
+        labelCode: "join_discussion",
         eligibility: "requires_sign_in",
         reason: "Sign in to comment.",
+        reasonCode: "sign_in_to_comment",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "discussion"),
       });
     }
@@ -254,8 +260,10 @@ export async function buildCollectiveParticipationJourney(input: {
         actionType: "petition_signature",
         stageId: "petition",
         label: "Sign the Petition",
+        labelCode: "sign_petition",
         eligibility: "requires_sign_in",
         reason: "Sign in to sign.",
+        reasonCode: "sign_in_to_sign",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "petition"),
       });
     }
@@ -264,8 +272,10 @@ export async function buildCollectiveParticipationJourney(input: {
         actionType: "decision_vote",
         stageId: "collective_decision",
         label: "Cast your vote",
+        labelCode: "cast_vote",
         eligibility: "requires_sign_in",
         reason: "Sign in to vote.",
+        reasonCode: "sign_in_to_vote",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "collective_decision"),
       });
     }
@@ -273,8 +283,10 @@ export async function buildCollectiveParticipationJourney(input: {
       actionType: "support_initiative",
       stageId: "initiative",
       label: "Support this Initiative",
+      labelCode: "support_initiative",
       eligibility: "requires_sign_in",
       reason: "Sign in to support.",
+      reasonCode: "sign_in_to_support",
       deepLink: buildInitiativeShellDeepLink(input.initiativeId, "initiative"),
     });
 
@@ -289,7 +301,7 @@ export async function buildCollectiveParticipationJourney(input: {
       pastActions: [],
       availableActions: availableActions.map((action) =>
         action.eligibility === "requires_sign_in"
-          ? { ...action, eligibility: "eligible", reason: undefined }
+          ? { ...action, eligibility: "eligible", reason: undefined, reasonCode: undefined }
           : action,
       ),
       activeAlly: false,
@@ -307,6 +319,7 @@ export async function buildCollectiveParticipationJourney(input: {
         ? {
             ...nextAction,
             reason: "Sign in to take this action.",
+            reasonCode: "sign_in_to_take_action",
             label: nextAction.label,
           }
         : null,
@@ -340,11 +353,14 @@ export async function buildCollectiveParticipationJourney(input: {
     const mine = comments.comments.filter((comment) => comment.authorUserId === participantId);
     if (mine.length > 0) {
       const latest = mine.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]!;
+      const commentCount = mine.length;
       pastActions.push({
         actionType: "discussion_comment",
         stageId: "discussion",
         occurredAt: latest.createdAt,
-        statusLabel: mine.length === 1 ? "Commented" : `Commented (${mine.length})`,
+        statusLabel: commentCount === 1 ? "Commented" : `Commented (${commentCount})`,
+        statusCode: commentCount === 1 ? "commented" : "commented_count",
+        statusParams: commentCount === 1 ? undefined : { count: commentCount },
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "discussion"),
         source: "domain_derived",
       });
@@ -363,11 +379,13 @@ export async function buildCollectiveParticipationJourney(input: {
       userId: participantId,
     });
     if (support.currentUserSignal === "like" || support.currentUserSignal === "dislike") {
+      const supported = support.currentUserSignal === "like";
       pastActions.push({
         actionType: "support_initiative",
         stageId: "initiative",
         occurredAt: new Date().toISOString(),
-        statusLabel: support.currentUserSignal === "like" ? "Supported" : "Opposed",
+        statusLabel: supported ? "Supported" : "Opposed",
+        statusCode: supported ? "supported" : "opposed",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "initiative"),
         source: "domain_derived",
       });
@@ -376,6 +394,7 @@ export async function buildCollectiveParticipationJourney(input: {
         actionType: "support_initiative",
         stageId: "initiative",
         label: "Support this Initiative",
+        labelCode: "support_initiative",
         eligibility: "eligible",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "initiative"),
       });
@@ -385,8 +404,10 @@ export async function buildCollectiveParticipationJourney(input: {
       actionType: "support_initiative",
       stageId: "initiative",
       label: "Support this Initiative",
+      labelCode: "support_initiative",
       eligibility: "unavailable",
       reason: "Support is temporarily unavailable.",
+      reasonCode: "support_unavailable",
       deepLink: buildInitiativeShellDeepLink(input.initiativeId, "initiative"),
     });
   }
@@ -398,6 +419,7 @@ export async function buildCollectiveParticipationJourney(input: {
       actionType: "discussion_comment",
       stageId: "discussion",
       label: alreadyCommented ? "Continue in Discussion" : "Join the Discussion",
+      labelCode: alreadyCommented ? "continue_discussion" : "join_discussion",
       eligibility: "eligible",
       deepLink: buildInitiativeShellDeepLink(input.initiativeId, "discussion"),
     });
@@ -425,6 +447,7 @@ export async function buildCollectiveParticipationJourney(input: {
               stageId: "petition",
               occurredAt: signature.signedAt,
               statusLabel: "Signed petition",
+              statusCode: "signed_petition",
               deepLink: buildInitiativeShellDeepLink(input.initiativeId, "petition"),
               source: "domain_derived",
             });
@@ -442,6 +465,7 @@ export async function buildCollectiveParticipationJourney(input: {
         actionType: "petition_signature",
         stageId: "petition",
         label: "Petition signed",
+        labelCode: "petition_signed",
         eligibility: "already_completed",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "petition"),
       });
@@ -450,8 +474,10 @@ export async function buildCollectiveParticipationJourney(input: {
         actionType: "petition_signature",
         stageId: "petition",
         label: "Sign the Petition",
+        labelCode: "sign_petition",
         eligibility: "unavailable",
         reason: "Petition information is temporarily unavailable.",
+        reasonCode: "petition_info_unavailable",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "petition"),
       });
     } else if (!petition || !petitionOpen) {
@@ -459,8 +485,10 @@ export async function buildCollectiveParticipationJourney(input: {
         actionType: "petition_signature",
         stageId: "petition",
         label: "Sign the Petition",
+        labelCode: "sign_petition",
         eligibility: "stage_not_open",
         reason: "Petition is not open for signatures yet.",
+        reasonCode: "petition_not_open",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "petition"),
       });
     } else {
@@ -468,6 +496,7 @@ export async function buildCollectiveParticipationJourney(input: {
         actionType: "petition_signature",
         stageId: "petition",
         label: "Sign the Petition",
+        labelCode: "sign_petition",
         eligibility: "eligible",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "petition"),
       });
@@ -499,6 +528,8 @@ export async function buildCollectiveParticipationJourney(input: {
             stageId: "collective_decision",
             occurredAt: vote.updatedAt ?? vote.castAt,
             statusLabel: `Voted (${vote.choice})`,
+            statusCode: "voted",
+            statusParams: { choice: String(vote.choice) },
             deepLink: buildInitiativeShellDeepLink(input.initiativeId, "collective_decision"),
             source: "domain_derived",
             updateable: openDecision != null,
@@ -520,6 +551,7 @@ export async function buildCollectiveParticipationJourney(input: {
             actionType: "decision_vote",
             stageId: "collective_decision",
             label: hasVote ? "Review or update your vote" : "Cast your vote",
+            labelCode: hasVote ? "review_or_update_vote" : "cast_vote",
             eligibility: "eligible",
             deepLink: buildInitiativeShellDeepLink(input.initiativeId, "collective_decision"),
           });
@@ -528,10 +560,12 @@ export async function buildCollectiveParticipationJourney(input: {
             actionType: "decision_vote",
             stageId: "collective_decision",
             label: "View decision result",
+            labelCode: "view_decision_result",
             eligibility: pastActions.some((a) => a.actionType === "decision_vote")
               ? "already_completed"
               : "stage_not_open",
             reason: "Voting is closed.",
+            reasonCode: "voting_closed",
             deepLink: buildInitiativeShellDeepLink(input.initiativeId, "collective_decision"),
           });
         }
@@ -540,8 +574,10 @@ export async function buildCollectiveParticipationJourney(input: {
           actionType: "decision_vote",
           stageId: "collective_decision",
           label: "Cast your vote",
+          labelCode: "cast_vote",
           eligibility: "stage_not_open",
           reason: "Collective Decision is not open yet.",
+          reasonCode: "decision_not_open",
           deepLink: buildInitiativeShellDeepLink(input.initiativeId, "collective_decision"),
         });
       }
@@ -550,8 +586,10 @@ export async function buildCollectiveParticipationJourney(input: {
         actionType: "decision_vote",
         stageId: "collective_decision",
         label: "Cast your vote",
+        labelCode: "cast_vote",
         eligibility: "unavailable",
         reason: "Voting information is temporarily unavailable.",
+        reasonCode: "voting_info_unavailable",
         deepLink: buildInitiativeShellDeepLink(input.initiativeId, "collective_decision"),
       });
     }

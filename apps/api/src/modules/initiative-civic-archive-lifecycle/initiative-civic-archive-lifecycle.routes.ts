@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 
 import { authenticationMiddleware } from "../auth/auth.middleware.js";
+import { attachRuntimeLocale } from "../language/runtime-locale.middleware.js";
 import { createSuccessResponse } from "../../shared/http-response.js";
 import { resolveRequestIdentity } from "../initiatives/identity/resolve-request-identity.js";
 import {
@@ -169,8 +170,10 @@ initiativeCivicArchiveLifecycleRouter.get(
   "/initiative/:initiativeId/document.pdf",
   async (req, res) => {
     try {
+      const runtimeLocale = await attachRuntimeLocale(req);
       const { buffer, filename } = await downloadPublishedArchivePdf({
         initiativeId: getInitiativeId(req),
+        locale: runtimeLocale.locale,
       });
       sendPdf(res, buffer, filename);
     } catch (error) {
@@ -183,8 +186,10 @@ initiativeCivicArchiveLifecycleRouter.get(
   "/versions/:archiveVersionId/document.pdf",
   async (req, res) => {
     try {
+      const runtimeLocale = await attachRuntimeLocale(req);
       const { buffer, filename } = await downloadPublishedArchivePdf({
         archiveVersionId: getArchiveVersionId(req),
+        locale: runtimeLocale.locale,
       });
       sendPdf(res, buffer, filename);
     } catch (error) {
@@ -199,7 +204,12 @@ initiativeCivicArchiveLifecycleRouter.get(
   async (req, res) => {
     try {
       const identity = await resolveRequestIdentity(req);
-      const { buffer, filename } = await downloadDraftArchivePdf(identity, getInitiativeId(req));
+      const runtimeLocale = await attachRuntimeLocale(req);
+      const { buffer, filename } = await downloadDraftArchivePdf(
+        identity,
+        getInitiativeId(req),
+        { locale: runtimeLocale.locale },
+      );
       sendPdf(res, buffer, filename);
     } catch (error) {
       handleServiceError(res, error);

@@ -58,10 +58,10 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     assert.match(installState, /ios_add_to_home/);
     assert.match(installState, /isIosLikeDevice/);
     const help = readWeb("features/pwa/components/PwaInstallGuidance.tsx");
-    assert.match(help, /Add to Home Screen/);
-    assert.match(help, /Share button|Share menu/);
+    assert.match(help, /install\.addToHomeScreen|install\.iosStep3|install\.iosHintSafari/);
+    assert.match(help, /install\.iosStep2/);
     const promo = readWeb("features/pwa/components/PwaInstallPromotion.tsx");
-    assert.match(promo, /Add to Home Screen/);
+    assert.match(promo, /install\.addToHomeScreen/);
   });
 
   it("9 — standalone does not show actionable install CTA", () => {
@@ -71,11 +71,11 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     );
     const promo = readWeb("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /runningStandalone/);
-    assert.match(promo, /already installed on this device|Installed/);
-    assert.match(promo, /Open Workspace/);
+    assert.match(promo, /install\.alreadyInstalled/);
+    assert.match(promo, /install\.openWorkspace/);
     assert.match(promo, /showInstallAction = uxState === "install_available" && !dismissed/);
-    assert.match(promo, /Installation guide/);
-    assert.match(promo, /handleDismiss[\s\S]*Later/);
+    assert.match(promo, /install\.installationGuide/);
+    assert.match(promo, /handleDismiss[\s\S]*install\.later/);
   });
 
   it("10 — no automatic install prompt", () => {
@@ -108,21 +108,21 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
   it("15 — Search routes to canonical /search", () => {
     const header = readWeb("features/pwa/components/PwaAppHeader.tsx");
     assert.match(header, /\/search\?q=/);
-    assert.match(header, /Search Humanity Union/);
+    assert.match(header, /searchLabel|searchPlaceholder/);
   });
 
   it("16 — hamburger Global Menu contains approved public links", () => {
     const menu = readWeb("features/pwa/components/PwaGlobalMenu.tsx");
-    for (const label of [
-      "Home",
-      "Institutions",
-      "Knowledge",
-      "Blog",
-      "Civic Media",
-      "Support",
-      "Search",
+    for (const labelKey of [
+      "home",
+      "institutions",
+      "knowledge",
+      "blog",
+      "civicMedia",
+      "support",
+      "search",
     ]) {
-      assert.match(menu, new RegExp(label));
+      assert.match(menu, new RegExp(`labelKey: "${labelKey}"`));
     }
   });
 
@@ -131,7 +131,7 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     assert.match(nav, /href="\/workspace"/);
     assert.match(nav, /href="\/initiatives"/);
     assert.match(nav, /href="\/initiatives\/create"/);
-    assert.match(nav, /Create Initiative/);
+    assert.match(nav, /createInitiativeAria/);
     assert.match(nav, /href="\/notifications"/);
     assert.match(nav, /openAssistant/);
     assert.match(nav, /useUnreadNotificationCount/);
@@ -213,7 +213,7 @@ describe("PWA Experience Pack 01 — installability & shell", () => {
     assert.match(section, /PwaInstallPromotion/);
     assert.doesNotMatch(section, /public-home-v2__section public-home-v2__section/);
     const promo = readWeb("features/pwa/components/PwaInstallPromotion.tsx");
-    assert.match(promo, /Humanity Union App/);
+    assert.match(promo, /install\.appTitle/);
     assert.doesNotMatch(promo, /Progressive Web App|Hybrid App/);
   });
 

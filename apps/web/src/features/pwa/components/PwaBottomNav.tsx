@@ -20,6 +20,7 @@ export function PwaBottomNav() {
   const pathname = usePathname() ?? "/";
   const tNav = useTranslations("navigation");
   const tWorkspace = useTranslations("workspace");
+  const tPwa = useTranslations("pwa");
   const tAssistant = useTranslations("initiativeExperience");
   const assistant = useOptionalHumanityUnionAssistant();
   const assistantButtonRef = useRef<HTMLButtonElement>(null);
@@ -33,7 +34,7 @@ export function PwaBottomNav() {
     pathname === "/notifications" || pathname.startsWith("/notifications/");
 
   return (
-    <nav className="hu-pwa-bottom-nav" aria-label="App">
+    <nav className="hu-pwa-bottom-nav" aria-label={tPwa("appNavAria")}>
       <Link
         href="/workspace"
         className="hu-pwa-bottom-nav__item"
@@ -69,7 +70,7 @@ export function PwaBottomNav() {
       <Link
         href="/initiatives/create"
         className="hu-pwa-bottom-nav__item"
-        aria-label="Create Initiative"
+        aria-label={tPwa("createInitiativeAria")}
       >
         <img
           className="hu-pwa-bottom-nav__icon"
@@ -79,7 +80,7 @@ export function PwaBottomNav() {
           height={36}
           aria-hidden="true"
         />
-        Create
+        <span className="hu-pwa-bottom-nav__label">{tPwa("create")}</span>
       </Link>
 
       <Link

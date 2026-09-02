@@ -11,6 +11,7 @@ import { createSuccessResponse } from "../../shared/http-response.js";
 import { optionalAuthenticationMiddleware } from "../auth/auth.middleware.js";
 import { getDecisionById } from "../initiative-collective-decision/initiative-collective-decision.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { attachRuntimeLocale } from "../language/runtime-locale.middleware.js";
 import { generatePublicChoiceResultsPdfBuffer } from "./public-choice-results-pdf-export.service.js";
 import { ensurePublicChoiceResultsFrozenForClosedDecision } from "./public-choice-results-retention.service.js";
 import { findPublicChoiceResultsSnapshotByDecision } from "./public-choice-results-snapshot.repository.js";
@@ -125,7 +126,10 @@ publicChoiceResultsRetentionRouter.get(
         return;
       }
 
-      const buffer = await generatePublicChoiceResultsPdfBuffer(snapshot);
+      const runtimeLocale = await attachRuntimeLocale(req);
+      const buffer = await generatePublicChoiceResultsPdfBuffer(snapshot, {
+        locale: runtimeLocale.locale,
+      });
       const filename = `humanity-union-public-choice-results-${initiativeId}.pdf`;
       sendPdf(res, buffer, filename);
     } catch (error) {

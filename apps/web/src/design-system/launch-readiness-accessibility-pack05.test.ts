@@ -105,7 +105,7 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
   it("8 — Preferences controls labelled", () => {
     const prefs = read("features/preferences/components/PreferencesWorkspace.tsx");
     assert.match(prefs, /preferences-workspace__field/);
-    assert.match(prefs, /Who can see my public profile/);
+    assert.match(prefs, /visibility\.\$\{field\}|VISIBILITY_FIELDS/);
     assert.match(prefs, /<label/);
   });
 

@@ -236,8 +236,9 @@ describe("Pack 02G Task 08E.8e — Implementation Commitment + Tracking advisori
     );
     assert.match(derive, /TODAY_ISO/);
     assert.match(derive, /targetDate < today/);
-    assert.match(derive, /currentStatus === "Preparation"/);
+    assert.match(derive, /isImplementationTrackingCandidatePreparation/);
     assert.match(derive, /progress >= 100/);
+    assert.doesNotMatch(derive, /currentStatus === "Preparation"/);
   });
 
   it("Analysis→Collective Decision resolver paths remain unchanged", async () => {

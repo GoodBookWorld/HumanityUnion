@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { CivicArchiveLifecycleRecord } from "@hu/types";
 
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
+import { resolveCivicArchiveOutcomeStatusDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { CivicArchiveCardTranslatedText } from "./CivicArchiveCardTranslatedText";
 
 function formatDate(value: string | undefined): string {
@@ -28,7 +30,13 @@ interface PublicArchiveInitiativeCardProps {
 }
 
 export function PublicArchiveInitiativeCard({ record }: PublicArchiveInitiativeCardProps) {
+  const t = useTranslations("initiativeExperience");
   const archiveHref = `/civic-archive/${encodeURIComponent(record.initiativeId)}`;
+  const outcomeLabel = resolveCivicArchiveOutcomeStatusDisplayLabel(
+    record.outcomeStatus,
+    t,
+    record.outcomeStatusLabel,
+  );
 
   return (
     <article className="civic-archive-record-card">
@@ -37,7 +45,7 @@ export function PublicArchiveInitiativeCard({ record }: PublicArchiveInitiativeC
           <InitiativeImage title={record.title} imageUrl={record.imageUrl} />
         </div>
         <div className="civic-archive-record-card__body">
-          <span className="civic-archive-record-card__badge">{record.outcomeStatusLabel}</span>
+          <span className="civic-archive-record-card__badge">{outcomeLabel}</span>
           <CivicArchiveCardTranslatedText
             archiveRecordId={record.archiveRecordId}
             title={record.title}
@@ -49,10 +57,14 @@ export function PublicArchiveInitiativeCard({ record }: PublicArchiveInitiativeC
             {record.activityArea} · {formatLocation(record)}
           </p>
           <p className="civic-archive-record-card__meta">
-            Archived {formatDate(record.archivedAt)}
-            {record.completedAt ? ` · Completed ${formatDate(record.completedAt)}` : null}
+            {t("civicArchivePublic.card.archived", { date: formatDate(record.archivedAt) })}
+            {record.completedAt
+              ? ` · ${t("civicArchivePublic.card.completed", { date: formatDate(record.completedAt) })}`
+              : null}
           </p>
-          <span className="civic-archive-record-card__action">View Archive Record →</span>
+          <span className="civic-archive-record-card__action">
+            {t("civicArchivePublic.card.viewRecord")}
+          </span>
         </div>
       </Link>
     </article>

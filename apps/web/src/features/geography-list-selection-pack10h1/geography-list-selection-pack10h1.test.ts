@@ -73,9 +73,9 @@ describe("Pack 10H1 — city list browseable selection", () => {
 
   it("Preferences keeps multi-select with browseable cities and clearer copy", () => {
     const preferred = readWeb("features/preferences/components/PreferredGeographyFields.tsx");
-    assert.match(preferred, /Add preferred cities/);
-    assert.doesNotMatch(preferred, /Add preferred region/);
-    assert.match(preferred, /from multiple regions/);
+    assert.match(preferred, /geography\.addPreferredRegion|addPreferredRegion/);
+    assert.doesNotMatch(preferred, /"Add preferred region"/);
+    assert.match(preferred, /citiesMultiRegionHelp/);
     assert.match(preferred, /GeographyMultiSelect/);
     assert.doesNotMatch(preferred, /requireSearch/);
   });

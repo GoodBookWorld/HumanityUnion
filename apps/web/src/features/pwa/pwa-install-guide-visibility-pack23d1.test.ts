@@ -23,7 +23,7 @@ describe("Pack 23D.1 — install guide visibility + modal usability", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /showInstallationGuide/);
     assert.match(promo, /!runningStandalone && !dismissed/);
-    assert.match(promo, /Installation guide/);
+    assert.match(promo, /install\.installationGuide/);
     assert.match(promo, /beforeinstallprompt is absent|does not depend on beforeinstallprompt|must not depend on beforeinstallprompt/i);
 
     const noPrompt = resolvePwaInstallUxState({ standalone: false, deferredPrompt: null });
@@ -57,7 +57,7 @@ describe("Pack 23D.1 — install guide visibility + modal usability", () => {
   it("6 — standalone does not show install guide CTAs", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /runningStandalone \? \(/);
-    assert.match(promo, /Open Workspace/);
+    assert.match(promo, /install\.openWorkspace/);
     assert.equal(
       resolvePwaInstallUxState({ standalone: true, deferredPrompt: null }),
       "already_installed",
@@ -90,17 +90,17 @@ describe("Pack 23D.1 — install guide visibility + modal usability", () => {
 
   it("14–16 — Android / iOS / badge note preserved", () => {
     const guidance = read("features/pwa/components/PwaInstallGuidance.tsx");
-    assert.match(guidance, /Android — Chrome/);
-    assert.match(guidance, /iPhone \/ iPad — Safari/);
-    assert.match(guidance, /Notification and app-icon badge behavior depends on your device/);
-    assert.match(guidance, /Close installation guide/);
+    assert.match(guidance, /install\.androidTitle/);
+    assert.match(guidance, /install\.iosTitle/);
+    assert.match(guidance, /install\.badgeNote/);
+    assert.match(guidance, /install\.closeGuideAria/);
   });
 
   it("17–18 — Pack 23D / install regressions retained", () => {
     const promo = read("features/pwa/components/PwaInstallPromotion.tsx");
     assert.match(promo, /getDeferredInstallPrompt/);
-    assert.match(promo, /Install Humanity Union/);
-    assert.match(promo, /Later/);
+    assert.match(promo, /install\.installCta/);
+    assert.match(promo, /install\.later/);
     assert.match(promo, /PwaInstallGuidance/);
     const preference = read("features/pwa/install-preference.ts");
     assert.match(preference, /catch \{/);
