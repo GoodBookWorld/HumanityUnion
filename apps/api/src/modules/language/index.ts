@@ -59,6 +59,7 @@ export {
   resolveTranslationLanguageEnglishName,
 } from "./providers/gemini-translation-provider.js";
 export {
+  assertCivicTitleFieldsTranslatedFromSource,
   assertTranslatedProseChangedFromSource,
   filterTranslatedFieldsToSourceAllowlist,
 } from "./content-translation-output-validation.js";
@@ -86,6 +87,7 @@ export {
   buildContentTranslationWorkIdentityKey,
 } from "./content-translation-work-identity.js";
 export {
+  CONTENT_TRANSLATION_CIVIC_TITLE_FIELDS,
   CONTENT_TRANSLATION_FIELD_ALLOWLIST,
   CONTENT_TRANSLATION_PRIVACY_EXCLUSIONS,
   PUBLIC_CONTENT_TRANSLATION_SOURCE_KINDS,

@@ -36,6 +36,7 @@ import {
   type CanonicalTranslatableSourceEligibility,
 } from "./content-translation-eligibility.js";
 import {
+  assertCivicTitleFieldsTranslatedFromSource,
   assertTranslatedProseChangedFromSource,
   filterTranslatedFieldsToSourceAllowlist,
 } from "./content-translation-output-validation.js";
@@ -339,13 +340,21 @@ export async function getOrCreateContentTranslation(input: {
     );
   }
 
-  // Pack 02G Task 07C — drop invented keys; reject all-prose-unchanged when languages differ.
+  // Pack 02G Task 07C / 07E.1 — drop invented keys; reject all-unchanged prose;
+  // require designated civic title/heading fields to differ for cross-language.
   translatedFields = filterTranslatedFieldsToSourceAllowlist({
     sourceKind: source.sourceKind,
     sourceFields: source.fields,
     translatedFields,
   });
   assertTranslatedProseChangedFromSource({
+    sourceKind: source.sourceKind,
+    sourceLanguage: source.sourceLanguage,
+    targetLanguage,
+    sourceFields: source.fields,
+    translatedFields,
+  });
+  assertCivicTitleFieldsTranslatedFromSource({
     sourceKind: source.sourceKind,
     sourceLanguage: source.sourceLanguage,
     targetLanguage,

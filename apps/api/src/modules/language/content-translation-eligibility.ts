@@ -118,6 +118,29 @@ export const CONTENT_TRANSLATION_FIELD_ALLOWLIST = {
   ],
 } as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
 
+/**
+ * Pack 02G Task 07E.1 — civic display titles/headings that must differ from
+ * source when sourceLanguage !== targetLanguage (non-empty source values).
+ * Strict subset of CONTENT_TRANSLATION_FIELD_ALLOWLIST per sourceKind.
+ */
+export const CONTENT_TRANSLATION_CIVIC_TITLE_FIELDS = {
+  initiative: ["title"],
+  collaborative_analysis: ["title"],
+  petition: ["title"],
+  blog_post: ["title"],
+  lifecycle_stage: [] as readonly string[],
+  improvement_proposal: [] as readonly string[],
+  initiative_revision: ["title"],
+  decision_session: ["title"],
+  collective_decision: ["question"],
+  implementation_commitment: ["title"],
+  implementation_tracking: [] as readonly string[],
+  official_response: ["subject"],
+  public_impact: ["title"],
+  civic_archive: ["title"],
+  civic_media: ["overviewTitle", "initiativeFlowTitle"],
+} as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
+
 /** Public kinds that require published/public projection eligibility for generation. */
 export const PUBLIC_CONTENT_TRANSLATION_SOURCE_KINDS = [
   "initiative",

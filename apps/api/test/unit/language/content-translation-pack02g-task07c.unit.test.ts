@@ -220,11 +220,11 @@ describe("Production Completion Pack 02G Task 07C — target-language enforcemen
       assert.equal(lookup.generated, false);
     });
 
-    it("accepts when one field is invariant but description is translated", async () => {
+    it("accepts when title is translated but a body field remains identical", async () => {
       setTranslationProviderForTests(
         new ScriptedStructuredTranslationProvider(() => ({
-          title: initiative.title,
-          description: "Учасники відновлюють місцеву річку з доказовими кроками.",
+          title: "Ініціатива Чистої Річки",
+          description: initiative.description,
         })),
       );
 
@@ -235,12 +235,9 @@ describe("Production Completion Pack 02G Task 07C — target-language enforcemen
         generateIfMissing: true,
       });
       assert.equal(result.generated, true);
-      assert.equal(result.translation?.translatedContent.title, initiative.title);
-      assert.equal(
-        result.translation?.translatedContent.description,
-        "Учасники відновлюють місцеву річку з доказовими кроками.",
-      );
-      assert.notEqual(result.translation?.translatedContent.description, initiative.description);
+      assert.equal(result.translation?.translatedContent.title, "Ініціатива Чистої Річки");
+      assert.equal(result.translation?.translatedContent.description, initiative.description);
+      assert.notEqual(result.translation?.translatedContent.title, initiative.title);
     });
 
     it("accepts when all eligible prose is translated", async () => {

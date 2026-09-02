@@ -20,9 +20,13 @@ describe("Production Completion Pack 02G Task 07D — civic title prompt contrac
   it("requires normal translation of civic titles/headings including JSON title", () => {
     assert.match(
       prompt,
-      /Civic content titles and human-readable headings \(including JSON field `title`\) are translatable content/,
+      /Civic content titles and human-readable headings \(including JSON fields such as `title`/,
     );
     assert.match(prompt, /translate them into the target language normally/);
+    assert.match(
+      prompt,
+      /designated civic title\/heading field values must not remain identical to the source/,
+    );
   });
 
   it("rejects treating campaign/alliance-like titles as automatically invariant", () => {
