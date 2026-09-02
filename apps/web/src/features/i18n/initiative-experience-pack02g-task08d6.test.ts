@@ -120,7 +120,7 @@ describe("Pack 02G Task 08D.6 — Petition author workspace i18n", () => {
     assert.match(publicResult, /shareReference\.sharingNote/);
   });
 
-  it("author-preview signature chrome localizes; public SignatureWidget untouched", () => {
+  it("author-preview signature chrome localizes; live SignatureWidget uses petitionSignature", () => {
     const preview = readWeb(
       "features/initiative-petition-lifecycle/components/InitiativePetitionDraftPreview.tsx",
     );
@@ -135,9 +135,10 @@ describe("Pack 02G Task 08D.6 — Petition author workspace i18n", () => {
     assert.match(publicResult, /author\.petition\.public\.previewSignatureDisabled/);
     assert.match(publicResult, /isPreview \?/);
     assert.match(publicResult, /InitiativePetitionSignatureWidget/);
-    assert.doesNotMatch(widget, /useTranslations/);
+    assert.match(widget, /useTranslations\("initiativeExperience"\)/);
+    assert.match(widget, /petitionSignature\.sign/);
     assert.doesNotMatch(widget, /author\.petition/);
-    assert.match(widget, /Sign this Petition/);
+    assert.doesNotMatch(widget, />Sign this Petition</);
   });
 
   it("deterministic client validation localized; Error.message not sentence-matched", () => {

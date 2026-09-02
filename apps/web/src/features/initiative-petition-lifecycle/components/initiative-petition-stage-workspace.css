@@ -251,26 +251,35 @@
   margin: 0;
   font-size: 0.85rem;
   color: var(--workspace-muted-text, #6b7280);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ipl-signature__status {
   margin: 0;
   font-weight: 600;
   color: var(--workspace-success-text, #15803d);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ipl-signature__actions {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .ipl-signature .workspace-button,
 .ipl-support .workspace-button {
+  max-width: 100%;
+  min-width: 0;
   white-space: normal;
 }
 
 .ipl-signature__error {
   margin: 0;
   color: var(--workspace-error-text, #b91c1c);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }

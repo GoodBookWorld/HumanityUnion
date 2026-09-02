@@ -187,6 +187,6 @@ describe("Pack 02G Task 08E.1 — public reaction widget i18n", () => {
     );
     assert.doesNotMatch(signature, /collaboration\.reaction/);
     assert.doesNotMatch(election, /collaboration\.reaction/);
-    assert.match(signature, /Sign this Petition|Withdraw Signature/);
+    assert.match(signature, /petitionSignature\./);
   });
 });

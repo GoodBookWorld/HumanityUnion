@@ -2045,6 +2045,17 @@
           "archived": "已封存"
         }
       }
+    },
+    "petitionSignature": {
+      "aria": "請願簽名",
+      "signedStatus": "您已簽署此請願。",
+      "sign": "簽署此請願",
+      "recording": "記錄中…",
+      "withdraw": "撤回簽名",
+      "withdrawing": "撤回中…",
+      "disclaimer": "簽署代表您對此請願的公民參與支持。這不是具法律拘束力的請願，也不會讓您承擔執行責任。",
+      "recordFailed": "無法記錄簽名。",
+      "withdrawFailed": "無法撤回簽名。"
     }
   }
 }

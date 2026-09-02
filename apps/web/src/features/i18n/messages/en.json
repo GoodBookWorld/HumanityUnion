@@ -2045,6 +2045,17 @@
           "archived": "Archived"
         }
       }
+    },
+    "petitionSignature": {
+      "aria": "Petition signature",
+      "signedStatus": "You have signed this Petition.",
+      "sign": "Sign this Petition",
+      "recording": "Recording…",
+      "withdraw": "Withdraw Signature",
+      "withdrawing": "Withdrawing…",
+      "disclaimer": "Signing records your civic participation in support of this Petition. It is not a legally binding petition and does not assign implementation responsibility to you.",
+      "recordFailed": "Could not record signature.",
+      "withdrawFailed": "Could not withdraw signature."
     }
   }
 }
