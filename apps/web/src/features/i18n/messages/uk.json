@@ -231,7 +231,11 @@
       "viewOriginalSource": "Переглянути оригінальне джерело",
       "publishedPrefix": "Опубліковано {date}",
       "lifecycleStagesAria": "Етапи життєвого циклу",
-      "initiativeSidebarAria": "Бічна панель ініціативи"
+      "initiativeSidebarAria": "Бічна панель ініціативи",
+      "optionalStageUnavailable": {
+        "petition": "Інформація про петицію тимчасово недоступна.",
+        "civicArchive": "Інформація про громадянський архів тимчасово недоступна."
+      }
     },
     "tabs": {
       "manage": "Керування",

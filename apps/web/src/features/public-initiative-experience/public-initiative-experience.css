@@ -293,6 +293,8 @@
   background: var(--hu-color-surface);
   color: var(--hu-color-text-muted, inherit);
   font-size: 0.9rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Lifecycle UX Completion Pack 02 Part 2 — markers track completion state. */
@@ -470,6 +472,7 @@
   display: grid;
   gap: var(--hu-space-4);
   align-content: start;
+  min-width: 0;
 }
 
 .pie-overview__item h3 {
@@ -485,6 +488,8 @@
   margin: 0;
   line-height: 1.5;
   font-size: 1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* UX Evolution Pack 02.4 Part 3 — real Initiative author link, only rendered when a public profile exists. */

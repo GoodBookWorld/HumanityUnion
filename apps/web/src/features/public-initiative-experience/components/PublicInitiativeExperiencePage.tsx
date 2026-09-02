@@ -98,9 +98,13 @@ export function PublicInitiativeExperiencePage({
     experience.lifecycleStages,
     experience.hero.currentStageLabel,
   ]);
-  const petitionDegradedMessage = publicSafeOptionalSectionMessage(
+  const petitionDegradedSection = publicSafeOptionalSectionMessage(
     experience.optionalStageDiagnostics,
     "petition",
+  );
+  const civicArchiveDegradedSection = publicSafeOptionalSectionMessage(
+    experience.optionalStageDiagnostics,
+    "civicArchive",
   );
   const returnToInitiativeHref = buildInitiativeExperienceHref(experience.initiativeId);
 
@@ -357,11 +361,18 @@ export function PublicInitiativeExperiencePage({
         }
         center={
           <>
-            {petitionDegradedMessage &&
+            {petitionDegradedSection &&
             showLifecyclePanel &&
             selectedStageId === "petition" ? (
               <p className="pie-optional-degraded" role="status">
-                {petitionDegradedMessage}
+                {t(`common.optionalStageUnavailable.${petitionDegradedSection}`)}
+              </p>
+            ) : null}
+            {civicArchiveDegradedSection &&
+            showLifecyclePanel &&
+            selectedStageId === "archive" ? (
+              <p className="pie-optional-degraded" role="status">
+                {t(`common.optionalStageUnavailable.${civicArchiveDegradedSection}`)}
               </p>
             ) : null}
             <PublicInitiativeCenterPanel

@@ -231,7 +231,11 @@
       "viewOriginalSource": "عرض المصدر الأصلي",
       "publishedPrefix": "نُشر في {date}",
       "lifecycleStagesAria": "مراحل دورة الحياة",
-      "initiativeSidebarAria": "الشريط الجانبي للمبادرة"
+      "initiativeSidebarAria": "الشريط الجانبي للمبادرة",
+      "optionalStageUnavailable": {
+        "petition": "معلومات العريضة غير متاحة مؤقتًا.",
+        "civicArchive": "معلومات الأرشيف المدني غير متاحة مؤقتًا."
+      }
     },
     "tabs": {
       "manage": "إدارة",

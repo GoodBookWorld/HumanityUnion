@@ -231,7 +231,11 @@
       "viewOriginalSource": "View original source",
       "publishedPrefix": "Published {date}",
       "lifecycleStagesAria": "Lifecycle stages",
-      "initiativeSidebarAria": "Initiative sidebar"
+      "initiativeSidebarAria": "Initiative sidebar",
+      "optionalStageUnavailable": {
+        "petition": "Petition information is temporarily unavailable.",
+        "civicArchive": "Civic Archive information is temporarily unavailable."
+      }
     },
     "tabs": {
       "manage": "Manage",

@@ -231,7 +231,11 @@
       "viewOriginalSource": "檢視原始來源",
       "publishedPrefix": "發布於 {date}",
       "lifecycleStagesAria": "生命週期階段",
-      "initiativeSidebarAria": "倡議側邊欄"
+      "initiativeSidebarAria": "倡議側邊欄",
+      "optionalStageUnavailable": {
+        "petition": "請願資訊暫時無法使用。",
+        "civicArchive": "公民典藏資訊暫時無法使用。"
+      }
     },
     "tabs": {
       "manage": "管理",

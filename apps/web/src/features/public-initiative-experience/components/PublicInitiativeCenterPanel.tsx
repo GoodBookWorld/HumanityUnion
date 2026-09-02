@@ -21,6 +21,7 @@ import {
 import { formatPublicGeography } from "@hu/geography";
 import {
   formatInitiativeExperienceDate,
+  formatInitiativeExperienceLanguageName,
   resolveActivityAreaDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
@@ -227,7 +228,10 @@ function PublicInitiativeOverview({
                 label={communityAssociationLabel}
                 value={metadata.communityAssociation ?? metadata.communitySlug}
               />
-              <OverviewMetadataItem label={t("overview.language")} value={metadata.language} />
+              <OverviewMetadataItem
+                label={t("overview.language")}
+                value={formatInitiativeExperienceLanguageName(locale, metadata.language)}
+              />
               <OverviewMetadataItem
                 label={t("overview.completionDate")}
                 value={

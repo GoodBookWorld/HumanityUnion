@@ -258,15 +258,18 @@ export function resolveShellAuthorModeEligible(input: {
   return input.isAuthorWorkspaceStage(input.selectedStageId);
 }
 
+/**
+ * When an optional stage diagnostic is `unavailable`, returns the section id
+ * so the shell can resolve a deterministic public-safe next-intl message.
+ * Does not surface API/domain reason prose.
+ */
 export function publicSafeOptionalSectionMessage(
   diagnostics: PublicInitiativeOptionalStageDiagnostics | undefined,
   section: "petition" | "civicArchive",
-): string | null {
+): "petition" | "civicArchive" | null {
   const entry = diagnostics?.[section];
   if (!entry || entry.health !== "unavailable") {
     return null;
   }
-  return section === "petition"
-    ? "Petition information is temporarily unavailable."
-    : "Civic Archive information is temporarily unavailable.";
+  return section;
 }
