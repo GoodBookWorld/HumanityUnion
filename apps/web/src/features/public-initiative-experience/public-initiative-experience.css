@@ -1445,6 +1445,11 @@
   margin: 0;
   padding-left: 1.1rem;
   color: var(--hu-color-text-muted);
+  min-width: 0;
+}
+
+.pie-election-page__meta li {
+  overflow-wrap: anywhere;
 }
 
 .pie-election-page__ranking {
@@ -1526,9 +1531,10 @@
 
 .pie-election-results__row {
   display: grid;
-  grid-template-columns: 3rem 1fr;
+  grid-template-columns: 3rem minmax(0, 1fr);
   gap: 0.85rem 1rem;
   align-items: start;
+  min-width: 0;
 }
 
 .pie-election-results__rank {
@@ -1540,10 +1546,16 @@
 
 .pie-election-results__identity {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 64px minmax(0, 1fr);
   gap: 0.75rem;
   align-items: center;
   grid-column: 2;
+  min-width: 0;
+}
+
+.pie-election-results__identity > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .pie-election-results__photo,
@@ -1565,16 +1577,19 @@
   grid-column: 2;
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .pie-election-results__percent {
   font-weight: 700;
   font-size: 1.1rem;
+  overflow-wrap: anywhere;
 }
 
 .pie-election-results__count {
   color: var(--hu-color-text-muted);
   font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 .pie-election-results__bar {
@@ -1655,6 +1670,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  min-width: 0;
+}
+
+.pie-election-results__heading h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .pie-election-results__download {
@@ -2210,6 +2231,7 @@
   flex-wrap: wrap;
   gap: var(--hu-space-2);
   align-items: center;
+  min-width: 0;
 }
 
 .pie-election-results__status {

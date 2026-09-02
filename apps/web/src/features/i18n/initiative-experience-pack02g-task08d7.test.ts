@@ -252,7 +252,7 @@ describe("Pack 02G Task 08D.7 — Decision Session + Collective Decision author 
     assert.doesNotMatch(ballot, /aria-label="Vote choices"/);
   });
 
-  it("PublicChoiceElectionResultsBoard left mostly untouched; wrapper chrome localized", () => {
+  it("PublicChoiceElectionResultsBoard chrome localized; CD wrapper uses status display resolver", () => {
     const publicResult = readWeb(
       "features/initiative-collective-decision-lifecycle/components/InitiativeCollectiveDecisionPublicResult.tsx",
     );
@@ -261,9 +261,13 @@ describe("Pack 02G Task 08D.7 — Decision Session + Collective Decision author 
     );
     assert.match(publicResult, /PublicChoiceElectionResultsBoard/);
     assert.match(publicResult, /author\.collectiveDecision\.public\.previewMeta/);
-    assert.match(publicResult, /publicChoiceElectionVotingStatusLabel\(votingStatus\)/);
-    assert.doesNotMatch(board, /author\.collectiveDecision/);
-    assert.doesNotMatch(board, /useTranslations/);
+    assert.match(
+      publicResult,
+      /resolvePublicChoiceElectionVotingStatusDisplayLabel\(\s*votingStatus/,
+    );
+    assert.doesNotMatch(publicResult, /publicChoiceElectionVotingStatusLabel\(votingStatus\)/);
+    assert.match(board, /useTranslations/);
+    assert.match(board, /publicChoice\.results\./);
   });
 
   it("no Gemini/runtime UI translation in Decision Session / Collective Decision author components", () => {

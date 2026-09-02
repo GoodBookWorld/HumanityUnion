@@ -2061,6 +2061,62 @@
       "disclaimer": "Signing records your civic participation in support of this Petition. It is not a legally binding petition and does not assign implementation responsibility to you.",
       "recordFailed": "Could not record signature.",
       "withdrawFailed": "Could not withdraw signature."
+    },
+    "publicChoice": {
+      "statuses": {
+        "NOT_STARTED": "Not started",
+        "OPEN": "Open",
+        "CLOSED": "Closed",
+        "EXPIRED": "Expired"
+      },
+      "results": {
+        "download": "Download results",
+        "preparing": "Preparing…",
+        "electionStatus": "Election status: {status}",
+        "votingOpenRanking": "Voting is open. Current community ranking — no winner is declared.",
+        "voteOnOverview": "Vote on Overview",
+        "votingClosedRanking": "Voting is closed. Top-ranked candidates reflect effective votes. Ties remain ties.",
+        "totalEffectiveVoters": "Total effective voters: <count></count>",
+        "noCandidates": "No candidates have been added yet.",
+        "rankAria": "Rank {rank}",
+        "candidateFallback": "Candidate",
+        "blocked": "Blocked",
+        "votesCount": "{count} votes",
+        "votesMetricAria": "{count} votes, {percent}",
+        "voteShareAria": "{name} share of effective votes",
+        "abstain": "Abstain",
+        "participationTitle": "Participation breakdown",
+        "participationNote": "Visitor, Participant, and Member are mutually exclusive. A Member vote counts once as Member — never also as Participant. Visitor identity is never shown publicly.",
+        "totalVoters": "Total voters",
+        "visitors": "Visitors",
+        "participants": "Participants",
+        "members": "Members",
+        "disclaimerTitle": "Community voting results",
+        "disclaimerBody": "These are Humanity Union community voting results. They are not official election results, statistically representative polling, or government-certified results."
+      },
+      "election": {
+        "loading": "Loading election…",
+        "loadFailed": "Election could not be loaded.",
+        "eyebrow": "Humanity Union community vote",
+        "backToInitiative": "← Back to Initiative",
+        "backToInitiativePlain": "Back to Initiative",
+        "geography": "Geography: {value}",
+        "startOfVoting": "Start of Voting: {value}",
+        "endOfVoting": "End of Voting: {value}",
+        "status": "Status: {status}",
+        "totalVotersMeta": "Total voters: {count}",
+        "shareAria": "Share {title}",
+        "resultsExpiredTitle": "Results no longer available",
+        "resultsExpiredBody": "The temporary results retention period has ended. Detailed election data has been removed.",
+        "downloadFailed": "Download failed."
+      },
+      "stage": {
+        "title": "Election Results",
+        "subtitle": "Collective Decision · {electionName}",
+        "loading": "Loading election results…",
+        "loadFailed": "Election results could not be loaded.",
+        "emptyPending": "Results appear when the election ballot is published."
+      }
     }
   }
 }

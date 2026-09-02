@@ -2061,6 +2061,62 @@
       "disclaimer": "التوقيع يسجّل مشاركتك المدنية لدعم هذه العريضة. ليست عريضة ملزمة قانونًا ولا تفرض عليك مسؤولية التنفيذ.",
       "recordFailed": "تعذّر تسجيل التوقيع.",
       "withdrawFailed": "تعذّر سحب التوقيع."
+    },
+    "publicChoice": {
+      "statuses": {
+        "NOT_STARTED": "لم تبدأ",
+        "OPEN": "مفتوحة",
+        "CLOSED": "مغلقة",
+        "EXPIRED": "منتهية"
+      },
+      "results": {
+        "download": "تنزيل النتائج",
+        "preparing": "جارٍ التحضير…",
+        "electionStatus": "حالة الانتخاب: {status}",
+        "votingOpenRanking": "التصويت مفتوح. هذا ترتيب المجتمع الحالي — لم يُعلن فائز.",
+        "voteOnOverview": "صوّت في النظرة العامة",
+        "votingClosedRanking": "التصويت مغلق. أعلى المراتب تعكس الأصوات الفعلية. التعادل يبقى تعادلاً.",
+        "totalEffectiveVoters": "إجمالي الناخبين الفعليين: <count></count>",
+        "noCandidates": "لم تُضف مرشحون بعد.",
+        "rankAria": "المرتبة {rank}",
+        "candidateFallback": "مرشح",
+        "blocked": "محظور",
+        "votesCount": "{count} أصوات",
+        "votesMetricAria": "{count} أصوات، {percent}",
+        "voteShareAria": "حصة {name} من الأصوات الفعلية",
+        "abstain": "امتناع",
+        "participationTitle": "تفصيل المشاركة",
+        "participationNote": "الزائر والمشارك والعضو فئات متنافية. صوت العضو يُحسب مرة واحدة كعضو — لا يُحسب أيضاً كمشارك. هوية الزائر لا تُعرض علناً.",
+        "totalVoters": "إجمالي الناخبين",
+        "visitors": "الزوار",
+        "participants": "المشاركون",
+        "members": "الأعضاء",
+        "disclaimerTitle": "نتائج تصويت المجتمع",
+        "disclaimerBody": "هذه نتائج تصويت مجتمع Humanity Union. وهي ليست نتائج انتخابات رسمية ولا استطلاعات ممثلة إحصائياً ولا نتائج معتمدة من الحكومة."
+      },
+      "election": {
+        "loading": "جارٍ تحميل الانتخاب…",
+        "loadFailed": "تعذر تحميل الانتخاب.",
+        "eyebrow": "تصويت مجتمع Humanity Union",
+        "backToInitiative": "← العودة إلى المبادرة",
+        "backToInitiativePlain": "العودة إلى المبادرة",
+        "geography": "الجغرافيا: {value}",
+        "startOfVoting": "بداية التصويت: {value}",
+        "endOfVoting": "نهاية التصويت: {value}",
+        "status": "الحالة: {status}",
+        "totalVotersMeta": "إجمالي الناخبين: {count}",
+        "shareAria": "مشاركة {title}",
+        "resultsExpiredTitle": "النتائج لم تعد متاحة",
+        "resultsExpiredBody": "انتهت فترة الاحتفاظ المؤقت بالنتائج. أُزيلت بيانات الانتخاب التفصيلية.",
+        "downloadFailed": "فشل التنزيل."
+      },
+      "stage": {
+        "title": "نتائج الانتخاب",
+        "subtitle": "القرار الجماعي · {electionName}",
+        "loading": "جارٍ تحميل نتائج الانتخاب…",
+        "loadFailed": "تعذر تحميل نتائج الانتخاب.",
+        "emptyPending": "تظهر النتائج عند نشر بطاقة الاقتراع."
+      }
     }
   }
 }

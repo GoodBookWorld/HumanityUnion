@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   InitiativeDecisionSelectOneAggregates,
@@ -12,8 +13,6 @@ import type {
   PublicInitiativeProjection,
 } from "@hu/types";
 import {
-  PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER,
-  publicChoiceElectionVotingStatusLabel,
   resolvePublicChoiceBallotMode,
   resolvePublicChoiceElectionVotingStatus,
 } from "@hu/types";
@@ -31,6 +30,10 @@ import {
 } from "../../public-choice-candidate/public-choice-election-result-surface";
 import { usePublicChoiceElectionRefresh } from "../../public-choice-candidate/public-choice-election-refresh";
 import { downloadPublicChoiceResultsPdf } from "../../public-choice-results-retention/api";
+import {
+  resolveInitiativeDecisionVoteChoiceDisplayLabel,
+  resolvePublicChoiceElectionVotingStatusDisplayLabel,
+} from "../initiative-experience-i18n";
 
 import "../public-initiative-experience.css";
 
@@ -74,15 +77,19 @@ function SupportOpposeResults({
   downloadBusy: boolean;
   shareSlot?: ReactNode;
 }) {
+  const t = useTranslations("initiativeExperience");
   const support = aggregates?.total.support ?? fallback.support;
   const doNotSupport = aggregates?.total.doNotSupport ?? fallback.doNotSupport;
   const abstain = aggregates?.total.abstain ?? fallback.abstain;
   const total = aggregates?.total.totalVotes ?? fallback.total;
 
   const rows = [
-    { label: "Support", count: support },
-    { label: "Do not support", count: doNotSupport },
-    { label: "Abstain", count: abstain },
+    { label: resolveInitiativeDecisionVoteChoiceDisplayLabel("support", t), count: support },
+    {
+      label: resolveInitiativeDecisionVoteChoiceDisplayLabel("do_not_support", t),
+      count: doNotSupport,
+    },
+    { label: resolveInitiativeDecisionVoteChoiceDisplayLabel("abstain", t), count: abstain },
   ];
 
   return (
@@ -99,39 +106,49 @@ function SupportOpposeResults({
                 onClick={onDownload}
                 disabled={downloadBusy}
               >
-                {downloadBusy ? "Preparing…" : "Download results"}
+                {downloadBusy
+                  ? t("publicChoice.results.preparing")
+                  : t("publicChoice.results.download")}
               </button>
             ) : null}
           </div>
         </div>
         {votingOpen ? (
-          <p role="status">Voting is open. These are current community results.</p>
+          <p role="status">{t("author.collectiveDecision.public.votingOpenNote")}</p>
         ) : (
-          <p role="status">Voting is closed. These are final community results.</p>
+          <p role="status">{t("author.collectiveDecision.public.votingClosedNote")}</p>
         )}
       </header>
       <p className="pie-election-results__total">
-        Total effective voters: <strong>{total}</strong>
+        {t.rich("publicChoice.results.totalEffectiveVoters", {
+          count: () => <strong>{total}</strong>,
+        })}
       </p>
       <ul className="pie-election-results__ternary">
         {rows.map((row) => {
           const percentage = total > 0 ? (row.count / total) * 100 : 0;
+          const percentLabel = formatPercent(percentage);
           return (
             <li key={row.label} className="pie-election-results__ternary-row">
               <strong>{row.label}</strong>
               <div
                 className="pie-election-results__metrics"
-                aria-label={`${row.count} votes, ${formatPercent(percentage)}`}
+                aria-label={t("publicChoice.results.votesMetricAria", {
+                  count: row.count,
+                  percent: percentLabel,
+                })}
               >
-                <div className="pie-election-results__count">{row.count} votes</div>
-                <div className="pie-election-results__percent">{formatPercent(percentage)}</div>
+                <div className="pie-election-results__count">
+                  {t("publicChoice.results.votesCount", { count: row.count })}
+                </div>
+                <div className="pie-election-results__percent">{percentLabel}</div>
                 <div
                   className="pie-election-results__bar"
                   role="meter"
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={Number(percentage.toFixed(1))}
-                  aria-label={`${row.label} share of effective votes`}
+                  aria-label={t("publicChoice.results.voteShareAria", { name: row.label })}
                 >
                   <span style={{ width: `${percentage}%` }} />
                 </div>
@@ -149,6 +166,7 @@ function SupportOpposeResults({
  * OPEN → live aggregates; CLOSED → frozen snapshot via the same public projection path.
  */
 export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [initiative, setInitiative] = useState<PublicInitiativeProjection | null>(null);
   const [candidates, setCandidates] = useState<PublicChoiceCandidatePublicProjection[]>([]);
   const [decision, setDecision] = useState<PublicInitiativeCollectiveDecisionProjection | null>(
@@ -210,15 +228,18 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
   });
   const votingOpen = votingStatus === "OPEN";
   const resultsExpired = votingStatus === "EXPIRED";
-  const electionStatusLabel = publicChoiceElectionVotingStatusLabel(votingStatus);
+  const electionStatusLabel = resolvePublicChoiceElectionVotingStatusDisplayLabel(
+    votingStatus,
+    t,
+  );
 
   const resultsLabel = votingOpen
-    ? "CURRENT RESULTS"
+    ? t("author.collectiveDecision.public.resultsCurrent")
     : resultsExpired
-      ? "RESULTS"
+      ? t("author.collectiveDecision.public.results")
       : decision?.status === "closed" || decision?.resultsRetention?.status === "results_available"
-        ? "FINAL RESULTS"
-        : "RESULTS";
+        ? t("author.collectiveDecision.public.resultsFinal")
+        : t("author.collectiveDecision.public.results");
 
   const downloadAvailable =
     Boolean(decision?.resultsRetention?.downloadAvailable) && !resultsExpired;
@@ -239,24 +260,28 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
     try {
       await downloadPublicChoiceResultsPdf(initiativeId, decision.decisionId);
     } catch (error) {
-      setDownloadError(error instanceof Error ? error.message : "Download failed.");
+      setDownloadError(
+        error instanceof Error && error.message.trim()
+          ? error.message
+          : t("publicChoice.election.downloadFailed"),
+      );
     } finally {
       setDownloadBusy(false);
     }
   }
 
   if (loadState === "loading") {
-    return <p role="status">Loading election…</p>;
+    return <p role="status">{t("publicChoice.election.loading")}</p>;
   }
 
   if (loadState === "error" && !initiative && candidates.length === 0 && !decision) {
-    return <p role="alert">Election could not be loaded.</p>;
+    return <p role="alert">{t("publicChoice.election.loadFailed")}</p>;
   }
 
   const electionName =
     initiative?.metadata.communityAssociation?.trim() ||
     initiative?.title ||
-    "Election";
+    t("sidebar.election.election");
   const cover =
     resolveMediaUrl(
       initiative?.metadata.imageUrl ??
@@ -292,27 +317,29 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
     initiativeId,
   };
 
-  const shareSlot = <CivicShareButton payload={sharePayload} ariaLabel={`Share ${electionName}`} />;
+  const shareSlot = (
+    <CivicShareButton
+      payload={sharePayload}
+      ariaLabel={t("publicChoice.election.shareAria", { title: electionName })}
+    />
+  );
 
   if (resultsExpired) {
     return (
       <article className="pie-election-page pie-election-page--expired">
         <p>
-          <Link href={initiativeHref}>← Back to Initiative</Link>
+          <Link href={initiativeHref}>{t("publicChoice.election.backToInitiative")}</Link>
         </p>
         <header className="pie-election-page__header">
-          <p className="pie-election-page__eyebrow">Humanity Union community vote</p>
+          <p className="pie-election-page__eyebrow">{t("publicChoice.election.eyebrow")}</p>
           <h1 className="pie-election-page__title">{electionName}</h1>
           <p role="status" className="pie-election-page__expired-message">
-            Results no longer available
+            {t("publicChoice.election.resultsExpiredTitle")}
           </p>
-          <p>
-            The temporary results retention period has ended. Detailed election data has been
-            removed.
-          </p>
+          <p>{t("publicChoice.election.resultsExpiredBody")}</p>
         </header>
         <p>
-          <Link href={initiativeHref}>Back to Initiative</Link>
+          <Link href={initiativeHref}>{t("publicChoice.election.backToInitiativePlain")}</Link>
         </p>
       </article>
     );
@@ -321,10 +348,10 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
   return (
     <article className="pie-election-page">
       <p>
-        <Link href={initiativeHref}>← Back to Initiative</Link>
+        <Link href={initiativeHref}>{t("publicChoice.election.backToInitiative")}</Link>
       </p>
 
-      <p className="pie-election-page__eyebrow">Humanity Union community vote</p>
+      <p className="pie-election-page__eyebrow">{t("publicChoice.election.eyebrow")}</p>
       <h1 className="pie-election-page__title">{electionName}</h1>
 
       <div className="pie-election-page__intro">
@@ -338,16 +365,22 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
         <div className="pie-election-page__intro-body">
           {initiative?.description ? <p>{initiative.description}</p> : null}
           <ul className="pie-election-page__meta">
-            <li>Geography: {geography || "—"}</li>
-            <li>Start of Voting: {startOfVoting ?? "—"}</li>
-            <li>End of Voting: {endOfVoting ?? "—"}</li>
-            <li>Status: {electionStatusLabel}</li>
-            <li>Total voters: {totalVoters}</li>
+            <li>
+              {t("publicChoice.election.geography", { value: geography || "—" })}
+            </li>
+            <li>
+              {t("publicChoice.election.startOfVoting", { value: startOfVoting ?? "—" })}
+            </li>
+            <li>
+              {t("publicChoice.election.endOfVoting", { value: endOfVoting ?? "—" })}
+            </li>
+            <li>{t("publicChoice.election.status", { status: electionStatusLabel })}</li>
+            <li>{t("publicChoice.election.totalVotersMeta", { count: totalVoters })}</li>
           </ul>
           {votingOpen ? (
             <p>
               <Link className="hu-button hu-button--primary" href={overviewVoteHref}>
-                Vote on Overview
+                {t("publicChoice.results.voteOnOverview")}
               </Link>
             </p>
           ) : null}
@@ -394,8 +427,8 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
       )}
 
       <section className="pie-election-page__disclaimer" role="note" aria-labelledby="pie-disclaimer-title">
-        <h2 id="pie-disclaimer-title">Community voting results</h2>
-        <p>{PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER}</p>
+        <h2 id="pie-disclaimer-title">{t("publicChoice.results.disclaimerTitle")}</h2>
+        <p>{t("publicChoice.results.disclaimerBody")}</p>
       </section>
     </article>
   );

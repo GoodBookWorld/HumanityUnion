@@ -10,7 +10,6 @@ import type {
 } from "@hu/types";
 import {
   isPublicChoiceCandidateElectionBallot,
-  publicChoiceElectionVotingStatusLabel,
   resolvePublicChoiceBallotMode,
   resolvePublicChoiceElectionVotingStatus,
 } from "@hu/types";
@@ -25,6 +24,7 @@ import { buildInitiativeExperienceHref } from "../../initiative-owner-studio/ini
 import {
   resolveCollectiveDecisionStatusDisplayLabel,
   resolveInitiativeDecisionVoteChoiceDisplayLabel,
+  resolvePublicChoiceElectionVotingStatusDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
 
 import { InitiativeCollectiveDecisionBallotWidget } from "./InitiativeCollectiveDecisionBallotWidget";
@@ -205,7 +205,10 @@ export function InitiativeCollectiveDecisionPublicResult({
             }
             resultsLabel={resultsLabel}
             votingOpen={votingOpen}
-            electionStatus={publicChoiceElectionVotingStatusLabel(votingStatus)}
+            electionStatus={resolvePublicChoiceElectionVotingStatusDisplayLabel(
+              votingStatus,
+              t,
+            )}
             downloadAvailable={downloadAvailable}
             onDownload={() => {
               void handleDownload();

@@ -450,6 +450,27 @@ export function resolveCivicArchiveTimelineStatusDisplayLabel(
   return resolveLabel(messagesOrT, `author.archive.timelineStatuses.${status}`, status);
 }
 
+const PUBLIC_CHOICE_ELECTION_VOTING_STATUS_CODES = new Set<string>([
+  "NOT_STARTED",
+  "OPEN",
+  "CLOSED",
+  "EXPIRED",
+]);
+
+/**
+ * Pack 02G 08E.5 — display-only Public Choice election voting status labels.
+ * Canonical codes unchanged. Unknown → raw code (no English helper / replaceAll).
+ */
+export function resolvePublicChoiceElectionVotingStatusDisplayLabel(
+  status: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!PUBLIC_CHOICE_ELECTION_VOTING_STATUS_CODES.has(status)) {
+    return status;
+  }
+  return resolveLabel(messagesOrT, `publicChoice.statuses.${status}`, status);
+}
+
 /**
  * Pack 02G 08E.4 — display-only mapping from stable AI-apply form field IDs
  * to existing author.*.fields.* catalog keys. Canonical IDs are never mutated.

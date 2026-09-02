@@ -2061,6 +2061,62 @@
       "disclaimer": "簽署代表您對此請願的公民參與支持。這不是具法律拘束力的請願，也不會讓您承擔執行責任。",
       "recordFailed": "無法記錄簽名。",
       "withdrawFailed": "無法撤回簽名。"
+    },
+    "publicChoice": {
+      "statuses": {
+        "NOT_STARTED": "尚未開始",
+        "OPEN": "進行中",
+        "CLOSED": "已結束",
+        "EXPIRED": "已過期"
+      },
+      "results": {
+        "download": "下載結果",
+        "preparing": "準備中…",
+        "electionStatus": "選舉狀態：{status}",
+        "votingOpenRanking": "投票進行中。目前為社群排名——尚未宣布獲勝者。",
+        "voteOnOverview": "在總覽投票",
+        "votingClosedRanking": "投票已結束。排名反映有效票。平手仍為平手。",
+        "totalEffectiveVoters": "有效投票總數：<count></count>",
+        "noCandidates": "尚未新增候選人。",
+        "rankAria": "第 {rank} 名",
+        "candidateFallback": "候選人",
+        "blocked": "已封鎖",
+        "votesCount": "{count} 票",
+        "votesMetricAria": "{count} 票，{percent}",
+        "voteShareAria": "{name} 的有效票占比",
+        "abstain": "棄權",
+        "participationTitle": "參與分布",
+        "participationNote": "訪客、參與者與會員互斥。會員票只計為會員一次——不會同時計為參與者。訪客身分不會公開顯示。",
+        "totalVoters": "投票總數",
+        "visitors": "訪客",
+        "participants": "參與者",
+        "members": "會員",
+        "disclaimerTitle": "社群投票結果",
+        "disclaimerBody": "這些是 Humanity Union 社群投票結果。它們不是官方選舉結果、具統計代表性的民調，或經政府認證的結果。"
+      },
+      "election": {
+        "loading": "正在載入選舉…",
+        "loadFailed": "無法載入選舉。",
+        "eyebrow": "Humanity Union 社群投票",
+        "backToInitiative": "← 返回倡議",
+        "backToInitiativePlain": "返回倡議",
+        "geography": "地理範圍：{value}",
+        "startOfVoting": "投票開始：{value}",
+        "endOfVoting": "投票結束：{value}",
+        "status": "狀態：{status}",
+        "totalVotersMeta": "投票總數：{count}",
+        "shareAria": "分享 {title}",
+        "resultsExpiredTitle": "結果不再可用",
+        "resultsExpiredBody": "臨時結果保留期限已結束。詳細選舉資料已移除。",
+        "downloadFailed": "下載失敗。"
+      },
+      "stage": {
+        "title": "選舉結果",
+        "subtitle": "集體決策 · {electionName}",
+        "loading": "正在載入選舉結果…",
+        "loadFailed": "無法載入選舉結果。",
+        "emptyPending": "選舉選票發布後才會顯示結果。"
+      }
     }
   }
 }

@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   InitiativeDecisionSelectOneAggregates,
   PublicChoiceCandidatePublicProjection,
 } from "@hu/types";
-import { PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER } from "@hu/types";
 
 import { resolveMediaUrl } from "../../media-upload/media-url";
 
@@ -22,32 +22,32 @@ function ParticipationBreakdown({
 }: {
   breakdown: InitiativeDecisionSelectOneAggregates["participationBreakdown"];
 }) {
+  const t = useTranslations("initiativeExperience");
   return (
     <section className="pie-election-results__participation" aria-labelledby="pie-participation-title">
-      <h3 id="pie-participation-title">Participation breakdown</h3>
+      <h3 id="pie-participation-title">{t("publicChoice.results.participationTitle")}</h3>
       <p className="pie-election-results__participation-note">
-        Visitor, Participant, and Member are mutually exclusive. A Member vote counts once as Member —
-        never also as Participant. Visitor identity is never shown publicly.
+        {t("publicChoice.results.participationNote")}
       </p>
       <ul className="pie-election-results__participation-list">
         <li>
-          <span>Total voters</span>
+          <span>{t("publicChoice.results.totalVoters")}</span>
           <strong>{breakdown.totalEffectiveVoters}</strong>
         </li>
         <li>
-          <span>Visitors</span>
+          <span>{t("publicChoice.results.visitors")}</span>
           <strong>
             {breakdown.visitors} ({formatPercent(breakdown.visitorPercentage)})
           </strong>
         </li>
         <li>
-          <span>Participants</span>
+          <span>{t("publicChoice.results.participants")}</span>
           <strong>
             {breakdown.participants} ({formatPercent(breakdown.participantPercentage)})
           </strong>
         </li>
         <li>
-          <span>Members</span>
+          <span>{t("publicChoice.results.members")}</span>
           <strong>
             {breakdown.members} ({formatPercent(breakdown.memberPercentage)})
           </strong>
@@ -63,7 +63,7 @@ export interface PublicChoiceElectionResultsBoardProps {
   aggregates: InitiativeDecisionSelectOneAggregates;
   resultsLabel: string;
   votingOpen: boolean;
-  /** Pack 04 — single status label (Not started / Open / Closed / Expired). */
+  /** Localized voting-status display label (canonical code resolved by caller). */
   electionStatus?: string;
   downloadAvailable: boolean;
   onDownload: () => void;
@@ -92,11 +92,13 @@ export function PublicChoiceElectionResultsBoard({
   voteHref,
   showDisclaimer = true,
 }: PublicChoiceElectionResultsBoardProps) {
+  const t = useTranslations("initiativeExperience");
   const byId = new Map(candidates.map((candidate) => [candidate.candidateId, candidate]));
   const rankedIds = new Set(aggregates.candidates.map((item) => item.candidateId));
   const unrankedCandidates = candidates.filter((candidate) => !rankedIds.has(candidate.candidateId));
   const overviewVoteHref =
     voteHref ?? `/initiatives/public/${encodeURIComponent(initiativeId)}#overview`;
+  const candidateFallback = t("publicChoice.results.candidateFallback");
 
   return (
     <section className="pie-election-results" aria-labelledby="pie-election-results-title">
@@ -112,35 +114,37 @@ export function PublicChoiceElectionResultsBoard({
                 onClick={onDownload}
                 disabled={downloadBusy}
               >
-                {downloadBusy ? "Preparing…" : "Download results"}
+                {downloadBusy
+                  ? t("publicChoice.results.preparing")
+                  : t("publicChoice.results.download")}
               </button>
             ) : null}
           </div>
         </div>
         {electionStatus ? (
           <p className="pie-election-results__status" role="status">
-            Election status: {electionStatus}
+            {t("publicChoice.results.electionStatus", { status: electionStatus })}
           </p>
         ) : null}
         {votingOpen ? (
           <p role="status">
-            Voting is open. Current community ranking — no winner is declared.{" "}
-            <Link href={overviewVoteHref}>Vote on Overview</Link>
+            {t("publicChoice.results.votingOpenRanking")}{" "}
+            <Link href={overviewVoteHref}>{t("publicChoice.results.voteOnOverview")}</Link>
           </p>
         ) : (
-          <p role="status">
-            Voting is closed. Top-ranked candidates reflect effective votes. Ties remain ties.
-          </p>
+          <p role="status">{t("publicChoice.results.votingClosedRanking")}</p>
         )}
       </header>
 
       <p className="pie-election-results__total">
-        Total effective voters: <strong>{aggregates.totalEffectiveVoters}</strong>
+        {t.rich("publicChoice.results.totalEffectiveVoters", {
+          count: () => <strong>{aggregates.totalEffectiveVoters}</strong>,
+        })}
       </p>
 
       {candidates.length === 0 ? (
         <p className="pie-election-results__empty" role="status">
-          No candidates have been added yet.
+          {t("publicChoice.results.noCandidates")}
         </p>
       ) : null}
 
@@ -149,10 +153,15 @@ export function PublicChoiceElectionResultsBoard({
           const candidate = byId.get(tally.candidateId);
           const photo = resolveMediaUrl(candidate?.photoUrl);
           const barWidth = Math.max(0, Math.min(100, tally.percentage));
+          const displayName = candidate?.name ?? candidateFallback;
+          const percentLabel = formatPercent(tally.percentage);
 
           return (
             <li key={tally.candidateId} className="pie-election-results__row">
-              <div className="pie-election-results__rank" aria-label={`Rank ${tally.rank}`}>
+              <div
+                className="pie-election-results__rank"
+                aria-label={t("publicChoice.results.rankAria", { rank: tally.rank })}
+              >
                 {tally.rank}
               </div>
               <div className="pie-election-results__identity">
@@ -170,16 +179,16 @@ export function PublicChoiceElectionResultsBoard({
                   </span>
                 )}
                 <div>
-                  <strong>{candidate?.name ?? "Candidate"}</strong>
+                  <strong>{displayName}</strong>
                   {candidate?.isBlocked ? (
                     <p className="pie-election-results__blocked" role="status">
-                      Blocked
+                      {t("publicChoice.results.blocked")}
                     </p>
                   ) : null}
                   {candidate?.campaignPageUrl ? (
                     <p>
                       <a href={candidate.campaignPageUrl} target="_blank" rel="noopener noreferrer">
-                        Campaign page
+                        {t("collaboration.vote.campaignPage")}
                       </a>
                     </p>
                   ) : null}
@@ -187,17 +196,22 @@ export function PublicChoiceElectionResultsBoard({
               </div>
               <div
                 className="pie-election-results__metrics"
-                aria-label={`${tally.count} votes, ${formatPercent(tally.percentage)}`}
+                aria-label={t("publicChoice.results.votesMetricAria", {
+                  count: tally.count,
+                  percent: percentLabel,
+                })}
               >
-                <div className="pie-election-results__count">{tally.count} votes</div>
-                <div className="pie-election-results__percent">{formatPercent(tally.percentage)}</div>
+                <div className="pie-election-results__count">
+                  {t("publicChoice.results.votesCount", { count: tally.count })}
+                </div>
+                <div className="pie-election-results__percent">{percentLabel}</div>
                 <div
                   className="pie-election-results__bar"
                   role="meter"
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={Number(tally.percentage.toFixed(1))}
-                  aria-label={`${candidate?.name ?? "Candidate"} share of effective votes`}
+                  aria-label={t("publicChoice.results.voteShareAria", { name: displayName })}
                 >
                   <span style={{ width: `${barWidth}%` }} />
                 </div>
@@ -231,13 +245,15 @@ export function PublicChoiceElectionResultsBoard({
                   <strong>{candidate.name}</strong>
                   {candidate.isBlocked ? (
                     <p className="pie-election-results__blocked" role="status">
-                      Blocked
+                      {t("publicChoice.results.blocked")}
                     </p>
                   ) : null}
                 </div>
               </div>
               <div className="pie-election-results__metrics">
-                <div className="pie-election-results__count">0 votes</div>
+                <div className="pie-election-results__count">
+                  {t("publicChoice.results.votesCount", { count: 0 })}
+                </div>
                 <div className="pie-election-results__percent">0.0%</div>
                 <div className="pie-election-results__bar" role="presentation" aria-hidden>
                   <span style={{ width: "0%" }} />
@@ -249,8 +265,8 @@ export function PublicChoiceElectionResultsBoard({
       </ol>
 
       <div className="pie-election-results__abstain">
-        <strong>Abstain</strong>
-        <span>{aggregates.abstain} votes</span>
+        <strong>{t("publicChoice.results.abstain")}</strong>
+        <span>{t("publicChoice.results.votesCount", { count: aggregates.abstain })}</span>
         <span>{formatPercent(aggregates.abstainPercentage)}</span>
       </div>
 
@@ -262,8 +278,8 @@ export function PublicChoiceElectionResultsBoard({
           role="note"
           aria-labelledby="pie-results-disclaimer-title"
         >
-          <h2 id="pie-results-disclaimer-title">Community voting results</h2>
-          <p>{PUBLIC_CHOICE_COMMUNITY_RESULTS_DISCLAIMER}</p>
+          <h2 id="pie-results-disclaimer-title">{t("publicChoice.results.disclaimerTitle")}</h2>
+          <p>{t("publicChoice.results.disclaimerBody")}</p>
         </section>
       ) : null}
     </section>
