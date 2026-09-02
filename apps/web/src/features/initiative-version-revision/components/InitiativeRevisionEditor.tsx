@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { InitiativeRevisionDraft, InitiativeRevisionDraftContext } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import { INITIATIVE_COMMUNITY_OPTIONS } from "../../initiatives/api";
 import {
@@ -47,6 +48,7 @@ export function InitiativeRevisionEditor({
   onTogglePreview,
   embeddedInProposals = false,
 }: InitiativeRevisionEditorProps) {
+  const actions = useAuthorActionLabels();
   const [title, setTitle] = useState(draft.title);
   const [description, setDescription] = useState(draft.description);
   const [communitySlug, setCommunitySlug] = useState(draft.metadata.communitySlug);
@@ -167,13 +169,11 @@ export function InitiativeRevisionEditor({
 
       <div className="irv-editor__header-actions">
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate Suggested Changes")}
+          {resolveSaveButtonLabel(generatePhase.phase, "Generate Suggested Changes", actions.phaseLabels)}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleSave()}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
         <WorkspaceButton
           variant="primary"

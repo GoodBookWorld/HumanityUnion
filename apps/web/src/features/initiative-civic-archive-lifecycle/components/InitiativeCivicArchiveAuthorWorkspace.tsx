@@ -11,6 +11,7 @@ import type {
 import { resolveInitiativeLifecycleProfile } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
 import { generateInitiativeCivicArchiveDraft, getInitiativeCivicArchiveWorkspace } from "../api";
 import { InitiativeCivicArchiveEditor } from "./InitiativeCivicArchiveEditor";
@@ -30,6 +31,7 @@ export function InitiativeCivicArchiveAuthorWorkspace({
   onTogglePreview,
   lifecycleProfile,
 }: InitiativeCivicArchiveAuthorWorkspaceProps) {
+  const actions = useAuthorActionLabels();
   const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
   const [context, setContext] = useState<InitiativeCivicArchiveLifecycleDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,7 +79,7 @@ export function InitiativeCivicArchiveAuthorWorkspace({
       <div className="lsw-main">
         <WorkspaceErrorState message="The Civic Archive workspace could not be loaded." />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
-          Retry
+          {actions.retry}
         </WorkspaceButton>
       </div>
     );
@@ -105,7 +107,7 @@ export function InitiativeCivicArchiveAuthorWorkspace({
 
       <div className="ica-editor__actions" style={{ marginBottom: "1rem" }}>
         <WorkspaceButton variant="secondary" onClick={() => setShowSourceReview((value) => !value)}>
-          {showSourceReview ? "Hide Sources / Completeness" : "Sources / Completeness"}
+          {showSourceReview ? actions.hideSourcesWithCompleteness : actions.sourcesWithCompleteness}
         </WorkspaceButton>
       </div>
 
@@ -125,7 +127,7 @@ export function InitiativeCivicArchiveAuthorWorkspace({
             records are never invented or deleted.
           </p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate Civic Archive Draft")}
+            {resolveSaveButtonLabel(generatePhase.phase, "Generate Civic Archive Draft", actions.phaseLabels)}
           </WorkspaceButton>
         </div>
       ) : (

@@ -78,12 +78,16 @@ export function useSaveButtonPhase(holdMs = SAVE_BUTTON_SUCCESS_HOLD_MS): SaveBu
 }
 
 /** Resolves the button label for a given phase, falling back to `idleLabel`. */
-export function resolveSaveButtonLabel(phase: SaveButtonPhase, idleLabel: string): string {
+export function resolveSaveButtonLabel(
+  phase: SaveButtonPhase,
+  idleLabel: string,
+  phaseLabels?: { readonly saving?: string; readonly success?: string },
+): string {
   switch (phase) {
     case "saving":
-      return "Saving…";
+      return phaseLabels?.saving ?? "Saving…";
     case "success":
-      return "Saved";
+      return phaseLabels?.success ?? "Saved";
     default:
       return idleLabel;
   }

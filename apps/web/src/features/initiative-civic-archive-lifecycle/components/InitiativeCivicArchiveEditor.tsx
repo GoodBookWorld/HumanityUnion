@@ -10,6 +10,7 @@ import type {
 
 import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
   generateInitiativeCivicArchiveDraft,
@@ -42,6 +43,7 @@ export function InitiativeCivicArchiveEditor({
   onPublished,
   onTogglePreview,
 }: InitiativeCivicArchiveEditorProps) {
+  const actions = useAuthorActionLabels();
   const [finalArchiveTitle, setFinalArchiveTitle] = useState(draft.finalArchiveTitle);
   const [finalSummary, setFinalSummary] = useState(draft.finalSummary);
   const [lessonsLearned, setLessonsLearned] = useState(draft.lessonsLearned);
@@ -208,16 +210,14 @@ export function InitiativeCivicArchiveEditor({
 
       <div className="ica-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate")}
+          {actions.saveLabel(generatePhase.phase, actions.generate)}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Complete Initiative Lifecycle")}
+          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Complete Initiative Lifecycle", actions.phaseLabels)}
         </WorkspaceButton>
       </div>
     </div>

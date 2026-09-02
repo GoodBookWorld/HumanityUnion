@@ -6,6 +6,7 @@ import { useAfterLifecyclePublish } from "../../public-initiative-experience/ini
 import type { InitiativePetitionDraft, InitiativePetitionDraftContext } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
 import { generateInitiativePetitionDraft, getInitiativePetitionWorkspace } from "../api";
 import { InitiativePetitionEditor } from "./InitiativePetitionEditor";
@@ -37,6 +38,7 @@ export function InitiativePetitionAuthorWorkspace({
   initiativeId,
   onTogglePreview,
 }: InitiativePetitionAuthorWorkspaceProps) {
+  const actions = useAuthorActionLabels();
   const [context, setContext] = useState<InitiativePetitionDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -83,7 +85,7 @@ export function InitiativePetitionAuthorWorkspace({
       <div className="lsw-main">
         <WorkspaceErrorState message="The Petition workspace could not be loaded." />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
-          Retry
+          {actions.retry}
         </WorkspaceButton>
       </div>
     );
@@ -148,7 +150,7 @@ export function InitiativePetitionAuthorWorkspace({
               disabled={generatePhase.isBusy}
               onClick={() => void handleGenerateFirstDraft()}
             >
-              {resolveSaveButtonLabel(generatePhase.phase, "Generate Petition Draft")}
+              {resolveSaveButtonLabel(generatePhase.phase, "Generate Petition Draft", actions.phaseLabels)}
             </WorkspaceButton>
           </div>
         </div>

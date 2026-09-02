@@ -9,6 +9,7 @@ import type {
 } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
 import {
   generateInitiativeDecisionSessionDraft,
@@ -28,6 +29,7 @@ export function InitiativeDecisionSessionAuthorWorkspace({
   initiativeId,
   onTogglePreview,
 }: InitiativeDecisionSessionAuthorWorkspaceProps) {
+  const actions = useAuthorActionLabels();
   const [context, setContext] = useState<InitiativeDecisionSessionDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -74,7 +76,7 @@ export function InitiativeDecisionSessionAuthorWorkspace({
       <div className="lsw-main">
         <WorkspaceErrorState message="The Decision Session workspace could not be loaded." />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
-          Retry
+          {actions.retry}
         </WorkspaceButton>
       </div>
     );
@@ -104,7 +106,7 @@ export function InitiativeDecisionSessionAuthorWorkspace({
     <div className="lsw-main">
       <div className="ids-editor__actions" style={{ marginBottom: "1rem" }}>
         <WorkspaceButton variant="secondary" onClick={() => setShowSourcePanel((value) => !value)}>
-          {showSourcePanel ? "Hide Sources" : "Sources"}
+          {showSourcePanel ? actions.hideSources : actions.sources}
         </WorkspaceButton>
       </div>
 
@@ -120,7 +122,7 @@ export function InitiativeDecisionSessionAuthorWorkspace({
             Decision Assistant remains advisory — nothing publishes automatically.
           </p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate Decision Draft")}
+            {resolveSaveButtonLabel(generatePhase.phase, "Generate Decision Draft", actions.phaseLabels)}
           </WorkspaceButton>
         </div>
       ) : (

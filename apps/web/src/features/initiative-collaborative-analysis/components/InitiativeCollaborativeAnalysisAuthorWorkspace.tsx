@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { InitiativeAnalysisSourceSnapshot, InitiativeCollaborativeAnalysis } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
 import {
   generateInitiativeAnalysisDraft,
@@ -39,6 +40,7 @@ export function InitiativeCollaborativeAnalysisAuthorWorkspace({
   initiativeId,
   onTogglePreview,
 }: InitiativeCollaborativeAnalysisAuthorWorkspaceProps) {
+  const actions = useAuthorActionLabels();
   const experienceRefresh = useInitiativeExperienceRefresh();
   const [analysis, setAnalysis] = useState<InitiativeCollaborativeAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,7 +82,7 @@ export function InitiativeCollaborativeAnalysisAuthorWorkspace({
       <div className="lsw-main">
         <WorkspaceErrorState message="This Analysis could not be loaded." />
         <WorkspaceButton variant="secondary" onClick={() => void loadAnalysis()}>
-          Retry
+          {actions.retry}
         </WorkspaceButton>
       </div>
     );
@@ -132,7 +134,7 @@ export function InitiativeCollaborativeAnalysisAuthorWorkspace({
               disabled={generatePhase.isBusy}
               onClick={() => void handleGenerateFirstDraft()}
             >
-              {resolveSaveButtonLabel(generatePhase.phase, "Generate Analysis Draft")}
+              {resolveSaveButtonLabel(generatePhase.phase, "Generate Analysis Draft", actions.phaseLabels)}
             </WorkspaceButton>
           </div>
         </div>

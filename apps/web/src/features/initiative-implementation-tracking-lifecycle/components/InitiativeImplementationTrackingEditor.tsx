@@ -16,6 +16,7 @@ import {
   type LifecycleAiApplySuggestionsDetail,
 } from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
   generateInitiativeImplementationTrackingDraft,
@@ -115,6 +116,7 @@ export function InitiativeImplementationTrackingEditor({
   onTogglePreview,
   onNavigate,
 }: InitiativeImplementationTrackingEditorProps) {
+  const actions = useAuthorActionLabels();
   const [title, setTitle] = useState(draft.title);
   const [summary, setSummary] = useState(draft.summary);
   const [candidates, setCandidates] = useState<CandidateFormState[]>(
@@ -434,16 +436,14 @@ export function InitiativeImplementationTrackingEditor({
 
       <div className="iit-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate")}
+          {actions.saveLabel(generatePhase.phase, actions.generate)}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Official Responses")}
+          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Official Responses", actions.phaseLabels)}
         </WorkspaceButton>
         {published && onNavigate ? (
           <WorkspaceButton

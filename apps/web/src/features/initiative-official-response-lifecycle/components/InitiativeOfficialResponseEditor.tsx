@@ -20,6 +20,7 @@ import {
   type LifecycleAiApplySuggestionsDetail,
 } from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
   generateInitiativeOfficialResponseDraft,
@@ -163,6 +164,7 @@ export function InitiativeOfficialResponseEditor({
   onTogglePreview,
   onNavigate,
 }: InitiativeOfficialResponseEditorProps) {
+  const actions = useAuthorActionLabels();
   const [title, setTitle] = useState(draft.title);
   const [summary, setSummary] = useState(draft.summary);
   const [outcomeKind, setOutcomeKind] = useState<InitiativeOfficialResponseOutcomeKind>(
@@ -587,16 +589,14 @@ export function InitiativeOfficialResponseEditor({
 
       <div className="ior-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate / Open Draft")}
+          {resolveSaveButtonLabel(generatePhase.phase, "Generate / Open Draft", actions.phaseLabels)}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Public Impact")}
+          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Public Impact", actions.phaseLabels)}
         </WorkspaceButton>
         {published && onNavigate ? (
           <WorkspaceButton

@@ -12,6 +12,7 @@ import {
   type LifecycleAiApplySuggestionsDetail,
 } from "../../lifecycle-ai-assistant";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import {
   addManualInitiativeStructuredProposal,
@@ -94,6 +95,7 @@ export function InitiativeImprovementProposalsEditor({
   onNavigate,
   onCompleted,
 }: InitiativeImprovementProposalsEditorProps) {
+  const actions = useAuthorActionLabels();
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualForm, setManualForm] = useState<ManualProposalFormState>(EMPTY_MANUAL_FORM);
@@ -283,7 +285,7 @@ export function InitiativeImprovementProposalsEditor({
 
       <div className="iip-editor__header-actions">
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate Draft")}
+          {actions.saveLabel(generatePhase.phase, actions.generateDraft)}
         </WorkspaceButton>
         {isDraft ? (
           <WorkspaceButton
@@ -294,16 +296,14 @@ export function InitiativeImprovementProposalsEditor({
             {showManualForm ? "Cancel" : "Add Manual Proposal"}
           </WorkspaceButton>
         ) : null}
-        <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         {isDraft ? (
           <WorkspaceButton
             variant="primary"
             disabled={isBusy || !canComplete}
             onClick={() => void handlePublish()}
           >
-            {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Petition")}
+            {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Petition", actions.phaseLabels)}
           </WorkspaceButton>
         ) : null}
       </div>
@@ -368,7 +368,7 @@ export function InitiativeImprovementProposalsEditor({
           </div>
           <div className="iip-proposal-card__actions">
             <WorkspaceButton type="submit" variant="primary" disabled={addPhase.isBusy}>
-              {resolveSaveButtonLabel(addPhase.phase, "Add Proposal")}
+              {resolveSaveButtonLabel(addPhase.phase, "Add Proposal", actions.phaseLabels)}
             </WorkspaceButton>
           </div>
         </form>

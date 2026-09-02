@@ -913,6 +913,40 @@
             "archive": "尚無草稿 — 請在主工作區使用「產生公民典藏草稿」開始。"
           }
         }
+      },
+      "actions": {
+        "generate": "產生",
+        "generateDraft": "產生草稿",
+        "generateNewDraft": "產生新草稿",
+        "saveDraft": "儲存草稿",
+        "saving": "儲存中…",
+        "saved": "已儲存",
+        "preview": "預覽",
+        "publish": "發布",
+        "publishAndContinue": "發布並繼續",
+        "retry": "重試",
+        "edit": "編輯",
+        "autosaveHint": "未啟用自動儲存 — 請使用「{action}」以保留變更。"
+      },
+      "translation": {
+        "title": "翻譯草稿",
+        "help": "建立工作用翻譯。在您明確套用翻譯之前，原始草稿欄位不會變更。",
+        "targetLanguage": "目標語言",
+        "translate": "翻譯草稿",
+        "translating": "翻譯中…",
+        "ready": "翻譯已就緒。原始草稿未變更。",
+        "failed": "翻譯失敗。原始草稿未變更。",
+        "showOriginal": "顯示原文",
+        "showTranslation": "顯示譯文",
+        "applyToDraft": "套用至草稿欄位",
+        "aria": "翻譯草稿"
+      },
+      "sources": {
+        "toggle": "來源",
+        "hide": "隱藏來源",
+        "toggleWithCompleteness": "來源 / 完整度",
+        "hideWithCompleteness": "隱藏來源 / 完整度",
+        "used": "使用的來源"
       }
     }
   }

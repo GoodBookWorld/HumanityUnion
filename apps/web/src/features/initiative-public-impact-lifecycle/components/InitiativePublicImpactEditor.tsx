@@ -9,6 +9,7 @@ import type {
 } from "@hu/types";
 
 import { useSaveButtonPhase, resolveSaveButtonLabel } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
   LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT,
@@ -40,6 +41,7 @@ export function InitiativePublicImpactEditor({
   onTogglePreview,
   onNavigate,
 }: InitiativePublicImpactEditorProps) {
+  const actions = useAuthorActionLabels();
   const [title, setTitle] = useState(draft.title);
   const [sections, setSections] = useState<InitiativePublicImpactReportSection[]>(
     draft.sections.map((section) => structuredClone(section)),
@@ -216,16 +218,14 @@ export function InitiativePublicImpactEditor({
 
       <div className="ipi-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate")}
+          {actions.saveLabel(generatePhase.phase, actions.generate)}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Civic Archive")}
+          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Civic Archive", actions.phaseLabels)}
         </WorkspaceButton>
         {published && onNavigate ? (
           <WorkspaceButton

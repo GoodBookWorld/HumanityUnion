@@ -11,6 +11,7 @@ import type {
 } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceErrorState } from "../../initiative-workspace-ux";
 import {
   createInitiativeRevisionDraft,
@@ -45,6 +46,7 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
   onTogglePreview,
   onNavigate,
 }: InitiativeImprovementProposalsAuthorWorkspaceProps) {
+  const actions = useAuthorActionLabels();
   const [collection, setCollection] = useState<InitiativeImprovementProposalsCollection | null>(null);
   const [revisionContext, setRevisionContext] = useState<InitiativeRevisionDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
@@ -126,7 +128,7 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
       <div className="lsw-main">
         <WorkspaceErrorState message="Improvement Proposals could not be loaded." />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
-          Retry
+          {actions.retry}
         </WorkspaceButton>
       </div>
     );
@@ -177,14 +179,14 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
               disabled={generatePhase.isBusy || emptyDraftPhase.isBusy}
               onClick={() => void handleGenerateFirstDraft()}
             >
-              {resolveSaveButtonLabel(generatePhase.phase, "Generate Improvement Proposals Draft")}
+              {resolveSaveButtonLabel(generatePhase.phase, "Generate Improvement Proposals Draft", actions.phaseLabels)}
             </WorkspaceButton>
             <WorkspaceButton
               variant="secondary"
               disabled={generatePhase.isBusy || emptyDraftPhase.isBusy}
               onClick={() => void handleStartWithoutProposals()}
             >
-              {resolveSaveButtonLabel(emptyDraftPhase.phase, "Continue without proposals")}
+              {resolveSaveButtonLabel(emptyDraftPhase.phase, "Continue without proposals", actions.phaseLabels)}
             </WorkspaceButton>
           </div>
         </div>
@@ -233,7 +235,7 @@ export function InitiativeImprovementProposalsAuthorWorkspace({
                 disabled={revisionCreatePhase.isBusy}
                 onClick={() => void handleCreateRevisionDraft()}
               >
-                {resolveSaveButtonLabel(revisionCreatePhase.phase, "Start Initiative Version Draft")}
+                {resolveSaveButtonLabel(revisionCreatePhase.phase, "Start Initiative Version Draft", actions.phaseLabels)}
               </WorkspaceButton>
             </div>
           )}

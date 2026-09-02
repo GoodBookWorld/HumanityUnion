@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import type { DecisionSession, InitiativeDecisionSessionDraft } from "@hu/types";
 
 import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
-import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
   generateInitiativeDecisionSessionDraft,
@@ -55,6 +56,7 @@ export function InitiativeDecisionSessionEditor({
   onPublished,
   onTogglePreview,
 }: InitiativeDecisionSessionEditorProps) {
+  const actions = useAuthorActionLabels();
   const [title, setTitle] = useState(draft.title);
   const [decisionQuestion, setDecisionQuestion] = useState(draft.decisionQuestion);
   const [decisionContext, setDecisionContext] = useState(draft.decisionContext);
@@ -339,16 +341,14 @@ export function InitiativeDecisionSessionEditor({
 
       <div className="ids-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate")}
+          {actions.saveLabel(generatePhase.phase, actions.generate)}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish")}
+          {actions.saveLabel(publishPhase.phase, actions.publish)}
         </WorkspaceButton>
       </div>
     </div>

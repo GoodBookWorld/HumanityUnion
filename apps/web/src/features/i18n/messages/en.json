@@ -913,6 +913,40 @@
             "archive": "No draft yet — use Generate Civic Archive Draft in the main workspace to begin."
           }
         }
+      },
+      "actions": {
+        "generate": "Generate",
+        "generateDraft": "Generate Draft",
+        "generateNewDraft": "Generate New Draft",
+        "saveDraft": "Save Draft",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "preview": "Preview",
+        "publish": "Publish",
+        "publishAndContinue": "Publish & Continue",
+        "retry": "Retry",
+        "edit": "Edit",
+        "autosaveHint": "Autosave is not enabled — use {action} to keep your changes."
+      },
+      "translation": {
+        "title": "Translate Draft",
+        "help": "Creates a working translation. Your original draft fields stay unchanged until you explicitly apply a translation.",
+        "targetLanguage": "Target language",
+        "translate": "Translate Draft",
+        "translating": "Translating…",
+        "ready": "Translation ready. Original draft is unchanged.",
+        "failed": "Translation failed. Original draft is unchanged.",
+        "showOriginal": "Show original",
+        "showTranslation": "Show translation",
+        "applyToDraft": "Apply to draft fields",
+        "aria": "Translate draft"
+      },
+      "sources": {
+        "toggle": "Sources",
+        "hide": "Hide Sources",
+        "toggleWithCompleteness": "Sources / Completeness",
+        "hideWithCompleteness": "Hide Sources / Completeness",
+        "used": "Sources Used"
       }
     }
   }

@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import type { InitiativeCollaborativeAnalysis } from "@hu/types";
 
 import { TranslateDraftControl } from "../../language";
-import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import {
   LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT,
@@ -76,6 +77,7 @@ export function InitiativeCollaborativeAnalysisForm({
   onUpdated,
   onTogglePreview,
 }: InitiativeCollaborativeAnalysisFormProps) {
+  const actions = useAuthorActionLabels();
   const [form, setForm] = useState<AnalysisFormState>(() => buildFormState(analysis));
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const generatePhase = useSaveButtonPhase();
@@ -213,7 +215,7 @@ export function InitiativeCollaborativeAnalysisForm({
         </p>
         <div className="ica-editor__actions">
           <WorkspaceButton variant="primary" disabled={isBusy} onClick={() => void handleGenerate()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate New Draft")}
+            {actions.saveLabel(generatePhase.phase, actions.generateNewDraft)}
           </WorkspaceButton>
         </div>
         {message ? (
@@ -312,20 +314,18 @@ export function InitiativeCollaborativeAnalysisForm({
           onChange={(event) => setForm((current) => ({ ...current, references: event.target.value }))}
         />
       </div>
-      <p className="ica-editor__hint">Autosave is not enabled — use Save Draft to keep your changes.</p>
+      <p className="ica-editor__hint">{actions.autosaveHint}</p>
 
       <div className="ica-editor__actions">
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate Draft")}
+          {actions.saveLabel(generatePhase.phase, actions.generateDraft)}
         </WorkspaceButton>
         <WorkspaceButton type="submit" variant="primary" disabled={isBusy}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" disabled={isBusy} onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish")}
+          {actions.saveLabel(publishPhase.phase, actions.publish)}
         </WorkspaceButton>
       </div>
 

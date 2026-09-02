@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
 
@@ -26,6 +27,9 @@ export interface TranslateDraftControlProps {
 /**
  * Explicit Translate Draft control — never silently mutates the canonical draft.
  * Target options come from registry-backed GET /translations/languages (enabled only).
+ *
+ * Pack 02G 08D.3 — UI chrome via initiativeExperience.author.translation.*;
+ * civic draft payloads and content-translation semantics are unchanged.
  */
 export function TranslateDraftControl({
   sourceKind,
@@ -36,6 +40,7 @@ export function TranslateDraftControl({
   draftContent,
   onApplyWorkingTranslation,
 }: TranslateDraftControlProps) {
+  const t = useTranslations("initiativeExperience");
   const statusId = useId();
   const [languageOptions, setLanguageOptions] = useState<readonly PriorityLanguageOption[]>([]);
   const [targetLanguage, setTargetLanguage] = useState<LanguageCode>("en");
@@ -74,7 +79,7 @@ export function TranslateDraftControl({
   async function handleTranslate() {
     setBusy(true);
     setError(null);
-    setStatus("Translating…");
+    setStatus(t("author.translation.translating"));
     try {
       const result = await requestTranslateDraft({
         sourceKind,
@@ -100,14 +105,14 @@ export function TranslateDraftControl({
         setWorkingText(JSON.stringify(fields, null, 2));
       }
       setShowOriginal(false);
-      setStatus("Translation ready. Original draft is unchanged.");
+      setStatus(t("author.translation.ready"));
     } catch (translateError) {
       setWorkingText(null);
       setWorkingFields(null);
       setError(
         translateError instanceof Error
           ? translateError.message
-          : "Translation failed. Original draft is unchanged.",
+          : t("author.translation.failed"),
       );
       setStatus("");
     } finally {
@@ -119,20 +124,18 @@ export function TranslateDraftControl({
     typeof draftContent === "string" ? draftContent : JSON.stringify(draftContent, null, 2);
 
   return (
-    <section className="hu-translate-draft" aria-labelledby={statusId}>
-      <h3 className="hu-translate-draft__title">Translate Draft</h3>
-      <p className="hu-translate-draft__help">
-        Creates a working translation. Your original draft fields stay unchanged until you
-        explicitly apply a translation.
-      </p>
+    <section className="hu-translate-draft" aria-labelledby={statusId} aria-label={t("author.translation.aria")}>
+      <h3 className="hu-translate-draft__title">{t("author.translation.title")}</h3>
+      <p className="hu-translate-draft__help">{t("author.translation.help")}</p>
 
       <div className="hu-translate-draft__controls">
         <label>
-          <span>Target language</span>
+          <span>{t("author.translation.targetLanguage")}</span>
           <select
             value={targetLanguage}
             disabled={busy || languageOptions.length === 0}
             onChange={(event) => setTargetLanguage(event.target.value as LanguageCode)}
+            aria-label={t("author.translation.targetLanguage")}
           >
             {languageOptions.map((option) => (
               <option key={option.code} value={option.code}>
@@ -145,8 +148,9 @@ export function TranslateDraftControl({
           type="button"
           disabled={busy || languageOptions.length === 0}
           onClick={() => void handleTranslate()}
+          aria-label={busy ? t("author.translation.translating") : t("author.translation.translate")}
         >
-          {busy ? "Translating…" : "Translate Draft"}
+          {busy ? t("author.translation.translating") : t("author.translation.translate")}
         </button>
       </div>
 
@@ -163,14 +167,16 @@ export function TranslateDraftControl({
         <div className="hu-translate-draft__result">
           <div className="hu-translate-draft__result-actions">
             <button type="button" onClick={() => setShowOriginal((value) => !value)}>
-              {showOriginal ? "Show translation" : "Show original"}
+              {showOriginal
+                ? t("author.translation.showTranslation")
+                : t("author.translation.showOriginal")}
             </button>
             {workingFields && onApplyWorkingTranslation ? (
               <button
                 type="button"
                 onClick={() => onApplyWorkingTranslation(workingFields)}
               >
-                Apply to draft fields
+                {t("author.translation.applyToDraft")}
               </button>
             ) : null}
           </div>

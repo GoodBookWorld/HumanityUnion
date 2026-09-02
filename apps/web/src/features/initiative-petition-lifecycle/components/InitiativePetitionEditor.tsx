@@ -7,6 +7,7 @@ import type { InitiativePetitionDraft } from "@hu/types";
 import { TranslateDraftControl } from "../../language";
 import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
   generateInitiativePetitionDraft,
@@ -51,6 +52,7 @@ export function InitiativePetitionEditor({
   onPublished,
   onTogglePreview,
 }: InitiativePetitionEditorProps) {
+  const actions = useAuthorActionLabels();
   const [title, setTitle] = useState(draft.title);
   const [publicSummary, setPublicSummary] = useState(draft.publicSummary);
   const [requestStatement, setRequestStatement] = useState(draft.requestStatement);
@@ -214,20 +216,18 @@ export function InitiativePetitionEditor({
 
       <div className="ipl-editor__header-actions">
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate")}
+          {actions.saveLabel(generatePhase.phase, actions.generate)}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>
-          Preview
-        </WorkspaceButton>
+        <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleSave()}>
-          {resolveSaveButtonLabel(savePhase.phase, "Save Draft")}
+          {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
         <WorkspaceButton
           variant="primary"
           disabled={isBusy || unresolvedPublishRequirements().length > 0}
           onClick={() => void handlePublish()}
         >
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish Petition")}
+          {resolveSaveButtonLabel(publishPhase.phase, "Publish Petition", actions.phaseLabels)}
         </WorkspaceButton>
       </div>
 
