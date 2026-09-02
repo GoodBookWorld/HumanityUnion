@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeAnalysisSourceSnapshot, InitiativeCollaborativeAnalysis } from "@hu/types";
 
@@ -35,11 +36,15 @@ interface InitiativeCollaborativeAnalysisAuthorWorkspaceProps {
  * (Section 3), then renders the Generate-draft empty state, the
  * Analysis Editor (Section 5), or the published/archived read-only
  * state, entirely from real persisted data.
+ *
+ * Pack 02G 08D.4 — Analysis-specific chrome via author.analysis.*;
+ * shared verbs via author.actions / useAuthorActionLabels.
  */
 export function InitiativeCollaborativeAnalysisAuthorWorkspace({
   initiativeId,
   onTogglePreview,
 }: InitiativeCollaborativeAnalysisAuthorWorkspaceProps) {
+  const t = useTranslations("initiativeExperience");
   const actions = useAuthorActionLabels();
   const experienceRefresh = useInitiativeExperienceRefresh();
   const [analysis, setAnalysis] = useState<InitiativeCollaborativeAnalysis | null>(null);
@@ -80,7 +85,7 @@ export function InitiativeCollaborativeAnalysisAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="This Analysis could not be loaded." />
+        <WorkspaceErrorState message={t("author.analysis.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadAnalysis()}>
           {actions.retry}
         </WorkspaceButton>
@@ -89,7 +94,7 @@ export function InitiativeCollaborativeAnalysisAuthorWorkspace({
   }
 
   if (loading) {
-    return <p className="lsw-sources__missing">Loading Analysis…</p>;
+    return <p className="lsw-sources__missing">{t("author.analysis.loading")}</p>;
   }
 
   return (
@@ -101,7 +106,9 @@ export function InitiativeCollaborativeAnalysisAuthorWorkspace({
           aria-expanded={showSourcePanel}
           onClick={() => setShowSourcePanel((current) => !current)}
         >
-          {showSourcePanel ? "Hide Source Snapshot" : "Show Source Snapshot"}
+          {showSourcePanel
+            ? t("author.analysis.hideSourceSnapshot")
+            : t("author.analysis.showSourceSnapshot")}
         </button>
       ) : null}
 
@@ -123,18 +130,19 @@ export function InitiativeCollaborativeAnalysisAuthorWorkspace({
         />
       ) : (
         <div className="ica-editor">
-          <h3>No draft yet</h3>
-          <p className="ica-editor__readonly">
-            Generate a structured draft from the Source Snapshot above, or start from a blank draft and
-            fill it in yourself.
-          </p>
+          <h3>{t("author.analysis.noDraftYet")}</h3>
+          <p className="ica-editor__readonly">{t("author.analysis.noDraftExplanation")}</p>
           <div className="ica-editor__actions">
             <WorkspaceButton
               variant="primary"
               disabled={generatePhase.isBusy}
               onClick={() => void handleGenerateFirstDraft()}
             >
-              {resolveSaveButtonLabel(generatePhase.phase, "Generate Analysis Draft", actions.phaseLabels)}
+              {resolveSaveButtonLabel(
+                generatePhase.phase,
+                t("author.analysis.generateAnalysisDraft"),
+                actions.phaseLabels,
+              )}
             </WorkspaceButton>
           </div>
         </div>
@@ -144,6 +152,7 @@ export function InitiativeCollaborativeAnalysisAuthorWorkspace({
 }
 
 function AnalysisSourceSnapshotSection({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeAnalysisSourceSnapshot | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -170,11 +179,11 @@ function AnalysisSourceSnapshotSection({ initiativeId }: { initiativeId: string 
   }, [initiativeId]);
 
   if (loadFailed) {
-    return <p className="ica-source-panel__empty">The Source Snapshot could not be loaded.</p>;
+    return <p className="ica-source-panel__empty">{t("author.analysis.sourceSnapshot.loadFailed")}</p>;
   }
 
   if (!snapshot) {
-    return <p className="ica-source-panel__empty">Loading Source Snapshot…</p>;
+    return <p className="ica-source-panel__empty">{t("author.analysis.sourceSnapshot.loading")}</p>;
   }
 
   return <InitiativeAnalysisSourceSnapshotPanel snapshot={snapshot} />;

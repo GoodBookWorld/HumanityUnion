@@ -947,6 +947,91 @@
         "toggleWithCompleteness": "來源 / 完整度",
         "hideWithCompleteness": "隱藏來源 / 完整度",
         "used": "使用的來源"
+      },
+      "analysis": {
+        "editorTitle": "分析編輯器",
+        "heading": "分析",
+        "noDraftYet": "尚無草稿",
+        "noDraftExplanation": "可從上方來源快照產生結構化草稿，或從空白草稿自行填寫。",
+        "generateAnalysisDraft": "產生分析草稿",
+        "showSourceSnapshot": "顯示來源快照",
+        "hideSourceSnapshot": "隱藏來源快照",
+        "loading": "正在載入分析…",
+        "loadFailed": "無法載入此分析。",
+        "fields": {
+          "title": "標題",
+          "summary": "執行摘要",
+          "supportingEvidence": "支持論點",
+          "risks": "疑慮",
+          "openQuestions": "待釐清問題",
+          "suggestedImprovements": "建議",
+          "references": "參考資料",
+          "author": "作者"
+        },
+        "readonly": {
+          "published": "此分析已發布，無法再編輯。請產生新草稿以準備更新後的分析。",
+          "archived": "此分析已封存，無法再編輯。"
+        },
+        "messages": {
+          "draftGenerated": "已依目前來源快照產生草稿。",
+          "draftSaved": "草稿已儲存。",
+          "published": "分析已發布。已通知所有活躍盟友。",
+          "aiApplied": "AI 建議已在本機套用。請視需要編輯後再儲存。尚未發布任何內容。",
+          "aiApplyDraftOnly": "僅能將 AI 建議套用至進行中的草稿。",
+          "unknownError": "未知錯誤",
+          "generateFailed": "產生失敗：{detail}",
+          "saveFailed": "儲存失敗：{detail}",
+          "publishFailed": "發布失敗：{detail}"
+        },
+        "confirm": {
+          "generateOverwrite": "產生新草稿將以討論的最新推導覆寫下方目前的標題、摘要與所有其他欄位。要繼續嗎？",
+          "publish": "發布後，此分析將公開可見，並通知每位活躍盟友。要繼續嗎？"
+        },
+        "preview": {
+          "loading": "正在載入草稿…",
+          "loadFailed": "無法載入此草稿。",
+          "empty": "尚無草稿 — 請先產生或建立草稿，然後再預覽。",
+          "authorYou": "您",
+          "reactionAria": "分析反應預覽",
+          "reactionTitle": "反應",
+          "reactionNoteDraft": "0 支持 · 0 不支持 — 此分析發布後，訪客才能使用反應小工具。",
+          "reactionNotePublished": "{support} 支持 · {doNotSupport} 不支持 — 預覽時反應小工具已停用。"
+        },
+        "public": {
+          "loading": "正在載入分析…",
+          "loadFailed": "無法載入此分析。"
+        },
+        "sourceSnapshot": {
+          "title": "來源快照",
+          "lede": "自動從討論收集 — 下方內容不可編輯，也非憑空產生。",
+          "emptyLede": "此倡議尚無討論活動可收集。參與者開始留言後，此面板會自動填入。",
+          "loading": "正在載入來源快照…",
+          "loadFailed": "無法載入來源快照。",
+          "statsAria": "討論統計",
+          "comments": "留言",
+          "helpful": "有幫助",
+          "notHelpful": "沒幫助",
+          "activeAllies": "活躍盟友",
+          "readyToCollaborate": "準備協作",
+          "mostDiscussedTopics": "討論最多的主題",
+          "mostDiscussedTopicsAria": "討論最多的主題",
+          "openQuestions": "待釐清問題",
+          "openQuestionsAria": "討論中的待釐清問題",
+          "repeatedArguments": "重複出現的論點",
+          "repeatedArgumentsAria": "討論中重複出現的論點",
+          "repeatedConcerns": "重複出現的疑慮",
+          "repeatedConcernsAria": "討論中重複出現的疑慮",
+          "proposalCandidates": "提案候選",
+          "proposalCandidatesAria": "討論中的提案候選",
+          "viewInDiscussion": "在討論中查看",
+          "helpfulCount": "{count} 有幫助",
+          "notHelpfulCount": "{count} 沒幫助",
+          "emptyTopics": "尚未辨識出重複主題。",
+          "emptyOpenQuestions": "討論中尚未辨識出待釐清問題。",
+          "emptyArguments": "尚無留言獲得「有幫助」反應。",
+          "emptyConcerns": "尚無留言被標記為「沒幫助」。",
+          "emptyProposals": "尚無貢獻被標記為提案。"
+        }
       }
     }
   }

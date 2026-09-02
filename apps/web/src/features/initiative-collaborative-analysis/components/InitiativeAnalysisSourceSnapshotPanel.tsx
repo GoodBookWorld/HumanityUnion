@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { InitiativeAnalysisSourceSnapshot } from "@hu/types";
 
 /**
@@ -16,21 +20,25 @@ import type { InitiativeAnalysisSourceSnapshot } from "@hu/types";
  * short label/summary list identical in shape for every stage; this one
  * is the Analysis-specific full breakdown, rendered inside this stage's
  * `authorEditorSlot` per the shell's extension-seam architecture.
+ *
+ * Pack 02G 08D.4 — section/empty/aria chrome via author.analysis.sourceSnapshot.*;
+ * excerpts, author names, URLs, and counts remain canonical source data.
  */
 export function InitiativeAnalysisSourceSnapshotPanel({
   snapshot,
 }: {
   snapshot: InitiativeAnalysisSourceSnapshot;
 }) {
+  const t = useTranslations("initiativeExperience");
+
   if (snapshot.isEmpty) {
     return (
       <section className="ica-source-panel" aria-labelledby="ica-source-panel-title">
         <h3 id="ica-source-panel-title" className="ica-source-panel__title">
-          Source Snapshot
+          {t("author.analysis.sourceSnapshot.title")}
         </h3>
         <p className="ica-source-panel__lede" role="status">
-          No Discussion activity has been collected for this Initiative yet. This panel will populate
-          automatically once participants begin commenting.
+          {t("author.analysis.sourceSnapshot.emptyLede")}
         </p>
       </section>
     );
@@ -39,41 +47,46 @@ export function InitiativeAnalysisSourceSnapshotPanel({
   return (
     <section className="ica-source-panel" aria-labelledby="ica-source-panel-title">
       <h3 id="ica-source-panel-title" className="ica-source-panel__title">
-        Source Snapshot
+        {t("author.analysis.sourceSnapshot.title")}
       </h3>
-      <p className="ica-source-panel__lede">
-        Automatically collected from Discussion — nothing below is editable or invented.
-      </p>
+      <p className="ica-source-panel__lede">{t("author.analysis.sourceSnapshot.lede")}</p>
 
-      <div className="ica-source-panel__stats" role="list" aria-label="Discussion statistics">
+      <div className="ica-source-panel__stats" role="list" aria-label={t("author.analysis.sourceSnapshot.statsAria")}>
         <div className="ica-source-panel__stat" role="listitem">
           <span className="ica-source-panel__stat-value">{snapshot.discussionStatistics.commentCount}</span>
-          <span className="ica-source-panel__stat-label">Comments</span>
+          <span className="ica-source-panel__stat-label">{t("author.analysis.sourceSnapshot.comments")}</span>
         </div>
         <div className="ica-source-panel__stat" role="listitem">
           <span className="ica-source-panel__stat-value">{snapshot.discussionStatistics.helpfulCount}</span>
-          <span className="ica-source-panel__stat-label">Helpful</span>
+          <span className="ica-source-panel__stat-label">{t("author.analysis.sourceSnapshot.helpful")}</span>
         </div>
         <div className="ica-source-panel__stat" role="listitem">
           <span className="ica-source-panel__stat-value">
             {snapshot.discussionStatistics.notHelpfulCount}
           </span>
-          <span className="ica-source-panel__stat-label">Not Helpful</span>
+          <span className="ica-source-panel__stat-label">{t("author.analysis.sourceSnapshot.notHelpful")}</span>
         </div>
         <div className="ica-source-panel__stat" role="listitem">
           <span className="ica-source-panel__stat-value">{snapshot.activeAlliesCount}</span>
-          <span className="ica-source-panel__stat-label">Active Allies</span>
+          <span className="ica-source-panel__stat-label">{t("author.analysis.sourceSnapshot.activeAllies")}</span>
         </div>
         <div className="ica-source-panel__stat" role="listitem">
           <span className="ica-source-panel__stat-value">{snapshot.readyToCollaborateCount}</span>
-          <span className="ica-source-panel__stat-label">Ready to Collaborate</span>
+          <span className="ica-source-panel__stat-label">
+            {t("author.analysis.sourceSnapshot.readyToCollaborate")}
+          </span>
         </div>
       </div>
 
       <div className="ica-source-panel__section">
-        <h4 className="ica-source-panel__section-title">Most Discussed Topics</h4>
+        <h4 className="ica-source-panel__section-title">
+          {t("author.analysis.sourceSnapshot.mostDiscussedTopics")}
+        </h4>
         {snapshot.mostDiscussedTopics.length > 0 ? (
-          <ul className="ica-source-panel__topics" aria-label="Most discussed topics">
+          <ul
+            className="ica-source-panel__topics"
+            aria-label={t("author.analysis.sourceSnapshot.mostDiscussedTopicsAria")}
+          >
             {snapshot.mostDiscussedTopics.map((topic) => (
               <li key={topic.topic} className="ica-source-panel__topic">
                 {topic.topic} ({topic.mentionCount})
@@ -81,91 +94,117 @@ export function InitiativeAnalysisSourceSnapshotPanel({
             ))}
           </ul>
         ) : (
-          <p className="ica-source-panel__empty">No repeated topics identified yet.</p>
+          <p className="ica-source-panel__empty">{t("author.analysis.sourceSnapshot.emptyTopics")}</p>
         )}
       </div>
 
       <div className="ica-source-panel__section">
-        <h4 className="ica-source-panel__section-title">Open Questions</h4>
+        <h4 className="ica-source-panel__section-title">
+          {t("author.analysis.sourceSnapshot.openQuestions")}
+        </h4>
         {snapshot.openQuestions.length > 0 ? (
-          <ul className="ica-source-panel__list" aria-label="Open questions from Discussion">
+          <ul
+            className="ica-source-panel__list"
+            aria-label={t("author.analysis.sourceSnapshot.openQuestionsAria")}
+          >
             {snapshot.openQuestions.map((item) => (
               <li key={item.commentId} className="ica-source-panel__item">
                 <span className="ica-source-panel__item-excerpt">&ldquo;{item.excerpt}&rdquo;</span>
                 <span className="ica-source-panel__item-meta">
                   — {item.authorDisplayName}
                   <a className="ica-source-panel__item-link" href={item.discussionUrl}>
-                    View in Discussion
+                    {t("author.analysis.sourceSnapshot.viewInDiscussion")}
                   </a>
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="ica-source-panel__empty">No open questions identified in Discussion yet.</p>
+          <p className="ica-source-panel__empty">
+            {t("author.analysis.sourceSnapshot.emptyOpenQuestions")}
+          </p>
         )}
       </div>
 
       <div className="ica-source-panel__section">
-        <h4 className="ica-source-panel__section-title">Repeated Arguments</h4>
+        <h4 className="ica-source-panel__section-title">
+          {t("author.analysis.sourceSnapshot.repeatedArguments")}
+        </h4>
         {snapshot.repeatedArguments.length > 0 ? (
-          <ul className="ica-source-panel__list" aria-label="Repeated arguments from Discussion">
+          <ul
+            className="ica-source-panel__list"
+            aria-label={t("author.analysis.sourceSnapshot.repeatedArgumentsAria")}
+          >
             {snapshot.repeatedArguments.map((item) => (
               <li key={item.commentId} className="ica-source-panel__item">
                 <span className="ica-source-panel__item-excerpt">&ldquo;{item.excerpt}&rdquo;</span>
                 <span className="ica-source-panel__item-meta">
-                  — {item.authorDisplayName} · {item.helpfulCount} Helpful
+                  — {item.authorDisplayName} ·{" "}
+                  {t("author.analysis.sourceSnapshot.helpfulCount", { count: item.helpfulCount })}
                   <a className="ica-source-panel__item-link" href={item.discussionUrl}>
-                    View in Discussion
+                    {t("author.analysis.sourceSnapshot.viewInDiscussion")}
                   </a>
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="ica-source-panel__empty">No comments have received Helpful reactions yet.</p>
+          <p className="ica-source-panel__empty">{t("author.analysis.sourceSnapshot.emptyArguments")}</p>
         )}
       </div>
 
       <div className="ica-source-panel__section">
-        <h4 className="ica-source-panel__section-title">Repeated Concerns</h4>
+        <h4 className="ica-source-panel__section-title">
+          {t("author.analysis.sourceSnapshot.repeatedConcerns")}
+        </h4>
         {snapshot.repeatedConcerns.length > 0 ? (
-          <ul className="ica-source-panel__list" aria-label="Repeated concerns from Discussion">
+          <ul
+            className="ica-source-panel__list"
+            aria-label={t("author.analysis.sourceSnapshot.repeatedConcernsAria")}
+          >
             {snapshot.repeatedConcerns.map((item) => (
               <li key={item.commentId} className="ica-source-panel__item">
                 <span className="ica-source-panel__item-excerpt">&ldquo;{item.excerpt}&rdquo;</span>
                 <span className="ica-source-panel__item-meta">
-                  — {item.authorDisplayName} · {item.notHelpfulCount} Not Helpful
+                  — {item.authorDisplayName} ·{" "}
+                  {t("author.analysis.sourceSnapshot.notHelpfulCount", {
+                    count: item.notHelpfulCount,
+                  })}
                   <a className="ica-source-panel__item-link" href={item.discussionUrl}>
-                    View in Discussion
+                    {t("author.analysis.sourceSnapshot.viewInDiscussion")}
                   </a>
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="ica-source-panel__empty">No comments have been marked Not Helpful yet.</p>
+          <p className="ica-source-panel__empty">{t("author.analysis.sourceSnapshot.emptyConcerns")}</p>
         )}
       </div>
 
       <div className="ica-source-panel__section">
-        <h4 className="ica-source-panel__section-title">Proposal Candidates</h4>
+        <h4 className="ica-source-panel__section-title">
+          {t("author.analysis.sourceSnapshot.proposalCandidates")}
+        </h4>
         {snapshot.proposalCandidates.length > 0 ? (
-          <ul className="ica-source-panel__list" aria-label="Proposal candidates from Discussion">
+          <ul
+            className="ica-source-panel__list"
+            aria-label={t("author.analysis.sourceSnapshot.proposalCandidatesAria")}
+          >
             {snapshot.proposalCandidates.map((item) => (
               <li key={item.commentId} className="ica-source-panel__item">
                 <span className="ica-source-panel__item-excerpt">&ldquo;{item.excerpt}&rdquo;</span>
                 <span className="ica-source-panel__item-meta">
                   — {item.authorDisplayName}
                   <a className="ica-source-panel__item-link" href={item.discussionUrl}>
-                    View in Discussion
+                    {t("author.analysis.sourceSnapshot.viewInDiscussion")}
                   </a>
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="ica-source-panel__empty">No contributions have been marked as proposals yet.</p>
+          <p className="ica-source-panel__empty">{t("author.analysis.sourceSnapshot.emptyProposals")}</p>
         )}
       </div>
     </section>

@@ -947,6 +947,91 @@
         "toggleWithCompleteness": "المصادر / الاكتمال",
         "hideWithCompleteness": "إخفاء المصادر / الاكتمال",
         "used": "المصادر المستخدمة"
+      },
+      "analysis": {
+        "editorTitle": "محرّر التحليل",
+        "heading": "التحليل",
+        "noDraftYet": "لا مسودة بعد",
+        "noDraftExplanation": "أنشئ مسودة منظّمة من لقطة المصادر أعلاه، أو ابدأ بمسودة فارغة واملأها بنفسك.",
+        "generateAnalysisDraft": "إنشاء مسودة التحليل",
+        "showSourceSnapshot": "إظهار لقطة المصادر",
+        "hideSourceSnapshot": "إخفاء لقطة المصادر",
+        "loading": "جارٍ تحميل التحليل…",
+        "loadFailed": "تعذّر تحميل هذا التحليل.",
+        "fields": {
+          "title": "العنوان",
+          "summary": "الملخص التنفيذي",
+          "supportingEvidence": "الحجج الداعمة",
+          "risks": "المخاوف",
+          "openQuestions": "أسئلة مفتوحة",
+          "suggestedImprovements": "التوصيات",
+          "references": "المراجع",
+          "author": "المؤلف"
+        },
+        "readonly": {
+          "published": "نُشر هذا التحليل ولم يعد قابلاً للتحرير. أنشئ مسودة جديدة لإعداد تحليل محدّث.",
+          "archived": "هذا التحليل مؤرشف ولم يعد قابلاً للتحرير."
+        },
+        "messages": {
+          "draftGenerated": "تم إنشاء المسودة من لقطة المصادر الحالية.",
+          "draftSaved": "تم حفظ المسودة.",
+          "published": "نُشر التحليل. تم إشعار الحلفاء النشطين.",
+          "aiApplied": "طُبّقت اقتراحات الذكاء الاصطناعي محلياً. عدّل حسب الحاجة ثم احفظ. لم يُنشر شيء.",
+          "aiApplyDraftOnly": "يمكن تطبيق اقتراحات الذكاء الاصطناعي فقط على مسودة قيد العمل.",
+          "unknownError": "خطأ غير معروف",
+          "generateFailed": "فشل الإنشاء: {detail}",
+          "saveFailed": "فشل الحفظ: {detail}",
+          "publishFailed": "فشل النشر: {detail}"
+        },
+        "confirm": {
+          "generateOverwrite": "سيؤدي إنشاء مسودة جديدة إلى استبدال العنوان الحالي والملخص وجميع الحقول الأخرى أدناه باشتقاق جديد من النقاش. هل تريد المتابعة؟",
+          "publish": "يجعل النشر هذا التحليل مرئياً للعامة ويُشعر كل حليف نشط. هل تريد المتابعة؟"
+        },
+        "preview": {
+          "loading": "جارٍ تحميل المسودة…",
+          "loadFailed": "تعذّر تحميل هذه المسودة.",
+          "empty": "لا مسودة بعد — أنشئ أو أنشئ واحدة ثم عُد إلى المعاينة.",
+          "authorYou": "أنت",
+          "reactionAria": "معاينة تفاعل التحليل",
+          "reactionTitle": "التفاعل",
+          "reactionNoteDraft": "0 دعم · 0 لا أدعم — تُفعَّل أداة التفاعل للزوّار بعد نشر هذا التحليل.",
+          "reactionNotePublished": "{support} دعم · {doNotSupport} لا أدعم — أداة التفاعل معطّلة أثناء المعاينة."
+        },
+        "public": {
+          "loading": "جارٍ تحميل التحليل…",
+          "loadFailed": "تعذّر تحميل هذا التحليل."
+        },
+        "sourceSnapshot": {
+          "title": "لقطة المصادر",
+          "lede": "جُمعت تلقائياً من النقاش — لا شيء أدناه قابل للتحرير أو مختلق.",
+          "emptyLede": "لم يُجمع أي نشاط نقاش لهذه المبادرة بعد. ستُملأ هذه اللوحة تلقائياً عندما يبدأ المشاركون بالتعليق.",
+          "loading": "جارٍ تحميل لقطة المصادر…",
+          "loadFailed": "تعذّر تحميل لقطة المصادر.",
+          "statsAria": "إحصاءات النقاش",
+          "comments": "التعليقات",
+          "helpful": "مفيد",
+          "notHelpful": "غير مفيد",
+          "activeAllies": "الحلفاء النشطون",
+          "readyToCollaborate": "جاهزون للتعاون",
+          "mostDiscussedTopics": "المواضيع الأكثر نقاشاً",
+          "mostDiscussedTopicsAria": "المواضيع الأكثر نقاشاً",
+          "openQuestions": "أسئلة مفتوحة",
+          "openQuestionsAria": "أسئلة مفتوحة من النقاش",
+          "repeatedArguments": "حجج متكررة",
+          "repeatedArgumentsAria": "حجج متكررة من النقاش",
+          "repeatedConcerns": "مخاوف متكررة",
+          "repeatedConcernsAria": "مخاوف متكررة من النقاش",
+          "proposalCandidates": "مرشّحو المقترحات",
+          "proposalCandidatesAria": "مرشّحو المقترحات من النقاش",
+          "viewInDiscussion": "عرض في النقاش",
+          "helpfulCount": "{count} مفيد",
+          "notHelpfulCount": "{count} غير مفيد",
+          "emptyTopics": "لم تُحدَّد مواضيع متكررة بعد.",
+          "emptyOpenQuestions": "لم تُحدَّد أسئلة مفتوحة في النقاش بعد.",
+          "emptyArguments": "لم يتلقَّ أي تعليق تفاعلات «مفيد» بعد.",
+          "emptyConcerns": "لم يُعلَّم أي تعليق كـ«غير مفيد» بعد.",
+          "emptyProposals": "لم يُعلَّم أي مساهمة كمقترح بعد."
+        }
       }
     }
   }

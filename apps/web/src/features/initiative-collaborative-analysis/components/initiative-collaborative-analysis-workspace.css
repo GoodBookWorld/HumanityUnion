@@ -100,7 +100,8 @@
 .ica-source-panel__item-link {
   font-size: 0.78rem;
   font-weight: 600;
-  margin-left: var(--hu-space-2);
+  margin-inline-start: var(--hu-space-2);
+  white-space: normal;
 }
 
 .ica-source-panel__empty {
@@ -132,11 +133,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--hu-space-1);
+  min-width: 0;
 }
 
 .ica-editor__field label {
   font-size: 0.85rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .ica-editor__field input,
@@ -144,6 +148,7 @@
   border: 1px solid var(--color-border, #dadce0);
   border-radius: var(--hu-radius-sm, 4px);
   font: inherit;
+  min-width: 0;
   padding: var(--hu-space-2);
   width: 100%;
 }
@@ -164,7 +169,13 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--hu-space-2);
+  min-width: 0;
   padding-top: var(--hu-space-3);
+}
+
+.ica-editor__actions .workspace-button {
+  max-width: 100%;
+  white-space: normal;
 }
 
 .ica-editor__message {
@@ -197,6 +208,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--hu-space-1);
+  min-width: 0;
 }
 
 .ica-public-result__field h4 {
@@ -205,10 +217,12 @@
   text-transform: uppercase;
   letter-spacing: 0.02em;
   color: var(--color-text-muted, #5f6368);
+  overflow-wrap: anywhere;
 }
 
 .ica-public-result__field p {
   margin: 0;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 

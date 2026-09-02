@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 /**
  * Initiative Lifecycle — Part B, Sections 7/8. The read-only Analysis
  * body — Title, Executive Summary, Supporting Arguments, Concerns, Open
@@ -8,6 +12,9 @@
  * (Public Preview of the Author's current unpublished draft, Section 7 —
  * "result shown exactly as visitors will see it") so both render the
  * identical field layout from a single implementation.
+ *
+ * Pack 02G 08D.4 — field heading chrome via author.analysis.fields.*;
+ * field body values remain canonical civic content.
  */
 export function InitiativeCollaborativeAnalysisContentFields({
   title,
@@ -26,36 +33,38 @@ export function InitiativeCollaborativeAnalysisContentFields({
   readonly suggestedImprovements: string;
   readonly references: string;
 }) {
+  const t = useTranslations("initiativeExperience");
+
   return (
     <>
       <div className="ica-public-result__field">
-        <h4>Title</h4>
+        <h4>{t("author.analysis.fields.title")}</h4>
         <p>{title}</p>
       </div>
       <div className="ica-public-result__field">
-        <h4>Executive Summary</h4>
+        <h4>{t("author.analysis.fields.summary")}</h4>
         <p>{summary}</p>
       </div>
       <div className="ica-public-result__field">
-        <h4>Supporting Arguments</h4>
+        <h4>{t("author.analysis.fields.supportingEvidence")}</h4>
         <p>{supportingEvidence}</p>
       </div>
       <div className="ica-public-result__field">
-        <h4>Concerns</h4>
+        <h4>{t("author.analysis.fields.risks")}</h4>
         <p>{risks}</p>
       </div>
       {openQuestions ? (
         <div className="ica-public-result__field">
-          <h4>Open Questions</h4>
+          <h4>{t("author.analysis.fields.openQuestions")}</h4>
           <p>{openQuestions}</p>
         </div>
       ) : null}
       <div className="ica-public-result__field">
-        <h4>Recommendations</h4>
+        <h4>{t("author.analysis.fields.suggestedImprovements")}</h4>
         <p>{suggestedImprovements}</p>
       </div>
       <div className="ica-public-result__field">
-        <h4>References</h4>
+        <h4>{t("author.analysis.fields.references")}</h4>
         <p>{references}</p>
       </div>
     </>

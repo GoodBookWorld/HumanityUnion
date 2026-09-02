@@ -947,6 +947,91 @@
         "toggleWithCompleteness": "Sources / Completeness",
         "hideWithCompleteness": "Hide Sources / Completeness",
         "used": "Sources Used"
+      },
+      "analysis": {
+        "editorTitle": "Analysis Editor",
+        "heading": "Analysis",
+        "noDraftYet": "No draft yet",
+        "noDraftExplanation": "Generate a structured draft from the Source Snapshot above, or start from a blank draft and fill it in yourself.",
+        "generateAnalysisDraft": "Generate Analysis Draft",
+        "showSourceSnapshot": "Show Source Snapshot",
+        "hideSourceSnapshot": "Hide Source Snapshot",
+        "loading": "Loading Analysis…",
+        "loadFailed": "This Analysis could not be loaded.",
+        "fields": {
+          "title": "Title",
+          "summary": "Executive Summary",
+          "supportingEvidence": "Supporting Arguments",
+          "risks": "Concerns",
+          "openQuestions": "Open Questions",
+          "suggestedImprovements": "Recommendations",
+          "references": "References",
+          "author": "Author"
+        },
+        "readonly": {
+          "published": "This Analysis has been published and can no longer be edited. Generate a new draft to prepare an updated Analysis.",
+          "archived": "This Analysis is archived and can no longer be edited."
+        },
+        "messages": {
+          "draftGenerated": "Draft generated from the current Source Snapshot.",
+          "draftSaved": "Draft saved.",
+          "published": "Analysis published. Active Allies have been notified.",
+          "aiApplied": "AI suggestion applied locally. Edit as needed, then Save. Nothing was published.",
+          "aiApplyDraftOnly": "AI suggestions can only be applied to an in-progress draft.",
+          "unknownError": "Unknown error",
+          "generateFailed": "Generate failed: {detail}",
+          "saveFailed": "Save failed: {detail}",
+          "publishFailed": "Publish failed: {detail}"
+        },
+        "confirm": {
+          "generateOverwrite": "Generating a new draft will overwrite the current Title, Summary, and all other fields below with a fresh derivation from Discussion. Continue?",
+          "publish": "Publishing makes this Analysis visible to the public and notifies every Active Ally. Continue?"
+        },
+        "preview": {
+          "loading": "Loading draft…",
+          "loadFailed": "This draft could not be loaded.",
+          "empty": "There is no draft yet — generate or create one, then Preview again.",
+          "authorYou": "You",
+          "reactionAria": "Analysis reaction preview",
+          "reactionTitle": "Reaction",
+          "reactionNoteDraft": "0 Support · 0 Do Not Support — the Reaction widget unlocks for visitors once this Analysis is published.",
+          "reactionNotePublished": "{support} Support · {doNotSupport} Do Not Support — the Reaction widget is disabled while previewing."
+        },
+        "public": {
+          "loading": "Loading Analysis…",
+          "loadFailed": "This Analysis could not be loaded."
+        },
+        "sourceSnapshot": {
+          "title": "Source Snapshot",
+          "lede": "Automatically collected from Discussion — nothing below is editable or invented.",
+          "emptyLede": "No Discussion activity has been collected for this Initiative yet. This panel will populate automatically once participants begin commenting.",
+          "loading": "Loading Source Snapshot…",
+          "loadFailed": "The Source Snapshot could not be loaded.",
+          "statsAria": "Discussion statistics",
+          "comments": "Comments",
+          "helpful": "Helpful",
+          "notHelpful": "Not Helpful",
+          "activeAllies": "Active Allies",
+          "readyToCollaborate": "Ready to Collaborate",
+          "mostDiscussedTopics": "Most Discussed Topics",
+          "mostDiscussedTopicsAria": "Most discussed topics",
+          "openQuestions": "Open Questions",
+          "openQuestionsAria": "Open questions from Discussion",
+          "repeatedArguments": "Repeated Arguments",
+          "repeatedArgumentsAria": "Repeated arguments from Discussion",
+          "repeatedConcerns": "Repeated Concerns",
+          "repeatedConcernsAria": "Repeated concerns from Discussion",
+          "proposalCandidates": "Proposal Candidates",
+          "proposalCandidatesAria": "Proposal candidates from Discussion",
+          "viewInDiscussion": "View in Discussion",
+          "helpfulCount": "{count} Helpful",
+          "notHelpfulCount": "{count} Not Helpful",
+          "emptyTopics": "No repeated topics identified yet.",
+          "emptyOpenQuestions": "No open questions identified in Discussion yet.",
+          "emptyArguments": "No comments have received Helpful reactions yet.",
+          "emptyConcerns": "No comments have been marked Not Helpful yet.",
+          "emptyProposals": "No contributions have been marked as proposals yet."
+        }
       }
     }
   }
