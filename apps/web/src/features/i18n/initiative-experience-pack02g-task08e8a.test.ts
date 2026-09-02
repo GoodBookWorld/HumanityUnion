@@ -221,8 +221,6 @@ describe("Pack 02G Task 08E.8a — Analysis structured advisories", () => {
 
   it("later-stage derive modules remain untouched English banks", () => {
     const files = [
-      "features/initiative-version-revision/derive-revision-ai-assistant-insights.ts",
-      "features/initiative-petition-lifecycle/derive-petition-ai-assistant-insights.ts",
       "features/initiative-decision-session-lifecycle/derive-decision-session-ai-assistant-insights.ts",
       "features/initiative-collective-decision-lifecycle/derive-collective-decision-ai-assistant-insights.ts",
       "features/initiative-implementation-commitment-lifecycle/derive-implementation-commitment-ai-assistant-insights.ts",

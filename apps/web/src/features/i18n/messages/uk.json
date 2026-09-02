@@ -1016,6 +1016,23 @@
             "treatments": {
               "review": "Переглянути"
             }
+          },
+          "revision": {
+            "sourcesEmpty": "Ще немає опублікованих Пропозицій покращення.",
+            "sourcesSummary": "{eligibleCount, plural, one {# опублікована Пропозиція покращення} few {# опубліковані Пропозиції покращення} many {# опублікованих Пропозицій покращення} other {# опублікованої Пропозиції покращення}}, {unresolvedCount, plural, one {# нерозв’язана} few {# нерозв’язані} many {# нерозв’язаних} other {# нерозв’язаної}}.",
+            "alignmentWithAnalysis": "Узгоджено з опублікованим Спільним аналізом: «{title}».",
+            "alignmentNoAnalysis": "Ще немає опублікованого Спільного аналізу для узгодження."
+          },
+          "petition": {
+            "sourcesEmpty": "Ще немає опублікованої Редакції.",
+            "sourcesSummary": "Побудовано з версії {version} Редакції, {proposalCount, plural, one {# прийнята Пропозиція} few {# прийняті Пропозиції} many {# прийнятих Пропозицій} other {# прийнятої Пропозиції}}.",
+            "alignmentWithAnalysis": "Узгоджено з опублікованим Спільним аналізом: «{title}».",
+            "alignmentNoAnalysis": "Ще немає опублікованого Спільного аналізу для узгодження.",
+            "clarityTitleEmpty": "Поле «{field}» порожнє.",
+            "clarityRequestStatementShort": "Поле «{field}» дуже коротке — відвідувачам може бути незрозуміло, про що йдеться.",
+            "clarityExpectedOutcomeEmpty": "Поле «{field}» порожнє.",
+            "contextSupportingContextEmpty": "Поле «{field}» порожнє — відвідувачі не побачать довідкової інформації.",
+            "contextKeyArgumentsEmpty": "Ще не надано: {field}."
           }
         },
         "completeness": {

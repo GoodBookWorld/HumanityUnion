@@ -1,17 +1,24 @@
 /**
- * Pack 02G Task 08E.8a/08E.8b — resolve Working Sidebar advisory descriptors to display text.
+ * Pack 02G Task 08E.8a/08E.8b/08E.8c — resolve Working Sidebar advisory descriptors to display text.
  * Display-only. Does not parse English or mutate civic values.
+ * API opaque intelligence details bypass this resolver entirely.
  */
 
 import type { InitiativeExperienceTranslator } from "../public-initiative-experience/initiative-experience-i18n";
 import {
   ANALYSIS_ADVISORY_MESSAGE_KEY,
   isAnalysisSidebarAdvisoryCode,
+  isPetitionSidebarAdvisoryCode,
+  isPetitionSidebarFieldId,
   isProposalSidebarAdvisoryCode,
   isProposalSidebarFieldId,
   isProposalTreatmentSuggestionCode,
+  isRevisionSidebarAdvisoryCode,
+  PETITION_ADVISORY_MESSAGE_KEY,
   PROPOSAL_ADVISORY_MESSAGE_KEY,
+  REVISION_ADVISORY_MESSAGE_KEY,
   type InitiativeSidebarAdvisory,
+  type PetitionSidebarFieldId,
   type ProposalSidebarFieldId,
 } from "./sidebar-advisory-contract";
 
@@ -43,6 +50,20 @@ export function formatProposalSidebarFieldLabels(
   t: InitiativeExperienceTranslator,
 ): string {
   return fieldIds.map((fieldId) => resolveProposalSidebarFieldDisplayLabel(fieldId, t)).join(", ");
+}
+
+/**
+ * Canonical Petition field ID → localized label via author.petition.fields.*.
+ * Unknown → raw ID.
+ */
+export function resolvePetitionSidebarFieldDisplayLabel(
+  fieldId: string,
+  t: InitiativeExperienceTranslator,
+): string {
+  if (!isPetitionSidebarFieldId(fieldId)) {
+    return fieldId;
+  }
+  return t(`author.petition.fields.${fieldId}`);
 }
 
 /**
@@ -88,16 +109,26 @@ function buildInterpolationValues(
   if (advisory.civic?.subject != null) {
     values.topic = advisory.civic.subject;
   }
+  // Revision/Petition alignment catalogs interpolate civic.title as {title}.
+  if (advisory.civic?.title != null) {
+    values.title = advisory.civic.title;
+  }
   // Proposal incomplete-treatment rationale interpolates localized field labels as {fields}.
   if (advisory.civic?.fieldIds && advisory.civic.fieldIds.length > 0) {
     values.fields = formatProposalSidebarFieldLabels(advisory.civic.fieldIds, t);
+  }
+  // Petition clarity/context advisories may interpolate a single localized field label as {field}.
+  if (advisory.civic?.petitionFieldIds && advisory.civic.petitionFieldIds.length > 0) {
+    const first = advisory.civic.petitionFieldIds[0]!;
+    values.field = resolvePetitionSidebarFieldDisplayLabel(first, t);
   }
   return values;
 }
 
 /**
- * Map a known Analysis/Proposal advisory code → localized text.
+ * Map a known Analysis/Proposal/Revision/Petition advisory code → localized text.
  * Defensive fallback for malformed/external codes: localized unknown label + raw code.
+ * API opaque intelligence details must not pass through this resolver.
  */
 export function resolveSidebarAdvisoryDisplay(
   advisory: InitiativeSidebarAdvisory,
@@ -123,6 +154,24 @@ export function resolveSidebarAdvisoryDisplay(
     };
   }
 
+  if (isRevisionSidebarAdvisoryCode(advisory.code)) {
+    const leaf = REVISION_ADVISORY_MESSAGE_KEY[advisory.code];
+    return {
+      text: t(`author.sidebar.advisories.revision.${leaf}`, values),
+      code: advisory.code,
+      civic: advisory.civic,
+    };
+  }
+
+  if (isPetitionSidebarAdvisoryCode(advisory.code)) {
+    const leaf = PETITION_ADVISORY_MESSAGE_KEY[advisory.code];
+    return {
+      text: t(`author.sidebar.advisories.petition.${leaf}`, values),
+      code: advisory.code,
+      civic: advisory.civic,
+    };
+  }
+
   return {
     text: t("author.sidebar.advisories.unknown", { code: advisory.code }),
     code: advisory.code,
@@ -130,5 +179,5 @@ export function resolveSidebarAdvisoryDisplay(
   };
 }
 
-/** Type helper for incomplete proposal field ID arrays. */
-export type { ProposalSidebarFieldId };
+/** Type helpers for incomplete proposal / petition field ID arrays. */
+export type { ProposalSidebarFieldId, PetitionSidebarFieldId };

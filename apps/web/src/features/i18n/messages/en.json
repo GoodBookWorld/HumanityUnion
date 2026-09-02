@@ -1016,6 +1016,23 @@
             "treatments": {
               "review": "Review"
             }
+          },
+          "revision": {
+            "sourcesEmpty": "No published Improvement Proposals collected yet.",
+            "sourcesSummary": "{eligibleCount, plural, one {# published Improvement Proposal} other {# published Improvement Proposals}}, {unresolvedCount, plural, one {# unresolved} other {# unresolved}}.",
+            "alignmentWithAnalysis": "Aligned with published Collaborative Analysis: “{title}”.",
+            "alignmentNoAnalysis": "No published Collaborative Analysis to align with yet."
+          },
+          "petition": {
+            "sourcesEmpty": "No published Revision collected yet.",
+            "sourcesSummary": "Built from Version {version} of the Revision, {proposalCount, plural, one {# accepted Proposal} other {# accepted Proposals}}.",
+            "alignmentWithAnalysis": "Aligned with published Collaborative Analysis: “{title}”.",
+            "alignmentNoAnalysis": "No published Collaborative Analysis to align with yet.",
+            "clarityTitleEmpty": "{field} is empty.",
+            "clarityRequestStatementShort": "{field} is very short — it may be too vague for visitors to understand what is being asked.",
+            "clarityExpectedOutcomeEmpty": "{field} is empty.",
+            "contextSupportingContextEmpty": "{field} is empty — visitors will see no background information.",
+            "contextKeyArgumentsEmpty": "No {field} provided yet."
           }
         },
         "completeness": {

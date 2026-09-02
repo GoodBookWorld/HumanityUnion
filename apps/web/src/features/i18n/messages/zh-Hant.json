@@ -1016,6 +1016,23 @@
             "treatments": {
               "review": "審核"
             }
+          },
+          "revision": {
+            "sourcesEmpty": "尚未收集已發布的改善提案。",
+            "sourcesSummary": "{eligibleCount} 項已發布的改善提案，{unresolvedCount} 項尚未處理。",
+            "alignmentWithAnalysis": "已與已發布的協作分析對齊：「{title}」。",
+            "alignmentNoAnalysis": "尚無已發布的協作分析可供對齊。"
+          },
+          "petition": {
+            "sourcesEmpty": "尚未收集已發布的修訂版。",
+            "sourcesSummary": "依修訂版第 {version} 版建立，並含 {proposalCount} 項已接受提案。",
+            "alignmentWithAnalysis": "已與已發布的協作分析對齊：「{title}」。",
+            "alignmentNoAnalysis": "尚無已發布的協作分析可供對齊。",
+            "clarityTitleEmpty": "「{field}」為空。",
+            "clarityRequestStatementShort": "「{field}」過短——訪客可能難以理解正在提出的請求。",
+            "clarityExpectedOutcomeEmpty": "「{field}」為空。",
+            "contextSupportingContextEmpty": "「{field}」為空——訪客將看不到背景資訊。",
+            "contextKeyArgumentsEmpty": "尚未提供{field}。"
           }
         },
         "completeness": {

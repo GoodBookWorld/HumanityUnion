@@ -1,5 +1,5 @@
 /**
- * Pack 02G Task 08E.8a/08E.8b — Web-local Working Sidebar advisory descriptors.
+ * Pack 02G Task 08E.8a/08E.8b/08E.8c — Web-local Working Sidebar advisory descriptors.
  * Language-neutral codes + civic payloads. Presentation owns localized prose.
  * Not part of @hu/types (Web presentation architecture).
  */
@@ -36,12 +36,35 @@ export const PROPOSAL_TREATMENT_SUGGESTION_CODES: readonly ProposalTreatmentSugg
 ] as const;
 
 /**
- * Civic/data payload — only fields used by migrated Analysis/Proposal slices.
- * Analysis: subject. Proposal: fieldIds (+ subject reserved unused).
+ * Canonical Petition draft field IDs used by clarity/context advisories (08E.8c).
+ * Matches InitiativePetitionDraft keys actually checked by derive.
+ */
+export type PetitionSidebarFieldId =
+  | "title"
+  | "requestStatement"
+  | "expectedOutcome"
+  | "supportingContext"
+  | "keyArguments";
+
+export const PETITION_SIDEBAR_FIELD_IDS: readonly PetitionSidebarFieldId[] = [
+  "title",
+  "requestStatement",
+  "expectedOutcome",
+  "supportingContext",
+  "keyArguments",
+] as const;
+
+/**
+ * Civic/data payload — only fields used by migrated Analysis/Proposal/Revision/Petition slices.
+ * Analysis: subject. Proposal: fieldIds. Revision/Petition alignment: title.
+ * Petition clarity/context: petitionFieldIds.
  */
 export type InitiativeSidebarAdvisoryCivic = {
   readonly subject?: string;
   readonly fieldIds?: readonly ProposalSidebarFieldId[];
+  /** Civic Analysis / related title for alignment advisories (not a catalog key). */
+  readonly title?: string;
+  readonly petitionFieldIds?: readonly PetitionSidebarFieldId[];
 };
 
 export type InitiativeSidebarAdvisory<Code extends string = string> = {
@@ -74,6 +97,29 @@ export type ProposalSidebarAdvisoryCode =
 
 export type ProposalSidebarAdvisory = InitiativeSidebarAdvisory<ProposalSidebarAdvisoryCode>;
 
+/** Exact Revision-stage Web-deterministic advisory codes (08E.8c). */
+export type RevisionSidebarAdvisoryCode =
+  | "revision.sources.summary"
+  | "revision.sources.empty"
+  | "revision.alignment.with_analysis"
+  | "revision.alignment.no_analysis";
+
+export type RevisionSidebarAdvisory = InitiativeSidebarAdvisory<RevisionSidebarAdvisoryCode>;
+
+/** Exact Petition-stage Web-deterministic advisory codes (08E.8c). */
+export type PetitionSidebarAdvisoryCode =
+  | "petition.sources.summary"
+  | "petition.sources.empty"
+  | "petition.alignment.with_analysis"
+  | "petition.alignment.no_analysis"
+  | "petition.clarity.title_empty"
+  | "petition.clarity.request_statement_short"
+  | "petition.clarity.expected_outcome_empty"
+  | "petition.context.supporting_context_empty"
+  | "petition.context.key_arguments_empty";
+
+export type PetitionSidebarAdvisory = InitiativeSidebarAdvisory<PetitionSidebarAdvisoryCode>;
+
 /** Catalog leaf under author.sidebar.advisories.analysis.* */
 export const ANALYSIS_ADVISORY_MESSAGE_KEY: Record<AnalysisSidebarAdvisoryCode, string> = {
   "analysis.sources.summary": "sourcesSummary",
@@ -95,6 +141,27 @@ export const PROPOSAL_ADVISORY_MESSAGE_KEY: Record<ProposalSidebarAdvisoryCode, 
   "proposal.treatment.rationale.decline_limited": "rationaleDeclineLimited",
 };
 
+/** Catalog leaf under author.sidebar.advisories.revision.* */
+export const REVISION_ADVISORY_MESSAGE_KEY: Record<RevisionSidebarAdvisoryCode, string> = {
+  "revision.sources.summary": "sourcesSummary",
+  "revision.sources.empty": "sourcesEmpty",
+  "revision.alignment.with_analysis": "alignmentWithAnalysis",
+  "revision.alignment.no_analysis": "alignmentNoAnalysis",
+};
+
+/** Catalog leaf under author.sidebar.advisories.petition.* */
+export const PETITION_ADVISORY_MESSAGE_KEY: Record<PetitionSidebarAdvisoryCode, string> = {
+  "petition.sources.summary": "sourcesSummary",
+  "petition.sources.empty": "sourcesEmpty",
+  "petition.alignment.with_analysis": "alignmentWithAnalysis",
+  "petition.alignment.no_analysis": "alignmentNoAnalysis",
+  "petition.clarity.title_empty": "clarityTitleEmpty",
+  "petition.clarity.request_statement_short": "clarityRequestStatementShort",
+  "petition.clarity.expected_outcome_empty": "clarityExpectedOutcomeEmpty",
+  "petition.context.supporting_context_empty": "contextSupportingContextEmpty",
+  "petition.context.key_arguments_empty": "contextKeyArgumentsEmpty",
+};
+
 export function isAnalysisSidebarAdvisoryCode(
   code: string,
 ): code is AnalysisSidebarAdvisoryCode {
@@ -107,8 +174,24 @@ export function isProposalSidebarAdvisoryCode(
   return Object.prototype.hasOwnProperty.call(PROPOSAL_ADVISORY_MESSAGE_KEY, code);
 }
 
+export function isRevisionSidebarAdvisoryCode(
+  code: string,
+): code is RevisionSidebarAdvisoryCode {
+  return Object.prototype.hasOwnProperty.call(REVISION_ADVISORY_MESSAGE_KEY, code);
+}
+
+export function isPetitionSidebarAdvisoryCode(
+  code: string,
+): code is PetitionSidebarAdvisoryCode {
+  return Object.prototype.hasOwnProperty.call(PETITION_ADVISORY_MESSAGE_KEY, code);
+}
+
 export function isProposalSidebarFieldId(value: string): value is ProposalSidebarFieldId {
   return (PROPOSAL_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
+}
+
+export function isPetitionSidebarFieldId(value: string): value is PetitionSidebarFieldId {
+  return (PETITION_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
 }
 
 export function isProposalTreatmentSuggestionCode(

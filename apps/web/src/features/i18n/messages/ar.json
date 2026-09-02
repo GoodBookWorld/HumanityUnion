@@ -1016,6 +1016,23 @@
             "treatments": {
               "review": "مراجعة"
             }
+          },
+          "revision": {
+            "sourcesEmpty": "لم تُجمع بعد مقترحات تحسين منشورة.",
+            "sourcesSummary": "{eligibleCount, plural, one {مقترح تحسين منشور واحد} other {# مقترحات تحسين منشورة}}، {unresolvedCount, plural, one {واحد غير محسوم} other {# غير محسومة}}.",
+            "alignmentWithAnalysis": "متوافق مع التحليل التعاوني المنشور: «{title}».",
+            "alignmentNoAnalysis": "لا يوجد بعد تحليل تعاوني منشور للمواءمة معه."
+          },
+          "petition": {
+            "sourcesEmpty": "لم تُجمع بعد مراجعة منشورة.",
+            "sourcesSummary": "مبني من الإصدار {version} من المراجعة، {proposalCount, plural, one {مقترح مقبول واحد} other {# مقترحات مقبولة}}.",
+            "alignmentWithAnalysis": "متوافق مع التحليل التعاوني المنشور: «{title}».",
+            "alignmentNoAnalysis": "لا يوجد بعد تحليل تعاوني منشور للمواءمة معه.",
+            "clarityTitleEmpty": "«{field}» فارغ.",
+            "clarityRequestStatementShort": "«{field}» قصير جدًا — قد يكون غامضًا جدًا ليفهم الزوار ما يُطلب.",
+            "clarityExpectedOutcomeEmpty": "«{field}» فارغ.",
+            "contextSupportingContextEmpty": "«{field}» فارغ — لن يرى الزوار أي معلومات خلفية.",
+            "contextKeyArgumentsEmpty": "لم يُقدَّم بعد: {field}."
           }
         },
         "completeness": {

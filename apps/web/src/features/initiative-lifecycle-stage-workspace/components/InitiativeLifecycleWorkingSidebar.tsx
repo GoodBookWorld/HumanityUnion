@@ -588,17 +588,21 @@ function RevisionAiAssistantContent({
     <div className="iip-ai-assistant">
       <div className="iip-ai-assistant__group">
         <h4>{t("author.sidebar.sourcesUsed")}</h4>
-        <p>{insights.sourcesUsedSummary}</p>
+        <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
         <h4>{t("author.sidebar.insights.alignmentWithAnalysis")}</h4>
-        <p>{insights.analysisAlignmentSummary}</p>
+        <p>{resolveSidebarAdvisoryDisplay(insights.analysisAlignment, t).text}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
         <h4>{t("author.sidebar.insights.unresolvedProposals")}</h4>
-        <p>{t("author.sidebar.insights.unresolvedProposalsCount", { count: insights.unresolvedProposalCount })}</p>
+        <p>
+          {t("author.sidebar.insights.unresolvedProposalsCount", {
+            count: insights.unresolvedProposalCount,
+          })}
+        </p>
       </div>
 
       <div className="iip-ai-assistant__group">
@@ -612,7 +616,9 @@ function RevisionAiAssistantContent({
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyEveryIncludedHasChange")}</p>
+          <p className="iip-ai-assistant__empty">
+            {t("author.sidebar.insights.emptyEveryIncludedHasChange")}
+          </p>
         )}
       </div>
 
@@ -635,12 +641,16 @@ function RevisionAiAssistantContent({
           <ul>
             {insights.untracedChanges.map((change) => (
               <li key={change.changeId}>
-                {t("author.sidebar.insights.untracedChangeNote", { sectionLabel: change.sectionLabel })}
+                {t("author.sidebar.insights.untracedChangeNote", {
+                  sectionLabel: change.sectionLabel,
+                })}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyEveryChangeTraceable")}</p>
+          <p className="iip-ai-assistant__empty">
+            {t("author.sidebar.insights.emptyEveryChangeTraceable")}
+          </p>
         )}
       </div>
     </div>
@@ -725,12 +735,12 @@ function PetitionAiAssistantContent({
     <div className="iip-ai-assistant">
       <div className="iip-ai-assistant__group">
         <h4>{t("author.sidebar.sourcesUsed")}</h4>
-        <p>{insights.sourcesUsedSummary}</p>
+        <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
         <h4>{t("author.sidebar.insights.alignmentWithAnalysis")}</h4>
-        <p>{insights.analysisAlignmentSummary}</p>
+        <p>{resolveSidebarAdvisoryDisplay(insights.analysisAlignment, t).text}</p>
       </div>
 
       <div className="iip-ai-assistant__group">
@@ -738,7 +748,7 @@ function PetitionAiAssistantContent({
         {insights.clarityWarnings.length > 0 ? (
           <ul>
             {insights.clarityWarnings.map((warning) => (
-              <li key={warning}>{warning}</li>
+              <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
             ))}
           </ul>
         ) : (
@@ -751,11 +761,13 @@ function PetitionAiAssistantContent({
         {insights.missingContextWarnings.length > 0 ? (
           <ul>
             {insights.missingContextWarnings.map((warning) => (
-              <li key={warning}>{warning}</li>
+              <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
             ))}
           </ul>
         ) : (
-          <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoMissingContext")}</p>
+          <p className="iip-ai-assistant__empty">
+            {t("author.sidebar.insights.emptyNoMissingContext")}
+          </p>
         )}
       </div>
 
