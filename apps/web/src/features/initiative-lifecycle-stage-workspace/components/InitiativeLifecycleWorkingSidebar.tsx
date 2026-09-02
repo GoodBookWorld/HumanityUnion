@@ -845,7 +845,7 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
         <div className="iip-ai-assistant">
           <div className="iip-ai-assistant__group">
             <h4>{t("author.sidebar.sourcesUsed")}</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="iip-ai-assistant__group">
             <h4>{t("author.sidebar.insights.missingDuplicatedOptions")}</h4>
@@ -854,7 +854,7 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
               <ul>
                 {[...insights.missingOptionsWarnings, ...insights.duplicatedOptionsWarnings].map(
                   (warning) => (
-                    <li key={warning}>{warning}</li>
+                    <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                   ),
                 )}
               </ul>
@@ -868,7 +868,7 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
               <ul>
                 {[...insights.riskVisibilityWarnings, ...insights.feasibilityWarnings].map(
                   (warning) => (
-                    <li key={warning}>{warning}</li>
+                    <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                   ),
                 )}
               </ul>
@@ -878,13 +878,21 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
           </div>
           <div className="iip-ai-assistant__group">
             <h4>{t("author.sidebar.insights.clarityEvidence")}</h4>
-            {[...insights.clarityWarnings, ...insights.unsupportedArgumentWarnings].length > 0 ? (
+            {[
+              ...insights.clarityWarnings,
+              ...insights.consistencyWarnings,
+              ...insights.unsupportedArgumentWarnings,
+            ].length > 0 ? (
               <ul>
-                {[...insights.clarityWarnings, ...insights.unsupportedArgumentWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
-                  ),
-                )}
+                {insights.clarityWarnings.map((warning) => (
+                  <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>{check.detail}</li>
+                ))}
+                {insights.unsupportedArgumentWarnings.map((warning) => (
+                  <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
+                ))}
               </ul>
             ) : (
               <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoClarityEvidence")}</p>
@@ -962,7 +970,7 @@ function CollectiveDecisionAiAssistantSlot({
         <div className="iip-ai-assistant">
           <div className="iip-ai-assistant__group">
             <h4>{t("author.sidebar.sourcesUsed")}</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="iip-ai-assistant__group">
             <h4>{t("author.sidebar.insights.missingDuplicatedActions")}</h4>
@@ -971,7 +979,7 @@ function CollectiveDecisionAiAssistantSlot({
               <ul>
                 {[...insights.missingActionsWarnings, ...insights.duplicatedActionsWarnings].map(
                   (warning) => (
-                    <li key={warning}>{warning}</li>
+                    <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                   ),
                 )}
               </ul>
@@ -986,7 +994,7 @@ function CollectiveDecisionAiAssistantSlot({
               <ul>
                 {[...insights.missingRolesWarnings, ...insights.unrealisticTimelineWarnings].map(
                   (warning) => (
-                    <li key={warning}>{warning}</li>
+                    <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                   ),
                 )}
               </ul>
@@ -1003,7 +1011,7 @@ function CollectiveDecisionAiAssistantSlot({
                   ...insights.unresolvedRisksWarnings,
                   ...insights.missingSuccessCriteriaWarnings,
                 ].map((warning) => (
-                  <li key={warning}>{warning}</li>
+                  <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                 ))}
               </ul>
             ) : (
@@ -1012,14 +1020,21 @@ function CollectiveDecisionAiAssistantSlot({
           </div>
           <div className="iip-ai-assistant__group">
             <h4>{t("author.sidebar.insights.claritySupport")}</h4>
-            {[...insights.clarityWarnings, ...insights.unsupportedConclusionsWarnings].length >
-            0 ? (
+            {[
+              ...insights.clarityWarnings,
+              ...insights.consistencyWarnings,
+              ...insights.unsupportedConclusionsWarnings,
+            ].length > 0 ? (
               <ul>
-                {[...insights.clarityWarnings, ...insights.unsupportedConclusionsWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
-                  ),
-                )}
+                {insights.clarityWarnings.map((warning) => (
+                  <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>{check.detail}</li>
+                ))}
+                {insights.unsupportedConclusionsWarnings.map((warning) => (
+                  <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
+                ))}
               </ul>
             ) : (
               <p className="iip-ai-assistant__empty">{t("author.sidebar.insights.emptyNoClaritySupport")}</p>

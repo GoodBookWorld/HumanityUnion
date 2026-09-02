@@ -77,8 +77,6 @@ const PROPOSAL_ADVISORY_KEYS = [
 ] as const;
 
 const LEGACY_DERIVE_MODULES = [
-  "features/initiative-decision-session-lifecycle/derive-decision-session-ai-assistant-insights.ts",
-  "features/initiative-collective-decision-lifecycle/derive-collective-decision-ai-assistant-insights.ts",
   "features/initiative-implementation-commitment-lifecycle/derive-implementation-commitment-ai-assistant-insights.ts",
   "features/initiative-implementation-tracking-lifecycle/derive-implementation-tracking-ai-assistant-insights.ts",
   "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
@@ -259,7 +257,7 @@ describe("Pack 02G Task 08E.8b — Proposal structured advisories", () => {
     );
   });
 
-  it("Analysis remains descriptor-based; Decision Session → Archive remain legacy English banks", () => {
+  it("Analysis remains descriptor-based; Commitment → Archive remain legacy English banks", () => {
     const analysis = readWeb(
       "features/initiative-collaborative-analysis/derive-ai-assistant-insights.ts",
     );

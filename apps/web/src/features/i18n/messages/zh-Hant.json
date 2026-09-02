@@ -1033,6 +1033,42 @@
             "clarityExpectedOutcomeEmpty": "「{field}」為空。",
             "contextSupportingContextEmpty": "「{field}」為空——訪客將看不到背景資訊。",
             "contextKeyArgumentsEmpty": "尚未提供{field}。"
+          },
+          "decisionSession": {
+            "sourcesEmpty": "尚無決策來源。",
+            "sources": {
+              "petition": "已發布請願",
+              "revision": "修訂版 v{version}",
+              "analysis": "協作分析",
+              "proposals": "{count} 項提案",
+              "allies": "{count} 項盟友建議"
+            },
+            "optionsPetitionRequired": "產生決策選項前請先發布請願。",
+            "optionsNeedTwo": "請至少新增兩個決策選項，讓集體決策有實質選擇。",
+            "optionsDuplicated": "部分決策選項似乎重複——發布前請合併。",
+            "argumentsNone": "尚無支持論點——請引用請願簽名、分析或提案。",
+            "risksNone": "尚未列出風險——發布前請揭示實施與參與風險。",
+            "feasibilityTimelineEmpty": "「{field}」為空——集體決策時程將不明確。",
+            "feasibilityRolesNone": "尚未建議負責角色——請標明誰負責協調與實施。",
+            "clarityQuestionUnclear": "決策問題應為清楚、中立的是非題或多選項公共問題。"
+          },
+          "collectiveDecision": {
+            "sourcesEmpty": "尚無決策來源。",
+            "sources": {
+              "decisionSession": "決策會議（選用）",
+              "petition": "已發布請願",
+              "revision": "修訂版 v{version}",
+              "analysis": "協作分析",
+              "proposals": "{count} 項提案"
+            },
+            "actionsNeedOne": "請至少新增一項核准行動，讓集體決策結果清楚。",
+            "actionsDuplicated": "部分核准行動似乎重複——發布前請合併。",
+            "rolesNone": "尚未列出負責角色——請標明誰對實施負責。",
+            "timelineEmpty": "「{field}」為空——實施時程將不明確。",
+            "risksNone": "尚未列出決策風險——發布前請揭示實施風險。",
+            "criteriaNone": "尚未列出成功標準——請定義成功結果的樣貌。",
+            "rationaleEmpty": "「{field}」為空——請說明此集體決策結果如何來自上游來源。",
+            "claritySummaryUnclear": "決策摘要應清楚說明集體決策結果與目的。"
           }
         },
         "completeness": {

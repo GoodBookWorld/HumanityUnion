@@ -1033,6 +1033,42 @@
             "clarityExpectedOutcomeEmpty": "{field} is empty.",
             "contextSupportingContextEmpty": "{field} is empty — visitors will see no background information.",
             "contextKeyArgumentsEmpty": "No {field} provided yet."
+          },
+          "decisionSession": {
+            "sourcesEmpty": "No Decision Sources available yet.",
+            "sources": {
+              "petition": "Published Petition",
+              "revision": "Revision v{version}",
+              "analysis": "Collaborative Analysis",
+              "proposals": "{count, plural, one {# Proposal} other {# Proposals}}",
+              "allies": "{count, plural, one {# Ally recommendation} other {# Ally recommendations}}"
+            },
+            "optionsPetitionRequired": "Publish a Petition before generating Decision options.",
+            "optionsNeedTwo": "Add at least two Decision Options so the Collective Decision has a real choice.",
+            "optionsDuplicated": "Some Decision Options appear duplicated — consolidate before publishing.",
+            "argumentsNone": "No Supporting Arguments yet — cite Petition signatures, Analysis, or Proposals.",
+            "risksNone": "No Risks listed — surface implementation and participation risks before publish.",
+            "feasibilityTimelineEmpty": "{field} is empty — Collective Decision timing will be unclear.",
+            "feasibilityRolesNone": "No Suggested Responsible Roles — identify who facilitates and implements.",
+            "clarityQuestionUnclear": "Decision Question should be a clear, neutral yes/no or multi-option civic question."
+          },
+          "collectiveDecision": {
+            "sourcesEmpty": "No Decision Sources available yet.",
+            "sources": {
+              "decisionSession": "Decision Session (optional)",
+              "petition": "Published Petition",
+              "revision": "Revision v{version}",
+              "analysis": "Collaborative Analysis",
+              "proposals": "{count, plural, one {# Proposal} other {# Proposals}}"
+            },
+            "actionsNeedOne": "Add at least one Approved Action so the Collective Decision has a clear outcome.",
+            "actionsDuplicated": "Some Approved Actions appear duplicated — consolidate before publishing.",
+            "rolesNone": "No Responsible Roles listed — identify who is accountable for implementation.",
+            "timelineEmpty": "{field} is empty — implementation timing will be unclear.",
+            "risksNone": "No Decision Risks listed — surface implementation risks before publish.",
+            "criteriaNone": "No Success Criteria listed — define what a successful outcome looks like.",
+            "rationaleEmpty": "{field} is empty — explain why this Collective Decision outcome follows from upstream sources.",
+            "claritySummaryUnclear": "Decision Summary should clearly state the Collective Decision outcome and purpose."
           }
         },
         "completeness": {

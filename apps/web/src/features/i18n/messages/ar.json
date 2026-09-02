@@ -1033,6 +1033,42 @@
             "clarityExpectedOutcomeEmpty": "«{field}» فارغ.",
             "contextSupportingContextEmpty": "«{field}» فارغ — لن يرى الزوار أي معلومات خلفية.",
             "contextKeyArgumentsEmpty": "لم يُقدَّم بعد: {field}."
+          },
+          "decisionSession": {
+            "sourcesEmpty": "لا مصادر قرار متاحة بعد.",
+            "sources": {
+              "petition": "عريضة منشورة",
+              "revision": "المراجعة v{version}",
+              "analysis": "تحليل تعاوني",
+              "proposals": "{count, plural, one {مقترح واحد} other {# مقترحات}}",
+              "allies": "{count, plural, one {توصية حليف واحدة} other {# توصيات حلفاء}}"
+            },
+            "optionsPetitionRequired": "انشر عريضة قبل إنشاء خيارات القرار.",
+            "optionsNeedTwo": "أضف خيارَي قرار على الأقل حتى يكون للقرار الجماعي اختيار حقيقي.",
+            "optionsDuplicated": "تبدو بعض خيارات القرار مكررة — وحّدها قبل النشر.",
+            "argumentsNone": "لا حجج داعمة بعد — استشهد بتوقيعات العريضة أو التحليل أو المقترحات.",
+            "risksNone": "لم تُدرج مخاطر — أبرز مخاطر التنفيذ والمشاركة قبل النشر.",
+            "feasibilityTimelineEmpty": "«{field}» فارغ — سيكون توقيت القرار الجماعي غير واضح.",
+            "feasibilityRolesNone": "لا أدوار مسؤولة مقترحة — حدّد من ييسّر وينفّذ.",
+            "clarityQuestionUnclear": "يجب أن يكون سؤال القرار واضحًا ومحايدًا بنعم/لا أو متعدد الخيارات."
+          },
+          "collectiveDecision": {
+            "sourcesEmpty": "لا مصادر قرار متاحة بعد.",
+            "sources": {
+              "decisionSession": "جلسة القرار (اختيارية)",
+              "petition": "عريضة منشورة",
+              "revision": "المراجعة v{version}",
+              "analysis": "تحليل تعاوني",
+              "proposals": "{count, plural, one {مقترح واحد} other {# مقترحات}}"
+            },
+            "actionsNeedOne": "أضف إجراءً معتمدًا واحدًا على الأقل حتى يكون لنتيجة القرار الجماعي وضوح.",
+            "actionsDuplicated": "تبدو بعض الإجراءات المعتمدة مكررة — وحّدها قبل النشر.",
+            "rolesNone": "لم تُدرج أدوار مسؤولة — حدّد من يحاسب على التنفيذ.",
+            "timelineEmpty": "«{field}» فارغ — سيكون توقيت التنفيذ غير واضح.",
+            "risksNone": "لم تُدرج مخاطر القرار — أبرز مخاطر التنفيذ قبل النشر.",
+            "criteriaNone": "لم تُدرج معايير نجاح — حدّد شكل النتيجة الناجحة.",
+            "rationaleEmpty": "«{field}» فارغ — اشرح لماذا تتبع نتيجة القرار الجماعي هذه المصادر السابقة.",
+            "claritySummaryUnclear": "يجب أن يبيّن ملخص القرار بوضوح نتيجة القرار الجماعي وغرضه."
           }
         },
         "completeness": {

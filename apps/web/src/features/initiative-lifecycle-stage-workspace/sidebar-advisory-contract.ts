@@ -1,5 +1,5 @@
 /**
- * Pack 02G Task 08E.8a/08E.8b/08E.8c — Web-local Working Sidebar advisory descriptors.
+ * Pack 02G Task 08E.8a–08E.8d — Web-local Working Sidebar advisory descriptors.
  * Language-neutral codes + civic payloads. Presentation owns localized prose.
  * Not part of @hu/types (Web presentation architecture).
  */
@@ -55,9 +55,51 @@ export const PETITION_SIDEBAR_FIELD_IDS: readonly PetitionSidebarFieldId[] = [
 ] as const;
 
 /**
- * Civic/data payload — only fields used by migrated Analysis/Proposal/Revision/Petition slices.
- * Analysis: subject. Proposal: fieldIds. Revision/Petition alignment: title.
- * Petition clarity/context: petitionFieldIds.
+ * Decision Session catalog field IDs used by deterministic advisories (08E.8d).
+ * Maps to author.decisionSession.fields.*.
+ */
+export type DecisionSessionSidebarFieldId =
+  | "question"
+  | "options"
+  | "arguments"
+  | "risks"
+  | "timeline"
+  | "roles";
+
+export const DECISION_SESSION_SIDEBAR_FIELD_IDS: readonly DecisionSessionSidebarFieldId[] = [
+  "question",
+  "options",
+  "arguments",
+  "risks",
+  "timeline",
+  "roles",
+] as const;
+
+/**
+ * Collective Decision catalog field IDs used by deterministic advisories (08E.8d).
+ * Maps to author.collectiveDecision.fields.*.
+ */
+export type CollectiveDecisionSidebarFieldId =
+  | "summary"
+  | "approvedActions"
+  | "roles"
+  | "timeline"
+  | "rationale"
+  | "risks"
+  | "criteria";
+
+export const COLLECTIVE_DECISION_SIDEBAR_FIELD_IDS: readonly CollectiveDecisionSidebarFieldId[] = [
+  "summary",
+  "approvedActions",
+  "roles",
+  "timeline",
+  "rationale",
+  "risks",
+  "criteria",
+] as const;
+
+/**
+ * Civic/data payload — only fields used by migrated Analysis→Collective Decision slices.
  */
 export type InitiativeSidebarAdvisoryCivic = {
   readonly subject?: string;
@@ -65,6 +107,8 @@ export type InitiativeSidebarAdvisoryCivic = {
   /** Civic Analysis / related title for alignment advisories (not a catalog key). */
   readonly title?: string;
   readonly petitionFieldIds?: readonly PetitionSidebarFieldId[];
+  readonly decisionSessionFieldIds?: readonly DecisionSessionSidebarFieldId[];
+  readonly collectiveDecisionFieldIds?: readonly CollectiveDecisionSidebarFieldId[];
 };
 
 export type InitiativeSidebarAdvisory<Code extends string = string> = {
@@ -120,6 +164,38 @@ export type PetitionSidebarAdvisoryCode =
 
 export type PetitionSidebarAdvisory = InitiativeSidebarAdvisory<PetitionSidebarAdvisoryCode>;
 
+/** Exact Decision Session Web-deterministic advisory codes (08E.8d). */
+export type DecisionSessionSidebarAdvisoryCode =
+  | "decision_session.sources.summary"
+  | "decision_session.sources.empty"
+  | "decision_session.options.petition_required"
+  | "decision_session.options.need_two"
+  | "decision_session.options.duplicated"
+  | "decision_session.arguments.none"
+  | "decision_session.risks.none"
+  | "decision_session.feasibility.timeline_empty"
+  | "decision_session.feasibility.roles_none"
+  | "decision_session.clarity.question_unclear";
+
+export type DecisionSessionSidebarAdvisory =
+  InitiativeSidebarAdvisory<DecisionSessionSidebarAdvisoryCode>;
+
+/** Exact Collective Decision Web-deterministic advisory codes (08E.8d). */
+export type CollectiveDecisionSidebarAdvisoryCode =
+  | "collective_decision.sources.summary"
+  | "collective_decision.sources.empty"
+  | "collective_decision.actions.need_one"
+  | "collective_decision.actions.duplicated"
+  | "collective_decision.roles.none"
+  | "collective_decision.timeline.empty"
+  | "collective_decision.risks.none"
+  | "collective_decision.criteria.none"
+  | "collective_decision.rationale.empty"
+  | "collective_decision.clarity.summary_unclear";
+
+export type CollectiveDecisionSidebarAdvisory =
+  InitiativeSidebarAdvisory<CollectiveDecisionSidebarAdvisoryCode>;
+
 /** Catalog leaf under author.sidebar.advisories.analysis.* */
 export const ANALYSIS_ADVISORY_MESSAGE_KEY: Record<AnalysisSidebarAdvisoryCode, string> = {
   "analysis.sources.summary": "sourcesSummary",
@@ -162,6 +238,46 @@ export const PETITION_ADVISORY_MESSAGE_KEY: Record<PetitionSidebarAdvisoryCode, 
   "petition.context.key_arguments_empty": "contextKeyArgumentsEmpty",
 };
 
+/**
+ * Catalog leaf under author.sidebar.advisories.decisionSession.*.
+ * sources.summary is assembled from sources.* fragments in the resolver.
+ */
+export const DECISION_SESSION_ADVISORY_MESSAGE_KEY: Record<
+  DecisionSessionSidebarAdvisoryCode,
+  string
+> = {
+  "decision_session.sources.summary": "sourcesSummary",
+  "decision_session.sources.empty": "sourcesEmpty",
+  "decision_session.options.petition_required": "optionsPetitionRequired",
+  "decision_session.options.need_two": "optionsNeedTwo",
+  "decision_session.options.duplicated": "optionsDuplicated",
+  "decision_session.arguments.none": "argumentsNone",
+  "decision_session.risks.none": "risksNone",
+  "decision_session.feasibility.timeline_empty": "feasibilityTimelineEmpty",
+  "decision_session.feasibility.roles_none": "feasibilityRolesNone",
+  "decision_session.clarity.question_unclear": "clarityQuestionUnclear",
+};
+
+/**
+ * Catalog leaf under author.sidebar.advisories.collectiveDecision.*.
+ * sources.summary is assembled from sources.* fragments in the resolver.
+ */
+export const COLLECTIVE_DECISION_ADVISORY_MESSAGE_KEY: Record<
+  CollectiveDecisionSidebarAdvisoryCode,
+  string
+> = {
+  "collective_decision.sources.summary": "sourcesSummary",
+  "collective_decision.sources.empty": "sourcesEmpty",
+  "collective_decision.actions.need_one": "actionsNeedOne",
+  "collective_decision.actions.duplicated": "actionsDuplicated",
+  "collective_decision.roles.none": "rolesNone",
+  "collective_decision.timeline.empty": "timelineEmpty",
+  "collective_decision.risks.none": "risksNone",
+  "collective_decision.criteria.none": "criteriaNone",
+  "collective_decision.rationale.empty": "rationaleEmpty",
+  "collective_decision.clarity.summary_unclear": "claritySummaryUnclear",
+};
+
 export function isAnalysisSidebarAdvisoryCode(
   code: string,
 ): code is AnalysisSidebarAdvisoryCode {
@@ -186,12 +302,36 @@ export function isPetitionSidebarAdvisoryCode(
   return Object.prototype.hasOwnProperty.call(PETITION_ADVISORY_MESSAGE_KEY, code);
 }
 
+export function isDecisionSessionSidebarAdvisoryCode(
+  code: string,
+): code is DecisionSessionSidebarAdvisoryCode {
+  return Object.prototype.hasOwnProperty.call(DECISION_SESSION_ADVISORY_MESSAGE_KEY, code);
+}
+
+export function isCollectiveDecisionSidebarAdvisoryCode(
+  code: string,
+): code is CollectiveDecisionSidebarAdvisoryCode {
+  return Object.prototype.hasOwnProperty.call(COLLECTIVE_DECISION_ADVISORY_MESSAGE_KEY, code);
+}
+
 export function isProposalSidebarFieldId(value: string): value is ProposalSidebarFieldId {
   return (PROPOSAL_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
 }
 
 export function isPetitionSidebarFieldId(value: string): value is PetitionSidebarFieldId {
   return (PETITION_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
+}
+
+export function isDecisionSessionSidebarFieldId(
+  value: string,
+): value is DecisionSessionSidebarFieldId {
+  return (DECISION_SESSION_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
+}
+
+export function isCollectiveDecisionSidebarFieldId(
+  value: string,
+): value is CollectiveDecisionSidebarFieldId {
+  return (COLLECTIVE_DECISION_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
 }
 
 export function isProposalTreatmentSuggestionCode(

@@ -1,5 +1,5 @@
 /**
- * Pack 02G Task 08E.8a/08E.8b/08E.8c — resolve Working Sidebar advisory descriptors to display text.
+ * Pack 02G Task 08E.8a–08E.8d — resolve Working Sidebar advisory descriptors to display text.
  * Display-only. Does not parse English or mutate civic values.
  * API opaque intelligence details bypass this resolver entirely.
  */
@@ -7,7 +7,13 @@
 import type { InitiativeExperienceTranslator } from "../public-initiative-experience/initiative-experience-i18n";
 import {
   ANALYSIS_ADVISORY_MESSAGE_KEY,
+  COLLECTIVE_DECISION_ADVISORY_MESSAGE_KEY,
+  DECISION_SESSION_ADVISORY_MESSAGE_KEY,
   isAnalysisSidebarAdvisoryCode,
+  isCollectiveDecisionSidebarAdvisoryCode,
+  isCollectiveDecisionSidebarFieldId,
+  isDecisionSessionSidebarAdvisoryCode,
+  isDecisionSessionSidebarFieldId,
   isPetitionSidebarAdvisoryCode,
   isPetitionSidebarFieldId,
   isProposalSidebarAdvisoryCode,
@@ -27,6 +33,16 @@ export type SidebarAdvisoryPresentation = {
   readonly code: string;
   readonly civic?: InitiativeSidebarAdvisory["civic"];
 };
+
+function paramFlag(params: InitiativeSidebarAdvisory["params"], key: string): boolean {
+  const value = params?.[key];
+  return value === true || value === 1 || value === "true" || value === "1";
+}
+
+function paramNumber(params: InitiativeSidebarAdvisory["params"], key: string): number {
+  const value = params?.[key];
+  return typeof value === "number" ? value : Number(value ?? 0);
+}
 
 /**
  * Canonical Proposal field ID → localized label via author.proposal.fields.*.
@@ -64,6 +80,34 @@ export function resolvePetitionSidebarFieldDisplayLabel(
     return fieldId;
   }
   return t(`author.petition.fields.${fieldId}`);
+}
+
+/**
+ * Decision Session field ID → author.decisionSession.fields.*.
+ * Unknown → raw ID.
+ */
+export function resolveDecisionSessionSidebarFieldDisplayLabel(
+  fieldId: string,
+  t: InitiativeExperienceTranslator,
+): string {
+  if (!isDecisionSessionSidebarFieldId(fieldId)) {
+    return fieldId;
+  }
+  return t(`author.decisionSession.fields.${fieldId}`);
+}
+
+/**
+ * Collective Decision field ID → author.collectiveDecision.fields.*.
+ * Unknown → raw ID.
+ */
+export function resolveCollectiveDecisionSidebarFieldDisplayLabel(
+  fieldId: string,
+  t: InitiativeExperienceTranslator,
+): string {
+  if (!isCollectiveDecisionSidebarFieldId(fieldId)) {
+    return fieldId;
+  }
+  return t(`author.collectiveDecision.fields.${fieldId}`);
 }
 
 /**
@@ -105,28 +149,112 @@ function buildInterpolationValues(
       }
     }
   }
-  // Analysis contradiction catalogs interpolate civic.subject as {topic}.
   if (advisory.civic?.subject != null) {
     values.topic = advisory.civic.subject;
   }
-  // Revision/Petition alignment catalogs interpolate civic.title as {title}.
   if (advisory.civic?.title != null) {
     values.title = advisory.civic.title;
   }
-  // Proposal incomplete-treatment rationale interpolates localized field labels as {fields}.
   if (advisory.civic?.fieldIds && advisory.civic.fieldIds.length > 0) {
     values.fields = formatProposalSidebarFieldLabels(advisory.civic.fieldIds, t);
   }
-  // Petition clarity/context advisories may interpolate a single localized field label as {field}.
   if (advisory.civic?.petitionFieldIds && advisory.civic.petitionFieldIds.length > 0) {
-    const first = advisory.civic.petitionFieldIds[0]!;
-    values.field = resolvePetitionSidebarFieldDisplayLabel(first, t);
+    values.field = resolvePetitionSidebarFieldDisplayLabel(advisory.civic.petitionFieldIds[0]!, t);
+  }
+  if (
+    advisory.civic?.decisionSessionFieldIds &&
+    advisory.civic.decisionSessionFieldIds.length > 0
+  ) {
+    values.field = resolveDecisionSessionSidebarFieldDisplayLabel(
+      advisory.civic.decisionSessionFieldIds[0]!,
+      t,
+    );
+  }
+  if (
+    advisory.civic?.collectiveDecisionFieldIds &&
+    advisory.civic.collectiveDecisionFieldIds.length > 0
+  ) {
+    values.field = resolveCollectiveDecisionSidebarFieldDisplayLabel(
+      advisory.civic.collectiveDecisionFieldIds[0]!,
+      t,
+    );
   }
   return values;
 }
 
+/** Preserve omit-empty join semantics from pre-migration DS sources summary. */
+function resolveDecisionSessionSourcesSummary(
+  advisory: InitiativeSidebarAdvisory,
+  t: InitiativeExperienceTranslator,
+): string {
+  const parts: string[] = [];
+  if (paramFlag(advisory.params, "hasPetition")) {
+    parts.push(t("author.sidebar.advisories.decisionSession.sources.petition"));
+  }
+  if (paramFlag(advisory.params, "hasRevision")) {
+    parts.push(
+      t("author.sidebar.advisories.decisionSession.sources.revision", {
+        version: paramNumber(advisory.params, "revisionVersion"),
+      }),
+    );
+  }
+  if (paramFlag(advisory.params, "hasAnalysis")) {
+    parts.push(t("author.sidebar.advisories.decisionSession.sources.analysis"));
+  }
+  const proposalCount = paramNumber(advisory.params, "proposalCount");
+  if (proposalCount > 0) {
+    parts.push(
+      t("author.sidebar.advisories.decisionSession.sources.proposals", {
+        count: proposalCount,
+      }),
+    );
+  }
+  const allyCount = paramNumber(advisory.params, "allyRecommendationCount");
+  if (allyCount > 0) {
+    parts.push(
+      t("author.sidebar.advisories.decisionSession.sources.allies", {
+        count: allyCount,
+      }),
+    );
+  }
+  return parts.join(" · ");
+}
+
+/** Preserve omit-empty join semantics from pre-migration CD sources summary. */
+function resolveCollectiveDecisionSourcesSummary(
+  advisory: InitiativeSidebarAdvisory,
+  t: InitiativeExperienceTranslator,
+): string {
+  const parts: string[] = [];
+  if (paramFlag(advisory.params, "hasDecisionSession")) {
+    parts.push(t("author.sidebar.advisories.collectiveDecision.sources.decisionSession"));
+  }
+  if (paramFlag(advisory.params, "hasPetition")) {
+    parts.push(t("author.sidebar.advisories.collectiveDecision.sources.petition"));
+  }
+  if (paramFlag(advisory.params, "hasRevision")) {
+    parts.push(
+      t("author.sidebar.advisories.collectiveDecision.sources.revision", {
+        version: paramNumber(advisory.params, "revisionVersion"),
+      }),
+    );
+  }
+  if (paramFlag(advisory.params, "hasAnalysis")) {
+    parts.push(t("author.sidebar.advisories.collectiveDecision.sources.analysis"));
+  }
+  const proposalCount = paramNumber(advisory.params, "proposalCount");
+  if (proposalCount > 0) {
+    parts.push(
+      t("author.sidebar.advisories.collectiveDecision.sources.proposals", {
+        count: proposalCount,
+      }),
+    );
+  }
+  return parts.join(" · ");
+}
+
 /**
- * Map a known Analysis/Proposal/Revision/Petition advisory code → localized text.
+ * Map a known stage advisory code → localized text.
  * Defensive fallback for malformed/external codes: localized unknown label + raw code.
  * API opaque intelligence details must not pass through this resolver.
  */
@@ -167,6 +295,38 @@ export function resolveSidebarAdvisoryDisplay(
     const leaf = PETITION_ADVISORY_MESSAGE_KEY[advisory.code];
     return {
       text: t(`author.sidebar.advisories.petition.${leaf}`, values),
+      code: advisory.code,
+      civic: advisory.civic,
+    };
+  }
+
+  if (isDecisionSessionSidebarAdvisoryCode(advisory.code)) {
+    if (advisory.code === "decision_session.sources.summary") {
+      return {
+        text: resolveDecisionSessionSourcesSummary(advisory, t),
+        code: advisory.code,
+        civic: advisory.civic,
+      };
+    }
+    const leaf = DECISION_SESSION_ADVISORY_MESSAGE_KEY[advisory.code];
+    return {
+      text: t(`author.sidebar.advisories.decisionSession.${leaf}`, values),
+      code: advisory.code,
+      civic: advisory.civic,
+    };
+  }
+
+  if (isCollectiveDecisionSidebarAdvisoryCode(advisory.code)) {
+    if (advisory.code === "collective_decision.sources.summary") {
+      return {
+        text: resolveCollectiveDecisionSourcesSummary(advisory, t),
+        code: advisory.code,
+        civic: advisory.civic,
+      };
+    }
+    const leaf = COLLECTIVE_DECISION_ADVISORY_MESSAGE_KEY[advisory.code];
+    return {
+      text: t(`author.sidebar.advisories.collectiveDecision.${leaf}`, values),
       code: advisory.code,
       civic: advisory.civic,
     };

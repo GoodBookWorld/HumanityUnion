@@ -83,8 +83,6 @@ const PETITION_KEYS = [
 ] as const;
 
 const LEGACY_DERIVE_MODULES = [
-  "features/initiative-decision-session-lifecycle/derive-decision-session-ai-assistant-insights.ts",
-  "features/initiative-collective-decision-lifecycle/derive-collective-decision-ai-assistant-insights.ts",
   "features/initiative-implementation-commitment-lifecycle/derive-implementation-commitment-ai-assistant-insights.ts",
   "features/initiative-implementation-tracking-lifecycle/derive-implementation-tracking-ai-assistant-insights.ts",
   "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
@@ -323,7 +321,7 @@ describe("Pack 02G Task 08E.8c — Revision + Petition structured advisories", (
     assert.match(revision, /INTERNAL_UNUSED/);
   });
 
-  it("Decision Session → Archive remain legacy English banks", () => {
+  it("Commitment → Archive remain legacy English banks", () => {
     for (const relative of LEGACY_DERIVE_MODULES) {
       const source = readWeb(relative);
       assert.doesNotMatch(source, /RevisionSidebarAdvisory/);
