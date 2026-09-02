@@ -2117,6 +2117,57 @@
         "loadFailed": "Election results could not be loaded.",
         "emptyPending": "Results appear when the election ballot is published."
       }
+    },
+    "assistant": {
+      "modal": {
+        "title": "Humanity Union Assistant",
+        "close": "Close",
+        "closeAria": "Close Assistant",
+        "loadingContext": "Loading context…",
+        "loading": "Loading Assistant…",
+        "working": "Working…",
+        "conversationAria": "Conversation",
+        "sourcesPrefix": "Sources: {sources}",
+        "platformKnowledge": "Platform knowledge",
+        "roleAssistant": "Assistant",
+        "roleYou": "You",
+        "suggestedQuestions": "Suggested questions",
+        "privacyNotice": "Conversation memory is temporary for this browser session only. Private messages are never read automatically. AI never publishes.",
+        "askLabel": "Ask the Assistant",
+        "askPlaceholder": "Ask about this context or Humanity Union…",
+        "send": "Send",
+        "explainContext": "Explain this context",
+        "useSuggestion": "Use suggestion in draft editor",
+        "newConversation": "New Conversation",
+        "clearContext": "Clear Current Context",
+        "continueDefault": "Continue Conversation is the default.",
+        "guestGuidance": "Sign in to use the Humanity Union Assistant with your Workspace and Initiative context.",
+        "signIn": "Sign in",
+        "register": "Register",
+        "diagnosticsSummary": "Development diagnostics",
+        "diagnosticsProvider": "Active provider: {value}",
+        "diagnosticsConfigured": "Configured provider: {value}",
+        "diagnosticsSurface": "Surface: {value}",
+        "diagnosticsStage": "Stage: {value}",
+        "diagnosticsPresentation": "Presentation mode: {value}",
+        "diagnosticsKnowledge": "Knowledge modules: {value}",
+        "diagnosticsPrompts": "Prompt versions: {value}",
+        "diagnosticsPromptSize": "Estimated prompt size: {chars} chars / ≈{tokens} tokens",
+        "diagnosticsRetries": "Retry count: {value}",
+        "diagnosticsResponseTime": "Response time: {value} ms",
+        "diagnosticsHistory": "History turns sent: {value}",
+        "diagnosticsNone": "none",
+        "diagnosticsNa": "n/a",
+        "diagnosticsSafeNote": "Diagnostics never include prompts or API keys."
+      },
+      "messages": {
+        "openFailed": "Could not open Humanity Union Assistant.",
+        "rateLimited": "Too many Assistant requests. Please wait a moment and try again.",
+        "temporarilyUnavailable": "The Assistant is temporarily unavailable. Please try again shortly.",
+        "autoApplyForbidden": "AI attempted an automatic edit or publication, which is forbidden.",
+        "appliedToDraft": "Suggestion copied into your draft editor locally. Edit it, then {saveDraft} → {preview} → {publish}. Nothing was published automatically.",
+        "appliedToBlog": "Suggestion queued for the publication editor. Review Apply / Replace / Dismiss there. Nothing was published automatically."
+      }
     }
   }
 }

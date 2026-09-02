@@ -2117,6 +2117,57 @@
         "loadFailed": "無法載入選舉結果。",
         "emptyPending": "選舉選票發布後才會顯示結果。"
       }
+    },
+    "assistant": {
+      "modal": {
+        "title": "Humanity Union 助理",
+        "close": "關閉",
+        "closeAria": "關閉助理",
+        "loadingContext": "正在載入上下文…",
+        "loading": "正在載入助理…",
+        "working": "處理中…",
+        "conversationAria": "對話",
+        "sourcesPrefix": "來源：{sources}",
+        "platformKnowledge": "平台知識",
+        "roleAssistant": "助理",
+        "roleYou": "你",
+        "suggestedQuestions": "建議問題",
+        "privacyNotice": "對話記憶僅暫時保存在此瀏覽器工作階段。絕不會自動讀取私人訊息。AI 絕不會代為發布。",
+        "askLabel": "詢問助理",
+        "askPlaceholder": "詢問此上下文或 Humanity Union…",
+        "send": "傳送",
+        "explainContext": "說明此上下文",
+        "useSuggestion": "在草稿編輯器使用建議",
+        "newConversation": "新對話",
+        "clearContext": "清除目前上下文",
+        "continueDefault": "預設會繼續目前對話。",
+        "guestGuidance": "請登入，以便在工作區與倡議上下文中使用 Humanity Union 助理。",
+        "signIn": "登入",
+        "register": "註冊",
+        "diagnosticsSummary": "開發診斷",
+        "diagnosticsProvider": "作用中提供者：{value}",
+        "diagnosticsConfigured": "已設定提供者：{value}",
+        "diagnosticsSurface": "介面：{value}",
+        "diagnosticsStage": "階段：{value}",
+        "diagnosticsPresentation": "呈現模式：{value}",
+        "diagnosticsKnowledge": "知識模組：{value}",
+        "diagnosticsPrompts": "提示版本：{value}",
+        "diagnosticsPromptSize": "預估提示大小：{chars} 字元 / ≈{tokens} token",
+        "diagnosticsRetries": "重試次數：{value}",
+        "diagnosticsResponseTime": "回應時間：{value} 毫秒",
+        "diagnosticsHistory": "已傳送歷史回合：{value}",
+        "diagnosticsNone": "無",
+        "diagnosticsNa": "不適用",
+        "diagnosticsSafeNote": "診斷資訊絕不會包含提示或 API 金鑰。"
+      },
+      "messages": {
+        "openFailed": "無法開啟 Humanity Union 助理。",
+        "rateLimited": "助理請求過多。請稍候再試。",
+        "temporarilyUnavailable": "助理暫時無法使用。請稍後再試。",
+        "autoApplyForbidden": "AI 試圖自動編輯或發布，這是禁止的。",
+        "appliedToDraft": "建議已在本機複製到草稿編輯器。請編輯後再 {saveDraft} → {preview} → {publish}。尚未自動發布任何內容。",
+        "appliedToBlog": "建議已排入出版編輯器。請在該處檢閱套用／取代／關閉。尚未自動發布任何內容。"
+      }
     }
   }
 }

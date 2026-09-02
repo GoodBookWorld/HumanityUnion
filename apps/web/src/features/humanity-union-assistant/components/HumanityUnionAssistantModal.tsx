@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   HumanityUnionAssistantAssistResult,
@@ -53,6 +54,7 @@ export function HumanityUnionAssistantModal({
   stageId,
   pagePath,
 }: HumanityUnionAssistantModalProps) {
+  const t = useTranslations("initiativeExperience");
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -143,14 +145,16 @@ export function HumanityUnionAssistantModal({
           return;
         }
         setLoadError(
-          error instanceof Error ? error.message : "Could not open Humanity Union Assistant.",
+          error instanceof Error && error.message.trim()
+            ? error.message
+            : t("assistant.messages.openFailed"),
         );
       });
 
     return () => {
       cancelled = true;
     };
-  }, [initiativeId, isOpen, pagePath, stageId, surfaceId]);
+  }, [initiativeId, isOpen, pagePath, stageId, surfaceId, t]);
 
   useEffect(() => {
     if (!isOpen || !sessionId) {
@@ -324,7 +328,7 @@ export function HumanityUnionAssistantModal({
       });
 
       if (assistResult.autoApplied || assistResult.autoPublished) {
-        throw new Error("AI attempted an automatic edit or publication, which is forbidden.");
+        throw new Error(t("assistant.messages.autoApplyForbidden"));
       }
 
       setResult(assistResult);
@@ -349,7 +353,7 @@ export function HumanityUnionAssistantModal({
       if (/could not be processed safely/i.test(raw)) {
         setAssistError(raw);
       } else if (/too many|rate/i.test(raw)) {
-        setAssistError("Too many Assistant requests. Please wait a moment and try again.");
+        setAssistError(t("assistant.messages.rateLimited"));
       } else if (
         /temporarily unavailable|not configured|Author Workspace|not found|could not be completed/i.test(
           raw,
@@ -357,7 +361,7 @@ export function HumanityUnionAssistantModal({
       ) {
         setAssistError(raw);
       } else {
-        setAssistError("The Assistant is temporarily unavailable. Please try again shortly.");
+        setAssistError(t("assistant.messages.temporarilyUnavailable"));
       }
     } finally {
       setBusy(false);
@@ -375,9 +379,7 @@ export function HumanityUnionAssistantModal({
         stageId: "blog_authoring",
         suggestions: result.suggestions,
       });
-      setApplyNotice(
-        "Suggestion queued for the publication editor. Review Apply / Replace / Dismiss there. Nothing was published automatically.",
-      );
+      setApplyNotice(t("assistant.messages.appliedToBlog"));
       return;
     }
 
@@ -391,15 +393,21 @@ export function HumanityUnionAssistantModal({
       suggestions: result.suggestions,
     });
     setApplyNotice(
-      "Suggestion copied into your draft editor locally. Edit it, then Save → Preview → Publish. Nothing was published automatically.",
+      t("assistant.messages.appliedToDraft", {
+        saveDraft: t("author.actions.saveDraft"),
+        preview: t("author.actions.preview"),
+        publish: t("author.actions.publish"),
+      }),
     );
   }
 
-  const contextLabel = context?.currentFeatureLabel ?? "Loading context…";
+  const contextLabel = context?.currentFeatureLabel ?? t("assistant.modal.loadingContext");
   const showDevDiagnostics =
     process.env.NODE_ENV === "development" &&
     Boolean(result?.diagnostics || context?.diagnostics);
   const activeDiagnostics = result?.diagnostics ?? context?.diagnostics;
+  const sourcesLabel =
+    context?.availableSourceLabels.join(" · ") || t("assistant.modal.platformKnowledge");
 
   return (
     <div className="hu-assistant-modal__backdrop" onClick={onClose}>
@@ -424,7 +432,7 @@ export function HumanityUnionAssistantModal({
             />
             <div>
               <h2 id={titleId} className="hu-assistant-modal__title hu-widget-title">
-                Humanity Union Assistant
+                {t("assistant.modal.title")}
               </h2>
               <p id={descriptionId} className="hu-assistant-modal__context-label">
                 {contextLabel}
@@ -436,24 +444,22 @@ export function HumanityUnionAssistantModal({
             type="button"
             className="hu-assistant-modal__close"
             onClick={onClose}
+            aria-label={t("assistant.modal.closeAria")}
           >
-            Close
+            {t("assistant.modal.close")}
           </button>
         </div>
 
         <div className="hu-assistant-modal__body">
           {needsSignIn ? (
             <div className="hu-assistant-modal__guest">
-              <p>
-                Sign in to use the Humanity Union Assistant with your Workspace and Initiative
-                context.
-              </p>
+              <p>{t("assistant.modal.guestGuidance")}</p>
               <div className="hu-assistant-modal__actions">
                 <Link href="/login" className="hu-assistant-modal__link-button">
-                  Sign in
+                  {t("assistant.modal.signIn")}
                 </Link>
                 <Link href="/register" className="hu-assistant-modal__link-button secondary">
-                  Register
+                  {t("assistant.modal.register")}
                 </Link>
               </div>
             </div>
@@ -463,18 +469,34 @@ export function HumanityUnionAssistantModal({
 
           {context && !needsSignIn ? (
             <>
-              <div className="hu-assistant-modal__session-bar" role="toolbar" aria-label="Conversation">
-                <button type="button" className="secondary" disabled={busy} onClick={handleNewConversation}>
-                  New Conversation
+              <div
+                className="hu-assistant-modal__session-bar"
+                role="toolbar"
+                aria-label={t("assistant.modal.conversationAria")}
+              >
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy}
+                  onClick={handleNewConversation}
+                >
+                  {t("assistant.modal.newConversation")}
                 </button>
-                <button type="button" className="secondary" disabled={busy} onClick={handleClearContext}>
-                  Clear Current Context
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy}
+                  onClick={handleClearContext}
+                >
+                  {t("assistant.modal.clearContext")}
                 </button>
-                <span className="hu-assistant-modal__session-note">Continue Conversation is the default.</span>
+                <span className="hu-assistant-modal__session-note">
+                  {t("assistant.modal.continueDefault")}
+                </span>
               </div>
 
               <p className="hu-assistant-modal__meta">
-                Sources: {context.availableSourceLabels.join(" · ") || "Platform knowledge"}
+                {t("assistant.modal.sourcesPrefix", { sources: sourcesLabel })}
                 {context.initiativeTitle ? ` · ${context.initiativeTitle}` : ""}
                 {context.stageLabel ? ` · ${context.stageLabel}` : ""}
               </p>
@@ -486,20 +508,26 @@ export function HumanityUnionAssistantModal({
               >
                 {turns.map((turn) => (
                   <article key={turn.id} className="hu-assistant-modal__bubble">
-                    <h3>{turn.role === "assistant" ? "Assistant" : "You"}</h3>
+                    <h3>
+                      {turn.role === "assistant"
+                        ? t("assistant.modal.roleAssistant")
+                        : t("assistant.modal.roleYou")}
+                    </h3>
                     <p>{turn.text}</p>
                   </article>
                 ))}
                 {busy ? (
                   <p className="hu-assistant-modal__notice" role="status">
-                    Working…
+                    {t("assistant.modal.working")}
                   </p>
                 ) : null}
               </div>
 
               {context.suggestedQuestions.length > 0 ? (
                 <>
-                  <p className="hu-assistant-modal__notice">Suggested questions</p>
+                  <p className="hu-assistant-modal__notice">
+                    {t("assistant.modal.suggestedQuestions")}
+                  </p>
                   <ul className="hu-assistant-modal__suggestions-list">
                     {context.suggestedQuestions.slice(0, 4).map((suggestion) => (
                       <li key={suggestion}>
@@ -519,10 +547,7 @@ export function HumanityUnionAssistantModal({
                 </>
               ) : null}
 
-              <p className="hu-assistant-modal__notice">
-                Conversation memory is temporary for this browser session only. Private messages are
-                never read automatically. AI never publishes.
-              </p>
+              <p className="hu-assistant-modal__notice">{t("assistant.modal.privacyNotice")}</p>
 
               {showDevDiagnostics && activeDiagnostics ? (
                 <details
@@ -532,39 +557,83 @@ export function HumanityUnionAssistantModal({
                     setDiagnosticsOpen((event.currentTarget as HTMLDetailsElement).open)
                   }
                 >
-                  <summary>Development diagnostics</summary>
+                  <summary>{t("assistant.modal.diagnosticsSummary")}</summary>
                   <ul>
-                    <li>Active provider: {activeDiagnostics.activeProviderId}</li>
-                    <li>Configured provider: {activeDiagnostics.configuredProvider}</li>
-                    <li>Surface: {activeDiagnostics.surfaceId ?? surfaceId}</li>
-                    <li>Stage: {context.stageId ?? "n/a"}</li>
-                    <li>Presentation mode: {activeDiagnostics.presentationMode ?? context.presentationMode ?? "n/a"}</li>
                     <li>
-                      Knowledge modules:{" "}
-                      {(activeDiagnostics.retrievedKnowledgeModuleIds ?? []).join(", ") || "none"}
+                      {t("assistant.modal.diagnosticsProvider", {
+                        value: activeDiagnostics.activeProviderId,
+                      })}
                     </li>
                     <li>
-                      Prompt versions: {(activeDiagnostics.promptVersions ?? []).join(", ") || "n/a"}
+                      {t("assistant.modal.diagnosticsConfigured", {
+                        value: activeDiagnostics.configuredProvider,
+                      })}
                     </li>
                     <li>
-                      Estimated prompt size: {activeDiagnostics.estimatedPromptChars ?? "n/a"} chars / ≈
-                      {activeDiagnostics.estimatedPromptTokens ?? "n/a"} tokens
+                      {t("assistant.modal.diagnosticsSurface", {
+                        value: activeDiagnostics.surfaceId ?? surfaceId,
+                      })}
                     </li>
-                    <li>Retry count: {activeDiagnostics.retryCount ?? 0}</li>
-                    <li>Response time: {activeDiagnostics.responseDurationMs ?? "n/a"} ms</li>
                     <li>
-                      History turns sent: {activeDiagnostics.conversationHistoryTurns ?? 0}
+                      {t("assistant.modal.diagnosticsStage", {
+                        value: context.stageId ?? t("assistant.modal.diagnosticsNa"),
+                      })}
+                    </li>
+                    <li>
+                      {t("assistant.modal.diagnosticsPresentation", {
+                        value:
+                          activeDiagnostics.presentationMode ??
+                          context.presentationMode ??
+                          t("assistant.modal.diagnosticsNa"),
+                      })}
+                    </li>
+                    <li>
+                      {t("assistant.modal.diagnosticsKnowledge", {
+                        value:
+                          (activeDiagnostics.retrievedKnowledgeModuleIds ?? []).join(", ") ||
+                          t("assistant.modal.diagnosticsNone"),
+                      })}
+                    </li>
+                    <li>
+                      {t("assistant.modal.diagnosticsPrompts", {
+                        value:
+                          (activeDiagnostics.promptVersions ?? []).join(", ") ||
+                          t("assistant.modal.diagnosticsNa"),
+                      })}
+                    </li>
+                    <li>
+                      {t("assistant.modal.diagnosticsPromptSize", {
+                        chars: activeDiagnostics.estimatedPromptChars ?? t("assistant.modal.diagnosticsNa"),
+                        tokens:
+                          activeDiagnostics.estimatedPromptTokens ?? t("assistant.modal.diagnosticsNa"),
+                      })}
+                    </li>
+                    <li>
+                      {t("assistant.modal.diagnosticsRetries", {
+                        value: activeDiagnostics.retryCount ?? 0,
+                      })}
+                    </li>
+                    <li>
+                      {t("assistant.modal.diagnosticsResponseTime", {
+                        value:
+                          activeDiagnostics.responseDurationMs ?? t("assistant.modal.diagnosticsNa"),
+                      })}
+                    </li>
+                    <li>
+                      {t("assistant.modal.diagnosticsHistory", {
+                        value: activeDiagnostics.conversationHistoryTurns ?? 0,
+                      })}
                     </li>
                   </ul>
                   <p className="hu-assistant-modal__notice">
-                    Diagnostics never include prompts or API keys.
+                    {t("assistant.modal.diagnosticsSafeNote")}
                   </p>
                 </details>
               ) : null}
             </>
           ) : !loadError && !needsSignIn ? (
             <p className="hu-assistant-modal__notice" role="status">
-              Loading Assistant…
+              {t("assistant.modal.loading")}
             </p>
           ) : null}
 
@@ -573,12 +642,16 @@ export function HumanityUnionAssistantModal({
               {assistError}
             </p>
           ) : null}
-          {applyNotice ? <p className="hu-assistant-modal__notice">{applyNotice}</p> : null}
+          {applyNotice ? (
+            <p className="hu-assistant-modal__notice" role="status">
+              {applyNotice}
+            </p>
+          ) : null}
 
           {result && context?.canApplySuggestionsToDraft ? (
             <div className="hu-assistant-modal__actions">
               <button type="button" className="secondary" onClick={handleUseSuggestions}>
-                Use suggestion in draft editor
+                {t("assistant.modal.useSuggestion")}
               </button>
             </div>
           ) : null}
@@ -589,11 +662,11 @@ export function HumanityUnionAssistantModal({
             <div className="hu-assistant-modal__composer">
               <div className="hu-assistant-modal__input">
                 <label>
-                  <span>Ask the Assistant</span>
+                  <span>{t("assistant.modal.askLabel")}</span>
                   <textarea
                     value={question}
                     onChange={(event) => setQuestion(event.target.value)}
-                    placeholder="Ask about this context or Humanity Union…"
+                    placeholder={t("assistant.modal.askPlaceholder")}
                     disabled={busy}
                   />
                 </label>
@@ -605,7 +678,7 @@ export function HumanityUnionAssistantModal({
                   disabled={busy || !question.trim()}
                   onClick={() => void runAssist("answer_question", question)}
                 >
-                  {busy ? "Working…" : "Send"}
+                  {busy ? t("assistant.modal.working") : t("assistant.modal.send")}
                 </button>
                 {context.allowedOperations.includes("explain") ? (
                   <button
@@ -614,7 +687,7 @@ export function HumanityUnionAssistantModal({
                     disabled={busy}
                     onClick={() => void runAssist("explain")}
                   >
-                    Explain this context
+                    {t("assistant.modal.explainContext")}
                   </button>
                 ) : null}
               </div>

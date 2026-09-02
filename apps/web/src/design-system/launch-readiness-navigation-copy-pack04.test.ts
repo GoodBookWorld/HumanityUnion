@@ -222,7 +222,8 @@ describe("Launch Readiness Pack 04 — Navigation & Copy Consistency", () => {
     );
     assert.doesNotMatch(fab, /Civic Assistant/);
     assert.doesNotMatch(modal, /Civic Assistant/);
-    assert.match(modal, /Humanity Union Assistant/);
+    assert.match(modal, /assistant\.modal\.title/);
+    assert.doesNotMatch(modal, />\s*Humanity Union Assistant\s*</);
   });
 
   it("15 — mobile navigation retains required routes", () => {

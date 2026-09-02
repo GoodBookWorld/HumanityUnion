@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   HumanityUnionAssistantSurfaceId,
@@ -27,11 +28,13 @@ export function HumanityUnionAssistantOpenButton({
   surfaceId,
   initiativeId,
   stageId,
-  label = "Ask Assistant",
+  label,
   className,
 }: HumanityUnionAssistantOpenButtonProps) {
+  const t = useTranslations("initiativeExperience");
   const assistant = useOptionalHumanityUnionAssistant();
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const resolvedLabel = label ?? t("author.sidebar.askAssistant");
 
   if (!assistant) {
     return null;
@@ -45,7 +48,7 @@ export function HumanityUnionAssistantOpenButton({
       type="button"
       className={resolvedClassName}
       aria-haspopup="dialog"
-      aria-label={label}
+      aria-label={resolvedLabel}
       onClick={() =>
         assistant.openAssistant({
           surfaceId,
@@ -66,7 +69,7 @@ export function HumanityUnionAssistantOpenButton({
         fetchPriority="low"
         aria-hidden="true"
       />
-      <span className="hu-assistant-open-button__label">{label}</span>
+      <span className="hu-assistant-open-button__label">{resolvedLabel}</span>
     </button>
   );
 }

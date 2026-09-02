@@ -65,7 +65,9 @@ describe("Launch Readiness Pack 05 — Accessibility & Interaction Quality", () 
     assert.match(modal, /role="dialog"/);
     assert.match(modal, /aria-modal="true"/);
     assert.match(modal, /aria-labelledby=\{titleId\}/);
-    assert.match(modal, /Humanity Union Assistant/);
+    assert.match(modal, /assistant\.modal\.title/);
+    assert.match(modal, /assistant\.modal\.closeAria/);
+    assert.doesNotMatch(modal, />\s*Humanity Union Assistant\s*</);
   });
 
   it("5 — Assistant restores focus on close", () => {

@@ -175,6 +175,7 @@
 .hu-assistant-modal {
   width: min(40rem, 100%);
   max-height: min(44rem, calc(100dvh - 2.5rem));
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -193,6 +194,8 @@
   gap: 1rem;
   align-items: flex-start;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  min-width: 0;
   padding: var(--hu-space-5) var(--hu-space-5) var(--hu-space-3);
 }
 
@@ -218,10 +221,12 @@
   line-height: var(--hu-line-height-tight);
   letter-spacing: var(--hu-letter-spacing-tight);
   color: var(--hu-color-text);
+  overflow-wrap: anywhere;
 }
 
 .hu-assistant-modal__body {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
   padding: 0 var(--hu-space-5);
@@ -240,6 +245,7 @@
   margin: 0.35rem 0 0;
   font-size: 0.92rem;
   color: #445163;
+  overflow-wrap: anywhere;
 }
 
 .hu-assistant-modal__close {
@@ -262,6 +268,8 @@
   font-size: 0.95rem;
   line-height: 1.45;
   flex-shrink: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .hu-assistant-modal__error {
@@ -269,6 +277,7 @@
   color: #8a2b2b;
   font-size: 0.95rem;
   flex-shrink: 0;
+  overflow-wrap: anywhere;
 }
 
 .hu-assistant-modal__guest {
@@ -341,6 +350,9 @@
 }
 
 .hu-assistant-modal__input textarea {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
   min-height: 4.5rem;
   max-height: 9rem;
   resize: vertical;
@@ -348,6 +360,7 @@
   background: #fffdf9;
   padding: 0.65rem 0.75rem;
   font: inherit;
+  overflow-wrap: anywhere;
 }
 
 .hu-assistant-modal__actions {
@@ -355,6 +368,7 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.75rem;
+  min-width: 0;
 }
 
 .hu-assistant-modal__actions button {
@@ -364,6 +378,8 @@
   padding: 0.55rem 0.85rem;
   cursor: pointer;
   font: inherit;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .hu-assistant-modal__actions button:disabled {
@@ -380,14 +396,17 @@
   display: grid;
   gap: 0.85rem;
   margin: 0.65rem 0;
+  min-width: 0;
   min-height: 0;
-  padding-right: 0.15rem;
+  padding-inline-end: 0.15rem;
 }
 
 .hu-assistant-modal__bubble {
   border: 1px solid rgba(28, 36, 48, 0.12);
   background: #fffdf9;
   padding: 0.75rem 0.85rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .hu-assistant-modal__bubble h3 {
@@ -402,6 +421,7 @@
   margin: 0;
   white-space: pre-wrap;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .hu-assistant-open-button {

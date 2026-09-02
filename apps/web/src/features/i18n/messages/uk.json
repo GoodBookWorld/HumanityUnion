@@ -2117,6 +2117,57 @@
         "loadFailed": "Не вдалося завантажити результати виборів.",
         "emptyPending": "Результати з’являться після публікації бюлетеня виборів."
       }
+    },
+    "assistant": {
+      "modal": {
+        "title": "Асистент Humanity Union",
+        "close": "Закрити",
+        "closeAria": "Закрити асистента",
+        "loadingContext": "Завантаження контексту…",
+        "loading": "Завантаження асистента…",
+        "working": "Працюємо…",
+        "conversationAria": "Розмова",
+        "sourcesPrefix": "Джерела: {sources}",
+        "platformKnowledge": "Знання платформи",
+        "roleAssistant": "Асистент",
+        "roleYou": "Ви",
+        "suggestedQuestions": "Пропоновані запитання",
+        "privacyNotice": "Пам’ять розмови тимчасова лише для цієї сесії браузера. Приватні повідомлення ніколи не читаються автоматично. ШІ ніколи не публікує.",
+        "askLabel": "Запитати асистента",
+        "askPlaceholder": "Запитайте про цей контекст або Humanity Union…",
+        "send": "Надіслати",
+        "explainContext": "Пояснити цей контекст",
+        "useSuggestion": "Використати пропозицію в редакторі чернетки",
+        "newConversation": "Нова розмова",
+        "clearContext": "Очистити поточний контекст",
+        "continueDefault": "За замовчуванням розмова продовжується.",
+        "guestGuidance": "Увійдіть, щоб користуватися Асистентом Humanity Union з контекстом вашого робочого простору та ініціативи.",
+        "signIn": "Увійти",
+        "register": "Зареєструватися",
+        "diagnosticsSummary": "Діагностика розробки",
+        "diagnosticsProvider": "Активний провайдер: {value}",
+        "diagnosticsConfigured": "Налаштований провайдер: {value}",
+        "diagnosticsSurface": "Поверхня: {value}",
+        "diagnosticsStage": "Етап: {value}",
+        "diagnosticsPresentation": "Режим подання: {value}",
+        "diagnosticsKnowledge": "Модулі знань: {value}",
+        "diagnosticsPrompts": "Версії підказок: {value}",
+        "diagnosticsPromptSize": "Орієнтовний розмір підказки: {chars} символів / ≈{tokens} токенів",
+        "diagnosticsRetries": "Кількість повторів: {value}",
+        "diagnosticsResponseTime": "Час відповіді: {value} мс",
+        "diagnosticsHistory": "Надіслано ходів історії: {value}",
+        "diagnosticsNone": "немає",
+        "diagnosticsNa": "н/д",
+        "diagnosticsSafeNote": "Діагностика ніколи не містить підказок чи ключів API."
+      },
+      "messages": {
+        "openFailed": "Не вдалося відкрити Асистента Humanity Union.",
+        "rateLimited": "Забагато запитів до Асистента. Зачекайте трохи й спробуйте знову.",
+        "temporarilyUnavailable": "Асистент тимчасово недоступний. Спробуйте знову незабаром.",
+        "autoApplyForbidden": "ШІ спробував автоматичне редагування або публікацію, що заборонено.",
+        "appliedToDraft": "Пропозицію скопійовано в редактор чернетки локально. Відредагуйте, потім {saveDraft} → {preview} → {publish}. Нічого не опубліковано автоматично.",
+        "appliedToBlog": "Пропозицію поставлено в чергу для редактора публікації. Перегляньте Застосувати / Замінити / Відхилити там. Нічого не опубліковано автоматично."
+      }
     }
   }
 }

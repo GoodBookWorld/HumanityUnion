@@ -2117,6 +2117,57 @@
         "loadFailed": "تعذر تحميل نتائج الانتخاب.",
         "emptyPending": "تظهر النتائج عند نشر بطاقة الاقتراع."
       }
+    },
+    "assistant": {
+      "modal": {
+        "title": "مساعد Humanity Union",
+        "close": "إغلاق",
+        "closeAria": "إغلاق المساعد",
+        "loadingContext": "جارٍ تحميل السياق…",
+        "loading": "جارٍ تحميل المساعد…",
+        "working": "جارٍ العمل…",
+        "conversationAria": "المحادثة",
+        "sourcesPrefix": "المصادر: {sources}",
+        "platformKnowledge": "معرفة المنصة",
+        "roleAssistant": "المساعد",
+        "roleYou": "أنت",
+        "suggestedQuestions": "أسئلة مقترحة",
+        "privacyNotice": "ذاكرة المحادثة مؤقتة لجلسة هذا المتصفح فقط. لا تُقرأ الرسائل الخاصة تلقائيًا أبدًا. الذكاء الاصطناعي لا ينشر أبدًا.",
+        "askLabel": "اسأل المساعد",
+        "askPlaceholder": "اسأل عن هذا السياق أو Humanity Union…",
+        "send": "إرسال",
+        "explainContext": "اشرح هذا السياق",
+        "useSuggestion": "استخدم الاقتراح في محرر المسودة",
+        "newConversation": "محادثة جديدة",
+        "clearContext": "مسح السياق الحالي",
+        "continueDefault": "متابعة المحادثة هي الوضع الافتراضي.",
+        "guestGuidance": "سجّل الدخول لاستخدام مساعد Humanity Union مع سياق مساحة العمل والمبادرة.",
+        "signIn": "تسجيل الدخول",
+        "register": "إنشاء حساب",
+        "diagnosticsSummary": "تشخيص التطوير",
+        "diagnosticsProvider": "المزوّد النشط: {value}",
+        "diagnosticsConfigured": "المزوّد المضبوط: {value}",
+        "diagnosticsSurface": "السطح: {value}",
+        "diagnosticsStage": "المرحلة: {value}",
+        "diagnosticsPresentation": "وضع العرض: {value}",
+        "diagnosticsKnowledge": "وحدات المعرفة: {value}",
+        "diagnosticsPrompts": "إصدارات المطالبات: {value}",
+        "diagnosticsPromptSize": "حجم المطالبة التقريبي: {chars} حرفًا / ≈{tokens} رمزًا",
+        "diagnosticsRetries": "عدد المحاولات: {value}",
+        "diagnosticsResponseTime": "زمن الاستجابة: {value} مللي ثانية",
+        "diagnosticsHistory": "دورات السجل المُرسلة: {value}",
+        "diagnosticsNone": "لا شيء",
+        "diagnosticsNa": "غير متاح",
+        "diagnosticsSafeNote": "التشخيص لا يتضمن أبدًا المطالبات أو مفاتيح API."
+      },
+      "messages": {
+        "openFailed": "تعذر فتح مساعد Humanity Union.",
+        "rateLimited": "طلبات كثيرة جدًا للمساعد. انتظر لحظة ثم أعد المحاولة.",
+        "temporarilyUnavailable": "المساعد غير متاح مؤقتًا. أعد المحاولة قريبًا.",
+        "autoApplyForbidden": "حاول الذكاء الاصطناعي تعديلًا أو نشرًا تلقائيًا، وهذا محظور.",
+        "appliedToDraft": "نُسخ الاقتراح إلى محرر المسودة محليًا. عدّل ثم {saveDraft} → {preview} → {publish}. لم يُنشر شيء تلقائيًا.",
+        "appliedToBlog": "وُضع الاقتراح في قائمة محرر النشر. راجع تطبيق / استبدال / رفض هناك. لم يُنشر شيء تلقائيًا."
+      }
     }
   }
 }
