@@ -56,6 +56,30 @@ Next Objective:
 
 # Entries
 
+## 2026-09-02 (Task 08I — final multilingual staging acceptance)
+
+Completed:
+
+- Local gates PASS for Packs **02B–02I** tip `97c0e1d`; pushed `staging` (no main/production).
+- Staging Web+API redeployed tip; uk Search UI + `locale` query evidenced Live.
+- Catalog parity en/uk/zh-Hant/ar; hreflang remains **DEFERRED**; deprecated transport gate **READY_TO_REMOVE_AFTER_PRODUCTION_ROLLOUT**.
+
+Architecture:
+
+- One Global Search engine; Registry remains sole language authority; SEO eligibility ≠ searchEnabled.
+- Empty staging sitemap is intentional (staging noindex policy).
+
+Engineering Notes:
+
+- **NOT_READY — BLOCKERS REMAIN:** staging Registry public languages are **en+uk only**; zh-Hant/ar not selectable; Ukrainian glossary search returns 0 until `searchEnabled` enabled via Admin.
+- Formal multi-viewport Layout Resilience remains Pack **02J**.
+
+Next Objective:
+
+- Staging Admin enable zh-Hant/ar + search/content flags; finish four-language Live matrix; then Pack 02J.
+
+---
+
 ## 2026-08-31 (Pack 02G Task 07A — pre-deploy local acceptance + staging push)
 
 Completed:

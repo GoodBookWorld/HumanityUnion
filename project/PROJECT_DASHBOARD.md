@@ -37,7 +37,7 @@ Architecture Status: Stable (Initiative-root ADR accepted)
 
 Engineering Status: **Production operational** + staging verification environment
 
-Project Health: **Healthy** (Pack 02B/02C/02D/02E/02F staging PASS)
+Project Health: **Healthy code tip** — Pack 02B–02I on `staging` (`97c0e1d`); **08I Live NOT_READY** until Registry enablement (zh-Hant/ar + search flags)
 
 ---
 
