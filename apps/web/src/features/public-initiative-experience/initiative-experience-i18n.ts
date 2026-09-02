@@ -10,6 +10,7 @@ import {
   type InitiativeExperienceLifecycleStageState,
   type InitiativeLifecyclePhase,
   type InitiativeStatus,
+  type ParticipationScope,
 } from "@hu/types";
 
 import { formatLanguageDisplayName } from "../language/format-language-display-name";
@@ -170,6 +171,27 @@ export function resolvePresentationStatusDisplayLabel(
   messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
 ): string {
   return resolveLabel(messagesOrT, `presentationStatuses.${status}`, status);
+}
+
+const PARTICIPATION_SCOPE_CODES = new Set<string>([
+  "world",
+  "country",
+  "region",
+  "community",
+]);
+
+/**
+ * Display-only label for canonical ParticipationScope codes.
+ * Reuses manage.scopes.* — never submit/store the localized string.
+ */
+export function resolveParticipationScopeDisplayLabel(
+  scope: ParticipationScope | string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!PARTICIPATION_SCOPE_CODES.has(scope)) {
+    return scope;
+  }
+  return resolveLabel(messagesOrT, `manage.scopes.${scope}`, scope);
 }
 
 /** Contract: every public stageId has a catalog key path stages.{id}. */

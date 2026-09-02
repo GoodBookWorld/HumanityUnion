@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type {
   InitiativeLifecycleProfile,
@@ -34,22 +35,24 @@ import {
   planDiscussionCommentDeepLinkScroll,
   resolveDiscussionCommentFocusTarget,
 } from "../discussion-comment-deep-link";
+import { formatInitiativeExperienceDate } from "../initiative-experience-i18n";
 import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
 import {
   DISCUSSION_ACTION_DEFINITIONS,
-  DISCUSSION_FILTERS,
+  DISCUSSION_FILTER_IDS,
   matchesDiscussionFilter,
   resolveAlliesInvitationResponseState,
   resolveAuthorBadges,
   resolveAuthorLinkPresentation,
   resolveCollaborationInvitationAcceptState,
   resolveCollaborationReviewActionState,
-  resolveCollaborationStatusLabel,
-  resolveFilterHeading,
+  resolveCollaborationStatusLabelKey,
+  resolveFilterHeadingKey,
   resolveInviteToAlliesActionState,
   resolveProposalActionState,
   resolveReadyToCollaborateActionState,
-  resolveStatusIndicators,
+  resolveStatusIndicatorKeys,
+  type DiscussionChromeLabelKey,
   type DiscussionFilter,
 } from "./discussion-comment-presentation";
 import { PublicChoiceDiscussionVotePanel } from "./PublicChoiceDiscussionVotePanel";
@@ -89,19 +92,17 @@ interface PublicDiscussionPanelProps {
 
 const DRAFT_STORAGE_PREFIX = "pie-discussion-draft:";
 
+const FILTER_LABEL_KEYS: Record<DiscussionFilter, string> = {
+  all: "collaboration.discussion.filtersAll",
+  proposals: "collaboration.discussion.filtersProposals",
+  collaboration: "collaboration.discussion.filtersCollaboration",
+};
+
 function buildDiscussionReturnTo(initiativeId: string): string {
   return resolveSafeReturnTo(
     `/initiatives/public/${encodeURIComponent(initiativeId)}#discussion`,
     "/",
   );
-}
-
-function formatCommentDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }
 
 function applyReactionChange(
@@ -140,6 +141,13 @@ const ICON_BY_ACTION_ID = new Map(
   DISCUSSION_ACTION_DEFINITIONS.map((definition) => [definition.id, definition.icon]),
 );
 
+function chromeLabel(
+  t: (key: `collaboration.discussion.chrome.${DiscussionChromeLabelKey}`) => string,
+  key: DiscussionChromeLabelKey,
+): string {
+  return t(`collaboration.discussion.chrome.${key}`);
+}
+
 /**
  * UX Evolution Pack 02.3 Part 6/7 — single ordered action row rendered
  * under every comment: Helpful, Not Helpful, Proposal, Ready to
@@ -173,6 +181,7 @@ function CommentActions({
   onCollaborationChanged: () => void;
   showStandardParticipationActions?: boolean;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [reactionBusy, setReactionBusy] = useState(false);
   const [collabAction, setCollabAction] = useState<
     "proposal" | "collaborate" | "invite" | "accept-invitation" | "decline-invitation" | null
@@ -210,7 +219,7 @@ function CommentActions({
       onCollaborationChanged();
     } catch (error) {
       setActionError(
-        error instanceof Error ? error.message : "This action could not be completed.",
+        error instanceof Error ? error.message : t("collaboration.discussion.actionFailed"),
       );
     } finally {
       setCollabAction(null);
@@ -226,7 +235,7 @@ function CommentActions({
         <a
           className="pie-discussion__action pie-discussion__action--guest"
           href={loginHref}
-          aria-label={`Helpful. ${comment.likes} votes. Sign in to react.`}
+          aria-label={t("collaboration.discussion.helpfulAriaGuest", { count: comment.likes })}
         >
           <img
             className="pie-discussion__action-icon"
@@ -236,7 +245,9 @@ function CommentActions({
             width={18}
             height={18}
           />
-          <span className="pie-discussion__action-label">Helpful</span>
+          <span className="pie-discussion__action-label">
+            {chromeLabel(t, "helpful")}
+          </span>
           <span className="pie-discussion__action-count" aria-hidden="true">
             {comment.likes}
           </span>
@@ -244,7 +255,9 @@ function CommentActions({
         <a
           className="pie-discussion__action pie-discussion__action--guest"
           href={loginHref}
-          aria-label={`Not helpful. ${comment.dislikes} votes. Sign in to react.`}
+          aria-label={t("collaboration.discussion.notHelpfulAriaGuest", {
+            count: comment.dislikes,
+          })}
         >
           <img
             className="pie-discussion__action-icon"
@@ -254,13 +267,15 @@ function CommentActions({
             width={18}
             height={18}
           />
-          <span className="pie-discussion__action-label">Not Helpful</span>
+          <span className="pie-discussion__action-label">
+            {chromeLabel(t, "notHelpful")}
+          </span>
           <span className="pie-discussion__action-count" aria-hidden="true">
             {comment.dislikes}
           </span>
         </a>
         <a className="pie-discussion__action-link" href={registerHref}>
-          Create Account
+          {t("collaboration.discussion.createAccount")}
         </a>
       </div>
     );
@@ -284,14 +299,18 @@ function CommentActions({
   const showInvite = showStandardParticipationActions && inviteState.visible;
 
   return (
-    <div className="pie-discussion__actions" role="group" aria-label="Comment feedback actions">
+    <div
+      className="pie-discussion__actions"
+      role="group"
+      aria-label={t("collaboration.discussion.feedbackActionsAria")}
+    >
       <button
         type="button"
         className={`pie-discussion__action${
           currentReaction === "like" ? " pie-discussion__action--active" : ""
         }`}
         aria-pressed={currentReaction === "like"}
-        aria-label={`Helpful. ${comment.likes} votes.`}
+        aria-label={t("collaboration.discussion.helpfulAria", { count: comment.likes })}
         disabled={reactionBusy}
         onClick={() => void handleReaction(currentReaction === "like" ? "none" : "like")}
       >
@@ -303,7 +322,7 @@ function CommentActions({
           width={18}
           height={18}
         />
-        <span className="pie-discussion__action-label">Helpful</span>
+        <span className="pie-discussion__action-label">{chromeLabel(t, "helpful")}</span>
         <span className="pie-discussion__action-count" aria-hidden="true">
           {comment.likes}
         </span>
@@ -314,7 +333,7 @@ function CommentActions({
           currentReaction === "dislike" ? " pie-discussion__action--active" : ""
         }`}
         aria-pressed={currentReaction === "dislike"}
-        aria-label={`Not helpful. ${comment.dislikes} votes.`}
+        aria-label={t("collaboration.discussion.notHelpfulAria", { count: comment.dislikes })}
         disabled={reactionBusy}
         onClick={() => void handleReaction(currentReaction === "dislike" ? "none" : "dislike")}
       >
@@ -326,7 +345,7 @@ function CommentActions({
           width={18}
           height={18}
         />
-        <span className="pie-discussion__action-label">Not Helpful</span>
+        <span className="pie-discussion__action-label">{chromeLabel(t, "notHelpful")}</span>
         <span className="pie-discussion__action-count" aria-hidden="true">
           {comment.dislikes}
         </span>
@@ -354,7 +373,9 @@ function CommentActions({
             width={18}
             height={18}
           />
-          <span className="pie-discussion__action-label">{proposalState.label}</span>
+          <span className="pie-discussion__action-label">
+            {chromeLabel(t, proposalState.labelKey)}
+          </span>
         </button>
       ) : null}
       {showReady ? (
@@ -380,7 +401,9 @@ function CommentActions({
             width={18}
             height={18}
           />
-          <span className="pie-discussion__action-label">{readyState.label}</span>
+          <span className="pie-discussion__action-label">
+            {chromeLabel(t, readyState.labelKey)}
+          </span>
         </button>
       ) : null}
       {showInvitationResponse ? (
@@ -404,7 +427,9 @@ function CommentActions({
               height={18}
             />
             <span className="pie-discussion__action-label">
-              {collabAction === "accept-invitation" ? "Accepting…" : "Accept Invitation"}
+              {collabAction === "accept-invitation"
+                ? t("collaboration.discussion.accepting")
+                : t("collaboration.discussion.acceptInvitation")}
             </span>
           </button>
           <button
@@ -418,7 +443,9 @@ function CommentActions({
             }
           >
             <span className="pie-discussion__action-label">
-              {collabAction === "decline-invitation" ? "Declining…" : "Decline"}
+              {collabAction === "decline-invitation"
+                ? t("collaboration.discussion.declining")
+                : t("collaboration.discussion.decline")}
             </span>
           </button>
         </>
@@ -446,7 +473,9 @@ function CommentActions({
             width={18}
             height={18}
           />
-          <span className="pie-discussion__action-label">{inviteState.label}</span>
+          <span className="pie-discussion__action-label">
+            {chromeLabel(t, inviteState.labelKey)}
+          </span>
         </button>
       ) : null}
 
@@ -475,9 +504,11 @@ function DiscussionCommentCard({
   onCollaborationChanged: () => void;
   showStandardParticipationActions?: boolean;
 }) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const authorLink = resolveAuthorLinkPresentation(comment.author);
   const badges = resolveAuthorBadges(comment.collaboration);
-  const indicators = resolveStatusIndicators(comment.collaboration);
+  const indicatorKeys = resolveStatusIndicatorKeys(comment.collaboration);
 
   return (
     <li
@@ -508,18 +539,24 @@ function DiscussionCommentCard({
         )}
         {badges.isInitiativeAuthor ? (
           <span className="pie-discussion__badge pie-discussion__badge--steward">
-            Initiative Author
+            {t("collaboration.discussion.authorBadge")}
           </span>
         ) : null}
-        {badges.isYou ? <span className="pie-discussion__badge pie-discussion__badge--you">You</span> : null}
-        <span className="pie-discussion__date">{formatCommentDate(comment.createdAt)}</span>
+        {badges.isYou ? (
+          <span className="pie-discussion__badge pie-discussion__badge--you">
+            {t("collaboration.discussion.youBadge")}
+          </span>
+        ) : null}
+        <span className="pie-discussion__date">
+          {formatInitiativeExperienceDate(locale, comment.createdAt, { month: "short" })}
+        </span>
       </p>
       <p className="pie-discussion__body">{comment.body}</p>
-      {indicators.length > 0 ? (
+      {indicatorKeys.length > 0 ? (
         <p className="pie-discussion__collab-indicators">
-          {indicators.map((indicator) => (
-            <span key={indicator} className="pie-discussion__collab-indicator">
-              {indicator}
+          {indicatorKeys.map((key) => (
+            <span key={key} className="pie-discussion__collab-indicator">
+              {chromeLabel(t, key)}
             </span>
           ))}
         </p>
@@ -560,6 +597,7 @@ function CollaborationParticipantList({
   viewerParticipantId: string | null;
   onChanged: () => void;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [busyParticipantId, setBusyParticipantId] = useState<string | null>(null);
   const [busyOwnInvitation, setBusyOwnInvitation] = useState(false);
   const [errorByParticipantId, setErrorByParticipantId] = useState<Record<string, string>>({});
@@ -584,7 +622,9 @@ function CollaborationParticipantList({
       setErrorByParticipantId((current) => ({
         ...current,
         [participantId]:
-          error instanceof Error ? error.message : "This request could not be updated.",
+          error instanceof Error
+            ? error.message
+            : t("collaboration.discussion.requestUpdateFailed"),
       }));
     } finally {
       setBusyParticipantId(null);
@@ -600,7 +640,9 @@ function CollaborationParticipantList({
       onChanged();
     } catch (error) {
       setOwnInvitationError(
-        error instanceof Error ? error.message : "This invitation could not be accepted.",
+        error instanceof Error
+          ? error.message
+          : t("collaboration.discussion.invitationAcceptFailed"),
       );
     } finally {
       setBusyOwnInvitation(false);
@@ -621,9 +663,9 @@ function CollaborationParticipantList({
           isViewerInitiativeSteward,
           busy: busyOwnInvitation,
         });
-        const statusLabel = invitationAcceptState.visible
+        const statusLabelKey = invitationAcceptState.visible
           ? null
-          : resolveCollaborationStatusLabel(entry.status);
+          : resolveCollaborationStatusLabelKey(entry.status);
         const reviewState = resolveCollaborationReviewActionState(
           entry.status,
           isViewerInitiativeSteward,
@@ -662,8 +704,8 @@ function CollaborationParticipantList({
               ) : (
                 <span className="pie-collab-list__name">{name}</span>
               )}
-              {statusLabel ? (
-                <span className="pie-collab-list__status">{statusLabel}</span>
+              {statusLabelKey ? (
+                <span className="pie-collab-list__status">{chromeLabel(t, statusLabelKey)}</span>
               ) : null}
               {invitationAcceptState.visible ? (
                 <button
@@ -672,7 +714,9 @@ function CollaborationParticipantList({
                   disabled={invitationAcceptState.disabled}
                   onClick={() => void handleAcceptOwnInvitation()}
                 >
-                  {busyOwnInvitation ? "Accepting…" : "Accept invitation"}
+                  {busyOwnInvitation
+                    ? t("collaboration.discussion.accepting")
+                    : t("collaboration.discussion.acceptInvitation")}
                 </button>
               ) : null}
             </span>
@@ -684,7 +728,9 @@ function CollaborationParticipantList({
                   disabled={reviewState.disabled}
                   onClick={() => void handleRespond(entry.participantId, "accept")}
                 >
-                  {busyParticipantId === entry.participantId ? "Working…" : "Accept"}
+                  {busyParticipantId === entry.participantId
+                    ? t("collaboration.discussion.working")
+                    : t("collaboration.discussion.accept")}
                 </button>
                 <button
                   type="button"
@@ -692,7 +738,7 @@ function CollaborationParticipantList({
                   disabled={reviewState.disabled}
                   onClick={() => void handleRespond(entry.participantId, "decline")}
                 >
-                  Decline
+                  {t("collaboration.discussion.decline")}
                 </button>
               </span>
             ) : null}
@@ -719,6 +765,7 @@ export function PublicDiscussionPanel({
   focusCollaborationParticipantId,
   lifecycleProfile,
 }: PublicDiscussionPanelProps) {
+  const t = useTranslations("initiativeExperience");
   const presentation = getInitiativeLifecycleProfilePresentation(lifecycleProfile);
   const authStatus = useClientAuthStatus();
   const [comments, setComments] = useState(initialComments);
@@ -787,13 +834,13 @@ export function PublicDiscussionPanel({
 
         if (user.status !== "active") {
           setCanComment(false);
-          setRestrictedMessage("Your account is restricted and cannot post comments.");
+          setRestrictedMessage(t("collaboration.discussion.restrictedAccount"));
           return;
         }
 
         if (user.emailVerificationStatus !== "verified") {
           setCanComment(false);
-          setRestrictedMessage("Confirm your email address before posting comments.");
+          setRestrictedMessage(t("collaboration.discussion.confirmEmail"));
           return;
         }
 
@@ -803,14 +850,14 @@ export function PublicDiscussionPanel({
       .catch(() => {
         if (!cancelled) {
           setCanComment(false);
-          setRestrictedMessage("Unable to verify your account for commenting.");
+          setRestrictedMessage(t("collaboration.discussion.unableVerify"));
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [authStatus]);
+  }, [authStatus, t]);
 
   const handleLoadMore = async () => {
     setLoadingMore(true);
@@ -824,7 +871,7 @@ export function PublicDiscussionPanel({
     } catch {
       setFeedback({
         variant: "warning",
-        message: "Unable to load more comments. Please try again.",
+        message: t("collaboration.discussion.loadMoreFailed"),
       });
     } finally {
       setLoadingMore(false);
@@ -882,7 +929,7 @@ export function PublicDiscussionPanel({
     () => comments.filter((comment) => matchesDiscussionFilter(comment, filter)),
     [comments, filter],
   );
-  const filterHeading = resolveFilterHeading(filter);
+  const filterHeadingKey = resolveFilterHeadingKey(filter);
   const focusedRenderedCommentId = resolveDiscussionCommentFocusTarget(
     filteredComments.map((comment) => comment.commentId),
     focusCommentId,
@@ -985,7 +1032,7 @@ export function PublicDiscussionPanel({
     setFeedback(null);
 
     if (!draft.trim()) {
-      setFeedback({ variant: "warning", message: "Enter a comment before submitting." });
+      setFeedback({ variant: "warning", message: t("collaboration.discussion.enterComment") });
       return;
     }
 
@@ -997,12 +1044,12 @@ export function PublicDiscussionPanel({
       setTotalCount((current) => current + 1);
       setDraft("");
       window.sessionStorage.removeItem(draftStorageKey);
-      setFeedback({ variant: "success", message: "Your comment was posted." });
+      setFeedback({ variant: "success", message: t("collaboration.discussion.commentPosted") });
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "Your comment could not be saved. Please try again.";
+          : t("collaboration.discussion.commentSaveFailed");
       const variant = message.toLowerCase().includes("wait") ? "warning" : "error";
       setFeedback({ variant, message });
     } finally {
@@ -1017,10 +1064,10 @@ export function PublicDiscussionPanel({
     return (
       <section {...sectionProps} className="pie-discussion" aria-labelledby={titleId}>
         <h2 id={titleId} className="pie-discussion__title">
-          Discussion
+          {t("collaboration.discussion.title")}
         </h2>
         {scopeLabel ? <p className="pie-discussion__scope">{scopeLabel}</p> : null}
-        <p className="pie-empty">Loading discussion access…</p>
+        <p className="pie-empty">{t("collaboration.discussion.loadingAccess")}</p>
       </section>
     );
   }
@@ -1028,7 +1075,7 @@ export function PublicDiscussionPanel({
   return (
     <section {...sectionProps} className="pie-discussion" aria-labelledby={titleId}>
       <h2 id={titleId} className="pie-discussion__title">
-        Discussion
+        {t("collaboration.discussion.title")}
       </h2>
       {scopeLabel ? <p className="pie-discussion__scope">{scopeLabel}</p> : null}
 
@@ -1039,19 +1086,9 @@ export function PublicDiscussionPanel({
        * single short paragraph, not an instruction panel.
        */}
       <p className="pie-discussion__guidance">
-        {presentation.discussionShowsStandardParticipationActions ? (
-          <>
-            Comments help improve this Initiative. Select <strong>Proposal</strong> to add a comment
-            to the improvement ideas list. Select <strong>Ready to Collaborate</strong> to let the
-            Initiative Author know that you want to help. The Initiative Author can then select{" "}
-            <strong>Invite to Allies</strong> to invite that Participant into the Initiative team.
-          </>
-        ) : (
-          <>
-            Share comments about this Public Choice. Candidate voting is on Overview.
-            Comments require a signed-in Participant.
-          </>
-        )}
+        {presentation.discussionShowsStandardParticipationActions
+          ? t("collaboration.discussion.guidanceStandard")
+          : t("collaboration.discussion.guidancePublicChoice")}
       </p>
 
       {presentation.discussionShowsVoteBallot ? (
@@ -1066,30 +1103,40 @@ export function PublicDiscussionPanel({
        */}
       {presentation.discussionShowsStandardParticipationActions &&
       (comments.length > 0 || filter === "collaboration") ? (
-        <div className="pie-discussion__filters" role="group" aria-label="Filter comments">
-          {DISCUSSION_FILTERS.map((option) => (
+        <div
+          className="pie-discussion__filters"
+          role="group"
+          aria-label={t("collaboration.discussion.filterAria")}
+        >
+          {DISCUSSION_FILTER_IDS.map((filterId) => (
             <button
-              key={option.id}
+              key={filterId}
               type="button"
               className={`pie-discussion__filter${
-                filter === option.id ? " pie-discussion__filter--active" : ""
+                filter === filterId ? " pie-discussion__filter--active" : ""
               }`}
-              aria-pressed={filter === option.id}
-              onClick={() => setFilter(option.id)}
+              aria-pressed={filter === filterId}
+              onClick={() => setFilter(filterId)}
             >
-              {option.label}
+              {t(FILTER_LABEL_KEYS[filterId])}
             </button>
           ))}
         </div>
       ) : null}
 
       {comments.length > 0 || filter === "collaboration" ? (
-        filterHeading ? (
-          <p className="pie-discussion__filter-heading">{filterHeading}</p>
+        filterHeadingKey ? (
+          <p className="pie-discussion__filter-heading">
+            {chromeLabel(t, filterHeadingKey)}
+          </p>
         ) : (
           <div className="pie-discussion__feedback-heading">
-            <h3 className="pie-discussion__feedback-title">Comment Feedback</h3>
-            <p className="pie-discussion__feedback-note">Express your opinion about this comment.</p>
+            <h3 className="pie-discussion__feedback-title">
+              {t("collaboration.discussion.commentFeedback")}
+            </h3>
+            <p className="pie-discussion__feedback-note">
+              {t("collaboration.discussion.commentFeedbackNote")}
+            </p>
           </div>
         )
       ) : null}
@@ -1098,7 +1145,7 @@ export function PublicDiscussionPanel({
         filter === "collaboration" ? (
           collaborationLoading && !collaborationData ? (
             <p className="pie-empty" id={COLLABORATION_LIST_DOM_ID}>
-              Loading collaboration requests…
+              {t("collaboration.discussion.loadingCollaboration")}
             </p>
           ) : collaborationData && collaborationData.participants.length > 0 ? (
             <CollaborationParticipantList
@@ -1110,7 +1157,7 @@ export function PublicDiscussionPanel({
             />
           ) : (
             <p className="pie-empty" id={COLLABORATION_LIST_DOM_ID}>
-              No participants have expressed interest yet.
+              {t("collaboration.discussion.emptyInterest")}
             </p>
           )
         ) : filteredComments.length > 0 ? (
@@ -1145,13 +1192,13 @@ export function PublicDiscussionPanel({
             </ul>
           </div>
         ) : (
-          <p className="pie-empty">No comments match this filter.</p>
+          <p className="pie-empty">{t("collaboration.discussion.emptyFilter")}</p>
         )
       ) : (
         <p className="pie-empty">
           {totalCount > 0
-            ? `${totalCount} comment${totalCount === 1 ? "" : "s"}`
-            : "No comments have been added."}
+            ? t("collaboration.discussion.commentsCount", { count: totalCount })
+            : t("collaboration.discussion.emptyComments")}
         </p>
       )}
 
@@ -1162,26 +1209,31 @@ export function PublicDiscussionPanel({
           disabled={loadingMore}
           onClick={() => void handleLoadMore()}
         >
-          {loadingMore ? "Loading…" : "Load more comments"}
+          {loadingMore
+            ? t("collaboration.discussion.loading")
+            : t("collaboration.discussion.loadMore")}
         </button>
       ) : null}
 
       {authStatus === "unauthenticated" ? (
         <div className="pie-discussion__guest">
-          <p>Sign in to join the discussion.</p>
+          <p>{t("collaboration.discussion.signIn")}</p>
           <div className="pie-discussion__guest-actions">
             <Button href={`/login?returnTo=${encodeURIComponent(returnTo)}`} variant="primary">
-              Log In
+              {t("collaboration.discussion.logIn")}
             </Button>
             <Button href={`/register?returnTo=${encodeURIComponent(returnTo)}`} variant="secondary">
-              Create Account
+              {t("collaboration.discussion.createAccount")}
             </Button>
           </div>
         </div>
       ) : null}
 
       {restrictedMessage ? (
-        <HuFeedbackMessage variant="warning" title="Commenting unavailable">
+        <HuFeedbackMessage
+          variant="warning"
+          title={t("collaboration.discussion.commentingUnavailable")}
+        >
           {restrictedMessage}
         </HuFeedbackMessage>
       ) : null}
@@ -1189,7 +1241,7 @@ export function PublicDiscussionPanel({
       {canComment ? (
         <form className="pie-discussion__form" onSubmit={(event) => void handleSubmit(event)}>
           <label htmlFor={panelId ? `${panelId}-comment` : "pie-discussion-comment"}>
-            Add a comment
+            {t("collaboration.discussion.addComment")}
           </label>
           <textarea
             id={panelId ? `${panelId}-comment` : "pie-discussion-comment"}
@@ -1204,7 +1256,9 @@ export function PublicDiscussionPanel({
             }}
           />
           <button type="submit" className="hu-button hu-button--primary" disabled={submitting}>
-            {submitting ? "Posting…" : "Post comment"}
+            {submitting
+              ? t("collaboration.discussion.posting")
+              : t("collaboration.discussion.postComment")}
           </button>
         </form>
       ) : null}

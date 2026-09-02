@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { InitiativeCollaborationChannel } from "../../initiative-collaboration-channel/components/InitiativeCollaborationChannel";
 import { InitiativeCollaborationSessionsPanel } from "../../initiative-collaboration-sessions/components/InitiativeCollaborationSessionsPanel";
@@ -31,6 +32,7 @@ interface InitiativeCollaborationWorkspaceProps {
  * a new page/route.
  */
 export function InitiativeCollaborationWorkspace({ initiativeId, initialTab }: InitiativeCollaborationWorkspaceProps) {
+  const t = useTranslations("initiativeExperience");
   const [activeTab, setActiveTab] = useState<CollaborationTab>(initialTab ?? "channel");
 
   // A notification deep link can arrive while this Workspace is already
@@ -45,7 +47,7 @@ export function InitiativeCollaborationWorkspace({ initiativeId, initialTab }: I
 
   return (
     <div className="icw-workspace">
-      <div className="icw-tabs" role="tablist" aria-label="Collaboration">
+      <div className="icw-tabs" role="tablist" aria-label={t("collaboration.workspace.aria")}>
         <button
           type="button"
           role="tab"
@@ -55,7 +57,7 @@ export function InitiativeCollaborationWorkspace({ initiativeId, initialTab }: I
           className={`icw-tab${activeTab === "channel" ? " icw-tab--active" : ""}`}
           onClick={() => setActiveTab("channel")}
         >
-          Channel
+          {t("collaboration.workspace.channel")}
         </button>
         <button
           type="button"
@@ -66,7 +68,7 @@ export function InitiativeCollaborationWorkspace({ initiativeId, initialTab }: I
           className={`icw-tab${activeTab === "sessions" ? " icw-tab--active" : ""}`}
           onClick={() => setActiveTab("sessions")}
         >
-          Sessions
+          {t("collaboration.workspace.sessions")}
         </button>
       </div>
 

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type {
   InitiativeActiveAllyEntry,
@@ -41,12 +42,15 @@ function mergeNewMessages(
 }
 
 function ChannelMessageRow({ message }: { message: InitiativeCollaborationChannelMessageView }) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
+
   if (message.type === "system_event") {
     return (
       <li className="icc-channel__system-event" role="note">
         <span className="icc-channel__system-event-text">{message.text}</span>
         <span className="icc-channel__system-event-time">
-          {formatCollaborationChannelTimestamp(message.createdAt)}
+          {formatCollaborationChannelTimestamp(message.createdAt, locale)}
         </span>
       </li>
     );
@@ -57,16 +61,21 @@ function ChannelMessageRow({ message }: { message: InitiativeCollaborationChanne
       className={`icc-channel__message${message.isOwnMessage ? " icc-channel__message--own" : ""}`}
     >
       {!message.isOwnMessage ? (
-        <p className="icc-channel__message-sender">{message.sender?.displayName ?? "Participant"}</p>
+        <p className="icc-channel__message-sender">
+          {message.sender?.displayName ?? t("collaboration.channel.participantFallback")}
+        </p>
       ) : null}
       <p className="icc-channel__message-text">{message.text}</p>
-      <p className="icc-channel__message-time">{formatCollaborationChannelTimestamp(message.createdAt)}</p>
+      <p className="icc-channel__message-time">
+        {formatCollaborationChannelTimestamp(message.createdAt, locale)}
+      </p>
     </li>
   );
 }
 
 /** Part 8 — participants panel Message button; reuses the exact shared open/create Direct Conversation action (never a duplicate implementation). */
 function ChannelParticipantMessageButton({ entry }: { entry: InitiativeActiveAllyEntry }) {
+  const t = useTranslations("initiativeExperience");
   const { isOpening, openConversation } = useOpenDirectConversation();
 
   if (!entry.participantId || !entry.canMessage) {
@@ -83,13 +92,15 @@ function ChannelParticipantMessageButton({ entry }: { entry: InitiativeActiveAll
         openConversation({ participantId: entry.participantId });
       }}
       disabled={isOpening}
-      aria-label={`Message ${entry.displayName}`}
+      aria-label={t("collaboration.channel.messageAria", { name: entry.displayName })}
     >
       <Image src={MESSAGE_ICON} alt="" width={14} height={14} aria-hidden="true" />
       {entry.hasUnreadMessages ? (
         <>
           <span className="icc-channel__participant-unread-dot" aria-hidden="true" />
-          <span className="icc-channel__visually-hidden">Unread messages from {entry.displayName}</span>
+          <span className="icc-channel__visually-hidden">
+            {t("collaboration.channel.unreadAria", { name: entry.displayName })}
+          </span>
         </>
       ) : null}
     </button>
@@ -105,7 +116,11 @@ function ChannelParticipantMessageButton({ entry }: { entry: InitiativeActiveAll
  * slot to extend without a layout change.
  */
 function ChannelParticipantRow({ entry }: { entry: InitiativeActiveAllyEntry }) {
-  const roleLabel = entry.role === "author" ? "Author" : "Ally";
+  const t = useTranslations("initiativeExperience");
+  const roleLabel =
+    entry.role === "author"
+      ? t("collaboration.channel.roleAuthor")
+      : t("collaboration.channel.roleAlly");
 
   return (
     <li className="icc-channel__participant-row">
@@ -123,7 +138,7 @@ function ChannelParticipantRow({ entry }: { entry: InitiativeActiveAllyEntry }) 
       <span className="icc-channel__participant-role">{roleLabel}</span>
       <span className="icc-channel__participant-status">
         <span className="icc-channel__participant-status-dot" aria-hidden="true" />
-        Active
+        {t("collaboration.channel.presenceActive")}
       </span>
       <ChannelParticipantMessageButton entry={entry} />
     </li>
@@ -144,6 +159,7 @@ type LoadState = "loading" | "ready" | "error";
  * the mandated mobile stacking order).
  */
 export function InitiativeCollaborationChannel({ initiativeId }: InitiativeCollaborationChannelProps) {
+  const t = useTranslations("initiativeExperience");
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [summary, setSummary] = useState<InitiativeCollaborationChannelSummary | null>(null);
@@ -214,10 +230,10 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
       setErrorMessage(
         error instanceof ApiRequestError
           ? error.message
-          : "Unable to load the Collaboration Channel. Please try again.",
+          : t("collaboration.channel.loadFailed"),
       );
     }
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   useEffect(() => {
     void load();
@@ -287,7 +303,7 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
       setMessages((current) => [...page.messages, ...current]);
       setHasMoreOlder(page.hasMoreOlderMessages);
     } catch {
-      setSendError("Unable to load earlier messages. Please try again.");
+      setSendError(t("collaboration.channel.loadEarlierFailed"));
     } finally {
       setLoadingOlder(false);
     }
@@ -311,7 +327,9 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
       setDraft("");
     } catch (error) {
       setSendError(
-        error instanceof ApiRequestError ? error.message : "Unable to send this message. Please try again.",
+        error instanceof ApiRequestError
+          ? error.message
+          : t("collaboration.channel.sendFailed"),
       );
     } finally {
       setSending(false);
@@ -320,9 +338,9 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
 
   if (loadState === "loading" && !summary) {
     return (
-      <section className="icc-channel" aria-label="Initiative Collaboration Channel">
+      <section className="icc-channel" aria-label={t("collaboration.channel.aria")}>
         <p className="icc-channel__status" role="status">
-          Loading Collaboration Channel…
+          {t("collaboration.channel.loading")}
         </p>
       </section>
     );
@@ -330,7 +348,7 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
 
   if (loadState === "error" && !summary) {
     return (
-      <section className="icc-channel" aria-label="Initiative Collaboration Channel">
+      <section className="icc-channel" aria-label={t("collaboration.channel.aria")}>
         <p className="icc-channel__status icc-channel__status--error" role="alert">
           {errorMessage}
         </p>
@@ -346,15 +364,15 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
     <section className="icc-channel" aria-labelledby="icc-channel-title">
       <header className="icc-channel__header">
         <h2 id="icc-channel-title" className="icc-channel__title">
-          {summary.initiativeTitle || "Collaboration Channel"}
+          {summary.initiativeTitle || t("collaboration.channel.fallbackTitle")}
         </h2>
         <p className="icc-channel__header-meta">
           <span>
-            {summary.participantCount} {summary.participantCount === 1 ? "participant" : "participants"}
+            {t("collaboration.channel.participantsCount", { count: summary.participantCount })}
           </span>
           {summary.unreadCount > 0 ? (
             <span className="icc-channel__unread-badge">
-              {summary.unreadCount} unread
+              {t("collaboration.channel.unreadCount", { count: summary.unreadCount })}
             </span>
           ) : null}
         </p>
@@ -362,7 +380,12 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
 
       <SharedDocumentsPanel context={{ contextType: "collaboration_channel", initiativeId }} />
 
-      <div className="icc-channel__history" role="log" aria-label="Collaboration Channel message history" ref={historyRef}>
+      <div
+        className="icc-channel__history"
+        role="log"
+        aria-label={t("collaboration.channel.historyAria")}
+        ref={historyRef}
+      >
         {hasMoreOlder ? (
           <button
             type="button"
@@ -370,7 +393,9 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
             onClick={() => void handleLoadOlder()}
             disabled={loadingOlder}
           >
-            {loadingOlder ? "Loading…" : "Load earlier messages"}
+            {loadingOlder
+              ? t("collaboration.channel.loadingEarlier")
+              : t("collaboration.channel.loadEarlier")}
           </button>
         ) : null}
 
@@ -381,13 +406,15 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
         </ul>
 
         {messages.length === 0 ? (
-          <p className="icc-channel__status">No messages yet. Start the collaboration below.</p>
+          <p className="icc-channel__status">
+            {t("collaboration.channel.empty")} {t("collaboration.channel.emptyHint")}
+          </p>
         ) : null}
       </div>
 
       <form className="icc-channel__composer" onSubmit={(event) => void handleSubmit(event)}>
         <label htmlFor="icc-channel-composer-input" className="icc-channel__composer-label">
-          Message the Collaboration Channel
+          {t("collaboration.channel.composerPlaceholder")}
         </label>
         <textarea
           id="icc-channel-composer-input"
@@ -406,7 +433,7 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
         />
         <div className="icc-channel__composer-actions">
           <button type="submit" className="hu-button hu-button--primary" disabled={sending || !draft.trim()}>
-            {sending ? "Sending…" : "Send"}
+            {sending ? t("collaboration.channel.sending") : t("collaboration.channel.send")}
           </button>
         </div>
         {sendError ? (
@@ -416,8 +443,13 @@ export function InitiativeCollaborationChannel({ initiativeId }: InitiativeColla
         ) : null}
       </form>
 
-      <section className="icc-channel__participants" aria-label="Collaboration Channel participants">
-        <h3 className="icc-channel__participants-title">Active Allies</h3>
+      <section
+        className="icc-channel__participants"
+        aria-label={t("collaboration.channel.participantsAria")}
+      >
+        <h3 className="icc-channel__participants-title">
+          {t("collaboration.channel.participantsTitle")}
+        </h3>
         <ul className="icc-channel__participants-list">
           {(participants ?? []).map((entry, index) => (
             <ChannelParticipantRow key={entry.participantId ?? `${entry.displayName}-${index}`} entry={entry} />

@@ -10,6 +10,7 @@
 
 .icw-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--hu-space-1);
   border-bottom: 1px solid var(--hu-color-border);
 }
@@ -23,6 +24,7 @@
   font-weight: 600;
   color: var(--hu-color-text-muted);
   cursor: pointer;
+  white-space: normal;
 }
 
 .icw-tab:focus-visible {

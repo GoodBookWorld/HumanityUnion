@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type {
   CastInitiativeDecisionVotePayload,
   InitiativeDecisionVote,
+  InitiativeDecisionVoteChoice,
   PublicChoiceBallotMode,
   PublicChoiceCandidatePublicProjection,
   PublicInitiativeCollectiveDecisionProjection,
@@ -24,13 +26,12 @@ import {
 import {
   describeCollectiveDecisionVotingUnavailable,
   isCollectiveDecisionVotingWindowOpen,
-  labelInitiativeDecisionVoteChoice,
-  localizedInitiativeDecisionVoteChoice,
 } from "../../initiative-collective-decision-lifecycle/collective-decision-voting";
 import { getPublicInitiative } from "../../initiatives/api";
 import { resolveMediaUrl } from "../../media-upload/media-url";
 import { listPublicChoiceCandidates } from "../../public-choice-candidate/api";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
+import { resolveParticipationScopeDisplayLabel } from "../initiative-experience-i18n";
 
 /**
  * Public Choice Architecture Pack 02A — Discussion-stage voting control.
@@ -40,6 +41,8 @@ import { useClientAuthStatus } from "../../auth/use-client-auth-status";
  * Visitors may vote without sign-in (credentials/cookies).
  */
 export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const authStatus = useClientAuthStatus();
   const [projection, setProjection] = useState<PublicInitiativeCollectiveDecisionProjection | null>(
     null,
@@ -120,6 +123,21 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
     ? describeCollectiveDecisionVotingUnavailable(projection)
     : null;
 
+  function voteChoiceLabel(choice: InitiativeDecisionVoteChoice): string {
+    switch (choice) {
+      case "support":
+        return t("collaboration.vote.support");
+      case "do_not_support":
+        return t("collaboration.vote.doNotSupport");
+      case "abstain":
+        return t("collaboration.vote.abstain");
+      default: {
+        const _exhaustive: never = choice;
+        return _exhaustive;
+      }
+    }
+  }
+
   async function handleCast(payload: CastInitiativeDecisionVotePayload, pending: string) {
     if (!decisionId || busy || !votingOpen) {
       return;
@@ -131,7 +149,7 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
         : currentVote?.choice === payload.choice && !currentVote.candidateId;
 
     if (alreadySelected) {
-      setStatusMessage("Your current selection is already recorded.");
+      setStatusMessage(t("collaboration.vote.alreadyRecorded"));
       return;
     }
 
@@ -143,13 +161,13 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
     try {
       const vote = await castOrUpdateInitiativeDecisionVote(decisionId, payload);
       setCurrentVote(vote);
-      setStatusMessage("Vote recorded.");
+      setStatusMessage(t("collaboration.vote.voteRecorded"));
       await reload();
     } catch (submissionError) {
       setError(
         submissionError instanceof Error
           ? submissionError.message
-          : "Your vote could not be recorded.",
+          : t("collaboration.vote.voteFailed"),
       );
     } finally {
       setBusy(false);
@@ -159,17 +177,21 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
 
   function describeCurrentSelection(): string {
     if (!currentVote) {
-      return "You have not voted yet.";
+      return t("collaboration.vote.notVotedYet");
     }
 
     if (currentVote.choice === "candidate" && currentVote.candidateId) {
       const match = candidates.find((item) => item.candidateId === currentVote.candidateId);
-      return match ? `Your current selection: ${match.name}` : "Your current selection: a candidate";
+      return match
+        ? t("collaboration.vote.currentSelection", { name: match.name })
+        : t("collaboration.vote.currentSelectionFallback");
     }
 
-    return `Your current vote: ${labelInitiativeDecisionVoteChoice(
-      currentVote.choice === "candidate" ? "abstain" : currentVote.choice,
-    )}`;
+    return t("collaboration.vote.currentVote", {
+      choice: voteChoiceLabel(
+        currentVote.choice === "candidate" ? "abstain" : currentVote.choice,
+      ),
+    });
   }
 
   /** Pack 03/04 — SELECT_ONE: pointer only (no ballot). Pack 04: usually unmounted via discussionShowsVoteBallot=false. */
@@ -177,11 +199,10 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
     return (
       <section className="pie-public-choice-vote" aria-labelledby="pie-public-choice-vote-title">
         <h3 id="pie-public-choice-vote-title" className="pie-public-choice-vote__title">
-          Candidate voting
+          {t("collaboration.vote.titleSelectOne")}
         </h3>
         <p className="pie-public-choice-vote__help">
-          Select or recall candidates on the Initiative Overview. Discussion is for comments and
-          election conversation only.
+          {t("collaboration.vote.helpSelectOne")}
         </p>
       </section>
     );
@@ -190,46 +211,51 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
   return (
     <section className="pie-public-choice-vote" aria-labelledby="pie-public-choice-vote-title">
       <h3 id="pie-public-choice-vote-title" className="pie-public-choice-vote__title">
-        Public Choice vote
+        {t("collaboration.vote.titleSupportOppose")}
       </h3>
 
       <p className="pie-public-choice-vote__help">
-        Choose one: {localizedInitiativeDecisionVoteChoice("support")},{" "}
-        {localizedInitiativeDecisionVoteChoice("do_not_support")}, or{" "}
-        {localizedInitiativeDecisionVoteChoice("abstain")}. Changing your choice replaces the
-        previous selection. Sign-in is optional.
+        {t("collaboration.vote.helpSupportOppose")}
       </p>
 
       {loadState === "loading" || authStatus === "pending" ? (
-        <p role="status">Loading vote…</p>
+        <p role="status">{t("collaboration.vote.loading")}</p>
       ) : null}
       {loadState === "error" ? (
-        <p role="alert">Voting is temporarily unavailable.</p>
+        <p role="alert">{t("collaboration.vote.error")}</p>
       ) : null}
       {loadState === "empty" ? (
-        <p role="status">
-          Voting opens when the Collective Decision ballot is published for this Public Choice.
-        </p>
+        <p role="status">{t("collaboration.vote.empty")}</p>
       ) : null}
 
       {loadState === "ready" && projection && decisionId ? (
         !votingOpen ? (
-          <p role="status">{unavailableReason ?? "Voting is not available."}</p>
+          <p role="status">{unavailableReason ?? t("collaboration.vote.unavailable")}</p>
         ) : (
           <div className="pie-public-choice-vote__ballot">
             <p className="pie-public-choice-vote__current" role="status">
               {describeCurrentSelection()}
             </p>
             <p className="pie-public-choice-vote__meta">
-              Closes {new Date(projection.closesAt).toLocaleString()} · Scope{" "}
-              {projection.participationScope}
+              {t("collaboration.vote.closesMeta", {
+                closesAt: new Date(projection.closesAt).toLocaleString(locale),
+                scope: resolveParticipationScopeDisplayLabel(
+                  projection.participationScope,
+                  t,
+                ),
+              })}
             </p>
 
             {ballotMode === "SUPPORT_OPPOSE" ? (
-              <div className="pie-public-choice-vote__choices" role="group" aria-label="Vote choices">
+              <div
+                className="pie-public-choice-vote__choices"
+                role="group"
+                aria-label={t("collaboration.vote.voteChoicesAria")}
+              >
                 {(["support", "do_not_support", "abstain"] as const).map((choice) => {
                   const selected = currentVote?.choice === choice;
                   const pending = pendingKey === choice;
+                  const label = voteChoiceLabel(choice);
                   return (
                     <button
                       key={choice}
@@ -244,14 +270,17 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
                       onClick={() => void handleCast({ choice }, choice)}
                     >
                       {pending
-                        ? `Recording ${labelInitiativeDecisionVoteChoice(choice)}…`
-                        : labelInitiativeDecisionVoteChoice(choice)}
+                        ? t("collaboration.vote.recordingChoice", { choice: label })
+                        : label}
                     </button>
                   );
                 })}
               </div>
             ) : (
-              <ul className="pie-public-choice-vote__candidates" aria-label="Candidates">
+              <ul
+                className="pie-public-choice-vote__candidates"
+                aria-label={t("collaboration.vote.candidatesAria")}
+              >
                 {candidates.map((candidate) => {
                   const photo = resolveMediaUrl(candidate.photoUrl);
                   const selected =
@@ -284,7 +313,7 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            Campaign page
+                            {t("collaboration.vote.campaignPage")}
                           </a>
                         ) : null}
                         <button
@@ -303,7 +332,11 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
                             )
                           }
                         >
-                          {pending ? "Recording…" : selected ? "Selected" : "Select"}
+                          {pending
+                            ? t("collaboration.vote.recording")
+                            : selected
+                              ? t("collaboration.vote.selected")
+                              : t("collaboration.vote.select")}
                         </button>
                       </div>
                     </li>
@@ -322,8 +355,10 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
                     onClick={() => void handleCast({ choice: "abstain" }, "abstain")}
                   >
                     {pendingKey === "abstain"
-                      ? "Recording Abstain…"
-                      : labelInitiativeDecisionVoteChoice("abstain")}
+                      ? t("collaboration.vote.recordingChoice", {
+                          choice: voteChoiceLabel("abstain"),
+                        })
+                      : voteChoiceLabel("abstain")}
                   </button>
                 </li>
               </ul>
@@ -331,7 +366,7 @@ export function PublicChoiceDiscussionVotePanel({ initiativeId }: { initiativeId
 
             {busy ? (
               <p role="status" aria-live="polite">
-                Submitting your vote…
+                {t("collaboration.vote.submitting")}
               </p>
             ) : null}
             {statusMessage ? (

@@ -220,6 +220,8 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 600;
+  white-space: normal;
+  overflow-wrap: anywhere;
   background: var(--hu-color-bg-muted);
   color: var(--hu-color-text-muted);
 }
