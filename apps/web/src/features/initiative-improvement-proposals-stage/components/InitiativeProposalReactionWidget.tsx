@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeProposalReactionKind, InitiativeProposalReactionSummary } from "@hu/types";
 
@@ -14,13 +15,16 @@ interface InitiativeProposalReactionWidgetProps {
   readonly onReactionSummaryChange: (summary: InitiativeProposalReactionSummary) => void;
 }
 
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 /**
  * Initiative Lifecycle — Part D, Section 8/9 (Public Presentation /
- * Community Reactions). "Support Proposal" / "Do Not Support Proposal" —
- * one reaction per participant per proposal, counts update immediately,
- * representative statistics only (never framed as a vote). Guests see a
- * sign-in prompt, exactly like `InitiativeAnalysisReactionWidget`
- * (Part B).
+ * Community Reactions). Support / Do Not Support — one reaction per
+ * participant per proposal, counts update immediately, representative
+ * statistics only (never framed as a vote). Guests see a sign-in prompt,
+ * exactly like `InitiativeAnalysisReactionWidget` (Part B).
  */
 export function InitiativeProposalReactionWidget({
   collectionId,
@@ -28,9 +32,11 @@ export function InitiativeProposalReactionWidget({
   reactionSummary,
   onReactionSummaryChange,
 }: InitiativeProposalReactionWidgetProps) {
+  const t = useTranslations("initiativeExperience");
   const authStatus = useClientAuthStatus();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const target = t("collaboration.reaction.targets.proposal");
 
   async function handleReact(kind: InitiativeProposalReactionKind) {
     if (authStatus !== "authenticated" || busy) {
@@ -47,7 +53,7 @@ export function InitiativeProposalReactionWidget({
       onReactionSummaryChange(updated);
     } catch (reactionError) {
       setError(
-        reactionError instanceof Error ? reactionError.message : "This reaction could not be saved.",
+        detailFromError(reactionError, t("collaboration.reaction.saveFailed")),
       );
     } finally {
       setBusy(false);
@@ -58,24 +64,30 @@ export function InitiativeProposalReactionWidget({
     const returnTo = typeof window !== "undefined" ? window.location.pathname : "/";
 
     return (
-      <section className="iip-reaction" aria-label="Proposal reaction">
+      <section className="iip-reaction" aria-label={t("collaboration.reaction.aria", { target })}>
         <div>
-          <p className="iip-reaction__title">Support Proposal</p>
+          <p className="iip-reaction__title">
+            {t("collaboration.reaction.supportTarget", { target })}
+          </p>
           <p className="iip-reaction__note">
-            {reactionSummary.support} Support · {reactionSummary.doNotSupport} Do Not Support —
-            representative statistics only, not a vote.
+            {t("collaboration.reaction.guestStats", {
+              supportCount: reactionSummary.support,
+              opposeCount: reactionSummary.doNotSupport,
+              supportLabel: t("sidebar.support.support"),
+              opposeLabel: t("sidebar.support.doNotSupport"),
+            })}
           </p>
         </div>
         <a className="iip-reaction__button" href={`/login?returnTo=${encodeURIComponent(returnTo)}`}>
-          Sign in to react
+          {t("collaboration.reaction.signInToReact")}
         </a>
       </section>
     );
   }
 
   return (
-    <section className="iip-reaction" aria-label="Proposal reaction">
-      <p className="iip-reaction__title">Reaction</p>
+    <section className="iip-reaction" aria-label={t("collaboration.reaction.aria", { target })}>
+      <p className="iip-reaction__title">{t("collaboration.reaction.title")}</p>
       <div className="iip-reaction__buttons">
         <button
           type="button"
@@ -84,7 +96,10 @@ export function InitiativeProposalReactionWidget({
           disabled={busy || authStatus === "pending"}
           onClick={() => void handleReact("support")}
         >
-          Support Proposal ({reactionSummary.support})
+          {t("collaboration.reaction.supportTargetWithCount", {
+            target,
+            count: reactionSummary.support,
+          })}
         </button>
         <button
           type="button"
@@ -93,10 +108,13 @@ export function InitiativeProposalReactionWidget({
           disabled={busy || authStatus === "pending"}
           onClick={() => void handleReact("do_not_support")}
         >
-          Do Not Support Proposal ({reactionSummary.doNotSupport})
+          {t("collaboration.reaction.opposeTargetWithCount", {
+            target,
+            count: reactionSummary.doNotSupport,
+          })}
         </button>
       </div>
-      <p className="iip-reaction__note">Representative statistics only — this is not a legal vote.</p>
+      <p className="iip-reaction__note">{t("collaboration.reaction.noteLegal")}</p>
       {error ? (
         <p className="iip-reaction__note" role="alert">
           {error}

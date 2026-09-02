@@ -791,6 +791,23 @@
         "select": "選擇",
         "selected": "已選擇",
         "submitting": "正在提交您的投票…"
+      },
+      "reaction": {
+        "aria": "{target}反應",
+        "title": "反應",
+        "supportTarget": "支持{target}",
+        "opposeTarget": "不支持{target}",
+        "supportTargetWithCount": "支持{target}（{count}）",
+        "opposeTargetWithCount": "不支持{target}（{count}）",
+        "signInToReact": "請登入後反應",
+        "noteLegal": "僅供代表性統計——這不是合法投票。",
+        "guestStats": "{supportCount} {supportLabel} · {opposeCount} {opposeLabel} — 僅供代表性統計，非投票。",
+        "saveFailed": "無法儲存此反應。",
+        "targets": {
+          "analysis": "協作分析",
+          "proposal": "提案",
+          "revision": "修訂"
+        }
       }
     },
     "documents": {

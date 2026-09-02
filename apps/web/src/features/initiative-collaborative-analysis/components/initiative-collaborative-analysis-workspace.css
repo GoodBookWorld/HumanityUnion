@@ -234,6 +234,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--hu-space-3);
+  min-width: 0;
   padding: var(--hu-space-3) var(--hu-space-4);
 }
 
@@ -241,6 +242,8 @@
   font-size: 0.85rem;
   font-weight: 700;
   margin: 0 0 var(--hu-space-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
@@ -249,6 +252,8 @@
   color: var(--color-text-muted, #5f6368);
   font-size: 0.78rem;
   margin: var(--hu-space-1) 0 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
   width: 100%;
 }
 
@@ -256,6 +261,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--hu-space-2);
+  min-width: 0;
 }
 
 .ica-reaction__button {
@@ -268,7 +274,11 @@
   font: inherit;
   font-weight: 600;
   gap: var(--hu-space-2);
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: 0.4rem 0.9rem;
+  white-space: normal;
 }
 
 .ica-reaction__button[aria-pressed="true"] {

@@ -791,6 +791,23 @@
         "select": "Вибрати",
         "selected": "Вибрано",
         "submitting": "Надсилання вашого голосу…"
+      },
+      "reaction": {
+        "aria": "Реакція: {target}",
+        "title": "Реакція",
+        "supportTarget": "Підтримати · {target}",
+        "opposeTarget": "Не підтримувати · {target}",
+        "supportTargetWithCount": "Підтримати · {target} ({count})",
+        "opposeTargetWithCount": "Не підтримувати · {target} ({count})",
+        "signInToReact": "Увійдіть, щоб відреагувати",
+        "noteLegal": "Лише репрезентативна статистика — це не юридичне голосування.",
+        "guestStats": "{supportCount} {supportLabel} · {opposeCount} {opposeLabel} — лише репрезентативна статистика, не голосування.",
+        "saveFailed": "Не вдалося зберегти цю реакцію.",
+        "targets": {
+          "analysis": "Спільний аналіз",
+          "proposal": "Пропозиція",
+          "revision": "Ревізія"
+        }
       }
     },
     "documents": {

@@ -791,6 +791,23 @@
         "select": "اختيار",
         "selected": "مختار",
         "submitting": "جارٍ إرسال تصويتك…"
+      },
+      "reaction": {
+        "aria": "تفاعل {target}",
+        "title": "تفاعل",
+        "supportTarget": "دعم {target}",
+        "opposeTarget": "عدم دعم {target}",
+        "supportTargetWithCount": "دعم {target} ({count})",
+        "opposeTargetWithCount": "عدم دعم {target} ({count})",
+        "signInToReact": "سجّل الدخول للتفاعل",
+        "noteLegal": "إحصاءات تمثيلية فقط — هذا ليس تصويتًا قانونيًا.",
+        "guestStats": "{supportCount} {supportLabel} · {opposeCount} {opposeLabel} — إحصاءات تمثيلية فقط، وليست تصويتًا.",
+        "saveFailed": "تعذّر حفظ هذا التفاعل.",
+        "targets": {
+          "analysis": "التحليل التعاوني",
+          "proposal": "مقترح",
+          "revision": "مراجعة"
+        }
       }
     },
     "documents": {

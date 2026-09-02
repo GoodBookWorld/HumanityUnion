@@ -791,6 +791,23 @@
         "select": "Select",
         "selected": "Selected",
         "submitting": "Submitting your vote…"
+      },
+      "reaction": {
+        "aria": "{target} reaction",
+        "title": "Reaction",
+        "supportTarget": "Support {target}",
+        "opposeTarget": "Do Not Support {target}",
+        "supportTargetWithCount": "Support {target} ({count})",
+        "opposeTargetWithCount": "Do Not Support {target} ({count})",
+        "signInToReact": "Sign in to react",
+        "noteLegal": "Representative statistics only — this is not a legal vote.",
+        "guestStats": "{supportCount} {supportLabel} · {opposeCount} {opposeLabel} — representative statistics only, not a vote.",
+        "saveFailed": "This reaction could not be saved.",
+        "targets": {
+          "analysis": "Collaborative Analysis",
+          "proposal": "Proposal",
+          "revision": "Revision"
+        }
       }
     },
     "documents": {

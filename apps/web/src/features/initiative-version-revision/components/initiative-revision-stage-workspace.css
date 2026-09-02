@@ -303,6 +303,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0;
   padding-top: 0.5rem;
   border-top: 1px solid var(--workspace-border, #e5e7eb);
 }
@@ -310,12 +311,15 @@
 .irv-reaction__title {
   margin: 0;
   font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .irv-reaction__buttons {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .irv-reaction__button {
@@ -326,6 +330,10 @@
   cursor: pointer;
   text-decoration: none;
   color: inherit;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .irv-reaction__button[aria-pressed="true"] {
@@ -337,4 +345,6 @@
   margin: 0;
   font-size: 0.8rem;
   color: var(--workspace-muted-text, #6b7280);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
