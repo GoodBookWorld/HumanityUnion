@@ -33,6 +33,7 @@ export function InitiativeImplementationCommitmentAuthorWorkspace({
   onNavigate,
 }: InitiativeImplementationCommitmentAuthorWorkspaceProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [context, setContext] = useState<InitiativeImplementationCommitmentLifecycleDraftContext | null>(
     null,
   );
@@ -79,7 +80,7 @@ export function InitiativeImplementationCommitmentAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="The Implementation Commitments workspace could not be loaded." />
+        <WorkspaceErrorState message={t("author.commitment.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
           {actions.retry}
         </WorkspaceButton>
@@ -88,15 +89,12 @@ export function InitiativeImplementationCommitmentAuthorWorkspace({
   }
 
   if (loading || !context) {
-    return <p className="iic-source-panel__empty">Loading Implementation Commitments workspace…</p>;
+    return <p className="iic-source-panel__empty">{t("author.commitment.loading")}</p>;
   }
 
   if (context.publishedPackageId) {
     return (
-      <p className="iic-source-panel__empty">
-        Implementation Commitments have already been published for this Initiative. Use Public
-        Preview to review them, or continue to Implementation Tracking.
-      </p>
+      <p className="iic-source-panel__empty">{t("author.commitment.alreadyPublished")}</p>
     );
   }
 
@@ -121,13 +119,13 @@ export function InitiativeImplementationCommitmentAuthorWorkspace({
 
       {!hasContent || !context.draft ? (
         <div className="iic-editor">
-          <p className="iic-source-panel__empty">
-            Generate Commitment Candidates from the published Collective Decision&rsquo;s Approved
-            Actions. The Implementation Assistant remains advisory — nothing publishes
-            automatically.
-          </p>
+          <p className="iic-source-panel__empty">{t("author.commitment.noDraftExplanation")}</p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate Implementation Commitments Draft", actions.phaseLabels)}
+            {resolveSaveButtonLabel(
+              generatePhase.phase,
+              t("author.commitment.generateCommitmentsDraft"),
+              actions.phaseLabels,
+            )}
           </WorkspaceButton>
         </div>
       ) : (

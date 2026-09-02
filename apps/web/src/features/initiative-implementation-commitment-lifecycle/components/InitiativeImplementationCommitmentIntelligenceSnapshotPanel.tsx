@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { InitiativeImplementationCommitmentIntelligenceSnapshot } from "@hu/types";
 
 export function InitiativeImplementationCommitmentIntelligenceSnapshotPanel({
@@ -7,34 +9,50 @@ export function InitiativeImplementationCommitmentIntelligenceSnapshotPanel({
 }: {
   snapshot: InitiativeImplementationCommitmentIntelligenceSnapshot;
 }) {
+  const t = useTranslations("initiativeExperience");
+
   if (snapshot.isEmpty) {
     return (
-      <p className="iic-source-panel__empty">
-        Implementation Commitment Sources are empty until a Collective Decision is closed.
-      </p>
+      <p className="iic-source-panel__empty">{t("author.commitment.sourceSnapshot.empty")}</p>
     );
   }
 
   return (
-    <section className="iic-source-panel" aria-label="Implementation Commitment Sources">
+    <section className="iic-source-panel" aria-label={t("author.commitment.sourceSnapshot.aria")}>
       <ul className="iic-source-panel__list">
         <li className="iic-source-panel__item">
-          <span className="iic-source-panel__label">Published Collective Decision</span>
+          <span className="iic-source-panel__label">
+            {t("author.commitment.sourceSnapshot.publishedDecision")}
+          </span>
           <p className="iic-source-panel__summary">
             {snapshot.decisionReference
-              ? `${snapshot.decisionReference.title} — ${snapshot.decisionReference.approvedActions.length} Approved Action(s)`
-              : "No published Collective Decision yet"}
+              ? t("author.commitment.sourceSnapshot.decisionSummary", {
+                  title: snapshot.decisionReference.title,
+                  count: snapshot.decisionReference.approvedActions.length,
+                })
+              : t("author.commitment.sourceSnapshot.noDecision")}
           </p>
         </li>
         <li className="iic-source-panel__item">
-          <span className="iic-source-panel__label">Active Allies</span>
-          <p className="iic-source-panel__summary">{snapshot.activeAllyCount} active</p>
+          <span className="iic-source-panel__label">
+            {t("author.commitment.sourceSnapshot.activeAllies")}
+          </span>
+          <p className="iic-source-panel__summary">
+            {t("author.commitment.sourceSnapshot.alliesActive", {
+              count: snapshot.activeAllyCount,
+            })}
+          </p>
         </li>
         <li className="iic-source-panel__item">
-          <span className="iic-source-panel__label">Consistency Checks</span>
+          <span className="iic-source-panel__label">
+            {t("author.commitment.sourceSnapshot.consistencyChecks")}
+          </span>
           <p className="iic-source-panel__summary">
-            {snapshot.consistencyChecks.filter((check) => check.status === "warning").length} warning(s)
-            of {snapshot.consistencyChecks.length}
+            {t("author.commitment.sourceSnapshot.consistencySummary", {
+              warnings: snapshot.consistencyChecks.filter((check) => check.status === "warning")
+                .length,
+              total: snapshot.consistencyChecks.length,
+            })}
           </p>
         </li>
       </ul>

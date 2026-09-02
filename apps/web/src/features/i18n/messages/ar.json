@@ -1527,6 +1527,205 @@
           "proposalsCount": "{count} مقترح(ات) مُشار إليها",
           "consistencySummary": "{warnings} تحذير(ات) من أصل {total}"
         }
+      },
+      "commitment": {
+        "loading": "جاري تحميل مساحة عمل التزامات التنفيذ…",
+        "loadFailed": "تعذّر تحميل مساحة عمل التزامات التنفيذ.",
+        "alreadyPublished": "نُشرت التزامات التنفيذ لهذه المبادرة بالفعل. استخدم المعاينة العامة لمراجعتها، أو تابع إلى تتبع التنفيذ.",
+        "noDraftExplanation": "أنشئ مرشحي الالتزام من الإجراءات المعتمدة للقرار الجماعي المنشور. مساعد التنفيذ استشاري فقط — لا يُنشر شيء تلقائيًا.",
+        "generateCommitmentsDraft": "إنشاء مسودة التزامات التنفيذ",
+        "openImplementationTracking": "فتح تتبع التنفيذ",
+        "noCandidatesYet": "لا يوجد مرشحو التزام بعد. أنشئ مسودة من الإجراءات المعتمدة للقرار الجماعي المنشور.",
+        "actionHeading": "الإجراء {number}: {action}",
+        "fields": {
+          "title": "العنوان",
+          "summary": "الملخص",
+          "description": "الوصف",
+          "suggestedResponsibleRole": "الدور المسؤول المقترح",
+          "suggestedTimeline": "الجدول الزمني المقترح",
+          "priority": "الأولوية",
+          "requiredResources": "الموارد المطلوبة (واحدة في كل سطر)",
+          "relatedRisks": "المخاطر ذات الصلة (واحدة في كل سطر)",
+          "references": "المراجع (واحدة في كل سطر)",
+          "proposedParticipantId": "معرّف المشارك المقترح (اختياري)",
+          "proposedParticipantPlaceholder": "اتركه فارغًا للنشر دون تعيين"
+        },
+        "sections": {
+          "requiredResources": "الموارد المطلوبة",
+          "relatedRisks": "المخاطر ذات الصلة",
+          "references": "المراجع"
+        },
+        "candidateStatuses": {
+          "draft": "مسودة"
+        },
+        "viewStates": {
+          "available": "متاح",
+          "awaiting_you": "بانتظار ردك",
+          "awaiting_response": "بانتظار الرد",
+          "accepted": "مقبول",
+          "transfer_pending": "نقل معلّق",
+          "completed": "مكتمل",
+          "withdrawn": "مسحوب",
+          "declined": "مرفوض"
+        },
+        "messages": {
+          "unknownError": "خطأ غير معروف",
+          "generateFailed": "فشل الإنشاء: {detail}",
+          "saveFailed": "فشل الحفظ: {detail}",
+          "publishFailed": "فشل النشر: {detail}",
+          "aiApplied": "طُبّقت اقتراحات الذكاء الاصطناعي محليًا. عدّل حسب الحاجة ثم احفظ المسودة. لم يُنشر شيء.",
+          "takeFailed": "فشل أخذ الالتزام: {detail}",
+          "requestFailed": "فشل الطلب: {detail}",
+          "enterParticipantId": "أدخل معرّف المشارك.",
+          "acceptedSuccess": "قُبل الالتزام. أنت الآن مسؤول عن هذا الإجراء.",
+          "reproposeSuccess": "اُقترح مشارك آخر. سيتلقى إشعار قبول/رفض.",
+          "transferSuccess": "اُقترح النقل. يبقى المشارك المسؤول الحالي مسؤولًا حتى يقبل البديل."
+        },
+        "preview": {
+          "loading": "جاري تحميل معاينة مسودة التزامات التنفيذ…",
+          "loadFailed": "تعذّر تحميل معاينة المسودة.",
+          "aria": "معاينة مسودة التزامات التنفيذ",
+          "meta": "معاينة — مسودة غير منشورة (نفس عارض العرض العام)",
+          "untitled": "التزامات تنفيذ بلا عنوان",
+          "rolePriorityTimeline": "الدور {role} · الأولوية {priority} · الجدول {timeline}",
+          "notSet": "غير محدد"
+        },
+        "public": {
+          "loading": "جاري تحميل التزامات التنفيذ المنشورة…",
+          "loadFailed": "تعذّر تحميل التزامات التنفيذ المنشورة.",
+          "empty": "لا توجد التزامات تنفيذ منشورة بعد.",
+          "aria": "التزامات التنفيذ المنشورة",
+          "previewMeta": "معاينة المؤلف لالتزامات التنفيذ المنشورة",
+          "heading": "التزامات التنفيذ",
+          "publishedCount": "{count} التزام(ات) منشورة",
+          "responsible": "المسؤول: {name}",
+          "priority": "الأولوية {priority}",
+          "responsibleWithPriority": "المسؤول: {name} · الأولوية {priority}",
+          "takeCommitment": "أخذ الالتزام",
+          "takeAria": "أخذ الالتزام لـ {title}",
+          "proposeAnother": "اقتراح مشارك آخر",
+          "proposeAnotherAria": "اقتراح مشارك آخر لـ {title}",
+          "transfer": "نقل المسؤولية",
+          "transferAria": "نقل المسؤولية عن {title}",
+          "takeConfirmTitle": "أخذ المسؤولية؟",
+          "takeConfirmDescription": "أخذ المسؤولية عن التزام التنفيذ هذا؟",
+          "transferConfirmTitle": "نقل المسؤولية؟",
+          "reproposeConfirmTitle": "اقتراح مشارك آخر؟",
+          "transferConfirmBody": "يعيد هذا تعيين المسؤولية. يبقى المشارك المسؤول الحالي مسؤولًا حتى يقبل البديل.",
+          "reproposeConfirmBody": "يبقى الرفض السابق في السجل. يتلقى المشارك الجديد اقتراح قبول/رفض عاديًا.",
+          "participantId": "معرّف المشارك",
+          "proposeTransfer": "اقتراح النقل",
+          "propose": "اقتراح",
+          "cancel": "إلغاء"
+        },
+        "sourceSnapshot": {
+          "empty": "مصادر التزام التنفيذ فارغة حتى يُغلق القرار الجماعي.",
+          "aria": "مصادر التزام التنفيذ",
+          "publishedDecision": "القرار الجماعي المنشور",
+          "activeAllies": "الحلفاء النشطون",
+          "consistencyChecks": "فحوصات الاتساق",
+          "noDecision": "لا يوجد قرار جماعي منشور بعد",
+          "decisionSummary": "{title} — {count} إجراء(ات) معتمدة",
+          "alliesActive": "{count} نشط(ون)",
+          "consistencySummary": "{warnings} تحذير(ات) من أصل {total}"
+        },
+        "inbox": {
+          "loading": "جاري تحميل التزاماتك المقترحة…",
+          "loadFailed": "تعذّر تحميل التزاماتك المقترحة.",
+          "empty": "ليس لديك التزامات تنفيذ مقترحة هنا.",
+          "accept": "قبول",
+          "decline": "رفض",
+          "accepted": "مقبول",
+          "acceptFailed": "فشل القبول: {detail}",
+          "declineFailed": "فشل الرفض: {detail}",
+          "unknownError": "خطأ غير معروف"
+        }
+      },
+      "tracking": {
+        "loading": "جاري تحميل مساحة عمل تتبع التنفيذ…",
+        "loadFailed": "تعذّر تحميل مساحة عمل تتبع التنفيذ.",
+        "alreadyPublished": "نُشر تتبع التنفيذ لهذه المبادرة بالفعل. استخدم المعاينة العامة لمراجعته، أو تابع إلى الردود الرسمية.",
+        "noDraftExplanation": "أنشئ خطة تنفيذ أولية من نتائج القرار الجماعي والتزامات التنفيذ (عند القبول) ونطاق المبادرة. مع صفر التزامات مقبولة تُنشأ المعالم كغير معيّنة / يحدد لاحقًا — دورة الحياة لا تمنع. المساعد استشاري ولا ينشر أبدًا.",
+        "zeroCommitmentHint": "لا توجد التزامات مقبولة بعد — سيُنشئ التوليد خطة قابلة للتحرير مع ذلك.",
+        "generateTrackingDraft": "إنشاء مسودة تتبع التنفيذ",
+        "publishAndContinue": "النشر والمتابعة إلى الردود الرسمية",
+        "publishConfirm": "ينهي نشر تتبع التنفيذ هذه المرحلة ويفتح الردود الرسمية. هل تريد المتابعة؟",
+        "openOfficialResponses": "فتح الردود الرسمية",
+        "noMilestonesYet": "لا توجد معالم تتبع بعد. أنشئ خطة من القرار الجماعي / الالتزامات / نطاق المبادرة.",
+        "milestoneHeading": "المعلم {number}: {title}",
+        "untitledMilestone": "بلا عنوان",
+        "sourceCommitment": "الالتزام المصدر: {commitmentId}",
+        "authorOriginated": "معلم من المؤلف (لا التزام مقبول)",
+        "fields": {
+          "title": "العنوان",
+          "summary": "الملخص",
+          "description": "الوصف",
+          "status": "الحالة",
+          "progress": "التقدم (%)",
+          "responsible": "المشارك / الفريق المسؤول (اتركه فارغًا لـ غير معيّن)",
+          "responsiblePlaceholder": "غير معيّن",
+          "plannedStart": "البداية المخططة",
+          "plannedEnd": "النهاية المخططة / التاريخ المستهدف",
+          "dependencies": "التبعيات (واحدة في كل سطر)",
+          "obstacles": "العوائق / المخاطر (واحدة في كل سطر)",
+          "evidence": "ملاحظات / مراجع الأدلة (واحدة في كل سطر)",
+          "notes": "ملاحظات"
+        },
+        "sections": {
+          "dependencies": "التبعيات",
+          "obstacles": "العوائق",
+          "evidenceReferences": "مراجع الأدلة"
+        },
+        "messages": {
+          "unknownError": "خطأ غير معروف",
+          "generateFailed": "فشل الإنشاء: {detail}",
+          "saveFailed": "فشل الحفظ: {detail}",
+          "publishFailed": "فشل النشر: {detail}",
+          "aiApplied": "طُبّقت اقتراحات الذكاء الاصطناعي محليًا. عدّل حسب الحاجة ثم احفظ المسودة. لم يُنشر شيء.",
+          "progressUpdateFailed": "فشل تحديث التقدم: {detail}"
+        },
+        "preview": {
+          "loading": "جاري تحميل معاينة مسودة تتبع التنفيذ…",
+          "loadFailed": "تعذّر تحميل معاينة المسودة.",
+          "aria": "معاينة مسودة تتبع التنفيذ",
+          "meta": "معاينة — مسودة غير منشورة (نفس عارض العرض العام)",
+          "untitled": "تتبع تنفيذ بلا عنوان",
+          "actionHeading": "الإجراء {number}: {action}",
+          "statusProgressTarget": "الحالة {status} · التقدم {progress}% · التاريخ المستهدف {target}",
+          "notSet": "غير محدد"
+        },
+        "public": {
+          "loading": "جاري تحميل تتبع التنفيذ المنشور…",
+          "loadFailed": "تعذّر تحميل تتبع التنفيذ المنشور.",
+          "empty": "لا يوجد تتبع تنفيذ منشور بعد.",
+          "aria": "تتبع التنفيذ المنشور",
+          "previewMeta": "معاينة المؤلف لتتبع التنفيذ المنشور",
+          "heading": "تتبع التنفيذ",
+          "publishedCount": "{count} سجل(ات) تتبع منشورة",
+          "progressMeta": " · التقدم {progress}%"
+        },
+        "sourceSnapshot": {
+          "empty": "مصادر تتبع التنفيذ فارغة حتى تُنشر التزامات التنفيذ ويُقبل واحد على الأقل.",
+          "aria": "مصادر تتبع التنفيذ",
+          "publishedPackage": "حزمة الالتزام المنشورة",
+          "activeAllies": "الحلفاء النشطون",
+          "consistencyChecks": "فحوصات الاتساق",
+          "noPackage": "لا توجد حزمة التزام منشورة بعد",
+          "packageSummary": "{title} — {count} التزام(ات) مقبولة",
+          "alliesActive": "{count} نشط(ون)",
+          "consistencySummary": "{warnings} تحذير(ات) من أصل {total}"
+        },
+        "inbox": {
+          "loading": "جاري تحميل تتبع التنفيذ النشط لديك…",
+          "loadFailed": "تعذّر تحميل تتبع التنفيذ النشط لديك.",
+          "empty": "ليس لديك مسؤوليات تتبع تنفيذ نشطة هنا.",
+          "currentStatus": "الحالة الحالية",
+          "progress": "التقدم (%)",
+          "notes": "ملاحظات",
+          "obstacles": "العوائق (واحدة في كل سطر)",
+          "evidence": "مراجع الأدلة (واحدة في كل سطر)",
+          "saveProgress": "حفظ التقدم"
+        }
       }
     }
   }

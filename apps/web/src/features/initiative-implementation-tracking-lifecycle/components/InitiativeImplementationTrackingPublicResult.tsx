@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicInitiativeImplementationTrackingListItem } from "@hu/types";
 
@@ -23,6 +24,7 @@ export function InitiativeImplementationTrackingPublicResult({
   initiativeId,
   isPreview = false,
 }: InitiativeImplementationTrackingPublicResultProps) {
+  const t = useTranslations("initiativeExperience");
   const [trackings, setTrackings] = useState<
     readonly PublicInitiativeImplementationTrackingListItem[] | null
   >(null);
@@ -39,7 +41,7 @@ export function InitiativeImplementationTrackingPublicResult({
         }
       } catch {
         if (!cancelled) {
-          setError("Published Implementation Tracking could not be loaded.");
+          setError(t("author.tracking.public.loadFailed"));
         }
       }
     })();
@@ -47,28 +49,30 @@ export function InitiativeImplementationTrackingPublicResult({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (error) {
     return <p className="iit-source-panel__empty">{error}</p>;
   }
 
   if (!trackings) {
-    return <p className="iit-source-panel__empty">Loading published Implementation Tracking…</p>;
+    return <p className="iit-source-panel__empty">{t("author.tracking.public.loading")}</p>;
   }
 
   if (trackings.length === 0) {
-    return <p className="iit-source-panel__empty">No Implementation Tracking published yet.</p>;
+    return <p className="iit-source-panel__empty">{t("author.tracking.public.empty")}</p>;
   }
 
   return (
-    <article className="iit-public" aria-label="Published Implementation Tracking">
+    <article className="iit-public" aria-label={t("author.tracking.public.aria")}>
       {isPreview ? (
-        <p className="iit-public__meta">Author Preview of published Implementation Tracking</p>
+        <p className="iit-public__meta">{t("author.tracking.public.previewMeta")}</p>
       ) : null}
       <section className="iit-public__section">
-        <h3>Implementation Tracking</h3>
-        <p className="iit-public__meta">{trackings.length} Tracking Record(s) published</p>
+        <h3>{t("author.tracking.public.heading")}</h3>
+        <p className="iit-public__meta">
+          {t("author.tracking.public.publishedCount", { count: trackings.length })}
+        </p>
       </section>
 
       {trackings.map((tracking) => (
@@ -77,7 +81,9 @@ export function InitiativeImplementationTrackingPublicResult({
           <p>{tracking.summary}</p>
           <p className="iit-public__meta">
             {tracking.authorDisplayName}
-            {tracking.progress !== null ? ` · Progress ${tracking.progress}%` : ""}
+            {tracking.progress !== null
+              ? t("author.tracking.public.progressMeta", { progress: tracking.progress })
+              : ""}
           </p>
           <span className="iit-public__tracking-status">{tracking.currentStage}</span>
         </div>

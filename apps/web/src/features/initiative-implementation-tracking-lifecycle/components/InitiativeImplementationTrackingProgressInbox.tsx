@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeImplementationTracking } from "@hu/types";
 
@@ -18,6 +19,10 @@ function linesToList(value: string): string[] {
 
 function listToLines(values: readonly string[] | null | undefined): string {
   return (values ?? []).join("\n");
+}
+
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
 }
 
 interface ProgressFormState {
@@ -49,6 +54,7 @@ export function InitiativeImplementationTrackingProgressInbox({
 }: {
   readonly initiativeId: string;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [trackings, setTrackings] = useState<InitiativeImplementationTracking[]>([]);
   const [forms, setForms] = useState<Record<string, ProgressFormState>>({});
   const [loading, setLoading] = useState(true);
@@ -108,25 +114,27 @@ export function InitiativeImplementationTrackingProgressInbox({
       });
       await loadMine();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Progress update failed.");
+      setError(
+        t("author.tracking.messages.progressUpdateFailed", {
+          detail: detailFromError(err, t("author.tracking.messages.unknownError")),
+        }),
+      );
     } finally {
       setPendingTrackingId(null);
     }
   }
 
   if (loading) {
-    return <p className="lsw-sidebar__loading">Loading your active Implementation Tracking…</p>;
+    return <p className="lsw-sidebar__loading">{t("author.tracking.inbox.loading")}</p>;
   }
 
   if (loadFailed) {
-    return <p className="lsw-sidebar__error">Could not load your active Implementation Tracking.</p>;
+    return <p className="lsw-sidebar__error">{t("author.tracking.inbox.loadFailed")}</p>;
   }
 
   if (trackings.length === 0) {
     return (
-      <p className="lsw-sidebar__placeholder">
-        You have no active Implementation Tracking responsibilities here.
-      </p>
+      <p className="lsw-sidebar__placeholder">{t("author.tracking.inbox.empty")}</p>
     );
   }
 
@@ -140,7 +148,9 @@ export function InitiativeImplementationTrackingProgressInbox({
           <div className="iit-progress-inbox__item" key={tracking.trackingId}>
             <strong>{tracking.approvedAction ?? tracking.summary}</strong>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-inbox-status-${tracking.trackingId}`}>Current Status</label>
+              <label htmlFor={`iit-inbox-status-${tracking.trackingId}`}>
+                {t("author.tracking.inbox.currentStatus")}
+              </label>
               <input
                 id={`iit-inbox-status-${tracking.trackingId}`}
                 value={form.currentStatus}
@@ -148,7 +158,9 @@ export function InitiativeImplementationTrackingProgressInbox({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-inbox-progress-${tracking.trackingId}`}>Progress (%)</label>
+              <label htmlFor={`iit-inbox-progress-${tracking.trackingId}`}>
+                {t("author.tracking.inbox.progress")}
+              </label>
               <input
                 id={`iit-inbox-progress-${tracking.trackingId}`}
                 type="number"
@@ -159,7 +171,9 @@ export function InitiativeImplementationTrackingProgressInbox({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-inbox-notes-${tracking.trackingId}`}>Notes</label>
+              <label htmlFor={`iit-inbox-notes-${tracking.trackingId}`}>
+                {t("author.tracking.inbox.notes")}
+              </label>
               <textarea
                 id={`iit-inbox-notes-${tracking.trackingId}`}
                 rows={2}
@@ -168,7 +182,9 @@ export function InitiativeImplementationTrackingProgressInbox({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-inbox-obstacles-${tracking.trackingId}`}>Obstacles (one per line)</label>
+              <label htmlFor={`iit-inbox-obstacles-${tracking.trackingId}`}>
+                {t("author.tracking.inbox.obstacles")}
+              </label>
               <textarea
                 id={`iit-inbox-obstacles-${tracking.trackingId}`}
                 rows={2}
@@ -178,7 +194,7 @@ export function InitiativeImplementationTrackingProgressInbox({
             </div>
             <div className="iit-editor__field">
               <label htmlFor={`iit-inbox-evidence-${tracking.trackingId}`}>
-                Evidence References (one per line)
+                {t("author.tracking.inbox.evidence")}
               </label>
               <textarea
                 id={`iit-inbox-evidence-${tracking.trackingId}`}
@@ -195,7 +211,7 @@ export function InitiativeImplementationTrackingProgressInbox({
                 onClick={() => void handleSubmit(tracking.trackingId)}
                 disabled={pendingTrackingId === tracking.trackingId}
               >
-                Save Progress
+                {t("author.tracking.inbox.saveProgress")}
               </WorkspaceButton>
             </div>
           </div>

@@ -1527,6 +1527,205 @@
           "proposalsCount": "{count} referenced proposal(s)",
           "consistencySummary": "{warnings} warning(s) of {total}"
         }
+      },
+      "commitment": {
+        "loading": "Loading Implementation Commitments workspace…",
+        "loadFailed": "The Implementation Commitments workspace could not be loaded.",
+        "alreadyPublished": "Implementation Commitments have already been published for this Initiative. Use Public Preview to review them, or continue to Implementation Tracking.",
+        "noDraftExplanation": "Generate Commitment Candidates from the published Collective Decision's Approved Actions. The Implementation Assistant remains advisory — nothing publishes automatically.",
+        "generateCommitmentsDraft": "Generate Implementation Commitments Draft",
+        "openImplementationTracking": "Open Implementation Tracking",
+        "noCandidatesYet": "No Commitment Candidates yet. Generate a draft from the published Collective Decision's Approved Actions.",
+        "actionHeading": "Action {number}: {action}",
+        "fields": {
+          "title": "Title",
+          "summary": "Summary",
+          "description": "Description",
+          "suggestedResponsibleRole": "Suggested Responsible Role",
+          "suggestedTimeline": "Suggested Timeline",
+          "priority": "Priority",
+          "requiredResources": "Required Resources (one per line)",
+          "relatedRisks": "Related Risks (one per line)",
+          "references": "References (one per line)",
+          "proposedParticipantId": "Proposed Participant ID (optional)",
+          "proposedParticipantPlaceholder": "Leave empty to publish unassigned"
+        },
+        "sections": {
+          "requiredResources": "Required Resources",
+          "relatedRisks": "Related Risks",
+          "references": "References"
+        },
+        "candidateStatuses": {
+          "draft": "Draft"
+        },
+        "viewStates": {
+          "available": "Available",
+          "awaiting_you": "Awaiting your response",
+          "awaiting_response": "Awaiting response",
+          "accepted": "Accepted",
+          "transfer_pending": "Transfer pending",
+          "completed": "Completed",
+          "withdrawn": "Withdrawn",
+          "declined": "Declined"
+        },
+        "messages": {
+          "unknownError": "Unknown error",
+          "generateFailed": "Generate failed: {detail}",
+          "saveFailed": "Save failed: {detail}",
+          "publishFailed": "Publish failed: {detail}",
+          "aiApplied": "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
+          "takeFailed": "Take Commitment failed: {detail}",
+          "requestFailed": "Request failed: {detail}",
+          "enterParticipantId": "Enter a Participant ID.",
+          "acceptedSuccess": "Commitment accepted. You are now responsible for this action.",
+          "reproposeSuccess": "Proposed another Participant. They will receive an Accept/Decline notification.",
+          "transferSuccess": "Transfer proposed. The current responsible Participant stays responsible until the replacement Accepts."
+        },
+        "preview": {
+          "loading": "Loading Implementation Commitments draft preview…",
+          "loadFailed": "Draft preview could not be loaded.",
+          "aria": "Implementation Commitments draft preview",
+          "meta": "Preview — unpublished draft (same renderer as Public)",
+          "untitled": "Untitled Implementation Commitments",
+          "rolePriorityTimeline": "Role {role} · Priority {priority} · Timeline {timeline}",
+          "notSet": "Not set"
+        },
+        "public": {
+          "loading": "Loading published Implementation Commitments…",
+          "loadFailed": "Published Implementation Commitments could not be loaded.",
+          "empty": "No Implementation Commitments published yet.",
+          "aria": "Published Implementation Commitments",
+          "previewMeta": "Author Preview of published Implementation Commitments",
+          "heading": "Implementation Commitments",
+          "publishedCount": "{count} Commitment(s) published",
+          "responsible": "Responsible: {name}",
+          "priority": "Priority {priority}",
+          "responsibleWithPriority": "Responsible: {name} · Priority {priority}",
+          "takeCommitment": "Take Commitment",
+          "takeAria": "Take Commitment for {title}",
+          "proposeAnother": "Propose Another Participant",
+          "proposeAnotherAria": "Propose another Participant for {title}",
+          "transfer": "Transfer Responsibility",
+          "transferAria": "Transfer responsibility for {title}",
+          "takeConfirmTitle": "Take responsibility?",
+          "takeConfirmDescription": "Take responsibility for this implementation commitment?",
+          "transferConfirmTitle": "Transfer responsibility?",
+          "reproposeConfirmTitle": "Propose another Participant?",
+          "transferConfirmBody": "This reassigns responsibility. The current responsible Participant stays responsible until the replacement Accepts.",
+          "reproposeConfirmBody": "The previous Decline remains in history. The new Participant receives a normal Accept/Decline proposal.",
+          "participantId": "Participant ID",
+          "proposeTransfer": "Propose Transfer",
+          "propose": "Propose",
+          "cancel": "Cancel"
+        },
+        "sourceSnapshot": {
+          "empty": "Implementation Commitment Sources are empty until a Collective Decision is closed.",
+          "aria": "Implementation Commitment Sources",
+          "publishedDecision": "Published Collective Decision",
+          "activeAllies": "Active Allies",
+          "consistencyChecks": "Consistency Checks",
+          "noDecision": "No published Collective Decision yet",
+          "decisionSummary": "{title} — {count} Approved Action(s)",
+          "alliesActive": "{count} active",
+          "consistencySummary": "{warnings} warning(s) of {total}"
+        },
+        "inbox": {
+          "loading": "Loading your proposed commitments…",
+          "loadFailed": "Could not load your proposed commitments.",
+          "empty": "You have no proposed Implementation Commitments here.",
+          "accept": "Accept",
+          "decline": "Decline",
+          "accepted": "Accepted",
+          "acceptFailed": "Accept failed: {detail}",
+          "declineFailed": "Decline failed: {detail}",
+          "unknownError": "Unknown error"
+        }
+      },
+      "tracking": {
+        "loading": "Loading Implementation Tracking workspace…",
+        "loadFailed": "The Implementation Tracking workspace could not be loaded.",
+        "alreadyPublished": "Implementation Tracking has already been published for this Initiative. Use Public Preview to review it, or continue to Official Responses.",
+        "noDraftExplanation": "Generate an initial implementation plan from Collective Decision results, Implementation Commitments (when accepted), and Initiative scope. With zero accepted commitments, milestones are created as Unassigned / To be determined — Lifecycle does not block. The Assistant remains advisory and never publishes.",
+        "zeroCommitmentHint": "No Accepted Commitments yet — Generate will still produce an editable plan.",
+        "generateTrackingDraft": "Generate Implementation Tracking Draft",
+        "publishAndContinue": "Publish & Continue to Official Responses",
+        "publishConfirm": "Publishing Implementation Tracking completes this stage and unlocks Official Responses. Continue?",
+        "openOfficialResponses": "Open Official Responses",
+        "noMilestonesYet": "No Tracking milestones yet. Generate a plan from Collective Decision / Commitments / Initiative scope.",
+        "milestoneHeading": "Milestone {number}: {title}",
+        "untitledMilestone": "Untitled",
+        "sourceCommitment": "Source commitment: {commitmentId}",
+        "authorOriginated": "Author-originated milestone (no accepted commitment)",
+        "fields": {
+          "title": "Title",
+          "summary": "Summary",
+          "description": "Description",
+          "status": "Status",
+          "progress": "Progress (%)",
+          "responsible": "Responsible participant / team (leave blank for Unassigned)",
+          "responsiblePlaceholder": "Unassigned",
+          "plannedStart": "Planned start",
+          "plannedEnd": "Planned end / target date",
+          "dependencies": "Dependencies (one per line)",
+          "obstacles": "Obstacles / risks (one per line)",
+          "evidence": "Notes / evidence references (one per line)",
+          "notes": "Notes"
+        },
+        "sections": {
+          "dependencies": "Dependencies",
+          "obstacles": "Obstacles",
+          "evidenceReferences": "Evidence References"
+        },
+        "messages": {
+          "unknownError": "Unknown error",
+          "generateFailed": "Generate failed: {detail}",
+          "saveFailed": "Save failed: {detail}",
+          "publishFailed": "Publish failed: {detail}",
+          "aiApplied": "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
+          "progressUpdateFailed": "Progress update failed: {detail}"
+        },
+        "preview": {
+          "loading": "Loading Implementation Tracking draft preview…",
+          "loadFailed": "Draft preview could not be loaded.",
+          "aria": "Implementation Tracking draft preview",
+          "meta": "Preview — unpublished draft (same renderer as Public)",
+          "untitled": "Untitled Implementation Tracking",
+          "actionHeading": "Action {number}: {action}",
+          "statusProgressTarget": "Status {status} · Progress {progress}% · Target Date {target}",
+          "notSet": "Not set"
+        },
+        "public": {
+          "loading": "Loading published Implementation Tracking…",
+          "loadFailed": "Published Implementation Tracking could not be loaded.",
+          "empty": "No Implementation Tracking published yet.",
+          "aria": "Published Implementation Tracking",
+          "previewMeta": "Author Preview of published Implementation Tracking",
+          "heading": "Implementation Tracking",
+          "publishedCount": "{count} Tracking Record(s) published",
+          "progressMeta": " · Progress {progress}%"
+        },
+        "sourceSnapshot": {
+          "empty": "Implementation Tracking Sources are empty until Implementation Commitments are published and at least one is Accepted.",
+          "aria": "Implementation Tracking Sources",
+          "publishedPackage": "Published Commitment Package",
+          "activeAllies": "Active Allies",
+          "consistencyChecks": "Consistency Checks",
+          "noPackage": "No published Commitment Package yet",
+          "packageSummary": "{title} — {count} Accepted Commitment(s)",
+          "alliesActive": "{count} active",
+          "consistencySummary": "{warnings} warning(s) of {total}"
+        },
+        "inbox": {
+          "loading": "Loading your active Implementation Tracking…",
+          "loadFailed": "Could not load your active Implementation Tracking.",
+          "empty": "You have no active Implementation Tracking responsibilities here.",
+          "currentStatus": "Current Status",
+          "progress": "Progress (%)",
+          "notes": "Notes",
+          "obstacles": "Obstacles (one per line)",
+          "evidence": "Evidence References (one per line)",
+          "saveProgress": "Save Progress"
+        }
       }
     }
   }

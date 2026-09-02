@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeImplementationCommitmentLifecycleDraft } from "@hu/types";
 
@@ -30,6 +31,7 @@ export function InitiativeImplementationCommitmentDraftPreview({
 }: {
   readonly initiativeId: string;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [draft, setDraft] = useState<InitiativeImplementationCommitmentLifecycleDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +46,7 @@ export function InitiativeImplementationCommitmentDraftPreview({
         }
       } catch {
         if (!cancelled) {
-          setError("Draft preview could not be loaded.");
+          setError(t("author.commitment.preview.loadFailed"));
         }
       }
     })();
@@ -52,36 +54,51 @@ export function InitiativeImplementationCommitmentDraftPreview({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (error) {
     return <p className="iic-source-panel__empty">{error}</p>;
   }
 
   if (!draft) {
-    return <p className="iic-source-panel__empty">Loading Implementation Commitments draft preview…</p>;
+    return <p className="iic-source-panel__empty">{t("author.commitment.preview.loading")}</p>;
   }
 
   return (
-    <article className="iic-public" aria-label="Implementation Commitments draft preview">
-      <p className="iic-public__meta">Preview — unpublished draft (same renderer as Public)</p>
+    <article className="iic-public" aria-label={t("author.commitment.preview.aria")}>
+      <p className="iic-public__meta">{t("author.commitment.preview.meta")}</p>
       <section className="iic-public__section">
-        <h3>{draft.title || "Untitled Implementation Commitments"}</h3>
+        <h3>{draft.title || t("author.commitment.preview.untitled")}</h3>
         <p>{draft.summary}</p>
       </section>
       {draft.candidates.map((candidate, index) => (
         <section className="iic-public__section" key={candidate.candidateId}>
           <h3>
-            Action {index + 1}: {candidate.approvedAction}
+            {t("author.commitment.actionHeading", {
+              number: index + 1,
+              action: candidate.approvedAction,
+            })}
           </h3>
           <p>{candidate.description}</p>
           <p className="iic-public__meta">
-            Role {candidate.suggestedResponsibleRole} · Priority {candidate.priority} · Timeline{" "}
-            {candidate.suggestedTimeline || "Not set"}
+            {t("author.commitment.preview.rolePriorityTimeline", {
+              role: candidate.suggestedResponsibleRole,
+              priority: candidate.priority,
+              timeline: candidate.suggestedTimeline || t("author.commitment.preview.notSet"),
+            })}
           </p>
-          <ListSection title="Required Resources" items={candidate.requiredResources} />
-          <ListSection title="Related Risks" items={candidate.relatedRisks} />
-          <ListSection title="References" items={candidate.references} />
+          <ListSection
+            title={t("author.commitment.sections.requiredResources")}
+            items={candidate.requiredResources}
+          />
+          <ListSection
+            title={t("author.commitment.sections.relatedRisks")}
+            items={candidate.relatedRisks}
+          />
+          <ListSection
+            title={t("author.commitment.sections.references")}
+            items={candidate.references}
+          />
         </section>
       ))}
     </article>

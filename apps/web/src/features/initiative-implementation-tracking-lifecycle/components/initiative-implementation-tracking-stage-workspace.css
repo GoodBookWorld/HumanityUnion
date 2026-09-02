@@ -2,6 +2,8 @@
   display: grid;
   gap: 0.75rem;
   margin-bottom: 1.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .iit-source-panel__empty {
@@ -33,16 +35,20 @@
 .iit-source-panel__summary {
   margin: 0.2rem 0 0;
   font-size: 0.95rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .iit-editor {
   display: grid;
   gap: 1rem;
+  min-width: 0;
 }
 
 .iit-editor__field {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .iit-editor__field label {
@@ -74,6 +80,8 @@
   border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
   border-radius: 0.5rem;
   padding: 0.85rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .iit-candidate__header {
@@ -109,6 +117,8 @@
 .iit-public {
   display: grid;
   gap: 1.1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .iit-public__section h3 {
@@ -124,7 +134,7 @@
 
 .iit-public__section ul {
   margin: 0;
-  padding-left: 1.1rem;
+  padding-inline-start: 1.1rem;
 }
 
 .iit-public__meta {
@@ -163,7 +173,7 @@
 
 .iit-assistant-block ul {
   margin: 0;
-  padding-left: 1rem;
+  padding-inline-start: 1rem;
 }
 
 .iit-progress-inbox {

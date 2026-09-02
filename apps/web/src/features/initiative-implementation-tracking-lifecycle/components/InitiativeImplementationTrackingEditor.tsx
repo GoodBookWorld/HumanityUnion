@@ -35,6 +35,10 @@ function listToLines(values: readonly string[]): string {
   return values.join("\n");
 }
 
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 interface CandidateFormState {
   candidateId: string;
   commitmentId: string;
@@ -117,6 +121,7 @@ export function InitiativeImplementationTrackingEditor({
   onNavigate,
 }: InitiativeImplementationTrackingEditorProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [title, setTitle] = useState(draft.title);
   const [summary, setSummary] = useState(draft.summary);
   const [candidates, setCandidates] = useState<CandidateFormState[]>(
@@ -185,9 +190,7 @@ export function InitiativeImplementationTrackingEditor({
       setTitle(result.packageFields.title);
       setSummary(result.packageFields.summary);
       setCandidates(result.candidates);
-      setApplyNotice(
-        "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
-      );
+      setApplyNotice(t("author.tracking.messages.aiApplied"));
       setError(null);
     }
 
@@ -195,7 +198,7 @@ export function InitiativeImplementationTrackingEditor({
     return () => {
       window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
     };
-  }, [initiativeId, title, summary, candidates]);
+  }, [initiativeId, title, summary, candidates, t]);
 
   function updateCandidate(candidateId: string, patch: Partial<CandidateFormState>) {
     setCandidates((current) =>
@@ -225,7 +228,11 @@ export function InitiativeImplementationTrackingEditor({
       setCandidates(generated.candidates.map((candidate) => toFormState(candidate)));
       onDraftUpdated(generated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generate failed.");
+      setError(
+        t("author.tracking.messages.generateFailed", {
+          detail: detailFromError(err, t("author.tracking.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -237,16 +244,16 @@ export function InitiativeImplementationTrackingEditor({
       );
       onDraftUpdated(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(
+        t("author.tracking.messages.saveFailed", {
+          detail: detailFromError(err, t("author.tracking.messages.unknownError")),
+        }),
+      );
     }
   }
 
   async function handlePublish() {
-    if (
-      !window.confirm(
-        "Publishing Implementation Tracking completes this stage and unlocks Official Responses. Continue?",
-      )
-    ) {
+    if (!window.confirm(t("author.tracking.publishConfirm"))) {
       return;
     }
 
@@ -260,18 +267,22 @@ export function InitiativeImplementationTrackingEditor({
       onPublished(pkg);
       onNavigate?.("official_response", "official-responses");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Publish failed.");
+      setError(
+        t("author.tracking.messages.publishFailed", {
+          detail: detailFromError(err, t("author.tracking.messages.unknownError")),
+        }),
+      );
     }
   }
 
   return (
     <div className="iit-editor">
       <div className="iit-editor__field">
-        <label htmlFor="iit-title">Title</label>
+        <label htmlFor="iit-title">{t("author.tracking.fields.title")}</label>
         <input id="iit-title" value={title} onChange={(event) => setTitle(event.target.value)} />
       </div>
       <div className="iit-editor__field">
-        <label htmlFor="iit-summary">Summary</label>
+        <label htmlFor="iit-summary">{t("author.tracking.fields.summary")}</label>
         <textarea
           id="iit-summary"
           rows={3}
@@ -281,21 +292,26 @@ export function InitiativeImplementationTrackingEditor({
       </div>
 
       {candidates.length === 0 ? (
-        <p className="iit-source-panel__empty">
-          No Tracking milestones yet. Generate a plan from Collective Decision / Commitments /
-          Initiative scope.
-        </p>
+        <p className="iit-source-panel__empty">{t("author.tracking.noMilestonesYet")}</p>
       ) : (
         candidates.map((candidate, index) => (
           <div className="iit-candidate" key={candidate.candidateId}>
             <div className="iit-candidate__header">
               <h4 className="iit-candidate__title">
-                Milestone {index + 1}: {candidate.title || candidate.approvedAction || "Untitled"}
+                {t("author.tracking.milestoneHeading", {
+                  number: index + 1,
+                  title:
+                    candidate.title ||
+                    candidate.approvedAction ||
+                    t("author.tracking.untitledMilestone"),
+                })}
               </h4>
               <span className="iit-candidate__status">{candidate.currentStatus}</span>
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-milestone-title-${candidate.candidateId}`}>Title</label>
+              <label htmlFor={`iit-milestone-title-${candidate.candidateId}`}>
+                {t("author.tracking.fields.title")}
+              </label>
               <input
                 id={`iit-milestone-title-${candidate.candidateId}`}
                 value={candidate.title}
@@ -308,7 +324,9 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-description-${candidate.candidateId}`}>Description</label>
+              <label htmlFor={`iit-description-${candidate.candidateId}`}>
+                {t("author.tracking.fields.description")}
+              </label>
               <textarea
                 id={`iit-description-${candidate.candidateId}`}
                 rows={2}
@@ -319,7 +337,9 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-status-${candidate.candidateId}`}>Status</label>
+              <label htmlFor={`iit-status-${candidate.candidateId}`}>
+                {t("author.tracking.fields.status")}
+              </label>
               <input
                 id={`iit-status-${candidate.candidateId}`}
                 value={candidate.currentStatus}
@@ -329,7 +349,9 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-progress-${candidate.candidateId}`}>Progress (%)</label>
+              <label htmlFor={`iit-progress-${candidate.candidateId}`}>
+                {t("author.tracking.fields.progress")}
+              </label>
               <input
                 id={`iit-progress-${candidate.candidateId}`}
                 type="number"
@@ -343,12 +365,12 @@ export function InitiativeImplementationTrackingEditor({
             </div>
             <div className="iit-editor__field">
               <label htmlFor={`iit-responsible-${candidate.candidateId}`}>
-                Responsible participant / team (leave blank for Unassigned)
+                {t("author.tracking.fields.responsible")}
               </label>
               <input
                 id={`iit-responsible-${candidate.candidateId}`}
                 value={candidate.responsibleParticipantId}
-                placeholder="Unassigned"
+                placeholder={t("author.tracking.fields.responsiblePlaceholder")}
                 onChange={(event) =>
                   updateCandidate(candidate.candidateId, {
                     responsibleParticipantId: event.target.value,
@@ -357,7 +379,9 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-planned-start-${candidate.candidateId}`}>Planned start</label>
+              <label htmlFor={`iit-planned-start-${candidate.candidateId}`}>
+                {t("author.tracking.fields.plannedStart")}
+              </label>
               <input
                 id={`iit-planned-start-${candidate.candidateId}`}
                 type="date"
@@ -368,7 +392,9 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-target-${candidate.candidateId}`}>Planned end / target date</label>
+              <label htmlFor={`iit-target-${candidate.candidateId}`}>
+                {t("author.tracking.fields.plannedEnd")}
+              </label>
               <input
                 id={`iit-target-${candidate.candidateId}`}
                 type="date"
@@ -379,7 +405,9 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-dependencies-${candidate.candidateId}`}>Dependencies (one per line)</label>
+              <label htmlFor={`iit-dependencies-${candidate.candidateId}`}>
+                {t("author.tracking.fields.dependencies")}
+              </label>
               <textarea
                 id={`iit-dependencies-${candidate.candidateId}`}
                 rows={2}
@@ -390,7 +418,9 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-obstacles-${candidate.candidateId}`}>Obstacles / risks (one per line)</label>
+              <label htmlFor={`iit-obstacles-${candidate.candidateId}`}>
+                {t("author.tracking.fields.obstacles")}
+              </label>
               <textarea
                 id={`iit-obstacles-${candidate.candidateId}`}
                 rows={2}
@@ -402,7 +432,7 @@ export function InitiativeImplementationTrackingEditor({
             </div>
             <div className="iit-editor__field">
               <label htmlFor={`iit-evidence-${candidate.candidateId}`}>
-                Notes / evidence references (one per line)
+                {t("author.tracking.fields.evidence")}
               </label>
               <textarea
                 id={`iit-evidence-${candidate.candidateId}`}
@@ -414,7 +444,9 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             <div className="iit-editor__field">
-              <label htmlFor={`iit-notes-${candidate.candidateId}`}>Notes</label>
+              <label htmlFor={`iit-notes-${candidate.candidateId}`}>
+                {t("author.tracking.fields.notes")}
+              </label>
               <textarea
                 id={`iit-notes-${candidate.candidateId}`}
                 rows={2}
@@ -423,9 +455,11 @@ export function InitiativeImplementationTrackingEditor({
               />
             </div>
             {candidate.commitmentId ? (
-              <p className="iit-source-panel__empty">Source commitment: {candidate.commitmentId}</p>
+              <p className="iit-source-panel__empty">
+                {t("author.tracking.sourceCommitment", { commitmentId: candidate.commitmentId })}
+              </p>
             ) : (
-              <p className="iit-source-panel__empty">Author-originated milestone (no accepted commitment)</p>
+              <p className="iit-source-panel__empty">{t("author.tracking.authorOriginated")}</p>
             )}
           </div>
         ))
@@ -436,21 +470,25 @@ export function InitiativeImplementationTrackingEditor({
 
       <div className="iit-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {actions.saveLabel(generatePhase.phase, actions.generate)}
+          {actions.saveLabel(generatePhase.phase, t("author.tracking.generateTrackingDraft"))}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
           {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="primary" onClick={() => void handlePublish()}>
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Official Responses", actions.phaseLabels)}
+          {resolveSaveButtonLabel(
+            publishPhase.phase,
+            t("author.tracking.publishAndContinue"),
+            actions.phaseLabels,
+          )}
         </WorkspaceButton>
         {published && onNavigate ? (
           <WorkspaceButton
             variant="secondary"
             onClick={() => onNavigate("official_response", "official-responses")}
           >
-            Open Official Responses
+            {t("author.tracking.openOfficialResponses")}
           </WorkspaceButton>
         ) : null}
       </div>

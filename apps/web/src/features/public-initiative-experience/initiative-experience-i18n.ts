@@ -277,6 +277,51 @@ export function resolveInitiativeDecisionVoteChoiceDisplayLabel(
   }
 }
 
+const COMMITMENT_CANDIDATE_STATUS_CODES = new Set<string>(["draft"]);
+
+/**
+ * Display-only label for Commitment Candidate draft status.
+ * Domain contract today: candidate drafts use `"draft"` only.
+ */
+export function resolveCommitmentCandidateStatusDisplayLabel(
+  status: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!COMMITMENT_CANDIDATE_STATUS_CODES.has(status)) {
+    return status;
+  }
+  return resolveLabel(messagesOrT, `author.commitment.candidateStatuses.${status}`, status);
+}
+
+const COMMITMENT_VIEW_STATE_CODES = new Set<string>([
+  "available",
+  "awaiting_you",
+  "awaiting_response",
+  "accepted",
+  "transfer_pending",
+  "completed",
+  "withdrawn",
+  "declined",
+]);
+
+/**
+ * Display-only labels for Commitment PublicResult view states
+ * (derived UI states, not raw proposalStatus codes).
+ * Unknown/legacy codes fall back to empty or raw without inventing meaning.
+ */
+export function resolveCommitmentViewStateDisplayLabel(
+  state: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (state === "legacy") {
+    return "";
+  }
+  if (!COMMITMENT_VIEW_STATE_CODES.has(state)) {
+    return state;
+  }
+  return resolveLabel(messagesOrT, `author.commitment.viewStates.${state}`, state);
+}
+
 /** Contract: every public stageId has a catalog key path stages.{id}. */
 export function listPublicLifecycleStageIdsForI18n(): readonly string[] {
   return PUBLIC_INITIATIVE_EXPERIENCE_STAGES.map((stage) => stage.stageId);

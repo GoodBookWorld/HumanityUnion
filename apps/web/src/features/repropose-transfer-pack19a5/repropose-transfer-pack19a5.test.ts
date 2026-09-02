@@ -4,6 +4,11 @@ import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { loadUiMessagesForLocale } from "../i18n/load-ui-messages.js";
+import {
+  resolveCommitmentViewStateDisplayLabel,
+} from "../public-initiative-experience/initiative-experience-i18n.js";
+
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 function read(relativePath: string): string {
@@ -16,13 +21,24 @@ describe("Pack 19A.5 — re-propose / transfer UX", () => {
       "initiative-implementation-commitment-lifecycle/components/InitiativeImplementationCommitmentPublicResult.tsx",
     );
 
-    assert.match(ui, /Propose Another Participant/);
-    assert.match(ui, /Transfer Responsibility/);
+    assert.match(ui, /author\.commitment\.public\.proposeAnother/);
+    assert.match(ui, /author\.commitment\.public\.transfer/);
     assert.match(ui, /viewerIsSteward/);
     assert.match(ui, /reproposeInitiativeImplementationCommitment/);
     assert.match(ui, /initiateImplementationCommitmentTransfer/);
-    assert.match(ui, /Transfer pending/);
-    assert.match(ui, /current responsible Participant stays responsible until the replacement Accepts/);
+    assert.match(ui, /author\.commitment\.messages\.transferSuccess/);
+    assert.match(ui, /viewState === "declined"/);
+    assert.match(ui, /viewState === "accepted"/);
+    assert.match(ui, /authorActionMode === "repropose"/);
+    assert.match(ui, /authorActionMode === "transfer"/);
+  });
+
+  it("transfer_pending view-state display label resolves", async () => {
+    const en = await loadUiMessagesForLocale("en");
+    assert.equal(
+      resolveCommitmentViewStateDisplayLabel("transfer_pending", en.messages),
+      "Transfer pending",
+    );
   });
 
   it("proposal actions support pending transfer invitee without a second engine", () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeImplementationCommitment } from "@hu/types";
 
@@ -13,6 +14,10 @@ import {
 
 import "./initiative-implementation-commitment-stage-workspace.css";
 
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 /**
  * Initiative Lifecycle — Part I, Section 6. The one place a proposed
  * Participant's own voluntary Accept/Decline choice happens — never on
@@ -24,6 +29,7 @@ export function InitiativeImplementationCommitmentProposalInbox({
 }: {
   readonly initiativeId: string;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [commitments, setCommitments] = useState<InitiativeImplementationCommitment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -55,7 +61,11 @@ export function InitiativeImplementationCommitmentProposalInbox({
       await acceptInitiativeImplementationCommitment(commitmentId);
       await loadProposed();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Accept failed.");
+      setError(
+        t("author.commitment.inbox.acceptFailed", {
+          detail: detailFromError(err, t("author.commitment.inbox.unknownError")),
+        }),
+      );
     } finally {
       setPendingCommitmentId(null);
     }
@@ -68,25 +78,29 @@ export function InitiativeImplementationCommitmentProposalInbox({
       await declineInitiativeImplementationCommitment(commitmentId);
       await loadProposed();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Decline failed.");
+      setError(
+        t("author.commitment.inbox.declineFailed", {
+          detail: detailFromError(err, t("author.commitment.inbox.unknownError")),
+        }),
+      );
     } finally {
       setPendingCommitmentId(null);
     }
   }
 
   if (loading) {
-    return <p className="lsw-sidebar__loading">Loading your proposed commitments…</p>;
+    return <p className="lsw-sidebar__loading">{t("author.commitment.inbox.loading")}</p>;
   }
 
   if (loadFailed) {
-    return <p className="lsw-sidebar__error">Could not load your proposed commitments.</p>;
+    return <p className="lsw-sidebar__error">{t("author.commitment.inbox.loadFailed")}</p>;
   }
 
   const proposed = commitments.filter((commitment) => commitment.proposalStatus === "proposed");
   const accepted = commitments.filter((commitment) => commitment.proposalStatus === "accepted");
 
   if (proposed.length === 0 && accepted.length === 0) {
-    return <p className="lsw-sidebar__placeholder">You have no proposed Implementation Commitments here.</p>;
+    return <p className="lsw-sidebar__placeholder">{t("author.commitment.inbox.empty")}</p>;
   }
 
   return (
@@ -102,14 +116,14 @@ export function InitiativeImplementationCommitmentProposalInbox({
               onClick={() => void handleAccept(commitment.commitmentId)}
               disabled={pendingCommitmentId === commitment.commitmentId}
             >
-              Accept
+              {t("author.commitment.inbox.accept")}
             </WorkspaceButton>
             <WorkspaceButton
               variant="secondary"
               onClick={() => void handleDecline(commitment.commitmentId)}
               disabled={pendingCommitmentId === commitment.commitmentId}
             >
-              Decline
+              {t("author.commitment.inbox.decline")}
             </WorkspaceButton>
           </div>
         </div>
@@ -117,7 +131,7 @@ export function InitiativeImplementationCommitmentProposalInbox({
       {accepted.map((commitment) => (
         <div className="iic-proposal-inbox__item" key={commitment.commitmentId}>
           <strong>{commitment.commitmentTitle}</strong>
-          <p className="iic-public__commitment-status">Accepted</p>
+          <p className="iic-public__commitment-status">{t("author.commitment.inbox.accepted")}</p>
         </div>
       ))}
     </div>
