@@ -115,7 +115,7 @@
   border: 1px dashed var(--color-border, #dadce0);
   border-radius: var(--hu-radius-md);
   padding: var(--hu-space-5);
-  text-align: left;
+  text-align: start;
 }
 
 .lsw-empty__title {
@@ -176,6 +176,7 @@
   flex-wrap: wrap;
   gap: var(--hu-space-3);
   justify-content: space-between;
+  min-width: 0;
   padding-top: var(--hu-space-3);
 }
 
@@ -184,6 +185,20 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--hu-space-2);
+  min-width: 0;
+}
+
+.lsw-footer__nav .workspace-button,
+.lsw-footer > .workspace-button {
+  white-space: normal;
+  height: auto;
+  min-height: 2.25rem;
+  overflow-wrap: anywhere;
+}
+
+.lsw-header__title {
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .lsw-footer__return {
@@ -209,11 +224,13 @@
   display: flex;
   flex-direction: column;
   gap: var(--hu-space-4);
+  min-width: 0;
 }
 
 .lsw-sidebar__section {
   border: 1px solid var(--color-border, #dadce0);
   border-radius: var(--hu-radius-md);
+  min-width: 0;
   padding: var(--hu-space-3) var(--hu-space-4);
 }
 
@@ -222,6 +239,7 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   margin: 0 0 var(--hu-space-2);
+  overflow-wrap: anywhere;
   text-transform: uppercase;
 }
 
@@ -231,12 +249,21 @@
   color: var(--color-text-muted, #5f6368);
   font-size: 0.88rem;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .lsw-sidebar__actions {
   display: flex;
   flex-direction: column;
   gap: var(--hu-space-2);
+  min-width: 0;
+}
+
+.lsw-sidebar__actions .workspace-button {
+  white-space: normal;
+  height: auto;
+  min-height: 2.25rem;
+  overflow-wrap: anywhere;
 }
 
 /* Focus visibility (Part 16) */

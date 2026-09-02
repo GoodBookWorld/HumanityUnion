@@ -4,14 +4,16 @@ import { formatWorkspaceStatusLabel, resolveWorkspaceBadgeVariant } from "../sta
 interface WorkspaceStatusBadgeProps {
   status: string;
   variant?: WorkspaceBadgeVariant;
+  /** Display-only override. Canonical `status` is never mutated. */
+  label?: string;
 }
 
-export function WorkspaceStatusBadge({ status, variant }: WorkspaceStatusBadgeProps) {
+export function WorkspaceStatusBadge({ status, variant, label }: WorkspaceStatusBadgeProps) {
   const resolvedVariant = variant ?? resolveWorkspaceBadgeVariant(status);
 
   return (
     <span className={`workspace-badge workspace-badge--${resolvedVariant}`}>
-      {formatWorkspaceStatusLabel(status)}
+      {label ?? formatWorkspaceStatusLabel(status)}
     </span>
   );
 }

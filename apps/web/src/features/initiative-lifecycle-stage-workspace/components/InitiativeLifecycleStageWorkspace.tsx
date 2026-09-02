@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { InitiativeLifecycleProfile, InitiativeLifecycleStageProjection } from "@hu/types";
 import {
@@ -14,6 +15,10 @@ import {
   WorkspaceButton,
   WorkspaceStatusBadge,
 } from "../../initiative-workspace-ux";
+import {
+  resolveLifecycleStageDisplayLabel,
+  resolvePresentationStatusDisplayLabel,
+} from "../../public-initiative-experience/initiative-experience-i18n";
 import { getInitiativeLifecycleStageProjection } from "../api";
 import { InitiativeLifecycleSourceSnapshotPanel } from "./InitiativeLifecycleSourceSnapshotPanel";
 import { InitiativeLifecyclePublicResultPanel } from "./InitiativeLifecyclePublicResultPanel";
@@ -45,18 +50,8 @@ function renderStageSlot(
  * Initiative Lifecycle — Part A Completion Part 5: the reusable
  * `InitiativeLifecycleStageWorkspace` shell.
  *
- * This is the ONE shell every lifecycle stage (Collaborative Analysis
- * onward) renders through. It never assumes a domain's content shape —
- * `authorEditorSlot` / `publicResultSlot` / `participationSlot` are the
- * seams a stage-specific pack (Part B onward) fills in; Part A supplies
- * none of them, so every stage renders this shell's own honest foundation
- * state (draft empty-state in Author Workspace, Upcoming/published-result
- * boundary in Public Mode) rather than a fake generic text form.
- *
- * Self-fetching (Part 23 convention, matching `InitiativeActiveAlliesWidget`)
- * — the ONLY thing it needs from its caller is which Initiative/stage is
- * selected; it resolves viewer role and Author Mode itself, authoritatively,
- * from `initiative-lifecycle-stage-projection.routes.ts`.
+ * Pack 02G 08D.2 — shared chrome via initiativeExperience.author.shared;
+ * stage editors remain stage-pack owned.
  */
 export interface InitiativeLifecycleStageWorkspaceProps {
   readonly initiativeId: string;
@@ -83,13 +78,13 @@ export interface InitiativeLifecycleStageWorkspaceProps {
   readonly lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }
 
-function formatTimestamp(value: string | null): string | null {
+function formatTimestamp(locale: string, value: string | null): string | null {
   if (!value) {
     return null;
   }
 
   try {
-    return new Date(value).toLocaleString(undefined, {
+    return new Date(value).toLocaleString(locale, {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -110,53 +105,80 @@ function StageHeader({
   isPreviewMode: boolean;
   showStageOrdinal: boolean;
 }) {
-  const publishedAtLabel = formatTimestamp(projection.metadata.publishedAt);
-  const draftUpdatedAtLabel = formatTimestamp(projection.metadata.draftUpdatedAt);
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
+  const stageLabel = resolveLifecycleStageDisplayLabel(
+    projection.stageId,
+    t,
+    projection.stageLabel,
+  );
+  const statusLabel = resolvePresentationStatusDisplayLabel(
+    projection.metadata.presentationStatus,
+    t,
+  );
+  const publishedAtLabel = formatTimestamp(locale, projection.metadata.publishedAt);
+  const draftUpdatedAtLabel = formatTimestamp(locale, projection.metadata.draftUpdatedAt);
 
   return (
     <header className="lsw-header">
       <div className="lsw-header__top">
         {showStageOrdinal ? (
           <p className="lsw-header__order" aria-hidden="true">
-            Stage {projection.stageOrder + 1} of {INITIATIVE_LIFECYCLE_STAGE_REGISTRY.length}
+            {t("author.shared.stageOf", {
+              current: projection.stageOrder + 1,
+              total: INITIATIVE_LIFECYCLE_STAGE_REGISTRY.length,
+            })}
           </p>
         ) : null}
         <h2 id={`lsw-stage-title-${projection.stageId}`} className="lsw-header__title">
-          {projection.stageLabel}
+          {stageLabel}
         </h2>
         <div className="lsw-header__badges">
-          <WorkspaceStatusBadge status={projection.metadata.presentationStatus} />
+          <WorkspaceStatusBadge
+            status={projection.metadata.presentationStatus}
+            label={statusLabel}
+          />
           {projection.metadata.version !== null ? (
-            <span className="lsw-header__version">Version {projection.metadata.version}</span>
+            <span className="lsw-header__version">
+              {t("common.versionN", { version: projection.metadata.version })}
+            </span>
           ) : null}
-          {isPreviewMode ? <span className="lsw-header__preview-flag">Public Preview</span> : null}
+          {isPreviewMode ? (
+            <span className="lsw-header__preview-flag">{t("author.shared.publicPreview")}</span>
+          ) : null}
         </div>
       </div>
       <p className="lsw-header__mode" aria-live="polite">
         {isPreviewMode
           ? projection.metadata.canViewPublicResult || projection.metadata.hasUnpublishedChanges
-            ? "Previewing how this stage will look to the public."
-            : "Previewing how this stage will look to the public. Nothing has been published."
+            ? t("author.shared.modePreviewing")
+            : t("author.shared.modePreviewingNothingPublished")
           : projection.presentationMode === "author_workspace"
-            ? "Author Workspace — only you can see this working view."
-            : "Public view."}
+            ? t("author.shared.modeAuthorWorkspace")
+            : t("author.shared.modePublicView")}
       </p>
       {publishedAtLabel ? (
-        <p className="lsw-header__timestamp">Published {publishedAtLabel}</p>
+        <p className="lsw-header__timestamp">
+          {t("author.shared.publishedAt", { date: publishedAtLabel })}
+        </p>
       ) : draftUpdatedAtLabel ? (
-        <p className="lsw-header__timestamp">Last updated {draftUpdatedAtLabel}</p>
+        <p className="lsw-header__timestamp">
+          {t("author.shared.lastUpdated", { date: draftUpdatedAtLabel })}
+        </p>
       ) : null}
     </header>
   );
 }
 
-function AuthorDraftEmptyState({ stageLabel }: { stageLabel: string }) {
+function AuthorDraftEmptyState({ stageId, fallbackLabel }: { stageId: string; fallbackLabel: string }) {
+  const t = useTranslations("initiativeExperience");
+  const stageLabel = resolveLifecycleStageDisplayLabel(stageId, t, fallbackLabel);
+
   return (
     <div className="lsw-empty">
-      <h3 className="lsw-empty__title">No draft yet</h3>
+      <h3 className="lsw-empty__title">{t("author.shared.noDraftYet")}</h3>
       <p className="lsw-empty__explanation">
-        This is the working foundation for the {stageLabel} stage. Drafting tools for this stage will be
-        available in an upcoming implementation pack.
+        {t("author.shared.noDraftYetExplanation", { stage: stageLabel })}
       </p>
     </div>
   );
@@ -189,7 +211,9 @@ function AuthorWorkspaceMainContent({
   return (
     <div className="lsw-main">
       <InitiativeLifecycleSourceSnapshotPanel snapshot={projection.sourceSnapshot} />
-      {authorEditorSlot ?? <AuthorDraftEmptyState stageLabel={projection.stageLabel} />}
+      {authorEditorSlot ?? (
+        <AuthorDraftEmptyState stageId={projection.stageId} fallbackLabel={projection.stageLabel} />
+      )}
     </div>
   );
 }
@@ -209,21 +233,39 @@ function StageFooterNav({
   isPreviewMode: boolean;
   onTogglePreview: () => void;
 }) {
+  const t = useTranslations("initiativeExperience");
+  const previousLabel = projection.previousStage
+    ? resolveLifecycleStageDisplayLabel(
+        projection.previousStage.stageId,
+        t,
+        projection.previousStage.label,
+      )
+    : null;
+  const nextLabel = projection.nextStage
+    ? resolveLifecycleStageDisplayLabel(
+        projection.nextStage.stageId,
+        t,
+        projection.nextStage.label,
+      )
+    : null;
+
   return (
-    <footer className="lsw-footer" aria-label="Stage navigation">
+    <footer className="lsw-footer" aria-label={t("author.shared.stageNavigationAria")}>
       <div className="lsw-footer__nav">
-        {projection.previousStage ? (
+        {projection.previousStage && previousLabel ? (
           <WorkspaceButton
             variant="secondary"
-            onClick={() => onNavigateStage(projection.previousStage!.stageId, projection.previousStage!.hash)}
+            onClick={() =>
+              onNavigateStage(projection.previousStage!.stageId, projection.previousStage!.hash)
+            }
           >
-            ← {projection.previousStage.label}
+            {t("author.shared.previousStage", { stage: previousLabel })}
           </WorkspaceButton>
         ) : null}
         <Link href={returnToInitiativeHref} className="lsw-footer__return">
-          Return to Initiative
+          {t("author.shared.returnToInitiative")}
         </Link>
-        {projection.nextStage ? (
+        {projection.nextStage && nextLabel ? (
           <WorkspaceButton
             variant="secondary"
             disabled={
@@ -238,13 +280,13 @@ function StageFooterNav({
             }
             onClick={() => onNavigateStage(projection.nextStage!.stageId, projection.nextStage!.hash)}
           >
-            {projection.nextStage.label} →
+            {t("author.shared.nextStage", { stage: nextLabel })}
           </WorkspaceButton>
         ) : null}
       </div>
       {isAuthorWorkspace ? (
         <WorkspaceButton variant="primary" onClick={onTogglePreview}>
-          {isPreviewMode ? "Return to Editing" : "Public Preview"}
+          {isPreviewMode ? t("author.shared.returnToEditing") : t("author.shared.publicPreview")}
         </WorkspaceButton>
       ) : null}
     </footer>
@@ -263,6 +305,7 @@ export function InitiativeLifecycleStageWorkspace({
   onTogglePreview,
   lifecycleProfile,
 }: InitiativeLifecycleStageWorkspaceProps) {
+  const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<InitiativeLifecycleStageProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [localIsPreviewMode, setLocalIsPreviewMode] = useState(false);
@@ -339,11 +382,11 @@ export function InitiativeLifecycleStageWorkspace({
   }, [onTogglePreview]);
 
   if (loadFailed) {
-    return <p className="lsw-error">This stage could not be loaded.</p>;
+    return <p className="lsw-error">{t("author.shared.stageLoadFailed")}</p>;
   }
 
   if (!projection) {
-    return <p className="lsw-loading">Loading stage…</p>;
+    return <p className="lsw-loading">{t("author.shared.loadingStage")}</p>;
   }
 
   const isAuthorWorkspace = projection.presentationMode === "author_workspace";

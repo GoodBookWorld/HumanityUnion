@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   InitiativeAnalysisSourceSnapshot,
@@ -33,6 +34,10 @@ import {
 import { InitiativeActiveAlliesWidget } from "../../initiative-active-allies/components/InitiativeActiveAlliesWidget";
 import { PublicInitiativeSupportStatistics } from "../../public-initiative-experience/components/PublicInitiativeSupportStatistics";
 import { PublicChoiceElectionSidebarWidget } from "../../public-initiative-experience/components/PublicChoiceElectionSidebarWidget";
+import {
+  resolveLifecycleStageDisplayLabel,
+  resolvePresentationStatusDisplayLabel,
+} from "../../public-initiative-experience/initiative-experience-i18n";
 import { getInitiativeAnalysisSourceSnapshot } from "../../initiative-collaborative-analysis/api";
 import { deriveAiAssistantInsights } from "../../initiative-collaborative-analysis/derive-ai-assistant-insights";
 import "../../initiative-collaborative-analysis/components/initiative-collaborative-analysis-workspace.css";
@@ -114,6 +119,51 @@ export interface InitiativeLifecycleWorkingSidebarProps {
   readonly supportBusy?: boolean;
 }
 
+
+function WorkingSidebarAssistantChrome({
+  initiativeId,
+  surfaceId,
+  stageId,
+  children,
+  loadFailed = false,
+  loading = false,
+  hint = false,
+}: {
+  initiativeId: string;
+  surfaceId: ComponentProps<typeof HumanityUnionAssistantOpenButton>["surfaceId"];
+  stageId: ComponentProps<typeof HumanityUnionAssistantOpenButton>["stageId"];
+  children?: ReactNode;
+  loadFailed?: boolean;
+  loading?: boolean;
+  hint?: boolean;
+}) {
+  const t = useTranslations("initiativeExperience");
+
+  return (
+    <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
+      <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
+        {t("author.sidebar.assistantTitle")}
+      </h3>
+      <HumanityUnionAssistantOpenButton
+        surfaceId={surfaceId}
+        initiativeId={initiativeId}
+        stageId={stageId}
+        label={t("author.sidebar.askAssistant")}
+        className="lifecycle-ai-modal__open-button"
+      />
+      {loadFailed ? (
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
+      ) : loading ? (
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
+      ) : hint ? (
+        <p className="lsw-sidebar__placeholder">{t("author.sidebar.assistantGenericHint")}</p>
+      ) : (
+        children
+      )}
+    </section>
+  );
+}
+
 function AiAssistantSlot({
   initiativeId,
   surfaceId,
@@ -148,21 +198,12 @@ function AiAssistantSlot({
     | "archive";
 }) {
   return (
-    <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
-      <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
-      </h3>
-      <HumanityUnionAssistantOpenButton
-        surfaceId={surfaceId}
-        initiativeId={initiativeId}
-        stageId={stageId}
-        label="Ask Assistant"
-        className="lifecycle-ai-modal__open-button"
-      />
-      <p className="lsw-sidebar__placeholder">
-        Ask about this stage or Humanity Union. Suggestions are advisory only.
-      </p>
-    </section>
+    <WorkingSidebarAssistantChrome
+      initiativeId={initiativeId}
+      surfaceId={surfaceId}
+      stageId={stageId}
+      hint
+    />
   );
 }
 
@@ -172,6 +213,7 @@ function AiAssistantSlot({
  * via `deriveAiAssistantInsights` — no AI chat, no external call.
  */
 function AnalysisAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeAnalysisSourceSnapshot | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -200,19 +242,19 @@ function AnalysisAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="analysis"
         initiativeId={initiativeId}
         stageId="analysis"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !snapshot ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <AnalysisAiAssistantContent snapshot={snapshot} />
       )}
@@ -304,6 +346,7 @@ function AnalysisAiAssistantContent({ snapshot }: { snapshot: InitiativeAnalysis
  * Exclude/Priority stay exclusively in the main Proposal Editor).
  */
 function ProposalAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeProposalIntelligenceSnapshot | null>(null);
   const [draftProposals, setDraftProposals] = useState<readonly InitiativeStructuredProposal[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -337,19 +380,19 @@ function ProposalAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="proposal"
         initiativeId={initiativeId}
         stageId="proposal"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !snapshot ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <ProposalAiAssistantContent snapshot={snapshot} draftProposals={draftProposals} />
       )}
@@ -454,6 +497,7 @@ function ProposalAiAssistantContent({
  * exclusively in the main Revision Editor).
  */
 function RevisionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeRevisionIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativeRevisionDraft | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -484,19 +528,19 @@ function RevisionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="revision"
         initiativeId={initiativeId}
         stageId="revision"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !snapshot ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <RevisionAiAssistantContent snapshot={snapshot} draftChanges={draft?.changes ?? []} />
       )}
@@ -586,6 +630,7 @@ function RevisionAiAssistantContent({
  * (Generate/Edit/Publish stay exclusively in the main Petition Editor).
  */
 function PetitionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativePetitionIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativeLifecycleWorkingSidebarPetitionDraft>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -616,19 +661,19 @@ function PetitionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="petition"
         initiativeId={initiativeId}
         stageId="petition"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !snapshot ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <PetitionAiAssistantContent snapshot={snapshot} draft={draft} />
       )}
@@ -708,6 +753,7 @@ function PetitionAiAssistantContent({
  * Advisory-only derived insights — never chooses an option, votes, or publishes.
  */
 function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeDecisionSessionIntelligenceSnapshot | null>(
     null,
   );
@@ -743,19 +789,19 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="decision_session"
         initiativeId={initiativeId}
         stageId="decision_session"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="iip-ai-assistant">
           <div className="iip-ai-assistant__group">
@@ -822,6 +868,7 @@ function CollectiveDecisionAiAssistantSlot({
   initiativeId: string;
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeCollectiveDecisionIntelligenceSnapshot | null>(
     null,
   );
@@ -859,19 +906,19 @@ function CollectiveDecisionAiAssistantSlot({
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="collective_decision"
         initiativeId={initiativeId}
         stageId="collective_decision"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="iip-ai-assistant">
           <div className="iip-ai-assistant__group">
@@ -951,6 +998,7 @@ function CollectiveDecisionAiAssistantSlot({
  * Candidate, or publishes.
  */
 function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeImplementationCommitmentIntelligenceSnapshot | null>(
     null,
   );
@@ -986,19 +1034,19 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="commitment"
         initiativeId={initiativeId}
         stageId="commitment"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="iic-assistant-block">
           <div className="iic-assistant-block">
@@ -1069,6 +1117,7 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
  * status, or dates.
  */
 function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeImplementationTrackingIntelligenceSnapshot | null>(
     null,
   );
@@ -1104,19 +1153,19 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="tracking"
         initiativeId={initiativeId}
         stageId="tracking"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="iit-assistant-block">
           <div className="iit-assistant-block">
@@ -1184,6 +1233,7 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
  * itself edits a Candidate or publishes.
  */
 function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeOfficialResponseIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativeOfficialResponseLifecycleDraft | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -1216,19 +1266,19 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="official_response"
         initiativeId={initiativeId}
         stageId="official_response"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="ior-assistant-block">
           <div className="ior-assistant-block">
@@ -1310,6 +1360,7 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
  * success/failure, and never itself edits a section or publishes.
  */
 function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativePublicImpactIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativePublicImpactLifecycleDraft | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -1342,19 +1393,19 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="public_impact"
         initiativeId={initiativeId}
         stageId="public_impact"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="ipi-assistant-block">
           <div className="ipi-assistant-block">
@@ -1439,6 +1490,7 @@ function CivicArchiveAiAssistantSlot({
   initiativeId: string;
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [snapshot, setSnapshot] = useState<InitiativeCivicArchiveIntelligenceSnapshot | null>(null);
   const [draft, setDraft] = useState<InitiativeCivicArchiveLifecycleDraft | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -1474,19 +1526,19 @@ function CivicArchiveAiAssistantSlot({
   return (
     <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-ai-title">
       <h3 id="lsw-sidebar-ai-title" className="lsw-sidebar__section-title">
-        Humanity Union Assistant
+        {t("author.sidebar.assistantTitle")}
       </h3>
       <HumanityUnionAssistantOpenButton
         surfaceId="archive"
         initiativeId={initiativeId}
         stageId="archive"
-        label="Ask Assistant"
+        label={t("author.sidebar.askAssistant")}
         className="lifecycle-ai-modal__open-button"
       />
       {loadFailed ? (
-        <p className="lsw-sidebar__error">Could not load Assistant data.</p>
+        <p className="lsw-sidebar__error">{t("author.sidebar.assistantLoadFailed")}</p>
       ) : !insights ? (
-        <p className="lsw-sidebar__loading">Loading…</p>
+        <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
       ) : (
         <div className="ica-assistant-block">
           <div className="ica-assistant-block">
@@ -1549,6 +1601,7 @@ export function InitiativeLifecycleWorkingSidebar({
   onSupportBookmarkToggle,
   supportBusy = false,
 }: InitiativeLifecycleWorkingSidebarProps) {
+  const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<InitiativeLifecycleStageProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -1598,8 +1651,57 @@ export function InitiativeLifecycleWorkingSidebar({
     isPublicImpactStage ||
     isArchiveStage;
 
+
+  function resolveDraftCompletenessCopy(): string {
+    if (loadFailed) {
+      return t("author.sidebar.draftStatusLoadFailed");
+    }
+    if (!projection) {
+      return t("author.sidebar.loading");
+    }
+    if (projection.metadata.hasUnpublishedChanges) {
+      return projection.metadata.draftUpdatedAt
+        ? t("author.sidebar.completeness.draftInProgressSaveHint")
+        : t("author.sidebar.completeness.draftInProgress");
+    }
+
+    const completenessStageId = (
+      [
+        "analysis",
+        "proposal",
+        "revision",
+        "petition",
+        "decision_session",
+        "collective_decision",
+        "commitment",
+        "tracking",
+        "official_response",
+        "public_impact",
+        "archive",
+      ] as const
+    ).includes(stageId as never)
+      ? (stageId as
+          | "analysis"
+          | "proposal"
+          | "revision"
+          | "petition"
+          | "decision_session"
+          | "collective_decision"
+          | "commitment"
+          | "tracking"
+          | "official_response"
+          | "public_impact"
+          | "archive")
+      : "analysis";
+
+    if (projection.metadata.publishedAt) {
+      return t(`author.sidebar.completeness.published.${completenessStageId}`);
+    }
+    return t(`author.sidebar.completeness.empty.${completenessStageId}`);
+  }
+
   return (
-    <div className="lsw-sidebar" aria-label="Stage working tools">
+    <div className="lsw-sidebar" aria-label={t("author.sidebar.aria")}>
       {supportStatistics &&
       onSupportSignalChange &&
       onSupportBookmarkToggle &&
@@ -1653,14 +1755,17 @@ export function InitiativeLifecycleWorkingSidebar({
 
       <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-status-title">
         <h3 id="lsw-sidebar-status-title" className="lsw-sidebar__section-title">
-          Stage Status
+          {t("author.sidebar.stageStatus")}
         </h3>
         {loadFailed ? (
-          <p className="lsw-sidebar__error">Could not load stage status.</p>
+          <p className="lsw-sidebar__error">{t("author.sidebar.stageStatusLoadFailed")}</p>
         ) : projection ? (
-          <WorkspaceStatusBadge status={projection.metadata.presentationStatus} />
+          <WorkspaceStatusBadge
+            status={projection.metadata.presentationStatus}
+            label={resolvePresentationStatusDisplayLabel(projection.metadata.presentationStatus, t)}
+          />
         ) : (
-          <p className="lsw-sidebar__loading">Loading…</p>
+          <p className="lsw-sidebar__loading">{t("author.sidebar.loading")}</p>
         )}
       </section>
 
@@ -1668,38 +1773,40 @@ export function InitiativeLifecycleWorkingSidebar({
         <>
           <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-sources-title">
             <h3 id="lsw-sidebar-sources-title" className="lsw-sidebar__section-title">
-              Sources Used
+              {t("author.sidebar.sourcesUsed")}
             </h3>
             <p className="lsw-sidebar__placeholder">
               {projection?.sourceSnapshot.isEmpty ?? true
-                ? "No sources collected yet."
-                : `${projection?.sourceSnapshot.items.length ?? 0} source(s) collected.`}
+                ? t("author.sidebar.sourcesNone")
+                : t("author.sidebar.sourcesCollectedCount", {
+                    count: projection?.sourceSnapshot.items.length ?? 0,
+                  })}
             </p>
           </section>
 
           <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-questions-title">
             <h3 id="lsw-sidebar-questions-title" className="lsw-sidebar__section-title">
-              Unresolved Questions
+              {t("author.sidebar.unresolvedQuestions")}
             </h3>
-            <p className="lsw-sidebar__placeholder">None identified yet.</p>
+            <p className="lsw-sidebar__placeholder">{t("author.sidebar.noneIdentified")}</p>
           </section>
 
           <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-completeness-title">
             <h3 id="lsw-sidebar-completeness-title" className="lsw-sidebar__section-title">
-              Draft Completeness
+              {t("author.sidebar.draftCompleteness")}
             </h3>
-            <p className="lsw-sidebar__placeholder">Not started.</p>
+            <p className="lsw-sidebar__placeholder">{t("author.sidebar.notStarted")}</p>
           </section>
 
           <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-primary-action-title">
             <h3 id="lsw-sidebar-primary-action-title" className="lsw-sidebar__section-title">
-              Primary Action
+              {t("author.sidebar.primaryAction")}
             </h3>
             <WorkspaceDeferredActions
-              title="Drafting tools coming soon"
-              note="This stage's drafting workspace is not implemented yet."
-              actions={["Generate Draft"]}
-              tooltip="Available once this stage's workspace is implemented."
+              title={t("author.sidebar.draftingComingSoonTitle")}
+              note={t("author.sidebar.draftingComingSoonNote")}
+              actions={[t("author.sidebar.generateDraft")]}
+              tooltip={t("author.sidebar.draftingComingSoonTooltip")}
               authorWorkflow
             />
           </section>
@@ -1707,66 +1814,16 @@ export function InitiativeLifecycleWorkingSidebar({
       ) : (
         <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-completeness-title">
           <h3 id="lsw-sidebar-completeness-title" className="lsw-sidebar__section-title">
-            Draft Completeness
+            {t("author.sidebar.draftCompleteness")}
           </h3>
-          <p className="lsw-sidebar__placeholder">
-            {loadFailed
-              ? "Could not load draft status."
-              : !projection
-                ? "Loading…"
-                : projection.metadata.hasUnpublishedChanges
-                  ? `Draft in progress${projection.metadata.draftUpdatedAt ? " — use Save Draft in the main workspace to keep your changes" : ""}.`
-                  : projection.metadata.publishedAt
-                    ? isProposalStage
-                      ? "Published — generate a new draft to prepare an updated round of proposals."
-                      : isRevisionStage
-                        ? "Published — start a new Revision draft to prepare the next update."
-                        : isPetitionStage
-                          ? "Published — this Initiative's Petition has been published and opened for signatures."
-                          : isDecisionSessionStage
-                            ? "Published — Collective Decision is now unlocked."
-                    : isCollectiveDecisionStage
-                      ? "Published — Implementation Commitments are now unlocked."
-                    : isCommitmentStage
-                      ? "Published — Implementation Tracking is now unlocked."
-                      : isTrackingStage
-                        ? "Published — Official Responses is now unlocked."
-                        : isOfficialResponseStage
-                          ? "Published — Public Impact is now unlocked."
-                          : isPublicImpactStage
-                            ? "Published — Civic Archive is now unlocked."
-                            : isArchiveStage
-                              ? "Published — generate again to prepare the next immutable Archive version."
-                          : "Published — generate a new draft to prepare an update."
-                : isProposalStage
-                  ? "No draft yet — use Generate Improvement Proposals Draft in the main workspace to begin."
-                  : isRevisionStage
-                    ? "No draft yet — use Start Revision Draft in the main workspace to begin."
-                    : isPetitionStage
-                      ? "No draft yet — use Generate Petition Draft in the main workspace to begin."
-                      : isDecisionSessionStage
-                        ? "No draft yet — use Generate Decision Draft in the main workspace to begin."
-                        : isCollectiveDecisionStage
-                          ? "No draft yet — use Generate Collective Decision Draft in the main workspace to begin."
-                          : isCommitmentStage
-                            ? "No draft yet — use Generate Implementation Commitments Draft in the main workspace to begin."
-                            : isTrackingStage
-                              ? "No draft yet — use Generate Implementation Tracking Draft in the main workspace to begin."
-                              : isOfficialResponseStage
-                                ? "No draft yet — use Generate Official Responses Draft in the main workspace to begin."
-                                : isPublicImpactStage
-                                  ? "No draft yet — use Generate Public Impact Draft in the main workspace to begin."
-                                  : isArchiveStage
-                                    ? "No draft yet — use Generate Civic Archive Draft in the main workspace to begin."
-                                : "No draft yet — use Generate Analysis Draft in the main workspace to begin."}
-          </p>
+          <p className="lsw-sidebar__placeholder">{resolveDraftCompletenessCopy()}</p>
         </section>
       )}
 
       {isCommitmentStage ? (
         <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-proposal-inbox-title">
           <h3 id="lsw-sidebar-proposal-inbox-title" className="lsw-sidebar__section-title">
-            My Proposed Commitments
+            {t("author.sidebar.myProposedCommitments")}
           </h3>
           <InitiativeImplementationCommitmentProposalInbox initiativeId={initiativeId} />
         </section>
@@ -1775,15 +1832,18 @@ export function InitiativeLifecycleWorkingSidebar({
       {isTrackingStage ? (
         <section className="lsw-sidebar__section" aria-labelledby="lsw-sidebar-progress-inbox-title">
           <h3 id="lsw-sidebar-progress-inbox-title" className="lsw-sidebar__section-title">
-            My Implementation Tracking
+            {t("author.sidebar.myImplementationTracking")}
           </h3>
           <InitiativeImplementationTrackingProgressInbox initiativeId={initiativeId} />
         </section>
       ) : null}
 
-      <section className="lsw-sidebar__section lsw-sidebar__actions" aria-label="Stage actions">
+      <section
+        className="lsw-sidebar__section lsw-sidebar__actions"
+        aria-label={t("author.sidebar.actionsAria")}
+      >
         <WorkspaceButton variant="secondary" onClick={onOpenPublicPreview}>
-          Public Preview
+          {t("author.sidebar.publicPreview")}
         </WorkspaceButton>
         {projection?.nextStage ? (
           <WorkspaceButton
@@ -1793,11 +1853,19 @@ export function InitiativeLifecycleWorkingSidebar({
               !projection.metadata.canViewPublicResult &&
               projection.metadata.presentationStatus !== "published"
             }
-            onClick={() => onNavigateNextStage(projection.nextStage!.stageId, projection.nextStage!.hash)}
+            onClick={() =>
+              onNavigateNextStage(projection.nextStage!.stageId, projection.nextStage!.hash)
+            }
           >
             {isPublicImpactStage && projection.nextStage.stageId === "archive"
-              ? "Open Civic Archive"
-              : `Next Stage: ${projection.nextStage.label}`}
+              ? t("author.sidebar.openCivicArchive")
+              : t("author.sidebar.nextStage", {
+                  stage: resolveLifecycleStageDisplayLabel(
+                    projection.nextStage.stageId,
+                    t,
+                    projection.nextStage.label,
+                  ),
+                })}
           </WorkspaceButton>
         ) : null}
       </section>
