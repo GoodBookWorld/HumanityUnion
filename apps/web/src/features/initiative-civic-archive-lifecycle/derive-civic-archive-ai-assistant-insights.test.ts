@@ -160,10 +160,11 @@ describe("Pack 02G Task 08E.8f — deriveCivicArchiveAiAssistantInsights", () =>
       emptySnapshot({
         consistencyChecks: [
           {
-            checkId: "a1",
+            checkId: "tracking-resolved",
             label: "API",
             status: "warning",
             detail: "Opaque Archive consistency detail.",
+            params: {},
           },
         ],
       }),

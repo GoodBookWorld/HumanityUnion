@@ -1204,6 +1204,246 @@
             "public_impact": "尚無草稿 — 請在主工作區使用「產生公共影響草稿」開始。",
             "archive": "尚無草稿 — 請在主工作區使用「產生公民典藏草稿」開始。"
           }
+        },
+        "apiConsistency": {
+          "generic": {
+            "warning": "一致性警告",
+            "conflict": "衝突警告"
+          },
+          "stages": {
+            "proposal": "改善提案",
+            "petition": "請願",
+            "decision_session": "決策會議",
+            "analysis": "協作分析",
+            "revision": "修訂",
+            "collective_decision": "集體決策",
+            "implementation_commitment": "執行承諾",
+            "implementation_tracking": "執行追蹤",
+            "official_response": "官方回應",
+            "public_impact": "公共影響",
+            "civic_archive": "公民典藏",
+            "discussion": "討論",
+            "initiative": "倡議"
+          },
+          "revision": {
+            "multiple_changes_same_section": "{changeCount, plural, one {有 # 項變更針對「{section}」區塊——發佈前請先檢視，以免產生衝突編輯。} other {有 # 項變更針對「{section}」區塊——發佈前請先檢視，以免產生衝突編輯。}}"
+          },
+          "petition": {
+            "labels": {
+              "revision-available": "已發佈修訂",
+              "analysis-available": "協作分析",
+              "proposal-references-resolved": "提案參照"
+            },
+            "revision-available": {
+              "ok": "請願將參照修訂 v{version}。",
+              "warning": "尚無已發佈的修訂。請先發佈修訂再產生請願。"
+            },
+            "analysis-available": {
+              "ok": "請願脈絡與協作分析「{title}」一致。",
+              "warning": "找不到已發佈的協作分析。支援脈絡可能不完整。"
+            },
+            "proposal-references-resolved": {
+              "ok": "{count, plural, one {修訂已參照 # 項改善提案。} other {修訂已參照 # 項改善提案。}}",
+              "warning": "目前修訂未接受任何改善提案。"
+            }
+          },
+          "decisionSession": {
+            "labels": {
+              "petition-available": "已發佈請願",
+              "revision-available": "已發佈修訂",
+              "analysis-available": "協作分析",
+              "proposal-references": "改善提案",
+              "ally-recommendations": "活躍盟友建議"
+            },
+            "petition-available": {
+              "ok": "請願「{title}」可作為決策會議的來源。",
+              "warning": "尚無已發佈的請願——決策會議可改用倡議／分析／提案脈絡。"
+            },
+            "revision-available": {
+              "ok": "已參照修訂 v{version}。",
+              "warning": "沒有可用於追溯的已發佈修訂。"
+            },
+            "analysis-available": {
+              "ok": "已參照分析「{title}」。",
+              "warning": "沒有可用的已發佈協作分析。"
+            },
+            "proposal-references": {
+              "ok": "{count, plural, one {有 # 項提案參照可用。} other {有 # 項提案參照可用。}}",
+              "warning": "尚未參照任何已接受的改善提案。"
+            },
+            "ally-recommendations": {
+              "ok": "{count, plural, one {來自活躍盟友的 # 則諮詢建議。} other {來自活躍盟友的 # 則諮詢建議。}}",
+              "okEmpty": "尚無活躍盟友建議——建議仍為可選且僅供諮詢。"
+            }
+          },
+          "collectiveDecision": {
+            "labels": {
+              "decision-session-available": "已發佈決策會議",
+              "options-available": "決策選項",
+              "risks-identified": "已識別風險",
+              "roles-assigned": "負責角色",
+              "timeline-defined": "執行時程"
+            },
+            "decision-session-available": {
+              "ok": "決策會議「{title}」可作為集體決策的來源。",
+              "okOptional": "決策會議「{title}」可作為可選脈絡。",
+              "warning": "尚無已發佈的決策會議——仍可依倡議脈絡設定集體決策。"
+            },
+            "options-available": {
+              "ok": "{count, plural, one {決策會議提供 # 個選項。} other {決策會議提供 # 個選項。}}",
+              "warning": "決策會議未記錄任何選項。"
+            },
+            "risks-identified": {
+              "ok": "{count, plural, one {自決策會議帶入 # 項風險。} other {自決策會議帶入 # 項風險。}}",
+              "warning": "決策會議未記錄任何風險。"
+            },
+            "roles-assigned": {
+              "ok": "{count, plural, one {自決策會議帶入 # 個建議角色。} other {自決策會議帶入 # 個建議角色。}}",
+              "warning": "決策會議未記錄任何建議負責角色。"
+            },
+            "timeline-defined": {
+              "ok": "決策會議提供建議時程。",
+              "warning": "決策會議未記錄建議時程。"
+            }
+          },
+          "implementationCommitment": {
+            "labels": {
+              "collective-decision-available": "已發佈集體決策",
+              "approved-actions-available": "已核准行動",
+              "roles-available": "負責角色",
+              "timeline-available": "執行時程",
+              "risks-available": "決策風險",
+              "success-criteria-available": "成功標準"
+            },
+            "collective-decision-available": {
+              "ok": "集體決策「{title}」可作為執行承諾的來源。",
+              "warning": "尚無已發佈（已關閉）的集體決策——仍可手動撰寫執行承諾。"
+            },
+            "approved-actions-available": {
+              "ok": "{count, plural, one {集體決策提供 # 項已核准行動。} other {集體決策提供 # 項已核准行動。}}",
+              "warning": "集體決策未記錄任何已核准行動。"
+            },
+            "roles-available": {
+              "ok": "{count, plural, one {自集體決策帶入 # 個建議角色。} other {自集體決策帶入 # 個建議角色。}}",
+              "warning": "集體決策未記錄負責角色。"
+            },
+            "timeline-available": {
+              "ok": "集體決策提供執行時程。",
+              "warning": "集體決策未記錄執行時程。"
+            },
+            "risks-available": {
+              "ok": "{count, plural, one {自集體決策帶入 # 項風險。} other {自集體決策帶入 # 項風險。}}",
+              "warning": "集體決策未記錄決策風險。"
+            },
+            "success-criteria-available": {
+              "ok": "{count, plural, one {自集體決策帶入 # 項成功標準。} other {自集體決策帶入 # 項成功標準。}}",
+              "warning": "集體決策未記錄成功標準。"
+            }
+          },
+          "implementationTracking": {
+            "labels": {
+              "commitment-package-available": "已發佈承諾套件",
+              "accepted-commitments-available": "已接受承諾",
+              "decision-actions-available": "集體決策行動",
+              "timelines-visible": "時程"
+            },
+            "commitment-package-available": {
+              "ok": "執行承諾「{title}」可作為追蹤來源資料。",
+              "warning": "尚無已發佈的承諾套件——追蹤仍可依集體決策／倡議範圍產生，所有權為未指派。"
+            },
+            "accepted-commitments-available": {
+              "ok": "{count, plural, one {# 項已接受承諾將填入受指派人與脈絡。} other {# 項已接受承諾將填入受指派人與脈絡。}}",
+              "warning": "尚無已接受承諾——計畫里程碑仍為未指派／待定。生命週期不會阻擋。"
+            },
+            "decision-actions-available": {
+              "ok": "{count, plural, one {有 # 項已核准決策行動可用於自動計畫里程碑。} other {有 # 項已核准決策行動可用於自動計畫里程碑。}}",
+              "warning": "找不到已關閉集體決策的已核准行動——將以倡議範圍作為計畫種子。"
+            },
+            "timelines-visible": {
+              "ok": "{count, plural, one {# 項已接受承諾含有預期完成日期。} other {# 項已接受承諾含有預期完成日期。}}",
+              "warning": "已接受承諾沒有預期完成日期——由作者設定目標日期。"
+            }
+          },
+          "officialResponse": {
+            "labels": {
+              "tracking-package-available": "已發佈執行追蹤套件",
+              "tracking-records-available": "追蹤紀錄",
+              "evidence-visible": "證據可見性",
+              "approved-actions-traceable": "已核准行動可追溯性"
+            },
+            "tracking-package-available": {
+              "ok": "執行追蹤「{title}」可作為官方回應的來源。",
+              "warning": "尚無已發佈的執行追蹤套件——仍可依倡議脈絡撰寫官方回應，包括「未收到官方回應」。"
+            },
+            "tracking-records-available": {
+              "ok": "{count, plural, one {追蹤套件提供 # 筆追蹤紀錄。} other {追蹤套件提供 # 筆追蹤紀錄。}}",
+              "warning": "尚無可用的追蹤紀錄。"
+            },
+            "evidence-visible": {
+              "ok": "{count, plural, one {# 筆追蹤紀錄含有證據參照。} other {# 筆追蹤紀錄含有證據參照。}}",
+              "warning": "尚無追蹤紀錄含有證據參照。"
+            },
+            "approved-actions-traceable": {
+              "ok": "每筆追蹤紀錄都引用其已核准行動。",
+              "warning": "一筆或多筆追蹤紀錄缺少已核准行動參照。"
+            }
+          },
+          "publicImpact": {
+            "labels": {
+              "official-response-package-available": "已發佈官方回應套件",
+              "official-response-outcome": "官方回應結果",
+              "tracking-package-available": "已發佈執行追蹤套件",
+              "implementation-complete": "執行完整度",
+              "evidence-visible": "證據可見性"
+            },
+            "official-response-package-available": {
+              "ok": "官方回應「{title}」可作為公共影響的來源。",
+              "okNoResponse": "官方回應「{title}」已發佈，結果為：未收到官方回應。",
+              "warning": "尚無已發佈的官方回應套件——仍可撰寫公共影響；請將缺失回應視為不確定／證據不足。"
+            },
+            "official-response-outcome": {
+              "ok": "「未收到官方回應」是已發佈的階段結果——請視為事實輸入，而非缺失來源。",
+              "warning": "「未收到官方回應」是已發佈的階段結果——請視為事實輸入，而非缺失來源。"
+            },
+            "tracking-package-available": {
+              "ok": "已引用執行追蹤「{title}」。",
+              "warning": "尚無可用的已發佈執行追蹤套件。"
+            },
+            "implementation-complete": {
+              "ok": "每筆追蹤紀錄皆標記為已完成。",
+              "warning": "{outstandingCount, plural, one {尚有 # 筆追蹤紀錄未完成——執行未完成可作為有效的公共影響結論，並非發佈阻擋條件。} other {尚有 # 筆追蹤紀錄未完成——執行未完成可作為有效的公共影響結論，並非發佈阻擋條件。}}",
+              "warningEmpty": "沒有可評估完整度的追蹤紀錄——低／零可衡量影響仍可發佈。"
+            },
+            "evidence-visible": {
+              "ok": "{count, plural, one {可從追蹤與官方回應看到 # 項證據參照。} other {可從追蹤與官方回應看到 # 項證據參照。}}",
+              "warning": "尚無可見的證據參照——請將證據不足記錄為不確定性；勿捏造證據。這不會阻擋發佈。"
+            }
+          },
+          "civicArchive": {
+            "labels": {
+              "public-impact-available": "已發佈公共影響報告",
+              "tracking-resolved": "執行追蹤完整度",
+              "evidence-visible": "證據可見性",
+              "optional-stages-missing": "可選階段"
+            },
+            "public-impact-available": {
+              "ok": "已發佈的公共影響報告可作為典藏來源。",
+              "okOptional": "已發佈的公共影響報告可作為可選典藏來源。",
+              "warning": "尚無已發佈的公共影響報告——典藏仍可依可用的生命週期歷史完成。"
+            },
+            "tracking-resolved": {
+              "ok": "沒有可見的未解決追蹤紀錄。",
+              "warning": "{unresolvedTrackingCount, plural, one {仍有 # 筆追蹤紀錄未解決——典藏將誠實記錄未完成工作。} other {仍有 # 筆追蹤紀錄未解決——典藏將誠實記錄未完成工作。}}"
+            },
+            "evidence-visible": {
+              "ok": "凡有追蹤紀錄處皆有追蹤證據參照。",
+              "warning": "{missingEvidenceCount, plural, one {# 筆追蹤紀錄缺少證據參照。} other {# 筆追蹤紀錄缺少證據參照。}}"
+            },
+            "optional-stages-missing": {
+              "warning": "尚無已發佈紀錄的可選階段：{stageIds}。",
+              "ok": "所有可選階段皆有已發佈紀錄。"
+            }
+          }
         }
       },
       "actions": {

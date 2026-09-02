@@ -62,6 +62,8 @@ function buildConsistencyChecks(input: {
           label: "Published Commitment Package",
           status: "ok",
           detail: `Implementation Commitments "${input.packageReference.title}" are available as Tracking source data.`,
+          params: {},
+          civic: { title: input.packageReference.title },
         }
       : {
           checkId: "commitment-package-available",
@@ -69,6 +71,7 @@ function buildConsistencyChecks(input: {
           status: "warning",
           detail:
             "No published Commitment Package yet — Tracking can still generate from Collective Decision / Initiative scope with Unassigned ownership.",
+          params: {},
         },
   );
 
@@ -79,6 +82,7 @@ function buildConsistencyChecks(input: {
           label: "Accepted Commitments",
           status: "ok",
           detail: `${input.acceptedCommitments.length} Accepted Commitment(s) will populate assignees and context.`,
+          params: { count: input.acceptedCommitments.length },
         }
       : {
           checkId: "accepted-commitments-available",
@@ -86,6 +90,7 @@ function buildConsistencyChecks(input: {
           status: "warning",
           detail:
             "No Accepted Commitments yet — plan milestones remain Unassigned / To be determined. Lifecycle does not block.",
+          params: { count: 0 },
         },
   );
 
@@ -96,12 +101,14 @@ function buildConsistencyChecks(input: {
           label: "Collective Decision Actions",
           status: "ok",
           detail: `${input.decisionApprovedActions.length} approved Decision action(s) available for automatic plan milestones.`,
+          params: { count: input.decisionApprovedActions.length },
         }
       : {
           checkId: "decision-actions-available",
           label: "Collective Decision Actions",
           status: "warning",
           detail: "No closed Collective Decision approved actions found — Initiative scope will seed the plan.",
+          params: { count: 0 },
         },
   );
 
@@ -115,12 +122,14 @@ function buildConsistencyChecks(input: {
           label: "Timelines",
           status: "ok",
           detail: `${withTimelines.length} Accepted Commitment(s) carry an expected completion date.`,
+          params: { count: withTimelines.length },
         }
       : {
           checkId: "timelines-visible",
           label: "Timelines",
           status: "warning",
           detail: "No expected completion dates from Accepted Commitments — Author sets target dates.",
+          params: { count: 0 },
         },
   );
 

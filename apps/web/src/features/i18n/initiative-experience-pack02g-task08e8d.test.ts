@@ -203,7 +203,7 @@ describe("Pack 02G Task 08E.8d — Decision Session + Collective Decision adviso
     }
   });
 
-  it("Working Sidebar keeps API consistency detail opaque for DS and CD", () => {
+  it("Working Sidebar resolves API consistency checks semantically for DS and CD", () => {
     const sidebar = readWeb(
       "features/initiative-lifecycle-stage-workspace/components/InitiativeLifecycleWorkingSidebar.tsx",
     );
@@ -214,12 +214,12 @@ describe("Pack 02G Task 08E.8d — Decision Session + Collective Decision adviso
     const ds = sidebar.slice(dsStart, dsEnd);
     const cd = sidebar.slice(cdStart, cdEnd);
     assert.match(ds, /resolveSidebarAdvisoryDisplay\(insights\.sourcesSummary/);
-    assert.match(ds, /check\.detail/);
-    assert.doesNotMatch(ds, /t\([^)]*check\.detail/);
+    assert.match(ds, /resolveApiConsistencyCheckDisplay\("decisionSession"/);
+    assert.doesNotMatch(ds, /check\.detail/);
     assert.doesNotMatch(ds, /sourcesUsedSummary/);
     assert.match(cd, /resolveSidebarAdvisoryDisplay\(insights\.sourcesSummary/);
-    assert.match(cd, /check\.detail/);
-    assert.doesNotMatch(cd, /t\([^)]*check\.detail/);
+    assert.match(cd, /resolveApiConsistencyCheckDisplay\("collectiveDecision"/);
+    assert.doesNotMatch(cd, /check\.detail/);
   });
 
   it("Official Response → Archive migration is owned by 08E.8f", () => {

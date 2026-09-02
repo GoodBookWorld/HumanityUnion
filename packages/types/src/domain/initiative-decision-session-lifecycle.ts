@@ -1,4 +1,9 @@
 import type { InitiativeDescription, InitiativeId, InitiativeTitle } from "./initiative.js";
+import type {
+  InitiativeLifecycleConsistencyCivic,
+  InitiativeLifecycleConsistencyParams,
+  InitiativeLifecycleConsistencyStatus,
+} from "./initiative-lifecycle-consistency.js";
 import type { MemberId } from "./member.js";
 
 /**
@@ -79,15 +84,27 @@ export interface InitiativeDecisionSessionRecommendation {
   updatedAt: string;
 }
 
+/** Finite Decision Session consistency check IDs (08E.9b). */
+export type InitiativeDecisionSessionConsistencyCheckId =
+  | "petition-available"
+  | "revision-available"
+  | "analysis-available"
+  | "proposal-references"
+  | "ally-recommendations";
+
 /**
  * Initiative Lifecycle — Part G, Section 4 (Decision Assistant).
  * Deterministic, read-only advisory check — never an automatic edit.
  */
 export interface InitiativeDecisionSessionConsistencyCheck {
-  readonly checkId: string;
+  readonly checkId: InitiativeDecisionSessionConsistencyCheckId;
+  /** Compatibility English chrome — prefer Web semantic presentation. */
   readonly label: string;
-  readonly status: "ok" | "warning";
+  readonly status: InitiativeLifecycleConsistencyStatus;
+  /** Compatibility English body — prefer Web semantic presentation. */
   readonly detail: string;
+  readonly params: InitiativeLifecycleConsistencyParams;
+  readonly civic?: InitiativeLifecycleConsistencyCivic;
 }
 
 /**

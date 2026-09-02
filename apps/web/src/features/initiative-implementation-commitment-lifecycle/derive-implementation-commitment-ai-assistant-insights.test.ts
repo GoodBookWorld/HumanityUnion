@@ -182,16 +182,18 @@ describe("Pack 02G Task 08E.8e — deriveImplementationCommitmentAiAssistantInsi
       snapshot({
         consistencyChecks: [
           {
-            checkId: "c1",
+            checkId: "collective-decision-available",
             label: "API label",
             status: "warning",
             detail: "Opaque API English detail remains raw.",
+            params: {},
           },
           {
-            checkId: "c2",
+            checkId: "approved-actions-available",
             label: "ok",
             status: "ok",
             detail: "ignored",
+            params: {},
           },
         ],
       }),

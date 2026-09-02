@@ -265,7 +265,7 @@ describe("Pack 02G Task 08E.8c — Revision + Petition structured advisories", (
     assert.match(petition, /petition\.clarity\.title_empty/);
   });
 
-  it("Revision Working Sidebar keeps API conflict message opaque and resolves descriptors", () => {
+  it("Revision Working Sidebar resolves API conflict warnings semantically", () => {
     const sidebar = readWeb(
       "features/initiative-lifecycle-stage-workspace/components/InitiativeLifecycleWorkingSidebar.tsx",
     );
@@ -275,15 +275,15 @@ describe("Pack 02G Task 08E.8c — Revision + Petition structured advisories", (
     const block = sidebar.slice(start, end);
     assert.match(block, /resolveSidebarAdvisoryDisplay\(insights\.sourcesSummary/);
     assert.match(block, /resolveSidebarAdvisoryDisplay\(insights\.analysisAlignment/);
-    assert.match(block, /warning\.message/);
-    assert.doesNotMatch(block, /t\([^)]*warning\.message/);
+    assert.match(block, /resolveApiConflictWarningDisplay\(warning,\s*t\)/);
+    assert.doesNotMatch(block, /warning\.message/);
     assert.doesNotMatch(block, /warning\.message\.includes/);
     assert.doesNotMatch(block, /sourcesUsedSummary/);
     assert.doesNotMatch(block, /analysisAlignmentSummary/);
     assert.doesNotMatch(block, /consistencyWarnings/);
   });
 
-  it("Petition Working Sidebar resolves descriptors and keeps API consistency detail opaque", () => {
+  it("Petition Working Sidebar resolves API consistency checks semantically", () => {
     const sidebar = readWeb(
       "features/initiative-lifecycle-stage-workspace/components/InitiativeLifecycleWorkingSidebar.tsx",
     );
@@ -294,8 +294,8 @@ describe("Pack 02G Task 08E.8c — Revision + Petition structured advisories", (
     assert.match(block, /resolveSidebarAdvisoryDisplay\(insights\.sourcesSummary/);
     assert.match(block, /resolveSidebarAdvisoryDisplay\(insights\.analysisAlignment/);
     assert.match(block, /resolveSidebarAdvisoryDisplay\(warning,\s*t\)/);
-    assert.match(block, /check\.detail/);
-    assert.doesNotMatch(block, /t\([^)]*check\.detail/);
+    assert.match(block, /resolveApiConsistencyCheckDisplay\("petition"/);
+    assert.doesNotMatch(block, /check\.detail/);
     assert.doesNotMatch(block, /sourcesUsedSummary/);
   });
 

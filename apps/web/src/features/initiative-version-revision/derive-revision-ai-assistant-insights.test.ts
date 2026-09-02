@@ -113,12 +113,14 @@ describe("Pack 02G Task 08E.8c — deriveRevisionAiAssistantInsights structured 
       snapshot({
         conflictWarnings: [
           {
+            code: "multiple_changes_same_section",
+            params: { changeCount: 2 },
             section: "description",
             sectionLabel: "Description",
             changeIds: ["c1", "c2"],
             proposalIds: ["p1"],
             message: apiMessage,
-          },
+           },
         ],
         consistencyChecks: [
           {

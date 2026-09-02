@@ -168,12 +168,15 @@ function buildConsistencyChecks(input: {
           label: "Published Petition",
           status: "ok",
           detail: `Petition "${input.petition.title}" is available as the Decision Session source.`,
+          params: {},
+          civic: { title: input.petition.title },
         }
       : {
           checkId: "petition-available",
           label: "Published Petition",
           status: "warning",
           detail: "No published Petition yet — Decision Session can use Initiative / Analysis / Proposal context instead.",
+          params: {},
         },
   );
 
@@ -184,12 +187,14 @@ function buildConsistencyChecks(input: {
           label: "Published Revision",
           status: "ok",
           detail: `Revision v${input.revision.version} is referenced.`,
+          params: { version: input.revision.version },
         }
       : {
           checkId: "revision-available",
           label: "Published Revision",
           status: "warning",
           detail: "No published Revision is available for traceability.",
+          params: {},
         },
   );
 
@@ -200,12 +205,15 @@ function buildConsistencyChecks(input: {
           label: "Collaborative Analysis",
           status: "ok",
           detail: `Analysis "${input.analysis.title}" is referenced.`,
+          params: {},
+          civic: { title: input.analysis.title },
         }
       : {
           checkId: "analysis-available",
           label: "Collaborative Analysis",
           status: "warning",
           detail: "No published Collaborative Analysis is available.",
+          params: {},
         },
   );
 
@@ -217,6 +225,7 @@ function buildConsistencyChecks(input: {
       input.proposalReferences.length > 0
         ? `${input.proposalReferences.length} proposal reference(s) are available.`
         : "No accepted Improvement Proposals are referenced yet.",
+    params: { count: input.proposalReferences.length },
   });
 
   checks.push({
@@ -227,6 +236,7 @@ function buildConsistencyChecks(input: {
       input.allyRecommendationCount > 0
         ? `${input.allyRecommendationCount} advisory recommendation(s) from Active Allies.`
         : "No Active Ally recommendations yet — recommendations remain optional and advisory.",
+    params: { count: input.allyRecommendationCount },
   });
 
   return checks;

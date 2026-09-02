@@ -461,12 +461,14 @@ function buildConsistencyChecks(input: {
             label: "Published Public Impact Report",
             status: "ok",
             detail: "A published Public Impact Report is available as the Archive source.",
+            params: { required: true },
           }
         : {
             checkId: "public-impact-available",
             label: "Published Public Impact Report",
             status: "warning",
             detail: "No published Public Impact Report yet — Archive can still finalize from available Lifecycle history.",
+            params: { required: true },
           },
     );
   } else if (input.publicImpactAvailable) {
@@ -475,6 +477,7 @@ function buildConsistencyChecks(input: {
       label: "Published Public Impact Report",
       status: "ok",
       detail: "A published Public Impact Report is available as an optional Archive source.",
+      params: { required: false },
     });
   }
 
@@ -485,12 +488,14 @@ function buildConsistencyChecks(input: {
           label: "Implementation Tracking Completeness",
           status: "ok",
           detail: "No unresolved Tracking Records are visible.",
+          params: { unresolvedTrackingCount: 0 },
         }
       : {
           checkId: "tracking-resolved",
           label: "Implementation Tracking Completeness",
           status: "warning",
           detail: `${input.unresolvedTrackingCount} Tracking Record(s) remain unresolved — Archive will record outstanding work honestly.`,
+          params: { unresolvedTrackingCount: input.unresolvedTrackingCount },
         },
   );
 
@@ -501,12 +506,14 @@ function buildConsistencyChecks(input: {
           label: "Evidence Visibility",
           status: "ok",
           detail: "Tracking evidence references are present where Tracking Records exist.",
+          params: { missingEvidenceCount: 0 },
         }
       : {
           checkId: "evidence-visible",
           label: "Evidence Visibility",
           status: "warning",
           detail: `${input.missingEvidenceCount} Tracking Record(s) lack evidence references.`,
+          params: { missingEvidenceCount: input.missingEvidenceCount },
         },
   );
 
@@ -516,6 +523,9 @@ function buildConsistencyChecks(input: {
       label: "Optional Stages",
       status: "warning",
       detail: `Optional stage(s) without published records: ${input.missingOptionalStages.join(", ")}.`,
+      params: {
+        stageIds: [...input.missingOptionalStages] as InitiativeLifecycleStageId[],
+      },
     });
   }
 

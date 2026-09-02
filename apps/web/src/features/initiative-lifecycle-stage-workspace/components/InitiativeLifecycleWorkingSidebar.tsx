@@ -84,6 +84,10 @@ import {
   resolveProposalTreatmentSuggestionDisplayLabel,
   resolveSidebarAdvisoryDisplay,
 } from "../resolve-sidebar-advisory-display";
+import {
+  resolveApiConflictWarningDisplay,
+  resolveApiConsistencyCheckDisplay,
+} from "../resolve-api-consistency-display";
 
 import "../initiative-lifecycle-stage-workspace.css";
 
@@ -627,7 +631,9 @@ function RevisionAiAssistantContent({
         {insights.conflictWarnings.length > 0 ? (
           <ul>
             {insights.conflictWarnings.map((warning) => (
-              <li key={warning.section}>{warning.message}</li>
+              <li key={warning.section}>
+                {resolveApiConflictWarningDisplay(warning, t).text}
+              </li>
             ))}
           </ul>
         ) : (
@@ -776,7 +782,9 @@ function PetitionAiAssistantContent({
         {insights.consistencyWarnings.length > 0 ? (
           <ul>
             {insights.consistencyWarnings.map((check) => (
-              <li key={check.checkId}>{check.detail}</li>
+              <li key={check.checkId}>
+                {resolveApiConsistencyCheckDisplay("petition", check, t).text}
+              </li>
             ))}
           </ul>
         ) : (
@@ -888,7 +896,9 @@ function DecisionSessionAiAssistantSlot({ initiativeId }: { initiativeId: string
                   <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                 ))}
                 {insights.consistencyWarnings.map((check) => (
-                  <li key={check.checkId}>{check.detail}</li>
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("decisionSession", check, t).text}
+                  </li>
                 ))}
                 {insights.unsupportedArgumentWarnings.map((warning) => (
                   <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
@@ -1030,7 +1040,9 @@ function CollectiveDecisionAiAssistantSlot({
                   <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
                 ))}
                 {insights.consistencyWarnings.map((check) => (
-                  <li key={check.checkId}>{check.detail}</li>
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("collectiveDecision", check, t).text}
+                  </li>
                 ))}
                 {insights.unsupportedConclusionsWarnings.map((warning) => (
                   <li key={warning.code}>{resolveSidebarAdvisoryDisplay(warning, t).text}</li>
@@ -1163,7 +1175,9 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
                   </li>
                 ))}
                 {insights.consistencyWarnings.map((check) => (
-                  <li key={check.checkId}>{check.detail}</li>
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("implementationCommitment", check, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -1291,7 +1305,9 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
                   </li>
                 ))}
                 {insights.consistencyWarnings.map((check) => (
-                  <li key={check.checkId}>{check.detail}</li>
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("implementationTracking", check, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -1422,7 +1438,9 @@ function OfficialResponseAiAssistantSlot({ initiativeId }: { initiativeId: strin
                   </li>
                 ))}
                 {insights.consistencyWarnings.map((check) => (
-                  <li key={check.checkId}>{check.detail}</li>
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("officialResponse", check, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -1560,7 +1578,9 @@ function PublicImpactAiAssistantSlot({ initiativeId }: { initiativeId: string })
                   </li>
                 ))}
                 {insights.consistencyWarnings.map((check) => (
-                  <li key={check.checkId}>{check.detail}</li>
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("publicImpact", check, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -1698,7 +1718,9 @@ function CivicArchiveAiAssistantSlot({
                   </li>
                 ))}
                 {insights.consistencyWarnings.map((check) => (
-                  <li key={check.checkId}>{check.detail}</li>
+                  <li key={check.checkId}>
+                    {resolveApiConsistencyCheckDisplay("civicArchive", check, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (

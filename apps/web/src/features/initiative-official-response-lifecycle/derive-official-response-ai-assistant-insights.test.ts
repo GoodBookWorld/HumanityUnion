@@ -138,10 +138,11 @@ describe("Pack 02G Task 08E.8f — deriveOfficialResponseAiAssistantInsights", (
       snapshot({
         consistencyChecks: [
           {
-            checkId: "c1",
+            checkId: "tracking-package-available",
             label: "API",
             status: "warning",
             detail: "Opaque OR consistency detail.",
+            params: {},
           },
         ],
       }),

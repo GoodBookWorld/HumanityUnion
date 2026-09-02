@@ -1,7 +1,19 @@
 import type { InitiativeCollectiveDecisionId } from "./initiative-collective-decision.js";
 import type { InitiativeDescription, InitiativeId, InitiativeTitle } from "./initiative.js";
+import type {
+  InitiativeLifecycleConsistencyCivic,
+  InitiativeLifecycleConsistencyParams,
+  InitiativeLifecycleConsistencyStatus,
+} from "./initiative-lifecycle-consistency.js";
 import type { MemberId } from "./member.js";
 import type { OfficialResponseType, OfficialResponseVerificationState } from "./official-response.js";
+
+/** Finite Official Response consistency check IDs (08E.9b). */
+export type InitiativeOfficialResponseConsistencyCheckId =
+  | "tracking-package-available"
+  | "tracking-records-available"
+  | "evidence-visible"
+  | "approved-actions-traceable";
 
 /**
  * Initiative Lifecycle — Part K, Section 2. Read-only reference into the
@@ -38,10 +50,14 @@ export interface InitiativeOfficialResponseTrackingRecordReference {
  * never creates or verifies responses automatically.
  */
 export interface InitiativeOfficialResponseConsistencyCheck {
-  readonly checkId: string;
+  readonly checkId: InitiativeOfficialResponseConsistencyCheckId;
+  /** Compatibility English chrome — prefer Web semantic presentation. */
   readonly label: string;
-  readonly status: "ok" | "warning";
+  readonly status: InitiativeLifecycleConsistencyStatus;
+  /** Compatibility English body — prefer Web semantic presentation. */
   readonly detail: string;
+  readonly params: InitiativeLifecycleConsistencyParams;
+  readonly civic?: InitiativeLifecycleConsistencyCivic;
 }
 
 /**

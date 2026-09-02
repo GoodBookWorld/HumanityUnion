@@ -157,6 +157,7 @@ describe("Pack 02G Task 08E.8d — deriveDecisionSessionAiAssistantInsights", ()
             label: "Analysis",
             status: "warning",
             detail,
+            params: {},
           },
         ],
       }),

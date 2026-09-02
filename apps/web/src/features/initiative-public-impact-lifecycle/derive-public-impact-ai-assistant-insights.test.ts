@@ -168,10 +168,11 @@ describe("Pack 02G Task 08E.8f — derivePublicImpactAiAssistantInsights", () =>
       snapshot({
         consistencyChecks: [
           {
-            checkId: "p1",
+            checkId: "tracking-package-available",
             label: "API",
             status: "warning",
             detail: "Opaque PI consistency detail.",
+            params: {},
           },
         ],
       }),

@@ -3,6 +3,34 @@ import type {
   InitiativeCollectiveDecisionOutcome,
   InitiativeCollectiveDecisionStatistics,
 } from "./initiative-collective-decision.js";
+import type {
+  InitiativeLifecycleConsistencyCivic,
+  InitiativeLifecycleConsistencyParams,
+  InitiativeLifecycleConsistencyStatus,
+} from "./initiative-lifecycle-consistency.js";
+
+/** Finite Collective Decision consistency check IDs (08E.9b). */
+export type InitiativeCollectiveDecisionConsistencyCheckId =
+  | "decision-session-available"
+  | "options-available"
+  | "risks-identified"
+  | "roles-assigned"
+  | "timeline-defined";
+
+/**
+ * Initiative Lifecycle — Part H, Section 4 (Decision Assistant).
+ * Deterministic, read-only advisory check — never an automatic edit.
+ */
+export interface InitiativeCollectiveDecisionConsistencyCheck {
+  readonly checkId: InitiativeCollectiveDecisionConsistencyCheckId;
+  /** Compatibility English chrome — prefer Web semantic presentation. */
+  readonly label: string;
+  readonly status: InitiativeLifecycleConsistencyStatus;
+  /** Compatibility English body — prefer Web semantic presentation. */
+  readonly detail: string;
+  readonly params: InitiativeLifecycleConsistencyParams;
+  readonly civic?: InitiativeLifecycleConsistencyCivic;
+}
 
 /**
  * Initiative Lifecycle — Part H, Section 2/9 (Decision Sources /
@@ -73,17 +101,6 @@ export interface InitiativeCollectiveDecisionProposalReference {
   readonly title: string;
   readonly summary: string;
   readonly status: "accepted" | "partially_accepted";
-}
-
-/**
- * Initiative Lifecycle — Part H, Section 4 (Decision Assistant).
- * Deterministic, read-only advisory check — never an automatic edit.
- */
-export interface InitiativeCollectiveDecisionConsistencyCheck {
-  readonly checkId: string;
-  readonly label: string;
-  readonly status: "ok" | "warning";
-  readonly detail: string;
 }
 
 /**

@@ -121,12 +121,14 @@ function buildConsistencyChecks(input: {
           label: "Published Revision",
           status: "ok",
           detail: `Petition will reference Revision v${input.revision.version}.`,
+          params: { version: input.revision.version },
         }
       : {
           checkId: "revision-available",
           label: "Published Revision",
           status: "warning",
           detail: "No Published Revision exists yet. Publish a Revision before generating a Petition.",
+          params: {},
         },
   );
 
@@ -137,12 +139,15 @@ function buildConsistencyChecks(input: {
           label: "Collaborative Analysis",
           status: "ok",
           detail: `Petition context is consistent with Analysis "${input.analysis.title}".`,
+          params: {},
+          civic: { title: input.analysis.title },
         }
       : {
           checkId: "analysis-available",
           label: "Collaborative Analysis",
           status: "warning",
           detail: "No Published Collaborative Analysis found. Supporting context may be incomplete.",
+          params: {},
         },
   );
 
@@ -153,12 +158,14 @@ function buildConsistencyChecks(input: {
           label: "Proposal References",
           status: "ok",
           detail: `${input.proposalReferences.length} Improvement Proposal(s) referenced from the Revision.`,
+          params: { count: input.proposalReferences.length },
         }
       : {
           checkId: "proposal-references-resolved",
           label: "Proposal References",
           status: "warning",
           detail: "The current Revision did not accept any Improvement Proposals.",
+          params: { count: 0 },
         },
   );
 

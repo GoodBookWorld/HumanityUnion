@@ -5,6 +5,10 @@ import { useTranslations } from "next-intl";
 import type { InitiativePetitionIntelligenceSnapshot } from "@hu/types";
 
 import { resolvePetitionProposalAcceptanceDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
+import {
+  resolveApiConsistencyCheckDisplay,
+  resolveApiConsistencyLabelDisplay,
+} from "../../initiative-lifecycle-stage-workspace/resolve-api-consistency-display";
 
 /**
  * Initiative Lifecycle — Part F, Section 2/3 (Petition Sources / Petition
@@ -125,8 +129,10 @@ export function InitiativePetitionIntelligenceSnapshotPanel({
               className="ipl-source-panel__item"
               data-tone={check.status === "warning" ? "warning" : undefined}
             >
-              <strong>{check.label}</strong>
-              <span className="ipl-source-panel__item-meta">{check.detail}</span>
+              <strong>{resolveApiConsistencyLabelDisplay("petition", check, t)}</strong>
+              <span className="ipl-source-panel__item-meta">
+                {resolveApiConsistencyCheckDisplay("petition", check, t).text}
+              </span>
             </li>
           ))}
         </ul>

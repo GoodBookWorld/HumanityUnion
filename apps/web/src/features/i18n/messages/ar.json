@@ -1204,6 +1204,246 @@
             "public_impact": "لا مسودة بعد — ابدأ بـ «إنشاء مسودة الأثر العام» في مساحة العمل الرئيسية.",
             "archive": "لا مسودة بعد — ابدأ بـ «إنشاء مسودة الأرشيف المدني» في مساحة العمل الرئيسية."
           }
+        },
+        "apiConsistency": {
+          "generic": {
+            "warning": "تحذير الاتساق",
+            "conflict": "تحذير تعارض"
+          },
+          "stages": {
+            "proposal": "مقترحات التحسين",
+            "petition": "العريضة",
+            "decision_session": "جلسة القرار",
+            "analysis": "التحليل التعاوني",
+            "revision": "المراجعة",
+            "collective_decision": "القرار الجماعي",
+            "implementation_commitment": "التزامات التنفيذ",
+            "implementation_tracking": "تتبع التنفيذ",
+            "official_response": "الردود الرسمية",
+            "public_impact": "الأثر العام",
+            "civic_archive": "الأرشيف المدني",
+            "discussion": "النقاش",
+            "initiative": "المبادرة"
+          },
+          "revision": {
+            "multiple_changes_same_section": "{changeCount, plural, one {تغيير # يستهدف قسم {section} — راجع قبل النشر لتجنب تعديلات متعارضة.} other {# تغييرات تستهدف قسم {section} — راجع قبل النشر لتجنب تعديلات متعارضة.}}"
+          },
+          "petition": {
+            "labels": {
+              "revision-available": "مراجعة منشورة",
+              "analysis-available": "التحليل التعاوني",
+              "proposal-references-resolved": "مراجع المقترحات"
+            },
+            "revision-available": {
+              "ok": "ستشير العريضة إلى المراجعة v{version}.",
+              "warning": "لا توجد مراجعة منشورة بعد. انشر مراجعة قبل إنشاء عريضة."
+            },
+            "analysis-available": {
+              "ok": "سياق العريضة متسق مع التحليل التعاوني «{title}».",
+              "warning": "لم يُعثر على تحليل تعاوني منشور. قد يكون السياق الداعم ناقصًا."
+            },
+            "proposal-references-resolved": {
+              "ok": "{count, plural, one {مقترح تحسين واحد مشار إليه من المراجعة.} other {# مقترحات تحسين مشار إليها من المراجعة.}}",
+              "warning": "المراجعة الحالية لم تقبل أي مقترحات تحسين."
+            }
+          },
+          "decisionSession": {
+            "labels": {
+              "petition-available": "عريضة منشورة",
+              "revision-available": "مراجعة منشورة",
+              "analysis-available": "التحليل التعاوني",
+              "proposal-references": "مقترحات التحسين",
+              "ally-recommendations": "توصيات الحلفاء النشطين"
+            },
+            "petition-available": {
+              "ok": "العريضة «{title}» متاحة كمصدر لجلسة القرار.",
+              "warning": "لا توجد عريضة منشورة بعد — يمكن لجلسة القرار استخدام سياق المبادرة / التحليل / المقترحات بدلًا من ذلك."
+            },
+            "revision-available": {
+              "ok": "تم الرجوع إلى المراجعة v{version}.",
+              "warning": "لا تتوفر مراجعة منشورة لإمكانية التتبع."
+            },
+            "analysis-available": {
+              "ok": "تم الرجوع إلى التحليل «{title}».",
+              "warning": "لا يتوفر تحليل تعاوني منشور."
+            },
+            "proposal-references": {
+              "ok": "{count, plural, one {مرجع مقترح واحد متاح.} other {# مراجع مقترحات متاحة.}}",
+              "warning": "لم يُشار بعد إلى أي مقترحات تحسين مقبولة."
+            },
+            "ally-recommendations": {
+              "ok": "{count, plural, one {توصية استشارية واحدة من الحلفاء النشطين.} other {# توصيات استشارية من الحلفاء النشطين.}}",
+              "okEmpty": "لا توجد توصيات من الحلفاء النشطين بعد — تبقى التوصيات اختيارية واستشارية."
+            }
+          },
+          "collectiveDecision": {
+            "labels": {
+              "decision-session-available": "جلسة قرار منشورة",
+              "options-available": "خيارات القرار",
+              "risks-identified": "المخاطر المحددة",
+              "roles-assigned": "الأدوار المسؤولة",
+              "timeline-defined": "الجدول الزمني للتنفيذ"
+            },
+            "decision-session-available": {
+              "ok": "جلسة القرار «{title}» متاحة كمصدر للقرار الجماعي.",
+              "okOptional": "جلسة القرار «{title}» متاحة كسياق اختياري.",
+              "warning": "لا توجد جلسة قرار منشورة بعد — يمكن تكوين القرار الجماعي من سياق المبادرة."
+            },
+            "options-available": {
+              "ok": "{count, plural, one {خيار واحد متاح من جلسة القرار.} other {# خيارات متاحة من جلسة القرار.}}",
+              "warning": "جلسة القرار لا تحتوي على خيارات مسجّلة."
+            },
+            "risks-identified": {
+              "ok": "{count, plural, one {خطر واحد مُرحَّل من جلسة القرار.} other {# مخاطر مُرحَّلة من جلسة القرار.}}",
+              "warning": "جلسة القرار لا تحتوي على مخاطر مسجّلة."
+            },
+            "roles-assigned": {
+              "ok": "{count, plural, one {دور مقترح واحد مُرحَّل من جلسة القرار.} other {# أدوار مقترحة مُرحَّلة من جلسة القرار.}}",
+              "warning": "جلسة القرار لا تحتوي على أدوار مسؤولة مقترحة مسجّلة."
+            },
+            "timeline-defined": {
+              "ok": "جدول زمني مقترح متاح من جلسة القرار.",
+              "warning": "جلسة القرار لا تحتوي على جدول زمني مقترح مسجّل."
+            }
+          },
+          "implementationCommitment": {
+            "labels": {
+              "collective-decision-available": "قرار جماعي منشور",
+              "approved-actions-available": "الإجراءات المعتمدة",
+              "roles-available": "الأدوار المسؤولة",
+              "timeline-available": "الجدول الزمني للتنفيذ",
+              "risks-available": "مخاطر القرار",
+              "success-criteria-available": "معايير النجاح"
+            },
+            "collective-decision-available": {
+              "ok": "القرار الجماعي «{title}» متاح كمصدر لالتزامات التنفيذ.",
+              "warning": "لا يوجد قرار جماعي منشور (مغلق) بعد — لا يزال بإمكانك تأليف التزامات التنفيذ يدويًا."
+            },
+            "approved-actions-available": {
+              "ok": "{count, plural, one {إجراء معتمد واحد متاح من القرار الجماعي.} other {# إجراءات معتمدة متاحة من القرار الجماعي.}}",
+              "warning": "القرار الجماعي لا يحتوي على إجراءات معتمدة مسجّلة."
+            },
+            "roles-available": {
+              "ok": "{count, plural, one {دور مقترح واحد مُرحَّل من القرار الجماعي.} other {# أدوار مقترحة مُرحَّلة من القرار الجماعي.}}",
+              "warning": "القرار الجماعي لا يحتوي على أدوار مسؤولة مسجّلة."
+            },
+            "timeline-available": {
+              "ok": "الجدول الزمني للتنفيذ متاح من القرار الجماعي.",
+              "warning": "القرار الجماعي لا يحتوي على جدول زمني للتنفيذ مسجّل."
+            },
+            "risks-available": {
+              "ok": "{count, plural, one {خطر واحد مُرحَّل من القرار الجماعي.} other {# مخاطر مُرحَّلة من القرار الجماعي.}}",
+              "warning": "القرار الجماعي لا يحتوي على مخاطر قرار مسجّلة."
+            },
+            "success-criteria-available": {
+              "ok": "{count, plural, one {معيار نجاح واحد مُرحَّل من القرار الجماعي.} other {# معايير نجاح مُرحَّلة من القرار الجماعي.}}",
+              "warning": "القرار الجماعي لا يحتوي على معايير نجاح مسجّلة."
+            }
+          },
+          "implementationTracking": {
+            "labels": {
+              "commitment-package-available": "حزمة التزامات منشورة",
+              "accepted-commitments-available": "الالتزامات المقبولة",
+              "decision-actions-available": "إجراءات القرار الجماعي",
+              "timelines-visible": "الجداول الزمنية"
+            },
+            "commitment-package-available": {
+              "ok": "التزامات التنفيذ «{title}» متاحة كبيانات مصدر للتتبع.",
+              "warning": "لا توجد حزمة التزامات منشورة بعد — لا يزال التتبع قادرًا على التوليد من نطاق القرار الجماعي / المبادرة بملكية غير معيّنة."
+            },
+            "accepted-commitments-available": {
+              "ok": "{count, plural, one {التزام مقبول واحد سيملأ المعيَّنين والسياق.} other {# التزامات مقبولة ستملأ المعيَّنين والسياق.}}",
+              "warning": "لا توجد التزامات مقبولة بعد — تبقى معالم الخطة غير معيّنة / قيد التحديد. دورة الحياة لا تُحظر."
+            },
+            "decision-actions-available": {
+              "ok": "{count, plural, one {إجراء قرار معتمد واحد متاح لمعالم الخطة التلقائية.} other {# إجراءات قرار معتمدة متاحة لمعالم الخطة التلقائية.}}",
+              "warning": "لم تُعثر على إجراءات معتمدة من قرار جماعي مغلق — سيُبذَر الخطة من نطاق المبادرة."
+            },
+            "timelines-visible": {
+              "ok": "{count, plural, one {التزام مقبول واحد يحمل تاريخ إكمال متوقع.} other {# التزامات مقبولة تحمل تاريخ إكمال متوقع.}}",
+              "warning": "لا توجد تواريخ إكمال متوقعة من الالتزامات المقبولة — يحدّد المؤلف التواريخ المستهدفة."
+            }
+          },
+          "officialResponse": {
+            "labels": {
+              "tracking-package-available": "حزمة تتبع تنفيذ منشورة",
+              "tracking-records-available": "سجلات التتبع",
+              "evidence-visible": "ظهور الأدلة",
+              "approved-actions-traceable": "قابلية تتبع الإجراءات المعتمدة"
+            },
+            "tracking-package-available": {
+              "ok": "تتبع التنفيذ «{title}» متاح كمصدر للرد الرسمي.",
+              "warning": "لا توجد حزمة تتبع تنفيذ منشورة بعد — لا يزال بإمكانك تأليف الردود الرسمية من سياق المبادرة، بما في ذلك «لم يُستلَم رد رسمي»."
+            },
+            "tracking-records-available": {
+              "ok": "{count, plural, one {سجل تتبع واحد متاح من حزمة التتبع.} other {# سجلات تتبع متاحة من حزمة التتبع.}}",
+              "warning": "لا يتوفر سجل تتبع بعد."
+            },
+            "evidence-visible": {
+              "ok": "{count, plural, one {سجل تتبع واحد يحمل مرجع دليل.} other {# سجلات تتبع تحمل مرجع دليل.}}",
+              "warning": "لا يحمل أي سجل تتبع مرجع دليل بعد."
+            },
+            "approved-actions-traceable": {
+              "ok": "كل سجل تتبع يستشهد بإجراءه المعتمد.",
+              "warning": "سجل تتبع واحد أو أكثر يفتقد مرجع إجراء معتمد."
+            }
+          },
+          "publicImpact": {
+            "labels": {
+              "official-response-package-available": "حزمة ردود رسمية منشورة",
+              "official-response-outcome": "نتيجة الرد الرسمي",
+              "tracking-package-available": "حزمة تتبع تنفيذ منشورة",
+              "implementation-complete": "اكتمال التنفيذ",
+              "evidence-visible": "ظهور الأدلة"
+            },
+            "official-response-package-available": {
+              "ok": "الردود الرسمية «{title}» متاحة كمصدر للأثر العام.",
+              "okNoResponse": "نُشرت الردود الرسمية «{title}» بالنتيجة: لم يُستلَم رد رسمي.",
+              "warning": "لا توجد حزمة ردود رسمية منشورة بعد — لا يزال بإمكانك تأليف الأثر العام؛ عالج الردود المفقودة كعدم يقين / نقص أدلة."
+            },
+            "official-response-outcome": {
+              "ok": "«لم يُستلَم رد رسمي» نتيجة مرحلة منشورة — عالجها كمدخل واقعي، لا كمصدر مفقود.",
+              "warning": "«لم يُستلَم رد رسمي» نتيجة مرحلة منشورة — عالجها كمدخل واقعي، لا كمصدر مفقود."
+            },
+            "tracking-package-available": {
+              "ok": "تم الاستشهاد بتتبع التنفيذ «{title}».",
+              "warning": "لا تتوفر حزمة تتبع تنفيذ منشورة بعد."
+            },
+            "implementation-complete": {
+              "ok": "كل سجل تتبع مُعلَّم كمكتمل.",
+              "warning": "{outstandingCount, plural, one {سجل تتبع واحد لم يكتمل بعد — التنفيذ غير المكتمل استنتاج صالح للأثر العام، وليس مانعًا للنشر.} other {# سجلات تتبع لم تكتمل بعد — التنفيذ غير المكتمل استنتاج صالح للأثر العام، وليس مانعًا للنشر.}}",
+              "warningEmpty": "لا تتوفر سجلات تتبع لتقييم الاكتمال — الأثر القابل للقياس المنخفض أو الصفري يبقى قابلاً للنشر."
+            },
+            "evidence-visible": {
+              "ok": "{count, plural, one {مرجع دليل واحد ظاهر من التتبع والردود الرسمية.} other {# مراجع أدلة ظاهرة من التتبع والردود الرسمية.}}",
+              "warning": "لا تظهر مراجع أدلة بعد — سجّل نقص الأدلة كعدم يقين؛ لا تختلق أدلة. هذا لا يمنع النشر."
+            }
+          },
+          "civicArchive": {
+            "labels": {
+              "public-impact-available": "تقرير أثر عام منشور",
+              "tracking-resolved": "اكتمال تتبع التنفيذ",
+              "evidence-visible": "ظهور الأدلة",
+              "optional-stages-missing": "المراحل الاختيارية"
+            },
+            "public-impact-available": {
+              "ok": "تقرير أثر عام منشور متاح كمصدر للأرشيف.",
+              "okOptional": "تقرير أثر عام منشور متاح كمصدر اختياري للأرشيف.",
+              "warning": "لا يوجد تقرير أثر عام منشور بعد — لا يزال بإمكان الأرشيف الإتمام من تاريخ دورة الحياة المتاح."
+            },
+            "tracking-resolved": {
+              "ok": "لا تظهر سجلات تتبع غير محلولة.",
+              "warning": "{unresolvedTrackingCount, plural, one {سجل تتبع واحد يبقى غير محلول — سيسجّل الأرشيف العمل المعلّق بصدق.} other {# سجلات تتبع تبقى غير محلولة — سيسجّل الأرشيف العمل المعلّق بصدق.}}"
+            },
+            "evidence-visible": {
+              "ok": "مراجع أدلة التتبع موجودة حيث توجد سجلات تتبع.",
+              "warning": "{missingEvidenceCount, plural, one {سجل تتبع واحد يفتقد مراجع أدلة.} other {# سجلات تتبع تفتقد مراجع أدلة.}}"
+            },
+            "optional-stages-missing": {
+              "warning": "مراحل اختيارية بلا سجلات منشورة: {stageIds}.",
+              "ok": "جميع المراحل الاختيارية لديها سجلات منشورة."
+            }
+          }
         }
       },
       "actions": {

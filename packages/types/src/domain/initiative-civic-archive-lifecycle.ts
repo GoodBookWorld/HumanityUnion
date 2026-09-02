@@ -1,11 +1,23 @@
 import type { InitiativeCollectiveDecisionId } from "./initiative-collective-decision.js";
 import type { InitiativeDescription, InitiativeId, InitiativeTitle } from "./initiative.js";
+import type {
+  InitiativeLifecycleConsistencyCivic,
+  InitiativeLifecycleConsistencyParams,
+  InitiativeLifecycleConsistencyStatus,
+} from "./initiative-lifecycle-consistency.js";
 import type { InitiativeLifecycleStageId } from "./initiative-lifecycle-stage.js";
 import type { MemberId } from "./member.js";
 import type {
   InitiativeOfficialResponseNoResponseDetail,
   InitiativeOfficialResponseOutcomeKind,
 } from "./initiative-official-response-lifecycle.js";
+
+/** Finite Civic Archive consistency check IDs (08E.9b). Completeness.summary is out of scope. */
+export type InitiativeCivicArchiveConsistencyCheckId =
+  | "public-impact-available"
+  | "tracking-resolved"
+  | "evidence-visible"
+  | "optional-stages-missing";
 
 /**
  * Initiative Lifecycle — Part M. Canonical Archive Document disclaimer
@@ -122,10 +134,14 @@ export interface InitiativeCivicArchiveParticipationStatistics {
 }
 
 export interface InitiativeCivicArchiveConsistencyCheck {
-  readonly checkId: string;
+  readonly checkId: InitiativeCivicArchiveConsistencyCheckId;
+  /** Compatibility English chrome — prefer Web semantic presentation. */
   readonly label: string;
-  readonly status: "ok" | "warning";
+  readonly status: InitiativeLifecycleConsistencyStatus;
+  /** Compatibility English body — prefer Web semantic presentation. */
   readonly detail: string;
+  readonly params: InitiativeLifecycleConsistencyParams;
+  readonly civic?: InitiativeLifecycleConsistencyCivic;
 }
 
 /** Read-only published upstream references for Archive Sources. */

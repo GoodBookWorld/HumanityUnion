@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { InitiativeRevisionIntelligenceSnapshot } from "@hu/types";
 
 import { resolveProposalCurationDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
+import { resolveApiConflictWarningDisplay } from "../../initiative-lifecycle-stage-workspace/resolve-api-consistency-display";
 
 /**
  * Initiative Lifecycle — Part E, Section 2/3 (Revision Sources / Intelligent
@@ -130,12 +131,15 @@ export function InitiativeRevisionIntelligenceSnapshotPanel({
             className="irv-source-panel__list"
             aria-label={t("author.revision.sourceSnapshot.conflictWarningsAria")}
           >
-            {snapshot.conflictWarnings.map((warning) => (
-              <li key={warning.section} className="irv-source-panel__item" data-tone="warning">
-                <strong>{warning.sectionLabel}</strong>
-                <span className="irv-source-panel__item-meta">{warning.message}</span>
-              </li>
-            ))}
+            {snapshot.conflictWarnings.map((warning) => {
+              const presentation = resolveApiConflictWarningDisplay(warning, t);
+              return (
+                <li key={warning.section} className="irv-source-panel__item" data-tone="warning">
+                  <strong>{presentation.sectionLabel}</strong>
+                  <span className="irv-source-panel__item-meta">{presentation.text}</span>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="irv-source-panel__empty">

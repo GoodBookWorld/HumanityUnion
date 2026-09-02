@@ -284,7 +284,7 @@ describe("Pack 02G Task 08E.8e — Implementation Commitment + Tracking advisori
     assert.match(tracking, /No Commitment Package yet/);
   });
 
-  it("Working Sidebar migrates Commitment+Tracking; keeps package bank unmounted; API detail opaque", () => {
+  it("Working Sidebar migrates Commitment+Tracking; keeps package bank unmounted; API consistency semantic", () => {
     const sidebar = readWeb(
       "features/initiative-lifecycle-stage-workspace/components/InitiativeLifecycleWorkingSidebar.tsx",
     );
@@ -295,13 +295,13 @@ describe("Pack 02G Task 08E.8e — Implementation Commitment + Tracking advisori
     const tracking = sidebar.slice(trackingStart, officialStart);
 
     assert.match(commitment, /resolveSidebarAdvisoryDisplay\(insights\.sourcesSummary/);
-    assert.match(commitment, /check\.detail/);
-    assert.doesNotMatch(commitment, /t\([^)]*check\.detail/);
+    assert.match(commitment, /resolveApiConsistencyCheckDisplay\("implementationCommitment"/);
+    assert.doesNotMatch(commitment, /check\.detail/);
     assert.doesNotMatch(commitment, /sourcesUsedSummary/);
 
     assert.match(tracking, /resolveSidebarAdvisoryDisplay\(insights\.sourcesSummary/);
-    assert.match(tracking, /check\.detail/);
-    assert.doesNotMatch(tracking, /t\([^)]*check\.detail/);
+    assert.match(tracking, /resolveApiConsistencyCheckDisplay\("implementationTracking"/);
+    assert.doesNotMatch(tracking, /check\.detail/);
     assert.doesNotMatch(tracking, /sourcesUsedSummary/);
     assert.doesNotMatch(tracking, /missingCommitmentPackageWarnings/);
   });

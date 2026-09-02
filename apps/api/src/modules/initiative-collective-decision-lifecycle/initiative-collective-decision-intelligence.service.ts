@@ -180,6 +180,8 @@ function buildConsistencyChecks(
         label: "Decision Session (optional)",
         status: "ok",
         detail: `Decision Session "${sessionReference.title}" is available as optional context.`,
+        params: { required: false },
+        civic: { title: sessionReference.title },
       });
     }
     return checks;
@@ -192,12 +194,15 @@ function buildConsistencyChecks(
           label: "Published Decision Session",
           status: "ok",
           detail: `Decision Session "${sessionReference.title}" is available as the Collective Decision source.`,
+          params: { required: true },
+          civic: { title: sessionReference.title },
         }
       : {
           checkId: "decision-session-available",
           label: "Published Decision Session",
           status: "warning",
           detail: "No published Decision Session yet — Collective Decision can be configured from Initiative context.",
+          params: { required: true },
         },
   );
 
@@ -208,12 +213,14 @@ function buildConsistencyChecks(
           label: "Decision Options",
           status: "ok",
           detail: `${sessionReference.options.length} option(s) are available from the Decision Session.`,
+          params: { count: sessionReference.options.length },
         }
       : {
           checkId: "options-available",
           label: "Decision Options",
           status: "warning",
           detail: "The Decision Session has no options recorded.",
+          params: { count: sessionReference?.options.length ?? 0 },
         },
   );
 
@@ -224,12 +231,14 @@ function buildConsistencyChecks(
           label: "Risks Identified",
           status: "ok",
           detail: `${sessionReference.risks.length} risk(s) carried over from the Decision Session.`,
+          params: { count: sessionReference.risks.length },
         }
       : {
           checkId: "risks-identified",
           label: "Risks Identified",
           status: "warning",
           detail: "The Decision Session has no risks recorded.",
+          params: { count: sessionReference?.risks.length ?? 0 },
         },
   );
 
@@ -240,12 +249,14 @@ function buildConsistencyChecks(
           label: "Responsible Roles",
           status: "ok",
           detail: `${sessionReference.suggestedResponsibleRoles.length} suggested role(s) carried over from the Decision Session.`,
+          params: { count: sessionReference.suggestedResponsibleRoles.length },
         }
       : {
           checkId: "roles-assigned",
           label: "Responsible Roles",
           status: "warning",
           detail: "The Decision Session has no suggested responsible roles recorded.",
+          params: { count: sessionReference?.suggestedResponsibleRoles.length ?? 0 },
         },
   );
 
@@ -256,12 +267,14 @@ function buildConsistencyChecks(
           label: "Implementation Timeline",
           status: "ok",
           detail: "A suggested timeline is available from the Decision Session.",
+          params: { present: true },
         }
       : {
           checkId: "timeline-defined",
           label: "Implementation Timeline",
           status: "warning",
           detail: "The Decision Session has no suggested timeline recorded.",
+          params: { present: false },
         },
   );
 

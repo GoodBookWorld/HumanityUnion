@@ -140,12 +140,15 @@ export function buildConflictWarnings(
     }
 
     const sectionLabel = REVISION_SECTION_LABELS[section] ?? section;
+    const changeCount = entries.length;
     warnings.push({
-      section,
+      code: "multiple_changes_same_section",
+      section: section as InitiativeRevisionChange["section"],
       sectionLabel,
       changeIds: entries.map((entry) => entry.changeId),
       proposalIds: [...new Set(entries.flatMap((entry) => entry.proposalIds))],
-      message: `${entries.length} changes target the ${sectionLabel} section — review before publishing to avoid conflicting edits.`,
+      params: { changeCount },
+      message: `${changeCount} changes target the ${sectionLabel} section — review before publishing to avoid conflicting edits.`,
     });
   }
 

@@ -238,10 +238,11 @@ describe("Pack 02G Task 08E.8e — deriveImplementationTrackingAiAssistantInsigh
       snapshot({
         consistencyChecks: [
           {
-            checkId: "t1",
+            checkId: "commitment-package-available",
             label: "API",
             status: "warning",
             detail: "Opaque tracking consistency detail.",
+            params: {},
           },
         ],
       }),

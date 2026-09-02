@@ -1,4 +1,11 @@
-import type { InitiativeRevisionEligibleStructuredProposal } from "./initiative-version-revision.js";
+import type {
+  InitiativeLifecycleConsistencyStatus,
+  InitiativeRevisionConflictWarningCode,
+} from "./initiative-lifecycle-consistency.js";
+import type {
+  InitiativeRevisionChangeSection,
+  InitiativeRevisionEligibleStructuredProposal,
+} from "./initiative-version-revision.js";
 
 /**
  * Initiative Lifecycle — Part E, Section 3 (Intelligent Revision Builder).
@@ -9,10 +16,17 @@ import type { InitiativeRevisionEligibleStructuredProposal } from "./initiative-
  * to resolve it.
  */
 export interface InitiativeRevisionConflictWarning {
-  readonly section: string;
+  /** Finite semantic code (08E.9b). */
+  readonly code: InitiativeRevisionConflictWarningCode;
+  readonly section: InitiativeRevisionChangeSection;
+  /** Compatibility English label — prefer Web localization of `section`. */
   readonly sectionLabel: string;
   readonly changeIds: readonly string[];
   readonly proposalIds: readonly string[];
+  readonly params: {
+    readonly changeCount: number;
+  };
+  /** Compatibility English message — prefer semantic presentation. */
   readonly message: string;
 }
 
@@ -20,11 +34,15 @@ export interface InitiativeRevisionConflictWarning {
  * Initiative Lifecycle — Part E, Section 3. One deterministic pass/fail
  * check the Revision Builder can always answer truthfully from persisted
  * data alone — never an AI judgment call.
+ *
+ * NOTE (08E.9b): checkId remains `string` — Revision consistencyChecks are
+ * intentionally unmounted in the Working Sidebar and out of scope for this
+ * semantic migration slice.
  */
 export interface InitiativeRevisionConsistencyCheck {
   readonly checkId: string;
   readonly label: string;
-  readonly status: "ok" | "warning";
+  readonly status: InitiativeLifecycleConsistencyStatus;
   readonly detail: string;
 }
 

@@ -84,9 +84,12 @@ describe("buildConflictWarnings", () => {
     ]);
 
     assert.equal(warnings.length, 1);
+    assert.equal(warnings[0]!.code, "multiple_changes_same_section");
     assert.equal(warnings[0]!.section, "description");
+    assert.equal(warnings[0]!.params.changeCount, 2);
     assert.deepEqual(warnings[0]!.changeIds.sort(), ["change-1", "change-2"]);
     assert.deepEqual(warnings[0]!.proposalIds.sort(), ["proposal-1", "proposal-2"]);
+    assert.match(warnings[0]!.message, /2 changes target the Description section/);
   });
 
   it("deduplicates proposalIds shared by the conflicting changes", () => {

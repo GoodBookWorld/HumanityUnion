@@ -149,6 +149,9 @@ function generateDeterministicDecisionSessionDraftContent(
     ...roleRecommendations.map((recommendation) => recommendation.title),
   ]);
 
+  // Compatibility sink (08E.9b): embeds producer-generated English `detail`
+  // into draft unresolvedQuestions. Must be removed before legacy detail
+  // deprecation — do not import Web catalogs or parse detail here.
   const unresolvedQuestions = uniqueNonEmpty([
     ...snapshot.consistencyChecks
       .filter((check) => check.status === "warning")

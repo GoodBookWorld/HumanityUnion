@@ -1,7 +1,19 @@
 import type { InitiativeCollectiveDecisionId } from "./initiative-collective-decision.js";
 import type { InitiativeImplementationCommitmentId } from "./initiative-implementation-commitment.js";
 import type { InitiativeDescription, InitiativeId, InitiativeTitle } from "./initiative.js";
+import type {
+  InitiativeLifecycleConsistencyCivic,
+  InitiativeLifecycleConsistencyParams,
+  InitiativeLifecycleConsistencyStatus,
+} from "./initiative-lifecycle-consistency.js";
 import type { MemberId } from "./member.js";
+
+/** Finite Implementation Tracking consistency check IDs (08E.9b). */
+export type InitiativeImplementationTrackingConsistencyCheckId =
+  | "commitment-package-available"
+  | "accepted-commitments-available"
+  | "decision-actions-available"
+  | "timelines-visible";
 
 /**
  * Initiative Lifecycle — Part J, Section 2/9. Read-only reference into one
@@ -45,10 +57,14 @@ export interface InitiativeImplementationTrackingPackageReference {
  * never an automatic progress or completion change.
  */
 export interface InitiativeImplementationTrackingConsistencyCheck {
-  readonly checkId: string;
+  readonly checkId: InitiativeImplementationTrackingConsistencyCheckId;
+  /** Compatibility English chrome — prefer Web semantic presentation. */
   readonly label: string;
-  readonly status: "ok" | "warning";
+  readonly status: InitiativeLifecycleConsistencyStatus;
+  /** Compatibility English body — prefer Web semantic presentation. */
   readonly detail: string;
+  readonly params: InitiativeLifecycleConsistencyParams;
+  readonly civic?: InitiativeLifecycleConsistencyCivic;
 }
 
 /**

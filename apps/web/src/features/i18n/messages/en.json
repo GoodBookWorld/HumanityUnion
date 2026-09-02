@@ -1204,6 +1204,246 @@
             "public_impact": "No draft yet — use Generate Public Impact Draft in the main workspace to begin.",
             "archive": "No draft yet — use Generate Civic Archive Draft in the main workspace to begin."
           }
+        },
+        "apiConsistency": {
+          "generic": {
+            "warning": "Consistency warning",
+            "conflict": "Conflict warning"
+          },
+          "stages": {
+            "proposal": "proposal",
+            "petition": "petition",
+            "decision_session": "decision_session",
+            "analysis": "analysis",
+            "revision": "revision",
+            "collective_decision": "collective_decision",
+            "implementation_commitment": "implementation_commitment",
+            "implementation_tracking": "implementation_tracking",
+            "official_response": "official_response",
+            "public_impact": "public_impact",
+            "civic_archive": "civic_archive",
+            "discussion": "discussion",
+            "initiative": "initiative"
+          },
+          "revision": {
+            "multiple_changes_same_section": "{changeCount, plural, one {# change targets the {section} section — review before publishing to avoid conflicting edits.} other {# changes target the {section} section — review before publishing to avoid conflicting edits.}}"
+          },
+          "petition": {
+            "labels": {
+              "revision-available": "Published Revision",
+              "analysis-available": "Collaborative Analysis",
+              "proposal-references-resolved": "Proposal References"
+            },
+            "revision-available": {
+              "ok": "Petition will reference Revision v{version}.",
+              "warning": "No Published Revision exists yet. Publish a Revision before generating a Petition."
+            },
+            "analysis-available": {
+              "ok": "Petition context is consistent with Analysis \"{title}\".",
+              "warning": "No Published Collaborative Analysis found. Supporting context may be incomplete."
+            },
+            "proposal-references-resolved": {
+              "ok": "{count, plural, one {# Improvement Proposal referenced from the Revision.} other {# Improvement Proposals referenced from the Revision.}}",
+              "warning": "The current Revision did not accept any Improvement Proposals."
+            }
+          },
+          "decisionSession": {
+            "labels": {
+              "petition-available": "Published Petition",
+              "revision-available": "Published Revision",
+              "analysis-available": "Collaborative Analysis",
+              "proposal-references": "Improvement Proposals",
+              "ally-recommendations": "Active Ally recommendations"
+            },
+            "petition-available": {
+              "ok": "Petition \"{title}\" is available as the Decision Session source.",
+              "warning": "No published Petition yet — Decision Session can use Initiative / Analysis / Proposal context instead."
+            },
+            "revision-available": {
+              "ok": "Revision v{version} is referenced.",
+              "warning": "No published Revision is available for traceability."
+            },
+            "analysis-available": {
+              "ok": "Analysis \"{title}\" is referenced.",
+              "warning": "No published Collaborative Analysis is available."
+            },
+            "proposal-references": {
+              "ok": "{count, plural, one {# proposal reference is available.} other {# proposal references are available.}}",
+              "warning": "No accepted Improvement Proposals are referenced yet."
+            },
+            "ally-recommendations": {
+              "ok": "{count, plural, one {# advisory recommendation from Active Allies.} other {# advisory recommendations from Active Allies.}}",
+              "okEmpty": "No Active Ally recommendations yet — recommendations remain optional and advisory."
+            }
+          },
+          "collectiveDecision": {
+            "labels": {
+              "decision-session-available": "Published Decision Session",
+              "options-available": "Decision Options",
+              "risks-identified": "Risks Identified",
+              "roles-assigned": "Responsible Roles",
+              "timeline-defined": "Implementation Timeline"
+            },
+            "decision-session-available": {
+              "ok": "Decision Session \"{title}\" is available as the Collective Decision source.",
+              "okOptional": "Decision Session \"{title}\" is available as optional context.",
+              "warning": "No published Decision Session yet — Collective Decision can be configured from Initiative context."
+            },
+            "options-available": {
+              "ok": "{count, plural, one {# option is available from the Decision Session.} other {# options are available from the Decision Session.}}",
+              "warning": "The Decision Session has no options recorded."
+            },
+            "risks-identified": {
+              "ok": "{count, plural, one {# risk carried over from the Decision Session.} other {# risks carried over from the Decision Session.}}",
+              "warning": "The Decision Session has no risks recorded."
+            },
+            "roles-assigned": {
+              "ok": "{count, plural, one {# suggested role carried over from the Decision Session.} other {# suggested roles carried over from the Decision Session.}}",
+              "warning": "The Decision Session has no suggested responsible roles recorded."
+            },
+            "timeline-defined": {
+              "ok": "A suggested timeline is available from the Decision Session.",
+              "warning": "The Decision Session has no suggested timeline recorded."
+            }
+          },
+          "implementationCommitment": {
+            "labels": {
+              "collective-decision-available": "Published Collective Decision",
+              "approved-actions-available": "Approved Actions",
+              "roles-available": "Responsible Roles",
+              "timeline-available": "Implementation Timeline",
+              "risks-available": "Decision Risks",
+              "success-criteria-available": "Success Criteria"
+            },
+            "collective-decision-available": {
+              "ok": "Collective Decision \"{title}\" is available as the Implementation Commitment source.",
+              "warning": "No published (closed) Collective Decision yet — Implementation Commitments can still be authored manually."
+            },
+            "approved-actions-available": {
+              "ok": "{count, plural, one {# Approved Action is available from the Collective Decision.} other {# Approved Actions are available from the Collective Decision.}}",
+              "warning": "The Collective Decision has no Approved Actions recorded."
+            },
+            "roles-available": {
+              "ok": "{count, plural, one {# suggested role carried over from the Collective Decision.} other {# suggested roles carried over from the Collective Decision.}}",
+              "warning": "The Collective Decision has no Responsible Roles recorded."
+            },
+            "timeline-available": {
+              "ok": "An Implementation Timeline is available from the Collective Decision.",
+              "warning": "The Collective Decision has no Implementation Timeline recorded."
+            },
+            "risks-available": {
+              "ok": "{count, plural, one {# risk carried over from the Collective Decision.} other {# risks carried over from the Collective Decision.}}",
+              "warning": "The Collective Decision has no Decision Risks recorded."
+            },
+            "success-criteria-available": {
+              "ok": "{count, plural, one {# Success Criterion carried over from the Collective Decision.} other {# Success Criteria carried over from the Collective Decision.}}",
+              "warning": "The Collective Decision has no Success Criteria recorded."
+            }
+          },
+          "implementationTracking": {
+            "labels": {
+              "commitment-package-available": "Published Commitment Package",
+              "accepted-commitments-available": "Accepted Commitments",
+              "decision-actions-available": "Collective Decision Actions",
+              "timelines-visible": "Timelines"
+            },
+            "commitment-package-available": {
+              "ok": "Implementation Commitments \"{title}\" are available as Tracking source data.",
+              "warning": "No published Commitment Package yet — Tracking can still generate from Collective Decision / Initiative scope with Unassigned ownership."
+            },
+            "accepted-commitments-available": {
+              "ok": "{count, plural, one {# Accepted Commitment will populate assignees and context.} other {# Accepted Commitments will populate assignees and context.}}",
+              "warning": "No Accepted Commitments yet — plan milestones remain Unassigned / To be determined. Lifecycle does not block."
+            },
+            "decision-actions-available": {
+              "ok": "{count, plural, one {# approved Decision action available for automatic plan milestones.} other {# approved Decision actions available for automatic plan milestones.}}",
+              "warning": "No closed Collective Decision approved actions found — Initiative scope will seed the plan."
+            },
+            "timelines-visible": {
+              "ok": "{count, plural, one {# Accepted Commitment carries an expected completion date.} other {# Accepted Commitments carry an expected completion date.}}",
+              "warning": "No expected completion dates from Accepted Commitments — Author sets target dates."
+            }
+          },
+          "officialResponse": {
+            "labels": {
+              "tracking-package-available": "Published Implementation Tracking Package",
+              "tracking-records-available": "Tracking Records",
+              "evidence-visible": "Evidence Visibility",
+              "approved-actions-traceable": "Approved Action Traceability"
+            },
+            "tracking-package-available": {
+              "ok": "Implementation Tracking \"{title}\" is available as the Official Response source.",
+              "warning": "No published Implementation Tracking Package yet — Official Responses can still be authored from Initiative context, including No official response received."
+            },
+            "tracking-records-available": {
+              "ok": "{count, plural, one {# Tracking Record is available from the Tracking Package.} other {# Tracking Records are available from the Tracking Package.}}",
+              "warning": "No Tracking Record is available yet."
+            },
+            "evidence-visible": {
+              "ok": "{count, plural, one {# Tracking Record carries an Evidence Reference.} other {# Tracking Records carry an Evidence Reference.}}",
+              "warning": "No Tracking Record carries an Evidence Reference yet."
+            },
+            "approved-actions-traceable": {
+              "ok": "Every Tracking Record cites its Approved Action.",
+              "warning": "One or more Tracking Records are missing an Approved Action reference."
+            }
+          },
+          "publicImpact": {
+            "labels": {
+              "official-response-package-available": "Published Official Response Package",
+              "official-response-outcome": "Official Response Outcome",
+              "tracking-package-available": "Published Implementation Tracking Package",
+              "implementation-complete": "Implementation Completeness",
+              "evidence-visible": "Evidence Visibility"
+            },
+            "official-response-package-available": {
+              "ok": "Official Responses \"{title}\" are available as the Public Impact source.",
+              "okNoResponse": "Official Responses \"{title}\" published with outcome: No official response received.",
+              "warning": "No published Official Response Package yet — Public Impact can still be authored; treat missing responses as uncertainty / missing evidence."
+            },
+            "official-response-outcome": {
+              "ok": "No official response received is a published stage outcome — treat it as factual input, not a missing source.",
+              "warning": "No official response received is a published stage outcome — treat it as factual input, not a missing source."
+            },
+            "tracking-package-available": {
+              "ok": "Implementation Tracking \"{title}\" is cited.",
+              "warning": "No published Implementation Tracking Package is available yet."
+            },
+            "implementation-complete": {
+              "ok": "Every Tracking Record is marked completed.",
+              "warning": "{outstandingCount, plural, one {# Tracking Record is not yet completed — incomplete implementation is a valid Public Impact conclusion, not a publish blocker.} other {# Tracking Records are not yet completed — incomplete implementation is a valid Public Impact conclusion, not a publish blocker.}}",
+              "warningEmpty": "No Tracking Records are available to assess completeness — low/zero measurable impact remains publishable."
+            },
+            "evidence-visible": {
+              "ok": "{count, plural, one {# evidence reference is visible from Tracking and Official Responses.} other {# evidence references are visible from Tracking and Official Responses.}}",
+              "warning": "No evidence references are visible yet — record evidence insufficiency as uncertainty; do not invent evidence. This does not block Publish."
+            }
+          },
+          "civicArchive": {
+            "labels": {
+              "public-impact-available": "Published Public Impact Report",
+              "tracking-resolved": "Implementation Tracking Completeness",
+              "evidence-visible": "Evidence Visibility",
+              "optional-stages-missing": "Optional Stages"
+            },
+            "public-impact-available": {
+              "ok": "A published Public Impact Report is available as the Archive source.",
+              "okOptional": "A published Public Impact Report is available as an optional Archive source.",
+              "warning": "No published Public Impact Report yet — Archive can still finalize from available Lifecycle history."
+            },
+            "tracking-resolved": {
+              "ok": "No unresolved Tracking Records are visible.",
+              "warning": "{unresolvedTrackingCount, plural, one {# Tracking Record remains unresolved — Archive will record outstanding work honestly.} other {# Tracking Records remain unresolved — Archive will record outstanding work honestly.}}"
+            },
+            "evidence-visible": {
+              "ok": "Tracking evidence references are present where Tracking Records exist.",
+              "warning": "{missingEvidenceCount, plural, one {# Tracking Record lacks evidence references.} other {# Tracking Records lack evidence references.}}"
+            },
+            "optional-stages-missing": {
+              "warning": "Optional stage(s) without published records: {stageIds}.",
+              "ok": "All optional stages have published records."
+            }
+          }
         }
       },
       "actions": {

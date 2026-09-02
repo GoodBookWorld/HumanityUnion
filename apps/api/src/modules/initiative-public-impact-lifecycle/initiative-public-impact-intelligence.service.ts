@@ -150,12 +150,15 @@ function buildConsistencyChecks(input: {
             input.officialResponsePackageReference.outcomeKind === "no_official_response_received"
               ? `Official Responses "${input.officialResponsePackageReference.title}" published with outcome: No official response received.`
               : `Official Responses "${input.officialResponsePackageReference.title}" are available as the Public Impact source.`,
+          params: { outcomeKind: input.officialResponsePackageReference.outcomeKind },
+          civic: { title: input.officialResponsePackageReference.title },
         }
       : {
           checkId: "official-response-package-available",
           label: "Published Official Response Package",
           status: "warning",
           detail: "No published Official Response Package yet — Public Impact can still be authored; treat missing responses as uncertainty / missing evidence.",
+          params: {},
         },
   );
 
@@ -171,6 +174,7 @@ function buildConsistencyChecks(input: {
       status: "ok",
       detail:
         "No official response received is a published stage outcome — treat it as factual input, not a missing source.",
+      params: {},
     });
   }
 
@@ -181,12 +185,15 @@ function buildConsistencyChecks(input: {
           label: "Published Implementation Tracking Package",
           status: "ok",
           detail: `Implementation Tracking "${input.trackingPackageReference.title}" is cited.`,
+          params: {},
+          civic: { title: input.trackingPackageReference.title },
         }
       : {
           checkId: "tracking-package-available",
           label: "Published Implementation Tracking Package",
           status: "warning",
           detail: "No published Implementation Tracking Package is available yet.",
+          params: {},
         },
   );
 
@@ -198,6 +205,10 @@ function buildConsistencyChecks(input: {
           label: "Implementation Completeness",
           status: "ok",
           detail: "Every Tracking Record is marked completed.",
+          params: {
+            outstandingCount: 0,
+            recordCount: input.trackingRecords.length,
+          },
         }
       : {
           checkId: "implementation-complete",
@@ -207,6 +218,10 @@ function buildConsistencyChecks(input: {
             outstanding.length > 0
               ? `${outstanding.length} Tracking Record(s) are not yet completed — incomplete implementation is a valid Public Impact conclusion, not a publish blocker.`
               : "No Tracking Records are available to assess completeness — low/zero measurable impact remains publishable.",
+          params: {
+            outstandingCount: outstanding.length,
+            recordCount: input.trackingRecords.length,
+          },
         },
   );
 
@@ -217,6 +232,7 @@ function buildConsistencyChecks(input: {
           label: "Evidence Visibility",
           status: "ok",
           detail: `${input.evidenceItems.length} evidence reference(s) are visible from Tracking and Official Responses.`,
+          params: { count: input.evidenceItems.length },
         }
       : {
           checkId: "evidence-visible",
@@ -224,6 +240,7 @@ function buildConsistencyChecks(input: {
           status: "warning",
           detail:
             "No evidence references are visible yet — record evidence insufficiency as uncertainty; do not invent evidence. This does not block Publish.",
+          params: { count: 0 },
         },
   );
 

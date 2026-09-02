@@ -241,7 +241,7 @@ describe("Pack 02G Task 08E.8f — Official Response + Public Impact + Civic Arc
     assert.match(or, /Publish an Implementation Tracking Package/);
   });
 
-  it("Working Sidebar migrates OR/PI/Archive; unused banks stay unmounted; API detail opaque", () => {
+  it("Working Sidebar migrates OR/PI/Archive; unused banks stay unmounted; API consistency semantic", () => {
     const sidebar = readWeb(
       "features/initiative-lifecycle-stage-workspace/components/InitiativeLifecycleWorkingSidebar.tsx",
     );
@@ -253,10 +253,12 @@ describe("Pack 02G Task 08E.8f — Official Response + Public Impact + Civic Arc
     const pi = sidebar.slice(piStart, archiveStart);
     const archive = sidebar.slice(archiveStart, exportStart);
 
+    assert.match(or, /resolveApiConsistencyCheckDisplay\("officialResponse"/);
+    assert.match(pi, /resolveApiConsistencyCheckDisplay\("publicImpact"/);
+    assert.match(archive, /resolveApiConsistencyCheckDisplay\("civicArchive"/);
     for (const block of [or, pi, archive]) {
       assert.match(block, /resolveSidebarAdvisoryDisplay\(insights\.sourcesSummary/);
-      assert.match(block, /check\.detail/);
-      assert.doesNotMatch(block, /t\([^)]*check\.detail/);
+      assert.doesNotMatch(block, /check\.detail/);
       assert.doesNotMatch(block, /sourcesUsedSummary/);
     }
     assert.doesNotMatch(or, /missingTrackingPackageWarnings/);

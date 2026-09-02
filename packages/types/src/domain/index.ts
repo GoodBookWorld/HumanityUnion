@@ -327,6 +327,12 @@ export type {
   InitiativeRevisionIntelligenceSnapshot,
 } from "./initiative-revision-intelligence-snapshot.js";
 export type {
+  InitiativeLifecycleConsistencyCivic,
+  InitiativeLifecycleConsistencyParams,
+  InitiativeLifecycleConsistencyStatus,
+  InitiativeRevisionConflictWarningCode,
+} from "./initiative-lifecycle-consistency.js";
+export type {
   InitiativeRevisionReaction,
   InitiativeRevisionReactionKind,
   InitiativeRevisionReactionSummary,
@@ -334,6 +340,7 @@ export type {
 export type {
   InitiativePetitionAnalysisReference,
   InitiativePetitionConsistencyCheck,
+  InitiativePetitionConsistencyCheckId,
   InitiativePetitionDraft,
   InitiativePetitionDraftContext,
   InitiativePetitionIntelligenceSnapshot,
@@ -346,6 +353,7 @@ export type {
   DecisionSessionTraceability,
   InitiativeDecisionSessionAnalysisReference,
   InitiativeDecisionSessionConsistencyCheck,
+  InitiativeDecisionSessionConsistencyCheckId,
   InitiativeDecisionSessionDraft,
   InitiativeDecisionSessionDraftContext,
   InitiativeDecisionSessionIntelligenceSnapshot,
@@ -361,6 +369,7 @@ export type {
   CollectiveDecisionTraceability,
   InitiativeCollectiveDecisionAnalysisReference,
   InitiativeCollectiveDecisionConsistencyCheck,
+  InitiativeCollectiveDecisionConsistencyCheckId,
   InitiativeCollectiveDecisionIntelligenceSnapshot,
   InitiativeCollectiveDecisionLifecycleDraft,
   InitiativeCollectiveDecisionLifecycleDraftContext,
@@ -427,6 +436,7 @@ export type {
   InitiativeImplementationCommitmentCandidate,
   InitiativeImplementationCommitmentCandidateDraftStatus,
   InitiativeImplementationCommitmentConsistencyCheck,
+  InitiativeImplementationCommitmentConsistencyCheckId,
   InitiativeImplementationCommitmentDecisionReference,
   InitiativeImplementationCommitmentIntelligenceSnapshot,
   InitiativeImplementationCommitmentLifecycleDraft,
@@ -453,6 +463,7 @@ export type {
   InitiativeImplementationTrackingCandidate,
   InitiativeImplementationTrackingCommitmentReference,
   InitiativeImplementationTrackingConsistencyCheck,
+  InitiativeImplementationTrackingConsistencyCheckId,
   InitiativeImplementationTrackingIntelligenceSnapshot,
   InitiativeImplementationTrackingLifecycleDraft,
   InitiativeImplementationTrackingLifecycleDraftContext,
@@ -462,6 +473,7 @@ export type {
 export type {
   InitiativeOfficialResponseCandidate,
   InitiativeOfficialResponseConsistencyCheck,
+  InitiativeOfficialResponseConsistencyCheckId,
   InitiativeOfficialResponseIntelligenceSnapshot,
   InitiativeOfficialResponseLifecycleDraft,
   InitiativeOfficialResponseLifecycleDraftContext,
@@ -477,6 +489,7 @@ export type {
   InitiativePublicImpactAnalysisReference,
   InitiativePublicImpactCommitmentPackageReference,
   InitiativePublicImpactConsistencyCheck,
+  InitiativePublicImpactConsistencyCheckId,
   InitiativePublicImpactDecisionReference,
   InitiativePublicImpactDecisionSessionReference,
   InitiativePublicImpactIntelligenceSnapshot,
@@ -499,6 +512,7 @@ export type {
   CivicArchiveTraceability,
   InitiativeCivicArchiveCompleteness,
   InitiativeCivicArchiveConsistencyCheck,
+  InitiativeCivicArchiveConsistencyCheckId,
   InitiativeCivicArchiveIntelligenceSnapshot,
   InitiativeCivicArchiveLifecycleDraft,
   InitiativeCivicArchiveLifecycleDraftContext,
