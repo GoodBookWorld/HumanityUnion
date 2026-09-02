@@ -1069,6 +1069,39 @@
             "criteriaNone": "尚未列出成功標準——請定義成功結果的樣貌。",
             "rationaleEmpty": "「{field}」為空——請說明此集體決策結果如何來自上游來源。",
             "claritySummaryUnclear": "決策摘要應清楚說明集體決策結果與目的。"
+          },
+          "implementationCommitment": {
+            "sourcesEmpty": "尚無實施承諾來源。",
+            "sources": {
+              "decision": "集體決策「{title}」",
+              "allies": "{count} 位活躍盟友"
+            },
+            "unassignedDecisionRequired": "產生實施承諾前請先發布集體決策。",
+            "unassignedNoCandidates": "尚無承諾候選人——請從集體決策的核准行動產生草稿。",
+            "unassignedMissingParticipants": "{count} 位候選人尚未指定建議參與者。",
+            "rolesOverloaded": "角色「{role}」被建議給 {count} 位候選人——請考慮分散責任。",
+            "resourcesMissing": "{count} 位候選人未列出所需資源。",
+            "timelineMissing": "{count} 位候選人沒有建議時程。",
+            "risksMissing": "{count} 位候選人未列出相關風險。",
+            "clarityTitleEmpty": "「{field}」為空——實施承諾應有清楚標示。",
+            "claritySummaryEmpty": "「{field}」為空——請重述集體決策的實施意圖。"
+          },
+          "implementationTracking": {
+            "sourcesEmpty": "倡議範圍可用於自動產生計畫。",
+            "sources": {
+              "package": "承諾套件「{title}」",
+              "commitments": "{count} 項已接受承諾",
+              "actions": "{count} 項決策行動",
+              "allies": "{count} 位活躍盟友"
+            },
+            "overdueCount": "{count} 個里程碑已超過目標日期——請檢視日期。",
+            "blockedCount": "{count} 個里程碑列有未解決風險/障礙。",
+            "evidenceMissingAtComplete": "{count} 個里程碑回報 100% 進度但尚無證據。",
+            "stalledNotStarted": "{count} 個里程碑尚未開始。",
+            "timelineMissingTargetDate": "{count} 個里程碑沒有目標日期——請謹慎設定日期；AI 不會最終確定。",
+            "clarityUnassigned": "{count} 個里程碑未指派——僅指派已知負責人。",
+            "clarityTitleEmpty": "「{field}」為空——實施追蹤應有清楚標示。",
+            "claritySummaryEmpty": "「{field}」為空——請重述實施意圖。"
           }
         },
         "completeness": {

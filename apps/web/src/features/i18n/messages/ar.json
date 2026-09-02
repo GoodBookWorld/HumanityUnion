@@ -1069,6 +1069,39 @@
             "criteriaNone": "لم تُدرج معايير نجاح — حدّد شكل النتيجة الناجحة.",
             "rationaleEmpty": "«{field}» فارغ — اشرح لماذا تتبع نتيجة القرار الجماعي هذه المصادر السابقة.",
             "claritySummaryUnclear": "يجب أن يبيّن ملخص القرار بوضوح نتيجة القرار الجماعي وغرضه."
+          },
+          "implementationCommitment": {
+            "sourcesEmpty": "لا مصادر لالتزامات التنفيذ متاحة بعد.",
+            "sources": {
+              "decision": "القرار الجماعي «{title}»",
+              "allies": "{count, plural, one {حليف نشط واحد} other {# حلفاء نشطين}}"
+            },
+            "unassignedDecisionRequired": "انشر قرارًا جماعيًا قبل إنشاء التزامات التنفيذ.",
+            "unassignedNoCandidates": "لا مرشحين للالتزام بعد — أنشئ مسودة من الإجراءات المعتمدة في القرار الجماعي.",
+            "unassignedMissingParticipants": "{count, plural, one {مرشح واحد بلا مشارك مقترح بعد.} other {# مرشحين بلا مشارك مقترح بعد.}}",
+            "rolesOverloaded": "الدور «{role}» مقترح لـ {count, plural, one {مرشح واحد} other {# مرشحين}} — فكّر في توزيع المسؤولية.",
+            "resourcesMissing": "{count, plural, one {مرشح واحد بلا موارد مطلوبة.} other {# مرشحين بلا موارد مطلوبة.}}",
+            "timelineMissing": "{count, plural, one {مرشح واحد بلا جدول زمني مقترح.} other {# مرشحين بلا جدول زمني مقترح.}}",
+            "risksMissing": "{count, plural, one {مرشح واحد بلا مخاطر مرتبطة.} other {# مرشحين بلا مخاطر مرتبطة.}}",
+            "clarityTitleEmpty": "«{field}» فارغ — يجب تسمية التزامات التنفيذ بوضوح.",
+            "claritySummaryEmpty": "«{field}» فارغ — أعد صياغة نية التنفيذ في القرار الجماعي."
+          },
+          "implementationTracking": {
+            "sourcesEmpty": "نطاق المبادرة متاح لتوليد الخطة تلقائيًا.",
+            "sources": {
+              "package": "حزمة الالتزامات «{title}»",
+              "commitments": "{count, plural, one {التزام مقبول واحد} other {# التزامات مقبولة}}",
+              "actions": "{count, plural, one {إجراء قرار واحد} other {# إجراءات قرار}}",
+              "allies": "{count, plural, one {حليف نشط واحد} other {# حلفاء نشطين}}"
+            },
+            "overdueCount": "{count, plural, one {معلم واحد تجاوز تاريخه المستهدف — راجع التواريخ.} other {# معالم تجاوزت تاريخها المستهدف — راجع التواريخ.}}",
+            "blockedCount": "{count, plural, one {معلم واحد يسرد مخاطر/عقبات غير محلولة.} other {# معالم تسرد مخاطر/عقبات غير محلولة.}}",
+            "evidenceMissingAtComplete": "{count, plural, one {معلم واحد يبلغ عن تقدم 100٪ بلا أدلة بعد.} other {# معالم تبلغ عن تقدم 100٪ بلا أدلة بعد.}}",
+            "stalledNotStarted": "{count, plural, one {معلم واحد لم يبدأ بعد.} other {# معالم لم تبدأ بعد.}}",
+            "timelineMissingTargetDate": "{count, plural, one {معلم واحد بلا تاريخ مستهدف — عيّن التواريخ بحذر؛ الذكاء الاصطناعي لا يُنهيها.} other {# معالم بلا تاريخ مستهدف — عيّن التواريخ بحذر؛ الذكاء الاصطناعي لا يُنهيها.}}",
+            "clarityUnassigned": "{count, plural, one {معلم واحد غير معيَّن — عيّن فقط أطرافًا مسؤولة معروفة.} other {# معالم غير معيَّنة — عيّن فقط أطرافًا مسؤولة معروفة.}}",
+            "clarityTitleEmpty": "«{field}» فارغ — يجب تسمية تتبع التنفيذ بوضوح.",
+            "claritySummaryEmpty": "«{field}» فارغ — أعد صياغة نية التنفيذ."
           }
         },
         "completeness": {

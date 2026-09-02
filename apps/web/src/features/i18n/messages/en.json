@@ -1069,6 +1069,39 @@
             "criteriaNone": "No Success Criteria listed — define what a successful outcome looks like.",
             "rationaleEmpty": "{field} is empty — explain why this Collective Decision outcome follows from upstream sources.",
             "claritySummaryUnclear": "Decision Summary should clearly state the Collective Decision outcome and purpose."
+          },
+          "implementationCommitment": {
+            "sourcesEmpty": "No Implementation Commitment Sources available yet.",
+            "sources": {
+              "decision": "Collective Decision “{title}”",
+              "allies": "{count, plural, one {# Active Ally} other {# Active Allies}}"
+            },
+            "unassignedDecisionRequired": "Publish a Collective Decision before generating Implementation Commitments.",
+            "unassignedNoCandidates": "No Commitment Candidates yet — generate a draft from the Collective Decision's Approved Actions.",
+            "unassignedMissingParticipants": "{count, plural, one {# Candidate has no proposed Participant yet.} other {# Candidates have no proposed Participant yet.}}",
+            "rolesOverloaded": "Role “{role}” is suggested for {count, plural, one {# Candidate} other {# Candidates}} — consider spreading responsibility.",
+            "resourcesMissing": "{count, plural, one {# Candidate lists no Required Resources.} other {# Candidates list no Required Resources.}}",
+            "timelineMissing": "{count, plural, one {# Candidate has no Suggested Timeline.} other {# Candidates have no Suggested Timeline.}}",
+            "risksMissing": "{count, plural, one {# Candidate lists no Related Risks.} other {# Candidates list no Related Risks.}}",
+            "clarityTitleEmpty": "{field} is empty — Implementation Commitments should be clearly labeled.",
+            "claritySummaryEmpty": "{field} is empty — restate the Collective Decision's implementation intent."
+          },
+          "implementationTracking": {
+            "sourcesEmpty": "Initiative scope available for automatic plan generation.",
+            "sources": {
+              "package": "Commitment Package “{title}”",
+              "commitments": "{count, plural, one {# Accepted Commitment} other {# Accepted Commitments}}",
+              "actions": "{count, plural, one {# Decision action} other {# Decision actions}}",
+              "allies": "{count, plural, one {# Active Ally} other {# Active Allies}}"
+            },
+            "overdueCount": "{count, plural, one {# milestone is past its target date — review dates.} other {# milestones are past their target date — review dates.}}",
+            "blockedCount": "{count, plural, one {# milestone lists unresolved risks/obstacles.} other {# milestones list unresolved risks/obstacles.}}",
+            "evidenceMissingAtComplete": "{count, plural, one {# milestone reports 100% progress with no evidence yet.} other {# milestones report 100% progress with no evidence yet.}}",
+            "stalledNotStarted": "{count, plural, one {# milestone has not been started yet.} other {# milestones have not been started yet.}}",
+            "timelineMissingTargetDate": "{count, plural, one {# milestone has no target date — set dates carefully; AI never finalizes them.} other {# milestones have no target date — set dates carefully; AI never finalizes them.}}",
+            "clarityUnassigned": "{count, plural, one {# milestone is Unassigned — assign only known responsible parties.} other {# milestones are Unassigned — assign only known responsible parties.}}",
+            "clarityTitleEmpty": "{field} is empty — Implementation Tracking should be clearly labeled.",
+            "claritySummaryEmpty": "{field} is empty — restate the implementation intent."
           }
         },
         "completeness": {

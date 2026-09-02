@@ -65,8 +65,6 @@ function translatorFor(messages: Record<string, unknown>) {
 }
 
 const LEGACY_DERIVE_MODULES = [
-  "features/initiative-implementation-commitment-lifecycle/derive-implementation-commitment-ai-assistant-insights.ts",
-  "features/initiative-implementation-tracking-lifecycle/derive-implementation-tracking-ai-assistant-insights.ts",
   "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
   "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
   "features/initiative-civic-archive-lifecycle/derive-civic-archive-ai-assistant-insights.ts",
@@ -228,7 +226,7 @@ describe("Pack 02G Task 08E.8d — Decision Session + Collective Decision adviso
     assert.doesNotMatch(cd, /t\([^)]*check\.detail/);
   });
 
-  it("Commitment → Archive remain legacy English banks", () => {
+  it("Official Response → Archive remain legacy English banks", () => {
     for (const relative of LEGACY_DERIVE_MODULES) {
       const source = readWeb(relative);
       assert.doesNotMatch(source, /DecisionSessionSidebarAdvisory/);

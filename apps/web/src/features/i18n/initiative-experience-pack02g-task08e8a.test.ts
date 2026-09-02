@@ -219,10 +219,8 @@ describe("Pack 02G Task 08E.8a — Analysis structured advisories", () => {
     assert.match(proposal, /ProposalSidebarAdvisory/);
   });
 
-  it("later-stage derive modules remain untouched English banks", () => {
+  it("Official Response → Archive remain untouched English banks", () => {
     const files = [
-      "features/initiative-implementation-commitment-lifecycle/derive-implementation-commitment-ai-assistant-insights.ts",
-      "features/initiative-implementation-tracking-lifecycle/derive-implementation-tracking-ai-assistant-insights.ts",
       "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
       "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
       "features/initiative-civic-archive-lifecycle/derive-civic-archive-ai-assistant-insights.ts",
@@ -232,6 +230,7 @@ describe("Pack 02G Task 08E.8a — Analysis structured advisories", () => {
       assert.doesNotMatch(source, /AnalysisSidebarAdvisory/);
       assert.doesNotMatch(source, /author\.sidebar\.advisories/);
       assert.doesNotMatch(source, /next-intl/);
+      assert.match(source, /sourcesUsedSummary/);
     }
   });
 

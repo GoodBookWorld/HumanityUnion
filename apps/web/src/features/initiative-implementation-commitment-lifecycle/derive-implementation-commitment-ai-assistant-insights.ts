@@ -3,14 +3,18 @@ import type {
   InitiativeImplementationCommitmentLifecycleDraft,
 } from "@hu/types";
 
+import type { ImplementationCommitmentSidebarAdvisory } from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
+
 export interface ImplementationCommitmentAiAssistantInsights {
-  sourcesUsedSummary: string;
-  unassignedActionsWarnings: string[];
-  overloadedRoleWarnings: string[];
-  missingResourcesWarnings: string[];
-  emptyTimelineWarnings: string[];
-  unresolvedRisksWarnings: string[];
-  clarityWarnings: string[];
+  readonly sourcesSummary: ImplementationCommitmentSidebarAdvisory;
+  readonly unassignedActionsWarnings: readonly ImplementationCommitmentSidebarAdvisory[];
+  readonly overloadedRoleWarnings: readonly ImplementationCommitmentSidebarAdvisory[];
+  readonly missingResourcesWarnings: readonly ImplementationCommitmentSidebarAdvisory[];
+  readonly emptyTimelineWarnings: readonly ImplementationCommitmentSidebarAdvisory[];
+  readonly unresolvedRisksWarnings: readonly ImplementationCommitmentSidebarAdvisory[];
+  readonly clarityWarnings: readonly ImplementationCommitmentSidebarAdvisory[];
+  /** API opaque consistency warnings — detail/label stay raw. */
+  readonly consistencyWarnings: InitiativeImplementationCommitmentIntelligenceSnapshot["consistencyChecks"];
 }
 
 /**
@@ -18,36 +22,43 @@ export interface ImplementationCommitmentAiAssistantInsights {
  * insights — never itself assigns a Participant, edits a Candidate, or
  * publishes. Every Candidate field it inspects mirrors what the Author can
  * already see and edit directly in the Editor.
+ *
+ * Pack 02G Task 08E.8e: Web-owned deterministic advisory meaning is encoded as
+ * language-neutral descriptors. API consistency-check detail remains opaque.
  */
 export function deriveImplementationCommitmentAiAssistantInsights(
   snapshot: InitiativeImplementationCommitmentIntelligenceSnapshot,
   draft: InitiativeImplementationCommitmentLifecycleDraft | null,
 ): ImplementationCommitmentAiAssistantInsights {
-  const unassignedActionsWarnings: string[] = [];
-  const overloadedRoleWarnings: string[] = [];
-  const missingResourcesWarnings: string[] = [];
-  const emptyTimelineWarnings: string[] = [];
-  const unresolvedRisksWarnings: string[] = [];
-  const clarityWarnings: string[] = [];
+  const unassignedActionsWarnings: ImplementationCommitmentSidebarAdvisory[] = [];
+  const overloadedRoleWarnings: ImplementationCommitmentSidebarAdvisory[] = [];
+  const missingResourcesWarnings: ImplementationCommitmentSidebarAdvisory[] = [];
+  const emptyTimelineWarnings: ImplementationCommitmentSidebarAdvisory[] = [];
+  const unresolvedRisksWarnings: ImplementationCommitmentSidebarAdvisory[] = [];
+  const clarityWarnings: ImplementationCommitmentSidebarAdvisory[] = [];
 
   if (!snapshot.decisionReference) {
-    unassignedActionsWarnings.push(
-      "Publish a Collective Decision before generating Implementation Commitments.",
-    );
+    unassignedActionsWarnings.push({
+      code: "implementation_commitment.unassigned.decision_required",
+      severity: "warning",
+    });
   }
 
   if (draft) {
     if (draft.candidates.length === 0) {
-      unassignedActionsWarnings.push(
-        "No Commitment Candidates yet — generate a draft from the Collective Decision's Approved Actions.",
-      );
+      unassignedActionsWarnings.push({
+        code: "implementation_commitment.unassigned.no_candidates",
+        severity: "warning",
+      });
     }
 
     const unassigned = draft.candidates.filter((candidate) => !candidate.proposedParticipantId);
     if (unassigned.length > 0) {
-      unassignedActionsWarnings.push(
-        `${unassigned.length} Candidate(s) have no proposed Participant yet.`,
-      );
+      unassignedActionsWarnings.push({
+        code: "implementation_commitment.unassigned.missing_participants",
+        severity: "warning",
+        params: { count: unassigned.length },
+      });
     }
 
     const roleCounts = new Map<string, number>();
@@ -60,58 +71,86 @@ export function deriveImplementationCommitmentAiAssistantInsights(
     }
     for (const [role, count] of roleCounts) {
       if (count > 2) {
-        overloadedRoleWarnings.push(`Role "${role}" is suggested for ${count} Candidates — consider spreading responsibility.`);
+        overloadedRoleWarnings.push({
+          code: "implementation_commitment.roles.overloaded",
+          severity: "warning",
+          params: { count },
+          civic: { role },
+        });
       }
     }
 
     const missingResources = draft.candidates.filter((candidate) => candidate.requiredResources.length === 0);
     if (missingResources.length > 0) {
-      missingResourcesWarnings.push(
-        `${missingResources.length} Candidate(s) list no Required Resources.`,
-      );
+      missingResourcesWarnings.push({
+        code: "implementation_commitment.resources.missing",
+        severity: "warning",
+        params: { count: missingResources.length },
+      });
     }
 
     const missingTimeline = draft.candidates.filter((candidate) => !candidate.suggestedTimeline.trim());
     if (missingTimeline.length > 0) {
-      emptyTimelineWarnings.push(
-        `${missingTimeline.length} Candidate(s) have no Suggested Timeline.`,
-      );
+      emptyTimelineWarnings.push({
+        code: "implementation_commitment.timeline.missing",
+        severity: "warning",
+        params: { count: missingTimeline.length },
+      });
     }
 
     const missingRisks = draft.candidates.filter((candidate) => candidate.relatedRisks.length === 0);
     if (missingRisks.length > 0) {
-      unresolvedRisksWarnings.push(`${missingRisks.length} Candidate(s) list no Related Risks.`);
+      unresolvedRisksWarnings.push({
+        code: "implementation_commitment.risks.missing",
+        severity: "warning",
+        params: { count: missingRisks.length },
+      });
     }
 
     if (!draft.title.trim()) {
-      clarityWarnings.push("Title is empty — Implementation Commitments should be clearly labeled.");
+      clarityWarnings.push({
+        code: "implementation_commitment.clarity.title_empty",
+        severity: "warning",
+        civic: { implementationCommitmentFieldIds: ["title"] },
+      });
     }
 
     if (!draft.summary.trim()) {
-      clarityWarnings.push("Summary is empty — restate the Collective Decision's implementation intent.");
+      clarityWarnings.push({
+        code: "implementation_commitment.clarity.summary_empty",
+        severity: "warning",
+        civic: { implementationCommitmentFieldIds: ["summary"] },
+      });
     }
   }
 
-  for (const check of snapshot.consistencyChecks) {
-    if (check.status === "warning") {
-      clarityWarnings.push(check.detail);
-    }
-  }
-
-  const sourcesUsedSummary = [
-    snapshot.decisionReference ? `Collective Decision "${snapshot.decisionReference.title}"` : null,
-    `${snapshot.activeAllyCount} Active Ally(ies)`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const hasDecision = Boolean(snapshot.decisionReference);
+  const sourcesSummary: ImplementationCommitmentSidebarAdvisory =
+    hasDecision || snapshot.activeAllyCount >= 0
+      ? {
+          code: "implementation_commitment.sources.summary",
+          severity: "info",
+          params: {
+            hasDecision: hasDecision ? 1 : 0,
+            activeAllyCount: snapshot.activeAllyCount,
+          },
+          civic: snapshot.decisionReference
+            ? { title: snapshot.decisionReference.title }
+            : undefined,
+        }
+      : {
+          code: "implementation_commitment.sources.empty",
+          severity: "info",
+        };
 
   return {
-    sourcesUsedSummary: sourcesUsedSummary || "No Implementation Commitment Sources available yet.",
+    sourcesSummary,
     unassignedActionsWarnings,
     overloadedRoleWarnings,
     missingResourcesWarnings,
     emptyTimelineWarnings,
     unresolvedRisksWarnings,
     clarityWarnings,
+    consistencyWarnings: snapshot.consistencyChecks.filter((check) => check.status === "warning"),
   };
 }

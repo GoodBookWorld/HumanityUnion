@@ -3,15 +3,23 @@ import type {
   InitiativeImplementationTrackingLifecycleDraft,
 } from "@hu/types";
 
+import type { ImplementationTrackingSidebarAdvisory } from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
+
 export interface ImplementationTrackingAiAssistantInsights {
-  sourcesUsedSummary: string;
-  missingCommitmentPackageWarnings: string[];
-  overdueWarnings: string[];
-  blockedWarnings: string[];
-  missingEvidenceWarnings: string[];
-  stalledWarnings: string[];
-  timelineConflictWarnings: string[];
-  clarityWarnings: string[];
+  readonly sourcesSummary: ImplementationTrackingSidebarAdvisory;
+  /**
+   * Unused/unmounted package-bank warnings (INTERNAL_UNUSED presentation debt).
+   * Kept as legacy English strings — do not migrate/localize until mounted.
+   */
+  readonly missingCommitmentPackageWarnings: readonly string[];
+  readonly overdueWarnings: readonly ImplementationTrackingSidebarAdvisory[];
+  readonly blockedWarnings: readonly ImplementationTrackingSidebarAdvisory[];
+  readonly missingEvidenceWarnings: readonly ImplementationTrackingSidebarAdvisory[];
+  readonly stalledWarnings: readonly ImplementationTrackingSidebarAdvisory[];
+  readonly timelineConflictWarnings: readonly ImplementationTrackingSidebarAdvisory[];
+  readonly clarityWarnings: readonly ImplementationTrackingSidebarAdvisory[];
+  /** API opaque consistency warnings — detail/label stay raw. */
+  readonly consistencyWarnings: InitiativeImplementationTrackingIntelligenceSnapshot["consistencyChecks"];
 }
 
 const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
@@ -22,18 +30,23 @@ const TODAY_ISO = () => new Date().toISOString().slice(0, 10);
  * dates. Every field it inspects mirrors what the Author (in the
  * Editor) or the responsible Participant (in the Progress Inbox) can
  * already see and edit directly.
+ *
+ * Pack 02G Task 08E.8e: Web-owned deterministic advisory meaning is encoded as
+ * language-neutral descriptors. Date/overdue/stalled computations remain
+ * derive-owned. API consistency-check detail remains opaque.
+ * missingCommitmentPackageWarnings remains an unmounted legacy English bank.
  */
 export function deriveImplementationTrackingAiAssistantInsights(
   snapshot: InitiativeImplementationTrackingIntelligenceSnapshot,
   draft: InitiativeImplementationTrackingLifecycleDraft | null,
 ): ImplementationTrackingAiAssistantInsights {
   const missingCommitmentPackageWarnings: string[] = [];
-  const overdueWarnings: string[] = [];
-  const blockedWarnings: string[] = [];
-  const missingEvidenceWarnings: string[] = [];
-  const stalledWarnings: string[] = [];
-  const timelineConflictWarnings: string[] = [];
-  const clarityWarnings: string[] = [];
+  const overdueWarnings: ImplementationTrackingSidebarAdvisory[] = [];
+  const blockedWarnings: ImplementationTrackingSidebarAdvisory[] = [];
+  const missingEvidenceWarnings: ImplementationTrackingSidebarAdvisory[] = [];
+  const stalledWarnings: ImplementationTrackingSidebarAdvisory[] = [];
+  const timelineConflictWarnings: ImplementationTrackingSidebarAdvisory[] = [];
+  const clarityWarnings: ImplementationTrackingSidebarAdvisory[] = [];
 
   if (!snapshot.packageReference) {
     missingCommitmentPackageWarnings.push(
@@ -64,70 +77,94 @@ export function deriveImplementationTrackingAiAssistantInsights(
         candidate.progress < 100,
     );
     if (overdue.length > 0) {
-      overdueWarnings.push(`${overdue.length} milestone(s) are past their target date — review dates.`);
+      overdueWarnings.push({
+        code: "implementation_tracking.overdue.count",
+        severity: "warning",
+        params: { count: overdue.length },
+      });
     }
 
     const blocked = draft.candidates.filter((candidate) => candidate.obstacles.length > 0);
     if (blocked.length > 0) {
-      blockedWarnings.push(`${blocked.length} milestone(s) list unresolved risks/obstacles.`);
+      blockedWarnings.push({
+        code: "implementation_tracking.blocked.count",
+        severity: "warning",
+        params: { count: blocked.length },
+      });
     }
 
     const missingEvidence = draft.candidates.filter(
       (candidate) => candidate.progress >= 100 && candidate.evidenceReferences.length === 0,
     );
     if (missingEvidence.length > 0) {
-      missingEvidenceWarnings.push(
-        `${missingEvidence.length} milestone(s) report 100% progress with no evidence yet.`,
-      );
+      missingEvidenceWarnings.push({
+        code: "implementation_tracking.evidence.missing_at_complete",
+        severity: "warning",
+        params: { count: missingEvidence.length },
+      });
     }
 
     const stalled = draft.candidates.filter(
       (candidate) => candidate.progress === 0 && candidate.currentStatus === "Preparation",
     );
     if (stalled.length > 0) {
-      stalledWarnings.push(`${stalled.length} milestone(s) have not been started yet.`);
+      stalledWarnings.push({
+        code: "implementation_tracking.stalled.not_started",
+        severity: "warning",
+        params: { count: stalled.length },
+      });
     }
 
     const missingTargetDate = draft.candidates.filter((candidate) => !candidate.targetDate);
     if (missingTargetDate.length > 0) {
-      timelineConflictWarnings.push(
-        `${missingTargetDate.length} milestone(s) have no target date — set dates carefully; AI never finalizes them.`,
-      );
+      timelineConflictWarnings.push({
+        code: "implementation_tracking.timeline.missing_target_date",
+        severity: "warning",
+        params: { count: missingTargetDate.length },
+      });
     }
 
     const unassigned = draft.candidates.filter((candidate) => !candidate.responsibleParticipantId.trim());
     if (unassigned.length > 0) {
-      clarityWarnings.push(
-        `${unassigned.length} milestone(s) are Unassigned — assign only known responsible parties.`,
-      );
+      clarityWarnings.push({
+        code: "implementation_tracking.clarity.unassigned",
+        severity: "warning",
+        params: { count: unassigned.length },
+      });
     }
 
     if (!draft.title.trim()) {
-      clarityWarnings.push("Title is empty — Implementation Tracking should be clearly labeled.");
+      clarityWarnings.push({
+        code: "implementation_tracking.clarity.title_empty",
+        severity: "warning",
+        civic: { implementationTrackingFieldIds: ["title"] },
+      });
     }
 
     if (!draft.summary.trim()) {
-      clarityWarnings.push("Summary is empty — restate the implementation intent.");
+      clarityWarnings.push({
+        code: "implementation_tracking.clarity.summary_empty",
+        severity: "warning",
+        civic: { implementationTrackingFieldIds: ["summary"] },
+      });
     }
   }
 
-  for (const check of snapshot.consistencyChecks) {
-    if (check.status === "warning") {
-      clarityWarnings.push(check.detail);
-    }
-  }
-
-  const sourcesUsedSummary = [
-    snapshot.packageReference ? `Commitment Package "${snapshot.packageReference.title}"` : null,
-    `${snapshot.acceptedCommitments.length} Accepted Commitment(s)`,
-    `${snapshot.decisionApprovedActions.length} Decision action(s)`,
-    `${snapshot.activeAllyCount} Active Ally(ies)`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const hasPackage = Boolean(snapshot.packageReference);
+  const sourcesSummary: ImplementationTrackingSidebarAdvisory = {
+    code: "implementation_tracking.sources.summary",
+    severity: "info",
+    params: {
+      hasPackage: hasPackage ? 1 : 0,
+      acceptedCommitmentCount: snapshot.acceptedCommitments.length,
+      decisionActionCount: snapshot.decisionApprovedActions.length,
+      activeAllyCount: snapshot.activeAllyCount,
+    },
+    civic: snapshot.packageReference ? { title: snapshot.packageReference.title } : undefined,
+  };
 
   return {
-    sourcesUsedSummary: sourcesUsedSummary || "Initiative scope available for automatic plan generation.",
+    sourcesSummary,
     missingCommitmentPackageWarnings,
     overdueWarnings,
     blockedWarnings,
@@ -135,5 +172,6 @@ export function deriveImplementationTrackingAiAssistantInsights(
     stalledWarnings,
     timelineConflictWarnings,
     clarityWarnings,
+    consistencyWarnings: snapshot.consistencyChecks.filter((check) => check.status === "warning"),
   };
 }

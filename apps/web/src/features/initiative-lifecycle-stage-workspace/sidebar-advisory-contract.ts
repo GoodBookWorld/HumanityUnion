@@ -1,5 +1,5 @@
 /**
- * Pack 02G Task 08E.8a–08E.8d — Web-local Working Sidebar advisory descriptors.
+ * Pack 02G Task 08E.8a–08E.8e — Web-local Working Sidebar advisory descriptors.
  * Language-neutral codes + civic payloads. Presentation owns localized prose.
  * Not part of @hu/types (Web presentation architecture).
  */
@@ -99,16 +99,38 @@ export const COLLECTIVE_DECISION_SIDEBAR_FIELD_IDS: readonly CollectiveDecisionS
 ] as const;
 
 /**
- * Civic/data payload — only fields used by migrated Analysis→Collective Decision slices.
+ * Implementation Commitment catalog field IDs (08E.8e).
+ * Maps to author.commitment.fields.*.
+ */
+export type ImplementationCommitmentSidebarFieldId = "title" | "summary";
+
+export const IMPLEMENTATION_COMMITMENT_SIDEBAR_FIELD_IDS: readonly ImplementationCommitmentSidebarFieldId[] =
+  ["title", "summary"] as const;
+
+/**
+ * Implementation Tracking catalog field IDs (08E.8e).
+ * Maps to author.tracking.fields.*.
+ */
+export type ImplementationTrackingSidebarFieldId = "title" | "summary";
+
+export const IMPLEMENTATION_TRACKING_SIDEBAR_FIELD_IDS: readonly ImplementationTrackingSidebarFieldId[] =
+  ["title", "summary"] as const;
+
+/**
+ * Civic/data payload — only fields used by migrated Analysis→Tracking slices.
  */
 export type InitiativeSidebarAdvisoryCivic = {
   readonly subject?: string;
   readonly fieldIds?: readonly ProposalSidebarFieldId[];
   /** Civic Analysis / related title for alignment advisories (not a catalog key). */
   readonly title?: string;
+  /** Civic suggested/responsible role text (Commitment overload advisories). */
+  readonly role?: string;
   readonly petitionFieldIds?: readonly PetitionSidebarFieldId[];
   readonly decisionSessionFieldIds?: readonly DecisionSessionSidebarFieldId[];
   readonly collectiveDecisionFieldIds?: readonly CollectiveDecisionSidebarFieldId[];
+  readonly implementationCommitmentFieldIds?: readonly ImplementationCommitmentSidebarFieldId[];
+  readonly implementationTrackingFieldIds?: readonly ImplementationTrackingSidebarFieldId[];
 };
 
 export type InitiativeSidebarAdvisory<Code extends string = string> = {
@@ -196,6 +218,39 @@ export type CollectiveDecisionSidebarAdvisoryCode =
 export type CollectiveDecisionSidebarAdvisory =
   InitiativeSidebarAdvisory<CollectiveDecisionSidebarAdvisoryCode>;
 
+/** Exact Implementation Commitment Web-deterministic advisory codes (08E.8e). */
+export type ImplementationCommitmentSidebarAdvisoryCode =
+  | "implementation_commitment.sources.summary"
+  | "implementation_commitment.sources.empty"
+  | "implementation_commitment.unassigned.decision_required"
+  | "implementation_commitment.unassigned.no_candidates"
+  | "implementation_commitment.unassigned.missing_participants"
+  | "implementation_commitment.roles.overloaded"
+  | "implementation_commitment.resources.missing"
+  | "implementation_commitment.timeline.missing"
+  | "implementation_commitment.risks.missing"
+  | "implementation_commitment.clarity.title_empty"
+  | "implementation_commitment.clarity.summary_empty";
+
+export type ImplementationCommitmentSidebarAdvisory =
+  InitiativeSidebarAdvisory<ImplementationCommitmentSidebarAdvisoryCode>;
+
+/** Exact Implementation Tracking Web-deterministic advisory codes (08E.8e). */
+export type ImplementationTrackingSidebarAdvisoryCode =
+  | "implementation_tracking.sources.summary"
+  | "implementation_tracking.sources.empty"
+  | "implementation_tracking.overdue.count"
+  | "implementation_tracking.blocked.count"
+  | "implementation_tracking.evidence.missing_at_complete"
+  | "implementation_tracking.stalled.not_started"
+  | "implementation_tracking.timeline.missing_target_date"
+  | "implementation_tracking.clarity.unassigned"
+  | "implementation_tracking.clarity.title_empty"
+  | "implementation_tracking.clarity.summary_empty";
+
+export type ImplementationTrackingSidebarAdvisory =
+  InitiativeSidebarAdvisory<ImplementationTrackingSidebarAdvisoryCode>;
+
 /** Catalog leaf under author.sidebar.advisories.analysis.* */
 export const ANALYSIS_ADVISORY_MESSAGE_KEY: Record<AnalysisSidebarAdvisoryCode, string> = {
   "analysis.sources.summary": "sourcesSummary",
@@ -278,6 +333,41 @@ export const COLLECTIVE_DECISION_ADVISORY_MESSAGE_KEY: Record<
   "collective_decision.clarity.summary_unclear": "claritySummaryUnclear",
 };
 
+/** Catalog leaf under author.sidebar.advisories.implementationCommitment.* */
+export const IMPLEMENTATION_COMMITMENT_ADVISORY_MESSAGE_KEY: Record<
+  ImplementationCommitmentSidebarAdvisoryCode,
+  string
+> = {
+  "implementation_commitment.sources.summary": "sourcesSummary",
+  "implementation_commitment.sources.empty": "sourcesEmpty",
+  "implementation_commitment.unassigned.decision_required": "unassignedDecisionRequired",
+  "implementation_commitment.unassigned.no_candidates": "unassignedNoCandidates",
+  "implementation_commitment.unassigned.missing_participants": "unassignedMissingParticipants",
+  "implementation_commitment.roles.overloaded": "rolesOverloaded",
+  "implementation_commitment.resources.missing": "resourcesMissing",
+  "implementation_commitment.timeline.missing": "timelineMissing",
+  "implementation_commitment.risks.missing": "risksMissing",
+  "implementation_commitment.clarity.title_empty": "clarityTitleEmpty",
+  "implementation_commitment.clarity.summary_empty": "claritySummaryEmpty",
+};
+
+/** Catalog leaf under author.sidebar.advisories.implementationTracking.* */
+export const IMPLEMENTATION_TRACKING_ADVISORY_MESSAGE_KEY: Record<
+  ImplementationTrackingSidebarAdvisoryCode,
+  string
+> = {
+  "implementation_tracking.sources.summary": "sourcesSummary",
+  "implementation_tracking.sources.empty": "sourcesEmpty",
+  "implementation_tracking.overdue.count": "overdueCount",
+  "implementation_tracking.blocked.count": "blockedCount",
+  "implementation_tracking.evidence.missing_at_complete": "evidenceMissingAtComplete",
+  "implementation_tracking.stalled.not_started": "stalledNotStarted",
+  "implementation_tracking.timeline.missing_target_date": "timelineMissingTargetDate",
+  "implementation_tracking.clarity.unassigned": "clarityUnassigned",
+  "implementation_tracking.clarity.title_empty": "clarityTitleEmpty",
+  "implementation_tracking.clarity.summary_empty": "claritySummaryEmpty",
+};
+
 export function isAnalysisSidebarAdvisoryCode(
   code: string,
 ): code is AnalysisSidebarAdvisoryCode {
@@ -314,6 +404,18 @@ export function isCollectiveDecisionSidebarAdvisoryCode(
   return Object.prototype.hasOwnProperty.call(COLLECTIVE_DECISION_ADVISORY_MESSAGE_KEY, code);
 }
 
+export function isImplementationCommitmentSidebarAdvisoryCode(
+  code: string,
+): code is ImplementationCommitmentSidebarAdvisoryCode {
+  return Object.prototype.hasOwnProperty.call(IMPLEMENTATION_COMMITMENT_ADVISORY_MESSAGE_KEY, code);
+}
+
+export function isImplementationTrackingSidebarAdvisoryCode(
+  code: string,
+): code is ImplementationTrackingSidebarAdvisoryCode {
+  return Object.prototype.hasOwnProperty.call(IMPLEMENTATION_TRACKING_ADVISORY_MESSAGE_KEY, code);
+}
+
 export function isProposalSidebarFieldId(value: string): value is ProposalSidebarFieldId {
   return (PROPOSAL_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
 }
@@ -332,6 +434,18 @@ export function isCollectiveDecisionSidebarFieldId(
   value: string,
 ): value is CollectiveDecisionSidebarFieldId {
   return (COLLECTIVE_DECISION_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
+}
+
+export function isImplementationCommitmentSidebarFieldId(
+  value: string,
+): value is ImplementationCommitmentSidebarFieldId {
+  return (IMPLEMENTATION_COMMITMENT_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
+}
+
+export function isImplementationTrackingSidebarFieldId(
+  value: string,
+): value is ImplementationTrackingSidebarFieldId {
+  return (IMPLEMENTATION_TRACKING_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
 }
 
 export function isProposalTreatmentSuggestionCode(

@@ -1105,14 +1105,16 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
         <div className="iic-assistant-block">
           <div className="iic-assistant-block">
             <h4>{t("author.sidebar.sourcesUsed")}</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="iic-assistant-block">
             <h4>{t("author.sidebar.insights.unassignedActions")}</h4>
             {insights.unassignedActionsWarnings.length > 0 ? (
               <ul>
-                {insights.unassignedActionsWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.unassignedActionsWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -1124,8 +1126,10 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
             {[...insights.overloadedRoleWarnings, ...insights.missingResourcesWarnings].length > 0 ? (
               <ul>
                 {[...insights.overloadedRoleWarnings, ...insights.missingResourcesWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
+                  (warning, index) => (
+                    <li key={`${warning.code}:${warning.civic?.role ?? ""}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
                   ),
                 )}
               </ul>
@@ -1138,8 +1142,10 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
             {[...insights.emptyTimelineWarnings, ...insights.unresolvedRisksWarnings].length > 0 ? (
               <ul>
                 {[...insights.emptyTimelineWarnings, ...insights.unresolvedRisksWarnings].map(
-                  (warning) => (
-                    <li key={warning}>{warning}</li>
+                  (warning, index) => (
+                    <li key={`${warning.code}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
                   ),
                 )}
               </ul>
@@ -1149,10 +1155,15 @@ function CommitmentAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
           </div>
           <div className="iic-assistant-block">
             <h4>{t("author.sidebar.insights.clarity")}</h4>
-            {insights.clarityWarnings.length > 0 ? (
+            {[...insights.clarityWarnings, ...insights.consistencyWarnings].length > 0 ? (
               <ul>
-                {insights.clarityWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.clarityWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>{check.detail}</li>
                 ))}
               </ul>
             ) : (
@@ -1224,14 +1235,16 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
         <div className="iit-assistant-block">
           <div className="iit-assistant-block">
             <h4>{t("author.sidebar.sourcesUsed")}</h4>
-            <p>{insights.sourcesUsedSummary}</p>
+            <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
           </div>
           <div className="iit-assistant-block">
             <h4>{t("author.sidebar.insights.overdueBlocked")}</h4>
             {[...insights.overdueWarnings, ...insights.blockedWarnings].length > 0 ? (
               <ul>
-                {[...insights.overdueWarnings, ...insights.blockedWarnings].map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {[...insights.overdueWarnings, ...insights.blockedWarnings].map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -1242,9 +1255,13 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
             <h4>{t("author.sidebar.insights.missingEvidenceStalled")}</h4>
             {[...insights.missingEvidenceWarnings, ...insights.stalledWarnings].length > 0 ? (
               <ul>
-                {[...insights.missingEvidenceWarnings, ...insights.stalledWarnings].map((warning) => (
-                  <li key={warning}>{warning}</li>
-                ))}
+                {[...insights.missingEvidenceWarnings, ...insights.stalledWarnings].map(
+                  (warning, index) => (
+                    <li key={`${warning.code}:${index}`}>
+                      {resolveSidebarAdvisoryDisplay(warning, t).text}
+                    </li>
+                  ),
+                )}
               </ul>
             ) : (
               <p>{t("author.sidebar.insights.emptyNoMissingEvidenceStalled")}</p>
@@ -1254,8 +1271,10 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
             <h4>{t("author.sidebar.insights.timelineConflicts")}</h4>
             {insights.timelineConflictWarnings.length > 0 ? (
               <ul>
-                {insights.timelineConflictWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.timelineConflictWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -1264,10 +1283,15 @@ function TrackingAiAssistantSlot({ initiativeId }: { initiativeId: string }) {
           </div>
           <div className="iit-assistant-block">
             <h4>{t("author.sidebar.insights.clarity")}</h4>
-            {insights.clarityWarnings.length > 0 ? (
+            {[...insights.clarityWarnings, ...insights.consistencyWarnings].length > 0 ? (
               <ul>
-                {insights.clarityWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                {insights.clarityWarnings.map((warning, index) => (
+                  <li key={`${warning.code}:${index}`}>
+                    {resolveSidebarAdvisoryDisplay(warning, t).text}
+                  </li>
+                ))}
+                {insights.consistencyWarnings.map((check) => (
+                  <li key={check.checkId}>{check.detail}</li>
                 ))}
               </ul>
             ) : (

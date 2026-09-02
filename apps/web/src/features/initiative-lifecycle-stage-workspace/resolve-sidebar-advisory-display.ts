@@ -1,7 +1,8 @@
 /**
- * Pack 02G Task 08E.8a–08E.8d — resolve Working Sidebar advisory descriptors to display text.
+ * Pack 02G Task 08E.8a–08E.8e — resolve Working Sidebar advisory descriptors to display text.
  * Display-only. Does not parse English or mutate civic values.
  * API opaque intelligence details bypass this resolver entirely.
+ * Overdue/stalled/date calculations remain derive-owned — this layer only presents codes.
  */
 
 import type { InitiativeExperienceTranslator } from "../public-initiative-experience/initiative-experience-i18n";
@@ -9,11 +10,17 @@ import {
   ANALYSIS_ADVISORY_MESSAGE_KEY,
   COLLECTIVE_DECISION_ADVISORY_MESSAGE_KEY,
   DECISION_SESSION_ADVISORY_MESSAGE_KEY,
+  IMPLEMENTATION_COMMITMENT_ADVISORY_MESSAGE_KEY,
+  IMPLEMENTATION_TRACKING_ADVISORY_MESSAGE_KEY,
   isAnalysisSidebarAdvisoryCode,
   isCollectiveDecisionSidebarAdvisoryCode,
   isCollectiveDecisionSidebarFieldId,
   isDecisionSessionSidebarAdvisoryCode,
   isDecisionSessionSidebarFieldId,
+  isImplementationCommitmentSidebarAdvisoryCode,
+  isImplementationCommitmentSidebarFieldId,
+  isImplementationTrackingSidebarAdvisoryCode,
+  isImplementationTrackingSidebarFieldId,
   isPetitionSidebarAdvisoryCode,
   isPetitionSidebarFieldId,
   isProposalSidebarAdvisoryCode,
@@ -111,6 +118,34 @@ export function resolveCollectiveDecisionSidebarFieldDisplayLabel(
 }
 
 /**
+ * Implementation Commitment field ID → author.commitment.fields.*.
+ * Unknown → raw ID.
+ */
+export function resolveImplementationCommitmentSidebarFieldDisplayLabel(
+  fieldId: string,
+  t: InitiativeExperienceTranslator,
+): string {
+  if (!isImplementationCommitmentSidebarFieldId(fieldId)) {
+    return fieldId;
+  }
+  return t(`author.commitment.fields.${fieldId}`);
+}
+
+/**
+ * Implementation Tracking field ID → author.tracking.fields.*.
+ * Unknown → raw ID.
+ */
+export function resolveImplementationTrackingSidebarFieldDisplayLabel(
+  fieldId: string,
+  t: InitiativeExperienceTranslator,
+): string {
+  if (!isImplementationTrackingSidebarFieldId(fieldId)) {
+    return fieldId;
+  }
+  return t(`author.tracking.fields.${fieldId}`);
+}
+
+/**
  * Stable treatment suggestion code → display label.
  * Reuses author.proposal.curation.* where semantics match Accept / Partially accept / Decline.
  * `review` uses advisories.proposal.treatments.review.
@@ -155,6 +190,9 @@ function buildInterpolationValues(
   if (advisory.civic?.title != null) {
     values.title = advisory.civic.title;
   }
+  if (advisory.civic?.role != null) {
+    values.role = advisory.civic.role;
+  }
   if (advisory.civic?.fieldIds && advisory.civic.fieldIds.length > 0) {
     values.fields = formatProposalSidebarFieldLabels(advisory.civic.fieldIds, t);
   }
@@ -176,6 +214,24 @@ function buildInterpolationValues(
   ) {
     values.field = resolveCollectiveDecisionSidebarFieldDisplayLabel(
       advisory.civic.collectiveDecisionFieldIds[0]!,
+      t,
+    );
+  }
+  if (
+    advisory.civic?.implementationCommitmentFieldIds &&
+    advisory.civic.implementationCommitmentFieldIds.length > 0
+  ) {
+    values.field = resolveImplementationCommitmentSidebarFieldDisplayLabel(
+      advisory.civic.implementationCommitmentFieldIds[0]!,
+      t,
+    );
+  }
+  if (
+    advisory.civic?.implementationTrackingFieldIds &&
+    advisory.civic.implementationTrackingFieldIds.length > 0
+  ) {
+    values.field = resolveImplementationTrackingSidebarFieldDisplayLabel(
+      advisory.civic.implementationTrackingFieldIds[0]!,
       t,
     );
   }
@@ -253,6 +309,58 @@ function resolveCollectiveDecisionSourcesSummary(
   return parts.join(" · ");
 }
 
+/** Preserve Commitment sources omit-empty + always-include ally-count semantics. */
+function resolveImplementationCommitmentSourcesSummary(
+  advisory: InitiativeSidebarAdvisory,
+  t: InitiativeExperienceTranslator,
+): string {
+  const parts: string[] = [];
+  if (paramFlag(advisory.params, "hasDecision")) {
+    parts.push(
+      t("author.sidebar.advisories.implementationCommitment.sources.decision", {
+        title: String(advisory.civic?.title ?? ""),
+      }),
+    );
+  }
+  parts.push(
+    t("author.sidebar.advisories.implementationCommitment.sources.allies", {
+      count: paramNumber(advisory.params, "activeAllyCount"),
+    }),
+  );
+  return parts.join(" · ");
+}
+
+/** Preserve Tracking sources omit-empty package + always-include count fragments. */
+function resolveImplementationTrackingSourcesSummary(
+  advisory: InitiativeSidebarAdvisory,
+  t: InitiativeExperienceTranslator,
+): string {
+  const parts: string[] = [];
+  if (paramFlag(advisory.params, "hasPackage")) {
+    parts.push(
+      t("author.sidebar.advisories.implementationTracking.sources.package", {
+        title: String(advisory.civic?.title ?? ""),
+      }),
+    );
+  }
+  parts.push(
+    t("author.sidebar.advisories.implementationTracking.sources.commitments", {
+      count: paramNumber(advisory.params, "acceptedCommitmentCount"),
+    }),
+  );
+  parts.push(
+    t("author.sidebar.advisories.implementationTracking.sources.actions", {
+      count: paramNumber(advisory.params, "decisionActionCount"),
+    }),
+  );
+  parts.push(
+    t("author.sidebar.advisories.implementationTracking.sources.allies", {
+      count: paramNumber(advisory.params, "activeAllyCount"),
+    }),
+  );
+  return parts.join(" · ");
+}
+
 /**
  * Map a known stage advisory code → localized text.
  * Defensive fallback for malformed/external codes: localized unknown label + raw code.
@@ -327,6 +435,38 @@ export function resolveSidebarAdvisoryDisplay(
     const leaf = COLLECTIVE_DECISION_ADVISORY_MESSAGE_KEY[advisory.code];
     return {
       text: t(`author.sidebar.advisories.collectiveDecision.${leaf}`, values),
+      code: advisory.code,
+      civic: advisory.civic,
+    };
+  }
+
+  if (isImplementationCommitmentSidebarAdvisoryCode(advisory.code)) {
+    if (advisory.code === "implementation_commitment.sources.summary") {
+      return {
+        text: resolveImplementationCommitmentSourcesSummary(advisory, t),
+        code: advisory.code,
+        civic: advisory.civic,
+      };
+    }
+    const leaf = IMPLEMENTATION_COMMITMENT_ADVISORY_MESSAGE_KEY[advisory.code];
+    return {
+      text: t(`author.sidebar.advisories.implementationCommitment.${leaf}`, values),
+      code: advisory.code,
+      civic: advisory.civic,
+    };
+  }
+
+  if (isImplementationTrackingSidebarAdvisoryCode(advisory.code)) {
+    if (advisory.code === "implementation_tracking.sources.summary") {
+      return {
+        text: resolveImplementationTrackingSourcesSummary(advisory, t),
+        code: advisory.code,
+        civic: advisory.civic,
+      };
+    }
+    const leaf = IMPLEMENTATION_TRACKING_ADVISORY_MESSAGE_KEY[advisory.code];
+    return {
+      text: t(`author.sidebar.advisories.implementationTracking.${leaf}`, values),
       code: advisory.code,
       civic: advisory.civic,
     };
