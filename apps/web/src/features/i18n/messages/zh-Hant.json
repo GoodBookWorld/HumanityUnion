@@ -1102,6 +1102,77 @@
             "clarityUnassigned": "{count} 個里程碑未指派——僅指派已知負責人。",
             "clarityTitleEmpty": "「{field}」為空——實施追蹤應有清楚標示。",
             "claritySummaryEmpty": "「{field}」為空——請重述實施意圖。"
+          },
+          "officialResponse": {
+            "sourcesEmpty": "尚無官方回應來源。",
+            "sources": {
+              "tracking": "追蹤套件「{title}」",
+              "records": "{count} 筆追蹤紀錄",
+              "allies": "{count} 位活躍盟友"
+            },
+            "incompleteNoCandidates": "尚無回應候選人——請產生草稿、新增已收到的回應，或記錄「未收到官方回應」。",
+            "incompleteSummaryEmpty": "「{subject}」尚無摘要。",
+            "incompleteSummaryEmptyUntitled": "候選人 {index} 尚無摘要。",
+            "duplicateSubject": "{count} 位候選人共用主題「{subject}」。",
+            "institutionMissing": "「{subject}」尚未填寫機構或組織。",
+            "institutionMissingUntitled": "候選人 {index} 尚未填寫機構或組織。",
+            "referenceUnlinked": "「{subject}」未連結任何追蹤紀錄或核准行動。",
+            "referenceUnlinkedUntitled": "候選人 {index} 未連結任何追蹤紀錄或核准行動。",
+            "referenceNoEvidence": "「{subject}」沒有文件 ID 或外部網址——若有證據請考慮附加。",
+            "referenceNoEvidenceUntitled": "候選人 {index} 沒有文件 ID 或外部網址——若有證據請考慮附加。",
+            "summaryUnsupported": "「{subject}」有摘要但沒有追蹤紀錄參照可支持。",
+            "summaryUnsupportedUntitled": "候選人 {index} 有摘要但沒有追蹤紀錄參照可支持。",
+            "dateFutureReceived": "「{subject}」的收到日期在未來。",
+            "dateFutureReceivedUntitled": "候選人 {index} 的收到日期在未來。",
+            "clarityNoResponseNote": "可選：簡短如實說明已聯繫情況或未獲回覆原因。",
+            "clarityTitleEmpty": "「{field}」為空——官方回應應清楚標示。",
+            "claritySummaryEmpty": "「{field}」為空——請重述追蹤套件結果。",
+            "noteNoResponseOutcome": "作者正在記錄「未收到官方回應」——這是合法階段結果。AI 不得虛構聲明或回應紀錄。",
+            "noteAdvisoryOnly": "AI 建議僅供參考——請區分來源事實與作者詮釋。AI 不能發布或推進生命週期。"
+          },
+          "publicImpact": {
+            "sourcesEmpty": "尚無公共影響來源。",
+            "sources": {
+              "official": "官方回應「{title}」",
+              "officialNoResponse": "官方回應「{title}」（未收到官方回應）",
+              "tracking": "追蹤套件「{trackingTitle}」",
+              "evidence": "{count} 項證據參照",
+              "allies": "{count} 位活躍盟友"
+            },
+            "evidencePackageRequired": "請先發布官方回應套件再產生公共影響。",
+            "evidenceNoneVisible": "追蹤或官方回應尚無可見證據參照——請明確標示不確定性，勿捏造證據。這不阻礙發布。",
+            "evidenceSectionEmpty": "「{label}」為空——發布需要非空正文。",
+            "conclusionUnsupported": "「{label}」有正文但無證據參照——應移除或引用無支持結論。",
+            "statsInconsistent": "草稿參與統計與目前情報快照不同——發布前請重新產生或對齊。",
+            "claimsDuplicated": "{count} 個章節共用相同正文開頭「{excerpt}」。",
+            "institutionMissingName": "一或多則官方回應仍缺少機構或組織名稱。",
+            "institutionMissingSummary": "一或多則官方回應仍缺少結果摘要。",
+            "clarityNoSections": "尚無報告章節——請從已發布來源產生草稿。",
+            "clarityTitleEmpty": "「{field}」為空——公共影響報告應清楚標示。",
+            "clarityJudgmentWording": "「{label}」使用成敗判斷用語——請改用中立事實摘要。",
+            "noteNoResponseOutcome": "官方回應已發布「未收到官方回應」——請視為事實結果。勿虛構機構回覆。",
+            "noteLowCompletion": "可見的可量測完成很少或沒有——作者可合法結論：尚無可量測影響、實施未完成或未達成結果。",
+            "noteAdvisoryOnly": "AI 建議僅供參考——請區分已確認事實與假設。AI 不能虛構結果、發布或推進生命週期。"
+          },
+          "civicArchive": {
+            "sourcesEmpty": "尚無公民檔案來源。",
+            "sources": {
+              "publicImpact": "公共影響「{title}」",
+              "official": "官方回應「{subject}」",
+              "tracking": "追蹤「{trackingTitle}」",
+              "stages": "{count} 個已發布階段"
+            },
+            "completenessMissingOptionalStages": "尚未發布紀錄的選用階段：{stages}。空白選用歷史有效，不阻礙檔案。",
+            "fieldsTitleEmpty": "「{field}」為空——發布前必填。",
+            "fieldsSummaryEmpty": "「{field}」為空——發布前必填。",
+            "fieldsLessonsEmpty": "「{field}」為空——選填，但建議在發布前填寫。",
+            "fieldsKnowledgeEmpty": "「{field}」為空——選填，但建議在發布前填寫。",
+            "outstandingUnresolvedTracking": "{count} 筆追蹤紀錄仍未解決——請誠實記錄於未完成工作。",
+            "outstandingUnfinishedCommitments": "{count} 項承諾未標示為已完成。",
+            "neutralityJudgmentWording": "最終貢獻欄位使用成敗判斷用語——請改用中立歷史語言。",
+            "clarityNoResponseOutcome": "官方回應記錄「未收到官方回應」——請在檔案摘要中保留該結果。",
+            "clarityAdvisoryOnly": "AI 僅供參考——不能發布公民檔案或結束倡議生命週期。",
+            "clarityNoSections": "尚無組裝的檔案章節——請從已發布來源產生。"
           }
         },
         "completeness": {

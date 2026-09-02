@@ -82,11 +82,7 @@ const PETITION_KEYS = [
   "author.sidebar.advisories.petition.contextKeyArgumentsEmpty",
 ] as const;
 
-const LEGACY_DERIVE_MODULES = [
-  "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
-  "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
-  "features/initiative-civic-archive-lifecycle/derive-civic-archive-ai-assistant-insights.ts",
-] as const;
+const LEGACY_DERIVE_MODULES = [] as const;
 
 describe("Pack 02G Task 08E.8c — Revision + Petition structured advisories", () => {
   it("catalog parity includes revision and petition advisories", async () => {
@@ -319,14 +315,19 @@ describe("Pack 02G Task 08E.8c — Revision + Petition structured advisories", (
     assert.match(revision, /INTERNAL_UNUSED/);
   });
 
-  it("Official Response → Archive remain legacy English banks", () => {
-    for (const relative of LEGACY_DERIVE_MODULES) {
+  it("Official Response → Archive migration is owned by 08E.8f", () => {
+    for (const relative of [
+      "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
+      "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
+      "features/initiative-civic-archive-lifecycle/derive-civic-archive-ai-assistant-insights.ts",
+    ]) {
       const source = readWeb(relative);
       assert.doesNotMatch(source, /RevisionSidebarAdvisory/);
       assert.doesNotMatch(source, /PetitionSidebarAdvisory/);
       assert.doesNotMatch(source, /author\.sidebar\.advisories/);
       assert.doesNotMatch(source, /next-intl/);
-      assert.match(source, /sourcesUsedSummary/);
+      assert.doesNotMatch(source, /sourcesUsedSummary/);
+      assert.match(source, /SidebarAdvisory/);
     }
   });
 

@@ -64,11 +64,7 @@ function translatorFor(messages: Record<string, unknown>) {
     formatMessage(ieKey(messages, key), values);
 }
 
-const LEGACY_DERIVE_MODULES = [
-  "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
-  "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
-  "features/initiative-civic-archive-lifecycle/derive-civic-archive-ai-assistant-insights.ts",
-] as const;
+const LEGACY_DERIVE_MODULES = [] as const;
 
 describe("Pack 02G Task 08E.8d — Decision Session + Collective Decision advisories", () => {
   it("catalog parity includes decisionSession and collectiveDecision advisories", async () => {
@@ -226,13 +222,18 @@ describe("Pack 02G Task 08E.8d — Decision Session + Collective Decision adviso
     assert.doesNotMatch(cd, /t\([^)]*check\.detail/);
   });
 
-  it("Official Response → Archive remain legacy English banks", () => {
-    for (const relative of LEGACY_DERIVE_MODULES) {
+  it("Official Response → Archive migration is owned by 08E.8f", () => {
+    for (const relative of [
+      "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
+      "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
+      "features/initiative-civic-archive-lifecycle/derive-civic-archive-ai-assistant-insights.ts",
+    ]) {
       const source = readWeb(relative);
       assert.doesNotMatch(source, /DecisionSessionSidebarAdvisory/);
       assert.doesNotMatch(source, /CollectiveDecisionSidebarAdvisory/);
       assert.doesNotMatch(source, /author\.sidebar\.advisories/);
-      assert.match(source, /sourcesUsedSummary/);
+      assert.doesNotMatch(source, /sourcesUsedSummary/);
+      assert.match(source, /SidebarAdvisory/);
     }
   });
 

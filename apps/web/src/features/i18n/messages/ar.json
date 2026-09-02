@@ -1102,6 +1102,77 @@
             "clarityUnassigned": "{count, plural, one {معلم واحد غير معيَّن — عيّن فقط أطرافًا مسؤولة معروفة.} other {# معالم غير معيَّنة — عيّن فقط أطرافًا مسؤولة معروفة.}}",
             "clarityTitleEmpty": "«{field}» فارغ — يجب تسمية تتبع التنفيذ بوضوح.",
             "claritySummaryEmpty": "«{field}» فارغ — أعد صياغة نية التنفيذ."
+          },
+          "officialResponse": {
+            "sourcesEmpty": "لا تتوفر بعد مصادر الردود الرسمية.",
+            "sources": {
+              "tracking": "حزمة التتبع «{title}»",
+              "records": "{count, plural, one {سجل تتبع واحد} other {# سجلات تتبع}}",
+              "allies": "{count, plural, one {حليف نشط واحد} other {# حلفاء نشطين}}"
+            },
+            "incompleteNoCandidates": "لا مرشحي رد بعد — أنشئ مسودة أو أضف ردودًا مستلمة أو سجّل «لم يُستلم رد رسمي».",
+            "incompleteSummaryEmpty": "«{subject}» بلا ملخص بعد.",
+            "incompleteSummaryEmptyUntitled": "المرشح {index} بلا ملخص بعد.",
+            "duplicateSubject": "{count, plural, one {مرشح واحد يشارك الموضوع «{subject}».} other {# مرشحين يشاركون الموضوع «{subject}».}}",
+            "institutionMissing": "«{subject}» بلا مؤسسة أو منظمة بعد.",
+            "institutionMissingUntitled": "المرشح {index} بلا مؤسسة أو منظمة بعد.",
+            "referenceUnlinked": "«{subject}» غير مرتبط بأي سجل تتبع أو إجراء معتمد.",
+            "referenceUnlinkedUntitled": "المرشح {index} غير مرتبط بأي سجل تتبع أو إجراء معتمد.",
+            "referenceNoEvidence": "«{subject}» بلا معرّف مستند أو رابط خارجي — فكّر بإرفاق أدلة إن وُجدت.",
+            "referenceNoEvidenceUntitled": "المرشح {index} بلا معرّف مستند أو رابط خارجي — فكّر بإرفاق أدلة إن وُجدت.",
+            "summaryUnsupported": "«{subject}» له ملخص بلا مرجع سجل تتبع يدعمه.",
+            "summaryUnsupportedUntitled": "المرشح {index} له ملخص بلا مرجع سجل تتبع يدعمه.",
+            "dateFutureReceived": "«{subject}» له تاريخ استلام في المستقبل.",
+            "dateFutureReceivedUntitled": "المرشح {index} له تاريخ استلام في المستقبل.",
+            "clarityNoResponseNote": "اختياري: أضف ملاحظة واقعية قصيرة عن التواصل أو سبب عدم الرد.",
+            "clarityTitleEmpty": "الحقل «{field}» فارغ — يجب تسمية الردود الرسمية بوضوح.",
+            "claritySummaryEmpty": "الحقل «{field}» فارغ — أعد صياغة نتيجة حزمة التتبع.",
+            "noteNoResponseOutcome": "المؤلف يوثّق «لم يُستلم رد رسمي» — نتيجة مرحلة مشروعة. يجب ألا يخترع الذكاء الاصطناعي بيانات أو سجلات رد.",
+            "noteAdvisoryOnly": "اقتراحات الذكاء الاصطناعي استشارية فقط — ميّز حقائق المصادر عن تفسير المؤلف. لا يمكنه النشر أو دفع دورة الحياة."
+          },
+          "publicImpact": {
+            "sourcesEmpty": "لا تتوفر بعد مصادر الأثر العام.",
+            "sources": {
+              "official": "الردود الرسمية «{title}»",
+              "officialNoResponse": "الردود الرسمية «{title}» (لم يُستلم رد رسمي)",
+              "tracking": "حزمة التتبع «{trackingTitle}»",
+              "evidence": "{count, plural, one {مرجع دليل واحد} other {# مراجع أدلة}}",
+              "allies": "{count, plural, one {حليف نشط واحد} other {# حلفاء نشطين}}"
+            },
+            "evidencePackageRequired": "انشر حزمة الردود الرسمية قبل إنشاء الأثر العام.",
+            "evidenceNoneVisible": "لا مراجع أدلة ظاهرة بعد من التتبع أو الردود الرسمية — ابقِ عدم اليقين صريحًا؛ لا تختلق أدلة. هذا لا يمنع النشر.",
+            "evidenceSectionEmpty": "«{label}» فارغ — النشر يتطلب نصًا غير فارغ.",
+            "conclusionUnsupported": "«{label}» له نص بلا مرجع دليل — أزل الاستنتاجات غير المدعومة أو استشهد بها.",
+            "statsInconsistent": "إحصاءات المشاركة في المسودة تختلف عن لقطة الاستخبارات الحالية — أعد التوليد أو وفّق قبل النشر.",
+            "claimsDuplicated": "{count, plural, one {قسم واحد يشارك نفس النص الذي يبدأ بـ «{excerpt}».} other {# أقسام تشارك نفس النص الذي يبدأ بـ «{excerpt}».}}",
+            "institutionMissingName": "رد رسمي واحد أو أكثر ما زال بلا اسم مؤسسة أو منظمة.",
+            "institutionMissingSummary": "رد رسمي واحد أو أكثر ما زال بلا ملخص نتيجة.",
+            "clarityNoSections": "لا أقسام تقرير بعد — أنشئ مسودة من المصادر المنشورة.",
+            "clarityTitleEmpty": "الحقل «{field}» فارغ — يجب تسمية تقارير الأثر العام بوضوح.",
+            "clarityJudgmentWording": "«{label}» يستخدم لغة حكم بالنجاح/الفشل — فضّل ملخصات واقعية محايدة.",
+            "noteNoResponseOutcome": "نُشرت الردود الرسمية بـ «لم يُستلم رد رسمي» — عامله كنتيجة واقعية. لا تختلق ردودًا مؤسسية.",
+            "noteLowCompletion": "قليل أو لا اكتمال قابل للقياس ظاهر — قد يكون استنتاج المؤلف الصالح: لا أثر قابل للقياس بعد، التنفيذ ناقص، أو لم تُحقق النتيجة.",
+            "noteAdvisoryOnly": "اقتراحات الذكاء الاصطناعي استشارية فقط — افصل الحقائق المؤكدة عن الافتراضات. لا يمكنه اختلاق نتائج أو النشر أو دفع دورة الحياة."
+          },
+          "civicArchive": {
+            "sourcesEmpty": "لا تتوفر بعد مصادر الأرشيف المدني.",
+            "sources": {
+              "publicImpact": "الأثر العام «{title}»",
+              "official": "الردود الرسمية «{subject}»",
+              "tracking": "التتبع «{trackingTitle}»",
+              "stages": "{count, plural, one {مرحلة منشورة واحدة} other {# مراحل منشورة}}"
+            },
+            "completenessMissingOptionalStages": "مراحل اختيارية بلا سجلات منشورة: {stages}. التاريخ الاختياري الفارغ صالح ولا يمنع الأرشيف.",
+            "fieldsTitleEmpty": "الحقل «{field}» فارغ — مطلوب قبل النشر.",
+            "fieldsSummaryEmpty": "الحقل «{field}» فارغ — مطلوب قبل النشر.",
+            "fieldsLessonsEmpty": "الحقل «{field}» فارغ — اختياري لكن يُنصح به قبل النشر.",
+            "fieldsKnowledgeEmpty": "الحقل «{field}» فارغ — اختياري لكن يُنصح به قبل النشر.",
+            "outstandingUnresolvedTracking": "{count, plural, one {سجل تتبع واحد ما زال غير محلول — سجّله بصدق في العمل المعلّق.} other {# سجلات تتبع ما زالت غير محلولة — سجّلها بصدق في العمل المعلّق.}}",
+            "outstandingUnfinishedCommitments": "{count, plural, one {التزام واحد لم يُعلَّم مكتملًا.} other {# التزامات لم تُعلَّم مكتملة.}}",
+            "neutralityJudgmentWording": "حقول المساهمة النهائية تستخدم لغة حكم بالنجاح/الفشل — فضّل لغة تاريخية محايدة.",
+            "clarityNoResponseOutcome": "الردود الرسمية تسجّل «لم يُستلم رد رسمي» — احفظ تلك النتيجة في ملخص الأرشيف.",
+            "clarityAdvisoryOnly": "الذكاء الاصطناعي استشاري فقط — لا يمكنه نشر الأرشيف المدني أو إغلاق دورة حياة المبادرة.",
+            "clarityNoSections": "لا أقسام أرشيف مجمّعة بعد — أنشئ من المصادر المنشورة."
           }
         },
         "completeness": {

@@ -64,11 +64,7 @@ function translatorFor(messages: Record<string, unknown>) {
     formatMessage(ieKey(messages, key), values);
 }
 
-const LEGACY_DERIVE_MODULES = [
-  "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
-  "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
-  "features/initiative-civic-archive-lifecycle/derive-civic-archive-ai-assistant-insights.ts",
-] as const;
+const LEGACY_DERIVE_MODULES = [] as const;
 
 describe("Pack 02G Task 08E.8e — Implementation Commitment + Tracking advisories", () => {
   it("catalog parity includes implementationCommitment and implementationTracking advisories", async () => {
@@ -231,7 +227,7 @@ describe("Pack 02G Task 08E.8e — Implementation Commitment + Tracking advisori
     assert.doesNotMatch(resolver, /progress\s*[<>=]/);
     assert.match(resolver, /isImplementationTrackingSidebarAdvisoryCode/);
     assert.match(resolver, /IMPLEMENTATION_TRACKING_ADVISORY_MESSAGE_KEY/);
-    assert.match(resolver, /Overdue\/stalled\/date calculations remain derive-owned/);
+    assert.match(resolver, /Overdue\/stalled\/date\/statistics calculations remain derive-owned/);
     assert.match(contract, /"implementation_tracking\.overdue\.count"/);
     assert.match(contract, /"implementation_tracking\.stalled\.not_started"/);
 
@@ -310,13 +306,17 @@ describe("Pack 02G Task 08E.8e — Implementation Commitment + Tracking advisori
     assert.doesNotMatch(tracking, /missingCommitmentPackageWarnings/);
   });
 
-  it("Official Response → Archive remain legacy English banks", () => {
-    for (const relative of LEGACY_DERIVE_MODULES) {
+  it("Official Response → Archive migration is owned by 08E.8f", () => {
+    for (const relative of [
+      "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
+      "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
+      "features/initiative-civic-archive-lifecycle/derive-civic-archive-ai-assistant-insights.ts",
+    ]) {
       const source = readWeb(relative);
       assert.doesNotMatch(source, /ImplementationCommitmentSidebarAdvisory/);
       assert.doesNotMatch(source, /ImplementationTrackingSidebarAdvisory/);
-      assert.doesNotMatch(source, /author\.sidebar\.advisories/);
-      assert.match(source, /sourcesUsedSummary/);
+      assert.match(source, /SidebarAdvisory/);
+      assert.doesNotMatch(source, /sourcesUsedSummary/);
     }
   });
 

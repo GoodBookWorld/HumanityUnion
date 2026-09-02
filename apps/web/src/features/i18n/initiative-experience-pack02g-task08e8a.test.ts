@@ -219,7 +219,7 @@ describe("Pack 02G Task 08E.8a — Analysis structured advisories", () => {
     assert.match(proposal, /ProposalSidebarAdvisory/);
   });
 
-  it("Official Response → Archive remain untouched English banks", () => {
+  it("Official Response → Archive migration is owned by 08E.8f", () => {
     const files = [
       "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
       "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
@@ -230,7 +230,8 @@ describe("Pack 02G Task 08E.8a — Analysis structured advisories", () => {
       assert.doesNotMatch(source, /AnalysisSidebarAdvisory/);
       assert.doesNotMatch(source, /author\.sidebar\.advisories/);
       assert.doesNotMatch(source, /next-intl/);
-      assert.match(source, /sourcesUsedSummary/);
+      assert.doesNotMatch(source, /sourcesUsedSummary/);
+      assert.match(source, /SidebarAdvisory/);
     }
   });
 

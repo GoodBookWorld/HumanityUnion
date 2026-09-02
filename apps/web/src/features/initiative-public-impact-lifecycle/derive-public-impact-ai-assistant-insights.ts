@@ -1,17 +1,36 @@
 import type {
   InitiativePublicImpactIntelligenceSnapshot,
   InitiativePublicImpactLifecycleDraft,
+  InitiativePublicImpactReportSectionId,
 } from "@hu/types";
 
+import type {
+  PublicImpactSidebarAdvisory,
+  PublicImpactSidebarSectionId,
+} from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
+
 export interface PublicImpactAiAssistantInsights {
-  sourcesUsedSummary: string;
-  missingEvidenceWarnings: string[];
-  unsupportedConclusionWarnings: string[];
-  inconsistentStatsWarnings: string[];
-  duplicatedClaimWarnings: string[];
-  missingInstitutionOutcomeWarnings: string[];
-  clarityWarnings: string[];
-  advisoryNotes: string[];
+  readonly sourcesSummary: PublicImpactSidebarAdvisory;
+  readonly missingEvidenceWarnings: readonly PublicImpactSidebarAdvisory[];
+  readonly unsupportedConclusionWarnings: readonly PublicImpactSidebarAdvisory[];
+  readonly inconsistentStatsWarnings: readonly PublicImpactSidebarAdvisory[];
+  readonly duplicatedClaimWarnings: readonly PublicImpactSidebarAdvisory[];
+  readonly missingInstitutionOutcomeWarnings: readonly PublicImpactSidebarAdvisory[];
+  readonly clarityWarnings: readonly PublicImpactSidebarAdvisory[];
+  readonly advisoryNotes: readonly PublicImpactSidebarAdvisory[];
+  /** API opaque consistency warnings — detail/label stay raw. */
+  readonly consistencyWarnings: InitiativePublicImpactIntelligenceSnapshot["consistencyChecks"];
+}
+
+function sectionCivic(section: {
+  title: string;
+  sectionId: InitiativePublicImpactReportSectionId;
+}): PublicImpactSidebarAdvisory["civic"] {
+  const title = section.title.trim();
+  if (title) {
+    return { title };
+  }
+  return { publicImpactSectionId: section.sectionId as PublicImpactSidebarSectionId };
 }
 
 /**
@@ -20,33 +39,40 @@ export interface PublicImpactAiAssistantInsights {
  * achievements, and never edits section bodies. AI cannot publish or
  * advance Lifecycle. Missing evidence yields uncertainty warnings, not
  * invent-or-block instructions.
+ *
+ * Pack 02G Task 08E.8f: Web-owned deterministic advisory meaning is encoded as
+ * language-neutral descriptors. Statistics comparisons remain derive-owned.
+ * API consistency-check detail remains opaque.
  */
 export function derivePublicImpactAiAssistantInsights(
   snapshot: InitiativePublicImpactIntelligenceSnapshot,
   draft: InitiativePublicImpactLifecycleDraft | null,
 ): PublicImpactAiAssistantInsights {
-  const missingEvidenceWarnings: string[] = [];
-  const unsupportedConclusionWarnings: string[] = [];
-  const inconsistentStatsWarnings: string[] = [];
-  const duplicatedClaimWarnings: string[] = [];
-  const missingInstitutionOutcomeWarnings: string[] = [];
-  const clarityWarnings: string[] = [];
-  const advisoryNotes: string[] = [];
+  const missingEvidenceWarnings: PublicImpactSidebarAdvisory[] = [];
+  const unsupportedConclusionWarnings: PublicImpactSidebarAdvisory[] = [];
+  const inconsistentStatsWarnings: PublicImpactSidebarAdvisory[] = [];
+  const duplicatedClaimWarnings: PublicImpactSidebarAdvisory[] = [];
+  const missingInstitutionOutcomeWarnings: PublicImpactSidebarAdvisory[] = [];
+  const clarityWarnings: PublicImpactSidebarAdvisory[] = [];
+  const advisoryNotes: PublicImpactSidebarAdvisory[] = [];
 
   if (!snapshot.officialResponsePackageReference) {
-    missingEvidenceWarnings.push(
-      "Publish an Official Response Package before generating Public Impact.",
-    );
+    missingEvidenceWarnings.push({
+      code: "public_impact.evidence.package_required",
+      severity: "warning",
+    });
   } else if (snapshot.officialResponsePackageReference.outcomeKind === "no_official_response_received") {
-    advisoryNotes.push(
-      "Official Responses published No official response received — treat that as a factual outcome. Do not invent institutional replies.",
-    );
+    advisoryNotes.push({
+      code: "public_impact.note.no_response_outcome",
+      severity: "info",
+    });
   }
 
   if (snapshot.evidenceItems.length === 0) {
-    missingEvidenceWarnings.push(
-      "No evidence references are visible yet from Tracking or Official Responses — keep uncertainty explicit; do not fabricate evidence. This does not block Publish.",
-    );
+    missingEvidenceWarnings.push({
+      code: "public_impact.evidence.none_visible",
+      severity: "warning",
+    });
   }
 
   if (
@@ -55,45 +81,55 @@ export function derivePublicImpactAiAssistantInsights(
       (response) => !response.institution.trim() && !response.organization.trim(),
     )
   ) {
-    missingInstitutionOutcomeWarnings.push(
-      "One or more Official Responses still lack an institution or organization name.",
-    );
+    missingInstitutionOutcomeWarnings.push({
+      code: "public_impact.institution.missing_name",
+      severity: "warning",
+    });
   }
 
   if (
     snapshot.officialResponsePackageReference?.outcomeKind !== "no_official_response_received" &&
     snapshot.officialResponseSummaries.some((response) => !response.summary.trim())
   ) {
-    missingInstitutionOutcomeWarnings.push(
-      "One or more Official Responses still lack an outcome summary.",
-    );
+    missingInstitutionOutcomeWarnings.push({
+      code: "public_impact.institution.missing_summary",
+      severity: "warning",
+    });
   }
 
   if (snapshot.completedCommitmentCount === 0 && snapshot.trackingRecords.every((t) => t.status !== "completed")) {
-    advisoryNotes.push(
-      "Little or no measurable completion is visible — a valid Author conclusion may be: no measurable impact yet, implementation incomplete, or outcome not achieved.",
-    );
+    advisoryNotes.push({
+      code: "public_impact.note.low_completion",
+      severity: "info",
+    });
   }
 
   if (draft) {
     if (draft.sections.length === 0) {
-      clarityWarnings.push("No Report sections yet — generate a draft from published sources.");
+      clarityWarnings.push({
+        code: "public_impact.clarity.no_sections",
+        severity: "warning",
+      });
     }
 
     for (const section of draft.sections) {
-      const label = section.title || section.sectionId;
-
       if (section.body.trim() && section.evidenceReferences.length === 0) {
-        unsupportedConclusionWarnings.push(
-          `"${label}" has a body but no evidence reference — unsupported conclusions should be removed or cited.`,
-        );
+        unsupportedConclusionWarnings.push({
+          code: "public_impact.conclusion.unsupported",
+          severity: "warning",
+          civic: sectionCivic(section),
+        });
       }
 
       if (
         (section.sectionId === "executive_summary" || section.sectionId === "evidence") &&
         !section.body.trim()
       ) {
-        missingEvidenceWarnings.push(`"${label}" is empty — publish requires a non-empty body.`);
+        missingEvidenceWarnings.push({
+          code: "public_impact.evidence.section_empty",
+          severity: "warning",
+          civic: sectionCivic(section),
+        });
       }
     }
 
@@ -107,9 +143,14 @@ export function derivePublicImpactAiAssistantInsights(
     }
     for (const [body, count] of bodyCounts) {
       if (count > 1) {
-        duplicatedClaimWarnings.push(
-          `${count} sections share the same body text starting "${body.slice(0, 48)}${body.length > 48 ? "…" : ""}".`,
-        );
+        duplicatedClaimWarnings.push({
+          code: "public_impact.claims.duplicated",
+          severity: "warning",
+          params: { count },
+          civic: {
+            excerpt: `${body.slice(0, 48)}${body.length > 48 ? "…" : ""}`,
+          },
+        });
       }
     }
 
@@ -121,54 +162,63 @@ export function derivePublicImpactAiAssistantInsights(
       stats.reactionCount !== snapshotStats.reactionCount ||
       stats.activeAllyCount !== snapshotStats.activeAllyCount
     ) {
-      inconsistentStatsWarnings.push(
-        "Draft participation statistics differ from the current intelligence snapshot — regenerate or reconcile before publishing.",
-      );
+      inconsistentStatsWarnings.push({
+        code: "public_impact.stats.inconsistent",
+        severity: "warning",
+      });
     }
 
     if (!draft.title.trim()) {
-      clarityWarnings.push("Title is empty — Public Impact Reports should be clearly labeled.");
+      clarityWarnings.push({
+        code: "public_impact.clarity.title_empty",
+        severity: "warning",
+        civic: { publicImpactFieldIds: ["title"] },
+      });
     }
 
     const judgmentWords = /\b(success|failure|failed|succeeded|triumph|disaster)\b/i;
     for (const section of draft.sections) {
       if (judgmentWords.test(section.body)) {
-        clarityWarnings.push(
-          `"${section.title || section.sectionId}" uses success/failure judgment wording — prefer neutral factual summaries.`,
-        );
+        clarityWarnings.push({
+          code: "public_impact.clarity.judgment_wording",
+          severity: "warning",
+          civic: sectionCivic(section),
+        });
       }
     }
   }
 
-  for (const check of snapshot.consistencyChecks) {
-    if (check.status === "warning") {
-      clarityWarnings.push(check.detail);
-    }
-  }
+  advisoryNotes.push({
+    code: "public_impact.note.advisory_only",
+    severity: "info",
+  });
 
-  advisoryNotes.push(
-    "AI suggestions are advisory only — separate confirmed facts from assumptions. AI cannot invent results, publish, or advance Lifecycle.",
-  );
-
-  const officialLabel = snapshot.officialResponsePackageReference
-    ? snapshot.officialResponsePackageReference.outcomeKind === "no_official_response_received"
-      ? `Official Responses "${snapshot.officialResponsePackageReference.title}" (No official response received)`
-      : `Official Responses "${snapshot.officialResponsePackageReference.title}"`
-    : null;
-
-  const sourcesUsedSummary = [
-    officialLabel,
-    snapshot.trackingPackageReference
-      ? `Tracking Package "${snapshot.trackingPackageReference.title}"`
-      : null,
-    `${snapshot.evidenceItems.length} evidence reference(s)`,
-    `${snapshot.participationStatistics.activeAllyCount} Active Ally(ies)`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const hasOfficial = Boolean(snapshot.officialResponsePackageReference);
+  const noResponseOutcome =
+    snapshot.officialResponsePackageReference?.outcomeKind === "no_official_response_received";
+  const hasTracking = Boolean(snapshot.trackingPackageReference);
+  const sourcesSummary: PublicImpactSidebarAdvisory = {
+    code: "public_impact.sources.summary",
+    severity: "info",
+    params: {
+      hasOfficial: hasOfficial ? 1 : 0,
+      noResponseOutcome: noResponseOutcome ? 1 : 0,
+      hasTracking: hasTracking ? 1 : 0,
+      evidenceCount: snapshot.evidenceItems.length,
+      activeAllyCount: snapshot.participationStatistics.activeAllyCount,
+    },
+    civic: {
+      ...(snapshot.officialResponsePackageReference
+        ? { title: snapshot.officialResponsePackageReference.title }
+        : {}),
+      ...(snapshot.trackingPackageReference
+        ? { trackingTitle: snapshot.trackingPackageReference.title }
+        : {}),
+    },
+  };
 
   return {
-    sourcesUsedSummary: sourcesUsedSummary || "No Public Impact Sources available yet.",
+    sourcesSummary,
     missingEvidenceWarnings,
     unsupportedConclusionWarnings,
     inconsistentStatsWarnings,
@@ -176,5 +226,6 @@ export function derivePublicImpactAiAssistantInsights(
     missingInstitutionOutcomeWarnings,
     clarityWarnings,
     advisoryNotes,
+    consistencyWarnings: snapshot.consistencyChecks.filter((check) => check.status === "warning"),
   };
 }

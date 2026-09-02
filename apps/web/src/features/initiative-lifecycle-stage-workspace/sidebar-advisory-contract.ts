@@ -117,7 +117,76 @@ export const IMPLEMENTATION_TRACKING_SIDEBAR_FIELD_IDS: readonly ImplementationT
   ["title", "summary"] as const;
 
 /**
- * Civic/data payload — only fields used by migrated Analysis→Tracking slices.
+ * Official Response catalog field IDs (08E.8f).
+ * Maps to author.officialResponse.fields.*.
+ */
+export type OfficialResponseSidebarFieldId = "title" | "summary";
+
+export const OFFICIAL_RESPONSE_SIDEBAR_FIELD_IDS: readonly OfficialResponseSidebarFieldId[] = [
+  "title",
+  "summary",
+] as const;
+
+/**
+ * Public Impact catalog field IDs (08E.8f).
+ * Maps to author.publicImpact.fields.*.
+ */
+export type PublicImpactSidebarFieldId = "title";
+
+export const PUBLIC_IMPACT_SIDEBAR_FIELD_IDS: readonly PublicImpactSidebarFieldId[] = [
+  "title",
+] as const;
+
+/**
+ * Canonical Public Impact section IDs for untitled-section advisories.
+ * Maps to author.publicImpact.sections.*.
+ */
+export type PublicImpactSidebarSectionId =
+  | "executive_summary"
+  | "objectives"
+  | "implemented_actions"
+  | "completed_commitments"
+  | "implementation_progress"
+  | "official_responses"
+  | "community_participation"
+  | "outstanding_issues"
+  | "lessons_learned"
+  | "evidence"
+  | "impact_references";
+
+export const PUBLIC_IMPACT_SIDEBAR_SECTION_IDS: readonly PublicImpactSidebarSectionId[] = [
+  "executive_summary",
+  "objectives",
+  "implemented_actions",
+  "completed_commitments",
+  "implementation_progress",
+  "official_responses",
+  "community_participation",
+  "outstanding_issues",
+  "lessons_learned",
+  "evidence",
+  "impact_references",
+] as const;
+
+/**
+ * Civic Archive catalog field IDs (08E.8f).
+ * Maps to author.archive.fields.*.
+ */
+export type CivicArchiveSidebarFieldId =
+  | "finalArchiveTitle"
+  | "finalSummary"
+  | "lessonsLearned"
+  | "knowledgeContribution";
+
+export const CIVIC_ARCHIVE_SIDEBAR_FIELD_IDS: readonly CivicArchiveSidebarFieldId[] = [
+  "finalArchiveTitle",
+  "finalSummary",
+  "lessonsLearned",
+  "knowledgeContribution",
+] as const;
+
+/**
+ * Civic/data payload — only fields used by migrated Analysis→Archive slices.
  */
 export type InitiativeSidebarAdvisoryCivic = {
   readonly subject?: string;
@@ -126,11 +195,19 @@ export type InitiativeSidebarAdvisoryCivic = {
   readonly title?: string;
   /** Civic suggested/responsible role text (Commitment overload advisories). */
   readonly role?: string;
+  /** Truncated civic body excerpt for PI duplicate-claim advisories. */
+  readonly excerpt?: string;
+  /** Civic Tracking package/source label (Archive sources fragment). */
+  readonly trackingTitle?: string;
   readonly petitionFieldIds?: readonly PetitionSidebarFieldId[];
   readonly decisionSessionFieldIds?: readonly DecisionSessionSidebarFieldId[];
   readonly collectiveDecisionFieldIds?: readonly CollectiveDecisionSidebarFieldId[];
   readonly implementationCommitmentFieldIds?: readonly ImplementationCommitmentSidebarFieldId[];
   readonly implementationTrackingFieldIds?: readonly ImplementationTrackingSidebarFieldId[];
+  readonly officialResponseFieldIds?: readonly OfficialResponseSidebarFieldId[];
+  readonly publicImpactFieldIds?: readonly PublicImpactSidebarFieldId[];
+  readonly publicImpactSectionId?: PublicImpactSidebarSectionId;
+  readonly civicArchiveFieldIds?: readonly CivicArchiveSidebarFieldId[];
 };
 
 export type InitiativeSidebarAdvisory<Code extends string = string> = {
@@ -251,6 +328,74 @@ export type ImplementationTrackingSidebarAdvisoryCode =
 export type ImplementationTrackingSidebarAdvisory =
   InitiativeSidebarAdvisory<ImplementationTrackingSidebarAdvisoryCode>;
 
+/** Exact Official Response Web-deterministic advisory codes (08E.8f). */
+export type OfficialResponseSidebarAdvisoryCode =
+  | "official_response.sources.summary"
+  | "official_response.sources.empty"
+  | "official_response.incomplete.no_candidates"
+  | "official_response.incomplete.summary_empty"
+  | "official_response.incomplete.summary_empty_untitled"
+  | "official_response.duplicate.subject"
+  | "official_response.institution.missing"
+  | "official_response.institution.missing_untitled"
+  | "official_response.reference.unlinked"
+  | "official_response.reference.unlinked_untitled"
+  | "official_response.reference.no_evidence"
+  | "official_response.reference.no_evidence_untitled"
+  | "official_response.summary.unsupported"
+  | "official_response.summary.unsupported_untitled"
+  | "official_response.date.future_received"
+  | "official_response.date.future_received_untitled"
+  | "official_response.clarity.no_response_note"
+  | "official_response.clarity.title_empty"
+  | "official_response.clarity.summary_empty"
+  | "official_response.note.no_response_outcome"
+  | "official_response.note.advisory_only";
+
+export type OfficialResponseSidebarAdvisory =
+  InitiativeSidebarAdvisory<OfficialResponseSidebarAdvisoryCode>;
+
+/** Exact Public Impact Web-deterministic advisory codes (08E.8f). */
+export type PublicImpactSidebarAdvisoryCode =
+  | "public_impact.sources.summary"
+  | "public_impact.sources.empty"
+  | "public_impact.evidence.package_required"
+  | "public_impact.evidence.none_visible"
+  | "public_impact.evidence.section_empty"
+  | "public_impact.conclusion.unsupported"
+  | "public_impact.stats.inconsistent"
+  | "public_impact.claims.duplicated"
+  | "public_impact.institution.missing_name"
+  | "public_impact.institution.missing_summary"
+  | "public_impact.clarity.no_sections"
+  | "public_impact.clarity.title_empty"
+  | "public_impact.clarity.judgment_wording"
+  | "public_impact.note.no_response_outcome"
+  | "public_impact.note.low_completion"
+  | "public_impact.note.advisory_only";
+
+export type PublicImpactSidebarAdvisory =
+  InitiativeSidebarAdvisory<PublicImpactSidebarAdvisoryCode>;
+
+/** Exact Civic Archive Web-deterministic advisory codes (08E.8f). */
+export type CivicArchiveSidebarAdvisoryCode =
+  | "civic_archive.sources.summary"
+  | "civic_archive.sources.empty"
+  | "civic_archive.completeness.missing_optional_stages"
+  | "civic_archive.fields.title_empty"
+  | "civic_archive.fields.summary_empty"
+  | "civic_archive.fields.lessons_empty"
+  | "civic_archive.fields.knowledge_empty"
+  | "civic_archive.outstanding.unresolved_tracking"
+  | "civic_archive.outstanding.unfinished_commitments"
+  | "civic_archive.neutrality.judgment_wording"
+  | "civic_archive.clarity.no_response_outcome"
+  | "civic_archive.clarity.advisory_only"
+  | "civic_archive.clarity.no_sections";
+
+export type CivicArchiveSidebarAdvisory =
+  InitiativeSidebarAdvisory<CivicArchiveSidebarAdvisoryCode>;
+
 /** Catalog leaf under author.sidebar.advisories.analysis.* */
 export const ANALYSIS_ADVISORY_MESSAGE_KEY: Record<AnalysisSidebarAdvisoryCode, string> = {
   "analysis.sources.summary": "sourcesSummary",
@@ -368,6 +513,77 @@ export const IMPLEMENTATION_TRACKING_ADVISORY_MESSAGE_KEY: Record<
   "implementation_tracking.clarity.summary_empty": "claritySummaryEmpty",
 };
 
+/** Catalog leaf under author.sidebar.advisories.officialResponse.* */
+export const OFFICIAL_RESPONSE_ADVISORY_MESSAGE_KEY: Record<
+  OfficialResponseSidebarAdvisoryCode,
+  string
+> = {
+  "official_response.sources.summary": "sourcesSummary",
+  "official_response.sources.empty": "sourcesEmpty",
+  "official_response.incomplete.no_candidates": "incompleteNoCandidates",
+  "official_response.incomplete.summary_empty": "incompleteSummaryEmpty",
+  "official_response.incomplete.summary_empty_untitled": "incompleteSummaryEmptyUntitled",
+  "official_response.duplicate.subject": "duplicateSubject",
+  "official_response.institution.missing": "institutionMissing",
+  "official_response.institution.missing_untitled": "institutionMissingUntitled",
+  "official_response.reference.unlinked": "referenceUnlinked",
+  "official_response.reference.unlinked_untitled": "referenceUnlinkedUntitled",
+  "official_response.reference.no_evidence": "referenceNoEvidence",
+  "official_response.reference.no_evidence_untitled": "referenceNoEvidenceUntitled",
+  "official_response.summary.unsupported": "summaryUnsupported",
+  "official_response.summary.unsupported_untitled": "summaryUnsupportedUntitled",
+  "official_response.date.future_received": "dateFutureReceived",
+  "official_response.date.future_received_untitled": "dateFutureReceivedUntitled",
+  "official_response.clarity.no_response_note": "clarityNoResponseNote",
+  "official_response.clarity.title_empty": "clarityTitleEmpty",
+  "official_response.clarity.summary_empty": "claritySummaryEmpty",
+  "official_response.note.no_response_outcome": "noteNoResponseOutcome",
+  "official_response.note.advisory_only": "noteAdvisoryOnly",
+};
+
+/**
+ * Catalog leaf under author.sidebar.advisories.publicImpact.*.
+ * sources.summary is assembled from sources.* fragments in the resolver.
+ */
+export const PUBLIC_IMPACT_ADVISORY_MESSAGE_KEY: Record<PublicImpactSidebarAdvisoryCode, string> = {
+  "public_impact.sources.summary": "sourcesSummary",
+  "public_impact.sources.empty": "sourcesEmpty",
+  "public_impact.evidence.package_required": "evidencePackageRequired",
+  "public_impact.evidence.none_visible": "evidenceNoneVisible",
+  "public_impact.evidence.section_empty": "evidenceSectionEmpty",
+  "public_impact.conclusion.unsupported": "conclusionUnsupported",
+  "public_impact.stats.inconsistent": "statsInconsistent",
+  "public_impact.claims.duplicated": "claimsDuplicated",
+  "public_impact.institution.missing_name": "institutionMissingName",
+  "public_impact.institution.missing_summary": "institutionMissingSummary",
+  "public_impact.clarity.no_sections": "clarityNoSections",
+  "public_impact.clarity.title_empty": "clarityTitleEmpty",
+  "public_impact.clarity.judgment_wording": "clarityJudgmentWording",
+  "public_impact.note.no_response_outcome": "noteNoResponseOutcome",
+  "public_impact.note.low_completion": "noteLowCompletion",
+  "public_impact.note.advisory_only": "noteAdvisoryOnly",
+};
+
+/**
+ * Catalog leaf under author.sidebar.advisories.civicArchive.*.
+ * sources.summary is assembled from sources.* fragments in the resolver.
+ */
+export const CIVIC_ARCHIVE_ADVISORY_MESSAGE_KEY: Record<CivicArchiveSidebarAdvisoryCode, string> = {
+  "civic_archive.sources.summary": "sourcesSummary",
+  "civic_archive.sources.empty": "sourcesEmpty",
+  "civic_archive.completeness.missing_optional_stages": "completenessMissingOptionalStages",
+  "civic_archive.fields.title_empty": "fieldsTitleEmpty",
+  "civic_archive.fields.summary_empty": "fieldsSummaryEmpty",
+  "civic_archive.fields.lessons_empty": "fieldsLessonsEmpty",
+  "civic_archive.fields.knowledge_empty": "fieldsKnowledgeEmpty",
+  "civic_archive.outstanding.unresolved_tracking": "outstandingUnresolvedTracking",
+  "civic_archive.outstanding.unfinished_commitments": "outstandingUnfinishedCommitments",
+  "civic_archive.neutrality.judgment_wording": "neutralityJudgmentWording",
+  "civic_archive.clarity.no_response_outcome": "clarityNoResponseOutcome",
+  "civic_archive.clarity.advisory_only": "clarityAdvisoryOnly",
+  "civic_archive.clarity.no_sections": "clarityNoSections",
+};
+
 export function isAnalysisSidebarAdvisoryCode(
   code: string,
 ): code is AnalysisSidebarAdvisoryCode {
@@ -416,6 +632,24 @@ export function isImplementationTrackingSidebarAdvisoryCode(
   return Object.prototype.hasOwnProperty.call(IMPLEMENTATION_TRACKING_ADVISORY_MESSAGE_KEY, code);
 }
 
+export function isOfficialResponseSidebarAdvisoryCode(
+  code: string,
+): code is OfficialResponseSidebarAdvisoryCode {
+  return Object.prototype.hasOwnProperty.call(OFFICIAL_RESPONSE_ADVISORY_MESSAGE_KEY, code);
+}
+
+export function isPublicImpactSidebarAdvisoryCode(
+  code: string,
+): code is PublicImpactSidebarAdvisoryCode {
+  return Object.prototype.hasOwnProperty.call(PUBLIC_IMPACT_ADVISORY_MESSAGE_KEY, code);
+}
+
+export function isCivicArchiveSidebarAdvisoryCode(
+  code: string,
+): code is CivicArchiveSidebarAdvisoryCode {
+  return Object.prototype.hasOwnProperty.call(CIVIC_ARCHIVE_ADVISORY_MESSAGE_KEY, code);
+}
+
 export function isProposalSidebarFieldId(value: string): value is ProposalSidebarFieldId {
   return (PROPOSAL_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
 }
@@ -446,6 +680,26 @@ export function isImplementationTrackingSidebarFieldId(
   value: string,
 ): value is ImplementationTrackingSidebarFieldId {
   return (IMPLEMENTATION_TRACKING_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
+}
+
+export function isOfficialResponseSidebarFieldId(
+  value: string,
+): value is OfficialResponseSidebarFieldId {
+  return (OFFICIAL_RESPONSE_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
+}
+
+export function isPublicImpactSidebarFieldId(value: string): value is PublicImpactSidebarFieldId {
+  return (PUBLIC_IMPACT_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
+}
+
+export function isPublicImpactSidebarSectionId(
+  value: string,
+): value is PublicImpactSidebarSectionId {
+  return (PUBLIC_IMPACT_SIDEBAR_SECTION_IDS as readonly string[]).includes(value);
+}
+
+export function isCivicArchiveSidebarFieldId(value: string): value is CivicArchiveSidebarFieldId {
+  return (CIVIC_ARCHIVE_SIDEBAR_FIELD_IDS as readonly string[]).includes(value);
 }
 
 export function isProposalTreatmentSuggestionCode(

@@ -1,18 +1,23 @@
 /**
- * Pack 02G Task 08E.8a–08E.8e — resolve Working Sidebar advisory descriptors to display text.
+ * Pack 02G Task 08E.8a–08E.8f — resolve Working Sidebar advisory descriptors to display text.
  * Display-only. Does not parse English or mutate civic values.
  * API opaque intelligence details bypass this resolver entirely.
- * Overdue/stalled/date calculations remain derive-owned — this layer only presents codes.
+ * Overdue/stalled/date/statistics calculations remain derive-owned — this layer only presents codes.
  */
 
 import type { InitiativeExperienceTranslator } from "../public-initiative-experience/initiative-experience-i18n";
 import {
   ANALYSIS_ADVISORY_MESSAGE_KEY,
+  CIVIC_ARCHIVE_ADVISORY_MESSAGE_KEY,
   COLLECTIVE_DECISION_ADVISORY_MESSAGE_KEY,
   DECISION_SESSION_ADVISORY_MESSAGE_KEY,
   IMPLEMENTATION_COMMITMENT_ADVISORY_MESSAGE_KEY,
   IMPLEMENTATION_TRACKING_ADVISORY_MESSAGE_KEY,
+  OFFICIAL_RESPONSE_ADVISORY_MESSAGE_KEY,
+  PUBLIC_IMPACT_ADVISORY_MESSAGE_KEY,
   isAnalysisSidebarAdvisoryCode,
+  isCivicArchiveSidebarAdvisoryCode,
+  isCivicArchiveSidebarFieldId,
   isCollectiveDecisionSidebarAdvisoryCode,
   isCollectiveDecisionSidebarFieldId,
   isDecisionSessionSidebarAdvisoryCode,
@@ -21,11 +26,16 @@ import {
   isImplementationCommitmentSidebarFieldId,
   isImplementationTrackingSidebarAdvisoryCode,
   isImplementationTrackingSidebarFieldId,
+  isOfficialResponseSidebarAdvisoryCode,
+  isOfficialResponseSidebarFieldId,
   isPetitionSidebarAdvisoryCode,
   isPetitionSidebarFieldId,
   isProposalSidebarAdvisoryCode,
   isProposalSidebarFieldId,
   isProposalTreatmentSuggestionCode,
+  isPublicImpactSidebarAdvisoryCode,
+  isPublicImpactSidebarFieldId,
+  isPublicImpactSidebarSectionId,
   isRevisionSidebarAdvisoryCode,
   PETITION_ADVISORY_MESSAGE_KEY,
   PROPOSAL_ADVISORY_MESSAGE_KEY,
@@ -146,6 +156,62 @@ export function resolveImplementationTrackingSidebarFieldDisplayLabel(
 }
 
 /**
+ * Official Response field ID → author.officialResponse.fields.*.
+ * Unknown → raw ID.
+ */
+export function resolveOfficialResponseSidebarFieldDisplayLabel(
+  fieldId: string,
+  t: InitiativeExperienceTranslator,
+): string {
+  if (!isOfficialResponseSidebarFieldId(fieldId)) {
+    return fieldId;
+  }
+  return t(`author.officialResponse.fields.${fieldId}`);
+}
+
+/**
+ * Public Impact field ID → author.publicImpact.fields.*.
+ * Unknown → raw ID.
+ */
+export function resolvePublicImpactSidebarFieldDisplayLabel(
+  fieldId: string,
+  t: InitiativeExperienceTranslator,
+): string {
+  if (!isPublicImpactSidebarFieldId(fieldId)) {
+    return fieldId;
+  }
+  return t(`author.publicImpact.fields.${fieldId}`);
+}
+
+/**
+ * Public Impact section ID → author.publicImpact.sections.*.
+ * Unknown → raw ID.
+ */
+export function resolvePublicImpactSidebarSectionDisplayLabel(
+  sectionId: string,
+  t: InitiativeExperienceTranslator,
+): string {
+  if (!isPublicImpactSidebarSectionId(sectionId)) {
+    return sectionId;
+  }
+  return t(`author.publicImpact.sections.${sectionId}`);
+}
+
+/**
+ * Civic Archive field ID → author.archive.fields.*.
+ * Unknown → raw ID.
+ */
+export function resolveCivicArchiveSidebarFieldDisplayLabel(
+  fieldId: string,
+  t: InitiativeExperienceTranslator,
+): string {
+  if (!isCivicArchiveSidebarFieldId(fieldId)) {
+    return fieldId;
+  }
+  return t(`author.archive.fields.${fieldId}`);
+}
+
+/**
  * Stable treatment suggestion code → display label.
  * Reuses author.proposal.curation.* where semantics match Accept / Partially accept / Decline.
  * `review` uses advisories.proposal.treatments.review.
@@ -193,6 +259,15 @@ function buildInterpolationValues(
   if (advisory.civic?.role != null) {
     values.role = advisory.civic.role;
   }
+  if (advisory.civic?.excerpt != null) {
+    values.excerpt = advisory.civic.excerpt;
+  }
+  if (advisory.civic?.trackingTitle != null) {
+    values.trackingTitle = advisory.civic.trackingTitle;
+  }
+  if (advisory.civic?.subject != null) {
+    values.subject = advisory.civic.subject;
+  }
   if (advisory.civic?.fieldIds && advisory.civic.fieldIds.length > 0) {
     values.fields = formatProposalSidebarFieldLabels(advisory.civic.fieldIds, t);
   }
@@ -232,6 +307,35 @@ function buildInterpolationValues(
   ) {
     values.field = resolveImplementationTrackingSidebarFieldDisplayLabel(
       advisory.civic.implementationTrackingFieldIds[0]!,
+      t,
+    );
+  }
+  if (
+    advisory.civic?.officialResponseFieldIds &&
+    advisory.civic.officialResponseFieldIds.length > 0
+  ) {
+    values.field = resolveOfficialResponseSidebarFieldDisplayLabel(
+      advisory.civic.officialResponseFieldIds[0]!,
+      t,
+    );
+  }
+  if (advisory.civic?.publicImpactFieldIds && advisory.civic.publicImpactFieldIds.length > 0) {
+    values.field = resolvePublicImpactSidebarFieldDisplayLabel(
+      advisory.civic.publicImpactFieldIds[0]!,
+      t,
+    );
+  }
+  if (advisory.civic?.civicArchiveFieldIds && advisory.civic.civicArchiveFieldIds.length > 0) {
+    values.field = resolveCivicArchiveSidebarFieldDisplayLabel(
+      advisory.civic.civicArchiveFieldIds[0]!,
+      t,
+    );
+  }
+  if (advisory.civic?.title != null) {
+    values.label = advisory.civic.title;
+  } else if (advisory.civic?.publicImpactSectionId != null) {
+    values.label = resolvePublicImpactSidebarSectionDisplayLabel(
+      advisory.civic.publicImpactSectionId,
       t,
     );
   }
@@ -361,6 +465,101 @@ function resolveImplementationTrackingSourcesSummary(
   return parts.join(" · ");
 }
 
+/** Preserve Official Response sources omit-empty + always-include count fragments. */
+function resolveOfficialResponseSourcesSummary(
+  advisory: InitiativeSidebarAdvisory,
+  t: InitiativeExperienceTranslator,
+): string {
+  const parts: string[] = [];
+  if (paramFlag(advisory.params, "hasTracking")) {
+    parts.push(
+      t("author.sidebar.advisories.officialResponse.sources.tracking", {
+        title: String(advisory.civic?.title ?? ""),
+      }),
+    );
+  }
+  parts.push(
+    t("author.sidebar.advisories.officialResponse.sources.records", {
+      count: paramNumber(advisory.params, "trackingRecordCount"),
+    }),
+  );
+  parts.push(
+    t("author.sidebar.advisories.officialResponse.sources.allies", {
+      count: paramNumber(advisory.params, "activeAllyCount"),
+    }),
+  );
+  return parts.join(" · ");
+}
+
+/** Preserve Public Impact sources omit-empty + always-include count fragments. */
+function resolvePublicImpactSourcesSummary(
+  advisory: InitiativeSidebarAdvisory,
+  t: InitiativeExperienceTranslator,
+): string {
+  const parts: string[] = [];
+  if (paramFlag(advisory.params, "hasOfficial")) {
+    const title = String(advisory.civic?.title ?? "");
+    parts.push(
+      paramFlag(advisory.params, "noResponseOutcome")
+        ? t("author.sidebar.advisories.publicImpact.sources.officialNoResponse", { title })
+        : t("author.sidebar.advisories.publicImpact.sources.official", { title }),
+    );
+  }
+  if (paramFlag(advisory.params, "hasTracking")) {
+    parts.push(
+      t("author.sidebar.advisories.publicImpact.sources.tracking", {
+        trackingTitle: String(advisory.civic?.trackingTitle ?? ""),
+      }),
+    );
+  }
+  parts.push(
+    t("author.sidebar.advisories.publicImpact.sources.evidence", {
+      count: paramNumber(advisory.params, "evidenceCount"),
+    }),
+  );
+  parts.push(
+    t("author.sidebar.advisories.publicImpact.sources.allies", {
+      count: paramNumber(advisory.params, "activeAllyCount"),
+    }),
+  );
+  return parts.join(" · ");
+}
+
+/** Preserve Civic Archive sources omit-empty + always-include stage count. */
+function resolveCivicArchiveSourcesSummary(
+  advisory: InitiativeSidebarAdvisory,
+  t: InitiativeExperienceTranslator,
+): string {
+  const parts: string[] = [];
+  if (paramFlag(advisory.params, "hasPublicImpact")) {
+    parts.push(
+      t("author.sidebar.advisories.civicArchive.sources.publicImpact", {
+        title: String(advisory.civic?.title ?? ""),
+      }),
+    );
+  }
+  if (paramFlag(advisory.params, "hasOfficial")) {
+    parts.push(
+      t("author.sidebar.advisories.civicArchive.sources.official", {
+        subject: String(advisory.civic?.subject ?? ""),
+      }),
+    );
+  }
+  if (paramFlag(advisory.params, "hasTracking")) {
+    parts.push(
+      t("author.sidebar.advisories.civicArchive.sources.tracking", {
+        trackingTitle: String(advisory.civic?.trackingTitle ?? ""),
+      }),
+    );
+  }
+  parts.push(
+    t("author.sidebar.advisories.civicArchive.sources.stages", {
+      count: paramNumber(advisory.params, "publishedStageCount"),
+    }),
+  );
+  return parts.join(" · ");
+}
+
 /**
  * Map a known stage advisory code → localized text.
  * Defensive fallback for malformed/external codes: localized unknown label + raw code.
@@ -467,6 +666,54 @@ export function resolveSidebarAdvisoryDisplay(
     const leaf = IMPLEMENTATION_TRACKING_ADVISORY_MESSAGE_KEY[advisory.code];
     return {
       text: t(`author.sidebar.advisories.implementationTracking.${leaf}`, values),
+      code: advisory.code,
+      civic: advisory.civic,
+    };
+  }
+
+  if (isOfficialResponseSidebarAdvisoryCode(advisory.code)) {
+    if (advisory.code === "official_response.sources.summary") {
+      return {
+        text: resolveOfficialResponseSourcesSummary(advisory, t),
+        code: advisory.code,
+        civic: advisory.civic,
+      };
+    }
+    const leaf = OFFICIAL_RESPONSE_ADVISORY_MESSAGE_KEY[advisory.code];
+    return {
+      text: t(`author.sidebar.advisories.officialResponse.${leaf}`, values),
+      code: advisory.code,
+      civic: advisory.civic,
+    };
+  }
+
+  if (isPublicImpactSidebarAdvisoryCode(advisory.code)) {
+    if (advisory.code === "public_impact.sources.summary") {
+      return {
+        text: resolvePublicImpactSourcesSummary(advisory, t),
+        code: advisory.code,
+        civic: advisory.civic,
+      };
+    }
+    const leaf = PUBLIC_IMPACT_ADVISORY_MESSAGE_KEY[advisory.code];
+    return {
+      text: t(`author.sidebar.advisories.publicImpact.${leaf}`, values),
+      code: advisory.code,
+      civic: advisory.civic,
+    };
+  }
+
+  if (isCivicArchiveSidebarAdvisoryCode(advisory.code)) {
+    if (advisory.code === "civic_archive.sources.summary") {
+      return {
+        text: resolveCivicArchiveSourcesSummary(advisory, t),
+        code: advisory.code,
+        civic: advisory.civic,
+      };
+    }
+    const leaf = CIVIC_ARCHIVE_ADVISORY_MESSAGE_KEY[advisory.code];
+    return {
+      text: t(`author.sidebar.advisories.civicArchive.${leaf}`, values),
       code: advisory.code,
       civic: advisory.civic,
     };

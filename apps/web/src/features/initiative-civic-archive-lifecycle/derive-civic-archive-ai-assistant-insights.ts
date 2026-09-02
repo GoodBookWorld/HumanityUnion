@@ -3,80 +3,113 @@ import type {
   InitiativeCivicArchiveLifecycleDraft,
 } from "@hu/types";
 
+import type { CivicArchiveSidebarAdvisory } from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
+
 export interface CivicArchiveAiAssistantInsights {
-  sourcesUsedSummary: string;
-  completenessWarnings: string[];
-  missingFinalFieldWarnings: string[];
-  outstandingWorkWarnings: string[];
-  neutralityWarnings: string[];
-  clarityWarnings: string[];
+  readonly sourcesSummary: CivicArchiveSidebarAdvisory;
+  readonly completenessWarnings: readonly CivicArchiveSidebarAdvisory[];
+  readonly missingFinalFieldWarnings: readonly CivicArchiveSidebarAdvisory[];
+  readonly outstandingWorkWarnings: readonly CivicArchiveSidebarAdvisory[];
+  readonly neutralityWarnings: readonly CivicArchiveSidebarAdvisory[];
+  readonly clarityWarnings: readonly CivicArchiveSidebarAdvisory[];
+  /** API opaque consistency warnings — detail/label stay raw. */
+  readonly consistencyWarnings: InitiativeCivicArchiveIntelligenceSnapshot["consistencyChecks"];
 }
 
 /**
  * Initiative Lifecycle — Part M, Section 4. Advisory-only derived insights —
  * neutral historical language; never praise/blame/success-wash; never edits
  * assembled section bodies or publishes.
+ *
+ * Pack 02G Task 08E.8f: Web-owned deterministic advisory meaning is encoded as
+ * language-neutral descriptors. Completeness counts remain derive-owned.
+ * API consistency-check detail and completeness.summary remain opaque/upstream.
  */
 export function deriveCivicArchiveAiAssistantInsights(
   snapshot: InitiativeCivicArchiveIntelligenceSnapshot,
   draft: InitiativeCivicArchiveLifecycleDraft | null,
   _lifecycleProfile?: string | null,
 ): CivicArchiveAiAssistantInsights {
-  const completenessWarnings: string[] = [];
-  const missingFinalFieldWarnings: string[] = [];
-  const outstandingWorkWarnings: string[] = [];
-  const neutralityWarnings: string[] = [];
-  const clarityWarnings: string[] = [];
+  const completenessWarnings: CivicArchiveSidebarAdvisory[] = [];
+  const missingFinalFieldWarnings: CivicArchiveSidebarAdvisory[] = [];
+  const outstandingWorkWarnings: CivicArchiveSidebarAdvisory[] = [];
+  const neutralityWarnings: CivicArchiveSidebarAdvisory[] = [];
+  const clarityWarnings: CivicArchiveSidebarAdvisory[] = [];
 
   // Public Impact is SOURCE_OPTIONAL; missing PI is incompleteness, not a hard block.
 
   if (snapshot.officialResponsePackageReference?.outcomeKind === "no_official_response_received") {
-    clarityWarnings.push(
-      "Official Responses record No official response received — preserve that outcome in the Archive summary.",
-    );
+    clarityWarnings.push({
+      code: "civic_archive.clarity.no_response_outcome",
+      severity: "warning",
+    });
   }
 
   if (snapshot.completeness.missingOptionalStages.length > 0) {
-    completenessWarnings.push(
-      `Optional stage(s) without published records: ${snapshot.completeness.missingOptionalStages.join(", ")}. Empty optional history is valid and does not block Archive.`,
-    );
+    completenessWarnings.push({
+      code: "civic_archive.completeness.missing_optional_stages",
+      severity: "warning",
+      params: {
+        stages: snapshot.completeness.missingOptionalStages.join(", "),
+      },
+    });
   }
 
-  clarityWarnings.push(
-    "AI is advisory only — it cannot publish Civic Archive or close the Initiative Lifecycle.",
-  );
+  clarityWarnings.push({
+    code: "civic_archive.clarity.advisory_only",
+    severity: "info",
+  });
   if (snapshot.completeness.unresolvedTrackingCount > 0) {
-    outstandingWorkWarnings.push(
-      `${snapshot.completeness.unresolvedTrackingCount} Tracking Record(s) remain unresolved — record them honestly in Outstanding Work.`,
-    );
+    outstandingWorkWarnings.push({
+      code: "civic_archive.outstanding.unresolved_tracking",
+      severity: "warning",
+      params: { count: snapshot.completeness.unresolvedTrackingCount },
+    });
   }
 
   if (snapshot.completeness.unfinishedCommitmentCount > 0) {
-    outstandingWorkWarnings.push(
-      `${snapshot.completeness.unfinishedCommitmentCount} Commitment(s) were not marked completed.`,
-    );
+    outstandingWorkWarnings.push({
+      code: "civic_archive.outstanding.unfinished_commitments",
+      severity: "warning",
+      params: { count: snapshot.completeness.unfinishedCommitmentCount },
+    });
   }
 
   if (draft) {
     if (!draft.finalArchiveTitle.trim()) {
-      missingFinalFieldWarnings.push("Final archive title is empty — required before publish.");
+      missingFinalFieldWarnings.push({
+        code: "civic_archive.fields.title_empty",
+        severity: "warning",
+        civic: { civicArchiveFieldIds: ["finalArchiveTitle"] },
+      });
     }
     if (!draft.finalSummary.trim()) {
-      missingFinalFieldWarnings.push("Final summary is empty — required before publish.");
+      missingFinalFieldWarnings.push({
+        code: "civic_archive.fields.summary_empty",
+        severity: "warning",
+        civic: { civicArchiveFieldIds: ["finalSummary"] },
+      });
     }
     if (!draft.lessonsLearned.trim()) {
-      missingFinalFieldWarnings.push(
-        "Lessons learned is empty — optional, but recommended before publish.",
-      );
+      missingFinalFieldWarnings.push({
+        code: "civic_archive.fields.lessons_empty",
+        severity: "warning",
+        civic: { civicArchiveFieldIds: ["lessonsLearned"] },
+      });
     }
     if (!draft.knowledgeContribution.trim()) {
-      missingFinalFieldWarnings.push(
-        "Knowledge contribution is empty — optional, but recommended before publish.",
-      );
+      missingFinalFieldWarnings.push({
+        code: "civic_archive.fields.knowledge_empty",
+        severity: "warning",
+        civic: { civicArchiveFieldIds: ["knowledgeContribution"] },
+      });
     }
 
     if (draft.sections.length === 0) {
-      clarityWarnings.push("No assembled Archive sections yet — generate from published sources.");
+      clarityWarnings.push({
+        code: "civic_archive.clarity.no_sections",
+        severity: "warning",
+      });
     }
 
     const judgmentWords = /\b(success|failure|failed|succeeded|triumph|disaster|victory)\b/i;
@@ -86,41 +119,47 @@ export function deriveCivicArchiveAiAssistantInsights(
       draft.knowledgeContribution,
     ]) {
       if (judgmentWords.test(field)) {
-        neutralityWarnings.push(
-          "Final contribution fields use success/failure judgment wording — prefer neutral historical language.",
-        );
+        neutralityWarnings.push({
+          code: "civic_archive.neutrality.judgment_wording",
+          severity: "warning",
+        });
         break;
       }
     }
   }
 
-  for (const check of snapshot.consistencyChecks) {
-    if (check.status === "warning") {
-      clarityWarnings.push(check.detail);
-    }
-  }
-
-  const sourcesUsedSummary = [
-    snapshot.publicImpactReportReference
-      ? `Public Impact "${snapshot.publicImpactReportReference.label}"`
-      : null,
-    snapshot.officialResponsePackageReference
-      ? `Official Responses "${snapshot.officialResponsePackageReference.label}"`
-      : null,
-    snapshot.trackingPackageReference
-      ? `Tracking "${snapshot.trackingPackageReference.label}"`
-      : null,
-    `${snapshot.completeness.stagesPublished.length} published stage(s)`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const hasPublicImpact = Boolean(snapshot.publicImpactReportReference);
+  const hasOfficial = Boolean(snapshot.officialResponsePackageReference);
+  const hasTracking = Boolean(snapshot.trackingPackageReference);
+  const sourcesSummary: CivicArchiveSidebarAdvisory = {
+    code: "civic_archive.sources.summary",
+    severity: "info",
+    params: {
+      hasPublicImpact: hasPublicImpact ? 1 : 0,
+      hasOfficial: hasOfficial ? 1 : 0,
+      hasTracking: hasTracking ? 1 : 0,
+      publishedStageCount: snapshot.completeness.stagesPublished.length,
+    },
+    civic: {
+      ...(snapshot.publicImpactReportReference
+        ? { title: snapshot.publicImpactReportReference.label }
+        : {}),
+      ...(snapshot.officialResponsePackageReference
+        ? { subject: snapshot.officialResponsePackageReference.label }
+        : {}),
+      ...(snapshot.trackingPackageReference
+        ? { trackingTitle: snapshot.trackingPackageReference.label }
+        : {}),
+    },
+  };
 
   return {
-    sourcesUsedSummary: sourcesUsedSummary || "No Civic Archive Sources available yet.",
+    sourcesSummary,
     completenessWarnings,
     missingFinalFieldWarnings,
     outstandingWorkWarnings,
     neutralityWarnings,
     clarityWarnings,
+    consistencyWarnings: snapshot.consistencyChecks.filter((check) => check.status === "warning"),
   };
 }

@@ -76,11 +76,7 @@ const PROPOSAL_ADVISORY_KEYS = [
   "author.sidebar.advisories.proposal.treatments.review",
 ] as const;
 
-const LEGACY_DERIVE_MODULES = [
-  "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
-  "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
-  "features/initiative-civic-archive-lifecycle/derive-civic-archive-ai-assistant-insights.ts",
-] as const;
+const LEGACY_DERIVE_MODULES = [] as const;
 
 describe("Pack 02G Task 08E.8b — Proposal structured advisories", () => {
   it("catalog parity includes author.sidebar.advisories.proposal", async () => {
@@ -255,19 +251,24 @@ describe("Pack 02G Task 08E.8b — Proposal structured advisories", () => {
     );
   });
 
-  it("Analysis remains descriptor-based; Official Response → Archive remain legacy English banks", () => {
+  it("Analysis remains descriptor-based; Official Response → Archive owned by 08E.8f", () => {
     const analysis = readWeb(
       "features/initiative-collaborative-analysis/derive-ai-assistant-insights.ts",
     );
     assert.match(analysis, /AnalysisSidebarAdvisory/);
     assert.match(analysis, /analysis\.sources\.summary/);
 
-    for (const relative of LEGACY_DERIVE_MODULES) {
+    for (const relative of [
+      "features/initiative-official-response-lifecycle/derive-official-response-ai-assistant-insights.ts",
+      "features/initiative-public-impact-lifecycle/derive-public-impact-ai-assistant-insights.ts",
+      "features/initiative-civic-archive-lifecycle/derive-civic-archive-ai-assistant-insights.ts",
+    ]) {
       const source = readWeb(relative);
       assert.doesNotMatch(source, /ProposalSidebarAdvisory/);
       assert.doesNotMatch(source, /author\.sidebar\.advisories/);
       assert.doesNotMatch(source, /next-intl/);
-      assert.match(source, /sourcesUsedSummary/);
+      assert.doesNotMatch(source, /sourcesUsedSummary/);
+      assert.match(source, /SidebarAdvisory/);
     }
   });
 

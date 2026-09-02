@@ -1102,6 +1102,77 @@
             "clarityUnassigned": "{count, plural, one {# milestone is Unassigned — assign only known responsible parties.} other {# milestones are Unassigned — assign only known responsible parties.}}",
             "clarityTitleEmpty": "{field} is empty — Implementation Tracking should be clearly labeled.",
             "claritySummaryEmpty": "{field} is empty — restate the implementation intent."
+          },
+          "officialResponse": {
+            "sourcesEmpty": "No Official Response Sources available yet.",
+            "sources": {
+              "tracking": "Tracking Package “{title}”",
+              "records": "{count, plural, one {# Tracking Record} other {# Tracking Records}}",
+              "allies": "{count, plural, one {# Active Ally} other {# Active Allies}}"
+            },
+            "incompleteNoCandidates": "No Response Candidates yet — generate a draft, add received responses, or record No official response received.",
+            "incompleteSummaryEmpty": "“{subject}” has no summary yet.",
+            "incompleteSummaryEmptyUntitled": "Candidate {index} has no summary yet.",
+            "duplicateSubject": "{count, plural, one {# Candidate shares the subject “{subject}”.} other {# Candidates share the subject “{subject}”.}}",
+            "institutionMissing": "“{subject}” has no institution or organization filled in yet.",
+            "institutionMissingUntitled": "Candidate {index} has no institution or organization filled in yet.",
+            "referenceUnlinked": "“{subject}” is not linked to any Tracking Record or Approved Action.",
+            "referenceUnlinkedUntitled": "Candidate {index} is not linked to any Tracking Record or Approved Action.",
+            "referenceNoEvidence": "“{subject}” has no document ID or external URL — consider attaching evidence if available.",
+            "referenceNoEvidenceUntitled": "Candidate {index} has no document ID or external URL — consider attaching evidence if available.",
+            "summaryUnsupported": "“{subject}” has a summary but no Tracking Record reference to support it.",
+            "summaryUnsupportedUntitled": "Candidate {index} has a summary but no Tracking Record reference to support it.",
+            "dateFutureReceived": "“{subject}” has a received date in the future.",
+            "dateFutureReceivedUntitled": "Candidate {index} has a received date in the future.",
+            "clarityNoResponseNote": "Optional: add a short factual note explaining outreach or why no reply was received.",
+            "clarityTitleEmpty": "{field} is empty — Official Responses should be clearly labeled.",
+            "claritySummaryEmpty": "{field} is empty — restate the Tracking Package's outcome.",
+            "noteNoResponseOutcome": "Author is documenting No official response received — a legitimate stage outcome. AI must not invent statements or invent response records.",
+            "noteAdvisoryOnly": "AI suggestions are advisory only — distinguish source facts from Author interpretation. AI cannot publish or advance Lifecycle."
+          },
+          "publicImpact": {
+            "sourcesEmpty": "No Public Impact Sources available yet.",
+            "sources": {
+              "official": "Official Responses “{title}”",
+              "officialNoResponse": "Official Responses “{title}” (No official response received)",
+              "tracking": "Tracking Package “{trackingTitle}”",
+              "evidence": "{count, plural, one {# evidence reference} other {# evidence references}}",
+              "allies": "{count, plural, one {# Active Ally} other {# Active Allies}}"
+            },
+            "evidencePackageRequired": "Publish an Official Response Package before generating Public Impact.",
+            "evidenceNoneVisible": "No evidence references are visible yet from Tracking or Official Responses — keep uncertainty explicit; do not fabricate evidence. This does not block Publish.",
+            "evidenceSectionEmpty": "“{label}” is empty — publish requires a non-empty body.",
+            "conclusionUnsupported": "“{label}” has a body but no evidence reference — unsupported conclusions should be removed or cited.",
+            "statsInconsistent": "Draft participation statistics differ from the current intelligence snapshot — regenerate or reconcile before publishing.",
+            "claimsDuplicated": "{count, plural, one {# section shares the same body text starting “{excerpt}”.} other {# sections share the same body text starting “{excerpt}”.}}",
+            "institutionMissingName": "One or more Official Responses still lack an institution or organization name.",
+            "institutionMissingSummary": "One or more Official Responses still lack an outcome summary.",
+            "clarityNoSections": "No Report sections yet — generate a draft from published sources.",
+            "clarityTitleEmpty": "{field} is empty — Public Impact Reports should be clearly labeled.",
+            "clarityJudgmentWording": "“{label}” uses success/failure judgment wording — prefer neutral factual summaries.",
+            "noteNoResponseOutcome": "Official Responses published No official response received — treat that as a factual outcome. Do not invent institutional replies.",
+            "noteLowCompletion": "Little or no measurable completion is visible — a valid Author conclusion may be: no measurable impact yet, implementation incomplete, or outcome not achieved.",
+            "noteAdvisoryOnly": "AI suggestions are advisory only — separate confirmed facts from assumptions. AI cannot invent results, publish, or advance Lifecycle."
+          },
+          "civicArchive": {
+            "sourcesEmpty": "No Civic Archive Sources available yet.",
+            "sources": {
+              "publicImpact": "Public Impact “{title}”",
+              "official": "Official Responses “{subject}”",
+              "tracking": "Tracking “{trackingTitle}”",
+              "stages": "{count, plural, one {# published stage} other {# published stages}}"
+            },
+            "completenessMissingOptionalStages": "Optional stage(s) without published records: {stages}. Empty optional history is valid and does not block Archive.",
+            "fieldsTitleEmpty": "{field} is empty — required before publish.",
+            "fieldsSummaryEmpty": "{field} is empty — required before publish.",
+            "fieldsLessonsEmpty": "{field} is empty — optional, but recommended before publish.",
+            "fieldsKnowledgeEmpty": "{field} is empty — optional, but recommended before publish.",
+            "outstandingUnresolvedTracking": "{count, plural, one {# Tracking Record remains unresolved — record it honestly in Outstanding Work.} other {# Tracking Records remain unresolved — record them honestly in Outstanding Work.}}",
+            "outstandingUnfinishedCommitments": "{count, plural, one {# Commitment was not marked completed.} other {# Commitments were not marked completed.}}",
+            "neutralityJudgmentWording": "Final contribution fields use success/failure judgment wording — prefer neutral historical language.",
+            "clarityNoResponseOutcome": "Official Responses record No official response received — preserve that outcome in the Archive summary.",
+            "clarityAdvisoryOnly": "AI is advisory only — it cannot publish Civic Archive or close the Initiative Lifecycle.",
+            "clarityNoSections": "No assembled Archive sections yet — generate from published sources."
           }
         },
         "completeness": {
