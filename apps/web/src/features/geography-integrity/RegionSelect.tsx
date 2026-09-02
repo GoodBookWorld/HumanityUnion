@@ -1,14 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 
-import { toGeographyRegionOptions } from "@hu/geography";
+import { OTHER_REGION_SLUG, toGeographyRegionOptions } from "@hu/geography";
 
 import { GeographySearchSelect } from "../../design-system/components/GeographySearchSelect";
-import {
-  countryHasStructuredRegions,
-  GEOGRAPHY_EMPTY_COPY,
-} from "./geography-cascade-contract";
+import { countryHasStructuredRegions } from "./geography-cascade-contract";
 
 export interface RegionSelectProps {
   id: string;
@@ -34,40 +32,51 @@ export function RegionSelect({
   includeOther = true,
   disabled = false,
   required = false,
-  placeholder = "Search regions…",
+  placeholder,
   helperText,
-  label = "Region",
+  label,
   error,
 }: RegionSelectProps) {
-  const options = useMemo(
-    () => (countryCode ? toGeographyRegionOptions(countryCode, includeOther) : []),
-    [countryCode, includeOther],
-  );
+  const t = useTranslations("initiativeExperience");
+  const resolvedLabel = label ?? t("manage.fields.region");
+  const resolvedPlaceholder = placeholder ?? t("manage.fields.searchRegions");
+  const otherLabel = t("manage.geography.otherNotListed");
+
+  const options = useMemo(() => {
+    if (!countryCode) {
+      return [];
+    }
+    return toGeographyRegionOptions(countryCode, includeOther).map((option) =>
+      option.slug === OTHER_REGION_SLUG ? { ...option, label: otherLabel } : option,
+    );
+  }, [countryCode, includeOther, otherLabel]);
 
   const hasStructured = countryHasStructuredRegions(countryCode);
 
   const resolvedHelper =
     helperText ??
     (!countryCode
-      ? GEOGRAPHY_EMPTY_COPY.selectCountryFirst
+      ? t("manage.geography.selectCountryFirst")
       : !hasStructured
         ? includeOther
-          ? GEOGRAPHY_EMPTY_COPY.noRegionsUseOther
-          : GEOGRAPHY_EMPTY_COPY.noRegions
+          ? t("manage.geography.noRegionsUseOther")
+          : t("manage.geography.noRegions")
         : undefined);
 
   return (
     <GeographySearchSelect
       id={id}
-      label={label}
+      label={resolvedLabel}
       value={value}
       options={options}
       onChange={onChange}
       disabled={disabled || !countryCode}
       required={required}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
       helperText={resolvedHelper}
       error={error}
+      loadingPlaceholder={t("manage.geography.loading")}
+      filterAriaLabel={t("manage.geography.filterAria", { label: resolvedLabel })}
       // Pack 10B — empty state lives only in helperText (avoid duplicate copy).
       emptyMessage={undefined}
     />

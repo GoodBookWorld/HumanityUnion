@@ -34,10 +34,10 @@ describe("Pack 10G — city select large-list discoverability", () => {
 
   it("CitySelect keeps shared search affordance without requiring search", () => {
     const city = readWeb("features/geography-integrity/CitySelect.tsx");
-    assert.match(city, /formatCityListHelper\(structuredCount\)/);
+    assert.match(city, /manage\.geography\.citiesAvailable/);
     assert.doesNotMatch(city, /requireSearch=\{/);
-    assert.match(city, /GEOGRAPHY_EMPTY_COPY\.citySearchPlaceholder/);
-    assert.match(city, /GEOGRAPHY_EMPTY_COPY\.noCityMatches/);
+    assert.match(city, /manage\.geography\.citySearchPlaceholder/);
+    assert.match(city, /manage\.geography\.noCityMatches/);
     assert.match(city, /key=\{`\$\{countryCode\}::\$\{regionCode\}`\}/);
   });
 
@@ -53,7 +53,7 @@ describe("Pack 10G — city select large-list discoverability", () => {
   it("does not treat large-list pre-query as noCities emptyMessage", () => {
     const city = readWeb("features/geography-integrity/CitySelect.tsx");
     assert.match(city, /emptyMessage=\{undefined\}/);
-    assert.match(city, /noMatchMessage=\{GEOGRAPHY_EMPTY_COPY\.noCityMatches\}/);
+    assert.match(city, /noMatchMessage=\{t\("manage\.geography\.noCityMatches"\)\}/);
   });
 
   it("Preferences multi-select keeps multi semantics with browseable city options", () => {

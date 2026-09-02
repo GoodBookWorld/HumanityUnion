@@ -41,9 +41,9 @@ describe("Pack 10H1 — city list browseable selection", () => {
     const city = readWeb("features/geography-integrity/CitySelect.tsx");
     assert.doesNotMatch(city, /requireSearch/);
     assert.doesNotMatch(city, /CITY_REQUIRE_SEARCH_ABOVE/);
-    assert.match(city, /formatCityListHelper/);
+    assert.match(city, /manage\.geography\.citiesAvailable/);
     assert.match(city, /emptyOptionLabel/);
-    assert.match(city, /All communities/);
+    assert.match(city, /manage\.geography\.allCommunities/);
   });
 
   it("GeographySearchSelect opens a browseable listbox with optional filter", () => {

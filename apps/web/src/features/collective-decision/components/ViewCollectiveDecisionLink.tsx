@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   WorkspaceEmptyState,
@@ -11,9 +12,16 @@ import { getCollectiveDecisionByInitiativeId } from "../api";
 
 interface ViewCollectiveDecisionLinkProps {
   initiativeId: string | null;
+  /** Localized link label; defaults to catalog English for callers outside Manage. */
+  label?: string;
 }
 
-export function ViewCollectiveDecisionLink({ initiativeId }: ViewCollectiveDecisionLinkProps) {
+export function ViewCollectiveDecisionLink({
+  initiativeId,
+  label,
+}: ViewCollectiveDecisionLinkProps) {
+  const t = useTranslations("initiativeExperience");
+  const resolvedLabel = label ?? t("manage.links.viewCollectiveDecision");
   const [decisionId, setDecisionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -60,23 +68,23 @@ export function ViewCollectiveDecisionLink({ initiativeId }: ViewCollectiveDecis
   if (!initiativeId) {
     return (
       <WorkspaceEmptyState
-        title="No initiative selected"
-        explanation="Select an initiative to open its collective decision workspace."
-        nextStep="Choose an initiative from My Initiatives."
+        title={t("manage.links.collectiveDecisionNoInitiativeTitle")}
+        explanation={t("manage.links.collectiveDecisionNoInitiativeExplanation")}
+        nextStep={t("manage.links.collectiveDecisionNoInitiativeNext")}
       />
     );
   }
 
   if (loading) {
-    return <WorkspaceLoadingState message="Loading collective decision..." />;
+    return <WorkspaceLoadingState message={t("manage.links.collectiveDecisionLoading")} />;
   }
 
   if (!decisionId) {
     return (
       <WorkspaceEmptyState
-        title="No decision session has been created yet."
-        explanation="This initiative does not have an opened collective decision record."
-        nextStep="Publish a decision session, then open collective decision voting."
+        title={t("manage.links.collectiveDecisionEmptyTitle")}
+        explanation={t("manage.links.collectiveDecisionEmptyExplanation")}
+        nextStep={t("manage.links.collectiveDecisionEmptyNext")}
       />
     );
   }
@@ -84,7 +92,7 @@ export function ViewCollectiveDecisionLink({ initiativeId }: ViewCollectiveDecis
   return (
     <WorkspacePublicLink
       href={`/collective-decisions/${encodeURIComponent(decisionId)}`}
-      label="View Collective Decision"
+      label={resolvedLabel}
     />
   );
 }

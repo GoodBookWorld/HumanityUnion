@@ -32,6 +32,10 @@ export interface ImageCropZoomEditorProps {
   instructions: string;
   saveLabel: string;
   savingLabel: string;
+  /** Optional; defaults keep Profile/avatar callers English-stable. */
+  cancelLabel?: string;
+  resetLabel?: string;
+  zoomHint?: string;
   outputWidth: number;
   outputHeight: number;
   outputMimeType?: string;
@@ -50,6 +54,9 @@ export function ImageCropZoomEditor({
   instructions,
   saveLabel,
   savingLabel,
+  cancelLabel = "Cancel",
+  resetLabel = "Reset",
+  zoomHint = "Out · Default · In",
   outputWidth,
   outputHeight,
   outputMimeType = "image/webp",
@@ -238,7 +245,7 @@ export function ImageCropZoomEditor({
           onChange={(event) => updateScaleFromSlider(Number(event.target.value))}
         />
         <span className="image-crop-zoom-editor__zoom-hint" aria-hidden="true">
-          Out · Default · In
+          {zoomHint}
         </span>
       </label>
 
@@ -251,10 +258,10 @@ export function ImageCropZoomEditor({
             applyTransform(centerImageCropTransform(source.width, source.height, frame, range.defaultScale))
           }
         >
-          Reset
+          {resetLabel}
         </Button>
         <Button type="button" variant="secondary" disabled={saving} onClick={onCancel}>
-          Cancel
+          {cancelLabel}
         </Button>
         <Button type="button" variant="primary" disabled={saving} onClick={() => void handleSave()}>
           {saving ? savingLabel : saveLabel}

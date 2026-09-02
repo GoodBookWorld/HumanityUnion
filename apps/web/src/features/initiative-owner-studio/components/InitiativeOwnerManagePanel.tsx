@@ -3,6 +3,7 @@
 import type { Initiative } from "@hu/types";
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { ProfileSection } from "../../../components/member/ProfileSection";
 import { InitiativeDraftEditor } from "../../initiatives/components/InitiativeDraftEditor";
@@ -43,6 +44,7 @@ export function InitiativeOwnerManagePanel({
   initiative,
   onInitiativeUpdated,
 }: InitiativeOwnerManagePanelProps) {
+  const t = useTranslations("initiativeExperience");
   const [currentInitiative, setCurrentInitiative] = useState(initiative);
 
   async function handleUpdated(updated: Initiative) {
@@ -62,14 +64,23 @@ export function InitiativeOwnerManagePanel({
   return (
     <div className="initiative-owner-manage-panel">
       <p className="initiative-owner-manage-panel__back">
-        <Link href={buildWorkspaceInitiativesHref()}>Back to Workspace Initiatives</Link>
+        <Link href={buildWorkspaceInitiativesHref()}>{t("manage.backToWorkspace")}</Link>
       </p>
 
-      <ProfileSection title="Manage Initiative" id="manage-initiative">
+      <ProfileSection title={t("manage.title")} id="manage-initiative">
         {renderManagementEditor(currentInitiative, (updated) => void handleUpdated(updated))}
-        <ViewCollaborativeAnalysisLink initiativeId={currentInitiative.initiativeId} />
-        <ViewCollectiveDecisionLink initiativeId={currentInitiative.initiativeId} />
-        <ViewPetitionLink initiativeId={currentInitiative.initiativeId} />
+        <ViewCollaborativeAnalysisLink
+          initiativeId={currentInitiative.initiativeId}
+          label={t("manage.links.viewCollaborativeAnalysis")}
+        />
+        <ViewCollectiveDecisionLink
+          initiativeId={currentInitiative.initiativeId}
+          label={t("manage.links.viewCollectiveDecision")}
+        />
+        <ViewPetitionLink
+          initiativeId={currentInitiative.initiativeId}
+          label={t("manage.links.viewPetition")}
+        />
       </ProfileSection>
     </div>
   );

@@ -119,6 +119,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  max-inline-size: 100%;
+}
+
+.initiative-cover-media-field__actions .hu-button {
+  white-space: normal;
+  max-inline-size: 100%;
 }
 
 .initiative-cover-media-field__button {

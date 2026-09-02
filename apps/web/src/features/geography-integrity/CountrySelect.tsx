@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 
 import { toGeographyCountryOptions } from "@hu/geography";
 
@@ -25,25 +26,30 @@ export function CountrySelect({
   onChange,
   disabled = false,
   required = false,
-  placeholder = "Search countries…",
+  placeholder,
   helperText,
-  label = "Country",
+  label,
   error,
 }: CountrySelectProps) {
+  const t = useTranslations("initiativeExperience");
   const options = useMemo(() => toGeographyCountryOptions(), []);
+  const resolvedLabel = label ?? t("manage.fields.country");
+  const resolvedPlaceholder = placeholder ?? t("manage.fields.searchCountries");
 
   return (
     <GeographySearchSelect
       id={id}
-      label={label}
+      label={resolvedLabel}
       value={value}
       options={options}
       onChange={onChange}
       disabled={disabled}
       required={required}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
       helperText={helperText}
       error={error}
+      loadingPlaceholder={t("manage.geography.loading")}
+      filterAriaLabel={t("manage.geography.filterAria", { label: resolvedLabel })}
     />
   );
 }

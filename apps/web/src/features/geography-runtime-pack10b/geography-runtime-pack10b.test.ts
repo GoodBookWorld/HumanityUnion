@@ -102,10 +102,10 @@ describe("Geography Runtime Correction Pack 10B — assets + forms", () => {
     const region = readWeb("features/geography-integrity/RegionSelect.tsx");
     assert.match(city, /emptyMessage=\{undefined\}/);
     assert.match(region, /emptyMessage=\{undefined\}/);
-    assert.match(city, /GEOGRAPHY_EMPTY_COPY\.noCities/);
+    assert.match(city, /manage\.geography\.noCities/);
     assert.doesNotMatch(
       city,
-      /emptyMessage=\{[\s\S]*GEOGRAPHY_EMPTY_COPY\.noCities/,
+      /emptyMessage=\{[\s\S]*manage\.geography\.noCities/,
     );
   });
 
