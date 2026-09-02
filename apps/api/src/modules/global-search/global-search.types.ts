@@ -21,6 +21,12 @@ export interface GlobalSearchIndexEntry extends CivicSearchMetadata {
   normalizedRegionLabel: string;
   normalizedCountryCode: string;
   normalizedRegionCode: string;
+  /** Pack 02H — language → normalized translated titles (current only). */
+  normalizedTranslatedTitles: Readonly<Record<string, string>>;
+  /** Pack 02H — language → normalized translated summaries (current only). */
+  normalizedTranslatedSummaries: Readonly<Record<string, string>>;
+  /** Pack 02H — language → normalized terminology alias terms. */
+  normalizedTerminologyAliasesByLanguage: Readonly<Record<string, readonly string[]>>;
 }
 
 export interface GlobalSearchMatchInput {

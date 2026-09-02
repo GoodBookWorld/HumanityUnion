@@ -1,4 +1,4 @@
-import type { CivicEntityType } from "@hu/types";
+import type { CivicEntityType, CivicSearchMetadata } from "@hu/types";
 
 import { buildSearchMetadata } from "../capability02-integration/capability02-integration.service.js";
 import { listAccountabilities } from "../civic-accountability/civic-accountability.store.js";
@@ -24,6 +24,7 @@ import { listPublishedCivicNominations } from "../civic-nomination/civic-nominat
 import { listPetitions } from "../petition/petition.store.js";
 import { blogPostToSearchMetadata } from "../blog/blog.projection.js";
 import { listPublishedBlogPostsForSearch } from "../blog/blog.service.js";
+import { enrichSearchEntryWithMultilingual } from "./global-search-multilingual.js";
 
 interface SearchEntityRef {
   entityType: CivicEntityType;
@@ -39,23 +40,76 @@ function isPublicInitiative(initiativeId: string): boolean {
   return initiative !== undefined && initiative !== null && initiative.lifecyclePhase !== "draft";
 }
 
-function toIndexEntry(
-  metadata: NonNullable<Awaited<ReturnType<typeof buildSearchMetadata>>>,
-): GlobalSearchIndexEntry {
+function buildNormalizedMultilingualMaps(metadata: CivicSearchMetadata): {
+  normalizedTranslatedTitles: Record<string, string>;
+  normalizedTranslatedSummaries: Record<string, string>;
+  normalizedTerminologyAliasesByLanguage: Record<string, readonly string[]>;
+} {
+  const normalizedTranslatedTitles: Record<string, string> = {};
+  const normalizedTranslatedSummaries: Record<string, string> = {};
+  const terminologyBuckets = new Map<string, Set<string>>();
+
+  for (const field of metadata.translatedFields ?? []) {
+    if (field.freshness !== "current") {
+      continue;
+    }
+    if (field.title) {
+      normalizedTranslatedTitles[field.language] = normalizeField(field.title);
+    }
+    if (field.summary) {
+      normalizedTranslatedSummaries[field.language] = normalizeField(field.summary);
+    }
+  }
+
+  for (const alias of metadata.terminologyAliases ?? []) {
+    const bucket = terminologyBuckets.get(alias.language) ?? new Set<string>();
+    bucket.add(normalizeField(alias.term));
+    terminologyBuckets.set(alias.language, bucket);
+  }
+
+  const normalizedTerminologyAliasesByLanguage: Record<string, readonly string[]> = {};
+  for (const [language, terms] of terminologyBuckets.entries()) {
+    normalizedTerminologyAliasesByLanguage[language] = [...terms].sort((a, b) =>
+      a.localeCompare(b),
+    );
+  }
+
   return {
-    ...metadata,
-    normalizedTitle: normalizeField(metadata.title),
-    normalizedSummary: normalizeField(metadata.summary),
-    normalizedCountry: normalizeField(metadata.country),
-    normalizedRegion: normalizeField(metadata.region),
-    normalizedCommunity: normalizeField(metadata.community),
-    normalizedActivityArea: normalizeField(metadata.activityArea),
-    normalizedStatus: normalizeField(metadata.status),
-    normalizedEntityType: normalizeField(metadata.entityType),
-    normalizedCountryLabel: normalizeField(metadata.countryLabel ?? ""),
-    normalizedRegionLabel: normalizeField(metadata.regionLabel ?? ""),
-    normalizedCountryCode: normalizeField(metadata.countryCode ?? ""),
-    normalizedRegionCode: normalizeField(metadata.regionCode ?? ""),
+    normalizedTranslatedTitles,
+    normalizedTranslatedSummaries,
+    normalizedTerminologyAliasesByLanguage,
+  };
+}
+
+async function toIndexEntry(
+  metadata: NonNullable<Awaited<ReturnType<typeof buildSearchMetadata>>>,
+): Promise<GlobalSearchIndexEntry> {
+  let enriched: CivicSearchMetadata = metadata;
+
+  try {
+    enriched = await enrichSearchEntryWithMultilingual(metadata);
+  } catch {
+    // Soft-fail enrichment — keep the canonical entry searchable.
+    enriched = metadata;
+  }
+
+  const multilingual = buildNormalizedMultilingualMaps(enriched);
+
+  return {
+    ...enriched,
+    normalizedTitle: normalizeField(enriched.title),
+    normalizedSummary: normalizeField(enriched.summary),
+    normalizedCountry: normalizeField(enriched.country),
+    normalizedRegion: normalizeField(enriched.region),
+    normalizedCommunity: normalizeField(enriched.community),
+    normalizedActivityArea: normalizeField(enriched.activityArea),
+    normalizedStatus: normalizeField(enriched.status),
+    normalizedEntityType: normalizeField(enriched.entityType),
+    normalizedCountryLabel: normalizeField(enriched.countryLabel ?? ""),
+    normalizedRegionLabel: normalizeField(enriched.regionLabel ?? ""),
+    normalizedCountryCode: normalizeField(enriched.countryCode ?? ""),
+    normalizedRegionCode: normalizeField(enriched.regionCode ?? ""),
+    ...multilingual,
   };
 }
 
@@ -203,22 +257,22 @@ export async function buildGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]
       continue;
     }
 
-    entries.push(toIndexEntry(metadata));
+    entries.push(await toIndexEntry(metadata));
   }
 
   for (const article of getKnowledgeArticleRecordsForSearch()) {
-    entries.push(toIndexEntry(knowledgeArticleToSearchMetadata(article)));
+    entries.push(await toIndexEntry(knowledgeArticleToSearchMetadata(article)));
   }
 
   for (const mediaRecord of await getCivicMediaRecordsForSearch()) {
-    entries.push(toIndexEntry(civicMediaToSearchMetadata(mediaRecord)));
+    entries.push(await toIndexEntry(civicMediaToSearchMetadata(mediaRecord)));
   }
 
   for (const nomination of listPublishedCivicNominations()) {
     const metadata = civicNominationToSearchMetadata(nomination);
 
     if (metadata) {
-      entries.push(toIndexEntry(metadata));
+      entries.push(await toIndexEntry(metadata));
     }
   }
 
@@ -226,7 +280,7 @@ export async function buildGlobalSearchIndex(): Promise<GlobalSearchIndexEntry[]
     for (const post of await listPublishedBlogPostsForSearch()) {
       const metadata = blogPostToSearchMetadata(post);
       if (metadata) {
-        entries.push(toIndexEntry(metadata));
+        entries.push(await toIndexEntry(metadata));
       }
     }
   } catch {

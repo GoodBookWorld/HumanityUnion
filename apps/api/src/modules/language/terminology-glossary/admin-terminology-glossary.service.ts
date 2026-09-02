@@ -18,6 +18,7 @@ import {
 } from "../../administration/administration.errors.js";
 import { record as recordAdministrationAudit } from "../../administration/audit.service.js";
 import { findAuthUserById } from "../../auth/auth-user.repository.js";
+import { invalidateGlobalSearchIndex } from "../../global-search/global-search.index.js";
 import {
   TerminologyGlossaryNotFoundError,
   TerminologyGlossaryValidationError,
@@ -277,6 +278,9 @@ export async function updateAdminTerminologyConcept(input: {
     ...patch,
     updatedByParticipantId: admin.participantId,
   });
+
+  // Pack 02H — glossary updates invalidate search index; rebuild on next query.
+  invalidateGlobalSearchIndex();
 
   const statusChanged = before.status !== updated.status;
   const afterParts = [

@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 
 import { CanonicalInitiativeExperienceLoader } from "../../../../features/public-initiative-experience/components/CanonicalInitiativeExperienceLoader";
 import { getPublicInitiative } from "../../../../features/initiatives/api";
+import { resolveDocumentHtmlLocale } from "../../../../features/language/resolve-document-locale";
 import { resolveMediaUrl } from "../../../../features/media-upload/media-url";
 import { buildPublicPageMetadata } from "../../../../lib/seo/build-public-page-metadata";
 import { applyPageSeoOverrideToMetadataInput } from "../../../../lib/seo/apply-page-seo-override";
 import { fetchPublicSeoPageOverride } from "../../../../lib/seo/fetch-public-seo-page-override";
+import { loadInitiativeMetadataTranslationFields } from "../../../../lib/seo/load-initiative-metadata-translation-fields";
+import { resolveLocalizedPublicMetadataCopy } from "../../../../lib/seo/resolve-localized-public-metadata-copy";
 import { JsonLdScript, buildWebPageJsonLd } from "../../../../lib/seo/structured-data";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +22,10 @@ interface PublicInitiativePageProps {
 /**
  * Social preview metadata for the canonical public Initiative URL.
  * Petition deep-links (`#petition`) share this page's Open Graph tags.
+ *
+ * Pack 02I — when a current cached civic translation exists for the document
+ * locale, title/description may use that copy. Canonical path stays locale-free.
+ * Never calls Gemini / translation generate from metadata.
  */
 export async function generateMetadata({
   params,
@@ -37,6 +44,19 @@ export async function generateMetadata({
     const description =
       initiative.description.trim() || `${initiative.title} on Humanity Union`;
 
+    const documentLocale = await resolveDocumentHtmlLocale();
+    const translationFields = await loadInitiativeMetadataTranslationFields({
+      initiativeId,
+      language: documentLocale.locale,
+    });
+    const localized = resolveLocalizedPublicMetadataCopy({
+      title: initiative.title,
+      description,
+      locale: documentLocale.locale,
+      translatedTitle: translationFields.translatedTitle,
+      translatedDescription: translationFields.translatedDescription,
+    });
+
     const override = await fetchPublicSeoPageOverride({
       family: "initiative",
       entityKey: initiativeId,
@@ -45,19 +65,20 @@ export async function generateMetadata({
     return buildPublicPageMetadata(
       applyPageSeoOverrideToMetadataInput(
         {
-          title: initiative.title,
-          description,
+          title: localized.title,
+          description: localized.description,
           canonicalPath,
-          socialTitle: initiative.title,
-          socialDescription: description,
+          socialTitle: localized.title,
+          socialDescription: localized.description,
           imageUrl: resolvedImage,
-          imageAlt: initiative.metadata.imageAltText || initiative.title,
+          imageAlt: initiative.metadata.imageAltText || localized.title,
           openGraphType: "website",
           descriptionMaxLength: 200,
         },
         override?.fields,
       ),
-    );  } catch {
+    );
+  } catch {
     return buildPublicPageMetadata({
       title: "Initiative",
       description: "Public Initiative on Humanity Union",

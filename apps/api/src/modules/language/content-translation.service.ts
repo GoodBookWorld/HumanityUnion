@@ -14,6 +14,7 @@ import {
 } from "@hu/types";
 
 import { findBlogPostById } from "../blog/persistence/blog.repository.js";
+import { invalidateGlobalSearchIndex } from "../global-search/global-search.index.js";
 import { getAnalysisById } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getPetition } from "../petition/petition.store.js";
@@ -274,6 +275,8 @@ export async function getOrCreateContentTranslation(input: {
     sourceRecordId: source.sourceRecordId,
     liveSourceVersion: source.sourceVersion,
   });
+  // Pack 02H — stale rows must stop contributing as current searchable text on next rebuild.
+  invalidateGlobalSearchIndex();
 
   const targetLanguage =
     intent === "automatic_warm"
@@ -379,6 +382,8 @@ export async function getOrCreateContentTranslation(input: {
   };
 
   await upsertContentTranslation(record);
+  // Pack 02H — translation upsert invalidates search index; rebuild on next query.
+  invalidateGlobalSearchIndex();
   return { source, translation: record, generated: true };
 }
 

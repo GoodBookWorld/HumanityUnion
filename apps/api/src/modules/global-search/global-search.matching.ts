@@ -3,14 +3,34 @@ import { resolveInitiativeLifecycleProfile } from "@hu/types";
 import { resolveCountrySearchSlug, resolveRegionSearchSlug } from "@hu/geography";
 
 import { getInitiativeById } from "../initiatives/initiative.store.js";
+import { resolveLanguageRegistryLocale } from "../language/language-registry/language-registry.repository.js";
 import { GLOBAL_SEARCH_ENTITY_TYPE_LABELS } from "./global-search.types.js";
 import type { GlobalSearchIndexEntry, GlobalSearchRankedMatch } from "./global-search.types.js";
 
+/** Canonical English / fallback title exact match. */
 const SCORE_EXACT_TITLE = 5000;
+/** Canonical English / fallback title contains. */
 const SCORE_TITLE_CONTAINS = 4000;
 const SCORE_SUMMARY_CONTAINS = 3000;
 const SCORE_LOCATION_OR_ACTIVITY = 2000;
 const SCORE_STATUS_OR_TYPE = 1000;
+
+/**
+ * Pack 02H multilingual scores (preferred locale):
+ * - SCORE_LOCALE_TITLE_EXACT = 5500 (above English exact 5000)
+ * - SCORE_LOCALE_TITLE_CONTAINS = 4500
+ * - SCORE_LOCALE_SUMMARY = 3500
+ * - SCORE_TERMINOLOGY_ALIAS = 4200
+ * - SCORE_FALLBACK_TITLE remains 4000/5000 for canonical
+ *
+ * When query.locale is omitted, current translations still match at a slightly
+ * lower boost than the preferred-locale scores ( −200 ).
+ */
+const SCORE_LOCALE_TITLE_EXACT = 5500;
+const SCORE_LOCALE_TITLE_CONTAINS = 4500;
+const SCORE_LOCALE_SUMMARY = 3500;
+const SCORE_TERMINOLOGY_ALIAS = 4200;
+const SCORE_UNPREFERRED_LOCALE_DELTA = 200;
 
 function normalize(value: string | undefined): string {
   return (value ?? "").trim().toLowerCase();
@@ -150,9 +170,90 @@ function locationFieldsMatchSearchTerm(entry: GlobalSearchIndexEntry, searchTerm
   );
 }
 
+function localeBoost(base: number, preferredLocale: string | undefined, fieldLanguage: string): number {
+  if (!preferredLocale) {
+    return base - SCORE_UNPREFERRED_LOCALE_DELTA;
+  }
+  if (preferredLocale === fieldLanguage) {
+    return base;
+  }
+  // Non-preferred current translations are still discoverable at the unpreferred boost.
+  return base - SCORE_UNPREFERRED_LOCALE_DELTA;
+}
+
+function shouldMatchLanguage(
+  preferredLocale: string | undefined,
+  fieldLanguage: string,
+): boolean {
+  // Preferred locale set → only that language. No locale → all current translations.
+  return !preferredLocale || preferredLocale === fieldLanguage;
+}
+
+function rankMultilingualFields(
+  entry: GlobalSearchIndexEntry,
+  searchTerm: string,
+  preferredLocale: string | undefined,
+  matchedFields: string[],
+  explanations: string[],
+  queryLabel: string | undefined,
+): number {
+  let score = 0;
+  const titles = entry.normalizedTranslatedTitles ?? {};
+  const summaries = entry.normalizedTranslatedSummaries ?? {};
+  const terminology = entry.normalizedTerminologyAliasesByLanguage ?? {};
+
+  for (const language of Object.keys(titles)) {
+    if (!shouldMatchLanguage(preferredLocale, language)) {
+      continue;
+    }
+    const normalizedTitle = titles[language];
+    if (!normalizedTitle) {
+      continue;
+    }
+    if (normalizedTitle === searchTerm) {
+      score += localeBoost(SCORE_LOCALE_TITLE_EXACT, preferredLocale, language);
+      matchedFields.push("translated_title");
+      explanations.push(`Exact localized title match for "${queryLabel}".`);
+    } else if (normalizedTitle.includes(searchTerm)) {
+      score += localeBoost(SCORE_LOCALE_TITLE_CONTAINS, preferredLocale, language);
+      matchedFields.push("translated_title");
+      explanations.push(`Localized title contains "${queryLabel}".`);
+    }
+  }
+
+  for (const language of Object.keys(summaries)) {
+    if (!shouldMatchLanguage(preferredLocale, language)) {
+      continue;
+    }
+    const normalizedSummary = summaries[language];
+    if (!normalizedSummary?.includes(searchTerm)) {
+      continue;
+    }
+    score += localeBoost(SCORE_LOCALE_SUMMARY, preferredLocale, language);
+    matchedFields.push("translated_summary");
+    explanations.push(`Localized summary contains "${queryLabel}".`);
+  }
+
+  for (const language of Object.keys(terminology)) {
+    if (!shouldMatchLanguage(preferredLocale, language)) {
+      continue;
+    }
+    const terms = terminology[language] ?? [];
+    if (!terms.some((term) => term === searchTerm || term.includes(searchTerm))) {
+      continue;
+    }
+    score += localeBoost(SCORE_TERMINOLOGY_ALIAS, preferredLocale, language);
+    matchedFields.push("terminology_alias");
+    explanations.push(`Terminology alias matches "${queryLabel}".`);
+  }
+
+  return score;
+}
+
 function rankEntry(
   query: CivicSearchQuery,
   entry: GlobalSearchIndexEntry,
+  preferredLocale: string | undefined,
 ): GlobalSearchRankedMatch | null {
   const searchTerm = normalize(query.q);
   const matchedFields: string[] = [];
@@ -175,6 +276,15 @@ function rankEntry(
       matchedFields.push("summary");
       explanations.push(`Summary contains "${query.q}".`);
     }
+
+    score += rankMultilingualFields(
+      entry,
+      searchTerm,
+      preferredLocale,
+      matchedFields,
+      explanations,
+      query.q,
+    );
 
     if (locationFieldsMatchSearchTerm(entry, searchTerm)) {
       score += SCORE_LOCATION_OR_ACTIVITY;
@@ -203,15 +313,34 @@ function rankEntry(
   return {
     entry,
     score,
-    matchedFields,
+    matchedFields: [...new Set(matchedFields)],
     explanation: explanations.join(" "),
   };
 }
 
-export function matchGlobalSearchIndex(
+export async function resolvePreferredSearchLocale(
+  locale: string | undefined,
+): Promise<string | undefined> {
+  if (!locale?.trim()) {
+    return undefined;
+  }
+
+  try {
+    const record = await resolveLanguageRegistryLocale(locale);
+    if (!record || !record.enabled || !record.searchEnabled) {
+      return undefined;
+    }
+    return record.locale;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function matchGlobalSearchIndex(
   query: CivicSearchQuery,
   index: GlobalSearchIndexEntry[],
-): GlobalSearchRankedMatch[] {
+): Promise<GlobalSearchRankedMatch[]> {
+  const preferredLocale = await resolvePreferredSearchLocale(query.locale);
   const ranked: GlobalSearchRankedMatch[] = [];
 
   for (const entry of index) {
@@ -219,7 +348,7 @@ export function matchGlobalSearchIndex(
       continue;
     }
 
-    const match = rankEntry(query, entry);
+    const match = rankEntry(query, entry, preferredLocale);
 
     if (!match) {
       continue;
@@ -247,14 +376,53 @@ export function matchGlobalSearchIndex(
   });
 }
 
-export function toSearchResult(match: GlobalSearchRankedMatch): CivicSearchResult {
+function resolveDisplayTranslation(
+  entry: GlobalSearchIndexEntry,
+  preferredLocale: string | undefined,
+): { title: string; summary: string; displayLanguage?: string; presentationMode: "preferred_translation" | "original" } {
+  if (!preferredLocale) {
+    return {
+      title: entry.title,
+      summary: entry.summary,
+      presentationMode: "original",
+    };
+  }
+
+  const field = (entry.translatedFields ?? []).find(
+    (candidate) =>
+      candidate.freshness === "current" &&
+      candidate.language === preferredLocale &&
+      (Boolean(candidate.title?.trim()) || Boolean(candidate.summary?.trim())),
+  );
+
+  if (!field) {
+    return {
+      title: entry.title,
+      summary: entry.summary,
+      presentationMode: "original",
+    };
+  }
+
+  return {
+    title: field.title?.trim() || entry.title,
+    summary: field.summary?.trim() || entry.summary,
+    displayLanguage: preferredLocale,
+    presentationMode: "preferred_translation",
+  };
+}
+
+export function toSearchResult(
+  match: GlobalSearchRankedMatch,
+  preferredLocale?: string,
+): CivicSearchResult {
   const { entry } = match;
+  const display = resolveDisplayTranslation(entry, preferredLocale);
 
   return {
     entityType: entry.entityType,
     entityId: entry.entityId,
-    title: entry.title,
-    summary: entry.summary,
+    title: display.title,
+    summary: display.summary,
     publicUrl: entry.publicUrl,
     country: entry.country || undefined,
     region: entry.region || undefined,
@@ -270,9 +438,23 @@ export function toSearchResult(match: GlobalSearchRankedMatch): CivicSearchResul
     regionCode: entry.regionCode || undefined,
     imageUrl: entry.imageUrl || undefined,
     initiativeId: entry.initiativeId || undefined,
+    displayLanguage: display.displayLanguage,
+    presentationMode: display.presentationMode,
   };
 }
 
 export function entityTypeLabel(entityType: CivicSearchResult["entityType"]): string {
   return GLOBAL_SEARCH_ENTITY_TYPE_LABELS[entityType];
 }
+
+/** Exported for unit tests — Pack 02H score table documentation. */
+export const GLOBAL_SEARCH_MULTILINGUAL_SCORES = {
+  SCORE_LOCALE_TITLE_EXACT,
+  SCORE_LOCALE_TITLE_CONTAINS,
+  SCORE_LOCALE_SUMMARY,
+  SCORE_TERMINOLOGY_ALIAS,
+  SCORE_EXACT_TITLE,
+  SCORE_TITLE_CONTAINS,
+  SCORE_SUMMARY_CONTAINS,
+  SCORE_UNPREFERRED_LOCALE_DELTA,
+} as const;

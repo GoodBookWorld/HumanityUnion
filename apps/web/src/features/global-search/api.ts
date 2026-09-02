@@ -19,6 +19,11 @@ export interface FetchPublicSearchInput {
   view?: CivicSearchView;
   /** Public Choice Experience Pack 01 / Country Discovery Pack 09F2 */
   lifecycleProfile?: "STANDARD" | "PUBLIC_CHOICE";
+  /**
+   * Pack 02H — preferred reading/search locale from the established interface
+   * language context (next-intl). Resolved on the API via Language Registry aliases.
+   */
+  locale?: string;
   /** Launch Readiness Pack 06 — abort stale search navigations. */
   signal?: AbortSignal;
 }
@@ -78,6 +83,10 @@ export async function fetchPublicSearch(
 
   if (input.lifecycleProfile) {
     params.set("lifecycleProfile", input.lifecycleProfile);
+  }
+
+  if (input.locale) {
+    params.set("locale", input.locale);
   }
 
   const query = params.toString();

@@ -98,6 +98,7 @@ export type {
   LanguageRegistryUpdateInput,
   LanguageTextDirection,
   LanguageUiTranslationStatus,
+  SeoIndexableLanguageRecord,
 } from "./language-registry.js";
 export {
   LANGUAGE_REGISTRY_DEFAULT_FALLBACK_LOCALE,
@@ -105,6 +106,7 @@ export {
   deriveLanguageCodeFromLocale,
   isLanguageTextDirection,
   isLanguageUiTranslationStatus,
+  isSeoIndexableLanguage,
   normalizeLanguageRegistryLocaleKey,
 } from "./language-registry.js";
 export type {
@@ -1078,6 +1080,8 @@ export type {
   CivicPipelineStatus,
   CivicRelationshipType,
   CivicSearchMetadata,
+  CivicSearchTerminologyAlias,
+  CivicSearchTranslatedField,
   RelatedRecord,
 } from "./capability02-integration.js";
 export { CIVIC_NOTIFICATION_EVENT_REGISTRY } from "./capability02-integration.js";

@@ -175,3 +175,26 @@ export function deriveLanguageCodeFromLocale(locale: string): string {
 
 export const LANGUAGE_REGISTRY_DEFAULT_FALLBACK_LOCALE: LanguageCode =
   DEFAULT_PLATFORM_LANGUAGE;
+
+/**
+ * Pack 02I — minimal record shape for SEO indexability checks.
+ * Distinct from `searchEnabled` and from content-translation availability.
+ */
+export interface SeoIndexableLanguageRecord {
+  readonly enabled: boolean;
+  readonly seoIndexingEnabled: boolean;
+}
+
+/**
+ * A locale is SEO-indexable only when Registry `enabled` AND `seoIndexingEnabled`.
+ *
+ * Do not conflate with:
+ * - `searchEnabled` (Pack 02H multilingual search)
+ * - `contentTranslationEnabled` / translation cache availability
+ * - `uiTranslationStatus` (UI catalog completeness)
+ *
+ * Does not authorize inventing hreflang language-alternate URLs.
+ */
+export function isSeoIndexableLanguage(record: SeoIndexableLanguageRecord): boolean {
+  return record.enabled === true && record.seoIndexingEnabled === true;
+}

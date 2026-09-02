@@ -3031,6 +3031,13 @@
         "superseded": "Superseded"
       },
       "filters": {
+        "search": "Search",
+        "searchPlaceholder": "Search archive records",
+        "submit": "Search",
+        "clearFilters": "Clear Filters",
+        "activityArea": "Activity area",
+        "allActivityAreas": "All activity areas",
+        "archiveYear": "Archive year",
         "outcomeStatus": "Outcome status",
         "allOutcomes": "All outcomes",
         "yearPlaceholder": "YYYY"
@@ -3041,6 +3048,80 @@
         "viewRecord": "View Archive Record →",
         "viewRecordAria": "View archive record: {title}"
       }
+    }
+  },
+  "search": {
+    "title": "Search civic records",
+    "loading": "Loading search...",
+    "filtersAria": "Search filters",
+    "queryLabel": "Search",
+    "queryPlaceholder": "Search titles, summaries, locations...",
+    "recordType": "Record type",
+    "activityArea": "Activity area",
+    "allActivityAreas": "All activity areas",
+    "status": "Status",
+    "statusPlaceholder": "Status",
+    "fromDate": "From date",
+    "toDate": "To date",
+    "submit": "Search",
+    "resultsHeading": "Search Results",
+    "resultsHeadingForQuery": "Search Results for “{q}”",
+    "resultsHeadingInCountry": "Search Results in {country}",
+    "initialPrompt": "Enter keywords or select filters to find public civic records.",
+    "searching": "Searching civic records…",
+    "unavailable": "Search is temporarily unavailable.",
+    "empty": "No public civic records match your search.",
+    "clearFilters": "Clear filters",
+    "returnToCountry": "Return to country",
+    "browseCountry": "Browse all records in this country",
+    "previous": "Previous",
+    "next": "Next",
+    "paginationAria": "Search pagination",
+    "viewInitiative": "View Initiative →",
+    "viewPublicPage": "View Public Page →",
+    "updated": "Updated {date}",
+    "resultsCount": "{count} results",
+    "resultsCountOne": "{count} result",
+    "showingRange": "showing {from}–{to}",
+    "filterKeywords": "Keywords: \"{q}\"",
+    "filterType": "Type: {type}",
+    "filterTypeStandard": "Type: Standard Initiatives",
+    "filterTypePublicChoice": "Type: Public Choice",
+    "filterCountry": "Country: {country}",
+    "filterRegion": "Region: {region}",
+    "filterCommunity": "Community: {community}",
+    "filterActivityArea": "Activity area: {area}",
+    "filterStatus": "Status: {status}",
+    "filterDates": "Dates: {from} – {to}",
+    "meta": {
+      "title": "Search",
+      "description": "Search public civic records on Humanity Union."
+    },
+    "entityTypes": {
+      "all": "All record types",
+      "initiative": "Initiative",
+      "analysis": "Collaborative Analysis",
+      "improvement_proposal": "Improvement Proposals",
+      "initiative_revision": "Revision",
+      "petition": "Petition",
+      "decision_session": "Decision Session",
+      "collective_decision": "Collective Decision",
+      "civic_action_package": "Civic Action Package",
+      "official_response": "Official Responses",
+      "civic_accountability": "Civic Accountability",
+      "implementation_commitment": "Implementation Commitments",
+      "implementation_tracking": "Implementation Tracking",
+      "public_impact": "Public Impact",
+      "civic_archive": "Civic Archive",
+      "knowledge_article": "Knowledge Article",
+      "knowledge_media": "Knowledge Media",
+      "civic_nomination": "Civic Nomination"
+    }
+  },
+  "seo": {
+    "home": {
+      "title": "Humanity Union",
+      "description": "World Solidarity civic technology platform"
     }
   }
 }

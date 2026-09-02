@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { InitiativeLifecycleSearchGroup } from "@hu/types";
 
@@ -16,9 +17,9 @@ import { Button } from "../../../design-system";
 import { CitySelect, CountrySelect, RegionSelect } from "../../geography-integrity";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
+import { resolveActivityAreaDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import {
   ENTITY_TYPE_OPTIONS,
-  entityTypeLabel,
   fetchPublicSearch,
   type CivicSearchResponse,
 } from "../api";
@@ -57,76 +58,14 @@ function formatGroupLocation(group: InitiativeLifecycleSearchGroup): string {
   return formatLocation(group);
 }
 
-function resultLinkLabel(entityType: string): string {
-  return entityType === "initiative" ? "View Initiative →" : "View Public Page →";
-}
-
-function buildActiveFilterSummary(input: {
-  q: string;
-  entityType: string;
-  country: string;
-  region: string;
-  community: string;
-  activityArea: string;
-  status: string;
-  fromDate: string;
-  toDate: string;
-  lifecycleProfile?: string;
-}): string[] {
-  const summary: string[] = [];
-
-  if (input.q) {
-    summary.push(`Keywords: "${input.q}"`);
-  }
-
-  if (input.lifecycleProfile === "STANDARD") {
-    summary.push("Type: Standard Initiatives");
-  } else if (input.lifecycleProfile === "PUBLIC_CHOICE") {
-    summary.push("Type: Public Choice");
-  } else if (input.entityType) {
-    summary.push(`Type: ${entityTypeLabel(input.entityType)}`);
-  }
-
-  if (input.country) {
-    summary.push(`Country: ${getCountryLabel(input.country) ?? input.country}`);
-  }
-
-  if (input.region) {
-    summary.push(`Region: ${input.region}`);
-  }
-
-  if (input.community) {
-    summary.push(`Community: ${input.community}`);
-  }
-
-  if (input.activityArea) {
-    summary.push(`Activity area: ${input.activityArea}`);
-  }
-
-  if (input.status) {
-    summary.push(`Status: ${input.status}`);
-  }
-
-  if (input.fromDate || input.toDate) {
-    summary.push(`Dates: ${input.fromDate || "…"} – ${input.toDate || "…"}`);
-  }
-
-  return summary;
-}
-
-function buildResultsHeading(input: { q: string; country: string }): string {
-  if (input.q.trim()) {
-    return `Search Results for “${input.q.trim()}”`;
-  }
-
-  if (input.country.trim()) {
-    return `Search Results in ${getCountryLabel(input.country) ?? input.country}`;
-  }
-
-  return "Search Results";
+function entityTypeMessageKey(entityType: string): string {
+  return entityType.trim() ? entityType : "all";
 }
 
 export function GlobalSearchPageContent() {
+  const t = useTranslations("search");
+  const tExperience = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -187,33 +126,80 @@ export function GlobalSearchPageContent() {
     ],
   );
 
-  const activeFilterSummary = useMemo(
-    () =>
-      buildActiveFilterSummary({
-        q,
-        entityType,
-        country,
-        region,
-        community,
-        activityArea,
-        status,
-        fromDate,
-        toDate,
-        lifecycleProfile,
-      }),
-    [
-      q,
-      entityType,
-      country,
-      region,
-      community,
-      activityArea,
-      status,
-      fromDate,
-      toDate,
-      lifecycleProfile,
-    ],
-  );
+  function localizeEntityTypeLabel(value: string): string {
+    const key = entityTypeMessageKey(value);
+    try {
+      return t(`entityTypes.${key}` as "entityTypes.all");
+    } catch {
+      return value || t("entityTypes.all");
+    }
+  }
+
+  const activeFilterSummary = useMemo(() => {
+    const summary: string[] = [];
+
+    if (q) {
+      summary.push(t("filterKeywords", { q }));
+    }
+
+    if (lifecycleProfile === "STANDARD") {
+      summary.push(t("filterTypeStandard"));
+    } else if (lifecycleProfile === "PUBLIC_CHOICE") {
+      summary.push(t("filterTypePublicChoice"));
+    } else if (entityType) {
+      summary.push(t("filterType", { type: localizeEntityTypeLabel(entityType) }));
+    }
+
+    if (country) {
+      summary.push(
+        t("filterCountry", { country: getCountryLabel(country) ?? country }),
+      );
+    }
+
+    if (region) {
+      summary.push(t("filterRegion", { region }));
+    }
+
+    if (community) {
+      summary.push(t("filterCommunity", { community }));
+    }
+
+    if (activityArea) {
+      summary.push(
+        t("filterActivityArea", {
+          area: resolveActivityAreaDisplayLabel(activityArea, tExperience),
+        }),
+      );
+    }
+
+    if (status) {
+      summary.push(t("filterStatus", { status }));
+    }
+
+    if (fromDate || toDate) {
+      summary.push(
+        t("filterDates", {
+          from: fromDate || "…",
+          to: toDate || "…",
+        }),
+      );
+    }
+
+    return summary;
+  }, [
+    q,
+    entityType,
+    country,
+    region,
+    community,
+    activityArea,
+    status,
+    fromDate,
+    toDate,
+    lifecycleProfile,
+    t,
+    tExperience,
+  ]);
 
   useEffect(() => {
     setCountryCode(country);
@@ -245,6 +231,7 @@ export function GlobalSearchPageContent() {
       fromDate: fromDate || undefined,
       toDate: toDate || undefined,
       lifecycleProfile: lifecycleProfile || undefined,
+      locale: locale || undefined,
       limit: 20,
       offset,
       view: "grouped",
@@ -255,15 +242,15 @@ export function GlobalSearchPageContent() {
           setResponse(data);
         }
       })
-      .catch((error: unknown) => {
+      .catch((caught: unknown) => {
         if (controller.signal.aborted) {
           return;
         }
-        if (error instanceof DOMException && error.name === "AbortError") {
+        if (caught instanceof DOMException && caught.name === "AbortError") {
           return;
         }
         setResponse(null);
-        setError("Search is temporarily unavailable.");
+        setError(t("unavailable"));
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -287,6 +274,8 @@ export function GlobalSearchPageContent() {
     fromDate,
     toDate,
     offset,
+    locale,
+    t,
   ]);
 
   const groupedPage = useMemo(() => {
@@ -353,7 +342,13 @@ export function GlobalSearchPageContent() {
   }
 
   const visibleCount = groupedPage.displayResults.length;
-  const resultsHeading = buildResultsHeading({ q, country });
+  const resultsHeading = q.trim()
+    ? t("resultsHeadingForQuery", { q: q.trim() })
+    : country.trim()
+      ? t("resultsHeadingInCountry", {
+          country: getCountryLabel(country) ?? country,
+        })
+      : t("resultsHeading");
   const searchResultsKey = useMemo(
     () =>
       [
@@ -410,12 +405,12 @@ export function GlobalSearchPageContent() {
   return (
     <main className="global-search-page">
       <header className="global-search-page__header">
-        <h1>Search civic records</h1>
+        <h1>{t("title")}</h1>
       </header>
 
       <form
         className="global-search-page__filters"
-        aria-label="Search filters"
+        aria-label={t("filtersAria")}
         onSubmit={(event) => {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
@@ -459,21 +454,21 @@ export function GlobalSearchPageContent() {
           <input type="hidden" name="lifecycleProfile" value={lifecycleProfile} />
         ) : null}
         <label>
-          Search
+          {t("queryLabel")}
           <input
             className="hu-form-control"
             name="q"
             defaultValue={q}
-            placeholder="Search titles, summaries, locations..."
+            placeholder={t("queryPlaceholder")}
           />
         </label>
 
         <label>
-          Record type
+          {t("recordType")}
           <select className="hu-form-control" name="entityType" defaultValue={entityType}>
             {ENTITY_TYPE_OPTIONS.map((option) => (
               <option key={option.label} value={option.value}>
-                {option.label}
+                {localizeEntityTypeLabel(option.value)}
               </option>
             ))}
           </select>
@@ -510,29 +505,29 @@ export function GlobalSearchPageContent() {
         />
 
         <label>
-          Activity area
+          {t("activityArea")}
           <select className="hu-form-control" name="activityArea" defaultValue={activityArea}>
-            <option value="">All activity areas</option>
+            <option value="">{t("allActivityAreas")}</option>
             {INITIATIVE_ACTIVITY_AREA_OPTIONS.map((option) => (
               <option key={option} value={option}>
-                {option}
+                {resolveActivityAreaDisplayLabel(option, tExperience)}
               </option>
             ))}
           </select>
         </label>
 
         <label>
-          Status
+          {t("status")}
           <input
             className="hu-form-control"
             name="status"
             defaultValue={status}
-            placeholder="Status"
+            placeholder={t("statusPlaceholder")}
           />
         </label>
 
         <label>
-          From date
+          {t("fromDate")}
           <input
             className="hu-form-control"
             name="fromDate"
@@ -542,13 +537,13 @@ export function GlobalSearchPageContent() {
         </label>
 
         <label>
-          To date
+          {t("toDate")}
           <input className="hu-form-control" name="toDate" type="date" defaultValue={toDate} />
         </label>
 
         <div className="global-search-page__actions">
           <Button type="submit" variant="primary">
-            Search
+            {t("submit")}
           </Button>
         </div>
       </form>
@@ -569,13 +564,13 @@ export function GlobalSearchPageContent() {
 
         {!hasActiveSearch ? (
           <p className="global-search-page__initial" role="status">
-            Enter keywords or select filters to find public civic records.
+            {t("initialPrompt")}
           </p>
         ) : null}
 
         {hasActiveSearch && loading ? (
           <p className="global-search-page__status" role="status">
-            Searching civic records…
+            {t("searching")}
           </p>
         ) : null}
 
@@ -588,24 +583,29 @@ export function GlobalSearchPageContent() {
         {hasActiveSearch && !loading && !error && response ? (
           <>
             <p className="global-search-page__metrics">
-              {response.totalDisplayResults} result{response.totalDisplayResults === 1 ? "" : "s"}
+              {response.totalDisplayResults === 1
+                ? t("resultsCountOne", { count: response.totalDisplayResults })
+                : t("resultsCount", { count: response.totalDisplayResults })}
               {response.totalDisplayResults > visibleCount
-                ? ` · showing ${response.offset + 1}–${response.offset + visibleCount}`
+                ? ` · ${t("showingRange", {
+                    from: response.offset + 1,
+                    to: response.offset + visibleCount,
+                  })}`
                 : null}
             </p>
 
             {groupedPage.displayResults.length === 0 ? (
               <div className="global-search-page__empty" role="status">
-                <p>No public civic records match your search.</p>
+                <p>{t("empty")}</p>
                 <div className="global-search-page__empty-actions">
-                  <Link href="/search">Clear filters</Link>
+                  <Link href="/search">{t("clearFilters")}</Link>
                   {country ? (
                     <>
                       <Link href={`/countries/${encodeURIComponent(country)}`}>
-                        Return to country
+                        {t("returnToCountry")}
                       </Link>
                       <Link href={buildSearchUrlForGeographyScope({ countrySlug: country })}>
-                        Browse all records in this country
+                        {t("browseCountry")}
                       </Link>
                     </>
                   ) : null}
@@ -637,20 +637,24 @@ export function GlobalSearchPageContent() {
                         </div>
                         <div className="global-search-page__item-body">
                           <span className="global-search-page__badge">
-                            {entityTypeLabel(result.entityType)}
+                            {localizeEntityTypeLabel(result.entityType)}
                           </span>
                           <h3>{result.title}</h3>
                           <p>{result.summary}</p>
                           {result.activityArea ? (
                             <p className="global-search-page__activity-area">
-                              {result.activityArea}
+                              {resolveActivityAreaDisplayLabel(result.activityArea, tExperience)}
                             </p>
                           ) : null}
                           <p className="global-search-page__meta">
-                            {formatLocation(result)} · {result.status} · Updated{" "}
-                            {formatDate(result.updatedAt)}
+                            {formatLocation(result)} · {result.status} ·{" "}
+                            {t("updated", { date: formatDate(result.updatedAt) })}
                           </p>
-                          <Link href={result.publicUrl}>{resultLinkLabel(result.entityType)}</Link>
+                          <Link href={result.publicUrl}>
+                            {result.entityType === "initiative"
+                              ? t("viewInitiative")
+                              : t("viewPublicPage")}
+                          </Link>
                         </div>
                       </li>
                     ))}
@@ -659,17 +663,17 @@ export function GlobalSearchPageContent() {
               </>
             )}
 
-            <nav className="global-search-page__pagination" aria-label="Search pagination">
+            <nav className="global-search-page__pagination" aria-label={t("paginationAria")}>
               {response.offset > 0 ? (
                 <Link
                   href={`/search${buildQueryString(Math.max(0, response.offset - response.limit))}`}
                 >
-                  Previous
+                  {t("previous")}
                 </Link>
               ) : null}
               {response.hasMore ? (
                 <Link href={`/search${buildQueryString(response.offset + response.limit)}`}>
-                  Next
+                  {t("next")}
                 </Link>
               ) : null}
             </nav>

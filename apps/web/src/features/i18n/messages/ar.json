@@ -3031,6 +3031,13 @@
         "superseded": "مستبدل"
       },
       "filters": {
+        "search": "بحث",
+        "searchPlaceholder": "البحث في سجلات الأرشيف",
+        "submit": "بحث",
+        "clearFilters": "مسح المرشحات",
+        "activityArea": "مجال النشاط",
+        "allActivityAreas": "كل مجالات النشاط",
+        "archiveYear": "سنة الأرشيف",
         "outcomeStatus": "حالة النتيجة",
         "allOutcomes": "كل النتائج",
         "yearPlaceholder": "YYYY"
@@ -3041,6 +3048,80 @@
         "viewRecord": "عرض سجل الأرشيف ←",
         "viewRecordAria": "عرض سجل الأرشيف: {title}"
       }
+    }
+  },
+  "search": {
+    "title": "البحث في السجلات المدنية",
+    "loading": "جارٍ تحميل البحث...",
+    "filtersAria": "مرشحات البحث",
+    "queryLabel": "بحث",
+    "queryPlaceholder": "ابحث في العناوين والملخصات والمواقع...",
+    "recordType": "نوع السجل",
+    "activityArea": "مجال النشاط",
+    "allActivityAreas": "كل مجالات النشاط",
+    "status": "الحالة",
+    "statusPlaceholder": "الحالة",
+    "fromDate": "من تاريخ",
+    "toDate": "إلى تاريخ",
+    "submit": "بحث",
+    "resultsHeading": "نتائج البحث",
+    "resultsHeadingForQuery": "نتائج البحث عن «{q}»",
+    "resultsHeadingInCountry": "نتائج البحث في {country}",
+    "initialPrompt": "أدخل كلمات مفتاحية أو اختر مرشحات للعثور على السجلات المدنية العامة.",
+    "searching": "جارٍ البحث في السجلات المدنية…",
+    "unavailable": "البحث غير متاح مؤقتًا.",
+    "empty": "لا توجد سجلات مدنية عامة تطابق بحثك.",
+    "clearFilters": "مسح المرشحات",
+    "returnToCountry": "العودة إلى البلد",
+    "browseCountry": "تصفح كل السجلات في هذا البلد",
+    "previous": "السابق",
+    "next": "التالي",
+    "paginationAria": "ترقيم صفحات البحث",
+    "viewInitiative": "عرض المبادرة ←",
+    "viewPublicPage": "عرض الصفحة العامة ←",
+    "updated": "تم التحديث {date}",
+    "resultsCount": "{count} نتيجة",
+    "resultsCountOne": "{count} نتيجة",
+    "showingRange": "عرض {from}–{to}",
+    "filterKeywords": "كلمات مفتاحية: \"{q}\"",
+    "filterType": "النوع: {type}",
+    "filterTypeStandard": "النوع: مبادرات قياسية",
+    "filterTypePublicChoice": "النوع: اختيار عام",
+    "filterCountry": "البلد: {country}",
+    "filterRegion": "المنطقة: {region}",
+    "filterCommunity": "المجتمع: {community}",
+    "filterActivityArea": "مجال النشاط: {area}",
+    "filterStatus": "الحالة: {status}",
+    "filterDates": "التواريخ: {from} – {to}",
+    "meta": {
+      "title": "بحث",
+      "description": "ابحث في السجلات المدنية العامة على Humanity Union."
+    },
+    "entityTypes": {
+      "all": "كل أنواع السجلات",
+      "initiative": "مبادرة",
+      "analysis": "تحليل تعاوني",
+      "improvement_proposal": "مقترحات التحسين",
+      "initiative_revision": "مراجعة",
+      "petition": "عريضة",
+      "decision_session": "جلسة قرار",
+      "collective_decision": "قرار جماعي",
+      "civic_action_package": "حزمة عمل مدني",
+      "official_response": "ردود رسمية",
+      "civic_accountability": "مساءلة مدنية",
+      "implementation_commitment": "التزامات التنفيذ",
+      "implementation_tracking": "تتبع التنفيذ",
+      "public_impact": "أثر عام",
+      "civic_archive": "الأرشيف المدني",
+      "knowledge_article": "مقالة معرفية",
+      "knowledge_media": "وسائط معرفية",
+      "civic_nomination": "ترشيح مدني"
+    }
+  },
+  "seo": {
+    "home": {
+      "title": "Humanity Union",
+      "description": "منصة تكنولوجيا مدنية لـ World Solidarity"
     }
   }
 }

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { CitySelect, CountrySelect, RegionSelect } from "../../geography-integrity";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
+import { resolveActivityAreaDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { type CivicArchiveDraftFilters, validateArchiveYearInput } from "../civic-archive-query";
 
 interface CivicArchiveFiltersFormProps {
@@ -65,21 +66,21 @@ export function CivicArchiveFiltersForm({
     <form className="civic-archive-page__filters" onSubmit={handleSubmit}>
       <div className="civic-archive-page__filters-primary">
         <label className="civic-archive-page__search-field">
-          <span>Search</span>
+          <span>{t("civicArchivePublic.filters.search")}</span>
           <input
             ref={searchFieldRef}
             className="hu-form-control"
             value={draftFilters.q}
             onChange={(event) => updateDraft({ q: event.target.value })}
-            placeholder="Search archive records"
+            placeholder={t("civicArchivePublic.filters.searchPlaceholder")}
           />
         </label>
-        <div className="hu-form-actions">
+        <div className="hu-form-actions civic-archive-page__filter-actions">
           <button type="submit" className="hu-button hu-button--primary">
-            Search
+            {t("civicArchivePublic.filters.submit")}
           </button>
           <button type="button" className="hu-button hu-button--secondary" onClick={onClearFilters}>
-            Clear Filters
+            {t("civicArchivePublic.filters.clearFilters")}
           </button>
         </div>
       </div>
@@ -95,7 +96,6 @@ export function CivicArchiveFiltersForm({
           id="civic-archive-country"
           value={draftFilters.countryCode}
           onChange={handleCountryChange}
-          placeholder="Search countries"
         />
         <RegionSelect
           id="civic-archive-region"
@@ -103,7 +103,6 @@ export function CivicArchiveFiltersForm({
           value={draftFilters.regionId}
           includeOther={false}
           onChange={handleRegionChange}
-          placeholder="Search regions"
         />
         <CitySelect
           id="civic-archive-community"
@@ -112,28 +111,27 @@ export function CivicArchiveFiltersForm({
           value={draftFilters.cityCommunityId}
           includeOther={false}
           onChange={(value) => updateDraft({ cityCommunityId: value })}
-          placeholder="Search cities and communities"
         />
       </div>
 
       <div className="civic-archive-page__filters-row civic-archive-page__filters-row--filters">
         <label>
-          <span>Activity area</span>
+          <span>{t("civicArchivePublic.filters.activityArea")}</span>
           <select
             className="hu-form-control"
             value={draftFilters.activityArea}
             onChange={(event) => updateDraft({ activityArea: event.target.value })}
           >
-            <option value="">All activity areas</option>
+            <option value="">{t("civicArchivePublic.filters.allActivityAreas")}</option>
             {INITIATIVE_ACTIVITY_AREA_OPTIONS.map((option) => (
               <option key={option} value={option}>
-                {option}
+                {resolveActivityAreaDisplayLabel(option, t)}
               </option>
             ))}
           </select>
         </label>
         <label>
-          <span>Archive year</span>
+          <span>{t("civicArchivePublic.filters.archiveYear")}</span>
           <input
             className="hu-form-control"
             value={draftFilters.archiveYear}

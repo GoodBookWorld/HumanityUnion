@@ -3031,6 +3031,13 @@
         "superseded": "Замінено"
       },
       "filters": {
+        "search": "Пошук",
+        "searchPlaceholder": "Шукати записи архіву",
+        "submit": "Пошук",
+        "clearFilters": "Очистити фільтри",
+        "activityArea": "Сфера діяльності",
+        "allActivityAreas": "Усі сфери діяльності",
+        "archiveYear": "Рік архіву",
         "outcomeStatus": "Статус результату",
         "allOutcomes": "Усі результати",
         "yearPlaceholder": "РРРР"
@@ -3041,6 +3048,80 @@
         "viewRecord": "Переглянути запис архіву →",
         "viewRecordAria": "Переглянути запис архіву: {title}"
       }
+    }
+  },
+  "search": {
+    "title": "Пошук громадянських записів",
+    "loading": "Завантаження пошуку...",
+    "filtersAria": "Фільтри пошуку",
+    "queryLabel": "Пошук",
+    "queryPlaceholder": "Шукайте за назвами, описами, локаціями...",
+    "recordType": "Тип запису",
+    "activityArea": "Сфера діяльності",
+    "allActivityAreas": "Усі сфери діяльності",
+    "status": "Статус",
+    "statusPlaceholder": "Статус",
+    "fromDate": "Дата від",
+    "toDate": "Дата до",
+    "submit": "Пошук",
+    "resultsHeading": "Результати пошуку",
+    "resultsHeadingForQuery": "Результати пошуку для «{q}»",
+    "resultsHeadingInCountry": "Результати пошуку в {country}",
+    "initialPrompt": "Введіть ключові слова або виберіть фільтри, щоб знайти публічні громадянські записи.",
+    "searching": "Пошук громадянських записів…",
+    "unavailable": "Пошук тимчасово недоступний.",
+    "empty": "Жоден публічний громадянський запис не відповідає вашому пошуку.",
+    "clearFilters": "Очистити фільтри",
+    "returnToCountry": "Повернутися до країни",
+    "browseCountry": "Переглянути всі записи в цій країні",
+    "previous": "Назад",
+    "next": "Далі",
+    "paginationAria": "Пагінація пошуку",
+    "viewInitiative": "Переглянути ініціативу →",
+    "viewPublicPage": "Переглянути публічну сторінку →",
+    "updated": "Оновлено {date}",
+    "resultsCount": "{count} результатів",
+    "resultsCountOne": "{count} результат",
+    "showingRange": "показано {from}–{to}",
+    "filterKeywords": "Ключові слова: \"{q}\"",
+    "filterType": "Тип: {type}",
+    "filterTypeStandard": "Тип: Стандартні ініціативи",
+    "filterTypePublicChoice": "Тип: Громадський вибір",
+    "filterCountry": "Країна: {country}",
+    "filterRegion": "Регіон: {region}",
+    "filterCommunity": "Громада: {community}",
+    "filterActivityArea": "Сфера діяльності: {area}",
+    "filterStatus": "Статус: {status}",
+    "filterDates": "Дати: {from} – {to}",
+    "meta": {
+      "title": "Пошук",
+      "description": "Шукайте публічні громадянські записи на Humanity Union."
+    },
+    "entityTypes": {
+      "all": "Усі типи записів",
+      "initiative": "Ініціатива",
+      "analysis": "Спільний аналіз",
+      "improvement_proposal": "Пропозиції покращень",
+      "initiative_revision": "Ревізія",
+      "petition": "Петиція",
+      "decision_session": "Сесія рішень",
+      "collective_decision": "Колективне рішення",
+      "civic_action_package": "Пакет громадянських дій",
+      "official_response": "Офіційні відповіді",
+      "civic_accountability": "Громадянська підзвітність",
+      "implementation_commitment": "Зобов’язання щодо реалізації",
+      "implementation_tracking": "Відстеження реалізації",
+      "public_impact": "Публічний вплив",
+      "civic_archive": "Громадянський архів",
+      "knowledge_article": "Стаття знань",
+      "knowledge_media": "Медіа знань",
+      "civic_nomination": "Громадянська номінація"
+    }
+  },
+  "seo": {
+    "home": {
+      "title": "Humanity Union",
+      "description": "Платформа громадянських технологій World Solidarity"
     }
   }
 }

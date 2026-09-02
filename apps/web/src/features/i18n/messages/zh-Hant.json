@@ -3031,6 +3031,13 @@
         "superseded": "已取代"
       },
       "filters": {
+        "search": "搜尋",
+        "searchPlaceholder": "搜尋歸檔紀錄",
+        "submit": "搜尋",
+        "clearFilters": "清除篩選",
+        "activityArea": "活動領域",
+        "allActivityAreas": "全部活動領域",
+        "archiveYear": "歸檔年份",
         "outcomeStatus": "結果狀態",
         "allOutcomes": "全部結果",
         "yearPlaceholder": "YYYY"
@@ -3041,6 +3048,80 @@
         "viewRecord": "查看歸檔紀錄 →",
         "viewRecordAria": "查看歸檔紀錄：{title}"
       }
+    }
+  },
+  "search": {
+    "title": "搜尋公民紀錄",
+    "loading": "正在載入搜尋...",
+    "filtersAria": "搜尋篩選",
+    "queryLabel": "搜尋",
+    "queryPlaceholder": "搜尋標題、摘要、地點…",
+    "recordType": "紀錄類型",
+    "activityArea": "活動領域",
+    "allActivityAreas": "全部活動領域",
+    "status": "狀態",
+    "statusPlaceholder": "狀態",
+    "fromDate": "起始日期",
+    "toDate": "結束日期",
+    "submit": "搜尋",
+    "resultsHeading": "搜尋結果",
+    "resultsHeadingForQuery": "「{q}」的搜尋結果",
+    "resultsHeadingInCountry": "{country}的搜尋結果",
+    "initialPrompt": "輸入關鍵字或選擇篩選條件，以尋找公開公民紀錄。",
+    "searching": "正在搜尋公民紀錄…",
+    "unavailable": "搜尋暫時無法使用。",
+    "empty": "沒有符合你搜尋條件的公開公民紀錄。",
+    "clearFilters": "清除篩選",
+    "returnToCountry": "返回國家",
+    "browseCountry": "瀏覽此國家的所有紀錄",
+    "previous": "上一頁",
+    "next": "下一頁",
+    "paginationAria": "搜尋分頁",
+    "viewInitiative": "查看倡議 →",
+    "viewPublicPage": "查看公開頁面 →",
+    "updated": "更新於 {date}",
+    "resultsCount": "{count} 筆結果",
+    "resultsCountOne": "{count} 筆結果",
+    "showingRange": "顯示 {from}–{to}",
+    "filterKeywords": "關鍵字：「{q}」",
+    "filterType": "類型：{type}",
+    "filterTypeStandard": "類型：標準倡議",
+    "filterTypePublicChoice": "類型：公共選擇",
+    "filterCountry": "國家：{country}",
+    "filterRegion": "地區：{region}",
+    "filterCommunity": "社區：{community}",
+    "filterActivityArea": "活動領域：{area}",
+    "filterStatus": "狀態：{status}",
+    "filterDates": "日期：{from} – {to}",
+    "meta": {
+      "title": "搜尋",
+      "description": "在 Humanity Union 搜尋公開公民紀錄。"
+    },
+    "entityTypes": {
+      "all": "全部紀錄類型",
+      "initiative": "倡議",
+      "analysis": "協作分析",
+      "improvement_proposal": "改進提案",
+      "initiative_revision": "修訂",
+      "petition": "請願",
+      "decision_session": "決策會議",
+      "collective_decision": "集體決策",
+      "civic_action_package": "公民行動套件",
+      "official_response": "官方回應",
+      "civic_accountability": "公民課責",
+      "implementation_commitment": "實施承諾",
+      "implementation_tracking": "實施追蹤",
+      "public_impact": "公共影響",
+      "civic_archive": "公民檔案",
+      "knowledge_article": "知識文章",
+      "knowledge_media": "知識媒體",
+      "civic_nomination": "公民提名"
+    }
+  },
+  "seo": {
+    "home": {
+      "title": "Humanity Union",
+      "description": "World Solidarity 公民科技平台"
     }
   }
 }

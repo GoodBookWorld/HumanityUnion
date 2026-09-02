@@ -10,6 +10,12 @@ export {
 } from "./apply-page-seo-override";
 export { fetchPublicSeoPageOverride } from "./fetch-public-seo-page-override";
 export {
+  HREFLANG_DEFERRED_REASON,
+  HREFLANG_STATUS,
+  shouldEmitHreflangAlternates,
+  shouldEmitXDefault,
+} from "./hreflang-policy";
+export {
   formatPublicPageTitle,
   normalizeMetaDescription,
   stripHtmlToPlainText,
@@ -25,6 +31,15 @@ export {
   resolvePublicSiteOrigin,
   toAbsolutePublicUrl,
 } from "./public-site-url";
+export {
+  resolveLocalizedPublicMetadataCopy,
+} from "./resolve-localized-public-metadata-copy";
+export type {
+  LocalizedPublicMetadataCopy,
+  ResolveLocalizedPublicMetadataCopyInput,
+} from "./resolve-localized-public-metadata-copy";
+export { isSeoIndexableLanguage } from "./seo-language-eligibility";
+export type { SeoIndexableLanguageRecord } from "./seo-language-eligibility";
 export {
   buildPublicSitemap,
   collectPublicSitemapPathEntries,

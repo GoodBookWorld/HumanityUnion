@@ -94,6 +94,7 @@ function hydrateInitiativeGroup(
   matchedByEntityKey: Map<string, GlobalSearchRankedMatch>,
   lifecycleEntries: GlobalSearchIndexEntry[],
   sortKey: DisplayUnitSortKey,
+  preferredLocale?: string,
 ): InitiativeLifecycleSearchGroup {
   const stageBuckets = new Map<string, InitiativeLifecycleSearchStage>();
   let totalChildRecordCount = 0;
@@ -115,7 +116,9 @@ function hydrateInitiativeGroup(
 
     const key = entityKey(entry.entityType, entry.entityId);
     const matched = matchedByEntityKey.get(key);
-    const record = matched ? toSearchResult(matched) : toContextSearchResult(entry);
+    const record = matched
+      ? toSearchResult(matched, preferredLocale)
+      : toContextSearchResult(entry);
 
     if (matched) {
       matchedChildRecordCount += 1;
@@ -219,6 +222,7 @@ export function buildGroupedSearchPage(
   query: CivicSearchQuery,
   matched: GlobalSearchRankedMatch[],
   index: GlobalSearchIndexEntry[],
+  preferredLocale?: string,
 ): GroupedSearchPage {
   const indexByInitiative = buildIndexByInitiative(index);
   const matchedByEntityKey = new Map<string, GlobalSearchRankedMatch>();
@@ -244,7 +248,7 @@ export function buildGroupedSearchPage(
     standaloneUnits.push({
       display: {
         kind: "standalone",
-        result: toSearchResult(match),
+        result: toSearchResult(match, preferredLocale),
       },
       sortKey: {
         score: match.score,
@@ -268,7 +272,13 @@ export function buildGroupedSearchPage(
     };
 
     initiativeUnits.push({
-      display: hydrateInitiativeGroup(initiativeId, matchedByEntityKey, lifecycleEntries, sortKey),
+      display: hydrateInitiativeGroup(
+        initiativeId,
+        matchedByEntityKey,
+        lifecycleEntries,
+        sortKey,
+        preferredLocale,
+      ),
       sortKey,
     });
   }

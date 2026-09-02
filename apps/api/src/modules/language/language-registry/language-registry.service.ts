@@ -24,6 +24,7 @@ import {
 } from "../../administration/administration.errors.js";
 import { record as recordAdministrationAudit } from "../../administration/audit.service.js";
 import { findAuthUserById } from "../../auth/auth-user.repository.js";
+import { invalidateGlobalSearchIndex } from "../../global-search/global-search.index.js";
 import {
   LanguageRegistryNotFoundError,
   LanguageRegistryValidationError,
@@ -359,6 +360,15 @@ export async function updateAdminLanguage(input: {
 
   const patch = parsePatchBody(input.body);
   const updated = await updateLanguageRegistryRecord(languageId, patch);
+
+  // Pack 02H — searchEnabled/enabled flips must rebuild enrichment without blind full DB reindex.
+  // In-memory cache invalidation is enough; next query rebuilds with current Registry gates.
+  if (
+    before.enabled !== updated.enabled ||
+    before.searchEnabled !== updated.searchEnabled
+  ) {
+    invalidateGlobalSearchIndex();
+  }
 
   await recordAdministrationAudit({
     actorParticipantId: admin.participantId,

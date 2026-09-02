@@ -26,6 +26,7 @@
   display: grid;
   gap: var(--hu-space-4);
   width: 100%;
+  min-width: 0;
   margin-bottom: var(--hu-space-5);
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-md);
@@ -39,26 +40,49 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--hu-space-3);
   align-items: end;
+  min-width: 0;
 }
 
 .civic-archive-page__search-field {
   display: grid;
   gap: var(--hu-space-2);
+  min-width: 0;
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.civic-archive-page__search-field .hu-form-control {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.civic-archive-page__filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hu-space-2);
+  min-width: 0;
 }
 
 .civic-archive-page__filters-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--hu-space-3);
+  min-width: 0;
 }
 
 .civic-archive-page__filters-row label,
 .civic-archive-page__filters-row .geography-search-select {
   display: grid;
   gap: var(--hu-space-2);
+  min-width: 0;
   font-size: 0.875rem;
+}
+
+.civic-archive-page__filters-row .hu-form-control {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .civic-archive-page__filters-row label span,
