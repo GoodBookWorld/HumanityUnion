@@ -5,7 +5,11 @@ import { useTranslations } from "next-intl";
 import type { InitiativeRevisionIntelligenceSnapshot } from "@hu/types";
 
 import { resolveProposalCurationDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
-import { resolveApiConflictWarningDisplay } from "../../initiative-lifecycle-stage-workspace/resolve-api-consistency-display";
+import {
+  resolveApiConflictWarningDisplay,
+  resolveApiConsistencyCheckDisplay,
+  resolveApiConsistencyLabelDisplay,
+} from "../../initiative-lifecycle-stage-workspace/resolve-api-consistency-display";
 
 /**
  * Initiative Lifecycle — Part E, Section 2/3 (Revision Sources / Intelligent
@@ -162,8 +166,10 @@ export function InitiativeRevisionIntelligenceSnapshotPanel({
               className="irv-source-panel__item"
               data-tone={check.status === "warning" ? "warning" : undefined}
             >
-              <strong>{check.label}</strong>
-              <span className="irv-source-panel__item-meta">{check.detail}</span>
+              <strong>{resolveApiConsistencyLabelDisplay("revision", check, t)}</strong>
+              <span className="irv-source-panel__item-meta">
+                {resolveApiConsistencyCheckDisplay("revision", check, t).text}
+              </span>
             </li>
           ))}
         </ul>

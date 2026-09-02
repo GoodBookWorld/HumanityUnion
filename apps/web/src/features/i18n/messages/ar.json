@@ -1226,7 +1226,19 @@
             "initiative": "المبادرة"
           },
           "revision": {
-            "multiple_changes_same_section": "{changeCount, plural, one {تغيير # يستهدف قسم {section} — راجع قبل النشر لتجنب تعديلات متعارضة.} other {# تغييرات تستهدف قسم {section} — راجع قبل النشر لتجنب تعديلات متعارضة.}}"
+            "multiple_changes_same_section": "{changeCount, plural, one {تغيير # يستهدف قسم {section} — راجع قبل النشر لتجنب تعديلات متعارضة.} other {# تغييرات تستهدف قسم {section} — راجع قبل النشر لتجنب تعديلات متعارضة.}}",
+            "labels": {
+              "accepted-proposals-traced": "المقترحات المقبولة مُتتبَّعة إلى تغيير",
+              "changes-have-origin": "لكل تغيير مصدر قابل للتحديد"
+            },
+            "accepted-proposals-traced": {
+              "ok": "كل مقترح مُعلَّم للإدراج مُشار إليه بتغيير.",
+              "warning": "{count, plural, zero {لا توجد مقترحات.} one {مقترح واحد مُعلَّم «Included in Revision» بلا تغيير داعم بعد.} two {مقترحان مُعلَّمان «Included in Revision» بلا تغيير داعم بعد.} few {# مقترحات مُعلَّمة «Included in Revision» بلا تغيير داعم بعد.} many {# مقترحًا مُعلَّمًا «Included in Revision» بلا تغيير داعم بعد.} other {# مقترح مُعلَّم «Included in Revision» بلا تغيير داعم بعد.}}"
+            },
+            "changes-have-origin": {
+              "ok": "كل تغيير مسودة يشير إلى مقترح أو مُعلَّم كمنشأ من المؤلف.",
+              "warning": "{count, plural, zero {لا توجد تغييرات.} one {تغيير واحد يفتقد مرجع مقترح أو سبب منشأ المؤلف.} two {تغييران يفتقدان مرجع مقترح أو سبب منشأ المؤلف.} few {# تغييرات تفتقد مرجع مقترح أو سبب منشأ المؤلف.} many {# تغييرًا تفتقد مرجع مقترح أو سبب منشأ المؤلف.} other {# تغيير يفتقد مرجع مقترح أو سبب منشأ المؤلف.}}"
+            }
           },
           "petition": {
             "labels": {

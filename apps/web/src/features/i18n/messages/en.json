@@ -1226,7 +1226,19 @@
             "initiative": "initiative"
           },
           "revision": {
-            "multiple_changes_same_section": "{changeCount, plural, one {# change targets the {section} section — review before publishing to avoid conflicting edits.} other {# changes target the {section} section — review before publishing to avoid conflicting edits.}}"
+            "multiple_changes_same_section": "{changeCount, plural, one {# change targets the {section} section — review before publishing to avoid conflicting edits.} other {# changes target the {section} section — review before publishing to avoid conflicting edits.}}",
+            "labels": {
+              "accepted-proposals-traced": "Accepted proposals traced into a change",
+              "changes-have-origin": "Every change has an identifiable origin"
+            },
+            "accepted-proposals-traced": {
+              "ok": "Every proposal marked for inclusion is referenced by a change.",
+              "warning": "{count, plural, one {# proposal marked \"Included in Revision\" has no backing change yet.} other {# proposals marked \"Included in Revision\" have no backing change yet.}}"
+            },
+            "changes-have-origin": {
+              "ok": "Every drafted change references a Proposal or is marked Author-originated.",
+              "warning": "{count, plural, one {# change is missing a Proposal reference or an Author-originated reason.} other {# changes are missing a Proposal reference or an Author-originated reason.}}"
+            }
           },
           "petition": {
             "labels": {

@@ -167,25 +167,29 @@ export function buildConsistencyChecks(
   missingReferenceProposalIds: readonly string[],
 ): InitiativeRevisionConsistencyCheck[] {
   const tracedCount = changes.filter(isTracedChange).length;
+  const missingCount = missingReferenceProposalIds.length;
+  const untracedCount = changes.length - tracedCount;
 
   return [
     {
       checkId: "accepted-proposals-traced",
       label: "Accepted proposals traced into a change",
-      status: missingReferenceProposalIds.length === 0 ? "ok" : "warning",
+      status: missingCount === 0 ? "ok" : "warning",
       detail:
-        missingReferenceProposalIds.length === 0
+        missingCount === 0
           ? "Every proposal marked for inclusion is referenced by a change."
-          : `${missingReferenceProposalIds.length} proposal(s) marked "Included in Revision" have no backing change yet.`,
+          : `${missingCount} proposal(s) marked "Included in Revision" have no backing change yet.`,
+      params: { count: missingCount },
     },
     {
       checkId: "changes-have-origin",
       label: "Every change has an identifiable origin",
-      status: tracedCount === changes.length ? "ok" : "warning",
+      status: untracedCount === 0 ? "ok" : "warning",
       detail:
-        tracedCount === changes.length
+        untracedCount === 0
           ? "Every drafted change references a Proposal or is marked Author-originated."
-          : `${changes.length - tracedCount} change(s) are missing a Proposal reference or an Author-originated reason.`,
+          : `${untracedCount} change(s) are missing a Proposal reference or an Author-originated reason.`,
+      params: { count: untracedCount },
     },
   ];
 }

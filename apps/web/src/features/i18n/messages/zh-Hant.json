@@ -1226,7 +1226,19 @@
             "initiative": "倡議"
           },
           "revision": {
-            "multiple_changes_same_section": "{changeCount, plural, one {有 # 項變更針對「{section}」區塊——發佈前請先檢視，以免產生衝突編輯。} other {有 # 項變更針對「{section}」區塊——發佈前請先檢視，以免產生衝突編輯。}}"
+            "multiple_changes_same_section": "{changeCount, plural, one {有 # 項變更針對「{section}」區塊——發佈前請先檢視，以免產生衝突編輯。} other {有 # 項變更針對「{section}」區塊——發佈前請先檢視，以免產生衝突編輯。}}",
+            "labels": {
+              "accepted-proposals-traced": "已接受提案已追蹤至變更",
+              "changes-have-origin": "每項變更皆有可識別來源"
+            },
+            "accepted-proposals-traced": {
+              "ok": "每項標示納入修訂的提案皆已被變更引用。",
+              "warning": "{count, plural, other {有 # 項標示「Included in Revision」的提案尚無對應變更。}}"
+            },
+            "changes-have-origin": {
+              "ok": "每項草稿變更皆引用提案或標示為作者原創。",
+              "warning": "{count, plural, other {有 # 項變更缺少提案引用或作者原創理由。}}"
+            }
           },
           "petition": {
             "labels": {

@@ -23,10 +23,18 @@ export type InitiativeCollectiveDecisionConsistencyCheckId =
  */
 export interface InitiativeCollectiveDecisionConsistencyCheck {
   readonly checkId: InitiativeCollectiveDecisionConsistencyCheckId;
-  /** Compatibility English chrome — prefer Web semantic presentation. */
+  /**
+   * @deprecated 08E.9c — transport-only compatibility English chrome.
+   * Prefer Web localization of `checkId`. Remove after coordinated
+   * staging acceptance + production rollout of semantic Web/API.
+   */
   readonly label: string;
   readonly status: InitiativeLifecycleConsistencyStatus;
-  /** Compatibility English body — prefer Web semantic presentation. */
+  /**
+   * @deprecated 08E.9c — transport-only compatibility English body.
+   * Prefer `params` + Web presentation. Remove after coordinated
+   * staging acceptance + production rollout of semantic Web/API.
+   */
   readonly detail: string;
   readonly params: InitiativeLifecycleConsistencyParams;
   readonly civic?: InitiativeLifecycleConsistencyCivic;

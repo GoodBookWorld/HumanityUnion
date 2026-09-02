@@ -113,7 +113,9 @@ describe("buildConsistencyChecks", () => {
 
     const byId = new Map(checks.map((check) => [check.checkId, check]));
     assert.equal(byId.get("accepted-proposals-traced")!.status, "ok");
+    assert.equal(byId.get("accepted-proposals-traced")!.params.count, 0);
     assert.equal(byId.get("changes-have-origin")!.status, "ok");
+    assert.equal(byId.get("changes-have-origin")!.params.count, 0);
   });
 
   it("reports 'warning' on 'accepted-proposals-traced' when a curated proposal has no backing change", () => {
@@ -121,6 +123,7 @@ describe("buildConsistencyChecks", () => {
     const check = checks.find((entry) => entry.checkId === "accepted-proposals-traced")!;
 
     assert.equal(check.status, "warning");
+    assert.equal(check.params.count, 1);
     assert.match(check.detail, /1 proposal\(s\)/);
   });
 
@@ -137,6 +140,7 @@ describe("buildConsistencyChecks", () => {
     const check = checks.find((entry) => entry.checkId === "changes-have-origin")!;
 
     assert.equal(check.status, "warning");
+    assert.equal(check.params.count, 1);
     assert.match(check.detail, /1 change\(s\)/);
   });
 });

@@ -1,4 +1,6 @@
 import type {
+  InitiativeLifecycleConsistencyCivic,
+  InitiativeLifecycleConsistencyParams,
   InitiativeLifecycleConsistencyStatus,
   InitiativeRevisionConflictWarningCode,
 } from "./initiative-lifecycle-consistency.js";
@@ -19,31 +21,53 @@ export interface InitiativeRevisionConflictWarning {
   /** Finite semantic code (08E.9b). */
   readonly code: InitiativeRevisionConflictWarningCode;
   readonly section: InitiativeRevisionChangeSection;
-  /** Compatibility English label — prefer Web localization of `section`. */
+  /**
+   * @deprecated 08E.9c — transport-only compatibility English.
+   * Prefer Web localization of `section`. Remove after coordinated
+   * staging acceptance + production rollout of semantic Web/API.
+   */
   readonly sectionLabel: string;
   readonly changeIds: readonly string[];
   readonly proposalIds: readonly string[];
   readonly params: {
     readonly changeCount: number;
   };
-  /** Compatibility English message — prefer semantic presentation. */
+  /**
+   * @deprecated 08E.9c — transport-only compatibility English.
+   * Prefer semantic `code` + `params` + Web presentation. Remove after
+   * coordinated staging acceptance + production rollout of semantic Web/API.
+   */
   readonly message: string;
 }
+
+/** Finite Revision consistency check IDs (08E.9c). */
+export type InitiativeRevisionConsistencyCheckId =
+  | "accepted-proposals-traced"
+  | "changes-have-origin";
 
 /**
  * Initiative Lifecycle — Part E, Section 3. One deterministic pass/fail
  * check the Revision Builder can always answer truthfully from persisted
  * data alone — never an AI judgment call.
- *
- * NOTE (08E.9b): checkId remains `string` — Revision consistencyChecks are
- * intentionally unmounted in the Working Sidebar and out of scope for this
- * semantic migration slice.
  */
 export interface InitiativeRevisionConsistencyCheck {
-  readonly checkId: string;
+  readonly checkId: InitiativeRevisionConsistencyCheckId;
+  /**
+   * @deprecated 08E.9c — transport-only compatibility English chrome.
+   * Prefer Web localization of `checkId`. Remove after coordinated
+   * staging acceptance + production rollout of semantic Web/API.
+   */
   readonly label: string;
   readonly status: InitiativeLifecycleConsistencyStatus;
+  /**
+   * @deprecated 08E.9c — transport-only compatibility English body.
+   * Prefer `params` + Web presentation. Remove after coordinated
+   * staging acceptance + production rollout of semantic Web/API.
+   */
   readonly detail: string;
+  /** Structural params (always present on new API — semantic mode signal). */
+  readonly params: InitiativeLifecycleConsistencyParams;
+  readonly civic?: InitiativeLifecycleConsistencyCivic;
 }
 
 export interface InitiativeRevisionAnalysisReference {

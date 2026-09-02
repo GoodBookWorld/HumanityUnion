@@ -324,6 +324,7 @@ export type {
   InitiativeRevisionAnalysisReference,
   InitiativeRevisionConflictWarning,
   InitiativeRevisionConsistencyCheck,
+  InitiativeRevisionConsistencyCheckId,
   InitiativeRevisionIntelligenceSnapshot,
 } from "./initiative-revision-intelligence-snapshot.js";
 export type {

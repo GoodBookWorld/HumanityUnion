@@ -128,6 +128,7 @@ describe("Pack 02G Task 08E.8c — deriveRevisionAiAssistantInsights structured 
             label: "Accepted proposals traced into a change",
             status: "warning",
             detail: '1 proposal(s) marked "Included in Revision" have no backing change yet.',
+            params: { count: 1 },
           },
         ],
       }),

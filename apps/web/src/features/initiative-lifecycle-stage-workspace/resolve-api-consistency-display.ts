@@ -18,6 +18,7 @@ import type {
 import type { InitiativeExperienceTranslator } from "../public-initiative-experience/initiative-experience-i18n";
 
 export type ApiConsistencyStageId =
+  | "revision"
   | "petition"
   | "decisionSession"
   | "collectiveDecision"

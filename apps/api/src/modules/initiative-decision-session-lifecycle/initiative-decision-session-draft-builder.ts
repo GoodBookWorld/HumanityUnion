@@ -1,5 +1,7 @@
 import type { InitiativeDecisionSessionIntelligenceSnapshot } from "@hu/types";
 
+import { formatDecisionSessionUnresolvedQuestionFromCheck } from "./initiative-decision-session-unresolved-question.js";
+
 /**
  * Initiative Lifecycle — Part G, Section 3 (Decision Intelligence Builder).
  * Deterministic generation of structured Decision Session draft fields from
@@ -149,13 +151,13 @@ function generateDeterministicDecisionSessionDraftContent(
     ...roleRecommendations.map((recommendation) => recommendation.title),
   ]);
 
-  // Compatibility sink (08E.9b): embeds producer-generated English `detail`
-  // into draft unresolvedQuestions. Must be removed before legacy detail
-  // deprecation — do not import Web catalogs or parse detail here.
+  // 08E.9c: draft unresolvedQuestions from semantic checkId/params via an
+  // API-owned canonical English adapter — not compatibility `detail`, and
+  // not Web localization catalogs.
   const unresolvedQuestions = uniqueNonEmpty([
     ...snapshot.consistencyChecks
-      .filter((check) => check.status === "warning")
-      .map((check) => check.detail),
+      .map((check) => formatDecisionSessionUnresolvedQuestionFromCheck(check) ?? "")
+      .filter((question) => question.length > 0),
     snapshot.openComments.length > 0
       ? `${snapshot.openComments.length} open collaboration comment(s) may still contain unresolved concerns.`
       : "",
