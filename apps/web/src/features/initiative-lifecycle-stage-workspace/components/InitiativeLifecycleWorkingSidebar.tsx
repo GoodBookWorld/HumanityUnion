@@ -79,6 +79,7 @@ import { deriveCivicArchiveAiAssistantInsights } from "../../initiative-civic-ar
 import { WorkspaceButton, WorkspaceDeferredActions, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import { HumanityUnionAssistantOpenButton } from "../../humanity-union-assistant";
 import { getInitiativeLifecycleStageProjection } from "../api";
+import { resolveSidebarAdvisoryDisplay } from "../resolve-sidebar-advisory-display";
 
 import "../initiative-lifecycle-stage-workspace.css";
 
@@ -270,7 +271,7 @@ function AnalysisAiAssistantContent({ snapshot }: { snapshot: InitiativeAnalysis
     <div className="ica-ai-assistant">
       <div className="ica-ai-assistant__group">
         <h4>{t("author.sidebar.sourcesUsed")}</h4>
-        <p>{insights.sourcesUsedSummary}</p>
+        <p>{resolveSidebarAdvisoryDisplay(insights.sourcesSummary, t).text}</p>
       </div>
 
       <div className="ica-ai-assistant__group">
@@ -278,7 +279,7 @@ function AnalysisAiAssistantContent({ snapshot }: { snapshot: InitiativeAnalysis
         {insights.missingEvidence.length > 0 ? (
           <ul>
             {insights.missingEvidence.map((item) => (
-              <li key={item}>{item}</li>
+              <li key={item.code}>{resolveSidebarAdvisoryDisplay(item, t).text}</li>
             ))}
           </ul>
         ) : (
@@ -306,7 +307,9 @@ function AnalysisAiAssistantContent({ snapshot }: { snapshot: InitiativeAnalysis
         {insights.possibleContradictions.length > 0 ? (
           <ul>
             {insights.possibleContradictions.map((item) => (
-              <li key={item.topic}>&ldquo;{item.topic}&rdquo; {t("author.sidebar.insights.contradictionNote")}</li>
+              <li key={item.advisory.civic?.subject ?? item.advisory.code}>
+                {resolveSidebarAdvisoryDisplay(item.advisory, t).text}
+              </li>
             ))}
           </ul>
         ) : (

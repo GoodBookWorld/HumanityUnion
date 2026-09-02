@@ -995,6 +995,18 @@
           "untracedChangeNote": "「{sectionLabel}」缺少提案引用或作者來源理由。",
           "emptyInstitutionsOutcomesReady": "正式回應的機構與成果摘要看起來已完整。"
         },
+        "advisories": {
+          "unknown": "無法辨識的建議（{code}）",
+          "analysis": {
+            "sourcesEmpty": "尚未收集任何來源。",
+            "sourcesSummary": "{commentCount} 則討論評論，{proposalCount} 則已標為提案，{activeAlliesCount} 位活躍盟友，{readyToCollaborateCount} 位準備協作。",
+            "missingHelpfulSources": "尚無標示為「有幫助」的評論可引用為支持論點。",
+            "missingNotHelpfulSources": "尚無標示為「無幫助」的評論可引用為疑慮。",
+            "missingProposalCandidates": "尚未有評論被標示為提案候選。",
+            "missingOpenQuestions": "討論中尚未提出未決問題。",
+            "textOverlapContradiction": "「{topic}」— 在不同評論中被支持與質疑。"
+          }
+        },
         "completeness": {
           "draftInProgress": "草稿進行中。",
           "draftInProgressSaveHint": "草稿進行中 — 請在主工作區使用「儲存草稿」以保留變更。",

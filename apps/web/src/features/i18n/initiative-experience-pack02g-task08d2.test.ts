@@ -187,7 +187,7 @@ describe("Pack 02G Task 08D.2 — Author shared shell / Working Sidebar i18n", (
     assert.match(sidebar, /author\.sidebar\.sourcesUsed/);
     assert.doesNotMatch(sidebar, /<h4>Sources Used<\/h4>|<h4>Missing Evidence<\/h4>/);
     assert.match(sidebar, /author\.sidebar\.askAssistant/);
-    assert.match(sidebar, /insights\.sourcesUsedSummary/);
+    assert.match(sidebar, /insights\.sourcesSummary|resolveSidebarAdvisoryDisplay/);
   });
 
   it("missing author key fails raw catalog parity", async () => {

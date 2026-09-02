@@ -995,6 +995,18 @@
           "untracedChangeNote": "«{sectionLabel}» не має посилання на пропозицію або причини від автора.",
           "emptyInstitutionsOutcomesReady": "Установи Офіційної відповіді та підсумки результатів виглядають повними."
         },
+        "advisories": {
+          "unknown": "Нерозпізнана порада ({code})",
+          "analysis": {
+            "sourcesEmpty": "Джерел ще не зібрано.",
+            "sourcesSummary": "{commentCount, plural, one {# коментар Обговорення} few {# коментарі Обговорення} many {# коментарів Обговорення} other {# коментаря Обговорення}}, {proposalCount} позначено як пропозиції, {activeAlliesCount, plural, one {# активний союзник} few {# активні союзники} many {# активних союзників} other {# активного союзника}}, {readyToCollaborateCount} готові співпрацювати.",
+            "missingHelpfulSources": "Ще немає коментарів, позначених як «Корисно», щоб цитувати як підтримувальні аргументи.",
+            "missingNotHelpfulSources": "Ще немає коментарів, позначених як «Не корисно», щоб цитувати як занепокоєння.",
+            "missingProposalCandidates": "Жоден коментар ще не позначено як кандидат у пропозиції.",
+            "missingOpenQuestions": "У Обговоренні ще не порушено відкритих запитань.",
+            "textOverlapContradiction": "«{topic}» — підтримується і оскаржується в різних коментарях."
+          }
+        },
         "completeness": {
           "draftInProgress": "Чернетка в роботі.",
           "draftInProgressSaveHint": "Чернетка в роботі — збережіть чернетку в основному робочому просторі, щоб не втратити зміни.",

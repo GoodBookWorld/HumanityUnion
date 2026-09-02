@@ -119,7 +119,8 @@ describe("Pack 02G Task 08E.7 — Working Sidebar AI insight chrome", () => {
     assert.doesNotMatch(sidebar, /<h4>Sources Used<\/h4>/);
     assert.doesNotMatch(sidebar, /No evidence gaps identified\./);
 
-    assert.match(sidebar, /insights\.sourcesUsedSummary/);
+    assert.match(sidebar, /resolveSidebarAdvisoryDisplay/);
+    assert.match(sidebar, /insights\.sourcesSummary/);
     assert.match(sidebar, /item\.excerpt/);
     assert.match(sidebar, /warning\.message/);
     assert.match(sidebar, /entry\.rationale/);
@@ -134,6 +135,7 @@ describe("Pack 02G Task 08E.7 — Working Sidebar AI insight chrome", () => {
       assert.doesNotMatch(source, /next-intl/);
       assert.doesNotMatch(source, /useTranslations/);
       assert.doesNotMatch(source, /author\.sidebar\.insights/);
+      assert.doesNotMatch(source, /author\.sidebar\.advisories/);
     }
   });
 

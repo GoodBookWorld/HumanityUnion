@@ -995,6 +995,18 @@
           "untracedChangeNote": "“{sectionLabel}” is missing a Proposal reference or Author-originated reason.",
           "emptyInstitutionsOutcomesReady": "Official Response institutions and outcome summaries look complete."
         },
+        "advisories": {
+          "unknown": "Unrecognized advisory ({code})",
+          "analysis": {
+            "sourcesEmpty": "No sources collected yet.",
+            "sourcesSummary": "{commentCount, plural, one {# Discussion comment} other {# Discussion comments}}, {proposalCount} proposal-marked, {activeAlliesCount, plural, one {# Active Ally} other {# Active Allies}}, {readyToCollaborateCount} ready to collaborate.",
+            "missingHelpfulSources": "No Helpful-marked comments to cite as supporting arguments yet.",
+            "missingNotHelpfulSources": "No Not-Helpful-marked comments to cite as concerns yet.",
+            "missingProposalCandidates": "No comments have been marked as proposal candidates yet.",
+            "missingOpenQuestions": "No open questions have been raised in Discussion yet.",
+            "textOverlapContradiction": "“{topic}” — supported and disputed in different comments."
+          }
+        },
         "completeness": {
           "draftInProgress": "Draft in progress.",
           "draftInProgressSaveHint": "Draft in progress — use Save Draft in the main workspace to keep your changes.",

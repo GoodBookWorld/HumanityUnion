@@ -4,6 +4,8 @@ import type {
   InitiativeAnalysisSourceSnapshot,
 } from "@hu/types";
 
+import type { AnalysisSidebarAdvisory } from "../initiative-lifecycle-stage-workspace/sidebar-advisory-contract";
+
 /**
  * Initiative Lifecycle — Part B, Section 6 (AI Assistant Sidebar).
  *
@@ -25,13 +27,17 @@ import type {
  *    published Analysis", not a verified reply-count).
  *  - `proposalCoverage`   — a plain ratio of proposal-marked comments to
  *    total comments.
+ *
+ * Pack 02G Task 08E.8a: user-visible advisory meaning is encoded as
+ * language-neutral descriptors (`AnalysisSidebarAdvisory`). Civic excerpts
+ * and topics remain data. Presentation resolves localized prose.
  */
 export interface AiAssistantInsights {
-  readonly sourcesUsedSummary: string;
-  readonly missingEvidence: readonly string[];
+  readonly sourcesSummary: AnalysisSidebarAdvisory;
+  readonly missingEvidence: readonly AnalysisSidebarAdvisory[];
   readonly repeatedArguments: readonly InitiativeAnalysisSourceArgument[];
   readonly possibleContradictions: readonly {
-    readonly topic: string;
+    readonly advisory: AnalysisSidebarAdvisory;
     readonly argument: InitiativeAnalysisSourceCommentRef;
     readonly concern: InitiativeAnalysisSourceCommentRef;
   }[];
@@ -50,43 +56,83 @@ function mentionsTopic(excerpt: string, topic: string): boolean {
 export function deriveAiAssistantInsights(
   snapshot: InitiativeAnalysisSourceSnapshot,
 ): AiAssistantInsights {
-  const missingEvidence: string[] = [];
+  const missingEvidence: AnalysisSidebarAdvisory[] = [];
 
   if (snapshot.repeatedArguments.length === 0) {
-    missingEvidence.push("No Helpful-marked comments to cite as supporting arguments yet.");
+    missingEvidence.push({
+      code: "analysis.missing_helpful_sources",
+      severity: "warning",
+    });
   }
 
   if (snapshot.repeatedConcerns.length === 0) {
-    missingEvidence.push("No Not-Helpful-marked comments to cite as concerns yet.");
+    missingEvidence.push({
+      code: "analysis.missing_not_helpful_sources",
+      severity: "warning",
+    });
   }
 
   if (snapshot.proposalCandidates.length === 0) {
-    missingEvidence.push("No comments have been marked as proposal candidates yet.");
+    missingEvidence.push({
+      code: "analysis.missing_proposal_candidates",
+      severity: "warning",
+    });
   }
 
   if (snapshot.openQuestions.length === 0) {
-    missingEvidence.push("No open questions have been raised in Discussion yet.");
+    missingEvidence.push({
+      code: "analysis.missing_open_questions",
+      severity: "warning",
+    });
   }
 
   const possibleContradictions = snapshot.mostDiscussedTopics.flatMap((topicItem) => {
-    const argument = snapshot.repeatedArguments.find((item) => mentionsTopic(item.excerpt, topicItem.topic));
-    const concern = snapshot.repeatedConcerns.find((item) => mentionsTopic(item.excerpt, topicItem.topic));
+    const argument = snapshot.repeatedArguments.find((item) =>
+      mentionsTopic(item.excerpt, topicItem.topic),
+    );
+    const concern = snapshot.repeatedConcerns.find((item) =>
+      mentionsTopic(item.excerpt, topicItem.topic),
+    );
 
     if (!argument || !concern) {
       return [];
     }
 
-    return [{ topic: topicItem.topic, argument, concern }];
+    return [
+      {
+        advisory: {
+          code: "analysis.text_overlap_contradiction" as const,
+          severity: "info" as const,
+          civic: { subject: topicItem.topic },
+        },
+        argument,
+        concern,
+      },
+    ];
   });
 
   const commentCount = snapshot.discussionStatistics.commentCount;
   const proposalCount = snapshot.proposalCandidates.length;
 
+  const sourcesSummary: AnalysisSidebarAdvisory =
+    commentCount > 0
+      ? {
+          code: "analysis.sources.summary",
+          severity: "info",
+          params: {
+            commentCount,
+            proposalCount,
+            activeAlliesCount: snapshot.activeAlliesCount,
+            readyToCollaborateCount: snapshot.readyToCollaborateCount,
+          },
+        }
+      : {
+          code: "analysis.sources.empty",
+          severity: "info",
+        };
+
   return {
-    sourcesUsedSummary:
-      commentCount > 0
-        ? `${commentCount} Discussion comment${commentCount === 1 ? "" : "s"}, ${proposalCount} proposal-marked, ${snapshot.activeAlliesCount} Active Ally${snapshot.activeAlliesCount === 1 ? "" : "ies"}, ${snapshot.readyToCollaborateCount} ready to collaborate.`
-        : "No sources collected yet.",
+    sourcesSummary,
     missingEvidence,
     repeatedArguments: snapshot.repeatedArguments,
     possibleContradictions,

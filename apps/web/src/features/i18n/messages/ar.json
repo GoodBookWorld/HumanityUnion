@@ -995,6 +995,18 @@
           "untracedChangeNote": "«{sectionLabel}» ينقصه مرجع مقترح أو سبب صادر عن المؤلف.",
           "emptyInstitutionsOutcomesReady": "تبدو مؤسسات الرد الرسمي وملخصات النتائج مكتملة."
         },
+        "advisories": {
+          "unknown": "استشارة غير معروفة ({code})",
+          "analysis": {
+            "sourcesEmpty": "لم تُجمع مصادر بعد.",
+            "sourcesSummary": "{commentCount, plural, one {تعليق نقاش واحد} other {# تعليقات نقاش}}، {proposalCount} مُعلَّم كمقترح، {activeAlliesCount, plural, one {حليف نشط واحد} other {# حلفاء نشطين}}، {readyToCollaborateCount} مستعدون للتعاون.",
+            "missingHelpfulSources": "لا توجد بعد تعليقات مُعلَّمة كـ«مفيدة» للاستشهاد بها كحجج داعمة.",
+            "missingNotHelpfulSources": "لا توجد بعد تعليقات مُعلَّمة كـ«غير مفيدة» للاستشهاد بها كمخاوف.",
+            "missingProposalCandidates": "لم تُعلَّم أي تعليقات بعد كمرشحين لمقترحات.",
+            "missingOpenQuestions": "لم تُطرح بعد أسئلة مفتوحة في النقاش.",
+            "textOverlapContradiction": "«{topic}» — مدعوم ومنازع عليه في تعليقات مختلفة."
+          }
+        },
         "completeness": {
           "draftInProgress": "المسودة قيد الإعداد.",
           "draftInProgressSaveHint": "المسودة قيد الإعداد — استخدم «حفظ المسودة» في مساحة العمل الرئيسية للاحتفاظ بالتغييرات.",
