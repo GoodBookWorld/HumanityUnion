@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeImprovementProposalsCollection } from "@hu/types";
 
@@ -29,6 +30,7 @@ import "./initiative-improvement-proposals-stage-workspace.css";
  * otherwise leaves empty.
  */
 export function InitiativeImprovementProposalsDraftPreview({ initiativeId }: { readonly initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [collection, setCollection] = useState<InitiativeImprovementProposalsCollection | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -61,32 +63,28 @@ export function InitiativeImprovementProposalsDraftPreview({ initiativeId }: { r
   }, [initiativeId]);
 
   if (loadFailed) {
-    return <p className="lsw-result__placeholder">This draft could not be loaded.</p>;
+    return <p className="lsw-result__placeholder">{t("author.proposal.preview.loadFailed")}</p>;
   }
 
   if (loading) {
-    return <p className="lsw-result__placeholder">Loading draft…</p>;
+    return <p className="lsw-result__placeholder">{t("author.proposal.preview.loading")}</p>;
   }
 
   if (!collection || collection.proposals.length === 0) {
-    return (
-      <p className="lsw-result__placeholder">
-        There are no draft proposals yet — generate or add one, then Preview again.
-      </p>
-    );
+    return <p className="lsw-result__placeholder">{t("author.proposal.preview.empty")}</p>;
   }
 
   return (
     <div className="iip-public-result">
       <div className="iip-public-result__field">
-        <h4>Author</h4>
-        <p>You</p>
+        <h4>{t("author.proposal.fields.author")}</h4>
+        <p>{t("author.proposal.preview.authorYou")}</p>
       </div>
 
       {collection.proposals.map((proposal) => (
         <article key={proposal.proposalId} className="iip-public-result__proposal">
           <div className="iip-proposal-card__header">
-            <h3>{proposal.title || "Untitled Proposal"}</h3>
+            <h3>{proposal.title || t("author.proposal.untitledProposal")}</h3>
           </div>
 
           <InitiativeImprovementProposalsContentFields
@@ -99,11 +97,15 @@ export function InitiativeImprovementProposalsDraftPreview({ initiativeId }: { r
             originalAuthorDisplayNames={proposal.originalAuthorDisplayNames}
           />
 
-          <section className="iip-reaction" aria-label="Proposal reaction preview">
-            <p className="iip-reaction__title">Reaction</p>
+          <section
+            className="iip-reaction"
+            aria-label={t("author.proposal.preview.reactionAria")}
+          >
+            <p className="iip-reaction__title">
+              {t("author.proposal.preview.reactionTitle")}
+            </p>
             <p className="iip-reaction__note">
-              0 Support · 0 Do Not Support — the Reaction widget unlocks for visitors once this proposal is
-              published.
+              {t("author.proposal.preview.reactionNoteDraft")}
             </p>
           </section>
         </article>

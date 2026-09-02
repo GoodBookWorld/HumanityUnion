@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeRevisionDraft, InitiativeRevisionDraftContext } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { resolveProposalCurationDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import { INITIATIVE_COMMUNITY_OPTIONS } from "../../initiatives/api";
@@ -30,6 +32,10 @@ interface InitiativeRevisionEditorProps {
   readonly embeddedInProposals?: boolean;
 }
 
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 /**
  * Initiative Lifecycle — Part E, Section 6 (Revision Workspace).
  *
@@ -48,6 +54,7 @@ export function InitiativeRevisionEditor({
   onTogglePreview,
   embeddedInProposals = false,
 }: InitiativeRevisionEditorProps) {
+  const t = useTranslations("initiativeExperience");
   const actions = useAuthorActionLabels();
   const [title, setTitle] = useState(draft.title);
   const [description, setDescription] = useState(draft.description);
@@ -74,10 +81,14 @@ export function InitiativeRevisionEditor({
     try {
       const updated = await generatePhase.runSave(() => generateInitiativeRevisionChanges(initiativeId));
       onDraftUpdated(updated);
-      setMessage({ tone: "success", text: "Draft enriched with suggested changes from included Proposals." });
+      setMessage({ tone: "success", text: t("author.revision.messages.draftEnriched") });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Generate failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.revision.messages.generateFailed", {
+          detail: detailFromError(error, t("author.revision.messages.unknownError")),
+        }),
+      });
     }
   }
 
@@ -99,21 +110,25 @@ export function InitiativeRevisionEditor({
         }),
       );
       onDraftUpdated(updated);
-      setMessage({ tone: "success", text: "Revision draft saved." });
+      setMessage({ tone: "success", text: t("author.revision.messages.draftSaved") });
       return true;
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Save failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.revision.messages.saveFailed", {
+          detail: detailFromError(error, t("author.revision.messages.unknownError")),
+        }),
+      });
       return false;
     }
   }
 
   function unresolvedPublishRequirements(): string[] {
     const missing: string[] = [];
-    if (!title.trim()) missing.push("Title");
-    if (!description.trim()) missing.push("Description");
-    if (!activityArea.trim()) missing.push("Activity area");
-    if (!revisionSummary.trim()) missing.push("Revision summary");
+    if (!title.trim()) missing.push(t("author.revision.requiredFieldNames.title"));
+    if (!description.trim()) missing.push(t("author.revision.requiredFieldNames.description"));
+    if (!activityArea.trim()) missing.push(t("author.revision.requiredFieldNames.activityArea"));
+    if (!revisionSummary.trim()) missing.push(t("author.revision.requiredFieldNames.revisionSummary"));
     return missing;
   }
 
@@ -122,14 +137,14 @@ export function InitiativeRevisionEditor({
     if (missing.length > 0) {
       setMessage({
         tone: "error",
-        text: `Commit blocked — complete required fields first: ${missing.join("; ")}.`,
+        text: t("author.revision.commitBlocked", { fields: missing.join("; ") }),
       });
       return;
     }
 
     const confirmMessage = embeddedInProposals
-      ? "Commit creates a new Initiative progress version and preserves version history. Improvement Proposals are not completed until you Publish & Continue to Petition. Continue?"
-      : "Publishing creates a new Initiative version, notifies every Active Ally, and unlocks the Petition stage. Continue?";
+      ? t("author.revision.confirm.commitEmbedded")
+      : t("author.revision.confirm.publishStandalone");
 
     if (!window.confirm(confirmMessage)) {
       return;
@@ -147,13 +162,17 @@ export function InitiativeRevisionEditor({
       setMessage({
         tone: "success",
         text: embeddedInProposals
-          ? "Initiative version committed. Publish & Continue to Petition when ready."
-          : "Revision published. Active Allies have been notified.",
+          ? t("author.revision.messages.committedEmbedded")
+          : t("author.revision.messages.publishedStandalone"),
       });
       onPublished();
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Commit failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.revision.messages.commitFailed", {
+          detail: detailFromError(error, t("author.revision.messages.unknownError")),
+        }),
+      });
     }
   }
 
@@ -162,14 +181,18 @@ export function InitiativeRevisionEditor({
       <div className="irv-editor__header">
         <h3 id="irv-editor-title">
           {embeddedInProposals
-            ? `Updated Initiative Version — current version ${context.currentVersion || 1}`
-            : `Revision Draft — current version ${context.currentVersion || 1}`}
+            ? t("author.revision.embeddedEditorTitle", { version: context.currentVersion || 1 })
+            : t("author.revision.editorTitle", { version: context.currentVersion || 1 })}
         </h3>
       </div>
 
       <div className="irv-editor__header-actions">
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleGenerate()}>
-          {resolveSaveButtonLabel(generatePhase.phase, "Generate Suggested Changes", actions.phaseLabels)}
+          {resolveSaveButtonLabel(
+            generatePhase.phase,
+            t("author.revision.generateSuggestedChanges"),
+            actions.phaseLabels,
+          )}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleSave()}>
@@ -182,14 +205,19 @@ export function InitiativeRevisionEditor({
         >
           {resolveSaveButtonLabel(
             publishPhase.phase,
-            embeddedInProposals ? "Commit Updated Initiative Version" : "Publish Revision",
+            embeddedInProposals
+              ? t("author.revision.commitVersion")
+              : t("author.revision.publishRevision"),
+            actions.phaseLabels,
           )}
         </WorkspaceButton>
       </div>
 
       {unresolvedPublishRequirements().length > 0 ? (
         <p className="irv-editor__message" data-tone="error" role="status">
-          Required before Commit: {unresolvedPublishRequirements().join("; ")}.
+          {t("author.revision.requiredBeforeCommit", {
+            fields: unresolvedPublishRequirements().join("; "),
+          })}
         </p>
       ) : null}
 
@@ -200,9 +228,9 @@ export function InitiativeRevisionEditor({
       ) : null}
 
       <div className="irv-editor__section">
-        <h4>Accepted and partially accepted proposals (legacy free-text)</h4>
+        <h4>{t("author.revision.acceptedProposalsTitle")}</h4>
         {context.eligibleProposals.length === 0 ? (
-          <p className="irv-source-panel__empty">No implementable proposals are available.</p>
+          <p className="irv-source-panel__empty">{t("author.revision.noImplementableProposals")}</p>
         ) : (
           <div className="irv-editor__proposal-list">
             {context.eligibleProposals.map((proposal) => (
@@ -215,7 +243,7 @@ export function InitiativeRevisionEditor({
                 <span className="irv-editor__proposal-body">
                   <strong>{proposal.targetSection}</strong>
                   <span className="irv-editor__proposal-meta">
-                    {proposal.status.replace("_", " ")} · {proposal.proposedChange}
+                    {resolveProposalCurationDisplayLabel(proposal.status, t)} · {proposal.proposedChange}
                   </span>
                 </span>
               </label>
@@ -225,13 +253,13 @@ export function InitiativeRevisionEditor({
       </div>
 
       <div className="irv-editor__section">
-        <h4>Initiative fields</h4>
+        <h4>{t("author.revision.initiativeFieldsTitle")}</h4>
         <div className="irv-editor__field">
-          <label htmlFor="irv-title">Title</label>
+          <label htmlFor="irv-title">{t("author.revision.fields.title")}</label>
           <input id="irv-title" value={title} onChange={(event) => setTitle(event.target.value)} />
         </div>
         <div className="irv-editor__field">
-          <label htmlFor="irv-description">Description</label>
+          <label htmlFor="irv-description">{t("author.revision.fields.description")}</label>
           <textarea
             id="irv-description"
             rows={4}
@@ -240,7 +268,7 @@ export function InitiativeRevisionEditor({
           />
         </div>
         <div className="irv-editor__field">
-          <label htmlFor="irv-community">Community</label>
+          <label htmlFor="irv-community">{t("author.revision.fields.community")}</label>
           <select
             id="irv-community"
             value={communitySlug}
@@ -254,7 +282,7 @@ export function InitiativeRevisionEditor({
           </select>
         </div>
         <div className="irv-editor__field">
-          <label htmlFor="irv-activity">Activity area</label>
+          <label htmlFor="irv-activity">{t("author.revision.fields.activityArea")}</label>
           <input
             id="irv-activity"
             value={activityArea}
@@ -263,7 +291,7 @@ export function InitiativeRevisionEditor({
         </div>
         <div className="irv-editor__field">
           <label htmlFor="irv-summary">
-            Change Summary — what changed in this revision? (required to publish)
+            {t("author.revision.fields.revisionSummary")}
           </label>
           <textarea
             id="irv-summary"
@@ -277,7 +305,7 @@ export function InitiativeRevisionEditor({
       </div>
 
       <div className="irv-editor__section">
-        <h4>Structured Changes (Before / After)</h4>
+        <h4>{t("author.revision.structuredChangesTitle")}</h4>
         {draft.changes.length > 0 ? (
           <div className="irv-change-list">
             {draft.changes.map((change) => (
@@ -291,8 +319,7 @@ export function InitiativeRevisionEditor({
           </div>
         ) : (
           <p className="irv-source-panel__empty">
-            No structured changes yet. Use Generate to build suggestions from included Proposals, or add an
-            Author-originated change below.
+            {t("author.revision.noStructuredChanges")}
           </p>
         )}
 

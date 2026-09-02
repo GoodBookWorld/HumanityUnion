@@ -1,4 +1,10 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { InitiativeRevisionIntelligenceSnapshot } from "@hu/types";
+
+import { resolveProposalCurationDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 
 /**
  * Initiative Lifecycle — Part E, Section 2/3 (Revision Sources / Intelligent
@@ -20,15 +26,16 @@ export function InitiativeRevisionIntelligenceSnapshotPanel({
 }: {
   snapshot: InitiativeRevisionIntelligenceSnapshot;
 }) {
+  const t = useTranslations("initiativeExperience");
+
   if (snapshot.isEmpty) {
     return (
       <section className="irv-source-panel" aria-labelledby="irv-source-panel-title">
         <h3 id="irv-source-panel-title" className="irv-source-panel__title">
-          Revision Sources
+          {t("author.revision.sourceSnapshot.title")}
         </h3>
         <p className="irv-source-panel__lede" role="status">
-          No published Improvement Proposals are available for this Initiative yet. This panel will
-          populate automatically once the Author publishes Improvement Proposals.
+          {t("author.revision.sourceSnapshot.emptyLede")}
         </p>
       </section>
     );
@@ -39,63 +46,90 @@ export function InitiativeRevisionIntelligenceSnapshotPanel({
   return (
     <section className="irv-source-panel" aria-labelledby="irv-source-panel-title">
       <h3 id="irv-source-panel-title" className="irv-source-panel__title">
-        Revision Sources
+        {t("author.revision.sourceSnapshot.title")}
       </h3>
       <p className="irv-source-panel__lede">
-        Automatically collected from the published Initiative, Collaborative Analysis, and Improvement
-        Proposals — nothing below is editable or invented.
+        {t("author.revision.sourceSnapshot.lede")}
       </p>
 
-      <div className="irv-source-panel__stats" role="list" aria-label="Revision source statistics">
+      <div
+        className="irv-source-panel__stats"
+        role="list"
+        aria-label={t("author.revision.sourceSnapshot.statsAria")}
+      >
         <div className="irv-source-panel__stat" role="listitem">
           <span className="irv-source-panel__stat-value">{snapshot.eligibleProposals.length}</span>
-          <span className="irv-source-panel__stat-label">Eligible Proposals</span>
+          <span className="irv-source-panel__stat-label">
+            {t("author.revision.sourceSnapshot.eligibleProposals")}
+          </span>
         </div>
         <div className="irv-source-panel__stat" role="listitem">
           <span className="irv-source-panel__stat-value">{unresolved.length}</span>
-          <span className="irv-source-panel__stat-label">Unresolved</span>
+          <span className="irv-source-panel__stat-label">
+            {t("author.revision.sourceSnapshot.unresolved")}
+          </span>
         </div>
         <div className="irv-source-panel__stat" role="listitem">
           <span className="irv-source-panel__stat-value">{snapshot.missingReferenceProposalIds.length}</span>
-          <span className="irv-source-panel__stat-label">Missing References</span>
+          <span className="irv-source-panel__stat-label">
+            {t("author.revision.sourceSnapshot.missingReferences")}
+          </span>
         </div>
         <div className="irv-source-panel__stat" role="listitem">
           <span className="irv-source-panel__stat-value">{snapshot.conflictWarnings.length}</span>
-          <span className="irv-source-panel__stat-label">Conflict Warnings</span>
+          <span className="irv-source-panel__stat-label">
+            {t("author.revision.sourceSnapshot.conflictWarnings")}
+          </span>
         </div>
       </div>
 
       {snapshot.analysisReference ? (
         <p className="irv-source-panel__lede">
-          Built on the published Collaborative Analysis: &ldquo;{snapshot.analysisReference.title}&rdquo;
+          {t("author.revision.sourceSnapshot.analysisReference", {
+            title: snapshot.analysisReference.title,
+          })}
         </p>
       ) : null}
 
       <div className="irv-source-panel__section">
-        <h4 className="irv-source-panel__section-title">Published Improvement Proposals</h4>
+        <h4 className="irv-source-panel__section-title">
+          {t("author.revision.sourceSnapshot.publishedProposalsTitle")}
+        </h4>
         {snapshot.eligibleProposals.length > 0 ? (
-          <ul className="irv-source-panel__list" aria-label="Eligible improvement proposals">
+          <ul
+            className="irv-source-panel__list"
+            aria-label={t("author.revision.sourceSnapshot.publishedProposalsAria")}
+          >
             {snapshot.eligibleProposals.map((proposal) => (
               <li key={proposal.proposalId} className="irv-source-panel__item">
                 <strong>{proposal.title}</strong>
                 <span className="irv-source-panel__item-meta">
-                  {proposal.status === "included_in_revision" ? "Included in Revision" : "Unresolved"} ·{" "}
+                  {resolveProposalCurationDisplayLabel(proposal.status, t)} ·{" "}
                   {proposal.originalAuthorDisplayNames.join(", ")}
                   {" · "}
-                  <a href={snapshot.discussionUrl}>View in Discussion</a>
+                  <a href={snapshot.discussionUrl}>
+                    {t("author.revision.sourceSnapshot.viewInDiscussion")}
+                  </a>
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="irv-source-panel__empty">No eligible Improvement Proposals yet.</p>
+          <p className="irv-source-panel__empty">
+            {t("author.revision.sourceSnapshot.emptyEligible")}
+          </p>
         )}
       </div>
 
       <div className="irv-source-panel__section">
-        <h4 className="irv-source-panel__section-title">Conflict Warnings</h4>
+        <h4 className="irv-source-panel__section-title">
+          {t("author.revision.sourceSnapshot.conflictWarningsTitle")}
+        </h4>
         {snapshot.conflictWarnings.length > 0 ? (
-          <ul className="irv-source-panel__list" aria-label="Conflict warnings">
+          <ul
+            className="irv-source-panel__list"
+            aria-label={t("author.revision.sourceSnapshot.conflictWarningsAria")}
+          >
             {snapshot.conflictWarnings.map((warning) => (
               <li key={warning.section} className="irv-source-panel__item" data-tone="warning">
                 <strong>{warning.sectionLabel}</strong>
@@ -104,13 +138,20 @@ export function InitiativeRevisionIntelligenceSnapshotPanel({
             ))}
           </ul>
         ) : (
-          <p className="irv-source-panel__empty">No conflicting changes detected.</p>
+          <p className="irv-source-panel__empty">
+            {t("author.revision.sourceSnapshot.emptyConflicts")}
+          </p>
         )}
       </div>
 
       <div className="irv-source-panel__section">
-        <h4 className="irv-source-panel__section-title">Consistency Checks</h4>
-        <ul className="irv-source-panel__list" aria-label="Consistency checks">
+        <h4 className="irv-source-panel__section-title">
+          {t("author.revision.sourceSnapshot.consistencyTitle")}
+        </h4>
+        <ul
+          className="irv-source-panel__list"
+          aria-label={t("author.revision.sourceSnapshot.consistencyAria")}
+        >
           {snapshot.consistencyChecks.map((check) => (
             <li
               key={check.checkId}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   InitiativeImprovementProposalsCollectionStatus,
@@ -9,6 +10,8 @@ import type {
 } from "@hu/types";
 
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { resolveProposalCurationDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
+import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import {
   saveInitiativeStructuredProposal,
@@ -38,6 +41,10 @@ function buildFormState(proposal: InitiativeStructuredProposal): ProposalFormSta
   };
 }
 
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 const PRE_PUBLICATION_STATUS_OPTIONS: readonly InitiativeStructuredProposalStatus[] = [
   "draft",
   "ready",
@@ -50,15 +57,6 @@ const POST_PUBLICATION_STATUS_OPTIONS: readonly InitiativeStructuredProposalStat
   "keep_for_later",
   "not_applicable",
 ];
-
-const STATUS_LABELS: Record<InitiativeStructuredProposalStatus, string> = {
-  draft: "Draft",
-  ready: "Ready",
-  published: "Published",
-  included_in_revision: "Accept",
-  keep_for_later: "Partially accept",
-  not_applicable: "Decline",
-};
 
 interface InitiativeStructuredProposalCardProps {
   readonly collectionId: string;
@@ -84,6 +82,8 @@ export function InitiativeStructuredProposalCard({
   proposal,
   onUpdated,
 }: InitiativeStructuredProposalCardProps) {
+  const t = useTranslations("initiativeExperience");
+  const actions = useAuthorActionLabels();
   const [form, setForm] = useState<ProposalFormState>(() => buildFormState(proposal));
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const savePhase = useSaveButtonPhase();
@@ -118,10 +118,14 @@ export function InitiativeStructuredProposalCard({
         onUpdated(savedProposal);
       }
 
-      setMessage({ tone: "success", text: "Proposal saved." });
+      setMessage({ tone: "success", text: t("author.proposal.messages.proposalSaved") });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Save failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.proposal.messages.saveFailed", {
+          detail: detailFromError(error, t("author.proposal.messages.unknownError")),
+        }),
+      });
     }
   }
 
@@ -137,8 +141,12 @@ export function InitiativeStructuredProposalCard({
         onUpdated(savedProposal);
       }
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Status update failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.proposal.messages.statusFailed", {
+          detail: detailFromError(error, t("author.proposal.messages.unknownError")),
+        }),
+      });
     } finally {
       setStatusBusy(false);
     }
@@ -147,22 +155,31 @@ export function InitiativeStructuredProposalCard({
   return (
     <article className="iip-proposal-card" aria-labelledby={`iip-proposal-title-${proposal.proposalId}`}>
       <div className="iip-proposal-card__header">
-        <h4 id={`iip-proposal-title-${proposal.proposalId}`}>{form.title || "Untitled Proposal"}</h4>
-        <WorkspaceStatusBadge status={proposal.status} />
+        <h4 id={`iip-proposal-title-${proposal.proposalId}`}>
+          {form.title || t("author.proposal.untitledProposal")}
+        </h4>
+        <WorkspaceStatusBadge
+          status={proposal.status}
+          label={resolveProposalCurationDisplayLabel(proposal.status, t)}
+        />
       </div>
 
       {proposal.originalAuthorDisplayNames.length > 0 ? (
         <p className="iip-proposal-card__meta">
-          Original author(s): {proposal.originalAuthorDisplayNames.join(", ")}
+          {t("author.proposal.originalAuthors", {
+            names: proposal.originalAuthorDisplayNames.join(", "),
+          })}
         </p>
       ) : (
-        <p className="iip-proposal-card__meta">Author-originated proposal (no Discussion source).</p>
+        <p className="iip-proposal-card__meta">{t("author.proposal.authorOriginatedMeta")}</p>
       )}
 
       {isDraftCollection ? (
         <>
           <div className="iip-proposal-card__field">
-            <label htmlFor={`iip-title-${proposal.proposalId}`}>Title</label>
+            <label htmlFor={`iip-title-${proposal.proposalId}`}>
+              {t("author.proposal.fields.title")}
+            </label>
             <input
               id={`iip-title-${proposal.proposalId}`}
               value={form.title}
@@ -171,7 +188,9 @@ export function InitiativeStructuredProposalCard({
             />
           </div>
           <div className="iip-proposal-card__field">
-            <label htmlFor={`iip-summary-${proposal.proposalId}`}>Summary</label>
+            <label htmlFor={`iip-summary-${proposal.proposalId}`}>
+              {t("author.proposal.fields.summary")}
+            </label>
             <textarea
               id={`iip-summary-${proposal.proposalId}`}
               value={form.summary}
@@ -180,7 +199,9 @@ export function InitiativeStructuredProposalCard({
             />
           </div>
           <div className="iip-proposal-card__field">
-            <label htmlFor={`iip-description-${proposal.proposalId}`}>Description</label>
+            <label htmlFor={`iip-description-${proposal.proposalId}`}>
+              {t("author.proposal.fields.description")}
+            </label>
             <textarea
               id={`iip-description-${proposal.proposalId}`}
               value={form.description}
@@ -189,7 +210,9 @@ export function InitiativeStructuredProposalCard({
             />
           </div>
           <div className="iip-proposal-card__field">
-            <label htmlFor={`iip-reason-${proposal.proposalId}`}>Reason</label>
+            <label htmlFor={`iip-reason-${proposal.proposalId}`}>
+              {t("author.proposal.fields.reason")}
+            </label>
             <textarea
               id={`iip-reason-${proposal.proposalId}`}
               value={form.reason}
@@ -198,7 +221,9 @@ export function InitiativeStructuredProposalCard({
             />
           </div>
           <div className="iip-proposal-card__field">
-            <label htmlFor={`iip-expected-${proposal.proposalId}`}>Expected Improvement</label>
+            <label htmlFor={`iip-expected-${proposal.proposalId}`}>
+              {t("author.proposal.fields.expectedImprovement")}
+            </label>
             <textarea
               id={`iip-expected-${proposal.proposalId}`}
               value={form.expectedImprovement}
@@ -209,7 +234,9 @@ export function InitiativeStructuredProposalCard({
             />
           </div>
           <div className="iip-proposal-card__field">
-            <label htmlFor={`iip-sources-${proposal.proposalId}`}>Supporting Sources</label>
+            <label htmlFor={`iip-sources-${proposal.proposalId}`}>
+              {t("author.proposal.fields.supportingSources")}
+            </label>
             <textarea
               id={`iip-sources-${proposal.proposalId}`}
               value={form.supportingSources}
@@ -220,7 +247,9 @@ export function InitiativeStructuredProposalCard({
             />
           </div>
           <div className="iip-proposal-card__field">
-            <label htmlFor={`iip-references-${proposal.proposalId}`}>Related Discussion References</label>
+            <label htmlFor={`iip-references-${proposal.proposalId}`}>
+              {t("author.proposal.fields.relatedDiscussionReferences")}
+            </label>
             <textarea
               id={`iip-references-${proposal.proposalId}`}
               value={form.relatedDiscussionReferences}
@@ -234,11 +263,11 @@ export function InitiativeStructuredProposalCard({
       ) : (
         <>
           <div className="iip-proposal-card__field">
-            <label>Summary</label>
+            <label>{t("author.proposal.fields.summary")}</label>
             <p>{form.summary}</p>
           </div>
           <div className="iip-proposal-card__field">
-            <label>Description</label>
+            <label>{t("author.proposal.fields.description")}</label>
             <p>{form.description}</p>
           </div>
         </>
@@ -247,13 +276,17 @@ export function InitiativeStructuredProposalCard({
       <div className="iip-proposal-card__actions">
         {isDraftCollection ? (
           <WorkspaceButton variant="secondary" disabled={savePhase.isBusy} onClick={() => void handleSave()}>
-            {resolveSaveButtonLabel(savePhase.phase, "Save Proposal")}
+            {resolveSaveButtonLabel(
+              savePhase.phase,
+              t("author.proposal.saveProposal"),
+              actions.phaseLabels,
+            )}
           </WorkspaceButton>
         ) : null}
 
         {canChangeStatus ? (
           <label className="iip-proposal-card__field">
-            <span>Status</span>
+            <span>{t("author.proposal.statusLabel")}</span>
             <select
               value={statusOptions.includes(proposal.status) ? proposal.status : statusOptions[0]}
               disabled={statusBusy}
@@ -263,7 +296,7 @@ export function InitiativeStructuredProposalCard({
             >
               {statusOptions.map((option) => (
                 <option key={option} value={option}>
-                  {STATUS_LABELS[option] ?? option.replace(/_/g, " ")}
+                  {resolveProposalCurationDisplayLabel(option, t)}
                 </option>
               ))}
             </select>

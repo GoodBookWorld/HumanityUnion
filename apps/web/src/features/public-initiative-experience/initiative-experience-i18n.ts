@@ -173,6 +173,29 @@ export function resolvePresentationStatusDisplayLabel(
   return resolveLabel(messagesOrT, `presentationStatuses.${status}`, status);
 }
 
+const PROPOSAL_CURATION_CODES = new Set<string>([
+  "draft",
+  "ready",
+  "published",
+  "included_in_revision",
+  "keep_for_later",
+  "not_applicable",
+]);
+
+/**
+ * Display-only label for InitiativeStructuredProposal status / curation codes.
+ * Canonical codes stay unchanged for select values and API submission.
+ */
+export function resolveProposalCurationDisplayLabel(
+  status: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!PROPOSAL_CURATION_CODES.has(status)) {
+    return status.replaceAll("_", " ");
+  }
+  return resolveLabel(messagesOrT, `author.proposal.curation.${status}`, status);
+}
+
 const PARTICIPATION_SCOPE_CODES = new Set<string>([
   "world",
   "country",

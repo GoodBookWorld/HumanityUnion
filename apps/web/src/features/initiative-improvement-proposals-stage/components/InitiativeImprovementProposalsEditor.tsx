@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeImprovementProposalsCollection, InitiativeStructuredProposal } from "@hu/types";
 
@@ -12,6 +13,7 @@ import {
   type LifecycleAiApplySuggestionsDetail,
 } from "../../lifecycle-ai-assistant";
 import { resolveSaveButtonLabel, useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { resolvePresentationStatusDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton, WorkspaceStatusBadge } from "../../initiative-workspace-ux";
 import {
@@ -47,6 +49,10 @@ const EMPTY_MANUAL_FORM: ManualProposalFormState = {
   reason: "",
   expectedImprovement: "",
 };
+
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
 
 function toProposalApplyForm(proposal: InitiativeStructuredProposal): ProposalApplyForm {
   return {
@@ -95,6 +101,7 @@ export function InitiativeImprovementProposalsEditor({
   onNavigate,
   onCompleted,
 }: InitiativeImprovementProposalsEditorProps) {
+  const t = useTranslations("initiativeExperience");
   const actions = useAuthorActionLabels();
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [showManualForm, setShowManualForm] = useState(false);
@@ -190,7 +197,7 @@ export function InitiativeImprovementProposalsEditor({
       });
       setMessage({
         tone: "success",
-        text: "AI suggestion applied locally. Edit as needed, then Save Draft. Nothing was published.",
+        text: t("author.proposal.messages.aiApplied"),
       });
     }
 
@@ -198,7 +205,7 @@ export function InitiativeImprovementProposalsEditor({
     return () => {
       window.removeEventListener(LIFECYCLE_AI_APPLY_SUGGESTIONS_EVENT, handleApplySuggestions);
     };
-  }, [collection, initiativeId, isDraft, onUpdated]);
+  }, [collection, initiativeId, isDraft, onUpdated, t]);
 
   function handleProposalUpdated(updatedProposal: InitiativeStructuredProposal) {
     onUpdated({
@@ -215,10 +222,14 @@ export function InitiativeImprovementProposalsEditor({
     try {
       const updated = await generatePhase.runSave(() => generateImprovementProposalsDraft(initiativeId));
       onUpdated(updated);
-      setMessage({ tone: "success", text: "Draft enriched with any newly detected proposal groups." });
+      setMessage({ tone: "success", text: t("author.proposal.messages.draftEnriched") });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Generate failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.proposal.messages.generateFailed", {
+          detail: detailFromError(error, t("author.proposal.messages.unknownError")),
+        }),
+      });
     }
   }
 
@@ -234,18 +245,20 @@ export function InitiativeImprovementProposalsEditor({
       onUpdated(updated);
       setManualForm(EMPTY_MANUAL_FORM);
       setShowManualForm(false);
-      setMessage({ tone: "success", text: "Proposal added." });
+      setMessage({ tone: "success", text: t("author.proposal.messages.proposalAdded") });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Add proposal failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.proposal.messages.addFailed", {
+          detail: detailFromError(error, t("author.proposal.messages.unknownError")),
+        }),
+      });
     }
   }
 
   async function handlePublish() {
     if (
-      !window.confirm(
-        "This commits the Initiative progress version (if not already committed), publishes Improvement Proposals, notifies Active Allies, and unlocks Petition. Continue?",
-      )
+      !window.confirm(t("author.proposal.confirm.publishAndContinue"))
     ) {
       return;
     }
@@ -259,33 +272,37 @@ export function InitiativeImprovementProposalsEditor({
       onUpdated(result.collection);
       setMessage({
         tone: "success",
-        text: "Improvement Proposals completed. Initiative version committed. Petition is unlocked.",
+        text: t("author.proposal.messages.completed"),
       });
       onCompleted?.();
       onNavigate?.("petition", "petition");
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Publish & Continue failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.proposal.messages.publishFailed", {
+          detail: detailFromError(error, t("author.proposal.messages.unknownError")),
+        }),
+      });
     }
   }
 
   return (
     <div className="iip-editor" aria-labelledby="iip-editor-title">
       <div className="iip-editor__header">
-        <h3 id="iip-editor-title">Improvement Proposals</h3>
-        <WorkspaceStatusBadge status={collection.status} />
+        <h3 id="iip-editor-title">{t("author.proposal.heading")}</h3>
+        <WorkspaceStatusBadge
+          status={collection.status}
+          label={resolvePresentationStatusDisplayLabel(collection.status, t)}
+        />
       </div>
 
       {!isDraft ? (
-        <p>
-          This collection has been published and can no longer be edited. Generate a new draft to prepare an
-          updated round of proposals.
-        </p>
+        <p>{t("author.proposal.readonlyPublished")}</p>
       ) : null}
 
       <div className="iip-editor__header-actions">
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleGenerate()}>
-          {actions.saveLabel(generatePhase.phase, actions.generateDraft)}
+          {actions.saveLabel(generatePhase.phase, t("author.proposal.generateDraft"))}
         </WorkspaceButton>
         {isDraft ? (
           <WorkspaceButton
@@ -293,7 +310,9 @@ export function InitiativeImprovementProposalsEditor({
             disabled={isBusy}
             onClick={() => setShowManualForm((current) => !current)}
           >
-            {showManualForm ? "Cancel" : "Add Manual Proposal"}
+            {showManualForm
+              ? t("author.proposal.cancel")
+              : t("author.proposal.addManualProposal")}
           </WorkspaceButton>
         ) : null}
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
@@ -303,7 +322,11 @@ export function InitiativeImprovementProposalsEditor({
             disabled={isBusy || !canComplete}
             onClick={() => void handlePublish()}
           >
-            {resolveSaveButtonLabel(publishPhase.phase, "Publish & Continue to Petition", actions.phaseLabels)}
+            {resolveSaveButtonLabel(
+              publishPhase.phase,
+              t("author.proposal.publishAndContinue"),
+              actions.phaseLabels,
+            )}
           </WorkspaceButton>
         ) : null}
       </div>
@@ -311,14 +334,14 @@ export function InitiativeImprovementProposalsEditor({
       {showManualForm ? (
         <form
           className="iip-proposal-card"
-          aria-label="Add manual proposal"
+          aria-label={t("author.proposal.manualFormAria")}
           onSubmit={(event) => {
             event.preventDefault();
             void handleAddManualProposal();
           }}
         >
           <div className="iip-proposal-card__field">
-            <label htmlFor="iip-manual-title">Title</label>
+            <label htmlFor="iip-manual-title">{t("author.proposal.fields.title")}</label>
             <input
               id="iip-manual-title"
               required
@@ -327,7 +350,7 @@ export function InitiativeImprovementProposalsEditor({
             />
           </div>
           <div className="iip-proposal-card__field">
-            <label htmlFor="iip-manual-summary">Summary</label>
+            <label htmlFor="iip-manual-summary">{t("author.proposal.fields.summary")}</label>
             <textarea
               id="iip-manual-summary"
               required
@@ -336,7 +359,7 @@ export function InitiativeImprovementProposalsEditor({
             />
           </div>
           <div className="iip-proposal-card__field">
-            <label htmlFor="iip-manual-description">Description</label>
+            <label htmlFor="iip-manual-description">{t("author.proposal.fields.description")}</label>
             <textarea
               id="iip-manual-description"
               required
@@ -347,7 +370,7 @@ export function InitiativeImprovementProposalsEditor({
             />
           </div>
           <div className="iip-proposal-card__field">
-            <label htmlFor="iip-manual-reason">Reason</label>
+            <label htmlFor="iip-manual-reason">{t("author.proposal.fields.reason")}</label>
             <textarea
               id="iip-manual-reason"
               required
@@ -356,7 +379,9 @@ export function InitiativeImprovementProposalsEditor({
             />
           </div>
           <div className="iip-proposal-card__field">
-            <label htmlFor="iip-manual-expected">Expected Improvement</label>
+            <label htmlFor="iip-manual-expected">
+              {t("author.proposal.fields.expectedImprovement")}
+            </label>
             <textarea
               id="iip-manual-expected"
               required
@@ -368,7 +393,11 @@ export function InitiativeImprovementProposalsEditor({
           </div>
           <div className="iip-proposal-card__actions">
             <WorkspaceButton type="submit" variant="primary" disabled={addPhase.isBusy}>
-              {resolveSaveButtonLabel(addPhase.phase, "Add Proposal", actions.phaseLabels)}
+              {resolveSaveButtonLabel(
+                addPhase.phase,
+                t("author.proposal.addProposal"),
+                actions.phaseLabels,
+              )}
             </WorkspaceButton>
           </div>
         </form>
@@ -393,9 +422,7 @@ export function InitiativeImprovementProposalsEditor({
           ))}
         </div>
       ) : (
-        <p className="iip-editor__empty">
-          No proposals yet. Use Generate Draft to build proposals from Discussion, or Add Manual Proposal.
-        </p>
+        <p className="iip-editor__empty">{t("author.proposal.emptyList")}</p>
       )}
     </div>
   );

@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 /**
  * Initiative Lifecycle — Part D, Sections 8/11. The read-only body of one
  * structured proposal — Summary, Description, Reason, Expected
@@ -28,42 +32,44 @@ export function InitiativeImprovementProposalsContentFields({
   readonly relatedDiscussionReferences: string;
   readonly originalAuthorDisplayNames: readonly string[];
 }) {
+  const t = useTranslations("initiativeExperience");
+
   return (
     <>
       <div className="iip-public-result__field">
-        <h4>Summary</h4>
+        <h4>{t("author.proposal.fields.summary")}</h4>
         <p>{summary}</p>
       </div>
       <div className="iip-public-result__field">
-        <h4>Description</h4>
+        <h4>{t("author.proposal.fields.description")}</h4>
         <p>{description}</p>
       </div>
       <div className="iip-public-result__field">
-        <h4>Reason</h4>
+        <h4>{t("author.proposal.fields.reason")}</h4>
         <p>{reason}</p>
       </div>
       <div className="iip-public-result__field">
-        <h4>Expected Improvement</h4>
+        <h4>{t("author.proposal.fields.expectedImprovement")}</h4>
         <p>{expectedImprovement}</p>
       </div>
       {supportingSources ? (
         <div className="iip-public-result__field">
-          <h4>Supporting Sources</h4>
+          <h4>{t("author.proposal.fields.supportingSources")}</h4>
           <p>{supportingSources}</p>
         </div>
       ) : null}
       {relatedDiscussionReferences ? (
         <div className="iip-public-result__field">
-          <h4>Related Discussion References</h4>
+          <h4>{t("author.proposal.fields.relatedDiscussionReferences")}</h4>
           <p>{relatedDiscussionReferences}</p>
         </div>
       ) : null}
       <div className="iip-public-result__field">
-        <h4>Original Author(s)</h4>
+        <h4>{t("author.proposal.fields.originalAuthors")}</h4>
         <p>
           {originalAuthorDisplayNames.length > 0
             ? originalAuthorDisplayNames.join(", ")
-            : "Author-originated (no Discussion source)"}
+            : t("author.proposal.authorOriginatedNoSource")}
         </p>
       </div>
     </>

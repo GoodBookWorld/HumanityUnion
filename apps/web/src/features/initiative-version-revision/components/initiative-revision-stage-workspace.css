@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .irv-source-panel__title {
@@ -63,6 +65,7 @@
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--workspace-border, #e5e7eb);
   border-radius: 0.5rem;
+  min-width: 0;
 }
 
 .irv-source-panel__item[data-tone="warning"] {
@@ -85,6 +88,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .irv-editor__header {
@@ -99,6 +104,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.irv-editor__header-actions button,
+.irv-change-card__actions button,
+.irv-reaction__buttons button {
+  white-space: normal;
 }
 
 .irv-editor__message {
@@ -146,10 +157,15 @@
   font-size: 0.85rem;
 }
 
+.irv-editor__proposal input {
+  margin-inline-start: 0;
+}
+
 .irv-editor__proposal-body {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
 }
 
 .irv-editor__proposal-meta {
@@ -170,6 +186,8 @@
   padding: 0.9rem;
   border: 1px solid var(--workspace-border, #e5e7eb);
   border-radius: 0.6rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .irv-change-card__header {
@@ -214,6 +232,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .irv-change-card__field label {
@@ -250,6 +269,8 @@
   padding: 0.9rem;
   border: 1px dashed var(--workspace-border, #e5e7eb);
   border-radius: 0.6rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .irv-public-result {

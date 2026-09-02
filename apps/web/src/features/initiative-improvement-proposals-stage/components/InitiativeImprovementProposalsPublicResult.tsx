@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicInitiativeImprovementProposalsCollectionProjection } from "@hu/types";
 
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux";
+import { resolveProposalCurationDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { getPublicImprovementProposalsCollection } from "../api";
 import { InitiativeImprovementProposalsContentFields } from "./InitiativeImprovementProposalsContentFields";
 import { InitiativeProposalReactionWidget } from "./InitiativeProposalReactionWidget";
@@ -36,6 +38,7 @@ export function InitiativeImprovementProposalsPublicResult({
   collectionId,
   isPreview = false,
 }: InitiativeImprovementProposalsPublicResultProps) {
+  const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<PublicInitiativeImprovementProposalsCollectionProjection | null>(
     null,
   );
@@ -64,21 +67,21 @@ export function InitiativeImprovementProposalsPublicResult({
   }, [collectionId]);
 
   if (loadFailed) {
-    return <p className="lsw-result__placeholder">These Improvement Proposals could not be loaded.</p>;
+    return <p className="lsw-result__placeholder">{t("author.proposal.public.loadFailed")}</p>;
   }
 
   if (!projection) {
-    return <p className="lsw-result__placeholder">Loading Improvement Proposals…</p>;
+    return <p className="lsw-result__placeholder">{t("author.proposal.public.loading")}</p>;
   }
 
   if (projection.proposals.length === 0) {
-    return <p className="iip-public-result__empty">No Improvement Proposals have been published yet.</p>;
+    return <p className="iip-public-result__empty">{t("author.proposal.public.empty")}</p>;
   }
 
   return (
     <div className="iip-public-result">
       <div className="iip-public-result__field">
-        <h4>Author</h4>
+        <h4>{t("author.proposal.fields.author")}</h4>
         <p>{projection.authorDisplayName}</p>
       </div>
 
@@ -86,7 +89,10 @@ export function InitiativeImprovementProposalsPublicResult({
         <article key={proposal.proposalId} className="iip-public-result__proposal">
           <div className="iip-proposal-card__header">
             <h3>{proposal.title}</h3>
-            <WorkspaceStatusBadge status={proposal.status} />
+            <WorkspaceStatusBadge
+              status={proposal.status}
+              label={resolveProposalCurationDisplayLabel(proposal.status, t)}
+            />
           </div>
 
           <InitiativeImprovementProposalsContentFields
@@ -100,11 +106,18 @@ export function InitiativeImprovementProposalsPublicResult({
           />
 
           {isPreview ? (
-            <section className="iip-reaction" aria-label="Proposal reaction preview">
-              <p className="iip-reaction__title">Reaction</p>
+            <section
+              className="iip-reaction"
+              aria-label={t("author.proposal.preview.reactionAria")}
+            >
+              <p className="iip-reaction__title">
+                {t("author.proposal.preview.reactionTitle")}
+              </p>
               <p className="iip-reaction__note">
-                {proposal.reactionSummary.support} Support · {proposal.reactionSummary.doNotSupport} Do Not
-                Support — the Reaction widget is disabled while previewing.
+                {t("author.proposal.preview.reactionNotePublished", {
+                  support: proposal.reactionSummary.support,
+                  doNotSupport: proposal.reactionSummary.doNotSupport,
+                })}
               </p>
             </section>
           ) : (

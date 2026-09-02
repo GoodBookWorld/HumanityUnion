@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .iip-source-panel__title {
@@ -37,12 +38,14 @@
 .iip-source-panel__stat-label {
   font-size: 0.75rem;
   color: var(--workspace-muted-text, #6b7280);
+  overflow-wrap: anywhere;
 }
 
 .iip-source-panel__section {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  min-width: 0;
 }
 
 .iip-source-panel__section-title {
@@ -63,6 +66,7 @@
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--workspace-border, #e5e7eb);
   border-radius: 0.5rem;
+  min-width: 0;
 }
 
 .iip-source-panel__group[data-duplicate="true"] {
@@ -73,6 +77,7 @@
   display: block;
   font-size: 0.8rem;
   color: var(--workspace-muted-text, #6b7280);
+  overflow-wrap: anywhere;
 }
 
 .iip-source-panel__empty {
@@ -85,6 +90,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-width: 0;
 }
 
 .iip-editor__header {
@@ -92,12 +98,18 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .iip-editor__header-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  min-width: 0;
+}
+
+.iip-editor__header-actions .workspace-button {
+  white-space: normal;
 }
 
 .iip-editor__message {
@@ -123,12 +135,14 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-width: 0;
 }
 
 .iip-proposal-card {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  min-width: 0;
   padding: 0.9rem;
   border: 1px solid var(--workspace-border, #e5e7eb);
   border-radius: 0.6rem;
@@ -140,6 +154,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .iip-proposal-card__header-title {
@@ -151,11 +166,17 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .iip-proposal-card__field label {
   font-size: 0.8rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.iip-proposal-card__field span {
+  overflow-wrap: anywhere;
 }
 
 .iip-proposal-card__meta {
@@ -168,18 +189,25 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
+  min-width: 0;
+}
+
+.iip-proposal-card__actions .workspace-button {
+  white-space: normal;
 }
 
 .iip-public-result {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-width: 0;
 }
 
 .iip-public-result__proposal {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0;
   padding: 0.9rem;
   border: 1px solid var(--workspace-border, #e5e7eb);
   border-radius: 0.6rem;
@@ -189,11 +217,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
 }
 
 .iip-public-result__field h4 {
   margin: 0;
   font-size: 0.85rem;
+  overflow-wrap: anywhere;
 }
 
 .iip-public-result__field p {
