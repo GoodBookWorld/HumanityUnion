@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ipl-source-panel__title {
@@ -17,6 +19,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  min-width: 0;
 }
 
 .ipl-source-panel__section-title {
@@ -37,6 +40,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--workspace-border, #e5e7eb);
   border-radius: 0.5rem;
@@ -62,6 +66,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ipl-editor__header {
@@ -100,6 +106,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .ipl-editor__field label {
@@ -117,22 +124,32 @@
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .ipl-editor__key-argument textarea {
   flex: 1;
+  min-width: min(100%, 16rem);
+}
+
+.ipl-editor .workspace-button {
+  white-space: normal;
 }
 
 .ipl-public-result {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ipl-public-result__field {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
+  min-width: 0;
 }
 
 .ipl-public-result__field h4 {
@@ -152,13 +169,15 @@
 
 .ipl-public-result__key-arguments {
   margin: 0;
-  padding-left: 1.25rem;
+  padding-inline-start: 1.25rem;
 }
 
 .ipl-traceability {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
   padding: 0.6rem 0.75rem;
   border: 1px solid var(--workspace-border, #e5e7eb);
   border-radius: 0.5rem;
@@ -169,6 +188,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  min-width: 0;
   padding-top: 0.5rem;
   border-top: 1px solid var(--workspace-border, #e5e7eb);
 }
@@ -197,6 +217,7 @@
   flex-direction: column;
   align-items: center;
   min-width: 6rem;
+  overflow-wrap: anywhere;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--workspace-border, #e5e7eb);
   border-radius: 0.5rem;
@@ -222,6 +243,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ipl-signature__prompt {
@@ -240,6 +263,11 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.ipl-signature .workspace-button,
+.ipl-support .workspace-button {
+  white-space: normal;
 }
 
 .ipl-signature__error {

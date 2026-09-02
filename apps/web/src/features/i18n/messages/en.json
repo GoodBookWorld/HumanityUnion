@@ -1233,6 +1233,103 @@
           "consistencyTitle": "Consistency Checks",
           "consistencyAria": "Consistency checks"
         }
+      },
+      "petition": {
+        "editorTitle": "Petition Draft",
+        "loading": "Loading Petition workspace…",
+        "loadFailed": "The Petition workspace could not be loaded.",
+        "alreadyPublished": "This Petition has already been published. Use Public Preview to review it, or continue to the Decision Session stage.",
+        "requiresRevision": "A Petition can be built once this Initiative has a Published Revision.",
+        "noDraftYet": "No Petition draft yet",
+        "noDraftExplanation": "Generate a Petition draft from the Published Revision, Collaborative Analysis, and accepted Improvement Proposals, then review and edit before Publish.",
+        "generatePetitionDraft": "Generate Petition Draft",
+        "showSources": "Show Petition Sources",
+        "hideSources": "Hide Petition Sources",
+        "publishPetition": "Publish Petition",
+        "requiredBeforePublish": "Required before Publish: {fields}.",
+        "publishBlocked": "Publish blocked — complete required fields first: {fields}.",
+        "fields": {
+          "title": "Petition Title",
+          "publicSummary": "Public Summary",
+          "requestStatement": "Request Statement",
+          "expectedOutcome": "Expected Outcome",
+          "supportingContext": "Supporting Context",
+          "keyArguments": "Key Arguments"
+        },
+        "requiredFieldNames": {
+          "title": "Petition title",
+          "publicSummary": "Public summary",
+          "requestStatement": "Request statement",
+          "expectedOutcome": "Expected outcome",
+          "revisionReference": "Generate from a published Revision (required reference)"
+        },
+        "keyArguments": {
+          "add": "Add Key Argument",
+          "remove": "Remove",
+          "itemAria": "Key argument {number}"
+        },
+        "proposalAcceptance": {
+          "accepted": "Accepted",
+          "partially_accepted": "Partially accepted"
+        },
+        "messages": {
+          "draftRebuilt": "Draft rebuilt from the Petition Sources. Review and edit before Publish.",
+          "draftSaved": "Petition draft saved.",
+          "published": "Petition published. Active Allies have been notified.",
+          "unknownError": "Unknown error",
+          "generateFailed": "Generate failed: {detail}",
+          "saveFailed": "Save failed: {detail}",
+          "publishFailed": "Publish failed: {detail}"
+        },
+        "confirm": {
+          "publish": "Publishing creates the canonical Public Petition, opens it for signatures, notifies every Active Ally, and unlocks the Decision Session stage. Continue?"
+        },
+        "preview": {
+          "loading": "Loading draft…",
+          "loadFailed": "This draft could not be loaded.",
+          "empty": "There is no Petition draft yet — generate one, then Preview again.",
+          "untitled": "Untitled",
+          "emptySummary": "No summary provided yet.",
+          "emptyRequest": "No request statement provided yet.",
+          "emptyOutcome": "No expected outcome provided yet.",
+          "emptyContext": "No supporting context provided yet.",
+          "emptyKeyArguments": "No key arguments drafted yet.",
+          "signaturesAria": "Representative signatures preview",
+          "signaturesTitle": "Representative Signatures",
+          "signaturesNote": "0 Participants · 0 Members · 0 Visitors — signing unlocks for visitors once this Petition is published and opened."
+        },
+        "public": {
+          "loading": "Loading Petition…",
+          "loadFailed": "This Petition could not be loaded.",
+          "emptySummary": "No summary provided.",
+          "traceability": "Traceability",
+          "supportingRevision": "Supporting Revision: Version {version} ({revisionId})",
+          "supportingAnalysis": "Supporting Analysis: {analysisId}",
+          "supportingAnalysisWithVersion": "Supporting Analysis: {analysisId} (Version {version})",
+          "supportingProposals": "Supporting Proposals: {proposalIds}",
+          "supportingProposalsNone": "none",
+          "publishedAt": "Published {date}",
+          "signaturesAria": "Representative signatures",
+          "signaturesTitle": "Representative Signatures",
+          "supportCountersAria": "Petition support counters",
+          "shareAria": "Share petition: {title}",
+          "previewSignatureDisabled": "The Signature widget is disabled while previewing — signing becomes available to visitors once this Petition is published and open."
+        },
+        "sourceSnapshot": {
+          "title": "Petition Sources",
+          "lede": "Automatically collected from the Published Initiative, Collaborative Analysis, Improvement Proposals, and Revision — nothing below is editable or invented.",
+          "emptyLede": "A Petition cannot be built yet — this Initiative has no Published Revision. This panel will populate automatically once the Author publishes a Revision.",
+          "publishedRevision": "Published Revision",
+          "versionLabel": "Version {version}",
+          "noRevision": "No published Revision yet.",
+          "publishedAnalysis": "Published Collaborative Analysis",
+          "noAnalysis": "No published Collaborative Analysis yet.",
+          "publishedProposals": "Published Improvement Proposals",
+          "proposalsAria": "Accepted improvement proposals",
+          "noProposals": "No accepted Improvement Proposals referenced.",
+          "consistencyTitle": "Consistency Checks",
+          "consistencyAria": "Consistency checks"
+        }
       }
     }
   }

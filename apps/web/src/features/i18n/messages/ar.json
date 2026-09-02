@@ -1233,6 +1233,103 @@
           "consistencyTitle": "فحوصات الاتساق",
           "consistencyAria": "فحوصات الاتساق"
         }
+      },
+      "petition": {
+        "editorTitle": "مسودة العريضة",
+        "loading": "جارٍ تحميل مساحة عمل العريضة…",
+        "loadFailed": "تعذّر تحميل مساحة عمل العريضة.",
+        "alreadyPublished": "نُشرت هذه العريضة بالفعل. استخدم المعاينة العامة لمراجعتها، أو تابع إلى مرحلة جلسة القرار.",
+        "requiresRevision": "يمكن بناء عريضة بعد أن يكون لهذه المبادرة مراجعة منشورة.",
+        "noDraftYet": "لا مسودة عريضة بعد",
+        "noDraftExplanation": "أنشئ مسودة عريضة من المراجعة المنشورة والتحليل التعاوني ومقترحات التحسين المقبولة، ثم راجع وعدّل قبل النشر.",
+        "generatePetitionDraft": "إنشاء مسودة العريضة",
+        "showSources": "إظهار مصادر العريضة",
+        "hideSources": "إخفاء مصادر العريضة",
+        "publishPetition": "نشر العريضة",
+        "requiredBeforePublish": "مطلوب قبل النشر: {fields}.",
+        "publishBlocked": "النشر محظور — أكمل الحقول المطلوبة أولاً: {fields}.",
+        "fields": {
+          "title": "عنوان العريضة",
+          "publicSummary": "الملخص العام",
+          "requestStatement": "بيان الطلب",
+          "expectedOutcome": "النتيجة المتوقعة",
+          "supportingContext": "السياق الداعم",
+          "keyArguments": "الحجج الرئيسية"
+        },
+        "requiredFieldNames": {
+          "title": "عنوان العريضة",
+          "publicSummary": "الملخص العام",
+          "requestStatement": "بيان الطلب",
+          "expectedOutcome": "النتيجة المتوقعة",
+          "revisionReference": "الإنشاء من مراجعة منشورة (مرجع مطلوب)"
+        },
+        "keyArguments": {
+          "add": "إضافة حجة رئيسية",
+          "remove": "إزالة",
+          "itemAria": "الحجة الرئيسية {number}"
+        },
+        "proposalAcceptance": {
+          "accepted": "مقبول",
+          "partially_accepted": "مقبول جزئياً"
+        },
+        "messages": {
+          "draftRebuilt": "أُعيد بناء المسودة من مصادر العريضة. راجع وعدّل قبل النشر.",
+          "draftSaved": "تم حفظ مسودة العريضة.",
+          "published": "نُشرت العريضة. تم إشعار الحلفاء النشطين.",
+          "unknownError": "خطأ غير معروف",
+          "generateFailed": "فشل الإنشاء: {detail}",
+          "saveFailed": "فشل الحفظ: {detail}",
+          "publishFailed": "فشل النشر: {detail}"
+        },
+        "confirm": {
+          "publish": "ينشئ النشر العريضة العامة الرسمية، ويفتحها للتوقيع، ويُشعر كل حليف نشط، ويفتح مرحلة جلسة القرار. هل تريد المتابعة؟"
+        },
+        "preview": {
+          "loading": "جارٍ تحميل المسودة…",
+          "loadFailed": "تعذّر تحميل هذه المسودة.",
+          "empty": "لا مسودة عريضة بعد — أنشئ واحدة ثم عُد إلى المعاينة.",
+          "untitled": "بلا عنوان",
+          "emptySummary": "لا ملخص بعد.",
+          "emptyRequest": "لا بيان طلب بعد.",
+          "emptyOutcome": "لا نتيجة متوقعة بعد.",
+          "emptyContext": "لا سياق داعم بعد.",
+          "emptyKeyArguments": "لم تُصغَ حجج رئيسية بعد.",
+          "signaturesAria": "معاينة التوقيعات التمثيلية",
+          "signaturesTitle": "التوقيعات التمثيلية",
+          "signaturesNote": "0 مشاركين · 0 أعضاء · 0 زوّار — يُفتح التوقيع للزوّار بعد نشر هذه العريضة وفتحها."
+        },
+        "public": {
+          "loading": "جارٍ تحميل العريضة…",
+          "loadFailed": "تعذّر تحميل هذه العريضة.",
+          "emptySummary": "لا ملخص متوفّر.",
+          "traceability": "إمكانية التتبّع",
+          "supportingRevision": "المراجعة الداعمة: النسخة {version} ({revisionId})",
+          "supportingAnalysis": "التحليل الداعم: {analysisId}",
+          "supportingAnalysisWithVersion": "التحليل الداعم: {analysisId} (النسخة {version})",
+          "supportingProposals": "المقترحات الداعمة: {proposalIds}",
+          "supportingProposalsNone": "لا شيء",
+          "publishedAt": "نُشرت {date}",
+          "signaturesAria": "التوقيعات التمثيلية",
+          "signaturesTitle": "التوقيعات التمثيلية",
+          "supportCountersAria": "عدّادات دعم العريضة",
+          "shareAria": "مشاركة العريضة: {title}",
+          "previewSignatureDisabled": "أداة التوقيع معطّلة أثناء المعاينة — يصبح التوقيع متاحاً للزوّار بعد نشر هذه العريضة وفتحها."
+        },
+        "sourceSnapshot": {
+          "title": "مصادر العريضة",
+          "lede": "جُمعت تلقائياً من المبادرة المنشورة والتحليل التعاوني ومقترحات التحسين والمراجعة — لا شيء أدناه قابل للتحرير أو مختلق.",
+          "emptyLede": "لا يمكن بناء عريضة بعد — ليست لهذه المبادرة مراجعة منشورة. ستُملأ هذه اللوحة تلقائياً بعد أن ينشر المؤلف مراجعة.",
+          "publishedRevision": "المراجعة المنشورة",
+          "versionLabel": "النسخة {version}",
+          "noRevision": "لا مراجعة منشورة بعد.",
+          "publishedAnalysis": "التحليل التعاوني المنشور",
+          "noAnalysis": "لا تحليل تعاوني منشور بعد.",
+          "publishedProposals": "مقترحات التحسين المنشورة",
+          "proposalsAria": "مقترحات التحسين المقبولة",
+          "noProposals": "لا مقترحات تحسين مقبولة مُشار إليها.",
+          "consistencyTitle": "فحوصات الاتساق",
+          "consistencyAria": "فحوصات الاتساق"
+        }
       }
     }
   }

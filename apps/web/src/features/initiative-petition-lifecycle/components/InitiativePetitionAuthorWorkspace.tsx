@@ -39,6 +39,7 @@ export function InitiativePetitionAuthorWorkspace({
   onTogglePreview,
 }: InitiativePetitionAuthorWorkspaceProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [context, setContext] = useState<InitiativePetitionDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -83,7 +84,7 @@ export function InitiativePetitionAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="The Petition workspace could not be loaded." />
+        <WorkspaceErrorState message={t("author.petition.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
           {actions.retry}
         </WorkspaceButton>
@@ -92,14 +93,13 @@ export function InitiativePetitionAuthorWorkspace({
   }
 
   if (loading || !context) {
-    return <p className="lsw-sources__missing">Loading Petition workspace…</p>;
+    return <p className="lsw-sources__missing">{t("author.petition.loading")}</p>;
   }
 
   if (context.publishedPetitionId) {
     return (
       <p className="ipl-source-panel__empty">
-        This Petition has already been published. Use Public Preview to review it, or continue to the
-        Decision Session stage.
+        {t("author.petition.alreadyPublished")}
       </p>
     );
   }
@@ -107,7 +107,7 @@ export function InitiativePetitionAuthorWorkspace({
   if (!context.intelligenceSnapshot.isRevisionAvailable) {
     return (
       <p className="ipl-source-panel__empty">
-        A Petition can be built once this Initiative has a Published Revision.
+        {t("author.petition.requiresRevision")}
       </p>
     );
   }
@@ -121,7 +121,7 @@ export function InitiativePetitionAuthorWorkspace({
           aria-expanded={showSourcePanel}
           onClick={() => setShowSourcePanel((current) => !current)}
         >
-          {showSourcePanel ? "Hide Petition Sources" : "Show Petition Sources"}
+          {showSourcePanel ? t("author.petition.hideSources") : t("author.petition.showSources")}
         </button>
       ) : null}
 
@@ -139,18 +139,19 @@ export function InitiativePetitionAuthorWorkspace({
         />
       ) : (
         <div className="ipl-editor">
-          <h3>No Petition draft yet</h3>
-          <p>
-            Generate a Petition draft from the Published Revision, Collaborative Analysis, and accepted
-            Improvement Proposals, then review and edit before Publish.
-          </p>
+          <h3>{t("author.petition.noDraftYet")}</h3>
+          <p>{t("author.petition.noDraftExplanation")}</p>
           <div className="ipl-editor__header-actions">
             <WorkspaceButton
               variant="primary"
               disabled={generatePhase.isBusy}
               onClick={() => void handleGenerateFirstDraft()}
             >
-              {resolveSaveButtonLabel(generatePhase.phase, "Generate Petition Draft", actions.phaseLabels)}
+              {resolveSaveButtonLabel(
+                generatePhase.phase,
+                t("author.petition.generatePetitionDraft"),
+                actions.phaseLabels,
+              )}
             </WorkspaceButton>
           </div>
         </div>

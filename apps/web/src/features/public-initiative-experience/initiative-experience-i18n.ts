@@ -196,6 +196,24 @@ export function resolveProposalCurationDisplayLabel(
   return resolveLabel(messagesOrT, `author.proposal.curation.${status}`, status);
 }
 
+const PETITION_PROPOSAL_ACCEPTANCE_CODES = new Set<string>(["accepted", "partially_accepted"]);
+
+/**
+ * Display-only label for Petition snapshot proposal acceptance codes.
+ * Domain contract: InitiativePetitionProposalReference.status is only
+ * `"accepted" | "partially_accepted"`. Unknown codes fall back to the raw
+ * code — never map unknowns to "Partially accepted".
+ */
+export function resolvePetitionProposalAcceptanceDisplayLabel(
+  status: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!PETITION_PROPOSAL_ACCEPTANCE_CODES.has(status)) {
+    return status;
+  }
+  return resolveLabel(messagesOrT, `author.petition.proposalAcceptance.${status}`, status);
+}
+
 const PARTICIPATION_SCOPE_CODES = new Set<string>([
   "world",
   "country",

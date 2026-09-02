@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativePetitionDraft } from "@hu/types";
 
@@ -32,6 +33,10 @@ interface InitiativePetitionEditorProps {
   readonly onTogglePreview: () => void;
 }
 
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 /**
  * Initiative Lifecycle — Part F, Section 3/6 (Petition Draft Builder /
  * Petition Workspace).
@@ -52,6 +57,7 @@ export function InitiativePetitionEditor({
   onPublished,
   onTogglePreview,
 }: InitiativePetitionEditorProps) {
+  const t = useTranslations("initiativeExperience");
   const actions = useAuthorActionLabels();
   const [title, setTitle] = useState(draft.title);
   const [publicSummary, setPublicSummary] = useState(draft.publicSummary);
@@ -128,11 +134,15 @@ export function InitiativePetitionEditor({
       applyDraftToFields(updated);
       setMessage({
         tone: "success",
-        text: "Draft rebuilt from the Petition Sources. Review and edit before Publish.",
+        text: t("author.petition.messages.draftRebuilt"),
       });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Generate failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.petition.messages.generateFailed", {
+          detail: detailFromError(error, t("author.petition.messages.unknownError")),
+        }),
+      });
     }
   }
 
@@ -151,23 +161,27 @@ export function InitiativePetitionEditor({
         }),
       );
       applyDraftToFields(updated);
-      setMessage({ tone: "success", text: "Petition draft saved." });
+      setMessage({ tone: "success", text: t("author.petition.messages.draftSaved") });
       return true;
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Save failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.petition.messages.saveFailed", {
+          detail: detailFromError(error, t("author.petition.messages.unknownError")),
+        }),
+      });
       return false;
     }
   }
 
   function unresolvedPublishRequirements(): string[] {
     const missing: string[] = [];
-    if (!title.trim()) missing.push("Petition title");
-    if (!publicSummary.trim()) missing.push("Public summary");
-    if (!requestStatement.trim()) missing.push("Request statement");
-    if (!expectedOutcome.trim()) missing.push("Expected outcome");
+    if (!title.trim()) missing.push(t("author.petition.requiredFieldNames.title"));
+    if (!publicSummary.trim()) missing.push(t("author.petition.requiredFieldNames.publicSummary"));
+    if (!requestStatement.trim()) missing.push(t("author.petition.requiredFieldNames.requestStatement"));
+    if (!expectedOutcome.trim()) missing.push(t("author.petition.requiredFieldNames.expectedOutcome"));
     if (!draft.revisionId || draft.revisionVersion === null) {
-      missing.push("Generate from a published Revision (required reference)");
+      missing.push(t("author.petition.requiredFieldNames.revisionReference"));
     }
     return missing;
   }
@@ -177,15 +191,13 @@ export function InitiativePetitionEditor({
     if (missing.length > 0) {
       setMessage({
         tone: "error",
-        text: `Publish blocked — complete required fields first: ${missing.join("; ")}.`,
+        text: t("author.petition.publishBlocked", { fields: missing.join("; ") }),
       });
       return;
     }
 
     if (
-      !window.confirm(
-        "Publishing creates the canonical Public Petition, opens it for signatures, notifies every Active Ally, and unlocks the Decision Session stage. Continue?",
-      )
+      !window.confirm(t("author.petition.confirm.publish"))
     ) {
       return;
     }
@@ -200,25 +212,31 @@ export function InitiativePetitionEditor({
       }
 
       await publishPhase.runSave(() => publishInitiativePetitionStage(initiativeId));
-      setMessage({ tone: "success", text: "Petition published. Active Allies have been notified." });
+      setMessage({ tone: "success", text: t("author.petition.messages.published") });
       onPublished();
     } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setMessage({ tone: "error", text: `Publish failed: ${detail}` });
+      setMessage({
+        tone: "error",
+        text: t("author.petition.messages.publishFailed", {
+          detail: detailFromError(error, t("author.petition.messages.unknownError")),
+        }),
+      });
     }
   }
 
   return (
     <div className="ipl-editor" aria-labelledby="ipl-editor-title">
       <div className="ipl-editor__header">
-        <h3 id="ipl-editor-title">Petition Draft</h3>
+        <h3 id="ipl-editor-title">{t("author.petition.editorTitle")}</h3>
       </div>
 
       <div className="ipl-editor__header-actions">
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleGenerate()}>
-          {actions.saveLabel(generatePhase.phase, actions.generate)}
+          {actions.saveLabel(generatePhase.phase, t("author.petition.generatePetitionDraft"))}
         </WorkspaceButton>
-        <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>{actions.preview}</WorkspaceButton>
+        <WorkspaceButton variant="secondary" disabled={isBusy} onClick={onTogglePreview}>
+          {actions.preview}
+        </WorkspaceButton>
         <WorkspaceButton variant="secondary" disabled={isBusy} onClick={() => void handleSave()}>
           {actions.saveLabel(savePhase.phase, actions.saveDraft)}
         </WorkspaceButton>
@@ -227,13 +245,19 @@ export function InitiativePetitionEditor({
           disabled={isBusy || unresolvedPublishRequirements().length > 0}
           onClick={() => void handlePublish()}
         >
-          {resolveSaveButtonLabel(publishPhase.phase, "Publish Petition", actions.phaseLabels)}
+          {resolveSaveButtonLabel(
+            publishPhase.phase,
+            t("author.petition.publishPetition"),
+            actions.phaseLabels,
+          )}
         </WorkspaceButton>
       </div>
 
       {unresolvedPublishRequirements().length > 0 ? (
         <p className="ipl-editor__message" data-tone="error" role="status">
-          Required before Publish: {unresolvedPublishRequirements().join("; ")}.
+          {t("author.petition.requiredBeforePublish", {
+            fields: unresolvedPublishRequirements().join("; "),
+          })}
         </p>
       ) : null}
 
@@ -245,12 +269,12 @@ export function InitiativePetitionEditor({
 
       <div className="ipl-editor__section">
         <div className="ipl-editor__field">
-          <label htmlFor="ipl-title">Petition Title</label>
+          <label htmlFor="ipl-title">{t("author.petition.fields.title")}</label>
           <input id="ipl-title" value={title} onChange={(event) => setTitle(event.target.value)} />
         </div>
 
         <div className="ipl-editor__field">
-          <label htmlFor="ipl-public-summary">Public Summary</label>
+          <label htmlFor="ipl-public-summary">{t("author.petition.fields.publicSummary")}</label>
           <textarea
             id="ipl-public-summary"
             rows={3}
@@ -260,7 +284,7 @@ export function InitiativePetitionEditor({
         </div>
 
         <div className="ipl-editor__field">
-          <label htmlFor="ipl-request-statement">Request Statement</label>
+          <label htmlFor="ipl-request-statement">{t("author.petition.fields.requestStatement")}</label>
           <textarea
             id="ipl-request-statement"
             rows={3}
@@ -270,7 +294,7 @@ export function InitiativePetitionEditor({
         </div>
 
         <div className="ipl-editor__field">
-          <label htmlFor="ipl-expected-outcome">Expected Outcome</label>
+          <label htmlFor="ipl-expected-outcome">{t("author.petition.fields.expectedOutcome")}</label>
           <textarea
             id="ipl-expected-outcome"
             rows={3}
@@ -280,7 +304,7 @@ export function InitiativePetitionEditor({
         </div>
 
         <div className="ipl-editor__field">
-          <label htmlFor="ipl-supporting-context">Supporting Context</label>
+          <label htmlFor="ipl-supporting-context">{t("author.petition.fields.supportingContext")}</label>
           <textarea
             id="ipl-supporting-context"
             rows={4}
@@ -290,23 +314,23 @@ export function InitiativePetitionEditor({
         </div>
 
         <div className="ipl-editor__field">
-          <label htmlFor="ipl-key-arguments">Key Arguments</label>
+          <label htmlFor="ipl-key-arguments">{t("author.petition.fields.keyArguments")}</label>
           <div className="ipl-editor__key-arguments" id="ipl-key-arguments">
             {keyArguments.map((argument, index) => (
               <div key={index} className="ipl-editor__key-argument">
                 <textarea
                   rows={2}
                   value={argument}
-                  aria-label={`Key argument ${index + 1}`}
+                  aria-label={t("author.petition.keyArguments.itemAria", { number: index + 1 })}
                   onChange={(event) => updateKeyArgument(index, event.target.value)}
                 />
                 <WorkspaceButton variant="secondary" onClick={() => removeKeyArgument(index)}>
-                  Remove
+                  {t("author.petition.keyArguments.remove")}
                 </WorkspaceButton>
               </div>
             ))}
             <WorkspaceButton variant="secondary" onClick={addKeyArgument}>
-              Add Key Argument
+              {t("author.petition.keyArguments.add")}
             </WorkspaceButton>
           </div>
         </div>

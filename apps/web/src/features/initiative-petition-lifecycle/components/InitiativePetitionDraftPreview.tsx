@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativePetitionDraftContext } from "@hu/types";
 
@@ -23,6 +24,7 @@ import "./initiative-petition-stage-workspace.css";
  * — this component only covers the "nothing published yet" gap.
  */
 export function InitiativePetitionDraftPreview({ initiativeId }: { readonly initiativeId: string }) {
+  const t = useTranslations("initiativeExperience");
   const [context, setContext] = useState<InitiativePetitionDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -55,11 +57,11 @@ export function InitiativePetitionDraftPreview({ initiativeId }: { readonly init
   }, [initiativeId]);
 
   if (loadFailed) {
-    return <p className="lsw-result__placeholder">This draft could not be loaded.</p>;
+    return <p className="lsw-result__placeholder">{t("author.petition.preview.loadFailed")}</p>;
   }
 
   if (loading) {
-    return <p className="lsw-result__placeholder">Loading draft…</p>;
+    return <p className="lsw-result__placeholder">{t("author.petition.preview.loading")}</p>;
   }
 
   const draft = context?.draft ?? null;
@@ -67,7 +69,7 @@ export function InitiativePetitionDraftPreview({ initiativeId }: { readonly init
   if (!draft) {
     return (
       <p className="lsw-result__placeholder">
-        There is no Petition draft yet — generate one, then Preview again.
+        {t("author.petition.preview.empty")}
       </p>
     );
   }
@@ -75,40 +77,52 @@ export function InitiativePetitionDraftPreview({ initiativeId }: { readonly init
   return (
     <div className="ipl-public-result" translate="yes">
       <div className="ipl-public-result__field">
-        <h4>Petition Title</h4>
-        <LifecycleTranslatableText>{draft.title || "Untitled"}</LifecycleTranslatableText>
+        <h4>{t("author.petition.fields.title")}</h4>
+        {draft.title ? (
+          <LifecycleTranslatableText>{draft.title}</LifecycleTranslatableText>
+        ) : (
+          <p className="ipl-public-result__empty">{t("author.petition.preview.untitled")}</p>
+        )}
       </div>
 
       <div className="ipl-public-result__field">
-        <h4>Public Summary</h4>
-        <LifecycleTranslatableText>
-          {draft.publicSummary || "No summary provided yet."}
-        </LifecycleTranslatableText>
+        <h4>{t("author.petition.fields.publicSummary")}</h4>
+        {draft.publicSummary ? (
+          <LifecycleTranslatableText>{draft.publicSummary}</LifecycleTranslatableText>
+        ) : (
+          <p className="ipl-public-result__empty">{t("author.petition.preview.emptySummary")}</p>
+        )}
       </div>
 
       <div className="ipl-public-result__field">
-        <h4>Request Statement</h4>
-        <LifecycleTranslatableText>
-          {draft.requestStatement || "No request statement provided yet."}
-        </LifecycleTranslatableText>
+        <h4>{t("author.petition.fields.requestStatement")}</h4>
+        {draft.requestStatement ? (
+          <LifecycleTranslatableText>{draft.requestStatement}</LifecycleTranslatableText>
+        ) : (
+          <p className="ipl-public-result__empty">{t("author.petition.preview.emptyRequest")}</p>
+        )}
       </div>
 
       <div className="ipl-public-result__field">
-        <h4>Expected Outcome</h4>
-        <LifecycleTranslatableText>
-          {draft.expectedOutcome || "No expected outcome provided yet."}
-        </LifecycleTranslatableText>
+        <h4>{t("author.petition.fields.expectedOutcome")}</h4>
+        {draft.expectedOutcome ? (
+          <LifecycleTranslatableText>{draft.expectedOutcome}</LifecycleTranslatableText>
+        ) : (
+          <p className="ipl-public-result__empty">{t("author.petition.preview.emptyOutcome")}</p>
+        )}
       </div>
 
       <div className="ipl-public-result__field">
-        <h4>Supporting Context</h4>
-        <LifecycleTranslatableText>
-          {draft.supportingContext || "No supporting context provided yet."}
-        </LifecycleTranslatableText>
+        <h4>{t("author.petition.fields.supportingContext")}</h4>
+        {draft.supportingContext ? (
+          <LifecycleTranslatableText>{draft.supportingContext}</LifecycleTranslatableText>
+        ) : (
+          <p className="ipl-public-result__empty">{t("author.petition.preview.emptyContext")}</p>
+        )}
       </div>
 
       <div className="ipl-public-result__field">
-        <h4>Key Arguments</h4>
+        <h4>{t("author.petition.fields.keyArguments")}</h4>
         {draft.keyArguments.length > 0 ? (
           <ul className="ipl-public-result__key-arguments" translate="yes">
             {draft.keyArguments.map((argument, index) => (
@@ -116,18 +130,18 @@ export function InitiativePetitionDraftPreview({ initiativeId }: { readonly init
             ))}
           </ul>
         ) : (
-          <LifecycleTranslatableText className="ipl-public-result__empty">
-            No key arguments drafted yet.
-          </LifecycleTranslatableText>
+          <p className="ipl-public-result__empty">
+            {t("author.petition.preview.emptyKeyArguments")}
+          </p>
         )}
       </div>
 
-      <section className="ipl-support" aria-label="Representative signatures preview">
-        <p className="ipl-support__title">Representative Signatures</p>
-        <p className="ipl-support__note">
-          0 Participants · 0 Members · 0 Visitors — signing unlocks for visitors once this Petition is
-          published and opened.
-        </p>
+      <section
+        className="ipl-support"
+        aria-label={t("author.petition.preview.signaturesAria")}
+      >
+        <p className="ipl-support__title">{t("author.petition.preview.signaturesTitle")}</p>
+        <p className="ipl-support__note">{t("author.petition.preview.signaturesNote")}</p>
       </section>
     </div>
   );

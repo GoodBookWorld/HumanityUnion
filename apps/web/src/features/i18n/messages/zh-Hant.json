@@ -1233,6 +1233,103 @@
           "consistencyTitle": "一致性檢查",
           "consistencyAria": "一致性檢查"
         }
+      },
+      "petition": {
+        "editorTitle": "請願草稿",
+        "loading": "正在載入請願工作區…",
+        "loadFailed": "無法載入請願工作區。",
+        "alreadyPublished": "此請願已發布。請使用公開預覽檢視，或繼續至決策會議階段。",
+        "requiresRevision": "此倡議需有已發布的修訂後，才能建立請願。",
+        "noDraftYet": "尚無請願草稿",
+        "noDraftExplanation": "請從已發布的修訂、協作分析與已接受的改進提案產生請願草稿，再於發布前檢視並編輯。",
+        "generatePetitionDraft": "產生請願草稿",
+        "showSources": "顯示請願來源",
+        "hideSources": "隱藏請願來源",
+        "publishPetition": "發布請願",
+        "requiredBeforePublish": "發布前必填：{fields}。",
+        "publishBlocked": "發布已阻擋 — 請先完成必填欄位：{fields}。",
+        "fields": {
+          "title": "請願標題",
+          "publicSummary": "公開摘要",
+          "requestStatement": "請求聲明",
+          "expectedOutcome": "預期結果",
+          "supportingContext": "支持脈絡",
+          "keyArguments": "關鍵論點"
+        },
+        "requiredFieldNames": {
+          "title": "請願標題",
+          "publicSummary": "公開摘要",
+          "requestStatement": "請求聲明",
+          "expectedOutcome": "預期結果",
+          "revisionReference": "從已發布修訂產生（必要參考）"
+        },
+        "keyArguments": {
+          "add": "新增關鍵論點",
+          "remove": "移除",
+          "itemAria": "關鍵論點 {number}"
+        },
+        "proposalAcceptance": {
+          "accepted": "已接受",
+          "partially_accepted": "部分接受"
+        },
+        "messages": {
+          "draftRebuilt": "已依請願來源重建草稿。請於發布前檢視並編輯。",
+          "draftSaved": "請願草稿已儲存。",
+          "published": "請願已發布。已通知活躍盟友。",
+          "unknownError": "未知錯誤",
+          "generateFailed": "產生失敗：{detail}",
+          "saveFailed": "儲存失敗：{detail}",
+          "publishFailed": "發布失敗：{detail}"
+        },
+        "confirm": {
+          "publish": "發布會建立正式的公開請願、開放簽署、通知每位活躍盟友，並解鎖決策會議階段。要繼續嗎？"
+        },
+        "preview": {
+          "loading": "正在載入草稿…",
+          "loadFailed": "無法載入此草稿。",
+          "empty": "尚無請願草稿 — 請先產生，然後再預覽。",
+          "untitled": "未命名",
+          "emptySummary": "尚無摘要。",
+          "emptyRequest": "尚無請求聲明。",
+          "emptyOutcome": "尚無預期結果。",
+          "emptyContext": "尚無支持脈絡。",
+          "emptyKeyArguments": "尚未撰寫關鍵論點。",
+          "signaturesAria": "代表性簽署預覽",
+          "signaturesTitle": "代表性簽署",
+          "signaturesNote": "0 位參與者 · 0 位成員 · 0 位訪客 — 此請願發布並開放後，訪客才能簽署。"
+        },
+        "public": {
+          "loading": "正在載入請願…",
+          "loadFailed": "無法載入此請願。",
+          "emptySummary": "沒有摘要。",
+          "traceability": "可追溯性",
+          "supportingRevision": "支持修訂：版本 {version}（{revisionId}）",
+          "supportingAnalysis": "支持分析：{analysisId}",
+          "supportingAnalysisWithVersion": "支持分析：{analysisId}（版本 {version}）",
+          "supportingProposals": "支持提案：{proposalIds}",
+          "supportingProposalsNone": "無",
+          "publishedAt": "已發布 {date}",
+          "signaturesAria": "代表性簽署",
+          "signaturesTitle": "代表性簽署",
+          "supportCountersAria": "請願支持計數",
+          "shareAria": "分享請願：{title}",
+          "previewSignatureDisabled": "預覽時簽署小工具已停用 — 此請願發布並開放後，訪客才能簽署。"
+        },
+        "sourceSnapshot": {
+          "title": "請願來源",
+          "lede": "自動從已發布倡議、協作分析、改進提案與修訂收集 — 下方內容不可編輯，也非憑空產生。",
+          "emptyLede": "尚無法建立請願 — 此倡議沒有已發布修訂。作者發布修訂後，此面板會自動填入。",
+          "publishedRevision": "已發布修訂",
+          "versionLabel": "版本 {version}",
+          "noRevision": "尚無已發布修訂。",
+          "publishedAnalysis": "已發布協作分析",
+          "noAnalysis": "尚無已發布協作分析。",
+          "publishedProposals": "已發布改進提案",
+          "proposalsAria": "已接受的改進提案",
+          "noProposals": "未引用已接受的改進提案。",
+          "consistencyTitle": "一致性檢查",
+          "consistencyAria": "一致性檢查"
+        }
       }
     }
   }

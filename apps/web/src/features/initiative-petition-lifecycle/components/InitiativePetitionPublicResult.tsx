@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicPetitionProjection } from "@hu/types";
 
@@ -25,13 +26,13 @@ interface InitiativePetitionPublicResultProps {
   readonly isPreview?: boolean;
 }
 
-function formatDate(value: string | null): string | null {
+function formatDate(value: string | null, locale: string): string | null {
   if (!value) {
     return null;
   }
 
   try {
-    return new Date(value).toLocaleDateString(undefined, {
+    return new Date(value).toLocaleDateString(locale, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -60,6 +61,8 @@ export function InitiativePetitionPublicResult({
   petitionId,
   isPreview = false,
 }: InitiativePetitionPublicResultProps) {
+  const locale = useLocale();
+  const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<PublicPetitionProjection | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -98,16 +101,16 @@ export function InitiativePetitionPublicResult({
   }, [petitionId]);
 
   if (loadFailed) {
-    return <p className="lsw-result__placeholder">This Petition could not be loaded.</p>;
+    return <p className="lsw-result__placeholder">{t("author.petition.public.loadFailed")}</p>;
   }
 
   if (!projection) {
-    return <p className="lsw-result__placeholder">Loading Petition…</p>;
+    return <p className="lsw-result__placeholder">{t("author.petition.public.loading")}</p>;
   }
 
   const { petitionIdentity, petitionSubject, traceability, supportBreakdown, participationTransparencyNote } =
     projection;
-  const publishedAtLabel = formatDate(projection.petitionSummary.publishedAt);
+  const publishedAtLabel = formatDate(projection.petitionSummary.publishedAt, locale);
 
   return (
     <div className="ipl-public-result" translate="yes">
@@ -123,16 +126,16 @@ export function InitiativePetitionPublicResult({
           "keyArguments",
         ]}
         fieldLabels={{
-          title: "Petition Title",
-          summary: "Public Summary",
-          requestStatement: "Request Statement",
-          expectedOutcome: "Expected Outcome",
-          supportingContext: "Supporting Context",
-          keyArguments: "Key Arguments",
+          title: t("author.petition.fields.title"),
+          summary: t("author.petition.fields.publicSummary"),
+          requestStatement: t("author.petition.fields.requestStatement"),
+          expectedOutcome: t("author.petition.fields.expectedOutcome"),
+          supportingContext: t("author.petition.fields.supportingContext"),
+          keyArguments: t("author.petition.fields.keyArguments"),
         }}
         fallbackFields={{
           title: petitionIdentity.title,
-          summary: petitionSubject.summary || "No summary provided.",
+          summary: petitionSubject.summary || t("author.petition.public.emptySummary"),
           requestStatement: petitionSubject.requestStatement ?? "",
           expectedOutcome: petitionSubject.expectedOutcome ?? "",
           supportingContext: petitionSubject.supportingContext ?? "",
@@ -142,30 +145,47 @@ export function InitiativePetitionPublicResult({
 
       {traceability ? (
         <div className="ipl-public-result__field">
-          <h4>Traceability</h4>
+          <h4>{t("author.petition.public.traceability")}</h4>
           <div className="ipl-traceability">
             <span>
-              Supporting Revision: Version {traceability.revisionVersion} ({traceability.revisionId})
+              {t("author.petition.public.supportingRevision", {
+                version: traceability.revisionVersion,
+                revisionId: traceability.revisionId,
+              })}
             </span>
             {traceability.analysisId ? (
               <span>
-                Supporting Analysis: {traceability.analysisId}
-                {traceability.analysisVersion !== null ? ` (Version ${traceability.analysisVersion})` : ""}
+                {traceability.analysisVersion !== null
+                  ? t("author.petition.public.supportingAnalysisWithVersion", {
+                      analysisId: traceability.analysisId,
+                      version: traceability.analysisVersion,
+                    })
+                  : t("author.petition.public.supportingAnalysis", {
+                      analysisId: traceability.analysisId,
+                    })}
               </span>
             ) : null}
             <span>
-              Supporting Proposals:{" "}
-              {traceability.proposalIds.length > 0 ? traceability.proposalIds.join(", ") : "none"}
+              {t("author.petition.public.supportingProposals", {
+                proposalIds:
+                  traceability.proposalIds.length > 0
+                    ? traceability.proposalIds.join(", ")
+                    : t("author.petition.public.supportingProposalsNone"),
+              })}
             </span>
           </div>
         </div>
       ) : null}
 
-      {publishedAtLabel ? <p className="ipl-public-result__empty">Published {publishedAtLabel}</p> : null}
+      {publishedAtLabel ? (
+        <p className="ipl-public-result__empty">
+          {t("author.petition.public.publishedAt", { date: publishedAtLabel })}
+        </p>
+      ) : null}
 
-      <section className="ipl-support" aria-label="Representative signatures">
+      <section className="ipl-support" aria-label={t("author.petition.public.signaturesAria")}>
         <div className="ipl-support__header">
-          <p className="ipl-support__title">Representative Signatures</p>
+          <p className="ipl-support__title">{t("author.petition.public.signaturesTitle")}</p>
           <CivicShareButton
             payload={
               projection.shareReference.available
@@ -180,29 +200,32 @@ export function InitiativePetitionPublicResult({
             }
             disabled={!projection.shareReference.available}
             disabledReason={projection.shareReference.sharingNote}
-            ariaLabel={`Share petition: ${petitionIdentity.title}`}
+            ariaLabel={t("author.petition.public.shareAria", { title: petitionIdentity.title })}
           />
         </div>
-        <div className="ipl-support__counters" role="list" aria-label="Petition support counters">
+        <div
+          className="ipl-support__counters"
+          role="list"
+          aria-label={t("author.petition.public.supportCountersAria")}
+        >
           <div className="ipl-support__counter" role="listitem">
             <span className="ipl-support__counter-value">{supportBreakdown.participantSignatures}</span>
-            <span className="ipl-support__counter-label">Participants</span>
+            <span className="ipl-support__counter-label">{t("sidebar.support.participants")}</span>
           </div>
           <div className="ipl-support__counter" role="listitem">
             <span className="ipl-support__counter-value">{supportBreakdown.memberSignatures}</span>
-            <span className="ipl-support__counter-label">Members</span>
+            <span className="ipl-support__counter-label">{t("sidebar.support.members")}</span>
           </div>
           <div className="ipl-support__counter" role="listitem">
             <span className="ipl-support__counter-value">{supportBreakdown.visitorSignals}</span>
-            <span className="ipl-support__counter-label">Visitors</span>
+            <span className="ipl-support__counter-label">{t("sidebar.support.visitors")}</span>
           </div>
         </div>
         <p className="ipl-support__note">{participationTransparencyNote}</p>
 
         {isPreview ? (
           <p className="ipl-support__note">
-            The Signature widget is disabled while previewing — signing becomes available to visitors once
-            this Petition is published and open.
+            {t("author.petition.public.previewSignatureDisabled")}
           </p>
         ) : (
           <InitiativePetitionSignatureWidget
