@@ -38,6 +38,7 @@ export function InitiativeCollectiveDecisionAuthorWorkspace({
   lifecycleProfile,
 }: InitiativeCollectiveDecisionAuthorWorkspaceProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const profile = resolveInitiativeLifecycleProfile(lifecycleProfile);
   const [context, setContext] = useState<InitiativeCollectiveDecisionLifecycleDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,7 +84,7 @@ export function InitiativeCollectiveDecisionAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="The Collective Decision workspace could not be loaded." />
+        <WorkspaceErrorState message={t("author.collectiveDecision.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
           {actions.retry}
         </WorkspaceButton>
@@ -92,15 +93,12 @@ export function InitiativeCollectiveDecisionAuthorWorkspace({
   }
 
   if (loading || !context) {
-    return <p className="icd-source-panel__empty">Loading Collective Decision workspace…</p>;
+    return <p className="icd-source-panel__empty">{t("author.collectiveDecision.loading")}</p>;
   }
 
   if (context.publishedDecisionId) {
     return (
-      <p className="icd-source-panel__empty">
-        This Collective Decision has already been published. Use Public Preview to review it, or
-        continue to Implementation Commitments.
-      </p>
+      <p className="icd-source-panel__empty">{t("author.collectiveDecision.alreadyPublished")}</p>
     );
   }
 
@@ -128,12 +126,13 @@ export function InitiativeCollectiveDecisionAuthorWorkspace({
 
       {!hasContent || !context.draft ? (
         <div className="icd-editor">
-          <p className="icd-source-panel__empty">
-            Generate a structured Decision Result from upstream Lifecycle sources. The Decision
-            Assistant remains advisory — nothing publishes automatically.
-          </p>
+          <p className="icd-source-panel__empty">{t("author.collectiveDecision.noDraftExplanation")}</p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate Collective Decision Draft", actions.phaseLabels)}
+            {resolveSaveButtonLabel(
+              generatePhase.phase,
+              t("author.collectiveDecision.generateCollectiveDecisionDraft"),
+              actions.phaseLabels,
+            )}
           </WorkspaceButton>
         </div>
       ) : (

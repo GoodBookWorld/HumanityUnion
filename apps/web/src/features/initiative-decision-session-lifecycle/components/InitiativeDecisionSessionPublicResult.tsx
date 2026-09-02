@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicDecisionSessionProjection } from "@hu/types";
 
@@ -34,6 +35,7 @@ export function InitiativeDecisionSessionPublicResult({
   sessionId,
   isPreview = false,
 }: InitiativeDecisionSessionPublicResultProps) {
+  const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<PublicDecisionSessionProjection | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,7 +50,7 @@ export function InitiativeDecisionSessionPublicResult({
         }
       } catch {
         if (!cancelled) {
-          setError("Published Decision Session could not be loaded.");
+          setError(t("author.decisionSession.public.loadFailed"));
         }
       }
     })();
@@ -56,79 +58,97 @@ export function InitiativeDecisionSessionPublicResult({
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, t]);
 
   if (error) {
     return <p className="ids-source-panel__empty">{error}</p>;
   }
 
   if (!projection) {
-    return <p className="ids-source-panel__empty">Loading published Decision Session…</p>;
+    return <p className="ids-source-panel__empty">{t("author.decisionSession.public.loading")}</p>;
   }
 
   const structured = projection.structuredContent;
 
   return (
-    <article className="ids-public" aria-label="Published Decision Session">
-      {isPreview ? <p className="ids-public__meta">Author Preview of published Decision Session</p> : null}
+    <article className="ids-public" aria-label={t("author.decisionSession.public.aria")}>
+      {isPreview ? (
+        <p className="ids-public__meta">{t("author.decisionSession.public.previewMeta")}</p>
+      ) : null}
       <section className="ids-public__section">
         <h3>{projection.title}</h3>
         <p>{projection.decisionQuestion}</p>
         <p className="ids-public__meta">
-          Published {projection.publishedAt} · Steward {projection.stewardDisplayName}
+          {t("author.decisionSession.public.publishedMeta", {
+            date: projection.publishedAt,
+            steward: projection.stewardDisplayName,
+          })}
         </p>
       </section>
 
       <section className="ids-public__section">
-        <h3>Context</h3>
+        <h3>{t("author.decisionSession.sections.context")}</h3>
         <p>{structured?.decisionContext || projection.purpose}</p>
       </section>
 
-      <ListSection title="Objectives" items={structured?.objectives} />
-      <ListSection title="Options" items={structured?.options} />
-      <ListSection title="Supporting Arguments" items={structured?.supportingArguments} />
-      <ListSection title="Risks" items={structured?.risks} />
-      <ListSection title="Required Resources" items={structured?.requiredResources} />
+      <ListSection title={t("author.decisionSession.sections.objectives")} items={structured?.objectives} />
+      <ListSection title={t("author.decisionSession.sections.options")} items={structured?.options} />
+      <ListSection
+        title={t("author.decisionSession.sections.arguments")}
+        items={structured?.supportingArguments}
+      />
+      <ListSection title={t("author.decisionSession.sections.risks")} items={structured?.risks} />
+      <ListSection
+        title={t("author.decisionSession.sections.requiredResources")}
+        items={structured?.requiredResources}
+      />
 
       {structured?.suggestedTimeline ? (
         <section className="ids-public__section">
-          <h3>Suggested Timeline</h3>
+          <h3>{t("author.decisionSession.sections.timeline")}</h3>
           <p>{structured.suggestedTimeline}</p>
         </section>
       ) : null}
 
-      <ListSection title="Suggested Responsible Roles" items={structured?.suggestedResponsibleRoles} />
+      <ListSection
+        title={t("author.decisionSession.sections.roles")}
+        items={structured?.suggestedResponsibleRoles}
+      />
 
       {projection.traceability ? (
         <section className="ids-public__section">
-          <h3>Traceability</h3>
+          <h3>{t("author.decisionSession.sections.traceability")}</h3>
           <p>
-            Produced from Petition {projection.traceability.petitionId} (v
-            {projection.traceability.petitionVersion})
-            {projection.traceability.revisionId
-              ? `, Revision ${projection.traceability.revisionId} (v${projection.traceability.revisionVersion})`
-              : ""}
-            . Signature statistics at publish — Participants{" "}
-            {projection.traceability.participantSignatures}, Members{" "}
-            {projection.traceability.memberSignatures}, Visitors{" "}
-            {projection.traceability.visitorSignals}.
+            {t("author.decisionSession.public.traceabilityFromPetition", {
+              petitionId: projection.traceability.petitionId,
+              petitionVersion: projection.traceability.petitionVersion,
+              revisionClause: projection.traceability.revisionId
+                ? t("author.decisionSession.public.revisionClause", {
+                    revisionId: projection.traceability.revisionId,
+                    revisionVersion: projection.traceability.revisionVersion,
+                  })
+                : "",
+              participants: projection.traceability.participantSignatures,
+              members: projection.traceability.memberSignatures,
+              visitors: projection.traceability.visitorSignals,
+            })}
           </p>
         </section>
       ) : projection.relatedPetitionContext ? (
         <section className="ids-public__section">
-          <h3>Supporting Petition</h3>
+          <h3>{t("author.decisionSession.sections.supportingPetition")}</h3>
           <p>
-            {projection.relatedPetitionContext.title} — Participants{" "}
-            {projection.relatedPetitionContext.participantSignatures}, Members{" "}
-            {projection.relatedPetitionContext.memberSignatures}, Visitors{" "}
-            {projection.relatedPetitionContext.visitorSignals}.
+            {t("author.decisionSession.public.supportingPetitionSummary", {
+              title: projection.relatedPetitionContext.title,
+              participants: projection.relatedPetitionContext.participantSignatures,
+              members: projection.relatedPetitionContext.memberSignatures,
+              visitors: projection.relatedPetitionContext.visitorSignals,
+            })}
           </p>
         </section>
       ) : null}
 
-      <p className="ids-public__meta">
-        Decision Session is informational. Voting belongs to Collective Decision.
-      </p>
+      <p className="ids-public__meta">{t("author.decisionSession.public.votingBelongsNotice")}</p>
     </article>
   );
 }

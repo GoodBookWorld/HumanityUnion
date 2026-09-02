@@ -235,6 +235,48 @@ export function resolveParticipationScopeDisplayLabel(
   return resolveLabel(messagesOrT, `manage.scopes.${scope}`, scope);
 }
 
+const COLLECTIVE_DECISION_STATUS_CODES = new Set<string>([
+  "draft",
+  "opened",
+  "closed",
+  "cancelled",
+]);
+
+/**
+ * Display-only label for InitiativeCollectiveDecisionStatus codes.
+ * Domain contract: `"draft" | "opened" | "closed" | "cancelled"`.
+ * Unknown codes fall back to the raw code — never invent meaning.
+ */
+export function resolveCollectiveDecisionStatusDisplayLabel(
+  status: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  if (!COLLECTIVE_DECISION_STATUS_CODES.has(status)) {
+    return status;
+  }
+  return resolveLabel(messagesOrT, `author.collectiveDecision.statuses.${status}`, status);
+}
+
+/**
+ * Display-only vote-choice labels reused from collaboration.vote.*.
+ * Canonical codes (`support` | `do_not_support` | `abstain`) stay unchanged.
+ */
+export function resolveInitiativeDecisionVoteChoiceDisplayLabel(
+  choice: string,
+  messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
+): string {
+  switch (choice) {
+    case "support":
+      return resolveLabel(messagesOrT, "collaboration.vote.support", choice);
+    case "do_not_support":
+      return resolveLabel(messagesOrT, "collaboration.vote.doNotSupport", choice);
+    case "abstain":
+      return resolveLabel(messagesOrT, "collaboration.vote.abstain", choice);
+    default:
+      return choice;
+  }
+}
+
 /** Contract: every public stageId has a catalog key path stages.{id}. */
 export function listPublicLifecycleStageIdsForI18n(): readonly string[] {
   return PUBLIC_INITIATIVE_EXPERIENCE_STAGES.map((stage) => stage.stageId);

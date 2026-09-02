@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   InitiativeDecisionVote,
@@ -21,6 +22,10 @@ import { listPublicChoiceCandidates } from "../../public-choice-candidate/api";
 import { PublicChoiceElectionResultsBoard } from "../../public-choice-candidate/components/PublicChoiceElectionResultsBoard";
 import { downloadPublicChoiceResultsPdf } from "../../public-choice-results-retention/api";
 import { buildInitiativeExperienceHref } from "../../initiative-owner-studio/initiative-experience-routes";
+import {
+  resolveCollectiveDecisionStatusDisplayLabel,
+  resolveInitiativeDecisionVoteChoiceDisplayLabel,
+} from "../../public-initiative-experience/initiative-experience-i18n";
 
 import { InitiativeCollectiveDecisionBallotWidget } from "./InitiativeCollectiveDecisionBallotWidget";
 
@@ -61,6 +66,7 @@ export function InitiativeCollectiveDecisionPublicResult({
   decisionId,
   isPreview = false,
 }: InitiativeCollectiveDecisionPublicResultProps) {
+  const t = useTranslations("initiativeExperience");
   const [projection, setProjection] = useState<PublicInitiativeCollectiveDecisionProjection | null>(
     null,
   );
@@ -96,7 +102,7 @@ export function InitiativeCollectiveDecisionPublicResult({
         }
       } catch {
         if (!cancelled) {
-          setError("Published Collective Decision could not be loaded.");
+          setError(t("author.collectiveDecision.public.loadFailed"));
         }
       }
     })();
@@ -104,7 +110,7 @@ export function InitiativeCollectiveDecisionPublicResult({
     return () => {
       cancelled = true;
     };
-  }, [decisionId, loadProjection]);
+  }, [decisionId, loadProjection, t]);
 
   async function handleVoteSucceeded(_vote: InitiativeDecisionVote) {
     try {
@@ -133,7 +139,7 @@ export function InitiativeCollectiveDecisionPublicResult({
   }
 
   if (!projection) {
-    return <p className="icd-source-panel__empty">Loading published Collective Decision…</p>;
+    return <p className="icd-source-panel__empty">{t("author.collectiveDecision.public.loading")}</p>;
   }
 
   const structured = projection.structuredContent;
@@ -152,13 +158,13 @@ export function InitiativeCollectiveDecisionPublicResult({
   const votingOpen = votingStatus === "OPEN";
   const resultsExpired = votingStatus === "EXPIRED";
   const resultsLabel = votingOpen
-    ? "CURRENT RESULTS"
+    ? t("author.collectiveDecision.public.resultsCurrent")
     : resultsExpired
-      ? "RESULTS"
+      ? t("author.collectiveDecision.public.results")
       : projection.status === "closed" ||
           projection.resultsRetention?.status === "results_available"
-        ? "FINAL RESULTS"
-        : "RESULTS";
+        ? t("author.collectiveDecision.public.resultsFinal")
+        : t("author.collectiveDecision.public.results");
   const downloadAvailable =
     Boolean(projection.resultsRetention?.downloadAvailable) && !resultsExpired;
   const overviewHref = buildInitiativeExperienceHref(projection.initiativeId);
@@ -178,12 +184,13 @@ export function InitiativeCollectiveDecisionPublicResult({
       memberPercentage: 0,
     },
   };
+  const statusLabel = resolveCollectiveDecisionStatusDisplayLabel(projection.status, t);
 
   if (isPublicChoiceBallot) {
     return (
-      <article className="icd-public" aria-label="Published Collective Decision">
+      <article className="icd-public" aria-label={t("author.collectiveDecision.public.aria")}>
         {isPreview ? (
-          <p className="icd-public__meta">Author Preview of published Collective Decision</p>
+          <p className="icd-public__meta">{t("author.collectiveDecision.public.previewMeta")}</p>
         ) : null}
 
         {ballotMode === "SELECT_ONE_CANDIDATE" ||
@@ -216,87 +223,126 @@ export function InitiativeCollectiveDecisionPublicResult({
 
         {votingOpen ? (
           <p className="icd-public__meta">
-            Select or recall your candidate on{" "}
-            <a href={`${overviewHref}#overview`}>Overview</a>.
+            {t.rich("author.collectiveDecision.public.selectCandidateOnOverview", {
+              overviewLink: (chunks) => (
+                <a href={`${overviewHref}#overview`}>{chunks}</a>
+              ),
+            })}
           </p>
         ) : null}
       </article>
     );
   }
 
+  const standardResultsHeading =
+    projection.status === "opened"
+      ? t("author.collectiveDecision.public.resultsCurrent")
+      : projection.status === "closed"
+        ? t("author.collectiveDecision.public.resultsFinal")
+        : t("author.collectiveDecision.public.resultsVoting");
+
   return (
-    <article className="icd-public" aria-label="Published Collective Decision">
+    <article className="icd-public" aria-label={t("author.collectiveDecision.public.aria")}>
       {isPreview ? (
-        <p className="icd-public__meta">Author Preview of published Collective Decision</p>
+        <p className="icd-public__meta">{t("author.collectiveDecision.public.previewMeta")}</p>
       ) : null}
       <section className="icd-public__section">
         <h3>{structured?.title || projection.question}</h3>
         <p>{structured?.decisionSummary ?? projection.question}</p>
         <p className="icd-public__meta">
-          Status {projection.status.replaceAll("_", " ")}
           {projection.closedAt
-            ? ` · Closed ${new Date(projection.closedAt).toLocaleString()}`
-            : ` · Closes ${new Date(projection.closesAt).toLocaleString()}`}{" "}
-          · Steward {projection.stewardDisplayName}
+            ? t("author.collectiveDecision.public.statusClosedMeta", {
+                status: statusLabel,
+                closedAt: new Date(projection.closedAt).toLocaleString(),
+                steward: projection.stewardDisplayName,
+              })
+            : t("author.collectiveDecision.public.statusMeta", {
+                status: statusLabel,
+                closesAt: new Date(projection.closesAt).toLocaleString(),
+                steward: projection.stewardDisplayName,
+              })}
         </p>
       </section>
 
-      <ListSection title="Approved Actions" items={structured?.approvedActions} />
-      <ListSection title="Rejected Alternatives" items={structured?.rejectedAlternatives} />
-      <ListSection title="Responsible Roles" items={structured?.responsibleRoles} />
-      <ListSection title="Implementation Priorities" items={structured?.implementationPriorities} />
+      <ListSection
+        title={t("author.collectiveDecision.sections.approvedActions")}
+        items={structured?.approvedActions}
+      />
+      <ListSection
+        title={t("author.collectiveDecision.sections.rejectedAlternatives")}
+        items={structured?.rejectedAlternatives}
+      />
+      <ListSection
+        title={t("author.collectiveDecision.sections.roles")}
+        items={structured?.responsibleRoles}
+      />
+      <ListSection
+        title={t("author.collectiveDecision.sections.priorities")}
+        items={structured?.implementationPriorities}
+      />
 
       {structured?.implementationTimeline ? (
         <section className="icd-public__section">
-          <h3>Implementation Timeline</h3>
+          <h3>{t("author.collectiveDecision.sections.timeline")}</h3>
           <p>{structured.implementationTimeline}</p>
         </section>
       ) : null}
 
       {structured?.decisionRationale ? (
         <section className="icd-public__section">
-          <h3>Decision Rationale</h3>
+          <h3>{t("author.collectiveDecision.sections.rationale")}</h3>
           <p>{structured.decisionRationale}</p>
         </section>
       ) : null}
 
-      <ListSection title="Decision Risks" items={structured?.decisionRisks} />
-      <ListSection title="Success Criteria" items={structured?.successCriteria} />
-      <ListSection title="Required Resources" items={structured?.requiredResources} />
+      <ListSection
+        title={t("author.collectiveDecision.sections.risks")}
+        items={structured?.decisionRisks}
+      />
+      <ListSection
+        title={t("author.collectiveDecision.sections.criteria")}
+        items={structured?.successCriteria}
+      />
+      <ListSection
+        title={t("author.collectiveDecision.sections.requiredResources")}
+        items={structured?.requiredResources}
+      />
 
       <section className="icd-public__section">
-        <h3>
-          {projection.status === "opened"
-            ? "CURRENT RESULTS"
-            : projection.status === "closed"
-              ? "FINAL RESULTS"
-              : "Voting Results"}
-        </h3>
+        <h3>{standardResultsHeading}</h3>
         <p>{projection.outcomeSummary}</p>
-        <ul className="icd-public__stats" aria-label="Vote totals">
+        <ul className="icd-public__stats" aria-label={t("author.collectiveDecision.public.voteTotalsAria")}>
           <li>
-            Support:{" "}
-            {ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
-              ? ballotAggregates.total.support
-              : stats.supportCount}
+            {t("author.collectiveDecision.public.supportCount", {
+              count:
+                ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
+                  ? ballotAggregates.total.support
+                  : stats.supportCount,
+            })}
           </li>
           <li>
-            Do Not Support:{" "}
-            {ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
-              ? ballotAggregates.total.doNotSupport
-              : stats.doNotSupportCount}
+            {t("author.collectiveDecision.public.doNotSupportCount", {
+              count:
+                ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
+                  ? ballotAggregates.total.doNotSupport
+                  : stats.doNotSupportCount,
+            })}
           </li>
           <li>
-            Abstain:{" "}
-            {ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
-              ? ballotAggregates.total.abstain
-              : stats.abstainCount}
+            {t("author.collectiveDecision.public.abstainCount", {
+              count:
+                ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
+                  ? ballotAggregates.total.abstain
+                  : stats.abstainCount,
+            })}
           </li>
           <li>
-            Total votes:{" "}
-            {ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
-              ? ballotAggregates.total.totalVotes
-              : stats.totalVotesCast}
+            {t("author.collectiveDecision.public.totalVotesCount", {
+              count:
+                ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
+                  ? ballotAggregates.total.totalVotes
+                  : stats.totalVotesCast,
+            })}
           </li>
         </ul>
         <p className="icd-public__meta">{projection.transparencyNote}</p>
@@ -310,26 +356,38 @@ export function InitiativeCollectiveDecisionPublicResult({
 
       {projection.traceability ? (
         <section className="icd-public__section">
-          <h3>Traceability</h3>
+          <h3>{t("author.collectiveDecision.sections.traceability")}</h3>
           <p>
-            {projection.traceability.decisionSessionId
-              ? `Produced from Decision Session ${projection.traceability.decisionSessionId} (v${projection.traceability.decisionSessionVersion})`
-              : "Produced from upstream Lifecycle sources"}
-            {projection.traceability.petitionId
-              ? `, Petition ${projection.traceability.petitionId}`
-              : ""}
-            {projection.traceability.revisionId
-              ? `, Revision ${projection.traceability.revisionId} (v${projection.traceability.revisionVersion})`
-              : ""}
-            . Signature statistics at publish — Participants{" "}
-            {projection.traceability.participantSignatures}, Members{" "}
-            {projection.traceability.memberSignatures}, Visitors{" "}
-            {projection.traceability.visitorSignals}.
+            {(projection.traceability.decisionSessionId
+              ? t("author.collectiveDecision.public.traceabilityFromSession", {
+                  sessionId: projection.traceability.decisionSessionId,
+                  sessionVersion: projection.traceability.decisionSessionVersion ?? "",
+                })
+              : t("author.collectiveDecision.public.traceabilityFromUpstream")) +
+              (projection.traceability.petitionId
+                ? t("author.collectiveDecision.public.traceabilityPetitionClause", {
+                    petitionId: projection.traceability.petitionId,
+                  })
+                : "") +
+              (projection.traceability.revisionId
+                ? t("author.collectiveDecision.public.traceabilityRevisionClause", {
+                    revisionId: projection.traceability.revisionId,
+                    revisionVersion: projection.traceability.revisionVersion ?? "",
+                  })
+                : "") +
+              t("author.collectiveDecision.public.traceabilitySignatures", {
+                participants: projection.traceability.participantSignatures,
+                members: projection.traceability.memberSignatures,
+                visitors: projection.traceability.visitorSignals,
+              })}
           </p>
         </section>
       ) : null}
 
-      <ListSection title="Supporting References" items={structured?.supportingReferences} />
+      <ListSection
+        title={t("author.collectiveDecision.sections.supportingReferences")}
+        items={structured?.supportingReferences}
+      />
     </article>
   );
 }
@@ -343,6 +401,7 @@ function SupportOpposeReadOnlyResults({
   resultsLabel: string;
   votingOpen: boolean;
 }) {
+  const t = useTranslations("initiativeExperience");
   const aggregates =
     projection.ballotAggregates?.ballotMode === "SUPPORT_OPPOSE"
       ? projection.ballotAggregates
@@ -353,9 +412,18 @@ function SupportOpposeReadOnlyResults({
   const abstain = aggregates?.total.abstain ?? projection.statistics.abstainCount;
   const total = aggregates?.total.totalVotes ?? projection.statistics.totalVotesCast;
   const rows = [
-    { label: "Support", count: support },
-    { label: "Do not support", count: doNotSupport },
-    { label: "Abstain", count: abstain },
+    {
+      label: resolveInitiativeDecisionVoteChoiceDisplayLabel("support", t),
+      count: support,
+    },
+    {
+      label: resolveInitiativeDecisionVoteChoiceDisplayLabel("do_not_support", t),
+      count: doNotSupport,
+    },
+    {
+      label: resolveInitiativeDecisionVoteChoiceDisplayLabel("abstain", t),
+      count: abstain,
+    },
   ];
 
   return (
@@ -364,12 +432,14 @@ function SupportOpposeReadOnlyResults({
         <h2 id="pie-cd-so-results-title">{resultsLabel}</h2>
         <p role="status">
           {votingOpen
-            ? "Voting is open. These are current community results."
-            : "Voting is closed. These are final community results."}
+            ? t("author.collectiveDecision.public.votingOpenNote")
+            : t("author.collectiveDecision.public.votingClosedNote")}
         </p>
       </header>
       <p className="pie-election-results__total">
-        Total effective voters: <strong>{total}</strong>
+        {t.rich("author.collectiveDecision.public.totalEffectiveVoters", {
+          count: () => <strong>{total}</strong>,
+        })}
       </p>
       <ul className="pie-election-results__ternary">
         {rows.map((row) => {
@@ -379,9 +449,14 @@ function SupportOpposeReadOnlyResults({
               <strong>{row.label}</strong>
               <div
                 className="pie-election-results__metrics"
-                aria-label={`${row.count} votes, ${formatPercent(percentage)}`}
+                aria-label={t("author.collectiveDecision.public.votesMetricAria", {
+                  count: row.count,
+                  percent: formatPercent(percentage),
+                })}
               >
-                <div className="pie-election-results__count">{row.count} votes</div>
+                <div className="pie-election-results__count">
+                  {t("author.collectiveDecision.public.votesMetric", { count: row.count })}
+                </div>
                 <div className="pie-election-results__percent">{formatPercent(percentage)}</div>
                 <div
                   className="pie-election-results__bar"

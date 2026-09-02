@@ -25,6 +25,10 @@ function listToLines(values: readonly string[]): string {
   return values.join("\n");
 }
 
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 interface DecisionSessionApplyForm {
   title: string;
   decisionQuestion: string;
@@ -57,6 +61,7 @@ export function InitiativeDecisionSessionEditor({
   onTogglePreview,
 }: InitiativeDecisionSessionEditorProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [title, setTitle] = useState(draft.title);
   const [decisionQuestion, setDecisionQuestion] = useState(draft.decisionQuestion);
   const [decisionContext, setDecisionContext] = useState(draft.decisionContext);
@@ -164,7 +169,11 @@ export function InitiativeDecisionSessionEditor({
       setUnresolvedQuestions(listToLines(generated.unresolvedQuestions));
       onDraftUpdated(generated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generate failed.");
+      setError(
+        t("author.decisionSession.messages.generateFailed", {
+          detail: detailFromError(err, t("author.decisionSession.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -190,7 +199,11 @@ export function InitiativeDecisionSessionEditor({
       );
       onDraftUpdated(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(
+        t("author.decisionSession.messages.saveFailed", {
+          detail: detailFromError(err, t("author.decisionSession.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -217,18 +230,22 @@ export function InitiativeDecisionSessionEditor({
       );
       onPublished(published);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Publish failed.");
+      setError(
+        t("author.decisionSession.messages.publishFailed", {
+          detail: detailFromError(err, t("author.decisionSession.messages.unknownError")),
+        }),
+      );
     }
   }
 
   return (
     <div className="ids-editor">
       <div className="ids-editor__field">
-        <label htmlFor="ids-title">Decision Title</label>
+        <label htmlFor="ids-title">{t("author.decisionSession.fields.title")}</label>
         <input id="ids-title" value={title} onChange={(event) => setTitle(event.target.value)} />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-question">Decision Question</label>
+        <label htmlFor="ids-question">{t("author.decisionSession.fields.question")}</label>
         <textarea
           id="ids-question"
           rows={3}
@@ -237,7 +254,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-context">Decision Context</label>
+        <label htmlFor="ids-context">{t("author.decisionSession.fields.context")}</label>
         <textarea
           id="ids-context"
           rows={5}
@@ -246,7 +263,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-objectives">Objectives (one per line)</label>
+        <label htmlFor="ids-objectives">{t("author.decisionSession.fields.objectives")}</label>
         <textarea
           id="ids-objectives"
           rows={4}
@@ -255,7 +272,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-options">Decision Options (one per line)</label>
+        <label htmlFor="ids-options">{t("author.decisionSession.fields.options")}</label>
         <textarea
           id="ids-options"
           rows={4}
@@ -264,7 +281,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-args">Supporting Arguments (one per line)</label>
+        <label htmlFor="ids-args">{t("author.decisionSession.fields.arguments")}</label>
         <textarea
           id="ids-args"
           rows={4}
@@ -273,7 +290,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-risks">Risks (one per line)</label>
+        <label htmlFor="ids-risks">{t("author.decisionSession.fields.risks")}</label>
         <textarea
           id="ids-risks"
           rows={3}
@@ -282,7 +299,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-deps">Dependencies (one per line)</label>
+        <label htmlFor="ids-deps">{t("author.decisionSession.fields.dependencies")}</label>
         <textarea
           id="ids-deps"
           rows={3}
@@ -291,7 +308,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-resources">Required Resources (one per line)</label>
+        <label htmlFor="ids-resources">{t("author.decisionSession.fields.requiredResources")}</label>
         <textarea
           id="ids-resources"
           rows={3}
@@ -300,7 +317,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-timeline">Suggested Timeline</label>
+        <label htmlFor="ids-timeline">{t("author.decisionSession.fields.timeline")}</label>
         <textarea
           id="ids-timeline"
           rows={3}
@@ -309,7 +326,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-participants">Suggested Participants (one per line)</label>
+        <label htmlFor="ids-participants">{t("author.decisionSession.fields.participants")}</label>
         <textarea
           id="ids-participants"
           rows={3}
@@ -318,7 +335,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-roles">Suggested Responsible Roles (one per line)</label>
+        <label htmlFor="ids-roles">{t("author.decisionSession.fields.roles")}</label>
         <textarea
           id="ids-roles"
           rows={3}
@@ -327,7 +344,7 @@ export function InitiativeDecisionSessionEditor({
         />
       </div>
       <div className="ids-editor__field">
-        <label htmlFor="ids-unresolved">Unresolved Questions (one per line)</label>
+        <label htmlFor="ids-unresolved">{t("author.decisionSession.fields.unresolvedQuestions")}</label>
         <textarea
           id="ids-unresolved"
           rows={3}
@@ -341,7 +358,7 @@ export function InitiativeDecisionSessionEditor({
 
       <div className="ids-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {actions.saveLabel(generatePhase.phase, actions.generate)}
+          {actions.saveLabel(generatePhase.phase, t("author.decisionSession.generateDecisionDraft"))}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
           {actions.saveLabel(savePhase.phase, actions.saveDraft)}

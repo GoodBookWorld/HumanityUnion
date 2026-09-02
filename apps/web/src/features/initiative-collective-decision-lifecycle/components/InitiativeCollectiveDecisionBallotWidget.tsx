@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type {
   InitiativeDecisionVote,
@@ -14,12 +15,15 @@ import {
   castOrUpdateInitiativeDecisionVote,
   getMyInitiativeDecisionVote,
 } from "../../initiative-collective-decision/api";
+import {
+  resolveInitiativeDecisionVoteChoiceDisplayLabel,
+  resolveParticipationScopeDisplayLabel,
+} from "../../public-initiative-experience/initiative-experience-i18n";
 
 import {
   INITIATIVE_DECISION_VOTE_CHOICES,
   describeCollectiveDecisionVotingUnavailable,
   isCollectiveDecisionVotingWindowOpen,
-  labelInitiativeDecisionVoteChoice,
 } from "../collective-decision-voting";
 
 interface InitiativeCollectiveDecisionBallotWidgetProps {
@@ -40,6 +44,7 @@ export function InitiativeCollectiveDecisionBallotWidget({
   projection,
   onVoteSucceeded,
 }: InitiativeCollectiveDecisionBallotWidgetProps) {
+  const t = useTranslations("initiativeExperience");
   const authStatus = useClientAuthStatus();
   const [currentVote, setCurrentVote] = useState<InitiativeDecisionVote | null>(null);
   const [voteLoadState, setVoteLoadState] = useState<"idle" | "loading" | "ready" | "error">(
@@ -51,7 +56,12 @@ export function InitiativeCollectiveDecisionBallotWidget({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const votingOpen = isCollectiveDecisionVotingWindowOpen(projection);
+  // Contract debt: English prose without stable reason codes — do not sentence-match.
   const unavailableReason = describeCollectiveDecisionVotingUnavailable(projection);
+
+  function choiceLabel(choice: string): string {
+    return resolveInitiativeDecisionVoteChoiceDisplayLabel(choice, t);
+  }
 
   useEffect(() => {
     if (!votingOpen || authStatus !== "authenticated") {
@@ -83,9 +93,9 @@ export function InitiativeCollectiveDecisionBallotWidget({
 
         setVoteLoadState("error");
         setError(
-          loadError instanceof Error
+          loadError instanceof Error && loadError.message.trim()
             ? loadError.message
-            : "Your current vote could not be loaded.",
+            : t("author.collectiveDecision.ballot.voteLoadFailed"),
         );
       }
     })();
@@ -93,7 +103,7 @@ export function InitiativeCollectiveDecisionBallotWidget({
     return () => {
       cancelled = true;
     };
-  }, [authStatus, decisionId, votingOpen]);
+  }, [authStatus, decisionId, t, votingOpen]);
 
   async function handleCast(choice: InitiativeDecisionVoteChoice) {
     if (authStatus !== "authenticated" || busy || !votingOpen) {
@@ -101,7 +111,11 @@ export function InitiativeCollectiveDecisionBallotWidget({
     }
 
     if (currentVote?.choice === choice) {
-      setStatusMessage(`Your vote is already recorded as ${labelInitiativeDecisionVoteChoice(choice)}.`);
+      setStatusMessage(
+        t("author.collectiveDecision.ballot.alreadyRecorded", {
+          choice: choiceLabel(choice),
+        }),
+      );
       return;
     }
 
@@ -116,15 +130,15 @@ export function InitiativeCollectiveDecisionBallotWidget({
       setVoteLoadState("ready");
       setStatusMessage(
         currentVote
-          ? `Vote updated to ${labelInitiativeDecisionVoteChoice(choice)}.`
-          : `Vote recorded as ${labelInitiativeDecisionVoteChoice(choice)}.`,
+          ? t("author.collectiveDecision.ballot.voteUpdated", { choice: choiceLabel(choice) })
+          : t("author.collectiveDecision.ballot.voteRecorded", { choice: choiceLabel(choice) }),
       );
       await onVoteSucceeded(vote);
     } catch (submissionError) {
       setError(
-        submissionError instanceof Error
+        submissionError instanceof Error && submissionError.message.trim()
           ? submissionError.message
-          : "Your vote could not be recorded.",
+          : t("author.collectiveDecision.ballot.voteSubmitFailed"),
       );
     } finally {
       setBusy(false);
@@ -132,12 +146,17 @@ export function InitiativeCollectiveDecisionBallotWidget({
     }
   }
 
+  const closesMeta = t("collaboration.vote.closesMeta", {
+    closesAt: new Date(projection.closesAt).toLocaleString(),
+    scope: resolveParticipationScopeDisplayLabel(projection.participationScope, t),
+  });
+
   if (!votingOpen) {
     return (
-      <section className="icd-ballot" aria-label="Collective Decision voting">
-        <h3 className="icd-ballot__title">Participant Vote</h3>
+      <section className="icd-ballot" aria-label={t("author.collectiveDecision.ballot.aria")}>
+        <h3 className="icd-ballot__title">{t("author.collectiveDecision.ballot.title")}</h3>
         <p className="icd-ballot__note" role="status">
-          {unavailableReason ?? "Voting is not available."}
+          {unavailableReason ?? t("collaboration.vote.unavailable")}
         </p>
       </section>
     );
@@ -145,10 +164,10 @@ export function InitiativeCollectiveDecisionBallotWidget({
 
   if (authStatus === "pending" || voteLoadState === "loading") {
     return (
-      <section className="icd-ballot" aria-label="Collective Decision voting">
-        <h3 className="icd-ballot__title">Participant Vote</h3>
+      <section className="icd-ballot" aria-label={t("author.collectiveDecision.ballot.aria")}>
+        <h3 className="icd-ballot__title">{t("author.collectiveDecision.ballot.title")}</h3>
         <p className="icd-ballot__note" role="status">
-          Checking your voting status…
+          {t("author.collectiveDecision.ballot.checkingStatus")}
         </p>
       </section>
     );
@@ -158,47 +177,34 @@ export function InitiativeCollectiveDecisionBallotWidget({
     const returnTo = typeof window !== "undefined" ? window.location.href : "/";
 
     return (
-      <section className="icd-ballot" aria-label="Collective Decision voting">
-        <h3 className="icd-ballot__title">Participant Vote</h3>
-        <p className="icd-ballot__note">
-          Sign in as a Participant to cast your vote on this Collective Decision. Choices are
-          Support, Do Not Support, or Abstain.
-        </p>
-        <p className="icd-ballot__meta">
-          Closes {new Date(projection.closesAt).toLocaleString()} · Scope{" "}
-          {projection.participationScope}
-        </p>
+      <section className="icd-ballot" aria-label={t("author.collectiveDecision.ballot.aria")}>
+        <h3 className="icd-ballot__title">{t("author.collectiveDecision.ballot.title")}</h3>
+        <p className="icd-ballot__note">{t("author.collectiveDecision.ballot.signInNote")}</p>
+        <p className="icd-ballot__meta">{closesMeta}</p>
         <a className="icd-ballot__signin" href={`/login?returnTo=${encodeURIComponent(returnTo)}`}>
-          Sign in to vote
+          {t("collaboration.vote.signInToVote")}
         </a>
       </section>
     );
   }
 
   return (
-    <section className="icd-ballot" aria-label="Collective Decision voting">
-      <h3 className="icd-ballot__title">Participant Vote</h3>
-      <p className="icd-ballot__note">
-        Cast your vote on this Collective Decision. You may change your choice while voting remains
-        open. Backend eligibility rules apply.
-      </p>
-      <p className="icd-ballot__meta">
-        Closes {new Date(projection.closesAt).toLocaleString()} · Scope{" "}
-        {projection.participationScope}
-      </p>
+    <section className="icd-ballot" aria-label={t("author.collectiveDecision.ballot.aria")}>
+      <h3 className="icd-ballot__title">{t("author.collectiveDecision.ballot.title")}</h3>
+      <p className="icd-ballot__note">{t("author.collectiveDecision.ballot.castNote")}</p>
+      <p className="icd-ballot__meta">{closesMeta}</p>
 
       {currentVote ? (
         <p className="icd-ballot__current" role="status">
-          Your current vote:{" "}
-          <strong>{labelInitiativeDecisionVoteChoice(currentVote.choice)}</strong>
+          {t("collaboration.vote.currentVote", { choice: choiceLabel(currentVote.choice) })}
         </p>
       ) : (
         <p className="icd-ballot__current" role="status">
-          You have not voted yet.
+          {t("collaboration.vote.notVotedYet")}
         </p>
       )}
 
-      <div className="icd-ballot__choices" role="group" aria-label="Vote choices">
+      <div className="icd-ballot__choices" role="group" aria-label={t("collaboration.vote.voteChoicesAria")}>
         {INITIATIVE_DECISION_VOTE_CHOICES.map((choice) => {
           const selected = currentVote?.choice === choice;
           const pending = pendingChoice === choice;
@@ -215,8 +221,8 @@ export function InitiativeCollectiveDecisionBallotWidget({
               onClick={() => void handleCast(choice)}
             >
               {pending
-                ? `Recording ${labelInitiativeDecisionVoteChoice(choice)}…`
-                : labelInitiativeDecisionVoteChoice(choice)}
+                ? t("collaboration.vote.recordingChoice", { choice: choiceLabel(choice) })
+                : choiceLabel(choice)}
             </button>
           );
         })}
@@ -224,7 +230,7 @@ export function InitiativeCollectiveDecisionBallotWidget({
 
       {busy ? (
         <p className="icd-ballot__note" role="status" aria-live="polite">
-          Submitting your vote…
+          {t("collaboration.vote.submitting")}
         </p>
       ) : null}
 

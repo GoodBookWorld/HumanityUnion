@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { InitiativeDecisionSessionIntelligenceSnapshot } from "@hu/types";
 
 export function InitiativeDecisionSessionIntelligenceSnapshotPanel({
@@ -7,56 +9,81 @@ export function InitiativeDecisionSessionIntelligenceSnapshotPanel({
 }: {
   snapshot: InitiativeDecisionSessionIntelligenceSnapshot;
 }) {
+  const t = useTranslations("initiativeExperience");
+
   if (snapshot.isEmpty) {
-    return (
-      <p className="ids-source-panel__empty">
-        Decision Sources are empty until a Petition (and upstream Revision/Analysis) is published.
-      </p>
-    );
+    return <p className="ids-source-panel__empty">{t("author.decisionSession.sourceSnapshot.empty")}</p>;
   }
 
   return (
-    <section className="ids-source-panel" aria-label="Decision Sources">
+    <section className="ids-source-panel" aria-label={t("author.decisionSession.sourceSnapshot.aria")}>
       <ul className="ids-source-panel__list">
         <li className="ids-source-panel__item">
-          <span className="ids-source-panel__label">Published Petition</span>
+          <span className="ids-source-panel__label">
+            {t("author.decisionSession.sourceSnapshot.publishedPetition")}
+          </span>
           <p className="ids-source-panel__summary">
             {snapshot.petitionReference
-              ? `${snapshot.petitionReference.title} — Participants ${snapshot.petitionReference.participantSignatures}, Members ${snapshot.petitionReference.memberSignatures}, Visitors ${snapshot.petitionReference.visitorSignals}`
-              : "No published Petition yet"}
+              ? t("author.decisionSession.sourceSnapshot.petitionSummary", {
+                  title: snapshot.petitionReference.title,
+                  participants: snapshot.petitionReference.participantSignatures,
+                  members: snapshot.petitionReference.memberSignatures,
+                  visitors: snapshot.petitionReference.visitorSignals,
+                })
+              : t("author.decisionSession.sourceSnapshot.noPetition")}
           </p>
         </li>
         <li className="ids-source-panel__item">
-          <span className="ids-source-panel__label">Published Revision</span>
+          <span className="ids-source-panel__label">
+            {t("author.decisionSession.sourceSnapshot.publishedRevision")}
+          </span>
           <p className="ids-source-panel__summary">
             {snapshot.revisionReference
-              ? `v${snapshot.revisionReference.version} — ${snapshot.revisionReference.revisionSummary}`
-              : "No published Revision yet"}
+              ? t("author.decisionSession.sourceSnapshot.revisionSummary", {
+                  version: snapshot.revisionReference.version,
+                  summary: snapshot.revisionReference.revisionSummary,
+                })
+              : t("author.decisionSession.sourceSnapshot.noRevision")}
           </p>
         </li>
         <li className="ids-source-panel__item">
-          <span className="ids-source-panel__label">Collaborative Analysis</span>
+          <span className="ids-source-panel__label">
+            {t("author.decisionSession.sourceSnapshot.collaborativeAnalysis")}
+          </span>
           <p className="ids-source-panel__summary">
-            {snapshot.analysisReference?.title ?? "No published Analysis yet"}
+            {snapshot.analysisReference?.title ??
+              t("author.decisionSession.sourceSnapshot.noAnalysis")}
           </p>
         </li>
         <li className="ids-source-panel__item">
-          <span className="ids-source-panel__label">Improvement Proposals</span>
+          <span className="ids-source-panel__label">
+            {t("author.decisionSession.sourceSnapshot.improvementProposals")}
+          </span>
           <p className="ids-source-panel__summary">
-            {snapshot.proposalReferences.length} referenced proposal(s)
+            {t("author.decisionSession.sourceSnapshot.proposalsCount", {
+              count: snapshot.proposalReferences.length,
+            })}
           </p>
         </li>
         <li className="ids-source-panel__item">
-          <span className="ids-source-panel__label">Active Ally recommendations</span>
+          <span className="ids-source-panel__label">
+            {t("author.decisionSession.sourceSnapshot.allyRecommendations")}
+          </span>
           <p className="ids-source-panel__summary">
-            {snapshot.allyRecommendations.length} advisory recommendation(s) from{" "}
-            {snapshot.activeAllyCount} Active Ally(ies)
+            {t("author.decisionSession.sourceSnapshot.allyCount", {
+              recommendations: snapshot.allyRecommendations.length,
+              allies: snapshot.activeAllyCount,
+            })}
           </p>
         </li>
         <li className="ids-source-panel__item">
-          <span className="ids-source-panel__label">Open collaboration comments</span>
+          <span className="ids-source-panel__label">
+            {t("author.decisionSession.sourceSnapshot.openComments")}
+          </span>
           <p className="ids-source-panel__summary">
-            {snapshot.openComments.length} recent comment(s) summarised
+            {t("author.decisionSession.sourceSnapshot.commentsCount", {
+              count: snapshot.openComments.length,
+            })}
           </p>
         </li>
       </ul>

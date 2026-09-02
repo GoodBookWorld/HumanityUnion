@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { InitiativeDecisionSessionDraft } from "@hu/types";
 
@@ -30,6 +31,7 @@ export function InitiativeDecisionSessionDraftPreview({
 }: {
   readonly initiativeId: string;
 }) {
+  const t = useTranslations("initiativeExperience");
   const [draft, setDraft] = useState<InitiativeDecisionSessionDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +46,7 @@ export function InitiativeDecisionSessionDraftPreview({
         }
       } catch {
         if (!cancelled) {
-          setError("Draft preview could not be loaded.");
+          setError(t("author.decisionSession.preview.loadFailed"));
         }
       }
     })();
@@ -52,37 +54,46 @@ export function InitiativeDecisionSessionDraftPreview({
     return () => {
       cancelled = true;
     };
-  }, [initiativeId]);
+  }, [initiativeId, t]);
 
   if (error) {
     return <p className="ids-source-panel__empty">{error}</p>;
   }
 
   if (!draft) {
-    return <p className="ids-source-panel__empty">Loading Decision Session draft preview…</p>;
+    return <p className="ids-source-panel__empty">{t("author.decisionSession.preview.loading")}</p>;
   }
 
   return (
-    <article className="ids-public" aria-label="Decision Session draft preview">
-      <p className="ids-public__meta">Preview — unpublished draft (same renderer as Public)</p>
+    <article className="ids-public" aria-label={t("author.decisionSession.preview.aria")}>
+      <p className="ids-public__meta">{t("author.decisionSession.preview.meta")}</p>
       <section className="ids-public__section">
-        <h3>{draft.title || "Untitled Decision Session"}</h3>
+        <h3>{draft.title || t("author.decisionSession.preview.untitled")}</h3>
         <p>{draft.decisionQuestion}</p>
       </section>
       <section className="ids-public__section">
-        <h3>Context</h3>
-        <p>{draft.decisionContext || "No context yet."}</p>
+        <h3>{t("author.decisionSession.sections.context")}</h3>
+        <p>{draft.decisionContext || t("author.decisionSession.preview.noContext")}</p>
       </section>
-      <ListSection title="Objectives" items={draft.objectives} />
-      <ListSection title="Options" items={draft.options} />
-      <ListSection title="Supporting Arguments" items={draft.supportingArguments} />
-      <ListSection title="Risks" items={draft.risks} />
-      <ListSection title="Required Resources" items={draft.requiredResources} />
+      <ListSection title={t("author.decisionSession.sections.objectives")} items={draft.objectives} />
+      <ListSection title={t("author.decisionSession.sections.options")} items={draft.options} />
+      <ListSection
+        title={t("author.decisionSession.sections.arguments")}
+        items={draft.supportingArguments}
+      />
+      <ListSection title={t("author.decisionSession.sections.risks")} items={draft.risks} />
+      <ListSection
+        title={t("author.decisionSession.sections.requiredResources")}
+        items={draft.requiredResources}
+      />
       <section className="ids-public__section">
-        <h3>Suggested Timeline</h3>
-        <p>{draft.suggestedTimeline || "Not set."}</p>
+        <h3>{t("author.decisionSession.sections.timeline")}</h3>
+        <p>{draft.suggestedTimeline || t("author.decisionSession.preview.notSet")}</p>
       </section>
-      <ListSection title="Suggested Responsible Roles" items={draft.suggestedResponsibleRoles} />
+      <ListSection
+        title={t("author.decisionSession.sections.roles")}
+        items={draft.suggestedResponsibleRoles}
+      />
     </article>
   );
 }

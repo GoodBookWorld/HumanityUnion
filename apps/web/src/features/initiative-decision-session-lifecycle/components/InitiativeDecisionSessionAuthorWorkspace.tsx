@@ -30,6 +30,7 @@ export function InitiativeDecisionSessionAuthorWorkspace({
   onTogglePreview,
 }: InitiativeDecisionSessionAuthorWorkspaceProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [context, setContext] = useState<InitiativeDecisionSessionDraftContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -74,7 +75,7 @@ export function InitiativeDecisionSessionAuthorWorkspace({
   if (loadFailed) {
     return (
       <div className="lsw-main">
-        <WorkspaceErrorState message="The Decision Session workspace could not be loaded." />
+        <WorkspaceErrorState message={t("author.decisionSession.loadFailed")} />
         <WorkspaceButton variant="secondary" onClick={() => void loadWorkspace()}>
           {actions.retry}
         </WorkspaceButton>
@@ -83,15 +84,12 @@ export function InitiativeDecisionSessionAuthorWorkspace({
   }
 
   if (loading || !context) {
-    return <p className="lsw-sources__missing">Loading Decision Session workspace…</p>;
+    return <p className="lsw-sources__missing">{t("author.decisionSession.loading")}</p>;
   }
 
   if (context.publishedSessionId) {
     return (
-      <p className="ids-source-panel__empty">
-        This Decision Session has already been published. Use Public Preview to review it, or continue
-        to Collective Decision.
-      </p>
+      <p className="ids-source-panel__empty">{t("author.decisionSession.alreadyPublished")}</p>
     );
   }
 
@@ -116,13 +114,13 @@ export function InitiativeDecisionSessionAuthorWorkspace({
 
       {!hasContent || !context.draft ? (
         <div className="ids-editor">
-          <p className="ids-source-panel__empty">
-            Generate a structured Decision Draft from available Petition / Analysis / Proposal /
-            Initiative context. Petition is optional — missing sources stay empty for editing. The
-            Decision Assistant remains advisory — nothing publishes automatically.
-          </p>
+          <p className="ids-source-panel__empty">{t("author.decisionSession.noDraftExplanation")}</p>
           <WorkspaceButton variant="primary" onClick={() => void handleGenerateFirstDraft()}>
-            {resolveSaveButtonLabel(generatePhase.phase, "Generate Decision Draft", actions.phaseLabels)}
+            {resolveSaveButtonLabel(
+              generatePhase.phase,
+              t("author.decisionSession.generateDecisionDraft"),
+              actions.phaseLabels,
+            )}
           </WorkspaceButton>
         </div>
       ) : (

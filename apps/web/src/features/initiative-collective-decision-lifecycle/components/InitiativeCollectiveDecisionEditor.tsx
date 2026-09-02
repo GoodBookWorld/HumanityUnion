@@ -6,6 +6,7 @@ import type { InitiativeCollectiveDecision, InitiativeCollectiveDecisionLifecycl
 
 import { useLifecycleAiFormApply } from "../../lifecycle-ai-assistant";
 import { useSaveButtonPhase } from "../../member-profile/use-save-button-phase";
+import { resolveParticipationScopeDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { useAuthorActionLabels } from "../../public-initiative-experience/use-author-action-labels";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
 import {
@@ -53,6 +54,10 @@ function fromDatetimeLocalValue(value: string): string {
   return Number.isNaN(date.getTime()) ? "" : date.toISOString();
 }
 
+function detailFromError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 interface CollectiveDecisionApplyForm {
   title: string;
   decisionSummary: string;
@@ -87,6 +92,7 @@ export function InitiativeCollectiveDecisionEditor({
   onNavigate,
 }: InitiativeCollectiveDecisionEditorProps) {
   const actions = useAuthorActionLabels();
+  const { t } = actions;
   const [title, setTitle] = useState(draft.title);
   const [decisionSummary, setDecisionSummary] = useState(draft.decisionSummary);
   const [approvedActions, setApprovedActions] = useState(listToLines(draft.approvedActions));
@@ -205,7 +211,11 @@ export function InitiativeCollectiveDecisionEditor({
       setSupportingReferences(listToLines(generated.supportingReferences));
       onDraftUpdated(generated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Generate failed.");
+      setError(
+        t("author.collectiveDecision.messages.generateFailed", {
+          detail: detailFromError(err, t("author.collectiveDecision.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -217,7 +227,11 @@ export function InitiativeCollectiveDecisionEditor({
       );
       onDraftUpdated(saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(
+        t("author.collectiveDecision.messages.saveFailed", {
+          detail: detailFromError(err, t("author.collectiveDecision.messages.unknownError")),
+        }),
+      );
     }
   }
 
@@ -231,18 +245,22 @@ export function InitiativeCollectiveDecisionEditor({
       setPublished(true);
       onPublished(decision);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Publish failed.");
+      setError(
+        t("author.collectiveDecision.messages.publishFailed", {
+          detail: detailFromError(err, t("author.collectiveDecision.messages.unknownError")),
+        }),
+      );
     }
   }
 
   return (
     <div className="icd-editor">
       <div className="icd-editor__field">
-        <label htmlFor="icd-title">Decision Title</label>
+        <label htmlFor="icd-title">{t("author.collectiveDecision.fields.title")}</label>
         <input id="icd-title" value={title} onChange={(event) => setTitle(event.target.value)} />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-summary">Decision Summary</label>
+        <label htmlFor="icd-summary">{t("author.collectiveDecision.fields.summary")}</label>
         <textarea
           id="icd-summary"
           rows={3}
@@ -251,7 +269,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-approved">Approved Actions (one per line)</label>
+        <label htmlFor="icd-approved">{t("author.collectiveDecision.fields.approvedActions")}</label>
         <textarea
           id="icd-approved"
           rows={4}
@@ -260,7 +278,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-rejected">Rejected Alternatives (one per line)</label>
+        <label htmlFor="icd-rejected">{t("author.collectiveDecision.fields.rejectedAlternatives")}</label>
         <textarea
           id="icd-rejected"
           rows={3}
@@ -269,7 +287,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-roles">Responsible Roles (one per line)</label>
+        <label htmlFor="icd-roles">{t("author.collectiveDecision.fields.roles")}</label>
         <textarea
           id="icd-roles"
           rows={3}
@@ -278,7 +296,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-priorities">Implementation Priorities (one per line)</label>
+        <label htmlFor="icd-priorities">{t("author.collectiveDecision.fields.priorities")}</label>
         <textarea
           id="icd-priorities"
           rows={3}
@@ -287,7 +305,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-timeline">Implementation Timeline</label>
+        <label htmlFor="icd-timeline">{t("author.collectiveDecision.fields.timeline")}</label>
         <textarea
           id="icd-timeline"
           rows={3}
@@ -296,7 +314,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-rationale">Decision Rationale</label>
+        <label htmlFor="icd-rationale">{t("author.collectiveDecision.fields.rationale")}</label>
         <textarea
           id="icd-rationale"
           rows={4}
@@ -305,7 +323,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-risks">Decision Risks (one per line)</label>
+        <label htmlFor="icd-risks">{t("author.collectiveDecision.fields.risks")}</label>
         <textarea
           id="icd-risks"
           rows={3}
@@ -314,7 +332,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-success">Success Criteria (one per line)</label>
+        <label htmlFor="icd-success">{t("author.collectiveDecision.fields.criteria")}</label>
         <textarea
           id="icd-success"
           rows={3}
@@ -323,7 +341,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-resources">Required Resources (one per line)</label>
+        <label htmlFor="icd-resources">{t("author.collectiveDecision.fields.requiredResources")}</label>
         <textarea
           id="icd-resources"
           rows={3}
@@ -332,7 +350,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-references">Supporting References (one per line)</label>
+        <label htmlFor="icd-references">{t("author.collectiveDecision.fields.supportingReferences")}</label>
         <textarea
           id="icd-references"
           rows={3}
@@ -341,7 +359,7 @@ export function InitiativeCollectiveDecisionEditor({
         />
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-scope">Participation Scope</label>
+        <label htmlFor="icd-scope">{t("author.collectiveDecision.fields.participationScope")}</label>
         <select
           id="icd-scope"
           value={participationScope}
@@ -349,13 +367,13 @@ export function InitiativeCollectiveDecisionEditor({
         >
           {PARTICIPATION_SCOPES.map((scope) => (
             <option key={scope} value={scope}>
-              {scope}
+              {resolveParticipationScopeDisplayLabel(scope, t)}
             </option>
           ))}
         </select>
       </div>
       <div className="icd-editor__field">
-        <label htmlFor="icd-closes">Closing Date</label>
+        <label htmlFor="icd-closes">{t("author.collectiveDecision.fields.closingDate")}</label>
         <input
           id="icd-closes"
           type="datetime-local"
@@ -369,7 +387,10 @@ export function InitiativeCollectiveDecisionEditor({
 
       <div className="icd-editor__actions">
         <WorkspaceButton variant="secondary" onClick={() => void handleGenerate()}>
-          {actions.saveLabel(generatePhase.phase, actions.generate)}
+          {actions.saveLabel(
+            generatePhase.phase,
+            t("author.collectiveDecision.generateCollectiveDecisionDraft"),
+          )}
         </WorkspaceButton>
         <WorkspaceButton variant="secondary" onClick={() => void handleSave()}>
           {actions.saveLabel(savePhase.phase, actions.saveDraft)}
@@ -383,7 +404,7 @@ export function InitiativeCollectiveDecisionEditor({
             variant="secondary"
             onClick={() => onNavigate("commitment", "implementation-commitments")}
           >
-            Open Implementation Commitments
+            {t("author.collectiveDecision.openImplementationCommitments")}
           </WorkspaceButton>
         ) : null}
       </div>
