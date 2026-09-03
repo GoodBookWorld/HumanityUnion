@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { Button } from "../../../design-system";
 
 interface PublicNewsPlaceholderProps {
@@ -7,12 +11,14 @@ interface PublicNewsPlaceholderProps {
 }
 
 export function PublicNewsPlaceholder({ variant, onRetry, message }: PublicNewsPlaceholderProps) {
+  const t = useTranslations("publicNews.placeholder");
+
   if (variant === "loading") {
     return (
       <div
         className="public-news-discovery__skeleton-grid"
         role="status"
-        aria-label="Loading news discovery articles"
+        aria-label={t("loadingAria")}
       >
         {Array.from({ length: 3 }, (_, index) => (
           <div key={index} className="public-news-discovery__skeleton-card" aria-hidden="true" />
@@ -24,11 +30,11 @@ export function PublicNewsPlaceholder({ variant, onRetry, message }: PublicNewsP
   if (variant === "error") {
     return (
       <div className="public-news-discovery__status" role="alert">
-        <h3>News discovery is temporarily unavailable</h3>
-        <p>We could not load current articles. Please try again shortly.</p>
+        <h3>{t("errorTitle")}</h3>
+        <p>{t("errorBody")}</p>
         {onRetry ? (
           <Button type="button" variant="secondary" onClick={onRetry}>
-            Retry
+            {t("retry")}
           </Button>
         ) : null}
       </div>
@@ -38,23 +44,16 @@ export function PublicNewsPlaceholder({ variant, onRetry, message }: PublicNewsP
   if (variant === "no-results") {
     return (
       <div className="public-news-discovery__placeholder" role="status">
-        <h3>No articles match your filters</h3>
-        <p>
-          {message ??
-            "Adjust search or filters to discover more events you can turn into initiatives."}
-        </p>
+        <h3>{t("noResultsTitle")}</h3>
+        <p>{message ?? t("noResultsBody")}</p>
       </div>
     );
   }
 
   return (
     <div className="public-news-discovery__placeholder" role="status">
-      <h3>No current news articles are available</h3>
-      <p>
-        The live RSS discovery feed has no active articles yet. When staging news refresh is enabled
-        (`NEWS_PROVIDER_ENABLED=true`) and approved sources are fetched, articles appear here
-        automatically.
-      </p>
+      <h3>{t("emptyTitle")}</h3>
+      <p>{t("emptyBody")}</p>
     </div>
   );
 }

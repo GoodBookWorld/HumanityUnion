@@ -1,4 +1,10 @@
+import { getLocale } from "next-intl/server";
+
 import { LegalPageShell } from "../../features/legal/components/LegalPageShell";
+import {
+  EXPECTED_LEGAL_FALLBACK,
+  resolveLegalDocumentPresentation,
+} from "../../features/legal/resolve-legal-document-presentation";
 import {
   CONTACT_EMAIL,
   ORGANIZATION_ADDRESS,
@@ -9,12 +15,10 @@ import {
 
 import "../../features/legal/legal-page.css";
 
-export default function PrivacyPage() {
+/** English canonical Privacy Policy body — authoritative source until counsel-approved localized copies exist. */
+function EnglishPrivacyBody() {
   return (
-    <LegalPageShell
-      title="Privacy Policy"
-      counselNote="This Privacy Policy is an informational platform policy and should be reviewed by legal counsel before public launch."
-    >
+    <>
       <section>
         <h2>Who we are</h2>
         <p>
@@ -165,6 +169,23 @@ export default function PrivacyPage() {
           Mailing address: {ORGANIZATION_ADDRESS}
         </p>
       </section>
+    </>
+  );
+}
+
+export default async function PrivacyPage() {
+  const locale = await getLocale();
+  const presentation = await resolveLegalDocumentPresentation(locale, "privacy");
+
+  return (
+    <LegalPageShell presentation={presentation} activeDocument="privacy">
+      {presentation.body.source === "approved_localized" && presentation.body.localizedBodyHtml ? (
+        <div dangerouslySetInnerHTML={{ __html: presentation.body.localizedBodyHtml }} />
+      ) : (
+        <div data-legal-body-source={EXPECTED_LEGAL_FALLBACK}>
+          <EnglishPrivacyBody />
+        </div>
+      )}
     </LegalPageShell>
   );
 }

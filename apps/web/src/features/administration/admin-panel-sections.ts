@@ -14,6 +14,7 @@ export type AdminPanelSectionId =
   | "platform"
   | "languages"
   | "brand-localization"
+  | "legal-localization"
   | "terminology-glossary"
   | "audit";
 
@@ -43,6 +44,11 @@ export const ADMIN_PANEL_SECTIONS: readonly AdminPanelSection[] = [
     id: "brand-localization",
     label: "Brand Localization",
     href: "/admin/brand-localization",
+  },
+  {
+    id: "legal-localization",
+    label: "Legal Localization",
+    href: "/admin/legal-localization",
   },
   {
     id: "terminology-glossary",

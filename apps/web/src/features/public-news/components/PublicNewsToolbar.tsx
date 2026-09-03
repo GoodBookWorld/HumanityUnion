@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { PublicNewsFilters } from "../public-news-discovery.utils";
 
 interface PublicNewsToolbarProps {
@@ -23,28 +25,31 @@ export function PublicNewsToolbar({
   showClearFilters = false,
   onClearFilters,
 }: PublicNewsToolbarProps) {
+  const t = useTranslations("publicNews.toolbar");
+  const summaryKey = resultCount === 1 ? "summary" : "summaryPlural";
+
   return (
-    <div className="public-news-toolbar" role="search" aria-label="News discovery filters">
+    <div className="public-news-toolbar" role="search" aria-label={t("ariaLabel")}>
       <div className="public-news-toolbar__search">
-        <label htmlFor="public-news-search">Search events</label>
+        <label htmlFor="public-news-search">{t("searchLabel")}</label>
         <input
           id="public-news-search"
           type="search"
           value={filters.search}
-          placeholder="Search headlines, topics, or publishers"
+          placeholder={t("searchPlaceholder")}
           onChange={(event) => onChange({ search: event.target.value })}
         />
       </div>
 
       <div className="public-news-toolbar__filters">
         <div className="public-news-toolbar__field">
-          <label htmlFor="public-news-provider">Provider</label>
+          <label htmlFor="public-news-provider">{t("provider")}</label>
           <select
             id="public-news-provider"
             value={filters.provider}
             onChange={(event) => onChange({ provider: event.target.value })}
           >
-            <option value="all">All providers</option>
+            <option value="all">{t("allProviders")}</option>
             {providers.map((provider) => (
               <option key={provider} value={provider}>
                 {provider}
@@ -54,13 +59,13 @@ export function PublicNewsToolbar({
         </div>
 
         <div className="public-news-toolbar__field">
-          <label htmlFor="public-news-topic">Topic</label>
+          <label htmlFor="public-news-topic">{t("topic")}</label>
           <select
             id="public-news-topic"
             value={filters.topic}
             onChange={(event) => onChange({ topic: event.target.value })}
           >
-            <option value="all">All topics</option>
+            <option value="all">{t("allTopics")}</option>
             {topics.map((topic) => (
               <option key={topic} value={topic}>
                 {topic}
@@ -70,13 +75,13 @@ export function PublicNewsToolbar({
         </div>
 
         <div className="public-news-toolbar__field">
-          <label htmlFor="public-news-country">Country</label>
+          <label htmlFor="public-news-country">{t("country")}</label>
           <select
             id="public-news-country"
             value={filters.country}
             onChange={(event) => onChange({ country: event.target.value })}
           >
-            <option value="all">All regions</option>
+            <option value="all">{t("allRegions")}</option>
             {countries.map((country) => (
               <option key={country} value={country}>
                 {country}
@@ -86,7 +91,7 @@ export function PublicNewsToolbar({
         </div>
 
         <div className="public-news-toolbar__field">
-          <label htmlFor="public-news-sort">Sort</label>
+          <label htmlFor="public-news-sort">{t("sort")}</label>
           <select
             id="public-news-sort"
             value={filters.sort}
@@ -94,20 +99,18 @@ export function PublicNewsToolbar({
               onChange({ sort: event.target.value as PublicNewsFilters["sort"] })
             }
           >
-            <option value="newest">Newest</option>
-            <option value="most-discussed">Most discussed</option>
-            <option value="most-relevant">Most relevant</option>
+            <option value="newest">{t("sortNewest")}</option>
+            <option value="most-discussed">{t("sortMostDiscussed")}</option>
+            <option value="most-relevant">{t("sortMostRelevant")}</option>
           </select>
         </div>
       </div>
 
       <div className="public-news-toolbar__footer">
-        <p className="public-news-toolbar__summary">
-          {resultCount} trusted event{resultCount === 1 ? "" : "s"} ready for initiative discovery
-        </p>
+        <p className="public-news-toolbar__summary">{t(summaryKey, { count: resultCount })}</p>
         {showClearFilters && onClearFilters ? (
           <button type="button" className="public-news-toolbar__clear" onClick={onClearFilters}>
-            Clear filters
+            {t("clearFilters")}
           </button>
         ) : null}
       </div>

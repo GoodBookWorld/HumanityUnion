@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useId, useRef, type RefObject } from "react";
+import { useTranslations } from "next-intl";
 
 import type { KnowledgeCenterListing } from "@hu/types";
 
@@ -27,6 +28,8 @@ export function KnowledgeNavDrawer({
   onClose,
   returnFocusRef,
 }: KnowledgeNavDrawerProps) {
+  const tMenu = useTranslations("knowledgePublic.menu");
+  const tNav = useTranslations("knowledgePublic.nav");
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -68,7 +71,7 @@ export function KnowledgeNavDrawer({
       <button
         type="button"
         className="knowledge-center__drawer-backdrop"
-        aria-label="Close Knowledge menu"
+        aria-label={tMenu("closeAria")}
         onClick={onClose}
       />
       <div
@@ -82,12 +85,12 @@ export function KnowledgeNavDrawer({
       >
         <div className="knowledge-center__drawer-header">
           <h2 id={titleId} className="knowledge-center__drawer-title">
-            Knowledge Center
+            {tNav("title")}
           </h2>
           <button
             type="button"
             className="knowledge-center__drawer-close"
-            aria-label="Close Knowledge menu"
+            aria-label={tMenu("closeAria")}
             onClick={onClose}
           >
             <Image

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { getCountryByCode, normalizeCountryInput } from "@hu/geography";
 
@@ -9,10 +10,7 @@ import {
   applyPageSeoOverrideToMetadataInput,
 } from "../../../lib/seo/apply-page-seo-override";
 import { fetchPublicSeoPageOverride } from "../../../lib/seo/fetch-public-seo-page-override";
-import {
-  buildCountryPageDescription,
-  buildUnavailablePublicMetadata,
-} from "../../../lib/seo/public-surface-copy";
+import { buildUnavailablePublicMetadata } from "../../../lib/seo/public-surface-copy";
 import { JsonLdScript, buildWebPageJsonLd } from "../../../lib/seo/structured-data";
 
 import "../../../features/country-experience/country-experience-dynamic.css";
@@ -24,14 +22,15 @@ interface CountriesPageProps {
 export async function generateMetadata({ params }: CountriesPageProps): Promise<Metadata> {
   const { countryCode: rawCode } = await params;
   const countryCode = normalizeCountryInput(rawCode);
+  const t = await getTranslations("publicGeo.country");
 
   if (!countryCode) {
-    return buildUnavailablePublicMetadata("Country not found | Humanity Union");
+    return buildUnavailablePublicMetadata(t("notFoundTitle"));
   }
 
   const country = getCountryByCode(countryCode);
   if (!country) {
-    return buildUnavailablePublicMetadata("Country not found | Humanity Union");
+    return buildUnavailablePublicMetadata(t("notFoundTitle"));
   }
 
   const override = await fetchPublicSeoPageOverride({
@@ -43,7 +42,7 @@ export async function generateMetadata({ params }: CountriesPageProps): Promise<
     applyPageSeoOverrideToMetadataInput(
       {
         title: country.name,
-        description: buildCountryPageDescription(country.name),
+        description: t("metaDescription", { countryName: country.name }),
         canonicalPath: `/countries/${encodeURIComponent(countryCode)}`,
         openGraphType: "website",
         socialTitle: country.name,
@@ -70,7 +69,9 @@ export default async function CountriesPage({ params }: CountriesPageProps) {
     notFound();
   }
 
-  const description = buildCountryPageDescription(country.name);
+  const t = await getTranslations("publicGeo.country");
+  const tShared = await getTranslations("publicGeo.shared");
+  const description = t("metaDescription", { countryName: country.name });
   const canonicalPath = `/countries/${encodeURIComponent(countryCode)}`;
   // No /countries index route exists — breadcrumb is Home → {Country}.
   const structuredData = buildWebPageJsonLd({
@@ -78,7 +79,7 @@ export default async function CountriesPage({ params }: CountriesPageProps) {
     description,
     canonicalPath,
     breadcrumbs: [
-      { name: "Home", path: "/" },
+      { name: tShared("home"), path: "/" },
       { name: country.name, path: canonicalPath },
     ],
   });

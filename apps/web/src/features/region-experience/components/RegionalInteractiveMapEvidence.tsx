@@ -2,14 +2,19 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
+import { useTranslations } from "next-intl";
 
-import {
-  BC_MAP_COMMUNITIES,
-  BC_MAP_SUBREGIONS,
-  REGIONAL_INTERACTIVE_MAP_CONTENT,
-} from "../content";
+import { BC_MAP_COMMUNITIES, BC_MAP_SUBREGIONS } from "../content";
 
-export function RegionalInteractiveMapEvidence() {
+interface RegionalInteractiveMapEvidenceProps {
+  regionName: string;
+}
+
+export function RegionalInteractiveMapEvidence({
+  regionName,
+}: RegionalInteractiveMapEvidenceProps) {
+  const t = useTranslations("publicGeo.region.map");
+  const tShared = useTranslations("publicGeo.shared");
   const [selectedSubRegionId, setSelectedSubRegionId] = useState<string | null>(null);
   const selectedSubRegion =
     BC_MAP_SUBREGIONS.find((subRegion) => subRegion.id === selectedSubRegionId) ?? null;
@@ -20,14 +25,14 @@ export function RegionalInteractiveMapEvidence() {
     <div className="regional-interactive-map">
       <p className="regional-interactive-map__scope" id={scopeStatusId} role="status">
         {selectedSubRegion
-          ? `Selected sub-area: ${selectedSubRegion.label}`
-          : REGIONAL_INTERACTIVE_MAP_CONTENT.regionScopeLabel}
+          ? t("selectedSubArea", { label: selectedSubRegion.label })
+          : t("regionScopeLabel", { regionName })}
       </p>
 
       <div
         className="regional-interactive-map__canvas"
         role="group"
-        aria-label="British Columbia civic activity map"
+        aria-label={t("canvasAria", { regionName })}
         aria-describedby={`${scopeStatusId} ${feedbackId}`}
       >
         <svg
@@ -61,7 +66,7 @@ export function RegionalInteractiveMapEvidence() {
           })}
         </svg>
 
-        <div className="regional-interactive-map__controls" role="group" aria-label="Map areas">
+        <div className="regional-interactive-map__controls" role="group" aria-label={t("areasAria")}>
           {BC_MAP_SUBREGIONS.map((subRegion) => {
             const isSelected = selectedSubRegionId === subRegion.id;
 
@@ -73,14 +78,14 @@ export function RegionalInteractiveMapEvidence() {
                   isSelected ? " regional-interactive-map__subregion-button--selected" : ""
                 }`}
                 aria-pressed={isSelected}
-                aria-label={`Select ${subRegion.label} to preview sub-regional scope`}
+                aria-label={t("selectPreviewAria", { label: subRegion.label })}
                 onClick={() =>
                   setSelectedSubRegionId((current) =>
                     current === subRegion.id ? null : subRegion.id,
                   )
                 }
               >
-                {subRegion.label} (preview)
+                {subRegion.label} {t("previewSuffix")}
               </button>
             );
           })}
@@ -105,22 +110,21 @@ export function RegionalInteractiveMapEvidence() {
         {selectedSubRegion ? (
           <>
             <p>
-              {REGIONAL_INTERACTIVE_MAP_CONTENT.subRegionUnavailableMessage} Sub-area:{" "}
-              <strong>{selectedSubRegion.label}</strong>.
+              {t("subUnavailableWithLabel", {
+                message: t("subUnavailable"),
+                label: selectedSubRegion.label,
+              })}
             </p>
             <button
               type="button"
               className="regional-interactive-map__reset"
               onClick={() => setSelectedSubRegionId(null)}
             >
-              {REGIONAL_INTERACTIVE_MAP_CONTENT.returnToRegionLabel}
+              {t("returnToRegion")}
             </button>
           </>
         ) : (
-          <p>
-            Community links above navigate to active community observation routes. Sub-area buttons
-            preview future regional depth without linking to unavailable routes.
-          </p>
+          <p>{tShared("mapDefaultFeedback")}</p>
         )}
       </div>
     </div>

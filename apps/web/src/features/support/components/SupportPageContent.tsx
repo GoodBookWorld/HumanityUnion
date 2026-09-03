@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
@@ -34,7 +35,7 @@ function ExternalButtonLink({
       className={`hu-button hu-button--${variant}`}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={ariaLabel ?? `${children} (opens in a new tab)`}
+      aria-label={ariaLabel ?? children}
     >
       {children}
     </a>
@@ -46,11 +47,13 @@ function SupportAction({
   variant = "primary",
   children,
   disabledLabel,
+  opensInNewTabLabel,
 }: {
   href: string | null;
   variant?: "primary" | "secondary";
   children: string;
   disabledLabel: string;
+  opensInNewTabLabel: string;
 }) {
   if (!href) {
     return (
@@ -67,13 +70,14 @@ function SupportAction({
     );
   }
   return (
-    <ExternalButtonLink href={href} variant={variant}>
+    <ExternalButtonLink href={href} variant={variant} ariaLabel={opensInNewTabLabel}>
       {children}
     </ExternalButtonLink>
   );
 }
 
 export function SupportPageContent() {
+  const t = useTranslations("supportPublic");
   const [links, setLinks] = useState<ResolvedSupportOperationalLinks>({
     donationUrl: SUPPORT_LINK_FALLBACKS.donation,
     volunteerUrl: SUPPORT_LINK_FALLBACKS.volunteer,
@@ -96,25 +100,13 @@ export function SupportPageContent() {
     <div className="support-page">
       <header className="support-page__hero">
         <div className="support-page__hero-copy">
-          <h1 className="support-page__title">Support Humanity Union</h1>
-          <p className="support-page__subtitle">
-            Help build better conditions for thoughtful collective action.
-          </p>
+          <h1 className="support-page__title">{t("title")}</h1>
+          <p className="support-page__subtitle">{t("subtitle")}</p>
           <div className="support-page__lede">
-            <p>
-              Humanity Union is developing an open platform where people can understand problems,
-              examine evidence, improve proposals, make transparent decisions, and follow their
-              implementation.
-            </p>
-            <p>
-              Supporting the project helps us expand the tools, knowledge, and communities that make
-              more responsible and lasting solutions possible.
-            </p>
+            <p>{t("lede1")}</p>
+            <p>{t("lede2")}</p>
           </div>
-          <p className="support-page__statement">
-            You can support Humanity Union with resources, your time, or by helping build a local
-            community.
-          </p>
+          <p className="support-page__statement">{t("statement")}</p>
         </div>
         <div className="support-page__hero-media">
           <Image
@@ -134,7 +126,7 @@ export function SupportPageContent() {
         aria-labelledby="support-ways-heading"
       >
         <h2 id="support-ways-heading" className="support-page__section-heading">
-          Ways to support
+          {t("waysHeading")}
         </h2>
         <div className="support-page__cards">
           <Card className="support-page__card">
@@ -146,19 +138,18 @@ export function SupportPageContent() {
               className="support-page__card-icon"
               unoptimized
             />
-            <h3 className="support-page__card-title">Support the Project</h3>
-            <p className="support-page__card-body">
-              Help fund platform development, infrastructure, educational resources, translation,
-              and public-interest projects.
-            </p>
+            <h3 className="support-page__card-title">{t("donate.title")}</h3>
+            <p className="support-page__card-body">{t("donate.body")}</p>
             <div className="support-page__card-actions">
-              <SupportAction href={links.donationUrl} disabledLabel="Donate (link not configured)">
-                Donate
+              <SupportAction
+                href={links.donationUrl}
+                disabledLabel={t("donate.disabledLabel")}
+                opensInNewTabLabel={t("opensInNewTab", { label: t("donate.cta") })}
+              >
+                {t("donate.cta")}
               </SupportAction>
             </div>
-            <p className="support-page__note">
-              Donations support the development and operation of Humanity Union.
-            </p>
+            <p className="support-page__note">{t("donate.note")}</p>
           </Card>
 
           <Card className="support-page__card">
@@ -170,23 +161,19 @@ export function SupportPageContent() {
               className="support-page__card-icon"
               unoptimized
             />
-            <h3 className="support-page__card-title">Volunteer</h3>
-            <p className="support-page__card-body">
-              Contribute your time, knowledge, professional skills, research, translation,
-              communication, organization, or community experience.
-            </p>
+            <h3 className="support-page__card-title">{t("volunteer.title")}</h3>
+            <p className="support-page__card-body">{t("volunteer.body")}</p>
             <div className="support-page__card-actions">
               <SupportAction
                 href={links.volunteerUrl}
-                disabledLabel="Volunteer with Humanity Union (coming soon)"
+                disabledLabel={t("volunteer.disabledLabel")}
+                opensInNewTabLabel={t("opensInNewTab", { label: t("volunteer.cta") })}
               >
-                Volunteer with Humanity Union
+                {t("volunteer.cta")}
               </SupportAction>
             </div>
             <p className="support-page__note">
-              {links.volunteerUrl
-                ? "Volunteer opportunities are available through the link above."
-                : "Volunteer applications will open here soon."}
+              {links.volunteerUrl ? t("volunteer.noteAvailable") : t("volunteer.noteSoon")}
             </p>
           </Card>
 
@@ -199,19 +186,16 @@ export function SupportPageContent() {
               className="support-page__card-icon"
               unoptimized
             />
-            <h3 className="support-page__card-title">Build a Regional Representation</h3>
-            <p className="support-page__card-body">
-              Help bring Humanity Union into your country or region. Regional representations
-              connect local knowledge and priorities with global cooperation while keeping
-              participation rooted in local communities.
-            </p>
+            <h3 className="support-page__card-title">{t("regional.title")}</h3>
+            <p className="support-page__card-body">{t("regional.body")}</p>
             <div className="support-page__card-actions">
               <SupportAction
                 href={links.regionalProgramUrl}
                 variant="secondary"
-                disabledLabel="Regional Program (link not configured)"
+                disabledLabel={t("regional.disabledLabel")}
+                opensInNewTabLabel={t("opensInNewTab", { label: t("regional.cta") })}
               >
-                Regional Program
+                {t("regional.cta")}
               </SupportAction>
             </div>
           </Card>
@@ -222,31 +206,18 @@ export function SupportPageContent() {
         <Card className="support-page__why">
           <div className="support-page__why-copy">
             <h2 id="why-support-heading" className="support-page__section-heading">
-              Why Support Matters
+              {t("why.heading")}
             </h2>
-            <p className="support-page__body">
-              Technology can do more than compete for attention.
-            </p>
-            <p className="support-page__body">
-              It can help people understand complexity, compare alternatives, learn from one
-              another, and carry decisions through to measurable results.
-            </p>
-            <p className="support-page__body">Humanity Union is being built around that purpose.</p>
-            <p className="support-page__body">
-              As the platform grows, more people and communities can participate in structured
-              discussion, develop better proposals, preserve the reasoning behind decisions, and
-              learn from their outcomes.
-            </p>
-            <p className="support-page__body">
-              Supporting Humanity Union means helping create an environment where participation can
-              become more informed, cooperation more practical, and collective decisions more
-              transparent and durable.
-            </p>
+            <p className="support-page__body">{t("why.p1")}</p>
+            <p className="support-page__body">{t("why.p2")}</p>
+            <p className="support-page__body">{t("why.p3")}</p>
+            <p className="support-page__body">{t("why.p4")}</p>
+            <p className="support-page__body">{t("why.p5")}</p>
           </div>
           <div className="support-page__why-illustration">
             <Image
               src={SUPPORT_ILLUSTRATIONS.why}
-              alt="A fruit tree illustrating how support helps Humanity Union grow stronger participation and lasting results"
+              alt={t("why.imageAlt")}
               width={650}
               height={350}
               className="support-page__why-image"
@@ -257,34 +228,31 @@ export function SupportPageContent() {
 
       <section className="support-page__section" aria-labelledby="support-forms-heading">
         <h2 id="support-forms-heading" className="support-page__section-heading">
-          Every form of support matters differently
+          {t("forms.heading")}
         </h2>
         <div className="support-page__blocks">
           <Card className="support-page__block">
-            <h3 className="support-page__block-title">Resources</h3>
-            <p className="support-page__block-body">Help build and maintain the platform.</p>
+            <h3 className="support-page__block-title">{t("forms.resourcesTitle")}</h3>
+            <p className="support-page__block-body">{t("forms.resourcesBody")}</p>
           </Card>
           <Card className="support-page__block">
-            <h3 className="support-page__block-title">Participation</h3>
-            <p className="support-page__block-body">
-              Contribute knowledge, experience, and practical work.
-            </p>
+            <h3 className="support-page__block-title">{t("forms.participationTitle")}</h3>
+            <p className="support-page__block-body">{t("forms.participationBody")}</p>
           </Card>
           <Card className="support-page__block">
-            <h3 className="support-page__block-title">Regional Communities</h3>
-            <p className="support-page__block-body">
-              Connect local communities with global cooperation.
-            </p>
+            <h3 className="support-page__block-title">{t("forms.regionalTitle")}</h3>
+            <p className="support-page__block-body">{t("forms.regionalBody")}</p>
           </Card>
         </div>
         <div className="support-page__closing-actions">
           <Button href="#support-ways" variant="primary">
-            Choose how you want to contribute
+            {t("forms.chooseCta")}
           </Button>
         </div>
         <p className="support-page__contact">
-          Questions about supporting the project? Email{" "}
-          <a href={mailtoContactLink("Support")}>{CONTACT_EMAIL}</a>.
+          {t.rich("forms.contactPrompt", {
+            email: () => <a href={mailtoContactLink("Support")}>{CONTACT_EMAIL}</a>,
+          })}
         </p>
       </section>
     </div>

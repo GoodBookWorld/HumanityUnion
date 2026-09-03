@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { CommunityIdentityPublicProjection } from "@hu/types";
 
@@ -14,6 +17,7 @@ function buildCountryHref(countrySlug: string): string {
 }
 
 export function CommunityGeographicNavigator({ identity }: CommunityGeographicNavigatorProps) {
+  const t = useTranslations("publicGeo");
   const countryHref = identity.countrySlug
     ? buildCountryHref(identity.countrySlug)
     : "/countries/CA";
@@ -22,10 +26,10 @@ export function CommunityGeographicNavigator({ identity }: CommunityGeographicNa
     : "/region/british-columbia";
 
   return (
-    <nav className="geographic-navigator" aria-label="Geographic and community scope">
+    <nav className="geographic-navigator" aria-label={t("community.navigatorAria")}>
       <div className="geographic-navigator__inner">
         <p className="geographic-navigator__label" id="geographic-scope-label">
-          Scope
+          {t("shared.scope")}
         </p>
         <ol className="geographic-navigator__list" aria-labelledby="geographic-scope-label">
           <li>
@@ -33,7 +37,7 @@ export function CommunityGeographicNavigator({ identity }: CommunityGeographicNa
               className="geographic-navigator__scope geographic-navigator__scope--link"
               href="/"
             >
-              World
+              {t("shared.world")}
             </Link>
           </li>
           <li>

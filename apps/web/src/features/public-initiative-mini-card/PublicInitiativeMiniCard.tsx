@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
@@ -9,23 +11,19 @@ import {
   CivicShareButton,
 } from "../civic-share";
 import { InitiativeImage } from "../initiatives/components/InitiativeImage";
+import { resolveTranslatedContent, generateContentTranslation } from "../language/translation-api";
+import { usePublicContentReadingContext } from "../language/use-public-content-reading-context";
+import {
+  formatInitiativeExperienceDate,
+  resolveActivityAreaDisplayLabel,
+  resolveInitiativeStatusDisplayLabel,
+  resolveLifecycleStageDisplayLabel,
+} from "../public-initiative-experience/initiative-experience-i18n";
 
 import "./public-initiative-mini-card.css";
 
 export const PUBLIC_INITIATIVE_MINI_CARD_FALLBACK_IMAGE =
   "/images/initiatives/initiative-default.webp";
-
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function buildAccessibleName(initiative: WorldInitiativeCardProjection): string {
-  return `View initiative: ${initiative.title}`;
-}
 
 export function resolvePublicInitiativeHref(initiative: WorldInitiativeCardProjection): string {
   return (
@@ -43,7 +41,86 @@ export function PublicInitiativeMiniCard({
 }: {
   initiative: WorldInitiativeCardProjection;
 }) {
+  const t = useTranslations("publicInitiativeMiniCard");
+  const tExperience = useTranslations("initiativeExperience");
+  const locale = useLocale();
+  const readingContext = usePublicContentReadingContext();
+  const [displayTitle, setDisplayTitle] = useState(initiative.title);
+  const [displaySummary, setDisplaySummary] = useState(initiative.summary);
+
+  useEffect(() => {
+    setDisplayTitle(initiative.title);
+    setDisplaySummary(initiative.summary);
+
+    if (!readingContext.ready) {
+      return;
+    }
+
+    let cancelled = false;
+    const readingLanguage = readingContext.readingLanguage;
+    const preference = readingContext.translationPreference;
+
+    void (async () => {
+      try {
+        let resolved = await resolveTranslatedContent({
+          sourceKind: "initiative",
+          sourceRecordId: initiative.initiativeId,
+          language: readingLanguage,
+        });
+
+        if (
+          preference === "preferred" &&
+          resolved.presentationMode === "original" &&
+          readingLanguage !== resolved.originalLanguage &&
+          !resolved.isStale
+        ) {
+          try {
+            const generated = await generateContentTranslation({
+              sourceKind: "initiative",
+              sourceRecordId: initiative.initiativeId,
+              targetLanguage: readingLanguage,
+            });
+            resolved = generated.display;
+          } catch {
+            // keep original
+          }
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        setDisplayTitle(resolved.content.title || initiative.title);
+        setDisplaySummary(resolved.content.description || initiative.summary);
+      } catch {
+        // keep props — never mutate source
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    initiative.initiativeId,
+    initiative.summary,
+    initiative.title,
+    readingContext.ready,
+    readingContext.readingLanguage,
+    readingContext.translationPreference,
+  ]);
+
   const href = resolvePublicInitiativeHref(initiative);
+  const activityAreaLabel = resolveActivityAreaDisplayLabel(initiative.activityArea, tExperience);
+  const stageLabel = initiative.currentStageLabel
+    ? resolveLifecycleStageDisplayLabel(
+        initiative.currentStageLabel,
+        tExperience,
+        initiative.currentStageLabel,
+      )
+    : resolveInitiativeStatusDisplayLabel(initiative.publicStatus, tExperience);
+  const updatedDate = formatInitiativeExperienceDate(locale, initiative.publishedAt, {
+    month: "short",
+  });
 
   return (
     <article className="public-initiative-mini-card">
@@ -53,43 +130,43 @@ export function PublicInitiativeMiniCard({
           stopPropagation
           payload={buildPublicInitiativeSharePayload({
             initiativeId: initiative.initiativeId,
-            title: initiative.title,
+            title: displayTitle,
             image: initiative.imageUrl,
-            optionalText: initiative.summary,
+            optionalText: displaySummary,
           })}
-          ariaLabel={`Share initiative: ${initiative.title}`}
+          ariaLabel={t("shareAria", { title: displayTitle })}
         />
       </div>
       <Link
         href={href}
         className="public-initiative-mini-card__link"
-        aria-label={buildAccessibleName(initiative)}
+        aria-label={t("viewAria", { title: displayTitle })}
       >
         <div className="public-initiative-mini-card__media" aria-hidden="true">
-          <MiniCardImage title={initiative.title} imageUrl={initiative.imageUrl} />
+          <MiniCardImage title={displayTitle} imageUrl={initiative.imageUrl} />
         </div>
         <div className="public-initiative-mini-card__body">
-          <h3 className="public-initiative-mini-card__title">{initiative.title}</h3>
-          <p className="public-initiative-mini-card__summary">{initiative.summary}</p>
+          <h3 className="public-initiative-mini-card__title">{displayTitle}</h3>
+          <p className="public-initiative-mini-card__summary">{displaySummary}</p>
           <p className="public-initiative-mini-card__meta">
-            {initiative.activityArea} · {initiative.geographyLabel}
+            {activityAreaLabel} · {initiative.geographyLabel}
           </p>
           <div className="public-initiative-mini-card__footer">
-            <span className="public-initiative-mini-card__status">
-              {initiative.currentStageLabel ?? initiative.publicStatus}
-            </span>
+            <span className="public-initiative-mini-card__status">{stageLabel}</span>
             <span className="public-initiative-mini-card__date">
-              Updated {formatDate(initiative.publishedAt)}
+              {t("updated", { date: updatedDate })}
             </span>
             {initiative.supportSummary ? (
               <span className="public-initiative-mini-card__support">
-                {initiative.supportSummary.likes} likes · {initiative.supportSummary.dislikes}{" "}
-                dislikes
+                {t("likesDislikes", {
+                  likes: initiative.supportSummary.likes,
+                  dislikes: initiative.supportSummary.dislikes,
+                })}
               </span>
             ) : null}
           </div>
           <span className="public-initiative-mini-card__cta" aria-hidden="true">
-            View Initiative →
+            {t("viewInitiative")}
           </span>
         </div>
       </Link>
@@ -119,20 +196,18 @@ function MiniCardImage({ title, imageUrl }: { title: string; imageUrl?: string }
 }
 
 export function PublicInitiativeMiniCardPlaceholder({ slotNumber }: { slotNumber: number }) {
+  const t = useTranslations("publicInitiativeMiniCard");
+
   return (
     <article
       className="public-initiative-mini-card public-initiative-mini-card--placeholder"
-      aria-label={`Initiative slot awaiting publication ${slotNumber}`}
+      aria-label={t("placeholder.ariaLabel", { slotNumber })}
     >
       <div className="public-initiative-mini-card__media" aria-hidden="true" />
       <div className="public-initiative-mini-card__body">
-        <h3 className="public-initiative-mini-card__title">Initiative slot awaiting publication</h3>
-        <p className="public-initiative-mini-card__summary">
-          A future public initiative will appear here when published.
-        </p>
-        <p className="public-initiative-mini-card__meta">
-          Capacity reserved for upcoming civic work
-        </p>
+        <h3 className="public-initiative-mini-card__title">{t("placeholder.title")}</h3>
+        <p className="public-initiative-mini-card__summary">{t("placeholder.summary")}</p>
+        <p className="public-initiative-mini-card__meta">{t("placeholder.meta")}</p>
       </div>
     </article>
   );

@@ -112,6 +112,8 @@ export const MONGO_COLLECTIONS = {
   terminologyGlossary: "terminology_glossary",
   /** Pack 08I.2 — Admin-managed Brand Localization. */
   brandLocalization: "brand_localization",
+  /** Pack 08I.5 — Admin-managed Legal Localization (counsel-approved). */
+  legalLocalization: "legal_localization",
   blogPosts: "blog_posts",
   blogCategories: "blog_categories",
   blogSubscribers: "blog_subscribers",

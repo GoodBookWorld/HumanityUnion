@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import { requestPublicBlogSubscription } from "../blog-subscription-api";
@@ -11,6 +12,7 @@ type FormState = "idle" | "submitting" | "success" | "error";
  * Pack 21A — Blog header subscribe form (email + Subscribe).
  */
 export function BlogSubscriptionForm() {
+  const t = useTranslations("blogPublic.subscribe");
   const emailId = useId();
   const [email, setEmail] = useState("");
   const [state, setState] = useState<FormState>("idle");
@@ -23,6 +25,7 @@ export function BlogSubscriptionForm() {
     try {
       const result = await requestPublicBlogSubscription(email);
       setState("success");
+      // API_OPAQUE — success copy comes from the API response.
       setMessage(result.message);
       setEmail("");
     } catch (error: unknown) {
@@ -30,7 +33,7 @@ export function BlogSubscriptionForm() {
       setMessage(
         error instanceof Error && error.message.trim()
           ? error.message
-          : "Unable to start subscription. Please try again.",
+          : t("errorFallback"),
       );
     }
   }
@@ -38,11 +41,11 @@ export function BlogSubscriptionForm() {
   return (
     <form className="blog-subscribe" onSubmit={(event) => void onSubmit(event)} noValidate>
       <p className="blog-subscribe__label" id={`${emailId}-label`}>
-        Subscribe to Blog publications
+        {t("label")}
       </p>
       <div className="blog-subscribe__row">
         <label className="hu-visually-hidden" htmlFor={emailId}>
-          Email address
+          {t("emailLabel")}
         </label>
         <input
           id={emailId}
@@ -51,7 +54,7 @@ export function BlogSubscriptionForm() {
           name="email"
           autoComplete="email"
           inputMode="email"
-          placeholder="Email address"
+          placeholder={t("emailPlaceholder")}
           value={email}
           disabled={state === "submitting"}
           aria-describedby={message ? `${emailId}-status` : `${emailId}-label`}
@@ -65,7 +68,7 @@ export function BlogSubscriptionForm() {
           required
         />
         <Button type="submit" variant="primary" disabled={state === "submitting" || !email.trim()}>
-          {state === "submitting" ? "Subscribing…" : "Subscribe"}
+          {state === "submitting" ? t("submitting") : t("submit")}
         </Button>
       </div>
       {message ? (

@@ -3,6 +3,7 @@
 import type { MembershipMePayload } from "@hu/types";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
 import { Button } from "../../../design-system/components/Button";
@@ -50,17 +51,18 @@ function MembershipAuthenticatedSections({
   contributionCancelled?: boolean;
   badgePaymentState?: "success" | "cancelled" | null;
 }) {
+  const t = useTranslations("membershipPublic");
+
   return (
     <>
       {badgePaymentState === "cancelled" ? (
         <p className="membership-section" role="status">
-          Member Badge payment was cancelled. Your application was saved and remains unpaid.
+          {t("badgePayment.cancelled")}
         </p>
       ) : null}
       {badgePaymentState === "success" ? (
         <p className="membership-section" role="status">
-          If payment completed, your Member Badge Application will show as Paid once confirmation
-          is received.
+          {t("badgePayment.success")}
         </p>
       ) : null}
       <MembershipStatusCard membership={payload.membership} />
@@ -75,7 +77,7 @@ function MembershipAuthenticatedSections({
         aria-labelledby="membership-platform-statistics-title"
       >
         <MembershipPlatformStatisticsSection
-          title="Platform Membership participation"
+          title={t("platformStatisticsTitle")}
           showUpdatedAt
         />
       </section>
@@ -85,23 +87,22 @@ function MembershipAuthenticatedSections({
 }
 
 function MembershipSignInPrompt() {
+  const t = useTranslations("membershipPublic");
+
   return (
     <>
       <section className="membership-section" aria-labelledby="membership-sign-in-title">
         <Card className="membership-sign-in-prompt">
           <h2 id="membership-sign-in-title" className="membership-sign-in-prompt__title">
-            Sign in to manage your Membership
+            {t("signIn.title")}
           </h2>
-          <p>
-            Create an account or sign in to view your Membership status, complete your application,
-            and track your journey.
-          </p>
+          <p>{t("signIn.body")}</p>
           <div className="membership-sign-in-prompt__actions">
             <Button href="/login?returnTo=/membership" variant="primary">
-              Log in
+              {t("signIn.login")}
             </Button>
             <Button href="/register?returnTo=/membership" variant="secondary">
-              Register
+              {t("signIn.register")}
             </Button>
           </div>
         </Card>
@@ -112,6 +113,7 @@ function MembershipSignInPrompt() {
 }
 
 function MembershipPageBody({ authStatus }: { authStatus: "authenticated" | "unauthenticated" }) {
+  const t = useTranslations("membershipPublic");
   const searchParams = useSearchParams();
   const contributionCancelled = searchParams.get("contribution") === "cancelled";
   const badgePaymentParam = searchParams.get("badgePayment");
@@ -168,7 +170,7 @@ function MembershipPageBody({ authStatus }: { authStatus: "authenticated" | "una
     return (
       <div className="membership-page">
         <MembershipHero cohortLabel={cohortLabel} />
-        <LoadingState message="Loading Membership..." />
+        <LoadingState message={t("loading")} />
       </div>
     );
   }
@@ -200,17 +202,18 @@ function MembershipPageBody({ authStatus }: { authStatus: "authenticated" | "una
 }
 
 export function MembershipPageContent() {
+  const t = useTranslations("membershipPublic");
   const authStatus = useClientAuthStatus();
 
   if (authStatus === "pending") {
-    return <LoadingState message="Loading Membership..." />;
+    return <LoadingState message={t("loading")} />;
   }
 
   if (authStatus === "authenticated") {
     return (
       <MemberWorkspace
-        title="Membership"
-        subtitle="Voluntary Humanity Union Membership and application"
+        title={t("pageTitle")}
+        subtitle={t("pageSubtitle")}
         workspaceNavigation={<WorkspaceNavigation />}
       >
         <MembershipPageBody authStatus="authenticated" />
@@ -221,10 +224,8 @@ export function MembershipPageContent() {
   return (
     <div className="membership-page-shell">
       <header className="membership-page-shell__header">
-        <h1 className="membership-page-shell__title">Membership</h1>
-        <p className="membership-page-shell__subtitle">
-          Voluntary Humanity Union Membership and application
-        </p>
+        <h1 className="membership-page-shell__title">{t("pageTitle")}</h1>
+        <p className="membership-page-shell__subtitle">{t("pageSubtitle")}</p>
       </header>
       <MembershipPageBody authStatus="unauthenticated" />
     </div>

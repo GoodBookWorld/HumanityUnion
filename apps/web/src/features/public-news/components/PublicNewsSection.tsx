@@ -3,6 +3,7 @@
 import type { PublicNewsArticleItem } from "@hu/types";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   MediaRailControls,
@@ -71,6 +72,9 @@ export function PublicNewsSection({
   description,
   className,
 }: PublicNewsSectionProps = {}) {
+  const tDiscovery = useTranslations("publicNews.discovery");
+  const tCountry = useTranslations("publicNews.country");
+  const tErrors = useTranslations("publicNews.errors");
   const [articles, setArticles] = useState<PublicNewsArticleItem[]>([]);
   const [activeProviders, setActiveProviders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,17 +84,14 @@ export function PublicNewsSection({
 
   const resolvedShowToolbar = showToolbar ?? variant === "discovery";
   const resolvedEyebrow =
-    eyebrow ?? (variant === "country" ? "COUNTRY NEWS" : "SEARCH EVENTS");
+    eyebrow ?? (variant === "country" ? tCountry("eyebrow") : tDiscovery("eyebrow"));
   const resolvedHeading =
-    heading ??
-    (variant === "country" && countryName
-      ? `Latest Trusted News`
-      : "Turn trusted news into civic action");
+    heading ?? (variant === "country" ? tCountry("heading") : tDiscovery("heading"));
   const resolvedDescription =
     description ??
     (variant === "country" && countryName
-      ? `Recent verified reporting relevant to ${countryName}.`
-      : "Filter live public news, read original sources, and create initiatives from verified stories.");
+      ? tCountry("description", { countryName })
+      : tDiscovery("description"));
 
   const loadArticles = useCallback(async () => {
     setLoading(true);
@@ -108,15 +109,13 @@ export function PublicNewsSection({
       setActiveProviders([]);
       setError(
         fetchError instanceof Error && isApiUnavailableError(fetchError)
-          ? "News is temporarily unavailable."
-          : fetchError instanceof Error
-            ? fetchError.message
-            : "News is temporarily unavailable.",
+          ? tErrors("temporarilyUnavailable")
+          : tErrors("temporarilyUnavailable"),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tErrors]);
 
   useEffect(() => {
     void loadArticles();
@@ -185,7 +184,7 @@ export function PublicNewsSection({
   }
 
   const railLabel =
-    variant === "country" ? "trusted news articles" : "trusted news discovery results";
+    variant === "country" ? tCountry("railLabel") : tDiscovery("railLabel");
 
   const rail = useMediaHorizontalRail({
     itemCount: processedArticles.length,
@@ -208,23 +207,27 @@ export function PublicNewsSection({
     variant === "country" && countryName ? (
       <>
         <span className="civic-media-chip civic-media-chip--active">
-          {processedArticles.length} trusted news event
-          {processedArticles.length === 1 ? "" : "s"} for {countryName}
+          {tCountry(
+            processedArticles.length === 1 ? "eventsForCountry" : "eventsForCountryPlural",
+            { count: processedArticles.length, countryName },
+          )}
         </span>
         {countryProvider !== "all" ? (
           <span className="civic-media-chip civic-media-chip--active">{countryProvider}</span>
         ) : null}
         {usedGlobalFallback ? (
           <span className="civic-media-chip">
-            Global sources covering {countryName}
+            {tCountry("globalSources", { countryName })}
           </span>
         ) : null}
       </>
     ) : (
       <>
         <span className="civic-media-chip civic-media-chip--active">
-          {processedArticles.length} trusted event
-          {processedArticles.length === 1 ? "" : "s"} found
+          {tDiscovery(
+            processedArticles.length === 1 ? "eventsFound" : "eventsFoundPlural",
+            { count: processedArticles.length },
+          )}
         </span>
         {filters.provider !== "all" ? (
           <span className="civic-media-chip civic-media-chip--active">{filters.provider}</span>
@@ -243,14 +246,14 @@ export function PublicNewsSection({
       sectionId={sectionId}
       surfaceStyle={variant === "country" ? "grouped" : "elevated"}
       eyebrow={showIntro ? resolvedEyebrow : undefined}
-      title={showIntro ? resolvedHeading : "Trusted news"}
+      title={showIntro ? resolvedHeading : tDiscovery("titleCollapsed")}
       description={showIntro ? resolvedDescription : undefined}
       metadata={!loading && !error ? resultSummary : null}
       controls={!loading && !error && processedArticles.length > 0 ? controls : null}
       className={className}
       footer={
         variant === "discovery" ? (
-          <Link href="/initiatives/create">Create initiative from news</Link>
+          <Link href="/initiatives/create">{tDiscovery("footerCreate")}</Link>
         ) : undefined
       }
     >
@@ -259,13 +262,13 @@ export function PublicNewsSection({
           {variant === "country" && countryName ? (
             <div className="public-news-toolbar public-news-toolbar--country">
               <div className="public-news-toolbar__field">
-                <label htmlFor={`${sectionId}-country-provider`}>Provider</label>
+                <label htmlFor={`${sectionId}-country-provider`}>{tCountry("providerLabel")}</label>
                 <select
                   id={`${sectionId}-country-provider`}
                   value={countryProvider}
                   onChange={(event) => setCountryProvider(event.target.value)}
                 >
-                  <option value="all">All trusted media for {countryName}</option>
+                  <option value="all">{tCountry("allTrustedMedia", { countryName })}</option>
                   {countryProviders.map((provider) => (
                     <option key={provider} value={provider}>
                       {provider}
@@ -279,7 +282,7 @@ export function PublicNewsSection({
                   className="public-news-toolbar__clear"
                   onClick={() => setCountryProvider("all")}
                 >
-                  Clear filter
+                  {tCountry("clearFilter")}
                 </button>
               ) : null}
             </div>
@@ -315,7 +318,7 @@ export function PublicNewsSection({
           variant="no-results"
           message={
             variant === "country" && countryName
-              ? `No current trusted news is available for ${countryName}.`
+              ? tCountry("noResults", { countryName })
               : undefined
           }
         />

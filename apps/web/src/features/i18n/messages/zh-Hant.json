@@ -144,7 +144,13 @@
     "twoStepCodeSent": "我們已將六位數代碼寄至您已確認的電子郵件地址。",
     "twoStepEnabledSuccess": "兩步驟登入已成功啟用。",
     "twoStepDisabledSuccess": "兩步驟登入已成功停用。",
-    "newVerificationCodeSent": "已寄出新的驗證碼。"
+    "newVerificationCodeSent": "已寄出新的驗證碼。",
+    "confirmEmailChangeTitle": "確認變更電子郵件",
+    "confirmEmailChangeSubtitle": "完成更新您的 Humanity Union 帳戶電子郵件。",
+    "confirmingEmailChange": "正在確認電子郵件變更…",
+    "emailChangeUpdated": "您的電子郵件地址已更新。",
+    "emailChangeTokenMissing": "缺少電子郵件變更權杖。",
+    "invalidEmailChangeToken": "電子郵件變更權杖無效或已過期。"
   },
   "workspace": {
     "workspaceHome": "工作區首頁",
@@ -3113,7 +3119,8 @@
       "eyebrow": "可信來源",
       "title": "我們為何推薦這些來源",
       "description": "選錄依循已公開的原則——而非人氣、星等或排名。",
-      "readFaq": "閱讀選錄常見問題"
+      "readFaq": "閱讀選錄常見問題",
+      "ariaLabel": "來源選錄原則"
     },
     "trustedMedia": {
       "eyebrow": "可信來源",
@@ -3123,12 +3130,14 @@
     "factChecking": {
       "eyebrow": "查核資訊",
       "title": "事實查核資源",
-      "description": "用於查核公開主張、圖像與媒體敘事的獨立組織與工具。"
+      "description": "用於查核公開主張、圖像與媒體敘事的獨立組織與工具。",
+      "ariaLabel": "事實查核資源"
     },
     "propaganda": {
       "eyebrow": "分析敘事",
       "title": "宣傳手法分析",
-      "description": "協助辨識操弄手法、協調敘事與資訊作戰的資源。"
+      "description": "協助辨識操弄手法、協調敘事與資訊作戰的資源。",
+      "ariaLabel": "宣傳手法分析資源"
     },
     "faq": {
       "heading": "常見問題"
@@ -3139,7 +3148,13 @@
     "mission": "使命",
     "officialWebsite": "官方網站",
     "learnMore": "了解更多",
-    "coverageAria": "涵蓋範圍"
+    "coverageAria": "涵蓋範圍",
+    "pipeline": {
+      "eyebrow": "公民流程",
+      "title": "新聞如何催生倡議",
+      "description": "經查證的資訊會經由討論、分析、決策與公眾影響推進。",
+      "label": "公民工作流程階段"
+    }
   },
   "search": {
     "title": "搜尋公民紀錄",
@@ -3234,7 +3249,45 @@
     "blogMeta": "部落格是作者出版表面。知識仍是結構化教育圖書館——兩個領域保持分離。",
     "openBlog": "開啟部落格",
     "articlesCount": "{count} 篇文章",
-    "articlesCountOne": "{count} 篇文章"
+    "articlesCountOne": "{count} 篇文章",
+    "article": {
+      "purpose": "目的",
+      "overview": "概覽",
+      "diagramAria": "圖表",
+      "keyConcepts": "關鍵概念",
+      "relatedConcepts": "相關概念",
+      "relatedGuides": "相關指南",
+      "relatedWorkspace": "相關工作區區段",
+      "relatedPublicPages": "相關公開頁面",
+      "warning": "知識文章以中立方式說明流程。它們不倡導立場，也不預測結果。",
+      "lastUpdated": "最後更新：{date}",
+      "version": "版本：{version}",
+      "readingTime": "預估閱讀時間：{minutes} 分鐘",
+      "pagerAria": "文章分頁",
+      "previous": "← 上一篇文章",
+      "next": "下一篇文章 →",
+      "loading": "正在載入文章…",
+      "unavailable": "文章無法使用。"
+    },
+    "menu": {
+      "open": "知識選單",
+      "openAria": "開啟知識選單",
+      "closeAria": "關閉知識選單"
+    },
+    "search": {
+      "title": "搜尋知識",
+      "placeholder": "搜尋文章…",
+      "ariaLabel": "搜尋知識中心",
+      "submit": "搜尋",
+      "searching": "搜尋中…",
+      "empty": "沒有符合搜尋條件的知識文章。"
+    },
+    "nav": {
+      "title": "知識中心",
+      "ariaLabel": "知識中心導覽",
+      "subsections": "子區段",
+      "civicMediaCenter": "公民媒體中心"
+    }
   },
   "institutionsPublic": {
     "headline": "建構負責任全球合作的機構",
@@ -3256,7 +3309,175 @@
     "relatedLoading": "正在載入倡議…",
     "relatedEmptyPrimary": "尚無公開倡議。",
     "relatedEmptySecondary": "當參與者發布倡議後，這裡最多會顯示三項。",
-    "relatedViewAll": "查看全部倡議"
+    "relatedViewAll": "查看全部倡議",
+    "stickyNavAria": "機構頁面章節",
+    "stickyNav": {
+      "architecture": "架構",
+      "institutions": "機構",
+      "protection": "防護",
+      "wpc": "WPC",
+      "regional-offices": "區域辦公室",
+      "related-initiatives": "相關倡議"
+    },
+    "architecture": {
+      "title": "憲政架構",
+      "intro": "從公民參與到公開紀錄的擬議流程。跟隨緞帶或選擇階段以探索相關機構。",
+      "ribbonAria": "機構導覽緞帶",
+      "ribbonInstructions": "選擇階段以導航至相關機構章節。緞帶持續捲動，並在懸停時暫停。",
+      "navigateTo": "導航至 {label} 的相關機構章節",
+      "blocks": {
+        "participants": "參與者",
+        "initiatives": "倡議",
+        "collaborative-analysis": "協作分析",
+        "collective-decision": "集體決策",
+        "humanity-council": "人類理事會",
+        "implementation": "執行",
+        "public-impact": "公共影響",
+        "civic-archive": "公民檔案"
+      }
+    },
+    "card": {
+      "purpose": "宗旨",
+      "role": "角色",
+      "learnMore": "了解更多",
+      "allNominations": "所有提名",
+      "createInitiative": "建立倡議",
+      "relatedKnowledge": "相關知識",
+      "readKnowledge": "{title} → 閱讀"
+    },
+    "status": {
+      "concept": "概念",
+      "futureInstitution": "未來機構",
+      "underDevelopment": "開發中"
+    },
+    "hierarchy": {
+      "title": "防護指揮結構",
+      "intro": "擬議的人類防護指揮中心（HPC）旨在協調防護政策，並在明確監督界限內指揮世界防護軍團（WPC）行動。",
+      "flowAria": "從 HPC 到區域與社區協調的防護層級",
+      "commands": "指揮",
+      "navigateTo": "導航至 {title}",
+      "levels": {
+        "hpc": {
+          "title": "人類防護指揮中心",
+          "subtitle": "全球行動協調中心"
+        },
+        "operational-command": {
+          "label": "行動指揮"
+        },
+        "wpc": {
+          "title": "世界防護軍團（WPC）",
+          "description": "在理事會監督與章程界限下接受 HPC 指揮的行動協調機構。"
+        },
+        "regional-offices": {
+          "title": "Humanity Union 區域辦公室",
+          "description": "連結全球機構架構與國家、區域及社區活動的地理據點。"
+        },
+        "community-self-defense-units": {
+          "title": "社區自衛單位",
+          "description": "以社區為範圍的防護協調，支援地方層級的平民韌性。"
+        }
+      }
+    },
+    "wpc": {
+      "accordionAria": "世界防護軍團行動領域",
+      "sections": {
+        "management-coordination": {
+          "title": "1. 集中管理與協調",
+          "body": "人類防護指揮中心（HPC）是世界防護軍團（WPC）所有行動的唯一戰略協調樞紐。該中心： - 指揮全球安全、防衛、救援與人道任務。 - 整合並監督專業武裝部隊、專業軍事單位、救援服務、環境保護團隊與指定醫療人員。 - 在人類理事會的戰略監督下運作，確保與全球優先事項及長期安全目標一致。"
+        },
+        "composition-structure": {
+          "title": "2. 組成與結構",
+          "body": "WPC 由民主國家按比例制度貢獻的人員與資源組成，考量： - 總人口（確保公平代表）。 - 領土面積（考量地理責任）。 - 資源能力（經濟實力、技術能力與物資貢獻）。各國主要透過財務貢獻或等值物資履行義務，以維持軍團的行動永續性。"
+        },
+        "recruitment-training": {
+          "title": "3. 招募與訓練",
+          "body": "- 統一全球招募系統依嚴格能力、技能與倫理標準選拔。 - 世界防護訓練中心（WPTC）為所有人員提供標準化訓練，聚焦防衛、危機應變、環境保護與醫療援助。 - WPC 專業分部包括：* 軍事與安全部隊（全球維和與防護）。* 救援與緊急應變單位（救災與危機干預）。* 環境保護團隊（生態危機管理與資源保育）。* 醫療與支援服務（人員福祉與任務永續）。"
+        },
+        "deployment-command": {
+          "title": "4. 行動部署與指揮",
+          "body": "- HPC 依即時全球威脅與緊急情況部署人員。 - 特遣隊在聯合指揮結構下運作，確保適應性與效率。 - 軍團維持快速應變能力，並由全球後勤與資源網絡支援。"
+        },
+        "financial-logistical": {
+          "title": "5. 財務與後勤支援",
+          "body": "- 民主國家透過結構化貢獻資助並裝備 WPC。 - 資源包括財務資產、技術、軍用等級裝備與人道物資。 - 全球後勤部門管理供應鏈、行動整備與任務永續。"
+        },
+        "integration-bodies": {
+          "title": "6. 與國家及國際機構整合",
+          "body": "- 貢獻國的專業武裝部隊整合進 WPC 指揮結構，同時保留國家監督。 - 國際組織（例如人道機構、環境團體）與 WPC 合作以提升任務成效。"
+        },
+        "legal-ethical": {
+          "title": "7. 法律與倫理基礎",
+          "body": "-人類理事會作為最高治理機構，就消除成因、預防全球軍事衝突、環境破壞及天然災害應變作出戰略決策。 - 決策基於諮商、專家分析與智識分析院建議，確保以理性、知識為本的全球安全路徑。 - 世界防護軍團在威脅全人類的全球衝突中不維持中立，而是積極消除衝突根源並透過戰略干預防止升級。 - 軍團在嚴格法律框架下運作，確保所有行動符合民主原則、國際法與倫理治理。 - 行動授權包括：* 防止國家或非國家行為者觸發全球不穩定。* 保護環境免於大規模破壞活動。* 果斷回應人道與天然危機。"
+        }
+      }
+    },
+    "records": {
+      "humanity-council": {
+        "name": "人類理事會",
+        "purpose": "擬議的最高議事大會，旨在整合各院投入，並在章程規則內授權重大治理方向。",
+        "role": "連結公民決策與機構行動及平台長期治理的中央議事機構。",
+        "knowledgeTitle": "憲政原則"
+      },
+      "chamber-of-state-representatives": {
+        "name": "國家代表院",
+        "purpose": "擬議供與國家及正式承認的區域當局相關代表參與的議院。",
+        "role": "透過協調與合作——而非指揮——將國家層級與地緣政治脈絡帶入理事會議事。",
+        "knowledgeTitle": "治理原則",
+        "nonNominationNote": "代表由參與政府任命。"
+      },
+      "chamber-of-intellectual-analysis": {
+        "name": "智識分析院",
+        "purpose": "擬議供專家分析、評估與策略研判以協助議事的議院。",
+        "role": "為理事會決策提供分析投入，而不取代民主投票或守護者主導的倡議工作。",
+        "knowledgeTitle": "協作分析"
+      },
+      "expert-analysis-team": {
+        "name": "專家分析團隊",
+        "purpose": "擬議支援智識分析院、進行領域導向評估的專業分析單位。",
+        "role": "提供與協作分析生態系連結的聚焦專家評估。",
+        "knowledgeTitle": "協作分析"
+      },
+      "state-collaboration-department": {
+        "name": "國家協作部門",
+        "purpose": "擬議與參與國家及區域當局協調工作流程的機構單位。",
+        "role": "在章程監督下，連結公民機構流程與國家協作路徑。",
+        "knowledgeTitle": "治理原則"
+      },
+      "secretariat": {
+        "name": "秘書處",
+        "purpose": "擬議負責延續性、紀錄與協調執行支援的常設行政機構。",
+        "role": "將理事會成果轉為排程行動，維護機構記憶，並支援跨機構後勤。",
+        "knowledgeTitle": "開放公民流程"
+      },
+      "hpc": {
+        "name": "人類防護指揮中心（HPC）",
+        "purpose": "擬議負責防護標準、監督與行動方向的政策與指揮協調中心。",
+        "role": "制定防護政策、協調監督，並在明確權限內指揮世界防護軍團行動。",
+        "knowledgeTitle": "透明度",
+        "nonNominationNote": "HPC 領導路徑須經專門安全與法律審查後，始開放公開提名。"
+      },
+      "wpc": {
+        "name": "世界防護軍團（WPC）",
+        "purpose": "擬議在有限授權內進行防護應變、人道支援與危機協調的行動協調機構。",
+        "role": "在 HPC 指揮與理事會監督下執行防護行動——為協調而設計，而非對國家單方面強制。",
+        "knowledgeTitle": "責任",
+        "nonNominationNote": "世界防護軍團是受 HPC 指揮的行動機構——不開放公民提名。"
+      },
+      "community-self-defense-units": {
+        "name": "社區自衛單位",
+        "purpose": "擬議以社區為範圍的防護協調，支援地方平民韌性。",
+        "role": "在平台規則內支援社區安全與降級——獨立於世界防護軍團，且非準軍事組織。",
+        "knowledgeTitle": "責任",
+        "nonNominationNote": "社區防護協調提名路徑暫緩。"
+      },
+      "regional-offices": {
+        "name": "Humanity Union 區域辦公室",
+        "purpose": "擬議連結全球機構架構與國家、區域及社區活動的地理據點。",
+        "role": "在地化協調、支援區域參與，並將地理公民活動連結至機構工作流程。",
+        "knowledgeTitle": "僅供參考架構",
+        "nonNominationNote": "區域辦公室提名模式暫緩。"
+      }
+    }
   },
   "worldInitiativesPublic": {
     "pageTitle": "世界倡議",
@@ -3460,6 +3681,909 @@
       "intro": "為後代保存公民知識、成就與教訓。",
       "copy": "為後代保存公民知識、成就與教訓。",
       "explore": "探索公民典藏"
+    },
+    "statistics": {
+      "title": "Humanity Union 數據一覽",
+      "intro": "平台公民活動的事實摘要。",
+      "unavailable": "平台統計資料暫時無法使用。",
+      "loading": "正在載入平台統計資料…",
+      "aboutMetric": "關於此指標",
+      "unavailableValue": "無法使用",
+      "unavailableAria": "{label}：無法使用",
+      "cards": {
+        "users": {
+          "label": "參與者",
+          "description": "平台上的有效驗證帳戶。"
+        },
+        "humanityUnionMembers": {
+          "label": "會員",
+          "description": "具有有效會員身分的已確認 Humanity Union 會員。會員身分永不改變投票權重。"
+        },
+        "countries": {
+          "label": "國家",
+          "description": "透過參與地區與個人檔案呈現的不同國家。"
+        },
+        "regions": {
+          "label": "區域",
+          "description": "平台上呈現的不同國家與區域組合。"
+        },
+        "initiatives": {
+          "label": "倡議",
+          "description": "公開可見的公民倡議。"
+        },
+        "collectiveDecisions": {
+          "label": "集體決策",
+          "description": "公開集體決策紀錄。"
+        },
+        "civicActionPackages": {
+          "label": "公民行動套件",
+          "description": "與公開倡議相關的已發行公民行動套件。"
+        },
+        "officialResponses": {
+          "label": "官方回應",
+          "description": "已發布或已典藏的公開官方回應。"
+        },
+        "civicArchive": {
+          "label": "公民典藏",
+          "description": "已發布的公開公民典藏紀錄。"
+        }
+      }
+    }
+  },
+  "publicInitiativeMiniCard": {
+    "viewInitiative": "查看倡議 →",
+    "updated": "更新於 {date}",
+    "likesDislikes": "{likes} 個讚 · {dislikes} 個倒讚",
+    "shareAria": "分享倡議：{title}",
+    "viewAria": "查看倡議：{title}",
+    "placeholder": {
+      "title": "倡議欄位等待發布",
+      "summary": "未來的公開倡議發布後將顯示於此。",
+      "meta": "為即將到來的公民工作預留容量",
+      "ariaLabel": "倡議欄位等待發布 {slotNumber}"
+    }
+  },
+  "membershipPublic": {
+    "pageTitle": "會員資格",
+    "pageSubtitle": "自願加入 Humanity Union 會員並提出申請",
+    "loading": "正在載入會員資格...",
+    "hero": {
+      "title": "成為 Humanity Union 會員",
+      "subtitle": "會員資格是自願承諾，用以支持 Humanity Union，並參與建立更強大的全球公民社群。",
+      "badgeAlt": "Humanity Union 會員徽章示意圖"
+    },
+    "signIn": {
+      "title": "登入以管理您的會員資格",
+      "body": "建立帳戶或登入，以查看會員狀態、完成申請並追蹤您的歷程。",
+      "login": "登入",
+      "register": "註冊"
+    },
+    "badgePayment": {
+      "cancelled": "會員徽章付款已取消。您的申請已儲存，仍為未付款狀態。",
+      "success": "若付款完成，會員徽章申請將在確認後顯示為已付款。"
+    },
+    "platformStatisticsTitle": "平台會員參與",
+    "meaning": {
+      "sectionTitle": "會員資格的意義",
+      "sectionDescription": "會員資格是對 Humanity Union 公民平台的自願支持。",
+      "cards": {
+        "community": {
+          "title": "社群",
+          "body": "成為 Humanity Union 長期公民社群的一員。"
+        },
+        "support": {
+          "title": "支持",
+          "body": "會員資格包含一次性會員貢獻，有助於維持平台運作。"
+        },
+        "participation": {
+          "title": "參與",
+          "body": "會員與所有參與者平等參與。會員資格絕不會增加投票權重。"
+        },
+        "transparency": {
+          "title": "透明",
+          "body": "會員狀態會顯示在您的公開個人資料上。您可選擇是否顯示會員編號。"
+        }
+      }
+    },
+    "notMeans": {
+      "sectionTitle": "會員資格不代表什麼",
+      "sectionDescription": "會員資格是公民支持——不是權力、身分或特權。",
+      "prefix": "會員資格不是{item}。",
+      "items": {
+        "identityVerification": "身分驗證",
+        "citizenship": "公民身分",
+        "governmentAuthorization": "政府授權",
+        "moderatorPrivileges": "版主權限",
+        "administratorPrivileges": "管理員權限",
+        "increasedVotingInfluence": "更高的投票影響力"
+      }
+    },
+    "benefits": {
+      "sectionTitle": "會員權益",
+      "sectionDescription": "會員資格目前與未來平台更新所提供的內容。",
+      "items": {
+        "member-badge": {
+          "title": "會員徽章",
+          "body": "會員資格啟用後，會員狀態會自動顯示在您的公開個人資料上。"
+        },
+        "member-number": {
+          "title": "會員編號",
+          "body": "在貢獻確認後，您將獲得獨特的 Humanity Union 會員編號。"
+        },
+        "participation-recognition": {
+          "title": "參與認可",
+          "body": "會員資格表彰對公民平台的自願支持。"
+        },
+        "future-programs": {
+          "title": "未來會員計畫",
+          "body": "未來會員計畫開放時將另行公告。"
+        },
+        "transparent-statistics": {
+          "title": "透明統計",
+          "body": "平台會公布彙總的會員參與統計。"
+        },
+        "platform-sustainability": {
+          "title": "平台永續",
+          "body": "會員貢獻有助於維持 Humanity Union 的公民基礎設施。"
+        }
+      }
+    },
+    "faq": {
+      "sectionTitle": "常見問題",
+      "regionLabel": "會員常見問題",
+      "items": {
+        "what-is-member": {
+          "question": "什麼是會員？",
+          "answer": "會員是已完成會員申請並確認一次性會員貢獻的參與者。會員在所有公民決策中仍是平等的參與者。"
+        },
+        "voting-power": {
+          "question": "會員資格會改變投票權重嗎？",
+          "answer": "不會。會員與參與者在所有集體決策中具有相同投票權重。"
+        },
+        "required": {
+          "question": "會員資格是必要的嗎？",
+          "answer": "不是。會員資格完全自願。參與者無需成為會員即可充分參與公民工作。"
+        },
+        "participate-without": {
+          "question": "沒有會員資格仍可參與嗎？",
+          "answer": "可以。所有核心公民參與功能仍對已確認的參與者開放。"
+        },
+        "expire": {
+          "question": "會員資格會過期嗎？",
+          "answer": "會員資格設計為長期自願承諾。若有任何到期政策，將在生效前公布。"
+        },
+        "future-contributions": {
+          "question": "未來的會員貢獻如何運作？",
+          "answer": "提交申請後，一次性會員貢獻將確認您的會員資格。付款整合將於未來平台更新中提供。"
+        }
+      }
+    }
+  },
+  "supportPublic": {
+    "title": "支持 Humanity Union",
+    "subtitle": "協助建立更有利於深思熟慮集體行動的條件。",
+    "lede1": "Humanity Union 正在發展開放平台，讓人們理解問題、檢視證據、改進提案、做出透明決策，並追蹤執行情況。",
+    "lede2": "支持本專案有助於擴展工具、知識與社群，使更負責任、更持久的解決方案成為可能。",
+    "statement": "您可以透過資源、時間，或協助建立在地社群來支持 Humanity Union。",
+    "waysHeading": "支持方式",
+    "donate": {
+      "title": "支持專案",
+      "body": "協助資助平台開發、基礎設施、教育資源、翻譯與公益專案。",
+      "cta": "捐款",
+      "disabledLabel": "捐款（尚未設定連結）",
+      "note": "捐款支持 Humanity Union 的發展與營運。"
+    },
+    "volunteer": {
+      "title": "志工",
+      "body": "貢獻您的時間、知識、專業技能、研究、翻譯、溝通、組織或社群經驗。",
+      "cta": "成為 Humanity Union 志工",
+      "disabledLabel": "成為 Humanity Union 志工（即將推出）",
+      "noteAvailable": "可透過上方連結參與志工機會。",
+      "noteSoon": "志工申請即將在此開放。"
+    },
+    "regional": {
+      "title": "建立區域代表",
+      "body": "協助將 Humanity Union 帶入您的國家或地區。區域代表把在地知識與優先事項連結到全球合作，同時讓參與扎根於在地社群。",
+      "cta": "區域計畫",
+      "disabledLabel": "區域計畫（尚未設定連結）"
+    },
+    "why": {
+      "heading": "為什麼支持很重要",
+      "p1": "科技可以做的不只是爭奪注意力。",
+      "p2": "它可以幫助人們理解複雜性、比較替代方案、彼此學習，並把決策貫徹到可衡量的結果。",
+      "p3": "Humanity Union 正圍繞這個目的而建。",
+      "p4": "隨著平台成長，更多人與社群能參與結構化討論、發展更好提案、保存決策理由，並從結果中學習。",
+      "p5": "支持 Humanity Union，就是協助創造一個參與更知情、合作更務實、集體決策更透明且持久的環境。",
+      "imageAlt": "果樹示意圖，說明支持如何幫助 Humanity Union 強化參與與持久成果"
+    },
+    "forms": {
+      "heading": "每種支持形式都有不同意義",
+      "resourcesTitle": "資源",
+      "resourcesBody": "協助建置與維護平台。",
+      "participationTitle": "參與",
+      "participationBody": "貢獻知識、經驗與實務工作。",
+      "regionalTitle": "區域社群",
+      "regionalBody": "把在地社群與全球合作連結起來。",
+      "chooseCta": "選擇您想貢獻的方式",
+      "contactPrompt": "對支持專案有疑問？請來信 <email></email>。"
+    },
+    "opensInNewTab": "{label}（在新分頁開啟）"
+  },
+  "contactPublic": {
+    "pageTitle": "聯絡",
+    "intro": "封閉測試與早期平台支援請以電子郵件聯絡 Humanity Union。訊息會在您自己的郵件用戶端開啟——我們不會在平台上儲存聯絡表單提交內容。",
+    "emailLabel": "電子郵件",
+    "organizationLabel": "組織",
+    "addressLabel": "地址",
+    "websiteLabel": "網站",
+    "subjectsHeading": "選擇主旨",
+    "hint": "請提供足夠脈絡以便我們轉送您的訊息。帳戶或公民工作區問題，儘可能使用與您的 Humanity Union 帳戶相關的電子郵件地址。",
+    "successChrome": "您的郵件用戶端應會開啟預填訊息。",
+    "errorUnavailable": "聯絡資訊暫時無法使用。請稍後再試。",
+    "subjects": {
+      "general": {
+        "label": "一般詢問",
+        "subject": "一般詢問"
+      },
+      "partnerships": {
+        "label": "合作與夥伴關係",
+        "subject": "合作與夥伴關係"
+      },
+      "media": {
+        "label": "媒體與新聞",
+        "subject": "媒體與新聞"
+      },
+      "technical": {
+        "label": "技術支援",
+        "subject": "技術支援"
+      }
+    }
+  },
+  "blogPublic": {
+    "pageTitle": "部落格",
+    "pageSubtitle": "Humanity Union 作者的想法、反思與觀點。",
+    "publicationsHeading": "出版內容",
+    "loadingPublications": "正在載入出版內容…",
+    "loadingPublication": "正在載入文章…",
+    "empty": "找不到出版內容。",
+    "emptyFiltered": "沒有符合此搜尋的出版內容。",
+    "clearFilters": "清除篩選",
+    "unavailable": "部落格暫時無法使用。請稍後再試。",
+    "loadError": "無法載入部落格出版內容。",
+    "notFound": "找不到此出版內容。",
+    "articleLoadError": "無法載入此出版內容。",
+    "backToBlog": "返回部落格",
+    "updated": "已更新 {date}",
+    "noComments": "尚無留言",
+    "oneComment": "1 則留言",
+    "commentsCount": "{count} 則留言",
+    "breadcrumbAria": "麵包屑",
+    "publicationDetailsAria": "出版詳情",
+    "bodyTranslationNote": "若有內容翻譯，Blog 正文會透過內容翻譯呈現；否則顯示權威 HTML。",
+    "readMore": "閱讀更多",
+    "search": {
+      "label": "搜尋",
+      "placeholder": "搜尋出版內容",
+      "submit": "搜尋"
+    },
+    "subscribe": {
+      "label": "訂閱部落格出版內容",
+      "emailLabel": "電子郵件地址",
+      "emailPlaceholder": "電子郵件地址",
+      "submit": "訂閱",
+      "submitting": "訂閱中…",
+      "errorFallback": "無法開始訂閱。請再試一次。"
+    },
+    "comments": {
+      "heading": "留言",
+      "headingWithCount": "留言（{count}）",
+      "removed": "留言已移除",
+      "awaitingReviewTitle": "此留言正在等待審核。",
+      "actionUnavailableTitle": "無法執行留言操作",
+      "postComment": "發表留言",
+      "postReply": "發表回覆",
+      "posting": "發表中…",
+      "signInPrompt": "<link>登入</link>以留言。",
+      "reply": "回覆",
+      "replyAria": "回覆 {name} 的留言",
+      "remove": "移除",
+      "composerLabel": "新增留言",
+      "composerHelp": "僅限純文字。回覆僅一層。",
+      "composerPlaceholder": "分享一則深思熟慮的留言",
+      "replyPlaceholder": "撰寫回覆",
+      "loading": "正在載入留言…",
+      "empty": "尚無留言。",
+      "posted": "已發表",
+      "edited": "已編輯",
+      "cancel": "取消"
+    },
+    "pagination": {
+      "ariaLabel": "部落格分頁",
+      "previousAria": "上一頁",
+      "nextAria": "下一頁",
+      "previous": "上一頁",
+      "next": "下一頁 ≫",
+      "showingCount": "顯示 {count} 則出版內容",
+      "showingCountPlural": "顯示 {count} 則出版內容",
+      "showingRange": "顯示第 {start}–{end} 則，共 {total} 則出版內容",
+      "pageAria": "第 {page} 頁"
+    },
+    "discovery": {
+      "leftAria": "部落格導覽",
+      "rightAria": "部落格探索",
+      "allCategories": "所有分類",
+      "categoriesHeading": "分類",
+      "categoryLabel": "分類",
+      "selected": "已選：{label}",
+      "views": {
+        "heading": "部落格瀏覽次數",
+        "valueAria": "{count} 次部落格頁面累計瀏覽",
+        "caption": "部落格頁面（`/blog`）的累計瀏覽次數。僅為彙總——不含訪客或身分。"
+      },
+      "authors": {
+        "heading": "作者",
+        "loading": "正在載入作者…",
+        "empty": "尚無已發佈的作者。"
+      },
+      "categoryChart": {
+        "heading": "依分類的出版內容",
+        "empty": "尚無已發佈的出版內容。",
+        "publicationCount": "{count} 則出版內容",
+        "publicationCountPlural": "{count} 則出版內容"
+      },
+      "latest": {
+        "heading": "最新出版內容",
+        "empty": "尚無出版內容。"
+      },
+      "related": {
+        "heading": "此分類的更多內容"
+      },
+      "authorCard": {
+        "ariaLabel": "作者",
+        "label": "作者",
+        "viewProfile": "查看個人檔案"
+      }
+    },
+    "reactions": {
+      "heading": "這篇出版內容有幫助嗎？",
+      "caption": "反應描述的是出版內容——而非作者品質或聲譽。",
+      "helpful": "有幫助 {count}",
+      "notHelpful": "沒幫助 {count}",
+      "helpfulAria": "有幫助。{count} 則反應。",
+      "helpfulAriaOne": "有幫助。1 則反應。",
+      "notHelpfulAria": "沒幫助。{count} 則反應。",
+      "notHelpfulAriaOne": "沒幫助。1 則反應。",
+      "signIn": "登入以對此出版內容作出反應。",
+      "signInPrompt": "<link>登入</link>以作出反應。"
+    },
+    "subscriptionPages": {
+      "title": "部落格訂閱",
+      "confirming": "正在確認您的訂閱…",
+      "updating": "正在更新您的訂閱…",
+      "invalidLink": "此連結無效或已過期。",
+      "returnToBlog": "返回部落格"
+    }
+  },
+  "legalPublic": {
+    "nav": {
+      "ariaLabel": "法律文件",
+      "privacy": "隱私權政策",
+      "terms": "使用條款"
+    },
+    "privacy": {
+      "title": "隱私權政策",
+      "counselNote": "本隱私權政策為資訊性平台政策，公開上線前應由法律顧問審閱。"
+    },
+    "terms": {
+      "title": "使用條款",
+      "counselNote": "本文件公開上線前應由法律顧問審閱。"
+    },
+    "expectedFallbackNote": "此語言尚未有核准的本地化法律正文。顯示英文權威文件（expected_legal_fallback）。"
+  },
+  "publicStatistics": {
+    "shared": {
+      "aboutMetric": "關於此指標",
+      "unavailableValue": "無法取得",
+      "unavailableAria": "{label}：無法取得",
+      "derivedSuffix": "衍生",
+      "scopePrefix": "範圍：{scope}",
+      "bootstrapSource": "Bootstrap 示範資料",
+      "indicatorsAria": "{scope} 範圍的參與指標"
+    },
+    "metrics": {
+      "participants": {
+        "label": "參與者"
+      },
+      "members": {
+        "label": "會員"
+      },
+      "countries": {
+        "label": "國家"
+      },
+      "regions": {
+        "label": "地區"
+      },
+      "citiesCommunities": {
+        "label": "城市／社區"
+      },
+      "initiatives": {
+        "label": "倡議"
+      },
+      "collectiveDecisions": {
+        "label": "集體決策"
+      },
+      "civicActionPackages": {
+        "label": "公民行動方案"
+      },
+      "officialResponses": {
+        "label": "官方回應"
+      },
+      "civicArchive": {
+        "label": "公民典藏"
+      }
+    },
+    "country": {
+      "title": "國家統計",
+      "unavailable": "國家統計暫時無法使用。",
+      "loading": "正在載入國家統計…",
+      "cards": {
+        "participants": {
+          "description": "該國範圍內、沒有有效會員身分的活躍註冊參與者。"
+        },
+        "members": {
+          "description": "該國範圍內的有效會員。"
+        },
+        "regions": {
+          "description": "該國已知的行政地區。"
+        },
+        "citiesCommunities": {
+          "description": "該國可選擇的已知城市與社區。"
+        },
+        "initiatives": {
+          "description": "該國範圍內的公開倡議。"
+        },
+        "collectiveDecisions": {
+          "description": "該國範圍內的公開集體決策。"
+        },
+        "civicActionPackages": {
+          "description": "為該國倡議核發的公民行動方案。"
+        },
+        "officialResponses": {
+          "description": "該國倡議已發布或已典藏的官方回應。"
+        },
+        "civicArchive": {
+          "description": "該國範圍內已發布的公民典藏紀錄。"
+        }
+      }
+    },
+    "region": {
+      "title": "地區統計",
+      "architecturalName": "統計",
+      "stage": "證據",
+      "contextIntroduction": "這些數字彙整與 Humanity Union 上 {regionName} 相關的公開公民活動。計數與指標來自公開紀錄——衍生值會標示清楚。",
+      "visitorConclusion": "這些彙總描述可觀察的公開活動——不是地區績效排名或宣傳主張。",
+      "publicNote": "僅公開彙總指標——不含私人參與者身分，也不提供營運資料庫存取。"
+    },
+    "community": {
+      "title": "社區統計",
+      "architecturalName": "統計",
+      "stage": "證據",
+      "contextIntroduction": "這些數字彙整與 Humanity Union 上 {communityName} 相關的公開公民活動。計數與指標來自公開紀錄——衍生值會標示清楚。",
+      "visitorConclusion": "這些彙總描述可觀察的公開活動——不是社區績效排名或宣傳主張。",
+      "publicNote": "僅公開彙總指標——不含私人參與者身分，也不提供營運資料庫存取。"
+    },
+    "geoIndicators": {
+      "regional-participant-indicators": {
+        "label": "公開參與者指標"
+      },
+      "regional-initiatives": {
+        "label": "相關公開倡議"
+      },
+      "regional-evidence-records": {
+        "label": "公開公民紀錄"
+      },
+      "community-participants": {
+        "label": "公開參與者指標"
+      },
+      "community-initiatives": {
+        "label": "相關公開倡議"
+      },
+      "community-evidence-records": {
+        "label": "公開公民紀錄"
+      },
+      "national-participant-indicators": {
+        "label": "公開參與者指標"
+      },
+      "national-initiatives": {
+        "label": "相關公開倡議"
+      },
+      "national-evidence-records": {
+        "label": "公開公民紀錄"
+      }
+    }
+  },
+  "publicGeo": {
+    "shared": {
+      "world": "世界",
+      "scope": "範圍",
+      "bootstrapSource": "Bootstrap 示範資料",
+      "breadcrumbAria": "地理範圍",
+      "home": "首頁",
+      "returnToCountrySquare": "返回 {countryName} 公共廣場",
+      "returnToRegionScope": "返回 {regionName} 區域範圍",
+      "returnToWorldSquare": "返回世界公共廣場",
+      "observeCommunity": "觀察此社群",
+      "activityArea": "活動領域",
+      "publicInitiatives": "公開倡議",
+      "geographicContext": "地理脈絡",
+      "localGeographicContext": "在地地理脈絡",
+      "representativeVisualAlt": "{name} 的代表性影像",
+      "derived": "衍生",
+      "scopePrefix": "範圍：{scope}",
+      "email": "電子郵件",
+      "website": "網站",
+      "pipelineStagesAria": "{scope} 範圍的參與管線階段",
+      "currentSuffix": "（目前）",
+      "comingSoon": "（即將推出）",
+      "comingSoonTitle": "{label} — 即將推出",
+      "bootstrapCommunitiesObserveInRegion": "Bootstrap 示範資料 — {count, plural, one {# 個參與者建立的社群} other {# 個參與者建立的社群}}可在 {regionName} 觀察。",
+      "bootstrapCommunitiesObserve": "Bootstrap 示範資料 — {count, plural, one {# 個參與者建立的社群} other {# 個參與者建立的社群}}可供觀察。",
+      "initiativeCard": {
+        "geographicScope": "地理範圍",
+        "participationStage": "參與階段",
+        "publicStatus": "公開狀態",
+        "publicRecord": "公開紀錄",
+        "notYetAvailable": "尚未提供",
+        "unavailableNotice": "公開倡議紀錄尚未提供 — 僅為示範卡片。",
+        "viewPublicInitiative": "檢視公開倡議：{title}",
+        "viewPublicInitiativeComingSoon": "檢視公開倡議（即將推出）",
+        "relatedAria": "{title} 的相關公開紀錄",
+        "relatedLabel": "相關公開連結"
+      },
+      "registration": {
+        "title": "加入 Humanity Union",
+        "architecturalName": "註冊入口",
+        "stage": "參與",
+        "contextIntroduction": "參與始於理解。準備好時再加入。",
+        "invitation": "您可以在沒有帳戶的情況下探索公開公民活動。建立帳戶後，可在您選擇時進行結構化參與。",
+        "explorationNote": "閱讀與探索無需註冊即可使用。",
+        "explorationNoteWorkspace": "閱讀與探索無需註冊或進入 Workspace 即可使用。",
+        "actionLabel": "建立帳戶",
+        "workspaceActionLabel": "繼續前往 Workspace",
+        "visitorConclusion": "公開觀察不需要帳戶。準備好在 Workspace 參與時再建立帳戶。",
+        "learnAbout": "建立帳戶前先了解 Humanity Union",
+        "authenticatedNote": "您可以繼續閱讀此社群頁面，或在選擇個人可問責參與時進入 Workspace。",
+        "contextIntroductionNamed": "您可以在沒有帳戶的情況下探索圍繞 {communityName} 的公開公民活動。註冊後，可在準備好時進行結構化參與。",
+        "workspaceContinuationContext": "您可以繼續探索圍繞 {communityName} 的公開公民活動，或在選擇時進入 Workspace 親自參與結構化公民行動。",
+        "boundaryNote": "公開體驗至此結束。當您選擇時，Workspace 開始個人可問責的參與。"
+      },
+      "openInitiativeAria": "開啟倡議：{title}",
+      "openElectionAria": "開啟選舉：{title}",
+      "updated": "更新於 {date}",
+      "participantsCount": "{count, plural, one {# 位參與者} other {# 位參與者}}",
+      "candidatesCount": "{count, plural, one {# 位候選人} other {# 位候選人}}",
+      "blockedUnavailable": "無法使用 — 已被管理封鎖",
+      "viewInitiative": "查看倡議 →",
+      "viewElection": "查看選舉 →",
+      "viewDetails": "查看詳情 →",
+      "mapDefaultFeedback": "上方社區連結會導向作用中的社區觀察路線。子區域按鈕僅預覽未來深度，不會連結到尚無路線的範圍。"
+    },
+    "country": {
+      "breadcrumbCountries": "國家",
+      "heroIntro": "探索與 {countryName} 相關的公開公民活動、倡議與可信媒體。彙總統計描述參與情況，且不揭露私人參與者紀錄。",
+      "search": {
+        "title": "搜尋此國家的公民活動",
+        "formAria": "在 {countryName} 搜尋公民活動",
+        "label": "搜尋",
+        "placeholder": "搜尋倡議、選舉、決策、典藏紀錄…",
+        "submit": "搜尋",
+        "clear": "清除篩選",
+        "allRegions": "所有地區",
+        "allCommunities": "所有社區",
+        "entityType": "實體類型",
+        "activityArea": "活動領域",
+        "allActivityAreas": "所有活動領域",
+        "scopeCountry": "國家範圍：",
+        "scopeRegion": "地區：",
+        "scopeCity": "城市：",
+        "entityAll": "全部",
+        "entityStandard": "標準倡議",
+        "entityPublicChoice": "公共選擇"
+      },
+      "action": {
+        "eyebrow": "國家行動",
+        "countryTitle": "國家行動",
+        "scopedTitle": "{placeName} 公民行動",
+        "descriptionCountry": "與 {countryName} 相關的公開公民活動。",
+        "descriptionScoped": "{placeName} 的公開公民活動。",
+        "unavailable": "此地理範圍的公民活動暫時無法使用。",
+        "loadingInitiatives": "正在載入倡議…",
+        "loadingElections": "正在載入選舉…",
+        "emptyInitiatives": "在 {placeName} 找不到倡議。",
+        "emptyElections": "在 {placeName} 找不到選舉。",
+        "viewAll": "查看全部 {rail}",
+        "rails": {
+          "countryInitiatives": "國家倡議",
+          "countryElections": "國家選舉",
+          "regionInitiatives": "地區倡議",
+          "regionElections": "地區選舉",
+          "cityInitiatives": "城市倡議",
+          "cityElections": "城市選舉"
+        }
+      },
+      "media": {
+        "eyebrow": "國家媒體",
+        "title": "推薦媒體",
+        "description": "為 {countryName} 精選的可信國家與地區來源。",
+        "railLabel": "推薦可信媒體",
+        "empty": "此國家尚無已驗證的公民媒體提供者。",
+        "footerStandards": "查看全球媒體標準"
+      },
+      "team": {
+        "title": "我們的團隊",
+        "intro": "在 {countryName} 支持 Humanity Union 活動的人們。",
+        "aria": "{countryName} 的我們的團隊"
+      },
+      "partners": {
+        "title": "我們的夥伴",
+        "intro": "在 {countryName} 與 Humanity Union 合作的組織。",
+        "aria": "{countryName} 的我們的夥伴"
+      },
+      "notFoundTitle": "找不到國家 | Humanity Union",
+      "metaDescription": "在 Humanity Union 探索 {countryName} 的公民活動、參與者與倡議。"
+    },
+    "region": {
+      "navigatorAria": "地理範圍",
+      "identity": {
+        "architecturalName": "主視覺 · 地理摘要",
+        "stage": "身分",
+        "contextIntroduction": "本頁顯示 Humanity Union 上與 {regionName} 相關的公開公民活動。此處觀察介於國家與社群範圍之間，屬於同一個相互連結的公民空間。",
+        "visitorConclusion": "此區域是 Humanity Union 內的地理公民脈絡 — 不是獨立的區域入口或行政名錄。",
+        "scopeLabel": "區域範圍 · {regionName}，{countryName}",
+        "descriptionLabel": "區域說明"
+      },
+      "map": {
+        "title": "區域互動地圖",
+        "architecturalName": "互動地圖",
+        "stage": "證據",
+        "contextIntroduction": "此地圖預覽 Humanity Union 上區域內公民活動的地理呈現。僅連結現有路線 — 尚不可用的子區域僅供預覽。",
+        "regionScopeLabel": "區域範圍：{regionName}",
+        "subRegionUnavailableMessage": "此子區域尚無 Region Experience 路線。此選項僅預覽未來範圍。",
+        "returnToRegionLabel": "返回區域範圍",
+        "mapAria": "{regionName} 公民活動地圖",
+        "mapAreasAria": "地圖區域",
+        "selectedSubArea": "已選子區域：{label}",
+        "selectSubAreaAria": "選擇 {label} 以預覽子區域範圍",
+        "previewLabel": "{label}（預覽）",
+        "subAreaStrong": "子區域：",
+        "idleFeedback": "上方社群連結導向現有社群觀察路線。子區域按鈕預覽未來區域深度，不會連結到尚不可用的路線。",
+        "subUnavailableWithLabel": "{message} 子區域：{label}。"
+      },
+      "pipeline": {
+        "title": "區域參與流程",
+        "architecturalName": "倡議層級",
+        "stage": "證據",
+        "contextIntroduction": "Humanity Union 上的參與遵循從提案到集體行動的結構化公民路徑。此概覽顯示與 {regionName} 相關、各階段可見的公開倡議數量。",
+        "visitorConclusion": "階段分布顯示結構化參與如何在區域層面呈現 — 與國家與社群範圍使用相同的公民路徑。"
+      },
+      "initiatives": {
+        "title": "最新區域倡議",
+        "architecturalName": "最新倡議",
+        "stage": "證據",
+        "contextIntroduction": "這些是 Humanity Union 上與 {regionName} 相關的近期公開倡議。有效卡片連結至可驗證的公開紀錄，無需註冊即可閱讀。",
+        "visitorConclusion": "具有有效公開紀錄的卡片連結至可驗證的公民細節。沒有公開紀錄的示範卡片會標示且不提供連結。",
+        "emptyMessage": "此區域尚無關聯的公開倡議。"
+      },
+      "discovery": {
+        "title": "社群探索",
+        "architecturalName": "探索",
+        "stage": "探索",
+        "contextIntroduction": "Humanity Union 上的社群透過公民參與產生 — 非由管理者指派。下方參與者建立的社群屬於此區域，在有公開路線時可觀察。",
+        "visitorConclusion": "社群頁面在社群範圍使用相同的 Public Experience 架構。此處探索為從區域觀察進入社群脈絡做準備。",
+        "participationNote": "列出的社群是透過參與建立的觀察入口 — 不是管理者維護的完整名錄。",
+        "browseLabel": "此區域內參與者建立的社群",
+        "browseLabelWithRegion": "{label} · {regionName}",
+        "empty": "此區域尚未列出有有效公開路線、由參與者建立的社群。"
+      }
+    },
+    "community": {
+      "navigatorAria": "地理與社群範圍",
+      "identity": {
+        "architecturalName": "主視覺 · 社群摘要",
+        "stage": "身分",
+        "contextIntroduction": "本頁顯示與 {communityName} 相關的公開公民活動 — 這是 Humanity Union 上由參與者建立的社群。此處觀察屬於同一個相互連結的區域、國家與全球公民空間。",
+        "visitorConclusion": "此社群是參與者建立的公民脈絡 — 不是管理者定義的行政單位。",
+        "scopeLabel": "社群範圍 · {regionName}，{countryName}",
+        "descriptionLabel": "社群說明"
+      },
+      "pipeline": {
+        "title": "社群參與流程",
+        "architecturalName": "倡議層級",
+        "stage": "證據",
+        "contextIntroduction": "Humanity Union 上的參與遵循從提案到集體行動的結構化公民路徑。此概覽顯示與 {communityName} 相關、各階段可見的公開倡議數量。",
+        "visitorConclusion": "階段分布顯示結構化參與如何圍繞此社群呈現 — 與更廣範圍使用相同的公民路徑。"
+      },
+      "initiatives": {
+        "title": "最新社群倡議",
+        "architecturalName": "最新倡議",
+        "stage": "證據",
+        "contextIntroduction": "這些是 Humanity Union 上與 {communityName} 相關的近期公開倡議。有效卡片連結至可驗證的公開紀錄，無需註冊即可閱讀。",
+        "visitorConclusion": "具有有效公開紀錄的卡片連結至可驗證的公民細節。沒有公開紀錄的示範卡片會標示且不提供連結。",
+        "emptyMessage": "此社群尚無關聯的公開倡議。"
+      },
+      "impact": {
+        "title": "社群影響概覽",
+        "architecturalName": "證據綜整",
+        "stage": "證據",
+        "contextIntroduction": "以下指標摘要與 {communityName} 相關、可觀察的公開成果 — 源自 Humanity Union 上已可見的公開公民紀錄。它們描述可公開觀察的內容 — 不是對社群價值的評判。",
+        "visitorConclusion": "您可依上方證據自行理解可觀察的社群影響。Humanity Union 呈現公開紀錄 — 不會替您評價此社群。",
+        "observableOutcomes": "{scope} 的可觀察成果",
+        "observableNote": "訊號描述可公開觀察的計數與階段存在 — 不是主觀影響判斷或社群評價。",
+        "signalsAria": "可觀察成果訊號",
+        "verifyRecord": "驗證公開紀錄",
+        "verifyComingSoon": "驗證公開紀錄（即將推出）",
+        "verifyComingSoonTitle": "公開驗證紀錄 — 即將推出"
+      },
+      "find": {
+        "title": "尋找您的社群",
+        "architecturalName": "探索",
+        "stage": "探索",
+        "contextIntroduction": "Humanity Union 上的社群透過公民參與建立 — 非由管理者指派。請在下方瀏覽或搜尋參與者建立的社群。",
+        "visitorConclusion": "列出的社群是參與者建立的觀察頁面 — 不是管理者維護的完整名錄。",
+        "currentCommunityNote": "您正在檢視一個社群。請在下方瀏覽或搜尋，以發現其他透過參與建立的社群。",
+        "browseLabel": "可供觀察、由參與者建立的社群",
+        "searchLabel": "依社群名稱或說明篩選",
+        "searchPlaceholder": "依社群名稱或說明搜尋",
+        "emptyResults": "沒有符合搜尋的參與者建立社群。請嘗試其他名稱或說明。"
+      },
+      "registration": {
+        "title": "加入 Humanity Union",
+        "architecturalName": "註冊入口",
+        "stage": "參與"
+      }
+    }
+  },
+  "publicNews": {
+    "discovery": {
+      "eyebrow": "搜尋事件",
+      "heading": "將可信新聞轉化為公民行動",
+      "description": "篩選即時公開新聞、閱讀原始來源，並從已驗證的報導建立倡議。",
+      "titleCollapsed": "可信新聞",
+      "footerCreate": "從新聞建立倡議",
+      "railLabel": "可信新聞探索結果",
+      "eventsFound": "找到 {count} 則可信事件",
+      "eventsFoundPlural": "找到 {count} 則可信事件"
+    },
+    "country": {
+      "eyebrow": "國家新聞",
+      "heading": "最新可信新聞",
+      "description": "與 {countryName} 相關的近期已驗證報導。",
+      "railLabel": "可信新聞文章",
+      "eventsForCountry": "{countryName} 有 {count} 則可信新聞事件",
+      "eventsForCountryPlural": "{countryName} 有 {count} 則可信新聞事件",
+      "globalSources": "涵蓋 {countryName} 的全球來源",
+      "providerLabel": "提供者",
+      "allTrustedMedia": "{countryName} 的所有可信媒體",
+      "clearFilter": "清除篩選",
+      "noResults": "目前沒有適用於 {countryName} 的可信新聞。"
+    },
+    "toolbar": {
+      "ariaLabel": "新聞探索篩選條件",
+      "searchLabel": "搜尋事件",
+      "searchPlaceholder": "搜尋標題、主題或出版者",
+      "provider": "提供者",
+      "allProviders": "所有提供者",
+      "topic": "主題",
+      "allTopics": "所有主題",
+      "country": "國家",
+      "allRegions": "所有地區",
+      "sort": "排序",
+      "sortNewest": "最新",
+      "sortMostDiscussed": "討論最多",
+      "sortMostRelevant": "最相關",
+      "summary": "有 {count} 則可信事件可供倡議探索",
+      "summaryPlural": "有 {count} 則可信事件可供倡議探索",
+      "clearFilters": "清除篩選條件"
+    },
+    "placeholder": {
+      "loadingAria": "正在載入新聞探索文章",
+      "errorTitle": "新聞探索暫時無法使用",
+      "errorBody": "無法載入目前的文章。請稍後再試。",
+      "retry": "重試",
+      "noResultsTitle": "沒有符合篩選條件的文章",
+      "noResultsBody": "請調整搜尋或篩選條件，以發現更多可轉化為倡議的事件。",
+      "emptyTitle": "目前沒有可用的新聞文章",
+      "emptyBody": "即時 RSS 探索動態尚無有效文章。啟用暫存新聞重新整理並擷取已核准來源後，文章會自動顯示於此。"
+    },
+    "card": {
+      "loading": "載入中…",
+      "createInitiative": "建立倡議",
+      "readOriginal": "閱讀原文",
+      "readOriginalAria": "閱讀原文：{title}（於新分頁開啟）",
+      "aiSummaryAria": "AI 摘要",
+      "relatedTitle": "相關倡議",
+      "relatedAria": "相關倡議",
+      "suggestedTitle": "建議行動",
+      "suggestedAria": "建議的公民行動",
+      "support": "支持",
+      "volunteer": "志工",
+      "createProposal": "建立提案",
+      "createPetition": "建立請願",
+      "share": "分享",
+      "shareAria": "分享文章：{title}",
+      "shared": "已分享",
+      "linkCopied": "已複製連結",
+      "copyUnavailable": "無法複製"
+    },
+    "pagination": {
+      "ariaLabel": "新聞探索分頁",
+      "showingCount": "顯示 {count} 篇文章",
+      "showingCountPlural": "顯示 {count} 篇文章",
+      "showingRange": "顯示第 {start}–{end} 篇，共 {total} 篇",
+      "previous": "上一頁",
+      "previousAria": "上一頁",
+      "next": "下一頁",
+      "nextAria": "下一頁",
+      "pageAria": "第 {page} 頁"
+    },
+    "errors": {
+      "temporarilyUnavailable": "新聞暫時無法使用。"
+    }
+  },
+  "participantPublic": {
+    "membership": {
+      "ariaLabel": "會員狀態",
+      "currentStatus": "目前狀態",
+      "member": "會員",
+      "memberNumber": "會員編號",
+      "memberSince": "成為會員自"
+    },
+    "sections": {
+      "professionalInfoAria": "專業資訊",
+      "skills": "技能",
+      "organization": "組織",
+      "biography": "簡介",
+      "participationStatistics": "參與統計",
+      "recentInitiatives": "近期倡議"
+    },
+    "ownerHidden": {
+      "biography": "簡介已從您的公開個人資料中隱藏。",
+      "statistics": "參與統計已從您的公開個人資料中隱藏。",
+      "skills": "技能已從您的公開個人資料中隱藏。",
+      "links": "專業連結已從您的公開個人資料中隱藏。",
+      "initiatives": "近期倡議已從您的公開個人資料中隱藏。",
+      "managePrivacy": "管理隱私"
+    },
+    "empty": {
+      "unavailableTitle": "個人資料無法使用",
+      "unavailableBody": "此公開個人資料無法使用。",
+      "backHome": "返回首頁"
+    },
+    "participation": {
+      "title": "公開參與個人資料",
+      "unavailable": "公開參與個人資料無法使用。",
+      "subtitle": "公開參與興趣",
+      "sectionTitle": "公開參與",
+      "displayName": "顯示名稱",
+      "languages": "語言",
+      "interestedTopics": "感興趣的主題",
+      "volunteerInterests": "志工興趣",
+      "preferredRegions": "偏好參與地區",
+      "notSpecified": "未指定",
+      "backHome": "返回首頁"
+    },
+    "statistics": {
+      "initiativesCount": "倡議",
+      "collectiveDecisionsCount": "集體決策",
+      "alliesCount": "盟友",
+      "proposalsCount": "提案",
+      "petitionsCount": "請願",
+      "commitmentsFulfilledCount": "執行承諾"
+    },
+    "messaging": {
+      "message": "訊息",
+      "messageAria": "傳訊給 {name}",
+      "opening": "開啟中…"
     }
   }
 }

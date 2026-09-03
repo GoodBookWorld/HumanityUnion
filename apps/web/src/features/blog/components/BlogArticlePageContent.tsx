@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicBlogPostDetail } from "@hu/types";
 
 import { isApiUnavailableError, isNotFoundError } from "../../../lib/api-client";
 import { formatBlogPublishedDate, fetchPublicBlogPostBySlug } from "../api";
 import { buildBlogIndexHref } from "../blog-url";
+import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
+import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { BlogArticleBody } from "./BlogArticleBody";
 import { BlogAuthorCard } from "./BlogAuthorCard";
 import { BlogAuthorInline } from "./BlogAuthorInline";
@@ -31,24 +34,14 @@ interface BlogArticlePageContentProps {
   initialPost?: PublicBlogPostDetail | null;
 }
 
-function commentsLabel(count: number): string {
-  if (count <= 0) {
-    return "No Comments";
-  }
-  if (count === 1) {
-    return "1 Comment";
-  }
-  return `${count} Comments`;
-}
-
 /**
- * Previous/Next neighbour navigation is deferred: the public Blog API does not
- * yet expose neighbouring posts. Do not fetch the full corpus client-side.
- *
- * Pack 14E — same Blog environment shell as `/blog` (left / center / right).
+ * Pack 08I.5 — Blog title + sanitized HTML body resolve through content_translations.
+ * Canonical post.content is never overwritten; missing/stale → English/original HTML.
  */
 export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageContentProps) {
+  const t = useTranslations("blogPublic");
   const discovery = usePublicBlogDiscovery();
+  const readingContext = usePublicContentReadingContext();
   const seeded = initialPost !== undefined;
   const [post, setPost] = useState<PublicBlogPostDetail | null>(() =>
     initialPost && initialPost.slug === slug ? initialPost : null,
@@ -56,11 +49,19 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
   const [error, setError] = useState<"not_found" | "unavailable" | "generic" | null>(() =>
     seeded && initialPost === null ? "not_found" : null,
   );
+  const [displayTitle, setDisplayTitle] = useState(() =>
+    initialPost && initialPost.slug === slug ? initialPost.title : "",
+  );
+  const [displayContentHtml, setDisplayContentHtml] = useState(() =>
+    initialPost && initialPost.slug === slug ? initialPost.content : "",
+  );
 
   useEffect(() => {
     if (seeded) {
       if (initialPost && initialPost.slug === slug) {
         setPost(initialPost);
+        setDisplayTitle(initialPost.title);
+        setDisplayContentHtml(initialPost.content);
         setError(null);
         return;
       }
@@ -78,6 +79,8 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
       .then((detail) => {
         if (!cancelled) {
           setPost(detail);
+          setDisplayTitle(detail.title);
+          setDisplayContentHtml(detail.content);
         }
       })
       .catch((fetchError: unknown) => {
@@ -103,14 +106,57 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
     };
   }, [slug, seeded, initialPost]);
 
+  useEffect(() => {
+    if (!post || !readingContext.ready) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void resolveBlogPostPresentation({
+      postId: post.postId,
+      canonical: {
+        title: post.title,
+        excerpt: post.excerpt,
+        contentHtml: post.content,
+      },
+      readingContext,
+    }).then((presentation) => {
+      if (cancelled) {
+        return;
+      }
+      setDisplayTitle(presentation.title);
+      setDisplayContentHtml(presentation.contentHtml);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    post,
+    readingContext.ready,
+    readingContext.readingLanguage,
+    readingContext.translationPreference,
+  ]);
+
+  function commentsLabel(count: number): string {
+    if (count <= 0) {
+      return t("noComments");
+    }
+    if (count === 1) {
+      return t("oneComment");
+    }
+    return t("commentsCount", { count });
+  }
+
   if (error === "not_found") {
     return (
       <main className="blog-page blog-article hu-page-container blog-page--pack15c">
         <p className="hu-body" role="alert">
-          This publication could not be found.
+          {t("notFound")}
         </p>
         <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
-          Back to Blog
+          {t("backToBlog")}
         </Link>
       </main>
     );
@@ -120,12 +166,10 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
     return (
       <main className="blog-page blog-article hu-page-container blog-page--pack15c">
         <p className="hu-body" role="alert">
-          {error === "unavailable"
-            ? "The Blog is temporarily unavailable. Please try again shortly."
-            : "Unable to load this publication."}
+          {error === "unavailable" ? t("unavailable") : t("articleLoadError")}
         </p>
         <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
-          Back to Blog
+          {t("backToBlog")}
         </Link>
       </main>
     );
@@ -141,7 +185,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
             categoryCounts={discovery.categoryCounts}
           />
           <section className="blog-layout__center" aria-busy="true" tabIndex={0}>
-            <p className="blog-page__status">Loading publication…</p>
+            <p className="blog-page__status">{t("loadingPublication")}</p>
           </section>
           <BlogDiscoveryRightRail
             blogIndexViews={discovery.blogIndexViews}
@@ -159,6 +203,8 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
     Date.parse(post.updatedAt) - Date.parse(post.publishedAt) > 60_000;
   const commentsHref = `#comments`;
   const categoryHref = buildBlogIndexHref({ categorySlug: post.category.slug });
+  const titleForDisplay = displayTitle || post.title;
+  const bodyHtml = displayContentHtml || post.content;
 
   return (
     <main className="blog-page blog-article hu-page-container blog-page--pack15c">
@@ -178,8 +224,8 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
           aria-labelledby="blog-article-title"
           tabIndex={0}
         >
-          <nav className="blog-article__crumb" aria-label="Breadcrumb">
-            <Link href="/blog">Blog</Link>
+          <nav className="blog-article__crumb" aria-label={t("breadcrumbAria")}>
+            <Link href="/blog">{t("pageTitle")}</Link>
             <span aria-hidden="true"> / </span>
             <Link href={categoryHref}>{post.category.name}</Link>
           </nav>
@@ -188,17 +234,17 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
             <Link href={categoryHref}>{post.category.name}</Link>
           </p>
           <h1 id="blog-article-title" className="hu-heading-1 blog-article__title">
-            {post.title}
+            {titleForDisplay}
           </h1>
 
-          <div className="blog-article__meta" aria-label="Publication details">
+          <div className="blog-article__meta" aria-label={t("publicationDetailsAria")}>
             <BlogAuthorInline author={post.author} />
             <time className="hu-caption" dateTime={post.publishedAt}>
               {formatBlogPublishedDate(post.publishedAt)}
             </time>
             {showUpdated ? (
               <time className="hu-caption" dateTime={post.updatedAt}>
-                Updated {formatBlogPublishedDate(post.updatedAt)}
+                {t("updated", { date: formatBlogPublishedDate(post.updatedAt) })}
               </time>
             ) : null}
             <Link href={commentsHref} className="hu-caption blog-article__comments-meta">
@@ -208,7 +254,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
 
           <div className="blog-article__cover">
             <BlogCoverImage
-              title={post.title}
+              title={titleForDisplay}
               imageUrl={post.coverImage?.mediaUrl}
               altText={post.coverImage?.altText}
               className="blog-article__cover-image"
@@ -216,14 +262,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
             />
           </div>
 
-          <BlogArticleBody html={post.content} />
-
-          {/*
-            Translation: Blog body is sanitized HTML. Existing TranslatedContentView
-            targets plain text fields. Until HTML-aware presentation exists, the
-            canonical original article is shown. Language Architecture already
-            registers sourceKind blog_post for future packs.
-          */}
+          <BlogArticleBody html={bodyHtml} />
 
           <BlogReactionControls
             slug={post.slug}
@@ -240,7 +279,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
 
           <p className="blog-article__back">
             <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
-              Back to Blog
+              {t("backToBlog")}
             </Link>
           </p>
         </article>

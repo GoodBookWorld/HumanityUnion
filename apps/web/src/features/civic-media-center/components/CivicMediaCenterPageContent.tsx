@@ -32,6 +32,7 @@ import { TrustedMediaCategoryTabs } from "./TrustedMediaCategoryTabs";
 import { TrustedMediaRailCard } from "./TrustedMediaRailCard";
 
 import "../civic-media-center.css";
+import "../media-rail/civic-media-section-shell.css";
 import "./civic-media-resource-cards.css";
 
 const PRINCIPLE_ICONS: Record<string, string> = {
@@ -169,14 +170,17 @@ function CivicMediaCenterLoaded({ media }: { media: CivicMediaCenterPublic }) {
             <div className="civic-media-page__editorial">
               <h2 className="civic-media-page__overview-title">{editorial.overview.title}</h2>
               <p className="civic-media-page__lead">{editorial.overview.summary}</p>
-              <ul className="civic-media-page__points">
+              <div className="civic-media-page__hero-grid">
                 {editorial.overview.points.map((point) => (
-                  <li key={point.id} className="civic-media-page__point">
-                    <h3>{point.heading}</h3>
+                  <Card
+                    key={point.id}
+                    className="civic-media-resource-card civic-media-resource-card--hero"
+                  >
+                    <h2>{point.heading}</h2>
                     <p>{point.body}</p>
-                  </li>
+                  </Card>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         </section>
@@ -195,7 +199,7 @@ function CivicMediaCenterLoaded({ media }: { media: CivicMediaCenterPublic }) {
           eyebrow={t("selectionPrinciples.eyebrow")}
           title={t("selectionPrinciples.title")}
           description={t("selectionPrinciples.description")}
-          label="source selection principles"
+          label={t("selectionPrinciples.ariaLabel")}
           items={[...editorial.selectionPrinciples]}
           layout="four-two-one"
           getItemKey={(principle) => principle.id}
@@ -226,7 +230,7 @@ function CivicMediaCenterLoaded({ media }: { media: CivicMediaCenterPublic }) {
           eyebrow={t("factChecking.eyebrow")}
           title={t("factChecking.title")}
           description={t("factChecking.description")}
-          label="fact-checking resources"
+          label={t("factChecking.ariaLabel")}
           items={media.factChecking}
           layout="three-two-one"
           getItemKey={(resource) => resource.id}
@@ -238,7 +242,7 @@ function CivicMediaCenterLoaded({ media }: { media: CivicMediaCenterPublic }) {
           eyebrow={t("propaganda.eyebrow")}
           title={t("propaganda.title")}
           description={t("propaganda.description")}
-          label="propaganda analysis resources"
+          label={t("propaganda.ariaLabel")}
           items={media.propagandaAnalysis}
           layout="three-two-one"
           getItemKey={(resource) => resource.id}

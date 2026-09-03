@@ -1,17 +1,26 @@
-import { REGIONAL_INTERACTIVE_MAP_CONTENT } from "../content";
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { ExperienceBlockShell } from "../../public-experience";
 import { RegionalInteractiveMapEvidence } from "./RegionalInteractiveMapEvidence";
 
-export function RegionalInteractiveMapSection() {
+interface RegionalInteractiveMapSectionProps {
+  regionName: string;
+}
+
+export function RegionalInteractiveMapSection({ regionName }: RegionalInteractiveMapSectionProps) {
+  const t = useTranslations("publicGeo.region.map");
+
   return (
     <ExperienceBlockShell
       id="regional-interactive-map"
-      title={REGIONAL_INTERACTIVE_MAP_CONTENT.title}
-      architecturalName="Interactive Map"
-      stage="Evidence"
-      contextIntroduction={REGIONAL_INTERACTIVE_MAP_CONTENT.contextIntroduction}
+      title={t("title")}
+      architecturalName={t("architecturalName")}
+      stage={t("stage")}
+      contextIntroduction={t("contextIntroduction")}
     >
-      <RegionalInteractiveMapEvidence />
+      <RegionalInteractiveMapEvidence regionName={regionName} />
     </ExperienceBlockShell>
   );
 }

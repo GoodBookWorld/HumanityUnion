@@ -1153,6 +1153,22 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // Pack 08I.5 — Admin-managed Legal Localization (one record per documentType+locale).
+    collectionName: MONGO_COLLECTIONS.legalLocalization,
+    indexes: [
+      {
+        key: { documentType: 1, locale: 1 },
+        unique: true,
+        name: "legal_localization_document_type_locale_unique",
+      },
+      {
+        key: { legalId: 1 },
+        unique: true,
+        name: "legal_localization_legal_id_unique",
+      },
+    ],
+  },
+  {
     // Blog Implementation Pack 02 — publishing domain.
     collectionName: MONGO_COLLECTIONS.blogPosts,
     indexes: [

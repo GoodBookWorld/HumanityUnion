@@ -17,8 +17,10 @@ export type HomeStatisticKey = keyof PlatformStatisticsCounts | "humanityUnionMe
 
 export interface PublicStatisticCardConfig {
   key: string;
+  /** English seed / fallback for non-i18n callers; Home localizes via `publicHome.statistics.cards`. */
   label: string;
   iconSrc: string;
+  /** English seed / fallback for non-i18n callers. */
   description: string;
 }
 

@@ -1,11 +1,61 @@
 import { MEMBERSHIP_VOTE_WEIGHT_TRANSPARENCY_NOTE } from "@hu/types";
 
+/**
+ * Pack 08I.4 — structural IDs for Membership public chrome.
+ * Display copy lives in `membershipPublic` UI catalogs (en/uk/zh-Hant/ar).
+ * Payment amounts / currency / API values remain here unchanged.
+ */
+
+export const MEMBERSHIP_MEANING_CARD_IDS = [
+  "community",
+  "support",
+  "participation",
+  "transparency",
+] as const;
+
+export type MembershipMeaningCardId = (typeof MEMBERSHIP_MEANING_CARD_IDS)[number];
+
+export const MEMBERSHIP_NOT_MEANS_IDS = [
+  "identityVerification",
+  "citizenship",
+  "governmentAuthorization",
+  "moderatorPrivileges",
+  "administratorPrivileges",
+  "increasedVotingInfluence",
+] as const;
+
+export type MembershipNotMeansId = (typeof MEMBERSHIP_NOT_MEANS_IDS)[number];
+
+export const MEMBERSHIP_BENEFIT_IDS = [
+  "member-badge",
+  "member-number",
+  "participation-recognition",
+  "future-programs",
+  "transparent-statistics",
+  "platform-sustainability",
+] as const;
+
+export type MembershipBenefitId = (typeof MEMBERSHIP_BENEFIT_IDS)[number];
+
+export const MEMBERSHIP_FAQ_IDS = [
+  "what-is-member",
+  "voting-power",
+  "required",
+  "participate-without",
+  "expire",
+  "future-contributions",
+] as const;
+
+export type MembershipFaqId = (typeof MEMBERSHIP_FAQ_IDS)[number];
+
+/** @deprecated Pack 08I.4 — use membershipPublic catalogs; kept for tests that assert structure. */
 export const MEMBERSHIP_HERO = {
   title: "Become a Humanity Union Member",
   subtitle:
     "Membership is a voluntary commitment to support Humanity Union and participate in building a stronger global civic community.",
 } as const;
 
+/** @deprecated Pack 08I.4 — prefer MEMBERSHIP_MEANING_CARD_IDS + membershipPublic */
 export const MEMBERSHIP_MEANING_CARDS = [
   {
     id: "community",
@@ -29,6 +79,7 @@ export const MEMBERSHIP_MEANING_CARDS = [
   },
 ] as const;
 
+/** @deprecated Pack 08I.4 — prefer MEMBERSHIP_NOT_MEANS_IDS + membershipPublic */
 export const MEMBERSHIP_NOT_MEANS = [
   "identity verification",
   "citizenship",
@@ -38,6 +89,7 @@ export const MEMBERSHIP_NOT_MEANS = [
   "increased voting influence",
 ] as const;
 
+/** @deprecated Pack 08I.4 — prefer MEMBERSHIP_BENEFIT_IDS + membershipPublic */
 export const MEMBERSHIP_BENEFITS = [
   {
     id: "member-badge",
@@ -71,6 +123,7 @@ export const MEMBERSHIP_BENEFITS = [
   },
 ] as const;
 
+/** @deprecated Pack 08I.4 — prefer MEMBERSHIP_FAQ_IDS + membershipPublic */
 export const MEMBERSHIP_FAQ = [
   {
     id: "what-is-member",

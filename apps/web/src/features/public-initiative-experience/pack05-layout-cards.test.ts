@@ -26,8 +26,8 @@ describe("Pack 05 Initiative public layout + mini-cards + media", () => {
   it("mini-card keeps one navigation Link for media+body; Share stays outside that Link", () => {
     const card = read("features/public-initiative-mini-card/PublicInitiativeMiniCard.tsx");
     assert.match(card, /resolvePublicInitiativeHref/);
-    assert.match(card, /View Initiative →/);
-    assert.match(card, /aria-label=\{buildAccessibleName/);
+    assert.match(card, /t\("viewInitiative"\)/);
+    assert.match(card, /aria-label=\{t\("viewAria"/);
     assert.match(card, /public-initiative-mini-card__link/);
     assert.match(card, /CivicShareButton/);
     assert.doesNotMatch(card, /<Link[^>]*>[\s\S]*<Link/);

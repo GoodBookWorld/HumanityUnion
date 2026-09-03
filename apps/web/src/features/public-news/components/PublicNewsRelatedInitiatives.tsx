@@ -3,6 +3,7 @@
 import type { CivicSearchResult, PublicNewsArticleItem } from "@hu/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { fetchRelatedInitiativesForArticle } from "../public-news-initiative-discovery.utils";
 
@@ -11,6 +12,7 @@ interface PublicNewsRelatedInitiativesProps {
 }
 
 export function PublicNewsRelatedInitiatives({ article }: PublicNewsRelatedInitiativesProps) {
+  const t = useTranslations("publicNews.card");
   const [relatedInitiatives, setRelatedInitiatives] = useState<CivicSearchResult[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -41,8 +43,8 @@ export function PublicNewsRelatedInitiatives({ article }: PublicNewsRelatedIniti
   }
 
   return (
-    <section className="public-news-card__related" aria-label="Related initiatives">
-      <h4 className="public-news-card__section-title">Related Initiatives</h4>
+    <section className="public-news-card__related" aria-label={t("relatedAria")}>
+      <h4 className="public-news-card__section-title">{t("relatedTitle")}</h4>
       <ul className="public-news-card__related-list">
         {relatedInitiatives.map((initiative) => (
           <li key={initiative.entityId}>

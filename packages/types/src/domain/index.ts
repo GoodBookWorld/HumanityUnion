@@ -145,6 +145,23 @@ export {
   visualHeroUnityQuoteLines,
 } from "./brand-localization.js";
 export type {
+  LegalDocumentType,
+  LegalLocalizationAdminListItem,
+  LegalLocalizationAdminListResponse,
+  LegalLocalizationRecord,
+  LegalLocalizationStatus,
+  LegalLocalizationUpdateInput,
+  LegalLocalizationUpsertInput,
+  ResolvedLocalizedLegalDocument,
+} from "./legal-localization.js";
+export {
+  CANONICAL_LEGAL_SOURCE_VERSIONS,
+  LEGAL_DOCUMENT_TYPES,
+  LEGAL_LOCALIZATION_STATUSES,
+  isLegalDocumentType,
+  isLegalLocalizationStatus,
+} from "./legal-localization.js";
+export type {
   ResolvedRuntimeLocale,
   ResolveRuntimeLocaleInput,
   RuntimeLocaleCatalogEntry,

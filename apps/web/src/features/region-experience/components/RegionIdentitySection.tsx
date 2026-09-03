@@ -1,9 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { RegionIdentityPublicProjection } from "@hu/types";
 
 import { normalizeCountryInput } from "@hu/geography";
-import { regionIdentityContextIntroduction } from "../content";
 import { ExperienceBlockShell } from "../../public-experience";
 import { RegionIdentityVisual } from "./RegionIdentityVisual";
 
@@ -12,15 +14,19 @@ interface RegionIdentitySectionProps {
 }
 
 export function RegionIdentitySection({ identity }: RegionIdentitySectionProps) {
+  const t = useTranslations("publicGeo");
+
   return (
     <ExperienceBlockShell
       id="region-identity"
       title={identity.name}
-      architecturalName="Hero · Geographic Summary"
-      stage="Identity"
-      contextIntroduction={regionIdentityContextIntroduction(identity.name)}
+      architecturalName={t("region.identity.architecturalName")}
+      stage={t("region.identity.stage")}
+      contextIntroduction={t("region.identity.contextIntroduction", {
+        regionName: identity.name,
+      })}
       headingLevel="h1"
-      visitorConclusion="This region is a geographic civic context within Humanity Union — not a separate regional portal or administrative directory."
+      visitorConclusion={t("region.identity.visitorConclusion")}
     >
       <div className="region-identity">
         <div className="region-identity__hero">
@@ -28,11 +34,14 @@ export function RegionIdentitySection({ identity }: RegionIdentitySectionProps) 
 
           <div className="region-identity__summary">
             <p className="region-identity__scope">
-              Region scope · {identity.name}, {identity.countryLabel}
+              {t("region.identity.scopeLine", {
+                regionName: identity.name,
+                countryName: identity.countryLabel,
+              })}
             </p>
             <dl className="region-identity__details">
               <div className="region-identity__detail">
-                <dt>Region Description</dt>
+                <dt>{t("region.identity.descriptionLabel")}</dt>
                 <dd>{identity.description}</dd>
               </div>
             </dl>
@@ -43,12 +52,12 @@ export function RegionIdentitySection({ identity }: RegionIdentitySectionProps) 
           <Link
             href={`/countries/${encodeURIComponent(normalizeCountryInput(identity.countrySlug) ?? identity.countrySlug.toUpperCase())}`}
           >
-            Return to {identity.countryLabel} public square
+            {t("shared.returnToCountrySquare", { countryName: identity.countryLabel })}
           </Link>
         </p>
         {identity.source === "bootstrap" ? (
           <p className="region-identity__source" role="note">
-            Bootstrap demonstration data
+            {t("shared.bootstrapSource")}
           </p>
         ) : null}
       </div>

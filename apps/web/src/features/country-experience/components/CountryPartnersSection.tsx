@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { CountryAffiliationPublic } from "@hu/types";
 
@@ -19,6 +20,7 @@ interface CountryPartnersSectionProps {
 }
 
 export function CountryPartnersSection({ countryCode, countryName }: CountryPartnersSectionProps) {
+  const t = useTranslations("publicGeo.country.partners");
   const [entries, setEntries] = useState<CountryAffiliationPublic[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -56,14 +58,14 @@ export function CountryPartnersSection({ countryCode, countryName }: CountryPart
       className="country-experience-dynamic__section country-affiliation-section"
       aria-labelledby="country-partners-title"
     >
-      <h2 id="country-partners-title">Our Partners</h2>
+      <h2 id="country-partners-title">{t("title")}</h2>
       <p className="country-affiliation-section__intro">
-        Organizations collaborating with Humanity Union in {countryName}.
+        {t("intro", { countryName })}
       </p>
       <div
         className="country-affiliation-rail"
         role="list"
-        aria-label={`Our Partners in ${countryName}`}
+        aria-label={t("aria", { countryName })}
       >
         {slots.map((slot) =>
           slot.kind === "entry" ? (

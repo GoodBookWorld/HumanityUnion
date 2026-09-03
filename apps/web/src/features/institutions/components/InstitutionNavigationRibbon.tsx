@@ -1,10 +1,13 @@
 "use client";
 
 import { useCallback, type CSSProperties } from "react";
+import { useTranslations } from "next-intl";
 
 import { CONSTITUTIONAL_ARCHITECTURE_BLOCKS } from "../constants";
 
 export function InstitutionNavigationRibbon() {
+  const t = useTranslations("institutionsPublic");
+
   const scrollToTarget = useCallback((targetId: string) => {
     const element = document.getElementById(targetId);
     element?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -23,14 +26,11 @@ export function InstitutionNavigationRibbon() {
       aria-labelledby="institutions-architecture-title"
     >
       <div className="institutions-section__inner">
-        <h2 id="institutions-architecture-title">Constitutional Architecture</h2>
-        <p className="institutions-architecture__intro">
-          A proposed flow from civic participation to public record. Follow the ribbon or select a
-          stage to explore related institutions.
-        </p>
+        <h2 id="institutions-architecture-title">{t("architecture.title")}</h2>
+        <p className="institutions-architecture__intro">{t("architecture.intro")}</p>
       </div>
 
-      <div className="institutions-ribbon" role="region" aria-label="Institution navigation ribbon">
+      <div className="institutions-ribbon" role="region" aria-label={t("architecture.ribbonAria")}>
         <div className="institutions-ribbon__viewport">
           <div className="institutions-ribbon__track">
             {ribbonItems.map((block, index) => (
@@ -42,14 +42,13 @@ export function InstitutionNavigationRibbon() {
                 onClick={() => scrollToTarget(block.targetId)}
                 aria-describedby={`institutions-architecture-desc-${block.id}`}
               >
-                {block.label}
+                {t(`architecture.blocks.${block.id}`)}
               </button>
             ))}
           </div>
         </div>
         <p className="institutions-architecture__sr-only" id="institutions-ribbon-instructions">
-          Select a stage to navigate to the related institution section. The ribbon scrolls
-          continuously and pauses on hover.
+          {t("architecture.ribbonInstructions")}
         </p>
         {CONSTITUTIONAL_ARCHITECTURE_BLOCKS.map((block) => (
           <span
@@ -57,7 +56,7 @@ export function InstitutionNavigationRibbon() {
             id={`institutions-architecture-desc-${block.id}`}
             className="institutions-architecture__sr-only"
           >
-            Navigate to related institution section for {block.label}
+            {t("architecture.navigateTo", { label: t(`architecture.blocks.${block.id}`) })}
           </span>
         ))}
       </div>

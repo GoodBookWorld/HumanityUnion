@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicBlogPostListItem } from "@hu/types";
 
@@ -16,6 +17,7 @@ interface BlogRelatedPostsProps {
  * Bounded same-category listing (max 3). Not AI-related; uses public Blog list API.
  */
 export function BlogRelatedPosts({ categoryId, excludePostId }: BlogRelatedPostsProps) {
+  const t = useTranslations("blogPublic.discovery.related");
   const [items, setItems] = useState<PublicBlogPostListItem[]>([]);
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export function BlogRelatedPosts({ categoryId, excludePostId }: BlogRelatedPosts
   return (
     <section className="blog-related" aria-labelledby="blog-related-heading">
       <h2 id="blog-related-heading" className="hu-heading-2">
-        More from this category
+        {t("heading")}
       </h2>
       <div className="blog-post-grid blog-post-grid--related">
         {items.map((post) => (

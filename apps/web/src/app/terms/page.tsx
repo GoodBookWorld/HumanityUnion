@@ -1,4 +1,10 @@
+import { getLocale } from "next-intl/server";
+
 import { LegalPageShell } from "../../features/legal/components/LegalPageShell";
+import {
+  EXPECTED_LEGAL_FALLBACK,
+  resolveLegalDocumentPresentation,
+} from "../../features/legal/resolve-legal-document-presentation";
 import {
   CONTACT_EMAIL,
   ORGANIZATION_ADDRESS,
@@ -9,12 +15,10 @@ import {
 
 import "../../features/legal/legal-page.css";
 
-export default function TermsPage() {
+/** English canonical Terms of Use body — authoritative source until counsel-approved localized copies exist. */
+function EnglishTermsBody() {
   return (
-    <LegalPageShell
-      title="Terms of Use"
-      counselNote="This document should be reviewed by legal counsel before public launch."
-    >
+    <>
       <section>
         <h2>Acceptance of terms</h2>
         <p>
@@ -149,6 +153,23 @@ export default function TermsPage() {
           Mailing address: {ORGANIZATION_ADDRESS}
         </p>
       </section>
+    </>
+  );
+}
+
+export default async function TermsPage() {
+  const locale = await getLocale();
+  const presentation = await resolveLegalDocumentPresentation(locale, "terms");
+
+  return (
+    <LegalPageShell presentation={presentation} activeDocument="terms">
+      {presentation.body.source === "approved_localized" && presentation.body.localizedBodyHtml ? (
+        <div dangerouslySetInnerHTML={{ __html: presentation.body.localizedBodyHtml }} />
+      ) : (
+        <div data-legal-body-source={EXPECTED_LEGAL_FALLBACK}>
+          <EnglishTermsBody />
+        </div>
+      )}
     </LegalPageShell>
   );
 }

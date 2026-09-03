@@ -12,6 +12,9 @@ interface PublicStatisticsGridProps {
   allUnavailable?: boolean;
   unavailableMessage?: string;
   loadingMessage?: string;
+  aboutMetricLabel?: string;
+  unavailableValueLabel?: string;
+  formatUnavailableAriaLabel?: (label: string) => string;
   resolveValue: (key: string) => number | null;
   formatValue: (key: string, value: number) => string;
   showDescriptions?: boolean;
@@ -33,6 +36,9 @@ export function PublicStatisticsGrid({
   allUnavailable = false,
   unavailableMessage = "Statistics are temporarily unavailable.",
   loadingMessage = "Loading statistics...",
+  aboutMetricLabel = "About this metric",
+  unavailableValueLabel = "Unavailable",
+  formatUnavailableAriaLabel,
   resolveValue,
   formatValue,
   showDescriptions = false,
@@ -67,6 +73,9 @@ export function PublicStatisticsGrid({
       {cards.map((card) => {
         const value = resolveValue(card.key);
         const unavailable = value === null;
+        const valueAriaLabel = unavailable
+          ? (formatUnavailableAriaLabel?.(card.label) ?? `${card.label}: unavailable`)
+          : `${card.label}: ${value}`;
 
         return (
           <li key={card.key} className="platform-statistics__card">
@@ -78,11 +87,8 @@ export function PublicStatisticsGrid({
               width={64}
               height={64}
             />
-            <p
-              className="platform-statistics__value"
-              aria-label={unavailable ? `${card.label}: unavailable` : `${card.label}: ${value}`}
-            >
-              {unavailable ? "Unavailable" : formatValue(card.key, value)}
+            <p className="platform-statistics__value" aria-label={valueAriaLabel}>
+              {unavailable ? unavailableValueLabel : formatValue(card.key, value)}
             </p>
             <p className="platform-statistics__label">{card.label}</p>
             {showDescriptions ? (
@@ -96,7 +102,7 @@ export function PublicStatisticsGrid({
                     setExpandedMetric((current) => (current === card.key ? null : card.key))
                   }
                 >
-                  About this metric
+                  {aboutMetricLabel}
                 </button>
                 <p className="platform-statistics__description" id={`stat-desc-${card.key}`}>
                   {card.description}

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { PublicMemberProfile, PublicMemberProfileHiddenSections } from "@hu/types";
 
@@ -59,22 +62,37 @@ function ParticipantStatisticsRow({
 }: {
   cards: ReturnType<typeof buildVisibleStatisticCards>;
 }) {
+  const t = useTranslations("participantPublic");
   return (
-    <ul className="personal-statistics__grid" aria-label="Participation statistics">
-      {cards.map((card) => (
-        <li key={card.key} className="personal-statistics__card">
-          <img
-            className="personal-statistics__icon"
-            src={card.iconSrc}
-            alt=""
-            aria-hidden="true"
-            width={40}
-            height={40}
-          />
-          <p className="personal-statistics__value">{card.value}</p>
-          <p className="personal-statistics__label">{card.label}</p>
-        </li>
-      ))}
+    <ul
+      className="personal-statistics__grid"
+      aria-label={t("sections.participationStatistics")}
+    >
+      {cards.map((card) => {
+        const labelKey = `statistics.${card.key}` as
+          | "statistics.initiativesCount"
+          | "statistics.collectiveDecisionsCount"
+          | "statistics.alliesCount"
+          | "statistics.proposalsCount"
+          | "statistics.petitionsCount"
+          | "statistics.commitmentsFulfilledCount";
+        return (
+          <li key={card.key} className="personal-statistics__card">
+            <img
+              className="personal-statistics__icon"
+              src={card.iconSrc}
+              alt=""
+              aria-hidden="true"
+              width={40}
+              height={40}
+            />
+            <p className="personal-statistics__value">{card.value}</p>
+            <p className="personal-statistics__label">
+              {t.has(labelKey) ? t(labelKey) : card.label}
+            </p>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -86,10 +104,11 @@ function OwnerHiddenSectionNotice({
   text: string;
   managePrivacyHref: string;
 }) {
+  const t = useTranslations("participantPublic.ownerHidden");
   return (
     <p className="public-member-page__owner-notice">
       {text}
-      <Link href={managePrivacyHref}>Manage Privacy</Link>
+      <Link href={managePrivacyHref}>{t("managePrivacy")}</Link>
     </p>
   );
 }
@@ -173,6 +192,7 @@ export function ParticipantProfileSurface({
   ownerActionLinks,
   footer,
 }: ParticipantProfileSurfaceProps) {
+  const t = useTranslations("participantPublic");
   const isOwnerPreview = mode === "owner_preview";
   const displayName = resolveDisplayName(profile);
   const metaLines = buildIdentityMetaLines(profile);
@@ -189,14 +209,14 @@ export function ParticipantProfileSurface({
   if (showMemberBadge) {
     publicMembershipTiles.push({
       id: "status",
-      label: "Current Status",
-      value: "Member",
+      label: t("membership.currentStatus"),
+      value: t("membership.member"),
       tone: "pale-blue",
     });
     if (profile.memberNumber) {
       publicMembershipTiles.push({
         id: "member-number",
-        label: "Member Number",
+        label: t("membership.memberNumber"),
         value: profile.memberNumber,
         tone: "pale-green",
       });
@@ -204,7 +224,7 @@ export function ParticipantProfileSurface({
     if (profile.memberSince) {
       publicMembershipTiles.push({
         id: "member-since",
-        label: "Member Since",
+        label: t("membership.memberSince"),
         value: formatMemberSince(profile.memberSince),
         tone: "pale-amber",
       });
@@ -277,7 +297,7 @@ export function ParticipantProfileSurface({
           <div className="public-member-page__membership-facts">
             <MembershipFactsTiles
               tiles={publicMembershipTiles}
-              ariaLabel="Membership status"
+              ariaLabel={t("membership.ariaLabel")}
             />
           </div>
         ) : null}
@@ -291,7 +311,10 @@ export function ParticipantProfileSurface({
             }
           >
             {showInfoColumn ? (
-              <section className="public-member-page__info" aria-label="Professional information">
+              <section
+                className="public-member-page__info"
+                aria-label={t("sections.professionalInfoAria")}
+              >
                 {hasLinks || showLinksNotice ? (
                   <div className="public-member-page__profile-context" id="professional-links">
                     {hasLinks ? (
@@ -310,7 +333,7 @@ export function ParticipantProfileSurface({
                           Professional Links
                         </h2>
                         <OwnerHiddenSectionNotice
-                          text="Professional links are hidden from your public profile."
+                          text={t("ownerHidden.links")}
                           managePrivacyHref={ownerActionLinks!.managePrivacyHref}
                         />
                       </>
@@ -325,7 +348,7 @@ export function ParticipantProfileSurface({
                       className="public-member-page__profile-context-heading public-member-page__profile-context-heading--with-icon"
                       iconSrc="/icons/workspace/organization.png"
                     >
-                      Organization
+                      {t("sections.organization")}
                     </HeadingWithIcon>
                     <p className="public-member-page__organization-text">{profile.organization}</p>
                   </div>
@@ -338,10 +361,13 @@ export function ParticipantProfileSurface({
                       className="public-member-page__profile-context-heading public-member-page__profile-context-heading--with-icon"
                       iconSrc="/icons/workspace/skills.png"
                     >
-                      Skills
+                      {t("sections.skills")}
                     </HeadingWithIcon>
                     {hasSkills ? (
-                      <ul className="public-member-page__skills-list" aria-label="Skills">
+                      <ul
+                        className="public-member-page__skills-list"
+                        aria-label={t("sections.skills")}
+                      >
                         {profile.skills?.map((skill) => (
                           <li key={skill} className="public-member-page__skill-tag">
                             {skill}
@@ -350,7 +376,7 @@ export function ParticipantProfileSurface({
                       </ul>
                     ) : (
                       <OwnerHiddenSectionNotice
-                        text="Skills are hidden from your public profile."
+                        text={t("ownerHidden.skills")}
                         managePrivacyHref={ownerActionLinks!.managePrivacyHref}
                       />
                     )}
@@ -362,14 +388,16 @@ export function ParticipantProfileSurface({
             {showStatisticsColumn ? (
               <section
                 className="public-member-page__statistics"
-                aria-label="Participation Statistics"
+                aria-label={t("sections.participationStatistics")}
               >
-                <h2 className="public-member-page__section-heading">Participation Statistics</h2>
+                <h2 className="public-member-page__section-heading">
+                  {t("sections.participationStatistics")}
+                </h2>
                 {hasStatistics ? (
                   <ParticipantStatisticsRow cards={statisticCards} />
                 ) : showStatisticsNotice ? (
                   <OwnerHiddenSectionNotice
-                    text="Participation Statistics are hidden from your public profile."
+                    text={t("ownerHidden.statistics")}
                     managePrivacyHref={ownerActionLinks!.managePrivacyHref}
                   />
                 ) : null}
@@ -386,13 +414,13 @@ export function ParticipantProfileSurface({
                 className="public-member-page__section-heading public-member-page__section-heading--with-icon"
                 iconSrc="/icons/workspace/biography.png"
               >
-                Biography
+                {t("sections.biography")}
               </HeadingWithIcon>
               {hasBiography ? (
                 <p className="public-member-page__biography-text">{profile.biography}</p>
               ) : showBiographyNotice ? (
                 <OwnerHiddenSectionNotice
-                  text="Biography is hidden from your public profile."
+                  text={t("ownerHidden.biography")}
                   managePrivacyHref={ownerActionLinks!.managePrivacyHref}
                 />
               ) : isOwnerPreview ? (
@@ -411,7 +439,7 @@ export function ParticipantProfileSurface({
           ) : (
             <div className="public-member-page__initiatives" id="recent-public-initiatives">
               <OwnerHiddenSectionNotice
-                text="Recent Public Initiatives are hidden from your public profile."
+                text={t("ownerHidden.initiatives")}
                 managePrivacyHref={ownerActionLinks!.managePrivacyHref}
               />
             </div>

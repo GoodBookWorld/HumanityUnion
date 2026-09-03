@@ -2,6 +2,7 @@
 
 import type { PublicNewsArticleItem } from "@hu/types";
 import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { MediaLogo } from "../../civic-media-center/components/MediaLogo";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
@@ -21,6 +22,7 @@ interface PublicNewsCardProps {
 
 function CreateInitiativeLink({ newsId }: { newsId: string }) {
   const authStatus = useClientAuthStatus();
+  const t = useTranslations("publicNews.card");
   const href =
     authStatus === "authenticated"
       ? buildCreateInitiativeFromNewsHref(newsId)
@@ -29,21 +31,23 @@ function CreateInitiativeLink({ newsId }: { newsId: string }) {
   if (authStatus === "pending") {
     return (
       <span className="public-news-card__button public-news-card__button--primary" aria-hidden="true">
-        Loading…
+        {t("loading")}
       </span>
     );
   }
 
   return (
     <a className="public-news-card__button public-news-card__button--primary" href={href}>
-      Create Initiative
+      {t("createInitiative")}
     </a>
   );
 }
 
 export function PublicNewsCard({ article }: PublicNewsCardProps) {
+  const locale = useLocale();
+  const t = useTranslations("publicNews.card");
   const provider = resolveProviderPresentation(article.sourceName);
-  const publishedLabel = formatNewsRelativeTime(article.publishedAt);
+  const publishedLabel = formatNewsRelativeTime(article.publishedAt, locale);
   const aiSummaryBullets = useMemo(
     () => buildNewsAiSummaryBullets(article.title, article.summary).slice(0, 3),
     [article.summary, article.title],
@@ -91,9 +95,9 @@ export function PublicNewsCard({ article }: PublicNewsCardProps) {
             className="public-news-card__button public-news-card__button--secondary"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Read original article: ${article.title} (opens in new tab)`}
+            aria-label={t("readOriginalAria", { title: article.title })}
           >
-            Read Original
+            {t("readOriginal")}
           </a>
           <CreateInitiativeLink newsId={article.id} />
         </div>

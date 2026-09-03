@@ -23,7 +23,7 @@ export function RegionExperiencePage({ projections }: RegionExperiencePageProps)
       <main className="region-experience-page__main">
         <div className="region-experience-page__content">
           <RegionIdentitySection identity={identity} />
-          <RegionalInteractiveMapSection />
+          <RegionalInteractiveMapSection regionName={identity.name} />
           <RegionalStatisticsSection projection={statistics} regionName={identity.name} />
           <RegionalParticipationPipelineSection projection={pipeline} regionName={identity.name} />
           <LatestRegionalInitiativesSection

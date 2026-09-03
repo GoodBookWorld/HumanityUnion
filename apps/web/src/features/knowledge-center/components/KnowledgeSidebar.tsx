@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import type { KnowledgeCenterListing } from "@hu/types";
 
@@ -22,6 +23,7 @@ export function KnowledgeSidebar({
   onNavigate,
   variant = "desktop",
 }: KnowledgeSidebarProps) {
+  const t = useTranslations("knowledgePublic.nav");
   const pathname = usePathname();
 
   return (
@@ -31,13 +33,13 @@ export function KnowledgeSidebar({
           ? "knowledge-center__sidebar knowledge-center__sidebar--drawer"
           : "knowledge-center__sidebar knowledge-center__sidebar--desktop"
       }
-      aria-label="Knowledge Center navigation"
+      aria-label={t("ariaLabel")}
     >
       {variant === "desktop" ? (
         <div>
           <p className="knowledge-center__sidebar-title">
             <Link href="/knowledge" onClick={onNavigate}>
-              Knowledge Center
+              {t("title")}
             </Link>
           </p>
         </div>
@@ -45,7 +47,7 @@ export function KnowledgeSidebar({
       <nav>
         <ul className="knowledge-center__nav-list">
           <li>
-            <p className="knowledge-center__nav-category">Subsections</p>
+            <p className="knowledge-center__nav-category">{t("subsections")}</p>
             <ul className="knowledge-center__nav-items">
               <li>
                 <Link
@@ -54,7 +56,7 @@ export function KnowledgeSidebar({
                   aria-current={pathname === CIVIC_MEDIA_ROUTE ? "page" : undefined}
                   onClick={onNavigate}
                 >
-                  Civic Media Center
+                  {t("civicMediaCenter")}
                 </Link>
               </li>
             </ul>

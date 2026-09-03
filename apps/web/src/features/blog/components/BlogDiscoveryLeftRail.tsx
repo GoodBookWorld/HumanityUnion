@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type { BlogCategory, PublicBlogCategoryCount } from "@hu/types";
 
 import { BlogAuthorsSidebar } from "./BlogAuthorsSidebar";
@@ -19,8 +21,10 @@ export function BlogDiscoveryLeftRail({
   q = "",
   categoryCounts,
 }: BlogDiscoveryLeftRailProps) {
+  const t = useTranslations("blogPublic.discovery");
+
   return (
-    <aside className="blog-layout__left" aria-label="Blog navigation">
+    <aside className="blog-layout__left" aria-label={t("leftAria")}>
       <div className="blog-layout__categories">
         <BlogCategoriesSidebar
           categories={categories}

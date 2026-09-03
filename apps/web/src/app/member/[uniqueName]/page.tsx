@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import type { PublicMemberProfile } from "@hu/types";
 
@@ -102,28 +103,17 @@ export async function generateMetadata({ params }: PublicMemberPageProps): Promi
  * previewing their own profile never needs.
  */
 export default async function PublicMemberPage({ params }: PublicMemberPageProps) {
+  const t = await getTranslations("participantPublic");
   const { uniqueName: publicName } = await params;
   const state = await loadPublicMemberProfile(publicName);
 
-  if (state.status === "restricted") {
+  if (state.status === "restricted" || state.status === "not_found") {
     return (
       <main className="public-member-page">
-        <h1>Public Profile</h1>
-        <p>This profile is only visible to signed-in Participants.</p>
+        <h1>{t("empty.unavailableTitle")}</h1>
+        <p>{t("empty.unavailableBody")}</p>
         <p className="public-member-page__back">
-          <Link href="/">Back to Home</Link>
-        </p>
-      </main>
-    );
-  }
-
-  if (state.status === "not_found") {
-    return (
-      <main className="public-member-page">
-        <h1>Public Profile</h1>
-        <p>This Participant profile is not available.</p>
-        <p className="public-member-page__back">
-          <Link href="/">Back to Home</Link>
+          <Link href="/">{t("empty.backHome")}</Link>
         </p>
       </main>
     );
@@ -155,7 +145,7 @@ export default async function PublicMemberPage({ params }: PublicMemberPageProps
         profile={profile}
         footer={
           <p className="public-member-page__back">
-            <Link href="/">Back to Home</Link>
+            <Link href="/">{t("empty.backHome")}</Link>
           </p>
         }
       />

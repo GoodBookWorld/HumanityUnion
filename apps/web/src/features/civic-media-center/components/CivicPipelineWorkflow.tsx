@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import {
   HuxWorkflowSection,
   HuxWorkflowStage,
@@ -14,10 +16,11 @@ interface CivicPipelineWorkflowProps {
 }
 
 export function CivicPipelineWorkflow({
-  title = "How News Creates Initiatives",
-  description = "Verified information moves through discussion, analysis, decision, and public impact.",
+  title,
+  description,
   stageTitles,
 }: CivicPipelineWorkflowProps = {}) {
+  const t = useTranslations("civicMediaPublic.pipeline");
   const stages =
     stageTitles && stageTitles.length === CIVIC_PIPELINE_STAGES.length
       ? CIVIC_PIPELINE_STAGES.map((stage, index) => ({
@@ -29,10 +32,10 @@ export function CivicPipelineWorkflow({
   return (
     <HuxWorkflowSection
       sectionId="initiative-flow"
-      eyebrow="CIVIC PIPELINE"
-      title={title}
-      description={description}
-      label="civic workflow stages"
+      eyebrow={t("eyebrow")}
+      title={title ?? t("title")}
+      description={description ?? t("description")}
+      label={t("label")}
       items={stages}
       getItemKey={(stage) => stage.id}
       viewportClassName="hux-workflow-rail"

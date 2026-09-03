@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { ParticipationPipelinePublicProjection } from "@hu/types";
 
 interface ParticipationPipelineEvidenceProps {
@@ -5,20 +9,21 @@ interface ParticipationPipelineEvidenceProps {
 }
 
 export function ParticipationPipelineEvidence({ projection }: ParticipationPipelineEvidenceProps) {
+  const t = useTranslations("publicGeo.shared");
   const totalCount = projection.stages.reduce((sum, stage) => sum + stage.count, 0);
 
   return (
     <div className="participation-pipeline">
       <p className="participation-pipeline__scope">
-        Scope: {projection.scopeLabel}
+        {t("scopePrefix", { scope: projection.scopeLabel })}
         {projection.source === "bootstrap" ? (
-          <span className="participation-pipeline__source"> · Bootstrap demonstration data</span>
+          <span className="participation-pipeline__source"> · {t("bootstrapSource")}</span>
         ) : null}
       </p>
 
       <ol
         className="participation-pipeline__stages"
-        aria-label={`Participation pipeline stages at ${projection.scopeLabel} scope`}
+        aria-label={t("pipelineStagesAria", { scope: projection.scopeLabel })}
       >
         {projection.stages.map((stage) => {
           const proportion = totalCount > 0 ? (stage.count / totalCount) * 100 : 0;

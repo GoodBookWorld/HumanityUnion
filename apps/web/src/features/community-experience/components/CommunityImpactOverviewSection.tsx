@@ -1,11 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { CommunityImpactOverviewPublicProjection } from "@hu/types";
 
-import {
-  COMMUNITY_IMPACT_VISITOR_CONCLUSION,
-  communityImpactContextIntroduction,
-} from "../content";
 import { ExperienceBlockShell } from "../../public-experience";
 
 interface CommunityImpactOverviewSectionProps {
@@ -15,38 +14,47 @@ interface CommunityImpactOverviewSectionProps {
 export function CommunityImpactOverviewSection({
   projection,
 }: CommunityImpactOverviewSectionProps) {
+  const t = useTranslations("publicGeo");
+
   return (
     <ExperienceBlockShell
       id="community-impact-overview"
-      title="Community Impact Overview"
-      architecturalName="Evidence synthesis"
-      stage="Evidence"
-      contextIntroduction={communityImpactContextIntroduction(projection.communityName)}
-      visitorConclusion={COMMUNITY_IMPACT_VISITOR_CONCLUSION}
+      title={t("community.impact.title")}
+      architecturalName={t("community.impact.architecturalName")}
+      stage={t("community.impact.stage")}
+      contextIntroduction={t("community.impact.contextIntroduction", {
+        communityName: projection.communityName,
+      })}
+      visitorConclusion={t("community.impact.visitorConclusion")}
     >
       <div className="community-impact-overview">
         <p className="community-impact-overview__scope">
-          Observable outcomes at {projection.scopeLabel}
+          {t("community.impact.observableOutcomes", { scope: projection.scopeLabel })}
           {projection.source === "bootstrap" ? (
             <span className="community-impact-overview__source">
               {" "}
-              · Bootstrap demonstration data
+              · {t("shared.bootstrapSource")}
             </span>
           ) : null}
         </p>
 
         <p className="community-impact-overview__observable-note" role="note">
-          Signals describe publicly observable counts and stage presence — not subjective impact
-          judgments or community evaluations.
+          {t("community.impact.observableNote")}
         </p>
 
-        <dl className="community-impact-overview__signals" aria-label="Observable outcome signals">
+        <dl
+          className="community-impact-overview__signals"
+          aria-label={t("community.impact.signalsAria")}
+        >
           {projection.signals.map((signal) => (
             <div key={signal.id} className="community-impact-overview__signal">
               <dt className="community-impact-overview__signal-label">
                 {signal.label}
                 {signal.derived ? (
-                  <span className="community-impact-overview__derived"> derived</span>
+                  <span className="community-impact-overview__derived">
+                    {" "}
+                    {t("shared.derived")}
+                  </span>
                 ) : null}
               </dt>
               <dd className="community-impact-overview__signal-value">
@@ -55,7 +63,7 @@ export function CommunityImpactOverviewSection({
                 (signal.verificationRouteStatus ?? "active") === "active" ? (
                   <>
                     {" "}
-                    · <Link href={signal.verificationHref}>Verify public record</Link>
+                    · <Link href={signal.verificationHref}>{t("community.impact.verifyRecord")}</Link>
                   </>
                 ) : signal.verificationRouteStatus === "unavailable" ? (
                   <>
@@ -64,9 +72,9 @@ export function CommunityImpactOverviewSection({
                     <span
                       className="community-impact-overview__verification-placeholder"
                       aria-disabled="true"
-                      title="Public verification record — coming soon"
+                      title={t("community.impact.verifyComingSoonTitle")}
                     >
-                      Verify public record (coming soon)
+                      {t("community.impact.verifyComingSoon")}
                     </span>
                   </>
                 ) : null}

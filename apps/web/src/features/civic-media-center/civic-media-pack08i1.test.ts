@@ -48,15 +48,18 @@ const CIVIC_MEDIA_PUBLIC_KEYS = [
   "civicMediaPublic.selectionPrinciples.title",
   "civicMediaPublic.selectionPrinciples.description",
   "civicMediaPublic.selectionPrinciples.readFaq",
+  "civicMediaPublic.selectionPrinciples.ariaLabel",
   "civicMediaPublic.trustedMedia.eyebrow",
   "civicMediaPublic.trustedMedia.title",
   "civicMediaPublic.trustedMedia.description",
   "civicMediaPublic.factChecking.eyebrow",
   "civicMediaPublic.factChecking.title",
   "civicMediaPublic.factChecking.description",
+  "civicMediaPublic.factChecking.ariaLabel",
   "civicMediaPublic.propaganda.eyebrow",
   "civicMediaPublic.propaganda.title",
   "civicMediaPublic.propaganda.description",
+  "civicMediaPublic.propaganda.ariaLabel",
   "civicMediaPublic.faq.heading",
   "civicMediaPublic.knowledgeLink",
   "civicMediaPublic.visitKnowledge",
@@ -126,6 +129,17 @@ describe("Pack 08I — Civic Media structured editorial + chrome", () => {
     assert.match(page, /useCivicMediaResolvedEditorial/);
   });
 
+  it("hero restores Card grid (civic-media-page__hero-grid) and never dumps JSON", () => {
+    const page = readWeb(
+      "features/civic-media-center/components/CivicMediaCenterPageContent.tsx",
+    );
+    assert.match(page, /civic-media-page__hero-grid/);
+    assert.match(page, /civic-media-resource-card civic-media-resource-card--hero/);
+    assert.match(page, /<Card[\s\S]*civic-media-resource-card--hero/);
+    assert.doesNotMatch(page, /civic-media-page__points/);
+    assert.doesNotMatch(page, /stableJsonForDisplay/);
+  });
+
   it("page uses useTranslations civicMediaPublic", () => {
     const page = readWeb(
       "features/civic-media-center/components/CivicMediaCenterPageContent.tsx",
@@ -133,6 +147,9 @@ describe("Pack 08I — Civic Media structured editorial + chrome", () => {
     assert.match(page, /useTranslations\("civicMediaPublic"\)/);
     assert.match(page, /t\("pageTitle"\)/);
     assert.match(page, /t\("selectionPrinciples\.title"\)/);
+    assert.match(page, /t\("selectionPrinciples\.ariaLabel"\)/);
+    assert.match(page, /t\("factChecking\.ariaLabel"\)/);
+    assert.match(page, /t\("propaganda\.ariaLabel"\)/);
     assert.match(page, /t\("faq\.heading"\)/);
     assert.match(page, /t\("whyItMatters"\)/);
   });

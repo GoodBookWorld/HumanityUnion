@@ -18,7 +18,7 @@ import { invalidateGlobalSearchIndex } from "../global-search/global-search.inde
 import { getAnalysisById } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getPetition } from "../petition/petition.store.js";
-import { blogHtmlToPlainText } from "../blog/blog-content-sanitize.js";
+import { sanitizeBlogHtml } from "../blog/blog-content-sanitize.js";
 import {
   loadCivicArchiveTranslationSource,
   loadCivicMediaTranslationSource,
@@ -176,11 +176,12 @@ export async function loadTranslatableSource(input: {
     if (!post) {
       return null;
     }
-    // Original remains canonical — translation never overwrites these fields.
+    // Pack 08I.5 — content remains sanitized HTML for translation + presentation.
+    // Canonical blog_posts.content is never overwritten by translation persistence.
     const fields = {
       title: post.title,
       excerpt: post.excerpt,
-      content: blogHtmlToPlainText(post.content),
+      content: sanitizeBlogHtml(post.content),
     };
     return {
       sourceKind: "blog_post",
@@ -364,6 +365,14 @@ export async function getOrCreateContentTranslation(input: {
     sourceFields: source.fields,
     translatedFields,
   });
+
+  // Pack 08I.5 — Blog HTML body: re-sanitize after provider so markup stays structurally safe.
+  if (source.sourceKind === "blog_post" && typeof translatedFields.content === "string") {
+    translatedFields = {
+      ...translatedFields,
+      content: sanitizeBlogHtml(translatedFields.content),
+    };
+  }
 
   const record: TranslatedContentRecord = {
     translationId: existing?.translationId ?? `translation-${randomUUID()}`,

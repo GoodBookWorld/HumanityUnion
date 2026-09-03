@@ -44,6 +44,6 @@ export async function fetchPlatformStatistics(): Promise<PlatformStatisticsRespo
   };
 }
 
-export function formatPlatformStatisticValue(value: number): string {
-  return new Intl.NumberFormat("en-US").format(value);
+export function formatPlatformStatisticValue(value: number, locale = "en"): string {
+  return new Intl.NumberFormat(locale).format(value);
 }

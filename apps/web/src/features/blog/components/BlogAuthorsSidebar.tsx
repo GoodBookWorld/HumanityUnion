@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicBlogAuthorDirectoryItem } from "@hu/types";
 
@@ -9,6 +10,7 @@ import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar
 import { fetchPublicBlogAuthors } from "../api";
 
 export function BlogAuthorsSidebar() {
+  const t = useTranslations("blogPublic.discovery.authors");
   const [authors, setAuthors] = useState<readonly PublicBlogAuthorDirectoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,12 +39,10 @@ export function BlogAuthorsSidebar() {
   return (
     <section className="blog-rail-widget" aria-labelledby="blog-authors-heading">
       <h2 id="blog-authors-heading" className="hu-heading-4 blog-rail-widget__title">
-        Authors
+        {t("heading")}
       </h2>
-      {loading ? <p className="hu-caption">Loading authors…</p> : null}
-      {!loading && authors.length === 0 ? (
-        <p className="hu-caption">No published authors yet.</p>
-      ) : null}
+      {loading ? <p className="hu-caption">{t("loading")}</p> : null}
+      {!loading && authors.length === 0 ? <p className="hu-caption">{t("empty")}</p> : null}
       {!loading && authors.length > 0 ? (
         <ul className="blog-authors-list">
           {authors.map((entry) => {

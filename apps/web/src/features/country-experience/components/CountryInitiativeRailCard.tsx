@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
@@ -11,24 +12,23 @@ interface CountryInitiativeRailCardProps {
   initiative: WorldInitiativeCardProjection;
 }
 
-function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString(undefined, {
+export function CountryInitiativeRailCard({ initiative }: CountryInitiativeRailCardProps) {
+  const t = useTranslations("publicGeo.shared");
+  const locale = useLocale();
+  const href =
+    initiative.publicInitiativeHref ||
+    `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`;
+  const updatedDate = new Date(initiative.publishedAt).toLocaleDateString(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
-}
-
-export function CountryInitiativeRailCard({ initiative }: CountryInitiativeRailCardProps) {
-  const href =
-    initiative.publicInitiativeHref ||
-    `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`;
 
   return (
     <Link
       href={href}
       className="country-initiative-rail-card"
-      aria-label={`Open initiative: ${initiative.title}`}
+      aria-label={t("openInitiativeAria", { title: initiative.title })}
     >
       <div className="country-initiative-rail-card__media">
         {initiative.imageUrl || initiative.coverMedia ? (
@@ -60,16 +60,13 @@ export function CountryInitiativeRailCard({ initiative }: CountryInitiativeRailC
           <span className="country-initiative-rail-card__status">
             {initiative.currentStageLabel ?? initiative.publicStatus}
           </span>
-          <span>Updated {formatDate(initiative.publishedAt)}</span>
+          <span>{t("updated", { date: updatedDate })}</span>
           {initiative.supportSummary ? (
-            <span>
-              {initiative.supportSummary.likes} participant
-              {initiative.supportSummary.likes === 1 ? "" : "s"}
-            </span>
+            <span>{t("participantsCount", { count: initiative.supportSummary.likes })}</span>
           ) : null}
         </div>
         <span className="country-initiative-rail-card__cta" aria-hidden="true">
-          View Initiative →
+          {t("viewInitiative")}
         </span>
       </div>
     </Link>

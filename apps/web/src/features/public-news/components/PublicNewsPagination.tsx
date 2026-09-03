@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 interface PublicNewsPaginationProps {
   page: number;
   totalPages: number;
@@ -18,10 +22,12 @@ export function PublicNewsPagination({
   pageSize,
   onPageChange,
 }: PublicNewsPaginationProps) {
+  const t = useTranslations("publicNews.pagination");
+
   if (totalPages <= 1) {
     return (
       <p className="public-news-pagination__info">
-        Showing {totalItems} article{totalItems === 1 ? "" : "s"}
+        {t(totalItems === 1 ? "showingCount" : "showingCountPlural", { count: totalItems })}
       </p>
     );
   }
@@ -31,9 +37,9 @@ export function PublicNewsPagination({
   const visiblePages = buildVisiblePages(page, totalPages);
 
   return (
-    <nav className="public-news-pagination" aria-label="News discovery pagination">
+    <nav className="public-news-pagination" aria-label={t("ariaLabel")}>
       <p className="public-news-pagination__info">
-        Showing {start}–{end} of {totalItems} articles
+        {t("showingRange", { start, end, total: totalItems })}
       </p>
       <div className="public-news-pagination__controls">
         <button
@@ -41,9 +47,9 @@ export function PublicNewsPagination({
           className="public-news-pagination__button"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          aria-label="Previous page"
+          aria-label={t("previousAria")}
         >
-          Previous
+          {t("previous")}
         </button>
         {visiblePages.map((pageNumber) => (
           <button
@@ -51,7 +57,7 @@ export function PublicNewsPagination({
             type="button"
             className="public-news-pagination__page"
             onClick={() => onPageChange(pageNumber)}
-            aria-label={`Page ${pageNumber}`}
+            aria-label={t("pageAria", { page: pageNumber })}
             aria-current={pageNumber === page ? "page" : undefined}
           >
             {pageNumber}
@@ -62,9 +68,9 @@ export function PublicNewsPagination({
           className="public-news-pagination__button"
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          aria-label="Next page"
+          aria-label={t("nextAria")}
         >
-          Next
+          {t("next")}
         </button>
       </div>
     </nav>

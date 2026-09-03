@@ -1,16 +1,21 @@
-import { REGISTRATION_GATEWAY_CONTENT } from "../content";
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { ExperienceBlockShell } from "./ExperienceBlockShell";
 import { RegistrationGatewayEvidence } from "./RegistrationGatewayEvidence";
 
 export function RegistrationGatewaySection() {
+  const t = useTranslations("publicGeo.shared.registration");
+
   return (
     <ExperienceBlockShell
       id="registration-gateway"
-      title={REGISTRATION_GATEWAY_CONTENT.title}
-      architecturalName="Registration Gateway"
-      stage="Participation"
-      contextIntroduction={REGISTRATION_GATEWAY_CONTENT.contextIntroduction}
-      visitorConclusion={REGISTRATION_GATEWAY_CONTENT.visitorConclusion}
+      title={t("title")}
+      architecturalName={t("architecturalName")}
+      stage={t("stage")}
+      contextIntroduction={t("contextIntroduction")}
+      visitorConclusion={t("visitorConclusion")}
     >
       <RegistrationGatewayEvidence />
     </ExperienceBlockShell>

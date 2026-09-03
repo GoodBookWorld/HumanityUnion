@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { CountryStatisticsCounts, TrustedMediaResource } from "@hu/types";
 
@@ -12,16 +13,23 @@ import { CitySelect, RegionSelect, useGeographyCommunityOptions } from "../../ge
 import { TrustedMediaRailCard } from "../../civic-media-center/components/TrustedMediaRailCard";
 import { CIVIC_MEDIA_ROUTE } from "../../civic-media-center/routes";
 import { HuxDirectorySection } from "../../horizontal-experience";
+import { ENTITY_TYPE_OPTIONS } from "../../global-search/api";
+import { resolveActivityAreaDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { PublicStatisticsGrid } from "../../platform-statistics/components/PublicStatisticsGrid";
+import { localizePublicStatisticCards } from "../../platform-statistics/localize-public-statistic-cards";
 import { formatPlatformStatisticValue } from "../../platform-statistics/platform-statistics-api";
-import { COUNTRY_STATISTIC_CARDS } from "../../platform-statistics/public-statistics-config";
+import {
+  COUNTRY_STATISTIC_CARDS,
+  type CountryStatisticKey,
+} from "../../platform-statistics/public-statistics-config";
 import {
   fetchCountryMedia,
   fetchCountryStatistics,
 } from "../country-experience-api";
 import {
-  COUNTRY_DISCOVERY_ENTITY_TYPE_OPTIONS,
+  COUNTRY_DISCOVERY_ENTITY_TYPE_OPTION_VALUES,
   resolveCountrySearchFilterParams,
+  type CountryDiscoveryEntityTypeValue,
 } from "../country-discovery-entity-types";
 import { CountryPublicNewsWidget } from "../../public-news/components/CountryPublicNewsWidget";
 import { CountryCivicActionSection } from "./CountryCivicActionSection";
@@ -42,6 +50,11 @@ function countryFlagSrc(countryCode: string): string {
 
 export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceDynamicPageProps) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("publicGeo");
+  const tStats = useTranslations("publicStatistics");
+  const tSearch = useTranslations("search");
+  const tExperience = useTranslations("initiativeExperience");
   const country = getCountryByCode(countryCode);
   const [statistics, setStatistics] = useState<CountryStatisticsCounts | null>(null);
   const [media, setMedia] = useState<TrustedMediaResource[]>([]);
@@ -156,15 +169,35 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
     setEntityTypeValue("");
   }
 
+  function entityTypeLabel(value: CountryDiscoveryEntityTypeValue): string {
+    if (value === "") {
+      return t("country.search.entityAll");
+    }
+    if (value === "standard_initiatives") {
+      return t("country.search.entityStandard");
+    }
+    if (value === "public_choice") {
+      return t("country.search.entityPublicChoice");
+    }
+    const key = `entityTypes.${value}` as "entityTypes.initiative";
+    if (tSearch.has(key)) {
+      return tSearch(key);
+    }
+    return ENTITY_TYPE_OPTIONS.find((option) => option.value === value)?.label ?? String(value);
+  }
+
   return (
     <div className="country-experience-dynamic">
-      <nav className="country-experience-dynamic__breadcrumb" aria-label="Breadcrumb">
+      <nav
+        className="country-experience-dynamic__breadcrumb"
+        aria-label={t("shared.breadcrumbAria")}
+      >
         <ol>
           <li>
-            <Link href="/">Home</Link>
+            <Link href="/">{t("shared.home")}</Link>
           </li>
           <li>
-            <Link href="/search">Countries</Link>
+            <Link href="/search">{t("country.breadcrumbCountries")}</Link>
           </li>
           <li aria-current="page">{country.name}</li>
         </ol>
@@ -177,9 +210,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
             {country.region} · {country.subregion}
           </p>
           <p className="country-experience-dynamic__intro">
-            Explore public civic activity, initiatives, and trusted media connected to{" "}
-            {country.name}. Aggregate statistics summarize participation without exposing private
-            participant records.
+            {t("country.heroIntro", { countryName: country.name })}
           </p>
         </div>
         <div className="country-experience-dynamic__flag-wrap">
@@ -201,13 +232,19 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
         aria-labelledby="country-statistics-title"
         aria-busy={loading}
       >
-        <h2 id="country-statistics-title">Country Statistics</h2>
+        <h2 id="country-statistics-title">{tStats("country.title")}</h2>
         <PublicStatisticsGrid
-          cards={COUNTRY_STATISTIC_CARDS}
+          cards={localizePublicStatisticCards(COUNTRY_STATISTIC_CARDS, tStats, {
+            labelPath: (key) => `metrics.${key as CountryStatisticKey}.label`,
+            descriptionPath: (key) => `country.cards.${key as CountryStatisticKey}.description`,
+          })}
           loading={loading}
           allUnavailable={error}
-          unavailableMessage="Country statistics are temporarily unavailable."
-          loadingMessage="Loading country statistics..."
+          unavailableMessage={tStats("country.unavailable")}
+          loadingMessage={tStats("country.loading")}
+          aboutMetricLabel={tStats("shared.aboutMetric")}
+          unavailableValueLabel={tStats("shared.unavailableValue")}
+          formatUnavailableAriaLabel={(label) => tStats("shared.unavailableAria", { label })}
           resolveValue={(key) => {
             if (error || !statistics) {
               return null;
@@ -217,7 +254,8 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
 
             return typeof value === "number" ? value : null;
           }}
-          formatValue={(_, value) => formatPlatformStatisticValue(value)}
+          formatValue={(_, value) => formatPlatformStatisticValue(value, locale)}
+          showDescriptions
         />
       </section>
 
@@ -225,31 +263,31 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
         className="country-experience-dynamic__section"
         aria-labelledby="country-search-title"
       >
-        <h2 id="country-search-title">Search Civic Activity in This Country</h2>
+        <h2 id="country-search-title">{t("country.search.title")}</h2>
         <form
           className="country-experience-dynamic__search-card"
           onSubmit={handleSearchSubmit}
-          aria-label={`Search civic activity in ${country.name}`}
+          aria-label={t("country.search.formAria", { countryName: country.name })}
         >
           <div className="country-experience-dynamic__search-primary">
             <label className="country-experience-dynamic__search-query">
-              <span>Search</span>
+              <span>{t("country.search.label")}</span>
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search initiatives, elections, decisions, archive records…"
+                placeholder={t("country.search.placeholder")}
               />
             </label>
             <div className="hu-form-actions country-experience-dynamic__search-primary-actions">
               <button type="submit" className="hu-button hu-button--primary">
-                Search
+                {t("country.search.submit")}
               </button>
               <button
                 type="button"
                 className="country-experience-dynamic__clear-filters"
                 onClick={handleClearFilters}
               >
-                Clear Filters
+                {t("country.search.clear")}
               </button>
             </div>
           </div>
@@ -263,7 +301,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
                 setRegionCode(value);
                 setCommunityCode("");
               }}
-              placeholder="All regions"
+              placeholder={t("country.search.allRegions")}
             />
             <CitySelect
               id="country-page-community"
@@ -272,50 +310,50 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
               value={communityCode}
               includeOther={false}
               onChange={setCommunityCode}
-              placeholder="All communities"
+              placeholder={t("country.search.allCommunities")}
             />
             <label>
-              <span>Entity Type</span>
+              <span>{t("country.search.entityType")}</span>
               <select
                 className="hu-form-control"
                 value={entityTypeValue}
                 onChange={(event) => setEntityTypeValue(event.target.value)}
               >
-                {COUNTRY_DISCOVERY_ENTITY_TYPE_OPTIONS.map((option) => (
-                  <option key={option.value || "all"} value={option.value}>
-                    {option.label}
+                {COUNTRY_DISCOVERY_ENTITY_TYPE_OPTION_VALUES.map((value) => (
+                  <option key={value || "all"} value={value}>
+                    {entityTypeLabel(value)}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              <span>Activity Area</span>
+              <span>{t("country.search.activityArea")}</span>
               <select
                 className="hu-form-control"
                 value={activityArea}
                 onChange={(event) => setActivityArea(event.target.value)}
               >
-                <option value="">All activity areas</option>
+                <option value="">{t("country.search.allActivityAreas")}</option>
                 {INITIATIVE_ACTIVITY_AREA_OPTIONS.map((option: string) => (
                   <option key={option} value={option}>
-                    {option}
+                    {resolveActivityAreaDisplayLabel(option, tExperience)}
                   </option>
                 ))}
               </select>
             </label>
           </div>
           <p className="country-experience-dynamic__search-scope">
-            Country scope: <strong>{country.name}</strong>
+            {t("country.search.scopeCountry")} <strong>{country.name}</strong>
             {regionLabel ? (
               <>
                 {" "}
-                · Region: <strong>{regionLabel}</strong>
+                · {t("country.search.scopeRegion")} <strong>{regionLabel}</strong>
               </>
             ) : null}
             {communityLabel ? (
               <>
                 {" "}
-                · City: <strong>{communityLabel}</strong>
+                · {t("country.search.scopeCity")} <strong>{communityLabel}</strong>
               </>
             ) : null}
           </p>
@@ -333,18 +371,18 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
 
       <HuxDirectorySection
         sectionId={`country-media-${countryCode.toLowerCase()}`}
-        eyebrow="COUNTRY MEDIA"
-        title="Recommended Media"
-        description={`Trusted national and regional sources selected for ${country.name}.`}
-        label="recommended trusted media"
+        eyebrow={t("country.media.eyebrow")}
+        title={t("country.media.title")}
+        description={t("country.media.description", { countryName: country.name })}
+        label={t("country.media.railLabel")}
         items={media}
         getItemKey={(resource) => resource.id}
         renderItem={(resource) => <TrustedMediaRailCard resource={resource} />}
-        emptyState={
-          <p>No verified civic media providers are available for this country yet.</p>
-        }
+        emptyState={<p>{t("country.media.empty")}</p>}
         footerAction={
-          <Link href={`${CIVIC_MEDIA_ROUTE}#selection-principles`}>View global media standards</Link>
+          <Link href={`${CIVIC_MEDIA_ROUTE}#selection-principles`}>
+            {t("country.media.footerStandards")}
+          </Link>
         }
       />
 

@@ -1,25 +1,27 @@
-import Link from "next/link";
+"use client";
 
-import { REGISTRATION_GATEWAY_CONTENT } from "../content";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+
 import { REGISTRATION_ROUTE } from "../footer-links";
 
 export function RegistrationGatewayEvidence() {
+  const t = useTranslations("publicGeo.shared.registration");
+
   return (
     <div className="registration-gateway">
-      <p className="registration-gateway__invitation">{REGISTRATION_GATEWAY_CONTENT.invitation}</p>
-      <p className="registration-gateway__exploration-note">
-        {REGISTRATION_GATEWAY_CONTENT.explorationNote}
-      </p>
+      <p className="registration-gateway__invitation">{t("invitation")}</p>
+      <p className="registration-gateway__exploration-note">{t("explorationNote")}</p>
 
       <div className="registration-gateway__actions">
         <Link className="registration-gateway__action" href={REGISTRATION_ROUTE}>
-          {REGISTRATION_GATEWAY_CONTENT.actionLabel}
+          {t("actionLabel")}
         </Link>
       </div>
 
       <p className="registration-gateway__about">
         <Link href="/knowledge" className="registration-gateway__about-link">
-          Learn about Humanity Union before creating an account
+          {t("learnAbout")}
         </Link>
       </p>
     </div>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
@@ -24,39 +25,7 @@ export interface CountryCivicActionSectionProps {
   communityLabel: string;
 }
 
-function resolveActionHeading(input: {
-  scope: CountryDiscoveryScope;
-  countryName: string;
-  regionLabel: string;
-  communityLabel: string;
-}): string {
-  if (input.scope === "city" && input.communityLabel) {
-    return `${input.communityLabel} Civic Action`;
-  }
-
-  if (input.scope === "region" && input.regionLabel) {
-    return `${input.regionLabel} Civic Action`;
-  }
-
-  return "Country Action";
-}
-
-function resolveRailTitles(scope: CountryDiscoveryScope): {
-  initiatives: string;
-  elections: string;
-} {
-  if (scope === "city") {
-    return { initiatives: "City Initiatives", elections: "City Elections" };
-  }
-
-  if (scope === "region") {
-    return { initiatives: "Region Initiatives", elections: "Region Elections" };
-  }
-
-  return { initiatives: "Country Initiatives", elections: "Country Elections" };
-}
-
-function resolveEmptyPlaceName(input: {
+function resolvePlaceName(input: {
   scope: CountryDiscoveryScope;
   countryName: string;
   regionLabel: string;
@@ -81,20 +50,35 @@ export function CountryCivicActionSection({
   communityCode,
   communityLabel,
 }: CountryCivicActionSectionProps) {
+  const t = useTranslations("publicGeo.country.action");
   const scope = resolveCountryDiscoveryScope({ regionCode, communityCode });
-  const heading = resolveActionHeading({
+  const placeName = resolvePlaceName({
     scope,
     countryName,
     regionLabel,
     communityLabel,
   });
-  const railTitles = resolveRailTitles(scope);
-  const placeName = resolveEmptyPlaceName({
-    scope,
-    countryName,
-    regionLabel,
-    communityLabel,
-  });
+
+  const heading =
+    scope === "country"
+      ? t("countryTitle")
+      : t("scopedTitle", { placeName });
+
+  const railTitles =
+    scope === "city"
+      ? {
+          initiatives: t("rails.cityInitiatives"),
+          elections: t("rails.cityElections"),
+        }
+      : scope === "region"
+        ? {
+            initiatives: t("rails.regionInitiatives"),
+            elections: t("rails.regionElections"),
+          }
+        : {
+            initiatives: t("rails.countryInitiatives"),
+            elections: t("rails.countryElections"),
+          };
 
   const [initiatives, setInitiatives] = useState<WorldInitiativeCardProjection[]>([]);
   const [elections, setElections] = useState<WorldInitiativeCardProjection[]>([]);
@@ -156,16 +140,16 @@ export function CountryCivicActionSection({
       aria-busy={loading}
     >
       <header className="country-civic-action__header">
-        <p className="country-civic-action__eyebrow">COUNTRY ACTION</p>
+        <p className="country-civic-action__eyebrow">{t("eyebrow")}</p>
         <h2 id="country-civic-action-heading">{heading}</h2>
         <p className="country-civic-action__description">
           {scope === "country"
-            ? `Public civic activity connected to ${countryName}.`
-            : `Public civic activity in ${placeName}.`}
+            ? t("descriptionCountry", { countryName })
+            : t("descriptionScoped", { placeName })}
         </p>
         {error ? (
           <p className="country-civic-action__error" role="status">
-            Civic activity is temporarily unavailable for this geography.
+            {t("unavailable")}
           </p>
         ) : null}
       </header>
@@ -174,21 +158,21 @@ export function CountryCivicActionSection({
         sectionId={`${sectionIdBase}-initiatives`}
         surfaceStyle="grouped"
         title={railTitles.initiatives}
-        label={railTitles.initiatives.toLowerCase()}
+        label={railTitles.initiatives}
         items={initiatives}
         getItemKey={(initiative) => initiative.initiativeId}
         renderItem={(initiative) => <CountryInitiativeRailCard initiative={initiative} />}
         emptyState={
           <p className="country-civic-action__empty" role="status">
             {loading
-              ? "Loading initiatives…"
-              : `No initiatives found in ${placeName}.`}
+              ? t("loadingInitiatives")
+              : t("emptyInitiatives", { placeName })}
           </p>
         }
         footerAction={
           initiatives.length > 0 ? (
             <Link href={`${viewAllHref}&lifecycleProfile=STANDARD`}>
-              View all {railTitles.initiatives.toLowerCase()}
+              {t("viewAll", { rail: railTitles.initiatives })}
             </Link>
           ) : undefined
         }
@@ -198,19 +182,19 @@ export function CountryCivicActionSection({
         sectionId={`${sectionIdBase}-elections`}
         surfaceStyle="grouped"
         title={railTitles.elections}
-        label={railTitles.elections.toLowerCase()}
+        label={railTitles.elections}
         items={elections}
         getItemKey={(initiative) => initiative.initiativeId}
         renderItem={(initiative) => <CountryElectionRailCard initiative={initiative} />}
         emptyState={
           <p className="country-civic-action__empty" role="status">
-            {loading ? "Loading elections…" : `No elections found in ${placeName}.`}
+            {loading ? t("loadingElections") : t("emptyElections", { placeName })}
           </p>
         }
         footerAction={
           elections.length > 0 ? (
             <Link href={`${viewAllHref}&lifecycleProfile=PUBLIC_CHOICE`}>
-              View all {railTitles.elections.toLowerCase()}
+              {t("viewAll", { rail: railTitles.elections })}
             </Link>
           ) : undefined
         }

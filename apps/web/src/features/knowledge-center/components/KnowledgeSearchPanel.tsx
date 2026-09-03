@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
@@ -11,6 +12,7 @@ import { searchKnowledgeArticles } from "../api";
 import "../knowledge-center.css";
 
 export function KnowledgeSearchPanel() {
+  const t = useTranslations("knowledgePublic.search");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<
     Array<{ entityId: string; title: string; summary: string; publicUrl: string }>
@@ -36,18 +38,18 @@ export function KnowledgeSearchPanel() {
 
   return (
     <Card className="knowledge-search">
-      <h2>Search Knowledge</h2>
+      <h2>{t("title")}</h2>
       <form className="knowledge-search__form" onSubmit={handleSearch}>
         <input
           className="knowledge-search__input"
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search articles..."
-          aria-label="Search Knowledge Center"
+          placeholder={t("placeholder")}
+          aria-label={t("ariaLabel")}
         />
         <Button type="submit" variant="primary" disabled={loading}>
-          {loading ? "Searching..." : "Search"}
+          {loading ? t("searching") : t("submit")}
         </Button>
       </form>
       {searched ? (
@@ -61,7 +63,7 @@ export function KnowledgeSearchPanel() {
             ))}
           </ul>
         ) : (
-          <p>No Knowledge articles matched your search.</p>
+          <p>{t("empty")}</p>
         )
       ) : null}
     </Card>

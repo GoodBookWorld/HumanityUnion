@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { CountryAffiliationPublic } from "@hu/types";
 
@@ -19,6 +20,7 @@ interface CountryTeamSectionProps {
 }
 
 export function CountryTeamSection({ countryCode, countryName }: CountryTeamSectionProps) {
+  const t = useTranslations("publicGeo.country.team");
   const [entries, setEntries] = useState<CountryAffiliationPublic[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -56,11 +58,11 @@ export function CountryTeamSection({ countryCode, countryName }: CountryTeamSect
       className="country-experience-dynamic__section country-affiliation-section"
       aria-labelledby="country-team-title"
     >
-      <h2 id="country-team-title">Our Team</h2>
+      <h2 id="country-team-title">{t("title")}</h2>
       <p className="country-affiliation-section__intro">
-        People supporting Humanity Union activity in {countryName}.
+        {t("intro", { countryName })}
       </p>
-      <div className="country-affiliation-rail" role="list" aria-label={`Our Team in ${countryName}`}>
+      <div className="country-affiliation-rail" role="list" aria-label={t("aria", { countryName })}>
         {slots.map((slot) =>
           slot.kind === "entry" ? (
             <div key={slot.entry.entryId} className="country-affiliation-rail__item" role="listitem">

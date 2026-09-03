@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { MemberProfilePublicRecentInitiative } from "@hu/types";
 
@@ -14,14 +15,16 @@ export function RecentPublicInitiativesDisclosure({
 }: {
   initiatives: readonly MemberProfilePublicRecentInitiative[];
 }) {
+  const t = useTranslations("participantPublic");
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const count = initiatives.length;
+  const recentInitiativesLabel = t("sections.recentInitiatives");
 
   return (
     <section
       className="public-member-page__initiatives"
-      aria-label="Recent Public Initiatives"
+      aria-label={recentInitiativesLabel}
     >
       <button
         type="button"
@@ -41,7 +44,7 @@ export function RecentPublicInitiativesDisclosure({
           height={24}
         />
         <span className="public-member-page__initiatives-toggle-label">
-          Recent Public Initiatives
+          {recentInitiativesLabel}
         </span>
         {count > 0 ? (
           <span className="public-member-page__initiatives-count">{count}</span>
@@ -59,7 +62,7 @@ export function RecentPublicInitiativesDisclosure({
       >
         <ul
           className="public-member-page__initiatives-list"
-          aria-label="Recent public initiatives"
+          aria-label={recentInitiativesLabel}
         >
           {initiatives.map((initiative) => (
             <li key={initiative.initiativeId} className="public-member-page__initiatives-item">

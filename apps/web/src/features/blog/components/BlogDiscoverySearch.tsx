@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { buildBlogIndexHref } from "../blog-url";
 
@@ -17,6 +18,7 @@ export function BlogDiscoverySearch({
   q = "",
   searchInputId = "blog-search",
 }: BlogDiscoverySearchProps) {
+  const t = useTranslations("blogPublic.search");
   const router = useRouter();
   const [draftQuery, setDraftQuery] = useState(q);
 
@@ -33,7 +35,7 @@ export function BlogDiscoverySearch({
     <form className="blog-filters blog-layout__search" onSubmit={onSearchSubmit} role="search">
       <div className="blog-filters__search">
         <label className="hu-label" htmlFor={searchInputId}>
-          Search
+          {t("label")}
         </label>
         <div className="blog-filters__search-row">
           <input
@@ -43,11 +45,11 @@ export function BlogDiscoverySearch({
             className="hu-form-control"
             value={draftQuery}
             onChange={(event) => setDraftQuery(event.target.value)}
-            placeholder="Search publications"
+            placeholder={t("placeholder")}
             autoComplete="off"
           />
           <button type="submit" className="hu-button hu-button--primary">
-            Search
+            {t("submit")}
           </button>
         </div>
       </div>

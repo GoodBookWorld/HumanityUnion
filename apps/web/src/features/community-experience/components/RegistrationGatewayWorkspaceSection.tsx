@@ -1,11 +1,8 @@
-import Link from "next/link";
+"use client";
 
-import {
-  REGISTRATION_GATEWAY_WORKSPACE_CONTENT,
-  REGISTRATION_VISITOR_CONCLUSION,
-  registrationGatewayContextIntroduction,
-  workspaceContinuationContextIntroduction,
-} from "../content";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+
 import { WORKSPACE_ROUTE } from "../constants";
 import { ExperienceBlockShell, REGISTRATION_ROUTE } from "../../public-experience";
 
@@ -18,48 +15,49 @@ export function RegistrationGatewayWorkspaceSection({
   communityName,
   isAuthenticated = false,
 }: RegistrationGatewayWorkspaceSectionProps) {
+  const t = useTranslations("publicGeo");
+
   return (
     <ExperienceBlockShell
       id="registration-gateway-workspace"
       title={
         isAuthenticated
-          ? REGISTRATION_GATEWAY_WORKSPACE_CONTENT.workspaceActionLabel
-          : REGISTRATION_GATEWAY_WORKSPACE_CONTENT.title
+          ? t("shared.registration.workspaceActionLabel")
+          : t("community.registration.title")
       }
-      architecturalName="Registration Gateway"
-      stage="Participation"
+      architecturalName={t("community.registration.architecturalName")}
+      stage={t("community.registration.stage")}
       contextIntroduction={
         isAuthenticated
-          ? workspaceContinuationContextIntroduction(communityName)
-          : registrationGatewayContextIntroduction(communityName)
+          ? t("shared.registration.workspaceContinuationContext", { communityName })
+          : t("shared.registration.contextIntroductionNamed", { communityName })
       }
-      visitorConclusion={REGISTRATION_VISITOR_CONCLUSION}
+      visitorConclusion={t("shared.registration.visitorConclusion")}
     >
       <div className="registration-gateway">
         <p className="registration-gateway__invitation">
           {isAuthenticated
-            ? REGISTRATION_GATEWAY_WORKSPACE_CONTENT.authenticatedNote
-            : REGISTRATION_GATEWAY_WORKSPACE_CONTENT.invitation}
+            ? t("shared.registration.authenticatedNote")
+            : t("shared.registration.invitation")}
         </p>
         <p className="registration-gateway__exploration-note">
-          {REGISTRATION_GATEWAY_WORKSPACE_CONTENT.explorationNote}
+          {t("shared.registration.explorationNoteWorkspace")}
         </p>
 
         <div className="registration-gateway__actions">
           {isAuthenticated ? (
             <Link className="registration-gateway__action" href={WORKSPACE_ROUTE}>
-              {REGISTRATION_GATEWAY_WORKSPACE_CONTENT.workspaceActionLabel}
+              {t("shared.registration.workspaceActionLabel")}
             </Link>
           ) : (
             <Link className="registration-gateway__action" href={REGISTRATION_ROUTE}>
-              {REGISTRATION_GATEWAY_WORKSPACE_CONTENT.registrationActionLabel}
+              {t("shared.registration.actionLabel")}
             </Link>
           )}
         </div>
 
         <p className="registration-gateway__boundary" role="note">
-          Public Experience ends here. Workspace begins personal accountable participation when you
-          choose.
+          {t("shared.registration.boundaryNote")}
         </p>
       </div>
     </ExperienceBlockShell>

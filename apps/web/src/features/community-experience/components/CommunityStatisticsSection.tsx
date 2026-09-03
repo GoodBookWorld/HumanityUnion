@@ -1,10 +1,9 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { ParticipationPublicStatisticsProjection } from "@hu/types";
 
-import {
-  COMMUNITY_STATISTICS_PUBLIC_NOTE,
-  COMMUNITY_STATISTICS_VISITOR_CONCLUSION,
-  communityStatisticsContextIntroduction,
-} from "../content";
 import { ExperienceBlockShell, ParticipationStatisticsEvidence } from "../../public-experience";
 
 interface CommunityStatisticsSectionProps {
@@ -16,18 +15,20 @@ export function CommunityStatisticsSection({
   projection,
   communityName,
 }: CommunityStatisticsSectionProps) {
+  const t = useTranslations("publicStatistics.community");
+
   return (
     <ExperienceBlockShell
       id="community-statistics"
-      title="Community Statistics"
-      architecturalName="Statistics"
-      stage="Evidence"
-      contextIntroduction={communityStatisticsContextIntroduction(communityName)}
-      visitorConclusion={COMMUNITY_STATISTICS_VISITOR_CONCLUSION}
+      title={t("title")}
+      architecturalName={t("architecturalName")}
+      stage={t("stage")}
+      contextIntroduction={t("contextIntroduction", { communityName })}
+      visitorConclusion={t("visitorConclusion")}
     >
       <ParticipationStatisticsEvidence projection={projection} />
       <p className="community-statistics__public-note" role="note">
-        {COMMUNITY_STATISTICS_PUBLIC_NOTE}
+        {t("publicNote")}
       </p>
     </ExperienceBlockShell>
   );

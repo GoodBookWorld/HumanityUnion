@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import type { PublicBlogPostListItem } from "@hu/types";
 
@@ -11,13 +12,15 @@ interface BlogLatestMiniCardsProps {
 
 /** Pack 14D — Latest 4 mini-cards for the right discovery rail. */
 export function BlogLatestMiniCards({ posts }: BlogLatestMiniCardsProps) {
+  const t = useTranslations("blogPublic.discovery.latest");
+
   return (
     <section className="blog-rail-widget blog-latest-mini" aria-labelledby="blog-latest-mini-heading">
       <h2 id="blog-latest-mini-heading" className="hu-heading-3 blog-rail-widget__title">
-        Latest Publications
+        {t("heading")}
       </h2>
       {posts.length === 0 ? (
-        <p className="hu-caption">No publications yet.</p>
+        <p className="hu-caption">{t("empty")}</p>
       ) : (
         <ul className="blog-latest-mini__list">
           {posts.map((post) => {

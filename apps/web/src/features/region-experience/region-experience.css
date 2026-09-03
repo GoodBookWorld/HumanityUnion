@@ -4,7 +4,7 @@
   min-height: 100vh;
   background: #fafafa;
   color: #df9815;
-  text-align: left;
+  text-align: start;
   line-height: 1.6;
   overflow-x: clip;
 }
@@ -12,7 +12,7 @@
 .region-experience-page__skip-link {
   position: absolute;
   top: 0.75rem;
-  left: 0.75rem;
+  inset-inline-start: 0.75rem;
   z-index: 100;
   padding: 0.5rem 0.875rem;
   border-radius: 0.375rem;

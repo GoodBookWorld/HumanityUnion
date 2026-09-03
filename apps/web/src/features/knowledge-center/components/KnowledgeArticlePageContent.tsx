@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Card } from "../../../design-system/components/Card";
 import type { KnowledgeArticlePublic, KnowledgeCenterListing } from "@hu/types";
@@ -16,6 +17,7 @@ interface KnowledgeArticlePageContentProps {
 }
 
 export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageContentProps) {
+  const t = useTranslations("knowledgePublic");
   const [listing, setListing] = useState<KnowledgeCenterListing | null>(null);
   const [article, setArticle] = useState<KnowledgeArticlePublic | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,19 +37,21 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
       })
       .catch((fetchError: unknown) => {
         if (!cancelled) {
-          setError(fetchError instanceof Error ? fetchError.message : "Article unavailable.");
+          setError(
+            fetchError instanceof Error ? fetchError.message : t("article.unavailable"),
+          );
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, t]);
 
   return (
     <KnowledgeShell listing={listing}>
       {error ? <p role="alert">{error}</p> : null}
-      {!error && !article ? <p role="status">Loading article…</p> : null}
+      {!error && !article ? <p role="status">{t("article.loading")}</p> : null}
       {article ? (
         <article className="knowledge-article">
           <header className="knowledge-article__header">
@@ -56,16 +60,16 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
           </header>
 
           <Card>
-            <h2>Purpose</h2>
+            <h2>{t("article.purpose")}</h2>
             <p>{article.purpose}</p>
           </Card>
 
-          <section className="knowledge-article__diagram" aria-label="Diagram">
+          <section className="knowledge-article__diagram" aria-label={t("article.diagramAria")}>
             <div dangerouslySetInnerHTML={{ __html: article.diagramSvg }} />
           </section>
 
           <Card>
-            <h2>Overview</h2>
+            <h2>{t("article.overview")}</h2>
             <p>{article.overview}</p>
           </Card>
 
@@ -77,7 +81,7 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
           ))}
 
           <Card>
-            <h2>Key concepts</h2>
+            <h2>{t("article.keyConcepts")}</h2>
             <ul>
               {article.keyConcepts.map((concept) => (
                 <li key={concept}>{concept}</li>
@@ -86,16 +90,13 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
           </Card>
 
           <div className="knowledge-warning-block">
-            <p>
-              Knowledge articles explain processes neutrally. They do not advocate positions or
-              predict outcomes.
-            </p>
+            <p>{t("article.warning")}</p>
           </div>
 
           <div className="knowledge-article__related">
             {article.relatedConcepts.length > 0 ? (
               <Card>
-                <h2>Related concepts</h2>
+                <h2>{t("article.relatedConcepts")}</h2>
                 <ul>
                   {article.relatedConcepts.map((item) => (
                     <li key={item.slug}>
@@ -108,7 +109,7 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
 
             {article.relatedGuides.length > 0 ? (
               <Card>
-                <h2>Related guides</h2>
+                <h2>{t("article.relatedGuides")}</h2>
                 <ul>
                   {article.relatedGuides.map((item) => (
                     <li key={item.slug}>
@@ -121,14 +122,14 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
 
             {article.relatedWorkspaceSection ? (
               <Card>
-                <h2>Related workspace section</h2>
+                <h2>{t("article.relatedWorkspace")}</h2>
                 <p>{article.relatedWorkspaceSection}</p>
               </Card>
             ) : null}
 
             {article.relatedPublicPages.length > 0 ? (
               <Card>
-                <h2>Related public pages</h2>
+                <h2>{t("article.relatedPublicPages")}</h2>
                 <ul>
                   {article.relatedPublicPages.map((item) => (
                     <li key={item.href}>
@@ -141,19 +142,23 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
           </div>
 
           <Card className="knowledge-article__meta-grid">
-            <p>Last updated: {new Date(article.updatedAt).toLocaleDateString()}</p>
-            <p>Version: {article.version}</p>
-            <p>Estimated reading time: {article.readingTimeMinutes} min</p>
+            <p>
+              {t("article.lastUpdated", {
+                date: new Date(article.updatedAt).toLocaleDateString(),
+              })}
+            </p>
+            <p>{t("article.version", { version: article.version })}</p>
+            <p>{t("article.readingTime", { minutes: article.readingTimeMinutes })}</p>
           </Card>
 
-          <nav className="knowledge-article__pager" aria-label="Article pagination">
+          <nav className="knowledge-article__pager" aria-label={t("article.pagerAria")}>
             {article.previousSlug ? (
-              <Link href={`/knowledge/${article.previousSlug}`}>← Previous article</Link>
+              <Link href={`/knowledge/${article.previousSlug}`}>{t("article.previous")}</Link>
             ) : (
               <span />
             )}
             {article.nextSlug ? (
-              <Link href={`/knowledge/${article.nextSlug}`}>Next article →</Link>
+              <Link href={`/knowledge/${article.nextSlug}`}>{t("article.next")}</Link>
             ) : null}
           </nav>
         </article>

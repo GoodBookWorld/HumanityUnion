@@ -90,6 +90,11 @@ export function buildGeminiTranslationSystemInstruction(input: {
           "Preserve JSON keys and structure exactly.",
           "Do not invent keys or fields.",
           "Return valid JSON only — no markdown fences.",
+          // Pack 08I.5 — Blog/HTML string values inside structured JSON
+          "When a JSON string value contains HTML markup (for example the blog_post `content` field): translate only participant-facing text nodes.",
+          "Do not translate, rename, invent, or remove HTML tags, attributes, classes, IDs, data-* attributes, href/src URLs, or script/style/code contents.",
+          "Preserve link URLs and image sources exactly.",
+          "Do not wrap the entire HTML value in markdown fences.",
         ].join(" ")
       : "Return only the translated text in the target language — no preface, no markdown fences.";
 

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PublicMemberProfileMessagingAvailability } from "@hu/types";
 
@@ -44,6 +45,7 @@ function buildGuestMessageLoginHref(publicName: string): string {
  * `unavailable`). Eligible authenticated viewers → `openConversation`.
  */
 export function DirectMessageAction({ publicName, displayName }: DirectMessageActionProps) {
+  const t = useTranslations("participantPublic.messaging");
   const authStatus = useClientAuthStatus();
   const [availability, setAvailability] =
     useState<PublicMemberProfileMessagingAvailability>("hidden");
@@ -74,7 +76,9 @@ export function DirectMessageAction({ publicName, displayName }: DirectMessageAc
     };
   }, [authStatus, publicName]);
 
-  const accessibleLabel = displayName ? `Message ${displayName}` : "Message";
+  const accessibleLabel = displayName
+    ? t("messageAria", { name: displayName })
+    : t("message");
 
   if (authStatus === "pending") {
     return null;
@@ -89,7 +93,7 @@ export function DirectMessageAction({ publicName, displayName }: DirectMessageAc
           aria-label={accessibleLabel}
         >
           <Image src={MESSAGE_ICON} alt="" width={18} height={18} aria-hidden="true" />
-          <span>Message</span>
+          <span>{t("message")}</span>
         </a>
       </div>
     );
@@ -111,7 +115,7 @@ export function DirectMessageAction({ publicName, displayName }: DirectMessageAc
         aria-busy={isOpening || undefined}
       >
         <Image src={MESSAGE_ICON} alt="" width={18} height={18} aria-hidden="true" />
-        <span>{isOpening ? "Opening…" : "Message"}</span>
+        <span>{isOpening ? t("opening") : t("message")}</span>
       </button>
       {errorMessage ? (
         <HuFeedbackMessage variant="error">{errorMessage}</HuFeedbackMessage>

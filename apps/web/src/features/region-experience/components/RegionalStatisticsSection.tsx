@@ -1,10 +1,9 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { ParticipationPublicStatisticsProjection } from "@hu/types";
 
-import {
-  REGIONAL_STATISTICS_PUBLIC_NOTE,
-  REGIONAL_STATISTICS_VISITOR_CONCLUSION,
-  regionalStatisticsContextIntroduction,
-} from "../content";
 import { ExperienceBlockShell, ParticipationStatisticsEvidence } from "../../public-experience";
 
 interface RegionalStatisticsSectionProps {
@@ -16,18 +15,20 @@ export function RegionalStatisticsSection({
   projection,
   regionName,
 }: RegionalStatisticsSectionProps) {
+  const t = useTranslations("publicStatistics.region");
+
   return (
     <ExperienceBlockShell
       id="regional-statistics"
-      title="Regional Statistics"
-      architecturalName="Statistics"
-      stage="Evidence"
-      contextIntroduction={regionalStatisticsContextIntroduction(regionName)}
-      visitorConclusion={REGIONAL_STATISTICS_VISITOR_CONCLUSION}
+      title={t("title")}
+      architecturalName={t("architecturalName")}
+      stage={t("stage")}
+      contextIntroduction={t("contextIntroduction", { regionName })}
+      visitorConclusion={t("visitorConclusion")}
     >
       <ParticipationStatisticsEvidence projection={projection} />
       <p className="regional-statistics__public-note" role="note">
-        {REGIONAL_STATISTICS_PUBLIC_NOTE}
+        {t("publicNote")}
       </p>
     </ExperienceBlockShell>
   );
