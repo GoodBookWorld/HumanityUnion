@@ -28,6 +28,7 @@ import { findMemberById } from "../member/infrastructure/member.repository.js";
 import { findMemberProfileByUserId } from "../member-profile/member-profile.repository.js";
 import { evaluateLifecycleSafety } from "../lifecycle-safety/lifecycle-safety.service.js";
 import { invalidateGlobalSearchIndex } from "../global-search/global-search.index.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import { blogHtmlToPlainText } from "./blog-content-sanitize.js";
 import {
   appendEditorialHistory,
@@ -441,6 +442,11 @@ export async function updateBlogDraft(input: {
 
   if (updated.status === "published") {
     invalidateGlobalSearchIndex();
+    scheduleContentTranslationWarmAfterMutation({
+      sourceKind: "blog_post",
+      sourceRecordId: updated.postId,
+      reason: "public_update",
+    });
     await emitBlogPostPublished({
       postId: updated.postId,
       authorParticipantId: updated.authorParticipantId,
@@ -1048,6 +1054,11 @@ async function publishBlogPostInternal(input: {
 
   if (updated.status === "published") {
     invalidateGlobalSearchIndex();
+    scheduleContentTranslationWarmAfterMutation({
+      sourceKind: "blog_post",
+      sourceRecordId: updated.postId,
+      reason: "public_mutation",
+    });
     await emitBlogPostPublished({
       postId: updated.postId,
       authorParticipantId: updated.authorParticipantId,

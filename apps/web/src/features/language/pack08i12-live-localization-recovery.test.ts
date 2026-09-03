@@ -262,20 +262,23 @@ describe("Pack 08I.12 — Blog author identity + surfaces", () => {
   });
 });
 
-describe("Pack 08I.12 — Discussion comments ownership", () => {
-  it("discussion comments remain participant-authored original (privacy-excluded)", () => {
+describe("Pack 08I.12 / 08I.13 — Discussion comments ownership", () => {
+  it("discussion comments use content_translations body presentation (public-eligible)", () => {
     const panel = readWeb(
       "features/public-initiative-experience/components/PublicDiscussionPanel.tsx",
     );
-    assert.match(panel, /comment\.body/);
+    assert.match(panel, /resolveDiscussionCommentPresentation/);
     assert.match(panel, /originalLanguageNote/);
-    assert.doesNotMatch(panel, /resolveTranslatedContent|generateContentTranslation/);
 
     const eligibility = readFileSync(
       path.resolve(webRoot, "../../api/src/modules/language/content-translation-eligibility.ts"),
       "utf8",
     );
-    assert.match(eligibility, /"discussion_comment"/);
+    assert.match(eligibility, /discussion_comment:\s*\[\s*"body"\s*\]/);
+    assert.doesNotMatch(
+      eligibility,
+      /CONTENT_TRANSLATION_PRIVACY_EXCLUSIONS[\s\S]*"discussion_comment"/,
+    );
   });
 });
 

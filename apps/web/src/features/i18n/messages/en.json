@@ -846,7 +846,7 @@
         "emptyInterest": "No participants have expressed interest yet.",
         "emptyFilter": "No comments match this filter.",
         "emptyComments": "No comments have been added.",
-        "originalLanguageNote": "Participant comments are shown in their original language.",
+        "originalLanguageNote": "Comments may appear in your reading language when a translation is available. The original is always preserved.",
         "commentsCount": "{count, plural, one {# comment} other {# comments}}",
         "loadMore": "Load more comments",
         "loading": "Loading…",

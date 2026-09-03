@@ -488,6 +488,7 @@ describe("Production Completion Pack 02G Task 02 — eligibility + sourceVersion
       "collaborative_analysis",
       "collective_decision",
       "decision_session",
+      "discussion_comment",
       "implementation_commitment",
       "implementation_tracking",
       "improvement_proposal",
@@ -498,7 +499,8 @@ describe("Production Completion Pack 02G Task 02 — eligibility + sourceVersion
       "petition",
       "public_impact",
     ]);
-    assert.ok(!Object.keys(CONTENT_TRANSLATION_FIELD_ALLOWLIST).includes("discussion_comment"));
+    assert.ok(Object.keys(CONTENT_TRANSLATION_FIELD_ALLOWLIST).includes("discussion_comment"));
+    assert.deepEqual([...CONTENT_TRANSLATION_FIELD_ALLOWLIST.discussion_comment], ["body"]);
     assert.ok(Object.keys(CONTENT_TRANSLATION_FIELD_ALLOWLIST).includes("improvement_proposal"));
     assert.ok(Object.keys(CONTENT_TRANSLATION_FIELD_ALLOWLIST).includes("collective_decision"));
     assert.ok(Object.keys(CONTENT_TRANSLATION_FIELD_ALLOWLIST).includes("civic_archive"));

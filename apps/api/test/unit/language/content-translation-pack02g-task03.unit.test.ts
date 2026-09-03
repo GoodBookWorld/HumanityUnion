@@ -124,8 +124,9 @@ describe("Production Completion Pack 02G Task 03 — civic source expansion", ()
       assert.ok((CONTENT_TRANSLATION_FIELD_ALLOWLIST[kind] as readonly string[]).length > 0);
     }
     assert.deepEqual([...CONTENT_TRANSLATION_FIELD_ALLOWLIST.lifecycle_stage], []);
-    assert.equal(isPrivacyExcludedTranslationSurface("discussion_comment"), true);
-    assert.equal(isSupportedContentTranslationSourceKind("discussion_comment"), false);
+    assert.equal(isPrivacyExcludedTranslationSurface("discussion_comment"), false);
+    assert.equal(isSupportedContentTranslationSourceKind("discussion_comment"), true);
+    assert.ok((PUBLIC_CONTENT_TRANSLATION_SOURCE_KINDS as readonly string[]).includes("discussion_comment"));
     assert.ok(!(PUBLIC_CONTENT_TRANSLATION_SOURCE_KINDS as readonly string[]).includes("lifecycle_stage"));
   });
 

@@ -1,19 +1,18 @@
 /**
- * Pack 08I.5 — reusable Blog presentation resolver (title / excerpt / HTML content).
+ * Pack 08I.5 / 08I.13 — reusable Blog presentation resolver (title / excerpt / HTML content).
  * Uses existing content_translations pipeline only — no second translation engine.
  * Canonical blog fields are never overwritten.
+ *
+ * Pack 08I.13 — warm GET is not skipped for translationPreference "none".
  */
 
 import type { ResolvedTranslatedDisplay } from "@hu/types";
 
+import { resolvePublicContentTranslationDisplay } from "../language/resolve-public-content-translation-display";
 import {
   generateContentTranslation,
   resolveTranslatedContent,
 } from "../language/translation-api";
-import {
-  emitPublicTranslationDiagnostic,
-  shouldAttemptOnDemandContentTranslation,
-} from "../language/public-translation-presentation-lifecycle";
 import type { PublicContentReadingContext } from "../language/use-public-content-reading-context";
 
 export interface BlogPresentationFields {
@@ -68,7 +67,7 @@ export async function resolveBlogPostPresentation(
 ): Promise<ResolvedBlogPresentation> {
   const { canonical, readingContext } = input;
 
-  if (!readingContext.ready || readingContext.translationPreference === "none") {
+  if (!readingContext.ready) {
     return {
       ...canonical,
       presentationMode: "original",
@@ -76,82 +75,26 @@ export async function resolveBlogPostPresentation(
     };
   }
 
-  try {
-    let resolved = await deps.resolveTranslatedContent({
-      sourceKind: "blog_post",
-      sourceRecordId: input.postId,
-      language: readingContext.readingLanguage,
-    });
+  const resolved = await resolvePublicContentTranslationDisplay({
+    sourceKind: "blog_post",
+    sourceRecordId: input.postId,
+    readingContext,
+    deps,
+  });
 
-    if (
-      shouldAttemptOnDemandContentTranslation({
-        ready: readingContext.ready,
-        translationPreference: readingContext.translationPreference,
-        readingLanguage: readingContext.readingLanguage,
-        resolvePresentationMode: resolved.presentationMode,
-        originalLanguage: resolved.originalLanguage,
-        isStale: resolved.isStale,
-      })
-    ) {
-      emitPublicTranslationDiagnostic({
-        phase: "TRANSLATION_GENERATION_STARTED",
-        sourceKind: "blog_post",
-        sourceRecordId: input.postId,
-        language: readingContext.readingLanguage,
-        presentationMode: resolved.presentationMode,
-      });
-      try {
-        const generated = await deps.generateContentTranslation({
-          sourceKind: "blog_post",
-          sourceRecordId: input.postId,
-          targetLanguage: readingContext.readingLanguage,
-        });
-        resolved = generated.display;
-      } catch {
-        emitPublicTranslationDiagnostic({
-          phase: "TRANSLATION_GENERATION_FAILED",
-          sourceKind: "blog_post",
-          sourceRecordId: input.postId,
-          language: readingContext.readingLanguage,
-        });
-      }
-    }
-
-    if (resolved.presentationMode === "original") {
-      emitPublicTranslationDiagnostic({
-        phase: "TRANSLATION_CACHE_MISS",
-        sourceKind: "blog_post",
-        sourceRecordId: input.postId,
-        language: readingContext.readingLanguage,
-        presentationMode: "original",
-      });
-      return {
-        ...canonical,
-        presentationMode: "original",
-        isStale: Boolean(resolved.isStale),
-      };
-    }
-
-    emitPublicTranslationDiagnostic({
-      phase: "TRANSLATION_DISPLAYED",
-      sourceKind: "blog_post",
-      sourceRecordId: input.postId,
-      language: readingContext.readingLanguage,
-      presentationMode: resolved.presentationMode,
-    });
-
-    return {
-      title: pickTranslatedField(resolved, "title", canonical.title),
-      excerpt: pickTranslatedField(resolved, "excerpt", canonical.excerpt),
-      contentHtml: pickTranslatedField(resolved, "content", canonical.contentHtml),
-      presentationMode: "translated",
-      isStale: Boolean(resolved.isStale),
-    };
-  } catch {
+  if (!resolved || resolved.presentationMode === "original") {
     return {
       ...canonical,
       presentationMode: "original",
-      isStale: false,
+      isStale: Boolean(resolved?.isStale),
     };
   }
+
+  return {
+    title: pickTranslatedField(resolved, "title", canonical.title),
+    excerpt: pickTranslatedField(resolved, "excerpt", canonical.excerpt),
+    contentHtml: pickTranslatedField(resolved, "content", canonical.contentHtml),
+    presentationMode: "translated",
+    isStale: Boolean(resolved.isStale),
+  };
 }

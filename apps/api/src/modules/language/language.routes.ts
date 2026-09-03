@@ -28,6 +28,7 @@ const SOURCE_KINDS: readonly ContentTranslationSourceKind[] = [
   "petition",
   "lifecycle_stage",
   "blog_post",
+  "discussion_comment",
   "improvement_proposal",
   "initiative_revision",
   "decision_session",
@@ -103,11 +104,16 @@ languageRouter.get(
       const preferredReadingLanguage = req.query.language
         ? normalizeLanguageCode(String(req.query.language))
         : undefined;
+      // Pack 08I.13 — explicit public `?language=` requests warm translation DISPLAY.
+      // Member `translationPreference: none` must not hide current content_translations
+      // for public surfaces (Live: Initiative/Blog/Media stayed English despite warm rows).
+      // On-demand generation remains gated by POST /generate + Web preferred preference.
       const resolved = await resolvePublicTranslatedContent({
         sourceKind,
         sourceRecordId,
         participantId: req.auth?.memberId,
         preferredReadingLanguage,
+        translationPreference: preferredReadingLanguage ? "preferred" : undefined,
         generateIfMissing: false,
       });
       res.json(createSuccessResponse(resolved, "Translated display resolved."));
@@ -153,6 +159,7 @@ languageRouter.post(
         sourceRecordId,
         participantId: req.auth?.memberId,
         preferredReadingLanguage: targetLanguage,
+        translationPreference: "preferred",
         generateIfMissing: false,
       });
       res.json(

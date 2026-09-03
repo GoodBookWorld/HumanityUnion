@@ -1,18 +1,17 @@
 /**
- * Pack 08I.8 — shared Initiative detail presentation (title + description).
+ * Pack 08I.8 / 08I.13 — shared Initiative detail presentation (title + description).
  * Used by PIE hero and Overview so neither invents a private translation path.
+ *
+ * Pack 08I.13 — warm GET is not skipped for translationPreference "none".
  */
 
 import type { LanguageCode, ResolvedTranslatedDisplay } from "@hu/types";
 
+import { resolvePublicContentTranslationDisplay } from "../language/resolve-public-content-translation-display";
 import {
   generateContentTranslation,
   resolveTranslatedContent,
 } from "../language/translation-api";
-import {
-  emitPublicTranslationDiagnostic,
-  shouldAttemptOnDemandContentTranslation,
-} from "../language/public-translation-presentation-lifecycle";
 import type { PublicContentReadingContext } from "../language/use-public-content-reading-context";
 
 export interface InitiativeDetailPresentationFields {
@@ -97,100 +96,52 @@ export async function resolveInitiativeDetailPresentation(
     canViewTranslation: false,
   };
 
-  if (!readingContext.ready || readingContext.translationPreference === "none") {
+  if (!readingContext.ready) {
     return originalFallback;
   }
 
-  try {
-    let resolved = await deps.resolveTranslatedContent({
-      sourceKind: "initiative",
-      sourceRecordId: input.initiativeId,
-      language: readingContext.readingLanguage as LanguageCode,
-    });
+  const resolved = await resolvePublicContentTranslationDisplay({
+    sourceKind: "initiative",
+    sourceRecordId: input.initiativeId,
+    readingContext,
+    deps,
+  });
 
-    if (
-      shouldAttemptOnDemandContentTranslation({
-        ready: readingContext.ready,
-        translationPreference: readingContext.translationPreference,
-        readingLanguage: readingContext.readingLanguage,
-        resolvePresentationMode: resolved.presentationMode,
-        originalLanguage: resolved.originalLanguage,
-        isStale: resolved.isStale,
-      })
-    ) {
-      emitPublicTranslationDiagnostic({
-        phase: "TRANSLATION_GENERATION_STARTED",
-        sourceKind: "initiative",
-        sourceRecordId: input.initiativeId,
-        language: readingContext.readingLanguage,
-        presentationMode: resolved.presentationMode,
-      });
-      try {
-        const generated = await deps.generateContentTranslation({
-          sourceKind: "initiative",
-          sourceRecordId: input.initiativeId,
-          targetLanguage: readingContext.readingLanguage as LanguageCode,
-        });
-        resolved = generated.display;
-      } catch {
-        emitPublicTranslationDiagnostic({
-          phase: "TRANSLATION_GENERATION_FAILED",
-          sourceKind: "initiative",
-          sourceRecordId: input.initiativeId,
-          language: readingContext.readingLanguage,
-        });
-      }
-    }
+  if (!resolved) {
+    return originalFallback;
+  }
 
-    const originalTitle = pickOriginalField(resolved, "title", canonical.title);
-    const originalDescription = pickOriginalField(
-      resolved,
-      "description",
-      canonical.description,
-    );
+  const originalTitle = pickOriginalField(resolved, "title", canonical.title);
+  const originalDescription = pickOriginalField(
+    resolved,
+    "description",
+    canonical.description,
+  );
 
-    if (resolved.presentationMode === "original") {
-      emitPublicTranslationDiagnostic({
-        phase: "TRANSLATION_CACHE_MISS",
-        sourceKind: "initiative",
-        sourceRecordId: input.initiativeId,
-        language: readingContext.readingLanguage,
-        presentationMode: "original",
-      });
-      return {
-        ...originalFallback,
-        isStale: Boolean(resolved.isStale),
-        activeLanguage: resolved.activeLanguage,
-        originalLanguage: resolved.originalLanguage,
-        originalTitle,
-        originalDescription,
-        canViewOriginal: resolved.canViewOriginal,
-        canViewTranslation: resolved.canViewTranslation,
-      };
-    }
-
-    emitPublicTranslationDiagnostic({
-      phase: "TRANSLATION_DISPLAYED",
-      sourceKind: "initiative",
-      sourceRecordId: input.initiativeId,
-      language: readingContext.readingLanguage,
-      presentationMode: resolved.presentationMode,
-    });
-
+  if (resolved.presentationMode === "original") {
     return {
-      title: pickTranslatedField(resolved, "title", canonical.title),
-      description: pickTranslatedField(resolved, "description", canonical.description),
-      presentationMode: "translated",
+      ...originalFallback,
       isStale: Boolean(resolved.isStale),
       activeLanguage: resolved.activeLanguage,
       originalLanguage: resolved.originalLanguage,
       originalTitle,
       originalDescription,
-      isMachineTranslated: resolved.isMachineTranslated,
       canViewOriginal: resolved.canViewOriginal,
       canViewTranslation: resolved.canViewTranslation,
     };
-  } catch {
-    return originalFallback;
   }
+
+  return {
+    title: pickTranslatedField(resolved, "title", canonical.title),
+    description: pickTranslatedField(resolved, "description", canonical.description),
+    presentationMode: "translated",
+    isStale: Boolean(resolved.isStale),
+    activeLanguage: resolved.activeLanguage,
+    originalLanguage: resolved.originalLanguage,
+    originalTitle,
+    originalDescription,
+    isMachineTranslated: resolved.isMachineTranslated,
+    canViewOriginal: resolved.canViewOriginal,
+    canViewTranslation: resolved.canViewTranslation,
+  };
 }

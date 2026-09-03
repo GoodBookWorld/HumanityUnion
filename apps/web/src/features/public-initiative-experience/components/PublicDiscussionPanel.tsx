@@ -35,8 +35,10 @@ import {
   planDiscussionCommentDeepLinkScroll,
   resolveDiscussionCommentFocusTarget,
 } from "../discussion-comment-deep-link";
+import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { formatInitiativeExperienceDate } from "../initiative-experience-i18n";
 import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
+import { resolveDiscussionCommentPresentation } from "../resolve-discussion-comment-presentation";
 import {
   DISCUSSION_ACTION_DEFINITIONS,
   DISCUSSION_FILTER_IDS,
@@ -506,9 +508,34 @@ function DiscussionCommentCard({
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
+  const readingContext = usePublicContentReadingContext();
+  const [displayBody, setDisplayBody] = useState(comment.body);
   const authorLink = resolveAuthorLinkPresentation(comment.author);
   const badges = resolveAuthorBadges(comment.collaboration);
   const indicatorKeys = resolveStatusIndicatorKeys(comment.collaboration);
+
+  useEffect(() => {
+    setDisplayBody(comment.body);
+    let cancelled = false;
+    void resolveDiscussionCommentPresentation({
+      commentId: comment.commentId,
+      canonicalBody: comment.body,
+      readingContext,
+    }).then((resolved) => {
+      if (!cancelled) {
+        setDisplayBody(resolved.body);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    comment.commentId,
+    comment.body,
+    readingContext.ready,
+    readingContext.readingLanguage,
+    readingContext.translationPreference,
+  ]);
 
   return (
     <li
@@ -551,7 +578,7 @@ function DiscussionCommentCard({
           {formatInitiativeExperienceDate(locale, comment.createdAt, { month: "short" })}
         </span>
       </p>
-      <p className="pie-discussion__body">{comment.body}</p>
+      <p className="pie-discussion__body">{displayBody}</p>
       {indicatorKeys.length > 0 ? (
         <p className="pie-discussion__collab-indicators">
           {indicatorKeys.map((key) => (

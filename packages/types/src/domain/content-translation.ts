@@ -29,6 +29,7 @@ export type ContentTranslationSourceKind =
   | "petition"
   | "lifecycle_stage"
   | "blog_post"
+  | "discussion_comment"
   | "improvement_proposal"
   | "initiative_revision"
   | "decision_session"

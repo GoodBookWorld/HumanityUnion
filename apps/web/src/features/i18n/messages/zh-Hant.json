@@ -846,7 +846,7 @@
         "emptyInterest": "尚無參與者表達興趣。",
         "emptyFilter": "沒有符合此篩選條件的留言。",
         "emptyComments": "尚未新增留言。",
-        "originalLanguageNote": "參與者留言以原始語言顯示。",
+        "originalLanguageNote": "若有可用翻譯，留言可能以您的閱讀語言顯示。原文會永久保留。",
         "commentsCount": "{count, plural, other {# 則留言}}",
         "loadMore": "載入更多留言",
         "loading": "載入中…",

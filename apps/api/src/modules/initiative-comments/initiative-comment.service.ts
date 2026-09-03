@@ -35,6 +35,7 @@ import {
   isEngagementMongoMode,
 } from "../../infrastructure/mongodb/resolve-engagement-persistence.js";
 import { getInitiativeCommentReactionSummaries } from "../initiative-comment-reactions/initiative-comment-reaction.service.js";
+import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
 import { resolvePublicCommentAuthorsForComments } from "./public-comment-author.projection.js";
 import { emitInitiativeCommentNotifications } from "../notifications/initiative-comment-notifications.service.js";
 
@@ -169,11 +170,18 @@ export async function createInitiativeComment(
     authorDisplayName: await resolveCommentAuthorNameSnapshot(input.authorUserId),
   };
 
-  if (isMongoMode()) {
-    return createInitiativeCommentMongo(persistedInput);
-  }
+  const comment = isMongoMode()
+    ? await createInitiativeCommentMongo(persistedInput)
+    : createMemoryComment(persistedInput);
 
-  return createMemoryComment(persistedInput);
+  // Pack 08I.13 — warm public comment body translations via existing outbox architecture.
+  scheduleContentTranslationWarmAfterMutation({
+    sourceKind: "discussion_comment",
+    sourceRecordId: comment.commentId,
+    reason: "public_mutation",
+  });
+
+  return comment;
 }
 
 export async function createInitiativeCommentWithNotifications(

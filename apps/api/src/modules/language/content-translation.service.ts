@@ -15,6 +15,7 @@ import {
 
 import { findBlogPostById } from "../blog/persistence/blog.repository.js";
 import { invalidateGlobalSearchIndex } from "../global-search/global-search.index.js";
+import { getInitiativeCommentById } from "../initiative-comments/initiative-comment.service.js";
 import { getAnalysisById } from "../initiative-collaborative-analysis/initiative-collaborative-analysis.store.js";
 import { getInitiativeById } from "../initiatives/initiative.store.js";
 import { getPetition } from "../petition/petition.store.js";
@@ -195,6 +196,28 @@ export async function loadTranslatableSource(input: {
       fields,
       authorParticipantId: post.authorParticipantId,
       isPublished: post.status === "published",
+    };
+  }
+
+  if (input.sourceKind === "discussion_comment") {
+    // Pack 08I.13 — public/approved Discussion comments only; body field only.
+    // Private messages, moderation-only content, and removed/hidden comments never load.
+    const comment = await getInitiativeCommentById(input.sourceRecordId);
+    if (!comment || comment.status !== "approved" || comment.deletedAt) {
+      return null;
+    }
+    const fields = { body: comment.body };
+    return {
+      sourceKind: "discussion_comment",
+      sourceRecordId: comment.commentId,
+      sourceVersion: buildContentTranslationSourceVersion({
+        fields,
+        versionStamp: comment.updatedAt,
+      }),
+      sourceLanguage: DEFAULT_PLATFORM_LANGUAGE,
+      fields,
+      authorParticipantId: comment.authorUserId,
+      isPublished: true,
     };
   }
 

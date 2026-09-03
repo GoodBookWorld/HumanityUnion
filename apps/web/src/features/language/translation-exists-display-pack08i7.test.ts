@@ -45,12 +45,16 @@ describe("Pack 08I.7 — translation exists vs expected fallback wiring", () => 
     assert.match(media, /generateContentTranslation/);
   });
 
-  it("none preference still short-circuits to canonical (expected fallback)", () => {
+  it("none preference still resolves warm translations (generate remains preferred-only)", () => {
+    const shared = readWeb("features/language/resolve-public-content-translation-display.ts");
     const initiative = readWeb(
       "features/public-initiative-mini-card/resolve-initiative-card-presentation.ts",
     );
     const blog = readWeb("features/blog/resolve-blog-post-presentation.ts");
-    assert.match(initiative, /translationPreference === "none"/);
-    assert.match(blog, /translationPreference === "none"/);
+    assert.match(shared, /Never skips warm GET/);
+    assert.match(initiative, /resolvePublicContentTranslationDisplay/);
+    assert.match(blog, /resolvePublicContentTranslationDisplay/);
+    assert.doesNotMatch(initiative, /translationPreference === "none"/);
+    assert.doesNotMatch(blog, /translationPreference === "none"/);
   });
 });

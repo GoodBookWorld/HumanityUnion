@@ -209,9 +209,21 @@ function CivicMediaCenterLoaded({
         </section>
 
         <CivicPipelineWorkflow
-          title={editorial.initiativeFlow.title}
-          description={editorial.initiativeFlow.summary}
-          stageTitles={editorial.initiativeFlow.stages}
+          title={
+            editorial.translationChrome.isMachineTranslated
+              ? editorial.initiativeFlow.title
+              : undefined
+          }
+          description={
+            editorial.translationChrome.isMachineTranslated
+              ? editorial.initiativeFlow.summary
+              : undefined
+          }
+          stageTitles={
+            editorial.translationChrome.isMachineTranslated
+              ? editorial.initiativeFlow.stages
+              : undefined
+          }
         />
 
         <PublicNewsSection sectionId="news-widgets" variant="discovery" />

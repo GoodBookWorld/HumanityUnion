@@ -221,19 +221,13 @@ export function useCivicMediaResolvedEditorial(
       return;
     }
 
-    if (readingContext.translationPreference === "none") {
-      if (!initialEditorial) {
-        setEditorial(buildCanonicalCivicMediaEditorial(media));
-      }
-      return;
-    }
-
     let cancelled = false;
     const readingLanguage = readingContext.readingLanguage;
     const preference = readingContext.translationPreference;
 
     void (async () => {
       try {
+        // Pack 08I.13 — always GET warm resolve when ready; preference gates generate only.
         let resolved = await resolveTranslatedContent({
           sourceKind: "civic_media",
           sourceRecordId: CIVIC_MEDIA_RECORD_ID,

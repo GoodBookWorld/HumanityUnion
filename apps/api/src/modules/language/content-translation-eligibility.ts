@@ -41,6 +41,8 @@ export const CONTENT_TRANSLATION_FIELD_ALLOWLIST = {
     "keyArguments",
   ],
   blog_post: ["title", "excerpt", "content"],
+  /** Public participant-visible Discussion comments — body only. */
+  discussion_comment: ["body"],
   /** Draft assist only — not public warm-eligible. */
   lifecycle_stage: [] as readonly string[],
   improvement_proposal: [
@@ -128,6 +130,7 @@ export const CONTENT_TRANSLATION_CIVIC_TITLE_FIELDS = {
   collaborative_analysis: ["title"],
   petition: ["title"],
   blog_post: ["title"],
+  discussion_comment: [] as readonly string[],
   lifecycle_stage: [] as readonly string[],
   improvement_proposal: [] as readonly string[],
   initiative_revision: ["title"],
@@ -147,6 +150,7 @@ export const PUBLIC_CONTENT_TRANSLATION_SOURCE_KINDS = [
   "collaborative_analysis",
   "petition",
   "blog_post",
+  "discussion_comment",
   "improvement_proposal",
   "initiative_revision",
   "decision_session",
@@ -177,7 +181,6 @@ export const CONTENT_TRANSLATION_PRIVACY_EXCLUSIONS = [
   "official_response_message_headers",
   "official_response_provider_metadata",
   "civic_archive_verification_metadata",
-  "discussion_comment",
 ] as const;
 
 export interface CanonicalTranslatableSourceEligibility {
