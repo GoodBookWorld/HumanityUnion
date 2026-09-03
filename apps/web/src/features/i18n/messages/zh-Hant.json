@@ -33,7 +33,8 @@
     "contact": "聯絡",
     "footerMission": "一場公民全球運動，共同為更公正、和平且永續的世界努力。",
     "footerPlatformHeading": "平台",
-    "footerLegalHeading": "法律與透明"
+    "footerLegalHeading": "法律與透明",
+    "footerCopyright": "© {year} {siteName}. 版權所有。"
   },
   "auth": {
     "logIn": "登入",
@@ -845,6 +846,7 @@
         "emptyInterest": "尚無參與者表達興趣。",
         "emptyFilter": "沒有符合此篩選條件的留言。",
         "emptyComments": "尚未新增留言。",
+        "originalLanguageNote": "參與者留言以原始語言顯示。",
         "commentsCount": "{count, plural, other {# 則留言}}",
         "loadMore": "載入更多留言",
         "loading": "載入中…",

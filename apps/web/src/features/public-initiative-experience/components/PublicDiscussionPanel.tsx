@@ -1162,6 +1162,9 @@ export function PublicDiscussionPanel({
           )
         ) : filteredComments.length > 0 ? (
           <div className="pie-discussion__comments-wrap">
+            <p className="pie-discussion__original-note" role="note">
+              {t("collaboration.discussion.originalLanguageNote")}
+            </p>
             <ul className="pie-discussion__comments">
               {filteredComments.map((comment) => (
                 <DiscussionCommentCard

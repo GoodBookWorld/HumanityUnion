@@ -29,12 +29,10 @@ export function CountryInitiativeRailCard({ initiative }: CountryInitiativeRailC
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
   const [displayTitle, setDisplayTitle] = useState(initiative.title);
-  const [displaySummary, setDisplaySummary] = useState(initiative.summary);
 
   useEffect(() => {
     setDisplayTitle(initiative.title);
-    setDisplaySummary(initiative.summary);
-  }, [initiative.initiativeId, initiative.title, initiative.summary]);
+  }, [initiative.initiativeId, initiative.title]);
 
   useEffect(() => {
     if (!readingContext.ready) {
@@ -51,7 +49,6 @@ export function CountryInitiativeRailCard({ initiative }: CountryInitiativeRailC
     }).then((presentation) => {
       if (!cancelled) {
         setDisplayTitle(presentation.title);
-        setDisplaySummary(presentation.summary);
       }
     });
     return () => {
@@ -105,9 +102,6 @@ export function CountryInitiativeRailCard({ initiative }: CountryInitiativeRailC
       </div>
       <div className="country-initiative-rail-card__body">
         <h3 className="country-initiative-rail-card__title">{displayTitle}</h3>
-        {displaySummary ? (
-          <p className="country-initiative-rail-card__summary">{displaySummary}</p>
-        ) : null}
         {statusLabel ? (
           <div className="country-initiative-rail-card__badge-row">
             <WorkspaceStatusBadge

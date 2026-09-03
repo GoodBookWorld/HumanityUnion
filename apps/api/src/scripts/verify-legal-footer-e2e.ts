@@ -104,11 +104,12 @@ function verifyFooterStructure(): void {
     "Footer social icon links must include aria-label.",
   );
   assert(
-    footer.includes("FOOTER_COPYRIGHT") ||
-      readRepoFile("apps/web/src/features/public-experience/constants.ts").includes(
-        "© 2024 Humanity Union. All rights reserved.",
-      ),
-    "Footer must include exact 2024 copyright line",
+    footer.includes("footerCopyright") &&
+      (footer.includes("FOOTER_COPYRIGHT_YEAR") ||
+        readRepoFile("apps/web/src/features/public-experience/constants.ts").includes(
+          "FOOTER_COPYRIGHT_YEAR = 2024",
+        )),
+    "Footer must include localized 2024 copyright via footerCopyright ICU",
   );
   assert(
     footerCss.includes("@media (min-width: 64rem)"),

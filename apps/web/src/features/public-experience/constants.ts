@@ -33,4 +33,9 @@ export const BRAND_TAGLINE = "WORLD SOLIDARITY";
 export const FOOTER_MISSION =
   "A global movement of citizens working together for a more just, peaceful and sustainable world.";
 
-export const FOOTER_COPYRIGHT = "© 2024 Humanity Union. All rights reserved.";
+/**
+ * Pack 02F / 08I.12 — founding-year copyright template.
+ * Locale-facing sentence comes from `navigation.footerCopyright` (ICU).
+ * Year stays founding year 2024 (not dynamic calendar year).
+ */
+export const FOOTER_COPYRIGHT_YEAR = 2024;

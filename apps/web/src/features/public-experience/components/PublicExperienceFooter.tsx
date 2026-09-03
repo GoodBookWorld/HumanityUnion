@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { resolveBrandForMetadata } from "../../brand-localization/resolve-brand-for-metadata";
-import { FOOTER_COPYRIGHT } from "../constants";
+import { FOOTER_COPYRIGHT_YEAR } from "../constants";
 import {
   FOOTER_LEGAL_LINKS,
   FOOTER_PLATFORM_COLUMN_ONE,
@@ -34,7 +34,10 @@ export async function PublicExperienceFooter() {
   const tNav = await getTranslations("navigation");
   const locale = await getLocale();
   const brand = await resolveBrandForMetadata(locale);
-  const copyright = FOOTER_COPYRIGHT.replace("Humanity Union", brand.siteName);
+  const copyright = tNav("footerCopyright", {
+    year: FOOTER_COPYRIGHT_YEAR,
+    siteName: brand.siteName,
+  });
 
   return (
     <footer

@@ -15,6 +15,7 @@ import {
   generateContentTranslation,
   resolveTranslatedContent,
 } from "../../language/translation-api";
+import { shouldAttemptOnDemandContentTranslation } from "../../language/public-translation-presentation-lifecycle";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 
 export const CIVIC_MEDIA_RECORD_ID = "civic-media-center";
@@ -240,10 +241,14 @@ export function useCivicMediaResolvedEditorial(
         });
 
         if (
-          preference === "preferred" &&
-          resolved.presentationMode === "original" &&
-          readingLanguage !== resolved.originalLanguage &&
-          !resolved.isStale
+          shouldAttemptOnDemandContentTranslation({
+            ready: readingContext.ready,
+            translationPreference: preference,
+            readingLanguage,
+            resolvePresentationMode: resolved.presentationMode,
+            originalLanguage: resolved.originalLanguage,
+            isStale: resolved.isStale,
+          })
         ) {
           try {
             const generated = await generateContentTranslation({

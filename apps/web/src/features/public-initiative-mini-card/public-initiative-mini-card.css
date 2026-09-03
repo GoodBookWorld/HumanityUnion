@@ -76,30 +76,12 @@
   }
 }
 
-/* Pack 09G — Home / grid mini cards: hide excerpt on phone; tablet grid may keep it */
+/* Pack 09G — Home / grid mini cards compact viewport */
 @media (max-width: 767px) {
-  .public-initiative-mini-card__summary {
-    display: none;
-  }
-
   .public-initiative-mini-card-window__viewport {
     max-height: calc(3 * 14.5rem + 2 * var(--hu-space-3, 0.75rem));
   }
-
-  .public-initiative-mini-card--placeholder .public-initiative-mini-card__summary {
-    display: none;
-  }
 }
-
-/* Pack 09G — Hux / horizontal rails: compact at tablet+phone rail widths */
-@media (max-width: 1024px) {
-  .horizontal-rail__viewport .public-initiative-mini-card__summary,
-  .media-horizontal-rail__viewport .public-initiative-mini-card__summary,
-  .hux-section .public-initiative-mini-card__summary {
-    display: none;
-  }
-}
-
 
 .public-initiative-mini-card__body {
   display: flex;
@@ -124,19 +106,7 @@
   overflow: hidden;
 }
 
-.public-initiative-mini-card__summary {
-  margin: 0;
-  color: var(--hu-color-text-muted);
-  font-size: 0.875rem;
-  font-weight: 400;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+/* Pack 08I.12 — compact cards no longer render Initiative summary/description. */
 
 .public-initiative-mini-card__badge-row {
   display: flex;

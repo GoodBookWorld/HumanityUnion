@@ -33,7 +33,8 @@
     "contact": "Contact",
     "footerMission": "A global movement of citizens working together for a more just, peaceful and sustainable world.",
     "footerPlatformHeading": "Platform",
-    "footerLegalHeading": "Legal and transparency"
+    "footerLegalHeading": "Legal and transparency",
+    "footerCopyright": "© {year} {siteName}. All rights reserved."
   },
   "auth": {
     "logIn": "Log in",
@@ -845,6 +846,7 @@
         "emptyInterest": "No participants have expressed interest yet.",
         "emptyFilter": "No comments match this filter.",
         "emptyComments": "No comments have been added.",
+        "originalLanguageNote": "Participant comments are shown in their original language.",
         "commentsCount": "{count, plural, one {# comment} other {# comments}}",
         "loadMore": "Load more comments",
         "loading": "Loading…",

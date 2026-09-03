@@ -243,6 +243,18 @@ describe("Production Completion Pack 02G Task 07B — reading context auth-gate"
     assert.equal(resolved.translationPreference, "none");
   });
 
+  it("08I.12 — unauthenticated + non-401 prefs failure keeps interface locale + preferred", () => {
+    const resolved = resolvePublicContentReadingFromProbe({
+      authStatus: "unauthenticated",
+      outcome: { kind: "unavailable" },
+      interfaceLocale: "uk",
+    });
+    assert.equal(resolved.ready, true);
+    assert.equal(resolved.isAuthenticated, false);
+    assert.equal(resolved.readingLanguage, "uk");
+    assert.equal(resolved.translationPreference, "preferred");
+  });
+
   it("no retry loop primitives in hook", () => {
     const hook = readWeb("src/features/language/use-public-content-reading-context.ts");
     assert.doesNotMatch(hook, /setInterval|while\s*\(/);

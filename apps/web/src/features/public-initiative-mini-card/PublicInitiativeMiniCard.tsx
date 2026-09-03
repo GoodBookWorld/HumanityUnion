@@ -48,12 +48,10 @@ export function PublicInitiativeMiniCard({
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
   const [displayTitle, setDisplayTitle] = useState(initiative.title);
-  const [displaySummary, setDisplaySummary] = useState(initiative.summary);
 
   useEffect(() => {
     setDisplayTitle(initiative.title);
-    setDisplaySummary(initiative.summary);
-  }, [initiative.initiativeId, initiative.title, initiative.summary]);
+  }, [initiative.initiativeId, initiative.title]);
 
   useEffect(() => {
     if (!readingContext.ready) {
@@ -73,7 +71,6 @@ export function PublicInitiativeMiniCard({
         return;
       }
       setDisplayTitle(presentation.title);
-      setDisplaySummary(presentation.summary);
     });
 
     return () => {
@@ -109,7 +106,6 @@ export function PublicInitiativeMiniCard({
             initiativeId: initiative.initiativeId,
             title: displayTitle,
             image: initiative.imageUrl,
-            optionalText: displaySummary,
           })}
           ariaLabel={t("shareAria", { title: displayTitle })}
         />
@@ -124,7 +120,6 @@ export function PublicInitiativeMiniCard({
         </div>
         <div className="public-initiative-mini-card__body">
           <h3 className="public-initiative-mini-card__title">{displayTitle}</h3>
-          <p className="public-initiative-mini-card__summary">{displaySummary}</p>
           {statusLabel ? (
             <div className="public-initiative-mini-card__badge-row">
               <WorkspaceStatusBadge
@@ -206,7 +201,6 @@ export function PublicInitiativeMiniCardPlaceholder({ slotNumber }: { slotNumber
       <div className="public-initiative-mini-card__media" aria-hidden="true" />
       <div className="public-initiative-mini-card__body">
         <h3 className="public-initiative-mini-card__title">{t("placeholder.title")}</h3>
-        <p className="public-initiative-mini-card__summary">{t("placeholder.summary")}</p>
         <p className="public-initiative-mini-card__meta">{t("placeholder.meta")}</p>
       </div>
     </article>

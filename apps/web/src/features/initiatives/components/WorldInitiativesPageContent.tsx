@@ -33,12 +33,10 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
   const [displayTitle, setDisplayTitle] = useState(initiative.title);
-  const [displaySummary, setDisplaySummary] = useState(initiative.summary);
 
   useEffect(() => {
     setDisplayTitle(initiative.title);
-    setDisplaySummary(initiative.summary);
-  }, [initiative.initiativeId, initiative.title, initiative.summary]);
+  }, [initiative.initiativeId, initiative.title]);
 
   useEffect(() => {
     if (!readingContext.ready) {
@@ -58,7 +56,6 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
         return;
       }
       setDisplayTitle(presentation.title);
-      setDisplaySummary(presentation.summary);
     });
 
     return () => {
@@ -93,7 +90,6 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
             initiativeId: initiative.initiativeId,
             title: displayTitle,
             image: initiative.imageUrl,
-            optionalText: displaySummary,
           })}
           ariaLabel={tMini("shareAria", { title: displayTitle })}
         />
@@ -114,9 +110,6 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
         </div>
         <div className="world-initiative-card__body">
           <h2 className="world-initiative-card__title">{displayTitle}</h2>
-          {displaySummary ? (
-            <p className="world-initiative-card__summary">{displaySummary}</p>
-          ) : null}
           {statusLabel ? (
             <div className="world-initiative-card__badge-row">
               <WorkspaceStatusBadge

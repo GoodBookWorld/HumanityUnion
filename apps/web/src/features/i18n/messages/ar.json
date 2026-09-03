@@ -33,7 +33,8 @@
     "contact": "اتصل بنا",
     "footerMission": "حركة عالمية لمواطنين يعملون معًا من أجل عالم أكثر عدلًا وسلامًا واستدامة.",
     "footerPlatformHeading": "المنصة",
-    "footerLegalHeading": "الشؤون القانونية والشفافية"
+    "footerLegalHeading": "الشؤون القانونية والشفافية",
+    "footerCopyright": "© {year} {siteName}. جميع الحقوق محفوظة."
   },
   "auth": {
     "logIn": "تسجيل الدخول",
@@ -845,6 +846,7 @@
         "emptyInterest": "لم يُبدِ أي مشارك اهتمامًا بعد.",
         "emptyFilter": "لا تعليقات تطابق هذا التصفية.",
         "emptyComments": "لم تُضَف أي تعليقات.",
+        "originalLanguageNote": "تُعرض تعليقات المشاركين بلغتها الأصلية.",
         "commentsCount": "{count, plural, zero {لا تعليقات} one {تعليق واحد} two {تعليقان} few {# تعليقات} many {# تعليقًا} other {# تعليق}}",
         "loadMore": "تحميل المزيد من التعليقات",
         "loading": "جارٍ التحميل…",

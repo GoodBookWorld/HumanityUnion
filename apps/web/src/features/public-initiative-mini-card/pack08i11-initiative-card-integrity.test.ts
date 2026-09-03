@@ -164,7 +164,8 @@ describe("Pack 08I.11 — Mounted card wiring + hierarchy", () => {
     assert.match(mini, /meta-value/);
     assert.match(mini, /badge-row/);
     assert.match(world, /badge-row/);
-    assert.match(world, /world-initiative-card__summary/);
+    assert.doesNotMatch(world, /world-initiative-card__summary/);
+    assert.doesNotMatch(mini, /public-initiative-mini-card__summary/);
     assert.match(miniCss, /font-weight:\s*700/);
     assert.match(miniCss, /margin-block-start:\s*auto|margin-top:\s*auto/);
     assert.match(miniCss, /border-block-start|border-top/);

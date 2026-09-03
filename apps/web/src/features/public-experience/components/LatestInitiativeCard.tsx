@@ -36,12 +36,10 @@ export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) 
   const readingContext = usePublicContentReadingContext();
   const hasActivePublicRoute = isActivePublicRoute(initiative);
   const [displayTitle, setDisplayTitle] = useState(initiative.title);
-  const [displaySummary, setDisplaySummary] = useState(initiative.summary);
 
   useEffect(() => {
     setDisplayTitle(initiative.title);
-    setDisplaySummary(initiative.summary);
-  }, [initiative.initiativeId, initiative.title, initiative.summary]);
+  }, [initiative.initiativeId, initiative.title]);
 
   useEffect(() => {
     if (!readingContext.ready) {
@@ -58,7 +56,6 @@ export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) 
     }).then((presentation) => {
       if (!cancelled) {
         setDisplayTitle(presentation.title);
-        setDisplaySummary(presentation.summary);
       }
     });
     return () => {
@@ -100,8 +97,6 @@ export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) 
           )}
         </h3>
       </header>
-
-      <p className="latest-initiative-card__summary">{displaySummary}</p>
 
       {statusLabel ? (
         <div className="latest-initiative-card__badge-row">

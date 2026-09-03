@@ -75,10 +75,25 @@ export function resolvePublicContentReadingFromProbe(input: {
     };
   }
 
+  // Pack 08I.12 — prefs probe non-401 failure.
+  // When the auth snapshot is NOT authenticated, treat as guest: keep the
+  // interface locale + preferred so public surfaces can still resolve/generate.
+  // Do NOT force guest when auth snapshot is authenticated (Pack 02G Task 07B).
+  if (input.authStatus !== "authenticated") {
+    const guestLanguage = canonicalizeGuestInterfaceLocale(input.interfaceLocale);
+    return {
+      authStatus: input.authStatus,
+      ready: true,
+      isAuthenticated: false,
+      readingLanguage: guestLanguage,
+      translationPreference: "preferred",
+    };
+  }
+
   return {
     authStatus: input.authStatus,
     ready: true,
-    isAuthenticated: input.authStatus === "authenticated",
+    isAuthenticated: true,
     readingLanguage: DEFAULT_PLATFORM_LANGUAGE,
     translationPreference: "none",
   };

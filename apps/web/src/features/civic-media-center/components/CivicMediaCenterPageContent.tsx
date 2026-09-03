@@ -299,22 +299,27 @@ export function CivicMediaCenterPageContent({
   initialMedia,
   initialEditorial,
 }: {
-  /** Pack 08I.9 — SSR-fetched media payload (Blog `initialPost` parity). */
-  initialMedia?: CivicMediaCenterPublic | null;
+  /**
+   * Pack 08I.9 / 08I.12 — SSR-fetched media payload when server fetch succeeded.
+   * Omit (undefined) when SSR failed so the client can recover via browser fetch.
+   * Never pass null to mean "unavailable" — that caused live /media to stick on
+   * "Civic Media Center unavailable." after SSR API/network errors.
+   */
+  initialMedia?: CivicMediaCenterPublic;
   /** Pack 08I.9 — SSR warm editorial seed (GET resolve only). */
   initialEditorial?: CivicMediaResolvedEditorial;
 } = {}) {
   const t = useTranslations("civicMediaPublic");
-  const seeded = initialMedia !== undefined;
+  const hasServerPayload = initialMedia !== undefined;
   const [media, setMedia] = useState<CivicMediaCenterPublic | null>(() =>
     initialMedia ?? null,
   );
-  const [error, setError] = useState(() => seeded && initialMedia === null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (seeded) {
-      setMedia(initialMedia ?? null);
-      setError(initialMedia === null);
+    if (hasServerPayload && initialMedia) {
+      setMedia(initialMedia);
+      setError(false);
       return;
     }
 
@@ -323,6 +328,7 @@ export function CivicMediaCenterPageContent({
       .then((result) => {
         if (!cancelled) {
           setMedia(result);
+          setError(false);
         }
       })
       .catch(() => {
@@ -334,7 +340,7 @@ export function CivicMediaCenterPageContent({
     return () => {
       cancelled = true;
     };
-  }, [seeded, initialMedia]);
+  }, [hasServerPayload, initialMedia]);
 
   if (error) {
     return (

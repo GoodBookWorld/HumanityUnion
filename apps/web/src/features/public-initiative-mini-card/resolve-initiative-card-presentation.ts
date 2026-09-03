@@ -10,6 +10,10 @@ import {
   generateContentTranslation,
   resolveTranslatedContent,
 } from "../language/translation-api";
+import {
+  emitPublicTranslationDiagnostic,
+  shouldAttemptOnDemandContentTranslation,
+} from "../language/public-translation-presentation-lifecycle";
 import type { PublicContentReadingContext } from "../language/use-public-content-reading-context";
 
 export interface InitiativeCardPresentationFields {
@@ -80,11 +84,22 @@ export async function resolveInitiativeCardPresentation(
     });
 
     if (
-      readingContext.translationPreference === "preferred" &&
-      resolved.presentationMode === "original" &&
-      readingContext.readingLanguage !== resolved.originalLanguage &&
-      !resolved.isStale
+      shouldAttemptOnDemandContentTranslation({
+        ready: readingContext.ready,
+        translationPreference: readingContext.translationPreference,
+        readingLanguage: readingContext.readingLanguage,
+        resolvePresentationMode: resolved.presentationMode,
+        originalLanguage: resolved.originalLanguage,
+        isStale: resolved.isStale,
+      })
     ) {
+      emitPublicTranslationDiagnostic({
+        phase: "TRANSLATION_GENERATION_STARTED",
+        sourceKind: "initiative",
+        sourceRecordId: input.initiativeId,
+        language: readingContext.readingLanguage,
+        presentationMode: resolved.presentationMode,
+      });
       try {
         const generated = await deps.generateContentTranslation({
           sourceKind: "initiative",
@@ -93,17 +108,37 @@ export async function resolveInitiativeCardPresentation(
         });
         resolved = generated.display;
       } catch {
-        // keep resolve result
+        emitPublicTranslationDiagnostic({
+          phase: "TRANSLATION_GENERATION_FAILED",
+          sourceKind: "initiative",
+          sourceRecordId: input.initiativeId,
+          language: readingContext.readingLanguage,
+        });
       }
     }
 
     if (resolved.presentationMode === "original") {
+      emitPublicTranslationDiagnostic({
+        phase: "TRANSLATION_CACHE_MISS",
+        sourceKind: "initiative",
+        sourceRecordId: input.initiativeId,
+        language: readingContext.readingLanguage,
+        presentationMode: "original",
+      });
       return {
         ...canonical,
         presentationMode: "original",
         isStale: Boolean(resolved.isStale),
       };
     }
+
+    emitPublicTranslationDiagnostic({
+      phase: "TRANSLATION_DISPLAYED",
+      sourceKind: "initiative",
+      sourceRecordId: input.initiativeId,
+      language: readingContext.readingLanguage,
+      presentationMode: resolved.presentationMode,
+    });
 
     return {
       title: pickTranslatedField(resolved, "title", canonical.title),

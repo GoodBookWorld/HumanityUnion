@@ -113,14 +113,14 @@ describe("Pack 08I.7 — Initiative card shared presentation boundary", () => {
       "features/public-initiative-mini-card/resolve-initiative-card-presentation.ts",
     );
 
-    assert.match(resolver, /resolveTranslatedContent\(\{/);
+    assert.match(resolver, /deps\.resolveTranslatedContent\(\{|resolveTranslatedContent\(\{/);
     assert.match(resolver, /sourceKind:\s*"initiative"/);
     assert.match(resolver, /sourceRecordId:\s*input\.initiativeId/);
     assert.match(resolver, /language:\s*readingContext\.readingLanguage/);
     assert.match(resolver, /TRANSLATION_EXISTS|non-original|presentationMode === "original"/);
     assert.match(
       resolver,
-      /translationPreference === "preferred"[\s\S]*presentationMode === "original"[\s\S]*generateContentTranslation/,
+      /shouldAttemptOnDemandContentTranslation[\s\S]*generateContentTranslation|translationPreference === "preferred"[\s\S]*generateContentTranslation/,
     );
   });
 
