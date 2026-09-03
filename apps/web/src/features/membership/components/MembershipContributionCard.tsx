@@ -1,10 +1,12 @@
 import type { MembershipMePayload } from "@hu/types";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
 import { SectionHeader } from "../../../design-system/components/SectionHeader";
 import { formatAuthFormError } from "../../../lib/api-client";
+import { MEMBERSHIP_CONTRIBUTION_AMOUNT } from "../membership.constants";
 import { startMembershipContribution } from "../membership-api";
 
 function isApplicationSubmitted(payload: MembershipMePayload): boolean {
@@ -21,6 +23,7 @@ export function MembershipContributionCard({
   payload: MembershipMePayload;
   contributionCancelled?: boolean;
 }) {
+  const t = useTranslations("membershipPublic");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,41 +46,37 @@ export function MembershipContributionCard({
 
   return (
     <section className="membership-section" aria-labelledby="membership-contribution-title">
-      <SectionHeader title="Membership Contribution" />
+      <SectionHeader title={t("contribution.title")} titleId="membership-contribution-title" />
       <Card className="membership-contribution-card">
         {contributionCancelled ? (
           <p className="membership-contribution-card__notice" role="status">
-            Membership Contribution was not completed.
+            {t("contribution.cancelledNotice")}
           </p>
         ) : null}
 
         {isActiveMember ? (
           <>
-            <p className="membership-contribution-card__body">Membership already active.</p>
+            <p className="membership-contribution-card__body">{t("contribution.alreadyActive")}</p>
             {payload.membership.memberNumber ? (
               <p className="membership-contribution-card__meta">
-                Member Number: {payload.membership.memberNumber}
+                {t("contribution.memberNumber", { number: payload.membership.memberNumber })}
               </p>
             ) : null}
           </>
         ) : (
           <>
             <p className="membership-contribution-card__body">
-              Membership becomes active after a voluntary one-time Membership Contribution of 1 CAD.
+              {t("contribution.bodyPrimary", { amount: MEMBERSHIP_CONTRIBUTION_AMOUNT })}
             </p>
-            <p className="membership-contribution-card__body">
-              This is not a donation, subscription, or identity verification fee.
-            </p>
+            <p className="membership-contribution-card__body">{t("contribution.bodySecondary")}</p>
 
             {!payload.emailConfirmed ? (
-              <p className="membership-contribution-card__hint">
-                Confirm your email address before completing Membership Contribution.
-              </p>
+              <p className="membership-contribution-card__hint">{t("contribution.hintEmail")}</p>
             ) : null}
 
             {payload.emailConfirmed && !isApplicationSubmitted(payload) ? (
               <p className="membership-contribution-card__hint">
-                Submit your Membership application before completing Membership Contribution.
+                {t("contribution.hintApplication")}
               </p>
             ) : null}
 
@@ -91,7 +90,7 @@ export function MembershipContributionCard({
                   void handleBecomeMember();
                 }}
               >
-                {loading ? "Preparing..." : "Become a Member"}
+                {loading ? t("contribution.preparing") : t("contribution.cta")}
               </Button>
             </div>
           </>

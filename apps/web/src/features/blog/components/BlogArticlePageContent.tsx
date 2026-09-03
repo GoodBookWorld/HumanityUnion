@@ -9,6 +9,7 @@ import type { PublicBlogPostDetail } from "@hu/types";
 import { isApiUnavailableError, isNotFoundError } from "../../../lib/api-client";
 import { formatBlogPublishedDate, fetchPublicBlogPostBySlug } from "../api";
 import { buildBlogIndexHref } from "../blog-url";
+import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { BlogArticleBody } from "./BlogArticleBody";
@@ -203,6 +204,7 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
     Date.parse(post.updatedAt) - Date.parse(post.publishedAt) > 60_000;
   const commentsHref = `#comments`;
   const categoryHref = buildBlogIndexHref({ categorySlug: post.category.slug });
+  const categoryDisplayName = resolveBlogCategoryDisplayName(post.category.categoryId, t);
   const titleForDisplay = displayTitle || post.title;
   const bodyHtml = displayContentHtml || post.content;
 
@@ -227,11 +229,11 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
           <nav className="blog-article__crumb" aria-label={t("breadcrumbAria")}>
             <Link href="/blog">{t("pageTitle")}</Link>
             <span aria-hidden="true"> / </span>
-            <Link href={categoryHref}>{post.category.name}</Link>
+            <Link href={categoryHref}>{categoryDisplayName}</Link>
           </nav>
 
           <p className="hu-caption blog-article__category">
-            <Link href={categoryHref}>{post.category.name}</Link>
+            <Link href={categoryHref}>{categoryDisplayName}</Link>
           </p>
           <h1 id="blog-article-title" className="hu-heading-1 blog-article__title">
             {titleForDisplay}

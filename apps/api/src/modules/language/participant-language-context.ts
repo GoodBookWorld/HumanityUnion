@@ -45,13 +45,20 @@ export async function buildParticipantLanguageContextFromExperience(
 /**
  * Load language roles for a participant from the canonical Preferences repository
  * (same Mongo/memory path as Preferences Save / getMyPreferences).
- * Missing prefs → safe defaults (English + translationDisplayPreference "none").
+ *
+ * Pack 08I.7 — unauthenticated public callers default to `preferred` so a warm
+ * `content_translations` row for the requested `?language=` is displayed.
+ * Authenticated missing prefs remain English + `none` (explicit opt-in).
  */
 export async function resolveParticipantLanguageContext(
   participantId: string | undefined,
 ): Promise<ParticipantLanguageContext> {
   if (!participantId) {
-    return buildParticipantLanguageContextFromExperience(null);
+    const guest = await buildParticipantLanguageContextFromExperience(null);
+    return {
+      ...guest,
+      translationDisplayPreference: "preferred",
+    };
   }
 
   const preferences = await findPreferencesByMemberId(participantId);

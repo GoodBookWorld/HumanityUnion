@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type { MembershipStatisticsPayload, PlatformStatisticsCounts } from "@hu/types";
 
 import {
@@ -18,6 +20,8 @@ import "../platform-statistics.css";
 export function HumanityUnionInNumbers() {
   const t = useTranslations("publicHome.statistics");
   const tMetrics = useTranslations("publicStatistics.metrics");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const locale = useLocale();
   const [counts, setCounts] = useState<PlatformStatisticsCounts | null>(null);
   const [membershipStatistics, setMembershipStatistics] =
@@ -88,7 +92,7 @@ export function HumanityUnionInNumbers() {
     return {
       ...card,
       label,
-      description: t(`cards.${card.key as HomeStatisticKey}.description`),
+      description: t(`cards.${card.key as HomeStatisticKey}.description`, siteName),
     };
   });
 
@@ -100,7 +104,7 @@ export function HumanityUnionInNumbers() {
       aria-labelledby="platform-statistics-title"
       aria-busy={loading}
     >
-      <h2 id="platform-statistics-title">{t("title")}</h2>
+      <h2 id="platform-statistics-title">{t("title", siteName)}</h2>
       <p className="public-home-v2__section-intro platform-statistics__intro">{t("intro")}</p>
 
       <PublicStatisticsGrid

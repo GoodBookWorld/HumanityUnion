@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import { MemberWorkspace } from "../../../components/member/MemberWorkspace";
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
@@ -203,6 +205,8 @@ function MembershipPageBody({ authStatus }: { authStatus: "authenticated" | "una
 
 export function MembershipPageContent() {
   const t = useTranslations("membershipPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const authStatus = useClientAuthStatus();
 
   if (authStatus === "pending") {
@@ -213,7 +217,7 @@ export function MembershipPageContent() {
     return (
       <MemberWorkspace
         title={t("pageTitle")}
-        subtitle={t("pageSubtitle")}
+        subtitle={t("pageSubtitle", siteName)}
         workspaceNavigation={<WorkspaceNavigation />}
       >
         <MembershipPageBody authStatus="authenticated" />
@@ -225,7 +229,7 @@ export function MembershipPageContent() {
     <div className="membership-page-shell">
       <header className="membership-page-shell__header">
         <h1 className="membership-page-shell__title">{t("pageTitle")}</h1>
-        <p className="membership-page-shell__subtitle">{t("pageSubtitle")}</p>
+        <p className="membership-page-shell__subtitle">{t("pageSubtitle", siteName)}</p>
       </header>
       <MembershipPageBody authStatus="unauthenticated" />
     </div>

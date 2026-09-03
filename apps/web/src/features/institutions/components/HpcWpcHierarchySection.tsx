@@ -3,11 +3,15 @@
 import { useCallback } from "react";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import { PROTECTION_HIERARCHY_LEVELS } from "../constants";
 import { InstitutionHeroIllustration } from "./InstitutionIllustration";
 
 export function HpcWpcHierarchySection() {
   const t = useTranslations("institutionsPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   const scrollToTarget = useCallback((targetId: string) => {
     const element = document.getElementById(targetId);
@@ -35,7 +39,7 @@ export function HpcWpcHierarchySection() {
                   <article className="institutions-hierarchy__node" id="institution-hpc">
                     <InstitutionHeroIllustration
                       illustrationId={level.illustrationId}
-                      title={t(`hierarchy.levels.${level.id}.title`)}
+                      title={t(`hierarchy.levels.${level.id}.title`, siteName)}
                       subtitle={t(`hierarchy.levels.${level.id}.subtitle`)}
                     />
                   </article>
@@ -65,7 +69,7 @@ export function HpcWpcHierarchySection() {
               );
             }
 
-            const levelTitle = t(`hierarchy.levels.${level.id}.title`);
+            const levelTitle = t(`hierarchy.levels.${level.id}.title`, siteName);
 
             return (
               <div key={level.id} className="institutions-hierarchy__step">
@@ -76,7 +80,7 @@ export function HpcWpcHierarchySection() {
                   aria-label={t("hierarchy.navigateTo", { title: levelTitle })}
                 >
                   <h3>{levelTitle}</h3>
-                  <p>{t(`hierarchy.levels.${level.id}.description`)}</p>
+                  <p>{t(`hierarchy.levels.${level.id}.description`, siteName)}</p>
                 </button>
                 {!isLast ? (
                   <div className="institutions-hierarchy__connector" aria-hidden="true">

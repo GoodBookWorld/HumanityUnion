@@ -1,12 +1,3 @@
-export const TRUSTED_MEDIA_CATEGORY_LABELS: Record<string, string> = {
-  "international-wire-service": "International Wire Service",
-  "public-broadcaster": "Public Broadcaster",
-  "independent-investigative": "Independent Investigative",
-  "regional-public-media": "Regional Public Media",
-  "scientific-publisher": "Scientific Publisher",
-  "academic-resource": "Academic Resource",
-};
-
 export const TRUSTED_MEDIA_CATEGORY_ICONS: Record<string, string> = {
   "international-wire-service": "🌐",
   "public-broadcaster": "📡",
@@ -16,6 +7,37 @@ export const TRUSTED_MEDIA_CATEGORY_ICONS: Record<string, string> = {
   "academic-resource": "📚",
 };
 
+/** Pack 08I.7 — category ids for civicMediaPublic.trustedCategories catalogs. */
+export const TRUSTED_MEDIA_CATEGORY_IDS = [
+  "international-wire-service",
+  "public-broadcaster",
+  "independent-investigative",
+  "regional-public-media",
+  "scientific-publisher",
+  "academic-resource",
+] as const;
+
+/** Pack 08I.7 — principle ids for civicMediaPublic.principles.{id}.whyItMatters catalogs. */
+export const PRINCIPLE_WHY_IT_MATTERS_IDS = [
+  "editorial-transparency",
+  "correction-policy",
+  "professional-standards",
+  "evidence-based",
+  "international-recognition",
+  "fact-checking-practice",
+] as const;
+
+/** @deprecated Pack 08I.7 — use civicMediaPublic.trustedCategories catalogs. */
+export const TRUSTED_MEDIA_CATEGORY_LABELS: Record<string, string> = {
+  "international-wire-service": "International Wire Service",
+  "public-broadcaster": "Public Broadcaster",
+  "independent-investigative": "Independent Investigative",
+  "regional-public-media": "Regional Public Media",
+  "scientific-publisher": "Scientific Publisher",
+  "academic-resource": "Academic Resource",
+};
+
+/** @deprecated Pack 08I.7 — use civicMediaPublic.principles.{id}.whyItMatters catalogs. */
 export const PRINCIPLE_WHY_IT_MATTERS: Record<string, string> = {
   "editorial-transparency": "Readers can evaluate possible bias before trusting a report.",
   "correction-policy": "Mistakes can be identified and corrected with public accountability.",
@@ -32,3 +54,4 @@ export function coverageToChips(coverage: string): string[] {
     .filter(Boolean)
     .slice(0, 4);
 }
+

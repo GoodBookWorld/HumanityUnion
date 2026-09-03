@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { TrustedMediaCategory, TrustedMediaResource } from "@hu/types";
 
@@ -11,15 +12,6 @@ import { useHorizontalRail } from "../media-rail/useMediaHorizontalRail";
 
 const TRUSTED_MEDIA_TAB_STORAGE_KEY = "hu.trusted-media.active-category";
 
-const TRUSTED_MEDIA_TAB_LABELS: Record<string, string> = {
-  "international-wire-service": "Wire Services",
-  "public-broadcaster": "Public Broadcasters",
-  "independent-investigative": "Investigative",
-  "regional-public-media": "Regional Media",
-  "scientific-publisher": "Scientific Publishers",
-  "academic-resource": "Academic Resources",
-};
-
 interface TrustedMediaCategoryTabsProps {
   sectionId: string;
   categories: TrustedMediaCategory[];
@@ -27,18 +19,33 @@ interface TrustedMediaCategoryTabsProps {
   renderItem: (resource: TrustedMediaResource, categoryTitle: string) => ReactNode;
 }
 
+function resolveCategoryDisplay(
+  categoryId: string,
+  fallback: string,
+  t: {
+    (key: string): string;
+    has: (key: string) => boolean;
+  },
+  keyPrefix: "trustedCategories" | "trustedCategoryTabs",
+): string {
+  const key = `${keyPrefix}.${categoryId}`;
+  return t.has(key) ? t(key) : fallback;
+}
+
 function TrustedMediaCategoryRail({
   sectionId,
   category,
+  categoryTitle,
   resources,
   renderItem,
 }: {
   sectionId: string;
   category: TrustedMediaCategory;
+  categoryTitle: string;
   resources: TrustedMediaResource[];
   renderItem: (resource: TrustedMediaResource, categoryTitle: string) => ReactNode;
 }) {
-  const label = `${category.title} media resources`;
+  const label = `${categoryTitle} media resources`;
   const rail = useHorizontalRail({
     itemCount: resources.length,
     layout: "four-two-one",
@@ -66,7 +73,7 @@ function TrustedMediaCategoryRail({
     >
       <div className="trusted-media-category-tabs__panel-heading">
         <div>
-          <h3>{category.title}</h3>
+          <h3>{categoryTitle}</h3>
           <span className="horizontal-section-chip">
             {resources.length} source{resources.length === 1 ? "" : "s"}
           </span>
@@ -80,7 +87,7 @@ function TrustedMediaCategoryRail({
         layout="four-two-one"
         items={resources}
         getItemKey={(resource) => resource.id}
-        renderItem={(resource) => renderItem(resource, category.title)}
+        renderItem={(resource) => renderItem(resource, categoryTitle)}
         rail={rail}
         hideSummary
       />
@@ -94,6 +101,7 @@ export function TrustedMediaCategoryTabs({
   resources,
   renderItem,
 }: TrustedMediaCategoryTabsProps) {
+  const t = useTranslations("civicMediaPublic");
   const availableCategories = useMemo(
     () =>
       categories.filter((category) =>
@@ -148,57 +156,62 @@ export function TrustedMediaCategoryTabs({
     const tabRight = tabLeft + activeTab.offsetWidth;
     const viewLeft = tabList.scrollLeft;
     const viewRight = viewLeft + tabList.clientWidth;
-    const pad = 8;
 
-    if (tabLeft < viewLeft + pad) {
-      tabList.scrollTo({
-        left: Math.max(0, tabLeft - pad),
-        behavior: "smooth",
-      });
-      return;
-    }
-
-    if (tabRight > viewRight - pad) {
-      tabList.scrollTo({
-        left: Math.max(0, tabRight - tabList.clientWidth + pad),
-        behavior: "smooth",
-      });
+    if (tabLeft < viewLeft) {
+      tabList.scrollLeft = tabLeft;
+    } else if (tabRight > viewRight) {
+      tabList.scrollLeft = tabRight - tabList.clientWidth;
     }
   }, [activeCategory, sectionId]);
-
-  const activeResources = useMemo(
-    () =>
-      activeCategory
-        ? resources.filter((resource) => resource.categoryId === activeCategory.id)
-        : [],
-    [activeCategory, resources],
-  );
 
   if (!activeCategory) {
     return null;
   }
 
-  function selectCategory(categoryId: string) {
+  const activeResources = resources.filter(
+    (resource) => resource.categoryId === activeCategory.id,
+  );
+
+  function selectCategory(categoryId: string): void {
     setActiveCategoryId(categoryId);
     sessionStorage.setItem(TRUSTED_MEDIA_TAB_STORAGE_KEY, categoryId);
   }
 
-  function handleTabKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
-    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") {
+  function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number): void {
+    if (availableCategories.length === 0) {
       return;
     }
 
-    event.preventDefault();
+    let nextIndex = index;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      nextIndex = (index + 1) % availableCategories.length;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      nextIndex = (index - 1 + availableCategories.length) % availableCategories.length;
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      event.preventDefault();
+      nextIndex = availableCategories.length - 1;
+    } else {
+      return;
+    }
 
-    const direction = event.key === "ArrowRight" ? 1 : -1;
-    const nextIndex = (index + direction + availableCategories.length) % availableCategories.length;
-    const nextCategory = availableCategories[nextIndex];
-
-    if (nextCategory) {
-      selectCategory(nextCategory.id);
-      document.getElementById(`${sectionId}-${nextCategory.id}-tab`)?.focus();
+    const next = availableCategories[nextIndex];
+    if (next) {
+      selectCategory(next.id);
+      document.getElementById(`${sectionId}-${next.id}-tab`)?.focus();
     }
   }
+
+  const activeCategoryTitle = resolveCategoryDisplay(
+    activeCategory.id,
+    activeCategory.title,
+    t,
+    "trustedCategories",
+  );
 
   return (
     <div className="trusted-media-category-tabs">
@@ -211,6 +224,12 @@ export function TrustedMediaCategoryTabs({
         {availableCategories.map((category, index) => {
           const isActive = category.id === activeCategory.id;
           const tabId = `${sectionId}-${category.id}-tab`;
+          const tabLabel = resolveCategoryDisplay(
+            category.id,
+            category.title,
+            t,
+            "trustedCategoryTabs",
+          );
 
           return (
             <button
@@ -225,7 +244,7 @@ export function TrustedMediaCategoryTabs({
               onClick={() => selectCategory(category.id)}
               onKeyDown={(event) => handleTabKeyDown(event, index)}
             >
-              {TRUSTED_MEDIA_TAB_LABELS[category.id] ?? category.title}
+              {tabLabel}
             </button>
           );
         })}
@@ -235,6 +254,7 @@ export function TrustedMediaCategoryTabs({
         key={activeCategory.id}
         sectionId={sectionId}
         category={activeCategory}
+        categoryTitle={activeCategoryTitle}
         resources={activeResources}
         renderItem={renderItem}
       />

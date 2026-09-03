@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type { CommunityCatalogPublicProjection } from "@hu/types";
 
 import { ExperienceBlockShell } from "../../public-experience";
@@ -14,6 +16,8 @@ interface CommunityDiscoverySectionProps {
 
 export function CommunityDiscoverySection({ catalog, regionName }: CommunityDiscoverySectionProps) {
   const t = useTranslations("publicGeo.region.discovery");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   return (
     <ExperienceBlockShell
@@ -21,7 +25,7 @@ export function CommunityDiscoverySection({ catalog, regionName }: CommunityDisc
       title={t("title")}
       architecturalName={t("architecturalName")}
       stage={t("stage")}
-      contextIntroduction={t("contextIntroduction")}
+      contextIntroduction={t("contextIntroduction", siteName)}
       visitorConclusion={t("visitorConclusion")}
     >
       <CommunityDiscoveryEvidence catalog={catalog} regionName={regionName} />

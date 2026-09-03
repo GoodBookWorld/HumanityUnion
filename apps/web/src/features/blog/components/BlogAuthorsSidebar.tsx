@@ -7,7 +7,55 @@ import { useTranslations } from "next-intl";
 import type { PublicBlogAuthorDirectoryItem } from "@hu/types";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
+import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { fetchPublicBlogAuthors } from "../api";
+import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
+
+function AuthorLatestPublicationTitle({
+  postId,
+  canonicalTitle,
+}: {
+  postId: string;
+  canonicalTitle: string;
+}) {
+  const readingContext = usePublicContentReadingContext();
+  const [displayTitle, setDisplayTitle] = useState(canonicalTitle);
+
+  useEffect(() => {
+    setDisplayTitle(canonicalTitle);
+
+    if (!readingContext.ready) {
+      return;
+    }
+
+    let cancelled = false;
+    void resolveBlogPostPresentation({
+      postId,
+      canonical: {
+        title: canonicalTitle,
+        excerpt: "",
+        contentHtml: "",
+      },
+      readingContext,
+    }).then((presentation) => {
+      if (!cancelled) {
+        setDisplayTitle(presentation.title);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    postId,
+    canonicalTitle,
+    readingContext.ready,
+    readingContext.readingLanguage,
+    readingContext.translationPreference,
+  ]);
+
+  return <>{displayTitle || canonicalTitle}</>;
+}
 
 export function BlogAuthorsSidebar() {
   const t = useTranslations("blogPublic.discovery.authors");
@@ -64,7 +112,10 @@ export function BlogAuthorsSidebar() {
                   )}
                 </div>
                 <Link href={publicationHref} className="blog-authors-list__latest">
-                  {entry.latestPublication.title}
+                  <AuthorLatestPublicationTitle
+                    postId={entry.latestPublication.postId}
+                    canonicalTitle={entry.latestPublication.title}
+                  />
                 </Link>
               </li>
             );

@@ -4,12 +4,17 @@
  * Content reading context is driven by a single getMyPreferences probe.
  * useClientAuthStatus "unauthenticated" alone is not treated as definitive guest
  * (cookie session may still authenticate API requests). Definitive guest requires
- * a preferences 401. Never uses interfaceLanguage as a reading substitute.
+ * a preferences 401.
+ *
+ * Pack 08I.7 — definitive guests follow the active interface locale (next-intl)
+ * with translationPreference preferred so warm content_translations display.
+ * Authenticated users still use readingLanguages[0] only (never interface as substitute).
  */
 
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 import type { LanguageCode } from "@hu/types";
@@ -57,6 +62,7 @@ function classifyPreferencesProbeError(error: unknown): PublicContentReadingProb
  */
 export function usePublicContentReadingContext(): PublicContentReadingContext {
   const authStatus = useClientAuthStatus();
+  const interfaceLocale = useLocale();
   /** Bumps on successful preferences PATCH so readingLanguages changes re-resolve. */
   const [preferencesEpoch, setPreferencesEpoch] = useState(0);
   const [context, setContext] = useState<PublicContentReadingContext>(() => ({
@@ -113,13 +119,19 @@ export function usePublicContentReadingContext(): PublicContentReadingContext {
         return;
       }
 
-      setContext(resolvePublicContentReadingFromProbe({ authStatus, outcome }));
+      setContext(
+        resolvePublicContentReadingFromProbe({
+          authStatus,
+          outcome,
+          interfaceLocale,
+        }),
+      );
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [authStatus, preferencesEpoch]);
+  }, [authStatus, preferencesEpoch, interfaceLocale]);
 
   return context;
 }

@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type {
   BlogCategory,
   PublicBlogCategoryCount,
@@ -32,6 +34,8 @@ import "../blog.css";
 
 export function BlogIndexPageContent() {
   const t = useTranslations("blogPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const searchParams = useSearchParams();
 
   const q = searchParams.get("q") ?? "";
@@ -136,7 +140,7 @@ export function BlogIndexPageContent() {
       <header className="blog-page__header">
         <div className="blog-page__header-copy">
           <h1 className="hu-heading-1">{t("pageTitle")}</h1>
-          <p className="hu-body blog-page__subtitle">{t("pageSubtitle")}</p>
+          <p className="hu-body blog-page__subtitle">{t("pageSubtitle", siteName)}</p>
         </div>
         <BlogSubscriptionForm />
       </header>

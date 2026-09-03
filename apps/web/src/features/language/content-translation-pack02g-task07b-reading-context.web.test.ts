@@ -105,15 +105,46 @@ describe("Production Completion Pack 02G Task 07B — reading context auth-gate"
     assert.equal(resolved.isAuthenticated, true);
   });
 
-  it("B. definitive preferences 401 → guest en/none ready once", () => {
-    const resolved = resolvePublicContentReadingFromProbe({
+  it("B. definitive preferences 401 → guest follows interface locale + preferred (08I.7)", () => {
+    const resolvedDefault = resolvePublicContentReadingFromProbe({
       authStatus: "unauthenticated",
       outcome: { kind: "unauthorized" },
     });
-    assert.equal(resolved.ready, true);
-    assert.equal(resolved.readingLanguage, DEFAULT_PLATFORM_LANGUAGE);
-    assert.equal(resolved.translationPreference, "none");
-    assert.equal(resolved.isAuthenticated, false);
+    assert.equal(resolvedDefault.ready, true);
+    assert.equal(resolvedDefault.readingLanguage, DEFAULT_PLATFORM_LANGUAGE);
+    assert.equal(resolvedDefault.translationPreference, "preferred");
+    assert.equal(resolvedDefault.isAuthenticated, false);
+
+    const resolvedUk = resolvePublicContentReadingFromProbe({
+      authStatus: "unauthenticated",
+      outcome: { kind: "unauthorized" },
+      interfaceLocale: "uk",
+    });
+    assert.equal(resolvedUk.readingLanguage, "uk");
+    assert.equal(resolvedUk.translationPreference, "preferred");
+
+    const resolvedZhHant = resolvePublicContentReadingFromProbe({
+      authStatus: "unauthenticated",
+      outcome: { kind: "unauthorized" },
+      interfaceLocale: "zh-Hant",
+    });
+    assert.equal(resolvedZhHant.readingLanguage, "zh-Hant");
+
+    // zh-TW alias normalizes to zh-Hant for reading language.
+    const resolvedZhTw = resolvePublicContentReadingFromProbe({
+      authStatus: "unauthenticated",
+      outcome: { kind: "unauthorized" },
+      interfaceLocale: "zh-TW",
+    });
+    assert.equal(resolvedZhTw.readingLanguage, "zh-Hant");
+
+    const resolvedAr = resolvePublicContentReadingFromProbe({
+      authStatus: "unauthenticated",
+      outcome: { kind: "unauthorized" },
+      interfaceLocale: "ar",
+    });
+    assert.equal(resolvedAr.readingLanguage, "ar");
+    assert.equal(resolvedAr.translationPreference, "preferred");
   });
 
   it("C. auth pending wiring keeps ready=false before prefs probe", () => {
@@ -148,6 +179,25 @@ describe("Production Completion Pack 02G Task 07B — reading context auth-gate"
     assert.equal(deriveAuthenticatedReadingLanguage(["uk"]), "uk");
   });
 
+  it("D2. authenticated explicit none stays none (interface locale does not override)", () => {
+    const resolved = resolvePublicContentReadingFromProbe({
+      authStatus: "authenticated",
+      outcome: {
+        kind: "success",
+        preferences: samplePreferences({
+          readingLanguages: ["uk"],
+          translationPreference: "none",
+          interfaceLanguage: "uk",
+        }),
+      },
+      interfaceLocale: "uk",
+    });
+    assert.equal(resolved.ready, true);
+    assert.equal(resolved.isAuthenticated, true);
+    assert.equal(resolved.readingLanguage, "uk");
+    assert.equal(resolved.translationPreference, "none");
+  });
+
   it("E. MEMBER_PREFERENCES_CHANGED_EVENT still refreshes prefs", () => {
     const hook = readWeb("src/features/language/use-public-content-reading-context.ts");
     assert.match(hook, /MEMBER_PREFERENCES_CHANGED_EVENT/);
@@ -157,7 +207,7 @@ describe("Production Completion Pack 02G Task 07B — reading context auth-gate"
     assert.match(prefsApi, /dispatchEvent\(new CustomEvent\(MEMBER_PREFERENCES_CHANGED_EVENT\)\)/);
   });
 
-  it("F. interface language does not substitute reading language", () => {
+  it("F. authenticated interface language does not substitute readingLanguages[0]", () => {
     const resolved = resolvePublicContentReadingFromProbe({
       authStatus: "authenticated",
       outcome: {
@@ -168,14 +218,18 @@ describe("Production Completion Pack 02G Task 07B — reading context auth-gate"
           interfaceLanguage: "fr",
         }),
       },
+      interfaceLocale: "fr",
     });
     assert.equal(resolved.readingLanguage, "uk");
     assert.notEqual(resolved.readingLanguage, "fr");
 
-    const hook = readWeb("src/features/language/use-public-content-reading-context.ts");
     const derive = readWeb("src/features/language/public-content-reading-language.ts");
-    assert.doesNotMatch(hook, /experiencePreferences\.interfaceLanguage|interfaceLanguage\s*[:=]/);
     assert.doesNotMatch(derive, /interfaceLanguage\s*[:=]|experiencePreferences\.interfaceLanguage/);
+
+    // Pack 08I.7 — guests may follow UI locale; authenticated path must still use readingLanguages[0].
+    const hook = readWeb("src/features/language/use-public-content-reading-context.ts");
+    assert.match(hook, /interfaceLocale/);
+    assert.match(hook, /readingLanguages|deriveAuthenticatedReadingLanguage|getMyPreferences/);
   });
 
   it("non-401 prefs failure does not force guest when auth snapshot is authenticated", () => {

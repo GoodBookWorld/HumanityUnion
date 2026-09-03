@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import type { ParticipationPublicStatisticsProjection } from "@hu/types";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { ExperienceBlockShell, ParticipationStatisticsEvidence } from "../../public-experience";
 
 interface CommunityStatisticsSectionProps {
@@ -16,6 +17,8 @@ export function CommunityStatisticsSection({
   communityName,
 }: CommunityStatisticsSectionProps) {
   const t = useTranslations("publicStatistics.community");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   return (
     <ExperienceBlockShell
@@ -23,7 +26,7 @@ export function CommunityStatisticsSection({
       title={t("title")}
       architecturalName={t("architecturalName")}
       stage={t("stage")}
-      contextIntroduction={t("contextIntroduction", { communityName })}
+      contextIntroduction={t("contextIntroduction", { communityName, ...siteName })}
       visitorConclusion={t("visitorConclusion")}
     >
       <ParticipationStatisticsEvidence projection={projection} />

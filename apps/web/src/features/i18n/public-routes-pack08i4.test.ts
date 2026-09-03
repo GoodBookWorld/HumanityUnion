@@ -109,7 +109,8 @@ describe("Pack 08I.4 — membership/support/contact/blog chrome catalogs", () =>
     const constants = readWeb("features/support/support.constants.ts");
 
     assert.match(support, /useTranslations\("supportPublic"\)/);
-    assert.match(support, /t\("title"\)/);
+    assert.match(support, /useLocalizedBrand/);
+    assert.match(support, /t\("title",\s*siteName\)/);
     assert.match(support, /t\("donate\.cta"\)/);
     assert.doesNotMatch(support, />Support Humanity Union</);
     assert.match(constants, /SUPPORT_DONATE_URL/);

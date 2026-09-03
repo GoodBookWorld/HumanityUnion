@@ -7,7 +7,12 @@ import { useTranslations } from "next-intl";
 import { Card } from "../../../design-system/components/Card";
 import type { KnowledgeCenterListing } from "@hu/types";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { fetchKnowledgeListing } from "../api";
+import {
+  resolveKnowledgeArticleTitle,
+  resolveKnowledgeCategoryPresentation,
+} from "../resolve-knowledge-presentation";
 import { KnowledgeSearchPanel } from "./KnowledgeSearchPanel";
 import { KnowledgeShell } from "./KnowledgeShell";
 
@@ -15,6 +20,8 @@ import "../knowledge-center.css";
 
 export function KnowledgeCenterPageContent() {
   const t = useTranslations("knowledgePublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const [listing, setListing] = useState<KnowledgeCenterListing | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +42,7 @@ export function KnowledgeCenterPageContent() {
         <>
           <section className="knowledge-center__intro">
             <h1>{t("pageTitle")}</h1>
-            <p>{t("pageIntro")}</p>
+            <p>{t("pageIntro", siteName)}</p>
           </section>
 
           <KnowledgeSearchPanel />
@@ -46,7 +53,7 @@ export function KnowledgeCenterPageContent() {
 
           <Card className="knowledge-article-card knowledge-blog-entry">
             <h2>{t("blogTitle")}</h2>
-            <p>{t("blogIntro")}</p>
+            <p>{t("blogIntro", siteName)}</p>
             <p className="knowledge-article-card__meta">{t("blogMeta")}</p>
             <p>
               <Link href="/blog" className="hu-button hu-button--secondary hu-button--sm">
@@ -56,24 +63,35 @@ export function KnowledgeCenterPageContent() {
           </Card>
 
           <div className="knowledge-category-grid">
-            {listing.categories.map((category) => (
-              <Card key={category.id} className="knowledge-article-card">
-                <h2>{category.title}</h2>
-                <p>{category.description}</p>
-                <p className="knowledge-article-card__meta">
-                  {category.articles.length === 1
-                    ? t("articlesCountOne", { count: category.articles.length })
-                    : t("articlesCount", { count: category.articles.length })}
-                </p>
-                <ul>
-                  {category.articles.slice(0, 5).map((article) => (
-                    <li key={article.slug}>
-                      <Link href={`/knowledge/${article.slug}`}>{article.title}</Link>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            ))}
+            {listing.categories.map((category) => {
+              const presentation = resolveKnowledgeCategoryPresentation(
+                category.id,
+                t,
+                { title: category.title, description: category.description },
+                siteName,
+              );
+
+              return (
+                <Card key={category.id} className="knowledge-article-card">
+                  <h2>{presentation.title}</h2>
+                  <p>{presentation.description}</p>
+                  <p className="knowledge-article-card__meta">
+                    {category.articles.length === 1
+                      ? t("articlesCountOne", { count: category.articles.length })
+                      : t("articlesCount", { count: category.articles.length })}
+                  </p>
+                  <ul>
+                    {category.articles.slice(0, 5).map((article) => (
+                      <li key={article.slug}>
+                        <Link href={`/knowledge/${article.slug}`}>
+                          {resolveKnowledgeArticleTitle(article.slug, article.title, t, siteName)}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              );
+            })}
           </div>
         </>
       ) : null}

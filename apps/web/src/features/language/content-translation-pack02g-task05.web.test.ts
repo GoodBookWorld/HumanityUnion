@@ -77,7 +77,8 @@ describe("Production Completion Pack 02G Task 05 — Web civic translated surfac
     );
     assert.match(mediaEditorial, /civic-media-center/);
     assert.match(mediaEditorial, /sourceKind:\s*"civic_media"/);
-    assert.doesNotMatch(mediaEditorial, /generateContentTranslation/);
+    // Pack 08I.7 — preferred miss generates (blog parity); page shell still does not.
+    assert.match(mediaEditorial, /generateContentTranslation/);
     assert.doesNotMatch(mediaEditorial, /diagramSvg|websiteUrl|trustedMedia/);
   });
 

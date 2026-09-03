@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type { CountryAffiliationPublic } from "@hu/types";
 
 import { buildAffiliationPresentationSlots } from "../country-affiliation-presentation";
@@ -21,6 +23,8 @@ interface CountryTeamSectionProps {
 
 export function CountryTeamSection({ countryCode, countryName }: CountryTeamSectionProps) {
   const t = useTranslations("publicGeo.country.team");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const [entries, setEntries] = useState<CountryAffiliationPublic[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -60,7 +64,7 @@ export function CountryTeamSection({ countryCode, countryName }: CountryTeamSect
     >
       <h2 id="country-team-title">{t("title")}</h2>
       <p className="country-affiliation-section__intro">
-        {t("intro", { countryName })}
+        {t("intro", { countryName, ...siteName })}
       </p>
       <div className="country-affiliation-rail" role="list" aria-label={t("aria", { countryName })}>
         {slots.map((slot) =>

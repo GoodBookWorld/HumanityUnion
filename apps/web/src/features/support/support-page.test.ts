@@ -27,16 +27,19 @@ describe("Support Page UX Pack 01", () => {
 
   it("renders required sections, single H1, and three support cards", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
-    assert.match(content, /<h1[^>]*>Support Humanity Union<\/h1>/);
-    assert.match(content, /Help build better conditions for thoughtful collective action/);
-    assert.match(content, /Support the Project/);
-    assert.match(content, /Volunteer/);
-    assert.match(content, /Build a Regional Representation/);
-    assert.match(content, /Why Support Matters/);
-    assert.match(content, /Every form of support matters differently/);
-    assert.match(content, /Resources/);
-    assert.match(content, /Participation/);
-    assert.match(content, /Regional Communities/);
+    assert.match(content, /useTranslations\("supportPublic"\)/);
+    assert.match(content, /useLocalizedBrand/);
+    assert.match(content, /t\("title",\s*siteName\)/);
+    assert.match(content, /support-page__title/);
+    assert.match(content, /t\("subtitle"\)/);
+    assert.match(content, /t\("donate\.title"\)/);
+    assert.match(content, /t\("volunteer\.title"\)/);
+    assert.match(content, /t\("regional\.title"\)/);
+    assert.match(content, /t\("why\.heading"\)/);
+    assert.match(content, /t\("forms\.heading"\)/);
+    assert.match(content, /t\("forms\.resourcesTitle"\)/);
+    assert.match(content, /t\("forms\.participationTitle"\)/);
+    assert.match(content, /t\("forms\.regionalTitle"\)/);
     assert.match(content, /id="support-ways"/);
   });
 
@@ -46,12 +49,12 @@ describe("Support Page UX Pack 01", () => {
     assert.match(content, /donationUrl|SUPPORT_LINK_FALLBACKS/);
     assert.match(content, /target="_blank"/);
     assert.match(content, /rel="noopener noreferrer"/);
-    assert.match(content, /Donate/);
+    assert.match(content, /t\("donate\.cta"\)/);
   });
 
   it("Volunteer gracefully handles empty optional link without a volunteer subsystem", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
-    assert.match(content, /Volunteer with Humanity Union/);
+    assert.match(content, /t\("volunteer\.cta",\s*siteName\)/);
     assert.match(content, /disabledLabel|disabled/);
     assert.doesNotMatch(content, /VolunteerSubsystem|volunteer\.routes|createVolunteer/);
   });
@@ -69,7 +72,7 @@ describe("Support Page UX Pack 01", () => {
   it("closing CTA scrolls to support cards; Support links use public platform API", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
     assert.match(content, /href="#support-ways"/);
-    assert.match(content, /Choose how you want to contribute/);
+    assert.match(content, /t\("forms\.chooseCta"\)/);
     assert.match(content, /fetchPublicSupportOperationalLinks/);
     assert.doesNotMatch(content, /VolunteerSubsystem|createVolunteer|paymentIntent/);
   });
@@ -88,7 +91,7 @@ describe("Support Page UX Pack 01", () => {
     assert.match(content, /SUPPORT_ILLUSTRATIONS\.why/);
     assert.match(content, /className="support-page__why-illustration"/);
     assert.doesNotMatch(content, /support-page__why-media|SUPPORT_ILLUSTRATIONS\.cooperation/);
-    assert.match(content, /alt="A fruit tree illustrating how support helps Humanity Union/);
+    assert.match(content, /t\("why\.imageAlt",\s*siteName\)/);
     assert.match(css, /\.support-page__why[\s\S]*grid-template-columns:\s*minmax\(0,\s*3fr\)\s+minmax\(0,\s*2fr\)/);
     assert.match(
       css,

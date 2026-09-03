@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import { Button, Card } from "../../../design-system";
 import { AllNominationsModal } from "../../civic-nomination/components/AllNominationsModal";
 import { CreateNominationButton } from "../../civic-nomination/components/CreateNominationButton";
@@ -55,6 +57,8 @@ function InstitutionCardDetails({
   onOpenNominations: () => void;
 }) {
   const t = useTranslations("institutionsPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const purpose = t(`records.${institution.id}.purpose`);
   const role = t(`records.${institution.id}.role`);
   const knowledgeTitle = t(`records.${institution.id}.knowledgeTitle`);
@@ -114,9 +118,11 @@ function InstitutionCardDetails({
 
 export function InstitutionCard({ institution, layout = "standard" }: InstitutionCardProps) {
   const t = useTranslations("institutionsPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const [modalOpen, setModalOpen] = useState(false);
   const nominatable = isNominatableInstitution(institution);
-  const name = t(`records.${institution.id}.name`);
+  const name = t(`records.${institution.id}.name`, siteName);
   const purpose = t(`records.${institution.id}.purpose`);
   const shortDescription = getShortDescription(purpose);
 

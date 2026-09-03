@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type { LatestInitiativesPublicProjection } from "@hu/types";
 
 import { ExperienceBlockShell, LatestInitiativesEvidence } from "../../public-experience";
@@ -16,6 +18,8 @@ export function LatestCommunityInitiativesSection({
   communityName,
 }: LatestCommunityInitiativesSectionProps) {
   const t = useTranslations("publicGeo.community.initiatives");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   return (
     <ExperienceBlockShell
@@ -23,7 +27,7 @@ export function LatestCommunityInitiativesSection({
       title={t("title")}
       architecturalName={t("architecturalName")}
       stage={t("stage")}
-      contextIntroduction={t("contextIntroduction", { communityName })}
+      contextIntroduction={t("contextIntroduction", { communityName, ...siteName })}
       visitorConclusion={t("visitorConclusion")}
     >
       <LatestInitiativesEvidence projection={projection} emptyMessage={t("emptyMessage")} />

@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import { Button } from "../../../design-system/components/Button";
 import { Card } from "../../../design-system/components/Card";
 import { CONTACT_EMAIL, mailtoContactLink } from "../../public-experience/footer-links";
@@ -78,6 +80,8 @@ function SupportAction({
 
 export function SupportPageContent() {
   const t = useTranslations("supportPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const [links, setLinks] = useState<ResolvedSupportOperationalLinks>({
     donationUrl: SUPPORT_LINK_FALLBACKS.donation,
     volunteerUrl: SUPPORT_LINK_FALLBACKS.volunteer,
@@ -100,13 +104,13 @@ export function SupportPageContent() {
     <div className="support-page">
       <header className="support-page__hero">
         <div className="support-page__hero-copy">
-          <h1 className="support-page__title">{t("title")}</h1>
+          <h1 className="support-page__title">{t("title", siteName)}</h1>
           <p className="support-page__subtitle">{t("subtitle")}</p>
           <div className="support-page__lede">
-            <p>{t("lede1")}</p>
+            <p>{t("lede1", siteName)}</p>
             <p>{t("lede2")}</p>
           </div>
-          <p className="support-page__statement">{t("statement")}</p>
+          <p className="support-page__statement">{t("statement", siteName)}</p>
         </div>
         <div className="support-page__hero-media">
           <Image
@@ -149,7 +153,7 @@ export function SupportPageContent() {
                 {t("donate.cta")}
               </SupportAction>
             </div>
-            <p className="support-page__note">{t("donate.note")}</p>
+            <p className="support-page__note">{t("donate.note", siteName)}</p>
           </Card>
 
           <Card className="support-page__card">
@@ -166,10 +170,10 @@ export function SupportPageContent() {
             <div className="support-page__card-actions">
               <SupportAction
                 href={links.volunteerUrl}
-                disabledLabel={t("volunteer.disabledLabel")}
-                opensInNewTabLabel={t("opensInNewTab", { label: t("volunteer.cta") })}
+                disabledLabel={t("volunteer.disabledLabel", siteName)}
+                opensInNewTabLabel={t("opensInNewTab", { label: t("volunteer.cta", siteName) })}
               >
-                {t("volunteer.cta")}
+                {t("volunteer.cta", siteName)}
               </SupportAction>
             </div>
             <p className="support-page__note">
@@ -187,7 +191,7 @@ export function SupportPageContent() {
               unoptimized
             />
             <h3 className="support-page__card-title">{t("regional.title")}</h3>
-            <p className="support-page__card-body">{t("regional.body")}</p>
+            <p className="support-page__card-body">{t("regional.body", siteName)}</p>
             <div className="support-page__card-actions">
               <SupportAction
                 href={links.regionalProgramUrl}
@@ -210,14 +214,14 @@ export function SupportPageContent() {
             </h2>
             <p className="support-page__body">{t("why.p1")}</p>
             <p className="support-page__body">{t("why.p2")}</p>
-            <p className="support-page__body">{t("why.p3")}</p>
+            <p className="support-page__body">{t("why.p3", siteName)}</p>
             <p className="support-page__body">{t("why.p4")}</p>
-            <p className="support-page__body">{t("why.p5")}</p>
+            <p className="support-page__body">{t("why.p5", siteName)}</p>
           </div>
           <div className="support-page__why-illustration">
             <Image
               src={SUPPORT_ILLUSTRATIONS.why}
-              alt={t("why.imageAlt")}
+              alt={t("why.imageAlt", siteName)}
               width={650}
               height={350}
               className="support-page__why-image"

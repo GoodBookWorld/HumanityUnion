@@ -7,7 +7,14 @@ import { useTranslations } from "next-intl";
 import { Card } from "../../../design-system/components/Card";
 import type { KnowledgeArticlePublic, KnowledgeCenterListing } from "@hu/types";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 import { fetchKnowledgeArticle, fetchKnowledgeListing } from "../api";
+import {
+  resolveKnowledgeArticleField,
+  resolveKnowledgeArticleTitle,
+  resolveKnowledgeExplanationSection,
+  resolveKnowledgeKeyConcepts,
+} from "../resolve-knowledge-presentation";
 import { KnowledgeShell } from "./KnowledgeShell";
 
 import "../knowledge-center.css";
@@ -18,6 +25,8 @@ interface KnowledgeArticlePageContentProps {
 
 export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageContentProps) {
   const t = useTranslations("knowledgePublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const [listing, setListing] = useState<KnowledgeCenterListing | null>(null);
   const [article, setArticle] = useState<KnowledgeArticlePublic | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,20 +57,35 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
     };
   }, [slug, t]);
 
+  const title = article
+    ? resolveKnowledgeArticleTitle(slug, article.title, t, siteName)
+    : "";
+  const purpose = article
+    ? resolveKnowledgeArticleField(slug, "purpose", article.purpose, t, siteName)
+    : null;
+  const overview = article
+    ? resolveKnowledgeArticleField(slug, "overview", article.overview, t, siteName)
+    : null;
+  const keyConcepts = article
+    ? resolveKnowledgeKeyConcepts(slug, article.keyConcepts, t, siteName)
+    : null;
+
   return (
     <KnowledgeShell listing={listing}>
       {error ? <p role="alert">{error}</p> : null}
       {!error && !article ? <p role="status">{t("article.loading")}</p> : null}
-      {article ? (
+      {article && purpose && overview && keyConcepts ? (
         <article className="knowledge-article">
           <header className="knowledge-article__header">
-            <h1>{article.title}</h1>
-            <p className="knowledge-article__purpose">{article.purpose}</p>
+            <h1>{title}</h1>
+            <p className="knowledge-article__purpose" data-source={purpose.source}>
+              {purpose.value}
+            </p>
           </header>
 
           <Card>
             <h2>{t("article.purpose")}</h2>
-            <p>{article.purpose}</p>
+            <p data-source={purpose.source}>{purpose.value}</p>
           </Card>
 
           <section className="knowledge-article__diagram" aria-label={t("article.diagramAria")}>
@@ -70,20 +94,27 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
 
           <Card>
             <h2>{t("article.overview")}</h2>
-            <p>{article.overview}</p>
+            <p data-source={overview.source}>{overview.value}</p>
           </Card>
 
-          {article.explanation.map((section) => (
-            <Card key={section.id} className="knowledge-article__section">
-              <h2>{section.heading}</h2>
-              <p>{section.body}</p>
-            </Card>
-          ))}
+          {article.explanation.map((section) => {
+            const localized = resolveKnowledgeExplanationSection(slug, section, t, siteName);
+            return (
+              <Card
+                key={section.id}
+                className="knowledge-article__section"
+                data-source={localized.source}
+              >
+                <h2>{localized.heading}</h2>
+                <p>{localized.body}</p>
+              </Card>
+            );
+          })}
 
-          <Card>
+          <Card data-source={keyConcepts.source}>
             <h2>{t("article.keyConcepts")}</h2>
             <ul>
-              {article.keyConcepts.map((concept) => (
+              {keyConcepts.concepts.map((concept) => (
                 <li key={concept}>{concept}</li>
               ))}
             </ul>
@@ -100,7 +131,9 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
                 <ul>
                   {article.relatedConcepts.map((item) => (
                     <li key={item.slug}>
-                      <Link href={item.href}>{item.title}</Link>
+                      <Link href={item.href}>
+                        {resolveKnowledgeArticleTitle(item.slug, item.title, t, siteName)}
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -113,7 +146,9 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
                 <ul>
                   {article.relatedGuides.map((item) => (
                     <li key={item.slug}>
-                      <Link href={item.href}>{item.title}</Link>
+                      <Link href={item.href}>
+                        {resolveKnowledgeArticleTitle(item.slug, item.title, t, siteName)}
+                      </Link>
                     </li>
                   ))}
                 </ul>

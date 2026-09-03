@@ -119,7 +119,11 @@ describe("Pack 08I — Civic Media structured editorial + chrome", () => {
 
     assert.match(editorial, /useCivicMediaResolvedEditorial/);
     assert.match(editorial, /resolveTranslatedContent/);
-    assert.match(editorial, /enableOnDemandGenerate|presentationMode === "original"|sourceKind:\s*"civic_media"/);
+    assert.match(editorial, /generateContentTranslation/);
+    assert.match(
+      editorial,
+      /enableOnDemandGenerate|presentationMode === "original"|sourceKind:\s*"civic_media"/,
+    );
     assert.doesNotMatch(editorial, /stableJsonForDisplay/);
     assert.doesNotMatch(editorial, /CivicPublicTranslatedSection/);
     assert.doesNotMatch(editorial, /JSON\.stringify/);

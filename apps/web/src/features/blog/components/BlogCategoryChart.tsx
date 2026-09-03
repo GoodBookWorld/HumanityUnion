@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { PublicBlogCategoryCount } from "@hu/types";
 
 import { buildBlogIndexHref } from "../blog-url";
+import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 
 interface BlogCategoryChartProps {
   counts: readonly PublicBlogCategoryCount[];
@@ -13,17 +14,18 @@ interface BlogCategoryChartProps {
 
 /** Pack 14D — vertically stacked category chart with accessible text counts. */
 export function BlogCategoryChart({ counts, activeCategorySlug, q }: BlogCategoryChartProps) {
-  const t = useTranslations("blogPublic.discovery.categoryChart");
+  const t = useTranslations("blogPublic");
+  const tChart = useTranslations("blogPublic.discovery.categoryChart");
   const visible = counts.filter((row) => row.count > 0);
   const max = Math.max(0, ...visible.map((row) => row.count));
 
   return (
     <section className="blog-rail-widget blog-category-chart" aria-labelledby="blog-category-chart-heading">
       <h2 id="blog-category-chart-heading" className="hu-heading-3 blog-rail-widget__title">
-        {t("heading")}
+        {tChart("heading")}
       </h2>
       {visible.length === 0 ? (
-        <p className="hu-caption">{t("empty")}</p>
+        <p className="hu-caption">{tChart("empty")}</p>
       ) : (
         <ul className="blog-category-chart__list">
           {visible.map((row) => {
@@ -34,6 +36,7 @@ export function BlogCategoryChart({ counts, activeCategorySlug, q }: BlogCategor
               page: 1,
             });
             const isActive = activeCategorySlug === row.slug;
+            const displayName = resolveBlogCategoryDisplayName(row.categoryId, t);
             return (
               <li key={row.categoryId} className="blog-category-chart__item">
                 <Link
@@ -46,9 +49,9 @@ export function BlogCategoryChart({ counts, activeCategorySlug, q }: BlogCategor
                   aria-current={isActive ? "page" : undefined}
                 >
                   <span className="blog-category-chart__label">
-                    <span className="blog-category-chart__name">{row.name}</span>
+                    <span className="blog-category-chart__name">{displayName}</span>
                     <span className="blog-category-chart__count">
-                      {t(row.count === 1 ? "publicationCount" : "publicationCountPlural", {
+                      {tChart(row.count === 1 ? "publicationCount" : "publicationCountPlural", {
                         count: row.count,
                       })}
                     </span>

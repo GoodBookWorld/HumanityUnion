@@ -1,5 +1,8 @@
 import type { MembershipMePayload } from "@hu/types";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
+
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 
 import { GeographyMultiSelect } from "../../../design-system/components/GeographyMultiSelect";
 import { Button } from "../../../design-system/components/Button";
@@ -34,6 +37,9 @@ interface MembershipApplicationFormProps {
 }
 
 export function MembershipApplicationForm({ payload, onUpdated }: MembershipApplicationFormProps) {
+  const t = useTranslations("membershipPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
   const countryOptions = useMemo(() => toGeographyCountryOptions(), []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +116,7 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
       });
 
       onUpdated(result);
-      setMessage(submit ? "Application submitted successfully." : "Draft saved successfully.");
+      setMessage(submit ? t("application.submittedSuccess") : t("application.draftSaved"));
     } catch (saveError) {
       setError(formatAuthFormError(saveError));
     } finally {
@@ -121,19 +127,20 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
   return (
     <section className="membership-section" aria-labelledby="membership-application-title">
       <SectionHeader
-        title="Membership Application"
-        description="Complete your voluntary Membership application."
+        title={t("application.title")}
+        description={t("application.description")}
+        titleId="membership-application-title"
       />
       <Card>
         {!payload.emailConfirmed ? (
           <StatusBanner
-            title="Email confirmation required"
-            message="Confirm your email before starting a Membership application."
+            title={t("application.emailRequiredTitle")}
+            message={t("application.emailRequiredMessage")}
           />
         ) : applicationLocked ? (
           <StatusBanner
-            title="Application submitted"
-            message="Your Membership application has been submitted. Complete the Membership Contribution below to become a Member."
+            title={t("application.submittedTitle")}
+            message={t("application.submittedMessage")}
           />
         ) : (
           <form
@@ -145,7 +152,7 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
             noValidate
           >
             <label className="membership-application-form__field" htmlFor="membership-display-name">
-              <span>Display Name</span>
+              <span>{t("application.displayName")}</span>
               <input
                 id="membership-display-name"
                 type="text"
@@ -159,17 +166,19 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
 
             <GeographyMultiSelect
               id="membership-participation-countries"
-              label="Countries of Civic Participation"
-              helperText="Select the countries where you live, have community connections, or intend to participate in civic activity."
+              label={t("application.countriesLabel")}
+              helperText={t("application.countriesHelper")}
               values={participationCountryCodes}
               options={countryOptions}
               onChange={setParticipationCountryCodes}
               maxSelections={MEMBERSHIP_PARTICIPATION_COUNTRY_LIMIT}
-              limitReachedMessage={`You may select up to ${MEMBERSHIP_PARTICIPATION_COUNTRY_LIMIT} countries of civic participation.`}
+              limitReachedMessage={t("application.countriesLimit", {
+                max: MEMBERSHIP_PARTICIPATION_COUNTRY_LIMIT,
+              })}
             />
 
             <fieldset className="membership-application-form__declarations">
-              <legend>Membership Declaration</legend>
+              <legend>{t("application.declarationLegend")}</legend>
 
               <label className="membership-application-form__checkbox">
                 <input
@@ -177,7 +186,7 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
                   checked={understandMembershipMeaning}
                   onChange={(event) => setUnderstandMembershipMeaning(event.target.checked)}
                 />
-                <span>I understand the purpose of Humanity Union Membership.</span>
+                <span>{t("application.declareMeaning", siteName)}</span>
               </label>
 
               <label className="membership-application-form__checkbox">
@@ -186,7 +195,7 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
                   checked={understandNoVoteWeightChange}
                   onChange={(event) => setUnderstandNoVoteWeightChange(event.target.checked)}
                 />
-                <span>I understand that Membership does not change voting power.</span>
+                <span>{t("application.declareVoteWeight")}</span>
               </label>
 
               <label className="membership-application-form__checkbox">
@@ -195,11 +204,11 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
                   checked={understandDataPolicy}
                   onChange={(event) => setUnderstandDataPolicy(event.target.checked)}
                 />
-                <span>I understand Humanity Union&apos;s Membership data policy.</span>
+                <span>{t("application.declareDataPolicy", siteName)}</span>
               </label>
             </fieldset>
 
-            {message ? <StatusBanner title="Success" message={message} /> : null}
+            {message ? <StatusBanner title={t("application.successTitle")} message={message} /> : null}
             {error ? (
               <div className="membership-application-form__error" role="alert">
                 {error}
@@ -213,10 +222,10 @@ export function MembershipApplicationForm({ payload, onUpdated }: MembershipAppl
                 disabled={submitting}
                 onClick={() => void handleSave(false)}
               >
-                Save Draft
+                {t("application.saveDraft")}
               </Button>
               <Button type="submit" variant="primary" disabled={submitting}>
-                Submit Application
+                {t("application.submit")}
               </Button>
             </div>
           </form>

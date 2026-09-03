@@ -11,7 +11,10 @@ import type {
 } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
-import { resolveTranslatedContent } from "../../language/translation-api";
+import {
+  generateContentTranslation,
+  resolveTranslatedContent,
+} from "../../language/translation-api";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 
 export const CIVIC_MEDIA_RECORD_ID = "civic-media-center";
@@ -194,9 +197,9 @@ export function overlayCivicMediaEditorialFromFields(
 }
 
 /**
- * Pack 02G / 08I — cache-first civic_media editorial overlay.
- * Resolves translated fields only (no POST /generate). Structured JSON fields are
- * parsed back into arrays; never stringify for UI display.
+ * Pack 02G / 08I / 08I.7 — cache-first civic_media editorial overlay.
+ * Preferred locale + original miss + not stale → generateContentTranslation (blog parity).
+ * Structured JSON fields are parsed back into arrays; never stringify for UI display.
  */
 export function useCivicMediaResolvedEditorial(
   media: CivicMediaCenterPublic,
@@ -217,14 +220,34 @@ export function useCivicMediaResolvedEditorial(
 
     let cancelled = false;
     const readingLanguage = readingContext.readingLanguage;
+    const preference = readingContext.translationPreference;
 
     void (async () => {
       try {
-        const resolved = await resolveTranslatedContent({
+        let resolved = await resolveTranslatedContent({
           sourceKind: "civic_media",
           sourceRecordId: CIVIC_MEDIA_RECORD_ID,
           language: readingLanguage,
         });
+
+        if (
+          preference === "preferred" &&
+          resolved.presentationMode === "original" &&
+          readingLanguage !== resolved.originalLanguage &&
+          !resolved.isStale
+        ) {
+          try {
+            const generated = await generateContentTranslation({
+              sourceKind: "civic_media",
+              sourceRecordId: CIVIC_MEDIA_RECORD_ID,
+              targetLanguage: readingLanguage,
+            });
+            resolved = generated.display;
+          } catch {
+            // keep resolve result
+          }
+        }
+
         if (cancelled) {
           return;
         }

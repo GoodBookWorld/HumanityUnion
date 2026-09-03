@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import { WORKSPACE_ROUTE } from "../constants";
 import { ExperienceBlockShell, REGISTRATION_ROUTE } from "../../public-experience";
 
@@ -16,6 +18,8 @@ export function RegistrationGatewayWorkspaceSection({
   isAuthenticated = false,
 }: RegistrationGatewayWorkspaceSectionProps) {
   const t = useTranslations("publicGeo");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   return (
     <ExperienceBlockShell
@@ -23,14 +27,14 @@ export function RegistrationGatewayWorkspaceSection({
       title={
         isAuthenticated
           ? t("shared.registration.workspaceActionLabel")
-          : t("community.registration.title")
+          : t("community.registration.title", siteName)
       }
       architecturalName={t("community.registration.architecturalName")}
       stage={t("community.registration.stage")}
       contextIntroduction={
         isAuthenticated
           ? t("shared.registration.workspaceContinuationContext", { communityName })
-          : t("shared.registration.contextIntroductionNamed", { communityName })
+          : t("shared.registration.contextIntroductionNamed", { communityName, ...siteName })
       }
       visitorConclusion={t("shared.registration.visitorConclusion")}
     >

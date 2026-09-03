@@ -1,4 +1,6 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+
+import { resolveBrandForMetadata } from "../../features/brand-localization/resolve-brand-for-metadata";
 
 import {
   CONTACT_EMAIL,
@@ -12,12 +14,15 @@ import { CONTACT_SUBJECT_IDS } from "../../features/public-experience/contact.co
 import "../../features/legal/legal-page.css";
 
 export default async function ContactPage() {
+  const locale = await getLocale();
+  const brand = await resolveBrandForMetadata(locale);
+  const siteName = { siteName: brand.siteName };
   const t = await getTranslations("contactPublic");
 
   return (
     <article className="contact-page">
       <h1>{t("pageTitle")}</h1>
-      <p className="contact-page__intro">{t("intro")}</p>
+      <p className="contact-page__intro">{t("intro", siteName)}</p>
 
       <div className="contact-page__details">
         <p>
@@ -47,7 +52,7 @@ export default async function ContactPage() {
         </div>
       </section>
 
-      <p className="contact-page__hint">{t("hint")}</p>
+      <p className="contact-page__hint">{t("hint", siteName)}</p>
       <p className="contact-page__hint" role="note">
         {t("successChrome")}
       </p>

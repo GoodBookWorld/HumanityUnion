@@ -76,14 +76,15 @@ describe("Production Completion Pack 02G Task 07B — auth-aware content resolve
     }
   });
 
-  it("D. guest path settles once with platform default / no auth retry loop", () => {
+  it("D. guest path settles with preferred + interface/default locale (08I.7)", () => {
     const hook = readWeb("src/features/language/use-public-content-reading-context.ts");
     const probe = readWeb("src/features/language/public-content-reading-probe.ts");
-    assert.match(probe, /GUEST_FIELDS|unauthorized/);
-    assert.match(probe, /translationPreference:\s*"none"/);
-    assert.match(probe, /readingLanguage:\s*DEFAULT_PLATFORM_LANGUAGE/);
+    assert.match(probe, /unauthorized/);
+    assert.match(probe, /translationPreference:\s*"preferred"/);
+    assert.match(probe, /interfaceLocale/);
     assert.match(probe, /isAuthenticated:\s*false/);
     assert.match(hook, /isAuthenticationRequiredError/);
+    assert.match(hook, /interfaceLocale/);
     assert.doesNotMatch(hook, /setInterval|while\s*\(/);
   });
 

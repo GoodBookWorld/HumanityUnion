@@ -8,6 +8,7 @@ import type { PublicBlogPostListItem } from "@hu/types";
 
 import { formatBlogPublishedDate } from "../api";
 import { buildBlogIndexHref } from "../blog-url";
+import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { BlogAuthorInline } from "./BlogAuthorInline";
@@ -135,7 +136,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
               className="blog-post-card__meta-icon"
               aria-hidden="true"
             />
-            <span>{post.category.name}</span>
+            <span>{resolveBlogCategoryDisplayName(post.category.categoryId, t)}</span>
           </Link>
         </p>
 

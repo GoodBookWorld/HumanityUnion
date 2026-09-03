@@ -21,13 +21,14 @@ export function CivicPipelineWorkflow({
   stageTitles,
 }: CivicPipelineWorkflowProps = {}) {
   const t = useTranslations("civicMediaPublic.pipeline");
-  const stages =
-    stageTitles && stageTitles.length === CIVIC_PIPELINE_STAGES.length
-      ? CIVIC_PIPELINE_STAGES.map((stage, index) => ({
-          ...stage,
-          title: stageTitles[index]!.trim() || stage.title,
-        }))
-      : CIVIC_PIPELINE_STAGES;
+  const stages = CIVIC_PIPELINE_STAGES.map((stage, index) => {
+    const overlayTitle = stageTitles?.[index]?.trim();
+    return {
+      ...stage,
+      title: overlayTitle || t(`stages.${stage.id}.title`),
+      description: t(`stages.${stage.id}.description`),
+    };
+  });
 
   return (
     <HuxWorkflowSection

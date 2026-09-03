@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type { CommunityImpactOverviewPublicProjection } from "@hu/types";
 
 import { ExperienceBlockShell } from "../../public-experience";
@@ -15,6 +17,8 @@ export function CommunityImpactOverviewSection({
   projection,
 }: CommunityImpactOverviewSectionProps) {
   const t = useTranslations("publicGeo");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   return (
     <ExperienceBlockShell
@@ -24,8 +28,9 @@ export function CommunityImpactOverviewSection({
       stage={t("community.impact.stage")}
       contextIntroduction={t("community.impact.contextIntroduction", {
         communityName: projection.communityName,
+        ...siteName,
       })}
-      visitorConclusion={t("community.impact.visitorConclusion")}
+      visitorConclusion={t("community.impact.visitorConclusion", siteName)}
     >
       <div className="community-impact-overview">
         <p className="community-impact-overview__scope">

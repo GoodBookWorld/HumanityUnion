@@ -1,10 +1,10 @@
 /**
- * Pack 08I.5 — reusable Blog presentation resolver (title / excerpt / HTML content).
+ * Pack 08I.7 — reusable Initiative card presentation resolver (title / summary).
  * Uses existing content_translations pipeline only — no second translation engine.
- * Canonical blog fields are never overwritten.
+ * Canonical initiative fields are never overwritten.
  */
 
-import type { ResolvedTranslatedDisplay } from "@hu/types";
+import type { LanguageCode, ResolvedTranslatedDisplay } from "@hu/types";
 
 import {
   generateContentTranslation,
@@ -12,23 +12,22 @@ import {
 } from "../language/translation-api";
 import type { PublicContentReadingContext } from "../language/use-public-content-reading-context";
 
-export interface BlogPresentationFields {
+export interface InitiativeCardPresentationFields {
   readonly title: string;
-  readonly excerpt: string;
-  readonly contentHtml: string;
+  readonly summary: string;
 }
 
-export interface ResolvedBlogPresentation extends BlogPresentationFields {
+export interface ResolvedInitiativeCardPresentation extends InitiativeCardPresentationFields {
   readonly presentationMode: "translated" | "original";
   readonly isStale: boolean;
 }
 
-export interface BlogPresentationDeps {
+export interface InitiativeCardPresentationDeps {
   readonly resolveTranslatedContent: typeof resolveTranslatedContent;
   readonly generateContentTranslation: typeof generateContentTranslation;
 }
 
-const defaultDeps: BlogPresentationDeps = {
+const defaultDeps: InitiativeCardPresentationDeps = {
   resolveTranslatedContent,
   generateContentTranslation,
 };
@@ -46,22 +45,23 @@ function pickTranslatedField(
 }
 
 /**
- * Resolve eligible Blog presentation fields for the current reading context.
+ * Resolve eligible Initiative card presentation fields for the current reading context.
  * Missing/stale translation → canonical fallbacks.
+ * TRANSLATION_EXISTS path: resolveTranslatedContent returns non-original → map title/description.
  *
  * `deps` is injectable for fixture tests that prove an existing translation reaches presentation.
  */
-export async function resolveBlogPostPresentation(
+export async function resolveInitiativeCardPresentation(
   input: {
-    readonly postId: string;
-    readonly canonical: BlogPresentationFields;
+    readonly initiativeId: string;
+    readonly canonical: InitiativeCardPresentationFields;
     readonly readingContext: Pick<
       PublicContentReadingContext,
       "ready" | "readingLanguage" | "translationPreference"
     >;
   },
-  deps: BlogPresentationDeps = defaultDeps,
-): Promise<ResolvedBlogPresentation> {
+  deps: InitiativeCardPresentationDeps = defaultDeps,
+): Promise<ResolvedInitiativeCardPresentation> {
   const { canonical, readingContext } = input;
 
   if (!readingContext.ready || readingContext.translationPreference === "none") {
@@ -74,9 +74,9 @@ export async function resolveBlogPostPresentation(
 
   try {
     let resolved = await deps.resolveTranslatedContent({
-      sourceKind: "blog_post",
-      sourceRecordId: input.postId,
-      language: readingContext.readingLanguage,
+      sourceKind: "initiative",
+      sourceRecordId: input.initiativeId,
+      language: readingContext.readingLanguage as LanguageCode,
     });
 
     if (
@@ -87,9 +87,9 @@ export async function resolveBlogPostPresentation(
     ) {
       try {
         const generated = await deps.generateContentTranslation({
-          sourceKind: "blog_post",
-          sourceRecordId: input.postId,
-          targetLanguage: readingContext.readingLanguage,
+          sourceKind: "initiative",
+          sourceRecordId: input.initiativeId,
+          targetLanguage: readingContext.readingLanguage as LanguageCode,
         });
         resolved = generated.display;
       } catch {
@@ -107,8 +107,7 @@ export async function resolveBlogPostPresentation(
 
     return {
       title: pickTranslatedField(resolved, "title", canonical.title),
-      excerpt: pickTranslatedField(resolved, "excerpt", canonical.excerpt),
-      contentHtml: pickTranslatedField(resolved, "content", canonical.contentHtml),
+      summary: pickTranslatedField(resolved, "description", canonical.summary),
       presentationMode: "translated",
       isStale: Boolean(resolved.isStale),
     };

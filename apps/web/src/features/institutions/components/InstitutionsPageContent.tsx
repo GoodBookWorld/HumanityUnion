@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import { Button } from "../../../design-system";
 import { PublicHomeCreateInitiativeCta } from "../../public-home-v2/components/PublicHomeCreateInitiativeCta";
 import { INSTITUTIONS_FOOTER } from "../constants";
@@ -34,6 +36,8 @@ const GRID_AFTER_WPC = STANDARD_INSTITUTION_CARDS.filter((record) =>
 
 export function InstitutionsPageContent() {
   const t = useTranslations("institutionsPublic");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   return (
     <main className="institutions-page">
@@ -45,7 +49,7 @@ export function InstitutionsPageContent() {
           <h1 id="institutions-hero-title">{t("headline")}</h1>
           <p className="institutions-hero__subheadline">{t("subheadline")}</p>
           <div className="institutions-hero__banner" role="note">
-            <p>{t("banner")}</p>
+            <p>{t("banner", siteName)}</p>
           </div>
           <div className="institutions-hero__actions">
             <PublicHomeCreateInitiativeCta label={t("primaryCta")} />
@@ -63,7 +67,7 @@ export function InstitutionsPageContent() {
       >
         <div className="institutions-section__inner">
           <h2 id="institutions-grid-title">{t("gridTitle")}</h2>
-          <p className="institutions-grid-section__intro">{t("gridIntro")}</p>
+          <p className="institutions-grid-section__intro">{t("gridIntro", siteName)}</p>
 
           <div className="institutions-grid">
             {GRID_BEFORE_WPC.map((institution) => (

@@ -1,9 +1,9 @@
 "use client";
 
 import type { TrustedMediaResource } from "@hu/types";
+import { useTranslations } from "next-intl";
 
 import { Badge, Card } from "../../../design-system";
-import { TRUSTED_MEDIA_CATEGORY_LABELS } from "../civic-media-card-utils";
 import { MediaLogo } from "./MediaLogo";
 
 interface TrustedMediaRailCardProps {
@@ -21,8 +21,11 @@ export function TrustedMediaRailCard({
   categoryTitle,
   className,
 }: TrustedMediaRailCardProps) {
-  const resolvedCategoryTitle =
-    categoryTitle ?? TRUSTED_MEDIA_CATEGORY_LABELS[resource.categoryId] ?? resource.categoryId;
+  const t = useTranslations("civicMediaPublic");
+  const catalogCategory = t.has(`trustedCategories.${resource.categoryId}`)
+    ? t(`trustedCategories.${resource.categoryId}`)
+    : resource.categoryId;
+  const resolvedCategoryTitle = categoryTitle ?? catalogCategory;
 
   return (
     <Card
@@ -59,11 +62,11 @@ export function TrustedMediaRailCard({
           target="_blank"
           rel="noopener noreferrer"
         >
-          Official website
+          {t("officialWebsite")}
         </a>
       ) : (
         <a href={resource.websiteUrl} className="hu-button hu-button--secondary">
-          Official website
+          {t("officialWebsite")}
         </a>
       )}
     </Card>

@@ -11,7 +11,6 @@ import {
   CivicShareButton,
 } from "../civic-share";
 import { InitiativeImage } from "../initiatives/components/InitiativeImage";
-import { resolveTranslatedContent, generateContentTranslation } from "../language/translation-api";
 import { usePublicContentReadingContext } from "../language/use-public-content-reading-context";
 import {
   formatInitiativeExperienceDate,
@@ -19,6 +18,8 @@ import {
   resolveInitiativeStatusDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../public-initiative-experience/initiative-experience-i18n";
+
+import { resolveInitiativeCardPresentation } from "./resolve-initiative-card-presentation";
 
 import "./public-initiative-mini-card.css";
 
@@ -57,45 +58,20 @@ export function PublicInitiativeMiniCard({
     }
 
     let cancelled = false;
-    const readingLanguage = readingContext.readingLanguage;
-    const preference = readingContext.translationPreference;
-
-    void (async () => {
-      try {
-        let resolved = await resolveTranslatedContent({
-          sourceKind: "initiative",
-          sourceRecordId: initiative.initiativeId,
-          language: readingLanguage,
-        });
-
-        if (
-          preference === "preferred" &&
-          resolved.presentationMode === "original" &&
-          readingLanguage !== resolved.originalLanguage &&
-          !resolved.isStale
-        ) {
-          try {
-            const generated = await generateContentTranslation({
-              sourceKind: "initiative",
-              sourceRecordId: initiative.initiativeId,
-              targetLanguage: readingLanguage,
-            });
-            resolved = generated.display;
-          } catch {
-            // keep original
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        setDisplayTitle(resolved.content.title || initiative.title);
-        setDisplaySummary(resolved.content.description || initiative.summary);
-      } catch {
-        // keep props — never mutate source
+    void resolveInitiativeCardPresentation({
+      initiativeId: initiative.initiativeId,
+      canonical: {
+        title: initiative.title,
+        summary: initiative.summary,
+      },
+      readingContext,
+    }).then((presentation) => {
+      if (cancelled) {
+        return;
       }
-    })();
+      setDisplayTitle(presentation.title);
+      setDisplaySummary(presentation.summary);
+    });
 
     return () => {
       cancelled = true;

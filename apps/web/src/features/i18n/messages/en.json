@@ -146,7 +146,7 @@
     "twoStepDisabledSuccess": "Two-Step Login disabled successfully.",
     "newVerificationCodeSent": "A new verification code has been sent.",
     "confirmEmailChangeTitle": "Confirm email change",
-    "confirmEmailChangeSubtitle": "Finish updating your Humanity Union account email.",
+    "confirmEmailChangeSubtitle": "Finish updating your {siteName} account email.",
     "confirmingEmailChange": "Confirming your email change...",
     "emailChangeUpdated": "Your email address has been updated.",
     "emailChangeTokenMissing": "Email change token is missing.",
@@ -3153,7 +3153,85 @@
       "eyebrow": "CIVIC PIPELINE",
       "title": "How News Creates Initiatives",
       "description": "Verified information moves through discussion, analysis, decision, and public impact.",
-      "label": "civic workflow stages"
+      "label": "civic workflow stages",
+      "stages": {
+        "news": {
+          "title": "News",
+          "description": "A verified event enters the civic workspace."
+        },
+        "verification": {
+          "title": "Verification",
+          "description": "Members examine the source, evidence, and context."
+        },
+        "discussion": {
+          "title": "Discussion",
+          "description": "Participants identify concerns, affected communities, and possible responses."
+        },
+        "initiative": {
+          "title": "Initiative",
+          "description": "A Member converts the verified event into a civic initiative."
+        },
+        "analysis": {
+          "title": "Analysis",
+          "description": "Participants examine causes, consequences, and available solutions."
+        },
+        "proposal": {
+          "title": "Proposal",
+          "description": "A concrete course of action is developed."
+        },
+        "decision": {
+          "title": "Decision",
+          "description": "The community or responsible institution evaluates and adopts a decision."
+        },
+        "implementation": {
+          "title": "Implementation",
+          "description": "Members and institutions carry out agreed actions."
+        },
+        "impact": {
+          "title": "Impact",
+          "description": "Results are measured and made visible."
+        },
+        "archive": {
+          "title": "Archive",
+          "description": "The full civic record remains publicly accessible."
+        }
+      }
+    },
+    "principles": {
+      "editorial-transparency": {
+        "whyItMatters": "Readers can evaluate possible bias before trusting a report."
+      },
+      "correction-policy": {
+        "whyItMatters": "Mistakes can be identified and corrected with public accountability."
+      },
+      "professional-standards": {
+        "whyItMatters": "Reporting follows recognized journalistic or academic review practices."
+      },
+      "evidence-based": {
+        "whyItMatters": "Claims can be traced to verifiable documentation or primary sources."
+      },
+      "international-recognition": {
+        "whyItMatters": "Standards remain consistent across regions and languages."
+      },
+      "fact-checking-practice": {
+        "whyItMatters": "Verification workflows support independent claim review."
+      }
+    },
+    "trustedCategories": {
+      "international-wire-service": "International Wire Service",
+      "public-broadcaster": "Public Broadcaster",
+      "independent-investigative": "Independent Investigative",
+      "regional-public-media": "Regional Public Media",
+      "scientific-publisher": "Scientific Publisher",
+      "academic-resource": "Academic Resource"
+    },
+    "trustedCategoryTabs": {
+      "international-wire-service": "Wire Services",
+      "public-broadcaster": "Public Broadcasters",
+      "independent-investigative": "Investigative",
+      "regional-public-media": "Regional Media",
+      "scientific-publisher": "Scientific Publishers",
+      "academic-resource": "Academic Resources"
     }
   },
   "search": {
@@ -3234,18 +3312,18 @@
   },
   "seo": {
     "home": {
-      "title": "Humanity Union",
+      "title": "{siteName}",
       "description": "World Solidarity civic technology platform"
     }
   },
   "knowledgePublic": {
     "pageTitle": "Knowledge Center",
-    "pageIntro": "The official educational and reference library for Humanity Union. Knowledge explains civic processes and platform concepts — it never persuades.",
+    "pageIntro": "The official educational and reference library for {siteName}. Knowledge explains civic processes and platform concepts — it never persuades.",
     "pageSecondary": "Every article answers one question. Use diagrams and concise sections before reading long text elsewhere.",
     "loading": "Loading Knowledge Center…",
     "unavailable": "Knowledge Center unavailable.",
     "blogTitle": "Blog",
-    "blogIntro": "Read publications and reflections from Humanity Union authors.",
+    "blogIntro": "Read publications and reflections from {siteName} authors.",
     "blogMeta": "Blog is an authored Publishing surface. Knowledge remains the structured educational library — the two domains stay separate.",
     "openBlog": "Open Blog",
     "articlesCount": "{count} articles",
@@ -3287,15 +3365,364 @@
       "ariaLabel": "Knowledge Center navigation",
       "subsections": "Subsections",
       "civicMediaCenter": "Civic Media Center"
+    },
+    "categories": {
+      "getting-started": {
+        "title": "Getting Started",
+        "description": "Introduction to {siteName}, its principles, and how the platform works."
+      },
+      "explanations": {
+        "title": "Explanations",
+        "description": "Concise explanations of platform concepts and civic processes (2–5 minute reads)."
+      },
+      "institutions-experience": {
+        "title": "Institutions Experience",
+        "description": "How {siteName} interacts with existing institutions — educational overview only."
+      },
+      "guides": {
+        "title": "Guides",
+        "description": "Step-by-step tutorials for common participant tasks."
+      },
+      "constitution": {
+        "title": "Constitution",
+        "description": "Constitutional and governance principles that shape the platform."
+      },
+      "glossary": {
+        "title": "Glossary",
+        "description": "Alphabetical definitions of platform terminology."
+      },
+      "faq": {
+        "title": "FAQ",
+        "description": "Short answers to common questions."
+      }
+    },
+    "articles": {
+      "constitutional-principles": {
+        "title": "Constitutional Principles"
+      },
+      "governance-principles": {
+        "title": "Governance Principles"
+      },
+      "transparency": {
+        "title": "Transparency"
+      },
+      "responsibility": {
+        "title": "Responsibility"
+      },
+      "open-civic-processes": {
+        "title": "Open Civic Processes"
+      },
+      "reference-only-architecture": {
+        "title": "Reference-only architecture"
+      },
+      "what-is-an-initiative": {
+        "title": "What is an Initiative?"
+      },
+      "collaborative-analysis": {
+        "title": "Collaborative Analysis"
+      },
+      "improvement-proposal": {
+        "title": "Improvement Proposal"
+      },
+      "decision-session": {
+        "title": "Decision Session"
+      },
+      "collective-decision": {
+        "title": "Collective Decision"
+      },
+      "implementation-commitment": {
+        "title": "Implementation Commitment"
+      },
+      "implementation-tracking": {
+        "title": "Implementation Tracking"
+      },
+      "public-impact": {
+        "title": "Public Impact"
+      },
+      "public-civic-archive": {
+        "title": "Public Civic Archive"
+      },
+      "civic-action-package": {
+        "title": "Civic Action Package"
+      },
+      "official-response": {
+        "title": "Official Response"
+      },
+      "civic-accountability": {
+        "title": "Civic Accountability"
+      },
+      "capability02-civic-pipeline": {
+        "title": "Capability 02 Civic Pipeline"
+      },
+      "participation-areas": {
+        "title": "Participation Areas"
+      },
+      "workspace": {
+        "title": "Workspace"
+      },
+      "global-search": {
+        "title": "Global Search"
+      },
+      "notifications": {
+        "title": "Notifications"
+      },
+      "ai-assistant": {
+        "title": "AI Assistant"
+      },
+      "faq-is-humanity-union-a-government": {
+        "title": "Is {siteName} a government?",
+        "purpose": "Is {siteName} a government body?",
+        "overview": "No. {siteName} is civic technology infrastructure. It does not exercise governmental authority.",
+        "keyConcepts": {
+          "0": "Platform",
+          "1": "Institution"
+        },
+        "explanation": {
+          "answer": {
+            "heading": "Answer",
+            "body": "Institutions retain their authority. The platform documents civic participation."
+          }
+        }
+      },
+      "faq-do-i-need-an-account": {
+        "title": "Do I need an account to read public records?",
+        "purpose": "Do I need an account to browse public content?",
+        "overview": "No. Public Experience and Knowledge Center are readable without signing in.",
+        "keyConcepts": {
+          "0": "Public",
+          "1": "Account"
+        },
+        "explanation": {
+          "answer": {
+            "heading": "Answer",
+            "body": "An account is required for workspace participation — creating initiatives, voting, and notifications."
+          }
+        }
+      },
+      "faq-what-is-closed-beta": {
+        "title": "What is closed beta?",
+        "purpose": "What does closed beta mean?",
+        "overview": "Closed beta means access is invite-only while the platform stabilizes with early participants.",
+        "keyConcepts": {
+          "0": "Beta",
+          "1": "Access"
+        },
+        "explanation": {
+          "answer": {
+            "heading": "Answer",
+            "body": "Some areas may remain unfinished. Feedback helps improve stability before wider release."
+          }
+        }
+      },
+      "faq-does-assistant-decide": {
+        "title": "Does the assistant decide outcomes?",
+        "purpose": "Can the AI assistant make civic decisions for me?",
+        "overview": "No. The assistant is advisory. Participants remain responsible for all actions.",
+        "keyConcepts": {
+          "0": "Assistant",
+          "1": "Advisory"
+        },
+        "explanation": {
+          "answer": {
+            "heading": "Answer",
+            "body": "The assistant references Knowledge Center articles and may suggest draft language. It cannot vote, publish, or verify on your behalf."
+          }
+        }
+      },
+      "faq-where-is-source-of-truth": {
+        "title": "Where is the source of truth?",
+        "purpose": "Which records are authoritative?",
+        "overview": "Governed civic records in the workspace data store are authoritative. Public pages and Knowledge are reference layers.",
+        "keyConcepts": {
+          "0": "Source of truth",
+          "1": "Projection"
+        },
+        "explanation": {
+          "answer": {
+            "heading": "Answer",
+            "body": "If a public projection differs from the source record, the source record governs."
+          }
+        }
+      },
+      "what-is-humanity-union": {
+        "title": "What is {siteName}?",
+        "purpose": "What is {siteName} and what problem does it address?",
+        "overview": "{siteName} is a civic technology platform for structured, transparent participation. It helps communities move from shared concern to documented civic action — without replacing institutions.",
+        "keyConcepts": {
+          "0": "Civic participation",
+          "1": "Transparency",
+          "2": "Reference records"
+        },
+        "explanation": {
+          "role": {
+            "heading": "Platform role",
+            "body": "{siteName} provides workspace tools, public civic records, and educational reference material. It documents processes; it does not decide outcomes for participants."
+          },
+          "audience": {
+            "heading": "Who it serves",
+            "body": "Participants, guests, researchers, journalists, and future institutional partners can all read public records and learn how civic workflows operate."
+          }
+        }
+      },
+      "platform-overview": {
+        "title": "Platform Overview",
+        "purpose": "How are the main parts of the platform organized?",
+        "overview": "The platform has three public-facing layers: Knowledge Center (education), Public Experience (published civic records), and participant Workspace (private civic work).",
+        "keyConcepts": {
+          "0": "Knowledge Center",
+          "1": "Public Experience",
+          "2": "Workspace"
+        },
+        "explanation": {
+          "knowledge": {
+            "heading": "Knowledge Center",
+            "body": "Authoritative explanations of concepts, processes, and terminology. This is where you learn before participating."
+          },
+          "public": {
+            "heading": "Public Experience",
+            "body": "Published initiatives, decisions, deliveries, and archives. Anyone can browse without signing in."
+          },
+          "workspace": {
+            "heading": "Workspace",
+            "body": "Authenticated participants draft initiatives, collaborate, vote, and track implementation."
+          }
+        }
+      },
+      "core-principles": {
+        "title": "Core Principles",
+        "purpose": "What principles guide {siteName} design?",
+        "overview": "{siteName} is built on clarity, neutrality, transparency, and participant responsibility. Knowledge explains; it never persuades.",
+        "keyConcepts": {
+          "0": "Neutrality",
+          "1": "Transparency",
+          "2": "Participant responsibility"
+        },
+        "explanation": {
+          "explain": {
+            "heading": "Knowledge explains",
+            "body": "Educational content describes how processes work. It does not advocate positions or predict outcomes."
+          },
+          "neutral": {
+            "heading": "Political neutrality",
+            "body": "Platform language stays descriptive. Civic merit is evaluated by participants through governed processes, not by the platform."
+          },
+          "records": {
+            "heading": "Records over rhetoric",
+            "body": "Published civic records are the durable source of civic memory. Public pages reference those records."
+          }
+        }
+      },
+      "how-humanity-union-works": {
+        "title": "How {siteName} Works",
+        "purpose": "What is the basic flow from concern to civic record?",
+        "overview": "A participant declares an initiative, collaborates through analysis and proposals, opens collective decisions, and may deliver civic action packages to institutions. Outcomes are tracked and archived publicly.",
+        "keyConcepts": {
+          "0": "Initiative",
+          "1": "Civic pipeline",
+          "2": "Public record"
+        },
+        "explanation": {
+          "start": {
+            "heading": "Start with an initiative",
+            "body": "An initiative frames a civic question or proposed action within a participation area."
+          },
+          "pipeline": {
+            "heading": "Follow the civic pipeline",
+            "body": "Analysis, proposals, revisions, decision sessions, collective decisions, and implementation stages build a documented trail."
+          },
+          "public": {
+            "heading": "Publish and archive",
+            "body": "Published records appear in Public Experience. Completed work may enter the Public Civic Archive."
+          }
+        }
+      },
+      "cap-glossary": {
+        "title": "CAP (Civic Action Package)"
+      },
+      "steward-glossary": {
+        "title": "Steward"
+      },
+      "projection-glossary": {
+        "title": "Projection"
+      },
+      "tracking-glossary": {
+        "title": "Tracking"
+      },
+      "archive-glossary": {
+        "title": "Archive"
+      },
+      "integration-layer-glossary": {
+        "title": "Integration Layer"
+      },
+      "public-impact-glossary": {
+        "title": "Public Impact"
+      },
+      "participation-area-glossary": {
+        "title": "Participation Area"
+      },
+      "decision-session-glossary": {
+        "title": "Decision Session"
+      },
+      "collective-decision-glossary": {
+        "title": "Collective Decision"
+      },
+      "official-response-glossary": {
+        "title": "Official Response"
+      },
+      "civic-accountability-glossary": {
+        "title": "Civic Accountability"
+      },
+      "create-your-first-initiative": {
+        "title": "Create your first initiative"
+      },
+      "prepare-good-evidence": {
+        "title": "Prepare good evidence"
+      },
+      "write-better-proposals": {
+        "title": "Write better proposals"
+      },
+      "understand-decision-results": {
+        "title": "Understand decision results"
+      },
+      "track-implementation": {
+        "title": "Track implementation"
+      },
+      "prepare-public-impact": {
+        "title": "Prepare Public Impact"
+      },
+      "archive-experience": {
+        "title": "Archive experience"
+      },
+      "what-is-an-institution": {
+        "title": "What is an institution?"
+      },
+      "institution-levels": {
+        "title": "Institution levels"
+      },
+      "how-initiatives-reach-institutions": {
+        "title": "How initiatives reach institutions"
+      },
+      "how-delivery-works": {
+        "title": "How Delivery works"
+      },
+      "how-official-responses-appear": {
+        "title": "How Official Responses appear"
+      },
+      "how-civic-accountability-works": {
+        "title": "How Civic Accountability works"
+      },
+      "how-public-archive-preserves-memory": {
+        "title": "How Public Archive preserves civic memory"
+      }
     }
   },
   "institutionsPublic": {
     "headline": "Building the Institutions of Responsible Global Cooperation",
     "subheadline": "A proposed institutional framework designed to strengthen civic participation, expert analysis, transparent decision-making, and responsible implementation across communities and nations.",
-    "banner": "This page presents the proposed constitutional institutions of Humanity Union. These institutions represent the platform's long-term governance vision and are being developed transparently through public civic participation.",
+    "banner": "This page presents the proposed constitutional institutions of {siteName}. These institutions represent the platform's long-term governance vision and are being developed transparently through public civic participation.",
     "primaryCta": "Create Initiative",
     "gridTitle": "Proposed Institutions",
-    "gridIntro": "Each institution is presented as part of Humanity Union's proposed constitutional model. Status badges indicate whether a body remains conceptual, under development, or planned as a future institution.",
+    "gridIntro": "Each institution is presented as part of {siteName}'s proposed constitutional model. Status badges indicate whether a body remains conceptual, under development, or planned as a future institution.",
     "regionalTitle": "Regional Offices",
     "footerClosingAria": "Closing statement",
     "footerStatementLine1": "Institutions are not built by declarations.",
@@ -3369,7 +3796,7 @@
           "description": "Operational coordination body receiving direction from HPC under council oversight and charter limits."
         },
         "regional-offices": {
-          "title": "Regional Humanity Union Offices",
+          "title": "Regional {siteName} Offices",
           "description": "Geographic presence connecting global institutional architecture to country, region, and community activity."
         },
         "community-self-defense-units": {
@@ -3471,7 +3898,7 @@
         "nonNominationNote": "Community protective coordination nomination pathways are deferred."
       },
       "regional-offices": {
-        "name": "Regional Humanity Union Offices",
+        "name": "Regional {siteName} Offices",
         "purpose": "Proposed geographic presence connecting global institutional architecture to country, region, and community activity.",
         "role": "Localizes coordination, supports regional participation, and links geographic civic activity to institutional workflows.",
         "knowledgeTitle": "Reference-only architecture",
@@ -3655,7 +4082,7 @@
       }
     },
     "ecosystem": {
-      "sectionTitle": "Civic ecosystem and Humanity Union App",
+      "sectionTitle": "Civic ecosystem and {siteName} App",
       "primary": "You have entered a civic space where people who share your commitment work together to understand public challenges, unite around solutions, and turn responsible ideas into real public results.",
       "supporting": "Every meaningful change begins with people who choose to act responsibly.",
       "createInitiative": "Create Initiative",
@@ -3683,7 +4110,7 @@
       "explore": "Explore Civic Archive"
     },
     "statistics": {
-      "title": "Humanity Union in Numbers",
+      "title": "{siteName} in Numbers",
       "intro": "A factual summary of civic activity across the platform.",
       "unavailable": "Platform statistics are temporarily unavailable.",
       "loading": "Loading platform statistics...",
@@ -3697,7 +4124,7 @@
         },
         "humanityUnionMembers": {
           "label": "Members",
-          "description": "Confirmed Humanity Union Members with active Membership status. Membership never changes vote weight."
+          "description": "Confirmed {siteName} Members with active Membership status. Membership never changes vote weight."
         },
         "countries": {
           "label": "Countries",
@@ -3745,12 +4172,12 @@
   },
   "membershipPublic": {
     "pageTitle": "Membership",
-    "pageSubtitle": "Voluntary Humanity Union Membership and application",
+    "pageSubtitle": "Voluntary {siteName} Membership and application",
     "loading": "Loading Membership...",
     "hero": {
-      "title": "Become a Humanity Union Member",
-      "subtitle": "Membership is a voluntary commitment to support Humanity Union and participate in building a stronger global civic community.",
-      "badgeAlt": "Humanity Union Member badge illustration"
+      "title": "Become a {siteName} Member",
+      "subtitle": "Membership is a voluntary commitment to support {siteName} and participate in building a stronger global civic community.",
+      "badgeAlt": "{siteName} Member badge illustration"
     },
     "signIn": {
       "title": "Sign in to manage your Membership",
@@ -3765,11 +4192,11 @@
     "platformStatisticsTitle": "Platform Membership participation",
     "meaning": {
       "sectionTitle": "Meaning of Membership",
-      "sectionDescription": "Membership is voluntary support for Humanity Union's civic platform.",
+      "sectionDescription": "Membership is voluntary support for {siteName}'s civic platform.",
       "cards": {
         "community": {
           "title": "Community",
-          "body": "Become part of Humanity Union's long-term civic community."
+          "body": "Become part of {siteName}'s long-term civic community."
         },
         "support": {
           "title": "Support",
@@ -3808,7 +4235,7 @@
         },
         "member-number": {
           "title": "Member Number",
-          "body": "Receive a unique Humanity Union Member Number after your contribution is confirmed."
+          "body": "Receive a unique {siteName} Member Number after your contribution is confirmed."
         },
         "participation-recognition": {
           "title": "Participation Recognition",
@@ -3824,7 +4251,7 @@
         },
         "platform-sustainability": {
           "title": "Platform Sustainability",
-          "body": "Membership Contributions help sustain Humanity Union's civic infrastructure."
+          "body": "Membership Contributions help sustain {siteName}'s civic infrastructure."
         }
       }
     },
@@ -3857,33 +4284,128 @@
           "answer": "After your application is submitted, a one-time Membership Contribution will confirm your Membership. Payment integration will be available in a future platform update."
         }
       }
+    },
+    "status": {
+      "title": "Membership Status",
+      "currentStatus": "Current Status",
+      "applicationStatus": "Application Status",
+      "memberNumber": "Member Number",
+      "memberSince": "Member Since",
+      "contribution": "Contribution",
+      "ariaFacts": "Membership status facts",
+      "memberCohort": "Member"
+    },
+    "journey": {
+      "title": "Membership Journey",
+      "description": "Your path from Participant to Member.",
+      "timelineAria": "Membership journey timeline",
+      "steps": {
+        "registration": {
+          "label": "Registration",
+          "detailComplete": "Account created",
+          "detailCurrent": "Account created",
+          "detailUpcoming": "Create your account"
+        },
+        "email_confirmed": {
+          "label": "Email confirmed",
+          "detailComplete": "Email address confirmed",
+          "detailCurrent": "Confirm your email to apply",
+          "detailUpcoming": "Confirm your email to apply"
+        },
+        "application": {
+          "label": "Membership application",
+          "detailComplete": "Application submitted",
+          "detailCurrent": "Complete the application form",
+          "detailUpcoming": "Complete the application form"
+        },
+        "contribution": {
+          "label": "Contribution",
+          "detailComplete": "Membership Contribution completed",
+          "detailCurrent": "Complete your one-time Membership Contribution",
+          "detailUpcoming": "One-time {amount} Membership Contribution"
+        },
+        "member": {
+          "label": "Member",
+          "detailComplete": "Membership active",
+          "detailCurrent": "Assigned after confirmed contribution",
+          "detailUpcoming": "Assigned after confirmed contribution"
+        }
+      }
+    },
+    "application": {
+      "title": "Membership Application",
+      "description": "Complete your voluntary Membership application.",
+      "emailRequiredTitle": "Email confirmation required",
+      "emailRequiredMessage": "Confirm your email before starting a Membership application.",
+      "submittedTitle": "Application submitted",
+      "submittedMessage": "Your Membership application has been submitted. Complete the Membership Contribution below to become a Member.",
+      "displayName": "Display Name",
+      "countriesLabel": "Countries of Civic Participation",
+      "countriesHelper": "Select the countries where you live, have community connections, or intend to participate in civic activity.",
+      "countriesLimit": "You may select up to {max} countries of civic participation.",
+      "declarationLegend": "Membership Declaration",
+      "declareMeaning": "I understand the purpose of {siteName} Membership.",
+      "declareVoteWeight": "I understand that Membership does not change voting power.",
+      "declareDataPolicy": "I understand {siteName}'s Membership data policy.",
+      "successTitle": "Success",
+      "draftSaved": "Draft saved successfully.",
+      "submittedSuccess": "Application submitted successfully.",
+      "saveDraft": "Save Draft",
+      "submit": "Submit Application"
+    },
+    "contribution": {
+      "title": "Membership Contribution",
+      "cancelledNotice": "Membership Contribution was not completed.",
+      "alreadyActive": "Membership already active.",
+      "memberNumber": "Member Number: {number}",
+      "bodyPrimary": "Membership becomes active after a voluntary one-time Membership Contribution of {amount}.",
+      "bodySecondary": "This is not a donation, subscription, or identity verification fee.",
+      "hintEmail": "Confirm your email address before completing Membership Contribution.",
+      "hintApplication": "Submit your Membership application before completing Membership Contribution.",
+      "cta": "Become a Member",
+      "preparing": "Preparing..."
+    },
+    "labels": {
+      "applicationStatus": {
+        "not_started": "Not Started",
+        "draft": "Draft",
+        "submitted": "Submitted",
+        "approved": "Approved",
+        "cancelled": "Cancelled"
+      },
+      "contributionStatus": {
+        "completed": "Completed",
+        "awaiting": "Awaiting Membership Contribution",
+        "notYet": "Not yet completed"
+      },
+      "journeySummary": "{completed} of {total} steps complete"
     }
   },
   "supportPublic": {
-    "title": "Support Humanity Union",
+    "title": "Support {siteName}",
     "subtitle": "Help build better conditions for thoughtful collective action.",
-    "lede1": "Humanity Union is developing an open platform where people can understand problems, examine evidence, improve proposals, make transparent decisions, and follow their implementation.",
+    "lede1": "{siteName} is developing an open platform where people can understand problems, examine evidence, improve proposals, make transparent decisions, and follow their implementation.",
     "lede2": "Supporting the project helps us expand the tools, knowledge, and communities that make more responsible and lasting solutions possible.",
-    "statement": "You can support Humanity Union with resources, your time, or by helping build a local community.",
+    "statement": "You can support {siteName} with resources, your time, or by helping build a local community.",
     "waysHeading": "Ways to support",
     "donate": {
       "title": "Support the Project",
       "body": "Help fund platform development, infrastructure, educational resources, translation, and public-interest projects.",
       "cta": "Donate",
       "disabledLabel": "Donate (link not configured)",
-      "note": "Donations support the development and operation of Humanity Union."
+      "note": "Donations support the development and operation of {siteName}."
     },
     "volunteer": {
       "title": "Volunteer",
       "body": "Contribute your time, knowledge, professional skills, research, translation, communication, organization, or community experience.",
-      "cta": "Volunteer with Humanity Union",
-      "disabledLabel": "Volunteer with Humanity Union (coming soon)",
+      "cta": "Volunteer with {siteName}",
+      "disabledLabel": "Volunteer with {siteName} (coming soon)",
       "noteAvailable": "Volunteer opportunities are available through the link above.",
       "noteSoon": "Volunteer applications will open here soon."
     },
     "regional": {
       "title": "Build a Regional Representation",
-      "body": "Help bring Humanity Union into your country or region. Regional representations connect local knowledge and priorities with global cooperation while keeping participation rooted in local communities.",
+      "body": "Help bring {siteName} into your country or region. Regional representations connect local knowledge and priorities with global cooperation while keeping participation rooted in local communities.",
       "cta": "Regional Program",
       "disabledLabel": "Regional Program (link not configured)"
     },
@@ -3891,10 +4413,10 @@
       "heading": "Why Support Matters",
       "p1": "Technology can do more than compete for attention.",
       "p2": "It can help people understand complexity, compare alternatives, learn from one another, and carry decisions through to measurable results.",
-      "p3": "Humanity Union is being built around that purpose.",
+      "p3": "{siteName} is being built around that purpose.",
       "p4": "As the platform grows, more people and communities can participate in structured discussion, develop better proposals, preserve the reasoning behind decisions, and learn from their outcomes.",
-      "p5": "Supporting Humanity Union means helping create an environment where participation can become more informed, cooperation more practical, and collective decisions more transparent and durable.",
-      "imageAlt": "A fruit tree illustrating how support helps Humanity Union grow stronger participation and lasting results"
+      "p5": "Supporting {siteName} means helping create an environment where participation can become more informed, cooperation more practical, and collective decisions more transparent and durable.",
+      "imageAlt": "A fruit tree illustrating how support helps {siteName} grow stronger participation and lasting results"
     },
     "forms": {
       "heading": "Every form of support matters differently",
@@ -3911,13 +4433,13 @@
   },
   "contactPublic": {
     "pageTitle": "Contact",
-    "intro": "For closed beta and early platform support, contact Humanity Union by email. Your message opens in your own email client — we do not store contact form submissions on the platform.",
+    "intro": "For closed beta and early platform support, contact {siteName} by email. Your message opens in your own email client — we do not store contact form submissions on the platform.",
     "emailLabel": "Email",
     "organizationLabel": "Organization",
     "addressLabel": "Address",
     "websiteLabel": "Website",
     "subjectsHeading": "Choose a subject",
-    "hint": "Include enough context for us to route your message. For account or civic workspace issues, use the email address associated with your Humanity Union account when possible.",
+    "hint": "Include enough context for us to route your message. For account or civic workspace issues, use the email address associated with your {siteName} account when possible.",
     "successChrome": "Your email client should open with a pre-filled message.",
     "errorUnavailable": "Contact details are temporarily unavailable. Please try again shortly.",
     "subjects": {
@@ -3941,7 +4463,7 @@
   },
   "blogPublic": {
     "pageTitle": "Blog",
-    "pageSubtitle": "Ideas, reflections and perspectives from Humanity Union authors.",
+    "pageSubtitle": "Ideas, reflections and perspectives from {siteName} authors.",
     "publicationsHeading": "Publications",
     "loadingPublications": "Loading publications…",
     "loadingPublication": "Loading publication…",
@@ -4062,6 +4584,17 @@
       "updating": "Updating your subscription…",
       "invalidLink": "This link is invalid or has expired.",
       "returnToBlog": "Return to Blog"
+    },
+    "categories": {
+      "conscious_existence": {
+        "name": "Conscious Existence"
+      },
+      "human_security": {
+        "name": "Human Security"
+      },
+      "our_life": {
+        "name": "Our Life"
+      }
     }
   },
   "legalPublic": {
@@ -4160,7 +4693,7 @@
       "title": "Regional Statistics",
       "architecturalName": "Statistics",
       "stage": "Evidence",
-      "contextIntroduction": "These figures summarize public civic activity associated with {regionName} on Humanity Union. Counts and indicators are computed from public records — derived values are labeled accordingly.",
+      "contextIntroduction": "These figures summarize public civic activity associated with {regionName} on {siteName}. Counts and indicators are computed from public records — derived values are labeled accordingly.",
       "visitorConclusion": "These aggregates describe observable public activity — not regional performance rankings or promotional claims.",
       "publicNote": "Public aggregate indicators only — no private participant identities and no operational database access."
     },
@@ -4168,7 +4701,7 @@
       "title": "Community Statistics",
       "architecturalName": "Statistics",
       "stage": "Evidence",
-      "contextIntroduction": "These figures summarize public civic activity associated with {communityName} on Humanity Union. Counts and indicators are computed from public records — derived values are labeled accordingly.",
+      "contextIntroduction": "These figures summarize public civic activity associated with {communityName} on {siteName}. Counts and indicators are computed from public records — derived values are labeled accordingly.",
       "visitorConclusion": "These aggregates describe observable public activity — not community performance rankings or promotional claims.",
       "publicNote": "Public aggregate indicators only — no private participant identities and no operational database access."
     },
@@ -4241,7 +4774,7 @@
         "relatedLabel": "Related public links"
       },
       "registration": {
-        "title": "Join Humanity Union",
+        "title": "Join {siteName}",
         "architecturalName": "Registration Gateway",
         "stage": "Participation",
         "contextIntroduction": "Participation begins with understanding. Join when you are ready.",
@@ -4251,7 +4784,7 @@
         "actionLabel": "Create account",
         "workspaceActionLabel": "Continue to Workspace",
         "visitorConclusion": "Public observation does not require an account. Create an account when you are ready to participate in Workspace.",
-        "learnAbout": "Learn about Humanity Union before creating an account",
+        "learnAbout": "Learn about {siteName} before creating an account",
         "authenticatedNote": "You may continue reading this community page or enter Workspace when you choose personal accountable participation.",
         "contextIntroductionNamed": "You can explore public civic activity around {communityName} without an account. Registration allows you to take part in structured participation when you are ready.",
         "workspaceContinuationContext": "You can continue exploring public civic activity around {communityName}, or enter your Workspace to participate personally in structured civic action when you choose.",
@@ -4321,24 +4854,24 @@
       },
       "team": {
         "title": "Our Team",
-        "intro": "People supporting Humanity Union activity in {countryName}.",
+        "intro": "People supporting {siteName} activity in {countryName}.",
         "aria": "Our Team in {countryName}"
       },
       "partners": {
         "title": "Our Partners",
-        "intro": "Organizations collaborating with Humanity Union in {countryName}.",
+        "intro": "Organizations collaborating with {siteName} in {countryName}.",
         "aria": "Our Partners in {countryName}"
       },
-      "notFoundTitle": "Country not found | Humanity Union",
-      "metaDescription": "Explore civic activity, Participants, and Initiatives in {countryName} on Humanity Union."
+      "notFoundTitle": "Country not found | {siteName}",
+      "metaDescription": "Explore civic activity, Participants, and Initiatives in {countryName} on {siteName}."
     },
     "region": {
       "navigatorAria": "Geographic scope",
       "identity": {
         "architecturalName": "Hero · Geographic Summary",
         "stage": "Identity",
-        "contextIntroduction": "This page shows public civic activity associated with {regionName} on Humanity Union. Observation here sits between national and community scope within one connected civic space.",
-        "visitorConclusion": "This region is a geographic civic context within Humanity Union — not a separate regional portal or administrative directory.",
+        "contextIntroduction": "This page shows public civic activity associated with {regionName} on {siteName}. Observation here sits between national and community scope within one connected civic space.",
+        "visitorConclusion": "This region is a geographic civic context within {siteName} — not a separate regional portal or administrative directory.",
         "scopeLabel": "Region scope · {regionName}, {countryName}",
         "descriptionLabel": "Region Description"
       },
@@ -4346,7 +4879,7 @@
         "title": "Regional Interactive Map",
         "architecturalName": "Interactive Map",
         "stage": "Evidence",
-        "contextIntroduction": "This map previews how civic activity appears geographically within a region on Humanity Union. Only routes that exist today are linked — unavailable sub-regions remain preview-only.",
+        "contextIntroduction": "This map previews how civic activity appears geographically within a region on {siteName}. Only routes that exist today are linked — unavailable sub-regions remain preview-only.",
         "regionScopeLabel": "Region scope: {regionName}",
         "subRegionUnavailableMessage": "No Region Experience route exists for this sub-area yet. This selection previews future scope only.",
         "returnToRegionLabel": "Return to regional scope",
@@ -4363,14 +4896,14 @@
         "title": "Regional Participation Pipeline",
         "architecturalName": "Initiative Levels",
         "stage": "Evidence",
-        "contextIntroduction": "Participation on Humanity Union follows a structured civic path from proposal through collective action. This overview shows how many public initiatives are visible at each stage associated with {regionName}.",
+        "contextIntroduction": "Participation on {siteName} follows a structured civic path from proposal through collective action. This overview shows how many public initiatives are visible at each stage associated with {regionName}.",
         "visitorConclusion": "Stage distribution shows how structured participation appears regionally — the same civic path used at country and community scopes."
       },
       "initiatives": {
         "title": "Latest Regional Initiatives",
         "architecturalName": "Latest Initiatives",
         "stage": "Evidence",
-        "contextIntroduction": "These are recent public initiatives associated with {regionName} on Humanity Union. Active cards link to verifiable public records you may read without registering.",
+        "contextIntroduction": "These are recent public initiatives associated with {regionName} on {siteName}. Active cards link to verifiable public records you may read without registering.",
         "visitorConclusion": "Cards with an active public record link to verifiable civic detail. Demonstration cards without public records are labeled and not linked.",
         "emptyMessage": "No public initiatives are associated with this region yet."
       },
@@ -4378,7 +4911,7 @@
         "title": "Community Discovery",
         "architecturalName": "Exploration",
         "stage": "Exploration",
-        "contextIntroduction": "Communities on Humanity Union emerge through civic participation — they are not assigned by administrators. The participant-created communities below belong to this region and may be observed when a public route exists.",
+        "contextIntroduction": "Communities on {siteName} emerge through civic participation — they are not assigned by administrators. The participant-created communities below belong to this region and may be observed when a public route exists.",
         "visitorConclusion": "Community pages use the same Public Experience architecture at community scope. Discovery here prepares descent from regional observation to community context.",
         "participationNote": "Listed communities are observation entry points created through participation — not an exhaustive administrator-maintained directory.",
         "browseLabel": "Participant-created communities in this region",
@@ -4391,7 +4924,7 @@
       "identity": {
         "architecturalName": "Hero · Community Summary",
         "stage": "Identity",
-        "contextIntroduction": "This page shows public civic activity associated with {communityName} — a participant-created community on Humanity Union. Observation here is part of one connected regional, national and global civic space.",
+        "contextIntroduction": "This page shows public civic activity associated with {communityName} — a participant-created community on {siteName}. Observation here is part of one connected regional, national and global civic space.",
         "visitorConclusion": "This community is a participant-created civic context — not an administrator-defined administrative unit.",
         "scopeLabel": "Community scope · {regionName}, {countryName}",
         "descriptionLabel": "Community Description"
@@ -4400,14 +4933,14 @@
         "title": "Community Participation Pipeline",
         "architecturalName": "Initiative Levels",
         "stage": "Evidence",
-        "contextIntroduction": "Participation on Humanity Union follows a structured civic path from proposal through collective action. This overview shows how many public initiatives are visible at each stage associated with {communityName}.",
+        "contextIntroduction": "Participation on {siteName} follows a structured civic path from proposal through collective action. This overview shows how many public initiatives are visible at each stage associated with {communityName}.",
         "visitorConclusion": "Stage distribution shows how structured participation appears around this community — the same civic path used at broader scopes."
       },
       "initiatives": {
         "title": "Latest Community Initiatives",
         "architecturalName": "Latest Initiatives",
         "stage": "Evidence",
-        "contextIntroduction": "These are recent public initiatives associated with {communityName} on Humanity Union. Active cards link to verifiable public records you may read without registering.",
+        "contextIntroduction": "These are recent public initiatives associated with {communityName} on {siteName}. Active cards link to verifiable public records you may read without registering.",
         "visitorConclusion": "Cards with an active public record link to verifiable civic detail. Demonstration cards without public records are labeled and not linked.",
         "emptyMessage": "No public initiatives are associated with this community yet."
       },
@@ -4415,8 +4948,8 @@
         "title": "Community Impact Overview",
         "architecturalName": "Evidence synthesis",
         "stage": "Evidence",
-        "contextIntroduction": "The indicators below summarize observable public outcomes associated with {communityName} — derived from public civic records already visible on Humanity Union. They describe what is publicly observable — not a judgment of community worth.",
-        "visitorConclusion": "You may form your own understanding of observable community impact from the evidence above. Humanity Union presents public records — it does not evaluate this community for you.",
+        "contextIntroduction": "The indicators below summarize observable public outcomes associated with {communityName} — derived from public civic records already visible on {siteName}. They describe what is publicly observable — not a judgment of community worth.",
+        "visitorConclusion": "You may form your own understanding of observable community impact from the evidence above. {siteName} presents public records — it does not evaluate this community for you.",
         "observableOutcomes": "Observable outcomes at {scope}",
         "observableNote": "Signals describe publicly observable counts and stage presence — not subjective impact judgments or community evaluations.",
         "signalsAria": "Observable outcome signals",
@@ -4428,7 +4961,7 @@
         "title": "Find Your Community",
         "architecturalName": "Exploration",
         "stage": "Exploration",
-        "contextIntroduction": "Communities on Humanity Union are created through civic participation — not assigned by administrators. Browse or search participant-created communities below.",
+        "contextIntroduction": "Communities on {siteName} are created through civic participation — not assigned by administrators. Browse or search participant-created communities below.",
         "visitorConclusion": "Listed communities are participant-created observation pages — not an exhaustive administrator-maintained directory.",
         "currentCommunityNote": "You are already viewing one community. Browse or search below to discover others created through participation.",
         "browseLabel": "Participant-created communities available to observe",
@@ -4437,7 +4970,7 @@
         "emptyResults": "No participant-created communities match your search. Try a different name or description."
       },
       "registration": {
-        "title": "Join Humanity Union",
+        "title": "Join {siteName}",
         "architecturalName": "Registration Gateway",
         "stage": "Participation"
       }

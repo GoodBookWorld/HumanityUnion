@@ -33,7 +33,9 @@ describe("Production Completion Pack 01 — Support globe-hand hero", () => {
   it("retains Support hero semantic structure and decorative alt", () => {
     const content = read("features/support/components/SupportPageContent.tsx");
     assert.match(content, /className="support-page__hero"/);
-    assert.match(content, /<h1[^>]*>Support Humanity Union<\/h1>/);
+    assert.match(content, /support-page__title/);
+    assert.match(content, /t\("title",\s*siteName\)/);
+    assert.match(content, /useLocalizedBrand/);
     assert.match(
       content,
       /SUPPORT_ILLUSTRATIONS\.hero[\s\S]{0,120}alt=""[\s\S]{0,80}className="support-page__hero-image"/,

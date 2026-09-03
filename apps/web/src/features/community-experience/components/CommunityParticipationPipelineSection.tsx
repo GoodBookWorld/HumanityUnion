@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type { ParticipationPipelinePublicProjection } from "@hu/types";
 
 import { ExperienceBlockShell, ParticipationPipelineEvidence } from "../../public-experience";
@@ -16,6 +18,8 @@ export function CommunityParticipationPipelineSection({
   communityName,
 }: CommunityParticipationPipelineSectionProps) {
   const t = useTranslations("publicGeo.community.pipeline");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   return (
     <ExperienceBlockShell
@@ -23,7 +27,7 @@ export function CommunityParticipationPipelineSection({
       title={t("title")}
       architecturalName={t("architecturalName")}
       stage={t("stage")}
-      contextIntroduction={t("contextIntroduction", { communityName })}
+      contextIntroduction={t("contextIntroduction", { communityName, ...siteName })}
       visitorConclusion={t("visitorConclusion")}
     >
       <ParticipationPipelineEvidence projection={projection} />

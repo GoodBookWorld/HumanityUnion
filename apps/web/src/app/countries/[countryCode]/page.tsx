@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { getCountryByCode, normalizeCountryInput } from "@hu/geography";
 
+import { resolveBrandForMetadata } from "../../../features/brand-localization/resolve-brand-for-metadata";
 import { CountryExperienceDynamicPage } from "../../../features/country-experience/components/CountryExperienceDynamicPage";
 import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
 import {
@@ -22,15 +23,18 @@ interface CountriesPageProps {
 export async function generateMetadata({ params }: CountriesPageProps): Promise<Metadata> {
   const { countryCode: rawCode } = await params;
   const countryCode = normalizeCountryInput(rawCode);
+  const locale = await getLocale();
+  const brand = await resolveBrandForMetadata(locale);
+  const siteName = { siteName: brand.siteName };
   const t = await getTranslations("publicGeo.country");
 
   if (!countryCode) {
-    return buildUnavailablePublicMetadata(t("notFoundTitle"));
+    return buildUnavailablePublicMetadata(t("notFoundTitle", siteName));
   }
 
   const country = getCountryByCode(countryCode);
   if (!country) {
-    return buildUnavailablePublicMetadata(t("notFoundTitle"));
+    return buildUnavailablePublicMetadata(t("notFoundTitle", siteName));
   }
 
   const override = await fetchPublicSeoPageOverride({
@@ -42,7 +46,7 @@ export async function generateMetadata({ params }: CountriesPageProps): Promise<
     applyPageSeoOverrideToMetadataInput(
       {
         title: country.name,
-        description: t("metaDescription", { countryName: country.name }),
+        description: t("metaDescription", { countryName: country.name, ...siteName }),
         canonicalPath: `/countries/${encodeURIComponent(countryCode)}`,
         openGraphType: "website",
         socialTitle: country.name,
@@ -69,9 +73,14 @@ export default async function CountriesPage({ params }: CountriesPageProps) {
     notFound();
   }
 
+  const locale = await getLocale();
+  const brand = await resolveBrandForMetadata(locale);
   const t = await getTranslations("publicGeo.country");
   const tShared = await getTranslations("publicGeo.shared");
-  const description = t("metaDescription", { countryName: country.name });
+  const description = t("metaDescription", {
+    countryName: country.name,
+    siteName: brand.siteName,
+  });
   const canonicalPath = `/countries/${encodeURIComponent(countryCode)}`;
   // No /countries index route exists — breadcrumb is Home → {Country}.
   const structuredData = buildWebPageJsonLd({

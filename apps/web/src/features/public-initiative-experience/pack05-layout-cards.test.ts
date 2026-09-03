@@ -17,8 +17,8 @@ describe("Pack 05 Initiative public layout + mini-cards + media", () => {
     assert.match(hero, /pie-hero__top/);
     assert.match(hero, /pie-hero__description/);
     assert.match(hero, /column: "a"/);
-    assert.match(hero, /Activity Area/);
-    assert.match(hero, /Current Stage/);
+    assert.match(hero, /t\("hero\.activityArea"\)/);
+    assert.match(hero, /t\("hero\.currentStage"\)/);
     assert.match(css, /grid-template-columns: 1fr 1fr/);
     assert.match(css, /\.pie-hero__description/);
   });
@@ -40,13 +40,15 @@ describe("Pack 05 Initiative public layout + mini-cards + media", () => {
   it("world initiative cards navigate via single Link wrapping media and body", () => {
     const world = read("features/initiatives/components/WorldInitiativesPageContent.tsx");
     assert.match(world, /className="world-initiative-card"/);
-    assert.match(world, /View Initiative →/);
-    assert.match(world, /aria-label=\{`View initiative:/);
+    assert.match(world, /tMini\("viewInitiative"\)/);
+    assert.match(world, /aria-label=\{tMini\("viewAria"/);
   });
 
   it("media empty state explains RSS refresh requirement instead of fake cards", () => {
     const placeholder = read("features/public-news/components/PublicNewsPlaceholder.tsx");
-    assert.match(placeholder, /NEWS_PROVIDER_ENABLED/);
+    assert.match(placeholder, /useTranslations\("publicNews\.placeholder"\)/);
+    assert.match(placeholder, /t\("emptyTitle"\)/);
+    assert.match(placeholder, /t\("emptyBody"\)/);
     assert.match(placeholder, /public-news-discovery__placeholder/);
   });
 });

@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import { Button } from "../../../design-system";
 import { PwaInstallPromotion } from "../../pwa/components/PwaInstallPromotion";
 
@@ -11,6 +13,8 @@ import { PwaInstallPromotion } from "../../pwa/components/PwaInstallPromotion";
  */
 export function PublicHomeEcosystemStatementSection() {
   const t = useTranslations("publicHome");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   return (
     <section
@@ -18,7 +22,7 @@ export function PublicHomeEcosystemStatementSection() {
       aria-labelledby="public-home-ecosystem-title"
     >
       <h2 id="public-home-ecosystem-title" className="public-home-v2__visually-hidden">
-        {t("ecosystem.sectionTitle")}
+        {t("ecosystem.sectionTitle", siteName)}
       </h2>
       <div className="public-home-v2__ecosystem-split">
         <div className="public-home-v2__ecosystem-column">

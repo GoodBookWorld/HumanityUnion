@@ -62,19 +62,22 @@ const PUBLIC_HOME_STATISTICS_KEYS = [
 ] as const;
 
 describe("Pack 08I.4 — PublicInitiativeMiniCard translation boundary", () => {
-  it("resolves title/summary via resolveTranslatedContent and reading context", () => {
+  it("resolves title/summary via shared presentation helper and reading context", () => {
     const card = readWeb("features/public-initiative-mini-card/PublicInitiativeMiniCard.tsx");
+    const resolver = readWeb(
+      "features/public-initiative-mini-card/resolve-initiative-card-presentation.ts",
+    );
     assert.match(card, /usePublicContentReadingContext/);
-    assert.match(card, /resolveTranslatedContent/);
-    assert.match(card, /sourceKind:\s*"initiative"/);
-    assert.match(card, /sourceRecordId:\s*initiative\.initiativeId/);
-    assert.match(card, /readingContext\.readingLanguage/);
-    assert.match(card, /generateContentTranslation/);
-    assert.match(card, /preference === "preferred"/);
-    assert.match(card, /presentationMode === "original"/);
-    assert.match(card, /resolved\.content\.title \|\| initiative\.title/);
-    assert.match(card, /resolved\.content\.description \|\| initiative\.summary/);
-    assert.match(card, /catch\s*\{[\s\S]*keep props|never mutate source/);
+    assert.match(card, /resolveInitiativeCardPresentation/);
+    assert.match(card, /initiativeId:\s*initiative\.initiativeId/);
+    assert.match(card, /readingContext/);
+    assert.match(resolver, /resolveTranslatedContent/);
+    assert.match(resolver, /sourceKind:\s*"initiative"/);
+    assert.match(resolver, /generateContentTranslation/);
+    assert.match(resolver, /translationPreference === "preferred"/);
+    assert.match(resolver, /presentationMode === "original"/);
+    assert.match(resolver, /pickTranslatedField\(resolved,\s*"title"/);
+    assert.match(resolver, /pickTranslatedField\(resolved,\s*"description"/);
     assert.doesNotMatch(card, /updatePublicInitiative|patchInitiative|mutateInitiative/);
   });
 
@@ -129,7 +132,8 @@ describe("Pack 08I.4 — publicHome.statistics catalog keys", () => {
     assert.match(section, /useLocale\(\)/);
     assert.match(section, /formatPlatformStatisticValue\(value, locale\)/);
     assert.match(section, /formatMembershipStatisticValue\(value, locale\)/);
-    assert.match(section, /t\("title"\)/);
+    assert.match(section, /t\("title", siteName\)|t\("title".*siteName/);
+    assert.match(section, /useLocalizedBrand/);
     assert.match(section, /t\(`cards\.\$\{card\.key[^}]*\}\.label`\)/);
     assert.doesNotMatch(section, /Humanity Union in Numbers/);
   });

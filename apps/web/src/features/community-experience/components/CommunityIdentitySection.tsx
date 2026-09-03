@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+
 import type { CommunityIdentityPublicProjection } from "@hu/types";
 
 import { normalizeCountryInput } from "@hu/geography";
@@ -15,6 +17,8 @@ interface CommunityIdentitySectionProps {
 
 export function CommunityIdentitySection({ identity }: CommunityIdentitySectionProps) {
   const t = useTranslations("publicGeo");
+  const brand = useLocalizedBrand();
+  const siteName = { siteName: brand.siteName };
 
   return (
     <ExperienceBlockShell
@@ -24,6 +28,7 @@ export function CommunityIdentitySection({ identity }: CommunityIdentitySectionP
       stage={t("community.identity.stage")}
       contextIntroduction={t("community.identity.contextIntroduction", {
         communityName: identity.name,
+        ...siteName,
       })}
       headingLevel="h1"
       visitorConclusion={t("community.identity.visitorConclusion")}

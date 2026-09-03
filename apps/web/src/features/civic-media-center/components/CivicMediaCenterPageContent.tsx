@@ -16,7 +16,7 @@ import { Badge, Card } from "../../../design-system";
 import { CIVIC_MEDIA_ROUTE } from "../routes";
 import {
   coverageToChips,
-  PRINCIPLE_WHY_IT_MATTERS,
+  PRINCIPLE_WHY_IT_MATTERS_IDS,
 } from "../civic-media-card-utils";
 import {
   HuxDirectorySection,
@@ -67,7 +67,8 @@ function ExternalResourceLink({ href, children }: { href: string; children: stri
 function PrincipleCard({ principle }: { principle: CivicMediaSelectionPrinciple }) {
   const t = useTranslations("civicMediaPublic");
   const icon = PRINCIPLE_ICONS[principle.id] ?? principle.title.slice(0, 1);
-  const whyItMatters = PRINCIPLE_WHY_IT_MATTERS[principle.id];
+  const hasWhy = (PRINCIPLE_WHY_IT_MATTERS_IDS as readonly string[]).includes(principle.id);
+  const whyItMatters = hasWhy ? t(`principles.${principle.id}.whyItMatters`) : null;
 
   return (
     <Card className="civic-media-resource-card civic-media-resource-card--principle">
