@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 
 import { fetchPublicBlogPostBySlugOptional } from "../../../features/blog/api";
 import { BlogArticlePageContent } from "../../../features/blog/components/BlogArticlePageContent";
+import { loadBlogArticlePresentationSeed } from "../../../features/blog/load-blog-article-presentation-seed";
+import { resolveBlogServerSeedReadingPolicy } from "../../../features/blog/resolve-blog-server-seed-reading-policy";
 import { resolveMediaUrl } from "../../../features/media-upload/media-url";
 import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
 import { JsonLdScript, buildBlogPostingJsonLd } from "../../../lib/seo/structured-data";
@@ -60,12 +62,35 @@ export default async function BlogArticlePage({ params }: BlogArticlePageProps) 
   // additional client-side refetch that previously always ran after hydration.
   const initialPost = await fetchPublicBlogPostBySlugOptional(slug);
 
+  // Pack 08I.8 / 08I.10 — SSR seed from warm content_translations (GET only).
+  // Authenticated explicit `none` → canonical seed (no warm overlay).
+  let initialPresentation:
+    | { title: string; excerpt: string; contentHtml: string }
+    | undefined;
+  if (initialPost) {
+    const readingPolicy = await resolveBlogServerSeedReadingPolicy();
+    initialPresentation = await loadBlogArticlePresentationSeed({
+      postId: initialPost.postId,
+      language: readingPolicy.language,
+      preferTranslation: readingPolicy.preferTranslation,
+      canonical: {
+        title: initialPost.title,
+        excerpt: initialPost.excerpt,
+        contentHtml: initialPost.content,
+      },
+    });
+  }
+
   const structuredData =
     initialPost == null
       ? null
       : buildBlogPostingJsonLd({
-          headline: initialPost.seo?.title || initialPost.title,
-          description: initialPost.seo?.description || initialPost.excerpt || initialPost.title,
+          headline: initialPresentation?.title || initialPost.seo?.title || initialPost.title,
+          description:
+            initialPresentation?.excerpt ||
+            initialPost.seo?.description ||
+            initialPost.excerpt ||
+            initialPost.title,
           canonicalPath:
             initialPost.seo?.canonicalPath || `/blog/${encodeURIComponent(initialPost.slug)}`,
           imageUrl: resolveMediaUrl(
@@ -83,7 +108,11 @@ export default async function BlogArticlePage({ params }: BlogArticlePageProps) 
   return (
     <>
       <JsonLdScript data={structuredData} />
-      <BlogArticlePageContent slug={slug} initialPost={initialPost} />
+      <BlogArticlePageContent
+        slug={slug}
+        initialPost={initialPost}
+        initialPresentation={initialPresentation}
+      />
     </>
   );
 }

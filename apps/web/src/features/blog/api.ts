@@ -86,17 +86,15 @@ export async function fetchPublicBlogPostBySlugOptional(
   );
 }
 
-export function formatBlogPublishedDate(isoDate: string): string {
+export function formatBlogPublishedDate(isoDate: string, locale = "en"): string {
   const parsed = Date.parse(isoDate);
 
   if (Number.isNaN(parsed)) {
     return isoDate;
   }
 
-  // Deterministic locale avoids SSR/client hydration mismatches until
-  // Language Architecture supplies a Participant-facing date locale.
   // UTC keeps noon-UTC publication dates on the intended calendar day.
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",

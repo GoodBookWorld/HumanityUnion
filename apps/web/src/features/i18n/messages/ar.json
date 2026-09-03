@@ -3108,6 +3108,36 @@
         "next": "التالي",
         "showingStatus": "عرض {start}–{end} من {total}"
       }
+    },
+    "lifecycleEmpty": {
+      "stage_initiative_see_overview": "محتوى المبادرة متاح في قسم النظرة العامة.",
+      "stage_discussion_see_discussion_tab": "يستمر النقاش في تبويب مناقشة المبادرة.",
+      "stage_analysis_none_published": "لم يُنشر تحليل تعاوني بعد.",
+      "stage_proposal_none_published": "لم تُنشر مقترحات التحسين بعد.",
+      "stage_revision_none_published": "لم تُنشر مراجعات بعد.",
+      "stage_petition_unavailable": "معلومات العريضة غير متاحة مؤقتًا.",
+      "stage_petition_none_linked": "لا توجد عريضة مرتبطة بهذه المبادرة.",
+      "stage_decision_session_none_published": "لم تُنشر جلسات قرار بعد.",
+      "stage_collective_decision_none_published": "لم تُنشر قرارات جماعية بعد.",
+      "stage_commitment_none_published": "لم تُنشر التزامات التنفيذ بعد.",
+      "stage_tracking_none_published": "لم تُنشر سجلات تتبع التنفيذ بعد.",
+      "stage_official_response_none_published": "لم تُنشر ردود رسمية بعد.",
+      "stage_public_impact_none_published": "لم تُنشر سجلات الأثر العام بعد.",
+      "stage_archive_unavailable": "معلومات الأرشيف المدني غير متاحة مؤقتًا.",
+      "stage_archive_not_archived": "لم تُؤرشف هذه المبادرة بعد.",
+      "stage_generic_none_available": "لا تتوفر سجلات لهذه المرحلة."
+    },
+    "lifecycleRecordTitles": {
+      "discussion_completed": "اكتمل النقاش",
+      "improvement_proposals_collection": "مقترحات التحسين",
+      "election_results": "نتائج الانتخابات",
+      "official_response_package": "حزمة الرد الرسمي",
+      "public_impact_report": "تقرير الأثر العام",
+      "no_official_response_received": "لم يُستلم رد رسمي"
+    },
+    "lifecycleRecordFields": {
+      "title": "العنوان",
+      "summary": "الملخص"
     }
   },
   "civicMediaPublic": {
@@ -3131,13 +3161,83 @@
       "eyebrow": "التحقق من المعلومات",
       "title": "موارد التحقق من الحقائق",
       "description": "منظمات وأدوات مستقلة للتحقق من الادعاءات العامة والصور والسرديات الإعلامية.",
-      "ariaLabel": "موارد التحقق من الحقائق"
+      "ariaLabel": "موارد التحقق من الحقائق",
+      "resources": {
+        "snopes": {
+          "mission": "يحقق في الشائعات والادعاءات الفيروسية والقصص واسعة الانتشار بأدلة موثقة.",
+          "coverage": "ادعاءات عامة وأساطير حضرية وشائعات وسائل التواصل والتصريحات العامة."
+        },
+        "politifact": {
+          "mission": "يدقق التصريحات العامة بمنهجية تقييم شفافة وإحالات إلى المصادر.",
+          "coverage": "تصريحات سياسية وادعاءات حملات وتأكيدات سياسات في الخطاب العام."
+        },
+        "factcheck-org": {
+          "mission": "مشروع غير حزبي يراقب الدقة الوقائعية في التواصل السياسي الأمريكي.",
+          "coverage": "إعلانات سياسية وخطابات ومناظرات ومحتوى سياسي فيروسي."
+        },
+        "euvsdisinfo": {
+          "mission": "يتتبع ويوثق سرديات التضليل بأدلة مفتوحة المصدر.",
+          "coverage": "حملات تضليل وتلاعب بالمعلومات وسرديات زائفة."
+        },
+        "bellingcat": {
+          "mission": "تحقيق مفتوح المصدر باستخدام أدلة عامة متاحة وأساليب قابلة للتحقق.",
+          "coverage": "تقارير النزاعات والتحقق الجغرافي والطب الشرعي الرقمي."
+        },
+        "afp-fact-check": {
+          "mission": "وحدة تدقيق الحقائق الدولية في وكالة فرانس برس بمعايير تحريرية.",
+          "coverage": "ادعاءات فيروسية عالمية ومعلومات صحية مضللة وتأكيدات إخبارية دولية."
+        },
+        "full-fact": {
+          "mission": "مؤسسة خيرية مستقلة لتدقيق الحقائق بمنهجية شفافة وتصحيحات.",
+          "coverage": "تصريحات عامة في المملكة المتحدة وإحصاءات وادعاءات شائعة عبر الإنترنت."
+        }
+      }
     },
     "propaganda": {
       "eyebrow": "تحليل السرديات",
       "title": "تحليل الدعاية",
       "description": "موارد لتحديد أساليب التلاعب والسرديات المنسّقة وعمليات المعلومات.",
-      "ariaLabel": "موارد تحليل الدعاية"
+      "ariaLabel": "موارد تحليل الدعاية",
+      "resources": {
+        "euvsdisinfo-analysis": {
+          "focusCode": "disinformation-manipulation",
+          "explanation": "يوثق السرديات الزائفة المتكررة ويشرح كيف تنتشر حملات المعلومات عبر المنصات.",
+          "focus": "التضليل والتلاعب بالمعلومات"
+        },
+        "dfrlab": {
+          "focusCode": "information-warfare",
+          "explanation": "مختبر أبحاث مجلس الأطلسي يحلل عمليات التأثير عبر الإنترنت والأدلة الرقمية.",
+          "focus": "حرب المعلومات والبحث الرقمي"
+        },
+        "stanford-internet-observatory": {
+          "focusCode": "platform-integrity",
+          "explanation": "مركز بحث أكاديمي يدرس انتشار المعلومات وكيف تقيّم المجتمعات المصادر.",
+          "focus": "أبحاث المنصات وسلامة المعلومات"
+        },
+        "first-draft": {
+          "focusCode": "media-literacy",
+          "explanation": "يوفر إرشادات عملية للتحقق من الصور والفيديوهات والادعاءات قبل المشاركة.",
+          "focus": "محو الأمية الإعلامية وتدريب التحقق"
+        },
+        "rand-information-warfare": {
+          "focusCode": "information-environment",
+          "explanation": "منظمة بحثية تنشر تحليلات حول عمليات المعلومات والمرونة والاستعداد المدني.",
+          "focus": "أبحاث بيئة المعلومات"
+        },
+        "mediawell": {
+          "focusCode": "misinformation-research",
+          "explanation": "مركز مجلس أبحاث العلوم الاجتماعية يجمع الأبحاث الأكاديمية حول التضليل ومحو الأمية الإعلامية.",
+          "focus": "تجميع أبحاث المعلومات المضللة"
+        }
+      },
+      "focus": {
+        "disinformation-manipulation": "التضليل والتلاعب بالمعلومات",
+        "information-warfare": "حرب المعلومات والبحث الرقمي",
+        "platform-integrity": "أبحاث المنصات وسلامة المعلومات",
+        "media-literacy": "محو الأمية الإعلامية وتدريب التحقق",
+        "information-environment": "أبحاث بيئة المعلومات",
+        "misinformation-research": "تجميع أبحاث المعلومات المضللة"
+      }
     },
     "faq": {
       "heading": "الأسئلة الشائعة"
@@ -3232,7 +3332,8 @@
       "regional-public-media": "إعلام إقليمي",
       "scientific-publisher": "ناشرون علميون",
       "academic-resource": "موارد أكاديمية"
-    }
+    },
+    "coverageLabel": "التغطية: {country}"
   },
   "search": {
     "title": "البحث في السجلات المدنية",
@@ -4545,7 +4646,9 @@
       "authors": {
         "heading": "المؤلفون",
         "loading": "جارٍ تحميل المؤلفين…",
-        "empty": "لا يوجد مؤلفون منشورون بعد."
+        "empty": "لا يوجد مؤلفون منشورون بعد.",
+        "latestLabel": "أحدث منشور",
+        "publicationsCount": "{count, plural, =0 {لا منشورات} one {منشور واحد} other {# منشورات}}"
       },
       "categoryChart": {
         "heading": "المنشورات حسب الفئة",
@@ -4595,6 +4698,11 @@
       "our_life": {
         "name": "حياتنا"
       }
+    },
+    "article": {
+      "publishedLabel": "نُشر",
+      "categoryLabel": "الفئة",
+      "authorLabel": "المؤلف"
     }
   },
   "legalPublic": {

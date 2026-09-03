@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogPostListItem } from "@hu/types";
 
 import { formatBlogPublishedDate } from "../api";
+import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { BlogCoverImage } from "./BlogCoverImage";
@@ -16,12 +17,16 @@ interface BlogLatestMiniCardsProps {
 }
 
 function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
+  const t = useTranslations("blogPublic");
+  const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
   const [displayTitle, setDisplayTitle] = useState(post.title);
 
   useEffect(() => {
     setDisplayTitle(post.title);
+  }, [post.postId, post.title]);
 
+  useEffect(() => {
     if (!readingContext.ready) {
       return;
     }
@@ -55,6 +60,7 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
 
   const href = `/blog/${encodeURIComponent(post.slug)}`;
   const titleForDisplay = displayTitle || post.title;
+  const categoryLabel = resolveBlogCategoryDisplayName(post.category.categoryId, t);
 
   return (
     <li className="blog-latest-mini__item">
@@ -70,8 +76,9 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
         </span>
         <span className="blog-latest-mini__body">
           <span className="blog-latest-mini__title">{titleForDisplay}</span>
+          <span className="blog-latest-mini__category">{categoryLabel}</span>
           <time className="blog-latest-mini__date" dateTime={post.publishedAt}>
-            {formatBlogPublishedDate(post.publishedAt)}
+            {formatBlogPublishedDate(post.publishedAt, locale)}
           </time>
           <span className="blog-latest-mini__author">{post.author.displayName}</span>
         </span>
@@ -80,7 +87,11 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
   );
 }
 
-/** Pack 14D — Latest 4 mini-cards for the right discovery rail. Pack 08I.7 — title via presentation resolver. */
+/**
+ * Pack 14D — Latest 4 mini-cards for the right discovery rail.
+ * Pack 08I.7 / 08I.10 — title via shared Blog presentation resolver; locale-aware dates;
+ * category via shared taxonomy presenter.
+ */
 export function BlogLatestMiniCards({ posts }: BlogLatestMiniCardsProps) {
   const t = useTranslations("blogPublic.discovery.latest");
 

@@ -3108,6 +3108,36 @@
         "next": "Next",
         "showingStatus": "Showing {start}–{end} of {total}"
       }
+    },
+    "lifecycleEmpty": {
+      "stage_initiative_see_overview": "Initiative content is available in Overview.",
+      "stage_discussion_see_discussion_tab": "Discussion continues in the Initiative Discussion tab.",
+      "stage_analysis_none_published": "No Collaborative Analysis has been published yet.",
+      "stage_proposal_none_published": "No improvement proposals have been published yet.",
+      "stage_revision_none_published": "No revisions have been published.",
+      "stage_petition_unavailable": "Petition information is temporarily unavailable.",
+      "stage_petition_none_linked": "No petition is linked to this initiative.",
+      "stage_decision_session_none_published": "No decision sessions have been published yet.",
+      "stage_collective_decision_none_published": "No collective decisions have been published yet.",
+      "stage_commitment_none_published": "No implementation commitments have been published yet.",
+      "stage_tracking_none_published": "No implementation tracking records have been published yet.",
+      "stage_official_response_none_published": "No official responses have been published yet.",
+      "stage_public_impact_none_published": "No public impact records have been published yet.",
+      "stage_archive_unavailable": "Civic Archive information is temporarily unavailable.",
+      "stage_archive_not_archived": "This initiative has not been archived yet.",
+      "stage_generic_none_available": "No records are available for this stage."
+    },
+    "lifecycleRecordTitles": {
+      "discussion_completed": "Discussion completed",
+      "improvement_proposals_collection": "Improvement proposals",
+      "election_results": "Election results",
+      "official_response_package": "Official response package",
+      "public_impact_report": "Public impact report",
+      "no_official_response_received": "No official response received"
+    },
+    "lifecycleRecordFields": {
+      "title": "Title",
+      "summary": "Summary"
     }
   },
   "civicMediaPublic": {
@@ -3131,13 +3161,83 @@
       "eyebrow": "VERIFY INFORMATION",
       "title": "Fact-Checking Resources",
       "description": "Independent organizations and tools for checking public claims, images, and media narratives.",
-      "ariaLabel": "fact-checking resources"
+      "ariaLabel": "fact-checking resources",
+      "resources": {
+        "snopes": {
+          "mission": "Investigate rumors, viral claims, and widely shared stories with documented evidence.",
+          "coverage": "General claims, urban legends, social media rumors, and public statements."
+        },
+        "politifact": {
+          "mission": "Fact-check public statements using transparent rating methodology and source citations.",
+          "coverage": "Political statements, campaign claims, and policy assertions in public discourse."
+        },
+        "factcheck-org": {
+          "mission": "Nonpartisan project monitoring factual accuracy in U.S. political communications.",
+          "coverage": "Political ads, speeches, debates, and viral political content."
+        },
+        "euvsdisinfo": {
+          "mission": "Track and document disinformation narratives with open-source evidence.",
+          "coverage": "Disinformation campaigns, information manipulation, and false narratives."
+        },
+        "bellingcat": {
+          "mission": "Open-source investigation using publicly available evidence and verifiable methods.",
+          "coverage": "Conflict reporting, geolocation verification, and digital forensics."
+        },
+        "afp-fact-check": {
+          "mission": "International fact-checking unit of Agence France-Presse with editorial standards.",
+          "coverage": "Global viral claims, health misinformation, and international news assertions."
+        },
+        "full-fact": {
+          "mission": "Independent fact-checking charity using transparent methodology and corrections.",
+          "coverage": "UK public statements, statistics, and widely shared online claims."
+        }
+      }
     },
     "propaganda": {
       "eyebrow": "ANALYZE NARRATIVES",
       "title": "Propaganda Analysis",
       "description": "Resources for identifying manipulation techniques, coordinated narratives, and information operations.",
-      "ariaLabel": "propaganda analysis resources"
+      "ariaLabel": "propaganda analysis resources",
+      "resources": {
+        "euvsdisinfo-analysis": {
+          "focusCode": "disinformation-manipulation",
+          "explanation": "Documents recurring false narratives and explains how information campaigns spread across platforms.",
+          "focus": "Disinformation and information manipulation"
+        },
+        "dfrlab": {
+          "focusCode": "information-warfare",
+          "explanation": "Atlantic Council research lab analyzing online influence operations and digital evidence.",
+          "focus": "Information warfare and digital research"
+        },
+        "stanford-internet-observatory": {
+          "focusCode": "platform-integrity",
+          "explanation": "Academic research center studying how information spreads and how communities can evaluate sources.",
+          "focus": "Platform research and information integrity"
+        },
+        "first-draft": {
+          "focusCode": "media-literacy",
+          "explanation": "Provides practical guidance for verifying images, videos, and claims before sharing information.",
+          "focus": "Media literacy and verification training"
+        },
+        "rand-information-warfare": {
+          "focusCode": "information-environment",
+          "explanation": "Research organization publishing analysis on information operations, resilience, and civic preparedness.",
+          "focus": "Information environment research"
+        },
+        "mediawell": {
+          "focusCode": "misinformation-research",
+          "explanation": "Social Science Research Council hub curating academic research on misinformation and media literacy.",
+          "focus": "Misinformation research aggregation"
+        }
+      },
+      "focus": {
+        "disinformation-manipulation": "Disinformation and information manipulation",
+        "information-warfare": "Information warfare and digital research",
+        "platform-integrity": "Platform research and information integrity",
+        "media-literacy": "Media literacy and verification training",
+        "information-environment": "Information environment research",
+        "misinformation-research": "Misinformation research aggregation"
+      }
     },
     "faq": {
       "heading": "Frequently Asked Questions"
@@ -3232,7 +3332,8 @@
       "regional-public-media": "Regional Media",
       "scientific-publisher": "Scientific Publishers",
       "academic-resource": "Academic Resources"
-    }
+    },
+    "coverageLabel": "Coverage: {country}"
   },
   "search": {
     "title": "Search civic records",
@@ -4545,7 +4646,9 @@
       "authors": {
         "heading": "Authors",
         "loading": "Loading authors…",
-        "empty": "No published authors yet."
+        "empty": "No published authors yet.",
+        "latestLabel": "Latest publication",
+        "publicationsCount": "{count, plural, =0 {No publications} one {# publication} other {# publications}}"
       },
       "categoryChart": {
         "heading": "Publications by Category",
@@ -4595,6 +4698,11 @@
       "our_life": {
         "name": "Our Life"
       }
+    },
+    "article": {
+      "publishedLabel": "Published",
+      "categoryLabel": "Category",
+      "authorLabel": "Author"
     }
   },
   "legalPublic": {

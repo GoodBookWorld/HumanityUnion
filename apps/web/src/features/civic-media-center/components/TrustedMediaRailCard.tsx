@@ -50,7 +50,9 @@ export function TrustedMediaRailCard({
         />
         <div>
           <h3>{resource.name}</h3>
-          <p className="civic-media-resource-card__meta">Coverage: {resource.country}</p>
+          <p className="civic-media-resource-card__meta">
+            {t("coverageLabel", { country: resource.country })}
+          </p>
         </div>
       </div>
       <Badge status={resolvedCategoryTitle} />

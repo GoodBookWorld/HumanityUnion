@@ -203,18 +203,27 @@ export function overlayCivicMediaEditorialFromFields(
  */
 export function useCivicMediaResolvedEditorial(
   media: CivicMediaCenterPublic,
+  initialEditorial?: CivicMediaResolvedEditorial,
 ): CivicMediaResolvedEditorial {
   const readingContext = usePublicContentReadingContext();
-  const [editorial, setEditorial] = useState(() => buildCanonicalCivicMediaEditorial(media));
+  const [editorial, setEditorial] = useState(
+    () => initialEditorial ?? buildCanonicalCivicMediaEditorial(media),
+  );
 
   useEffect(() => {
-    setEditorial(buildCanonicalCivicMediaEditorial(media));
+    // Pack 08I.9 — do not force canonical when SSR seed is present (Blog parity).
+    if (!initialEditorial) {
+      setEditorial(buildCanonicalCivicMediaEditorial(media));
+    }
 
     if (!readingContext.ready) {
       return;
     }
 
     if (readingContext.translationPreference === "none") {
+      if (!initialEditorial) {
+        setEditorial(buildCanonicalCivicMediaEditorial(media));
+      }
       return;
     }
 
@@ -265,7 +274,7 @@ export function useCivicMediaResolvedEditorial(
           }),
         );
       } catch {
-        // keep canonical fallback
+        // keep canonical / SSR seed fallback
       }
     })();
 
@@ -274,6 +283,7 @@ export function useCivicMediaResolvedEditorial(
     };
   }, [
     media,
+    initialEditorial,
     readingContext.ready,
     readingContext.readingLanguage,
     readingContext.translationPreference,

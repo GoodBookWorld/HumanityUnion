@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { getTranslations } from "next-intl/server";
 
 import { BlogIndexPageContent } from "../../features/blog/components/BlogIndexPageContent";
 
@@ -12,15 +13,18 @@ export const metadata: Metadata = {
   },
 };
 
+async function BlogIndexSuspenseFallback() {
+  const t = await getTranslations("blogPublic");
+  return (
+    <main className="blog-page hu-page-container">
+      <p className="blog-page__status">{t("loadingPublications")}</p>
+    </main>
+  );
+}
+
 export default function BlogPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="blog-page hu-page-container">
-          <p className="blog-page__status">Loading Blog…</p>
-        </main>
-      }
-    >
+    <Suspense fallback={<BlogIndexSuspenseFallback />}>
       <BlogIndexPageContent />
     </Suspense>
   );

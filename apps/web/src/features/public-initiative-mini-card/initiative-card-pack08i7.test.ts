@@ -199,11 +199,11 @@ describe("Pack 08I.7 — Initiative card shared presentation boundary", () => {
     assert.match(world, /useTranslations\("initiativeExperience"\)/);
     assert.match(world, /tMini\("viewInitiative"\)/);
     assert.match(world, /tExperience\("hero\.activityArea"\)/);
-    assert.match(world, /tExperience\("hero\.status"\)/);
+    assert.match(world, /resolveInitiativeCardBadgeLabel/);
     assert.match(world, /tExperience\("overview\.startDate"\)/);
     assert.match(world, /tExperience\("overview\.completionDate"\)/);
     assert.match(world, /resolveActivityAreaDisplayLabel/);
-    assert.match(world, /resolveInitiativeStatusDisplayLabel/);
+    assert.match(world, /WorkspaceStatusBadge/);
     assert.doesNotMatch(world, />Activity Area</);
     assert.doesNotMatch(world, /View Initiative →/);
   });

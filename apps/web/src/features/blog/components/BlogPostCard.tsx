@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogPostListItem } from "@hu/types";
 
@@ -20,6 +20,7 @@ interface BlogPostCardProps {
 
 export function BlogPostCard({ post }: BlogPostCardProps) {
   const t = useTranslations("blogPublic");
+  const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
   const [displayTitle, setDisplayTitle] = useState(post.title);
   const [displayExcerpt, setDisplayExcerpt] = useState(post.excerpt);
@@ -27,7 +28,9 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
   useEffect(() => {
     setDisplayTitle(post.title);
     setDisplayExcerpt(post.excerpt);
+  }, [post.postId, post.title, post.excerpt]);
 
+  useEffect(() => {
     if (!readingContext.ready) {
       return;
     }
@@ -94,7 +97,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
               className="blog-post-card__meta-icon"
               aria-hidden="true"
             />
-            <time dateTime={post.publishedAt}>{formatBlogPublishedDate(post.publishedAt)}</time>
+            <time dateTime={post.publishedAt}>{formatBlogPublishedDate(post.publishedAt, locale)}</time>
           </span>
 
           <span className="blog-post-card__meta-item blog-post-card__meta-item--author">

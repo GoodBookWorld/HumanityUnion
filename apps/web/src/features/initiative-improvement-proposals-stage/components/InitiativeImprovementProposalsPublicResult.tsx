@@ -6,9 +6,9 @@ import { useTranslations } from "next-intl";
 import type { PublicInitiativeImprovementProposalsCollectionProjection } from "@hu/types";
 
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux";
+import { CivicPublicTranslatedSection } from "../../language";
 import { resolveProposalCurationDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import { getPublicImprovementProposalsCollection } from "../api";
-import { InitiativeImprovementProposalsContentFields } from "./InitiativeImprovementProposalsContentFields";
 import { InitiativeProposalReactionWidget } from "./InitiativeProposalReactionWidget";
 
 import "./initiative-improvement-proposals-stage-workspace.css";
@@ -88,22 +88,31 @@ export function InitiativeImprovementProposalsPublicResult({
       {projection.proposals.map((proposal) => (
         <article key={proposal.proposalId} className="iip-public-result__proposal">
           <div className="iip-proposal-card__header">
-            <h3>{proposal.title}</h3>
+            <CivicPublicTranslatedSection
+              sourceKind="improvement_proposal"
+              sourceRecordId={proposal.proposalId}
+              fallbackFields={{
+                targetSection: "",
+                currentIssue: proposal.summary ?? "",
+                proposedChange: proposal.title,
+                rationale: proposal.reason || proposal.description || "",
+                expectedImprovement: proposal.expectedImprovement ?? "",
+                references: proposal.supportingSources ?? "",
+                decisionNote: "",
+              }}
+              fieldOrder={[
+                "proposedChange",
+                "currentIssue",
+                "rationale",
+                "expectedImprovement",
+                "references",
+              ]}
+            />
             <WorkspaceStatusBadge
               status={proposal.status}
               label={resolveProposalCurationDisplayLabel(proposal.status, t)}
             />
           </div>
-
-          <InitiativeImprovementProposalsContentFields
-            summary={proposal.summary}
-            description={proposal.description}
-            reason={proposal.reason}
-            expectedImprovement={proposal.expectedImprovement}
-            supportingSources={proposal.supportingSources}
-            relatedDiscussionReferences={proposal.relatedDiscussionReferences}
-            originalAuthorDisplayNames={proposal.originalAuthorDisplayNames}
-          />
 
           {isPreview ? (
             <section

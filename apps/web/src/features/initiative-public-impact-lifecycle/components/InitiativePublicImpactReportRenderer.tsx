@@ -31,7 +31,11 @@ export function InitiativePublicImpactReportRenderer({
     <article className="ipi-public" aria-label={t("author.publicImpact.report.aria")}>
       {metaLabel ? <p className="ipi-public__meta">{metaLabel}</p> : null}
       <section className="ipi-public__section">
-        <h3>{title || t("author.publicImpact.report.untitled")}</h3>
+        <h3>
+          {title.trim()
+            ? title
+            : t("lifecycleRecordTitles.public_impact_report")}
+        </h3>
         <p className="ipi-public__meta">
           {t("author.publicImpact.report.participationStats", {
             signatures: participationStatistics.signatureCount,
@@ -41,12 +45,15 @@ export function InitiativePublicImpactReportRenderer({
           })}
         </p>
       </section>
-      {sections.map((section) => (
+      {sections.map((section) => {
+        const semanticHeading = resolvePublicImpactSectionDisplayLabel(section.sectionId, t);
+        const heading =
+          semanticHeading && semanticHeading !== section.sectionId
+            ? semanticHeading
+            : section.title.trim() || semanticHeading || t("author.publicImpact.report.untitled");
+        return (
         <section className="ipi-public__section" key={section.sectionId}>
-          <h3>
-            {section.title ||
-              resolvePublicImpactSectionDisplayLabel(section.sectionId, t)}
-          </h3>
+          <h3>{heading}</h3>
           {section.body.trim() ? (
             <p style={{ whiteSpace: "pre-wrap" }}>{section.body}</p>
           ) : (
@@ -60,7 +67,8 @@ export function InitiativePublicImpactReportRenderer({
             </p>
           ) : null}
         </section>
-      ))}
+        );
+      })}
     </article>
   );
 }

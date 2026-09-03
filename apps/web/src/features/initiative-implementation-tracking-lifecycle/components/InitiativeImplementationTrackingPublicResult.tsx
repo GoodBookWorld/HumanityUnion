@@ -6,6 +6,9 @@ import { useTranslations } from "next-intl";
 import type { PublicInitiativeImplementationTrackingListItem } from "@hu/types";
 
 import { listPublicInitiativeImplementationTrackings } from "../../initiative-implementation-tracking/api";
+import { CivicPublicTranslatedSection } from "../../language";
+import { resolvePresentationStatusDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
+import { looksLikeRawI18nKey } from "../../public-initiative-experience/normalize-initiative-status-code";
 
 import "./initiative-implementation-tracking-stage-workspace.css";
 
@@ -75,19 +78,35 @@ export function InitiativeImplementationTrackingPublicResult({
         </p>
       </section>
 
-      {trackings.map((tracking) => (
-        <div className="iit-public__tracking" key={tracking.trackingId}>
-          <h3>{tracking.approvedAction ?? tracking.summary}</h3>
-          <p>{tracking.summary}</p>
-          <p className="iit-public__meta">
-            {tracking.authorDisplayName}
-            {tracking.progress !== null
-              ? t("author.tracking.public.progressMeta", { progress: tracking.progress })
-              : ""}
-          </p>
-          <span className="iit-public__tracking-status">{tracking.currentStage}</span>
-        </div>
-      ))}
+      {trackings.map((tracking) => {
+        const stageRaw = tracking.currentStage;
+        const stageLabel = resolvePresentationStatusDisplayLabel(stageRaw, t);
+        const safeStage =
+          stageLabel && !looksLikeRawI18nKey(stageLabel) ? stageLabel : stageRaw.replaceAll("_", " ");
+
+        return (
+          <div className="iit-public__tracking" key={tracking.trackingId}>
+            <CivicPublicTranslatedSection
+              sourceKind="implementation_tracking"
+              sourceRecordId={tracking.trackingId}
+              fallbackFields={{
+                approvedAction: tracking.approvedAction ?? "",
+                summary: tracking.summary,
+                currentStage: tracking.currentStage,
+                notes: "",
+              }}
+              fieldOrder={["approvedAction", "summary", "currentStage"]}
+            />
+            <p className="iit-public__meta">
+              {tracking.authorDisplayName}
+              {tracking.progress !== null
+                ? t("author.tracking.public.progressMeta", { progress: tracking.progress })
+                : ""}
+            </p>
+            <span className="iit-public__tracking-status">{safeStage}</span>
+          </div>
+        );
+      })}
     </article>
   );
 }

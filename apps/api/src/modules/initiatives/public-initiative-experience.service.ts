@@ -147,7 +147,9 @@ export async function buildStageRecords(
       recordId: initiativeId,
       title: initiative.title,
       summary: summarizeText(initiative.description, 320),
+      sourceKind: "initiative",
       status: initiative.status,
+      statusCode: initiative.status,
       updatedAt: initiative.updatedAt,
       authorDisplayName: publicInitiative.stewardDisplayName,
     },
@@ -163,8 +165,10 @@ export async function buildStageRecords(
           {
             recordId: discussionCompletion.completionId,
             title: "Discussion completed",
+            titleCode: "discussion_completed",
             summary: "The Author marked Discussion complete for lifecycle progression.",
             status: "Completed",
+            statusCode: "completed",
             updatedAt: discussionCompletion.completedAt,
             publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#discussion`,
           },
@@ -217,6 +221,7 @@ export async function buildStageRecords(
       recordId: analysis.analysisId,
       title: analysis.title,
       summary: analysis.summary,
+      sourceKind: "collaborative_analysis",
       updatedAt: analysis.publishedAt,
       publicHref: `/initiative-analyses/public/${encodeURIComponent(analysis.analysisId)}`,
       authorDisplayName: analysis.authorDisplayName,
@@ -230,18 +235,23 @@ export async function buildStageRecords(
       ? publishedProposalCollections.map((collection) => ({
           recordId: collection.collectionId,
           title: "Improvement Proposals collection",
+          titleCode: "improvement_proposals_collection",
           summary: `${collection.proposals.filter((proposal) => proposal.status === "published").length} published proposal(s)`,
           status: collection.status,
+          statusCode: collection.status,
           updatedAt: collection.publishedAt ?? collection.updatedAt,
           publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#improvement-proposals`,
         }))
       : legacyProposals.map((proposal) => ({
           recordId: proposal.proposalId,
           title: `${proposal.targetSection}: ${proposal.proposedChange}`,
+          sourceKind: "improvement_proposal",
           status: proposal.status.replaceAll("_", " "),
+          statusCode: proposal.status,
           updatedAt: proposal.decidedAt ?? proposal.updatedAt,
           publicHref: `/improvement-proposals/public/${encodeURIComponent(proposal.proposalId)}`,
           authorDisplayName: proposal.authorDisplayName,
+          detail: proposal.targetSection,
         })),
   );
 
@@ -250,8 +260,10 @@ export async function buildStageRecords(
     filterLifecycleProgressRevisions(versionHistory.revisions).map((revision) => ({
       recordId: revision.revisionId,
       title: `Version ${revision.version}`,
+      sourceKind: "initiative_revision",
       summary: revision.revisionSummary,
       status: revision.isCurrent ? "Current" : "Published",
+      statusCode: revision.isCurrent ? "current" : "published",
       updatedAt: revision.publishedAt,
       publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}/revisions/${revision.version}`,
       authorDisplayName: revision.authorDisplayName,
@@ -287,7 +299,9 @@ export async function buildStageRecords(
             recordId: petitionProjection.petitionIdentity.petitionId,
             title: petitionProjection.petitionIdentity.title,
             summary: petitionProjection.petitionSummary.purpose,
+            sourceKind: "petition",
             status: petitionProjection.petitionIdentity.lifecycleStatus,
+            statusCode: petitionProjection.petitionIdentity.lifecycleStatus,
             updatedAt:
               petitionProjection.petitionSummary.publishedAt ??
               petitionProjection.petitionSummary.opensAt ??
@@ -303,7 +317,9 @@ export async function buildStageRecords(
     listPublicDecisionSessionsForInitiative(initiativeId).map((session) => ({
       recordId: session.sessionId,
       title: session.title,
+      sourceKind: "decision_session",
       status: session.status,
+      statusCode: session.status,
       updatedAt: session.closesAt,
       publicHref: `/decision-sessions/public/${encodeURIComponent(session.sessionId)}`,
     })),
@@ -322,8 +338,11 @@ export async function buildStageRecords(
           initiative.title ||
           "Election Results"
         : decision.question,
+      titleCode: isPublicChoiceLifecycle ? "election_results" : undefined,
+      sourceKind: isPublicChoiceLifecycle ? undefined : "collective_decision",
       summary: decision.outcomeSummary,
       status: decision.status,
+      statusCode: decision.status,
       updatedAt: decision.closedAt ?? decision.closesAt,
       publicHref: isPublicChoiceLifecycle
         ? `/initiatives/public/${encodeURIComponent(initiativeId)}/election`
@@ -337,7 +356,9 @@ export async function buildStageRecords(
       recordId: commitment.commitmentId,
       title: commitment.title,
       summary: commitment.summary,
+      sourceKind: "implementation_commitment",
       status: commitment.status,
+      statusCode: commitment.status,
       updatedAt:
         commitment.publishedAt ??
         commitment.completedAt ??
@@ -353,7 +374,9 @@ export async function buildStageRecords(
     trackings.map((tracking) => ({
       recordId: tracking.trackingId,
       title: tracking.summary,
+      sourceKind: "implementation_tracking",
       status: tracking.status,
+      statusCode: tracking.status,
       updatedAt: tracking.activatedAt ?? tracking.completedAt ?? initiative.updatedAt,
       publicHref: `/implementation-tracking/public/${encodeURIComponent(tracking.trackingId)}`,
       authorDisplayName: tracking.authorDisplayName,
@@ -366,7 +389,9 @@ export async function buildStageRecords(
       recordId: response.responseId,
       title: response.subject,
       summary: response.summary,
+      sourceKind: "official_response" as const,
       status: response.verificationState,
+      statusCode: response.verificationState,
       updatedAt: response.publishedAt ?? response.receivedAt,
       publicHref: `/official-responses/public/${encodeURIComponent(response.responseId)}`,
     }),
@@ -377,7 +402,9 @@ export async function buildStageRecords(
         recordId: response.responseId,
         title: response.subject,
         summary: response.summary,
+        sourceKind: "official_response" as const,
         status: response.verificationStatus,
+        statusCode: response.verificationStatus,
         updatedAt: response.publishedAt ?? response.receivedAt,
         publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#official-responses`,
       }))
@@ -393,12 +420,17 @@ export async function buildStageRecords(
             {
               recordId: lifecycleOfficialPackage.packageId,
               title: lifecycleOfficialPackage.title,
+              titleCode: "official_response_package",
               summary:
                 lifecycleOfficialPackage.outcomeKind === "no_official_response_received"
                   ? lifecycleOfficialPackage.noResponseDetail?.note ||
                     "No official response received"
                   : lifecycleOfficialPackage.summary,
               status:
+                lifecycleOfficialPackage.outcomeKind === "no_official_response_received"
+                  ? "no_official_response_received"
+                  : "published",
+              statusCode:
                 lifecycleOfficialPackage.outcomeKind === "no_official_response_received"
                   ? "no_official_response_received"
                   : "published",
@@ -424,8 +456,10 @@ export async function buildStageRecords(
           {
             recordId: lifecyclePublicImpactReport.reportId,
             title: lifecyclePublicImpactReport.title,
+            titleCode: "public_impact_report",
             summary: lifecyclePublicImpactReport.sections[0]?.body,
             status: lifecyclePublicImpactReport.status,
+            statusCode: lifecyclePublicImpactReport.status,
             updatedAt: lifecyclePublicImpactReport.publishedAt,
             publicHref: `/initiatives/public/${encodeURIComponent(initiativeId)}#public-impact`,
           },
@@ -434,7 +468,9 @@ export async function buildStageRecords(
           recordId: impact.impactId,
           title: impact.title,
           summary: impact.observedImpact,
+          sourceKind: "public_impact",
           status: impact.status,
+          statusCode: impact.status,
           updatedAt: impact.publishedAt ?? impact.verifiedAt ?? initiative.updatedAt,
           publicHref: `/public-impact/${encodeURIComponent(impact.impactId)}`,
           authorDisplayName: impact.authorDisplayName,
@@ -458,7 +494,9 @@ export async function buildStageRecords(
             recordId: lifecycleArchiveVersion.archiveVersionId,
             title: lifecycleArchiveVersion.finalArchiveTitle,
             summary: lifecycleArchiveVersion.finalSummary,
+            sourceKind: "civic_archive",
             status: "archived",
+            statusCode: "archived",
             updatedAt: lifecycleArchiveVersion.publishedAt,
             publicHref: lifecycleArchiveVersion.publicUrlPath,
           },
@@ -491,34 +529,84 @@ function buildStageContent(
   stageRecords: Map<string, PublicInitiativeLifecycleRecordItem[]>,
   optionalStageDiagnostics?: PublicInitiativeOptionalStageDiagnostics,
 ): PublicInitiativeLifecycleStageContent[] {
-  const emptyMessages: Record<string, string> = {
-    initiative: "Initiative content is available in Overview.",
-    discussion: "Discussion continues in the Initiative Discussion tab.",
-    analysis: "No Collaborative Analysis has been published yet.",
-    proposal: "No improvement proposals have been published yet.",
-    revision: "No revisions have been published.",
-    petition:
-      optionalStageDiagnostics?.petition?.health === "unavailable"
-        ? "Petition information is temporarily unavailable."
-        : "No petition is linked to this initiative.",
-    decision_session: "No decision sessions have been published yet.",
-    collective_decision: "No collective decisions have been published yet.",
-    commitment: "No implementation commitments have been published yet.",
-    tracking: "No implementation tracking records have been published yet.",
-    official_response: "No official responses have been published yet.",
-    public_impact: "No public impact records have been published yet.",
-    archive:
-      optionalStageDiagnostics?.civicArchive?.health === "unavailable"
-        ? "Civic Archive information is temporarily unavailable."
-        : "This initiative has not been archived yet.",
+  const emptyMessages: Record<string, { code: string; message: string }> = {
+    initiative: {
+      code: "stage_initiative_see_overview",
+      message: "Initiative content is available in Overview.",
+    },
+    discussion: {
+      code: "stage_discussion_see_discussion_tab",
+      message: "Discussion continues in the Initiative Discussion tab.",
+    },
+    analysis: {
+      code: "stage_analysis_none_published",
+      message: "No Collaborative Analysis has been published yet.",
+    },
+    proposal: {
+      code: "stage_proposal_none_published",
+      message: "No improvement proposals have been published yet.",
+    },
+    revision: {
+      code: "stage_revision_none_published",
+      message: "No revisions have been published.",
+    },
+    petition: {
+      code:
+        optionalStageDiagnostics?.petition?.health === "unavailable"
+          ? "stage_petition_unavailable"
+          : "stage_petition_none_linked",
+      message:
+        optionalStageDiagnostics?.petition?.health === "unavailable"
+          ? "Petition information is temporarily unavailable."
+          : "No petition is linked to this initiative.",
+    },
+    decision_session: {
+      code: "stage_decision_session_none_published",
+      message: "No decision sessions have been published yet.",
+    },
+    collective_decision: {
+      code: "stage_collective_decision_none_published",
+      message: "No collective decisions have been published yet.",
+    },
+    commitment: {
+      code: "stage_commitment_none_published",
+      message: "No implementation commitments have been published yet.",
+    },
+    tracking: {
+      code: "stage_tracking_none_published",
+      message: "No implementation tracking records have been published yet.",
+    },
+    official_response: {
+      code: "stage_official_response_none_published",
+      message: "No official responses have been published yet.",
+    },
+    public_impact: {
+      code: "stage_public_impact_none_published",
+      message: "No public impact records have been published yet.",
+    },
+    archive: {
+      code:
+        optionalStageDiagnostics?.civicArchive?.health === "unavailable"
+          ? "stage_archive_unavailable"
+          : "stage_archive_not_archived",
+      message:
+        optionalStageDiagnostics?.civicArchive?.health === "unavailable"
+          ? "Civic Archive information is temporarily unavailable."
+          : "This initiative has not been archived yet.",
+    },
   };
 
   return EXPERIENCE_STAGES.map((stage) => {
     const stateRecords = stageRecords.get(stage.stageId) ?? [];
+    const empty = emptyMessages[stage.stageId] ?? {
+      code: "stage_generic_none_available",
+      message: "No records are available for this stage.",
+    };
     return {
       stageId: stage.stageId,
       records: stateRecords,
-      emptyStateMessage: emptyMessages[stage.stageId] ?? "No records are available for this stage.",
+      emptyStateMessage: empty.message,
+      emptyStateCode: empty.code,
     };
   });
 }

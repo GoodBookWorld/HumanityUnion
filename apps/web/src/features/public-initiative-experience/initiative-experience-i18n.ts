@@ -15,6 +15,20 @@ import {
 } from "@hu/types";
 
 import { formatLanguageDisplayName } from "../language/format-language-display-name";
+import { normalizeInitiativeStageCode } from "./normalize-initiative-stage-code";
+import {
+  looksLikeRawI18nKey,
+  normalizeInitiativeStatusCode,
+} from "./normalize-initiative-status-code";
+
+function humanizeFallback(code: string): string {
+  return code
+    .trim()
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
 
 /** Message keys under initiativeExperience.activityAreas.* */
 export const ACTIVITY_AREA_MESSAGE_KEY_BY_VALUE: Record<
@@ -91,16 +105,42 @@ function resolveLabel(
       ) as Record<string, string | number | Date>)
     : undefined;
 
+  const isUnresolved = (value: string): boolean => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return true;
+    }
+    if (looksLikeRawI18nKey(trimmed)) {
+      return true;
+    }
+    if (trimmed === key) {
+      return true;
+    }
+    const lower = trimmed.toLowerCase();
+    const keyLower = key.toLowerCase();
+    if (lower.endsWith(`.${keyLower}`) || lower === keyLower) {
+      return true;
+    }
+    // Pack 08I.11 — catch namespace.key even when casing differs from lookup key.
+    if (/\.(stages|statuses|states|phases)\./i.test(trimmed)) {
+      return true;
+    }
+    return false;
+  };
+
   if (typeof messagesOrT === "function") {
     try {
       const value = messagesOrT(key, translatorValues);
-      return value.trim() ? value : fallback;
+      if (isUnresolved(value)) {
+        return fallback;
+      }
+      return value.trim();
     } catch {
       return fallback;
     }
   }
   const template = resolveInitiativeExperienceMessage(messagesOrT, key);
-  if (!template) {
+  if (!template || isUnresolved(template)) {
     return fallback;
   }
   if (!translatorValues) {
@@ -146,7 +186,9 @@ export function resolveLifecycleStageDisplayLabel(
   messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
   fallbackLabel?: string,
 ): string {
-  return resolveLabel(messagesOrT, `stages.${stageId}`, fallbackLabel || stageId);
+  const code = normalizeInitiativeStageCode(stageId);
+  const humanFallback = humanizeFallback(fallbackLabel || code);
+  return resolveLabel(messagesOrT, `stages.${code}`, humanFallback);
 }
 
 export function resolveLifecycleStateDisplayLabel(
@@ -168,11 +210,9 @@ export function resolveInitiativeStatusDisplayLabel(
   status: InitiativeStatus | string,
   messagesOrT: InitiativeExperienceMessages | InitiativeExperienceTranslator,
 ): string {
-  return resolveLabel(
-    messagesOrT,
-    `statuses.${status}`,
-    status.replaceAll("_", " "),
-  );
+  const code = normalizeInitiativeStatusCode(status);
+  const humanFallback = humanizeFallback(code);
+  return resolveLabel(messagesOrT, `statuses.${code}`, humanFallback);
 }
 
 export function resolveActivityAreaDisplayLabel(

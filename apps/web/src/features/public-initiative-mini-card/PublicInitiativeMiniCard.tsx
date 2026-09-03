@@ -15,11 +15,11 @@ import { usePublicContentReadingContext } from "../language/use-public-content-r
 import {
   formatInitiativeExperienceDate,
   resolveActivityAreaDisplayLabel,
-  resolveInitiativeStatusDisplayLabel,
-  resolveLifecycleStageDisplayLabel,
 } from "../public-initiative-experience/initiative-experience-i18n";
+import { WorkspaceStatusBadge } from "../initiative-workspace-ux/components/WorkspaceStatusBadge";
 
 import { resolveInitiativeCardPresentation } from "./resolve-initiative-card-presentation";
+import { resolveInitiativeCardBadgeLabel } from "./resolve-initiative-card-semantic-labels";
 
 import "./public-initiative-mini-card.css";
 
@@ -36,6 +36,7 @@ export function resolvePublicInitiativeHref(initiative: WorldInitiativeCardProje
 /**
  * Share Fix 01 — Share lives outside the navigation Link so the civic
  * popover never competes with card navigation or nested-interactive quirks.
+ * Pack 08I.11 — status badge via shared semantic labels (never stages.Proposal).
  */
 export function PublicInitiativeMiniCard({
   initiative,
@@ -52,7 +53,9 @@ export function PublicInitiativeMiniCard({
   useEffect(() => {
     setDisplayTitle(initiative.title);
     setDisplaySummary(initiative.summary);
+  }, [initiative.initiativeId, initiative.title, initiative.summary]);
 
+  useEffect(() => {
     if (!readingContext.ready) {
       return;
     }
@@ -87,13 +90,11 @@ export function PublicInitiativeMiniCard({
 
   const href = resolvePublicInitiativeHref(initiative);
   const activityAreaLabel = resolveActivityAreaDisplayLabel(initiative.activityArea, tExperience);
-  const stageLabel = initiative.currentStageLabel
-    ? resolveLifecycleStageDisplayLabel(
-        initiative.currentStageLabel,
-        tExperience,
-        initiative.currentStageLabel,
-      )
-    : resolveInitiativeStatusDisplayLabel(initiative.publicStatus, tExperience);
+  const statusLabel = resolveInitiativeCardBadgeLabel({
+    publicStatus: initiative.publicStatus,
+    currentStageLabel: initiative.currentStageLabel,
+    messagesOrT: tExperience,
+  });
   const updatedDate = formatInitiativeExperienceDate(locale, initiative.publishedAt, {
     month: "short",
   });
@@ -124,11 +125,34 @@ export function PublicInitiativeMiniCard({
         <div className="public-initiative-mini-card__body">
           <h3 className="public-initiative-mini-card__title">{displayTitle}</h3>
           <p className="public-initiative-mini-card__summary">{displaySummary}</p>
-          <p className="public-initiative-mini-card__meta">
-            {activityAreaLabel} · {initiative.geographyLabel}
-          </p>
+          {statusLabel ? (
+            <div className="public-initiative-mini-card__badge-row">
+              <WorkspaceStatusBadge
+                status={initiative.publicStatus || "neutral"}
+                variant="neutral"
+                label={statusLabel}
+              />
+            </div>
+          ) : null}
+          <dl className="public-initiative-mini-card__meta">
+            <div className="public-initiative-mini-card__meta-field">
+              <dt className="public-initiative-mini-card__meta-label">
+                {tExperience("hero.activityArea")}
+              </dt>
+              <dd className="public-initiative-mini-card__meta-value">{activityAreaLabel}</dd>
+            </div>
+            {initiative.geographyLabel ? (
+              <div className="public-initiative-mini-card__meta-field">
+                <dt className="public-initiative-mini-card__meta-label">
+                  {tExperience("hero.geography")}
+                </dt>
+                <dd className="public-initiative-mini-card__meta-value">
+                  {initiative.geographyLabel}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
           <div className="public-initiative-mini-card__footer">
-            <span className="public-initiative-mini-card__status">{stageLabel}</span>
             <span className="public-initiative-mini-card__date">
               {t("updated", { date: updatedDate })}
             </span>

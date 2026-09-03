@@ -12,7 +12,6 @@ import {
 } from "../../language";
 import type { TranslatedContentViewMode } from "../../language/translated-content-view-mode";
 import { translatedContentHasDistinctTranslation } from "../../language/translated-content-view-mode";
-import { resolveTranslatedContent, generateContentTranslation } from "../../language/translation-api";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
 import {
@@ -21,6 +20,7 @@ import {
   resolveInitiativeStatusDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
+import { resolveInitiativeDetailPresentation } from "../resolve-initiative-detail-presentation";
 
 export interface PublicExperienceHeroMetaItem {
   label: string;
@@ -36,8 +36,13 @@ export interface PublicExperienceHeroProps {
   coverMedia?: InitiativeCoverMedia;
   meta: PublicExperienceHeroMetaItem[];
   parentLink?: { href: string; label: string };
-  /** Pack 02 — when set, title/summary resolve through provider-backed translation. */
+  /** Pack 02 / 08I.8 — title/description resolve through shared Initiative detail presentation. */
   initiativeId?: string;
+  /** Pack 08I.9 — SSR warm title/description seed (GET resolve only). */
+  initialPresentation?: {
+    readonly title: string;
+    readonly description: string;
+  };
 }
 
 export function PublicExperienceHero({
@@ -48,11 +53,16 @@ export function PublicExperienceHero({
   meta,
   parentLink,
   initiativeId,
+  initialPresentation,
 }: PublicExperienceHeroProps) {
   const t = useTranslations("initiativeExperience");
   const readingContext = usePublicContentReadingContext();
-  const [displayTitle, setDisplayTitle] = useState(title);
-  const [displaySummary, setDisplaySummary] = useState(summary ?? "");
+  const [displayTitle, setDisplayTitle] = useState(
+    () => initialPresentation?.title || title,
+  );
+  const [displaySummary, setDisplaySummary] = useState(
+    () => initialPresentation?.description || summary || "",
+  );
   const [originalTitle, setOriginalTitle] = useState(title);
   const [originalSummary, setOriginalSummary] = useState(summary ?? "");
   const [activeLanguage, setActiveLanguage] = useState("en");
@@ -60,74 +70,65 @@ export function PublicExperienceHero({
   const [canViewOriginal, setCanViewOriginal] = useState(false);
   const [isMachineTranslated, setIsMachineTranslated] = useState(false);
   const [isStale, setIsStale] = useState(false);
-  const [viewMode, setViewMode] = useState<TranslatedContentViewMode>("original");
+  const [viewMode, setViewMode] = useState<TranslatedContentViewMode>(() =>
+    initialPresentation &&
+    (initialPresentation.title !== title ||
+      initialPresentation.description !== (summary ?? ""))
+      ? "translation"
+      : "original",
+  );
 
   useEffect(() => {
-    if (!initiativeId || !readingContext.ready) {
+    // Pack 08I.9 — keep SSR seed until reading context is ready (Blog parity).
+    if (!readingContext.ready) {
+      if (!initialPresentation) {
+        setDisplayTitle(title);
+        setDisplaySummary(summary ?? "");
+      }
+      setOriginalTitle(title);
+      setOriginalSummary(summary ?? "");
+      return;
+    }
+
+    if (!initiativeId) {
+      setDisplayTitle(initialPresentation?.title || title);
+      setDisplaySummary(initialPresentation?.description || summary || "");
       return;
     }
 
     let cancelled = false;
-    const readingLanguage = readingContext.readingLanguage;
-    const preference = readingContext.translationPreference;
 
-    void (async () => {
-      try {
-        let resolved = await resolveTranslatedContent({
-          sourceKind: "initiative",
-          sourceRecordId: initiativeId,
-          language: readingLanguage,
-        });
-
-        if (
-          preference === "preferred" &&
-          resolved.presentationMode === "original" &&
-          readingLanguage !== resolved.originalLanguage &&
-          !resolved.isStale
-        ) {
-          try {
-            const generated = await generateContentTranslation({
-              sourceKind: "initiative",
-              sourceRecordId: initiativeId,
-              targetLanguage: readingLanguage,
-            });
-            resolved = generated.display;
-          } catch {
-            // keep original
-          }
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        const nextTitle = resolved.content.title || title;
-        const nextOriginalTitle = resolved.originalContent.title || title;
-        const nextSummary = resolved.content.description || summary || "";
-        const nextOriginalSummary = resolved.originalContent.description || summary || "";
-        const nextCanView = resolved.canViewOriginal || resolved.canViewTranslation;
-        setDisplayTitle(nextTitle);
-        setDisplaySummary(nextSummary);
-        setOriginalTitle(nextOriginalTitle);
-        setOriginalSummary(nextOriginalSummary);
-        setActiveLanguage(resolved.activeLanguage);
-        setOriginalLanguage(resolved.originalLanguage);
-        setCanViewOriginal(nextCanView);
-        setIsMachineTranslated(resolved.isMachineTranslated);
-        setIsStale(resolved.isStale);
-        setViewMode(
-          translatedContentHasDistinctTranslation({
-            content: `${nextTitle}\n${nextSummary}`,
-            originalContent: `${nextOriginalTitle}\n${nextOriginalSummary}`,
-            canViewOriginal: nextCanView,
-          })
-            ? "translation"
-            : "original",
-        );
-      } catch {
-        // keep props
+    void resolveInitiativeDetailPresentation({
+      initiativeId,
+      canonical: {
+        title,
+        description: summary ?? "",
+      },
+      readingContext,
+    }).then((presentation) => {
+      if (cancelled) {
+        return;
       }
-    })();
+
+      setDisplayTitle(presentation.title);
+      setDisplaySummary(presentation.description);
+      setOriginalTitle(presentation.originalTitle);
+      setOriginalSummary(presentation.originalDescription);
+      setActiveLanguage(presentation.activeLanguage);
+      setOriginalLanguage(presentation.originalLanguage);
+      setCanViewOriginal(presentation.canViewOriginal || presentation.canViewTranslation);
+      setIsMachineTranslated(presentation.isMachineTranslated);
+      setIsStale(presentation.isStale);
+      setViewMode(
+        translatedContentHasDistinctTranslation({
+          content: `${presentation.title}\n${presentation.description}`,
+          originalContent: `${presentation.originalTitle}\n${presentation.originalDescription}`,
+          canViewOriginal: presentation.canViewOriginal || presentation.canViewTranslation,
+        })
+          ? "translation"
+          : "original",
+      );
+    });
 
     return () => {
       cancelled = true;
@@ -136,6 +137,7 @@ export function PublicExperienceHero({
     initiativeId,
     summary,
     title,
+    initialPresentation,
     readingContext.ready,
     readingContext.readingLanguage,
     readingContext.translationPreference,
@@ -318,3 +320,4 @@ function inferStageIdFromEnglishLabel(label: string): string | null {
   }
   return null;
 }
+

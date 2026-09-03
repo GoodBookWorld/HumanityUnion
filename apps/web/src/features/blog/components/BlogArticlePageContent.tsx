@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogPostDetail } from "@hu/types";
 
@@ -33,14 +33,25 @@ interface BlogArticlePageContentProps {
    * `null` for not-found), the client skips a duplicate detail fetch.
    */
   initialPost?: PublicBlogPostDetail | null;
+  /** Pack 08I.8 — optional SSR-localized title/body seed from warm translations. */
+  initialPresentation?: {
+    readonly title: string;
+    readonly excerpt: string;
+    readonly contentHtml: string;
+  };
 }
 
 /**
  * Pack 08I.5 — Blog title + sanitized HTML body resolve through content_translations.
  * Canonical post.content is never overwritten; missing/stale → English/original HTML.
  */
-export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageContentProps) {
+export function BlogArticlePageContent({
+  slug,
+  initialPost,
+  initialPresentation,
+}: BlogArticlePageContentProps) {
   const t = useTranslations("blogPublic");
+  const locale = useLocale();
   const discovery = usePublicBlogDiscovery();
   const readingContext = usePublicContentReadingContext();
   const seeded = initialPost !== undefined;
@@ -50,19 +61,24 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
   const [error, setError] = useState<"not_found" | "unavailable" | "generic" | null>(() =>
     seeded && initialPost === null ? "not_found" : null,
   );
-  const [displayTitle, setDisplayTitle] = useState(() =>
-    initialPost && initialPost.slug === slug ? initialPost.title : "",
-  );
-  const [displayContentHtml, setDisplayContentHtml] = useState(() =>
-    initialPost && initialPost.slug === slug ? initialPost.content : "",
-  );
+  const [displayTitle, setDisplayTitle] = useState(() => {
+    if (initialPost && initialPost.slug === slug) {
+      return initialPresentation?.title || initialPost.title;
+    }
+    return "";
+  });
+  const [displayContentHtml, setDisplayContentHtml] = useState(() => {
+    if (initialPost && initialPost.slug === slug) {
+      return initialPresentation?.contentHtml || initialPost.content;
+    }
+    return "";
+  });
 
   useEffect(() => {
     if (seeded) {
       if (initialPost && initialPost.slug === slug) {
         setPost(initialPost);
-        setDisplayTitle(initialPost.title);
-        setDisplayContentHtml(initialPost.content);
+        // Pack 08I.8 — do not force canonical HTML here; presentation effect owns display.
         setError(null);
         return;
       }
@@ -80,8 +96,6 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
       .then((detail) => {
         if (!cancelled) {
           setPost(detail);
-          setDisplayTitle(detail.title);
-          setDisplayContentHtml(detail.content);
         }
       })
       .catch((fetchError: unknown) => {
@@ -108,7 +122,16 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
   }, [slug, seeded, initialPost]);
 
   useEffect(() => {
-    if (!post || !readingContext.ready) {
+    if (!post) {
+      return;
+    }
+
+    // Canonical until reading context is ready — keep SSR seed when present.
+    if (!readingContext.ready) {
+      if (!initialPresentation) {
+        setDisplayTitle(post.title);
+        setDisplayContentHtml(post.content);
+      }
       return;
     }
 
@@ -205,8 +228,13 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
   const commentsHref = `#comments`;
   const categoryHref = buildBlogIndexHref({ categorySlug: post.category.slug });
   const categoryDisplayName = resolveBlogCategoryDisplayName(post.category.categoryId, t);
-  const titleForDisplay = displayTitle || post.title;
-  const bodyHtml = displayContentHtml || post.content;
+  // Pack 08I.10 — presentation owns title/body; canonical only when presentation empty.
+  const titleForDisplay =
+    displayTitle.trim() || initialPresentation?.title || post.title;
+  const bodyHtml =
+    displayContentHtml.trim() ||
+    initialPresentation?.contentHtml ||
+    post.content;
 
   return (
     <main className="blog-page blog-article hu-page-container blog-page--pack15c">
@@ -240,15 +268,27 @@ export function BlogArticlePageContent({ slug, initialPost }: BlogArticlePageCon
           </h1>
 
           <div className="blog-article__meta" aria-label={t("publicationDetailsAria")}>
-            <BlogAuthorInline author={post.author} />
-            <time className="hu-caption" dateTime={post.publishedAt}>
-              {formatBlogPublishedDate(post.publishedAt)}
-            </time>
+            <span className="blog-article__meta-item">
+              <span className="blog-article__meta-label">{t("article.authorLabel")}</span>{" "}
+              <BlogAuthorInline author={post.author} />
+            </span>
+            <span className="blog-article__meta-item">
+              <span className="blog-article__meta-label">{t("article.publishedLabel")}</span>{" "}
+              <time className="hu-caption" dateTime={post.publishedAt}>
+                {formatBlogPublishedDate(post.publishedAt, locale)}
+              </time>
+            </span>
             {showUpdated ? (
               <time className="hu-caption" dateTime={post.updatedAt}>
-                {t("updated", { date: formatBlogPublishedDate(post.updatedAt) })}
+                {t("updated", { date: formatBlogPublishedDate(post.updatedAt, locale) })}
               </time>
             ) : null}
+            <span className="blog-article__meta-item">
+              <span className="blog-article__meta-label">{t("article.categoryLabel")}</span>{" "}
+              <Link href={categoryHref} className="hu-caption">
+                {categoryDisplayName}
+              </Link>
+            </span>
             <Link href={commentsHref} className="hu-caption blog-article__comments-meta">
               {commentsLabel(post.commentCount)}
             </Link>

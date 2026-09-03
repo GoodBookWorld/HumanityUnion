@@ -14,6 +14,11 @@ import "../../initiative-owner-studio/initiative-owner-studio.css";
 
 interface CanonicalInitiativeExperienceLoaderProps {
   readonly initiativeId: string;
+  /** Pack 08I.9 — SSR warm title/description seed (GET resolve only). */
+  readonly initialPresentation?: {
+    readonly title: string;
+    readonly description: string;
+  };
 }
 
 /**
@@ -21,6 +26,7 @@ interface CanonicalInitiativeExperienceLoaderProps {
  */
 export function CanonicalInitiativeExperienceLoader({
   initiativeId,
+  initialPresentation,
 }: CanonicalInitiativeExperienceLoaderProps) {
   const t = useTranslations("initiativeExperience");
   const [experience, setExperience] = useState<PublicInitiativeExperienceProjection | null>(null);
@@ -77,6 +83,7 @@ export function CanonicalInitiativeExperienceLoader({
       <PublicInitiativeExperiencePage
         experience={experience}
         manageInitiative={manageInitiative}
+        initialPresentation={initialPresentation}
         onManageInitiativeUpdated={(updated) => {
           setManageInitiative(updated);
           void load({ quiet: true });

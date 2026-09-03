@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { CanonicalInitiativeExperienceLoader } from "../../../../features/public-initiative-experience/components/CanonicalInitiativeExperienceLoader";
+import { loadInitiativeDetailPresentationSeed } from "../../../../features/public-initiative-experience/load-initiative-detail-presentation-seed";
 import { resolveBrandForMetadata } from "../../../../features/brand-localization/resolve-brand-for-metadata";
 import { getPublicInitiative } from "../../../../features/initiatives/api";
 import { resolveDocumentHtmlLocale } from "../../../../features/language/resolve-document-locale";
@@ -111,25 +112,39 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   const tNav = await getTranslations("navigation");
 
   let structuredData = null;
+  let initialPresentation:
+    | { title: string; description: string }
+    | undefined;
   try {
     const initiative = await getPublicInitiative(initiativeId);
+    const documentLocale = await resolveDocumentHtmlLocale();
+    initialPresentation = await loadInitiativeDetailPresentationSeed({
+      initiativeId,
+      language: documentLocale.locale,
+      canonical: {
+        title: initiative.title,
+        description: initiative.description,
+      },
+    });
+
     const rawImage =
       initiative.metadata.imageUrl ??
       initiative.metadata.coverMedia?.thumbnailUrl ??
       initiative.metadata.coverMedia?.url ??
       undefined;
     const description =
-      initiative.description.trim() || `${initiative.title} on ${brand.seoSiteName}`;
+      (initialPresentation?.description || initiative.description).trim() ||
+      `${initialPresentation?.title || initiative.title} on ${brand.seoSiteName}`;
 
     structuredData = buildWebPageJsonLd({
-      name: initiative.title,
+      name: initialPresentation?.title || initiative.title,
       description,
       canonicalPath,
       imageUrl: resolveMediaUrl(rawImage),
       breadcrumbs: [
         { name: tNav("home"), path: "/" },
         { name: tNav("initiatives"), path: "/initiatives" },
-        { name: initiative.title, path: canonicalPath },
+        { name: initialPresentation?.title || initiative.title, path: canonicalPath },
       ],
     });
   } catch {
@@ -139,7 +154,10 @@ export default async function PublicInitiativePage({ params }: PublicInitiativeP
   return (
     <>
       <JsonLdScript data={structuredData} />
-      <CanonicalInitiativeExperienceLoader initiativeId={initiativeId} />
+      <CanonicalInitiativeExperienceLoader
+        initiativeId={initiativeId}
+        initialPresentation={initialPresentation}
+      />
     </>
   );
 }

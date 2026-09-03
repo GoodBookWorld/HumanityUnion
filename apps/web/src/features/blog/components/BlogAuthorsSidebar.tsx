@@ -23,7 +23,9 @@ function AuthorLatestPublicationTitle({
 
   useEffect(() => {
     setDisplayTitle(canonicalTitle);
+  }, [postId, canonicalTitle]);
 
+  useEffect(() => {
     if (!readingContext.ready) {
       return;
     }
@@ -111,6 +113,7 @@ export function BlogAuthorsSidebar() {
                     </div>
                   )}
                 </div>
+                <p className="blog-authors-list__latest-label hu-caption">{t("latestLabel")}</p>
                 <Link href={publicationHref} className="blog-authors-list__latest">
                   <AuthorLatestPublicationTitle
                     postId={entry.latestPublication.postId}

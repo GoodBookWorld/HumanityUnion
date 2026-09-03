@@ -97,7 +97,23 @@ export interface PublicInitiativeLifecycleRecordItem {
   recordId: string;
   title: string;
   summary?: string;
+  /** Compatibility English / display string — prefer statusCode for localization. */
   status?: string;
+  /**
+   * Pack 08I.9 — canonical status/state code for semantic localization.
+   * When set, Web must not prefer raw `status` English.
+   */
+  statusCode?: string;
+  /**
+   * Pack 08I.9 — content_translations sourceKind when recordId is a real artifact id.
+   * Omit for synthetic / catalog-only cards.
+   */
+  sourceKind?: string;
+  /**
+   * Pack 08I.9 — catalog key under initiativeExperience.lifecycleRecordTitles.*
+   * for synthetic titles that are not civic content_translations.
+   */
+  titleCode?: string;
   updatedAt: string;
   publicHref?: string;
   authorDisplayName?: string;
@@ -107,7 +123,10 @@ export interface PublicInitiativeLifecycleRecordItem {
 export interface PublicInitiativeLifecycleStageContent {
   stageId: string;
   records: PublicInitiativeLifecycleRecordItem[];
+  /** Deprecated compatibility English — Web prefers emptyStateCode when present. */
   emptyStateMessage: string;
+  /** Pack 08I.8 — semantic empty-state code resolved via initiativeExperience.lifecycleEmpty.* */
+  emptyStateCode?: string;
 }
 
 export interface InitiativeSupportAudienceBreakdown {

@@ -10,6 +10,7 @@ import { fetchAuthSession } from "../../auth/auth-api";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { listPublicInitiativeImplementationCommitments } from "../../initiative-implementation-commitment/api";
 import { WorkspaceButton } from "../../initiative-workspace-ux";
+import { CivicPublicTranslatedSection } from "../../language";
 import { resolveCommitmentViewStateDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import {
   initiateImplementationCommitmentTransfer,
@@ -286,8 +287,23 @@ export function InitiativeImplementationCommitmentPublicResult({
 
         return (
           <div className="iic-public__commitment" key={commitment.commitmentId}>
-            <h3>{commitmentTitle}</h3>
-            <p>{commitment.summary}</p>
+            <CivicPublicTranslatedSection
+              sourceKind="implementation_commitment"
+              sourceRecordId={commitment.commitmentId}
+              fallbackFields={{
+                title: commitment.title,
+                summary: commitment.summary ?? "",
+                approvedAction: commitment.approvedAction ?? "",
+                priority: commitment.priority ?? "",
+                organization: "",
+                commitmentScope: "",
+                suggestedResponsibleRole: "",
+                requiredResources: "",
+                relatedRisks: "",
+                references: "",
+              }}
+              fieldOrder={["title", "summary", "approvedAction", "priority"]}
+            />
             {showResponsible && commitment.authorDisplayName !== "Unassigned" ? (
               <p className="iic-public__meta">
                 {commitment.priority

@@ -26,6 +26,7 @@ import {
   resolveInitiativeDecisionVoteChoiceDisplayLabel,
   resolvePublicChoiceElectionVotingStatusDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
+import { CivicPublicTranslatedSection, stableJsonForDisplay } from "../../language";
 
 import { InitiativeCollectiveDecisionBallotWidget } from "./InitiativeCollectiveDecisionBallotWidget";
 
@@ -250,8 +251,26 @@ export function InitiativeCollectiveDecisionPublicResult({
         <p className="icd-public__meta">{t("author.collectiveDecision.public.previewMeta")}</p>
       ) : null}
       <section className="icd-public__section">
-        <h3>{structured?.title || projection.question}</h3>
-        <p>{structured?.decisionSummary ?? projection.question}</p>
+        <CivicPublicTranslatedSection
+          sourceKind="collective_decision"
+          sourceRecordId={projection.decisionId}
+          fallbackFields={{
+            question: projection.question,
+            outcomeSummary: projection.outcomeSummary ?? "",
+            transparencyNote: "",
+            structuredContent: structured
+              ? stableJsonForDisplay({
+                  title: structured.title,
+                  decisionSummary: structured.decisionSummary,
+                  approvedActions: structured.approvedActions,
+                  rejectedAlternatives: structured.rejectedAlternatives,
+                  responsibleRoles: structured.responsibleRoles,
+                  implementationPriorities: structured.implementationPriorities,
+                  implementationTimeline: structured.implementationTimeline,
+                })
+              : "",
+          }}
+        />
         <p className="icd-public__meta">
           {projection.closedAt
             ? t("author.collectiveDecision.public.statusClosedMeta", {

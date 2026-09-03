@@ -1,7 +1,7 @@
 "use client";
 
 import type { RefObject, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import type {
@@ -25,6 +25,9 @@ import {
   resolveActivityAreaDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
+import { resolveInitiativeDetailPresentation } from "../resolve-initiative-detail-presentation";
+import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
+import { looksLikeRawI18nKey } from "../normalize-initiative-status-code";
 import { InitiativeLifecycleStageWorkspace } from "../../initiative-lifecycle-stage-workspace";
 import { InitiativeCollaborativeAnalysisAuthorWorkspace } from "../../initiative-collaborative-analysis/components/InitiativeCollaborativeAnalysisAuthorWorkspace";
 import { InitiativeCollaborativeAnalysisDraftPreview } from "../../initiative-collaborative-analysis/components/InitiativeCollaborativeAnalysisDraftPreview";
@@ -58,6 +61,7 @@ import { InitiativeCivicArchiveDraftPreview } from "../../initiative-civic-archi
 import { InitiativeCivicArchivePublicResult } from "../../initiative-civic-archive-lifecycle/components/InitiativeCivicArchivePublicResult";
 import { CurrentLifecycleStageBanner } from "./CurrentLifecycleStageBanner";
 import { DiscussionLifecycleCompletionBanner } from "./DiscussionLifecycleCompletionBanner";
+import { LifecycleTranslatedRecordCard } from "./LifecycleTranslatedRecordCard";
 import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
 import { PublicDiscussionPanel } from "./PublicDiscussionPanel";
 import { PublicChoiceOverviewCandidateIntake } from "../../public-choice-candidate/components/PublicChoiceOverviewCandidateIntake";
@@ -92,6 +96,60 @@ function OverviewSection({ label, value }: { label: string; value: string | null
       <p>{value}</p>
     </section>
   );
+}
+
+/** Pack 08I.8 — Overview full description uses shared Initiative detail presentation. */
+function OverviewTranslatedDescription({
+  initiativeId,
+  canonicalDescription,
+  label,
+  initialDescription,
+}: {
+  initiativeId: string;
+  canonicalDescription: string;
+  label: string;
+  /** Pack 08I.9 — SSR-localized description seed. */
+  initialDescription?: string;
+}) {
+  const readingContext = usePublicContentReadingContext();
+  const [description, setDescription] = useState(
+    () => initialDescription || canonicalDescription,
+  );
+
+  useEffect(() => {
+    // Pack 08I.9 — keep SSR seed until reading context is ready.
+    if (!readingContext.ready) {
+      if (!initialDescription) {
+        setDescription(canonicalDescription);
+      }
+      return;
+    }
+    let cancelled = false;
+    void resolveInitiativeDetailPresentation({
+      initiativeId,
+      canonical: {
+        title: "",
+        description: canonicalDescription,
+      },
+      readingContext,
+    }).then((presentation) => {
+      if (!cancelled) {
+        setDescription(presentation.description);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    initiativeId,
+    canonicalDescription,
+    initialDescription,
+    readingContext.ready,
+    readingContext.readingLanguage,
+    readingContext.translationPreference,
+  ]);
+
+  return <OverviewSection label={label} value={description} />;
 }
 
 function OverviewMetadataItem({ label, value }: { label: string; value: string | null | undefined }) {
@@ -146,6 +204,7 @@ function PublicInitiativeOverview({
   currentStageLabel,
   openCandidateSubmit = false,
   onOpenCandidateSubmitConsumed,
+  initialDescription,
 }: {
   initiative: PublicInitiativeProjection;
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
@@ -153,6 +212,7 @@ function PublicInitiativeOverview({
   currentStageLabel: string;
   openCandidateSubmit?: boolean;
   onOpenCandidateSubmitConsumed?: () => void;
+  initialDescription?: string;
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
@@ -188,7 +248,12 @@ function PublicInitiativeOverview({
       ) : null}
       {!presentation.isPublicChoice ? (
         <>
-          <OverviewSection label={t("overview.fullDescription")} value={initiative.description} />
+          <OverviewTranslatedDescription
+            initiativeId={initiative.initiativeId}
+            canonicalDescription={initiative.description}
+            initialDescription={initialDescription}
+            label={t("overview.fullDescription")}
+          />
           <div className="pie-overview__grid">
             <div className="pie-overview__column">
               {presentation.showActivityArea ? (
@@ -275,34 +340,25 @@ function PublicInitiativeOverview({
 }
 
 function LifecycleRecordCard({ record }: { record: PublicInitiativeLifecycleRecordItem }) {
-  const locale = useLocale();
-  const content = (
-    <>
-      <h3>{record.title}</h3>
-      {record.summary ? <p>{record.summary}</p> : null}
-      <p className="pie-record__meta">
-        {[record.status, record.authorDisplayName, record.detail].filter(Boolean).join(" · ")}
-        {record.updatedAt
-          ? ` · ${formatInitiativeExperienceDate(locale, record.updatedAt)}`
-          : ""}
-      </p>
-    </>
-  );
-
-  if (record.publicHref) {
-    return (
-      <article className="pie-record">
-        <Link href={record.publicHref}>{content}</Link>
-      </article>
-    );
-  }
-
-  return <article className="pie-record">{content}</article>;
+  return <LifecycleTranslatedRecordCard record={record} />;
 }
 
 function LifecycleStagePanel({ stage }: { stage: PublicInitiativeLifecycleStageContent }) {
+  const t = useTranslations("initiativeExperience");
+
   if (stage.records.length === 0) {
-    return <p className="pie-empty">{stage.emptyStateMessage}</p>;
+    const code = stage.emptyStateCode ?? `stage_${stage.stageId}_default`;
+    const key = `lifecycleEmpty.${code}`;
+    let message = stage.emptyStateMessage;
+    try {
+      const localized = t(key);
+      if (localized.trim() && !looksLikeRawI18nKey(localized) && localized !== key) {
+        message = localized;
+      }
+    } catch {
+      // keep API compatibility English
+    }
+    return <p className="pie-empty">{message}</p>;
   }
 
   return (
@@ -400,6 +456,11 @@ interface PublicInitiativeCenterPanelProps {
   /** Pack 03 — open Overview candidate form immediately (no reload). */
   openCandidateSubmit?: boolean;
   onOpenCandidateSubmitConsumed?: () => void;
+  /** Pack 08I.9 — SSR-localized title/description seed for Overview. */
+  initialPresentation?: {
+    readonly title: string;
+    readonly description: string;
+  };
 }
 
 export function PublicInitiativeCenterPanel({
@@ -421,6 +482,7 @@ export function PublicInitiativeCenterPanel({
   onToggleStagePreviewMode,
   openCandidateSubmit = false,
   onOpenCandidateSubmitConsumed,
+  initialPresentation,
 }: PublicInitiativeCenterPanelProps) {
   const t = useTranslations("initiativeExperience");
   const experienceRefresh = useInitiativeExperienceRefresh();
@@ -768,6 +830,7 @@ export function PublicInitiativeCenterPanel({
                   currentStageLabel={facingLabel}
                   openCandidateSubmit={openCandidateSubmit}
                   onOpenCandidateSubmitConsumed={onOpenCandidateSubmitConsumed}
+                  initialDescription={initialPresentation?.description}
                 />
               );
             })()}

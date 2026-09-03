@@ -8,6 +8,7 @@ import {
   resolveCivicArchiveCompletenessSummaryDisplay,
   resolveCivicArchiveSectionDisplayLabel,
   resolveCivicArchiveTimelineStatusDisplayLabel,
+  resolveLifecycleStageDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
 
 /**
@@ -27,7 +28,11 @@ export function InitiativeCivicArchiveDocumentRenderer({
     <article className="ica-public" aria-label={t("author.archive.document.aria")}>
       {metaLabel ? <p className="ica-public__meta">{metaLabel}</p> : null}
       <section className="ica-public__section">
-        <h3>{document.finalArchiveTitle || t("author.archive.document.untitled")}</h3>
+        <h3>
+          {document.finalArchiveTitle.trim()
+            ? document.finalArchiveTitle
+            : t("author.archive.document.untitled")}
+        </h3>
         <p className="ica-public__meta">
           {document.archiveVersion != null
             ? t("author.archive.document.version", { version: document.archiveVersion })
@@ -54,7 +59,9 @@ export function InitiativeCivicArchiveDocumentRenderer({
         <ul className="ica-source-panel__list">
           {document.timeline.map((entry) => (
             <li className="ica-source-panel__item" key={entry.stageId}>
-              <span className="ica-source-panel__label">{entry.label}</span>
+              <span className="ica-source-panel__label">
+                {resolveLifecycleStageDisplayLabel(entry.stageId, t) || entry.label}
+              </span>
               <p className="ica-source-panel__summary">
                 {resolveCivicArchiveTimelineStatusDisplayLabel(entry.status, t)}
                 {entry.publishedAt ? ` · ${entry.publishedAt}` : ""}

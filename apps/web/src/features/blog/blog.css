@@ -305,6 +305,15 @@
   flex: 1 1 auto;
 }
 
+.blog-latest-mini__date,
+.blog-latest-mini__author,
+.blog-latest-mini__category {
+  color: var(--hu-color-text-muted);
+  font-size: var(--hu-font-size-xs, 0.75rem);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .blog-latest-mini__title {
   font-size: var(--hu-font-size-sm);
   font-weight: var(--hu-font-weight-semibold);
@@ -312,12 +321,8 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-}
-
-.blog-latest-mini__date,
-.blog-latest-mini__author {
-  color: var(--hu-color-text-muted);
-  font-size: var(--hu-font-size-xs, 0.75rem);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .blog-post-card__cta {
@@ -409,6 +414,8 @@
 .blog-authors-list__name {
   font-size: var(--hu-font-size-sm);
   font-weight: var(--hu-font-weight-semibold);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .blog-authors-list__latest {
@@ -416,6 +423,8 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   margin-left: calc(36px + var(--hu-space-2));
   color: var(--hu-color-text-muted);
   text-decoration: none;
@@ -537,6 +546,8 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 6;
   overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   color: var(--hu-color-text);
   min-height: 0;
 }

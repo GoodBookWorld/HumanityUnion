@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
 
@@ -11,13 +11,14 @@ import {
   CivicShareButton,
 } from "../../civic-share";
 import { Button } from "../../../design-system/components/Button";
+import { WorkspaceStatusBadge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { resolveInitiativeCardPresentation } from "../../public-initiative-mini-card/resolve-initiative-card-presentation";
+import { resolveInitiativeCardBadgeLabel } from "../../public-initiative-mini-card/resolve-initiative-card-semantic-labels";
 import {
+  formatInitiativeExperienceDate,
   resolveActivityAreaDisplayLabel,
-  resolveInitiativeStatusDisplayLabel,
 } from "../../public-initiative-experience/initiative-experience-i18n";
-import { formatStableCalendarDate } from "../initiative-lifecycle-labels";
 import { InitiativeImage } from "./InitiativeImage";
 
 import "./world-initiatives-page.css";
@@ -29,6 +30,7 @@ interface WorldInitiativesPageContentProps {
 function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardProjection }) {
   const tMini = useTranslations("publicInitiativeMiniCard");
   const tExperience = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
   const [displayTitle, setDisplayTitle] = useState(initiative.title);
   const [displaySummary, setDisplaySummary] = useState(initiative.summary);
@@ -36,7 +38,9 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
   useEffect(() => {
     setDisplayTitle(initiative.title);
     setDisplaySummary(initiative.summary);
+  }, [initiative.initiativeId, initiative.title, initiative.summary]);
 
+  useEffect(() => {
     if (!readingContext.ready) {
       return;
     }
@@ -73,7 +77,11 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
     initiative.publicInitiativeHref ||
     `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`;
   const activityAreaLabel = resolveActivityAreaDisplayLabel(initiative.activityArea, tExperience);
-  const statusLabel = resolveInitiativeStatusDisplayLabel(initiative.publicStatus, tExperience);
+  const statusLabel = resolveInitiativeCardBadgeLabel({
+    publicStatus: initiative.publicStatus,
+    currentStageLabel: initiative.currentStageLabel,
+    messagesOrT: tExperience,
+  });
 
   return (
     <article className="world-initiative-card">
@@ -106,22 +114,48 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
         </div>
         <div className="world-initiative-card__body">
           <h2 className="world-initiative-card__title">{displayTitle}</h2>
+          {displaySummary ? (
+            <p className="world-initiative-card__summary">{displaySummary}</p>
+          ) : null}
+          {statusLabel ? (
+            <div className="world-initiative-card__badge-row">
+              <WorkspaceStatusBadge
+                status={initiative.publicStatus || "neutral"}
+                variant="neutral"
+                label={statusLabel}
+              />
+            </div>
+          ) : null}
           <dl className="world-initiative-card__meta">
             <div>
-              <dt>{tExperience("hero.activityArea")}</dt>
-              <dd>{activityAreaLabel}</dd>
+              <dt className="world-initiative-card__meta-label">
+                {tExperience("hero.activityArea")}
+              </dt>
+              <dd className="world-initiative-card__meta-value">{activityAreaLabel}</dd>
             </div>
             <div>
-              <dt>{tExperience("hero.status")}</dt>
-              <dd>{statusLabel}</dd>
+              <dt className="world-initiative-card__meta-label">
+                {tExperience("overview.startDate")}
+              </dt>
+              <dd className="world-initiative-card__meta-value">
+                {initiative.startDate
+                  ? formatInitiativeExperienceDate(locale, initiative.startDate, {
+                      month: "short",
+                    })
+                  : "—"}
+              </dd>
             </div>
             <div>
-              <dt>{tExperience("overview.startDate")}</dt>
-              <dd>{formatStableCalendarDate(initiative.startDate)}</dd>
-            </div>
-            <div>
-              <dt>{tExperience("overview.completionDate")}</dt>
-              <dd>{formatStableCalendarDate(initiative.completionDate)}</dd>
+              <dt className="world-initiative-card__meta-label">
+                {tExperience("overview.completionDate")}
+              </dt>
+              <dd className="world-initiative-card__meta-value">
+                {initiative.completionDate
+                  ? formatInitiativeExperienceDate(locale, initiative.completionDate, {
+                      month: "short",
+                    })
+                  : "—"}
+              </dd>
             </div>
           </dl>
           <span className="world-initiative-card__cta" aria-hidden="true">

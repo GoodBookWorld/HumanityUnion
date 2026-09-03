@@ -3108,6 +3108,36 @@
         "next": "下一頁",
         "showingStatus": "顯示 {start}–{end}／共 {total}"
       }
+    },
+    "lifecycleEmpty": {
+      "stage_initiative_see_overview": "倡議內容可在「概覽」中查看。",
+      "stage_discussion_see_discussion_tab": "討論持續於「倡議討論」分頁。",
+      "stage_analysis_none_published": "尚未發布協作分析。",
+      "stage_proposal_none_published": "尚未發布改進提案。",
+      "stage_revision_none_published": "尚未發布修訂。",
+      "stage_petition_unavailable": "請願資訊暫時無法使用。",
+      "stage_petition_none_linked": "此倡議尚未連結請願。",
+      "stage_decision_session_none_published": "尚未發布決策會議。",
+      "stage_collective_decision_none_published": "尚未發布集體決策。",
+      "stage_commitment_none_published": "尚未發布實施承諾。",
+      "stage_tracking_none_published": "尚未發布實施追蹤紀錄。",
+      "stage_official_response_none_published": "尚未發布官方回應。",
+      "stage_public_impact_none_published": "尚未發布公共影響紀錄。",
+      "stage_archive_unavailable": "公民檔案資訊暫時無法使用。",
+      "stage_archive_not_archived": "此倡議尚未歸檔。",
+      "stage_generic_none_available": "此階段沒有可用紀錄。"
+    },
+    "lifecycleRecordTitles": {
+      "discussion_completed": "討論已完成",
+      "improvement_proposals_collection": "改進提案",
+      "election_results": "選舉結果",
+      "official_response_package": "官方回應套件",
+      "public_impact_report": "公共影響報告",
+      "no_official_response_received": "未收到官方回應"
+    },
+    "lifecycleRecordFields": {
+      "title": "標題",
+      "summary": "摘要"
     }
   },
   "civicMediaPublic": {
@@ -3131,13 +3161,83 @@
       "eyebrow": "查核資訊",
       "title": "事實查核資源",
       "description": "用於查核公開主張、圖像與媒體敘事的獨立組織與工具。",
-      "ariaLabel": "事實查核資源"
+      "ariaLabel": "事實查核資源",
+      "resources": {
+        "snopes": {
+          "mission": "以可查證證據調查謠言、病毒式聲稱與廣為流傳的故事。",
+          "coverage": "一般聲稱、都市傳說、社群媒體謠言與公開聲明。"
+        },
+        "politifact": {
+          "mission": "以透明評級方法與來源引用查核公開聲明。",
+          "coverage": "政治聲明、競選主張與公共論述中的政策宣稱。"
+        },
+        "factcheck-org": {
+          "mission": "超黨派計畫，監測美國政治傳播的事實準確性。",
+          "coverage": "政治廣告、演講、辯論與病毒式政治內容。"
+        },
+        "euvsdisinfo": {
+          "mission": "以開源證據追蹤並記錄假訊息敘事。",
+          "coverage": "假訊息活動、資訊操弄與虛假敘事。"
+        },
+        "bellingcat": {
+          "mission": "運用公開可得證據與可驗證方法進行開源調查。",
+          "coverage": "衝突報導、地理定位查證與數位鑑識。"
+        },
+        "afp-fact-check": {
+          "mission": "法新社國際事實查核單位，遵循編輯標準。",
+          "coverage": "全球病毒式聲稱、健康假訊息與國際新聞主張。"
+        },
+        "full-fact": {
+          "mission": "獨立事實查核慈善機構，採透明方法與更正機制。",
+          "coverage": "英國公開聲明、統計數據與廣為流傳的線上聲稱。"
+        }
+      }
     },
     "propaganda": {
       "eyebrow": "分析敘事",
       "title": "宣傳手法分析",
       "description": "協助辨識操弄手法、協調敘事與資訊作戰的資源。",
-      "ariaLabel": "宣傳手法分析資源"
+      "ariaLabel": "宣傳手法分析資源",
+      "resources": {
+        "euvsdisinfo-analysis": {
+          "focusCode": "disinformation-manipulation",
+          "explanation": "記錄反覆出現的虛假敘事，並說明資訊戰如何跨平台擴散。",
+          "focus": "假訊息與資訊操弄"
+        },
+        "dfrlab": {
+          "focusCode": "information-warfare",
+          "explanation": "大西洋理事會研究實驗室，分析線上影響行動與數位證據。",
+          "focus": "資訊戰與數位研究"
+        },
+        "stanford-internet-observatory": {
+          "focusCode": "platform-integrity",
+          "explanation": "學術研究中心，探討資訊如何傳播以及社群如何評估來源。",
+          "focus": "平台研究與資訊完整性"
+        },
+        "first-draft": {
+          "focusCode": "media-literacy",
+          "explanation": "提供在分享前查證影像、影片與聲稱的實務指引。",
+          "focus": "媒體素養與查證訓練"
+        },
+        "rand-information-warfare": {
+          "focusCode": "information-environment",
+          "explanation": "研究機構，發表資訊行動、韌性與公民準備度分析。",
+          "focus": "資訊環境研究"
+        },
+        "mediawell": {
+          "focusCode": "misinformation-research",
+          "explanation": "社會科學研究委員會樞紐，彙整錯誤資訊與媒體素養學術研究。",
+          "focus": "錯誤資訊研究彙整"
+        }
+      },
+      "focus": {
+        "disinformation-manipulation": "假訊息與資訊操弄",
+        "information-warfare": "資訊戰與數位研究",
+        "platform-integrity": "平台研究與資訊完整性",
+        "media-literacy": "媒體素養與查證訓練",
+        "information-environment": "資訊環境研究",
+        "misinformation-research": "錯誤資訊研究彙整"
+      }
     },
     "faq": {
       "heading": "常見問題"
@@ -3232,7 +3332,8 @@
       "regional-public-media": "區域媒體",
       "scientific-publisher": "科學出版",
       "academic-resource": "學術資源"
-    }
+    },
+    "coverageLabel": "涵蓋範圍：{country}"
   },
   "search": {
     "title": "搜尋公民紀錄",
@@ -4545,7 +4646,9 @@
       "authors": {
         "heading": "作者",
         "loading": "正在載入作者…",
-        "empty": "尚無已發佈的作者。"
+        "empty": "尚無已發佈的作者。",
+        "latestLabel": "最新文章",
+        "publicationsCount": "{count, plural, =0 {尚無文章} other {# 篇文章}}"
       },
       "categoryChart": {
         "heading": "依分類的出版內容",
@@ -4595,6 +4698,11 @@
       "our_life": {
         "name": "我們的生活"
       }
+    },
+    "article": {
+      "publishedLabel": "發布於",
+      "categoryLabel": "分類",
+      "authorLabel": "作者"
     }
   },
   "legalPublic": {

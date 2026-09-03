@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import type { PublicDecisionSessionProjection } from "@hu/types";
 
 import { getPublicDecisionSession } from "../../decision-session/api";
+import { CivicPublicTranslatedSection, stableJsonForDisplay } from "../../language";
 
 import "./initiative-decision-session-stage-workspace.css";
 
@@ -76,19 +77,37 @@ export function InitiativeDecisionSessionPublicResult({
         <p className="ids-public__meta">{t("author.decisionSession.public.previewMeta")}</p>
       ) : null}
       <section className="ids-public__section">
-        <h3>{projection.title}</h3>
-        <p>{projection.decisionQuestion}</p>
+        {/* Pack 08I.9 — warm civic translation; do not prefer raw English fields. */}
+        <CivicPublicTranslatedSection
+          sourceKind="decision_session"
+          sourceRecordId={projection.sessionId}
+          fallbackFields={{
+            title: projection.title,
+            purpose: structured?.decisionContext || projection.purpose,
+            decisionQuestion: projection.decisionQuestion,
+            structuredContent: structured
+              ? stableJsonForDisplay({
+                  decisionContext: structured.decisionContext,
+                  objectives: structured.objectives,
+                  options: structured.options,
+                  supportingArguments: structured.supportingArguments,
+                  risks: structured.risks,
+                  dependencies: structured.dependencies,
+                  requiredResources: structured.requiredResources,
+                  suggestedTimeline: structured.suggestedTimeline,
+                  suggestedParticipants: structured.suggestedParticipants,
+                  suggestedResponsibleRoles: structured.suggestedResponsibleRoles,
+                  unresolvedQuestions: structured.unresolvedQuestions,
+                })
+              : "",
+          }}
+        />
         <p className="ids-public__meta">
           {t("author.decisionSession.public.publishedMeta", {
             date: projection.publishedAt,
             steward: projection.stewardDisplayName,
           })}
         </p>
-      </section>
-
-      <section className="ids-public__section">
-        <h3>{t("author.decisionSession.sections.context")}</h3>
-        <p>{structured?.decisionContext || projection.purpose}</p>
       </section>
 
       <ListSection title={t("author.decisionSession.sections.objectives")} items={structured?.objectives} />
@@ -147,8 +166,6 @@ export function InitiativeDecisionSessionPublicResult({
           </p>
         </section>
       ) : null}
-
-      <p className="ids-public__meta">{t("author.decisionSession.public.votingBelongsNotice")}</p>
     </article>
   );
 }

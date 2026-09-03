@@ -9,6 +9,7 @@ import type {
 } from "@hu/types";
 
 import { getPublishedOfficialResponses } from "../api";
+import { CivicPublicTranslatedSection } from "../../language";
 
 import "./initiative-official-response-stage-workspace.css";
 
@@ -70,6 +71,8 @@ export function InitiativeOfficialResponsePublicResult({
   if (isNoResponse) {
     const noResponseBody =
       pkg.noResponseDetail?.note?.trim() || pkg.summary.trim() || null;
+    const packageTitle =
+      pkg.title?.trim() || t("lifecycleRecordTitles.official_response_package");
 
     return (
       <article
@@ -80,10 +83,22 @@ export function InitiativeOfficialResponsePublicResult({
           <p className="ior-public__meta">{t("author.officialResponse.public.previewMeta")}</p>
         ) : null}
         <section className="ior-public__section">
-          <h3>{pkg.title || t("author.officialResponse.public.untitled")}</h3>
+          <h3>{packageTitle}</h3>
           <p className="ior-public__meta">{t("author.officialResponse.public.publishedOutcome")}</p>
           <h3>{t("author.officialResponse.sections.noOfficialResponse")}</h3>
-          {noResponseBody ? <p>{noResponseBody}</p> : null}
+          {noResponseBody ? (
+            <CivicPublicTranslatedSection
+              sourceKind="official_response"
+              sourceRecordId={pkg.packageId}
+              fallbackFields={{
+                subject: packageTitle,
+                summary: noResponseBody,
+                organizationName: "",
+                responseReference: "",
+              }}
+              fieldOrder={["summary"]}
+            />
+          ) : null}
           {pkg.noResponseDetail?.contactedOrganizations?.length ? (
             <p className="ior-public__meta">
               {t("author.officialResponse.public.contacted", {
@@ -113,12 +128,22 @@ export function InitiativeOfficialResponsePublicResult({
         <p className="ior-public__meta">
           {t("author.officialResponse.public.publishedCount", { count: responses.length })}
         </p>
-        {pkg.summary ? <p>{pkg.summary}</p> : null}
       </section>
 
       {responses.map((response) => (
         <div className="ior-public__response" key={response.responseId}>
-          <h3>{response.subject}</h3>
+          <CivicPublicTranslatedSection
+            sourceKind="official_response"
+            sourceRecordId={response.responseId}
+            fallbackFields={{
+              subject: response.subject,
+              summary: response.summary,
+              organizationName:
+                response.institution || response.organization || "",
+              responseReference: "",
+            }}
+            fieldOrder={["subject", "summary", "organizationName"]}
+          />
           <p className="ior-public__meta">
             {t("author.officialResponse.public.responseMeta", {
               org:
@@ -128,7 +153,6 @@ export function InitiativeOfficialResponsePublicResult({
               date: response.receivedAt,
             })}
           </p>
-          <p>{response.summary}</p>
           {response.documentIds.length > 0 || response.links.length > 0 ? (
             <p className="ior-public__meta">
               {t("author.officialResponse.public.docsLinks", {

@@ -1,3 +1,5 @@
+@import "../../initiative-workspace-ux/initiative-workspace-ux.css";
+
 .world-initiatives-page {
   width: min(100%, var(--hu-page-max-width));
   max-width: var(--hu-page-max-width);
@@ -112,39 +114,93 @@
 .world-initiative-card__body {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  padding: 0.85rem 1rem 1rem;
+  gap: 0.85rem;
+  padding: 0.95rem 1rem 1.1rem;
   flex: 1;
+  min-width: 0;
 }
 
 .world-initiative-card__title {
   margin: 0;
-  font-size: 0.98rem;
+  font-size: 1.15rem;
+  font-weight: 700;
   line-height: 1.3;
+  color: var(--hu-color-text, #122033);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.world-initiative-card__summary {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--hu-color-text-muted, #5f6b7a);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.world-initiative-card__badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
 .world-initiative-card__meta {
   margin: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.45rem 0.75rem;
-  font-size: 0.78rem;
-  line-height: 1.3;
+  gap: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  min-width: 0;
 }
 
-.world-initiative-card__meta dt {
+.world-initiative-card__meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.world-initiative-card__meta dt,
+.world-initiative-card__meta-label {
+  margin: 0;
+  font-size: 0.7rem;
   font-weight: 600;
+  letter-spacing: 0.01em;
   color: var(--hu-color-text-muted, #5f6b7a);
+  overflow-wrap: anywhere;
 }
 
-.world-initiative-card__meta dd {
-  margin: 0.1rem 0 0;
+.world-initiative-card__meta dd,
+.world-initiative-card__meta-value {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--hu-color-text, #1a2433);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .world-initiative-card__cta {
-  margin-top: auto;
+  margin-block-start: auto;
+  padding-block-start: 0.55rem;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  color: var(--hu-color-primary, #0174b0);
+  border-block-start: 1px solid var(--hu-border-subtle, rgba(18, 32, 51, 0.08));
+}
+
+@media (max-width: 900px) {
+  .world-initiative-card__meta {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 420px) {
@@ -152,3 +208,8 @@
     grid-template-columns: 1fr;
   }
 }
+
+[dir="rtl"] .world-initiative-card__cta {
+  text-align: start;
+}
+

@@ -7,6 +7,7 @@ import type { WorldInitiativeCardProjection } from "@hu/types";
 
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
 import { PUBLIC_INITIATIVE_MINI_CARD_FALLBACK_IMAGE } from "../../public-initiative-mini-card/PublicInitiativeMiniCard";
+import { resolveInitiativeCardBadgeLabel } from "../../public-initiative-mini-card/resolve-initiative-card-semantic-labels";
 
 interface CountryElectionRailCardProps {
   initiative: WorldInitiativeCardProjection;
@@ -17,14 +18,18 @@ interface CountryElectionRailCardProps {
  */
 export function CountryElectionRailCard({ initiative }: CountryElectionRailCardProps) {
   const t = useTranslations("publicGeo.shared");
+  const tExperience = useTranslations("initiativeExperience");
   const href =
     initiative.publicInitiativeHref ||
     `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`;
   const blocked = initiative.administrativelyBlocked === true;
   const statusLabel =
-    initiative.electionVotingStatusLabel ??
-    initiative.currentStageLabel ??
-    initiative.publicStatus;
+    initiative.electionVotingStatusLabel ||
+    resolveInitiativeCardBadgeLabel({
+      publicStatus: initiative.publicStatus,
+      currentStageLabel: initiative.currentStageLabel,
+      messagesOrT: tExperience,
+    });
 
   return (
     <Link

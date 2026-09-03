@@ -36,6 +36,11 @@ interface PublicInitiativeExperiencePageProps {
   onManageInitiativeUpdated?: (initiative: Initiative) => void;
   /** Refetch canonical experience (lifecycleStages, viewerIsSteward, sidebar). */
   onExperienceRefetch?: () => Promise<void>;
+  /** Pack 08I.9 — SSR-localized title/description seed. */
+  initialPresentation?: {
+    readonly title: string;
+    readonly description: string;
+  };
 }
 
 export function PublicInitiativeExperiencePage({
@@ -43,6 +48,7 @@ export function PublicInitiativeExperiencePage({
   manageInitiative = null,
   onManageInitiativeUpdated,
   onExperienceRefetch,
+  initialPresentation,
 }: PublicInitiativeExperiencePageProps) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
@@ -347,6 +353,7 @@ export function PublicInitiativeExperiencePage({
               },
             )}
             initiativeId={experience.initiativeId}
+            initialPresentation={initialPresentation}
           />
         }
         lifecycle={
@@ -386,6 +393,7 @@ export function PublicInitiativeExperiencePage({
               initialDiscussionFilter={initialDiscussionFilter}
               focusDiscussionCommentId={focusDiscussionCommentId}
               focusCollaborationParticipantId={focusCollaborationParticipantId}
+              initialPresentation={initialPresentation}
               managePanel={
                 canShowManage && manageInitiative ? (
                   <InitiativeOwnerManagePanel

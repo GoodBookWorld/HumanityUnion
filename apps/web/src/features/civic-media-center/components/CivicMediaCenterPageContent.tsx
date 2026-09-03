@@ -25,7 +25,10 @@ import {
 } from "../../horizontal-experience";
 import { PublicNewsSection } from "../../public-news/components/PublicNewsSection";
 import { fetchCivicMediaCenter } from "../api";
-import { useCivicMediaResolvedEditorial } from "./CivicMediaTranslatedEditorial";
+import {
+  useCivicMediaResolvedEditorial,
+  type CivicMediaResolvedEditorial,
+} from "./CivicMediaTranslatedEditorial";
 import { CivicPipelineWorkflow } from "./CivicPipelineWorkflow";
 import { MediaLogo } from "./MediaLogo";
 import { TrustedMediaCategoryTabs } from "./TrustedMediaCategoryTabs";
@@ -89,7 +92,11 @@ function PrincipleCard({ principle }: { principle: CivicMediaSelectionPrinciple 
 
 function FactCheckCard({ resource }: { resource: FactCheckResource }) {
   const t = useTranslations("civicMediaPublic");
-  const chips = coverageToChips(resource.coverage);
+  const missionKey = `factChecking.resources.${resource.id}.mission`;
+  const coverageKey = `factChecking.resources.${resource.id}.coverage`;
+  const mission = t.has(missionKey) ? t(missionKey) : resource.mission;
+  const coverage = t.has(coverageKey) ? t(coverageKey) : resource.coverage;
+  const chips = coverageToChips(coverage);
 
   return (
     <Card className="civic-media-resource-card civic-media-resource-card--verification">
@@ -108,7 +115,7 @@ function FactCheckCard({ resource }: { resource: FactCheckResource }) {
         />
       </div>
       <p className="civic-media-resource-card__label">{t("mission")}</p>
-      <p className="civic-media-resource-card__body">{resource.mission}</p>
+      <p className="civic-media-resource-card__body">{mission}</p>
       <div className="civic-media-resource-card__chips" aria-label={t("coverageAria")}>
         {chips.map((chip) => (
           <span key={chip} className="civic-media-chip">
@@ -123,6 +130,15 @@ function FactCheckCard({ resource }: { resource: FactCheckResource }) {
 
 function PropagandaCard({ resource }: { resource: PropagandaAnalysisResource }) {
   const t = useTranslations("civicMediaPublic");
+  const focusCodeKey = `propaganda.resources.${resource.id}.focusCode`;
+  const explanationKey = `propaganda.resources.${resource.id}.explanation`;
+  const focusCode = t.has(focusCodeKey) ? t(focusCodeKey) : "";
+  const focusLabel = focusCode && t.has(`propaganda.focus.${focusCode}`)
+    ? t(`propaganda.focus.${focusCode}`)
+    : t.has(`propaganda.resources.${resource.id}.focus`)
+      ? t(`propaganda.resources.${resource.id}.focus`)
+      : resource.focus;
+  const explanation = t.has(explanationKey) ? t(explanationKey) : resource.explanation;
 
   return (
     <Card className="civic-media-resource-card civic-media-resource-card--analysis">
@@ -140,8 +156,8 @@ function PropagandaCard({ resource }: { resource: PropagandaAnalysisResource }) 
           height={40}
         />
       </div>
-      <Badge status={resource.focus} />
-      <p className="civic-media-resource-card__body">{resource.explanation}</p>
+      <Badge status="neutral" variant="neutral" label={focusLabel} />
+      <p className="civic-media-resource-card__body">{explanation}</p>
       <ExternalResourceLink href={resource.websiteUrl}>{t("learnMore")}</ExternalResourceLink>
     </Card>
   );
@@ -157,9 +173,15 @@ function TrustedMediaCard({
   return <TrustedMediaRailCard resource={resource} categoryTitle={categoryTitle} />;
 }
 
-function CivicMediaCenterLoaded({ media }: { media: CivicMediaCenterPublic }) {
+function CivicMediaCenterLoaded({
+  media,
+  initialEditorial,
+}: {
+  media: CivicMediaCenterPublic;
+  initialEditorial?: CivicMediaResolvedEditorial;
+}) {
   const t = useTranslations("civicMediaPublic");
-  const editorial = useCivicMediaResolvedEditorial(media);
+  const editorial = useCivicMediaResolvedEditorial(media, initialEditorial);
 
   return (
     <main className="civic-media-page">
@@ -273,18 +295,46 @@ function CivicMediaCenterLoaded({ media }: { media: CivicMediaCenterPublic }) {
   );
 }
 
-export function CivicMediaCenterPageContent() {
+export function CivicMediaCenterPageContent({
+  initialMedia,
+  initialEditorial,
+}: {
+  /** Pack 08I.9 — SSR-fetched media payload (Blog `initialPost` parity). */
+  initialMedia?: CivicMediaCenterPublic | null;
+  /** Pack 08I.9 — SSR warm editorial seed (GET resolve only). */
+  initialEditorial?: CivicMediaResolvedEditorial;
+} = {}) {
   const t = useTranslations("civicMediaPublic");
-  const [media, setMedia] = useState<CivicMediaCenterPublic | null>(null);
-  const [error, setError] = useState(false);
+  const seeded = initialMedia !== undefined;
+  const [media, setMedia] = useState<CivicMediaCenterPublic | null>(() =>
+    initialMedia ?? null,
+  );
+  const [error, setError] = useState(() => seeded && initialMedia === null);
 
   useEffect(() => {
+    if (seeded) {
+      setMedia(initialMedia ?? null);
+      setError(initialMedia === null);
+      return;
+    }
+
+    let cancelled = false;
     void fetchCivicMediaCenter()
-      .then(setMedia)
+      .then((result) => {
+        if (!cancelled) {
+          setMedia(result);
+        }
+      })
       .catch(() => {
-        setError(true);
+        if (!cancelled) {
+          setError(true);
+        }
       });
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [seeded, initialMedia]);
 
   if (error) {
     return (
@@ -306,5 +356,5 @@ export function CivicMediaCenterPageContent() {
     );
   }
 
-  return <CivicMediaCenterLoaded media={media} />;
+  return <CivicMediaCenterLoaded media={media} initialEditorial={initialEditorial} />;
 }
