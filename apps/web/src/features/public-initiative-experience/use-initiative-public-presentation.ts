@@ -1,20 +1,25 @@
 /**
- * Pack 08I.14A — shared Initiative public presentation lifecycle (title + description).
+ * Pack 08I.14A / 08I.14B — shared Initiative public presentation lifecycle.
  *
- * Live break: SSR seeded Ukrainian via interface locale, then client resolve used
- * authenticated readingLanguages[0]=en and overwrote Hero/Overview/card titles
- * with canonical English (SEED_OK_CLIENT_RESET).
+ * Live break (08I.14A): SSR seeded Ukrainian via interface locale, then client
+ * resolve used authenticated readingLanguages[0]=en and overwrote titles.
+ *
+ * Live break (08I.14B): locale switch UK→EN retained UK presentation until reload
+ * because mergeInitiativePublicPresentationUpdate blocked translated→original
+ * for the same canonical identity without considering activeLanguage.
  *
  * Contract:
  * - display language = active interface locale
  * - translationPreference gates GENERATION only (never warm display)
  * - keep SSR seed until reading context is ready
- * - never blindly reset display state to canonical after a translated value applies
+ * - locale changes apply immediately; stale async responses are cancelled
+ * - never blindly reset display state to canonical after a translated value
+ *   applies *for the same display language*
  */
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 
 import { resolveInitiativeDetailPresentation } from "./resolve-initiative-detail-presentation";
@@ -35,6 +40,7 @@ export function useInitiativePublicPresentation(input: {
   const interfaceLocale = useLocale();
   const readingContext = usePublicContentReadingContext();
   const displayLanguage = resolveInitiativePublicDisplayLanguage(interfaceLocale);
+  const requestGeneration = useRef(0);
 
   const [presentation, setPresentation] = useState<InitiativePublicPresentation>(() =>
     selectInitiativePublicPresentation({
@@ -53,6 +59,29 @@ export function useInitiativePublicPresentation(input: {
     }),
   );
 
+  // Pack 08I.14B — react to locale immediately (no remount / reload).
+  useEffect(() => {
+    setPresentation((previous) => {
+      if (previous.activeLanguage === displayLanguage) {
+        return previous;
+      }
+      // Switching toward a new language: drop prior translated fields until resolve.
+      // If the new language matches source, show canonical immediately.
+      return selectInitiativePublicPresentation({
+        canonical: {
+          title: previous.originalTitle,
+          description: previous.originalDescription,
+        },
+        presentationMode: "original",
+        activeLanguage: displayLanguage,
+        originalLanguage: previous.originalLanguage,
+        canViewOriginal: false,
+        canViewTranslation: false,
+        isMachineTranslated: false,
+      });
+    });
+  }, [displayLanguage]);
+
   useEffect(() => {
     if (!readingContext.ready) {
       if (!input.initialPresentation) {
@@ -66,18 +95,23 @@ export function useInitiativePublicPresentation(input: {
       return;
     }
 
+    const generation = ++requestGeneration.current;
     let cancelled = false;
     void resolveInitiativeDetailPresentation({
       initiativeId: input.initiativeId,
       canonical: input.canonical,
       readingContext: {
         ready: readingContext.ready,
-        // Pack 08I.14A — request warm translation for the UI locale, not stale readingLanguages[0].
+        // Pack 08I.14A/B — request warm translation for the UI locale.
         readingLanguage: displayLanguage,
         translationPreference: readingContext.translationPreference,
       },
     }).then((resolved) => {
-      if (cancelled) {
+      if (cancelled || generation !== requestGeneration.current) {
+        return;
+      }
+      // Reject stale responses whose resolve language no longer matches UI locale.
+      if (resolved.activeLanguage !== displayLanguage) {
         return;
       }
       const next = selectInitiativePublicPresentation({
@@ -128,16 +162,19 @@ export function useInitiativeCardTitlePresentation(input: {
   const readingContext = usePublicContentReadingContext();
   const displayLanguage = resolveInitiativePublicDisplayLanguage(interfaceLocale);
   const [title, setTitle] = useState(input.canonicalTitle);
+  const requestGeneration = useRef(0);
 
   useEffect(() => {
+    // Locale change or canonical change: start from canonical until resolve lands.
     setTitle(input.canonicalTitle);
-  }, [input.initiativeId, input.canonicalTitle]);
+  }, [input.initiativeId, input.canonicalTitle, displayLanguage]);
 
   useEffect(() => {
     if (!readingContext.ready) {
       return;
     }
 
+    const generation = ++requestGeneration.current;
     let cancelled = false;
     void resolveInitiativeDetailPresentation({
       initiativeId: input.initiativeId,
@@ -151,7 +188,10 @@ export function useInitiativeCardTitlePresentation(input: {
         translationPreference: readingContext.translationPreference,
       },
     }).then((resolved) => {
-      if (cancelled) {
+      if (cancelled || generation !== requestGeneration.current) {
+        return;
+      }
+      if (resolved.activeLanguage !== displayLanguage) {
         return;
       }
       setTitle(

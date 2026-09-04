@@ -27,6 +27,10 @@
   background-color: color-mix(in srgb, var(--hu-color-primary) 6%, #ffffff);
   border: 1px solid var(--hu-color-border);
   border-radius: var(--hu-radius-pill);
+  /* Pack 08I.14B — subtle inset/pressed treatment (not raised outward). */
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, var(--hu-color-text) 12%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #ffffff 50%, transparent);
   /* Logical padding so chevron gutter flips under Pack 02C dir=rtl (Task 02). */
   padding-block: 0.35rem;
   padding-inline-start: 0.75rem;
@@ -54,6 +58,12 @@
 .hu-language-selector__select:focus-visible {
   border-color: color-mix(in srgb, var(--hu-color-primary) 45%, var(--hu-color-border));
   background-color: color-mix(in srgb, var(--hu-color-primary) 10%, #ffffff);
+}
+
+.hu-language-selector__select:active {
+  box-shadow:
+    inset 0 2px 3px color-mix(in srgb, var(--hu-color-text) 16%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #ffffff 40%, transparent);
 }
 
 .hu-language-selector__select:focus-visible {

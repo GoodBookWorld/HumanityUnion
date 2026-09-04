@@ -28,6 +28,7 @@ import {
 } from "../initiative-experience-i18n";
 import { looksLikeRawI18nKey } from "../normalize-initiative-status-code";
 import { resolveInitiativeDetailPresentation } from "../resolve-initiative-detail-presentation";
+import { resolveInitiativePublicDisplayLanguage } from "../initiative-public-presentation";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { lifecycleRecordUsesWarmTranslation } from "../lifecycle-record-warm-matrix";
 
@@ -90,7 +91,9 @@ function InitiativeRecordBody({
 }: {
   record: PublicInitiativeLifecycleRecordItem;
 }) {
+  const interfaceLocale = useLocale();
   const readingContext = usePublicContentReadingContext();
+  const displayLanguage = resolveInitiativePublicDisplayLanguage(interfaceLocale);
   const [title, setTitle] = useState(record.title);
   const [summary, setSummary] = useState(record.summary ?? "");
 
@@ -107,9 +110,17 @@ function InitiativeRecordBody({
         title: record.title,
         description: record.summary ?? "",
       },
-      readingContext,
+      readingContext: {
+        ready: readingContext.ready,
+        // Pack 08I.14B — Lifecycle initiative records follow UI locale.
+        readingLanguage: displayLanguage,
+        translationPreference: readingContext.translationPreference,
+      },
     }).then((presentation) => {
       if (cancelled) {
+        return;
+      }
+      if (presentation.activeLanguage !== displayLanguage) {
         return;
       }
       setTitle(presentation.title);
@@ -123,7 +134,7 @@ function InitiativeRecordBody({
     record.title,
     record.summary,
     readingContext.ready,
-    readingContext.readingLanguage,
+    displayLanguage,
     readingContext.translationPreference,
   ]);
 

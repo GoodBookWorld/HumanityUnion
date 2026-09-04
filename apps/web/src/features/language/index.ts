@@ -38,6 +38,7 @@ export {
   PUBLIC_LANGUAGES_CLIENT_CACHE_TTL_MS,
 } from "./public-languages-api";
 export type { SelectablePublicLanguage } from "./public-languages-api";
+export { resolvePublicContentDisplayLanguage } from "./resolve-public-content-display-language";
 export { canonicalizeEnabledLocale } from "./canonicalize-locale";
 export { writeHuLangCookieViaWebRoute } from "./write-hu-lang-cookie";
 export {

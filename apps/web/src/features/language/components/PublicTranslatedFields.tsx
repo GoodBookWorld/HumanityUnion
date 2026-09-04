@@ -7,6 +7,7 @@ import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
 import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
 
 import { formatLanguageDisplayName } from "../format-language-display-name";
+import { resolvePublicContentDisplayLanguage } from "../resolve-public-content-display-language";
 import { resolveTranslatedContent, generateContentTranslation } from "../translation-api";
 import { usePublicContentReadingContext } from "../use-public-content-reading-context";
 import { TranslatedContentView } from "./TranslatedContentView";
@@ -45,6 +46,8 @@ export function PublicTranslatedFields({
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
+  // Pack 08I.14B — Initiative Lifecycle/Discussion civic fields follow UI locale.
+  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
   const [fields, setFields] = useState(fallbackFields);
   const [originalFields, setOriginalFields] = useState(fallbackFields);
   const [activeLanguage, setActiveLanguage] = useState<LanguageCode>(DEFAULT_PLATFORM_LANGUAGE);
@@ -68,16 +71,15 @@ export function PublicTranslatedFields({
     }
 
     let cancelled = false;
-    const readingLanguage = readingContext.readingLanguage;
     const preference = readingContext.translationPreference;
-    setPreferredLanguage(readingLanguage);
+    setPreferredLanguage(displayLanguage);
 
     void (async () => {
       try {
         let resolved = await resolveTranslatedContent({
           sourceKind,
           sourceRecordId,
-          language: readingLanguage,
+          language: displayLanguage,
         });
 
         // Initiative/Analysis/Petition compatibility: optional on-demand generate.
@@ -86,14 +88,14 @@ export function PublicTranslatedFields({
           enableOnDemandGenerate &&
           preference === "preferred" &&
           resolved.presentationMode === "original" &&
-          readingLanguage !== resolved.originalLanguage &&
+          displayLanguage !== resolved.originalLanguage &&
           !resolved.isStale
         ) {
           try {
             const generated = await generateContentTranslation({
               sourceKind,
               sourceRecordId,
-              targetLanguage: readingLanguage,
+              targetLanguage: displayLanguage,
             });
             resolved = generated.display;
           } catch {
@@ -102,6 +104,9 @@ export function PublicTranslatedFields({
         }
 
         if (cancelled) {
+          return;
+        }
+        if (resolved.activeLanguage !== displayLanguage) {
           return;
         }
 
@@ -130,7 +135,7 @@ export function PublicTranslatedFields({
     fallbackSignature,
     enableOnDemandGenerate,
     readingContext.ready,
-    readingContext.readingLanguage,
+    displayLanguage,
     readingContext.translationPreference,
   ]);
 

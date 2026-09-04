@@ -1,12 +1,14 @@
 /**
- * Pack 08I.14A — single public Initiative presentation owner for title/description.
+ * Pack 08I.14A / 08I.14B — single public Initiative presentation owner for title/description.
  *
  * Canonical Initiative domain data stays canonical.
  * Mounted card / PIE Hero / Overview consume these presentation values only.
  */
 
 import type { LanguageCode } from "@hu/types";
-import { DEFAULT_PLATFORM_LANGUAGE, normalizeLanguageCode } from "@hu/types";
+import { DEFAULT_PLATFORM_LANGUAGE } from "@hu/types";
+
+import { resolvePublicContentDisplayLanguage } from "../language/resolve-public-content-display-language";
 
 export interface InitiativePublicPresentation {
   readonly title: string;
@@ -27,25 +29,11 @@ export interface InitiativePublicPresentationCanonical {
   readonly description: string;
 }
 
-/**
- * Align UI locale tags with Registry aliases used by translation resolve.
- * Pack 08I.14A — public Initiative title/description follow the active interface locale.
- */
+/** Pack 08I.14A/B — alias of the shared public content display-language helper. */
 export function resolveInitiativePublicDisplayLanguage(
   interfaceLocale: string | null | undefined,
 ): LanguageCode {
-  const trimmed = typeof interfaceLocale === "string" ? interfaceLocale.trim() : "";
-  if (!trimmed) {
-    return DEFAULT_PLATFORM_LANGUAGE;
-  }
-  const lower = trimmed.toLowerCase();
-  if (lower === "zh-hant" || lower === "zh-tw" || lower === "zh-hk") {
-    return "zh-Hant";
-  }
-  if (lower === "zh-hans" || lower === "zh-cn") {
-    return "zh";
-  }
-  return normalizeLanguageCode(trimmed, DEFAULT_PLATFORM_LANGUAGE);
+  return resolvePublicContentDisplayLanguage(interfaceLocale);
 }
 
 /**
@@ -89,13 +77,22 @@ export function selectInitiativePublicPresentation(input: {
 }
 
 /**
- * Hydration/update contract: once translated presentation is applied, a later
- * canonical-only tick must not revert participant-visible title/description.
+ * Hydration/update contract:
+ * - locale switches always apply (`activeLanguage` change wins)
+ * - once translated presentation is applied for the *same* display language,
+ *   a later canonical-only tick must not revert participant-visible fields
+ *   (guards against auth reading-language / race overwrites within one locale)
  */
 export function mergeInitiativePublicPresentationUpdate(input: {
   readonly previous: InitiativePublicPresentation;
   readonly next: InitiativePublicPresentation;
 }): InitiativePublicPresentation {
+  // Pack 08I.14B — UK→EN (and any locale change) must not be blocked by the
+  // same-locale anti-reversion guard. Stale async responses for a prior locale
+  // are cancelled in the hook; this additionally rejects language mismatches.
+  if (input.previous.activeLanguage !== input.next.activeLanguage) {
+    return input.next;
+  }
   if (
     input.previous.presentationMode === "translated" &&
     input.next.presentationMode === "original" &&
@@ -103,7 +100,7 @@ export function mergeInitiativePublicPresentationUpdate(input: {
     input.previous.originalTitle === input.next.originalTitle &&
     input.previous.originalDescription === input.next.originalDescription
   ) {
-    // Ignore a transient canonical overwrite for the same source identity.
+    // Ignore a transient canonical overwrite for the same source identity + locale.
     return input.previous;
   }
   return input.next;

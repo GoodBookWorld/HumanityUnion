@@ -22,6 +22,8 @@
   /* Semantic status — restrained Admin / table chips (Pack 23A). */
   --hu-color-success: #1a6b3a;
   --hu-color-warning: #9a6700;
+  /* Soft amber surface shared by feedback + translated View Original (Pack 08I.14B). */
+  --hu-color-warning-soft: #fff9ef;
   /* Pack 23B — PWA footer Notification unread badge only (not header/Admin/OS). */
   --hu-color-notification-badge: #b42318;
 

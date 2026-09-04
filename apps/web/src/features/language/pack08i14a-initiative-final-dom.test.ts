@@ -108,6 +108,8 @@ describe("Pack 08I.14A — final DOM (card / hero / overview)", () => {
   it("hydration/update does not revert translated presentation to canonical", () => {
     const canonical = selectInitiativePublicPresentation({
       canonical: { title: EN_TITLE, description: EN_DESCRIPTION },
+      activeLanguage: "uk",
+      originalLanguage: "en",
     });
     const translated = selectInitiativePublicPresentation({
       canonical: { title: EN_TITLE, description: EN_DESCRIPTION },
@@ -125,6 +127,7 @@ describe("Pack 08I.14A — final DOM (card / hero / overview)", () => {
     assert.equal(afterTranslate.title, UK_TITLE);
     assert.equal(afterTranslate.description, UK_DESCRIPTION);
 
+    // Same display language + transient original must not wipe warm translation.
     const revertedAttempt = mergeInitiativePublicPresentationUpdate({
       previous: afterTranslate,
       next: canonical,

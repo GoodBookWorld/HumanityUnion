@@ -36,6 +36,7 @@ import {
   resolveDiscussionCommentFocusTarget,
 } from "../discussion-comment-deep-link";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
+import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
 import { formatInitiativeExperienceDate } from "../initiative-experience-i18n";
 import { useInitiativeExperienceRefresh } from "../initiative-experience-refresh-context";
 import { resolveDiscussionCommentPresentation } from "../resolve-discussion-comment-presentation";
@@ -509,6 +510,7 @@ function DiscussionCommentCard({
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
+  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
   const [displayBody, setDisplayBody] = useState(comment.body);
   const authorLink = resolveAuthorLinkPresentation(comment.author);
   const badges = resolveAuthorBadges(comment.collaboration);
@@ -520,7 +522,12 @@ function DiscussionCommentCard({
     void resolveDiscussionCommentPresentation({
       commentId: comment.commentId,
       canonicalBody: comment.body,
-      readingContext,
+      readingContext: {
+        ready: readingContext.ready,
+        // Pack 08I.14B — Discussion body follows interface locale, not readingLanguages[0].
+        readingLanguage: displayLanguage,
+        translationPreference: readingContext.translationPreference,
+      },
     }).then((resolved) => {
       if (!cancelled) {
         setDisplayBody(resolved.body);
@@ -533,7 +540,7 @@ function DiscussionCommentCard({
     comment.commentId,
     comment.body,
     readingContext.ready,
-    readingContext.readingLanguage,
+    displayLanguage,
     readingContext.translationPreference,
   ]);
 

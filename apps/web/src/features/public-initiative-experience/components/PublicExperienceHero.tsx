@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { InitiativeCoverMedia, PublicInitiativeExperienceHero } from "@hu/types";
@@ -71,6 +71,10 @@ export function PublicExperienceHero({
   const isMachineTranslated = Boolean(presentation?.isMachineTranslated);
   const isStale = Boolean(presentation?.isStale);
   const [userPrefersOriginal, setUserPrefersOriginal] = useState(false);
+  // Pack 08I.14B — locale change resets View Original so chrome matches new presentation.
+  useEffect(() => {
+    setUserPrefersOriginal(false);
+  }, [presentation?.activeLanguage]);
   const hasDistinctTranslation = translatedContentHasDistinctTranslation({
     content: `${displayTitle}\n${displaySummary}`,
     originalContent: `${originalTitle}\n${originalSummary}`,
