@@ -62,6 +62,7 @@ import { resolveTranslationProvider } from "./resolve-translation-provider.js";
 import { TerminologyGlossaryValidationError } from "./terminology-glossary/terminology-glossary.errors.js";
 import { resolveProviderTerminologyContext } from "./terminology-glossary/terminology-glossary.provider-context.js";
 import { TranslationProviderError } from "./translation.config.js";
+import { withContentTranslationWorkerSlot } from "./content-translation-worker-concurrency.js";
 
 export interface LoadedTranslatableSource {
   readonly sourceKind: ContentTranslationSourceKind;
@@ -346,16 +347,18 @@ export async function getOrCreateContentTranslation(input: {
     throw error;
   }
 
-  const result = await provider.translate({
-    sourceLanguage: source.sourceLanguage,
-    targetLanguage,
-    text: JSON.stringify(source.fields),
-    contentType: "structured_json",
-    sourceRecordId: source.sourceRecordId,
-    sourceVersion: source.sourceVersion,
-    terminologyContext,
-    safetyCleared: true,
-  });
+  const result = await withContentTranslationWorkerSlot(() =>
+    provider.translate({
+      sourceLanguage: source.sourceLanguage,
+      targetLanguage,
+      text: JSON.stringify(source.fields),
+      contentType: "structured_json",
+      sourceRecordId: source.sourceRecordId,
+      sourceVersion: source.sourceVersion,
+      terminologyContext,
+      safetyCleared: true,
+    }),
+  );
 
   let translatedFields: Record<string, string>;
   try {

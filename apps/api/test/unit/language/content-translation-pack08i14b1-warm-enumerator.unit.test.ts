@@ -2,7 +2,8 @@
  * Pack 08I.14B.1 — staging warm enumerator discovery vs live API persistence.
  *
  * Root cause regression: warm script connected Mongo without
- * bootstrapMongoPersistence(), leaving Initiative/Analysis snapshot stores empty.
+ * hydrating Initiative/Analysis snapshot stores (empty discovery).
+ * Pack 08I.16 — operator uses lightweight bootstrap, not full API hydrate.
  */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -56,16 +57,13 @@ function buildPublicInitiative(overrides: Partial<Initiative> = {}): Initiative 
 }
 
 describe("Pack 08I.14B.1 — warm enumerator persistence bootstrap", () => {
-  it("warm script bootstraps Mongo persistence before enumeration", () => {
+  it("warm script bootstraps lightweight operator persistence before enumeration", () => {
     const script = readApi("src/scripts/warm-staging-content-translations.ts");
-    assert.match(script, /bootstrapMongoPersistence/);
+    assert.match(script, /bootstrapContentTranslationOperatorPersistence/);
+    assert.doesNotMatch(script, /await bootstrapMongoPersistence\(\)/);
     assert.match(script, /SOURCE_RECORDS_DISCOVERED/);
     assert.match(script, /WARM_REQUEST_CANDIDATES/);
     assert.match(script, /ELIGIBLE_SOURCE_RECORDS/);
-    assert.doesNotMatch(
-      script,
-      /await connectMongoClient\(\);\s*\n\s*try \{\s*\n\s*const result = await runStaging/,
-    );
   });
 
   it("empty Initiative store surfaces discoveryHint at SOURCE_RECORDS_DISCOVERED=0", async () => {
@@ -89,7 +87,7 @@ describe("Pack 08I.14B.1 — warm enumerator persistence bootstrap", () => {
     });
     assert.equal(discovered.candidates.length, 0);
     assert.match(String(discovered.discoveryHint), /SOURCE_RECORDS_DISCOVERED\.initiative=0/);
-    assert.match(String(discovered.discoveryHint), /bootstrapMongoPersistence/);
+    assert.match(String(discovered.discoveryHint), /bootstrapContentTranslationOperatorPersistence/);
   });
 });
 

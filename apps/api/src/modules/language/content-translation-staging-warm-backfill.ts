@@ -6,7 +6,8 @@
  * skipped_existing for current translations).
  *
  * Pack 08I.14B.1 — enumerator reads the SAME in-memory/Mongo stores as the live
- * API. Scripts MUST call bootstrapMongoPersistence() before enumeration so
+ * API. Scripts MUST call bootstrapContentTranslationOperatorPersistence()
+ * (or full bootstrapMongoPersistence) before enumeration so
  * Mongo snapshot adapters are hydrated and Initiative/Analysis stores synced.
  */
 
@@ -306,7 +307,7 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
   let discoveryHint: string | null = null;
   if (allInitiatives.length === 0) {
     discoveryHint =
-      "SOURCE_RECORDS_DISCOVERED.initiative=0 — Mongo snapshot stores may be unhydrated. Call bootstrapMongoPersistence() before warm enumeration (live API does this on boot).";
+      "SOURCE_RECORDS_DISCOVERED.initiative=0 — Mongo snapshot stores may be unhydrated. Call bootstrapContentTranslationOperatorPersistence() before warm enumeration (live API uses full bootstrapMongoPersistence on boot).";
   }
 
   return {

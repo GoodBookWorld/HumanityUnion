@@ -1,19 +1,23 @@
 /**
- * Pack 02G Task 04 — bounded locale fan-out concurrency for warm consumer.
+ * Pack 02G Task 04 / 08I.16 — bounded locale fan-out concurrency for warm consumer.
+ *
+ * Locale fan-out must never exceed CONTENT_TRANSLATION_WORKER_CONCURRENCY.
  */
 
-const DEFAULT_LOCALE_CONCURRENCY = 2;
+import { resolveContentTranslationWorkerConcurrency } from "./content-translation-worker-concurrency.js";
+
+const DEFAULT_LOCALE_CONCURRENCY = 1;
 
 export function resolveContentTranslationWarmLocaleConcurrency(): number {
   const raw = process.env.CONTENT_TRANSLATION_WARM_LOCALE_CONCURRENCY?.trim();
-  if (!raw) {
-    return DEFAULT_LOCALE_CONCURRENCY;
+  let resolved = DEFAULT_LOCALE_CONCURRENCY;
+  if (raw) {
+    const parsed = Number.parseInt(raw, 10);
+    if (Number.isFinite(parsed) && parsed >= 1) {
+      resolved = Math.min(parsed, 8);
+    }
   }
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return DEFAULT_LOCALE_CONCURRENCY;
-  }
-  return Math.min(parsed, 8);
+  return Math.min(resolved, resolveContentTranslationWorkerConcurrency());
 }
 
 /**

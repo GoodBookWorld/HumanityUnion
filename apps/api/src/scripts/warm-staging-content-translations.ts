@@ -17,8 +17,9 @@
  *   Mongo database name === humanity_union_staging
  *   PLATFORM_MODE is not production
  *
- * Pack 08I.14B.1 — MUST bootstrap Mongo persistence before enumeration.
+ * Pack 08I.14B.1 — MUST hydrate Initiative-path discovery stores before enumeration.
  * Pack 08I.14B.3 — enqueue is not materialization success; optional wait verifies CURRENT.
+ * Pack 08I.16 — lightweight operator bootstrap (not full API hydrate); wait uses compact identities.
  *
  * Usage (from apps/api):
  *   pnpm warm:staging-content-translations
@@ -32,7 +33,7 @@
  */
 
 import { loadApiEnvironment } from "../config/load-api-environment.js";
-import { bootstrapMongoPersistence } from "../infrastructure/mongodb/bootstrap-mongo-persistence.js";
+import { bootstrapContentTranslationOperatorPersistence } from "../infrastructure/mongodb/bootstrap-content-translation-operator-persistence.js";
 import {
   isMongoConfigured,
   resolveMongoConfig,
@@ -124,7 +125,7 @@ async function main(): Promise<void> {
   const mongo = resolveMongoConfig();
   assertStagingWarmGuards({ execute, databaseName: mongo.database });
 
-  await bootstrapMongoPersistence();
+  const bootstrap = await bootstrapContentTranslationOperatorPersistence();
 
   try {
     if (repair) {
@@ -140,16 +141,31 @@ async function main(): Promise<void> {
         materialization = await waitForStagingWarmMaterialization({
           candidates: result.repairCandidates,
           timeoutMs,
+          onProgress: (progress) => {
+            console.log(
+              JSON.stringify({
+                pack: "08I.16",
+                operation: "wait_for_materialization_progress",
+                TARGETS_TOTAL: progress.targetsTotal,
+                CURRENT: progress.current,
+                PENDING: progress.pending,
+                RETRYING: progress.retrying,
+                TERMINAL_FAILED: progress.terminalFailed,
+                TIMED_OUT: progress.timedOut,
+              }),
+            );
+          },
         });
       }
 
       console.log(
         JSON.stringify(
           {
-            pack: "08I.14B.3",
+            pack: "08I.16",
             operation: "staging_content_translation_repair",
             mode: result.mode,
             database: mongo.database,
+            persistenceBootstrap: bootstrap.mode,
             kinds: kinds ?? [...STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS],
             totals: result.totals,
             byKindLocale: result.byKindLocale,
@@ -160,12 +176,20 @@ async function main(): Promise<void> {
                   elapsedMs: materialization.elapsedMs,
                   currentCount: materialization.currentCount,
                   remainingMissingOrStale: materialization.remainingMissingOrStale.length,
+                  progress: {
+                    TARGETS_TOTAL: materialization.progress.targetsTotal,
+                    CURRENT: materialization.progress.current,
+                    PENDING: materialization.progress.pending,
+                    RETRYING: materialization.progress.retrying,
+                    TERMINAL_FAILED: materialization.progress.terminalFailed,
+                    TIMED_OUT: materialization.progress.timedOut,
+                  },
                 }
               : null,
             note:
               result.mode === "dry-run"
                 ? "DRY RUN — no outbox writes. CURRENT skipped. Re-run with ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true --repair --execute."
-                : "EXECUTE — repair warms enqueued for MISSING/STALE only; CURRENT skipped. Enqueue ≠ materialization.",
+                : "EXECUTE — repair warms enqueued for MISSING/STALE only; CURRENT skipped. Enqueue ≠ materialization. Bounded API worker materializes.",
           },
           null,
           2,
@@ -188,18 +212,32 @@ async function main(): Promise<void> {
       materialization = await waitForStagingWarmMaterialization({
         candidates: result.candidates,
         timeoutMs,
+        onProgress: (progress) => {
+          console.log(
+            JSON.stringify({
+              pack: "08I.16",
+              operation: "wait_for_materialization_progress",
+              TARGETS_TOTAL: progress.targetsTotal,
+              CURRENT: progress.current,
+              PENDING: progress.pending,
+              RETRYING: progress.retrying,
+              TERMINAL_FAILED: progress.terminalFailed,
+              TIMED_OUT: progress.timedOut,
+            }),
+          );
+        },
       });
     }
 
     console.log(
       JSON.stringify(
         {
-          pack: "08I.14B.3",
+          pack: "08I.16",
           operation: "staging_content_translation_warm",
           mode: result.mode,
           database: mongo.database,
           kinds: kinds ?? [...STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS],
-          persistenceBootstrap: "bootstrapMongoPersistence",
+          persistenceBootstrap: bootstrap.mode,
           discoveryHint: result.discoveryHint,
           totals: {
             SOURCE_RECORDS_DISCOVERED: result.totals.sourceRecordsDiscovered,
@@ -228,12 +266,20 @@ async function main(): Promise<void> {
                 elapsedMs: materialization.elapsedMs,
                 currentCount: materialization.currentCount,
                 remainingMissingOrStale: materialization.remainingMissingOrStale.length,
+                progress: {
+                  TARGETS_TOTAL: materialization.progress.targetsTotal,
+                  CURRENT: materialization.progress.current,
+                  PENDING: materialization.progress.pending,
+                  RETRYING: materialization.progress.retrying,
+                  TERMINAL_FAILED: materialization.progress.terminalFailed,
+                  TIMED_OUT: materialization.progress.timedOut,
+                },
               }
             : null,
           note:
             result.mode === "dry-run"
               ? "DRY RUN — no outbox writes. Re-run with ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true --execute."
-              : "EXECUTE — warm requests enqueued; enqueue ≠ CURRENT materialization. Use --wait-for-materialization to verify.",
+              : "EXECUTE — warm requests enqueued; enqueue ≠ CURRENT materialization. Bounded API worker materializes. Use --wait-for-materialization to verify.",
         },
         null,
         2,

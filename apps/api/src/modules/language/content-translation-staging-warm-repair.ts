@@ -27,7 +27,10 @@ export type StagingWarmLocaleMaterializationState =
   | "CURRENT"
   | "MISSING"
   | "STALE"
-  | "INELIGIBLE";
+  | "INELIGIBLE"
+  | "PENDING"
+  | "RETRYING"
+  | "FAILED";
 
 export type StagingWarmRepairAction =
   | "MISSING"
@@ -310,20 +313,41 @@ export async function runStagingInitiativePathContentTranslationRepair(input: {
   };
 }
 
+export type StagingWarmWaitTargetIdentity = {
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly sourceRecordId: string;
+  readonly sourceVersion: string;
+  readonly targetLanguage: LanguageCode;
+};
+
+export type StagingWarmWaitProgress = {
+  readonly targetsTotal: number;
+  readonly current: number;
+  readonly pending: number;
+  readonly retrying: number;
+  readonly terminalFailed: number;
+  readonly timedOut: number;
+};
+
 /**
  * Bounded poll until CURRENT for each candidate×locale, or timeout.
- * Does not run the provider; expects the live outbox consumer to process.
+ * Resolves sourceVersion once per candidate, then tracks compact identities
+ * only — poll loops use indexed findContentTranslation lookups and do not
+ * reload source documents or run the provider. Expects the live outbox
+ * consumer to process.
  */
 export async function waitForStagingWarmMaterialization(input: {
   readonly candidates: readonly StagingWarmCandidate[];
   readonly targetLanguages?: readonly LanguageCode[];
   readonly timeoutMs?: number;
   readonly pollIntervalMs?: number;
+  readonly onProgress?: (progress: StagingWarmWaitProgress) => void;
 }): Promise<{
   readonly timedOut: boolean;
   readonly elapsedMs: number;
   readonly remainingMissingOrStale: readonly StagingWarmLocaleAuditRow[];
   readonly currentCount: number;
+  readonly progress: StagingWarmWaitProgress;
 }> {
   const timeoutMs = Math.max(1_000, input.timeoutMs ?? 120_000);
   const pollIntervalMs = Math.max(250, input.pollIntervalMs ?? 2_000);
@@ -334,44 +358,122 @@ export async function waitForStagingWarmMaterialization(input: {
     input.targetLanguages?.length ? input.targetLanguages : warmTargetLocales
   ) as LanguageCode[];
 
-  let remaining: StagingWarmLocaleAuditRow[] = [];
-  let currentCount = 0;
+  const identities: StagingWarmWaitTargetIdentity[] = [];
+  for (const candidate of input.candidates) {
+    // Resolve version once per candidate (compact string only). Do not retain
+    // hydrated source objects across polls.
+    const source = await loadTranslatableSource({
+      sourceKind: candidate.sourceKind,
+      sourceRecordId: candidate.sourceRecordId,
+    });
+    if (!source) {
+      continue;
+    }
+    for (const targetLanguage of targets) {
+      identities.push({
+        sourceKind: candidate.sourceKind,
+        sourceRecordId: candidate.sourceRecordId,
+        sourceVersion: source.sourceVersion,
+        targetLanguage,
+      });
+    }
+  }
+
+  let lastProgress: StagingWarmWaitProgress = {
+    targetsTotal: identities.length,
+    current: 0,
+    pending: identities.length,
+    retrying: 0,
+    terminalFailed: 0,
+    timedOut: 0,
+  };
 
   for (;;) {
-    remaining = [];
-    currentCount = 0;
-    for (const candidate of input.candidates) {
-      for (const targetLanguage of targets) {
-        const row = await auditContentTranslationMaterialization({
-          sourceKind: candidate.sourceKind,
-          sourceRecordId: candidate.sourceRecordId,
-          targetLanguage,
+    let current = 0;
+    let pending = 0;
+    let retrying = 0;
+    const terminalFailed = 0;
+    const remaining: StagingWarmLocaleAuditRow[] = [];
+
+    // Bound poll reads: one indexed lookup per identity; discard prior poll set.
+    // Does not call loadTranslatableSource or the provider.
+    for (const identity of identities) {
+      const row = await findContentTranslation({
+        sourceKind: identity.sourceKind,
+        sourceRecordId: identity.sourceRecordId,
+        sourceVersion: identity.sourceVersion,
+        targetLanguage: identity.targetLanguage,
+      });
+
+      if (!row) {
+        pending += 1;
+        remaining.push({
+          sourceKind: identity.sourceKind,
+          sourceRecordId: identity.sourceRecordId,
+          sourceVersion: identity.sourceVersion,
+          targetLanguage: identity.targetLanguage,
+          state: "MISSING",
         });
-        if (row.state === "CURRENT" || row.state === "INELIGIBLE") {
-          if (row.state === "CURRENT") {
-            currentCount += 1;
-          }
-          continue;
-        }
-        remaining.push(row);
+        continue;
       }
+
+      if (row.freshness === "regenerating") {
+        retrying += 1;
+        remaining.push({
+          sourceKind: identity.sourceKind,
+          sourceRecordId: identity.sourceRecordId,
+          sourceVersion: identity.sourceVersion,
+          targetLanguage: identity.targetLanguage,
+          state: "RETRYING",
+        });
+        continue;
+      }
+
+      if (row.stale || row.freshness === "stale") {
+        pending += 1;
+        remaining.push({
+          sourceKind: identity.sourceKind,
+          sourceRecordId: identity.sourceRecordId,
+          sourceVersion: identity.sourceVersion,
+          targetLanguage: identity.targetLanguage,
+          state: "STALE",
+        });
+        continue;
+      }
+
+      // freshness current + not stale → materialized
+      current += 1;
     }
+
+    lastProgress = {
+      targetsTotal: identities.length,
+      current,
+      pending,
+      retrying,
+      terminalFailed,
+      timedOut: 0,
+    };
+    input.onProgress?.(lastProgress);
 
     if (remaining.length === 0) {
       return {
         timedOut: false,
         elapsedMs: Date.now() - started,
         remainingMissingOrStale: [],
-        currentCount,
+        currentCount: current,
+        progress: lastProgress,
       };
     }
 
     if (Date.now() - started >= timeoutMs) {
+      lastProgress = { ...lastProgress, timedOut: remaining.length };
+      input.onProgress?.(lastProgress);
       return {
         timedOut: true,
         elapsedMs: Date.now() - started,
         remainingMissingOrStale: remaining,
-        currentCount,
+        currentCount: current,
+        progress: lastProgress,
       };
     }
 

@@ -138,7 +138,16 @@ export type {
   StagingWarmLocaleMaterializationState,
   StagingWarmRepairAction,
   StagingWarmRepairResult,
+  StagingWarmWaitProgress,
+  StagingWarmWaitTargetIdentity,
 } from "./content-translation-staging-warm-repair.js";
+export {
+  getContentTranslationWorkerInFlightForTests,
+  getContentTranslationWorkerPeakConcurrencyForTests,
+  resetContentTranslationWorkerConcurrencyForTests,
+  resolveContentTranslationWorkerConcurrency,
+  withContentTranslationWorkerSlot,
+} from "./content-translation-worker-concurrency.js";
 export {
   buildContentTranslationWarmTargetDiagnostic,
   contentTranslationWarmRegistryCandidateDiagnosticKeys,

@@ -29,7 +29,7 @@ describe("Pack 08I.14B — staging content translation warm backfill", () => {
     assert.match(script, /humanity_union_staging/);
     assert.match(script, /ALLOW_STAGING_CONTENT_TRANSLATION_WARM/);
     assert.match(script, /--execute/);
-    assert.match(script, /bootstrapMongoPersistence/);
+    assert.match(script, /bootstrapContentTranslationOperatorPersistence/);
     assert.doesNotMatch(script, /blog_post/);
 
     const moduleSource = readApi(
