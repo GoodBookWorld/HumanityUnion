@@ -24,11 +24,12 @@ describe("Pack 08I.14B — staging content translation warm backfill", () => {
     assert.ok(!STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS.includes("civic_media" as never));
   });
 
-  it("script is staging-guarded and uses operator_backfill enqueue path", () => {
+  it("script is staging-guarded, bootstraps Mongo persistence, and uses operator_backfill", () => {
     const script = readApi("src/scripts/warm-staging-content-translations.ts");
     assert.match(script, /humanity_union_staging/);
     assert.match(script, /ALLOW_STAGING_CONTENT_TRANSLATION_WARM/);
     assert.match(script, /--execute/);
+    assert.match(script, /bootstrapMongoPersistence/);
     assert.doesNotMatch(script, /blog_post/);
 
     const moduleSource = readApi(
@@ -37,6 +38,7 @@ describe("Pack 08I.14B — staging content translation warm backfill", () => {
     assert.match(moduleSource, /operator_backfill/);
     assert.match(moduleSource, /enqueueContentTranslationWarmRequested/);
     assert.match(moduleSource, /canExposePublicInitiativeProjection/);
+    assert.match(moduleSource, /SOURCE_RECORDS_DISCOVERED|sourceRecordsDiscovered/);
   });
 
   it("discussion_comment create still schedules warm; removed comments are not loadable", () => {

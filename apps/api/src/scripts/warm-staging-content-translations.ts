@@ -1,5 +1,5 @@
 /**
- * Pack 08I.14B — STAGING-ONLY ContentTranslationWarm backfill.
+ * Pack 08I.14B / 08I.14B.1 — STAGING-ONLY ContentTranslationWarm backfill.
  *
  * Defaults to DRY RUN (no outbox writes).
  *
@@ -7,7 +7,11 @@
  *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true
  *   --execute
  *   Mongo database name === humanity_union_staging
- *   PLATFORM_MODE is not production (or explicitly staging/beta with staging DB)
+ *   PLATFORM_MODE is not production
+ *
+ * Pack 08I.14B.1 — MUST bootstrap Mongo persistence (hydrate + sync stores)
+ * before enumeration. Connecting alone leaves Initiative/Analysis in-memory
+ * maps empty and yields candidates=0.
  *
  * Usage (from apps/api):
  *   pnpm warm:staging-content-translations
@@ -17,14 +21,12 @@
  */
 
 import { loadApiEnvironment } from "../config/load-api-environment.js";
+import { bootstrapMongoPersistence } from "../infrastructure/mongodb/bootstrap-mongo-persistence.js";
 import {
   isMongoConfigured,
   resolveMongoConfig,
 } from "../infrastructure/mongodb/mongo-config.js";
-import {
-  connectMongoClient,
-  disconnectMongoClient,
-} from "../infrastructure/mongodb/mongo-connection.js";
+import { disconnectMongoClient } from "../infrastructure/mongodb/mongo-connection.js";
 import {
   runStagingInitiativePathContentTranslationWarm,
   type StagingWarmSourceKind,
@@ -87,7 +89,11 @@ async function main(): Promise<void> {
   const mongo = resolveMongoConfig();
   assertStagingWarmGuards({ execute, databaseName: mongo.database });
 
-  await connectMongoClient();
+  // Pack 08I.14B.1 — hydrate Mongo snapshot caches + sync Initiative/Analysis
+  // in-memory stores (same path as live API boot). connectMongoClient alone is
+  // insufficient and produced SOURCE_RECORDS_DISCOVERED=0 on staging.
+  await bootstrapMongoPersistence();
+
   try {
     const result = await runStagingInitiativePathContentTranslationWarm({
       execute,
@@ -97,16 +103,30 @@ async function main(): Promise<void> {
     console.log(
       JSON.stringify(
         {
-          pack: "08I.14B",
+          pack: "08I.14B.1",
           operation: "staging_content_translation_warm",
           mode: result.mode,
           database: mongo.database,
           kinds: kinds ?? [...STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS],
-          totals: result.totals,
-          byKind: result.byKind.map((row) => ({
+          persistenceBootstrap: "bootstrapMongoPersistence",
+          discoveryHint: result.discoveryHint,
+          totals: {
+            SOURCE_RECORDS_DISCOVERED: result.totals.sourceRecordsDiscovered,
+            PUBLIC_RECORDS: result.totals.publicRecords,
+            ELIGIBLE_SOURCE_RECORDS: result.totals.eligibleSourceRecords,
+            WARM_REQUEST_CANDIDATES: result.totals.warmRequestCandidates,
+            SCHEDULED: result.totals.scheduled,
+            skippedCurrentOrIneligible: result.totals.skippedCurrentOrIneligible,
+            deduped: result.totals.deduped,
+            failed: result.totals.failed,
+          },
+          byKind: result.discoveryByKind.map((row) => ({
             sourceKind: row.sourceKind,
-            candidates: row.candidates,
-            scheduled: row.scheduled,
+            SOURCE_RECORDS_DISCOVERED: row.sourceRecordsDiscovered,
+            PUBLIC_RECORDS: row.publicRecords,
+            ELIGIBLE_SOURCE_RECORDS: row.eligibleSourceRecords,
+            WARM_REQUEST_CANDIDATES: row.warmRequestCandidates,
+            SCHEDULED: row.scheduled,
             skippedCurrentOrIneligible: row.skippedCurrentOrIneligible,
             deduped: row.deduped,
             failed: row.failed,
