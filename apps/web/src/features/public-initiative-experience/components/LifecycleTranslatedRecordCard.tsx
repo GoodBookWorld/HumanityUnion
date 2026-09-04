@@ -163,7 +163,13 @@ function CatalogOrCanonicalTitle({
       // fall through
     }
   }
-  return <h3>{record.title}</h3>;
+  // Pack 08I.15 — synthetic/WEB_UI titles only; CIVIC_CONTENT titles render via
+  // PublicTranslatedFields / CivicPublicTranslatedSection in the card body.
+  if (!record.sourceKind || record.sourceKind === "lifecycle_stage") {
+    const catalogFallbackTitle = record.title;
+    return <h3>{catalogFallbackTitle}</h3>;
+  }
+  return null;
 }
 
 export function LifecycleTranslatedRecordCard({

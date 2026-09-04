@@ -19,6 +19,21 @@ export {
   joinLinesForDisplay,
   stableJsonForDisplay,
 } from "./civic-translation-field-meta";
+export {
+  ADMIN_MANAGED_LOCALIZATION_DOMAINS,
+  CIVIC_CONTENT_MANUAL_OVERRIDE_STATUS,
+  CIVIC_CONTENT_SOURCE_KINDS,
+  DEFAULT_LOCALIZABLE_RULE,
+  assertNotMachineTranslatedAdminDomain,
+  assertParticipantFacingTextClassified,
+  classifyLocalizationOwnership,
+  isCivicContentSourceKind,
+  isRegisteredNonTranslatableFieldKey,
+  NON_TRANSLATABLE_FIELD_KEYS,
+} from "./localization-ownership";
+export type { CivicContentSourceKind } from "./localization-ownership";
+export { useCivicInitiativeLocalizedTitle } from "./use-civic-initiative-localized-title";
+// Coverage gate (node:fs) is test/tooling only — do not re-export from this barrel.
 export { TranslateDraftControl } from "./components/TranslateDraftControl";
 export type { TranslateDraftControlProps } from "./components/TranslateDraftControl";
 export { DocumentLanguageAttributes } from "./components/DocumentLanguageAttributes";

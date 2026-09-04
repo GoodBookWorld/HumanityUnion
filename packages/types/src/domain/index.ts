@@ -198,6 +198,14 @@ export type {
   TranslationProviderId,
 } from "./content-translation.js";
 export { CONTENT_TRANSLATION_WARM_REQUESTED } from "./content-translation.js";
+export type {
+  LocalizationOwnershipClass,
+  LocalizationResolutionPriorityStep,
+} from "./localization-ownership.js";
+export {
+  DEFAULT_LOCALIZABLE_RULE,
+  LOCALIZATION_RESOLUTION_PRIORITY,
+} from "./localization-ownership.js";
 export type { ApproximateIpGeography, ApproximateIpGeographySource } from "./ip-geography.js";
 export type {
   AnalysisId,

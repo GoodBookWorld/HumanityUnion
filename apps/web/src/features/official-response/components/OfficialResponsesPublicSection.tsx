@@ -1,59 +1,96 @@
+"use client";
+
+/**
+ * Pack 08I.15 — Official Response public list.
+ * WEB_UI chrome via catalogs; CIVIC_CONTENT summary via PublicTranslatedFields.
+ * organizationName / responseNumber remain NON_TRANSLATABLE.
+ */
+
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicOfficialResponseListItem } from "@hu/types";
+
+import { PublicTranslatedFields } from "../../language";
 
 interface OfficialResponsesPublicSectionProps {
   responses: PublicOfficialResponseListItem[];
   viewAllHref?: string;
 }
 
-function formatDate(value: string | undefined): string {
+function formatDate(value: string | undefined, locale: string): string {
   if (!value) {
-    return "Not specified";
+    return "—";
   }
 
-  return new Date(value).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  try {
+    return new Date(value).toLocaleDateString(locale, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return "—";
+  }
 }
 
-function formatType(responseType: string): string {
-  return responseType.replace(/_/g, " ");
+function OfficialResponseSummary({
+  response,
+}: {
+  response: PublicOfficialResponseListItem;
+}) {
+  const t = useTranslations("initiativeExperience");
+  return (
+    <PublicTranslatedFields
+      sourceKind="official_response"
+      sourceRecordId={response.responseId}
+      fieldOrder={["summary"]}
+      fieldLabels={{
+        summary: t("stages.official_response"),
+      }}
+      fallbackFields={{
+        summary: response.summary,
+      }}
+    />
+  );
 }
 
 export function OfficialResponsesPublicSection({
   responses,
   viewAllHref,
 }: OfficialResponsesPublicSectionProps) {
+  const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
+
   if (responses.length === 0) {
     return null;
   }
 
   const latest = responses[0];
+  const heading = t("stages.official_response");
 
   return (
     <section>
-      <h2>Official Responses</h2>
+      <h2>{heading}</h2>
       <p>
-        {responses.length} institutional response{responses.length === 1 ? "" : "s"} on public
-        record.
+        {responses.length}{" "}
+        {heading}
       </p>
 
       {latest ? (
         <div>
           <p>
-            <strong>Latest:</strong> {latest.responseNumber} — {latest.organizationName}
+            <strong>{latest.responseNumber}</strong> — {latest.organizationName}
           </p>
           <p>
-            {formatType(latest.responseType)} · {latest.verificationState.replace(/_/g, " ")} ·{" "}
-            {formatDate(latest.receivedAt)}
+            {latest.responseType.replace(/_/g, " ")} ·{" "}
+            {latest.verificationState.replace(/_/g, " ")} ·{" "}
+            {formatDate(latest.receivedAt, locale)}
           </p>
-          <p>{latest.summary}</p>
+          <OfficialResponseSummary response={latest} />
           <p>
             <Link href={`/public-responses/${encodeURIComponent(latest.responseId)}`}>
-              Open response →
+              {latest.responseNumber}
             </Link>
           </p>
         </div>
@@ -66,17 +103,18 @@ export function OfficialResponsesPublicSection({
               {response.responseNumber} — {response.organizationName}
             </Link>
             <p>
-              {formatType(response.responseType)} · {response.verificationState.replace(/_/g, " ")}{" "}
-              · {formatDate(response.receivedAt)}
+              {response.responseType.replace(/_/g, " ")} ·{" "}
+              {response.verificationState.replace(/_/g, " ")} ·{" "}
+              {formatDate(response.receivedAt, locale)}
             </p>
-            <p>{response.summary}</p>
+            <OfficialResponseSummary response={response} />
           </li>
         ))}
       </ul>
 
       {viewAllHref ? (
         <p>
-          <Link href={viewAllHref}>View all official responses</Link>
+          <Link href={viewAllHref}>{heading}</Link>
         </p>
       ) : null}
     </section>

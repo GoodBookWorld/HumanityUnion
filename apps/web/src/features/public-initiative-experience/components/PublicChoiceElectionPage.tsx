@@ -34,6 +34,7 @@ import {
   resolveInitiativeDecisionVoteChoiceDisplayLabel,
   resolvePublicChoiceElectionVotingStatusDisplayLabel,
 } from "../initiative-experience-i18n";
+import { useInitiativePublicPresentation } from "../use-initiative-public-presentation";
 
 import "../public-initiative-experience.css";
 
@@ -212,6 +213,14 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
 
   usePublicChoiceElectionRefresh(initiativeId, reload);
 
+  const initiativePresentation = useInitiativePublicPresentation({
+    initiativeId,
+    canonical: {
+      title: initiative?.title ?? "",
+      description: initiative?.description ?? "",
+    },
+  });
+
   const ballotMode: PublicChoiceBallotMode = resolvePublicChoiceBallotMode(
     decision?.ballotMode ?? initiative?.metadata.ballotMode,
   );
@@ -280,6 +289,7 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
 
   const electionName =
     initiative?.metadata.communityAssociation?.trim() ||
+    initiativePresentation.title ||
     initiative?.title ||
     t("sidebar.election.election");
   const cover =
@@ -312,7 +322,7 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
     url: resolveAbsoluteCivicShareUrl(electionPath),
     title: electionName,
     image: cover,
-    optionalText: initiative?.description?.slice(0, 160),
+    optionalText: initiativePresentation.description?.slice(0, 160),
     contentType: "initiative" as const,
     initiativeId,
   };
@@ -363,7 +373,9 @@ export function PublicChoiceElectionPage({ initiativeId }: { initiativeId: strin
           )}
         </div>
         <div className="pie-election-page__intro-body">
-          {initiative?.description ? <p>{initiative.description}</p> : null}
+          {initiativePresentation.description ? (
+            <p>{initiativePresentation.description}</p>
+          ) : null}
           <ul className="pie-election-page__meta">
             <li>
               {t("publicChoice.election.geography", { value: geography || "—" })}

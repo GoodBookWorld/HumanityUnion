@@ -117,6 +117,13 @@ export {
   stableJsonForTranslation,
 } from "./content-translation-field-serialize.js";
 export {
+  ADMIN_MANAGED_LOCALIZATION_DOMAINS,
+  CIVIC_CONTENT_MANUAL_OVERRIDE_STATUS,
+  DEFAULT_LOCALIZABLE_RULE,
+  LOCALIZATION_RESOLUTION_PRIORITY,
+  assertAdminDomainNotMachineTranslated,
+} from "./localization-ownership.js";
+export {
   assertAutomaticContentTranslationTargetLocale,
   listAutomaticContentTranslationTargetLocales,
   resolveAutomaticContentTranslationWarmTargets,

@@ -538,3 +538,56 @@ eligible public mutation (after persistence)
 - ellipsis only where information loss is acceptable
 
 **Engineering support (future):** synthetic long-string / pseudo-localization stress mode for CI and staging acceptance.
+
+---
+
+## Pack 08I.15 — Universal Participant-Facing Translation Coverage
+
+**Permanent engineering rule:**
+
+> Participant-facing semantic text is localizable by default.  
+> Canonical-language rendering without localization ownership is an explicit exception, not the default.
+
+### Ownership classes
+
+| Class | Owner | Pipeline |
+|-------|--------|----------|
+| `WEB_UI` | next-intl catalogs | Deterministic chrome |
+| `CIVIC_CONTENT` | `content_translations` + TranslationProvider | Canonical civic prose |
+| `BRAND_LOCALIZATION` | Admin Brand Localization | Manual — never Gemini |
+| `LEGAL_LOCALIZATION` | Admin Legal Localization | Manual — never Gemini |
+| `CONTROLLED_TERMINOLOGY` | Terminology Glossary | Controlled vocab / provider context |
+| `NON_TRANSLATABLE` | Explicit registry | IDs, emails, URLs, metrics, codes, proper-name policy |
+
+### DEFAULT_LOCALIZABLE mechanism
+
+- Unknown participant-facing semantic prose classifies as **`CIVIC_CONTENT`**, not as silent English.
+- Presentation surfaces must not invent per-component allowlists of `"title" | "description" | …`.
+- Provider **field allowlists** remain a safety boundary for what enters Gemini payloads; they are not the presentation coverage model.
+- New CIVIC artifact types register **once** (sourceKind + loader + warm discovery + public resolver). New cards/rails consume the shared presentation contract.
+
+### Presentation invariant
+
+Public civic UI consumes localized presentation/view models (`useInitiativePublicPresentation`, `useInitiativeCardTitlePresentation` / `useCivicInitiativeLocalizedTitle`, `PublicTranslatedFields`, `CivicPublicTranslatedSection`). Raw `{initiative.title}` / `{petition.summary}` style bindings on governed surfaces are coverage-gate violations.
+
+Public Choice is an Initiative lifecycle profile — same Initiative localization contract; no `public_choice` sourceKind.
+
+### Discovery / materialization invariant
+
+Eligible public CIVIC_CONTENT → discoverable via staging warm enumerator / mutation warm → CURRENT translation → presentation resolver → DOM. Enqueue ≠ materialization (Pack 08I.14B.3).
+
+### Coverage gate
+
+`apps/web/src/features/language/universal-localization-coverage-gate.ts` reports:
+
+- `PUBLIC_SEMANTIC_BYPASS`
+- `UNCLASSIFIED_PARTICIPANT_TEXT`
+- `BRAND_MACHINE_TRANSLATION_BYPASS`
+- `LEGAL_MACHINE_TRANSLATION_BYPASS`
+- `NON_TRANSLATABLE_VIOLATION`
+
+Governed Initiative-path mounted surfaces target **0** unexpected bypasses. Remaining Blog/Media/Knowledge/search/PWA/CI debt must be **explicitly registered**.
+
+### CIVIC_CONTENT manual override
+
+`translationKind` supports `human` | `author-approved` in the model and display can prefer approved rows, but **no Admin write path** persists those kinds for civic content today. Brand/Legal remain the only Admin-approved localization systems.
