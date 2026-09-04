@@ -93,7 +93,9 @@ describe("Production Completion Pack 02G Task 06 — layout resilience", () => {
     assert.match(mediaCss, /\.civic-media-page__points\s*\{[^}]*overflow-wrap:\s*anywhere/s);
     assert.match(editorial, /useCivicMediaResolvedEditorial/);
     assert.match(editorial, /resolveTranslatedContent/);
-    assert.doesNotMatch(editorial, /diagramSvg|websiteUrl|trustedMedia/);
+    // Pack 08J.1 — trusted explanations are semantic; names/URLs/diagram stay identity-only.
+    assert.match(editorial, /trustedMediaExplanations|trustedExplanationsById/);
+    assert.doesNotMatch(editorial, /diagramSvg|websiteUrl/);
   });
 
   it("9–11 CJK line-breaking, RTL document direction, logical CSS on touched surfaces", () => {

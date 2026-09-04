@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogAuthorDirectoryItem } from "@hu/types";
 
 import { HumanityAvatar } from "../../../design-system/components/HumanityAvatar";
+import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { fetchPublicBlogAuthors } from "../api";
 import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
@@ -18,7 +19,9 @@ function AuthorLatestPublicationTitle({
   postId: string;
   canonicalTitle: string;
 }) {
+  const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
+  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
   const [displayTitle, setDisplayTitle] = useState(canonicalTitle);
 
   useEffect(() => {
@@ -38,7 +41,9 @@ function AuthorLatestPublicationTitle({
         excerpt: "",
         contentHtml: "",
       },
-      readingContext,
+      displayLanguage,
+      ready: readingContext.ready,
+      translationPreference: readingContext.translationPreference,
     }).then((presentation) => {
       if (!cancelled) {
         setDisplayTitle(presentation.title);
@@ -52,7 +57,7 @@ function AuthorLatestPublicationTitle({
     postId,
     canonicalTitle,
     readingContext.ready,
-    readingContext.readingLanguage,
+    displayLanguage,
     readingContext.translationPreference,
   ]);
 

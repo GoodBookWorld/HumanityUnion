@@ -1,21 +1,21 @@
 /**
- * Pack 08I.13 — public Discussion comment body presentation via content_translations.
+ * Pack 08I.13 / 08J.1 — public Discussion comment body via generic boundary.
  * Translates `body` only. Canonical comment body is never overwritten.
+ * Interface locale drives resolve language.
  */
 
-import type { ResolvedTranslatedDisplay } from "@hu/types";
+import type { LanguageCode } from "@hu/types";
 
-import { resolvePublicContentTranslationDisplay } from "../language/resolve-public-content-translation-display";
+import {
+  resolveLocalizedPresentation,
+  type LocalizedPresentationDeps,
+} from "../language/resolve-localized-presentation";
 import {
   generateContentTranslation,
   resolveTranslatedContent,
 } from "../language/translation-api";
-import type { PublicContentReadingContext } from "../language/use-public-content-reading-context";
 
-export interface DiscussionCommentPresentationDeps {
-  readonly resolveTranslatedContent: typeof resolveTranslatedContent;
-  readonly generateContentTranslation: typeof generateContentTranslation;
-}
+export interface DiscussionCommentPresentationDeps extends LocalizedPresentationDeps {}
 
 const defaultDeps: DiscussionCommentPresentationDeps = {
   resolveTranslatedContent,
@@ -26,58 +26,61 @@ export interface ResolvedDiscussionCommentPresentation {
   readonly body: string;
   readonly presentationMode: "translated" | "original";
   readonly isStale: boolean;
-}
-
-function pickBody(
-  resolved: ResolvedTranslatedDisplay<Record<string, string>>,
-  fallback: string,
-): string {
-  const value = resolved.content.body;
-  if (typeof value === "string" && value.trim()) {
-    return value;
-  }
-  return fallback;
+  readonly activeLanguage: LanguageCode | string;
 }
 
 export async function resolveDiscussionCommentPresentation(
   input: {
     readonly commentId: string;
     readonly canonicalBody: string;
-    readonly readingContext: Pick<
-      PublicContentReadingContext,
-      "ready" | "readingLanguage" | "translationPreference"
-    >;
+    readonly displayLanguage?: LanguageCode | string;
+    readonly ready?: boolean;
+    readonly translationPreference?: string;
+    readonly requestGeneration?: number;
+    /** @deprecated Prefer displayLanguage + ready + translationPreference. */
+    readonly readingContext?: {
+      readonly ready: boolean;
+      readonly readingLanguage: string;
+      readonly translationPreference: string;
+    };
   },
   deps: DiscussionCommentPresentationDeps = defaultDeps,
 ): Promise<ResolvedDiscussionCommentPresentation> {
-  const { canonicalBody, readingContext } = input;
+  const ready = input.ready ?? input.readingContext?.ready ?? false;
+  const translationPreference =
+    input.translationPreference ??
+    input.readingContext?.translationPreference ??
+    "preferred";
+  const displayLanguage =
+    input.displayLanguage ?? input.readingContext?.readingLanguage ?? "en";
 
-  if (!readingContext.ready) {
-    return {
-      body: canonicalBody,
-      presentationMode: "original",
-      isStale: false,
-    };
-  }
-
-  const resolved = await resolvePublicContentTranslationDisplay({
-    sourceKind: "discussion_comment",
-    sourceRecordId: input.commentId,
-    readingContext,
+  const resolved = await resolveLocalizedPresentation({
+    request: {
+      sourceKind: "discussion_comment",
+      sourceRecordId: input.commentId,
+      displayLanguage,
+      ready,
+      translationPreference,
+      requestGeneration: input.requestGeneration,
+      enableOnDemandGenerate: true,
+    },
+    canonicalFields: { body: input.canonicalBody },
     deps,
   });
 
-  if (!resolved || resolved.presentationMode === "original") {
+  if (resolved.presentationMode === "original") {
     return {
-      body: canonicalBody,
+      body: input.canonicalBody,
       presentationMode: "original",
-      isStale: Boolean(resolved?.isStale),
+      isStale: resolved.isStale,
+      activeLanguage: resolved.activeLanguage,
     };
   }
 
   return {
-    body: pickBody(resolved, canonicalBody),
+    body: resolved.fields.body?.trim() || input.canonicalBody,
     presentationMode: "translated",
-    isStale: Boolean(resolved.isStale),
+    isStale: resolved.isStale,
+    activeLanguage: resolved.activeLanguage,
   };
 }

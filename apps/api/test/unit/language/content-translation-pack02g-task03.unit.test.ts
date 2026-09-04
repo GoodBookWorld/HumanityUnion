@@ -195,7 +195,7 @@ describe("Production Completion Pack 02G Task 03 — civic source expansion", ()
     );
   });
 
-  it("civic_media loads editorial copy only; excludes resource URLs/admin workflow", async () => {
+  it("civic_media loads editorial + trusted explanations; excludes resource URLs/names", async () => {
     const missing = await loadCivicMediaTranslationSource("not-the-center");
     assert.equal(missing, null);
 
@@ -208,9 +208,11 @@ describe("Production Completion Pack 02G Task 03 — civic source expansion", ()
       Object.keys(loaded.fields).sort(),
       [...CONTENT_TRANSLATION_FIELD_ALLOWLIST.civic_media].sort(),
     );
+    assert.ok("trustedMediaExplanations" in loaded.fields);
     assert.ok(!JSON.stringify(loaded.fields).includes("websiteUrl"));
     assert.ok(!JSON.stringify(loaded.fields).includes("diagramSvg"));
     assert.ok(!("trustedMedia" in loaded.fields));
+    assert.ok(CONTENT_TRANSLATION_FIELD_ALLOWLIST.civic_media.includes("trustedMediaExplanations"));
 
     const again = await loadCivicMediaTranslationSource("civic-media-center");
     assert.equal(again?.sourceVersion, loaded.sourceVersion);

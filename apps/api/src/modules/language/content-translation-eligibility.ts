@@ -126,6 +126,7 @@ export const CONTENT_TRANSLATION_FIELD_ALLOWLIST = {
     "initiativeFlowTitle",
     "initiativeFlowSummary",
     "initiativeFlowStages",
+    "trustedMediaExplanations",
   ],
 } as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
 

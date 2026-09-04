@@ -9,6 +9,7 @@ import type { PublicBlogPostListItem } from "@hu/types";
 import { formatBlogPublishedDate } from "../api";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
+import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { BlogCoverImage } from "./BlogCoverImage";
 
@@ -20,6 +21,7 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
   const t = useTranslations("blogPublic");
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
+  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
   const [displayTitle, setDisplayTitle] = useState(post.title);
 
   useEffect(() => {
@@ -39,7 +41,9 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
         excerpt: post.excerpt ?? "",
         contentHtml: "",
       },
-      readingContext,
+      displayLanguage,
+      ready: readingContext.ready,
+      translationPreference: readingContext.translationPreference,
     }).then((presentation) => {
       if (!cancelled) {
         setDisplayTitle(presentation.title);
@@ -54,7 +58,7 @@ function BlogLatestMiniCard({ post }: { post: PublicBlogPostListItem }) {
     post.title,
     post.excerpt,
     readingContext.ready,
-    readingContext.readingLanguage,
+    displayLanguage,
     readingContext.translationPreference,
   ]);
 

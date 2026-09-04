@@ -620,6 +620,27 @@ Governed Initiative-path mounted surfaces target **0** unexpected bypasses. Rema
 
 `warm:staging-content-translations` is **recovery / migration only**. It must `process.exit` after disconnect (Mongo heartbeats must not hang the shell). Normal create/publish/update must not require this CLI.
 
+## Pack 08J.1 — Runtime Universal Translation Completion
+
+**Problem:** `CURRENT` row counts ≠ universal runtime presentation. Surfaces can still render canonical English when (a) UI locale ≠ authenticated `readingLanguages[0]`, (b) stale `sourceVersion` caused English reversion, (c) projection families (Blog/Media trusted prose) were outside recovery discovery, or (d) components bypassed the shared presentation boundary.
+
+**Runtime boundary:**
+
+```
+sanitized participant-facing projection
+  → resolveLocalizedPresentation / PublicTranslatedFields (UI displayLanguage)
+  → applyTranslatedPresentationFields walker
+  → React render
+```
+
+**Pack 08J.1 rules:**
+
+1. Interface/document locale drives content resolve language on Blog, Media, Discussion, Lifecycle, and Initiative surfaces.
+2. Stale preferred CURRENT rows are **consumed** (marked `isStale`) rather than silently reverting to English.
+3. `civic_media` projection includes `trustedMediaExplanations` (names/URLs remain NON_TRANSLATABLE).
+4. Recovery discovery (`CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS`) includes `blog_post` + `civic_media` + civic lifecycle families — metrics must describe the real corpus.
+5. Coverage gate requires `RAW_CANONICAL_RENDER_BYPASS = 0` on governed mounted surfaces.
+
 ### KEEP / SIMPLIFY summary
 
 | Piece | Decision |

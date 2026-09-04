@@ -15,6 +15,7 @@ export interface UniversalLocalizationCoverageCounters {
   readonly PUBLIC_SEMANTIC_BYPASS: number;
   readonly UNCLASSIFIED_PARTICIPANT_TEXT: number;
   readonly AUTO_TRANSLATION_BYPASS: number;
+  readonly RAW_CANONICAL_RENDER_BYPASS: number;
   readonly BRAND_MACHINE_TRANSLATION_BYPASS: number;
   readonly LEGAL_MACHINE_TRANSLATION_BYPASS: number;
   readonly NON_TRANSLATABLE_VIOLATION: number;
@@ -31,6 +32,7 @@ export interface UniversalLocalizationBypassFinding {
     | "PUBLIC_SEMANTIC_BYPASS"
     | "UNCLASSIFIED_PARTICIPANT_TEXT"
     | "AUTO_TRANSLATION_BYPASS"
+    | "RAW_CANONICAL_RENDER_BYPASS"
     | "BRAND_MACHINE_TRANSLATION_BYPASS"
     | "LEGAL_MACHINE_TRANSLATION_BYPASS"
     | "NON_TRANSLATABLE_VIOLATION"
@@ -83,7 +85,7 @@ export const INTENTIONAL_LOCALIZATION_DEBT: readonly {
   },
 ];
 
-/** Governed Initiative-path surfaces that must score 0 unexpected PUBLIC_SEMANTIC_BYPASS. */
+/** Governed surfaces that must score 0 unexpected PUBLIC_SEMANTIC / RAW_CANONICAL bypass. */
 export const GOVERNED_ZERO_BYPASS_GLOBS = [
   "features/public-initiative-experience/components/",
   "features/public-initiative-mini-card/",
@@ -93,6 +95,11 @@ export const GOVERNED_ZERO_BYPASS_GLOBS = [
   "features/initiatives/components/WorldInitiativesPageContent.tsx",
   "features/community-intelligence/components/RelatedInitiativesWidget.tsx",
   "features/official-response/components/OfficialResponsesPublicSection.tsx",
+  "features/blog/components/BlogPostCard.tsx",
+  "features/blog/components/BlogArticlePageContent.tsx",
+  "features/civic-media-center/components/CivicMediaCenterPageContent.tsx",
+  "features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
+  "features/civic-media-center/components/TrustedMediaRailCard.tsx",
 ] as const;
 
 const BYPASS_PATTERNS: readonly {
@@ -129,6 +136,11 @@ const BYPASS_PATTERNS: readonly {
     id: "web_ssr_gemini_provider",
     pattern: /GoogleGenerativeAI|@google\/generative-ai|getGenerativeModel\s*\(/,
     counter: "AUTO_TRANSLATION_BYPASS",
+  },
+  {
+    id: "raw_trusted_explanation_jsx",
+    pattern: /\{resource\.explanation\}/,
+    counter: "RAW_CANONICAL_RENDER_BYPASS",
   },
   {
     id: "private_email_translate_attempt",
@@ -254,7 +266,8 @@ export function runUniversalLocalizationCoverageGate(webSrcRoot: string): {
 
   const governedUnexpectedBypasses = findings.filter(
     (f) =>
-      f.counter === "PUBLIC_SEMANTIC_BYPASS" && isGovernedZeroBypass(f.file),
+      (f.counter === "PUBLIC_SEMANTIC_BYPASS" || f.counter === "RAW_CANONICAL_RENDER_BYPASS") &&
+      isGovernedZeroBypass(f.file),
   );
 
   const count = (key: UniversalLocalizationBypassFinding["counter"]) =>
@@ -265,6 +278,7 @@ export function runUniversalLocalizationCoverageGate(webSrcRoot: string): {
       PUBLIC_SEMANTIC_BYPASS: count("PUBLIC_SEMANTIC_BYPASS"),
       UNCLASSIFIED_PARTICIPANT_TEXT: count("UNCLASSIFIED_PARTICIPANT_TEXT"),
       AUTO_TRANSLATION_BYPASS: count("AUTO_TRANSLATION_BYPASS"),
+      RAW_CANONICAL_RENDER_BYPASS: count("RAW_CANONICAL_RENDER_BYPASS"),
       BRAND_MACHINE_TRANSLATION_BYPASS: count("BRAND_MACHINE_TRANSLATION_BYPASS"),
       LEGAL_MACHINE_TRANSLATION_BYPASS: count("LEGAL_MACHINE_TRANSLATION_BYPASS"),
       NON_TRANSLATABLE_VIOLATION: count("NON_TRANSLATABLE_VIOLATION"),

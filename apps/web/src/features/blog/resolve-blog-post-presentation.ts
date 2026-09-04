@@ -1,19 +1,18 @@
 /**
- * Pack 08I.5 / 08I.13 — reusable Blog presentation resolver (title / excerpt / HTML content).
- * Uses existing content_translations pipeline only — no second translation engine.
- * Canonical blog fields are never overwritten.
- *
- * Pack 08I.13 — warm GET is not skipped for translationPreference "none".
+ * Pack 08J.1 — reusable Blog presentation via the generic localized boundary.
+ * Uses UI/document locale for resolve language. Canonical fields never mutated.
  */
 
-import type { ResolvedTranslatedDisplay } from "@hu/types";
+import type { LanguageCode } from "@hu/types";
 
-import { resolvePublicContentTranslationDisplay } from "../language/resolve-public-content-translation-display";
+import {
+  resolveLocalizedPresentation,
+  type LocalizedPresentationDeps,
+} from "../language/resolve-localized-presentation";
 import {
   generateContentTranslation,
   resolveTranslatedContent,
 } from "../language/translation-api";
-import type { PublicContentReadingContext } from "../language/use-public-content-reading-context";
 
 export interface BlogPresentationFields {
   readonly title: string;
@@ -24,77 +23,82 @@ export interface BlogPresentationFields {
 export interface ResolvedBlogPresentation extends BlogPresentationFields {
   readonly presentationMode: "translated" | "original";
   readonly isStale: boolean;
+  readonly activeLanguage: LanguageCode | string;
 }
 
-export interface BlogPresentationDeps {
-  readonly resolveTranslatedContent: typeof resolveTranslatedContent;
-  readonly generateContentTranslation: typeof generateContentTranslation;
-}
+export interface BlogPresentationDeps extends LocalizedPresentationDeps {}
 
 const defaultDeps: BlogPresentationDeps = {
   resolveTranslatedContent,
   generateContentTranslation,
 };
 
-function pickTranslatedField(
-  resolved: ResolvedTranslatedDisplay<Record<string, string>>,
-  key: string,
-  fallback: string,
-): string {
-  const value = resolved.content[key];
-  if (typeof value === "string" && value.trim()) {
-    return value;
-  }
-  return fallback;
-}
-
 /**
- * Resolve eligible Blog presentation fields for the current reading context.
- * Missing/stale translation → canonical fallbacks.
- *
- * `deps` is injectable for fixture tests that prove an existing translation reaches presentation.
+ * Resolve eligible Blog presentation fields for the interface locale.
  */
 export async function resolveBlogPostPresentation(
   input: {
     readonly postId: string;
     readonly canonical: BlogPresentationFields;
-    readonly readingContext: Pick<
-      PublicContentReadingContext,
-      "ready" | "readingLanguage" | "translationPreference"
-    >;
+    readonly displayLanguage?: LanguageCode | string;
+    readonly ready?: boolean;
+    readonly translationPreference?: string;
+    readonly requestGeneration?: number;
+    /**
+     * @deprecated Prefer displayLanguage + ready + translationPreference.
+     * Kept for transitional call sites that still pass readingContext.
+     */
+    readonly readingContext?: {
+      readonly ready: boolean;
+      readonly readingLanguage: string;
+      readonly translationPreference: string;
+    };
   },
   deps: BlogPresentationDeps = defaultDeps,
 ): Promise<ResolvedBlogPresentation> {
-  const { canonical, readingContext } = input;
+  const ready = input.ready ?? input.readingContext?.ready ?? false;
+  const translationPreference =
+    input.translationPreference ??
+    input.readingContext?.translationPreference ??
+    "preferred";
+  const displayLanguage =
+    input.displayLanguage ?? input.readingContext?.readingLanguage ?? "en";
 
-  if (!readingContext.ready) {
-    return {
-      ...canonical,
-      presentationMode: "original",
-      isStale: false,
-    };
-  }
+  const canonicalFields = {
+    title: input.canonical.title,
+    excerpt: input.canonical.excerpt,
+    content: input.canonical.contentHtml,
+  };
 
-  const resolved = await resolvePublicContentTranslationDisplay({
-    sourceKind: "blog_post",
-    sourceRecordId: input.postId,
-    readingContext,
+  const resolved = await resolveLocalizedPresentation({
+    request: {
+      sourceKind: "blog_post",
+      sourceRecordId: input.postId,
+      displayLanguage,
+      ready,
+      translationPreference,
+      requestGeneration: input.requestGeneration,
+      enableOnDemandGenerate: true,
+    },
+    canonicalFields,
     deps,
   });
 
-  if (!resolved || resolved.presentationMode === "original") {
+  if (resolved.presentationMode === "original") {
     return {
-      ...canonical,
+      ...input.canonical,
       presentationMode: "original",
-      isStale: Boolean(resolved?.isStale),
+      isStale: resolved.isStale,
+      activeLanguage: resolved.activeLanguage,
     };
   }
 
   return {
-    title: pickTranslatedField(resolved, "title", canonical.title),
-    excerpt: pickTranslatedField(resolved, "excerpt", canonical.excerpt),
-    contentHtml: pickTranslatedField(resolved, "content", canonical.contentHtml),
+    title: resolved.fields.title?.trim() || input.canonical.title,
+    excerpt: resolved.fields.excerpt?.trim() || input.canonical.excerpt,
+    contentHtml: resolved.fields.content?.trim() || input.canonical.contentHtml,
     presentationMode: "translated",
-    isStale: Boolean(resolved.isStale),
+    isStale: resolved.isStale,
+    activeLanguage: resolved.activeLanguage,
   };
 }

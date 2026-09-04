@@ -522,12 +522,9 @@ function DiscussionCommentCard({
     void resolveDiscussionCommentPresentation({
       commentId: comment.commentId,
       canonicalBody: comment.body,
-      readingContext: {
-        ready: readingContext.ready,
-        // Pack 08I.14B — Discussion body follows interface locale, not readingLanguages[0].
-        readingLanguage: displayLanguage,
-        translationPreference: readingContext.translationPreference,
-      },
+      displayLanguage,
+      ready: readingContext.ready,
+      translationPreference: readingContext.translationPreference,
     }).then((resolved) => {
       if (!cancelled) {
         setDisplayBody(resolved.body);

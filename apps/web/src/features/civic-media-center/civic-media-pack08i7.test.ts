@@ -42,9 +42,11 @@ describe("Pack 08I.7 — Civic Media residual localization", () => {
       "features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
     );
     assert.match(editorial, /generateContentTranslation/);
-    assert.match(editorial, /preference === "preferred"/);
-    assert.match(editorial, /presentationMode === "original"/);
-    assert.match(editorial, /!resolved\.isStale/);
+    assert.match(editorial, /resolvePublicContentDisplayLanguage/);
+    assert.match(editorial, /language:\s*displayLanguage/);
+    assert.match(editorial, /targetLanguage:\s*displayLanguage/);
+    assert.match(editorial, /shouldAttemptOnDemandContentTranslation/);
+    assert.match(editorial, /resolved\.activeLanguage !== displayLanguage/);
     assert.match(editorial, /sourceKind:\s*"civic_media"/);
     assert.doesNotMatch(editorial, /JSON\.stringify/);
   });
@@ -68,8 +70,10 @@ describe("Pack 08I.7 — Civic Media residual localization", () => {
     assert.match(page, /civic-media-page__faq/);
     assert.match(page, /useCivicMediaResolvedEditorial/);
     assert.match(page, /CivicPipelineWorkflow/);
-    assert.match(page, /stageTitles=\{editorial\.initiativeFlow\.stages\}/);
+    assert.match(page, /editorial\.initiativeFlow\.stages/);
+    assert.match(page, /stageTitles=\{/);
     assert.match(page, /layout="three-two-one"/);
+    assert.match(page, /editorial\.trustedExplanationsById\[resource\.id\]/);
     assert.match(editorial, /overlayCivicMediaEditorialFromFields/);
     assert.match(editorial, /resolveTranslatedContent/);
     assert.match(editorial, /if \(resolved\.presentationMode === "original"\)/);
@@ -105,7 +109,11 @@ describe("Pack 08I.7 — Civic Media residual localization", () => {
 
     assert.match(rail, /trustedCategories/);
     assert.match(rail, /useTranslations\("civicMediaPublic"\)/);
+    assert.match(rail, /explanation \?\? resource\.explanation/);
     assert.doesNotMatch(rail, /TRUSTED_MEDIA_CATEGORY_LABELS/);
+    // Identity: resource.name is never replaced by a translation overlay prop.
+    assert.match(rail, /\{resource\.name\}/);
+    assert.doesNotMatch(rail, /name=\{\s*translated/);
 
     assert.match(tabs, /trustedCategoryTabs/);
     assert.match(tabs, /trustedCategories/);

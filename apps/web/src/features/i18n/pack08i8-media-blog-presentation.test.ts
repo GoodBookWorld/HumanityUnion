@@ -45,7 +45,18 @@ const SAMPLE_MEDIA = {
   },
   factChecking: [],
   propagandaAnalysis: [],
-  trustedMedia: [],
+  trustedMedia: [
+    {
+      id: "bbc",
+      name: "BBC",
+      logoLabel: "BBC",
+      country: "UK",
+      categoryId: "public-broadcaster",
+      explanation: "Canonical BBC explanation",
+      websiteUrl: "https://www.bbc.com",
+      sortOrder: 1,
+    },
+  ],
   trustedMediaCategories: [],
 } as const;
 
@@ -64,6 +75,9 @@ describe("Pack 08I.8 — Media + Blog runtime presentation", () => {
         initiativeFlowTitle: "Потік",
         initiativeFlowSummary: "Опис потоку",
         initiativeFlowStages: "Новини\nПеревірка",
+        trustedMediaExplanations: JSON.stringify([
+          { id: "bbc", explanation: "Пояснення BBC" },
+        ]),
       },
       buildCanonicalCivicMediaEditorial(SAMPLE_MEDIA as never).translationChrome,
     );
@@ -73,6 +87,7 @@ describe("Pack 08I.8 — Media + Blog runtime presentation", () => {
     assert.equal(overlay.selectionPrinciples[0]?.title, "Прозорість");
     assert.equal(overlay.faq[0]?.question, "Питання?");
     assert.deepEqual(overlay.initiativeFlow.stages, ["Новини", "Перевірка"]);
+    assert.equal(overlay.trustedExplanationsById.bbc, "Пояснення BBC");
   });
 
   it("Media verification/propaganda cards resolve catalogs by resource id", () => {
@@ -85,6 +100,7 @@ describe("Pack 08I.8 — Media + Blog runtime presentation", () => {
     assert.match(page, /label=\{focusLabel\}/);
     assert.match(page, /editorial\.overview\.title/);
     assert.match(page, /editorial\.faq\.map/);
+    assert.match(page, /editorial\.trustedExplanationsById\[resource\.id\]/);
     assert.doesNotMatch(page, /Badge status=\{resource\.focus\}/);
   });
 

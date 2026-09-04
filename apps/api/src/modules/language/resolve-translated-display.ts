@@ -159,11 +159,29 @@ export function resolveTranslatedDisplay(
     };
   }
 
+  // Pack 08J.1 — consume a stale preferred translation rather than silently
+  // reverting to English when sourceVersion drifted. UI marks isStale; warm
+  // repair regenerates. Do not hide CURRENT rows behind canonical fallback.
+  if (stalePreferred) {
+    return {
+      presentationMode: "preferred_translation",
+      content: asTextContent(stalePreferred.translatedContent),
+      activeLanguage: preferred,
+      originalLanguage,
+      originalContent,
+      translation: stalePreferred,
+      isMachineTranslated: stalePreferred.translationKind === "machine",
+      isStale: true,
+      canViewOriginal: true,
+      canViewTranslation: false,
+    };
+  }
+
   return baseOriginal({
     originalContent,
     originalLanguage,
-    translation: stalePreferred ?? null,
-    isStale: Boolean(stalePreferred),
+    translation: null,
+    isStale: false,
     canViewTranslation: false,
   });
 }
@@ -199,7 +217,10 @@ export function resolveStructuredTranslatedDisplay(input: {
   ) {
     const fields: Record<string, string> = { ...input.originalFields };
     for (const [key, value] of Object.entries(textResolved.translation.translatedContent)) {
-      if (typeof value === "string" && key in fields) {
+      // Pack 08J.1 — apply every translated string key onto the projection bag.
+      // Exclusion policy already stripped NON_TRANSLATABLE before provider write;
+      // do not require a second allowlist at consume time.
+      if (typeof value === "string") {
         fields[key] = value;
       }
     }

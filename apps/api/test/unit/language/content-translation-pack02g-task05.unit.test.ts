@@ -239,6 +239,9 @@ describe("Production Completion Pack 02G Task 05 — civic translated read API",
     );
     assert.ok(!CONTENT_TRANSLATION_FIELD_ALLOWLIST.civic_media.includes("diagramSvg"));
     assert.ok(!CONTENT_TRANSLATION_FIELD_ALLOWLIST.civic_media.includes("websiteUrl"));
+    assert.ok(
+      CONTENT_TRANSLATION_FIELD_ALLOWLIST.civic_media.includes("trustedMediaExplanations"),
+    );
 
     const loaders = readFileSync(
       path.join(repoRoot, "apps/api/src/modules/language/content-translation-civic-loaders.ts"),

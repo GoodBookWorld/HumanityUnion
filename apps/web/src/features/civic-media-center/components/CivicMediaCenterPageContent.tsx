@@ -72,14 +72,17 @@ function PrincipleCard({ principle }: { principle: CivicMediaSelectionPrinciple 
   const icon = PRINCIPLE_ICONS[principle.id] ?? principle.title.slice(0, 1);
   const hasWhy = (PRINCIPLE_WHY_IT_MATTERS_IDS as readonly string[]).includes(principle.id);
   const whyItMatters = hasWhy ? t(`principles.${principle.id}.whyItMatters`) : null;
+  // Pack 08J.1 — principle already localized via civic_media editorial overlay.
+  const displayTitle = principle.title;
+  const displayBody = principle.description;
 
   return (
     <Card className="civic-media-resource-card civic-media-resource-card--principle">
       <span className="civic-media-resource-card__icon" aria-hidden="true">
         {icon}
       </span>
-      <h3>{principle.title}</h3>
-      <p className="civic-media-resource-card__body">{principle.description}</p>
+      <h3>{displayTitle}</h3>
+      <p className="civic-media-resource-card__body">{displayBody}</p>
       {whyItMatters ? (
         <p className="civic-media-resource-card__why">
           <strong>{t("whyItMatters")}</strong>
@@ -166,11 +169,19 @@ function PropagandaCard({ resource }: { resource: PropagandaAnalysisResource }) 
 function TrustedMediaCard({
   resource,
   categoryTitle,
+  explanation,
 }: {
   resource: TrustedMediaResource;
   categoryTitle: string;
+  explanation?: string;
 }) {
-  return <TrustedMediaRailCard resource={resource} categoryTitle={categoryTitle} />;
+  return (
+    <TrustedMediaRailCard
+      resource={resource}
+      categoryTitle={categoryTitle}
+      explanation={explanation}
+    />
+  );
 }
 
 function CivicMediaCenterLoaded({
@@ -255,7 +266,11 @@ function CivicMediaCenterLoaded({
             categories={media.trustedMediaCategories}
             resources={media.trustedMedia}
             renderItem={(resource, categoryTitle) => (
-              <TrustedMediaCard resource={resource} categoryTitle={categoryTitle} />
+              <TrustedMediaCard
+                resource={resource}
+                categoryTitle={categoryTitle}
+                explanation={editorial.trustedExplanationsById[resource.id]}
+              />
             )}
           />
         </HuxDirectoryShell>

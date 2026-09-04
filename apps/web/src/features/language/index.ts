@@ -37,6 +37,12 @@ export {
   isNonTranslatableFieldKey,
 } from "./translate-presentation";
 export type { PresentationProjectionValue } from "./translate-presentation";
+export { resolveLocalizedPresentation } from "./resolve-localized-presentation";
+export type {
+  LocalizedPresentationDeps,
+  LocalizedPresentationRequest,
+  LocalizedPresentationResult,
+} from "./resolve-localized-presentation";
 export { useCivicInitiativeLocalizedTitle } from "./use-civic-initiative-localized-title";
 // Coverage gate (node:fs) is test/tooling only — do not re-export from this barrel.
 export { TranslateDraftControl } from "./components/TranslateDraftControl";

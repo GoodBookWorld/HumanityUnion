@@ -1,11 +1,11 @@
 /**
- * Pack 08I.14B / 08I.14B.1 / 08I.14B.3 — STAGING-ONLY ContentTranslationWarm.
+ * Pack 08I.14B / 08I.14B.1 / 08I.14B.3 / 08J.1 — STAGING-ONLY ContentTranslationWarm.
  *
  * Defaults to DRY RUN (no outbox writes).
  *
  * Modes:
  *   (default)           dry-run warm discovery/enqueue report
- *   --execute           enqueue warm for eligible public Initiative-path sources
+ *   --execute           enqueue warm for eligible public recovery sources
  *   --repair            dry-run repair audit (MISSING/STALE only; skip CURRENT)
  *   --repair --execute  enqueue repair warms for MISSING/STALE only
  *   --wait-for-materialization
@@ -26,6 +26,8 @@
  * mutation-driven (scheduleContentTranslationWarmAfterMutation). Do not use
  * this script for ordinary create/publish/update. Always process.exit after
  * disconnect so Mongo driver heartbeats cannot hang the shell.
+ * Pack 08J.1 — discovery covers all CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS
+ * (Initiative-path civic families + blog_post + civic_media), not Initiative-path only.
  *
  * Usage (from apps/api):
  *   pnpm warm:staging-content-translations

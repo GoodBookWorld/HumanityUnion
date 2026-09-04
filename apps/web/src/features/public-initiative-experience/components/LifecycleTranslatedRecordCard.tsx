@@ -213,7 +213,7 @@ export function LifecycleTranslatedRecordCard({
             summary: record.summary ?? "",
           }}
           className="pie-record__translated"
-          enableOnDemandGenerate={false}
+          enableOnDemandGenerate={true}
         />
         {meta}
       </>

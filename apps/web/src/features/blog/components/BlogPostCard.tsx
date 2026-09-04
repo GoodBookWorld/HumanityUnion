@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogPostListItem } from "@hu/types";
@@ -10,6 +10,7 @@ import { formatBlogPublishedDate } from "../api";
 import { buildBlogIndexHref } from "../blog-url";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
+import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { BlogAuthorInline } from "./BlogAuthorInline";
 import { BlogCoverImage } from "./BlogCoverImage";
@@ -22,6 +23,8 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
   const t = useTranslations("blogPublic");
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
+  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
+  const requestGenerationRef = useRef(0);
   const [displayTitle, setDisplayTitle] = useState(post.title);
   const [displayExcerpt, setDisplayExcerpt] = useState(post.excerpt);
 
@@ -35,6 +38,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
       return;
     }
 
+    const requestGeneration = ++requestGenerationRef.current;
     let cancelled = false;
     void resolveBlogPostPresentation({
       postId: post.postId,
@@ -43,9 +47,18 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
         excerpt: post.excerpt,
         contentHtml: "",
       },
-      readingContext,
+      displayLanguage,
+      ready: readingContext.ready,
+      translationPreference: readingContext.translationPreference,
+      requestGeneration,
     }).then((presentation) => {
-      if (cancelled) {
+      if (cancelled || requestGeneration !== requestGenerationRef.current) {
+        return;
+      }
+      if (
+        presentation.presentationMode === "translated" &&
+        presentation.activeLanguage !== displayLanguage
+      ) {
         return;
       }
       setDisplayTitle(presentation.title);
@@ -60,7 +73,7 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
     post.title,
     post.excerpt,
     readingContext.ready,
-    readingContext.readingLanguage,
+    displayLanguage,
     readingContext.translationPreference,
   ]);
 

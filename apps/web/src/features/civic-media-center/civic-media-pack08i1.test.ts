@@ -222,6 +222,7 @@ describe("Pack 08I — Civic Media structured editorial + chrome", () => {
     assert.equal(overlay.selectionPrinciples[0]?.title, "Translated principle");
     assert.equal(overlay.faq[0]?.question, "Translated question?");
     assert.deepEqual(overlay.initiativeFlow.stages, ["Новини", "Перевірка", "Обговорення"]);
+    assert.deepEqual(overlay.trustedExplanationsById, {});
 
     const invalidOverlay = overlayCivicMediaEditorialFromFields(
       SAMPLE_MEDIA,

@@ -199,6 +199,7 @@ describe("Pack 08I.15 — universal coverage gate", () => {
     assert.equal(result.counters.LEGAL_MACHINE_TRANSLATION_BYPASS, 0);
     assert.equal(result.counters.UNCLASSIFIED_PARTICIPANT_TEXT, 0);
     assert.equal(result.counters.AUTO_TRANSLATION_BYPASS, 0);
+    assert.equal(result.counters.RAW_CANONICAL_RENDER_BYPASS, 0);
     assert.equal(result.counters.NON_TRANSLATABLE_VIOLATION, 0);
     assert.equal(result.counters.PRIVATE_DATA_TRANSLATION_ATTEMPT, 0);
     assert.ok(result.counters.GOVERNED_SURFACE_FILES_SCANNED > 0);

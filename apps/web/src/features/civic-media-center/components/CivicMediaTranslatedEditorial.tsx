@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocale } from "next-intl";
 
 import type {
   CivicMediaCenterPublic,
@@ -16,9 +17,13 @@ import {
   resolveTranslatedContent,
 } from "../../language/translation-api";
 import { shouldAttemptOnDemandContentTranslation } from "../../language/public-translation-presentation-lifecycle";
+import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 
 export const CIVIC_MEDIA_RECORD_ID = "civic-media-center";
+
+/** Trusted-media explanation overlay keyed by resource id (name/url stay identity). */
+export type CivicMediaTrustedExplanationsById = Readonly<Record<string, string>>;
 
 export interface CivicMediaResolvedEditorial {
   readonly overview: CivicMediaOverview;
@@ -29,6 +34,7 @@ export interface CivicMediaResolvedEditorial {
     readonly summary: string;
     readonly stages: readonly string[];
   };
+  readonly trustedExplanationsById: CivicMediaTrustedExplanationsById;
   readonly translationChrome: {
     readonly activeLanguage: LanguageCode;
     readonly originalLanguage: LanguageCode;
@@ -42,6 +48,7 @@ export interface CivicMediaResolvedEditorial {
 type OverviewPointTranslated = { heading: string; body: string };
 type PrincipleTranslated = { title: string; description: string };
 type FaqTranslated = { question: string; answer: string };
+type TrustedExplanationTranslated = { id: string; explanation: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value != null && typeof value === "object" && !Array.isArray(value);
@@ -68,6 +75,16 @@ function isFaqTranslated(value: unknown): value is FaqTranslated {
     isRecord(value) &&
     typeof value.question === "string" &&
     typeof value.answer === "string"
+  );
+}
+
+function isTrustedExplanationTranslated(
+  value: unknown,
+): value is TrustedExplanationTranslated {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.explanation === "string"
   );
 }
 
@@ -107,6 +124,16 @@ export function parseInitiativeFlowStages(
   return stages.length > 0 ? stages : null;
 }
 
+export function buildTrustedExplanationsById(
+  media: CivicMediaCenterPublic,
+): CivicMediaTrustedExplanationsById {
+  const byId: Record<string, string> = {};
+  for (const item of media.trustedMedia) {
+    byId[item.id] = item.explanation;
+  }
+  return byId;
+}
+
 export function buildCanonicalCivicMediaEditorial(
   media: CivicMediaCenterPublic,
 ): CivicMediaResolvedEditorial {
@@ -123,6 +150,7 @@ export function buildCanonicalCivicMediaEditorial(
       summary: media.initiativeFlow.summary,
       stages: [...media.initiativeFlow.stages],
     },
+    trustedExplanationsById: buildTrustedExplanationsById(media),
     translationChrome: {
       activeLanguage: DEFAULT_PLATFORM_LANGUAGE,
       originalLanguage: DEFAULT_PLATFORM_LANGUAGE,
@@ -149,6 +177,22 @@ export function overlayCivicMediaEditorialFromFields(
   );
   const faqTranslated = parseCivicMediaJsonArray(fields.faq, isFaqTranslated);
   const stagesTranslated = parseInitiativeFlowStages(fields.initiativeFlowStages);
+  const trustedExplanationsTranslated = parseCivicMediaJsonArray(
+    fields.trustedMediaExplanations,
+    isTrustedExplanationTranslated,
+  );
+
+  const trustedExplanationsById: Record<string, string> = {
+    ...buildTrustedExplanationsById(media),
+  };
+  if (trustedExplanationsTranslated) {
+    for (const item of trustedExplanationsTranslated) {
+      const explanation = item.explanation.trim();
+      if (explanation.length > 0) {
+        trustedExplanationsById[item.id] = explanation;
+      }
+    }
+  }
 
   return {
     overview: {
@@ -193,12 +237,14 @@ export function overlayCivicMediaEditorialFromFields(
       summary: fields.initiativeFlowSummary?.trim() || media.initiativeFlow.summary,
       stages: stagesTranslated ?? [...media.initiativeFlow.stages],
     },
+    trustedExplanationsById,
     translationChrome: chrome,
   };
 }
 
 /**
- * Pack 02G / 08I / 08I.7 — cache-first civic_media editorial overlay.
+ * Pack 02G / 08I / 08I.7 / 08J.1 — cache-first civic_media editorial overlay.
+ * UI displayLanguage drives resolve/generate; readingContext supplies ready + preference.
  * Preferred locale + original miss + not stale → generateContentTranslation (blog parity).
  * Structured JSON fields are parsed back into arrays; never stringify for UI display.
  */
@@ -206,7 +252,10 @@ export function useCivicMediaResolvedEditorial(
   media: CivicMediaCenterPublic,
   initialEditorial?: CivicMediaResolvedEditorial,
 ): CivicMediaResolvedEditorial {
+  const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
+  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
+  const requestGenerationRef = useRef(0);
   const [editorial, setEditorial] = useState(
     () => initialEditorial ?? buildCanonicalCivicMediaEditorial(media),
   );
@@ -221,8 +270,8 @@ export function useCivicMediaResolvedEditorial(
       return;
     }
 
+    const requestGeneration = ++requestGenerationRef.current;
     let cancelled = false;
-    const readingLanguage = readingContext.readingLanguage;
     const preference = readingContext.translationPreference;
 
     void (async () => {
@@ -231,14 +280,14 @@ export function useCivicMediaResolvedEditorial(
         let resolved = await resolveTranslatedContent({
           sourceKind: "civic_media",
           sourceRecordId: CIVIC_MEDIA_RECORD_ID,
-          language: readingLanguage,
+          language: displayLanguage,
         });
 
         if (
           shouldAttemptOnDemandContentTranslation({
             ready: readingContext.ready,
             translationPreference: preference,
-            readingLanguage,
+            readingLanguage: displayLanguage,
             resolvePresentationMode: resolved.presentationMode,
             originalLanguage: resolved.originalLanguage,
             isStale: resolved.isStale,
@@ -248,7 +297,7 @@ export function useCivicMediaResolvedEditorial(
             const generated = await generateContentTranslation({
               sourceKind: "civic_media",
               sourceRecordId: CIVIC_MEDIA_RECORD_ID,
-              targetLanguage: readingLanguage,
+              targetLanguage: displayLanguage,
             });
             resolved = generated.display;
           } catch {
@@ -256,7 +305,10 @@ export function useCivicMediaResolvedEditorial(
           }
         }
 
-        if (cancelled) {
+        if (cancelled || requestGeneration !== requestGenerationRef.current) {
+          return;
+        }
+        if (resolved.activeLanguage !== displayLanguage) {
           return;
         }
         if (resolved.presentationMode === "original") {
@@ -284,7 +336,7 @@ export function useCivicMediaResolvedEditorial(
     media,
     initialEditorial,
     readingContext.ready,
-    readingContext.readingLanguage,
+    displayLanguage,
     readingContext.translationPreference,
   ]);
 

@@ -9,6 +9,8 @@ import { MediaLogo } from "./MediaLogo";
 interface TrustedMediaRailCardProps {
   resource: TrustedMediaResource;
   categoryTitle?: string;
+  /** Localized explanation overlay; falls back to resource.explanation (identity name untouched). */
+  explanation?: string;
   className?: string;
 }
 
@@ -19,6 +21,7 @@ function isExternalUrl(url: string): boolean {
 export function TrustedMediaRailCard({
   resource,
   categoryTitle,
+  explanation,
   className,
 }: TrustedMediaRailCardProps) {
   const t = useTranslations("civicMediaPublic");
@@ -26,6 +29,7 @@ export function TrustedMediaRailCard({
     ? t(`trustedCategories.${resource.categoryId}`)
     : resource.categoryId;
   const resolvedCategoryTitle = categoryTitle ?? catalogCategory;
+  const displayExplanation = explanation ?? resource.explanation;
 
   return (
     <Card
@@ -56,7 +60,7 @@ export function TrustedMediaRailCard({
         </div>
       </div>
       <Badge status={resolvedCategoryTitle} />
-      <p className="civic-media-resource-card__body">{resource.explanation}</p>
+      <p className="civic-media-resource-card__body">{displayExplanation}</p>
       {isExternalUrl(resource.websiteUrl) ? (
         <a
           href={resource.websiteUrl}

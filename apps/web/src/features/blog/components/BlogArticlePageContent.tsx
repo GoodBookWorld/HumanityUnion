@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { PublicBlogPostDetail } from "@hu/types";
@@ -11,6 +11,7 @@ import { formatBlogPublishedDate, fetchPublicBlogPostBySlug } from "../api";
 import { buildBlogIndexHref } from "../blog-url";
 import { resolveBlogCategoryDisplayName } from "../resolve-blog-category-display-name";
 import { resolveBlogPostPresentation } from "../resolve-blog-post-presentation";
+import { resolvePublicContentDisplayLanguage } from "../../language/resolve-public-content-display-language";
 import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { BlogArticleBody } from "./BlogArticleBody";
 import { BlogAuthorCard } from "./BlogAuthorCard";
@@ -54,6 +55,8 @@ export function BlogArticlePageContent({
   const locale = useLocale();
   const discovery = usePublicBlogDiscovery();
   const readingContext = usePublicContentReadingContext();
+  const displayLanguage = resolvePublicContentDisplayLanguage(locale);
+  const requestGenerationRef = useRef(0);
   const seeded = initialPost !== undefined;
   const [post, setPost] = useState<PublicBlogPostDetail | null>(() =>
     initialPost && initialPost.slug === slug ? initialPost : null,
@@ -136,6 +139,7 @@ export function BlogArticlePageContent({
     }
 
     let cancelled = false;
+    const requestGeneration = ++requestGenerationRef.current;
 
     void resolveBlogPostPresentation({
       postId: post.postId,
@@ -144,9 +148,18 @@ export function BlogArticlePageContent({
         excerpt: post.excerpt,
         contentHtml: post.content,
       },
-      readingContext,
+      displayLanguage,
+      ready: readingContext.ready,
+      translationPreference: readingContext.translationPreference,
+      requestGeneration,
     }).then((presentation) => {
-      if (cancelled) {
+      if (cancelled || requestGeneration !== requestGenerationRef.current) {
+        return;
+      }
+      if (
+        presentation.presentationMode === "translated" &&
+        presentation.activeLanguage !== displayLanguage
+      ) {
         return;
       }
       setDisplayTitle(presentation.title);
@@ -159,8 +172,9 @@ export function BlogArticlePageContent({
   }, [
     post,
     readingContext.ready,
-    readingContext.readingLanguage,
+    displayLanguage,
     readingContext.translationPreference,
+    initialPresentation,
   ]);
 
   function commentsLabel(count: number): string {

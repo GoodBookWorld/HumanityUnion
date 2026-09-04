@@ -118,6 +118,8 @@ export type {
   TranslatePresentationString,
 } from "./translate-presentation.js";
 export {
+  CIVIC_MEDIA_RECORD_ID,
+  discoverCivicMediaTranslationRecordIds,
   isCivicMediaTranslationRecordId,
   loadCivicArchiveTranslationSource,
   loadCivicMediaTranslationSource,

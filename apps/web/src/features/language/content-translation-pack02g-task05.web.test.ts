@@ -79,7 +79,9 @@ describe("Production Completion Pack 02G Task 05 — Web civic translated surfac
     assert.match(mediaEditorial, /sourceKind:\s*"civic_media"/);
     // Pack 08I.7 — preferred miss generates (blog parity); page shell still does not.
     assert.match(mediaEditorial, /generateContentTranslation/);
-    assert.doesNotMatch(mediaEditorial, /diagramSvg|websiteUrl|trustedMedia/);
+    // Pack 08J.1 — trusted explanations are semantic; names/URLs/diagram stay identity-only.
+    assert.match(mediaEditorial, /trustedMediaExplanations|trustedExplanationsById/);
+    assert.doesNotMatch(mediaEditorial, /diagramSvg|websiteUrl/);
   });
 
   it("keeps Initiative/Analysis/Petition on-demand generate; disables for civic section", () => {

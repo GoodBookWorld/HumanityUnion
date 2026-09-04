@@ -7,7 +7,10 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS } from "../../../src/modules/language/content-translation-staging-warm-backfill.js";
+import {
+  CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS,
+  STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS,
+} from "../../../src/modules/language/content-translation-staging-warm-backfill.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -16,12 +19,16 @@ function readApi(relative: string): string {
 }
 
 describe("Pack 08I.14B — staging content translation warm backfill", () => {
-  it("enumerates Initiative-path kinds and excludes Blog/Media", () => {
+  it("enumerates recovery kinds including Initiative-path, blog_post, and civic_media", () => {
     assert.ok(STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS.includes("initiative"));
     assert.ok(STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS.includes("discussion_comment"));
     assert.ok(STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS.includes("collaborative_analysis"));
-    assert.ok(!STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS.includes("blog_post" as never));
-    assert.ok(!STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS.includes("civic_media" as never));
+    assert.ok(STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS.includes("blog_post"));
+    assert.ok(STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS.includes("civic_media"));
+    assert.equal(
+      STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS,
+      CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS,
+    );
   });
 
   it("script is staging-guarded, bootstraps Mongo persistence, and uses operator_backfill", () => {
@@ -30,7 +37,7 @@ describe("Pack 08I.14B — staging content translation warm backfill", () => {
     assert.match(script, /ALLOW_STAGING_CONTENT_TRANSLATION_WARM/);
     assert.match(script, /--execute/);
     assert.match(script, /bootstrapContentTranslationOperatorPersistence/);
-    assert.doesNotMatch(script, /blog_post/);
+    assert.match(script, /blog_post/);
 
     const moduleSource = readApi(
       "src/modules/language/content-translation-staging-warm-backfill.ts",

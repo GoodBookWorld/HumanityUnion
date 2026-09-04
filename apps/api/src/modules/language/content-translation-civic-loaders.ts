@@ -38,10 +38,19 @@ export interface CivicTranslatableSourceLoad {
   readonly isPublished: boolean;
 }
 
-const CIVIC_MEDIA_RECORD_ID = "civic-media-center";
+/** Singleton civic-media-center record id used by content-translation loaders. */
+export const CIVIC_MEDIA_RECORD_ID = "civic-media-center";
 
 export function isCivicMediaTranslationRecordId(sourceRecordId: string): boolean {
   return sourceRecordId.trim() === CIVIC_MEDIA_RECORD_ID;
+}
+
+/**
+ * Pack 08J.1 — civic_media is a single static seed record (no admin mutation API).
+ * Recovery / staging discovery can use this helper to find the warm candidate.
+ */
+export function discoverCivicMediaTranslationRecordIds(): readonly string[] {
+  return [CIVIC_MEDIA_RECORD_ID];
 }
 
 export async function loadImprovementProposalTranslationSource(
@@ -395,8 +404,13 @@ export async function loadCivicArchiveTranslationSource(
 }
 
 /**
- * Civic Media Center editorial copy only (overview / FAQ / principles / flow).
- * Admin-curated media resource rows and URLs are excluded from this sourceKind.
+ * Civic Media Center editorial copy (overview / FAQ / principles / flow) plus
+ * trusted-media explanations. Names/URLs/logos stay identity-only and are
+ * excluded; trusted explanations ARE included as semantic participant-facing copy.
+ * Fact-check missions stay in UI dictionaries (FactCheckCard) — not this bag.
+ *
+ * Pack 08J.1 — static seed only (no mutation API); schedule warm via recovery
+ * discovery (`discoverCivicMediaTranslationRecordIds`), not post-mutation enqueue.
  */
 export async function loadCivicMediaTranslationSource(
   sourceRecordId: string,
@@ -429,6 +443,12 @@ export async function loadCivicMediaTranslationSource(
     initiativeFlowTitle: center.initiativeFlow.title,
     initiativeFlowSummary: center.initiativeFlow.summary,
     initiativeFlowStages: joinTranslationLines(center.initiativeFlow.stages),
+    trustedMediaExplanations: stableJsonForTranslation(
+      center.trustedMedia.map((item) => ({
+        id: item.id,
+        explanation: item.explanation,
+      })),
+    ),
   };
   return {
     sourceKind: "civic_media",
