@@ -68,7 +68,7 @@ describe("Pack 08I.4 — PublicInitiativeMiniCard translation boundary", () => {
       "features/public-initiative-mini-card/resolve-initiative-card-presentation.ts",
     );
     assert.match(card, /usePublicContentReadingContext/);
-    assert.match(card, /resolveInitiativeCardPresentation/);
+    assert.match(card, /useInitiativeCardTitlePresentation/);
     assert.match(card, /initiativeId:\s*initiative\.initiativeId/);
     assert.match(card, /readingContext/);
     assert.match(resolver, /resolveTranslatedContent/);

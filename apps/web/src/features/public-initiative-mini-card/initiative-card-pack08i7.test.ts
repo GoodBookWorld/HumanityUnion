@@ -17,25 +17,27 @@ function readWeb(relative: string): string {
 }
 
 describe("Pack 08I.7 — Initiative card shared presentation boundary", () => {
-  it("MiniCard and WorldInitiativeCard both use resolveInitiativeCardPresentation", () => {
+  it("MiniCard and WorldInitiativeCard both use useInitiativeCardTitlePresentation", () => {
     const mini = readWeb("features/public-initiative-mini-card/PublicInitiativeMiniCard.tsx");
     const world = readWeb("features/initiatives/components/WorldInitiativesPageContent.tsx");
+    const hook = readWeb(
+      "features/public-initiative-experience/use-initiative-public-presentation.ts",
+    );
     const resolver = readWeb(
       "features/public-initiative-mini-card/resolve-initiative-card-presentation.ts",
     );
 
-    assert.match(mini, /resolveInitiativeCardPresentation/);
-    assert.match(world, /resolveInitiativeCardPresentation/);
+    assert.match(mini, /useInitiativeCardTitlePresentation/);
+    assert.match(world, /useInitiativeCardTitlePresentation/);
     assert.match(world, /function WorldInitiativeCard/);
-    assert.match(world, /usePublicContentReadingContext/);
-    assert.match(world, /useEffect/);
+    assert.match(hook, /usePublicContentReadingContext/);
+    assert.match(hook, /resolveInitiativePublicDisplayLanguage/);
     assert.doesNotMatch(mini, /resolveTranslatedContent\s*\(/);
     assert.doesNotMatch(mini, /generateContentTranslation\s*\(/);
     assert.doesNotMatch(world, /resolveTranslatedContent\s*\(/);
     assert.doesNotMatch(world, /generateContentTranslation\s*\(/);
     assert.match(resolver, /sourceKind:\s*"initiative"/);
-    assert.match(resolver, /resolveTranslatedContent/);
-    assert.match(resolver, /generateContentTranslation/);
+    assert.match(resolver, /resolvePublicContentTranslationDisplay/);
   });
 
   it("maps content.title / content.description → title / summary when translated", () => {
@@ -52,7 +54,7 @@ describe("Pack 08I.7 — Initiative card shared presentation boundary", () => {
     assert.match(resolver, /presentationMode === "original"/);
   });
 
-  it("short-circuits when !ready or preference === none without calling resolve", async () => {
+  it("short-circuits when !ready; none still warm-displays when resolve returns translation", async () => {
     const notReady = await resolveInitiativeCardPresentation({
       initiativeId: "init-1",
       canonical: { title: "Canonical Title", summary: "Canonical Summary" },
@@ -69,21 +71,36 @@ describe("Pack 08I.7 — Initiative card shared presentation boundary", () => {
       isStale: false,
     });
 
-    const nonePref = await resolveInitiativeCardPresentation({
-      initiativeId: "init-1",
-      canonical: { title: "Canonical Title", summary: "Canonical Summary" },
-      readingContext: {
-        ready: true,
-        readingLanguage: "uk",
-        translationPreference: "none",
+    const nonePref = await resolveInitiativeCardPresentation(
+      {
+        initiativeId: "init-1",
+        canonical: { title: "Canonical Title", summary: "Canonical Summary" },
+        readingContext: {
+          ready: true,
+          readingLanguage: "uk",
+          translationPreference: "none",
+        },
       },
-    });
-    assert.deepEqual(nonePref, {
-      title: "Canonical Title",
-      summary: "Canonical Summary",
-      presentationMode: "original",
-      isStale: false,
-    });
+      {
+        resolveTranslatedContent: async () => ({
+          presentationMode: "preferred_translation",
+          content: { title: "UK Title", description: "UK Summary" },
+          activeLanguage: "uk",
+          originalLanguage: "en",
+          originalContent: { title: "Canonical Title", description: "Canonical Summary" },
+          translation: null,
+          isMachineTranslated: true,
+          isStale: false,
+          canViewOriginal: true,
+          canViewTranslation: false,
+        }),
+        generateContentTranslation: async () => {
+          throw new Error("must not generate for none");
+        },
+      },
+    );
+    assert.equal(nonePref.presentationMode, "translated");
+    assert.equal(nonePref.title, "UK Title");
   });
 
   it("Home + Institutions + World share the initiative card presentation contract", () => {
@@ -100,28 +117,29 @@ describe("Pack 08I.7 — Initiative card shared presentation boundary", () => {
     assert.match(home, /PublicInitiativeMiniCard/);
     assert.match(institutions, /from ["'].*public-initiative-mini-card["']/);
     assert.match(institutions, /PublicInitiativeMiniCard/);
-    assert.match(mini, /resolveInitiativeCardPresentation/);
-    assert.match(world, /resolveInitiativeCardPresentation/);
+    assert.match(mini, /useInitiativeCardTitlePresentation/);
+    assert.match(world, /useInitiativeCardTitlePresentation/);
     assert.match(
       world,
-      /from ["'].*public-initiative-mini-card\/resolve-initiative-card-presentation["']/,
+      /use-initiative-public-presentation/,
     );
   });
 
-  it("proves TRANSLATION_EXISTS path is wired via resolveTranslatedContent", () => {
+  it("proves TRANSLATION_EXISTS path is wired via resolvePublicContentTranslationDisplay", () => {
     const resolver = readWeb(
       "features/public-initiative-mini-card/resolve-initiative-card-presentation.ts",
     );
+    const shared = readWeb(
+      "features/language/resolve-public-content-translation-display.ts",
+    );
 
-    assert.match(resolver, /deps\.resolveTranslatedContent\(\{|resolveTranslatedContent\(\{/);
+    assert.match(resolver, /resolvePublicContentTranslationDisplay/);
     assert.match(resolver, /sourceKind:\s*"initiative"/);
     assert.match(resolver, /sourceRecordId:\s*input\.initiativeId/);
-    assert.match(resolver, /language:\s*readingContext\.readingLanguage/);
+    assert.match(shared, /resolveTranslatedContent/);
     assert.match(resolver, /TRANSLATION_EXISTS|non-original|presentationMode === "original"/);
-    assert.match(
-      resolver,
-      /shouldAttemptOnDemandContentTranslation[\s\S]*generateContentTranslation|translationPreference === "preferred"[\s\S]*generateContentTranslation/,
-    );
+    assert.match(shared, /shouldAttemptOnDemandContentTranslation/);
+    assert.match(shared, /generateContentTranslation/);
   });
 
   it("EXISTING current translation fixture → translated title/summary on card presentation", async () => {
@@ -165,8 +183,9 @@ describe("Pack 08I.7 — Initiative card shared presentation boundary", () => {
     assert.equal(presented.isStale, false);
   });
 
-  it("authenticated explicit none never calls resolve (interface locale must not override)", async () => {
+  it("authenticated explicit none still warm-resolves (generate remains preferred-only)", async () => {
     let resolveCalls = 0;
+    let generateCalls = 0;
     const presented = await resolveInitiativeCardPresentation(
       {
         initiativeId: "init-1",
@@ -180,16 +199,29 @@ describe("Pack 08I.7 — Initiative card shared presentation boundary", () => {
       {
         resolveTranslatedContent: async () => {
           resolveCalls += 1;
-          throw new Error("unreachable");
+          return {
+            presentationMode: "preferred_translation",
+            content: { title: "Українська назва", description: "Опис" },
+            activeLanguage: "uk",
+            originalLanguage: "en",
+            originalContent: { title: "Keep English", description: "Keep summary" },
+            translation: null,
+            isMachineTranslated: true,
+            isStale: false,
+            canViewOriginal: true,
+            canViewTranslation: false,
+          };
         },
         generateContentTranslation: async () => {
-          throw new Error("unreachable");
+          generateCalls += 1;
+          throw new Error("must not generate when preference is none");
         },
       },
     );
-    assert.equal(resolveCalls, 0);
-    assert.equal(presented.title, "Keep English");
-    assert.equal(presented.presentationMode, "original");
+    assert.equal(resolveCalls, 1);
+    assert.equal(generateCalls, 0);
+    assert.equal(presented.title, "Українська назва");
+    assert.equal(presented.presentationMode, "translated");
   });
 
   it("WorldInitiativeCard localizes chrome via existing catalogs", () => {

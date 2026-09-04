@@ -62,18 +62,21 @@ describe("Production Completion Pack 02G Task 07B — auth-aware content resolve
     assert.match(prefsApi, /dispatchEvent/);
 
     for (const surface of [
-      "src/features/public-initiative-experience/components/PublicExperienceHero.tsx",
+      "src/features/public-initiative-experience/use-initiative-public-presentation.ts",
       "src/features/language/components/PublicTranslatedFields.tsx",
       "src/features/public-civic-archive/components/CivicArchiveCardTranslatedText.tsx",
     ]) {
       const src = readWeb(surface);
       assert.match(src, /usePublicContentReadingContext/);
-      assert.match(src, /readingContext\.readingLanguage/);
-      assert.match(src, /readingContext\.ready/);
-      assert.doesNotMatch(src, /interfaceLanguage/);
+      assert.match(src, /readingContext\.(ready|translationPreference)/);
       // Must not permanently stick on initial en without auth readiness.
       assert.doesNotMatch(src, /setReadingLanguage\("en"\)/);
     }
+    const initiativeHook = readWeb(
+      "src/features/public-initiative-experience/use-initiative-public-presentation.ts",
+    );
+    assert.match(initiativeHook, /resolveInitiativePublicDisplayLanguage\(interfaceLocale\)/);
+    assert.match(initiativeHook, /readingLanguage:\s*displayLanguage/);
   });
 
   it("D. guest path settles with preferred + interface/default locale (08I.7)", () => {

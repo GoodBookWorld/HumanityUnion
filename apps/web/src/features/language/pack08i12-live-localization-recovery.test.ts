@@ -61,7 +61,7 @@ describe("Pack 08I.12 — Compact Initiative cards (no description)", () => {
     const latest = readWeb("features/public-experience/components/LatestInitiativeCard.tsx");
 
     for (const src of [mini, world, country, latest]) {
-      assert.match(src, /resolveInitiativeCardPresentation/);
+      assert.match(src, /useInitiativeCardTitlePresentation/);
       assert.doesNotMatch(src, /className="[^"]*__summary"/);
     }
 

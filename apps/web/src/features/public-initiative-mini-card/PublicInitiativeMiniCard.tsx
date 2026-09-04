@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
@@ -11,14 +10,13 @@ import {
   CivicShareButton,
 } from "../civic-share";
 import { InitiativeImage } from "../initiatives/components/InitiativeImage";
-import { usePublicContentReadingContext } from "../language/use-public-content-reading-context";
 import {
   formatInitiativeExperienceDate,
   resolveActivityAreaDisplayLabel,
 } from "../public-initiative-experience/initiative-experience-i18n";
+import { useInitiativeCardTitlePresentation } from "../public-initiative-experience/use-initiative-public-presentation";
 import { WorkspaceStatusBadge } from "../initiative-workspace-ux/components/WorkspaceStatusBadge";
 
-import { resolveInitiativeCardPresentation } from "./resolve-initiative-card-presentation";
 import { resolveInitiativeCardBadgeLabel } from "./resolve-initiative-card-semantic-labels";
 
 import "./public-initiative-mini-card.css";
@@ -37,6 +35,7 @@ export function resolvePublicInitiativeHref(initiative: WorldInitiativeCardProje
  * Share Fix 01 — Share lives outside the navigation Link so the civic
  * popover never competes with card navigation or nested-interactive quirks.
  * Pack 08I.11 — status badge via shared semantic labels (never stages.Proposal).
+ * Pack 08I.14A — title from shared Initiative presentation owner (interface locale).
  */
 export function PublicInitiativeMiniCard({
   initiative,
@@ -46,44 +45,11 @@ export function PublicInitiativeMiniCard({
   const t = useTranslations("publicInitiativeMiniCard");
   const tExperience = useTranslations("initiativeExperience");
   const locale = useLocale();
-  const readingContext = usePublicContentReadingContext();
-  const [displayTitle, setDisplayTitle] = useState(initiative.title);
-
-  useEffect(() => {
-    setDisplayTitle(initiative.title);
-  }, [initiative.initiativeId, initiative.title]);
-
-  useEffect(() => {
-    if (!readingContext.ready) {
-      return;
-    }
-
-    let cancelled = false;
-    void resolveInitiativeCardPresentation({
-      initiativeId: initiative.initiativeId,
-      canonical: {
-        title: initiative.title,
-        summary: initiative.summary,
-      },
-      readingContext,
-    }).then((presentation) => {
-      if (cancelled) {
-        return;
-      }
-      setDisplayTitle(presentation.title);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    initiative.initiativeId,
-    initiative.summary,
-    initiative.title,
-    readingContext.ready,
-    readingContext.readingLanguage,
-    readingContext.translationPreference,
-  ]);
+  const displayTitle = useInitiativeCardTitlePresentation({
+    initiativeId: initiative.initiativeId,
+    canonicalTitle: initiative.title,
+    canonicalSummary: initiative.summary,
+  });
 
   const href = resolvePublicInitiativeHref(initiative);
   const activityAreaLabel = resolveActivityAreaDisplayLabel(initiative.activityArea, tExperience);

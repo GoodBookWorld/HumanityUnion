@@ -25,8 +25,6 @@ import {
   resolveActivityAreaDisplayLabel,
   resolveLifecycleStageDisplayLabel,
 } from "../initiative-experience-i18n";
-import { resolveInitiativeDetailPresentation } from "../resolve-initiative-detail-presentation";
-import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
 import { looksLikeRawI18nKey } from "../normalize-initiative-status-code";
 import { InitiativeLifecycleStageWorkspace } from "../../initiative-lifecycle-stage-workspace";
 import { InitiativeCollaborativeAnalysisAuthorWorkspace } from "../../initiative-collaborative-analysis/components/InitiativeCollaborativeAnalysisAuthorWorkspace";
@@ -98,60 +96,6 @@ function OverviewSection({ label, value }: { label: string; value: string | null
   );
 }
 
-/** Pack 08I.8 — Overview full description uses shared Initiative detail presentation. */
-function OverviewTranslatedDescription({
-  initiativeId,
-  canonicalDescription,
-  label,
-  initialDescription,
-}: {
-  initiativeId: string;
-  canonicalDescription: string;
-  label: string;
-  /** Pack 08I.9 — SSR-localized description seed. */
-  initialDescription?: string;
-}) {
-  const readingContext = usePublicContentReadingContext();
-  const [description, setDescription] = useState(
-    () => initialDescription || canonicalDescription,
-  );
-
-  useEffect(() => {
-    // Pack 08I.9 — keep SSR seed until reading context is ready.
-    if (!readingContext.ready) {
-      if (!initialDescription) {
-        setDescription(canonicalDescription);
-      }
-      return;
-    }
-    let cancelled = false;
-    void resolveInitiativeDetailPresentation({
-      initiativeId,
-      canonical: {
-        title: "",
-        description: canonicalDescription,
-      },
-      readingContext,
-    }).then((presentation) => {
-      if (!cancelled) {
-        setDescription(presentation.description);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    initiativeId,
-    canonicalDescription,
-    initialDescription,
-    readingContext.ready,
-    readingContext.readingLanguage,
-    readingContext.translationPreference,
-  ]);
-
-  return <OverviewSection label={label} value={description} />;
-}
-
 function OverviewMetadataItem({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) {
     return null;
@@ -204,7 +148,7 @@ function PublicInitiativeOverview({
   currentStageLabel,
   openCandidateSubmit = false,
   onOpenCandidateSubmitConsumed,
-  initialDescription,
+  presentationDescription,
 }: {
   initiative: PublicInitiativeProjection;
   lifecycleProfile?: InitiativeLifecycleProfile | string | null;
@@ -212,7 +156,7 @@ function PublicInitiativeOverview({
   currentStageLabel: string;
   openCandidateSubmit?: boolean;
   onOpenCandidateSubmitConsumed?: () => void;
-  initialDescription?: string;
+  presentationDescription?: string;
 }) {
   const t = useTranslations("initiativeExperience");
   const locale = useLocale();
@@ -248,11 +192,9 @@ function PublicInitiativeOverview({
       ) : null}
       {!presentation.isPublicChoice ? (
         <>
-          <OverviewTranslatedDescription
-            initiativeId={initiative.initiativeId}
-            canonicalDescription={initiative.description}
-            initialDescription={initialDescription}
+          <OverviewSection
             label={t("overview.fullDescription")}
+            value={presentationDescription || initiative.description}
           />
           <div className="pie-overview__grid">
             <div className="pie-overview__column">
@@ -456,11 +398,11 @@ interface PublicInitiativeCenterPanelProps {
   /** Pack 03 — open Overview candidate form immediately (no reload). */
   openCandidateSubmit?: boolean;
   onOpenCandidateSubmitConsumed?: () => void;
-  /** Pack 08I.9 — SSR-localized title/description seed for Overview. */
-  initialPresentation?: {
-    readonly title: string;
-    readonly description: string;
-  };
+  /**
+   * Pack 08I.14A — presentation description owned by the page.
+   * Overview must not independently re-resolve title/description.
+   */
+  presentationDescription?: string;
 }
 
 export function PublicInitiativeCenterPanel({
@@ -482,7 +424,7 @@ export function PublicInitiativeCenterPanel({
   onToggleStagePreviewMode,
   openCandidateSubmit = false,
   onOpenCandidateSubmitConsumed,
-  initialPresentation,
+  presentationDescription,
 }: PublicInitiativeCenterPanelProps) {
   const t = useTranslations("initiativeExperience");
   const experienceRefresh = useInitiativeExperienceRefresh();
@@ -830,7 +772,7 @@ export function PublicInitiativeCenterPanel({
                   currentStageLabel={facingLabel}
                   openCandidateSubmit={openCandidateSubmit}
                   onOpenCandidateSubmitConsumed={onOpenCandidateSubmitConsumed}
-                  initialDescription={initialPresentation?.description}
+                  presentationDescription={presentationDescription}
                 />
               );
             })()}

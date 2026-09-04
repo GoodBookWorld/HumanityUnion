@@ -26,6 +26,7 @@ import { PublicInitiativeCenterPanel, type CenterTab } from "./PublicInitiativeC
 import { PublicInitiativeLifecycleNav } from "./PublicInitiativeLifecycleNav";
 import { InitiativeOwnerManagePanel } from "../../initiative-owner-studio/components/InitiativeOwnerManagePanel";
 import { buildInitiativeExperienceHref } from "../../initiative-owner-studio/initiative-experience-routes";
+import { useInitiativePublicPresentation } from "../use-initiative-public-presentation";
 
 import "../public-initiative-experience.css";
 
@@ -336,6 +337,15 @@ export function PublicInitiativeExperiencePage({
     [refreshExperience],
   );
 
+  const initiativePresentation = useInitiativePublicPresentation({
+    initiativeId: experience.initiativeId,
+    canonical: {
+      title: experience.hero.title,
+      description: experience.hero.summary || experience.initiative.description,
+    },
+    initialPresentation,
+  });
+
   return (
     <InitiativeExperienceRefreshProvider value={refreshApi}>
       <PublicCivicRecordExperienceLayout
@@ -352,8 +362,7 @@ export function PublicInitiativeExperiencePage({
                 currentStageId: presentationCurrentStageId,
               },
             )}
-            initiativeId={experience.initiativeId}
-            initialPresentation={initialPresentation}
+            presentation={initiativePresentation}
           />
         }
         lifecycle={
@@ -393,7 +402,7 @@ export function PublicInitiativeExperiencePage({
               initialDiscussionFilter={initialDiscussionFilter}
               focusDiscussionCommentId={focusDiscussionCommentId}
               focusCollaborationParticipantId={focusCollaborationParticipantId}
-              initialPresentation={initialPresentation}
+              presentationDescription={initiativePresentation.description}
               managePanel={
                 canShowManage && manageInitiative ? (
                   <InitiativeOwnerManagePanel

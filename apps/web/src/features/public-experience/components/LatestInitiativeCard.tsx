@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { LatestInitiativeCardProjection } from "@hu/types";
 
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
-import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
-import { resolveInitiativeCardPresentation } from "../../public-initiative-mini-card/resolve-initiative-card-presentation";
+import { useInitiativeCardTitlePresentation } from "../../public-initiative-experience/use-initiative-public-presentation";
 import {
   resolveInitiativeCardBadgeLabel,
   resolveInitiativeCardStageLabel,
@@ -33,42 +31,12 @@ function isActivePublicRoute(
 export function LatestInitiativeCard({ initiative }: LatestInitiativeCardProps) {
   const t = useTranslations("publicGeo.shared");
   const tExperience = useTranslations("initiativeExperience");
-  const readingContext = usePublicContentReadingContext();
   const hasActivePublicRoute = isActivePublicRoute(initiative);
-  const [displayTitle, setDisplayTitle] = useState(initiative.title);
-
-  useEffect(() => {
-    setDisplayTitle(initiative.title);
-  }, [initiative.initiativeId, initiative.title]);
-
-  useEffect(() => {
-    if (!readingContext.ready) {
-      return;
-    }
-    let cancelled = false;
-    void resolveInitiativeCardPresentation({
-      initiativeId: initiative.initiativeId,
-      canonical: {
-        title: initiative.title,
-        summary: initiative.summary,
-      },
-      readingContext,
-    }).then((presentation) => {
-      if (!cancelled) {
-        setDisplayTitle(presentation.title);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    initiative.initiativeId,
-    initiative.title,
-    initiative.summary,
-    readingContext.ready,
-    readingContext.readingLanguage,
-    readingContext.translationPreference,
-  ]);
+  const displayTitle = useInitiativeCardTitlePresentation({
+    initiativeId: initiative.initiativeId,
+    canonicalTitle: initiative.title,
+    canonicalSummary: initiative.summary,
+  });
 
   const statusLabel = resolveInitiativeCardBadgeLabel({
     publicStatus: initiative.publicStatus,

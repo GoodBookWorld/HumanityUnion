@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { WorldInitiativeCardProjection } from "@hu/types";
@@ -12,8 +11,7 @@ import {
 } from "../../civic-share";
 import { Button } from "../../../design-system/components/Button";
 import { WorkspaceStatusBadge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
-import { usePublicContentReadingContext } from "../../language/use-public-content-reading-context";
-import { resolveInitiativeCardPresentation } from "../../public-initiative-mini-card/resolve-initiative-card-presentation";
+import { useInitiativeCardTitlePresentation } from "../../public-initiative-experience/use-initiative-public-presentation";
 import { resolveInitiativeCardBadgeLabel } from "../../public-initiative-mini-card/resolve-initiative-card-semantic-labels";
 import {
   formatInitiativeExperienceDate,
@@ -31,44 +29,11 @@ function WorldInitiativeCard({ initiative }: { initiative: WorldInitiativeCardPr
   const tMini = useTranslations("publicInitiativeMiniCard");
   const tExperience = useTranslations("initiativeExperience");
   const locale = useLocale();
-  const readingContext = usePublicContentReadingContext();
-  const [displayTitle, setDisplayTitle] = useState(initiative.title);
-
-  useEffect(() => {
-    setDisplayTitle(initiative.title);
-  }, [initiative.initiativeId, initiative.title]);
-
-  useEffect(() => {
-    if (!readingContext.ready) {
-      return;
-    }
-
-    let cancelled = false;
-    void resolveInitiativeCardPresentation({
-      initiativeId: initiative.initiativeId,
-      canonical: {
-        title: initiative.title,
-        summary: initiative.summary,
-      },
-      readingContext,
-    }).then((presentation) => {
-      if (cancelled) {
-        return;
-      }
-      setDisplayTitle(presentation.title);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    initiative.initiativeId,
-    initiative.summary,
-    initiative.title,
-    readingContext.ready,
-    readingContext.readingLanguage,
-    readingContext.translationPreference,
-  ]);
+  const displayTitle = useInitiativeCardTitlePresentation({
+    initiativeId: initiative.initiativeId,
+    canonicalTitle: initiative.title,
+    canonicalSummary: initiative.summary,
+  });
 
   const href =
     initiative.publicInitiativeHref ||

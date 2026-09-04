@@ -149,7 +149,7 @@ describe("Pack 08I.11 — Mounted card wiring + hierarchy", () => {
     for (const src of [mini, world, country, latest]) {
       assert.match(src, /resolveInitiativeCardBadgeLabel|resolveInitiativeCardStatusLabel/);
       assert.match(src, /WorkspaceStatusBadge/);
-      assert.match(src, /resolveInitiativeCardPresentation/);
+      assert.match(src, /useInitiativeCardTitlePresentation/);
     }
     assert.doesNotMatch(mini, /resolveLifecycleStageDisplayLabel\(\s*initiative\.currentStageLabel/);
   });

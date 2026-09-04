@@ -150,21 +150,24 @@ describe("Pack 08I.9 — PIE SSR-first seed + hydration", () => {
     const loader = readWeb(
       "features/public-initiative-experience/components/CanonicalInitiativeExperienceLoader.tsx",
     );
-    const hero = readWeb(
-      "features/public-initiative-experience/components/PublicExperienceHero.tsx",
+    const experiencePage = readWeb(
+      "features/public-initiative-experience/components/PublicInitiativeExperiencePage.tsx",
     );
     const overview = readWeb(
       "features/public-initiative-experience/components/PublicInitiativeCenterPanel.tsx",
+    );
+    const hook = readWeb(
+      "features/public-initiative-experience/use-initiative-public-presentation.ts",
     );
 
     assert.match(page, /loadInitiativeDetailPresentationSeed/);
     assert.match(page, /resolveDocumentHtmlLocale/);
     assert.match(page, /initialPresentation/);
     assert.match(loader, /initialPresentation/);
-    assert.match(hero, /initialPresentation/);
-    assert.match(hero, /keep SSR seed|!initialPresentation/);
-    assert.match(overview, /initialDescription/);
-    assert.match(overview, /keep SSR seed|!initialDescription/);
+    assert.match(experiencePage, /useInitiativePublicPresentation/);
+    assert.match(experiencePage, /initialPresentation/);
+    assert.match(overview, /presentationDescription/);
+    assert.match(hook, /keep SSR seed|!input\.initialPresentation/);
   });
 
   it("EXISTING UK initiative translation → detail presentation (TRANSLATION_EXISTS_BUT_NOT_DISPLAYED=0)", async () => {

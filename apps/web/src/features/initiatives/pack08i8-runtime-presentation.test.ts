@@ -122,15 +122,17 @@ describe("Pack 08I.8 — World Initiative + status key integrity", () => {
       "features/public-initiative-experience/components/PublicInitiativeCenterPanel.tsx",
     );
 
-    assert.match(world, /resolveInitiativeCardPresentation/);
+    assert.match(world, /useInitiativeCardTitlePresentation/);
     assert.match(world, /world-initiative-card__meta-label/);
     assert.match(world, /world-initiative-card__meta-value/);
     assert.match(world, /resolveInitiativeCardBadgeLabel|resolveInitiativeStatusDisplayLabel/);
     assert.match(css, /font-weight:\s*700/);
     assert.match(css, /world-initiative-card__meta-label/);
     assert.match(css, /world-initiative-card__meta-value/);
-    assert.match(hero, /resolveInitiativeDetailPresentation/);
-    assert.match(panel, /OverviewTranslatedDescription/);
+    assert.match(hero, /presentation\?\.title/);
+    assert.match(panel, /presentationDescription/);
+    const page = readWeb("features/public-initiative-experience/components/PublicInitiativeExperiencePage.tsx");
+    assert.match(page, /useInitiativePublicPresentation/);
     assert.match(panel, /lifecycleEmpty\./);
     assert.doesNotMatch(hero, /resolveTranslatedContent\(\{/);
   });

@@ -131,11 +131,17 @@ describe("Pack 08I.1 — public routes WEB_UI + brand + initiative diagnosis", (
     const hero = readWeb(
       "features/public-initiative-experience/components/PublicExperienceHero.tsx",
     );
-    assert.match(hero, /resolveTranslatedContent/);
-    assert.match(hero, /sourceKind:\s*"initiative"/);
-    assert.match(hero, /resolved\.content\.title\s*\|\|\s*title/);
-    assert.match(hero, /presentationMode\s*===\s*"original"/);
-    assert.match(hero, /generateContentTranslation/);
+    const page = readWeb(
+      "features/public-initiative-experience/components/PublicInitiativeExperiencePage.tsx",
+    );
+    const hook = readWeb(
+      "features/public-initiative-experience/use-initiative-public-presentation.ts",
+    );
+    assert.match(hero, /presentation\?\.title/);
+    assert.match(hero, /presentation\?\.description/);
+    assert.match(page, /useInitiativePublicPresentation/);
+    assert.match(hook, /resolveInitiativeDetailPresentation/);
+    assert.match(hook, /readingLanguage:\s*displayLanguage/);
     // Civic titles remain content-owned — no UI catalog inventing initiative titles.
     assert.doesNotMatch(hero, /useTranslations\(["']initiativeTitles/);
     assert.doesNotMatch(hero, /t\(["']title["']\)/);

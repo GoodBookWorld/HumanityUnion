@@ -138,13 +138,16 @@ describe("Production Completion Pack 02G Task 06 — layout resilience", () => {
     const analysis = readWeb(
       "src/features/initiative-collaborative-analysis/components/InitiativeCollaborativeAnalysisPublicResult.tsx",
     );
-    const initiativeHero = readWeb(
-      "src/features/public-initiative-experience/components/PublicExperienceHero.tsx",
+    const initiativePage = readWeb(
+      "src/features/public-initiative-experience/components/PublicInitiativeExperiencePage.tsx",
+    );
+    const initiativeHook = readWeb(
+      "src/features/public-initiative-experience/use-initiative-public-presentation.ts",
     );
     assert.match(petition, /PublicTranslatedFields/);
     assert.match(analysis, /PublicTranslatedFields/);
-    assert.match(initiativeHero, /sourceKind:\s*"initiative"/);
-    assert.match(initiativeHero, /resolveTranslatedContent|generateContentTranslation/);
+    assert.match(initiativePage, /useInitiativePublicPresentation/);
+    assert.match(initiativeHook, /resolveInitiativeDetailPresentation/);
   });
 
   it("17 Task 05 civic surfaces remain wired", () => {
