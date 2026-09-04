@@ -1,7 +1,15 @@
 /**
- * Pack 08I.14B / 08I.14B.1 — STAGING-ONLY ContentTranslationWarm backfill.
+ * Pack 08I.14B / 08I.14B.1 / 08I.14B.3 — STAGING-ONLY ContentTranslationWarm.
  *
  * Defaults to DRY RUN (no outbox writes).
+ *
+ * Modes:
+ *   (default)           dry-run warm discovery/enqueue report
+ *   --execute           enqueue warm for eligible public Initiative-path sources
+ *   --repair            dry-run repair audit (MISSING/STALE only; skip CURRENT)
+ *   --repair --execute  enqueue repair warms for MISSING/STALE only
+ *   --wait-for-materialization
+ *                       after execute/repair execute, poll until CURRENT or timeout
  *
  * Execute requires ALL of:
  *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true
@@ -9,15 +17,18 @@
  *   Mongo database name === humanity_union_staging
  *   PLATFORM_MODE is not production
  *
- * Pack 08I.14B.1 — MUST bootstrap Mongo persistence (hydrate + sync stores)
- * before enumeration. Connecting alone leaves Initiative/Analysis in-memory
- * maps empty and yields candidates=0.
+ * Pack 08I.14B.1 — MUST bootstrap Mongo persistence before enumeration.
+ * Pack 08I.14B.3 — enqueue is not materialization success; optional wait verifies CURRENT.
  *
  * Usage (from apps/api):
  *   pnpm warm:staging-content-translations
  *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --execute
+ *   pnpm warm:staging-content-translations -- --repair
+ *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --repair --execute
+ *   ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true pnpm warm:staging-content-translations -- --repair --execute --wait-for-materialization --timeout-ms=600000
  *
  * Never prints MONGODB_URI / passwords / API keys / translated bodies.
+ * Do NOT run execute/repair against production.
  */
 
 import { loadApiEnvironment } from "../config/load-api-environment.js";
@@ -32,6 +43,10 @@ import {
   type StagingWarmSourceKind,
   STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS,
 } from "../modules/language/content-translation-staging-warm-backfill.js";
+import {
+  runStagingInitiativePathContentTranslationRepair,
+  waitForStagingWarmMaterialization,
+} from "../modules/language/content-translation-staging-warm-repair.js";
 
 loadApiEnvironment();
 
@@ -40,6 +55,23 @@ const ALLOW_FLAG = "ALLOW_STAGING_CONTENT_TRANSLATION_WARM";
 
 function isExecuteModeRequested(): boolean {
   return process.argv.includes("--execute");
+}
+
+function isRepairModeRequested(): boolean {
+  return process.argv.includes("--repair");
+}
+
+function isWaitForMaterializationRequested(): boolean {
+  return process.argv.includes("--wait-for-materialization");
+}
+
+function parseTimeoutMs(): number {
+  const match = process.argv.find((entry) => entry.startsWith("--timeout-ms="));
+  if (!match) {
+    return 300_000;
+  }
+  const parsed = Number.parseInt(match.slice("--timeout-ms=".length), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 300_000;
 }
 
 function parseKinds(): StagingWarmSourceKind[] | undefined {
@@ -80,7 +112,10 @@ function assertStagingWarmGuards(input: {
 
 async function main(): Promise<void> {
   const execute = isExecuteModeRequested();
+  const repair = isRepairModeRequested();
+  const waitForMaterialization = isWaitForMaterializationRequested();
   const kinds = parseKinds();
+  const timeoutMs = parseTimeoutMs();
 
   if (!isMongoConfigured()) {
     throw new Error("MONGODB_URI is not configured.");
@@ -89,21 +124,77 @@ async function main(): Promise<void> {
   const mongo = resolveMongoConfig();
   assertStagingWarmGuards({ execute, databaseName: mongo.database });
 
-  // Pack 08I.14B.1 — hydrate Mongo snapshot caches + sync Initiative/Analysis
-  // in-memory stores (same path as live API boot). connectMongoClient alone is
-  // insufficient and produced SOURCE_RECORDS_DISCOVERED=0 on staging.
   await bootstrapMongoPersistence();
 
   try {
+    if (repair) {
+      const result = await runStagingInitiativePathContentTranslationRepair({
+        execute,
+        kinds,
+      });
+
+      let materialization: Awaited<
+        ReturnType<typeof waitForStagingWarmMaterialization>
+      > | null = null;
+      if (execute && waitForMaterialization && result.repairCandidates.length > 0) {
+        materialization = await waitForStagingWarmMaterialization({
+          candidates: result.repairCandidates,
+          timeoutMs,
+        });
+      }
+
+      console.log(
+        JSON.stringify(
+          {
+            pack: "08I.14B.3",
+            operation: "staging_content_translation_repair",
+            mode: result.mode,
+            database: mongo.database,
+            kinds: kinds ?? [...STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS],
+            totals: result.totals,
+            byKindLocale: result.byKindLocale,
+            repairCandidateCount: result.repairCandidates.length,
+            materializationWait: materialization
+              ? {
+                  timedOut: materialization.timedOut,
+                  elapsedMs: materialization.elapsedMs,
+                  currentCount: materialization.currentCount,
+                  remainingMissingOrStale: materialization.remainingMissingOrStale.length,
+                }
+              : null,
+            note:
+              result.mode === "dry-run"
+                ? "DRY RUN — no outbox writes. CURRENT skipped. Re-run with ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true --repair --execute."
+                : "EXECUTE — repair warms enqueued for MISSING/STALE only; CURRENT skipped. Enqueue ≠ materialization.",
+          },
+          null,
+          2,
+        ),
+      );
+      if (materialization?.timedOut) {
+        process.exitCode = 2;
+      }
+      return;
+    }
+
     const result = await runStagingInitiativePathContentTranslationWarm({
       execute,
       kinds,
     });
 
+    let materialization: Awaited<ReturnType<typeof waitForStagingWarmMaterialization>> | null =
+      null;
+    if (execute && waitForMaterialization && result.candidates.length > 0) {
+      materialization = await waitForStagingWarmMaterialization({
+        candidates: result.candidates,
+        timeoutMs,
+      });
+    }
+
     console.log(
       JSON.stringify(
         {
-          pack: "08I.14B.1",
+          pack: "08I.14B.3",
           operation: "staging_content_translation_warm",
           mode: result.mode,
           database: mongo.database,
@@ -131,15 +222,26 @@ async function main(): Promise<void> {
             deduped: row.deduped,
             failed: row.failed,
           })),
+          materializationWait: materialization
+            ? {
+                timedOut: materialization.timedOut,
+                elapsedMs: materialization.elapsedMs,
+                currentCount: materialization.currentCount,
+                remainingMissingOrStale: materialization.remainingMissingOrStale.length,
+              }
+            : null,
           note:
             result.mode === "dry-run"
               ? "DRY RUN — no outbox writes. Re-run with ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true --execute."
-              : "EXECUTE — warm requests enqueued; consumer skips current translations.",
+              : "EXECUTE — warm requests enqueued; enqueue ≠ CURRENT materialization. Use --wait-for-materialization to verify.",
         },
         null,
         2,
       ),
     );
+    if (materialization?.timedOut) {
+      process.exitCode = 2;
+    }
   } finally {
     await disconnectMongoClient().catch(() => undefined);
   }

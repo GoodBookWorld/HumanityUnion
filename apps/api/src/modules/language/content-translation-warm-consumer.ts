@@ -67,7 +67,9 @@ export interface ContentTranslationWarmProcessResult {
     | "completed"
     | "skipped_missing_source"
     | "skipped_ineligible"
-    | "failed_retryable";
+    | "failed_retryable"
+    /** Pack 08I.14B.3 — locale failure without CURRENT; must not mark warm success. */
+    | "failed_terminal";
   readonly locales: readonly ContentTranslationWarmLocaleOutcome[];
 }
 
@@ -212,6 +214,7 @@ export async function processContentTranslationWarmRequested(
 
   const concurrency = resolveContentTranslationWarmLocaleConcurrency();
   let sawRetryableFailure = false;
+  let sawNonRetryableFailure = false;
 
   const locales = await mapWithConcurrency(targets, concurrency, async (targetLanguage) => {
     const identity = buildContentTranslationWorkIdentity({
@@ -246,11 +249,16 @@ export async function processContentTranslationWarmRequested(
         }),
       );
 
+      // Pack 08I.14B.3 — enqueue/skip without CURRENT translation is not success.
       const status = result.generated
         ? ("generated" as const)
-        : result.translation
+        : result.translation && !result.translation.stale
           ? ("skipped_existing" as const)
           : ("skipped_ineligible" as const);
+
+      if (status === "skipped_ineligible") {
+        sawNonRetryableFailure = true;
+      }
 
       logger.info("content_translation.warm.locale_result", {
         component: "content-translation-warm",
@@ -283,6 +291,8 @@ export async function processContentTranslationWarmRequested(
 
       if (failureClass === "retryable") {
         sawRetryableFailure = true;
+      } else {
+        sawNonRetryableFailure = true;
       }
 
       return {
@@ -295,24 +305,41 @@ export async function processContentTranslationWarmRequested(
     }
   });
 
-  if (sawRetryableFailure) {
+  const materializedOk = locales.every(
+    (locale) =>
+      locale.status === "generated" ||
+      locale.status === "skipped_existing" ||
+      locale.status === "skipped_source_language",
+  );
+
+  if (!materializedOk || sawRetryableFailure || sawNonRetryableFailure) {
+    const outcome = sawRetryableFailure ? "failed_retryable" : "failed_terminal";
     const err = new TranslationProviderError(
-      "unavailable",
-      "One or more automatic warm locale translations failed with a retryable error.",
+      sawRetryableFailure ? "unavailable" : "bad_request",
+      sawRetryableFailure
+        ? "One or more automatic warm locale translations failed with a retryable error."
+        : "One or more automatic warm locale translations failed without CURRENT materialization.",
     );
-    logger.warn("content_translation.warm.consume_retryable", {
-      component: "content-translation-warm",
-      sourceKind: source.sourceKind,
-      sourceRecordId: source.sourceRecordId,
-      sourceVersion: source.sourceVersion,
-    });
-    // Attach locale outcomes for tests via cause-like property.
+    logger.warn(
+      sawRetryableFailure
+        ? "content_translation.warm.consume_retryable"
+        : "content_translation.warm.consume_terminal_failure",
+      {
+        component: "content-translation-warm",
+        sourceKind: source.sourceKind,
+        sourceRecordId: source.sourceRecordId,
+        sourceVersion: source.sourceVersion,
+        outcome,
+        localeStatuses: locales.map((locale) => locale.status),
+      },
+    );
+    // Attach locale outcomes for tests / operator diagnostics.
     (err as Error & { warmResult?: ContentTranslationWarmProcessResult }).warmResult = {
       sourceKind: source.sourceKind,
       sourceRecordId: source.sourceRecordId,
       sourceVersion: source.sourceVersion,
       sourceLanguage: source.sourceLanguage,
-      outcome: "failed_retryable",
+      outcome,
       locales,
     };
     throw err;

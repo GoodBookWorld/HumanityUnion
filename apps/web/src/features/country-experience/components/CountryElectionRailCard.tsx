@@ -7,6 +7,7 @@ import type { WorldInitiativeCardProjection } from "@hu/types";
 
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
 import { PUBLIC_INITIATIVE_MINI_CARD_FALLBACK_IMAGE } from "../../public-initiative-mini-card/PublicInitiativeMiniCard";
+import { useInitiativeCardTitlePresentation } from "../../public-initiative-experience/use-initiative-public-presentation";
 import { resolveInitiativeCardBadgeLabel } from "../../public-initiative-mini-card/resolve-initiative-card-semantic-labels";
 
 interface CountryElectionRailCardProps {
@@ -19,6 +20,13 @@ interface CountryElectionRailCardProps {
 export function CountryElectionRailCard({ initiative }: CountryElectionRailCardProps) {
   const t = useTranslations("publicGeo.shared");
   const tExperience = useTranslations("initiativeExperience");
+  // Pack 08I.14B.3 — Public Choice is an Initiative lifecycle profile; reuse
+  // the canonical Initiative card title presentation (no separate sourceKind).
+  const displayTitle = useInitiativeCardTitlePresentation({
+    initiativeId: initiative.initiativeId,
+    canonicalTitle: initiative.title,
+    canonicalSummary: initiative.summary,
+  });
   const href =
     initiative.publicInitiativeHref ||
     `/initiatives/public/${encodeURIComponent(initiative.initiativeId)}`;
@@ -35,12 +43,12 @@ export function CountryElectionRailCard({ initiative }: CountryElectionRailCardP
     <Link
       href={href}
       className="country-initiative-rail-card country-election-rail-card"
-      aria-label={t("openElectionAria", { title: initiative.title })}
+      aria-label={t("openElectionAria", { title: displayTitle })}
     >
       <div className="country-initiative-rail-card__media">
         {initiative.imageUrl || initiative.coverMedia ? (
           <InitiativeImage
-            title={initiative.title}
+            title={displayTitle}
             imageUrl={initiative.imageUrl}
             coverMedia={initiative.coverMedia}
           />
@@ -56,7 +64,7 @@ export function CountryElectionRailCard({ initiative }: CountryElectionRailCardP
         )}
       </div>
       <div className="country-initiative-rail-card__body">
-        <h3 className="country-initiative-rail-card__title">{initiative.title}</h3>
+        <h3 className="country-initiative-rail-card__title">{displayTitle}</h3>
         <p className="country-initiative-rail-card__meta">{initiative.geographyLabel}</p>
         <div className="country-initiative-rail-card__footer">
           <span className="country-initiative-rail-card__status">{statusLabel}</span>

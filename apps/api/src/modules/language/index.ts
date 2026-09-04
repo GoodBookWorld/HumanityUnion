@@ -122,6 +122,17 @@ export {
   resolveAutomaticContentTranslationWarmTargets,
 } from "./content-translation-warm-targets.js";
 export {
+  auditContentTranslationMaterialization,
+  runStagingInitiativePathContentTranslationRepair,
+  waitForStagingWarmMaterialization,
+} from "./content-translation-staging-warm-repair.js";
+export type {
+  StagingWarmLocaleAuditRow,
+  StagingWarmLocaleMaterializationState,
+  StagingWarmRepairAction,
+  StagingWarmRepairResult,
+} from "./content-translation-staging-warm-repair.js";
+export {
   buildContentTranslationWarmTargetDiagnostic,
   contentTranslationWarmRegistryCandidateDiagnosticKeys,
 } from "./content-translation-warm-diagnostic.js";

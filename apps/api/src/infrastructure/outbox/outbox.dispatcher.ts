@@ -41,6 +41,12 @@ export async function dispatchOutboxBatch(): Promise<number> {
       try {
         const envelope = deserializeDomainEventEnvelope(record.envelope);
 
+        // Pack 08I.14B.3 — do not treat in-progress skip as successful publish.
+        // A deploy/restart during a long warm handler left claims "processing";
+        // marking published here previously completed outbox rows without materialization.
+        let handlerSucceeded = false;
+        let deferredInProgress = false;
+
         await dispatchEnvelopeToHandlers(envelope, async (handler, eventEnvelope) => {
           const claim = await claimEventForProcessing({
             consumerId: handler.consumerId,
@@ -48,13 +54,26 @@ export async function dispatchOutboxBatch(): Promise<number> {
             correlationId: eventEnvelope.metadata.correlationId,
           });
 
-          if (claim.alreadyCompleted || claim.inProgress) {
+          if (claim.alreadyCompleted) {
+            handlerSucceeded = true;
             logDomainEvent("skipped_duplicate", {
               consumerId: handler.consumerId,
               eventId: eventEnvelope.eventId,
               eventName: eventEnvelope.eventName,
               correlationId: eventEnvelope.metadata.correlationId,
-              skipReason: claim.alreadyCompleted ? "completed" : "in_progress",
+              skipReason: "completed",
+            });
+            return;
+          }
+
+          if (claim.inProgress) {
+            deferredInProgress = true;
+            logDomainEvent("skipped_duplicate", {
+              consumerId: handler.consumerId,
+              eventId: eventEnvelope.eventId,
+              eventName: eventEnvelope.eventName,
+              correlationId: eventEnvelope.metadata.correlationId,
+              skipReason: "in_progress",
             });
             return;
           }
@@ -69,6 +88,7 @@ export async function dispatchOutboxBatch(): Promise<number> {
               consumerId: handler.consumerId,
               eventId: eventEnvelope.eventId,
             });
+            handlerSucceeded = true;
 
             logDomainEvent("processed", {
               consumerId: handler.consumerId,
@@ -87,6 +107,17 @@ export async function dispatchOutboxBatch(): Promise<number> {
             throw handlerError;
           }
         });
+
+        if (deferredInProgress && !handlerSucceeded) {
+          logDomainEvent("skipped_duplicate", {
+            outboxId: record.outboxId,
+            eventId: record.eventId,
+            eventName: record.eventName,
+            correlationId: record.correlationId,
+            skipReason: "in_progress_defer_publish",
+          });
+          continue;
+        }
 
         await markOutboxRecordPublished(record.outboxId);
         processedCount += 1;
