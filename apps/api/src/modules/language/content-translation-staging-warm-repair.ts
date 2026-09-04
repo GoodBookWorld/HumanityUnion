@@ -19,6 +19,7 @@ import {
   discoverStagingInitiativePathWarmSources,
   type StagingWarmCandidate,
   type StagingWarmDiscoveryDeps,
+  type StagingWarmDiscoveryKindCounts,
   type StagingWarmSourceKind,
 } from "./content-translation-staging-warm-backfill.js";
 import { assertCanonicalSourceEligibleForTranslation } from "./content-translation-eligibility.js";
@@ -73,6 +74,15 @@ export interface StagingWarmRepairResult {
     readonly FAILED: number;
   };
   readonly repairCandidates: readonly StagingWarmCandidate[];
+  /** Pack 08I.16.1 — discovery funnel so 0/0/0 cannot look like success. */
+  readonly discoveryByKind: readonly StagingWarmDiscoveryKindCounts[];
+  readonly discoveryTotals: {
+    readonly SOURCE_RECORDS_DISCOVERED: number;
+    readonly PUBLIC_RECORDS: number;
+    readonly ELIGIBLE_SOURCE_RECORDS: number;
+    readonly LOCALE_TARGETS_AUDITED: number;
+  };
+  readonly discoveryHint: string | null;
 }
 
 /**
@@ -198,6 +208,16 @@ export async function runStagingInitiativePathContentTranslationRepair(input: {
     deps: input.deps,
   });
 
+  const discoveryByKind = [...discovered.discoveryByKind.values()].sort((a, b) =>
+    a.sourceKind.localeCompare(b.sourceKind),
+  );
+
+  // Eligible = discovered public candidates that pass load+eligibility (repair audits those).
+  const discoveryWithEligible = discoveryByKind.map((row) => {
+    const eligible = discovered.candidates.filter((c) => c.sourceKind === row.sourceKind).length;
+    return { ...row, eligibleSourceRecords: eligible };
+  });
+
   const { warmTargetLocales } = await resolveAutomaticContentTranslationWarmTargets();
   const targets = (
     input.targetLanguages?.length ? input.targetLanguages : warmTargetLocales
@@ -304,12 +324,30 @@ export async function runStagingInitiativePathContentTranslationRepair(input: {
     },
   );
 
+  const discoveryTotals = discoveryWithEligible.reduce(
+    (acc, row) => ({
+      SOURCE_RECORDS_DISCOVERED: acc.SOURCE_RECORDS_DISCOVERED + row.sourceRecordsDiscovered,
+      PUBLIC_RECORDS: acc.PUBLIC_RECORDS + row.publicRecords,
+      ELIGIBLE_SOURCE_RECORDS: acc.ELIGIBLE_SOURCE_RECORDS + row.eligibleSourceRecords,
+      LOCALE_TARGETS_AUDITED: acc.LOCALE_TARGETS_AUDITED,
+    }),
+    {
+      SOURCE_RECORDS_DISCOVERED: 0,
+      PUBLIC_RECORDS: 0,
+      ELIGIBLE_SOURCE_RECORDS: 0,
+      LOCALE_TARGETS_AUDITED: audited.length,
+    },
+  );
+
   return {
     mode: input.execute ? "execute" : "dry-run",
     audited,
     byKindLocale,
     totals,
     repairCandidates,
+    discoveryByKind: discoveryWithEligible,
+    discoveryTotals,
+    discoveryHint: discovered.discoveryHint,
   };
 }
 

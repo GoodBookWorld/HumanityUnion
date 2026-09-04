@@ -307,7 +307,7 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
   let discoveryHint: string | null = null;
   if (allInitiatives.length === 0) {
     discoveryHint =
-      "SOURCE_RECORDS_DISCOVERED.initiative=0 — Mongo snapshot stores may be unhydrated. Call bootstrapContentTranslationOperatorPersistence() before warm enumeration (live API uses full bootstrapMongoPersistence on boot).";
+      "SOURCE_RECORDS_DISCOVERED.initiative=0 — Mongo snapshot stores may be unhydrated or unsynced. Call bootstrapContentTranslationOperatorPersistence() (hydrate + syncInitiativeStoreAfterMongoHydrate) before warm enumeration.";
   }
 
   return {

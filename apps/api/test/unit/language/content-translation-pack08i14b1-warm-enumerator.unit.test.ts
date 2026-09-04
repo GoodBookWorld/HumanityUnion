@@ -87,7 +87,7 @@ describe("Pack 08I.14B.1 — warm enumerator persistence bootstrap", () => {
     });
     assert.equal(discovered.candidates.length, 0);
     assert.match(String(discovered.discoveryHint), /SOURCE_RECORDS_DISCOVERED\.initiative=0/);
-    assert.match(String(discovered.discoveryHint), /bootstrapContentTranslationOperatorPersistence/);
+    assert.match(String(discovered.discoveryHint), /syncInitiativeStoreAfterMongoHydrate|bootstrapContentTranslationOperatorPersistence/);
   });
 });
 

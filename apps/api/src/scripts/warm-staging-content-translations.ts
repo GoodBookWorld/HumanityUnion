@@ -20,6 +20,8 @@
  * Pack 08I.14B.1 — MUST hydrate Initiative-path discovery stores before enumeration.
  * Pack 08I.14B.3 — enqueue is not materialization success; optional wait verifies CURRENT.
  * Pack 08I.16 — lightweight operator bootstrap (not full API hydrate); wait uses compact identities.
+ * Pack 08I.16.1 — bootstrap must hydrate+sync Initiative/Analysis maps; staging zero-discovery fails closed
+ *                 unless --allow-empty-discovery.
  *
  * Usage (from apps/api):
  *   pnpm warm:staging-content-translations
@@ -44,6 +46,11 @@ import {
   type StagingWarmSourceKind,
   STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS,
 } from "../modules/language/content-translation-staging-warm-backfill.js";
+import {
+  assertStagingWarmDiscoveryNotSilentlyEmpty,
+  resolveStagingWarmDiscoveryExpectation,
+  StagingContentTranslationDiscoveryFailure,
+} from "../modules/language/content-translation-staging-warm-discovery-safety.js";
 import {
   runStagingInitiativePathContentTranslationRepair,
   waitForStagingWarmMaterialization,
@@ -126,12 +133,22 @@ async function main(): Promise<void> {
   assertStagingWarmGuards({ execute, databaseName: mongo.database });
 
   const bootstrap = await bootstrapContentTranslationOperatorPersistence();
+  const discoveryExpectation = resolveStagingWarmDiscoveryExpectation({
+    databaseName: mongo.database,
+  });
 
   try {
     if (repair) {
       const result = await runStagingInitiativePathContentTranslationRepair({
         execute,
         kinds,
+      });
+
+      assertStagingWarmDiscoveryNotSilentlyEmpty({
+        expectation: discoveryExpectation,
+        discoveryByKind: result.discoveryByKind,
+        discoveryHint: result.discoveryHint,
+        localeTargetsAudited: result.discoveryTotals.LOCALE_TARGETS_AUDITED,
       });
 
       let materialization: Awaited<
@@ -144,7 +161,7 @@ async function main(): Promise<void> {
           onProgress: (progress) => {
             console.log(
               JSON.stringify({
-                pack: "08I.16",
+                pack: "08I.16.1",
                 operation: "wait_for_materialization_progress",
                 TARGETS_TOTAL: progress.targetsTotal,
                 CURRENT: progress.current,
@@ -161,12 +178,26 @@ async function main(): Promise<void> {
       console.log(
         JSON.stringify(
           {
-            pack: "08I.16",
+            pack: "08I.16.1",
             operation: "staging_content_translation_repair",
             mode: result.mode,
             database: mongo.database,
             persistenceBootstrap: bootstrap.mode,
+            discoveryExpectation: discoveryExpectation.reason,
             kinds: kinds ?? [...STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS],
+            discovery: {
+              SOURCE_RECORDS_DISCOVERED: result.discoveryTotals.SOURCE_RECORDS_DISCOVERED,
+              PUBLIC_RECORDS: result.discoveryTotals.PUBLIC_RECORDS,
+              ELIGIBLE_SOURCE_RECORDS: result.discoveryTotals.ELIGIBLE_SOURCE_RECORDS,
+              LOCALE_TARGETS_AUDITED: result.discoveryTotals.LOCALE_TARGETS_AUDITED,
+              byKind: result.discoveryByKind.map((row) => ({
+                sourceKind: row.sourceKind,
+                SOURCE_RECORDS_DISCOVERED: row.sourceRecordsDiscovered,
+                PUBLIC_RECORDS: row.publicRecords,
+                ELIGIBLE_SOURCE_RECORDS: row.eligibleSourceRecords,
+              })),
+              discoveryHint: result.discoveryHint,
+            },
             totals: result.totals,
             byKindLocale: result.byKindLocale,
             repairCandidateCount: result.repairCandidates.length,
@@ -206,6 +237,13 @@ async function main(): Promise<void> {
       kinds,
     });
 
+    assertStagingWarmDiscoveryNotSilentlyEmpty({
+      expectation: discoveryExpectation,
+      discoveryByKind: result.discoveryByKind,
+      discoveryHint: result.discoveryHint,
+      localeTargetsAudited: 0,
+    });
+
     let materialization: Awaited<ReturnType<typeof waitForStagingWarmMaterialization>> | null =
       null;
     if (execute && waitForMaterialization && result.candidates.length > 0) {
@@ -215,7 +253,7 @@ async function main(): Promise<void> {
         onProgress: (progress) => {
           console.log(
             JSON.stringify({
-              pack: "08I.16",
+              pack: "08I.16.1",
               operation: "wait_for_materialization_progress",
               TARGETS_TOTAL: progress.targetsTotal,
               CURRENT: progress.current,
@@ -232,12 +270,13 @@ async function main(): Promise<void> {
     console.log(
       JSON.stringify(
         {
-          pack: "08I.16",
+          pack: "08I.16.1",
           operation: "staging_content_translation_warm",
           mode: result.mode,
           database: mongo.database,
           kinds: kinds ?? [...STAGING_INITIATIVE_PATH_WARM_SOURCE_KINDS],
           persistenceBootstrap: bootstrap.mode,
+          discoveryExpectation: discoveryExpectation.reason,
           discoveryHint: result.discoveryHint,
           totals: {
             SOURCE_RECORDS_DISCOVERED: result.totals.sourceRecordsDiscovered,
@@ -294,6 +333,30 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
+  if (error instanceof StagingContentTranslationDiscoveryFailure) {
+    console.error(
+      JSON.stringify({
+        success: false,
+        code: error.code,
+        error: error.message,
+        diagnostics: {
+          SOURCE_RECORDS_DISCOVERED: error.diagnostics.SOURCE_RECORDS_DISCOVERED,
+          PUBLIC_RECORDS: error.diagnostics.PUBLIC_RECORDS,
+          ELIGIBLE_SOURCE_RECORDS: error.diagnostics.ELIGIBLE_SOURCE_RECORDS,
+          LOCALE_TARGETS_AUDITED: error.diagnostics.LOCALE_TARGETS_AUDITED,
+          discoveryHint: error.diagnostics.discoveryHint,
+          byKind: error.diagnostics.byKind.map((row) => ({
+            sourceKind: row.sourceKind,
+            SOURCE_RECORDS_DISCOVERED: row.sourceRecordsDiscovered,
+            PUBLIC_RECORDS: row.publicRecords,
+            ELIGIBLE_SOURCE_RECORDS: row.eligibleSourceRecords,
+          })),
+        },
+      }),
+    );
+    process.exitCode = 3;
+    return;
+  }
   const message = error instanceof Error ? error.message : String(error);
   console.error(JSON.stringify({ success: false, error: message }));
   process.exitCode = 1;

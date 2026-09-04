@@ -129,6 +129,17 @@ export {
   resolveAutomaticContentTranslationWarmTargets,
 } from "./content-translation-warm-targets.js";
 export {
+  assertStagingWarmDiscoveryNotSilentlyEmpty,
+  resolveStagingWarmDiscoveryExpectation,
+  STAGING_CONTENT_TRANSLATION_DATABASE,
+  StagingContentTranslationDiscoveryFailure,
+  summarizeStagingWarmDiscovery,
+} from "./content-translation-staging-warm-discovery-safety.js";
+export type {
+  StagingWarmDiscoveryExpectation,
+  StagingWarmDiscoveryTotals,
+} from "./content-translation-staging-warm-discovery-safety.js";
+export {
   auditContentTranslationMaterialization,
   runStagingInitiativePathContentTranslationRepair,
   waitForStagingWarmMaterialization,
