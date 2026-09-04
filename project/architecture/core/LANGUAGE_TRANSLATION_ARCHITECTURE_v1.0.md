@@ -591,3 +591,42 @@ Governed Initiative-path mounted surfaces target **0** unexpected bypasses. Rema
 ### CIVIC_CONTENT manual override
 
 `translationKind` supports `human` | `author-approved` in the model and display can prefer approved rows, but **no Admin write path** persists those kinds for civic content today. Brand/Legal remain the only Admin-approved localization systems.
+
+---
+
+## Pack 08J — Universal Automatic Translation Architecture
+
+**Normative translation policy:**
+
+1. **UI text** → next-intl / native dictionaries (`WEB_UI` ≡ UI_CHROME). Never Gemini.
+2. **Public/participant-facing semantic content** → `CIVIC_CONTENT` ≡ AUTO_TRANSLATABLE_CONTENT **by default**.
+3. **Admin/manual localization** (Brand/Legal) → authoritative; never machine-overwritten.
+4. **Identity / private / technical values** → `NON_TRANSLATABLE` via central exclusion policy; never enter Gemini.
+5. **Canonical source is immutable.**
+6. **Translation is cached** in `content_translations`, **bounded** (`CONTENT_TRANSLATION_WORKER_CONCURRENCY` default 1), **asynchronous**, and **restart-safe** via outbox.
+7. **New participant-facing content inherits translation automatically** through mutation warm — no normal operator warm/repair.
+
+### Developer workflow (future features)
+
+1. Persist canonical domain data.
+2. Expose a **sanitized participant-facing presentation projection** (string field bag / nested presentation object).
+3. Mark only protected identity/technical keys (NON_TRANSLATABLE policy) — do **not** edit a central title/description allowlist to enroll prose.
+4. Call `scheduleContentTranslationWarmAfterMutation` after public create/publish/update (or reuse the shared post-persist helper).
+5. Render via shared presentation contracts (`PublicTranslatedFields` / Initiative presentation owners / `applyTranslatedPresentationFields`).
+
+`CONTENT_TRANSLATION_FIELD_ALLOWLIST` is a **compatibility shim** unioned with projection keys. It is **not** the primary enrollment gate.
+
+### Operator tooling
+
+`warm:staging-content-translations` is **recovery / migration only**. It must `process.exit` after disconnect (Mongo heartbeats must not hang the shell). Normal create/publish/update must not require this CLI.
+
+### KEEP / SIMPLIFY summary
+
+| Piece | Decision |
+|-------|----------|
+| Ownership + DEFAULT_LOCALIZABLE | KEEP (+ synonyms) |
+| Allowlist as presentation gate | REPLACE with exclusion policy |
+| Outbox + warm consumer + worker slots | KEEP |
+| Brand / Legal / Terminology | KEEP |
+| Staging warm as normal ops | DEPRECATE → recovery-only |
+| Second translation engine | NEVER |

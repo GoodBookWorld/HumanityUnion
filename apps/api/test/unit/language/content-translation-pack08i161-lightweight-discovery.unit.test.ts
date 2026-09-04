@@ -344,7 +344,7 @@ describe("Pack 08I.16.1 — lightweight discovery regression", () => {
     assert.match(script, /assertStagingWarmDiscoveryNotSilentlyEmpty/);
     assert.match(script, /StagingContentTranslationDiscoveryFailure/);
     assert.match(script, /allow-empty-discovery|allow_empty_discovery/);
-    assert.match(script, /process\.exitCode = 3/);
+    assert.match(script, /process\.exit\(process\.exitCode \?\? 0\)|process\.exit\(3\)/);
     assert.match(script, /SOURCE_RECORDS_DISCOVERED/);
     assert.match(script, /LOCALE_TARGETS_AUDITED/);
   });

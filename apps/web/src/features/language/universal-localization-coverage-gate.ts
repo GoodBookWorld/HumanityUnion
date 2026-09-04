@@ -14,9 +14,11 @@ import path from "node:path";
 export interface UniversalLocalizationCoverageCounters {
   readonly PUBLIC_SEMANTIC_BYPASS: number;
   readonly UNCLASSIFIED_PARTICIPANT_TEXT: number;
+  readonly AUTO_TRANSLATION_BYPASS: number;
   readonly BRAND_MACHINE_TRANSLATION_BYPASS: number;
   readonly LEGAL_MACHINE_TRANSLATION_BYPASS: number;
   readonly NON_TRANSLATABLE_VIOLATION: number;
+  readonly PRIVATE_DATA_TRANSLATION_ATTEMPT: number;
   readonly GOVERNED_SURFACE_FILES_SCANNED: number;
   readonly REGISTERED_INTENTIONAL_DEBT: number;
 }
@@ -28,9 +30,11 @@ export interface UniversalLocalizationBypassFinding {
   readonly counter:
     | "PUBLIC_SEMANTIC_BYPASS"
     | "UNCLASSIFIED_PARTICIPANT_TEXT"
+    | "AUTO_TRANSLATION_BYPASS"
     | "BRAND_MACHINE_TRANSLATION_BYPASS"
     | "LEGAL_MACHINE_TRANSLATION_BYPASS"
-    | "NON_TRANSLATABLE_VIOLATION";
+    | "NON_TRANSLATABLE_VIOLATION"
+    | "PRIVATE_DATA_TRANSLATION_ATTEMPT";
 }
 
 /**
@@ -120,6 +124,21 @@ const BYPASS_PATTERNS: readonly {
     id: "legal_via_content_translations",
     pattern: /sourceKind\s*[:=]\s*["']legal(?:_document)?["']/,
     counter: "LEGAL_MACHINE_TRANSLATION_BYPASS",
+  },
+  {
+    id: "web_ssr_gemini_provider",
+    pattern: /GoogleGenerativeAI|@google\/generative-ai|getGenerativeModel\s*\(/,
+    counter: "AUTO_TRANSLATION_BYPASS",
+  },
+  {
+    id: "private_email_translate_attempt",
+    pattern: /translatedContent\s*[:=].*(?:email|phoneNumber|password)/i,
+    counter: "PRIVATE_DATA_TRANSLATION_ATTEMPT",
+  },
+  {
+    id: "non_translatable_id_jsx_mutation",
+    pattern: /translate(?:Field|Text)?\s*\(\s*(?:initiativeId|participantId|email)\b/,
+    counter: "NON_TRANSLATABLE_VIOLATION",
   },
 ];
 
@@ -245,9 +264,11 @@ export function runUniversalLocalizationCoverageGate(webSrcRoot: string): {
     counters: {
       PUBLIC_SEMANTIC_BYPASS: count("PUBLIC_SEMANTIC_BYPASS"),
       UNCLASSIFIED_PARTICIPANT_TEXT: count("UNCLASSIFIED_PARTICIPANT_TEXT"),
+      AUTO_TRANSLATION_BYPASS: count("AUTO_TRANSLATION_BYPASS"),
       BRAND_MACHINE_TRANSLATION_BYPASS: count("BRAND_MACHINE_TRANSLATION_BYPASS"),
       LEGAL_MACHINE_TRANSLATION_BYPASS: count("LEGAL_MACHINE_TRANSLATION_BYPASS"),
       NON_TRANSLATABLE_VIOLATION: count("NON_TRANSLATABLE_VIOLATION"),
+      PRIVATE_DATA_TRANSLATION_ATTEMPT: count("PRIVATE_DATA_TRANSLATION_ATTEMPT"),
       GOVERNED_SURFACE_FILES_SCANNED: scanned,
       REGISTERED_INTENTIONAL_DEBT: INTENTIONAL_LOCALIZATION_DEBT.length,
     },

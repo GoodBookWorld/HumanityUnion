@@ -259,3 +259,70 @@ export function markContentTranslationWarmMemoryPublishedForTests(eventId: strin
     memoryPendingByAggregate.delete(aggregateId);
   }
 }
+
+/** Test helper — mark memory pending row as terminal failed. */
+export function markContentTranslationWarmMemoryFailedForTests(
+  eventId: string,
+  lastError = "terminal warm failure",
+): void {
+  const record = memoryRecordsByEventId.get(eventId);
+  if (!record) {
+    return;
+  }
+  record.status = "failed";
+  record.lastError = lastError;
+  const aggregateId = buildContentTranslationWarmAggregateId(record.command);
+  const pending = memoryPendingByAggregate.get(aggregateId);
+  if (pending?.eventId === eventId) {
+    memoryPendingByAggregate.delete(aggregateId);
+  }
+}
+
+export type ContentTranslationWarmOutboxDisposition = "pending" | "failed" | "none";
+
+/**
+ * Pack 08J — wait diagnostics: distinguish PENDING work from terminal FAILED
+ * outbox outcomes so recovery tooling does not mislabel failures forever.
+ */
+export async function resolveContentTranslationWarmOutboxDisposition(input: {
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly sourceRecordId: string;
+}): Promise<ContentTranslationWarmOutboxDisposition> {
+  const aggregateId = buildContentTranslationWarmAggregateId(input);
+
+  if (useMemoryWarmOutbox()) {
+    const pending = memoryPendingByAggregate.get(aggregateId);
+    if (pending?.status === "pending") {
+      return "pending";
+    }
+    for (const record of memoryRecordsByEventId.values()) {
+      const id = buildContentTranslationWarmAggregateId(record.command);
+      if (id === aggregateId && record.status === "failed") {
+        return "failed";
+      }
+    }
+    return "none";
+  }
+
+  const collection = getMongoCollection<{
+    status: string;
+    eventName: string;
+    aggregateId: string;
+  }>(MONGO_COLLECTIONS.outbox);
+
+  const pending = await collection.findOne({
+    status: "pending",
+    eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
+    aggregateId,
+  });
+  if (pending) {
+    return "pending";
+  }
+
+  const failed = await collection.findOne({
+    status: "failed",
+    eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
+    aggregateId,
+  });
+  return failed ? "failed" : "none";
+}

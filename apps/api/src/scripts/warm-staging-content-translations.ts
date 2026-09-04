@@ -22,6 +22,10 @@
  * Pack 08I.16 — lightweight operator bootstrap (not full API hydrate); wait uses compact identities.
  * Pack 08I.16.1 — bootstrap must hydrate+sync Initiative/Analysis maps; staging zero-discovery fails closed
  *                 unless --allow-empty-discovery.
+ * Pack 08J — recovery/migration operator only. Normal content translation is
+ * mutation-driven (scheduleContentTranslationWarmAfterMutation). Do not use
+ * this script for ordinary create/publish/update. Always process.exit after
+ * disconnect so Mongo driver heartbeats cannot hang the shell.
  *
  * Usage (from apps/api):
  *   pnpm warm:staging-content-translations
@@ -226,7 +230,7 @@ async function main(): Promise<void> {
           2,
         ),
       );
-      if (materialization?.timedOut) {
+      if (materialization?.timedOut || (materialization?.progress.terminalFailed ?? 0) > 0) {
         process.exitCode = 2;
       }
       return;
@@ -324,15 +328,18 @@ async function main(): Promise<void> {
         2,
       ),
     );
-    if (materialization?.timedOut) {
+    if (materialization?.timedOut || (materialization?.progress.terminalFailed ?? 0) > 0) {
       process.exitCode = 2;
     }
   } finally {
     await disconnectMongoClient().catch(() => undefined);
   }
+
+  // Pack 08J — Mongo driver timers can keep the event loop alive after disconnect.
+  process.exit(process.exitCode ?? 0);
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   if (error instanceof StagingContentTranslationDiscoveryFailure) {
     console.error(
       JSON.stringify({
@@ -354,10 +361,11 @@ main().catch((error) => {
         },
       }),
     );
-    process.exitCode = 3;
-    return;
+    await disconnectMongoClient().catch(() => undefined);
+    process.exit(3);
   }
   const message = error instanceof Error ? error.message : String(error);
   console.error(JSON.stringify({ success: false, error: message }));
-  process.exitCode = 1;
+  await disconnectMongoClient().catch(() => undefined);
+  process.exit(1);
 });

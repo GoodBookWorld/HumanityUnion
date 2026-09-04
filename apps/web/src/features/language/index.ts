@@ -32,6 +32,11 @@ export {
   NON_TRANSLATABLE_FIELD_KEYS,
 } from "./localization-ownership";
 export type { CivicContentSourceKind } from "./localization-ownership";
+export {
+  applyTranslatedPresentationFields,
+  isNonTranslatableFieldKey,
+} from "./translate-presentation";
+export type { PresentationProjectionValue } from "./translate-presentation";
 export { useCivicInitiativeLocalizedTitle } from "./use-civic-initiative-localized-title";
 // Coverage gate (node:fs) is test/tooling only — do not re-export from this barrel.
 export { TranslateDraftControl } from "./components/TranslateDraftControl";

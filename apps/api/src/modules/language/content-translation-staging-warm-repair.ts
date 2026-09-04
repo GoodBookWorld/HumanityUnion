@@ -12,6 +12,7 @@ import { findContentTranslation } from "./persistence/content-translation.reposi
 import { loadTranslatableSource } from "./content-translation.service.js";
 import {
   enqueueContentTranslationWarmRequested,
+  resolveContentTranslationWarmOutboxDisposition,
   type ContentTranslationWarmEnqueueResult,
 } from "./content-translation-warm-enqueue.js";
 import { resolveAutomaticContentTranslationWarmTargets } from "./content-translation-warm-targets.js";
@@ -426,12 +427,33 @@ export async function waitForStagingWarmMaterialization(input: {
     timedOut: 0,
   };
 
+  // Cache outbox disposition per source aggregate across locales in one poll.
+  const outboxDispositionByAggregate = new Map<
+    string,
+    Awaited<ReturnType<typeof resolveContentTranslationWarmOutboxDisposition>>
+  >();
+
+  async function outboxDispositionFor(identity: StagingWarmWaitTargetIdentity) {
+    const key = `${identity.sourceKind}::${identity.sourceRecordId}`;
+    const cached = outboxDispositionByAggregate.get(key);
+    if (cached) {
+      return cached;
+    }
+    const disposition = await resolveContentTranslationWarmOutboxDisposition({
+      sourceKind: identity.sourceKind,
+      sourceRecordId: identity.sourceRecordId,
+    });
+    outboxDispositionByAggregate.set(key, disposition);
+    return disposition;
+  }
+
   for (;;) {
     let current = 0;
     let pending = 0;
     let retrying = 0;
-    const terminalFailed = 0;
+    let terminalFailed = 0;
     const remaining: StagingWarmLocaleAuditRow[] = [];
+    outboxDispositionByAggregate.clear();
 
     // Bound poll reads: one indexed lookup per identity; discard prior poll set.
     // Does not call loadTranslatableSource or the provider.
@@ -444,14 +466,26 @@ export async function waitForStagingWarmMaterialization(input: {
       });
 
       if (!row) {
-        pending += 1;
-        remaining.push({
-          sourceKind: identity.sourceKind,
-          sourceRecordId: identity.sourceRecordId,
-          sourceVersion: identity.sourceVersion,
-          targetLanguage: identity.targetLanguage,
-          state: "MISSING",
-        });
+        const disposition = await outboxDispositionFor(identity);
+        if (disposition === "failed") {
+          terminalFailed += 1;
+          remaining.push({
+            sourceKind: identity.sourceKind,
+            sourceRecordId: identity.sourceRecordId,
+            sourceVersion: identity.sourceVersion,
+            targetLanguage: identity.targetLanguage,
+            state: "FAILED",
+          });
+        } else {
+          pending += 1;
+          remaining.push({
+            sourceKind: identity.sourceKind,
+            sourceRecordId: identity.sourceRecordId,
+            sourceVersion: identity.sourceVersion,
+            targetLanguage: identity.targetLanguage,
+            state: disposition === "pending" ? "PENDING" : "MISSING",
+          });
+        }
         continue;
       }
 
@@ -468,14 +502,26 @@ export async function waitForStagingWarmMaterialization(input: {
       }
 
       if (row.stale || row.freshness === "stale") {
-        pending += 1;
-        remaining.push({
-          sourceKind: identity.sourceKind,
-          sourceRecordId: identity.sourceRecordId,
-          sourceVersion: identity.sourceVersion,
-          targetLanguage: identity.targetLanguage,
-          state: "STALE",
-        });
+        const disposition = await outboxDispositionFor(identity);
+        if (disposition === "failed") {
+          terminalFailed += 1;
+          remaining.push({
+            sourceKind: identity.sourceKind,
+            sourceRecordId: identity.sourceRecordId,
+            sourceVersion: identity.sourceVersion,
+            targetLanguage: identity.targetLanguage,
+            state: "FAILED",
+          });
+        } else {
+          pending += 1;
+          remaining.push({
+            sourceKind: identity.sourceKind,
+            sourceRecordId: identity.sourceRecordId,
+            sourceVersion: identity.sourceVersion,
+            targetLanguage: identity.targetLanguage,
+            state: disposition === "pending" ? "PENDING" : "STALE",
+          });
+        }
         continue;
       }
 
@@ -503,6 +549,17 @@ export async function waitForStagingWarmMaterialization(input: {
       };
     }
 
+    // Pack 08J — do not wait forever when only terminal failures remain.
+    if (pending === 0 && retrying === 0 && terminalFailed > 0) {
+      return {
+        timedOut: false,
+        elapsedMs: Date.now() - started,
+        remainingMissingOrStale: remaining,
+        currentCount: current,
+        progress: lastProgress,
+      };
+    }
+
     if (Date.now() - started >= timeoutMs) {
       lastProgress = { ...lastProgress, timedOut: remaining.length };
       input.onProgress?.(lastProgress);
@@ -515,6 +572,9 @@ export async function waitForStagingWarmMaterialization(input: {
       };
     }
 
-    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, pollIntervalMs);
+      timer.unref?.();
+    });
   }
 }

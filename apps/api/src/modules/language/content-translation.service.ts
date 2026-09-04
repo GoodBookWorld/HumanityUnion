@@ -35,6 +35,7 @@ import {
 import {
   assertCanonicalSourceEligibleForTranslation,
   isRedundantTargetLanguage,
+  sanitizeFieldsForAutomaticTranslation,
   type CanonicalTranslatableSourceEligibility,
 } from "./content-translation-eligibility.js";
 import {
@@ -336,6 +337,11 @@ export async function getOrCreateContentTranslation(input: {
     intent,
   });
 
+  const providerFields = sanitizeFieldsForAutomaticTranslation({
+    sourceKind: source.sourceKind,
+    fields: source.fields,
+  });
+
   const provider = resolveTranslationProvider();
   let terminologyContext: string;
   try {
@@ -351,7 +357,7 @@ export async function getOrCreateContentTranslation(input: {
     provider.translate({
       sourceLanguage: source.sourceLanguage,
       targetLanguage,
-      text: JSON.stringify(source.fields),
+      text: JSON.stringify(providerFields),
       contentType: "structured_json",
       sourceRecordId: source.sourceRecordId,
       sourceVersion: source.sourceVersion,
@@ -370,25 +376,25 @@ export async function getOrCreateContentTranslation(input: {
     );
   }
 
-  // Pack 02G Task 07C / 07E.1 — drop invented keys; reject all-unchanged prose;
-  // require designated civic title/heading fields to differ for cross-language.
+  // Pack 02G Task 07C / 07E.1 / 08J — keep AUTO_TRANSLATABLE projection keys;
+  // reject all-unchanged prose; require civic title fields to differ.
   translatedFields = filterTranslatedFieldsToSourceAllowlist({
     sourceKind: source.sourceKind,
-    sourceFields: source.fields,
+    sourceFields: providerFields,
     translatedFields,
   });
   assertTranslatedProseChangedFromSource({
     sourceKind: source.sourceKind,
     sourceLanguage: source.sourceLanguage,
     targetLanguage,
-    sourceFields: source.fields,
+    sourceFields: providerFields,
     translatedFields,
   });
   assertCivicTitleFieldsTranslatedFromSource({
     sourceKind: source.sourceKind,
     sourceLanguage: source.sourceLanguage,
     targetLanguage,
-    sourceFields: source.fields,
+    sourceFields: providerFields,
     translatedFields,
   });
 

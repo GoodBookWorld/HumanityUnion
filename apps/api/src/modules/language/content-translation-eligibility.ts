@@ -1,8 +1,10 @@
 /**
- * Pack 02G Task 02 — canonical source eligibility for content translation.
+ * Pack 02G Task 02 / 08J — canonical source eligibility for content translation.
  *
- * Same public/safety gates apply to on-demand generation and automatic warming.
- * Warming must not bypass published/public field allowlists or safetyCleared.
+ * Pack 08J: participant-facing semantic fields are AUTO_TRANSLATABLE by default.
+ * CONTENT_TRANSLATION_FIELD_ALLOWLIST is a compatibility shim (unioned with
+ * projection keys), not the presentation enrollment gate. NON_TRANSLATABLE
+ * policy is the exclusion boundary for provider payloads.
  *
  * Private surfaces (DMs, Participant PII, auth, shipping, admin notes, moderation,
  * drafts, raw events, secrets, Official Response raw headers, Civic Archive
@@ -16,10 +18,17 @@ import type {
   LanguageCode,
 } from "@hu/types";
 
+import {
+  assertSafeForAutomaticTranslation,
+  resolveAutomaticTranslationFieldKeys,
+  stripNonTranslatableKeys,
+} from "./non-translatable-policy.js";
 import { TranslationProviderError } from "./translation.config.js";
 
 /**
- * Exact public fields permitted in the provider payload per sourceKind.
+ * Compatibility field shim per sourceKind (Pack 08J — not the primary gate).
+ * New projection keys are accepted when present on the loaded source bag and
+ * not NON_TRANSLATABLE, without editing this map.
  */
 export const CONTENT_TRANSLATION_FIELD_ALLOWLIST = {
   initiative: ["title", "description"],
@@ -210,19 +219,54 @@ export function isPrivacyExcludedTranslationSurface(value: string): boolean {
   return (CONTENT_TRANSLATION_PRIVACY_EXCLUSIONS as readonly string[]).includes(value);
 }
 
+/**
+ * Pack 08J — projection fields minus NON_TRANSLATABLE; compatibility allowlist
+ * is unioned. Rejects only when no AUTO_TRANSLATABLE fields remain.
+ * NON_TRANSLATABLE keys on the source bag are stripped, not fatal.
+ */
 export function assertPublicFieldsAllowlisted(input: {
   readonly sourceKind: ContentTranslationSourceKind;
   readonly fields: Readonly<Record<string, string>>;
 }): void {
-  const allowlist = new Set(CONTENT_TRANSLATION_FIELD_ALLOWLIST[input.sourceKind] as readonly string[]);
-  for (const key of Object.keys(input.fields)) {
-    if (!allowlist.has(key)) {
-      throw new TranslationProviderError(
-        "forbidden",
-        `Field "${key}" is not eligible for content translation on ${input.sourceKind}.`,
-      );
+  const sanitized = stripNonTranslatableKeys(input.fields);
+  assertSafeForAutomaticTranslation(sanitized);
+  const eligible = resolveAutomaticTranslationFieldKeys({
+    sourceFields: sanitized,
+    compatibilityAllowlist:
+      CONTENT_TRANSLATION_FIELD_ALLOWLIST[input.sourceKind] as readonly string[],
+  });
+  if (Object.keys(input.fields).length > 0 && eligible.length === 0) {
+    throw new TranslationProviderError(
+      "forbidden",
+      `No AUTO_TRANSLATABLE fields remain for ${input.sourceKind} after NON_TRANSLATABLE exclusion.`,
+    );
+  }
+}
+
+/**
+ * Sanitize a loaded source field bag for provider input: strip NON_TRANSLATABLE
+ * keys and private-shaped values. Projection keys are kept by default.
+ */
+export function sanitizeFieldsForAutomaticTranslation(input: {
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly fields: Readonly<Record<string, string>>;
+}): Record<string, string> {
+  const stripped = stripNonTranslatableKeys(input.fields);
+  const eligibleKeys = new Set(
+    resolveAutomaticTranslationFieldKeys({
+      sourceFields: stripped,
+      compatibilityAllowlist:
+        CONTENT_TRANSLATION_FIELD_ALLOWLIST[input.sourceKind] as readonly string[],
+    }),
+  );
+  const out: Record<string, string> = {};
+  for (const key of eligibleKeys) {
+    const value = stripped[key];
+    if (typeof value === "string") {
+      out[key] = value;
     }
   }
+  return out;
 }
 
 /**

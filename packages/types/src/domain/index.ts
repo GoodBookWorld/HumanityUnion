@@ -204,6 +204,7 @@ export type {
 } from "./localization-ownership.js";
 export {
   DEFAULT_LOCALIZABLE_RULE,
+  LOCALIZATION_OWNERSHIP_SYNONYMS,
   LOCALIZATION_RESOLUTION_PRIORITY,
 } from "./localization-ownership.js";
 export type { ApproximateIpGeography, ApproximateIpGeographySource } from "./ip-geography.js";

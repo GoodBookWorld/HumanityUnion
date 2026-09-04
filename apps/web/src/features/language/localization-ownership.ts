@@ -121,6 +121,17 @@ export const NON_TRANSLATABLE_FIELD_KEYS = [
   "verificationState",
   "lifecycleProfile",
   "publicStatus",
+  // Pack 08J — identity / contact
+  "name",
+  "displayName",
+  "authorDisplayName",
+  "uniqueName",
+  "username",
+  "candidateName",
+  "organizationName",
+  "phone",
+  "phoneNumber",
+  "emailAddress",
 ] as const;
 
 export function isRegisteredNonTranslatableFieldKey(fieldKey: string): boolean {

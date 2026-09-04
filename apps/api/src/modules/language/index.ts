@@ -97,8 +97,26 @@ export {
   isPublicContentTranslationSourceKind,
   isRedundantTargetLanguage,
   isSupportedContentTranslationSourceKind,
+  sanitizeFieldsForAutomaticTranslation,
 } from "./content-translation-eligibility.js";
 export type { CanonicalTranslatableSourceEligibility } from "./content-translation-eligibility.js";
+export {
+  NON_TRANSLATABLE_FIELD_KEYS,
+  assertSafeForAutomaticTranslation,
+  isNonTranslatableFieldKey,
+  looksLikeNonTranslatableValue,
+  resolveAutomaticTranslationFieldKeys,
+  stripNonTranslatableKeys,
+} from "./non-translatable-policy.js";
+export {
+  applyTranslatedPresentationFields,
+  flattenTranslatablePresentationFields,
+  walkTranslatablePresentation,
+} from "./translate-presentation.js";
+export type {
+  PresentationProjectionValue,
+  TranslatePresentationString,
+} from "./translate-presentation.js";
 export {
   isCivicMediaTranslationRecordId,
   loadCivicArchiveTranslationSource,
@@ -179,12 +197,17 @@ export {
   buildContentTranslationWarmEventId,
   enqueueContentTranslationWarmRequested,
   listContentTranslationWarmMemoryPendingForTests,
+  markContentTranslationWarmMemoryFailedForTests,
   markContentTranslationWarmMemoryPublishedForTests,
   resetContentTranslationWarmMemoryForTests,
+  resolveContentTranslationWarmOutboxDisposition,
   scheduleContentTranslationWarmAfterMutation,
   setContentTranslationWarmForceMemoryForTests,
 } from "./content-translation-warm-enqueue.js";
-export type { ContentTranslationWarmEnqueueResult } from "./content-translation-warm-enqueue.js";
+export type {
+  ContentTranslationWarmEnqueueResult,
+  ContentTranslationWarmOutboxDisposition,
+} from "./content-translation-warm-enqueue.js";
 export {
   CONTENT_TRANSLATION_WARM_CONSUMER_ID,
   handleContentTranslationWarmRequestedEvent,

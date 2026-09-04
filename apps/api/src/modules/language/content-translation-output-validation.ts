@@ -1,5 +1,5 @@
 /**
- * Pack 02G Task 07C / 07E.1 — post-provider structured translation validation
+ * Pack 02G Task 07C / 07E.1 / 08J — post-provider structured translation validation
  * before persistence.
  */
 
@@ -9,6 +9,10 @@ import {
   CONTENT_TRANSLATION_CIVIC_TITLE_FIELDS,
   CONTENT_TRANSLATION_FIELD_ALLOWLIST,
 } from "./content-translation-eligibility.js";
+import {
+  isNonTranslatableFieldKey,
+  resolveAutomaticTranslationFieldKeys,
+} from "./non-translatable-policy.js";
 import { TranslationProviderError } from "./translation.config.js";
 
 /**
@@ -27,8 +31,11 @@ export function assertTranslatedProseChangedFromSource(input: {
     return;
   }
 
-  const allowlist = CONTENT_TRANSLATION_FIELD_ALLOWLIST[input.sourceKind] as readonly string[];
-  const eligibleKeys = allowlist.filter((key) => {
+  const eligibleKeys = resolveAutomaticTranslationFieldKeys({
+    sourceFields: input.sourceFields,
+    compatibilityAllowlist:
+      CONTENT_TRANSLATION_FIELD_ALLOWLIST[input.sourceKind] as readonly string[],
+  }).filter((key) => {
     const sourceValue = input.sourceFields[key];
     return typeof sourceValue === "string" && sourceValue.trim().length > 0;
   });
@@ -90,26 +97,34 @@ export function assertCivicTitleFieldsTranslatedFromSource(input: {
 }
 
 /**
- * Keep only allowlisted keys that already exist on the source payload.
- * Prevents inventing fields; display merge already ignores unknown keys.
+ * Keep only source projection keys that are AUTO_TRANSLATABLE.
+ * Pack 08J — unknown semantic keys on the source bag are kept without a
+ * central allowlist edit; NON_TRANSLATABLE keys and invented keys are dropped.
  */
 export function filterTranslatedFieldsToSourceAllowlist(input: {
   readonly sourceKind: ContentTranslationSourceKind;
   readonly sourceFields: Readonly<Record<string, string>>;
   readonly translatedFields: Readonly<Record<string, string>>;
 }): Record<string, string> {
-  const allowlist = new Set(
-    CONTENT_TRANSLATION_FIELD_ALLOWLIST[input.sourceKind] as readonly string[],
+  const eligible = new Set(
+    resolveAutomaticTranslationFieldKeys({
+      sourceFields: input.sourceFields,
+      compatibilityAllowlist:
+        CONTENT_TRANSLATION_FIELD_ALLOWLIST[input.sourceKind] as readonly string[],
+    }),
   );
   const filtered: Record<string, string> = {};
   for (const [key, value] of Object.entries(input.translatedFields)) {
     if (typeof value !== "string") {
       continue;
     }
-    if (!allowlist.has(key)) {
+    if (isNonTranslatableFieldKey(key)) {
       continue;
     }
     if (!(key in input.sourceFields)) {
+      continue;
+    }
+    if (!eligible.has(key)) {
       continue;
     }
     filtered[key] = value;
