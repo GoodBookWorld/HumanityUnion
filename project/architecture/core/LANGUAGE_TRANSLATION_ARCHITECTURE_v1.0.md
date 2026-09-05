@@ -775,3 +775,20 @@ Non-mutating retry preflight (`--explain-residuals`) reports `retryPreflight.rea
 
 Known validation codes (`UNCHANGED_CIVIC_TITLE`, `UNCHANGED_SOURCE_PROSE`, …) remain blocked until a concrete code/content fix. Future warm failures persist `CT_FAIL_META_V1:` safe metadata on outbox `lastError`.
 
+---
+
+## Pack 08K.2.2 — Gated residual retry operator
+
+```
+pnpm --filter @hu/api reconcile:public-localization -- --mongo --retry-ready-residuals
+ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true \
+  pnpm --filter @hu/api reconcile:public-localization -- --mongo --execute --retry-ready-residuals \
+    --wait-for-materialization --timeout-ms=600000
+```
+
+- Selection uses exclusively `selectReadyPresentationsForResidualRetry` / `retryPreflight.ready` — never full-corpus `uniquePresentationsRequiringWork`.
+- Execute requires `--mongo` + `--execute` + `--retry-ready-residuals` + `ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true` + database `humanity_union_staging`; production refused.
+- Warm command may carry optional `targetLocales` so residual fan-out processes only ready identities; CURRENT/blocked locales are not provider-called.
+- Historical FAILED outbox rows are not globally cleared; new `operator_residual_retry` work is enqueued for approved `architectureRetryBasis` only.
+- Wait observes `RETRY_SELECTED_IDENTITIES` only. Final `POST_*` counters come from a fresh corpus audit (never the pre-execution snapshot). Zero-fallback success requires `POST_CANONICAL_FALLBACK_NODES === 0` from that fresh audit.
+

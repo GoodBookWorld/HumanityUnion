@@ -12,6 +12,7 @@ import type {
   ContentTranslationSourceKind,
   ContentTranslationWarmReason,
   ContentTranslationWarmRequestedCommand,
+  LanguageCode,
 } from "@hu/types";
 import { CONTENT_TRANSLATION_WARM_REQUESTED } from "@hu/types";
 
@@ -119,6 +120,8 @@ export async function enqueueContentTranslationWarmRequested(
     readonly sourceRecordId: string;
     readonly reason?: ContentTranslationWarmReason;
     readonly requestedAt?: string;
+    /** Pack 08K.2.2 — constrain consumer locale fan-out (residual retry). */
+    readonly targetLocales?: readonly LanguageCode[];
   },
   options: EnqueueOutboxOptions = {},
 ): Promise<ContentTranslationWarmEnqueueResult> {
@@ -187,6 +190,9 @@ export async function enqueueContentTranslationWarmRequested(
           sourceRecordId: command.sourceRecordId,
           requestedAt: command.requestedAt,
           reason: command.reason,
+          ...(command.targetLocales?.length
+            ? { targetLocales: command.targetLocales }
+            : {}),
         },
         occurredAt: command.requestedAt,
       }),
@@ -301,20 +307,33 @@ export async function resolveContentTranslationWarmOutboxDisposition(input: {
     if (pending?.status === "pending") {
       return "pending";
     }
-    let sawPublished = false;
+    // Pack 08K.2.2 — prefer the latest event for this aggregate. An older
+    // FAILED must not mask a newer residual-retry published/pending outcome.
+    let latest: MemoryWarmOutboxRecord | null = null;
     for (const record of memoryRecordsByEventId.values()) {
       const id = buildContentTranslationWarmAggregateId(record.command);
       if (id !== aggregateId) {
         continue;
       }
-      if (record.status === "failed") {
-        return "failed";
-      }
-      if (record.status === "published") {
-        sawPublished = true;
+      if (
+        !latest ||
+        record.command.requestedAt > latest.command.requestedAt ||
+        (record.command.requestedAt === latest.command.requestedAt &&
+          record.eventId > latest.eventId)
+      ) {
+        latest = record;
       }
     }
-    return sawPublished ? "published" : "none";
+    if (!latest) {
+      return "none";
+    }
+    if (latest.status === "failed") {
+      return "failed";
+    }
+    if (latest.status === "published") {
+      return "published";
+    }
+    return "none";
   }
 
   const collection = getMongoCollection<{
@@ -334,21 +353,25 @@ export async function resolveContentTranslationWarmOutboxDisposition(input: {
     return "pending";
   }
 
-  const failed = await collection.findOne({
-    status: "failed",
-    eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
-    aggregateId,
-  });
-  if (failed) {
+  // Latest terminal/published row for this aggregate (residual retry safe).
+  const latest = await collection.findOne(
+    {
+      eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
+      aggregateId,
+      status: { $in: ["failed", "published"] },
+    },
+    { sort: { updatedAt: -1, createdAt: -1 } },
+  );
+  if (!latest) {
+    return "none";
+  }
+  if (latest.status === "failed") {
     return "failed";
   }
-
-  const published = await collection.findOne({
-    status: "published",
-    eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
-    aggregateId,
-  });
-  return published ? "published" : "none";
+  if (latest.status === "published") {
+    return "published";
+  }
+  return "none";
 }
 
 /**

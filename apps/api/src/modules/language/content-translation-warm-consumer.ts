@@ -107,12 +107,24 @@ function parseWarmCommand(
     throw new TranslationProviderError("bad_request", "Invalid warm request requestedAt.");
   }
 
+  const targetLocales = Array.isArray(payload.targetLocales)
+    ? ([
+        ...new Set(
+          payload.targetLocales
+            .filter((locale): locale is string => typeof locale === "string")
+            .map((locale) => locale.trim())
+            .filter(Boolean),
+        ),
+      ] as LanguageCode[])
+    : undefined;
+
   return {
     commandName: CONTENT_TRANSLATION_WARM_REQUESTED,
     sourceKind: sourceKind as ContentTranslationSourceKind,
     sourceRecordId: sourceRecordId.trim(),
     requestedAt,
     reason: (typeof reason === "string" ? reason : "public_mutation") as ContentTranslationWarmReason,
+    ...(targetLocales?.length ? { targetLocales } : {}),
   };
 }
 
@@ -205,10 +217,23 @@ export async function processContentTranslationWarmRequested(
     };
   }
 
-  const { registryCandidates, warmTargetLocales: targets } =
+  const { registryCandidates, warmTargetLocales: registryTargets } =
     await resolveAutomaticContentTranslationWarmTargets({
       excludeSourceLanguage: source.sourceLanguage,
     });
+
+  // Pack 08K.2.2 — residual retry may constrain fan-out to ready locales only.
+  let targets = registryTargets;
+  if (command.targetLocales?.length) {
+    const allowed = new Set(command.targetLocales);
+    targets = registryTargets.filter((locale) => allowed.has(locale));
+    if (targets.length === 0) {
+      throw new TranslationProviderError(
+        "bad_request",
+        "Residual retry targetLocales empty after Registry automatic-target intersection.",
+      );
+    }
+  }
 
   logger.info("content_translation.warm.target_resolution", {
     ...buildContentTranslationWarmTargetDiagnostic({
@@ -219,6 +244,7 @@ export async function processContentTranslationWarmRequested(
       registryCandidates,
       warmTargetLocales: targets,
     }),
+    targetLocalesConstrained: Boolean(command.targetLocales?.length),
   });
 
   const concurrency = resolveContentTranslationWarmLocaleConcurrency();

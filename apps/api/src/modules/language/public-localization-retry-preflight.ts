@@ -353,31 +353,80 @@ export async function explainPublicLocalizationResidualsWithPreflight(input: {
 }
 
 /**
- * Presentations that may be enqueued on a future gated execute
- * (ready residual identities only). Does not enqueue.
+ * Presentations that may be enqueued on a gated residual retry execute
+ * (ready residual identities only). Groups ready locales per presentation
+ * so fan-out stays locale-precise. Does not enqueue.
  */
-export function selectReadyPresentationsForResidualRetry(
-  selection: PublicLocalizationRetrySelection,
-): readonly {
+export type ResidualRetryPresentationSchedule = {
   readonly sourceKind: ContentTranslationSourceKind;
   readonly sourceRecordId: string;
-}[] {
-  const seen = new Set<string>();
-  const out: {
-    sourceKind: ContentTranslationSourceKind;
-    sourceRecordId: string;
-  }[] = [];
+  readonly targetLocales: readonly LanguageCode[];
+  readonly readyIdentityCount: number;
+  readonly architectureRetryBases: readonly string[];
+};
+
+export function selectReadyPresentationsForResidualRetry(
+  selection: PublicLocalizationRetrySelection,
+): readonly ResidualRetryPresentationSchedule[] {
+  const byPresentation = new Map<string, ResidualRetryPresentationSchedule>();
+
   for (const row of selection.ready) {
-    const key = `${row.presentationIdentity.sourceKind}::${row.presentationIdentity.sourceRecordId}`;
-    if (seen.has(key)) {
+    if (!row.retryPreflight.ready) {
       continue;
     }
-    seen.add(key);
-    out.push({
-      sourceKind: row.presentationIdentity
-        .sourceKind as ContentTranslationSourceKind,
+    const key = `${row.presentationIdentity.sourceKind}::${row.presentationIdentity.sourceRecordId}`;
+    const existing = byPresentation.get(key);
+    const basis = row.retryPreflight.architectureRetryBasis;
+    if (existing) {
+      const locales = new Set(existing.targetLocales);
+      locales.add(row.targetLocale);
+      const bases = new Set(existing.architectureRetryBases);
+      if (basis) {
+        bases.add(basis);
+      }
+      byPresentation.set(key, {
+        sourceKind: existing.sourceKind,
+        sourceRecordId: existing.sourceRecordId,
+        targetLocales: [...locales].sort((a, b) => a.localeCompare(b)) as LanguageCode[],
+        readyIdentityCount: existing.readyIdentityCount + 1,
+        architectureRetryBases: [...bases].sort((a, b) => a.localeCompare(b)),
+      });
+      continue;
+    }
+    byPresentation.set(key, {
+      sourceKind: row.presentationIdentity.sourceKind as ContentTranslationSourceKind,
       sourceRecordId: row.presentationIdentity.sourceRecordId,
+      targetLocales: [row.targetLocale],
+      readyIdentityCount: 1,
+      architectureRetryBases: basis ? [basis] : [],
     });
   }
-  return out;
+
+  return [...byPresentation.values()].sort((a, b) => {
+    const kind = a.sourceKind.localeCompare(b.sourceKind);
+    if (kind !== 0) {
+      return kind;
+    }
+    return a.sourceRecordId.localeCompare(b.sourceRecordId);
+  });
+}
+
+/**
+ * Convert ready residual rows into wait/work identities (locale-precise).
+ */
+export function selectedReadyWorkItemsFromResiduals(
+  ready: readonly PublicLocalizationResidualWithPreflight[],
+): PublicLocalizationWorkItem[] {
+  return ready
+    .filter((row) => row.retryPreflight.ready)
+    .map((row) => ({
+      sourceKind: row.presentationIdentity.sourceKind as ContentTranslationSourceKind,
+      sourceRecordId: row.presentationIdentity.sourceRecordId,
+      sourceVersion: "unloaded",
+      targetLanguage: row.targetLocale,
+      state: "MISSING" as const,
+      autoNodeCount: 0,
+      missingOrStaleNodeCount: 0,
+      fallbackPaths: [],
+    }));
 }

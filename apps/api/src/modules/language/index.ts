@@ -213,6 +213,14 @@ export type {
   PublicLocalizationResidualExplanation,
 } from "./public-localization-reconciliation.js";
 export {
+  runPublicLocalizationResidualRetry,
+  auditPublicLocalizationCorpusPostRetry,
+} from "./public-localization-residual-retry.js";
+export type {
+  PublicLocalizationResidualRetryMode,
+  PublicLocalizationResidualRetryResult,
+} from "./public-localization-residual-retry.js";
+export {
   getContentTranslationWorkerInFlightForTests,
   getContentTranslationWorkerPeakConcurrencyForTests,
   resetContentTranslationWorkerConcurrencyForTests,
@@ -290,11 +298,13 @@ export {
   buildPublicLocalizationRetryPreflight,
   explainPublicLocalizationResidualsWithPreflight,
   selectReadyPresentationsForResidualRetry,
+  selectedReadyWorkItemsFromResiduals,
 } from "./public-localization-retry-preflight.js";
 export type {
   PublicLocalizationResidualWithPreflight,
   PublicLocalizationRetryPreflight,
   PublicLocalizationRetrySelection,
+  ResidualRetryPresentationSchedule,
 } from "./public-localization-retry-preflight.js";
 export {
   mapWithConcurrency,

@@ -1,28 +1,35 @@
 /**
- * Pack 08K.1 — historical PublicLocalizedPresentation reconciliation operator.
+ * Pack 08K.1 / 08K.2.2 — historical PublicLocalizedPresentation reconciliation
+ * + gated residual retry operator.
  *
  * Defaults to READ-ONLY dry-run. Shares discovery with diagnose:public-localization.
  *
  * Modes:
  *   (default)                         dry-run coverage + work-item report
  *   --explain-residuals               dry-run + safe residual identity diagnostics
+ *   --retry-ready-residuals           residual-retry selection (dry-run unless --execute)
  *   --execute                         enqueue warms (requires staging gate)
  *   --wait-for-materialization        after execute, poll compact identities
  *   --timeout-ms=<n>                  wait timeout (default 300000)
  *
- * Execute requires ALL of:
- *   ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true
+ * Full-corpus execute (--execute without --retry-ready-residuals) uses
+ * uniquePresentationsRequiringWork. Residual execute uses ONLY
+ * selectReadyPresentationsForResidualRetry — never falls back to full corpus.
+ *
+ * Residual execute requires ALL of:
+ *   --mongo
  *   --execute
+ *   --retry-ready-residuals
+ *   ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true
  *   Mongo database name === humanity_union_staging
  *   PLATFORM_MODE is not production
  *
  * Usage (from apps/api):
  *   pnpm reconcile:public-localization -- --mongo
  *   pnpm reconcile:public-localization -- --mongo --explain-residuals
+ *   pnpm reconcile:public-localization -- --mongo --retry-ready-residuals
  *   ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true \
- *     pnpm reconcile:public-localization -- --mongo --execute
- *   ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true \
- *     pnpm reconcile:public-localization -- --mongo --execute \
+ *     pnpm reconcile:public-localization -- --mongo --execute --retry-ready-residuals \
  *       --wait-for-materialization --timeout-ms=600000
  *
  * Never prints MONGODB_URI / passwords / API keys / translated bodies.
@@ -45,6 +52,10 @@ import {
   runPublicLocalizationReconciliation,
   waitForPublicLocalizationMaterialization,
 } from "../modules/language/public-localization-reconciliation.js";
+import {
+  auditPublicLocalizationCorpusPostRetry,
+  runPublicLocalizationResidualRetry,
+} from "../modules/language/public-localization-residual-retry.js";
 import { explainPublicLocalizationResidualsWithPreflight } from "../modules/language/public-localization-retry-preflight.js";
 import type { StagingWarmSourceKind } from "../modules/language/content-translation-staging-warm-backfill.js";
 
@@ -63,6 +74,14 @@ function isWaitForMaterializationRequested(): boolean {
 
 function isExplainResidualsRequested(): boolean {
   return process.argv.includes("--explain-residuals");
+}
+
+function isRetryReadyResidualsRequested(): boolean {
+  return process.argv.includes("--retry-ready-residuals");
+}
+
+function isMongoFlagRequested(): boolean {
+  return process.argv.includes("--mongo");
 }
 
 function parseTimeoutMs(): number {
@@ -89,11 +108,20 @@ function parseKinds(): StagingWarmSourceKind[] | undefined {
 
 function assertReconciliationGuards(input: {
   readonly execute: boolean;
+  readonly retryReadyResiduals: boolean;
+  readonly mongoFlag: boolean;
   readonly databaseName: string | null;
 }): void {
   if (!input.execute) {
     return;
   }
+
+  if (input.retryReadyResiduals && !input.mongoFlag) {
+    throw new Error(
+      "Refusing residual retry execute: --mongo is required with --execute --retry-ready-residuals.",
+    );
+  }
+
   if (process.env[ALLOW_FLAG] !== "true") {
     throw new Error(
       `Refusing execute: set ${ALLOW_FLAG}=true to confirm staging public localization reconciliation.`,
@@ -120,9 +148,10 @@ async function main(): Promise<void> {
   const execute = isExecuteModeRequested();
   const waitForMaterialization = isWaitForMaterializationRequested();
   const explainResiduals = isExplainResidualsRequested();
+  const retryReadyResiduals = isRetryReadyResidualsRequested();
+  const mongoFlag = isMongoFlagRequested();
   const kinds = parseKinds();
   const timeoutMs = parseTimeoutMs();
-  const wantMongo = process.argv.includes("--mongo") || true;
 
   if (execute && explainResiduals) {
     throw new Error("--explain-residuals is READ-ONLY; omit --execute.");
@@ -132,17 +161,242 @@ async function main(): Promise<void> {
     throw new Error("MONGODB_URI is not configured.");
   }
 
-  // --mongo is the real-corpus path; keep flag for diagnose parity.
-  void wantMongo;
-
   const mongo = resolveMongoConfig();
-  assertReconciliationGuards({ execute, databaseName: mongo.database });
+  assertReconciliationGuards({
+    execute,
+    retryReadyResiduals,
+    mongoFlag,
+    databaseName: mongo.database,
+  });
 
   const bootstrap = await bootstrapContentTranslationOperatorPersistence();
   const discoveryExpectation = resolveStagingWarmDiscoveryExpectation({
     databaseName: mongo.database,
   });
 
+  // Pack 08K.2.2 — residual path never uses full-corpus enqueue selection.
+  if (retryReadyResiduals) {
+    // Phase 1: non-mutating selection (ALWAYS before any enqueue).
+    const plan = await runPublicLocalizationResidualRetry({
+      execute: false,
+      kinds,
+    });
+
+    assertStagingWarmDiscoveryNotSilentlyEmpty({
+      expectation: discoveryExpectation,
+      discoveryByKind: plan.preAudit.discoveryByKind,
+      discoveryHint: plan.preAudit.discoveryHint,
+      localeTargetsAudited: plan.preAudit.totals.TARGET_TRANSLATION_IDENTITIES,
+    });
+
+    if (plan.preAudit.discoveryStatus === "FAILED") {
+      throw new StagingContentTranslationDiscoveryFailure(
+        "Public localization residual retry discovery FAILED — refusing success report.",
+        {
+          SOURCE_RECORDS_DISCOVERED: plan.preAudit.discoveryByKind.reduce(
+            (sum, row) => sum + row.sourceRecordsDiscovered,
+            0,
+          ),
+          PUBLIC_RECORDS: plan.preAudit.discoveryByKind.reduce(
+            (sum, row) => sum + row.publicRecords,
+            0,
+          ),
+          ELIGIBLE_SOURCE_RECORDS: plan.preAudit.candidates.length,
+          LOCALE_TARGETS_AUDITED: plan.preAudit.totals.TARGET_TRANSLATION_IDENTITIES,
+          byKind: [...plan.preAudit.discoveryByKind],
+          discoveryHint: plan.preAudit.discoveryHint,
+        },
+      );
+    }
+
+    console.log(
+      JSON.stringify(
+        {
+          pack: "08K.2.2",
+          operation: "retry_ready_residuals_selection",
+          mode: "dry-run",
+          RETRY_READY_IDENTITIES: plan.RETRY_READY_IDENTITIES,
+          RETRY_BLOCKED_IDENTITIES: plan.RETRY_BLOCKED_IDENTITIES,
+          RETRY_SELECTED_IDENTITIES: plan.RETRY_SELECTED_IDENTITIES,
+          presentationsToEnqueue: plan.presentationsToEnqueue,
+          presentationGroupingExplained: plan.presentationGroupingExplained,
+          selectedIdentities: plan.selectedIdentities,
+          blockedIdentities: plan.blockedIdentities,
+          abortReason: plan.abortReason,
+          note: "Selection before mutation — zero provider calls, zero DB/outbox writes.",
+        },
+        null,
+        2,
+      ),
+    );
+
+    if (plan.abortReason) {
+      process.exitCode = 1;
+      return;
+    }
+
+    if (!execute) {
+      console.log(
+        JSON.stringify(
+          {
+            pack: "08K.2.2",
+            operation: "retry_ready_residuals",
+            mode: "dry-run",
+            database: mongo.database,
+            persistenceBootstrap: bootstrap.mode,
+            DISCOVERY_STATUS: plan.preAudit.discoveryStatus,
+            PRE_TOTAL_SEMANTIC_NODES: plan.preAudit.totals.TOTAL_SEMANTIC_NODES,
+            PRE_CURRENT_LOCALIZED_NODES: plan.preAudit.totals.CURRENT_LOCALIZED_NODES,
+            PRE_CANONICAL_FALLBACK_NODES: plan.preAudit.totals.CANONICAL_FALLBACK_NODES,
+            PRE_WORK_ITEMS_REQUIRED: plan.preAudit.totals.WORK_ITEMS_REQUIRED,
+            RETRY_READY_IDENTITIES: plan.RETRY_READY_IDENTITIES,
+            RETRY_BLOCKED_IDENTITIES: plan.RETRY_BLOCKED_IDENTITIES,
+            RETRY_SELECTED_IDENTITIES: plan.RETRY_SELECTED_IDENTITIES,
+            presentationsScheduled: 0,
+            materialization: null,
+            POST_TOTAL_SEMANTIC_NODES: null,
+            POST_CURRENT_LOCALIZED_NODES: null,
+            POST_CANONICAL_FALLBACK_NODES: null,
+            POST_WORK_ITEMS_REQUIRED: null,
+            POST_RETRY_READY_IDENTITIES: null,
+            POST_RETRY_BLOCKED_IDENTITIES: null,
+            universalCorpusSuccessClaimed: false,
+            note: "DRY RUN — selection only. Pass --execute with all staging gates to enqueue.",
+          },
+          null,
+          2,
+        ),
+      );
+      if (plan.preAudit.discoveryStatus === "PARTIAL") {
+        process.exitCode = 2;
+      }
+      return;
+    }
+
+    // Phase 2: recompute preflight immediately before enqueue (execute gates already passed).
+    const residual = await runPublicLocalizationResidualRetry({
+      execute: true,
+      kinds,
+    });
+
+    if (residual.abortReason) {
+      console.log(
+        JSON.stringify({
+          pack: "08K.2.2",
+          operation: "retry_ready_residuals",
+          mode: "execute",
+          fatal: true,
+          abortReason: residual.abortReason,
+          RETRY_READY_IDENTITIES: residual.RETRY_READY_IDENTITIES,
+          RETRY_BLOCKED_IDENTITIES: residual.RETRY_BLOCKED_IDENTITIES,
+          RETRY_SELECTED_IDENTITIES: residual.RETRY_SELECTED_IDENTITIES,
+        }),
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    let materialization: Awaited<
+      ReturnType<typeof waitForPublicLocalizationMaterialization>
+    > | null = null;
+
+    if (waitForMaterialization && residual.selectedWorkItems.length > 0) {
+      materialization = await waitForPublicLocalizationMaterialization({
+        workItems: residual.selectedWorkItems,
+        timeoutMs,
+        onProgress: (progress) => {
+          console.log(
+            JSON.stringify({
+              pack: "08K.2.2",
+              operation: "wait_for_materialization_progress",
+              ...progress,
+            }),
+          );
+        },
+      });
+    }
+
+    // Fresh post-audit — never reuse pre-execution CURRENT/fallback snapshot.
+    const postAudit = await auditPublicLocalizationCorpusPostRetry({ kinds });
+    const postResidualSelection = await explainPublicLocalizationResidualsWithPreflight({
+      workItems: postAudit.workItems,
+    });
+
+    const postUniversalSuccess =
+      postAudit.discoveryStatus === "COMPLETE" &&
+      postAudit.totals.CANONICAL_FALLBACK_NODES === 0 &&
+      postAudit.totals.WORK_ITEMS_REQUIRED === 0 &&
+      postAudit.totals.CURRENT_LOCALIZED_NODES === postAudit.totals.TOTAL_SEMANTIC_NODES;
+
+    console.log(
+      JSON.stringify(
+        {
+          pack: "08K.2.2",
+          operation: "retry_ready_residuals",
+          mode: "execute",
+          database: mongo.database,
+          persistenceBootstrap: bootstrap.mode,
+          discoveryExpectation: discoveryExpectation.reason,
+          DISCOVERY_STATUS: residual.preAudit.discoveryStatus,
+          PRE_TOTAL_SEMANTIC_NODES: residual.preAudit.totals.TOTAL_SEMANTIC_NODES,
+          PRE_CURRENT_LOCALIZED_NODES: residual.preAudit.totals.CURRENT_LOCALIZED_NODES,
+          PRE_CANONICAL_FALLBACK_NODES: residual.preAudit.totals.CANONICAL_FALLBACK_NODES,
+          PRE_WORK_ITEMS_REQUIRED: residual.preAudit.totals.WORK_ITEMS_REQUIRED,
+          RETRY_READY_IDENTITIES: residual.RETRY_READY_IDENTITIES,
+          RETRY_BLOCKED_IDENTITIES: residual.RETRY_BLOCKED_IDENTITIES,
+          RETRY_SELECTED_IDENTITIES: residual.RETRY_SELECTED_IDENTITIES,
+          presentationsScheduled: residual.presentationsScheduled,
+          presentationsDeduped: residual.presentationsDeduped,
+          presentationsFailed: residual.presentationsFailed,
+          materialization: materialization
+            ? {
+                timedOut: materialization.timedOut,
+                elapsedMs: materialization.elapsedMs,
+                WORK_ITEMS_TOTAL: materialization.progress.WORK_ITEMS_TOTAL,
+                CURRENT: materialization.progress.CURRENT,
+                QUEUED: materialization.progress.QUEUED,
+                PROCESSING: materialization.progress.PROCESSING,
+                RETRYING: materialization.progress.RETRYING,
+                TERMINAL_FAILED: materialization.progress.TERMINAL_FAILED,
+                MISSING_AFTER_DISPATCH: materialization.progress.MISSING_AFTER_DISPATCH,
+                MISSING: materialization.progress.MISSING,
+                TIMED_OUT: materialization.progress.TIMED_OUT,
+              }
+            : null,
+          POST_TOTAL_SEMANTIC_NODES: postAudit.totals.TOTAL_SEMANTIC_NODES,
+          POST_CURRENT_LOCALIZED_NODES: postAudit.totals.CURRENT_LOCALIZED_NODES,
+          POST_CANONICAL_FALLBACK_NODES: postAudit.totals.CANONICAL_FALLBACK_NODES,
+          POST_WORK_ITEMS_REQUIRED: postAudit.totals.WORK_ITEMS_REQUIRED,
+          POST_RETRY_READY_IDENTITIES:
+            postResidualSelection.selection.RETRY_READY_IDENTITIES,
+          POST_RETRY_BLOCKED_IDENTITIES:
+            postResidualSelection.selection.RETRY_BLOCKED_IDENTITIES,
+          universalCorpusSuccessClaimed: postUniversalSuccess,
+          note:
+            "EXECUTE complete — POST_* counters are a fresh corpus audit (not the pre-execution snapshot).",
+        },
+        null,
+        2,
+      ),
+    );
+
+    if (residual.preAudit.discoveryStatus === "PARTIAL") {
+      process.exitCode = 2;
+    }
+    if (materialization?.timedOut) {
+      process.exitCode = 1;
+    }
+    if (
+      materialization &&
+      materialization.progress.TERMINAL_FAILED > 0 &&
+      materialization.progress.CURRENT < materialization.progress.WORK_ITEMS_TOTAL
+    ) {
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  // --- Full-corpus reconciliation path (Pack 08K.1) ---
   const result = await runPublicLocalizationReconciliation({
     execute,
     kinds,
@@ -208,7 +462,6 @@ async function main(): Promise<void> {
         RETRY_BLOCKED_IDENTITIES: residualReport.selection.RETRY_BLOCKED_IDENTITIES,
         byFamilyReady: residualReport.selection.byFamilyReady,
         byLocaleReady: residualReport.selection.byLocaleReady,
-        // Identities only — no prose.
         readyIdentities: residualReport.selection.ready.map((row) => ({
           family: row.family,
           sourceRecordId: row.presentationIdentity.sourceRecordId,
@@ -226,15 +479,27 @@ async function main(): Promise<void> {
       }
     : null;
 
+  // Fresh post-audit after full-corpus execute+wait (Pack 08K.2.2 observability fix).
+  const postAudit =
+    execute && !explainResiduals
+      ? await auditPublicLocalizationCorpusPostRetry({ kinds })
+      : null;
+
   const universalSuccessClaimed =
-    result.audit.discoveryStatus === "COMPLETE" &&
-    result.audit.totals.CANONICAL_FALLBACK_NODES === 0 &&
-    result.audit.totals.WORK_ITEMS_REQUIRED === 0;
+    postAudit !== null
+      ? postAudit.discoveryStatus === "COMPLETE" &&
+        postAudit.totals.CANONICAL_FALLBACK_NODES === 0 &&
+        postAudit.totals.WORK_ITEMS_REQUIRED === 0 &&
+        postAudit.totals.CURRENT_LOCALIZED_NODES ===
+          postAudit.totals.TOTAL_SEMANTIC_NODES
+      : result.audit.discoveryStatus === "COMPLETE" &&
+        result.audit.totals.CANONICAL_FALLBACK_NODES === 0 &&
+        result.audit.totals.WORK_ITEMS_REQUIRED === 0;
 
   console.log(
     JSON.stringify(
       {
-        pack: "08K.2.1",
+        pack: execute ? "08K.2.2" : "08K.2.1",
         operation: "reconcile_public_localization",
         mode: result.mode,
         explainResiduals,
@@ -271,13 +536,19 @@ async function main(): Promise<void> {
         byLocale: result.audit.byLocale,
         residuals,
         retrySelection,
+        POST_TOTAL_SEMANTIC_NODES: postAudit?.totals.TOTAL_SEMANTIC_NODES ?? null,
+        POST_CURRENT_LOCALIZED_NODES: postAudit?.totals.CURRENT_LOCALIZED_NODES ?? null,
+        POST_CANONICAL_FALLBACK_NODES: postAudit?.totals.CANONICAL_FALLBACK_NODES ?? null,
+        POST_WORK_ITEMS_REQUIRED: postAudit?.totals.WORK_ITEMS_REQUIRED ?? null,
         universalCorpusSuccessClaimed: universalSuccessClaimed,
         note:
           result.mode === "dry-run"
             ? explainResiduals
               ? "EXPLAIN RESIDUALS — read-only. Identities/counts/failureClass only; no source/translated bodies."
-              : "DRY RUN — zero provider calls, zero DB/outbox writes. Pass --explain-residuals for residual identity diagnostics."
-            : "EXECUTE — enqueued presentation-level warms via bounded infrastructure. Materialization requires live outbox consumer.",
+              : "DRY RUN — zero provider calls, zero DB/outbox writes. Pass --explain-residuals or --retry-ready-residuals."
+            : postAudit
+              ? "EXECUTE — POST_* is a fresh corpus audit after enqueue/wait."
+              : "EXECUTE — enqueued presentation-level warms via bounded infrastructure.",
         materialization: materialization
           ? {
               timedOut: materialization.timedOut,
@@ -311,7 +582,7 @@ main()
     if (error instanceof StagingContentTranslationDiscoveryFailure) {
       console.error(
         JSON.stringify({
-          pack: "08K.1",
+          pack: "08K.2.2",
           operation: "reconcile_public_localization",
           fatal: true,
           code: error.code,
@@ -322,7 +593,7 @@ main()
     } else {
       console.error(
         JSON.stringify({
-          pack: "08K.1",
+          pack: "08K.2.2",
           operation: "reconcile_public_localization",
           fatal: true,
           errorName: error instanceof Error ? error.name : "Error",

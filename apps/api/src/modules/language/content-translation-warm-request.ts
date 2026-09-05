@@ -9,29 +9,36 @@ import type {
   ContentTranslationSourceKind,
   ContentTranslationWarmReason,
   ContentTranslationWarmRequestedCommand,
+  LanguageCode,
 } from "@hu/types";
 import { CONTENT_TRANSLATION_WARM_REQUESTED } from "@hu/types";
 
 /**
  * Build the durable warm-request command payload (source identity only).
  * Does not publish to outbox.
+ * Optional `targetLocales` constrains residual-retry fan-out (Pack 08K.2.2).
  */
 export function buildContentTranslationWarmRequestedCommand(input: {
   readonly sourceKind: ContentTranslationSourceKind;
   readonly sourceRecordId: string;
   readonly reason?: ContentTranslationWarmReason;
   readonly requestedAt?: string;
+  readonly targetLocales?: readonly LanguageCode[];
 }): ContentTranslationWarmRequestedCommand {
   const sourceRecordId = input.sourceRecordId.trim();
   if (!sourceRecordId) {
     throw new Error("sourceRecordId is required for ContentTranslationWarmRequested.");
   }
+  const targetLocales = input.targetLocales?.length
+    ? ([...new Set(input.targetLocales.map((locale) => locale.trim()).filter(Boolean))] as LanguageCode[])
+    : undefined;
   return {
     commandName: CONTENT_TRANSLATION_WARM_REQUESTED,
     sourceKind: input.sourceKind,
     sourceRecordId,
     requestedAt: input.requestedAt ?? new Date().toISOString(),
     reason: input.reason ?? "public_mutation",
+    ...(targetLocales?.length ? { targetLocales } : {}),
   };
 }
 

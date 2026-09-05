@@ -149,7 +149,9 @@ export type ContentTranslationWarmReason =
   | "public_mutation"
   | "public_update"
   | "operator_manual"
-  | "operator_backfill";
+  | "operator_backfill"
+  /** Pack 08K.2.2 — gated residual retry of ready identities only. */
+  | "operator_residual_retry";
 
 export interface ContentTranslationWarmRequestedCommand {
   readonly commandName: ContentTranslationWarmRequestedCommandName;
@@ -157,4 +159,11 @@ export interface ContentTranslationWarmRequestedCommand {
   readonly sourceRecordId: string;
   readonly requestedAt: string;
   readonly reason: ContentTranslationWarmReason;
+  /**
+   * Optional locale constraint (Pack 08K.2.2 residual retry).
+   * When set, consumer intersects with Registry automatic targets and processes
+   * ONLY these locales — never unrelated CURRENT/blocked identities.
+   * Omit for normal mutation/backfill full Registry fan-out.
+   */
+  readonly targetLocales?: readonly LanguageCode[];
 }
