@@ -17,7 +17,7 @@ import {
   setMediaPlpWebEnabledForTests,
 } from "./feature-flag.js";
 
-const webSrc = join(dirname(fileURLToPath(import.meta.url)), "../..");
+const webSrc = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
 describe("Reset 03 web Media PLP boundary", () => {
   it("feature flag defaults OFF", () => {
