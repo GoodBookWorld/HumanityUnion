@@ -99,6 +99,43 @@ export function useTrustedMediaExplanationsOverlay(input?: {
           language: displayLanguage as LanguageCode,
         });
 
+        const isPartial =
+          resolved.presentationMode !== "original" &&
+          (() => {
+            const translated = parseCivicMediaJsonArray(
+              resolved.content.trustedMediaExplanations,
+              isTrustedExplanationTranslated,
+            );
+            if (!translated || translated.length === 0) {
+              return false;
+            }
+            // WORLD + COUNTRY explanations share one civic_media bag (08K.3.3).
+            let present = 0;
+            let missing = 0;
+            for (const item of translated) {
+              if (item.explanation.trim()) {
+                present += 1;
+              } else {
+                missing += 1;
+              }
+            }
+            for (const resource of media.trustedMedia) {
+              const match = translated.find((entry) => entry.id === resource.id);
+              if (!match || !match.explanation.trim()) {
+                missing += 1;
+              }
+            }
+            if (input?.seedById) {
+              for (const id of Object.keys(input.seedById)) {
+                const match = translated.find((entry) => entry.id === id);
+                if (!match || !match.explanation.trim()) {
+                  missing += 1;
+                }
+              }
+            }
+            return present > 0 && missing > 0;
+          })();
+
         if (
           shouldAttemptOnDemandContentTranslation({
             ready: readingContext.ready,
@@ -107,6 +144,7 @@ export function useTrustedMediaExplanationsOverlay(input?: {
             resolvePresentationMode: resolved.presentationMode,
             originalLanguage: resolved.originalLanguage,
             isStale: resolved.isStale,
+            isPartial,
           })
         ) {
           try {

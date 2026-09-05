@@ -4268,6 +4268,17 @@
           "description": "Published public civic archive records."
         }
       }
+    },
+    "interactiveMap": {
+      "toolbarAria": "Map view",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "reset": "Reset",
+      "iframeTitle": "Interactive world map",
+      "hintDefault": "Use Zoom in to explore regions. Select a country on the map or from the list below.",
+      "hintZoomed": "Drag the map to pan while zoomed. Country taps still open civic activity.",
+      "exploreByCountry": "Explore civic activity by country",
+      "selectCountry": "Select a country"
     }
   },
   "publicInitiativeMiniCard": {

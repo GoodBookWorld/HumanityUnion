@@ -94,13 +94,41 @@ function buildFixtureHtml(locale: string): string {
       <a data-hu-semantic="protected" href="https://actuc.com/">https://actuc.com/</a>
     </div>`;
 
+  // Pack 08K.3.3 — Home interactive map shell + tooltip (modal/popover stand-in).
+  const homeMap = `
+    <section data-hu-surface="home-interactive-map" data-hu-fallback-nodes="0">
+      <div role="toolbar" data-hu-semantic="ui" aria-label="[${locale}] Map view">
+        <button type="button" data-hu-semantic="ui">[${locale}] Zoom in</button>
+        <button type="button" data-hu-semantic="ui">[${locale}] Zoom out</button>
+        <button type="button" data-hu-semantic="ui">[${locale}] Reset</button>
+      </div>
+      <p data-hu-semantic="ui">[${locale}] Use Zoom in to explore regions.</p>
+      <label data-hu-semantic="ui">[${locale}] Explore civic activity by country</label>
+      <select data-hu-semantic="ui">
+        <option value="">[${locale}] Select a country</option>
+        <option value="CA" data-hu-semantic="auto" data-hu-geo="country">[${locale}] Canada</option>
+        <option value="UA" data-hu-semantic="auto" data-hu-geo="country">[${locale}] Ukraine</option>
+      </select>
+      <div data-hu-surface="home-map-tooltip" role="tooltip" data-open="true" data-hu-fallback-nodes="0">
+        <b data-hu-semantic="auto" data-hu-geo="country">[${locale}] Canada</b>
+        <span data-hu-semantic="protected">CA</span>
+      </div>
+    </section>
+    <section data-hu-surface="country-recommended-media" data-hu-fallback-nodes="0">
+      <article class="hu-card civic-media-resource-card civic-media-resource-card--trusted country-media-rail-card">
+        <h3 data-hu-semantic="protected">The Atlantic</h3>
+        <p class="civic-media-resource-card__body" data-hu-semantic="auto">[${locale}] Trusted explanation of editorial standards for participants.</p>
+      </article>
+    </section>`;
+
   return `<!doctype html>
 <html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}">
 <head><meta charset="utf-8"><title>Pack 08K Fixture ${locale}</title>
 <style>
   body { margin: 0; font-family: system-ui, sans-serif; }
   main { max-width: 1280px; margin: 0 auto; padding: 12px; }
-  .public-news-card, .actuc-modal__dialog, .country-experience-dynamic__hero-copy {
+  .public-news-card, .actuc-modal__dialog, .country-experience-dynamic__hero-copy,
+  .civic-media-resource-card__body, [data-hu-surface="home-map-tooltip"] {
     overflow-wrap: anywhere; min-width: 0; max-width: 100%;
   }
 </style>
@@ -108,6 +136,7 @@ function buildFixtureHtml(locale: string): string {
 <body data-viewport="1280" data-locale="${locale}">
   <main>
     ${countryHero}
+    ${homeMap}
     <section data-hu-surface="blog-list">${blog}</section>
     <section data-hu-surface="petition">
       <h2 data-hu-semantic="auto">[${locale}] Petition title</h2>
@@ -209,6 +238,23 @@ for (const locale of ["uk", "zh-Hant", "ar"] as const) {
           await page.locator('[data-hu-surface="country-media-rail-card"]').count(),
         ).toBeGreaterThanOrEqual(1);
 
+        // Pack 08K.3.3 — Home map + country Recommended Media
+        expect(await page.locator('[data-hu-surface="home-interactive-map"]').count()).toBe(1);
+        expect(await page.locator('[data-hu-surface="home-map-tooltip"]').count()).toBe(1);
+        expect(
+          await page.locator('[data-hu-surface="country-recommended-media"]').count(),
+        ).toBe(1);
+        const mapGeo = await page
+          .locator('[data-hu-surface="home-interactive-map"] [data-hu-geo="country"]')
+          .allTextContents();
+        expect(mapGeo.every((t) => t.includes(`[${locale}]`))).toBe(true);
+        const countryMediaBody = await page
+          .locator(
+            '[data-hu-surface="country-recommended-media"] .civic-media-resource-card__body',
+          )
+          .textContent();
+        expect(countryMediaBody ?? "").toContain(`[${locale}]`);
+
         const fallbackAttrs = await page.locator("[data-hu-fallback-nodes]").evaluateAll((els) =>
           els.map((el) => el.getAttribute("data-hu-fallback-nodes")),
         );
@@ -220,6 +266,10 @@ for (const locale of ["uk", "zh-Hant", "ar"] as const) {
 
         if (locale === "ar") {
           await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+          const tooltipBox = await page
+            .locator('[data-hu-surface="home-map-tooltip"]')
+            .boundingBox();
+          expect(tooltipBox).not.toBeNull();
         }
 
         await page.close();

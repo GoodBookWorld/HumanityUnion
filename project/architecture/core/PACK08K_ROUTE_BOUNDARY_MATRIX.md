@@ -27,6 +27,8 @@ Participant-facing routes that must consume **PublicLocalizedPresentation** (or 
 | `/civic-archive` / `[initiativeId]` | `civic_archive` | Archive narrative | Civic archive presentation |
 | Country / community CI rails | `ci_rail` | Collaboration / overlap titles | `adapters/ci-rail-presentation` |
 | Country trusted media evidence | `civic_media` / search-shaped | Trusted card explanations | Protected outlet identity + AUTO explanation |
+| Home interactive map | geography display + UI chrome | `InteractiveWorldMap` + iframe tooltip | Geography resolver + next-intl; no CT for ordinary names |
+| Country Recommended Media rail | `civic_media` trusted | Shared overlay + `TrustedMediaRailCard` | Same `civic_media` identity/version as `/media` |
 | Member recent public initiatives | `ci_rail` / initiative title | Disclosure titles | `adapters/ci-rail-presentation` |
 | Public news related initiatives | `search_result` | Related titles | `adapters/search-result-presentation` |
 | Capability / Civic Integration widgets | `ci_rail` | Widget titles | `adapters/ci-rail-presentation` |

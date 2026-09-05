@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
-import { GEOGRAPHY_COUNTRIES, getRegionsForCountry } from "@hu/geography";
+import {
+  GEOGRAPHY_COUNTRIES,
+  getLocalizedAdminRegionDisplayName,
+  getLocalizedCountryDisplayName,
+  getRegionsForCountry,
+} from "@hu/geography";
 import { buildSearchUrlForGeographyScope } from "../../../data/geography/helpers";
 
 import "./geographic-navigator.css";
@@ -28,6 +33,7 @@ export function GeographicNavigator({
   communitySlug = FEATURED_COMMUNITY_SLUG,
 }: GeographicNavigatorProps) {
   const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const country =
     GEOGRAPHY_COUNTRIES.find((entry) => entry.slug === countrySlug) ??
     GEOGRAPHY_COUNTRIES.find((entry) => entry.slug === FEATURED_COUNTRY_CODE);
@@ -36,10 +42,20 @@ export function GeographicNavigator({
     (entry) => entry.slug === regionSlug,
   );
 
+  const countryDisplayName = country
+    ? getLocalizedCountryDisplayName(country.slug, locale, country.label)
+    : t("geography.country");
+  const regionDisplayName = region
+    ? getLocalizedAdminRegionDisplayName(
+        country?.slug ?? FEATURED_COUNTRY_CODE,
+        region.slug,
+        locale,
+        region.label,
+      )
+    : t("geography.region");
+
   const communityLabel = communitySlug.replace(/-/g, " ");
   const worldLabel = t("geography.world");
-  const countryFallback = t("geography.country");
-  const regionFallback = t("geography.region");
 
   return (
     <nav className="geographic-navigator" aria-label={t("geography.navigatorAria")}>
@@ -53,6 +69,7 @@ export function GeographicNavigator({
               <span
                 className="geographic-navigator__scope geographic-navigator__scope--active"
                 aria-current="location"
+                data-hu-semantic="ui"
               >
                 {worldLabel}
               </span>
@@ -60,6 +77,7 @@ export function GeographicNavigator({
               <Link
                 className="geographic-navigator__scope geographic-navigator__scope--link"
                 href="/initiatives"
+                data-hu-semantic="ui"
               >
                 {worldLabel}
               </Link>
@@ -70,15 +88,19 @@ export function GeographicNavigator({
               <span
                 className="geographic-navigator__scope geographic-navigator__scope--active"
                 aria-current="location"
+                data-hu-semantic="auto"
+                data-hu-geo="country"
               >
-                {country?.label ?? countryFallback}
+                {countryDisplayName}
               </span>
             ) : (
               <Link
                 className="geographic-navigator__scope geographic-navigator__scope--link"
                 href={`/countries/${country?.slug ?? FEATURED_COUNTRY_CODE}`}
+                data-hu-semantic="auto"
+                data-hu-geo="country"
               >
-                {country?.label ?? countryFallback}
+                {countryDisplayName}
               </Link>
             )}
           </li>
@@ -87,8 +109,10 @@ export function GeographicNavigator({
               <span
                 className="geographic-navigator__scope geographic-navigator__scope--active"
                 aria-current="location"
+                data-hu-semantic="auto"
+                data-hu-geo="region"
               >
-                {region?.label ?? regionFallback}
+                {regionDisplayName}
               </span>
             ) : (
               <Link
@@ -97,8 +121,10 @@ export function GeographicNavigator({
                   countrySlug: country?.slug,
                   regionSlug: region?.slug ?? regionSlug,
                 })}
+                data-hu-semantic="auto"
+                data-hu-geo="region"
               >
-                {region?.label ?? regionFallback}
+                {regionDisplayName}
               </Link>
             )}
           </li>
@@ -107,6 +133,7 @@ export function GeographicNavigator({
               <span
                 className="geographic-navigator__scope geographic-navigator__scope--active"
                 aria-current="location"
+                data-hu-semantic="ui"
               >
                 {communityLabel}
               </span>
@@ -118,6 +145,7 @@ export function GeographicNavigator({
                   regionSlug: region?.slug ?? regionSlug,
                   communitySlug,
                 })}
+                data-hu-semantic="ui"
               >
                 {communityLabel}
               </Link>

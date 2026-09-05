@@ -16,6 +16,7 @@ import {
 } from "@hu/geography";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { CitySelect, RegionSelect, useGeographyCommunityOptions } from "../../geography-integrity";
+import type { CivicMediaTrustedExplanationsById } from "../../civic-media-center/components/CivicMediaTranslatedEditorial";
 import { TrustedMediaRailCard } from "../../civic-media-center/components/TrustedMediaRailCard";
 import { useTrustedMediaExplanationsOverlay } from "../../civic-media-center/components/use-trusted-media-explanations-overlay";
 import { CIVIC_MEDIA_ROUTE } from "../../civic-media-center/routes";
@@ -49,13 +50,18 @@ import "../country-experience-dynamic.css";
 
 interface CountryExperienceDynamicPageProps {
   countryCode: string;
+  /** Pack 08K.3.3 — SSR seed from shared civic_media trusted explanations. */
+  initialTrustedExplanationsById?: CivicMediaTrustedExplanationsById;
 }
 
 function countryFlagSrc(countryCode: string): string {
   return `/images/flags/4x3/${countryCode.toLowerCase()}.svg`;
 }
 
-export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceDynamicPageProps) {
+export function CountryExperienceDynamicPage({
+  countryCode,
+  initialTrustedExplanationsById,
+}: CountryExperienceDynamicPageProps) {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("publicGeo");
@@ -91,7 +97,11 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
   const [media, setMedia] = useState<TrustedMediaResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const trustedExplanationsById = useTrustedMediaExplanationsOverlay();
+  const trustedExplanationsById = useTrustedMediaExplanationsOverlay(
+    initialTrustedExplanationsById
+      ? { seedById: initialTrustedExplanationsById }
+      : undefined,
+  );
 
   const [query, setQuery] = useState("");
   const [regionCode, setRegionCode] = useState("");
@@ -406,27 +416,32 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
         communityLabel={communityLabel}
       />
 
-      <HuxDirectorySection
-        sectionId={`country-media-${countryCode.toLowerCase()}`}
-        eyebrow={t("country.media.eyebrow")}
-        title={t("country.media.title")}
-        description={t("country.media.description", { countryName: countryDisplayName })}
-        label={t("country.media.railLabel")}
-        items={media}
-        getItemKey={(resource) => resource.id}
-        renderItem={(resource) => (
-          <TrustedMediaRailCard
-            resource={resource}
-            explanation={trustedExplanationsById[resource.id]}
-          />
-        )}
-        emptyState={<p>{t("country.media.empty")}</p>}
-        footerAction={
-          <Link href={`${CIVIC_MEDIA_ROUTE}#selection-principles`}>
-            {t("country.media.footerStandards")}
-          </Link>
-        }
-      />
+      <div
+        data-hu-surface="country-recommended-media"
+        data-hu-fallback-nodes="0"
+      >
+        <HuxDirectorySection
+          sectionId={`country-media-${countryCode.toLowerCase()}`}
+          eyebrow={t("country.media.eyebrow")}
+          title={t("country.media.title")}
+          description={t("country.media.description", { countryName: countryDisplayName })}
+          label={t("country.media.railLabel")}
+          items={media}
+          getItemKey={(resource) => resource.id}
+          renderItem={(resource) => (
+            <TrustedMediaRailCard
+              resource={resource}
+              explanation={trustedExplanationsById[resource.id]}
+            />
+          )}
+          emptyState={<p>{t("country.media.empty")}</p>}
+          footerAction={
+            <Link href={`${CIVIC_MEDIA_ROUTE}#selection-principles`}>
+              {t("country.media.footerStandards")}
+            </Link>
+          }
+        />
+      </div>
 
       <CountryPublicNewsWidget
         countryCode={countryCode}

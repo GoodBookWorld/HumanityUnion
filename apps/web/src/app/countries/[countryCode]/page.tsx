@@ -5,8 +5,11 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { getCountryByCode, normalizeCountryInput } from "@hu/geography";
 import { getLocalizedCountryDisplayName } from "@hu/geography";
 
+import { fetchCivicMediaCenter } from "../../../features/civic-media-center/api";
+import { loadCivicMediaEditorialSeed } from "../../../features/civic-media-center/load-civic-media-editorial-seed";
 import { resolveBrandForMetadata } from "../../../features/brand-localization/resolve-brand-for-metadata";
 import { CountryExperienceDynamicPage } from "../../../features/country-experience/components/CountryExperienceDynamicPage";
+import { resolveDocumentHtmlLocale } from "../../../features/language/resolve-document-locale";
 import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
 import {
   applyPageSeoOverrideToMetadataInput,
@@ -105,10 +108,27 @@ export default async function CountriesPage({ params }: CountriesPageProps) {
     ],
   });
 
+  // Pack 08K.3.3 — SSR seed shared civic_media trusted explanations (same identity as /media).
+  let initialTrustedExplanationsById: Record<string, string> | undefined;
+  try {
+    const media = await fetchCivicMediaCenter();
+    const documentLocale = await resolveDocumentHtmlLocale();
+    const editorial = await loadCivicMediaEditorialSeed({
+      media,
+      language: documentLocale.locale,
+    });
+    initialTrustedExplanationsById = editorial.trustedExplanationsById;
+  } catch {
+    initialTrustedExplanationsById = undefined;
+  }
+
   return (
     <>
       <JsonLdScript data={structuredData} />
-      <CountryExperienceDynamicPage countryCode={countryCode} />
+      <CountryExperienceDynamicPage
+        countryCode={countryCode}
+        initialTrustedExplanationsById={initialTrustedExplanationsById}
+      />
     </>
   );
 }

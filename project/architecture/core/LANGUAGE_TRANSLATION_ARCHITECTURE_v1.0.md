@@ -934,6 +934,24 @@ Retry policy unchanged (`EXACT_FAILURE_REASON_PROPAGATION_08K25`, `INVALID_PROVI
 
 ---
 
+## Pack 08K.3.3 — Geography & country media localization closure
+
+**Staging evidence after 08K.3.2:** Home interactive map tooltips/select still showed English country names and English Democracy Index hover prose; country Recommended Media `civic-media-resource-card__body` remained canonical when COUNTRY-scoped trusted resources were absent from the `civic_media` explanation bag / lacked SSR seed.
+
+| Surface | FIRST BREAK | Ownership / fix |
+|---------|-------------|-----------------|
+| Home map country labels | Raw English hover + select | Geography display-name resolver → iframe `setCountryNames` |
+| Home map toolbar / hints | Hardcoded English chrome | next-intl `publicHome.interactiveMap.*` |
+| Home map “modal” | No React modal — `#wdcrjstip` tooltip | Localized name + flag only (no Democracy Index prose) |
+| IP / geographic navigator | API English `countryName` / `label` | Shared `getLocalizedCountryDisplayName` / admin-region resolver |
+| Country Recommended Media body | Overlay miss for COUNTRY ids + no SSR seed | `listAllPublicTrustedMediaForTranslation` in civic_media bag; shared `useTrustedMediaExplanationsOverlay`; country page SSR `loadCivicMediaEditorialSeed` |
+
+**Contract:** One `civic_media` / `civic-media-center` identity for trusted explanations across `/media` and country Recommended Media. Geography names are Intl display resolvers (no Gemini). Diagnostics: `HOME_MAP_*` / `COUNTRY_MEDIA_*` counters via `home-country-localization-diagnostic.ts`. Thin media diagnostic still emits `country_media_rail` clones of trusted rows.
+
+**Do not:** per-country dictionaries, duplicate Media translation identities, page-specific allowlists, live Mongo/Gemini from Cursor.
+
+---
+
 ## Pack 08K.2.2 — Gated residual retry operator
 
 ```

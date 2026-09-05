@@ -1,12 +1,56 @@
-﻿function isTouchEnabled() {
+function isTouchEnabled() {
   return (("ontouchstart" in window)
     || (navigator.MaxTouchPoints > 0)
     || (navigator.msMaxTouchPoints > 0));
 }
+
+/** Pack 08K.3.3 — locale-aware country display names injected by React parent. */
+window.__HU_MAP_COUNTRY_NAMES = window.__HU_MAP_COUNTRY_NAMES || {};
+
+function wdcrEscapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function wdcrCountryCodeFromConfig(id) {
+  var cfg = wdcrjsconfig[id];
+  if (!cfg || typeof cfg.url !== "string") {
+    return "";
+  }
+  var match = cfg.url.match(/\/countries\/([A-Za-z]{2})\b/);
+  return match ? match[1].toUpperCase() : "";
+}
+
+function wdcrFlagHtmlFromHover(hover) {
+  if (typeof hover !== "string") {
+    return "";
+  }
+  var match = hover.match(/<img\b[^>]*>/i);
+  return match ? match[0] : "";
+}
+
+function wdcrLocalizedHoverHtml(id) {
+  var cfg = wdcrjsconfig[id];
+  var code = wdcrCountryCodeFromConfig(id);
+  var names = window.__HU_MAP_COUNTRY_NAMES || {};
+  var displayName = (code && names[code]) ? names[code] : (code || id);
+  var flag = wdcrFlagHtmlFromHover(cfg && cfg.hover);
+  return "<b><u>" + wdcrEscapeHtml(displayName) + "</u></b>" + (flag ? "<br>" + flag : "");
+}
+
 jQuery(function () {
   jQuery("path[id^=wdcrjs]").each(function (i, e) {
     wdcraddEvent( jQuery(e).attr("id"));
   });
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage(
+      { source: "hu-world-map", type: "ready" },
+      window.location.origin
+    );
+  }
 });
 function wdcraddEvent(id,relationId) {
   var _obj = jQuery("#" + id);
@@ -18,7 +62,7 @@ function wdcraddEvent(id,relationId) {
   if (wdcrjsconfig[id].active === true) {
     _Textobj.attr({"cursor": "pointer"});
     _Textobj.hover(function () {
-      jQuery("#wdcrjstip").show().html(wdcrjsconfig[id].hover);
+      jQuery("#wdcrjstip").show().html(wdcrLocalizedHoverHtml(id));
       _obj.css({"fill":wdcrjsconfig[id].overColor});
     }, function () {
       jQuery("#wdcrjstip").hide();
@@ -57,7 +101,7 @@ function wdcraddEvent(id,relationId) {
         x = (x + tipw >jQuery(document).scrollLeft() +jQuery(window).width())? x - tipw -(20 * 2) : x ;
         y =(y + tiph >jQuery(document).scrollTop() +jQuery(window).height())? jQuery(document).scrollTop() +jQuery(window).height() -tiph - 10 : y ;
         jQuery("#" + id).css({"fill":wdcrjsconfig[id].downColor});
-        jQuery("#wdcrjstip").show().html(wdcrjsconfig[id].hover);
+        jQuery("#wdcrjstip").show().html(wdcrLocalizedHoverHtml(id));
         jQuery("#wdcrjstip").css({left: x, top: y});
       });
       _Textobj.on("touchend", function () {
@@ -168,6 +212,9 @@ function wdcraddEvent(id,relationId) {
     else if (data.action === "zoomOut") zoomOut();
     else if (data.action === "reset") resetView();
     else if (data.action === "sync") publishView();
+    else if (data.action === "setCountryNames" && data.names && typeof data.names === "object") {
+      window.__HU_MAP_COUNTRY_NAMES = data.names;
+    }
   });
 
   function onPointerDown(event) {
@@ -201,8 +248,6 @@ function wdcraddEvent(id,relationId) {
         base.style.cursor = "grabbing";
       }
     }
-    // Prefer horizontal/vertical map pan; do not call preventDefault so page
-    // vertical scroll remains available when the gesture is mostly vertical.
     tx = originTx + dx;
     ty = originTy + dy;
     applyTransform();

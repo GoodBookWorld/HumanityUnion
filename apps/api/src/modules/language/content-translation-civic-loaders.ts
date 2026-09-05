@@ -424,6 +424,10 @@ export async function loadCivicMediaTranslationSource(
     return null;
   }
   const center = await getCivicMediaCenter();
+  const { listAllPublicTrustedMediaForTranslation } = await import(
+    "../media-resources/media-resource.service.js"
+  );
+  const allTrustedForTranslation = await listAllPublicTrustedMediaForTranslation();
   const fields = {
     overviewTitle: center.overview.title,
     overviewSummary: center.overview.summary,
@@ -449,8 +453,9 @@ export async function loadCivicMediaTranslationSource(
     initiativeFlowTitle: center.initiativeFlow.title,
     initiativeFlowSummary: center.initiativeFlow.summary,
     initiativeFlowStages: joinTranslationLines(center.initiativeFlow.stages),
+    // Pack 08K.3.3 — WORLD + COUNTRY trusted explanations share one civic_media identity.
     trustedMediaExplanations: stableJsonForTranslation(
-      center.trustedMedia.map((item) => ({
+      allTrustedForTranslation.map((item) => ({
         id: item.id,
         explanation: item.explanation,
       })),

@@ -4268,6 +4268,17 @@
           "description": "已發布的公開公民典藏紀錄。"
         }
       }
+    },
+    "interactiveMap": {
+      "toolbarAria": "地圖檢視",
+      "zoomIn": "放大",
+      "zoomOut": "縮小",
+      "reset": "重設",
+      "iframeTitle": "互動世界地圖",
+      "hintDefault": "使用放大來探索區域。在地圖或下方清單中選擇國家。",
+      "hintZoomed": "放大後可拖曳地圖平移。點選國家仍會開啟公民活動頁面。",
+      "exploreByCountry": "依國家探索公民活動",
+      "selectCountry": "選擇國家"
     }
   },
   "publicInitiativeMiniCard": {

@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { ApproximateIpGeography } from "@hu/types";
+import {
+  getLocalizedAdminRegionDisplayName,
+  getLocalizedCountryDisplayName,
+} from "@hu/geography";
 
 import { fetchApproximateIpGeography } from "../ip-geography-api";
 
@@ -20,21 +24,33 @@ interface NavigatorLevel {
 function buildNavigatorLevels(
   geography: ApproximateIpGeography,
   worldLabel: string,
+  locale: string,
 ): NavigatorLevel[] {
   const levels: NavigatorLevel[] = [{ key: "world", label: worldLabel, href: "/initiatives" }];
 
-  if (geography.countryCode && geography.countryName) {
+  if (geography.countryCode) {
+    const countryLabel = getLocalizedCountryDisplayName(
+      geography.countryCode,
+      locale,
+      geography.countryName ?? geography.countryCode,
+    );
     levels.push({
       key: "country",
-      label: geography.countryName,
+      label: countryLabel,
       href: `/countries/${encodeURIComponent(geography.countryCode)}`,
     });
   }
 
-  if (geography.countryCode && geography.regionCode && geography.regionName) {
+  if (geography.countryCode && geography.regionCode) {
+    const regionLabel = getLocalizedAdminRegionDisplayName(
+      geography.countryCode,
+      geography.regionCode,
+      locale,
+      geography.regionName ?? geography.regionCode,
+    );
     levels.push({
       key: "region",
-      label: geography.regionName,
+      label: regionLabel,
       href: `/region/${encodeURIComponent(geography.regionCode)}`,
     });
   }
@@ -51,6 +67,7 @@ function buildNavigatorLevels(
 
 export function ApproximateIpGeographicNavigator() {
   const t = useTranslations("initiativeExperience");
+  const locale = useLocale();
   const [geography, setGeography] = useState<ApproximateIpGeography>({ source: "unavailable" });
   const [loading, setLoading] = useState(true);
 
@@ -63,8 +80,8 @@ export function ApproximateIpGeographicNavigator() {
 
   const worldLabel = t("geography.world");
   const levels = useMemo(
-    () => buildNavigatorLevels(geography, worldLabel),
-    [geography, worldLabel],
+    () => buildNavigatorLevels(geography, worldLabel, locale),
+    [geography, worldLabel, locale],
   );
   const screenReaderSummary = levels.map((level) => level.label).join(", ");
 
@@ -72,9 +89,10 @@ export function ApproximateIpGeographicNavigator() {
     <nav
       className="geographic-navigator approximate-ip-geographic-navigator"
       aria-label={t("geography.approximateLocationAria")}
+      data-hu-surface="home-geo-navigator"
     >
       <div className="geographic-navigator__inner">
-        <p className="approximate-ip-geographic-navigator__label">
+        <p className="approximate-ip-geographic-navigator__label" data-hu-semantic="ui">
           {t("geography.approximateLocation")}
         </p>
         <p className="public-home-v2__visually-hidden" id="approximate-location-summary">
@@ -95,6 +113,7 @@ export function ApproximateIpGeographicNavigator() {
                     <Link
                       className="geographic-navigator__scope geographic-navigator__scope--link"
                       href={level.href}
+                      data-hu-semantic={level.key === "world" ? "ui" : "auto"}
                     >
                       {level.label}
                     </Link>
@@ -102,6 +121,9 @@ export function ApproximateIpGeographicNavigator() {
                     <span
                       className="geographic-navigator__scope geographic-navigator__scope--active"
                       aria-current={isLast ? "location" : undefined}
+                      data-hu-semantic={
+                        level.key === "world" || level.key === "city" ? "ui" : "auto"
+                      }
                     >
                       {level.label}
                     </span>
