@@ -312,6 +312,19 @@ export function useCivicMediaResolvedEditorial(
           return;
         }
         if (resolved.presentationMode === "original") {
+          // MISSING/STALE: keep SSR seed or canonical; surface chrome so callers
+          // can observe fallback (generate already attempted when preferred).
+          setEditorial((prev) => ({
+            ...prev,
+            translationChrome: {
+              activeLanguage: resolved.activeLanguage,
+              originalLanguage: resolved.originalLanguage,
+              isMachineTranslated: false,
+              isStale: resolved.isStale,
+              canViewOriginal: resolved.canViewOriginal,
+              presentationMode: resolved.presentationMode,
+            },
+          }));
           return;
         }
         setEditorial(

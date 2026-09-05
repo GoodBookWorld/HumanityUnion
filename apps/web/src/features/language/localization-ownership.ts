@@ -36,6 +36,7 @@ export const CIVIC_CONTENT_SOURCE_KINDS = [
   "civic_archive",
   "civic_media",
   "blog_post",
+  "public_news",
 ] as const satisfies readonly ContentTranslationSourceKind[];
 
 export type CivicContentSourceKind = (typeof CIVIC_CONTENT_SOURCE_KINDS)[number];

@@ -30,7 +30,7 @@ import type { PublicContentReadingContext } from "./use-public-content-reading-c
 
 export type PublicContentTranslationSourceKind = Extract<
   ContentTranslationSourceKind,
-  "initiative" | "blog_post" | "civic_media" | "discussion_comment"
+  "initiative" | "blog_post" | "civic_media" | "discussion_comment" | "public_news"
 >;
 
 export interface PublicContentTranslationDeps {

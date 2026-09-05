@@ -128,6 +128,7 @@ export const CONTENT_TRANSLATION_FIELD_ALLOWLIST = {
     "initiativeFlowStages",
     "trustedMediaExplanations",
   ],
+  public_news: ["title", "summary", "category"],
 } as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
 
 /**
@@ -152,6 +153,7 @@ export const CONTENT_TRANSLATION_CIVIC_TITLE_FIELDS = {
   public_impact: ["title"],
   civic_archive: ["title"],
   civic_media: ["overviewTitle", "initiativeFlowTitle"],
+  public_news: ["title"],
 } as const satisfies Record<ContentTranslationSourceKind, readonly string[]>;
 
 /** Public kinds that require published/public projection eligibility for generation. */
@@ -171,6 +173,7 @@ export const PUBLIC_CONTENT_TRANSLATION_SOURCE_KINDS = [
   "public_impact",
   "civic_archive",
   "civic_media",
+  "public_news",
 ] as const satisfies readonly ContentTranslationSourceKind[];
 
 /** Surfaces that must never appear as translation sourceKinds (regression sentinel). */

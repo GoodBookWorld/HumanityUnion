@@ -81,8 +81,10 @@ function PrincipleCard({ principle }: { principle: CivicMediaSelectionPrinciple 
       <span className="civic-media-resource-card__icon" aria-hidden="true">
         {icon}
       </span>
-      <h3>{displayTitle}</h3>
-      <p className="civic-media-resource-card__body">{displayBody}</p>
+      <h3 data-hu-semantic="auto">{displayTitle}</h3>
+      <p className="civic-media-resource-card__body" data-hu-semantic="auto">
+        {displayBody}
+      </p>
       {whyItMatters ? (
         <p className="civic-media-resource-card__why">
           <strong>{t("whyItMatters")}</strong>

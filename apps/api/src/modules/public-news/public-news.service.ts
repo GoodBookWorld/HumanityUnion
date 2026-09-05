@@ -4,6 +4,7 @@ import type {
   PublicNewsListingResponse,
 } from "@hu/types";
 
+import { notifyPublicPresentationChanged } from "../language/public-presentation-changed.js";
 import { resolvePublicNewsConfig } from "./public-news.config.js";
 import type { ExternalNewsArticle } from "./public-news.normalize.js";
 import { filterExternalNewsArticles, validateExternalNewsArticleUrls } from "./public-news.filter.js";
@@ -153,6 +154,16 @@ export async function refreshPublicNews(): Promise<{ upserted: number; fetched: 
       .filter((record): record is NewsArticleRecord => record !== null);
 
     const upserted = await upsertPublicNewsRecords(normalized);
+
+    for (const record of normalized) {
+      if (record.status === "active") {
+        notifyPublicPresentationChanged({
+          sourceKind: "public_news",
+          sourceRecordId: record.id,
+          reason: "public_mutation",
+        });
+      }
+    }
 
     return {
       upserted,

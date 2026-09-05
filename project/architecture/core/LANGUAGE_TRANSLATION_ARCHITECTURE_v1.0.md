@@ -900,6 +900,22 @@ Retry policy unchanged (`EXACT_FAILURE_REASON_PROPAGATION_08K25`, `INVALID_PROVI
 
 ---
 
+## Pack 08K.3.1 — /media runtime localization closure
+
+**Staging evidence after 08K.3:** Fixture HTML acceptance did not prove live `/media`. Real surfaces still rendered canonical English for news cards, principle cards, trusted explanations, and country rails.
+
+| Family | FIRST BREAK | Fix |
+|--------|-------------|-----|
+| Public news | Adapter claimed `civic_media` identity; no `public_news` loader/resolve | `public_news` sourceKind + `loadPublicNewsTranslationSource` + `resolvePublicNewsLocalizedPresentation` |
+| Principles | Warm-dependent `civic_media.selectionPrinciples`; incomplete warm → English | Same `civic_media` overlay; generate-on-miss + chrome on original fallback |
+| Trusted explanation | Overlay only on `/media`; country rail used raw `resource.explanation` | Shared `useTrustedMediaExplanationsOverlay` |
+| Trusted country label | Raw `resource.country` English | `getLocalizedCountryDisplayName` |
+| Category description / source count | Hardcoded English chrome | next-intl `trustedCategoryDescriptions` / `trustedCategorySourceCount` |
+
+**Contract:** One localized presentation boundary before React for Media semantic families. Interface locale authoritative. Generation-on-miss via existing bounded pipeline (no Gemini in SSR). `notifyPublicPresentationChanged` on public news upsert. Route diagnostic emits `MEDIA_*` counters. Thin residual diagnostic stays isolated (kind list may include `public_news`; no Media React graph import).
+
+---
+
 ## Pack 08K.2.2 — Gated residual retry operator
 
 ```

@@ -17,6 +17,7 @@ import {
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { CitySelect, RegionSelect, useGeographyCommunityOptions } from "../../geography-integrity";
 import { TrustedMediaRailCard } from "../../civic-media-center/components/TrustedMediaRailCard";
+import { useTrustedMediaExplanationsOverlay } from "../../civic-media-center/components/use-trusted-media-explanations-overlay";
 import { CIVIC_MEDIA_ROUTE } from "../../civic-media-center/routes";
 import { HuxDirectorySection } from "../../horizontal-experience";
 import { ENTITY_TYPE_OPTIONS } from "../../global-search/api";
@@ -90,6 +91,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
   const [media, setMedia] = useState<TrustedMediaResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const trustedExplanationsById = useTrustedMediaExplanationsOverlay();
 
   const [query, setQuery] = useState("");
   const [regionCode, setRegionCode] = useState("");
@@ -412,7 +414,12 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
         label={t("country.media.railLabel")}
         items={media}
         getItemKey={(resource) => resource.id}
-        renderItem={(resource) => <TrustedMediaRailCard resource={resource} />}
+        renderItem={(resource) => (
+          <TrustedMediaRailCard
+            resource={resource}
+            explanation={trustedExplanationsById[resource.id]}
+          />
+        )}
         emptyState={<p>{t("country.media.empty")}</p>}
         footerAction={
           <Link href={`${CIVIC_MEDIA_ROUTE}#selection-principles`}>

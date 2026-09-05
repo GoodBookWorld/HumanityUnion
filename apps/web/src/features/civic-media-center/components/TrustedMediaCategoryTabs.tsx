@@ -45,7 +45,12 @@ function TrustedMediaCategoryRail({
   resources: TrustedMediaResource[];
   renderItem: (resource: TrustedMediaResource, categoryTitle: string) => ReactNode;
 }) {
-  const label = `${categoryTitle} media resources`;
+  const t = useTranslations("civicMediaPublic");
+  const categoryDescription = t.has(`trustedCategoryDescriptions.${category.id}`)
+    ? t(`trustedCategoryDescriptions.${category.id}`)
+    : category.description;
+  const sourcesLabel = t("trustedCategorySourceCount", { count: resources.length });
+  const label = t("trustedCategoryRailLabel", { category: categoryTitle });
   const rail = useHorizontalRail({
     itemCount: resources.length,
     layout: "four-two-one",
@@ -73,14 +78,19 @@ function TrustedMediaCategoryRail({
     >
       <div className="trusted-media-category-tabs__panel-heading">
         <div>
-          <h3>{categoryTitle}</h3>
-          <span className="horizontal-section-chip">
-            {resources.length} source{resources.length === 1 ? "" : "s"}
+          <h3 data-hu-semantic="ui">{categoryTitle}</h3>
+          <span className="horizontal-section-chip" data-hu-semantic="ui">
+            {sourcesLabel}
           </span>
         </div>
         {controls}
       </div>
-      <p className="trusted-media-category-tabs__panel-description">{category.description}</p>
+      <p
+        className="trusted-media-category-tabs__panel-description"
+        data-hu-semantic="ui"
+      >
+        {categoryDescription}
+      </p>
 
       <HorizontalRailViewport
         label={label}

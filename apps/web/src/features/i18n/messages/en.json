@@ -3335,7 +3335,17 @@
       "scientific-publisher": "Scientific Publishers",
       "academic-resource": "Academic Resources"
     },
-    "coverageLabel": "Coverage: {country}"
+    "coverageLabel": "Coverage: {country}",
+    "trustedCategoryDescriptions": {
+      "international-wire-service": "Global news agencies with editorial standards and international bureaus.",
+      "public-broadcaster": "Publicly funded broadcasters with editorial independence mandates.",
+      "independent-investigative": "Nonprofit and independent outlets focused on accountability reporting.",
+      "regional-public-media": "National public media organizations serving specific regions.",
+      "scientific-publisher": "Peer-reviewed scientific publications and research journals.",
+      "academic-resource": "Reference libraries and academic knowledge bases."
+    },
+    "trustedCategorySourceCount": "{count, plural, one {# source} other {# sources}}",
+    "trustedCategoryRailLabel": "{category} media resources"
   },
   "search": {
     "title": "Search civic records",

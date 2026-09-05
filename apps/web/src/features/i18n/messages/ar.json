@@ -3335,7 +3335,17 @@
       "scientific-publisher": "ناشرون علميون",
       "academic-resource": "موارد أكاديمية"
     },
-    "coverageLabel": "التغطية: {country}"
+    "coverageLabel": "التغطية: {country}",
+    "trustedCategoryDescriptions": {
+      "international-wire-service": "وكالات أنباء عالمية بمعايير تحريرية ومكاتب دولية.",
+      "public-broadcaster": "هيئات بث ممولة عمومًا بمهام استقلالية تحريرية.",
+      "independent-investigative": "منافذ غير ربحية ومستقلة تركز على تقارير المساءلة.",
+      "regional-public-media": "مؤسسات إعلام عام وطنية تخدم مناطق محددة.",
+      "scientific-publisher": "منشورات علمية محكمة ودوريات بحثية.",
+      "academic-resource": "مكتبات مرجعية وقواعد معرفة أكاديمية."
+    },
+    "trustedCategorySourceCount": "{count, plural, one {مصدر واحد} other {# مصادر}}",
+    "trustedCategoryRailLabel": "موارد إعلامية: {category}"
   },
   "search": {
     "title": "البحث في السجلات المدنية",

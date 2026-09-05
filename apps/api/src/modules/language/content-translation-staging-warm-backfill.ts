@@ -27,6 +27,7 @@ import { canExposePublicInitiativeProjection } from "../initiatives/public-initi
 import { listPetitions } from "../petition/petition.store.js";
 import {
   discoverCivicMediaTranslationRecordIds,
+  discoverPublicNewsTranslationRecordIds,
 } from "./content-translation-civic-loaders.js";
 import {
   enqueueContentTranslationWarmRequested,
@@ -57,6 +58,7 @@ export const CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS = [
   "civic_archive",
   "blog_post",
   "civic_media",
+  "public_news",
 ] as const satisfies readonly ContentTranslationSourceKind[];
 
 /**
@@ -627,6 +629,18 @@ export async function discoverStagingInitiativePathWarmSources(input?: {
     bumpField("civic_media", "sourceRecordsDiscovered", civicMediaIds.length);
     for (const recordId of civicMediaIds) {
       pushCandidate("civic_media", recordId);
+    }
+  }
+
+  if (allowed.has("public_news")) {
+    try {
+      const newsIds = await discoverPublicNewsTranslationRecordIds({ limit: 200 });
+      bumpField("public_news", "sourceRecordsDiscovered", newsIds.length);
+      for (const recordId of newsIds) {
+        pushCandidate("public_news", recordId);
+      }
+    } catch {
+      bumpField("public_news", "sourceRecordsDiscovered", 0);
     }
   }
 

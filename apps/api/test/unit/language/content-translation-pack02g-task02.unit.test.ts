@@ -498,6 +498,7 @@ describe("Production Completion Pack 02G Task 02 — eligibility + sourceVersion
       "official_response",
       "petition",
       "public_impact",
+      "public_news",
     ]);
     assert.ok(Object.keys(CONTENT_TRANSLATION_FIELD_ALLOWLIST).includes("discussion_comment"));
     assert.deepEqual([...CONTENT_TRANSLATION_FIELD_ALLOWLIST.discussion_comment], ["body"]);

@@ -140,6 +140,8 @@ export {
   loadInitiativeRevisionTranslationSource,
   loadOfficialResponseTranslationSource,
   loadPublicImpactTranslationSource,
+  loadPublicNewsTranslationSource,
+  discoverPublicNewsTranslationRecordIds,
 } from "./content-translation-civic-loaders.js";
 export {
   joinTranslationLines,

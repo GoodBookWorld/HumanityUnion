@@ -7,6 +7,7 @@
 
 import {
   DEFAULT_PLATFORM_LANGUAGE,
+  normalizeLanguageCode,
   type ContentTranslationSourceKind,
   type LanguageCode,
 } from "@hu/types";
@@ -22,6 +23,10 @@ import { getRevisionById } from "../initiative-version-revision/initiative-versi
 import { getPublicInitiativeVersionRevision } from "../initiative-version-revision/public-initiative-version-revision.projection.js";
 import { getPublicOfficialResponse } from "../official-response/official-response.projection.js";
 import { getPublicCivicArchive } from "../public-civic-archive/public-civic-archive.projection.js";
+import {
+  findActivePublicNewsRecords,
+  findPublicNewsRecordById,
+} from "../public-news/public-news.repository.js";
 import {
   joinTranslationLines,
   stableJsonForTranslation,
@@ -462,4 +467,50 @@ export async function loadCivicMediaTranslationSource(
     authorParticipantId: null,
     isPublished: true,
   };
+}
+
+/**
+ * Pack 08K.3.1 — public_news active article → content-translation source.
+ * Geographic scope / URLs / outlet identity stay outside the field bag.
+ */
+export async function loadPublicNewsTranslationSource(
+  sourceRecordId: string,
+): Promise<CivicTranslatableSourceLoad | null> {
+  const record = await findPublicNewsRecordById(sourceRecordId.trim());
+  if (!record) {
+    return null;
+  }
+  if (record.status !== "active") {
+    return null;
+  }
+  const now = Date.now();
+  if (Date.parse(record.expiresAt) <= now) {
+    return null;
+  }
+  const fields: Record<string, string> = {
+    title: record.title,
+    summary: record.summary,
+    category: record.category?.trim() ?? "",
+  };
+  return {
+    sourceKind: "public_news",
+    sourceRecordId: record.id,
+    sourceVersion: buildContentTranslationSourceVersion({
+      fields,
+      versionStamp: record.updatedAt,
+    }),
+    sourceLanguage: normalizeLanguageCode(record.language, DEFAULT_PLATFORM_LANGUAGE),
+    fields,
+    authorParticipantId: null,
+    isPublished: true,
+  };
+}
+
+/** Warm/recovery discovery: active, non-expired public news ids (bounded). */
+export async function discoverPublicNewsTranslationRecordIds(input?: {
+  readonly limit?: number;
+}): Promise<readonly string[]> {
+  const limit = input?.limit ?? 200;
+  const records = await findActivePublicNewsRecords({ limit });
+  return records.map((record) => record.id);
 }

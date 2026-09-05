@@ -175,6 +175,43 @@ export async function loadThinSourceVersionMetadata(
       });
       return { sourceExists: true, sourceVersion, sourceRecordsLoaded: 1 };
     }
+    case "public_news": {
+      const collection = getMongoCollection<Record<string, unknown>>(
+        MONGO_COLLECTIONS.publicNewsArticles,
+      );
+      const doc = await collection.findOne(
+        { id: identity.sourceRecordId },
+        {
+          projection: {
+            id: 1,
+            title: 1,
+            summary: 1,
+            category: 1,
+            updatedAt: 1,
+            status: 1,
+            expiresAt: 1,
+            language: 1,
+          },
+        },
+      );
+      if (!doc) {
+        markThinSourceRecordsLoaded(0);
+        return { sourceExists: false, sourceVersion: null, sourceRecordsLoaded: 0 };
+      }
+      markThinSourceRecordsLoaded(1);
+      if (doc.status !== "active") {
+        return { sourceExists: false, sourceVersion: null, sourceRecordsLoaded: 1 };
+      }
+      const sourceVersion = buildContentTranslationSourceVersion({
+        fields: {
+          title: asString(doc.title),
+          summary: asString(doc.summary),
+          category: asString(doc.category),
+        },
+        versionStamp: asString(doc.updatedAt) || "unknown",
+      });
+      return { sourceExists: true, sourceVersion, sourceRecordsLoaded: 1 };
+    }
     default:
       markThinSourceRecordsLoaded(0);
       return { sourceExists: false, sourceVersion: null, sourceRecordsLoaded: 0 };

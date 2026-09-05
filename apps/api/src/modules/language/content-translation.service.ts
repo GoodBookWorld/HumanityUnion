@@ -31,6 +31,7 @@ import {
   loadInitiativeRevisionTranslationSource,
   loadOfficialResponseTranslationSource,
   loadPublicImpactTranslationSource,
+  loadPublicNewsTranslationSource,
 } from "./content-translation-civic-loaders.js";
 import {
   assertCanonicalSourceEligibleForTranslation,
@@ -253,6 +254,9 @@ export async function loadTranslatableSource(input: {
   }
   if (input.sourceKind === "civic_media") {
     return loadCivicMediaTranslationSource(input.sourceRecordId);
+  }
+  if (input.sourceKind === "public_news") {
+    return loadPublicNewsTranslationSource(input.sourceRecordId);
   }
 
   return null;

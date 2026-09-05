@@ -3335,7 +3335,17 @@
       "scientific-publisher": "科學出版",
       "academic-resource": "學術資源"
     },
-    "coverageLabel": "涵蓋範圍：{country}"
+    "coverageLabel": "涵蓋範圍：{country}",
+    "trustedCategoryDescriptions": {
+      "international-wire-service": "具備編輯標準與國際分社的全球通訊社。",
+      "public-broadcaster": "具有編輯獨立任務的公共資助廣播機構。",
+      "independent-investigative": "專注於問責報導的非營利與獨立媒體。",
+      "regional-public-media": "服務特定地區的國家公共媒體組織。",
+      "scientific-publisher": "同行評審的科學出版物與研究期刊。",
+      "academic-resource": "參考圖書館與學術知識庫。"
+    },
+    "trustedCategorySourceCount": "{count} 個來源",
+    "trustedCategoryRailLabel": "{category} 媒體資源"
   },
   "search": {
     "title": "搜尋公民紀錄",

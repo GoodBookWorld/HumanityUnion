@@ -299,6 +299,35 @@ export async function loadTranslatableSourceDirect(input: {
     };
   }
 
+  // Pack 08K.3.1 — public_news direct residual lookup (no hydrate).
+  if (input.sourceKind === "public_news") {
+    const { findPublicNewsRecordById } = await import(
+      "../public-news/public-news.repository.js"
+    );
+    const record = await findPublicNewsRecordById(input.sourceRecordId);
+    residualDiagnosticCounters.SOURCE_RECORDS_LOADED += 1;
+    if (!record || record.status !== "active") {
+      return null;
+    }
+    const fields = {
+      title: record.title,
+      summary: record.summary,
+      category: record.category?.trim() ?? "",
+    };
+    return {
+      sourceKind: "public_news",
+      sourceRecordId: record.id,
+      sourceVersion: buildContentTranslationSourceVersion({
+        fields,
+        versionStamp: record.updatedAt,
+      }),
+      sourceLanguage: normalizeLanguageCode(record.language, DEFAULT_PLATFORM_LANGUAGE),
+      fields,
+      authorParticipantId: null,
+      isPublished: true,
+    };
+  }
+
   // Other kinds: not required for current residuals; fail closed without hydrate.
   return null;
 }

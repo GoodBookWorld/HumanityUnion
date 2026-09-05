@@ -21,15 +21,34 @@ function buildFixtureHtml(locale: string): string {
     (n) => `<p data-hu-semantic="auto">[${locale}] Petition paragraph ${n}</p>`,
   );
   const media = `
-    <article data-hu-surface="media-principle">
-      <h3 data-hu-semantic="auto">[${locale}] Principle title</h3>
-      <p data-hu-semantic="auto">[${locale}] Principle body</p>
-    </article>
-    <article data-hu-surface="media-trusted">
-      <h3 data-hu-semantic="protected">The Atlantic</h3>
-      <p data-hu-semantic="auto">[${locale}] Trusted explanation</p>
-      <a data-hu-semantic="protected" href="https://www.theatlantic.com/">https://www.theatlantic.com/</a>
-    </article>`;
+    <section data-hu-route="media" data-hu-fallback-nodes="0">
+      <article data-hu-surface="civic-media-resource-card--principle" class="hu-card civic-media-resource-card civic-media-resource-card--principle">
+        <h3 data-hu-semantic="auto">[${locale}] Independence of trusted media evidence</h3>
+        <p data-hu-semantic="auto">[${locale}] Principle description explaining independence requirements.</p>
+      </article>
+      <article data-hu-surface="civic-media-resource-card--principle" class="hu-card civic-media-resource-card civic-media-resource-card--principle">
+        <h3 data-hu-semantic="auto">[${locale}] Transparent sourcing for participants</h3>
+        <p data-hu-semantic="auto">[${locale}] Principle description explaining transparent sourcing.</p>
+      </article>
+      <article data-hu-surface="civic-media-resource-card--trusted" class="hu-card civic-media-resource-card civic-media-resource-card--trusted country-media-rail-card">
+        <h3 data-hu-semantic="protected">The Atlantic</h3>
+        <p data-hu-semantic="ui">Coverage: [${locale}] United States</p>
+        <p data-hu-semantic="auto">[${locale}] Trusted explanation of editorial standards for participants.</p>
+        <a data-hu-semantic="protected" href="https://www.theatlantic.com/">https://www.theatlantic.com/</a>
+      </article>
+      <article data-hu-surface="country-media-rail-card" class="hu-card civic-media-resource-card civic-media-resource-card--trusted country-media-rail-card">
+        <h3 data-hu-semantic="protected">Reuters</h3>
+        <p data-hu-semantic="auto">[${locale}] Country-rail trusted explanation for local participants.</p>
+      </article>
+      <article data-hu-surface="public-news-card" class="public-news-card" data-hu-fallback-nodes="0"
+        data-news-payload='{"id":"news-realistic-1","sourceName":"The Atlantic","title":"Civic shoreline","summary":"Communities organize","category":"Environment","language":"en"}'>
+        <span data-hu-semantic="auto">[${locale}] Environment</span>
+        <p data-hu-semantic="protected">The Atlantic</p>
+        <h3 data-hu-semantic="auto">[${locale}] Civic shoreline restoration expands</h3>
+        <p data-hu-semantic="auto">[${locale}] Communities organize a public initiative around coastal habitats.</p>
+        <a data-hu-semantic="protected" href="https://example.com/a">https://example.com/a</a>
+      </article>
+    </section>`;
 
   const blog = posts
     .map(
@@ -176,10 +195,24 @@ for (const locale of ["uk", "zh-Hant", "ar"] as const) {
         );
 
         const newsCards = page.locator('[data-hu-surface="public-news-card"]');
-        expect(await newsCards.count()).toBe(2);
+        expect(await newsCards.count()).toBeGreaterThanOrEqual(2);
         expect(await page.locator('[data-hu-surface="country-hero"]').count()).toBe(1);
         expect(await page.locator('[data-hu-surface="actuc-modal"]').count()).toBe(1);
         expect(await page.locator('[data-hu-surface="region-display"]').count()).toBe(1);
+        expect(
+          await page.locator('[data-hu-surface="civic-media-resource-card--principle"]').count(),
+        ).toBeGreaterThanOrEqual(2);
+        expect(
+          await page.locator('[data-hu-surface="civic-media-resource-card--trusted"]').count(),
+        ).toBeGreaterThanOrEqual(1);
+        expect(
+          await page.locator('[data-hu-surface="country-media-rail-card"]').count(),
+        ).toBeGreaterThanOrEqual(1);
+
+        const fallbackAttrs = await page.locator("[data-hu-fallback-nodes]").evaluateAll((els) =>
+          els.map((el) => el.getAttribute("data-hu-fallback-nodes")),
+        );
+        expect(fallbackAttrs.every((v) => v === "0")).toBe(true);
 
         const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
         const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);

@@ -35,7 +35,7 @@ export type PublicNewsArticlePresentationTree = {
   readonly title: string;
   readonly summary: string;
   readonly category: string;
-  readonly geographicScope: string;
+  readonly geographicScope: PublicProtectedValue;
   /**
    * Extension bag for future nested semantic fields.
    * Plain strings auto-localize without allowlist edits.
@@ -58,7 +58,7 @@ export function buildPublicNewsArticlePresentation(
     title: article.title,
     summary: article.summary,
     category: article.category ?? "",
-    geographicScope: article.geographicScope ?? "",
+    geographicScope: protectedTechnical(article.geographicScope ?? ""),
     ...(article.extensions ? { extensions: article.extensions } : {}),
   };
 }
@@ -145,7 +145,7 @@ export function localizePublicNewsArticlePresentation(input: {
   const sourceLanguage = input.article.language?.trim() || "en";
   return localizePublicPresentation({
     identity: {
-      sourceKind: "civic_media",
+      sourceKind: "public_news",
       sourceRecordId: input.article.id,
       presentationSchemaVersion: PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
     },

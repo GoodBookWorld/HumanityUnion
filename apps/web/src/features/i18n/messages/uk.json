@@ -3335,7 +3335,17 @@
       "scientific-publisher": "Наукові видавництва",
       "academic-resource": "Академічні ресурси"
     },
-    "coverageLabel": "Охоплення: {country}"
+    "coverageLabel": "Охоплення: {country}",
+    "trustedCategoryDescriptions": {
+      "international-wire-service": "Глобальні інформагентства з редакційними стандартами та міжнародними бюро.",
+      "public-broadcaster": "Публічно фінансовані мовники з мандатом редакційної незалежності.",
+      "independent-investigative": "Некомерційні та незалежні видання, зосереджені на підзвітності.",
+      "regional-public-media": "Національні громадські медіа, що обслуговують конкретні регіони.",
+      "scientific-publisher": "Рецензовані наукові видання та дослідницькі журнали.",
+      "academic-resource": "Довідкові бібліотеки та академічні бази знань."
+    },
+    "trustedCategorySourceCount": "{count, plural, one {# джерело} few {# джерела} many {# джерел} other {# джерела}}",
+    "trustedCategoryRailLabel": "Медіаресурси: {category}"
   },
   "search": {
     "title": "Пошук громадянських записів",

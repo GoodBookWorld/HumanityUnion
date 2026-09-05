@@ -39,7 +39,8 @@ export type ContentTranslationSourceKind =
   | "official_response"
   | "public_impact"
   | "civic_archive"
-  | "civic_media";
+  | "civic_media"
+  | "public_news";
 
 /**
  * Reusable translated-content record.

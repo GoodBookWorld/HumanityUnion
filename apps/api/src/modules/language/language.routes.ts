@@ -39,6 +39,7 @@ const SOURCE_KINDS: readonly ContentTranslationSourceKind[] = [
   "public_impact",
   "civic_archive",
   "civic_media",
+  "public_news",
 ];
 
 function failure(message: string) {

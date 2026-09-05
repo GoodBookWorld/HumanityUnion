@@ -27,6 +27,7 @@ const KNOWN_SOURCE_KINDS = new Set<string>([
   "public_impact",
   "civic_archive",
   "civic_media",
+  "public_news",
 ]);
 
 export function parseThinResidualIdentityArg(
