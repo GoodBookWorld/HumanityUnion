@@ -85,3 +85,29 @@ Published Localized Presentation **core** is now **AVAILABLE**
 - Consumer allowlist remains **empty** (dormant — no public route migrated).
 - **No** legacy path removed.
 - **ACTIVE legacy count remains 30** (truthful; do not decrement until a route migrates and a ledger row is REMOVED).
+
+---
+
+## Reset 03 note (2026-09-05) — Media vertical slice (flag default OFF)
+
+Media PLP path is **AVAILABLE** but **not the runtime default**.
+
+| Count | Value |
+|-------|-------|
+| `LEGACY_ACTIVE_RUNTIME_DEFAULT` | **30** (unchanged — flag OFF) |
+| `LEGACY_REPLACED_PENDING_ACCEPTANCE` | Media semantic paths L07–L13 classified below |
+| ACTIVE (truthful removal count) | **30** — do not decrement until staging PLP acceptance |
+
+### Media legacy path reclassification (not deleted)
+
+| ID | Classification |
+|----|----------------|
+| L07 CivicMediaTranslatedEditorial | `ACTIVE_LEGACY_FALLBACK` (default) / `REPLACED_PENDING_LIVE_ACCEPTANCE` when `HU_MEDIA_PLP_ENABLED=true` |
+| L08 useTrustedMediaExplanationsOverlay | same (`disabled` in PLP mode) |
+| L09 loadCivicMediaEditorialSeed | same (skipped when PLP on) |
+| L10 media/page editorial wiring | same (PLP branch behind flag) |
+| L11 country trusted SSR seed | same |
+| L12 use-localized-public-news-card | `ACTIVE_LEGACY_FALLBACK` (news PLP consume later within Media flag) |
+| L13 resolve-public-news-presentation | `ACTIVE_LEGACY_FALLBACK` |
+
+Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure → coherent CANONICAL_FALLBACK (does not re-enter generate-on-miss overlays).

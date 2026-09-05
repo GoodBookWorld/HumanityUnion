@@ -40,12 +40,14 @@ export {
   setPublishedLocalizationPersistenceModeForTests,
 } from "./persistence/repository.js";
 export {
+  findCurrentPublishedMemory,
+  findPublishedSnapshotByIdMemory,
   getPublishedLocalizationBallastCountForTests,
   getPublishedLocalizationMemoryStoreStatsForTests,
   publishAtomicMemory,
   putPublishedSnapshotMemory,
   resetPublishedLocalizedPresentationMemoryStoreForTests,
   seedPublishedLocalizationBallastCountForTests,
-  findCurrentPublishedMemory,
-  findPublishedSnapshotByIdMemory,
 } from "./persistence/memory.store.js";
+
+export * from "./media/index.js";

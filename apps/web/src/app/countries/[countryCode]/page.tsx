@@ -9,6 +9,9 @@ import { fetchCivicMediaCenter } from "../../../features/civic-media-center/api"
 import { loadCivicMediaEditorialSeed } from "../../../features/civic-media-center/load-civic-media-editorial-seed";
 import { resolveBrandForMetadata } from "../../../features/brand-localization/resolve-brand-for-metadata";
 import { CountryExperienceDynamicPage } from "../../../features/country-experience/components/CountryExperienceDynamicPage";
+import { isMediaPlpWebEnabled } from "../../../features/language/media-plp/feature-flag";
+import { loadMediaPlpTrustedPresentations } from "../../../features/language/media-plp/load-media-plp-ssr";
+import type { MediaPlpResolvedPresentation } from "../../../features/language/media-plp/presentation";
 import { resolveDocumentHtmlLocale } from "../../../features/language/resolve-document-locale";
 import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
 import {
@@ -108,18 +111,30 @@ export default async function CountriesPage({ params }: CountriesPageProps) {
     ],
   });
 
-  // Pack 08K.3.3 — SSR seed shared civic_media trusted explanations (same identity as /media).
+  // Pack 08K.3.3 / Reset 03 — shared trusted identity with /media.
   let initialTrustedExplanationsById: Record<string, string> | undefined;
+  let initialPlpTrustedById:
+    | Readonly<Record<string, MediaPlpResolvedPresentation>>
+    | undefined;
   try {
     const media = await fetchCivicMediaCenter();
     const documentLocale = await resolveDocumentHtmlLocale();
-    const editorial = await loadCivicMediaEditorialSeed({
-      media,
-      language: documentLocale.locale,
-    });
-    initialTrustedExplanationsById = editorial.trustedExplanationsById;
+    if (isMediaPlpWebEnabled()) {
+      initialPlpTrustedById =
+        (await loadMediaPlpTrustedPresentations({
+          resources: media.trustedMedia,
+          locale: documentLocale.locale,
+        })) ?? undefined;
+    } else {
+      const editorial = await loadCivicMediaEditorialSeed({
+        media,
+        language: documentLocale.locale,
+      });
+      initialTrustedExplanationsById = editorial.trustedExplanationsById;
+    }
   } catch {
     initialTrustedExplanationsById = undefined;
+    initialPlpTrustedById = undefined;
   }
 
   return (
@@ -128,6 +143,7 @@ export default async function CountriesPage({ params }: CountriesPageProps) {
       <CountryExperienceDynamicPage
         countryCode={countryCode}
         initialTrustedExplanationsById={initialTrustedExplanationsById}
+        initialPlpTrustedById={initialPlpTrustedById}
       />
     </>
   );

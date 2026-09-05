@@ -20,6 +20,9 @@ import type { CivicMediaTrustedExplanationsById } from "../../civic-media-center
 import { TrustedMediaRailCard } from "../../civic-media-center/components/TrustedMediaRailCard";
 import { useTrustedMediaExplanationsOverlay } from "../../civic-media-center/components/use-trusted-media-explanations-overlay";
 import { CIVIC_MEDIA_ROUTE } from "../../civic-media-center/routes";
+import { isMediaPlpWebEnabled } from "../../language/media-plp/feature-flag";
+import { MediaPlpTrustedCard } from "../../language/media-plp/MediaPlpTrustedCard";
+import type { MediaPlpResolvedPresentation } from "../../language/media-plp/presentation";
 import { HuxDirectorySection } from "../../horizontal-experience";
 import { ENTITY_TYPE_OPTIONS } from "../../global-search/api";
 import { resolveActivityAreaDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
@@ -52,6 +55,8 @@ interface CountryExperienceDynamicPageProps {
   countryCode: string;
   /** Pack 08K.3.3 — SSR seed from shared civic_media trusted explanations. */
   initialTrustedExplanationsById?: CivicMediaTrustedExplanationsById;
+  /** Reset 03 — PLP resolved trusted presentations (same entity ids as /media). */
+  initialPlpTrustedById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
 }
 
 function countryFlagSrc(countryCode: string): string {
@@ -61,6 +66,7 @@ function countryFlagSrc(countryCode: string): string {
 export function CountryExperienceDynamicPage({
   countryCode,
   initialTrustedExplanationsById,
+  initialPlpTrustedById,
 }: CountryExperienceDynamicPageProps) {
   const router = useRouter();
   const locale = useLocale();
@@ -68,6 +74,7 @@ export function CountryExperienceDynamicPage({
   const tStats = useTranslations("publicStatistics");
   const tSearch = useTranslations("search");
   const tExperience = useTranslations("initiativeExperience");
+  const plpEnabled = isMediaPlpWebEnabled() && initialPlpTrustedById != null;
   const country = getCountryByCode(countryCode);
   const countryDisplayName = useMemo(
     () =>
@@ -98,9 +105,11 @@ export function CountryExperienceDynamicPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const trustedExplanationsById = useTrustedMediaExplanationsOverlay(
-    initialTrustedExplanationsById
-      ? { seedById: initialTrustedExplanationsById }
-      : undefined,
+    plpEnabled
+      ? { disabled: true }
+      : initialTrustedExplanationsById
+        ? { seedById: initialTrustedExplanationsById }
+        : undefined,
   );
 
   const [query, setQuery] = useState("");
@@ -428,12 +437,22 @@ export function CountryExperienceDynamicPage({
           label={t("country.media.railLabel")}
           items={media}
           getItemKey={(resource) => resource.id}
-          renderItem={(resource) => (
-            <TrustedMediaRailCard
-              resource={resource}
-              explanation={trustedExplanationsById[resource.id]}
-            />
-          )}
+          renderItem={(resource) => {
+            if (plpEnabled && initialPlpTrustedById?.[resource.id]) {
+              return (
+                <MediaPlpTrustedCard
+                  resource={resource}
+                  resolved={initialPlpTrustedById[resource.id]!}
+                />
+              );
+            }
+            return (
+              <TrustedMediaRailCard
+                resource={resource}
+                explanation={trustedExplanationsById[resource.id]}
+              />
+            );
+          }}
           emptyState={<p>{t("country.media.empty")}</p>}
           footerAction={
             <Link href={`${CIVIC_MEDIA_ROUTE}#selection-principles`}>

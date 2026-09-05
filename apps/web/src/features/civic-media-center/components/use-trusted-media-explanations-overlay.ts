@@ -60,9 +60,11 @@ function mergeTrustedExplanations(
 /**
  * Resolve localized trusted-media explanations for the interface locale.
  * Optional `seedById` preserves SSR /media overlay until client resolve upgrades.
+ * Reset 03: `disabled` skips resolve/generate (PLP mode — no legacy CT hooks).
  */
 export function useTrustedMediaExplanationsOverlay(input?: {
   readonly seedById?: CivicMediaTrustedExplanationsById;
+  readonly disabled?: boolean;
 }): CivicMediaTrustedExplanationsById {
   const locale = useLocale();
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
@@ -75,6 +77,10 @@ export function useTrustedMediaExplanationsOverlay(input?: {
   useEffect(() => {
     if (input?.seedById) {
       setById(input.seedById);
+    }
+
+    if (input?.disabled) {
+      return;
     }
 
     if (!readingContext.ready) {
@@ -182,6 +188,7 @@ export function useTrustedMediaExplanationsOverlay(input?: {
     };
   }, [
     displayLanguage,
+    input?.disabled,
     input?.seedById,
     readingContext.ready,
     readingContext.translationPreference,

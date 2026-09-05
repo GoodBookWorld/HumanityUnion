@@ -238,6 +238,15 @@ export {
   PUBLISHED_LOCALIZATION_PROVENANCE_PRIORITY,
   PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
 } from "./published-localized-presentation.js";
+export type { MediaPlpEntityType } from "./media-plp-identities.js";
+export {
+  MEDIA_PLP_ENTITY_TYPE,
+  MEDIA_PLP_ENTITY_TYPES,
+  isMediaPlpEntityType,
+  mediaPlpPrincipleEntityId,
+  mediaPlpPublicNewsEntityId,
+  mediaPlpTrustedEntityId,
+} from "./media-plp-identities.js";
 export type {
   LocalizationOwnershipClass,
   LocalizationResolutionPriorityStep,

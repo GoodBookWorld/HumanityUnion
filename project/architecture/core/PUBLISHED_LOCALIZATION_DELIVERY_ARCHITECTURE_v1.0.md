@@ -472,3 +472,14 @@ Core is implemented under:
 - Feature boundary: `PUBLISHED_LOCALIZATION_CONSUMER_ALLOWLIST = []`
 
 No public route consumes snapshots until Reset 03+ enablement. ACTIVE legacy count remains 30.
+
+---
+
+## Reset 03 — Media vertical slice (flag default OFF)
+
+- Identities: `public_news`, `civic_media_principle`, `civic_media_trusted` (`media-plp-identities.ts`)
+- Build/publish/read: `published-localized-presentation/media/`
+- Web consume: `features/language/media-plp/` behind `HU_MEDIA_PLP_ENABLED` (default false)
+- Shared trusted entityId for `/media` + Country Recommended Media
+- Publication hook `notifyMediaCanonicalPublishedForLocalizationBuild` = **INACTIVE**
+- ACTIVE legacy count remains **30**; see ledger Reset 03 note

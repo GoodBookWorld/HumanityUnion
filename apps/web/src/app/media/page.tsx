@@ -6,6 +6,12 @@ import { fetchCivicMediaCenter } from "../../features/civic-media-center/api";
 import { CivicMediaCenterPageContent } from "../../features/civic-media-center/components/CivicMediaCenterPageContent";
 import type { CivicMediaResolvedEditorial } from "../../features/civic-media-center/components/CivicMediaTranslatedEditorial";
 import { loadCivicMediaEditorialSeed } from "../../features/civic-media-center/load-civic-media-editorial-seed";
+import { isMediaPlpWebEnabled } from "../../features/language/media-plp/feature-flag";
+import { CivicMediaCenterPlpContent } from "../../features/language/media-plp/CivicMediaCenterPlpContent";
+import {
+  loadMediaPlpPrinciplePresentations,
+  loadMediaPlpTrustedPresentations,
+} from "../../features/language/media-plp/load-media-plp-ssr";
 import { resolveDocumentHtmlLocale } from "../../features/language/resolve-document-locale";
 
 export const dynamic = "force-dynamic";
@@ -21,12 +27,8 @@ export const metadata: Metadata = {
 
 /**
  * Pack 08I.9 / 08I.12 — SSR-first Media editorial seed (GET resolve only).
- *
- * CRITICAL (08I.12): localization must never make the canonical Media page
- * unavailable. Media fetch and editorial seed are independent:
- * - Media SSR success → pass payload; seed may overlay translations
- * - Media SSR failure → omit payload so the client recovers via browser fetch
- * - Seed failure → keep media; fall back to canonical editorial client-side
+ * Reset 03 — when HU_MEDIA_PLP_ENABLED=true, serve PLP coherent presentations
+ * (no content_translations generate-on-miss). Default remains legacy.
  */
 export default async function CivicMediaPage() {
   let initialMedia: CivicMediaCenterPublic | undefined;
@@ -35,9 +37,28 @@ export default async function CivicMediaPage() {
   try {
     initialMedia = await fetchCivicMediaCenter();
   } catch {
-    // Leave undefined — client browser fetch can still succeed when SSR
-    // cannot reach the API (common Render/server networking difference).
     initialMedia = undefined;
+  }
+
+  if (initialMedia && isMediaPlpWebEnabled()) {
+    const documentLocale = await resolveDocumentHtmlLocale();
+    const trustedById = await loadMediaPlpTrustedPresentations({
+      resources: initialMedia.trustedMedia,
+      locale: documentLocale.locale,
+    });
+    const principlesById = await loadMediaPlpPrinciplePresentations({
+      principles: initialMedia.selectionPrinciples,
+      locale: documentLocale.locale,
+    });
+    if (trustedById && principlesById) {
+      return (
+        <CivicMediaCenterPlpContent
+          media={initialMedia}
+          trustedById={trustedById}
+          principlesById={principlesById}
+        />
+      );
+    }
   }
 
   if (initialMedia) {
