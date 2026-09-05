@@ -4,6 +4,11 @@
  * Reuses enqueueContentTranslationWarmRequested (existing outbox path).
  * Skips CURRENT translations. Dry-run by default; execute is gated by the
  * staging warm script guards (not enforced inside this module).
+ *
+ * Pack 08K — CURRENT_SKIPPED counts recovery identities already CURRENT for
+ * discovered families. Operator JSON also exposes the clearer alias
+ * `recoveryIdentitiesCurrentForDiscoveredFamilies`. Neither field is
+ * site_translation_coverage.
  */
 
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
@@ -69,7 +74,10 @@ export interface StagingWarmRepairResult {
   readonly totals: {
     readonly MISSING: number;
     readonly STALE: number;
+    /** Identities already CURRENT for discovered families (recovery skip). NOT site_translation_coverage. */
     readonly CURRENT_SKIPPED: number;
+    /** Pack 08K alias of CURRENT_SKIPPED — clearer recovery label. NOT site_translation_coverage. */
+    readonly recoveryIdentitiesCurrentForDiscoveredFamilies: number;
     readonly RETRY_SCHEDULED: number;
     readonly REPAIR_SCHEDULED: number;
     readonly FAILED: number;
@@ -306,7 +314,7 @@ export async function runStagingInitiativePathContentTranslationRepair(input: {
     return String(a.targetLanguage).localeCompare(String(b.targetLanguage));
   });
 
-  const totals = byKindLocale.reduce(
+  const totalsBase = byKindLocale.reduce(
     (acc, row) => ({
       MISSING: acc.MISSING + row.MISSING,
       STALE: acc.STALE + row.STALE,
@@ -324,6 +332,11 @@ export async function runStagingInitiativePathContentTranslationRepair(input: {
       FAILED: 0,
     },
   );
+  const totals = {
+    ...totalsBase,
+    // Pack 08K — clearer recovery label; NOT site_translation_coverage.
+    recoveryIdentitiesCurrentForDiscoveredFamilies: totalsBase.CURRENT_SKIPPED,
+  };
 
   const discoveryTotals = discoveryWithEligible.reduce(
     (acc, row) => ({

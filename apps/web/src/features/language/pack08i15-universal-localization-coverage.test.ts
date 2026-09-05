@@ -206,10 +206,23 @@ describe("Pack 08I.15 — universal coverage gate", () => {
     assert.ok(result.counters.REGISTERED_INTENTIONAL_DEBT === INTENTIONAL_LOCALIZATION_DEBT.length);
   });
 
-  it("intentional debt is explicit (Blog/Media/Knowledge/search/PWA/CI remain listed)", () => {
-    const reasons = INTENTIONAL_LOCALIZATION_DEBT.map((d) => d.relativePath).join(" ");
-    assert.match(reasons, /global-search/);
-    assert.match(reasons, /PwaInitiativeFeed|pwa/);
-    assert.match(reasons, /knowledge-center/);
+  it("Pack 08K closes unnamed residual debt (INTENTIONAL_LOCALIZATION_DEBT empty) and adapters exist", () => {
+    assert.equal(INTENTIONAL_LOCALIZATION_DEBT.length, 0);
+    assert.equal(
+      runUniversalLocalizationCoverageGate(webSrc).counters.REGISTERED_INTENTIONAL_DEBT,
+      0,
+    );
+
+    // Former Search / PWA / Knowledge intentional-debt surfaces now have adapters.
+    for (const relative of [
+      "features/language/adapters/search-result-presentation.ts",
+      "features/language/adapters/pwa-feed-presentation.ts",
+      "features/language/adapters/knowledge-article-presentation.ts",
+      "features/language/adapters/ci-rail-presentation.ts",
+    ]) {
+      const src = readWeb(relative);
+      assert.match(src, /PublicPresentationNode|build\w+Presentation/);
+      assert.ok(src.length > 0, `adapter missing: ${relative}`);
+    }
   });
 });

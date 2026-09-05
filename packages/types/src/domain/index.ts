@@ -199,6 +199,27 @@ export type {
 } from "./content-translation.js";
 export { CONTENT_TRANSLATION_WARM_REQUESTED } from "./content-translation.js";
 export type {
+  PublicLocalizationCoverageStatus,
+  PublicLocalizationProtectionCategory,
+  PublicLocalizedPresentation,
+  PublicLocalizedPresentationCoverage,
+  PublicPresentationIdentity,
+  PublicPresentationNode,
+  PublicProtectedValue,
+} from "./public-localized-presentation.js";
+export {
+  PUBLIC_LOCALIZATION_PROTECTED_BRAND,
+  PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
+  controlledTerminologyValue,
+  isPublicProtectedValue,
+  manualLocalizedValue,
+  protectedIdentity,
+  protectedPrivate,
+  protectedTechnical,
+  uiDictionaryValue,
+  unwrapPublicPresentationValue,
+} from "./public-localized-presentation.js";
+export type {
   LocalizationOwnershipClass,
   LocalizationResolutionPriorityStep,
 } from "./localization-ownership.js";

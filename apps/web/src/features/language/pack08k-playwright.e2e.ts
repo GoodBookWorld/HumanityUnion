@@ -1,0 +1,136 @@
+/**
+ * Pack 08K — Playwright browser E2E against a fixture HTML page.
+ *
+ * Serves deterministic PublicLocalizedPresentation markup (no live Gemini)
+ * and asserts AUTO_TRANSLATABLE nodes are localized for uk / zh-Hant / ar.
+ */
+
+import { createServer, type Server } from "node:http";
+
+import { test, expect } from "@playwright/test";
+
+function buildFixtureHtml(locale: string): string {
+  const posts = [
+    { id: "b1", title: `[${locale}] Short title`, body: `[${locale}] Short body` },
+    { id: "b2", title: `[${locale}] Multi title`, body: `[${locale}] P1` },
+    { id: "b3", title: `[${locale}] Nested title`, body: `[${locale}] Nested heading` },
+    { id: "b4", title: `[${locale}] Author post`, body: `[${locale}] Body with author` },
+    { id: "b5", title: `[${locale}] URL post`, body: `[${locale}] Prose with link` },
+  ];
+  const petitionParagraphs = [1, 2, 3, 4, 5].map(
+    (n) => `<p data-hu-semantic="auto">[${locale}] Petition paragraph ${n}</p>`,
+  );
+  const media = `
+    <article data-hu-surface="media-principle">
+      <h3 data-hu-semantic="auto">[${locale}] Principle title</h3>
+      <p data-hu-semantic="auto">[${locale}] Principle body</p>
+    </article>
+    <article data-hu-surface="media-trusted">
+      <h3 data-hu-semantic="protected">The Atlantic</h3>
+      <p data-hu-semantic="auto">[${locale}] Trusted explanation</p>
+      <a data-hu-semantic="protected" href="https://www.theatlantic.com/">https://www.theatlantic.com/</a>
+    </article>`;
+
+  const blog = posts
+    .map(
+      (p) => `
+      <article data-hu-surface="blog" data-post-id="${p.id}">
+        <h2 data-hu-semantic="auto">${p.title}</h2>
+        <p data-hu-semantic="auto">${p.body}</p>
+        <span data-hu-semantic="protected">Ada Lovelace</span>
+      </article>`,
+    )
+    .join("\n");
+
+  return `<!doctype html>
+<html lang="${locale}">
+<head><meta charset="utf-8"><title>Pack 08K Fixture ${locale}</title></head>
+<body data-viewport="1280" data-locale="${locale}">
+  <main>
+    <section data-hu-surface="blog-list">${blog}</section>
+    <section data-hu-surface="petition">
+      <h2 data-hu-semantic="auto">[${locale}] Petition title</h2>
+      ${petitionParagraphs.join("\n")}
+    </section>
+    <section data-hu-surface="discussion">
+      <p data-hu-semantic="auto">[${locale}] Comment body one</p>
+      <p data-hu-semantic="auto">[${locale}] Comment body two</p>
+      <span data-hu-semantic="protected">Bob Author</span>
+    </section>
+    <section data-hu-surface="ca">
+      <h2 data-hu-semantic="auto">[${locale}] CA title</h2>
+      <p data-hu-semantic="auto">[${locale}] CA section paragraph</p>
+    </section>
+    <section data-hu-surface="media">${media}</section>
+    <section data-hu-surface="knowledge">
+      <h1 data-hu-semantic="auto">[${locale}] Knowledge title</h1>
+      <p data-hu-semantic="auto">[${locale}] Knowledge overview</p>
+    </section>
+    <section data-hu-surface="search">
+      <a data-hu-semantic="auto">[${locale}] Search result title</a>
+      <p data-hu-semantic="auto">[${locale}] Search snippet</p>
+    </section>
+    <section data-hu-surface="related-rail">
+      <a data-hu-semantic="auto">[${locale}] Related initiative</a>
+    </section>
+  </main>
+</body>
+</html>`;
+}
+
+async function withFixtureServer(
+  locale: string,
+  run: (baseUrl: string) => Promise<void>,
+): Promise<void> {
+  const html = buildFixtureHtml(locale);
+  const server: Server = createServer((_req, res) => {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(html);
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    server.close();
+    throw new Error("Failed to bind fixture server");
+  }
+  const baseUrl = `http://127.0.0.1:${address.port}/`;
+  try {
+    await run(baseUrl);
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((err) => (err ? reject(err) : resolve())),
+    );
+  }
+}
+
+for (const locale of ["uk", "zh-Hant", "ar"] as const) {
+  for (const viewport of [
+    { width: 375, height: 812 },
+    { width: 900, height: 800 },
+    { width: 1280, height: 800 },
+  ] as const) {
+    test(`Pack 08K browser ${locale} @${viewport.width}: zero canonical AUTO leaks`, async ({
+      browser,
+    }) => {
+      await withFixtureServer(locale, async (baseUrl) => {
+        const page = await browser.newPage({ viewport });
+        await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+
+        const autoTexts = await page.locator('[data-hu-semantic="auto"]').allTextContents();
+        expect(autoTexts.length).toBeGreaterThan(10);
+
+        const canonicalFallback = autoTexts.filter((t) => !t.includes(`[${locale}]`));
+        expect(canonicalFallback, `unexpected English AUTO nodes: ${canonicalFallback.join(" | ")}`).toEqual(
+          [],
+        );
+
+        const protectedTexts = await page
+          .locator('[data-hu-semantic="protected"]')
+          .allTextContents();
+        expect(protectedTexts.join(" ")).toMatch(/Ada Lovelace|The Atlantic|Bob Author|theatlantic/);
+
+        await page.close();
+      });
+    });
+  }
+}

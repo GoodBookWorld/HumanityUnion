@@ -40,50 +40,19 @@ export interface UniversalLocalizationBypassFinding {
 }
 
 /**
- * Explicit residual debt — counted but not treated as unexpected bypass.
- * Shrink this list; do not grow it without an ADR-level reason.
+ * Pack 08K — ZERO unnamed residual participant-facing translation debt.
+ *
+ * Former 08J.1 Search / PWA / Knowledge / CI / Media / rails entries are closed:
+ * those surfaces must build PublicPresentationNode via language/adapters/*
+ * (or equivalent) and render from PublicLocalizedPresentation — never raw
+ * canonical semantic prose. UI chrome remains uiDictionaryValue / next-intl.
+ *
+ * Keep this array empty. Do not re-register silent English as intentional debt.
  */
 export const INTENTIONAL_LOCALIZATION_DEBT: readonly {
   readonly relativePath: string;
   readonly reason: string;
-}[] = [
-  {
-    relativePath: "features/global-search/components/GlobalSearchPageContent.tsx",
-    reason: "Search result titles are projection text; CIVIC overlay not yet unified (08I.15 debt).",
-  },
-  {
-    relativePath: "features/pwa/components/PwaInitiativeFeed.tsx",
-    reason: "PWA feed marked CIVIC_DATA/API_OPAQUE historically; presentation contract pending.",
-  },
-  {
-    relativePath: "features/community-intelligence/components/CollaborationOpportunitiesWidget.tsx",
-    reason: "CI collaboration titles/summaries await Initiative presentation owner.",
-  },
-  {
-    relativePath: "features/community-intelligence/components/InitiativeOverlapNotice.tsx",
-    reason: "Overlap notice titles await Initiative presentation owner.",
-  },
-  {
-    relativePath: "features/public-news/components/PublicNewsRelatedInitiatives.tsx",
-    reason: "News related rail titles await Initiative presentation owner.",
-  },
-  {
-    relativePath: "features/member-profile/components/RecentPublicInitiativesDisclosure.tsx",
-    reason: "Profile disclosure titles await Initiative presentation owner.",
-  },
-  {
-    relativePath: "features/capability02-integration/components/CivicIntegrationWidgets.tsx",
-    reason: "Capability widget titles/summaries await CIVIC_CONTENT presentation owner.",
-  },
-  {
-    relativePath: "features/country-experience/components/TrustedNationalMediaEvidence.tsx",
-    reason: "Trusted national media titles/summaries are civic_media projection debt pending PublicTranslatedFields mount.",
-  },
-  {
-    relativePath: "features/knowledge-center",
-    reason: "Knowledge article bodies are DOCUMENT_LAYER_DEBT — not a content_translations sourceKind yet.",
-  },
-];
+}[] = [];
 
 /** Governed surfaces that must score 0 unexpected PUBLIC_SEMANTIC / RAW_CANONICAL bypass. */
 export const GOVERNED_ZERO_BYPASS_GLOBS = [

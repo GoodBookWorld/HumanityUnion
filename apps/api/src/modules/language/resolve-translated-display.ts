@@ -159,22 +159,18 @@ export function resolveTranslatedDisplay(
     };
   }
 
-  // Pack 08J.1 — consume a stale preferred translation rather than silently
-  // reverting to English when sourceVersion drifted. UI marks isStale; warm
-  // repair regenerates. Do not hide CURRENT rows behind canonical fallback.
+  // Pack 08K — stale preferred must NOT present as preferred_translation /
+  // COMPLETE. Fall back to canonical original with isStale=true; bounded
+  // regeneration is scheduled separately (manual current → CURRENT machine →
+  // canonical fallback).
   if (stalePreferred) {
-    return {
-      presentationMode: "preferred_translation",
-      content: asTextContent(stalePreferred.translatedContent),
-      activeLanguage: preferred,
-      originalLanguage,
+    return baseOriginal({
       originalContent,
+      originalLanguage,
       translation: stalePreferred,
-      isMachineTranslated: stalePreferred.translationKind === "machine",
       isStale: true,
-      canViewOriginal: true,
       canViewTranslation: false,
-    };
+    });
   }
 
   return baseOriginal({

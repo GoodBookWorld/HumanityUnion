@@ -8,6 +8,9 @@ import { Card } from "../../../design-system/components/Card";
 import type { KnowledgeArticlePublic, KnowledgeCenterListing } from "@hu/types";
 
 import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
+import {
+  buildKnowledgeArticlePresentation,
+} from "../../language/adapters/knowledge-article-presentation";
 import { fetchKnowledgeArticle, fetchKnowledgeListing } from "../api";
 import {
   resolveKnowledgeArticleField,
@@ -57,9 +60,6 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
     };
   }, [slug, t]);
 
-  const title = article
-    ? resolveKnowledgeArticleTitle(slug, article.title, t, siteName)
-    : "";
   const purpose = article
     ? resolveKnowledgeArticleField(slug, "purpose", article.purpose, t, siteName)
     : null;
@@ -69,17 +69,29 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
   const keyConcepts = article
     ? resolveKnowledgeKeyConcepts(slug, article.keyConcepts, t, siteName)
     : null;
+  // Pack 08K — semantic article fields via PublicPresentationNode adapter.
+  // Catalog resolution still supplies preferred strings; adapter owns the boundary shape.
+  const articlePresentation = article
+    ? buildKnowledgeArticlePresentation({
+        slug,
+        title: resolveKnowledgeArticleTitle(slug, article.title, t, siteName),
+        purpose: purpose?.value,
+        overview: overview?.value,
+        keyConcepts: keyConcepts?.concepts,
+        explanation: article.explanation,
+      })
+    : null;
 
   return (
     <KnowledgeShell listing={listing}>
       {error ? <p role="alert">{error}</p> : null}
       {!error && !article ? <p role="status">{t("article.loading")}</p> : null}
-      {article && purpose && overview && keyConcepts ? (
+      {article && purpose && overview && keyConcepts && articlePresentation ? (
         <article className="knowledge-article">
           <header className="knowledge-article__header">
-            <h1>{title}</h1>
+            <h1>{articlePresentation.title}</h1>
             <p className="knowledge-article__purpose" data-source={purpose.source}>
-              {purpose.value}
+              {articlePresentation.purpose || purpose.value}
             </p>
           </header>
 
@@ -166,11 +178,17 @@ export function KnowledgeArticlePageContent({ slug }: KnowledgeArticlePageConten
               <Card>
                 <h2>{t("article.relatedPublicPages")}</h2>
                 <ul>
-                  {article.relatedPublicPages.map((item) => (
-                    <li key={item.href}>
-                      <Link href={item.href}>{item.title}</Link>
-                    </li>
-                  ))}
+                  {article.relatedPublicPages.map((item) => {
+                    const relatedPresentation = buildKnowledgeArticlePresentation({
+                      slug: item.href,
+                      title: item.title,
+                    });
+                    return (
+                      <li key={item.href}>
+                        <Link href={item.href}>{relatedPresentation.title}</Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               </Card>
             ) : null}

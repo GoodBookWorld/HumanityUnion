@@ -651,3 +651,60 @@ sanitized participant-facing projection
 | Brand / Legal / Terminology | KEEP |
 | Staging warm as normal ops | DEPRECATE → recovery-only |
 | Second translation engine | NEVER |
+
+---
+
+## Pack 08K — PublicLocalizedPresentation (end-to-end guarantee)
+
+**Supersedes** the acceptance strategy of Pack 08J / 08J.1 for participant-facing semantic coverage.
+
+### PublicLocalizedPresentation
+
+One architectural boundary for participant-facing semantic data:
+
+```
+DOMAIN DATA
+  → SANITIZED PUBLIC PRESENTATION (PublicPresentationNode)
+  → PUBLIC LOCALIZATION BOUNDARY (localizePublicPresentation / ensureLocalizedPublicPresentation)
+  → LOCALIZED PRESENTATION (PublicLocalizedPresentation)
+  → REACT
+```
+
+- Recursive tree: strings, nullable strings, arrays, nested objects.
+- Plain strings are **AUTO_TRANSLATABLE by default**.
+- Coverage statuses: `COMPLETE` | `FALLBACK_CANONICAL` | `STALE` | `MANUAL` | `SOURCE_LANGUAGE`.
+- `COMPLETE` requires zero canonical fallbacks and zero stale nodes. Partial trees (e.g. 4/5 petition paragraphs) must report `FALLBACK_CANONICAL`, never `COMPLETE`.
+
+Contract types live in `packages/types/src/domain/public-localized-presentation.ts`.
+Engine: `apps/api/src/modules/language/public-localized-presentation.ts` (web mirror under `apps/web/src/features/language/`).
+
+### AUTO default / explicit protection
+
+Automatic translation is the default. Protection is an explicit, closed exception set — never inferred from English property names alone:
+
+| Helper | Category |
+|--------|----------|
+| `protectedIdentity` | names, outlet names, usernames |
+| `protectedTechnical` | IDs, URLs, slugs, codes, metrics |
+| `protectedPrivate` | auth/secrets/private notes |
+| `manualLocalizedValue` | Brand/Legal/human-approved |
+| `uiDictionaryValue` | UI chrome (next-intl) |
+| `controlledTerminologyValue` | glossary-controlled terms |
+
+### Residual debt CLOSED (Pack 08K)
+
+Previously registered 08J.1 intentional debt for **Search / PWA / Knowledge / CI** (and related rails) is **CLOSED**.
+
+Those surfaces **must**:
+
+- build sanitized `PublicPresentationNode` trees (see `apps/web/src/features/language/adapters/*`), and
+- render semantic prose from `PublicLocalizedPresentation`, **or**
+- use `uiDictionaryValue` / next-intl catalogs for chrome only.
+
+`INTENTIONAL_LOCALIZATION_DEBT` must remain **empty**. There is **zero unnamed** residual participant-facing translation debt at Pack 08K acceptance.
+
+Proof fixtures: `apps/api/test/unit/language/pack08k-fixtures.ts`  
+Proof tests: `apps/api/test/unit/language/content-translation-pack08k-proofs.unit.test.ts`  
+Browser acceptance: `apps/web/src/features/language/pack08k-browser-acceptance.test.ts`  
+Route matrix: `project/architecture/core/PACK08K_ROUTE_BOUNDARY_MATRIX.md`  
+Developer one-pager: `project/architecture/core/PUBLIC_LOCALIZATION_DEVELOPER_CONTRACT_v1.0.md`

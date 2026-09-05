@@ -73,4 +73,9 @@ packages/geography/source/countries+states+cities.json
 packages/geography/source/regions.json
 packages/geography/source/subregions.json
 
+# Playwright
+**/test-results/
+**/playwright-report/
+**/blob-report/
+
 .DS_Store

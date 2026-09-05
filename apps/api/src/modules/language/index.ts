@@ -75,6 +75,15 @@ export {
   markTranslationStaleIfSourceChanged,
 } from "./resolve-translated-display.js";
 export type { ResolveTranslatedDisplayInput } from "./resolve-translated-display.js";
+export {
+  applyPublicPresentationTranslations,
+  collectAutoTranslatableNodes,
+  ensureLocalizedPublicPresentation,
+  fingerprintPublicPresentation,
+  localizePublicPresentation,
+} from "./public-localized-presentation.js";
+export type { PublicAutoTranslatableNode } from "./public-localized-presentation.js";
+export { notifyPublicPresentationChanged } from "./public-presentation-changed.js";
 export { translateDraft } from "./translate-draft.js";
 export {
   buildParticipantLanguageContextFromExperience,

@@ -8,7 +8,8 @@
     "start": "next start -p 3000",
     "start:standalone": "cd .next/standalone && HOSTNAME=0.0.0.0 PORT=${PORT:-3000} node apps/web/server.js",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test \"src/**/*.test.ts\""
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "test:e2e:pack08k": "playwright test -c playwright.config.ts"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-react": "^11.2.0",
@@ -23,6 +24,7 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.185.4",

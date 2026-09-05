@@ -1,14 +1,28 @@
 /**
- * Pack 08J.1 — reusable Blog presentation via the generic localized boundary.
- * Uses UI/document locale for resolve language. Canonical fields never mutated.
+ * Pack 08J.1 / 08K — reusable Blog presentation via the generic localized boundary.
+ *
+ * After field resolve, builds a PublicPresentationNode and runs
+ * localizePublicPresentation so coverage is computed on every resolve.
+ * Canonical fields are never mutated.
  */
 
-import type { LanguageCode } from "@hu/types";
+import type {
+  LanguageCode,
+  PublicLocalizedPresentationCoverage,
+  PublicPresentationNode,
+} from "@hu/types";
+import {
+  PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
+  protectedIdentity,
+} from "@hu/types";
 
 import {
   resolveLocalizedPresentation,
   type LocalizedPresentationDeps,
 } from "../language/resolve-localized-presentation";
+import {
+  localizePublicPresentation,
+} from "../language/public-localized-presentation";
 import {
   generateContentTranslation,
   resolveTranslatedContent,
@@ -24,6 +38,8 @@ export interface ResolvedBlogPresentation extends BlogPresentationFields {
   readonly presentationMode: "translated" | "original";
   readonly isStale: boolean;
   readonly activeLanguage: LanguageCode | string;
+  /** Pack 08K — PublicLocalizedPresentation coverage for title/excerpt/content. */
+  readonly coverage: PublicLocalizedPresentationCoverage;
 }
 
 export interface BlogPresentationDeps extends LocalizedPresentationDeps {}
@@ -33,8 +49,24 @@ const defaultDeps: BlogPresentationDeps = {
   generateContentTranslation,
 };
 
+function buildBlogPresentationTree(input: {
+  readonly canonical: BlogPresentationFields;
+  readonly authorDisplayName?: string | null;
+}): PublicPresentationNode {
+  const tree: Record<string, PublicPresentationNode> = {
+    title: input.canonical.title,
+    excerpt: input.canonical.excerpt,
+    content: input.canonical.contentHtml,
+  };
+  if (input.authorDisplayName && input.authorDisplayName.trim()) {
+    tree.authorName = protectedIdentity(input.authorDisplayName.trim());
+  }
+  return tree;
+}
+
 /**
  * Resolve eligible Blog presentation fields for the interface locale.
+ * Bridges resolveLocalizedPresentation → localizePublicPresentation coverage.
  */
 export async function resolveBlogPostPresentation(
   input: {
@@ -44,6 +76,7 @@ export async function resolveBlogPostPresentation(
     readonly ready?: boolean;
     readonly translationPreference?: string;
     readonly requestGeneration?: number;
+    readonly authorDisplayName?: string | null;
     /**
      * @deprecated Prefer displayLanguage + ready + translationPreference.
      * Kept for transitional call sites that still pass readingContext.
@@ -84,12 +117,46 @@ export async function resolveBlogPostPresentation(
     deps,
   });
 
+  const presentationTree = buildBlogPresentationTree({
+    canonical: input.canonical,
+    authorDisplayName: input.authorDisplayName,
+  });
+
+  const sourceLanguage = "en";
+  const targetLanguage = resolved.activeLanguage || displayLanguage;
+
+  const translations: Record<string, string> =
+    resolved.presentationMode === "original"
+      ? {}
+      : {
+          title: resolved.fields.title?.trim() || input.canonical.title,
+          excerpt: resolved.fields.excerpt?.trim() || input.canonical.excerpt,
+          content: resolved.fields.content?.trim() || input.canonical.contentHtml,
+        };
+
+  const localized = localizePublicPresentation({
+    identity: {
+      sourceKind: "blog_post",
+      sourceRecordId: input.postId,
+      presentationSchemaVersion: PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
+    },
+    sourceLanguage,
+    targetLanguage,
+    presentation: presentationTree,
+    translations,
+    stalePaths: resolved.isStale
+      ? (["title", "excerpt", "content"] as const)
+      : undefined,
+    isMachineTranslated: resolved.presentationMode !== "original",
+  });
+
   if (resolved.presentationMode === "original") {
     return {
       ...input.canonical,
       presentationMode: "original",
       isStale: resolved.isStale,
       activeLanguage: resolved.activeLanguage,
+      coverage: localized.coverage,
     };
   }
 
@@ -100,5 +167,6 @@ export async function resolveBlogPostPresentation(
     presentationMode: "translated",
     isStale: resolved.isStale,
     activeLanguage: resolved.activeLanguage,
+    coverage: localized.coverage,
   };
 }

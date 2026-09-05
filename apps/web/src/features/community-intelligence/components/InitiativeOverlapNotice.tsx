@@ -2,6 +2,7 @@
 
 import type { CommunityInitiativeRelationshipProjection } from "@hu/types";
 
+import { buildCiRailPresentation } from "../../language/adapters/ci-rail-presentation";
 import {
   CONSIDER_COLLABORATION_BEHAVIOR,
   OVERLAP_NOTICE_INTRO,
@@ -30,13 +31,18 @@ export function InitiativeOverlapNotice({
       <p className="ci-overlap__intro">{OVERLAP_NOTICE_INTRO}</p>
       <ul className="ci-overlap__list">
         {bounded.map((item) => {
+          const presentation = buildCiRailPresentation({
+            recordId: item.initiativeId,
+            title: item.title,
+            summary: item.reasons[0]?.message,
+          });
           const collaborationHref = buildConsiderCollaborationHref(item.publicUrl);
           const typeLabel = relationshipTypeLabel(item.relationshipType);
-          const reason = item.reasons[0]?.message;
+          const reason = presentation.summary || item.reasons[0]?.message;
 
           return (
             <li key={item.initiativeId}>
-              <p className="ci-overlap__title">{item.title}</p>
+              <p className="ci-overlap__title">{presentation.title}</p>
               <p className="ci-overlap__meta">{typeLabel}</p>
               {reason ? <p className="ci-overlap__reason">{reason}</p> : null}
               <p className="ci-overlap__actions">
@@ -44,7 +50,7 @@ export function InitiativeOverlapNotice({
                   href={item.publicUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`View Initiative ${item.title} (opens in a new tab)`}
+                  aria-label={`View Initiative ${presentation.title} (opens in a new tab)`}
                 >
                   View Initiative
                 </a>
@@ -53,7 +59,7 @@ export function InitiativeOverlapNotice({
                   href={collaborationHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Consider collaboration on ${item.title} (opens in a new tab)`}
+                  aria-label={`Consider collaboration on ${presentation.title} (opens in a new tab)`}
                   title={CONSIDER_COLLABORATION_BEHAVIOR}
                 >
                   Consider collaboration

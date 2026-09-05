@@ -28,7 +28,7 @@ import { findMemberById } from "../member/infrastructure/member.repository.js";
 import { findMemberProfileByUserId } from "../member-profile/member-profile.repository.js";
 import { evaluateLifecycleSafety } from "../lifecycle-safety/lifecycle-safety.service.js";
 import { invalidateGlobalSearchIndex } from "../global-search/global-search.index.js";
-import { scheduleContentTranslationWarmAfterMutation } from "../language/content-translation-warm-enqueue.js";
+import { notifyPublicPresentationChanged } from "../language/public-presentation-changed.js";
 import { blogHtmlToPlainText } from "./blog-content-sanitize.js";
 import {
   appendEditorialHistory,
@@ -442,7 +442,7 @@ export async function updateBlogDraft(input: {
 
   if (updated.status === "published") {
     invalidateGlobalSearchIndex();
-    scheduleContentTranslationWarmAfterMutation({
+    notifyPublicPresentationChanged({
       sourceKind: "blog_post",
       sourceRecordId: updated.postId,
       reason: "public_update",
@@ -1054,7 +1054,7 @@ async function publishBlogPostInternal(input: {
 
   if (updated.status === "published") {
     invalidateGlobalSearchIndex();
-    scheduleContentTranslationWarmAfterMutation({
+    notifyPublicPresentationChanged({
       sourceKind: "blog_post",
       sourceRecordId: updated.postId,
       reason: "public_mutation",

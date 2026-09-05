@@ -37,6 +37,15 @@ export {
   isNonTranslatableFieldKey,
 } from "./translate-presentation";
 export type { PresentationProjectionValue } from "./translate-presentation";
+export {
+  applyPublicPresentationTranslations,
+  collectAutoTranslatableNodes,
+  ensureLocalizedPublicPresentation,
+  fingerprintPublicPresentation,
+  localizePublicPresentation,
+} from "./public-localized-presentation";
+export type { PublicAutoTranslatableNode } from "./public-localized-presentation";
+export { assertPublicLocalizationBoundary } from "./assert-public-localization-boundary";
 export { resolveLocalizedPresentation } from "./resolve-localized-presentation";
 export type {
   LocalizedPresentationDeps,

@@ -19,6 +19,11 @@ import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-a
 import { InitiativeImage } from "../../initiatives/components/InitiativeImage";
 import { resolveActivityAreaDisplayLabel } from "../../public-initiative-experience/initiative-experience-i18n";
 import {
+  buildSearchResultPresentation,
+  readSearchResultSummary,
+  readSearchResultTitle,
+} from "../../language/adapters/search-result-presentation";
+import {
   ENTITY_TYPE_OPTIONS,
   fetchPublicSearch,
   type CivicSearchResponse,
@@ -627,20 +632,29 @@ export function GlobalSearchPageContent() {
 
                 {groupedPage.standaloneResults.length > 0 ? (
                   <ul className="global-search-page__list">
-                    {groupedPage.standaloneResults.map((result) => (
+                    {groupedPage.standaloneResults.map((result) => {
+                      // Pack 08K — semantic titles via PublicPresentationNode adapter.
+                      const presentation = buildSearchResultPresentation({
+                        entityId: result.entityId,
+                        title: result.title,
+                        summary: result.summary,
+                      });
+                      const displayTitle = readSearchResultTitle(presentation);
+                      const displaySummary = readSearchResultSummary(presentation);
+                      return (
                       <li
                         key={`${result.entityType}-${result.entityId}`}
                         className="global-search-page__item"
                       >
                         <div className="global-search-page__item-media">
-                          <InitiativeImage title={result.title} imageUrl={result.imageUrl} />
+                          <InitiativeImage title={displayTitle} imageUrl={result.imageUrl} />
                         </div>
                         <div className="global-search-page__item-body">
                           <span className="global-search-page__badge">
                             {localizeEntityTypeLabel(result.entityType)}
                           </span>
-                          <h3>{result.title}</h3>
-                          <p>{result.summary}</p>
+                          <h3>{presentation.title}</h3>
+                          <p>{displaySummary}</p>
                           {result.activityArea ? (
                             <p className="global-search-page__activity-area">
                               {resolveActivityAreaDisplayLabel(result.activityArea, tExperience)}
@@ -657,7 +671,8 @@ export function GlobalSearchPageContent() {
                           </Link>
                         </div>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 ) : null}
               </>

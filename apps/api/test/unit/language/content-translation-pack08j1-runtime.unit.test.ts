@@ -20,7 +20,7 @@ function readApi(relative: string): string {
 }
 
 describe("Pack 08J.1 — stale CURRENT consumption", () => {
-  it("4–6. preferred stale translation is presented (not English reversion)", () => {
+  it("4–6. Pack 08K — stale preferred falls back to original (not COMPLETE preferred_translation)", () => {
     const resolved = resolveTranslatedDisplay({
       originalContent: "Hello EN",
       originalLanguage: "en",
@@ -43,9 +43,9 @@ describe("Pack 08J.1 — stale CURRENT consumption", () => {
         },
       ],
     });
-    assert.equal(resolved.presentationMode, "preferred_translation");
-    assert.equal(resolved.content, "Привіт UK");
-    assert.equal(resolved.activeLanguage, "uk");
+    assert.equal(resolved.presentationMode, "original");
+    assert.equal(resolved.content, "Hello EN");
+    assert.equal(resolved.activeLanguage, "en");
     assert.equal(resolved.isStale, true);
   });
 
@@ -94,7 +94,7 @@ describe("Pack 08J.1 — recovery discovery + scheduling", () => {
 
   it("H. mutation scheduling covers blog + lifecycle; civic_media discoverable", () => {
     const blog = readApi("src/modules/blog/blog.service.ts");
-    assert.match(blog, /scheduleContentTranslationWarmAfterMutation/);
+    assert.match(blog, /notifyPublicPresentationChanged|scheduleContentTranslationWarmAfterMutation/);
     assert.match(blog, /sourceKind:\s*["']blog_post["']/);
 
     const comment = readApi("src/modules/initiative-comments/initiative-comment.service.ts");

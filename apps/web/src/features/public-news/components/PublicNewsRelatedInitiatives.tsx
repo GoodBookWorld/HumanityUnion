@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { buildSearchResultPresentation } from "../../language/adapters/search-result-presentation";
 import { fetchRelatedInitiativesForArticle } from "../public-news-initiative-discovery.utils";
 
 interface PublicNewsRelatedInitiativesProps {
@@ -46,11 +47,19 @@ export function PublicNewsRelatedInitiatives({ article }: PublicNewsRelatedIniti
     <section className="public-news-card__related" aria-label={t("relatedAria")}>
       <h4 className="public-news-card__section-title">{t("relatedTitle")}</h4>
       <ul className="public-news-card__related-list">
-        {relatedInitiatives.map((initiative) => (
-          <li key={initiative.entityId}>
-            <Link href={initiative.publicUrl}>{initiative.title}</Link>
-          </li>
-        ))}
+        {relatedInitiatives.map((initiative) => {
+          // Pack 08K — related rail titles via PublicPresentationNode adapter.
+          const presentation = buildSearchResultPresentation({
+            entityId: initiative.entityId,
+            title: initiative.title,
+            summary: initiative.summary,
+          });
+          return (
+            <li key={initiative.entityId}>
+              <Link href={initiative.publicUrl}>{presentation.title}</Link>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

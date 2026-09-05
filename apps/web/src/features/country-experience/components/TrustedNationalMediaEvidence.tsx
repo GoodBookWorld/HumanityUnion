@@ -1,5 +1,7 @@
 import type { TrustedNationalMediaPublicProjection } from "@hu/types";
 
+import { buildSearchResultPresentation } from "../../language/adapters/search-result-presentation";
+
 function isActiveMediaRoute(
   record: TrustedNationalMediaPublicProjection["media"][number],
 ): record is TrustedNationalMediaPublicProjection["media"][number] & { mediaHref: string } {
@@ -10,6 +12,10 @@ interface TrustedNationalMediaEvidenceProps {
   projection: TrustedNationalMediaPublicProjection;
 }
 
+/**
+ * Pack 08K — trusted media titles/summaries via PublicPresentationNode adapter.
+ * Outlet identity remains domain publisher string (identity); titles/summaries are AUTO.
+ */
 export function TrustedNationalMediaEvidence({ projection }: TrustedNationalMediaEvidenceProps) {
   return (
     <div className="trusted-national-media">
@@ -22,27 +28,34 @@ export function TrustedNationalMediaEvidence({ projection }: TrustedNationalMedi
 
       {projection.media.length > 0 ? (
         <ul className="trusted-national-media__list">
-          {projection.media.map((record) => (
-            <li key={record.id} className="trusted-national-media__item">
-              <article aria-labelledby={`trusted-media-${record.id}`}>
-                <h3 className="trusted-national-media__title" id={`trusted-media-${record.id}`}>
-                  {isActiveMediaRoute(record) ? (
-                    <a href={record.mediaHref}>{record.title}</a>
-                  ) : (
-                    <span>{record.title}</span>
-                  )}
-                </h3>
-                <p className="trusted-national-media__publisher">{record.publisher}</p>
-                <p className="trusted-national-media__summary">{record.summary}</p>
-                {record.mediaRouteStatus === "unavailable" ? (
-                  <p className="trusted-national-media__unavailable" role="note">
-                    {record.unavailableNotice ??
-                      "Media link not available — Verified Media capability not yet implemented."}
-                  </p>
-                ) : null}
-              </article>
-            </li>
-          ))}
+          {projection.media.map((record) => {
+            const presentation = buildSearchResultPresentation({
+              entityId: record.id,
+              title: record.title,
+              summary: record.summary,
+            });
+            return (
+              <li key={record.id} className="trusted-national-media__item">
+                <article aria-labelledby={`trusted-media-${record.id}`}>
+                  <h3 className="trusted-national-media__title" id={`trusted-media-${record.id}`}>
+                    {isActiveMediaRoute(record) ? (
+                      <a href={record.mediaHref}>{presentation.title}</a>
+                    ) : (
+                      <span>{presentation.title}</span>
+                    )}
+                  </h3>
+                  <p className="trusted-national-media__publisher">{record.publisher}</p>
+                  <p className="trusted-national-media__summary">{presentation.summary}</p>
+                  {record.mediaRouteStatus === "unavailable" ? (
+                    <p className="trusted-national-media__unavailable" role="note">
+                      {record.unavailableNotice ??
+                        "Media link not available — Verified Media capability not yet implemented."}
+                    </p>
+                  ) : null}
+                </article>
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="trusted-national-media__empty" role="status">

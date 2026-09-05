@@ -23,11 +23,15 @@
  * Pack 08I.16.1 — bootstrap must hydrate+sync Initiative/Analysis maps; staging zero-discovery fails closed
  *                 unless --allow-empty-discovery.
  * Pack 08J — recovery/migration operator only. Normal content translation is
- * mutation-driven (scheduleContentTranslationWarmAfterMutation). Do not use
+ * mutation-driven (scheduleContentTranslationWarmAfterMutation /
+ * notifyPublicPresentationChanged). Do not use
  * this script for ordinary create/publish/update. Always process.exit after
  * disconnect so Mongo driver heartbeats cannot hang the shell.
  * Pack 08J.1 — discovery covers all CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS
  * (Initiative-path civic families + blog_post + civic_media), not Initiative-path only.
+ * Pack 08K — repair JSON includes recoveryIdentitiesCurrentForDiscoveredFamilies
+ * alongside CURRENT_SKIPPED. That field counts identities already CURRENT for
+ * discovered families during recovery — it is NOT site_translation_coverage.
  *
  * Usage (from apps/api):
  *   pnpm warm:staging-content-translations
@@ -204,8 +208,19 @@ async function main(): Promise<void> {
               })),
               discoveryHint: result.discoveryHint,
             },
-            totals: result.totals,
-            byKindLocale: result.byKindLocale,
+            totals: {
+              ...result.totals,
+              /**
+               * Pack 08K — alias of CURRENT_SKIPPED for clarity.
+               * Counts recovery identities already CURRENT for discovered families.
+               * NOT site_translation_coverage.
+               */
+              recoveryIdentitiesCurrentForDiscoveredFamilies: result.totals.CURRENT_SKIPPED,
+            },
+            byKindLocale: result.byKindLocale.map((row) => ({
+              ...row,
+              recoveryIdentitiesCurrentForDiscoveredFamilies: row.CURRENT_SKIPPED,
+            })),
             repairCandidateCount: result.repairCandidates.length,
             materializationWait: materialization
               ? {
@@ -225,8 +240,8 @@ async function main(): Promise<void> {
               : null,
             note:
               result.mode === "dry-run"
-                ? "DRY RUN — no outbox writes. CURRENT skipped. Re-run with ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true --repair --execute."
-                : "EXECUTE — repair warms enqueued for MISSING/STALE only; CURRENT skipped. Enqueue ≠ materialization. Bounded API worker materializes.",
+                ? "DRY RUN — no outbox writes. CURRENT skipped (recoveryIdentitiesCurrentForDiscoveredFamilies). NOT site_translation_coverage. Re-run with ALLOW_STAGING_CONTENT_TRANSLATION_WARM=true --repair --execute."
+                : "EXECUTE — repair warms enqueued for MISSING/STALE only; CURRENT skipped (recoveryIdentitiesCurrentForDiscoveredFamilies). NOT site_translation_coverage. Enqueue ≠ materialization. Bounded API worker materializes.",
           },
           null,
           2,

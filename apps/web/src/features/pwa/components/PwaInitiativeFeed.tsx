@@ -8,6 +8,9 @@ import type { CommunityCollaborationOpportunityProjection } from "@hu/types";
 
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import { fetchWorldInitiativesProjection } from "../../initiatives/world-initiatives-api";
+import {
+  buildPwaFeedItemPresentation,
+} from "../../language/adapters/pwa-feed-presentation";
 import { getWorkspaceHome } from "../../workspace-home/workspace-home-api";
 
 interface FeedItem {
@@ -57,7 +60,8 @@ async function loadNewestPublicInitiatives(): Promise<FeedItem[]> {
  * Private `/workspace/home` is fetched only after canonical auth is authenticated.
  * Guests/pending never trigger that private projection (or Preferences-style refresh noise).
  *
- * Pack 02G Task 08G — chrome via `pwa.feed.*`; item.title / explanation stay CIVIC_DATA/API_OPAQUE.
+ * Pack 08K — chrome via `pwa.feed.*`; semantic titles/explanations via
+ * `buildPwaFeedItemPresentation` → PublicLocalizedPresentation boundary.
  */
 export function PwaInitiativeFeed() {
   const t = useTranslations("pwa");
@@ -125,19 +129,28 @@ export function PwaInitiativeFeed() {
 
       {items.length > 0 ? (
         <ul className="hu-pwa-initiative-feed__list" aria-label={t("feed.carouselAria")}>
-          {items.map((item) => (
+          {items.map((item) => {
+            // Pack 08K — semantic titles via PublicPresentationNode adapter.
+            const presentation = buildPwaFeedItemPresentation({
+              initiativeId: item.initiativeId,
+              title: item.title,
+              context: item.context,
+              explanation: item.explanation,
+            });
+            return (
             <li key={item.initiativeId} className="hu-pwa-initiative-feed__item">
               <Link className="hu-pwa-initiative-feed__card" href={item.href}>
-                <h3 className="hu-pwa-initiative-feed__title">{item.title}</h3>
-                {item.context ? (
-                  <p className="hu-pwa-initiative-feed__context">{item.context}</p>
+                <h3 className="hu-pwa-initiative-feed__title">{presentation.title}</h3>
+                {presentation.context ? (
+                  <p className="hu-pwa-initiative-feed__context">{presentation.context}</p>
                 ) : null}
-                {item.explanation ? (
-                  <p className="hu-pwa-initiative-feed__why">{item.explanation}</p>
+                {presentation.explanation ? (
+                  <p className="hu-pwa-initiative-feed__why">{presentation.explanation}</p>
                 ) : null}
               </Link>
             </li>
-          ))}
+            );
+          })}
         </ul>
       ) : null}
 
