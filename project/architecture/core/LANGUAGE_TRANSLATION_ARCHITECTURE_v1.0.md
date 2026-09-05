@@ -4,6 +4,13 @@ Version: 1.0
 Status: Active (Provider-backed vertical slice)  
 Pack: Language Architecture Pack 01–02
 
+> **TRANSLATION DELIVERY RESET 01 (2026-09-05):** Target delivery architecture is  
+> **Published Localized Presentation** — see  
+> [`PUBLISHED_LOCALIZATION_DELIVERY_ARCHITECTURE_v1.0.md`](./PUBLISHED_LOCALIZATION_DELIVERY_ARCHITECTURE_v1.0.md),  
+> [`ADR-026-PUBLISHED-LOCALIZATION-DELIVERY.md`](../governance/ADR-026-PUBLISHED-LOCALIZATION-DELIVERY.md),  
+> and [`PUBLISHED_LOCALIZATION_LEGACY_REMOVAL_LEDGER_v1.0.md`](./PUBLISHED_LOCALIZATION_LEGACY_REMOVAL_LEDGER_v1.0.md).  
+> This file remains the historical Pack 01–08K.3.3 record. **Reset 01 does not change runtime behavior.**
+
 ---
 
 ## Purpose
@@ -949,6 +956,20 @@ Retry policy unchanged (`EXACT_FAILURE_REASON_PROPAGATION_08K25`, `INVALID_PROVI
 **Contract:** One `civic_media` / `civic-media-center` identity for trusted explanations across `/media` and country Recommended Media. Geography names are Intl display resolvers (no Gemini). Diagnostics: `HOME_MAP_*` / `COUNTRY_MEDIA_*` counters via `home-country-localization-diagnostic.ts`. Thin media diagnostic still emits `country_media_rail` clones of trusted rows.
 
 **Do not:** per-country dictionaries, duplicate Media translation identities, page-specific allowlists, live Mongo/Gemini from Cursor.
+
+---
+
+## TRANSLATION DELIVERY RESET 01 — Published delivery baseline
+
+Architecture/audit only (no runtime change). Normative target:
+
+Canonical Public Content → Localization Build → atomic PublishedLocalizedPresentation → API/SSR → React.
+
+See:
+
+- `PUBLISHED_LOCALIZATION_DELIVERY_ARCHITECTURE_v1.0.md`
+- `ADR-026-PUBLISHED-LOCALIZATION-DELIVERY.md`
+- `PUBLISHED_LOCALIZATION_LEGACY_REMOVAL_LEDGER_v1.0.md`
 
 ---
 

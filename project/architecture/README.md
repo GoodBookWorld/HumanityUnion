@@ -152,6 +152,10 @@ Engineering standards and platform foundations.
 - `core/PLATFORM_LIFECYCLE.md`
 - `core/SYSTEM_ARCHITECTURE.md`
 - `core/LANGUAGE_TRANSLATION_ARCHITECTURE_v1.0.md`
+- `core/PUBLISHED_LOCALIZATION_DELIVERY_ARCHITECTURE_v1.0.md` (Reset 01 — target delivery)
+- `core/PUBLISHED_LOCALIZATION_LEGACY_REMOVAL_LEDGER_v1.0.md`
+- `core/PUBLIC_LOCALIZATION_DEVELOPER_CONTRACT_v1.0.md`
+- `core/PACK08K_ROUTE_BOUNDARY_MATRIX.md`
 
 ## intelligence/
 
@@ -170,6 +174,8 @@ Platform decisions, freezes, and certification artifacts.
 
 - `governance/ENGINEERING_DECISIONS.md`
 - `governance/ARCHITECTURE_FREEZE.md`
+- `governance/ADR-025-TRANSPARENT-PARTICIPATION-VOTING.md`
+- `governance/ADR-026-PUBLISHED-LOCALIZATION-DELIVERY.md`
 - `governance/COLLECTIVE_INTELLIGENCE_ARCHITECTURE_FREEZE.md`
 - `governance/COLLECTIVE_INTELLIGENCE_FOUNDATION_CERTIFICATE.md`
 

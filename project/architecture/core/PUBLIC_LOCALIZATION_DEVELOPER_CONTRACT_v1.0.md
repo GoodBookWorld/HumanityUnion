@@ -2,6 +2,12 @@
 
 **Normative one-pager.** Participant-facing semantic text localizes by default.
 
+> **TRANSLATION DELIVERY RESET 01:** Future public delivery reads an atomic  
+> **PublishedLocalizedPresentation** (publication concern). Ownership wrappers and  
+> AUTO-by-default remain required when **authoring canonical presentation trees**  
+> for Localization Build. Web must **not** add new generate-on-miss / overlay paths.  
+> See `PUBLISHED_LOCALIZATION_DELIVERY_ARCHITECTURE_v1.0.md`. Runtime unchanged until migration packs.
+
 ## What you must do
 
 1. Build a **sanitized participant-facing presentation** (`PublicPresentationNode`).

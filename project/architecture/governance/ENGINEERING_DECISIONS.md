@@ -336,6 +336,28 @@ ADR-025-TRANSPARENT-PARTICIPATION-VOTING.md, COLLECTIVE_DECISION_ARCHITECTURE.md
 
 ---
 
+## Decision
+
+Published Localization Delivery (Translation Delivery Reset 01)
+
+Capability:
+
+Platform Language / Public Localization
+
+Status:
+
+Accepted (architecture baseline; runtime unchanged until migration packs)
+
+Reason:
+
+Participant-facing localization must be a publication concern: Canonical Public Content → asynchronous Localization Build → atomic PublishedLocalizedPresentation → API/SSR → React. PARTIAL must not be published. Read path returns PUBLISHED_LOCALIZED or coherent CANONICAL_FALLBACK with no provider. Brand/Legal/Terminology/Geography remain higher-priority control planes than machine translation. Media is the first migration slice. Worker concurrency default=1 and no corpus hydrate on public reads are mandatory load-safety rules.
+
+Reference:
+
+ADR-026-PUBLISHED-LOCALIZATION-DELIVERY.md, PUBLISHED_LOCALIZATION_DELIVERY_ARCHITECTURE_v1.0.md, PUBLISHED_LOCALIZATION_LEGACY_REMOVAL_LEDGER_v1.0.md
+
+---
+
 # Register Rules
 
 Engineering Decisions:

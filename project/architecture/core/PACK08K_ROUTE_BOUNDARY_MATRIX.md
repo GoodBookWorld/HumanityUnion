@@ -2,6 +2,11 @@
 
 Participant-facing routes that must consume **PublicLocalizedPresentation** (or an equivalent shared presentation contract) for semantic prose. UI chrome stays next-intl / `uiDictionaryValue`.
 
+> **TRANSLATION DELIVERY RESET 01:** Migration target is **PublishedLocalizedPresentation**  
+> per entity/locale (atomic publish). This matrix remains the surface inventory.  
+> First slice: `/media` (+ shared country Recommended Media). See  
+> `PUBLISHED_LOCALIZATION_DELIVERY_ARCHITECTURE_v1.0.md` §11–13 and the legacy removal ledger.
+
 | Route / surface | Family | Presentation path | Boundary |
 |-----------------|--------|-------------------|----------|
 | `/blog` | `blog_post` | Blog index cards via `resolveBlogPostPresentation` | `localizePublicPresentation` coverage on resolve |
