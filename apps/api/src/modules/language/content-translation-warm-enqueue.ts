@@ -124,6 +124,8 @@ export async function enqueueContentTranslationWarmRequested(
     readonly requestedAt?: string;
     /** Pack 08K.2.2 — constrain consumer locale fan-out (residual retry). */
     readonly targetLocales?: readonly LanguageCode[];
+    /** Pack 08K.2.6 — architecture basis for attempt idempotency. */
+    readonly architectureRetryBasis?: string;
   },
   options: EnqueueOutboxOptions = {},
 ): Promise<ContentTranslationWarmEnqueueResult> {
@@ -136,6 +138,7 @@ export async function enqueueContentTranslationWarmRequested(
       sourceKind: command.sourceKind,
       sourceRecordId: command.sourceRecordId,
       reason: command.reason,
+      architectureRetryBasis: command.architectureRetryBasis ?? null,
     });
     return {
       enqueued: false,
@@ -170,6 +173,7 @@ export async function enqueueContentTranslationWarmRequested(
       sourceKind: command.sourceKind,
       sourceRecordId: command.sourceRecordId,
       reason: command.reason,
+      architectureRetryBasis: command.architectureRetryBasis ?? null,
     });
     return {
       enqueued: true,
@@ -196,6 +200,9 @@ export async function enqueueContentTranslationWarmRequested(
           ...(command.targetLocales?.length
             ? { targetLocales: command.targetLocales }
             : {}),
+          ...(command.architectureRetryBasis
+            ? { architectureRetryBasis: command.architectureRetryBasis }
+            : {}),
         },
         occurredAt: command.requestedAt,
       }),
@@ -210,6 +217,7 @@ export async function enqueueContentTranslationWarmRequested(
       sourceKind: command.sourceKind,
       sourceRecordId: command.sourceRecordId,
       reason: command.reason,
+      architectureRetryBasis: command.architectureRetryBasis ?? null,
     });
 
     return {
@@ -298,6 +306,7 @@ export type ContentTranslationWarmAttemptSnapshot = {
   readonly eventId: string;
   readonly status: "pending" | "published" | "failed";
   readonly reason: string | null;
+  readonly architectureRetryBasis: string | null;
   readonly requestedAt: string;
   readonly attemptAt: string;
   readonly targetLocales: readonly LanguageCode[] | null;
@@ -390,6 +399,7 @@ export async function listContentTranslationWarmAttemptsBounded(input: {
         eventId: record.eventId,
         status: record.status,
         reason: record.command.reason ?? null,
+        architectureRetryBasis: record.command.architectureRetryBasis ?? null,
         requestedAt: record.command.requestedAt,
         attemptAt,
         targetLocales: record.command.targetLocales
@@ -449,6 +459,10 @@ export async function listContentTranslationWarmAttemptsBounded(input: {
             ? row.status
             : "failed",
         reason: typeof payload?.reason === "string" ? payload.reason : null,
+        architectureRetryBasis:
+          typeof payload?.architectureRetryBasis === "string"
+            ? payload.architectureRetryBasis
+            : null,
         requestedAt,
         attemptAt,
         targetLocales: parseTargetLocalesFromPayload(payload),

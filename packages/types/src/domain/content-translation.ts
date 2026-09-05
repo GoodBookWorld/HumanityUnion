@@ -166,4 +166,9 @@ export interface ContentTranslationWarmRequestedCommand {
    * Omit for normal mutation/backfill full Registry fan-out.
    */
   readonly targetLocales?: readonly LanguageCode[];
+  /**
+   * Pack 08K.2.6 — optional architecture retry basis recorded on the attempt
+   * (e.g. EXACT_FAILURE_REASON_PROPAGATION_08K25). Observability / idempotency only.
+   */
+  readonly architectureRetryBasis?: string;
 }

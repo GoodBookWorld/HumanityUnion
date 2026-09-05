@@ -24,6 +24,8 @@ export function buildContentTranslationWarmRequestedCommand(input: {
   readonly reason?: ContentTranslationWarmReason;
   readonly requestedAt?: string;
   readonly targetLocales?: readonly LanguageCode[];
+  /** Pack 08K.2.6 — optional architecture basis for attempt idempotency. */
+  readonly architectureRetryBasis?: string;
 }): ContentTranslationWarmRequestedCommand {
   const sourceRecordId = input.sourceRecordId.trim();
   if (!sourceRecordId) {
@@ -32,6 +34,7 @@ export function buildContentTranslationWarmRequestedCommand(input: {
   const targetLocales = input.targetLocales?.length
     ? ([...new Set(input.targetLocales.map((locale) => locale.trim()).filter(Boolean))] as LanguageCode[])
     : undefined;
+  const architectureRetryBasis = input.architectureRetryBasis?.trim() || undefined;
   return {
     commandName: CONTENT_TRANSLATION_WARM_REQUESTED,
     sourceKind: input.sourceKind,
@@ -39,6 +42,7 @@ export function buildContentTranslationWarmRequestedCommand(input: {
     requestedAt: input.requestedAt ?? new Date().toISOString(),
     reason: input.reason ?? "public_mutation",
     ...(targetLocales?.length ? { targetLocales } : {}),
+    ...(architectureRetryBasis ? { architectureRetryBasis } : {}),
   };
 }
 

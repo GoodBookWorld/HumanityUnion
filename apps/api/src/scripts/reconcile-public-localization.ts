@@ -20,6 +20,11 @@
  * Pack 08K.2.5 — true residual selection (exclude CURRENT) + explicit identities:
  *   --residual sourceKind:sourceRecordId:locale   (repeatable; read-only; no prose)
  *
+ * Pack 08K.2.6 — controlled one-attempt post-fix diagnostic retry:
+ *   --retry-explicit-residuals-after-failure-reason-fix
+ *   requires one or more --residual; no automatic discovery
+ *   execute additionally requires --mongo + staging gates (same as residual retry)
+ *
  * Full-corpus execute (--execute without --retry-ready-residuals) uses
  * uniquePresentationsRequiringWork. Residual execute uses ONLY
  * selectReadyPresentationsForResidualRetry — never falls back to full corpus.
@@ -27,7 +32,7 @@
  * Residual execute requires ALL of:
  *   --mongo
  *   --execute
- *   --retry-ready-residuals
+ *   --retry-ready-residuals  OR  --retry-explicit-residuals-after-failure-reason-fix
  *   ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true
  *   Mongo database name === humanity_union_staging
  *   PLATFORM_MODE is not production
@@ -36,6 +41,9 @@
  *   pnpm reconcile:public-localization -- --mongo
  *   pnpm reconcile:public-localization -- --mongo --explain-residuals
  *   pnpm reconcile:public-localization -- --mongo --retry-ready-residuals
+ *   pnpm reconcile:public-localization -- --mongo \
+ *     --retry-explicit-residuals-after-failure-reason-fix \
+ *     --residual blog_post:blog-id:zh-Hant
  *   ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true \
  *     pnpm reconcile:public-localization -- --mongo --execute --retry-ready-residuals \
  *       --wait-for-materialization --timeout-ms=600000
@@ -66,6 +74,11 @@ import {
   runPublicLocalizationResidualRetry,
 } from "../modules/language/public-localization-residual-retry.js";
 import { explainResidualsOnly, parseResidualIdentityArgs } from "../modules/language/public-localization-residual-only-diagnostic.js";
+import {
+  assertExplicitPostFixExecuteGuards,
+  EXPLICIT_POST_FIX_RETRY_FLAG,
+  runExplicitResidualsAfterFailureReasonFix,
+} from "../modules/language/public-localization-explicit-post-fix-retry.js";
 import { explainPublicLocalizationResidualsWithPreflight } from "../modules/language/public-localization-retry-preflight.js";
 import type { StagingWarmSourceKind } from "../modules/language/content-translation-staging-warm-backfill.js";
 
@@ -91,6 +104,10 @@ function isExplainResidualsRequested(): boolean {
 
 function isRetryReadyResidualsRequested(): boolean {
   return process.argv.includes("--retry-ready-residuals");
+}
+
+function isRetryExplicitPostFixRequested(): boolean {
+  return process.argv.includes(EXPLICIT_POST_FIX_RETRY_FLAG);
 }
 
 function isMongoFlagRequested(): boolean {
@@ -122,6 +139,7 @@ function parseKinds(): StagingWarmSourceKind[] | undefined {
 function assertReconciliationGuards(input: {
   readonly execute: boolean;
   readonly retryReadyResiduals: boolean;
+  readonly retryExplicitPostFix: boolean;
   readonly mongoFlag: boolean;
   readonly databaseName: string | null;
 }): void {
@@ -129,10 +147,27 @@ function assertReconciliationGuards(input: {
     return;
   }
 
-  if (input.retryReadyResiduals && !input.mongoFlag) {
+  if (
+    (input.retryReadyResiduals || input.retryExplicitPostFix) &&
+    !input.mongoFlag
+  ) {
     throw new Error(
-      "Refusing residual retry execute: --mongo is required with --execute --retry-ready-residuals.",
+      "Refusing residual retry execute: --mongo is required with --execute and residual retry flags.",
     );
+  }
+
+  if (input.retryExplicitPostFix) {
+    assertExplicitPostFixExecuteGuards({
+      mongoFlag: input.mongoFlag,
+      execute: input.execute,
+      databaseName: input.databaseName,
+      allowFlag: process.env[ALLOW_FLAG],
+      platformMode: process.env.PLATFORM_MODE,
+      nodeEnv: process.env.NODE_ENV,
+      stagingDatabase: STAGING_DATABASE,
+      allowEnvName: ALLOW_FLAG,
+    });
+    return;
   }
 
   if (process.env[ALLOW_FLAG] !== "true") {
@@ -162,12 +197,20 @@ async function main(): Promise<void> {
   const waitForMaterialization = isWaitForMaterializationRequested();
   const explainResiduals = isExplainResidualsRequested();
   const retryReadyResiduals = isRetryReadyResidualsRequested();
+  const retryExplicitPostFix = isRetryExplicitPostFixRequested();
   const mongoFlag = isMongoFlagRequested();
   const kinds = parseKinds();
   const timeoutMs = parseTimeoutMs();
+  const explicitIdentities = parseResidualIdentityArgs(process.argv);
 
   if (execute && explainResiduals) {
     throw new Error("--explain-residuals is READ-ONLY; omit --execute.");
+  }
+
+  if (retryExplicitPostFix && retryReadyResiduals) {
+    throw new Error(
+      "Choose either --retry-ready-residuals or --retry-explicit-residuals-after-failure-reason-fix.",
+    );
   }
 
   if (!isMongoConfigured()) {
@@ -178,14 +221,110 @@ async function main(): Promise<void> {
   assertReconciliationGuards({
     execute,
     retryReadyResiduals,
+    retryExplicitPostFix,
     mongoFlag,
     databaseName: mongo.database,
   });
 
+  // Pack 08K.2.6 — explicit post-fix diagnostic retry (no full corpus).
+  if (retryExplicitPostFix) {
+    if (explicitIdentities.length === 0) {
+      throw new Error(
+        "--retry-explicit-residuals-after-failure-reason-fix requires one or more --residual identities.",
+      );
+    }
+    const bootstrap = await bootstrapContentTranslationResidualDiagnosticPersistence();
+    const plan = await runExplicitResidualsAfterFailureReasonFix({
+      execute: false,
+      postFixFlagEnabled: true,
+      explicitIdentities,
+    });
+    console.log(
+      JSON.stringify(
+        {
+          pack: "08K.2.6",
+          operation: "retry_explicit_residuals_after_failure_reason_fix_selection",
+          mode: "dry-run",
+          database: mongo.database,
+          persistenceBootstrap: bootstrap.mode,
+          FULL_CORPUS_HYDRATED: plan.FULL_CORPUS_HYDRATED,
+          SELECTED_IDENTITIES: plan.SELECTED_IDENTITIES,
+          BLOCKED_IDENTITIES: plan.BLOCKED_IDENTITIES,
+          SOURCE_RECORDS_LOADED: plan.SOURCE_RECORDS_LOADED,
+          PEAK_IN_FLIGHT_IDENTITIES: plan.PEAK_IN_FLIGHT_IDENTITIES,
+          WORKER_CONCURRENCY: plan.WORKER_CONCURRENCY,
+          selectedIdentities: plan.selectedIdentities,
+          blockedIdentities: plan.blockedIdentities,
+          abortReason: plan.abortReason,
+          note: plan.note,
+        },
+        null,
+        2,
+      ),
+    );
+    if (plan.abortReason) {
+      process.exitCode = 1;
+      return;
+    }
+    if (!execute) {
+      return;
+    }
+
+    const residual = await runExplicitResidualsAfterFailureReasonFix({
+      execute: true,
+      postFixFlagEnabled: true,
+      explicitIdentities,
+      waitForMaterialization,
+      timeoutMs,
+    });
+    console.log(
+      JSON.stringify(
+        {
+          pack: "08K.2.6",
+          operation: "retry_explicit_residuals_after_failure_reason_fix",
+          mode: "execute",
+          database: mongo.database,
+          FULL_CORPUS_HYDRATED: residual.FULL_CORPUS_HYDRATED,
+          SELECTED_IDENTITIES: residual.SELECTED_IDENTITIES,
+          BLOCKED_IDENTITIES: residual.BLOCKED_IDENTITIES,
+          SOURCE_RECORDS_LOADED: residual.SOURCE_RECORDS_LOADED,
+          PEAK_IN_FLIGHT_IDENTITIES: residual.PEAK_IN_FLIGHT_IDENTITIES,
+          WORKER_CONCURRENCY: residual.WORKER_CONCURRENCY,
+          presentationsScheduled: residual.presentationsScheduled,
+          presentationsDeduped: residual.presentationsDeduped,
+          presentationsFailed: residual.presentationsFailed,
+          selectedIdentities: residual.selectedIdentities,
+          blockedIdentities: residual.blockedIdentities,
+          outcomes: residual.outcomes?.map((row) => ({
+            sourceKind: row.sourceKind,
+            sourceRecordId: row.sourceRecordId,
+            targetLocale: row.targetLocale,
+            outcome: row.outcome,
+            ...(row.outcome === "TERMINAL_FAILED"
+              ? {
+                  failureMetadataVersion: row.failureMetadataVersion,
+                  failureClass: row.failureClass,
+                  failureReasonCode: row.failureReasonCode,
+                  retryability: row.retryability,
+                  latestAttemptAt: row.latestAttemptAt,
+                  latestAttemptReason: row.latestAttemptReason,
+                  latestAttemptTargetLocale: row.latestAttemptTargetLocale,
+                  architectureRetryBasis: row.architectureRetryBasis,
+                }
+              : {}),
+          })),
+          note: residual.note,
+        },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+
   // Pack 08K.2.4 — residual-only diagnostics: NO civic snapshot hydrate, NO full corpus audit.
   if (explainResiduals) {
     const bootstrap = await bootstrapContentTranslationResidualDiagnosticPersistence();
-    const explicitIdentities = parseResidualIdentityArgs(process.argv);
     const residualOnly = await explainResidualsOnly({
       ...(explicitIdentities.length ? { explicitIdentities } : {}),
     });

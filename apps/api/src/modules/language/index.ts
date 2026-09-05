@@ -319,6 +319,18 @@ export type {
   ResidualOnlyDiagnosticResult,
 } from "./public-localization-residual-only-diagnostic.js";
 export {
+  EXPLICIT_POST_FIX_RETRY_FLAG,
+  assertExplicitPostFixExecuteGuards,
+  evaluateExplicitPostFixDiagnosticRetryEligibility,
+  runExplicitResidualsAfterFailureReasonFix,
+} from "./public-localization-explicit-post-fix-retry.js";
+export type {
+  ExplicitPostFixIdentityOutcome,
+  ExplicitPostFixRetryEligibility,
+  ExplicitPostFixRetryResult,
+  ExplicitPostFixSelectedIdentity,
+} from "./public-localization-explicit-post-fix-retry.js";
+export {
   loadTranslatableSourceDirect,
   getResidualDiagnosticCounters,
   resetResidualDiagnosticCountersForTests,

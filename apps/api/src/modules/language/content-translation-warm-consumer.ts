@@ -122,6 +122,11 @@ function parseWarmCommand(
         ),
       ] as LanguageCode[])
     : undefined;
+  const architectureRetryBasis =
+    typeof payload.architectureRetryBasis === "string" &&
+    payload.architectureRetryBasis.trim().length > 0
+      ? payload.architectureRetryBasis.trim()
+      : undefined;
 
   return {
     commandName: CONTENT_TRANSLATION_WARM_REQUESTED,
@@ -130,6 +135,7 @@ function parseWarmCommand(
     requestedAt,
     reason: (typeof reason === "string" ? reason : "public_mutation") as ContentTranslationWarmReason,
     ...(targetLocales?.length ? { targetLocales } : {}),
+    ...(architectureRetryBasis ? { architectureRetryBasis } : {}),
   };
 }
 

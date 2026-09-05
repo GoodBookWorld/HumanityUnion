@@ -820,6 +820,20 @@ Counters add: `CANDIDATE_IDENTITIES_INSPECTED`, `RESIDUAL_IDENTITIES`, `CURRENT_
 
 ---
 
+## Pack 08K.2.6 — Controlled post-fix diagnostic retry
+
+One-time operator override for historical pre-08K.2.5 collapsed `failureReasonCode=VALIDATION_FAILED`, gated by:
+
+```
+--retry-explicit-residuals-after-failure-reason-fix
+--residual sourceKind:sourceRecordId:locale   (required, repeatable)
+[--execute --mongo --wait-for-materialization]
+```
+
+Architecture basis: `EXACT_FAILURE_REASON_PROPAGATION_08K25` (recorded on the warm attempt). Idempotent: a second attempt with that basis is refused. `INVALID_PROVIDER_PAYLOAD` remains selectable under normal `VALIDATION_DIAGNOSTICS_CONTRACT_v1` policy. No corpus hydrate; historical FAILED rows are not cleared. Cursor must not run this against staging/prod.
+
+---
+
 ## Pack 08K.2.2 — Gated residual retry operator
 
 ```
