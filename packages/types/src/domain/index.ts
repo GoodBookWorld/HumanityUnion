@@ -220,6 +220,25 @@ export {
   unwrapPublicPresentationValue,
 } from "./public-localized-presentation.js";
 export type {
+  BuildValidationReasonCode,
+  BuildValidationResult,
+  LocalizedNodeProvenance,
+  PublishAtomicResult,
+  PublishedLocalizationProvenanceSource,
+  PublishedLocalizationSchemaVersion,
+  PublishedLocalizedPresentationIdentity,
+  PublishedLocalizedPresentationRecord,
+  PublishedLocalizedPresentationSeo,
+  PublishedLocalizedPresentationState,
+  ResolvePublishedPresentationInput,
+  ResolvePublishedPresentationMode,
+  ResolvePublishedPresentationResult,
+} from "./published-localized-presentation.js";
+export {
+  PUBLISHED_LOCALIZATION_PROVENANCE_PRIORITY,
+  PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
+} from "./published-localized-presentation.js";
+export type {
   LocalizationOwnershipClass,
   LocalizationResolutionPriorityStep,
 } from "./localization-ownership.js";

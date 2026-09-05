@@ -106,6 +106,13 @@ export const MONGO_COLLECTIONS = {
   initiativeCivicArchiveVersions: "initiative_civic_archive_versions",
   petitionVisitorSignals: "petition_visitor_signals",
   contentTranslations: "content_translations",
+  /**
+   * Reset 02 — current PUBLISHED pointer (unique entityType+entityId+locale).
+   * Normal reads use this collection only — never history scans.
+   */
+  publishedLocalizedPresentationsCurrent: "published_localized_presentations_current",
+  /** Reset 02 — BUILDING/FAILED/SUPERSEDED/history snapshots (not used by normal reads). */
+  publishedLocalizedPresentationsHistory: "published_localized_presentations_history",
   /** Pack 02B — Admin-managed Language Registry. */
   languageRegistry: "language_registry",
   /** Pack 02F — Canonical Terminology Glossary. */

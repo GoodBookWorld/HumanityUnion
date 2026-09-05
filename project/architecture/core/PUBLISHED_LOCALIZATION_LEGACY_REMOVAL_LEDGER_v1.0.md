@@ -73,3 +73,15 @@ Status values: `ACTIVE` | `FLAGGED_LEGACY` | `REMOVED` | `KEEP`
 3. Phase G closes when ACTIVE count for L01–L30 is **0** (KEEP rows excluded).
 
 **Baseline ACTIVE count (Reset 01):** 30
+
+---
+
+## Reset 02 note (2026-09-05)
+
+Published Localized Presentation **core** is now **AVAILABLE**
+(`apps/api/src/modules/language/published-localized-presentation/`,
+`PUBLISHED_LOCALIZATION_SCHEMA_VERSION=PLP.1`).
+
+- Consumer allowlist remains **empty** (dormant — no public route migrated).
+- **No** legacy path removed.
+- **ACTIVE legacy count remains 30** (truthful; do not decrement until a route migrates and a ledger row is REMOVED).

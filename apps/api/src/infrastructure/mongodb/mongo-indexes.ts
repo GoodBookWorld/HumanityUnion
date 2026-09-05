@@ -1102,6 +1102,36 @@ const MODULE_INDEXES: ReadonlyArray<{
     ],
   },
   {
+    // TRANSLATION DELIVERY RESET 02 — current PUBLISHED pointer (indexed read).
+    collectionName: MONGO_COLLECTIONS.publishedLocalizedPresentationsCurrent,
+    indexes: [
+      {
+        key: { entityType: 1, entityId: 1, locale: 1 },
+        unique: true,
+        name: "published_localized_presentations_current_entity_locale_unique",
+      },
+      {
+        key: { entityType: 1, entityId: 1, locale: 1, state: 1 },
+        name: "published_localized_presentations_current_state",
+      },
+    ],
+  },
+  {
+    // TRANSLATION DELIVERY RESET 02 — history / BUILDING / FAILED (not normal read path).
+    collectionName: MONGO_COLLECTIONS.publishedLocalizedPresentationsHistory,
+    indexes: [
+      {
+        key: { snapshotId: 1 },
+        unique: true,
+        name: "published_localized_presentations_history_snapshot_unique",
+      },
+      {
+        key: { "identity.entityType": 1, "identity.entityId": 1, "identity.locale": 1 },
+        name: "published_localized_presentations_history_entity_locale",
+      },
+    ],
+  },
+  {
     // Production Completion Pack 02B — Language Registry.
     collectionName: MONGO_COLLECTIONS.languageRegistry,
     indexes: [

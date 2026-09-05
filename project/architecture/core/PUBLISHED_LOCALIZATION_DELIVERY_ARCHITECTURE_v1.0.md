@@ -459,3 +459,16 @@ A **mixed** localized/canonical card is **not**.
 ## Acceptance (Reset 01 docs)
 
 See ADR-026 and the RETURN checklist in the implementing commit message / agent return. This document defines A–O of the architecture acceptance; P–R are process constraints (no runtime/live/`production-admin-source.json` changes).
+
+---
+
+## Reset 02 — core implementation (dormant)
+
+Core is implemented under:
+
+- `packages/types/src/domain/published-localized-presentation.ts`
+- `apps/api/src/modules/language/published-localized-presentation/`
+- Read barrel: `read.ts` (provider/worker-free)
+- Feature boundary: `PUBLISHED_LOCALIZATION_CONSUMER_ALLOWLIST = []`
+
+No public route consumes snapshots until Reset 03+ enablement. ACTIVE legacy count remains 30.
