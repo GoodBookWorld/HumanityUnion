@@ -5228,5 +5228,37 @@
       "messageAria": "傳訊給 {name}",
       "opening": "開啟中…"
     }
+  },
+  "actuc": {
+    "closePresentationAria": "關閉 ACTUC 簡報",
+    "badge": "{siteName} // 知識防衛部門",
+    "close": "關閉",
+    "closeAria": "關閉",
+    "titleLead": "ACTUC：知識防衛軍",
+    "titleEmphasis": "對抗無知",
+    "subtitleLead": "侵略不過是系統性無知所投下的暴力陰影。",
+    "subtitleBody": "ACTUC（行動團結中心）是 {siteName} 的戰略防衛平台——動員全球知識先鋒，以消解假訊息、揭露根源並恢復人類真相。",
+    "pillars": {
+      "shield": {
+        "node": "[ 節點 01 // 盾 ]",
+        "title": "觀察與真相",
+        "description": "在全球假訊息攻擊引發敵意或社會崩解之前，於根源加以識別與分析。"
+      },
+      "sword": {
+        "node": "[ 節點 02 // 劍 ]",
+        "title": "策略與反制",
+        "description": "以同步、專家主導的知識回應系統，取代孤立而被動的恐慌。"
+      },
+      "sentinel": {
+        "node": "[ 節點 03 // 哨兵 ]",
+        "title": "從人質到哨兵",
+        "description": "賦能個人，從混亂的旁觀者轉為全球智慧的積極守護者。"
+      }
+    },
+    "mottoStatusLabel": "> 狀態：",
+    "mottoStatusValue": "主動防衛",
+    "mottoSloganLabel": " // 口號：",
+    "mottoSloganValue": "消解無知。解除侵略。",
+    "cta": "[ 加入先鋒 ]"
   }
 }

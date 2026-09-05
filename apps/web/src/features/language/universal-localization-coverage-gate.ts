@@ -69,6 +69,8 @@ export const GOVERNED_ZERO_BYPASS_GLOBS = [
   "features/civic-media-center/components/CivicMediaCenterPageContent.tsx",
   "features/civic-media-center/components/CivicMediaTranslatedEditorial.tsx",
   "features/civic-media-center/components/TrustedMediaRailCard.tsx",
+  "features/public-news/components/",
+  "features/public-home-v2/components/ActucPresentationModal.tsx",
 ] as const;
 
 const BYPASS_PATTERNS: readonly {
@@ -90,6 +92,21 @@ const BYPASS_PATTERNS: readonly {
     id: "raw_summary_jsx",
     pattern: /\{(?:latest|response|item|analysis|petition)\.summary\}/,
     counter: "PUBLIC_SEMANTIC_BYPASS",
+  },
+  {
+    id: "raw_article_title_jsx",
+    pattern: /\{article\.title\}/,
+    counter: "PUBLIC_SEMANTIC_BYPASS",
+  },
+  {
+    id: "raw_article_summary_jsx",
+    pattern: /\{article\.summary\}/,
+    counter: "PUBLIC_SEMANTIC_BYPASS",
+  },
+  {
+    id: "raw_country_name_jsx",
+    pattern: /\{country\.name\}/,
+    counter: "RAW_CANONICAL_RENDER_BYPASS",
   },
   {
     id: "brand_via_content_translations",

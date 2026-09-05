@@ -7,7 +7,13 @@ import { useLocale, useTranslations } from "next-intl";
 
 import type { CountryStatisticsCounts, TrustedMediaResource } from "@hu/types";
 
-import { getCountryByCode, getRegionLabel } from "@hu/geography";
+import { getCountryByCode } from "@hu/geography";
+import {
+  getLocalizedAdminRegionDisplayName,
+  getLocalizedCountryDisplayName,
+  resolveUnRegionDisplayName,
+  resolveUnSubregionDisplayName,
+} from "@hu/geography";
 import { INITIATIVE_ACTIVITY_AREA_OPTIONS } from "../../initiatives/initiative-activity-areas";
 import { CitySelect, RegionSelect, useGeographyCommunityOptions } from "../../geography-integrity";
 import { TrustedMediaRailCard } from "../../civic-media-center/components/TrustedMediaRailCard";
@@ -56,6 +62,30 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
   const tSearch = useTranslations("search");
   const tExperience = useTranslations("initiativeExperience");
   const country = getCountryByCode(countryCode);
+  const countryDisplayName = useMemo(
+    () =>
+      country
+        ? getLocalizedCountryDisplayName(countryCode, locale, country.name)
+        : countryCode,
+    [country, countryCode, locale],
+  );
+  const unRegionDisplayName = useMemo(
+    () =>
+      country?.region
+        ? resolveUnRegionDisplayName({ englishRegion: country.region, locale }).displayName
+        : "",
+    [country?.region, locale],
+  );
+  const unSubregionDisplayName = useMemo(
+    () =>
+      country?.subregion
+        ? resolveUnSubregionDisplayName({
+            englishSubregion: country.subregion,
+            locale,
+          }).displayName
+        : "",
+    [country?.subregion, locale],
+  );
   const [statistics, setStatistics] = useState<CountryStatisticsCounts | null>(null);
   const [media, setMedia] = useState<TrustedMediaResource[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,8 +98,11 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
   const [entityTypeValue, setEntityTypeValue] = useState("");
 
   const regionLabel = useMemo(
-    () => (regionCode ? (getRegionLabel(countryCode, regionCode) ?? "") : ""),
-    [countryCode, regionCode],
+    () =>
+      regionCode
+        ? getLocalizedAdminRegionDisplayName(countryCode, regionCode, locale)
+        : "",
+    [countryCode, locale, regionCode],
   );
   const { options: cityOptions } = useGeographyCommunityOptions(countryCode, regionCode, false);
   const communityLabel = useMemo(() => {
@@ -199,18 +232,20 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
           <li>
             <Link href="/search">{t("country.breadcrumbCountries")}</Link>
           </li>
-          <li aria-current="page">{country.name}</li>
+          <li aria-current="page">{countryDisplayName}</li>
         </ol>
       </nav>
 
       <header className="country-experience-dynamic__hero">
         <div className="country-experience-dynamic__hero-copy">
-          <h1>{country.name}</h1>
+          <h1>{countryDisplayName}</h1>
           <p className="country-experience-dynamic__region">
-            {country.region} · {country.subregion}
+            {unRegionDisplayName}
+            {unRegionDisplayName && unSubregionDisplayName ? " · " : null}
+            {unSubregionDisplayName}
           </p>
           <p className="country-experience-dynamic__intro">
-            {t("country.heroIntro", { countryName: country.name })}
+            {t("country.heroIntro", { countryName: countryDisplayName })}
           </p>
         </div>
         <div className="country-experience-dynamic__flag-wrap">
@@ -267,7 +302,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
         <form
           className="country-experience-dynamic__search-card"
           onSubmit={handleSearchSubmit}
-          aria-label={t("country.search.formAria", { countryName: country.name })}
+          aria-label={t("country.search.formAria", { countryName: countryDisplayName })}
         >
           <div className="country-experience-dynamic__search-primary">
             <label className="country-experience-dynamic__search-query">
@@ -343,7 +378,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
             </label>
           </div>
           <p className="country-experience-dynamic__search-scope">
-            {t("country.search.scopeCountry")} <strong>{country.name}</strong>
+            {t("country.search.scopeCountry")} <strong>{countryDisplayName}</strong>
             {regionLabel ? (
               <>
                 {" "}
@@ -362,7 +397,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
 
       <CountryCivicActionSection
         countryCode={countryCode}
-        countryName={country.name}
+        countryName={countryDisplayName}
         regionCode={regionCode}
         regionLabel={regionLabel}
         communityCode={communityCode}
@@ -373,7 +408,7 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
         sectionId={`country-media-${countryCode.toLowerCase()}`}
         eyebrow={t("country.media.eyebrow")}
         title={t("country.media.title")}
-        description={t("country.media.description", { countryName: country.name })}
+        description={t("country.media.description", { countryName: countryDisplayName })}
         label={t("country.media.railLabel")}
         items={media}
         getItemKey={(resource) => resource.id}
@@ -388,13 +423,13 @@ export function CountryExperienceDynamicPage({ countryCode }: CountryExperienceD
 
       <CountryPublicNewsWidget
         countryCode={countryCode}
-        countryName={country.name}
+        countryName={countryDisplayName}
         regionName={country.region}
         recommendedMedia={media}
       />
 
-      <CountryTeamSection countryCode={countryCode} countryName={country.name} />
-      <CountryPartnersSection countryCode={countryCode} countryName={country.name} />
+      <CountryTeamSection countryCode={countryCode} countryName={countryDisplayName} />
+      <CountryPartnersSection countryCode={countryCode} countryName={countryDisplayName} />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import type { PublicNewsArticleItem } from "@hu/types";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   MediaRailControls,
@@ -72,6 +72,7 @@ export function PublicNewsSection({
   description,
   className,
 }: PublicNewsSectionProps = {}) {
+  const locale = useLocale();
   const tDiscovery = useTranslations("publicNews.discovery");
   const tCountry = useTranslations("publicNews.country");
   const tErrors = useTranslations("publicNews.errors");
@@ -98,6 +99,8 @@ export function PublicNewsSection({
     setError(null);
 
     try {
+      // Pack 08K.3 — fetch English source corpus; interface `locale` owns presentation.
+      void locale;
       const response = await fetchPublicNewsArticles({
         limit: PUBLIC_NEWS_RAIL_LIMIT,
         language: "en",
@@ -115,7 +118,7 @@ export function PublicNewsSection({
     } finally {
       setLoading(false);
     }
-  }, [tErrors]);
+  }, [tErrors, locale]);
 
   useEffect(() => {
     void loadArticles();

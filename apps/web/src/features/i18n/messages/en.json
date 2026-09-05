@@ -5228,5 +5228,37 @@
       "messageAria": "Message {name}",
       "opening": "Opening…"
     }
+  },
+  "actuc": {
+    "closePresentationAria": "Close ACTUC presentation",
+    "badge": "{siteName} // Intellectual Defense Division",
+    "close": "Close",
+    "closeAria": "Close",
+    "titleLead": "ACTUC: The Intellectual Army",
+    "titleEmphasis": "Fighting Ignorance",
+    "subtitleLead": "Aggression is merely the violent shadow of systemic ignorance.",
+    "subtitleBody": "ACTUC (Action Unity Center) is {siteName}'s strategic defense platform—mobilizing a global intellectual vanguard to neutralize disinformation, expose root causes, and restore human truth.",
+    "pillars": {
+      "shield": {
+        "node": "[ NODE 01 // THE SHIELD ]",
+        "title": "Observation & Truth",
+        "description": "Identifying and analyzing global disinformation attacks at the root before they trigger hostility or social collapse."
+      },
+      "sword": {
+        "node": "[ NODE 02 // THE SWORD ]",
+        "title": "Strategy & Counter-Action",
+        "description": "Replacing isolated, passive panic with a synchronized, expert-led intellectual response system."
+      },
+      "sentinel": {
+        "node": "[ NODE 03 // THE SENTINEL ]",
+        "title": "Hostage to Sentinel",
+        "description": "Empowering individuals to transition from passive spectators of chaos into active guardians of global intelligence."
+      }
+    },
+    "mottoStatusLabel": "> STATUS: ",
+    "mottoStatusValue": "ACTIVE DEFENSE",
+    "mottoSloganLabel": " // SLOGAN: ",
+    "mottoSloganValue": "NEUTRALIZE IGNORANCE. DISARM AGGRESSION.",
+    "cta": "[ Join The Vanguard ]"
   }
 }

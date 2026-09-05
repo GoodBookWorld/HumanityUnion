@@ -878,6 +878,28 @@ Retry policy unchanged (`EXACT_FAILURE_REASON_PROPAGATION_08K25`, `INVALID_PROVI
 
 ---
 
+## Pack 08K.3 — Close runtime localization boundary bypasses
+
+**Staging evidence:** Untranslated participant-facing text remained in:
+
+| Surface | FIRST BREAK | Classification |
+|---------|-------------|----------------|
+| Country hero (`country-experience-dynamic__hero-copy`) | `CountryExperienceDynamicPage` rendered `country.name` / UN region English | `GEOGRAPHIC_DISPLAY_NAME_BYPASS` |
+| `public-news-card` | `PublicNewsCard` rendered raw `article.title` / summary / category | `AUTO_TRANSLATABLE_CONTENT_BYPASS` (+ forced corpus `language:"en"` is source fetch, not display locale) |
+| `actuc-modal__dialog` | `ActucPresentationModal` English literals | `UI_CHROME_BYPASS` (+ brand via Brand Localization) |
+
+**Geography:** `@hu/geography` `resolveCountryDisplayName` / UN region overrides / admin-region resolver. Canonical codes unchanged. Intl.DisplayNames for countries; controlled overrides for UN region/subregion keys. No Gemini, no per-page dictionaries.
+
+**Media:** Shared `buildPublicNewsArticlePresentation` → `PublicLocalizedPresentation`. Publisher `sourceName` = `protectedIdentity`; URL/id/timestamps = `protectedTechnical`. Both `/media` and country news rails use `PublicNewsCard` + `useLocalizedPublicNewsCard` (interface `useLocale()`).
+
+**ACTUC:** next-intl `actuc.*` catalogs (en/uk/zh-Hant/ar); `useLocalizedBrand` for `{siteName}`; external URL protected.
+
+**Boundary diagnostic:** Coverage gate patterns add `{article.title|summary}` and `{country.name}`; governed globs include public-news + ACTUC.
+
+**Preserved:** thin `diagnose:localization-residuals`; HREFLANG deferred; canonical URLs unchanged; no live Gemini for geography/UI chrome.
+
+---
+
 ## Pack 08K.2.2 — Gated residual retry operator
 
 ```

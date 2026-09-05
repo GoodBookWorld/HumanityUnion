@@ -1,8 +1,14 @@
+"use client";
+
+import { useLocale } from "next-intl";
 import {
   formatPublicGeography,
   type PublicGeographyInput,
 } from "@hu/geography";
 
+/**
+ * Pack 08K.3 — participant-facing geography label uses interface locale.
+ */
 export function PublicGeographyLabel({
   geography,
   className,
@@ -10,7 +16,11 @@ export function PublicGeographyLabel({
   geography: PublicGeographyInput | string;
   className?: string;
 }) {
-  const label = typeof geography === "string" ? geography : formatPublicGeography(geography);
+  const locale = useLocale();
+  const label =
+    typeof geography === "string"
+      ? geography
+      : formatPublicGeography({ ...geography, locale });
 
   return <span className={className}>{label}</span>;
 }

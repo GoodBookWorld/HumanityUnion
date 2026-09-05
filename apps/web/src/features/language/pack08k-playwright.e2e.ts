@@ -42,11 +42,53 @@ function buildFixtureHtml(locale: string): string {
     )
     .join("\n");
 
+  const countryHero = `
+    <section data-hu-surface="country-hero" class="country-experience-dynamic__hero-copy">
+      <h1 data-hu-semantic="auto">[${locale}] Canada</h1>
+      <p data-hu-semantic="auto">[${locale}] Americas · [${locale}] Northern America</p>
+      <span data-hu-semantic="protected">CA</span>
+    </section>
+    <section data-hu-surface="region-display">
+      <p data-hu-semantic="auto">[${locale}] British Columbia</p>
+      <span data-hu-semantic="protected">CA-BC</span>
+    </section>`;
+
+  const newsCards = ["media-route", "country-route"]
+    .map(
+      (route) => `
+      <article data-hu-surface="public-news-card" data-news-route="${route}" class="public-news-card"
+        data-hu-fallback-nodes="0">
+        <span data-hu-semantic="auto">[${locale}] Environment</span>
+        <p data-hu-semantic="protected">The Atlantic</p>
+        <h3 data-hu-semantic="auto">[${locale}] News headline for ${route}</h3>
+        <p data-hu-semantic="auto">[${locale}] News summary for ${route}</p>
+        <a data-hu-semantic="protected" href="https://example.com/a">https://example.com/a</a>
+      </article>`,
+    )
+    .join("\n");
+
+  const actuc = `
+    <div data-hu-surface="actuc-modal" class="actuc-modal__dialog" data-open="true">
+      <button data-hu-semantic="ui">${locale === "en" ? "Close" : `[${locale}] Close`}</button>
+      <h2 data-hu-semantic="ui">[${locale}] ACTUC title</h2>
+      <p data-hu-semantic="ui">[${locale}] ACTUC subtitle</p>
+      <a data-hu-semantic="protected" href="https://actuc.com/">https://actuc.com/</a>
+    </div>`;
+
   return `<!doctype html>
-<html lang="${locale}">
-<head><meta charset="utf-8"><title>Pack 08K Fixture ${locale}</title></head>
+<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}">
+<head><meta charset="utf-8"><title>Pack 08K Fixture ${locale}</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; }
+  main { max-width: 1280px; margin: 0 auto; padding: 12px; }
+  .public-news-card, .actuc-modal__dialog, .country-experience-dynamic__hero-copy {
+    overflow-wrap: anywhere; min-width: 0; max-width: 100%;
+  }
+</style>
+</head>
 <body data-viewport="1280" data-locale="${locale}">
   <main>
+    ${countryHero}
     <section data-hu-surface="blog-list">${blog}</section>
     <section data-hu-surface="petition">
       <h2 data-hu-semantic="auto">[${locale}] Petition title</h2>
@@ -62,6 +104,8 @@ function buildFixtureHtml(locale: string): string {
       <p data-hu-semantic="auto">[${locale}] CA section paragraph</p>
     </section>
     <section data-hu-surface="media">${media}</section>
+    <section data-hu-surface="public-news">${newsCards}</section>
+    ${actuc}
     <section data-hu-surface="knowledge">
       <h1 data-hu-semantic="auto">[${locale}] Knowledge title</h1>
       <p data-hu-semantic="auto">[${locale}] Knowledge overview</p>
@@ -127,7 +171,23 @@ for (const locale of ["uk", "zh-Hant", "ar"] as const) {
         const protectedTexts = await page
           .locator('[data-hu-semantic="protected"]')
           .allTextContents();
-        expect(protectedTexts.join(" ")).toMatch(/Ada Lovelace|The Atlantic|Bob Author|theatlantic/);
+        expect(protectedTexts.join(" ")).toMatch(
+          /Ada Lovelace|The Atlantic|Bob Author|theatlantic|CA|actuc\.com/,
+        );
+
+        const newsCards = page.locator('[data-hu-surface="public-news-card"]');
+        expect(await newsCards.count()).toBe(2);
+        expect(await page.locator('[data-hu-surface="country-hero"]').count()).toBe(1);
+        expect(await page.locator('[data-hu-surface="actuc-modal"]').count()).toBe(1);
+        expect(await page.locator('[data-hu-surface="region-display"]').count()).toBe(1);
+
+        const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+        const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+        expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
+
+        if (locale === "ar") {
+          await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+        }
 
         await page.close();
       });

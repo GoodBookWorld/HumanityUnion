@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { getCountryByCode, normalizeCountryInput } from "@hu/geography";
+import { getLocalizedCountryDisplayName } from "@hu/geography";
 
 import { resolveBrandForMetadata } from "../../../features/brand-localization/resolve-brand-for-metadata";
 import { CountryExperienceDynamicPage } from "../../../features/country-experience/components/CountryExperienceDynamicPage";
@@ -37,6 +38,12 @@ export async function generateMetadata({ params }: CountriesPageProps): Promise<
     return buildUnavailablePublicMetadata(t("notFoundTitle", siteName));
   }
 
+  const countryDisplayName = getLocalizedCountryDisplayName(
+    countryCode,
+    locale,
+    country.name,
+  );
+
   const override = await fetchPublicSeoPageOverride({
     family: "country",
     entityKey: countryCode,
@@ -45,11 +52,11 @@ export async function generateMetadata({ params }: CountriesPageProps): Promise<
   return buildPublicPageMetadata(
     applyPageSeoOverrideToMetadataInput(
       {
-        title: country.name,
-        description: t("metaDescription", { countryName: country.name, ...siteName }),
+        title: countryDisplayName,
+        description: t("metaDescription", { countryName: countryDisplayName, ...siteName }),
         canonicalPath: `/countries/${encodeURIComponent(countryCode)}`,
         openGraphType: "website",
-        socialTitle: country.name,
+        socialTitle: countryDisplayName,
       },
       override?.fields,
     ),
@@ -77,19 +84,24 @@ export default async function CountriesPage({ params }: CountriesPageProps) {
   const brand = await resolveBrandForMetadata(locale);
   const t = await getTranslations("publicGeo.country");
   const tShared = await getTranslations("publicGeo.shared");
+  const countryDisplayName = getLocalizedCountryDisplayName(
+    countryCode,
+    locale,
+    country.name,
+  );
   const description = t("metaDescription", {
-    countryName: country.name,
+    countryName: countryDisplayName,
     siteName: brand.siteName,
   });
   const canonicalPath = `/countries/${encodeURIComponent(countryCode)}`;
   // No /countries index route exists — breadcrumb is Home → {Country}.
   const structuredData = buildWebPageJsonLd({
-    name: country.name,
+    name: countryDisplayName,
     description,
     canonicalPath,
     breadcrumbs: [
       { name: tShared("home"), path: "/" },
-      { name: country.name, path: canonicalPath },
+      { name: countryDisplayName, path: canonicalPath },
     ],
   });
 

@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
-import { toGeographyCountryOptions } from "@hu/geography";
+import {
+  getLocalizedCountryDisplayName,
+  toGeographyCountryOptions,
+} from "@hu/geography";
 
 import { GeographySearchSelect } from "../../design-system/components/GeographySearchSelect";
 
@@ -19,7 +22,7 @@ export interface CountrySelectProps {
   error?: string;
 }
 
-/** Canonical Country control — single source via @hu/geography. */
+/** Canonical Country control — single source via @hu/geography (Pack 08K.3 localized labels). */
 export function CountrySelect({
   id,
   value,
@@ -31,8 +34,16 @@ export function CountrySelect({
   label,
   error,
 }: CountrySelectProps) {
+  const locale = useLocale();
   const t = useTranslations("initiativeExperience");
-  const options = useMemo(() => toGeographyCountryOptions(), []);
+  const options = useMemo(
+    () =>
+      toGeographyCountryOptions().map((option) => ({
+        ...option,
+        label: getLocalizedCountryDisplayName(option.code, locale, option.label),
+      })),
+    [locale],
+  );
   const resolvedLabel = label ?? t("manage.fields.country");
   const resolvedPlaceholder = placeholder ?? t("manage.fields.searchCountries");
 

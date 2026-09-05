@@ -152,13 +152,14 @@ describe("Pack 08I.6 — Geo public chrome localization", () => {
     assert.match(registration, /publicGeo\.shared\.registration/);
   });
 
-  it("geographic display names remain canonical data (not UI catalog keys)", () => {
+  it("geographic display names use locale-aware resolver (not UI catalog country dictionaries)", () => {
     const page = readWeb(
       "features/country-experience/components/CountryExperienceDynamicPage.tsx",
     );
-    assert.match(page, /country\.name/);
+    assert.match(page, /getLocalizedCountryDisplayName|resolveUnRegionDisplayName/);
     assert.match(page, /getCountryByCode/);
     assert.doesNotMatch(page, /publicGeo\.country\.names/);
+    assert.doesNotMatch(page, /\{country\.name\}/);
   });
 
   it("country news + shared public news chrome use publicNews catalogs", () => {

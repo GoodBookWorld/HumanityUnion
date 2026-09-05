@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useMemo, useRef } from "react";
+import { useTranslations } from "next-intl";
 
 import { trapTabKey } from "../../../design-system/focus-trap";
 import { Button } from "../../../design-system";
+import { useLocalizedBrand } from "../../brand-localization/useLocalizedBrand";
 
 import "./actuc-home.css";
 
@@ -14,35 +16,36 @@ interface ActucPresentationModalProps {
   onClose: () => void;
 }
 
-const PILLARS = [
-  {
-    node: "[ NODE 01 // THE SHIELD ]",
-    title: "Observation & Truth",
-    description:
-      "Identifying and analyzing global disinformation attacks at the root before they trigger hostility or social collapse.",
-  },
-  {
-    node: "[ NODE 02 // THE SWORD ]",
-    title: "Strategy & Counter-Action",
-    description:
-      "Replacing isolated, passive panic with a synchronized, expert-led intellectual response system.",
-  },
-  {
-    node: "[ NODE 03 // THE SENTINEL ]",
-    title: "Hostage to Sentinel",
-    description:
-      "Empowering individuals to transition from passive spectators of chaos into active guardians of global intelligence.",
-  },
-] as const;
-
 /**
- * Pack 24C — ACTUC presentation dialog.
- * Reuses HU focus-trap / Escape / backdrop patterns (same contract as PWA install help).
+ * Pack 24C / 08K.3 — ACTUC presentation dialog.
+ * Participant-facing chrome + marketing copy: next-intl (`actuc`).
+ * Brand site name: Brand Localization (`useLocalizedBrand`).
+ * External URL: protected identity (not translated).
  */
 export function ActucPresentationModal({ open, onClose }: ActucPresentationModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const t = useTranslations("actuc");
+  const brand = useLocalizedBrand();
+  const siteName = brand.siteName;
+
+  const pillars = useMemo(
+    () =>
+      (
+        [
+          "shield",
+          "sword",
+          "sentinel",
+        ] as const
+      ).map((key) => ({
+        key,
+        node: t(`pillars.${key}.node`),
+        title: t(`pillars.${key}.title`),
+        description: t(`pillars.${key}.description`),
+      })),
+    [t],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -80,11 +83,11 @@ export function ActucPresentationModal({ open, onClose }: ActucPresentationModal
   }
 
   return (
-    <div className="actuc-modal" role="presentation">
+    <div className="actuc-modal" role="presentation" data-hu-surface="actuc-modal">
       <button
         type="button"
         className="actuc-modal__backdrop"
-        aria-label="Close ACTUC presentation"
+        aria-label={t("closePresentationAria")}
         onClick={onClose}
       />
       <div
@@ -98,27 +101,24 @@ export function ActucPresentationModal({ open, onClose }: ActucPresentationModal
         <div className="actuc-modal__chrome">
           <span className="actuc-modal__badge" aria-hidden="true">
             <span className="actuc-modal__status-dot" />
-            Humanity Union // Intellectual Defense Division
+            {t("badge", { siteName })}
           </span>
-          <Button type="button" variant="secondary" onClick={onClose} aria-label="Close">
-            Close
+          <Button type="button" variant="secondary" onClick={onClose} aria-label={t("closeAria")}>
+            {t("close")}
           </Button>
         </div>
 
         <h2 id={titleId} className="actuc-modal__title">
-          ACTUC: The Intellectual Army <span>Fighting Ignorance</span>
+          {t("titleLead")} <span>{t("titleEmphasis")}</span>
         </h2>
 
         <p className="actuc-modal__subtitle">
-          Aggression is merely the violent shadow of systemic ignorance.{" "}
-          <strong>ACTUC (Action Unity Center)</strong> is Humanity Union&apos;s strategic defense
-          platform—mobilizing a global intellectual vanguard to neutralize disinformation, expose
-          root causes, and restore human truth.
+          {t("subtitleLead")} {t("subtitleBody", { siteName })}
         </p>
 
         <div className="actuc-modal__pillars">
-          {PILLARS.map((pillar) => (
-            <article key={pillar.title} className="actuc-modal__pillar">
+          {pillars.map((pillar) => (
+            <article key={pillar.key} className="actuc-modal__pillar">
               <p className="actuc-modal__pillar-node">{pillar.node}</p>
               <h3 className="actuc-modal__pillar-title">{pillar.title}</h3>
               <p className="actuc-modal__pillar-desc">{pillar.description}</p>
@@ -128,18 +128,19 @@ export function ActucPresentationModal({ open, onClose }: ActucPresentationModal
 
         <div className="actuc-modal__footer">
           <p className="actuc-modal__motto">
-            {"> STATUS: "}
-            <strong>ACTIVE DEFENSE</strong>
-            {" // SLOGAN: "}
-            <strong>NEUTRALIZE IGNORANCE. DISARM AGGRESSION.</strong>
+            {t("mottoStatusLabel")}
+            <strong>{t("mottoStatusValue")}</strong>
+            {t("mottoSloganLabel")}
+            <strong>{t("mottoSloganValue")}</strong>
           </p>
           <a
             className="actuc-modal__cta"
             href={ACTUC_EXTERNAL_URL}
             target="_blank"
             rel="noopener noreferrer"
+            data-hu-semantic="protected"
           >
-            [ Join The Vanguard ]
+            {t("cta")}
           </a>
         </div>
       </div>

@@ -1,9 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
-import { OTHER_REGION_SLUG, toGeographyRegionOptions } from "@hu/geography";
+import {
+  getLocalizedAdminRegionDisplayName,
+  OTHER_REGION_SLUG,
+  toGeographyRegionOptions,
+} from "@hu/geography";
 
 import { GeographySearchSelect } from "../../design-system/components/GeographySearchSelect";
 import { countryHasStructuredRegions } from "./geography-cascade-contract";
@@ -23,7 +27,7 @@ export interface RegionSelectProps {
   error?: string;
 }
 
-/** Region control dependent on Country — options from @hu/geography. */
+/** Region control dependent on Country — options from @hu/geography (Pack 08K.3). */
 export function RegionSelect({
   id,
   countryCode,
@@ -37,6 +41,7 @@ export function RegionSelect({
   label,
   error,
 }: RegionSelectProps) {
+  const locale = useLocale();
   const t = useTranslations("initiativeExperience");
   const resolvedLabel = label ?? t("manage.fields.region");
   const resolvedPlaceholder = placeholder ?? t("manage.fields.searchRegions");
@@ -46,10 +51,21 @@ export function RegionSelect({
     if (!countryCode) {
       return [];
     }
-    return toGeographyRegionOptions(countryCode, includeOther).map((option) =>
-      option.slug === OTHER_REGION_SLUG ? { ...option, label: otherLabel } : option,
-    );
-  }, [countryCode, includeOther, otherLabel]);
+    return toGeographyRegionOptions(countryCode, includeOther).map((option) => {
+      if (option.slug === OTHER_REGION_SLUG) {
+        return { ...option, label: otherLabel };
+      }
+      return {
+        ...option,
+        label: getLocalizedAdminRegionDisplayName(
+          countryCode,
+          option.slug,
+          locale,
+          option.label,
+        ),
+      };
+    });
+  }, [countryCode, includeOther, locale, otherLabel]);
 
   const hasStructured = countryHasStructuredRegions(countryCode);
 
