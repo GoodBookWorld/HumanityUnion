@@ -846,6 +846,38 @@ Architecture basis: `EXACT_FAILURE_REASON_PROPAGATION_08K25` (recorded on the wa
 
 ---
 
+## Pack 08K.2.8 — Zero-hydration localization operator process
+
+**Incident (staging `417c003`):** Read-only
+`reconcile:public-localization --mongo --snapshot-explicit-residual-state --residual <4 ids>`
+OOM-restarted the Render staging API. Inner resolver was bounded (`FULL_CORPUS_HYDRATED=false`), but **import-time** RSS was not.
+
+**Exact OOM root cause:** Static import of `reconcile-public-localization.ts` loaded the reconciliation application graph **before `main()`** (~400+ modules), including:
+1. `language-registry/index` → `language-registry.service` → `global-search.index` (first substantial amplifier)
+2. residual bootstrap → full `ensureMongoIndexes` + registry seed barrel
+3. reconciliation / residual-retry / residual-only / post-fix modules → `content-translation.service` → Gemini provider + civic loaders
+4. `content-translation-source-direct` → Initiative/CA/CD Map store modules + comment service (even when unused at runtime for snapshot)
+
+`FULL_CORPUS_HYDRATED=false` only describes the residual bootstrap contract, not import RSS.
+
+**Fix — separate executables:**
+| | A. Residual diagnostics | B. Reconciliation / retry |
+|--|--|--|
+| Command | `pnpm --filter @hu/api diagnose:localization-residuals -- --mongo --residual ...` | `reconcile:public-localization` (execute / retry flags) |
+| Graph | `thin-localization-diagnostic/*` — Mongo connect + narrow projections + residual-state-core | Lazy `reconcile-public-localization-heavy.ts` |
+| Forbidden | provider/Gemini, warm consumer/worker, corpus discovery, presentation trees, aggregate hydrate, reconcile execute | N/A (write path) |
+
+**sourceVersion strategy:** Direct collection projections (`initiatives`, `initiative_analyses`, `initiative_comments`, `blog_posts`) + `buildContentTranslationSourceVersion` (blog also `sanitizeBlogHtml` + `publishedVersion`). No `PublicLocalizedPresentation` trees.
+
+**Old flags:** `--snapshot-explicit-residual-state` and `--explain-residuals*` are `OPERATOR_DEPRECATED_MEMORY_UNSAFE`. Snapshot delegates to the thin diagnostic **without** statically importing the heavy graph. Explain refuses (exit 2). Do not run either on Render until this pack is deployed.
+
+**Memory contract (actual guards/instrumentation):**
+`OPERATOR_MODE=THIN_READ_ONLY`, `FULL_APPLICATION_GRAPH_IMPORTED=false`, `FULL_CORPUS_HYDRATED=false`, `PROVIDER_MODULE_IMPORTED=false`, `WORKER_MODULE_IMPORTED=false`, `PRESENTATION_TREE_BUILT=false`, plus RSS phase counters (`PROCESS_START_RSS_MB` … `PEAK_RSS_MB`).
+
+Retry policy unchanged (`EXACT_FAILURE_REASON_PROPAGATION_08K25`, `INVALID_PROVIDER_PAYLOAD`, historical failure rules, one-shot semantics).
+
+---
+
 ## Pack 08K.2.2 — Gated residual retry operator
 
 ```
