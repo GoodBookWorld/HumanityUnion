@@ -1,14 +1,21 @@
 /**
- * Pack 08K — READ-ONLY public localization coverage diagnostic.
+ * Pack 08K / 08K.1 — READ-ONLY public localization coverage diagnostic.
  *
  * Does NOT translate or mutate. Defaults to --dry-run + fixture mode.
  * Reports by-family counts only (identities/counts — never private content).
  *
+ * Counter semantics (Pack 08K.1):
+ * - SOURCE_PRESENTATION_COUNT: discovered public presentation identities
+ *   (formerly IDENTITY_COUNT).
+ * - MISSING_TARGET_TRANSLATION_IDENTITIES: presentation × target-locale slots
+ *   lacking CURRENT translation for live sourceVersion
+ *   (formerly MISSING_TRANSLATION_IDENTITIES).
+ * - PRESENTATIONS_WITH_ANY_FALLBACK: presentations with ≥1 canonical fallback.
+ *
  * Modes:
  *   (default / --dry-run)  fixture-mode report; exit 0
  *   --fixture              force Pack 08K fixture trees (no Mongo)
- *   --mongo                when MONGODB_URI configured — discover + content_translations
- *                          lookups via PublicLocalizedPresentation collect
+ *   --mongo                when MONGODB_URI configured — shared corpus discovery
  *
  * Usage (from apps/api):
  *   pnpm diagnose:public-localization
@@ -24,7 +31,6 @@ import {
   PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
   protectedIdentity,
   protectedTechnical,
-  type LanguageCode,
   type PublicPresentationIdentity,
   type PublicPresentationNode,
 } from "@hu/types";
@@ -37,13 +43,9 @@ import {
 } from "../infrastructure/mongodb/mongo-config.js";
 import { disconnectMongoClient } from "../infrastructure/mongodb/mongo-connection.js";
 import {
-  CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS,
-  discoverStagingInitiativePathWarmSources,
-  type StagingWarmSourceKind,
-} from "../modules/language/content-translation-staging-warm-backfill.js";
-import { loadTranslatableSource } from "../modules/language/content-translation.service.js";
-import { listAutomaticContentTranslationTargetLocales } from "../modules/language/content-translation-warm-targets.js";
-import { listContentTranslationsForSource } from "../modules/language/persistence/content-translation.repository.js";
+  auditPublicLocalizationCorpus,
+  type PublicLocalizationCorpusFamilyCounts,
+} from "../modules/language/public-localization-corpus.js";
 import {
   collectAutoTranslatableNodes,
   localizePublicPresentation,
@@ -51,14 +53,25 @@ import {
 
 loadApiEnvironment();
 
-interface FamilyCoverageCounts {
+interface FixtureFamilyCoverageCounts {
   readonly family: string;
+  readonly SOURCE_PRESENTATION_COUNT: number;
+  readonly PRESENTATIONS_WITH_ANY_FALLBACK: number;
   readonly TOTAL_SEMANTIC_NODES: number;
-  readonly LOCALIZED: number;
-  readonly CANONICAL_FALLBACK: number;
-  readonly PROTECTED: number;
-  readonly MISSING_TRANSLATION_IDENTITIES: number;
+  readonly CURRENT_LOCALIZED_NODES: number;
+  readonly CANONICAL_FALLBACK_NODES: number;
+  readonly PROTECTED_NODES: number;
+  readonly MISSING_TARGET_TRANSLATION_IDENTITIES: number;
+  /** @deprecated Pack 08K.1 alias */
   readonly IDENTITY_COUNT: number;
+  /** @deprecated Pack 08K.1 alias */
+  readonly MISSING_TRANSLATION_IDENTITIES: number;
+  /** @deprecated Pack 08K.1 alias of CURRENT_LOCALIZED_NODES */
+  readonly LOCALIZED: number;
+  /** @deprecated Pack 08K.1 alias of CANONICAL_FALLBACK_NODES */
+  readonly CANONICAL_FALLBACK: number;
+  /** @deprecated Pack 08K.1 alias of PROTECTED_NODES */
+  readonly PROTECTED: number;
 }
 
 function parseTargetLanguage(): string {
@@ -69,55 +82,72 @@ function parseTargetLanguage(): string {
   return match.slice("--target-language=".length).trim() || "uk";
 }
 
-function emptyFamily(family: string): FamilyCoverageCounts {
+function emptyFamily(family: string): FixtureFamilyCoverageCounts {
   return {
     family,
+    SOURCE_PRESENTATION_COUNT: 0,
+    PRESENTATIONS_WITH_ANY_FALLBACK: 0,
     TOTAL_SEMANTIC_NODES: 0,
+    CURRENT_LOCALIZED_NODES: 0,
+    CANONICAL_FALLBACK_NODES: 0,
+    PROTECTED_NODES: 0,
+    MISSING_TARGET_TRANSLATION_IDENTITIES: 0,
+    IDENTITY_COUNT: 0,
+    MISSING_TRANSLATION_IDENTITIES: 0,
     LOCALIZED: 0,
     CANONICAL_FALLBACK: 0,
     PROTECTED: 0,
-    MISSING_TRANSLATION_IDENTITIES: 0,
-    IDENTITY_COUNT: 0,
+  };
+}
+
+function withFixtureAliases(
+  row: Omit<
+    FixtureFamilyCoverageCounts,
+    | "IDENTITY_COUNT"
+    | "MISSING_TRANSLATION_IDENTITIES"
+    | "LOCALIZED"
+    | "CANONICAL_FALLBACK"
+    | "PROTECTED"
+  >,
+): FixtureFamilyCoverageCounts {
+  return {
+    ...row,
+    IDENTITY_COUNT: row.SOURCE_PRESENTATION_COUNT,
+    MISSING_TRANSLATION_IDENTITIES: row.MISSING_TARGET_TRANSLATION_IDENTITIES,
+    LOCALIZED: row.CURRENT_LOCALIZED_NODES,
+    CANONICAL_FALLBACK: row.CANONICAL_FALLBACK_NODES,
+    PROTECTED: row.PROTECTED_NODES,
   };
 }
 
 function mergeFamily(
-  acc: FamilyCoverageCounts,
-  next: Omit<FamilyCoverageCounts, "family">,
-): FamilyCoverageCounts {
-  return {
+  acc: FixtureFamilyCoverageCounts,
+  next: Omit<FixtureFamilyCoverageCounts, "family">,
+): FixtureFamilyCoverageCounts {
+  return withFixtureAliases({
     family: acc.family,
+    SOURCE_PRESENTATION_COUNT:
+      acc.SOURCE_PRESENTATION_COUNT + next.SOURCE_PRESENTATION_COUNT,
+    PRESENTATIONS_WITH_ANY_FALLBACK:
+      acc.PRESENTATIONS_WITH_ANY_FALLBACK + next.PRESENTATIONS_WITH_ANY_FALLBACK,
     TOTAL_SEMANTIC_NODES: acc.TOTAL_SEMANTIC_NODES + next.TOTAL_SEMANTIC_NODES,
-    LOCALIZED: acc.LOCALIZED + next.LOCALIZED,
-    CANONICAL_FALLBACK: acc.CANONICAL_FALLBACK + next.CANONICAL_FALLBACK,
-    PROTECTED: acc.PROTECTED + next.PROTECTED,
-    MISSING_TRANSLATION_IDENTITIES:
-      acc.MISSING_TRANSLATION_IDENTITIES + next.MISSING_TRANSLATION_IDENTITIES,
-    IDENTITY_COUNT: acc.IDENTITY_COUNT + next.IDENTITY_COUNT,
-  };
+    CURRENT_LOCALIZED_NODES:
+      acc.CURRENT_LOCALIZED_NODES + next.CURRENT_LOCALIZED_NODES,
+    CANONICAL_FALLBACK_NODES:
+      acc.CANONICAL_FALLBACK_NODES + next.CANONICAL_FALLBACK_NODES,
+    PROTECTED_NODES: acc.PROTECTED_NODES + next.PROTECTED_NODES,
+    MISSING_TARGET_TRANSLATION_IDENTITIES:
+      acc.MISSING_TARGET_TRANSLATION_IDENTITIES +
+      next.MISSING_TARGET_TRANSLATION_IDENTITIES,
+  });
 }
 
 function sumFamilies(
-  byFamily: readonly FamilyCoverageCounts[],
-): Omit<FamilyCoverageCounts, "family"> {
+  byFamily: readonly FixtureFamilyCoverageCounts[],
+): Omit<FixtureFamilyCoverageCounts, "family"> {
   return byFamily.reduce(
-    (acc, row) => ({
-      TOTAL_SEMANTIC_NODES: acc.TOTAL_SEMANTIC_NODES + row.TOTAL_SEMANTIC_NODES,
-      LOCALIZED: acc.LOCALIZED + row.LOCALIZED,
-      CANONICAL_FALLBACK: acc.CANONICAL_FALLBACK + row.CANONICAL_FALLBACK,
-      PROTECTED: acc.PROTECTED + row.PROTECTED,
-      MISSING_TRANSLATION_IDENTITIES:
-        acc.MISSING_TRANSLATION_IDENTITIES + row.MISSING_TRANSLATION_IDENTITIES,
-      IDENTITY_COUNT: acc.IDENTITY_COUNT + row.IDENTITY_COUNT,
-    }),
-    {
-      TOTAL_SEMANTIC_NODES: 0,
-      LOCALIZED: 0,
-      CANONICAL_FALLBACK: 0,
-      PROTECTED: 0,
-      MISSING_TRANSLATION_IDENTITIES: 0,
-      IDENTITY_COUNT: 0,
-    },
+    (acc, row) => mergeFamily({ ...acc, family: "*" }, row),
+    emptyFamily("*"),
   );
 }
 
@@ -187,31 +217,28 @@ function buildFullTranslations(
   return out;
 }
 
-function fieldsAsPresentation(fields: Record<string, string>): PublicPresentationNode {
-  return { ...fields };
-}
-
-function translatedFieldsFromRecord(
-  translatedContent: Record<string, unknown> | string,
-): Record<string, string> {
-  if (typeof translatedContent === "string") {
-    return { text: translatedContent };
-  }
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(translatedContent)) {
-    if (typeof value === "string" && value.trim()) {
-      out[key] = value;
-    }
-  }
-  return out;
+function familyFromAuditRow(
+  row: PublicLocalizationCorpusFamilyCounts,
+): FixtureFamilyCoverageCounts {
+  return withFixtureAliases({
+    family: row.family,
+    SOURCE_PRESENTATION_COUNT: row.SOURCE_PRESENTATION_COUNT,
+    PRESENTATIONS_WITH_ANY_FALLBACK: row.PRESENTATIONS_WITH_ANY_FALLBACK,
+    TOTAL_SEMANTIC_NODES: row.TOTAL_SEMANTIC_NODES,
+    CURRENT_LOCALIZED_NODES: row.CURRENT_LOCALIZED_NODES,
+    CANONICAL_FALLBACK_NODES: row.CANONICAL_FALLBACK_NODES,
+    PROTECTED_NODES: row.PROTECTED_NODES,
+    MISSING_TARGET_TRANSLATION_IDENTITIES: row.MISSING_TARGET_TRANSLATION_IDENTITIES,
+  });
 }
 
 function runFixtureMode(targetLanguage: string): {
   readonly mode: "fixture";
-  readonly byFamily: FamilyCoverageCounts[];
-  readonly totals: Omit<FamilyCoverageCounts, "family">;
+  readonly DISCOVERY_STATUS: "COMPLETE";
+  readonly byFamily: FixtureFamilyCoverageCounts[];
+  readonly totals: Omit<FixtureFamilyCoverageCounts, "family">;
 } {
-  const byFamilyMap = new Map<string, FamilyCoverageCounts>();
+  const byFamilyMap = new Map<string, FixtureFamilyCoverageCounts>();
 
   for (const fixture of buildFixtureTrees()) {
     const family = fixture.identity.sourceKind;
@@ -227,138 +254,81 @@ function runFixtureMode(targetLanguage: string): {
     byFamilyMap.set(
       family,
       mergeFamily(prev, {
+        SOURCE_PRESENTATION_COUNT: 1,
+        PRESENTATIONS_WITH_ANY_FALLBACK:
+          localized.coverage.canonicalFallbackNodeCount > 0 ? 1 : 0,
         TOTAL_SEMANTIC_NODES: localized.coverage.semanticNodeCount,
+        CURRENT_LOCALIZED_NODES: localized.coverage.localizedNodeCount,
+        CANONICAL_FALLBACK_NODES: localized.coverage.canonicalFallbackNodeCount,
+        PROTECTED_NODES: localized.coverage.protectedNodeCount,
+        MISSING_TARGET_TRANSLATION_IDENTITIES: 0,
+        IDENTITY_COUNT: 1,
+        MISSING_TRANSLATION_IDENTITIES: 0,
         LOCALIZED: localized.coverage.localizedNodeCount,
         CANONICAL_FALLBACK: localized.coverage.canonicalFallbackNodeCount,
         PROTECTED: localized.coverage.protectedNodeCount,
-        MISSING_TRANSLATION_IDENTITIES: 0,
-        IDENTITY_COUNT: 1,
-      }),
-    );
-  }
-
-  const byFamily = [...byFamilyMap.values()].sort((a, b) => a.family.localeCompare(b.family));
-  return { mode: "fixture", byFamily, totals: sumFamilies(byFamily) };
-}
-
-async function runMongoMode(targetLanguage: string): Promise<{
-  readonly mode: "mongo";
-  readonly database: string;
-  readonly byFamily: FamilyCoverageCounts[];
-  readonly totals: Omit<FamilyCoverageCounts, "family">;
-}> {
-  const mongo = resolveMongoConfig();
-  await bootstrapContentTranslationOperatorPersistence();
-
-  const discovered = await discoverStagingInitiativePathWarmSources({
-    kinds: [...CONTENT_TRANSLATION_RECOVERY_SOURCE_KINDS],
-  });
-
-  let targetLocales: readonly LanguageCode[] = [targetLanguage as LanguageCode];
-  try {
-    const warmLocales = await listAutomaticContentTranslationTargetLocales();
-    if (warmLocales.length > 0) {
-      targetLocales = warmLocales;
-    }
-  } catch {
-    // Registry unavailable — fall back to CLI target language only.
-  }
-
-  const byFamilyMap = new Map<string, FamilyCoverageCounts>();
-
-  for (const candidate of discovered.candidates) {
-    const family = candidate.sourceKind as StagingWarmSourceKind;
-    const source = await loadTranslatableSource({
-      sourceKind: candidate.sourceKind,
-      sourceRecordId: candidate.sourceRecordId,
-    });
-    if (!source) {
-      const prev = byFamilyMap.get(family) ?? emptyFamily(family);
-      byFamilyMap.set(
-        family,
-        mergeFamily(prev, {
-          TOTAL_SEMANTIC_NODES: 0,
-          LOCALIZED: 0,
-          CANONICAL_FALLBACK: 0,
-          PROTECTED: 0,
-          MISSING_TRANSLATION_IDENTITIES: 1,
-          IDENTITY_COUNT: 1,
-        }),
-      );
-      continue;
-    }
-
-    const presentation = fieldsAsPresentation(source.fields);
-    const autoNodes = collectAutoTranslatableNodes(presentation);
-    const localizedProbe = localizePublicPresentation({
-      identity: {
-        sourceKind: candidate.sourceKind,
-        sourceRecordId: candidate.sourceRecordId,
-        presentationSchemaVersion: PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
-      },
-      sourceLanguage: source.sourceLanguage,
-      targetLanguage,
-      presentation,
-      translations: {},
-    });
-
-    const rows = await listContentTranslationsForSource({
-      sourceKind: candidate.sourceKind,
-      sourceRecordId: candidate.sourceRecordId,
-    });
-
-    let localized = 0;
-    let fallback = 0;
-    let missingIdentity = 0;
-
-    for (const locale of targetLocales) {
-      const current = rows.find(
-        (row) =>
-          row.targetLanguage === locale &&
-          row.sourceVersion === source.sourceVersion &&
-          row.freshness === "current" &&
-          row.stale !== true,
-      );
-      if (!current) {
-        missingIdentity += 1;
-        fallback += autoNodes.length;
-        continue;
-      }
-      const translatedFields = translatedFieldsFromRecord(current.translatedContent);
-      for (const node of autoNodes) {
-        const leaf = node.path.split(".").pop() ?? node.path;
-        if (
-          (typeof translatedFields[node.path] === "string" &&
-            translatedFields[node.path]!.trim()) ||
-          (typeof translatedFields[leaf] === "string" && translatedFields[leaf]!.trim())
-        ) {
-          localized += 1;
-        } else {
-          fallback += 1;
-        }
-      }
-    }
-
-    const prev = byFamilyMap.get(family) ?? emptyFamily(family);
-    byFamilyMap.set(
-      family,
-      mergeFamily(prev, {
-        TOTAL_SEMANTIC_NODES: autoNodes.length * targetLocales.length,
-        LOCALIZED: localized,
-        CANONICAL_FALLBACK: fallback,
-        PROTECTED: localizedProbe.coverage.protectedNodeCount,
-        MISSING_TRANSLATION_IDENTITIES: missingIdentity,
-        IDENTITY_COUNT: 1,
       }),
     );
   }
 
   const byFamily = [...byFamilyMap.values()].sort((a, b) => a.family.localeCompare(b.family));
   return {
-    mode: "mongo",
-    database: mongo.database,
+    mode: "fixture",
+    DISCOVERY_STATUS: "COMPLETE",
     byFamily,
     totals: sumFamilies(byFamily),
+  };
+}
+
+async function runMongoMode(): Promise<{
+  readonly mode: "mongo";
+  readonly database: string;
+  readonly DISCOVERY_STATUS: string;
+  readonly discoveryHint: string | null;
+  readonly discoveryByKind: readonly {
+    readonly family: string;
+    readonly SOURCE_RECORDS_DISCOVERED: number;
+    readonly PUBLIC_RECORDS: number;
+  }[];
+  readonly targetLocales: readonly string[];
+  readonly byFamily: FixtureFamilyCoverageCounts[];
+  readonly byLocale: unknown;
+  readonly totals: Omit<FixtureFamilyCoverageCounts, "family"> & {
+    readonly TARGET_TRANSLATION_IDENTITIES: number;
+    readonly STALE_TARGET_TRANSLATION_IDENTITIES: number;
+    readonly FAILED_TARGET_TRANSLATION_IDENTITIES: number;
+    readonly WORK_ITEMS_REQUIRED: number;
+  };
+}> {
+  const mongo = resolveMongoConfig();
+  await bootstrapContentTranslationOperatorPersistence();
+
+  // Shared discovery/coverage with reconcile:public-localization.
+  const audit = await auditPublicLocalizationCorpus();
+
+  const byFamily = audit.byFamily.map(familyFromAuditRow);
+  return {
+    mode: "mongo",
+    database: mongo.database,
+    DISCOVERY_STATUS: audit.discoveryStatus,
+    discoveryHint: audit.discoveryHint,
+    discoveryByKind: audit.discoveryByKind.map((row) => ({
+      family: row.sourceKind,
+      SOURCE_RECORDS_DISCOVERED: row.sourceRecordsDiscovered,
+      PUBLIC_RECORDS: row.publicRecords,
+    })),
+    targetLocales: audit.targetLocales,
+    byFamily,
+    byLocale: audit.byLocale,
+    totals: {
+      ...familyFromAuditRow({ ...audit.totals, family: "*" }),
+      TARGET_TRANSLATION_IDENTITIES: audit.totals.TARGET_TRANSLATION_IDENTITIES,
+      STALE_TARGET_TRANSLATION_IDENTITIES:
+        audit.totals.STALE_TARGET_TRANSLATION_IDENTITIES,
+      FAILED_TARGET_TRANSLATION_IDENTITIES:
+        audit.totals.FAILED_TARGET_TRANSLATION_IDENTITIES,
+      WORK_ITEMS_REQUIRED: audit.totals.WORK_ITEMS_REQUIRED,
+    },
   };
 }
 
@@ -370,7 +340,7 @@ async function main(): Promise<void> {
   if (process.argv.includes("--execute")) {
     console.log(
       JSON.stringify({
-        pack: "08K",
+        pack: "08K.1",
         operation: "diagnose_public_localization_coverage",
         refused: "execute_not_supported",
         note: "This script is READ ONLY. Omit --execute; --dry-run is the default.",
@@ -386,11 +356,11 @@ async function main(): Promise<void> {
 
   if (!forceFixture && wantMongo && isMongoConfigured()) {
     try {
-      report = await runMongoMode(targetLanguage);
+      report = await runMongoMode();
     } catch {
       console.log(
         JSON.stringify({
-          pack: "08K",
+          pack: "08K.1",
           operation: "diagnose_public_localization_coverage",
           mode: "fixture_fallback",
           note: "Mongo requested but discovery failed; falling back to fixture mode.",
@@ -402,7 +372,7 @@ async function main(): Promise<void> {
     if (wantMongo && !isMongoConfigured()) {
       console.log(
         JSON.stringify({
-          pack: "08K",
+          pack: "08K.1",
           operation: "diagnose_public_localization_coverage",
           mode: "fixture_fallback",
           note: "--mongo requested but MONGODB_URI not configured; using fixture mode.",
@@ -412,34 +382,55 @@ async function main(): Promise<void> {
     report = runFixtureMode(targetLanguage);
   }
 
+  const universalCorpusSuccessClaimed =
+    report.mode === "mongo" &&
+    report.DISCOVERY_STATUS === "COMPLETE" &&
+    report.totals.CANONICAL_FALLBACK_NODES === 0;
+
   console.log(
     JSON.stringify(
       {
-        pack: "08K",
+        pack: "08K.1",
         operation: "diagnose_public_localization_coverage",
         dryRun: true,
         targetLanguage,
         schemaVersion: PUBLIC_LOCALIZED_PRESENTATION_SCHEMA_VERSION,
         mode: report.mode,
         database: "database" in report ? report.database : null,
+        DISCOVERY_STATUS: report.DISCOVERY_STATUS,
+        discoveryHint: "discoveryHint" in report ? report.discoveryHint : null,
+        discoveryByKind: "discoveryByKind" in report ? report.discoveryByKind : null,
+        targetLocales: "targetLocales" in report ? report.targetLocales : [targetLanguage],
         note:
           report.mode === "fixture"
-            ? "FIXTURE MODE — Pack 08K fixture trees only (default, or --fixture). Pass --mongo to use live content_translations lookups. NOT site_translation_coverage."
-            : "MONGO MODE — read-only discovery + content_translations lookups. Identities/counts only. NOT site_translation_coverage.",
+            ? "FIXTURE MODE — Pack 08K fixture trees only (default, or --fixture). Pass --mongo to use live shared corpus. NOT site_translation_coverage."
+            : "MONGO MODE — read-only shared discovery + content_translations lookups (same as reconcile:public-localization). Identities/counts only.",
+        SOURCE_PRESENTATION_COUNT: report.totals.SOURCE_PRESENTATION_COUNT,
+        PRESENTATIONS_WITH_ANY_FALLBACK: report.totals.PRESENTATIONS_WITH_ANY_FALLBACK,
+        MISSING_TARGET_TRANSLATION_IDENTITIES:
+          report.totals.MISSING_TARGET_TRANSLATION_IDENTITIES,
         totals: report.totals,
         byFamily: report.byFamily,
+        byLocale: "byLocale" in report ? report.byLocale : null,
+        universalCorpusSuccessClaimed,
       },
       null,
       2,
     ),
   );
+
+  if (report.mode === "mongo" && report.DISCOVERY_STATUS === "FAILED") {
+    process.exitCode = 1;
+  } else if (report.mode === "mongo" && report.DISCOVERY_STATUS === "PARTIAL") {
+    process.exitCode = 2;
+  }
 }
 
 main()
   .catch((error) => {
     console.error(
       JSON.stringify({
-        pack: "08K",
+        pack: "08K.1",
         operation: "diagnose_public_localization_coverage",
         fatal: true,
         errorName: error instanceof Error ? error.name : "Error",

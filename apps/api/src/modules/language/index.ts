@@ -182,6 +182,33 @@ export type {
   StagingWarmWaitTargetIdentity,
 } from "./content-translation-staging-warm-repair.js";
 export {
+  auditPublicLocalizationCorpus,
+  buildPublicPresentationIdentity,
+  countLocalizedAutoNodes,
+  discoverPublicLocalizationCorpus,
+  fieldsAsPublicPresentation,
+  planPresentationLocaleCoverage,
+  translatedFieldsFromRecord,
+  uniquePresentationsRequiringWork,
+} from "./public-localization-corpus.js";
+export type {
+  PublicLocalizationCorpusAudit,
+  PublicLocalizationCorpusFamilyCounts,
+  PublicLocalizationCorpusTotals,
+  PublicLocalizationDiscoveryStatus,
+  PublicLocalizationTargetTranslationState,
+  PublicLocalizationWorkItem,
+} from "./public-localization-corpus.js";
+export {
+  runPublicLocalizationReconciliation,
+  waitForPublicLocalizationMaterialization,
+} from "./public-localization-reconciliation.js";
+export type {
+  PublicLocalizationReconciliationMode,
+  PublicLocalizationReconciliationResult,
+  PublicLocalizationWaitProgress,
+} from "./public-localization-reconciliation.js";
+export {
   getContentTranslationWorkerInFlightForTests,
   getContentTranslationWorkerPeakConcurrencyForTests,
   resetContentTranslationWorkerConcurrencyForTests,

@@ -708,3 +708,41 @@ Proof tests: `apps/api/test/unit/language/content-translation-pack08k-proofs.uni
 Browser acceptance: `apps/web/src/features/language/pack08k-browser-acceptance.test.ts`  
 Route matrix: `project/architecture/core/PACK08K_ROUTE_BOUNDARY_MATRIX.md`  
 Developer one-pager: `project/architecture/core/PUBLIC_LOCALIZATION_DEVELOPER_CONTRACT_v1.0.md`
+
+---
+
+## Pack 08K.1 — Real corpus reconciliation operator
+
+Historical migration only. Future content continues through normal automatic publication scheduling (`notifyPublicPresentationChanged` / mutation warm).
+
+### Shared discovery
+
+```
+DIAGNOSTIC_DISCOVERY === RECONCILIATION_DISCOVERY
+```
+
+Both `diagnose:public-localization -- --mongo` and `reconcile:public-localization` call `discoverPublicLocalizationCorpus` / `auditPublicLocalizationCorpus` (`apps/api/src/modules/language/public-localization-corpus.ts`).
+
+### Counter semantics
+
+| Counter | Meaning |
+|--------|---------|
+| `SOURCE_PRESENTATION_COUNT` | Discovered public presentation identities (`sourceKind` + `sourceRecordId`). Formerly `IDENTITY_COUNT`. |
+| `TARGET_TRANSLATION_IDENTITIES` | `SOURCE_PRESENTATION_COUNT` × Registry locales with `enabled && contentTranslationEnabled`. |
+| `MISSING_TARGET_TRANSLATION_IDENTITIES` | Presentation × target-locale slots lacking CURRENT translation for live `sourceVersion`. Formerly `MISSING_TRANSLATION_IDENTITIES`. |
+| `PRESENTATIONS_WITH_ANY_FALLBACK` | Presentations with ≥1 canonical fallback semantic node. |
+| `DISCOVERY_STATUS` | `COMPLETE` \| `PARTIAL` \| `FAILED`. Partial/failed cannot claim universal corpus success. |
+
+### Operator
+
+```
+pnpm --filter @hu/api reconcile:public-localization -- --mongo          # dry-run (default)
+ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true \
+  pnpm --filter @hu/api reconcile:public-localization -- --mongo --execute
+```
+
+- Dry-run: zero provider calls, zero DB/outbox writes.
+- Execute requires `--execute` + `ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true` + database `humanity_union_staging`; production refused.
+- Enqueues presentation-level warms via existing bounded consumer (`CONTENT_TRANSLATION_WORKER_CONCURRENCY` default 1).
+- Wait: `--wait-for-materialization --timeout-ms=<n>` polls compact translation identities only.
+
