@@ -25,6 +25,10 @@
  *   requires one or more --residual; no automatic discovery
  *   execute additionally requires --mongo + staging gates (same as residual retry)
  *
+ * Pack 08K.2.7 — deterministic residual state snapshot (read-only):
+ *   --snapshot-explicit-residual-state
+ *   requires one or more --residual; direct persistence reads only
+ *
  * Full-corpus execute (--execute without --retry-ready-residuals) uses
  * uniquePresentationsRequiringWork. Residual execute uses ONLY
  * selectReadyPresentationsForResidualRetry — never falls back to full corpus.
@@ -79,6 +83,7 @@ import {
   EXPLICIT_POST_FIX_RETRY_FLAG,
   runExplicitResidualsAfterFailureReasonFix,
 } from "../modules/language/public-localization-explicit-post-fix-retry.js";
+import { resolveExplicitResidualState } from "../modules/language/content-translation-residual-state.js";
 import { explainPublicLocalizationResidualsWithPreflight } from "../modules/language/public-localization-retry-preflight.js";
 import type { StagingWarmSourceKind } from "../modules/language/content-translation-staging-warm-backfill.js";
 
@@ -108,6 +113,10 @@ function isRetryReadyResidualsRequested(): boolean {
 
 function isRetryExplicitPostFixRequested(): boolean {
   return process.argv.includes(EXPLICIT_POST_FIX_RETRY_FLAG);
+}
+
+function isSnapshotExplicitResidualStateRequested(): boolean {
+  return process.argv.includes("--snapshot-explicit-residual-state");
 }
 
 function isMongoFlagRequested(): boolean {
@@ -198,6 +207,7 @@ async function main(): Promise<void> {
   const explainResiduals = isExplainResidualsRequested();
   const retryReadyResiduals = isRetryReadyResidualsRequested();
   const retryExplicitPostFix = isRetryExplicitPostFixRequested();
+  const snapshotExplicitResidualState = isSnapshotExplicitResidualStateRequested();
   const mongoFlag = isMongoFlagRequested();
   const kinds = parseKinds();
   const timeoutMs = parseTimeoutMs();
@@ -205,6 +215,10 @@ async function main(): Promise<void> {
 
   if (execute && explainResiduals) {
     throw new Error("--explain-residuals is READ-ONLY; omit --execute.");
+  }
+
+  if (execute && snapshotExplicitResidualState) {
+    throw new Error("--snapshot-explicit-residual-state is READ-ONLY; omit --execute.");
   }
 
   if (retryExplicitPostFix && retryReadyResiduals) {
@@ -225,6 +239,58 @@ async function main(): Promise<void> {
     mongoFlag,
     databaseName: mongo.database,
   });
+
+  // Pack 08K.2.7 — read-only exact-identity residual state snapshot (no hydrate).
+  if (snapshotExplicitResidualState) {
+    if (explicitIdentities.length === 0) {
+      throw new Error(
+        "--snapshot-explicit-residual-state requires one or more --residual identities.",
+      );
+    }
+    const bootstrap = await bootstrapContentTranslationResidualDiagnosticPersistence();
+    const snapshots = [];
+    for (const identity of explicitIdentities) {
+      snapshots.push(await resolveExplicitResidualState(identity));
+    }
+    console.log(
+      JSON.stringify(
+        {
+          pack: "08K.2.7",
+          operation: "snapshot_explicit_residual_state",
+          mode: "read-only",
+          database: mongo.database,
+          persistenceBootstrap: bootstrap.mode,
+          FULL_CORPUS_HYDRATED: false,
+          DIAGNOSTIC_IDENTITIES: snapshots.length,
+          identities: snapshots.map((row) => ({
+            sourceKind: row.sourceKind,
+            sourceRecordId: row.sourceRecordId,
+            targetLocale: row.targetLocale,
+            sourceVersion: row.sourceVersion,
+            sourceFingerprint: row.sourceFingerprint,
+            translationRowExists: row.translationRowExists,
+            translationRowStatus: row.translationRowStatus,
+            translationVersionMatch: row.translationVersionMatch,
+            translationUpdatedAt: row.translationUpdatedAt,
+            activeAttemptExists: row.activeAttemptExists,
+            terminalAttemptCountInspected: row.terminalAttemptCountInspected,
+            selectedAttemptId: row.selectedAttemptId,
+            selectedAttemptCreatedAt: row.selectedAttemptCreatedAt,
+            selectedAttemptReason: row.selectedAttemptReason,
+            selectedAttemptMetadataVersion: row.selectedAttemptMetadataVersion,
+            selectedAttemptTargetLocale: row.selectedAttemptTargetLocale,
+            selectedFailureClass: row.selectedFailureClass,
+            selectedFailureReasonCode: row.selectedFailureReasonCode,
+            resolvedTranslationState: row.resolvedTranslationState,
+          })),
+          note: "READ-ONLY persistence snapshot — no provider calls, no writes, no full corpus hydrate.",
+        },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
 
   // Pack 08K.2.6 — explicit post-fix diagnostic retry (no full corpus).
   if (retryExplicitPostFix) {

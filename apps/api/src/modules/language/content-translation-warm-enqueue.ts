@@ -370,8 +370,9 @@ export async function listContentTranslationWarmAttempts(input: {
 }
 
 /**
- * Bounded warm-attempt listing (Pack 08K.2.4).
+ * Bounded warm-attempt listing (Pack 08K.2.4 / 08K.2.7).
  * Loads at most `limit` newest attempts (default 10), then returns oldest→newest.
+ * Pack 08K.2.7 — Mongo uses total ordering createdAt DESC, eventId DESC.
  */
 export async function listContentTranslationWarmAttemptsBounded(input: {
   readonly sourceKind: ContentTranslationSourceKind;
@@ -394,7 +395,11 @@ export async function listContentTranslationWarmAttemptsBounded(input: {
       if (id !== aggregateId) {
         continue;
       }
-      const attemptAt = record.failedAt ?? record.command.requestedAt;
+      const failureMetadata = parseContentTranslationFailureMetadata(record.lastError);
+      const attemptAt =
+        record.failedAt ??
+        failureMetadata?.failedAt ??
+        record.command.requestedAt;
       out.push({
         eventId: record.eventId,
         status: record.status,
@@ -406,7 +411,7 @@ export async function listContentTranslationWarmAttemptsBounded(input: {
           ? [...record.command.targetLocales]
           : null,
         lastError: record.lastError,
-        failureMetadata: parseContentTranslationFailureMetadata(record.lastError),
+        failureMetadata,
       });
     }
   } else {
@@ -421,12 +426,13 @@ export async function listContentTranslationWarmAttemptsBounded(input: {
       publishedAt?: string | null;
     }>(MONGO_COLLECTIONS.outbox);
 
+    // Pack 08K.2.7 — total ordering; never rely on natural Mongo order.
     const rows = await collection
       .find({
         eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
         aggregateId,
       })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, eventId: -1 })
       .limit(limit)
       .toArray();
 
@@ -446,12 +452,18 @@ export async function listContentTranslationWarmAttemptsBounded(input: {
         (typeof payload?.requestedAt === "string" && payload.requestedAt) ||
         (typeof row.createdAt === "string" ? row.createdAt : "") ||
         "";
+      const lastError = typeof row.lastError === "string" ? row.lastError : null;
+      const failureMetadata = parseContentTranslationFailureMetadata(lastError);
       const attemptAt =
         (typeof row.publishedAt === "string" && row.status === "published"
           ? row.publishedAt
           : null) ||
+        (row.status === "failed"
+          ? failureMetadata?.failedAt ||
+            (typeof row.createdAt === "string" ? row.createdAt : null) ||
+            requestedAt
+          : null) ||
         (typeof row.createdAt === "string" ? row.createdAt : requestedAt);
-      const lastError = typeof row.lastError === "string" ? row.lastError : null;
       out.push({
         eventId: String(row.eventId),
         status:
@@ -467,34 +479,33 @@ export async function listContentTranslationWarmAttemptsBounded(input: {
         attemptAt,
         targetLocales: parseTargetLocalesFromPayload(payload),
         lastError,
-        failureMetadata: parseContentTranslationFailureMetadata(lastError),
+        failureMetadata,
       });
     }
   }
 
-  // Newest-first from Mongo; memory unsorted — normalize to oldest→newest, keep ≤ limit newest.
+  // Normalize to oldest→newest with deterministic attemptAt+eventId order.
   const sorted = [...out].sort(compareAttemptOrder);
   return sorted.length > limit ? sorted.slice(sorted.length - limit) : sorted;
 }
 
 /**
- * Pack 08K.2.3 — latest warm attempt relevant to a target locale identity.
- * Never lets an older FAILED mask a newer residual-retry attempt.
+ * Pack 08K.2.3 / 08K.2.7 — latest warm attempt relevant to a target locale identity.
+ * Uses deterministic locale attribution precedence (never remaps sibling failures).
  */
 export async function resolveLatestContentTranslationWarmAttemptForIdentity(input: {
   readonly sourceKind: ContentTranslationSourceKind;
   readonly sourceRecordId: string;
   readonly targetLocale: LanguageCode | string;
 }): Promise<ContentTranslationWarmAttemptSnapshot | null> {
+  const { selectLatestLocaleRelevantWarmAttempt } = await import(
+    "./content-translation-residual-state.js"
+  );
   const attempts = await listContentTranslationWarmAttempts(input);
-  for (let i = attempts.length - 1; i >= 0; i -= 1) {
-    const attempt = attempts[i]!;
-    if (!attemptAppliesToLocale(attempt, input.targetLocale)) {
-      continue;
-    }
-    return attempt;
-  }
-  return null;
+  return selectLatestLocaleRelevantWarmAttempt({
+    attemptsOldestFirst: attempts,
+    targetLocale: input.targetLocale,
+  });
 }
 
 export async function resolveContentTranslationWarmOutboxDisposition(input: {
@@ -542,7 +553,8 @@ export async function resolveContentTranslationWarmOutboxDisposition(input: {
 
 /**
  * Safe outbox failure peek for residual diagnostics (no payload bodies).
- * Pack 08K.2.3 — when targetLocale is set, reads the latest locale-relevant attempt.
+ * Pack 08K.2.3 / 08K.2.7 — when targetLocale is set, reads the latest
+ * locale-attributed attempt (sibling failures are skipped, not remapped).
  */
 export async function peekContentTranslationWarmOutboxFailure(input: {
   readonly sourceKind: ContentTranslationSourceKind;
@@ -558,10 +570,9 @@ export async function peekContentTranslationWarmOutboxFailure(input: {
     typeof import("./content-translation-failure-metadata.js").parseContentTranslationFailureMetadata
   >;
 }> {
-  const {
-    classifyLegacyOutboxLastError,
-    resolveLocaleFailureFromMetadata,
-  } = await import("./content-translation-failure-metadata.js");
+  const { resolveAttemptFailureFields } = await import(
+    "./content-translation-residual-state.js"
+  );
 
   const latest = input.targetLocale
     ? await resolveLatestContentTranslationWarmAttemptForIdentity({
@@ -571,84 +582,61 @@ export async function peekContentTranslationWarmOutboxFailure(input: {
       })
     : (await listContentTranslationWarmAttempts(input)).at(-1) ?? null;
 
-  const disposition: ContentTranslationWarmOutboxDisposition = !latest
-    ? "none"
-    : latest.status === "pending"
-      ? "pending"
-      : latest.status === "failed"
-        ? "failed"
-        : latest.status === "published"
-          ? "published"
-          : "none";
-
-  const message = latest?.lastError ?? null;
-  const failureMetadata = latest?.failureMetadata ?? null;
-
-  if (failureMetadata && input.targetLocale) {
-    const localeResolved = resolveLocaleFailureFromMetadata(
-      failureMetadata,
-      input.targetLocale,
-    );
-    if (localeResolved.attributed) {
+  if (!input.targetLocale) {
+    const disposition: ContentTranslationWarmOutboxDisposition = !latest
+      ? "none"
+      : latest.status === "pending"
+        ? "pending"
+        : latest.status === "failed"
+          ? "failed"
+          : latest.status === "published"
+            ? "published"
+            : "none";
+    const message = latest?.lastError ?? null;
+    const failureMetadata = latest?.failureMetadata ?? null;
+    if (failureMetadata) {
       return {
         disposition,
-        lastErrorClass: localeResolved.failureClass,
+        lastErrorClass: failureMetadata.failureClass,
         lastErrorRaw: message,
-        lastFailureAt: localeResolved.failedAt ?? latest?.attemptAt ?? null,
+        lastFailureAt: failureMetadata.failedAt || latest?.attemptAt || null,
         latestAttempt: latest,
-        failureMetadata: {
-          ...failureMetadata,
-          failureClass: localeResolved.failureClass ?? failureMetadata.failureClass,
-          failureReasonCode:
-            localeResolved.failureReasonCode ?? failureMetadata.failureReasonCode,
-          retryabilityHint:
-            localeResolved.retryabilityHint ?? failureMetadata.retryabilityHint,
-          targetLocale: input.targetLocale,
-        },
+        failureMetadata,
       };
     }
-    // Latest attempt failed for a different locale — not this identity's failure.
-    if (disposition === "failed" && !localeResolved.attributed) {
+    if (disposition === "failed") {
+      const { classifyLegacyOutboxLastError } = await import(
+        "./content-translation-failure-metadata.js"
+      );
+      const legacy = classifyLegacyOutboxLastError(message);
       return {
-        disposition: "published",
-        lastErrorClass: null,
-        lastErrorRaw: null,
-        lastFailureAt: null,
+        disposition,
+        lastErrorClass: legacy.failureClass,
+        lastErrorRaw: message,
+        lastFailureAt: latest?.attemptAt ?? null,
         latestAttempt: latest,
         failureMetadata: null,
       };
     }
-  }
-
-  if (failureMetadata) {
     return {
       disposition,
-      lastErrorClass: failureMetadata.failureClass,
+      lastErrorClass: null,
       lastErrorRaw: message,
-      lastFailureAt: failureMetadata.failedAt || latest?.attemptAt || null,
-      latestAttempt: latest,
-      failureMetadata,
-    };
-  }
-
-  if (disposition === "failed") {
-    const legacy = classifyLegacyOutboxLastError(message);
-    return {
-      disposition,
-      lastErrorClass: legacy.failureClass,
-      lastErrorRaw: message,
-      lastFailureAt: latest?.attemptAt ?? null,
+      lastFailureAt: null,
       latestAttempt: latest,
       failureMetadata: null,
     };
   }
 
+  const resolved = resolveAttemptFailureFields(latest, input.targetLocale);
   return {
-    disposition,
-    lastErrorClass: null,
-    lastErrorRaw: message,
-    lastFailureAt: null,
+    disposition: resolved.disposition,
+    lastErrorClass: resolved.failureClass,
+    lastErrorRaw: latest?.lastError ?? null,
+    lastFailureAt:
+      resolved.failureMetadata?.failedAt ||
+      (resolved.disposition === "failed" ? latest?.attemptAt ?? null : null),
     latestAttempt: latest,
-    failureMetadata: null,
+    failureMetadata: resolved.failureMetadata,
   };
 }

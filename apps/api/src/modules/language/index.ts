@@ -331,6 +331,17 @@ export type {
   ExplicitPostFixSelectedIdentity,
 } from "./public-localization-explicit-post-fix-retry.js";
 export {
+  resolveCanonicalResidualTranslationState,
+  resolveExplicitResidualState,
+  residualStateSnapshotDigest,
+  selectLatestLocaleRelevantWarmAttempt,
+  resolveAttemptFailureFields,
+} from "./content-translation-residual-state.js";
+export type {
+  ResidualResolvedTranslationState,
+  ResidualStateSnapshot,
+} from "./content-translation-residual-state.js";
+export {
   loadTranslatableSourceDirect,
   getResidualDiagnosticCounters,
   resetResidualDiagnosticCountersForTests,

@@ -250,7 +250,7 @@ export async function discoverResidualIdentitiesFromFailedOutbox(input?: {
         eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
         status: "failed",
       })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, eventId: -1 })
       .limit(maxOutboxRows)
       .toArray()
       .then((docs) =>
@@ -410,38 +410,33 @@ async function diagnoseOneResidualIdentity(
     sourceLanguage !== null && identity.targetLocale === sourceLanguage;
 
   let currentTranslationAbsent = true;
-  let translationStale = false;
   let liveState: ResidualLiveTranslationState = "UNKNOWN";
 
+  let translationRow: Awaited<ReturnType<typeof findContentTranslation>> = null;
   if (liveSourceVersion) {
-    const row = await findContentTranslation({
+    translationRow = await findContentTranslation({
       sourceKind: identity.sourceKind,
       sourceRecordId: identity.sourceRecordId,
       sourceVersion: liveSourceVersion,
       targetLanguage: identity.targetLocale,
     });
-    markResidualDiagnosticTranslationRowsLoaded(row ? 1 : 0);
-    if (!row) {
-      currentTranslationAbsent = true;
-      liveState = peek.disposition === "failed" ? "TERMINAL_FAILED" : "MISSING";
-    } else if (row.freshness === "current" && row.stale !== true) {
-      currentTranslationAbsent = false;
-      liveState = "CURRENT";
-    } else {
-      currentTranslationAbsent = true;
-      translationStale = true;
-      liveState = "STALE";
-    }
-  } else if (peek.disposition === "failed") {
-    liveState = "TERMINAL_FAILED";
-  } else {
-    liveState = "MISSING";
+    markResidualDiagnosticTranslationRowsLoaded(translationRow ? 1 : 0);
   }
 
-  // Terminal failed outbox without CURRENT still counts as residual even if row missing.
-  if (liveState !== "CURRENT" && peek.disposition === "failed" && !translationStale) {
-    liveState = "TERMINAL_FAILED";
-  }
+  // Pack 08K.2.7 — canonical precedence (CURRENT wins historical FAILED).
+  const { resolveCanonicalResidualTranslationState } = await import(
+    "./content-translation-residual-state.js"
+  );
+  const canonical = resolveCanonicalResidualTranslationState({
+    translationRow,
+    liveSourceVersion,
+    outboxDisposition: peek.disposition,
+  });
+  liveState =
+    canonical === "ACTIVE"
+      ? "UNKNOWN"
+      : (canonical as ResidualLiveTranslationState);
+  currentTranslationAbsent = liveState !== "CURRENT";
 
   const disposition = peek.disposition;
   const terminalFailureForCurrentVersion = disposition === "failed";
@@ -449,7 +444,11 @@ async function diagnoseOneResidualIdentity(
 
   let failureReasonCode: string | null = null;
   let failureClass: string | null = null;
-  if (peek.failureMetadata) {
+  if (liveState === "CURRENT") {
+    // Historical outbox failures must not override CURRENT translation state.
+    failureReasonCode = null;
+    failureClass = null;
+  } else if (peek.failureMetadata) {
     failureReasonCode = peek.failureMetadata.failureReasonCode;
     failureClass = peek.failureMetadata.failureClass;
   } else if (disposition === "failed") {

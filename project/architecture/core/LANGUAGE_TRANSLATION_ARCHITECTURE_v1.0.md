@@ -834,6 +834,18 @@ Architecture basis: `EXACT_FAILURE_REASON_PROPAGATION_08K25` (recorded on the wa
 
 ---
 
+## Pack 08K.2.7 — Deterministic residual state resolution
+
+**Incident:** Two consecutive dry-runs of the same four `--residual` identities returned different selection truth (`SELECTED=4` then `SELECTED=0` with `UNKNOWN_LEGACY` / CURRENT).
+
+**Root causes:**
+1. **READ_RESOLUTION_DEFECT** — Mongo latest-attempt listing used `sort({ createdAt: -1 })` without `eventId` tie-break; peek remapped sibling-locale structured failures to `published`, allowing older unrestricted legacy rows (`UNKNOWN_LEGACY`) to surface nondeterministically.
+2. **EXPECTED_ASYNC_MATERIALIZATION** — dry-run writes nothing; `CURRENT` can only appear when a concurrent warm consumer upserts a translation row between invocations.
+
+**Fix:** Canonical resolver (`content-translation-residual-state.ts`): CURRENT wins historical FAILED; locale-attributed CT_FAIL_META_V1 precedes locale-constrained attempts precedes unrestricted legacy; Mongo total order `createdAt DESC, eventId DESC`. Read-only `--snapshot-explicit-residual-state` emits decision inputs (no prose).
+
+---
+
 ## Pack 08K.2.2 — Gated residual retry operator
 
 ```
