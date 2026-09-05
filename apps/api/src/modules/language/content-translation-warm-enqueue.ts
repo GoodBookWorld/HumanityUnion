@@ -360,32 +360,62 @@ export async function peekContentTranslationWarmOutboxFailure(input: {
 }): Promise<{
   readonly disposition: ContentTranslationWarmOutboxDisposition;
   readonly lastErrorClass: string | null;
+  readonly lastErrorRaw: string | null;
   readonly lastFailureAt: string | null;
+  readonly failureMetadata: ReturnType<
+    typeof import("./content-translation-failure-metadata.js").parseContentTranslationFailureMetadata
+  >;
 }> {
+  const {
+    parseContentTranslationFailureMetadata,
+    classifyLegacyOutboxLastError,
+  } = await import("./content-translation-failure-metadata.js");
+
   const disposition = await resolveContentTranslationWarmOutboxDisposition(input);
   const aggregateId = buildContentTranslationWarmAggregateId(input);
+
+  const finish = (message: string | null, lastFailureAt: string | null) => {
+    const failureMetadata = parseContentTranslationFailureMetadata(message);
+    if (failureMetadata) {
+      return {
+        disposition,
+        lastErrorClass: failureMetadata.failureClass,
+        lastErrorRaw: message,
+        lastFailureAt,
+        failureMetadata,
+      };
+    }
+    if (disposition === "failed") {
+      const legacy = classifyLegacyOutboxLastError(message);
+      return {
+        disposition,
+        lastErrorClass: legacy.failureClass,
+        lastErrorRaw: message,
+        lastFailureAt,
+        failureMetadata: null,
+      };
+    }
+    return {
+      disposition,
+      lastErrorClass: null,
+      lastErrorRaw: message,
+      lastFailureAt,
+      failureMetadata: null,
+    };
+  };
 
   if (useMemoryWarmOutbox()) {
     for (const record of memoryRecordsByEventId.values()) {
       const id = buildContentTranslationWarmAggregateId(record.command);
       if (id === aggregateId && record.status === "failed") {
-        const message = record.lastError ?? "";
-        return {
-          disposition,
-          lastErrorClass: message.toLowerCase().includes("source unavailable")
-            ? "SOURCE_UNAVAILABLE"
-            : message
-              ? "UNKNOWN"
-              : null,
-          lastFailureAt: null,
-        };
+        return finish(record.lastError ?? null, null);
       }
     }
-    return { disposition, lastErrorClass: null, lastFailureAt: null };
+    return finish(null, null);
   }
 
   if (disposition !== "failed") {
-    return { disposition, lastErrorClass: null, lastFailureAt: null };
+    return finish(null, null);
   }
 
   const collection = getMongoCollection<{
@@ -402,26 +432,8 @@ export async function peekContentTranslationWarmOutboxFailure(input: {
     aggregateId,
   });
 
-  const message = typeof failed?.lastError === "string" ? failed.lastError : "";
-  let lastErrorClass: string | null = null;
-  if (message) {
-    const lower = message.toLowerCase();
-    if (lower.includes("source unavailable")) {
-      lastErrorClass = "SOURCE_UNAVAILABLE";
-    } else if (lower.includes("timeout")) {
-      lastErrorClass = "PROVIDER_TIMEOUT";
-    } else if (lower.includes("malformed")) {
-      lastErrorClass = "PROVIDER_INVALID_RESPONSE";
-    } else if (lower.includes("validation") || lower.includes("prose") || lower.includes("title")) {
-      lastErrorClass = "VALIDATION_FAILED";
-    } else {
-      lastErrorClass = "UNKNOWN";
-    }
-  }
-
-  return {
-    disposition,
-    lastErrorClass,
-    lastFailureAt: typeof failed?.updatedAt === "string" ? failed.updatedAt : null,
-  };
+  return finish(
+    typeof failed?.lastError === "string" ? failed.lastError : null,
+    typeof failed?.updatedAt === "string" ? failed.updatedAt : null,
+  );
 }

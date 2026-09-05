@@ -273,6 +273,30 @@ export type {
   ContentTranslationWarmFailureClass,
 } from "./content-translation-warm-failure.js";
 export {
+  CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
+  CONTENT_TRANSLATION_VALIDATION_CONTRACT_VERSION,
+  ContentTranslationValidationError,
+  classifyLegacyOutboxLastError,
+  encodeContentTranslationFailureMetadata,
+  parseContentTranslationFailureMetadata,
+  resolveValidationReasonCodeFromError,
+} from "./content-translation-failure-metadata.js";
+export type {
+  ContentTranslationArchitectureRetryBasis,
+  ContentTranslationSafeFailureMetadata,
+  ContentTranslationValidationReasonCode,
+} from "./content-translation-failure-metadata.js";
+export {
+  buildPublicLocalizationRetryPreflight,
+  explainPublicLocalizationResidualsWithPreflight,
+  selectReadyPresentationsForResidualRetry,
+} from "./public-localization-retry-preflight.js";
+export type {
+  PublicLocalizationResidualWithPreflight,
+  PublicLocalizationRetryPreflight,
+  PublicLocalizationRetrySelection,
+} from "./public-localization-retry-preflight.js";
+export {
   mapWithConcurrency,
   resolveContentTranslationWarmLocaleConcurrency,
 } from "./content-translation-warm-concurrency.js";

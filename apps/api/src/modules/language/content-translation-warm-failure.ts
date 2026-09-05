@@ -6,6 +6,11 @@
  */
 
 import { TranslationProviderError } from "./translation.config.js";
+import {
+  ContentTranslationValidationError,
+  parseContentTranslationFailureMetadata,
+  resolveValidationReasonCodeFromError,
+} from "./content-translation-failure-metadata.js";
 
 export type ContentTranslationWarmFailureClass = "retryable" | "non_retryable";
 
@@ -56,7 +61,66 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
   readonly failureClass: ContentTranslationMaterializationFailureClass;
   readonly retryability: ContentTranslationFailureRetryability;
   readonly providerErrorCode: string | null;
+  readonly failureReasonCode: string | null;
 } {
+  if (error instanceof Error) {
+    const meta = parseContentTranslationFailureMetadata(error.message);
+    if (meta) {
+      return {
+        failureClass: meta.failureClass as ContentTranslationMaterializationFailureClass,
+        retryability:
+          (meta.retryabilityHint as ContentTranslationFailureRetryability) ?? "unknown",
+        providerErrorCode:
+          error instanceof TranslationProviderError ? error.code : null,
+        failureReasonCode: meta.failureReasonCode,
+      };
+    }
+  }
+
+  if (error instanceof ContentTranslationValidationError) {
+    const nonRetryableReasons = new Set([
+      "UNCHANGED_SOURCE_PROSE",
+      "UNCHANGED_CIVIC_TITLE",
+      "EMPTY_TRANSLATION",
+      "INVALID_RICH_TEXT_STRUCTURE",
+      "MISSING_REQUIRED_PATH",
+      "UNEXPECTED_PATH",
+      "STRUCTURE_MISMATCH",
+      "TARGET_LANGUAGE_MISMATCH",
+      "OTHER_VALIDATION_FAILURE",
+    ]);
+    return {
+      failureClass: "VALIDATION_FAILED",
+      retryability: nonRetryableReasons.has(error.reasonCode)
+        ? "non_retryable_until_code_or_content_change"
+        : error.reasonCode === "INVALID_PROVIDER_PAYLOAD"
+          ? "retryable"
+          : "unknown",
+      providerErrorCode: error.code,
+      failureReasonCode: error.reasonCode,
+    };
+  }
+
+  const reasonCode = resolveValidationReasonCodeFromError(error);
+  if (reasonCode === "INVALID_PROVIDER_PAYLOAD") {
+    return {
+      failureClass: "PROVIDER_INVALID_RESPONSE",
+      retryability: "retryable",
+      providerErrorCode:
+        error instanceof TranslationProviderError ? error.code : null,
+      failureReasonCode: reasonCode,
+    };
+  }
+  if (reasonCode && reasonCode !== "UNKNOWN_LEGACY") {
+    return {
+      failureClass: "VALIDATION_FAILED",
+      retryability: "non_retryable_until_code_or_content_change",
+      providerErrorCode:
+        error instanceof TranslationProviderError ? error.code : null,
+      failureReasonCode: reasonCode,
+    };
+  }
+
   if (error instanceof TranslationProviderError) {
     switch (error.code) {
       case "timeout":
@@ -64,6 +128,7 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
           failureClass: "PROVIDER_TIMEOUT",
           retryability: "retryable",
           providerErrorCode: error.code,
+          failureReasonCode: null,
         };
       case "rate_limited":
       case "network_failure":
@@ -75,18 +140,21 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
               : "PROVIDER_TIMEOUT",
           retryability: "retryable",
           providerErrorCode: error.code,
+          failureReasonCode: null,
         };
       case "malformed_response":
         return {
           failureClass: "PROVIDER_INVALID_RESPONSE",
           retryability: "retryable",
           providerErrorCode: error.code,
+          failureReasonCode: "INVALID_PROVIDER_PAYLOAD",
         };
       case "safety_rejected":
         return {
           failureClass: "PROVIDER_REJECTED",
           retryability: "non_retryable_until_code_or_content_change",
           providerErrorCode: error.code,
+          failureReasonCode: null,
         };
       case "unsupported_language":
       case "forbidden":
@@ -95,26 +163,14 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
           failureClass: "UNSUPPORTED_SOURCE",
           retryability: "non_retryable_until_code_or_content_change",
           providerErrorCode: error.code,
+          failureReasonCode: null,
         };
       case "bad_request": {
-        const message = error.message.toLowerCase();
-        if (
-          message.includes("malformed") ||
-          message.includes("validation") ||
-          message.includes("prose") ||
-          message.includes("title") ||
-          message.includes("allowlist")
-        ) {
-          return {
-            failureClass: "VALIDATION_FAILED",
-            retryability: "non_retryable_until_code_or_content_change",
-            providerErrorCode: error.code,
-          };
-        }
         return {
           failureClass: "VALIDATION_FAILED",
           retryability: "non_retryable_until_code_or_content_change",
           providerErrorCode: error.code,
+          failureReasonCode: "OTHER_VALIDATION_FAILURE",
         };
       }
       default:
@@ -122,6 +178,7 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
           failureClass: "UNKNOWN",
           retryability: "retryable",
           providerErrorCode: error.code,
+          failureReasonCode: null,
         };
     }
   }
@@ -139,6 +196,7 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
         failureClass: "PROVIDER_TIMEOUT",
         retryability: "retryable",
         providerErrorCode: null,
+        failureReasonCode: null,
       };
     }
     if (message.includes("persist") || message.includes("mongo") || message.includes("write")) {
@@ -146,6 +204,7 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
         failureClass: "PERSISTENCE_FAILED",
         retryability: "retryable",
         providerErrorCode: null,
+        failureReasonCode: null,
       };
     }
     if (message.includes("unsupported") || message.includes("sourcekind")) {
@@ -153,6 +212,7 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
         failureClass: "UNSUPPORTED_SOURCE",
         retryability: "non_retryable_until_code_or_content_change",
         providerErrorCode: null,
+        failureReasonCode: null,
       };
     }
   }
@@ -161,6 +221,7 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
     failureClass: "UNKNOWN",
     retryability: "unknown",
     providerErrorCode: null,
+    failureReasonCode: null,
   };
 }
 

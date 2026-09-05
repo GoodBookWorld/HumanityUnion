@@ -43,6 +43,7 @@ import {
   assertTranslatedProseChangedFromSource,
   filterTranslatedFieldsToSourceAllowlist,
 } from "./content-translation-output-validation.js";
+import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
 import { buildContentTranslationSourceVersion } from "./content-translation-version.js";
 import { assertAutomaticContentTranslationTargetLocale } from "./content-translation-warm-targets.js";
 import {
@@ -370,9 +371,10 @@ export async function getOrCreateContentTranslation(input: {
   try {
     translatedFields = parseStructuredTranslation(result.translatedText);
   } catch {
-    throw new TranslationProviderError(
-      "malformed_response",
+    throw new ContentTranslationValidationError(
+      "INVALID_PROVIDER_PAYLOAD",
       "Translation provider returned malformed structured content.",
+      "malformed_response",
     );
   }
 

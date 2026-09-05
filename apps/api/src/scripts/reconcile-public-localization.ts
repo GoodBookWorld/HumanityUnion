@@ -42,10 +42,10 @@ import {
   StagingContentTranslationDiscoveryFailure,
 } from "../modules/language/content-translation-staging-warm-discovery-safety.js";
 import {
-  explainPublicLocalizationResiduals,
   runPublicLocalizationReconciliation,
   waitForPublicLocalizationMaterialization,
 } from "../modules/language/public-localization-reconciliation.js";
+import { explainPublicLocalizationResidualsWithPreflight } from "../modules/language/public-localization-retry-preflight.js";
 import type { StagingWarmSourceKind } from "../modules/language/content-translation-staging-warm-backfill.js";
 
 loadApiEnvironment();
@@ -195,10 +195,35 @@ async function main(): Promise<void> {
     });
   }
 
-  const residuals = explainResiduals
-    ? await explainPublicLocalizationResiduals({
+  const residualReport = explainResiduals
+    ? await explainPublicLocalizationResidualsWithPreflight({
         workItems: result.audit.workItems,
       })
+    : null;
+
+  const residuals = residualReport?.residuals ?? null;
+  const retrySelection = residualReport
+    ? {
+        RETRY_READY_IDENTITIES: residualReport.selection.RETRY_READY_IDENTITIES,
+        RETRY_BLOCKED_IDENTITIES: residualReport.selection.RETRY_BLOCKED_IDENTITIES,
+        byFamilyReady: residualReport.selection.byFamilyReady,
+        byLocaleReady: residualReport.selection.byLocaleReady,
+        // Identities only — no prose.
+        readyIdentities: residualReport.selection.ready.map((row) => ({
+          family: row.family,
+          sourceRecordId: row.presentationIdentity.sourceRecordId,
+          targetLocale: row.targetLocale,
+          architectureRetryBasis: row.retryPreflight.architectureRetryBasis,
+          failureReasonCode: row.failureReasonCode,
+        })),
+        blockedIdentities: residualReport.selection.blocked.map((row) => ({
+          family: row.family,
+          sourceRecordId: row.presentationIdentity.sourceRecordId,
+          targetLocale: row.targetLocale,
+          blockReason: row.retryPreflight.blockReason,
+          failureReasonCode: row.failureReasonCode,
+        })),
+      }
     : null;
 
   const universalSuccessClaimed =
@@ -209,7 +234,7 @@ async function main(): Promise<void> {
   console.log(
     JSON.stringify(
       {
-        pack: "08K.2",
+        pack: "08K.2.1",
         operation: "reconcile_public_localization",
         mode: result.mode,
         explainResiduals,
@@ -245,6 +270,7 @@ async function main(): Promise<void> {
         byFamily: result.audit.byFamily,
         byLocale: result.audit.byLocale,
         residuals,
+        retrySelection,
         universalCorpusSuccessClaimed: universalSuccessClaimed,
         note:
           result.mode === "dry-run"

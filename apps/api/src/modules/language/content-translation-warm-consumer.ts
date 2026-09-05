@@ -26,7 +26,14 @@ import {
   mapWithConcurrency,
   resolveContentTranslationWarmLocaleConcurrency,
 } from "./content-translation-warm-concurrency.js";
-import { classifyContentTranslationWarmFailure } from "./content-translation-warm-failure.js";
+import {
+  classifyContentTranslationMaterializationFailure,
+  classifyContentTranslationWarmFailure,
+} from "./content-translation-warm-failure.js";
+import {
+  encodeContentTranslationFailureMetadata,
+  resolveValidationReasonCodeFromError,
+} from "./content-translation-failure-metadata.js";
 import {
   listContentTranslationWarmMemoryPendingForTests,
   markContentTranslationWarmMemoryFailedForTests,
@@ -57,6 +64,7 @@ export type ContentTranslationWarmLocaleOutcome =
       readonly status: "failed";
       readonly failureClass: "retryable" | "non_retryable";
       readonly errorCode: string;
+      readonly failureReasonCode: string | null;
     };
 
 export interface ContentTranslationWarmProcessResult {
@@ -277,6 +285,7 @@ export async function processContentTranslationWarmRequested(
       const failureClass = classifyContentTranslationWarmFailure(error);
       const errorCode =
         error instanceof TranslationProviderError ? error.code : "unknown";
+      const failureReasonCode = resolveValidationReasonCodeFromError(error);
 
       logger.warn("content_translation.warm.locale_failed", {
         component: "content-translation-warm",
@@ -287,6 +296,7 @@ export async function processContentTranslationWarmRequested(
         workIdentityKey,
         failureClass,
         errorCode,
+        failureReasonCode,
         error: error instanceof Error ? error.message : String(error),
       });
 
@@ -302,6 +312,7 @@ export async function processContentTranslationWarmRequested(
         status: "failed" as const,
         failureClass,
         errorCode,
+        failureReasonCode,
       };
     }
   });
@@ -315,11 +326,43 @@ export async function processContentTranslationWarmRequested(
 
   if (!materializedOk || sawRetryableFailure || sawNonRetryableFailure) {
     const outcome = sawRetryableFailure ? "failed_retryable" : "failed_terminal";
+    const firstFailed = locales.find((locale) => locale.status === "failed");
+    const diagnostic = firstFailed
+      ? classifyContentTranslationMaterializationFailure(
+          firstFailed.errorCode === "timeout"
+            ? new TranslationProviderError("timeout", "timeout")
+            : firstFailed.errorCode === "malformed_response"
+              ? new TranslationProviderError("malformed_response", "malformed")
+              : firstFailed.errorCode === "unavailable"
+                ? new TranslationProviderError("unavailable", "unavailable")
+                : new TranslationProviderError("bad_request", "validation"),
+        )
+      : classifyContentTranslationMaterializationFailure(
+          new TranslationProviderError("bad_request", "validation"),
+        );
+    const reasonCode =
+      (firstFailed && "failureReasonCode" in firstFailed
+        ? firstFailed.failureReasonCode
+        : null) ??
+      diagnostic.failureClass ??
+      "UNKNOWN_LEGACY";
+
+    const metaMessage = encodeContentTranslationFailureMetadata({
+      schema: "content_translation_failure_meta_v1",
+      validationContractVersion: "v1",
+      failureClass: diagnostic.failureClass,
+      failureReasonCode: String(reasonCode),
+      sourceKind: source.sourceKind,
+      sourceRecordId: source.sourceRecordId,
+      sourceVersion: source.sourceVersion,
+      targetLocale: firstFailed?.targetLanguage ?? null,
+      failedAt: new Date().toISOString(),
+      retryabilityHint: diagnostic.retryability,
+    });
+
     const err = new TranslationProviderError(
       sawRetryableFailure ? "unavailable" : "bad_request",
-      sawRetryableFailure
-        ? "One or more automatic warm locale translations failed with a retryable error."
-        : "One or more automatic warm locale translations failed without CURRENT materialization.",
+      metaMessage,
     );
     logger.warn(
       sawRetryableFailure
@@ -331,6 +374,8 @@ export async function processContentTranslationWarmRequested(
         sourceRecordId: source.sourceRecordId,
         sourceVersion: source.sourceVersion,
         outcome,
+        failureClass: diagnostic.failureClass,
+        failureReasonCode: reasonCode,
         localeStatuses: locales.map((locale) => locale.status),
       },
     );

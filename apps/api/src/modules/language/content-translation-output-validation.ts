@@ -1,6 +1,8 @@
 /**
- * Pack 02G Task 07C / 07E.1 / 08J — post-provider structured translation validation
- * before persistence.
+ * Pack 02G Task 07C / 07E.1 / 08J / 08K.2.1 — post-provider structured
+ * translation validation before persistence.
+ *
+ * Pack 08K.2.1 — throws ContentTranslationValidationError with reason codes.
  */
 
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
@@ -9,6 +11,7 @@ import {
   CONTENT_TRANSLATION_CIVIC_TITLE_FIELDS,
   CONTENT_TRANSLATION_FIELD_ALLOWLIST,
 } from "./content-translation-eligibility.js";
+import { ContentTranslationValidationError } from "./content-translation-failure-metadata.js";
 import {
   isNonTranslatableFieldKey,
   resolveAutomaticTranslationFieldKeys,
@@ -44,6 +47,19 @@ export function assertTranslatedProseChangedFromSource(input: {
     return;
   }
 
+  const presentKeys = eligibleKeys.filter(
+    (key) =>
+      typeof input.translatedFields[key] === "string" &&
+      input.translatedFields[key]!.trim().length > 0,
+  );
+  if (presentKeys.length === 0) {
+    throw new ContentTranslationValidationError(
+      "EMPTY_TRANSLATION",
+      "Translation provider returned no eligible non-empty translated fields.",
+      "malformed_response",
+    );
+  }
+
   const anyChanged = eligibleKeys.some((key) => {
     const sourceValue = input.sourceFields[key]!.trim();
     const translatedValue =
@@ -54,9 +70,10 @@ export function assertTranslatedProseChangedFromSource(input: {
   });
 
   if (!anyChanged) {
-    throw new TranslationProviderError(
-      "malformed_response",
+    throw new ContentTranslationValidationError(
+      "UNCHANGED_SOURCE_PROSE",
       "Translation provider returned unchanged source text for all eligible fields.",
+      "malformed_response",
     );
   }
 }
@@ -87,10 +104,18 @@ export function assertCivicTitleFieldsTranslatedFromSource(input: {
       typeof input.translatedFields[key] === "string"
         ? input.translatedFields[key]!.trim()
         : "";
-    if (translatedValue === sourceValue.trim()) {
-      throw new TranslationProviderError(
+    if (!translatedValue) {
+      throw new ContentTranslationValidationError(
+        "MISSING_REQUIRED_PATH",
+        `Translation provider omitted civic title/heading field "${key}".`,
         "malformed_response",
+      );
+    }
+    if (translatedValue === sourceValue.trim()) {
+      throw new ContentTranslationValidationError(
+        "UNCHANGED_CIVIC_TITLE",
         `Translation provider left civic title/heading field "${key}" unchanged.`,
+        "malformed_response",
       );
     }
   }
@@ -131,3 +156,6 @@ export function filterTranslatedFieldsToSourceAllowlist(input: {
   }
   return filtered;
 }
+
+/** Re-export for callers that only import validation helpers. */
+export { ContentTranslationValidationError, TranslationProviderError };

@@ -764,3 +764,14 @@ Fix: `syncInitiativeCollectiveDecisionStoreAfterMongoHydrate` + hydrate/sync in 
 
 Published outbox without a CURRENT row ⇒ `MISSING_AFTER_DISPATCH` (never indefinite PENDING).
 
+---
+
+## Pack 08K.2.1 — Residual retry readiness
+
+Non-mutating retry preflight (`--explain-residuals`) reports `retryPreflight.ready` only when source resolves, presentation is eligible, locale is content-translation enabled, no CURRENT row, no active queued work, and either:
+
+- plain MISSING after CD hydrate/sync fix (`COLLECTIVE_DECISION_HYDRATE_SYNC_08K2`), or
+- historical terminal failure with `failureReasonCode=UNKNOWN_LEGACY` (`HISTORICAL_FAILURE_SEMANTICS_UNKNOWN_LEGACY_v1`).
+
+Known validation codes (`UNCHANGED_CIVIC_TITLE`, `UNCHANGED_SOURCE_PROSE`, …) remain blocked until a concrete code/content fix. Future warm failures persist `CT_FAIL_META_V1:` safe metadata on outbox `lastError`.
+
