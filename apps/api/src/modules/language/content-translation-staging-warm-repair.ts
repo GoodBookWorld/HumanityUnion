@@ -489,6 +489,25 @@ export async function waitForStagingWarmMaterialization(input: {
             targetLanguage: identity.targetLanguage,
             state: "FAILED",
           });
+        } else if (disposition === "published") {
+          // Pack 08K.2 — consumed without CURRENT row is a residual, not PENDING.
+          terminalFailed += 1;
+          remaining.push({
+            sourceKind: identity.sourceKind,
+            sourceRecordId: identity.sourceRecordId,
+            sourceVersion: identity.sourceVersion,
+            targetLanguage: identity.targetLanguage,
+            state: "FAILED",
+          });
+        } else if (disposition === "pending") {
+          pending += 1;
+          remaining.push({
+            sourceKind: identity.sourceKind,
+            sourceRecordId: identity.sourceRecordId,
+            sourceVersion: identity.sourceVersion,
+            targetLanguage: identity.targetLanguage,
+            state: "PENDING",
+          });
         } else {
           pending += 1;
           remaining.push({
@@ -496,7 +515,7 @@ export async function waitForStagingWarmMaterialization(input: {
             sourceRecordId: identity.sourceRecordId,
             sourceVersion: identity.sourceVersion,
             targetLanguage: identity.targetLanguage,
-            state: disposition === "pending" ? "PENDING" : "MISSING",
+            state: "MISSING",
           });
         }
         continue;

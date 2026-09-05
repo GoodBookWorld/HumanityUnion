@@ -334,14 +334,17 @@ describe("Production Completion Pack 02G Task 04 — durable warm + outbox", () 
       "non_retryable",
     );
 
-    const missing = await processContentTranslationWarmRequested(
-      buildContentTranslationWarmRequestedCommand({
-        sourceKind: "initiative",
-        sourceRecordId: "missing-initiative-pack02g-t04",
-      }),
+    await assert.rejects(
+      () =>
+        processContentTranslationWarmRequested(
+          buildContentTranslationWarmRequestedCommand({
+            sourceKind: "initiative",
+            sourceRecordId: "missing-initiative-pack02g-t04",
+          }),
+        ),
+      (error: unknown) =>
+        error instanceof TranslationProviderError && error.code === "unavailable",
     );
-    assert.equal(missing.outcome, "skipped_missing_source");
-
     // Canonical source remains readable after warm path.
     const source = await loadTranslatableSource({
       sourceKind: "initiative",

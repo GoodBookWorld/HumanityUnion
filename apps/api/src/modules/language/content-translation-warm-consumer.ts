@@ -29,6 +29,7 @@ import {
 import { classifyContentTranslationWarmFailure } from "./content-translation-warm-failure.js";
 import {
   listContentTranslationWarmMemoryPendingForTests,
+  markContentTranslationWarmMemoryFailedForTests,
   markContentTranslationWarmMemoryPublishedForTests,
 } from "./content-translation-warm-enqueue.js";
 import { buildContentTranslationWarmTargetDiagnostic } from "./content-translation-warm-diagnostic.js";
@@ -150,19 +151,19 @@ export async function processContentTranslationWarmRequested(
   });
 
   if (!source) {
-    logger.info("content_translation.warm.skipped_missing_source", {
+    logger.warn("content_translation.warm.skipped_missing_source", {
       component: "content-translation-warm",
       sourceKind: command.sourceKind,
       sourceRecordId: command.sourceRecordId,
+      // Pack 08K.2 — must not ack outbox success: that left identities MISSING
+      // forever after Collective Decision Map sync failures.
+      outcome: "failed_retryable",
+      failureClass: "SOURCE_UNAVAILABLE",
     });
-    return {
-      sourceKind: command.sourceKind,
-      sourceRecordId: command.sourceRecordId,
-      sourceVersion: null,
-      sourceLanguage: null,
-      outcome: "skipped_missing_source",
-      locales: [],
-    };
+    throw new TranslationProviderError(
+      "unavailable",
+      `Content translation warm source unavailable for ${command.sourceKind}.`,
+    );
   }
 
   try {
@@ -395,9 +396,17 @@ export async function processContentTranslationWarmMemoryQueueForTests(): Promis
   const pending = listContentTranslationWarmMemoryPendingForTests();
   const results: ContentTranslationWarmProcessResult[] = [];
   for (const row of pending) {
-    const result = await processContentTranslationWarmRequested(row.command);
-    markContentTranslationWarmMemoryPublishedForTests(row.eventId);
-    results.push(result);
+    try {
+      const result = await processContentTranslationWarmRequested(row.command);
+      markContentTranslationWarmMemoryPublishedForTests(row.eventId);
+      results.push(result);
+    } catch (error) {
+      markContentTranslationWarmMemoryFailedForTests(
+        row.eventId,
+        error instanceof Error ? error.message : "warm memory drain failure",
+      );
+      throw error;
+    }
   }
   return results;
 }

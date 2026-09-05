@@ -639,12 +639,37 @@ describe("Pack 08K.1 — public localization reconciliation", () => {
     assert.equal(waited.progress.PENDING, 0);
   });
 
-  it("19. wait exits on timeout", async () => {
+  it("19. wait exits on timeout while QUEUED work remains", async () => {
+    const initiative = sampleInitiative("wait-timeout");
+    createInitiative(initiative);
+    createdInitiativeIds.push(initiative.initiativeId);
+
+    const dry = await runPublicLocalizationReconciliation({
+      execute: true,
+      kinds: ["initiative"],
+      deps: { listInitiatives: () => [initiative] },
+      targetLocales: ["uk"],
+    });
+    assert.ok(dry.audit.workItems.length >= 1);
+    // Leave outbox pending — do not process consumer — so wait stays QUEUED until timeout.
+    assert.ok(listContentTranslationWarmMemoryPendingForTests().length >= 1);
+
+    const waited = await waitForPublicLocalizationMaterialization({
+      workItems: dry.audit.workItems,
+      timeoutMs: 400,
+      pollIntervalMs: 50,
+    });
+    assert.equal(waited.timedOut, true);
+    assert.ok(waited.progress.TIMED_OUT >= 1);
+    assert.ok(waited.progress.QUEUED >= 1);
+  });
+
+  it("19b. bare MISSING without queued outbox converges (not indefinite PENDING)", async () => {
     const waited = await waitForPublicLocalizationMaterialization({
       workItems: [
         {
           sourceKind: "initiative",
-          sourceRecordId: "never-materializes",
+          sourceRecordId: "never-enqueued-08k1",
           sourceVersion: "v1",
           targetLanguage: "uk",
           state: "MISSING",
@@ -653,11 +678,12 @@ describe("Pack 08K.1 — public localization reconciliation", () => {
           fallbackPaths: ["title"],
         },
       ],
-      timeoutMs: 400,
+      timeoutMs: 2_000,
       pollIntervalMs: 50,
     });
-    assert.equal(waited.timedOut, true);
-    assert.ok(waited.progress.TIMED_OUT >= 1);
+    assert.equal(waited.timedOut, false);
+    assert.equal(waited.progress.MISSING, 1);
+    assert.equal(waited.progress.PENDING, 0);
   });
 
   it("20. discovery zero/partial cannot masquerade as success", async () => {

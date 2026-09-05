@@ -737,12 +737,30 @@ Both `diagnose:public-localization -- --mongo` and `reconcile:public-localizatio
 
 ```
 pnpm --filter @hu/api reconcile:public-localization -- --mongo          # dry-run (default)
+pnpm --filter @hu/api reconcile:public-localization -- --mongo --explain-residuals
 ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true \
   pnpm --filter @hu/api reconcile:public-localization -- --mongo --execute
 ```
 
 - Dry-run: zero provider calls, zero DB/outbox writes.
+- `--explain-residuals`: safe residual identity diagnostics (no source/translated bodies).
 - Execute requires `--execute` + `ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true` + database `humanity_union_staging`; production refused.
 - Enqueues presentation-level warms via existing bounded consumer (`CONTENT_TRANSLATION_WORKER_CONCURRENCY` default 1).
 - Wait: `--wait-for-materialization --timeout-ms=<n>` polls compact translation identities only.
+
+---
+
+## Pack 08K.2 — Residual materialization diagnostics
+
+### Collective Decision root cause
+
+Warm events were enqueued, but the warm consumer loaded `null` because the Collective Decision in-memory Map was never re-bound after Mongo hydrate (unlike Initiative / Collaborative Analysis). Operator bootstrap also omitted CD hydrate+sync. The consumer previously treated missing source as a **successful skip**, so outbox was acknowledged without `content_translations` rows → identities stayed **MISSING** (not FAILED).
+
+Fix: `syncInitiativeCollectiveDecisionStoreAfterMongoHydrate` + hydrate/sync in operator + full bootstrap; missing source now throws `SOURCE_UNAVAILABLE` (retryable) instead of silent success.
+
+### Wait / residual state model
+
+`CURRENT | QUEUED | PROCESSING | RETRYING | TERMINAL_FAILED | MISSING_AFTER_DISPATCH | MISSING | STALE`
+
+Published outbox without a CURRENT row ⇒ `MISSING_AFTER_DISPATCH` (never indefinite PENDING).
 

@@ -278,11 +278,17 @@ export function markContentTranslationWarmMemoryFailedForTests(
   }
 }
 
-export type ContentTranslationWarmOutboxDisposition = "pending" | "failed" | "none";
+export type ContentTranslationWarmOutboxDisposition =
+  | "pending"
+  | "failed"
+  | "published"
+  | "none";
 
 /**
- * Pack 08J — wait diagnostics: distinguish PENDING work from terminal FAILED
- * outbox outcomes so recovery tooling does not mislabel failures forever.
+ * Pack 08J / 08K.2 — wait diagnostics: distinguish PENDING / FAILED /
+ * PUBLISHED (consumed) from absent outbox evidence.
+ *
+ * published + no translation ⇒ MISSING_AFTER_DISPATCH (not indefinite PENDING).
  */
 export async function resolveContentTranslationWarmOutboxDisposition(input: {
   readonly sourceKind: ContentTranslationSourceKind;
@@ -295,19 +301,28 @@ export async function resolveContentTranslationWarmOutboxDisposition(input: {
     if (pending?.status === "pending") {
       return "pending";
     }
+    let sawPublished = false;
     for (const record of memoryRecordsByEventId.values()) {
       const id = buildContentTranslationWarmAggregateId(record.command);
-      if (id === aggregateId && record.status === "failed") {
+      if (id !== aggregateId) {
+        continue;
+      }
+      if (record.status === "failed") {
         return "failed";
       }
+      if (record.status === "published") {
+        sawPublished = true;
+      }
     }
-    return "none";
+    return sawPublished ? "published" : "none";
   }
 
   const collection = getMongoCollection<{
     status: string;
     eventName: string;
     aggregateId: string;
+    updatedAt?: string;
+    lastError?: string | null;
   }>(MONGO_COLLECTIONS.outbox);
 
   const pending = await collection.findOne({
@@ -324,5 +339,89 @@ export async function resolveContentTranslationWarmOutboxDisposition(input: {
     eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
     aggregateId,
   });
-  return failed ? "failed" : "none";
+  if (failed) {
+    return "failed";
+  }
+
+  const published = await collection.findOne({
+    status: "published",
+    eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
+    aggregateId,
+  });
+  return published ? "published" : "none";
+}
+
+/**
+ * Safe outbox failure peek for residual diagnostics (no payload bodies).
+ */
+export async function peekContentTranslationWarmOutboxFailure(input: {
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly sourceRecordId: string;
+}): Promise<{
+  readonly disposition: ContentTranslationWarmOutboxDisposition;
+  readonly lastErrorClass: string | null;
+  readonly lastFailureAt: string | null;
+}> {
+  const disposition = await resolveContentTranslationWarmOutboxDisposition(input);
+  const aggregateId = buildContentTranslationWarmAggregateId(input);
+
+  if (useMemoryWarmOutbox()) {
+    for (const record of memoryRecordsByEventId.values()) {
+      const id = buildContentTranslationWarmAggregateId(record.command);
+      if (id === aggregateId && record.status === "failed") {
+        const message = record.lastError ?? "";
+        return {
+          disposition,
+          lastErrorClass: message.toLowerCase().includes("source unavailable")
+            ? "SOURCE_UNAVAILABLE"
+            : message
+              ? "UNKNOWN"
+              : null,
+          lastFailureAt: null,
+        };
+      }
+    }
+    return { disposition, lastErrorClass: null, lastFailureAt: null };
+  }
+
+  if (disposition !== "failed") {
+    return { disposition, lastErrorClass: null, lastFailureAt: null };
+  }
+
+  const collection = getMongoCollection<{
+    status: string;
+    eventName: string;
+    aggregateId: string;
+    updatedAt?: string;
+    lastError?: string | null;
+  }>(MONGO_COLLECTIONS.outbox);
+
+  const failed = await collection.findOne({
+    status: "failed",
+    eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
+    aggregateId,
+  });
+
+  const message = typeof failed?.lastError === "string" ? failed.lastError : "";
+  let lastErrorClass: string | null = null;
+  if (message) {
+    const lower = message.toLowerCase();
+    if (lower.includes("source unavailable")) {
+      lastErrorClass = "SOURCE_UNAVAILABLE";
+    } else if (lower.includes("timeout")) {
+      lastErrorClass = "PROVIDER_TIMEOUT";
+    } else if (lower.includes("malformed")) {
+      lastErrorClass = "PROVIDER_INVALID_RESPONSE";
+    } else if (lower.includes("validation") || lower.includes("prose") || lower.includes("title")) {
+      lastErrorClass = "VALIDATION_FAILED";
+    } else {
+      lastErrorClass = "UNKNOWN";
+    }
+  }
+
+  return {
+    disposition,
+    lastErrorClass,
+    lastFailureAt: typeof failed?.updatedAt === "string" ? failed.updatedAt : null,
+  };
 }

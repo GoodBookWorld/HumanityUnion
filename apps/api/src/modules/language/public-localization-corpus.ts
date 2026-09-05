@@ -50,8 +50,12 @@ export type PublicLocalizationDiscoveryStatus = "COMPLETE" | "PARTIAL" | "FAILED
 export type PublicLocalizationTargetTranslationState =
   | "CURRENT"
   | "MISSING"
+  | "MISSING_AFTER_DISPATCH"
   | "STALE"
   | "FAILED"
+  | "QUEUED"
+  | "PROCESSING"
+  | "RETRYING"
   | "PENDING"
   | "MANUAL_PRESERVED";
 
@@ -211,7 +215,7 @@ export function planPresentationLocaleCoverage(input: {
   readonly presentation: PublicPresentationNode;
   readonly targetLanguage: LanguageCode;
   readonly translationRows: readonly TranslatedContentRecord[];
-  readonly outboxDisposition?: "pending" | "failed" | "none";
+  readonly outboxDisposition?: "pending" | "failed" | "none" | "published";
 }): {
   readonly localizedNodes: number;
   readonly fallbackNodes: number;
@@ -299,7 +303,10 @@ export function planPresentationLocaleCoverage(input: {
   if (input.outboxDisposition === "failed") {
     state = "FAILED";
   } else if (input.outboxDisposition === "pending") {
-    state = "PENDING";
+    state = "QUEUED";
+  } else if (input.outboxDisposition === "published") {
+    // Pack 08K.2 — outbox consumed/acked but no CURRENT row.
+    state = "MISSING_AFTER_DISPATCH";
   } else if (stale) {
     state = "STALE";
   }
@@ -626,7 +633,7 @@ export function uniquePresentationsRequiringWork(
   const seen = new Set<string>();
   const out: StagingWarmCandidate[] = [];
   for (const item of workItems) {
-    if (item.state !== "MISSING" && item.state !== "STALE" && item.state !== "FAILED") {
+    if (item.state !== "MISSING" && item.state !== "STALE" && item.state !== "FAILED" && item.state !== "MISSING_AFTER_DISPATCH") {
       continue;
     }
     const key = `${item.sourceKind}::${item.sourceRecordId}`;

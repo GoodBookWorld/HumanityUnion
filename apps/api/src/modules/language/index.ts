@@ -202,11 +202,15 @@ export type {
 export {
   runPublicLocalizationReconciliation,
   waitForPublicLocalizationMaterialization,
+  explainPublicLocalizationResiduals,
+  resolvePublicLocalizationMaterializationState,
 } from "./public-localization-reconciliation.js";
 export type {
   PublicLocalizationReconciliationMode,
   PublicLocalizationReconciliationResult,
   PublicLocalizationWaitProgress,
+  PublicLocalizationMaterializationState,
+  PublicLocalizationResidualExplanation,
 } from "./public-localization-reconciliation.js";
 export {
   getContentTranslationWorkerInFlightForTests,
@@ -237,6 +241,7 @@ export {
   listContentTranslationWarmMemoryPendingForTests,
   markContentTranslationWarmMemoryFailedForTests,
   markContentTranslationWarmMemoryPublishedForTests,
+  peekContentTranslationWarmOutboxFailure,
   resetContentTranslationWarmMemoryForTests,
   resolveContentTranslationWarmOutboxDisposition,
   scheduleContentTranslationWarmAfterMutation,
@@ -257,7 +262,16 @@ export type {
   ContentTranslationWarmLocaleOutcome,
   ContentTranslationWarmProcessResult,
 } from "./content-translation-warm-consumer.js";
-export { classifyContentTranslationWarmFailure } from "./content-translation-warm-failure.js";
+export {
+  classifyContentTranslationWarmFailure,
+  classifyContentTranslationMaterializationFailure,
+  resolveContentTranslationFailureRetryPolicy,
+} from "./content-translation-warm-failure.js";
+export type {
+  ContentTranslationFailureRetryability,
+  ContentTranslationMaterializationFailureClass,
+  ContentTranslationWarmFailureClass,
+} from "./content-translation-warm-failure.js";
 export {
   mapWithConcurrency,
   resolveContentTranslationWarmLocaleConcurrency,

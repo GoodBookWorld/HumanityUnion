@@ -10,6 +10,10 @@
  * Mongo snapshot adapters load (same order as full bootstrap). Without sync,
  * listInitiatives() stays empty and every dependent kind discovers zero records.
  *
+ * Pack 08K.2 — Collective Decision uses the same Map+hydrate pattern. Without
+ * hydrate+sync here, reconcile can enqueue CD warms while the warm consumer
+ * loads null (`skipped_missing_source`) and leaves identities MISSING.
+ *
  * Comments/petitions already use repository queries (no full-app hydrate), but
  * discovery still walks public initiatives first — so Initiative sync is required
  * for comment/petition public candidacy as well.
@@ -19,6 +23,7 @@
 
 import { shouldBootstrapMongoPersistence } from "../../config/production-persistence-contract.js";
 import { hydrateInitiativeCollaborativeAnalysisMongoPersistence } from "../../modules/initiative-collaborative-analysis/persistence/initiative-collaborative-analysis-mongo.persistence.js";
+import { hydrateInitiativeCollectiveDecisionMongoPersistence } from "../../modules/initiative-collective-decision/persistence/initiative-collective-decision-mongo.persistence.js";
 import { hydrateInitiativeMongoPersistence } from "../../modules/initiatives/persistence/initiative-mongo.persistence.js";
 import { ensureLanguageRegistrySeeded } from "../../modules/language/language-registry/index.js";
 import { assertMongoConfigured } from "../mongodb/mongo-config.js";
@@ -49,9 +54,10 @@ export async function bootstrapContentTranslationOperatorPersistence(): Promise<
   await Promise.all([
     hydrateInitiativeMongoPersistence(),
     hydrateInitiativeCollaborativeAnalysisMongoPersistence(),
+    hydrateInitiativeCollectiveDecisionMongoPersistence(),
   ]);
 
-  // Pack 08I.16.1 — mirror full bootstrap: adapter hydrate then store re-bind.
+  // Pack 08I.16.1 / 08K.2 — mirror full bootstrap: adapter hydrate then store re-bind.
   const { syncInitiativeStoreAfterMongoHydrate } = await import(
     "../../modules/initiatives/initiative.store.js"
   );
@@ -61,6 +67,11 @@ export async function bootstrapContentTranslationOperatorPersistence(): Promise<
     "../../modules/initiative-collaborative-analysis/initiative-collaborative-analysis.store.js"
   );
   syncInitiativeCollaborativeAnalysisStoreAfterMongoHydrate();
+
+  const { syncInitiativeCollectiveDecisionStoreAfterMongoHydrate } = await import(
+    "../../modules/initiative-collective-decision/initiative-collective-decision.store.js"
+  );
+  syncInitiativeCollectiveDecisionStoreAfterMongoHydrate();
 
   return { mode: "lightweight_discovery" };
 }

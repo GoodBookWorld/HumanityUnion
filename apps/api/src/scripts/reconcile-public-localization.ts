@@ -5,6 +5,7 @@
  *
  * Modes:
  *   (default)                         dry-run coverage + work-item report
+ *   --explain-residuals               dry-run + safe residual identity diagnostics
  *   --execute                         enqueue warms (requires staging gate)
  *   --wait-for-materialization        after execute, poll compact identities
  *   --timeout-ms=<n>                  wait timeout (default 300000)
@@ -17,6 +18,7 @@
  *
  * Usage (from apps/api):
  *   pnpm reconcile:public-localization -- --mongo
+ *   pnpm reconcile:public-localization -- --mongo --explain-residuals
  *   ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true \
  *     pnpm reconcile:public-localization -- --mongo --execute
  *   ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true \
@@ -40,6 +42,7 @@ import {
   StagingContentTranslationDiscoveryFailure,
 } from "../modules/language/content-translation-staging-warm-discovery-safety.js";
 import {
+  explainPublicLocalizationResiduals,
   runPublicLocalizationReconciliation,
   waitForPublicLocalizationMaterialization,
 } from "../modules/language/public-localization-reconciliation.js";
@@ -56,6 +59,10 @@ function isExecuteModeRequested(): boolean {
 
 function isWaitForMaterializationRequested(): boolean {
   return process.argv.includes("--wait-for-materialization");
+}
+
+function isExplainResidualsRequested(): boolean {
+  return process.argv.includes("--explain-residuals");
 }
 
 function parseTimeoutMs(): number {
@@ -112,9 +119,14 @@ function assertReconciliationGuards(input: {
 async function main(): Promise<void> {
   const execute = isExecuteModeRequested();
   const waitForMaterialization = isWaitForMaterializationRequested();
+  const explainResiduals = isExplainResidualsRequested();
   const kinds = parseKinds();
   const timeoutMs = parseTimeoutMs();
   const wantMongo = process.argv.includes("--mongo") || true;
+
+  if (execute && explainResiduals) {
+    throw new Error("--explain-residuals is READ-ONLY; omit --execute.");
+  }
 
   if (!isMongoConfigured()) {
     throw new Error("MONGODB_URI is not configured.");
@@ -174,7 +186,7 @@ async function main(): Promise<void> {
       onProgress: (progress) => {
         console.log(
           JSON.stringify({
-            pack: "08K.1",
+            pack: "08K.2",
             operation: "wait_for_materialization_progress",
             ...progress,
           }),
@@ -182,6 +194,12 @@ async function main(): Promise<void> {
       },
     });
   }
+
+  const residuals = explainResiduals
+    ? await explainPublicLocalizationResiduals({
+        workItems: result.audit.workItems,
+      })
+    : null;
 
   const universalSuccessClaimed =
     result.audit.discoveryStatus === "COMPLETE" &&
@@ -191,9 +209,10 @@ async function main(): Promise<void> {
   console.log(
     JSON.stringify(
       {
-        pack: "08K.1",
+        pack: "08K.2",
         operation: "reconcile_public_localization",
         mode: result.mode,
+        explainResiduals,
         database: mongo.database,
         persistenceBootstrap: bootstrap.mode,
         discoveryExpectation: discoveryExpectation.reason,
@@ -225,10 +244,13 @@ async function main(): Promise<void> {
         presentationsFailed: result.presentationsFailed,
         byFamily: result.audit.byFamily,
         byLocale: result.audit.byLocale,
+        residuals,
         universalCorpusSuccessClaimed: universalSuccessClaimed,
         note:
           result.mode === "dry-run"
-            ? "DRY RUN — zero provider calls, zero DB/outbox writes. Pass --execute with ALLOW_STAGING_PUBLIC_LOCALIZATION_RECONCILIATION=true on humanity_union_staging only."
+            ? explainResiduals
+              ? "EXPLAIN RESIDUALS — read-only. Identities/counts/failureClass only; no source/translated bodies."
+              : "DRY RUN — zero provider calls, zero DB/outbox writes. Pass --explain-residuals for residual identity diagnostics."
             : "EXECUTE — enqueued presentation-level warms via bounded infrastructure. Materialization requires live outbox consumer.",
         materialization: materialization
           ? {
