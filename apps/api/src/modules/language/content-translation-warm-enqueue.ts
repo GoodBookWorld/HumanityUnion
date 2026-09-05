@@ -347,16 +347,36 @@ function attemptAppliesToLocale(
 
 /**
  * List warm attempts for a presentation aggregate, oldest → newest.
+ * Pack 08K.2.4 — bounded: never unbounded toArray of all history.
  * Deterministic order: attemptAt (createdAt/requestedAt/failedAt), then eventId.
  */
+export const CONTENT_TRANSLATION_WARM_ATTEMPTS_LIST_LIMIT = 10;
+
 export async function listContentTranslationWarmAttempts(input: {
   readonly sourceKind: ContentTranslationSourceKind;
   readonly sourceRecordId: string;
+  readonly limit?: number;
+}): Promise<readonly ContentTranslationWarmAttemptSnapshot[]> {
+  return listContentTranslationWarmAttemptsBounded(input);
+}
+
+/**
+ * Bounded warm-attempt listing (Pack 08K.2.4).
+ * Loads at most `limit` newest attempts (default 10), then returns oldest→newest.
+ */
+export async function listContentTranslationWarmAttemptsBounded(input: {
+  readonly sourceKind: ContentTranslationSourceKind;
+  readonly sourceRecordId: string;
+  readonly limit?: number;
 }): Promise<readonly ContentTranslationWarmAttemptSnapshot[]> {
   const { parseContentTranslationFailureMetadata } = await import(
     "./content-translation-failure-metadata.js"
   );
   const aggregateId = buildContentTranslationWarmAggregateId(input);
+  const limit = Math.min(
+    50,
+    Math.max(1, input.limit ?? CONTENT_TRANSLATION_WARM_ATTEMPTS_LIST_LIMIT),
+  );
   const out: ContentTranslationWarmAttemptSnapshot[] = [];
 
   if (useMemoryWarmOutbox()) {
@@ -365,9 +385,7 @@ export async function listContentTranslationWarmAttempts(input: {
       if (id !== aggregateId) {
         continue;
       }
-      const attemptAt =
-        record.failedAt ??
-        record.command.requestedAt;
+      const attemptAt = record.failedAt ?? record.command.requestedAt;
       out.push({
         eventId: record.eventId,
         status: record.status,
@@ -398,6 +416,8 @@ export async function listContentTranslationWarmAttempts(input: {
         eventName: CATALOGUE_EVENTS.contentTranslationWarmRequested,
         aggregateId,
       })
+      .sort({ createdAt: -1 })
+      .limit(limit)
       .toArray();
 
     for (const row of rows) {
@@ -438,7 +458,9 @@ export async function listContentTranslationWarmAttempts(input: {
     }
   }
 
-  return [...out].sort(compareAttemptOrder);
+  // Newest-first from Mongo; memory unsorted — normalize to oldest→newest, keep ≤ limit newest.
+  const sorted = [...out].sort(compareAttemptOrder);
+  return sorted.length > limit ? sorted.slice(sorted.length - limit) : sorted;
 }
 
 /**

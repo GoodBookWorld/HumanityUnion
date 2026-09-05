@@ -6,11 +6,16 @@
  *
  * Modes:
  *   (default)                         dry-run coverage + work-item report
- *   --explain-residuals               dry-run + safe residual identity diagnostics
+ *   --explain-residuals               residual-only failure diagnostics (bounded memory)
+ *   --explain-residuals-only          alias of --explain-residuals (Pack 08K.2.4)
  *   --retry-ready-residuals           residual-retry selection (dry-run unless --execute)
  *   --execute                         enqueue warms (requires staging gate)
  *   --wait-for-materialization        after execute, poll compact identities
  *   --timeout-ms=<n>                  wait timeout (default 300000)
+ *
+ * Pack 08K.2.4 — --explain-residuals / --explain-residuals-only NEVER invoke full
+ * corpus discovery/audit or civic snapshot hydrate. Use default dry-run (no explain)
+ * for full corpus acceptance audit (still memory-heavy — documented debt).
  *
  * Full-corpus execute (--execute without --retry-ready-residuals) uses
  * uniquePresentationsRequiringWork. Residual execute uses ONLY
@@ -38,6 +43,7 @@
 
 import { loadApiEnvironment } from "../config/load-api-environment.js";
 import { bootstrapContentTranslationOperatorPersistence } from "../infrastructure/mongodb/bootstrap-content-translation-operator-persistence.js";
+import { bootstrapContentTranslationResidualDiagnosticPersistence } from "../infrastructure/mongodb/bootstrap-content-translation-residual-diagnostic-persistence.js";
 import {
   isMongoConfigured,
   resolveMongoConfig,
@@ -56,6 +62,7 @@ import {
   auditPublicLocalizationCorpusPostRetry,
   runPublicLocalizationResidualRetry,
 } from "../modules/language/public-localization-residual-retry.js";
+import { explainResidualsOnly } from "../modules/language/public-localization-residual-only-diagnostic.js";
 import { explainPublicLocalizationResidualsWithPreflight } from "../modules/language/public-localization-retry-preflight.js";
 import type { StagingWarmSourceKind } from "../modules/language/content-translation-staging-warm-backfill.js";
 
@@ -73,7 +80,10 @@ function isWaitForMaterializationRequested(): boolean {
 }
 
 function isExplainResidualsRequested(): boolean {
-  return process.argv.includes("--explain-residuals");
+  return (
+    process.argv.includes("--explain-residuals") ||
+    process.argv.includes("--explain-residuals-only")
+  );
 }
 
 function isRetryReadyResidualsRequested(): boolean {
@@ -168,6 +178,52 @@ async function main(): Promise<void> {
     mongoFlag,
     databaseName: mongo.database,
   });
+
+  // Pack 08K.2.4 — residual-only diagnostics: NO civic snapshot hydrate, NO full corpus audit.
+  if (explainResiduals) {
+    const bootstrap = await bootstrapContentTranslationResidualDiagnosticPersistence();
+    const residualOnly = await explainResidualsOnly();
+    console.log(
+      JSON.stringify(
+        {
+          pack: "08K.2.4",
+          operation: "explain_residuals_only",
+          mode: residualOnly.mode,
+          database: mongo.database,
+          persistenceBootstrap: bootstrap.mode,
+          FULL_CORPUS_HYDRATED: residualOnly.memory.FULL_CORPUS_HYDRATED,
+          DIAGNOSTIC_IDENTITIES: residualOnly.memory.DIAGNOSTIC_IDENTITIES,
+          DIAGNOSTIC_BATCH_SIZE: residualOnly.memory.DIAGNOSTIC_BATCH_SIZE,
+          OUTBOX_ROWS_INSPECTED: residualOnly.memory.OUTBOX_ROWS_INSPECTED,
+          SOURCE_RECORDS_LOADED: residualOnly.memory.SOURCE_RECORDS_LOADED,
+          TRANSLATION_ROWS_LOADED: residualOnly.memory.TRANSLATION_ROWS_LOADED,
+          PEAK_IN_FLIGHT_IDENTITIES: residualOnly.memory.PEAK_IN_FLIGHT_IDENTITIES,
+          RETRY_READY_IDENTITIES: residualOnly.RETRY_READY_IDENTITIES,
+          RETRY_BLOCKED_IDENTITIES: residualOnly.RETRY_BLOCKED_IDENTITIES,
+          residuals: residualOnly.residuals.map((row) => ({
+            sourceKind: row.presentationIdentity.sourceKind,
+            sourceRecordId: row.presentationIdentity.sourceRecordId,
+            targetLocale: row.targetLocale,
+            latestAttemptAt: row.latestAttemptAt,
+            latestAttemptReason: row.latestAttemptReason,
+            latestAttemptTargetLocale: row.latestAttemptTargetLocale,
+            failureMetadataVersion: row.failureMetadataVersion,
+            failureClass: row.failureClass,
+            failureReasonCode: row.failureReasonCode,
+            retryability: row.retryability,
+            architectureRetryBasis: row.retryPreflight.architectureRetryBasis,
+            mayScheduleNewWarm: row.mayScheduleNewWarm,
+            ready: row.retryPreflight.ready,
+            blockReason: row.retryPreflight.blockReason,
+          })),
+          note: residualOnly.note,
+        },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
 
   const bootstrap = await bootstrapContentTranslationOperatorPersistence();
   const discoveryExpectation = resolveStagingWarmDiscoveryExpectation({
@@ -449,52 +505,14 @@ async function main(): Promise<void> {
     });
   }
 
-  const residualReport = explainResiduals
-    ? await explainPublicLocalizationResidualsWithPreflight({
-        workItems: result.audit.workItems,
-      })
-    : null;
-
-  const residuals = residualReport?.residuals ?? null;
-  const retrySelection = residualReport
-    ? {
-        RETRY_READY_IDENTITIES: residualReport.selection.RETRY_READY_IDENTITIES,
-        RETRY_BLOCKED_IDENTITIES: residualReport.selection.RETRY_BLOCKED_IDENTITIES,
-        byFamilyReady: residualReport.selection.byFamilyReady,
-        byLocaleReady: residualReport.selection.byLocaleReady,
-        readyIdentities: residualReport.selection.ready.map((row) => ({
-          family: row.family,
-          sourceRecordId: row.presentationIdentity.sourceRecordId,
-          targetLocale: row.targetLocale,
-          architectureRetryBasis: row.retryPreflight.architectureRetryBasis,
-          failureReasonCode: row.failureReasonCode,
-          latestAttemptAt: row.latestAttemptAt,
-          latestAttemptReason: row.latestAttemptReason,
-          failureMetadataVersion: row.failureMetadataVersion,
-          mayScheduleNewWarm: row.mayScheduleNewWarm,
-          ready: row.retryPreflight.ready,
-        })),
-        blockedIdentities: residualReport.selection.blocked.map((row) => ({
-          family: row.family,
-          sourceRecordId: row.presentationIdentity.sourceRecordId,
-          targetLocale: row.targetLocale,
-          blockReason: row.retryPreflight.blockReason,
-          failureReasonCode: row.failureReasonCode,
-          failureClass: row.failureClass,
-          latestAttemptAt: row.latestAttemptAt,
-          latestAttemptReason: row.latestAttemptReason,
-          latestAttemptTargetLocale: row.latestAttemptTargetLocale,
-          failureMetadataVersion: row.failureMetadataVersion,
-          retryability: row.retryability,
-          mayScheduleNewWarm: row.mayScheduleNewWarm,
-          ready: row.retryPreflight.ready,
-        })),
-      }
-    : null;
+  const residualReport = null;
+  const residuals = null;
+  const retrySelection = null;
 
   // Fresh post-audit after full-corpus execute+wait (Pack 08K.2.2 observability fix).
+  // Pack 08K.2.4 — explain-residuals no longer runs on this path (early return above).
   const postAudit =
-    execute && !explainResiduals
+    execute
       ? await auditPublicLocalizationCorpusPostRetry({ kinds })
       : null;
 
@@ -512,10 +530,10 @@ async function main(): Promise<void> {
   console.log(
     JSON.stringify(
       {
-        pack: execute ? "08K.2.3" : explainResiduals ? "08K.2.3" : "08K.2.1",
+        pack: execute ? "08K.2.4" : "08K.2.4",
         operation: "reconcile_public_localization",
         mode: result.mode,
-        explainResiduals,
+        explainResiduals: false,
         database: mongo.database,
         persistenceBootstrap: bootstrap.mode,
         discoveryExpectation: discoveryExpectation.reason,
@@ -556,9 +574,7 @@ async function main(): Promise<void> {
         universalCorpusSuccessClaimed: universalSuccessClaimed,
         note:
           result.mode === "dry-run"
-            ? explainResiduals
-              ? "EXPLAIN RESIDUALS — read-only. Identities/counts/failureClass only; no source/translated bodies."
-              : "DRY RUN — zero provider calls, zero DB/outbox writes. Pass --explain-residuals or --retry-ready-residuals."
+            ? "DRY RUN full corpus audit — memory-heavy. Prefer --explain-residuals-only for residual failure diagnostics."
             : postAudit
               ? "EXECUTE — POST_* is a fresh corpus audit after enqueue/wait."
               : "EXECUTE — enqueued presentation-level warms via bounded infrastructure.",

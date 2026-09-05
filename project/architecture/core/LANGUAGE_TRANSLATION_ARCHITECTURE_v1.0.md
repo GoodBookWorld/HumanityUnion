@@ -785,6 +785,21 @@ Fix: locale-precise latest-attempt resolver (`resolveLatestContentTranslationWar
 
 ---
 
+## Pack 08K.2.4 — Memory-safe residual diagnostics
+
+**Incident:** `--mongo --explain-residuals` OOM'd staging by hydrating Initiative/CA/CD Maps and auditing the full PublicLocalizedPresentation corpus merely to explain four failures.
+
+**Amplification (exact):**
+1. `bootstrapContentTranslationOperatorPersistence` → full snapshot hydrate into Maps
+2. `discoverPublicLocalizationCorpus` + `auditPublicLocalizationCorpus` → per-candidate presentation trees × locales
+3. Unbounded outbox `toArray()` per residual (pre-bound)
+
+**Fix:** `--explain-residuals` / `--explain-residuals-only` use `bootstrapContentTranslationResidualDiagnosticPersistence` (connect+registry only) + `explainResidualsOnly` (bounded failed-outbox discovery ≤100 rows, batch ≤25, direct-by-id source loads, bounded warm attempts ≤10). Counters: `DIAGNOSTIC_IDENTITIES`, `OUTBOX_ROWS_INSPECTED`, `SOURCE_RECORDS_LOADED`, `TRANSLATION_ROWS_LOADED`, `FULL_CORPUS_HYDRATED=false`.
+
+**Debt:** Full corpus acceptance audit (default dry-run / `--execute` without residual-only) remains memory-heavy and must eventually be streamed separately. Residual diagnostics must never invoke it.
+
+---
+
 ## Pack 08K.2.2 — Gated residual retry operator
 
 ```

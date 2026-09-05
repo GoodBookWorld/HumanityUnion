@@ -301,6 +301,24 @@ export type {
   ContentTranslationValidationReasonCode,
 } from "./content-translation-failure-metadata.js";
 export {
+  explainResidualsOnly,
+  discoverResidualIdentitiesFromFailedOutbox,
+  RESIDUAL_DIAGNOSTIC_DEFAULT_BATCH_SIZE,
+  RESIDUAL_DIAGNOSTIC_DEFAULT_OUTBOX_SCAN_LIMIT,
+} from "./public-localization-residual-only-diagnostic.js";
+export type {
+  ResidualDiagnosticIdentity,
+  ResidualDiagnosticMemoryCounters,
+  ResidualOnlyDiagnosticResult,
+} from "./public-localization-residual-only-diagnostic.js";
+export {
+  loadTranslatableSourceDirect,
+  getResidualDiagnosticCounters,
+  resetResidualDiagnosticCountersForTests,
+} from "./content-translation-source-direct.js";
+export { bootstrapContentTranslationResidualDiagnosticPersistence } from "../../infrastructure/mongodb/bootstrap-content-translation-residual-diagnostic-persistence.js";
+export { listContentTranslationWarmAttemptsBounded } from "./content-translation-warm-enqueue.js";
+export {
   buildPublicLocalizationRetryPreflight,
   explainPublicLocalizationResidualsWithPreflight,
   selectReadyPresentationsForResidualRetry,
