@@ -36,6 +36,7 @@
     "diagnose:public-localization": "tsx src/scripts/diagnose-public-localization-coverage.ts",
     "diagnose:localization-residuals": "tsx src/scripts/diagnose-localization-residuals.ts",
     "diagnose:media-localization": "tsx src/scripts/diagnose-media-localization.ts",
+    "diagnose:media-plp-preflight": "tsx src/scripts/diagnose-media-plp-preflight.ts",
     "reconcile:public-localization": "tsx src/scripts/reconcile-public-localization.ts",
     "verify:staging": "tsx src/scripts/verify-staging.ts",
     "verify:initiative-lifecycle": "tsx src/scripts/verify-initiative-lifecycle.ts",
