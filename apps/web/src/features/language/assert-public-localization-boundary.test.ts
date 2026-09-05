@@ -38,7 +38,7 @@ describe("Pack 08K — assertPublicLocalizationBoundary", () => {
     );
   });
 
-  it("throws when requireComplete and coverage is FALLBACK_CANONICAL", () => {
+  it("throws when requireComplete and coverage is PARTIAL", () => {
     const incomplete = localizePublicPresentation({
       identity: {
         sourceKind: "petition",
@@ -50,7 +50,7 @@ describe("Pack 08K — assertPublicLocalizationBoundary", () => {
       presentation: { title: "Petition title", body: "Petition body" },
       translations: { title: "[uk] Petition title" },
     });
-    assert.equal(incomplete.coverage.status, "FALLBACK_CANONICAL");
+    assert.equal(incomplete.coverage.status, "PARTIAL");
     assert.throws(
       () =>
         assertPublicLocalizationBoundary({
@@ -58,7 +58,7 @@ describe("Pack 08K — assertPublicLocalizationBoundary", () => {
           presentation: incomplete,
           requireComplete: true,
         }),
-      /requireComplete.*FALLBACK_CANONICAL/,
+      /requireComplete.*PARTIAL/,
     );
   });
 

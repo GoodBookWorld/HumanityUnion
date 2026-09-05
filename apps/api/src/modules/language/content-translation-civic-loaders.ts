@@ -435,6 +435,7 @@ export async function loadCivicMediaTranslationSource(
     ),
     selectionPrinciples: stableJsonForTranslation(
       center.selectionPrinciples.map((item) => ({
+        id: item.id,
         title: item.title,
         description: item.description,
       })),
@@ -495,9 +496,11 @@ export async function loadPublicNewsTranslationSource(
   return {
     sourceKind: "public_news",
     sourceRecordId: record.id,
+    // Pack 08K.3.2 — semantic fields only. RSS refresh bumps updatedAt without
+    // content change; wall-clock stamps must not invalidate translations.
     sourceVersion: buildContentTranslationSourceVersion({
       fields,
-      versionStamp: record.updatedAt,
+      versionStamp: "semantic",
     }),
     sourceLanguage: normalizeLanguageCode(record.language, DEFAULT_PLATFORM_LANGUAGE),
     fields,

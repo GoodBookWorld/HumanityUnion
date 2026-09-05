@@ -21,10 +21,12 @@ export type PublicLocalizationProtectionCategory =
 
 export type PublicLocalizationCoverageStatus =
   | "COMPLETE"
+  | "PARTIAL"
   | "FALLBACK_CANONICAL"
   | "STALE"
   | "MANUAL"
-  | "SOURCE_LANGUAGE";
+  | "SOURCE_LANGUAGE"
+  | "FAILED";
 
 export const PUBLIC_LOCALIZATION_PROTECTED_BRAND = "__huPublicProtected" as const;
 

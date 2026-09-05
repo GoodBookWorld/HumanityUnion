@@ -916,6 +916,24 @@ Retry policy unchanged (`EXACT_FAILURE_REASON_PROPAGATION_08K25`, `INVALID_PROVI
 
 ---
 
+## Pack 08K.3.2 — Media translation identity & materialization
+
+**Staging evidence after 08K.3.1:** Alternating RSS cards and principle/trusted descriptions remained English even when sibling chrome localized.
+
+| Root cause | Classification | Fix |
+|------------|----------------|-----|
+| `public_news` `sourceVersion` included `updatedAt` | `SOURCE_VERSION_MISMATCH` / churn STALE | Semantic-only `versionStamp: "semantic"` |
+| Random `createNewsArticleId()` on normalize | Identity risk (upsert usually preserved) | Deterministic `news-{sha256(normalizedUrl)}` |
+| Translation row with subset of fields treated as done | `PARTIAL_TRANSLATION_ROW` | `PARTIAL` coverage + generate-on-partial |
+| Principles JSON without `id` + index overlay | Nested apply fragility | Serialize `id`; overlay by id |
+| No Media thin diagnostic | Operator blind spot | `diagnose:media-localization` |
+
+**PARTIAL contract:** COMPLETE only when every current AUTO node is localized. PARTIAL schedules repair. Locales audited independently.
+
+**Thin CLI:** `pnpm --filter @hu/api diagnose:media-localization -- --mongo --locale uk` — READ-ONLY, 08K.2.8 memory contract, path diagnostics without prose. Cursor must not run against staging/prod.
+
+---
+
 ## Pack 08K.2.2 — Gated residual retry operator
 
 ```

@@ -249,7 +249,7 @@ describe("Pack 08K — browser acceptance harness", () => {
     }
   }
 
-  it("viewport 375px / locale=uk: incomplete petition (4/5) → CANONICAL_FALLBACK, not COMPLETE", () => {
+  it("viewport 375px / locale=uk: incomplete petition (4/5) → PARTIAL, not COMPLETE", () => {
     const fixture = buildPack08kLifecycleFixture();
     const full = buildFullLocaleTranslations(fixture.presentation, "uk");
     const incomplete = { ...full };
@@ -257,8 +257,9 @@ describe("Pack 08K — browser acceptance harness", () => {
 
     const localized = localizeFixture(fixture, "uk", incomplete);
     assert.ok(localized.coverage.canonicalFallbackNodeCount > 0);
+    assert.ok(localized.coverage.localizedNodeCount > 0);
     assert.notEqual(localized.coverage.status, "COMPLETE");
-    assert.equal(localized.coverage.status, "FALLBACK_CANONICAL");
+    assert.equal(localized.coverage.status, "PARTIAL");
 
     const html = renderToStaticMarkup(
       createElement(Pack08kAcceptanceSurface, {
@@ -267,7 +268,7 @@ describe("Pack 08K — browser acceptance harness", () => {
         fixtures: [{ localized }],
       }),
     );
-    assert.match(html, /data-hu-coverage="FALLBACK_CANONICAL"/);
+    assert.match(html, /data-hu-coverage="PARTIAL"/);
     const autoTexts = collectAttrTexts(html, "auto");
     assert.ok(
       autoTexts.includes("Petition paragraph five commits to follow-through tracking."),

@@ -70,6 +70,14 @@ function isPrincipleTranslated(value: unknown): value is PrincipleTranslated {
   );
 }
 
+type PrincipleTranslatedWithId = PrincipleTranslated & { id?: string };
+
+function isPrincipleTranslatedWithId(
+  value: unknown,
+): value is PrincipleTranslatedWithId {
+  return isPrincipleTranslated(value);
+}
+
 function isFaqTranslated(value: unknown): value is FaqTranslated {
   return (
     isRecord(value) &&
@@ -173,7 +181,7 @@ export function overlayCivicMediaEditorialFromFields(
   );
   const principlesTranslated = parseCivicMediaJsonArray(
     fields.selectionPrinciples,
-    isPrincipleTranslated,
+    isPrincipleTranslatedWithId,
   );
   const faqTranslated = parseCivicMediaJsonArray(fields.faq, isFaqTranslated);
   const stagesTranslated = parseInitiativeFlowStages(fields.initiativeFlowStages);
@@ -190,6 +198,15 @@ export function overlayCivicMediaEditorialFromFields(
       const explanation = item.explanation.trim();
       if (explanation.length > 0) {
         trustedExplanationsById[item.id] = explanation;
+      }
+    }
+  }
+
+  const principlesById = new Map<string, PrincipleTranslatedWithId>();
+  if (principlesTranslated) {
+    for (const item of principlesTranslated) {
+      if (typeof item.id === "string" && item.id.trim()) {
+        principlesById.set(item.id.trim(), item);
       }
     }
   }
@@ -211,7 +228,9 @@ export function overlayCivicMediaEditorialFromFields(
       }),
     },
     selectionPrinciples: media.selectionPrinciples.map((item, index) => {
-      const translated = principlesTranslated?.[index];
+      // Pack 08K.3.2 — prefer id match; fall back to index for legacy rows.
+      const translated =
+        principlesById.get(item.id) ?? principlesTranslated?.[index] ?? null;
       if (!translated) {
         return { ...item };
       }
@@ -248,6 +267,58 @@ export function overlayCivicMediaEditorialFromFields(
  * Preferred locale + original miss + not stale → generateContentTranslation (blog parity).
  * Structured JSON fields are parsed back into arrays; never stringify for UI display.
  */
+function isCivicMediaTranslationPartial(
+  media: CivicMediaCenterPublic,
+  fields: Record<string, string>,
+): boolean {
+  const principles = parseCivicMediaJsonArray(
+    fields.selectionPrinciples,
+    isPrincipleTranslatedWithId,
+  );
+  if (!principles) {
+    // Field missing entirely while canonical has principles → treat as miss (not partial).
+    return false;
+  }
+  let principlePresent = 0;
+  let principleMissing = 0;
+  for (const item of media.selectionPrinciples) {
+    const byId = principles.find((p) => p.id === item.id);
+    const byIndex = principles[media.selectionPrinciples.indexOf(item)];
+    const match = byId ?? byIndex;
+    if (
+      match &&
+      match.title.trim() &&
+      match.description.trim()
+    ) {
+      principlePresent += 1;
+    } else {
+      principleMissing += 1;
+    }
+  }
+  if (principlePresent > 0 && principleMissing > 0) {
+    return true;
+  }
+
+  const trusted = parseCivicMediaJsonArray(
+    fields.trustedMediaExplanations,
+    isTrustedExplanationTranslated,
+  );
+  if (!trusted) {
+    return false;
+  }
+  let trustedPresent = 0;
+  let trustedMissing = 0;
+  for (const resource of media.trustedMedia) {
+    const match = trusted.find((t) => t.id === resource.id);
+    if (match && match.explanation.trim()) {
+      trustedPresent += 1;
+    } else {
+      trustedMissing += 1;
+    }
+  }
+  return trustedPresent > 0 && trustedMissing > 0;
+}
+
 export function useCivicMediaResolvedEditorial(
   media: CivicMediaCenterPublic,
   initialEditorial?: CivicMediaResolvedEditorial,
@@ -283,6 +354,10 @@ export function useCivicMediaResolvedEditorial(
           language: displayLanguage,
         });
 
+        const isPartial =
+          resolved.presentationMode !== "original" &&
+          isCivicMediaTranslationPartial(media, resolved.content);
+
         if (
           shouldAttemptOnDemandContentTranslation({
             ready: readingContext.ready,
@@ -291,6 +366,7 @@ export function useCivicMediaResolvedEditorial(
             resolvePresentationMode: resolved.presentationMode,
             originalLanguage: resolved.originalLanguage,
             isStale: resolved.isStale,
+            isPartial,
           })
         ) {
           try {

@@ -319,7 +319,7 @@ export async function loadTranslatableSourceDirect(input: {
       sourceRecordId: record.id,
       sourceVersion: buildContentTranslationSourceVersion({
         fields,
-        versionStamp: record.updatedAt,
+        versionStamp: "semantic",
       }),
       sourceLanguage: normalizeLanguageCode(record.language, DEFAULT_PLATFORM_LANGUAGE),
       fields,

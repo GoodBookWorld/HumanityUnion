@@ -157,13 +157,22 @@ function resolveCoverageStatus(input: {
   readonly sourceLanguage: string;
   readonly targetLanguage: string;
   readonly canonicalFallbackNodeCount: number;
+  readonly localizedNodeCount: number;
   readonly staleNodeCount: number;
+  readonly failed?: boolean;
 }): PublicLocalizationCoverageStatus {
+  if (input.failed) {
+    return "FAILED";
+  }
   if (input.sourceLanguage === input.targetLanguage) {
     return "SOURCE_LANGUAGE";
   }
   if (input.staleNodeCount > 0) {
     return "STALE";
+  }
+  // Pack 08K.3.2 — PARTIAL: current row/map applies some nodes but not all.
+  if (input.canonicalFallbackNodeCount > 0 && input.localizedNodeCount > 0) {
+    return "PARTIAL";
   }
   if (input.canonicalFallbackNodeCount > 0) {
     return "FALLBACK_CANONICAL";
@@ -241,6 +250,7 @@ export function localizePublicPresentation(input: {
       sourceLanguage: input.sourceLanguage,
       targetLanguage: input.targetLanguage,
       canonicalFallbackNodeCount,
+      localizedNodeCount,
       staleNodeCount,
     }),
     semanticNodeCount: autoNodes.length,

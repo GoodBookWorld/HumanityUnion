@@ -208,7 +208,7 @@ export async function loadThinSourceVersionMetadata(
           summary: asString(doc.summary),
           category: asString(doc.category),
         },
-        versionStamp: asString(doc.updatedAt) || "unknown",
+        versionStamp: "semantic",
       });
       return { sourceExists: true, sourceVersion, sourceRecordsLoaded: 1 };
     }

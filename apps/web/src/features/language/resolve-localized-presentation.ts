@@ -26,6 +26,27 @@ import {
   shouldAttemptOnDemandContentTranslation,
 } from "./public-translation-presentation-lifecycle";
 
+/** Detect incomplete translated field bags (Pack 08K.3.2 PARTIAL). */
+export function isPartialTranslatedFieldBag(input: {
+  readonly canonicalFields: Readonly<Record<string, string>>;
+  readonly translatedFields: Readonly<Record<string, string>>;
+}): boolean {
+  let present = 0;
+  let missing = 0;
+  for (const [key, sourceValue] of Object.entries(input.canonicalFields)) {
+    if (!sourceValue.trim()) {
+      continue;
+    }
+    const translated = input.translatedFields[key];
+    if (typeof translated === "string" && translated.trim()) {
+      present += 1;
+    } else {
+      missing += 1;
+    }
+  }
+  return present > 0 && missing > 0;
+}
+
 export interface LocalizedPresentationDeps {
   readonly resolveTranslatedContent: typeof resolveTranslatedContent;
   readonly generateContentTranslation: typeof generateContentTranslation;
@@ -109,6 +130,20 @@ export async function resolveLocalizedPresentation(input: {
       language: displayLanguage as LanguageCode,
     });
 
+    let isPartial = false;
+    if (resolved.presentationMode !== "original") {
+      const translatedFields: Record<string, string> = {};
+      for (const [key, value] of Object.entries(resolved.content)) {
+        if (typeof value === "string") {
+          translatedFields[key] = value;
+        }
+      }
+      isPartial = isPartialTranslatedFieldBag({
+        canonicalFields: input.canonicalFields,
+        translatedFields,
+      });
+    }
+
     if (
       enableOnDemandGenerate &&
       shouldAttemptOnDemandContentTranslation({
@@ -118,6 +153,7 @@ export async function resolveLocalizedPresentation(input: {
         resolvePresentationMode: resolved.presentationMode,
         originalLanguage: resolved.originalLanguage,
         isStale: resolved.isStale,
+        isPartial,
       })
     ) {
       try {
