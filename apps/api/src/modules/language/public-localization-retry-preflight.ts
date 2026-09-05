@@ -1,7 +1,9 @@
 /**
- * Pack 08K.2.1 — non-mutating residual retry preflight + selection contract.
+ * Pack 08K.2.1 / 08K.2.3 — non-mutating residual retry preflight + selection.
  *
  * Zero provider calls. Zero writes.
+ * Pack 08K.2.3: locale-precise latest-attempt diagnostics; modern terminal
+ * failures block HISTORICAL UNKNOWN_LEGACY retry basis.
  */
 
 import type {
@@ -13,12 +15,14 @@ import { assertCanonicalSourceEligibleForTranslation } from "./content-translati
 import {
   CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS,
   classifyLegacyOutboxLastError,
+  isExplicitlyRetryableModernFailure,
   type ContentTranslationArchitectureRetryBasis,
   type ContentTranslationValidationReasonCode,
 } from "./content-translation-failure-metadata.js";
 import {
   peekContentTranslationWarmOutboxFailure,
   resolveContentTranslationWarmOutboxDisposition,
+  type ContentTranslationWarmAttemptSnapshot,
 } from "./content-translation-warm-enqueue.js";
 import { listAutomaticContentTranslationTargetLocales } from "./content-translation-warm-targets.js";
 import { loadTranslatableSource } from "./content-translation.service.js";
@@ -67,6 +71,11 @@ export type PublicLocalizationResidualWithPreflight = {
   readonly outboxDisposition: string;
   readonly mayScheduleNewWarm: boolean;
   readonly retryPreflight: PublicLocalizationRetryPreflight;
+  /** Pack 08K.2.3 — latest locale-relevant attempt diagnostics (no prose). */
+  readonly latestAttemptAt: string | null;
+  readonly latestAttemptReason: string | null;
+  readonly latestAttemptTargetLocale: string | null;
+  readonly failureMetadataVersion: string | null;
 };
 
 export type PublicLocalizationRetrySelection = {
@@ -87,6 +96,24 @@ async function isLocaleEligible(targetLanguage: LanguageCode): Promise<boolean> 
   }
 }
 
+function isModernTerminalAttempt(
+  attempt: ContentTranslationWarmAttemptSnapshot | null,
+): boolean {
+  if (!attempt) {
+    return false;
+  }
+  if (attempt.failureMetadata) {
+    return true;
+  }
+  if (attempt.reason === "operator_residual_retry") {
+    return true;
+  }
+  if (typeof attempt.lastError === "string" && attempt.lastError.startsWith("CT_FAIL_META_V1:")) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Deterministic non-mutating preflight for one residual identity.
  */
@@ -97,6 +124,7 @@ export async function buildPublicLocalizationRetryPreflight(input: {
   const peek = await peekContentTranslationWarmOutboxFailure({
     sourceKind: item.sourceKind,
     sourceRecordId: item.sourceRecordId,
+    targetLocale: item.targetLanguage,
   });
   const disposition = peek.disposition;
 
@@ -145,7 +173,6 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     sourceLanguage !== null && item.targetLanguage === sourceLanguage;
 
   let currentTranslationAbsent = true;
-  let terminalFailureForCurrentVersion = false;
   if (liveSourceVersion && liveSourceVersion !== "unloaded") {
     const row = await findContentTranslation({
       sourceKind: item.sourceKind,
@@ -158,18 +185,18 @@ export async function buildPublicLocalizationRetryPreflight(input: {
     }
   }
 
-  if (disposition === "failed") {
-    terminalFailureForCurrentVersion = true;
-  }
-
+  const terminalFailureForCurrentVersion = disposition === "failed";
   const activeWorkAbsent = disposition !== "pending";
 
   let failureReasonCode: string | null = null;
+  let failureClass: string | null = null;
   if (peek.failureMetadata) {
     failureReasonCode = peek.failureMetadata.failureReasonCode;
+    failureClass = peek.failureMetadata.failureClass;
   } else if (disposition === "failed") {
-    failureReasonCode = classifyLegacyOutboxLastError(peek.lastErrorRaw ?? null)
-      .failureReasonCode;
+    const legacy = classifyLegacyOutboxLastError(peek.lastErrorRaw ?? null);
+    failureReasonCode = legacy.failureReasonCode;
+    failureClass = legacy.failureClass;
   }
 
   let architectureRetryBasis: ContentTranslationArchitectureRetryBasis | null = null;
@@ -192,9 +219,26 @@ export async function buildPublicLocalizationRetryPreflight(input: {
   } else if (!localeEligible) {
     blockReason = "Target locale is not enabled for content translation.";
   } else if (terminalFailureForCurrentVersion) {
-    if (failureReasonCode === "UNKNOWN_LEGACY") {
+    const modernAttempt = isModernTerminalAttempt(peek.latestAttempt);
+    if (
+      failureReasonCode === "UNKNOWN_LEGACY" &&
+      !modernAttempt &&
+      !peek.failureMetadata
+    ) {
+      // Historical pre-metadata failure only — never after a modern attempt.
       architectureRetryBasis =
         CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.HISTORICAL_FAILURE_SEMANTICS_UNKNOWN_LEGACY_v1;
+      ready = true;
+      readyState = "MISSING_READY_FOR_WARM";
+      blockReason = null;
+    } else if (
+      isExplicitlyRetryableModernFailure({
+        failureClass,
+        failureReasonCode,
+      })
+    ) {
+      architectureRetryBasis =
+        CONTENT_TRANSLATION_ARCHITECTURE_RETRY_BASIS.VALIDATION_DIAGNOSTICS_CONTRACT_v1;
       ready = true;
       readyState = "MISSING_READY_FOR_WARM";
       blockReason = null;
@@ -204,9 +248,14 @@ export async function buildPublicLocalizationRetryPreflight(input: {
       failureReasonCode === "EMPTY_TRANSLATION" ||
       failureReasonCode === "MISSING_REQUIRED_PATH" ||
       failureReasonCode === "INVALID_RICH_TEXT_STRUCTURE" ||
-      failureReasonCode === "OTHER_VALIDATION_FAILURE"
+      failureReasonCode === "OTHER_VALIDATION_FAILURE" ||
+      failureReasonCode === "UNEXPECTED_PATH" ||
+      failureReasonCode === "STRUCTURE_MISMATCH" ||
+      failureReasonCode === "TARGET_LANGUAGE_MISMATCH"
     ) {
       blockReason = `Terminal validation failureReasonCode=${failureReasonCode} has no proven architecture retry basis.`;
+    } else if (modernAttempt) {
+      blockReason = `Modern terminal attempt blocks historical UNKNOWN_LEGACY retry (failureReasonCode=${failureReasonCode ?? "null"}).`;
     } else {
       blockReason = `Terminal failure without proven retry basis (failureReasonCode=${failureReasonCode ?? "null"}).`;
     }
@@ -254,10 +303,12 @@ export async function explainPublicLocalizationResidualsWithPreflight(input: {
     const peek = await peekContentTranslationWarmOutboxFailure({
       sourceKind: item.sourceKind,
       sourceRecordId: item.sourceRecordId,
+      targetLocale: item.targetLanguage,
     });
     const disposition = await resolveContentTranslationWarmOutboxDisposition({
       sourceKind: item.sourceKind,
       sourceRecordId: item.sourceRecordId,
+      targetLocale: item.targetLanguage,
     });
 
     const preflight = await buildPublicLocalizationRetryPreflight({ workItem: item });
@@ -304,6 +355,12 @@ export async function explainPublicLocalizationResidualsWithPreflight(input: {
       failureClass = "HISTORICAL_MISSING_AFTER_DISPATCH";
     }
 
+    const failureMetadataVersion = peek.failureMetadata
+      ? peek.failureMetadata.schema
+      : disposition === "failed"
+        ? "legacy_unstructured"
+        : null;
+
     residuals.push({
       family: item.sourceKind,
       presentationIdentity: {
@@ -318,7 +375,8 @@ export async function explainPublicLocalizationResidualsWithPreflight(input: {
       retryability: preflight.ready
         ? "retryable"
         : preflight.terminalFailureForCurrentVersion
-          ? "non_retryable_until_code_or_content_change"
+          ? peek.failureMetadata?.retryabilityHint ??
+            "non_retryable_until_code_or_content_change"
           : preflight.blockReason
             ? "unknown"
             : null,
@@ -326,6 +384,13 @@ export async function explainPublicLocalizationResidualsWithPreflight(input: {
       outboxDisposition: disposition,
       mayScheduleNewWarm: preflight.ready,
       retryPreflight: preflight,
+      latestAttemptAt: peek.latestAttempt?.attemptAt ?? peek.lastFailureAt,
+      latestAttemptReason: peek.latestAttempt?.reason ?? null,
+      latestAttemptTargetLocale:
+        peek.failureMetadata?.targetLocale != null
+          ? String(peek.failureMetadata.targetLocale)
+          : item.targetLanguage,
+      failureMetadataVersion,
     });
   }
 

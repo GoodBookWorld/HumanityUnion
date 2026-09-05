@@ -352,7 +352,10 @@ export async function processContentTranslationWarmRequested(
 
   if (!materializedOk || sawRetryableFailure || sawNonRetryableFailure) {
     const outcome = sawRetryableFailure ? "failed_retryable" : "failed_terminal";
-    const firstFailed = locales.find((locale) => locale.status === "failed");
+    const failedLocales = locales.filter((locale) => locale.status === "failed") as Array<
+      Extract<ContentTranslationWarmLocaleOutcome, { status: "failed" }>
+    >;
+    const firstFailed = failedLocales[0];
     const diagnostic = firstFailed
       ? classifyContentTranslationMaterializationFailure(
           firstFailed.errorCode === "timeout"
@@ -367,11 +370,28 @@ export async function processContentTranslationWarmRequested(
           new TranslationProviderError("bad_request", "validation"),
         );
     const reasonCode =
-      (firstFailed && "failureReasonCode" in firstFailed
-        ? firstFailed.failureReasonCode
-        : null) ??
+      firstFailed?.failureReasonCode ??
+      diagnostic.failureReasonCode ??
       diagnostic.failureClass ??
       "UNKNOWN_LEGACY";
+
+    const localeFailures = failedLocales.map((locale) => ({
+      targetLocale: locale.targetLanguage,
+      failureClass:
+        locale.errorCode === "timeout"
+          ? "PROVIDER_TIMEOUT"
+          : locale.errorCode === "unavailable"
+            ? "SOURCE_UNAVAILABLE"
+            : locale.errorCode === "malformed_response"
+              ? "PROVIDER_INVALID_RESPONSE"
+              : "VALIDATION_FAILED",
+      failureReasonCode:
+        locale.failureReasonCode ?? "OTHER_VALIDATION_FAILURE",
+      retryabilityHint:
+        locale.failureClass === "retryable"
+          ? "retryable"
+          : "non_retryable_until_code_or_content_change",
+    }));
 
     const metaMessage = encodeContentTranslationFailureMetadata({
       schema: "content_translation_failure_meta_v1",
@@ -384,6 +404,7 @@ export async function processContentTranslationWarmRequested(
       targetLocale: firstFailed?.targetLanguage ?? null,
       failedAt: new Date().toISOString(),
       retryabilityHint: diagnostic.retryability,
+      ...(localeFailures.length ? { localeFailures } : {}),
     });
 
     const err = new TranslationProviderError(

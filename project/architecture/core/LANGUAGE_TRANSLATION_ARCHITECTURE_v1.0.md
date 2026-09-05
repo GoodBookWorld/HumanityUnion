@@ -777,6 +777,14 @@ Known validation codes (`UNCHANGED_CIVIC_TITLE`, `UNCHANGED_SOURCE_PROSE`, …) 
 
 ---
 
+## Pack 08K.2.3 — Terminal failure observability
+
+First break (08K.2.2 post-retry diagnostics): **FAILURE_METADATA_WRITE=WRITTEN** on the new outbox event, but **FAILURE_METADATA_READ=STALE_EVENT** — `peekContentTranslationWarmOutboxFailure` returned an older FAILED row without structured metadata, so residuals still showed `UNKNOWN_LEGACY` and incorrectly stayed retry-ready via `HISTORICAL_FAILURE_SEMANTICS_UNKNOWN_LEGACY_v1`.
+
+Fix: locale-precise latest-attempt resolver (`resolveLatestContentTranslationWarmAttemptForIdentity`) ordered by deterministic `attemptAt`/`eventId`; CT_FAIL_META_V1 gains optional `localeFailures[]`; modern terminal attempts (structured meta or `operator_residual_retry`) **block** the historical UNKNOWN_LEGACY retry basis. `--explain-residuals` reports `latestAttemptAt`, `failureMetadataVersion`, `failureReasonCode`, `retryPreflight.ready`, `blockReason` (no prose).
+
+---
+
 ## Pack 08K.2.2 — Gated residual retry operator
 
 ```

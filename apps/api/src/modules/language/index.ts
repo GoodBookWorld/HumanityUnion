@@ -252,10 +252,13 @@ export {
   peekContentTranslationWarmOutboxFailure,
   resetContentTranslationWarmMemoryForTests,
   resolveContentTranslationWarmOutboxDisposition,
+  listContentTranslationWarmAttempts,
+  resolveLatestContentTranslationWarmAttemptForIdentity,
   scheduleContentTranslationWarmAfterMutation,
   setContentTranslationWarmForceMemoryForTests,
 } from "./content-translation-warm-enqueue.js";
 export type {
+  ContentTranslationWarmAttemptSnapshot,
   ContentTranslationWarmEnqueueResult,
   ContentTranslationWarmOutboxDisposition,
 } from "./content-translation-warm-enqueue.js";
@@ -286,11 +289,14 @@ export {
   ContentTranslationValidationError,
   classifyLegacyOutboxLastError,
   encodeContentTranslationFailureMetadata,
+  isExplicitlyRetryableModernFailure,
   parseContentTranslationFailureMetadata,
+  resolveLocaleFailureFromMetadata,
   resolveValidationReasonCodeFromError,
 } from "./content-translation-failure-metadata.js";
 export type {
   ContentTranslationArchitectureRetryBasis,
+  ContentTranslationLocaleFailureRecord,
   ContentTranslationSafeFailureMetadata,
   ContentTranslationValidationReasonCode,
 } from "./content-translation-failure-metadata.js";

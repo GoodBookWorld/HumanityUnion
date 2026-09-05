@@ -224,7 +224,7 @@ export async function waitForPublicLocalizationMaterialization(input: {
   >();
 
   async function outboxFor(item: PublicLocalizationWorkItem) {
-    const key = `${item.sourceKind}::${item.sourceRecordId}`;
+    const key = `${item.sourceKind}::${item.sourceRecordId}::${item.targetLanguage}`;
     const cached = outboxCache.get(key);
     if (cached) {
       return cached;
@@ -232,6 +232,7 @@ export async function waitForPublicLocalizationMaterialization(input: {
     const disposition = await resolveContentTranslationWarmOutboxDisposition({
       sourceKind: item.sourceKind,
       sourceRecordId: item.sourceRecordId,
+      targetLocale: item.targetLanguage,
     });
     outboxCache.set(key, disposition);
     return disposition;

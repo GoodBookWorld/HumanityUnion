@@ -468,6 +468,11 @@ async function main(): Promise<void> {
           targetLocale: row.targetLocale,
           architectureRetryBasis: row.retryPreflight.architectureRetryBasis,
           failureReasonCode: row.failureReasonCode,
+          latestAttemptAt: row.latestAttemptAt,
+          latestAttemptReason: row.latestAttemptReason,
+          failureMetadataVersion: row.failureMetadataVersion,
+          mayScheduleNewWarm: row.mayScheduleNewWarm,
+          ready: row.retryPreflight.ready,
         })),
         blockedIdentities: residualReport.selection.blocked.map((row) => ({
           family: row.family,
@@ -475,6 +480,14 @@ async function main(): Promise<void> {
           targetLocale: row.targetLocale,
           blockReason: row.retryPreflight.blockReason,
           failureReasonCode: row.failureReasonCode,
+          failureClass: row.failureClass,
+          latestAttemptAt: row.latestAttemptAt,
+          latestAttemptReason: row.latestAttemptReason,
+          latestAttemptTargetLocale: row.latestAttemptTargetLocale,
+          failureMetadataVersion: row.failureMetadataVersion,
+          retryability: row.retryability,
+          mayScheduleNewWarm: row.mayScheduleNewWarm,
+          ready: row.retryPreflight.ready,
         })),
       }
     : null;
@@ -499,7 +512,7 @@ async function main(): Promise<void> {
   console.log(
     JSON.stringify(
       {
-        pack: execute ? "08K.2.2" : "08K.2.1",
+        pack: execute ? "08K.2.3" : explainResiduals ? "08K.2.3" : "08K.2.1",
         operation: "reconcile_public_localization",
         mode: result.mode,
         explainResiduals,

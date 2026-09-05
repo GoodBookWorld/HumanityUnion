@@ -41,6 +41,13 @@ export type ContentTranslationValidationReasonCode =
   | "OTHER_VALIDATION_FAILURE"
   | "UNKNOWN_LEGACY";
 
+export type ContentTranslationLocaleFailureRecord = {
+  readonly targetLocale: LanguageCode | string;
+  readonly failureClass: string;
+  readonly failureReasonCode: ContentTranslationValidationReasonCode | string;
+  readonly retryabilityHint: string | null;
+};
+
 export type ContentTranslationSafeFailureMetadata = {
   readonly schema: "content_translation_failure_meta_v1";
   readonly validationContractVersion: typeof CONTENT_TRANSLATION_VALIDATION_CONTRACT_VERSION;
@@ -52,6 +59,11 @@ export type ContentTranslationSafeFailureMetadata = {
   readonly targetLocale: LanguageCode | string | null;
   readonly failedAt: string;
   readonly retryabilityHint: string | null;
+  /**
+   * Pack 08K.2.3 — per-locale terminal outcomes when a presentation warm
+   * fans out multiple locales. Never includes bodies/prompts/secrets.
+   */
+  readonly localeFailures?: readonly ContentTranslationLocaleFailureRecord[];
 };
 
 const META_PREFIX = "CT_FAIL_META_V1:";
@@ -87,6 +99,23 @@ export function parseContentTranslationFailureMetadata(
     if (raw.schema !== "content_translation_failure_meta_v1") {
       return null;
     }
+    const localeFailures = Array.isArray(raw.localeFailures)
+      ? raw.localeFailures
+          .filter((row): row is Record<string, unknown> => !!row && typeof row === "object")
+          .map((row) => ({
+            targetLocale:
+              typeof row.targetLocale === "string" ? row.targetLocale : "",
+            failureClass:
+              typeof row.failureClass === "string" ? row.failureClass : "UNKNOWN",
+            failureReasonCode:
+              typeof row.failureReasonCode === "string"
+                ? row.failureReasonCode
+                : "UNKNOWN_LEGACY",
+            retryabilityHint:
+              typeof row.retryabilityHint === "string" ? row.retryabilityHint : null,
+          }))
+          .filter((row) => row.targetLocale.length > 0)
+      : undefined;
     return {
       schema: "content_translation_failure_meta_v1",
       validationContractVersion:
@@ -102,10 +131,78 @@ export function parseContentTranslationFailureMetadata(
       targetLocale: typeof raw.targetLocale === "string" ? raw.targetLocale : null,
       failedAt: typeof raw.failedAt === "string" ? raw.failedAt : "",
       retryabilityHint: typeof raw.retryabilityHint === "string" ? raw.retryabilityHint : null,
+      ...(localeFailures?.length ? { localeFailures } : {}),
     };
   } catch {
     return null;
   }
+}
+
+/**
+ * Resolve locale-specific failure fields from CT_FAIL_META_V1 (or null).
+ */
+export function resolveLocaleFailureFromMetadata(
+  meta: ContentTranslationSafeFailureMetadata | null,
+  targetLocale: LanguageCode | string,
+): {
+  readonly failureClass: string | null;
+  readonly failureReasonCode: string | null;
+  readonly retryabilityHint: string | null;
+  readonly failedAt: string | null;
+  readonly attributed: boolean;
+} {
+  if (!meta) {
+    return {
+      failureClass: null,
+      failureReasonCode: null,
+      retryabilityHint: null,
+      failedAt: null,
+      attributed: false,
+    };
+  }
+  const locale = String(targetLocale);
+  const fromList = meta.localeFailures?.find((row) => row.targetLocale === locale);
+  if (fromList) {
+    return {
+      failureClass: fromList.failureClass,
+      failureReasonCode: fromList.failureReasonCode,
+      retryabilityHint: fromList.retryabilityHint,
+      failedAt: meta.failedAt || null,
+      attributed: true,
+    };
+  }
+  if (meta.targetLocale === null || meta.targetLocale === locale) {
+    return {
+      failureClass: meta.failureClass,
+      failureReasonCode: meta.failureReasonCode,
+      retryabilityHint: meta.retryabilityHint,
+      failedAt: meta.failedAt || null,
+      attributed: true,
+    };
+  }
+  return {
+    failureClass: null,
+    failureReasonCode: null,
+    retryabilityHint: null,
+    failedAt: meta.failedAt || null,
+    attributed: false,
+  };
+}
+
+/**
+ * Modern terminal codes that may be retried under an explicit policy only.
+ */
+export function isExplicitlyRetryableModernFailure(input: {
+  readonly failureClass: string | null;
+  readonly failureReasonCode: string | null;
+}): boolean {
+  if (input.failureClass === "SOURCE_UNAVAILABLE") {
+    return true;
+  }
+  if (input.failureReasonCode === "INVALID_PROVIDER_PAYLOAD") {
+    return true;
+  }
+  return false;
 }
 
 /**
