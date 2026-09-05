@@ -14,6 +14,7 @@ export {
   markMediaPlpPreflightMongoClosed,
   markMediaPlpPreflightPlpLookup,
   markMediaPlpPreflightProviderCallForTests,
+  markMediaPlpPreflightSampleDiscovery,
   markMediaPlpPreflightSourceLookup,
   markMediaPlpPreflightWriteForTests,
   resetMediaPlpPreflightCountersForTests,
@@ -29,6 +30,8 @@ export {
 export {
   parseMediaPlpPreflightArgs,
   type MediaPlpPreflightArgs,
+  type MediaPlpPreflightIdentityArgs,
+  type MediaPlpPreflightSampleArgs,
 } from "./parse-args.js";
 export {
   evaluateMediaPlpPreflightProductionRefusal,
@@ -38,8 +41,14 @@ export {
   printMediaPlpPreflightReport,
   runMediaPlpPreflight,
   type MediaPlpPreflightDeps,
+  type MediaPlpPreflightIdentityReport,
   type MediaPlpPreflightReport,
+  type MediaPlpPreflightSampleReport,
 } from "./run-preflight.js";
+export {
+  discoverMediaPlpSampleOne,
+  type MediaPlpSampleDiscoveryResult,
+} from "./sample-discovery.js";
 export {
   loadMediaPlpPreflightSource,
   type MediaPlpPreflightSourceLookup,

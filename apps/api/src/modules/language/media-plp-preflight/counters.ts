@@ -6,6 +6,7 @@ const counters = {
   SOURCE_LOOKUP_COUNT: 0,
   PLP_LOOKUP_COUNT: 0,
   LANGUAGE_REGISTRY_LOOKUP_COUNT: 0,
+  SAMPLE_DISCOVERY_COUNT: 0,
   WRITES_PERFORMED: 0,
   PROVIDER_CALLS: 0,
   MONGO_CLOSED: false,
@@ -15,6 +16,7 @@ export function resetMediaPlpPreflightCountersForTests(): void {
   counters.SOURCE_LOOKUP_COUNT = 0;
   counters.PLP_LOOKUP_COUNT = 0;
   counters.LANGUAGE_REGISTRY_LOOKUP_COUNT = 0;
+  counters.SAMPLE_DISCOVERY_COUNT = 0;
   counters.WRITES_PERFORMED = 0;
   counters.PROVIDER_CALLS = 0;
   counters.MONGO_CLOSED = false;
@@ -30,6 +32,10 @@ export function markMediaPlpPreflightPlpLookup(): void {
 
 export function markMediaPlpPreflightLanguageRegistryLookup(): void {
   counters.LANGUAGE_REGISTRY_LOOKUP_COUNT += 1;
+}
+
+export function markMediaPlpPreflightSampleDiscovery(): void {
+  counters.SAMPLE_DISCOVERY_COUNT += 1;
 }
 
 export function markMediaPlpPreflightWriteForTests(): void {
@@ -48,6 +54,7 @@ export function getMediaPlpPreflightCounters(): {
   readonly SOURCE_LOOKUP_COUNT: number;
   readonly PLP_LOOKUP_COUNT: number;
   readonly LANGUAGE_REGISTRY_LOOKUP_COUNT: number;
+  readonly SAMPLE_DISCOVERY_COUNT: number;
   readonly WRITES_PERFORMED: number;
   readonly PROVIDER_CALLS: number;
   readonly MONGO_CLOSED: boolean;
@@ -58,6 +65,7 @@ export function getMediaPlpPreflightCounters(): {
     TOTAL_BOUNDED_LOOKUPS:
       counters.SOURCE_LOOKUP_COUNT +
       counters.PLP_LOOKUP_COUNT +
-      counters.LANGUAGE_REGISTRY_LOOKUP_COUNT,
+      counters.LANGUAGE_REGISTRY_LOOKUP_COUNT +
+      counters.SAMPLE_DISCOVERY_COUNT,
   };
 }

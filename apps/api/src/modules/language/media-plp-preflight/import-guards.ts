@@ -81,7 +81,12 @@ export function assertMediaPlpPreflightImportIsolation(): {
     violations.push("unbounded-.toArray");
   }
   // Write verbs must not appear in executable lookup paths (test helpers OK).
-  const lookupFiles = ["source-lookup.ts", "plp-lookup.ts", "language-registry-lookup.ts"];
+  const lookupFiles = [
+    "source-lookup.ts",
+    "plp-lookup.ts",
+    "language-registry-lookup.ts",
+    "sample-discovery.ts",
+  ];
   for (const file of lookupFiles) {
     const text = readFileSync(join(preflightRoot(), file), "utf8");
     if (

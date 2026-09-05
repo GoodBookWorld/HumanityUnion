@@ -179,9 +179,39 @@ describe("Reset 03A Media PLP safety preflight", () => {
     ]);
     assert.equal(ok.ok, true);
     if (ok.ok) {
-      assert.equal(ok.args.entityType, "civic_media_trusted");
-      assert.equal(ok.args.entityId, "reuters");
-      assert.equal(ok.args.locale, "uk");
+      assert.equal(ok.args.mode, "identity");
+      if (ok.args.mode === "identity") {
+        assert.equal(ok.args.entityType, "civic_media_trusted");
+        assert.equal(ok.args.entityId, "reuters");
+        assert.equal(ok.args.locale, "uk");
+      }
+    }
+  });
+
+  it("03A.1: --sample-one and --entity-id are mutually exclusive", () => {
+    const both = parseMediaPlpPreflightArgs([
+      "--mongo",
+      "--entity-type",
+      "civic_media_trusted",
+      "--entity-id",
+      "reuters",
+      "--sample-one",
+    ]);
+    assert.equal(both.ok, false);
+    if (!both.ok) {
+      assert.match(both.errorMessage, /mutually exclusive/);
+    }
+
+    const sample = parseMediaPlpPreflightArgs([
+      "--mongo",
+      "--entity-type",
+      "civic_media_trusted",
+      "--sample-one",
+    ]);
+    assert.equal(sample.ok, true);
+    if (sample.ok) {
+      assert.equal(sample.args.mode, "sample-one");
+      assert.equal(sample.args.entityType, "civic_media_trusted");
     }
   });
 
@@ -232,18 +262,23 @@ describe("Reset 03A Media PLP safety preflight", () => {
     );
     assert.equal(result.exitCode, 0);
     assert.ok(result.report);
-    assert.equal(result.report!.SOURCE_FOUND, true);
-    assert.equal(result.report!.PLP_CURRENT_FOUND, false);
-    assert.equal(result.report!.PLP_MATCHES_CURRENT_SOURCE, false);
-    assert.equal(result.report!.WOULD_REQUIRE_BUILD, true);
-    assert.equal(result.report!.WRITES_PERFORMED, 0);
-    assert.equal(result.report!.PROVIDER_CALLS, 0);
-    assert.equal(result.report!.SOURCE_LOOKUP_COUNT, 1);
-    assert.equal(result.report!.PLP_LOOKUP_COUNT, 1);
-    assert.equal(result.report!.LANGUAGE_REGISTRY_LOOKUP_COUNT, 1);
-    assert.equal(result.report!.TOTAL_BOUNDED_LOOKUPS, 3);
-    assert.equal(result.report!.HU_MEDIA_PLP_ENABLED, process.env.HU_MEDIA_PLP_ENABLED ?? "(unset)");
-    assert.notEqual(result.report!.HU_MEDIA_PLP_ENABLED, "true");
+    assert.equal(result.report!.reportKind, "identity");
+    if (result.report!.reportKind !== "identity") {
+      return;
+    }
+    assert.equal(result.report.SOURCE_FOUND, true);
+    assert.equal(result.report.PLP_CURRENT_FOUND, false);
+    assert.equal(result.report.PLP_MATCHES_CURRENT_SOURCE, false);
+    assert.equal(result.report.WOULD_REQUIRE_BUILD, true);
+    assert.equal(result.report.WRITES_PERFORMED, 0);
+    assert.equal(result.report.PROVIDER_CALLS, 0);
+    assert.equal(result.report.SOURCE_LOOKUP_COUNT, 1);
+    assert.equal(result.report.PLP_LOOKUP_COUNT, 1);
+    assert.equal(result.report.LANGUAGE_REGISTRY_LOOKUP_COUNT, 1);
+    assert.equal(result.report.SAMPLE_DISCOVERY_COUNT, 0);
+    assert.equal(result.report.TOTAL_BOUNDED_LOOKUPS, 3);
+    assert.equal(result.report.HU_MEDIA_PLP_ENABLED, process.env.HU_MEDIA_PLP_ENABLED ?? "(unset)");
+    assert.notEqual(result.report.HU_MEDIA_PLP_ENABLED, "true");
     assert.equal(disconnectCalls.count, 1);
     assert.equal(getMediaPlpPreflightCounters().MONGO_CLOSED, true);
   });
@@ -266,9 +301,13 @@ describe("Reset 03A Media PLP safety preflight", () => {
       }),
     );
     assert.equal(result.exitCode, 0);
-    assert.equal(result.report!.PLP_MATCHES_CURRENT_SOURCE, true);
-    assert.equal(result.report!.WOULD_REQUIRE_BUILD, false);
-    assert.equal(result.report!.SOURCE_DOCUMENT_BYTES > 0, true);
+    assert.equal(result.report!.reportKind, "identity");
+    if (result.report!.reportKind !== "identity") {
+      return;
+    }
+    assert.equal(result.report.PLP_MATCHES_CURRENT_SOURCE, true);
+    assert.equal(result.report.WOULD_REQUIRE_BUILD, false);
+    assert.equal(result.report.SOURCE_DOCUMENT_BYTES > 0, true);
     const printed = JSON.stringify(result.report);
     assert.doesNotMatch(printed, /Editorial transparency|explanation|title":/);
   });
@@ -314,9 +353,127 @@ describe("Reset 03A Media PLP safety preflight", () => {
       );
     }
     assert.ok(joined.includes("media-plp-preflight/source-lookup.ts"));
+    assert.ok(joined.includes("media-plp-preflight/sample-discovery.ts"));
     assert.ok(joined.includes("media/canonical-trees.ts"));
     assert.equal(joined.includes("media/publisher.ts"), false);
     assert.equal(joined.includes("media/build-adapter.ts"), false);
+
+    const sampleSrc = readFileSync(
+      join(apiSrc, "modules/language/media-plp-preflight/sample-discovery.ts"),
+      "utf8",
+    );
+    assert.match(sampleSrc, /findOne/);
+    assert.doesNotMatch(sampleSrc, /\.toArray\s*\(/);
+    assert.match(sampleSrc, /status:\s*"active"/);
+    assert.match(sampleSrc, /resourceType:\s*"TRUSTED_MEDIA"/);
+    assert.match(sampleSrc, /projection:\s*\{\s*id:\s*1/);
+    assert.doesNotMatch(sampleSrc, /title|summary|explanation|websiteUrl|description/);
+  });
+
+  it("03A.1: sample-one returns identity only; public eligibility; zero writes; disconnect", async () => {
+    const disconnectCalls = { count: 0 };
+    const result = await runMediaPlpPreflight(
+      argv(["--entity-type", "civic_media_trusted", "--sample-one"]),
+      {
+        ...fixtureDeps({ disconnectCalls }),
+        sampleOne: async (entityType) => {
+          const { markMediaPlpPreflightSampleDiscovery } = await import(
+            "../../../src/modules/language/media-plp-preflight/counters.js"
+          );
+          markMediaPlpPreflightSampleDiscovery();
+          return {
+            SAMPLE_FOUND: true,
+            SAMPLE_ENTITY_TYPE: entityType,
+            SAMPLE_ENTITY_ID: "reuters",
+          };
+        },
+      },
+    );
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.report!.reportKind, "sample-one");
+    if (result.report!.reportKind !== "sample-one") {
+      return;
+    }
+    assert.equal(result.report.SAMPLE_FOUND, true);
+    assert.equal(result.report.SAMPLE_ENTITY_TYPE, "civic_media_trusted");
+    assert.equal(result.report.SAMPLE_ENTITY_ID, "reuters");
+    assert.equal(result.report.WRITES_PERFORMED, 0);
+    assert.equal(result.report.PROVIDER_CALLS, 0);
+    assert.equal(result.report.SAMPLE_DISCOVERY_COUNT, 1);
+    assert.equal(result.report.SOURCE_LOOKUP_COUNT, 0);
+    assert.equal(result.report.PLP_LOOKUP_COUNT, 0);
+    const printed = JSON.stringify(result.report);
+    assert.doesNotMatch(
+      printed,
+      /title|summary|explanation|websiteUrl|description|Editorial/,
+    );
+    assert.equal(disconnectCalls.count, 1);
+    assert.equal(getMediaPlpPreflightCounters().MONGO_CLOSED, true);
+  });
+
+  it("03A.1: principle sample uses first seed id without body output", async () => {
+    const result = await runMediaPlpPreflight(
+      argv(["--entity-type", "civic_media_principle", "--sample-one"]),
+      {
+        isMongoConfigured: () => false,
+        resolveDatabase: () => "humanity_union_dev",
+        sampleOne: async (entityType) => {
+          const { markMediaPlpPreflightSampleDiscovery } = await import(
+            "../../../src/modules/language/media-plp-preflight/counters.js"
+          );
+          markMediaPlpPreflightSampleDiscovery();
+          return {
+            SAMPLE_FOUND: true,
+            SAMPLE_ENTITY_TYPE: entityType,
+            SAMPLE_ENTITY_ID: "editorial-transparency",
+          };
+        },
+        disconnect: async () => undefined,
+      },
+    );
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.report!.reportKind, "sample-one");
+    if (result.report!.reportKind === "sample-one") {
+      assert.equal(result.report.SAMPLE_ENTITY_ID, "editorial-transparency");
+    }
+  });
+
+  it("03A.1: sample-one production refusal and failure disconnect", async () => {
+    const prev = process.env.PLATFORM_MODE;
+    process.env.PLATFORM_MODE = "production";
+    try {
+      const prod = await runMediaPlpPreflight(
+        argv(["--entity-type", "public_news", "--sample-one"]),
+        {
+          ...fixtureDeps(),
+          resolveDatabase: () => "humanity_union_staging",
+        },
+      );
+      assert.equal(prod.exitCode, 2);
+      assert.match(prod.errorMessage ?? "", /PLATFORM_MODE=production/);
+      assert.equal(getMediaPlpPreflightCounters().SAMPLE_DISCOVERY_COUNT, 0);
+    } finally {
+      if (prev === undefined) {
+        delete process.env.PLATFORM_MODE;
+      } else {
+        process.env.PLATFORM_MODE = prev;
+      }
+    }
+
+    const disconnectCalls = { count: 0 };
+    const fail = await runMediaPlpPreflight(
+      argv(["--entity-type", "public_news", "--sample-one"]),
+      {
+        ...fixtureDeps({ disconnectCalls }),
+        sampleOne: async () => {
+          throw new Error("simulated sample failure");
+        },
+      },
+    );
+    assert.equal(fail.exitCode, 1);
+    assert.match(fail.errorMessage ?? "", /simulated sample failure/);
+    assert.equal(disconnectCalls.count, 1);
+    assert.equal(getMediaPlpPreflightCounters().MONGO_CLOSED, true);
   });
 
   it("script + package wiring; no document-body console dumps; flag default OFF", () => {

@@ -1,12 +1,18 @@
 /**
- * Reset 03A — thin Media PLP safety preflight CLI.
+ * Reset 03A / 03A.1 — thin Media PLP safety preflight CLI.
  *
- * Usage:
+ * Usage (explicit identity):
  *   pnpm --filter @hu/api diagnose:media-plp-preflight -- \
  *     --mongo \
  *     --entity-type civic_media_trusted \
  *     --entity-id reuters \
  *     --locale uk
+ *
+ * Usage (bounded sample discovery):
+ *   pnpm --filter @hu/api diagnose:media-plp-preflight -- \
+ *     --mongo \
+ *     --entity-type civic_media_trusted \
+ *     --sample-one
  *
  * READ-ONLY. Cursor must not run this against staging/prod in this task.
  */

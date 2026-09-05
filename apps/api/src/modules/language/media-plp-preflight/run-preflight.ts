@@ -1,5 +1,5 @@
 /**
- * Reset 03A — thin one-entity Media PLP safety preflight runner.
+ * Reset 03A / 03A.1 — thin one-entity Media PLP safety preflight runner.
  * READ-ONLY. Never publishes, never calls provider, never hydrates corpus.
  */
 
@@ -27,20 +27,27 @@ import {
   captureMediaPlpPreflightStart,
   getMediaPlpPreflightMemoryPhases,
 } from "./memory-phases.js";
-import { parseMediaPlpPreflightArgs } from "./parse-args.js";
+import {
+  parseMediaPlpPreflightArgs,
+  type MediaPlpPreflightIdentityArgs,
+} from "./parse-args.js";
 import { loadMediaPlpPreflightCurrent } from "./plp-lookup.js";
 import { evaluateMediaPlpPreflightProductionRefusal } from "./production-refusal.js";
+import {
+  discoverMediaPlpSampleOne,
+  type MediaPlpSampleDiscoveryResult,
+} from "./sample-discovery.js";
 import { loadMediaPlpPreflightSource } from "./source-lookup.js";
 import type { MediaPlpPreflightLocaleLookup } from "./language-registry-lookup.js";
 import type { MediaPlpPreflightPlpLookup } from "./plp-lookup.js";
 import type { MediaPlpPreflightSourceLookup } from "./source-lookup.js";
-import type { MediaPlpPreflightArgs } from "./parse-args.js";
 
-export type MediaPlpPreflightReport = {
+export type MediaPlpPreflightIdentityReport = {
   readonly pack: "RESET_03A";
   readonly operation: "diagnose_media_plp_preflight";
   readonly mode: "read-only";
   readonly OPERATOR_MODE: "THIN_READ_ONLY";
+  readonly reportKind: "identity";
   readonly ENTITY_TYPE: string;
   readonly ENTITY_ID: string;
   readonly LOCALE: string;
@@ -64,6 +71,7 @@ export type MediaPlpPreflightReport = {
   readonly SOURCE_LOOKUP_COUNT: number;
   readonly PLP_LOOKUP_COUNT: number;
   readonly LANGUAGE_REGISTRY_LOOKUP_COUNT: number;
+  readonly SAMPLE_DISCOVERY_COUNT: number;
   readonly TOTAL_BOUNDED_LOOKUPS: number;
   readonly WRITES_PERFORMED: number;
   readonly PROVIDER_CALLS: number;
@@ -71,16 +79,46 @@ export type MediaPlpPreflightReport = {
   readonly memory: ReturnType<typeof getMediaPlpPreflightMemoryPhases>;
 };
 
+export type MediaPlpPreflightSampleReport = {
+  readonly pack: "RESET_03A.1";
+  readonly operation: "diagnose_media_plp_preflight_sample_one";
+  readonly mode: "read-only";
+  readonly OPERATOR_MODE: "THIN_READ_ONLY";
+  readonly reportKind: "sample-one";
+  readonly SAMPLE_FOUND: boolean;
+  readonly SAMPLE_ENTITY_TYPE: string;
+  readonly SAMPLE_ENTITY_ID: string | null;
+  readonly database: string | null;
+  readonly HU_MEDIA_PLP_ENABLED: string;
+  readonly IMPORT_BOUNDARY_OK: boolean;
+  readonly SOURCE_LOOKUP_COUNT: number;
+  readonly PLP_LOOKUP_COUNT: number;
+  readonly LANGUAGE_REGISTRY_LOOKUP_COUNT: number;
+  readonly SAMPLE_DISCOVERY_COUNT: number;
+  readonly TOTAL_BOUNDED_LOOKUPS: number;
+  readonly WRITES_PERFORMED: number;
+  readonly PROVIDER_CALLS: number;
+  readonly MONGO_CLOSED: boolean;
+  readonly memory: ReturnType<typeof getMediaPlpPreflightMemoryPhases>;
+};
+
+export type MediaPlpPreflightReport =
+  | MediaPlpPreflightIdentityReport
+  | MediaPlpPreflightSampleReport;
+
 export type MediaPlpPreflightDeps = {
   readonly loadSource?: (
-    args: MediaPlpPreflightArgs,
+    args: MediaPlpPreflightIdentityArgs,
   ) => Promise<MediaPlpPreflightSourceLookup>;
   readonly loadPlp?: (
-    args: MediaPlpPreflightArgs,
+    args: MediaPlpPreflightIdentityArgs,
   ) => Promise<MediaPlpPreflightPlpLookup>;
   readonly loadLocale?: (
-    locale: MediaPlpPreflightArgs["locale"],
+    locale: MediaPlpPreflightIdentityArgs["locale"],
   ) => Promise<MediaPlpPreflightLocaleLookup>;
+  readonly sampleOne?: (
+    entityType: MediaPlpPreflightIdentityArgs["entityType"],
+  ) => Promise<MediaPlpSampleDiscoveryResult>;
   readonly connect?: () => Promise<void>;
   readonly disconnect?: () => Promise<void>;
   readonly isMongoConfigured?: () => boolean;
@@ -102,6 +140,32 @@ function computeMatch(input: {
   return {
     matches,
     wouldRequireBuild: !matches,
+  };
+}
+
+function safetyCounterFields(): Pick<
+  MediaPlpPreflightSampleReport,
+  | "SOURCE_LOOKUP_COUNT"
+  | "PLP_LOOKUP_COUNT"
+  | "LANGUAGE_REGISTRY_LOOKUP_COUNT"
+  | "SAMPLE_DISCOVERY_COUNT"
+  | "TOTAL_BOUNDED_LOOKUPS"
+  | "WRITES_PERFORMED"
+  | "PROVIDER_CALLS"
+  | "MONGO_CLOSED"
+  | "memory"
+> {
+  const counters = getMediaPlpPreflightCounters();
+  return {
+    SOURCE_LOOKUP_COUNT: counters.SOURCE_LOOKUP_COUNT,
+    PLP_LOOKUP_COUNT: counters.PLP_LOOKUP_COUNT,
+    LANGUAGE_REGISTRY_LOOKUP_COUNT: counters.LANGUAGE_REGISTRY_LOOKUP_COUNT,
+    SAMPLE_DISCOVERY_COUNT: counters.SAMPLE_DISCOVERY_COUNT,
+    TOTAL_BOUNDED_LOOKUPS: counters.TOTAL_BOUNDED_LOOKUPS,
+    WRITES_PERFORMED: counters.WRITES_PERFORMED,
+    PROVIDER_CALLS: counters.PROVIDER_CALLS,
+    MONGO_CLOSED: false,
+    memory: getMediaPlpPreflightMemoryPhases(),
   };
 }
 
@@ -143,8 +207,16 @@ export async function runMediaPlpPreflight(
     };
   }
 
+  const needsMongo =
+    parsed.args.mode === "identity" ||
+    parsed.args.entityType !== "civic_media_principle";
   const mongoReady = (deps.isMongoConfigured ?? isMongoConfigured)();
-  if (!mongoReady && !deps.loadSource) {
+  if (
+    needsMongo &&
+    !mongoReady &&
+    !deps.loadSource &&
+    !deps.sampleOne
+  ) {
     return {
       exitCode: 1,
       report: null,
@@ -154,53 +226,95 @@ export async function runMediaPlpPreflight(
 
   let connected = false;
   try {
-    if (!deps.loadSource) {
+    const shouldConnect =
+      !deps.loadSource &&
+      !deps.sampleOne &&
+      (parsed.args.mode === "identity" ||
+        parsed.args.entityType !== "civic_media_principle");
+    if (shouldConnect) {
       await (deps.connect ?? connectMongoClient)();
+      connected = true;
+    } else if (deps.connect && (deps.loadSource || deps.sampleOne)) {
+      // Fixture path may still want connect/disconnect bookkeeping.
+      await deps.connect();
       connected = true;
     }
     captureMediaPlpPreflightAfterMongoConnect();
 
+    if (parsed.args.mode === "sample-one") {
+      const sample = await (deps.sampleOne ?? discoverMediaPlpSampleOne)(
+        parsed.args.entityType,
+      );
+      captureMediaPlpPreflightAfterSourceLookup();
+      captureMediaPlpPreflightAfterPlpLookup();
+
+      const database =
+        deps.resolveDatabase?.() ??
+        (isMongoConfigured() ? resolveMongoConfig().database : null);
+
+      const report: MediaPlpPreflightSampleReport = {
+        pack: "RESET_03A.1",
+        operation: "diagnose_media_plp_preflight_sample_one",
+        mode: "read-only",
+        OPERATOR_MODE: "THIN_READ_ONLY",
+        reportKind: "sample-one",
+        SAMPLE_FOUND: sample.SAMPLE_FOUND,
+        SAMPLE_ENTITY_TYPE: sample.SAMPLE_ENTITY_TYPE,
+        SAMPLE_ENTITY_ID: sample.SAMPLE_ENTITY_ID,
+        database,
+        HU_MEDIA_PLP_ENABLED: process.env.HU_MEDIA_PLP_ENABLED ?? "(unset)",
+        IMPORT_BOUNDARY_OK: true,
+        ...safetyCounterFields(),
+      };
+      return {
+        exitCode: sample.SAMPLE_FOUND ? 0 : 1,
+        report,
+        errorMessage: null,
+      };
+    }
+
+    const identityArgs = parsed.args;
     const loadSource = deps.loadSource ?? loadMediaPlpPreflightSource;
     const loadPlp = deps.loadPlp ?? loadMediaPlpPreflightCurrent;
     const loadLocale = deps.loadLocale ?? loadMediaPlpPreflightLocale;
 
-    const source = await loadSource(parsed.args);
+    const source = await loadSource(identityArgs);
     captureMediaPlpPreflightAfterSourceLookup();
 
     if (source.identityCollision) {
       return {
         exitCode: 2,
         report: null,
-        errorMessage: `Source lookup returned multiple identities for ${parsed.args.entityType}/${parsed.args.entityId}`,
+        errorMessage: `Source lookup returned multiple identities for ${identityArgs.entityType}/${identityArgs.entityId}`,
       };
     }
 
-    const plp = await loadPlp(parsed.args);
+    const plp = await loadPlp(identityArgs);
     captureMediaPlpPreflightAfterPlpLookup();
 
     if (plp.identityCollision) {
       return {
         exitCode: 2,
         report: null,
-        errorMessage: `PLP current lookup returned multiple identities for ${parsed.args.entityType}/${parsed.args.entityId}/${parsed.args.locale}`,
+        errorMessage: `PLP current lookup returned multiple identities for ${identityArgs.entityType}/${identityArgs.entityId}/${identityArgs.locale}`,
       };
     }
 
-    const localeInfo = await loadLocale(parsed.args.locale);
+    const localeInfo = await loadLocale(identityArgs.locale);
     const match = computeMatch({ source, plp });
-    const counters = getMediaPlpPreflightCounters();
     const database =
       deps.resolveDatabase?.() ??
       (isMongoConfigured() ? resolveMongoConfig().database : null);
 
-    const report: MediaPlpPreflightReport = {
+    const report: MediaPlpPreflightIdentityReport = {
       pack: "RESET_03A",
       operation: "diagnose_media_plp_preflight",
       mode: "read-only",
       OPERATOR_MODE: "THIN_READ_ONLY",
-      ENTITY_TYPE: parsed.args.entityType,
-      ENTITY_ID: parsed.args.entityId,
-      LOCALE: parsed.args.locale,
+      reportKind: "identity",
+      ENTITY_TYPE: identityArgs.entityType,
+      ENTITY_ID: identityArgs.entityId,
+      LOCALE: identityArgs.locale,
       SOURCE_FOUND: source.SOURCE_FOUND,
       SOURCE_PUBLIC: source.SOURCE_PUBLIC,
       CANONICAL_VERSION: source.CANONICAL_VERSION,
@@ -218,14 +332,7 @@ export async function runMediaPlpPreflight(
       database,
       HU_MEDIA_PLP_ENABLED: process.env.HU_MEDIA_PLP_ENABLED ?? "(unset)",
       IMPORT_BOUNDARY_OK: true,
-      SOURCE_LOOKUP_COUNT: counters.SOURCE_LOOKUP_COUNT,
-      PLP_LOOKUP_COUNT: counters.PLP_LOOKUP_COUNT,
-      LANGUAGE_REGISTRY_LOOKUP_COUNT: counters.LANGUAGE_REGISTRY_LOOKUP_COUNT,
-      TOTAL_BOUNDED_LOOKUPS: counters.TOTAL_BOUNDED_LOOKUPS,
-      WRITES_PERFORMED: counters.WRITES_PERFORMED,
-      PROVIDER_CALLS: counters.PROVIDER_CALLS,
-      MONGO_CLOSED: false,
-      memory: getMediaPlpPreflightMemoryPhases(),
+      ...safetyCounterFields(),
     };
 
     return { exitCode: 0, report, errorMessage: null };
@@ -248,6 +355,32 @@ export async function runMediaPlpPreflight(
 }
 
 export function printMediaPlpPreflightReport(report: MediaPlpPreflightReport): void {
+  if (report.reportKind === "sample-one") {
+    const lines = [
+      `OPERATOR_MODE=${report.OPERATOR_MODE}`,
+      `SAMPLE_FOUND=${report.SAMPLE_FOUND}`,
+      `SAMPLE_ENTITY_TYPE=${report.SAMPLE_ENTITY_TYPE}`,
+      `SAMPLE_ENTITY_ID=${report.SAMPLE_ENTITY_ID ?? ""}`,
+      `IMPORT_BOUNDARY_OK=${report.IMPORT_BOUNDARY_OK}`,
+      `SOURCE_LOOKUP_COUNT=${report.SOURCE_LOOKUP_COUNT}`,
+      `PLP_LOOKUP_COUNT=${report.PLP_LOOKUP_COUNT}`,
+      `LANGUAGE_REGISTRY_LOOKUP_COUNT=${report.LANGUAGE_REGISTRY_LOOKUP_COUNT}`,
+      `SAMPLE_DISCOVERY_COUNT=${report.SAMPLE_DISCOVERY_COUNT}`,
+      `TOTAL_BOUNDED_LOOKUPS=${report.TOTAL_BOUNDED_LOOKUPS}`,
+      `WRITES_PERFORMED=${report.WRITES_PERFORMED}`,
+      `PROVIDER_CALLS=${report.PROVIDER_CALLS}`,
+      `MONGO_CLOSED=${getMediaPlpPreflightCounters().MONGO_CLOSED}`,
+      `RSS_START_MB=${report.memory.RSS_START_MB}`,
+      `RSS_AFTER_IMPORT_MB=${report.memory.RSS_AFTER_IMPORT_MB}`,
+      `RSS_AFTER_MONGO_CONNECT_MB=${report.memory.RSS_AFTER_MONGO_CONNECT_MB}`,
+      `RSS_AFTER_SOURCE_LOOKUP_MB=${report.memory.RSS_AFTER_SOURCE_LOOKUP_MB}`,
+      `RSS_AFTER_PLP_LOOKUP_MB=${report.memory.RSS_AFTER_PLP_LOOKUP_MB}`,
+      `RSS_PEAK_MB=${report.memory.RSS_PEAK_MB}`,
+    ];
+    console.log(lines.join("\n"));
+    return;
+  }
+
   const lines = [
     `OPERATOR_MODE=${report.OPERATOR_MODE}`,
     `ENTITY_TYPE=${report.ENTITY_TYPE}`,
@@ -273,6 +406,7 @@ export function printMediaPlpPreflightReport(report: MediaPlpPreflightReport): v
     `SOURCE_LOOKUP_COUNT=${report.SOURCE_LOOKUP_COUNT}`,
     `PLP_LOOKUP_COUNT=${report.PLP_LOOKUP_COUNT}`,
     `LANGUAGE_REGISTRY_LOOKUP_COUNT=${report.LANGUAGE_REGISTRY_LOOKUP_COUNT}`,
+    `SAMPLE_DISCOVERY_COUNT=${report.SAMPLE_DISCOVERY_COUNT}`,
     `TOTAL_BOUNDED_LOOKUPS=${report.TOTAL_BOUNDED_LOOKUPS}`,
     `WRITES_PERFORMED=${report.WRITES_PERFORMED}`,
     `PROVIDER_CALLS=${report.PROVIDER_CALLS}`,
