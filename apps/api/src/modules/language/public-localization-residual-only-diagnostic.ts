@@ -1,9 +1,8 @@
 /**
- * Pack 08K.2.4 — memory-safe residual-only failure diagnostics.
+ * Pack 08K.2.4 / 08K.2.5 — memory-safe residual-only failure diagnostics.
  *
  * Does NOT invoke full corpus discovery/audit or civic snapshot hydrate.
- * Discovers residuals from bounded failed-outbox rows (or explicit identities),
- * then diagnoses each identity with direct source/translation/outbox lookups.
+ * Pack 08K.2.5 — true residual selection (exclude CURRENT) + explicit identities.
  */
 
 import type { ContentTranslationSourceKind, LanguageCode } from "@hu/types";
@@ -53,6 +52,20 @@ export type ResidualDiagnosticIdentity = {
   readonly targetLocale: LanguageCode;
 };
 
+/** Completeness truth for residual discovery — never claim a capped sample is the corpus. */
+export type ResidualDiscoveryMode =
+  | "COMPLETE"
+  | "BOUNDED_CANDIDATES"
+  | "EXPLICIT_IDENTITIES";
+
+/** Live compact persistence state for residual membership. */
+export type ResidualLiveTranslationState =
+  | "MISSING"
+  | "STALE"
+  | "TERMINAL_FAILED"
+  | "CURRENT"
+  | "UNKNOWN";
+
 export type ResidualDiagnosticMemoryCounters = {
   readonly DIAGNOSTIC_IDENTITIES: number;
   readonly DIAGNOSTIC_BATCH_SIZE: number;
@@ -61,16 +74,39 @@ export type ResidualDiagnosticMemoryCounters = {
   readonly TRANSLATION_ROWS_LOADED: number;
   readonly FULL_CORPUS_HYDRATED: false;
   readonly PEAK_IN_FLIGHT_IDENTITIES: number;
+  readonly CANDIDATE_IDENTITIES_INSPECTED: number;
+  readonly RESIDUAL_IDENTITIES: number;
+  readonly CURRENT_IDENTITIES_FILTERED: number;
 };
 
 export type ResidualOnlyDiagnosticResult = {
   readonly mode: "explain-residuals-only";
+  readonly RESIDUAL_DISCOVERY: ResidualDiscoveryMode;
   readonly residuals: readonly PublicLocalizationResidualWithPreflight[];
   readonly RETRY_READY_IDENTITIES: number;
   readonly RETRY_BLOCKED_IDENTITIES: number;
   readonly memory: ResidualDiagnosticMemoryCounters;
   readonly note: string;
 };
+
+const KNOWN_SOURCE_KINDS = new Set<string>([
+  "initiative",
+  "collaborative_analysis",
+  "petition",
+  "lifecycle_stage",
+  "blog_post",
+  "discussion_comment",
+  "improvement_proposal",
+  "initiative_revision",
+  "decision_session",
+  "collective_decision",
+  "implementation_commitment",
+  "implementation_tracking",
+  "official_response",
+  "public_impact",
+  "civic_archive",
+  "civic_media",
+]);
 
 function parseAggregateId(aggregateId: string): {
   sourceKind: ContentTranslationSourceKind;
@@ -89,8 +125,74 @@ function parseAggregateId(aggregateId: string): {
 }
 
 /**
- * Discover terminal-failed residual identities from a bounded failed-outbox scan.
- * Never loads the full outbox collection.
+ * Parse `--residual sourceKind:sourceRecordId:locale`.
+ * sourceRecordId may contain colons; kind is first segment, locale is last.
+ * Never logs or returns source prose.
+ */
+export function parseResidualIdentityArg(
+  raw: string,
+): ResidualDiagnosticIdentity | null {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const parts = trimmed.split(":");
+  if (parts.length < 3) {
+    return null;
+  }
+  const sourceKind = parts[0]!.trim();
+  const targetLocale = parts[parts.length - 1]!.trim();
+  const sourceRecordId = parts.slice(1, -1).join(":").trim();
+  if (!KNOWN_SOURCE_KINDS.has(sourceKind) || !sourceRecordId || !targetLocale) {
+    return null;
+  }
+  return {
+    sourceKind: sourceKind as ContentTranslationSourceKind,
+    sourceRecordId,
+    targetLocale: targetLocale as LanguageCode,
+  };
+}
+
+export function parseResidualIdentityArgs(
+  argv: readonly string[],
+): readonly ResidualDiagnosticIdentity[] {
+  const out: ResidualDiagnosticIdentity[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === "--residual") {
+      const value = argv[i + 1];
+      if (!value || value.startsWith("--")) {
+        continue;
+      }
+      const parsed = parseResidualIdentityArg(value);
+      if (parsed) {
+        const key = `${parsed.sourceKind}::${parsed.sourceRecordId}::${parsed.targetLocale}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(parsed);
+        }
+      }
+      i += 1;
+      continue;
+    }
+    if (arg?.startsWith("--residual=")) {
+      const parsed = parseResidualIdentityArg(arg.slice("--residual=".length));
+      if (parsed) {
+        const key = `${parsed.sourceKind}::${parsed.sourceRecordId}::${parsed.targetLocale}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(parsed);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Discover candidate identities from a bounded failed-outbox scan.
+ * Not semantically residual — callers must filter CURRENT live translations.
  */
 export async function discoverResidualIdentitiesFromFailedOutbox(input?: {
   readonly maxOutboxRows?: number;
@@ -235,9 +337,22 @@ export async function discoverResidualIdentitiesFromFailedOutbox(input?: {
   return [...byKey.values()];
 }
 
+/**
+ * Compact live translation state for residual membership.
+ * Residual only when MISSING | STALE | TERMINAL_FAILED.
+ */
+export function isTrueResidualLiveState(
+  state: ResidualLiveTranslationState,
+): boolean {
+  return state === "MISSING" || state === "STALE" || state === "TERMINAL_FAILED";
+}
+
 async function diagnoseOneResidualIdentity(
   identity: ResidualDiagnosticIdentity,
-): Promise<PublicLocalizationResidualWithPreflight> {
+): Promise<{
+  readonly residual: PublicLocalizationResidualWithPreflight;
+  readonly liveState: ResidualLiveTranslationState;
+}> {
   const peek = await peekContentTranslationWarmOutboxFailure({
     sourceKind: identity.sourceKind,
     sourceRecordId: identity.sourceRecordId,
@@ -295,6 +410,9 @@ async function diagnoseOneResidualIdentity(
     sourceLanguage !== null && identity.targetLocale === sourceLanguage;
 
   let currentTranslationAbsent = true;
+  let translationStale = false;
+  let liveState: ResidualLiveTranslationState = "UNKNOWN";
+
   if (liveSourceVersion) {
     const row = await findContentTranslation({
       sourceKind: identity.sourceKind,
@@ -303,9 +421,26 @@ async function diagnoseOneResidualIdentity(
       targetLanguage: identity.targetLocale,
     });
     markResidualDiagnosticTranslationRowsLoaded(row ? 1 : 0);
-    if (row && row.freshness === "current" && row.stale !== true) {
+    if (!row) {
+      currentTranslationAbsent = true;
+      liveState = peek.disposition === "failed" ? "TERMINAL_FAILED" : "MISSING";
+    } else if (row.freshness === "current" && row.stale !== true) {
       currentTranslationAbsent = false;
+      liveState = "CURRENT";
+    } else {
+      currentTranslationAbsent = true;
+      translationStale = true;
+      liveState = "STALE";
     }
+  } else if (peek.disposition === "failed") {
+    liveState = "TERMINAL_FAILED";
+  } else {
+    liveState = "MISSING";
+  }
+
+  // Terminal failed outbox without CURRENT still counts as residual even if row missing.
+  if (liveState !== "CURRENT" && peek.disposition === "failed" && !translationStale) {
+    liveState = "TERMINAL_FAILED";
   }
 
   const disposition = peek.disposition;
@@ -340,7 +475,7 @@ async function diagnoseOneResidualIdentity(
     | "NOT_APPLICABLE" = "BLOCKED";
   let blockReason: string | null = null;
 
-  if (!currentTranslationAbsent) {
+  if (liveState === "CURRENT") {
     readyState = "CURRENT";
     blockReason = "CURRENT translation already exists for live sourceVersion.";
   } else if (!activeWorkAbsent) {
@@ -392,67 +527,73 @@ async function diagnoseOneResidualIdentity(
   }
 
   const translationState =
-    disposition === "failed"
-      ? "TERMINAL_FAILED"
-      : disposition === "pending"
-        ? "QUEUED"
-        : disposition === "published" && currentTranslationAbsent
-          ? "MISSING_AFTER_DISPATCH"
-          : readyState === "MISSING_READY_FOR_WARM"
+    liveState === "CURRENT"
+      ? "CURRENT"
+      : liveState === "STALE"
+        ? "STALE"
+        : liveState === "TERMINAL_FAILED"
+          ? "TERMINAL_FAILED"
+          : liveState === "MISSING"
             ? "MISSING"
-            : String(disposition);
+            : disposition === "pending"
+              ? "QUEUED"
+              : String(disposition);
 
   return {
-    family: identity.sourceKind,
-    presentationIdentity: {
-      sourceKind: identity.sourceKind,
-      sourceRecordId: identity.sourceRecordId,
-    },
-    targetLocale: identity.targetLocale,
-    translationState,
-    sourceVersionMatch: liveSourceVersion ? "unloaded" : "no_row",
-    failureClass,
-    failureReasonCode,
-    retryability: ready
-      ? "retryable"
-      : terminalFailureForCurrentVersion
-        ? peek.failureMetadata?.retryabilityHint ??
-          "non_retryable_until_code_or_content_change"
-        : blockReason
-          ? "unknown"
-          : null,
-    lastFailureAt: peek.lastFailureAt,
-    outboxDisposition: disposition,
-    mayScheduleNewWarm: ready,
-    retryPreflight: {
-      sourceResolvable,
-      presentationValid,
-      localeEligible: localeEligible && !redundant,
-      currentTranslationAbsent,
-      terminalFailureForCurrentVersion,
-      activeWorkAbsent,
-      architectureRetryBasis,
+    liveState,
+    residual: {
+      family: identity.sourceKind,
+      presentationIdentity: {
+        sourceKind: identity.sourceKind,
+        sourceRecordId: identity.sourceRecordId,
+      },
+      targetLocale: identity.targetLocale,
+      translationState,
+      sourceVersionMatch: liveSourceVersion ? "unloaded" : "no_row",
+      failureClass,
       failureReasonCode,
-      ready,
-      readyState,
-      blockReason,
+      retryability: ready
+        ? "retryable"
+        : terminalFailureForCurrentVersion
+          ? peek.failureMetadata?.retryabilityHint ??
+            "non_retryable_until_code_or_content_change"
+          : blockReason
+            ? "unknown"
+            : null,
+      lastFailureAt: peek.lastFailureAt,
+      outboxDisposition: disposition,
+      mayScheduleNewWarm: ready,
+      retryPreflight: {
+        sourceResolvable,
+        presentationValid,
+        localeEligible: localeEligible && !redundant,
+        currentTranslationAbsent,
+        terminalFailureForCurrentVersion,
+        activeWorkAbsent,
+        architectureRetryBasis,
+        failureReasonCode,
+        ready,
+        readyState,
+        blockReason,
+      },
+      latestAttemptAt: peek.latestAttempt?.attemptAt ?? peek.lastFailureAt,
+      latestAttemptReason: peek.latestAttempt?.reason ?? null,
+      latestAttemptTargetLocale:
+        peek.failureMetadata?.targetLocale != null
+          ? String(peek.failureMetadata.targetLocale)
+          : identity.targetLocale,
+      failureMetadataVersion: peek.failureMetadata
+        ? peek.failureMetadata.schema
+        : disposition === "failed"
+          ? "legacy_unstructured"
+          : null,
     },
-    latestAttemptAt: peek.latestAttempt?.attemptAt ?? peek.lastFailureAt,
-    latestAttemptReason: peek.latestAttempt?.reason ?? null,
-    latestAttemptTargetLocale:
-      peek.failureMetadata?.targetLocale != null
-        ? String(peek.failureMetadata.targetLocale)
-        : identity.targetLocale,
-    failureMetadataVersion: peek.failureMetadata
-      ? peek.failureMetadata.schema
-      : disposition === "failed"
-        ? "legacy_unstructured"
-        : null,
   };
 }
 
 /**
  * Bounded residual-only diagnostic — zero provider calls, zero writes.
+ * Pack 08K.2.5 — filters CURRENT live translations from residual output.
  */
 export async function explainResidualsOnly(input?: {
   readonly batchSize?: number;
@@ -475,22 +616,59 @@ export async function explainResidualsOnly(input?: {
     Math.max(1, input?.batchSize ?? RESIDUAL_DIAGNOSTIC_DEFAULT_BATCH_SIZE),
   );
 
-  const identities =
-    input?.identitiesForTests !== undefined
-      ? input.identitiesForTests.slice(0, batchSize)
-      : await discoverResidualIdentitiesFromFailedOutbox({
-          maxOutboxRows: input?.maxOutboxRows,
-          maxIdentities: batchSize,
-          explicit: input?.explicitIdentities,
-          failedOutboxRowsForTests: input?.failedOutboxRowsForTests,
-        });
+  let discovery: ResidualDiscoveryMode;
+  let candidates: readonly ResidualDiagnosticIdentity[];
+
+  if (input?.identitiesForTests !== undefined) {
+    // Test injection — treat as explicit when no failed-outbox fixture provided.
+    discovery = input.failedOutboxRowsForTests
+      ? "BOUNDED_CANDIDATES"
+      : "EXPLICIT_IDENTITIES";
+    candidates = input.identitiesForTests.slice(0, batchSize);
+    if (!input.failedOutboxRowsForTests) {
+      markResidualDiagnosticOutboxRowsInspected(0);
+    } else {
+      markResidualDiagnosticOutboxRowsInspected(
+        Math.min(
+          input.failedOutboxRowsForTests.length,
+          input.maxOutboxRows ?? RESIDUAL_DIAGNOSTIC_DEFAULT_OUTBOX_SCAN_LIMIT,
+        ),
+      );
+    }
+  } else if (input?.explicitIdentities?.length) {
+    // Pack 08K.2.5 — explicit mode: direct-query only requested identities.
+    discovery = "EXPLICIT_IDENTITIES";
+    candidates = input.explicitIdentities.slice(0, batchSize);
+    markResidualDiagnosticOutboxRowsInspected(0);
+  } else {
+    // Bounded failed-outbox sample is NOT the residual corpus — completeness unproven.
+    discovery = "BOUNDED_CANDIDATES";
+    candidates = await discoverResidualIdentitiesFromFailedOutbox({
+      maxOutboxRows: input?.maxOutboxRows,
+      maxIdentities: batchSize,
+      failedOutboxRowsForTests: input?.failedOutboxRowsForTests,
+    });
+  }
 
   const residuals: PublicLocalizationResidualWithPreflight[] = [];
-  for (let i = 0; i < identities.length; i += batchSize) {
-    const batch = identities.slice(i, i + batchSize);
+  let currentFiltered = 0;
+  let candidatesInspected = 0;
+
+  for (let i = 0; i < candidates.length; i += batchSize) {
+    const batch = candidates.slice(i, i + batchSize);
     markResidualDiagnosticInFlight(batch.length);
     for (const identity of batch) {
-      residuals.push(await diagnoseOneResidualIdentity(identity));
+      candidatesInspected += 1;
+      const diagnosed = await diagnoseOneResidualIdentity(identity);
+      if (diagnosed.liveState === "CURRENT") {
+        currentFiltered += 1;
+        continue;
+      }
+      if (!isTrueResidualLiveState(diagnosed.liveState)) {
+        // UNKNOWN / non-residual — omit from residual corpus output.
+        continue;
+      }
+      residuals.push(diagnosed.residual);
     }
   }
 
@@ -499,6 +677,7 @@ export async function explainResidualsOnly(input?: {
 
   return {
     mode: "explain-residuals-only",
+    RESIDUAL_DISCOVERY: discovery,
     residuals,
     RETRY_READY_IDENTITIES: ready.length,
     RETRY_BLOCKED_IDENTITIES: residuals.length - ready.length,
@@ -510,9 +689,14 @@ export async function explainResidualsOnly(input?: {
       TRANSLATION_ROWS_LOADED: counters.TRANSLATION_ROWS_LOADED,
       FULL_CORPUS_HYDRATED: false,
       PEAK_IN_FLIGHT_IDENTITIES: counters.PEAK_IN_FLIGHT_IDENTITIES,
+      CANDIDATE_IDENTITIES_INSPECTED: candidatesInspected,
+      RESIDUAL_IDENTITIES: residuals.length,
+      CURRENT_IDENTITIES_FILTERED: currentFiltered,
     },
     note:
-      "RESIDUAL-ONLY diagnostic — no full corpus hydrate/audit. Bounded outbox+source lookups only.",
+      discovery === "EXPLICIT_IDENTITIES"
+        ? "EXPLICIT residual identities — direct lookups only; no full corpus hydrate; CURRENT filtered."
+        : "BOUNDED_CANDIDATES residual discovery — capped failed-outbox is not the residual corpus; CURRENT filtered; completeness not proven without full streamed corpus scan.",
   };
 }
 

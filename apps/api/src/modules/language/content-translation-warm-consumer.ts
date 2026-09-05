@@ -32,6 +32,8 @@ import {
 } from "./content-translation-warm-failure.js";
 import {
   encodeContentTranslationFailureMetadata,
+  normalizeExactValidationReasonCode,
+  resolvePersistedFailureReasonCode,
   resolveValidationReasonCodeFromError,
 } from "./content-translation-failure-metadata.js";
 import {
@@ -63,8 +65,11 @@ export type ContentTranslationWarmLocaleOutcome =
       readonly workIdentityKey: string;
       readonly status: "failed";
       readonly failureClass: "retryable" | "non_retryable";
+      /** Materialization failure class (VALIDATION_FAILED, PROVIDER_*, …). */
+      readonly materializationFailureClass: string;
       readonly errorCode: string;
-      readonly failureReasonCode: string | null;
+      /** Exact validator reason — never the generic string "VALIDATION_FAILED". */
+      readonly failureReasonCode: string;
     };
 
 export interface ContentTranslationWarmProcessResult {
@@ -308,10 +313,17 @@ export async function processContentTranslationWarmRequested(
 
       return { targetLanguage, workIdentityKey, status };
     } catch (error) {
+      const materialization = classifyContentTranslationMaterializationFailure(error);
       const failureClass = classifyContentTranslationWarmFailure(error);
       const errorCode =
         error instanceof TranslationProviderError ? error.code : "unknown";
-      const failureReasonCode = resolveValidationReasonCodeFromError(error);
+      // Pack 08K.2.5 — exact reason from original error; never collapse to failureClass.
+      const failureReasonCode = resolvePersistedFailureReasonCode({
+        failureReasonCode:
+          materialization.failureReasonCode ??
+          resolveValidationReasonCodeFromError(error),
+        failureClass: materialization.failureClass,
+      });
 
       logger.warn("content_translation.warm.locale_failed", {
         component: "content-translation-warm",
@@ -321,6 +333,7 @@ export async function processContentTranslationWarmRequested(
         targetLanguage,
         workIdentityKey,
         failureClass,
+        materializationFailureClass: materialization.failureClass,
         errorCode,
         failureReasonCode,
         error: error instanceof Error ? error.message : String(error),
@@ -337,6 +350,7 @@ export async function processContentTranslationWarmRequested(
         workIdentityKey,
         status: "failed" as const,
         failureClass,
+        materializationFailureClass: materialization.failureClass,
         errorCode,
         failureReasonCode,
       };
@@ -356,54 +370,42 @@ export async function processContentTranslationWarmRequested(
       Extract<ContentTranslationWarmLocaleOutcome, { status: "failed" }>
     >;
     const firstFailed = failedLocales[0];
-    const diagnostic = firstFailed
-      ? classifyContentTranslationMaterializationFailure(
-          firstFailed.errorCode === "timeout"
-            ? new TranslationProviderError("timeout", "timeout")
-            : firstFailed.errorCode === "malformed_response"
-              ? new TranslationProviderError("malformed_response", "malformed")
-              : firstFailed.errorCode === "unavailable"
-                ? new TranslationProviderError("unavailable", "unavailable")
-                : new TranslationProviderError("bad_request", "validation"),
-        )
-      : classifyContentTranslationMaterializationFailure(
-          new TranslationProviderError("bad_request", "validation"),
-        );
-    const reasonCode =
-      firstFailed?.failureReasonCode ??
-      diagnostic.failureReasonCode ??
-      diagnostic.failureClass ??
-      "UNKNOWN_LEGACY";
 
     const localeFailures = failedLocales.map((locale) => ({
       targetLocale: locale.targetLanguage,
-      failureClass:
-        locale.errorCode === "timeout"
-          ? "PROVIDER_TIMEOUT"
-          : locale.errorCode === "unavailable"
-            ? "SOURCE_UNAVAILABLE"
-            : locale.errorCode === "malformed_response"
-              ? "PROVIDER_INVALID_RESPONSE"
-              : "VALIDATION_FAILED",
-      failureReasonCode:
-        locale.failureReasonCode ?? "OTHER_VALIDATION_FAILURE",
+      failureClass: locale.materializationFailureClass,
+      failureReasonCode: normalizeExactValidationReasonCode(locale.failureReasonCode),
       retryabilityHint:
         locale.failureClass === "retryable"
           ? "retryable"
           : "non_retryable_until_code_or_content_change",
     }));
 
+    const reasonCode = normalizeExactValidationReasonCode(
+      firstFailed?.failureReasonCode ??
+        localeFailures[0]?.failureReasonCode ??
+        "OTHER_VALIDATION_FAILURE",
+    );
+    const materializationFailureClass =
+      firstFailed?.materializationFailureClass ??
+      (reasonCode === "INVALID_PROVIDER_PAYLOAD"
+        ? "PROVIDER_INVALID_RESPONSE"
+        : "VALIDATION_FAILED");
+
     const metaMessage = encodeContentTranslationFailureMetadata({
       schema: "content_translation_failure_meta_v1",
       validationContractVersion: "v1",
-      failureClass: diagnostic.failureClass,
-      failureReasonCode: String(reasonCode),
+      failureClass: materializationFailureClass,
+      failureReasonCode: reasonCode,
       sourceKind: source.sourceKind,
       sourceRecordId: source.sourceRecordId,
       sourceVersion: source.sourceVersion,
       targetLocale: firstFailed?.targetLanguage ?? null,
       failedAt: new Date().toISOString(),
-      retryabilityHint: diagnostic.retryability,
+      retryabilityHint:
+        firstFailed?.failureClass === "retryable"
+          ? "retryable"
+          : "non_retryable_until_code_or_content_change",
       ...(localeFailures.length ? { localeFailures } : {}),
     });
 
@@ -421,7 +423,7 @@ export async function processContentTranslationWarmRequested(
         sourceRecordId: source.sourceRecordId,
         sourceVersion: source.sourceVersion,
         outcome,
-        failureClass: diagnostic.failureClass,
+        failureClass: materializationFailureClass,
         failureReasonCode: reasonCode,
         localeStatuses: locales.map((locale) => locale.status),
       },

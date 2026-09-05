@@ -217,11 +217,13 @@ export function classifyContentTranslationMaterializationFailure(error: unknown)
     }
   }
 
+  // Pack 08K.2.5 — truly unclassified exceptions become OTHER_VALIDATION_FAILURE
+  // (never the generic reasonCode "VALIDATION_FAILED").
   return {
-    failureClass: "UNKNOWN",
-    retryability: "unknown",
+    failureClass: "VALIDATION_FAILED",
+    retryability: "non_retryable_until_code_or_content_change",
     providerErrorCode: null,
-    failureReasonCode: null,
+    failureReasonCode: "OTHER_VALIDATION_FAILURE",
   };
 }
 

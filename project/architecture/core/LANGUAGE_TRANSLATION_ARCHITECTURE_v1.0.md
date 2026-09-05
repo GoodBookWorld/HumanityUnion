@@ -800,6 +800,26 @@ Fix: locale-precise latest-attempt resolver (`resolveLatestContentTranslationWar
 
 ---
 
+## Pack 08K.2.5 — Exact validation reasons + true residual selection
+
+**Problem A:** Warm consumer collapsed exact validator `failureReasonCode` into the generic string `VALIDATION_FAILED` by re-classifying a synthetic `TranslationProviderError` and falling back to `diagnostic.failureClass` as the reason code.
+
+**Fix:** Classify the **original** locale error; persist `materializationFailureClass` + exact `failureReasonCode`; `encodeContentTranslationFailureMetadata` forbids reasonCode `"VALIDATION_FAILED"` (rewrites to `OTHER_VALIDATION_FAILURE`). `failureClass` may still be `VALIDATION_FAILED`.
+
+**Historical three staging generics:** When persisted 08K.2.2 meta already stores only `failureReasonCode=VALIDATION_FAILED`, exact historical reason is **NOT_RECOVERABLE_WITHOUT_PROVIDER_CALL**. Next warm attempt persists the exact modern validator code.
+
+**Problem B:** Bounded failed-outbox discovery included identities whose live translation is already CURRENT.
+
+**True residual:** live compact state for current `sourceVersion` is `MISSING` | `STALE` | `TERMINAL_FAILED`. CURRENT is filtered out.
+
+**Discovery truth:**
+- `RESIDUAL_DISCOVERY=BOUNDED_CANDIDATES` — capped failed-outbox sample; completeness **not** proven without full streamed corpus scan
+- `RESIDUAL_DISCOVERY=EXPLICIT_IDENTITIES` — `--residual sourceKind:sourceRecordId:locale` (repeatable; read-only; no prose)
+
+Counters add: `CANDIDATE_IDENTITIES_INSPECTED`, `RESIDUAL_IDENTITIES`, `CURRENT_IDENTITIES_FILTERED`. `RETRY_*` counts only residual output rows.
+
+---
+
 ## Pack 08K.2.2 — Gated residual retry operator
 
 ```

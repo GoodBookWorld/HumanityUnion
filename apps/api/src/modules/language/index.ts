@@ -290,8 +290,10 @@ export {
   classifyLegacyOutboxLastError,
   encodeContentTranslationFailureMetadata,
   isExplicitlyRetryableModernFailure,
+  normalizeExactValidationReasonCode,
   parseContentTranslationFailureMetadata,
   resolveLocaleFailureFromMetadata,
+  resolvePersistedFailureReasonCode,
   resolveValidationReasonCodeFromError,
 } from "./content-translation-failure-metadata.js";
 export type {
@@ -303,12 +305,17 @@ export type {
 export {
   explainResidualsOnly,
   discoverResidualIdentitiesFromFailedOutbox,
+  isTrueResidualLiveState,
+  parseResidualIdentityArg,
+  parseResidualIdentityArgs,
   RESIDUAL_DIAGNOSTIC_DEFAULT_BATCH_SIZE,
   RESIDUAL_DIAGNOSTIC_DEFAULT_OUTBOX_SCAN_LIMIT,
 } from "./public-localization-residual-only-diagnostic.js";
 export type {
   ResidualDiagnosticIdentity,
   ResidualDiagnosticMemoryCounters,
+  ResidualDiscoveryMode,
+  ResidualLiveTranslationState,
   ResidualOnlyDiagnosticResult,
 } from "./public-localization-residual-only-diagnostic.js";
 export {

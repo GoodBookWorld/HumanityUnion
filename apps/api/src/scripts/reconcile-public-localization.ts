@@ -13,9 +13,12 @@
  *   --wait-for-materialization        after execute, poll compact identities
  *   --timeout-ms=<n>                  wait timeout (default 300000)
  *
- * Pack 08K.2.4 — --explain-residuals / --explain-residuals-only NEVER invoke full
+ * Pack 08K.2.4 / 08K.2.5 — --explain-residuals / --explain-residuals-only NEVER invoke full
  * corpus discovery/audit or civic snapshot hydrate. Use default dry-run (no explain)
  * for full corpus acceptance audit (still memory-heavy — documented debt).
+ *
+ * Pack 08K.2.5 — true residual selection (exclude CURRENT) + explicit identities:
+ *   --residual sourceKind:sourceRecordId:locale   (repeatable; read-only; no prose)
  *
  * Full-corpus execute (--execute without --retry-ready-residuals) uses
  * uniquePresentationsRequiringWork. Residual execute uses ONLY
@@ -62,7 +65,7 @@ import {
   auditPublicLocalizationCorpusPostRetry,
   runPublicLocalizationResidualRetry,
 } from "../modules/language/public-localization-residual-retry.js";
-import { explainResidualsOnly } from "../modules/language/public-localization-residual-only-diagnostic.js";
+import { explainResidualsOnly, parseResidualIdentityArgs } from "../modules/language/public-localization-residual-only-diagnostic.js";
 import { explainPublicLocalizationResidualsWithPreflight } from "../modules/language/public-localization-retry-preflight.js";
 import type { StagingWarmSourceKind } from "../modules/language/content-translation-staging-warm-backfill.js";
 
@@ -182,16 +185,25 @@ async function main(): Promise<void> {
   // Pack 08K.2.4 — residual-only diagnostics: NO civic snapshot hydrate, NO full corpus audit.
   if (explainResiduals) {
     const bootstrap = await bootstrapContentTranslationResidualDiagnosticPersistence();
-    const residualOnly = await explainResidualsOnly();
+    const explicitIdentities = parseResidualIdentityArgs(process.argv);
+    const residualOnly = await explainResidualsOnly({
+      ...(explicitIdentities.length ? { explicitIdentities } : {}),
+    });
     console.log(
       JSON.stringify(
         {
-          pack: "08K.2.4",
+          pack: "08K.2.5",
           operation: "explain_residuals_only",
           mode: residualOnly.mode,
           database: mongo.database,
           persistenceBootstrap: bootstrap.mode,
+          RESIDUAL_DISCOVERY: residualOnly.RESIDUAL_DISCOVERY,
           FULL_CORPUS_HYDRATED: residualOnly.memory.FULL_CORPUS_HYDRATED,
+          CANDIDATE_IDENTITIES_INSPECTED:
+            residualOnly.memory.CANDIDATE_IDENTITIES_INSPECTED,
+          RESIDUAL_IDENTITIES: residualOnly.memory.RESIDUAL_IDENTITIES,
+          CURRENT_IDENTITIES_FILTERED:
+            residualOnly.memory.CURRENT_IDENTITIES_FILTERED,
           DIAGNOSTIC_IDENTITIES: residualOnly.memory.DIAGNOSTIC_IDENTITIES,
           DIAGNOSTIC_BATCH_SIZE: residualOnly.memory.DIAGNOSTIC_BATCH_SIZE,
           OUTBOX_ROWS_INSPECTED: residualOnly.memory.OUTBOX_ROWS_INSPECTED,
@@ -204,6 +216,7 @@ async function main(): Promise<void> {
             sourceKind: row.presentationIdentity.sourceKind,
             sourceRecordId: row.presentationIdentity.sourceRecordId,
             targetLocale: row.targetLocale,
+            translationState: row.translationState,
             latestAttemptAt: row.latestAttemptAt,
             latestAttemptReason: row.latestAttemptReason,
             latestAttemptTargetLocale: row.latestAttemptTargetLocale,

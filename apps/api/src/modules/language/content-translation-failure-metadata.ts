@@ -82,10 +82,60 @@ export class ContentTranslationValidationError extends TranslationProviderError 
   }
 }
 
+/**
+ * Pack 08K.2.5 — never persist the generic string "VALIDATION_FAILED" as a
+ * failureReasonCode. That string is a failureClass only.
+ * Unclassified / collapsed codes become OTHER_VALIDATION_FAILURE.
+ */
+export function normalizeExactValidationReasonCode(
+  reasonCode: string | null | undefined,
+  fallback: ContentTranslationValidationReasonCode = "OTHER_VALIDATION_FAILURE",
+): string {
+  if (
+    reasonCode == null ||
+    reasonCode === "" ||
+    reasonCode === "VALIDATION_FAILED"
+  ) {
+    return fallback;
+  }
+  return reasonCode;
+}
+
+/**
+ * Resolve a persisted reason code from materialization classification.
+ * Never returns the generic reasonCode "VALIDATION_FAILED".
+ */
+export function resolvePersistedFailureReasonCode(input: {
+  readonly failureReasonCode: string | null | undefined;
+  readonly failureClass: string;
+}): string {
+  const normalized = normalizeExactValidationReasonCode(
+    input.failureReasonCode,
+    input.failureClass === "PROVIDER_INVALID_RESPONSE"
+      ? "INVALID_PROVIDER_PAYLOAD"
+      : input.failureClass === "VALIDATION_FAILED"
+        ? "OTHER_VALIDATION_FAILURE"
+        : "UNKNOWN_LEGACY",
+  );
+  return normalized;
+}
+
 export function encodeContentTranslationFailureMetadata(
   meta: ContentTranslationSafeFailureMetadata,
 ): string {
-  return `${META_PREFIX}${JSON.stringify(meta)}`;
+  const failureReasonCode = normalizeExactValidationReasonCode(
+    meta.failureReasonCode,
+  );
+  const localeFailures = meta.localeFailures?.map((row) => ({
+    ...row,
+    failureReasonCode: normalizeExactValidationReasonCode(row.failureReasonCode),
+  }));
+  const encoded: ContentTranslationSafeFailureMetadata = {
+    ...meta,
+    failureReasonCode,
+    ...(localeFailures?.length ? { localeFailures } : {}),
+  };
+  return `${META_PREFIX}${JSON.stringify(encoded)}`;
 }
 
 export function parseContentTranslationFailureMetadata(
