@@ -13,6 +13,7 @@
 
 import type { LocalizationStructuralIntegritySubreason } from "@hu/types";
 
+import type { ConsumerValueLineageTrace } from "./consumer-value-lineage";
 import type { MediaSemanticNodeRecord } from "./media-semantic-contract";
 import { collectRenderedMediaSemanticNodes } from "./media-rendered-coverage";
 
@@ -28,6 +29,8 @@ export type MediaStructuralCardinality = {
   readonly OUTPUT_WITHOUT_APPLY: number;
   readonly APPLY_WITHOUT_RENDER: number;
   readonly CANONICAL_RENDER_BYPASS: number;
+  /** Reset 03E.5 — value-lineage breaks after resolver (resolved ≠ projected/rendered). */
+  readonly CONSUMER_VALUE_LINEAGE_BYPASS: number;
   readonly STRUCTURAL_MISMATCH_COUNT: number;
   readonly STRUCTURAL_INTEGRITY_STATUS: "PASSED" | "FAILED";
   readonly STRUCTURAL_INTEGRITY_VERSION: "LSI.1";
@@ -165,6 +168,7 @@ export function evaluateMediaEntityStructuralParity(input: {
       OUTPUT_WITHOUT_APPLY: outputWithoutApply,
       APPLY_WITHOUT_RENDER: applyWithoutRender,
       CANONICAL_RENDER_BYPASS: canonicalBypass,
+      CONSUMER_VALUE_LINEAGE_BYPASS: 0,
       STRUCTURAL_MISMATCH_COUNT,
     },
   };
@@ -182,6 +186,12 @@ export function evaluateMediaPageStructuralIntegrity(input: {
   readonly strictUiDictionaryKeys?: boolean;
   /** When false, PLP nodes may omit semanticPath (legacy render fixtures). Default true. */
   readonly strictPlpSemanticPaths?: boolean;
+  /**
+   * Reset 03E.5 — optional consumer value lineage traces.
+   * Path presence alone is insufficient: when traces are supplied, LSI.1 fails if
+   * RESOLVED_LOCALIZED does not equal PROJECTED/PROPAGATED/RENDERED values.
+   */
+  readonly consumerValueLineage?: readonly ConsumerValueLineageTrace[];
 }): MediaStructuralCardinality {
   const nodes = collectRenderedMediaSemanticNodes(input.html);
   const reasons = new Set<LocalizationStructuralIntegritySubreason>();
@@ -199,8 +209,22 @@ export function evaluateMediaPageStructuralIntegrity(input: {
     OUTPUT_WITHOUT_APPLY: 0,
     APPLY_WITHOUT_RENDER: 0,
     CANONICAL_RENDER_BYPASS: 0,
+    CONSUMER_VALUE_LINEAGE_BYPASS: 0,
     STRUCTURAL_MISMATCH_COUNT: 0,
   };
+
+  if (input.consumerValueLineage) {
+    for (const trace of input.consumerValueLineage) {
+      if (trace.bypass) {
+        reasons.add("LOCALIZED_PRESENTATION_CONSUMER_BYPASS");
+        failingPaths.push(
+          `${trace.entityType}/${trace.entityId}:${trace.semanticPath}`,
+        );
+        totals.CONSUMER_VALUE_LINEAGE_BYPASS += 1;
+        totals.STRUCTURAL_MISMATCH_COUNT += 1;
+      }
+    }
+  }
 
   for (const node of nodes) {
     if (node.owner === "BUG_UNOWNED" || node.result === "UNOWNED") {
@@ -275,6 +299,7 @@ export function evaluateMediaPageStructuralIntegrity(input: {
         totals.APPLY_WITHOUT_RENDER + parity.counts.APPLY_WITHOUT_RENDER,
       CANONICAL_RENDER_BYPASS:
         totals.CANONICAL_RENDER_BYPASS + parity.counts.CANONICAL_RENDER_BYPASS,
+      CONSUMER_VALUE_LINEAGE_BYPASS: totals.CONSUMER_VALUE_LINEAGE_BYPASS,
       STRUCTURAL_MISMATCH_COUNT:
         totals.STRUCTURAL_MISMATCH_COUNT + parity.counts.STRUCTURAL_MISMATCH_COUNT,
     };

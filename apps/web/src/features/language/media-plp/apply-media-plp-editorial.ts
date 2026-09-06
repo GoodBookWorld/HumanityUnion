@@ -18,6 +18,22 @@ import { buildCanonicalCivicMediaEditorial } from "../../civic-media-center/comp
 import type { MediaPlpResolvedPresentation } from "./presentation";
 import { readMediaPlpStringField } from "./presentation";
 
+function readRowString(row: Record<string, unknown>, key: string): string {
+  const raw = row[key];
+  if (typeof raw === "string") {
+    return raw.trim();
+  }
+  if (
+    raw &&
+    typeof raw === "object" &&
+    "value" in raw &&
+    typeof (raw as { value: unknown }).value === "string"
+  ) {
+    return String((raw as { value: string }).value).trim();
+  }
+  return "";
+}
+
 function readOverviewPoints(
   presentation: MediaPlpResolvedPresentation["presentation"],
   canonical: CivicMediaResolvedEditorial["overview"]["points"],
@@ -35,20 +51,19 @@ function readOverviewPoints(
         row &&
         typeof row === "object" &&
         !Array.isArray(row) &&
-        (row as { id?: unknown }).id === point.id,
-    ) as { heading?: unknown; body?: unknown } | undefined;
-    const byIndex = raw[index] as { heading?: unknown; body?: unknown } | undefined;
+        readRowString(row as Record<string, unknown>, "id") === point.id,
+    ) as Record<string, unknown> | undefined;
+    const byIndex = raw[index] as Record<string, unknown> | undefined;
     const row = hit ?? byIndex;
     if (!row) {
       return point;
     }
+    const heading = readRowString(row, "heading");
+    const body = readRowString(row, "body");
     return {
       ...point,
-      heading:
-        typeof row.heading === "string" && row.heading.trim()
-          ? row.heading.trim()
-          : point.heading,
-      body: typeof row.body === "string" && row.body.trim() ? row.body.trim() : point.body,
+      heading: heading || point.heading,
+      body: body || point.body,
     };
   });
 }
@@ -70,21 +85,19 @@ function readFaqItems(
         row &&
         typeof row === "object" &&
         !Array.isArray(row) &&
-        (row as { id?: unknown }).id === item.id,
-    ) as { question?: unknown; answer?: unknown } | undefined;
-    const byIndex = raw[index] as { question?: unknown; answer?: unknown } | undefined;
+        readRowString(row as Record<string, unknown>, "id") === item.id,
+    ) as Record<string, unknown> | undefined;
+    const byIndex = raw[index] as Record<string, unknown> | undefined;
     const row = hit ?? byIndex;
     if (!row) {
       return { ...item };
     }
+    const question = readRowString(row, "question");
+    const answer = readRowString(row, "answer");
     return {
       ...item,
-      question:
-        typeof row.question === "string" && row.question.trim()
-          ? row.question.trim()
-          : item.question,
-      answer:
-        typeof row.answer === "string" && row.answer.trim() ? row.answer.trim() : item.answer,
+      question: question || item.question,
+      answer: answer || item.answer,
     };
   });
 }

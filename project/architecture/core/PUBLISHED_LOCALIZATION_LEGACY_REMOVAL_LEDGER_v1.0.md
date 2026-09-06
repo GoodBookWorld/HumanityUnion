@@ -231,6 +231,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Coverage acceptance | **pending until live** |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 03E.5 note — consumer value lineage (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live gap | Valid editorial PLP (`PUBLISHED_LOCALIZED` + CLI.1 + LSI.1) while route cards/sections still showed English |
+| Root class | Consumer value lineage break after resolver (news batch unused; country WORLD×COUNTRY id miss; markers claimed LOCALIZED without projected values) |
+| Gate | Route-level sentinel lineage; `LOCALIZED_PRESENTATION_CONSUMER_BYPASS` |
+| Election/initiative | Explicit `DOMAIN_NOT_YET_MIGRATED` (not Media PLP) |
+| Coverage acceptance | **pending until live** |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

@@ -25,6 +25,11 @@ interface PublicNewsCardProps {
   article: PublicNewsArticleItem;
   /** Reset 03E — Media PLP path: never generate-on-read. */
   disableOnDemandTranslation?: boolean;
+  /** Reset 03E.5 — resolved Media PLP presentation for this article. */
+  plpPresentation?: {
+    readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+    readonly presentation: unknown;
+  };
 }
 
 function plpEntityResult(view: {
@@ -73,11 +78,13 @@ function CreateInitiativeLink({ newsId }: { newsId: string }) {
 export function PublicNewsCard({
   article,
   disableOnDemandTranslation = false,
+  plpPresentation,
 }: PublicNewsCardProps) {
   const locale = useLocale();
   const t = useTranslations("publicNews.card");
   const view = useLocalizedPublicNewsCard(article, {
-    skipClientTranslation: disableOnDemandTranslation,
+    skipClientTranslation: disableOnDemandTranslation || plpPresentation != null,
+    plpPresentation,
   });
   const provider = resolveProviderPresentation(view.sourceName);
   const publishedLabel = formatNewsRelativeTime(view.publishedAt, locale);

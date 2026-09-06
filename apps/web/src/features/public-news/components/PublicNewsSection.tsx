@@ -53,6 +53,16 @@ export interface PublicNewsSectionProps {
   disableOnDemandTranslation?: boolean;
   /** SSR/static seed — skip initial fetch when provided. */
   initialArticles?: PublicNewsArticleItem[];
+  /** Reset 03E.5 — Media PLP presentations keyed by article id. */
+  plpNewsById?: Readonly<
+    Record<
+      string,
+      {
+        readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+        readonly presentation: unknown;
+      }
+    >
+  >;
 }
 
 function hasActiveDiscoveryFilters(filters: PublicNewsFilters): boolean {
@@ -80,6 +90,7 @@ export function PublicNewsSection({
   className,
   disableOnDemandTranslation = false,
   initialArticles,
+  plpNewsById,
 }: PublicNewsSectionProps = {}) {
   const locale = useLocale();
   const tDiscovery = useTranslations("publicNews.discovery");
@@ -354,6 +365,7 @@ export function PublicNewsSection({
             <PublicNewsCard
               article={article}
               disableOnDemandTranslation={disableOnDemandTranslation}
+              plpPresentation={plpNewsById?.[article.id]}
             />
           )}
           rail={rail}

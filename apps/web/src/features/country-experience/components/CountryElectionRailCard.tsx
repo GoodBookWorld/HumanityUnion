@@ -44,6 +44,8 @@ export function CountryElectionRailCard({ initiative }: CountryElectionRailCardP
       href={href}
       className="country-initiative-rail-card country-election-rail-card"
       aria-label={t("openElectionAria", { title: displayTitle })}
+      data-hu-localization-domain="initiative"
+      data-hu-media-plp-coverage="DOMAIN_NOT_YET_MIGRATED"
     >
       <div className="country-initiative-rail-card__media">
         {initiative.imageUrl || initiative.coverMedia ? (

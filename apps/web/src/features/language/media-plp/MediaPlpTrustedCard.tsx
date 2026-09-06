@@ -16,17 +16,19 @@ export function MediaPlpTrustedCard(input: {
   readonly categoryTitle?: string;
 }) {
   const explanation = readMediaPlpStringField(input.resolved.presentation, "explanation");
+  const usedLocalized =
+    input.resolved.mode === "PUBLISHED_LOCALIZED" && explanation.trim().length > 0;
 
   return (
     <TrustedMediaRailCard
       resource={input.resource}
       categoryTitle={input.categoryTitle}
-      explanation={explanation.trim() || input.resource.explanation}
+      explanation={usedLocalized ? explanation.trim() : undefined}
       data-hu-plp-mode={input.resolved.mode}
       data-hu-plp-entity={input.resolved.entityType}
       data-hu-plp-id={input.resolved.entityId}
       data-hu-fallback-nodes={
-        input.resolved.mode === "CANONICAL_FALLBACK" ? "all" : "0"
+        usedLocalized ? "0" : "all"
       }
     />
   );

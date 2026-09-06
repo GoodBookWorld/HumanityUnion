@@ -9,10 +9,14 @@ import { fetchCivicMediaCenter } from "../../../features/civic-media-center/api"
 import { loadCivicMediaEditorialSeed } from "../../../features/civic-media-center/load-civic-media-editorial-seed";
 import { resolveBrandForMetadata } from "../../../features/brand-localization/resolve-brand-for-metadata";
 import { CountryExperienceDynamicPage } from "../../../features/country-experience/components/CountryExperienceDynamicPage";
+import {
+  fetchCountryMedia,
+} from "../../../features/country-experience/country-experience-api";
 import { isMediaPlpWebEnabled } from "../../../features/language/media-plp/feature-flag";
 import { loadMediaPlpTrustedPresentations } from "../../../features/language/media-plp/load-media-plp-ssr";
 import type { MediaPlpResolvedPresentation } from "../../../features/language/media-plp/presentation";
 import { resolveDocumentHtmlLocale } from "../../../features/language/resolve-document-locale";
+import type { TrustedMediaResource } from "@hu/types";
 import { buildPublicPageMetadata } from "../../../lib/seo/build-public-page-metadata";
 import {
   applyPageSeoOverrideToMetadataInput,
@@ -111,21 +115,25 @@ export default async function CountriesPage({ params }: CountriesPageProps) {
     ],
   });
 
-  // Pack 08K.3.3 / Reset 03 — shared trusted identity with /media.
+  // Pack 08K.3.3 / Reset 03 / 03E.5 — shared civic_media_trusted identity with /media.
+  // Resolve PLP for the SAME resource ids the country rail will render (COUNTRY scope),
+  // not the WORLD civic-media-center list (id miss → canonical English body).
   let initialTrustedExplanationsById: Record<string, string> | undefined;
   let initialPlpTrustedById:
     | Readonly<Record<string, MediaPlpResolvedPresentation>>
     | undefined;
+  let initialCountryMedia: TrustedMediaResource[] | undefined;
   try {
-    const media = await fetchCivicMediaCenter();
     const documentLocale = await resolveDocumentHtmlLocale();
     if (isMediaPlpWebEnabled()) {
+      initialCountryMedia = await fetchCountryMedia(countryCode);
       initialPlpTrustedById =
         (await loadMediaPlpTrustedPresentations({
-          resources: media.trustedMedia,
+          resources: initialCountryMedia,
           locale: documentLocale.locale,
         })) ?? undefined;
     } else {
+      const media = await fetchCivicMediaCenter();
       const editorial = await loadCivicMediaEditorialSeed({
         media,
         language: documentLocale.locale,
@@ -135,6 +143,7 @@ export default async function CountriesPage({ params }: CountriesPageProps) {
   } catch {
     initialTrustedExplanationsById = undefined;
     initialPlpTrustedById = undefined;
+    initialCountryMedia = undefined;
   }
 
   return (
@@ -144,6 +153,7 @@ export default async function CountriesPage({ params }: CountriesPageProps) {
         countryCode={countryCode}
         initialTrustedExplanationsById={initialTrustedExplanationsById}
         initialPlpTrustedById={initialPlpTrustedById}
+        initialCountryMedia={initialCountryMedia}
       />
     </>
   );

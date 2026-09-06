@@ -13,7 +13,8 @@ import type {
   TrustedMediaResource,
 } from "@hu/types";
 
-import { Badge, Card } from "../../../design-system";
+import { Card } from "../../../design-system/components/Card";
+import { WorkspaceStatusBadge as Badge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
 import { CIVIC_MEDIA_ROUTE } from "../routes";
 import { coverageToChips } from "../civic-media-card-utils";
 import {
@@ -177,10 +178,30 @@ function FactCheckCard({
 }) {
   const t = useTranslations("civicMediaPublic");
   const chips = coverageToChips(coverage);
-  const bodyResult = plpModeToSemanticResult(plpMode);
+  // Reset 03E.5 — do not claim LOCALIZED while rendering canonical mission/coverage.
+  const usedPresentation =
+    plpMode === "PUBLISHED_LOCALIZED" &&
+    mission.trim().length > 0 &&
+    mission.trim() !== resource.mission.trim();
+  const effectiveMode = usedPresentation
+    ? "PUBLISHED_LOCALIZED"
+    : plpMode === "PUBLISHED_LOCALIZED"
+      ? "CANONICAL_FALLBACK"
+      : plpMode;
+  const bodyResult = plpModeToSemanticResult(effectiveMode);
 
   return (
-    <Card className="civic-media-resource-card civic-media-resource-card--verification">
+    <Card
+      className="civic-media-resource-card civic-media-resource-card--verification"
+      data-hu-plp-mode={effectiveMode}
+      data-hu-consumer-lineage={
+        plpMode === "PUBLISHED_LOCALIZED" && !usedPresentation
+          ? "LOCALIZED_PRESENTATION_CONSUMER_BYPASS"
+          : usedPresentation
+            ? "RENDERED_LOCALIZED"
+            : undefined
+      }
+    >
       <div className="civic-media-resource-card__header civic-media-resource-card__header--logo-end">
         <div className="civic-media-resource-card__heading">
           <MediaSemanticNode as="h3" owner="PROTECTED_CANONICAL" result="PROTECTED_CANONICAL">
@@ -250,10 +271,29 @@ function PropagandaCard({
   plpMode?: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
 }) {
   const t = useTranslations("civicMediaPublic");
-  const bodyResult = plpModeToSemanticResult(plpMode);
+  const usedPresentation =
+    plpMode === "PUBLISHED_LOCALIZED" &&
+    explanation.trim().length > 0 &&
+    explanation.trim() !== resource.explanation.trim();
+  const effectiveMode = usedPresentation
+    ? "PUBLISHED_LOCALIZED"
+    : plpMode === "PUBLISHED_LOCALIZED"
+      ? "CANONICAL_FALLBACK"
+      : plpMode;
+  const bodyResult = plpModeToSemanticResult(effectiveMode);
 
   return (
-    <Card className="civic-media-resource-card civic-media-resource-card--analysis">
+    <Card
+      className="civic-media-resource-card civic-media-resource-card--analysis"
+      data-hu-plp-mode={effectiveMode}
+      data-hu-consumer-lineage={
+        plpMode === "PUBLISHED_LOCALIZED" && !usedPresentation
+          ? "LOCALIZED_PRESENTATION_CONSUMER_BYPASS"
+          : usedPresentation
+            ? "RENDERED_LOCALIZED"
+            : undefined
+      }
+    >
       <div className="civic-media-resource-card__header civic-media-resource-card__header--logo-end">
         <div className="civic-media-resource-card__heading">
           <MediaSemanticNode as="h3" owner="PROTECTED_CANONICAL" result="PROTECTED_CANONICAL">
@@ -489,13 +529,19 @@ function CivicMediaCenterLoaded({
     plpPrinciplesById,
   });
 
+  const editorialApplied =
+    plpMode &&
+    plpEditorialPresentation?.mode === "PUBLISHED_LOCALIZED" &&
+    editorial.overview.title.trim() !== media.overview.title.trim() &&
+    editorial.overview.summary.trim() !== media.overview.summary.trim();
   const editorialResult = plpMode
     ? plpModeToSemanticResult(
-        plpEditorialPresentation?.mode ?? "CANONICAL_FALLBACK",
+        editorialApplied ? "PUBLISHED_LOCALIZED" : "CANONICAL_FALLBACK",
       )
     : "CANONICAL_FALLBACK";
-  const editorialMode =
-    plpEditorialPresentation?.mode ?? (plpMode ? "CANONICAL_FALLBACK" : undefined);
+  const editorialMode = editorialApplied
+    ? "PUBLISHED_LOCALIZED"
+    : plpEditorialPresentation?.mode ?? (plpMode ? "CANONICAL_FALLBACK" : undefined);
 
   return (
     <main
@@ -588,6 +634,7 @@ function CivicMediaCenterLoaded({
           variant="discovery"
           disableOnDemandTranslation={plpMode || plpNewsById != null}
           initialArticles={initialNewsArticles}
+          plpNewsById={plpNewsById}
         />
 
         <HuxEducationSection
@@ -650,18 +697,28 @@ function CivicMediaCenterLoaded({
           items={media.factChecking}
           layout="three-two-one"
           getItemKey={(resource) => resource.id}
-          renderItem={(resource) => (
-            <FactCheckCard
-              resource={resource}
-              mission={factCheckMaps?.missionsById[resource.id] ?? resource.mission}
-              coverage={factCheckMaps?.coverageById[resource.id] ?? resource.coverage}
-              plpMode={
-                plpMode
-                  ? plpFactCheckById?.[resource.id]?.mode ?? "CANONICAL_FALLBACK"
-                  : undefined
-              }
-            />
-          )}
+          renderItem={(resource) => {
+            const resolved = plpFactCheckById?.[resource.id];
+            const usedLocalized = resolved?.mode === "PUBLISHED_LOCALIZED";
+            return (
+              <FactCheckCard
+                resource={resource}
+                mission={
+                  usedLocalized
+                    ? (factCheckMaps?.missionsById[resource.id] ?? "")
+                    : (factCheckMaps?.missionsById[resource.id] ?? resource.mission)
+                }
+                coverage={
+                  usedLocalized
+                    ? (factCheckMaps?.coverageById[resource.id] ?? "")
+                    : (factCheckMaps?.coverageById[resource.id] ?? resource.coverage)
+                }
+                plpMode={
+                  plpMode ? resolved?.mode ?? "CANONICAL_FALLBACK" : undefined
+                }
+              />
+            );
+          }}
         />
 
         <HuxDirectorySection
@@ -673,20 +730,29 @@ function CivicMediaCenterLoaded({
           items={media.propagandaAnalysis}
           layout="three-two-one"
           getItemKey={(resource) => resource.id}
-          renderItem={(resource) => (
-            <PropagandaCard
-              resource={resource}
-              focus={propagandaMaps?.focusById[resource.id] ?? resource.focus}
-              explanation={
-                propagandaMaps?.explanationsById[resource.id] ?? resource.explanation
-              }
-              plpMode={
-                plpMode
-                  ? plpPropagandaById?.[resource.id]?.mode ?? "CANONICAL_FALLBACK"
-                  : undefined
-              }
-            />
-          )}
+          renderItem={(resource) => {
+            const resolved = plpPropagandaById?.[resource.id];
+            const usedLocalized = resolved?.mode === "PUBLISHED_LOCALIZED";
+            return (
+              <PropagandaCard
+                resource={resource}
+                focus={
+                  usedLocalized
+                    ? (propagandaMaps?.focusById[resource.id] ?? "")
+                    : (propagandaMaps?.focusById[resource.id] ?? resource.focus)
+                }
+                explanation={
+                  usedLocalized
+                    ? (propagandaMaps?.explanationsById[resource.id] ?? "")
+                    : (propagandaMaps?.explanationsById[resource.id] ??
+                      resource.explanation)
+                }
+                plpMode={
+                  plpMode ? resolved?.mode ?? "CANONICAL_FALLBACK" : undefined
+                }
+              />
+            );
+          }}
         />
 
         <section id="faq" className="civic-media-page__faq civic-media-section-shell">

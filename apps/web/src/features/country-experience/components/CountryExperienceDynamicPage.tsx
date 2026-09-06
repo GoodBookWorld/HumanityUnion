@@ -54,8 +54,13 @@ interface CountryExperienceDynamicPageProps {
   countryCode: string;
   /** Pack 08K.3.3 — SSR seed from shared civic_media trusted explanations. */
   initialTrustedExplanationsById?: CivicMediaTrustedExplanationsById;
-  /** Reset 03 — PLP resolved trusted presentations (same entity ids as /media). */
+  /**
+   * Reset 03 / 03E.5 — PLP resolved trusted presentations for the SAME
+   * country-rail resource ids (civic_media_trusted), not a WORLD-only batch.
+   */
   initialPlpTrustedById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  /** Reset 03E.5 — SSR country media list matching the PLP batch keys. */
+  initialCountryMedia?: readonly TrustedMediaResource[];
 }
 
 function countryFlagSrc(countryCode: string): string {
@@ -66,6 +71,7 @@ export function CountryExperienceDynamicPage({
   countryCode,
   initialTrustedExplanationsById,
   initialPlpTrustedById,
+  initialCountryMedia,
 }: CountryExperienceDynamicPageProps) {
   const router = useRouter();
   const locale = useLocale();
@@ -100,7 +106,9 @@ export function CountryExperienceDynamicPage({
     [country?.subregion, locale],
   );
   const [statistics, setStatistics] = useState<CountryStatisticsCounts | null>(null);
-  const [media, setMedia] = useState<TrustedMediaResource[]>([]);
+  const [media, setMedia] = useState<TrustedMediaResource[]>(() =>
+    initialCountryMedia ? [...initialCountryMedia] : [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const trustedExplanationsById = useTrustedMediaExplanationsOverlay(
@@ -161,11 +169,16 @@ export function CountryExperienceDynamicPage({
     void fetchCountryMedia(countryCode)
       .then((mediaItems) => {
         if (!cancelled) {
-          setMedia(mediaItems);
+          // Prefer SSR list when present so PLP map keys stay aligned.
+          setMedia(
+            initialCountryMedia && initialCountryMedia.length > 0
+              ? [...initialCountryMedia]
+              : mediaItems,
+          );
         }
       })
       .catch(() => {
-        if (!cancelled) {
+        if (!cancelled && !(initialCountryMedia && initialCountryMedia.length > 0)) {
           setMedia([]);
         }
       });
@@ -173,7 +186,7 @@ export function CountryExperienceDynamicPage({
     return () => {
       cancelled = true;
     };
-  }, [countryCode]);
+  }, [countryCode, initialCountryMedia]);
 
   if (!country) {
     return null;

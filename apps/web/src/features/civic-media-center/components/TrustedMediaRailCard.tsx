@@ -1,7 +1,8 @@
 /**
  * Pack 08K.3.1 — Trusted media rail card.
- * Outlet name stays protected identity; explanation uses overlay; country uses geography display.
+ * Outlet name stays protected identity; explanation uses explicit presentation overlay.
  * Reset 03E.1 — rendered semantic owner+result contracts on participant-facing nodes.
+ * Reset 03E.5 — presentation body is explicit; canonical fallback cannot claim LOCALIZED.
  */
 
 "use client";
@@ -10,7 +11,8 @@ import type { TrustedMediaResource } from "@hu/types";
 import { getLocalizedCountryDisplayName } from "@hu/geography";
 import { useLocale, useTranslations } from "next-intl";
 
-import { Badge, Card } from "../../../design-system";
+import { Card } from "../../../design-system/components/Card";
+import { WorkspaceStatusBadge as Badge } from "../../initiative-workspace-ux/components/WorkspaceStatusBadge";
 import {
   MediaSemanticNode,
   plpModeToSemanticResult,
@@ -20,7 +22,11 @@ import { MediaLogo } from "./MediaLogo";
 interface TrustedMediaRailCardProps {
   resource: TrustedMediaResource;
   categoryTitle?: string;
-  /** Localized explanation overlay; falls back to resource.explanation (identity name untouched). */
+  /**
+   * Explicit presentation explanation from PLP projection.
+   * When PLP mode is PUBLISHED_LOCALIZED, this must carry the localized value —
+   * never silently prefer resource.explanation while claiming LOCALIZED.
+   */
   explanation?: string;
   className?: string;
   /** Reset 03C.1 — optional PLP observability hooks (structure unchanged). */
@@ -50,11 +56,21 @@ export function TrustedMediaRailCard({
     ? t(`trustedCategories.${resource.categoryId}`)
     : resource.categoryId;
   const resolvedCategoryTitle = categoryTitle ?? catalogCategory;
-  const displayExplanation = explanation ?? resource.explanation;
+  const presentationExplanation = (explanation ?? "").trim();
+  const canonicalExplanation = resource.explanation;
+  const usedPresentation =
+    plpMode === "PUBLISHED_LOCALIZED" && presentationExplanation.length > 0;
+  const displayExplanation = usedPresentation
+    ? presentationExplanation
+    : presentationExplanation || canonicalExplanation;
+  const explanationResult = usedPresentation
+    ? plpModeToSemanticResult("PUBLISHED_LOCALIZED")
+    : plpModeToSemanticResult(
+        plpMode === "PUBLISHED_LOCALIZED" ? "CANONICAL_FALLBACK" : plpMode,
+      );
   const countryLabel = resource.countryCode
     ? getLocalizedCountryDisplayName(resource.countryCode, locale, resource.country)
     : resource.country;
-  const explanationResult = plpModeToSemanticResult(plpMode);
 
   const cta = (
     <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
@@ -72,10 +88,25 @@ export function TrustedMediaRailCard({
       ]
         .filter(Boolean)
         .join(" ")}
-      data-hu-plp-mode={plpMode}
+      data-hu-plp-mode={
+        usedPresentation
+          ? "PUBLISHED_LOCALIZED"
+          : plpMode === "PUBLISHED_LOCALIZED"
+            ? "CANONICAL_FALLBACK"
+            : plpMode
+      }
       data-hu-plp-entity={plpEntity}
       data-hu-plp-id={plpId}
-      data-hu-fallback-nodes={fallbackNodes}
+      data-hu-fallback-nodes={
+        usedPresentation ? "0" : (fallbackNodes ?? (plpMode ? "all" : undefined))
+      }
+      data-hu-consumer-lineage={
+        plpMode === "PUBLISHED_LOCALIZED" && !usedPresentation
+          ? "LOCALIZED_PRESENTATION_CONSUMER_BYPASS"
+          : usedPresentation
+            ? "RENDERED_LOCALIZED"
+            : undefined
+      }
     >
       <div className="civic-media-resource-card__header">
         <MediaLogo
@@ -110,7 +141,13 @@ export function TrustedMediaRailCard({
           className="civic-media-resource-card__visually-hidden"
           owner="GEOGRAPHY"
           result="LOCALIZED_DICTIONARY"
-          style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}
+          style={{
+            position: "absolute",
+            width: 1,
+            height: 1,
+            overflow: "hidden",
+            clip: "rect(0 0 0 0)",
+          }}
         >
           {countryLabel}
         </MediaSemanticNode>

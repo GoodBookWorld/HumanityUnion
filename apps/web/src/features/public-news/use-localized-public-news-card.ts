@@ -98,6 +98,14 @@ export function useLocalizedPublicNewsCard(
   options?: {
     /** Reset 03E — Media PLP path: never resolve/generate content_translations. */
     readonly skipClientTranslation?: boolean;
+    /**
+     * Reset 03E.5 — explicit Media PLP presentation for this article.
+     * When mode is PUBLISHED_LOCALIZED, title/summary come from the presentation.
+     */
+    readonly plpPresentation?: {
+      readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+      readonly presentation: unknown;
+    };
   },
 ): LocalizedPublicNewsCardView {
   const locale = useLocale();
@@ -105,17 +113,44 @@ export function useLocalizedPublicNewsCard(
   const readingContext = usePublicContentReadingContext();
   const requestGenerationRef = useRef(0);
   const skipClientTranslation = options?.skipClientTranslation === true;
+  const plpPresentation = options?.plpPresentation;
 
-  const seed = useMemo(
-    () => resolveLocalizedPublicNewsCardView({ article, locale: displayLanguage }),
-    [article, displayLanguage],
-  );
+  const seed = useMemo(() => {
+    if (
+      plpPresentation &&
+      plpPresentation.mode === "PUBLISHED_LOCALIZED" &&
+      plpPresentation.presentation &&
+      typeof plpPresentation.presentation === "object"
+    ) {
+      const node = plpPresentation.presentation as Record<string, unknown>;
+      const title =
+        typeof node.title === "string" && node.title.trim()
+          ? node.title.trim()
+          : article.title;
+      const summary =
+        typeof node.summary === "string" && node.summary.trim()
+          ? node.summary.trim()
+          : article.summary;
+      const category =
+        typeof node.category === "string" ? node.category : undefined;
+      return resolveLocalizedPublicNewsCardView({
+        article,
+        locale: displayLanguage,
+        translations: {
+          title,
+          summary,
+          ...(category != null ? { category } : {}),
+        },
+      });
+    }
+    return resolveLocalizedPublicNewsCardView({ article, locale: displayLanguage });
+  }, [article, displayLanguage, plpPresentation]);
 
   const [view, setView] = useState(seed);
 
   useEffect(() => {
     setView(seed);
-    if (skipClientTranslation) {
+    if (skipClientTranslation || plpPresentation) {
       return;
     }
     const injected = fixtureTranslationsByArticleId.get(article.id);
@@ -165,6 +200,7 @@ export function useLocalizedPublicNewsCard(
     readingContext.translationPreference,
     seed,
     skipClientTranslation,
+    plpPresentation,
   ]);
 
   return view;

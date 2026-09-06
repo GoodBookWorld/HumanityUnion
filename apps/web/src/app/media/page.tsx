@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import type { CivicMediaCenterPublic } from "@hu/types";
+import type { CivicMediaCenterPublic, PublicNewsArticleItem } from "@hu/types";
 
 import { fetchCivicMediaCenter } from "../../features/civic-media-center/api";
 import { CivicMediaCenterPageContent } from "../../features/civic-media-center/components/CivicMediaCenterPageContent";
@@ -12,6 +12,10 @@ import { loadMediaPlpPagePresentations } from "../../features/language/media-plp
 import { markMediaLocaleSwitchPerfPhase } from "../../features/language/media-plp/media-plp-locale-switch-perf";
 import type { MediaPlpResolvedPresentation } from "../../features/language/media-plp/presentation";
 import { resolveDocumentHtmlLocale } from "../../features/language/resolve-document-locale";
+import { fetchPublicNewsArticles } from "../../features/public-news/api";
+
+/** Bound news PLP entities so the single Media batch stays under resolve max items. */
+const MEDIA_PLP_NEWS_BATCH_LIMIT = 12;
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +54,7 @@ export default async function CivicMediaPage() {
     | Readonly<Record<string, MediaPlpResolvedPresentation>>
     | undefined;
   let plpNewsById: Readonly<Record<string, MediaPlpResolvedPresentation>> | undefined;
+  let initialNewsArticles: PublicNewsArticleItem[] | undefined;
 
   try {
     initialMedia = await fetchCivicMediaCenter();
@@ -60,12 +65,21 @@ export default async function CivicMediaPage() {
   if (initialMedia && isMediaPlpWebEnabled()) {
     const documentLocale = await resolveDocumentHtmlLocale();
     markMediaLocaleSwitchPerfPhase("T4_MEDIA_PLP_LOAD_BEGIN");
-    // newsArticles omitted — page does not fetch news SSR; newsById stays empty/fallback.
+    try {
+      const newsListing = await fetchPublicNewsArticles({
+        limit: MEDIA_PLP_NEWS_BATCH_LIMIT,
+        language: "en",
+      });
+      initialNewsArticles = newsListing.items;
+    } catch {
+      initialNewsArticles = [];
+    }
     const plp = await loadMediaPlpPagePresentations({
       resources: initialMedia.trustedMedia,
       principles: initialMedia.selectionPrinciples,
       factChecking: initialMedia.factChecking,
       propagandaAnalysis: initialMedia.propagandaAnalysis,
+      newsArticles: initialNewsArticles,
       media: initialMedia,
       locale: documentLocale.locale,
     });
@@ -98,6 +112,7 @@ export default async function CivicMediaPage() {
       plpFactCheckById={plpFactCheckById}
       plpPropagandaById={plpPropagandaById}
       plpNewsById={plpNewsById}
+      initialNewsArticles={initialNewsArticles}
     />
   );
 }

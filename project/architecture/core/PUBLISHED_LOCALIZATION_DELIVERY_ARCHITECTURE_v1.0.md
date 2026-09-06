@@ -642,3 +642,26 @@ Shared classifier: `classifyUsableLocalizedPresentation` (API domain). For `loca
 | Diagnostics | `EXISTING_PLP_USABILITY`, `EXISTING_PLP_USABILITY_REASON`, integrity statuses, `REBUILD_REQUIRED` (no bodies) |
 | Atomic replace | Invalid current untouched until successful publish; prior → SUPERSEDED |
 | ACTIVE count | **30** — unchanged |
+
+### Reset 03E.5 — consumer value lineage
+
+**Invariant:** Localization success requires not only published entity validity but end-to-end **CONSUMER VALUE LINEAGE**.
+
+Normative chain:
+
+1. OWNERSHIP  
+2. STRUCTURAL REACHABILITY (`LSI.1`)  
+3. CONTENT INTEGRITY (`CLI.1`)  
+4. RESOLVER VALIDITY (`PUBLISHED_LOCALIZED`)  
+5. **CONSUMER VALUE LINEAGE** — `RESOLVED_LOCALIZED` → `PROJECTED_LOCALIZED` → `PROPAGATED_LOCALIZED` → `RENDERED_LOCALIZED`  
+6. RENDERED LOCALIZED VALUE  
+
+A break after resolver is a localization failure (`LOCALIZED_PRESENTATION_CONSUMER_BYPASS`). Path presence markers alone are insufficient — resolved localized values must equal projected/card/rendered values (opaque sentinels in tests).
+
+| Concern | Rule |
+|---------|------|
+| News | `/media` SSR fetches a bounded news set into the single Media PLP batch; cards consume `plpNewsById` |
+| Country Recommended Media | PLP batch keys = country-rail resource ids (`civic_media_trusted`), not WORLD-only miss |
+| Trusted card body | Explicit presentation explanation; cannot claim LOCALIZED while rendering canonical |
+| Election/initiative rails | `DOMAIN_NOT_YET_MIGRATED` for Media PLP (Initiative CT path; Pack 05) |
+| ACTIVE count | **30** — unchanged |
