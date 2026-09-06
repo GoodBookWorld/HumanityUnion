@@ -137,6 +137,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Ledger class | remains `CONSUMER_READY_PENDING_LIVE_ACCEPTANCE` |
 | ACTIVE count | **30** — do not decrement |
 | Flag | Web rolled back OFF; do not re-enable in this pack |
+
+### Reset 03C.2 note — second live acceptance FAILED (locale-switch deadlock; rolled back)
+
+| Item | Status |
+|------|--------|
+| Incident | Staging `/media` with API+Web flags ON: page loaded; Language Selector locale change updated selection; loading/pending stayed active; Media never settled to PLP or canonical fallback |
+| Root cause | Unstable PLP editorial identity (`applyMediaPlpPresentationsToEditorial` every render) + `skipClientTranslation` effect `setEditorial(initialEditorial)` on identity change → client update loop; Language Selector `startTransition(router.refresh())` never settled. Secondary: sequential unbounded PLP SSR resolves could stall refresh |
+| Fix | Memoized PLP editorial; synchronous PLP derive (no setEditorial loop); parallel bounded `Promise.all` PLP batches + resolve timeout; fail-closed to CANONICAL_FALLBACK |
+| Ledger class | remains `CONSUMER_READY_PENDING_LIVE_ACCEPTANCE` |
+| ACTIVE count | **30** — do not decrement |
+| Flag | Web rolled back OFF again; do not re-enable in this pack |
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

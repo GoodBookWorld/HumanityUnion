@@ -84,13 +84,22 @@ export async function loadMediaPlpTrustedPresentations(input: {
     for (const resource of input.resources) {
       const entityId = mediaPlpTrustedEntityId(resource.id);
       const canonical = buildCanonicalTrustedPresentationNode(resource);
-      out[resource.id] = await input.resolve({
-        entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
-        entityId,
-        locale: input.locale,
-        liveCanonicalVersion: "injected",
-        canonicalPresentation: canonical,
-      });
+      try {
+        out[resource.id] = await input.resolve({
+          entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
+          entityId,
+          locale: input.locale,
+          liveCanonicalVersion: "injected",
+          canonicalPresentation: canonical,
+        });
+      } catch {
+        out[resource.id] = coherentFallback({
+          entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
+          entityId,
+          locale: input.locale,
+          presentation: canonical,
+        });
+      }
     }
     return out;
   }
@@ -158,12 +167,21 @@ export async function loadMediaPlpPrinciplePresentations(input: {
     for (const principle of input.principles) {
       const entityId = mediaPlpPrincipleEntityId(principle.id);
       const canonical = buildCanonicalPrinciplePresentationNode(principle);
-      out[principle.id] = await input.resolve({
-        entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE,
-        entityId,
-        locale: input.locale,
-        canonicalPresentation: canonical,
-      });
+      try {
+        out[principle.id] = await input.resolve({
+          entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE,
+          entityId,
+          locale: input.locale,
+          canonicalPresentation: canonical,
+        });
+      } catch {
+        out[principle.id] = coherentFallback({
+          entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE,
+          entityId,
+          locale: input.locale,
+          presentation: canonical,
+        });
+      }
     }
     return out;
   }

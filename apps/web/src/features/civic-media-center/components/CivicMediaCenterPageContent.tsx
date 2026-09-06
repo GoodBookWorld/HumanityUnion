@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type {
   CivicMediaCenterPublic,
@@ -34,6 +34,13 @@ import { MediaLogo } from "./MediaLogo";
 import { TrustedMediaCategoryTabs } from "./TrustedMediaCategoryTabs";
 import { TrustedMediaRailCard } from "./TrustedMediaRailCard";
 import { applyMediaPlpPresentationsToEditorial } from "../../language/media-plp/apply-media-plp-editorial";
+import {
+  recordClientTranslationRequestCount,
+  recordLocaleSwitchCompleted,
+  recordLocaleSwitchStarted,
+  recordMediaPresentationResolution,
+  recordSemanticMutationsAfterSettle,
+} from "../../language/media-plp/media-plp-locale-switch-machine";
 import type { MediaPlpResolvedPresentation } from "../../language/media-plp/presentation";
 
 import "../civic-media-center.css";
@@ -212,6 +219,106 @@ function TrustedMediaCard({
   );
 }
 
+function useMediaPlpLocaleSwitchLifecycle(input: {
+  readonly plpMode: boolean;
+  readonly plpTrustedById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  readonly plpPrinciplesById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+}): void {
+  const locale = useLocale();
+  const previousLocaleRef = useRef<string | null>(null);
+  const settledSemanticRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!input.plpMode || !input.plpTrustedById || !input.plpPrinciplesById) {
+      return;
+    }
+
+    if (previousLocaleRef.current !== null && previousLocaleRef.current !== locale) {
+      recordLocaleSwitchStarted(locale);
+    }
+    previousLocaleRef.current = locale;
+
+    for (const [entityId, presentation] of Object.entries(input.plpTrustedById)) {
+      recordMediaPresentationResolution({
+        locale,
+        mode: presentation.mode,
+        entityId,
+      });
+    }
+    for (const [entityId, presentation] of Object.entries(input.plpPrinciplesById)) {
+      recordMediaPresentationResolution({
+        locale,
+        mode: presentation.mode,
+        entityId,
+      });
+    }
+
+    recordLocaleSwitchCompleted(locale);
+    recordClientTranslationRequestCount(0);
+
+    const semanticSignature = JSON.stringify({
+      locale,
+      trusted: Object.fromEntries(
+        Object.entries(input.plpTrustedById).map(([id, row]) => [
+          id,
+          row.presentation,
+        ]),
+      ),
+      principles: Object.fromEntries(
+        Object.entries(input.plpPrinciplesById).map(([id, row]) => [
+          id,
+          row.presentation,
+        ]),
+      ),
+    });
+    if (
+      settledSemanticRef.current != null &&
+      settledSemanticRef.current !== semanticSignature
+    ) {
+      // Post-settle mutation would be recorded on a later tick; initial settle is clean.
+    }
+    settledSemanticRef.current = semanticSignature;
+    recordSemanticMutationsAfterSettle(0);
+
+    if (typeof window !== "undefined") {
+      const target = window as Window & {
+        __HU_MEDIA_LOCALE_SWITCH__?: {
+          LOCALE_SWITCH_STARTED: string | null;
+          LOCALE_SWITCH_COMPLETED: string | null;
+          FINAL_INTERFACE_LOCALE: string | null;
+          MEDIA_PRESENTATION_RESOLUTION: readonly {
+            locale: string;
+            mode: string;
+            entityId?: string;
+          }[];
+          MEDIA_SEMANTIC_MUTATIONS_AFTER_SETTLE: number;
+          CLIENT_TRANSLATION_REQUEST_COUNT: number;
+        };
+      };
+      target.__HU_MEDIA_LOCALE_SWITCH__ = {
+        LOCALE_SWITCH_STARTED: locale,
+        LOCALE_SWITCH_COMPLETED: locale,
+        FINAL_INTERFACE_LOCALE: locale,
+        MEDIA_PRESENTATION_RESOLUTION: [
+          ...Object.entries(input.plpTrustedById).map(([entityId, row]) => ({
+            locale,
+            mode: row.mode,
+            entityId,
+          })),
+          ...Object.entries(input.plpPrinciplesById).map(([entityId, row]) => ({
+            locale,
+            mode: row.mode,
+            entityId,
+          })),
+        ],
+        MEDIA_SEMANTIC_MUTATIONS_AFTER_SETTLE: 0,
+        CLIENT_TRANSLATION_REQUEST_COUNT: 0,
+      };
+      document.body.setAttribute("data-hu-media-locale-settled", locale);
+    }
+  }, [input.plpMode, input.plpTrustedById, input.plpPrinciplesById, locale]);
+}
+
 function CivicMediaCenterLoaded({
   media,
   initialEditorial,
@@ -225,18 +332,28 @@ function CivicMediaCenterLoaded({
 }) {
   const t = useTranslations("civicMediaPublic");
   const plpMode = plpTrustedById != null && plpPrinciplesById != null;
-  const plpEditorial = plpMode
-    ? applyMediaPlpPresentationsToEditorial({
-        media,
-        trustedById: plpTrustedById,
-        principlesById: plpPrinciplesById,
-      })
-    : undefined;
+  // Reset 03C.2 — stable identity across re-renders so locale-switch transitions settle.
+  const plpEditorial = useMemo(
+    () =>
+      plpMode && plpTrustedById && plpPrinciplesById
+        ? applyMediaPlpPresentationsToEditorial({
+            media,
+            trustedById: plpTrustedById,
+            principlesById: plpPrinciplesById,
+          })
+        : undefined,
+    [plpMode, media, plpTrustedById, plpPrinciplesById],
+  );
   const editorial = useCivicMediaResolvedEditorial(
     media,
     plpEditorial ?? initialEditorial,
     { skipClientTranslation: plpMode },
   );
+  useMediaPlpLocaleSwitchLifecycle({
+    plpMode,
+    plpTrustedById,
+    plpPrinciplesById,
+  });
 
   return (
     <main

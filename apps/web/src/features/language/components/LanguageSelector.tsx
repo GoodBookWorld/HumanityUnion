@@ -15,6 +15,7 @@ import {
 } from "../public-languages-api";
 import { markInterfaceLanguageCookieSynced } from "./InterfaceLanguageCookieSync";
 import { writeHuLangCookieViaWebRoute } from "../write-hu-lang-cookie";
+import { recordLocaleSwitchStarted } from "../media-plp/media-plp-locale-switch-machine";
 
 import "./language-selector.css";
 
@@ -151,6 +152,8 @@ export function LanguageSelector({
       if (authStatus === "authenticated") {
         markInterfaceLanguageCookieSynced(written.locale);
       }
+      // Reset 03C.2 — locale switch ownership starts here; Media PLP completes after refresh.
+      recordLocaleSwitchStarted(written.locale);
       startTransition(() => {
         router.refresh();
       });

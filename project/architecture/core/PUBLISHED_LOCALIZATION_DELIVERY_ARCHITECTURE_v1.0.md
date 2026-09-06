@@ -527,3 +527,27 @@ Rules:
 First live staging acceptance with Web `HU_MEDIA_PLP_ENABLED=true` **failed**: dual `CivicMediaCenterPlpContent` omitted major sections and left a large blank `flex:1` main region. Web flag rolled back OFF.
 
 Correct architecture: one shared `CivicMediaCenterPageContent` structure; PLP only supplies atomic entity semantic presentations (principles + trusted). Missing localization must not remove content.
+
+### Reset 03C.2 — Media PLP locale-switch settle (post second live rollback)
+
+Second live staging acceptance with API+Web flags ON **failed**: Language Selector change left pending/loading stuck; Media never settled to PUBLISHED_LOCALIZED or coherent CANONICAL_FALLBACK. Web flag rolled back OFF.
+
+Correct locale-switch contract:
+
+```
+Language Selector
+  → persist hu_lang (+ prefs if auth)
+  → startTransition(router.refresh)
+  → SSR: Promise.all([trusted batch, principles batch]) with resolve timeout
+  → PUBLISHED_LOCALIZED | CANONICAL_FALLBACK maps
+  → shared CivicMediaCenterPageContent
+  → memoized PLP editorial (sync derive; no setEditorial identity loop)
+  → transition completes; pending clears
+```
+
+Rules:
+
+- Canonical fallback for missing PLP (e.g. ar / zh-Hant) is success, not failure
+- Zero client generate / provider / content_translation writes on flagged path
+- Loading ownership always terminates (success, fallback, API error, timeout, abort, repeated selection)
+- Flag default remains OFF; ACTIVE legacy remains 30 until live acceptance

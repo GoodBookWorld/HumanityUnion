@@ -332,13 +332,20 @@ export function useCivicMediaResolvedEditorial(
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
   const requestGenerationRef = useRef(0);
   const skipClientTranslation = options?.skipClientTranslation === true;
+  /**
+   * Reset 03C.2 — PLP path derives editorial synchronously.
+   * Never setEditorial from an unstable parent identity (that loop kept
+   * LanguageSelector useTransition pending after locale switch).
+   */
+  const plpDerivedEditorial = skipClientTranslation
+    ? (initialEditorial ?? buildCanonicalCivicMediaEditorial(media))
+    : null;
   const [editorial, setEditorial] = useState(
     () => initialEditorial ?? buildCanonicalCivicMediaEditorial(media),
   );
 
   useEffect(() => {
     if (skipClientTranslation) {
-      setEditorial(initialEditorial ?? buildCanonicalCivicMediaEditorial(media));
       return;
     }
 
@@ -440,5 +447,8 @@ export function useCivicMediaResolvedEditorial(
     readingContext.translationPreference,
   ]);
 
+  if (skipClientTranslation) {
+    return plpDerivedEditorial ?? buildCanonicalCivicMediaEditorial(media);
+  }
   return editorial;
 }
