@@ -282,6 +282,7 @@ Mandatory (staging has already OOMed under corpus hydrate):
 | API public request | Never hydrates translation corpus |
 | Localization read | No full `Map` bootstrap; direct indexed lookup |
 | Provider | No Gemini/provider import on read path |
+| Localization build provider | Must not run inside normal API/Web request processes; thin isolated boundary for controlled operators (Reset 03B.2); ultimate placement outside participant-facing render |
 | Worker | No worker import in Web |
 | Concurrency | Bounded worker default = 1 |
 | Payload | Bounded translation / snapshot payload size |
@@ -483,3 +484,20 @@ No public route consumes snapshots until Reset 03+ enablement. ACTIVE legacy cou
 - Shared trusted entityId for `/media` + Country Recommended Media
 - Publication hook `notifyMediaCanonicalPublishedForLocalizationBuild` = **INACTIVE**
 - ACTIVE legacy count remains **30**; see ledger Reset 03 note
+
+### Reset 03B.2 — localization build provider execution placement
+
+**Normative rule**
+
+| Process class | Allowed |
+|---------------|---------|
+| **PUBLIC RUNTIME** (API/Web request) | Read published PLP or canonical fallback only. No localization-build provider execution. |
+| **LOCALIZATION BUILD EXECUTION** | Bounded isolated thin provider boundary only. |
+
+Normal participant-facing render/request processes must **not** host localization-build provider execution (Gemini / translation transport).
+
+For the current controlled staging operator (`materialize:media-plp`), the thin boundary under `media-plp-materializer/` is **temporary operational tooling**. It must not import API application bootstrap, routes, services barrels, workers, corpus hydration, warm/reconcile, search index, or Web code.
+
+Do **not** create a new paid Render worker/service for this path unless separately approved. Ultimate placement remains outside normal request execution.
+
+**Incident class (03B.2):** importing `providers/gemini-translation-provider` pulled `language-registry/index` (routes/services) → ~350 local modules and OOM on Render Starter 512MB. Thin transport uses native `fetch` + `translation.config` + terminology seed only.

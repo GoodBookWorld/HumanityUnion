@@ -1,5 +1,5 @@
 /**
- * Reset 03B — RSS phase instrumentation for Media PLP materializer.
+ * Reset 03B / 03B.2 — RSS phase instrumentation for Media PLP materializer.
  */
 
 export type MediaPlpMaterializerMemoryPhases = {
@@ -8,6 +8,7 @@ export type MediaPlpMaterializerMemoryPhases = {
   readonly RSS_AFTER_MONGO_CONNECT_MB: number;
   readonly RSS_AFTER_SOURCE_LOOKUP_MB: number;
   readonly RSS_AFTER_TRANSLATION_LOOKUP_MB: number;
+  readonly RSS_AFTER_THIN_PROVIDER_IMPORT_MB: number | null;
   readonly RSS_BEFORE_PROVIDER_MB: number | null;
   readonly RSS_AFTER_PROVIDER_MB: number | null;
   readonly RSS_AFTER_PUBLISH_MB: number | null;
@@ -23,6 +24,7 @@ let afterImportRss = startRss;
 let afterMongoRss = startRss;
 let afterSourceRss = startRss;
 let afterTranslationRss = startRss;
+let afterThinProviderImportRss: number | null = null;
 let beforeProviderRss: number | null = null;
 let afterProviderRss: number | null = null;
 let afterPublishRss: number | null = null;
@@ -38,6 +40,7 @@ function bumpPeak(value = rssMb()): number {
 export function captureMaterializerStart(): void {
   startRss = rssMb();
   peakRss = startRss;
+  afterThinProviderImportRss = null;
   beforeProviderRss = null;
   afterProviderRss = null;
   afterPublishRss = null;
@@ -57,6 +60,11 @@ export function captureMaterializerAfterSourceLookup(): void {
 
 export function captureMaterializerAfterTranslationLookup(): void {
   afterTranslationRss = bumpPeak();
+}
+
+export function captureMaterializerAfterThinProviderImport(): number {
+  afterThinProviderImportRss = bumpPeak();
+  return afterThinProviderImportRss;
 }
 
 export function captureMaterializerBeforeProvider(): number {
@@ -85,6 +93,7 @@ export function getMediaPlpMaterializerMemoryPhases(): MediaPlpMaterializerMemor
     RSS_AFTER_MONGO_CONNECT_MB: afterMongoRss,
     RSS_AFTER_SOURCE_LOOKUP_MB: afterSourceRss,
     RSS_AFTER_TRANSLATION_LOOKUP_MB: afterTranslationRss,
+    RSS_AFTER_THIN_PROVIDER_IMPORT_MB: afterThinProviderImportRss,
     RSS_BEFORE_PROVIDER_MB: beforeProviderRss,
     RSS_AFTER_PROVIDER_MB: afterProviderRss,
     RSS_AFTER_PUBLISH_MB: afterPublishRss,

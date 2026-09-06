@@ -1,6 +1,6 @@
 /**
- * Reset 03B — provider dynamic-import boundary (execute only).
- * Never imported at CLI startup / dry-run / lookup phases.
+ * Reset 03B.2 — thin provider execution boundary (execute only).
+ * Never silently falls back to the heavy Gemini provider module / registry barrel.
  */
 
 import type { LanguageCode } from "@hu/types";
@@ -12,6 +12,12 @@ import {
   getMediaPlpMaterializerCounters,
 } from "./counters.js";
 import { resolveMediaPlpOperatorMaxProviderInputBytes } from "./constants.js";
+import {
+  createThinMediaPlpProviderFromConfig,
+  MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID,
+} from "./thin-gemini-transport.js";
+
+export const MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY = "THIN" as const;
 
 export type ProviderBoundaryResult =
   | {
@@ -19,6 +25,8 @@ export type ProviderBoundaryResult =
       readonly values: Readonly<Record<string, string>>;
       readonly PROVIDER_INPUT_BYTES: number;
       readonly providerId: string;
+      readonly PROVIDER_EXECUTION_BOUNDARY: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
+      readonly PROVIDER_TRANSPORT: string;
     }
   | {
       readonly ok: false;
@@ -26,31 +34,76 @@ export type ProviderBoundaryResult =
         | "PAYLOAD_LIMIT"
         | "PROVIDER_CALL_CAP"
         | "PROVIDER_FAILURE"
-        | "PARSE_FAILURE";
+        | "PARSE_FAILURE"
+        | "WRONG_TARGET_LANGUAGE"
+        | "PARTIAL"
+        | "TIMEOUT";
       readonly PROVIDER_INPUT_BYTES: number;
       readonly message: string;
+      readonly PROVIDER_EXECUTION_BOUNDARY: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
+      readonly PROVIDER_TRANSPORT: string;
     };
 
+export type ThinProviderImportResult = {
+  readonly provider: TranslationProvider;
+  readonly PROVIDER_EXECUTION_BOUNDARY: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
+  readonly PROVIDER_TRANSPORT: string;
+};
+
 /**
- * Dynamically import a TranslationProvider implementation.
- * Gemini module loads only when TRANSLATION_PROVIDER=gemini.
+ * Import the thin Media PLP provider execution boundary only.
+ * Never imports the heavy Gemini provider module (registry barrel).
  */
-export async function importMediaPlpMaterializerProvider(): Promise<TranslationProvider> {
+export async function importMediaPlpMaterializerProvider(): Promise<ThinProviderImportResult> {
   markMaterializerProviderImported();
   const { resolveTranslationConfig } = await import("../translation.config.js");
   const config = resolveTranslationConfig();
-  if (config.provider === "gemini") {
-    const { GeminiTranslationProvider } = await import(
-      "../providers/gemini-translation-provider.js"
-    );
-    const { assertGeminiTranslationConfigured } = await import("../translation.config.js");
-    assertGeminiTranslationConfigured(config);
-    return new GeminiTranslationProvider(config);
+  const created = await createThinMediaPlpProviderFromConfig(config);
+  return {
+    provider: created.provider,
+    PROVIDER_EXECUTION_BOUNDARY: MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY,
+    PROVIDER_TRANSPORT: created.PROVIDER_TRANSPORT,
+  };
+}
+
+export function validateMediaPlpProviderLocalizationValues(input: {
+  readonly locale: LanguageCode;
+  readonly autoValues: Readonly<Record<string, string>>;
+  readonly translated: Readonly<Record<string, string>>;
+}): { readonly ok: true } | { readonly ok: false; readonly reason: "PARTIAL" | "WRONG_TARGET_LANGUAGE"; readonly message: string } {
+  const missing: string[] = [];
+  for (const key of Object.keys(input.autoValues)) {
+    const value = input.translated[key];
+    if (typeof value !== "string" || !value.trim()) {
+      missing.push(key);
+    }
   }
-  const { DeterministicTranslationProvider } = await import(
-    "../providers/deterministic-translation-provider.js"
-  );
-  return new DeterministicTranslationProvider();
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      reason: "PARTIAL",
+      message: `Provider localization missing AUTO paths: ${missing.join(", ")}`,
+    };
+  }
+
+  if (input.locale !== "en") {
+    let anyChanged = false;
+    for (const key of Object.keys(input.autoValues)) {
+      if (input.translated[key]!.trim() !== input.autoValues[key]!.trim()) {
+        anyChanged = true;
+        break;
+      }
+    }
+    if (!anyChanged) {
+      return {
+        ok: false,
+        reason: "WRONG_TARGET_LANGUAGE",
+        message: `Provider returned source-identical values for locale=${input.locale}; refusing publish.`,
+      };
+    }
+  }
+
+  return { ok: true };
 }
 
 export async function callMediaPlpMaterializerProviderOnce(input: {
@@ -60,7 +113,10 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
   readonly sourceRecordId: string;
   readonly sourceVersion: string;
   readonly maxInputBytes?: number;
+  readonly PROVIDER_TRANSPORT?: string;
 }): Promise<ProviderBoundaryResult> {
+  const transport = input.PROVIDER_TRANSPORT ?? MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID;
+  const boundary = MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
   const counters = getMediaPlpMaterializerCounters();
   if (counters.PROVIDER_CALL_COUNT >= 1) {
     return {
@@ -68,6 +124,8 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       reason: "PROVIDER_CALL_CAP",
       PROVIDER_INPUT_BYTES: 0,
       message: "Hard fail: PROVIDER_CALL_COUNT would exceed 1.",
+      PROVIDER_EXECUTION_BOUNDARY: boundary,
+      PROVIDER_TRANSPORT: transport,
     };
   }
 
@@ -80,6 +138,8 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       reason: "PAYLOAD_LIMIT",
       PROVIDER_INPUT_BYTES: bytes,
       message: `Provider input ${bytes} bytes exceeds limit ${maxBytes}.`,
+      PROVIDER_EXECUTION_BOUNDARY: boundary,
+      PROVIDER_TRANSPORT: transport,
     };
   }
 
@@ -90,6 +150,8 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
       reason: "PROVIDER_CALL_CAP",
       PROVIDER_INPUT_BYTES: bytes,
       message: "Hard fail: PROVIDER_CALL_COUNT exceeded 1.",
+      PROVIDER_EXECUTION_BOUNDARY: boundary,
+      PROVIDER_TRANSPORT: transport,
     };
   }
 
@@ -112,6 +174,8 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         reason: "PARSE_FAILURE",
         PROVIDER_INPUT_BYTES: bytes,
         message: "Provider returned non-JSON structured payload.",
+        PROVIDER_EXECUTION_BOUNDARY: boundary,
+        PROVIDER_TRANSPORT: transport,
       };
     }
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -120,6 +184,8 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         reason: "PARSE_FAILURE",
         PROVIDER_INPUT_BYTES: bytes,
         message: "Provider returned unexpected structured shape.",
+        PROVIDER_EXECUTION_BOUNDARY: boundary,
+        PROVIDER_TRANSPORT: transport,
       };
     }
     const values: Record<string, string> = {};
@@ -128,18 +194,46 @@ export async function callMediaPlpMaterializerProviderOnce(input: {
         values[key] = value;
       }
     }
+
+    const validated = validateMediaPlpProviderLocalizationValues({
+      locale: input.locale,
+      autoValues: input.autoValues,
+      translated: values,
+    });
+    if (!validated.ok) {
+      return {
+        ok: false,
+        reason: validated.reason,
+        PROVIDER_INPUT_BYTES: bytes,
+        message: validated.message,
+        PROVIDER_EXECUTION_BOUNDARY: boundary,
+        PROVIDER_TRANSPORT: transport,
+      };
+    }
+
     return {
       ok: true,
       values,
       PROVIDER_INPUT_BYTES: bytes,
       providerId: result.providerId,
+      PROVIDER_EXECUTION_BOUNDARY: boundary,
+      PROVIDER_TRANSPORT: transport,
     };
   } catch (error) {
+    const message = error instanceof Error ? error.message : "provider failure";
+    const isTimeout =
+      (error instanceof Error &&
+        ("code" in error
+          ? (error as { code?: string }).code === "timeout"
+          : false)) ||
+      /timed out/i.test(message);
     return {
       ok: false,
-      reason: "PROVIDER_FAILURE",
+      reason: isTimeout ? "TIMEOUT" : "PROVIDER_FAILURE",
       PROVIDER_INPUT_BYTES: bytes,
-      message: error instanceof Error ? error.message : "provider failure",
+      message,
+      PROVIDER_EXECUTION_BOUNDARY: boundary,
+      PROVIDER_TRANSPORT: transport,
     };
   }
 }

@@ -1,14 +1,16 @@
 /**
- * Reset 03B — Media PLP materializer exports (thin operator surface).
+ * Reset 03B / 03B.2 — Media PLP materializer exports (thin operator surface).
  * Do not re-export through language/index.ts.
  */
 
 export {
   MEDIA_PLP_OPERATOR_DEFAULT_MAX_PROVIDER_INPUT_BYTES,
   MEDIA_PLP_OPERATOR_DEFAULT_MAX_RSS_MB,
+  MEDIA_PLP_OPERATOR_DEFAULT_PRE_PROVIDER_MAX_RSS_MB,
   MEDIA_PLP_STAGING_DATABASE,
   resolveMediaPlpOperatorMaxProviderInputBytes,
   resolveMediaPlpOperatorMaxRssMb,
+  resolveMediaPlpOperatorPreProviderMaxRssMb,
 } from "./constants.js";
 export {
   getMediaPlpMaterializerCounters,
@@ -17,7 +19,10 @@ export {
   markMaterializerSourceWriteForTests,
   resetMediaPlpMaterializerCountersForTests,
 } from "./counters.js";
-export { assertMediaPlpMaterializerImportIsolation } from "./import-guards.js";
+export {
+  assertMediaPlpMaterializerImportIsolation,
+  assertThinMediaPlpProviderImportGraph,
+} from "./import-guards.js";
 export {
   parseMediaPlpMaterializerArgs,
   type MediaPlpMaterializerArgs,
@@ -41,3 +46,17 @@ export {
   evaluateMediaPlpMaterializerExecuteGuards,
   evaluateMediaPlpMaterializerProductionRefusal,
 } from "./staging-guards.js";
+export {
+  MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY,
+  importMediaPlpMaterializerProvider,
+  callMediaPlpMaterializerProviderOnce,
+  validateMediaPlpProviderLocalizationValues,
+} from "./provider-boundary.js";
+export {
+  MEDIA_PLP_THIN_GEMINI_TRANSPORT_ID,
+  MEDIA_PLP_FAKE_LOCAL_TRANSPORT_ID,
+  MEDIA_PLP_DETERMINISTIC_TRANSPORT_ID,
+  ThinGeminiMediaPlpTransport,
+  FakeLocalMediaPlpTransport,
+  createThinMediaPlpProviderFromConfig,
+} from "./thin-gemini-transport.js";

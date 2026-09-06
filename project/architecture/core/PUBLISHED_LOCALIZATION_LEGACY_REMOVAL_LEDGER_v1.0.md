@@ -111,3 +111,16 @@ Media PLP path is **AVAILABLE** but **not the runtime default**.
 | L13 resolve-public-news-presentation | `ACTIVE_LEGACY_FALLBACK` |
 
 Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure → coherent CANONICAL_FALLBACK (does not re-enter generate-on-miss overlays).
+
+---
+
+## Reset 03B.2 note (2026-09-05) — thin provider execution boundary
+
+| Item | Status |
+|------|--------|
+| Heavy path | `materialize:media-plp` → `gemini-translation-provider` → `language-registry/index` → routes/services/search/auth (~350 modules) — **FORBIDDEN** for operator execute |
+| Thin path | `media-plp-materializer/thin-gemini-transport` + `translation.config` + terminology seed — native Generative Language HTTP |
+| Boundary report | `PROVIDER_EXECUTION_BOUNDARY=THIN`, `PROVIDER_TRANSPORT=gemini_generativelanguage_http` (or `fake_local` / `deterministic_local`) |
+| Placement | Localization build provider execution outside public runtime; thin operator is temporary tooling — **no new Render worker** unless approved |
+| Durability (03B.1) | Unchanged: `--mongo` requires Mongo PLP persistence; durable read-back before `PUBLISHED` |
+| Flag | `HU_MEDIA_PLP_ENABLED` remains default OFF; ACTIVE legacy count **30** |

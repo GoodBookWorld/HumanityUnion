@@ -158,6 +158,7 @@ function fixtureDeps(input?: {
         } satisfies TranslationProvider)
       );
     },
+    providerTransport: "fake_local",
     publish: input?.publish,
   };
 }
@@ -337,11 +338,14 @@ describe("Reset 03B Media PLP materializer", () => {
     const importProviderCalls = { count: 0 };
     const result = await runMediaPlpMaterializer(
       identityArgv(["--execute"]),
-      fixtureDeps({
-        importProviderCalls,
-        maxRssMb: 1,
-        currentRssMb: () => 50,
-      }),
+      {
+        ...fixtureDeps({
+          importProviderCalls,
+          maxRssMb: 400,
+          currentRssMb: () => 50,
+        }),
+        preProviderMaxRssMb: 1,
+      },
     );
     assert.equal(result.exitCode, 1);
     assert.equal(result.report!.abortReason, "RSS_GUARD_BEFORE_PROVIDER");

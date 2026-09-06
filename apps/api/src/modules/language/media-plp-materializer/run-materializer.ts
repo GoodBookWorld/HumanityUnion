@@ -22,6 +22,7 @@ import {
 import {
   resolveMediaPlpOperatorMaxProviderInputBytes,
   resolveMediaPlpOperatorMaxRssMb,
+  resolveMediaPlpOperatorPreProviderMaxRssMb,
 } from "./constants.js";
 import { assertMediaPlpMaterializerImportIsolation } from "./import-guards.js";
 import { loadMediaPlpMaterializerLocale } from "./locale-lookup.js";
@@ -31,6 +32,7 @@ import {
   captureMaterializerAfterPublish,
   captureMaterializerAfterProvider,
   captureMaterializerAfterSourceLookup,
+  captureMaterializerAfterThinProviderImport,
   captureMaterializerAfterTranslationLookup,
   captureMaterializerBeforeProvider,
   captureMaterializerStart,
@@ -57,7 +59,12 @@ import type { MediaPlpExistingTranslationLookup } from "./translation-reuse.js";
 import type { MediaPlpMaterializerPlpInspect } from "./plp-inspect.js";
 import type { MediaPlpMaterializerLocaleLookup } from "./locale-lookup.js";
 import type { TranslationProvider } from "../translation-provider.js";
-import type { ProviderBoundaryResult } from "./provider-boundary.js";
+import type {
+  ProviderBoundaryResult,
+  ThinProviderImportResult,
+} from "./provider-boundary.js";
+import { MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY } from "./provider-boundary.js";
+import { MEDIA_PLP_FAKE_LOCAL_TRANSPORT_ID } from "./thin-gemini-transport.js";
 
 export type MediaPlpMaterializerReport = {
   readonly pack: "RESET_03B";
@@ -78,6 +85,8 @@ export type MediaPlpMaterializerReport = {
   readonly LOCALIZATION_SOURCE: "EXISTING_CURRENT" | "PROVIDER" | "NONE" | "UNCHANGED_PLP";
   readonly PROVIDER_IMPORTED: boolean;
   readonly PROVIDER_CALL_COUNT: number;
+  readonly PROVIDER_EXECUTION_BOUNDARY: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY | null;
+  readonly PROVIDER_TRANSPORT: string | null;
   readonly AUTO_NODE_COUNT: number;
   readonly PROVIDER_INPUT_BYTES: number;
   readonly PLP_WRITES: number;
@@ -92,6 +101,7 @@ export type MediaPlpMaterializerReport = {
   readonly PLP_DURABILITY_VERIFIED: boolean | null;
   readonly IMPORT_BOUNDARY_OK: boolean;
   readonly RSS_GUARD_MB: number;
+  readonly PRE_PROVIDER_RSS_GUARD_MB: number;
   readonly PROVIDER_INPUT_LIMIT_BYTES: number;
   readonly HU_MEDIA_PLP_ENABLED: string;
   readonly database: string | null;
@@ -119,7 +129,8 @@ export type MediaPlpMaterializerDeps = {
   readonly loadLocale?: (
     locale: MediaPlpMaterializerArgs["locale"],
   ) => Promise<MediaPlpMaterializerLocaleLookup>;
-  readonly importProvider?: () => Promise<TranslationProvider>;
+  readonly importProvider?: () => Promise<TranslationProvider | ThinProviderImportResult>;
+  readonly providerTransport?: string;
   readonly publish?: typeof publishMediaPlpEntity;
   readonly verifyDurability?: typeof verifyDurableMediaPlpCurrent;
   readonly connect?: () => Promise<void>;
@@ -128,6 +139,7 @@ export type MediaPlpMaterializerDeps = {
   readonly resolveDatabase?: () => string | null;
   readonly platformMode?: string | null;
   readonly maxRssMb?: number;
+  readonly preProviderMaxRssMb?: number;
   readonly maxProviderInputBytes?: number;
   readonly currentRssMb?: () => number;
   readonly skipImportBoundaryCheck?: boolean;
@@ -151,6 +163,8 @@ function buildReport(input: {
   readonly database: string | null;
   readonly persistence: MediaPlpPersistenceObservability;
   readonly durabilityVerified: boolean | null;
+  readonly providerExecutionBoundary?: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY | null;
+  readonly providerTransport?: string | null;
 }): MediaPlpMaterializerReport {
   const counters = getMediaPlpMaterializerCounters();
   return {
@@ -172,6 +186,8 @@ function buildReport(input: {
     LOCALIZATION_SOURCE: input.localizationSource,
     PROVIDER_IMPORTED: counters.PROVIDER_IMPORTED,
     PROVIDER_CALL_COUNT: counters.PROVIDER_CALL_COUNT,
+    PROVIDER_EXECUTION_BOUNDARY: input.providerExecutionBoundary ?? null,
+    PROVIDER_TRANSPORT: input.providerTransport ?? null,
     AUTO_NODE_COUNT: input.source.autoPaths.length,
     PROVIDER_INPUT_BYTES: input.providerInputBytes,
     PLP_WRITES: counters.PLP_WRITES,
@@ -186,6 +202,7 @@ function buildReport(input: {
     PLP_DURABILITY_VERIFIED: input.durabilityVerified,
     IMPORT_BOUNDARY_OK: true,
     RSS_GUARD_MB: resolveMediaPlpOperatorMaxRssMb(),
+    PRE_PROVIDER_RSS_GUARD_MB: resolveMediaPlpOperatorPreProviderMaxRssMb(),
     PROVIDER_INPUT_LIMIT_BYTES: resolveMediaPlpOperatorMaxProviderInputBytes(),
     HU_MEDIA_PLP_ENABLED: process.env.HU_MEDIA_PLP_ENABLED ?? "(unset)",
     database: input.database,
@@ -274,12 +291,16 @@ export async function runMediaPlpMaterializer(
       "persistence" | "durabilityVerified"
     > & {
       readonly durabilityVerified?: boolean | null;
+      readonly providerExecutionBoundary?: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY | null;
+      readonly providerTransport?: string | null;
     },
   ): MediaPlpMaterializerReport =>
     buildReport({
       ...partial,
       persistence,
       durabilityVerified: partial.durabilityVerified ?? null,
+      providerExecutionBoundary: partial.providerExecutionBoundary ?? null,
+      providerTransport: partial.providerTransport ?? null,
     });
 
   let connected = false;
@@ -442,15 +463,20 @@ export async function runMediaPlpMaterializer(
     let localizationValues: Record<string, string> = {};
     let localizationSource: MediaPlpMaterializerReport["LOCALIZATION_SOURCE"] = "NONE";
     let providerInputBytes = 0;
+    let providerExecutionBoundary: typeof MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY | null =
+      null;
+    let providerTransport: string | null = null;
 
     if (wouldReuse) {
       localizationValues = { ...translation.values };
       localizationSource = "EXISTING_CURRENT";
     } else {
       const maxRss = deps.maxRssMb ?? resolveMediaPlpOperatorMaxRssMb();
+      const preProviderMaxRss =
+        deps.preProviderMaxRssMb ?? resolveMediaPlpOperatorPreProviderMaxRssMb();
       const rssNow = (deps.currentRssMb ?? currentMaterializerRssMb)();
       captureMaterializerBeforeProvider();
-      if (rssNow >= maxRss) {
+      if (rssNow >= preProviderMaxRss) {
         const report = withPersistence({
           args,
           source,
@@ -468,7 +494,7 @@ export async function runMediaPlpMaterializer(
         return {
           exitCode: 1,
           report,
-          errorMessage: `RSS guard aborted before provider (${rssNow} >= ${maxRss} MB).`,
+          errorMessage: `Pre-provider RSS guard aborted (${rssNow} >= ${preProviderMaxRss} MB).`,
         };
       }
 
@@ -497,8 +523,56 @@ export async function runMediaPlpMaterializer(
       }
 
       const providerModule = await import("./provider-boundary.js");
-      const provider =
-        (await (deps.importProvider ?? providerModule.importMediaPlpMaterializerProvider)()) as TranslationProvider;
+      const imported = await (deps.importProvider ??
+        providerModule.importMediaPlpMaterializerProvider)();
+      captureMaterializerAfterThinProviderImport();
+
+      let provider: TranslationProvider;
+      if (
+        imported &&
+        typeof imported === "object" &&
+        "PROVIDER_TRANSPORT" in imported &&
+        "provider" in imported
+      ) {
+        const thin = imported as ThinProviderImportResult;
+        provider = thin.provider;
+        providerExecutionBoundary = thin.PROVIDER_EXECUTION_BOUNDARY;
+        providerTransport = thin.PROVIDER_TRANSPORT;
+      } else {
+        provider = imported as TranslationProvider;
+        providerExecutionBoundary = MEDIA_PLP_PROVIDER_EXECUTION_BOUNDARY;
+        providerTransport =
+          deps.providerTransport ?? MEDIA_PLP_FAKE_LOCAL_TRANSPORT_ID;
+      }
+
+      // Fail closed: thin Gemini transport always exposes transportId.
+      // Heavy Gemini class instances lack that marker on this operator path.
+      const thinMarker = (provider as { transportId?: string }).transportId;
+      if (provider.providerId === "gemini" && !thinMarker) {
+        const report = withPersistence({
+          args,
+          source,
+          plp,
+          translation,
+          wouldReuse: false,
+          wouldCallProvider: true,
+          wouldPublish: false,
+          localizationSource: "NONE",
+          providerInputBytes: estimatedProviderBytes,
+          plpOutcome: null,
+          abortReason: "HEAVY_PROVIDER_REFUSED",
+          database,
+          providerExecutionBoundary,
+          providerTransport,
+        });
+        return {
+          exitCode: 2,
+          report,
+          errorMessage:
+            "materialize:media-plp refused heavy Gemini provider; thin boundary required.",
+        };
+      }
+
       const providerResult: ProviderBoundaryResult =
         await providerModule.callMediaPlpMaterializerProviderOnce({
           provider,
@@ -507,8 +581,11 @@ export async function runMediaPlpMaterializer(
           sourceRecordId: `${args.entityType}:${args.entityId}`,
           sourceVersion: source.CANONICAL_VERSION,
           maxInputBytes: maxBytes,
+          PROVIDER_TRANSPORT: providerTransport,
         });
       captureMaterializerAfterProvider();
+      providerExecutionBoundary = providerResult.PROVIDER_EXECUTION_BOUNDARY;
+      providerTransport = providerResult.PROVIDER_TRANSPORT;
 
       if (!providerResult.ok) {
         const report = withPersistence({
@@ -524,6 +601,8 @@ export async function runMediaPlpMaterializer(
           plpOutcome: null,
           abortReason: providerResult.reason,
           database,
+          providerExecutionBoundary,
+          providerTransport,
         });
         return { exitCode: 1, report, errorMessage: providerResult.message };
       }
@@ -543,6 +622,8 @@ export async function runMediaPlpMaterializer(
           plpOutcome: null,
           abortReason: "RSS_GUARD_AFTER_PROVIDER",
           database,
+          providerExecutionBoundary,
+          providerTransport,
         });
         return {
           exitCode: 1,
@@ -551,9 +632,63 @@ export async function runMediaPlpMaterializer(
         };
       }
 
+      // Exact locale + unchanged canonicalVersion before any publish.
+      const expectedLocale = args.locale;
+      const expectedCanonicalVersion = source.CANONICAL_VERSION;
+      if (expectedLocale !== args.locale || !expectedCanonicalVersion) {
+        const report = withPersistence({
+          args,
+          source,
+          plp,
+          translation,
+          wouldReuse: false,
+          wouldCallProvider: true,
+          wouldPublish: false,
+          localizationSource: "NONE",
+          providerInputBytes: providerResult.PROVIDER_INPUT_BYTES,
+          plpOutcome: null,
+          abortReason: !expectedCanonicalVersion
+            ? "CANONICAL_VERSION_CHANGED"
+            : "LOCALE_MISMATCH",
+          database,
+          providerExecutionBoundary,
+          providerTransport,
+        });
+        return {
+          exitCode: 1,
+          report,
+          errorMessage: "Locale/canonicalVersion invariant failed after provider; refusing publish.",
+        };
+      }
+
       localizationValues = { ...providerResult.values };
       localizationSource = "PROVIDER";
       providerInputBytes = providerResult.PROVIDER_INPUT_BYTES;
+    }
+
+    const publishCanonicalVersion = source.CANONICAL_VERSION;
+    if (!publishCanonicalVersion) {
+      const report = withPersistence({
+        args,
+        source,
+        plp,
+        translation,
+        wouldReuse,
+        wouldCallProvider: localizationSource === "PROVIDER",
+        wouldPublish: false,
+        localizationSource,
+        providerInputBytes,
+        plpOutcome: null,
+        abortReason: "CANONICAL_VERSION_MISSING",
+        database,
+        providerExecutionBoundary,
+        providerTransport,
+      });
+      return {
+        exitCode: 1,
+        report,
+        errorMessage: "canonicalVersion required before publish.",
+      };
     }
 
     const contentRevision = (plp.PLP_CONTENT_REVISION ?? 0) + 1;
@@ -562,7 +697,7 @@ export async function runMediaPlpMaterializer(
       entityType: args.entityType,
       entityId: args.entityId,
       locale: args.locale,
-      canonicalVersion: source.CANONICAL_VERSION,
+      canonicalVersion: publishCanonicalVersion,
       contentRevision,
       canonicalPresentation: source.canonicalPresentation!,
       layers: [
@@ -591,6 +726,8 @@ export async function runMediaPlpMaterializer(
           publishResult.outcome === "NOT_READY" ? "PARTIAL_OR_NOT_READY" : publishResult.outcome,
         database,
         durabilityVerified: false,
+        providerExecutionBoundary,
+        providerTransport,
       });
       return {
         exitCode: 1,
@@ -607,7 +744,7 @@ export async function runMediaPlpMaterializer(
       entityType: args.entityType,
       entityId: args.entityId,
       locale: args.locale,
-      canonicalVersion: source.CANONICAL_VERSION,
+      canonicalVersion: publishCanonicalVersion,
       requireMongo: !deps.skipMongoPersistenceRequire,
     });
 
@@ -626,6 +763,8 @@ export async function runMediaPlpMaterializer(
         abortReason: "DURABILITY_VERIFICATION_FAILED",
         database,
         durabilityVerified: false,
+        providerExecutionBoundary,
+        providerTransport,
       });
       return {
         exitCode: 1,
@@ -648,6 +787,8 @@ export async function runMediaPlpMaterializer(
       abortReason: null,
       database,
       durabilityVerified: true,
+      providerExecutionBoundary,
+      providerTransport,
     });
     void PUBLISHED_LOCALIZATION_SCHEMA_VERSION;
     return { exitCode: 0, report, errorMessage: null };
@@ -689,6 +830,8 @@ export function printMediaPlpMaterializerReport(
     `LOCALIZATION_SOURCE=${report.LOCALIZATION_SOURCE}`,
     `PROVIDER_IMPORTED=${report.PROVIDER_IMPORTED}`,
     `PROVIDER_CALL_COUNT=${report.PROVIDER_CALL_COUNT}`,
+    `PROVIDER_EXECUTION_BOUNDARY=${report.PROVIDER_EXECUTION_BOUNDARY ?? ""}`,
+    `PROVIDER_TRANSPORT=${report.PROVIDER_TRANSPORT ?? ""}`,
     `AUTO_NODE_COUNT=${report.AUTO_NODE_COUNT}`,
     `PROVIDER_INPUT_BYTES=${report.PROVIDER_INPUT_BYTES}`,
     `PLP_WRITES=${report.PLP_WRITES}`,
@@ -703,6 +846,7 @@ export function printMediaPlpMaterializerReport(
     `PLP_DURABILITY_VERIFIED=${report.PLP_DURABILITY_VERIFIED ?? ""}`,
     `IMPORT_BOUNDARY_OK=${report.IMPORT_BOUNDARY_OK}`,
     `RSS_GUARD_MB=${report.RSS_GUARD_MB}`,
+    `PRE_PROVIDER_RSS_GUARD_MB=${report.PRE_PROVIDER_RSS_GUARD_MB}`,
     `PROVIDER_INPUT_LIMIT_BYTES=${report.PROVIDER_INPUT_LIMIT_BYTES}`,
     `HU_MEDIA_PLP_ENABLED=${report.HU_MEDIA_PLP_ENABLED}`,
     `database=${report.database ?? ""}`,
@@ -713,6 +857,7 @@ export function printMediaPlpMaterializerReport(
     `RSS_AFTER_MONGO_CONNECT_MB=${report.memory.RSS_AFTER_MONGO_CONNECT_MB}`,
     `RSS_AFTER_SOURCE_LOOKUP_MB=${report.memory.RSS_AFTER_SOURCE_LOOKUP_MB}`,
     `RSS_AFTER_TRANSLATION_LOOKUP_MB=${report.memory.RSS_AFTER_TRANSLATION_LOOKUP_MB}`,
+    `RSS_AFTER_THIN_PROVIDER_IMPORT_MB=${report.memory.RSS_AFTER_THIN_PROVIDER_IMPORT_MB ?? ""}`,
     `RSS_BEFORE_PROVIDER_MB=${report.memory.RSS_BEFORE_PROVIDER_MB ?? ""}`,
     `RSS_AFTER_PROVIDER_MB=${report.memory.RSS_AFTER_PROVIDER_MB ?? ""}`,
     `RSS_AFTER_PUBLISH_MB=${report.memory.RSS_AFTER_PUBLISH_MB ?? ""}`,
