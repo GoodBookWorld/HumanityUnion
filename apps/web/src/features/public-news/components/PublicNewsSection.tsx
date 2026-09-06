@@ -46,6 +46,11 @@ export interface PublicNewsSectionProps {
   heading?: string;
   description?: string;
   className?: string;
+  /**
+   * Reset 03E — on Media PLP path, never generate-on-read for news cards.
+   * Missing published localization → coherent canonical item.
+   */
+  disableOnDemandTranslation?: boolean;
 }
 
 function hasActiveDiscoveryFilters(filters: PublicNewsFilters): boolean {
@@ -71,6 +76,7 @@ export function PublicNewsSection({
   heading,
   description,
   className,
+  disableOnDemandTranslation = false,
 }: PublicNewsSectionProps = {}) {
   const locale = useLocale();
   const tDiscovery = useTranslations("publicNews.discovery");
@@ -333,7 +339,12 @@ export function PublicNewsSection({
           layout="three-two-one"
           items={processedArticles}
           getItemKey={(article) => article.id}
-          renderItem={(article) => <PublicNewsCard article={article} />}
+          renderItem={(article) => (
+            <PublicNewsCard
+              article={article}
+              disableOnDemandTranslation={disableOnDemandTranslation}
+            />
+          )}
           rail={rail}
           hideSummary
           showCount={false}

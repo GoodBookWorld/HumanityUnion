@@ -3297,7 +3297,8 @@
           "title": "Архів",
           "description": "Повний громадянський запис залишається загальнодоступним."
         }
-      }
+      },
+      "stageOf": "Етап {current} з {total}"
     },
     "principles": {
       "editorial-transparency": {
@@ -3345,7 +3346,19 @@
       "academic-resource": "Довідкові бібліотеки та академічні бази знань."
     },
     "trustedCategorySourceCount": "{count, plural, one {# джерело} few {# джерела} many {# джерел} other {# джерела}}",
-    "trustedCategoryRailLabel": "Медіаресурси: {category}"
+    "trustedCategoryRailLabel": "Медіаресурси: {category}",
+    "metaTitle": "Громадянські медіа | Humanity Union",
+    "metaDescription": "Знайдіть надійні джерела, перевіряйте твердження та перетворюйте перевірені новини на конструктивні громадянські ініціативи.",
+    "logoAlt": "Логотип {name}",
+    "trustedCategoriesTablist": "Категорії надійних медіа",
+    "rail": {
+      "previous": "Попередні {label}",
+      "next": "Наступні {label}",
+      "navigation": "Навігація: {label}",
+      "showing": "Показано {start}–{end} з {total}",
+      "instructions": "{label}. Використовуйте кнопки назад/вперед, стрілки або горизонтальну прокрутку, щоб переглянути додаткові картки.",
+      "swipeHint": "Проведіть, щоб переглянути"
+    }
   },
   "search": {
     "title": "Пошук громадянських записів",

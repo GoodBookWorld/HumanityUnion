@@ -19,6 +19,8 @@ import { PublicNewsRelatedInitiatives } from "./PublicNewsRelatedInitiatives";
 
 interface PublicNewsCardProps {
   article: PublicNewsArticleItem;
+  /** Reset 03E — Media PLP path: never generate-on-read. */
+  disableOnDemandTranslation?: boolean;
 }
 
 function CreateInitiativeLink({ newsId }: { newsId: string }) {
@@ -48,10 +50,15 @@ function CreateInitiativeLink({ newsId }: { newsId: string }) {
  * Pack 08K.3 — shared public-news-card.
  * Semantic fields render from PublicLocalizedPresentation only.
  */
-export function PublicNewsCard({ article }: PublicNewsCardProps) {
+export function PublicNewsCard({
+  article,
+  disableOnDemandTranslation = false,
+}: PublicNewsCardProps) {
   const locale = useLocale();
   const t = useTranslations("publicNews.card");
-  const view = useLocalizedPublicNewsCard(article);
+  const view = useLocalizedPublicNewsCard(article, {
+    skipClientTranslation: disableOnDemandTranslation,
+  });
   const provider = resolveProviderPresentation(view.sourceName);
   const publishedLabel = formatNewsRelativeTime(view.publishedAt, locale);
   const aiSummaryBullets = useMemo(
@@ -66,6 +73,7 @@ export function PublicNewsCard({ article }: PublicNewsCardProps) {
       data-hu-surface="public-news-card"
       data-hu-coverage={view.coverage.status}
       data-hu-fallback-nodes={String(view.coverage.canonicalFallbackNodeCount)}
+      data-hu-semantic-owner="PLP_ENTITY"
     >
       <div className="public-news-card__header">
         {view.category ? (

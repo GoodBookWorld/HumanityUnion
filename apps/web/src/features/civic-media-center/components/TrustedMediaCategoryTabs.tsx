@@ -228,8 +228,9 @@ export function TrustedMediaCategoryTabs({
       <div
         id={`${sectionId}-category-tablist`}
         role="tablist"
-        aria-label="Trusted media categories"
+        aria-label={t("trustedCategoriesTablist")}
         className="trusted-media-category-tabs__list"
+        data-hu-semantic-owner="UI_DICTIONARY"
       >
         {availableCategories.map((category, index) => {
           const isActive = category.id === activeCategory.id;

@@ -3297,7 +3297,8 @@
           "title": "أرشيف",
           "description": "يظل السجل المدني الكامل متاحًا للعموم."
         }
-      }
+      },
+      "stageOf": "المرحلة {current} من {total}"
     },
     "principles": {
       "editorial-transparency": {
@@ -3345,7 +3346,19 @@
       "academic-resource": "مكتبات مرجعية وقواعد معرفة أكاديمية."
     },
     "trustedCategorySourceCount": "{count, plural, one {مصدر واحد} other {# مصادر}}",
-    "trustedCategoryRailLabel": "موارد إعلامية: {category}"
+    "trustedCategoryRailLabel": "موارد إعلامية: {category}",
+    "metaTitle": "الإعلام المدني | Humanity Union",
+    "metaDescription": "اعثر على مصادر إعلامية موثوقة، وتحقق من الادعاءات، وحوّل الأخبار الموثقة إلى مبادرات مدنية بنّاءة.",
+    "logoAlt": "شعار {name}",
+    "trustedCategoriesTablist": "فئات الإعلام الموثوق",
+    "rail": {
+      "previous": "السابق {label}",
+      "next": "التالي {label}",
+      "navigation": "تنقل {label}",
+      "showing": "عرض {start}–{end} من {total}",
+      "instructions": "{label}. استخدم زرّي السابق والتالي أو مفاتيح الأسهم أو التمرير الأفقي لتصفح بطاقات إضافية.",
+      "swipeHint": "اسحب للاستكشاف"
+    }
   },
   "search": {
     "title": "البحث في السجلات المدنية",

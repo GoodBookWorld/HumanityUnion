@@ -165,8 +165,27 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Dominant waits | Dual PLP HTTP posts; duplicate SSR languages fetches; sequential auth prefs→cookie |
 | Fix | One combined Media PLP resolve; React.cache locale catalog; parallel prefs∥cookie; bounded API resolve cache |
 | HTTP boundary | Retained Web→API (no Mongo/API bootstrap in Web) |
+| Live observed | en→uk improved ~4s → ~2.5s on staging (informational) |
+| Final perf acceptance | **informational** — topology preserved; not a hard gate for ledger removal |
 | ACTIVE count | **30** |
 | Flag | Do not change flags in this pack |
+
+### Reset 03E note — Media PLP semantic coverage (no live ops)
+
+| Item | Status |
+|------|--------|
+| 03C functional acceptance | **PASSED** (live staging) |
+| 03D performance | Improved (~2.5s); final perf remains **informational** |
+| Inventory | Complete Media semantic ownership inventory + detector (`UNOWNED_FIELDS=0`) |
+| PLP schema | `civic_media_editorial` entity (overview + FAQ); `PUBLISHED_LOCALIZATION_SCHEMA_VERSION=PLP.2` |
+| Stale snapshots | Existing `reuters/uk` and other `PLP.1` snapshots are **schema-stale** until rematerialized → fail closed to CANONICAL_FALLBACK |
+| UI ownership | Rail chrome / metadata / logo alt / stage-of → UI dictionary |
+| Initiative flow | Participant UX remains `civicMediaPublic.pipeline.*` (UI_DICTIONARY) |
+| Fact/propaganda | UI_DICTIONARY (`civicMediaPublic.factChecking` / `propaganda`) |
+| News on PLP path | No generate-on-read; coherent canonical item when unpublished |
+| Coverage acceptance | **pending until live** |
+| Media legacy entries | remain pending until live coverage acceptance |
+| ACTIVE count | **30** — do not reduce yet |
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

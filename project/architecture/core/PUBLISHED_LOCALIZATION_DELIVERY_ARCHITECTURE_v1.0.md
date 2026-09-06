@@ -569,3 +569,16 @@ Language Selector
 ```
 
 Ledger: `LIVE_FUNCTIONAL_ACCEPTANCE_PASSED` + `PERFORMANCE_ACCEPTANCE_PENDING` until live timing acceptance. ACTIVE 30 unchanged.
+
+### Reset 03E — Media PLP semantic coverage
+
+Every `/media` participant-facing field is classified:
+
+| Owner | Examples |
+|-------|----------|
+| UI_DICTIONARY | Section chrome, pipeline stages, fact/propaganda bodies, rail a11y |
+| PLP_ENTITY | Principles, trusted explanations, overview+FAQ (`civic_media_editorial`), news cards |
+| PROTECTED_CANONICAL | Outlet names, URLs |
+| GEOGRAPHY | Country labels with codes |
+
+Schema **PLP.2** adds `civic_media_editorial`. Prior `PLP.1` snapshots (including reuters/uk) fail closed to canonical until rematerialized. Combined Media resolve remains **one HTTP batch**. Coverage gate: `UNOWNED_FIELDS=0`.

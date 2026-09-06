@@ -1,9 +1,11 @@
 /**
  * Reset 03 — canonical Media semantic presentation trees for PLP.
  * Complete participant-facing trees; protected identity/technical remain wrapped.
+ * Reset 03E — civic_media_editorial tree (overview + FAQ).
  */
 
 import type {
+  CivicMediaCenterPublic,
   CivicMediaSelectionPrinciple,
   PublicNewsArticleItem,
   PublicPresentationNode,
@@ -35,6 +37,22 @@ export type MediaPlpTrustedTree = {
   readonly name: ReturnType<typeof protectedIdentity>;
   readonly websiteUrl: ReturnType<typeof protectedTechnical>;
   readonly explanation: string;
+};
+
+/** Overview + FAQ semantic tree (initiative-flow UX stays UI dictionary). */
+export type MediaPlpEditorialTree = {
+  readonly overviewTitle: string;
+  readonly overviewSummary: string;
+  readonly overviewPoints: readonly {
+    readonly id: string;
+    readonly heading: string;
+    readonly body: string;
+  }[];
+  readonly faq: readonly {
+    readonly id: string;
+    readonly question: string;
+    readonly answer: string;
+  }[];
 };
 
 export function buildCanonicalPublicNewsPresentation(
@@ -73,8 +91,31 @@ export function buildCanonicalTrustedPresentation(
   };
 }
 
+export function buildCanonicalEditorialPresentation(
+  media: Pick<CivicMediaCenterPublic, "overview" | "faq">,
+): MediaPlpEditorialTree {
+  return {
+    overviewTitle: media.overview.title,
+    overviewSummary: media.overview.summary,
+    overviewPoints: media.overview.points.map((point) => ({
+      id: point.id,
+      heading: point.heading,
+      body: point.body,
+    })),
+    faq: media.faq.map((item) => ({
+      id: item.id,
+      question: item.question,
+      answer: item.answer,
+    })),
+  };
+}
+
 export function asMediaPlpPresentationNode(
-  tree: MediaPlpPublicNewsTree | MediaPlpPrincipleTree | MediaPlpTrustedTree,
+  tree:
+    | MediaPlpPublicNewsTree
+    | MediaPlpPrincipleTree
+    | MediaPlpTrustedTree
+    | MediaPlpEditorialTree,
 ): PublicPresentationNode {
   return tree as unknown as PublicPresentationNode;
 }

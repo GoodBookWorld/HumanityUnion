@@ -9,13 +9,18 @@ import type {
   PublicNewsArticleItem,
   TrustedMediaCategoryId,
 } from "@hu/types";
-import { MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
+import { MEDIA_PLP_EDITORIAL_ENTITY_ID, MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
-import { CIVIC_MEDIA_SELECTION_PRINCIPLES } from "../../civic-media-center/content/sections.js";
+import {
+  CIVIC_MEDIA_FAQ,
+  CIVIC_MEDIA_OVERVIEW,
+  CIVIC_MEDIA_SELECTION_PRINCIPLES,
+} from "../../civic-media-center/content/sections.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
 import {
   asMediaPlpPresentationNode,
+  buildCanonicalEditorialPresentation,
   buildCanonicalPrinciplePresentation,
   buildCanonicalPublicNewsPresentation,
   buildCanonicalTrustedPresentation,
@@ -160,6 +165,34 @@ function loadPrincipleSource(entityId: string): MediaPlpPreflightSourceLookup {
   };
 }
 
+function loadEditorialSource(entityId: string): MediaPlpPreflightSourceLookup {
+  markMediaPlpPreflightSourceLookup();
+  if (entityId.trim() !== MEDIA_PLP_EDITORIAL_ENTITY_ID) {
+    return emptySource(0);
+  }
+  const tree = buildCanonicalEditorialPresentation({
+    overview: CIVIC_MEDIA_OVERVIEW,
+    faq: [...CIVIC_MEDIA_FAQ],
+  });
+  const canonicalVersion = fingerprintMediaPlpCanonicalVersion(
+    asMediaPlpPresentationNode(tree),
+  );
+  return {
+    SOURCE_FOUND: true,
+    SOURCE_PUBLIC: true,
+    CANONICAL_VERSION: canonicalVersion,
+    SOURCE_DOCUMENT_BYTES: documentBytes({
+      id: MEDIA_PLP_EDITORIAL_ENTITY_ID,
+      overviewTitleLen: CIVIC_MEDIA_OVERVIEW.title.length,
+      overviewSummaryLen: CIVIC_MEDIA_OVERVIEW.summary.length,
+      overviewPointCount: CIVIC_MEDIA_OVERVIEW.points.length,
+      faqCount: CIVIC_MEDIA_FAQ.length,
+    }),
+    SOURCE_RECORDS_MATCHED: 1,
+    identityCollision: false,
+  };
+}
+
 async function loadTrustedSource(
   entityId: string,
 ): Promise<MediaPlpPreflightSourceLookup> {
@@ -240,6 +273,8 @@ export async function loadMediaPlpPreflightSource(input: {
       return loadPrincipleSource(input.entityId);
     case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED:
       return loadTrustedSource(input.entityId);
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL:
+      return loadEditorialSource(input.entityId);
     default: {
       const _exhaustive: never = input.entityType;
       void _exhaustive;

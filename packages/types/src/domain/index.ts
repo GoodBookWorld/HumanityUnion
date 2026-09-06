@@ -242,7 +242,9 @@ export type { MediaPlpEntityType } from "./media-plp-identities.js";
 export {
   MEDIA_PLP_ENTITY_TYPE,
   MEDIA_PLP_ENTITY_TYPES,
+  MEDIA_PLP_EDITORIAL_ENTITY_ID,
   isMediaPlpEntityType,
+  mediaPlpEditorialEntityId,
   mediaPlpPrincipleEntityId,
   mediaPlpPublicNewsEntityId,
   mediaPlpTrustedEntityId,

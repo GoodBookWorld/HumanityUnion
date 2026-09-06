@@ -95,11 +95,16 @@ export function resolveLocalizedPublicNewsCardView(input: {
  */
 export function useLocalizedPublicNewsCard(
   article: PublicNewsArticleItem,
+  options?: {
+    /** Reset 03E — Media PLP path: never resolve/generate content_translations. */
+    readonly skipClientTranslation?: boolean;
+  },
 ): LocalizedPublicNewsCardView {
   const locale = useLocale();
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
   const readingContext = usePublicContentReadingContext();
   const requestGenerationRef = useRef(0);
+  const skipClientTranslation = options?.skipClientTranslation === true;
 
   const seed = useMemo(
     () => resolveLocalizedPublicNewsCardView({ article, locale: displayLanguage }),
@@ -110,6 +115,9 @@ export function useLocalizedPublicNewsCard(
 
   useEffect(() => {
     setView(seed);
+    if (skipClientTranslation) {
+      return;
+    }
     const injected = fixtureTranslationsByArticleId.get(article.id);
     if (injected) {
       setView(
@@ -156,6 +164,7 @@ export function useLocalizedPublicNewsCard(
     readingContext.ready,
     readingContext.translationPreference,
     seed,
+    skipClientTranslation,
   ]);
 
   return view;

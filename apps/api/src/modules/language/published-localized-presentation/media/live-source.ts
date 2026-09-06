@@ -10,11 +10,12 @@ import type {
 } from "@hu/types";
 import { MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
-import { CIVIC_MEDIA_SELECTION_PRINCIPLES } from "../../../civic-media-center/content/sections.js";
+import { CIVIC_MEDIA_FAQ, CIVIC_MEDIA_OVERVIEW, CIVIC_MEDIA_SELECTION_PRINCIPLES } from "../../../civic-media-center/content/sections.js";
 import { MONGO_COLLECTIONS } from "../../../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../../../infrastructure/mongodb/mongo-database.js";
 import {
   asMediaPlpPresentationNode,
+  buildCanonicalEditorialPresentation,
   buildCanonicalPrinciplePresentation,
   buildCanonicalTrustedPresentation,
   fingerprintMediaPlpCanonicalVersion,
@@ -116,6 +117,21 @@ async function resolveTrusted(entityId: string): Promise<MediaPlpLiveCanonicalSo
   );
 }
 
+function resolveEditorial(entityId: string): MediaPlpLiveCanonicalSource {
+  if (entityId.trim() !== "civic-media-center") {
+    return empty();
+  }
+  return withTree(
+    asMediaPlpPresentationNode(
+      buildCanonicalEditorialPresentation({
+        overview: CIVIC_MEDIA_OVERVIEW,
+        faq: [...CIVIC_MEDIA_FAQ],
+      }),
+    ),
+    true,
+  );
+}
+
 export async function loadMediaPlpLiveCanonicalSource(input: {
   readonly entityType: MediaPlpEntityType;
   readonly entityId: string;
@@ -125,8 +141,10 @@ export async function loadMediaPlpLiveCanonicalSource(input: {
       return resolvePrinciple(input.entityId);
     case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED:
       return resolveTrusted(input.entityId);
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL:
+      return resolveEditorial(input.entityId);
     case MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS:
-      // Consumer gate focuses on trusted/principles; news remains legacy until later.
+      // Consumer gate focuses on trusted/principles/editorial; news remains precomputed/canonical.
       return empty();
     default: {
       const _exhaustive: never = input.entityType;

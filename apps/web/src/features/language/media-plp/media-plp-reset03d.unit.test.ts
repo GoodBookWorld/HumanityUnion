@@ -133,6 +133,14 @@ describe("Reset 03D — single bounded Media resolution", () => {
       await loadMediaPlpPagePresentations({
         resources: [reuters, atlantic],
         principles,
+        media: {
+          overview: {
+            title: "Overview",
+            summary: "Summary",
+            points: [],
+          },
+          faq: [],
+        },
         locale: "uk",
       }),
       null,

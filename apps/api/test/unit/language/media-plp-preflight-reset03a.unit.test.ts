@@ -19,6 +19,7 @@ import {
   runMediaPlpPreflight,
   type MediaPlpPreflightDeps,
 } from "../../../src/modules/language/media-plp-preflight/index.js";
+import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const apiRoot = join(__dirname, "../../..");
@@ -118,7 +119,9 @@ function fixtureDeps(input?: {
         PLP_CURRENT_FOUND: input?.plpFound ?? false,
         PLP_STATE: input?.plpState ?? null,
         PLP_CANONICAL_VERSION: input?.plpVersion ?? null,
-        PLP_SCHEMA_VERSION: input?.plpFound ? "PLP.1" : null,
+        PLP_SCHEMA_VERSION: input?.plpFound
+          ? PUBLISHED_LOCALIZATION_SCHEMA_VERSION
+          : null,
         PLP_DOCUMENT_BYTES: input?.plpFound ? 64 : 0,
         PLP_RECORDS_MATCHED: input?.plpFound ? 1 : 0,
         identityCollision: false,

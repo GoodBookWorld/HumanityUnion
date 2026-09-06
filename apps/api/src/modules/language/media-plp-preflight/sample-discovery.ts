@@ -4,7 +4,7 @@
  */
 
 import type { MediaPlpEntityType } from "@hu/types";
-import { MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
+import { MEDIA_PLP_EDITORIAL_ENTITY_ID, MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
 import { CIVIC_MEDIA_SELECTION_PRINCIPLES } from "../../civic-media-center/content/sections.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
@@ -56,6 +56,11 @@ function samplePrinciple(): string | null {
   return id || null;
 }
 
+function sampleEditorial(): string | null {
+  markMediaPlpPreflightSampleDiscovery();
+  return MEDIA_PLP_EDITORIAL_ENTITY_ID;
+}
+
 /**
  * Return exactly one public Media entity id for the requested type.
  * Mongo paths use findOne + identity projection (no .toArray / corpus scan).
@@ -73,6 +78,9 @@ export async function discoverMediaPlpSampleOne(
       break;
     case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE:
       entityId = samplePrinciple();
+      break;
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL:
+      entityId = sampleEditorial();
       break;
     default: {
       const _exhaustive: never = entityType;

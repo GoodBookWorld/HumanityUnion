@@ -3297,7 +3297,8 @@
           "title": "典藏",
           "description": "完整公民紀錄維持公開可查。"
         }
-      }
+      },
+      "stageOf": "第 {current} 階段，共 {total} 階段"
     },
     "principles": {
       "editorial-transparency": {
@@ -3345,7 +3346,19 @@
       "academic-resource": "參考圖書館與學術知識庫。"
     },
     "trustedCategorySourceCount": "{count} 個來源",
-    "trustedCategoryRailLabel": "{category} 媒體資源"
+    "trustedCategoryRailLabel": "{category} 媒體資源",
+    "metaTitle": "公民媒體 | Humanity Union",
+    "metaDescription": "尋找可信媒體來源、查核聲明，並將已查核新聞轉為建設性公民倡議。",
+    "logoAlt": "{name} 標誌",
+    "trustedCategoriesTablist": "可信媒體分類",
+    "rail": {
+      "previous": "上一組{label}",
+      "next": "下一組{label}",
+      "navigation": "{label}導覽",
+      "showing": "顯示第 {start}–{end} 項，共 {total} 項",
+      "instructions": "{label}。使用上一頁/下一頁按鈕、方向鍵或水平捲動瀏覽更多卡片。",
+      "swipeHint": "滑動探索"
+    }
   },
   "search": {
     "title": "搜尋公民紀錄",

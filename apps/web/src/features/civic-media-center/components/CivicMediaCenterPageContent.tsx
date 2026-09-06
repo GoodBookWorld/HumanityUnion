@@ -324,15 +324,17 @@ function CivicMediaCenterLoaded({
   initialEditorial,
   plpTrustedById,
   plpPrinciplesById,
+  plpEditorialPresentation,
 }: {
   media: CivicMediaCenterPublic;
   initialEditorial?: CivicMediaResolvedEditorial;
   plpTrustedById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   plpPrinciplesById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  plpEditorialPresentation?: MediaPlpResolvedPresentation;
 }) {
   const t = useTranslations("civicMediaPublic");
   const plpMode = plpTrustedById != null && plpPrinciplesById != null;
-  // Reset 03C.2 — stable identity across re-renders so locale-switch transitions settle.
+  // Reset 03C.2 / 03E — stable identity; editorial overview/FAQ from PLP when present.
   const plpEditorial = useMemo(
     () =>
       plpMode && plpTrustedById && plpPrinciplesById
@@ -340,9 +342,10 @@ function CivicMediaCenterLoaded({
             media,
             trustedById: plpTrustedById,
             principlesById: plpPrinciplesById,
+            editorialPresentation: plpEditorialPresentation,
           })
         : undefined,
-    [plpMode, media, plpTrustedById, plpPrinciplesById],
+    [plpMode, media, plpTrustedById, plpPrinciplesById, plpEditorialPresentation],
   );
   const editorial = useCivicMediaResolvedEditorial(
     media,
@@ -360,20 +363,37 @@ function CivicMediaCenterLoaded({
       className="civic-media-page"
       data-hu-media-plp={plpMode ? "true" : undefined}
       data-hu-media-renderer="shared"
+      data-hu-semantic-unowned="0"
     >
       <div className="civic-media-page__container">
         <section id="overview" className="civic-media-page__hero civic-media-section-shell">
           <div className="civic-media-section-shell__inner">
-            <p className="civic-media-page__eyebrow">{t("eyebrow")}</p>
-            <h1>{t("pageTitle")}</h1>
+            <p className="civic-media-page__eyebrow" data-hu-semantic-owner="UI_DICTIONARY">
+              {t("eyebrow")}
+            </p>
+            <h1 data-hu-semantic-owner="UI_DICTIONARY">{t("pageTitle")}</h1>
             <div className="civic-media-page__editorial">
-              <h2 className="civic-media-page__overview-title">{editorial.overview.title}</h2>
-              <p className="civic-media-page__lead">{editorial.overview.summary}</p>
+              <h2
+                className="civic-media-page__overview-title"
+                data-hu-semantic-owner="PLP_ENTITY"
+                data-hu-plp-entity="civic_media_editorial"
+              >
+                {editorial.overview.title}
+              </h2>
+              <p
+                className="civic-media-page__lead"
+                data-hu-semantic-owner="PLP_ENTITY"
+                data-hu-plp-entity="civic_media_editorial"
+              >
+                {editorial.overview.summary}
+              </p>
               <div className="civic-media-page__hero-grid">
                 {editorial.overview.points.map((point) => (
                   <Card
                     key={point.id}
                     className="civic-media-resource-card civic-media-resource-card--hero"
+                    data-hu-semantic-owner="PLP_ENTITY"
+                    data-hu-plp-entity="civic_media_editorial"
                   >
                     <h2>{point.heading}</h2>
                     <p>{point.body}</p>
@@ -384,25 +404,13 @@ function CivicMediaCenterLoaded({
           </div>
         </section>
 
-        <CivicPipelineWorkflow
-          title={
-            editorial.translationChrome.isMachineTranslated
-              ? editorial.initiativeFlow.title
-              : undefined
-          }
-          description={
-            editorial.translationChrome.isMachineTranslated
-              ? editorial.initiativeFlow.summary
-              : undefined
-          }
-          stageTitles={
-            editorial.translationChrome.isMachineTranslated
-              ? editorial.initiativeFlow.stages
-              : undefined
-          }
-        />
+        <CivicPipelineWorkflow />
 
-        <PublicNewsSection sectionId="news-widgets" variant="discovery" />
+        <PublicNewsSection
+          sectionId="news-widgets"
+          variant="discovery"
+          disableOnDemandTranslation={plpMode}
+        />
 
         <HuxEducationSection
           sectionId="selection-principles"
@@ -484,7 +492,12 @@ function CivicMediaCenterLoaded({
             <h2>{t("faq.heading")}</h2>
             <div className="civic-media-page__faq-list">
               {editorial.faq.map((item) => (
-                <Card key={item.id} className="civic-media-resource-card">
+                <Card
+                  key={item.id}
+                  className="civic-media-resource-card"
+                  data-hu-semantic-owner="PLP_ENTITY"
+                  data-hu-plp-entity="civic_media_editorial"
+                >
                   <h3>{item.question}</h3>
                   <p>{item.answer}</p>
                 </Card>
@@ -507,6 +520,7 @@ export function CivicMediaCenterPageContent({
   initialEditorial,
   plpTrustedById,
   plpPrinciplesById,
+  plpEditorialPresentation,
 }: {
   /**
    * Pack 08I.9 / 08I.12 — SSR-fetched media payload when server fetch succeeded.
@@ -523,6 +537,8 @@ export function CivicMediaCenterPageContent({
    */
   plpTrustedById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   plpPrinciplesById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  /** Reset 03E — overview + FAQ PLP presentation (civic_media_editorial). */
+  plpEditorialPresentation?: MediaPlpResolvedPresentation;
 } = {}) {
   const t = useTranslations("civicMediaPublic");
   const hasServerPayload = initialMedia !== undefined;
@@ -583,6 +599,7 @@ export function CivicMediaCenterPageContent({
       initialEditorial={initialEditorial}
       plpTrustedById={plpTrustedById}
       plpPrinciplesById={plpPrinciplesById}
+      plpEditorialPresentation={plpEditorialPresentation}
     />
   );
 }

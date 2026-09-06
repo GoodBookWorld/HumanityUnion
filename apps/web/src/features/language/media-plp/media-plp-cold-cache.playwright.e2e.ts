@@ -29,7 +29,7 @@ function buildRealisticMediaFixtureHtml(locale: string): string {
 <body>
 <div class="humanity-layout">
   <header>Header</header>
-  <main class="humanity-layout__main civic-media-page" data-hu-media-plp="true" data-hu-media-renderer="shared" data-hu-plp-ssr="1">
+  <main class="humanity-layout__main civic-media-page" data-hu-media-plp="true" data-hu-media-renderer="shared" data-hu-plp-ssr="1" data-hu-semantic-unowned="0">
     <div class="civic-media-page__container">
       <section id="overview" class="civic-media-page__hero">
         <p class="civic-media-page__eyebrow">Civic Media</p>
@@ -221,6 +221,8 @@ for (const locale of ["en", "uk", "zh-Hant", "ar"] as const) {
 
         await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
         await page.waitForSelector('[data-hu-plp-hydrated="1"]');
+        await expect(page.locator('[data-hu-semantic-unowned="0"]')).toHaveCount(1);
+        await expect(page.locator('[data-hu-semantic-owner="BUG_UNOWNED"]')).toHaveCount(0);
 
         for (const id of MEDIA_PAGE_MAJOR_SECTION_IDS) {
           await expect(page.locator(`#${id}`)).toHaveCount(1);

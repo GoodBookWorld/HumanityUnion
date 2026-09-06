@@ -3297,7 +3297,8 @@
           "title": "Archive",
           "description": "The full civic record remains publicly accessible."
         }
-      }
+      },
+      "stageOf": "Stage {current} of {total}"
     },
     "principles": {
       "editorial-transparency": {
@@ -3345,7 +3346,19 @@
       "academic-resource": "Reference libraries and academic knowledge bases."
     },
     "trustedCategorySourceCount": "{count, plural, one {# source} other {# sources}}",
-    "trustedCategoryRailLabel": "{category} media resources"
+    "trustedCategoryRailLabel": "{category} media resources",
+    "metaTitle": "Civic Media | Humanity Union",
+    "metaDescription": "Find trusted media sources, verify claims, and turn verified news into constructive civic initiatives.",
+    "logoAlt": "{name} logo",
+    "trustedCategoriesTablist": "Trusted media categories",
+    "rail": {
+      "previous": "Previous {label}",
+      "next": "Next {label}",
+      "navigation": "{label} navigation",
+      "showing": "Showing {start}–{end} of {total}",
+      "instructions": "{label}. Use the previous and next buttons, arrow keys, or horizontal scrolling to browse additional cards.",
+      "swipeHint": "Swipe to explore"
+    }
   },
   "search": {
     "title": "Search civic records",

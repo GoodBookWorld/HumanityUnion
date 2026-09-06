@@ -9,7 +9,7 @@ import type { LanguageCode } from "./language.js";
 import type { PublicPresentationNode } from "./public-localized-presentation.js";
 
 /** Current localization schema for newly published snapshots. */
-export const PUBLISHED_LOCALIZATION_SCHEMA_VERSION = "PLP.1" as const;
+export const PUBLISHED_LOCALIZATION_SCHEMA_VERSION = "PLP.2" as const;
 
 export type PublishedLocalizationSchemaVersion =
   | typeof PUBLISHED_LOCALIZATION_SCHEMA_VERSION

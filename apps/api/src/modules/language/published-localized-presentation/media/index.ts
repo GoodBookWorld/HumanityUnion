@@ -10,6 +10,7 @@ export {
 } from "./feature-flag.js";
 export {
   asMediaPlpPresentationNode,
+  buildCanonicalEditorialPresentation,
   buildCanonicalPrinciplePresentation,
   buildCanonicalPublicNewsPresentation,
   buildCanonicalTrustedPresentation,

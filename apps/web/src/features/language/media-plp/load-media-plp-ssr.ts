@@ -5,12 +5,15 @@
  */
 
 import type {
+  CivicMediaCenterPublic,
   CivicMediaSelectionPrinciple,
   PublicPresentationNode,
   TrustedMediaResource,
 } from "@hu/types";
 import {
+  MEDIA_PLP_EDITORIAL_ENTITY_ID,
   MEDIA_PLP_ENTITY_TYPE,
+  mediaPlpEditorialEntityId,
   mediaPlpPrincipleEntityId,
   mediaPlpTrustedEntityId,
   protectedIdentity,
@@ -40,6 +43,26 @@ export function buildCanonicalPrinciplePresentationNode(
   return {
     title: principle.title,
     description: principle.description,
+  };
+}
+
+/** Reset 03E — overview + FAQ canonical presentation for civic_media_editorial. */
+export function buildCanonicalEditorialPresentationNode(
+  media: Pick<CivicMediaCenterPublic, "overview" | "faq">,
+): PublicPresentationNode {
+  return {
+    overviewTitle: media.overview.title,
+    overviewSummary: media.overview.summary,
+    overviewPoints: media.overview.points.map((point) => ({
+      id: point.id,
+      heading: point.heading,
+      body: point.body,
+    })),
+    faq: media.faq.map((item) => ({
+      id: item.id,
+      question: item.question,
+      answer: item.answer,
+    })),
   };
 }
 
@@ -231,16 +254,18 @@ export async function loadMediaPlpPrinciplePresentations(input: {
 }
 
 /**
- * Reset 03D — one bounded Media PLP HTTP resolve for trusted + principles.
- * Prefer this on /media locale navigation (halves Web→API PLP round-trips vs dual batch).
+ * Reset 03D / 03E — one bounded Media PLP HTTP resolve for Media page entities.
+ * Trusted + principles + editorial (overview/FAQ) in a single batch.
  */
 export async function loadMediaPlpPagePresentations(input: {
   readonly resources: readonly TrustedMediaResource[];
   readonly principles: readonly CivicMediaSelectionPrinciple[];
+  readonly media: Pick<CivicMediaCenterPublic, "overview" | "faq">;
   readonly locale: string;
 }): Promise<{
   readonly trustedById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   readonly principlesById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  readonly editorial: MediaPlpResolvedPresentation;
 } | null> {
   if (!isMediaPlpWebEnabled()) {
     return null;
@@ -258,6 +283,8 @@ export async function loadMediaPlpPagePresentations(input: {
     canonicalPresentation: buildCanonicalPrinciplePresentationNode(principle),
     principleId: principle.id,
   }));
+  const editorialCanonical = buildCanonicalEditorialPresentationNode(input.media);
+  const editorialEntityId = mediaPlpEditorialEntityId(MEDIA_PLP_EDITORIAL_ENTITY_ID);
 
   const items = [
     ...trustedItems.map(({ entityType, entityId, canonicalPresentation }) => ({
@@ -270,6 +297,11 @@ export async function loadMediaPlpPagePresentations(input: {
       entityId,
       canonicalPresentation,
     })),
+    {
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+      entityId: editorialEntityId,
+      canonicalPresentation: editorialCanonical,
+    },
   ];
 
   try {
@@ -305,7 +337,17 @@ export async function loadMediaPlpPagePresentations(input: {
           });
     }
 
-    return { trustedById, principlesById };
+    const editorialHit = byEntityId.get(editorialEntityId);
+    const editorial = editorialHit
+      ? toMediaPlpResolvedPresentation(editorialHit)
+      : coherentFallback({
+          entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+          entityId: editorialEntityId,
+          locale: input.locale,
+          presentation: editorialCanonical,
+        });
+
+    return { trustedById, principlesById, editorial };
   } catch {
     const trustedById: Record<string, MediaPlpResolvedPresentation> = {};
     for (const item of trustedItems) {
@@ -325,6 +367,15 @@ export async function loadMediaPlpPagePresentations(input: {
         presentation: item.canonicalPresentation,
       });
     }
-    return { trustedById, principlesById };
+    return {
+      trustedById,
+      principlesById,
+      editorial: coherentFallback({
+        entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+        entityId: editorialEntityId,
+        locale: input.locale,
+        presentation: editorialCanonical,
+      }),
+    };
   }
 }

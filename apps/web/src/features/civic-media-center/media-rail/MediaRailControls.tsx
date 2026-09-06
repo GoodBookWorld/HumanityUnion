@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 interface HorizontalRailControlsProps {
   label: string;
   canScrollPrevious: boolean;
@@ -17,18 +19,20 @@ export function HorizontalRailControls({
   onNext,
   compact = false,
 }: HorizontalRailControlsProps) {
+  const t = useTranslations("civicMediaPublic.rail");
   return (
     <div
       className={
         compact ? "horizontal-rail-controls horizontal-rail-controls--compact" : "horizontal-rail-controls"
       }
-      aria-label={`${label} navigation`}
+      aria-label={t("navigation", { label })}
+      data-hu-semantic-owner="UI_DICTIONARY"
     >
       <button
         type="button"
         className="horizontal-rail-controls__button horizontal-rail-controls__button--previous"
-        aria-label={`Previous ${label}`}
-        title={`Previous ${label}`}
+        aria-label={t("previous", { label })}
+        title={t("previous", { label })}
         disabled={!canScrollPrevious}
         onClick={onPrevious}
       >
@@ -37,8 +41,8 @@ export function HorizontalRailControls({
       <button
         type="button"
         className="horizontal-rail-controls__button horizontal-rail-controls__button--next"
-        aria-label={`Next ${label}`}
-        title={`Next ${label}`}
+        aria-label={t("next", { label })}
+        title={t("next", { label })}
         disabled={!canScrollNext}
         onClick={onNext}
       >

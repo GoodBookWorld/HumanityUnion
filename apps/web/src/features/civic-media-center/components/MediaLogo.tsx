@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface MediaLogoProps {
   name: string;
@@ -21,17 +22,19 @@ export function MediaLogo({
   width = 48,
   height = 48,
 }: MediaLogoProps) {
+  const t = useTranslations("civicMediaPublic");
   const [imageFailed, setImageFailed] = useState(false);
 
   if (logoUrl && !imageFailed) {
     return (
       <img
         src={logoUrl}
-        alt={`${name} logo`}
+        alt={t("logoAlt", { name })}
         className={imageClassName}
         width={width}
         height={height}
         onError={() => setImageFailed(true)}
+        data-hu-semantic-owner="UI_DICTIONARY"
       />
     );
   }

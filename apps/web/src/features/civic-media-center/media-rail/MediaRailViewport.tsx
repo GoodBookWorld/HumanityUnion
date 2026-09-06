@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import type { HorizontalRailLayout } from "./horizontal-section.types";
 import type { useHorizontalRail } from "./useMediaHorizontalRail";
@@ -23,18 +24,6 @@ interface HorizontalRailViewportProps<T> {
   viewportClassName?: string;
 }
 
-function resolveScrollHint(showScrollHint: boolean, scrollHint: string): string | null {
-  if (!showScrollHint || typeof window === "undefined") {
-    return null;
-  }
-
-  if (window.matchMedia("(min-width: 768px)").matches) {
-    return null;
-  }
-
-  return scrollHint;
-}
-
 export function HorizontalRailViewport<T>({
   label,
   layout,
@@ -45,11 +34,12 @@ export function HorizontalRailViewport<T>({
   hideSummary = false,
   showCount = true,
   showScrollHint = false,
-  scrollHint = "Swipe to explore",
+  scrollHint,
   footerAction,
   slideClassName,
   viewportClassName,
 }: HorizontalRailViewportProps<T>) {
+  const t = useTranslations("civicMediaPublic.rail");
   const {
     instructionsId,
     viewportRef,
@@ -67,7 +57,14 @@ export function HorizontalRailViewport<T>({
     return null;
   }
 
-  const visibleScrollHint = resolveScrollHint(showScrollHint && canScrollNext, scrollHint);
+  const resolvedScrollHint = scrollHint ?? t("swipeHint");
+  const visibleScrollHint =
+    showScrollHint &&
+    canScrollNext &&
+    typeof window !== "undefined" &&
+    !window.matchMedia("(min-width: 768px)").matches
+      ? resolvedScrollHint
+      : null;
   const shouldShowCount = showCount && !hideSummary && !allItemsVisible;
 
   return (
@@ -77,10 +74,10 @@ export function HorizontalRailViewport<T>({
       aria-label={label}
       data-visible-count={visibleCount}
       data-layout={layout}
+      data-hu-semantic-owner="UI_DICTIONARY"
     >
       <p id={instructionsId} className="horizontal-rail__visually-hidden">
-        {label}. Use the previous and next buttons, arrow keys, or horizontal scrolling to browse
-        additional cards.
+        {t("instructions", { label })}
       </p>
 
       {visibleScrollHint ? (
@@ -125,8 +122,16 @@ export function HorizontalRailViewport<T>({
       {shouldShowCount || footerAction ? (
         <div className="horizontal-rail__footer">
           {shouldShowCount ? (
-            <p className="horizontal-rail__summary" aria-live="polite">
-              Showing {startIndex + 1}–{visibleEnd} of {items.length}
+            <p
+              className="horizontal-rail__summary"
+              aria-live="polite"
+              data-hu-semantic-owner="UI_DICTIONARY"
+            >
+              {t("showing", {
+                start: startIndex + 1,
+                end: visibleEnd,
+                total: items.length,
+              })}
             </p>
           ) : null}
           {footerAction ? (
