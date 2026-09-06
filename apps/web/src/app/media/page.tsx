@@ -5,10 +5,12 @@ import type { CivicMediaCenterPublic } from "@hu/types";
 
 import { fetchCivicMediaCenter } from "../../features/civic-media-center/api";
 import { CivicMediaCenterPageContent } from "../../features/civic-media-center/components/CivicMediaCenterPageContent";
+import { applyMediaPlpPresentationsToEditorial } from "../../features/language/media-plp/apply-media-plp-editorial";
 import {
   composeMediaPageLocalization,
   MEDIA_PLP_NEWS_BATCH_LIMIT,
 } from "../../features/language/media-plp/compose-media-page-localization";
+import { finalizeMediaPlpLiveTruthProbeAttrFromApplied } from "../../features/language/media-plp/media-plp-live-truth-probe";
 import { markMediaLocaleSwitchPerfPhase } from "../../features/language/media-plp/media-plp-locale-switch-perf";
 import { resolveDocumentHtmlLocale } from "../../features/language/resolve-document-locale";
 import { fetchPublicNewsArticles } from "../../features/public-news/api";
@@ -65,6 +67,27 @@ export default async function CivicMediaPage() {
       })()
     : null;
 
+  // Reset 03E.7 — finalize live-truth fingerprints on the server (not in client hydrate).
+  let mediaPlpLiveTruthProbeAttr: string | undefined;
+  if (
+    initialMedia &&
+    composition?.runtimeBranch === "PLP" &&
+    composition.plpTrustedById &&
+    composition.plpPrinciplesById
+  ) {
+    const applied = applyMediaPlpPresentationsToEditorial({
+      media: initialMedia,
+      trustedById: composition.plpTrustedById,
+      principlesById: composition.plpPrinciplesById,
+      editorialPresentation: composition.plpEditorialPresentation,
+    });
+    mediaPlpLiveTruthProbeAttr = finalizeMediaPlpLiveTruthProbeAttrFromApplied({
+      overviewSummary: applied.overview.summary,
+      faq0Question: applied.faq[0]?.question ?? "",
+      faq0Answer: applied.faq[0]?.answer ?? "",
+    });
+  }
+
   return (
     <CivicMediaCenterPageContent
       initialMedia={initialMedia}
@@ -81,6 +104,7 @@ export default async function CivicMediaPage() {
       }
       mediaLocalizationRequestedLocale={documentLocale.locale}
       mediaLocalizationBatchLocale={composition?.batchLocale ?? undefined}
+      mediaPlpLiveTruthProbeAttr={mediaPlpLiveTruthProbeAttr}
     />
   );
 }

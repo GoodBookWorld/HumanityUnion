@@ -8,13 +8,23 @@ import type { CivicMediaCenterPublic, PublicNewsArticleItem } from "@hu/types";
 import type { CivicMediaResolvedEditorial } from "../../civic-media-center/components/CivicMediaTranslatedEditorial";
 import { loadCivicMediaEditorialSeed } from "../../civic-media-center/load-civic-media-editorial-seed";
 import { isMediaPlpWebEnabled } from "./feature-flag";
-import { loadMediaPlpPagePresentations } from "./load-media-plp-ssr";
+import {
+  buildCanonicalEditorialPresentationNode,
+  loadMediaPlpPagePresentations,
+} from "./load-media-plp-ssr";
 import type { MediaPlpResolvedPresentation } from "./presentation";
 import {
   MEDIA_LOCALIZATION_RUNTIME_BRANCH_LEGACY,
   MEDIA_LOCALIZATION_RUNTIME_BRANCH_PLP,
   type MediaLocalizationRuntimeBranch,
 } from "./media-localization-runtime-truth";
+import {
+  beginMediaPlpLiveTruthProbe,
+  isMediaPlpLiveTruthProbeEnabled,
+  mediaPlpLiveTruthNeedsEditorialRecord,
+  recordMediaPlpLiveTruthEditorialResult,
+} from "./media-plp-live-truth-probe";
+import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
 
 /** Bound news PLP entities so the single Media batch stays under resolve max items. */
 export const MEDIA_PLP_NEWS_BATCH_LIMIT = 12;
@@ -54,6 +64,10 @@ export async function composeMediaPageLocalization(input: {
   const isPlpEnabled = input.isPlpEnabled ?? isMediaPlpWebEnabled;
   const loadPlp = input.loadPlp ?? loadMediaPlpPagePresentations;
   const loadLegacy = input.loadLegacyEditorial ?? loadCivicMediaEditorialSeed;
+
+  if (isMediaPlpLiveTruthProbeEnabled()) {
+    beginMediaPlpLiveTruthProbe({ REQUESTED_LOCALE: input.locale });
+  }
 
   if (!isPlpEnabled()) {
     let initialEditorial: CivicMediaResolvedEditorial | undefined;
@@ -98,6 +112,22 @@ export async function composeMediaPageLocalization(input: {
     media: input.media,
     locale: input.locale,
   });
+
+  // Real loader records first (preserves reasonCode). Injected loadPlp (tests) records here.
+  if (
+    isMediaPlpLiveTruthProbeEnabled() &&
+    plp?.editorial &&
+    mediaPlpLiveTruthNeedsEditorialRecord()
+  ) {
+    recordMediaPlpLiveTruthEditorialResult({
+      mode: plp.editorial.mode,
+      entityId: plp.editorial.entityId,
+      canonicalVersion: plp.editorial.canonicalVersion,
+      schema: PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
+      presentation: plp.editorial.presentation,
+      canonicalPresentation: buildCanonicalEditorialPresentationNode(input.media),
+    });
+  }
 
   return {
     runtimeBranch: MEDIA_LOCALIZATION_RUNTIME_BRANCH_PLP,

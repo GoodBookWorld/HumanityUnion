@@ -17,6 +17,10 @@ import type { CivicMediaResolvedEditorial } from "../../civic-media-center/compo
 import { buildCanonicalCivicMediaEditorial } from "../../civic-media-center/components/CivicMediaTranslatedEditorial";
 import type { MediaPlpResolvedPresentation } from "./presentation";
 import { readMediaPlpStringField } from "./presentation";
+import {
+  isMediaPlpLiveTruthProbeEnabled,
+  recordMediaPlpLiveTruthProjected,
+} from "./media-plp-live-truth-probe";
 
 function readRowString(row: Record<string, unknown>, key: string): string {
   const raw = row[key];
@@ -246,6 +250,8 @@ export function applyMediaPlpPresentationsToEditorial(input: {
     }
   }
 
+  recordEditorialProjectionProbe(overview, faq);
+
   return {
     ...canonical,
     overview,
@@ -257,4 +263,18 @@ export function applyMediaPlpPresentationsToEditorial(input: {
       presentationMode: "plp_consumer",
     },
   };
+}
+
+function recordEditorialProjectionProbe(
+  overview: CivicMediaResolvedEditorial["overview"],
+  faq: readonly CivicMediaFaqItem[],
+): void {
+  if (!isMediaPlpLiveTruthProbeEnabled()) {
+    return;
+  }
+  recordMediaPlpLiveTruthProjected({
+    overviewSummary: overview.summary,
+    faq0Question: faq[0]?.question ?? "",
+    faq0Answer: faq[0]?.answer ?? "",
+  });
 }

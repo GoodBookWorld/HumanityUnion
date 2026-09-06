@@ -253,6 +253,19 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Coverage acceptance | **pending until live** (requires Web `HU_MEDIA_PLP_ENABLED=true` without `FORCE_LEGACY`) |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 03E.7 note — live Web PLP payload truth (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live gap | Staging Web `runtime-branch=PLP` + API GET `PUBLISHED_LOCALIZED`, yet `/media` editorial/FAQ still English |
+| 03E.6 hypothesis | **FALSE** on current staging — loss is inside the PLP path, not LEGACY |
+| FIRST LOSS | POST consumer version gate fingerprinted **client** tree → `CANONICAL_VERSION_MISMATCH` → `CANONICAL_FALLBACK` while GET used live source (`API_RESPONSE_CONTRACT_GAP`) |
+| False positive | 03E.5/03E.6 fixtures injected matching `PUBLISHED_LOCALIZED` presentations / skipped skewed POST fingerprint (`TEST_ARCHITECTURE_FALSE_POSITIVE`) |
+| Repair | `resolveMediaPlpConsumerItem` prefers live-source fingerprint+tree; Web live-truth probe fingerprints only |
+| Probe | `HU_MEDIA_PLP_LIVE_TRUTH_PROBE=true` → `data-hu-media-plp-live-truth` (URI JSON; no bodies) |
+| Coverage acceptance | **pending until live probe after deploy** |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

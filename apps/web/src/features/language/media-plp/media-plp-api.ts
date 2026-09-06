@@ -3,12 +3,17 @@
  * Never imports provider credentials or generate-on-miss hooks.
  * Reset 03C.2 — bounded fetch (timeout) so locale-switch transitions cannot hang.
  * Reset 03D — request counter for one-batch-per-navigation budgets.
+ * Reset 03E.7 — live truth probe records safe API request metadata.
  */
 
 import type { PublicPresentationNode } from "@hu/types";
 
-import { apiRequest } from "../../../lib/api-client";
+import { apiRequest, API_BASE_URL } from "../../../lib/api-client";
 import { recordMediaPlpHttpResolveRequest } from "./media-plp-locale-switch-perf";
+import {
+  isMediaPlpLiveTruthProbeEnabled,
+  recordMediaPlpLiveTruthApiRequest,
+} from "./media-plp-live-truth-probe";
 import type { MediaPlpResolvedPresentation } from "./presentation";
 
 /** Hard bound for Media PLP resolve during SSR / locale-switch refresh. */
@@ -40,13 +45,28 @@ export async function resolveMediaPlpBatch(input: {
 
   recordMediaPlpHttpResolveRequest();
 
+  const routePath = "/api/v1/public/media-plp/resolve";
+  if (isMediaPlpLiveTruthProbeEnabled()) {
+    recordMediaPlpLiveTruthApiRequest({
+      locale: input.locale,
+      apiBaseUrl: API_BASE_URL,
+      routePath,
+      entityCount: input.items.length,
+      editorialRequested: input.items.some(
+        (item) =>
+          item.entityType === "civic_media_editorial" &&
+          item.entityId === "civic-media-center",
+      ),
+    });
+  }
+
   const timeoutSignal =
     typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
       ? AbortSignal.timeout(MEDIA_PLP_RESOLVE_TIMEOUT_MS)
       : undefined;
 
   const data = await apiRequest<{ results: MediaPlpResolveBatchResultItem[] }>(
-    "/api/v1/public/media-plp/resolve",
+    routePath,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

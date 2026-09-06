@@ -690,3 +690,19 @@ Normative runtime success requires:
 | Flag read | Runtime dynamic `process.env["HU_MEDIA_PLP_ENABLED"]` (not `NEXT_PUBLIC_*`) |
 | Playwright cold-cache | Structural HTML fixture ≠ real route composition (`TEST_ARCHITECTURE_FALSE_POSITIVE` if treated as proof) |
 | ACTIVE count | **30** — unchanged |
+
+### Reset 03E.7 — live Web PLP payload truth
+
+**Invariant:** Runtime branch `PLP` is **not** end-to-end localization proof when GET diagnostic and Web POST batch disagree on the version gate.
+
+Normative consumer resolve must fingerprint the **authoritative live source** (same as GET diagnostic) when available. Client-supplied canonical trees may drift (whitespace, host seed skew) and must not silently force `CANONICAL_FALLBACK` while a matching `PUBLISHED` snapshot exists for the live version.
+
+Bounded Web probe (`data-hu-media-plp-live-truth`, enabled via `HU_MEDIA_PLP_LIVE_TRUTH_PROBE=true` on staging / non-production by default) records fingerprints only for `overviewSummary`, `faq[0].question`, `faq[0].answer` plus safe request/result metadata — never participant bodies or secrets.
+
+| Concern | Rule |
+|---------|------|
+| FIRST LOSS | `API_RESPONSE_CONTRACT_GAP` — POST version gate used client fingerprint; GET used live source |
+| Repair | `versionSource=live_source` preferred in `resolveMediaPlpConsumerItem` |
+| Observability | Fingerprint lineage: CANONICAL → RESOLVED → PROJECTED → SSR |
+| False positive | Fixture-injected `PUBLISHED_LOCALIZED` skipped skewed POST gate (`TEST_ARCHITECTURE_FALSE_POSITIVE`) |
+| ACTIVE count | **30** — unchanged |

@@ -24,6 +24,7 @@ import {
   mediaPlpTrustedEntityId,
   protectedIdentity,
   protectedTechnical,
+  PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
 } from "@hu/types";
 
 import { isMediaPlpWebEnabled } from "./feature-flag";
@@ -31,6 +32,10 @@ import {
   resolveMediaPlpBatch,
   toMediaPlpResolvedPresentation,
 } from "./media-plp-api";
+import {
+  isMediaPlpLiveTruthProbeEnabled,
+  recordMediaPlpLiveTruthEditorialResult,
+} from "./media-plp-live-truth-probe";
 import type { MediaPlpResolvedPresentation } from "./presentation";
 
 export function buildCanonicalTrustedPresentationNode(
@@ -491,6 +496,18 @@ export async function loadMediaPlpPagePresentations(input: {
           locale: input.locale,
           presentation: editorialCanonical,
         });
+
+    if (isMediaPlpLiveTruthProbeEnabled()) {
+      recordMediaPlpLiveTruthEditorialResult({
+        mode: editorial.mode,
+        reasonCode: editorialHit?.reasonCode,
+        entityId: editorial.entityId,
+        canonicalVersion: editorial.canonicalVersion,
+        schema: PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
+        presentation: editorial.presentation,
+        canonicalPresentation: editorialCanonical,
+      });
+    }
 
     return {
       trustedById,

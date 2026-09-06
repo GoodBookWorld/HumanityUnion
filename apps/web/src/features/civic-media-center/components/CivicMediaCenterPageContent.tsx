@@ -475,6 +475,7 @@ function CivicMediaCenterLoaded({
   mediaLocalizationRuntimeBranch,
   mediaLocalizationRequestedLocale,
   mediaLocalizationBatchLocale,
+  mediaPlpLiveTruthProbeAttr,
 }: {
   media: CivicMediaCenterPublic;
   initialEditorial?: CivicMediaResolvedEditorial;
@@ -488,6 +489,8 @@ function CivicMediaCenterLoaded({
   mediaLocalizationRuntimeBranch?: "PLP" | "LEGACY";
   mediaLocalizationRequestedLocale?: string;
   mediaLocalizationBatchLocale?: string;
+  /** Reset 03E.7 — server-finalized probe attr (fingerprints only). */
+  mediaPlpLiveTruthProbeAttr?: string;
 }) {
   const t = useTranslations("civicMediaPublic");
   const plpMode = plpTrustedById != null && plpPrinciplesById != null;
@@ -551,6 +554,8 @@ function CivicMediaCenterLoaded({
     ? "PUBLISHED_LOCALIZED"
     : plpEditorialPresentation?.mode ?? (plpMode ? "CANONICAL_FALLBACK" : undefined);
 
+  let liveTruthProbeAttr: string | undefined = mediaPlpLiveTruthProbeAttr;
+
   return (
     <main
       className="civic-media-page"
@@ -563,6 +568,7 @@ function CivicMediaCenterLoaded({
         mediaLocalizationRequestedLocale
       }
       data-hu-media-localization-batch-locale={mediaLocalizationBatchLocale}
+      data-hu-media-plp-live-truth={liveTruthProbeAttr}
     >
       <div className="civic-media-page__container">
         <section id="overview" className="civic-media-page__hero civic-media-section-shell">
@@ -836,6 +842,7 @@ export function CivicMediaCenterPageContent({
   mediaLocalizationRuntimeBranch,
   mediaLocalizationRequestedLocale,
   mediaLocalizationBatchLocale,
+  mediaPlpLiveTruthProbeAttr,
 }: {
   /**
    * Pack 08I.9 / 08I.12 — SSR-fetched media payload when server fetch succeeded.
@@ -866,6 +873,8 @@ export function CivicMediaCenterPageContent({
   mediaLocalizationRuntimeBranch?: "PLP" | "LEGACY";
   mediaLocalizationRequestedLocale?: string;
   mediaLocalizationBatchLocale?: string;
+  /** Reset 03E.7 — server-finalized live truth probe attr (fingerprints only). */
+  mediaPlpLiveTruthProbeAttr?: string;
 } = {}) {
   const t = useTranslations("civicMediaPublic");
   const hasServerPayload = initialMedia !== undefined;
@@ -934,6 +943,7 @@ export function CivicMediaCenterPageContent({
       mediaLocalizationRuntimeBranch={mediaLocalizationRuntimeBranch}
       mediaLocalizationRequestedLocale={mediaLocalizationRequestedLocale}
       mediaLocalizationBatchLocale={mediaLocalizationBatchLocale}
+      mediaPlpLiveTruthProbeAttr={mediaPlpLiveTruthProbeAttr}
     />
   );
 }
