@@ -37,6 +37,8 @@ const PRE_PROVIDER_FILES = [
   "translation-reuse.ts",
   "plp-inspect.ts",
   "locale-lookup.ts",
+  "persistence-selection.ts",
+  "durability-verify.ts",
   "run-materializer.ts",
 ] as const;
 

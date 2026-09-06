@@ -1,5 +1,9 @@
 /**
  * Reset 02 — persistence facade (memory default; mongo when configured + selected).
+ *
+ * Reset 03B.1 — CLI operators with `--mongo` MUST call
+ * `requirePublishedLocalizationMongoPersistence` before any PLP publish/read.
+ * Silent memory fallback under `--mongo` is a durability incident class.
  */
 
 import type { PublishedLocalizedPresentationRecord } from "@hu/types";
@@ -23,6 +27,19 @@ export function setPublishedLocalizationPersistenceModeForTests(
   mode = next;
 }
 
+/**
+ * Operator / CLI seam: force durable Mongo PLP persistence.
+ * Fail closed when Mongo is not configured — never silently fall back to memory.
+ */
+export function requirePublishedLocalizationMongoPersistence(reason: string): void {
+  if (!isMongoConfigured()) {
+    throw new Error(
+      `PLP durable Mongo persistence required (${reason}): MONGODB_URI is not configured.`,
+    );
+  }
+  mode = "mongo";
+}
+
 export function setPublishedLocalizationFindFailureForTests(fail: boolean): void {
   findFailureForTests = fail;
 }
@@ -32,6 +49,17 @@ export function getPublishedLocalizationPersistenceMode(): PublishedLocalization
     return "mongo";
   }
   return "memory";
+}
+
+/**
+ * Assert the effective mode is Mongo. Use after require* / before publish.
+ */
+export function assertPublishedLocalizationMongoPersistenceActive(reason: string): void {
+  if (getPublishedLocalizationPersistenceMode() !== "mongo") {
+    throw new Error(
+      `PLP persistence mode is not MONGO (${reason}). Refusing silent memory fallback.`,
+    );
+  }
 }
 
 export function resetPublishedLocalizationPersistenceForTests(): void {

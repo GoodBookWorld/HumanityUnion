@@ -23,6 +23,15 @@ export {
   type MediaPlpMaterializerArgs,
 } from "./parse-args.js";
 export {
+  getMediaPlpPersistenceObservability,
+  requireMediaPlpMaterializerMongoPersistence,
+} from "./persistence-selection.js";
+export { verifyDurableMediaPlpCurrent } from "./durability-verify.js";
+export {
+  MEDIA_PLP_STAGING_FORENSIC_PLAN_STATUS,
+  MEDIA_PLP_STAGING_FORENSIC_TARGET,
+} from "./staging-forensic-read-plan.js";
+export {
   printMediaPlpMaterializerReport,
   runMediaPlpMaterializer,
   type MediaPlpMaterializerDeps,

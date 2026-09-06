@@ -45,6 +45,12 @@ import {
   evaluateMediaPlpMaterializerProductionRefusal,
 } from "./staging-guards.js";
 import { lookupExistingMediaPlpTranslation } from "./translation-reuse.js";
+import {
+  getMediaPlpPersistenceObservability,
+  requireMediaPlpMaterializerMongoPersistence,
+  type MediaPlpPersistenceObservability,
+} from "./persistence-selection.js";
+import { verifyDurableMediaPlpCurrent } from "./durability-verify.js";
 import type { MediaPlpMaterializerArgs } from "./parse-args.js";
 import type { MediaPlpMaterializerSourceResolve } from "./source-resolve.js";
 import type { MediaPlpExistingTranslationLookup } from "./translation-reuse.js";
@@ -78,6 +84,12 @@ export type MediaPlpMaterializerReport = {
   readonly CONTENT_TRANSLATION_WRITES: number;
   readonly SOURCE_WRITES: number;
   readonly PLP_OUTCOME: string | null;
+  readonly PLP_PERSISTENCE_MODE: MediaPlpPersistenceObservability["PLP_PERSISTENCE_MODE"];
+  readonly PLP_CURRENT_COLLECTION: string;
+  readonly PLP_HISTORY_COLLECTION: string;
+  readonly PLP_READ_DATABASE: string | null;
+  readonly PLP_WRITE_DATABASE: string | null;
+  readonly PLP_DURABILITY_VERIFIED: boolean | null;
   readonly IMPORT_BOUNDARY_OK: boolean;
   readonly RSS_GUARD_MB: number;
   readonly PROVIDER_INPUT_LIMIT_BYTES: number;
@@ -109,6 +121,7 @@ export type MediaPlpMaterializerDeps = {
   ) => Promise<MediaPlpMaterializerLocaleLookup>;
   readonly importProvider?: () => Promise<TranslationProvider>;
   readonly publish?: typeof publishMediaPlpEntity;
+  readonly verifyDurability?: typeof verifyDurableMediaPlpCurrent;
   readonly connect?: () => Promise<void>;
   readonly disconnect?: () => Promise<void>;
   readonly isMongoConfigured?: () => boolean;
@@ -118,6 +131,9 @@ export type MediaPlpMaterializerDeps = {
   readonly maxProviderInputBytes?: number;
   readonly currentRssMb?: () => number;
   readonly skipImportBoundaryCheck?: boolean;
+  /** Unit fixtures only — production CLI must never skip Mongo PLP persistence. */
+  readonly skipMongoPersistenceRequire?: boolean;
+  readonly requirePersistence?: () => MediaPlpPersistenceObservability;
 };
 
 function buildReport(input: {
@@ -133,6 +149,8 @@ function buildReport(input: {
   readonly plpOutcome: string | null;
   readonly abortReason: string | null;
   readonly database: string | null;
+  readonly persistence: MediaPlpPersistenceObservability;
+  readonly durabilityVerified: boolean | null;
 }): MediaPlpMaterializerReport {
   const counters = getMediaPlpMaterializerCounters();
   return {
@@ -160,6 +178,12 @@ function buildReport(input: {
     CONTENT_TRANSLATION_WRITES: counters.CONTENT_TRANSLATION_WRITES,
     SOURCE_WRITES: counters.SOURCE_WRITES,
     PLP_OUTCOME: input.plpOutcome,
+    PLP_PERSISTENCE_MODE: input.persistence.PLP_PERSISTENCE_MODE,
+    PLP_CURRENT_COLLECTION: input.persistence.PLP_CURRENT_COLLECTION,
+    PLP_HISTORY_COLLECTION: input.persistence.PLP_HISTORY_COLLECTION,
+    PLP_READ_DATABASE: input.persistence.PLP_READ_DATABASE,
+    PLP_WRITE_DATABASE: input.persistence.PLP_WRITE_DATABASE,
+    PLP_DURABILITY_VERIFIED: input.durabilityVerified,
     IMPORT_BOUNDARY_OK: true,
     RSS_GUARD_MB: resolveMediaPlpOperatorMaxRssMb(),
     PROVIDER_INPUT_LIMIT_BYTES: resolveMediaPlpOperatorMaxProviderInputBytes(),
@@ -218,13 +242,45 @@ export async function runMediaPlpMaterializer(
   }
 
   const mongoReady = (deps.isMongoConfigured ?? isMongoConfigured)();
-  if (!mongoReady && !deps.resolveSource) {
+  if (!mongoReady && !deps.resolveSource && !deps.skipMongoPersistenceRequire) {
     return {
       exitCode: 1,
       report: null,
       errorMessage: "MONGODB_URI is not configured.",
     };
   }
+
+  let persistence: MediaPlpPersistenceObservability;
+  try {
+    if (deps.requirePersistence) {
+      persistence = deps.requirePersistence();
+    } else if (deps.skipMongoPersistenceRequire) {
+      persistence = getMediaPlpPersistenceObservability();
+    } else {
+      // --mongo is mandatory for this CLI: never silently publish/read via memory Map.
+      persistence = requireMediaPlpMaterializerMongoPersistence();
+    }
+  } catch (error) {
+    return {
+      exitCode: 2,
+      report: null,
+      errorMessage: error instanceof Error ? error.message : "PLP Mongo persistence required",
+    };
+  }
+
+  const withPersistence = (
+    partial: Omit<
+      Parameters<typeof buildReport>[0],
+      "persistence" | "durabilityVerified"
+    > & {
+      readonly durabilityVerified?: boolean | null;
+    },
+  ): MediaPlpMaterializerReport =>
+    buildReport({
+      ...partial,
+      persistence,
+      durabilityVerified: partial.durabilityVerified ?? null,
+    });
 
   let connected = false;
   try {
@@ -294,7 +350,7 @@ export async function runMediaPlpMaterializer(
     );
 
     if (!args.execute) {
-      const report = buildReport({
+      const report = withPersistence({
         args,
         source,
         plp,
@@ -313,13 +369,14 @@ export async function runMediaPlpMaterializer(
         plpOutcome: null,
         abortReason: null,
         database,
+        durabilityVerified: alreadyCurrent ? true : null,
       });
       return { exitCode: 0, report, errorMessage: null };
     }
 
     // ---- EXECUTE path ----
     if (!source.SOURCE_FOUND || !source.SOURCE_PUBLIC || !source.CANONICAL_VERSION) {
-      const report = buildReport({
+      const report = withPersistence({
         args,
         source,
         plp,
@@ -341,7 +398,7 @@ export async function runMediaPlpMaterializer(
       !localeInfo.LOCALE_ENABLED ||
       !localeInfo.CONTENT_TRANSLATION_ENABLED
     ) {
-      const report = buildReport({
+      const report = withPersistence({
         args,
         source,
         plp,
@@ -362,8 +419,9 @@ export async function runMediaPlpMaterializer(
       };
     }
 
+    // Idempotency before provider: durable current match → no import/call/write.
     if (alreadyCurrent) {
-      const report = buildReport({
+      const report = withPersistence({
         args,
         source,
         plp,
@@ -373,9 +431,10 @@ export async function runMediaPlpMaterializer(
         wouldPublish: false,
         localizationSource: "UNCHANGED_PLP",
         providerInputBytes: 0,
-        plpOutcome: "IDEMPOTENT",
+        plpOutcome: "UNCHANGED_PLP",
         abortReason: null,
         database,
+        durabilityVerified: true,
       });
       return { exitCode: 0, report, errorMessage: null };
     }
@@ -392,7 +451,7 @@ export async function runMediaPlpMaterializer(
       const rssNow = (deps.currentRssMb ?? currentMaterializerRssMb)();
       captureMaterializerBeforeProvider();
       if (rssNow >= maxRss) {
-        const report = buildReport({
+        const report = withPersistence({
           args,
           source,
           plp,
@@ -416,7 +475,7 @@ export async function runMediaPlpMaterializer(
       const maxBytes =
         deps.maxProviderInputBytes ?? resolveMediaPlpOperatorMaxProviderInputBytes();
       if (estimatedProviderBytes > maxBytes) {
-        const report = buildReport({
+        const report = withPersistence({
           args,
           source,
           plp,
@@ -452,7 +511,7 @@ export async function runMediaPlpMaterializer(
       captureMaterializerAfterProvider();
 
       if (!providerResult.ok) {
-        const report = buildReport({
+        const report = withPersistence({
           args,
           source,
           plp,
@@ -471,7 +530,7 @@ export async function runMediaPlpMaterializer(
 
       const rssAfter = (deps.currentRssMb ?? currentMaterializerRssMb)();
       if (rssAfter >= maxRss) {
-        const report = buildReport({
+        const report = withPersistence({
           args,
           source,
           plp,
@@ -517,7 +576,7 @@ export async function runMediaPlpMaterializer(
     });
 
     if (!publishResult.ok) {
-      const report = buildReport({
+      const report = withPersistence({
         args,
         source,
         plp,
@@ -531,6 +590,7 @@ export async function runMediaPlpMaterializer(
         abortReason:
           publishResult.outcome === "NOT_READY" ? "PARTIAL_OR_NOT_READY" : publishResult.outcome,
         database,
+        durabilityVerified: false,
       });
       return {
         exitCode: 1,
@@ -542,7 +602,39 @@ export async function runMediaPlpMaterializer(
     markMaterializerPlpWrite();
     captureMaterializerAfterPublish();
 
-    const report = buildReport({
+    const verify = deps.verifyDurability ?? verifyDurableMediaPlpCurrent;
+    const durability = await verify({
+      entityType: args.entityType,
+      entityId: args.entityId,
+      locale: args.locale,
+      canonicalVersion: source.CANONICAL_VERSION,
+      requireMongo: !deps.skipMongoPersistenceRequire,
+    });
+
+    if (!durability.ok) {
+      const report = withPersistence({
+        args,
+        source,
+        plp,
+        translation,
+        wouldReuse,
+        wouldCallProvider: localizationSource === "PROVIDER",
+        wouldPublish: true,
+        localizationSource,
+        providerInputBytes,
+        plpOutcome: "DURABILITY_VERIFICATION_FAILED",
+        abortReason: "DURABILITY_VERIFICATION_FAILED",
+        database,
+        durabilityVerified: false,
+      });
+      return {
+        exitCode: 1,
+        report,
+        errorMessage: durability.reason,
+      };
+    }
+
+    const report = withPersistence({
       args,
       source,
       plp,
@@ -552,11 +644,11 @@ export async function runMediaPlpMaterializer(
       wouldPublish: true,
       localizationSource,
       providerInputBytes,
-      plpOutcome: publishResult.outcome,
+      plpOutcome: publishResult.outcome === "IDEMPOTENT" ? "IDEMPOTENT" : "PUBLISHED",
       abortReason: null,
       database,
+      durabilityVerified: true,
     });
-    // Ensure schema constant referenced for execute gate documentation.
     void PUBLISHED_LOCALIZATION_SCHEMA_VERSION;
     return { exitCode: 0, report, errorMessage: null };
   } catch (error) {
@@ -603,6 +695,12 @@ export function printMediaPlpMaterializerReport(
     `CONTENT_TRANSLATION_WRITES=${report.CONTENT_TRANSLATION_WRITES}`,
     `SOURCE_WRITES=${report.SOURCE_WRITES}`,
     `PLP_OUTCOME=${report.PLP_OUTCOME ?? ""}`,
+    `PLP_PERSISTENCE_MODE=${report.PLP_PERSISTENCE_MODE}`,
+    `PLP_CURRENT_COLLECTION=${report.PLP_CURRENT_COLLECTION}`,
+    `PLP_HISTORY_COLLECTION=${report.PLP_HISTORY_COLLECTION}`,
+    `PLP_READ_DATABASE=${report.PLP_READ_DATABASE ?? ""}`,
+    `PLP_WRITE_DATABASE=${report.PLP_WRITE_DATABASE ?? ""}`,
+    `PLP_DURABILITY_VERIFIED=${report.PLP_DURABILITY_VERIFIED ?? ""}`,
     `IMPORT_BOUNDARY_OK=${report.IMPORT_BOUNDARY_OK}`,
     `RSS_GUARD_MB=${report.RSS_GUARD_MB}`,
     `PROVIDER_INPUT_LIMIT_BYTES=${report.PROVIDER_INPUT_LIMIT_BYTES}`,

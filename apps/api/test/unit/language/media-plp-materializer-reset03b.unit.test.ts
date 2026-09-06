@@ -99,6 +99,7 @@ function fixtureDeps(input?: {
     input?.translationState ?? (translationComplete ? "COMPLETE" : "MISSING");
   return {
     skipImportBoundaryCheck: false,
+    skipMongoPersistenceRequire: true,
     isMongoConfigured: () => true,
     resolveDatabase: () => input?.database ?? "humanity_union_staging",
     platformMode: input?.executePlatform ?? "staging",
@@ -131,6 +132,10 @@ function fixtureDeps(input?: {
       LOCALE_REGISTRY_FOUND: true,
       LOCALE_ENABLED: true,
       CONTENT_TRANSLATION_ENABLED: true,
+    }),
+    verifyDurability: async () => ({
+      ok: true as const,
+      PLP_DURABILITY_VERIFIED: true as const,
     }),
     importProvider: async () => {
       importProviderCalls.count += 1;
@@ -423,7 +428,7 @@ describe("Reset 03B Media PLP materializer", () => {
     assert.equal(second.report!.PROVIDER_CALL_COUNT, 0);
     assert.equal(importProviderCalls.count, 0);
     assert.equal(second.report!.PLP_WRITES, 0);
-    assert.equal(second.report!.PLP_OUTCOME, "IDEMPOTENT");
+    assert.equal(second.report!.PLP_OUTCOME, "UNCHANGED_PLP");
   });
 
   it("P: stale/lower revision cannot replace current", async () => {
@@ -550,5 +555,83 @@ describe("Reset 03B Media PLP materializer", () => {
     );
     assert.equal(result.exitCode, 2);
     assert.match(result.errorMessage ?? "", /PLATFORM_MODE must be staging/);
+  });
+
+  it("03B.1 G: durability read-back failure reports DURABILITY_VERIFICATION_FAILED", async () => {
+    const result = await runMediaPlpMaterializer(identityArgv(["--execute"]), {
+      ...fixtureDeps({ translationComplete: true }),
+      verifyDurability: async () => ({
+        ok: false,
+        PLP_DURABILITY_VERIFIED: false,
+        reason: "Durable current pointer missing after publish.",
+      }),
+    });
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.report!.PLP_OUTCOME, "DURABILITY_VERIFICATION_FAILED");
+    assert.equal(result.report!.PLP_DURABILITY_VERIFIED, false);
+    assert.equal(result.report!.PROVIDER_CALL_COUNT, 0);
+  });
+
+  it("03B.1 A/B: --mongo cannot silently select memory without require", async () => {
+    const {
+      getPublishedLocalizationPersistenceMode,
+      requirePublishedLocalizationMongoPersistence,
+      resetPublishedLocalizationPersistenceForTests,
+    } = await import(
+      "../../../src/modules/language/published-localized-presentation/persistence/repository.js"
+    );
+    resetPublishedLocalizationPersistenceForTests();
+    assert.equal(getPublishedLocalizationPersistenceMode(), "memory");
+
+    const refused = await runMediaPlpMaterializer(identityArgv(), {
+      ...fixtureDeps(),
+      skipMongoPersistenceRequire: false,
+      requirePersistence: () => {
+        throw new Error(
+          "materialize:media-plp --mongo requires MONGODB_URI; refusing memory PLP fallback.",
+        );
+      },
+    });
+    assert.equal(refused.exitCode, 2);
+    assert.match(refused.errorMessage ?? "", /refusing memory PLP fallback/i);
+    assert.equal(getPublishedLocalizationPersistenceMode(), "memory");
+    void requirePublishedLocalizationMongoPersistence;
+  });
+
+  it("03B.1 incident class: memory publish does not survive store reset", async () => {
+    const {
+      findCurrentPublishedPresentation,
+      publishMediaPlpEntity,
+      resetPublishedLocalizationPersistenceForTests,
+      setPublishedLocalizationPersistenceModeForTests,
+    } = await import(
+      "../../../src/modules/language/published-localized-presentation/index.js"
+    );
+    resetPublishedLocalizationPersistenceForTests();
+    setPublishedLocalizationPersistenceModeForTests("memory");
+    const published = await publishMediaPlpEntity({
+      entityType: "civic_media_trusted",
+      entityId: "reuters-incident-repro",
+      locale: "uk",
+      canonicalVersion,
+      contentRevision: 1,
+      canonicalPresentation,
+      layers: [{ source: "MACHINE", values: { explanation: "[uk] x" } }],
+      includeDeterministicMachine: false,
+    });
+    assert.equal(published.ok, true);
+    const before = await findCurrentPublishedPresentation({
+      entityType: "civic_media_trusted",
+      entityId: "reuters-incident-repro",
+      locale: "uk",
+    });
+    assert.ok(before);
+    resetPublishedLocalizationPersistenceForTests();
+    const after = await findCurrentPublishedPresentation({
+      entityType: "civic_media_trusted",
+      entityId: "reuters-incident-repro",
+      locale: "uk",
+    });
+    assert.equal(after, null);
   });
 });

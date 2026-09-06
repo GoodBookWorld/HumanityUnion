@@ -34,6 +34,8 @@ export {
   findCurrentPublishedPresentation,
   getPublishedLocalizationPersistenceMode,
   publishAtomicPublishedPresentation,
+  requirePublishedLocalizationMongoPersistence,
+  assertPublishedLocalizationMongoPersistenceActive,
   resetPublishedLocalizationPersistenceForTests,
   saveBuildingOrFailedSnapshot,
   setPublishedLocalizationFindFailureForTests,
