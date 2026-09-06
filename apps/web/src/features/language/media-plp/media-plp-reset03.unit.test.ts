@@ -34,14 +34,15 @@ describe("Reset 03 web Media PLP boundary", () => {
   });
 
   it("PLP page path does not import generateContentTranslation", () => {
-    const plpPage = readFileSync(
-      join(webSrc, "features/language/media-plp/CivicMediaCenterPlpContent.tsx"),
-      "utf8",
-    );
-    assert.doesNotMatch(plpPage, /generateContentTranslation|useTrustedMediaExplanationsOverlay/);
-    assert.doesNotMatch(plpPage, /CivicMediaTranslatedEditorial/);
     const mediaRoute = readFileSync(join(webSrc, "app/media/page.tsx"), "utf8");
     assert.match(mediaRoute, /isMediaPlpWebEnabled/);
-    assert.match(mediaRoute, /CivicMediaCenterPlpContent/);
+    assert.match(mediaRoute, /CivicMediaCenterPageContent/);
+    assert.doesNotMatch(mediaRoute, /CivicMediaCenterPlpContent/);
+    const pageContent = readFileSync(
+      join(webSrc, "features/civic-media-center/components/CivicMediaCenterPageContent.tsx"),
+      "utf8",
+    );
+    assert.match(pageContent, /skipClientTranslation/);
+    assert.doesNotMatch(pageContent, /generateContentTranslation\(/);
   });
 });

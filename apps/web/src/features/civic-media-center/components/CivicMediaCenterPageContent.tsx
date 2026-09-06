@@ -33,6 +33,8 @@ import { CivicPipelineWorkflow } from "./CivicPipelineWorkflow";
 import { MediaLogo } from "./MediaLogo";
 import { TrustedMediaCategoryTabs } from "./TrustedMediaCategoryTabs";
 import { TrustedMediaRailCard } from "./TrustedMediaRailCard";
+import { applyMediaPlpPresentationsToEditorial } from "../../language/media-plp/apply-media-plp-editorial";
+import type { MediaPlpResolvedPresentation } from "../../language/media-plp/presentation";
 
 import "../civic-media-center.css";
 import "../media-rail/civic-media-section-shell.css";
@@ -67,17 +69,33 @@ function ExternalResourceLink({ href, children }: { href: string; children: stri
   );
 }
 
-function PrincipleCard({ principle }: { principle: CivicMediaSelectionPrinciple }) {
+function PrincipleCard({
+  principle,
+  plpMode,
+  plpEntityId,
+}: {
+  principle: CivicMediaSelectionPrinciple;
+  plpMode?: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+  plpEntityId?: string;
+}) {
   const t = useTranslations("civicMediaPublic");
   const icon = PRINCIPLE_ICONS[principle.id] ?? principle.title.slice(0, 1);
   const hasWhy = (PRINCIPLE_WHY_IT_MATTERS_IDS as readonly string[]).includes(principle.id);
   const whyItMatters = hasWhy ? t(`principles.${principle.id}.whyItMatters`) : null;
-  // Pack 08J.1 — principle already localized via civic_media editorial overlay.
+  // Pack 08J.1 / Reset 03C.1 — principle text from editorial (legacy CT or PLP-applied).
   const displayTitle = principle.title;
   const displayBody = principle.description;
 
   return (
-    <Card className="civic-media-resource-card civic-media-resource-card--principle">
+    <Card
+      className="civic-media-resource-card civic-media-resource-card--principle"
+      data-hu-plp-mode={plpMode}
+      data-hu-plp-entity={plpMode ? "civic_media_principle" : undefined}
+      data-hu-plp-id={plpEntityId}
+      data-hu-fallback-nodes={
+        plpMode === "CANONICAL_FALLBACK" ? "all" : plpMode === "PUBLISHED_LOCALIZED" ? "0" : undefined
+      }
+    >
       <span className="civic-media-resource-card__icon" aria-hidden="true">
         {icon}
       </span>
@@ -172,16 +190,24 @@ function TrustedMediaCard({
   resource,
   categoryTitle,
   explanation,
+  plpMode,
 }: {
   resource: TrustedMediaResource;
   categoryTitle: string;
   explanation?: string;
+  plpMode?: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
 }) {
   return (
     <TrustedMediaRailCard
       resource={resource}
       categoryTitle={categoryTitle}
       explanation={explanation}
+      data-hu-plp-mode={plpMode}
+      data-hu-plp-entity={plpMode ? "civic_media_trusted" : undefined}
+      data-hu-plp-id={plpMode ? resource.id : undefined}
+      data-hu-fallback-nodes={
+        plpMode === "CANONICAL_FALLBACK" ? "all" : plpMode === "PUBLISHED_LOCALIZED" ? "0" : undefined
+      }
     />
   );
 }
@@ -189,15 +215,35 @@ function TrustedMediaCard({
 function CivicMediaCenterLoaded({
   media,
   initialEditorial,
+  plpTrustedById,
+  plpPrinciplesById,
 }: {
   media: CivicMediaCenterPublic;
   initialEditorial?: CivicMediaResolvedEditorial;
+  plpTrustedById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  plpPrinciplesById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
 }) {
   const t = useTranslations("civicMediaPublic");
-  const editorial = useCivicMediaResolvedEditorial(media, initialEditorial);
+  const plpMode = plpTrustedById != null && plpPrinciplesById != null;
+  const plpEditorial = plpMode
+    ? applyMediaPlpPresentationsToEditorial({
+        media,
+        trustedById: plpTrustedById,
+        principlesById: plpPrinciplesById,
+      })
+    : undefined;
+  const editorial = useCivicMediaResolvedEditorial(
+    media,
+    plpEditorial ?? initialEditorial,
+    { skipClientTranslation: plpMode },
+  );
 
   return (
-    <main className="civic-media-page">
+    <main
+      className="civic-media-page"
+      data-hu-media-plp={plpMode ? "true" : undefined}
+      data-hu-media-renderer="shared"
+    >
       <div className="civic-media-page__container">
         <section id="overview" className="civic-media-page__hero civic-media-section-shell">
           <div className="civic-media-section-shell__inner">
@@ -251,7 +297,17 @@ function CivicMediaCenterLoaded({
           items={[...editorial.selectionPrinciples]}
           layout="four-two-one"
           getItemKey={(principle) => principle.id}
-          renderItem={(principle) => <PrincipleCard principle={principle} />}
+          renderItem={(principle) => (
+            <PrincipleCard
+              principle={principle}
+              plpMode={
+                plpMode
+                  ? plpPrinciplesById[principle.id]?.mode ?? "CANONICAL_FALLBACK"
+                  : undefined
+              }
+              plpEntityId={plpMode ? principle.id : undefined}
+            />
+          )}
           footerAction={
             <Link href={`${CIVIC_MEDIA_ROUTE}#faq`}>{t("selectionPrinciples.readFaq")}</Link>
           }
@@ -272,6 +328,11 @@ function CivicMediaCenterLoaded({
                 resource={resource}
                 categoryTitle={categoryTitle}
                 explanation={editorial.trustedExplanationsById[resource.id]}
+                plpMode={
+                  plpMode
+                    ? plpTrustedById[resource.id]?.mode ?? "CANONICAL_FALLBACK"
+                    : undefined
+                }
               />
             )}
           />
@@ -327,6 +388,8 @@ function CivicMediaCenterLoaded({
 export function CivicMediaCenterPageContent({
   initialMedia,
   initialEditorial,
+  plpTrustedById,
+  plpPrinciplesById,
 }: {
   /**
    * Pack 08I.9 / 08I.12 — SSR-fetched media payload when server fetch succeeded.
@@ -337,6 +400,12 @@ export function CivicMediaCenterPageContent({
   initialMedia?: CivicMediaCenterPublic;
   /** Pack 08I.9 — SSR warm editorial seed (GET resolve only). */
   initialEditorial?: CivicMediaResolvedEditorial;
+  /**
+   * Reset 03C.1 — when set with plpPrinciplesById, use shared Media structure with
+   * PLP semantic values (no separate PLP page; no generate-on-miss).
+   */
+  plpTrustedById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  plpPrinciplesById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
 } = {}) {
   const t = useTranslations("civicMediaPublic");
   const hasServerPayload = initialMedia !== undefined;
@@ -391,5 +460,12 @@ export function CivicMediaCenterPageContent({
     );
   }
 
-  return <CivicMediaCenterLoaded media={media} initialEditorial={initialEditorial} />;
+  return (
+    <CivicMediaCenterLoaded
+      media={media}
+      initialEditorial={initialEditorial}
+      plpTrustedById={plpTrustedById}
+      plpPrinciplesById={plpPrinciplesById}
+    />
+  );
 }

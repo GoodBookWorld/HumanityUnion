@@ -521,3 +521,9 @@ Rules:
 - Country Recommended Media shares `civic_media_trusted` identity with `/media`
 - Flag OFF → exact legacy CT path (rollback)
 - Live cold-cache acceptance required before ACTIVE legacy decrement; diagnostic: `diagnose:media-plp-consumer`
+
+### Reset 03C.1 — shared Media structure (post live rollback)
+
+First live staging acceptance with Web `HU_MEDIA_PLP_ENABLED=true` **failed**: dual `CivicMediaCenterPlpContent` omitted major sections and left a large blank `flex:1` main region. Web flag rolled back OFF.
+
+Correct architecture: one shared `CivicMediaCenterPageContent` structure; PLP only supplies atomic entity semantic presentations (principles + trusted). Missing localization must not remove content.

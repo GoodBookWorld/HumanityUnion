@@ -126,6 +126,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Staging PLP | Existing `civic_media_trusted/reuters/uk` must be readable — no modify/rematerialize in this pack |
 | Diagnostic | `diagnose:media-plp-consumer` (READ-ONLY; do not run in Cursor task) |
 | ACTIVE legacy | **30** unchanged until live acceptance |
+
+### Reset 03C.1 note — first live structural acceptance FAILED (rolled back)
+
+| Item | Status |
+|------|--------|
+| Incident | Staging `/media` with Web flag ON: large content missing, layout/blank region, incomplete page |
+| Root cause | Dual renderer `CivicMediaCenterPlpContent` only mounted principles + trusted (omitted overview, initiative-flow, news, fact-checking, propaganda, FAQ); wrong wrapper `civic-media-page__inner`; missing CSS; `humanity-layout__main { flex: 1 }` left large empty vertical gap |
+| Fix | Shared `CivicMediaCenterPageContent` for both modes; PLP supplies semantic values only |
+| Ledger class | remains `CONSUMER_READY_PENDING_LIVE_ACCEPTANCE` |
+| ACTIVE count | **30** — do not decrement |
+| Flag | Web rolled back OFF; do not re-enable in this pack |
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

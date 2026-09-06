@@ -322,16 +322,26 @@ function isCivicMediaTranslationPartial(
 export function useCivicMediaResolvedEditorial(
   media: CivicMediaCenterPublic,
   initialEditorial?: CivicMediaResolvedEditorial,
+  options?: {
+    /** Reset 03C.1 — PLP mode: never resolve/generate content_translations. */
+    readonly skipClientTranslation?: boolean;
+  },
 ): CivicMediaResolvedEditorial {
   const locale = useLocale();
   const readingContext = usePublicContentReadingContext();
   const displayLanguage = resolvePublicContentDisplayLanguage(locale);
   const requestGenerationRef = useRef(0);
+  const skipClientTranslation = options?.skipClientTranslation === true;
   const [editorial, setEditorial] = useState(
     () => initialEditorial ?? buildCanonicalCivicMediaEditorial(media),
   );
 
   useEffect(() => {
+    if (skipClientTranslation) {
+      setEditorial(initialEditorial ?? buildCanonicalCivicMediaEditorial(media));
+      return;
+    }
+
     // Pack 08I.9 — do not force canonical when SSR seed is present (Blog parity).
     if (!initialEditorial) {
       setEditorial(buildCanonicalCivicMediaEditorial(media));
@@ -424,6 +434,7 @@ export function useCivicMediaResolvedEditorial(
   }, [
     media,
     initialEditorial,
+    skipClientTranslation,
     readingContext.ready,
     displayLanguage,
     readingContext.translationPreference,

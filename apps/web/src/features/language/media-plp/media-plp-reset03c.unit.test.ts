@@ -154,7 +154,7 @@ describe("Reset 03C web Media PLP consumer", () => {
     const mediaRoute = readFileSync(join(webSrc, "app/media/page.tsx"), "utf8");
     assert.match(mediaRoute, /CivicMediaCenterPageContent/);
     assert.match(mediaRoute, /loadCivicMediaEditorialSeed/);
-    assert.match(mediaRoute, /CivicMediaCenterPlpContent/);
+    assert.match(mediaRoute, /isMediaPlpWebEnabled/);
   });
 
   it("ledger marks consumer ready pending live acceptance; ACTIVE count unchanged", () => {

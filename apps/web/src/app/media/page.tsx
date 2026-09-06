@@ -7,11 +7,11 @@ import { CivicMediaCenterPageContent } from "../../features/civic-media-center/c
 import type { CivicMediaResolvedEditorial } from "../../features/civic-media-center/components/CivicMediaTranslatedEditorial";
 import { loadCivicMediaEditorialSeed } from "../../features/civic-media-center/load-civic-media-editorial-seed";
 import { isMediaPlpWebEnabled } from "../../features/language/media-plp/feature-flag";
-import { CivicMediaCenterPlpContent } from "../../features/language/media-plp/CivicMediaCenterPlpContent";
 import {
   loadMediaPlpPrinciplePresentations,
   loadMediaPlpTrustedPresentations,
 } from "../../features/language/media-plp/load-media-plp-ssr";
+import type { MediaPlpResolvedPresentation } from "../../features/language/media-plp/presentation";
 import { resolveDocumentHtmlLocale } from "../../features/language/resolve-document-locale";
 
 export const dynamic = "force-dynamic";
@@ -27,13 +27,16 @@ export const metadata: Metadata = {
 
 /**
  * Pack 08I.9 / 08I.12 — SSR-first Media editorial seed (GET resolve only).
- * Reset 03C — when HU_MEDIA_PLP_ENABLED=true, SSR resolves Media PLP via
- * /api/v1/public/media-plp/resolve (PUBLISHED_LOCALIZED or coherent
- * CANONICAL_FALLBACK; no content_translations generate-on-miss). Default remains legacy.
+ * Reset 03C.1 — when HU_MEDIA_PLP_ENABLED=true, same shared Media structure
+ * receives PLP semantic presentations (never a second simplified page).
  */
 export default async function CivicMediaPage() {
   let initialMedia: CivicMediaCenterPublic | undefined;
   let initialEditorial: CivicMediaResolvedEditorial | undefined;
+  let plpTrustedById: Readonly<Record<string, MediaPlpResolvedPresentation>> | undefined;
+  let plpPrinciplesById:
+    | Readonly<Record<string, MediaPlpResolvedPresentation>>
+    | undefined;
 
   try {
     initialMedia = await fetchCivicMediaCenter();
@@ -43,26 +46,17 @@ export default async function CivicMediaPage() {
 
   if (initialMedia && isMediaPlpWebEnabled()) {
     const documentLocale = await resolveDocumentHtmlLocale();
-    const trustedById = await loadMediaPlpTrustedPresentations({
-      resources: initialMedia.trustedMedia,
-      locale: documentLocale.locale,
-    });
-    const principlesById = await loadMediaPlpPrinciplePresentations({
-      principles: initialMedia.selectionPrinciples,
-      locale: documentLocale.locale,
-    });
-    if (trustedById && principlesById) {
-      return (
-        <CivicMediaCenterPlpContent
-          media={initialMedia}
-          trustedById={trustedById}
-          principlesById={principlesById}
-        />
-      );
-    }
-  }
-
-  if (initialMedia) {
+    plpTrustedById =
+      (await loadMediaPlpTrustedPresentations({
+        resources: initialMedia.trustedMedia,
+        locale: documentLocale.locale,
+      })) ?? undefined;
+    plpPrinciplesById =
+      (await loadMediaPlpPrinciplePresentations({
+        principles: initialMedia.selectionPrinciples,
+        locale: documentLocale.locale,
+      })) ?? undefined;
+  } else if (initialMedia) {
     try {
       const documentLocale = await resolveDocumentHtmlLocale();
       initialEditorial = await loadCivicMediaEditorialSeed({
@@ -78,6 +72,8 @@ export default async function CivicMediaPage() {
     <CivicMediaCenterPageContent
       initialMedia={initialMedia}
       initialEditorial={initialEditorial}
+      plpTrustedById={plpTrustedById}
+      plpPrinciplesById={plpPrinciplesById}
     />
   );
 }

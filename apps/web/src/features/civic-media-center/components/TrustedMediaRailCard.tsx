@@ -18,6 +18,11 @@ interface TrustedMediaRailCardProps {
   /** Localized explanation overlay; falls back to resource.explanation (identity name untouched). */
   explanation?: string;
   className?: string;
+  /** Reset 03C.1 — optional PLP observability hooks (structure unchanged). */
+  "data-hu-plp-mode"?: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+  "data-hu-plp-entity"?: string;
+  "data-hu-plp-id"?: string;
+  "data-hu-fallback-nodes"?: string;
 }
 
 function isExternalUrl(url: string): boolean {
@@ -29,6 +34,10 @@ export function TrustedMediaRailCard({
   categoryTitle,
   explanation,
   className,
+  "data-hu-plp-mode": plpMode,
+  "data-hu-plp-entity": plpEntity,
+  "data-hu-plp-id": plpId,
+  "data-hu-fallback-nodes": fallbackNodes,
 }: TrustedMediaRailCardProps) {
   const t = useTranslations("civicMediaPublic");
   const locale = useLocale();
@@ -51,6 +60,10 @@ export function TrustedMediaRailCard({
       ]
         .filter(Boolean)
         .join(" ")}
+      data-hu-plp-mode={plpMode}
+      data-hu-plp-entity={plpEntity}
+      data-hu-plp-id={plpId}
+      data-hu-fallback-nodes={fallbackNodes}
     >
       <div className="civic-media-resource-card__header">
         <MediaLogo
