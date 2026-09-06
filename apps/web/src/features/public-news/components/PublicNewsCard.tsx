@@ -5,6 +5,10 @@ import { useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { MediaLogo } from "../../civic-media-center/components/MediaLogo";
+import {
+  MediaSemanticNode,
+  type MediaSemanticResult,
+} from "../../language/media-plp/media-semantic-contract";
 import { useClientAuthStatus } from "../../auth/use-client-auth-status";
 import {
   buildCreateInitiativeFromNewsHref,
@@ -23,6 +27,18 @@ interface PublicNewsCardProps {
   disableOnDemandTranslation?: boolean;
 }
 
+function plpEntityResult(view: {
+  coverage: { status: string; canonicalFallbackNodeCount: number };
+}): MediaSemanticResult {
+  if (
+    view.coverage.status === "FALLBACK_CANONICAL" ||
+    view.coverage.canonicalFallbackNodeCount > 0
+  ) {
+    return "CANONICAL_FALLBACK";
+  }
+  return "PUBLISHED_LOCALIZED";
+}
+
 function CreateInitiativeLink({ newsId }: { newsId: string }) {
   const authStatus = useClientAuthStatus();
   const t = useTranslations("publicNews.card");
@@ -34,14 +50,18 @@ function CreateInitiativeLink({ newsId }: { newsId: string }) {
   if (authStatus === "pending") {
     return (
       <span className="public-news-card__button public-news-card__button--primary" aria-hidden="true">
-        {t("loading")}
+        <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+          {t("loading")}
+        </MediaSemanticNode>
       </span>
     );
   }
 
   return (
     <a className="public-news-card__button public-news-card__button--primary" href={href}>
-      {t("createInitiative")}
+      <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+        {t("createInitiative")}
+      </MediaSemanticNode>
     </a>
   );
 }
@@ -65,6 +85,7 @@ export function PublicNewsCard({
     () => buildNewsAiSummaryBullets(view.title, view.summary).slice(0, 3),
     [view.summary, view.title],
   );
+  const entityResult = plpEntityResult(view);
 
   return (
     <article
@@ -73,13 +94,19 @@ export function PublicNewsCard({
       data-hu-surface="public-news-card"
       data-hu-coverage={view.coverage.status}
       data-hu-fallback-nodes={String(view.coverage.canonicalFallbackNodeCount)}
-      data-hu-semantic-owner="PLP_ENTITY"
     >
       <div className="public-news-card__header">
         {view.category ? (
-          <span className="public-news-card__badge" data-hu-semantic="auto">
+          <MediaSemanticNode
+            as="span"
+            className="public-news-card__badge"
+            owner="PLP_ENTITY"
+            result={entityResult}
+            entityType="public_news"
+            entityId={view.id}
+          >
             {view.category}
-          </span>
+          </MediaSemanticNode>
         ) : null}
         <div className="public-news-card__provider">
           <MediaLogo
@@ -92,9 +119,14 @@ export function PublicNewsCard({
             height={28}
           />
           <div className="public-news-card__provider-copy">
-            <p className="public-news-card__provider-name" data-hu-semantic="protected">
+            <MediaSemanticNode
+              as="p"
+              className="public-news-card__provider-name"
+              owner="PROTECTED_CANONICAL"
+              result="PROTECTED_CANONICAL"
+            >
               {view.sourceName}
-            </p>
+            </MediaSemanticNode>
             <p className="public-news-card__published">
               <time dateTime={view.publishedAt}>{publishedLabel}</time>
             </p>
@@ -107,15 +139,23 @@ export function PublicNewsCard({
       </div>
 
       <div className="public-news-card__body">
-        <h3
+        <MediaSemanticNode
+          as="h3"
           id={`public-news-title-${view.id}`}
           className="public-news-card__headline"
-          data-hu-semantic="auto"
+          owner="PLP_ENTITY"
+          result={entityResult}
+          entityType="public_news"
+          entityId={view.id}
         >
           {view.title}
-        </h3>
+        </MediaSemanticNode>
 
-        <PublicNewsAiSummary bullets={aiSummaryBullets} />
+        <PublicNewsAiSummary
+          bullets={aiSummaryBullets}
+          entityResult={entityResult}
+          entityId={view.id}
+        />
 
         <div className="public-news-card__actions">
           <a
@@ -124,9 +164,10 @@ export function PublicNewsCard({
             target="_blank"
             rel="noopener noreferrer"
             aria-label={t("readOriginalAria", { title: view.title })}
-            data-hu-semantic="protected"
           >
-            {t("readOriginal")}
+            <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+              {t("readOriginal")}
+            </MediaSemanticNode>
           </a>
           <CreateInitiativeLink newsId={view.id} />
         </div>

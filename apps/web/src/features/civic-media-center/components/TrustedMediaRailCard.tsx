@@ -1,6 +1,7 @@
 /**
  * Pack 08K.3.1 — Trusted media rail card.
  * Outlet name stays protected identity; explanation uses overlay; country uses geography display.
+ * Reset 03E.1 — rendered semantic owner+result contracts on participant-facing nodes.
  */
 
 "use client";
@@ -10,6 +11,10 @@ import { getLocalizedCountryDisplayName } from "@hu/geography";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Badge, Card } from "../../../design-system";
+import {
+  MediaSemanticNode,
+  plpModeToSemanticResult,
+} from "../../language/media-plp/media-semantic-contract";
 import { MediaLogo } from "./MediaLogo";
 
 interface TrustedMediaRailCardProps {
@@ -49,6 +54,13 @@ export function TrustedMediaRailCard({
   const countryLabel = resource.countryCode
     ? getLocalizedCountryDisplayName(resource.countryCode, locale, resource.country)
     : resource.country;
+  const explanationResult = plpModeToSemanticResult(plpMode);
+
+  const cta = (
+    <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+      {t("officialWebsite")}
+    </MediaSemanticNode>
+  );
 
   return (
     <Card
@@ -76,33 +88,55 @@ export function TrustedMediaRailCard({
           height={48}
         />
         <div>
-          <h3 data-hu-semantic="protected">{resource.name}</h3>
-          <p className="civic-media-resource-card__meta" data-hu-semantic="ui">
+          <MediaSemanticNode as="h3" owner="PROTECTED_CANONICAL" result="PROTECTED_CANONICAL">
+            {resource.name}
+          </MediaSemanticNode>
+          <MediaSemanticNode
+            as="p"
+            className="civic-media-resource-card__meta"
+            owner="UI_DICTIONARY"
+            result="LOCALIZED_DICTIONARY"
+          >
             {t("coverageLabel", { country: countryLabel })}
-          </p>
+          </MediaSemanticNode>
         </div>
       </div>
-      <Badge status={resolvedCategoryTitle} />
-      <p className="civic-media-resource-card__body" data-hu-semantic="auto">
+      <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+        <Badge status={resolvedCategoryTitle} />
+      </MediaSemanticNode>
+      {resource.countryCode ? (
+        <MediaSemanticNode
+          as="span"
+          className="civic-media-resource-card__visually-hidden"
+          owner="GEOGRAPHY"
+          result="LOCALIZED_DICTIONARY"
+          style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}
+        >
+          {countryLabel}
+        </MediaSemanticNode>
+      ) : null}
+      <MediaSemanticNode
+        as="p"
+        className="civic-media-resource-card__body"
+        owner="PLP_ENTITY"
+        result={explanationResult}
+        entityType={plpEntity}
+        entityId={plpId}
+      >
         {displayExplanation}
-      </p>
+      </MediaSemanticNode>
       {isExternalUrl(resource.websiteUrl) ? (
         <a
           href={resource.websiteUrl}
           className="hu-button hu-button--secondary"
           target="_blank"
           rel="noopener noreferrer"
-          data-hu-semantic="protected"
         >
-          {t("officialWebsite")}
+          {cta}
         </a>
       ) : (
-        <a
-          href={resource.websiteUrl}
-          className="hu-button hu-button--secondary"
-          data-hu-semantic="protected"
-        >
-          {t("officialWebsite")}
+        <a href={resource.websiteUrl} className="hu-button hu-button--secondary">
+          {cta}
         </a>
       )}
     </Card>

@@ -51,6 +51,8 @@ export interface PublicNewsSectionProps {
    * Missing published localization → coherent canonical item.
    */
   disableOnDemandTranslation?: boolean;
+  /** SSR/static seed — skip initial fetch when provided. */
+  initialArticles?: PublicNewsArticleItem[];
 }
 
 function hasActiveDiscoveryFilters(filters: PublicNewsFilters): boolean {
@@ -77,17 +79,21 @@ export function PublicNewsSection({
   description,
   className,
   disableOnDemandTranslation = false,
+  initialArticles,
 }: PublicNewsSectionProps = {}) {
   const locale = useLocale();
   const tDiscovery = useTranslations("publicNews.discovery");
   const tCountry = useTranslations("publicNews.country");
   const tErrors = useTranslations("publicNews.errors");
-  const [articles, setArticles] = useState<PublicNewsArticleItem[]>([]);
+  const [articles, setArticles] = useState<PublicNewsArticleItem[]>(
+    () => initialArticles ?? [],
+  );
   const [activeProviders, setActiveProviders] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => initialArticles == null);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<PublicNewsFilters>(DEFAULT_PUBLIC_NEWS_FILTERS);
   const [countryProvider, setCountryProvider] = useState("all");
+  const hasInitialArticles = initialArticles != null;
 
   const resolvedShowToolbar = showToolbar ?? variant === "discovery";
   const resolvedEyebrow =
@@ -127,8 +133,11 @@ export function PublicNewsSection({
   }, [tErrors, locale]);
 
   useEffect(() => {
+    if (hasInitialArticles) {
+      return;
+    }
     void loadArticles();
-  }, [loadArticles]);
+  }, [hasInitialArticles, loadArticles]);
 
   const filterOptions = useMemo(
     () => collectFilterOptions(articles, activeProviders),
@@ -260,6 +269,8 @@ export function PublicNewsSection({
       metadata={!loading && !error ? resultSummary : null}
       controls={!loading && !error && processedArticles.length > 0 ? controls : null}
       className={className}
+      chromeSemanticOwner="UI_DICTIONARY"
+      chromeSemanticResult="LOCALIZED_DICTIONARY"
       footer={
         variant === "discovery" ? (
           <Link href="/initiatives/create">{tDiscovery("footerCreate")}</Link>

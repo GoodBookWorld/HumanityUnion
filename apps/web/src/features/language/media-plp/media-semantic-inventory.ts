@@ -1,6 +1,9 @@
 /**
- * Reset 03E — Media /media semantic ownership inventory + coverage detector.
- * Structural: every participant-facing field must classify; UNOWNED_FIELDS must be 0.
+ * Reset 03E — Media /media semantic ownership inventory (DECLARATIVE ONLY).
+ *
+ * Reset 03E.1: this table is NOT coverage authority. UNOWNED_FIELDS=0 here was a
+ * false positive — it never inspected rendered DOM, PLP resolve RESULT, or nested
+ * components. Use media-rendered-coverage.ts + MediaSemanticNode render contracts.
  */
 
 export type MediaSemanticOwner =

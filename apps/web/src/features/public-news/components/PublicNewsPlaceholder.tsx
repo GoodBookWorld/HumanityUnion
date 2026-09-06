@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import { Button } from "../../../design-system";
+import { MediaSemanticNode } from "../../language/media-plp/media-semantic-contract";
 
 interface PublicNewsPlaceholderProps {
   variant: "loading" | "empty" | "error" | "no-results";
@@ -30,11 +31,17 @@ export function PublicNewsPlaceholder({ variant, onRetry, message }: PublicNewsP
   if (variant === "error") {
     return (
       <div className="public-news-discovery__status" role="alert">
-        <h3>{t("errorTitle")}</h3>
-        <p>{t("errorBody")}</p>
+        <MediaSemanticNode as="h3" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+          {t("errorTitle")}
+        </MediaSemanticNode>
+        <MediaSemanticNode as="p" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+          {t("errorBody")}
+        </MediaSemanticNode>
         {onRetry ? (
           <Button type="button" variant="secondary" onClick={onRetry}>
-            {t("retry")}
+            <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+              {t("retry")}
+            </MediaSemanticNode>
           </Button>
         ) : null}
       </div>
@@ -44,16 +51,24 @@ export function PublicNewsPlaceholder({ variant, onRetry, message }: PublicNewsP
   if (variant === "no-results") {
     return (
       <div className="public-news-discovery__placeholder" role="status">
-        <h3>{t("noResultsTitle")}</h3>
-        <p>{message ?? t("noResultsBody")}</p>
+        <MediaSemanticNode as="h3" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+          {t("noResultsTitle")}
+        </MediaSemanticNode>
+        <MediaSemanticNode as="p" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+          {message ?? t("noResultsBody")}
+        </MediaSemanticNode>
       </div>
     );
   }
 
   return (
     <div className="public-news-discovery__placeholder" role="status">
-      <h3>{t("emptyTitle")}</h3>
-      <p>{t("emptyBody")}</p>
+      <MediaSemanticNode as="h3" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+        {t("emptyTitle")}
+      </MediaSemanticNode>
+      <MediaSemanticNode as="p" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+        {t("emptyBody")}
+      </MediaSemanticNode>
     </div>
   );
 }

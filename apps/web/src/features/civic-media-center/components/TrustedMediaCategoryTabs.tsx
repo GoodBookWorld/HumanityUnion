@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import type { TrustedMediaCategory, TrustedMediaResource } from "@hu/types";
 
+import { MediaSemanticNode } from "../../language/media-plp/media-semantic-contract";
 import { HorizontalRailControls } from "../media-rail/MediaRailControls";
 import { HorizontalRailViewport } from "../media-rail/MediaRailViewport";
 import { useHorizontalRail } from "../media-rail/useMediaHorizontalRail";
@@ -78,19 +79,28 @@ function TrustedMediaCategoryRail({
     >
       <div className="trusted-media-category-tabs__panel-heading">
         <div>
-          <h3 data-hu-semantic="ui">{categoryTitle}</h3>
-          <span className="horizontal-section-chip" data-hu-semantic="ui">
+          <MediaSemanticNode as="h3" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+            {categoryTitle}
+          </MediaSemanticNode>
+          <MediaSemanticNode
+            as="span"
+            className="horizontal-section-chip"
+            owner="UI_DICTIONARY"
+            result="LOCALIZED_DICTIONARY"
+          >
             {sourcesLabel}
-          </span>
+          </MediaSemanticNode>
         </div>
         {controls}
       </div>
-      <p
+      <MediaSemanticNode
+        as="p"
         className="trusted-media-category-tabs__panel-description"
-        data-hu-semantic="ui"
+        owner="UI_DICTIONARY"
+        result="LOCALIZED_DICTIONARY"
       >
         {categoryDescription}
-      </p>
+      </MediaSemanticNode>
 
       <HorizontalRailViewport
         label={label}
@@ -230,7 +240,6 @@ export function TrustedMediaCategoryTabs({
         role="tablist"
         aria-label={t("trustedCategoriesTablist")}
         className="trusted-media-category-tabs__list"
-        data-hu-semantic-owner="UI_DICTIONARY"
       >
         {availableCategories.map((category, index) => {
           const isActive = category.id === activeCategory.id;
@@ -255,7 +264,9 @@ export function TrustedMediaCategoryTabs({
               onClick={() => selectCategory(category.id)}
               onKeyDown={(event) => handleTabKeyDown(event, index)}
             >
-              {tabLabel}
+              <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+                {tabLabel}
+              </MediaSemanticNode>
             </button>
           );
         })}

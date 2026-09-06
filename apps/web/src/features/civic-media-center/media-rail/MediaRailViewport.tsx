@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
+import { MediaSemanticNode } from "../../language/media-plp/media-semantic-contract";
 import type { HorizontalRailLayout } from "./horizontal-section.types";
 import type { useHorizontalRail } from "./useMediaHorizontalRail";
 
@@ -74,16 +75,23 @@ export function HorizontalRailViewport<T>({
       aria-label={label}
       data-visible-count={visibleCount}
       data-layout={layout}
-      data-hu-semantic-owner="UI_DICTIONARY"
     >
       <p id={instructionsId} className="horizontal-rail__visually-hidden">
-        {t("instructions", { label })}
+        <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+          {t("instructions", { label })}
+        </MediaSemanticNode>
       </p>
 
       {visibleScrollHint ? (
-        <p className="horizontal-rail__scroll-hint" aria-hidden="true">
+        <MediaSemanticNode
+          as="p"
+          className="horizontal-rail__scroll-hint"
+          aria-hidden="true"
+          owner="UI_DICTIONARY"
+          result="LOCALIZED_DICTIONARY"
+        >
           {visibleScrollHint}
-        </p>
+        </MediaSemanticNode>
       ) : null}
 
       <div
@@ -122,17 +130,19 @@ export function HorizontalRailViewport<T>({
       {shouldShowCount || footerAction ? (
         <div className="horizontal-rail__footer">
           {shouldShowCount ? (
-            <p
+            <MediaSemanticNode
+              as="p"
               className="horizontal-rail__summary"
               aria-live="polite"
-              data-hu-semantic-owner="UI_DICTIONARY"
+              owner="UI_DICTIONARY"
+              result="LOCALIZED_DICTIONARY"
             >
               {t("showing", {
                 start: startIndex + 1,
                 end: visibleEnd,
                 total: items.length,
               })}
-            </p>
+            </MediaSemanticNode>
           ) : null}
           {footerAction ? (
             <div className="horizontal-rail__footer-action">{footerAction}</div>

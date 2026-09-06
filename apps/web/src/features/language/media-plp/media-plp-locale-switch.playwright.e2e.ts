@@ -22,7 +22,7 @@ function mediaBodyFor(locale: Locale): string {
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   return `
-<main class="humanity-layout__main civic-media-page" data-hu-media-plp="true" data-hu-media-renderer="shared" data-hu-plp-ssr="1" data-hu-semantic-unowned="0">
+<main class="humanity-layout__main civic-media-page" data-hu-media-plp="true" data-hu-media-renderer="shared" data-hu-plp-ssr="1" data-hu-semantic-contract="rendered">
   <div class="civic-media-page__container">
     <section id="overview" class="civic-media-page__hero">
       <p class="civic-media-page__eyebrow">Civic Media</p>
@@ -366,7 +366,7 @@ for (const transition of [
         expect(clientTranslationRequests).toBe(0);
         // Fixture does not hit a real API; network Media PLP count stays 0.
         expect(mediaPlpResolveRequests).toBe(0);
-        await expect(page.locator('[data-hu-semantic-unowned="0"]')).toHaveCount(1);
+        await expect(page.locator('[data-hu-semantic-contract="rendered"]')).toHaveCount(1);
         await expect(page.locator('[data-hu-semantic-owner="BUG_UNOWNED"]')).toHaveCount(0);
         // Controllable fixture budget — not a staging/Render claim.
         expect(transitionDurationMs).toBeLessThan(2_000);

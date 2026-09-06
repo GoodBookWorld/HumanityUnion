@@ -581,4 +581,14 @@ Every `/media` participant-facing field is classified:
 | PROTECTED_CANONICAL | Outlet names, URLs |
 | GEOGRAPHY | Country labels with codes |
 
-Schema **PLP.2** adds `civic_media_editorial`. Prior `PLP.1` snapshots (including reuters/uk) fail closed to canonical until rematerialized. Combined Media resolve remains **one HTTP batch**. Coverage gate: `UNOWNED_FIELDS=0`.
+Schema **PLP.2** adds `civic_media_editorial`. Prior `PLP.1` snapshots (including reuters/uk) fail closed to canonical until rematerialized. Combined Media resolve remains **one HTTP batch**.
+
+### Reset 03E.1 — rendered semantic coverage authority
+
+Coverage authority is the **rendered** participant-facing tree:
+
+- Every semantic text node emits `MediaSemanticNode` with `OWNER` + `RESULT`
+- Gates derive from rendered HTML (`media-rendered-coverage.ts`), not a hand inventory
+- Page status: `FULLY_LOCALIZED` | `PARTIALLY_LOCALIZED` | `CANONICAL_ONLY` | `INVALID_COVERAGE`
+- `UNOWNED=0` alone is insufficient; non-English `FULLY_LOCALIZED` also requires zero translatable `CANONICAL_FALLBACK`
+- Production remains lightweight (data-* attrs only; no DOM crawl on request)

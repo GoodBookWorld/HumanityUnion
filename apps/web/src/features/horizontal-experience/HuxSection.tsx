@@ -10,6 +10,11 @@ import type {
   HorizontalRailLayout,
   HorizontalSurfaceStyle,
 } from "../civic-media-center/media-rail/horizontal-section.types";
+import {
+  MediaSemanticNode,
+  type MediaSemanticOwner,
+  type MediaSemanticResult,
+} from "../language/media-plp/media-semantic-contract";
 
 import { resolveHuxPreset } from "./hux-presets";
 import type { HuxExperienceVariant } from "./hux.types";
@@ -37,6 +42,8 @@ export function HuxSection<T>({
   showScrollHint,
   className,
   viewportClassName,
+  chromeSemanticOwner = "UI_DICTIONARY",
+  chromeSemanticResult = "LOCALIZED_DICTIONARY",
   ...props
 }: HuxSectionProps<T> & { viewportClassName?: string }) {
   const preset = resolveHuxPreset(experience, {
@@ -58,6 +65,8 @@ export function HuxSection<T>({
       showScrollHint={preset.showScrollHint}
       className={className}
       viewportClassName={viewportClassName}
+      chromeSemanticOwner={chromeSemanticOwner}
+      chromeSemanticResult={chromeSemanticResult}
     />
   );
 }
@@ -95,6 +104,29 @@ export interface HuxDirectoryShellProps {
   footer?: ReactNode;
   className?: string;
   children: ReactNode;
+  chromeSemanticOwner?: MediaSemanticOwner;
+  chromeSemanticResult?: MediaSemanticResult;
+}
+
+function HuxChromeText(props: {
+  readonly as: "p" | "h2";
+  readonly className: string;
+  readonly id?: string;
+  readonly text: string;
+  readonly owner: MediaSemanticOwner;
+  readonly result: MediaSemanticResult;
+}) {
+  return (
+    <MediaSemanticNode
+      as={props.as}
+      className={props.className}
+      id={props.id}
+      owner={props.owner}
+      result={props.result}
+    >
+      {props.text}
+    </MediaSemanticNode>
+  );
 }
 
 export function HuxDirectoryShell({
@@ -106,6 +138,8 @@ export function HuxDirectoryShell({
   footer,
   className,
   children,
+  chromeSemanticOwner = "UI_DICTIONARY",
+  chromeSemanticResult = "LOCALIZED_DICTIONARY",
 }: HuxDirectoryShellProps) {
   const headingId = `${sectionId}-heading`;
 
@@ -126,11 +160,24 @@ export function HuxDirectoryShell({
       <div className="horizontal-section-shell__inner">
         <header className="horizontal-section-shell__header">
           <div className="horizontal-section-shell__heading-block">
-            {eyebrow ? <p className="horizontal-section-shell__eyebrow">{eyebrow}</p> : null}
+            {eyebrow ? (
+              <HuxChromeText
+                as="p"
+                className="horizontal-section-shell__eyebrow"
+                text={eyebrow}
+                owner={chromeSemanticOwner}
+                result={chromeSemanticResult}
+              />
+            ) : null}
             <div className="horizontal-section-shell__title-row">
-              <h2 id={headingId} className="horizontal-section-shell__title">
-                {title}
-              </h2>
+              <HuxChromeText
+                as="h2"
+                id={headingId}
+                className="horizontal-section-shell__title"
+                text={title}
+                owner={chromeSemanticOwner}
+                result={chromeSemanticResult}
+              />
               {headerAction ? (
                 <div className="horizontal-section-shell__title-actions">
                   <div className="horizontal-section-shell__header-action">{headerAction}</div>
@@ -138,7 +185,13 @@ export function HuxDirectoryShell({
               ) : null}
             </div>
             {description ? (
-              <p className="horizontal-section-shell__description">{description}</p>
+              <HuxChromeText
+                as="p"
+                className="horizontal-section-shell__description"
+                text={description}
+                owner={chromeSemanticOwner}
+                result={chromeSemanticResult}
+              />
             ) : null}
           </div>
         </header>
@@ -167,6 +220,8 @@ export function HuxDiscoveryShell({
   className,
   surfaceStyle = "elevated",
   children,
+  chromeSemanticOwner = "UI_DICTIONARY",
+  chromeSemanticResult = "LOCALIZED_DICTIONARY",
 }: HuxDiscoveryShellProps) {
   const headingId = `${sectionId}-heading`;
 
@@ -187,11 +242,24 @@ export function HuxDiscoveryShell({
       <div className="horizontal-section-shell__inner">
         <header className="horizontal-section-shell__header">
           <div className="horizontal-section-shell__heading-block">
-            {eyebrow ? <p className="horizontal-section-shell__eyebrow">{eyebrow}</p> : null}
+            {eyebrow ? (
+              <HuxChromeText
+                as="p"
+                className="horizontal-section-shell__eyebrow"
+                text={eyebrow}
+                owner={chromeSemanticOwner}
+                result={chromeSemanticResult}
+              />
+            ) : null}
             <div className="horizontal-section-shell__title-row">
-              <h2 id={headingId} className="horizontal-section-shell__title">
-                {title}
-              </h2>
+              <HuxChromeText
+                as="h2"
+                id={headingId}
+                className="horizontal-section-shell__title"
+                text={title}
+                owner={chromeSemanticOwner}
+                result={chromeSemanticResult}
+              />
               <div className="horizontal-section-shell__title-actions">
                 {headerAction ? (
                   <div className="horizontal-section-shell__header-action">{headerAction}</div>
@@ -202,7 +270,13 @@ export function HuxDiscoveryShell({
               </div>
             </div>
             {description ? (
-              <p className="horizontal-section-shell__description">{description}</p>
+              <HuxChromeText
+                as="p"
+                className="horizontal-section-shell__description"
+                text={description}
+                owner={chromeSemanticOwner}
+                result={chromeSemanticResult}
+              />
             ) : null}
             {metadata ? (
               <div className="horizontal-section-shell__metadata">{metadata}</div>

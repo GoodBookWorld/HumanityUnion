@@ -9,6 +9,7 @@ import type {
   CivicMediaSelectionPrinciple,
   FactCheckResource,
   PropagandaAnalysisResource,
+  PublicNewsArticleItem,
   TrustedMediaResource,
 } from "@hu/types";
 
@@ -34,6 +35,10 @@ import { MediaLogo } from "./MediaLogo";
 import { TrustedMediaCategoryTabs } from "./TrustedMediaCategoryTabs";
 import { TrustedMediaRailCard } from "./TrustedMediaRailCard";
 import { applyMediaPlpPresentationsToEditorial } from "../../language/media-plp/apply-media-plp-editorial";
+import {
+  MediaSemanticNode,
+  plpModeToSemanticResult,
+} from "../../language/media-plp/media-semantic-contract";
 import {
   recordClientTranslationRequestCount,
   recordLocaleSwitchCompleted,
@@ -61,17 +66,22 @@ function isExternalHttpUrl(url: string): boolean {
 }
 
 function ExternalResourceLink({ href, children }: { href: string; children: string }) {
+  const linkBody = (
+    <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+      {children}
+    </MediaSemanticNode>
+  );
   if (isExternalHttpUrl(href)) {
     return (
       <a href={href} className="hu-button hu-button--secondary" target="_blank" rel="noopener noreferrer">
-        {children}
+        {linkBody}
       </a>
     );
   }
 
   return (
     <a href={href} className="hu-button hu-button--secondary">
-      {children}
+      {linkBody}
     </a>
   );
 }
@@ -106,14 +116,33 @@ function PrincipleCard({
       <span className="civic-media-resource-card__icon" aria-hidden="true">
         {icon}
       </span>
-      <h3 data-hu-semantic="auto">{displayTitle}</h3>
-      <p className="civic-media-resource-card__body" data-hu-semantic="auto">
+      <MediaSemanticNode
+        as="h3"
+        owner="PLP_ENTITY"
+        result={plpModeToSemanticResult(plpMode)}
+        entityType="civic_media_principle"
+        entityId={plpEntityId}
+      >
+        {displayTitle}
+      </MediaSemanticNode>
+      <MediaSemanticNode
+        as="p"
+        className="civic-media-resource-card__body"
+        owner="PLP_ENTITY"
+        result={plpModeToSemanticResult(plpMode)}
+        entityType="civic_media_principle"
+        entityId={plpEntityId}
+      >
         {displayBody}
-      </p>
+      </MediaSemanticNode>
       {whyItMatters ? (
         <p className="civic-media-resource-card__why">
-          <strong>{t("whyItMatters")}</strong>
-          {whyItMatters}
+          <MediaSemanticNode as="strong" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+            {t("whyItMatters")}
+          </MediaSemanticNode>
+          <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+            {whyItMatters}
+          </MediaSemanticNode>
         </p>
       ) : null}
     </Card>
@@ -132,7 +161,9 @@ function FactCheckCard({ resource }: { resource: FactCheckResource }) {
     <Card className="civic-media-resource-card civic-media-resource-card--verification">
       <div className="civic-media-resource-card__header civic-media-resource-card__header--logo-end">
         <div className="civic-media-resource-card__heading">
-          <h3>{resource.name}</h3>
+          <MediaSemanticNode as="h3" owner="PROTECTED_CANONICAL" result="PROTECTED_CANONICAL">
+            {resource.name}
+          </MediaSemanticNode>
         </div>
         <MediaLogo
           name={resource.name}
@@ -144,13 +175,33 @@ function FactCheckCard({ resource }: { resource: FactCheckResource }) {
           height={40}
         />
       </div>
-      <p className="civic-media-resource-card__label">{t("mission")}</p>
-      <p className="civic-media-resource-card__body">{mission}</p>
+      <MediaSemanticNode
+        as="p"
+        className="civic-media-resource-card__label"
+        owner="UI_DICTIONARY"
+        result="LOCALIZED_DICTIONARY"
+      >
+        {t("mission")}
+      </MediaSemanticNode>
+      <MediaSemanticNode
+        as="p"
+        className="civic-media-resource-card__body"
+        owner="UI_DICTIONARY"
+        result="LOCALIZED_DICTIONARY"
+      >
+        {mission}
+      </MediaSemanticNode>
       <div className="civic-media-resource-card__chips" aria-label={t("coverageAria")}>
         {chips.map((chip) => (
-          <span key={chip} className="civic-media-chip">
+          <MediaSemanticNode
+            key={chip}
+            as="span"
+            className="civic-media-chip"
+            owner="UI_DICTIONARY"
+            result="LOCALIZED_DICTIONARY"
+          >
             {chip}
-          </span>
+          </MediaSemanticNode>
         ))}
       </div>
       <ExternalResourceLink href={resource.websiteUrl}>{t("officialWebsite")}</ExternalResourceLink>
@@ -174,7 +225,9 @@ function PropagandaCard({ resource }: { resource: PropagandaAnalysisResource }) 
     <Card className="civic-media-resource-card civic-media-resource-card--analysis">
       <div className="civic-media-resource-card__header civic-media-resource-card__header--logo-end">
         <div className="civic-media-resource-card__heading">
-          <h3>{resource.name}</h3>
+          <MediaSemanticNode as="h3" owner="PROTECTED_CANONICAL" result="PROTECTED_CANONICAL">
+            {resource.name}
+          </MediaSemanticNode>
         </div>
         <MediaLogo
           name={resource.name}
@@ -186,8 +239,17 @@ function PropagandaCard({ resource }: { resource: PropagandaAnalysisResource }) 
           height={40}
         />
       </div>
-      <Badge status="neutral" variant="neutral" label={focusLabel} />
-      <p className="civic-media-resource-card__body">{explanation}</p>
+      <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+        <Badge status="neutral" variant="neutral" label={focusLabel} />
+      </MediaSemanticNode>
+      <MediaSemanticNode
+        as="p"
+        className="civic-media-resource-card__body"
+        owner="UI_DICTIONARY"
+        result="LOCALIZED_DICTIONARY"
+      >
+        {explanation}
+      </MediaSemanticNode>
       <ExternalResourceLink href={resource.websiteUrl}>{t("learnMore")}</ExternalResourceLink>
     </Card>
   );
@@ -325,12 +387,14 @@ function CivicMediaCenterLoaded({
   plpTrustedById,
   plpPrinciplesById,
   plpEditorialPresentation,
+  initialNewsArticles,
 }: {
   media: CivicMediaCenterPublic;
   initialEditorial?: CivicMediaResolvedEditorial;
   plpTrustedById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   plpPrinciplesById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   plpEditorialPresentation?: MediaPlpResolvedPresentation;
+  initialNewsArticles?: PublicNewsArticleItem[];
 }) {
   const t = useTranslations("civicMediaPublic");
   const plpMode = plpTrustedById != null && plpPrinciplesById != null;
@@ -358,45 +422,81 @@ function CivicMediaCenterLoaded({
     plpPrinciplesById,
   });
 
+  const editorialResult = plpMode
+    ? plpModeToSemanticResult(
+        plpEditorialPresentation?.mode ?? "CANONICAL_FALLBACK",
+      )
+    : "CANONICAL_FALLBACK";
+  const editorialMode =
+    plpEditorialPresentation?.mode ?? (plpMode ? "CANONICAL_FALLBACK" : undefined);
+
   return (
     <main
       className="civic-media-page"
       data-hu-media-plp={plpMode ? "true" : undefined}
       data-hu-media-renderer="shared"
-      data-hu-semantic-unowned="0"
+      data-hu-semantic-contract="rendered"
+      data-hu-plp-editorial-mode={editorialMode}
     >
       <div className="civic-media-page__container">
         <section id="overview" className="civic-media-page__hero civic-media-section-shell">
           <div className="civic-media-section-shell__inner">
-            <p className="civic-media-page__eyebrow" data-hu-semantic-owner="UI_DICTIONARY">
+            <MediaSemanticNode
+              as="p"
+              className="civic-media-page__eyebrow"
+              owner="UI_DICTIONARY"
+              result="LOCALIZED_DICTIONARY"
+            >
               {t("eyebrow")}
-            </p>
-            <h1 data-hu-semantic-owner="UI_DICTIONARY">{t("pageTitle")}</h1>
+            </MediaSemanticNode>
+            <MediaSemanticNode as="h1" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+              {t("pageTitle")}
+            </MediaSemanticNode>
             <div className="civic-media-page__editorial">
-              <h2
+              <MediaSemanticNode
+                as="h2"
                 className="civic-media-page__overview-title"
-                data-hu-semantic-owner="PLP_ENTITY"
-                data-hu-plp-entity="civic_media_editorial"
+                owner="PLP_ENTITY"
+                result={editorialResult}
+                entityType="civic_media_editorial"
+                entityId="civic-media-center"
               >
                 {editorial.overview.title}
-              </h2>
-              <p
+              </MediaSemanticNode>
+              <MediaSemanticNode
+                as="p"
                 className="civic-media-page__lead"
-                data-hu-semantic-owner="PLP_ENTITY"
-                data-hu-plp-entity="civic_media_editorial"
+                owner="PLP_ENTITY"
+                result={editorialResult}
+                entityType="civic_media_editorial"
+                entityId="civic-media-center"
               >
                 {editorial.overview.summary}
-              </p>
+              </MediaSemanticNode>
               <div className="civic-media-page__hero-grid">
                 {editorial.overview.points.map((point) => (
                   <Card
                     key={point.id}
                     className="civic-media-resource-card civic-media-resource-card--hero"
-                    data-hu-semantic-owner="PLP_ENTITY"
-                    data-hu-plp-entity="civic_media_editorial"
                   >
-                    <h2>{point.heading}</h2>
-                    <p>{point.body}</p>
+                    <MediaSemanticNode
+                      as="h2"
+                      owner="PLP_ENTITY"
+                      result={editorialResult}
+                      entityType="civic_media_editorial"
+                      entityId="civic-media-center"
+                    >
+                      {point.heading}
+                    </MediaSemanticNode>
+                    <MediaSemanticNode
+                      as="p"
+                      owner="PLP_ENTITY"
+                      result={editorialResult}
+                      entityType="civic_media_editorial"
+                      entityId="civic-media-center"
+                    >
+                      {point.body}
+                    </MediaSemanticNode>
                   </Card>
                 ))}
               </div>
@@ -410,6 +510,7 @@ function CivicMediaCenterLoaded({
           sectionId="news-widgets"
           variant="discovery"
           disableOnDemandTranslation={plpMode}
+          initialArticles={initialNewsArticles}
         />
 
         <HuxEducationSection
@@ -489,17 +590,30 @@ function CivicMediaCenterLoaded({
 
         <section id="faq" className="civic-media-page__faq civic-media-section-shell">
           <div className="civic-media-section-shell__inner">
-            <h2>{t("faq.heading")}</h2>
+            <MediaSemanticNode as="h2" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+              {t("faq.heading")}
+            </MediaSemanticNode>
             <div className="civic-media-page__faq-list">
               {editorial.faq.map((item) => (
-                <Card
-                  key={item.id}
-                  className="civic-media-resource-card"
-                  data-hu-semantic-owner="PLP_ENTITY"
-                  data-hu-plp-entity="civic_media_editorial"
-                >
-                  <h3>{item.question}</h3>
-                  <p>{item.answer}</p>
+                <Card key={item.id} className="civic-media-resource-card">
+                  <MediaSemanticNode
+                    as="h3"
+                    owner="PLP_ENTITY"
+                    result={editorialResult}
+                    entityType="civic_media_editorial"
+                    entityId="civic-media-center"
+                  >
+                    {item.question}
+                  </MediaSemanticNode>
+                  <MediaSemanticNode
+                    as="p"
+                    owner="PLP_ENTITY"
+                    result={editorialResult}
+                    entityType="civic_media_editorial"
+                    entityId="civic-media-center"
+                  >
+                    {item.answer}
+                  </MediaSemanticNode>
                 </Card>
               ))}
             </div>
@@ -507,8 +621,15 @@ function CivicMediaCenterLoaded({
         </section>
 
         <p className="civic-media-page__knowledge-link">
-          {t("knowledgeLink")}{" "}
-          <Link href="/knowledge">{t("visitKnowledge")}</Link>.
+          <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+            {t("knowledgeLink")}
+          </MediaSemanticNode>{" "}
+          <Link href="/knowledge">
+            <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+              {t("visitKnowledge")}
+            </MediaSemanticNode>
+          </Link>
+          .
         </p>
       </div>
     </main>
@@ -521,6 +642,7 @@ export function CivicMediaCenterPageContent({
   plpTrustedById,
   plpPrinciplesById,
   plpEditorialPresentation,
+  initialNewsArticles,
 }: {
   /**
    * Pack 08I.9 / 08I.12 — SSR-fetched media payload when server fetch succeeded.
@@ -539,6 +661,8 @@ export function CivicMediaCenterPageContent({
   plpPrinciplesById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   /** Reset 03E — overview + FAQ PLP presentation (civic_media_editorial). */
   plpEditorialPresentation?: MediaPlpResolvedPresentation;
+  /** Optional SSR/static news seed for PublicNewsSection. */
+  initialNewsArticles?: PublicNewsArticleItem[];
 } = {}) {
   const t = useTranslations("civicMediaPublic");
   const hasServerPayload = initialMedia !== undefined;
@@ -600,6 +724,7 @@ export function CivicMediaCenterPageContent({
       plpTrustedById={plpTrustedById}
       plpPrinciplesById={plpPrinciplesById}
       plpEditorialPresentation={plpEditorialPresentation}
+      initialNewsArticles={initialNewsArticles}
     />
   );
 }

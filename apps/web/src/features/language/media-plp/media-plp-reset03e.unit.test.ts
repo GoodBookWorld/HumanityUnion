@@ -79,10 +79,11 @@ function sampleMedia(): CivicMediaCenterPublic {
 }
 
 describe("Reset 03E — Media semantic coverage", () => {
-  it("coverage detector: UNOWNED_FIELDS=0", () => {
+  it("coverage detector: UNOWNED_FIELDS=0 (inventory only — not render authority; see 03E.1)", () => {
     const report = assertMediaSemanticCoverageComplete();
     assert.equal(report.UNOWNED_FIELDS, 0);
     assert.ok(report.MEDIA_SEMANTIC_FIELDS_TOTAL >= 30);
+    // 03E.1: inventory completeness ≠ localized render. Render gates live in reset03e1.
     assert.ok(report.PLP_FIELDS >= 1);
     assert.ok(report.UI_DICTIONARY_FIELDS >= 1);
     const formatted = formatMediaSemanticCoverageReport(report);

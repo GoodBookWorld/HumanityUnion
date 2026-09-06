@@ -186,6 +186,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Coverage acceptance | **pending until live** |
 | Media legacy entries | remain pending until live coverage acceptance |
 | ACTIVE count | **30** — do not reduce yet |
+
+### Reset 03E.1 note — rendered semantic coverage authority (no live ops)
+
+| Item | Status |
+|------|--------|
+| 03E false positive | Static 45-field inventory `UNOWNED_FIELDS=0` did **not** inspect render RESULT; PLP.1→PLP.2 stale + CANONICAL_FALLBACK still showed English |
+| Authority | `MediaSemanticNode` owner+result on real render path; coverage from rendered HTML contracts |
+| Page status | `FULLY_LOCALIZED` / `PARTIALLY_LOCALIZED` / `CANONICAL_ONLY` / `INVALID_COVERAGE` |
+| PLP.1 under PLP.2 | Remains fail-closed CANONICAL_FALLBACK; counted as fallback, not localized |
+| Coverage acceptance | **pending until live** |
+| ACTIVE count | **30** — do not reduce yet |
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

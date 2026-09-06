@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { MediaSemanticNode } from "../../language/media-plp/media-semantic-contract";
+
 interface HorizontalRailControlsProps {
   label: string;
   canScrollPrevious: boolean;
@@ -20,14 +22,23 @@ export function HorizontalRailControls({
   compact = false,
 }: HorizontalRailControlsProps) {
   const t = useTranslations("civicMediaPublic.rail");
+  const navigationLabel = t("navigation", { label });
   return (
     <div
       className={
         compact ? "horizontal-rail-controls horizontal-rail-controls--compact" : "horizontal-rail-controls"
       }
-      aria-label={t("navigation", { label })}
-      data-hu-semantic-owner="UI_DICTIONARY"
+      aria-label={navigationLabel}
     >
+      <MediaSemanticNode
+        as="span"
+        className="hu-visually-hidden"
+        owner="UI_DICTIONARY"
+        result="LOCALIZED_DICTIONARY"
+        aria-hidden="true"
+      >
+        {navigationLabel}
+      </MediaSemanticNode>
       <button
         type="button"
         className="horizontal-rail-controls__button horizontal-rail-controls__button--previous"
