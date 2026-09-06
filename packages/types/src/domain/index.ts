@@ -222,6 +222,9 @@ export {
 export type {
   BuildValidationReasonCode,
   BuildValidationResult,
+  LocalizationContentIntegrityReport,
+  LocalizationContentIntegrityStatus,
+  LocalizationContentIntegritySubreason,
   LocalizedNodeProvenance,
   PublishAtomicResult,
   PublishedLocalizationProvenanceSource,

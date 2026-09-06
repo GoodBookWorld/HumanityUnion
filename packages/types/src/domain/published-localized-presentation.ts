@@ -76,6 +76,33 @@ export type PublishedLocalizedPresentationSeo = {
 };
 
 /**
+ * Reset 03E.2 — semantic localization content integrity (CLI.1).
+ * Counts only — never participant prose. Required for non-English PUBLISHED_LOCALIZED.
+ */
+export type LocalizationContentIntegrityStatus =
+  | "PASSED"
+  | "FAILED"
+  | "NOT_APPLICABLE_EN"
+  | "UNKNOWN_LEGACY";
+
+export type LocalizationContentIntegritySubreason =
+  | "CANONICAL_IDENTICAL_TRANSLATABLE_VALUE"
+  | "MISSING_TRANSLATED_VALUE"
+  | "STRUCTURAL_TRANSLATION_MISMATCH";
+
+export type LocalizationContentIntegrityReport = {
+  readonly version: "CLI.1";
+  readonly status: LocalizationContentIntegrityStatus;
+  readonly TRANSLATABLE_NODE_COUNT: number;
+  readonly LOCALIZED_VALUE_NODE_COUNT: number;
+  readonly CANONICAL_IDENTICAL_NODE_COUNT: number;
+  readonly EMPTY_OR_MISSING_NODE_COUNT: number;
+  readonly PROTECTED_CANONICAL_NODE_COUNT: number;
+  readonly reasonCodes: readonly LocalizationContentIntegritySubreason[];
+  readonly evaluatedAt: string;
+};
+
+/**
  * Persisted / in-memory snapshot record.
  * Only state=PUBLISHED is eligible for normal public reads (with version match).
  */
@@ -91,6 +118,11 @@ export type PublishedLocalizedPresentationRecord = {
   readonly presentation: PublicPresentationNode;
   readonly provenance: readonly LocalizedNodeProvenance[];
   readonly seo?: PublishedLocalizedPresentationSeo;
+  /**
+   * Reset 03E.2 — content-integrity attestation. Missing on legacy PLP.2 ⇒
+   * read path fail-closed to CANONICAL_FALLBACK for locale != en.
+   */
+  readonly contentIntegrity?: LocalizationContentIntegrityReport;
   readonly publishedAt?: string;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -131,7 +163,11 @@ export type BuildValidationReasonCode =
   | "MISSING_REQUIRED_PROTECTED"
   | "PROVENANCE_PRIORITY_VIOLATION"
   | "EMPTY_PRESENTATION"
-  | "INVALID_IDENTITY";
+  | "INVALID_IDENTITY"
+  | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
+  | "CANONICAL_IDENTICAL_TRANSLATABLE_VALUE"
+  | "MISSING_TRANSLATED_VALUE"
+  | "STRUCTURAL_TRANSLATION_MISMATCH";
 
 export type BuildValidationResult =
   | {

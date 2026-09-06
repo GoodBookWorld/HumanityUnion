@@ -197,6 +197,18 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | PLP.1 under PLP.2 | Remains fail-closed CANONICAL_FALLBACK; counted as fallback, not localized |
 | Coverage acceptance | **pending until live** |
 | ACTIVE count | **30** — do not reduce yet |
+
+### Reset 03E.2 note — localization content integrity (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live gap | `civic_media_editorial` / uk could be `PUBLISHED` + `PUBLISHED_LOCALIZED` while overview/FAQ prose remained English |
+| Root class | **D** (provider/validation allowed MACHINE-identical English + resolve trusted publish state) |
+| Gate | `CLI.1` content integrity on build + resolve; reason `LOCALIZATION_CONTENT_INTEGRITY_FAILED` / `_MISSING` |
+| Bad snapshots | Not deleted; read path fail-closed to `CANONICAL_FALLBACK` |
+| Coverage | Integrity-invalid entity → `RESULT=CANONICAL_FALLBACK` → cannot be `FULLY_LOCALIZED` |
+| Coverage acceptance | **pending until live** |
+| ACTIVE count | **30** — do not reduce yet |
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

@@ -25,6 +25,13 @@ export {
   selectWinningProvenance,
 } from "./provenance-priority.js";
 export { collectAutoPaths } from "./presentation-paths.js";
+export {
+  evaluateLocalizationContentIntegrity,
+  isTechnicalIdentityPath,
+  LOCALIZATION_CONTENT_INTEGRITY_VERSION,
+  normalizeLocalizationCompareValue,
+  resolveLocalizationContentIntegrityForRead,
+} from "./content-integrity.js";
 export { resolvePublishedPresentation } from "./resolve-published-presentation.js";
 export {
   publishPublishedLocalizedPresentation,

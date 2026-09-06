@@ -592,3 +592,19 @@ Coverage authority is the **rendered** participant-facing tree:
 - Page status: `FULLY_LOCALIZED` | `PARTIALLY_LOCALIZED` | `CANONICAL_ONLY` | `INVALID_COVERAGE`
 - `UNOWNED=0` alone is insufficient; non-English `FULLY_LOCALIZED` also requires zero translatable `CANONICAL_FALLBACK`
 - Production remains lightweight (data-* attrs only; no DOM crawl on request)
+
+### Reset 03E.2 — localization content integrity
+
+**Invariant:** Publication state is not sufficient evidence of localization. A localized presentation must pass semantic content-integrity validation (`CLI.1`) before it may be served as `PUBLISHED_LOCALIZED`.
+
+| Concern | Rule |
+|---------|------|
+| TRANSLATABLE leaves | Non-English: must differ from canonical after whitespace-normalized equality (no language detection) |
+| PROTECTED_CANONICAL | Names, URLs, technical `*.id` paths — identical allowed; not counted as localization failures |
+| Publication | `locale != en` + any missing/empty/canonical-identical required prose → `LOCALIZATION_CONTENT_INTEGRITY_FAILED` → not publishable |
+| Atomicity | Whole entity fails closed; no field-by-field hybrid Ukrainian+English publish |
+| Legacy PLP.2 | Missing `contentIntegrity` metadata or failed recompute → read path `CANONICAL_FALLBACK` (no delete/mutate) |
+| Canonical fallback | Valid availability state; **not** a successful localization result |
+| Preflight | Exact identity only: integrity counts/status/reason — no body text, no provider, no writes |
+
+Provider boundary: every AUTO prose path must be present and non-identical to source; extras ignored; missing → `PARTIAL`.

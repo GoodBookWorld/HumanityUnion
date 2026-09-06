@@ -14,6 +14,10 @@ import {
   disconnectMongoClient,
 } from "../../../infrastructure/mongodb/mongo-connection.js";
 import {
+  evaluateLocalizationContentIntegrity,
+  resolveLocalizationContentIntegrityForRead,
+} from "../published-localized-presentation/content-integrity.js";
+import {
   getMediaPlpPreflightCounters,
   markMediaPlpPreflightMongoClosed,
 } from "./counters.js";
@@ -62,6 +66,14 @@ export type MediaPlpPreflightIdentityReport = {
   readonly WOULD_REQUIRE_BUILD: boolean;
   readonly SOURCE_DOCUMENT_BYTES: number;
   readonly PLP_DOCUMENT_BYTES: number;
+  /** Reset 03E.2 — bounded integrity counts (no body text). */
+  readonly TRANSLATABLE_NODE_COUNT: number | null;
+  readonly LOCALIZED_VALUE_NODE_COUNT: number | null;
+  readonly CANONICAL_IDENTICAL_NODE_COUNT: number | null;
+  readonly EMPTY_OR_MISSING_NODE_COUNT: number | null;
+  readonly PROTECTED_CANONICAL_NODE_COUNT: number | null;
+  readonly CONTENT_INTEGRITY_STATUS: string | null;
+  readonly CONTENT_INTEGRITY_REASON: string | null;
   readonly LOCALE_REGISTRY_FOUND: boolean;
   readonly LOCALE_ENABLED: boolean;
   readonly CONTENT_TRANSLATION_ENABLED: boolean;
@@ -125,6 +137,75 @@ export type MediaPlpPreflightDeps = {
   readonly resolveDatabase?: () => string | null;
   readonly skipImportBoundaryCheck?: boolean;
 };
+
+function computeContentIntegrityFields(input: {
+  readonly locale: string;
+  readonly source: MediaPlpPreflightSourceLookup;
+  readonly plp: MediaPlpPreflightPlpLookup;
+}): {
+  readonly TRANSLATABLE_NODE_COUNT: number | null;
+  readonly LOCALIZED_VALUE_NODE_COUNT: number | null;
+  readonly CANONICAL_IDENTICAL_NODE_COUNT: number | null;
+  readonly EMPTY_OR_MISSING_NODE_COUNT: number | null;
+  readonly PROTECTED_CANONICAL_NODE_COUNT: number | null;
+  readonly CONTENT_INTEGRITY_STATUS: string | null;
+  readonly CONTENT_INTEGRITY_REASON: string | null;
+} {
+  if (
+    !input.plp.PLP_CURRENT_FOUND ||
+    !input.source.canonicalPresentation ||
+    input.plp.presentation == null
+  ) {
+    return {
+      TRANSLATABLE_NODE_COUNT: null,
+      LOCALIZED_VALUE_NODE_COUNT: null,
+      CANONICAL_IDENTICAL_NODE_COUNT: null,
+      EMPTY_OR_MISSING_NODE_COUNT: null,
+      PROTECTED_CANONICAL_NODE_COUNT: null,
+      CONTENT_INTEGRITY_STATUS: input.plp.PLP_CURRENT_FOUND
+        ? "UNAVAILABLE"
+        : null,
+      CONTENT_INTEGRITY_REASON: input.plp.PLP_CURRENT_FOUND
+        ? "PRESENTATION_OR_CANONICAL_MISSING"
+        : null,
+    };
+  }
+
+  const gate = resolveLocalizationContentIntegrityForRead({
+    locale: input.locale,
+    canonicalPresentation: input.source.canonicalPresentation,
+    localizedPresentation: input.plp.presentation,
+    persisted: input.plp.contentIntegrity ?? null,
+  });
+
+  // Prefer recomputed counts; status/reason reflect read-path gate.
+  const report =
+    gate.report.status === "UNKNOWN_LEGACY"
+      ? evaluateLocalizationContentIntegrity({
+          locale: input.locale,
+          canonicalPresentation: input.source.canonicalPresentation,
+          localizedPresentation: input.plp.presentation,
+        })
+      : gate.report;
+
+  return {
+    TRANSLATABLE_NODE_COUNT: report.TRANSLATABLE_NODE_COUNT,
+    LOCALIZED_VALUE_NODE_COUNT: report.LOCALIZED_VALUE_NODE_COUNT,
+    CANONICAL_IDENTICAL_NODE_COUNT: report.CANONICAL_IDENTICAL_NODE_COUNT,
+    EMPTY_OR_MISSING_NODE_COUNT: report.EMPTY_OR_MISSING_NODE_COUNT,
+    PROTECTED_CANONICAL_NODE_COUNT: report.PROTECTED_CANONICAL_NODE_COUNT,
+    CONTENT_INTEGRITY_STATUS:
+      gate.reasonCode === "OK"
+        ? report.status
+        : gate.reasonCode === "LOCALIZATION_CONTENT_INTEGRITY_MISSING"
+          ? "UNKNOWN_LEGACY"
+          : "FAILED",
+    CONTENT_INTEGRITY_REASON:
+      gate.reasonCode === "OK"
+        ? report.reasonCodes[0] ?? null
+        : gate.reasonCode,
+  };
+}
 
 function computeMatch(input: {
   readonly source: MediaPlpPreflightSourceLookup;
@@ -302,6 +383,11 @@ export async function runMediaPlpPreflight(
 
     const localeInfo = await loadLocale(identityArgs.locale);
     const match = computeMatch({ source, plp });
+    const integrity = computeContentIntegrityFields({
+      locale: identityArgs.locale,
+      source,
+      plp,
+    });
     const database =
       deps.resolveDatabase?.() ??
       (isMongoConfigured() ? resolveMongoConfig().database : null);
@@ -326,6 +412,13 @@ export async function runMediaPlpPreflight(
       WOULD_REQUIRE_BUILD: match.wouldRequireBuild,
       SOURCE_DOCUMENT_BYTES: source.SOURCE_DOCUMENT_BYTES,
       PLP_DOCUMENT_BYTES: plp.PLP_DOCUMENT_BYTES,
+      TRANSLATABLE_NODE_COUNT: integrity.TRANSLATABLE_NODE_COUNT,
+      LOCALIZED_VALUE_NODE_COUNT: integrity.LOCALIZED_VALUE_NODE_COUNT,
+      CANONICAL_IDENTICAL_NODE_COUNT: integrity.CANONICAL_IDENTICAL_NODE_COUNT,
+      EMPTY_OR_MISSING_NODE_COUNT: integrity.EMPTY_OR_MISSING_NODE_COUNT,
+      PROTECTED_CANONICAL_NODE_COUNT: integrity.PROTECTED_CANONICAL_NODE_COUNT,
+      CONTENT_INTEGRITY_STATUS: integrity.CONTENT_INTEGRITY_STATUS,
+      CONTENT_INTEGRITY_REASON: integrity.CONTENT_INTEGRITY_REASON,
       LOCALE_REGISTRY_FOUND: localeInfo.LOCALE_REGISTRY_FOUND,
       LOCALE_ENABLED: localeInfo.LOCALE_ENABLED,
       CONTENT_TRANSLATION_ENABLED: localeInfo.CONTENT_TRANSLATION_ENABLED,

@@ -7,6 +7,7 @@ import type {
   LanguageCode,
   MediaPlpEntityType,
   PublicNewsArticleItem,
+  PublicPresentationNode,
   TrustedMediaCategoryId,
 } from "@hu/types";
 import { MEDIA_PLP_EDITORIAL_ENTITY_ID, MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
@@ -35,6 +36,8 @@ export type MediaPlpPreflightSourceLookup = {
   readonly SOURCE_DOCUMENT_BYTES: number;
   readonly SOURCE_RECORDS_MATCHED: number;
   readonly identityCollision: boolean;
+  /** In-memory only for 03E.2 integrity counts — never printed. */
+  readonly canonicalPresentation?: PublicPresentationNode | null;
 };
 
 function asString(value: unknown): string {
@@ -57,6 +60,7 @@ function emptySource(matched: number, collision = false): MediaPlpPreflightSourc
     SOURCE_DOCUMENT_BYTES: 0,
     SOURCE_RECORDS_MATCHED: matched,
     identityCollision: collision,
+    canonicalPresentation: null,
   };
 }
 
@@ -131,6 +135,7 @@ async function loadPublicNewsSource(
     SOURCE_DOCUMENT_BYTES: documentBytes(doc),
     SOURCE_RECORDS_MATCHED: 1,
     identityCollision: false,
+    canonicalPresentation: asMediaPlpPresentationNode(tree),
   };
 }
 
@@ -162,6 +167,7 @@ function loadPrincipleSource(entityId: string): MediaPlpPreflightSourceLookup {
     }),
     SOURCE_RECORDS_MATCHED: 1,
     identityCollision: false,
+    canonicalPresentation: asMediaPlpPresentationNode(tree),
   };
 }
 
@@ -190,6 +196,7 @@ function loadEditorialSource(entityId: string): MediaPlpPreflightSourceLookup {
     }),
     SOURCE_RECORDS_MATCHED: 1,
     identityCollision: false,
+    canonicalPresentation: asMediaPlpPresentationNode(tree),
   };
 }
 
@@ -257,6 +264,7 @@ async function loadTrustedSource(
     SOURCE_DOCUMENT_BYTES: documentBytes(doc),
     SOURCE_RECORDS_MATCHED: 1,
     identityCollision: false,
+    canonicalPresentation: asMediaPlpPresentationNode(tree),
   };
 }
 

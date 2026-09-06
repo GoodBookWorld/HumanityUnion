@@ -36,6 +36,7 @@ export type ProviderBoundaryResult =
         | "PROVIDER_FAILURE"
         | "PARSE_FAILURE"
         | "WRONG_TARGET_LANGUAGE"
+        | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
         | "PARTIAL"
         | "TIMEOUT";
       readonly PROVIDER_INPUT_BYTES: number;
@@ -70,7 +71,16 @@ export function validateMediaPlpProviderLocalizationValues(input: {
   readonly locale: LanguageCode;
   readonly autoValues: Readonly<Record<string, string>>;
   readonly translated: Readonly<Record<string, string>>;
-}): { readonly ok: true } | { readonly ok: false; readonly reason: "PARTIAL" | "WRONG_TARGET_LANGUAGE"; readonly message: string } {
+}):
+  | { readonly ok: true }
+  | {
+      readonly ok: false;
+      readonly reason:
+        | "PARTIAL"
+        | "WRONG_TARGET_LANGUAGE"
+        | "LOCALIZATION_CONTENT_INTEGRITY_FAILED";
+      readonly message: string;
+    } {
   const missing: string[] = [];
   for (const key of Object.keys(input.autoValues)) {
     const value = input.translated[key];
@@ -87,18 +97,34 @@ export function validateMediaPlpProviderLocalizationValues(input: {
   }
 
   if (input.locale !== "en") {
-    let anyChanged = false;
+    const identical: string[] = [];
+    let anyProsePath = false;
     for (const key of Object.keys(input.autoValues)) {
-      if (input.translated[key]!.trim() !== input.autoValues[key]!.trim()) {
-        anyChanged = true;
-        break;
+      // Technical identity paths may remain identical (protected by contract).
+      if (key === "id" || key.endsWith(".id")) {
+        continue;
+      }
+      anyProsePath = true;
+      const source = input.autoValues[key]!;
+      const translated = input.translated[key]!;
+      const normSource = source.trim().replace(/\s+/g, " ");
+      const normTranslated = translated.trim().replace(/\s+/g, " ");
+      if (normTranslated === normSource) {
+        identical.push(key);
       }
     }
-    if (!anyChanged) {
+    if (anyProsePath && identical.length === Object.keys(input.autoValues).filter((k) => k !== "id" && !k.endsWith(".id")).length) {
       return {
         ok: false,
         reason: "WRONG_TARGET_LANGUAGE",
-        message: `Provider returned source-identical values for locale=${input.locale}; refusing publish.`,
+        message: `Provider returned source-identical values for every translatable path (locale=${input.locale}); refusing publish.`,
+      };
+    }
+    if (identical.length > 0) {
+      return {
+        ok: false,
+        reason: "LOCALIZATION_CONTENT_INTEGRITY_FAILED",
+        message: `Provider left ${identical.length} translatable path(s) canonical-identical (e.g. ${identical.slice(0, 3).join(", ")}); refusing publish.`,
       };
     }
   }

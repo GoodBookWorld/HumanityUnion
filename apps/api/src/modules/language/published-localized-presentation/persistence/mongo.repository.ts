@@ -44,6 +44,7 @@ function fromCurrentDocument(doc: CurrentDocument): PublishedLocalizedPresentati
     presentation: doc.presentation,
     provenance: doc.provenance,
     seo: doc.seo,
+    ...(doc.contentIntegrity ? { contentIntegrity: doc.contentIntegrity } : {}),
     publishedAt: doc.publishedAt,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,

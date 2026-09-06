@@ -16,6 +16,11 @@ import {
 } from "@hu/types";
 
 import {
+  evaluateLocalizationContentIntegrity,
+  isTechnicalIdentityPath,
+  normalizeLocalizationCompareValue,
+} from "./content-integrity.js";
+import {
   collectAutoPaths,
   getPresentationValueAtPath,
   setPresentationStringAtPath,
@@ -169,6 +174,55 @@ export function validatePublishedBuildResult(
 
   if (missingPaths.length > 0) {
     reasonCodes.push("PARTIAL_AUTO_NODES");
+  }
+
+  // Reset 03E.2 — non-English candidates must actually localize translatable prose.
+  // MACHINE provenance with canonical-identical values is not publishable.
+  if (String(input.locale).toLowerCase() !== "en") {
+    const integrity = evaluateLocalizationContentIntegrity({
+      locale: input.locale,
+      canonicalPresentation: input.canonicalPresentation,
+      localizedPresentation: input.localizedCandidate,
+    });
+    if (integrity.status === "FAILED") {
+      reasonCodes.push("LOCALIZATION_CONTENT_INTEGRITY_FAILED");
+      for (const code of integrity.reasonCodes) {
+        reasonCodes.push(code);
+      }
+      if (integrity.CANONICAL_IDENTICAL_NODE_COUNT > 0) {
+        for (const node of canonicalAutos) {
+          if (isTechnicalIdentityPath(node.path)) {
+            continue;
+          }
+          const localizedValue = getPresentationValueAtPath(
+            input.localizedCandidate,
+            node.path,
+          );
+          if (
+            typeof localizedValue === "string" &&
+            localizedValue.trim() &&
+            normalizeLocalizationCompareValue(localizedValue) ===
+              normalizeLocalizationCompareValue(node.value)
+          ) {
+            missingPaths.push(node.path);
+          }
+        }
+      }
+      if (integrity.EMPTY_OR_MISSING_NODE_COUNT > 0) {
+        for (const node of canonicalAutos) {
+          if (isTechnicalIdentityPath(node.path)) {
+            continue;
+          }
+          const localizedValue = getPresentationValueAtPath(
+            input.localizedCandidate,
+            node.path,
+          );
+          if (typeof localizedValue !== "string" || !localizedValue.trim()) {
+            missingPaths.push(node.path);
+          }
+        }
+      }
+    }
   }
 
   const uniqueReasons = [...new Set(reasonCodes)];

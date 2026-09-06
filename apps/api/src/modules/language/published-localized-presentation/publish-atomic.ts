@@ -14,6 +14,7 @@ import type {
 } from "@hu/types";
 import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
 
+import { evaluateLocalizationContentIntegrity } from "./content-integrity.js";
 import { publishAtomicPublishedPresentation } from "./persistence/repository.js";
 import {
   validatePublishedBuildResult,
@@ -64,6 +65,27 @@ export async function publishPublishedLocalizedPresentation(
   }
 
   const now = new Date().toISOString();
+  const contentIntegrity = evaluateLocalizationContentIntegrity({
+    locale: input.locale,
+    canonicalPresentation: input.canonicalPresentation,
+    localizedPresentation: input.localizedCandidate,
+    evaluatedAt: now,
+  });
+  // Validation already required PASSED (or NOT_APPLICABLE_EN). Persist attestation.
+  if (
+    String(input.locale).toLowerCase() !== "en" &&
+    contentIntegrity.status !== "PASSED"
+  ) {
+    return {
+      ok: false,
+      outcome: "NOT_READY",
+      reasonCodes: [
+        "LOCALIZATION_CONTENT_INTEGRITY_FAILED",
+        ...contentIntegrity.reasonCodes,
+      ],
+    };
+  }
+
   const candidate: PublishedLocalizedPresentationRecord = {
     snapshotId: input.snapshotId ?? randomUUID(),
     identity: {
@@ -78,6 +100,7 @@ export async function publishPublishedLocalizedPresentation(
     presentation: input.localizedCandidate,
     provenance: input.provenance,
     seo: input.seo,
+    contentIntegrity,
     createdAt: now,
     updatedAt: now,
   };
