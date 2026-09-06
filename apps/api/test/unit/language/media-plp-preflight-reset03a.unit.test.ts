@@ -92,8 +92,13 @@ function fixtureDeps(input?: {
   readonly plpVersion?: string;
   readonly plpState?: string;
   readonly disconnectCalls?: { count: number };
+  /** When true (default for plpFound), attach CLI.1+LSI.1 so match means usable. */
+  readonly plpUsable?: boolean;
 }): MediaPlpPreflightDeps {
   const disconnectCalls = input?.disconnectCalls ?? { count: 0 };
+  const plpUsable = input?.plpUsable ?? Boolean(input?.plpFound);
+  const canonical = { title: "Editorial transparency", description: "EN desc" };
+  const localized = { title: "Прозорість", description: "UK desc" };
   return {
     skipImportBoundaryCheck: false,
     isMongoConfigured: () => true,
@@ -111,6 +116,7 @@ function fixtureDeps(input?: {
         SOURCE_DOCUMENT_BYTES: 128,
         SOURCE_RECORDS_MATCHED: 1,
         identityCollision: false,
+        canonicalPresentation: canonical,
       };
     },
     loadPlp: async () => {
@@ -125,6 +131,32 @@ function fixtureDeps(input?: {
         PLP_DOCUMENT_BYTES: input?.plpFound ? 64 : 0,
         PLP_RECORDS_MATCHED: input?.plpFound ? 1 : 0,
         identityCollision: false,
+        presentation: input?.plpFound ? localized : null,
+        contentIntegrity: plpUsable
+          ? {
+              version: "CLI.1" as const,
+              status: "PASSED" as const,
+              TRANSLATABLE_NODE_COUNT: 2,
+              LOCALIZED_VALUE_NODE_COUNT: 2,
+              CANONICAL_IDENTICAL_NODE_COUNT: 0,
+              EMPTY_OR_MISSING_NODE_COUNT: 0,
+              PROTECTED_CANONICAL_NODE_COUNT: 0,
+              reasonCodes: [] as const,
+              evaluatedAt: "2026-01-01T00:00:00.000Z",
+            }
+          : null,
+        structuralIntegrity: plpUsable
+          ? {
+              version: "LSI.1" as const,
+              status: "PASSED" as const,
+              CANONICAL_SOURCE_PATHS: 2,
+              BUILD_INPUT_PATHS: 2,
+              LOCALIZED_OUTPUT_PATHS: 2,
+              STRUCTURAL_MISMATCH_COUNT: 0,
+              reasonCodes: [] as const,
+              evaluatedAt: "2026-01-01T00:00:00.000Z",
+            }
+          : null,
       };
     },
     loadLocale: async () => {

@@ -229,6 +229,8 @@ export type {
   LocalizationStructuralIntegrityStatus,
   LocalizationStructuralIntegritySubreason,
   LocalizedNodeProvenance,
+  LocalizedPresentationUsability,
+  LocalizedPresentationUsabilityReason,
   PublishAtomicResult,
   PublishedLocalizationProvenanceSource,
   PublishedLocalizationSchemaVersion,

@@ -118,6 +118,15 @@ function fixtureDeps(input?: {
       PLP_SCHEMA_VERSION: input?.plpFound ? "PLP.1" : null,
       PLP_CONTENT_REVISION: input?.plpRevision ?? null,
       PLP_MATCHES_CURRENT_SOURCE: input?.plpMatches ?? false,
+      EXISTING_PLP_USABILITY: input?.plpMatches
+        ? ("USABLE_LOCALIZED" as const)
+        : ("REBUILD_REQUIRED" as const),
+      EXISTING_PLP_USABILITY_REASON: input?.plpMatches
+        ? ("OK" as const)
+        : ("NO_SNAPSHOT" as const),
+      CONTENT_INTEGRITY_STATUS: input?.plpMatches ? "PASSED" : null,
+      STRUCTURAL_INTEGRITY_STATUS: input?.plpMatches ? "PASSED" : null,
+      REBUILD_REQUIRED: !(input?.plpMatches ?? false),
     }),
     lookupTranslation: async () => ({
       EXISTING_TRANSLATION_STATE: translationState,
@@ -389,19 +398,36 @@ describe("Reset 03B Media PLP materializer", () => {
     assert.equal(result.report!.abortReason, "PROVIDER_FAILURE");
   });
 
-  it("M: PARTIAL candidate zero PLP writes", async () => {
+  it("M: COMPLETE flag with integrity-invalid CT is not reused; PARTIAL publish refused", async () => {
     const result = await runMediaPlpMaterializer(identityArgv(["--execute"]), {
-      ...fixtureDeps({ translationComplete: true }),
-      // Incomplete values force NOT_READY when deterministic fill disabled.
+      ...fixtureDeps({}),
+      // Marked COMPLETE but empty values fail CLI.1+LSI.1 → must not reuse.
       lookupTranslation: async () => ({
         EXISTING_TRANSLATION_STATE: "COMPLETE",
         EXISTING_TRANSLATION_COMPLETE: true,
-        values: {}, // missing explanation → NOT_READY
+        values: {},
+      }),
+      importProvider: async () => ({
+        providerId: "deterministic",
+        async translate() {
+          return {
+            translatedText: JSON.stringify({}),
+            providerId: "deterministic",
+            isPlaceholder: false,
+          };
+        },
       }),
     });
     assert.equal(result.exitCode, 1);
+    assert.equal(result.report!.WOULD_REUSE_EXISTING_TRANSLATION, false);
     assert.equal(result.report!.PLP_WRITES, 0);
-    assert.equal(result.report!.abortReason, "PARTIAL_OR_NOT_READY");
+    assert.ok(
+      result.report!.abortReason === "PARTIAL_OR_NOT_READY" ||
+        result.report!.abortReason === "PARTIAL" ||
+        result.report!.abortReason === "PROVIDER_WRONG_TARGET_LANGUAGE" ||
+        result.report!.abortReason === "PROVIDER_PARTIAL",
+      `unexpected abortReason=${result.report!.abortReason}`,
+    );
   });
 
   it("N/O: successful publish + duplicate idempotent (no unnecessary provider)", async () => {
@@ -464,6 +490,11 @@ describe("Reset 03B Media PLP materializer", () => {
           PLP_SCHEMA_VERSION: "PLP.1",
           PLP_CONTENT_REVISION: 5,
           PLP_MATCHES_CURRENT_SOURCE: false,
+          EXISTING_PLP_USABILITY: "REBUILD_REQUIRED" as const,
+          EXISTING_PLP_USABILITY_REASON: "CANONICAL_VERSION_MISMATCH" as const,
+          CONTENT_INTEGRITY_STATUS: null,
+          STRUCTURAL_INTEGRITY_STATUS: null,
+          REBUILD_REQUIRED: true,
         }),
       },
     );

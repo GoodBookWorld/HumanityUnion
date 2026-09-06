@@ -3,6 +3,11 @@
  * Default DRY RUN: zero writes, zero provider imports/calls.
  */
 
+import type {
+  LocalizedPresentationUsability,
+  LocalizedPresentationUsabilityReason,
+  PublicPresentationNode,
+} from "@hu/types";
 import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
 
 import {
@@ -14,6 +19,7 @@ import {
   disconnectMongoClient,
 } from "../../../infrastructure/mongodb/mongo-connection.js";
 import { publishMediaPlpEntity } from "../published-localized-presentation/media/publisher.js";
+import { translationValuesPassLocalizationIntegrity } from "../published-localized-presentation/usability.js";
 import {
   getMediaPlpMaterializerCounters,
   markMaterializerMongoClosed,
@@ -77,6 +83,11 @@ export type MediaPlpMaterializerReport = {
   readonly SOURCE_FOUND: boolean;
   readonly SOURCE_PUBLIC: boolean;
   readonly PLP_CURRENT_FOUND: boolean;
+  readonly EXISTING_PLP_USABILITY: LocalizedPresentationUsability | null;
+  readonly EXISTING_PLP_USABILITY_REASON: LocalizedPresentationUsabilityReason | null;
+  readonly CONTENT_INTEGRITY_STATUS: string | null;
+  readonly STRUCTURAL_INTEGRITY_STATUS: string | null;
+  readonly REBUILD_REQUIRED: boolean;
   readonly EXISTING_TRANSLATION_STATE: string;
   readonly EXISTING_TRANSLATION_COMPLETE: boolean;
   readonly WOULD_REUSE_EXISTING_TRANSLATION: boolean;
@@ -119,6 +130,7 @@ export type MediaPlpMaterializerDeps = {
     readonly entityId: string;
     readonly locale: string;
     readonly canonicalVersion: string | null;
+    readonly canonicalPresentation?: PublicPresentationNode | null;
   }) => Promise<MediaPlpMaterializerPlpInspect>;
   readonly lookupTranslation?: (input: {
     readonly entityType: MediaPlpMaterializerArgs["entityType"];
@@ -178,6 +190,11 @@ function buildReport(input: {
     SOURCE_FOUND: input.source.SOURCE_FOUND,
     SOURCE_PUBLIC: input.source.SOURCE_PUBLIC,
     PLP_CURRENT_FOUND: input.plp.PLP_CURRENT_FOUND,
+    EXISTING_PLP_USABILITY: input.plp.EXISTING_PLP_USABILITY,
+    EXISTING_PLP_USABILITY_REASON: input.plp.EXISTING_PLP_USABILITY_REASON,
+    CONTENT_INTEGRITY_STATUS: input.plp.CONTENT_INTEGRITY_STATUS,
+    STRUCTURAL_INTEGRITY_STATUS: input.plp.STRUCTURAL_INTEGRITY_STATUS,
+    REBUILD_REQUIRED: input.plp.REBUILD_REQUIRED,
     EXISTING_TRANSLATION_STATE: input.translation.EXISTING_TRANSLATION_STATE,
     EXISTING_TRANSLATION_COMPLETE: input.translation.EXISTING_TRANSLATION_COMPLETE,
     WOULD_REUSE_EXISTING_TRANSLATION: input.wouldReuse,
@@ -330,6 +347,7 @@ export async function runMediaPlpMaterializer(
       entityId: args.entityId,
       locale: args.locale,
       canonicalVersion: source.CANONICAL_VERSION,
+      canonicalPresentation: source.canonicalPresentation,
     });
 
     const translation = await (deps.lookupTranslation ?? lookupExistingMediaPlpTranslation)({
@@ -346,8 +364,19 @@ export async function runMediaPlpMaterializer(
       deps.resolveDatabase?.() ??
       (isMongoConfigured() ? resolveMongoConfig().database : null);
 
-    const wouldReuse = translation.EXISTING_TRANSLATION_COMPLETE;
-    const alreadyCurrent = plp.PLP_MATCHES_CURRENT_SOURCE;
+    // CT completeness alone is not proof — candidate must pass CLI.1 + LSI.1.
+    const wouldReuse =
+      translation.EXISTING_TRANSLATION_COMPLETE &&
+      Boolean(source.canonicalPresentation) &&
+      translationValuesPassLocalizationIntegrity({
+        locale: args.locale,
+        canonicalPresentation: source.canonicalPresentation!,
+        values: translation.values,
+      }).ok;
+    // Usable localized snapshot only — identity/version/schema match is insufficient.
+    const alreadyCurrent =
+      plp.EXISTING_PLP_USABILITY === "USABLE_LOCALIZED" ||
+      (plp.EXISTING_PLP_USABILITY == null && plp.PLP_MATCHES_CURRENT_SOURCE);
     const wouldCallProvider =
       source.SOURCE_FOUND &&
       source.SOURCE_PUBLIC &&
@@ -822,6 +851,11 @@ export function printMediaPlpMaterializerReport(
     `SOURCE_FOUND=${report.SOURCE_FOUND}`,
     `SOURCE_PUBLIC=${report.SOURCE_PUBLIC}`,
     `PLP_CURRENT_FOUND=${report.PLP_CURRENT_FOUND}`,
+    `EXISTING_PLP_USABILITY=${report.EXISTING_PLP_USABILITY ?? ""}`,
+    `EXISTING_PLP_USABILITY_REASON=${report.EXISTING_PLP_USABILITY_REASON ?? ""}`,
+    `CONTENT_INTEGRITY_STATUS=${report.CONTENT_INTEGRITY_STATUS ?? ""}`,
+    `STRUCTURAL_INTEGRITY_STATUS=${report.STRUCTURAL_INTEGRITY_STATUS ?? ""}`,
+    `REBUILD_REQUIRED=${report.REBUILD_REQUIRED}`,
     `EXISTING_TRANSLATION_STATE=${report.EXISTING_TRANSLATION_STATE}`,
     `EXISTING_TRANSLATION_COMPLETE=${report.EXISTING_TRANSLATION_COMPLETE}`,
     `WOULD_REUSE_EXISTING_TRANSLATION=${report.WOULD_REUSE_EXISTING_TRANSLATION}`,

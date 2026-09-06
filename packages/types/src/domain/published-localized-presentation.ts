@@ -198,6 +198,26 @@ export type ResolvePublishedPresentationResult = {
   readonly reasonCode?: string;
 };
 
+/**
+ * Reset 03E.4 — shared published-presentation usability contract.
+ * Read eligibility and rebuild eligibility are complements of the same classifier.
+ */
+export type LocalizedPresentationUsability =
+  | "USABLE_LOCALIZED"
+  | "REBUILD_REQUIRED";
+
+export type LocalizedPresentationUsabilityReason =
+  | "OK"
+  | "NO_SNAPSHOT"
+  | "STATE_NOT_PUBLISHED"
+  | "CANONICAL_VERSION_MISMATCH"
+  | "SCHEMA_VERSION_MISMATCH"
+  | "CONTENT_INTEGRITY_MISSING"
+  | "CONTENT_INTEGRITY_FAILED"
+  | "STRUCTURAL_INTEGRITY_MISSING"
+  | "STRUCTURAL_INTEGRITY_FAILED"
+  | "PRESENTATION_OR_CANONICAL_MISSING";
+
 export type BuildValidationReasonCode =
   | "PARTIAL_AUTO_NODES"
   | "CANONICAL_VERSION_MISMATCH"

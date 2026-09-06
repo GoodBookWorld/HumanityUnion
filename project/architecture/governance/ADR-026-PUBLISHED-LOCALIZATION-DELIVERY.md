@@ -38,8 +38,9 @@ Normative principle: **localization is a publication concern, not a rendering co
 7. Memory/load safety: no corpus hydrate on normal Web/API reads; indexed lookup; thin diagnostics.  
 8. Media is the first migration slice; cold-cache acceptance gates implementation.  
 9. `HREFLANG_STATUS` remains DEFERRED until locale-addressable URLs (Phase H).  
-10. **Reset 03E.2:** Publication state is not evidence of localization. Non-English `PUBLISHED_LOCALIZED` requires `CLI.1` semantic content-integrity (translatable values must differ from canonical). Missing/failed integrity ⇒ `CANONICAL_FALLBACK`. Canonical fallback is availability, not successful localization.  
-11. **Reset 03E.3:** Ownership + content difference are still insufficient. Non-English `PUBLISHED_LOCALIZED` also requires `LSI.1` structural reachability (canonical → build → presentation → apply → renderer). Render-authority structural parity is enforced in test/dev from real `/media` markers.  
+11. **Reset 03E.2:** Publication state is not evidence of localization. Non-English `PUBLISHED_LOCALIZED` requires `CLI.1` semantic content-integrity (translatable values must differ from canonical). Missing/failed integrity ⇒ `CANONICAL_FALLBACK`. Canonical fallback is availability, not successful localization.  
+12. **Reset 03E.3:** Ownership + content difference are still insufficient. Non-English `PUBLISHED_LOCALIZED` also requires `LSI.1` structural reachability (canonical → build → presentation → apply → renderer). Render-authority structural parity is enforced in test/dev from real `/media` markers.  
+13. **Reset 03E.4:** Read eligibility and rebuild eligibility are complements of the same usability contract (`classifyUsableLocalizedPresentation`). A snapshot that fails closed on read must never short-circuit materializer as `UNCHANGED_PLP`.  
 
 Reset 01 documents the baseline only — **no runtime behavior change**.
 

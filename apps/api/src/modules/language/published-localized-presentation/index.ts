@@ -38,6 +38,11 @@ export {
   LOCALIZATION_STRUCTURAL_INTEGRITY_VERSION,
   resolveLocalizationStructuralIntegrityForRead,
 } from "./structural-integrity.js";
+export {
+  classifyUsableLocalizedPresentation,
+  translationValuesPassLocalizationIntegrity,
+} from "./usability.js";
+export type { UsableLocalizedPresentationClassification } from "./usability.js";
 export { resolvePublishedPresentation } from "./resolve-published-presentation.js";
 export {
   publishPublishedLocalizedPresentation,

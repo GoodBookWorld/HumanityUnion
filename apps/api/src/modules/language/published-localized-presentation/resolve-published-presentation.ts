@@ -9,6 +9,9 @@
  *
  * Reset 03D — bounded in-process resolve cache keyed by
  * entityType|entityId|locale|canonicalVersion|schemaVersion.
+ *
+ * Reset 03E.4 — read eligibility uses the shared usability classifier
+ * (same contract as materializer rebuild eligibility).
  */
 
 import type {
@@ -17,14 +20,13 @@ import type {
 } from "@hu/types";
 import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
 
-import { resolveLocalizationContentIntegrityForRead } from "./content-integrity.js";
-import { resolveLocalizationStructuralIntegrityForRead } from "./structural-integrity.js";
 import { findCurrentPublishedPresentation } from "./persistence/repository.js";
 import {
   buildMediaPlpResolveCacheKey,
   getCachedMediaPlpResolve,
   setCachedMediaPlpResolve,
 } from "./resolve-cache.js";
+import { classifyUsableLocalizedPresentation } from "./usability.js";
 
 export async function resolvePublishedPresentation(
   input: ResolvePublishedPresentationInput,
@@ -50,70 +52,28 @@ export async function resolvePublishedPresentation(
       locale: String(input.locale),
     });
 
-    let result: ResolvePublishedPresentationResult;
+    const usability = classifyUsableLocalizedPresentation({
+      locale: String(input.locale),
+      liveCanonicalVersion: input.liveCanonicalVersion,
+      liveLocalizationSchemaVersion: liveSchema,
+      canonicalPresentation: input.canonicalPresentation,
+      snapshot: current,
+    });
 
-    if (!current || current.state !== "PUBLISHED") {
-      result = {
-        mode: "CANONICAL_FALLBACK",
-        presentation: input.canonicalPresentation,
-        seo: input.canonicalSeo,
-        reasonCode: "NO_PUBLISHED_SNAPSHOT",
-      };
-    } else if (current.identity.canonicalVersion !== input.liveCanonicalVersion) {
-      result = {
-        mode: "CANONICAL_FALLBACK",
-        presentation: input.canonicalPresentation,
-        seo: input.canonicalSeo,
-        reasonCode: "CANONICAL_VERSION_MISMATCH",
-      };
-    } else if (current.identity.localizationSchemaVersion !== liveSchema) {
-      result = {
-        mode: "CANONICAL_FALLBACK",
-        presentation: input.canonicalPresentation,
-        seo: input.canonicalSeo,
-        reasonCode: "SCHEMA_VERSION_MISMATCH",
-      };
-    } else {
-      // Reset 03E.2 / 03E.3 — publication state is not evidence of localization.
-      // Missing / failed content or structural integrity ⇒ CANONICAL_FALLBACK (no mutate/delete).
-      const integrity = resolveLocalizationContentIntegrityForRead({
-        locale: String(input.locale),
-        canonicalPresentation: input.canonicalPresentation,
-        localizedPresentation: current.presentation,
-        persisted: current.contentIntegrity ?? null,
-      });
-      if (!integrity.allowPublishedLocalized) {
-        result = {
+    const result: ResolvePublishedPresentationResult = usability.allowPublishedLocalized
+      ? {
+          mode: "PUBLISHED_LOCALIZED",
+          presentation: current!.presentation,
+          seo: current!.seo,
+          identity: current!.identity,
+          snapshotId: current!.snapshotId,
+        }
+      : {
           mode: "CANONICAL_FALLBACK",
           presentation: input.canonicalPresentation,
           seo: input.canonicalSeo,
-          reasonCode: integrity.reasonCode,
+          reasonCode: usability.resolveReasonCode ?? "NO_PUBLISHED_SNAPSHOT",
         };
-      } else {
-        const structural = resolveLocalizationStructuralIntegrityForRead({
-          locale: String(input.locale),
-          canonicalPresentation: input.canonicalPresentation,
-          localizedPresentation: current.presentation,
-          persisted: current.structuralIntegrity ?? null,
-        });
-        if (!structural.allowPublishedLocalized) {
-          result = {
-            mode: "CANONICAL_FALLBACK",
-            presentation: input.canonicalPresentation,
-            seo: input.canonicalSeo,
-            reasonCode: structural.reasonCode,
-          };
-        } else {
-          result = {
-            mode: "PUBLISHED_LOCALIZED",
-            presentation: current.presentation,
-            seo: current.seo,
-            identity: current.identity,
-            snapshotId: current.snapshotId,
-          };
-        }
-      }
-    }
 
     setCachedMediaPlpResolve(cacheKey, result);
     return result;

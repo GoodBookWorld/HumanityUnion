@@ -220,6 +220,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | PLP schema | Remains **PLP.2** (LSI.1 independent) |
 | Coverage acceptance | **pending until live** |
 | ACTIVE count | **30** — do not reduce yet |
+### Reset 03E.4 note — PLP rebuild eligibility parity (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live gap | Matching `PUBLISHED` PLP.2 without CLI.1/LSI.1 → `CANONICAL_FALLBACK` on read while materializer reported `UNCHANGED_PLP` |
+| Contract | Shared `classifyUsableLocalizedPresentation` — read and rebuild are complements |
+| Usable only when | identity + version + schema + `PUBLISHED` + CLI.1 PASSED (+ recompute) + LSI.1 PASSED (+ recompute) |
+| Otherwise | READ → `CANONICAL_FALLBACK`; BUILD → `REBUILD_REQUIRED` (never `UNCHANGED_PLP`) |
+| Coverage acceptance | **pending until live** |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

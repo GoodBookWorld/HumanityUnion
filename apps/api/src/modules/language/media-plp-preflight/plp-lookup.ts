@@ -6,6 +6,7 @@
 
 import type {
   LocalizationContentIntegrityReport,
+  LocalizationStructuralIntegrityReport,
   PublicPresentationNode,
 } from "@hu/types";
 import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
@@ -25,6 +26,7 @@ export type MediaPlpPreflightPlpLookup = {
   /** In-memory only — never printed by the preflight report. */
   readonly presentation?: PublicPresentationNode | null;
   readonly contentIntegrity?: LocalizationContentIntegrityReport | null;
+  readonly structuralIntegrity?: LocalizationStructuralIntegrityReport | null;
 };
 
 function asString(value: unknown): string {
@@ -88,6 +90,51 @@ function parseContentIntegrity(
   };
 }
 
+function parseStructuralIntegrity(
+  raw: unknown,
+): LocalizationStructuralIntegrityReport | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const obj = raw as Record<string, unknown>;
+  if (obj.version !== "LSI.1") {
+    return null;
+  }
+  const status = asString(obj.status);
+  if (
+    status !== "PASSED" &&
+    status !== "FAILED" &&
+    status !== "NOT_APPLICABLE_EN" &&
+    status !== "UNKNOWN_LEGACY"
+  ) {
+    return null;
+  }
+  return {
+    version: "LSI.1",
+    status,
+    CANONICAL_SOURCE_PATHS:
+      typeof obj.CANONICAL_SOURCE_PATHS === "number"
+        ? obj.CANONICAL_SOURCE_PATHS
+        : 0,
+    BUILD_INPUT_PATHS:
+      typeof obj.BUILD_INPUT_PATHS === "number" ? obj.BUILD_INPUT_PATHS : 0,
+    LOCALIZED_OUTPUT_PATHS:
+      typeof obj.LOCALIZED_OUTPUT_PATHS === "number"
+        ? obj.LOCALIZED_OUTPUT_PATHS
+        : 0,
+    STRUCTURAL_MISMATCH_COUNT:
+      typeof obj.STRUCTURAL_MISMATCH_COUNT === "number"
+        ? obj.STRUCTURAL_MISMATCH_COUNT
+        : 0,
+    reasonCodes: Array.isArray(obj.reasonCodes)
+      ? (obj.reasonCodes.filter(
+          (c) => typeof c === "string",
+        ) as LocalizationStructuralIntegrityReport["reasonCodes"])
+      : [],
+    evaluatedAt: asString(obj.evaluatedAt) || new Date(0).toISOString(),
+  };
+}
+
 export async function loadMediaPlpPreflightCurrent(input: {
   readonly entityType: string;
   readonly entityId: string;
@@ -114,6 +161,7 @@ export async function loadMediaPlpPreflightCurrent(input: {
         updatedAt: 1,
         presentation: 1,
         contentIntegrity: 1,
+        structuralIntegrity: 1,
       },
       limit: 2,
     },
@@ -131,6 +179,7 @@ export async function loadMediaPlpPreflightCurrent(input: {
       identityCollision: true,
       presentation: null,
       contentIntegrity: null,
+      structuralIntegrity: null,
     };
   }
 
@@ -145,6 +194,7 @@ export async function loadMediaPlpPreflightCurrent(input: {
       identityCollision: false,
       presentation: null,
       contentIntegrity: null,
+      structuralIntegrity: null,
     };
   }
 
@@ -160,6 +210,7 @@ export async function loadMediaPlpPreflightCurrent(input: {
     contentRevision: doc.contentRevision,
     snapshotId: doc.snapshotId,
     contentIntegrity: doc.contentIntegrity,
+    structuralIntegrity: doc.structuralIntegrity,
   };
 
   return {
@@ -174,5 +225,6 @@ export async function loadMediaPlpPreflightCurrent(input: {
     identityCollision: false,
     presentation: (doc.presentation as PublicPresentationNode | undefined) ?? null,
     contentIntegrity: parseContentIntegrity(doc.contentIntegrity),
+    structuralIntegrity: parseStructuralIntegrity(doc.structuralIntegrity),
   };
 }

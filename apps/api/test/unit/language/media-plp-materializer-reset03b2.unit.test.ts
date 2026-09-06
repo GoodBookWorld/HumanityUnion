@@ -143,6 +143,15 @@ function fixtureDeps(input?: {
       PLP_SCHEMA_VERSION: input?.plpMatches ? "PLP.1" : null,
       PLP_CONTENT_REVISION: input?.plpMatches ? 1 : null,
       PLP_MATCHES_CURRENT_SOURCE: input?.plpMatches ?? false,
+      EXISTING_PLP_USABILITY: input?.plpMatches
+        ? ("USABLE_LOCALIZED" as const)
+        : ("REBUILD_REQUIRED" as const),
+      EXISTING_PLP_USABILITY_REASON: input?.plpMatches
+        ? ("OK" as const)
+        : ("NO_SNAPSHOT" as const),
+      CONTENT_INTEGRITY_STATUS: input?.plpMatches ? "PASSED" : null,
+      STRUCTURAL_INTEGRITY_STATUS: input?.plpMatches ? "PASSED" : null,
+      REBUILD_REQUIRED: !(input?.plpMatches ?? false),
     }),
     lookupTranslation: async () => ({
       EXISTING_TRANSLATION_STATE: "MISSING",

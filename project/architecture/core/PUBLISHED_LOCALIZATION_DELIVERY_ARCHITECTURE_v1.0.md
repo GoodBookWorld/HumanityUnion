@@ -629,3 +629,16 @@ Provider boundary: every AUTO prose path must be present and non-identical to so
 | News | Included in the single Media PLP batch when articles are supplied |
 | Thin operator | Persists LSI.1 counts only; render-path parity stays test/dev (no production DOM crawl) |
 | ACTIVE count | **30** — unchanged |
+
+### Reset 03E.4 — PLP rebuild eligibility parity
+
+**Invariant:** Read eligibility and rebuild eligibility are complements of the same published-presentation usability contract. A snapshot rejected by the read path must never suppress its own rebuild.
+
+Shared classifier: `classifyUsableLocalizedPresentation` (API domain). For `locale != en`, an existing snapshot is `USABLE_LOCALIZED` / `UNCHANGED_PLP` only when identity, `canonicalVersion`, `localizationSchemaVersion`, `state=PUBLISHED`, CLI.1 (present + PASSED + recompute), and LSI.1 (present + PASSED + recompute) all hold. Otherwise: READ → `CANONICAL_FALLBACK`; BUILD → `REBUILD_REQUIRED` (provider/publish eligible; dry-run still no provider/writes). CT path completeness alone is not reuse proof — candidate must pass CLI.1 + LSI.1.
+
+| Concern | Rule |
+|---------|------|
+| Shared classifier | One domain function for resolver + materializer + preflight match |
+| Diagnostics | `EXISTING_PLP_USABILITY`, `EXISTING_PLP_USABILITY_REASON`, integrity statuses, `REBUILD_REQUIRED` (no bodies) |
+| Atomic replace | Invalid current untouched until successful publish; prior → SUPERSEDED |
+| ACTIVE count | **30** — unchanged |

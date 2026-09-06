@@ -3,6 +3,10 @@
  * READ-ONLY. Never publishes, never calls provider, never hydrates corpus.
  */
 
+import type {
+  LocalizedPresentationUsability,
+  LocalizedPresentationUsabilityReason,
+} from "@hu/types";
 import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
 
 import {
@@ -17,6 +21,7 @@ import {
   evaluateLocalizationContentIntegrity,
   resolveLocalizationContentIntegrityForRead,
 } from "../published-localized-presentation/content-integrity.js";
+import { classifyUsableLocalizedPresentation } from "../published-localized-presentation/usability.js";
 import {
   getMediaPlpPreflightCounters,
   markMediaPlpPreflightMongoClosed,
@@ -64,6 +69,9 @@ export type MediaPlpPreflightIdentityReport = {
   readonly PLP_SCHEMA_VERSION: string | null;
   readonly PLP_MATCHES_CURRENT_SOURCE: boolean;
   readonly WOULD_REQUIRE_BUILD: boolean;
+  readonly EXISTING_PLP_USABILITY: LocalizedPresentationUsability | null;
+  readonly EXISTING_PLP_USABILITY_REASON: LocalizedPresentationUsabilityReason | null;
+  readonly REBUILD_REQUIRED: boolean;
   readonly SOURCE_DOCUMENT_BYTES: number;
   readonly PLP_DOCUMENT_BYTES: number;
   /** Reset 03E.2 — bounded integrity counts (no body text). */
@@ -74,6 +82,7 @@ export type MediaPlpPreflightIdentityReport = {
   readonly PROTECTED_CANONICAL_NODE_COUNT: number | null;
   readonly CONTENT_INTEGRITY_STATUS: string | null;
   readonly CONTENT_INTEGRITY_REASON: string | null;
+  readonly STRUCTURAL_INTEGRITY_STATUS: string | null;
   readonly LOCALE_REGISTRY_FOUND: boolean;
   readonly LOCALE_ENABLED: boolean;
   readonly CONTENT_TRANSLATION_ENABLED: boolean;
@@ -208,19 +217,66 @@ function computeContentIntegrityFields(input: {
 }
 
 function computeMatch(input: {
+  readonly locale: string;
   readonly source: MediaPlpPreflightSourceLookup;
   readonly plp: MediaPlpPreflightPlpLookup;
-}): { readonly matches: boolean; readonly wouldRequireBuild: boolean } {
-  const matches =
-    input.source.SOURCE_FOUND &&
-    Boolean(input.source.CANONICAL_VERSION) &&
-    input.plp.PLP_CURRENT_FOUND &&
-    input.plp.PLP_STATE === "PUBLISHED" &&
-    input.plp.PLP_CANONICAL_VERSION === input.source.CANONICAL_VERSION &&
-    input.plp.PLP_SCHEMA_VERSION === PUBLISHED_LOCALIZATION_SCHEMA_VERSION;
+}): {
+  readonly matches: boolean;
+  readonly wouldRequireBuild: boolean;
+  readonly EXISTING_PLP_USABILITY: LocalizedPresentationUsability | null;
+  readonly EXISTING_PLP_USABILITY_REASON: LocalizedPresentationUsabilityReason | null;
+  readonly REBUILD_REQUIRED: boolean;
+  readonly STRUCTURAL_INTEGRITY_STATUS: string | null;
+} {
+  if (!input.source.SOURCE_FOUND || !input.source.CANONICAL_VERSION) {
+    return {
+      matches: false,
+      wouldRequireBuild: true,
+      EXISTING_PLP_USABILITY: "REBUILD_REQUIRED",
+      EXISTING_PLP_USABILITY_REASON: input.plp.PLP_CURRENT_FOUND
+        ? "CANONICAL_VERSION_MISMATCH"
+        : "NO_SNAPSHOT",
+      REBUILD_REQUIRED: true,
+      STRUCTURAL_INTEGRITY_STATUS: null,
+    };
+  }
+
+  const snapshot = input.plp.PLP_CURRENT_FOUND
+    ? {
+        state: (input.plp.PLP_STATE ?? "FAILED") as
+          | "PUBLISHED"
+          | "BUILDING"
+          | "FAILED"
+          | "SUPERSEDED",
+        identity: {
+          entityType: "preflight",
+          entityId: "preflight",
+          locale: input.locale,
+          canonicalVersion: input.plp.PLP_CANONICAL_VERSION ?? "",
+          localizationSchemaVersion:
+            input.plp.PLP_SCHEMA_VERSION ?? PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
+        },
+        presentation: input.plp.presentation ?? null,
+        contentIntegrity: input.plp.contentIntegrity ?? null,
+        structuralIntegrity: input.plp.structuralIntegrity ?? null,
+      }
+    : null;
+
+  const classification = classifyUsableLocalizedPresentation({
+    locale: input.locale,
+    liveCanonicalVersion: input.source.CANONICAL_VERSION,
+    liveLocalizationSchemaVersion: PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
+    canonicalPresentation: input.source.canonicalPresentation,
+    snapshot,
+  });
+
   return {
-    matches,
-    wouldRequireBuild: !matches,
+    matches: classification.usability === "USABLE_LOCALIZED",
+    wouldRequireBuild: classification.rebuildRequired,
+    EXISTING_PLP_USABILITY: classification.usability,
+    EXISTING_PLP_USABILITY_REASON: classification.reason,
+    REBUILD_REQUIRED: classification.rebuildRequired,
+    STRUCTURAL_INTEGRITY_STATUS: classification.structuralIntegrityStatus,
   };
 }
 
@@ -382,7 +438,11 @@ export async function runMediaPlpPreflight(
     }
 
     const localeInfo = await loadLocale(identityArgs.locale);
-    const match = computeMatch({ source, plp });
+    const match = computeMatch({
+      locale: identityArgs.locale,
+      source,
+      plp,
+    });
     const integrity = computeContentIntegrityFields({
       locale: identityArgs.locale,
       source,
@@ -410,6 +470,9 @@ export async function runMediaPlpPreflight(
       PLP_SCHEMA_VERSION: plp.PLP_SCHEMA_VERSION,
       PLP_MATCHES_CURRENT_SOURCE: match.matches,
       WOULD_REQUIRE_BUILD: match.wouldRequireBuild,
+      EXISTING_PLP_USABILITY: match.EXISTING_PLP_USABILITY,
+      EXISTING_PLP_USABILITY_REASON: match.EXISTING_PLP_USABILITY_REASON,
+      REBUILD_REQUIRED: match.REBUILD_REQUIRED,
       SOURCE_DOCUMENT_BYTES: source.SOURCE_DOCUMENT_BYTES,
       PLP_DOCUMENT_BYTES: plp.PLP_DOCUMENT_BYTES,
       TRANSLATABLE_NODE_COUNT: integrity.TRANSLATABLE_NODE_COUNT,
@@ -419,6 +482,7 @@ export async function runMediaPlpPreflight(
       PROTECTED_CANONICAL_NODE_COUNT: integrity.PROTECTED_CANONICAL_NODE_COUNT,
       CONTENT_INTEGRITY_STATUS: integrity.CONTENT_INTEGRITY_STATUS,
       CONTENT_INTEGRITY_REASON: integrity.CONTENT_INTEGRITY_REASON,
+      STRUCTURAL_INTEGRITY_STATUS: match.STRUCTURAL_INTEGRITY_STATUS,
       LOCALE_REGISTRY_FOUND: localeInfo.LOCALE_REGISTRY_FOUND,
       LOCALE_ENABLED: localeInfo.LOCALE_ENABLED,
       CONTENT_TRANSLATION_ENABLED: localeInfo.CONTENT_TRANSLATION_ENABLED,
@@ -488,6 +552,11 @@ export function printMediaPlpPreflightReport(report: MediaPlpPreflightReport): v
     `PLP_SCHEMA_VERSION=${report.PLP_SCHEMA_VERSION ?? ""}`,
     `PLP_MATCHES_CURRENT_SOURCE=${report.PLP_MATCHES_CURRENT_SOURCE}`,
     `WOULD_REQUIRE_BUILD=${report.WOULD_REQUIRE_BUILD}`,
+    `EXISTING_PLP_USABILITY=${report.EXISTING_PLP_USABILITY ?? ""}`,
+    `EXISTING_PLP_USABILITY_REASON=${report.EXISTING_PLP_USABILITY_REASON ?? ""}`,
+    `REBUILD_REQUIRED=${report.REBUILD_REQUIRED}`,
+    `CONTENT_INTEGRITY_STATUS=${report.CONTENT_INTEGRITY_STATUS ?? ""}`,
+    `STRUCTURAL_INTEGRITY_STATUS=${report.STRUCTURAL_INTEGRITY_STATUS ?? ""}`,
     `SOURCE_DOCUMENT_BYTES=${report.SOURCE_DOCUMENT_BYTES}`,
     `PLP_DOCUMENT_BYTES=${report.PLP_DOCUMENT_BYTES}`,
     `LOCALE_REGISTRY_FOUND=${report.LOCALE_REGISTRY_FOUND}`,
