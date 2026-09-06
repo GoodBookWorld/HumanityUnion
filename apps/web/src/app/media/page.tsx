@@ -27,8 +27,9 @@ export const metadata: Metadata = {
 
 /**
  * Pack 08I.9 / 08I.12 — SSR-first Media editorial seed (GET resolve only).
- * Reset 03 — when HU_MEDIA_PLP_ENABLED=true, serve PLP coherent presentations
- * (no content_translations generate-on-miss). Default remains legacy.
+ * Reset 03C — when HU_MEDIA_PLP_ENABLED=true, SSR resolves Media PLP via
+ * /api/v1/public/media-plp/resolve (PUBLISHED_LOCALIZED or coherent
+ * CANONICAL_FALLBACK; no content_translations generate-on-miss). Default remains legacy.
  */
 export default async function CivicMediaPage() {
   let initialMedia: CivicMediaCenterPublic | undefined;

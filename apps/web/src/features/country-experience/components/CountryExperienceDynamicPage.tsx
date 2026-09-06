@@ -20,7 +20,6 @@ import type { CivicMediaTrustedExplanationsById } from "../../civic-media-center
 import { TrustedMediaRailCard } from "../../civic-media-center/components/TrustedMediaRailCard";
 import { useTrustedMediaExplanationsOverlay } from "../../civic-media-center/components/use-trusted-media-explanations-overlay";
 import { CIVIC_MEDIA_ROUTE } from "../../civic-media-center/routes";
-import { isMediaPlpWebEnabled } from "../../language/media-plp/feature-flag";
 import { MediaPlpTrustedCard } from "../../language/media-plp/MediaPlpTrustedCard";
 import type { MediaPlpResolvedPresentation } from "../../language/media-plp/presentation";
 import { HuxDirectorySection } from "../../horizontal-experience";
@@ -74,7 +73,7 @@ export function CountryExperienceDynamicPage({
   const tStats = useTranslations("publicStatistics");
   const tSearch = useTranslations("search");
   const tExperience = useTranslations("initiativeExperience");
-  const plpEnabled = isMediaPlpWebEnabled() && initialPlpTrustedById != null;
+  const plpEnabled = initialPlpTrustedById != null;
   const country = getCountryByCode(countryCode);
   const countryDisplayName = useMemo(
     () =>

@@ -33,6 +33,7 @@ import { platformStatisticsRouter } from "./modules/platform-statistics/index.js
 import { countryStatisticsRouter } from "./modules/country-statistics/index.js";
 import { membershipStatisticsRouter } from "./modules/membership-statistics/index.js";
 import { knowledgeCenterRouter } from "./modules/knowledge-center/index.js";
+import { publicMediaPlpRouter } from "./modules/language/published-localized-presentation/media/index.js";
 import { ipGeographyRouter } from "./modules/ip-geography/index.js";
 import { notificationRouter } from "./modules/notifications/index.js";
 import { reminderRouter } from "./modules/reminders/index.js";
@@ -390,6 +391,7 @@ app.use(
 app.use("/api/v1/implementation-commitments", implementationCommitmentRouter);
 app.use("/api/v1/implementations", implementationRouter);
 app.use("/api/v1/public/knowledge", knowledgeCenterRouter);
+app.use("/api/v1/public/media-plp", publicMediaPlpRouter);
 app.use("/api/v1/public/ip-geography", ipGeographyRouter);
 app.use("/api/v1/statistics", membershipStatisticsRouter);
 app.use("/api/v1/public", globalSearchRouter);

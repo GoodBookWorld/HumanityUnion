@@ -102,16 +102,30 @@ Media PLP path is **AVAILABLE** but **not the runtime default**.
 
 | ID | Classification |
 |----|----------------|
-| L07 CivicMediaTranslatedEditorial | `ACTIVE_LEGACY_FALLBACK` (default) / `REPLACED_PENDING_LIVE_ACCEPTANCE` when `HU_MEDIA_PLP_ENABLED=true` |
-| L08 useTrustedMediaExplanationsOverlay | same (`disabled` in PLP mode) |
+| L07 CivicMediaTranslatedEditorial | `ACTIVE_LEGACY_FALLBACK` (flag OFF) / `CONSUMER_READY_PENDING_LIVE_ACCEPTANCE` (flag ON path ready; live cold-cache pending) |
+| L08 useTrustedMediaExplanationsOverlay | same (`disabled` when PLP SSR map present) |
 | L09 loadCivicMediaEditorialSeed | same (skipped when PLP on) |
-| L10 media/page editorial wiring | same (PLP branch behind flag) |
-| L11 country trusted SSR seed | same |
+| L10 media/page editorial wiring | same (PLP branch behind flag; SSR resolves via `/api/v1/public/media-plp/resolve`) |
+| L11 country trusted SSR seed | same (shared `civic_media_trusted` identity) |
 | L12 use-localized-public-news-card | `ACTIVE_LEGACY_FALLBACK` (news PLP consume later within Media flag) |
 | L13 resolve-public-news-presentation | `ACTIVE_LEGACY_FALLBACK` |
 
 Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure → coherent CANONICAL_FALLBACK (does not re-enter generate-on-miss overlays).
 
+**Do not decrement ACTIVE count** until live cold-cache acceptance with flag ON.
+
+---
+
+## Reset 03C note (2026-09-05) — Media PLP consumer staging gate
+
+| Item | Status |
+|------|--------|
+| Consumer path | Flagged `/media` + country Recommended Media → `POST /api/v1/public/media-plp/resolve` → PUBLISHED_LOCALIZED or coherent CANONICAL_FALLBACK |
+| Fingerprint | API sha256 fingerprint (matches materializer); web does not use FNV for liveCanonicalVersion |
+| Flag | `HU_MEDIA_PLP_ENABLED` default **OFF**; this pack does **not** enable it |
+| Staging PLP | Existing `civic_media_trusted/reuters/uk` must be readable — no modify/rematerialize in this pack |
+| Diagnostic | `diagnose:media-plp-consumer` (READ-ONLY; do not run in Cursor task) |
+| ACTIVE legacy | **30** unchanged until live acceptance |
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

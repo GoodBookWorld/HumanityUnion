@@ -501,3 +501,23 @@ For the current controlled staging operator (`materialize:media-plp`), the thin 
 Do **not** create a new paid Render worker/service for this path unless separately approved. Ultimate placement remains outside normal request execution.
 
 **Incident class (03B.2):** importing `providers/gemini-translation-provider` pulled `language-registry/index` (routes/services) → ~350 local modules and OOM on Render Starter 512MB. Thin transport uses native `fetch` + `translation.config` + terminology seed only.
+### Reset 03C — Media PLP consumer staging gate (flag default OFF)
+
+Participant-facing Media reads when `HU_MEDIA_PLP_ENABLED=true`:
+
+```
+fetchCivicMediaCenter / country media list
+  → SSR loadMediaPlp*Presentations
+  → POST /api/v1/public/media-plp/resolve (batch; API fingerprints)
+  → PUBLISHED_LOCALIZED | CANONICAL_FALLBACK (complete entity; never mixed)
+  → CivicMediaCenterPlpContent / MediaPlpTrustedCard
+```
+
+Rules:
+
+- Matching PUBLISHED PLP (entityType + entityId + locale + canonicalVersion + schema) → localized presentation
+- Otherwise → complete canonical English presentation
+- No provider, no generate-on-miss, no content_translations field merge on flagged path
+- Country Recommended Media shares `civic_media_trusted` identity with `/media`
+- Flag OFF → exact legacy CT path (rollback)
+- Live cold-cache acceptance required before ACTIVE legacy decrement; diagnostic: `diagnose:media-plp-consumer`

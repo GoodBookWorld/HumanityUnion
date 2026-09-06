@@ -26,22 +26,23 @@ function buildPlpMediaFixtureHtml(locale: string): string {
 <main data-hu-plp-ssr="1">
   <section data-hu-surface="media" data-hu-fallback-nodes="0">
     <article class="hu-card civic-media-resource-card civic-media-resource-card--principle"
-      data-hu-plp-mode="PUBLISHED_LOCALIZED" data-hu-plp-entity="civic_media_principle"
-      data-hu-plp-id="editorial-transparency">
-      <h3 data-hu-semantic="auto">[${locale}] Independence of trusted media evidence</h3>
-      <p class="civic-media-resource-card__body" data-hu-semantic="auto">[${locale}] Principle description explaining independence requirements.</p>
-    </article>
-    <article class="hu-card civic-media-resource-card civic-media-resource-card--principle"
-      data-hu-plp-mode="PUBLISHED_LOCALIZED" data-hu-plp-entity="civic_media_principle"
-      data-hu-plp-id="transparent-sourcing">
-      <h3 data-hu-semantic="auto">[${locale}] Transparent sourcing for participants</h3>
-      <p class="civic-media-resource-card__body" data-hu-semantic="auto">[${locale}] Principle description explaining transparent sourcing.</p>
+      data-hu-plp-mode="CANONICAL_FALLBACK" data-hu-plp-entity="civic_media_principle"
+      data-hu-plp-id="editorial-transparency" data-hu-fallback-nodes="all">
+      <h3 data-hu-semantic="auto">Independence of trusted media evidence</h3>
+      <p class="civic-media-resource-card__body" data-hu-semantic="auto">Principle description explaining independence requirements.</p>
     </article>
     <article class="hu-card civic-media-resource-card civic-media-resource-card--trusted country-media-rail-card"
       data-hu-plp-mode="PUBLISHED_LOCALIZED" data-hu-plp-entity="civic_media_trusted"
-      data-hu-plp-id="the-atlantic" data-hu-shared-trusted="1">
+      data-hu-plp-id="reuters" data-hu-shared-trusted="1" data-hu-fallback-nodes="0">
+      <h3 data-hu-semantic="protected">Reuters</h3>
+      <p class="civic-media-resource-card__body" data-hu-semantic="auto">[${locale}] Independent international news agency with global editorial standards.</p>
+      <a data-hu-semantic="protected" href="https://www.reuters.com/">https://www.reuters.com/</a>
+    </article>
+    <article class="hu-card civic-media-resource-card civic-media-resource-card--trusted country-media-rail-card"
+      data-hu-plp-mode="CANONICAL_FALLBACK" data-hu-plp-entity="civic_media_trusted"
+      data-hu-plp-id="the-atlantic" data-hu-shared-trusted="1" data-hu-fallback-nodes="all">
       <h3 data-hu-semantic="protected">The Atlantic</h3>
-      <p class="civic-media-resource-card__body" data-hu-semantic="auto">[${locale}] Trusted explanation of editorial standards for participants.</p>
+      <p class="civic-media-resource-card__body" data-hu-semantic="auto">Trusted explanation of editorial standards for participants.</p>
       <a data-hu-semantic="protected" href="https://www.theatlantic.com/">https://www.theatlantic.com/</a>
     </article>
     <article class="public-news-card" data-hu-plp-mode="PUBLISHED_LOCALIZED"
@@ -52,20 +53,19 @@ function buildPlpMediaFixtureHtml(locale: string): string {
       <p data-hu-semantic="auto">[${locale}] Communities organize a public initiative around coastal habitats.</p>
       <a data-hu-semantic="protected" href="https://example.com/a">https://example.com/a</a>
     </article>
-    <article class="public-news-card" data-hu-plp-mode="PUBLISHED_LOCALIZED"
-      data-hu-plp-entity="public_news" data-hu-plp-id="news-realistic-2" data-hu-fallback-nodes="0">
-      ${auto("Politics")}
-      <p data-hu-semantic="protected">Reuters</p>
-      <h3 data-hu-semantic="auto">[${locale}] Second RSS card with stable identity</h3>
-      <p data-hu-semantic="auto">[${locale}] Nested summary remains fully localized.</p>
-    </article>
   </section>
-  <section data-hu-surface="country-recommended-media" data-hu-fallback-nodes="0">
+  <section data-hu-surface="country-recommended-media">
     <article class="hu-card civic-media-resource-card civic-media-resource-card--trusted country-media-rail-card"
       data-hu-plp-mode="PUBLISHED_LOCALIZED" data-hu-plp-entity="civic_media_trusted"
-      data-hu-plp-id="the-atlantic" data-hu-shared-trusted="1">
+      data-hu-plp-id="reuters" data-hu-shared-trusted="1" data-hu-fallback-nodes="0">
+      <h3 data-hu-semantic="protected">Reuters</h3>
+      <p class="civic-media-resource-card__body" data-hu-semantic="auto">[${locale}] Independent international news agency with global editorial standards.</p>
+    </article>
+    <article class="hu-card civic-media-resource-card civic-media-resource-card--trusted country-media-rail-card"
+      data-hu-plp-mode="CANONICAL_FALLBACK" data-hu-plp-entity="civic_media_trusted"
+      data-hu-plp-id="the-atlantic" data-hu-shared-trusted="1" data-hu-fallback-nodes="all">
       <h3 data-hu-semantic="protected">The Atlantic</h3>
-      <p class="civic-media-resource-card__body" data-hu-semantic="auto">[${locale}] Trusted explanation of editorial standards for participants.</p>
+      <p class="civic-media-resource-card__body" data-hu-semantic="auto">Trusted explanation of editorial standards for participants.</p>
     </article>
   </section>
   <script>
@@ -144,19 +144,37 @@ for (const locale of ["uk", "zh-Hant", "ar"] as const) {
         await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
         await page.waitForSelector('[data-hu-plp-hydrated="1"]');
 
-        const autoTexts = await page.locator('[data-hu-semantic="auto"]').allTextContents();
-        expect(autoTexts.length).toBeGreaterThan(5);
-        const mixed = autoTexts.filter((t) => !t.includes(`[${locale}]`));
-        expect(mixed, `MIXED_LANGUAGE_SEMANTIC_NODES: ${mixed.join(" | ")}`).toEqual([]);
+        // Per-entity coherence: PUBLISHED cards are fully localized; CANONICAL_FALLBACK is fully English.
+        const publishedCards = page.locator('[data-hu-plp-mode="PUBLISHED_LOCALIZED"]');
+        const fallbackCards = page.locator('[data-hu-plp-mode="CANONICAL_FALLBACK"]');
+        expect(await publishedCards.count()).toBeGreaterThan(0);
+        expect(await fallbackCards.count()).toBeGreaterThan(0);
+
+        for (const el of await publishedCards.all()) {
+          const autos = await el.locator('[data-hu-semantic="auto"]').allTextContents();
+          expect(autos.length).toBeGreaterThan(0);
+          for (const t of autos) {
+            expect(t, `mixed localized/canonical in PUBLISHED card: ${t}`).toContain(
+              `[${locale}]`,
+            );
+          }
+        }
+        for (const el of await fallbackCards.all()) {
+          const autos = await el.locator('[data-hu-semantic="auto"]').allTextContents();
+          expect(autos.length).toBeGreaterThan(0);
+          for (const t of autos) {
+            expect(t, `fake-localized canonical fallback: ${t}`).not.toContain(`[${locale}]`);
+          }
+        }
 
         const mediaBody = await page
           .locator(
-            '[data-hu-surface="media"] [data-hu-plp-id="the-atlantic"] .civic-media-resource-card__body',
+            '[data-hu-surface="media"] [data-hu-plp-id="reuters"] .civic-media-resource-card__body',
           )
           .textContent();
         const countryBody = await page
           .locator(
-            '[data-hu-surface="country-recommended-media"] [data-hu-plp-id="the-atlantic"] .civic-media-resource-card__body',
+            '[data-hu-surface="country-recommended-media"] [data-hu-plp-id="reuters"] .civic-media-resource-card__body',
           )
           .textContent();
         expect(mediaBody).toBe(countryBody);
