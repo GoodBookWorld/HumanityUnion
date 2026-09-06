@@ -24,10 +24,13 @@ import {
 import {
   evaluateMediaPlpMaterializerExecuteGuards,
   evaluateMediaPlpMaterializerProductionRefusal,
+  getMediaPlpPersistenceObservability,
+  requireMediaPlpMaterializerMongoPersistence,
   resetMediaPlpMaterializerCountersForTests,
   runMediaPlpMaterializer,
   type MediaPlpMaterializerDeps,
   type MediaPlpMaterializerReport,
+  type MediaPlpPersistenceObservability,
 } from "../media-plp-materializer/index.js";
 import {
   resolveMediaPlpOperatorMaxRssMb,
@@ -72,6 +75,7 @@ export type MediaPlpCarouselMaterializeReport = {
   readonly LOCALE: string;
   readonly COUNTRY_CODE: string | null;
   readonly LIMIT: number;
+  readonly PLP_PERSISTENCE_MODE: MediaPlpPersistenceObservability["PLP_PERSISTENCE_MODE"];
   readonly selection: MediaPlpCarouselSelectionResult;
   readonly entities: readonly MediaPlpCarouselMaterializeEntityResult[];
   readonly SELECTED: number;
@@ -114,6 +118,8 @@ export type MediaPlpCarouselMaterializeDeps = {
   readonly preProviderMaxRssMb?: number;
   readonly skipImportBoundaryCheck?: boolean;
   readonly skipMongoPersistenceRequire?: boolean;
+  /** Unit/fixture override; production CLI uses requireMediaPlpMaterializerMongoPersistence. */
+  readonly requirePersistence?: () => MediaPlpPersistenceObservability;
 };
 
 function rssMb(): number {
@@ -220,6 +226,35 @@ export async function runMediaPlpCarouselMaterializer(
     return { exitCode: 1, report: null, errorMessage: "MONGODB_URI is not configured." };
   }
 
+  // Fail-closed Mongo PLP bind BEFORE any carousel PLP read/classify (parity with
+  // materialize:media-plp). Never discover against accidental MEMORY while URI is set.
+  let persistence: MediaPlpPersistenceObservability;
+  try {
+    if (deps.requirePersistence) {
+      persistence = deps.requirePersistence();
+    } else if (deps.skipMongoPersistenceRequire) {
+      persistence = getMediaPlpPersistenceObservability();
+    } else {
+      persistence = requireMediaPlpMaterializerMongoPersistence(
+        "materialize:media-plp-carousel --mongo",
+      );
+    }
+  } catch (error) {
+    return {
+      exitCode: 1,
+      report: null,
+      errorMessage: error instanceof Error ? error.message : "PLP Mongo persistence required",
+    };
+  }
+  if (persistence.PLP_PERSISTENCE_MODE !== "MONGO" && !deps.skipMongoPersistenceRequire) {
+    return {
+      exitCode: 1,
+      report: null,
+      errorMessage:
+        "PLP persistence mode is not MONGO (materialize:media-plp-carousel --mongo). Refusing silent memory fallback.",
+    };
+  }
+
   const maxRss = deps.maxRssMb ?? resolveMediaPlpOperatorMaxRssMb();
   const preProviderMax =
     deps.preProviderMaxRssMb ?? resolveMediaPlpOperatorPreProviderMaxRssMb();
@@ -251,6 +286,7 @@ export async function runMediaPlpCarouselMaterializer(
         LOCALE: args.locale,
         COUNTRY_CODE: args.countryCode,
         LIMIT: args.limit,
+        PLP_PERSISTENCE_MODE: persistence.PLP_PERSISTENCE_MODE,
         selection,
         entities: selection.selected.map((item, index) => ({
           ENTITY_INDEX: index + 1,
@@ -277,7 +313,10 @@ export async function runMediaPlpCarouselMaterializer(
         ABORT_REASON: null,
         RSS_PEAK_MB: peakTracker.value,
         IMPORT_BOUNDARY_OK: true,
-        database: deps.resolveDatabase?.() ?? resolveMongoConfig().database,
+        database:
+          persistence.PLP_READ_DATABASE ??
+          deps.resolveDatabase?.() ??
+          resolveMongoConfig().database,
       };
       return { exitCode: 0, report, errorMessage: null };
     }
@@ -326,6 +365,8 @@ export async function runMediaPlpCarouselMaterializer(
           connect: async () => undefined,
           disconnect: async () => undefined,
           skipImportBoundaryCheck: true,
+          // Persistence already bound above; keep the same MONGO repository.
+          requirePersistence: () => persistence,
           skipMongoPersistenceRequire: deps.skipMongoPersistenceRequire,
           platformMode: deps.platformMode,
           resolveDatabase: deps.resolveDatabase,
@@ -448,6 +489,7 @@ export async function runMediaPlpCarouselMaterializer(
       LOCALE: args.locale,
       COUNTRY_CODE: args.countryCode,
       LIMIT: args.limit,
+      PLP_PERSISTENCE_MODE: persistence.PLP_PERSISTENCE_MODE,
       selection,
       entities: entityResults,
       SELECTED: selection.SELECTED_BY_LIMIT,
@@ -461,7 +503,10 @@ export async function runMediaPlpCarouselMaterializer(
       ABORT_REASON: abortReason,
       RSS_PEAK_MB: peakTracker.value,
       IMPORT_BOUNDARY_OK: true,
-      database: deps.resolveDatabase?.() ?? resolveMongoConfig().database,
+      database:
+        persistence.PLP_READ_DATABASE ??
+        deps.resolveDatabase?.() ??
+        resolveMongoConfig().database,
     };
 
     return {
@@ -498,6 +543,7 @@ export function printMediaPlpCarouselMaterializeReport(
         LOCALE: report.LOCALE,
         COUNTRY_CODE: report.COUNTRY_CODE,
         LIMIT: report.LIMIT,
+        PLP_PERSISTENCE_MODE: report.PLP_PERSISTENCE_MODE,
         database: report.database,
         IMPORT_BOUNDARY_OK: report.IMPORT_BOUNDARY_OK,
       },

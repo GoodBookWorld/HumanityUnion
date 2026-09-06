@@ -4,14 +4,18 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
+import {
+  MEDIA_PLP_ENTITY_TYPE,
+} from "@hu/types";
 
 import {
   MEDIA_PLP_CAROUSEL_MATERIALIZE_DEFAULT_LIMIT,
   MEDIA_PLP_CAROUSEL_MATERIALIZE_PLAN_MAX,
+  classifyMediaPlpCarouselEntity,
+  discoverMediaPlpCarouselStaticEntities,
   type MediaPlpCarouselEntityRow,
 } from "../../../src/modules/language/media-plp-carousel/index.js";
 import {
@@ -21,6 +25,16 @@ import {
   selectMediaPlpCarouselMaterializeEntities,
 } from "../../../src/modules/language/media-plp-carousel-materializer/index.js";
 import type { MediaPlpMaterializerReport } from "../../../src/modules/language/media-plp-materializer/index.js";
+import {
+  asMediaPlpPresentationNode,
+  buildCanonicalPrinciplePresentation,
+  fingerprintMediaPlpCanonicalVersion,
+  forcePublishedLocalizationPersistenceUnboundForTests,
+  publishMediaPlpEntity,
+  resetPublishedLocalizationPersistenceForTests,
+  setPublishedLocalizationPersistenceModeForTests,
+} from "../../../src/modules/language/published-localized-presentation/index.js";
+import { CIVIC_MEDIA_SELECTION_PRINCIPLES } from "../../../src/modules/civic-media-center/content/sections.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const apiRoot = path.resolve(here, "../../..");
@@ -461,5 +475,205 @@ describe("Reset 03E.10 — materialize:media-plp-carousel", () => {
     );
     assert.doesNotMatch(runner, /Promise\.all/);
     assert.match(runner, /await materializeOne/);
+    assert.match(runner, /requireMediaPlpMaterializerMongoPersistence/);
+  });
+});
+
+describe("Reset 03E.10.1 — batch Mongo PLP bootstrap parity", () => {
+  beforeEach(() => {
+    forcePublishedLocalizationPersistenceUnboundForTests();
+  });
+
+  afterEach(() => {
+    resetPublishedLocalizationPersistenceForTests();
+  });
+
+  it("--mongo binds MONGO before carousel discovery", async () => {
+    const events: string[] = [];
+    const result = await runMediaPlpCarouselMaterializer(
+      ["node", "x", "--mongo", "--locale", "uk"],
+      {
+        skipImportBoundaryCheck: true,
+        platformMode: "staging",
+        resolveDatabase: () => "humanity_union_staging",
+        isMongoConfigured: () => true,
+        requirePersistence: () => {
+          events.push("require");
+          return {
+            PLP_PERSISTENCE_MODE: "MONGO",
+            PLP_CURRENT_COLLECTION: "published_localized_presentations_current",
+            PLP_HISTORY_COLLECTION: "published_localized_presentations_history",
+            PLP_READ_DATABASE: "humanity_union_staging",
+            PLP_WRITE_DATABASE: "humanity_union_staging",
+          };
+        },
+        discoverRows: async () => {
+          events.push("discover");
+          return [
+            row({
+              entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE,
+              entityId: "editorial-transparency",
+              rebuildReason: "NONE",
+              usability: "USABLE_LOCALIZED",
+              WOULD_REQUIRE_PROVIDER: false,
+              plpFound: true,
+            }),
+          ];
+        },
+      },
+    );
+    assert.deepEqual(events, ["require", "discover"]);
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.report?.PLP_PERSISTENCE_MODE, "MONGO");
+    assert.equal(result.report?.PROVIDER_CALLS_TOTAL, 0);
+    assert.equal(result.report?.PLP_WRITES_TOTAL, 0);
+  });
+
+  it("discovery can read an existing published PLP after bootstrap bind", async () => {
+    // Fresh process starts UNBOUND; bind durable facade then classify existing snapshot.
+    setPublishedLocalizationPersistenceModeForTests("memory");
+    const principle = CIVIC_MEDIA_SELECTION_PRINCIPLES.find(
+      (p) => p.id === "editorial-transparency",
+    )!;
+    const presentation = asMediaPlpPresentationNode(
+      buildCanonicalPrinciplePresentation(principle),
+    );
+    const version = fingerprintMediaPlpCanonicalVersion(presentation);
+    const published = await publishMediaPlpEntity({
+      entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE,
+      entityId: principle.id,
+      locale: "uk",
+      canonicalVersion: version,
+      contentRevision: 1,
+      canonicalPresentation: presentation,
+      includeDeterministicMachine: true,
+    });
+    assert.equal(published.ok, true);
+
+    const result = await runMediaPlpCarouselMaterializer(
+      ["node", "x", "--mongo", "--locale", "uk"],
+      {
+        skipImportBoundaryCheck: true,
+        skipMongoPersistenceRequire: true,
+        platformMode: "staging",
+        resolveDatabase: () => "humanity_union_staging",
+        isMongoConfigured: () => true,
+        requirePersistence: () => ({
+          PLP_PERSISTENCE_MODE: "MONGO",
+          PLP_CURRENT_COLLECTION: "published_localized_presentations_current",
+          PLP_HISTORY_COLLECTION: "published_localized_presentations_history",
+          PLP_READ_DATABASE: "humanity_union_staging",
+          PLP_WRITE_DATABASE: "humanity_union_staging",
+        }),
+        discoverRows: async () => {
+          const ref = discoverMediaPlpCarouselStaticEntities().find(
+            (r) => r.entityId === "editorial-transparency",
+          )!;
+          return [await classifyMediaPlpCarouselEntity({ ref, locale: "uk" })];
+        },
+      },
+    );
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.report?.selection.SKIPPED_USABLE, 1);
+    assert.equal(result.report?.SELECTED, 0);
+    assert.equal(result.report?.PROVIDER_CALLS_TOTAL, 0);
+    assert.equal(result.report?.PLP_WRITES_TOTAL, 0);
+  });
+
+  it("missing Mongo binding fails closed before discovery; no memory fallback", async () => {
+    let discovered = false;
+    const result = await runMediaPlpCarouselMaterializer(
+      ["node", "x", "--mongo", "--locale", "uk"],
+      {
+        skipImportBoundaryCheck: true,
+        platformMode: "staging",
+        resolveDatabase: () => "humanity_union_staging",
+        isMongoConfigured: () => true,
+        requirePersistence: () => {
+          throw new Error(
+            "PLP persistence still on memory while MONGODB_URI is configured (bootstrap missing)",
+          );
+        },
+        discoverRows: async () => {
+          discovered = true;
+          return [];
+        },
+      },
+    );
+    assert.equal(discovered, false);
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.report, null);
+    assert.match(result.errorMessage ?? "", /bootstrap missing|memory/i);
+  });
+
+  it("refuses non-MONGO persistence mode without skip (no silent MEMORY)", async () => {
+    let discovered = false;
+    const result = await runMediaPlpCarouselMaterializer(
+      ["node", "x", "--mongo", "--locale", "uk"],
+      {
+        skipImportBoundaryCheck: true,
+        platformMode: "staging",
+        resolveDatabase: () => "humanity_union_staging",
+        isMongoConfigured: () => true,
+        requirePersistence: () => ({
+          PLP_PERSISTENCE_MODE: "MEMORY",
+          PLP_CURRENT_COLLECTION: "x",
+          PLP_HISTORY_COLLECTION: "y",
+          PLP_READ_DATABASE: null,
+          PLP_WRITE_DATABASE: null,
+        }),
+        discoverRows: async () => {
+          discovered = true;
+          return [];
+        },
+      },
+    );
+    assert.equal(discovered, false);
+    assert.equal(result.report, null);
+    assert.match(result.errorMessage ?? "", /not MONGO/);
+    assert.ok(result.exitCode !== 0);
+  });
+
+  it("execute path still sequential and max 20 after bootstrap", async () => {
+    const order: string[] = [];
+    const result = await runMediaPlpCarouselMaterializer(
+      ["node", "x", "--mongo", "--locale", "uk", "--execute", "--limit", "2"],
+      {
+        skipImportBoundaryCheck: true,
+        platformMode: "staging",
+        resolveDatabase: () => "humanity_union_staging",
+        isMongoConfigured: () => true,
+        requirePersistence: () => ({
+          PLP_PERSISTENCE_MODE: "MONGO",
+          PLP_CURRENT_COLLECTION: "published_localized_presentations_current",
+          PLP_HISTORY_COLLECTION: "published_localized_presentations_history",
+          PLP_READ_DATABASE: "humanity_union_staging",
+          PLP_WRITE_DATABASE: "humanity_union_staging",
+        }),
+        discoverRows: async () =>
+          Array.from({ length: 5 }, (_, i) =>
+            row({
+              entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE,
+              entityId: `p-${i}`,
+              rebuildReason: "NO_PUBLISHED_SNAPSHOT",
+            }),
+          ),
+        materializeOne: async (input) => {
+          order.push(input.entityId);
+          return {
+            exitCode: 0,
+            report: fakeMaterializerReport({
+              ENTITY_ID: input.entityId,
+              PLP_WRITES: 1,
+              PROVIDER_CALL_COUNT: 1,
+            }),
+            errorMessage: null,
+          };
+        },
+      },
+    );
+    assert.deepEqual(order, ["p-0", "p-1"]);
+    assert.equal(result.report?.SELECTED, 2);
+    assert.equal(result.report?.PLP_PERSISTENCE_MODE, "MONGO");
   });
 });

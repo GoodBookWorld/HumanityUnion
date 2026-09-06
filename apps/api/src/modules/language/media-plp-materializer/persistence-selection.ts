@@ -25,14 +25,16 @@ export type MediaPlpPersistenceObservability = {
  * Fail-closed: `--mongo` materializer must use durable Mongo PLP persistence.
  * Never silently select the in-process memory Map.
  */
-export function requireMediaPlpMaterializerMongoPersistence(): MediaPlpPersistenceObservability {
+export function requireMediaPlpMaterializerMongoPersistence(
+  reason: string = "materialize:media-plp --mongo",
+): MediaPlpPersistenceObservability {
   if (!isMongoConfigured()) {
     throw new Error(
-      "materialize:media-plp --mongo requires MONGODB_URI; refusing memory PLP fallback.",
+      `${reason} requires MONGODB_URI; refusing memory PLP fallback.`,
     );
   }
-  requirePublishedLocalizationMongoPersistence("materialize:media-plp --mongo");
-  assertPublishedLocalizationMongoPersistenceActive("materialize:media-plp --mongo");
+  requirePublishedLocalizationMongoPersistence(reason);
+  assertPublishedLocalizationMongoPersistenceActive(reason);
   return getMediaPlpPersistenceObservability();
 }
 

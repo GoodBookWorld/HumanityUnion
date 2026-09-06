@@ -31,6 +31,7 @@ export {
   getMediaPlpPersistenceObservability,
   requireMediaPlpMaterializerMongoPersistence,
 } from "./persistence-selection.js";
+export type { MediaPlpPersistenceObservability } from "./persistence-selection.js";
 export { verifyDurableMediaPlpCurrent } from "./durability-verify.js";
 export {
   MEDIA_PLP_STAGING_FORENSIC_PLAN_STATUS,
