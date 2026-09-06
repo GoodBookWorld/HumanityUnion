@@ -608,3 +608,24 @@ Coverage authority is the **rendered** participant-facing tree:
 | Preflight | Exact identity only: integrity counts/status/reason — no body text, no provider, no writes |
 
 Provider boundary: every AUTO prose path must be present and non-identical to source; extras ignored; missing → `PARTIAL`.
+
+### Reset 03E.3 — localization structural completeness
+
+**Invariant:** Ownership alone, publication state alone, and content difference alone are each insufficient. A participant-facing localized presentation requires:
+
+1. **OWNERSHIP** — every rendered semantic node has a stable owner  
+2. **STRUCTURAL REACHABILITY (`LSI.1`)** — every PLP-owned rendered path exists in canonical source → build AUTO map → presentation → apply → renderer  
+3. **LOCALIZED CONTENT INTEGRITY (`CLI.1`)** — values are not merely canonical source  
+
+**PLP.2 decision:** Schema version stays **PLP.2**. `LSI.1` is an independent attestation on the snapshot (like `CLI.1`). Entity allowlist expands with `civic_media_fact_check` / `civic_media_propaganda`; principle trees gain `whyItMatters`. Fingerprint changes fail-close old principle snapshots until rematerialized (not done in this pack).
+
+| Concern | Rule |
+|---------|------|
+| Render authority | Real `/media` composition (`CivicMediaCenterPageContent`) emits `semanticPath` / `messageKey` on `MediaSemanticNode` |
+| Build gate | Non-English candidates need `STRUCTURAL_INTEGRITY=PASSED` and `CONTENT_INTEGRITY=PASSED` |
+| Resolver | Missing/failed `structuralIntegrity` → `CANONICAL_FALLBACK` (no delete/mutate) |
+| Fact/propaganda | Reclassified from UI_DICTIONARY bodies → PLP entities (substantive content) |
+| Principle whyItMatters | Moved from UI dictionary catalogs → principle PLP field |
+| News | Included in the single Media PLP batch when articles are supplied |
+| Thin operator | Persists LSI.1 counts only; render-path parity stays test/dev (no production DOM crawl) |
+| ACTIVE count | **30** — unchanged |

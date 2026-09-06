@@ -7,6 +7,8 @@
 import type {
   CivicMediaCenterPublic,
   CivicMediaSelectionPrinciple,
+  FactCheckResource,
+  PropagandaAnalysisResource,
   PublicNewsArticleItem,
   PublicPresentationNode,
   TrustedMediaResource,
@@ -31,11 +33,26 @@ export type MediaPlpPublicNewsTree = {
 export type MediaPlpPrincipleTree = {
   readonly title: string;
   readonly description: string;
+  readonly whyItMatters: string;
 };
 
 export type MediaPlpTrustedTree = {
   readonly name: ReturnType<typeof protectedIdentity>;
   readonly websiteUrl: ReturnType<typeof protectedTechnical>;
+  readonly explanation: string;
+};
+
+export type MediaPlpFactCheckTree = {
+  readonly name: ReturnType<typeof protectedIdentity>;
+  readonly websiteUrl: ReturnType<typeof protectedTechnical>;
+  readonly mission: string;
+  readonly coverage: string;
+};
+
+export type MediaPlpPropagandaTree = {
+  readonly name: ReturnType<typeof protectedIdentity>;
+  readonly websiteUrl: ReturnType<typeof protectedTechnical>;
+  readonly focus: string;
   readonly explanation: string;
 };
 
@@ -78,6 +95,7 @@ export function buildCanonicalPrinciplePresentation(
   return {
     title: principle.title,
     description: principle.description,
+    whyItMatters: principle.whyItMatters ?? "",
   };
 }
 
@@ -87,6 +105,28 @@ export function buildCanonicalTrustedPresentation(
   return {
     name: protectedIdentity(resource.name),
     websiteUrl: protectedTechnical(resource.websiteUrl),
+    explanation: resource.explanation,
+  };
+}
+
+export function buildCanonicalFactCheckPresentation(
+  resource: FactCheckResource,
+): MediaPlpFactCheckTree {
+  return {
+    name: protectedIdentity(resource.name),
+    websiteUrl: protectedTechnical(resource.websiteUrl),
+    mission: resource.mission,
+    coverage: resource.coverage,
+  };
+}
+
+export function buildCanonicalPropagandaPresentation(
+  resource: PropagandaAnalysisResource,
+): MediaPlpPropagandaTree {
+  return {
+    name: protectedIdentity(resource.name),
+    websiteUrl: protectedTechnical(resource.websiteUrl),
+    focus: resource.focus,
     explanation: resource.explanation,
   };
 }
@@ -115,7 +155,9 @@ export function asMediaPlpPresentationNode(
     | MediaPlpPublicNewsTree
     | MediaPlpPrincipleTree
     | MediaPlpTrustedTree
-    | MediaPlpEditorialTree,
+    | MediaPlpEditorialTree
+    | MediaPlpFactCheckTree
+    | MediaPlpPropagandaTree,
 ): PublicPresentationNode {
   return tree as unknown as PublicPresentationNode;
 }

@@ -18,6 +18,7 @@ import type {
 import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
 
 import { resolveLocalizationContentIntegrityForRead } from "./content-integrity.js";
+import { resolveLocalizationStructuralIntegrityForRead } from "./structural-integrity.js";
 import { findCurrentPublishedPresentation } from "./persistence/repository.js";
 import {
   buildMediaPlpResolveCacheKey,
@@ -73,8 +74,8 @@ export async function resolvePublishedPresentation(
         reasonCode: "SCHEMA_VERSION_MISMATCH",
       };
     } else {
-      // Reset 03E.2 — publication state is not evidence of localization.
-      // Missing / failed content integrity ⇒ coherent CANONICAL_FALLBACK (no mutate/delete).
+      // Reset 03E.2 / 03E.3 — publication state is not evidence of localization.
+      // Missing / failed content or structural integrity ⇒ CANONICAL_FALLBACK (no mutate/delete).
       const integrity = resolveLocalizationContentIntegrityForRead({
         locale: String(input.locale),
         canonicalPresentation: input.canonicalPresentation,
@@ -89,13 +90,28 @@ export async function resolvePublishedPresentation(
           reasonCode: integrity.reasonCode,
         };
       } else {
-        result = {
-          mode: "PUBLISHED_LOCALIZED",
-          presentation: current.presentation,
-          seo: current.seo,
-          identity: current.identity,
-          snapshotId: current.snapshotId,
-        };
+        const structural = resolveLocalizationStructuralIntegrityForRead({
+          locale: String(input.locale),
+          canonicalPresentation: input.canonicalPresentation,
+          localizedPresentation: current.presentation,
+          persisted: current.structuralIntegrity ?? null,
+        });
+        if (!structural.allowPublishedLocalized) {
+          result = {
+            mode: "CANONICAL_FALLBACK",
+            presentation: input.canonicalPresentation,
+            seo: input.canonicalSeo,
+            reasonCode: structural.reasonCode,
+          };
+        } else {
+          result = {
+            mode: "PUBLISHED_LOCALIZED",
+            presentation: current.presentation,
+            seo: current.seo,
+            identity: current.identity,
+            snapshotId: current.snapshotId,
+          };
+        }
       }
     }
 

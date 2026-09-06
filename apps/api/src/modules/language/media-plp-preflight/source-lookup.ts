@@ -12,6 +12,8 @@ import type {
 } from "@hu/types";
 import { MEDIA_PLP_EDITORIAL_ENTITY_ID, MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
+import { FACT_CHECK_RESOURCES } from "../../civic-media-center/content/fact-checking.js";
+import { PROPAGANDA_ANALYSIS_RESOURCES } from "../../civic-media-center/content/propaganda-analysis.js";
 import {
   CIVIC_MEDIA_FAQ,
   CIVIC_MEDIA_OVERVIEW,
@@ -22,7 +24,9 @@ import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-databa
 import {
   asMediaPlpPresentationNode,
   buildCanonicalEditorialPresentation,
+  buildCanonicalFactCheckPresentation,
   buildCanonicalPrinciplePresentation,
+  buildCanonicalPropagandaPresentation,
   buildCanonicalPublicNewsPresentation,
   buildCanonicalTrustedPresentation,
   fingerprintMediaPlpCanonicalVersion,
@@ -268,6 +272,66 @@ async function loadTrustedSource(
   };
 }
 
+function loadFactCheckSource(entityId: string): MediaPlpPreflightSourceLookup {
+  markMediaPlpPreflightSourceLookup();
+  const matches = FACT_CHECK_RESOURCES.filter((item) => item.id === entityId);
+  if (matches.length > 1) {
+    return emptySource(matches.length, true);
+  }
+  const resource = matches[0];
+  if (!resource) {
+    return emptySource(0);
+  }
+  const tree = buildCanonicalFactCheckPresentation(resource);
+  const canonicalVersion = fingerprintMediaPlpCanonicalVersion(
+    asMediaPlpPresentationNode(tree),
+  );
+  return {
+    SOURCE_FOUND: true,
+    SOURCE_PUBLIC: true,
+    CANONICAL_VERSION: canonicalVersion,
+    SOURCE_DOCUMENT_BYTES: documentBytes({
+      id: resource.id,
+      missionLen: resource.mission.length,
+      coverageLen: resource.coverage.length,
+      sortOrder: resource.sortOrder,
+    }),
+    SOURCE_RECORDS_MATCHED: 1,
+    identityCollision: false,
+    canonicalPresentation: asMediaPlpPresentationNode(tree),
+  };
+}
+
+function loadPropagandaSource(entityId: string): MediaPlpPreflightSourceLookup {
+  markMediaPlpPreflightSourceLookup();
+  const matches = PROPAGANDA_ANALYSIS_RESOURCES.filter((item) => item.id === entityId);
+  if (matches.length > 1) {
+    return emptySource(matches.length, true);
+  }
+  const resource = matches[0];
+  if (!resource) {
+    return emptySource(0);
+  }
+  const tree = buildCanonicalPropagandaPresentation(resource);
+  const canonicalVersion = fingerprintMediaPlpCanonicalVersion(
+    asMediaPlpPresentationNode(tree),
+  );
+  return {
+    SOURCE_FOUND: true,
+    SOURCE_PUBLIC: true,
+    CANONICAL_VERSION: canonicalVersion,
+    SOURCE_DOCUMENT_BYTES: documentBytes({
+      id: resource.id,
+      focusLen: resource.focus.length,
+      explanationLen: resource.explanation.length,
+      sortOrder: resource.sortOrder,
+    }),
+    SOURCE_RECORDS_MATCHED: 1,
+    identityCollision: false,
+    canonicalPresentation: asMediaPlpPresentationNode(tree),
+  };
+}
+
 export async function loadMediaPlpPreflightSource(input: {
   readonly entityType: MediaPlpEntityType;
   readonly entityId: string;
@@ -283,6 +347,10 @@ export async function loadMediaPlpPreflightSource(input: {
       return loadTrustedSource(input.entityId);
     case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL:
       return loadEditorialSource(input.entityId);
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_FACT_CHECK:
+      return loadFactCheckSource(input.entityId);
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PROPAGANDA:
+      return loadPropagandaSource(input.entityId);
     default: {
       const _exhaustive: never = input.entityType;
       void _exhaustive;

@@ -15,10 +15,7 @@ import type {
 
 import { Badge, Card } from "../../../design-system";
 import { CIVIC_MEDIA_ROUTE } from "../routes";
-import {
-  coverageToChips,
-  PRINCIPLE_WHY_IT_MATTERS_IDS,
-} from "../civic-media-card-utils";
+import { coverageToChips } from "../civic-media-card-utils";
 import {
   HuxDirectorySection,
   HuxDirectoryShell,
@@ -34,7 +31,11 @@ import { CivicPipelineWorkflow } from "./CivicPipelineWorkflow";
 import { MediaLogo } from "./MediaLogo";
 import { TrustedMediaCategoryTabs } from "./TrustedMediaCategoryTabs";
 import { TrustedMediaRailCard } from "./TrustedMediaRailCard";
-import { applyMediaPlpPresentationsToEditorial } from "../../language/media-plp/apply-media-plp-editorial";
+import {
+  applyMediaPlpFactCheckMaps,
+  applyMediaPlpPresentationsToEditorial,
+  applyMediaPlpPropagandaMaps,
+} from "../../language/media-plp/apply-media-plp-editorial";
 import {
   MediaSemanticNode,
   plpModeToSemanticResult,
@@ -97,11 +98,11 @@ function PrincipleCard({
 }) {
   const t = useTranslations("civicMediaPublic");
   const icon = PRINCIPLE_ICONS[principle.id] ?? principle.title.slice(0, 1);
-  const hasWhy = (PRINCIPLE_WHY_IT_MATTERS_IDS as readonly string[]).includes(principle.id);
-  const whyItMatters = hasWhy ? t(`principles.${principle.id}.whyItMatters`) : null;
-  // Pack 08J.1 / Reset 03C.1 — principle text from editorial (legacy CT or PLP-applied).
+  // Reset 03E.3 — whyItMatters from editorial/PLP entity field (not UI dictionary body).
+  const whyItMatters = (principle.whyItMatters ?? "").trim();
   const displayTitle = principle.title;
   const displayBody = principle.description;
+  const principleResult = plpModeToSemanticResult(plpMode);
 
   return (
     <Card
@@ -119,9 +120,10 @@ function PrincipleCard({
       <MediaSemanticNode
         as="h3"
         owner="PLP_ENTITY"
-        result={plpModeToSemanticResult(plpMode)}
+        result={principleResult}
         entityType="civic_media_principle"
         entityId={plpEntityId}
+        semanticPath="title"
       >
         {displayTitle}
       </MediaSemanticNode>
@@ -129,18 +131,31 @@ function PrincipleCard({
         as="p"
         className="civic-media-resource-card__body"
         owner="PLP_ENTITY"
-        result={plpModeToSemanticResult(plpMode)}
+        result={principleResult}
         entityType="civic_media_principle"
         entityId={plpEntityId}
+        semanticPath="description"
       >
         {displayBody}
       </MediaSemanticNode>
       {whyItMatters ? (
         <p className="civic-media-resource-card__why">
-          <MediaSemanticNode as="strong" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+          <MediaSemanticNode
+            as="strong"
+            owner="UI_DICTIONARY"
+            result="LOCALIZED_DICTIONARY"
+            messageKey="civicMediaPublic.whyItMatters"
+          >
             {t("whyItMatters")}
           </MediaSemanticNode>
-          <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+          <MediaSemanticNode
+            as="span"
+            owner="PLP_ENTITY"
+            result={principleResult}
+            entityType="civic_media_principle"
+            entityId={plpEntityId}
+            semanticPath="whyItMatters"
+          >
             {whyItMatters}
           </MediaSemanticNode>
         </p>
@@ -149,13 +164,20 @@ function PrincipleCard({
   );
 }
 
-function FactCheckCard({ resource }: { resource: FactCheckResource }) {
+function FactCheckCard({
+  resource,
+  mission,
+  coverage,
+  plpMode,
+}: {
+  resource: FactCheckResource;
+  mission: string;
+  coverage: string;
+  plpMode?: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+}) {
   const t = useTranslations("civicMediaPublic");
-  const missionKey = `factChecking.resources.${resource.id}.mission`;
-  const coverageKey = `factChecking.resources.${resource.id}.coverage`;
-  const mission = t.has(missionKey) ? t(missionKey) : resource.mission;
-  const coverage = t.has(coverageKey) ? t(coverageKey) : resource.coverage;
   const chips = coverageToChips(coverage);
+  const bodyResult = plpModeToSemanticResult(plpMode);
 
   return (
     <Card className="civic-media-resource-card civic-media-resource-card--verification">
@@ -180,46 +202,55 @@ function FactCheckCard({ resource }: { resource: FactCheckResource }) {
         className="civic-media-resource-card__label"
         owner="UI_DICTIONARY"
         result="LOCALIZED_DICTIONARY"
+        messageKey="civicMediaPublic.mission"
       >
         {t("mission")}
       </MediaSemanticNode>
       <MediaSemanticNode
         as="p"
         className="civic-media-resource-card__body"
-        owner="UI_DICTIONARY"
-        result="LOCALIZED_DICTIONARY"
+        owner="PLP_ENTITY"
+        result={bodyResult}
+        entityType="civic_media_fact_check"
+        entityId={resource.id}
+        semanticPath="mission"
       >
         {mission}
       </MediaSemanticNode>
-      <div className="civic-media-resource-card__chips" aria-label={t("coverageAria")}>
+      <MediaSemanticNode
+        as="div"
+        className="civic-media-resource-card__chips"
+        aria-label={t("coverageAria")}
+        owner="PLP_ENTITY"
+        result={bodyResult}
+        entityType="civic_media_fact_check"
+        entityId={resource.id}
+        semanticPath="coverage"
+      >
         {chips.map((chip) => (
-          <MediaSemanticNode
-            key={chip}
-            as="span"
-            className="civic-media-chip"
-            owner="UI_DICTIONARY"
-            result="LOCALIZED_DICTIONARY"
-          >
+          <span key={chip} className="civic-media-chip">
             {chip}
-          </MediaSemanticNode>
+          </span>
         ))}
-      </div>
+      </MediaSemanticNode>
       <ExternalResourceLink href={resource.websiteUrl}>{t("officialWebsite")}</ExternalResourceLink>
     </Card>
   );
 }
 
-function PropagandaCard({ resource }: { resource: PropagandaAnalysisResource }) {
+function PropagandaCard({
+  resource,
+  focus,
+  explanation,
+  plpMode,
+}: {
+  resource: PropagandaAnalysisResource;
+  focus: string;
+  explanation: string;
+  plpMode?: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+}) {
   const t = useTranslations("civicMediaPublic");
-  const focusCodeKey = `propaganda.resources.${resource.id}.focusCode`;
-  const explanationKey = `propaganda.resources.${resource.id}.explanation`;
-  const focusCode = t.has(focusCodeKey) ? t(focusCodeKey) : "";
-  const focusLabel = focusCode && t.has(`propaganda.focus.${focusCode}`)
-    ? t(`propaganda.focus.${focusCode}`)
-    : t.has(`propaganda.resources.${resource.id}.focus`)
-      ? t(`propaganda.resources.${resource.id}.focus`)
-      : resource.focus;
-  const explanation = t.has(explanationKey) ? t(explanationKey) : resource.explanation;
+  const bodyResult = plpModeToSemanticResult(plpMode);
 
   return (
     <Card className="civic-media-resource-card civic-media-resource-card--analysis">
@@ -239,14 +270,24 @@ function PropagandaCard({ resource }: { resource: PropagandaAnalysisResource }) 
           height={40}
         />
       </div>
-      <MediaSemanticNode as="span" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
-        <Badge status="neutral" variant="neutral" label={focusLabel} />
+      <MediaSemanticNode
+        as="span"
+        owner="PLP_ENTITY"
+        result={bodyResult}
+        entityType="civic_media_propaganda"
+        entityId={resource.id}
+        semanticPath="focus"
+      >
+        <Badge status="neutral" variant="neutral" label={focus} />
       </MediaSemanticNode>
       <MediaSemanticNode
         as="p"
         className="civic-media-resource-card__body"
-        owner="UI_DICTIONARY"
-        result="LOCALIZED_DICTIONARY"
+        owner="PLP_ENTITY"
+        result={bodyResult}
+        entityType="civic_media_propaganda"
+        entityId={resource.id}
+        semanticPath="explanation"
       >
         {explanation}
       </MediaSemanticNode>
@@ -387,6 +428,9 @@ function CivicMediaCenterLoaded({
   plpTrustedById,
   plpPrinciplesById,
   plpEditorialPresentation,
+  plpFactCheckById,
+  plpPropagandaById,
+  plpNewsById,
   initialNewsArticles,
 }: {
   media: CivicMediaCenterPublic;
@@ -394,6 +438,9 @@ function CivicMediaCenterLoaded({
   plpTrustedById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   plpPrinciplesById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   plpEditorialPresentation?: MediaPlpResolvedPresentation;
+  plpFactCheckById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  plpPropagandaById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  plpNewsById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   initialNewsArticles?: PublicNewsArticleItem[];
 }) {
   const t = useTranslations("civicMediaPublic");
@@ -410,6 +457,26 @@ function CivicMediaCenterLoaded({
           })
         : undefined,
     [plpMode, media, plpTrustedById, plpPrinciplesById, plpEditorialPresentation],
+  );
+  const factCheckMaps = useMemo(
+    () =>
+      plpMode && plpFactCheckById
+        ? applyMediaPlpFactCheckMaps({
+            resources: media.factChecking,
+            factCheckById: plpFactCheckById,
+          })
+        : undefined,
+    [plpMode, media.factChecking, plpFactCheckById],
+  );
+  const propagandaMaps = useMemo(
+    () =>
+      plpMode && plpPropagandaById
+        ? applyMediaPlpPropagandaMaps({
+            resources: media.propagandaAnalysis,
+            propagandaById: plpPropagandaById,
+          })
+        : undefined,
+    [plpMode, media.propagandaAnalysis, plpPropagandaById],
   );
   const editorial = useCivicMediaResolvedEditorial(
     media,
@@ -446,10 +513,16 @@ function CivicMediaCenterLoaded({
               className="civic-media-page__eyebrow"
               owner="UI_DICTIONARY"
               result="LOCALIZED_DICTIONARY"
+              messageKey="civicMediaPublic.eyebrow"
             >
               {t("eyebrow")}
             </MediaSemanticNode>
-            <MediaSemanticNode as="h1" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+            <MediaSemanticNode
+              as="h1"
+              owner="UI_DICTIONARY"
+              result="LOCALIZED_DICTIONARY"
+              messageKey="civicMediaPublic.pageTitle"
+            >
               {t("pageTitle")}
             </MediaSemanticNode>
             <div className="civic-media-page__editorial">
@@ -460,6 +533,7 @@ function CivicMediaCenterLoaded({
                 result={editorialResult}
                 entityType="civic_media_editorial"
                 entityId="civic-media-center"
+                semanticPath="overviewTitle"
               >
                 {editorial.overview.title}
               </MediaSemanticNode>
@@ -470,11 +544,12 @@ function CivicMediaCenterLoaded({
                 result={editorialResult}
                 entityType="civic_media_editorial"
                 entityId="civic-media-center"
+                semanticPath="overviewSummary"
               >
                 {editorial.overview.summary}
               </MediaSemanticNode>
               <div className="civic-media-page__hero-grid">
-                {editorial.overview.points.map((point) => (
+                {editorial.overview.points.map((point, index) => (
                   <Card
                     key={point.id}
                     className="civic-media-resource-card civic-media-resource-card--hero"
@@ -485,6 +560,7 @@ function CivicMediaCenterLoaded({
                       result={editorialResult}
                       entityType="civic_media_editorial"
                       entityId="civic-media-center"
+                      semanticPath={`overviewPoints[${index}].heading`}
                     >
                       {point.heading}
                     </MediaSemanticNode>
@@ -494,6 +570,7 @@ function CivicMediaCenterLoaded({
                       result={editorialResult}
                       entityType="civic_media_editorial"
                       entityId="civic-media-center"
+                      semanticPath={`overviewPoints[${index}].body`}
                     >
                       {point.body}
                     </MediaSemanticNode>
@@ -509,7 +586,7 @@ function CivicMediaCenterLoaded({
         <PublicNewsSection
           sectionId="news-widgets"
           variant="discovery"
-          disableOnDemandTranslation={plpMode}
+          disableOnDemandTranslation={plpMode || plpNewsById != null}
           initialArticles={initialNewsArticles}
         />
 
@@ -573,7 +650,18 @@ function CivicMediaCenterLoaded({
           items={media.factChecking}
           layout="three-two-one"
           getItemKey={(resource) => resource.id}
-          renderItem={(resource) => <FactCheckCard resource={resource} />}
+          renderItem={(resource) => (
+            <FactCheckCard
+              resource={resource}
+              mission={factCheckMaps?.missionsById[resource.id] ?? resource.mission}
+              coverage={factCheckMaps?.coverageById[resource.id] ?? resource.coverage}
+              plpMode={
+                plpMode
+                  ? plpFactCheckById?.[resource.id]?.mode ?? "CANONICAL_FALLBACK"
+                  : undefined
+              }
+            />
+          )}
         />
 
         <HuxDirectorySection
@@ -585,16 +673,34 @@ function CivicMediaCenterLoaded({
           items={media.propagandaAnalysis}
           layout="three-two-one"
           getItemKey={(resource) => resource.id}
-          renderItem={(resource) => <PropagandaCard resource={resource} />}
+          renderItem={(resource) => (
+            <PropagandaCard
+              resource={resource}
+              focus={propagandaMaps?.focusById[resource.id] ?? resource.focus}
+              explanation={
+                propagandaMaps?.explanationsById[resource.id] ?? resource.explanation
+              }
+              plpMode={
+                plpMode
+                  ? plpPropagandaById?.[resource.id]?.mode ?? "CANONICAL_FALLBACK"
+                  : undefined
+              }
+            />
+          )}
         />
 
         <section id="faq" className="civic-media-page__faq civic-media-section-shell">
           <div className="civic-media-section-shell__inner">
-            <MediaSemanticNode as="h2" owner="UI_DICTIONARY" result="LOCALIZED_DICTIONARY">
+            <MediaSemanticNode
+              as="h2"
+              owner="UI_DICTIONARY"
+              result="LOCALIZED_DICTIONARY"
+              messageKey="civicMediaPublic.faq.heading"
+            >
               {t("faq.heading")}
             </MediaSemanticNode>
             <div className="civic-media-page__faq-list">
-              {editorial.faq.map((item) => (
+              {editorial.faq.map((item, index) => (
                 <Card key={item.id} className="civic-media-resource-card">
                   <MediaSemanticNode
                     as="h3"
@@ -602,6 +708,7 @@ function CivicMediaCenterLoaded({
                     result={editorialResult}
                     entityType="civic_media_editorial"
                     entityId="civic-media-center"
+                    semanticPath={`faq[${index}].question`}
                   >
                     {item.question}
                   </MediaSemanticNode>
@@ -611,6 +718,7 @@ function CivicMediaCenterLoaded({
                     result={editorialResult}
                     entityType="civic_media_editorial"
                     entityId="civic-media-center"
+                    semanticPath={`faq[${index}].answer`}
                   >
                     {item.answer}
                   </MediaSemanticNode>
@@ -642,6 +750,9 @@ export function CivicMediaCenterPageContent({
   plpTrustedById,
   plpPrinciplesById,
   plpEditorialPresentation,
+  plpFactCheckById,
+  plpPropagandaById,
+  plpNewsById,
   initialNewsArticles,
 }: {
   /**
@@ -661,6 +772,12 @@ export function CivicMediaCenterPageContent({
   plpPrinciplesById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   /** Reset 03E — overview + FAQ PLP presentation (civic_media_editorial). */
   plpEditorialPresentation?: MediaPlpResolvedPresentation;
+  /** Reset 03E.3 — fact-check mission/coverage PLP presentations. */
+  plpFactCheckById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  /** Reset 03E.3 — propaganda focus/explanation PLP presentations. */
+  plpPropagandaById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  /** Reset 03E.3 — optional news PLP map (wiring can stay minimal). */
+  plpNewsById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   /** Optional SSR/static news seed for PublicNewsSection. */
   initialNewsArticles?: PublicNewsArticleItem[];
 } = {}) {
@@ -724,6 +841,9 @@ export function CivicMediaCenterPageContent({
       plpTrustedById={plpTrustedById}
       plpPrinciplesById={plpPrinciplesById}
       plpEditorialPresentation={plpEditorialPresentation}
+      plpFactCheckById={plpFactCheckById}
+      plpPropagandaById={plpPropagandaById}
+      plpNewsById={plpNewsById}
       initialNewsArticles={initialNewsArticles}
     />
   );

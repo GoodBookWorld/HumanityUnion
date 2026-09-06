@@ -7,6 +7,9 @@
 import type {
   CivicMediaCenterPublic,
   CivicMediaSelectionPrinciple,
+  FactCheckResource,
+  PropagandaAnalysisResource,
+  PublicNewsArticleItem,
   PublicPresentationNode,
   TrustedMediaResource,
 } from "@hu/types";
@@ -14,7 +17,10 @@ import {
   MEDIA_PLP_EDITORIAL_ENTITY_ID,
   MEDIA_PLP_ENTITY_TYPE,
   mediaPlpEditorialEntityId,
+  mediaPlpFactCheckEntityId,
   mediaPlpPrincipleEntityId,
+  mediaPlpPropagandaEntityId,
+  mediaPlpPublicNewsEntityId,
   mediaPlpTrustedEntityId,
   protectedIdentity,
   protectedTechnical,
@@ -43,6 +49,46 @@ export function buildCanonicalPrinciplePresentationNode(
   return {
     title: principle.title,
     description: principle.description,
+    whyItMatters: principle.whyItMatters ?? "",
+  };
+}
+
+export function buildCanonicalFactCheckPresentationNode(
+  resource: FactCheckResource,
+): PublicPresentationNode {
+  return {
+    name: protectedIdentity(resource.name),
+    websiteUrl: protectedTechnical(resource.websiteUrl),
+    mission: resource.mission,
+    coverage: resource.coverage,
+  };
+}
+
+export function buildCanonicalPropagandaPresentationNode(
+  resource: PropagandaAnalysisResource,
+): PublicPresentationNode {
+  return {
+    name: protectedIdentity(resource.name),
+    websiteUrl: protectedTechnical(resource.websiteUrl),
+    focus: resource.focus,
+    explanation: resource.explanation,
+  };
+}
+
+export function buildCanonicalPublicNewsPresentationNode(
+  article: PublicNewsArticleItem,
+): PublicPresentationNode {
+  return {
+    id: protectedTechnical(article.id),
+    articleUrl: protectedTechnical(article.articleUrl),
+    imageUrl: article.imageUrl ? protectedTechnical(article.imageUrl) : null,
+    publishedAt: protectedTechnical(article.publishedAt),
+    sourceName: protectedIdentity(article.sourceName),
+    verificationStatus: protectedTechnical(article.verificationStatus),
+    title: article.title,
+    summary: article.summary,
+    category: article.category ?? "",
+    geographicScope: protectedTechnical(article.geographicScope ?? ""),
   };
 }
 
@@ -253,18 +299,80 @@ export async function loadMediaPlpPrinciplePresentations(input: {
   }
 }
 
+function resolveKeyedFromBatch(input: {
+  readonly locale: string;
+  readonly byEntityId: ReadonlyMap<
+    string,
+    {
+      readonly entityType: string;
+      readonly entityId: string;
+      readonly locale: string;
+      readonly mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK";
+      readonly presentation: PublicPresentationNode;
+      readonly canonicalVersion: string;
+    }
+  >;
+  readonly items: readonly {
+    readonly entityType: string;
+    readonly entityId: string;
+    readonly canonicalPresentation: PublicPresentationNode;
+    readonly key: string;
+  }[];
+}): Record<string, MediaPlpResolvedPresentation> {
+  const out: Record<string, MediaPlpResolvedPresentation> = {};
+  for (const item of input.items) {
+    const hit = input.byEntityId.get(item.entityId);
+    out[item.key] = hit
+      ? toMediaPlpResolvedPresentation(hit)
+      : coherentFallback({
+          entityType: item.entityType,
+          entityId: item.entityId,
+          locale: input.locale,
+          presentation: item.canonicalPresentation,
+        });
+  }
+  return out;
+}
+
+function fallbackKeyed(input: {
+  readonly locale: string;
+  readonly items: readonly {
+    readonly entityType: string;
+    readonly entityId: string;
+    readonly canonicalPresentation: PublicPresentationNode;
+    readonly key: string;
+  }[];
+}): Record<string, MediaPlpResolvedPresentation> {
+  const out: Record<string, MediaPlpResolvedPresentation> = {};
+  for (const item of input.items) {
+    out[item.key] = coherentFallback({
+      entityType: item.entityType,
+      entityId: item.entityId,
+      locale: input.locale,
+      presentation: item.canonicalPresentation,
+    });
+  }
+  return out;
+}
+
 /**
  * Reset 03D / 03E — one bounded Media PLP HTTP resolve for Media page entities.
- * Trusted + principles + editorial (overview/FAQ) in a single batch.
+ * Trusted + principles + editorial + fact-check + propaganda (+ optional news) in a single batch.
  */
 export async function loadMediaPlpPagePresentations(input: {
   readonly resources: readonly TrustedMediaResource[];
   readonly principles: readonly CivicMediaSelectionPrinciple[];
+  readonly factChecking: readonly FactCheckResource[];
+  readonly propagandaAnalysis: readonly PropagandaAnalysisResource[];
+  readonly newsArticles?: readonly PublicNewsArticleItem[];
   readonly media: Pick<CivicMediaCenterPublic, "overview" | "faq">;
   readonly locale: string;
 }): Promise<{
   readonly trustedById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   readonly principlesById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  readonly factCheckById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  readonly propagandaById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  readonly newsById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   readonly editorial: MediaPlpResolvedPresentation;
 } | null> {
   if (!isMediaPlpWebEnabled()) {
@@ -275,13 +383,31 @@ export async function loadMediaPlpPagePresentations(input: {
     entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
     entityId: mediaPlpTrustedEntityId(resource.id),
     canonicalPresentation: buildCanonicalTrustedPresentationNode(resource),
-    resourceId: resource.id,
+    key: resource.id,
   }));
   const principleItems = input.principles.map((principle) => ({
     entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE,
     entityId: mediaPlpPrincipleEntityId(principle.id),
     canonicalPresentation: buildCanonicalPrinciplePresentationNode(principle),
-    principleId: principle.id,
+    key: principle.id,
+  }));
+  const factCheckItems = input.factChecking.map((resource) => ({
+    entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_FACT_CHECK,
+    entityId: mediaPlpFactCheckEntityId(resource.id),
+    canonicalPresentation: buildCanonicalFactCheckPresentationNode(resource),
+    key: resource.id,
+  }));
+  const propagandaItems = input.propagandaAnalysis.map((resource) => ({
+    entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PROPAGANDA,
+    entityId: mediaPlpPropagandaEntityId(resource.id),
+    canonicalPresentation: buildCanonicalPropagandaPresentationNode(resource),
+    key: resource.id,
+  }));
+  const newsItems = (input.newsArticles ?? []).map((article) => ({
+    entityType: MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS,
+    entityId: mediaPlpPublicNewsEntityId(article.id),
+    canonicalPresentation: buildCanonicalPublicNewsPresentationNode(article),
+    key: article.id,
   }));
   const editorialCanonical = buildCanonicalEditorialPresentationNode(input.media);
   const editorialEntityId = mediaPlpEditorialEntityId(MEDIA_PLP_EDITORIAL_ENTITY_ID);
@@ -293,6 +419,21 @@ export async function loadMediaPlpPagePresentations(input: {
       canonicalPresentation,
     })),
     ...principleItems.map(({ entityType, entityId, canonicalPresentation }) => ({
+      entityType,
+      entityId,
+      canonicalPresentation,
+    })),
+    ...factCheckItems.map(({ entityType, entityId, canonicalPresentation }) => ({
+      entityType,
+      entityId,
+      canonicalPresentation,
+    })),
+    ...propagandaItems.map(({ entityType, entityId, canonicalPresentation }) => ({
+      entityType,
+      entityId,
+      canonicalPresentation,
+    })),
+    ...newsItems.map(({ entityType, entityId, canonicalPresentation }) => ({
       entityType,
       entityId,
       canonicalPresentation,
@@ -311,31 +452,31 @@ export async function loadMediaPlpPagePresentations(input: {
     });
     const byEntityId = new Map(results.map((row) => [row.entityId, row]));
 
-    const trustedById: Record<string, MediaPlpResolvedPresentation> = {};
-    for (const item of trustedItems) {
-      const hit = byEntityId.get(item.entityId);
-      trustedById[item.resourceId] = hit
-        ? toMediaPlpResolvedPresentation(hit)
-        : coherentFallback({
-            entityType: item.entityType,
-            entityId: item.entityId,
-            locale: input.locale,
-            presentation: item.canonicalPresentation,
-          });
-    }
-
-    const principlesById: Record<string, MediaPlpResolvedPresentation> = {};
-    for (const item of principleItems) {
-      const hit = byEntityId.get(item.entityId);
-      principlesById[item.principleId] = hit
-        ? toMediaPlpResolvedPresentation(hit)
-        : coherentFallback({
-            entityType: item.entityType,
-            entityId: item.entityId,
-            locale: input.locale,
-            presentation: item.canonicalPresentation,
-          });
-    }
+    const trustedById = resolveKeyedFromBatch({
+      locale: input.locale,
+      byEntityId,
+      items: trustedItems,
+    });
+    const principlesById = resolveKeyedFromBatch({
+      locale: input.locale,
+      byEntityId,
+      items: principleItems,
+    });
+    const factCheckById = resolveKeyedFromBatch({
+      locale: input.locale,
+      byEntityId,
+      items: factCheckItems,
+    });
+    const propagandaById = resolveKeyedFromBatch({
+      locale: input.locale,
+      byEntityId,
+      items: propagandaItems,
+    });
+    const newsById = resolveKeyedFromBatch({
+      locale: input.locale,
+      byEntityId,
+      items: newsItems,
+    });
 
     const editorialHit = byEntityId.get(editorialEntityId);
     const editorial = editorialHit
@@ -347,29 +488,21 @@ export async function loadMediaPlpPagePresentations(input: {
           presentation: editorialCanonical,
         });
 
-    return { trustedById, principlesById, editorial };
-  } catch {
-    const trustedById: Record<string, MediaPlpResolvedPresentation> = {};
-    for (const item of trustedItems) {
-      trustedById[item.resourceId] = coherentFallback({
-        entityType: item.entityType,
-        entityId: item.entityId,
-        locale: input.locale,
-        presentation: item.canonicalPresentation,
-      });
-    }
-    const principlesById: Record<string, MediaPlpResolvedPresentation> = {};
-    for (const item of principleItems) {
-      principlesById[item.principleId] = coherentFallback({
-        entityType: item.entityType,
-        entityId: item.entityId,
-        locale: input.locale,
-        presentation: item.canonicalPresentation,
-      });
-    }
     return {
       trustedById,
       principlesById,
+      factCheckById,
+      propagandaById,
+      newsById,
+      editorial,
+    };
+  } catch {
+    return {
+      trustedById: fallbackKeyed({ locale: input.locale, items: trustedItems }),
+      principlesById: fallbackKeyed({ locale: input.locale, items: principleItems }),
+      factCheckById: fallbackKeyed({ locale: input.locale, items: factCheckItems }),
+      propagandaById: fallbackKeyed({ locale: input.locale, items: propagandaItems }),
+      newsById: fallbackKeyed({ locale: input.locale, items: newsItems }),
       editorial: coherentFallback({
         entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
         entityId: editorialEntityId,

@@ -12,13 +12,17 @@ import type {
 } from "@hu/types";
 import { MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
+import { FACT_CHECK_RESOURCES } from "../../civic-media-center/content/fact-checking.js";
+import { PROPAGANDA_ANALYSIS_RESOURCES } from "../../civic-media-center/content/propaganda-analysis.js";
 import { CIVIC_MEDIA_FAQ, CIVIC_MEDIA_OVERVIEW, CIVIC_MEDIA_SELECTION_PRINCIPLES } from "../../civic-media-center/content/sections.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
 import {
   asMediaPlpPresentationNode,
   buildCanonicalEditorialPresentation,
+  buildCanonicalFactCheckPresentation,
   buildCanonicalPrinciplePresentation,
+  buildCanonicalPropagandaPresentation,
   buildCanonicalPublicNewsPresentation,
   buildCanonicalTrustedPresentation,
   fingerprintMediaPlpCanonicalVersion,
@@ -214,6 +218,38 @@ function resolveEditorial(entityId: string): MediaPlpMaterializerSourceResolve {
   );
 }
 
+function resolveFactCheck(entityId: string): MediaPlpMaterializerSourceResolve {
+  markMaterializerSourceLookup();
+  const matches = FACT_CHECK_RESOURCES.filter((item) => item.id === entityId);
+  if (matches.length > 1) {
+    return { ...empty(), identityCollision: true };
+  }
+  const resource = matches[0];
+  if (!resource) {
+    return empty();
+  }
+  return withTree(
+    asMediaPlpPresentationNode(buildCanonicalFactCheckPresentation(resource)),
+    true,
+  );
+}
+
+function resolvePropaganda(entityId: string): MediaPlpMaterializerSourceResolve {
+  markMaterializerSourceLookup();
+  const matches = PROPAGANDA_ANALYSIS_RESOURCES.filter((item) => item.id === entityId);
+  if (matches.length > 1) {
+    return { ...empty(), identityCollision: true };
+  }
+  const resource = matches[0];
+  if (!resource) {
+    return empty();
+  }
+  return withTree(
+    asMediaPlpPresentationNode(buildCanonicalPropagandaPresentation(resource)),
+    true,
+  );
+}
+
 export async function resolveMediaPlpMaterializerSource(input: {
   readonly entityType: MediaPlpEntityType;
   readonly entityId: string;
@@ -229,6 +265,10 @@ export async function resolveMediaPlpMaterializerSource(input: {
       return resolveTrusted(input.entityId);
     case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL:
       return resolveEditorial(input.entityId);
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_FACT_CHECK:
+      return resolveFactCheck(input.entityId);
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PROPAGANDA:
+      return resolvePropaganda(input.entityId);
     default: {
       const _exhaustive: never = input.entityType;
       void _exhaustive;

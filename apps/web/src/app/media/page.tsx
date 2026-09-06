@@ -31,6 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * Reset 03C.1 — shared Media structure with PLP semantic presentations.
  * Reset 03D — one combined Media PLP resolve HTTP post per navigation.
  * Reset 03E — combined batch includes civic_media_editorial (overview + FAQ).
+ * Reset 03E.3 — also fact-check + propaganda (+ optional news) PLP maps.
  */
 export default async function CivicMediaPage() {
   markMediaLocaleSwitchPerfPhase("T3_WEB_RENDER_BEGIN");
@@ -42,6 +43,13 @@ export default async function CivicMediaPage() {
     | Readonly<Record<string, MediaPlpResolvedPresentation>>
     | undefined;
   let plpEditorialPresentation: MediaPlpResolvedPresentation | undefined;
+  let plpFactCheckById:
+    | Readonly<Record<string, MediaPlpResolvedPresentation>>
+    | undefined;
+  let plpPropagandaById:
+    | Readonly<Record<string, MediaPlpResolvedPresentation>>
+    | undefined;
+  let plpNewsById: Readonly<Record<string, MediaPlpResolvedPresentation>> | undefined;
 
   try {
     initialMedia = await fetchCivicMediaCenter();
@@ -52,15 +60,21 @@ export default async function CivicMediaPage() {
   if (initialMedia && isMediaPlpWebEnabled()) {
     const documentLocale = await resolveDocumentHtmlLocale();
     markMediaLocaleSwitchPerfPhase("T4_MEDIA_PLP_LOAD_BEGIN");
+    // newsArticles omitted — page does not fetch news SSR; newsById stays empty/fallback.
     const plp = await loadMediaPlpPagePresentations({
       resources: initialMedia.trustedMedia,
       principles: initialMedia.selectionPrinciples,
+      factChecking: initialMedia.factChecking,
+      propagandaAnalysis: initialMedia.propagandaAnalysis,
       media: initialMedia,
       locale: documentLocale.locale,
     });
     plpTrustedById = plp?.trustedById;
     plpPrinciplesById = plp?.principlesById;
     plpEditorialPresentation = plp?.editorial;
+    plpFactCheckById = plp?.factCheckById;
+    plpPropagandaById = plp?.propagandaById;
+    plpNewsById = plp?.newsById;
     markMediaLocaleSwitchPerfPhase("T9_WEB_RENDER_COMPLETE");
   } else if (initialMedia) {
     try {
@@ -81,6 +95,9 @@ export default async function CivicMediaPage() {
       plpTrustedById={plpTrustedById}
       plpPrinciplesById={plpPrinciplesById}
       plpEditorialPresentation={plpEditorialPresentation}
+      plpFactCheckById={plpFactCheckById}
+      plpPropagandaById={plpPropagandaById}
+      plpNewsById={plpNewsById}
     />
   );
 }

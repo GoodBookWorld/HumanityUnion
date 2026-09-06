@@ -14,6 +14,10 @@ export const MEDIA_PLP_ENTITY_TYPE = {
   CIVIC_MEDIA_TRUSTED: "civic_media_trusted",
   /** Page-level overview + FAQ (not chrome; not pipeline UI dictionary). */
   CIVIC_MEDIA_EDITORIAL: "civic_media_editorial",
+  /** Fact-check resource mission/coverage (substantive content, not chrome). */
+  CIVIC_MEDIA_FACT_CHECK: "civic_media_fact_check",
+  /** Propaganda-analysis resource focus/explanation (substantive content). */
+  CIVIC_MEDIA_PROPAGANDA: "civic_media_propaganda",
 } as const;
 
 export type MediaPlpEntityType =
@@ -24,6 +28,8 @@ export const MEDIA_PLP_ENTITY_TYPES: readonly MediaPlpEntityType[] = [
   MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE,
   MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
   MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL,
+  MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_FACT_CHECK,
+  MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PROPAGANDA,
 ] as const;
 
 /** Stable singleton entityId for /media overview + FAQ presentation. */
@@ -41,6 +47,16 @@ export function mediaPlpPrincipleEntityId(principleId: string): string {
 
 /** Stable entityId for a trusted media resource — shared by /media and country rails. */
 export function mediaPlpTrustedEntityId(resourceId: string): string {
+  return resourceId.trim();
+}
+
+/** Stable entityId for a fact-check resource. */
+export function mediaPlpFactCheckEntityId(resourceId: string): string {
+  return resourceId.trim();
+}
+
+/** Stable entityId for a propaganda-analysis resource. */
+export function mediaPlpPropagandaEntityId(resourceId: string): string {
   return resourceId.trim();
 }
 

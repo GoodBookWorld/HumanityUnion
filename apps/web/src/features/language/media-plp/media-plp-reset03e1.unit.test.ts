@@ -66,6 +66,7 @@ function sampleMedia(): CivicMediaCenterPublic {
         id: "editorial-transparency",
         title: "Independence EN",
         description: "Principle description EN",
+        whyItMatters: "Why matters EN",
         sortOrder: 1,
       },
     ],
@@ -157,6 +158,8 @@ async function renderMediaPage(input: {
   readonly plpTrustedById?: Record<string, MediaPlpResolvedPresentation>;
   readonly plpPrinciplesById?: Record<string, MediaPlpResolvedPresentation>;
   readonly plpEditorialPresentation?: MediaPlpResolvedPresentation;
+  readonly plpFactCheckById?: Record<string, MediaPlpResolvedPresentation>;
+  readonly plpPropagandaById?: Record<string, MediaPlpResolvedPresentation>;
   readonly inject?: ReactNode;
 }): Promise<string> {
   const loaded = await loadUiMessagesForLocale(input.locale);
@@ -175,6 +178,8 @@ async function renderMediaPage(input: {
           plpTrustedById: input.plpTrustedById,
           plpPrinciplesById: input.plpPrinciplesById,
           plpEditorialPresentation: input.plpEditorialPresentation,
+          plpFactCheckById: input.plpFactCheckById,
+          plpPropagandaById: input.plpPropagandaById,
           initialNewsArticles: input.news ?? [sampleNews()],
         }),
         input.inject ?? null,
@@ -203,6 +208,7 @@ function fullySeededPlp(locale: string) {
         {
           title: `[${locale}] principle title`,
           description: `[${locale}] principle description`,
+          whyItMatters: `[${locale}] why matters`,
         },
         locale,
       ),
@@ -222,6 +228,24 @@ function fullySeededPlp(locale: string) {
       },
       locale,
     ),
+    plpFactCheckById: {
+      snopes: plp(
+        MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_FACT_CHECK,
+        "snopes",
+        "PUBLISHED_LOCALIZED",
+        { mission: `[${locale}] mission`, coverage: `[${locale}] coverage` },
+        locale,
+      ),
+    },
+    plpPropagandaById: {
+      euvsdisinfo: plp(
+        MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PROPAGANDA,
+        "euvsdisinfo",
+        "PUBLISHED_LOCALIZED",
+        { focus: `[${locale}] focus`, explanation: `[${locale}] propaganda` },
+        locale,
+      ),
+    },
   };
 }
 

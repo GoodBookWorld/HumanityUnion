@@ -32,6 +32,12 @@ export {
   normalizeLocalizationCompareValue,
   resolveLocalizationContentIntegrityForRead,
 } from "./content-integrity.js";
+export {
+  evaluateLocalizationStructuralIntegrity,
+  listRequiredLocalizationSourcePaths,
+  LOCALIZATION_STRUCTURAL_INTEGRITY_VERSION,
+  resolveLocalizationStructuralIntegrityForRead,
+} from "./structural-integrity.js";
 export { resolvePublishedPresentation } from "./resolve-published-presentation.js";
 export {
   publishPublishedLocalizedPresentation,

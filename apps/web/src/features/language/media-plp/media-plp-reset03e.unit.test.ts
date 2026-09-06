@@ -214,7 +214,7 @@ describe("Reset 03E — Media semantic coverage", () => {
       join(webSrc, "features/civic-media-center/components/CivicMediaCenterPageContent.tsx"),
       "utf8",
     );
-    assert.match(pageContent, /disableOnDemandTranslation=\{plpMode\}/);
+    assert.match(pageContent, /disableOnDemandTranslation=\{plpMode/);
     const hook = readFileSync(
       join(webSrc, "features/public-news/use-localized-public-news-card.ts"),
       "utf8",

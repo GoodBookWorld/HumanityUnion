@@ -39,6 +39,7 @@ Normative principle: **localization is a publication concern, not a rendering co
 8. Media is the first migration slice; cold-cache acceptance gates implementation.  
 9. `HREFLANG_STATUS` remains DEFERRED until locale-addressable URLs (Phase H).  
 10. **Reset 03E.2:** Publication state is not evidence of localization. Non-English `PUBLISHED_LOCALIZED` requires `CLI.1` semantic content-integrity (translatable values must differ from canonical). Missing/failed integrity ⇒ `CANONICAL_FALLBACK`. Canonical fallback is availability, not successful localization.  
+11. **Reset 03E.3:** Ownership + content difference are still insufficient. Non-English `PUBLISHED_LOCALIZED` also requires `LSI.1` structural reachability (canonical → build → presentation → apply → renderer). Render-authority structural parity is enforced in test/dev from real `/media` markers.  
 
 Reset 01 documents the baseline only — **no runtime behavior change**.
 

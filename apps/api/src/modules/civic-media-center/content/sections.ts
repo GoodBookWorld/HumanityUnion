@@ -33,6 +33,7 @@ export const CIVIC_MEDIA_SELECTION_PRINCIPLES: readonly CivicMediaSelectionPrinc
     title: "Editorial transparency",
     description:
       "Sources publish editorial standards, ownership structure, and funding information.",
+    whyItMatters: "Readers can evaluate possible bias before trusting a report.",
     sortOrder: 1,
   },
   {
@@ -40,30 +41,35 @@ export const CIVIC_MEDIA_SELECTION_PRINCIPLES: readonly CivicMediaSelectionPrinc
     title: "Correction policy",
     description:
       "Sources document how errors are corrected and how readers can report inaccuracies.",
+    whyItMatters: "Mistakes can be identified and corrected with public accountability.",
     sortOrder: 2,
   },
   {
     id: "professional-standards",
     title: "Professional standards",
     description: "Sources follow recognized journalistic or academic review practices.",
+    whyItMatters: "Reporting follows recognized journalistic or academic review practices.",
     sortOrder: 3,
   },
   {
     id: "evidence-based",
     title: "Evidence-based reporting",
     description: "Claims are supported by verifiable documentation, data, or primary sources.",
+    whyItMatters: "Claims can be traced to verifiable documentation or primary sources.",
     sortOrder: 4,
   },
   {
     id: "international-recognition",
     title: "International recognition",
     description: "Organizations are known for consistent standards across regions and languages.",
+    whyItMatters: "Standards remain consistent across regions and languages.",
     sortOrder: 5,
   },
   {
     id: "fact-checking-practice",
     title: "Fact-checking practice",
     description: "Sources participate in or support independent verification workflows.",
+    whyItMatters: "Verification workflows support independent claim review.",
     sortOrder: 6,
   },
 ] as const;

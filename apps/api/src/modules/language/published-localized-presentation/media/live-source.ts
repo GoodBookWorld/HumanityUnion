@@ -10,13 +10,17 @@ import type {
 } from "@hu/types";
 import { MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
+import { FACT_CHECK_RESOURCES } from "../../../civic-media-center/content/fact-checking.js";
+import { PROPAGANDA_ANALYSIS_RESOURCES } from "../../../civic-media-center/content/propaganda-analysis.js";
 import { CIVIC_MEDIA_FAQ, CIVIC_MEDIA_OVERVIEW, CIVIC_MEDIA_SELECTION_PRINCIPLES } from "../../../civic-media-center/content/sections.js";
 import { MONGO_COLLECTIONS } from "../../../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../../../infrastructure/mongodb/mongo-database.js";
 import {
   asMediaPlpPresentationNode,
   buildCanonicalEditorialPresentation,
+  buildCanonicalFactCheckPresentation,
   buildCanonicalPrinciplePresentation,
+  buildCanonicalPropagandaPresentation,
   buildCanonicalTrustedPresentation,
   fingerprintMediaPlpCanonicalVersion,
 } from "./canonical-trees.js";
@@ -132,6 +136,28 @@ function resolveEditorial(entityId: string): MediaPlpLiveCanonicalSource {
   );
 }
 
+function resolveFactCheck(entityId: string): MediaPlpLiveCanonicalSource {
+  const resource = FACT_CHECK_RESOURCES.find((item) => item.id === entityId);
+  if (!resource) {
+    return empty();
+  }
+  return withTree(
+    asMediaPlpPresentationNode(buildCanonicalFactCheckPresentation(resource)),
+    true,
+  );
+}
+
+function resolvePropaganda(entityId: string): MediaPlpLiveCanonicalSource {
+  const resource = PROPAGANDA_ANALYSIS_RESOURCES.find((item) => item.id === entityId);
+  if (!resource) {
+    return empty();
+  }
+  return withTree(
+    asMediaPlpPresentationNode(buildCanonicalPropagandaPresentation(resource)),
+    true,
+  );
+}
+
 export async function loadMediaPlpLiveCanonicalSource(input: {
   readonly entityType: MediaPlpEntityType;
   readonly entityId: string;
@@ -143,6 +169,10 @@ export async function loadMediaPlpLiveCanonicalSource(input: {
       return resolveTrusted(input.entityId);
     case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL:
       return resolveEditorial(input.entityId);
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_FACT_CHECK:
+      return resolveFactCheck(input.entityId);
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PROPAGANDA:
+      return resolvePropaganda(input.entityId);
     case MEDIA_PLP_ENTITY_TYPE.PUBLIC_NEWS:
       // Consumer gate focuses on trusted/principles/editorial; news remains precomputed/canonical.
       return empty();

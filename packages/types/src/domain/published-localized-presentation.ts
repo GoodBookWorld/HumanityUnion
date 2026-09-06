@@ -103,6 +103,43 @@ export type LocalizationContentIntegrityReport = {
 };
 
 /**
+ * Reset 03E.3 — localization structural integrity (LSI.1).
+ * Proves required entity AUTO paths exist in the localized presentation shape.
+ * Render-authority parity (rendered path ↔ source ↔ build ↔ apply) lives in
+ * web test/dev; persisted LSI.1 is the build/read contract.
+ */
+export type LocalizationStructuralIntegrityStatus =
+  | "PASSED"
+  | "FAILED"
+  | "NOT_APPLICABLE_EN"
+  | "UNKNOWN_LEGACY";
+
+export type LocalizationStructuralIntegritySubreason =
+  | "RENDERED_PATH_NOT_IN_CANONICAL_LOCALIZATION_SOURCE"
+  | "RENDERED_PATH_NOT_IN_BUILD_INPUT"
+  | "BUILD_PATH_NOT_IN_PRESENTATION_SCHEMA"
+  | "PRESENTATION_PATH_NOT_APPLIED"
+  | "RENDERER_CANONICAL_BYPASS"
+  | "UI_DICTIONARY_KEY_MISSING"
+  | "UI_DICTIONARY_LOCALE_FALLBACK"
+  | "UNOWNED_RENDERED_SEMANTIC_NODE"
+  | "SOURCE_WITHOUT_BUILD"
+  | "BUILD_WITHOUT_OUTPUT"
+  | "OUTPUT_WITHOUT_APPLY"
+  | "APPLY_WITHOUT_RENDER";
+
+export type LocalizationStructuralIntegrityReport = {
+  readonly version: "LSI.1";
+  readonly status: LocalizationStructuralIntegrityStatus;
+  readonly CANONICAL_SOURCE_PATHS: number;
+  readonly BUILD_INPUT_PATHS: number;
+  readonly LOCALIZED_OUTPUT_PATHS: number;
+  readonly STRUCTURAL_MISMATCH_COUNT: number;
+  readonly reasonCodes: readonly LocalizationStructuralIntegritySubreason[];
+  readonly evaluatedAt: string;
+};
+
+/**
  * Persisted / in-memory snapshot record.
  * Only state=PUBLISHED is eligible for normal public reads (with version match).
  */
@@ -123,6 +160,11 @@ export type PublishedLocalizedPresentationRecord = {
    * read path fail-closed to CANONICAL_FALLBACK for locale != en.
    */
   readonly contentIntegrity?: LocalizationContentIntegrityReport;
+  /**
+   * Reset 03E.3 — structural-integrity attestation (LSI.1).
+   * Missing/failed ⇒ fail-closed with content integrity for locale != en.
+   */
+  readonly structuralIntegrity?: LocalizationStructuralIntegrityReport;
   readonly publishedAt?: string;
   readonly createdAt: string;
   readonly updatedAt: string;
@@ -167,7 +209,11 @@ export type BuildValidationReasonCode =
   | "LOCALIZATION_CONTENT_INTEGRITY_FAILED"
   | "CANONICAL_IDENTICAL_TRANSLATABLE_VALUE"
   | "MISSING_TRANSLATED_VALUE"
-  | "STRUCTURAL_TRANSLATION_MISMATCH";
+  | "STRUCTURAL_TRANSLATION_MISMATCH"
+  | "LOCALIZATION_STRUCTURAL_INTEGRITY_FAILED"
+  | "BUILD_PATH_NOT_IN_PRESENTATION_SCHEMA"
+  | "SOURCE_WITHOUT_BUILD"
+  | "BUILD_WITHOUT_OUTPUT";
 
 export type BuildValidationResult =
   | {

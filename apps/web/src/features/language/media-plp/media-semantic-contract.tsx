@@ -1,7 +1,7 @@
 /**
- * Reset 03E.1 — render-boundary semantic ownership + localization result contract.
+ * Reset 03E.1 / 03E.3 — render-boundary semantic ownership + structural refs.
  * Attribution comes from the rendering path (this component), not a parallel inventory list.
- * Production: lightweight data-* attributes only. Coverage aggregation is test/dev.
+ * Production: lightweight data-* attributes only (no translated bodies). Coverage is test/dev.
  */
 
 import {
@@ -43,6 +43,10 @@ export type MediaSemanticNodeRecord = {
   readonly result: MediaSemanticResult;
   readonly entityType?: string;
   readonly entityId?: string;
+  /** PLP presentation path, e.g. overviewPoints[0].heading */
+  readonly semanticPath?: string;
+  /** UI dictionary key, e.g. civicMediaPublic.pipeline.title */
+  readonly messageKey?: string;
   readonly text?: string;
 };
 
@@ -63,6 +67,8 @@ type MediaSemanticNodeProps = {
   readonly result: MediaSemanticResult;
   readonly entityType?: string;
   readonly entityId?: string;
+  readonly semanticPath?: string;
+  readonly messageKey?: string;
   readonly as?: ElementType;
   readonly children?: ReactNode;
   readonly className?: string;
@@ -76,6 +82,8 @@ export function MediaSemanticNode({
   result,
   entityType,
   entityId,
+  semanticPath,
+  messageKey,
   as = "span",
   children,
   className,
@@ -91,6 +99,8 @@ export function MediaSemanticNode({
       "data-hu-semantic-result": result,
       ...(entityType ? { "data-hu-plp-entity": entityType } : {}),
       ...(entityId ? { "data-hu-plp-id": entityId } : {}),
+      ...(semanticPath ? { "data-hu-semantic-path": semanticPath } : {}),
+      ...(messageKey ? { "data-hu-message-key": messageKey } : {}),
     },
     children,
   );

@@ -6,6 +6,8 @@
 import type { MediaPlpEntityType } from "@hu/types";
 import { MEDIA_PLP_EDITORIAL_ENTITY_ID, MEDIA_PLP_ENTITY_TYPE } from "@hu/types";
 
+import { FACT_CHECK_RESOURCES } from "../../civic-media-center/content/fact-checking.js";
+import { PROPAGANDA_ANALYSIS_RESOURCES } from "../../civic-media-center/content/propaganda-analysis.js";
 import { CIVIC_MEDIA_SELECTION_PRINCIPLES } from "../../civic-media-center/content/sections.js";
 import { MONGO_COLLECTIONS } from "../../../infrastructure/mongodb/mongo-collections.js";
 import { getMongoCollection } from "../../../infrastructure/mongodb/mongo-database.js";
@@ -61,6 +63,20 @@ function sampleEditorial(): string | null {
   return MEDIA_PLP_EDITORIAL_ENTITY_ID;
 }
 
+function sampleFactCheck(): string | null {
+  markMediaPlpPreflightSampleDiscovery();
+  const first = FACT_CHECK_RESOURCES[0];
+  const id = asString(first?.id);
+  return id || null;
+}
+
+function samplePropaganda(): string | null {
+  markMediaPlpPreflightSampleDiscovery();
+  const first = PROPAGANDA_ANALYSIS_RESOURCES[0];
+  const id = asString(first?.id);
+  return id || null;
+}
+
 /**
  * Return exactly one public Media entity id for the requested type.
  * Mongo paths use findOne + identity projection (no .toArray / corpus scan).
@@ -81,6 +97,12 @@ export async function discoverMediaPlpSampleOne(
       break;
     case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL:
       entityId = sampleEditorial();
+      break;
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_FACT_CHECK:
+      entityId = sampleFactCheck();
+      break;
+    case MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PROPAGANDA:
+      entityId = samplePropaganda();
       break;
     default: {
       const _exhaustive: never = entityType;

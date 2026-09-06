@@ -209,6 +209,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Coverage | Integrity-invalid entity → `RESULT=CANONICAL_FALLBACK` → cannot be `FULLY_LOCALIZED` |
 | Coverage acceptance | **pending until live** |
 | ACTIVE count | **30** — do not reduce yet |
+
+### Reset 03E.3 note — structural completeness (no live ops)
+
+| Item | Status |
+|------|--------|
+| Systemic gaps | News omitted from Media PLP batch; principle `whyItMatters` + fact/propaganda bodies parked in UI_DICTIONARY; PLP markers lacked `semanticPath` |
+| Gate | `LSI.1` structural integrity (+ `CLI.1`); render-authority parity in test/dev |
+| Reclassifications | Fact/propaganda → PLP entities; whyItMatters → principle PLP field; chrome labels remain UI_DICTIONARY |
+| PLP schema | Remains **PLP.2** (LSI.1 independent) |
+| Coverage acceptance | **pending until live** |
+| ACTIVE count | **30** — do not reduce yet |
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

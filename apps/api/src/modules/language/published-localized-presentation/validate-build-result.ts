@@ -20,6 +20,7 @@ import {
   isTechnicalIdentityPath,
   normalizeLocalizationCompareValue,
 } from "./content-integrity.js";
+import { evaluateLocalizationStructuralIntegrity } from "./structural-integrity.js";
 import {
   collectAutoPaths,
   getPresentationValueAtPath,
@@ -220,6 +221,25 @@ export function validatePublishedBuildResult(
           if (typeof localizedValue !== "string" || !localizedValue.trim()) {
             missingPaths.push(node.path);
           }
+        }
+      }
+    }
+
+    // Reset 03E.3 — structural reachability of AUTO paths in the presentation shape.
+    const structural = evaluateLocalizationStructuralIntegrity({
+      locale: input.locale,
+      canonicalPresentation: input.canonicalPresentation,
+      localizedPresentation: input.localizedCandidate,
+    });
+    if (structural.status === "FAILED") {
+      reasonCodes.push("LOCALIZATION_STRUCTURAL_INTEGRITY_FAILED");
+      for (const code of structural.reasonCodes) {
+        if (
+          code === "BUILD_PATH_NOT_IN_PRESENTATION_SCHEMA" ||
+          code === "SOURCE_WITHOUT_BUILD" ||
+          code === "BUILD_WITHOUT_OUTPUT"
+        ) {
+          reasonCodes.push(code);
         }
       }
     }

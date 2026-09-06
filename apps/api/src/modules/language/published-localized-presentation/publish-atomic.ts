@@ -15,6 +15,7 @@ import type {
 import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
 
 import { evaluateLocalizationContentIntegrity } from "./content-integrity.js";
+import { evaluateLocalizationStructuralIntegrity } from "./structural-integrity.js";
 import { publishAtomicPublishedPresentation } from "./persistence/repository.js";
 import {
   validatePublishedBuildResult,
@@ -71,19 +72,34 @@ export async function publishPublishedLocalizedPresentation(
     localizedPresentation: input.localizedCandidate,
     evaluatedAt: now,
   });
+  const structuralIntegrity = evaluateLocalizationStructuralIntegrity({
+    locale: input.locale,
+    canonicalPresentation: input.canonicalPresentation,
+    localizedPresentation: input.localizedCandidate,
+    evaluatedAt: now,
+  });
   // Validation already required PASSED (or NOT_APPLICABLE_EN). Persist attestation.
-  if (
-    String(input.locale).toLowerCase() !== "en" &&
-    contentIntegrity.status !== "PASSED"
-  ) {
-    return {
-      ok: false,
-      outcome: "NOT_READY",
-      reasonCodes: [
-        "LOCALIZATION_CONTENT_INTEGRITY_FAILED",
-        ...contentIntegrity.reasonCodes,
-      ],
-    };
+  if (String(input.locale).toLowerCase() !== "en") {
+    if (contentIntegrity.status !== "PASSED") {
+      return {
+        ok: false,
+        outcome: "NOT_READY",
+        reasonCodes: [
+          "LOCALIZATION_CONTENT_INTEGRITY_FAILED",
+          ...contentIntegrity.reasonCodes,
+        ],
+      };
+    }
+    if (structuralIntegrity.status !== "PASSED") {
+      return {
+        ok: false,
+        outcome: "NOT_READY",
+        reasonCodes: [
+          "LOCALIZATION_STRUCTURAL_INTEGRITY_FAILED",
+          ...structuralIntegrity.reasonCodes,
+        ],
+      };
+    }
   }
 
   const candidate: PublishedLocalizedPresentationRecord = {
@@ -101,6 +117,7 @@ export async function publishPublishedLocalizedPresentation(
     provenance: input.provenance,
     seo: input.seo,
     contentIntegrity,
+    structuralIntegrity,
     createdAt: now,
     updatedAt: now,
   };

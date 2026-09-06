@@ -77,7 +77,7 @@ export const MEDIA_SEMANTIC_INVENTORY: readonly MediaSemanticField[] = [
   { id: "principles.chrome", section: "selection-principles", label: "Principles section chrome", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
   { id: "principles.title", section: "selection-principles", label: "Principle title", owner: "PLP_ENTITY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
   { id: "principles.description", section: "selection-principles", label: "Principle description", owner: "PLP_ENTITY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
-  { id: "principles.whyItMatters", section: "selection-principles", label: "Why it matters", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
+  { id: "principles.whyItMatters", section: "selection-principles", label: "Why it matters", owner: "PLP_ENTITY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
 
   // Trusted
   { id: "trusted.chrome", section: "trusted-media", label: "Trusted section chrome", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
@@ -88,17 +88,17 @@ export const MEDIA_SEMANTIC_INVENTORY: readonly MediaSemanticField[] = [
   { id: "trusted.websiteUrl", section: "trusted-media", label: "Website URL", owner: "PROTECTED_CANONICAL", component: "features/civic-media-center/components/TrustedMediaRailCard.tsx" },
   { id: "trusted.officialWebsite", section: "trusted-media", label: "Official website CTA", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/TrustedMediaRailCard.tsx" },
 
-  // Fact checking
+  // Fact checking — bodies are PLP (civic_media_fact_check); chrome stays UI_DICTIONARY
   { id: "fact.chrome", section: "fact-checking", label: "Fact-checking chrome", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
   { id: "fact.name", section: "fact-checking", label: "Fact-check outlet name", owner: "PROTECTED_CANONICAL", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
-  { id: "fact.mission", section: "fact-checking", label: "Mission body", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
-  { id: "fact.coverage", section: "fact-checking", label: "Coverage chips", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
+  { id: "fact.mission", section: "fact-checking", label: "Mission body", owner: "PLP_ENTITY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
+  { id: "fact.coverage", section: "fact-checking", label: "Coverage chips", owner: "PLP_ENTITY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
 
-  // Propaganda
+  // Propaganda — bodies are PLP (civic_media_propaganda)
   { id: "propaganda.chrome", section: "propaganda-analysis", label: "Propaganda chrome", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
   { id: "propaganda.name", section: "propaganda-analysis", label: "Propaganda outlet name", owner: "PROTECTED_CANONICAL", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
-  { id: "propaganda.focus", section: "propaganda-analysis", label: "Focus badge", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
-  { id: "propaganda.explanation", section: "propaganda-analysis", label: "Explanation", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
+  { id: "propaganda.focus", section: "propaganda-analysis", label: "Focus badge", owner: "PLP_ENTITY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
+  { id: "propaganda.explanation", section: "propaganda-analysis", label: "Explanation", owner: "PLP_ENTITY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },
 
   // FAQ / knowledge / states / controls
   { id: "faq.heading", section: "faq", label: "FAQ heading", owner: "UI_DICTIONARY", component: "features/civic-media-center/components/CivicMediaCenterPageContent.tsx" },

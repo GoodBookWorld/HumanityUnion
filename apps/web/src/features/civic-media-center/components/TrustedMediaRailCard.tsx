@@ -122,6 +122,7 @@ export function TrustedMediaRailCard({
         result={explanationResult}
         entityType={plpEntity}
         entityId={plpId}
+        semanticPath="explanation"
       >
         {displayExplanation}
       </MediaSemanticNode>

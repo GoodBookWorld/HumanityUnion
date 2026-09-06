@@ -70,8 +70,9 @@ describe("Pack 08I.7 — Civic Media residual localization", () => {
     assert.match(page, /civic-media-page__faq/);
     assert.match(page, /useCivicMediaResolvedEditorial/);
     assert.match(page, /CivicPipelineWorkflow/);
-    assert.match(page, /editorial\.initiativeFlow\.stages/);
-    assert.match(page, /stageTitles=\{/);
+    // Reset 03E — initiative-flow participant UX is UI_DICTIONARY (pipeline.*); editorial.initiativeFlow is unused.
+    assert.doesNotMatch(page, /stageTitles=\{/);
+    assert.doesNotMatch(page, /editorial\.initiativeFlow\.stages/);
     assert.match(page, /layout="three-two-one"/);
     assert.match(page, /editorial\.trustedExplanationsById\[resource\.id\]/);
     assert.match(editorial, /overlayCivicMediaEditorialFromFields/);
@@ -81,7 +82,7 @@ describe("Pack 08I.7 — Civic Media residual localization", () => {
     assert.match(pipeline, /HuxWorkflowSection/);
     assert.match(hux, /horizontal-section-shell__content/);
     assert.match(shell, /horizontal-section-shell__content/);
-    assert.doesNotMatch(page, /JSON\.stringify/);
+    // Locale-switch semantic signature may use JSON.stringify; content translation path must not.
     assert.doesNotMatch(editorial, /JSON\.stringify/);
   });
 
@@ -99,8 +100,10 @@ describe("Pack 08I.7 — Civic Media residual localization", () => {
       "features/civic-media-center/components/TrustedMediaCategoryTabs.tsx",
     );
 
-    assert.match(page, /PRINCIPLE_WHY_IT_MATTERS_IDS/);
-    assert.match(page, /principles\.\$\{principle\.id\}\.whyItMatters/);
+    // Reset 03E.3 — whyItMatters body from principle field / PLP, not UI dictionary catalog.
+    assert.doesNotMatch(page, /PRINCIPLE_WHY_IT_MATTERS_IDS/);
+    assert.doesNotMatch(page, /principles\.\$\{principle\.id\}\.whyItMatters/);
+    assert.match(page, /principle\.whyItMatters/);
     assert.doesNotMatch(page, /PRINCIPLE_WHY_IT_MATTERS\[/);
 
     assert.match(pipeline, /stages\.\$\{stage\.id\}\.description/);

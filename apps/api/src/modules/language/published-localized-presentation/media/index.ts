@@ -11,7 +11,9 @@ export {
 export {
   asMediaPlpPresentationNode,
   buildCanonicalEditorialPresentation,
+  buildCanonicalFactCheckPresentation,
   buildCanonicalPrinciplePresentation,
+  buildCanonicalPropagandaPresentation,
   buildCanonicalPublicNewsPresentation,
   buildCanonicalTrustedPresentation,
   fingerprintMediaPlpCanonicalVersion,
