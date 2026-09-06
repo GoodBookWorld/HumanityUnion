@@ -153,7 +153,7 @@ function initiativeRow(ref: MediaPlpCarouselEntityRef): MediaPlpCarouselEntityRo
   };
 }
 
-async function classifyMediaEntity(input: {
+export async function classifyMediaPlpCarouselEntity(input: {
   readonly ref: MediaPlpCarouselEntityRef;
   readonly locale: LanguageCode;
 }): Promise<MediaPlpCarouselEntityRow> {
@@ -228,6 +228,13 @@ async function classifyMediaEntity(input: {
     inWebBatch: ref.inWebBatch,
     inMaterializerSource: ref.inMaterializerSource,
   };
+}
+
+async function classifyMediaEntity(input: {
+  readonly ref: MediaPlpCarouselEntityRef;
+  readonly locale: LanguageCode;
+}): Promise<MediaPlpCarouselEntityRow> {
+  return classifyMediaPlpCarouselEntity(input);
 }
 
 export function computeMediaPlpCarouselTotals(

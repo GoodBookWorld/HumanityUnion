@@ -721,3 +721,16 @@ Bounded Web probe (`data-hu-media-plp-live-truth`, enabled via `HU_MEDIA_PLP_LIV
 | Materialize plan | Explicit entity list from diagnostic; hard max ≤20; one-by-one existing `materialize:media-plp`; dry-run default |
 | Election/initiative | `DOMAIN_NOT_YET_MIGRATED` — Initiative CT via `useInitiativeCardTitlePresentation`; future Pack 05 / Initiative PLP migration |
 | ACTIVE count | **30** — unchanged |
+
+### Reset 03E.10 — bounded carousel materialization runner
+
+**Invariant:** After a single carousel entity is proven end-to-end, remaining Media PLP carousel snapshots must be fillable via a **bounded sequential** staging runner — never unbounded corpus materialization.
+
+| Concern | Rule |
+|---------|------|
+| Command | `materialize:media-plp-carousel -- --mongo --locale <code>` (dry-run default; `--execute` required) |
+| Selection | 03E.9 discover/classify order; only `REBUILD_REQUIRED` + `nodes > 0` + Media PLP |
+| Cap | `--limit` default 20 / hard max 20 |
+| Execution | one-by-one `materialize:media-plp`; provider concurrency 1; fail-fast (no `--continue-on-error`) |
+| Skip | usable snapshots (0 provider/writes), zero-node, Initiative domain, source missing |
+| ACTIVE count | **30** — unchanged |

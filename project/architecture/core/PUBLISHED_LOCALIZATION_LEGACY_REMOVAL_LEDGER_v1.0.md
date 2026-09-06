@@ -288,6 +288,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Coverage acceptance | **pending until staging materialize + live verify** |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 03E.10 note — bounded carousel materialization runner (no live ops)
+
+| Item | Status |
+|------|--------|
+| Proven | `civic_media_principle/editorial-transparency/uk` end-to-end (thin provider → PLP.2 → durable → live Ukrainian card) |
+| Runner | `materialize:media-plp-carousel` — reuses 03E.9 inventory + one-entity materializer |
+| Bounds | dry-run default; `--execute` staging-only; limit default/max 20; sequential concurrency=1; fail-fast |
+| Skip | USABLE_LOCALIZED / ZERO_TRANSLATABLE_NODES / DOMAIN_NOT_YET_MIGRATED / SOURCE_NOT_FOUND / LIMIT_EXCEEDED |
+| Coverage acceptance | **pending until staging dry-run then bounded --execute** |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

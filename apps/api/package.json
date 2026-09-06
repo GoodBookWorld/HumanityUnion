@@ -40,6 +40,7 @@
     "diagnose:media-plp-consumer": "tsx src/scripts/diagnose-media-plp-consumer.ts",
     "diagnose:media-plp-carousel": "tsx src/scripts/diagnose-media-plp-carousel.ts",
     "materialize:media-plp": "tsx src/scripts/materialize-media-plp.ts",
+    "materialize:media-plp-carousel": "tsx src/scripts/materialize-media-plp-carousel.ts",
     "reconcile:public-localization": "tsx src/scripts/reconcile-public-localization.ts",
     "verify:staging": "tsx src/scripts/verify-staging.ts",
     "verify:initiative-lifecycle": "tsx src/scripts/verify-initiative-lifecycle.ts",
