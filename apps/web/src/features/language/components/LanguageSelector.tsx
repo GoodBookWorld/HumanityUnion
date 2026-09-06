@@ -16,6 +16,9 @@ import {
 import { markInterfaceLanguageCookieSynced } from "./InterfaceLanguageCookieSync";
 import { writeHuLangCookieViaWebRoute } from "../write-hu-lang-cookie";
 import { recordLocaleSwitchStarted } from "../media-plp/media-plp-locale-switch-machine";
+import {
+  markMediaLocaleSwitchPerfPhase,
+} from "../media-plp/media-plp-locale-switch-perf";
 
 import "./language-selector.css";
 
@@ -138,22 +141,31 @@ export function LanguageSelector({
   const applyLocale = useCallback(
     async (locale: string) => {
       setError(null);
+      markMediaLocaleSwitchPerfPhase("T0_SELECTOR");
 
-      if (authStatus === "authenticated") {
-        await updateMyPreferences({
-          // API accepts partial experiencePreferences; validator merges interfaceLanguage only.
-          experiencePreferences: { interfaceLanguage: locale } as never,
-        });
-      }
+      // Reset 03D — parallelize independent writes of the same locale string.
+      // Cookie remains required for Web SSR; prefs remain required when authenticated.
+      const preferenceWrite =
+        authStatus === "authenticated"
+          ? updateMyPreferences({
+              // API accepts partial experiencePreferences; validator merges interfaceLanguage only.
+              experiencePreferences: { interfaceLanguage: locale } as never,
+            })
+          : Promise.resolve();
 
-      // Preference may already be saved — keep UI on `locale` even if cookie write fails.
-      const written = await writeHuLangCookieViaWebRoute(locale);
+      const [written] = await Promise.all([
+        writeHuLangCookieViaWebRoute(locale),
+        preferenceWrite,
+      ]);
+
+      markMediaLocaleSwitchPerfPhase("T1_PREFERENCE_COOKIE");
       setValue(written.locale);
       if (authStatus === "authenticated") {
         markInterfaceLanguageCookieSynced(written.locale);
       }
       // Reset 03C.2 — locale switch ownership starts here; Media PLP completes after refresh.
       recordLocaleSwitchStarted(written.locale);
+      markMediaLocaleSwitchPerfPhase("T2_NAVIGATION_START");
       startTransition(() => {
         router.refresh();
       });
@@ -164,6 +176,10 @@ export function LanguageSelector({
   async function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
     const next = event.target.value;
     const previous = value;
+    // Reset 03D — repeated selection of the active locale is a no-op.
+    if (next === previous) {
+      return;
+    }
     setValue(next);
 
     try {

@@ -551,3 +551,21 @@ Rules:
 - Zero client generate / provider / content_translation writes on flagged path
 - Loading ownership always terminates (success, fallback, API error, timeout, abort, repeated selection)
 - Flag default remains OFF; ACTIVE legacy remains 30 until live acceptance
+
+### Reset 03D — Media PLP locale-switch performance
+
+Measured 03C.2 topology (guest `/media` switch): **2** PLP resolve HTTP posts + **2** SSR languages fetches (layout+page) + sequential auth prefs→cookie. Staging en→uk ~4s functionally correct but too slow for precomputed reads.
+
+03D reductions (HTTP Web→API retained — deployment boundary forbids Mongo/API bootstrap in Web):
+
+```
+Language Selector
+  → prefs ∥ cookie (same locale; no-op if already active)
+  → router.refresh
+  → SSR: React.cache languages (1/request) + media payload
+  → ONE POST /media-plp/resolve (trusted+principles combined)
+  → API: bounded resolve cache keyed by entity|locale|canonicalVersion|schema
+  → settle
+```
+
+Ledger: `LIVE_FUNCTIONAL_ACCEPTANCE_PASSED` + `PERFORMANCE_ACCEPTANCE_PENDING` until live timing acceptance. ACTIVE 30 unchanged.

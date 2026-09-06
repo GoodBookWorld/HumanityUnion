@@ -22,6 +22,7 @@ import {
   type RuntimeLocaleCatalogEntry,
 } from "@hu/types";
 import { cookies, headers } from "next/headers";
+import { cache } from "react";
 
 import { API_BASE_URL } from "../../lib/api-base-url";
 
@@ -34,7 +35,9 @@ const ENGLISH_ONLY_CATALOG: readonly RuntimeLocaleCatalogEntry[] = [
   },
 ];
 
-async function fetchEnabledLocaleCatalog(): Promise<readonly RuntimeLocaleCatalogEntry[]> {
+async function fetchEnabledLocaleCatalogUncached(): Promise<
+  readonly RuntimeLocaleCatalogEntry[]
+> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/languages`, {
       method: "GET",
@@ -63,6 +66,12 @@ async function fetchEnabledLocaleCatalog(): Promise<readonly RuntimeLocaleCatalo
     return ENGLISH_ONLY_CATALOG;
   }
 }
+
+/**
+ * Reset 03D — request-scoped dedupe so layout + /media share one Registry fetch.
+ * Not a process-lifetime cache (Admin enable/disable still propagates next request).
+ */
+const fetchEnabledLocaleCatalog = cache(fetchEnabledLocaleCatalogUncached);
 
 /**
  * Resolve document locale for the current Next.js request (server-only).

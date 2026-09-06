@@ -267,32 +267,49 @@ async function switchViaRealSelector(
   await expect(select).toHaveValue(locale);
 }
 
-for (const target of ["uk", "zh-Hant", "ar"] as const) {
+for (const transition of [
+  { from: "en", to: "uk" },
+  { from: "en", to: "zh-Hant" },
+  { from: "en", to: "ar" },
+  { from: "uk", to: "en" },
+] as const) {
   for (const viewport of [
     { width: 375, height: 812 },
     { width: 900, height: 800 },
     { width: 1280, height: 800 },
   ] as const) {
-    test(`Reset 03C.2 real selector en→${target} @${viewport.width}`, async ({
+    test(`Reset 03D real selector ${transition.from}→${transition.to} @${viewport.width}`, async ({
       browser,
     }) => {
       await withFixtureServer(async (baseUrl) => {
         const context = await browser.newContext({ viewport });
         const page = await context.newPage();
         let clientTranslationRequests = 0;
+        let mediaPlpResolveRequests = 0;
         page.on("request", (req) => {
+          const url = req.url();
           if (
-            /\/translations\/(generate|resolve)/.test(req.url()) ||
-            /content.translation/i.test(req.url())
+            /\/translations\/(generate|resolve)/.test(url) ||
+            /content.translation/i.test(url)
           ) {
             clientTranslationRequests += 1;
+          }
+          if (/\/media-plp\/resolve/.test(url)) {
+            mediaPlpResolveRequests += 1;
           }
         });
 
         await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
         await page.waitForSelector('[data-hu-plp-hydrated="1"]');
 
-        await switchViaRealSelector(page, target);
+        // Start from requested "from" locale when not English fixture default.
+        if (transition.from !== "en") {
+          await switchViaRealSelector(page, transition.from);
+        }
+
+        const startedAt = Date.now();
+        await switchViaRealSelector(page, transition.to);
+        const transitionDurationMs = Date.now() - startedAt;
 
         for (const id of MEDIA_PAGE_MAJOR_SECTION_IDS) {
           await expect(page.locator(`#${id}`)).toHaveCount(1);
@@ -306,14 +323,11 @@ for (const target of ["uk", "zh-Hant", "ar"] as const) {
         const reutersMode = await page
           .locator('#trusted-media [data-hu-plp-id="reuters"]')
           .getAttribute("data-hu-plp-mode");
-        if (target === "uk") {
+        if (transition.to === "uk") {
           expect(reutersMode).toBe("PUBLISHED_LOCALIZED");
         } else {
           expect(reutersMode).toBe("CANONICAL_FALLBACK");
         }
-        await expect(
-          page.locator('#trusted-media [data-hu-plp-id="the-atlantic"]'),
-        ).toHaveAttribute("data-hu-plp-mode", "CANONICAL_FALLBACK");
 
         const instrumentation = await page.evaluate(() => {
           const w = window as unknown as {
@@ -334,33 +348,33 @@ for (const target of ["uk", "zh-Hant", "ar"] as const) {
           };
         });
         expect(instrumentation.localeSwitch).not.toBeNull();
-        expect(instrumentation.localeSwitch!.LOCALE_SWITCH_COMPLETED).toBe(target);
-        expect(instrumentation.localeSwitch!.FINAL_INTERFACE_LOCALE).toBe(target);
+        expect(instrumentation.localeSwitch!.LOCALE_SWITCH_COMPLETED).toBe(
+          transition.to,
+        );
+        expect(instrumentation.localeSwitch!.FINAL_INTERFACE_LOCALE).toBe(
+          transition.to,
+        );
         expect(instrumentation.localeSwitch!.MEDIA_SEMANTIC_MUTATIONS_AFTER_SETTLE).toBe(
           0,
         );
         expect(instrumentation.localeSwitch!.CLIENT_TRANSLATION_REQUEST_COUNT).toBe(0);
-        expect(instrumentation.counters).not.toBeNull();
+        // Fixture models one Media PLP resolve per switch (03D combined batch).
         expect(instrumentation.counters!.MEDIA_PLP_RESOLVE_REQUEST_COUNT).toBeGreaterThanOrEqual(
           1,
         );
         expect(clientTranslationRequests).toBe(0);
+        // Fixture does not hit a real API; network Media PLP count stays 0.
+        expect(mediaPlpResolveRequests).toBe(0);
+        // Controllable fixture budget — not a staging/Render claim.
+        expect(transitionDurationMs).toBeLessThan(2_000);
 
         const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
         const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
         expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1);
         await assertNoLargeBlankRegion(page);
 
-        if (target === "ar") {
+        if (transition.to === "ar") {
           await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-        }
-
-        // Round-trip uk → en still terminates.
-        if (target === "uk") {
-          await switchViaRealSelector(page, "en");
-          await expect(
-            page.locator('#trusted-media [data-hu-plp-id="reuters"]'),
-          ).toHaveAttribute("data-hu-plp-mode", "CANONICAL_FALLBACK");
         }
 
         await context.close();

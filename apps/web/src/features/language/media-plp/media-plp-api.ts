@@ -2,11 +2,13 @@
  * Reset 03C — Web client for Media PLP consumer resolve (SSR GET/POST only).
  * Never imports provider credentials or generate-on-miss hooks.
  * Reset 03C.2 — bounded fetch (timeout) so locale-switch transitions cannot hang.
+ * Reset 03D — request counter for one-batch-per-navigation budgets.
  */
 
 import type { PublicPresentationNode } from "@hu/types";
 
 import { apiRequest } from "../../../lib/api-client";
+import { recordMediaPlpHttpResolveRequest } from "./media-plp-locale-switch-perf";
 import type { MediaPlpResolvedPresentation } from "./presentation";
 
 /** Hard bound for Media PLP resolve during SSR / locale-switch refresh. */
@@ -35,6 +37,8 @@ export async function resolveMediaPlpBatch(input: {
   if (input.items.length === 0) {
     return [];
   }
+
+  recordMediaPlpHttpResolveRequest();
 
   const timeoutSignal =
     typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"

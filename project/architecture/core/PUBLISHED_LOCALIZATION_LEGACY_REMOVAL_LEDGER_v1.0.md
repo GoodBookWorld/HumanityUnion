@@ -148,6 +148,25 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Ledger class | remains `CONSUMER_READY_PENDING_LIVE_ACCEPTANCE` |
 | ACTIVE count | **30** — do not decrement |
 | Flag | Web rolled back OFF again; do not re-enable in this pack |
+
+### Reset 03C — live functional acceptance PASSED; performance pending (03D)
+
+| Item | Status |
+|------|--------|
+| Live functional | `LIVE_FUNCTIONAL_ACCEPTANCE_PASSED` — structure + locale-switch settle verified on staging |
+| Performance | `PERFORMANCE_ACCEPTANCE_PENDING` — ~4s en→uk observed; addressed in Reset 03D |
+| Ledger class | remains `CONSUMER_READY_PENDING_LIVE_ACCEPTANCE` until performance acceptance |
+| ACTIVE count | **30** — do not decrement |
+
+### Reset 03D note — Media PLP locale-switch performance (no live ops)
+
+| Item | Status |
+|------|--------|
+| Dominant waits | Dual PLP HTTP posts; duplicate SSR languages fetches; sequential auth prefs→cookie |
+| Fix | One combined Media PLP resolve; React.cache locale catalog; parallel prefs∥cookie; bounded API resolve cache |
+| HTTP boundary | Retained Web→API (no Mongo/API bootstrap in Web) |
+| ACTIVE count | **30** |
+| Flag | Do not change flags in this pack |
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

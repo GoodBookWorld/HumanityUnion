@@ -19,6 +19,7 @@ import {
   validatePublishedBuildResult,
   type ValidatePublishedBuildInput,
 } from "./validate-build-result.js";
+import { invalidateMediaPlpResolveCacheForEntity } from "./resolve-cache.js";
 
 export type PublishPublishedLocalizedPresentationInput = {
   readonly entityType: string;
@@ -96,6 +97,12 @@ export async function publishPublishedLocalizedPresentation(
       reasonCodes: ["PERSISTENCE_ERROR"],
     };
   }
+
+  // Reset 03D — drop stale resolve cache entries for this entity after publish.
+  invalidateMediaPlpResolveCacheForEntity({
+    entityType: input.entityType,
+    entityId: input.entityId,
+  });
 
   return {
     ok: true,

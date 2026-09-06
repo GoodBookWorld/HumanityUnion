@@ -229,3 +229,102 @@ export async function loadMediaPlpPrinciplePresentations(input: {
     return out;
   }
 }
+
+/**
+ * Reset 03D — one bounded Media PLP HTTP resolve for trusted + principles.
+ * Prefer this on /media locale navigation (halves Web→API PLP round-trips vs dual batch).
+ */
+export async function loadMediaPlpPagePresentations(input: {
+  readonly resources: readonly TrustedMediaResource[];
+  readonly principles: readonly CivicMediaSelectionPrinciple[];
+  readonly locale: string;
+}): Promise<{
+  readonly trustedById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+  readonly principlesById: Readonly<Record<string, MediaPlpResolvedPresentation>>;
+} | null> {
+  if (!isMediaPlpWebEnabled()) {
+    return null;
+  }
+
+  const trustedItems = input.resources.map((resource) => ({
+    entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_TRUSTED,
+    entityId: mediaPlpTrustedEntityId(resource.id),
+    canonicalPresentation: buildCanonicalTrustedPresentationNode(resource),
+    resourceId: resource.id,
+  }));
+  const principleItems = input.principles.map((principle) => ({
+    entityType: MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_PRINCIPLE,
+    entityId: mediaPlpPrincipleEntityId(principle.id),
+    canonicalPresentation: buildCanonicalPrinciplePresentationNode(principle),
+    principleId: principle.id,
+  }));
+
+  const items = [
+    ...trustedItems.map(({ entityType, entityId, canonicalPresentation }) => ({
+      entityType,
+      entityId,
+      canonicalPresentation,
+    })),
+    ...principleItems.map(({ entityType, entityId, canonicalPresentation }) => ({
+      entityType,
+      entityId,
+      canonicalPresentation,
+    })),
+  ];
+
+  try {
+    const results = await resolveMediaPlpBatch({
+      locale: input.locale,
+      items,
+    });
+    const byEntityId = new Map(results.map((row) => [row.entityId, row]));
+
+    const trustedById: Record<string, MediaPlpResolvedPresentation> = {};
+    for (const item of trustedItems) {
+      const hit = byEntityId.get(item.entityId);
+      trustedById[item.resourceId] = hit
+        ? toMediaPlpResolvedPresentation(hit)
+        : coherentFallback({
+            entityType: item.entityType,
+            entityId: item.entityId,
+            locale: input.locale,
+            presentation: item.canonicalPresentation,
+          });
+    }
+
+    const principlesById: Record<string, MediaPlpResolvedPresentation> = {};
+    for (const item of principleItems) {
+      const hit = byEntityId.get(item.entityId);
+      principlesById[item.principleId] = hit
+        ? toMediaPlpResolvedPresentation(hit)
+        : coherentFallback({
+            entityType: item.entityType,
+            entityId: item.entityId,
+            locale: input.locale,
+            presentation: item.canonicalPresentation,
+          });
+    }
+
+    return { trustedById, principlesById };
+  } catch {
+    const trustedById: Record<string, MediaPlpResolvedPresentation> = {};
+    for (const item of trustedItems) {
+      trustedById[item.resourceId] = coherentFallback({
+        entityType: item.entityType,
+        entityId: item.entityId,
+        locale: input.locale,
+        presentation: item.canonicalPresentation,
+      });
+    }
+    const principlesById: Record<string, MediaPlpResolvedPresentation> = {};
+    for (const item of principleItems) {
+      principlesById[item.principleId] = coherentFallback({
+        entityType: item.entityType,
+        entityId: item.entityId,
+        locale: input.locale,
+        presentation: item.canonicalPresentation,
+      });
+    }
+    return { trustedById, principlesById };
+  }
+}

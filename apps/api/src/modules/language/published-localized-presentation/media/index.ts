@@ -53,6 +53,15 @@ export {
   resetMediaPlpInstrumentationForTests,
 } from "./instrumentation.js";
 export {
+  buildMediaPlpResolveCacheKey,
+  getCachedMediaPlpResolve,
+  getMediaPlpResolveCacheStats,
+  invalidateMediaPlpResolveCacheForEntity,
+  resetMediaPlpResolveCacheForTests,
+  setCachedMediaPlpResolve,
+  MEDIA_PLP_RESOLVE_CACHE_MAX_ENTRIES,
+} from "../resolve-cache.js";
+export {
   assertMediaPlpReadImportIsolation,
   mediaPlpReadModulesAvoidCorpusToArray,
 } from "./import-isolation.js";
