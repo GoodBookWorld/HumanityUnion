@@ -55,6 +55,9 @@ export type MediaPlpLiveTruthProbeReport = {
   readonly API_RESULT_CANONICAL_VERSION: string | null;
   readonly API_RESULT_SCHEMA: string | null;
   readonly API_RESULT_PRESENTATION_SHAPE: "string" | "wrapped_value" | "mixed" | "missing" | null;
+  /** Reset 03E.8 — API persistence probe metadata (no secrets). */
+  readonly PLP_PERSISTENCE_MODE: "MONGO" | "MEMORY_TEST" | "UNAVAILABLE" | null;
+  readonly PLP_LOOKUP_RESULT: "FOUND" | "NOT_FOUND" | "ERROR" | null;
   readonly paths: readonly MediaPlpLiveTruthPathRecord[];
 };
 
@@ -267,6 +270,8 @@ type ActiveProbeBag = {
   API_RESULT_CANONICAL_VERSION: string | null;
   API_RESULT_SCHEMA: string | null;
   API_RESULT_PRESENTATION_SHAPE: "string" | "wrapped_value" | "mixed" | "missing" | null;
+  PLP_PERSISTENCE_MODE: "MONGO" | "MEMORY_TEST" | "UNAVAILABLE" | null;
+  PLP_LOOKUP_RESULT: "FOUND" | "NOT_FOUND" | "ERROR" | null;
   pathAccum: Partial<
     Record<
       EditorialProbePath,
@@ -308,6 +313,8 @@ export function beginMediaPlpLiveTruthProbe(seed?: {
     API_RESULT_CANONICAL_VERSION: null,
     API_RESULT_SCHEMA: null,
     API_RESULT_PRESENTATION_SHAPE: null,
+    PLP_PERSISTENCE_MODE: null,
+    PLP_LOOKUP_RESULT: null,
     pathAccum: {},
   };
 }
@@ -342,6 +349,8 @@ export function recordMediaPlpLiveTruthEditorialResult(input: {
   readonly schema?: string;
   readonly presentation: unknown;
   readonly canonicalPresentation: unknown;
+  readonly persistenceMode?: "MONGO" | "MEMORY_TEST" | "UNAVAILABLE";
+  readonly lookupResult?: "FOUND" | "NOT_FOUND" | "ERROR";
 }): void {
   if (!activeProbe?.pathAccum) {
     return;
@@ -353,6 +362,12 @@ export function recordMediaPlpLiveTruthEditorialResult(input: {
   activeProbe.API_RESULT_ENTITY_ID = input.entityId;
   activeProbe.API_RESULT_CANONICAL_VERSION = input.canonicalVersion;
   activeProbe.API_RESULT_SCHEMA = input.schema ?? null;
+  if (input.persistenceMode !== undefined) {
+    activeProbe.PLP_PERSISTENCE_MODE = input.persistenceMode;
+  }
+  if (input.lookupResult !== undefined) {
+    activeProbe.PLP_LOOKUP_RESULT = input.lookupResult;
+  }
 
   const overviewShape = classifyPresentationValueShape(
     (input.presentation as Record<string, unknown> | null)?.overviewSummary,
@@ -449,6 +464,8 @@ export function finalizeMediaPlpLiveTruthProbe(): MediaPlpLiveTruthProbeReport |
     API_RESULT_CANONICAL_VERSION: activeProbe.API_RESULT_CANONICAL_VERSION ?? null,
     API_RESULT_SCHEMA: activeProbe.API_RESULT_SCHEMA ?? null,
     API_RESULT_PRESENTATION_SHAPE: activeProbe.API_RESULT_PRESENTATION_SHAPE ?? null,
+    PLP_PERSISTENCE_MODE: activeProbe.PLP_PERSISTENCE_MODE ?? null,
+    PLP_LOOKUP_RESULT: activeProbe.PLP_LOOKUP_RESULT ?? null,
     paths,
   };
 }

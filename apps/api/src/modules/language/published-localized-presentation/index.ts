@@ -43,7 +43,7 @@ export {
   translationValuesPassLocalizationIntegrity,
 } from "./usability.js";
 export type { UsableLocalizedPresentationClassification } from "./usability.js";
-export { resolvePublishedPresentation } from "./resolve-published-presentation.js";
+export { resolvePublishedPresentation, readPublishedLocalizationPersistenceProbeMode } from "./resolve-published-presentation.js";
 export {
   publishPublishedLocalizedPresentation,
 } from "./publish-atomic.js";
@@ -51,13 +51,25 @@ export type { PublishPublishedLocalizedPresentationInput } from "./publish-atomi
 export {
   findCurrentPublishedPresentation,
   getPublishedLocalizationPersistenceMode,
+  getPublishedLocalizationPersistenceProbeMode,
+  getPublishedLocalizationPersistenceRuntimeClass,
   publishAtomicPublishedPresentation,
   requirePublishedLocalizationMongoPersistence,
   assertPublishedLocalizationMongoPersistenceActive,
+  assertPublishedLocalizationHttpPersistenceSafe,
+  bootstrapPublishedLocalizationApiPersistence,
+  bindPublishedLocalizationMemoryPersistenceForTests,
+  markPublishedLocalizationPersistenceUnavailable,
+  forcePublishedLocalizationPersistenceUnboundForTests,
+  PublishedLocalizationPersistenceUnavailableError,
   resetPublishedLocalizationPersistenceForTests,
   saveBuildingOrFailedSnapshot,
   setPublishedLocalizationFindFailureForTests,
   setPublishedLocalizationPersistenceModeForTests,
+} from "./persistence/repository.js";
+export type {
+  PublishedLocalizationPersistenceMode,
+  PublishedLocalizationPersistenceRuntimeClass,
 } from "./persistence/repository.js";
 export {
   findCurrentPublishedMemory,

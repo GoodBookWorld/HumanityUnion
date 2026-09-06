@@ -14,6 +14,7 @@ import { MEDIA_PLP_ENTITY_TYPES } from "@hu/types";
 import { fingerprintMediaPlpCanonicalVersion } from "./canonical-trees.js";
 import { loadMediaPlpLiveCanonicalSource } from "./live-source.js";
 import { resolveMediaPlpPresentation } from "./resolve-media-presentation.js";
+import { getPublishedLocalizationPersistenceProbeMode } from "../persistence/repository.js";
 
 export const MEDIA_PLP_CONSUMER_RESOLVE_MAX_ITEMS = 64;
 
@@ -34,7 +35,26 @@ export type MediaPlpConsumerResolveItemResult = {
   readonly snapshotId?: string;
   /** Reset 03E.7 — version source used for the usability gate. */
   readonly versionSource?: "live_source" | "client_canonical";
+  /** Reset 03E.8 — non-secret persistence probe metadata. */
+  readonly persistenceMode?: "MONGO" | "MEMORY_TEST" | "UNAVAILABLE";
+  readonly lookupResult?: "FOUND" | "NOT_FOUND" | "ERROR";
 };
+
+function classifyLookupResult(
+  mode: "PUBLISHED_LOCALIZED" | "CANONICAL_FALLBACK",
+  reasonCode?: string,
+): "FOUND" | "NOT_FOUND" | "ERROR" {
+  if (mode === "PUBLISHED_LOCALIZED") {
+    return "FOUND";
+  }
+  if (
+    reasonCode === "PLP_PERSISTENCE_UNAVAILABLE" ||
+    reasonCode === "PERSISTENCE_LOOKUP_FAILED"
+  ) {
+    return "ERROR";
+  }
+  return "NOT_FOUND";
+}
 
 export async function resolveMediaPlpConsumerItem(input: {
   readonly locale: string;
@@ -80,6 +100,8 @@ export async function resolveMediaPlpConsumerItem(input: {
     presentation: resolved.presentation,
     canonicalVersion: liveCanonicalVersion,
     versionSource,
+    persistenceMode: getPublishedLocalizationPersistenceProbeMode(),
+    lookupResult: classifyLookupResult(resolved.mode, resolved.reasonCode),
     ...(resolved.reasonCode ? { reasonCode: resolved.reasonCode } : {}),
     ...(resolved.snapshotId ? { snapshotId: resolved.snapshotId } : {}),
   };

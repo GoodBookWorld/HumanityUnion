@@ -22,6 +22,10 @@ import { PUBLISHED_LOCALIZATION_SCHEMA_VERSION } from "@hu/types";
 
 import { findCurrentPublishedPresentation } from "./persistence/repository.js";
 import {
+  PublishedLocalizationPersistenceUnavailableError,
+  getPublishedLocalizationPersistenceProbeMode,
+} from "./persistence/repository.js";
+import {
   buildMediaPlpResolveCacheKey,
   getCachedMediaPlpResolve,
   setCachedMediaPlpResolve,
@@ -77,9 +81,17 @@ export async function resolvePublishedPresentation(
 
     setCachedMediaPlpResolve(cacheKey, result);
     return result;
-  } catch {
+  } catch (error) {
     // Persistence failure: controlled fallback — no provider, no sync build, no corpus hydrate.
     // Do not cache persistence failures (allow quick retry after recovery).
+    if (error instanceof PublishedLocalizationPersistenceUnavailableError) {
+      return {
+        mode: "CANONICAL_FALLBACK",
+        presentation: input.canonicalPresentation,
+        seo: input.canonicalSeo,
+        reasonCode: "PLP_PERSISTENCE_UNAVAILABLE",
+      };
+    }
     return {
       mode: "CANONICAL_FALLBACK",
       presentation: input.canonicalPresentation,
@@ -87,4 +99,12 @@ export async function resolvePublishedPresentation(
       reasonCode: "PERSISTENCE_LOOKUP_FAILED",
     };
   }
+}
+
+/** Non-secret probe helper for HTTP/debug metadata. */
+export function readPublishedLocalizationPersistenceProbeMode():
+  | "MONGO"
+  | "MEMORY_TEST"
+  | "UNAVAILABLE" {
+  return getPublishedLocalizationPersistenceProbeMode();
 }

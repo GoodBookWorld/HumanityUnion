@@ -33,6 +33,9 @@ export type MediaPlpResolveBatchResultItem = {
   readonly presentation: PublicPresentationNode;
   readonly canonicalVersion: string;
   readonly reasonCode?: string;
+  /** Reset 03E.8 — non-secret persistence probe fields from API. */
+  readonly persistenceMode?: "MONGO" | "MEMORY_TEST" | "UNAVAILABLE";
+  readonly lookupResult?: "FOUND" | "NOT_FOUND" | "ERROR";
 };
 
 export async function resolveMediaPlpBatch(input: {

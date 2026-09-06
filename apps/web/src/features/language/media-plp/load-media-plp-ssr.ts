@@ -506,6 +506,8 @@ export async function loadMediaPlpPagePresentations(input: {
         schema: PUBLISHED_LOCALIZATION_SCHEMA_VERSION,
         presentation: editorial.presentation,
         canonicalPresentation: editorialCanonical,
+        persistenceMode: editorialHit?.persistenceMode,
+        lookupResult: editorialHit?.lookupResult,
       });
     }
 

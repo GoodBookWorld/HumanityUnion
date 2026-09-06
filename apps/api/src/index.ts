@@ -1,6 +1,7 @@
 import { bootstrapEventInfrastructure } from "./infrastructure/events/bootstrap-event-infrastructure.js";
 import { bootstrapAuthPersistence } from "./infrastructure/mongodb/bootstrap-auth-persistence.js";
 import { bootstrapMongoPersistence } from "./infrastructure/mongodb/bootstrap-mongo-persistence.js";
+import { bootstrapPublishedLocalizationPersistence } from "./infrastructure/mongodb/bootstrap-published-localization-persistence.js";
 import { environment, initializeEnvironment } from "./config/environment.js";
 
 initializeEnvironment();
@@ -9,6 +10,9 @@ async function start(): Promise<void> {
   await bootstrapAuthPersistence();
   await bootstrapEventInfrastructure();
   await bootstrapMongoPersistence();
+  // Reset 03E.8 — bind HTTP PLP resolve to the same durable Mongo store as
+  // materialize/diagnose --mongo (never silent empty memory).
+  await bootstrapPublishedLocalizationPersistence();
 
   const { assertNormalCivicArchiveRuntimeDatabase, logCivicArchiveRuntimeDiagnostic } =
     await import("./modules/public-civic-archive/civic-archive-runtime-diagnostic.js");

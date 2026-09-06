@@ -266,6 +266,16 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Coverage acceptance | **pending until live probe after deploy** |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 03E.8 note — HTTP PLP persistence truth (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live gap | Probe ENABLED + PLP branch + uk, but `API_RESULT_REASON=NO_PUBLISHED_SNAPSHOT` while CLI Mongo diagnostic was `PUBLISHED_LOCALIZED` |
+| FIRST LOSS | API HTTP process left PLP facade on default MEMORY while materializer/diagnose used MONGO |
+| Repair | `bootstrapPublishedLocalizationPersistence` in API `start()`; fail-closed `PLP_PERSISTENCE_UNAVAILABLE` when Mongo URI present but facade unbound/memory |
+| Probe | `PLP_PERSISTENCE_MODE` / `PLP_LOOKUP_RESULT` on live-truth metadata |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary
