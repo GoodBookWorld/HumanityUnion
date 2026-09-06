@@ -13,8 +13,8 @@ import type {
   PropagandaAnalysisResource,
 } from "@hu/types";
 
-import type { CivicMediaResolvedEditorial } from "../../civic-media-center/components/CivicMediaTranslatedEditorial";
-import { buildCanonicalCivicMediaEditorial } from "../../civic-media-center/components/CivicMediaTranslatedEditorial";
+import type { CivicMediaResolvedEditorial } from "../../civic-media-center/civic-media-canonical-editorial";
+import { buildCanonicalCivicMediaEditorial } from "../../civic-media-center/civic-media-canonical-editorial";
 import type { MediaPlpResolvedPresentation } from "./presentation";
 import { readMediaPlpStringField } from "./presentation";
 import {

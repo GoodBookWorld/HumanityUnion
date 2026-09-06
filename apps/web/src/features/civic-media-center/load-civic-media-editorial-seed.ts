@@ -1,6 +1,7 @@
 /**
  * Pack 08I.9 — SSR seed for Civic Media structured editorial.
  * GET resolve only — never POST generate from the server page.
+ * Reset 03E.7A.1 — imports pure canonical builders (never "use client" module).
  */
 import type { CivicMediaCenterPublic, LanguageCode } from "@hu/types";
 
@@ -10,7 +11,7 @@ import {
   CIVIC_MEDIA_RECORD_ID,
   overlayCivicMediaEditorialFromFields,
   type CivicMediaResolvedEditorial,
-} from "./components/CivicMediaTranslatedEditorial";
+} from "./civic-media-canonical-editorial";
 
 export async function loadCivicMediaEditorialSeed(input: {
   readonly media: CivicMediaCenterPublic;

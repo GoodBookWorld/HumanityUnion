@@ -5,7 +5,7 @@
 
 import type { CivicMediaCenterPublic, PublicNewsArticleItem } from "@hu/types";
 
-import type { CivicMediaResolvedEditorial } from "../../civic-media-center/components/CivicMediaTranslatedEditorial";
+import type { CivicMediaResolvedEditorial } from "../../civic-media-center/civic-media-canonical-editorial";
 import { loadCivicMediaEditorialSeed } from "../../civic-media-center/load-civic-media-editorial-seed";
 import { isMediaPlpWebEnabled } from "./feature-flag";
 import {
