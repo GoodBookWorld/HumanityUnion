@@ -1,0 +1,115 @@
+/**
+ * Reset 03E.6 — real /media route localization composition (testable).
+ * Same branch logic as apps/web/src/app/media/page.tsx — not a fixture-only path.
+ */
+
+import type { CivicMediaCenterPublic, PublicNewsArticleItem } from "@hu/types";
+
+import type { CivicMediaResolvedEditorial } from "../../civic-media-center/components/CivicMediaTranslatedEditorial";
+import { loadCivicMediaEditorialSeed } from "../../civic-media-center/load-civic-media-editorial-seed";
+import { isMediaPlpWebEnabled } from "./feature-flag";
+import { loadMediaPlpPagePresentations } from "./load-media-plp-ssr";
+import type { MediaPlpResolvedPresentation } from "./presentation";
+import {
+  MEDIA_LOCALIZATION_RUNTIME_BRANCH_LEGACY,
+  MEDIA_LOCALIZATION_RUNTIME_BRANCH_PLP,
+  type MediaLocalizationRuntimeBranch,
+} from "./media-localization-runtime-truth";
+
+/** Bound news PLP entities so the single Media batch stays under resolve max items. */
+export const MEDIA_PLP_NEWS_BATCH_LIMIT = 12;
+
+export type MediaPageLocalizationComposition = {
+  readonly runtimeBranch: MediaLocalizationRuntimeBranch;
+  readonly requestedLocale: string | null;
+  readonly batchLocale: string | null;
+  readonly initialEditorial: CivicMediaResolvedEditorial | undefined;
+  readonly plpTrustedById:
+    | Readonly<Record<string, MediaPlpResolvedPresentation>>
+    | undefined;
+  readonly plpPrinciplesById:
+    | Readonly<Record<string, MediaPlpResolvedPresentation>>
+    | undefined;
+  readonly plpEditorialPresentation: MediaPlpResolvedPresentation | undefined;
+  readonly plpFactCheckById:
+    | Readonly<Record<string, MediaPlpResolvedPresentation>>
+    | undefined;
+  readonly plpPropagandaById:
+    | Readonly<Record<string, MediaPlpResolvedPresentation>>
+    | undefined;
+  readonly plpNewsById:
+    | Readonly<Record<string, MediaPlpResolvedPresentation>>
+    | undefined;
+  readonly initialNewsArticles: PublicNewsArticleItem[] | undefined;
+};
+
+export async function composeMediaPageLocalization(input: {
+  readonly media: CivicMediaCenterPublic;
+  readonly locale: string;
+  readonly fetchNewsArticles?: () => Promise<readonly PublicNewsArticleItem[]>;
+  readonly loadPlp?: typeof loadMediaPlpPagePresentations;
+  readonly loadLegacyEditorial?: typeof loadCivicMediaEditorialSeed;
+  readonly isPlpEnabled?: () => boolean;
+}): Promise<MediaPageLocalizationComposition> {
+  const isPlpEnabled = input.isPlpEnabled ?? isMediaPlpWebEnabled;
+  const loadPlp = input.loadPlp ?? loadMediaPlpPagePresentations;
+  const loadLegacy = input.loadLegacyEditorial ?? loadCivicMediaEditorialSeed;
+
+  if (!isPlpEnabled()) {
+    let initialEditorial: CivicMediaResolvedEditorial | undefined;
+    try {
+      initialEditorial = await loadLegacy({
+        media: input.media,
+        language: input.locale,
+      });
+    } catch {
+      initialEditorial = undefined;
+    }
+    return {
+      runtimeBranch: MEDIA_LOCALIZATION_RUNTIME_BRANCH_LEGACY,
+      requestedLocale: input.locale,
+      batchLocale: null,
+      initialEditorial,
+      plpTrustedById: undefined,
+      plpPrinciplesById: undefined,
+      plpEditorialPresentation: undefined,
+      plpFactCheckById: undefined,
+      plpPropagandaById: undefined,
+      plpNewsById: undefined,
+      initialNewsArticles: undefined,
+    };
+  }
+
+  let initialNewsArticles: PublicNewsArticleItem[] = [];
+  if (input.fetchNewsArticles) {
+    try {
+      initialNewsArticles = [...(await input.fetchNewsArticles())];
+    } catch {
+      initialNewsArticles = [];
+    }
+  }
+
+  const plp = await loadPlp({
+    resources: input.media.trustedMedia,
+    principles: input.media.selectionPrinciples,
+    factChecking: input.media.factChecking,
+    propagandaAnalysis: input.media.propagandaAnalysis,
+    newsArticles: initialNewsArticles,
+    media: input.media,
+    locale: input.locale,
+  });
+
+  return {
+    runtimeBranch: MEDIA_LOCALIZATION_RUNTIME_BRANCH_PLP,
+    requestedLocale: input.locale,
+    batchLocale: input.locale,
+    initialEditorial: undefined,
+    plpTrustedById: plp?.trustedById,
+    plpPrinciplesById: plp?.principlesById,
+    plpEditorialPresentation: plp?.editorial,
+    plpFactCheckById: plp?.factCheckById,
+    plpPropagandaById: plp?.propagandaById,
+    plpNewsById: plp?.newsById,
+    initialNewsArticles,
+  };
+}

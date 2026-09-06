@@ -39,7 +39,20 @@ export function readMediaPlpStringField(
   if (typeof value === "string") {
     return value;
   }
-  return unwrapPublicPresentationValue(value as never) ?? "";
+  // Reset 03E.6 — also accept plain { value } rows and branded protected wrappers.
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const branded = unwrapPublicPresentationValue(value as never);
+    if (typeof branded === "string" && branded.trim()) {
+      return branded;
+    }
+    if (
+      "value" in value &&
+      typeof (value as { value: unknown }).value === "string"
+    ) {
+      return String((value as { value: string }).value);
+    }
+  }
+  return "";
 }
 
 export function assertNoClientSemanticTranslationInPlpMode(): void {

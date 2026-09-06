@@ -472,6 +472,9 @@ function CivicMediaCenterLoaded({
   plpPropagandaById,
   plpNewsById,
   initialNewsArticles,
+  mediaLocalizationRuntimeBranch,
+  mediaLocalizationRequestedLocale,
+  mediaLocalizationBatchLocale,
 }: {
   media: CivicMediaCenterPublic;
   initialEditorial?: CivicMediaResolvedEditorial;
@@ -482,9 +485,14 @@ function CivicMediaCenterLoaded({
   plpPropagandaById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   plpNewsById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   initialNewsArticles?: PublicNewsArticleItem[];
+  mediaLocalizationRuntimeBranch?: "PLP" | "LEGACY";
+  mediaLocalizationRequestedLocale?: string;
+  mediaLocalizationBatchLocale?: string;
 }) {
   const t = useTranslations("civicMediaPublic");
   const plpMode = plpTrustedById != null && plpPrinciplesById != null;
+  const runtimeBranch =
+    mediaLocalizationRuntimeBranch ?? (plpMode ? "PLP" : "LEGACY");
   // Reset 03C.2 / 03E — stable identity; editorial overview/FAQ from PLP when present.
   const plpEditorial = useMemo(
     () =>
@@ -550,6 +558,11 @@ function CivicMediaCenterLoaded({
       data-hu-media-renderer="shared"
       data-hu-semantic-contract="rendered"
       data-hu-plp-editorial-mode={editorialMode}
+      data-hu-media-localization-runtime-branch={runtimeBranch}
+      data-hu-media-localization-requested-locale={
+        mediaLocalizationRequestedLocale
+      }
+      data-hu-media-localization-batch-locale={mediaLocalizationBatchLocale}
     >
       <div className="civic-media-page__container">
         <section id="overview" className="civic-media-page__hero civic-media-section-shell">
@@ -820,6 +833,9 @@ export function CivicMediaCenterPageContent({
   plpPropagandaById,
   plpNewsById,
   initialNewsArticles,
+  mediaLocalizationRuntimeBranch,
+  mediaLocalizationRequestedLocale,
+  mediaLocalizationBatchLocale,
 }: {
   /**
    * Pack 08I.9 / 08I.12 — SSR-fetched media payload when server fetch succeeded.
@@ -846,6 +862,10 @@ export function CivicMediaCenterPageContent({
   plpNewsById?: Readonly<Record<string, MediaPlpResolvedPresentation>>;
   /** Optional SSR/static news seed for PublicNewsSection. */
   initialNewsArticles?: PublicNewsArticleItem[];
+  /** Reset 03E.6 — PLP vs LEGACY branch actually taken by /media. */
+  mediaLocalizationRuntimeBranch?: "PLP" | "LEGACY";
+  mediaLocalizationRequestedLocale?: string;
+  mediaLocalizationBatchLocale?: string;
 } = {}) {
   const t = useTranslations("civicMediaPublic");
   const hasServerPayload = initialMedia !== undefined;
@@ -911,6 +931,9 @@ export function CivicMediaCenterPageContent({
       plpPropagandaById={plpPropagandaById}
       plpNewsById={plpNewsById}
       initialNewsArticles={initialNewsArticles}
+      mediaLocalizationRuntimeBranch={mediaLocalizationRuntimeBranch}
+      mediaLocalizationRequestedLocale={mediaLocalizationRequestedLocale}
+      mediaLocalizationBatchLocale={mediaLocalizationBatchLocale}
     />
   );
 }

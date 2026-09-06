@@ -301,7 +301,7 @@ export async function loadMediaPlpPrinciplePresentations(input: {
 
 function resolveKeyedFromBatch(input: {
   readonly locale: string;
-  readonly byEntityId: ReadonlyMap<
+  readonly byEntityKey: ReadonlyMap<
     string,
     {
       readonly entityType: string;
@@ -321,7 +321,7 @@ function resolveKeyedFromBatch(input: {
 }): Record<string, MediaPlpResolvedPresentation> {
   const out: Record<string, MediaPlpResolvedPresentation> = {};
   for (const item of input.items) {
-    const hit = input.byEntityId.get(item.entityId);
+    const hit = input.byEntityKey.get(`${item.entityType}\0${item.entityId}`);
     out[item.key] = hit
       ? toMediaPlpResolvedPresentation(hit)
       : coherentFallback({
@@ -450,35 +450,39 @@ export async function loadMediaPlpPagePresentations(input: {
       locale: input.locale,
       items,
     });
-    const byEntityId = new Map(results.map((row) => [row.entityId, row]));
+    const byEntityKey = new Map(
+      results.map((row) => [`${row.entityType}\0${row.entityId}`, row]),
+    );
 
     const trustedById = resolveKeyedFromBatch({
       locale: input.locale,
-      byEntityId,
+      byEntityKey: byEntityKey,
       items: trustedItems,
     });
     const principlesById = resolveKeyedFromBatch({
       locale: input.locale,
-      byEntityId,
+      byEntityKey: byEntityKey,
       items: principleItems,
     });
     const factCheckById = resolveKeyedFromBatch({
       locale: input.locale,
-      byEntityId,
+      byEntityKey: byEntityKey,
       items: factCheckItems,
     });
     const propagandaById = resolveKeyedFromBatch({
       locale: input.locale,
-      byEntityId,
+      byEntityKey: byEntityKey,
       items: propagandaItems,
     });
     const newsById = resolveKeyedFromBatch({
       locale: input.locale,
-      byEntityId,
+      byEntityKey: byEntityKey,
       items: newsItems,
     });
 
-    const editorialHit = byEntityId.get(editorialEntityId);
+    const editorialHit = byEntityKey.get(
+      `${MEDIA_PLP_ENTITY_TYPE.CIVIC_MEDIA_EDITORIAL}\0${editorialEntityId}`,
+    );
     const editorial = editorialHit
       ? toMediaPlpResolvedPresentation(editorialHit)
       : coherentFallback({

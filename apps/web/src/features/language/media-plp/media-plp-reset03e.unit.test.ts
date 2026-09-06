@@ -177,9 +177,14 @@ describe("Reset 03E — Media semantic coverage", () => {
 
   it("combined page resolve includes editorial; still one HTTP batch topology", () => {
     const page = readFileSync(join(webSrc, "app/media/page.tsx"), "utf8");
-    assert.match(page, /loadMediaPlpPagePresentations/);
+    assert.match(page, /composeMediaPageLocalization/);
     assert.match(page, /plpEditorialPresentation/);
     assert.equal(MEDIA_PLP_LOCALE_SWITCH_POST_FIX_TOPOLOGY.mediaPlpResolveHttpPosts, 1);
+    const compose = readFileSync(
+      join(webSrc, "features/language/media-plp/compose-media-page-localization.ts"),
+      "utf8",
+    );
+    assert.match(compose, /loadMediaPlpPagePresentations/);
     const loader = readFileSync(
       join(webSrc, "features/language/media-plp/load-media-plp-ssr.ts"),
       "utf8",

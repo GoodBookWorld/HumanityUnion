@@ -420,15 +420,19 @@ describe("Reset 03E.5 — consumer value lineage", () => {
   });
 
   it("Media page route requests news entities in PLP batch (source wiring)", async () => {
-    const pageSrc = await import("node:fs").then((fs) =>
-      fs.readFileSync(
-        new URL("../../../app/media/page.tsx", import.meta.url),
-        "utf8",
-      ),
+    const fs = await import("node:fs");
+    const pageSrc = fs.readFileSync(
+      new URL("../../../app/media/page.tsx", import.meta.url),
+      "utf8",
+    );
+    const composeSrc = fs.readFileSync(
+      new URL("./compose-media-page-localization.ts", import.meta.url),
+      "utf8",
     );
     assert.match(pageSrc, /fetchPublicNewsArticles/);
-    assert.match(pageSrc, /newsArticles:\s*initialNewsArticles/);
     assert.match(pageSrc, /MEDIA_PLP_NEWS_BATCH_LIMIT/);
+    assert.match(composeSrc, /newsArticles:\s*initialNewsArticles/);
+    assert.match(composeSrc, /MEDIA_PLP_NEWS_BATCH_LIMIT/);
   });
 
   it("country page resolves PLP for country media resources (not WORLD-only)", async () => {

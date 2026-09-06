@@ -35,9 +35,14 @@ describe("Reset 03 web Media PLP boundary", () => {
 
   it("PLP page path does not import generateContentTranslation", () => {
     const mediaRoute = readFileSync(join(webSrc, "app/media/page.tsx"), "utf8");
-    assert.match(mediaRoute, /isMediaPlpWebEnabled/);
+    assert.match(mediaRoute, /composeMediaPageLocalization/);
     assert.match(mediaRoute, /CivicMediaCenterPageContent/);
     assert.doesNotMatch(mediaRoute, /CivicMediaCenterPlpContent/);
+    const compose = readFileSync(
+      join(webSrc, "features/language/media-plp/compose-media-page-localization.ts"),
+      "utf8",
+    );
+    assert.match(compose, /isMediaPlpWebEnabled/);
     const pageContent = readFileSync(
       join(webSrc, "features/civic-media-center/components/CivicMediaCenterPageContent.tsx"),
       "utf8",

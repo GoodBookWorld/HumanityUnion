@@ -153,8 +153,14 @@ describe("Reset 03C web Media PLP consumer", () => {
   it("legacy path preserved when flag OFF (media page still has legacy branch)", () => {
     const mediaRoute = readFileSync(join(webSrc, "app/media/page.tsx"), "utf8");
     assert.match(mediaRoute, /CivicMediaCenterPageContent/);
-    assert.match(mediaRoute, /loadCivicMediaEditorialSeed/);
-    assert.match(mediaRoute, /isMediaPlpWebEnabled/);
+    assert.match(mediaRoute, /composeMediaPageLocalization/);
+    const compose = readFileSync(
+      join(webSrc, "features/language/media-plp/compose-media-page-localization.ts"),
+      "utf8",
+    );
+    assert.match(compose, /loadCivicMediaEditorialSeed/);
+    assert.match(compose, /isMediaPlpWebEnabled/);
+    assert.match(compose, /MEDIA_LOCALIZATION_RUNTIME_BRANCH_LEGACY/);
   });
 
   it("ledger marks consumer ready pending live acceptance; ACTIVE count unchanged", () => {

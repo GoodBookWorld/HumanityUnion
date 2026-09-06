@@ -116,9 +116,14 @@ describe("Reset 03D — measured pre-fix topology", () => {
 describe("Reset 03D — single bounded Media resolution", () => {
   it("A/B: page uses loadMediaPlpPagePresentations (one HTTP batch)", () => {
     const page = readFileSync(join(webSrc, "app/media/page.tsx"), "utf8");
-    assert.match(page, /loadMediaPlpPagePresentations/);
+    assert.match(page, /composeMediaPageLocalization/);
     assert.doesNotMatch(page, /loadMediaPlpTrustedPresentations/);
     assert.doesNotMatch(page, /loadMediaPlpPrinciplePresentations/);
+    const compose = readFileSync(
+      join(webSrc, "features/language/media-plp/compose-media-page-localization.ts"),
+      "utf8",
+    );
+    assert.match(compose, /loadMediaPlpPagePresentations/);
   });
 
   it("C: combined loader returns trusted + principles without sequential dual HTTP", async () => {

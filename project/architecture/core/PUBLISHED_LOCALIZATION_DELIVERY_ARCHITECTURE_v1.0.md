@@ -665,3 +665,28 @@ A break after resolver is a localization failure (`LOCALIZED_PRESENTATION_CONSUM
 | Trusted card body | Explicit presentation explanation; cannot claim LOCALIZED while rendering canonical |
 | Election/initiative rails | `DOMAIN_NOT_YET_MIGRATED` for Media PLP (Initiative CT path; Pack 05) |
 | ACTIVE count | **30** — unchanged |
+
+### Reset 03E.6 — live runtime truth
+
+**Invariant:** Published localization is **not** runtime localization proof.
+
+Normative runtime success requires:
+
+1. published presentation validity (CLI.1 + LSI.1 + resolver)  
+2. correct requested locale (`uk → uk → uk`)  
+3. correct runtime branch (`MEDIA_LOCALIZATION_RUNTIME_BRANCH=PLP`)  
+4. consumer value lineage  
+5. localized SSR value  
+6. localized settled hydrated value  
+
+**False-positive architecture found:** API consumer acceptance (`CONSUMER_MODE=PUBLISHED_LOCALIZED`) proved the **API** process with `HU_MEDIA_PLP_ENABLED=true`, while staging Web historically rolled back to `HU_MEDIA_PLP_ENABLED` unset/false → `/media` stayed on **LEGACY** (`loadCivicMediaEditorialSeed` / CT). RSS cards still translated via generate-on-miss; editorial/FAQ/PLP cards remained English. Deploying consumer fixes (03E.5) without Web entering the PLP branch produces **zero visual change**.
+
+| Concern | Rule |
+|---------|------|
+| FIRST LOSS | `ROUTE_BRANCH_GAP` / `FEATURE_FLAG_GAP` — Web LEGACY while API PLP valid |
+| Observability | `data-hu-media-localization-runtime-branch=PLP\|LEGACY` (+ requested/batch locale) |
+| Route authority | `composeMediaPageLocalization` (same function as `/media` page) |
+| Rollback | `HU_MEDIA_PLP_WEB_FORCE_LEGACY=true` forces LEGACY even if shared flag ON |
+| Flag read | Runtime dynamic `process.env["HU_MEDIA_PLP_ENABLED"]` (not `NEXT_PUBLIC_*`) |
+| Playwright cold-cache | Structural HTML fixture ≠ real route composition (`TEST_ARCHITECTURE_FALSE_POSITIVE` if treated as proof) |
+| ACTIVE count | **30** — unchanged |

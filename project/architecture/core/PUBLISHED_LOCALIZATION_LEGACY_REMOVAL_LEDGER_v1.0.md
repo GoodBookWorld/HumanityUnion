@@ -242,6 +242,17 @@ Rollback: unset `HU_MEDIA_PLP_ENABLED` → legacy Media path. PLP lookup failure
 | Coverage acceptance | **pending until live** |
 | ACTIVE count | **30** — do not reduce yet |
 
+### Reset 03E.6 note — live runtime truth (no live ops)
+
+| Item | Status |
+|------|--------|
+| Live gap | After 03E.5 deploy, staging `/media` still English despite API `PUBLISHED_LOCALIZED` |
+| FIRST LOSS | `ROUTE_BRANCH_GAP` — Web `HU_MEDIA_PLP_ENABLED` unset/false → LEGACY CT while API PLP valid |
+| False positive | API consumer acceptance ≠ Web runtime branch; Playwright structural fixture ≠ real route |
+| Repair | `composeMediaPageLocalization` + runtime branch attrs + staging-shaped sentinel regression; projection unwrap harden; composite batch keys |
+| Coverage acceptance | **pending until live** (requires Web `HU_MEDIA_PLP_ENABLED=true` without `FORCE_LEGACY`) |
+| ACTIVE count | **30** — do not reduce yet |
+
 ---
 
 ## Reset 03B.2 note (2026-09-05) — thin provider execution boundary

@@ -42,6 +42,7 @@ Normative principle: **localization is a publication concern, not a rendering co
 12. **Reset 03E.3:** Ownership + content difference are still insufficient. Non-English `PUBLISHED_LOCALIZED` also requires `LSI.1` structural reachability (canonical → build → presentation → apply → renderer). Render-authority structural parity is enforced in test/dev from real `/media` markers.  
 13. **Reset 03E.4:** Read eligibility and rebuild eligibility are complements of the same usability contract (`classifyUsableLocalizedPresentation`). A snapshot that fails closed on read must never short-circuit materializer as `UNCHANGED_PLP`.  
 14. **Reset 03E.5:** Localization success requires end-to-end consumer value lineage after resolver validity. `PUBLISHED_LOCALIZED` plus path markers is insufficient if rendered card/section values remain canonical (`LOCALIZED_PRESENTATION_CONSUMER_BYPASS`).  
+15. **Reset 03E.6:** Published localization is not runtime localization proof. API `CONSUMER_MODE=PUBLISHED_LOCALIZED` does not prove Web `/media` is on the PLP branch. Runtime success requires correct requested locale, `MEDIA_LOCALIZATION_RUNTIME_BRANCH=PLP`, consumer value lineage, localized SSR, and localized hydrated values. Web/API `HU_MEDIA_PLP_ENABLED` are independent process envs; Web LEGACY while API PLP-valid is `ROUTE_BRANCH_GAP`.  
 
 Reset 01 documents the baseline only — **no runtime behavior change**.
 

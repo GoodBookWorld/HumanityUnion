@@ -230,8 +230,13 @@ describe("Reset 03C.2 — locale-switch contract + bounding", () => {
 
   it("page SSR uses one combined PLP resolve (03D) with timeout bound", () => {
     const page = readFileSync(join(webSrc, "app/media/page.tsx"), "utf8");
-    assert.match(page, /loadMediaPlpPagePresentations/);
+    assert.match(page, /composeMediaPageLocalization/);
     assert.doesNotMatch(page, /Promise\.all\(\[\s*loadMediaPlpTrusted/);
+    const compose = readFileSync(
+      join(webSrc, "features/language/media-plp/compose-media-page-localization.ts"),
+      "utf8",
+    );
+    assert.match(compose, /loadMediaPlpPagePresentations/);
     const api = readFileSync(
       join(webSrc, "features/language/media-plp/media-plp-api.ts"),
       "utf8",
@@ -250,7 +255,12 @@ describe("Reset 03C.2 — locale-switch contract + bounding", () => {
     // Injected path not used — exercise production batch counter via stubbing is hard;
     // assert combined loader exists and dual Promise.all is gone from page.
     const page = readFileSync(join(webSrc, "app/media/page.tsx"), "utf8");
-    assert.match(page, /loadMediaPlpPagePresentations/);
+    assert.match(page, /composeMediaPageLocalization/);
+    const compose = readFileSync(
+      join(webSrc, "features/language/media-plp/compose-media-page-localization.ts"),
+      "utf8",
+    );
+    assert.match(compose, /loadMediaPlpPagePresentations/);
     assert.equal(getMediaPlpHttpResolveRequestCount(), 0);
 
     // Country-style trusted-only still available without forcing dual page resolves.
